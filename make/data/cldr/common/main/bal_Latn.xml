@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -419,23 +419,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight draft="provisional">Ástréliáay, Ládhaway garmági wahd</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard draft="provisional">Makwáriay anjári wahd</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic draft="provisional">Mágadánay wahd</generic>
 					<standard draft="provisional">Mágadánay anjári wahd</standard>
 					<daylight draft="provisional">Mágadánay garmági wahd</daylight>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic draft="provisional">Shemálrónendi Meksikóay wahd</generic>
-					<standard draft="provisional">Górichánrónendi Meksikóay anjári wahd</standard>
-					<daylight draft="provisional">Shemálrónendi Meksikóay garmági wahd</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">

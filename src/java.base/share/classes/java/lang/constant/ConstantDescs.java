@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -236,31 +236,31 @@ public final class ConstantDescs {
             CD_Object, CD_Object);
 
     /** {@link ClassDesc} representing the primitive type {@code int} */
-    public static final ClassDesc CD_int = ClassDesc.ofDescriptor("I");
+    public static final ClassDesc CD_int = new PrimitiveClassDescImpl("I");
 
     /** {@link ClassDesc} representing the primitive type {@code long} */
-    public static final ClassDesc CD_long = ClassDesc.ofDescriptor("J");
+    public static final ClassDesc CD_long = new PrimitiveClassDescImpl("J");
 
     /** {@link ClassDesc} representing the primitive type {@code float} */
-    public static final ClassDesc CD_float = ClassDesc.ofDescriptor("F");
+    public static final ClassDesc CD_float = new PrimitiveClassDescImpl("F");
 
     /** {@link ClassDesc} representing the primitive type {@code double} */
-    public static final ClassDesc CD_double = ClassDesc.ofDescriptor("D");
+    public static final ClassDesc CD_double = new PrimitiveClassDescImpl("D");
 
     /** {@link ClassDesc} representing the primitive type {@code short} */
-    public static final ClassDesc CD_short = ClassDesc.ofDescriptor("S");
+    public static final ClassDesc CD_short = new PrimitiveClassDescImpl("S");
 
     /** {@link ClassDesc} representing the primitive type {@code byte} */
-    public static final ClassDesc CD_byte = ClassDesc.ofDescriptor("B");
+    public static final ClassDesc CD_byte = new PrimitiveClassDescImpl("B");
 
     /** {@link ClassDesc} representing the primitive type {@code char} */
-    public static final ClassDesc CD_char = ClassDesc.ofDescriptor("C");
+    public static final ClassDesc CD_char = new PrimitiveClassDescImpl("C");
 
     /** {@link ClassDesc} representing the primitive type {@code boolean} */
-    public static final ClassDesc CD_boolean = ClassDesc.ofDescriptor("Z");
+    public static final ClassDesc CD_boolean = new PrimitiveClassDescImpl("Z");
 
     /** {@link ClassDesc} representing the primitive type {@code void} */
-    public static final ClassDesc CD_void = ClassDesc.ofDescriptor("V");
+    public static final ClassDesc CD_void = new PrimitiveClassDescImpl("V");
 
     /**
      * {@link MethodHandleDesc} representing {@link MethodHandles#classData(Lookup, String, Class) MethodHandles.classData}

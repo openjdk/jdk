@@ -22,7 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-/**
+/*
  *******************************************************************************
  * Copyright (C) 1996-2014, International Business Machines Corporation and
  * others. All Rights Reserved.

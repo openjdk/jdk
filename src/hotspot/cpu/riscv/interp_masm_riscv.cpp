@@ -216,13 +216,6 @@ void InterpreterMacroAssembler::get_cache_index_at_bcp(Register index,
     }
   } else if (index_size == sizeof(u4)) {
     load_int_misaligned(index, Address(xbcp, bcp_offset), tmp, false);
-
-    // Check if the secondary index definition is still ~x, otherwise
-    // we have to change the following assembler code to calculate the
-    // plain index.
-    assert(ConstantPool::decode_invokedynamic_index(~123) == 123, "else change next line");
-    xori(index, index, -1);
-    sign_extend(index, index, 32);
   } else if (index_size == sizeof(u1)) {
     load_unsigned_byte(index, Address(xbcp, bcp_offset));
   } else {
