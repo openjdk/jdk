@@ -156,7 +156,7 @@ public class TestReachabilityFence {
         });
 
         for (int i = 0; i < 20_000; i++) {
-            //test(foo, foo.obj.arr, foo.obj.arr.length);
+            test(foo, foo.obj.arr, foo.obj.arr.length);
         }
 
         Thread threadGC = new Thread() {
@@ -173,13 +173,21 @@ public class TestReachabilityFence {
         };
         threadGC.setDaemon(true);
 
+        //final int[] arr2 = new int[1024 * 1024 * 1024];
+
         Thread threadUpdate = new Thread() {
             public void run() {
                 try {
-                    Thread.sleep(1000);
-                    int newId = foo.obj.id + 1;
-                    foo.obj = null; // newB;
-                    System.out.println("!!! CLEAN !!!");
+                    //while (true) {
+                        Thread.sleep(1000);
+
+                        int newId = foo.obj.id + 1;
+
+                        //B newB = new B(newId);
+                        foo.obj = null; // newB;
+
+                        System.out.println("!!! CLEAN !!!");
+                    //}
                 } catch (Throwable e) {
                     throw new InternalError(e);
                 }
