@@ -890,16 +890,26 @@ class LoadVectorNode : public LoadNode {
 // Load Vector from memory via index map
 class LoadVectorGatherNode : public LoadVectorNode {
  public:
-  LoadVectorGatherNode(Node* c, Node* mem, Node* adr, const TypePtr* at, const TypeVect* vt, Node* indices)
+  LoadVectorGatherNode(Node* c, Node* mem, Node* adr, const TypePtr* at, const TypeVect* vt, Node* indices, Node* offset = nullptr)
     : LoadVectorNode(c, mem, adr, at, vt) {
     init_class_id(Class_LoadVectorGather);
-    assert(indices->bottom_type()->is_vect(), "indices must be in vector");
     add_req(indices);
-    assert(req() == MemNode::ValueIn + 1, "match_edge expects that last input is in MemNode::ValueIn");
+    DEBUG_ONLY(bool is_subword = is_subword_type(vt->element_basic_type()));
+    assert(is_subword || indices->bottom_type()->is_vect(), "indices must be in vector");
+    assert(is_subword || !offset, "");
+    assert(req() == MemNode::ValueIn + 1, "match_edge expects that index input is in MemNode::ValueIn");
+    if (offset) {
+      add_req(offset);
+    }
   }
 
   virtual int Opcode() const;
-  virtual uint match_edge(uint idx) const { return idx == MemNode::Address || idx == MemNode::ValueIn; }
+  virtual uint match_edge(uint idx) const {
+     return idx == MemNode::Address ||
+            idx == MemNode::ValueIn ||
+            ((is_subword_type(vect_type()->element_basic_type())) &&
+              idx == MemNode::ValueIn + 1);
+  }
 };
 
 //------------------------------StoreVectorNode--------------------------------
@@ -1003,20 +1013,23 @@ class LoadVectorMaskedNode : public LoadVectorNode {
 // Load Vector from memory via index map under the influence of a predicate register(mask).
 class LoadVectorGatherMaskedNode : public LoadVectorNode {
  public:
-  LoadVectorGatherMaskedNode(Node* c, Node* mem, Node* adr, const TypePtr* at, const TypeVect* vt, Node* indices, Node* mask)
+  LoadVectorGatherMaskedNode(Node* c, Node* mem, Node* adr, const TypePtr* at, const TypeVect* vt, Node* indices, Node* mask, Node* offset = nullptr)
     : LoadVectorNode(c, mem, adr, at, vt) {
     init_class_id(Class_LoadVectorGatherMasked);
-    assert(indices->bottom_type()->is_vect(), "indices must be in vector");
-    assert(mask->bottom_type()->isa_vectmask(), "sanity");
     add_req(indices);
     add_req(mask);
     assert(req() == MemNode::ValueIn + 2, "match_edge expects that last input is in MemNode::ValueIn+1");
+    if (is_subword_type(vt->element_basic_type())) {
+      add_req(offset);
+    }
   }
 
   virtual int Opcode() const;
   virtual uint match_edge(uint idx) const { return idx == MemNode::Address ||
                                                    idx == MemNode::ValueIn ||
-                                                   idx == MemNode::ValueIn + 1; }
+                                                   idx == MemNode::ValueIn + 1 ||
+                                                   (is_subword_type(vect_type()->is_vect()->element_basic_type()) &&
+                                                   idx == MemNode::ValueIn + 2); }
 };
 
 //------------------------------StoreVectorScatterMaskedNode--------------------------------

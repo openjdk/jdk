@@ -126,17 +126,18 @@ ifeq ($(call isTargetOsType, unix)+$(STATIC_BUILD), true+false)
   # Create symlinks to libjsig in each JVM variant sub dir
   ifneq ($(STATIC_LIBS), true)
     LIB_OUTPUTDIR := $(call FindLibDirForModule, java.base)
+    LIBJSIG_NAME := $(LIBRARY_PREFIX)jsig$(SHARED_LIBRARY_SUFFIX)
 
     # $1 variant subdir
     define CreateSymlinks
       # Always symlink from libdir/variant/libjsig.so -> ../libjsig.so.
-      $(LIB_OUTPUTDIR)/$1/$(call SHARED_LIBRARY,jsig): \
-          $(LIB_OUTPUTDIR)/$(call SHARED_LIBRARY,jsig)
+      $(LIB_OUTPUTDIR)/$1/$(LIBJSIG_NAME): \
+          $(LIB_OUTPUTDIR)/$(LIBJSIG_NAME)
 		$$(call MakeDir, $$(@D))
 		$(RM) $$@
 		$(LN) -s ../$$(@F) $$@
 
-      TARGETS += $(LIB_OUTPUTDIR)/$1/$(call SHARED_LIBRARY,jsig)
+      TARGETS += $(LIB_OUTPUTDIR)/$1/$(LIBJSIG_NAME)
     endef
 
     # The subdir is the same as the variant

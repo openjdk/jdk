@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -4473,26 +4473,6 @@ public class Check {
         } catch (CompletionFailure ex) {
             return false;
         }
-    }
-
-    public Type checkProcessorType(JCExpression processor, Type resultType, Env<AttrContext> env) {
-        Type processorType = processor.type;
-        Type interfaceType = types.asSuper(processorType, syms.processorType.tsym);
-
-        if (interfaceType != null) {
-            List<Type> typeArguments = interfaceType.getTypeArguments();
-
-            if (typeArguments.size() == 2) {
-                resultType = typeArguments.head;
-            } else {
-                resultType = syms.objectType;
-            }
-        } else {
-            log.error(DiagnosticFlag.RESOLVE_ERROR, processor.pos,
-                    Errors.NotAProcessorType(processorType.tsym));
-        }
-
-        return resultType;
     }
 
     public void checkLeaksNotAccessible(Env<AttrContext> env, JCClassDecl check) {
