@@ -62,7 +62,7 @@ static char *skipNonWhitespace(char *p) {
 // input/output/error file descriptors will not be closed
 // by this function. This function returns 0 on failure
 // and 1 on success.
-int
+static int
 closeDescriptors(void)
 {
     DIR *dp;
@@ -115,7 +115,7 @@ closeDescriptors(void)
 // Does necessary housekeeping of a forked child process
 // (like closing copied file descriptors) before
 // execing the child process. This function never returns.
-void
+static void
 forkedChildProcess(const char *file, char *const argv[])
 {
     /* Close all file descriptors that have been copied over

@@ -117,13 +117,13 @@ void relocInfo::change_reloc_info_for_address(RelocIterator *itr, address pc, re
 // ----------------------------------------------------------------------------------------------------
 // Implementation of RelocIterator
 
-void RelocIterator::initialize(CompiledMethod* nm, address begin, address limit) {
+void RelocIterator::initialize(nmethod* nm, address begin, address limit) {
   initialize_misc();
 
   if (nm == nullptr && begin != nullptr) {
     // allow nmethod to be deduced from beginning address
     CodeBlob* cb = CodeCache::find_blob(begin);
-    nm = (cb != nullptr) ? cb->as_compiled_method_or_null() : nullptr;
+    nm = (cb != nullptr) ? cb->as_nmethod_or_null() : nullptr;
   }
   guarantee(nm != nullptr, "must be able to deduce nmethod from other arguments");
 
@@ -633,9 +633,9 @@ address virtual_call_Relocation::cached_value() {
 }
 
 Method* virtual_call_Relocation::method_value() {
-  CompiledMethod* cm = code();
-  if (cm == nullptr) return (Method*)nullptr;
-  Metadata* m = cm->metadata_at(_method_index);
+  nmethod* nm = code();
+  if (nm == nullptr) return (Method*)nullptr;
+  Metadata* m = nm->metadata_at(_method_index);
   assert(m != nullptr || _method_index == 0, "should be non-null for non-zero index");
   assert(m == nullptr || m->is_method(), "not a method");
   return (Method*)m;
@@ -659,9 +659,9 @@ void opt_virtual_call_Relocation::unpack_data() {
 }
 
 Method* opt_virtual_call_Relocation::method_value() {
-  CompiledMethod* cm = code();
-  if (cm == nullptr) return (Method*)nullptr;
-  Metadata* m = cm->metadata_at(_method_index);
+  nmethod* nm = code();
+  if (nm == nullptr) return (Method*)nullptr;
+  Metadata* m = nm->metadata_at(_method_index);
   assert(m != nullptr || _method_index == 0, "should be non-null for non-zero index");
   assert(m == nullptr || m->is_method(), "not a method");
   return (Method*)m;
@@ -689,9 +689,9 @@ address opt_virtual_call_Relocation::static_stub() {
 }
 
 Method* static_call_Relocation::method_value() {
-  CompiledMethod* cm = code();
-  if (cm == nullptr) return (Method*)nullptr;
-  Metadata* m = cm->metadata_at(_method_index);
+  nmethod* nm = code();
+  if (nm == nullptr) return (Method*)nullptr;
+  Metadata* m = nm->metadata_at(_method_index);
   assert(m != nullptr || _method_index == 0, "should be non-null for non-zero index");
   assert(m == nullptr || m->is_method(), "not a method");
   return (Method*)m;

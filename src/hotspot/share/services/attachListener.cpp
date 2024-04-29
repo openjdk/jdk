@@ -135,7 +135,12 @@ static jint load_agent(AttachOperation* op, outputStream* out) {
     }
   }
 
-  return JvmtiAgentList::load_agent(agent, absParam, options, out);
+  // The abs parameter should be "true" or "false".
+  const bool is_absolute_path = (absParam != nullptr) && (strcmp(absParam, "true") == 0);
+  JvmtiAgentList::load_agent(agent, is_absolute_path, options, out);
+
+  // Agent_OnAttach result or error message is written to 'out'.
+  return JNI_OK;
 }
 
 // Implementation of "properties" command.

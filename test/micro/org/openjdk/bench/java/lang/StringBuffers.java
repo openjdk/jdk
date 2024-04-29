@@ -29,7 +29,6 @@ import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Scope;
-import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
@@ -42,43 +41,6 @@ import java.util.concurrent.TimeUnit;
 @Measurement(iterations = 5, time = 1)
 @Fork(3)
 public class StringBuffers {
-
-    private String name;
-    private String blaha;
-    private Sigurd sig;
-
-    @Setup
-    public void setup() {
-        name = "joe";
-        blaha = "sniglogigloienlitenapasomarengrodasjukadjavelhej";
-        sig = new Sigurd();
-    }
-
-    @Benchmark
-    public String appendAndToString() {
-        return "MyStringBuffer named:" + ((name == null) ? "unknown" : name) + ".";
-    }
-
-    @Benchmark
-    public String toStringComplex() {
-        return sig.toString();
-    }
-
-    static class Sigurd {
-        int x;
-        byte y;
-        String z = "yahoo";
-
-        @Override
-        public String toString() {
-            return Integer.toString(x) + "_" + Integer.toString((int) y) + "_" + z + "_";
-        }
-    }
-
-    @Benchmark
-    public String substring() {
-        return blaha.substring(30, 35);
-    }
 
     StringBuffer sb = new StringBuffer();
 
