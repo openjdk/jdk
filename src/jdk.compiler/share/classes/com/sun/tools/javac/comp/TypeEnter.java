@@ -342,7 +342,7 @@ public class TypeEnter implements Completer {
 
             ImportFilter prevStaticImportFilter = staticImportFilter;
             ImportFilter prevTypeImportFilter = typeImportFilter;
-            DiagnosticPosition prevLintPos = deferredLintHandler.immediate();
+            DiagnosticPosition prevLintPos = deferredLintHandler.immediate(lint);
             Lint prevLint = chk.setLint(lint);
             Env<AttrContext> prevEnv = this.env;
             try {

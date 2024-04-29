@@ -150,20 +150,20 @@ JNIEXPORT void JNICALL Java_jdk_internal_org_jline_terminal_impl_jna_linux_CLibr
   (JNIEnv *env, jobject, jint fd, jint cmd, jobject data) {
     winsize ws;
 
-    ws.ws_row = env->GetIntField(data, ws_row);
-    ws.ws_col = env->GetIntField(data, ws_col);
-    ws.ws_xpixel = env->GetIntField(data, ws_xpixel);
-    ws.ws_ypixel = env->GetIntField(data, ws_ypixel);
+    ws.ws_row = env->GetShortField(data, ws_row);
+    ws.ws_col = env->GetShortField(data, ws_col);
+    ws.ws_xpixel = env->GetShortField(data, ws_xpixel);
+    ws.ws_ypixel = env->GetShortField(data, ws_ypixel);
 
     if (ioctl(fd, cmd, &ws) != 0) {
         throw_errno(env);
         return ;
     }
 
-    env->SetIntField(data, ws_row, ws.ws_row);
-    env->SetIntField(data, ws_col, ws.ws_col);
-    env->SetIntField(data, ws_xpixel, ws.ws_xpixel);
-    env->SetIntField(data, ws_ypixel, ws.ws_ypixel);
+    env->SetShortField(data, ws_row, ws.ws_row);
+    env->SetShortField(data, ws_col, ws.ws_col);
+    env->SetShortField(data, ws_xpixel, ws.ws_xpixel);
+    env->SetShortField(data, ws_ypixel, ws.ws_ypixel);
 }
 
 /*
