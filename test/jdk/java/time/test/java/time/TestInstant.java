@@ -137,9 +137,12 @@ public class TestInstant extends AbstractTest {
 
     @Test(dataProvider = "provider_until_1arg")
     public void test_until_1arg(Instant start, Instant end) {
+        Duration result = start.until(end);
         Duration expected = Duration.ofSeconds(end.getEpochSecond() - start.getEpochSecond(),
                 end.getNano() - start.getNano());
-        assertEquals(start.until(end), expected);
+        assertEquals(result, expected);
+        expected = Duration.between(start, end);
+        assertEquals(result, expected);
     }
 
     @Test
