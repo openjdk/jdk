@@ -979,7 +979,7 @@ public class Attr extends JCTree.Visitor {
         env.info.ctorPrologue = false;
         MethodSymbol prevMethod = chk.setMethod(m);
         try {
-            deferredLintHandler.flush(tree.pos());
+            deferredLintHandler.flush(tree.pos(), lint);
             chk.checkDeprecatedAnnotation(tree.pos(), m);
 
 
@@ -1280,7 +1280,7 @@ public class Attr extends JCTree.Visitor {
 
         try {
             v.getConstValue(); // ensure compile-time constant initializer is evaluated
-            deferredLintHandler.flush(tree.pos());
+            deferredLintHandler.flush(tree.pos(), lint);
             chk.checkDeprecatedAnnotation(tree.pos(), v);
 
             if (tree.init != null) {
@@ -5297,7 +5297,7 @@ public class Attr extends JCTree.Visitor {
         JavaFileObject prev = log.useSource(env.toplevel.sourcefile);
 
         try {
-            deferredLintHandler.flush(env.tree.pos());
+            deferredLintHandler.flush(env.tree.pos(), lint);
             attrib.accept(env);
         } finally {
             log.useSource(prev);
@@ -5472,7 +5472,7 @@ public class Attr extends JCTree.Visitor {
                     }
                 }
 
-                deferredLintHandler.flush(env.tree);
+                deferredLintHandler.flush(env.tree, env.info.lint);
                 env.info.returnResult = null;
                 // java.lang.Enum may not be subclassed by a non-enum
                 if (st.tsym == syms.enumSym &&
@@ -5522,7 +5522,7 @@ public class Attr extends JCTree.Visitor {
         chk.checkDeprecatedAnnotation(tree, msym);
 
         try {
-            deferredLintHandler.flush(tree.pos());
+            deferredLintHandler.flush(tree.pos(), lint);
         } finally {
             chk.setLint(prevLint);
         }

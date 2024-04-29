@@ -146,7 +146,7 @@ class MacroAssembler: public Assembler {
   // last Java Frame (fills frame anchor)
   void set_last_Java_frame(Register last_java_sp, Register last_java_fp, address last_java_pc, Register tmp);
   void set_last_Java_frame(Register last_java_sp, Register last_java_fp, Label &last_java_pc, Register tmp);
-  void set_last_Java_frame(Register last_java_sp, Register last_java_fp, Register last_java_pc, Register tmp);
+  void set_last_Java_frame(Register last_java_sp, Register last_java_fp, Register last_java_pc);
 
   // thread in the default location (xthread)
   void reset_last_Java_frame(bool clear_fp);

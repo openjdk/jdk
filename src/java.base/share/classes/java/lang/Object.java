@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -370,16 +370,21 @@ public class Object {
      * @see    #wait(long, int)
      */
     public final void wait(long timeoutMillis) throws InterruptedException {
-        long comp = Blocker.begin();
+        if (!Thread.currentThread().isVirtual()) {
+            wait0(timeoutMillis);
+            return;
+        }
+
+        // virtual thread waiting
+        boolean attempted = Blocker.begin();
         try {
             wait0(timeoutMillis);
         } catch (InterruptedException e) {
-            Thread thread = Thread.currentThread();
-            if (thread.isVirtual())
-                thread.getAndClearInterrupt();
+            // virtual thread's interrupt status needs to be cleared
+            Thread.currentThread().getAndClearInterrupt();
             throw e;
         } finally {
-            Blocker.end(comp);
+            Blocker.end(attempted);
         }
     }
 

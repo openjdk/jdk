@@ -340,11 +340,11 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
         // underlying file has been truncated. Do not crash the VM in such a case.
         CodeBlob* cb = CodeCache::find_blob(pc);
         nmethod* nm = cb ? cb->as_nmethod_or_null() : nullptr;
-        bool is_unsafe_memory_access = (thread->doing_unsafe_access() && UnsafeCopyMemory::contains_pc(pc));
+        bool is_unsafe_memory_access = (thread->doing_unsafe_access() && UnsafeMemoryAccess::contains_pc(pc));
         if ((nm != nullptr && nm->has_unsafe_access()) || is_unsafe_memory_access) {
           address next_pc = pc + 4;
           if (is_unsafe_memory_access) {
-            next_pc = UnsafeCopyMemory::page_error_continue_pc(pc);
+            next_pc = UnsafeMemoryAccess::page_error_continue_pc(pc);
           }
           next_pc = SharedRuntime::handle_unsafe_access(thread, next_pc);
           os::Posix::ucontext_set_pc(uc, next_pc);
@@ -368,8 +368,8 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
                 thread->thread_state() == _thread_in_native) &&
                sig == SIGBUS && thread->doing_unsafe_access()) {
         address next_pc = pc + 4;
-        if (UnsafeCopyMemory::contains_pc(pc)) {
-          next_pc = UnsafeCopyMemory::page_error_continue_pc(pc);
+        if (UnsafeMemoryAccess::contains_pc(pc)) {
+          next_pc = UnsafeMemoryAccess::page_error_continue_pc(pc);
         }
         next_pc = SharedRuntime::handle_unsafe_access(thread, next_pc);
         os::Posix::ucontext_set_pc(uc, next_pc);

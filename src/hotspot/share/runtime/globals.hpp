@@ -867,9 +867,6 @@ const int ObjectAlignmentInBytes = 8;
   develop(bool, TraceBytecodes, false,                                      \
           "Trace bytecode execution")                                       \
                                                                             \
-  develop(bool, TraceInvocationCounterOverflow, false,                      \
-          "Trace method invocation counter overflow")                       \
-                                                                            \
   develop(bool, VerifyDependencies, trueInDebug,                            \
           "Exercise and verify the compilation dependency mechanism")       \
                                                                             \
@@ -955,7 +952,7 @@ const int ObjectAlignmentInBytes = 8;
              "Enable Thread SMR Statistics")                                \
                                                                             \
   product(bool, UseNotificationThread, true,                                \
-          "Use Notification Thread")                                        \
+          "(Deprecated) Use Notification Thread")                           \
                                                                             \
   product(bool, Inline, true,                                               \
           "Enable inlining")                                                \
@@ -980,9 +977,6 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   develop(bool, TraceMethodReplacement, false,                              \
           "Print when methods are replaced do to recompilation")            \
-                                                                            \
-  product(bool, PrintMethodFlushingStatistics, false, DIAGNOSTIC,           \
-          "print statistics about method flushing")                         \
                                                                             \
   product(intx, MinPassesBeforeFlush, 10, DIAGNOSTIC,                       \
           "Minimum number of sweeper passes before an nmethod "             \

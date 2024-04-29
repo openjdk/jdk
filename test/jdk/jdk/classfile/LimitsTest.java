@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8320360
+ * @bug 8320360 8330684
  * @summary Testing ClassFile limits.
  * @run junit LimitsTest
  */
@@ -31,6 +31,7 @@ import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.classfile.ClassFile;
+import java.lang.classfile.constantpool.ConstantPoolException;
 import jdk.internal.classfile.impl.LabelContext;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
@@ -91,5 +92,11 @@ class LimitsTest {
     void testReadingOutOfBounds() {
         assertThrows(IllegalArgumentException.class, () -> ClassFile.of().parse(new byte[]{(byte)0xCA, (byte)0xFE, (byte)0xBA, (byte)0xBE}), "reading magic only");
         assertThrows(IllegalArgumentException.class, () -> ClassFile.of().parse(new byte[]{(byte)0xCA, (byte)0xFE, (byte)0xBA, (byte)0xBE, 0, 0, 0, 0, 0, 2}), "reading invalid CP size");
+    }
+
+    @Test
+    void testInvalidClassEntry() {
+        assertThrows(ConstantPoolException.class, () -> ClassFile.of().parse(new byte[]{(byte)0xCA, (byte)0xFE, (byte)0xBA, (byte)0xBE,
+            0, 0, 0, 0, 0, 2, ClassFile.TAG_METHODREF, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}).thisClass());
     }
 }

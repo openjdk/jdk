@@ -906,10 +906,11 @@ struct TableLocker {
   ~TableLocker() { pthread_mutex_unlock(&g_handletable_mutex); }
 };
 struct handletableentry{
-    void*   handle;
-    ino64_t inode;
-    dev64_t devid;
-    uint    refcount;
+    void*         handle;
+    ino64_t       inode;
+    dev64_t       devid;
+    char*         member;
+    uint          refcount;
 };
 constexpr unsigned init_num_handles = 128;
 static unsigned max_handletable = 0;
@@ -1049,6 +1050,14 @@ void* Aix_dlopen(const char* filename, int Flags, const char** error_report) {
     return nullptr;
   }
   else {
+    // extract member string if exist duplicate it and store pointer of it
+    // if member does not exist store nullptr
+    char* member = nullptr;
+    const char* substr;
+    if (filename[strlen(filename) - 1] == ')' && (substr = strrchr(filename, '('))) {
+      member = os::strdup(substr);
+    }
+
     unsigned i = 0;
     TableLocker lock;
     // check if library belonging to filename is already loaded.
@@ -1056,7 +1065,10 @@ void* Aix_dlopen(const char* filename, int Flags, const char** error_report) {
     for (i = 0; i < g_handletable_used; i++) {
       if ((p_handletable + i)->handle &&
           (p_handletable + i)->inode == libstat.st_ino &&
-          (p_handletable + i)->devid == libstat.st_dev) {
+          (p_handletable + i)->devid == libstat.st_dev &&
+          (((p_handletable + i)->member == nullptr && member == nullptr) ||
+           ((p_handletable + i)->member != nullptr && member != nullptr &&
+           strcmp((p_handletable + i)->member, member) == 0))) {
         (p_handletable + i)->refcount++;
         result = (p_handletable + i)->handle;
         break;
@@ -1084,6 +1096,7 @@ void* Aix_dlopen(const char* filename, int Flags, const char** error_report) {
         (p_handletable + i)->handle = result;
         (p_handletable + i)->inode = libstat.st_ino;
         (p_handletable + i)->devid = libstat.st_dev;
+        (p_handletable + i)->member = member;
         (p_handletable + i)->refcount = 1;
       }
       else {
@@ -1131,7 +1144,7 @@ bool os::pd_dll_unload(void* libhandle, char* ebuf, int ebuflen) {
     // while in the second case we simply have to nag.
     res = (0 == ::dlclose(libhandle));
     if (!res) {
-      // error analysis when dlopen fails
+      // error analysis when dlclose fails
       const char* error_report = ::dlerror();
       if (error_report == nullptr) {
         error_report = "dlerror returned no error description";
@@ -1145,7 +1158,11 @@ bool os::pd_dll_unload(void* libhandle, char* ebuf, int ebuflen) {
     if (i < g_handletable_used) {
       if (res) {
         // First case: libhandle was found (with refcount == 0) and ::dlclose successful,
-        // so delete entry from array
+        // so delete entry from array (do not forget to free member-string space if member exists)
+        if ((p_handletable + i)->member) {
+          os::free((p_handletable + i)->member);
+          (p_handletable + i)->member = nullptr;
+        }
         g_handletable_used--;
         // If the entry was the last one of the array, the previous g_handletable_used--
         // is sufficient to remove the entry from the array, otherwise we move the last

@@ -1560,7 +1560,7 @@ class VectorReinterpretNode : public VectorNode {
   const TypeVect* src_type() { return _src_vt; }
   virtual uint hash() const { return VectorNode::hash() + _src_vt->hash(); }
   virtual bool cmp( const Node &n ) const {
-    return VectorNode::cmp(n) && !Type::cmp(_src_vt,((VectorReinterpretNode&)n)._src_vt);
+    return VectorNode::cmp(n) && Type::equals(_src_vt, ((VectorReinterpretNode&) n)._src_vt);
   }
   virtual Node* Identity(PhaseGVN* phase);
 
@@ -1696,7 +1696,7 @@ class VectorInsertNode : public VectorNode {
   VectorInsertNode(Node* vsrc, Node* new_val, ConINode* pos, const TypeVect* vt) : VectorNode(vsrc, new_val, (Node*)pos, vt) {
    assert(pos->get_int() >= 0, "positive constants");
    assert(pos->get_int() < (int)vt->length(), "index must be less than vector length");
-   assert(Type::cmp(vt, vsrc->bottom_type()) == 0, "input and output must be same type");
+   assert(Type::equals(vt, vsrc->bottom_type()), "input and output must be same type");
   }
   virtual int Opcode() const;
   uint pos() const { return in(3)->get_int(); }
