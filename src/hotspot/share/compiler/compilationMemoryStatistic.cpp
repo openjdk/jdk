@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2023, Red Hat, Inc. and/or its affiliates.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -394,15 +394,19 @@ void CompilationMemoryStatistic::on_end_compilation() {
   ResourceMark rm;
   CompilerThread* const th = Thread::current()->as_Compiler_thread();
   ArenaStatCounter* const arena_stat = th->arena_stat();
-  const CompilerType ct = th->task()->compiler()->type();
+  CompileTask* const task = th->task();
+  const CompilerType ct = task->compiler()->type();
 
   const Method* const m = th->task()->method();
   FullMethodName fmn(m);
   fmn.make_permanent();
 
   const DirectiveSet* directive = th->task()->directive();
-  assert(directive->should_collect_memstat(), "Only call if memstat is enabled");
+  assert(directive->should_collect_memstat(), "Should only be called if memstat is enabled for this method");
   const bool print = directive->should_print_memstat();
+
+  // Store memory used in task, for later processing by JFR
+  task->set_arena_bytes(arena_stat->peak_since_start());
 
   // Store result
   // For this to work, we must call on_end_compilation() at a point where
@@ -492,7 +496,7 @@ void CompilationMemoryStatistic::on_arena_change(ssize_t diff, const Arena* aren
       CompilerType ct = compiler_none;
 
       // get some more info
-      const CompileTask* task = th->task();
+      const CompileTask* const task = th->task();
       if (task != nullptr) {
         ct = task->compiler()->type();
         const DirectiveSet* directive = task->directive();
