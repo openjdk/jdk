@@ -1126,6 +1126,10 @@ extern RegMask _NO_SPECIAL_REG32_mask;
 extern RegMask _NO_SPECIAL_REG_mask;
 extern RegMask _NO_SPECIAL_PTR_REG_mask;
 
+// Figure out which register class each belongs in: rc_int, rc_float or
+// rc_stack.
+enum RC { rc_bad, rc_int, rc_float, rc_predicate, rc_stack };
+
 class CallStubImpl {
 
   //--------------------------------------------------------------
@@ -1899,10 +1903,6 @@ const Pipeline * MachEpilogNode::pipeline() const {
 }
 
 //=============================================================================
-
-// Figure out which register class each belongs in: rc_int, rc_float or
-// rc_stack.
-enum RC { rc_bad, rc_int, rc_float, rc_predicate, rc_stack };
 
 static enum RC rc_class(OptoReg::Name reg) {
 

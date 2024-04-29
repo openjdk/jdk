@@ -4057,10 +4057,9 @@ void TemplateTable::_new() {
   __ jcc(Assembler::notEqual, slow_case);
 #endif
 
-  // make sure klass doesn't have finalizer
   // get instance_size in InstanceKlass (scaled to a count of bytes)
   __ movl(rdx, Address(rcx, Klass::layout_helper_offset()));
-  // test to see if it has a finalizer or is malformed in some way
+  // test to see if it is malformed in some way
   __ testl(rdx, Klass::_lh_instance_slow_path_bit);
   __ jcc(Assembler::notZero, slow_case);
 
