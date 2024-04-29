@@ -43,10 +43,15 @@ public class LocaleTest {
     // the native encoding is determined as such, which is used by
     // the `Process` class under jtreg environment.
     private static List<String> EXPECTED = List.of(
-        "2024-April-22 Monday",
-        "2024-avril-22 lundi",
-        "2024-April-22 Montag",
-        "2024-abril-22 lunes");
+        String.format(Locale.UK, FORMAT, TODAY),
+        String.format(Locale.FRANCE, FORMAT, TODAY),
+        String.format(Locale.GERMANY, FORMAT, TODAY),
+        String.format(Locale.of("es"), FORMAT, TODAY),
+        String.format((Locale)null, FORMAT, TODAY),
+        String.format((Locale)null, FORMAT, TODAY),
+        String.format((Locale)null, FORMAT, TODAY),
+        String.format((Locale)null, FORMAT, TODAY)
+    );
 
     public static void main(String... args) throws Throwable {
         if (args.length == 0) {
@@ -83,6 +88,16 @@ public class LocaleTest {
                 con.readLine(Locale.GERMANY, FORMAT, TODAY);
                 con.printf("\n");
                 con.readPassword(Locale.of("es"), FORMAT, TODAY);
+                con.printf("\n");
+
+                // tests null locale
+                con.format((Locale)null, FORMAT, TODAY);
+                con.printf("\n");
+                con.printf((Locale)null, FORMAT, TODAY);
+                con.printf("\n");
+                con.readLine((Locale)null, FORMAT, TODAY);
+                con.printf("\n");
+                con.readPassword((Locale)null, FORMAT, TODAY);
             } else {
                 // Exit with -1
                 System.exit(-1);

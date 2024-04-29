@@ -166,7 +166,7 @@ public sealed class Console implements Flushable permits ProxyingConsole {
      *         variable and may be zero.  The maximum number of arguments is
      *         limited by the maximum dimension of a Java array as defined by
      *         <cite>The Java Virtual Machine Specification</cite>.
-     *         The behaviour on a
+     *         The behavior on a
      *         {@code null} argument depends on the {@link
      *         Formatter##syntax conversion}.
      *
@@ -190,7 +190,10 @@ public sealed class Console implements Flushable permits ProxyingConsole {
      * the specified format string and arguments with the specified
      * {@code locale}.
      *
-     * @param  locale locale used for formatting
+     * @param  locale The {@linkplain Locale locale} to apply during
+     *         formatting.  If {@code locale} is {@code null} then no localization
+     *         is applied.
+     *
      * @param  format
      *         A format string as described in {@link
      *         Formatter##syntax Format string syntax}.
@@ -202,7 +205,7 @@ public sealed class Console implements Flushable permits ProxyingConsole {
      *         variable and may be zero.  The maximum number of arguments is
      *         limited by the maximum dimension of a Java array as defined by
      *         <cite>The Java Virtual Machine Specification</cite>.
-     *         The behaviour on a
+     *         The behavior on a
      *         {@code null} argument depends on the {@link
      *         Formatter##syntax conversion}.
      *
@@ -245,7 +248,7 @@ public sealed class Console implements Flushable permits ProxyingConsole {
      *         variable and may be zero.  The maximum number of arguments is
      *         limited by the maximum dimension of a Java array as defined by
      *         <cite>The Java Virtual Machine Specification</cite>.
-     *         The behaviour on a
+     *         The behavior on a
      *         {@code null} argument depends on the {@link
      *         Formatter##syntax conversion}.
      *
@@ -269,7 +272,10 @@ public sealed class Console implements Flushable permits ProxyingConsole {
      * output stream using the specified format string and arguments with
      * the specified {@code locale}.
      *
-     * @param  locale locale used for formatting
+     * @param  locale The {@linkplain Locale locale} to apply during
+     *         formatting.  If {@code locale} is {@code null} then no localization
+     *         is applied.
+     *
      * @param  format
      *         A format string as described in {@link
      *         Formatter##syntax Format string syntax}.
@@ -281,7 +287,7 @@ public sealed class Console implements Flushable permits ProxyingConsole {
      *         variable and may be zero.  The maximum number of arguments is
      *         limited by the maximum dimension of a Java array as defined by
      *         <cite>The Java Virtual Machine Specification</cite>.
-     *         The behaviour on a
+     *         The behavior on a
      *         {@code null} argument depends on the {@link
      *         Formatter##syntax conversion}.
      *
@@ -313,9 +319,13 @@ public sealed class Console implements Flushable permits ProxyingConsole {
      * @param  args
      *         Arguments referenced by the format specifiers in the format
      *         string.  If there are more arguments than format specifiers, the
-     *         extra arguments are ignored.  The maximum number of arguments is
+     *         extra arguments are ignored.  The number of arguments is
+     *         variable and may be zero.  The maximum number of arguments is
      *         limited by the maximum dimension of a Java array as defined by
      *         <cite>The Java Virtual Machine Specification</cite>.
+     *         The behavior on a
+     *         {@code null} argument depends on the {@link
+     *         Formatter##syntax conversion}.
      *
      * @throws  IllegalFormatException
      *          If a format string contains an illegal syntax, a format
@@ -341,7 +351,10 @@ public sealed class Console implements Flushable permits ProxyingConsole {
      * Provides a formatted prompt using the specified {@code locale}, then
      * reads a single line of text from the console.
      *
-     * @param  locale locale used for formatting
+     * @param  locale The {@linkplain Locale locale} to apply during
+     *         formatting.  If {@code locale} is {@code null} then no localization
+     *         is applied.
+     *
      * @param  format
      *         A format string as described in {@link
      *         Formatter##syntax Format string syntax}.
@@ -349,9 +362,13 @@ public sealed class Console implements Flushable permits ProxyingConsole {
      * @param  args
      *         Arguments referenced by the format specifiers in the format
      *         string.  If there are more arguments than format specifiers, the
-     *         extra arguments are ignored.  The maximum number of arguments is
+     *         extra arguments are ignored.  The number of arguments is
+     *         variable and may be zero.  The maximum number of arguments is
      *         limited by the maximum dimension of a Java array as defined by
      *         <cite>The Java Virtual Machine Specification</cite>.
+     *         The behavior on a
+     *         {@code null} argument depends on the {@link
+     *         Formatter##syntax conversion}.
      *
      * @throws  IllegalFormatException
      *          If a format string contains an illegal syntax, a format
@@ -401,9 +418,13 @@ public sealed class Console implements Flushable permits ProxyingConsole {
      * @param  args
      *         Arguments referenced by the format specifiers in the format
      *         string.  If there are more arguments than format specifiers, the
-     *         extra arguments are ignored.  The maximum number of arguments is
+     *         extra arguments are ignored.  The number of arguments is
+     *         variable and may be zero.  The maximum number of arguments is
      *         limited by the maximum dimension of a Java array as defined by
      *         <cite>The Java Virtual Machine Specification</cite>.
+     *         The behavior on a
+     *         {@code null} argument depends on the {@link
+     *         Formatter##syntax conversion}.
      *
      * @throws  IllegalFormatException
      *          If a format string contains an illegal syntax, a format
@@ -429,7 +450,10 @@ public sealed class Console implements Flushable permits ProxyingConsole {
      * Provides a formatted prompt using the specified {@code locale}, then
      * reads a password or passphrase from the console with echoing disabled.
      *
-     * @param  locale locale used for formatting
+     * @param  locale The {@linkplain Locale locale} to apply during
+     *         formatting.  If {@code locale} is {@code null} then no localization
+     *         is applied.
+     *
      * @param  format
      *         A format string as described in {@link
      *         Formatter##syntax Format string syntax}
@@ -438,9 +462,13 @@ public sealed class Console implements Flushable permits ProxyingConsole {
      * @param  args
      *         Arguments referenced by the format specifiers in the format
      *         string.  If there are more arguments than format specifiers, the
-     *         extra arguments are ignored.  The maximum number of arguments is
+     *         extra arguments are ignored.  The number of arguments is
+     *         variable and may be zero.  The maximum number of arguments is
      *         limited by the maximum dimension of a Java array as defined by
      *         <cite>The Java Virtual Machine Specification</cite>.
+     *         The behavior on a
+     *         {@code null} argument depends on the {@link
+     *         Formatter##syntax conversion}.
      *
      * @throws  IllegalFormatException
      *          If a format string contains an illegal syntax, a format
