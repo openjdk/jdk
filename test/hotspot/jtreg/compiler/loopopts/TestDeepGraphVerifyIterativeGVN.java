@@ -33,7 +33,7 @@
 
 package compiler.loopopts;
 
-// Note; we disable the implicit memory limit of 1G in debug JVMs until JDK-8331283 is fixed
+// Note; we disable the implicit memory limit of 1G in debug JVMs until JDK-8331295 is fixed
 
 public class TestDeepGraphVerifyIterativeGVN
 {
