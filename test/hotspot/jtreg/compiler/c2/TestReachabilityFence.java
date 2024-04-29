@@ -109,9 +109,6 @@ public class TestReachabilityFence {
         }
     }
 
-    static boolean flag = true;
-
-    // Test cases 2 and 3 are variations on the above with the reachability fence.
 
     static void test2(A foo, int[] arr, int[] arr1, int limit) {
         int arr0 = arr[0];
@@ -149,7 +146,6 @@ public class TestReachabilityFence {
         }
     }
 
-    static void noinline(Object o) {}
 
     // Test case to trigger a NullPointerException (NPE) if 'bar' is prematurely collected
     static void test10(A foo, int[] arr, int[] arr1, int limit) {
