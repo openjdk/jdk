@@ -48,12 +48,12 @@ public class TestReduceAllocationAndNonExactAllocate {
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
     public static void main(String[] args) {
-	    try {
+        try {
             if (test(20, Integer.class) != 2032) {
                 throw new RuntimeException("Expected the value to be 2032.");
             }
-	    }
-	    catch (InstantiationException e) {
+        }
+        catch (InstantiationException e) {
             e.printStackTrace();
         }
     }
