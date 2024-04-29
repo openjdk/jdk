@@ -1556,9 +1556,6 @@ class InvokerBytecodeGenerator {
             @Override
             public void accept(ClassBuilder clb) {
                 methodSetup(clb, new Consumer<MethodBuilder>() {
-
-                    private static final MethodRefEntry MRE_LF_interpretWithArguments = CP.methodRefEntry(CD_LF, "interpretWithArguments", MethodTypeDesc.of(CD_Object, CD_OBJARY));
-
                     @Override
                     public void accept(MethodBuilder mb) {
 
