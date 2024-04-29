@@ -82,6 +82,15 @@ source %{
       case Op_VectorCastHF2F:
       case Op_VectorCastF2HF:
         return UseZvfh;
+      case Op_VectorLoadShuffle:
+      case Op_VectorRearrange:
+        // vlen >= 4 is required, because min vector size for byte is 4 on riscv,
+        // VectorLoadShuffle is from byte to X, so it requires vlen >= 4.
+        // VectorRearrange depends on VectorLoadShuffle, so it also requires vlen >= 4.
+        if (vlen < 4) {
+          return false;
+        }
+        break;
       default:
         break;
     }
@@ -3557,6 +3566,41 @@ instruct vmask_reinterpret_diff_esize(vRegMask dst, vRegMask_V0 src, vReg tmp) %
     BasicType to_bt = Matcher::vector_element_basic_type(this);
     __ vsetvli_helper(to_bt, Matcher::vector_length(this));
     __ vmseq_vi(as_VectorRegister($dst$$reg), as_VectorRegister($tmp$$reg), -1);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// ------------------------------ Vector shuffle -------------------------------
+
+instruct loadshuffleB(vReg dst) %{
+  predicate(Matcher::vector_element_basic_type(n) == T_BYTE);
+  match(Set dst (VectorLoadShuffle dst));
+  format %{ "loadshuffleB $dst, $dst" %}
+  ins_encode %{
+    // For T_BYTE, no need to do anything
+  %}
+  ins_pipe(pipe_class_empty);
+%}
+
+instruct loadshuffleX(vReg dst, vReg src) %{
+  predicate(Matcher::vector_element_basic_type(n) == T_DOUBLE ||
+            Matcher::vector_element_basic_type(n) == T_LONG ||
+            Matcher::vector_element_basic_type(n) == T_FLOAT ||
+            Matcher::vector_element_basic_type(n) == T_INT ||
+            Matcher::vector_element_basic_type(n) == T_SHORT);
+  match(Set dst (VectorLoadShuffle src));
+  effect(TEMP_DEF dst);
+  format %{ "loadshuffleX $dst, $src" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    if (bt == T_SHORT) {
+      __ vzext_vf2(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg));
+    } else if (bt == T_FLOAT || bt == T_INT) {
+      __ vzext_vf4(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg));
+    } else { // bt == T_DOUBLE || bt == T_LONG
+      __ vzext_vf8(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg));
+    }
   %}
   ins_pipe(pipe_slow);
 %}
