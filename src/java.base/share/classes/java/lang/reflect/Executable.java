@@ -343,8 +343,6 @@ public abstract sealed class Executable extends AccessibleObject
             // If we have real parameter data, then we use the
             // synthetic and mandate flags to our advantage.
             if (realParamData) {
-                final Type[] out = new Type[nonGenericParamTypes.length];
-                final Parameter[] params = getParameters();
                 if (getDeclaringClass().isRecord() && this instanceof Constructor) {
                     /* we could be seeing a compact constructor of a record class
                      * its parameters are mandated but we should be able to retrieve
@@ -356,6 +354,8 @@ public abstract sealed class Executable extends AccessibleObject
                         return nonGenericParamTypes.clone();
                     }
                 } else {
+                    final Type[] out = new Type[nonGenericParamTypes.length];
+                    final Parameter[] params = getParameters();
                     int fromidx = 0;
                     for (int i = 0; i < out.length; i++) {
                         final Parameter param = params[i];
@@ -369,8 +369,8 @@ public abstract sealed class Executable extends AccessibleObject
                             fromidx++;
                         }
                     }
+                    return out;
                 }
-                return out;
             } else {
                 // Otherwise, use the non-generic parameter data.
                 // Without method parameter reflection data, we have
