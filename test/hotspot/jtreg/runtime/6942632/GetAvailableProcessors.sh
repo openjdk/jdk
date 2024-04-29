@@ -29,6 +29,19 @@
 #          "start /affinity HEXAFFINITY java.exe" when the
 #          UseAllWindowsProcessorGroups flag is enabled.
 
+system_root=$SystemRoot
+if [ "${system_root}" = "" ]
+then
+  echo "SystemRoot environment variable not set. Checking SYSTEMROOT environment variable."
+  system_root=$SYSTEMROOT
+fi
+
+if [ "${system_root}" = "" ]
+then
+  echo "The SystemRoot environment variable needs to be set. Test cannot execute."
+  exit 1
+fi
+
 if [ "${TESTSRC}" = "" ]
 then
   echo "TESTSRC not set. Test cannot execute."
@@ -50,11 +63,11 @@ echo "TESTCLASSES:    $TESTCLASSES"
 echo "TESTJAVACOPTS:  $TESTJAVACOPTS"
 echo "TESTTOOLVMOPTS: $TESTTOOLVMOPTS"
 
-javac="${TESTJAVA}/bin/javac"
+javac="${TESTJAVA}/bin/javac${EXE_SUFFIX}"
 
 src_file_base=GetAvailableProcessors
 src_file="${TESTSRC}/$src_file_base.java"
-log_file="${TESTCLASSES}/$src_file_base.output.log"
+log_file="$src_file_base.output.log"
 $javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -d ${TESTCLASSES} $src_file
 
 status=$?
@@ -64,9 +77,16 @@ if [ ! $status -eq "0" ]; then
 fi
 
 # Write processor information from Windows APIs to a log file
-get_proc_info_name=GetProcessorInfo
-get_proc_info_log="${TESTCLASSES}/$get_proc_info_name.output.log"
-${TESTNATIVEPATH}/$get_proc_info_name > $get_proc_info_log 2>&1
+get_proc_info_name="GetProcessorInfo${EXE_SUFFIX}"
+get_proc_info_path="${TESTNATIVEPATH}/${get_proc_info_name}"
+get_proc_info_log="$get_proc_info_name.output.log"
+$get_proc_info_path > $get_proc_info_log 2>&1
+
+status=$?
+if [ ! $status -eq "0" ]; then
+  echo "Could not launch $get_proc_info_path";
+  exit 1
+fi
 
 # Validate output from GetProcessorInfo.exe
 unsupported_os_regex="Unsupported OS\\."
@@ -81,7 +101,7 @@ processor_info_regex="Active processors per group: (\\d+,)+"
 grep -Po "$processor_info_regex" $get_proc_info_log
 status=$?
 if [ ! $status -eq "0" ]; then
-  echo "TESTBUG: $get_proc_info_name did not output a processor count.";
+  echo "TESTBUG: $get_proc_info_path did not output a processor count.";
   exit 1
 fi
 
@@ -122,10 +142,10 @@ fi
 
 # Write Runtime.availableProcessors to a log file
 java_cmd_line="${TESTJAVA}/bin/java -XX:+UseAllWindowsProcessorGroups ${TESTVMOPTS} -cp ${TESTCLASSES} $src_file_base"
-cmd_line="start /wait /b /affinity $affinity $java_cmd_line > $log_file"
+cmd_line="$system_root/System32/cmd.exe //c start //wait //b //affinity $affinity $java_cmd_line > $log_file"
 
 echo "Executing: $cmd_line"
-cmd /c $cmd_line
+$cmd_line
 status=$?
 if [ ! $status -eq "0" ]; then
   echo "Test FAILED: $src_file";
@@ -151,6 +171,6 @@ java_runtime_processors=$(<$java_procs_log)
 if [ "$java_runtime_processors" != "$num_processors" ]; then
   echo "Test failed: Runtime.availableProcessors ($java_runtime_processors) != Processor count in smallest group ($num_processors)"
   exit 1
-else
-  echo "Test passed."
 fi
+
+echo "Test passed."
