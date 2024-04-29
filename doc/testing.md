@@ -105,7 +105,7 @@ The test specifications given in `TEST` is parsed into fully qualified test
 descriptors, which clearly and unambigously show which tests will be run. As an
 example, `:tier1` will expand to `jtreg:$(TOPDIR)/test/hotspot/jtreg:tier1
 jtreg:$(TOPDIR)/test/jdk:tier1 jtreg:$(TOPDIR)/test/langtools:tier1
-jtreg:$(TOPDIR)/test/nashorn:tier1 jtreg:$(TOPDIR)/test/jaxp:tier1`. You can
+jtreg:$(TOPDIR)/test/jaxp:tier1 jtreg:$(TOPDIR)/test/lib-test:tier1`. You can
 always submit a list of fully qualified test descriptors in the `TEST` variable
 if you want to shortcut the parser.
 
