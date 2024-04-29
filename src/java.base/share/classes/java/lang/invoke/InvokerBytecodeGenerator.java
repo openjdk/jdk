@@ -25,9 +25,6 @@
 
 package java.lang.invoke;
 
-import jdk.internal.vm.annotation.DontInline;
-import jdk.internal.vm.annotation.ForceInline;
-import jdk.internal.vm.annotation.Hidden;
 import sun.invoke.util.VerifyAccess;
 import sun.invoke.util.VerifyType;
 import sun.invoke.util.Wrapper;
@@ -37,7 +34,6 @@ import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
 import java.lang.classfile.attribute.SourceFileAttribute;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
-import java.lang.classfile.constantpool.FieldRefEntry;
 import java.lang.classfile.constantpool.InterfaceMethodRefEntry;
 import java.lang.classfile.constantpool.MethodRefEntry;
 import java.lang.classfile.instruction.SwitchCase;
@@ -71,15 +67,15 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
  */
 class InvokerBytecodeGenerator {
     /** Define class names for convenience. */
-    private static final ClassDesc CD_DMH     = ClassDesc.ofInternalName("java/lang/invoke/DirectMethodHandle");
-    private static final ClassDesc CD_MHI     = ClassDesc.ofInternalName("java/lang/invoke/MethodHandleImpl");
-    private static final ClassDesc CD_LF      = ClassDesc.ofInternalName("java/lang/invoke/LambdaForm");
-    private static final ClassDesc CD_LFN     = ClassDesc.ofInternalName("java/lang/invoke/LambdaForm$Name");
-    private static final ClassDesc CD_OBJARY  = CD_Object.arrayType();
+    private static final ClassDesc CD_DMH     = ClassDesc.ofDescriptor("Ljava/lang/invoke/DirectMethodHandle;");
+    private static final ClassDesc CD_MHI     = ClassDesc.ofDescriptor("Ljava/lang/invoke/MethodHandleImpl;");
+    private static final ClassDesc CD_LF      = ClassDesc.ofDescriptor("Ljava/lang/invoke/LambdaForm;");
+    private static final ClassDesc CD_LFN     = ClassDesc.ofDescriptor("Ljava/lang/invoke/LambdaForm$Name;");
+    private static final ClassDesc CD_OBJARY  = ClassDesc.ofDescriptor("[Ljava/lang/Object;");
 
-    private static final ClassDesc CD_LOOP_CLAUSES = ClassDesc.ofInternalName("java/lang/invoke/MethodHandleImpl$LoopClauses");
+    private static final ClassDesc CD_LOOP_CLAUSES = ClassDesc.ofDescriptor("Ljava/lang/invoke/MethodHandleImpl$LoopClauses;");
 
-    private static final ClassDesc CD_MHARY2       = CD_MethodHandle.arrayType(2);
+    private static final ClassDesc CD_MHARY2       = ClassDesc.ofDescriptor("[[Ljava/lang/invoke/MethodHandle;");
 
 
     private static final String CLASS_PREFIX = "java/lang/invoke/LambdaForm$";
@@ -89,14 +85,10 @@ class InvokerBytecodeGenerator {
     private static final ClassEntry CE_Object = CP.classEntry(CD_Object);
     private static final ClassEntry CE_OBJARY = CP.classEntry(CD_OBJARY);
     private static final ClassEntry CE_MethodHandle = CP.classEntry(CD_MethodHandle);
-    private static final FieldRefEntry MRE_LF_names = CP.fieldRefEntry(CD_LF, "names", CD_LFN);
-    private static final FieldRefEntry MRE_MethodHandle_form = CP.fieldRefEntry(CD_MethodHandle, "form", CD_LF);
     private static final InterfaceMethodRefEntry MRE_List_get = CP.interfaceMethodRefEntry(CD_List, "get", MethodTypeDesc.of(CD_Object, CD_int));
     private static final MethodRefEntry MRE_MethodHandles_classData = CP.methodRefEntry(CD_MethodHandles, "classData", MethodTypeDesc.of(CD_Object, CD_Class));
-    private static final MethodRefEntry MRE_MHI_assertSame = CP.methodRefEntry(CD_MHI, "assertSame", MethodTypeDesc.of(CD_void, CD_Object, CD_Object));
     private static final MethodRefEntry MRE_Class_cast = CP.methodRefEntry(CD_Class, "cast", MethodTypeDesc.of(CD_Object, CD_Object));
     private static final MethodRefEntry MRE_Class_isInstance = CP.methodRefEntry(CD_Class, "isInstance", MethodTypeDesc.of(CD_boolean, CD_Object));
-    private static final MethodRefEntry MRE_LF_interpretWithArguments = CP.methodRefEntry(CD_LF, "interpretWithArguments", MethodTypeDesc.of(CD_Object, CD_Object.arrayType()));
 
     // Static builders to avoid lambdas
     private static final Consumer<FieldBuilder> STATIC_FINAL_FIELD = new Consumer<FieldBuilder>() {
@@ -552,19 +544,16 @@ class InvokerBytecodeGenerator {
         // Expects MethodHandle on the stack and actual receiver MethodHandle in slot #0
         cob.dup()
            .aload(0)
-           .invokestatic(MRE_MHI_assertSame);
+           .invokestatic(CD_MHI, "assertSame", MethodTypeDesc.of(CD_void, CD_Object, CD_Object));
         return true;
     }
 
-    private static Annotation annotation(Class<?> cls) {
-        return Annotation.of(classDesc(cls));
-    }
+    static final Annotation DONTINLINE      = Annotation.of(ClassDesc.ofDescriptor("Ljdk/internal/vm/annotation/DontInline;"));
+    static final Annotation FORCEINLINE     = Annotation.of(ClassDesc.ofDescriptor("Ljdk/internal/vm/annotation/ForceInline;"));
+    static final Annotation HIDDEN          = Annotation.of(ClassDesc.ofDescriptor("Ljdk/internal/vm/annotation/Hidden;"));
+    static final Annotation INJECTEDPROFILE = Annotation.of(ClassDesc.ofDescriptor("Ljava/lang/invoke/InjectedProfile;"));
+    static final Annotation LF_COMPILED     = Annotation.of(ClassDesc.ofDescriptor("Ljava/lang/invoke/LambdaForm$Compiled;"));
 
-    static final Annotation DONTINLINE      = annotation(DontInline.class);
-    static final Annotation FORCEINLINE     = annotation(ForceInline.class);
-    static final Annotation HIDDEN          = annotation(Hidden.class);
-    static final Annotation INJECTEDPROFILE = annotation(InjectedProfile.class);
-    static final Annotation LF_COMPILED     = annotation(LambdaForm.Compiled.class);
     /**
      * Generate an invoker method for the passed {@link LambdaForm}.
      */
@@ -751,8 +740,8 @@ class InvokerBytecodeGenerator {
             // load receiver
             cob.aload(0);
             emitReferenceCast(cob, MethodHandle.class, null);
-            cob.getfield(MRE_MethodHandle_form)
-               .getfield(MRE_LF_names);
+            cob.getfield(CD_MethodHandle, "form", CD_LF)
+               .getfield(CD_LF, "names", CD_LFN);
             // TODO more to come
         }
 
@@ -1567,6 +1556,9 @@ class InvokerBytecodeGenerator {
             @Override
             public void accept(ClassBuilder clb) {
                 methodSetup(clb, new Consumer<MethodBuilder>() {
+
+                    private static final MethodRefEntry MRE_LF_interpretWithArguments = CP.methodRefEntry(CD_LF, "interpretWithArguments", MethodTypeDesc.of(CD_Object, CD_OBJARY));
+
                     @Override
                     public void accept(MethodBuilder mb) {
 
@@ -1596,9 +1588,9 @@ class InvokerBytecodeGenerator {
                                 }
                                 // invoke
                                 cob.aload(0);
-                                cob.getfield(MRE_MethodHandle_form);
+                                cob.getfield(CD_MethodHandle, "form", CD_LF);
                                 cob.swap();  // swap form and array; avoid local variable
-                                cob.invokevirtual(MRE_LF_interpretWithArguments);
+                                cob.invokevirtual(CD_LF, "interpretWithArguments", MethodTypeDesc.of(CD_Object, CD_OBJARY));
 
                                 // maybe unbox
                                 Class<?> rtype = invokerType.returnType();
