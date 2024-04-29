@@ -247,6 +247,15 @@ TEST_VM_F(VMATreeTest, LowLevel) {
       }
     });
   }
+
+  { // Attempting to reserve or commit an empty region should not change the tree.
+    Tree tree;
+    Tree::Metadata md{si1, mtNMT};
+    tree.reserve_mapping(0, 0, md);
+    EXPECT_EQ(nullptr, treap_of(tree));
+    tree.commit_mapping(0, 0, md);
+    EXPECT_EQ(nullptr, treap_of(tree));
+  }
 }
 
 // Tests for summary accounting
