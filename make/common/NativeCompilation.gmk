@@ -229,6 +229,9 @@ endef
 ################################################################################
 # Verify that user passed arguments are valid
 define VerifyArguments
+  ifeq ($$($1_NAME), )
+    $$(error NAME must not be empty in $1)
+  endif
   ifneq ($$($1_NAME), $(basename $$($1_NAME)))
     $$(error NAME must not contain any directory path in $1)
   endif

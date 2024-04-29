@@ -1094,6 +1094,7 @@ private:
   void cdql();
 
   void cdqq();
+  void cdqe();
 
   void cld();
 
@@ -1109,12 +1110,15 @@ private:
 
 
   void cmpb(Address dst, int imm8);
+  void cmpb(Address dst, Register reg);
+  void cmpb(Register reg, Address dst);
 
   void cmpl(Address dst, int32_t imm32);
   void cmpl(Register dst, int32_t imm32);
   void cmpl(Register dst, Register src);
   void cmpl(Register dst, Address src);
   void cmpl_imm32(Address dst, int32_t imm32);
+  void cmpl(Address dst,  Register reg);
 
   void cmpq(Address dst, int32_t imm32);
   void cmpq(Address dst, Register src);
@@ -1123,6 +1127,7 @@ private:
   void cmpq(Register dst, Address src);
 
   void cmpw(Address dst, int imm16);
+  void cmpw(Address dst, Register reg);
 
   void cmpxchg8 (Address adr);
 
@@ -1734,7 +1739,9 @@ private:
 
   void btsq(Address dst, int imm8);
   void btrq(Address dst, int imm8);
+  void btq(Register src, int imm8);
 #endif
+  void btq(Register dst, Register src);
 
   void orw(Register dst, Register src);
 
@@ -1800,6 +1807,7 @@ private:
   void vpcmpCCbwd(XMMRegister dst, XMMRegister nds, XMMRegister src, int cond_encoding, int vector_len);
 
   void vpcmpeqb(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void vpcmpeqb(XMMRegister dst, XMMRegister src1, Address src2, int vector_len);
   void evpcmpeqb(KRegister kdst, XMMRegister nds, XMMRegister src, int vector_len);
   void evpcmpeqb(KRegister kdst, XMMRegister nds, Address src, int vector_len);
   void evpcmpeqb(KRegister kdst, KRegister mask, XMMRegister nds, Address src, int vector_len);
@@ -1814,6 +1822,7 @@ private:
   void evpcmpuq(KRegister kdst, XMMRegister nds, XMMRegister src, ComparisonPredicate vcc, int vector_len);
 
   void pcmpeqw(XMMRegister dst, XMMRegister src);
+  void vpcmpeqw(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
   void vpcmpeqw(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void evpcmpeqw(KRegister kdst, XMMRegister nds, XMMRegister src, int vector_len);
   void evpcmpeqw(KRegister kdst, XMMRegister nds, Address src, int vector_len);
@@ -2253,6 +2262,7 @@ private:
   void xorb(Address dst, Register src);
   void xorb(Register dst, Address src);
   void xorw(Register dst, Register src);
+  void xorw(Register dst, Address src);
 
   void xorq(Register dst, Address src);
   void xorq(Address dst, int32_t imm32);
@@ -2304,6 +2314,7 @@ private:
   void shrxq(Register dst, Address src1, Register src2);
 
   void bzhiq(Register dst, Register src1, Register src2);
+  void bzhil(Register dst, Register src1, Register src2);
 
   void pextl(Register dst, Register src1, Register src2);
   void pdepl(Register dst, Register src1, Register src2);
@@ -2579,6 +2590,7 @@ private:
   // Minimum of packed integers
   void pminsb(XMMRegister dst, XMMRegister src);
   void vpminsb(XMMRegister dst, XMMRegister src1, XMMRegister src2, int vector_len);
+  void vpminub(XMMRegister dst, XMMRegister src1, XMMRegister src2, int vector_len);
   void pminsw(XMMRegister dst, XMMRegister src);
   void vpminsw(XMMRegister dst, XMMRegister src1, XMMRegister src2, int vector_len);
   void pminsd(XMMRegister dst, XMMRegister src);

@@ -2225,7 +2225,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                Character.isSurrogate((char)ch);
     }
 
-    /**
+    /*
      *  The following methods handle the main parsing. They are sorted
      *  according to their precedence order, the lowest one first.
      */
@@ -2282,10 +2282,10 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         }
     }
 
-    @SuppressWarnings("fallthrough")
     /**
      * Parsing of sequences between alternations.
      */
+    @SuppressWarnings("fallthrough")
     private Node sequence(Node end) {
         Node head = null;
         Node tail = null;
@@ -2409,10 +2409,10 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         return head;
     }
 
-    @SuppressWarnings("fallthrough")
     /**
      * Parse and add a new Single or Slice.
      */
+    @SuppressWarnings("fallthrough")
     private Node atom() {
         int first = 0;
         int prev = -1;
@@ -3322,10 +3322,10 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         return head;
     }
 
-    @SuppressWarnings("fallthrough")
     /**
      * Parses inlined match flags and set them appropriately.
      */
+    @SuppressWarnings("fallthrough")
     private void addFlag() {
         int ch = peek();
         for (;;) {
@@ -3364,11 +3364,11 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         }
     }
 
-    @SuppressWarnings("fallthrough")
     /**
      * Parses the second part of inlined match flags and turns off
      * flags appropriately.
      */
+    @SuppressWarnings("fallthrough")
     private void subFlag() {
         int ch = peek();
         for (;;) {
@@ -3708,7 +3708,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         return hasSupplementary ? new SliceS(tmp) : new Slice(tmp);
     }
 
-    /**
+    /*
      * The following classes are the building components of the object
      * tree that represents a compiled regular expression. The object tree
      * is made of individual elements that handle constructs in the Pattern.

@@ -167,12 +167,9 @@ public:
   inline HeapWord* allocate(size_t word_size);
   inline HeapWord* allocate(size_t min_word_size, size_t desired_word_size, size_t* actual_size);
 
-  // Update BOT if this obj is the first entering a new card (i.e. crossing the card boundary).
-  inline void update_bot_for_obj(HeapWord* obj_start, size_t obj_size);
-
   // Full GC support methods.
 
-  void update_bot_for_block(HeapWord* start, HeapWord* end);
+  inline void update_bot_for_block(HeapWord* start, HeapWord* end);
 
   void prepare_for_full_gc();
   // Update heap region that has been compacted to be consistent after Full GC.

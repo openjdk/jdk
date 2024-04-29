@@ -228,20 +228,16 @@ void MacroAssembler::check_and_handle_popframe(Register java_thread) {}
 // has to be reset to 0. This is required to allow proper stack traversal.
 void MacroAssembler::set_last_Java_frame(Register last_java_sp,
                                          Register last_java_fp,
-                                         Register last_java_pc,
-                                         Register tmp) {
+                                         Register last_java_pc) {
 
   if (last_java_pc->is_valid()) {
-      sd(last_java_pc, Address(xthread,
-                               JavaThread::frame_anchor_offset() +
-                               JavaFrameAnchor::last_Java_pc_offset()));
+    sd(last_java_pc, Address(xthread,
+                             JavaThread::frame_anchor_offset() +
+                             JavaFrameAnchor::last_Java_pc_offset()));
   }
 
   // determine last_java_sp register
-  if (last_java_sp == sp) {
-    mv(tmp, sp);
-    last_java_sp = tmp;
-  } else if (!last_java_sp->is_valid()) {
+  if (!last_java_sp->is_valid()) {
     last_java_sp = esp;
   }
 
@@ -262,7 +258,7 @@ void MacroAssembler::set_last_Java_frame(Register last_java_sp,
   la(tmp, last_java_pc);
   sd(tmp, Address(xthread, JavaThread::frame_anchor_offset() + JavaFrameAnchor::last_Java_pc_offset()));
 
-  set_last_Java_frame(last_java_sp, last_java_fp, noreg, tmp);
+  set_last_Java_frame(last_java_sp, last_java_fp, noreg);
 }
 
 void MacroAssembler::set_last_Java_frame(Register last_java_sp,
@@ -721,7 +717,7 @@ void MacroAssembler::super_call_VM_leaf(address entry_point, Register arg_0, Reg
 
 void MacroAssembler::la(Register Rd, const address addr) {
   int64_t offset = addr - pc();
-  if (is_simm32(offset)) {
+  if (is_valid_32bit_offset(offset)) {
     auipc(Rd, (int32_t)offset + 0x800);  //0x800, Note:the 11th sign bit
     addi(Rd, Rd, ((int64_t)offset << 52) >> 52);
   } else {
@@ -1166,6 +1162,19 @@ void MacroAssembler::fsflagsi(Register Rd, unsigned imm) {
   INSN(fsflagsi);
 
 #undef INSN
+
+void MacroAssembler::restore_cpu_control_state_after_jni(Register tmp) {
+  if (RestoreMXCSROnJNICalls) {
+    Label skip_fsrmi;
+    frrm(tmp);
+    // Set FRM to the state we need. We do want Round to Nearest.
+    // We don't want non-IEEE rounding modes.
+    guarantee(RoundingMode::rne == 0, "must be");
+    beqz(tmp, skip_fsrmi);        // Only reset FRM if it's wrong
+    fsrmi(RoundingMode::rne);
+    bind(skip_fsrmi);
+  }
+}
 
 void MacroAssembler::push_reg(Register Rs)
 {

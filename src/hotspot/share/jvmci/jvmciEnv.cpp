@@ -29,6 +29,8 @@
 #include "code/codeCache.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "compiler/compileTask.hpp"
+#include "gc/shared/barrierSet.hpp"
+#include "gc/shared/barrierSetNMethod.hpp"
 #include "jvm_io.h"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
@@ -1722,18 +1724,20 @@ void JVMCIEnv::invalidate_nmethod_mirror(JVMCIObject mirror, bool deoptimize, JV
     JVMCI_THROW(NullPointerException);
   }
 
-  nmethod* nm = JVMCIENV->get_nmethod(mirror);
-  if (nm == nullptr) {
-    // Nothing to do
-    return;
-  }
-
   Thread* current = Thread::current();
   if (!mirror.is_hotspot() && !current->is_Java_thread()) {
     // Calling back into native might cause the execution to block, so only allow this when calling
     // from a JavaThread, which is the normal case anyway.
     JVMCI_THROW_MSG(IllegalArgumentException,
                     "Cannot invalidate HotSpotNmethod object in shared library VM heap from non-JavaThread");
+  }
+
+  JavaThread* thread = JavaThread::cast(current);
+  JVMCINMethodHandle nmethod_handle(thread);
+  nmethod* nm = JVMCIENV->get_nmethod(mirror, nmethod_handle);
+  if (nm == nullptr) {
+    // Nothing to do
+    return;
   }
 
   if (!deoptimize) {
@@ -1825,10 +1829,22 @@ CodeBlob* JVMCIEnv::get_code_blob(JVMCIObject obj) {
   return cb;
 }
 
-nmethod* JVMCIEnv::get_nmethod(JVMCIObject obj) {
+void JVMCINMethodHandle::set_nmethod(nmethod* nm) {
+  BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
+  if (bs_nm != nullptr) {
+    bs_nm->nmethod_entry_barrier(nm);
+  }
+  _thread->set_live_nmethod(nm);
+}
+
+nmethod* JVMCIEnv::get_nmethod(JVMCIObject obj, JVMCINMethodHandle& nmethod_handle) {
   CodeBlob* cb = get_code_blob(obj);
   if (cb != nullptr) {
-    return cb->as_nmethod_or_null();
+    nmethod* nm = cb->as_nmethod_or_null();
+    if (nm != nullptr) {
+      nmethod_handle.set_nmethod(nm);
+      return nm;
+    }
   }
   return nullptr;
 }
