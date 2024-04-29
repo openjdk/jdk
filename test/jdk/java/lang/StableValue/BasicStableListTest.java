@@ -99,7 +99,7 @@ final class BasicStableListTest {
         String expected = IntStream.range(0, size)
                 .mapToObj(i -> {
                     StableValue<Integer> stable = StableValue.of();
-                    stable.setOrThrow(i);
+                    stable.trySet(i);
                     return stable;
                 })
                 .toList()
@@ -129,7 +129,7 @@ final class BasicStableListTest {
         list = StableValue.ofList(size);
         for (int i = 0; i<size; i++) {
             StableValue<Integer> stable = list.get(i);
-            stable.setOrThrow(FUNCTION.apply(i));
+            stable.trySet(FUNCTION.apply(i));
         }
     }
 

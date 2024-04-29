@@ -61,11 +61,11 @@ final class BasicStableTest {
     }
 
     @Test
-    void setOrThrow() {
-        stable.setOrThrow(FIRST);
+    void trySet() {
+        assertTrue(stable.trySet(FIRST));
         assertTrue(stable.isSet());
         assertEquals(FIRST, stable.orThrow());
-        assertThrows(IllegalStateException.class, () -> stable.setOrThrow(SECOND));
+        assertFalse(stable.trySet(SECOND));
         assertTrue(stable.isSet());
         assertEquals(FIRST, stable.orThrow());
     }
@@ -144,7 +144,7 @@ final class BasicStableTest {
     @Test
     void testToString() {
         assertEquals("StableValue.unset", stable.toString());
-        stable.setOrThrow(1);
+        stable.trySet(1);
         assertEquals("StableValue[1]", stable.toString());
     }
 

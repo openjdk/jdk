@@ -397,7 +397,7 @@ final class JepDemo {
 
         public Fibonacci3(int upperBound) {
             this(StableValue.of());
-            fibFunction.setOrThrow(
+            fibFunction.trySet(
                     StableValue.ofIntFunction(upperBound, this::fib));
         }
 

@@ -110,7 +110,8 @@ public class StableListElementBenchmark {
 
     private static void initLazy(List<StableValue<Integer>> list) {
         int index = 8;
-        list.get(index).setOrThrow(FUNCTION.apply(index));
+        var result = list.get(index).trySet(FUNCTION.apply(index));
+        assert result;
     }
 
     private static List<Integer> initList(List<Integer> list) {

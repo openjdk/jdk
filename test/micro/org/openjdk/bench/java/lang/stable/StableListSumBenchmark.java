@@ -121,7 +121,7 @@ public class StableListSumBenchmark {
     private static List<StableValue<Integer>> randomStable(List<StableValue<Integer>> list) {
         Random rnd = new Random();
         for (int i = 0; i < SIZE; i++) {
-            list.get(i).setOrThrow(rnd.nextInt(0, SIZE));
+            list.get(i).trySet(rnd.nextInt(0, SIZE));
         }
         return list;
     }
