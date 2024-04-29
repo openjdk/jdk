@@ -1181,8 +1181,8 @@ public final class Instant
      * This instance is immutable and unaffected by this method call.
      *
      * @param endExclusive the end {@code Instant}, exclusive, not null
-     * @return the {@code Duration} between this {@code Instant} and the
-     *      end {@code Instant}
+     * @return the {@code Duration} from this {@code Instant} until the
+     *      specified {@code endExclusive} {@code Instant}
      * @see Duration#between(Temporal, Temporal)
      * @since 23
      */
