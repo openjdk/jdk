@@ -54,8 +54,8 @@ public:
 
   // Each point has some stack and a flag associated with it.
   struct Metadata {
-    NativeCallStackStorage::StackIndex stack_idx;
-    MEMFLAGS flag;
+    const NativeCallStackStorage::StackIndex stack_idx;
+    const MEMFLAGS flag;
 
     Metadata() : stack_idx(), flag(mtNone) {}
 
