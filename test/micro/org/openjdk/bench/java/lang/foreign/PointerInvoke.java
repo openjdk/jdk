@@ -58,13 +58,13 @@ public class PointerInvoke extends CLayouts {
     static {
         Linker abi = Linker.nativeLinker();
         SymbolLookup loaderLibs = SymbolLookup.loaderLookup();
-        F_LONG_LONG = abi.downcallHandle(loaderLibs.find("id_long_long").get(),
+        F_LONG_LONG = abi.downcallHandle(loaderLibs.findOrThrow("id_long_long"),
                 FunctionDescriptor.of(C_LONG_LONG, C_LONG_LONG));
-        F_PTR_LONG = abi.downcallHandle(loaderLibs.find("id_ptr_long").get(),
+        F_PTR_LONG = abi.downcallHandle(loaderLibs.findOrThrow("id_ptr_long"),
                 FunctionDescriptor.of(C_LONG_LONG, C_POINTER));
-        F_LONG_PTR = abi.downcallHandle(loaderLibs.find("id_long_ptr").get(),
+        F_LONG_PTR = abi.downcallHandle(loaderLibs.findOrThrow("id_long_ptr"),
                 FunctionDescriptor.of(C_POINTER, C_LONG_LONG));
-        F_PTR_PTR = abi.downcallHandle(loaderLibs.find("id_ptr_ptr").get(),
+        F_PTR_PTR = abi.downcallHandle(loaderLibs.findOrThrow("id_ptr_ptr"),
                 FunctionDescriptor.of(C_POINTER, C_POINTER));
     }
 

@@ -2434,7 +2434,7 @@ class StubGenerator: public StubCodeGenerator {
       __ membar(__ LoadLoad);
     }
 
-    __ set_last_Java_frame(sp, fp, ra, t0);
+    __ set_last_Java_frame(sp, fp, ra);
 
     __ enter();
     __ add(t1, sp, wordSize);
