@@ -29,6 +29,7 @@ import jdk.internal.lang.StableArray;
 import jdk.internal.lang.StableValue;
 import jdk.internal.misc.Unsafe;
 
+import java.util.NoSuchElementException;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
@@ -48,11 +49,21 @@ final class StableUtil {
     static final int NON_NULL = 1;
     // Indicates a value is set to a `null` value
     static final int NULL = 2;
+    // Indicates there was an error when computing a value
+    static final int ERROR = 3;
 
     static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
     static IllegalStateException alreadySet(StableValue<?> stable) {
         return new IllegalStateException("A value is already set: " + stable.orThrow());
+    }
+
+    static NoSuchElementException notSet() {
+        return new NoSuchElementException("No value set");
+    }
+
+    static NoSuchElementException error(StableValue<?> stable) {
+        return new NoSuchElementException("An error occurred during computation");
     }
 
     static StackOverflowError stackOverflow(Object provider, Object key) {
@@ -80,7 +91,7 @@ final class StableUtil {
         return "StableValue" +
                 (stable.isSet()
                         ? "[" + stable.orThrow() + "]"
-                        : ".unset");
+                        : stable.isError() ? ".error" : ".unset");
     }
 
     static <V> String toString(StableArray<V> arr) {

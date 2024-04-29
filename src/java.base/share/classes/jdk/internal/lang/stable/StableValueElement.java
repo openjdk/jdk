@@ -1,5 +1,6 @@
 package jdk.internal.lang.stable;
 
+import jdk.internal.classfile.impl.Util;
 import jdk.internal.lang.StableValue;
 import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.ForceInline;
@@ -24,7 +25,15 @@ public record StableValueElement<V>(
     @ForceInline
     @Override
     public boolean isSet() {
-        return states[index] != UNSET || stateVolatile() != UNSET;
+        int s;
+        return (s = states[index]) == NON_NULL || s == NULL ||
+                (s = stateVolatile()) == NON_NULL || s == NULL;
+    }
+
+    @ForceInline
+    @Override
+    public boolean isError() {
+        return states[index] == ERROR || stateVolatile() == ERROR;
     }
 
     @ForceInline
@@ -46,20 +55,19 @@ public record StableValueElement<V>(
         return orThrowVolatile();
     }
 
-    @DontInline
+    @DontInline // Slow-path taken at most once per thread if set
     private V orThrowVolatile() {
-        V v = elementVolatile();
-        if (v != null) {
-            // If we see a non-null value, we know a value is set.
-            return v;
+        // This is intentionally an old switch statement as it generates
+        // more compact byte code.
+        switch (stateVolatile()) {
+            case UNSET:    { throw StableUtil.notSet();}
+            case NON_NULL: { return elementVolatile(); }
+            case NULL:     { return null; }
+            case ERROR:    { throw StableUtil.error(this); }
         }
-        return switch (stateVolatile()) {
-            case UNSET    -> throw new NoSuchElementException(); // No value was set
-            case NON_NULL -> orThrowVolatile(); // Race: another thread has set a value
-            case NULL     -> null;              // A value of `null` was set
-            default       -> throw shouldNotReachHere();
-        };
+        throw shouldNotReachHere();
     }
+
     @Override
     public V setIfUnset(V value) {
         if (isSet()) {
@@ -68,6 +76,9 @@ public record StableValueElement<V>(
         synchronized (acquireMutex()) {
             if (isSet()) {
                 return orThrow();
+            }
+            if (isError()) {
+                throw StableUtil.error(this);
             }
             setValue(value);
             return value;
@@ -80,7 +91,7 @@ public record StableValueElement<V>(
             return false;
         }
         synchronized (acquireMutex()) {
-            if (isSet()) {
+            if (isSet() || isError()) {
                 return false;
             }
             setValue(value);
@@ -127,17 +138,15 @@ public record StableValueElement<V>(
 
     @DontInline
     private <K> V computeIfUnsetVolatile(Object provider, K key) {
-        V e = elementVolatile();
-        if (e != null) {
-            // If we see a non-null value, we know a value is set.
-            return e;
+        // This is intentionally an old switch statement as it generates
+        // more compact byte code.
+        switch (stateVolatile()) {
+            case UNSET:    { return computeIfUnsetVolatile0(provider, key);}
+            case NON_NULL: { return elementVolatile(); }
+            case NULL:     { return null; }
+            case ERROR:    { throw StableUtil.error(this); }
         }
-        return switch (stateVolatile()) {
-            case UNSET    -> computeIfUnsetVolatile0(provider, key);
-            case NON_NULL -> orThrow(); // Race
-            case NULL     -> null;
-            default       -> throw shouldNotReachHere();
-        };
+        throw shouldNotReachHere();
     }
 
     private <K> V computeIfUnsetVolatile0(Object provider, K key) {
@@ -152,15 +161,20 @@ public record StableValueElement<V>(
             }
             try {
                 supplying(true);
-                @SuppressWarnings("unchecked")
-                V newValue = switch (provider) {
-                    case Supplier<?> sup     -> (V) sup.get();
-                    case IntFunction<?> iFun -> (V) iFun.apply((int) key);
-                    case Function<?, ?> func -> ((Function<K, V>) func).apply(key);
-                    default                  -> throw shouldNotReachHere();
-                };
-                setValue(newValue);
-                return newValue;
+                try {
+                    @SuppressWarnings("unchecked")
+                    V newValue = switch (provider) {
+                        case Supplier<?> sup -> (V) sup.get();
+                        case IntFunction<?> iFun -> (V) iFun.apply((int) key);
+                        case Function<?, ?> func -> ((Function<K, V>) func).apply(key);
+                        default -> throw shouldNotReachHere();
+                    };
+                    setValue(newValue);
+                    return newValue;
+                } catch (Throwable t) {
+                    putState(ERROR);
+                    throw t;
+                }
             } finally {
                 supplying(false);
             }

@@ -57,6 +57,7 @@ final class BasicStableTest {
     @Test
     void unset() {
         assertFalse(stable.isSet());
+        assertFalse(stable.isError());
         assertThrows(NoSuchElementException.class, stable::orThrow);
     }
 
@@ -64,6 +65,7 @@ final class BasicStableTest {
     void trySet() {
         assertTrue(stable.trySet(FIRST));
         assertTrue(stable.isSet());
+        assertFalse(stable.isError());
         assertEquals(FIRST, stable.orThrow());
         assertFalse(stable.trySet(SECOND));
         assertTrue(stable.isSet());
@@ -74,6 +76,7 @@ final class BasicStableTest {
     void setIfUnset() {
         Integer i = stable.setIfUnset(FIRST);
         assertTrue(stable.isSet());
+        assertFalse(stable.isError());
         assertEquals(FIRST, i);
         assertEquals(FIRST, stable.orThrow());
 
@@ -86,6 +89,7 @@ final class BasicStableTest {
     void setIfUnsetNull() {
         Integer i = stable.setIfUnset(null);
         assertTrue(stable.isSet());
+        assertFalse(stable.isError());
         assertNull(i);
         assertNull(stable.orThrow());
 
@@ -127,8 +131,15 @@ final class BasicStableTest {
         assertThrows(UnsupportedOperationException.class,
                 () -> stable.computeIfUnset(failingSupplier));
         assertFalse(stable.isSet());
-        stable.computeIfUnset(() -> FIRST);
-        assertEquals(FIRST, stable.orThrow());
+        assertTrue(stable.isError());
+        assertThrows(NoSuchElementException.class,() ->
+                stable.computeIfUnset(() -> FIRST));
+        assertFalse(stable.isSet());
+        assertTrue(stable.isError());
+        assertThrows(NoSuchElementException.class,() ->
+                stable.orThrow());
+        assertFalse(stable.isSet());
+        assertTrue(stable.isError());
     }
 
     @Test

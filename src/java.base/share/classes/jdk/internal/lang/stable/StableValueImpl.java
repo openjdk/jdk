@@ -78,7 +78,15 @@ public final class StableValueImpl<V> implements StableValue<V> {
     @ForceInline
     @Override
     public boolean isSet() {
-        return state != UNSET || stateVolatile() != UNSET;
+        int s;
+        return (s = state) == NON_NULL || s == NULL ||
+                (s = stateVolatile()) == NON_NULL || s == NULL;
+    }
+
+    @ForceInline
+    @Override
+    public boolean isError() {
+        return state == ERROR || stateVolatile() == ERROR;
     }
 
     @ForceInline
@@ -102,18 +110,15 @@ public final class StableValueImpl<V> implements StableValue<V> {
 
     @DontInline // Slow-path taken at most once per thread if set
     private V orThrowVolatile() {
-        V v = valueVolatile();
-        if (v != null) {
-            // If we see a non-null value, we know a value is set.
-            return v;
+        // This is intentionally an old switch statement as it generates
+        // more compact byte code.
+        switch (stateVolatile()) {
+            case UNSET:    { throw StableUtil.notSet();}
+            case NON_NULL: { return valueVolatile(); }
+            case NULL:     { return null; }
+            case ERROR:    { throw StableUtil.error(this); }
         }
-        // Desugar?
-        return switch (stateVolatile()) {
-            case UNSET    -> throw new NoSuchElementException(); // No value was set
-            case NON_NULL -> orThrowVolatile(); // Race: another thread has set a value
-            case NULL     -> null;              // A value of `null` was set
-            default       -> throw shouldNotReachHere();
-        };
+        throw shouldNotReachHere();
     }
 
     @ForceInline
@@ -125,6 +130,9 @@ public final class StableValueImpl<V> implements StableValue<V> {
         synchronized (acquireMutex()) {
             if (isSet()) {
                 return orThrow();
+            }
+            if (isError()) {
+                throw StableUtil.error(this);
             }
             setValue(value);
             return value;
@@ -138,7 +146,7 @@ public final class StableValueImpl<V> implements StableValue<V> {
             return false;
         }
         synchronized (acquireMutex()) {
-            if (isSet()) {
+            if (isSet() || isError()) {
                 return false;
             }
             setValue(value);
@@ -167,18 +175,15 @@ public final class StableValueImpl<V> implements StableValue<V> {
 
     @DontInline // Slow-path taken at most once per thread if set
     private V computeIfUnsetVolatile(Supplier<? extends V> supplier) {
-        // Now, fall back to volatile semantics.
-        V v = valueVolatile();
-        if (v != null) {
-            // If we see a non-null value, we know a value is set.
-            return v;
+        // This is intentionally an old switch statement as it generates
+        // more compact byte code.
+        switch (stateVolatile()) {
+            case UNSET:    { return computeIfUnsetVolatile0(supplier);}
+            case NON_NULL: { return valueVolatile(); }
+            case NULL:     { return null; }
+            case ERROR:    { throw StableUtil.error(this); }
         }
-        return switch (stateVolatile()) {
-            case UNSET    -> computeIfUnsetVolatile0(supplier);
-            case NON_NULL -> orThrow(); // Race
-            case NULL     -> null;
-            default       -> throw shouldNotReachHere();
-        };
+        throw shouldNotReachHere();
     }
 
     private V computeIfUnsetVolatile0(Supplier<? extends V> supplier) {
@@ -193,9 +198,14 @@ public final class StableValueImpl<V> implements StableValue<V> {
             }
             try {
                 supplying = true;
-                V newValue = supplier.get();
-                setValue(newValue);
-                return newValue;
+                try {
+                    V newValue = supplier.get();
+                    setValue(newValue);
+                    return newValue;
+                } catch (Throwable t) {
+                    putState(ERROR);
+                    throw t;
+                }
             } finally {
                 supplying = false;
             }

@@ -77,6 +77,7 @@ public sealed interface StableValue<V>
      * {@code NoSuchElementException}}
      *
      * @throws NoSuchElementException if no value is set
+     * @throws NoSuchElementException if {@linkplain #isError()} is {@code true}
      */
     V orThrow();
 
@@ -84,6 +85,12 @@ public sealed interface StableValue<V>
      * {@return {@code true} if a value is set, otherwise {@code false}}
      */
     boolean isSet();
+
+    /**
+     * {@return {@code true} if an error occurred during
+     * {@linkplain #computeIfUnset(Supplier) computation} , otherwise {@code false}}
+     */
+    boolean isError();
 
     /**
      * {@return {@code true} if the stable value was previously unset and is now set
@@ -101,6 +108,7 @@ public sealed interface StableValue<V>
      *
      * @param value to set (nullable)
      * @return the bound value
+     * @throws NoSuchElementException if {@linkplain #isError()} is {@code true}
      */
     V setIfUnset(V value);
 
@@ -111,8 +119,9 @@ public sealed interface StableValue<V>
      *
      * <p>
      * If the supplier throws an (unchecked) exception, the exception is rethrown, and no
-     * value is set. The most common usage is to construct a new object serving as a
-     * lazily computed value or memoized result, as in:
+     * value is set and {@linkplain #isError()} will return {@code true}. The most common
+     * usage is to construct a new object serving as a lazily computed value or memoized
+     * result, as in:
      *
      * <pre> {@code
      * Value witness = stable.computeIfUnset(Value::new);
@@ -132,12 +141,14 @@ public sealed interface StableValue<V>
      * }</pre>
      * Except it is atomic, thread-safe and will only return the same witness value
      * regardless if invoked by several threads. Also, the provided {@code supplier}
-     * will only be invoked once even if invoked from several threads.
+     * will only be invoked once even if invoked from several threads and if the
+     * {@code supplier} throws an exception, the stable value will be in an error state.
      *
      * // Todo: Should we wrap supplier exceptions into a specific exception type?
      *
      * @param  supplier to be used for computing a value
      * @return the current (pre-existing or computed) value
+     * @throws NoSuchElementException if {@linkplain #isError()} is {@code true}
      * @throws StackOverflowError if the provided {@code supplier} recursively
      *         invokes this method upon being invoked.
      */
@@ -282,6 +293,8 @@ public sealed interface StableValue<V>
      *               {@linkplain StableValue#isSet() not set}
      * @return the current (pre-existing or computed) value at the provided {@code index}
      * @param <V> the StableValue type to set
+     * @throws NoSuchElementException if {@linkplain #isError()} is {@code true} for
+     *         the provided {@code index}
      * @throws IndexOutOfBoundsException if the provided {@code index} is less than
      *         zero or {@code index >= list.size()}
      * @throws StackOverflowError if the provided {@code mapper} recursively invoke
@@ -324,6 +337,8 @@ public sealed interface StableValue<V>
      * @return the current (pre-existing or computed) value for the provided {@code key}
      * @param <K> the type of keys maintained by this map
      * @param <V> the StableValue value type to set
+     * @throws NoSuchElementException if {@linkplain #isError()} is {@code true} for
+     *         the provided {@code key}
      * @throws NoSuchElementException if the provided {@code map} does not
      *         {@linkplain Map#containsKey(Object) contain} the provided {@code key}
      * @throws StackOverflowError if the provided {@code mapper} recursively invoke
