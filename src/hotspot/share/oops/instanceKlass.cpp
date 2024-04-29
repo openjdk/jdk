@@ -1509,6 +1509,7 @@ instanceOop InstanceKlass::register_finalizer(instanceOop i, TRAPS) {
 }
 
 instanceOop InstanceKlass::allocate_instance(TRAPS) {
+  assert(!is_abstract() && !is_interface(), "Should not create this object");
   size_t size = size_helper();  // Query before forming handle.
   return (instanceOop)Universe::heap()->obj_allocate(this, size, CHECK_NULL);
 }

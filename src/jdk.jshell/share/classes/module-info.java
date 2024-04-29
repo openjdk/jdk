@@ -35,7 +35,7 @@ import jdk.internal.javac.ParticipatesInPreview;
  * and programmatically launching the existing Java shell tool.
  * <p>
  *     The {@link jdk.jshell} is the package for creating 'snippet' evaluating tools.
- *     Generally, this is only package that would be needed for creating tools.
+ *     Generally, this is the only package that would be needed for creating tools.
  * </p>
  * <p>
  *     The {@link jdk.jshell.spi} package specifies a Service Provider Interface (SPI)
