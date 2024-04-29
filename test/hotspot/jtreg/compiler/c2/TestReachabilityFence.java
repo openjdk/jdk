@@ -31,7 +31,7 @@ import java.lang.ref.Cleaner;
  * @bug 8290892
  * @summary Tests to ensure that reachabilityFence() correctly keeps objects from being collected prematurely.
  *
- * @run main/othervm compiler.c2.TestReachabilityFence
+ * @run main/othervm -XX:CompileCommand=compileonly,*TestReachabilityFence::* compiler.c2.TestReachabilityFence
  */
 
 public class TestReachabilityFence {
