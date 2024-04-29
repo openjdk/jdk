@@ -36,33 +36,35 @@ import static java.lang.constant.ConstantDescs.*;
 
 class TypeConvertingMethodAdapter {
 
-    private static final ConstantPoolBuilder CP = ConstantPoolBuilder.of();
+    private static class BoxHolder {
+        private static final ConstantPoolBuilder CP = ConstantPoolBuilder.of();
 
-    private static MethodRefEntry box(ClassDesc primitive, ClassDesc target) {
-        return CP.methodRefEntry(target, "valueOf", MethodTypeDesc.of(target, primitive));
+        private static MethodRefEntry box(ClassDesc primitive, ClassDesc target) {
+            return CP.methodRefEntry(target, "valueOf", MethodTypeDesc.of(target, primitive));
+        }
+
+        private static final MethodRefEntry BOX_BOOLEAN = box(CD_boolean, CD_Boolean),
+                                            BOX_BYTE    = box(CD_byte, CD_Byte),
+                                            BOX_SHORT   = box(CD_short, CD_Short),
+                                            BOX_CHAR    = box(CD_char, CD_Character),
+                                            BOX_INT     = box(CD_int, CD_Integer),
+                                            BOX_LONG    = box(CD_long, CD_Long),
+                                            BOX_FLOAT   = box(CD_float, CD_Float),
+                                            BOX_DOUBLE  = box(CD_double, CD_Double);
+
+        private static MethodRefEntry unbox(ClassDesc owner, String methodName, ClassDesc primitiveTarget) {
+            return CP.methodRefEntry(owner, methodName, MethodTypeDesc.of(primitiveTarget));
+        }
+
+        private static final MethodRefEntry UNBOX_BOOLEAN = unbox(CD_Boolean, "booleanValue", CD_boolean),
+                                            UNBOX_BYTE    = unbox(CD_Number, "byteValue", CD_byte),
+                                            UNBOX_SHORT   = unbox(CD_Number, "shortValue", CD_short),
+                                            UNBOX_CHAR    = unbox(CD_Character, "charValue", CD_char),
+                                            UNBOX_INT     = unbox(CD_Number, "intValue", CD_int),
+                                            UNBOX_LONG    = unbox(CD_Number, "longValue", CD_long),
+                                            UNBOX_FLOAT   = unbox(CD_Number, "floatValue", CD_float),
+                                            UNBOX_DOUBLE  = unbox(CD_Number, "doubleValue", CD_double);
     }
-
-    private static final MethodRefEntry BOX_BOOLEAN = box(CD_boolean, CD_Boolean),
-                                        BOX_BYTE    = box(CD_byte, CD_Byte),
-                                        BOX_SHORT   = box(CD_short, CD_Short),
-                                        BOX_CHAR    = box(CD_char, CD_Character),
-                                        BOX_INT     = box(CD_int, CD_Integer),
-                                        BOX_LONG    = box(CD_long, CD_Long),
-                                        BOX_FLOAT   = box(CD_float, CD_Float),
-                                        BOX_DOUBLE  = box(CD_double, CD_Double);
-
-    private static MethodRefEntry unbox(ClassDesc owner, String methodName, ClassDesc primitiveTarget) {
-        return CP.methodRefEntry(owner, methodName, MethodTypeDesc.of(primitiveTarget));
-    }
-
-    private static final MethodRefEntry UNBOX_BOOLEAN = unbox(CD_Boolean, "booleanValue", CD_boolean),
-                                        UNBOX_BYTE    = unbox(CD_Number, "byteValue", CD_byte),
-                                        UNBOX_SHORT   = unbox(CD_Number, "shortValue", CD_short),
-                                        UNBOX_CHAR    = unbox(CD_Character, "charValue", CD_char),
-                                        UNBOX_INT     = unbox(CD_Number, "intValue", CD_int),
-                                        UNBOX_LONG    = unbox(CD_Number, "longValue", CD_long),
-                                        UNBOX_FLOAT   = unbox(CD_Number, "floatValue", CD_float),
-                                        UNBOX_DOUBLE  = unbox(CD_Number, "doubleValue", CD_double);
 
     private static TypeKind primitiveTypeKindFromClass(Class<?> type) {
         if (type == int.class)     return TypeKind.IntType;
@@ -90,27 +92,27 @@ class TypeConvertingMethodAdapter {
 
     static void box(CodeBuilder cob, TypeKind tk) {
         switch (tk) {
-            case BooleanType -> cob.invokestatic(BOX_BOOLEAN);
-            case ByteType    -> cob.invokestatic(BOX_BYTE);
-            case CharType    -> cob.invokestatic(BOX_CHAR);
-            case DoubleType  -> cob.invokestatic(BOX_DOUBLE);
-            case FloatType   -> cob.invokestatic(BOX_FLOAT);
-            case IntType     -> cob.invokestatic(BOX_INT);
-            case LongType    -> cob.invokestatic(BOX_LONG);
-            case ShortType   -> cob.invokestatic(BOX_SHORT);
+            case BooleanType -> cob.invokestatic(BoxHolder.BOX_BOOLEAN);
+            case ByteType    -> cob.invokestatic(BoxHolder.BOX_BYTE);
+            case CharType    -> cob.invokestatic(BoxHolder.BOX_CHAR);
+            case DoubleType  -> cob.invokestatic(BoxHolder.BOX_DOUBLE);
+            case FloatType   -> cob.invokestatic(BoxHolder.BOX_FLOAT);
+            case IntType     -> cob.invokestatic(BoxHolder.BOX_INT);
+            case LongType    -> cob.invokestatic(BoxHolder.BOX_LONG);
+            case ShortType   -> cob.invokestatic(BoxHolder.BOX_SHORT);
         }
     }
 
     static void unbox(CodeBuilder cob, TypeKind to) {
         switch (to) {
-            case BooleanType -> cob.invokevirtual(UNBOX_BOOLEAN);
-            case ByteType    -> cob.invokevirtual(UNBOX_BYTE);
-            case CharType    -> cob.invokevirtual(UNBOX_CHAR);
-            case DoubleType  -> cob.invokevirtual(UNBOX_DOUBLE);
-            case FloatType   -> cob.invokevirtual(UNBOX_FLOAT);
-            case IntType     -> cob.invokevirtual(UNBOX_INT);
-            case LongType    -> cob.invokevirtual(UNBOX_LONG);
-            case ShortType   -> cob.invokevirtual(UNBOX_SHORT);
+            case BooleanType -> cob.invokevirtual(BoxHolder.UNBOX_BOOLEAN);
+            case ByteType    -> cob.invokevirtual(BoxHolder.UNBOX_BYTE);
+            case CharType    -> cob.invokevirtual(BoxHolder.UNBOX_CHAR);
+            case DoubleType  -> cob.invokevirtual(BoxHolder.UNBOX_DOUBLE);
+            case FloatType   -> cob.invokevirtual(BoxHolder.UNBOX_FLOAT);
+            case IntType     -> cob.invokevirtual(BoxHolder.UNBOX_INT);
+            case LongType    -> cob.invokevirtual(BoxHolder.UNBOX_LONG);
+            case ShortType   -> cob.invokevirtual(BoxHolder.UNBOX_SHORT);
         }
     }
 
