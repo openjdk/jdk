@@ -74,23 +74,26 @@ public class FrameStateTest implements ActionListener {
         </p><p>
         Select the different options for the Frame:
             <ul>
-                <li><i>{Normal, Non-resizalbe}</i></li>
+                <li><i>{Normal, Non-resizable}</i></li>
                 <li><i>{Normal, Resizable}</i></li>
                 <li><i>{Iconified, Resizable}</i></li>
-                <li><i>{Iconified, Non-resizalbe}</i></li>
+                <li><i>{Iconified, Non-resizable}</i></li>
             </ul>
         After choosing the Frame's state click the
         Create Frame button.<br>
         After the Frame (Frame State Test (Window2)) comes
-        up make sure the proper behavior occurred<br>
-        (Frame shown in proper state).<br>
+        up make sure the proper behavior occurred (Frame shown in proper state).<br>
         Click the Dispose button to close the Frame.<br>
 
         </p><hr/><p>
 
         Do the above steps for all the different Frame state combinations available.<br>
-        If you observe the proper behavior the test has passed, Press the Pass button.<br>
-        Otherwise the test has failed, Press the Fail button.
+        For "hide,iconify and show" case, the frame is hidden then iconified hence Window2
+        is not seen on-screen when shown as the frame is still in the ICONIFIED state.
+        Window2 is visible on-screen when it is restored to NORMAL state as observed with
+        "hide,iconify, show and restore" case.<br><br>
+
+        If you observe the proper behavior for all the combinations, press PASS else FAIL.<br>
         </p><p>
         Note: In Frame State Test (Window2) you can also chose the different
         buttons to see different Frame behavior.<br>An example of a problem that
@@ -108,7 +111,7 @@ public class FrameStateTest implements ActionListener {
     CheckboxGroup cbgResize = new CheckboxGroup();
     Checkbox cbIconState = new Checkbox("Frame state ICONIFIED", cbgState, true);
     Checkbox cbNormState = new Checkbox("Frame state NORMAL", cbgState, false);
-    Checkbox cbNonResize = new Checkbox("Frame non-resizable", cbgResize, false);
+    Checkbox cbNonResize = new Checkbox("Frame Non-resizable", cbgResize, false);
     Checkbox cbResize = new Checkbox("Frame Resizable", cbgResize, true);
 
     CreateFrame icontst;
@@ -119,7 +122,7 @@ public class FrameStateTest implements ActionListener {
                 .title("GetBoundsResizeTest Instructions")
                 .instructions(INSTRUCTIONS)
                 .testTimeOut(10)
-                .rows(25)
+                .rows(27)
                 .columns(70)
                 .logArea(10)
                 .splitUIBottom(() -> new FrameStateTest().createPanel())
@@ -320,11 +323,11 @@ public class FrameStateTest implements ActionListener {
 
         public void stateLog(String message) {
             PassFailJFrame
-                .log("[State=%d] %s %s".formatted(getState(), name, message));
+                .log("[Current State=%d] %s %s".formatted(getState(), name, message));
         }
 
         public void stateLog() {
-            PassFailJFrame.log("[State=" + getState() + "]");
+            PassFailJFrame.log("[Current State=" + getState() + "]");
         }
     }
 }
