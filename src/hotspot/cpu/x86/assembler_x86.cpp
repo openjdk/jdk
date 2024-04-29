@@ -1938,7 +1938,7 @@ void Assembler::crc32(Register crc, Register v, int8_t sizeInBytes) {
   assert(VM_Version::supports_sse4_2(), "");
   if (needs_rex2(crc, v)) {
     InstructionAttr attributes(AVX_128bit, /* rex_w */ sizeInBytes == 8, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
-    int encode = vex_prefix_and_encode(crc->encoding(), 0, v->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_3C, &attributes, true);
+    int encode = vex_prefix_and_encode(crc->encoding(), 0, v->encoding(), sizeInBytes == 2 ? VEX_SIMD_66 : VEX_SIMD_NONE, VEX_OPCODE_0F_3C, &attributes, true);
     emit_int16(sizeInBytes == 1 ? (unsigned char)0xF0 : (unsigned char)0xF1, (0xC0 | encode));
   } else {
     int8_t w = 0x01;
@@ -1986,7 +1986,7 @@ void Assembler::crc32(Register crc, Address adr, int8_t sizeInBytes) {
   if (needs_rex2(crc, adr.base(), adr.index())) {
     InstructionAttr attributes(AVX_128bit, /* vex_w */ sizeInBytes == 8, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
     attributes.set_address_attributes(/* tuple_type */ EVEX_NOSCALE, /* input_size_in_bits */ EVEX_64bit);
-    vex_prefix(adr, 0, crc->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_3C, &attributes);
+    vex_prefix(adr, 0, crc->encoding(), sizeInBytes == 2 ? VEX_SIMD_66 : VEX_SIMD_NONE, VEX_OPCODE_0F_3C, &attributes);
     emit_int8(sizeInBytes == 1 ? (unsigned char)0xF0 : (unsigned char)0xF1);
     emit_operand(crc, adr, 0);
   } else {
@@ -2618,7 +2618,7 @@ void Assembler::jmpb_0(Label& L, const char* file, int line) {
 }
 
 void Assembler::ldmxcsr( Address src) {
-  if (UseAVX > 0 ) {
+  if (UseAVX > 0 && !needs_rex2(src.base(), src.index()) ) {
     InstructionMark im(this);
     InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ true, /* no_mask_reg */ true, /* uses_vl */ false);
     vex_prefix(src, 0, 0, VEX_SIMD_NONE, VEX_OPCODE_0F, &attributes);
@@ -13260,7 +13260,6 @@ void Assembler::emit_prefix_and_int8(int prefix, int b1) {
   if ((prefix & 0xFF00) == 0) {
     emit_int16(prefix, b1);
   } else {
-    assert(UseAPX, "APX features not enabled");
     emit_int24((prefix & 0xFF00) >> 8, prefix & 0x00FF, b1);
   }
 }
