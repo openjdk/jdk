@@ -336,9 +336,8 @@ public class Table<T> extends Content {
         Pattern pattern = Pattern.compile(regex);
         for (Content c : contents) {
             HtmlStyle cellStyle = columnStyles.get(colIndex);
-
             // Add tab order to only plain text to avoid widget_tabbable_single(potential violation)
-            boolean matchFound = c.isValid() && pattern.matcher(c.toString()).find();
+            boolean matchFound = pattern.matcher(c.toString()).find();
     
             // Always add content to make sure the cell isn't dropped
             var cell = HtmlTree.DIV(cellStyle).addUnchecked(c.isEmpty() ? Text.EMPTY : c);
