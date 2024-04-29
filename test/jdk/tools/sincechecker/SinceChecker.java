@@ -158,7 +158,7 @@ public class SinceChecker {
     }
 
     private void processClassElement(TypeElement te, String version, Types types, Elements elements) {
-        if (!(isDocumented(te))) {
+        if (!isDocumented(te)) {
             return;
         }
         persistElement(te.getEnclosingElement(), te, types, version);
@@ -326,7 +326,7 @@ public class SinceChecker {
     private void analyzeClassCheck(TypeElement te, String version, EffectiveSourceSinceHelper javadocHelper,
                                    Types types, Elements elementUtils) {
         String currentjdkVersion = String.valueOf(Runtime.version().feature());
-        if (!(isDocumented(te))) {
+        if (!isDocumented(te)) {
             return;
         }
         checkElement(te.getEnclosingElement(), te, types, javadocHelper, version, elementUtils);
