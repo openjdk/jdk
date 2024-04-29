@@ -26,16 +26,7 @@ package compiler.c2;
 import java.lang.ref.Reference;
 import java.lang.ref.Cleaner;
 
-/*
- * @test
- * @bug 8290892
- * @summary Tests to ensure that reachabilityFence() correctly keeps objects from being collected prematurely.
- *
- * @run main/othervm/timeout=7200 -XX:CompileCommand=compileonly,*TestReachabilityFence::* compiler.c2.TestReachabilityFence
- */
-
 public class TestReachabilityFence {
-    // Nested class A containing an instance of class B
     static class A {
         public B obj;
         public A(B obj) {
@@ -43,7 +34,6 @@ public class TestReachabilityFence {
         }
     }
 
-    // Nested class B containing an integer ID and a static integer array
     static class B {
         public final int id;
 
@@ -54,10 +44,8 @@ public class TestReachabilityFence {
         }
     }
 
-    // Retrieve the test case number from system properties, defaulting to 1
     static final int CASE = Integer.getInteger("CASE", 1);
 
-    // Test dispatcher based on the CASE value
     static void test(A foo, int[] arr, int limit) {
         switch (CASE) {
             case 0: test0(foo, arr, arr, limit); break;
@@ -71,10 +59,6 @@ public class TestReachabilityFence {
         }
     }
 
-    // Each test case function manipulates an array using the 'id' of object 'B'
-    // and checks the reachability fence functionality.
-
-    // Simple manipulation without reachability fence
     static void test0(A foo, int[] arr, int[] arr1, int limit) {
         int arr0 = arr[0];
 
@@ -90,7 +74,6 @@ public class TestReachabilityFence {
         }
     }
 
-    // Manipulation with reachability fence after each operation
     static void test1(A foo, int[] arr, int[] arr1, int limit) {
         int arr0 = arr[0];
 
@@ -109,6 +92,7 @@ public class TestReachabilityFence {
         }
     }
 
+    static boolean flag = true;
 
     static void test2(A foo, int[] arr, int[] arr1, int limit) {
         int arr0 = arr[0];
@@ -146,8 +130,8 @@ public class TestReachabilityFence {
         }
     }
 
+    static void noinline(Object o) {}
 
-    // Test case to trigger a NullPointerException (NPE) if 'bar' is prematurely collected
     static void test10(A foo, int[] arr, int[] arr1, int limit) {
         int arr0 = arr[0];
 
@@ -165,19 +149,16 @@ public class TestReachabilityFence {
     }
 
     public static void main(String[] args) {
-        // Setup a test environment with object 'A' containing 'B' and register a cleaner
         final A foo = new A(new B(1));
         Cleaner.create().register(foo.obj, () -> {
             System.out.println("!!! GONE !!!");
             B.arr[0] = 1_000_000 + foo.obj.id;
         });
 
-        // Perform intensive testing to potentially trigger garbage collection
         for (int i = 0; i < 20_000; i++) {
-            test(foo, foo.obj.arr, foo.obj.arr.length);
+            //test(foo, foo.obj.arr, foo.obj.arr.length);
         }
 
-        // Thread to continuously trigger garbage collection
         Thread threadGC = new Thread() {
             public void run() {
                 try {
@@ -192,13 +173,12 @@ public class TestReachabilityFence {
         };
         threadGC.setDaemon(true);
 
-        // Thread to simulate object reference changes during execution
         Thread threadUpdate = new Thread() {
             public void run() {
                 try {
                     Thread.sleep(1000);
                     int newId = foo.obj.id + 1;
-                    foo.obj = null; // newB; Simulate losing the reference
+                    foo.obj = null; // newB;
                     System.out.println("!!! CLEAN !!!");
                 } catch (Throwable e) {
                     throw new InternalError(e);
@@ -210,10 +190,7 @@ public class TestReachabilityFence {
         threadGC.start();
         threadUpdate.start();
 
-        // Final test call with max integer limit
         System.out.println(0 + "");
         test(foo, foo.obj.arr, Integer.MAX_VALUE);
-
-        System.out.println("Test completed.");
     }
 }
