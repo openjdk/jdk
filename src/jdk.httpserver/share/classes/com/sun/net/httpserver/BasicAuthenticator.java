@@ -118,7 +118,7 @@ public abstract class BasicAuthenticator extends Authenticator {
             return new Authenticator.Retry (401);
         }
         int sp = auth.indexOf (' ');
-        if (sp == -1 || !auth.substring(0, sp).equals ("Basic")) {
+        if (sp == -1 || !auth.substring(0, sp).equalsIgnoreCase("Basic")) {
             return new Authenticator.Failure (401);
         }
         byte[] b = Base64.getDecoder().decode(auth.substring(sp+1));
