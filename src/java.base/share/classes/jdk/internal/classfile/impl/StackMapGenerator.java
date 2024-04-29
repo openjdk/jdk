@@ -1243,14 +1243,14 @@ public final class StackMapGenerator {
         //frequently used types to reduce footprint
         static final Type OBJECT_TYPE = referenceType(CD_Object),
             THROWABLE_TYPE = referenceType(CD_Throwable),
-            INT_ARRAY_TYPE = referenceType(CD_int.arrayType()),
-            BOOLEAN_ARRAY_TYPE = referenceType(CD_boolean.arrayType()),
-            BYTE_ARRAY_TYPE = referenceType(CD_byte.arrayType()),
-            CHAR_ARRAY_TYPE = referenceType(CD_char.arrayType()),
-            SHORT_ARRAY_TYPE = referenceType(CD_short.arrayType()),
-            LONG_ARRAY_TYPE = referenceType(CD_long.arrayType()),
-            DOUBLE_ARRAY_TYPE = referenceType(CD_double.arrayType()),
-            FLOAT_ARRAY_TYPE = referenceType(CD_float.arrayType()),
+            INT_ARRAY_TYPE = referenceType(ClassDesc.ofDescriptor("[I")),
+            BOOLEAN_ARRAY_TYPE = referenceType(ClassDesc.ofDescriptor("[Z")),
+            BYTE_ARRAY_TYPE = referenceType(ClassDesc.ofDescriptor("[B")),
+            CHAR_ARRAY_TYPE = referenceType(ClassDesc.ofDescriptor("[C")),
+            SHORT_ARRAY_TYPE = referenceType(ClassDesc.ofDescriptor("[S")),
+            LONG_ARRAY_TYPE = referenceType(ClassDesc.ofDescriptor("[J")),
+            DOUBLE_ARRAY_TYPE = referenceType(ClassDesc.ofDescriptor("[D")),
+            FLOAT_ARRAY_TYPE = referenceType(ClassDesc.ofDescriptor("[F")),
             STRING_TYPE = referenceType(CD_String),
             CLASS_TYPE = referenceType(CD_Class),
             METHOD_HANDLE_TYPE = referenceType(CD_MethodHandle),
@@ -1315,8 +1315,8 @@ public final class StackMapGenerator {
             }
         }
 
-        private static final ClassDesc CD_Cloneable = ClassDesc.of("java.lang.Cloneable");
-        private static final ClassDesc CD_Serializable = ClassDesc.of("java.io.Serializable");
+        private static final ClassDesc CD_Cloneable = ClassDesc.ofDescriptor("Ljava/lang/Cloneable;");
+        private static final ClassDesc CD_Serializable = ClassDesc.ofDescriptor("Ljava/io/Serializable;");
 
         private Type mergeReferenceFrom(Type from, ClassHierarchyImpl context) {
             if (from == NULL_TYPE) {
