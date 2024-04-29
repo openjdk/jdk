@@ -32,8 +32,7 @@ import jdk.jfr.internal.Type;
 @Name(Type.EVENT_NAME_PREFIX + "SelectorSelect")
 @Label("Selector Select")
 @Category("Java Application")
-@MirrorEvent(className = "jdk.internal.event.SelectorSelectEvent")
-public class SelectorSelectEvent extends AbstractJDKEvent {
+public class SelectorSelectEvent extends MirrorEvent {
 
     @Label("SelectionKey Count")
     @Description("The number of unique keys updated")
