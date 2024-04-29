@@ -28,6 +28,10 @@
 
 VMATree::SummaryDiff VMATree::register_mapping(size_t A, size_t B, StateType state,
                                                Metadata& metadata) {
+  if (A == B) {
+    // A 0-sized mapping isn't worth recording.
+    return SummaryDiff();
+  }
 
   // AddressState saves the necessary information for performing online summary accounting.
   struct AddressState {
