@@ -227,10 +227,16 @@ size_t ShenandoahOldGeneration::get_live_bytes_after_last_mark() const {
 }
 
 void ShenandoahOldGeneration::set_live_bytes_after_last_mark(size_t bytes) {
-  _live_bytes_after_last_mark = bytes;
-  _growth_before_compaction /= 2;
-  if (_growth_before_compaction < _min_growth_before_compaction) {
-    _growth_before_compaction = _min_growth_before_compaction;
+  if (bytes == 0) {
+    // Restart search for best old-gen size to the initial state
+    _live_bytes_after_last_mark = ShenandoahHeap::heap()->capacity() * INITIAL_LIVE_FRACTION / FRACTIONAL_DENOMINATOR;
+    _growth_before_compaction = INITIAL_GROWTH_BEFORE_COMPACTION;
+  } else {
+    _live_bytes_after_last_mark = bytes;
+    _growth_before_compaction /= 2;
+    if (_growth_before_compaction < _min_growth_before_compaction) {
+      _growth_before_compaction = _min_growth_before_compaction;
+    }
   }
 }
 
@@ -520,7 +526,7 @@ bool ShenandoahOldGeneration::validate_waiting_for_bootstrap() {
 #endif
 
 ShenandoahHeuristics* ShenandoahOldGeneration::initialize_heuristics(ShenandoahMode* gc_mode) {
-  _old_heuristics = new ShenandoahOldHeuristics(this);
+  _old_heuristics = new ShenandoahOldHeuristics(this, ShenandoahGenerationalHeap::heap());
   _old_heuristics->set_guaranteed_gc_interval(ShenandoahGuaranteedOldGCInterval);
   _heuristics = _old_heuristics;
   return _heuristics;
@@ -613,54 +619,6 @@ void ShenandoahOldGeneration::prepare_for_mixed_collections_after_global_gc() {
   log_info(gc)("After choosing global collection set, mixed candidates: " UINT32_FORMAT ", coalescing candidates: " SIZE_FORMAT,
                _old_heuristics->unprocessed_old_collection_candidates(),
                _old_heuristics->coalesce_and_fill_candidates_count());
-}
-
-void ShenandoahOldGeneration::maybe_trigger_collection(size_t first_old_region, size_t last_old_region, size_t old_region_count) {
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-  const size_t old_region_span = (first_old_region <= last_old_region)? (last_old_region + 1 - first_old_region): 0;
-  const size_t allowed_old_gen_span = heap->num_regions() - (ShenandoahGenerationalHumongousReserve * heap->num_regions() / 100);
-
-  // Tolerate lower density if total span is small.  Here's the implementation:
-  //   if old_gen spans more than 100% and density < 75%, trigger old-defrag
-  //   else if old_gen spans more than 87.5% and density < 62.5%, trigger old-defrag
-  //   else if old_gen spans more than 75% and density < 50%, trigger old-defrag
-  //   else if old_gen spans more than 62.5% and density < 37.5%, trigger old-defrag
-  //   else if old_gen spans more than 50% and density < 25%, trigger old-defrag
-  //
-  // A previous implementation was more aggressive in triggering, resulting in degraded throughput when
-  // humongous allocation was not required.
-
-  const size_t old_available = available();
-  const size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
-  const size_t old_unaffiliated_available = free_unaffiliated_regions() * region_size_bytes;
-  assert(old_available >= old_unaffiliated_available, "sanity");
-  const size_t old_fragmented_available = old_available - old_unaffiliated_available;
-
-  const size_t old_bytes_consumed = old_region_count * region_size_bytes - old_fragmented_available;
-  const size_t old_bytes_spanned = old_region_span * region_size_bytes;
-  const double old_density = ((double) old_bytes_consumed) / old_bytes_spanned;
-
-  uint eighths = 8;
-  for (uint i = 0; i < 5; i++) {
-    size_t span_threshold = eighths * allowed_old_gen_span / 8;
-    double density_threshold = (eighths - 2) / 8.0;
-    if ((old_region_span >= span_threshold) && (old_density < density_threshold)) {
-      heuristics()->trigger_old_is_fragmented(old_density, first_old_region, last_old_region);
-      break;
-    }
-    eighths--;
-  }
-
-  const size_t old_used = used() + get_humongous_waste();
-  const size_t trigger_threshold = usage_trigger_threshold();
-  // Detects unsigned arithmetic underflow
-  assert(old_used <= heap->free_set()->capacity(),
-         "Old used (" SIZE_FORMAT ", " SIZE_FORMAT") must not be more than heap capacity (" SIZE_FORMAT ")",
-         used(), get_humongous_waste(), heap->free_set()->capacity());
-
-  if (old_used > trigger_threshold) {
-    heuristics()->trigger_old_has_grown();
-  }
 }
 
 void ShenandoahOldGeneration::parallel_region_iterate_free(ShenandoahHeapRegionClosure* cl) {

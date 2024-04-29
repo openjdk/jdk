@@ -27,6 +27,7 @@
 
 #include "gc/shenandoah/heuristics/shenandoahOldHeuristics.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
+#include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 
 class ShenandoahHeapRegion;
@@ -221,7 +222,6 @@ public:
   // Abandon any regions waiting for mixed collections
   void abandon_collection_candidates();
 
-  void maybe_trigger_collection(size_t first_old_region, size_t last_old_region, size_t old_region_count);
 public:
   enum State {
     FILLING, WAITING_FOR_BOOTSTRAP, BOOTSTRAPPING, MARKING, EVACUATING, EVACUATING_AFTER_GLOBAL
@@ -234,7 +234,7 @@ public:
 private:
   State _state;
 
-  static const size_t FRACTIONAL_DENOMINATOR = 64536;
+  static const size_t FRACTIONAL_DENOMINATOR = 65536;
 
   // During initialization of the JVM, we search for the correct old-gen size by initially performing old-gen
   // collection when old-gen usage is 50% more (INITIAL_GROWTH_BEFORE_COMPACTION) than the initial old-gen size

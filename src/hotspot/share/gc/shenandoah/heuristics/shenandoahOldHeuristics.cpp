@@ -56,8 +56,10 @@ int ShenandoahOldHeuristics::compare_by_index(RegionData a, RegionData b) {
   }
 }
 
-ShenandoahOldHeuristics::ShenandoahOldHeuristics(ShenandoahOldGeneration* generation) :
+ShenandoahOldHeuristics::ShenandoahOldHeuristics(ShenandoahOldGeneration* generation, ShenandoahGenerationalHeap* gen_heap) :
   ShenandoahHeuristics(generation),
+  _heap(gen_heap),
+  _old_gen(generation),
   _first_pinned_candidate(NOT_FOUND),
   _last_old_collection_candidate(0),
   _next_old_collection_candidate(0),
@@ -549,7 +551,63 @@ void ShenandoahOldHeuristics::clear_triggers() {
   _cannot_expand_trigger = false;
   _fragmentation_trigger = false;
   _growth_trigger = false;
- }
+}
+
+void ShenandoahOldHeuristics::trigger_collection_if_fragmented(size_t first_old_region, size_t last_old_region, size_t old_region_count, size_t num_regions) {
+  if (ShenandoahGenerationalHumongousReserve > 0) {
+    size_t old_region_span = (first_old_region <= last_old_region)? (last_old_region + 1 - first_old_region): 0;
+    size_t allowed_old_gen_span = num_regions - (ShenandoahGenerationalHumongousReserve * num_regions) / 100;
+
+    // Tolerate lower density if total span is small.  Here's the implementation:
+    //   if old_gen spans more than 100% and density < 75%, trigger old-defrag
+    //   else if old_gen spans more than 87.5% and density < 62.5%, trigger old-defrag
+    //   else if old_gen spans more than 75% and density < 50%, trigger old-defrag
+    //   else if old_gen spans more than 62.5% and density < 37.5%, trigger old-defrag
+    //   else if old_gen spans more than 50% and density < 25%, trigger old-defrag
+    //
+    // A previous implementation was more aggressive in triggering, resulting in degraded throughput when
+    // humongous allocation was not required.
+
+    size_t old_available = _old_gen->available();
+    size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
+    size_t old_unaffiliated_available = _old_gen->free_unaffiliated_regions() * region_size_bytes;
+    assert(old_available >= old_unaffiliated_available, "sanity");
+    size_t old_fragmented_available = old_available - old_unaffiliated_available;
+
+    size_t old_bytes_consumed = old_region_count * region_size_bytes - old_fragmented_available;
+    size_t old_bytes_spanned = old_region_span * region_size_bytes;
+    double old_density = ((double) old_bytes_consumed) / old_bytes_spanned;
+
+    uint eighths = 8;
+    for (uint i = 0; i < 5; i++) {
+      size_t span_threshold = eighths * allowed_old_gen_span / 8;
+      double density_threshold = (eighths - 2) / 8.0;
+      if ((old_region_span >= span_threshold) && (old_density < density_threshold)) {
+        trigger_old_is_fragmented(old_density, first_old_region, last_old_region);
+        return;
+      }
+      eighths--;
+    }
+  }
+}
+
+void ShenandoahOldHeuristics::trigger_collection_if_overgrown() {
+  size_t old_used = _old_gen->used() + _old_gen->get_humongous_waste();
+  size_t trigger_threshold = _old_gen->usage_trigger_threshold();
+  // Detects unsigned arithmetic underflow
+  assert(old_used <= _heap->capacity(),
+         "Old used (" SIZE_FORMAT ", " SIZE_FORMAT") must not be more than heap capacity (" SIZE_FORMAT ")",
+         _old_gen->used(), _old_gen->get_humongous_waste(), _heap->capacity());
+  if (old_used > trigger_threshold) {
+    trigger_old_has_grown();
+  }
+}
+
+void ShenandoahOldHeuristics::trigger_maybe(size_t first_old_region, size_t last_old_region,
+                                            size_t old_region_count, size_t num_regions) {
+  trigger_collection_if_fragmented(first_old_region, last_old_region, old_region_count, num_regions);
+  trigger_collection_if_overgrown();
+}
 
 bool ShenandoahOldHeuristics::should_start_gc() {
   // Cannot start a new old-gen GC until previous one has finished.
@@ -595,7 +653,7 @@ bool ShenandoahOldHeuristics::should_start_gc() {
   if (_growth_trigger) {
     // Growth may be falsely triggered during mixed evacuations, before the mixed-evacuation candidates have been
     // evacuated.  Before acting on a false trigger, we check to confirm the trigger condition is still satisfied.
-    const size_t current_usage = _old_generation->used();
+    const size_t current_usage = _old_generation->used() + _old_generation->get_humongous_waste();
     const size_t trigger_threshold = _old_generation->usage_trigger_threshold();
     const size_t heap_size = heap->capacity();
     const size_t ignore_threshold = (ShenandoahIgnoreOldGrowthBelowPercentage * heap_size) / 100;
@@ -618,6 +676,7 @@ bool ShenandoahOldHeuristics::should_start_gc() {
                    byte_size_in_proper_unit(current_usage), proper_unit_for_byte_size(current_usage), percent_growth);
       return true;
     } else {
+      // Mixed evacuations have decreased current_usage such that old-growth trigger is no longer relevant.
       _growth_trigger = false;
     }
   }
