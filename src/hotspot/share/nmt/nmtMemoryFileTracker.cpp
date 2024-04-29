@@ -47,18 +47,16 @@ void MemoryFileTracker::allocate_memory(MemoryFile* device, size_t offset,
   VMATree::Metadata metadata(sidx, flag);
   VMATree::SummaryDiff diff = device->_tree.reserve_mapping(offset, size, metadata);
   for (int i = 0; i < mt_number_of_types; i++) {
-    const VMATree::SingleDiff& rescom = diff.flag[i];
     VirtualMemory* summary = device->_summary.by_type(NMTUtil::index_to_flag(i));
-    summary->reserve_memory(rescom.reserve);
+    summary->reserve_memory(diff.flag[i].reserve);
   }
 }
 
 void MemoryFileTracker::free_memory(MemoryFile* device, size_t offset, size_t size) {
   VMATree::SummaryDiff diff = device->_tree.release_mapping(offset, size);
   for (int i = 0; i < mt_number_of_types; i++) {
-    const VMATree::SingleDiff& rescom = diff.flag[i];
     VirtualMemory* summary = device->_summary.by_type(NMTUtil::index_to_flag(i));
-    summary->reserve_memory(rescom.reserve);
+    summary->reserve_memory(diff.flag[i].reserve);
   }
 }
 
