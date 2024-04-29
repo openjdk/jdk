@@ -71,7 +71,7 @@ final class MethodTypeDescImpl implements MethodTypeDesc {
             return new MethodTypeDescImpl(returnType, ConstantUtils.EMPTY_CLASSDESC);
 
         for (ClassDesc cd : trustedArgTypes)
-            if (cd.descriptorString().equals("V")) // implicit null check
+            if (cd.descriptorString().charAt(0) == 'V') // implicit null check
                 throw new IllegalArgumentException("Void parameters not permitted");
 
         return new MethodTypeDescImpl(returnType, trustedArgTypes);
