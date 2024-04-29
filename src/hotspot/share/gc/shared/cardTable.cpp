@@ -27,7 +27,7 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gcLogPrecious.hpp"
 #include "gc/shared/gc_globals.hpp"
-#include "gc/shared/space.inline.hpp"
+#include "gc/shared/space.hpp"
 #include "logging/log.hpp"
 #include "memory/virtualspace.hpp"
 #include "nmt/memTracker.hpp"
@@ -202,12 +202,10 @@ void CardTable::resize_covered_region(MemRegion new_region) {
 void CardTable::dirty_MemRegion(MemRegion mr) {
   assert(align_down(mr.start(), HeapWordSize) == mr.start(), "Unaligned start");
   assert(align_up  (mr.end(),   HeapWordSize) == mr.end(),   "Unaligned end"  );
+  assert(_covered[0].contains(mr) || _covered[1].contains(mr), "precondition");
   CardValue* cur  = byte_for(mr.start());
   CardValue* last = byte_after(mr.last());
-  while (cur < last) {
-    *cur = dirty_card;
-    cur++;
-  }
+  memset(cur, dirty_card, pointer_delta(last, cur, sizeof(CardValue)));
 }
 
 void CardTable::clear_MemRegion(MemRegion mr) {
@@ -227,15 +225,6 @@ void CardTable::clear_MemRegion(MemRegion mr) {
 uintx CardTable::ct_max_alignment_constraint() {
   // Calculate maximum alignment using GCCardSizeInBytes as card_size hasn't been set yet
   return GCCardSizeInBytes * os::vm_page_size();
-}
-
-void CardTable::invalidate(MemRegion mr) {
-  assert(align_down(mr.start(), HeapWordSize) == mr.start(), "Unaligned start");
-  assert(align_up  (mr.end(),   HeapWordSize) == mr.end(),   "Unaligned end"  );
-  for (int i = 0; i < max_covered_regions; i++) {
-    MemRegion mri = mr.intersection(_covered[i]);
-    if (!mri.is_empty()) dirty_MemRegion(mri);
-  }
 }
 
 #ifndef PRODUCT

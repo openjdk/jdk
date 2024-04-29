@@ -67,6 +67,12 @@ public class DocPaths {
     /** The name of the file for all references to external specifications. */
     public static final DocPath EXTERNAL_SPECS = DocPath.create("external-specs.html");
 
+    /** The name of the sub-directory containing font resources. */
+    public static final DocPath FONTS = DocPath.create("fonts");
+
+    /** The name of the DejaVu web fonts CSS file. */
+    public static final DocPath DEJAVU_CSS = DocPath.create("dejavu.css");
+
     /** The name of the image file showing a magnifying glass on the search box. */
     public static final DocPath GLASS_IMG = DocPath.create("glass.png");
 
@@ -107,7 +113,7 @@ public class DocPaths {
     public static final DocPath JQUERY_DIR = DocPath.create("jquery");
 
     /** The name of the default jQuery javascript file. */
-    public static final DocPath JQUERY_JS = DocPath.create("jquery-3.6.1.min.js");
+    public static final DocPath JQUERY_JS = DocPath.create("jquery-3.7.1.min.js");
 
     /** The name of the default jQuery UI stylesheet file. */
     public static final DocPath JQUERY_UI_CSS = DocPath.create("jquery-ui.min.css");

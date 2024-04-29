@@ -406,6 +406,10 @@ public:
   HeapWord* summarize_split_space(size_t src_region, SplitInfo& split_info,
                                   HeapWord* destination, HeapWord* target_end,
                                   HeapWord** target_next);
+
+  size_t live_words_in_space(const MutableSpace* space,
+                             HeapWord** full_region_prefix_end = nullptr);
+
   bool summarize(SplitInfo& split_info,
                  HeapWord* source_beg, HeapWord* source_end,
                  HeapWord** source_next,
@@ -935,26 +939,22 @@ class PSParallelCompact : AllStatic {
   static void pre_compact();
   static void post_compact();
 
+  static bool reassess_maximum_compaction(bool maximum_compaction,
+                                          size_t total_live_words,
+                                          MutableSpace* const old_space,
+                                          HeapWord* full_region_prefix_end);
+
   // Mark live objects
   static void marking_phase(ParallelOldTracer *gc_tracer);
 
-  // Methods used to compute the dense prefix.
-
-  // Return a pointer to the first region in the range [beg, end) that is not
-  // completely full.
-  static RegionData* first_dead_space_region(const RegionData* beg,
-                                             const RegionData* end);
-
-  // Compute the dense prefix for the designated space.
-  static HeapWord* compute_dense_prefix(const SpaceId id,
-                                        bool maximum_compaction);
+  // Identify the dense-fix in the old-space to avoid moving much memory with little reclaimed.
+  static HeapWord* compute_dense_prefix_for_old_space(MutableSpace* old_space,
+                                                      HeapWord* full_region_prefix_end);
 
   // Create a filler obj (if needed) right before the dense-prefix-boundary to
   // make the heap parsable.
   static void fill_dense_prefix_end(SpaceId id);
 
-  static void summarize_spaces_quick();
-  static void summarize_space(SpaceId id, bool maximum_compaction);
   static void summary_phase(bool maximum_compaction);
 
   // Adjust addresses in roots.  Does not adjust addresses in heap.

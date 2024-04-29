@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ import java.security.PrivilegedAction;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.StringJoiner;
 
 import static java.util.Objects.requireNonNull;
 
@@ -88,20 +87,18 @@ final class MethodTypeDescImpl implements MethodTypeDesc {
      * @jvms 4.3.3 Method Descriptors
      */
     static MethodTypeDescImpl ofDescriptor(String descriptor) {
-        requireNonNull(descriptor);
+        // Implicit null-check of descriptor
+        List<ClassDesc> ptypes = ConstantUtils.parseMethodDescriptor(descriptor);
+        int args = ptypes.size() - 1;
+        ClassDesc[] paramTypes = args > 0
+                ? ptypes.subList(1, args + 1).toArray(ConstantUtils.EMPTY_CLASSDESC)
+                : ConstantUtils.EMPTY_CLASSDESC;
 
-        List<String> types = ConstantUtils.parseMethodDescriptor(descriptor);
-
-        int paramCount = types.size() - 1;
-        var paramTypes = paramCount > 0 ? new ClassDesc[paramCount] : ConstantUtils.EMPTY_CLASSDESC;
-        for (int i = 0; i < paramCount; i++) {
-            paramTypes[i] = ClassDesc.ofDescriptor(types.get(i + 1));
-        }
-
-        MethodTypeDescImpl result = ofTrusted(ClassDesc.ofDescriptor(types.getFirst()), paramTypes);
+        MethodTypeDescImpl result = ofTrusted(ptypes.get(0), paramTypes);
         result.cachedDescriptorString = descriptor;
         return result;
     }
+
 
     @Override
     public ClassDesc returnType() {
@@ -170,11 +167,17 @@ final class MethodTypeDescImpl implements MethodTypeDesc {
         if (desc != null)
             return desc;
 
-        var sj = new StringJoiner("", "(", ")" + returnType().descriptorString());
-        for (int i = 0; i < parameterCount(); i++) {
-            sj.add(parameterType(i).descriptorString());
+        int len = 2 + returnType.descriptorString().length();
+        for (ClassDesc argType : argTypes) {
+            len += argType.descriptorString().length();
         }
-        return cachedDescriptorString = sj.toString();
+        StringBuilder sb = new StringBuilder(len).append('(');
+        for (ClassDesc argType : argTypes) {
+            sb.append(argType.descriptorString());
+        }
+        desc = sb.append(')').append(returnType.descriptorString()).toString();
+        cachedDescriptorString = desc;
+        return desc;
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,11 +40,11 @@ import jdk.jfr.events.ContainerCPUUsageEvent;
 import jdk.jfr.events.ContainerCPUThrottlingEvent;
 import jdk.jfr.events.ContainerMemoryUsageEvent;
 import jdk.jfr.events.DirectBufferStatisticsEvent;
+import jdk.jfr.events.FileForceEvent;
 import jdk.jfr.events.FileReadEvent;
 import jdk.jfr.events.FileWriteEvent;
 import jdk.jfr.events.InitialSecurityPropertyEvent;
-import jdk.jfr.events.SocketReadEvent;
-import jdk.jfr.events.SocketWriteEvent;
+
 import jdk.jfr.internal.JVM;
 import jdk.jfr.internal.LogLevel;
 import jdk.jfr.internal.LogTag;
@@ -57,10 +57,9 @@ import jdk.internal.platform.Metrics;
 public final class JDKEvents {
 
     private static final Class<?>[] eventClasses = {
+        FileForceEvent.class,
         FileReadEvent.class,
         FileWriteEvent.class,
-        SocketReadEvent.class,
-        SocketWriteEvent.class,
         ActiveSettingEvent.class,
         ActiveRecordingEvent.class,
         // jdk.internal.event.* classes need their mirror

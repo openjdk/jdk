@@ -135,19 +135,17 @@ public:
   bool failures() { return _failures; }
 };
 
-class G1VerifyCodeRootBlobClosure: public CodeBlobClosure {
+class G1VerifyCodeRootNMethodClosure: public NMethodClosure {
   G1VerifyCodeRootOopClosure* _oop_cl;
 
 public:
-  G1VerifyCodeRootBlobClosure(G1VerifyCodeRootOopClosure* oop_cl):
+  G1VerifyCodeRootNMethodClosure(G1VerifyCodeRootOopClosure* oop_cl):
     _oop_cl(oop_cl) {}
 
-  void do_code_blob(CodeBlob* cb) {
-    nmethod* nm = cb->as_nmethod_or_null();
-    if (nm != nullptr) {
-      _oop_cl->set_nmethod(nm);
-      nm->oops_do(_oop_cl);
-    }
+  void do_nmethod(nmethod* nm) {
+    assert(nm != nullptr, "Sanity");
+    _oop_cl->set_nmethod(nm);
+    nm->oops_do(_oop_cl);
   }
 };
 
@@ -340,7 +338,7 @@ void G1HeapVerifier::verify(VerifyOption vo) {
   // system dictionary, class loader data graph, the string table
   // and the nmethods in the code cache.
   G1VerifyCodeRootOopClosure codeRootsCl(_g1h, &rootsCl, vo);
-  G1VerifyCodeRootBlobClosure blobsCl(&codeRootsCl);
+  G1VerifyCodeRootNMethodClosure blobsCl(&codeRootsCl);
 
   {
     G1RootProcessor root_processor(_g1h, 1);

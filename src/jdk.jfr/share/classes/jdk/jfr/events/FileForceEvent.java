@@ -36,8 +36,7 @@ import jdk.jfr.internal.Type;
 @Label("File Force")
 @Category("Java Application")
 @Description("Force updates to be written to file")
-@MirrorEvent(className = "jdk.internal.event.FileForceEvent")
-public final class FileForceEvent extends AbstractJDKEvent {
+public final class FileForceEvent extends MirrorEvent {
 
     // The order of these fields must be the same as the parameters in
     // commit(..., String, boolean)

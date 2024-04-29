@@ -58,7 +58,7 @@ public class Stack016 extends Thread {
     private final static int THREADS = 10;
     private final static int CYCLES = 10;
     private final static int STEP = 10;
-    private final static int RESERVE = 100;
+    private final static int RESERVE = 10;
     private final static int PROBES = STEP * RESERVE;
 
     public static void main(String[] args) {
@@ -88,7 +88,7 @@ public class Stack016 extends Thread {
         for (int i = 0; i < threads.length; i++) {
             threads[i] = new Stack016();
             threads[i].setName("Thread: " + (i + 1) + "/" + THREADS);
-            threads[i].depthToTry = RESERVE * maxDepth;
+            threads[i].depthToTry = RESERVE * maxDepth * 10;
             threads[i].start();
         }
         for (int i = 0; i < threads.length; i++) {

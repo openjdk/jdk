@@ -47,7 +47,6 @@
   template(ZombieAll)                             \
   template(Verify)                                \
   template(HeapDumper)                            \
-  template(HeapDumpMerge)                         \
   template(CollectForMetadataAllocation)          \
   template(CollectForCodeCacheAllocation)         \
   template(GC_HeapInspection)                     \
@@ -83,7 +82,6 @@
   template(ChangeBreakpoints)                     \
   template(GetOrSetLocal)                         \
   template(VirtualThreadGetOrSetLocal)            \
-  template(VirtualThreadGetCurrentLocation)       \
   template(ChangeSingleStep)                      \
   template(SetNotifyJvmtiEventsMode)              \
   template(HeapWalkOperation)                     \

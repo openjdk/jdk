@@ -39,7 +39,6 @@
 
 class BitMap;
 class CardTableBarrierSet;
-class CodeBlobClosure;
 class G1AbstractSubTask;
 class G1CollectedHeap;
 class G1CMBitMap;

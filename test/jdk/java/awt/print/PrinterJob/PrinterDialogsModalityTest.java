@@ -30,7 +30,7 @@ import javax.swing.JFrame;
 
 /*
  * @test
- * @bug 4784285 4785920
+ * @bug 4784285 4785920 5024549
  * @key printer
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
