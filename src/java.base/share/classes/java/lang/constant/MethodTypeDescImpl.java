@@ -34,6 +34,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  * A <a href="package-summary.html#nominal">nominal descriptor</a> for a
  * {@link MethodType}.  A {@linkplain MethodTypeDescImpl} corresponds to a
@@ -64,7 +66,7 @@ final class MethodTypeDescImpl implements MethodTypeDesc {
      * @param trustedArgTypes {@link ClassDesc}s describing the trusted parameter types
      */
     static MethodTypeDescImpl ofTrusted(ClassDesc returnType, ClassDesc[] trustedArgTypes) {
-        Objects.requireNonNull(returnType);
+        requireNonNull(returnType);
         if (trustedArgTypes.length == 0) // implicit null check
             return new MethodTypeDescImpl(returnType, ConstantUtils.EMPTY_CLASSDESC);
 
@@ -125,7 +127,7 @@ final class MethodTypeDescImpl implements MethodTypeDesc {
 
     @Override
     public MethodTypeDesc changeReturnType(ClassDesc returnType) {
-        return new MethodTypeDescImpl(returnType, argTypes);
+        return new MethodTypeDescImpl(requireNonNull(returnType), argTypes);
     }
 
     @Override
