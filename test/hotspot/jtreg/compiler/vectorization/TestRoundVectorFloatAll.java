@@ -28,10 +28,10 @@
  *
  * @library /test/lib /
  * @modules java.base/jdk.internal.math
- * @run main compiler.vectorization.TestRoundVectorFloatRandom -XX:-TieredCompilation -XX:CompileThresholdScaling=0.3
- * @run main compiler.vectorization.TestRoundVectorFloatRandom -XX:-TieredCompilation -XX:CompileThresholdScaling=0.3 -XX:MaxVectorSize=8
- * @run main compiler.vectorization.TestRoundVectorFloatRandom -XX:-TieredCompilation -XX:CompileThresholdScaling=0.3 -XX:MaxVectorSize=16
- * @run main compiler.vectorization.TestRoundVectorFloatRandom -XX:-TieredCompilation -XX:CompileThresholdScaling=0.3 -XX:MaxVectorSize=32
+ * @run main/othervm -XX:+PrintIdeal -XX:-TieredCompilation -XX:CompileThresholdScaling=0.3 -XX:+UseSuperWord -XX:CompileCommand=compileonly,compiler.vectorization.TestRoundVectorFloatAll::test* compiler.vectorization.TestRoundVectorFloatAll
+ * @run main/othervm -XX:+PrintIdeal -XX:-TieredCompilation -XX:CompileThresholdScaling=0.3 -XX:MaxVectorSize=8 -XX:+UseSuperWord -XX:CompileCommand=compileonly,compiler.vectorization.TestRoundVectorFloatAll::test* compiler.vectorization.TestRoundVectorFloatAll
+ * @run main/othervm -XX:+PrintIdeal -XX:-TieredCompilation -XX:CompileThresholdScaling=0.3 -XX:MaxVectorSize=16 -XX:+UseSuperWord -XX:CompileCommand=compileonly,compiler.vectorization.TestRoundVectorFloatAll::test* compiler.vectorization.TestRoundVectorFloatAll
+ * @run main/othervm -XX:+PrintIdeal -XX:-TieredCompilation -XX:CompileThresholdScaling=0.3 -XX:MaxVectorSize=32 -XX:+UseSuperWord -XX:CompileCommand=compileonly,compiler.vectorization.TestRoundVectorFloatAll::test* compiler.vectorization.TestRoundVectorFloatAll
  */
 
 package compiler.vectorization;
@@ -79,14 +79,10 @@ public class TestRoundVectorFloatAll {
     }
   }
 
-  static int test() {
+  static void test() {
     float[] input = new float[ARRLEN];
     int [] res = new int[ARRLEN];
 
-    for (int i=0; i<ARRLEN; i++) {
-      float val = ADD_INIT+(float)i;
-      input[i] = val;
-    }
     // Warmup
     System.out.println("Warmup");
     for (int i=0; i<ITERS; i++) {
@@ -98,7 +94,7 @@ public class TestRoundVectorFloatAll {
     int errn = 0;
     for (long l = Integer.MIN_VALUE; l <= Integer.MAX_VALUE; l+=ARRLEN) {
       for (int i = 0; i < ARRLEN; i++) {
-        input[i] = (int)(l+i);
+        input[i] = Float.intBitsToFloat((int)(i+l));
       }
 
       // run tests

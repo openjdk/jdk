@@ -28,7 +28,7 @@
  *
  * @library /test/lib /
  * @modules java.base/jdk.internal.math
- * @run main compiler.vectorization.TestRoundVectorFloatRandom -XX:-TieredCompilation -XX:CompileThresholdScaling=0.3
+ * @run main/othervm -XX:-TieredCompilation -XX:CompileThresholdScaling=0.3 -XX:+PrintIdeal -XX:CompileCommand=compileonly,compiler.floatingpoint.TestRoundFloatAll::test* -XX:-UseSuperWord compiler.floatingpoint.TestRoundFloatAll
  */
 
  package compiler.floatingpoint;
@@ -85,7 +85,7 @@ public class TestRoundFloatAll {
     return false;
   }
 
-  static int test() {
+  static void test() {
     final int ITERS = 11000;
     boolean fail = false;
 
