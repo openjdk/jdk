@@ -133,11 +133,9 @@ class SerialFullGC : AllStatic {
   static void adjust_marks();   // Adjust the pointers in the preserved marks table
   static void restore_marks();  // Restore the marks that we saved in preserve_mark
 
-  static size_t adjust_pointers(oop obj);
-
   static void follow_stack();   // Empty marking stack.
 
-  template <class T> static inline void adjust_pointer(T* p);
+  template <class T> static void adjust_pointer(T* p);
 
   // Check mark and maybe push on marking stack
   template <class T> static void mark_and_push(T* p);

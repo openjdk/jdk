@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,8 +126,9 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
               (cldg_cleanup_work = ClassLoaderDataGraph::should_clean_metaspaces_and_reset()) |
               (jvmti_tagmap_work = JvmtiTagMap::has_object_free_events_and_reset())
              ) == 0) {
-        // Wait until notified that there is some work to do.
-        ml.wait();
+        // Wait until notified that there is some work to do or timer expires.
+        // Some cleanup requests don't notify the ServiceThread so work needs to be done at periodic intervals.
+        ml.wait(ServiceThreadCleanupInterval);
       }
 
       if (has_jvmti_events) {

@@ -34,7 +34,7 @@
 #include "unittest.hpp"
 
 // @requires UseG1GC
-TEST_VM(FreeRegionList, length) {
+TEST_OTHER_VM(FreeRegionList, length) {
   if (!UseG1GC) {
     return;
   }

@@ -34,6 +34,8 @@
 class JavaThread;
 class OopClosure;
 class outputStream;
+template<typename>
+class GrowableArray;
 
 class LockStack {
   friend class LockStackTest;
@@ -119,6 +121,9 @@ public:
 
   // Printing
   void print_on(outputStream* st);
+
+  // Verify Lock Stack consistent with lock order
+  void verify_consistent_lock_order(GrowableArray<oop>& lock_order, bool leaf_frame) const NOT_DEBUG_RETURN;
 };
 
 #endif // SHARE_RUNTIME_LOCKSTACK_HPP

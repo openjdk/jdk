@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,8 @@ class CMoveNode : public TypeNode {
   virtual Node* Identity(PhaseGVN* phase);
   static CMoveNode *make(Node *c, Node *bol, Node *left, Node *right, const Type *t);
   // Helper function to spot cmove graph shapes
-  static Node *is_cmove_id( PhaseTransform *phase, Node *cmp, Node *t, Node *f, BoolNode *b );
+  static Node* is_cmove_id(PhaseTransform* phase, Node* cmp, Node* t, Node* f, BoolNode* b);
+  static Node* Ideal_minmax(PhaseGVN* phase, CMoveNode* cmov);
 };
 
 //------------------------------CMoveDNode-------------------------------------
