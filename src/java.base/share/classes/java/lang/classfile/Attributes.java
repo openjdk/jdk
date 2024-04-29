@@ -986,7 +986,7 @@ public class Attributes {
      * @param name the name of the attribute to find
      */
     public static AttributeMapper<?> standardAttribute(Utf8Entry name) {
-        return _ATTR_MAP.get(name);
+        return AttributesMapping._ATTR_MAP.get(name);
     }
 
     /**
@@ -1030,13 +1030,14 @@ public class Attributes {
             STACK_MAP_TABLE,
             SYNTHETIC);
 
-    private static final Map<Utf8Entry, AttributeMapper<?>> _ATTR_MAP;
-    //no lambdas here as this is on critical JDK boostrap path
-    static {
-        var map = new HashMap<Utf8Entry, AttributeMapper<?>>(64);
-        for (var am : PREDEFINED_ATTRIBUTES) {
-            map.put(AbstractPoolEntry.rawUtf8EntryFromStandardAttributeName(am.name()), am);
+    private static final class AttributesMapping {
+        private static final Map<Utf8Entry, AttributeMapper<?>> _ATTR_MAP;
+        static {
+            var map = new HashMap<Utf8Entry, AttributeMapper<?>>(64);
+            for (var am : PREDEFINED_ATTRIBUTES) {
+                map.put(AbstractPoolEntry.rawUtf8EntryFromStandardAttributeName(am.name()), am);
+            }
+            _ATTR_MAP = Collections.unmodifiableMap(map);
         }
-        _ATTR_MAP = Collections.unmodifiableMap(map);
     }
 }
