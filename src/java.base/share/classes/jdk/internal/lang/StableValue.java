@@ -86,10 +86,9 @@ public sealed interface StableValue<V>
     boolean isSet();
 
     /**
-     * Sets the stable value to the provided (nullable) {@code value} if unset,
-     * and returns if the value was set.
+     * {@return {@code true} if the stable value was previously unset and is now set
+     * to the provided (nullable) {@code value}, otherwise returns {@code false}}
      * @param value to set (nullable)
-     * @return {@code true} if successful, {@code false} if not
      */
     boolean trySet(V value);
 
