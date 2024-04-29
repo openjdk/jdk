@@ -889,7 +889,7 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
 
         public BoundRuntimeInvisibleAnnotationsAttribute(ClassReader cf,
                                                          int payloadStart) {
-            super(cf, Attributes.RUNTIME_INVISIBLE_ANNOTATIONS, payloadStart);
+            super(cf, Attributes.runtimeInvisibleAnnotations(), payloadStart);
         }
 
         @Override
@@ -907,7 +907,7 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
 
         public BoundRuntimeVisibleAnnotationsAttribute(ClassReader cf,
                                                        int payloadStart) {
-            super(cf, Attributes.RUNTIME_VISIBLE_ANNOTATIONS, payloadStart);
+            super(cf, Attributes.runtimeVisibleAnnotations(), payloadStart);
         }
 
         @Override
