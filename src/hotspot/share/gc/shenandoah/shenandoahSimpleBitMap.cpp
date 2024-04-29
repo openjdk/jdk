@@ -175,7 +175,7 @@ idx_t ShenandoahSimpleBitMap::find_first_consecutive_set_bits(idx_t beg, idx_t e
 }
 
 idx_t ShenandoahSimpleBitMap::find_last_consecutive_set_bits(const idx_t beg, idx_t end, const size_t num_bits) const {
-                                                             
+
   assert((end >= 0) && (end < _num_bits), "precondition");
 
   // Stop looking if there are not num_bits remaining in probe space.
