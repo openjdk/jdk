@@ -91,7 +91,7 @@ public class FrameStateTest implements ActionListener {
         For "hide,iconify and show" case, the frame is hidden then iconified hence Window2
         is not seen on-screen when shown as the frame is still in the ICONIFIED state.
         Window2 is visible on-screen when it is restored to NORMAL state as observed with
-        "hide,iconify, show and restore" case.<br><br>
+        "hide,iconify,show and restore" case.<br><br>
 
         If you observe the proper behavior for all the combinations, press PASS else FAIL.<br>
         </p><p>
@@ -184,7 +184,7 @@ public class FrameStateTest implements ActionListener {
             add(b4 = new Button("iconify and restore"));
             add(b5 = new Button("hide and show"));
             add(b6 = new Button("hide, iconify and show"));
-            add(b7 = new Button("hide, iconify, show, and restore"));
+            add(b7 = new Button("hide, iconify, show and restore"));
             b1.addActionListener(this);
             b2.addActionListener(this);
             b3.addActionListener(this);
