@@ -347,11 +347,9 @@ public interface Elements {
      * @jls 3.7 Comments
      *
      * @apiNote
-     * Documentation comments are processed by the
-     * {@linkplain jdk.javadoc/jdk.javadoc.doclet.StandardDoclet standard doclet}
-     * used by the {@link jdk.javadoc/ javadoc} tool to generate API documentation.
+     * Documentation comments are processed by the standard doclet
+     * used by the {@code javadoc} tool to generate API documentation.
      */
-    @SuppressWarnings("doclint:reference") // forward cross-module links
     String getDocComment(Element e);
 
     /**
@@ -373,14 +371,12 @@ public interface Elements {
      *
      * @since 23
      */
-    @SuppressWarnings("doclint:reference") // forward cross-module links
     enum DocCommentKind {
         /**
          * The kind of comments whose lines are prefixed by {@code ///}.
          *
          * @apiNote
-         * The {@linkplain jdk.javadoc/jdk.javadoc.doclet.StandardDoclet standard doclet}
-         * used by the {@link jdk.javadoc/ javadoc} tool treats these comments
+         * The standard doclet used by the {@code javadoc} tool treats these comments
          * as containing Markdown and documentation comment tags.
          *
          *
@@ -393,8 +389,7 @@ public interface Elements {
          * The kind of comments that begin with {@code /**}.
          *
          * @apiNote
-         * The {@linkplain jdk.javadoc/jdk.javadoc.doclet.StandardDoclet standard doclet}
-         * used by the {@link jdk.javadoc/ javadoc} tool treats these comments
+         * The standard doclet used by the {@code javadoc} tool treats these comments
          * as containing HTML and documentation comment tags.
          */
         TRADITIONAL
