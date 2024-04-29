@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1475,7 +1475,10 @@ public sealed interface ClassFile
     /** The class major version of JAVA_22. */
     int JAVA_22_VERSION = 66;
 
-    /** 67 */
+    /**
+     * The class major version of JAVA_23.
+     * @since 23
+     */
     int JAVA_23_VERSION = 67;
 
     /**
