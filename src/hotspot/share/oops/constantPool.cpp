@@ -652,32 +652,29 @@ Method* ConstantPool::method_at_if_loaded(const constantPoolHandle& cpool,
 }
 
 
-bool ConstantPool::has_appendix_at_if_loaded(const constantPoolHandle& cpool, int which) {
+bool ConstantPool::has_appendix_at_if_loaded(const constantPoolHandle& cpool, int which, Bytecodes::Code code) {
   if (cpool->cache() == nullptr)  return false;  // nothing to load yet
-  if (is_invokedynamic_index(which)) {
-    int indy_index = decode_invokedynamic_index(which);
-    return cpool->resolved_indy_entry_at(indy_index)->has_appendix();
+  if (code == Bytecodes::_invokedynamic) {
+    return cpool->resolved_indy_entry_at(which)->has_appendix();
   } else {
     return cpool->resolved_method_entry_at(which)->has_appendix();
   }
 }
 
-oop ConstantPool::appendix_at_if_loaded(const constantPoolHandle& cpool, int which) {
+oop ConstantPool::appendix_at_if_loaded(const constantPoolHandle& cpool, int which, Bytecodes::Code code) {
   if (cpool->cache() == nullptr)  return nullptr;  // nothing to load yet
-  if (is_invokedynamic_index(which)) {
-    int indy_index = decode_invokedynamic_index(which);
-    return cpool->resolved_reference_from_indy(indy_index);
+  if (code == Bytecodes::_invokedynamic) {
+    return cpool->resolved_reference_from_indy(which);
   } else {
     return cpool->cache()->appendix_if_resolved(which);
   }
 }
 
 
-bool ConstantPool::has_local_signature_at_if_loaded(const constantPoolHandle& cpool, int which) {
+bool ConstantPool::has_local_signature_at_if_loaded(const constantPoolHandle& cpool, int which, Bytecodes::Code code) {
   if (cpool->cache() == nullptr)  return false;  // nothing to load yet
-  if (is_invokedynamic_index(which)) {
-    int indy_index = decode_invokedynamic_index(which);
-    return cpool->resolved_indy_entry_at(indy_index)->has_local_signature();
+  if (code == Bytecodes::_invokedynamic) {
+    return cpool->resolved_indy_entry_at(which)->has_local_signature();
   } else {
     return cpool->resolved_method_entry_at(which)->has_local_signature();
   }
@@ -739,8 +736,6 @@ u2 ConstantPool::uncached_klass_ref_index_at(int cp_index) {
 }
 
 u2 ConstantPool::klass_ref_index_at(int index, Bytecodes::Code code) {
-  guarantee(!ConstantPool::is_invokedynamic_index(index),
-            "an invokedynamic instruction does not have a klass");
   assert(code != Bytecodes::_invokedynamic,
             "an invokedynamic instruction does not have a klass");
   return uncached_klass_ref_index_at(to_cp_index(index, code));
