@@ -27,11 +27,13 @@
  * @requires vm.debug == true & vm.flavor == "server"
  * @summary Test which causes a stack overflow segmentation fault with -XX:VerifyIterativeGVN=1 due to a too deep recursion in Node::verify_recur().
  *
- * @run main/othervm/timeout=600 -Xcomp -XX:VerifyIterativeGVN=1 -XX:CompileCommand=compileonly,compiler.loopopts.TestDeepGraphVerifyIterativeGVN::*
+ * @run main/othervm/timeout=600 -Xcomp -XX:VerifyIterativeGVN=1 -XX:CompileCommand=compileonly,compiler.loopopts.TestDeepGraphVerifyIterativeGVN::* -XX:CompileCommand=memlimit,TestFindNode::test,0
  *                               compiler.loopopts.TestDeepGraphVerifyIterativeGVN
  */
 
 package compiler.loopopts;
+
+// Note; we disable the implicit memory limit of 1G in debug JVMs until JDK-8331283 is fixed
 
 public class TestDeepGraphVerifyIterativeGVN
 {
