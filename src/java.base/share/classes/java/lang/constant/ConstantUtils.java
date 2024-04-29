@@ -146,7 +146,6 @@ class ConstantUtils {
      * @throws IllegalArgumentException if the member name is invalid
      */
     public static String validateMemberName(String name, boolean method) {
-        requireNonNull(name);
         if (name.length() == 0)
             throw new IllegalArgumentException("zero-length member name");
         for (int i=0; i<name.length(); i++) {
