@@ -1599,7 +1599,6 @@ char* FileMapInfo::write_bitmap_region(CHeapBitMap* rw_ptrmap, CHeapBitMap* ro_p
                                        size_t &size_in_bytes) {
   size_t removed_rw_zeros = remove_bitmap_leading_zeros(rw_ptrmap);
   size_t removed_ro_zeros = remove_bitmap_leading_zeros(ro_ptrmap);
-  tty->print_cr("Rw removed zeros: %ld, Ro removed zeros: %ld", removed_rw_zeros, removed_ro_zeros);
   header()->set_rw_ptrmap_start_pos(removed_rw_zeros);
   header()->set_ro_ptrmap_start_pos(removed_ro_zeros);
   size_in_bytes = rw_ptrmap->size_in_bytes() + ro_ptrmap->size_in_bytes();
@@ -1608,7 +1607,6 @@ char* FileMapInfo::write_bitmap_region(CHeapBitMap* rw_ptrmap, CHeapBitMap* ro_p
     // Remove leading zeros
     size_t removed_oop_zeros = remove_bitmap_leading_zeros(heap_info->oopmap());
     size_t removed_ptr_zeros = remove_bitmap_leading_zeros(heap_info->ptrmap());
-    tty->print_cr("Oopmap removed zeros: %ld, Ptrmap removed zeros: %ld", removed_oop_zeros, removed_ptr_zeros);
 
     header()->set_heap_oopmap_start_pos(removed_oop_zeros);
     header()->set_heap_ptrmap_start_pos(removed_ptr_zeros);
@@ -1920,9 +1918,6 @@ char* FileMapInfo::map_bitmap_region() {
 bool FileMapInfo::relocate_pointers_in_core_regions(intx addr_delta) {
   log_debug(cds, reloc)("runtime archive relocation start");
   char* bitmap_base = map_bitmap_region();
-
-  //CppVtables::restore_vtables();
-
 
   if (bitmap_base == nullptr) {
     return false; // OOM, or CRC check failure

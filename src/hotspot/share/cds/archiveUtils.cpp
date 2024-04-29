@@ -45,8 +45,6 @@
 #include "utilities/formatBuffer.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-#include "cds/cppVtables.hpp"
-
 CHeapBitMap* ArchivePtrMarker::_ptrmap = nullptr;
 CHeapBitMap* ArchivePtrMarker::_rw_ptrmap = nullptr;
 CHeapBitMap* ArchivePtrMarker::_ro_ptrmap = nullptr;
@@ -181,6 +179,7 @@ void ArchivePtrMarker::compact(address relocatable_base, address relocatable_end
 
 void ArchivePtrMarker::compact(size_t max_non_null_offset) {
   assert(!_compacted, "cannot compact again");
+  //tty->print_cr("Compacting: %ld -> %ld", _ptrmap->size(), max_non_null_offset + 1);
   _ptrmap->resize(max_non_null_offset + 1);
   _compacted = true;
 }
@@ -316,7 +315,7 @@ void WriteClosure::do_ptr(void** p) {
     size_t offset = ptr - (address)ArchiveBuilder::current()->rw_region()->base();
     ptr = (address)offset;
   }
-  tty->print_cr("Base: %p, obj: %lx", (address)ArchiveBuilder::current()->rw_region()->base(), (intptr_t)ptr);
+  //tty->print_cr("Base: %p, obj: %lx", (address)ArchiveBuilder::current()->rw_region()->base(), (intptr_t)ptr);
   _dump_region->append_intptr_t((intptr_t)ptr, false);
 }
 
@@ -338,10 +337,10 @@ void ReadClosure::do_ptr(void** p) {
          "hit tag while initializing ptrs.");
   if (obj != 0) {
     *p = (void*)(SharedBaseAddress + obj);
-    tty->print_cr("Base: %lx, obj: %p, read: %lx", SharedBaseAddress, *p, obj);
+    //tty->print_cr("Base: %lx, obj: %p, read: %lx", SharedBaseAddress, *p, obj);
   } else {
     *p = (void*)obj;
-    tty->print_cr("Base: %lx, obj: %p", SharedBaseAddress, *p);
+    //tty->print_cr("Base: %lx, obj: %p", SharedBaseAddress, *p);
   }
 }
 
@@ -373,7 +372,8 @@ void ReadClosure::do_region(u_char* start, size_t size) {
   assert(size % sizeof(intptr_t) == 0, "bad size");
   do_tag((int)size);
   while (size > 0) {
-    *(intptr_t*)start = nextPtr();
+    //*(intptr_t*)start = nextPtr();
+    do_ptr((void**)start);
     start += sizeof(intptr_t);
     size -= sizeof(intptr_t);
   }

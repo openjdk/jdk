@@ -116,6 +116,7 @@ void CppVtableCloner<T>::initialize(const char* name, CppVtableInfo* info) {
   int n = info->vtable_size();
   intptr_t* srcvtable = vtable_of(&tmp);
   intptr_t* dstvtable = info->cloned_vtable();
+  //tty->print_cr("vtable %p -> %p", srcvtable, dstvtable);
 
   // We already checked (and, if necessary, adjusted n) when the vtables were allocated, so we are
   // safe to do memcpy.
@@ -230,14 +231,12 @@ char* CppVtables::dumptime_init(ArchiveBuilder* builder) {
 }
 
 void CppVtables::serialize(SerializeClosure* soc) {
-  tty->print_cr("Serializing vtables");
   for (int i = 0; i < _num_cloned_vtable_kinds; i++) {
     soc->do_ptr(&_index[i]);
   }
   if (soc->reading()) {
     CPP_VTABLE_TYPES_DO(INITIALIZE_VTABLE);
   }
-  tty->print_cr("Done Serializing vtables");
 }
 
 intptr_t* CppVtables::get_archived_vtable(MetaspaceObj::Type msotype, address obj) {

@@ -695,7 +695,7 @@ void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* s
   intptr_t* archived_vtable = CppVtables::get_archived_vtable(src_info->msotype(), (address)dest);
   if (archived_vtable != nullptr) {
     *(address*)dest = (address)archived_vtable;
-    //ArchivePtrMarker::mark_pointer((address*)dest);
+    ArchivePtrMarker::mark_pointer((address*)dest);
   }
 
   log_trace(cds)("Copy: " PTR_FORMAT " ==> " PTR_FORMAT " %d", p2i(src), p2i(dest), bytes);
@@ -916,7 +916,7 @@ class RelocateBufferToRequested : public BitMapClosure {
       ArchivePtrMarker::ptrmap()->clear_bit(offset);
     } else {
       if (STATIC_DUMP) {
-        assert(_builder->is_in_buffer_space(*p), "old pointer must point inside buffer space: %p", *p);
+        assert(_builder->is_in_buffer_space(*p), "old pointer must point inside buffer space");
         *p += _buffer_to_requested_delta;
         assert(_builder->is_in_requested_static_archive(*p), "new pointer must point inside requested archive");
       } else {
