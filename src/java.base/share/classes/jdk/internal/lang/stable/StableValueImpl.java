@@ -95,7 +95,7 @@ public final class StableValueImpl<V> implements StableValue<V> {
     @Override
     public V orThrow() {
         // Optimistically try plain semantics first
-        V v = value;
+        final V v = value;
         if (v != null) {
             // If we happen to see a non-null value under
             // plain semantics, we know a value is set.
@@ -165,7 +165,7 @@ public final class StableValueImpl<V> implements StableValue<V> {
     @Override
     public V computeIfUnset(Supplier<? extends V> supplier) {
         // Optimistically try plain semantics first
-        V v = value;
+        final V v = value;
         if (v != null) {
             // If we happen to see a non-null value under
             // plain semantics, we know a value is set.

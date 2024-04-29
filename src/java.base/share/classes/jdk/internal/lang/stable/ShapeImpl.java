@@ -47,7 +47,7 @@ public record ShapeImpl(int[] shape, @Override int size)
     }
 
     public static StableArray.Shape of(int... shape) {
-        int size = (shape.length == 0)
+        final int size = (shape.length == 0)
                 ? 0
                 : Math.toIntExact(Arrays.stream(shape)
                 .mapToLong(i -> i)

@@ -66,7 +66,7 @@ public final class StableArrayZero<V> implements StableArray<V> {
     }
 
     static MethodHandle getter0() {
-        MethodHandles.Lookup lookup = MethodHandles.lookup();
+        final MethodHandles.Lookup lookup = MethodHandles.lookup();
         try {
             return lookup.findGetter(StableArrayZero.class, "stable", StableValue.class);
         } catch (ReflectiveOperationException e) {

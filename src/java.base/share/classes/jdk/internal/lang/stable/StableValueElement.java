@@ -38,7 +38,7 @@ public record StableValueElement<V>(
     @Override
     public V orThrow() {
         // Optimistically try plain semantics first
-        V e = elements[index];
+        final V e = elements[index];
         if (e != null) {
             // If we happen to see a non-null value under
             // plain semantics, we know a value is set.
@@ -129,7 +129,7 @@ public record StableValueElement<V>(
     @ForceInline
     private <K> V computeIfUnsetShared(Object provider, K key) {
         // Optimistically try plain semantics first
-        V e = elements[index];
+        final V e = elements[index];
         if (e != null) {
             // If we happen to see a non-null value under
             // plain semantics, we know a value is set.

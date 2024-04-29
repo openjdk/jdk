@@ -54,6 +54,7 @@ final class StableUtil {
 
     static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
+    // Used to mark that a mutex will not be used anymore
     static final Object TOMBSTONE = new Object();
 
     static IllegalStateException alreadySet(StableValue<?> stable) {
@@ -69,7 +70,7 @@ final class StableUtil {
     }
 
     static StackOverflowError stackOverflow(Object provider, Object key) {
-        String typeText = switch (provider) {
+        final String typeText = switch (provider) {
             case Supplier<?> _    -> "Supplier.get()";
             case IntFunction<?> _ -> "IntFunction.apply(" + key + ")";
             case Function<?, ?> _ -> "Function.apply(" + key + ")";
@@ -97,20 +98,20 @@ final class StableUtil {
     }
 
     static <V> String toString(StableArray<V> arr) {
-        StableArray.Shape shape = arr.shape();
+        final StableArray.Shape shape = arr.shape();
         if (shape.size() == 0) {
             return "[]";
         }
-        StringBuilder sb = new StringBuilder();
+        final StringBuilder sb = new StringBuilder();
         switch (shape.nDimensions()) {
             case 1 -> {
                 sb.append('[');
-                int dim0 = shape.dimension(0);
+                final int dim0 = shape.dimension(0);
                 for (int i = 0; i < dim0; i++) {
                     if (i != 0) {
                         sb.append(',');
                     }
-                    StableValue<V> stable = arr.get(i);
+                    final StableValue<V> stable = arr.get(i);
                     if (stable.isSet()) {
                         V v = stable.orThrow();
                         sb.append(v == arr ? "(this StableArray)" : stable);
@@ -122,8 +123,8 @@ final class StableUtil {
             }
             case 2 -> {
                 sb.append('[');
-                int dim0 = shape.dimension(0);
-                int dim1 = shape.dimension(1);
+                final int dim0 = shape.dimension(0);
+                final int dim1 = shape.dimension(1);
                 for (int i = 0; i < dim0; i++) {
                     if (i != 0) {
                         sb.append(',');
@@ -133,7 +134,7 @@ final class StableUtil {
                         if (j != 0) {
                             sb.append(',');
                         }
-                        StableValue<V> stable = arr.get(i, j);
+                        final StableValue<V> stable = arr.get(i, j);
                         if (stable.isSet()) {
                             V v = stable.orThrow();
                             sb.append(v == arr ? "(this StableArray)" : stable);

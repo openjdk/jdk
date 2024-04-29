@@ -82,7 +82,7 @@ public final class StableArrayOne<V> implements StableArray<V> {
     }
 
     static MethodHandle getter0() {
-        MethodHandles.Lookup lookup = MethodHandles.lookup();
+        final MethodHandles.Lookup lookup = MethodHandles.lookup();
         try {
             return lookup.findVirtual(StableArrayOne.class, "get", MethodType.methodType(StableValue.class));
         } catch (ReflectiveOperationException e) {
