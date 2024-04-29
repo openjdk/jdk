@@ -13260,6 +13260,7 @@ void Assembler::emit_prefix_and_int8(int prefix, int b1) {
   if ((prefix & 0xFF00) == 0) {
     emit_int16(prefix, b1);
   } else {
+    assert(UseAPX, "APX features not enabled");
     emit_int24((prefix & 0xFF00) >> 8, prefix & 0x00FF, b1);
   }
 }
@@ -13570,7 +13571,9 @@ void Assembler::cvttsd2siq(Register dst, Address src) {
   // F2 REX.W 0F 2C /r
   // CVTTSD2SI r64, xmm1/m64
   InstructionMark im(this);
-  emit_int32((unsigned char)0xF2, REX_W, 0x0F, 0x2C);
+  emit_int8((unsigned char)0xF2);
+  prefixq(src, dst, true /* is_map1 */);
+  emit_int8((unsigned char)0x2C);
   emit_operand(dst, src, 0);
 }
 
@@ -13993,10 +13996,9 @@ void Assembler::orq(Register dst, Register src) {
 void Assembler::popcntq(Register dst, Address src) {
   assert(VM_Version::supports_popcnt(), "must support");
   InstructionMark im(this);
-  emit_int32((unsigned char)0xF3,
-             get_prefixq(src, dst),
-             0x0F,
-             (unsigned char)0xB8);
+  emit_int8((unsigned char)0xF3);
+  prefixq(src, dst, true /* is_map1 */);
+  emit_int8((unsigned char)0xB8);
   emit_operand(dst, src, 0);
 }
 
@@ -14014,7 +14016,8 @@ void Assembler::popq(Address dst) {
 }
 
 void Assembler::popq(Register dst) {
-  emit_int8((unsigned char)0x58 | dst->encoding());
+  int encode = prefix_and_encode(dst->encoding());
+  emit_int8((unsigned char)0x58 | encode);
 }
 
 // Precomputable: popa, pusha, vzeroupper
