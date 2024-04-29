@@ -312,8 +312,11 @@ void WriteClosure::do_ptr(void** p) {
   if (ptr != nullptr && !ArchiveBuilder::current()->is_in_buffer_space(ptr)) {
     ptr = ArchiveBuilder::current()->get_buffered_addr(ptr);
   }
-  size_t offset = ptr - (address)ArchiveBuilder::current()->rw_region()->base();
-  ptr = (address)offset;
+  if (ptr != nullptr) {
+    size_t offset = ptr - (address)ArchiveBuilder::current()->rw_region()->base();
+    ptr = (address)offset;
+  }
+  tty->print_cr("Base: %p, obj: %lx", (address)ArchiveBuilder::current()->rw_region()->base(), (intptr_t)ptr);
   _dump_region->append_intptr_t((intptr_t)ptr, false);
 }
 
@@ -333,8 +336,13 @@ void ReadClosure::do_ptr(void** p) {
   intptr_t obj = nextPtr();
   assert((intptr_t)obj >= 0 || (intptr_t)obj < -100,
          "hit tag while initializing ptrs.");
-  *p = (void*)(SharedBaseAddress + obj);
-  tty->print_cr("Deserializing: %p", *p);
+  if (obj != 0) {
+    *p = (void*)(SharedBaseAddress + obj);
+    tty->print_cr("Base: %lx, obj: %p, read: %lx", SharedBaseAddress, *p, obj);
+  } else {
+    *p = (void*)obj;
+    tty->print_cr("Base: %lx, obj: %p", SharedBaseAddress, *p);
+  }
 }
 
 void ReadClosure::do_u4(u4* p) {

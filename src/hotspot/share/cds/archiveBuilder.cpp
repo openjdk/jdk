@@ -916,7 +916,7 @@ class RelocateBufferToRequested : public BitMapClosure {
       ArchivePtrMarker::ptrmap()->clear_bit(offset);
     } else {
       if (STATIC_DUMP) {
-        assert(_builder->is_in_buffer_space(*p), "old pointer must point inside buffer space");
+        assert(_builder->is_in_buffer_space(*p), "old pointer must point inside buffer space: %p", *p);
         *p += _buffer_to_requested_delta;
         assert(_builder->is_in_requested_static_archive(*p), "new pointer must point inside requested archive");
       } else {

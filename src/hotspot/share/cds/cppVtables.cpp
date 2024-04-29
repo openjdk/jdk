@@ -230,12 +230,14 @@ char* CppVtables::dumptime_init(ArchiveBuilder* builder) {
 }
 
 void CppVtables::serialize(SerializeClosure* soc) {
+  tty->print_cr("Serializing vtables");
   for (int i = 0; i < _num_cloned_vtable_kinds; i++) {
     soc->do_ptr(&_index[i]);
   }
   if (soc->reading()) {
     CPP_VTABLE_TYPES_DO(INITIALIZE_VTABLE);
   }
+  tty->print_cr("Done Serializing vtables");
 }
 
 intptr_t* CppVtables::get_archived_vtable(MetaspaceObj::Type msotype, address obj) {
