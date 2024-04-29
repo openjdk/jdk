@@ -391,6 +391,7 @@ static void restore_eliminated_locks(JavaThread* thread, GrowableArray<compiledV
 #ifndef PRODUCT
   bool first = true;
 #endif // !PRODUCT
+  DEBUG_ONLY(GrowableArray<oop> lock_order{0};)
   // Start locking from outermost/oldest frame
   for (int i = (chunk->length() - 1); i >= 0; i--) {
     compiledVFrame* cvf = chunk->at(i);
@@ -400,6 +401,13 @@ static void restore_eliminated_locks(JavaThread* thread, GrowableArray<compiledV
       bool relocked = Deoptimization::relock_objects(thread, monitors, deoptee_thread, deoptee,
                                                      exec_mode, realloc_failures);
       deoptimized_objects = deoptimized_objects || relocked;
+#ifdef ASSERT
+      if (LockingMode == LM_LIGHTWEIGHT && !realloc_failures) {
+        for (MonitorInfo* mi : *monitors) {
+          lock_order.push(mi->owner());
+        }
+      }
+#endif // ASSERT
 #ifndef PRODUCT
       if (PrintDeoptimizationDetails) {
         ResourceMark rm;
@@ -431,6 +439,11 @@ static void restore_eliminated_locks(JavaThread* thread, GrowableArray<compiledV
 #endif // !PRODUCT
     }
   }
+#ifdef ASSERT
+  if (LockingMode == LM_LIGHTWEIGHT && !realloc_failures) {
+    deoptee_thread->lock_stack().verify_consistent_lock_order(lock_order, exec_mode != Deoptimization::Unpack_none);
+  }
+#endif // ASSERT
 }
 
 // Deoptimize objects, that is reallocate and relock them, just before they escape through JVMTI.
@@ -1642,7 +1655,7 @@ bool Deoptimization::relock_objects(JavaThread* thread, GrowableArray<MonitorInf
             }
           }
         }
-        if (LockingMode == LM_LIGHTWEIGHT && exec_mode == Unpack_none) {
+        if (LockingMode == LM_LIGHTWEIGHT) {
           // We have lost information about the correct state of the lock stack.
           // Inflate the locks instead. Enter then inflate to avoid races with
           // deflation.

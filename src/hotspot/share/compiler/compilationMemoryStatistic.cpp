@@ -167,12 +167,9 @@ public:
     ss.put(')');
     return buf;
   }
-
-  bool equals(const FullMethodName& b) const {
+  bool operator== (const FullMethodName& b) const {
     return _k == b._k && _m == b._m && _s == b._s;
   }
-
-  bool operator== (const FullMethodName& other) const { return equals(other); }
 };
 
 // Note: not mtCompiler since we don't want to change what we measure
@@ -292,15 +289,34 @@ public:
     const size_t x2 = _total;
     return x1 < x2 ? -1 : x1 == x2 ? 0 : 1;
   }
+};
 
-  bool equals(const FullMethodName& b) const {
-    return _method.equals(b);
+// The MemStatTable contains records of memory usage of all compilations. It is printed,
+// as memory summary, either with jcmd Compiler.memory, or - if the "print" suboption has
+// been given with the MemStat compile command - as summary printout at VM exit.
+// For any given compiled method, we only keep the memory statistics of the most recent
+// compilation, but on a per-compiler basis. If one needs statistics of prior compilations,
+// one needs to look into the log produced by the "print" suboption.
+
+class MemStatTableKey {
+  const FullMethodName _fmn;
+  const CompilerType _comptype;
+public:
+  MemStatTableKey(FullMethodName fmn, CompilerType comptype) :
+    _fmn(fmn), _comptype(comptype) {}
+  MemStatTableKey(const MemStatTableKey& o) :
+    _fmn(o._fmn), _comptype(o._comptype) {}
+  bool operator== (const MemStatTableKey& other) const {
+    return _fmn == other._fmn && _comptype == other._comptype;
+  }
+  static unsigned compute_hash(const MemStatTableKey& n) {
+    return FullMethodName::compute_hash(n._fmn) + (unsigned)n._comptype;
   }
 };
 
 class MemStatTable :
-    public ResourceHashtable<FullMethodName, MemStatEntry*, 7919, AnyObj::C_HEAP,
-                             mtInternal, FullMethodName::compute_hash>
+    public ResourceHashtable<MemStatTableKey, MemStatEntry*, 7919, AnyObj::C_HEAP,
+                             mtInternal, MemStatTableKey::compute_hash>
 {
 public:
 
@@ -308,12 +324,12 @@ public:
            size_t total, size_t na_at_peak, size_t ra_at_peak,
            unsigned live_nodes_at_peak, const char* result) {
     assert_lock_strong(NMTCompilationCostHistory_lock);
-
-    MemStatEntry** pe = get(fmn);
+    MemStatTableKey key(fmn, comptype);
+    MemStatEntry** pe = get(key);
     MemStatEntry* e = nullptr;
     if (pe == nullptr) {
       e = new MemStatEntry(fmn);
-      put(fmn, e);
+      put(key, e);
     } else {
       // Update existing entry
       e = *pe;
@@ -338,7 +354,7 @@ public:
     const int num_all = number_of_entries();
     MemStatEntry** flat = NEW_C_HEAP_ARRAY(MemStatEntry*, num_all, mtInternal);
     int i = 0;
-    auto do_f = [&] (const FullMethodName& ignored, MemStatEntry* e) {
+    auto do_f = [&] (const MemStatTableKey& ignored, MemStatEntry* e) {
       if (e->total() >= min_size) {
         flat[i] = e;
         assert(i < num_all, "Sanity");
@@ -388,14 +404,6 @@ void CompilationMemoryStatistic::on_end_compilation() {
   assert(directive->should_collect_memstat(), "Only call if memstat is enabled");
   const bool print = directive->should_print_memstat();
 
-  if (print) {
-    char buf[1024];
-    fmn.as_C_string(buf, sizeof(buf));
-    tty->print("%s Arena usage %s: ", compilertype2name(ct), buf);
-    arena_stat->print_on(tty);
-    tty->cr();
-  }
-
   // Store result
   // For this to work, we must call on_end_compilation() at a point where
   // Compile|Compilation already handed over the failure string to ciEnv,
@@ -419,6 +427,13 @@ void CompilationMemoryStatistic::on_end_compilation() {
                     arena_stat->ra_at_peak(),
                     arena_stat->live_nodes_at_peak(),
                     result);
+  }
+  if (print) {
+    char buf[1024];
+    fmn.as_C_string(buf, sizeof(buf));
+    tty->print("%s Arena usage %s: ", compilertype2name(ct), buf);
+    arena_stat->print_on(tty);
+    tty->cr();
   }
 
   arena_stat->end(); // reset things
@@ -523,6 +538,10 @@ static inline ssize_t diff_entries_by_size(const MemStatEntry* e1, const MemStat
 }
 
 void CompilationMemoryStatistic::print_all_by_size(outputStream* st, bool human_readable, size_t min_size) {
+
+  MutexLocker ml(NMTCompilationCostHistory_lock, Mutex::_no_safepoint_check_flag);
+
+  st->cr();
   st->print_cr("Compilation memory statistics");
 
   if (!enabled()) {
@@ -543,29 +562,27 @@ void CompilationMemoryStatistic::print_all_by_size(outputStream* st, bool human_
   MemStatEntry::print_header(st);
 
   MemStatEntry** filtered = nullptr;
-  {
-    MutexLocker ml(NMTCompilationCostHistory_lock, Mutex::_no_safepoint_check_flag);
 
-    if (_the_table != nullptr) {
-      // We sort with quicksort
-      int num = 0;
-      filtered = _the_table->calc_flat_array(num, min_size);
-      if (min_size > 0) {
-        st->print_cr("(%d/%d)", num, _the_table->number_of_entries());
-      }
-      if (num > 0) {
-        QuickSort::sort(filtered, num, diff_entries_by_size, false);
-        // Now print. Has to happen under lock protection too, since entries may be changed.
-        for (int i = 0; i < num; i ++) {
-          filtered[i]->print_on(st, human_readable);
-        }
-      } else {
-        st->print_cr("No entries.");
+  if (_the_table != nullptr) {
+    // We sort with quicksort
+    int num = 0;
+    filtered = _the_table->calc_flat_array(num, min_size);
+    if (min_size > 0) {
+      st->print_cr("(%d/%d)", num, _the_table->number_of_entries());
+    }
+    if (num > 0) {
+      QuickSort::sort(filtered, num, diff_entries_by_size, false);
+      // Now print. Has to happen under lock protection too, since entries may be changed.
+      for (int i = 0; i < num; i ++) {
+        filtered[i]->print_on(st, human_readable);
       }
     } else {
-      st->print_cr("Not initialized.");
+      st->print_cr("No entries.");
     }
-  } // locked
+  } else {
+    st->print_cr("Not initialized.");
+  }
+  st->cr();
 
   FREE_C_HEAP_ARRAY(Entry, filtered);
 }

@@ -145,7 +145,7 @@ inline oop PSPromotionManager::copy_to_survivor_space(oop o) {
   // in o. There may be multiple threads racing on it, and it may be forwarded
   // at any time.
   markWord m = o->mark();
-  if (!m.is_marked()) {
+  if (!m.is_forwarded()) {
     return copy_unmarked_to_survivor_space<promote_immediately>(o, m);
   } else {
     // Ensure any loads from the forwardee follow all changes that precede
@@ -153,7 +153,7 @@ inline oop PSPromotionManager::copy_to_survivor_space(oop o) {
     // other thread.
     OrderAccess::acquire();
     // Return the already installed forwardee.
-    return cast_to_oop(m.decode_pointer());
+    return m.forwardee();
   }
 }
 

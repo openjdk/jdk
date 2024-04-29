@@ -51,8 +51,14 @@ public sealed interface NewPrimitiveArrayInstruction extends Instruction
      * {@return a new primitive array instruction}
      *
      * @param typeKind the component type of the array
+     * @throws IllegalArgumentException when the {@code typeKind} is not a legal
+     *                                  primitive array component type
      */
     static NewPrimitiveArrayInstruction of(TypeKind typeKind) {
+        // Implicit null-check:
+        if (typeKind.newarraycode() < 0) {
+            throw new IllegalArgumentException("Illegal component type: " + typeKind.typeName());
+        }
         return new AbstractInstruction.UnboundNewPrimitiveArrayInstruction(typeKind);
     }
 }

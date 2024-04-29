@@ -34,8 +34,10 @@ ifeq ($(call isTargetOs, aix), false)
       NAME := le, \
       LINK_TYPE := C++, \
       OPTIMIZATION := LOW, \
+      EXTRA_HEADER_DIRS := \
+          java.base:libjava \
+          java.base:libjvm, \
       LD_SET_ORIGIN := false, \
-      JDK_LIBS := $(JDKLIB_LIBS), \
       LIBS_windows := user32.lib, \
   ))
 
