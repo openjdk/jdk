@@ -135,6 +135,7 @@ MemoryFileTracker::Instance::make_device(const char* descriptive_name) {
 void MemoryFileTracker::Instance::print_report_on(const MemoryFile* device,
                                                   outputStream* stream, size_t scale) {
   assert(device != nullptr, "must be");
+  assert(stream != nullptr, "must be");
   _tracker->print_report_on(device, stream, scale);
 }
 
