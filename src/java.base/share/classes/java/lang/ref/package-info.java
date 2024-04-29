@@ -134,7 +134,7 @@
  *
  * <a id="MemoryConsistency"></a>
  * <h2>Memory Consistency Properties</h2>
- * Certain interactions between references, references queues, and the garbage
+ * Certain interactions between references, reference queues, and the garbage
  * collector form
  * <a href="{@docRoot}/java.base/java/util/concurrent/package-summary.html#MemoryVisibility"><i>happens-before</i></a>
  * relationships:
@@ -154,7 +154,7 @@
  *
  * <li>The dequeuing of a reference to a
  * {@linkplain Cleaner#register(Object object, Runnable action) registered}
- * object, by a Cleaner thread, <i>happens-before</i> that Cleaner thread runs
+ * object, by the Cleaner thread, <i>happens-before</i> the Cleaner thread runs
  * the cleaning action for that object.</li>
  *
  * </ul>
@@ -173,7 +173,7 @@
  * <ul>
  * <li>Actions in a thread prior to calling
  * {@link Reference#reachabilityFence Reference.reachabilityFence(x)}
- * <i>happen-before</i> the finalizer for x is run by a finalizer thread.</li>
+ * <i>happen-before</i> the finalizer for {@code x} is run by a finalizer thread.</li>
  * </ul>
  *
  * This ensures that actions in a thread prior to a
