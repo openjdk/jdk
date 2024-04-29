@@ -339,6 +339,10 @@ public class FileInputStream extends InputStream
      * {@inheritDoc}
      *
      * @since 11
+     *
+     * @throws    IllegalArgumentException {@inheritDoc}
+     * @throws    IOException {@inheritDoc}
+     * @throws    OutOfMemoryError {@inheritDoc}
      */
     @Override
     public byte[] readNBytes(int len) throws IOException {

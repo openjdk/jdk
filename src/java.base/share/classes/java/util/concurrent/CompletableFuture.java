@@ -2135,7 +2135,11 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * @since 19
+     *
+     * @throws    IllegalStateException {@inheritDoc}
      */
     @Override
     public T resultNow() {
@@ -2153,7 +2157,11 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * @since 19
+     *
+     * @throws    IllegalStateException {@inheritDoc}
      */
     @Override
     public Throwable exceptionNow() {
@@ -2403,6 +2411,8 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * @since 12
      */
     public CompletableFuture<T> exceptionallyAsync(
@@ -2411,6 +2421,8 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * @since 12
      */
     public CompletableFuture<T> exceptionallyAsync(
@@ -2419,6 +2431,8 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * @since 12
      */
     public CompletableFuture<T> exceptionallyCompose(
@@ -2427,6 +2441,8 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * @since 12
      */
     public CompletableFuture<T> exceptionallyComposeAsync(
@@ -2435,6 +2451,8 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * @since 12
      */
     public CompletableFuture<T> exceptionallyComposeAsync(

@@ -590,6 +590,8 @@ public class ChoiceFormat extends NumberFormat {
      * {@inheritDoc}
      *
      * @since 23
+     *
+     * @throws    UnsupportedOperationException {@inheritDoc}
      */
     @Override
     public boolean isStrict() {
@@ -601,6 +603,8 @@ public class ChoiceFormat extends NumberFormat {
      * {@inheritDoc}
      *
      * @since 23
+     *
+     * @throws    UnsupportedOperationException {@inheritDoc}
      */
     @Override
     public void setStrict(boolean strict) {

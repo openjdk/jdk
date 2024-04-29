@@ -209,6 +209,9 @@ public sealed interface MethodHandleDesc
      * {@inheritDoc}
      *
      * @since 21
+     *
+     * @throws    ReflectiveOperationException {@inheritDoc}
+     * @throws    LinkageError {@inheritDoc}
      */
     @Override
     MethodHandle resolveConstantDesc(MethodHandles.Lookup lookup) throws ReflectiveOperationException;
