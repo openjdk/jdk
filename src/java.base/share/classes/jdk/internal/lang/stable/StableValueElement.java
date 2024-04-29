@@ -1,12 +1,10 @@
 package jdk.internal.lang.stable;
 
-import jdk.internal.classfile.impl.Util;
 import jdk.internal.lang.StableValue;
 import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
-import java.util.NoSuchElementException;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
@@ -70,10 +68,14 @@ public record StableValueElement<V>(
 
     @Override
     public V setIfUnset(V value) {
-        if (isSet()) {
+        if (isSet() || isError()) {
             return orThrow();
         }
-        synchronized (acquireMutex()) {
+        final var m = acquireMutex();
+        if (m == TOMBSTONE) {
+            return orThrow();
+        }
+        synchronized (m) {
             if (isSet()) {
                 return orThrow();
             }
@@ -87,10 +89,14 @@ public record StableValueElement<V>(
 
     @Override
     public boolean trySet(V value) {
-        if (isSet()) {
+        if (isSet() || isError()) {
             return false;
         }
-        synchronized (acquireMutex()) {
+        final var m = acquireMutex();
+        if (m == TOMBSTONE) {
+            return false;
+        }
+        synchronized (m) {
             if (isSet() || isError()) {
                 return false;
             }
@@ -150,8 +156,12 @@ public record StableValueElement<V>(
     }
 
     private <K> V computeIfUnsetVolatile0(Object provider, K key) {
-        synchronized (acquireMutex()) {
-            if (isSet()) {
+        final var m = acquireMutex();
+        if (m == TOMBSTONE) {
+            return orThrow();
+        }
+        synchronized (m) {
+            if (states[index] != UNSET) {
                 return orThrow();
             }
 
@@ -164,15 +174,16 @@ public record StableValueElement<V>(
                 try {
                     @SuppressWarnings("unchecked")
                     V newValue = switch (provider) {
-                        case Supplier<?> sup -> (V) sup.get();
+                        case Supplier<?> sup     -> (V) sup.get();
                         case IntFunction<?> iFun -> (V) iFun.apply((int) key);
                         case Function<?, ?> func -> ((Function<K, V>) func).apply(key);
-                        default -> throw shouldNotReachHere();
+                        default                  -> throw shouldNotReachHere();
                     };
                     setValue(newValue);
                     return newValue;
                 } catch (Throwable t) {
                     putState(ERROR);
+                    putMutexTombstone();
                     throw t;
                 }
             } finally {
@@ -187,14 +198,12 @@ public record StableValueElement<V>(
     }
 
     private void setValue(V value) {
-        if (states[index] != UNSET) {
-            throw StableUtil.alreadySet(this);
-        }
         if (value != null) {
             putValue(value);
         }
         // Crucially, indicate a value is set _after_ it has actually been set.
         putState(value == null ? NULL : NON_NULL);
+        putMutexTombstone(); // We do not need a mutex anymore
     }
 
     private void putValue(V created) {
@@ -231,9 +240,13 @@ public record StableValueElement<V>(
     }
 
     private Object caeMutex() {
-        Object created = new Object();
-        Object witness = UNSAFE.compareAndExchangeReference(mutexes, objectOffset(index), null, created);
+        final var created = new Object();
+        final var witness = UNSAFE.compareAndExchangeReference(mutexes, objectOffset(index), null, created);
         return witness == null ? created : witness;
+    }
+
+    private void putMutexTombstone() {
+        UNSAFE.putReferenceVolatile(mutexes, objectOffset(index), TOMBSTONE);
     }
 
 }

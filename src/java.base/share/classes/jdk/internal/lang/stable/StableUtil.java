@@ -54,6 +54,8 @@ final class StableUtil {
 
     static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
+    static final Object TOMBSTONE = new Object();
+
     static IllegalStateException alreadySet(StableValue<?> stable) {
         return new IllegalStateException("A value is already set: " + stable.orThrow());
     }

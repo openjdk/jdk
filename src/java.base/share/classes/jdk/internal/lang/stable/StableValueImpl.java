@@ -30,7 +30,6 @@ import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
-import java.util.NoSuchElementException;
 import java.util.concurrent.ThreadFactory;
 import java.util.function.Supplier;
 
@@ -49,6 +48,9 @@ public final class StableValueImpl<V> implements StableValue<V> {
 
     /**
      * An internal mutex used rather than synchronizing on `this`. Lazily created.
+     * If `null`    , we have not entered a mutex section yet
+     * If TOMBSTONE , we do not need synchronization anymore (isSet() && isError() = true)
+     * otherwise    , a distinct synchronization object
      */
     private Object mutex;
 
@@ -124,15 +126,16 @@ public final class StableValueImpl<V> implements StableValue<V> {
     @ForceInline
     @Override
     public V setIfUnset(V value) {
-        if (isSet()) {
+        if (isSet() || isError()) {
            return orThrow();
         }
-        synchronized (acquireMutex()) {
-            if (isSet()) {
+        final var m = acquireMutex();
+        if (m == TOMBSTONE) {
+            return orThrow();
+        }
+        synchronized (m) {
+            if (isSet() || isError()) {
                 return orThrow();
-            }
-            if (isError()) {
-                throw StableUtil.error(this);
             }
             setValue(value);
             return value;
@@ -142,10 +145,14 @@ public final class StableValueImpl<V> implements StableValue<V> {
     @ForceInline
     @Override
     public boolean trySet(V value) {
-        if (isSet()) {
+        if (isSet() || isError()) {
             return false;
         }
-        synchronized (acquireMutex()) {
+        final var m = acquireMutex();
+        if (m == TOMBSTONE) {
+            return false;
+        }
+        synchronized (m) {
             if (isSet() || isError()) {
                 return false;
             }
@@ -187,7 +194,11 @@ public final class StableValueImpl<V> implements StableValue<V> {
     }
 
     private V computeIfUnsetVolatile0(Supplier<? extends V> supplier) {
-        synchronized (acquireMutex()) {
+        final var m = acquireMutex();
+        if (m == TOMBSTONE) {
+            return orThrow();
+        }
+        synchronized (m) {
             // A value is already set
             if (state != UNSET) {
                 return orThrow();
@@ -204,6 +215,7 @@ public final class StableValueImpl<V> implements StableValue<V> {
                     return newValue;
                 } catch (Throwable t) {
                     putState(ERROR);
+                    putMutexTombstone();
                     throw t;
                 }
             } finally {
@@ -223,14 +235,12 @@ public final class StableValueImpl<V> implements StableValue<V> {
     }
 
     private void setValue(V value) {
-        if (state != UNSET) {
-            throw StableUtil.alreadySet(this);
-        }
         if (value != null) {
             putValue(value);
         }
         // Crucially, indicate a value is set _after_ it has actually been set.
         putState(value == null ? NULL : NON_NULL);
+        putMutexTombstone(); // We do not need a mutex anymore
     }
 
     private void putValue(V value) {
@@ -259,9 +269,13 @@ public final class StableValueImpl<V> implements StableValue<V> {
     }
 
     private Object caeMutex() {
-        Object created = new Object();
-        Object witness = UNSAFE.compareAndExchangeReference(this, MUTEX_OFFSET, null, created);
+        final var created = new Object();
+        final var witness = UNSAFE.compareAndExchangeReference(this, MUTEX_OFFSET, null, created);
         return witness == null ? created : witness;
+    }
+
+    private void putMutexTombstone() {
+        UNSAFE.putReferenceVolatile(this, MUTEX_OFFSET, TOMBSTONE);
     }
 
     // Factories
@@ -272,7 +286,7 @@ public final class StableValueImpl<V> implements StableValue<V> {
 
     public static <V> StableValue<V> ofBackground(ThreadFactory threadFactory,
                                                   Supplier<? extends V> supplier) {
-        StableValue<V> stable = StableValue.of();
+        final StableValue<V> stable = StableValue.of();
         Thread bgThread = threadFactory.newThread(new Runnable() {
             @Override
             public void run() {
