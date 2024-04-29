@@ -25,6 +25,7 @@
 
 package jdk.internal.lang.stable;
 
+import jdk.internal.lang.StableArray;
 import jdk.internal.lang.StableValue;
 import jdk.internal.misc.Unsafe;
 
@@ -65,6 +66,12 @@ final class StableUtil {
                 "Recursive invocation of " + typeText + ": " + provider);
     }
 
+    static UnsupportedOperationException illegalShape(int nDimension, StableArray.Shape actualShape) {
+        return new UnsupportedOperationException(
+                "Unsupported indexing mode using " + nDimension +
+                        " for an array of shape : " + actualShape);
+    }
+
     /**
      * {@return a String representation of the provided {@code stable}}
      * @param stable to extract a string representation from
@@ -74,6 +81,61 @@ final class StableUtil {
                 (stable.isSet()
                         ? "[" + stable.orThrow() + "]"
                         : ".unset");
+    }
+
+    static <V> String toString(StableArray<V> arr) {
+        StableArray.Shape shape = arr.shape();
+        if (shape.size() == 0) {
+            return "[]";
+        }
+        StringBuilder sb = new StringBuilder();
+        switch (shape.nDimensions()) {
+            case 1 -> {
+                sb.append('[');
+                int dim0 = shape.dimension(0);
+                for (int i = 0; i < dim0; i++) {
+                    if (i != 0) {
+                        sb.append(',');
+                    }
+                    StableValue<V> stable = arr.get(i);
+                    if (stable.isSet()) {
+                        V v = stable.orThrow();
+                        sb.append(v == arr ? "(this StableArray)" : stable);
+                    } else {
+                        sb.append(stable);
+                    }
+                }
+                sb.append(']');
+            }
+            case 2 -> {
+                sb.append('[');
+                int dim0 = shape.dimension(0);
+                int dim1 = shape.dimension(1);
+                for (int i = 0; i < dim0; i++) {
+                    if (i != 0) {
+                        sb.append(',');
+                    }
+                    sb.append('[');
+                    for (int j = 0; j < dim1; j++) {
+                        if (j != 0) {
+                            sb.append(',');
+                        }
+                        StableValue<V> stable = arr.get(i, j);
+                        if (stable.isSet()) {
+                            V v = stable.orThrow();
+                            sb.append(v == arr ? "(this StableArray)" : stable);
+                        } else {
+                            sb.append(stable);
+                        }
+                    }
+                    sb.append(']');
+                }
+                sb.append(']');
+            }
+            // For arrays with dimension > 2, we only provide the shape information
+            default -> sb.append(shape);
+        }
+        return sb.toString();
     }
 
     /**
