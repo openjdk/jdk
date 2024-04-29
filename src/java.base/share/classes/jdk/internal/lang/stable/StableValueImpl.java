@@ -71,7 +71,7 @@ public final class StableValueImpl<V> implements StableValue<V> {
      * Indicates if a supplier is currently being invoked. Used to
      * detect circular supplier invocations.
      */
-    private boolean supplying;
+    @Stable private boolean supplying;
 
     private StableValueImpl() {}
 
@@ -118,20 +118,6 @@ public final class StableValueImpl<V> implements StableValue<V> {
 
     @ForceInline
     @Override
-    public void setOrThrow(V value) {
-        if (isSet()) {
-            throw StableUtil.alreadySet(this);
-        }
-        synchronized (acquireMutex()) {
-            if (isSet()) {
-                throw StableUtil.alreadySet(this);
-            }
-            setValue(value);
-        }
-    }
-
-    @ForceInline
-    @Override
     public V setIfUnset(V value) {
         if (isSet()) {
            return orThrow();
@@ -142,6 +128,21 @@ public final class StableValueImpl<V> implements StableValue<V> {
             }
             setValue(value);
             return value;
+        }
+    }
+
+    @ForceInline
+    @Override
+    public boolean trySet(V value) {
+        if (isSet()) {
+            return false;
+        }
+        synchronized (acquireMutex()) {
+            if (isSet()) {
+                return false;
+            }
+            setValue(value);
+            return true;
         }
     }
 

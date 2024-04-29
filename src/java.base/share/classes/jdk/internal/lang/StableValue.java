@@ -86,13 +86,12 @@ public sealed interface StableValue<V>
     boolean isSet();
 
     /**
-     * Sets the stable value to the provided (nullable) {@code value} or throws an
-     * {@linkplain IllegalStateException} if a value is already set.
-     *
+     * Sets the stable value to the provided (nullable) {@code value} if unset,
+     * and returns if the value was set.
      * @param value to set (nullable)
-     * @throws IllegalStateException if a value is already set
+     * @return {@code true} if successful, {@code false} if not
      */
-    void setOrThrow(V value);
+    boolean trySet(V value);
 
     /**
      * If no value is set, sets the stable value to the provided (nullable)
@@ -124,7 +123,7 @@ public sealed interface StableValue<V>
      * {@code stable}:
      *
      * <pre> {@code
-     * if (stable.isBound()) {
+     * if (stable.isSet()) {
      *     return stable.get();
      * } else {
      *     V newValue = supplier.get();

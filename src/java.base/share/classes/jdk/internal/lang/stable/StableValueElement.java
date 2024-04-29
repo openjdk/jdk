@@ -3,6 +3,7 @@ package jdk.internal.lang.stable;
 import jdk.internal.lang.StableValue;
 import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.ForceInline;
+import jdk.internal.vm.annotation.Stable;
 
 import java.util.NoSuchElementException;
 import java.util.function.Function;
@@ -13,9 +14,9 @@ import static jdk.internal.lang.stable.StableUtil.*;
 
 // Records are ~10% faster than @ValueBased in JDK 23
 public record StableValueElement<V>(
-        V[] elements,
-        int[] states,
-        Object[] mutexes,
+        @Stable V[] elements,
+        @Stable int[] states,
+        @Stable Object[] mutexes,
         boolean[] supplyings, // Todo: make this array more dense
         int index
 ) implements StableValue<V> {
@@ -59,20 +60,6 @@ public record StableValueElement<V>(
             default       -> throw shouldNotReachHere();
         };
     }
-
-    @Override
-    public void setOrThrow(V value) {
-        if (isSet()) {
-            throw StableUtil.alreadySet(this);
-        }
-        synchronized (acquireMutex()) {
-            if (isSet()) {
-                throw StableUtil.alreadySet(this);
-            }
-            setValue(value);
-        }
-    }
-
     @Override
     public V setIfUnset(V value) {
         if (isSet()) {
@@ -84,6 +71,20 @@ public record StableValueElement<V>(
             }
             setValue(value);
             return value;
+        }
+    }
+
+    @Override
+    public boolean trySet(V value) {
+        if (isSet()) {
+            return false;
+        }
+        synchronized (acquireMutex()) {
+            if (isSet()) {
+                return false;
+            }
+            setValue(value);
+            return true;
         }
     }
 

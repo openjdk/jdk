@@ -56,9 +56,8 @@ final class BasicStableArrayOneTest {
     }
 
     Stream<Executable> unsupportedMethods() {
-        return Stream.of(
-
-        )
+        return Stream.empty(
+        );
     }
 
 

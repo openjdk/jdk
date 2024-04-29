@@ -63,8 +63,8 @@ public class StableBenchmark {
 
     @Setup
     public void setup() {
-        list.getFirst().setOrThrow(VALUE);
-        stableHoldingList.setOrThrow(List.of(VALUE));
+        list.getFirst().trySet(VALUE);
+        stableHoldingList.trySet(List.of(VALUE));
     }
 
     @Benchmark
@@ -113,7 +113,7 @@ public class StableBenchmark {
     }
 
     private static StableValue<Integer> init(StableValue<Integer> m) {
-        m.setOrThrow(VALUE);
+        m.trySet(VALUE);
         return m;
     }
 

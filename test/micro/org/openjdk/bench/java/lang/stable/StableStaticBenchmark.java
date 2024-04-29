@@ -63,7 +63,8 @@ public class StableStaticBenchmark {
     private static final StableRecordHolder STABLE_RECORD_HOLDER = new StableRecordHolder();
 
     static {
-        LIST.getFirst().setOrThrow(VALUE);
+        var result = LIST.getFirst().trySet(VALUE);
+        assert result;
     }
 
     @Benchmark
@@ -110,7 +111,8 @@ public class StableStaticBenchmark {
     }
 
     private static StableValue<Integer> init(StableValue<Integer> m) {
-        m.setOrThrow(VALUE);
+        var result = m.trySet(VALUE);
+        assert result;
         return m;
     }
 
@@ -159,7 +161,8 @@ public class StableStaticBenchmark {
 
         public StableHolder() {
             delegate = StableValue.of();
-            delegate.setOrThrow(VALUE);
+            var result = delegate.trySet(VALUE);
+            assert result;
         }
 
         public Integer get() {
@@ -171,7 +174,8 @@ public class StableStaticBenchmark {
 
         public StableRecordHolder() {
             this(StableValue.of());
-            delegate.setOrThrow(VALUE);
+            var result = delegate.trySet(VALUE);
+            assert result;
         }
 
         public Integer get() {
