@@ -148,13 +148,14 @@ public:
 
     ResourceMark rm;
     if (last_frame.is_compiled_frame() && last_frame.can_be_deoptimized()) {
+      /*
       CloseScopedMemoryFindOopClosure cl(_session);
       last_frame.oops_do(&cl, nullptr, &register_map);
       if (cl.found()) {
            //Found the deopt oop in a compiled method; deoptimize.
            Deoptimization::deoptimize(jt, last_frame);
-      }
-      // Deoptimization::deoptimize(jt, last_frame);
+      }*/
+      Deoptimization::deoptimize(jt, last_frame);
     }
 
     if (jt->has_async_exception_condition()) {
