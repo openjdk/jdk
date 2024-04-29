@@ -59,9 +59,12 @@ public class RedirectedStdOut {
         Path javaLauncher = Path.of(testJDK, "bin", "java");
         AtomicReference<byte[]> out = new AtomicReference<>();
         AtomicReference<byte[]> err = new AtomicReference<>();
-        Process launched = new ProcessBuilder(javaLauncher.toString(), "RedirectedStdOut$ConsoleTest")
-                .directory(Path.of(System.getProperty("test.classes")).toFile())
-                .start();
+        Process launched = new ProcessBuilder(javaLauncher.toString(),
+                                              "--class-path",
+                                              System.getProperty("test.classes"),
+                                              ConsoleTest.class.getName()
+                                              )
+                           .start();
         Thread outReader = Thread.ofVirtual().unstarted(() -> {
             try {
                 out.set(launched.getInputStream().readAllBytes());
