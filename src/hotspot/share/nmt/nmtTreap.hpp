@@ -181,6 +181,7 @@ public:
       // Already exists, update value.
       found->_value = v;
       this->_root = merge(split_up.left, split_up.right);
+      return;
     }
     // Doesn't exist, make node
     void* node_place = ALLOCATOR::allocate(sizeof(TreapNode));
