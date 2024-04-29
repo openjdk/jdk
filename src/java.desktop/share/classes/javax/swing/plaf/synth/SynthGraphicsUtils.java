@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,18 +26,23 @@ package javax.swing.plaf.synth;
 
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Insets;
 import java.awt.Rectangle;
+import java.awt.Window;
 
+import javax.swing.AbstractButton;
 import javax.swing.ButtonModel;
 import javax.swing.Icon;
 import javax.swing.JComponent;
+import javax.swing.JLabel;
 import javax.swing.JMenuItem;
 import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 import javax.swing.plaf.basic.BasicHTML;
 import javax.swing.text.View;
 
@@ -665,9 +670,17 @@ public class SynthGraphicsUtils {
                 g.setColor(lh.getStyle().getColor(
                         lh.getContext(), ColorType.TEXT_FOREGROUND));
                 g.setFont(lh.getStyle().getFont(lh.getContext()));
+
+                int mnemIndex = lh.getMenuItem().getDisplayedMnemonicIndex();
+                // Check to see if the Mnemonic should be rendered in GTK.
+                if ((UIManager.getLookAndFeel().getName().contains("GTK"))
+                    && SynthLookAndFeel.isMnemonicHidden() == true) {
+                    mnemIndex = -1;
+                }
+
                 lh.getGraphicsUtils().paintText(lh.getContext(), g, lh.getText(),
                         lr.getTextRect().x, lr.getTextRect().y,
-                        lh.getMenuItem().getDisplayedMnemonicIndex());
+                        mnemIndex);
             }
         }
     }
@@ -729,6 +742,49 @@ public class SynthGraphicsUtils {
 
         public int getIconHeight() {
             return synthIcon.getIconHeight(context);
+        }
+    }
+
+    /*
+     * Repaints all the components with the mnemonics in the given window and all its owned windows.
+     */
+    static void repaintMnemonicsInWindow(final Window w) {
+        if (w == null || !w.isShowing()) {
+            return;
+        }
+
+        final Window[] ownedWindows = w.getOwnedWindows();
+        for (final Window element : ownedWindows) {
+            repaintMnemonicsInWindow(element);
+        }
+
+        repaintMnemonicsInContainer(w);
+    }
+
+    /*
+     * Repaints all the components with the mnemonics in container.
+     * Recursively searches for all the subcomponents.
+     */
+    static void repaintMnemonicsInContainer(final Container cont) {
+        for (int i = 0; i < cont.getComponentCount(); i++) {
+            final Component c = cont.getComponent(i);
+            if (c == null || !c.isVisible()) {
+                continue;
+            }
+
+            if (c instanceof AbstractButton && ((AbstractButton) c).getMnemonic() != '\0') {
+                c.repaint();
+                continue;
+            }
+
+            if (c instanceof JLabel && ((JLabel) c).getDisplayedMnemonic() != '\0') {
+                c.repaint();
+                continue;
+            }
+
+            if (c instanceof Container) {
+                repaintMnemonicsInContainer((Container) c);
+            }
         }
     }
 }

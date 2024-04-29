@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -665,6 +665,10 @@ public class SynthLookAndFeel extends BasicLookAndFeel {
         setStyleFactory(factory);
         KeyboardFocusManager.getCurrentKeyboardFocusManager().
             addPropertyChangeListener(_handler);
+        if (UIManager.getLookAndFeel().getName().contains("GTK")) {
+            KeyboardFocusManager.getCurrentKeyboardFocusManager().
+                    addKeyEventPostProcessor(SynthRootPaneUI.altProcessor);
+        }
     }
 
     /**
@@ -674,6 +678,10 @@ public class SynthLookAndFeel extends BasicLookAndFeel {
     public void uninitialize() {
         KeyboardFocusManager.getCurrentKeyboardFocusManager().
             removePropertyChangeListener(_handler);
+        if (UIManager.getLookAndFeel().getName().contains("GTK")) {
+            KeyboardFocusManager.getCurrentKeyboardFocusManager().
+                    removeKeyEventPostProcessor(SynthRootPaneUI.altProcessor);
+        }
         // We should uninstall the StyleFactory here, but unfortunately
         // there are a handful of things that retain references to the
         // LookAndFeel and expect things to work
@@ -1040,5 +1048,42 @@ public class SynthLookAndFeel extends BasicLookAndFeel {
                 }
             }
         }
+    }
+
+    // Toggle flag for drawing the mnemonic state
+    private static boolean isMnemonicHidden = true;
+
+    /**
+     * Sets the state of the hide mnemonic flag. This flag is used by the
+     * component UI delegates to determine if the mnemonic should be rendered.
+     * This method is a non operation if the underlying operating system
+     * does not support the mnemonic hiding feature.
+     *
+     * @param hide true if mnemonics should be hidden
+     * @since 23
+     */
+    public static void setMnemonicHidden(boolean hide) {
+        if (UIManager.getBoolean("Button.showMnemonics") == true) {
+            // Do not hide mnemonics if the UI defaults do not support this
+            isMnemonicHidden = false;
+        } else {
+            isMnemonicHidden = hide;
+        }
+    }
+
+    /**
+     * Gets the state of the hide mnemonic flag. This only has meaning
+     * if this feature is supported by the underlying OS.
+     *
+     * @return true if mnemonics are hidden, otherwise, false
+     * @see #setMnemonicHidden
+     * @since 23
+     */
+    public static boolean isMnemonicHidden() {
+        if (UIManager.getBoolean("Button.showMnemonics") == true) {
+            // Do not hide mnemonics if the UI defaults do not support this
+            isMnemonicHidden = false;
+        }
+        return isMnemonicHidden;
     }
 }
