@@ -520,7 +520,7 @@ void HeapDumpDCmd::execute(DCmdSource source, TRAPS) {
   // This helps reduces the amount of unreachable objects in the dump
   // and makes it easier to browse.
   HeapDumper dumper(!_all.value() /* request GC if _all is false*/);
-  dumper.dump(_filename.value(), output(), (int)level, _overwrite.value(), (uint)parallel);
+  dumper.dump(_filename.value(), output(), (int) level, _overwrite.value(), (uint)parallel);
 }
 
 ClassHistogramDCmd::ClassHistogramDCmd(outputStream* output, bool heap) :
