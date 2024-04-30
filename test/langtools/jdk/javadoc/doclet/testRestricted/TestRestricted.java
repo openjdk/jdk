@@ -161,14 +161,14 @@ public class TestRestricted extends JavadocTester {
                 <div class="col-summary-item-name even-row-color"><a href="pkg/I.html#restrictedMet\
                 hod()">pkg.I.restrictedMethod()</a><sup><a href="pkg/I.html#restricted-restrictedMe\
                 thod()">RESTRICTED</a></sup></div>
-                <div class="col-last even-row-color">
+                <div class="col-last even-row-color" role="tablist" tabindex="0">
                 <div class="block">Restricted method.</div>
                 </div>
                 <div class="col-summary-item-name odd-row-color"><a href="pkg/I.html#restrictedPrev\
                 iewMethod()">pkg.I.restrictedPreviewMethod()</a><sup><a href="pkg/I.html#preview-re\
                 strictedPreviewMethod()">PREVIEW</a></sup>&nbsp;<sup><a href="pkg/I.html#restricted\
                 -restrictedPreviewMethod()">RESTRICTED</a></sup></div>
-                <div class="col-last odd-row-color">
+                <div class="col-last odd-row-color" role="tablist" tabindex="0">
                 <div class="block">Restricted preview method.</div>
                 </div>""");
     }

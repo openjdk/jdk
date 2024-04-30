@@ -93,7 +93,7 @@ public class TestProperty extends JavadocTester {
                     s in pkg">MyObj</a>[]&gt;</code></div>
                     <div class="col-second even-row-color"><code><a href="#badProperty" class="membe\
                     r-name-link">bad</a></code></div>
-                    <div class="col-last even-row-color">""",
+                    <div class="col-last even-row-color" role="tablist" tabindex="0">""",
 
                 // tab classes should be used in the method table
                 """

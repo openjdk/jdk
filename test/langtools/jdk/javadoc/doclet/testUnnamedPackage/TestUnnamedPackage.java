@@ -84,7 +84,7 @@ public class TestUnnamedPackage extends JavadocTester {
                     <div class="table-header col-last">Description</div>
                     <div class="col-first even-row-color all-classes-table all-classes-table-tab2"><\
                     a href="C.html" title="class in Unnamed Package">C</a></div>
-                    <div class="col-last even-row-color all-classes-table all-classes-table-tab2">
+                    <div class="col-last even-row-color all-classes-table all-classes-table-tab2" role="tablist" tabindex="0">
                     <div class="block">This is a class in the unnamed package.</div>
                     </div>
                     </div>""");
@@ -96,7 +96,7 @@ public class TestUnnamedPackage extends JavadocTester {
                     <div class="table-header col-first">Package</div>
                     <div class="table-header col-last">Description</div>
                     <div class="col-first even-row-color"><a href="package-summary.html">Unnamed Package</a></div>
-                    <div class="col-last even-row-color">
+                    <div class="col-last even-row-color" role="tablist" tabindex="0">
                     <div class="block">This is a package comment for the unnamed package.</div>
                     </div>
                     </div>""");
@@ -176,12 +176,12 @@ public class TestUnnamedPackage extends JavadocTester {
                 """
                     <div class="col-first even-row-color all-packages-table all-packages-table-tab1"\
                     ><a href="package-summary.html">Unnamed Package</a></div>
-                    <div class="col-last even-row-color all-packages-table all-packages-table-tab1">
+                    <div class="col-last even-row-color all-packages-table all-packages-table-tab1" role="tablist" tabindex="0">
                     <div class="block">This is a package comment for the unnamed package.</div>
                     </div>
                     <div class="col-first odd-row-color all-packages-table all-packages-table-tab1">\
                     <a href="pkg/package-summary.html">pkg</a></div>
-                    <div class="col-last odd-row-color all-packages-table all-packages-table-tab1">
+                    <div class="col-last odd-row-color all-packages-table all-packages-table-tab1" role="tablist" tabindex="0">
                     <div class="block">This is a package comment for package pkg.</div>""");
     }
 }

@@ -129,7 +129,7 @@ public class TestUseOption extends JavadocTester {
                 Subinterfaces of <a href="../UsedInterface.html" title="interface in pkg1">UsedI\
                 nterface</a> in <a href="../package-summary.html">pkg1""",
             """
-                <div class="col-first even-row-color"><code>interface&nbsp;</code></div>
+                <div class="col-first even-row-color" role="tablist" tabindex="0"><code>interface&nbsp;</code></div>
                 <div class="col-second even-row-color"><code><a href="\
                 ../SubInterface.html" class="type-name-link" title="interface in pkg1">SubInterface</a>&lt;T&gt;\
                 </code></div>"""
@@ -139,7 +139,7 @@ public class TestUseOption extends JavadocTester {
                 Methods in <a href="../package-summary.html">pkg1</a> that throw <a href="../Use\
                 dThrowable.html" title="class in pkg1">UsedThrowable</a>""",
             """
-                <div class="col-first even-row-color"><code>void</code></div>
+                <div class="col-first even-row-color" role="tablist" tabindex="0"><code>void</code></div>
                 <div class="col-second even-row-color"><span class="type-name-label">C1.</span><code>\
                 <a href="../C1.html#methodInC1ThrowsThrowable()" class="member-name-link">\
                 methodInC1ThrowsThrowable</a>()</code></div>"""
@@ -170,7 +170,7 @@ public class TestUseOption extends JavadocTester {
                     <div class="col-first even-row-color"><a href="class-use/UsedInC.html#unnamed-package">UsedInC</a></div>""",
                 """
                     <div class="col-first even-row-color"><a href="#unnamed-package">Unnamed Package</a></div>
-                    <div class="col-last even-row-color">&nbsp;</div>"""
+                    <div class="col-last even-row-color" role="tablist" tabindex="0">&nbsp;</div>"""
         );
     }
 

@@ -91,7 +91,7 @@ public class TestSpecTag extends JavadocTester {
 
         checkOutput("external-specs.html", true,
                 """
-                    <div class="col-first even-row-color">label</div>
+                    <div class="col-first even-row-color" role="tablist" tabindex="0">label</div>
                     <div class="col-last even-row-color">
                     <ul class="ref-list">
                     <li><code><a href="p/C.html#label">class p.C</a></code></li>
