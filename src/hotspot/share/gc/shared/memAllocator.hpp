@@ -47,7 +47,6 @@ protected:
 
 private:
   // Allocate in a TLAB. Could allocate a new TLAB, and therefore potentially safepoint.
-  HeapWord* mem_allocate_inside_tlab(Allocation& allocation) const;
   HeapWord* mem_allocate_inside_tlab_slow(Allocation& allocation) const;
 
   // Allocate outside a TLAB. Could safepoint.
