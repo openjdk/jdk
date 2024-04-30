@@ -32,6 +32,7 @@ ifeq ($(call isTargetOs, windows), true)
 
   $(eval $(call SetupJdkLibrary, BUILD_LIBSUNMSCAPI, \
       NAME := sunmscapi, \
+      LANG := C++, \
       OPTIMIZATION := LOW, \
       EXTRA_HEADER_DIRS := java.base:libjava, \
       LDFLAGS := $(LDFLAGS_CXX_JDK), \
