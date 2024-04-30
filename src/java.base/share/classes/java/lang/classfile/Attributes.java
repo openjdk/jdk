@@ -24,15 +24,8 @@
  */
 package java.lang.classfile;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-
 import java.lang.classfile.attribute.*;
-import java.lang.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.impl.AbstractAttributeMapper.*;
-import jdk.internal.classfile.impl.AbstractPoolEntry;
 import jdk.internal.javac.PreviewFeature;
 
 /**
@@ -442,71 +435,5 @@ public final class Attributes {
      */
     public static AttributeMapper<SyntheticAttribute> synthetic() {
         return SyntheticMapper.INSTANCE;
-    }
-
-    /**
-     * {@return the attribute mapper for a standard attribute}
-     *
-     * @param name the name of the attribute to find
-     */
-    public static AttributeMapper<?> standardAttribute(Utf8Entry name) {
-        return PredefinedAttributes._ATTR_MAP.get(name);
-    }
-
-    /**
-     * {@return All standard attribute mappers.}
-     * @since 23
-     */
-    public static Set<AttributeMapper<?>> predefinedAttributes() {
-        return PredefinedAttributes._ATTRS;
-    }
-
-    private static final class PredefinedAttributes {
-        private static final Set<AttributeMapper<?>> _ATTRS = Set.of(
-            annotationDefault(),
-            bootstrapMethods(),
-            characterRangeTable(),
-            code(),
-            compilationId(),
-            constantValue(),
-            deprecated(),
-            enclosingMethod(),
-            exceptions(),
-            innerClasses(),
-            lineNumberTable(),
-            localVariableTable(),
-            localVariableTypeTable(),
-            methodParameters(),
-            module(),
-            moduleHashes(),
-            moduleMainClass(),
-            modulePackages(),
-            moduleResolution(),
-            moduleTarget(),
-            nestHost(),
-            nestMembers(),
-            permittedSubclasses(),
-            record(),
-            runtimeInvisibleAnnotations(),
-            runtimeInvisibleParameterAnnotations(),
-            runtimeInvisibleTypeAnnotations(),
-            runtimeVisibleAnnotations(),
-            runtimeVisibleParameterAnnotations(),
-            runtimeVisibleTypeAnnotations(),
-            signature(),
-            sourceDebugExtension(),
-            sourceFile(),
-            sourceId(),
-            stackMapTable(),
-            synthetic());
-
-        private static final Map<Utf8Entry, AttributeMapper<?>> _ATTR_MAP;
-        static {
-            var map = new HashMap<Utf8Entry, AttributeMapper<?>>(64);
-            for (var am : _ATTRS) {
-                map.put(AbstractPoolEntry.rawUtf8EntryFromStandardAttributeName(am.name()), am);
-            }
-            _ATTR_MAP = Collections.unmodifiableMap(map);
-        }
     }
 }
