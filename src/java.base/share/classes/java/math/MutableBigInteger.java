@@ -1122,15 +1122,8 @@ class MutableBigInteger {
         while (--xlen > 0) {
             long dividendEstimate = (remLong << 32) |
                     (value[offset + intLen - xlen] & LONG_MASK);
-            int q;
-            if (dividendEstimate >= 0) {
-                q = (int) (dividendEstimate / divisorLong);
-                rem = (int) (dividendEstimate - q * divisorLong);
-            } else {
-                long tmp = divWord(dividendEstimate, divisor);
-                q = (int) (tmp & LONG_MASK);
-                rem = (int) (tmp >>> 32);
-            }
+            int q = (int) Long.divideUnsigned(dividendEstimate, divisorLong);
+            rem = (int) Long.remainderUnsigned(dividendEstimate, divisorLong);
             quotient.value[intLen - xlen] = q;
             remLong = rem & LONG_MASK;
         }
@@ -1557,14 +1550,8 @@ class MutableBigInteger {
                 skipCorrection = qrem + 0x80000000 < nh2;
             } else {
                 long nChunk = (((long)nh) << 32) | (nm & LONG_MASK);
-                if (nChunk >= 0) {
-                    qhat = (int) (nChunk / dhLong);
-                    qrem = (int) (nChunk - (qhat * dhLong));
-                } else {
-                    long tmp = divWord(nChunk, dh);
-                    qhat = (int) (tmp & LONG_MASK);
-                    qrem = (int) (tmp >>> 32);
-                }
+                qhat = (int) Long.divideUnsigned(nChunk, dhLong);
+                qrem = (int) Long.remainderUnsigned(nChunk, dhLong);
             }
 
             if (qhat == 0)
@@ -1616,14 +1603,8 @@ class MutableBigInteger {
             skipCorrection = qrem + 0x80000000 < nh2;
         } else {
             long nChunk = (((long) nh) << 32) | (nm & LONG_MASK);
-            if (nChunk >= 0) {
-                qhat = (int) (nChunk / dhLong);
-                qrem = (int) (nChunk - (qhat * dhLong));
-            } else {
-                long tmp = divWord(nChunk, dh);
-                qhat = (int) (tmp & LONG_MASK);
-                qrem = (int) (tmp >>> 32);
-            }
+            qhat = (int) Long.divideUnsigned(nChunk, dhLong);
+            qrem = (int) Long.remainderUnsigned(nChunk, dhLong);
         }
         if (qhat != 0) {
             if (!skipCorrection) { // Correct qhat
@@ -1732,14 +1713,8 @@ class MutableBigInteger {
                 skipCorrection = qrem + 0x80000000 < nh2;
             } else {
                 long nChunk = (((long) nh) << 32) | (nm & LONG_MASK);
-                if (nChunk >= 0) {
-                    qhat = (int) (nChunk / dhLong);
-                    qrem = (int) (nChunk - (qhat * dhLong));
-                } else {
-                    long tmp = divWord(nChunk, dh);
-                    qhat =(int)(tmp & LONG_MASK);
-                    qrem = (int)(tmp>>>32);
-                }
+                qhat = (int) Long.divideUnsigned(nChunk, dhLong);
+                qrem = (int) Long.remainderUnsigned(nChunk, dhLong);
             }
 
             if (qhat == 0)
@@ -1832,40 +1807,6 @@ class MutableBigInteger {
      */
     private boolean unsignedLongCompare(long one, long two) {
         return (one+Long.MIN_VALUE) > (two+Long.MIN_VALUE);
-    }
-
-    /**
-     * This method divides a long quantity by an int to estimate
-     * qhat for two multi precision numbers. It is used when
-     * the signed value of n is less than zero.
-     * Returns long value where high 32 bits contain remainder value and
-     * low 32 bits contain quotient value.
-     */
-    static long divWord(long n, int d) {
-        long dLong = d & LONG_MASK;
-        long r;
-        long q;
-        if (dLong == 1) {
-            q = (int)n;
-            r = 0;
-            return (r << 32) | (q & LONG_MASK);
-        }
-
-        // Approximate the quotient and remainder
-        q = (n >>> 1) / (dLong >>> 1);
-        r = n - q*dLong;
-
-        // Correct the approximation
-        while (r < 0) {
-            r += dLong;
-            q--;
-        }
-        while (r >= dLong) {
-            r -= dLong;
-            q++;
-        }
-        // n - q*dlong == r && 0 <= r <dLong, hence we're done.
-        return (r << 32) | (q & LONG_MASK);
     }
 
     /**
