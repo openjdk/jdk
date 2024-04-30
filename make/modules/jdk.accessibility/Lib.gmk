@@ -39,6 +39,7 @@ ifeq ($(call isTargetOs, windows), true)
   define SetupJavaDLL
     $(call SetupJdkLibrary, BUILD_LIBJAVAACCESSBRIDGE$1, \
         NAME := javaaccessbridge$1, \
+        LANG := C++, \
         SRC := libjavaaccessbridge, \
         EXTRA_SRC := common, \
         OPTIMIZATION := LOW, \
@@ -68,6 +69,7 @@ ifeq ($(call isTargetOs, windows), true)
   define SetupWinDLL
     $(call SetupJdkLibrary, BUILD_LIBWINDOWSACCESSBRIDGE$1, \
         NAME := windowsaccessbridge$1, \
+        LANG := C++, \
         SRC := libwindowsaccessbridge, \
         EXTRA_SRC := common, \
         OPTIMIZATION := LOW, \
