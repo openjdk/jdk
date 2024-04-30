@@ -2138,7 +2138,7 @@ bool size_fits_all_mem_uses(AddPNode* addp, int shift) {
 }
 
 // Binary src (Replicate con)
-static bool is_valid_rvv_arith_con_pattern(Node* n, Node* m) {
+static bool is_vector_scalar_bitwise_pattern(Node* n, Node* m) {
   if (n == nullptr || m == nullptr) {
     return false;
   }
@@ -2171,9 +2171,9 @@ static bool is_vector_bitwise_not_pattern(Node* n, Node* m) {
 // Should the Matcher clone input 'm' of node 'n'?
 bool Matcher::pd_clone_node(Node* n, Node* m, Matcher::MStack& mstack) {
   assert_cond(m != nullptr);
-  if (is_vshift_con_pattern(n, m) ||
+  if (is_vshift_con_pattern(n, m) || // ShiftV src (ShiftCntV con)
       is_vector_bitwise_not_pattern(n, m) ||
-      is_valid_rvv_arith_con_pattern(n, m)) {
+      is_vector_scalar_bitwise_pattern(n, m)) {
     mstack.push(m, Visit);
     return true;
   }

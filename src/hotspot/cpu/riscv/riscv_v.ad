@@ -726,6 +726,9 @@ instruct vxor_regL(vReg dst_src, iRegL src) %{
 // vector not
 
 instruct vnotI(vReg dst, vReg src, immI_M1 m1) %{
+  predicate(Matcher::vector_element_basic_type(n) == T_INT ||
+            Matcher::vector_element_basic_type(n) == T_BYTE ||
+            Matcher::vector_element_basic_type(n) == T_SHORT);
   match(Set dst (XorV src (Replicate m1)));
   format %{ "vnotI $dst, $src" %}
   ins_encode %{
@@ -739,6 +742,7 @@ instruct vnotI(vReg dst, vReg src, immI_M1 m1) %{
 %}
 
 instruct vnotL(vReg dst, vReg src, immL_M1 m1) %{
+  predicate(Matcher::vector_element_basic_type(n) == T_LONG);
   match(Set dst (XorV src (Replicate m1)));
   format %{ "vnotL $dst, $src" %}
   ins_encode %{
