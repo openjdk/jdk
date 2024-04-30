@@ -112,7 +112,7 @@ public class FrameStateTest implements ActionListener {
     CheckboxGroup cbgResize = new CheckboxGroup();
     Checkbox cbIconState = new Checkbox("Frame State ICONIFIED", cbgState, true);
     Checkbox cbNormState = new Checkbox("Frame State NORMAL", cbgState, false);
-    Checkbox cbNonResize = new Checkbox("Frame Non-resizable", cbgResize, false);
+    Checkbox cbNonResize = new Checkbox("Frame Non-Resizable", cbgResize, false);
     Checkbox cbResize = new Checkbox("Frame Resizable", cbgResize, true);
 
     CreateFrame icontst;
@@ -120,7 +120,7 @@ public class FrameStateTest implements ActionListener {
     public static void main(String[] args) throws Exception {
         PassFailJFrame
                 .builder()
-                .title("FrameState Instructions")
+                .title("Frame Stateand Size Test Instructions")
                 .instructions(INSTRUCTIONS)
                 .testTimeOut(10)
                 .rows(26)
@@ -195,7 +195,7 @@ public class FrameStateTest implements ActionListener {
             b7.addActionListener(this);
             addWindowListener(this);
 
-            setBounds(100, 2, 250, 200);
+            setBounds(100, 2, 300, 200);
             setState(iconified ? Frame.ICONIFIED : Frame.NORMAL);
             setResizable(isResizable);
             setVisible(true);
