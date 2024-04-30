@@ -30,29 +30,16 @@
  * should not be removed.
  */
 
-package jdk.internal.org.commonmark.internal.renderer.text;
+package jdk.internal.org.commonmark.text;
 
-import jdk.internal.org.commonmark.node.OrderedList;
+/**
+ * Matcher interface for {@code char} values.
+ * <p>
+ * Note that because this matches on {@code char} values only (as opposed to {@code int} code points),
+ * this only operates on the level of code units and doesn't support supplementary characters
+ * (see {@link Character#isSupplementaryCodePoint(int)}).
+ */
+public interface CharMatcher {
 
-public class OrderedListHolder extends ListHolder {
-    private final String delimiter;
-    private int counter;
-
-    public OrderedListHolder(ListHolder parent, OrderedList list) {
-        super(parent);
-        delimiter = list.getMarkerDelimiter() != null ? list.getMarkerDelimiter() : ".";
-        counter = list.getMarkerStartNumber() != null ? list.getMarkerStartNumber() : 1;
-    }
-
-    public String getDelimiter() {
-        return delimiter;
-    }
-
-    public int getCounter() {
-        return counter;
-    }
-
-    public void increaseCounter() {
-        counter++;
-    }
+    boolean matches(char c);
 }

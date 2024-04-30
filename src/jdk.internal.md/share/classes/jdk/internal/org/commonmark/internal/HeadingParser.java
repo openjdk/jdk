@@ -32,15 +32,16 @@
 
 package jdk.internal.org.commonmark.internal;
 
-import jdk.internal.org.commonmark.internal.inline.Position;
-import jdk.internal.org.commonmark.internal.inline.Scanner;
 import jdk.internal.org.commonmark.internal.util.Parsing;
 import jdk.internal.org.commonmark.node.Block;
 import jdk.internal.org.commonmark.node.Heading;
 import jdk.internal.org.commonmark.parser.InlineParser;
 import jdk.internal.org.commonmark.parser.SourceLine;
 import jdk.internal.org.commonmark.parser.SourceLines;
+import jdk.internal.org.commonmark.parser.beta.Position;
+import jdk.internal.org.commonmark.parser.beta.Scanner;
 import jdk.internal.org.commonmark.parser.block.*;
+import jdk.internal.org.commonmark.text.Characters;
 
 public class HeadingParser extends AbstractBlockParser {
 
@@ -180,8 +181,8 @@ public class HeadingParser extends AbstractBlockParser {
     }
 
     private static boolean isSetextHeadingRest(CharSequence line, int index, char marker) {
-        int afterMarker = Parsing.skip(marker, line, index, line.length());
-        int afterSpace = Parsing.skipSpaceTab(line, afterMarker, line.length());
+        int afterMarker = Characters.skip(marker, line, index, line.length());
+        int afterSpace = Characters.skipSpaceTab(line, afterMarker, line.length());
         return afterSpace >= line.length();
     }
 }

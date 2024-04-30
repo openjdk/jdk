@@ -30,29 +30,19 @@
  * should not be removed.
  */
 
-package jdk.internal.org.commonmark.internal.renderer.text;
+package jdk.internal.org.commonmark.parser.beta;
 
-import jdk.internal.org.commonmark.node.OrderedList;
+/**
+ * Position within a {@link Scanner}. This is intentionally kept opaque so as not to expose the internal structure of
+ * the Scanner.
+ */
+public class Position {
 
-public class OrderedListHolder extends ListHolder {
-    private final String delimiter;
-    private int counter;
+    final int lineIndex;
+    final int index;
 
-    public OrderedListHolder(ListHolder parent, OrderedList list) {
-        super(parent);
-        delimiter = list.getMarkerDelimiter() != null ? list.getMarkerDelimiter() : ".";
-        counter = list.getMarkerStartNumber() != null ? list.getMarkerStartNumber() : 1;
-    }
-
-    public String getDelimiter() {
-        return delimiter;
-    }
-
-    public int getCounter() {
-        return counter;
-    }
-
-    public void increaseCounter() {
-        counter++;
+    Position(int lineIndex, int index) {
+        this.lineIndex = lineIndex;
+        this.index = index;
     }
 }

@@ -32,10 +32,12 @@
 
 package jdk.internal.org.commonmark.internal.inline;
 
-import jdk.internal.org.commonmark.internal.util.Parsing;
 import jdk.internal.org.commonmark.node.Code;
 import jdk.internal.org.commonmark.node.Text;
 import jdk.internal.org.commonmark.parser.SourceLines;
+import jdk.internal.org.commonmark.parser.beta.Position;
+import jdk.internal.org.commonmark.parser.beta.Scanner;
+import jdk.internal.org.commonmark.text.Characters;
 
 /**
  * Attempt to parse backticks, returning either a backtick code span or a literal sequence of backticks.
@@ -63,7 +65,7 @@ public class BackticksInlineParser implements InlineContentParser {
                 if (content.length() >= 3 &&
                         content.charAt(0) == ' ' &&
                         content.charAt(content.length() - 1) == ' ' &&
-                        Parsing.hasNonSpace(content)) {
+                        Characters.hasNonSpace(content)) {
                     content = content.substring(1, content.length() - 1);
                 }
 

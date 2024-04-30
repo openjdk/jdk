@@ -30,7 +30,7 @@
  * should not be removed.
  */
 
-package jdk.internal.org.commonmark.renderer.text;
+package jdk.internal.org.commonmark.renderer.markdown;
 
 import jdk.internal.org.commonmark.Extension;
 import jdk.internal.org.commonmark.internal.renderer.NodeRendererMap;
@@ -38,34 +38,45 @@ import jdk.internal.org.commonmark.node.Node;
 import jdk.internal.org.commonmark.renderer.NodeRenderer;
 import jdk.internal.org.commonmark.renderer.Renderer;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 /**
- * Renders nodes to plain text content with minimal markup-like additions.
+ * Renders nodes to Markdown (CommonMark syntax); use {@link #builder()} to create a renderer.
+ * <p>
+ * Note that it doesn't currently preserve the exact syntax of the original input Markdown (if any):
+ * <ul>
+ *     <li>Headings are output as ATX headings if possible (multi-line headings need Setext headings)</li>
+ *     <li>Links are always rendered as inline links (no support for reference links yet)</li>
+ *     <li>Escaping might be over-eager, e.g. a plain {@code *} might be escaped
+ *     even though it doesn't need to be in that particular context</li>
+ *     <li>Leading whitespace in paragraphs is not preserved</li>
+ * </ul>
+ * However, it should produce Markdown that is semantically equivalent to the input, i.e. if the Markdown was parsed
+ * again and compared against the original AST, it should be the same (minus bugs).
  */
-public class TextContentRenderer implements Renderer {
+public class MarkdownRenderer implements Renderer {
 
-    private final boolean stripNewlines;
+    private final List<MarkdownNodeRendererFactory> nodeRendererFactories;
 
-    private final List<TextContentNodeRendererFactory> nodeRendererFactories;
-
-    private TextContentRenderer(Builder builder) {
-        this.stripNewlines = builder.stripNewlines;
-
+    private MarkdownRenderer(Builder builder) {
         this.nodeRendererFactories = new ArrayList<>(builder.nodeRendererFactories.size() + 1);
         this.nodeRendererFactories.addAll(builder.nodeRendererFactories);
         // Add as last. This means clients can override the rendering of core nodes if they want.
-        this.nodeRendererFactories.add(new TextContentNodeRendererFactory() {
+        this.nodeRendererFactories.add(new MarkdownNodeRendererFactory() {
             @Override
-            public NodeRenderer create(TextContentNodeRendererContext context) {
-                return new CoreTextContentNodeRenderer(context);
+            public NodeRenderer create(MarkdownNodeRendererContext context) {
+                return new CoreMarkdownNodeRenderer(context);
+            }
+
+            @Override
+            public Set<Character> getSpecialCharacters() {
+                return Collections.emptySet();
             }
         });
     }
 
     /**
-     * Create a new builder for configuring a {@link TextContentRenderer}.
+     * Create a new builder for configuring a {@link MarkdownRenderer}.
      *
      * @return a builder
      */
@@ -75,7 +86,7 @@ public class TextContentRenderer implements Renderer {
 
     @Override
     public void render(Node node, Appendable output) {
-        RendererContext context = new RendererContext(new TextContentWriter(output));
+        RendererContext context = new RendererContext(new MarkdownWriter(output));
         context.render(node);
     }
 
@@ -87,30 +98,17 @@ public class TextContentRenderer implements Renderer {
     }
 
     /**
-     * Builder for configuring a {@link TextContentRenderer}. See methods for default configuration.
+     * Builder for configuring a {@link MarkdownRenderer}. See methods for default configuration.
      */
     public static class Builder {
 
-        private boolean stripNewlines = false;
-        private List<TextContentNodeRendererFactory> nodeRendererFactories = new ArrayList<>();
+        private final List<MarkdownNodeRendererFactory> nodeRendererFactories = new ArrayList<>();
 
         /**
-         * @return the configured {@link TextContentRenderer}
+         * @return the configured {@link MarkdownRenderer}
          */
-        public TextContentRenderer build() {
-            return new TextContentRenderer(this);
-        }
-
-        /**
-         * Set the value of flag for stripping new lines.
-         *
-         * @param stripNewlines true for stripping new lines and render text as "single line",
-         *                      false for keeping all line breaks
-         * @return {@code this}
-         */
-        public Builder stripNewlines(boolean stripNewlines) {
-            this.stripNewlines = stripNewlines;
-            return this;
+        public MarkdownRenderer build() {
+            return new MarkdownRenderer(this);
         }
 
         /**
@@ -123,21 +121,20 @@ public class TextContentRenderer implements Renderer {
          * @param nodeRendererFactory the factory for creating a node renderer
          * @return {@code this}
          */
-        public Builder nodeRendererFactory(TextContentNodeRendererFactory nodeRendererFactory) {
+        public Builder nodeRendererFactory(MarkdownNodeRendererFactory nodeRendererFactory) {
             this.nodeRendererFactories.add(nodeRendererFactory);
             return this;
         }
 
         /**
-         * @param extensions extensions to use on this text content renderer
+         * @param extensions extensions to use on this renderer
          * @return {@code this}
          */
         public Builder extensions(Iterable<? extends Extension> extensions) {
             for (Extension extension : extensions) {
-                if (extension instanceof TextContentRenderer.TextContentRendererExtension) {
-                    TextContentRenderer.TextContentRendererExtension textContentRendererExtension =
-                            (TextContentRenderer.TextContentRendererExtension) extension;
-                    textContentRendererExtension.extend(this);
+                if (extension instanceof MarkdownRendererExtension) {
+                    MarkdownRendererExtension markdownRendererExtension = (MarkdownRendererExtension) extension;
+                    markdownRendererExtension.extend(this);
                 }
             }
             return this;
@@ -145,40 +142,54 @@ public class TextContentRenderer implements Renderer {
     }
 
     /**
-     * Extension for {@link TextContentRenderer}.
+     * Extension for {@link MarkdownRenderer} for rendering custom nodes.
      */
-    public interface TextContentRendererExtension extends Extension {
-        void extend(TextContentRenderer.Builder rendererBuilder);
+    public interface MarkdownRendererExtension extends Extension {
+
+        /**
+         * Extend Markdown rendering, usually by registering custom node renderers using {@link Builder#nodeRendererFactory}.
+         *
+         * @param rendererBuilder the renderer builder to extend
+         */
+        void extend(Builder rendererBuilder);
     }
 
-    private class RendererContext implements TextContentNodeRendererContext {
-        private final TextContentWriter textContentWriter;
+    private class RendererContext implements MarkdownNodeRendererContext {
+        private final MarkdownWriter writer;
         private final NodeRendererMap nodeRendererMap = new NodeRendererMap();
+        private final Set<Character> additionalTextEscapes;
 
-        private RendererContext(TextContentWriter textContentWriter) {
-            this.textContentWriter = textContentWriter;
+        private RendererContext(MarkdownWriter writer) {
+            // Set fields that are used by interface
+            this.writer = writer;
+            Set<Character> escapes = new HashSet<Character>();
+            for (MarkdownNodeRendererFactory factory : nodeRendererFactories) {
+                escapes.addAll(factory.getSpecialCharacters());
+            }
+            additionalTextEscapes = Collections.unmodifiableSet(escapes);
 
             // The first node renderer for a node type "wins".
             for (int i = nodeRendererFactories.size() - 1; i >= 0; i--) {
-                TextContentNodeRendererFactory nodeRendererFactory = nodeRendererFactories.get(i);
+                MarkdownNodeRendererFactory nodeRendererFactory = nodeRendererFactories.get(i);
+                // Pass in this as context here, which uses the fields set above
                 NodeRenderer nodeRenderer = nodeRendererFactory.create(this);
                 nodeRendererMap.add(nodeRenderer);
             }
         }
 
         @Override
-        public boolean stripNewlines() {
-            return stripNewlines;
-        }
-
-        @Override
-        public TextContentWriter getWriter() {
-            return textContentWriter;
+        public MarkdownWriter getWriter() {
+            return writer;
         }
 
         @Override
         public void render(Node node) {
             nodeRendererMap.render(node);
+        }
+
+        @Override
+        public Set<Character> getSpecialCharacters() {
+            return additionalTextEscapes;
         }
     }
 }

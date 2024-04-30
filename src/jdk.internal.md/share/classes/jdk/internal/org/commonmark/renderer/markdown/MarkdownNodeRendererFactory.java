@@ -30,29 +30,28 @@
  * should not be removed.
  */
 
-package jdk.internal.org.commonmark.internal.renderer.text;
+package jdk.internal.org.commonmark.renderer.markdown;
 
-import jdk.internal.org.commonmark.node.OrderedList;
+import jdk.internal.org.commonmark.renderer.NodeRenderer;
 
-public class OrderedListHolder extends ListHolder {
-    private final String delimiter;
-    private int counter;
+import java.util.Set;
 
-    public OrderedListHolder(ListHolder parent, OrderedList list) {
-        super(parent);
-        delimiter = list.getMarkerDelimiter() != null ? list.getMarkerDelimiter() : ".";
-        counter = list.getMarkerStartNumber() != null ? list.getMarkerStartNumber() : 1;
-    }
+/**
+ * Factory for instantiating new node renderers for rendering custom nodes.
+ */
+public interface MarkdownNodeRendererFactory {
 
-    public String getDelimiter() {
-        return delimiter;
-    }
+    /**
+     * Create a new node renderer for the specified rendering context.
+     *
+     * @param context the context for rendering (normally passed on to the node renderer)
+     * @return a node renderer
+     */
+    NodeRenderer create(MarkdownNodeRendererContext context);
 
-    public int getCounter() {
-        return counter;
-    }
-
-    public void increaseCounter() {
-        counter++;
-    }
+    /**
+     * @return the additional special characters that this factory would like to have escaped in normal text; currently
+     * only ASCII characters are allowed
+     */
+    Set<Character> getSpecialCharacters();
 }

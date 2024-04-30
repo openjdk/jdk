@@ -1,4 +1,4 @@
-## CommonMark 0.21.0
+## CommonMark 0.22.0
 
 ### CommonMark License
 ```

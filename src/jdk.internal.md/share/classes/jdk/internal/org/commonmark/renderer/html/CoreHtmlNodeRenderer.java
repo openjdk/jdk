@@ -200,7 +200,7 @@ public class CoreHtmlNodeRenderer extends AbstractVisitor implements NodeRendere
 
     @Override
     public void visit(OrderedList orderedList) {
-        int start = orderedList.getStartNumber();
+        int start = orderedList.getMarkerStartNumber() != null ? orderedList.getMarkerStartNumber() : 1;
         Map<String, String> attrs = new LinkedHashMap<>();
         if (start != 1) {
             attrs.put("start", String.valueOf(start));

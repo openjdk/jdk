@@ -34,8 +34,8 @@ package jdk.internal.org.commonmark.internal.inline;
 
 import jdk.internal.org.commonmark.internal.util.Escaping;
 import jdk.internal.org.commonmark.node.HardLineBreak;
-import jdk.internal.org.commonmark.node.Node;
 import jdk.internal.org.commonmark.node.Text;
+import jdk.internal.org.commonmark.parser.beta.Scanner;
 
 import java.util.regex.Pattern;
 

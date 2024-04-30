@@ -30,29 +30,7 @@
  * should not be removed.
  */
 
-package jdk.internal.org.commonmark.internal.renderer.text;
-
-import jdk.internal.org.commonmark.node.OrderedList;
-
-public class OrderedListHolder extends ListHolder {
-    private final String delimiter;
-    private int counter;
-
-    public OrderedListHolder(ListHolder parent, OrderedList list) {
-        super(parent);
-        delimiter = list.getMarkerDelimiter() != null ? list.getMarkerDelimiter() : ".";
-        counter = list.getMarkerStartNumber() != null ? list.getMarkerStartNumber() : 1;
-    }
-
-    public String getDelimiter() {
-        return delimiter;
-    }
-
-    public int getCounter() {
-        return counter;
-    }
-
-    public void increaseCounter() {
-        counter++;
-    }
-}
+/**
+ * Experimental APIs to use for extensions. APIs are subject to change if necessary.
+ */
+package jdk.internal.org.commonmark.parser.beta;

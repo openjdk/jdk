@@ -52,8 +52,10 @@ public class ListItemParser extends AbstractBlockParser {
 
     private boolean hadBlankLine;
 
-    public ListItemParser(int contentIndent) {
+    public ListItemParser(int markerIndent, int contentIndent) {
         this.contentIndent = contentIndent;
+        block.setMarkerIndent(markerIndent);
+        block.setContentIndent(contentIndent);
     }
 
     @Override
