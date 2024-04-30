@@ -52,7 +52,7 @@
  * algorithm. {@link RandomGeneratorFactory} also provides methods for
  * selecting random number generator algorithms. RandomGeneratorFactory
  * registers implementations of {@link RandomGenerator} interface using the
- * {@linkplain java.util.ServiceLoader service loader API}
+ * {@linkplain java.util.ServiceLoader service loader API}.
  *
  * <p> An important subsidiary interface is
  * {@link RandomGenerator.StreamableGenerator}, which provides methods for
