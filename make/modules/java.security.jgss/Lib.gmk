@@ -47,6 +47,7 @@ ifeq ($(call isTargetOs, windows), true)
 
   $(eval $(call SetupJdkLibrary, BUILD_LIBSSPI_BRIDGE, \
       NAME := sspi_bridge, \
+      LANG := C++, \
       OPTIMIZATION := LOW, \
       EXTRA_HEADER_DIRS := \
           libj2gss \
