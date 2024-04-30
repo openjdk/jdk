@@ -2802,6 +2802,7 @@ public class Attr extends JCTree.Visitor {
                 }
             }
         } else if (!clazztype.tsym.isInterface() &&
+                   (clazztype.tsym.flags_field & NOOUTERTHIS) == 0 &&
                    clazztype.getEnclosingType().hasTag(CLASS)) {
             // Check for the existence of an apropos outer instance
             rs.resolveImplicitThis(tree.pos(), env, clazztype);

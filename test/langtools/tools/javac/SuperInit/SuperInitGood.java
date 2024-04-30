@@ -429,6 +429,32 @@ public class SuperInitGood {
         }
     }
 
+    // allow creating and using local and anonymous classes before super()
+    // they will not have enclosing instances though
+    public static class Test21 {
+        public Test21(int x) {
+            Runnable r = new Runnable() {
+                public void run() {
+                    this.hashCode();
+                }
+            };
+            r.run();
+            super();
+            r.run();
+        }
+        public Test21(float x) {
+            class Foo {
+                public void bar() {
+                    this.hashCode();
+                }
+            };
+            new Foo().bar();
+            super();
+            new Foo().bar();
+        }
+    }
+
+
     public static void main(String[] args) {
         new Test0();
         new Test1();
@@ -471,5 +497,7 @@ public class SuperInitGood {
         }
         new Test19(123);
         new Test20(123);
+        new Test21((int)123);
+        new Test21((float)123);
     }
 }

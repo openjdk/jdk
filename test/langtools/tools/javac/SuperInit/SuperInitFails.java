@@ -145,16 +145,6 @@ public class SuperInitFails extends AtomicReference<Object> implements Iterable<
         return null;
     }
 
-    public SuperInitFails(short[][] x) {
-        class Foo {
-            Foo() {
-                SuperInitFails.this.hashCode();
-            }
-        };
-        new Foo();                      // this should FAIL
-        super();
-    }
-
     public SuperInitFails(float[][] x) {
         Runnable r = () -> {
             super();                    // this should FAIL
