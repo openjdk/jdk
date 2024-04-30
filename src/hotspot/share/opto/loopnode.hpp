@@ -1985,4 +1985,54 @@ class DataNodeGraph : public StackObj {
     return _orig_to_new;
   }
 };
+
+//------------------------------Invariance-----------------------------------
+// Helper class for loop_predication_impl to compute invariance on the fly and
+// clone invariants.
+class Invariance : public StackObj {
+  VectorSet _visited, _invariant;
+  Node_Stack _stack;
+  VectorSet _clone_visited;
+  Node_List _old_new; // map of old to new (clone)
+  IdealLoopTree* _lpt;
+  PhaseIdealLoop* _phase;
+  Node* _data_dependency_on; // The projection into the loop on which data nodes are dependent or null otherwise
+
+  void visit(Node* use, Node* n);
+  void compute_invariance(Node* n);
+  void clone_visit(Node* n);
+  void clone_nodes(Node* n, Node* ctrl);
+
+public:
+  Invariance(Arena* area, IdealLoopTree* lpt);
+
+  // Did we explicitly mark some nodes non-loop-invariant? If so, return the entry node on which some data nodes
+  // are dependent that prevent loop predication. Otherwise, return null.
+  Node* data_dependency_on() {
+    return _data_dependency_on;
+  }
+
+  void map_ctrl(Node* old, Node* n) {
+    assert(old->is_CFG() && n->is_CFG(), "must be");
+    _old_new.map(old->_idx, n); // "clone" of old is n
+    _invariant.set(old->_idx);  // old is invariant
+    _clone_visited.set(old->_idx);
+  }
+
+  // Driver function to compute invariance
+  bool is_invariant(Node* n) {
+    if (!_visited.test_set(n->_idx))
+      compute_invariance(n);
+    return (_invariant.test(n->_idx) != 0);
+  }
+
+  // Driver function to clone invariant
+  Node* clone(Node* n, Node* ctrl) {
+    assert(ctrl->is_CFG(), "must be");
+    assert(_invariant.test(n->_idx), "must be an invariant");
+    if (!_clone_visited.test(n->_idx))
+      clone_nodes(n, ctrl);
+    return _old_new[n->_idx];
+  }
+};
 #endif // SHARE_OPTO_LOOPNODE_HPP

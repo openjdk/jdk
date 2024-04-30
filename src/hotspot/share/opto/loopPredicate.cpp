@@ -442,181 +442,137 @@ void PhaseIdealLoop::check_cloned_parse_predicate_for_unswitching(const Node* ne
 }
 #endif
 
-//------------------------------Invariance-----------------------------------
-// Helper class for loop_predication_impl to compute invariance on the fly and
-// clone invariants.
-class Invariance : public StackObj {
-  VectorSet _visited, _invariant;
-  Node_Stack _stack;
-  VectorSet _clone_visited;
-  Node_List _old_new; // map of old to new (clone)
-  IdealLoopTree* _lpt;
-  PhaseIdealLoop* _phase;
-  Node* _data_dependency_on; // The projection into the loop on which data nodes are dependent or null otherwise
-
-  // Helper function to set up the invariance for invariance computation
-  // If n is a known invariant, set up directly. Otherwise, look up the
-  // the possibility to push n onto the stack for further processing.
-  void visit(Node* use, Node* n) {
-    if (_lpt->is_invariant(n)) { // known invariant
-      _invariant.set(n->_idx);
-    } else if (!n->is_CFG()) {
-      Node *n_ctrl = _phase->ctrl_or_self(n);
-      Node *u_ctrl = _phase->ctrl_or_self(use); // self if use is a CFG
-      if (_phase->is_dominator(n_ctrl, u_ctrl)) {
-        _stack.push(n, n->in(0) == nullptr ? 1 : 0);
-      }
-    }
-  }
-
-  // Compute invariance for "the_node" and (possibly) all its inputs recursively
-  // on the fly
-  void compute_invariance(Node* n) {
-    assert(_visited.test(n->_idx), "must be");
-    visit(n, n);
-    while (_stack.is_nonempty()) {
-      Node*  n = _stack.node();
-      uint idx = _stack.index();
-      if (idx == n->req()) { // all inputs are processed
-        _stack.pop();
-        // n is invariant if it's inputs are all invariant
-        bool all_inputs_invariant = true;
-        for (uint i = 0; i < n->req(); i++) {
-          Node* in = n->in(i);
-          if (in == nullptr) continue;
-          assert(_visited.test(in->_idx), "must have visited input");
-          if (!_invariant.test(in->_idx)) { // bad guy
-            all_inputs_invariant = false;
-            break;
-          }
-        }
-        if (all_inputs_invariant) {
-          // If n's control is a predicate that was moved out of the
-          // loop, it was marked invariant but n is only invariant if
-          // it depends only on that test. Otherwise, unless that test
-          // is out of the loop, it's not invariant.
-          if (n->is_CFG() || n->depends_only_on_test() || n->in(0) == nullptr || !_phase->is_member(_lpt, n->in(0))) {
-            _invariant.set(n->_idx); // I am a invariant too
-          }
-        }
-      } else { // process next input
-        _stack.set_index(idx + 1);
-        Node* m = n->in(idx);
-        if (m != nullptr && !_visited.test_set(m->_idx)) {
-          visit(n, m);
-        }
-      }
-    }
-  }
-
-  // Helper function to set up _old_new map for clone_nodes.
-  // If n is a known invariant, set up directly ("clone" of n == n).
-  // Otherwise, push n onto the stack for real cloning.
-  void clone_visit(Node* n) {
-    assert(_invariant.test(n->_idx), "must be invariant");
-    if (_lpt->is_invariant(n)) { // known invariant
-      _old_new.map(n->_idx, n);
-    } else { // to be cloned
-      assert(!n->is_CFG(), "should not see CFG here");
+// Helper function to set up the invariance for invariance computation
+// If n is a known invariant, set up directly. Otherwise, look up the
+// the possibility to push n onto the stack for further processing.
+void Invariance::visit(Node* use, Node* n) {
+  if (_lpt->is_invariant(n)) { // known invariant
+    _invariant.set(n->_idx);
+  } else if (!n->is_CFG()) {
+    Node *n_ctrl = _phase->ctrl_or_self(n);
+    Node *u_ctrl = _phase->ctrl_or_self(use); // self if use is a CFG
+    if (_phase->is_dominator(n_ctrl, u_ctrl)) {
       _stack.push(n, n->in(0) == nullptr ? 1 : 0);
     }
   }
+}
 
-  // Clone "n" and (possibly) all its inputs recursively
-  void clone_nodes(Node* n, Node* ctrl) {
-    clone_visit(n);
-    while (_stack.is_nonempty()) {
-      Node*  n = _stack.node();
-      uint idx = _stack.index();
-      if (idx == n->req()) { // all inputs processed, clone n!
-        _stack.pop();
-        // clone invariant node
-        Node* n_cl = n->clone();
-        _old_new.map(n->_idx, n_cl);
-        _phase->register_new_node(n_cl, ctrl);
-        for (uint i = 0; i < n->req(); i++) {
-          Node* in = n_cl->in(i);
-          if (in == nullptr) continue;
-          n_cl->set_req(i, _old_new[in->_idx]);
+// Compute invariance for "the_node" and (possibly) all its inputs recursively
+// on the fly
+void Invariance::compute_invariance(Node* n) {
+  assert(_visited.test(n->_idx), "must be");
+  visit(n, n);
+  while (_stack.is_nonempty()) {
+    Node*  n = _stack.node();
+    uint idx = _stack.index();
+    if (idx == n->req()) { // all inputs are processed
+      _stack.pop();
+      // n is invariant if it's inputs are all invariant
+      bool all_inputs_invariant = true;
+      for (uint i = 0; i < n->req(); i++) {
+        Node* in = n->in(i);
+        if (in == nullptr) continue;
+        assert(_visited.test(in->_idx), "must have visited input");
+        if (!_invariant.test(in->_idx)) { // bad guy
+          all_inputs_invariant = false;
+          break;
         }
-      } else { // process next input
-        _stack.set_index(idx + 1);
-        Node* m = n->in(idx);
-        if (m != nullptr && !_clone_visited.test_set(m->_idx)) {
-          clone_visit(m); // visit the input
+      }
+      if (all_inputs_invariant) {
+        // If n's control is a predicate that was moved out of the
+        // loop, it was marked invariant but n is only invariant if
+        // it depends only on that test. Otherwise, unless that test
+        // is out of the loop, it's not invariant.
+        if (n->is_CFG() || n->depends_only_on_test() || n->in(0) == nullptr || !_phase->is_member(_lpt, n->in(0))) {
+          _invariant.set(n->_idx); // I am a invariant too
         }
+      }
+    } else { // process next input
+      _stack.set_index(idx + 1);
+      Node* m = n->in(idx);
+      if (m != nullptr && !_visited.test_set(m->_idx)) {
+        visit(n, m);
       }
     }
   }
+}
 
- public:
-  Invariance(Arena* area, IdealLoopTree* lpt) :
-    _visited(area), _invariant(area),
-    _stack(area, 10 /* guess */),
-    _clone_visited(area), _old_new(area),
-    _lpt(lpt), _phase(lpt->_phase),
-    _data_dependency_on(nullptr)
-  {
-    LoopNode* head = _lpt->_head->as_Loop();
-    Node* entry = head->skip_strip_mined()->in(LoopNode::EntryControl);
-    if (entry->outcnt() != 1) {
-      // If a node is pinned between the predicates and the loop
-      // entry, we won't be able to move any node in the loop that
-      // depends on it above it in a predicate. Mark all those nodes
-      // as non-loop-invariant.
-      // Loop predication could create new nodes for which the below
-      // invariant information is missing. Mark the 'entry' node to
-      // later check again if a node needs to be treated as non-loop-
-      // invariant as well.
-      _data_dependency_on = entry;
-      Unique_Node_List wq;
-      wq.push(entry);
-      for (uint next = 0; next < wq.size(); ++next) {
-        Node *n = wq.at(next);
-        for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
-          Node* u = n->fast_out(i);
-          if (!u->is_CFG()) {
-            Node* c = _phase->get_ctrl(u);
-            if (_lpt->is_member(_phase->get_loop(c)) || _phase->is_dominator(c, head)) {
-              _visited.set(u->_idx);
-              wq.push(u);
-            }
+// Helper function to set up _old_new map for clone_nodes.
+// If n is a known invariant, set up directly ("clone" of n == n).
+// Otherwise, push n onto the stack for real cloning.
+void Invariance::clone_visit(Node* n) {
+  assert(_invariant.test(n->_idx), "must be invariant");
+  if (_lpt->is_invariant(n)) { // known invariant
+    _old_new.map(n->_idx, n);
+  } else { // to be cloned
+    assert(!n->is_CFG(), "should not see CFG here");
+    _stack.push(n, n->in(0) == nullptr ? 1 : 0);
+  }
+}
+
+// Clone "n" and (possibly) all its inputs recursively
+void Invariance::clone_nodes(Node* n, Node* ctrl) {
+  clone_visit(n);
+  while (_stack.is_nonempty()) {
+    Node*  n = _stack.node();
+    uint idx = _stack.index();
+    if (idx == n->req()) { // all inputs processed, clone n!
+      _stack.pop();
+      // clone invariant node
+      Node* n_cl = n->clone();
+      _old_new.map(n->_idx, n_cl);
+      _phase->register_new_node(n_cl, ctrl);
+      for (uint i = 0; i < n->req(); i++) {
+        Node* in = n_cl->in(i);
+        if (in == nullptr) continue;
+        n_cl->set_req(i, _old_new[in->_idx]);
+      }
+    } else { // process next input
+      _stack.set_index(idx + 1);
+      Node* m = n->in(idx);
+      if (m != nullptr && !_clone_visited.test_set(m->_idx)) {
+        clone_visit(m); // visit the input
+      }
+    }
+  }
+}
+
+Invariance::Invariance(Arena* area, IdealLoopTree* lpt) :
+        _visited(area), _invariant(area),
+        _stack(area, 10 /* guess */),
+        _clone_visited(area), _old_new(area),
+        _lpt(lpt), _phase(lpt->_phase),
+        _data_dependency_on(nullptr)
+{
+  LoopNode* head = _lpt->_head->as_Loop();
+  Node* entry = head->skip_strip_mined()->in(LoopNode::EntryControl);
+  if (entry->outcnt() != 1) {
+    // If a node is pinned between the predicates and the loop
+    // entry, we won't be able to move any node in the loop that
+    // depends on it above it in a predicate. Mark all those nodes
+    // as non-loop-invariant.
+    // Loop predication could create new nodes for which the below
+    // invariant information is missing. Mark the 'entry' node to
+    // later check again if a node needs to be treated as non-loop-
+    // invariant as well.
+    _data_dependency_on = entry;
+    Unique_Node_List wq;
+    wq.push(entry);
+    for (uint next = 0; next < wq.size(); ++next) {
+      Node *n = wq.at(next);
+      for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+        Node* u = n->fast_out(i);
+        if (!u->is_CFG()) {
+          Node* c = _phase->get_ctrl(u);
+          if (_lpt->is_member(_phase->get_loop(c)) || _phase->is_dominator(c, head)) {
+            _visited.set(u->_idx);
+            wq.push(u);
           }
         }
       }
     }
   }
-
-  // Did we explicitly mark some nodes non-loop-invariant? If so, return the entry node on which some data nodes
-  // are dependent that prevent loop predication. Otherwise, return null.
-  Node* data_dependency_on() {
-    return _data_dependency_on;
-  }
-
-  // Map old to n for invariance computation and clone
-  void map_ctrl(Node* old, Node* n) {
-    assert(old->is_CFG() && n->is_CFG(), "must be");
-    _old_new.map(old->_idx, n); // "clone" of old is n
-    _invariant.set(old->_idx);  // old is invariant
-    _clone_visited.set(old->_idx);
-  }
-
-  // Driver function to compute invariance
-  bool is_invariant(Node* n) {
-    if (!_visited.test_set(n->_idx))
-      compute_invariance(n);
-    return (_invariant.test(n->_idx) != 0);
-  }
-
-  // Driver function to clone invariant
-  Node* clone(Node* n, Node* ctrl) {
-    assert(ctrl->is_CFG(), "must be");
-    assert(_invariant.test(n->_idx), "must be an invariant");
-    if (!_clone_visited.test(n->_idx))
-      clone_nodes(n, ctrl);
-    return _old_new[n->_idx];
-  }
-};
+}
 
 //------------------------------is_range_check_if -----------------------------------
 // Returns true if the predicate of iff is in "scale*iv + offset u< load_range(ptr)" format
@@ -1537,115 +1493,4 @@ bool IdealLoopTree::loop_predication( PhaseIdealLoop *phase) {
 
 bool IdealLoopTree::can_apply_loop_predication() {
   return _head->is_Loop() && !_irreducible && !tail()->is_top();
-}
-
-bool PhaseIdealLoop::is_uncommon_or_multi_uncommon_trap_if_pattern(IfProjNode* proj) {
-  if (proj->is_uncommon_trap_if_pattern()) {
-    return true;
-  }
-  if (proj->in(0)->in(1)->is_Bool() &&
-      proj->in(0)->in(1)->in(1)->Opcode() == Op_ScopedValueGetHitsInCache &&
-      proj->is_multi_uncommon_trap_if_pattern()) {
-    return true;
-  }
-  return false;
-}
-
-
-// A ScopedValueGetHitsInCache check is loop invariant if the scoped value object it is applied to is loop invariant
-bool PhaseIdealLoop::loop_predication_for_scoped_value_get(IdealLoopTree* loop, IfProjNode* if_success_proj,
-                                                           ParsePredicateSuccessProj* parse_predicate_proj,
-                                                           Invariance& invar, Deoptimization::DeoptReason reason,
-                                                           IfNode* iff, IfProjNode*& new_predicate_proj) {
-  BoolNode* bol = iff->in(1)->as_Bool();
-  if (bol->in(1)->Opcode() != Op_ScopedValueGetHitsInCache) {
-    return false;
-  }
-  ScopedValueGetHitsInCacheNode* hits_in_the_cache = bol->in(1)->as_ScopedValueGetHitsInCache();
-  if (!invar.is_invariant(hits_in_the_cache->scoped_value()) ||
-      !invar.is_invariant(hits_in_the_cache->index1()) ||
-      !invar.is_invariant(hits_in_the_cache->index2())) {
-    return false;
-  }
-  Node* load_from_cache = if_success_proj->find_out_with(Op_ScopedValueGetLoadFromCache, true);
-  assert(load_from_cache->in(1) == hits_in_the_cache, "unexpected ScopedValueGetHitsInCache/ScopedValueGetLoadFromCache shape");
-  assert(if_success_proj->is_IfTrue(), "unexpected ScopedValueGetHitsInCache/ScopedValueGetLoadFromCache shape");
-  new_predicate_proj = create_new_if_for_predicate(parse_predicate_proj, nullptr,
-                                                   reason,
-                                                   iff->Opcode());
-  Node* ctrl = new_predicate_proj->in(0)->in(0);
-  Node* new_bol = bol->clone();
-  register_new_node(new_bol, ctrl);
-  Node* new_hits_in_the_cache = hits_in_the_cache->clone();
-  register_new_node(new_hits_in_the_cache, ctrl);
-  _igvn.replace_input_of(load_from_cache, 1, new_hits_in_the_cache);
-
-  CallStaticJavaNode* call = new_predicate_proj->is_uncommon_trap_if_pattern();
-  assert(call != nullptr, "Where's the uncommon trap call?");
-
-  Node* all_mem = call->in(TypeFunc::Memory);
-  MergeMemNode* mm = all_mem->isa_MergeMem();
-  Node* raw_mem = mm != nullptr ? mm->memory_at(Compile::AliasIdxRaw) : all_mem;
-
-  // The scoped value cache may be loop variant because it depends on raw memory which may keep the
-  // ScopedValueGetHitsInCache in the loop. It's legal to hoist it out of loop though but we need to update the scoped
-  // value cache to be out of loop as well.
-  Node* scoped_value_cache_load = make_scoped_value_cache_node(raw_mem);
-
-  _igvn.replace_input_of(new_hits_in_the_cache, 1, scoped_value_cache_load);
-  Node* oop_mem = mm != nullptr ? mm->memory_at(C->get_alias_index(TypeAryPtr::OOPS)) : all_mem;
-  _igvn.replace_input_of(new_hits_in_the_cache, ScopedValueGetHitsInCacheNode::Memory, oop_mem);
-  _igvn.replace_input_of(new_hits_in_the_cache, 0, ctrl);
-  _igvn.replace_input_of(new_hits_in_the_cache, ScopedValueGetHitsInCacheNode::ScopedValue,
-                         invar.clone(hits_in_the_cache->scoped_value(), ctrl));
-  _igvn.replace_input_of(new_hits_in_the_cache, ScopedValueGetHitsInCacheNode::Index1,
-                         invar.clone(hits_in_the_cache->index1(), ctrl));
-  _igvn.replace_input_of(new_hits_in_the_cache, ScopedValueGetHitsInCacheNode::Index2,
-                         invar.clone(hits_in_the_cache->index2(), ctrl));
-
-  _igvn.replace_input_of(new_bol, 1, new_hits_in_the_cache);
-
-  assert(invar.is_invariant(new_bol), "should be loop invariant");
-
-  IfNode* new_predicate_iff = new_predicate_proj->in(0)->as_If();
-  _igvn.hash_delete(new_predicate_iff);
-  new_predicate_iff->set_req(1, new_bol);
-#ifndef PRODUCT
-  if (TraceLoopPredicate) {
-    tty->print("Predicate invariant if: %d ", new_predicate_iff->_idx);
-    loop->dump_head();
-  } else if (TraceLoopOpts) {
-    tty->print("Predicate IC ");
-    loop->dump_head();
-  }
-#endif
-  return true;
-}
-
-// It is easier to re-create the cache load subgraph rather than trying to change the inputs of the existing one to move
-// it out of loops
-Node* PhaseIdealLoop::make_scoped_value_cache_node(Node* raw_mem) {
-  Node* thread = new ThreadLocalNode();
-  register_new_node(thread, C->root());
-  Node* scoped_value_cache_offset = _igvn.MakeConX(in_bytes(JavaThread::scopedValueCache_offset()));
-  set_ctrl(scoped_value_cache_offset, C->root());
-  Node* p = new AddPNode(C->top(), thread, scoped_value_cache_offset);
-  register_new_node(p, C->root());
-  Node* handle_load = LoadNode::make(_igvn, nullptr, raw_mem, p, p->bottom_type()->is_ptr(), TypeRawPtr::NOTNULL,
-                                     T_ADDRESS, MemNode::unordered);
-  _igvn.register_new_node_with_optimizer(handle_load);
-  set_subtree_ctrl(handle_load, true);
-
-  ciInstanceKlass* object_klass = ciEnv::current()->Object_klass();
-  const TypeOopPtr* etype = TypeOopPtr::make_from_klass(object_klass);
-  const TypeAry* arr0 = TypeAry::make(etype, TypeInt::POS);
-  const TypeAryPtr* objects_type = TypeAryPtr::make(TypePtr::BotPTR, arr0, nullptr, true, 0);
-
-  DecoratorSet decorators = C2_READ_ACCESS | IN_NATIVE;
-  C2AccessValuePtr addr(handle_load, TypeRawPtr::NOTNULL);
-  C2OptAccess access(_igvn, nullptr, raw_mem, decorators, T_OBJECT, nullptr, addr);
-  BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-  Node* load_of_cache = bs->load_at(access, objects_type);
-  set_subtree_ctrl(load_of_cache, true);
-  return load_of_cache;
 }

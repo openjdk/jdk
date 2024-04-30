@@ -25,11 +25,9 @@
 #include "precompiled.hpp"
 #include "opto/intrinsicnode.hpp"
 #include "opto/addnode.hpp"
-#include "opto/cfgnode.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/memnode.hpp"
 #include "opto/phaseX.hpp"
-#include "opto/subnode.hpp"
 #include "utilities/population_count.hpp"
 #include "utilities/count_leading_zeros.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -370,22 +368,3 @@ const Type* ExpandBitsNode::Value(PhaseGVN* phase) const {
 
   return bitshuffle_value(src_type, mask_type, Op_ExpandBits, bt);
 }
-
-Node* ScopedValueGetLoadFromCacheNode::scoped_value() const {
-  Node* hits_in_cache = in(1);
-  return hits_in_cache->as_ScopedValueGetHitsInCache()->scoped_value();
-}
-
-IfNode* ScopedValueGetLoadFromCacheNode::iff() const {
-  return in(0)->as_IfTrue()->in(0)->as_If();
-}
-
-#ifdef ASSERT
-void ScopedValueGetLoadFromCacheNode::verify() const {
-  // check a ScopedValueGetHitsInCache guards this ScopedValueGetLoadFromCache
-  IfNode* iff = this->iff();
-  assert(iff->in(1)->is_Bool(), "unexpected ScopedValueGetLoadFromCache shape");
-  assert(iff->in(1)->in(1)->Opcode() == Op_ScopedValueGetHitsInCache, "unexpected ScopedValueGetLoadFromCache shape");
-  assert(iff->in(1)->in(1) == in(1), "unexpected ScopedValueGetLoadFromCache shape");
-}
-#endif

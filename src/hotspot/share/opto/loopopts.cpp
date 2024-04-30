@@ -4000,25 +4000,6 @@ void PhaseIdealLoop::sink_to_not_peel(VectorSet& peel, VectorSet& not_peel, Node
 #endif
 }
 
-// ScopedValueGetHitsInCache node ended up on the peel list but its companion ScopedValueGetLoadFromCache is not.
-// Peeling will separate the two, breaking the expected shape for ScopedValueGetHitsInCache/ScopedValueGetLoadFromCache.
-// Move the ScopedValueGetHitsInCache out of the peel list where it doesn't need to be: its uses are in the not_peel
-// part of the loop body.
-void PhaseIdealLoop::move_scoped_value_nodes_to_avoid_peeling_it(VectorSet& peel, VectorSet& not_peel, Node_List& peel_list,
-                                                                 Node_List& sink_list, uint i) {
-  ScopedValueGetHitsInCacheNode* hits_in_cache = peel_list.at(i)->as_ScopedValueGetHitsInCache();
-  hits_in_cache->verify();
-#ifdef ASSERT
-  ScopedValueGetLoadFromCacheNode* load_from_cache = hits_in_cache->load_from_cache();
-  assert(load_from_cache == nullptr || not_peel.test(load_from_cache->_idx), "unexpected ScopedValueGetHitsInCache/ScopedValueGetLoadFromCache shape");
-  Node* bol = hits_in_cache->find_out_with(Op_Bool, true);
-  assert(not_peel.test(bol->_idx), "should be in not peel subgraph");
-  Node* iff = bol->unique_ctrl_out();
-  assert(not_peel.test(iff->_idx), "should be in not peel subgraph");
-#endif
-  sink_to_not_peel(peel, not_peel, peel_list, sink_list, i);
-}
-
 // Transform:
 //
 // loop<-----------------+

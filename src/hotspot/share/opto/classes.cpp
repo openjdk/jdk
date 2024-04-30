@@ -45,6 +45,7 @@
 #include "opto/node.hpp"
 #include "opto/opaquenode.hpp"
 #include "opto/rootnode.hpp"
+#include "opto/scoped_value.hpp"
 #include "opto/subnode.hpp"
 #include "opto/subtypenode.hpp"
 #include "opto/vectornode.hpp"

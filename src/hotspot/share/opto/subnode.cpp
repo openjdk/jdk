@@ -30,7 +30,6 @@
 #include "opto/addnode.hpp"
 #include "opto/callnode.hpp"
 #include "opto/cfgnode.hpp"
-#include "opto/intrinsicnode.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/matcher.hpp"
 #include "opto/movenode.hpp"
@@ -1974,31 +1973,3 @@ Node* ReverseLNode::Identity(PhaseGVN* phase) {
   }
   return this;
 }
-
-IfProjNode* ScopedValueGetHitsInCacheNode::success_proj() const {
-  ScopedValueGetLoadFromCacheNode* load_from_cache = this->load_from_cache();
-  BoolNode* bol = find_out_with(Op_Bool, true)->as_Bool();
-  assert(bol->_test._test == BoolTest::ne, "unexpected ScopedValueGetHitsInCache shape");
-  IfNode* iff = bol->find_out_with(Op_If, true)->as_If();
-  assert(load_from_cache == nullptr || load_from_cache->iff() == iff, "unexpected ScopedValueGetHitsInCache/ScopedValueGetLoadFromCache shape");
-  IfProjNode* dom = iff->proj_out(1)->as_IfProj();
-  assert(load_from_cache == nullptr || dom == load_from_cache->in(0), "unexpected ScopedValueGetHitsInCache/ScopedValueGetLoadFromCache shape");
-  return dom;
-}
-
-#ifdef ASSERT
-void ScopedValueGetHitsInCacheNode::verify() const {
-  for (DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++) {
-    Node* u = fast_out(i);
-    assert(u->is_Bool() || u->Opcode() == Op_ScopedValueGetLoadFromCache, "wrong ScopedValueGetHitsInCache shape");
-  }
-  ScopedValueGetLoadFromCacheNode* load = load_from_cache();
-  if (load != nullptr) {
-    assert(load->in(0)->Opcode() == Op_IfTrue, "wrong ScopedValueGetHitsInCache/ScopedValueGetLoadFromCache shape");
-    assert(load->in(0)->in(0)->in(1)->is_Bool(), "wrong ScopedValueGetHitsInCache/ScopedValueGetLoadFromCache shape");
-    assert(load->in(0)->in(0)->in(1)->in(1) == this, "wrong ScopedValueGetHitsInCache/ScopedValueGetLoadFromCache shape");
-  }
-}
-#endif
-
-

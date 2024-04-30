@@ -3045,11 +3045,3 @@ void BlackholeNode::format(PhaseRegAlloc* ra, outputStream* st) const {
 }
 #endif
 
-
-const Type* ScopedValueGetResultNode::Value(PhaseGVN* phase) const {
-  if (phase->type(in(0)) == Type::TOP) {
-    return Type::TOP;
-  }
-  return Node::Value(phase);
-}
-

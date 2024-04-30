@@ -550,29 +550,6 @@ uint IdealLoopTree::estimate_if_peeling_possible(PhaseIdealLoop* phase) const {
   return estimate;
 }
 
-// If a ScopedValueGetResult dominates the back edge, peeling one iteration will allow the elimination of the
-// ScopedValue.get() nodes in the loop body.
-bool IdealLoopTree::policy_peeling_for_scoped_value(PhaseIdealLoop* phase) {
-  uint estimate = estimate_if_peeling_possible(phase);
-
-  if (estimate == 0) {
-    return false;
-  }
-
-  Node* test = tail();
-
-  while (test != _head) {   // Scan till run off top of loop
-    if (test->Opcode() == Op_ScopedValueGetResult &&
-        !phase->is_member(this, phase->get_ctrl((test->as_ScopedValueGetResult())->scoped_value()))) {
-      return phase->may_require_nodes(estimate);
-    }
-    // Walk up dominators to loop _head looking for test which is executed on
-    // every path through the loop.
-    test = phase->idom(test);
-  }
-  return false;
-}
-
 //------------------------------peeled_dom_test_elim---------------------------
 // If we got the effect of peeling, either by actually peeling or by making
 // a pre-loop which must execute at least once, we can remove all

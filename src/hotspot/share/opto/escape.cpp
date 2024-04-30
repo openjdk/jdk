@@ -36,7 +36,6 @@
 #include "opto/cfgnode.hpp"
 #include "opto/compile.hpp"
 #include "opto/escape.hpp"
-#include "opto/intrinsicnode.hpp"
 #include "opto/macro.hpp"
 #include "opto/locknode.hpp"
 #include "opto/phaseX.hpp"
@@ -44,6 +43,7 @@
 #include "opto/narrowptrnode.hpp"
 #include "opto/castnode.hpp"
 #include "opto/rootnode.hpp"
+#include "opto/scoped_value.hpp"
 #include "utilities/macros.hpp"
 
 ConnectionGraph::ConnectionGraph(Compile * C, PhaseIterGVN *igvn, int invocation) :
