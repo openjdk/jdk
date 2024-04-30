@@ -413,6 +413,7 @@ public class StructuredTaskScope<T> implements AutoCloseable {
      * @param name the name of the task scope, can be null
      * @param factory the thread factory
      */
+    @SuppressWarnings("this-escape")
     public StructuredTaskScope(String name, ThreadFactory factory) {
         this.factory = Objects.requireNonNull(factory, "'factory' is null");
         if (name == null)

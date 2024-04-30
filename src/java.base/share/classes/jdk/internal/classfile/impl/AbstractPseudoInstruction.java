@@ -154,7 +154,7 @@ public abstract sealed class AbstractPseudoInstruction
 
     }
 
-    private static abstract sealed class AbstractLocalPseudo extends AbstractPseudoInstruction {
+    private abstract static sealed class AbstractLocalPseudo extends AbstractPseudoInstruction {
         protected final int slot;
         protected final Utf8Entry name;
         protected final Utf8Entry descriptor;

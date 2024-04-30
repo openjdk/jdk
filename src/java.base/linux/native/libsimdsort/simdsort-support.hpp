@@ -31,8 +31,8 @@
 #define assert(cond, msg) { if (!(cond)) { fprintf(stderr, "assert fails %s %d: %s\n", __FILE__, __LINE__, msg); abort(); }}
 
 
-// GCC >= 7.5 is needed to build AVX2 portions of libsimdsort using C++17 features
-#if defined(_LP64) && (defined(__GNUC__) && ((__GNUC__ > 7) || ((__GNUC__ == 7) && (__GNUC_MINOR__ >= 5))))
+// GCC >= 9.1 is needed to build AVX2 portions of libsimdsort using C++17 features
+#if defined(_LP64) && (defined(__GNUC__) && ((__GNUC__ > 9) || ((__GNUC__ == 9) && (__GNUC_MINOR__ >= 1))))
 #define __SIMDSORT_SUPPORTED_LINUX
 #endif
 

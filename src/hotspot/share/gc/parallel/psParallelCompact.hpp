@@ -123,7 +123,6 @@ public:
 
   // The index of the split region, the size of the partial object on that
   // region and the destination of the partial object.
-  size_t    src_region_idx() const   { return _src_region_idx; }
   size_t    partial_obj_size() const { return _partial_obj_size; }
   HeapWord* destination() const      { return _destination; }
 
@@ -280,12 +279,6 @@ public:
     // Number of times the block table was filled.
     DEBUG_ONLY(inline size_t blocks_filled_count() const;)
 
-    // The location of the java heap data that corresponds to this region.
-    inline HeapWord* data_location() const;
-
-    // The highest address referenced by objects in this region.
-    inline HeapWord* highest_ref() const;
-
     // Whether this region is available to be claimed, has been claimed, or has
     // been completed.
     //
@@ -308,13 +301,12 @@ public:
 
     inline void set_destination_count(uint count);
     inline void set_live_obj_size(size_t words);
-    inline void set_data_location(HeapWord* addr);
+
     inline void set_completed();
     inline bool claim_unsafe();
 
     // These are atomic.
     inline void add_live_obj(size_t words);
-    inline void set_highest_ref(HeapWord* addr);
     inline void decrement_destination_count();
     inline bool claim();
 
@@ -368,11 +360,6 @@ public:
 
 #ifdef ASSERT
     size_t               _blocks_filled_count;   // Number of block table fills.
-
-    // These enable optimizations that are only partially implemented.  Use
-    // debug builds to prevent the code fragments from breaking.
-    HeapWord*            _data_location;
-    HeapWord*            _highest_ref;
 #endif  // #ifdef ASSERT
 
 #ifdef ASSERT
@@ -399,7 +386,7 @@ public:
 
 public:
   ParallelCompactData();
-  bool initialize(MemRegion covered_region);
+  bool initialize(MemRegion reserved_heap);
 
   size_t region_count() const { return _region_count; }
   size_t reserved_byte_size() const { return _reserved_byte_size; }
@@ -410,10 +397,6 @@ public:
 
   size_t block_count() const { return _block_count; }
   inline BlockData* block(size_t block_idx) const;
-  inline size_t     block(const BlockData* block_ptr) const;
-
-  void add_obj(HeapWord* addr, size_t len);
-  void add_obj(oop p, size_t len) { add_obj(cast_from_oop<HeapWord*>(p), len); }
 
   // Fill in the regions covering [beg, end) so that no data moves; i.e., the
   // destination of region n is simply the start of region n.  Both arguments
@@ -423,13 +406,16 @@ public:
   HeapWord* summarize_split_space(size_t src_region, SplitInfo& split_info,
                                   HeapWord* destination, HeapWord* target_end,
                                   HeapWord** target_next);
+
+  size_t live_words_in_space(const MutableSpace* space,
+                             HeapWord** full_region_prefix_end = nullptr);
+
   bool summarize(SplitInfo& split_info,
                  HeapWord* source_beg, HeapWord* source_end,
                  HeapWord** source_next,
                  HeapWord* target_beg, HeapWord* target_end,
                  HeapWord** target_next);
 
-  void clear();
   void clear_range(size_t beg_region, size_t end_region);
   void clear_range(HeapWord* beg, HeapWord* end) {
     clear_range(addr_to_region_idx(beg), addr_to_region_idx(end));
@@ -443,26 +429,16 @@ public:
   inline size_t     addr_to_region_idx(const HeapWord* addr) const;
   inline RegionData* addr_to_region_ptr(const HeapWord* addr) const;
   inline HeapWord*  region_to_addr(size_t region) const;
-  inline HeapWord*  region_to_addr(size_t region, size_t offset) const;
   inline HeapWord*  region_to_addr(const RegionData* region) const;
 
   inline HeapWord*  region_align_down(HeapWord* addr) const;
   inline HeapWord*  region_align_up(HeapWord* addr) const;
   inline bool       is_region_aligned(HeapWord* addr) const;
 
-  // Analogous to region_offset() for blocks.
-  size_t     block_offset(const HeapWord* addr) const;
   size_t     addr_to_block_idx(const HeapWord* addr) const;
-  size_t     addr_to_block_idx(const oop obj) const {
-    return addr_to_block_idx(cast_from_oop<HeapWord*>(obj));
-  }
   inline BlockData* addr_to_block_ptr(const HeapWord* addr) const;
-  inline HeapWord*  block_to_addr(size_t block) const;
-  inline size_t     region_to_block_idx(size_t region) const;
 
   inline HeapWord*  block_align_down(HeapWord* addr) const;
-  inline HeapWord*  block_align_up(HeapWord* addr) const;
-  inline bool       is_block_aligned(HeapWord* addr) const;
 
   // Return the address one past the end of the partial object.
   HeapWord* partial_obj_end(size_t region_idx) const;
@@ -481,13 +457,12 @@ public:
 
 private:
   bool initialize_block_data();
-  bool initialize_region_data(size_t region_size);
+  bool initialize_region_data(size_t heap_size);
   PSVirtualSpace* create_vspace(size_t count, size_t element_size);
 
-private:
-  HeapWord*       _region_start;
+  HeapWord*       _heap_start;
 #ifdef  ASSERT
-  HeapWord*       _region_end;
+  HeapWord*       _heap_end;
 #endif  // #ifdef ASSERT
 
   PSVirtualSpace* _region_vspace;
@@ -558,23 +533,6 @@ inline void ParallelCompactData::RegionData::decrement_destination_count()
   Atomic::add(&_dc_and_los, dc_mask);
 }
 
-inline HeapWord* ParallelCompactData::RegionData::data_location() const
-{
-  DEBUG_ONLY(return _data_location;)
-  NOT_DEBUG(return nullptr;)
-}
-
-inline HeapWord* ParallelCompactData::RegionData::highest_ref() const
-{
-  DEBUG_ONLY(return _highest_ref;)
-  NOT_DEBUG(return nullptr;)
-}
-
-inline void ParallelCompactData::RegionData::set_data_location(HeapWord* addr)
-{
-  DEBUG_ONLY(_data_location = addr;)
-}
-
 inline void ParallelCompactData::RegionData::set_completed()
 {
   assert(claimed(), "must be claimed first");
@@ -596,16 +554,6 @@ inline void ParallelCompactData::RegionData::add_live_obj(size_t words)
 {
   assert(words <= (size_t)los_mask - live_obj_size(), "overflow");
   Atomic::add(&_dc_and_los, static_cast<region_sz_t>(words));
-}
-
-inline void ParallelCompactData::RegionData::set_highest_ref(HeapWord* addr)
-{
-#ifdef ASSERT
-  HeapWord* tmp = _highest_ref;
-  while (addr > tmp) {
-    tmp = Atomic::cmpxchg(&_highest_ref, tmp, addr);
-  }
-#endif  // #ifdef ASSERT
 }
 
 inline bool ParallelCompactData::RegionData::claim()
@@ -662,18 +610,18 @@ ParallelCompactData::block(size_t n) const {
 inline size_t
 ParallelCompactData::region_offset(const HeapWord* addr) const
 {
-  assert(addr >= _region_start, "bad addr");
+  assert(addr >= _heap_start, "bad addr");
   // would mistakenly return 0 for _region_end
-  assert(addr < _region_end, "bad addr");
+  assert(addr < _heap_end, "bad addr");
   return (size_t(addr) & RegionAddrOffsetMask) >> LogHeapWordSize;
 }
 
 inline size_t
 ParallelCompactData::addr_to_region_idx(const HeapWord* addr) const
 {
-  assert(addr >= _region_start, "bad addr " PTR_FORMAT " _region_start " PTR_FORMAT, p2i(addr), p2i(_region_start));
-  assert(addr <= _region_end, "bad addr " PTR_FORMAT " _region_end " PTR_FORMAT, p2i(addr), p2i(_region_end));
-  return pointer_delta(addr, _region_start) >> Log2RegionSize;
+  assert(addr >= _heap_start, "bad addr " PTR_FORMAT " _region_start " PTR_FORMAT, p2i(addr), p2i(_heap_start));
+  assert(addr <= _heap_end, "bad addr " PTR_FORMAT " _region_end " PTR_FORMAT, p2i(addr), p2i(_heap_end));
+  return pointer_delta(addr, _heap_start) >> Log2RegionSize;
 }
 
 inline ParallelCompactData::RegionData*
@@ -686,7 +634,7 @@ inline HeapWord*
 ParallelCompactData::region_to_addr(size_t region) const
 {
   assert(region <= _region_count, "region out of range");
-  return _region_start + (region << Log2RegionSize);
+  return _heap_start + (region << Log2RegionSize);
 }
 
 inline HeapWord*
@@ -697,26 +645,18 @@ ParallelCompactData::region_to_addr(const RegionData* region) const
 }
 
 inline HeapWord*
-ParallelCompactData::region_to_addr(size_t region, size_t offset) const
-{
-  assert(region <= _region_count, "region out of range");
-  assert(offset < RegionSize, "offset too big");  // This may be too strict.
-  return region_to_addr(region) + offset;
-}
-
-inline HeapWord*
 ParallelCompactData::region_align_down(HeapWord* addr) const
 {
-  assert(addr >= _region_start, "bad addr");
-  assert(addr < _region_end + RegionSize, "bad addr");
+  assert(addr >= _heap_start, "bad addr");
+  assert(addr < _heap_end + RegionSize, "bad addr");
   return (HeapWord*)(size_t(addr) & RegionAddrMask);
 }
 
 inline HeapWord*
 ParallelCompactData::region_align_up(HeapWord* addr) const
 {
-  assert(addr >= _region_start, "bad addr");
-  assert(addr <= _region_end, "bad addr");
+  assert(addr >= _heap_start, "bad addr");
+  assert(addr <= _heap_end, "bad addr");
   return region_align_down(addr + RegionSizeOffsetMask);
 }
 
@@ -727,19 +667,11 @@ ParallelCompactData::is_region_aligned(HeapWord* addr) const
 }
 
 inline size_t
-ParallelCompactData::block_offset(const HeapWord* addr) const
-{
-  assert(addr >= _region_start, "bad addr");
-  assert(addr <= _region_end, "bad addr");
-  return (size_t(addr) & BlockAddrOffsetMask) >> LogHeapWordSize;
-}
-
-inline size_t
 ParallelCompactData::addr_to_block_idx(const HeapWord* addr) const
 {
-  assert(addr >= _region_start, "bad addr");
-  assert(addr <= _region_end, "bad addr");
-  return pointer_delta(addr, _region_start) >> Log2BlockSize;
+  assert(addr >= _heap_start, "bad addr");
+  assert(addr <= _heap_end, "bad addr");
+  return pointer_delta(addr, _heap_start) >> Log2BlockSize;
 }
 
 inline ParallelCompactData::BlockData*
@@ -749,38 +681,11 @@ ParallelCompactData::addr_to_block_ptr(const HeapWord* addr) const
 }
 
 inline HeapWord*
-ParallelCompactData::block_to_addr(size_t block) const
-{
-  assert(block < _block_count, "block out of range");
-  return _region_start + (block << Log2BlockSize);
-}
-
-inline size_t
-ParallelCompactData::region_to_block_idx(size_t region) const
-{
-  return region << Log2BlocksPerRegion;
-}
-
-inline HeapWord*
 ParallelCompactData::block_align_down(HeapWord* addr) const
 {
-  assert(addr >= _region_start, "bad addr");
-  assert(addr < _region_end + RegionSize, "bad addr");
+  assert(addr >= _heap_start, "bad addr");
+  assert(addr < _heap_end + RegionSize, "bad addr");
   return (HeapWord*)(size_t(addr) & BlockAddrMask);
-}
-
-inline HeapWord*
-ParallelCompactData::block_align_up(HeapWord* addr) const
-{
-  assert(addr >= _region_start, "bad addr");
-  assert(addr <= _region_end, "bad addr");
-  return block_align_down(addr + BlockSizeOffsetMask);
-}
-
-inline bool
-ParallelCompactData::is_block_aligned(HeapWord* addr) const
-{
-  return block_offset(addr) == 0;
 }
 
 // Abstract closure for use with ParMarkBitMap::iterate(), which will invoke the
@@ -819,7 +724,6 @@ class ParMarkBitMapClosure: public StackObj {
  private:
   ParMarkBitMap* const        _bitmap;
   ParCompactionManager* const _compaction_manager;
-  DEBUG_ONLY(const size_t     _initial_words_remaining;) // Useful in debugger.
   size_t                      _words_remaining; // Words left to copy.
 
  protected:
@@ -831,9 +735,6 @@ ParMarkBitMapClosure::ParMarkBitMapClosure(ParMarkBitMap* bitmap,
                                            ParCompactionManager* cm,
                                            size_t words):
   _bitmap(bitmap), _compaction_manager(cm)
-#ifdef  ASSERT
-  , _initial_words_remaining(words)
-#endif
 {
   _words_remaining = words;
   _source = nullptr;
@@ -1025,15 +926,6 @@ class PSParallelCompact : AllStatic {
   static SpanSubjectToDiscoveryClosure  _span_based_discoverer;
   static ReferenceProcessor*  _ref_processor;
 
-  // Values computed at initialization and used by dead_wood_limiter().
-  static double _dwl_mean;
-  static double _dwl_std_dev;
-  static double _dwl_first_term;
-  static double _dwl_adjustment;
-#ifdef  ASSERT
-  static bool   _dwl_initialized;
-#endif  // #ifdef ASSERT
-
  public:
   static ParallelOldTracer* gc_tracer() { return &_gc_tracer; }
 
@@ -1047,67 +939,22 @@ class PSParallelCompact : AllStatic {
   static void pre_compact();
   static void post_compact();
 
+  static bool reassess_maximum_compaction(bool maximum_compaction,
+                                          size_t total_live_words,
+                                          MutableSpace* const old_space,
+                                          HeapWord* full_region_prefix_end);
+
   // Mark live objects
   static void marking_phase(ParallelOldTracer *gc_tracer);
 
-  // Compute the dense prefix for the designated space.  This is an experimental
-  // implementation currently not used in production.
-  static HeapWord* compute_dense_prefix_via_density(const SpaceId id,
-                                                    bool maximum_compaction);
+  // Identify the dense-fix in the old-space to avoid moving much memory with little reclaimed.
+  static HeapWord* compute_dense_prefix_for_old_space(MutableSpace* old_space,
+                                                      HeapWord* full_region_prefix_end);
 
-  // Methods used to compute the dense prefix.
-
-  // Compute the value of the normal distribution at x = density.  The mean and
-  // standard deviation are values saved by initialize_dead_wood_limiter().
-  static inline double normal_distribution(double density);
-
-  // Initialize the static vars used by dead_wood_limiter().
-  static void initialize_dead_wood_limiter();
-
-  // Return the percentage of space that can be treated as "dead wood" (i.e.,
-  // not reclaimed).
-  static double dead_wood_limiter(double density, size_t min_percent);
-
-  // Find the first (left-most) region in the range [beg, end) that has at least
-  // dead_words of dead space to the left.  The argument beg must be the first
-  // region in the space that is not completely live.
-  static RegionData* dead_wood_limit_region(const RegionData* beg,
-                                            const RegionData* end,
-                                            size_t dead_words);
-
-  // Return a pointer to the first region in the range [beg, end) that is not
-  // completely full.
-  static RegionData* first_dead_space_region(const RegionData* beg,
-                                             const RegionData* end);
-
-  // Return a value indicating the benefit or 'yield' if the compacted region
-  // were to start (or equivalently if the dense prefix were to end) at the
-  // candidate region.  Higher values are better.
-  //
-  // The value is based on the amount of space reclaimed vs. the costs of (a)
-  // updating references in the dense prefix plus (b) copying objects and
-  // updating references in the compacted region.
-  static inline double reclaimed_ratio(const RegionData* const candidate,
-                                       HeapWord* const bottom,
-                                       HeapWord* const top,
-                                       HeapWord* const new_top);
-
-  // Compute the dense prefix for the designated space.
-  static HeapWord* compute_dense_prefix(const SpaceId id,
-                                        bool maximum_compaction);
-
-  // Return true if dead space crosses onto the specified Region; bit must be
-  // the bit index corresponding to the first word of the Region.
-  static inline bool dead_space_crosses_boundary(const RegionData* region,
-                                                 idx_t bit);
-
-  // Summary phase utility routine to fill dead space (if any) at the dense
-  // prefix boundary.  Should only be called if the dense prefix is
-  // non-empty.
+  // Create a filler obj (if needed) right before the dense-prefix-boundary to
+  // make the heap parsable.
   static void fill_dense_prefix_end(SpaceId id);
 
-  static void summarize_spaces_quick();
-  static void summarize_space(SpaceId id, bool maximum_compaction);
   static void summary_phase(bool maximum_compaction);
 
   // Adjust addresses in roots.  Does not adjust addresses in heap.
@@ -1133,9 +980,6 @@ class PSParallelCompact : AllStatic {
 #endif  // #ifndef PRODUCT
 
  public:
-
-  PSParallelCompact();
-
   static bool invoke(bool maximum_heap_compaction);
   static bool invoke_no_policy(bool maximum_heap_compaction);
 
@@ -1144,7 +988,7 @@ class PSParallelCompact : AllStatic {
   // allocations.  This should be called during the VM initialization
   // at a pointer where it would be appropriate to return a JNI_ENOMEM
   // in the event of a failure.
-  static bool initialize();
+  static bool initialize_aux_data();
 
   // Closure accessors
   static BoolObjectClosure* is_alive_closure()     { return &_is_alive_closure; }
@@ -1170,15 +1014,6 @@ class PSParallelCompact : AllStatic {
   static inline HeapWord*         new_top(SpaceId space_id);
   static inline HeapWord*         dense_prefix(SpaceId space_id);
   static inline ObjectStartArray* start_array(SpaceId space_id);
-
-  // Process the end of the given region range in the dense prefix.
-  // This includes saving any object not updated.
-  static void dense_prefix_regions_epilogue(ParCompactionManager* cm,
-                                            size_t region_start_index,
-                                            size_t region_end_index,
-                                            idx_t exiting_object_offset,
-                                            idx_t region_offset_start,
-                                            idx_t region_offset_end);
 
   // Update a region in the dense prefix.  For each live object
   // in the region, update it's interior references.  For each
@@ -1254,10 +1089,6 @@ class PSParallelCompact : AllStatic {
   // Debugging support.
   static const char* space_names[last_space_id];
   static void print_region_ranges();
-  static void print_dense_prefix_stats(const char* const algorithm,
-                                       const SpaceId id,
-                                       const bool maximum_compaction,
-                                       HeapWord* const addr);
   static void summary_phase_msg(SpaceId dst_space_id,
                                 HeapWord* dst_beg, HeapWord* dst_end,
                                 SpaceId src_space_id,

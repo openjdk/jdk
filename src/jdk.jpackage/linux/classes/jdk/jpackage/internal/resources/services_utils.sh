@@ -4,7 +4,8 @@
 register_services ()
 {
   for unit in "$@"; do
-    systemctl enable --now "$unit"
+    local unit_name=`basename "$unit"`
+    systemctl enable --now "$unit_name"
   done
 }
 

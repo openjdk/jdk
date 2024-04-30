@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1348,7 +1348,7 @@ void SystemDictionaryShared::update_shared_entry(InstanceKlass* k, int id) {
   info->_id = id;
 }
 
-const char* class_loader_name_for_shared(Klass* k) {
+static const char* class_loader_name_for_shared(Klass* k) {
   assert(k != nullptr, "Sanity");
   assert(k->is_shared(), "Must be");
   assert(k->is_instance_klass(), "Must be");

@@ -24,7 +24,6 @@
 #include "precompiled.hpp"
 #include "code/relocInfo.hpp"
 #include "code/nmethod.hpp"
-#include "code/icBuffer.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/classUnloadingContext.hpp"
@@ -305,9 +304,7 @@ public:
     }
 
     // Clear compiled ICs and exception caches
-    if (!nm->unload_nmethod_caches(_unloading_occurred)) {
-      set_failed();
-    }
+    nm->unload_nmethod_caches(_unloading_occurred);
   }
 
   bool failed() const {
@@ -318,13 +315,11 @@ public:
 class XNMethodUnlinkTask : public XTask {
 private:
   XNMethodUnlinkClosure _cl;
-  ICRefillVerifier*     _verifier;
 
 public:
-  XNMethodUnlinkTask(bool unloading_occurred, ICRefillVerifier* verifier) :
+  XNMethodUnlinkTask(bool unloading_occurred) :
       XTask("XNMethodUnlinkTask"),
-      _cl(unloading_occurred),
-      _verifier(verifier) {
+      _cl(unloading_occurred) {
     XNMethodTable::nmethods_do_begin();
   }
 
@@ -333,33 +328,13 @@ public:
   }
 
   virtual void work() {
-    ICRefillVerifierMark mark(_verifier);
     XNMethodTable::nmethods_do(&_cl);
-  }
-
-  bool success() const {
-    return !_cl.failed();
   }
 };
 
 void XNMethod::unlink(XWorkers* workers, bool unloading_occurred) {
-  for (;;) {
-    ICRefillVerifier verifier;
-
-    {
-      XNMethodUnlinkTask task(unloading_occurred, &verifier);
-      workers->run(&task);
-      if (task.success()) {
-        return;
-      }
-    }
-
-    // Cleaning failed because we ran out of transitional IC stubs,
-    // so we have to refill and try again. Refilling requires taking
-    // a safepoint, so we temporarily leave the suspendible thread set.
-    SuspendibleThreadSetLeaver sts;
-    InlineCacheBuffer::refill_ic_stubs();
-  }
+  XNMethodUnlinkTask task(unloading_occurred);
+  workers->run(&task);
 }
 
 void XNMethod::purge() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -399,11 +399,13 @@ const Type *Type::make( enum TYPES t ) {
 }
 
 //------------------------------cmp--------------------------------------------
-int Type::cmp( const Type *const t1, const Type *const t2 ) {
-  if( t1->_base != t2->_base )
-    return 1;                   // Missed badly
+bool Type::equals(const Type* t1, const Type* t2) {
+  if (t1->_base != t2->_base) {
+    return false; // Missed badly
+  }
+
   assert(t1 != t2 || t1->eq(t2), "eq must be reflexive");
-  return !t1->eq(t2);           // Return ZERO if equal
+  return t1->eq(t2);
 }
 
 const Type* Type::maybe_remove_speculative(bool include_speculative) const {
@@ -433,9 +435,13 @@ void Type::Initialize_shared(Compile* current) {
   Arena* shared_type_arena = new (mtCompiler)Arena(mtCompiler);
 
   current->set_type_arena(shared_type_arena);
-  _shared_type_dict =
-    new (shared_type_arena) Dict( (CmpKey)Type::cmp, (Hash)Type::uhash,
-                                  shared_type_arena, 128 );
+
+  // Map the boolean result of Type::equals into a comparator result that CmpKey expects.
+  CmpKey type_cmp = [](const void* t1, const void* t2) -> int32_t {
+    return Type::equals((Type*) t1, (Type*) t2) ? 0 : 1;
+  };
+
+  _shared_type_dict = new (shared_type_arena) Dict(type_cmp, (Hash) Type::uhash, shared_type_arena, 128);
   current->set_type_dict(_shared_type_dict);
 
   // Make shared pre-built types.
@@ -744,7 +750,7 @@ const Type *Type::hashcons(void) {
   // Since we just discovered a new Type, compute its dual right now.
   assert( !_dual, "" );         // No dual yet
   _dual = xdual();              // Compute the dual
-  if (cmp(this, _dual) == 0) {  // Handle self-symmetric
+  if (equals(this, _dual)) {    // Handle self-symmetric
     if (_dual != this) {
       delete _dual;
       _dual = this;
@@ -4664,7 +4670,7 @@ template <class T1, class T2>  bool TypePtr::is_meet_subtype_of_helper_for_array
   }
 
   if (other_elem == nullptr && this_elem == nullptr) {
-    return this_one->_klass->is_subtype_of(other->_klass);
+    return this_one->klass()->is_subtype_of(other->klass());
   }
 
   return false;
@@ -5169,18 +5175,17 @@ void TypeAryPtr::dump2( Dict &d, uint depth, outputStream *st ) const {
   }
 
   if( _offset != 0 ) {
-    int header_size = objArrayOopDesc::header_size() * wordSize;
+    BasicType basic_elem_type = elem()->basic_type();
+    int header_size = arrayOopDesc::base_offset_in_bytes(basic_elem_type);
     if( _offset == OffsetTop )       st->print("+undefined");
     else if( _offset == OffsetBot )  st->print("+any");
     else if( _offset < header_size ) st->print("+%d", _offset);
     else {
-      BasicType basic_elem_type = elem()->basic_type();
       if (basic_elem_type == T_ILLEGAL) {
         st->print("+any");
       } else {
-        int array_base = arrayOopDesc::base_offset_in_bytes(basic_elem_type);
         int elem_size = type2aelembytes(basic_elem_type);
-        st->print("[%d]", (_offset - array_base)/elem_size);
+        st->print("[%d]", (_offset - header_size)/elem_size);
       }
     }
   }
@@ -5993,7 +5998,7 @@ template <class T1, class T2> bool TypePtr::is_java_subtype_of_helper_for_instan
     return true;
   }
 
-  return this_one->_klass->is_subtype_of(other->_klass) && this_one->_interfaces->contains(other->_interfaces);
+  return this_one->klass()->is_subtype_of(other->klass()) && this_one->_interfaces->contains(other->_interfaces);
 }
 
 bool TypeInstKlassPtr::is_java_subtype_of_helper(const TypeKlassPtr* other, bool this_exact, bool other_exact) const {
@@ -6008,7 +6013,7 @@ template <class T1, class T2> bool TypePtr::is_same_java_type_as_helper_for_inst
   if (!this_one->is_instance_type(other)) {
     return false;
   }
-  return this_one->_klass->equals(other->_klass) && this_one->_interfaces->eq(other->_interfaces);
+  return this_one->klass()->equals(other->klass()) && this_one->_interfaces->eq(other->_interfaces);
 }
 
 bool TypeInstKlassPtr::is_same_java_type_as_helper(const TypeKlassPtr* other) const {
@@ -6022,7 +6027,7 @@ template <class T1, class T2> bool TypePtr::maybe_java_subtype_of_helper_for_ins
   }
 
   if (this_one->is_array_type(other)) {
-    return !this_exact && this_one->_klass->equals(ciEnv::current()->Object_klass())  && other->_interfaces->contains(this_one->_interfaces);
+    return !this_exact && this_one->klass()->equals(ciEnv::current()->Object_klass())  && other->_interfaces->contains(this_one->_interfaces);
   }
 
   assert(this_one->is_instance_type(other), "unsupported");
@@ -6031,12 +6036,12 @@ template <class T1, class T2> bool TypePtr::maybe_java_subtype_of_helper_for_ins
     return this_one->is_java_subtype_of(other);
   }
 
-  if (!this_one->_klass->is_subtype_of(other->_klass) && !other->_klass->is_subtype_of(this_one->_klass)) {
+  if (!this_one->klass()->is_subtype_of(other->klass()) && !other->klass()->is_subtype_of(this_one->klass())) {
     return false;
   }
 
   if (this_exact) {
-    return this_one->_klass->is_subtype_of(other->_klass) && this_one->_interfaces->contains(other->_interfaces);
+    return this_one->klass()->is_subtype_of(other->klass()) && this_one->_interfaces->contains(other->_interfaces);
   }
 
   return true;
@@ -6116,7 +6121,7 @@ uint TypeAryKlassPtr::hash(void) const {
 
 //----------------------compute_klass------------------------------------------
 // Compute the defining klass for this class
-ciKlass* TypeAryPtr::compute_klass(DEBUG_ONLY(bool verify)) const {
+ciKlass* TypeAryPtr::compute_klass() const {
   // Compute _klass based on element type.
   ciKlass* k_ary = nullptr;
   const TypeInstPtr *tinst;
@@ -6137,28 +6142,7 @@ ciKlass* TypeAryPtr::compute_klass(DEBUG_ONLY(bool verify)) const {
     // and object; Top occurs when doing join on Bottom.
     // Leave k_ary at null.
   } else {
-    // Cannot compute array klass directly from basic type,
-    // since subtypes of TypeInt all have basic type T_INT.
-#ifdef ASSERT
-    if (verify && el->isa_int()) {
-      // Check simple cases when verifying klass.
-      BasicType bt = T_ILLEGAL;
-      if (el == TypeInt::BYTE) {
-        bt = T_BYTE;
-      } else if (el == TypeInt::SHORT) {
-        bt = T_SHORT;
-      } else if (el == TypeInt::CHAR) {
-        bt = T_CHAR;
-      } else if (el == TypeInt::INT) {
-        bt = T_INT;
-      } else {
-        return _klass; // just return specified klass
-      }
-      return ciTypeArrayKlass::make(bt);
-    }
-#endif
-    assert(!el->isa_int(),
-           "integral arrays must be pre-equipped with a class");
+    assert(!el->isa_int(), "integral arrays must be pre-equipped with a class");
     // Compute array klass directly from basic type
     k_ary = ciTypeArrayKlass::make(el->basic_type());
   }
@@ -6366,7 +6350,8 @@ const Type    *TypeAryKlassPtr::xmeet( const Type *t ) const {
       // For instances when a subclass meets a superclass we fall
       // below the centerline when the superclass is exact. We need to
       // do the same here.
-      if (tp->klass()->equals(ciEnv::current()->Object_klass()) && this_interfaces->intersection_with(tp_interfaces)->eq(tp_interfaces) && !tp->klass_is_exact()) {
+      if (tp->klass()->equals(ciEnv::current()->Object_klass()) && this_interfaces->contains(tp_interfaces) &&
+          !tp->klass_is_exact()) {
         return TypeAryKlassPtr::make(ptr, _elem, _klass, offset);
       } else {
         // cannot subclass, so the meet has to fall badly below the centerline
@@ -6384,7 +6369,8 @@ const Type    *TypeAryKlassPtr::xmeet( const Type *t ) const {
         // For instances when a subclass meets a superclass we fall
         // below the centerline when the superclass is exact. We need
         // to do the same here.
-        if (tp->klass()->equals(ciEnv::current()->Object_klass()) && this_interfaces->intersection_with(tp_interfaces)->eq(tp_interfaces) && !tp->klass_is_exact()) {
+        if (tp->klass()->equals(ciEnv::current()->Object_klass()) && this_interfaces->contains(tp_interfaces) &&
+            !tp->klass_is_exact()) {
           // that is, my array type is a subtype of 'tp' klass
           return make(ptr, _elem, _klass, offset);
         }
@@ -6418,7 +6404,8 @@ template <class T1, class T2> bool TypePtr::is_java_subtype_of_helper_for_array(
   }
 
   if (this_one->is_instance_type(other)) {
-    return other->klass() == ciEnv::current()->Object_klass() && other->_interfaces->intersection_with(this_one->_interfaces)->eq(other->_interfaces) && other_exact;
+    return other->klass() == ciEnv::current()->Object_klass() && this_one->_interfaces->contains(other->_interfaces) &&
+           other_exact;
   }
 
   assert(this_one->is_array_type(other), "");
@@ -6434,7 +6421,7 @@ template <class T1, class T2> bool TypePtr::is_java_subtype_of_helper_for_array(
     return this_one->is_reference_type(this_elem)->is_java_subtype_of_helper(this_one->is_reference_type(other_elem), this_exact, other_exact);
   }
   if (this_elem == nullptr && other_elem == nullptr) {
-    return this_one->_klass->is_subtype_of(other->_klass);
+    return this_one->klass()->is_subtype_of(other->klass());
   }
   return false;
 }
@@ -6466,8 +6453,7 @@ template <class T1, class T2> bool TypePtr::is_same_java_type_as_helper_for_arra
     return this_one->is_reference_type(this_elem)->is_same_java_type_as(this_one->is_reference_type(other_elem));
   }
   if (other_elem == nullptr && this_elem == nullptr) {
-    assert(this_one->_klass != nullptr && other->_klass != nullptr, "");
-    return this_one->_klass->equals(other->_klass);
+    return this_one->klass()->equals(other->klass());
   }
   return false;
 }
@@ -6481,14 +6467,20 @@ template <class T1, class T2> bool TypePtr::maybe_java_subtype_of_helper_for_arr
   if (other->klass() == ciEnv::current()->Object_klass() && other->_interfaces->empty() && other_exact) {
     return true;
   }
-  int dummy;
-  bool this_top_or_bottom = (this_one->base_element_type(dummy) == Type::TOP || this_one->base_element_type(dummy) == Type::BOTTOM);
-  if (!this_one->is_loaded() || !other->is_loaded() || this_top_or_bottom) {
+  if (!this_one->is_loaded() || !other->is_loaded()) {
     return true;
   }
   if (this_one->is_instance_type(other)) {
-    return other->_klass->equals(ciEnv::current()->Object_klass()) && other->_interfaces->intersection_with(this_one->_interfaces)->eq(other->_interfaces);
+    return other->klass()->equals(ciEnv::current()->Object_klass()) &&
+           this_one->_interfaces->contains(other->_interfaces);
   }
+
+  int dummy;
+  bool this_top_or_bottom = (this_one->base_element_type(dummy) == Type::TOP || this_one->base_element_type(dummy) == Type::BOTTOM);
+  if (this_top_or_bottom) {
+    return true;
+  }
+
   assert(this_one->is_array_type(other), "");
 
   const T1* other_ary = this_one->is_array_type(other);
@@ -6506,7 +6498,7 @@ template <class T1, class T2> bool TypePtr::maybe_java_subtype_of_helper_for_arr
     return this_one->is_reference_type(this_elem)->maybe_java_subtype_of_helper(this_one->is_reference_type(other_elem), this_exact, other_exact);
   }
   if (other_elem == nullptr && this_elem == nullptr) {
-    return this_one->_klass->is_subtype_of(other->_klass);
+    return this_one->klass()->is_subtype_of(other->klass());
   }
   return false;
 }

@@ -97,6 +97,7 @@ JfrJniMethodRegistration::JfrJniMethodRegistration(JNIEnv* env) {
       (char*)"isInstrumented", (char*)"(Ljava/lang/Class;)Z", (void*) jfr_is_class_instrumented,
       (char*)"isContainerized", (char*)"()Z", (void*) jfr_is_containerized,
       (char*)"hostTotalMemory", (char*)"()J", (void*) jfr_host_total_memory,
+      (char*)"hostTotalSwapMemory", (char*)"()J", (void*) jfr_host_total_swap_memory,
       (char*)"emitDataLoss", (char*)"(J)V", (void*)jfr_emit_data_loss,
       (char*)"registerStackFilter", (char*)"([Ljava/lang/String;[Ljava/lang/String;)J", (void*)jfr_register_stack_filter,
       (char*)"unregisterStackFilter", (char*)"(J)V", (void*)jfr_unregister_stack_filter

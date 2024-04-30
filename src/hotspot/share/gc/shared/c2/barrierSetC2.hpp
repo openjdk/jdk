@@ -205,6 +205,48 @@ public:
   virtual bool is_opt_access() const { return true; }
 };
 
+class BarrierSetC2State : public ArenaObj {
+protected:
+  Node_Array                      _live;
+
+public:
+  BarrierSetC2State(Arena* arena) : _live(arena) {}
+
+  RegMask* live(const Node* node) {
+    if (!node->is_Mach() || !needs_liveness_data(node->as_Mach())) {
+      // Don't need liveness for non-MachNodes or if the GC doesn't request it
+      return nullptr;
+    }
+    RegMask* live = (RegMask*)_live[node->_idx];
+    if (live == nullptr) {
+      live = new (Compile::current()->comp_arena()->AmallocWords(sizeof(RegMask))) RegMask();
+      _live.map(node->_idx, (Node*)live);
+    }
+
+    return live;
+  }
+
+  virtual bool needs_liveness_data(const MachNode* mach) const = 0;
+};
+
+// This class represents the slow path in a C2 barrier. It is defined by a
+// memory access, an entry point, and a continuation point (typically the end of
+// the barrier). It provides a set of registers whose value is live across the
+// barrier, and hence must be preserved across runtime calls from the stub.
+class BarrierStubC2 : public ArenaObj {
+protected:
+  const MachNode* _node;
+  Label           _entry;
+  Label           _continuation;
+
+public:
+  BarrierStubC2(const MachNode* node);
+  RegMask& live() const;
+  Label* entry();
+  Label* continuation();
+
+  virtual Register result() const = 0;
+};
 
 // This is the top-level class for the backend of the Access API in C2.
 // The top-level class is responsible for performing raw accesses. The
@@ -278,6 +320,9 @@ public:
   virtual bool optimize_loops(PhaseIdealLoop* phase, LoopOptsMode mode, VectorSet& visited, Node_Stack& nstack, Node_List& worklist) const { return false; }
   virtual bool strip_mined_loops_expanded(LoopOptsMode mode) const { return false; }
   virtual bool is_gc_specific_loop_opts_pass(LoopOptsMode mode) const { return false; }
+  // Estimated size of the node barrier in number of C2 Ideal nodes.
+  // This is used to guide heuristics in C2, e.g. whether to unroll a loop.
+  virtual uint estimated_barrier_size(const Node* node) const { return 0; }
 
   enum CompilePhase {
     BeforeOptimize,
@@ -299,6 +344,7 @@ public:
   virtual bool matcher_is_store_load_barrier(Node* x, uint xop) const { return false; }
 
   virtual void late_barrier_analysis() const { }
+  virtual void compute_liveness_at_stubs() const;
   virtual int estimate_stub_size() const { return 0; }
   virtual void emit_stubs(CodeBuffer& cb) const { }
 

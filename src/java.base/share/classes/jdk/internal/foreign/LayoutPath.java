@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -363,45 +363,141 @@ public class LayoutPath {
                 .collect(joining(", selected from: "));
     }
 
-    /**
-     * This class provides an immutable implementation for the {@code PathElement} interface. A path element implementation
-     * is simply a pointer to one of the selector methods provided by the {@code LayoutPath} class.
-     */
-    public static final class PathElementImpl implements MemoryLayout.PathElement, UnaryOperator<LayoutPath> {
+    public record GroupElementByName(String name)
+            implements MemoryLayout.PathElement, UnaryOperator<LayoutPath> {
 
-        public enum PathKind {
-            SEQUENCE_ELEMENT("unbound sequence element"),
-            SEQUENCE_ELEMENT_INDEX("bound sequence element"),
-            SEQUENCE_RANGE("sequence range"),
-            GROUP_ELEMENT("group element"),
-            DEREF_ELEMENT("dereference element");
-
-            final String description;
-
-            PathKind(String description) {
-                this.description = description;
-            }
-
-            public String description() {
-                return description;
-            }
-        }
-
-        final PathKind kind;
-        final UnaryOperator<LayoutPath> pathOp;
-
-        public PathElementImpl(PathKind kind, UnaryOperator<LayoutPath> pathOp) {
-            this.kind = kind;
-            this.pathOp = pathOp;
+        // Assert invariants
+        public GroupElementByName {
+            Objects.requireNonNull(name);
         }
 
         @Override
         public LayoutPath apply(LayoutPath layoutPath) {
-            return pathOp.apply(layoutPath);
+            return layoutPath.groupElement(name);
         }
 
-        public PathKind kind() {
-            return kind;
+        @Override
+        public String toString() {
+            return "groupElement(\"" + name + "\")";
         }
     }
+
+    public record GroupElementByIndex(long index)
+            implements MemoryLayout.PathElement, UnaryOperator<LayoutPath> {
+
+        // Assert invariants
+        public GroupElementByIndex {
+            if (index < 0) {
+                throw new IllegalArgumentException("Index < 0");
+            }
+        }
+
+        @Override
+        public LayoutPath apply(LayoutPath layoutPath) {
+            return layoutPath.groupElement(index);
+        }
+
+        @Override
+        public String toString() {
+            return "groupElement(" + index + ")";
+        }
+
+    }
+
+    public record SequenceElementByIndex(long index)
+            implements MemoryLayout.PathElement, UnaryOperator<LayoutPath> {
+
+        // Assert invariants
+        public SequenceElementByIndex {
+            if (index < 0) {
+                throw new IllegalArgumentException("Index < 0");
+            }
+        }
+
+        @Override
+        public LayoutPath apply(LayoutPath layoutPath) {
+            return layoutPath.sequenceElement(index);
+        }
+
+        @Override
+        public String toString() {
+            return "sequenceElement(" + index + ")";
+        }
+
+    }
+
+    public record SequenceElementByRange(long start, long step)
+            implements MemoryLayout.PathElement, UnaryOperator<LayoutPath> {
+
+        // Assert invariants
+        public SequenceElementByRange {
+            if (start < 0) {
+                throw new IllegalArgumentException("Start index must be positive: " + start);
+            }
+            if (step == 0) {
+                throw new IllegalArgumentException("Step must be != 0: " + step);
+            }
+        }
+
+        @Override
+        public LayoutPath apply(LayoutPath layoutPath) {
+            return layoutPath.sequenceElement(start, step);
+        }
+
+        @Override
+        public String toString() {
+            return "sequenceElement(" + start + ", " + step + ")";
+        }
+
+    }
+
+    public record SequenceElement()
+            implements MemoryLayout.PathElement, UnaryOperator<LayoutPath> {
+
+        private static final SequenceElement INSTANCE = new SequenceElement();
+
+        @Override
+        public LayoutPath apply(LayoutPath layoutPath) {
+            return layoutPath.sequenceElement();
+        }
+
+        @Override
+        public String toString() {
+            return "sequenceElement()";
+        }
+
+        public static MemoryLayout.PathElement instance() {
+            return INSTANCE;
+        }
+
+    }
+
+    public record DereferenceElement()
+            implements MemoryLayout.PathElement, UnaryOperator<LayoutPath> {
+
+        private static final DereferenceElement INSTANCE = new DereferenceElement();
+
+        @Override
+        public LayoutPath apply(LayoutPath layoutPath) {
+            return layoutPath.derefElement();
+        }
+
+        // Overriding here will ensure DereferenceElement will have a hash code
+        // that is different from the hash code of SequenceElement.
+        @Override
+        public int hashCode() {
+            return 31;
+        }
+
+        @Override
+        public String toString() {
+            return "dereferenceElement()";
+        }
+
+        public static MemoryLayout.PathElement instance() {
+            return INSTANCE;
+        }
+
+    }
+
 }

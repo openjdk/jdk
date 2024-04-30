@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,8 @@
  * questions.
  */
 
-import jdk.test.lib.JDKToolFinder;
-import static jdk.test.lib.process.ProcessTools.executeCommand;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 /**
  * @test
@@ -39,12 +39,13 @@ import static jdk.test.lib.process.ProcessTools.executeCommand;
 public class OtherResourcesTest {
     public static void main(String[] args) throws Throwable {
         String classes = System.getProperty("test.classes");
-        executeCommand(JDKToolFinder.getTestJDKTool("java"),
-                       "--limit-modules", "java.base",
-                       "-cp", classes, "OtherResources")
-                      .outputTo(System.out)
-                      .errorTo(System.out)
-                      .shouldHaveExitValue(0);
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
+                "--limit-modules", "java.base",
+                "-cp", classes, "OtherResources");
+        new OutputAnalyzer(pb.start())
+                .outputTo(System.out)
+                .errorTo(System.out)
+                .shouldHaveExitValue(0);
     }
 }
 

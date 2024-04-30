@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -281,10 +281,10 @@ class InterpreterMacroAssembler: public MacroAssembler {
                         Label& not_equal_continue);
 
   void record_klass_in_profile(Register receiver, Register mdp,
-                               Register reg2, bool is_virtual_call);
+                               Register reg2);
   void record_klass_in_profile_helper(Register receiver, Register mdp,
                                       Register reg2, int start_row,
-                                      Label& done, bool is_virtual_call);
+                                      Label& done);
 
   void update_mdp_by_offset(Register mdp_in, int offset_of_offset);
   void update_mdp_by_offset(Register mdp_in, Register dataidx, int offset_of_disp);
@@ -301,7 +301,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void profile_ret(Register return_bci, Register mdp);
   void profile_null_seen(Register mdp);
   void profile_typecheck(Register mdp, Register klass, Register scratch);
-  void profile_typecheck_failed(Register mdp, Register tmp);
   void profile_switch_default(Register mdp);
   void profile_switch_case(Register index_in_scratch, Register mdp,
                            Register scratch1, Register scratch2);

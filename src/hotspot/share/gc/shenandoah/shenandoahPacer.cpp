@@ -338,3 +338,8 @@ void ShenandoahPacer::print_cycle_on(outputStream* out) {
   }
   out->cr();
 }
+
+void ShenandoahPeriodicPacerNotifyTask::task() {
+  assert(ShenandoahPacing, "Should not be here otherwise");
+  _pacer->notify_waiters();
+}

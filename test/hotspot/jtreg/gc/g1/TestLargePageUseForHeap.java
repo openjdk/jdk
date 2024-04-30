@@ -85,29 +85,26 @@ public class TestLargePageUseForHeap {
     }
 
     static void testVM(long regionSize) throws Exception {
-        ProcessBuilder pb;
         // Test with large page enabled.
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+UseG1GC",
-                                                              "-XX:G1HeapRegionSize=" + regionSize,
-                                                              "-Xmx128m",
-                                                              "-Xlog:gc+init,pagesize,gc+heap+coops=debug",
-                                                              "-XX:+UseLargePages",
-                                                              "-version");
+        OutputAnalyzer output = ProcessTools.executeLimitedTestJava("-XX:+UseG1GC",
+                                                                    "-XX:G1HeapRegionSize=" + regionSize,
+                                                                    "-Xmx128m",
+                                                                    "-Xlog:gc+init,pagesize,gc+heap+coops=debug",
+                                                                    "-XX:+UseLargePages",
+                                                                    "-version");
 
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
         boolean largePageEnabled = checkLargePageEnabled(output);
         checkHeap(output, largePageEnabled ? largePageSize : smallPageSize);
         output.shouldHaveExitValue(0);
 
         // Test with large page disabled.
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+UseG1GC",
-                                                              "-XX:G1HeapRegionSize=" + regionSize,
-                                                              "-Xmx128m",
-                                                              "-Xlog:gc+init,pagesize,gc+heap+coops=debug",
-                                                              "-XX:-UseLargePages",
-                                                              "-version");
+        output = ProcessTools.executeLimitedTestJava("-XX:+UseG1GC",
+                                                     "-XX:G1HeapRegionSize=" + regionSize,
+                                                     "-Xmx128m",
+                                                     "-Xlog:gc+init,pagesize,gc+heap+coops=debug",
+                                                     "-XX:-UseLargePages",
+                                                     "-version");
 
-        output = new OutputAnalyzer(pb.start());
         checkHeap(output, smallPageSize);
         output.shouldHaveExitValue(0);
     }

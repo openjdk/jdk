@@ -105,7 +105,7 @@ public class CompileCommandMemLimit {
         }
         options.add(getTestClass());
 
-        OutputAnalyzer oa = ProcessTools.executeTestJvm(options);
+        OutputAnalyzer oa = ProcessTools.executeTestJava(options);
 
         oa.reportDiagnosticSummary();
 

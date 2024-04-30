@@ -421,6 +421,7 @@ class SerializeClosure;
   template(notifyJvmtiMount_name,                     "notifyJvmtiMount")                         \
   template(notifyJvmtiUnmount_name,                   "notifyJvmtiUnmount")                       \
   template(notifyJvmtiHideFrames_name,                "notifyJvmtiHideFrames")                    \
+  template(notifyJvmtiDisableSuspend_name,            "notifyJvmtiDisableSuspend")                \
   template(doYield_name,                              "doYield")                                  \
   template(enter_name,                                "enter")                                    \
   template(enterSpecial_name,                         "enterSpecial")                             \
@@ -763,7 +764,7 @@ class SerializeClosure;
   template(decodeAndThrowThrowable_name,               "decodeAndThrowThrowable")                                 \
   template(encodeAnnotations_name,                     "encodeAnnotations")                                       \
   template(encodeAnnotations_signature,                "([BLjava/lang/Class;Ljdk/internal/reflect/ConstantPool;Z[Ljava/lang/Class;)[B")\
-  template(decodeAndThrowThrowable_signature,          "(IJZ)V")                                                  \
+  template(decodeAndThrowThrowable_signature,          "(IJZZ)V")                                                 \
   template(classRedefinedCount_name,                   "classRedefinedCount")                                     \
   template(classLoader_name,                           "classLoader")                                             \
   template(componentType_name,                         "componentType")                                           \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -143,11 +143,11 @@ static double select_young_gc_workers(const ZDirectorStats& stats, double serial
   return gc_workers;
 }
 
-ZDriverRequest rule_minor_allocation_rate_dynamic(const ZDirectorStats& stats,
-                                                  double serial_gc_time_passed,
-                                                  double parallel_gc_time_passed,
-                                                  bool conservative_alloc_rate,
-                                                  size_t capacity) {
+static ZDriverRequest rule_minor_allocation_rate_dynamic(const ZDirectorStats& stats,
+                                                         double serial_gc_time_passed,
+                                                         double parallel_gc_time_passed,
+                                                         bool conservative_alloc_rate,
+                                                         size_t capacity) {
   if (!stats._old_stats._cycle._is_time_trustable) {
     // Rule disabled
     return ZDriverRequest(GCCause::_no_gc, ZYoungGCThreads, 0);
@@ -214,9 +214,9 @@ ZDriverRequest rule_minor_allocation_rate_dynamic(const ZDirectorStats& stats,
   return ZDriverRequest(GCCause::_z_allocation_rate, actual_gc_workers, 0);
 }
 
-ZDriverRequest rule_soft_minor_allocation_rate_dynamic(const ZDirectorStats& stats,
-                                                       double serial_gc_time_passed,
-                                                       double parallel_gc_time_passed) {
+static ZDriverRequest rule_soft_minor_allocation_rate_dynamic(const ZDirectorStats& stats,
+                                                              double serial_gc_time_passed,
+                                                              double parallel_gc_time_passed) {
     return rule_minor_allocation_rate_dynamic(stats,
                                               0.0 /* serial_gc_time_passed */,
                                               0.0 /* parallel_gc_time_passed */,
@@ -224,9 +224,9 @@ ZDriverRequest rule_soft_minor_allocation_rate_dynamic(const ZDirectorStats& sta
                                               stats._heap._soft_max_heap_size /* capacity */);
 }
 
-ZDriverRequest rule_semi_hard_minor_allocation_rate_dynamic(const ZDirectorStats& stats,
-                                                            double serial_gc_time_passed,
-                                                            double parallel_gc_time_passed) {
+static ZDriverRequest rule_semi_hard_minor_allocation_rate_dynamic(const ZDirectorStats& stats,
+                                                                   double serial_gc_time_passed,
+                                                                   double parallel_gc_time_passed) {
   return rule_minor_allocation_rate_dynamic(stats,
                                             0.0 /* serial_gc_time_passed */,
                                             0.0 /* parallel_gc_time_passed */,
@@ -234,9 +234,9 @@ ZDriverRequest rule_semi_hard_minor_allocation_rate_dynamic(const ZDirectorStats
                                             ZHeap::heap()->max_capacity() /* capacity */);
 }
 
-ZDriverRequest rule_hard_minor_allocation_rate_dynamic(const ZDirectorStats& stats,
-                                                       double serial_gc_time_passed,
-                                                       double parallel_gc_time_passed) {
+static ZDriverRequest rule_hard_minor_allocation_rate_dynamic(const ZDirectorStats& stats,
+                                                              double serial_gc_time_passed,
+                                                              double parallel_gc_time_passed) {
   return rule_minor_allocation_rate_dynamic(stats,
                                             0.0 /* serial_gc_time_passed */,
                                             0.0 /* parallel_gc_time_passed */,

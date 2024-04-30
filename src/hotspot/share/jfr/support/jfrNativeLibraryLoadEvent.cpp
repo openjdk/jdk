@@ -69,7 +69,7 @@ static inline JfrTicksWrapper* allocate_start_time() {
   return EventType::is_enabled() ? new JfrTicksWrapper() : nullptr;
 }
 
-NativeLibraryLoadEvent::NativeLibraryLoadEvent(const char* name, void** result) : JfrNativeLibraryEventBase(name), _result(result) {
+NativeLibraryLoadEvent::NativeLibraryLoadEvent(const char* name, void** result) : JfrNativeLibraryEventBase(name), _result(result), _fp_env_correction_attempt(false), _fp_env_correction_success(false) {
   assert(_result != nullptr, "invariant");
   _start_time = allocate_start_time<EventNativeLibraryLoad>();
 }
@@ -90,8 +90,17 @@ void NativeLibraryUnloadEvent::set_result(bool result) {
   _result = result;
 }
 
+static void set_additional_data(EventNativeLibraryLoad& event, const NativeLibraryLoadEvent& helper) {
+  event.set_fpEnvCorrectionAttempt(helper.get_fp_env_correction_attempt());
+  event.set_fpEnvCorrectionSuccess(helper.get_fp_env_correction_success());
+}
+
+static void set_additional_data(EventNativeLibraryUnload& event, const NativeLibraryUnloadEvent& helper) {
+  // no additional entries atm. for the unload event
+}
+
 template <typename EventType, typename HelperType>
-static void commit(HelperType& helper) {
+static void commit(const HelperType& helper) {
   if (!helper.has_start_time()) {
     return;
   }
@@ -101,6 +110,7 @@ static void commit(HelperType& helper) {
   event.set_name(helper.name());
   event.set_errorMessage(helper.error_msg());
   event.set_success(helper.success());
+  set_additional_data(event, helper);
   Thread* thread = Thread::current();
   assert(thread != nullptr, "invariant");
   if (thread->is_Java_thread()) {

@@ -25,7 +25,6 @@
 #include "precompiled.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
-#include "code/icBuffer.hpp"
 #include "compiler/compiler_globals.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
@@ -83,7 +82,6 @@ void jni_handles_init();
 void vmStructs_init() NOT_DEBUG_RETURN;
 
 void vtableStubs_init();
-void InlineCacheBuffer_init();
 bool compilerOracle_init();
 bool compileBroker_init();
 void dependencyContext_init();
@@ -115,6 +113,12 @@ void vm_init_globals() {
 jint init_globals() {
   management_init();
   JvmtiExport::initialize_oop_storage();
+#if INCLUDE_JVMTI
+  if (AlwaysRecordEvolDependencies) {
+    JvmtiExport::set_can_hotswap_or_post_breakpoint(true);
+    JvmtiExport::set_all_dependencies_are_recorded(true);
+  }
+#endif
   bytecodes_init();
   classLoader_init1();
   compilationPolicy_init();
@@ -157,7 +161,6 @@ jint init_globals2() {
 #endif // INCLUDE_VM_STRUCTS
 
   vtableStubs_init();
-  InlineCacheBuffer_init();
   if (!compilerOracle_init()) {
     return JNI_EINVAL;
   }

@@ -205,6 +205,7 @@ public class ClassReader {
       * @param classFileOffset the offset in byteBuffer of the first byte of the ClassFile to be read.
       * @param classFileLength the length in bytes of the ClassFile to be read.
       */
+    @SuppressWarnings("this-escape")
     public ClassReader(
             final byte[] classFileBuffer,
             final int classFileOffset,
@@ -407,7 +408,7 @@ public class ClassReader {
     }
 
     /**
-      * Returns the internal of name of the super class (see {@link Type#getInternalName()}). For
+      * Returns the internal name of the super class (see {@link Type#getInternalName()}). For
       * interfaces, the super class is {@link Object}.
       *
       * @return the internal name of the super class, or {@literal null} for {@link Object} class.
@@ -2082,6 +2083,7 @@ public class ClassReader {
         currentOffset = bytecodeStartOffset;
         while (currentOffset < bytecodeEndOffset) {
             final int currentBytecodeOffset = currentOffset - bytecodeStartOffset;
+            readBytecodeInstructionOffset(currentBytecodeOffset);
 
             // Visit the label and the line number(s) for this bytecode offset, if any.
             Label currentLabel = labels[currentBytecodeOffset];
@@ -2695,6 +2697,20 @@ public class ClassReader {
 
         // Visit the max stack and max locals values.
         methodVisitor.visitMaxs(maxStack, maxLocals);
+    }
+
+    /**
+      * Handles the bytecode offset of the next instruction to be visited in {@link
+      * #accept(ClassVisitor,int)}. This method is called just before the instruction and before its
+      * associated label and stack map frame, if any. The default implementation of this method does
+      * nothing. Subclasses can override this method to store the argument in a mutable field, for
+      * instance, so that {@link MethodVisitor} instances can get the bytecode offset of each visited
+      * instruction (if so, the usual concurrency issues related to mutable data should be addressed).
+      *
+      * @param bytecodeOffset the bytecode offset of the next instruction to be visited.
+      */
+    protected void readBytecodeInstructionOffset(final int bytecodeOffset) {
+        // Do nothing by default.
     }
 
     /**
@@ -3882,4 +3898,3 @@ public class ClassReader {
         }
     }
 }
-

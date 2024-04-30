@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,17 +82,17 @@ void Dictionary::Config::free_node(void* context, void* memory, Value const& val
 }
 
 DictionaryEntry::DictionaryEntry(InstanceKlass* klass) : _instance_klass(klass) {
-  release_set_pd_set(nullptr);
+  release_set_package_access_cache(nullptr);
 }
 
 DictionaryEntry::~DictionaryEntry() {
   // avoid recursion when deleting linked list
-  // pd_set is accessed during a safepoint.
+  // package_access_cache is accessed during a safepoint.
   // This doesn't require a lock because nothing is reading this
   // entry anymore.  The ClassLoader is dead.
-  while (pd_set_acquire() != nullptr) {
-    ProtectionDomainEntry* to_delete = pd_set_acquire();
-    release_set_pd_set(to_delete->next_acquire());
+  while (package_access_cache_acquire() != nullptr) {
+    ProtectionDomainEntry* to_delete = package_access_cache_acquire();
+    release_set_package_access_cache(to_delete->next_acquire());
     delete to_delete;
   }
 }
@@ -108,14 +108,13 @@ bool Dictionary::check_if_needs_resize() {
          !_table->is_max_size_reached());
 }
 
-bool DictionaryEntry::is_valid_protection_domain(Handle protection_domain) {
-
+bool DictionaryEntry::has_package_access_been_granted(Handle protection_domain) {
   return protection_domain() == nullptr || !java_lang_System::allow_security_manager()
         ? true
-        : contains_protection_domain(protection_domain());
+        : is_in_package_access_cache(protection_domain());
 }
 
-// Reading the pd_set on each DictionaryEntry is lock free and cannot safepoint.
+// Reading the package_access_cache on each DictionaryEntry is lock free and cannot safepoint.
 // Adding and deleting entries is under the SystemDictionary_lock
 // Deleting unloaded entries on ClassLoaderData for dictionaries that are not unloaded
 // is a three step process:
@@ -123,24 +122,24 @@ bool DictionaryEntry::is_valid_protection_domain(Handle protection_domain) {
 //     readers to complete (see NSV here), and then actually deleting the entries.
 // Deleting entries is done by the ServiceThread when triggered by class unloading.
 
-bool DictionaryEntry::contains_protection_domain(oop protection_domain) const {
+bool DictionaryEntry::is_in_package_access_cache(oop protection_domain) const {
   assert(Thread::current()->is_Java_thread() || SafepointSynchronize::is_at_safepoint(),
          "can only be called by a JavaThread or at safepoint");
   // This cannot safepoint while reading the protection domain set.
   NoSafepointVerifier nsv;
 #ifdef ASSERT
   if (protection_domain == instance_klass()->protection_domain()) {
-    // Ensure this doesn't show up in the pd_set (invariant)
-    bool in_pd_set = false;
-    for (ProtectionDomainEntry* current = pd_set_acquire();
+    // Ensure this doesn't show up in the package_access_cache (invariant)
+    bool in_package_access_cache = false;
+    for (ProtectionDomainEntry* current = package_access_cache_acquire();
                                 current != nullptr;
                                 current = current->next_acquire()) {
       if (current->object_no_keepalive() == protection_domain) {
-        in_pd_set = true;
+        in_package_access_cache = true;
         break;
       }
     }
-    if (in_pd_set) {
+    if (in_package_access_cache) {
       assert(false, "A klass's protection domain should not show up "
                     "in its sys. dict. PD set");
     }
@@ -152,7 +151,7 @@ bool DictionaryEntry::contains_protection_domain(oop protection_domain) const {
     return true;
   }
 
-  for (ProtectionDomainEntry* current = pd_set_acquire();
+  for (ProtectionDomainEntry* current = package_access_cache_acquire();
                               current != nullptr;
                               current = current->next_acquire()) {
     if (current->object_no_keepalive() == protection_domain) {
@@ -162,19 +161,19 @@ bool DictionaryEntry::contains_protection_domain(oop protection_domain) const {
   return false;
 }
 
-void DictionaryEntry::add_protection_domain(ClassLoaderData* loader_data, Handle protection_domain) {
+void DictionaryEntry::add_to_package_access_cache(ClassLoaderData* loader_data, Handle protection_domain) {
   assert_lock_strong(SystemDictionary_lock);
-  if (!contains_protection_domain(protection_domain())) {
+  if (!is_in_package_access_cache(protection_domain())) {
     WeakHandle obj = ProtectionDomainCacheTable::add_if_absent(protection_domain);
     // Additions and deletions hold the SystemDictionary_lock, readers are lock-free
-    ProtectionDomainEntry* new_head = new ProtectionDomainEntry(obj, _pd_set);
-    release_set_pd_set(new_head);
+    ProtectionDomainEntry* new_head = new ProtectionDomainEntry(obj, _package_access_cache);
+    release_set_package_access_cache(new_head);
   }
   LogTarget(Trace, protectiondomain) lt;
   if (lt.is_enabled()) {
     ResourceMark rm;
     LogStream ls(lt);
-    ls.print("adding protection domain for class %s", instance_klass()->name()->as_C_string());
+    ls.print("adding protection domain that can access class %s", instance_klass()->name()->as_C_string());
     ls.print(" class loader: ");
     loader_data->class_loader()->print_value_on(&ls);
     ls.print(" protection domain: ");
@@ -292,13 +291,14 @@ DictionaryEntry* Dictionary::get_entry(Thread* current,
   return result;
 }
 
-
+// If SecurityManager is allowed, return the class ONLY IF the protection_domain has been
+// granted access to this class by a previous call to Dictionary::check_package_access()
 InstanceKlass* Dictionary::find(Thread* current, Symbol* name,
                                 Handle protection_domain) {
   NoSafepointVerifier nsv;
 
   DictionaryEntry* entry = get_entry(current, name);
-  if (entry != nullptr && entry->is_valid_protection_domain(protection_domain)) {
+  if (entry != nullptr && entry->has_package_access_been_granted(protection_domain)) {
     return entry->instance_klass();
   } else {
     return nullptr;
@@ -312,9 +312,9 @@ InstanceKlass* Dictionary::find_class(Thread* current,
   return (entry != nullptr) ? entry->instance_klass() : nullptr;
 }
 
-void Dictionary::add_protection_domain(JavaThread* current,
-                                       InstanceKlass* klass,
-                                       Handle protection_domain) {
+void Dictionary::add_to_package_access_cache(JavaThread* current,
+                                             InstanceKlass* klass,
+                                             Handle protection_domain) {
   assert(java_lang_System::allow_security_manager(), "only needed if security manager allowed");
   Symbol*  klass_name = klass->name();
   DictionaryEntry* entry = get_entry(current, klass_name);
@@ -323,34 +323,38 @@ void Dictionary::add_protection_domain(JavaThread* current,
   assert(protection_domain() != nullptr,
          "real protection domain should be present");
 
-  entry->add_protection_domain(loader_data(), protection_domain);
+  entry->add_to_package_access_cache(loader_data(), protection_domain);
 
 #ifdef ASSERT
   assert(loader_data() != ClassLoaderData::the_null_class_loader_data(), "doesn't make sense");
 #endif
 
-  assert(entry->contains_protection_domain(protection_domain()),
+  assert(entry->is_in_package_access_cache(protection_domain()),
          "now protection domain should be present");
 }
 
-
-inline bool Dictionary::is_valid_protection_domain(JavaThread* current,
+inline bool Dictionary::is_in_package_access_cache(JavaThread* current,
                                             Symbol* name,
                                             Handle protection_domain) {
   DictionaryEntry* entry = get_entry(current, name);
-  return entry->is_valid_protection_domain(protection_domain);
+  return entry->has_package_access_been_granted(protection_domain);
 }
 
-void Dictionary::validate_protection_domain(InstanceKlass* klass,
-                                            Handle class_loader,
-                                            Handle protection_domain,
-                                            TRAPS) {
+void Dictionary::check_package_access(InstanceKlass* klass,
+                                      Handle class_loader,
+                                      Handle protection_domain,
+                                      TRAPS) {
 
   assert(class_loader() != nullptr, "Should not call this");
   assert(protection_domain() != nullptr, "Should not call this");
 
-  if (!java_lang_System::allow_security_manager() ||
-      is_valid_protection_domain(THREAD, klass->name(), protection_domain)) {
+  if (!java_lang_System::allow_security_manager()) {
+    // No need for any further checking. Package access always allowed.
+    return;
+  }
+
+  if (is_in_package_access_cache(THREAD, klass->name(), protection_domain)) {
+    // No need to check again.
     return;
   }
 
@@ -395,21 +399,21 @@ void Dictionary::validate_protection_domain(InstanceKlass* klass,
     if (HAS_PENDING_EXCEPTION) return;
   }
 
-  // If no exception has been thrown, we have validated the protection domain
-  // Insert the protection domain of the initiating class into the set.
-  // We still have to add the protection_domain to the dictionary in case a new
-  // security manager is installed later. Calls to load the same class with class loader
-  // and protection domain are expected to succeed.
+  // If no exception has been thrown, we have checked that the protection_domain can access
+  // this klass. Always add it to the cache (even if no SecurityManager is installed yet).
+  //
+  // This ensures that subsequent calls to Dictionary::find(THREAD, klass->name(), protection_domain)
+  // will always succeed. I.e., a new SecurityManager installed in the future cannot retroactively
+  // revoke the granted access.
   {
     MutexLocker mu(THREAD, SystemDictionary_lock);
-    add_protection_domain(THREAD, klass,
-                          protection_domain);
+    add_to_package_access_cache(THREAD, klass, protection_domain);
   }
 }
 
 // During class loading we may have cached a protection domain that has
 // since been unreferenced, so this entry should be cleared.
-void Dictionary::clean_cached_protection_domains(GrowableArray<ProtectionDomainEntry*>* delete_list) {
+void Dictionary::remove_from_package_access_cache(GrowableArray<ProtectionDomainEntry*>* delete_list) {
   assert(Thread::current()->is_Java_thread(), "only called by JavaThread");
   assert_lock_strong(SystemDictionary_lock);
   assert(!loader_data()->has_class_mirror_holder(), "cld should have a ClassLoader holder not a Class holder");
@@ -423,7 +427,7 @@ void Dictionary::clean_cached_protection_domains(GrowableArray<ProtectionDomainE
       DictionaryEntry* probe = *value;
       Klass* e = probe->instance_klass();
 
-      ProtectionDomainEntry* current = probe->pd_set_acquire();
+      ProtectionDomainEntry* current = probe->package_access_cache_acquire();
       ProtectionDomainEntry* prev = nullptr;
       while (current != nullptr) {
         if (current->object_no_keepalive() == nullptr) {
@@ -437,8 +441,8 @@ void Dictionary::clean_cached_protection_domains(GrowableArray<ProtectionDomainE
             ls.print(" loading: "); probe->instance_klass()->print_value_on(&ls);
             ls.cr();
           }
-          if (probe->pd_set_acquire() == current) {
-            probe->release_set_pd_set(current->next_acquire());
+          if (probe->package_access_cache_acquire() == current) {
+            probe->release_set_package_access_cache(current->next_acquire());
           } else {
             assert(prev != nullptr, "should be set by alive entry");
             prev->release_set_next(current->next_acquire());
@@ -458,9 +462,9 @@ void Dictionary::clean_cached_protection_domains(GrowableArray<ProtectionDomainE
   _table->do_scan(Thread::current(), clean_entries);
 }
 
-void DictionaryEntry::verify_protection_domain_set() {
+void DictionaryEntry::verify_package_access_cache() {
   assert(SafepointSynchronize::is_at_safepoint(), "must only be called as safepoint");
-  for (ProtectionDomainEntry* current = pd_set_acquire(); // accessed at a safepoint
+  for (ProtectionDomainEntry* current = package_access_cache_acquire(); // accessed at a safepoint
                               current != nullptr;
                               current = current->next_acquire()) {
     guarantee(oopDesc::is_oop_or_null(current->object_no_keepalive()), "Invalid oop");
@@ -470,7 +474,7 @@ void DictionaryEntry::verify_protection_domain_set() {
 void DictionaryEntry::print_count(outputStream *st) {
   assert_locked_or_safepoint(SystemDictionary_lock);
   int count = 0;
-  for (ProtectionDomainEntry* current = pd_set_acquire();
+  for (ProtectionDomainEntry* current = package_access_cache_acquire();
                               current != nullptr;
                               current = current->next_acquire()) {
     count++;
@@ -525,7 +529,7 @@ void DictionaryEntry::verify() {
   guarantee(e->is_instance_klass(),
                           "Verify of dictionary failed");
   e->verify();
-  verify_protection_domain_set();
+  verify_package_access_cache();
 }
 
 void Dictionary::verify() {

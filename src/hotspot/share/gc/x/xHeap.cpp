@@ -249,7 +249,7 @@ void XHeap::mark_start() {
   // Enter mark phase
   XGlobalPhase = XPhaseMark;
 
-  // Reset marking information and mark roots
+  // Reset marking information
   _mark.start();
 
   // Update statistics
@@ -322,7 +322,8 @@ void XHeap::process_non_strong_references() {
   _weak_roots_processor.process_weak_roots();
 
   ClassUnloadingContext ctx(_workers.active_workers(),
-                            true /* lock_codeblob_free_separately */);
+                            true /* unregister_nmethods_during_purge */,
+                            true /* lock_nmethod_free_separately */);
 
   // Unlink stale metadata and nmethods
   _unload.unlink();

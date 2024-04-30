@@ -65,10 +65,8 @@ public class TestAggressiveHeap {
         " *bool +UseParallelGC *= *true +\\{product\\} *\\{command line\\}";
 
     private static void testFlag() throws Exception {
-        ProcessBuilder pb = GCArguments.createTestJavaProcessBuilder(
+        OutputAnalyzer output = GCArguments.executeTestJava(
             option, heapSizeOption, "-XX:+PrintFlagsFinal", "-version");
-
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
         output.shouldHaveExitValue(0);
 

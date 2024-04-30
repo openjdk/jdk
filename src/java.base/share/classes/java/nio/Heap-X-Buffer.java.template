@@ -29,6 +29,7 @@ package java.nio;
 
 import java.lang.foreign.MemorySegment;
 import java.util.Objects;
+import jdk.internal.util.ArraysSupport;
 
 /**
 #if[rw]
@@ -705,6 +706,9 @@ class Heap$Type$Buffer$RW$
                                                                    addr, segment)));
     }
 
+    public int hashCode() {
+        return ArraysSupport.vectorizedHashCode(hb, ix(position()), remaining(), 1, ArraysSupport.T_BYTE);
+    }
 
 #end[byte]
 
@@ -733,6 +737,9 @@ class Heap$Type$Buffer$RW$
                                       offset, segment);
     }
 
+    public int hashCode() {
+        return ArraysSupport.vectorizedHashCode(hb, ix(position()), remaining(), 1, ArraysSupport.T_CHAR);
+    }
 #end[char]
 
 

@@ -44,8 +44,6 @@ import jdk.jfr.events.FileForceEvent;
 import jdk.jfr.events.FileReadEvent;
 import jdk.jfr.events.FileWriteEvent;
 import jdk.jfr.events.InitialSecurityPropertyEvent;
-import jdk.jfr.events.SocketReadEvent;
-import jdk.jfr.events.SocketWriteEvent;
 
 import jdk.jfr.internal.JVM;
 import jdk.jfr.internal.LogLevel;
@@ -59,11 +57,8 @@ import jdk.internal.platform.Metrics;
 public final class JDKEvents {
 
     private static final Class<?>[] eventClasses = {
-        FileForceEvent.class,
         FileReadEvent.class,
         FileWriteEvent.class,
-        SocketReadEvent.class,
-        SocketWriteEvent.class,
         ActiveSettingEvent.class,
         ActiveRecordingEvent.class,
         // jdk.internal.event.* classes need their mirror
@@ -72,9 +67,11 @@ public final class JDKEvents {
         jdk.internal.event.ErrorThrownEvent.class,
         jdk.internal.event.ExceptionStatisticsEvent.class,
         jdk.internal.event.ExceptionThrownEvent.class,
+        jdk.internal.event.FileForceEvent.class,
         jdk.internal.event.ProcessStartEvent.class,
         jdk.internal.event.SecurityPropertyModificationEvent.class,
         jdk.internal.event.SecurityProviderServiceEvent.class,
+        jdk.internal.event.SerializationMisdeclarationEvent.class,
         jdk.internal.event.SocketReadEvent.class,
         jdk.internal.event.SocketWriteEvent.class,
         jdk.internal.event.ThreadSleepEvent.class,
@@ -186,6 +183,7 @@ public final class JDKEvents {
             t.memoryLimit = containerMetrics.getMemoryLimit();
             t.swapMemoryLimit = containerMetrics.getMemoryAndSwapLimit();
             t.hostTotalMemory = JVM.hostTotalMemory();
+            t.hostTotalSwapMemory = JVM.hostTotalSwapMemory();
             t.commit();
         }
     }

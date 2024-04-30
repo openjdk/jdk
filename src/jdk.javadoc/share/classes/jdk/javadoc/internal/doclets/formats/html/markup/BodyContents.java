@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,17 +37,24 @@ import java.util.Objects;
  * Content for the {@code <body>} element.
  *
  * The content is a {@code <div>} element that contains a
- * header that is always visible, and main content that
- * can be scrolled if necessary.
+ * header that is always visible, main content that
+ * can be scrolled if necessary, and optional side and footer
+ * contents that are only rendered if available.
  */
 public class BodyContents extends Content {
 
     private final List<Content> mainContents = new ArrayList<>();
+    private Content side = null;
     private Content header = null;
     private Content footer = null;
 
     public BodyContents addMainContent(Content content) {
         mainContents.add(content);
+        return this;
+    }
+
+    public BodyContents setSideContent(Content side) {
+        this.side = Objects.requireNonNull(side);
         return this;
     }
 
@@ -89,7 +96,10 @@ public class BodyContents extends Content {
 
         return new ContentBuilder()
                 .add(header)
-                .add(HtmlTree.MAIN().add(mainContents))
-                .add(footer == null ? Text.EMPTY : footer);
+                .add(HtmlTree.DIV(HtmlStyle.mainGrid)
+                        .add(side == null ? Text.EMPTY : side)
+                        .add(HtmlTree.MAIN()
+                                .add(mainContents)
+                                .add(footer == null ? Text.EMPTY : footer)));
     }
 }

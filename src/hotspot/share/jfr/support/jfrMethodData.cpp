@@ -56,6 +56,10 @@ static bool mark_mdo(Method* method, int bci, JavaThread* jt) {
   assert(jt != nullptr, "invariant");
   MethodData* const mdo = get_mdo(method, jt);
   assert(mdo != nullptr, "invariant");
+
+  // Lock to access ProfileData, and ensure lock is not broken by a safepoint
+  MutexLocker ml(mdo->extra_data_lock(), Mutex::_no_safepoint_check_flag);
+
   // Get the datalayout for the invocation bci.
   BitData* const bit_data = get_bit_data(mdo, bci);
   // Returns true if this callsite is not yet linked and

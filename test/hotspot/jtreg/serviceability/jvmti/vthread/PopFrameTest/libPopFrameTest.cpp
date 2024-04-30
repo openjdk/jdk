@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "jvmti.h"
-#include "jvmti_common.h"
+#include "jvmti_common.hpp"
 
 extern "C" {
 
@@ -49,11 +49,13 @@ Breakpoint(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread,
   {
     RawMonitorLocker rml(jvmti, jni, monitor);
     bp_sync_reached = true;
-    rml.wait(0);
+    while (bp_sync_reached) { // guard against spurious wakeups
+      rml.wait(0);
+    }
   }
   LOG("Breakpoint: In method TestTask.B(): after sync section\n");
 
-  if (do_pop_frame != 0) {
+  if (do_pop_frame) {
     err = jvmti->PopFrame(thread);
     LOG("Breakpoint: PopFrame returned code: %s (%d)\n", TranslateError(err), err);
     check_jvmti_status(jni, err, "Breakpoint: Failed in PopFrame");
@@ -69,7 +71,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
   LOG("Agent init\n");
   res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-  if (res != JNI_OK || jvmti == NULL) {
+  if (res != JNI_OK || jvmti == nullptr) {
     LOG("Agent init: Failed in GetEnv!\n");
     return JNI_ERR;
   }
@@ -114,19 +116,19 @@ Java_PopFrameTest_prepareAgent(JNIEnv *jni, jclass cls, jclass task_clazz, jbool
 
   LOG("Main: prepareAgent started\n");
 
-  if (jvmti == NULL) {
+  if (jvmti == nullptr) {
     fatal(jni, "prepareAgent: Failed as JVMTI client was not properly loaded!\n");
   }
   do_pop_frame = do_pop;
 
   mid_B = jni->GetStaticMethodID(task_clazz, "B", "()V");
-  if (mid_B == NULL) {
+  if (mid_B == nullptr) {
     fatal(jni, "prepareAgent: Failed to find Method ID for method: TestTask.B()\n");
   }
   err = jvmti->SetBreakpoint(mid_B, 0);
   check_jvmti_status(jni, err, "prepareAgent: Failed in JVMTI SetBreakpoint");
 
-  set_event_notification_mode(jvmti, JVMTI_ENABLE, JVMTI_EVENT_BREAKPOINT, NULL);
+  set_event_notification_mode(jvmti, JVMTI_ENABLE, JVMTI_EVENT_BREAKPOINT, nullptr);
 
   LOG("Main: prepareAgent finished\n");
 }
@@ -152,13 +154,15 @@ Java_PopFrameTest_popFrame(JNIEnv *jni, jclass cls, jthread thread) {
 
 JNIEXPORT void JNICALL
 Java_PopFrameTest_ensureAtBreakpoint(JNIEnv *jni, jclass cls) {
-  bool need_stop = false;
-
   LOG("Main: ensureAtBreakpoint\n");
-  while (!need_stop) {
-    RawMonitorLocker rml(jvmti, jni, monitor);
-    need_stop = bp_sync_reached;
-    sleep_ms(1); // 1 millisecond
+  RawMonitorLocker rml(jvmti, jni, monitor);
+  int attempts = 0;
+  while (!bp_sync_reached) {
+    if (++attempts > 100) {
+      fatal(jni, "Main: ensureAtBreakpoint: waited 20 sec");
+    }
+    LOG("Main: ensureAtBreakpoint: waiting 200 millis\n");
+    rml.wait(200); // 200 milliseconds
   }
 }
 
@@ -166,6 +170,9 @@ JNIEXPORT void JNICALL
 Java_PopFrameTest_notifyAtBreakpoint(JNIEnv *jni, jclass cls) {
   LOG("Main: notifyAtBreakpoint\n");
   RawMonitorLocker rml(jvmti, jni, monitor);
+  if (!bp_sync_reached) { // better diagnosability
+    fatal(jni, "Main: notifyAtBreakpoint: expected: bp_sync_reached==true");
+  }
   bp_sync_reached = false;
   rml.notify_all();
 }

@@ -162,6 +162,7 @@ public class ThreadGroup implements Thread.UncaughtExceptionHandler {
      *               thread in the specified thread group.
      * @see     java.lang.ThreadGroup#checkAccess()
      */
+    @SuppressWarnings("this-escape")
     public ThreadGroup(ThreadGroup parent, String name) {
         this(checkParentAccess(parent), parent, name);
     }

@@ -75,7 +75,9 @@ class MultiFileSourceLauncherTests {
                     public class Hello {
                       public static void main(String... args) throws Exception {
                         System.out.println(Class.forName("World$Core"));
-                        System.out.println(Class.forName("p.q.Unit$First$Second"));
+                        System.out.println(Class.forName("p.q.Unit$Fir$t"));
+                        System.out.println(Class.forName("p.q.Unit$123$Fir$t$$econd"));
+                        System.out.println(Class.forName("$.$.$"));
                       }
                     }
                     """);
@@ -90,10 +92,25 @@ class MultiFileSourceLauncherTests {
                     """
                     package p.q;
                     record Unit() {
-                      record First() {
-                        record Second() {}
+                      record Fir$t() {
+                        record $econd() {}
                       }
                     }
+                    """);
+        Files.writeString(pq.resolve("Unit$123.java"),
+                    """
+                    package p.q;
+                    record Unit$123() {
+                      record Fir$t() {
+                        record $econd() {}
+                      }
+                    }
+                    """);
+        var $$ = Files.createDirectories(base.resolve("$/$"));
+        Files.writeString($$.resolve("$.java"),
+                    """
+                    package $.$;
+                    record $($ $) {}
                     """);
 
         var run = Run.of(hello);
@@ -101,7 +118,9 @@ class MultiFileSourceLauncherTests {
                 () -> assertLinesMatch(
                         """
                         class World$Core
-                        class p.q.Unit$First$Second
+                        class p.q.Unit$Fir$t
+                        class p.q.Unit$123$Fir$t$$econd
+                        class $.$.$
                         """.lines(),
                         run.stdOut().lines()),
                 () -> assertTrue(run.stdErr().isEmpty()),

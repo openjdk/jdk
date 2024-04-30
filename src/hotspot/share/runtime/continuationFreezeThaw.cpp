@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.inline.hpp"
-#include "code/compiledMethod.inline.hpp"
+#include "code/nmethod.inline.hpp"
 #include "code/vmreg.inline.hpp"
 #include "compiler/oopMap.inline.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
@@ -390,7 +390,7 @@ public:
   inline int size_if_fast_freeze_available();
 
 #ifdef ASSERT
-  bool interpreted_native_or_deoptimized_on_stack();
+  bool check_valid_fast_path();
 #endif
 
 protected:
@@ -1070,8 +1070,8 @@ void FreezeBase::patch(const frame& f, frame& hf, const frame& caller, bool is_b
   if (hf.is_compiled_frame()) {
     if (f.is_deoptimized_frame()) { // TODO DEOPT: long term solution: unroll on freeze and patch pc
       log_develop_trace(continuations)("Freezing deoptimized frame");
-      assert(f.cb()->as_compiled_method()->is_deopt_pc(f.raw_pc()), "");
-      assert(f.cb()->as_compiled_method()->is_deopt_pc(ContinuationHelper::Frame::real_pc(f)), "");
+      assert(f.cb()->as_nmethod()->is_deopt_pc(f.raw_pc()), "");
+      assert(f.cb()->as_nmethod()->is_deopt_pc(ContinuationHelper::Frame::real_pc(f)), "");
     }
   }
 #endif
@@ -1242,7 +1242,6 @@ NOINLINE freeze_result FreezeBase::recurse_freeze_stub_frame(frame& f, frame& ca
 
 NOINLINE void FreezeBase::finish_freeze(const frame& f, const frame& top) {
   stackChunkOop chunk = _cont.tail();
-  assert(chunk->to_offset(top.sp()) <= chunk->sp(), "");
 
   LogTarget(Trace, continuations) lt;
   if (lt.develop_is_enabled()) {
@@ -1470,7 +1469,7 @@ void FreezeBase::throw_stack_overflow_on_humongous_chunk() {
 
 #if INCLUDE_JVMTI
 static int num_java_frames(ContinuationWrapper& cont) {
-  ResourceMark rm; // used for scope traversal in num_java_frames(CompiledMethod*, address)
+  ResourceMark rm; // used for scope traversal in num_java_frames(nmethod*, address)
   int count = 0;
   for (stackChunkOop chunk = cont.tail(); chunk != nullptr; chunk = chunk->parent()) {
     count += chunk->num_java_frames();
@@ -1498,23 +1497,26 @@ static void jvmti_yield_cleanup(JavaThread* thread, ContinuationWrapper& cont) {
 #endif // INCLUDE_JVMTI
 
 #ifdef ASSERT
-// static bool monitors_on_stack(JavaThread* thread) {
-//   ContinuationEntry* ce = thread->last_continuation();
-//   RegisterMap map(thread,
-//                   RegisterMap::UpdateMap::include,
-//                   RegisterMap::ProcessFrames::include,
-//                   RegisterMap::WalkContinuation::skip);
-//   map.set_include_argument_oops(false);
-//   for (frame f = thread->last_frame(); Continuation::is_frame_in_continuation(ce, f); f = f.sender(&map)) {
-//     if ((f.is_interpreted_frame() && ContinuationHelper::InterpretedFrame::is_owning_locks(f)) ||
-//         (f.is_compiled_frame() && ContinuationHelper::CompiledFrame::is_owning_locks(map.thread(), &map, f))) {
-//       return true;
-//     }
-//   }
-//   return false;
-// }
+static bool monitors_on_stack(JavaThread* thread) {
+  ContinuationEntry* ce = thread->last_continuation();
+  RegisterMap map(thread,
+                  RegisterMap::UpdateMap::include,
+                  RegisterMap::ProcessFrames::include,
+                  RegisterMap::WalkContinuation::skip);
+  map.set_include_argument_oops(false);
+  for (frame f = thread->last_frame(); Continuation::is_frame_in_continuation(ce, f); f = f.sender(&map)) {
+    if ((f.is_interpreted_frame() && ContinuationHelper::InterpretedFrame::is_owning_locks(f)) ||
+        (f.is_compiled_frame() && ContinuationHelper::CompiledFrame::is_owning_locks(map.thread(), &map, f))) {
+      return true;
+    }
+  }
+  return false;
+}
 
-bool FreezeBase::interpreted_native_or_deoptimized_on_stack() {
+// There are no interpreted frames if we're not called from the interpreter and we haven't ancountered an i2c
+// adapter or called Deoptimization::unpack_frames. As for native frames, upcalls from JNI also go through the
+// interpreter (see JavaCalls::call_helper), while the UpcallLinker explicitly sets cont_fastpath.
+bool FreezeBase::check_valid_fast_path() {
   ContinuationEntry* ce = _thread->last_continuation();
   RegisterMap map(_thread,
                   RegisterMap::UpdateMap::skip,
@@ -1522,11 +1524,11 @@ bool FreezeBase::interpreted_native_or_deoptimized_on_stack() {
                   RegisterMap::WalkContinuation::skip);
   map.set_include_argument_oops(false);
   for (frame f = freeze_start_frame(); Continuation::is_frame_in_continuation(ce, f); f = f.sender(&map)) {
-    if (f.is_interpreted_frame() || f.is_native_frame() || f.is_deoptimized_frame()) {
-      return true;
+    if (!f.is_compiled_frame() || f.is_deoptimized_frame()) {
+      return false;
     }
   }
-  return false;
+  return true;
 }
 #endif // ASSERT
 
@@ -1575,8 +1577,8 @@ static inline int freeze_internal(JavaThread* current, intptr_t* const sp) {
 
   assert(entry->is_virtual_thread() == (entry->scope(current) == java_lang_VirtualThread::vthread_scope()), "");
 
-  // assert(monitors_on_stack(current) == ((current->held_monitor_count() - current->jni_monitor_count()) > 0),
-  //        "Held monitor count and locks on stack invariant: " INT64_FORMAT " JNI: " INT64_FORMAT, (int64_t)current->held_monitor_count(), (int64_t)current->jni_monitor_count());
+  assert(monitors_on_stack(current) == ((current->held_monitor_count() - current->jni_monitor_count()) > 0),
+         "Held monitor count and locks on stack invariant: " INT64_FORMAT " JNI: " INT64_FORMAT, (int64_t)current->held_monitor_count(), (int64_t)current->jni_monitor_count());
 
   if (entry->is_pinned() || current->held_monitor_count() > 0) {
     log_develop_debug(continuations)("PINNED due to critical section/hold monitor");
@@ -1588,11 +1590,7 @@ static inline int freeze_internal(JavaThread* current, intptr_t* const sp) {
 
   Freeze<ConfigT> freeze(current, cont, sp);
 
-  // There are no interpreted frames if we're not called from the interpreter and we haven't ancountered an i2c
-  // adapter or called Deoptimization::unpack_frames. Calls from native frames also go through the interpreter
-  // (see JavaCalls::call_helper).
-  assert(!current->cont_fastpath()
-         || (current->cont_fastpath_thread_state() && !freeze.interpreted_native_or_deoptimized_on_stack()), "");
+  assert(!current->cont_fastpath() || freeze.check_valid_fast_path(), "");
   bool fast = UseContinuationFastPath && current->cont_fastpath();
   if (fast && freeze.size_if_fast_freeze_available() > 0) {
     freeze.freeze_fast_existing_chunk();
@@ -1775,7 +1773,7 @@ private:
   inline void before_thaw_java_frame(const frame& hf, const frame& caller, bool bottom, int num_frame);
   inline void after_thaw_java_frame(const frame& f, bool bottom);
   inline void patch(frame& f, const frame& caller, bool bottom);
-  void clear_bitmap_bits(intptr_t* start, int range);
+  void clear_bitmap_bits(address start, address end);
 
   NOINLINE void recurse_thaw_interpreted_frame(const frame& hf, frame& caller, int num_frames);
   void recurse_thaw_compiled_frame(const frame& hf, frame& caller, int num_frames, bool stub_caller);
@@ -2166,13 +2164,22 @@ inline void ThawBase::patch(frame& f, const frame& caller, bool bottom) {
   assert(!bottom || (_cont.is_empty() != Continuation::is_cont_barrier_frame(f)), "");
 }
 
-void ThawBase::clear_bitmap_bits(intptr_t* start, int range) {
+void ThawBase::clear_bitmap_bits(address start, address end) {
+  assert(is_aligned(start, wordSize), "should be aligned: " PTR_FORMAT, p2i(start));
+  assert(is_aligned(end, VMRegImpl::stack_slot_size), "should be aligned: " PTR_FORMAT, p2i(end));
+
   // we need to clear the bits that correspond to arguments as they reside in the caller frame
-  // or they will keep objects that are otherwise unreachable alive
-  log_develop_trace(continuations)("clearing bitmap for " INTPTR_FORMAT " - " INTPTR_FORMAT, p2i(start), p2i(start+range));
+  // or they will keep objects that are otherwise unreachable alive.
+
+  // Align `end` if UseCompressedOops is not set to avoid UB when calculating the bit index, since
+  // `end` could be at an odd number of stack slots from `start`, i.e might not be oop aligned.
+  // If that's the case the bit range corresponding to the last stack slot should not have bits set
+  // anyways and we assert that before returning.
+  address effective_end = UseCompressedOops ? end : align_down(end, wordSize);
+  log_develop_trace(continuations)("clearing bitmap for " INTPTR_FORMAT " - " INTPTR_FORMAT, p2i(start), p2i(effective_end));
   stackChunkOop chunk = _cont.tail();
-  chunk->bitmap().clear_range(chunk->bit_index_for(start),
-                              chunk->bit_index_for(start+range));
+  chunk->bitmap().clear_range(chunk->bit_index_for(start), chunk->bit_index_for(effective_end));
+  assert(effective_end == end || !chunk->bitmap().at(chunk->bit_index_for(effective_end)), "bit should not be set");
 }
 
 NOINLINE void ThawBase::recurse_thaw_interpreted_frame(const frame& hf, frame& caller, int num_frames) {
@@ -2225,7 +2232,9 @@ NOINLINE void ThawBase::recurse_thaw_interpreted_frame(const frame& hf, frame& c
     _cont.tail()->fix_thawed_frame(caller, SmallRegisterMap::instance);
   } else if (_cont.tail()->has_bitmap() && locals > 0) {
     assert(hf.is_heap_frame(), "should be");
-    clear_bitmap_bits(heap_frame_bottom - locals, locals);
+    address start = (address)(heap_frame_bottom - locals);
+    address end = (address)heap_frame_bottom;
+    clear_bitmap_bits(start, end);
   }
 
   DEBUG_ONLY(after_thaw_java_frame(f, is_bottom_frame);)
@@ -2280,7 +2289,7 @@ void ThawBase::recurse_thaw_compiled_frame(const frame& hf, frame& caller, int n
   if (hf.is_deoptimized_frame()) {
     maybe_set_fastpath(f.sp());
   } else if (_thread->is_interp_only_mode()
-              || (_cont.is_preempted() && f.cb()->as_compiled_method()->is_marked_for_deoptimization())) {
+              || (_cont.is_preempted() && f.cb()->as_nmethod()->is_marked_for_deoptimization())) {
     // The caller of the safepoint stub when the continuation is preempted is not at a call instruction, and so
     // cannot rely on nmethod patching for deopt.
     assert(_thread->is_interp_only_mode() || stub_caller, "expected a stub-caller");
@@ -2298,7 +2307,10 @@ void ThawBase::recurse_thaw_compiled_frame(const frame& hf, frame& caller, int n
     // can only fix caller once this frame is thawed (due to callee saved regs); this happens on the stack
     _cont.tail()->fix_thawed_frame(caller, SmallRegisterMap::instance);
   } else if (_cont.tail()->has_bitmap() && added_argsize > 0) {
-    clear_bitmap_bits(heap_frame_top + ContinuationHelper::CompiledFrame::size(hf) + frame::metadata_words_at_top, added_argsize);
+    address start = (address)(heap_frame_top + ContinuationHelper::CompiledFrame::size(hf) + frame::metadata_words_at_top);
+    int stack_args_slots = f.cb()->as_nmethod()->num_stack_arg_slots(false /* rounded */);
+    int argsize_in_bytes = stack_args_slots * VMRegImpl::stack_slot_size;
+    clear_bitmap_bits(start, start + argsize_in_bytes);
   }
 
   DEBUG_ONLY(after_thaw_java_frame(f, is_bottom_frame);)
@@ -2391,7 +2403,7 @@ void ThawBase::finish_thaw(frame& f) {
 }
 
 void ThawBase::push_return_frame(frame& f) { // see generate_cont_thaw
-  assert(!f.is_compiled_frame() || f.is_deoptimized_frame() == f.cb()->as_compiled_method()->is_deopt_pc(f.raw_pc()), "");
+  assert(!f.is_compiled_frame() || f.is_deoptimized_frame() == f.cb()->as_nmethod()->is_deopt_pc(f.raw_pc()), "");
   assert(!f.is_compiled_frame() || f.is_deoptimized_frame() == (f.pc() != f.raw_pc()), "");
 
   LogTarget(Trace, continuations) lt;
@@ -2478,10 +2490,10 @@ static void do_deopt_after_thaw(JavaThread* thread) {
   fst.register_map()->set_include_argument_oops(false);
   ContinuationHelper::update_register_map_with_callee(*fst.current(), fst.register_map());
   for (; !fst.is_done(); fst.next()) {
-    if (fst.current()->cb()->is_compiled()) {
-      CompiledMethod* cm = fst.current()->cb()->as_compiled_method();
-      if (!cm->method()->is_continuation_native_intrinsic()) {
-        cm->make_deoptimized();
+    if (fst.current()->cb()->is_nmethod()) {
+      nmethod* nm = fst.current()->cb()->as_nmethod();
+      if (!nm->method()->is_continuation_native_intrinsic()) {
+        nm->make_deoptimized();
       }
     }
   }
@@ -2521,13 +2533,13 @@ static bool do_verify_after_thaw(JavaThread* thread, stackChunkOop chunk, output
 
   ResourceMark rm;
   ThawVerifyOopsClosure cl(st);
-  CodeBlobToOopClosure cf(&cl, false);
+  NMethodToOopClosure cf(&cl, false);
 
   StackFrameStream fst(thread, true, false);
   fst.register_map()->set_include_argument_oops(false);
   ContinuationHelper::update_register_map_with_callee(*fst.current(), fst.register_map());
   for (; !fst.is_done() && !Continuation::is_continuation_enterSpecial(*fst.current()); fst.next()) {
-    if (fst.current()->cb()->is_compiled() && fst.current()->cb()->as_compiled_method()->is_marked_for_deoptimization()) {
+    if (fst.current()->cb()->is_nmethod() && fst.current()->cb()->as_nmethod()->is_marked_for_deoptimization()) {
       st->print_cr(">>> do_verify_after_thaw deopt");
       fst.current()->deoptimize(nullptr);
       fst.current()->print_on(st);

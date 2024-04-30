@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ import java.security.PrivilegedAction;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.StringJoiner;
 
 import static java.util.Objects.requireNonNull;
 
@@ -55,8 +54,8 @@ final class MethodTypeDescImpl implements MethodTypeDesc {
      * @param validatedArgTypes {@link ClassDesc}s describing the trusted and validated parameter types
      */
     private MethodTypeDescImpl(ClassDesc returnType, ClassDesc[] validatedArgTypes) {
-        this.returnType = requireNonNull(returnType);
-        this.argTypes = requireNonNull(validatedArgTypes);
+        this.returnType = returnType;
+        this.argTypes = validatedArgTypes;
     }
 
     /**
@@ -67,12 +66,12 @@ final class MethodTypeDescImpl implements MethodTypeDesc {
      * @param trustedArgTypes {@link ClassDesc}s describing the trusted parameter types
      */
     static MethodTypeDescImpl ofTrusted(ClassDesc returnType, ClassDesc[] trustedArgTypes) {
-        Objects.requireNonNull(returnType);
+        requireNonNull(returnType);
         if (trustedArgTypes.length == 0) // implicit null check
             return new MethodTypeDescImpl(returnType, ConstantUtils.EMPTY_CLASSDESC);
 
         for (ClassDesc cd : trustedArgTypes)
-            if (cd.isPrimitive() && cd.descriptorString().charAt(0) == 'V') // implicit null check
+            if (cd.descriptorString().charAt(0) == 'V') // implicit null check
                 throw new IllegalArgumentException("Void parameters not permitted");
 
         return new MethodTypeDescImpl(returnType, trustedArgTypes);
@@ -88,20 +87,18 @@ final class MethodTypeDescImpl implements MethodTypeDesc {
      * @jvms 4.3.3 Method Descriptors
      */
     static MethodTypeDescImpl ofDescriptor(String descriptor) {
-        requireNonNull(descriptor);
+        // Implicit null-check of descriptor
+        List<ClassDesc> ptypes = ConstantUtils.parseMethodDescriptor(descriptor);
+        int args = ptypes.size() - 1;
+        ClassDesc[] paramTypes = args > 0
+                ? ptypes.subList(1, args + 1).toArray(ConstantUtils.EMPTY_CLASSDESC)
+                : ConstantUtils.EMPTY_CLASSDESC;
 
-        List<String> types = ConstantUtils.parseMethodDescriptor(descriptor);
-
-        int paramCount = types.size() - 1;
-        var paramTypes = paramCount > 0 ? new ClassDesc[paramCount] : ConstantUtils.EMPTY_CLASSDESC;
-        for (int i = 0; i < paramCount; i++) {
-            paramTypes[i] = ClassDesc.ofDescriptor(types.get(i + 1));
-        }
-
-        MethodTypeDescImpl result = ofTrusted(ClassDesc.ofDescriptor(types.getFirst()), paramTypes);
+        MethodTypeDescImpl result = ofTrusted(ptypes.get(0), paramTypes);
         result.cachedDescriptorString = descriptor;
         return result;
     }
+
 
     @Override
     public ClassDesc returnType() {
@@ -130,7 +127,7 @@ final class MethodTypeDescImpl implements MethodTypeDesc {
 
     @Override
     public MethodTypeDesc changeReturnType(ClassDesc returnType) {
-        return new MethodTypeDescImpl(returnType, argTypes);
+        return new MethodTypeDescImpl(requireNonNull(returnType), argTypes);
     }
 
     @Override
@@ -146,8 +143,12 @@ final class MethodTypeDescImpl implements MethodTypeDesc {
         Objects.checkFromToIndex(start, end, argTypes.length);
 
         ClassDesc[] newArgs = new ClassDesc[argTypes.length - (end - start)];
-        System.arraycopy(argTypes, 0, newArgs, 0, start);
-        System.arraycopy(argTypes, end, newArgs, start, argTypes.length - end);
+        if (start > 0) {
+            System.arraycopy(argTypes, 0, newArgs, 0, start);
+        }
+        if (end < argTypes.length) {
+            System.arraycopy(argTypes, end, newArgs, start, argTypes.length - end);
+        }
         return ofTrusted(returnType, newArgs);
     }
 
@@ -157,10 +158,13 @@ final class MethodTypeDescImpl implements MethodTypeDesc {
             throw new IndexOutOfBoundsException(pos);
 
         ClassDesc[] newArgs = new ClassDesc[argTypes.length + paramTypes.length];
-        System.arraycopy(argTypes, 0, newArgs, 0, pos);
+        if (pos > 0) {
+            System.arraycopy(argTypes, 0, newArgs, 0, pos);
+        }
         System.arraycopy(paramTypes, 0, newArgs, pos, paramTypes.length);
-        System.arraycopy(argTypes, pos, newArgs, pos+paramTypes.length, argTypes.length - pos);
-
+        if (pos < argTypes.length) {
+            System.arraycopy(argTypes, pos, newArgs, pos + paramTypes.length, argTypes.length - pos);
+        }
         return ofTrusted(returnType, newArgs);
     }
 
@@ -170,11 +174,17 @@ final class MethodTypeDescImpl implements MethodTypeDesc {
         if (desc != null)
             return desc;
 
-        var sj = new StringJoiner("", "(", ")" + returnType().descriptorString());
-        for (int i = 0; i < parameterCount(); i++) {
-            sj.add(parameterType(i).descriptorString());
+        int len = 2 + returnType.descriptorString().length();
+        for (ClassDesc argType : argTypes) {
+            len += argType.descriptorString().length();
         }
-        return cachedDescriptorString = sj.toString();
+        StringBuilder sb = new StringBuilder(len).append('(');
+        for (ClassDesc argType : argTypes) {
+            sb.append(argType.descriptorString());
+        }
+        desc = sb.append(')').append(returnType.descriptorString()).toString();
+        cachedDescriptorString = desc;
+        return desc;
     }
 
     @Override

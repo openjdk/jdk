@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,15 @@ import java.util.StringJoiner;
  * representing the modifiers are taken from the tables in sections
  * {@jvms 4.1}, {@jvms 4.4}, {@jvms 4.5}, and {@jvms 4.7} of
  * <cite>The Java Virtual Machine Specification</cite>.
+ *
+ * @apiNote
+ * Not all modifiers that are syntactic Java language modifiers are
+ * represented in this class, only those modifiers that <em>also</em>
+ * have a corresponding JVM {@linkplain AccessFlag access flag} are
+ * included. In particular the {@code default} method modifier (JLS
+ * {@jls 9.4.3}) and the {@code sealed} and {@code non-sealed} class
+ * (JLS {@jls 8.1.1.2}) and interface (JLS {@jls 9.1.1.4}) modifiers
+ * are <em>not</em> represented in this class.
  *
  * @see Class#getModifiers()
  * @see Member#getModifiers()
@@ -208,6 +217,7 @@ public class Modifier {
      * public protected private abstract static final transient
      * volatile synchronized native strictfp
      * interface } </blockquote>
+     *
      * The {@code interface} modifier discussed in this class is
      * not a true modifier in the Java language and it appears after
      * all other modifiers listed by this method.  This method may
@@ -220,6 +230,22 @@ public class Modifier {
      * such as a constructor or method, first AND the argument of
      * {@code toString} with the appropriate mask from a method like
      * {@link #constructorModifiers} or {@link #methodModifiers}.
+     *
+     * @apiNote
+     * To make a high-fidelity representation of the Java source
+     * modifiers of a class or member, source-level modifiers that do
+     * <em>not</em> have a constant in this class should be included
+     * and appear in an order consistent with the full recommended
+     * ordering for that kind of declaration as given in <cite>The
+     * Java Language Specification</cite>. For example, for a
+     * {@linkplain Method#toGenericString() method} the "{@link
+     * Method#isDefault() default}" modifier is ordered immediately
+     * before "{@code static}" (JLS {@jls 9.4}). For a {@linkplain
+     * Class#toGenericString() class object}, the "{@link
+     * Class#isSealed() sealed}" or {@code "non-sealed"} modifier is
+     * ordered immediately after "{@code final}" for a class (JLS
+     * {@jls 8.1.1}) and immediately after "{@code static}" for an
+     * interface (JLS {@jls 9.1.1}).
      *
      * @param   mod a set of modifiers
      * @return  a string representation of the set of modifiers

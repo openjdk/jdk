@@ -181,18 +181,6 @@ InterpreterOopMap::InterpreterOopMap() {
 #endif
 }
 
-InterpreterOopMap::~InterpreterOopMap() {
-  // The expectation is that the bit mask was allocated
-  // last in this resource area.  That would make the free of the
-  // bit_mask effective (see how FREE_RESOURCE_ARRAY does a free).
-  // If it was not allocated last, there is not a correctness problem
-  // but the space for the bit_mask is not freed.
-  assert(_resource_allocate_bit_mask, "Trying to free C heap space");
-  if (mask_size() > small_mask_limit) {
-    FREE_RESOURCE_ARRAY(uintptr_t, _bit_mask[0], mask_word_size());
-  }
-}
-
 bool InterpreterOopMap::is_empty() const {
   bool result = _method == nullptr;
   assert(_method != nullptr || (_bci == 0 &&

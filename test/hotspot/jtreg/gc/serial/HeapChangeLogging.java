@@ -41,8 +41,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 public class HeapChangeLogging {
   public static void main(String[] args) throws Exception {
-    ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xmx128m", "-Xmn100m", "-XX:+UseSerialGC", "-Xlog:gc", HeapFiller.class.getName());
-    OutputAnalyzer output = new OutputAnalyzer(pb.start());
+    OutputAnalyzer output = ProcessTools.executeLimitedTestJava("-Xmx128m", "-Xmn100m", "-XX:+UseSerialGC", "-Xlog:gc", HeapFiller.class.getName());
     String stdout = output.getStdout();
     System.out.println(stdout);
     Matcher stdoutMatcher = Pattern.compile(".*\\(Allocation Failure\\) [0-9]+[KMG]->[0-9]+[KMG]\\([0-9]+[KMG]\\)", Pattern.MULTILINE).matcher(stdout);
