@@ -881,7 +881,6 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req) {
       used_words = ShenandoahHeapRegion::region_size_words();
     }
 
-    r->set_update_watermark(r->bottom());
     r->set_top(r->bottom() + used_words);
   }
 
