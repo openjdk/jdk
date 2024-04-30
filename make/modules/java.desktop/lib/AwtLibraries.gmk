@@ -99,6 +99,7 @@ endif
 # some gcc
 $(eval $(call SetupJdkLibrary, BUILD_LIBAWT, \
     NAME := awt, \
+    LANG := $(if $(filter $(OPENJDK_TARGET_OS), windows), C++, C), \
     EXTRA_SRC := $(LIBAWT_EXTRA_SRC), \
     EXCLUDE_FILES := $(LIBAWT_EXCLUDE_FILES), \
     OPTIMIZATION := HIGHEST, \
@@ -396,6 +397,7 @@ endif
 
 $(eval $(call SetupJdkLibrary, BUILD_LIBJAWT, \
     NAME := jawt, \
+    LANG := $(if $(filter $(OPENJDK_TARGET_OS), windows), C++, C), \
     EXCLUDE_SRC_PATTERNS := $(LIBJAWT_EXCLUDE_SRC_PATTERNS), \
     OPTIMIZATION := LOW, \
     CFLAGS := $(LIBJAWT_CFLAGS), \
