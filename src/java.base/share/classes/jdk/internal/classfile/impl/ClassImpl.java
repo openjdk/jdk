@@ -210,17 +210,17 @@ public final class ClassImpl
             return false;
 
         return attributes().stream().allMatch(a ->
-                a instanceof CustomAttribute
-             || a instanceof ModuleAttribute
+                a instanceof ModuleAttribute
+             || a instanceof ModulePackagesAttribute
              || a instanceof ModuleHashesAttribute
              || a instanceof ModuleMainClassAttribute
-             || a instanceof ModulePackagesAttribute
              || a instanceof ModuleResolutionAttribute
              || a instanceof ModuleTargetAttribute
              || a instanceof InnerClassesAttribute
              || a instanceof SourceFileAttribute
              || a instanceof SourceDebugExtensionAttribute
              || a instanceof RuntimeVisibleAnnotationsAttribute
-             || a instanceof RuntimeInvisibleAnnotationsAttribute);
+             || a instanceof RuntimeInvisibleAnnotationsAttribute
+             || a instanceof CustomAttribute);
     }
 }
