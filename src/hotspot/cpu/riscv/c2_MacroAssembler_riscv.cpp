@@ -2766,7 +2766,7 @@ void C2_MacroAssembler::reduce_mul_fp_v(FloatRegister dst, FloatRegister src1, V
                                         BasicType bt, uint vector_length) {
   assert(bt == T_FLOAT || bt == T_DOUBLE, "unsupported element type");
   uint len = vector_length/type2aelembytes(bt);
-  vsetvli_helper(bt, vector_length);
+  vsetvli_helper(bt, len);
 
   len /= 2;
   vslidedown_vi(vtmp1, src2, len);
