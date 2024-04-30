@@ -2135,11 +2135,7 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * @since 19
-     *
-     * @throws    IllegalStateException {@inheritDoc}
      */
     @Override
     public T resultNow() {
