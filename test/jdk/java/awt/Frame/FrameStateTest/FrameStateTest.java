@@ -68,10 +68,9 @@ public class FrameStateTest implements ActionListener {
         setVisible(true) the Frame is shown in the proper iconified state.
         The problem was that it did not honor the initial iconic state, but
         instead was shown in the NORMAL state.
-        </p><hr/><p>
-
+        </p><hr/>
         Steps to try to reproduce this problem:
-        </p><p>
+        <p>
         Select the different options for the Frame:
             <ul>
                 <li><i>{Normal, Non-resizable}</i></li>
@@ -81,19 +80,21 @@ public class FrameStateTest implements ActionListener {
             </ul>
         After choosing the Frame's state click the
         Create Frame button.<br>
-        After the Frame (Frame State Test (Window2)) comes
-        up make sure the proper behavior occurred (Frame shown in proper state).<br>
+        After the Frame (Frame State Test (Window2)) comes up make sure the
+        proper behavior occurred (Frame shown in proper state).<br>
         Click the Dispose button to close the Frame.<br>
-
         </p><hr/><p>
 
-        Do the above steps for all the different Frame state combinations available.<br>
-        For "hide,iconify and show" case, the frame is hidden then iconified hence Window2
-        is not seen on-screen when shown as the frame is still in the ICONIFIED state.
-        Window2 is visible on-screen when it is restored to NORMAL state as observed with
-        "hide,iconify,show and restore" case.<br><br>
+        Do the above steps for all the different Frame state combinations
+        available.<br>
+        For "Hide, Iconify and Show" case, the frame is hidden then iconified
+        hence Window2 is not seen on-screen when shown as the frame is still
+        in the ICONIFIED state. Window2 is visible on-screen when it is restored
+        to NORMAL state as observed with "Hide, Iconify, Show and Restore" case.
+        <br><br>
 
-        If you observe the proper behavior for all the combinations, press PASS else FAIL.<br>
+        If you observe the proper behavior for all the combinations,
+        press PASS else FAIL.<br>
         </p><p>
         Note: In Frame State Test (Window2) you can also chose the different
         buttons to see different Frame behavior.<br>An example of a problem that
@@ -109,8 +110,8 @@ public class FrameStateTest implements ActionListener {
     Button btnDispose = new Button("Dispose Frame");
     CheckboxGroup cbgState = new CheckboxGroup();
     CheckboxGroup cbgResize = new CheckboxGroup();
-    Checkbox cbIconState = new Checkbox("Frame state ICONIFIED", cbgState, true);
-    Checkbox cbNormState = new Checkbox("Frame state NORMAL", cbgState, false);
+    Checkbox cbIconState = new Checkbox("Frame State ICONIFIED", cbgState, true);
+    Checkbox cbNormState = new Checkbox("Frame State NORMAL", cbgState, false);
     Checkbox cbNonResize = new Checkbox("Frame Non-resizable", cbgResize, false);
     Checkbox cbResize = new Checkbox("Frame Resizable", cbgResize, true);
 
@@ -119,12 +120,12 @@ public class FrameStateTest implements ActionListener {
     public static void main(String[] args) throws Exception {
         PassFailJFrame
                 .builder()
-                .title("GetBoundsResizeTest Instructions")
+                .title("FrameState Instructions")
                 .instructions(INSTRUCTIONS)
                 .testTimeOut(10)
-                .rows(27)
+                .rows(26)
                 .columns(70)
-                .logArea(10)
+                .logArea(6)
                 .splitUIBottom(() -> new FrameStateTest().createPanel())
                 .build()
                 .awaitAndCheck();
@@ -152,7 +153,7 @@ public class FrameStateTest implements ActionListener {
         if (evt.getSource() == btnCreate) {
             btnCreate.setEnabled(false);
             btnDispose.setEnabled(true);
-            icontst =new CreateFrame(cbIconState.getState(), cbResize.getState());
+            icontst = new CreateFrame(cbIconState.getState(), cbResize.getState());
             icontst.setVisible(true);
         } else if (evt.getSource() == btnDispose) {
             btnCreate.setEnabled(true);
@@ -169,7 +170,7 @@ public class FrameStateTest implements ActionListener {
         String name = "Frame State Test";
 
         CreateFrame(boolean iconified, boolean resizable) {
-            setTitle("Frame State Test (Window 2)");
+            setTitle("Test Window (Window 2)");
 
             isResizable = resizable;
 
@@ -178,13 +179,13 @@ public class FrameStateTest implements ActionListener {
                     ((isResizable) ? "RESIZABLE" : "NON-RESIZABLE"));
 
             setLayout(new FlowLayout());
-            add(b1 = new Button("resizable"));
-            add(b2 = new Button("resize"));
-            add(b3 = new Button("iconify"));
-            add(b4 = new Button("iconify and restore"));
-            add(b5 = new Button("hide and show"));
-            add(b6 = new Button("hide, iconify and show"));
-            add(b7 = new Button("hide, iconify, show and restore"));
+            add(b1 = new Button("Resizable"));
+            add(b2 = new Button("Resize"));
+            add(b3 = new Button("Iconify"));
+            add(b4 = new Button("Iconify and Restore"));
+            add(b5 = new Button("Hide and show"));
+            add(b6 = new Button("Hide, Iconify and Show"));
+            add(b7 = new Button("Hide, Iconify, Show and Restore"));
             b1.addActionListener(this);
             b2.addActionListener(this);
             b3.addActionListener(this);
@@ -194,10 +195,9 @@ public class FrameStateTest implements ActionListener {
             b7.addActionListener(this);
             addWindowListener(this);
 
-            setBounds(100, 2, 200, 200);
+            setBounds(100, 2, 250, 200);
             setState(iconified ? Frame.ICONIFIED : Frame.NORMAL);
             setResizable(isResizable);
-            pack();
             setVisible(true);
         }
 
@@ -323,11 +323,11 @@ public class FrameStateTest implements ActionListener {
 
         public void stateLog(String message) {
             PassFailJFrame
-                .log("[Current State=%d] %s %s".formatted(getState(), name, message));
+                .log("[Current State = %d] %s %s".formatted(getState(), name, message));
         }
 
         public void stateLog() {
-            PassFailJFrame.log("[Current State=" + getState() + "]");
+            PassFailJFrame.log("[Current State = " + getState() + "]");
         }
     }
 }
