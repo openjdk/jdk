@@ -148,11 +148,11 @@ public:
     return _membership[int(which_partition)].is_set(idx);
   }
 
-#ifdef ASSERT
   // Returns the ShenandoahFreeSetPartitionId affiliation of region idx, NotFree if this region is not currently in any partition.
   // This does not enforce that free_set membership implies allocation capacity.
   inline ShenandoahFreeSetPartitionId membership(ssize_t idx) const;
 
+#ifdef ASSERT
   // Returns true iff region idx's membership is which_partition.  If which_partition represents a free set, asserts
   // that the region has allocation capacity.
   inline bool partition_id_matches(ssize_t idx, ShenandoahFreeSetPartitionId which_partition) const;

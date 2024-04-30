@@ -330,19 +330,10 @@ void ShenandoahRegionPartitions::move_from_partition_to_partition(idx_t idx, She
 }
 
 const char* ShenandoahRegionPartitions::partition_membership_name(idx_t idx) const {
-  assert (idx < _max, "index is sane: " SIZE_FORMAT " < " SIZE_FORMAT, idx, _max);
-  ShenandoahFreeSetPartitionId result = ShenandoahFreeSetPartitionId::NotFree;
-  for (uint partition_id = 0; partition_id < UIntNumPartitions; partition_id++) {
-    if (_membership[partition_id].is_set(idx)) {
-      assert(result == ShenandoahFreeSetPartitionId::NotFree, "Region should reside in only one partition");
-      result = (ShenandoahFreeSetPartitionId) partition_id;
-    }
-  }
+  ShenandoahFreeSetPartitionId result = membership(idx);
   return partition_name(result);
 }
 
-
-#ifdef ASSERT
 inline ShenandoahFreeSetPartitionId ShenandoahRegionPartitions::membership(idx_t idx) const {
   assert (idx < _max, "index is sane: " SIZE_FORMAT " < " SIZE_FORMAT, idx, _max);
   ShenandoahFreeSetPartitionId result = ShenandoahFreeSetPartitionId::NotFree;
@@ -355,6 +346,7 @@ inline ShenandoahFreeSetPartitionId ShenandoahRegionPartitions::membership(idx_t
   return result;
 }
 
+#ifdef ASSERT
 inline bool ShenandoahRegionPartitions::partition_id_matches(idx_t idx, ShenandoahFreeSetPartitionId test_partition) const {
   assert (idx < _max, "index is sane: " SIZE_FORMAT " < " SIZE_FORMAT, idx, _max);
   assert (test_partition < ShenandoahFreeSetPartitionId::NotFree, "must be a valid partition");
