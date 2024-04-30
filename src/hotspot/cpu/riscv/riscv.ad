@@ -2137,7 +2137,7 @@ bool size_fits_all_mem_uses(AddPNode* addp, int shift) {
   return true;
 }
 
-// Binary src (Replicate con)
+// Binary src (Replicate scalar/immediate)
 static bool is_vector_scalar_bitwise_pattern(Node* n, Node* m) {
   if (n == nullptr || m == nullptr) {
     return false;
