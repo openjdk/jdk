@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/resolvedFieldEntry.hpp"
 #include "oops/resolvedIndyEntry.hpp"
+#include "oops/resolvedMethodEntry.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/frame.inline.hpp"
@@ -544,14 +545,12 @@ void TemplateTable::condy_helper(Label& Done) {
 
   // VMr = obj = base address to find primitive value to push
   // VMr2 = flags = (tos, off) using format of CPCE::_flags
-  assert(ConstantPoolCacheEntry::field_index_mask == 0xffff, "or use other instructions");
+  assert(ConstantPoolCache::field_index_mask == 0xffff, "or use other instructions");
   __ z_llghr(off, flags);
   const Address field(obj, off);
 
   // What sort of thing are we loading?
-  __ z_srl(flags, ConstantPoolCacheEntry::tos_state_shift);
-  // Make sure we don't need to mask flags for tos_state after the above shift.
-  ConstantPoolCacheEntry::verify_tos_state_shift();
+  __ z_srl(flags, ConstantPoolCache::tos_state_shift);
 
   switch (bytecode()) {
   case Bytecodes::_ldc:
@@ -2351,53 +2350,58 @@ void TemplateTable::_return(TosState state) {
 }
 
 // ----------------------------------------------------------------------------
-// NOTE: index is already computed as byte offset, so we must not
-// shift it afterwards!
-void TemplateTable::resolve_cache_and_index(int byte_no,
-                                            Register cache,
-                                            Register index,
-                                            size_t index_size) {
-
-  assert_different_registers(cache, index, Z_R1_scratch);
+// Register Killed: Z_R1_scratch
+void TemplateTable::resolve_cache_and_index_for_method(int byte_no,
+                                                       Register Rcache,
+                                                       Register index) {
+  BLOCK_COMMENT("resolve_cache_and_index_for_method {");
+  assert_different_registers(Rcache, index);
   assert(byte_no == f1_byte || byte_no == f2_byte, "byte_no out of range");
 
-  const Register  bytecode_in_cpcache = Z_R1_scratch;
-  NearLabel       resolved, clinit_barrier_slow;
+  Label resolved, clinit_barrier_slow;
+
   Bytecodes::Code code = bytecode();
+  switch (code) {
+    case Bytecodes::_nofast_getfield: code = Bytecodes::_getfield; break;
+    case Bytecodes::_nofast_putfield: code = Bytecodes::_putfield; break;
+    default:
+      break;
+  }
 
-  BLOCK_COMMENT("resolve_cache_and_index {");
+  const int bc_offset = (byte_no == f1_byte) ? in_bytes(ResolvedMethodEntry::bytecode1_offset())
+                                             : in_bytes(ResolvedMethodEntry::bytecode2_offset());
 
-  __ get_cache_and_index_and_bytecode_at_bcp(cache, index, bytecode_in_cpcache, byte_no, 1, index_size);
-  // Have we resolved this bytecode?
-  __ compare32_and_branch(bytecode_in_cpcache, (int)code, Assembler::bcondEqual, resolved);
+  __ load_method_entry(Rcache, index);
+  __ z_cli(Address(Rcache, bc_offset), code);
+  __ z_bre(resolved);
 
-  // Resolve first time through via runtime call.
+  // Resolve first time through
   // Class initialization barrier slow path lands here as well.
   __ bind(clinit_barrier_slow);
   address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache);
   __ load_const_optimized(Z_ARG2, (int)code);
   __ call_VM(noreg, entry, Z_ARG2);
-  // Update registers with resolved info.
-  __ get_cache_and_index_at_bcp(cache, index, 1, index_size);
 
+  // Update registers with resolved info.
+  __ load_method_entry(Rcache, index);
   __ bind(resolved);
 
   // Class initialization barrier for static methods
   if (VM_Version::supports_fast_class_init_checks() && bytecode() == Bytecodes::_invokestatic) {
     const Register method = Z_R1_scratch;
     const Register klass  = Z_R1_scratch;
-
-    __ load_resolved_method_at_index(byte_no, cache, index, method);
+    __ z_lg(method, Address(Rcache, in_bytes(ResolvedMethodEntry::method_offset())));
     __ load_method_holder(klass, method);
     __ clinit_barrier(klass, Z_thread, nullptr /*L_fast_path*/, &clinit_barrier_slow);
   }
 
-  BLOCK_COMMENT("} resolve_cache_and_index");
+  BLOCK_COMMENT("} resolve_cache_and_index_for_method");
 }
 
 void TemplateTable::resolve_cache_and_index_for_field(int byte_no,
                                                       Register cache,
                                                       Register index) {
+  BLOCK_COMMENT("resolve_cache_and_index_for_field {");
 
   assert_different_registers(cache, index);
   assert(byte_no == f1_byte || byte_no == f2_byte, "byte_no out of range");
@@ -2412,11 +2416,10 @@ void TemplateTable::resolve_cache_and_index_for_field(int byte_no,
   }
 
   __ load_field_entry(cache, index);
-  if (byte_no == f1_byte) {
-    __ z_cli(Address(cache, in_bytes(ResolvedFieldEntry::get_code_offset())), code);
-  } else {
-    __ z_cli(Address(cache, in_bytes(ResolvedFieldEntry::put_code_offset())), code);
-  }
+  const int code_offset = (byte_no == f1_byte) ? in_bytes(ResolvedFieldEntry::get_code_offset()) :
+                                                 in_bytes(ResolvedFieldEntry::put_code_offset()) ;
+
+  __ z_cli(Address(cache, code_offset), code);
   __ z_bre(resolved);
 
   // resolve first time through
@@ -2428,6 +2431,8 @@ void TemplateTable::resolve_cache_and_index_for_field(int byte_no,
   __ load_field_entry(cache, index);
 
   __ bind(resolved);
+
+  BLOCK_COMMENT("} resolve_cache_and_index_for_field");
 }
 
 // The cache register (the only input reg) must be set before call.
@@ -2458,30 +2463,6 @@ void TemplateTable::load_resolved_field_entry(Register obj,
   }
 }
 
-// The Rcache and index registers must be set before call.
-// Index is already a byte offset, don't shift!
-void TemplateTable::load_field_cp_cache_entry(Register obj,
-                                              Register cache,
-                                              Register index,
-                                              Register off,
-                                              Register flags,
-                                              bool is_static = false) {
-  assert_different_registers(cache, index, flags, off);
-  ByteSize cp_base_offset = ConstantPoolCache::base_offset();
-
-  // Field offset
-  __ mem2reg_opt(off, Address(cache, index, cp_base_offset + ConstantPoolCacheEntry::f2_offset()));
-  // Flags. Must load 64 bits.
-  __ mem2reg_opt(flags, Address(cache, index, cp_base_offset + ConstantPoolCacheEntry::flags_offset()));
-
-  // klass overwrite register
-  if (is_static) {
-    __ mem2reg_opt(obj, Address(cache, index, cp_base_offset + ConstantPoolCacheEntry::f1_offset()));
-    __ mem2reg_opt(obj, Address(obj, Klass::java_mirror_offset()));
-    __ resolve_oop_handle(obj);
-  }
-}
-
 void TemplateTable::load_invokedynamic_entry(Register method) {
   const Register cache    = Z_tmp_1;
   const Register index    = Z_tmp_3;
@@ -2493,7 +2474,7 @@ void TemplateTable::load_invokedynamic_entry(Register method) {
   __ z_lg(method, Address(cache, in_bytes(ResolvedIndyEntry::method_offset())));
 
   // The invokedynamic is unresolved iff method is null
-  __ z_clgij(method, (unsigned long)nullptr, Assembler::bcondNotEqual, resolved); // method != 0, jump to resolved
+  __ compare64_and_branch(method, (unsigned long)nullptr, Assembler::bcondNotEqual, resolved); // method != 0, jump to resolved
   Bytecodes::Code code = bytecode();
   // Call to the interpreter runtime to resolve invokedynamic
   address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache);
@@ -2503,17 +2484,17 @@ void TemplateTable::load_invokedynamic_entry(Register method) {
   __ load_resolved_indy_entry(cache, index);
   __ z_lg(method, Address(cache, in_bytes(ResolvedIndyEntry::method_offset())));
 #ifdef ASSERT
-  __ z_clgij(method, (unsigned long)nullptr, Assembler::bcondNotEqual, resolved); // method != 0, jump to resolved
+  __ compare64_and_branch(method, (unsigned long)nullptr, Assembler::bcondNotEqual, resolved); // method != 0, jump to resolved
   __ stop("should be resolved by now");
 #endif // ASSERT
   __ bind(resolved);
 
   Label L_no_push;
-  __ z_llgc(index, Address(cache, in_bytes(ResolvedIndyEntry::flags_offset())));
+  __ load_sized_value(index, Address(cache, in_bytes(ResolvedIndyEntry::flags_offset())), sizeof(u1), false /*is_signed*/);
   __ testbit(index, ResolvedIndyEntry::has_appendix_shift);
   __ z_bfalse(L_no_push);
   // get appendix
-  __ z_llgh(index, Address(cache, in_bytes(ResolvedIndyEntry::resolved_references_index_offset())));
+  __ load_sized_value(index, Address(cache, in_bytes(ResolvedIndyEntry::resolved_references_index_offset())), sizeof(u2), false /*is_signed*/);
   // Push the appendix as a trailing parameter.
   // This must be done before we get the receiver,
   // since the parameter_size includes it.
@@ -2524,65 +2505,42 @@ void TemplateTable::load_invokedynamic_entry(Register method) {
 
   // Compute return type.
   Register ret_type = index;
-  __ z_llgc(ret_type, Address(cache, in_bytes(ResolvedIndyEntry::result_type_offset())));
+  __ load_sized_value(ret_type, Address(cache, in_bytes(ResolvedIndyEntry::result_type_offset())), sizeof(u1), false /*is_signed*/);
 
   const address table_addr = (address)Interpreter::invoke_return_entry_table_for(code);
   __ load_absolute_address(Z_R14, table_addr);
 
   const int bit_shift = LogBytesPerWord;           // Size of each table entry.
-  // const int r_bitpos  = 63 - bit_shift;
-  // const int l_bitpos  = r_bitpos - ConstantPoolCacheEntry::tos_state_bits + 1;
-  // const int n_rotate  = bit_shift-ConstantPoolCacheEntry::tos_state_shift;
-  // __ rotate_then_insert(ret_type, Z_R0_scratch, l_bitpos, r_bitpos, n_rotate, true);
-  // Make sure we don't need to mask flags for tos_state after the above shift.
   __ z_sllg(ret_type, ret_type, bit_shift);
-  ConstantPoolCacheEntry::verify_tos_state_shift();
   __ z_lg(Z_R14, Address(Z_R14, ret_type));
 }
 
-void TemplateTable::load_invoke_cp_cache_entry(int byte_no,
-                                               Register method,
-                                               Register itable_index,
-                                               Register flags,
-                                               bool is_invokevirtual,
-                                               bool is_invokevfinal, // unused
-                                               bool is_invokedynamic /* unused */) {
-  BLOCK_COMMENT("load_invoke_cp_cache_entry {");
-  // Setup registers.
-  const Register cache     = Z_ARG1;
-  const Register cpe_offset= flags;
-  const ByteSize base_off  = ConstantPoolCache::base_offset();
-  const ByteSize f1_off    = ConstantPoolCacheEntry::f1_offset();
-  const ByteSize f2_off    = ConstantPoolCacheEntry::f2_offset();
-  const ByteSize flags_off = ConstantPoolCacheEntry::flags_offset();
-  const int method_offset  = in_bytes(base_off + ((byte_no == f2_byte) ? f2_off : f1_off));
-  const int flags_offset   = in_bytes(base_off + flags_off);
-  // Access constant pool cache fields.
-  const int index_offset   = in_bytes(base_off + f2_off);
+void TemplateTable::load_resolved_method_entry_handle(Register cache,
+                                                      Register method,
+                                                      Register ref_index,
+                                                      Register flags) {
+  assert_different_registers(method, cache, ref_index, flags);
 
-  assert_different_registers(method, itable_index, flags, cache);
-  assert(is_invokevirtual == (byte_no == f2_byte), "is_invokevirtual flag redundant");
+  // determine constant pool cache field offsets
+  resolve_cache_and_index_for_method(f1_byte, cache, method /* index */);
 
-  if (is_invokevfinal) {
-    // Already resolved.
-     assert(itable_index == noreg, "register not used");
-     __ get_cache_and_index_at_bcp(cache, cpe_offset, 1);
-  } else {
-    // Need to resolve.
-    resolve_cache_and_index(byte_no, cache, cpe_offset, sizeof(u2));
-  }
-  __ z_lg(method, Address(cache, cpe_offset, method_offset));
+  // maybe push appendix to arguments (just before return address)
+  Label L_no_push;
+  __ load_sized_value(flags, Address(cache, in_bytes(ResolvedMethodEntry::flags_offset())), sizeof(u1), false /* is signed */);
+  __ testbit(flags, ResolvedMethodEntry::has_appendix_shift); // life ended for flags
+  __ z_bfalse(L_no_push);
+  // invokehandle uses an index into the resolved references array
+  __ load_sized_value(ref_index, Address(cache, in_bytes(ResolvedMethodEntry::resolved_references_index_offset())), sizeof(u2), false /* is signed */);
+  // Push the appendix as a trailing parameter.
+  // This must be done before we get the receiver,
+  // since the parameter_size includes it.
+  Register appendix = method;
+  __ load_resolved_reference_at_index(appendix, ref_index);
+  __ verify_oop(appendix);
+  __ push_ptr(appendix);  // Push appendix (MethodType, CallSite, etc.).
+  __ bind(L_no_push);
 
-  if (itable_index != noreg) {
-    __ z_lg(itable_index, Address(cache, cpe_offset, index_offset));
-  }
-
-  // Only load the lower 4 bytes and fill high bytes of flags with zeros.
-  // Callers depend on this zero-extension!!!
-  // Attention: overwrites cpe_offset == flags
-  __ z_llgf(flags, Address(cache, cpe_offset, flags_offset + (BytesPerLong-BytesPerInt)));
-
-  BLOCK_COMMENT("} load_invoke_cp_cache_entry");
+  __ z_lg(method, Address(cache, in_bytes(ResolvedMethodEntry::method_offset())));
 }
 
 // The registers cache and index are set up if needed.
@@ -2910,7 +2868,7 @@ void TemplateTable::jvmti_post_field_mod(Register cache,
   __ z_lgr(fieldEntry, cache);
 
   if (is_static) {
-    // Life is simple. NULL the object pointer.
+    // Life is simple. Null the object pointer.
     __ clear_reg(obj, true, false); // Don't set CC.
   } else {
     // Life is harder. The stack holds the value on top, followed by
@@ -3539,61 +3497,21 @@ void TemplateTable::fast_xaccess(TosState state) {
 //-----------------------------------------------------------------------------
 // Calls
 
-void TemplateTable::prepare_invoke(int byte_no,
-                                   Register method,  // linked method (or i-klass)
-                                   Register index,   // itable index, MethodType, etc.
-                                   Register recv,    // If caller wants to see it.
-                                   Register flags) { // If caller wants to test it.
-  // Determine flags.
-  const Bytecodes::Code code = bytecode();
-  const bool is_invokeinterface  = code == Bytecodes::_invokeinterface;
-  const bool is_invokedynamic    = false; // should not reach here with invokedynamic
-  const bool is_invokehandle     = code == Bytecodes::_invokehandle;
-  const bool is_invokevirtual    = code == Bytecodes::_invokevirtual;
-  const bool is_invokespecial    = code == Bytecodes::_invokespecial;
-  const bool load_receiver       = (recv != noreg);
-  assert(load_receiver == (code != Bytecodes::_invokestatic && code != Bytecodes::_invokedynamic), "");
+void TemplateTable::prepare_invoke(Register cache, Register recv) {
+  Bytecodes::Code code     = bytecode();
+  const Register  ret_type = Z_R1_scratch;
+  const bool load_receiver = (code != Bytecodes::_invokestatic) && (code != Bytecodes::_invokedynamic);
+  assert_different_registers(ret_type, recv);
 
-  // Setup registers & access constant pool cache.
-  if (recv  == noreg) { recv  = Z_ARG1; }
-  if (flags == noreg) { flags = Z_ARG2; }
-  assert_different_registers(method, Z_R14, index, recv, flags);
+  // Load TOS state for later
+  __ load_sized_value(ret_type, Address(cache, in_bytes(ResolvedMethodEntry::type_offset())), sizeof(u1), false /* is signed */);
 
-  BLOCK_COMMENT("prepare_invoke {");
-
-  load_invoke_cp_cache_entry(byte_no, method, index, flags, is_invokevirtual, false, is_invokedynamic);
-
-  // Maybe push appendix to arguments.
-  if (is_invokehandle) {
-    Label L_no_push;
-    Register resolved_reference = Z_R1_scratch;
-    __ testbit(flags, ConstantPoolCacheEntry::has_appendix_shift);
-    __ z_bfalse(L_no_push);
-    // Push the appendix as a trailing parameter.
-    // This must be done before we get the receiver,
-    // since the parameter_size includes it.
-    __ load_resolved_reference_at_index(resolved_reference, index);
-    __ verify_oop(resolved_reference);
-    __ push_ptr(resolved_reference);  // Push appendix (MethodType, CallSite, etc.).
-    __ bind(L_no_push);
-  }
-
-  // Load receiver if needed (after appendix is pushed so parameter size is correct).
+  // load receiver if needed (note: no return address pushed yet)
   if (load_receiver) {
-    assert(!is_invokedynamic, "");
-    // recv := int2long(flags & ConstantPoolCacheEntry::parameter_size_mask) << 3
-    // Flags is zero-extended int2long when loaded during load_invoke_cp_cache_entry().
-    // Only the least significant byte (psize) of flags is used.
-    {
-      const unsigned int logSES = Interpreter::logStackElementSize;
-      const int bit_shift = logSES;
-      const int r_bitpos  = 63 - bit_shift;
-      const int l_bitpos  = r_bitpos - ConstantPoolCacheEntry::parameter_size_bits + 1;
-      const int n_rotate  = bit_shift;
-      assert(ConstantPoolCacheEntry::parameter_size_mask == 255, "adapt bitpositions");
-      __ rotate_then_insert(recv, flags, l_bitpos, r_bitpos, n_rotate, true);
-    }
-    // Recv now contains #arguments * StackElementSize.
+    __ load_sized_value(recv, Address(cache, in_bytes(ResolvedMethodEntry::num_parameters_offset())), sizeof(u2), false /* is signed */);
+    const unsigned int bit_shift = Interpreter::logStackElementSize;
+    __ z_sllg(recv, recv, bit_shift);
+    // recv now contains #arguments * StackElementSize.
 
     Address recv_addr(Z_esp, recv);
     __ z_lg(recv, recv_addr);
@@ -3602,26 +3520,73 @@ void TemplateTable::prepare_invoke(int byte_no,
 
   // Compute return type.
   // ret_type is used by callers (invokespecial, invokestatic) at least.
-  Register ret_type = Z_R1_scratch;
-  assert_different_registers(ret_type, method);
-
   const address table_addr = (address)Interpreter::invoke_return_entry_table_for(code);
   __ load_absolute_address(Z_R14, table_addr);
+  __ z_sllg(ret_type, ret_type, LogBytesPerWord);
 
-  {
-    const int bit_shift = LogBytesPerWord;           // Size of each table entry.
-    const int r_bitpos  = 63 - bit_shift;
-    const int l_bitpos  = r_bitpos - ConstantPoolCacheEntry::tos_state_bits + 1;
-    const int n_rotate  = bit_shift-ConstantPoolCacheEntry::tos_state_shift;
-    __ rotate_then_insert(ret_type, flags, l_bitpos, r_bitpos, n_rotate, true);
-    // Make sure we don't need to mask flags for tos_state after the above shift.
-    ConstantPoolCacheEntry::verify_tos_state_shift();
-  }
-
-    __ z_lg(Z_R14, Address(Z_R14, ret_type)); // Load return address.
-  BLOCK_COMMENT("} prepare_invoke");
+  __ z_lg(Z_R14, Address(Z_R14, ret_type)); // Load return address.
 }
 
+void TemplateTable::load_resolved_method_entry_interface(Register cache,
+                                                         Register klass,
+                                                         Register method_or_table_index,
+                                                         Register flags) {
+  assert_different_registers(method_or_table_index, cache, flags, klass);
+  BLOCK_COMMENT("load_resolved_method_entry_interface {");
+  // determine constant pool cache field offsets
+  const Register index = flags; // not containing anything important, let's kill it.
+  resolve_cache_and_index_for_method(f1_byte, cache, index);
+  __ load_sized_value(flags, Address(cache, in_bytes(ResolvedMethodEntry::flags_offset())), sizeof(u1), false /* is signed*/);
+
+  // Invokeinterface can behave in different ways:
+  // If calling a method from java.lang.Object, the forced virtual flag is true so the invocation will
+  // behave like an invokevirtual call. The state of the virtual final flag will determine whether a method or
+  // vtable index is placed in the register.
+  // Otherwise, the registers will be populated with the klass and method.
+  Label NotVirtual, NotVFinal, Done;
+  __ testbit(flags, ResolvedMethodEntry::is_forced_virtual_shift);
+  __ z_brz(NotVirtual);
+  __ testbit(flags, ResolvedMethodEntry::is_vfinal_shift);
+  __ z_brz(NotVFinal);
+  __ z_lg(method_or_table_index, Address(cache, in_bytes(ResolvedMethodEntry::method_offset())));
+  __ z_bru(Done);
+
+  __ bind(NotVFinal);
+  __ load_sized_value(method_or_table_index, Address(cache, in_bytes(ResolvedMethodEntry::table_index_offset())), sizeof(u2), false /* is signed */);
+  __ z_bru(Done);
+
+  __ bind(NotVirtual);
+  __ z_lg(method_or_table_index, Address(cache, in_bytes(ResolvedMethodEntry::method_offset())));
+  __ z_lg(klass, Address(cache, in_bytes(ResolvedMethodEntry::klass_offset())));
+  __ bind(Done);
+
+  BLOCK_COMMENT("} load_resolved_method_entry_interface");
+}
+
+// Registers Killed: Z_R1
+void TemplateTable::load_resolved_method_entry_virtual(Register cache,
+                                                       Register method_or_table_index,
+                                                       Register flags) {
+  BLOCK_COMMENT("load_resolved_method_entry_virtual {");
+  assert_different_registers(method_or_table_index, cache, flags);
+  const Register index = flags; // doesn't contain valuable content, could be used as index for once
+
+  // determine constant pool cache field offsets
+  resolve_cache_and_index_for_method(f2_byte, cache, index);
+  __ load_sized_value(flags, Address(cache, in_bytes(ResolvedMethodEntry::flags_offset())), sizeof(u1), false /*is_signed*/);
+
+  // method_or_table_index can either be an itable index or a method depending on the virtual final flag
+  Label NotVFinal, Done;
+  __ testbit(flags, ResolvedMethodEntry::is_vfinal_shift);
+  __ z_brz(NotVFinal);
+  __ z_lg(method_or_table_index,  Address(cache, in_bytes(ResolvedMethodEntry::method_offset())));
+  __ z_bru(Done);
+
+  __ bind(NotVFinal);
+  __ load_sized_value(method_or_table_index, Address(cache, in_bytes(ResolvedMethodEntry::table_index_offset())), sizeof(u2), false /* is signed */);
+  __ bind(Done);
+  BLOCK_COMMENT("} load_resolved_method_entry_virtual");
+}
 
 void TemplateTable::invokevirtual_helper(Register index,
                                          Register recv,
@@ -3634,7 +3599,7 @@ void TemplateTable::invokevirtual_helper(Register index,
 
   BLOCK_COMMENT("invokevirtual_helper {");
 
-  __ testbit(flags, ConstantPoolCacheEntry::is_vfinal_shift);
+  __ testbit(flags, ResolvedMethodEntry::is_vfinal_shift);
   __ z_brz(notFinal);
 
   const Register method = index;  // Method must be Z_ARG3.
@@ -3673,16 +3638,19 @@ void TemplateTable::invokevirtual(int byte_no) {
   transition(vtos, vtos);
 
   assert(byte_no == f2_byte, "use this argument");
-  prepare_invoke(byte_no,
-                 Z_ARG3,  // method or vtable index
-                 noreg,   // unused itable index
-                 Z_ARG1,  // recv
-                 Z_ARG2); // flags
+  const Register Rrecv   = Z_ARG1;
+  const Register Rmethod = Z_ARG3;
+  const Register Rflags  = Z_ARG2;
+
+  load_resolved_method_entry_virtual(Rrecv,
+                                     Rmethod,
+                                     Rflags);
+  prepare_invoke(Rrecv, Rrecv);
 
   // Z_ARG3 : index
   // Z_ARG1 : receiver
   // Z_ARG2 : flags
-  invokevirtual_helper(Z_ARG3, Z_ARG1, Z_ARG2);
+  invokevirtual_helper(Rmethod, Rrecv, Rflags);
 }
 
 void TemplateTable::invokespecial(int byte_no) {
@@ -3690,14 +3658,34 @@ void TemplateTable::invokespecial(int byte_no) {
 
   assert(byte_no == f1_byte, "use this argument");
   Register Rmethod = Z_tmp_2;
-  prepare_invoke(byte_no, Rmethod, noreg, // Get f1 method.
-                 Z_ARG3);   // Get receiver also for null check.
-  __ verify_oop(Z_ARG3);
-  __ null_check(Z_ARG3);
+  Register Rrecv   = Z_ARG3;
+  load_resolved_method_entry_special_or_static(Rrecv,
+                                               Rmethod,
+                                               noreg); /* flags are not used here */
+  prepare_invoke(Rrecv, Rrecv);
+  __ verify_oop(Rrecv);
+  __ null_check(Rrecv);
   // Do the call.
   __ profile_call(Z_ARG2);
   __ profile_arguments_type(Z_ARG2, Rmethod, Z_ARG5, false);
   __ jump_from_interpreted(Rmethod, Z_R1_scratch);
+}
+
+/*
+ * There are only two callsite (invokestatic, invokespecial) for this method and both of them are passing
+ * "noreg" for flags registers at present.
+ */
+void TemplateTable::load_resolved_method_entry_special_or_static(Register cache,
+                                                                 Register method,
+                                                                 Register flags) {
+  assert_different_registers(method, cache, flags);
+
+  // determine constant pool cache field offsets
+  resolve_cache_and_index_for_method(f1_byte, cache, method /* index (temp) */);
+  if (flags != noreg) {
+    __ load_sized_value(flags, Address(cache, in_bytes(ResolvedMethodEntry::flags_offset())), sizeof(u1), false /* is signed */);
+  }
+  __ z_lg(method, Address(cache, in_bytes(ResolvedMethodEntry::method_offset())));
 }
 
 void TemplateTable::invokestatic(int byte_no) {
@@ -3705,7 +3693,12 @@ void TemplateTable::invokestatic(int byte_no) {
 
   assert(byte_no == f1_byte, "use this argument");
   Register Rmethod = Z_tmp_2;
-  prepare_invoke(byte_no, Rmethod);   // Get f1 method.
+  Register Rrecv   = Z_ARG1;
+
+  load_resolved_method_entry_special_or_static(Rrecv,
+                                               Rmethod,
+                                               noreg); /* flags are not used here */
+  prepare_invoke(Rrecv, Rrecv);  // get receiver also for null check and flags
   // Do the call.
   __ profile_call(Z_ARG2);
   __ profile_arguments_type(Z_ARG2, Rmethod, Z_ARG5, false);
@@ -3731,8 +3724,11 @@ void TemplateTable::invokeinterface(int byte_no) {
 
   BLOCK_COMMENT("invokeinterface {");
 
-  prepare_invoke(byte_no, interface, method,  // Get f1 klassOop, f2 Method*.
-                 receiver, flags);
+  load_resolved_method_entry_interface(receiver,   // ResolvedMethodEntry*
+                                       interface,  // Klass*  (interface klass (from f1))
+                                       method,     // Method* or itable/vtable index
+                                       flags);     // flags
+  prepare_invoke(receiver, receiver);
 
   // Z_R14 (== Z_bytecode) : return entry
 
@@ -3742,14 +3738,14 @@ void TemplateTable::invokeinterface(int byte_no) {
   // Special case of invokeinterface called for virtual method of
   // java.lang.Object. See cpCache.cpp for details.
   NearLabel notObjectMethod, no_such_method;
-  __ testbit(flags, ConstantPoolCacheEntry::is_forced_virtual_shift);
+  __ testbit(flags, ResolvedMethodEntry::is_forced_virtual_shift);
   __ z_brz(notObjectMethod);
   invokevirtual_helper(method, receiver, flags);
   __ bind(notObjectMethod);
 
   // Check for private method invocation - indicated by vfinal
   NearLabel notVFinal;
-  __ testbit(flags, ConstantPoolCacheEntry::is_vfinal_shift);
+  __ testbit(flags, ResolvedMethodEntry::is_vfinal_shift);
   __ z_brz(notVFinal);
 
   // Get receiver klass into klass - also a null check.
@@ -3843,9 +3839,12 @@ void TemplateTable::invokehandle(int byte_no) {
   const Register method = Z_tmp_2;
   const Register recv   = Z_ARG5;
   const Register mtype  = Z_tmp_1;
-  prepare_invoke(byte_no,
-                 method, mtype,   // Get f2 method, f1 MethodType.
-                 recv);
+  const Register flags  = Z_R1_scratch;
+  load_resolved_method_entry_handle(recv,
+                                    method,
+                                    mtype /* index */,
+                                    flags );
+  prepare_invoke(recv, recv);
   __ verify_method_ptr(method);
   __ verify_oop(recv);
   __ null_check(recv);
@@ -3866,10 +3865,10 @@ void TemplateTable::invokedynamic(int byte_no) {
 
   load_invokedynamic_entry(Rmethod);
 
-  // Rmethod: CallSite object (from f1)
-  // Rcallsite: MH.linkToCallSite method (from f2)
+  // Rmethod: CallSite object
+  // Rcallsite: MH.linkToCallSite method
 
-  // Note: Callsite is already pushed by prepare_invoke.
+  // Note: Callsite is already pushed
 
   // TODO: should make a type profile for any invokedynamic that takes a ref argument.
   // Profile this call.
@@ -3915,20 +3914,15 @@ void TemplateTable::_new() {
   __ z_cli(0, tmp, JVM_CONSTANT_Class);
   __ z_brne(slow_case);
 
-  __ z_sllg(offset, offset, LogBytesPerWord); // Convert to to offset.
+  __ z_sllg(offset, offset, LogBytesPerWord); // Convert to offset.
   // Get InstanceKlass.
   Register iklass = cpool;
   __ load_resolved_klass_at_offset(cpool, offset, iklass);
 
-  // Make sure klass is initialized & doesn't have finalizer.
-  // Make sure klass is fully initialized.
-  const int state_offset = in_bytes(InstanceKlass::init_state_offset());
-  if (Immediate::is_uimm12(state_offset)) {
-    __ z_cli(state_offset, iklass, InstanceKlass::fully_initialized);
-  } else {
-    __ z_cliy(state_offset, iklass, InstanceKlass::fully_initialized);
-  }
-  __ z_brne(slow_case);
+  // make sure klass is initialized
+  assert(VM_Version::supports_fast_class_init_checks(),
+         "Optimization requires support for fast class initialization checks");
+  __ clinit_barrier(iklass, Z_thread, nullptr /*L_fast_path*/, &slow_case);
 
   // Get instance_size in InstanceKlass (scaled to a count of bytes).
   Register Rsize = offset;

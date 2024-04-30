@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -253,7 +253,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="KYD">
 				<displayName draft="contributed">开曼群岛元</displayName>
-				<displayName count="other" draft="contributed">开曼群岛元</displayName>
 			</currency>
 			<currency type="NIO">
 				<displayName count="other">尼加拉瓜科多巴</displayName>
@@ -296,7 +295,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</unitLength>
 		<unitLength type="narrow">
 			<unit type="concentr-karat">
-				<displayName>开</displayName>
 				<unitPattern count="other">{0}开</unitPattern>
 			</unit>
 			<unit type="length-picometer">
@@ -316,10 +314,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="length-light-year">
 				<unitPattern count="other" draft="unconfirmed">{0}光年</unitPattern>
-			</unit>
-			<unit type="temperature-kelvin">
-				<displayName>开氏度</displayName>
-				<unitPattern count="other">{0}°K</unitPattern>
 			</unit>
 		</unitLength>
 	</units>

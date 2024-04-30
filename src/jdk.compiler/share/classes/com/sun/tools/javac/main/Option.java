@@ -83,6 +83,10 @@ import static com.sun.tools.javac.main.Option.OptionKind.*;
  * {@code handleOption} then calls {@link #process process} providing a suitable
  * {@link OptionHelper} to provide access the compiler state.
  *
+ * <p>A subset of options is relevant to the source launcher implementation
+ * located in {@link com.sun.tools.javac.launcher} package. When an option is
+ * added, changed, or removed, also update the {@code RelevantJavacOptions} class
+ * in the launcher package accordingly.
  *
  * <p>Maintenance note: when adding new annotation processing related
  * options, the list of options regarded as requesting explicit
@@ -1079,6 +1083,10 @@ public enum Option {
 
     public OptionKind getKind() {
         return kind;
+    }
+
+    public boolean isInBasicOptionGroup() {
+        return group == BASIC;
     }
 
     public ArgKind getArgKind() {

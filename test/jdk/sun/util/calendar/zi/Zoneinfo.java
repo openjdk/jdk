@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import java.util.StringTokenizer;
 class Zoneinfo {
 
     private static final int minYear = 1900;
-    private static final int maxYear = 2037;
+    private static final int maxYear = 2100;
     private static final long minTime = Time.getLocalTime(minYear, Month.JANUARY, 1, 0);
     private static int startYear = minYear;
     private static int endYear = maxYear;

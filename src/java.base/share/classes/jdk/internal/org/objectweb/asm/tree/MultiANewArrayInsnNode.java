@@ -104,4 +104,3 @@ public class MultiANewArrayInsnNode extends AbstractInsnNode {
         return new MultiANewArrayInsnNode(desc, dims).cloneAnnotations(this);
     }
 }
-

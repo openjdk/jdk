@@ -30,13 +30,13 @@ import java.util.List;
 
 import java.util.Locale;
 import java.util.stream.Collectors;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.Opcode;
-import jdk.internal.classfile.constantpool.*;
-import jdk.internal.classfile.Instruction;
-import jdk.internal.classfile.MethodModel;
-import jdk.internal.classfile.attribute.CodeAttribute;
-import jdk.internal.classfile.instruction.*;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.Opcode;
+import java.lang.classfile.constantpool.*;
+import java.lang.classfile.Instruction;
+import java.lang.classfile.MethodModel;
+import java.lang.classfile.attribute.CodeAttribute;
+import java.lang.classfile.instruction.*;
 
 /*
  *  Write the contents of a Code attribute.
@@ -82,7 +82,7 @@ public class CodeWriter extends BasicWriter {
     public void writeVerboseHeader(CodeAttribute attr) {
         MethodModel method = attr.parent().get();
         int n = method.methodTypeSymbol().parameterCount();
-        if ((method.flags().flagsMask() & Classfile.ACC_STATIC) == 0)
+        if ((method.flags().flagsMask() & ClassFile.ACC_STATIC) == 0)
             ++n;  // for 'this'
         println("stack=" + attr.maxStack() +
                 ", locals=" + attr.maxLocals() +
@@ -130,7 +130,7 @@ public class CodeWriter extends BasicWriter {
                 case InvokeDynamicInstruction instr ->
                     printConstantPoolRefAndValue(instr.invokedynamic(), 0);
                 case InvokeInstruction instr -> {
-                    if (instr.isInterface() && instr.opcode() != Opcode.INVOKESTATIC)
+                    if (instr.opcode() == Opcode.INVOKEINTERFACE)
                         printConstantPoolRefAndValue(instr.method(), instr.count());
                     else printConstantPoolRef(instr.method());
                 }

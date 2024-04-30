@@ -47,6 +47,9 @@ class ArenaStatCounter : public CHeapObj<mtCompiler> {
   size_t _na;
   // Current bytes used for resource areas
   size_t _ra;
+  // MemLimit handling
+  size_t _limit;
+  bool _hit_limit;
 
   // Peak composition:
   // Size of node arena when total peaked (c2 only)
@@ -69,15 +72,20 @@ public:
   size_t ra_at_peak() const { return _ra_at_peak; }
   unsigned live_nodes_at_peak() const { return _live_nodes_at_peak; }
 
-  // Mark the start of a compilation.
-  void start();
+  // Mark the start and end of a compilation.
+  void start(size_t limit);
+  void end();
 
   // Account an arena allocation or de-allocation.
   // Returns true if new peak reached
   bool account(ssize_t delta, int tag);
 
   void set_live_nodes_at_peak(unsigned i) { _live_nodes_at_peak = i; }
+
   void print_on(outputStream* st) const;
+
+  size_t limit() const              { return _limit; }
+  bool   hit_limit() const          { return _hit_limit; }
 };
 
 class CompilationMemoryStatistic : public AllStatic {
@@ -86,10 +94,16 @@ public:
   static void initialize();
   // true if CollectMemStat or PrintMemStat has been enabled for any method
   static bool enabled() { return _enabled; }
-  static void on_start_compilation();
+  static void on_start_compilation(const DirectiveSet* directive);
+
+  // Called at end of compilation. Records the arena usage peak. Also takes over
+  // status information from ciEnv (compilation failed, oom'ed or went okay). ciEnv::_failure_reason
+  // must be set at this point (so place CompilationMemoryStatisticMark correctly).
   static void on_end_compilation();
   static void on_arena_change(ssize_t diff, const Arena* arena);
   static void print_all_by_size(outputStream* st, bool human_readable, size_t minsize);
+  // For compilers
+  static const char* failure_reason_memlimit();
 };
 
 // RAII object to wrap one compilation

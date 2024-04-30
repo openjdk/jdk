@@ -32,6 +32,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
+import javax.xml.catalog.CatalogManager;
+import javax.xml.catalog.CatalogResolver;
+import javax.xml.catalog.CatalogResolver.NotFoundAction;
 import javax.xml.stream.XMLInputFactory;
 import jdk.xml.internal.JdkProperty.State;
 import jdk.xml.internal.JdkProperty.ImplPropMap;
@@ -67,14 +70,29 @@ public final class XMLSecurityManager {
         DTD_MAP = Collections.unmodifiableMap(map);
     }
 
+    // Valid values for Catalog Resolve, and mappings between the string and
+    // interger values
+    static final Map<String, Integer> CR_MAP;
+    // Source Level JDK 8
+    static {
+        Map<String, Integer> map = new HashMap<>();
+        map.put("continue", 0);
+        map.put("ignore", 1);
+        map.put("strict", 2);
+        CR_MAP = Collections.unmodifiableMap(map);
+    }
+
     // Value converter for properties of type Boolean
     private static final BooleanMapper BOOLMAPPER = new BooleanMapper();
 
     // Value converter for properties of type Integer
     private static final IntegerMapper INTMAPPER = new IntegerMapper();
 
-    // DTD value map
+    // DTD value mapper
     private static final StringMapper DTDMAPPER = new StringMapper(DTD_MAP);
+
+    // Catalog Resolve value mapper
+    private static final StringMapper CRMAPPER = new StringMapper(CR_MAP);
 
     /**
      * Limits managed by the security manager
@@ -109,6 +127,8 @@ public final class XMLSecurityManager {
                 JdkConstants.ALLOW, JdkConstants.ALLOW, Processor.PARSER, DTDMAPPER),
         XERCES_DISALLOW_DTD("disallowDTD", DISALLOW_DTD, null, null, 0, 0, Processor.PARSER, BOOLMAPPER),
         STAX_SUPPORT_DTD("supportDTD", XMLInputFactory.SUPPORT_DTD, null, null, 1, 1, Processor.PARSER, BOOLMAPPER),
+        JDKCATALOG_RESOLVE("JDKCatalogResolve", JdkConstants.JDKCATALOG_RESOLVE, JdkConstants.JDKCATALOG_RESOLVE, null,
+                JdkConstants.CONTINUE, JdkConstants.CONTINUE, Processor.PARSER, CRMAPPER),
         ;
 
         final String key;
@@ -266,6 +286,48 @@ public final class XMLSecurityManager {
 
         //read system properties or the config file (jaxp.properties by default)
         readSystemProperties();
+        // prepare the JDK Catalog
+        prepareCatalog();
+    }
+
+    /**
+     * Flag indicating whether the JDK Catalog has been initialized
+     */
+    static volatile boolean jdkcatalogInitialized = false;
+    private final Object lock = new Object();
+
+    private void prepareCatalog() {
+        if (!jdkcatalogInitialized) {
+            synchronized (lock) {
+                if (!jdkcatalogInitialized) {
+                    jdkcatalogInitialized = true;
+                    String resolve = getLimitValueAsString(Limit.JDKCATALOG_RESOLVE);
+                    JdkCatalog.init(resolve);
+                }
+            }
+        }
+    }
+
+    /**
+     * Returns the JDKCatalogResolver with the current setting of the RESOLVE
+     * property.
+     *
+     * @return the JDKCatalogResolver
+     */
+    public CatalogResolver getJDKCatalogResolver() {
+        String resolve = getLimitValueAsString(Limit.JDKCATALOG_RESOLVE);
+        return CatalogManager.catalogResolver(JdkCatalog.catalog, toActionType(resolve));
+    }
+
+    // convert the string value of the RESOLVE property to the corresponding
+    // action type
+    private NotFoundAction toActionType(String resolve) {
+        for (NotFoundAction type : NotFoundAction.values()) {
+            if (type.toString().equals(resolve)) {
+                return type;
+            }
+        }
+        return null;
     }
 
     /**

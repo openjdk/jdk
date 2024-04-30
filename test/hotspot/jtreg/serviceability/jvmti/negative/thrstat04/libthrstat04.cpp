@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "jvmti.h"
-#include "jvmti_common.h"
+#include "jvmti_common.hpp"
 
 extern "C" {
 
@@ -32,7 +32,7 @@ extern "C" {
 #define PASSED 0
 #define STATUS_FAILED 2
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jint result = PASSED;
 static jboolean printdump = JNI_FALSE;
 
@@ -40,12 +40,12 @@ JNIEXPORT jint JNICALL
 Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   jint res;
 
-  if (options != NULL && strcmp(options, "printdump") == 0) {
+  if (options != nullptr && strcmp(options, "printdump") == 0) {
     printdump = JNI_TRUE;
   }
 
   res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-  if (res != JNI_OK || jvmti == NULL) {
+  if (res != JNI_OK || jvmti == nullptr) {
     LOG("Wrong result of a valid call to GetEnv!\n");
     return JNI_ERR;
   }
@@ -58,7 +58,7 @@ Java_thrstat04_check(JNIEnv *env, jclass cls, jthread thr) {
   jvmtiError err;
   jint thrState;
 
-  if (jvmti == NULL) {
+  if (jvmti == nullptr) {
     LOG("JVMTI client was not properly loaded!\n");
     return STATUS_FAILED;
   }
@@ -66,7 +66,7 @@ Java_thrstat04_check(JNIEnv *env, jclass cls, jthread thr) {
   if (printdump == JNI_TRUE) {
     LOG(">>> (threadStatePtr) null pointer check ...\n");
   }
-  err = jvmti->GetThreadState(thr, NULL);
+  err = jvmti->GetThreadState(thr, nullptr);
   if (err != JVMTI_ERROR_NULL_POINTER) {
     LOG("(threadStatePtr) error expected: JVMTI_ERROR_NULL_POINTER,\n");
     LOG("           got: %s (%d)\n", TranslateError(err), err);

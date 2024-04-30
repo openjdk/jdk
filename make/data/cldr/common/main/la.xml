@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -430,15 +430,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	<characters>
 		<exemplarCharacters draft="provisional">[a b c d e f g h i j k l m n o p q r s t u v w x y z]</exemplarCharacters>
 		<exemplarCharacters type="index" draft="provisional">[A B C D E F G H I J K L M N O P Q R S T U V W X Y Z]</exemplarCharacters>
-		<exemplarCharacters type="numbers" draft="provisional">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation" draft="provisional">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
+		<exemplarCharacters type="punctuation" draft="provisional">[\- ‐‑ – — , ; \: ! ? . … '‘’ &quot;“” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 	</characters>
-	<delimiters>
-		<quotationStart draft="provisional">“</quotationStart>
-		<quotationEnd draft="provisional">”</quotationEnd>
-		<alternateQuotationStart draft="provisional">‘</alternateQuotationStart>
-		<alternateQuotationEnd draft="provisional">’</alternateQuotationEnd>
-	</delimiters>
 	<dates>
 		<calendars>
 			<calendar type="gregorian">
@@ -474,20 +467,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
-						<monthWidth type="abbreviated">
-							<month type="1" draft="provisional">Ian</month>
-							<month type="2" draft="provisional">Feb</month>
-							<month type="3" draft="provisional">Mar</month>
-							<month type="4" draft="provisional">Apr</month>
-							<month type="5" draft="provisional">Mai</month>
-							<month type="6" draft="provisional">Iun</month>
-							<month type="7" draft="provisional">Iul</month>
-							<month type="8" draft="provisional">Aug</month>
-							<month type="9" draft="provisional">Sep</month>
-							<month type="10" draft="provisional">Oct</month>
-							<month type="11" draft="provisional">Nov</month>
-							<month type="12" draft="provisional">Dec</month>
-						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1" draft="provisional">Ianuarius</month>
 							<month type="2" draft="provisional">Februarius</month>
@@ -530,26 +509,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dayWidth>
 					</dayContext>
 					<dayContext type="stand-alone">
-						<dayWidth type="abbreviated">
-							<day type="sun" draft="provisional">Sol</day>
-							<day type="sun" alt="variant" draft="provisional">Dom</day>
-							<day type="mon" draft="provisional">Lun</day>
-							<day type="tue" draft="provisional">Mar</day>
-							<day type="wed" draft="provisional">Mer</day>
-							<day type="thu" draft="provisional">Iov</day>
-							<day type="fri" draft="provisional">Ven</day>
-							<day type="sat" draft="provisional">Sat</day>
-							<day type="sat" alt="variant" draft="provisional">Sab</day>
-						</dayWidth>
 						<dayWidth type="wide">
-							<day type="sun" draft="provisional">dies Solis</day>
 							<day type="sun" alt="variant" draft="provisional">Dominica</day>
-							<day type="mon" draft="provisional">dies Lunae</day>
-							<day type="tue" draft="provisional">dies Martis</day>
-							<day type="wed" draft="provisional">dies Mercurii</day>
-							<day type="thu" draft="provisional">dies Iovis</day>
-							<day type="fri" draft="provisional">dies Veneris</day>
-							<day type="sat" draft="provisional">dies Saturni</day>
 							<day type="sat" alt="variant" draft="provisional">Sabbatum</day>
 						</dayWidth>
 					</dayContext>
@@ -569,28 +530,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<quarter type="4" draft="provisional">quarta quarta</quarter>
 						</quarterWidth>
 					</quarterContext>
-					<quarterContext type="stand-alone">
-						<quarterWidth type="abbreviated">
-							<quarter type="1" draft="provisional">Q1</quarter>
-							<quarter type="2" draft="provisional">Q2</quarter>
-							<quarter type="3" draft="provisional">Q3</quarter>
-							<quarter type="4" draft="provisional">Q4</quarter>
-						</quarterWidth>
-						<quarterWidth type="wide">
-							<quarter type="1" draft="provisional">prima quarta</quarter>
-							<quarter type="2" draft="provisional">secunda quarta</quarter>
-							<quarter type="3" draft="provisional">tertia quarta</quarter>
-							<quarter type="4" draft="provisional">quarta quarta</quarter>
-						</quarterWidth>
-					</quarterContext>
 				</quarters>
 				<dayPeriods>
 					<dayPeriodContext type="format">
 						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="am" draft="provisional">a.m.</dayPeriod>
-							<dayPeriod type="pm" draft="provisional">p.m.</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="wide">
 							<dayPeriod type="am" draft="provisional">a.m.</dayPeriod>
 							<dayPeriod type="pm" draft="provisional">p.m.</dayPeriod>
 						</dayPeriodWidth>
@@ -636,25 +579,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<timeFormatLength type="full">
 						<timeFormat>
 							<pattern draft="provisional">HH:mm:ss zzzz</pattern>
-							<datetimeSkeleton draft="provisional">HHmmsszzzz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="long">
 						<timeFormat>
 							<pattern draft="provisional">HH:mm:ss z</pattern>
-							<datetimeSkeleton draft="provisional">HHmmssz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="medium">
 						<timeFormat>
 							<pattern draft="provisional">HH:mm:ss</pattern>
-							<datetimeSkeleton draft="provisional">HHmmss</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="short">
 						<timeFormat>
 							<pattern draft="provisional">HH:mm</pattern>
-							<datetimeSkeleton draft="provisional">HHmm</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 				</timeFormats>
@@ -783,7 +722,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="one" draft="provisional">abhinc {0} hebdomadem</relativeTimePattern>
 					<relativeTimePattern count="other" draft="provisional">abhinc {0} hebdomades</relativeTimePattern>
 				</relativeTime>
-				<relativePeriod>the week of {0}</relativePeriod>
 			</field>
 			<field type="week-short">
 				<displayName draft="provisional">hebd.</displayName>
@@ -804,17 +742,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="-1" draft="provisional">pridie</relative>
 				<relative type="0" draft="provisional">hodie</relative>
 				<relative type="1" draft="provisional">cras</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one" draft="provisional">in {0} die</relativeTimePattern>
-					<relativeTimePattern count="other" draft="provisional">in {0} diebus</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one" draft="provisional">abhinc {0} diem</relativeTimePattern>
-					<relativeTimePattern count="other" draft="provisional">abhinc {0} dies</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="day-short">
-				<displayName draft="provisional">dies</displayName>
 				<relativeTime type="future">
 					<relativeTimePattern count="one" draft="provisional">in {0} die</relativeTimePattern>
 					<relativeTimePattern count="other" draft="provisional">in {0} diebus</relativeTimePattern>
@@ -1069,7 +996,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="second-short">
 				<displayName draft="provisional">sec.</displayName>
-				<relative type="0" draft="provisional">nunc</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one" draft="provisional">in {0} sec.</relativeTimePattern>
 					<relativeTimePattern count="other" draft="provisional">in {0} sec.</relativeTimePattern>
@@ -1085,28 +1011,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</fields>
 	</dates>
 	<numbers>
-		<defaultNumberingSystem>latn</defaultNumberingSystem>
-		<otherNumberingSystems>
-			<native>latn</native>
-		</otherNumberingSystems>
-		<minimumGroupingDigits>1</minimumGroupingDigits>
 		<symbols numberSystem="latn">
 			<decimal draft="provisional">,</decimal>
 			<group draft="provisional"> </group>
-			<list draft="provisional">;</list>
-			<percentSign draft="provisional">%</percentSign>
-			<plusSign draft="provisional">+</plusSign>
-			<minusSign draft="provisional">-</minusSign>
-			<perMille draft="provisional">‰</perMille>
-			<infinity draft="provisional">∞</infinity>
-			<timeSeparator draft="provisional">:</timeSeparator>
 		</symbols>
 		<decimalFormats numberSystem="latn">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern draft="provisional">#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
 			<decimalFormatLength type="long">
 				<decimalFormat>
 					<pattern type="1000" count="one" draft="provisional">0 mille</pattern>
@@ -1220,27 +1129,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</numbers>
 	<listPatterns>
 		<listPattern>
-			<listPatternPart type="start" draft="provisional">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle" draft="provisional">{0}, {1}</listPatternPart>
 			<listPatternPart type="end" draft="provisional">{0} et {1}</listPatternPart>
 			<listPatternPart type="2" draft="provisional">{0} et {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="standard-short">
-			<listPatternPart type="start" draft="provisional">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle" draft="provisional">{0}, {1}</listPatternPart>
-			<listPatternPart type="end" draft="provisional">{0} et {1}</listPatternPart>
-			<listPatternPart type="2" draft="provisional">{0} et {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="unit">
-			<listPatternPart type="start" draft="provisional">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle" draft="provisional">{0}, {1}</listPatternPart>
-			<listPatternPart type="end" draft="provisional">{0} et {1}</listPatternPart>
-			<listPatternPart type="2" draft="provisional">{0}, {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="unit-short">
-			<listPatternPart type="start" draft="provisional">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle" draft="provisional">{0}, {1}</listPatternPart>
-			<listPatternPart type="end" draft="provisional">{0} et {1}</listPatternPart>
 			<listPatternPart type="2" draft="provisional">{0}, {1}</listPatternPart>
 		</listPattern>
 	</listPatterns>

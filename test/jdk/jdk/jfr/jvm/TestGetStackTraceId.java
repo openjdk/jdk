@@ -52,7 +52,7 @@ public class TestGetStackTraceId {
     }
 
     private static void assertMaxSkip() {
-        Asserts.assertEquals(JVM.getStackTraceId(Integer.MAX_VALUE), 0L, "Insane skip level "
+        Asserts.assertEquals(JVM.getStackTraceId(Integer.MAX_VALUE, -1), 0L, "Insane skip level "
                 + Integer.MAX_VALUE + " should not return a valid stack trace id");
     }
 
@@ -64,6 +64,6 @@ public class TestGetStackTraceId {
         if (depth > 0) {
             return getStackIdOfDepth(depth - 1);
         }
-        return JVM.getStackTraceId(0);
+        return JVM.getStackTraceId(0, -1);
     }
 }

@@ -227,7 +227,7 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm) {
   __ cmp(tmp0, tmp1);
   __ b(skip, eq);
 
-  __ mov_address(tmp0, StubRoutines::Arm::method_entry_barrier());
+  __ mov_address(tmp0, StubRoutines::method_entry_barrier());
   __ call(tmp0);
   __ b(skip);
 
@@ -242,3 +242,11 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm) {
   __ bind(skip);
   __ block_comment("nmethod_barrier end");
 }
+
+#ifdef COMPILER2
+
+OptoReg::Name BarrierSetAssembler::refine_register(const Node* node, OptoReg::Name opto_reg) {
+  Unimplemented(); // This must be implemented to support late barrier expansion.
+}
+
+#endif // COMPILER2

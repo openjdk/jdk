@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -12,11 +12,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<script type="Latn"/>
 	</identity>
 	<localeDisplayNames>
-		<localeDisplayPattern>
-			<localePattern>{0} ({1})</localePattern>
-			<localeSeparator>{0}, {1}</localeSeparator>
-			<localeKeyTypePattern>{0}: {1}</localeKeyTypePattern>
-		</localeDisplayPattern>
 		<languages>
 			<language type="bal">بلۆچی</language>
 			<language type="bal_Latn" draft="provisional">Balóchi</language>
@@ -106,17 +101,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<codePattern type="territory">damag: {0}</codePattern>
 		</codePatterns>
 	</localeDisplayNames>
-	<layout>
-		<orientation>
-			<characterOrder>left-to-right</characterOrder>
-			<lineOrder>top-to-bottom</lineOrder>
-		</orientation>
-	</layout>
 	<characters>
 		<exemplarCharacters draft="provisional">[á a b c d é e g h i j k l m n ó o p r s t u v w y z]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary" draft="provisional">[f ń q x]</exemplarCharacters>
 		<exemplarCharacters type="index" draft="provisional">[Á A B {Ch} D {Dh} É E F G H I J K L M N Ó O P R {Rh} S {Sh} T {Th} U V W Y Z {Zh}]</exemplarCharacters>
-		<exemplarCharacters type="punctuation" draft="provisional">[, ; \: ? . ‘ ’ “ ”]</exemplarCharacters>
+		<exemplarCharacters type="punctuation" draft="provisional">[, ; \: ? . ‘’ “”]</exemplarCharacters>
 	</characters>
 	<dates>
 		<calendars>
@@ -182,32 +171,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<quarter type="2" draft="provisional">2/4</quarter>
 							<quarter type="3" draft="provisional">3/4</quarter>
 							<quarter type="4" draft="provisional">4/4</quarter>
-						</quarterWidth>
-						<quarterWidth type="narrow">
-							<quarter type="1" draft="provisional">1</quarter>
-							<quarter type="2" draft="provisional">2</quarter>
-							<quarter type="3" draft="provisional">3</quarter>
-							<quarter type="4" draft="provisional">4</quarter>
-						</quarterWidth>
-						<quarterWidth type="wide">
-							<quarter type="1" draft="provisional">awali chárek</quarter>
-							<quarter type="2" draft="provisional">domi chárek</quarter>
-							<quarter type="3" draft="provisional">sayomi chárek</quarter>
-							<quarter type="4" draft="provisional">cháromi chárek</quarter>
-						</quarterWidth>
-					</quarterContext>
-					<quarterContext type="stand-alone">
-						<quarterWidth type="abbreviated">
-							<quarter type="1" draft="provisional">1/4</quarter>
-							<quarter type="2" draft="provisional">2/4</quarter>
-							<quarter type="3" draft="provisional">3/4</quarter>
-							<quarter type="4" draft="provisional">4/4</quarter>
-						</quarterWidth>
-						<quarterWidth type="narrow">
-							<quarter type="1" draft="provisional">1</quarter>
-							<quarter type="2" draft="provisional">2</quarter>
-							<quarter type="3" draft="provisional">3</quarter>
-							<quarter type="4" draft="provisional">4</quarter>
 						</quarterWidth>
 						<quarterWidth type="wide">
 							<quarter type="1" draft="provisional">awali chárek</quarter>
@@ -456,23 +419,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight draft="provisional">Ástréliáay, Ládhaway garmági wahd</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard draft="provisional">Makwáriay anjári wahd</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic draft="provisional">Mágadánay wahd</generic>
 					<standard draft="provisional">Mágadánay anjári wahd</standard>
 					<daylight draft="provisional">Mágadánay garmági wahd</daylight>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic draft="provisional">Shemálrónendi Meksikóay wahd</generic>
-					<standard draft="provisional">Górichánrónendi Meksikóay anjári wahd</standard>
-					<daylight draft="provisional">Shemálrónendi Meksikóay garmági wahd</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">
@@ -541,62 +492,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</timeZoneNames>
 	</dates>
 	<numbers>
-		<defaultNumberingSystem draft="contributed">latn</defaultNumberingSystem>
-		<symbols numberSystem="latn">
-			<decimal draft="provisional">.</decimal>
-			<group draft="provisional">,</group>
-			<percentSign draft="provisional">%</percentSign>
-			<plusSign draft="provisional">+</plusSign>
-			<minusSign draft="provisional">-</minusSign>
-		</symbols>
-		<decimalFormats numberSystem="latn">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern draft="provisional">#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-		</decimalFormats>
-		<scientificFormats numberSystem="latn">
-			<scientificFormatLength>
-				<scientificFormat>
-					<pattern draft="provisional">#E0</pattern>
-				</scientificFormat>
-			</scientificFormatLength>
-		</scientificFormats>
-		<percentFormats numberSystem="latn">
-			<percentFormatLength>
-				<percentFormat>
-					<pattern draft="provisional">#,##0%</pattern>
-				</percentFormat>
-			</percentFormatLength>
-		</percentFormats>
-		<currencyFormats numberSystem="latn">
-			<currencyFormatLength>
-				<currencyFormat type="standard">
-					<pattern draft="provisional">¤ #,##0.00</pattern>
-				</currencyFormat>
-			</currencyFormatLength>
-		</currencyFormats>
 		<currencies>
 			<currency type="BRL">
 				<displayName draft="provisional">Brázili riál</displayName>
-				<symbol draft="provisional">R$</symbol>
-				<symbol alt="narrow" draft="provisional">R$</symbol>
 			</currency>
 			<currency type="EUR">
 				<displayName draft="provisional">yuró</displayName>
-				<symbol draft="provisional">€</symbol>
-				<symbol alt="narrow" draft="provisional">€</symbol>
 			</currency>
 			<currency type="GBP">
 				<displayName draft="provisional">Bartáni pawndh</displayName>
-				<symbol draft="provisional">£</symbol>
-				<symbol alt="narrow" draft="provisional">£</symbol>
 			</currency>
 			<currency type="INR">
 				<displayName draft="provisional">Hendostáni rupi</displayName>
-				<symbol draft="provisional">₹</symbol>
-				<symbol alt="narrow" draft="provisional">₹</symbol>
 			</currency>
 			<currency type="IRR">
 				<displayName draft="provisional">Éráni ryál</displayName>
@@ -605,22 +512,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="JPY">
 				<displayName draft="provisional">Jápáni yen</displayName>
 				<symbol draft="provisional">¥</symbol>
-				<symbol alt="narrow" draft="provisional">¥</symbol>
 			</currency>
 			<currency type="PKR">
 				<displayName draft="provisional">Pákestáni rupi</displayName>
 				<symbol draft="provisional">Rs</symbol>
-				<symbol alt="narrow" draft="provisional">Rs</symbol>
 			</currency>
 			<currency type="RUB">
 				<displayName draft="provisional">Rusi rubel</displayName>
 				<symbol draft="provisional">₽</symbol>
-				<symbol alt="narrow" draft="provisional">₽</symbol>
 			</currency>
 			<currency type="USD">
 				<displayName draft="provisional">Amriki dhálar</displayName>
 				<symbol draft="provisional">$</symbol>
-				<symbol alt="narrow" draft="provisional">$</symbol>
 			</currency>
 			<currency type="XXX">
 				<displayName draft="provisional">Nazántagén zarr</displayName>

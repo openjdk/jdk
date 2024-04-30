@@ -1,5 +1,6 @@
 /*
  * Copyright 2012 Google, Inc.  All Rights Reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,124 +25,137 @@
 /**
  * @test
  * @bug 8056934
- * @summary Check ability to read zip files created by python zipfile
- * implementation, which fails to write optional (but recommended) data
- * descriptor signatures.  Repro scenario is a Java -> Python -> Java round trip:
- * - ZipOutputStream creates zip file with DEFLATED entries and data
- *   descriptors with optional signature "PK0x0708".
- * - Python reads those entries, preserving the 0x08 flag byte
- * - Python outputs those entries with data descriptors lacking the
- *   optional signature.
- * - ZipInputStream cannot handle the missing signature
- *
+ * @summary Verify the ability to read zip files whose local header
+ * data descriptor is missing the optional signature
+ * <p>
  * No way to adapt the technique in this test to get a ZIP64 zip file
  * without data descriptors was found.
- *
- * @ignore 8303920 This test has brittle dependencies on an external working python.
+ * @run junit DataDescriptorSignatureMissing
  */
 
+
+import org.junit.jupiter.api.Test;
+
 import java.io.*;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
 import java.util.zip.*;
 
-public class DataDescriptorSignatureMissing  {
-    void printStream(InputStream is) throws IOException {
-        Reader r = new InputStreamReader(is);
-        StringBuilder sb = new StringBuilder();
-        char[] buf = new char[1024];
-        int n;
-        while ((n = r.read(buf)) > 0) {
-            sb.append(buf, 0, n);
-        }
-        System.out.print(sb);
-    }
+import static org.junit.jupiter.api.Assertions.*;
 
-    int entryCount(File zipFile) throws IOException {
-        try (FileInputStream fis = new FileInputStream(zipFile);
-             ZipInputStream zis = new ZipInputStream(fis)) {
-            for (int count = 0;; count++)
-                if (zis.getNextEntry() == null)
-                    return count;
-        }
-    }
+public class DataDescriptorSignatureMissing {
 
-    void test(String[] args) throws Throwable {
-        if (! new File("/usr/bin/python").canExecute())
-            return;
+    /**
+     * Verify that ZipInputStream correctly parses a ZIP with a Data Descriptor without
+     * the recommended but optional signature.
+     */
+    @Test
+    public void shouldParseSignaturelessDescriptor() throws IOException {
+        // The ZIP with a signature-less descriptor
+        byte[] zip = makeZipWithSignaturelessDescriptor();
 
-        // Create a java zip file with DEFLATED entries and data
-        // descriptors with signatures.
-        final File in = new File("in.zip");
-        final File out = new File("out.zip");
-        final int count = 3;
-        try (FileOutputStream fos = new FileOutputStream(in);
-             ZipOutputStream zos = new ZipOutputStream(fos)) {
-            for (int i = 0; i < count; i++) {
-                ZipEntry ze = new ZipEntry("hello.python" + i);
-                ze.setMethod(ZipEntry.DEFLATED);
-                zos.putNextEntry(ze);
-                zos.write(new byte[10]);
-                zos.closeEntry();
-            }
+        // ZipInputStream should read the signature-less data descriptor
+        try (ZipInputStream in = new ZipInputStream(
+                new ByteArrayInputStream(zip))) {
+            ZipEntry first = in.getNextEntry();
+            assertNotNull(first, "Zip file is unexpectedly missing first entry");
+            assertEquals("first", first.getName());
+            assertArrayEquals("first".getBytes(StandardCharsets.UTF_8), in.readAllBytes());
+
+            ZipEntry second = in.getNextEntry();
+            assertNotNull(second, "Zip file is unexpectedly missing second entry");
+            assertEquals("second", second.getName());
+            assertArrayEquals("second".getBytes(StandardCharsets.UTF_8), in.readAllBytes());
         }
 
-        // Copy the zip file using python's zipfile module
-        String[] python_program_lines = {
-            "import os",
-            "import zipfile",
-            "input_zip = zipfile.ZipFile('in.zip', mode='r')",
-            "output_zip = zipfile.ZipFile('out.zip', mode='w')",
-            "count08 = 0",
-            "for input_info in input_zip.infolist():",
-            "  output_info = input_info",
-            "  if output_info.flag_bits & 0x08 == 0x08:",
-            "    count08 += 1",
-            "  output_zip.writestr(output_info, input_zip.read(input_info))",
-            "output_zip.close()",
-            "if count08 == 0:",
-            "  raise ValueError('Expected to see entries with 0x08 flag_bits set')",
-        };
-        StringBuilder python_program_builder = new StringBuilder();
-        for (String line : python_program_lines)
-            python_program_builder.append(line).append('\n');
-        String python_program = python_program_builder.toString();
-        String[] cmdline = { "/usr/bin/python", "-c", python_program };
-        ProcessBuilder pb = new ProcessBuilder(cmdline);
-        pb.redirectErrorStream(true);
-        Process p = pb.start();
-        printStream(p.getInputStream());
-        p.waitFor();
-        equal(p.exitValue(), 0);
-
-        File pythonZipFile = new File("out.zip");
-        check(pythonZipFile.exists());
-
-        equal(entryCount(in),
-              entryCount(out));
-
-        // We expect out to be identical to in, except for the removal of
-        // the optional data descriptor signatures.
-        final int SIG_LENGTH = 4;       // length of a zip signature - PKxx
-        equal(in.length(),
-              out.length() + SIG_LENGTH * count);
-
-        in.delete();
-        out.delete();
     }
 
-    //--------------------- Infrastructure ---------------------------
-    volatile int passed = 0, failed = 0;
-    void pass() {passed++;}
-    void fail() {failed++; Thread.dumpStack();}
-    void fail(String msg) {System.err.println(msg); fail();}
-    void unexpected(Throwable t) {failed++; t.printStackTrace();}
-    void check(boolean cond) {if (cond) pass(); else fail();}
-    void equal(Object x, Object y) {
-        if (x == null ? y == null : x.equals(y)) pass();
-        else fail(x + " not equal to " + y);}
-    public static void main(String[] args) throws Throwable {
-        new DataDescriptorSignatureMissing().instanceMain(args);}
-    public void instanceMain(String[] args) throws Throwable {
-        try {test(args);} catch (Throwable t) {unexpected(t);}
-        System.out.printf("%nPassed = %d, failed = %d%n%n", passed, failed);
-        if (failed > 0) throw new AssertionError("Some tests failed");}
+    /**
+     * The 'Data descriptor' record is used to facilitate ZIP streaming. If the size of an
+     * entry is unknown at the time the LOC header is written, bit 3 of the General Purpose Bit Flag
+     * is set, and the File data is immediately followed by the 'Data descriptor' record. This record
+     * then contains the compressed and uncompressed sizes of the entry and also the CRC value.
+     *
+     * The 'Data descriptor' record is usually preceded by the recommended, but optional
+     * signature value 0x08074b50.
+     *
+     * A ZIP entry in streaming mode has the following structure:
+     *
+     *  ------  Local File Header  ------
+     *  000000  signature          0x04034b50
+     *  000004  version            20
+     *  000006  flags              0x0808   # Notice bit 3 is set
+     *  [..] Omitted for brevity
+     *
+     *  ------  File Data  ------
+     *  000035  data               7 bytes
+     *
+     *  ------  Data Descriptor  ------
+     *  000042  signature          0x08074b50
+     *  000046  crc                0x3610a686
+     *  000050  csize              7
+     *  000054  size               5
+     *
+     * A signature-less data descriptor will look like the following:
+     *
+     *  ------  Data Descriptor  ------
+     *  000042  crc                0x3610a686
+     *  000046  csize              7
+     *  000050  size               5
+     *
+     * This method produces a ZIP with two entries, where the first entry
+     * is made signature-less.
+     */
+    private static byte[] makeZipWithSignaturelessDescriptor() throws IOException {
+        // Offset of the signed data descriptor
+        int sigOffset;
+
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        try (ZipOutputStream zo = new ZipOutputStream(out)) {
+            // Write a first entry
+            zo.putNextEntry(new ZipEntry("first"));
+            zo.write("first".getBytes(StandardCharsets.UTF_8));
+            // Force the data descriptor to be written out
+            zo.closeEntry();
+            // Signed data descriptor starts 16 bytes before current offset
+            sigOffset = out.size() - 4 * Integer.BYTES;
+            // Add a second entry
+            zo.putNextEntry(new ZipEntry("second"));
+            zo.write("second".getBytes(StandardCharsets.UTF_8));
+        }
+
+        // The generated ZIP file with a signed data descriptor
+        byte[] sigZip = out.toByteArray();
+
+        // The offset of the CRC immediately following the 4-byte signature
+        int crcOffset = sigOffset + Integer.BYTES;
+
+        // Create a ZIP file with a signature-less data descriptor for the first entry
+        ByteArrayOutputStream sigLess = new ByteArrayOutputStream();
+        sigLess.write(sigZip, 0, sigOffset);
+        // Skip the signature
+        sigLess.write(sigZip, crcOffset, sigZip.length - crcOffset);
+
+        byte[] siglessZip = sigLess.toByteArray();
+
+        // Adjust the CEN offset in the END header
+        ByteBuffer buffer = ByteBuffer.wrap(siglessZip).order(ByteOrder.LITTLE_ENDIAN);
+        // Reduce cenOffset by 4 bytes
+        int cenOff = siglessZip.length - ZipFile.ENDHDR + ZipFile.ENDOFF;
+        int realCenOff = buffer.getInt(cenOff) - Integer.BYTES;
+        buffer.putInt(cenOff, realCenOff);
+
+        // Adjust the LOC offset in the second CEN header
+        int cen = realCenOff;
+        // Skip past the first CEN header
+        int nlen = buffer.getShort(cen + ZipFile.CENNAM);
+        cen += ZipFile.CENHDR + nlen;
+
+        // Reduce LOC offset by 4 bytes
+        int locOff = cen + ZipFile.CENOFF;
+        buffer.putInt(locOff, buffer.getInt(locOff) - Integer.BYTES);
+
+        return siglessZip;
+    }
 }

@@ -24,8 +24,10 @@
 
 /**
  * @test
- * @bug 8185164
- * @summary Checks that a contended monitor does not show up in the list of owned monitors
+ * @bug 8185164 8320515
+ * @summary Checks that a contended monitor does not show up in the list of owned monitors.
+ *          8320515 piggy-backs on this test and injects an owned monitor with a dead object,
+            and checks that that monitor isn't exposed to GetOwnedMonitorInfo.
  * @requires vm.jvmti
  * @compile GetOwnedMonitorInfoTest.java
  * @run main/othervm/native -agentlib:GetOwnedMonitorInfoTest GetOwnedMonitorInfoTest
@@ -46,19 +48,47 @@ public class GetOwnedMonitorInfoTest {
         }
     }
 
+    private static native void jniMonitorEnter(Object obj);
     private static native int check();
     private static native boolean hasEventPosted();
 
-    public static void main(String[] args) throws Exception {
-        runTest(true);
-        runTest(false);
+    private static void jniMonitorEnterAndLetObjectDie() {
+        // The monitor iterator used by GetOwnedMonitorInfo used to
+        // assert when an owned monitor with a dead object was found.
+        // Inject this situation into this test that performs other
+        // GetOwnedMonitorInfo testing.
+        Object obj = new Object() {};
+        jniMonitorEnter(obj);
+        if (!Thread.holdsLock(obj)) {
+            throw new RuntimeException("The object is not locked");
+        }
+        obj = null;
+        System.gc();
     }
 
-    public static void runTest(boolean isVirtual) throws Exception {
+    public static void main(String[] args) throws Exception {
+        runTest(true, true);
+        runTest(true, false);
+        runTest(false, true);
+        runTest(false, false);
+    }
+
+    static int t_num = 0;
+    public static void runTest(boolean isVirtual, boolean jni) throws Exception {
         var threadFactory = isVirtual ? Thread.ofVirtual().factory() : Thread.ofPlatform().factory();
         final GetOwnedMonitorInfoTest lock = new GetOwnedMonitorInfoTest();
 
         Thread t1 = threadFactory.newThread(() -> {
+            Thread.currentThread().setName((isVirtual ? "Virtual-" : "") + "Worker-Thread-" + t_num);
+            t_num++;
+
+            if (jni) {
+                System.out.println("Thread doing JNI call: "
+                                   + Thread.currentThread().getName());
+
+                jniMonitorEnterAndLetObjectDie();
+            }
+
             synchronized (lock) {
                 System.out.println("Thread in sync section: "
                                    + Thread.currentThread().getName());
@@ -67,7 +97,9 @@ public class GetOwnedMonitorInfoTest {
 
         // Make sure t1 contends on the monitor.
         synchronized (lock) {
-            System.out.println("Main starting worker thread.");
+            System.out.print("Main starting worker thread for ");
+            System.out.print(isVirtual ? "virtual " : "non-virtual ");
+            System.out.println(jni ? "JNI" : "non-JNI");
             t1.start();
 
             // Wait for the MonitorContendedEnter event

@@ -22,6 +22,7 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include "jvmti.h"
 #include "jni.h"
@@ -262,6 +263,14 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     }
     printf("Agent_OnLoad finished\n");
     return JNI_OK;
+}
+
+JNIEXPORT void JNICALL
+Java_GetOwnedMonitorInfoTest_jniMonitorEnter(JNIEnv* env, jclass cls, jobject obj) {
+    if ((*env)->MonitorEnter(env, obj) != 0) {
+        fprintf(stderr, "MonitorEnter failed");
+        exit(-1);
+    }
 }
 
 JNIEXPORT jint JNICALL

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,6 @@ class XCollectedHeap : public CollectedHeap {
   friend class ::VMStructs;
 
 private:
-  SoftRefPolicy     _soft_ref_policy;
   XBarrierSet       _barrier_set;
   XInitialize       _initialize;
   XHeap             _heap;
@@ -64,8 +63,6 @@ public:
   jint initialize() override;
   void initialize_serviceability() override;
   void stop() override;
-
-  SoftRefPolicy* soft_ref_policy() override;
 
   size_t max_capacity() const override;
   size_t capacity() const override;
@@ -89,8 +86,6 @@ public:
   size_t tlab_used(Thread* thr) const override;
   size_t max_tlab_size() const override;
   size_t unsafe_max_tlab_alloc(Thread* thr) const override;
-
-  bool uses_stack_watermark_barrier() const override;
 
   MemoryUsage memory_usage() override;
   GrowableArray<GCMemoryManager*> memory_managers() override;

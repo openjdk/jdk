@@ -76,6 +76,7 @@ import jdk.dynalink.support.SimpleRelinkableCallSite;
  * method handles. A relinkable call site will be managed by a
  * {@link DynamicLinker} object after being associated with it using its
  * {@link DynamicLinker#link(RelinkableCallSite)} method.
+ * @since 9
  */
 public interface RelinkableCallSite {
     /**

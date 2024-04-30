@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,32 +25,21 @@
 #include "precompiled.hpp"
 #include "gc/parallel/objectStartArray.inline.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
-#include "memory/allocation.inline.hpp"
 #include "nmt/memTracker.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"
 #include "utilities/align.hpp"
 
-uint ObjectStartArray::_card_shift = 0;
-uint ObjectStartArray::_card_size = 0;
-uint ObjectStartArray::_card_size_in_words = 0;
+static size_t num_bytes_required(MemRegion mr) {
+  assert(CardTable::is_card_aligned(mr.start()), "precondition");
+  assert(CardTable::is_card_aligned(mr.end()), "precondition");
 
-void ObjectStartArray::initialize_block_size(uint card_shift) {
-  _card_shift = card_shift;
-  _card_size = 1 << _card_shift;
-  _card_size_in_words = _card_size / sizeof(HeapWord);
+  return mr.word_size() / CardTable::card_size_in_words();
 }
 
 void ObjectStartArray::initialize(MemRegion reserved_region) {
-  // We're based on the assumption that we use the same
-  // size blocks as the card table.
-  assert(_card_size == CardTable::card_size(), "Sanity");
-  assert(_card_size <= MaxBlockSize, "block_size must be less than or equal to " UINT32_FORMAT, MaxBlockSize);
-
   // Calculate how much space must be reserved
-  _reserved_region = reserved_region;
-
-  size_t bytes_to_reserve = reserved_region.word_size() / _card_size_in_words;
+  size_t bytes_to_reserve = num_bytes_required(reserved_region);
   assert(bytes_to_reserve > 0, "Sanity");
 
   bytes_to_reserve =
@@ -62,91 +51,96 @@ void ObjectStartArray::initialize(MemRegion reserved_region) {
   if (!backing_store.is_reserved()) {
     vm_exit_during_initialization("Could not reserve space for ObjectStartArray");
   }
-  MemTracker::record_virtual_memory_type((address)backing_store.base(), mtGC);
+  MemTracker::record_virtual_memory_type(backing_store.base(), mtGC);
 
   // We do not commit any memory initially
   _virtual_space.initialize(backing_store);
 
-  _raw_base = (jbyte*)_virtual_space.low_boundary();
-  assert(_raw_base != nullptr, "set from the backing_store");
+  assert(_virtual_space.low_boundary() != nullptr, "set from the backing_store");
 
-  _offset_base = _raw_base - (size_t(reserved_region.start()) >> _card_shift);
-
-  _covered_region.set_start(reserved_region.start());
-  _covered_region.set_word_size(0);
-
-  _blocks_region.set_start((HeapWord*)_raw_base);
-  _blocks_region.set_word_size(0);
+  _offset_base = (uint8_t*)(_virtual_space.low_boundary() - (uintptr_t(reserved_region.start()) >> CardTable::card_shift()));
 }
 
 void ObjectStartArray::set_covered_region(MemRegion mr) {
-  assert(_reserved_region.contains(mr), "MemRegion outside of reserved space");
-  assert(_reserved_region.start() == mr.start(), "Attempt to move covered region");
+  DEBUG_ONLY(_covered_region = mr;)
 
-  HeapWord* low_bound  = mr.start();
-  HeapWord* high_bound = mr.end();
-  assert((uintptr_t(low_bound)  & (_card_size - 1))  == 0, "heap must start at block boundary");
-  assert((uintptr_t(high_bound) & (_card_size - 1))  == 0, "heap must end at block boundary");
-
-  size_t requested_blocks_size_in_bytes = mr.word_size() / _card_size_in_words;
-
+  size_t requested_size = num_bytes_required(mr);
   // Only commit memory in page sized chunks
-  requested_blocks_size_in_bytes =
-    align_up(requested_blocks_size_in_bytes, os::vm_page_size());
+  requested_size = align_up(requested_size, os::vm_page_size());
 
-  _covered_region = mr;
+  size_t current_size = _virtual_space.committed_size();
 
-  size_t current_blocks_size_in_bytes = _blocks_region.byte_size();
+  if (requested_size == current_size) {
+    return;
+  }
 
-  if (requested_blocks_size_in_bytes > current_blocks_size_in_bytes) {
+  if (requested_size > current_size) {
     // Expand
-    size_t expand_by = requested_blocks_size_in_bytes - current_blocks_size_in_bytes;
+    size_t expand_by = requested_size - current_size;
     if (!_virtual_space.expand_by(expand_by)) {
       vm_exit_out_of_memory(expand_by, OOM_MMAP_ERROR, "object start array expansion");
     }
-    // Clear *only* the newly allocated region
-    memset(_blocks_region.end(), clean_block, expand_by);
-  }
-
-  if (requested_blocks_size_in_bytes < current_blocks_size_in_bytes) {
+  } else {
     // Shrink
-    size_t shrink_by = current_blocks_size_in_bytes - requested_blocks_size_in_bytes;
+    size_t shrink_by = current_size - requested_size;
     _virtual_space.shrink_by(shrink_by);
   }
-
-  _blocks_region.set_word_size(requested_blocks_size_in_bytes / sizeof(HeapWord));
-
-  assert(requested_blocks_size_in_bytes % sizeof(HeapWord) == 0, "Block table not expanded in word sized increment");
-  assert(requested_blocks_size_in_bytes == _blocks_region.byte_size(), "Sanity");
-  assert(block_for_addr(low_bound) == &_raw_base[0], "Checking start of map");
-  assert(block_for_addr(high_bound-1) <= &_raw_base[_blocks_region.byte_size()-1], "Checking end of map");
 }
 
-void ObjectStartArray::reset() {
-  memset(_blocks_region.start(), clean_block, _blocks_region.byte_size());
+static void fill_range(uint8_t* start, uint8_t* end, uint8_t v) {
+  // + 1 for inclusive
+  memset(start, v, pointer_delta(end, start, sizeof(uint8_t)) + 1);
 }
 
-bool ObjectStartArray::object_starts_in_range(HeapWord* start_addr,
-                                              HeapWord* end_addr) const {
-  assert(start_addr <= end_addr,
-         "Range is wrong. start_addr (" PTR_FORMAT ") is after end_addr (" PTR_FORMAT ")",
-         p2i(start_addr), p2i(end_addr));
+void ObjectStartArray::update_for_block_work(HeapWord* blk_start,
+                                             HeapWord* blk_end) {
+  HeapWord* const cur_card_boundary = align_up_by_card_size(blk_start);
+  uint8_t* const offset_entry = entry_for_addr(cur_card_boundary);
 
-  assert(is_aligned(start_addr, _card_size), "precondition");
+  // The first card holds the actual offset.
+  *offset_entry = checked_cast<uint8_t>(pointer_delta(cur_card_boundary, blk_start));
 
-  if (start_addr == end_addr) {
-    // No objects in empty range.
-    return false;
+  // Check if this block spans over other cards.
+  uint8_t* const end_entry = entry_for_addr(blk_end - 1);
+  assert(offset_entry <= end_entry, "inv");
+
+  if (offset_entry != end_entry) {
+    // Handling remaining entries.
+    uint8_t* start_entry_for_region = offset_entry + 1;
+    for (uint i = 0; i < BOTConstants::N_powers; i++) {
+      // -1 so that the reach ends in this region and not at the start
+      // of the next.
+      uint8_t* reach = offset_entry + BOTConstants::power_to_cards_back(i + 1) - 1;
+      uint8_t value = checked_cast<uint8_t>(CardTable::card_size_in_words() + i);
+
+      fill_range(start_entry_for_region, MIN2(reach, end_entry), value);
+      start_entry_for_region = reach + 1;
+
+      if (reach >= end_entry) {
+        break;
+      }
+    }
+    assert(start_entry_for_region > end_entry, "Sanity check");
   }
 
-  jbyte* start_block = block_for_addr(start_addr);
-  jbyte* end_block = block_for_addr(end_addr - 1);
+  debug_only(verify_for_block(blk_start, blk_end);)
+}
 
-  for (jbyte* block = start_block; block <= end_block; block++) {
-    if (*block != clean_block) {
-      return true;
+void ObjectStartArray::verify_for_block(HeapWord* blk_start, HeapWord* blk_end) const {
+  assert(is_crossing_card_boundary(blk_start, blk_end), "precondition");
+
+  const uint8_t* const start_entry = entry_for_addr(align_up_by_card_size(blk_start));
+  const uint8_t* const end_entry = entry_for_addr(blk_end - 1);
+  // Check entries in [start_entry, end_entry]
+  assert(*start_entry < CardTable::card_size_in_words(), "offset entry");
+
+  for (const uint8_t* i = start_entry + 1; i <= end_entry; ++i) {
+    const uint8_t prev  = *(i-1);
+    const uint8_t value = *i;
+    if (prev != value) {
+      assert(value >= prev, "monotonic");
+      size_t n_cards_back = BOTConstants::entry_to_cards_back(value);
+      assert(start_entry == (i - n_cards_back), "inv");
     }
   }
-
-  return false;
 }

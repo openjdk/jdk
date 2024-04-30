@@ -194,7 +194,7 @@ class GraphKit : public Phase {
   bool stopped();
 
   // Tell if this method or any caller method has exception handlers.
-  bool has_ex_handler();
+  bool has_exception_handler();
 
   // Save an exception without blowing stack contents or other JVM state.
   // (The extra pointer is stuck with add_req on the map, beyond the JVMS.)

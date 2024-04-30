@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@
 #include "ci/ciObjArray.hpp"
 #include "ci/ciUtilities.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
+#include "compiler/compilerOracle.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c1/barrierSetC1.hpp"
 #include "oops/klass.inline.hpp"
@@ -205,9 +206,11 @@ void LIRItem::set_result(LIR_Opr opr) {
   assert(value()->operand()->is_illegal() || value()->operand()->is_constant(), "operand should never change");
   value()->set_operand(opr);
 
+#ifdef ASSERT
   if (opr->is_virtual()) {
     _gen->_instruction_for_operand.at_put_grow(opr->vreg_number(), value(), nullptr);
   }
+#endif
 
   _result = opr;
 }
@@ -403,8 +406,20 @@ CodeEmitInfo* LIRGenerator::state_for(Instruction* x, ValueStack* state, bool ig
 
   ValueStack* s = state;
   for_each_state(s) {
-    if (s->kind() == ValueStack::EmptyExceptionState) {
-      assert(s->stack_size() == 0 && s->locals_size() == 0 && (s->locks_size() == 0 || s->locks_size() == 1), "state must be empty");
+    if (s->kind() == ValueStack::EmptyExceptionState ||
+        s->kind() == ValueStack::CallerEmptyExceptionState)
+    {
+#ifdef ASSERT
+      int index;
+      Value value;
+      for_each_stack_value(s, index, value) {
+        fatal("state must be empty");
+      }
+      for_each_local_value(s, index, value) {
+        fatal("state must be empty");
+      }
+#endif
+      assert(s->locks_size() == 0 || s->locks_size() == 1, "state must be empty");
       continue;
     }
 
@@ -1309,9 +1324,9 @@ void LIRGenerator::do_getModifiers(Intrinsic* x) {
   // from the primitive class itself. See spec for Class.getModifiers that provides
   // the typed array klasses with similar modifiers as their component types.
 
-  Klass* univ_klass_obj = Universe::byteArrayKlassObj();
-  assert(univ_klass_obj->modifier_flags() == (JVM_ACC_ABSTRACT | JVM_ACC_FINAL | JVM_ACC_PUBLIC), "Sanity");
-  LIR_Opr prim_klass = LIR_OprFact::metadataConst(univ_klass_obj);
+  Klass* univ_klass = Universe::byteArrayKlass();
+  assert(univ_klass->modifier_flags() == (JVM_ACC_ABSTRACT | JVM_ACC_FINAL | JVM_ACC_PUBLIC), "Sanity");
+  LIR_Opr prim_klass = LIR_OprFact::metadataConst(univ_klass);
 
   LIR_Opr recv_klass = new_register(T_METADATA);
   __ move(new LIR_Address(receiver.result(), java_lang_Class::klass_offset(), T_ADDRESS), recv_klass, info);
@@ -1482,28 +1497,22 @@ LIR_Opr LIRGenerator::operand_for_instruction(Instruction* x) {
       assert(x->as_Phi() || x->as_Local() != nullptr, "only for Phi and Local");
       // allocate a virtual register for this local or phi
       x->set_operand(rlock(x));
+#ifdef ASSERT
       _instruction_for_operand.at_put_grow(x->operand()->vreg_number(), x, nullptr);
+#endif
     }
   }
   return x->operand();
 }
 
-
-Instruction* LIRGenerator::instruction_for_opr(LIR_Opr opr) {
-  if (opr->is_virtual()) {
-    return instruction_for_vreg(opr->vreg_number());
-  }
-  return nullptr;
-}
-
-
+#ifdef ASSERT
 Instruction* LIRGenerator::instruction_for_vreg(int reg_num) {
   if (reg_num < _instruction_for_operand.length()) {
     return _instruction_for_operand.at(reg_num);
   }
   return nullptr;
 }
-
+#endif
 
 void LIRGenerator::set_vreg_flag(int vreg_num, VregFlag f) {
   if (_vreg_flags.size_in_bits() == 0) {
@@ -2648,7 +2657,9 @@ void LIRGenerator::do_Base(Base* x) {
     assert(as_ValueType(t)->tag() == local->type()->tag(), "check");
 #endif // __SOFTFP__
     local->set_operand(dest);
+#ifdef ASSERT
     _instruction_for_operand.at_put_grow(dest->vreg_number(), local, nullptr);
+#endif
     java_index += type2size[t];
   }
 
@@ -3206,7 +3217,7 @@ void LIRGenerator::do_ProfileInvoke(ProfileInvoke* x) {
     // Notify the runtime very infrequently only to take care of counter overflows
     int freq_log = Tier23InlineeNotifyFreqLog;
     double scale;
-    if (_method->has_option_value(CompileCommand::CompileThresholdScaling, scale)) {
+    if (_method->has_option_value(CompileCommandEnum::CompileThresholdScaling, scale)) {
       freq_log = CompilerConfig::scaled_freq_log(freq_log, scale);
     }
     increment_event_counter_impl(info, x->inlinee(), LIR_OprFact::intConst(InvocationCounter::count_increment), right_n_bits(freq_log), InvocationEntryBci, false, true);
@@ -3247,7 +3258,7 @@ void LIRGenerator::increment_event_counter(CodeEmitInfo* info, LIR_Opr step, int
   }
   // Increment the appropriate invocation/backedge counter and notify the runtime.
   double scale;
-  if (_method->has_option_value(CompileCommand::CompileThresholdScaling, scale)) {
+  if (_method->has_option_value(CompileCommandEnum::CompileThresholdScaling, scale)) {
     freq_log = CompilerConfig::scaled_freq_log(freq_log, scale);
   }
   increment_event_counter_impl(info, info->scope()->method(), step, right_n_bits(freq_log), bci, backedge, true);

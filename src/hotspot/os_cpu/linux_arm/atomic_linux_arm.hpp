@@ -153,7 +153,6 @@ inline int32_t reorder_cmpxchg_func(int32_t exchange_value,
 inline int64_t reorder_cmpxchg_long_func(int64_t exchange_value,
                                          int64_t volatile* dest,
                                          int64_t compare_value) {
-  assert(VM_Version::supports_cx8(), "Atomic compare and exchange int64_t not supported on this architecture!");
   // Warning:  Arguments are swapped to avoid moving them for kernel call
   return (*ARMAtomicFuncs::_cmpxchg_long_func)(compare_value, exchange_value, dest);
 }

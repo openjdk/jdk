@@ -192,7 +192,8 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                     if (isNormalClass(p.getParentPath())) {
                         reportMissing("dc.default.constructor");
                     }
-                } else if (!isOverridingMethod && !isSynthetic() && !isAnonymous() && !isRecordComponentOrField()) {
+                } else if (!isOverridingMethod && !isSynthetic() && !isAnonymous() && !isRecordComponentOrField()
+                        && !isImplicitlyDeclaredClass(env.currPath.getLeaf())) {
                     reportMissing("dc.missing.comment");
                 }
                 return null;
@@ -1248,14 +1249,8 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     }
 
     private boolean isDefaultConstructor() {
-        if (env.currElement.getKind() == ElementKind.CONSTRUCTOR) {
-            // A synthetic default constructor has the same pos as the
-            // enclosing class
-            TreePath p = env.currPath;
-            return env.getPos(p) == env.getPos(p.getParentPath());
-        } else {
-            return false;
-        }
+        return env.currElement.getKind() == ElementKind.CONSTRUCTOR
+                && env.elements.getOrigin(env.currElement) == Elements.Origin.MANDATED;
     }
 
     private boolean isDeclaredType() {
@@ -1281,9 +1276,18 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     private boolean isNormalClass(TreePath p) {
         return switch (p.getLeaf().getKind()) {
             case ENUM, RECORD -> false;
-            case CLASS -> true;
+            case CLASS -> !isImplicitlyDeclaredClass(p.getLeaf());
             default -> throw new IllegalArgumentException(p.getLeaf().getKind().name());
         };
+    }
+
+    /*
+     * If a similar query is ever added to com.sun.source.tree, use that instead.
+     */
+    private boolean isImplicitlyDeclaredClass(Tree t) {
+        return t.getKind() == Tree.Kind.CLASS
+                && t instanceof com.sun.tools.javac.tree.JCTree.JCClassDecl classDecl
+                && (classDecl.mods.flags & com.sun.tools.javac.code.Flags.IMPLICIT_CLASS) != 0;
     }
 
     void markEnclosingTag(Flag flag) {

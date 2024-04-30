@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -254,13 +254,10 @@ public class HelloExtensionsTest {
 
         SSLEngine ssle;
 
-        KeyStore ks = KeyStore.getInstance("JKS");
-        KeyStore ts = KeyStore.getInstance("JKS");
-
         char[] passphrase = "passphrase".toCharArray();
 
-        ks.load(new FileInputStream(keyFile), passphrase);
-        ts.load(new FileInputStream(trustFile), passphrase);
+        KeyStore ks = KeyStore.getInstance(new File(keyFile), passphrase);
+        KeyStore ts = KeyStore.getInstance(new File(trustFile), passphrase);
 
         KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
         kmf.init(ks, passphrase);

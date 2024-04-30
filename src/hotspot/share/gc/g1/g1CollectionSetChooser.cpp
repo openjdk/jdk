@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,8 @@
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectionSetCandidates.hpp"
 #include "gc/g1/g1CollectionSetChooser.hpp"
-#include "gc/g1/heapRegionRemSet.inline.hpp"
-#include "gc/shared/space.inline.hpp"
+#include "gc/g1/g1HeapRegionRemSet.inline.hpp"
+#include "gc/shared/space.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/quickSort.hpp"
 
@@ -39,7 +39,7 @@
 // moved to the destination.
 class G1BuildCandidateRegionsTask : public WorkerTask {
 
-  using CandidateInfo = G1CollectionCandidateList::CandidateInfo;
+  using CandidateInfo = G1CollectionSetCandidateInfo;
 
   // Work area for building the set of collection set candidates. Contains references
   // to heap regions with their GC efficiencies calculated. To reduce contention

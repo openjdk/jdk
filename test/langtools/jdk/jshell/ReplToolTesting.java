@@ -304,7 +304,7 @@ public class ReplToolTesting {
     private void testRaw(Locale locale, String[] args,
                          String expectedErrorOutput, ReplTest... tests) {
         testRawInit(tests);
-        testRawRun(locale, args);
+        testRawRun(locale, Presets.addExecutionIfMissing(args));
         testRawCheck(locale, expectedErrorOutput);
     }
 

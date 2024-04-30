@@ -36,10 +36,11 @@ class ResolutionErrorTable : AllStatic {
 
 public:
   static void initialize();
-  static void add_entry(const constantPoolHandle& pool, int which, Symbol* error, Symbol* message,
-                        Symbol* cause, Symbol* cause_msg);
+  static void add_entry(const constantPoolHandle& pool, int cp_index,
+                        Symbol* error, const char* error_msg,
+                        Symbol* cause, const char* cause_msg);
 
-  static void add_entry(const constantPoolHandle& pool, int which, const char* message);
+  static void add_entry(const constantPoolHandle& pool, int cp_index, const char* message);
 
   // find error given the constant pool and constant pool index
   static ResolutionErrorEntry* find_entry(const constantPoolHandle& pool, int cp_index);
@@ -56,11 +57,9 @@ public:
   // index of another entry in the table.
   static const int CPCACHE_INDEX_MANGLE_VALUE = 1000000;
 
-  // This function is used to encode an index to differentiate it from a
-  // constant pool index.  It assumes it is being called with a cpCache index
-  // (that is less than 0).
-  static int encode_cpcache_index(int index) {
-    assert(index < 0, "Unexpected non-negative cpCache index");
+  // This function is used to encode an invokedynamic index to differentiate it from a
+  // constant pool index.
+  static int encode_indy_index(int index) {
     return index + CPCACHE_INDEX_MANGLE_VALUE;
   }
 };
@@ -69,34 +68,38 @@ public:
 class ResolutionErrorEntry : public CHeapObj<mtClass> {
  private:
   Symbol*           _error;
-  Symbol*           _message;
+  const char*       _message;
   Symbol*           _cause;
-  Symbol*           _cause_msg;
+  const char*       _cause_msg;
   const char*       _nest_host_error;
 
   NONCOPYABLE(ResolutionErrorEntry);
 
  public:
-    ResolutionErrorEntry(Symbol* error, Symbol* message, Symbol* cause, Symbol* cause_msg);
+  // The incoming message and cause_msg are copied to the C-Heap.
+  ResolutionErrorEntry(Symbol* error, const char* message,
+                       Symbol* cause, const char* cause_msg);
 
-    ResolutionErrorEntry(const char* message):
+  // The incoming nest host error message is already in the C-Heap.
+  ResolutionErrorEntry(const char* message):
         _error(nullptr),
         _message(nullptr),
         _cause(nullptr),
         _cause_msg(nullptr),
         _nest_host_error(message) {}
 
-    ~ResolutionErrorEntry();
+  ~ResolutionErrorEntry();
 
-    void set_nest_host_error(const char* message) {
-      _nest_host_error = message;
-    }
+  // The incoming nest host error message is already in the C-Heap.
+  void set_nest_host_error(const char* message) {
+    _nest_host_error = message;
+  }
 
 
   Symbol*            error() const              { return _error; }
-  Symbol*            message() const            { return _message; }
+  const char*        message() const            { return _message; }
   Symbol*            cause() const              { return _cause; }
-  Symbol*            cause_msg() const          { return _cause_msg; }
+  const char*        cause_msg() const          { return _cause_msg; }
   const char*        nest_host_error() const    { return _nest_host_error; }
 };
 

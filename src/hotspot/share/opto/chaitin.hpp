@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -163,8 +163,8 @@ public:
   bool is_scalable() {
 #ifdef ASSERT
     if (_is_scalable) {
-      assert(_is_vector && (_num_regs == RegMask::SlotsPerVecA) ||
-             _is_predicate && (_num_regs == RegMask::SlotsPerRegVectMask), "unexpected scalable reg");
+      assert((_is_vector && (_num_regs == RegMask::SlotsPerVecA)) ||
+             (_is_predicate && (_num_regs == RegMask::SlotsPerRegVectMask)), "unexpected scalable reg");
     }
 #endif
     return Matcher::implements_scalable_vector && _is_scalable;
@@ -292,7 +292,7 @@ public:
 #endif
 
   //--------------- Live Range Accessors
-  LRG &lrgs(uint idx) const { assert(idx < _maxlrg, "oob"); return _lrgs[idx]; }
+  LRG &lrgs(uint idx) const { assert(idx < _maxlrg, "oob: index %u not smaller than %u", idx, _maxlrg); return _lrgs[idx]; }
 
   // Compute and set effective degree.  Might be folded into SquareUp().
   void Compute_Effective_Degree();

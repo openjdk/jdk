@@ -25,8 +25,8 @@
 
 package jdk.internal.classfile.impl;
 
-import jdk.internal.classfile.Label;
-import jdk.internal.classfile.instruction.CharacterRange;
+import java.lang.classfile.Label;
+import java.lang.classfile.instruction.CharacterRange;
 
 public final class BoundCharacterRange
         extends AbstractElement

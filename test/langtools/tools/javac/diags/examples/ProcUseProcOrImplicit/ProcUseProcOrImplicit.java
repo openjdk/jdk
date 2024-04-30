@@ -21,6 +21,8 @@
  * questions.
  */
 
+// key: compiler.warn.proc.use.proc.or.implicit
+// key: compiler.note.implicit.annotation.processing
 // options: -Xprefer:source
 
 import p.SomeClass;

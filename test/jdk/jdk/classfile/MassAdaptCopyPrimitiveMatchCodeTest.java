@@ -23,20 +23,20 @@
 
 /*
  * @test
- * @summary Testing Classfile massive class adaptation.
+ * @summary Testing ClassFile massive class adaptation.
  * @run junit MassAdaptCopyPrimitiveMatchCodeTest
  */
 import helpers.InstructionModelToCodeBuilder;
 import java.lang.reflect.AccessFlag;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.attribute.CodeAttribute;
-import jdk.internal.classfile.Attributes;
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.CodeElement;
-import jdk.internal.classfile.CodeModel;
-import jdk.internal.classfile.Instruction;
-import jdk.internal.classfile.MethodModel;
-import jdk.internal.classfile.instruction.InvokeInstruction;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.attribute.CodeAttribute;
+import java.lang.classfile.Attributes;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.CodeElement;
+import java.lang.classfile.CodeModel;
+import java.lang.classfile.Instruction;
+import java.lang.classfile.MethodModel;
+import java.lang.classfile.instruction.InvokeInstruction;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
@@ -94,7 +94,7 @@ class MassAdaptCopyPrimitiveMatchCodeTest {
 
     void copy(String name, byte[] bytes) throws Exception {
         //System.err.printf("MassAdaptCopyPrimitiveMatchCodeTest - %s%n", name);
-        var cc = Classfile.of();
+        var cc = ClassFile.of();
         ClassModel cm =cc.parse(bytes);
         Map<String, byte[]> m2b = new HashMap<>();
         Map<String, CodeAttribute> m2c = new HashMap<>();

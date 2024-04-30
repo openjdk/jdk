@@ -23,20 +23,20 @@
 
 /*
  * @test
- * @summary Testing Classfile handling JSR and RET instructions.
+ * @summary Testing ClassFile handling JSR and RET instructions.
  * @run junit DiscontinuedInstructionsTest
  */
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.util.ArrayList;
 import java.util.List;
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.instruction.DiscontinuedInstruction;
+import java.lang.classfile.*;
+import java.lang.classfile.instruction.DiscontinuedInstruction;
 import helpers.ByteArrayClassLoader;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 import static java.lang.constant.ConstantDescs.*;
-import static jdk.internal.classfile.Classfile.*;
+import static java.lang.classfile.ClassFile.*;
 
 class DiscontinuedInstructionsTest {
 
@@ -45,7 +45,7 @@ class DiscontinuedInstructionsTest {
         var testClass = "JsrAndRetSample";
         var testMethod = "testMethod";
         var cd_list = ArrayList.class.describeConstable().get();
-        var cc = Classfile.of();
+        var cc = ClassFile.of();
         var bytes = cc.build(ClassDesc.of(testClass), clb -> clb
                 .withVersion(JAVA_5_VERSION, 0)
                 .withMethodBody(testMethod, MethodTypeDesc.of(CD_void, cd_list), ACC_PUBLIC | ACC_STATIC, cob -> cob
@@ -94,7 +94,7 @@ class DiscontinuedInstructionsTest {
 
         //test failure of stack map generation when enforced to generate
         assertThrows(IllegalArgumentException.class, () ->
-                Classfile.of(Classfile.StackMapsOption.GENERATE_STACK_MAPS)
+                ClassFile.of(ClassFile.StackMapsOption.GENERATE_STACK_MAPS)
                          .transform(clm, ClassTransform.transformingMethodBodies(CodeTransform.ACCEPT_ALL)));
     }
 }

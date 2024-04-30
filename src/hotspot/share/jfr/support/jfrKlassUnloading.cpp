@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,13 +101,12 @@ void JfrKlassUnloading::clear() {
   }
 }
 
-static bool add_to_unloaded_klass_set(traceid klass_id, bool current_epoch) {
+static void add_to_unloaded_klass_set(traceid klass_id) {
   assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
-  GrowableArray<traceid>* const unload_set = current_epoch ? get_unload_set() : get_unload_set_previous_epoch();
+  GrowableArray<traceid>* const unload_set = get_unload_set();
   assert(unload_set != nullptr, "invariant");
   assert(unload_set->find(klass_id) == -1, "invariant");
   unload_set->append(klass_id);
-  return true;
 }
 
 #if INCLUDE_MANAGEMENT
@@ -129,7 +128,8 @@ bool JfrKlassUnloading::on_unload(const Klass* k) {
   if (IS_JDK_JFR_EVENT_SUBKLASS(k)) {
     ++event_klass_unloaded_count;
   }
-  return USED_ANY_EPOCH(k) && add_to_unloaded_klass_set(JfrTraceId::load_raw(k), USED_THIS_EPOCH(k));
+  add_to_unloaded_klass_set(JfrTraceId::load_raw(k));
+  return USED_THIS_EPOCH(k);
 }
 
 bool JfrKlassUnloading::is_unloaded(traceid klass_id, bool previous_epoch /* false */) {

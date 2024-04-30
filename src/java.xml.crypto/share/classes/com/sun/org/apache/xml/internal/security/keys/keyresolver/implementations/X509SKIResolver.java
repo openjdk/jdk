@@ -28,7 +28,6 @@ import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.Iterator;
 
-
 import com.sun.org.apache.xml.internal.security.exceptions.XMLSecurityException;
 import com.sun.org.apache.xml.internal.security.keys.content.x509.XMLX509SKI;
 import com.sun.org.apache.xml.internal.security.keys.keyresolver.KeyResolverException;
@@ -95,20 +94,18 @@ public class X509SKIResolver extends KeyResolverSpi {
             }
 
             XMLX509SKI[] x509childObject = new XMLX509SKI[x509childNodes.length];
-
             for (int i = 0; i < x509childNodes.length; i++) {
                 x509childObject[i] = new XMLX509SKI(x509childNodes[i], baseURI);
             }
 
             Iterator<Certificate> storageIterator = storage.getIterator();
             while (storageIterator.hasNext()) {
-                X509Certificate cert = (X509Certificate)storageIterator.next();
+                X509Certificate cert = (X509Certificate) storageIterator.next();
                 XMLX509SKI certSKI = new XMLX509SKI(element.getOwnerDocument(), cert);
 
-                for (int i = 0; i < x509childObject.length; i++) {
-                    if (certSKI.equals(x509childObject[i])) {
+                for (XMLX509SKI childNodeSKI : x509childObject) {
+                    if (certSKI.equals(childNodeSKI)) {
                         LOG.debug("Return PublicKey from {}", cert.getSubjectX500Principal().getName());
-
                         return cert;
                     }
                 }

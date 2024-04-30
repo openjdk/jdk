@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -407,21 +407,15 @@ class CompileReplay : public StackObj {
       bytecode.verify();
       int index = bytecode.index();
 
-      ConstantPoolCacheEntry* cp_cache_entry = nullptr;
       CallInfo callInfo;
       Bytecodes::Code bc = bytecode.invoke_code();
       LinkResolver::resolve_invoke(callInfo, Handle(), cp, index, bc, CHECK_NULL);
 
-      // ResolvedIndyEntry and ConstantPoolCacheEntry must currently coexist.
-      // To address this, the variables below contain the values that *might*
-      // be used to avoid multiple blocks of similar code. When CPCE is obsoleted
-      // these can be removed
       oop appendix = nullptr;
       Method* adapter_method = nullptr;
       int pool_index = 0;
 
       if (bytecode.is_invokedynamic()) {
-        index = cp->decode_invokedynamic_index(index);
         cp->cache()->set_dynamic_call(callInfo, index);
 
         appendix = cp->resolved_reference_from_indy(index);
@@ -433,12 +427,10 @@ class CompileReplay : public StackObj {
         Symbol* name = cp->name_ref_at(index, bytecode.code());
         assert(MethodHandles::is_signature_polymorphic_name(holder, name), "");
 #endif
-        cp_cache_entry = cp->cache()->entry_at(cp->decode_cpcache_index(index));
-        cp_cache_entry->set_method_handle(cp, callInfo);
-
-        appendix = cp_cache_entry->appendix_if_resolved(cp);
-        adapter_method = cp_cache_entry->f1_as_method();
-        pool_index = cp_cache_entry->constant_pool_index();
+        ResolvedMethodEntry* method_entry = cp->cache()->set_method_handle(index, callInfo);
+        appendix = cp->cache()->appendix_if_resolved(method_entry);
+        adapter_method = method_entry->method();
+        pool_index = method_entry->constant_pool_index();
       } else {
         report_error("no dynamic invoke found");
         return nullptr;
@@ -811,7 +803,7 @@ class CompileReplay : public StackObj {
       }
     }
     // Make sure the existence of a prior compile doesn't stop this one
-    CompiledMethod* nm = (entry_bci != InvocationEntryBci) ? method->lookup_osr_nmethod_for(entry_bci, comp_level, true) : method->code();
+    nmethod* nm = (entry_bci != InvocationEntryBci) ? method->lookup_osr_nmethod_for(entry_bci, comp_level, true) : method->code();
     if (nm != nullptr) {
       nm->make_not_entrant();
     }

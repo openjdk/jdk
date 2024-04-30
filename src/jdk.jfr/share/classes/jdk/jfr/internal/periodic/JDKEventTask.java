@@ -24,7 +24,7 @@
  */
 package jdk.jfr.internal.periodic;
 
-import jdk.jfr.Event;
+import jdk.internal.event.Event;
 
 /**
  * Periodic task that runs trusted code that doesn't require an access control

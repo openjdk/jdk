@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,13 @@
 
 #include <string.h>
 #include "jvmti.h"
-#include "jvmti_common.h"
+#include "jvmti_common.hpp"
 
 extern "C" {
 
-static jvmtiEnv *jvmti = NULL;
-static jthread exp_thread = NULL;
-static jrawMonitorID event_mon = NULL;
+static jvmtiEnv *jvmti = nullptr;
+static jthread exp_thread = nullptr;
+static jrawMonitorID event_mon = nullptr;
 static int vthread_mounted_count = 0;
 static int vthread_unmounted_count = 0;
 static int breakpoint_count = 0;
@@ -41,9 +41,9 @@ static jboolean received_method_exit_event = JNI_FALSE;
 static jboolean passed = JNI_TRUE;
 static bool done = false;
 
-static jmethodID *test_methods = NULL;
+static jmethodID *test_methods = nullptr;
 jint test_method_count = 0;
-jclass test_class = NULL;
+jclass test_class = nullptr;
 
 static void
 print_frame_event_info(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread, jmethodID method,
@@ -79,7 +79,7 @@ set_or_clear_breakpoint(JNIEnv *jni, jboolean set, const char *methodName,
                      jclass klass, jmethodID methods[], int method_count)
 {
   jlocation location = (jlocation)0L;
-  jmethodID method = NULL;
+  jmethodID method = nullptr;
   jvmtiError err;
 
   // Find the jmethodID of the specified method
@@ -93,7 +93,7 @@ set_or_clear_breakpoint(JNIEnv *jni, jboolean set, const char *methodName,
     }
     deallocate(jvmti, jni, (void*)mname);
   }
-  if (method == NULL) {
+  if (method == nullptr) {
       LOG("setupBreakpoint: not found method %s() to %s a breakpoint\n",
              methodName, set ? "set" : "clear");
       jni->FatalError("Error in setupBreakpoint: not found method");
@@ -131,7 +131,7 @@ breakpoint_hit1(jvmtiEnv *jvmti, JNIEnv* jni,
                 jthread thread, jthread cthread,
                 jboolean is_virtual, char* mname) {
   char* tname = get_thread_name(jvmti, jni, cthread);
-  jthread vthread = NULL;
+  jthread vthread = nullptr;
   jvmtiError err;
 
   // Test GetVirtualThread for carrier thread.
@@ -161,10 +161,10 @@ breakpoint_hit1(jvmtiEnv *jvmti, JNIEnv* jni,
     LOG("GetThreadLocalStorage for carrier thread returned value %p as expected\n\n", tls_data);
   }
   {
-    jmethodID method = NULL;
+    jmethodID method = nullptr;
     jlocation loc = 0L;
-    char* mname1 = NULL;
-    char* cname1 = NULL;
+    char* mname1 = nullptr;
+    char* cname1 = nullptr;
 
     err = jvmti->GetFrameLocation(cthread, 0, &method, &loc);
     check_jvmti_status(jni, err, "Breakpoint: error in JVMTI GetFrameLocation");
@@ -252,7 +252,7 @@ breakpoint_hit3(jvmtiEnv *jvmti, JNIEnv* jni,
 
   // Disable breakpoint events.
   clear_breakpoint(jni, "brkpt", test_class, test_methods, test_method_count);
-  set_event_notification_mode(jvmti, jni, JVMTI_DISABLE, JVMTI_EVENT_BREAKPOINT, NULL);
+  set_event_notification_mode(jvmti, jni, JVMTI_DISABLE, JVMTI_EVENT_BREAKPOINT, nullptr);
 
   // Disable METHOD_EXIT events on the vthread.
   LOG("Hit #3: Breakpoint: %s: disabling MethodExit events on virtual thread: %p\n", mname, (void*)thread);
@@ -279,7 +279,7 @@ Breakpoint(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread,
   if (done) {
     return; // avoid failures with JVMTI_ERROR_WRONG_PHASE
   }
-  jthread cthread = NULL;
+  jthread cthread = nullptr;
   char* mname = get_method_name(jvmti, jni, method);
   jboolean is_virtual = jni->IsVirtualThread(thread);
 
@@ -347,7 +347,7 @@ MethodExit(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread, jmethodID method,
   }
 
   // print_frame_event_info(jvmti, jni, thread, method, "MethodExit", method_exit_count);
-  if (strstr(mname, "brkpt") != NULL) { // event IS in the "brkpt" method
+  if (strstr(mname, "brkpt") != nullptr) { // event IS in the "brkpt" method
     LOG("Hit #%d: MethodExit #%d: method: %s on thread: %p\n",
            brkptBreakpointHit, method_exit_count, mname, (void*)thread);
     received_method_exit_event = JNI_TRUE; // set it for brkpt method only if brkptBreakpointHit > 1
@@ -433,15 +433,15 @@ VirtualThreadMount(jvmtiEnv *jvmti, ...) {
   if (done) {
     return; // avoid failures with JVMTI_ERROR_WRONG_PHASE
   }
-  jmethodID method = NULL;
+  jmethodID method = nullptr;
   jlocation loc = 0L;
-  char* mname = NULL;
-  char* cname = NULL;
+  char* mname = nullptr;
+  char* cname = nullptr;
   jvmtiError err;
 
   va_list ap;
-  JNIEnv* jni = NULL;
-  jthread thread = NULL;
+  JNIEnv* jni = nullptr;
+  jthread thread = nullptr;
 
   va_start(ap, jvmti);
   jni = va_arg(ap, JNIEnv*);
@@ -478,15 +478,15 @@ VirtualThreadUnmount(jvmtiEnv *jvmti, ...) {
   if (done) {
     return; // avoid failures with JVMTI_ERROR_WRONG_PHASE
   }
-  jmethodID method = NULL;
+  jmethodID method = nullptr;
   jlocation loc = 0L;
-  char* mname = NULL;
-  char* cname = NULL;
+  char* mname = nullptr;
+  char* cname = nullptr;
   jvmtiError err;
 
   va_list ap;
-  JNIEnv* jni = NULL;
-  jthread thread = NULL;
+  JNIEnv* jni = nullptr;
+  jthread thread = nullptr;
 
   va_start(ap, jvmti);
   jni = va_arg(ap, JNIEnv*);
@@ -562,9 +562,9 @@ Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
     LOG("Agent_OnLoad: Error in JVMTI SetEventCallbacks: %d\n", err);
     return JNI_ERR;
   }
-  set_event_notification_mode(jvmti, JVMTI_ENABLE, JVMTI_EVENT_FRAME_POP, NULL);
-  set_event_notification_mode(jvmti, JVMTI_ENABLE, JVMTI_EVENT_THREAD_START, NULL);
-  set_event_notification_mode(jvmti, JVMTI_ENABLE, JVMTI_EVENT_VIRTUAL_THREAD_START, NULL);
+  set_event_notification_mode(jvmti, JVMTI_ENABLE, JVMTI_EVENT_FRAME_POP, nullptr);
+  set_event_notification_mode(jvmti, JVMTI_ENABLE, JVMTI_EVENT_THREAD_START, nullptr);
+  set_event_notification_mode(jvmti, JVMTI_ENABLE, JVMTI_EVENT_VIRTUAL_THREAD_START, nullptr);
 
   event_mon = create_raw_monitor(jvmti, "Events Monitor");
 
@@ -585,7 +585,7 @@ Java_MethodExitTest_enableEvents(JNIEnv *jni, jclass klass, jthread thread, jcla
   set_breakpoint(jni, "brkpt", testKlass, test_methods, test_method_count);
 
   // Enable Breakpoint events globally
-  set_event_notification_mode(jvmti, jni, JVMTI_ENABLE, JVMTI_EVENT_BREAKPOINT, NULL);
+  set_event_notification_mode(jvmti, jni, JVMTI_ENABLE, JVMTI_EVENT_BREAKPOINT, nullptr);
 
   LOG("enableEvents: finished\n");
 }

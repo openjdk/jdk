@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,6 @@
  */
 package jdk.internal.foreign.abi.fallback;
 
-import jdk.internal.foreign.AbstractMemorySegmentImpl;
-import jdk.internal.foreign.MemorySessionImpl;
-import jdk.internal.foreign.abi.AbstractLinker;
-import jdk.internal.foreign.abi.CapturableState;
-import jdk.internal.foreign.abi.LinkerOptions;
-import jdk.internal.foreign.abi.SharedUtils;
-
 import java.lang.foreign.AddressLayout;
 import java.lang.foreign.Arena;
 import java.lang.foreign.FunctionDescriptor;
@@ -39,16 +32,6 @@ import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SegmentAllocator;
 import java.lang.foreign.ValueLayout;
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
-import java.lang.ref.Reference;
-import java.nio.ByteOrder;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Consumer;
-
 import static java.lang.foreign.ValueLayout.ADDRESS;
 import static java.lang.foreign.ValueLayout.JAVA_BOOLEAN;
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
@@ -58,7 +41,21 @@ import static java.lang.foreign.ValueLayout.JAVA_FLOAT;
 import static java.lang.foreign.ValueLayout.JAVA_INT;
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
 import static java.lang.foreign.ValueLayout.JAVA_SHORT;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import static java.lang.invoke.MethodHandles.foldArguments;
+import java.lang.invoke.MethodType;
+import java.lang.ref.Reference;
+import java.nio.ByteOrder;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import jdk.internal.foreign.AbstractMemorySegmentImpl;
+import jdk.internal.foreign.MemorySessionImpl;
+import jdk.internal.foreign.abi.AbstractLinker;
+import jdk.internal.foreign.abi.CapturableState;
+import jdk.internal.foreign.abi.LinkerOptions;
+import jdk.internal.foreign.abi.SharedUtils;
 
 public final class FallbackLinker extends AbstractLinker {
 
@@ -95,7 +92,7 @@ public final class FallbackLinker extends AbstractLinker {
                 .mapToInt(CapturableState::mask)
                 .reduce(0, (a, b) -> a | b);
         DowncallData invData = new DowncallData(cif, function.returnLayout().orElse(null),
-                function.argumentLayouts(), capturedStateMask);
+                function.argumentLayouts(), capturedStateMask, options.allowsHeapAccess());
 
         MethodHandle target = MethodHandles.insertArguments(MH_DO_DOWNCALL, 2, invData);
 
@@ -126,11 +123,6 @@ public final class FallbackLinker extends AbstractLinker {
         };
     }
 
-    @Override
-    protected ByteOrder linkerByteOrder() {
-        return ByteOrder.nativeOrder();
-    }
-
     private static MemorySegment makeCif(MethodType methodType, FunctionDescriptor function, LinkerOptions options, Arena scope) {
         FFIABI abi = FFIABI.DEFAULT;
 
@@ -155,12 +147,13 @@ public final class FallbackLinker extends AbstractLinker {
     }
 
     private record DowncallData(MemorySegment cif, MemoryLayout returnLayout, List<MemoryLayout> argLayouts,
-                                int capturedStateMask) {}
+                                int capturedStateMask, boolean allowsHeapAccess) {}
 
     private static Object doDowncall(SegmentAllocator returnAllocator, Object[] args, DowncallData invData) {
         List<MemorySessionImpl> acquiredSessions = new ArrayList<>();
         try (Arena arena = Arena.ofConfined()) {
             int argStart = 0;
+            Object[] heapBases = invData.allowsHeapAccess() ? new Object[args.length] : null;
 
             MemorySegment target = (MemorySegment) args[argStart++];
             MemorySessionImpl targetImpl = ((AbstractMemorySegmentImpl) target).sessionImpl();
@@ -180,12 +173,22 @@ public final class FallbackLinker extends AbstractLinker {
             for (int i = 0; i < argLayouts.size(); i++) {
                 Object arg = args[argStart + i];
                 MemoryLayout layout = argLayouts.get(i);
-                MemorySegment argSeg = arena.allocate(layout);
-                writeValue(arg, layout, argSeg, addr -> {
-                    MemorySessionImpl sessionImpl = ((AbstractMemorySegmentImpl) addr).sessionImpl();
+
+                if (layout instanceof AddressLayout) {
+                    AbstractMemorySegmentImpl ms = (AbstractMemorySegmentImpl) arg;
+                    MemorySessionImpl sessionImpl = ms.sessionImpl();
                     sessionImpl.acquire0();
                     acquiredSessions.add(sessionImpl);
-                });
+                    if (invData.allowsHeapAccess() && !ms.isNative()) {
+                        heapBases[i] = ms.unsafeGetBase();
+                        // write the offset to the arg segment, add array ptr to it in native code
+                        layout = JAVA_LONG;
+                        arg = ms.address();
+                    }
+                }
+
+                MemorySegment argSeg = arena.allocate(layout);
+                writeValue(arg, layout, argSeg);
                 argPtrs.setAtIndex(ADDRESS, i, argSeg);
             }
 
@@ -194,7 +197,8 @@ public final class FallbackLinker extends AbstractLinker {
                 retSeg = (invData.returnLayout() instanceof GroupLayout ? returnAllocator : arena).allocate(invData.returnLayout);
             }
 
-            LibFallback.doDowncall(invData.cif, target, retSeg, argPtrs, capturedState, invData.capturedStateMask());
+            LibFallback.doDowncall(invData.cif, target, retSeg, argPtrs, capturedState, invData.capturedStateMask(),
+                                   heapBases, args.length);
 
             Reference.reachabilityFence(invData.cif());
 
@@ -209,6 +213,7 @@ public final class FallbackLinker extends AbstractLinker {
     // note that cif is not used, but we store it here to keep it alive
     private record UpcallData(MemoryLayout returnLayout, List<MemoryLayout> argLayouts, MemorySegment cif) {}
 
+    @SuppressWarnings("restricted")
     private static void doUpcall(MethodHandle target, MemorySegment retPtr, MemorySegment argPtrs, UpcallData data) throws Throwable {
         List<MemoryLayout> argLayouts = data.argLayouts();
         int numArgs = argLayouts.size();
@@ -216,14 +221,14 @@ public final class FallbackLinker extends AbstractLinker {
         try (Arena upcallArena = Arena.ofConfined()) {
             MemorySegment argsSeg = argPtrs.reinterpret(numArgs * ADDRESS.byteSize(), upcallArena, null);
             MemorySegment retSeg = retLayout != null
-                ? retPtr.reinterpret(retLayout.byteSize(), upcallArena, null)
+                ? retPtr.reinterpret(retLayout.byteSize(), upcallArena, null) // restricted
                 : null;
 
             Object[] args = new Object[numArgs];
             for (int i = 0; i < numArgs; i++) {
                 MemoryLayout argLayout = argLayouts.get(i);
                 MemorySegment argPtr = argsSeg.getAtIndex(ADDRESS, i)
-                        .reinterpret(argLayout.byteSize(), upcallArena, null);
+                        .reinterpret(argLayout.byteSize(), upcallArena, null); // restricted
                 args[i] = readValue(argPtr, argLayout);
             }
 
@@ -235,11 +240,6 @@ public final class FallbackLinker extends AbstractLinker {
 
     // where
     private static void writeValue(Object arg, MemoryLayout layout, MemorySegment argSeg) {
-        writeValue(arg, layout, argSeg, addr -> {});
-    }
-
-    private static void writeValue(Object arg, MemoryLayout layout, MemorySegment argSeg,
-                                   Consumer<MemorySegment> acquireCallback) {
         switch (layout) {
             case ValueLayout.OfBoolean bl -> argSeg.set(bl, 0, (Boolean) arg);
             case ValueLayout.OfByte    bl -> argSeg.set(bl, 0, (Byte) arg);
@@ -249,12 +249,8 @@ public final class FallbackLinker extends AbstractLinker {
             case ValueLayout.OfLong    ll -> argSeg.set(ll, 0, (Long) arg);
             case ValueLayout.OfFloat   fl -> argSeg.set(fl, 0, (Float) arg);
             case ValueLayout.OfDouble  dl -> argSeg.set(dl, 0, (Double) arg);
-            case AddressLayout         al -> {
-                MemorySegment addrArg = (MemorySegment) arg;
-                acquireCallback.accept(addrArg);
-                argSeg.set(al, 0, addrArg);
-            }
-            case GroupLayout           __ ->
+            case AddressLayout         al -> argSeg.set(al, 0, (MemorySegment) arg);
+            case GroupLayout            _ ->
                     MemorySegment.copy((MemorySegment) arg, 0, argSeg, 0, argSeg.byteSize()); // by-value struct
             case null, default -> {
                 assert layout == null;
@@ -306,8 +302,8 @@ public final class FallbackLinker extends AbstractLinker {
                     Map.entry("bool", JAVA_BOOLEAN),
                     Map.entry("char", JAVA_BYTE),
                     Map.entry("float", JAVA_FLOAT),
-                    Map.entry("long long", JAVA_LONG),
-                    Map.entry("double", JAVA_DOUBLE),
+                    Map.entry("long long", JAVA_LONG.withByteAlignment(LibFallback.longLongAlign())),
+                    Map.entry("double", JAVA_DOUBLE.withByteAlignment(LibFallback.doubleAlign())),
                     Map.entry("void*", ADDRESS),
                     // platform-dependent sizes
                     Map.entry("size_t", FFIType.SIZE_T),

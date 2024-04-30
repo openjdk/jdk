@@ -24,6 +24,8 @@
  */
 package java.util.stream;
 
+import jdk.internal.javac.PreviewFeature;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
@@ -1050,6 +1052,58 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
     <U> U reduce(U identity,
                  BiFunction<U, ? super T, U> accumulator,
                  BinaryOperator<U> combiner);
+
+    /**
+     * Returns a stream consisting of the results of applying the given
+     * {@link Gatherer} to the elements of this stream.
+     *
+     * <p>This is a <a href="package-summary.html#StreamOps">stateful
+     * intermediate operation</a> that is an
+     * <a href="package-summary.html#Extensibility">extension point</a>.
+     *
+     * <p>Gatherers are highly flexible and can describe a vast array of
+     * possibly stateful operations, with support for short-circuiting, and
+     * parallelization.
+     *
+     * <p>When executed in parallel, multiple intermediate results may be
+     * instantiated, populated, and merged so as to maintain isolation of
+     * mutable data structures.  Therefore, even when executed in parallel
+     * with non-thread-safe data structures (such as {@code ArrayList}), no
+     * additional synchronization is needed for a parallel reduction.
+     *
+     * <p>Implementations are allowed, but not required, to detect consecutive
+     * invocations and compose them into a single, fused, operation. This would
+     * make the first expression below behave like the second:
+     *
+     * <pre>{@code
+     *     var stream1 = Stream.of(...).gather(gatherer1).gather(gatherer2);
+     *     var stream2 = Stream.of(...).gather(gatherer1.andThen(gatherer2));
+     * }</pre>
+     *
+     * @implSpec
+     * The default implementation obtains the {@link #spliterator() spliterator}
+     * of this stream, wraps that spliterator so as to support the semantics
+     * of this operation on traversal, and returns a new stream associated with
+     * the wrapped spliterator.  The returned stream preserves the execution
+     * characteristics of this stream (namely parallel or sequential execution
+     * as per {@link #isParallel()}) but the wrapped spliterator may choose to
+     * not support splitting.  When the returned stream is closed, the close
+     * handlers for both the returned and this stream are invoked.
+     * Implementations of this interface should provide their own
+     * implementation of this method.
+     *
+     * @see Gatherers
+     * @param <R> The element type of the new stream
+     * @param gatherer a gatherer
+     * @return the new stream
+     * @since 22
+     */
+    @PreviewFeature(feature = PreviewFeature.Feature.STREAM_GATHERERS)
+    default <R> Stream<R> gather(Gatherer<? super T, ?, R> gatherer) {
+        return StreamSupport.stream(spliterator(), isParallel())
+                            .gather(gatherer)
+                            .onClose(this::close);
+    }
 
     /**
      * Performs a <a href="package-summary.html#MutableReduction">mutable

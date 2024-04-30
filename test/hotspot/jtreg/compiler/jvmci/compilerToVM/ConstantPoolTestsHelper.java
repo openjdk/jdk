@@ -80,7 +80,7 @@ public class ConstantPoolTestsHelper {
             if (constantPoolSS.getTagAt(cpi).equals(Tag.INVOKEDYNAMIC)) {
                 for (int indy_index = 0; indy_index < WB.getIndyInfoLength(this.klass); indy_index++) {
                     if (WB.getIndyCPIndex(this.klass, indy_index) == cpi) {
-                        return ~indy_index;
+                        return indy_index;
                     }
                 }
             }
@@ -91,14 +91,11 @@ public class ConstantPoolTestsHelper {
                     }
                 }
             }
-            int cacheLength = WB.getConstantPoolCacheLength(this.klass);
-            int indexTag = WB.getConstantPoolCacheIndexTag();
-            for (int cpci = indexTag; cpci < cacheLength + indexTag; cpci++) {
-                if (WB.remapInstructionOperandFromCPCache(this.klass, cpci) == cpi) {
-                    if (constantPoolSS.getTagAt(cpi).equals(Tag.INVOKEDYNAMIC)) {
-                        return WB.encodeConstantPoolIndyIndex(cpci) + indexTag;
+            if (constantPoolSS.getTagAt(cpi).equals(Tag.METHODREF) || constantPoolSS.getTagAt(cpi).equals(Tag.INTERFACEMETHODREF)) {
+                for (int method_index = 0; method_index < WB.getMethodEntriesLength(this.klass); method_index++) {
+                    if (WB.getMethodCPIndex(this.klass, method_index) == cpi) {
+                        return method_index;
                     }
-                    return cpci;
                 }
             }
             return NO_CP_CACHE_PRESENT;

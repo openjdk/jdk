@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,15 +53,9 @@ void DebugInfoWriteStream::write_metadata(Metadata* h) {
 }
 
 oop DebugInfoReadStream::read_oop() {
-  nmethod* nm = const_cast<CompiledMethod*>(code())->as_nmethod_or_null();
-  oop o;
-  if (nm != nullptr) {
-    // Despite these oops being found inside nmethods that are on-stack,
-    // they are not kept alive by all GCs (e.g. G1 and Shenandoah).
-    o = nm->oop_at_phantom(read_int());
-  } else {
-    o = code()->oop_at(read_int());
-  }
+  // Despite these oops being found inside nmethods that are on-stack,
+  // they are not kept alive by all GCs (e.g. G1 and Shenandoah).
+  oop o = code()->oop_at_phantom(read_int());
   assert(oopDesc::is_oop_or_null(o), "oop only");
   return o;
 }
@@ -250,18 +244,25 @@ ObjectValue* ObjectMergeValue::select(frame& fr, RegisterMap& reg_map) {
   // the description of the scalar replaced object.
   if (selector == -1) {
     StackValue* sv_merge_pointer = StackValue::create_stack_value(&fr, &reg_map, _merge_pointer);
-    _selected = new ObjectValue(id());
+    _selected = new ObjectValue(id(), nullptr, false);
 
     // Retrieve the pointer to the real object and use it as if we had
     // allocated it during the deoptimization
     _selected->set_value(sv_merge_pointer->get_obj()());
 
-    // No need to rematerialize
-    return nullptr;
+    return _selected;
   } else {
     assert(selector < _possible_objects.length(), "sanity");
     _selected = (ObjectValue*) _possible_objects.at(selector);
     return _selected;
+  }
+}
+
+Handle ObjectMergeValue::value() const {
+  if (_selected != nullptr) {
+    return _selected->value();
+  } else {
+    return Handle();
   }
 }
 

@@ -92,11 +92,6 @@ CDSHeapVerifier::CDSHeapVerifier() : _archived_objs(0), _problems(0)
   //
   //       class                                         field                     type
   ADD_EXCL("java/lang/ClassLoader",                      "scl");                   // A
-  ADD_EXCL("java/lang/invoke/InvokerBytecodeGenerator",  "DONTINLINE_SIG",         // B
-                                                         "FORCEINLINE_SIG",        // B
-                                                         "HIDDEN_SIG",             // B
-                                                         "INJECTEDPROFILE_SIG",    // B
-                                                         "LF_COMPILED_SIG");       // B
   ADD_EXCL("java/lang/Module",                           "ALL_UNNAMED_MODULE",     // A
                                                          "ALL_UNNAMED_MODULE_SET", // A
                                                          "EVERYONE_MODULE",        // A
@@ -106,10 +101,6 @@ CDSHeapVerifier::CDSHeapVerifier() : _archived_objs(0), _problems(0)
   ADD_EXCL("java/lang/reflect/AccessFlag$Location",      "EMPTY_SET");             // E
 
   ADD_EXCL("java/lang/System",                           "bootLayer");             // A
-  ADD_EXCL("java/lang/VersionProps",                     "VENDOR_URL_BUG",         // C
-                                                         "VENDOR_URL_VM_BUG",      // C
-                                                         "VENDOR_VERSION");        // C
-  ADD_EXCL("java/net/URL$DefaultFactory",                "PREFIX");                // B FIXME: JDK-8276561
 
   // A dummy object used by HashSet. The value doesn't matter and it's never
   // tested for equality.
@@ -118,7 +109,6 @@ CDSHeapVerifier::CDSHeapVerifier() : _archived_objs(0), _problems(0)
   ADD_EXCL("jdk/internal/loader/ClassLoaders",           "BOOT_LOADER",            // A
                                                          "APP_LOADER",             // A
                                                          "PLATFORM_LOADER");       // A
-  ADD_EXCL("jdk/internal/loader/URLClassPath",           "JAVA_VERSION");          // B
   ADD_EXCL("jdk/internal/module/Builder",                "cachedVersion");         // D
   ADD_EXCL("jdk/internal/module/ModuleLoaderMap$Mapper", "APP_CLASSLOADER",        // A
                                                          "APP_LOADER_INDEX",       // A
@@ -128,14 +118,10 @@ CDSHeapVerifier::CDSHeapVerifier() : _archived_objs(0), _problems(0)
 
   // This just points to an empty Map
   ADD_EXCL("jdk/internal/reflect/Reflection",            "methodFilterMap");       // E
-  ADD_EXCL("jdk/internal/util/StaticProperty",           "FILE_ENCODING",          // C
-                                                 "JAVA_LOCALE_USE_OLD_ISO_CODES"); // C
 
   // Integer for 0 and 1 are in java/lang/Integer$IntegerCache and are archived
   ADD_EXCL("sun/invoke/util/ValueConversions",           "ONE_INT",                // E
                                                          "ZERO_INT");              // E
-  ADD_EXCL("sun/security/util/SecurityConstants",        "PROVIDER_VER");          // C
-
 
 # undef ADD_EXCL
 
@@ -229,6 +215,12 @@ inline bool CDSHeapVerifier::do_entry(oop& orig_obj, HeapShared::CachedOopInfo& 
 
   StaticFieldInfo* info = _table.get(orig_obj);
   if (info != nullptr) {
+    if (value.orig_referrer() == nullptr && java_lang_String::is_instance(orig_obj)) {
+      // This string object is not referenced by any of the archived object graphs. It's archived
+      // only because it's in the interned string table. So we are not in a condition that
+      // should be flagged by CDSHeapVerifier.
+      return true; /* keep on iterating */
+    }
     ResourceMark rm;
     LogStream ls(Log(cds, heap)::warning());
     ls.print_cr("Archive heap points to a static field that may be reinitialized at runtime:");

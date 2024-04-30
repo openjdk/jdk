@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4900206
+ * @bug 4900206 8316708
  * @summary Test worst case behavior of exp, log, sin, cos, etc.
  * @build Tests
  * @build WorstCaseTests
@@ -32,11 +32,22 @@
  */
 
 /**
- * Use "Table Maker's Dilemma" results from Jean-Michel Muller and
- * Vincent Lef&egrave;vre, to test the math library.  See
- * http://perso.ens-lyon.fr/jean-michel.muller/TMD.html for original
+ * This test contains two distinct kinds of worst-case inputs:
+ *
+ * 1) Exact numerical results that are nearly half-way between
+ * representable numbers or very close to a representable
+ * number. (Half-way cases are hardest for round to nearest even;
+ * close to a representable number cases are hard for directed
+ * roundings.)
+ *
+ * 2) Worst-case errors as observed empirically across different
+ * implementations that are not correctly rounded.
+ *
+ * For the first category, the "Table Maker's Dilemma" results from
+ * Jean-Michel Muller and Vincent Lef&egrave;vre, are used.
+ * See https://perso.ens-lyon.fr/jean-michel.muller/TMD.html for original
  * test vectors from 2000 and see
- * http://perso.ens-lyon.fr/jean-michel.muller/TMDworstcases.pdf with
+ * https://perso.ens-lyon.fr/jean-michel.muller/TMDworstcases.pdf with
  * additional test vectors from 2003.  The latter link also contains
  * some information about the methodology used to produce the test
  * vectors.
@@ -52,6 +63,17 @@
  * JDK implementation complies with a 1 ulp bound on the worst-case
  * values.  Therefore, no addition leeway is afforded when testing
  * sinh and cosh.
+ *
+ * For the second category, worst-case observed error inputs for the
+ * FDLIBM-derived OpenLibm 0.8.1 and other math libraries are added
+ * from "Accuracy of Mathematical Functions in Single, Double, Double
+ * Extended, and Quadruple Precision" by Brian Gladman, Vincenzo
+ * Innocente and Paul Zimmermann.
+ *
+ * From https://openlibm.org/, "The OpenLibm code derives from the
+ * FreeBSD msun and OpenBSD libm implementations, which in turn derive
+ * from FDLIBM 5.3." Java's StrictMath libraries use the FDLIBM 5.3
+ * algorithms.
  */
 public class WorstCaseTests {
     private WorstCaseTests() {throw new AssertionError("No instances for you.");}
@@ -67,9 +89,11 @@ public class WorstCaseTests {
         failures += testWorstAcos();
         failures += testWorstTan();
         failures += testWorstAtan();
+        failures += testWorstAtan2();
         failures += testWorstPow2();
         failures += testWorstSinh();
         failures += testWorstCosh();
+        failures += testWorstHypot();
 
         if (failures > 0) {
             System.err.printf("Testing worst cases incurred %d failures.%n", failures);
@@ -77,6 +101,9 @@ public class WorstCaseTests {
         }
     }
 
+    /*
+     * 1 ulp stated error bound
+     */
     private static int testWorstExp() {
         int failures = 0;
         double [][] testCases = {
@@ -113,6 +140,17 @@ public class WorstCaseTests {
             {+0x1.A8EAD058BC6B8p3,      0x1.1D71965F516ADp19},
             {+0x1.1D5C2DAEBE367p4,      0x1.A8C02E974C314p25},
             {+0x1.C44CE0D716A1Ap4,      0x1.B890CA8637AE1p40},
+
+            // Worst-case observed error for OpenLibm
+            {+0x1.2e8f20cf3cbe7p+8,     0x1.6a2a59cc78bf7p436},
+            // Other worst-case observed errors
+            {-0x1.49f33ad2c1c58p+9,     0x1.f3ccc815431b5p-953},
+            {+0x1.fce66609f7428p+5,     0x1.b59724cb0bc4cp91},
+            {+0x1.b97dc8345c55p+5,      0x1.88ab482dafdd7p79},
+            {-0x1.18209ecd19a8cp+6,     0x1.f3dcee4c90df9p-102},
+            {-0x1.4133f4fd79c1cp-13,    0x1.ffebed256fadp-1},
+            {-0x1.74046dfefd9d1p+9,     0x0.0000000000001p-1022},
+            {-0x1.49f33ad2c1c58p+9,     0x1.f3ccc815431b5p-953},
         };
 
         for(double[] testCase: testCases) {
@@ -130,6 +168,9 @@ public class WorstCaseTests {
         return failures;
     }
 
+    /*
+     * 1 ulp stated error bound
+     */
     private static int testWorstLog() {
         int failures = 0;
         double [][] testCases = {
@@ -145,6 +186,19 @@ public class WorstCaseTests {
             {+0x17.F3825778AAAFp0,      +0x3.2D0F907F5E00Cp+0},
             {+0x1AC.50B409C8AEEp0,      +0x6.0F52F37AECFCCp+0},
             {+0x1.DE7CD6751029Ap16,     +0x1.76E7E5D7B6EABp+3},
+
+            // Worst-case observed error for OpenLibm
+            {+0x1.48ae5a67204f5p+0,     0x1.ffd10abffc3fep-3},
+            // Other worst-case observed errors
+            {+0x1.1211bef8f68e9p+0,     +0x1.175caeca67f84p-4},
+            {+0x1.008000db2e8bep+0,     +0x1.ff83959f5cc1fp-10},
+            {+0x1.0ffea3878db6bp+0,     +0x1.f07a0cca521efp-5},
+            {+0x1.dc0b586f2b26p-1,      -0x1.2a3eaaa6e8d72p-4},
+            {+0x1.490af72a25a81p-1,     -0x1.c4bf7ae48f078p-2},
+            {+0x1.5b6e7e4e96f86p+2,     +0x1.b11240cba290dp0},
+            {+0x1.0ffc349469a2fp+0,     +0x1.f030c2507cd81p-5},
+            {+0x1.69e7aa6da2df5p-1,     -0x1.634508c9adfp-2},
+            {+0x1.5556123e8a2bp-1,      -0x1.9f300810f7d7cp-2},
         };
 
         for(double[] testCase: testCases) {
@@ -162,6 +216,9 @@ public class WorstCaseTests {
         return failures;
     }
 
+    /*
+     * 1 ulp stated error bound
+     */
     private static int testWorstSin() {
         int failures = 0;
         double [][] testCases = {
@@ -178,6 +235,19 @@ public class WorstCaseTests {
             {+0x1.921FB54442D18p-0,     +0x1.FFFFFFFFFFFFFp-1},
 
             {+0x1.6756745770A51p+1,     +0x1.4FF350E412821p-2},
+
+            // Worst-case observed error for OpenLibm
+            {+0x1.4d84db080b9fdp+21,    +0x1.6e21c4ff6aec3p-1},
+            // Other worst-case observed errors
+            {-0x1.f8b791cafcdefp+4,     -0x1.073ca87470df9p-3 },
+            {-0x1.0e16eb809a35dp+944,   +0x1.b5e361ed01dacp-2},
+            {-0x1.85e624577c23ep-1,     -0x1.614ac15b6df5ap-1},
+            {-0x1.842d8ec8f752fp+21,    -0x1.6ce864edeaffdp-1},
+            {-0x1.07e4c92b5349dp+4,     +0x1.6a096375ffb23p-1},
+            {-0x1.13a5ccd87c9bbp+1008,  -0x1.27b3964185d8dp-1},
+            {-0x1.11b624b546894p+9,     -0x1.6a35f2416aba8p-1},
+            {-0x1.1c49ad613ff3bp+19,    -0x1.fffe203cfabe1p-2},
+            {-0x1.f05e952d81b89p+5,     +0x1.6a2319a85a544p-1},
         };
 
         for(double[] testCase: testCases) {
@@ -195,6 +265,9 @@ public class WorstCaseTests {
         return failures;
     }
 
+    /*
+     * 1 ulp stated error bound
+     */
     private static int testWorstAsin() {
         int failures = 0;
         double [][] testCases = {
@@ -210,6 +283,18 @@ public class WorstCaseTests {
             {+0x1.1ED06D50F7E88p-1,     +0x1.30706F699466Dp-1},
             {+0x1.D5B05A89D3E77p-1,     +0x1.29517AB4C132Ap+0},
             {+0x1.E264357EA0E29p-1,     +0x1.3AA301F6EBB1Dp+0},
+
+            // Worst-case observed error for OpenLibm
+            {-0x1.004d1c5a9400bp-1,    -0x1.0c6e322e8a28bp-1},
+            // Other worst-case observed errors
+            {-0x1.0000045b2c904p-3,     -0x1.00abe5252746cp-3},
+            {+0x1.6c042a6378102p-1,     +0x1.94eda53f72c5ap-1},
+            {-0x1.00d44cccfa99p-1,      -0x1.0d0a6a0e79e15p-1},
+            {+0x1.eae75e3d82b6fp-2,     +0x1.fff7d74b1ea4fp-2},
+            {-0x1.0239000439deep-1,     -0x1.0ea71ea2a7cd7p-1},
+            {+0x1.0479b37d95e5cp-1,     +0x1.1143fafdc5b2cp-1},
+            {-0x1.2ef2481799c7cp-1,     -0x1.442d10aa50906p-1},
+            {+0x1.df27e1c764802p-2,     +0x1.f2a0f0c96deefp-2},
         };
 
         for(double[] testCase: testCases) {
@@ -227,6 +312,9 @@ public class WorstCaseTests {
         return failures;
     }
 
+    /*
+     * 1 ulp stated error bound
+     */
     private static int testWorstCos() {
         int failures = 0;
         double [][] testCases = {
@@ -243,6 +331,19 @@ public class WorstCaseTests {
             {+0x1.7CB7648526F99p-1,     +0x1.78DAF01036D0Cp-1},
             {+0x1.C65A170474549p-1,     +0x1.434A3645BE208p-1},
             {+0x1.6B8A6273D7C21p+0,     +0x1.337FC5B072C52p-3},
+
+            // Worst-case observed error for OpenLibm
+            {-0x1.34e729fd08086p+21,    +0x1.6a6a0d6a17f0fp-1},
+            // Other worst-case observed errors
+            {-0x1.7120161c92674p+0,     +0x1.0741fb7683849p-3},
+            {-0x1.d19ebc5567dcdp+311,   -0x1.b5d2f45f68958p-2},
+            {+0x1.91e60af551108p-1,     +0x1.6a32aaa34b118p-1},
+            {-0x1.4ae182c1ab422p+21,    -0x1.6c9c3831b6e3bp-1},
+            {-0x1.34e729fd08086p+21,    +0x1.6a6a0d6a17f0fp-1},
+            {+0x1.2f29eb4e99fa2p+7,     +0x1.6a0751dc5d2bbp-1},
+            {-0x1.9200634d4471fp-1,     +0x1.6a200b493230cp-1},
+            {+0x1.25133ca3904dfp+20,    -0x1.fb399cd6fe563p-3},
+            {+0x1.2a33ae49ab15dp+1,     -0x1.60524e89bbcb2p-1},
         };
 
         for(double[] testCase: testCases) {
@@ -260,6 +361,9 @@ public class WorstCaseTests {
         return failures;
     }
 
+    /*
+     * 1 ulp stated error bound
+     */
     private static int testWorstAcos() {
         int failures = 0;
         double [][] testCases = {
@@ -267,6 +371,18 @@ public class WorstCaseTests {
             {+0x1.4182199998587p-1,     +0x1.C8A538AE83D1Fp-1},
             {+0x1.E45A1C93651ECp-1,     +0x1.520DC553F6B23p-2},
             {+0x1.F10FC61E2C78Fp-1,     +0x1.EFEEF61D39AC1p-3},
+
+            // Worst-case observed error for OpenLibm
+            {-0x1.0068b067c6feep-1,     +0x1.0c335e2f0726fp1},
+            // Other worst-case observed errors
+            {+0x1.dffffb3488a4p-1,      0x1.6bf3a4a4f4dcbp-2},
+            {+0x1.6c05eb219ec46p-1,     0x1.8f4f472807261p-1},
+            {+0x1.35b03e336a82bp-1,     0x1.d7a84ec2f6707p-1},
+            {-0x1.8d313198a2e03p-53,    0x1.921fb54442d19p0},
+            {-0x1.010fd0ad6aa41p-1,     0x1.0c63a8cd23beep1},
+            {+0x1.251869c3f7881p-1,     0x1.ec2ff0c102683p-1},
+            {+0x1.266637a3d2bbcp-1,     0x1.ea98637533648p-1},
+            {-0x1.36b1482765f6dp-1,     0x1.1c8666ca1cab1p1},
         };
 
         for(double[] testCase: testCases) {
@@ -284,6 +400,9 @@ public class WorstCaseTests {
         return failures;
     }
 
+    /*
+     * 1.25 ulp stated error bound
+     */
     private static int testWorstTan() {
         int failures = 0;
         double [][] testCases = {
@@ -296,6 +415,9 @@ public class WorstCaseTests {
             {+0x1.D696BFA988DB9p-2,     +0x1.FAC71CD34EEA6p-2},
             {+0x1.46AC372243536p-1,     +0x1.7BA49F739829Ep-1},
             {+0x0.A3561B9121A9Bp+0,     +0x0.BDD24FB9CC14Fp+0},
+
+            // Worst-case observed error for OpenLibm, outside of 1 ulp error
+            // {0x1.3f9605aaeb51bp+21,     -0x1.9678ee5d64934p-1}, // 1.02
         };
 
         for(double[] testCase: testCases) {
@@ -313,6 +435,9 @@ public class WorstCaseTests {
         return failures;
     }
 
+    /*
+     * 1 ulp stated error bound
+     */
     private static int testWorstAtan() {
         int failures = 0;
         double [][] testCases = {
@@ -328,6 +453,19 @@ public class WorstCaseTests {
             {+0x1.7BA49F739829Fp-1,     +0x1.46AC372243536p-1},
 
             {+0x0.BDD24FB9CC14F8p+0,    +0x0.A3561B9121A9Bp+0},
+
+            // Worst-case observed error
+            {0x1.62ff6a1682c25p-1,      +0x1.3666b15c8756ap-1},
+            // Other worst-case observed errors
+            {+0x1.f9004c4fef9eap-4,  0x1.f67727f5618f2p-4},
+            {-0x1.ffff8020d3d1dp-7, -0x1.fff4d5e4886c7p-7},
+            {+0x1.0103fc4ebaaa8p+1,  0x1.1bd5c375c97b5p0},
+            {+0x1.01e0be37af68fp+1,  0x1.1c2d45ec82765p0},
+            {-0x1.60370d15396b7p-1, -0x1.348461c347fd9p-1},
+            {+0x1.032b4811f3dc5p+0,  0x1.9545fd233ee14p-1},
+            {+0x1.52184b1b9bd9bp+0,  0x1.d86de33c93814p-1},
+            {-0x1.0684fa9fa7481p+0, -0x1.988f9da70b11ap-1},
+
         };
 
         for(double[] testCase: testCases) {
@@ -345,6 +483,35 @@ public class WorstCaseTests {
         return failures;
     }
 
+    /*
+     * 2 ulp stated error bound
+     */
+    private static int testWorstAtan2() {
+        int failures = 0;
+        double [][] testCases = {
+            // Input with large worst-case observed error for another math library
+            {-0x0.00000000039a2p-1022, 0x0.000fdf02p-1022, -0x1.d0ce6fac85de8p-27},
+        };
+
+        for(double[] testCase: testCases) {
+            failures += testAtan2Case(testCase[0], testCase[1], testCase[2]);
+        }
+
+        return failures;
+    }
+
+    private static int testAtan2Case(double input1, double input2, double expected) {
+        int failures = 0;
+         // Cannot represent exact result, allow 1 additional ulp on top of documented bound.
+        double ulps = 2.0 + 1.0;
+        failures += Tests.testUlpDiff("Math.atan2",       input1, input2, Math::atan2,       expected, ulps);
+        failures += Tests.testUlpDiff("StrictMath.atan2", input1, input2, StrictMath::atan2, expected, ulps);
+        return failures;
+    }
+
+    /*
+     * 1 ulp stated error bound
+     */
     private static int testWorstPow2() {
         int failures = 0;
         double [][] testCases = {
@@ -429,6 +596,32 @@ public class WorstCaseTests {
         double out = Tests.nextOut(expected);
         failures += Tests.testBounds("Math.cosh",       input, Math::cosh,       expected, out);
         failures += Tests.testBounds("StrictMath.cosh", input, StrictMath::cosh, expected, out);
+        return failures;
+    }
+
+    /*
+     * 1.5 ulp stated error bound
+     */
+    private static int testWorstHypot() {
+        int failures = 0;
+        double [][] testCases = {
+            // Input with large worst-case observed error for another math library
+            {-0x0.fffffffffffffp-1022, 0x0.0000000000001p-1022, 0x0.fffffffffffffp-1022},
+        };
+
+        for(double[] testCase: testCases) {
+            failures += testHypotCase(testCase[0], testCase[1], testCase[2]);
+        }
+
+        return failures;
+    }
+
+    private static int testHypotCase(double input1, double input2, double expected) {
+        int failures = 0;
+         // Cannot represent exact result, allow 1 additional ulp on top of documented bound, rounding up.
+        double ulps = 3.0; // 1.5 + 1.0, rounded up
+        failures += Tests.testUlpDiff("Math.hypot",       input1, input2, Math::hypot,       expected, ulps);
+        failures += Tests.testUlpDiff("StrictMath.hypot", input1, input2, StrictMath::hypot, expected, ulps);
         return failures;
     }
 }

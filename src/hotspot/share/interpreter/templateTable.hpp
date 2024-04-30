@@ -262,13 +262,12 @@ class TemplateTable: AllStatic {
 
   static void _return(TosState state);
 
-  static void resolve_cache_and_index(int byte_no,       // one of 1,2,11
-                                      Register cache,    // output for CP cache
-                                      Register index,    // output for CP index
-                                      size_t index_size); // one of 1,2,4
   static void resolve_cache_and_index_for_field(int byte_no,
                                                 Register cache,
                                                 Register index);
+  static void resolve_cache_and_index_for_method(int byte_no,
+                                                 Register cache,
+                                                 Register index);
   static void load_invokedynamic_entry(Register method);
   static void load_resolved_field_entry(Register obj,
                                         Register cache,
@@ -276,6 +275,20 @@ class TemplateTable: AllStatic {
                                         Register off,
                                         Register flags,
                                         bool is_static);
+  static void load_resolved_method_entry_special_or_static(Register cache,
+                                                           Register method,
+                                                           Register flags);
+  static void load_resolved_method_entry_handle(Register cache,
+                                                Register method,
+                                                Register ref_index,
+                                                Register flags);
+  static void load_resolved_method_entry_interface(Register cache,
+                                                   Register klass,
+                                                   Register method_or_table_index,
+                                                   Register flags);
+  static void load_resolved_method_entry_virtual(Register cache,
+                                                 Register method_or_table_index,
+                                                 Register flags);
   static void load_invoke_cp_cache_entry(int byte_no,
                                          Register method,
                                          Register itable_index,

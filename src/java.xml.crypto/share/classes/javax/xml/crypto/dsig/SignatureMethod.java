@@ -276,6 +276,43 @@ public interface SignatureMethod extends XMLStructure, AlgorithmMethod {
     String ED448 = "http://www.w3.org/2021/04/xmldsig-more#eddsa-ed448";
 
     /**
+     * The <a href="http://www.w3.org/2007/05/xmldsig-more#sha3-224-rsa-MGF1">
+     * SHA3-224-RSA-MGF1</a> (PKCS #1) signature method algorithm URI.
+     *
+     * @since 22
+     */
+    String SHA3_224_RSA_MGF1 =
+            "http://www.w3.org/2007/05/xmldsig-more#sha3-224-rsa-MGF1";
+
+    /**
+     * The <a href="http://www.w3.org/2007/05/xmldsig-more#sha3-256-rsa-MGF1">
+     * SHA3-256-RSA-MGF1</a> (PKCS #1) signature method algorithm URI.
+     *
+     * @since 22
+     */
+    String SHA3_256_RSA_MGF1 =
+            "http://www.w3.org/2007/05/xmldsig-more#sha3-256-rsa-MGF1";
+
+    /**
+     * The <a href="http://www.w3.org/2007/05/xmldsig-more#sha3-384-rsa-MGF1">
+     * SHA3-384-RSA-MGF1</a> (PKCS #1) signature method algorithm URI.
+     *
+     * @since 22
+     */
+    String SHA3_384_RSA_MGF1 =
+            "http://www.w3.org/2007/05/xmldsig-more#sha3-384-rsa-MGF1";
+
+    /**
+     * The <a href="http://www.w3.org/2007/05/xmldsig-more#sha3-512-rsa-MGF1">
+     * SHA3-512-RSA-MGF1</a> (PKCS #1) signature method algorithm URI.
+     *
+     * @since 22
+     */
+    String SHA3_512_RSA_MGF1 =
+            "http://www.w3.org/2007/05/xmldsig-more#sha3-512-rsa-MGF1";
+
+
+    /**
      * Returns the algorithm-specific input parameters of this
      * <code>SignatureMethod</code>.
      *

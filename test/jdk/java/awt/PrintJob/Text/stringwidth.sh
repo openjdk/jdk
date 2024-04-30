@@ -23,6 +23,7 @@
 #
 #   @test      
 #   @bug        4692562
+#   @key printer
 #   @summary    Requirement: Windows with printer installed.  It should print with text "Hello World".
 #   @compile StringWidth.java
 #   @run shell/manual stringwidth.sh

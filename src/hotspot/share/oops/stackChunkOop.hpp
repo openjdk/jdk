@@ -155,7 +155,7 @@ public:
 
   inline void* gc_data() const;
   inline BitMapView bitmap() const;
-  inline BitMap::idx_t bit_index_for(intptr_t* p) const;
+  inline BitMap::idx_t bit_index_for(address p) const;
   inline intptr_t* address_for_bit(BitMap::idx_t index) const;
   template <typename OopT> inline BitMap::idx_t bit_index_for(OopT* p) const;
   template <typename OopT> inline OopT* address_for_bit(BitMap::idx_t index) const;

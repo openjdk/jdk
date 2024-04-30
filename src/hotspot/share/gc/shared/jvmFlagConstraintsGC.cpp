@@ -93,13 +93,7 @@ JVMFlag::Error YoungPLABSizeConstraintFunc(size_t value, bool verbose) {
 }
 
 JVMFlag::Error OldPLABSizeConstraintFunc(size_t value, bool verbose) {
-  JVMFlag::Error status = JVMFlag::SUCCESS;
-
-  {
-    status = MinMaxPLABSizeBounds("OldPLABSize", value, verbose);
-  }
-
-  return status;
+  return MinMaxPLABSizeBounds("OldPLABSize", value, verbose);
 }
 
 JVMFlag::Error MinHeapFreeRatioConstraintFunc(uintx value, bool verbose) {

@@ -40,8 +40,12 @@ public final class CalendarUtils {
      * @see CalendarDate#isLeapYear
      */
     public static boolean isGregorianLeapYear(int gregorianYear) {
-        return (((gregorianYear % 4) == 0) && (((gregorianYear % 100) != 0)
-                || ((gregorianYear % 400) == 0)));
+        // A year that is a multiple of 100, 200 and 300 is not divisible by 16, but 400 is.
+        // So for a year that's divisible by 4, checking that it's also divisible by 16
+        // is sufficient to determine it must be a leap year.
+        return (gregorianYear & 15) == 0
+                ? (gregorianYear & 3) == 0
+                : (gregorianYear & 3) == 0 && gregorianYear % 100 != 0;
     }
 
     /**

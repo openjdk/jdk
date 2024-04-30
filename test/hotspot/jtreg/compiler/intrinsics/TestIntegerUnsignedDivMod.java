@@ -24,7 +24,7 @@
 /**
 * @test
 * @summary Test intrinsic for divideUnsigned() and remainderUnsigned() methods for Integer
-* @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="riscv64"
+* @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="riscv64" | os.arch=="aarch64"
 * @library /test/lib /
 * @run driver compiler.intrinsics.TestIntegerUnsignedDivMod
 */
@@ -73,7 +73,7 @@ public class TestIntegerUnsignedDivMod {
 
     @Test // needs to be run in (fast) debug mode
     @Warmup(10000)
-    @IR(counts = {IRNode.UDIV_I, ">= 1"}) // Atleast one UDivI node is generated if intrinsic is used
+    @IR(counts = {IRNode.UDIV_I, ">= 1"}) // At least one UDivI node is generated if intrinsic is used
     public void testDivideUnsigned() {
         for (int i = 0; i < BUFFER_SIZE; i++) {
             try {
@@ -87,7 +87,7 @@ public class TestIntegerUnsignedDivMod {
 
     @Test // needs to be run in (fast) debug mode
     @Warmup(10000)
-    @IR(counts = {IRNode.UMOD_I, ">= 1"}) // Atleast one UModI node is generated if intrinsic is used
+    @IR(counts = {IRNode.UMOD_I, ">= 1"}) // At least one UModI node is generated if intrinsic is used
     public void testRemainderUnsigned() {
         for (int i = 0; i < BUFFER_SIZE; i++) {
             try {
@@ -102,7 +102,8 @@ public class TestIntegerUnsignedDivMod {
 
     @Test // needs to be run in (fast) debug mode
     @Warmup(10000)
-    @IR(counts = {IRNode.UDIV_MOD_I, ">= 1"}) // Atleast one UDivModI node is generated if intrinsic is used
+    @IR(applyIfPlatform = {"x64", "true"},
+        counts = {IRNode.UDIV_MOD_I, ">= 1"}) // At least one UDivModI node is generated if intrinsic is used
     public void testDivModUnsigned() {
         for (int i = 0; i < BUFFER_SIZE; i++) {
             try {

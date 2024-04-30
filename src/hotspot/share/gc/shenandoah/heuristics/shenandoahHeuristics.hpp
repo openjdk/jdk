@@ -80,9 +80,6 @@ protected:
 
   RegionData* _region_data;
 
-  uint _degenerated_cycles_in_a_row;
-  uint _successful_cycles_in_a_row;
-
   double _cycle_start;
   double _last_cycle_end;
 
@@ -130,7 +127,6 @@ public:
   virtual void choose_collection_set(ShenandoahCollectionSet* collection_set);
 
   virtual bool can_unload_classes();
-  virtual bool can_unload_classes_normal();
   virtual bool should_unload_classes();
 
   virtual const char* name() = 0;

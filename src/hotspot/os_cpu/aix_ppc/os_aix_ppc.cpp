@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@
 #include "asm/assembler.inline.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
-#include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jvm.h"
@@ -126,7 +125,7 @@ frame os::fetch_frame_from_context(const void* ucVoid) {
   address epc = fetch_frame_from_context(ucVoid, &sp, &fp);
   // Avoid crash during crash if pc broken.
   if (epc) {
-    frame fr(sp, epc);
+    frame fr(sp, epc, frame::kind::unknown);
     return fr;
   }
   frame fr(sp);
@@ -137,21 +136,21 @@ frame os::fetch_compiled_frame_from_context(const void* ucVoid) {
   const ucontext_t* uc = (const ucontext_t*)ucVoid;
   intptr_t* sp = os::Aix::ucontext_get_sp(uc);
   address lr = ucontext_get_lr(uc);
-  return frame(sp, lr);
+  return frame(sp, lr, frame::kind::unknown);
 }
 
 frame os::get_sender_for_C_frame(frame* fr) {
   if (*fr->sp() == (intptr_t) nullptr) {
     // fr is the last C frame
-    return frame(nullptr, nullptr);
+    return frame();
   }
-  return frame(fr->sender_sp(), fr->sender_pc());
+  return frame(fr->sender_sp(), fr->sender_pc(), frame::kind::unknown);
 }
 
 
 frame os::current_frame() {
   intptr_t* csp = *(intptr_t**) __builtin_frame_address(0);
-  frame topframe(csp, CAST_FROM_FN_PTR(address, os::current_frame));
+  frame topframe(csp, CAST_FROM_FN_PTR(address, os::current_frame), frame::kind::unknown);
   return os::get_sender_for_C_frame(&topframe);
 }
 
@@ -237,7 +236,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
                ((NativeInstruction*)pc)->is_safepoint_poll() &&
                CodeCache::contains((void*) pc) &&
                ((cb = CodeCache::find_blob(pc)) != nullptr) &&
-               cb->is_compiled()) {
+               cb->is_nmethod()) {
         if (TraceTraps) {
           tty->print_cr("trap: safepoint_poll at " INTPTR_FORMAT " (%s)", p2i(pc),
                         USE_POLL_BIT_ONLY ? "SIGTRAP" : "SIGSEGV");
@@ -250,7 +249,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
                ((NativeInstruction*)pc)->is_safepoint_poll_return() &&
                CodeCache::contains((void*) pc) &&
                ((cb = CodeCache::find_blob(pc)) != nullptr) &&
-               cb->is_compiled()) {
+               cb->is_nmethod()) {
         if (TraceTraps) {
           tty->print_cr("trap: safepoint_poll at return at " INTPTR_FORMAT " (nmethod)", p2i(pc));
         }
@@ -262,7 +261,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
       else if (sig == SIGTRAP && TrapBasedICMissChecks &&
                nativeInstruction_at(pc)->is_sigtrap_ic_miss_check()) {
         if (TraceTraps) {
-          tty->print_cr("trap: ic_miss_check at " INTPTR_FORMAT " (SIGTRAP)", pc);
+          tty->print_cr("trap: ic_miss_check at " INTPTR_FORMAT " (SIGTRAP)", p2i(pc));
         }
         stub = SharedRuntime::get_ic_miss_stub();
         goto run_stub;
@@ -272,7 +271,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
       else if (sig == SIGTRAP && TrapBasedNullChecks &&
                nativeInstruction_at(pc)->is_sigtrap_null_check()) {
         if (TraceTraps) {
-          tty->print_cr("trap: null_check at " INTPTR_FORMAT " (SIGTRAP)", pc);
+          tty->print_cr("trap: null_check at " INTPTR_FORMAT " (SIGTRAP)", p2i(pc));
         }
         stub = SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::IMPLICIT_NULL);
         goto run_stub;
@@ -283,7 +282,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
                CodeCache::contains((void*) pc) &&
                MacroAssembler::uses_implicit_null_check(info->si_addr)) {
         if (TraceTraps) {
-          tty->print_cr("trap: null_check at " INTPTR_FORMAT " (SIGSEGV)", pc);
+          tty->print_cr("trap: null_check at " INTPTR_FORMAT " (SIGSEGV)", p2i(pc));
         }
         stub = SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::IMPLICIT_NULL);
       }
@@ -293,7 +292,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
       else if (sig == SIGTRAP && TrapBasedRangeChecks &&
                nativeInstruction_at(pc)->is_sigtrap_range_check()) {
         if (TraceTraps) {
-          tty->print_cr("trap: range_check at " INTPTR_FORMAT " (SIGTRAP)", pc);
+          tty->print_cr("trap: range_check at " INTPTR_FORMAT " (SIGTRAP)", p2i(pc));
         }
         stub = SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::IMPLICIT_NULL);
         goto run_stub;
@@ -331,9 +330,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
 
         // End life with a fatal error, message and detail message and the context.
         // Note: no need to do any post-processing here (e.g. signal chaining)
-        va_list va_dummy = nullptr;
-        VMError::report_and_die(thread, uc, nullptr, 0, msg, detail_msg, va_dummy);
-        va_end(va_dummy);
+        VMError::report_and_die(thread, uc, nullptr, 0, msg, "%s", detail_msg);
 
         ShouldNotReachHere();
       }
@@ -342,12 +339,12 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
         // BugId 4454115: A read from a MappedByteBuffer can fault here if the
         // underlying file has been truncated. Do not crash the VM in such a case.
         CodeBlob* cb = CodeCache::find_blob(pc);
-        CompiledMethod* nm = cb ? cb->as_compiled_method_or_null() : nullptr;
-        bool is_unsafe_arraycopy = (thread->doing_unsafe_access() && UnsafeCopyMemory::contains_pc(pc));
-        if ((nm != nullptr && nm->has_unsafe_access()) || is_unsafe_arraycopy) {
+        nmethod* nm = cb ? cb->as_nmethod_or_null() : nullptr;
+        bool is_unsafe_memory_access = (thread->doing_unsafe_access() && UnsafeMemoryAccess::contains_pc(pc));
+        if ((nm != nullptr && nm->has_unsafe_access()) || is_unsafe_memory_access) {
           address next_pc = pc + 4;
-          if (is_unsafe_arraycopy) {
-            next_pc = UnsafeCopyMemory::page_error_continue_pc(pc);
+          if (is_unsafe_memory_access) {
+            next_pc = UnsafeMemoryAccess::page_error_continue_pc(pc);
           }
           next_pc = SharedRuntime::handle_unsafe_access(thread, next_pc);
           os::Posix::ucontext_set_pc(uc, next_pc);
@@ -371,8 +368,8 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
                 thread->thread_state() == _thread_in_native) &&
                sig == SIGBUS && thread->doing_unsafe_access()) {
         address next_pc = pc + 4;
-        if (UnsafeCopyMemory::contains_pc(pc)) {
-          next_pc = UnsafeCopyMemory::page_error_continue_pc(pc);
+        if (UnsafeMemoryAccess::contains_pc(pc)) {
+          next_pc = UnsafeMemoryAccess::page_error_continue_pc(pc);
         }
         next_pc = SharedRuntime::handle_unsafe_access(thread, next_pc);
         os::Posix::ucontext_set_pc(uc, next_pc);
@@ -438,12 +435,12 @@ void os::print_context(outputStream *st, const void *context) {
   const ucontext_t* uc = (const ucontext_t*)context;
 
   st->print_cr("Registers:");
-  st->print("pc =" INTPTR_FORMAT "  ", uc->uc_mcontext.jmp_context.iar);
-  st->print("lr =" INTPTR_FORMAT "  ", uc->uc_mcontext.jmp_context.lr);
-  st->print("ctr=" INTPTR_FORMAT "  ", uc->uc_mcontext.jmp_context.ctr);
+  st->print("pc =" INTPTR_FORMAT "  ", (unsigned long)uc->uc_mcontext.jmp_context.iar);
+  st->print("lr =" INTPTR_FORMAT "  ", (unsigned long)uc->uc_mcontext.jmp_context.lr);
+  st->print("ctr=" INTPTR_FORMAT "  ", (unsigned long)uc->uc_mcontext.jmp_context.ctr);
   st->cr();
   for (int i = 0; i < 32; i++) {
-    st->print("r%-2d=" INTPTR_FORMAT "  ", i, uc->uc_mcontext.jmp_context.gpr[i]);
+    st->print("r%-2d=" INTPTR_FORMAT "  ", i, (unsigned long)uc->uc_mcontext.jmp_context.gpr[i]);
     if (i % 3 == 2) st->cr();
   }
   st->cr();
@@ -467,7 +464,7 @@ void os::print_tos_pc(outputStream *st, const void *context) {
   st->cr();
 
   // Try to decode the instructions.
-  st->print_cr("Decoded instructions: (pc=" PTR_FORMAT ")", pc);
+  st->print_cr("Decoded instructions: (pc=" PTR_FORMAT ")", p2i(pc));
   st->print("<TODO: PPC port - print_context>");
   // TODO: PPC port Disassembler::decode(pc, 16, 16, st);
   st->cr();

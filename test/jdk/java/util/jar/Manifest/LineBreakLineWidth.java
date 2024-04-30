@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.jar.Manifest;
 import java.util.jar.Attributes;
 import java.util.jar.Attributes.Name;
@@ -171,7 +172,7 @@ public class LineBreakLineWidth {
          * if the header name is 69 or 70 bytes and in that case the name/value
          * delimiter ": " was broken on a new line.
          *
-         * changing the line width in Manifest#make72Safe(StringBuffer),
+         * changing the line width in {@link Manifest#println72(OutputStream, String)},
          * however, also affects at which positions values are broken across
          * lines (should always have affected values only and never header
          * names or the delimiter) which is tested here.

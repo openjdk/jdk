@@ -77,17 +77,13 @@ sealed class SharedSession extends MemorySessionImpl permits ImplicitSession {
     }
 
     void justClose() {
-        int prevState = (int) STATE.compareAndExchange(this, OPEN, CLOSING);
+        int prevState = (int) STATE.compareAndExchange(this, OPEN, CLOSED);
         if (prevState < 0) {
             throw alreadyClosed();
         } else if (prevState != OPEN) {
             throw alreadyAcquired(prevState);
         }
-        boolean success = SCOPED_MEMORY_ACCESS.closeScope(this);
-        STATE.setVolatile(this, success ? CLOSED : OPEN);
-        if (!success) {
-            throw alreadyAcquired(1);
-        }
+        SCOPED_MEMORY_ACCESS.closeScope(this, ALREADY_CLOSED);
     }
 
     /**

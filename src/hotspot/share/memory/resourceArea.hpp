@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -193,17 +193,7 @@ class ResourceMark: public StackObj {
 #ifndef ASSERT
   ResourceMark(ResourceArea* area, Thread* thread) : _impl(area) {}
 #else
-  ResourceMark(ResourceArea* area, Thread* thread) :
-    _impl(area),
-    _thread(thread),
-    _previous_resource_mark(nullptr)
-  {
-    if (_thread != nullptr) {
-      assert(_thread == Thread::current(), "not the current thread");
-      _previous_resource_mark = _thread->current_resource_mark();
-      _thread->set_current_resource_mark(this);
-    }
-  }
+  ResourceMark(ResourceArea* area, Thread* thread);
 #endif // ASSERT
 
 public:

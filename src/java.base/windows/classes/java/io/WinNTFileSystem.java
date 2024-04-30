@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import java.nio.file.Path;
 import java.util.BitSet;
 import java.util.Locale;
 import java.util.Properties;
-import jdk.internal.misc.Blocker;
 import sun.security.action.GetPropertyAction;
 
 /**
@@ -40,6 +39,8 @@ import sun.security.action.GetPropertyAction;
  * @since 1.4
  */
 final class WinNTFileSystem extends FileSystem {
+
+    private static final String LONG_PATH_PREFIX = "\\\\?\\";
 
     private final char slash;
     private final char altSlash;
@@ -58,6 +59,25 @@ final class WinNTFileSystem extends FileSystem {
         } else {
             ENABLE_ADS = true;
         }
+    }
+
+    // Strip a long path or UNC prefix and return the result.
+    // If there is no such prefix, return the parameter passed in.
+    private static String stripLongOrUNCPrefix(String path) {
+        // if a prefix is present, remove it
+        if (path.startsWith(LONG_PATH_PREFIX)) {
+            if (path.startsWith("UNC\\", 4)) {
+                path = "\\\\" + path.substring(8);
+            } else {
+                path = path.substring(4);
+                // if only "UNC" remains, a trailing "\\" was likely removed
+                if (path.equals("UNC")) {
+                    path = "\\\\";
+                }
+            }
+        }
+
+        return path;
     }
 
     WinNTFileSystem() {
@@ -98,6 +118,7 @@ final class WinNTFileSystem extends FileSystem {
        This way we iterate through the whole pathname string only once. */
     @Override
     public String normalize(String path) {
+        path = stripLongOrUNCPrefix(path);
         int n = path.length();
         char slash = this.slash;
         char altSlash = this.altSlash;
@@ -223,6 +244,8 @@ final class WinNTFileSystem extends FileSystem {
 
     @Override
     public int prefixLength(String path) {
+        assert !path.startsWith(LONG_PATH_PREFIX);
+
         char slash = this.slash;
         int n = path.length();
         if (n == 0) return 0;
@@ -242,6 +265,8 @@ final class WinNTFileSystem extends FileSystem {
 
     @Override
     public String resolve(String parent, String child) {
+        assert !child.startsWith(LONG_PATH_PREFIX);
+
         int pn = parent.length();
         if (pn == 0) return child;
         int cn = child.length();
@@ -320,6 +345,9 @@ final class WinNTFileSystem extends FileSystem {
 
     @Override
     public boolean isAbsolute(File f) {
+        String path = f.getPath();
+        assert !path.startsWith(LONG_PATH_PREFIX);
+
         int pl = f.getPrefixLength();
         return (((pl == 2) && (f.getPath().charAt(0) == slash))
                 || (pl == 3));
@@ -358,6 +386,8 @@ final class WinNTFileSystem extends FileSystem {
     @Override
     public String resolve(File f) {
         String path = f.getPath();
+        assert !path.startsWith(LONG_PATH_PREFIX);
+
         int pl = f.getPrefixLength();
         if ((pl == 2) && (path.charAt(0) == slash))
             return path;                        /* UNC */
@@ -440,6 +470,8 @@ final class WinNTFileSystem extends FileSystem {
 
     @Override
     public String canonicalize(String path) throws IOException {
+        assert !path.startsWith(LONG_PATH_PREFIX);
+
         // If path is a drive letter only then skip canonicalization
         int len = path.length();
         if ((len == 2) &&
@@ -458,12 +490,7 @@ final class WinNTFileSystem extends FileSystem {
                 return path;
             return "" + ((char) (c-32)) + ':' + '\\';
         }
-        long comp = Blocker.begin();
-        try {
-            return canonicalize0(path);
-        } finally {
-            Blocker.end(comp);
-        }
+        return canonicalize0(path);
     }
 
     private native String canonicalize0(String path)
@@ -474,56 +501,31 @@ final class WinNTFileSystem extends FileSystem {
 
     @Override
     public int getBooleanAttributes(File f) {
-        long comp = Blocker.begin();
-        try {
-            return getBooleanAttributes0(f);
-        } finally {
-            Blocker.end(comp);
-        }
+        return getBooleanAttributes0(f);
     }
     private native int getBooleanAttributes0(File f);
 
     @Override
     public boolean checkAccess(File f, int access) {
-        long comp = Blocker.begin();
-        try {
-            return checkAccess0(f, access);
-        } finally {
-            Blocker.end(comp);
-        }
+        return checkAccess0(f, access);
     }
     private native boolean checkAccess0(File f, int access);
 
     @Override
     public long getLastModifiedTime(File f) {
-        long comp = Blocker.begin();
-        try {
-            return getLastModifiedTime0(f);
-        } finally {
-            Blocker.end(comp);
-        }
+        return getLastModifiedTime0(f);
     }
     private native long getLastModifiedTime0(File f);
 
     @Override
     public long getLength(File f) {
-        long comp = Blocker.begin();
-        try {
-            return getLength0(f);
-        } finally {
-            Blocker.end(comp);
-        }
+        return getLength0(f);
     }
     private native long getLength0(File f);
 
     @Override
     public boolean setPermission(File f, int access, boolean enable, boolean owneronly) {
-        long comp = Blocker.begin();
-        try {
-            return setPermission0(f, access, enable, owneronly);
-        } finally {
-            Blocker.end(comp);
-        }
+        return setPermission0(f, access, enable, owneronly);
     }
     private native boolean setPermission0(File f, int access, boolean enable, boolean owneronly);
 
@@ -531,78 +533,43 @@ final class WinNTFileSystem extends FileSystem {
 
     @Override
     public boolean createFileExclusively(String path) throws IOException {
-        long comp = Blocker.begin();
-        try {
-            return createFileExclusively0(path);
-        } finally {
-            Blocker.end(comp);
-        }
+        return createFileExclusively0(path);
     }
     private native boolean createFileExclusively0(String path) throws IOException;
 
     @Override
     public String[] list(File f) {
-        long comp = Blocker.begin();
-        try {
-            return list0(f);
-        } finally {
-            Blocker.end(comp);
-        }
+        return list0(f);
     }
     private native String[] list0(File f);
 
     @Override
     public boolean createDirectory(File f) {
-        long comp = Blocker.begin();
-        try {
-            return createDirectory0(f);
-        } finally {
-            Blocker.end(comp);
-        }
+        return createDirectory0(f);
     }
     private native boolean createDirectory0(File f);
 
     @Override
     public boolean setLastModifiedTime(File f, long time) {
-        long comp = Blocker.begin();
-        try {
-            return setLastModifiedTime0(f, time);
-        } finally {
-            Blocker.end(comp);
-        }
+        return setLastModifiedTime0(f, time);
     }
     private native boolean setLastModifiedTime0(File f, long time);
 
     @Override
     public boolean setReadOnly(File f) {
-        long comp = Blocker.begin();
-        try {
-            return setReadOnly0(f);
-        } finally {
-            Blocker.end(comp);
-        }
+        return setReadOnly0(f);
     }
     private native boolean setReadOnly0(File f);
 
     @Override
     public boolean delete(File f) {
-        long comp = Blocker.begin();
-        try {
-            return delete0(f);
-        } finally {
-            Blocker.end(comp);
-        }
+        return delete0(f);
     }
     private native boolean delete0(File f);
 
     @Override
     public boolean rename(File f1, File f2) {
-        long comp = Blocker.begin();
-        try {
-            return rename0(f1, f2);
-        } finally {
-            Blocker.end(comp);
-        }
+        return rename0(f1, f2);
     }
     private native boolean rename0(File f1, File f2);
 

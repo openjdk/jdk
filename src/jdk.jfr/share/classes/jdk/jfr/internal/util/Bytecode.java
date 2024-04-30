@@ -32,10 +32,10 @@ import java.util.Objects;
 import jdk.jfr.internal.Logger;
 import jdk.jfr.internal.LogLevel;
 import jdk.jfr.internal.LogTag;
-import jdk.internal.classfile.CodeBuilder;
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.components.ClassPrinter;
+import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.components.ClassPrinter;
 
 /**
  * Helper class when working with bytecode.
@@ -158,7 +158,7 @@ public final class Bytecode {
             StringBuilder out = new StringBuilder();
             out.append("Bytecode:");
             out.append(System.lineSeparator());
-            ClassModel classModel = Classfile.of().parse(bytes);
+            ClassModel classModel = ClassFile.of().parse(bytes);
             ClassPrinter.toYaml(classModel, ClassPrinter.Verbosity.TRACE_ALL, out::append);
             Logger.log(LogTag.JFR_SYSTEM_BYTECODE, LogLevel.TRACE, out.toString());
         }

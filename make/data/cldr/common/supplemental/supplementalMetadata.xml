@@ -310,7 +310,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<languageAlias type="prs" replacement="fa_AF" reason="overlong"/> <!-- Dari ⇒ Farsi (Afganistan) -->
 			<languageAlias type="swc" replacement="sw_CD" reason="overlong"/> <!-- Congo Swahili ⇒ Swahili (Congo - Kinshasa) -->
 			<!-- incorrect three-letter language codes -->
-            <!-- start of data generated with CountItems tool per http://sites.google.com/site/cldr/development/updating-codes/update-languagescriptregion-subtags -->
+            <!-- start of data generated with CountItems tool per https://cldr.unicode.org/development/updating-codes/update-languagescriptregion-subtags -->
 			<languageAlias type="aar" replacement="aa" reason="overlong"/> <!-- [Afar] -->
 			<languageAlias type="abk" replacement="ab" reason="overlong"/> <!-- [Abkhazian] -->
 			<languageAlias type="ave" replacement="ae" reason="overlong"/> <!-- [Avestan] -->
@@ -518,7 +518,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<languageAlias type="slo" replacement="sk" reason="bibliographic"/> <!-- [Slovak] -->
 			<languageAlias type="tib" replacement="bo" reason="bibliographic"/> <!-- [Tibetan] -->
 			<languageAlias type="wel" replacement="cy" reason="bibliographic"/> <!-- [Welsh] -->
-            <!-- end of data generated with CountItems tool per http://sites.google.com/site/cldr/development/updating-codes/update-languagescriptregion-subtags -->
+            <!-- end of data generated with CountItems tool per https://cldr.unicode.org/development/updating-codes/update-languagescriptregion-subtags -->
 			<languageAlias type="cel_gaulish" replacement="xtg" reason="legacy"/> <!-- irregular bcp47 code -->
 			<languageAlias type="i_default" replacement="en_x_i_default" reason="legacy"/> <!-- irregular bcp47 code -->
 			<languageAlias type="i_enochian" replacement="und_x_i_enochian" reason="legacy"/> <!-- irregular bcp47 code -->
@@ -536,6 +536,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<languageAlias type="und_hakka" replacement="und" reason="deprecated"/>
 			<languageAlias type="und_xiang" replacement="und" reason="deprecated"/>
 			<languageAlias type="und_hepburn_heploc" replacement="und_alalc97" reason="deprecated"/>
+
+			<!-- more deprecated 2024-03-19 -->
+			<languageAlias type="ajp" replacement="apc" reason="deprecated"/> <!-- South Levantine Arabic ⇒ Levantine Arabic -->
+			<languageAlias type="kgm" replacement="plu" reason="deprecated"/> <!-- Karipúna ⇒ Palikúr -->
+			<languageAlias type="nom" replacement="cbr" reason="deprecated"/> <!-- Nocamán ⇒ Cashibo-Cacataibo -->
+			<languageAlias type="pmk" replacement="crr" reason="deprecated"/> <!-- Pamlico ⇒ Carolina Algonquian -->
+			<languageAlias type="prp" replacement="gu" reason="deprecated"/> <!-- Parsi ⇒ Gujarati -->
+			<languageAlias type="szd" replacement="umi" reason="deprecated"/> <!-- Seru ⇒ Ukit -->
+			<languageAlias type="tmk" replacement="tdg" reason="deprecated"/> <!-- Northwestern Tamang ⇒ Western Tamang -->
+			<languageAlias type="tpw" replacement="tpn" reason="deprecated"/> <!-- Tupí ⇒ Tupinambá -->
+			<languageAlias type="xss" replacement="zko" reason="deprecated"/> <!-- Assan ⇒ Kott -->
+			<languageAlias type="zkb" replacement="kjh" reason="deprecated"/> <!-- Koibal ⇒ Khakas -->
 
             <!-- scripts -->
             <scriptAlias type="Qaai" replacement="Zinh" reason="deprecated"/>
@@ -579,7 +591,7 @@ For terms of use, see http://www.unicode.org/copyright.html
             <territoryAlias type="886" replacement="YE" reason="deprecated"/> <!-- Yemen (pre-1990) -->
             <territoryAlias type="890" replacement="RS ME SI HR MK BA" reason="deprecated"/> <!-- Yugoslavia (pre-1992) -->
             <!-- 3-letter ISO code values -->
-            <!-- start of data generated with CountItems tool per http://sites.google.com/site/cldr/development/updating-codes/update-languagescriptregion-subtags -->
+            <!-- start of data generated with CountItems tool per https://cldr.unicode.org/development/updating-codes/update-languagescriptregion-subtags -->
 			<territoryAlias type="AAA" replacement="AA" reason="overlong"/> <!-- null -->
 			<territoryAlias type="ASC" replacement="AC" reason="overlong"/> <!-- Ascension Island -->
 			<territoryAlias type="AND" replacement="AD" reason="overlong"/> <!-- Andorra -->
@@ -1182,7 +1194,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territoryAlias type="894" replacement="ZM" reason="overlong"/> <!-- Zambia -->
 			<territoryAlias type="716" replacement="ZW" reason="overlong"/> <!-- Zimbabwe -->
 			<territoryAlias type="999" replacement="ZZ" reason="overlong"/> <!-- Unknown Region -->
-            <!-- end of data generated with CountItems tool per http://sites.google.com/site/cldr/development/updating-codes/update-languagescriptregion-subtags -->
+            <!-- end of data generated with CountItems tool per https://cldr.unicode.org/development/updating-codes/update-languagescriptregion-subtags -->
 
 			<subdivisionAlias type="fi01" replacement="AX" reason="overlong"/> <!-- Åland Islands -->
 			<subdivisionAlias type="frcp" replacement="CP" reason="overlong"/> <!-- Clipperton Island -->
@@ -1797,15 +1809,25 @@ For terms of use, see http://www.unicode.org/copyright.html
             <zoneAlias type="Asia/Chongqing" replacement="Asia/Shanghai" reason="deprecated"/>
             <zoneAlias type="Asia/Harbin" replacement="Asia/Shanghai" reason="deprecated"/>
             <zoneAlias type="Asia/Kashgar" replacement="Asia/Urumqi" reason="deprecated"/>
+            <zoneAlias type="America/Nipigon" replacement="America/Toronto" reason="deprecated"/>
+            <zoneAlias type="America/Pangnirtung" replacement="America/Iqaluit" reason="deprecated"/>
+            <zoneAlias type="America/Rainy_River" replacement="America/Winnipeg" reason="deprecated"/>
+            <zoneAlias type="America/Santa_Isabel" replacement="America/Tijuana" reason="deprecated"/>
+            <zoneAlias type="America/Thunder_Bay" replacement="America/Toronto" reason="deprecated"/>
+            <zoneAlias type="America/Yellowknife" replacement="America/Edmonton" reason="deprecated"/>
+            <zoneAlias type="Australia/Currie" replacement="Australia/Hobart" reason="deprecated"/>
+            <zoneAlias type="Europe/Uzhgorod" replacement="Europe/Kiev" reason="deprecated"/>
+            <zoneAlias type="Europe/Zaporozhye" replacement="Europe/Kiev" reason="deprecated"/>
+            <zoneAlias type="Pacific/Johnston" replacement="Pacific/Honolulu" reason="deprecated"/>
         </alias>
 		<defaultContent locales="
 			aa_ET ab_GE af_ZA agq_CM ak_GH am_ET an_ES ann_NG apc_SY ar_001 arn_CL as_IN
 			asa_TZ ast_ES az_Arab_IR az_Cyrl_AZ az_Latn az_Latn_AZ
-			ba_RU bal_Arab bal_Arab_PK bal_Latn_PK bas_CM be_BY bem_ZM bez_TZ bg_BG bgc_IN
-			bgn_PK bho_IN blt_VN bm_ML bm_Nkoo_ML bn_BD bo_CN br_FR brx_IN bs_Cyrl_BA
-			bs_Latn bs_Latn_BA bss_CM byn_ER
+			ba_RU bal_Arab bal_Arab_PK bal_Latn_PK bas_CM be_BY bem_ZM bew_ID bez_TZ bg_BG
+			bgc_IN bgn_PK bho_IN blo_BJ blt_VN bm_ML bm_Nkoo_ML bn_BD bo_CN br_FR brx_IN
+			bs_Cyrl_BA bs_Latn bs_Latn_BA bss_CM byn_ER
 			ca_ES cad_US cch_NG ccp_BD ce_RU ceb_PH cgg_UG cho_US chr_US cic_US ckb_IQ
-			co_FR cs_CZ cu_RU cv_RU cy_GB
+			co_FR cs_CZ csw_CA cu_RU cv_RU cy_GB
 			da_DK dav_KE de_DE dje_NE doi_IN dsb_DE dua_CM dv_MV dyo_SN dz_BT
 			ebu_KE ee_GH el_GR en_Dsrt_US en_Shaw_GB en_US eo_001 es_ES et_EE eu_ES ewo_CM
 			fa_IR ff_Adlm_GN ff_Latn ff_Latn_SN fi_FI fil_PH fo_FO fr_FR frr_DE fur_IT
@@ -1813,35 +1835,36 @@ For terms of use, see http://www.unicode.org/copyright.html
 			ga_IE gaa_GH gd_GB gez_ET gl_ES gn_PY gsw_CH gu_IN guz_KE gv_IM
 			ha_Arab_NG ha_NG haw_US he_IL hi_IN hi_Latn_IN hnj_Hmnp hnj_Hmnp_US hr_HR
 			hsb_DE hu_HU hy_AM
-			ia_001 id_ID ife_TG ig_NG ii_CN io_001 is_IS it_IT iu_CA iu_Latn_CA
+			ia_001 id_ID ie_EE ife_TG ig_NG ii_CN io_001 is_IS it_IT iu_CA iu_Latn_CA
 			ja_JP jbo_001 jgo_CM jmc_TZ jv_ID
 			ka_GE kab_DZ kaj_NG kam_KE kcg_NG kde_TZ kea_CV ken_CM kgp_BR khq_ML ki_KE
 			kk_KZ kkj_CM kl_GL kln_KE km_KH kn_IN ko_KR kok_IN kpe_LR ks_Arab ks_Arab_IN
-			ks_Deva_IN ksb_TZ ksf_CM ksh_DE ku_TR kw_GB ky_KG
+			ks_Deva_IN ksb_TZ ksf_CM ksh_DE ku_TR kw_GB kxv_Deva_IN kxv_Latn kxv_Latn_IN
+			kxv_Orya_IN kxv_Telu_IN ky_KG
 			la_VA lag_TZ lb_LU lg_UG lij_IT lkt_US lmo_IT ln_CD lo_LA lrc_IR lt_LT lu_CD
 			luo_KE luy_KE lv_LV
-			mai_IN mas_KE mdf_RU mer_KE mfe_MU mg_MG mgh_MZ mgo_CM mi_NZ mk_MK ml_IN mn_MN
-			mn_Mong_CN mni_Beng mni_Beng_IN mni_Mtei_IN moh_CA mr_IN ms_Arab_MY ms_MY mt_MT
-			mua_CM mus_US my_MM myv_RU mzn_IR
+			mai_IN mas_KE mdf_RU mer_KE mfe_MU mg_MG mgh_MZ mgo_CM mi_NZ mic_CA mk_MK ml_IN
+			mn_MN mn_Mong_CN mni_Beng mni_Beng_IN mni_Mtei_IN moh_CA mr_IN ms_Arab_MY ms_MY
+			mt_MT mua_CM mus_US my_MM myv_RU mzn_IR
 			naq_NA nb nb_NO nd_ZW nds_DE ne_NP nl_NL nmg_CM nn_NO nnh_CM nqo_GN nr_ZA
 			nso_ZA nus_SS nv_US ny_MW nyn_UG
 			oc_FR om_ET or_IN os_GE osa_US
-			pa_Arab_PK pa_Guru pa_Guru_IN pap_CW pcm_NG pis_SB pl_PL prg_001 ps_AF pt_BR
+			pa_Arab_PK pa_Guru pa_Guru_IN pap_CW pcm_NG pis_SB pl_PL prg_PL ps_AF pt_BR
 			qu_PE quc_GT
 			raj_IN rhg_Rohg rhg_Rohg_MM rif_MA rm_CH rn_BI ro_RO rof_TZ ru_RU rw_RW rwk_TZ
 			sa_IN sah_RU saq_KE sat_Deva_IN sat_Olck sat_Olck_IN sbp_TZ sc_IT scn_IT
 			sd_Arab sd_Arab_PK sd_Deva_IN sdh_IR se_NO seh_MZ ses_ML sg_CF shi_Latn_MA
-			shi_Tfng shi_Tfng_MA shn_MM si_LK sid_ET sk_SK sl_SI sma_SE smj_SE smn_FI
-			sms_FI sn_ZW so_SO sq_AL sr_Cyrl sr_Cyrl_RS sr_Latn_RS ss_ZA ssy_ER st_ZA
-			su_Latn su_Latn_ID sv_SE sw_TZ syr_IQ szl_PL
+			shi_Tfng shi_Tfng_MA shn_MM si_LK sid_ET sk_SK skr_PK sl_SI sma_SE smj_SE
+			smn_FI sms_FI sn_ZW so_SO sq_AL sr_Cyrl sr_Cyrl_RS sr_Latn_RS ss_ZA ssy_ER
+			st_ZA su_Latn su_Latn_ID sv_SE sw_TZ syr_IQ szl_PL
 			ta_IN te_IN teo_UG tg_TJ th_TH ti_ET tig_ER tk_TM tn_ZA to_TO tok_001 tpi_PG
-			tr_TR trv_TW trw_PK ts_ZA tt_RU twq_NE tzm_MA
+			tr_TR trv_TW trw_PK ts_ZA tt_RU twq_NE tyv_RU tzm_MA
 			ug_CN uk_UA ur_PK uz_Arab_AF uz_Cyrl_UZ uz_Latn uz_Latn_UZ
-			vai_Latn_LR vai_Vaii vai_Vaii_LR ve_ZA vec_IT vi_VN vo_001 vun_TZ
+			vai_Latn_LR vai_Vaii vai_Vaii_LR ve_ZA vec_IT vi_VN vmw_MZ vo_001 vun_TZ
 			wa_BE wae_CH wal_ET wbp_AU wo_SN
-			xh_ZA xog_UG
-			yav_CM yi_001 yo_NG yrl_BR yue_Hans_CN yue_Hant yue_Hant_HK
-			zgh_MA zh_Hans zh_Hans_CN zh_Hant_TW zu_ZA"
+			xh_ZA xnr_IN xog_UG
+			yav_CM yi_UA yo_NG yrl_BR yue_Hans_CN yue_Hant yue_Hant_HK
+			za_CN zgh_MA zh_Hans zh_Hans_CN zh_Hant_TW zu_ZA"
 		/>
     </metadata>
 </supplementalData>

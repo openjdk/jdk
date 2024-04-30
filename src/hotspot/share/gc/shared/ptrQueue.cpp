@@ -23,10 +23,8 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/shared/bufferNode.hpp"
 #include "gc/shared/ptrQueue.hpp"
-#include "memory/allocation.inline.hpp"
-
-#include <new>
 
 PtrQueue::PtrQueue(PtrQueueSet* qset) :
   _index(0),
@@ -43,46 +41,6 @@ size_t PtrQueue::current_capacity() const {
   } else {
     return BufferNode::make_node_from_buffer(_buf)->capacity();
   }
-}
-
-BufferNode::AllocatorConfig::AllocatorConfig(size_t size)
-  : _buffer_capacity(size)
-{
-  assert(size >= 1, "Invalid buffer capacity %zu", size);
-  assert(size <= max_size(), "Invalid buffer capacity %zu", size);
-}
-
-void* BufferNode::AllocatorConfig::allocate() {
-  size_t byte_size = buffer_capacity() * sizeof(void*);
-  return NEW_C_HEAP_ARRAY(char, buffer_offset() + byte_size, mtGC);
-}
-
-void BufferNode::AllocatorConfig::deallocate(void* node) {
-  assert(node != nullptr, "precondition");
-  FREE_C_HEAP_ARRAY(char, node);
-}
-
-BufferNode::Allocator::Allocator(const char* name, size_t buffer_capacity) :
-  _config(buffer_capacity),
-  _free_list(name, &_config)
-{}
-
-size_t BufferNode::Allocator::free_count() const {
-  return _free_list.free_count();
-}
-
-BufferNode* BufferNode::Allocator::allocate() {
-  auto internal_capacity = static_cast<InternalSizeType>(buffer_capacity());
-  return ::new (_free_list.allocate()) BufferNode(internal_capacity);
-}
-
-void BufferNode::Allocator::release(BufferNode* node) {
-  assert(node != nullptr, "precondition");
-  assert(node->next() == nullptr, "precondition");
-  assert(node->capacity() == buffer_capacity(),
-         "Wrong size %zu, expected %zu", node->capacity(), buffer_capacity());
-  node->~BufferNode();
-  _free_list.release(node);
 }
 
 PtrQueueSet::PtrQueueSet(BufferNode::Allocator* allocator) :

@@ -49,31 +49,33 @@
 // predictors in reverse chronological order as returned by age_in_group(). I.e.
 // index 0 contains the rate information for the region retired most recently.
 class G1SurvRateGroup : public CHeapObj<mtGC> {
-  size_t  _stats_arrays_length;
+  uint _stats_arrays_length;
+  uint _num_added_regions;   // The number of regions in this survivor rate group.
+
   double* _accum_surv_rate_pred;
   double  _last_pred;
   TruncatedSeq** _surv_rate_predictors;
-
-  size_t _num_added_regions;   // The number of regions in this survivor rate group.
 
   void fill_in_last_surv_rates();
   void finalize_predictions(const G1Predictions& predictor);
 
 public:
-  static const int InvalidAgeIndex = -1;
-  static bool is_valid_age_index(int age) { return age >= 0; }
+  static const uint InvalidAgeIndex = UINT_MAX;
+  bool is_valid_age_index(uint age_index) const {
+    return age_index >= 1 && age_index <= _num_added_regions;
+  }
+  bool is_valid_age(uint age) const { return age < _num_added_regions; }
 
   G1SurvRateGroup();
   void reset();
   void start_adding_regions();
   void stop_adding_regions();
-  void record_surviving_words(int age_in_group, size_t surv_words);
+  void record_surviving_words(uint age, size_t surv_words);
   void all_surviving_words_recorded(const G1Predictions& predictor, bool update_predictors);
 
-  double accum_surv_rate_pred(int age) const {
+  double accum_surv_rate_pred(uint age) const {
     assert(_stats_arrays_length > 0, "invariant" );
-    assert(is_valid_age_index(age), "must be");
-    if ((size_t)age < _stats_arrays_length)
+    if (age < _stats_arrays_length)
       return _accum_surv_rate_pred[age];
     else {
       double diff = (double)(age - _stats_arrays_length + 1);
@@ -81,22 +83,22 @@ public:
     }
   }
 
-  double surv_rate_pred(G1Predictions const& predictor, int age) const {
-    assert(is_valid_age_index(age), "must be");
+  double surv_rate_pred(G1Predictions const& predictor, uint age) const {
+    assert(is_valid_age(age), "must be");
 
-    age = MIN2(age, (int)_stats_arrays_length - 1);
+    // _stats_arrays_length might not be in sync with _num_added_regions in Cleanup pause.
+    age = MIN2(age, _stats_arrays_length - 1);
 
     return predictor.predict_in_unit_interval(_surv_rate_predictors[age]);
   }
 
-  int next_age_index() {
-    return (int)++_num_added_regions;
+  uint next_age_index() {
+    return ++_num_added_regions;
   }
 
-  int age_in_group(int age_index) const {
-    int result = (int)(_num_added_regions - age_index);
-    assert(is_valid_age_index(result), "invariant" );
-    return result;
+  uint age_in_group(uint age_index) const {
+    assert(is_valid_age_index(age_index), "invariant" );
+    return _num_added_regions - age_index;
   }
 };
 

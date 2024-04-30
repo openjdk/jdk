@@ -406,14 +406,6 @@ extern "C" {                                                         \
     VM_LEAF_BASE(result_type, header)
 
 
-#define JVM_ENTRY_FROM_LEAF(env, result_type, header)                \
-  { {                                                                \
-    JavaThread* thread=JavaThread::thread_from_jni_environment(env); \
-    ThreadInVMfromNative __tiv(thread);                              \
-    debug_only(VMNativeEntryWrapper __vew;)                          \
-    VM_ENTRY_BASE_FROM_LEAF(result_type, header, thread)
-
-
 #define JVM_END } }
 
 #endif // SHARE_RUNTIME_INTERFACESUPPORT_INLINE_HPP

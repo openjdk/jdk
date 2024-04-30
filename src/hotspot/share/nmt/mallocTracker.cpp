@@ -40,10 +40,12 @@
 #include "runtime/safefetch.hpp"
 #include "services/mallocLimit.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/vmError.hpp"
+#include "utilities/globalDefinitions.hpp"
 
-size_t MallocMemorySummary::_snapshot[CALC_OBJ_SIZE_IN_TYPE(MallocMemorySnapshot, size_t)];
+MallocMemorySnapshot MallocMemorySummary::_snapshot;
 
 void MemoryCounter::update_peak(size_t size, size_t cnt) {
   size_t peak_sz = peak_size();
@@ -57,6 +59,23 @@ void MemoryCounter::update_peak(size_t size, size_t cnt) {
       peak_sz = old_sz;
     }
   }
+}
+
+void MallocMemorySnapshot::copy_to(MallocMemorySnapshot* s) {
+  // Use ThreadCritical to make sure that mtChunks don't get deallocated while the
+  // copy is going on, because their size is adjusted using this
+  // buffer in make_adjustment().
+  ThreadCritical tc;
+  s->_all_mallocs = _all_mallocs;
+  size_t total_size = 0;
+  size_t total_count = 0;
+  for (int index = 0; index < mt_number_of_types; index ++) {
+    s->_malloc[index] = _malloc[index];
+    total_size += s->_malloc[index].malloc_size();
+    total_count += s->_malloc[index].malloc_count();
+  }
+  // malloc counters may be updated concurrently
+  s->_all_mallocs.set_size_and_count(total_size, total_count);
 }
 
 // Total malloc'd memory used by arenas
@@ -78,22 +97,26 @@ void MallocMemorySnapshot::make_adjustment() {
 }
 
 void MallocMemorySummary::initialize() {
-  assert(sizeof(_snapshot) >= sizeof(MallocMemorySnapshot), "Sanity Check");
   // Uses placement new operator to initialize static area.
-  ::new ((void*)_snapshot)MallocMemorySnapshot();
   MallocLimitHandler::initialize(MallocLimit);
 }
 
 bool MallocMemorySummary::total_limit_reached(size_t s, size_t so_far, const malloclimit* limit) {
 
-  // Ignore the limit break during error reporting to prevent secondary errors.
-  if (VMError::is_error_reported()) {
-    return false;
-  }
-
 #define FORMATTED \
   "MallocLimit: reached global limit (triggering allocation size: " PROPERFMT ", allocated so far: " PROPERFMT ", limit: " PROPERFMT ") ", \
   PROPERFMTARGS(s), PROPERFMTARGS(so_far), PROPERFMTARGS(limit->sz)
+
+  // If we hit the limit during error reporting, we print a short warning but otherwise ignore it.
+  // We don't want to risk recursive assertion or torn hs-err logs.
+  if (VMError::is_error_reported()) {
+    // Print warning, but only the first n times to avoid flooding output.
+    static int stopafter = 10;
+    if (stopafter-- > 0) {
+      log_warning(nmt)(FORMATTED);
+    }
+    return false;
+  }
 
   if (limit->mode == MallocLimitMode::trigger_fatal) {
     fatal(FORMATTED);
@@ -107,14 +130,20 @@ bool MallocMemorySummary::total_limit_reached(size_t s, size_t so_far, const mal
 
 bool MallocMemorySummary::category_limit_reached(MEMFLAGS f, size_t s, size_t so_far, const malloclimit* limit) {
 
-  // Ignore the limit break during error reporting to prevent secondary errors.
-  if (VMError::is_error_reported()) {
-    return false;
-  }
-
 #define FORMATTED \
   "MallocLimit: reached category \"%s\" limit (triggering allocation size: " PROPERFMT ", allocated so far: " PROPERFMT ", limit: " PROPERFMT ") ", \
   NMTUtil::flag_to_enum_name(f), PROPERFMTARGS(s), PROPERFMTARGS(so_far), PROPERFMTARGS(limit->sz)
+
+  // If we hit the limit during error reporting, we print a short warning but otherwise ignore it.
+  // We don't want to risk recursive assertion or torn hs-err logs.
+  if (VMError::is_error_reported()) {
+    // Print warning, but only the first n times to avoid flooding output.
+    static int stopafter = 10;
+    if (stopafter-- > 0) {
+      log_warning(nmt)(FORMATTED);
+    }
+    return false;
+  }
 
   if (limit->mode == MallocLimitMode::trigger_fatal) {
     fatal(FORMATTED);
@@ -198,6 +227,8 @@ void MallocTracker::deaccount(MallocHeader::FreeInfo free_info) {
 bool MallocTracker::print_pointer_information(const void* p, outputStream* st) {
   assert(MemTracker::enabled(), "NMT not enabled");
 
+#if !INCLUDE_ASAN
+
   address addr = (address)p;
 
   // Carefully feel your way upwards and try to find a malloc header. Then check if
@@ -211,7 +242,8 @@ bool MallocTracker::print_pointer_information(const void* p, outputStream* st) {
     const uint8_t* here = align_down(addr, smallest_possible_alignment);
     const uint8_t* const end = here - (0x1000 + sizeof(MallocHeader)); // stop searching after 4k
     for (; here >= end; here -= smallest_possible_alignment) {
-      if (!os::is_readable_pointer(here)) {
+      // JDK-8306561: cast to a MallocHeader needs to guarantee it can reside in readable memory
+      if (!os::is_readable_range(here, here + sizeof(MallocHeader))) {
         // Probably OOB, give up
         break;
       }
@@ -274,5 +306,8 @@ bool MallocTracker::print_pointer_information(const void* p, outputStream* st) {
     }
     return true;
   }
+
+#endif // !INCLUDE_ASAN
+
   return false;
 }

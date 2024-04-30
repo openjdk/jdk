@@ -71,6 +71,7 @@ import jdk.dynalink.linker.GuardedInvocation;
  * If the guard of that single invocation fails, or it has an invalidated
  * switch point, or its invalidating exception triggered, then the call site
  * will throw it away and ask its associated {@link DynamicLinker} to relink it.
+ * @since 9
  */
 public class SimpleRelinkableCallSite extends AbstractRelinkableCallSite {
     /**

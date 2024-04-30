@@ -518,6 +518,7 @@ class Inet6Address extends InetAddress {
      * @throws IllegalArgumentException if the {@code ipv6AddressLiteral} cannot be
      *         parsed as an IPv6 address literal.
      * @throws NullPointerException if the {@code ipv6AddressLiteral} is {@code null}.
+     * @since 22
      */
     public static InetAddress ofLiteral(String ipv6AddressLiteral) {
         Objects.requireNonNull(ipv6AddressLiteral);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,7 +27,6 @@
 #include "asm/macroAssembler.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
-#include "code/icBuffer.hpp"
 #include "code/nativeInst.hpp"
 #include "code/vtableStubs.hpp"
 #include "interpreter/interpreter.hpp"
@@ -39,6 +38,7 @@
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
@@ -229,12 +229,12 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
         // here if the underlying file has been truncated.
         // Do not crash the VM in such a case.
         CodeBlob* cb = CodeCache::find_blob(pc);
-        CompiledMethod* nm = (cb != nullptr) ? cb->as_compiled_method_or_null() : nullptr;
-        bool is_unsafe_arraycopy = (thread->doing_unsafe_access() && UnsafeCopyMemory::contains_pc(pc));
-        if ((nm != nullptr && nm->has_unsafe_access()) || is_unsafe_arraycopy) {
-          address next_pc = pc + NativeCall::instruction_size;
-          if (is_unsafe_arraycopy) {
-            next_pc = UnsafeCopyMemory::page_error_continue_pc(pc);
+        nmethod* nm = (cb != nullptr) ? cb->as_nmethod_or_null() : nullptr;
+        bool is_unsafe_memory_access = (thread->doing_unsafe_access() && UnsafeMemoryAccess::contains_pc(pc));
+        if ((nm != nullptr && nm->has_unsafe_access()) || is_unsafe_memory_access) {
+          address next_pc = Assembler::locate_next_instruction(pc);
+          if (is_unsafe_memory_access) {
+            next_pc = UnsafeMemoryAccess::page_error_continue_pc(pc);
           }
           stub = SharedRuntime::handle_unsafe_access(thread, next_pc);
         }
@@ -251,9 +251,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
 
         // End life with a fatal error, message and detail message and the context.
         // Note: no need to do any post-processing here (e.g. signal chaining)
-        va_list va_dummy;
-        VMError::report_and_die(thread, uc, nullptr, 0, msg, detail_msg, va_dummy);
-        va_end(va_dummy);
+        VMError::report_and_die(thread, uc, nullptr, 0, msg, "%s", detail_msg);
 
         ShouldNotReachHere();
       } else if (sig == SIGFPE  &&
@@ -273,9 +271,9 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
                 thread->thread_state() == _thread_in_native) &&
                 sig == SIGBUS && /* info->si_code == BUS_OBJERR && */
                 thread->doing_unsafe_access()) {
-      address next_pc = pc + NativeCall::instruction_size;
-      if (UnsafeCopyMemory::contains_pc(pc)) {
-        next_pc = UnsafeCopyMemory::page_error_continue_pc(pc);
+      address next_pc = Assembler::locate_next_instruction(pc);
+      if (UnsafeMemoryAccess::contains_pc(pc)) {
+        next_pc = UnsafeMemoryAccess::page_error_continue_pc(pc);
       }
       stub = SharedRuntime::handle_unsafe_access(thread, next_pc);
     }
@@ -408,6 +406,14 @@ static inline void atomic_copy64(const volatile void *src, volatile void *dst) {
 
 extern "C" {
   int SpinPause() {
+    if (UseZihintpause) {
+      // PAUSE is encoded as a FENCE instruction with pred=W, succ=0, fm=0, rd=x0, and rs1=x0.
+      // To do: __asm__ volatile("pause " : : : );
+      // Since we're currently not passing '-march=..._zihintpause' to the compiler,
+      // it will not recognize the "pause" instruction, hence the hard-coded instruction.
+      __asm__ volatile(".word 0x0100000f  " : : : );
+      return 1;
+    }
     return 0;
   }
 

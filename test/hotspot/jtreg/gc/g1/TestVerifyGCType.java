@@ -122,9 +122,9 @@ public class TestVerifyGCType {
     private static void testYoungEvacFail() throws Exception {
         OutputAnalyzer output;
         output = testWithVerificationType(new String[] {"young-evac-fail"},
-                                          new String[] {"-XX:+G1EvacuationFailureALot",
-                                                        "-XX:G1EvacuationFailureALotCount=100",
-                                                        "-XX:G1EvacuationFailureALotInterval=1",
+                                          new String[] {"-XX:+G1GCAllocationFailureALot",
+                                                        "-XX:G1GCAllocationFailureALotCount=100",
+                                                        "-XX:G1GCAllocationFailureALotInterval=1",
                                                         "-XX:+UnlockDiagnosticVMOptions"});
         output.shouldHaveExitValue(0);
 
@@ -178,10 +178,7 @@ public class TestVerifyGCType {
 
         basicOpts.add(TriggerGCs.class.getName());
 
-        ProcessBuilder procBuilder =  ProcessTools.createLimitedTestJavaProcessBuilder(basicOpts);
-        OutputAnalyzer analyzer = new OutputAnalyzer(procBuilder.start());
-
-        return analyzer;
+        return ProcessTools.executeLimitedTestJava(basicOpts);
     }
 
     private static void verifyCollection(String name, boolean expectBefore, boolean expectDuring, boolean expectAfter, String data) {

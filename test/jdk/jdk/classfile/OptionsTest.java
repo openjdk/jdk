@@ -25,7 +25,7 @@
 
 /*
  * @test
- * @summary Testing Classfile options on small Corpus.
+ * @summary Testing ClassFile options on small Corpus.
  * @run junit/othervm -Djunit.jupiter.execution.parallel.enabled=true OptionsTest
  */
 import org.junit.jupiter.params.ParameterizedTest;
@@ -44,16 +44,7 @@ import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import jdk.internal.classfile.AttributeMapper;
-import jdk.internal.classfile.AttributedElement;
-import jdk.internal.classfile.BufWriter;
-import jdk.internal.classfile.ClassReader;
-import jdk.internal.classfile.ClassTransform;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.ClassfileElement;
-import jdk.internal.classfile.CodeTransform;
-import jdk.internal.classfile.CompoundElement;
-import jdk.internal.classfile.CustomAttribute;
+import java.lang.classfile.*;
 
 /**
  * OptionsTest
@@ -72,9 +63,9 @@ class OptionsTest {
     @ParameterizedTest
     @MethodSource("corpus")
     void testAttributesProcessingOptionOnTransform(Path path) throws Exception {
-        testNoUnstable(path, Classfile.of().parse(
-                Classfile.of(Classfile.AttributesProcessingOption.DROP_UNSTABLE_ATRIBUTES).transform(
-                            Classfile.of().parse(path),
+        testNoUnstable(path, ClassFile.of().parse(
+                ClassFile.of(ClassFile.AttributesProcessingOption.DROP_UNSTABLE_ATRIBUTES).transform(
+                            ClassFile.of().parse(path),
                             ClassTransform.transformingMethodBodies(CodeTransform.ACCEPT_ALL))));
     }
 
@@ -110,24 +101,24 @@ class OptionsTest {
 
     @Test
     void testUnknownAttribute() throws Exception {
-        var classBytes = Classfile.of(Classfile.AttributeMapperOption.of(e -> {
+        var classBytes = ClassFile.of(ClassFile.AttributeMapperOption.of(e -> {
             return e.equalsString(STRANGE_ATTRIBUTE_MAPPER.name()) ? STRANGE_ATTRIBUTE_MAPPER : null;
         })).build(ClassDesc.of("StrangeClass"), clb -> clb.with(new StrangeAttribute()));
 
         //test default
-        assertFalse(Classfile.of().parse(classBytes).attributes().isEmpty());
+        assertFalse(ClassFile.of().parse(classBytes).attributes().isEmpty());
 
         //test drop unknown at transform
-        assertTrue(Classfile.of().parse(
-                Classfile.of(Classfile.AttributesProcessingOption.DROP_UNKNOWN_ATTRIBUTES).transform(
-                        Classfile.of().parse(classBytes),
+        assertTrue(ClassFile.of().parse(
+                ClassFile.of(ClassFile.AttributesProcessingOption.DROP_UNKNOWN_ATTRIBUTES).transform(
+                        ClassFile.of().parse(classBytes),
                         ClassTransform.ACCEPT_ALL)).attributes().isEmpty());
     }
 
-    void testNoUnstable(Path path, ClassfileElement e) {
+    void testNoUnstable(Path path, ClassFileElement e) {
         if (e instanceof AttributedElement ae) ae.attributes().forEach(a ->
                 assertTrue(AttributeMapper.AttributeStability.UNSTABLE.ordinal() >= a.attributeMapper().stability().ordinal(),
                            () -> "class " + path + " contains unexpected " + a));
-        if (e instanceof CompoundElement ce) ce.forEachElement(ee -> testNoUnstable(path, (ClassfileElement)ee));
+        if (e instanceof CompoundElement ce) ce.forEachElement(ee -> testNoUnstable(path, (ClassFileElement)ee));
     }
 }

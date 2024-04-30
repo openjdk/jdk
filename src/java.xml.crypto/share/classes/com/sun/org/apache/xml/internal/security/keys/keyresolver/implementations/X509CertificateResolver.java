@@ -86,8 +86,8 @@ public class X509CertificateResolver extends KeyResolverSpi {
             }
 
             // populate Object array
-            for (int i = 0; i < els.length; i++) {
-                XMLX509Certificate xmlCert = new XMLX509Certificate(els[i], baseURI);
+            for (Element el : els) {
+                XMLX509Certificate xmlCert = new XMLX509Certificate(el, baseURI);
                 X509Certificate cert = xmlCert.getX509Certificate();
                 if (cert != null) {
                     return cert;

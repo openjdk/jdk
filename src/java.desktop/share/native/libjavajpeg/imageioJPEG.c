@@ -1132,6 +1132,10 @@ imageio_skip_input_data(j_decompress_ptr cinfo, long num_bytes)
         return;
     }
     num_bytes += sb->remaining_skip;
+    // Check for overflow if remaining_skip value is too large
+    if (num_bytes < 0) {
+        return;
+    }
     sb->remaining_skip = 0;
 
     /* First the easy case where we are skipping <= the current contents. */

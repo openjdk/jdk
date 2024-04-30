@@ -1,4 +1,4 @@
-## Apache Santuario v3.0.2
+## Apache Santuario v3.0.3
 
 ### Apache 2.0 License
 ```

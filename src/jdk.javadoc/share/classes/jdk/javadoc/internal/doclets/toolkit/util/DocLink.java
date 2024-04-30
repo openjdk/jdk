@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,7 +90,7 @@ public class DocLink {
 
         DocPath newPath = base.relativize(path);
         // avoid generating an empty link by using the basename of the path if necessary
-        if (newPath.isEmpty() && isEmpty(fragment)) {
+        if (newPath.isEmpty() && fragment == null) {
             newPath = path.basename();
         }
         return new DocLink(newPath, fragment);
@@ -121,18 +121,14 @@ public class DocLink {
     @Override
     public String toString() {
         // common fast path
-        if (path != null && isEmpty(fragment))
+        if (path != null && fragment == null)
             return path.getPath();
 
         StringBuilder sb = new StringBuilder();
         if (path != null)
             sb.append(path.getPath());
-        if (!isEmpty(fragment))
+        if (fragment != null)
             sb.append("#").append(fragment);
         return sb.toString();
-    }
-
-    private static boolean isEmpty(String s) {
-        return (s == null) || s.isEmpty();
     }
 }

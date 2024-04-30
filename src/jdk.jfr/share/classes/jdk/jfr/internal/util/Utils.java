@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,8 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -49,6 +51,7 @@ import jdk.jfr.RecordingState;
 import jdk.jfr.internal.LogLevel;
 import jdk.jfr.internal.LogTag;
 import jdk.jfr.internal.Logger;
+import jdk.jfr.internal.MirrorEvent;
 import jdk.jfr.internal.SecuritySupport;
 import jdk.jfr.internal.Type;
 import jdk.jfr.internal.settings.PeriodSetting;
@@ -56,11 +59,6 @@ import jdk.jfr.internal.settings.StackTraceSetting;
 import jdk.jfr.internal.settings.ThresholdSetting;
 
 public final class Utils {
-    public static final String FIELD_DURATION = "duration";
-    public static final String FIELD_STACK_TRACE = "stackTrace";
-    public static final String FIELD_START_TIME = "startTime";
-    public static final String FIELD_EVENT_THREAD = "eventThread";
-
     private static final Object flushObject = new Object();
     private static final String LEGACY_EVENT_NAME_PREFIX = "com.oracle.jdk.";
 
@@ -181,6 +179,19 @@ public final class Utils {
         return map;
     }
 
+    public static <T> boolean compareLists(List<T> a, List<T> b, Comparator<T> c) {
+        int size = a.size();
+        if (size != b.size()) {
+            return false;
+        }
+        for (int i = 0; i < size; i++) {
+            if (c.compare(a.get(i), b.get(i)) != 0) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     public static <T> List<T> sanitizeNullFreeList(List<T> elements, Class<T> clazz) {
         List<T> sanitized = new ArrayList<>(elements.size());
         for (T element : elements) {
@@ -196,9 +207,8 @@ public final class Utils {
     }
 
     public static List<Field> getVisibleEventFields(Class<?> clazz) {
-        Utils.ensureValidEventSubclass(clazz);
         List<Field> fields = new ArrayList<>();
-        for (Class<?> c = clazz; c != jdk.internal.event.Event.class; c = c.getSuperclass()) {
+        for (Class<?> c = clazz; !Utils.isEventBaseClass(c); c = c.getSuperclass()) {
             for (Field field : c.getDeclaredFields()) {
                 // skip private field in base classes
                 if (c == clazz || !Modifier.isPrivate(field.getModifiers())) {
@@ -207,6 +217,16 @@ public final class Utils {
             }
         }
         return fields;
+    }
+
+    public static boolean isEventBaseClass(Class<?> clazz) {
+        if (jdk.internal.event.Event.class == clazz) {
+            return true;
+        }
+        if (jdk.jfr.internal.MirrorEvent.class == clazz) {
+            return true;
+        }
+        return false;
     }
 
     public static void ensureValidEventSubclass(Class<?> eventClass) {
@@ -328,7 +348,7 @@ public final class Utils {
         return eventName;
     }
 
-    public static void verifyMirror(Class<?> mirror, Class<?> real) {
+    public static void verifyMirror(Class<? extends MirrorEvent> mirror, Class<?> real) {
         Class<?> cMirror = Objects.requireNonNull(mirror);
         Class<?> cReal = Objects.requireNonNull(real);
 
@@ -343,7 +363,7 @@ public final class Utils {
         }
         while (cReal != null) {
             for (Field realField : cReal.getDeclaredFields()) {
-                if (isSupportedType(realField.getType())) {
+                if (isSupportedType(realField.getType()) && !realField.isSynthetic()) {
                     String fieldName = realField.getName();
                     Field mirrorField = mirrorFields.get(fieldName);
                     if (mirrorField == null) {
@@ -435,5 +455,27 @@ public final class Utils {
 
     public static String makeSimpleName(String qualified) {
         return qualified.substring(qualified.lastIndexOf(".") + 1);
+    }
+
+    public static String format(String template, Map<String, String> parameters) {
+        StringBuilder sb = new StringBuilder(3 * template.length() / 2);
+        List<String> keys = new ArrayList<>(parameters.keySet());
+        // Sort so longest keys are checked first in case keys overlap.
+        keys.sort((a, b) -> b.length() - a.length());
+        for (int i = 0; i < template.length(); i++) {
+            int index = i;
+            for (int j = 0; j < keys.size(); j++) {
+                String key = keys.get(j);
+                if (template.startsWith(key, i)) {
+                    sb.append(parameters.get(key));
+                    i += key.length() - 1;
+                    break;
+                }
+            }
+            if (i == index) {
+                sb.append(template.charAt(i));
+            }
+        }
+        return sb.toString();
     }
 }

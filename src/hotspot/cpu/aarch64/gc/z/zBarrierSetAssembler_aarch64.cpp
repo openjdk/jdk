@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1081,84 +1081,6 @@ void ZBarrierSetAssembler::generate_c1_store_barrier_runtime_stub(StubAssembler*
 
 #ifdef COMPILER2
 
-OptoReg::Name ZBarrierSetAssembler::refine_register(const Node* node, OptoReg::Name opto_reg) {
-  if (!OptoReg::is_reg(opto_reg)) {
-    return OptoReg::Bad;
-  }
-
-  const VMReg vm_reg = OptoReg::as_VMReg(opto_reg);
-  if (vm_reg->is_FloatRegister()) {
-    return opto_reg & ~1;
-  }
-
-  return opto_reg;
-}
-
-#undef __
-#define __ _masm->
-
-class ZSaveLiveRegisters {
-private:
-  MacroAssembler* const _masm;
-  RegSet                _gp_regs;
-  FloatRegSet           _fp_regs;
-  PRegSet               _p_regs;
-
-public:
-  void initialize(ZBarrierStubC2* stub) {
-    // Record registers that needs to be saved/restored
-    RegMaskIterator rmi(stub->live());
-    while (rmi.has_next()) {
-      const OptoReg::Name opto_reg = rmi.next();
-      if (OptoReg::is_reg(opto_reg)) {
-        const VMReg vm_reg = OptoReg::as_VMReg(opto_reg);
-        if (vm_reg->is_Register()) {
-          _gp_regs += RegSet::of(vm_reg->as_Register());
-        } else if (vm_reg->is_FloatRegister()) {
-          _fp_regs += FloatRegSet::of(vm_reg->as_FloatRegister());
-        } else if (vm_reg->is_PRegister()) {
-          _p_regs += PRegSet::of(vm_reg->as_PRegister());
-        } else {
-          fatal("Unknown register type");
-        }
-      }
-    }
-
-    // Remove C-ABI SOE registers, scratch regs and _ref register that will be updated
-    if (stub->result() != noreg) {
-      _gp_regs -= RegSet::range(r19, r30) + RegSet::of(r8, r9, stub->result());
-    } else {
-      _gp_regs -= RegSet::range(r19, r30) + RegSet::of(r8, r9);
-    }
-  }
-
-  ZSaveLiveRegisters(MacroAssembler* masm, ZBarrierStubC2* stub)
-    : _masm(masm),
-      _gp_regs(),
-      _fp_regs(),
-      _p_regs() {
-
-    // Figure out what registers to save/restore
-    initialize(stub);
-
-    // Save registers
-    __ push(_gp_regs, sp);
-    __ push_fp(_fp_regs, sp);
-    __ push_p(_p_regs, sp);
-  }
-
-  ~ZSaveLiveRegisters() {
-    // Restore registers
-    __ pop_p(_p_regs, sp);
-    __ pop_fp(_fp_regs, sp);
-
-    // External runtime call may clobber ptrue reg
-    __ reinitialize_ptrue();
-
-    __ pop(_gp_regs, sp);
-  }
-};
-
 #undef __
 #define __ _masm->
 
@@ -1228,7 +1150,7 @@ void ZBarrierSetAssembler::generate_c2_load_barrier_stub(MacroAssembler* masm, Z
   }
 
   {
-    ZSaveLiveRegisters save_live_registers(masm, stub);
+    SaveLiveRegisters save_live_registers(masm, stub);
     ZSetupArguments setup_arguments(masm, stub);
     __ mov(rscratch1, stub->slow_path());
     __ blr(rscratch1);
@@ -1260,7 +1182,7 @@ void ZBarrierSetAssembler::generate_c2_store_barrier_stub(MacroAssembler* masm, 
   __ bind(slow);
 
   {
-    ZSaveLiveRegisters save_live_registers(masm, stub);
+    SaveLiveRegisters save_live_registers(masm, stub);
     __ lea(c_rarg0, stub->ref_addr());
 
     if (stub->is_native()) {
@@ -1290,6 +1212,9 @@ static bool aarch64_test_and_branch_reachable(int branch_offset, int target_offs
   return test_and_branch_to_trampoline_delta < test_and_branch_delta_limit;
 }
 
+ZLoadBarrierStubC2Aarch64::ZLoadBarrierStubC2Aarch64(const MachNode* node, Address ref_addr, Register ref)
+  : ZLoadBarrierStubC2(node, ref_addr, ref), _test_and_branch_reachable_entry(), _offset(), _deferred_emit(false), _test_and_branch_reachable(false) {}
+
 ZLoadBarrierStubC2Aarch64::ZLoadBarrierStubC2Aarch64(const MachNode* node, Address ref_addr, Register ref, int offset)
   : ZLoadBarrierStubC2(node, ref_addr, ref), _test_and_branch_reachable_entry(), _offset(offset), _deferred_emit(false), _test_and_branch_reachable(false) {
   PhaseOutput* const output = Compile::current()->output();
@@ -1317,6 +1242,12 @@ int ZLoadBarrierStubC2Aarch64::get_stub_size() {
   ZLoadBarrierStubC2::emit_code(masm);
   output->set_in_scratch_emit_size(false);
   return cb.insts_size();
+}
+
+ZLoadBarrierStubC2Aarch64* ZLoadBarrierStubC2Aarch64::create(const MachNode* node, Address ref_addr, Register ref) {
+  ZLoadBarrierStubC2Aarch64* const stub = new (Compile::current()->comp_arena()) ZLoadBarrierStubC2Aarch64(node, ref_addr, ref);
+  register_stub(stub);
+  return stub;
 }
 
 ZLoadBarrierStubC2Aarch64* ZLoadBarrierStubC2Aarch64::create(const MachNode* node, Address ref_addr, Register ref, int offset) {

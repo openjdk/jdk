@@ -24,7 +24,7 @@
  */
 package jdk.internal.classfile.impl;
 
-import jdk.internal.classfile.Label;
+import java.lang.classfile.Label;
 
 public sealed interface LabelContext
         permits BufferedCodeBuilder, CodeImpl, DirectCodeBuilder {

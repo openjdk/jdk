@@ -342,9 +342,6 @@ public class HtmlConfiguration extends BaseConfiguration {
      * if only classes are provided on the command line.
      */
     protected void setTopFile() {
-        if (!checkForDeprecation()) {
-            return;
-        }
         if (options.createOverview()) {
             topFile = DocPaths.INDEX;
         } else {
@@ -366,15 +363,6 @@ public class HtmlConfiguration extends BaseConfiguration {
             }
         }
         return null;
-    }
-
-    protected boolean checkForDeprecation() {
-        for (TypeElement te : getIncludedTypeElements()) {
-            if (isGeneratedDoc(te)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     /**

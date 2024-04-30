@@ -337,7 +337,8 @@ class GTKEngine {
                 return widgets[0];
             }
         } else if (id == Region.ARROW_BUTTON) {
-            if (c.getParent() instanceof JScrollBar) {
+            if (c.getParent() instanceof JScrollBar
+                || c.getParent() instanceof JTabbedPane) {
                 Integer prop = (Integer)
                     c.getClientProperty("__arrow_direction__");
                 int dir = (prop != null) ?

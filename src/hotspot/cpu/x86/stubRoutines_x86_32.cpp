@@ -32,7 +32,6 @@
 // a description of how to extend it, see the stubRoutines.hpp file.
 
 address StubRoutines::x86::_verify_fpu_cntrl_wrd_entry = nullptr;
-address StubRoutines::x86::_method_entry_barrier = nullptr;
 
 address StubRoutines::x86::_d2i_wrapper = nullptr;
 address StubRoutines::x86::_d2l_wrapper = nullptr;

@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @key headful
+ * @key headful printer
  * @bug 4112758
  * @summary Checks that a second invocation of PrintJob.end() does not cause
  * an exception or segmentation violation.

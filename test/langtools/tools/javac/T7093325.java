@@ -27,12 +27,8 @@
  * @summary Redundant entry in bytecode exception table
  *  temporarily workaround combo tests are causing time out in several platforms
  * @library /tools/javac/lib
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
+ * @enablePreview
+ * @modules java.base/jdk.internal.classfile.impl
  *          jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.util
@@ -43,9 +39,9 @@
 import java.io.IOException;
 import java.io.InputStream;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.CodeAttribute;
-import jdk.internal.classfile.constantpool.ClassEntry;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.CodeAttribute;
+import java.lang.classfile.constantpool.ClassEntry;
 
 import javax.tools.JavaFileObject;
 
@@ -152,9 +148,9 @@ public class T7093325 extends ComboInstance<T7093325> {
         }
 
         try (InputStream is = result.get().iterator().next().openInputStream()) {
-            ClassModel cf = Classfile.of().parse(is.readAllBytes());
+            ClassModel cf = ClassFile.of().parse(is.readAllBytes());
             if (cf == null) {
-                fail("Classfile not found: " + result.compilationInfo());
+                fail("ClassFile not found: " + result.compilationInfo());
                 return;
             }
 

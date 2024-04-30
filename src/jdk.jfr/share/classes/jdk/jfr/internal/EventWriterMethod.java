@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ package jdk.jfr.internal;
 
 import jdk.jfr.internal.util.Bytecode.FieldDesc;
 import jdk.jfr.internal.util.Bytecode.MethodDesc;
-import jdk.jfr.internal.util.Utils;
+import jdk.jfr.internal.util.ImplicitFields;
 
 public enum EventWriterMethod {
 
@@ -69,7 +69,7 @@ public enum EventWriterMethod {
      */
     public static EventWriterMethod lookupMethod(FieldDesc field) {
         // event thread
-        if (field.name().equals(Utils.FIELD_EVENT_THREAD)) {
+        if (field.name().equals(ImplicitFields.EVENT_THREAD)) {
             return EventWriterMethod.PUT_EVENT_THREAD;
         }
         for (EventWriterMethod m : EventWriterMethod.values()) {
