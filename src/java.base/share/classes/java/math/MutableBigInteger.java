@@ -1106,20 +1106,9 @@ class MutableBigInteger {
         quotient.offset = 0;
         quotient.intLen = intLen;
 
-        // Normalize the divisor
-        int shift = Integer.numberOfLeadingZeros(divisor);
-
-        int rem = value[offset];
-        long remLong = rem & LONG_MASK;
-        if (remLong < divisorLong) {
-            quotient.value[0] = 0;
-        } else {
-            quotient.value[0] = (int)(remLong / divisorLong);
-            rem = (int) (remLong - (quotient.value[0] * divisorLong));
-            remLong = rem & LONG_MASK;
-        }
-        int xlen = intLen;
-        while (--xlen > 0) {
+        int rem = 0;
+        long remLong = 0;
+        for (int xlen = intLen; xlen > 0; xlen--) {
             long dividendEstimate = (remLong << 32) |
                     (value[offset + intLen - xlen] & LONG_MASK);
             int q = (int) Long.divideUnsigned(dividendEstimate, divisorLong);
@@ -1129,11 +1118,7 @@ class MutableBigInteger {
         }
 
         quotient.normalize();
-        // Unnormalize
-        if (shift > 0)
-            return rem % divisor;
-        else
-            return rem;
+        return rem;
     }
 
     /**
