@@ -338,7 +338,7 @@ public class Table<T> extends Content {
             HtmlStyle cellStyle = columnStyles.get(colIndex);
             // Add tab order to only plain text to avoid widget_tabbable_single(potential violation)
             boolean matchFound = pattern.matcher(c.toString()).find();
-    
+
             // Always add content to make sure the cell isn't dropped
             var cell = HtmlTree.DIV(cellStyle).addUnchecked(c.isEmpty() ? Text.EMPTY : c);
             cell.addStyle(rowStyle);
@@ -346,7 +346,7 @@ public class Table<T> extends Content {
                 cell.put(HtmlAttr.ROLE, "tablist")
                     .put(HtmlAttr.TABINDEX, "0");
             }
-            
+
             for (String tabClass : tabClasses) {
                 cell.addStyle(tabClass);
                 if (!matchFound) {
@@ -354,7 +354,7 @@ public class Table<T> extends Content {
                         .put(HtmlAttr.TABINDEX, "0");
                 }
             }
-            
+
             row.add(cell);
             colIndex++;
         }
