@@ -1317,7 +1317,7 @@ public:
     if (!_cleanup_list.is_empty()) {
       log_debug(gc)("Reclaimed %u empty regions", _cleanup_list.length());
       // Now print the empty regions list.
-      _g1h->hr_printer()->cleanup(&_cleanup_list);
+      _g1h->hr_printer()->mark_reclaim(&_cleanup_list);
       // And actually make them available.
       _g1h->prepend_to_freelist(&_cleanup_list);
     }
