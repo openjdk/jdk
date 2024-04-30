@@ -984,7 +984,7 @@ void JvmtiThreadState::process_pending_step_for_earlyret() {
   }
 }
 
-void JvmtiThreadState::oops_do(OopClosure* f, CodeBlobClosure* cf) {
+void JvmtiThreadState::oops_do(OopClosure* f, NMethodClosure* cf) {
   f->do_oop((oop*) &_earlyret_oop);
 
   // Keep nmethods from unloading on the event queue
@@ -993,7 +993,7 @@ void JvmtiThreadState::oops_do(OopClosure* f, CodeBlobClosure* cf) {
   }
 }
 
-void JvmtiThreadState::nmethods_do(CodeBlobClosure* cf) {
+void JvmtiThreadState::nmethods_do(NMethodClosure* cf) {
   // Keep nmethods from unloading on the event queue
   if (_jvmti_event_queue != nullptr) {
     _jvmti_event_queue->nmethods_do(cf);

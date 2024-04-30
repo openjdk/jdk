@@ -1256,7 +1256,7 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
 #ifdef _LP64
   if (UseCompressedClassPointers && ((uintptr_t)addr &~ (uintptr_t)max_juint) == 0) {
     narrowKlass narrow_klass = (narrowKlass)(uintptr_t)addr;
-    Klass* k = CompressedKlassPointers::decode_raw(narrow_klass);
+    Klass* k = CompressedKlassPointers::decode_without_asserts(narrow_klass);
 
     if (Klass::is_valid(k)) {
       st->print_cr(UINT32_FORMAT " is a compressed pointer to class: " INTPTR_FORMAT, narrow_klass, p2i((HeapWord*)k));

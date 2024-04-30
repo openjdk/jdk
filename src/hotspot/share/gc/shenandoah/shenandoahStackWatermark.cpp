@@ -35,15 +35,13 @@
 
 uint32_t ShenandoahStackWatermark::_epoch_id = 1;
 
-ShenandoahOnStackCodeBlobClosure::ShenandoahOnStackCodeBlobClosure() :
+ShenandoahOnStackNMethodClosure::ShenandoahOnStackNMethodClosure() :
     _bs_nm(BarrierSet::barrier_set()->barrier_set_nmethod()) {}
 
-void ShenandoahOnStackCodeBlobClosure::do_code_blob(CodeBlob* cb) {
-  nmethod* const nm = cb->as_nmethod_or_null();
-  if (nm != nullptr) {
-    const bool result = _bs_nm->nmethod_entry_barrier(nm);
-    assert(result, "NMethod on-stack must be alive");
-  }
+void ShenandoahOnStackNMethodClosure::do_nmethod(nmethod* nm) {
+  assert(nm != nullptr, "Sanity");
+  const bool result = _bs_nm->nmethod_entry_barrier(nm);
+  assert(result, "NMethod on-stack must be alive");
 }
 
 ThreadLocalAllocStats& ShenandoahStackWatermark::stats() {
@@ -65,7 +63,7 @@ ShenandoahStackWatermark::ShenandoahStackWatermark(JavaThread* jt) :
   _stats(),
   _keep_alive_cl(),
   _evac_update_oop_cl(),
-  _cb_cl() {}
+  _nm_cl() {}
 
 OopClosure* ShenandoahStackWatermark::closure_from_context(void* context) {
   if (context != nullptr) {
@@ -98,7 +96,7 @@ void ShenandoahStackWatermark::start_processing_impl(void* context) {
     // It is also a good place to resize the TLAB sizes for future allocations.
     retire_tlab();
 
-    _jt->oops_do_no_frames(closure_from_context(context), &_cb_cl);
+    _jt->oops_do_no_frames(closure_from_context(context), &_nm_cl);
   } else if (heap->is_concurrent_weak_root_in_progress()) {
     assert(heap->is_evacuation_in_progress(), "Should not be armed");
     // Retire the TLABs, which will force threads to reacquire their TLABs.
@@ -108,7 +106,7 @@ void ShenandoahStackWatermark::start_processing_impl(void* context) {
     // be needed for reference updates (would update the large filler instead).
     retire_tlab();
 
-    _jt->oops_do_no_frames(closure_from_context(context), &_cb_cl);
+    _jt->oops_do_no_frames(closure_from_context(context), &_nm_cl);
   } else {
     ShouldNotReachHere();
   }
@@ -135,5 +133,5 @@ void ShenandoahStackWatermark::process(const frame& fr, RegisterMap& register_ma
   assert((heap->is_concurrent_weak_root_in_progress() && heap->is_evacuation_in_progress()) ||
          heap->is_concurrent_mark_in_progress(),
          "Only these two phases");
-  fr.oops_do(oops, &_cb_cl, &register_map, DerivedPointerIterationMode::_directly);
+  fr.oops_do(oops, &_nm_cl, &register_map, DerivedPointerIterationMode::_directly);
 }

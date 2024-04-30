@@ -602,7 +602,7 @@ bool ObjectSynchronizer::enter_fast_impl(Handle obj, BasicLock* lock, JavaThread
       }
 
       markWord mark = obj()->mark_acquire();
-      while (mark.is_neutral()) {
+      while (mark.is_unlocked()) {
         // Retry until a lock state change has been observed. cas_set_mark() may collide with non lock bits modifications.
         // Try to swing into 'fast-locked' state.
         assert(!lock_stack.contains(obj()), "thread must not already hold the lock");
@@ -625,7 +625,7 @@ bool ObjectSynchronizer::enter_fast_impl(Handle obj, BasicLock* lock, JavaThread
       return false;
     } else if (LockingMode == LM_LEGACY) {
       markWord mark = obj->mark();
-      if (mark.is_neutral()) {
+      if (mark.is_unlocked()) {
         // Anticipate successful CAS -- the ST of the displaced mark must
         // be visible <= the ST performed by the CAS.
         lock->set_displaced_header(mark);
@@ -696,7 +696,7 @@ void ObjectSynchronizer::exit(oop object, BasicLock* lock, JavaThread* current) 
           // Only do diagnostics if we are not racing an inflation. Simply
           // exiting a recursive enter of a Java Monitor that is being
           // inflated is safe; see the has_monitor() comment below.
-          assert(!mark.is_neutral(), "invariant");
+          assert(!mark.is_unlocked(), "invariant");
           assert(!mark.has_locker() ||
                  current->is_lock_owned((address)mark.locker()), "invariant");
           if (mark.has_monitor()) {
@@ -1009,7 +1009,7 @@ intptr_t ObjectSynchronizer::FastHashCode(Thread* current, oop obj) {
       assert(LockingMode == LM_MONITOR, "+VerifyHeavyMonitors requires LockingMode == 0 (LM_MONITOR)");
       guarantee((obj->mark().value() & markWord::lock_mask_in_place) != markWord::locked_value, "must not be lightweight/stack-locked");
     }
-    if (mark.is_neutral() || (LockingMode == LM_LIGHTWEIGHT && mark.is_fast_locked())) {
+    if (mark.is_unlocked() || (LockingMode == LM_LIGHTWEIGHT && mark.is_fast_locked())) {
       hash = mark.hash();
       if (hash != 0) {                     // if it has a hash, just return it
         return hash;
@@ -1139,7 +1139,7 @@ bool ObjectSynchronizer::current_thread_holds_lock(JavaThread* current,
     return monitor->is_entered(current) != 0;
   }
   // Unlocked case, header in place
-  assert(mark.is_neutral(), "sanity check");
+  assert(mark.is_unlocked(), "sanity check");
   return false;
 }
 
@@ -1172,7 +1172,7 @@ JavaThread* ObjectSynchronizer::get_lock_owner(ThreadsList * t_list, Handle h_ob
   // Unlocked case, header in place
   // Cannot have assertion since this object may have been
   // locked by another thread when reaching here.
-  // assert(mark.is_neutral(), "sanity check");
+  // assert(mark.is_unlocked(), "sanity check");
 
   return nullptr;
 }
@@ -1423,7 +1423,7 @@ ObjectMonitor* ObjectSynchronizer::inflate_impl(JavaThread* inflating_thread, oo
     // *  stack-locked - Coerce it to inflated from stack-locked.
     // *  INFLATING    - Busy wait for conversion from stack-locked to
     //                   inflated.
-    // *  neutral      - Aggressively inflate the object.
+    // *  unlocked     - Aggressively inflate the object.
 
     // CASE: inflated
     if (mark.has_monitor()) {
@@ -1601,7 +1601,7 @@ ObjectMonitor* ObjectSynchronizer::inflate_impl(JavaThread* inflating_thread, oo
       return m;
     }
 
-    // CASE: neutral
+    // CASE: unlocked
     // TODO-FIXME: for entry we currently inflate and then try to CAS _owner.
     // If we know we're inflating for entry it's better to inflate by swinging a
     // pre-locked ObjectMonitor pointer into the object header.   A successful
@@ -1610,9 +1610,7 @@ ObjectMonitor* ObjectSynchronizer::inflate_impl(JavaThread* inflating_thread, oo
     // to inflate and then CAS() again to try to swing _owner from null to current.
     // An inflateTry() method that we could call from enter() would be useful.
 
-    // Catch if the object's header is not neutral (not locked and
-    // not marked is what we care about here).
-    assert(mark.is_neutral(), "invariant: header=" INTPTR_FORMAT, mark.value());
+    assert(mark.is_unlocked(), "invariant: header=" INTPTR_FORMAT, mark.value());
     ObjectMonitor* m = new ObjectMonitor(object);
     // prepare m for installation - set monitor to initial state
     m->set_header(mark);
@@ -1635,7 +1633,7 @@ ObjectMonitor* ObjectSynchronizer::inflate_impl(JavaThread* inflating_thread, oo
     OM_PERFDATA_OP(Inflations, inc());
     if (log_is_enabled(Trace, monitorinflation)) {
       ResourceMark rm;
-      lsh.print_cr("inflate(neutral): object=" INTPTR_FORMAT ", mark="
+      lsh.print_cr("inflate(unlocked): object=" INTPTR_FORMAT ", mark="
                    INTPTR_FORMAT ", type='%s'", p2i(object),
                    object->mark().value(), object->klass()->external_name());
     }

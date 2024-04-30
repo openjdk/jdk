@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2019 SAP SE. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
  * Copyright (c) 2022, IBM Corp.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -35,6 +35,7 @@
 #include "loadlib_aix.hpp"
 #include "misc_aix.hpp"
 #include "porting_aix.hpp"
+#include "logging/log.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/ostream.hpp"
 
@@ -116,8 +117,8 @@ static void print_entry(const loaded_module_t* lm, outputStream* os) {
             ", data: " INTPTR_FORMAT " - " INTPTR_FORMAT " "
             "%s",
       (lm->is_in_vm ? '*' : ' '),
-      lm->text, (uintptr_t)lm->text + lm->text_len,
-      lm->data, (uintptr_t)lm->data + lm->data_len,
+      p2i(lm->text), (uintptr_t)lm->text + lm->text_len,
+      p2i(lm->data), (uintptr_t)lm->data + lm->data_len,
       lm->path);
   if (lm->member) {
     os->print("(%s)", lm->member);
@@ -194,7 +195,7 @@ static bool reload_table() {
       if (errno == ENOMEM) {
         buflen *= 2;
       } else {
-        trcVerbose("loadquery failed (%d)", errno);
+        log_warning(os)("loadquery failed (%d)", errno);
         goto cleanup;
       }
     } else {
@@ -211,7 +212,7 @@ static bool reload_table() {
 
     loaded_module_t* lm = (loaded_module_t*) ::malloc(sizeof(loaded_module_t));
     if (!lm) {
-      trcVerbose("OOM.");
+      log_warning(os)("OOM.");
       goto cleanup;
     }
 
@@ -224,7 +225,7 @@ static bool reload_table() {
 
     lm->path = g_stringlist.add(ldi->ldinfo_filename);
     if (!lm->path) {
-      trcVerbose("OOM.");
+      log_warning(os)("OOM.");
       free(lm);
       goto cleanup;
     }
@@ -246,7 +247,7 @@ static bool reload_table() {
     if (*p_mbr_name) {
       lm->member = g_stringlist.add(p_mbr_name);
       if (!lm->member) {
-        trcVerbose("OOM.");
+        log_warning(os)("OOM.");
         free(lm);
         goto cleanup;
       }

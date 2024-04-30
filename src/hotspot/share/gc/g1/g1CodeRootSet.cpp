@@ -152,7 +152,7 @@ public:
     clean(always_true);
   }
 
-  void iterate_at_safepoint(CodeBlobClosure* blk) {
+  void iterate_at_safepoint(NMethodClosure* blk) {
     assert_at_safepoint();
     // A lot of code root sets are typically empty.
     if (is_empty()) {
@@ -161,7 +161,7 @@ public:
 
     auto do_value =
       [&] (nmethod** value) {
-        blk->do_code_blob(*value);
+        blk->do_nmethod(*value);
         return true;
       };
     _table_scanner.do_safepoint_scan(do_value);
@@ -288,7 +288,7 @@ void G1CodeRootSet::reset_table_scanner() {
   _table->reset_table_scanner();
 }
 
-void G1CodeRootSet::nmethods_do(CodeBlobClosure* blk) const {
+void G1CodeRootSet::nmethods_do(NMethodClosure* blk) const {
   DEBUG_ONLY(_is_iterating = true;)
   _table->iterate_at_safepoint(blk);
   DEBUG_ONLY(_is_iterating = false;)
@@ -317,14 +317,14 @@ class CleanCallback : public StackObj {
   };
 
   PointsIntoHRDetectionClosure _detector;
-  CodeBlobToOopClosure _blobs;
+  NMethodToOopClosure _nmethod_cl;
 
  public:
-  CleanCallback(HeapRegion* hr) : _detector(hr), _blobs(&_detector, !CodeBlobToOopClosure::FixRelocations) {}
+  CleanCallback(HeapRegion* hr) : _detector(hr), _nmethod_cl(&_detector, !NMethodToOopClosure::FixRelocations) {}
 
   bool operator()(nmethod** value) {
     _detector._points_into = false;
-    _blobs.do_code_blob(*value);
+    _nmethod_cl.do_nmethod(*value);
     return !_detector._points_into;
   }
 };

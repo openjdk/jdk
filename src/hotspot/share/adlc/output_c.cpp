@@ -1902,7 +1902,7 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
 // target specific instruction object encodings.
 // Define the ___Node::emit() routine
 //
-// (1) void  ___Node::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
+// (1) void  ___Node::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
 // (2)   // ...  encoding defined by user
 // (3)
 // (4) }
@@ -2301,7 +2301,7 @@ public:
       // Check results of prior scan
       if ( ! _may_reloc ) {
         // Definitely don't need relocation information
-        fprintf( _fp, "emit_%s(cbuf, ", d32_hi_lo );
+        fprintf( _fp, "emit_%s(masm, ", d32_hi_lo );
         emit_replacement(); fprintf(_fp, ")");
       }
       else {
@@ -2315,26 +2315,26 @@ public:
         fprintf(_fp,"if ( opnd_array(%d)->%s_reloc() != relocInfo::none ) {\n",
                 _operand_idx, disp_constant);
         fprintf(_fp,"  ");
-        fprintf(_fp,"emit_%s_reloc(cbuf, ", d32_hi_lo );
+        fprintf(_fp,"emit_%s_reloc(masm, ", d32_hi_lo );
         emit_replacement();             fprintf(_fp,", ");
         fprintf(_fp,"opnd_array(%d)->%s_reloc(), ",
                 _operand_idx, disp_constant);
         fprintf(_fp, "%d", _reloc_form);fprintf(_fp, ");");
         fprintf(_fp,"\n");
         fprintf(_fp,"} else {\n");
-        fprintf(_fp,"  emit_%s(cbuf, ", d32_hi_lo);
+        fprintf(_fp,"  emit_%s(masm, ", d32_hi_lo);
         emit_replacement(); fprintf(_fp, ");\n"); fprintf(_fp,"}");
       }
     }
     else if ( _doing_emit_d16 ) {
       // Relocation of 16-bit values is not supported
-      fprintf(_fp,"emit_d16(cbuf, ");
+      fprintf(_fp,"emit_d16(masm, ");
       emit_replacement(); fprintf(_fp, ")");
       // No relocation done for 16-bit values
     }
     else if ( _doing_emit8 ) {
       // Relocation of 8-bit values is not supported
-      fprintf(_fp,"emit_d8(cbuf, ");
+      fprintf(_fp,"emit_d8(masm, ");
       emit_replacement(); fprintf(_fp, ")");
       // No relocation done for 8-bit values
     }
@@ -2675,7 +2675,7 @@ void ArchDesc::defineEmit(FILE* fp, InstructForm& inst) {
 
   // (1)
   // Output instruction's emit prototype
-  fprintf(fp, "void %sNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const {\n", inst._ident);
+  fprintf(fp, "void %sNode::emit(C2_MacroAssembler* masm, PhaseRegAlloc* ra_) const {\n", inst._ident);
 
   // If user did not define an encode section,
   // provide stub that does not generate any machine code.
@@ -2685,12 +2685,9 @@ void ArchDesc::defineEmit(FILE* fp, InstructForm& inst) {
     return;
   }
 
-  // Save current instruction's starting address (helps with relocation).
-  fprintf(fp, "  cbuf.set_insts_mark();\n");
-
   // For MachConstantNodes which are ideal jump nodes, fill the jump table.
   if (inst.is_mach_constant() && inst.is_ideal_jump()) {
-    fprintf(fp, "  ra_->C->output()->constant_table().fill_jump_table(cbuf, (MachConstantNode*) this, _index2label);\n");
+    fprintf(fp, "  ra_->C->output()->constant_table().fill_jump_table(masm, (MachConstantNode*) this, _index2label);\n");
   }
 
   // Output each operand's offset into the array of registers.

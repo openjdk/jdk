@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -218,11 +218,8 @@ inline ZForwardingEntry ZForwarding::next(ZForwardingCursor* cursor) const {
   return at(cursor);
 }
 
-inline zaddress ZForwarding::find(zaddress_unsafe addr) {
-  const uintptr_t from_index = (ZAddress::offset(addr) - start()) >> object_alignment_shift();
-  ZForwardingCursor cursor;
-  const ZForwardingEntry entry = find(from_index, &cursor);
-  return entry.populated() ? ZOffset::address(to_zoffset(entry.to_offset())) : zaddress::null;
+inline uintptr_t ZForwarding::index(zoffset from_offset) {
+  return (from_offset - start()) >> object_alignment_shift();
 }
 
 inline ZForwardingEntry ZForwarding::find(uintptr_t from_index, ZForwardingCursor* cursor) const {
@@ -241,6 +238,25 @@ inline ZForwardingEntry ZForwarding::find(uintptr_t from_index, ZForwardingCurso
 
   // Match not found, return empty entry
   return entry;
+}
+
+inline zaddress ZForwarding::find(zoffset from_offset, ZForwardingCursor* cursor) {
+  const uintptr_t from_index = index(from_offset);
+  const ZForwardingEntry entry = find(from_index, cursor);
+  return entry.populated() ? ZOffset::address(to_zoffset(entry.to_offset())) : zaddress::null;
+}
+
+inline zaddress ZForwarding::find(zaddress from_addr, ZForwardingCursor* cursor) {
+  return find(ZAddress::offset(from_addr), cursor);
+}
+
+inline zaddress ZForwarding::find(zaddress_unsafe from_addr, ZForwardingCursor* cursor) {
+  return find(ZAddress::offset(from_addr), cursor);
+}
+
+inline zaddress ZForwarding::find(zaddress_unsafe from_addr) {
+  ZForwardingCursor cursor;
+  return find(from_addr, &cursor);
 }
 
 inline zoffset ZForwarding::insert(uintptr_t from_index, zoffset to_offset, ZForwardingCursor* cursor) {
@@ -269,6 +285,17 @@ inline zoffset ZForwarding::insert(uintptr_t from_index, zoffset to_offset, ZFor
       entry = next(cursor);
     }
   }
+}
+
+inline zaddress ZForwarding::insert(zoffset from_offset, zaddress to_addr, ZForwardingCursor* cursor) {
+  const uintptr_t from_index = index(from_offset);
+  const zoffset to_offset = ZAddress::offset(to_addr);
+  const zoffset to_offset_final = insert(from_index, to_offset, cursor);
+  return ZOffset::address(to_offset_final);
+}
+
+inline zaddress ZForwarding::insert(zaddress from_addr, zaddress to_addr, ZForwardingCursor* cursor) {
+  return insert(ZAddress::offset(from_addr), to_addr, cursor);
 }
 
 inline void ZForwarding::relocated_remembered_fields_register(volatile zpointer* p) {

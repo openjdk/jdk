@@ -1092,8 +1092,8 @@ juint Node::max_flags() {
 // Print as assembly
 void Node::format( PhaseRegAlloc *, outputStream *st ) const {}
 //------------------------------emit-------------------------------------------
-// Emit bytes starting at parameter 'ptr'.
-void Node::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {}
+// Emit bytes using C2_MacroAssembler
+void Node::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {}
 //------------------------------size-------------------------------------------
 // Size of instruction in bytes
 uint Node::size(PhaseRegAlloc *ra_) const { return 0; }
@@ -3011,7 +3011,7 @@ uint TypeNode::hash() const {
   return Node::hash() + _type->hash();
 }
 bool TypeNode::cmp(const Node& n) const {
-  return !Type::cmp(_type, ((TypeNode&)n)._type);
+  return Type::equals(_type, n.as_Type()->_type);
 }
 const Type* TypeNode::bottom_type() const { return _type; }
 const Type* TypeNode::Value(PhaseGVN* phase) const { return _type; }

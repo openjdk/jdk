@@ -97,7 +97,7 @@ public class CLDRConverter {
     private static final String DST = "dst";
     private static final String NO_SUBST = "-";
 
-    private static SupplementDataParseHandler handlerSuppl;
+    private static SupplementalDataParseHandler handlerSuppl;
     private static LikelySubtagsParseHandler handlerLikelySubtags;
     private static WinZonesParseHandler handlerWinZones;
     static PluralsParseHandler handlerPlurals;
@@ -471,7 +471,7 @@ public class CLDRConverter {
         // SupplementalData file also provides the "parent" locales which
         // are othrwise not to be fallen back. Process them here as well.
         //
-        handlerSuppl = new SupplementDataParseHandler();
+        handlerSuppl = new SupplementalDataParseHandler();
         parseLDMLFile(new File(SPPL_SOURCE_FILE), handlerSuppl);
         Map<String, Object> parentData = handlerSuppl.getData("root");
         parentData.keySet().stream()

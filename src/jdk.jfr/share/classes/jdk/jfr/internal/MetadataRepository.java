@@ -144,10 +144,6 @@ public final class MetadataRepository {
         }
         EventConfiguration configuration = getConfiguration(eventClass, true);
         if (configuration == null) {
-            if (eventClass.getAnnotation(MirrorEvent.class) != null) {
-                // Don't register mirror classes.
-                return null;
-            }
             PlatformEventType pe = findMirrorType(eventClass);
             configuration = makeConfiguration(eventClass, pe, dynamicAnnotations, dynamicFields);
         }
@@ -162,8 +158,7 @@ public final class MetadataRepository {
     }
 
     private PlatformEventType findMirrorType(Class<? extends jdk.internal.event.Event> eventClass) throws InternalError {
-        String fullName = eventClass.getModule().getName() + ":" + eventClass.getName();
-        Class<? extends Event> mirrorClass = MirrorEvents.find(fullName);
+        Class<? extends MirrorEvent> mirrorClass = MirrorEvents.find(eventClass);
         if (mirrorClass == null) {
             return null; // not a mirror
         }

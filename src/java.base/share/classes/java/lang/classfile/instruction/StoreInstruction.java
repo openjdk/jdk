@@ -72,6 +72,8 @@ public sealed interface StoreInstruction extends Instruction
      * @param op the opcode for the specific type of store instruction,
      *           which must be of kind {@link Opcode.Kind#STORE}
      * @param slot the local variable slot to store to
+     * @throws IllegalArgumentException if the opcode kind is not
+     *         {@link Opcode.Kind#STORE}.
      */
     static StoreInstruction of(Opcode op, int slot) {
         Util.checkKind(op, Opcode.Kind.STORE);

@@ -55,6 +55,7 @@ import jdk.jfr.internal.jfc.JFC;
 import jdk.jfr.internal.jfc.model.JFCModel;
 import jdk.jfr.internal.jfc.model.JFCModelException;
 import jdk.jfr.internal.jfc.model.XmlInput;
+import jdk.jfr.internal.util.Utils;
 
 /**
  * JFR.start
@@ -317,11 +318,35 @@ final class DCmdStart extends AbstractDCmd {
         return false;
     }
 
+    public String[] printStartupHelp() {
+        Map<String, String> parameters = Map.of(
+            "$SYNTAX", "-XX:StartFlightRecording:[options]",
+            "$SOURCE", "-XX:StartFlightRecording:",
+            "$DELIMITER", ",",
+            "$DELIMITER_NAME", "comma",
+            "$DIRECTORY", exampleDirectory(),
+            "$JFC_OPTIONS", jfcOptions()
+        );
+        return Utils.format(helpTemplate(), parameters).lines().toArray(String[]::new);
+    }
+
     @Override
     public String[] printHelp() {
+        Map<String, String> parameters = Map.of(
+           "$SYNTAX", "JFR.start [options]",
+           "$SOURCE", "$ jcmd <pid> JFR.start ",
+           "$DELIMITER", " ",
+           "$DELIMITER_NAME", "whitespace",
+           "$DIRECTORY", exampleDirectory(),
+           "$JFC_OPTIONS", jfcOptions()
+        );
+        return Utils.format(helpTemplate(), parameters).lines().toArray(String[]::new);
+    }
+
+    private static String helpTemplate() {
             // 0123456789001234567890012345678900123456789001234567890012345678900123456789001234567890
         return """
-               Syntax : JFR.start [options]
+               Syntax : $SYNTAX
 
                Options:
 
@@ -352,8 +377,8 @@ final class DCmdStart extends AbstractDCmd {
                                   generated from the PID and the current date in the specified
                                   directory. (STRING, no default value)
 
-                                  Note: If a filename is given, '%%p' in the filename will be
-                                  replaced by the PID, and '%%t' will be replaced by the time in
+                                  Note: If a filename is given, '%p' in the filename will be
+                                  replaced by the PID, and '%t' will be replaced by the time in
                                   'yyyy_MM_dd_HH_mm_ss' format.
 
                  maxage           (Optional) Maximum time to keep the recorded data on disk. This
@@ -409,27 +434,28 @@ final class DCmdStart extends AbstractDCmd {
                take  precedence. The whitespace character can be omitted for timespan values,
                i.e. 20s. For more information about the settings syntax, see Javadoc of the
                jdk.jfr package.
-               %s
-               Options must be specified using the <key> or <key>=<value> syntax.
+               $JFC_OPTIONS
+               Options must be specified using the <key> or <key>=<value> syntax. Multiple
+               options are separated with a $DELIMITER_NAME.
 
                Example usage:
 
-                $ jcmd <pid> JFR.start
-                $ jcmd <pid> JFR.start filename=dump.jfr
-                $ jcmd <pid> JFR.start filename=%s
-                $ jcmd <pid> JFR.start dumponexit=true
-                $ jcmd <pid> JFR.start maxage=1h maxsize=1000M
-                $ jcmd <pid> JFR.start settings=profile
-                $ jcmd <pid> JFR.start delay=5m settings=my.jfc
-                $ jcmd <pid> JFR.start gc=high method-profiling=high
-                $ jcmd <pid> JFR.start jdk.JavaMonitorEnter#threshold=1ms
-                $ jcmd <pid> JFR.start +HelloWorld#enabled=true +HelloWorld#stackTrace=true
-                $ jcmd <pid> JFR.start settings=user.jfc com.example.UserDefined#enabled=true
-                $ jcmd <pid> JFR.start settings=none +Hello#enabled=true
+                $SOURCE
+                $SOURCEfilename=dump.jfr
+                $SOURCEfilename=$DIRECTORY
+                $SOURCEdumponexit=true
+                $SOURCEmaxage=1h$DELIMITERmaxsize=1000M
+                $SOURCEsettings=profile
+                $SOURCEdelay=5m$DELIMITERsettings=my.jfc
+                $SOURCEgc=high$DELIMITERmethod-profiling=high
+                $SOURCEjdk.JavaMonitorEnter#threshold=1ms
+                $SOURCE+HelloWorld#enabled=true$DELIMITER+HelloWorld#stackTrace=true
+                $SOURCEsettings=user.jfc$DELIMITERcom.example.UserDefined#enabled=true
+                $SOURCEsettings=none$DELIMITER+Hello#enabled=true
 
-               Note, if the default event settings are modified, overhead may exceed 1%%.
+               Note, if the default event settings are modified, overhead may exceed 1%.
 
-               """.formatted(jfcOptions(), exampleDirectory()).lines().toArray(String[]::new);
+               """;
     }
 
     private static String jfcOptions() {

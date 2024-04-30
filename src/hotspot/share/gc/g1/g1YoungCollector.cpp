@@ -484,13 +484,8 @@ void G1YoungCollector::set_young_collection_default_active_worker_threads(){
 }
 
 void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info) {
-
-  // Must be before collection set calculation, requires collection set to not
-  // be calculated yet.
-  if (collector_state()->in_concurrent_start_gc()) {
-    concurrent_mark()->pre_concurrent_start(_gc_cause);
-  }
-
+  // Flush various data in thread-local buffers to be able to determine the collection
+  // set
   {
     Ticks start = Ticks::now();
     G1PreEvacuateCollectionSetBatchTask cl;
@@ -500,6 +495,10 @@ void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info) 
 
   // Needs log buffers flushed.
   calculate_collection_set(evacuation_info, policy()->max_pause_time_ms());
+
+  if (collector_state()->in_concurrent_start_gc()) {
+    concurrent_mark()->pre_concurrent_start(_gc_cause);
+  }
 
   // Please see comment in g1CollectedHeap.hpp and
   // G1CollectedHeap::ref_processing_init() to see how
