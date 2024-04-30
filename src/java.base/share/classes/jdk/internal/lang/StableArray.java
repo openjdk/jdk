@@ -23,7 +23,7 @@ import java.util.Objects;
  * @since 23
  */
 public sealed interface StableArray<V>
-        permits StableArrayOne, StableArrayZero {
+        permits StableArrayZero, StableArrayOne {
 
     /**
      * {@return the {@linkplain Shape} of this stable array}

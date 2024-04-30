@@ -108,6 +108,18 @@ public final class StableValueImpl<V> implements StableValue<V> {
         }
         // Now, fall back to volatile semantics.
         return orThrowVolatile();
+
+/*
+        // This is intentionally an old switch statement as it generates
+        // more compact byte code.
+        switch (state) {
+            case UNSET:    { throw StableUtil.notSet();}
+            case NON_NULL: { return value; }
+            case NULL:     { return null; }
+            case ERROR:    { throw StableUtil.error(this); }
+        }
+        throw shouldNotReachHere();*/
+
     }
 
     @DontInline // Slow-path taken at most once per thread if set
