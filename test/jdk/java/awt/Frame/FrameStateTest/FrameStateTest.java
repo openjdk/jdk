@@ -21,15 +21,6 @@
  * questions.
  */
 
-/*
- * FrameStateTest.java
- *
- * summary: Checks that when setState(Frame.ICONIFIED) is called before
- *      setVisible(true) the Frame is shown in the proper iconified state.
- *      The problem was that it did not honor the initial iconic state, but
- *      instead was shown in the NORMAL state.
- */
-
 import java.awt.Button;
 import java.awt.Checkbox;
 import java.awt.CheckboxGroup;
@@ -52,9 +43,9 @@ import javax.swing.Timer;
  * @test
  * @bug 4157271
  * @summary Checks that when a Frame is created it honors the state it
- *       was set to. The bug was that if setState(Frame.ICONIFIED) was
- *       called before setVisible(true) the Frame would be shown in NORMAL
- *       state instead of ICONIFIED.
+ *          was set to. The bug was that if setState(Frame.ICONIFIED) was
+ *          called before setVisible(true) the Frame would be shown in NORMAL
+ *          state instead of ICONIFIED.
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual FrameStateTest
