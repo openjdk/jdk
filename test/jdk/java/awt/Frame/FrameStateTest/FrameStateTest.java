@@ -174,7 +174,7 @@ public class FrameStateTest implements ActionListener {
             add(b2 = new Button("Resize"));
             add(b3 = new Button("Iconify"));
             add(b4 = new Button("Iconify and Restore"));
-            add(b5 = new Button("Hide and show"));
+            add(b5 = new Button("Hide and Show"));
             add(b6 = new Button("Hide, Iconify and Show"));
             add(b7 = new Button("Hide, Iconify, Show and Restore"));
             b1.addActionListener(this);
