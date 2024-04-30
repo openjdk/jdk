@@ -992,6 +992,7 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
      * @param name the name of the attribute to find
      */
     public static AttributeMapper<?> standardAttribute(Utf8Entry name) {
+        // critical bootstrap path, so no lambdas nor method handles here
         return switch (name.hashCode()) {
             case 0x78147009 ->
                 name.equalsString(NAME_ANNOTATION_DEFAULT) ? annotationDefault() : null;
