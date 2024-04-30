@@ -39,7 +39,7 @@ import java.util.stream.Stream;
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Thread)
 @Warmup(iterations = 5, time = 1)
-@Measurement(iterations = 5, time = 1)
+@Measurement(iterations = 5, time = 2)
 @Fork(value = 2, jvmArgsAppend = {"--add-exports=java.base/jdk.internal.lang=ALL-UNNAMED", "--enable-preview"})
 @OperationsPerInvocation(1000)
 public class StableListSumBenchmark {

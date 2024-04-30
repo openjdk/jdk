@@ -60,6 +60,7 @@ public class StableBenchmark {
     private final Supplier<Integer> dcl = new Dcl<>(() -> VALUE);
     private final List<StableValue<Integer>> list = StableValue.ofList(1);
     private final AtomicReference<Integer> atomic = new AtomicReference<>(VALUE);
+    private final Supplier<Integer> supplier = () -> VALUE;
 
     @Setup
     public void setup() {
@@ -108,6 +109,16 @@ public class StableBenchmark {
         int sum = 0;
         for (int i = 0; i < ITERATIONS; i++) {
             sum += list.get(0).orThrow();
+        }
+        return sum;
+    }
+
+    // Reference case
+    @Benchmark
+    public int supplier() {
+        int sum = 0;
+        for (int i = 0; i < ITERATIONS; i++) {
+            sum += supplier.get();
         }
         return sum;
     }
