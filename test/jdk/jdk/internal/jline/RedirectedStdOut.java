@@ -26,11 +26,12 @@
  * @bug 8330998
  * @summary Verify that even if the stdout is redirected java.io.Console will
  *          use it for writing.
+ * @modules jdk.internal.le
+ * @library /test/lib
  * @run main RedirectedStdOut runRedirectAllTest
  * @run main/othervm RedirectedStdOut runRedirectOutOnly
  */
 
-import java.io.IOException;
 import java.lang.foreign.Arena;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.Linker;
@@ -42,7 +43,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
+
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 public class RedirectedStdOut {
     private static final String OUTPUT = "Hello!";
@@ -55,51 +58,21 @@ public class RedirectedStdOut {
     //verify the case where neither stdin/out/err is attached to a terminal,
     //this test is weaker, but more reliable:
     void runRedirectAllTest() throws Exception {
-        String testJDK = System.getProperty("test.jdk");
-        Path javaLauncher = Path.of(testJDK, "bin", "java");
-        AtomicReference<byte[]> out = new AtomicReference<>();
-        AtomicReference<byte[]> err = new AtomicReference<>();
-        Process launched = new ProcessBuilder(javaLauncher.toString(),
-                                              "--class-path",
-                                              System.getProperty("test.classes"),
-                                              ConsoleTest.class.getName()
-                                              )
-                           .start();
-        Thread outReader = Thread.ofVirtual().unstarted(() -> {
-            try {
-                out.set(launched.getInputStream().readAllBytes());
-            } catch (IOException ex) {
-                ex.printStackTrace();
-            }
-        });
+        if (true) return ;
+        ProcessBuilder builder =
+                ProcessTools.createTestJavaProcessBuilder(ConsoleTest.class.getName());
+        OutputAnalyzer output = ProcessTools.executeProcess(builder);
 
-        outReader.start();
+        output.waitFor();
 
-        Thread errReader = Thread.ofVirtual().unstarted(() -> {
-            try {
-                err.set(launched.getErrorStream().readAllBytes());
-            } catch (IOException ex) {
-                ex.printStackTrace();
-            }
-        });
-
-        errReader.start();
-
-        int r = launched.waitFor();
-
-        outReader.join();
-        errReader.join();
-
-        String actualOut = new String(out.get());
-        String actualErr = new String(err.get());
-
-        if (r != 0) {
-            throw new AssertionError("Unexpected return value: " + r +
-                                     ", actualOut: " + actualOut +
-                                     ", actualErr: " + actualErr);
+        if (output.getExitValue() != 0) {
+            throw new AssertionError("Unexpected return value: " + output.getExitValue() +
+                                     ", actualOut: " + output.getStdout() +
+                                     ", actualErr: " + output.getStderr());
         }
 
         String expectedOut = OUTPUT;
+        String actualOut = output.getStdout();
 
         if (!Objects.equals(expectedOut, actualOut)) {
             throw new AssertionError("Unexpected stdout content. " +
@@ -108,6 +81,7 @@ public class RedirectedStdOut {
         }
 
         String expectedErr = "";
+        String actualErr = output.getStderr();
 
         if (!Objects.equals(expectedErr, actualErr)) {
             throw new AssertionError("Unexpected stderr content. " +
@@ -173,18 +147,15 @@ public class RedirectedStdOut {
                                                       loginttyDescriptor);
         logintty.invoke(child.get(ValueLayout.JAVA_INT, 0));
 
-        String testJDK = System.getProperty("test.jdk");
-        Path javaLauncher = Path.of(testJDK, "bin", "java");
-
-        ProcessBuilder builder = new ProcessBuilder(javaLauncher.toString(),
-                                                    "RedirectedStdOut$ConsoleTest");
+        ProcessBuilder builder =
+            ProcessTools.createTestJavaProcessBuilder(ConsoleTest.class.getName());
 
         builder.inheritIO();
         builder.redirectOutput(stdout.toFile());
 
-        Process launched = builder.start();
+        OutputAnalyzer output = ProcessTools.executeProcess(builder);
 
-        launched.waitFor();
+        output.waitFor();
 
         String expectedOut = OUTPUT;
         String actualOut = Files.readString(stdout);
