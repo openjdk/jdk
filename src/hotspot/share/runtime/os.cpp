@@ -1713,7 +1713,7 @@ const char* os::errno_name(int e) {
 
 // create binary file, rewriting existing file if required
 int os::create_binary_file(const char* path, bool rewrite_existing) {
-  int oflags = O_WRONLY | O_CREAT WINDOWS_ONLY(| _O_BINARY);
+  int oflags = O_WRONLY | O_CREAT WINDOWS_ONLY(| O_BINARY);
   oflags |= rewrite_existing ? O_TRUNC : O_EXCL;
   return ::open(path, oflags, S_IREAD | S_IWRITE);
 }
