@@ -34,31 +34,40 @@ import java.nio.file.Paths;
 import java.nio.channels.FileChannel;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.NoSuchFileException;
+import java.util.List;
+
 import static java.nio.file.StandardOpenOption.*;
 
 
 public class BlockDeviceSize {
-    private static final String BLK_FNAME = "/dev/sda1";
-    private static final Path BLK_PATH = Paths.get(BLK_FNAME);
+    private static final List<String> BLK_FNAMES = List.of("/dev/sda1", "/dev/nvme0n1") ;
+
+    public static Path getBlkPath(String blkFileName) {
+        return Paths.get(blkFileName);
+    }
 
     public static void main(String[] args) throws Throwable {
-        try (FileChannel ch = FileChannel.open(BLK_PATH, READ);
-             RandomAccessFile file = new RandomAccessFile(BLK_FNAME, "r")) {
+        for (String blkFname: BLK_FNAMES) {
+            Path blkPath = getBlkPath(blkFname);
+            try (FileChannel ch = FileChannel.open(blkPath, READ);
+                 RandomAccessFile file = new RandomAccessFile(blkFname, "r")) {
 
-            long size1 = ch.size();
-            long size2 = file.length();
-            if (size1 != size2) {
-                throw new RuntimeException("size differs when retrieved" +
-                        " in different ways: " + size1 + " != " + size2);
+                long size1 = ch.size();
+                long size2 = file.length();
+                if (size1 != size2) {
+                    throw new RuntimeException("size differs when retrieved" +
+                            " in different ways: " + size1 + " != " + size2);
+                }
+                System.out.println("OK");
+
+            } catch (NoSuchFileException nsfe) {
+                System.err.println("File " + blkFname + " not found." +
+                        " Skipping test");
+            } catch (AccessDeniedException ade) {
+                throw new RuntimeException("Access to " + blkFname + " is denied."
+                        + " Run test as root.", ade);
             }
-            System.out.println("OK");
 
-        } catch (NoSuchFileException nsfe) {
-            System.err.println("File " + BLK_FNAME + " not found." +
-                    " Skipping test");
-        } catch (AccessDeniedException ade) {
-            throw new RuntimeException("Access to " + BLK_FNAME + " is denied."
-                    + " Run test as root.", ade);
         }
     }
 }
