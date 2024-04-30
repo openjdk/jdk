@@ -369,7 +369,11 @@ inline idx_t ShenandoahRegionPartitions::find_index_of_next_available_region(
     start_index = leftmost_idx;
   }
   idx_t result = _membership[int(which_partition)].find_first_set_bit(start_index, rightmost_idx + 1);
-  return (result > rightmost_idx)? _max: result;
+  if (result > rightmost_idx) {
+    result = _max;
+  }
+  assert (result >= start_index, "Requires progress");
+  return result;
 }
 
 inline idx_t ShenandoahRegionPartitions::find_index_of_previous_available_region(
@@ -382,7 +386,11 @@ inline idx_t ShenandoahRegionPartitions::find_index_of_previous_available_region
     last_index = rightmost_idx;
   }
   idx_t result = _membership[int(which_partition)].find_last_set_bit(-1, last_index);
-  return (result < leftmost_idx)? -1: result;
+  if (result < leftmost_idx) {
+    result = -1;
+  }
+  assert (result <= last_index, "Requires progress");
+  return result;
 }
 
 inline idx_t ShenandoahRegionPartitions::find_index_of_next_available_cluster_of_regions(
@@ -391,7 +399,11 @@ inline idx_t ShenandoahRegionPartitions::find_index_of_next_available_cluster_of
   idx_t leftmost_idx = leftmost(which_partition);
   if ((rightmost_idx < leftmost_idx) || (start_index > rightmost_idx)) return _max;
   idx_t result = _membership[int(which_partition)].find_first_consecutive_set_bits(start_index, rightmost_idx + 1, cluster_size);
-  return (result > rightmost_idx)? _max: result;
+  if (result > rightmost_idx) {
+    result = _max;
+  }
+  assert (result >= start_index, "Requires progress");
+  return result;
 }
 
 inline idx_t ShenandoahRegionPartitions::find_index_of_previous_available_cluster_of_regions(
@@ -400,7 +412,11 @@ inline idx_t ShenandoahRegionPartitions::find_index_of_previous_available_cluste
   // if (leftmost_idx == max) then (last_index < leftmost_idx)
   if (last_index < leftmost_idx) return -1;
   idx_t result = _membership[int(which_partition)].find_last_consecutive_set_bits(leftmost_idx - 1, last_index, cluster_size);
-  return (result <= leftmost_idx)? -1: result;
+  if (result <= leftmost_idx) {
+    result = -1;
+  }
+  assert (result <= last_index, "Requires progress");
+  return result;
 }
 
 idx_t ShenandoahRegionPartitions::leftmost_empty(ShenandoahFreeSetPartitionId which_partition) {
