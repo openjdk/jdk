@@ -111,7 +111,7 @@ public class FrameStateTest implements ActionListener {
     public static void main(String[] args) throws Exception {
         PassFailJFrame
                 .builder()
-                .title("Frame Stateand Size Test Instructions")
+                .title("Frame State and Size Test Instructions")
                 .instructions(INSTRUCTIONS)
                 .testTimeOut(10)
                 .rows(26)
