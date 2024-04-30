@@ -144,11 +144,12 @@ public class Klist {
         switch (action) {
         case 'c':
             if (name == null) {
-                target = CredentialsCache.getInstance();
-                name = CredentialsCache.cacheName();
-            } else
+                CredentialsCache cc = CredentialsCache.getInstance();
+                target = cc;
+                name = cc.cacheName();
+            } else {
                 target = CredentialsCache.getInstance(name);
-
+            }
             if (target != null) {
                 return displayCache();
             } else {
@@ -172,8 +173,9 @@ public class Klist {
                 printHelp();
                 return -1;
             } else {
-                target = CredentialsCache.getInstance();
-                name = CredentialsCache.cacheName();
+                CredentialsCache cc = CredentialsCache.getInstance();
+                target = cc;
+                name = cc.cacheName();
                 if (target != null) {
                     return displayCache();
                 } else {

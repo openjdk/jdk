@@ -167,7 +167,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<languageMatch desired="aeb" supported="ar" distance="10" oneway="true"/>	<!-- Tunisian Arabic -->
 			<languageMatch desired="aec" supported="ar" distance="10" oneway="true"/>	<!-- Saidi Arabic -->
 			<languageMatch desired="afb" supported="ar" distance="10" oneway="true"/>	<!-- Gulf Arabic -->
-			<languageMatch desired="ajp" supported="ar" distance="10" oneway="true"/>	<!-- South Levantine Arabic -->
 			<languageMatch desired="apc" supported="ar" distance="10" oneway="true"/>	<!-- North Levantine Arabic -->
 			<languageMatch desired="apd" supported="ar" distance="10" oneway="true"/>	<!-- Sudanese Arabic -->
 			<languageMatch desired="arq" supported="ar" distance="10" oneway="true"/>	<!-- Algerian Arabic -->

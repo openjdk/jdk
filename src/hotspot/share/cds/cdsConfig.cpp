@@ -140,7 +140,7 @@ void CDSConfig::init_shared_archive_paths() {
     if (is_dumping_static_archive()) {
       vm_exit_during_initialization("-XX:ArchiveClassesAtExit cannot be used with -Xshare:dump");
     }
-    check_unsupported_dumping_properties();
+    check_unsupported_dumping_module_options();
 
     if (os::same_files(default_archive_path(), ArchiveClassesAtExit)) {
       vm_exit_during_initialization(
@@ -260,41 +260,52 @@ void CDSConfig::check_incompatible_property(const char* key, const char* value) 
 
 }
 
-static const char* unsupported_properties[] = {
-  "jdk.module.limitmods",
-  "jdk.module.upgrade.path",
-  "jdk.module.patch.0"
-};
-static const char* unsupported_options[] = {
-  "--limit-modules",
-  "--upgrade-module-path",
-  "--patch-module"
-};
+// Returns any JVM command-line option, such as "--patch-module", that's not supported by CDS.
+static const char* find_any_unsupported_module_option() {
+  // Note that arguments.cpp has translated the command-line options into properties. If we find an
+  // unsupported property, translate it back to its command-line option for better error reporting.
 
-void CDSConfig::check_unsupported_dumping_properties() {
-  assert(is_dumping_archive(), "this function is only used with CDS dump time");
-  assert(ARRAY_SIZE(unsupported_properties) == ARRAY_SIZE(unsupported_options), "must be");
-  // If a vm option is found in the unsupported_options array, vm will exit with an error message.
+  // The following properties are checked by Arguments::is_internal_module_property() and cannot be
+  // directly specified in the command-line.
+  static const char* unsupported_module_properties[] = {
+    "jdk.module.limitmods",
+    "jdk.module.upgrade.path",
+    "jdk.module.patch.0"
+  };
+  static const char* unsupported_module_options[] = {
+    "--limit-modules",
+    "--upgrade-module-path",
+    "--patch-module"
+  };
+
+  assert(ARRAY_SIZE(unsupported_module_properties) == ARRAY_SIZE(unsupported_module_options), "must be");
   SystemProperty* sp = Arguments::system_properties();
   while (sp != nullptr) {
-    for (uint i = 0; i < ARRAY_SIZE(unsupported_properties); i++) {
-      if (strcmp(sp->key(), unsupported_properties[i]) == 0) {
-        vm_exit_during_initialization(
-          "Cannot use the following option when dumping the shared archive", unsupported_options[i]);
+    for (uint i = 0; i < ARRAY_SIZE(unsupported_module_properties); i++) {
+      if (strcmp(sp->key(), unsupported_module_properties[i]) == 0) {
+        return unsupported_module_options[i];
       }
     }
     sp = sp->next();
   }
 
+  return nullptr; // not found
+}
+
+void CDSConfig::check_unsupported_dumping_module_options() {
+  assert(is_dumping_archive(), "this function is only used with CDS dump time");
+  const char* option = find_any_unsupported_module_option();
+  if (option != nullptr) {
+    vm_exit_during_initialization("Cannot use the following option when dumping the shared archive", option);
+  }
   // Check for an exploded module build in use with -Xshare:dump.
   if (!Arguments::has_jimage()) {
     vm_exit_during_initialization("Dumping the shared archive is not supported with an exploded module build");
   }
 }
 
-bool CDSConfig::check_unsupported_cds_runtime_properties() {
+bool CDSConfig::has_unsupported_runtime_module_options() {
   assert(UseSharedSpaces, "this function is only used with -Xshare:{on,auto}");
-  assert(ARRAY_SIZE(unsupported_properties) == ARRAY_SIZE(unsupported_options), "must be");
   if (ArchiveClassesAtExit != nullptr) {
     // dynamic dumping, just return false for now.
     // check_unsupported_dumping_properties() will be called later to check the same set of
@@ -302,20 +313,19 @@ bool CDSConfig::check_unsupported_cds_runtime_properties() {
     // are used.
     return false;
   }
-  for (uint i = 0; i < ARRAY_SIZE(unsupported_properties); i++) {
-    if (Arguments::get_property(unsupported_properties[i]) != nullptr) {
-      if (RequireSharedSpaces) {
-        warning("CDS is disabled when the %s option is specified.", unsupported_options[i]);
-      } else {
-        log_info(cds)("CDS is disabled when the %s option is specified.", unsupported_options[i]);
-      }
-      return true;
+  const char* option = find_any_unsupported_module_option();
+  if (option != nullptr) {
+    if (RequireSharedSpaces) {
+      warning("CDS is disabled when the %s option is specified.", option);
+    } else {
+      log_info(cds)("CDS is disabled when the %s option is specified.", option);
     }
+    return true;
   }
   return false;
 }
 
-bool CDSConfig::check_vm_args_consistency(bool patch_mod_javabase,  bool mode_flag_cmd_line) {
+bool CDSConfig::check_vm_args_consistency(bool patch_mod_javabase, bool mode_flag_cmd_line) {
   if (is_dumping_static_archive()) {
     if (!mode_flag_cmd_line) {
       // By default, -Xshare:dump runs in interpreter-only mode, which is required for deterministic archive.
@@ -363,7 +373,7 @@ bool CDSConfig::check_vm_args_consistency(bool patch_mod_javabase,  bool mode_fl
   if (UseSharedSpaces && patch_mod_javabase) {
     Arguments::no_shared_spaces("CDS is disabled when " JAVA_BASE_NAME " module is patched.");
   }
-  if (UseSharedSpaces && check_unsupported_cds_runtime_properties()) {
+  if (UseSharedSpaces && has_unsupported_runtime_module_options()) {
     UseSharedSpaces = false;
   }
 

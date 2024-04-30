@@ -892,7 +892,7 @@ jdk.tls.legacyAlgorithms=NULL, anon, RC4, DES, 3DES_EDE_CBC
 #   KeyLimits:
 #       " KeyLimit { , KeyLimit } "
 #
-#   WeakKeyLimit:
+#   KeyLimit:
 #       AlgorithmName Action Length
 #
 #   AlgorithmName:

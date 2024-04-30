@@ -407,32 +407,6 @@ public class SuperInitGood {
         }
     }
 
-    // local class declared before super(), but not used until after super()
-    public static class Test20 {
-        public Test20() {
-            class Foo {
-                Foo() {
-                    Test20.this.hashCode();
-                }
-            }
-            super();
-            new Foo();
-        }
-    }
-
-    // local class inside super() parameter list
-    public static class Test21 extends AtomicReference<Object> {
-        private int x;
-        public Test21() {
-            super(switch ("foo".hashCode()) {
-                default -> {
-                    class Nested {{ System.out.println(x); }}       // class is NOT instantiated - OK
-                    yield "bar";
-                }
-            });
-        }
-    }
-
     public static void main(String[] args) {
         new Test0();
         new Test1();
@@ -474,7 +448,5 @@ public class SuperInitGood {
             assert false : "unexpected exception: " + e;
         }
         new Test19(123);
-        new Test20();
-        new Test21();
     }
 }
