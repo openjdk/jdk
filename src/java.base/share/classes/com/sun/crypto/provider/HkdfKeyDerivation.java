@@ -26,13 +26,19 @@
 package com.sun.crypto.provider;
 
 import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.ProviderException;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidParameterSpecException;
 import java.util.List;
 import javax.crypto.KDFSpi;
+import javax.crypto.Mac;
 import javax.crypto.SecretKey;
+import javax.crypto.ShortBufferException;
 import javax.crypto.spec.HKDFParameterSpec;
 import javax.crypto.spec.KDFParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 
 /**
  * KeyDerivation implementation for the HKDF function.
@@ -43,6 +49,8 @@ import javax.crypto.spec.KDFParameterSpec;
  */
 abstract class HkdfKeyDerivation extends KDFSpi {
 
+    protected Mac hmacObj;
+    protected int hmacLen;
     protected String hmacAlgName;
     protected List<SecretKey> ikms;
     protected List<SecretKey> salts;
@@ -89,6 +97,13 @@ abstract class HkdfKeyDerivation extends KDFSpi {
         // inspect KDFParameterSpec object
         inspectKDFParameterSpec(kdfParameterSpec);
 
+        try {
+            // set up the HMAC instance
+            hmacLen = setupHMAC(hmacAlgName);
+        } catch(NoSuchAlgorithmException nsae) {
+            throw new ProviderException(nsae);
+        }
+
         return null;
     }
 
@@ -111,7 +126,19 @@ abstract class HkdfKeyDerivation extends KDFSpi {
         // inspect KDFParameterSpec object
         inspectKDFParameterSpec(kdfParameterSpec);
 
+        try {
+            // set up the HMAC instance
+            hmacLen = setupHMAC(hmacAlgName);
+        } catch(NoSuchAlgorithmException nsae) {
+            throw new ProviderException(nsae);
+        }
+
         return new byte[0];
+    }
+
+    protected int setupHMAC(String hmacAlgName) throws NoSuchAlgorithmException {
+        hmacObj = Mac.getInstance(hmacAlgName);
+        return hmacObj.getMacLength();
     }
 
     protected void inspectKDFParameterSpec(KDFParameterSpec kdfParameterSpec)
@@ -163,6 +190,90 @@ abstract class HkdfKeyDerivation extends KDFSpi {
             throw new InvalidParameterSpecException(
                 "The KDFParameterSpec object was not of a recognized type");
         }
+    }
+
+    /**
+     * Perform the HMAC-Extract operation.
+     *
+     * @param inputKey
+     *     the input keying material used for the HKDF-Extract operation.
+     * @param salt
+     *     the salt value used for HKDF-Extract.  If no salt is to be used a {@code null} value
+     *     should be provided.
+     *
+     * @return a byte array containing the pseudorandom key (PRK)
+     *
+     * @throws InvalidKeyException
+     *     if an invalid salt was provided through the {@code HkdfParameterSpec}
+     */
+    protected byte[] hkdfExtract(SecretKey inputKey, byte[] salt) throws InvalidKeyException {
+
+        if (salt == null) {
+            salt = new byte[hmacLen];
+        }
+        hmacObj.init(new SecretKeySpec(salt, "HKDF-Salt"));
+
+        return hmacObj.doFinal(inputKey.getEncoded());
+    }
+
+    /**
+     * Perform the HMAC-Expand operation.  At the end of the operation, the keyStream instance
+     * variable will contain the complete KDF output based on the input values and desired length.
+     *
+     * @param prk
+     *     the pseudorandom key used for HKDF-Expand
+     * @param info
+     *     optional context and application specific information or {@code null} if no info data is
+     *     provided.
+     * @param outLen
+     *     the length in bytes of the required output
+     *
+     * @return a byte array containing the complete KDF output.  This will be at least as long as
+     * the requested length in the {@code outLen} parameter, but will be rounded up to the nearest
+     * multiple of the HMAC output length.
+     *
+     * @throws InvalidKeyException
+     *     if an invalid key was provided through the {@code HkdfParameterSpec} or derived during
+     *     the generation of the PRK.
+     */
+    protected byte[] hkdfExpand(SecretKey prk, byte[] info, int outLen) throws InvalidKeyException {
+        byte[] kdfOutput;
+
+        // Calculate the number of rounds of HMAC that are needed to
+        // meet the requested data.  Then set up the buffers we will need.
+        hmacObj.init(prk);
+        if (info == null) {
+            info = new byte[0];
+        }
+        int rounds = (outLen + hmacLen - 1) / hmacLen;
+        kdfOutput = new byte[rounds * hmacLen];
+        int offset = 0;
+        int tLength = 0;
+
+        for (int i = 0; i < rounds; i++) {
+
+            // Calculate this round
+            try {
+                // Add T(i).  This will be an empty string on the first
+                // iteration since tLength starts at zero.  After the first
+                // iteration, tLength is changed to the HMAC length for the
+                // rest of the loop.
+                hmacObj.update(kdfOutput, Math.max(0, offset - hmacLen), tLength);
+                hmacObj.update(info);                       // Add info
+                hmacObj.update((byte) (i + 1));              // Add round number
+                hmacObj.doFinal(kdfOutput, offset);
+
+                tLength = hmacLen;
+                offset += hmacLen;                       // For next iteration
+            } catch (ShortBufferException sbe) {
+                // This really shouldn't happen given that we've
+                // sized the buffers to their largest possible size up-front,
+                // but just in case...
+                throw new RuntimeException(sbe);
+            }
+        }
+
+        return kdfOutput;
     }
 
     private static class HkdfExtExpBase extends HkdfKeyDerivation {
