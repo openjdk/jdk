@@ -104,6 +104,7 @@ public class TestCompatibleUseDefTypeSize {
         tests.put("test8",       () -> { return test8(aL.clone(), bD.clone()); });
         tests.put("test9",       () -> { return test9(aL.clone(), bD.clone()); });
         tests.put("test10",      () -> { return test10(aL.clone(), bD.clone()); });
+        tests.put("test11",      () -> { return test11(aC.clone()); });
 
         // Compute gold value for all test methods before compilation
         for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {
@@ -125,7 +126,8 @@ public class TestCompatibleUseDefTypeSize {
                  "test7",
                  "test8",
                  "test9",
-                 "test10"})
+                 "test10",
+                 "test11"})
     public void runTests() {
         for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {
             String name = entry.getKey();
@@ -457,5 +459,16 @@ public class TestCompatibleUseDefTypeSize {
             b[i] = Double.longBitsToDouble(a[i]);
         }
         return new Object[]{ a, b };
+    }
+
+    @Test
+    // MaxI reduction is with char type, but the MaxI char vector is not implemented.
+    static Object[] test11(char[] a) {
+        char m = 0;
+        for (int i = 0; i < a.length; i++) {
+            m = (char)Math.max(m, a[i]);
+            a[i] = 0;
+        }
+        return new Object[]{ a, new char[] { m } };
     }
 }
