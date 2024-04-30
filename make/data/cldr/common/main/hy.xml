@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 
 Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
@@ -2000,9 +2000,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 		</fields>
 		<timeZoneNames>
-			<zone type="America/Santa_Isabel">
-				<exemplarCity>Սանտա Իզաբել</exemplarCity>
-			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>Համաշխարհային կոորդինացված ժամանակ</standard>
@@ -2124,9 +2121,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Australia/Melbourne">
 				<exemplarCity>Մելբուրն</exemplarCity>
-			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>Քերի</exemplarCity>
 			</zone>
 			<zone type="Australia/Hobart">
 				<exemplarCity>Հոբարտ</exemplarCity>
@@ -2281,9 +2275,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Creston">
 				<exemplarCity>Քրեսթոն</exemplarCity>
 			</zone>
-			<zone type="America/Yellowknife">
-				<exemplarCity>Յելոունայֆ</exemplarCity>
-			</zone>
 			<zone type="America/Edmonton">
 				<exemplarCity>Էդմոնտոն</exemplarCity>
 			</zone>
@@ -2302,29 +2293,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Resolute">
 				<exemplarCity>Ռեզոլյուտ</exemplarCity>
 			</zone>
-			<zone type="America/Rainy_River">
-				<exemplarCity>Ռեյնի Ռիվեր</exemplarCity>
-			</zone>
 			<zone type="America/Rankin_Inlet">
 				<exemplarCity>Ռանկին Ինլեթ</exemplarCity>
 			</zone>
 			<zone type="America/Coral_Harbour">
 				<exemplarCity>Ատիկոկան</exemplarCity>
 			</zone>
-			<zone type="America/Thunder_Bay">
-				<exemplarCity>Թանդեր Բեյ</exemplarCity>
-			</zone>
-			<zone type="America/Nipigon">
-				<exemplarCity>Նիպիգոն</exemplarCity>
-			</zone>
 			<zone type="America/Toronto">
 				<exemplarCity>Տորոնտո</exemplarCity>
 			</zone>
 			<zone type="America/Iqaluit">
 				<exemplarCity>Իկալուիտ</exemplarCity>
-			</zone>
-			<zone type="America/Pangnirtung">
-				<exemplarCity>Պանգնիրտանգ</exemplarCity>
 			</zone>
 			<zone type="America/Moncton">
 				<exemplarCity>Մոնկտոն</exemplarCity>
@@ -3139,17 +3118,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Africa/Dar_es_Salaam">
 				<exemplarCity>Դար-Էս-Սալամ</exemplarCity>
 			</zone>
-			<zone type="Europe/Uzhgorod">
-				<exemplarCity>Ուժգորոդ</exemplarCity>
-			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>Կիև</exemplarCity>
 			</zone>
 			<zone type="Europe/Simferopol">
 				<exemplarCity>Սիմֆերոպոլ</exemplarCity>
-			</zone>
-			<zone type="Europe/Zaporozhye">
-				<exemplarCity>Զապոռոժյե</exemplarCity>
 			</zone>
 			<zone type="Africa/Kampala">
 				<exemplarCity>Կամպալա</exemplarCity>
@@ -3168,9 +3141,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Pacific/Honolulu">
 				<exemplarCity>Հոնոլուլու</exemplarCity>
-			</zone>
-			<zone type="Pacific/Johnston">
-				<exemplarCity>Ջոնսթոն</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>Անքորիջ</exemplarCity>
@@ -3807,11 +3777,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Լորդ Հաուի ամառային ժամանակ</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Մակկուորի կղզու ժամանակ</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>Մագադանի ժամանակ</generic>
@@ -3849,13 +3814,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Mawson">
 				<long>
 					<standard>Մոուսոնի ժամանակ</standard>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic>Հյուսիսարևմտյան Մեքսիկայի ժամանակ</generic>
-					<standard>Հյուսիսարևմտյան Մեքսիկայի ստանդարտ ժամանակ</standard>
-					<daylight>Հյուսիսարևմտյան Մեքսիկայի ամառային ժամանակ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">
