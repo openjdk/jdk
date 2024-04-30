@@ -569,11 +569,19 @@ public class TestModulePackages extends JavadocTester {
         sb.append("<div class=\"col-first " + color + " " + classes + "\"><a href=\""
                 + packageName.replace('.', '/') + "/package-summary.html\">"
                 + packageName + "</a></div>\n");
-        if (exportedTo != null && !(sb.toString().contains("href"))) {
-            sb.append("<div class=\"col-second " + color + " " + classes + "\" role=\"tablist\" tabindex=\"0\">" + exportedTo + "</div>\n");
+        if (exportedTo != null) {
+            if (exportedTo.contains("href")) {
+                sb.append("<div class=\"col-second " + color + " " + classes + "\">" + exportedTo + "</div>\n");
+            } else {
+                sb.append("<div class=\"col-second " + color + " " + classes + "\" role=\"tablist\" tabindex=\"0\">" + exportedTo + "</div>\n");
+            }
         }
-        if (openedTo != null && !(sb.toString().contains("href"))) {
-            sb.append("<div class=\"col-second " + color + " " + classes + "\" role=\"tablist\" tabindex=\"0\">" + openedTo + "</div>\n");
+        if (openedTo != null) {
+            if (openedTo.contains("href")) {
+                sb.append("<div class=\"col-second " + color + " " + classes + "\">" + openedTo + "</div>\n");
+            } else {
+                sb.append("<div class=\"col-second " + color + " " + classes + "\" role=\"tablist\" tabindex=\"0\">" + openedTo + "</div>\n");
+            }
         }
         sb.append("<div class=\"col-last " + color + " " + classes + "\" role=\"tablist\" tabindex=\"0\">" + desc + "</div>");
 

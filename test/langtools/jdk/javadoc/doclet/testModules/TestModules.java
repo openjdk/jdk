@@ -887,7 +887,7 @@ public class TestModules extends JavadocTester {
                 """
                     <div class="col-first odd-row-color all-modules-table all-modules-table-tab1"><a\
                      href="moduletags/module-summary.html">moduletags</a></div>
-                    <div class="col-last odd-row-color all-modules-table all-modules-table-tab1" role="tablist" tabindex="0">
+                    <div class="col-last odd-row-color all-modules-table all-modules-table-tab1">
                     <div class="block">This is a test description for the moduletags module.<br>
                      Type Link: <a href="moduletags/testpkgmdltags/TestClassInModuleTags.html" title\
                     ="class in testpkgmdltags"><code>TestClassInModuleTags</code></a>.<br>
