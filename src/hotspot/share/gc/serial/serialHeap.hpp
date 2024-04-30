@@ -147,9 +147,6 @@ public:
   void post_initialize() override;
 
   bool is_young_gen(const Generation* gen) const { return gen == _young_gen; }
-  bool is_old_gen(const Generation* gen) const { return gen == _old_gen; }
-
-  MemRegion reserved_region() const { return _reserved; }
   bool is_in_reserved(const void* addr) const { return _reserved.contains(addr); }
 
   // Performance Counter support

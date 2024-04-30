@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,7 +90,6 @@ final class EventInstrumentation {
     private static final ClassDesc TYPE_ISE = Bytecode.classDesc(IllegalStateException.class);
     private static final ClassDesc TYPE_EVENT_WRITER = classDesc(EventWriter.class);
     private static final ClassDesc TYPE_EVENT_WRITER_FACTORY = ClassDesc.of("jdk.jfr.internal.event.EventWriterFactory");
-    private static final ClassDesc TYPE_MIRROR_EVENT = Bytecode.classDesc(MirrorEvent.class);
     private static final ClassDesc TYPE_OBJECT = Bytecode.classDesc(Object.class);
     private static final ClassDesc TYPE_SETTING_DEFINITION = Bytecode.classDesc(SettingDefinition.class);
     private static final MethodDesc METHOD_BEGIN = MethodDesc.of("begin", "()V");
@@ -144,9 +143,7 @@ final class EventInstrumentation {
 
     private ImplicitFields determineImplicitFields() {
         if (isJDK) {
-            // For now, only support mirror events in java.base
-            String fullName = "java.base:" + className;
-            Class<?> eventClass = MirrorEvents.find(fullName);
+            Class<?> eventClass = MirrorEvents.find(isJDK, className);
             if (eventClass != null) {
                 return new ImplicitFields(eventClass);
             }
@@ -219,20 +216,6 @@ final class EventInstrumentation {
             }
         }
         return true;
-    }
-
-    boolean isMirrorEvent() {
-        String typeDescriptor = TYPE_MIRROR_EVENT.descriptorString();
-        for (ClassElement ce : classModel.elements()) {
-            if (ce instanceof RuntimeVisibleAnnotationsAttribute rvaa) {
-                for (var annotation : rvaa.annotations()) {
-                    if (annotation.className().equalsString(typeDescriptor)) {
-                        return true;
-                    }
-                }
-            }
-        }
-        return false;
     }
 
     @SuppressWarnings("unchecked")

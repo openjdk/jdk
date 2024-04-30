@@ -26,7 +26,6 @@
 #define SHARE_GC_SERIAL_TENUREDGENERATION_INLINE_HPP
 
 #include "gc/serial/tenuredGeneration.hpp"
-
 #include "gc/shared/space.hpp"
 
 inline size_t TenuredGeneration::capacity() const {
