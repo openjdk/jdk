@@ -106,7 +106,7 @@ public:
 // constant evaluation in the compiler. We don't do something like that now,
 // because we need a fallback when we don't have any mechanism for detecting
 // constant evaluation.
-#if defined(TARGET_COMPILER_gcc) || defined(TARGET_COMPILER_xlc)
+#if defined(TARGET_COMPILER_gcc)
 
 // Both __has_builtin and __builtin_is_constant_evaluated are available in our
 // minimum required versions of gcc and clang.

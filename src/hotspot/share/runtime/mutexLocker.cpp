@@ -37,7 +37,7 @@
 // Mutexes used in the VM (see comment in mutexLocker.hpp):
 
 Mutex*   Patching_lock                = nullptr;
-Mutex*   CompiledMethod_lock          = nullptr;
+Mutex*   NMethodState_lock            = nullptr;
 Monitor* SystemDictionary_lock        = nullptr;
 Mutex*   InvokeMethodTypeTable_lock   = nullptr;
 Monitor* InvokeMethodIntrinsicTable_lock = nullptr;
@@ -327,7 +327,7 @@ void mutex_init() {
   MUTEX_DEFL(VtableStubs_lock               , PaddedMutex  , CompiledIC_lock);  // Also holds DumpTimeTable_lock
   MUTEX_DEFL(CodeCache_lock                 , PaddedMonitor, VtableStubs_lock);
   MUTEX_DEFL(DirectivesStack_lock           , PaddedMutex  , CodeCache_lock);
-  MUTEX_DEFL(CompiledMethod_lock            , PaddedMutex  , CodeCache_lock);
+  MUTEX_DEFL(NMethodState_lock              , PaddedMutex  , CodeCache_lock);
 
   MUTEX_DEFL(Threads_lock                   , PaddedMonitor, CompileThread_lock, true);
   MUTEX_DEFL(Compile_lock                   , PaddedMutex  , MethodCompileQueue_lock);

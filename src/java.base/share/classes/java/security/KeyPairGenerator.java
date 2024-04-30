@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -230,9 +230,7 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
     public static KeyPairGenerator getInstance(String algorithm)
             throws NoSuchAlgorithmException {
         Objects.requireNonNull(algorithm, "null algorithm name");
-        List<Service> list =
-                GetInstance.getServices("KeyPairGenerator", algorithm);
-        Iterator<Service> t = list.iterator();
+        Iterator<Service> t = GetInstance.getServices("KeyPairGenerator", algorithm);
         if (!t.hasNext()) {
             throw new NoSuchAlgorithmException
                 (algorithm + " KeyPairGenerator not available");

@@ -75,6 +75,7 @@
 #include "utilities/defaultStream.hpp"
 #include "utilities/events.hpp"
 #include "utilities/fastrand.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 #ifndef _WINDOWS
@@ -1199,6 +1200,8 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
     return;
   }
 
+#if !INCLUDE_ASAN
+
   bool accessible = is_readable_pointer(addr);
 
   // Check if addr is a JNI handle.
@@ -1253,7 +1256,7 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
 #ifdef _LP64
   if (UseCompressedClassPointers && ((uintptr_t)addr &~ (uintptr_t)max_juint) == 0) {
     narrowKlass narrow_klass = (narrowKlass)(uintptr_t)addr;
-    Klass* k = CompressedKlassPointers::decode_raw(narrow_klass);
+    Klass* k = CompressedKlassPointers::decode_without_asserts(narrow_klass);
 
     if (Klass::is_valid(k)) {
       st->print_cr(UINT32_FORMAT " is a compressed pointer to class: " INTPTR_FORMAT, narrow_klass, p2i((HeapWord*)k));
@@ -1285,7 +1288,10 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
     return;
   }
 
+#endif // !INCLUDE_ASAN
+
   st->print_cr(INTPTR_FORMAT " is an unknown value", p2i(addr));
+
 }
 
 static bool is_pointer_bad(intptr_t* ptr) {

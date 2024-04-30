@@ -179,7 +179,8 @@ GrowableArray<Klass*>* ArrayKlass::compute_secondary_supers(int num_extra_slots,
   assert(num_extra_slots == 0, "sanity of primitive array type");
   assert(transitive_interfaces == nullptr, "sanity");
   // Must share this for correct bootstrapping!
-  set_secondary_supers(Universe::the_array_interfaces_array());
+  set_secondary_supers(Universe::the_array_interfaces_array(),
+                       Universe::the_array_interfaces_bitmap());
   return nullptr;
 }
 
