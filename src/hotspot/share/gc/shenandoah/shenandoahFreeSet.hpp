@@ -80,7 +80,10 @@ private:
   size_t _used[UIntNumPartitions];
   size_t _region_counts[UIntNumPartitions];
 
+  // Shrink the intervals associated with partition when region idx is removed from this free set
   inline void shrink_interval_if_boundary_modified(ShenandoahFreeSetPartitionId partition, ssize_t idx);
+
+  // Shrink the intervals associated with partition when regions low_idx through high_idx inclusive are removed from this free set
   inline void shrink_interval_if_range_modifies_either_boundary(ShenandoahFreeSetPartitionId partition,
                                                                 ssize_t low_idx, ssize_t high_idx);
   inline void expand_interval_if_boundary_modified(ShenandoahFreeSetPartitionId partition, ssize_t idx, size_t capacity);

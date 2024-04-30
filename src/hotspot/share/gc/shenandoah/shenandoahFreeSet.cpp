@@ -225,37 +225,7 @@ inline void ShenandoahRegionPartitions::shrink_interval_if_range_modifies_either
 }
 
 inline void ShenandoahRegionPartitions::shrink_interval_if_boundary_modified(ShenandoahFreeSetPartitionId partition, idx_t idx) {
-  assert((idx >= 0) && (idx < _max), "Range must span legal index values");
-  if (idx == leftmost(partition)) {
-    assert (!_membership[int(partition)].is_set(idx), "Do not shrink interval if region not removed");
-    if (idx + 1 == _max) {
-      _leftmosts[int(partition)] = _max;
-    } else {
-      _leftmosts[int(partition)] = find_index_of_next_available_region(partition, idx + 1);
-    }
-    if (leftmost_empty(partition) < leftmost(partition)) {
-      // This gets us closer to where we need to be; we'll scan further when leftmosts_empty is requested.
-      _leftmosts_empty[int(partition)] = leftmost(partition);
-    }
-  }
-  if (idx == rightmost(partition)) {
-    assert (!_membership[int(partition)].is_set(idx), "Do not shrink interval if region not removed");
-    if (idx == 0) {
-      _rightmosts[int(partition)] = -1;
-    } else {
-      _rightmosts[int(partition)] = find_index_of_previous_available_region(partition, idx - 1);
-    }
-    if (rightmost_empty(partition) > rightmost(partition)) {
-      // This gets us closer to where we need to be; we'll scan further when rightmosts_empty is requested.
-      _rightmosts_empty[int(partition)] = rightmost(partition);
-    }
-  }
-  if (leftmost(partition) > rightmost(partition)) {
-    _leftmosts[int(partition)] = _max;
-    _rightmosts[int(partition)] = -1;
-    _leftmosts_empty[int(partition)] = _max;
-    _rightmosts_empty[int(partition)] = -1;
-  }
+  shrink_interval_if_range_modifies_either_boundary(partition, idx, idx);
 }
 
 inline void ShenandoahRegionPartitions::expand_interval_if_boundary_modified(ShenandoahFreeSetPartitionId partition,
