@@ -51,8 +51,12 @@ public class TestScopedValue {
     private static long tieredStopAtLevel = (long)WHITE_BOX.getVMFlag("TieredStopAtLevel");
 
     static ScopedValue<MyDouble> sv = ScopedValue.newInstance();
+    static ScopedValue<MyDouble> sv2 = ScopedValue.newInstance();
+    static ScopedValue<MyDouble> sv3 = ScopedValue.newInstance();
     static final ScopedValue<MyDouble> svFinal = ScopedValue.newInstance();
     static ScopedValue<Object> svObject = ScopedValue.newInstance();
+    static ScopedValue<ScopedValue<ScopedValue<MyDouble>>> svChain = ScopedValue.newInstance();
+    static ScopedValue<ScopedValue<MyDouble>> svChain2 = ScopedValue.newInstance();
     private static volatile int volatileField;
 
     public static void main(String[] args) {
@@ -62,8 +66,10 @@ public class TestScopedValue {
             // Fast path tests need to be run one at a time to prevent profile pollution
             List<String> tests = List.of("testFastPath1", "testFastPath2", "testFastPath3", "testFastPath4",
                     "testFastPath5", "testFastPath6", "testFastPath7", "testFastPath8", "testFastPath9",
-                    "testFastPath10", "testFastPath11", "testFastPath12", "testFastPath13", "testFastPath14", "testFastPath15",
-                    "testSlowPath1,testSlowPath2,testSlowPath3,testSlowPath4,testSlowPath5,testSlowPath6,testSlowPath7,testSlowPath8,testSlowPath9,testSlowPath10");
+                    "testFastPath10", "testFastPath11", "testFastPath12", "testFastPath13", "testFastPath14",
+                    "testFastPath15", "testFastPath16", "testFastPath17", "testFastPath18",
+                    "testSlowPath1,testSlowPath2,testSlowPath3,testSlowPath4,testSlowPath5,testSlowPath6," +
+                    "testSlowPath7,testSlowPath8,testSlowPath9,testSlowPath10,testSlowPath11,testSlowPath12,testSlowPath13");
             for (String test : tests) {
                 TestFramework.runWithFlags("-XX:+TieredCompilation", "--enable-preview", "-XX:CompileCommand=dontinline,java.lang.ScopedValue::slowGet", "-DTest=" + test);
             }
@@ -504,6 +510,87 @@ public class TestScopedValue {
     }
 
     @Test
+    @IR(failOn = {IRNode.CALL_OF_METHOD, "slowGet"})
+    @IR(counts = {IRNode.LOAD_D, "3" })
+    public static double testFastPath16() {
+        MyDouble v1 = sv.get();
+        MyDouble v21 = sv2.get();
+        MyDouble v31 = sv3.get();
+        MyDouble v2 = sv.get(); // Should optimize out
+        MyDouble v22 = sv2.get(); // Should optimize out
+        MyDouble v32 = sv3.get(); // Should optimize out
+        return v1.getValue() + v2.getValue() + v21.getValue() + v22.getValue() + v31.getValue() + v32.getValue();
+    }
+
+    @Run(test = "testFastPath16", mode = RunMode.STANDALONE)
+    private void testFastPath16Runner() throws Exception {
+        ScopedValue.where(sv, new MyDouble(42))
+                .where(sv2, new MyDouble(0x42))
+                .where(sv3, new MyDouble(042))
+                .run(() -> {
+                    MyDouble unused = sv.get();
+                    unused = sv2.get();
+                    unused = sv3.get();
+                    for (int i = 0; i < 20_000; i++) {
+                        if (testFastPath16() != (42 + 0x42 + 042) * 2) {
+                            throw new RuntimeException();
+                        }
+                    }
+                });
+        forceCompilation("testFastPath16");
+    }
+
+    @Test
+    @IR(failOn = {IRNode.CALL_OF_METHOD, "slowGet"})
+    @IR(counts = {IRNode.LOAD_D, "1" })
+    public static double testFastPath17() {
+        return svChain.get().get().get().getValue() + svChain.get().get().get().getValue();
+    }
+
+    @Run(test = "testFastPath17", mode = RunMode.STANDALONE)
+    private void testFastPath17Runner() throws Exception {
+        ScopedValue.where(sv, new MyDouble(42))
+                .where(svChain2, sv)
+                .where(svChain, svChain2)
+                .run(() -> {
+                    MyDouble unused = svChain.get().get().get();
+                    for (int i = 0; i < 20_000; i++) {
+                        if (testFastPath17() != 42 + 42) {
+                            throw new RuntimeException();
+                        }
+                    }
+                });
+        forceCompilation("testFastPath17");
+    }
+
+    @Test
+    @IR(failOn = {IRNode.CALL_OF_METHOD, "slowGet", IRNode.LOOP, IRNode.COUNTED_LOOP})
+    @IR(counts = {IRNode.LOAD_D, "1" })
+    public static double testFastPath18() {
+        double res = 0;
+        for (int i = 0; i < 10_000; i++) {
+            res = svChain.get().get().get().getValue(); // should be hoisted out of loop and loop should optimize out
+        }
+        return res;
+    }
+
+    @Run(test = "testFastPath18", mode = RunMode.STANDALONE)
+    private void testFastPath18Runner() throws Exception {
+        ScopedValue.where(sv, new MyDouble(42))
+                .where(svChain2, sv)
+                .where(svChain, svChain2)
+                .run(() -> {
+                    MyDouble unused = svChain.get().get().get();
+                    for (int i = 0; i < 20_000; i++) {
+                        if (testFastPath18() != 42) {
+                            throw new RuntimeException();
+                        }
+                    }
+                });
+        forceCompilation("testFastPath18");
+    }
+
+    @Test
     @IR(counts = {IRNode.LOAD_D, "1", IRNode.CALL_OF_METHOD, "slowGet", "1" })
     public static double testSlowPath1() {
         ScopedValue<MyDouble> localSV = sv;
@@ -604,7 +691,6 @@ public class TestScopedValue {
                 });
     }
 
-
     @Test
     @IR(counts = {IRNode.CALL_OF_METHOD, "slowGet", "2" })
     public static double testSlowPath6() {
@@ -698,6 +784,76 @@ public class TestScopedValue {
                 });
     }
 
+    @Test
+    @IR(counts = {IRNode.LOAD_D, "3", IRNode.CALL_OF_METHOD, "slowGet", "3" })
+    public static double testSlowPath11() {
+        final ScopedValue<MyDouble> localSV = sv;
+        final ScopedValue<MyDouble> localSV2 = sv2;
+        final ScopedValue<MyDouble> localSV3 = sv3;
+        MyDouble v1 = localSV.get();
+        MyDouble v21 = localSV2.get();
+        MyDouble v31 = localSV3.get();
+        MyDouble v2 = localSV.get(); // Should optimize out
+        MyDouble v22 = localSV2.get(); // Should optimize out
+        MyDouble v32 = localSV3.get(); // Should optimize out
+        return v1.getValue() + v2.getValue() + v21.getValue() + v22.getValue() + v31.getValue() + v32.getValue();
+    }
+
+    @Run(test = "testSlowPath11", mode = RunMode.STANDALONE)
+    private void testSlowPath11Runner() throws Exception {
+        ScopedValue.where(sv, new MyDouble(42))
+                .where(sv2, new MyDouble(0x42))
+                .where(sv3, new MyDouble(042))
+                .run(() -> {
+                    if (testSlowPath11() != (42 + 0x42 + 042) * 2) {
+                        throw new RuntimeException();
+                    }
+                });
+        forceCompilation("testSlowPath11");
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_D, "1", IRNode.CALL_OF_METHOD, "slowGet", "3" })
+    public static double testSlowPath12() {
+        ScopedValue<ScopedValue<ScopedValue<MyDouble>>> localSV = svChain;
+        return localSV.get().get().get().getValue() + localSV.get().get().get().getValue();
+    }
+
+    @Run(test = "testSlowPath12")
+    private void testSlowPath12Runner() throws Exception {
+        ScopedValue.where(sv, new MyDouble(42))
+                .where(svChain2, sv)
+                .where(svChain, svChain2)
+                .run(() -> {
+                    if (testSlowPath12() != 42 + 42) {
+                        throw new RuntimeException();
+                    }
+                });
+    }
+
+    @Test
+    @IR(failOn = {IRNode.LOOP, IRNode.COUNTED_LOOP})
+    @IR(counts = {IRNode.LOAD_D, "1", IRNode.CALL_OF_METHOD, "slowGet", "3" })
+    public static double testSlowPath13() {
+        ScopedValue<ScopedValue<ScopedValue<MyDouble>>> localSV = svChain;
+        double res = 0;
+        for (int i = 0; i < 10_000; i++) {
+            res = localSV.get().get().get().getValue(); // one iteration of the loop should be peeled to optimize get() out of loop
+        }
+        return res;
+    }
+
+    @Run(test = "testSlowPath13")
+    private void testSlowPath13Runner() throws Exception {
+        ScopedValue.where(sv, new MyDouble(42))
+                .where(svChain2, sv)
+                .where(svChain, svChain2)
+                .run(() -> {
+                    if (testSlowPath13() != 42) {
+                        throw new RuntimeException();
+                    }
+                });
+    }
 
     static class MyDouble {
         final private double value;
