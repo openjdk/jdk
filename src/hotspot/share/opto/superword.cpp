@@ -2743,7 +2743,17 @@ uint SuperWord::find_use_def_boundary(const Node_List* pack) const {
 bool SuperWord::is_vector_use(Node* use, int u_idx) const {
   Node_List* u_pk = get_pack(use);
   if (u_pk == nullptr) return false;
-  if (is_marked_reduction(use)) return true;
+
+  // Reduction: first input is internal connection.
+  if (is_marked_reduction(use) && u_idx == 1) {
+#ifdef ASSERT
+      for (uint i = 1; i < u_pk->size(); i++) {
+        assert(u_pk->at(i-1) == u_pk->at(i)->in(1), "internal connection");
+      }
+#endif
+    return true;
+  }
+
   Node* def = use->in(u_idx);
   Node_List* d_pk = get_pack(def);
   if (d_pk == nullptr) {
