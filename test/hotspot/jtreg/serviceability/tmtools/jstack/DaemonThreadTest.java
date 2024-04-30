@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,15 @@ public class DaemonThreadTest {
     }
 
     private static void testNoDaemon() throws Exception {
-        testThread(new NormalThread(), "");
+        Thread t = new NormalThread();
+        if (Thread.currentThread().isVirtual()) {
+            // If the NormalThread was created by a current virtual thread
+            // then the NormalThread too will be marked daemon (since virtual threads
+            // are always daemon). In that case, we explicitly reset daemon to false
+            // for the newly created thread.
+            t.setDaemon(false);
+        }
+        testThread(t, "");
     }
 
     private static void testDaemon() throws Exception {
