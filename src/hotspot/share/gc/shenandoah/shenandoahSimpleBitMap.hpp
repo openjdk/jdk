@@ -28,6 +28,8 @@
 
 #include <cstddef>
 
+#include "gc/shenandoah/shenandoahAsserts.hpp"
+
 // TODO: Merge the enhanced capabilities of ShenandoahSimpleBitMap into src/hotspot/share/utilities/bitMap.hpp
 //       and deprecate ShenandoahSimpleBitMap.  The key enhanced capabilities to be integrated include:
 //
@@ -56,19 +58,10 @@ class ShenandoahSimpleBitMap {
   uintx* const _bitmap;
 
 public:
-  ShenandoahSimpleBitMap(size_t num_bits) :
-      _num_bits(num_bits),
-      _num_words((num_bits + (BitsPerWord - 1)) / BitsPerWord),
-      _bitmap(NEW_C_HEAP_ARRAY(uintx, _num_words, mtGC))
-  {
-    clear_all();
-  }
+  ShenandoahSimpleBitMap(size_t num_bits);
 
-  ~ShenandoahSimpleBitMap() {
-    if (_bitmap != nullptr) {
-      FREE_C_HEAP_ARRAY(uintx, _bitmap);
-    }
-  }
+  ~ShenandoahSimpleBitMap();
+
   void clear_all() {
     for (size_t i = 0; i < _num_words; i++) {
       _bitmap[i] = 0;

@@ -26,6 +26,20 @@
 #include "precompiled.hpp"
 #include "gc/shenandoah/shenandoahSimpleBitMap.hpp"
 
+ShenandoahSimpleBitMap::ShenandoahSimpleBitMap(size_t num_bits) :
+    _num_bits(num_bits),
+    _num_words((num_bits + (BitsPerWord - 1)) / BitsPerWord),
+    _bitmap(NEW_C_HEAP_ARRAY(uintx, _num_words, mtGC))
+{
+  clear_all();
+}
+
+ShenandoahSimpleBitMap::~ShenandoahSimpleBitMap() {
+  if (_bitmap != nullptr) {
+    FREE_C_HEAP_ARRAY(uintx, _bitmap);
+  }
+}
+
 size_t ShenandoahSimpleBitMap::count_leading_ones(idx_t start_idx) const {
   assert((start_idx >= 0) && (start_idx < _num_bits), "precondition");
   size_t array_idx = start_idx >> LogBitsPerWord;
