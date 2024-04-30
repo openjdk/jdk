@@ -429,7 +429,7 @@ JvmtiVTMSTransitionDisabler::start_VTMS_transition(jthread vthread, bool is_moun
   assert(!thread->is_in_VTMS_transition(), "VTMS_transition sanity check");
 
   // Avoid using MonitorLocker on performance critical path, use
-  // two-level synchronization with lock-free operations on counters.
+  // two-level synchronization with lock-free operations on state bits.
   assert(!thread->VTMS_transition_mark(), "sanity check");
   thread->set_VTMS_transition_mark(true); // Try to enter VTMS transition section optmistically.
   java_lang_Thread::set_is_in_VTMS_transition(vt, true);
@@ -451,7 +451,7 @@ JvmtiVTMSTransitionDisabler::start_VTMS_transition(jthread vthread, bool is_moun
       thread->is_suspended() ||
       JvmtiVTSuspender::is_vthread_suspended(thread_id)
   ) {
-    // Slow path: undo unsuccessful optimistic counter incrementation.
+    // Slow path: undo unsuccessful optimistic set of the VTMS_transition_mark.
     // It can cause an extra waiting cycle for VTMS transition disablers.
     thread->set_VTMS_transition_mark(false);
     java_lang_Thread::set_is_in_VTMS_transition(vth(), false);
