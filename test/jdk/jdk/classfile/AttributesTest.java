@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8331291
  * @summary Testing Attributes API.
  * @run junit AttributesTest
  */
