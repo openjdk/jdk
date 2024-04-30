@@ -50,6 +50,7 @@ import java.util.Objects;
 
 import jdk.internal.access.JavaIOFileDescriptorAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.event.FileForceEvent;
 import jdk.internal.foreign.MemorySessionImpl;
 import jdk.internal.foreign.SegmentFactories;
 import jdk.internal.misc.Blocker;
@@ -486,8 +487,7 @@ public class FileChannelImpl
         }
     }
 
-    @Override
-    public void force(boolean metaData) throws IOException {
+    private void implForce(boolean metaData) throws IOException {
         ensureOpen();
         int rv = -1;
         int ti = -1;
@@ -509,6 +509,17 @@ public class FileChannelImpl
             endBlocking(rv > -1);
             assert IOStatus.check(rv);
         }
+    }
+
+    @Override
+    public void force(boolean metaData) throws IOException {
+        if (!FileForceEvent.enabled()) {
+            implForce(metaData);
+            return;
+        }
+        long start = FileForceEvent.timestamp();
+        implForce(metaData);
+        FileForceEvent.offer(start, path, metaData);
     }
 
     // Assume at first that the underlying kernel supports sendfile/equivalent;

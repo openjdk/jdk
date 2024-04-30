@@ -146,7 +146,6 @@ class ConstantUtils {
      * @throws IllegalArgumentException if the member name is invalid
      */
     public static String validateMemberName(String name, boolean method) {
-        requireNonNull(name);
         if (name.length() == 0)
             throw new IllegalArgumentException("zero-length member name");
         for (int i=0; i<name.length(); i++) {
@@ -226,7 +225,7 @@ class ConstantUtils {
 
     private static ClassDesc resolveClassDesc(String descriptor, int start, int len) {
         if (len == 1) {
-            return Wrapper.forBasicType(descriptor.charAt(start)).primitiveClassDescriptor();
+            return Wrapper.forPrimitiveType(descriptor.charAt(start)).classDescriptor();
         }
         return ClassDesc.ofDescriptor(descriptor.substring(start, start + len));
     }

@@ -32,7 +32,7 @@ import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
 
 public enum Wrapper {
-    //        wrapperType      simple     primitiveType  simple     char  emptyArray     format               numericClass  superClass
+    //        wrapperType      simple     primitiveType  simple     char  emptyArray     format               numericClass  superClass  classDescriptor
     BOOLEAN(  Boolean.class,   "Boolean", boolean.class, "boolean", 'Z', new boolean[0], Format.unsigned( 1), 0, 0, ConstantDescs.CD_boolean),
     // These must be in the order defined for widening primitive conversions in JLS 5.1.2
     // Avoid boxing integral types here to defer initialization of internal caches
@@ -60,9 +60,18 @@ public enum Wrapper {
     private final int      superClasses;
     private final String   wrapperSimpleName;
     private final String   primitiveSimpleName;
-    private final ClassDesc primitiveTypeDesc;
+    private final ClassDesc classDesc;
 
-    private Wrapper(Class<?> wtype, String wtypeName, Class<?> ptype, String ptypeName, char tchar, Object emptyArray, int format, int numericClass, int superClasses, ClassDesc primitiveTypeDesc) {
+    private Wrapper(Class<?> wtype,
+                    String wtypeName,
+                    Class<?> ptype,
+                    String ptypeName,
+                    char tchar,
+                    Object emptyArray,
+                    int format,
+                    int numericClass,
+                    int superClasses,
+                    ClassDesc classDesc) {
         this.wrapperType = wtype;
         this.primitiveType = ptype;
         this.basicTypeChar = tchar;
@@ -73,7 +82,7 @@ public enum Wrapper {
         this.superClasses = superClasses;
         this.wrapperSimpleName = wtypeName;
         this.primitiveSimpleName = ptypeName;
-        this.primitiveTypeDesc = primitiveTypeDesc;
+        this.classDesc = classDesc;
     }
 
     /** For debugging, give the details of this wrapper. */
@@ -380,8 +389,8 @@ public enum Wrapper {
         }
     }
 
-    /** A nominal descriptor of the primitive type */
-    public ClassDesc primitiveClassDescriptor() { return primitiveTypeDesc; }
+    /** A nominal descriptor of the wrapped type */
+    public ClassDesc classDescriptor() { return classDesc; }
 
     /** What is the primitive type wrapped by this wrapper? */
     public Class<?> primitiveType() { return primitiveType; }

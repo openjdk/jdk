@@ -160,7 +160,7 @@ public sealed interface ClassDesc
     static ClassDesc ofDescriptor(String descriptor) {
         // implicit null-check
         return (descriptor.length() == 1)
-               ? Wrapper.forPrimitiveType(descriptor.charAt(0)).primitiveClassDescriptor()
+               ? Wrapper.forPrimitiveType(descriptor.charAt(0)).classDescriptor()
                // will throw IAE on descriptor.length == 0 or if array dimensions too long
                : new ReferenceClassDescImpl(descriptor);
     }
@@ -270,7 +270,7 @@ public sealed interface ClassDesc
      * @return whether this {@linkplain ClassDesc} describes an array type
      */
     default boolean isArray() {
-        return descriptorString().startsWith("[");
+        return descriptorString().charAt(0) == '[';
     }
 
     /**
@@ -288,7 +288,7 @@ public sealed interface ClassDesc
      * @return whether this {@linkplain ClassDesc} describes a class or interface type
      */
     default boolean isClassOrInterface() {
-        return descriptorString().startsWith("L");
+        return descriptorString().charAt(0) == 'L';
     }
 
     /**
