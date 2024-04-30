@@ -28,8 +28,6 @@
 #include "gc/g1/g1HeapRegion.hpp"
 #include "logging/log.hpp"
 
-#define SKIP_RETIRED_FULL_REGIONS 1
-
 class FreeRegionList;
 
 class G1HRPrinter {
@@ -58,9 +56,7 @@ public:
 
   void retire(HeapRegion* hr) {
     if (is_active()) {
-      if (!SKIP_RETIRED_FULL_REGIONS || hr->top() < hr->end()) {
-        print("RETIRE", hr);
-      }
+      print("RETIRE", hr);
     }
   }
 
