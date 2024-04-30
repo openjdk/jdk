@@ -1316,8 +1316,6 @@ public:
   ~G1UpdateRegionLivenessAndSelectForRebuildTask() {
     if (!_cleanup_list.is_empty()) {
       log_debug(gc)("Reclaimed %u empty regions", _cleanup_list.length());
-      // Now print the empty regions list.
-      _g1h->hr_printer()->mark_reclaim(&_cleanup_list);
       // And actually make them available.
       _g1h->prepend_to_freelist(&_cleanup_list);
     }
@@ -1333,6 +1331,9 @@ public:
     // Update the old/humongous region sets
     _g1h->remove_from_old_gen_sets(on_region_cl._num_old_regions_removed,
                                    on_region_cl._num_humongous_regions_removed);
+
+    // Print the reclaimed regions list.
+    _g1h->hr_printer()->mark_reclaim(&local_cleanup_list);
 
     {
       MutexLocker x(G1RareEvent_lock, Mutex::_no_safepoint_check_flag);
