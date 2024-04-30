@@ -47,6 +47,8 @@ import java.io.InputStreamReader;
 import java.lang.reflect.InvocationTargetException;
 import javax.swing.SwingUtilities;
 
+import jdk.test.lib.Platform;
+
 /**
  * AWT Mixing test for HierarchyBoundsListener ancestors.
  * <p>See <a href="https://bugs.openjdk.org/browse/JDK-6768230">CR6768230</a> for details.
@@ -56,7 +58,8 @@ import javax.swing.SwingUtilities;
  * @key headful
  * @bug 6768230 8221823
  * @summary Mixing test for HierarchyBoundsListener ancestors
- * @build FrameBorderCounter
+ * @library /test/lib
+ * @build FrameBorderCounter jdk.test.lib.Platform
  * @run main HierarchyBoundsListenerMixingTest
  */
 public class HierarchyBoundsListenerMixingTest {
@@ -202,7 +205,7 @@ public class HierarchyBoundsListenerMixingTest {
         int w;
         int h;
 
-        if (!isOnWayland) {
+        if (!Platform.isOnWayland()) {
             x = frame.getLocationOnScreen().x;
             y = frame.getLocationOnScreen().y;
             w = frame.getSize().width;
@@ -279,7 +282,7 @@ public class HierarchyBoundsListenerMixingTest {
 
         resetValues();
 
-        if (!isOnWayland) {
+        if (!Platform.isOnWayland()) {
             x = frame.getLocationOnScreen().x;
             y = frame.getLocationOnScreen().y;
             w = frame.getSize().width;
@@ -476,14 +479,12 @@ public class HierarchyBoundsListenerMixingTest {
     private static String failureMessage = "";
     private static Thread mainThread = null;
     private static int sleepTime = 300000;
-    private static boolean isOnWayland;
 
     // Not sure about what happens if multiple of this test are
     //  instantiated in the same VM.  Being static (and using
     //  static vars), it aint gonna work.  Not worrying about
     //  it for now.
     public static void main(String[] args) throws InterruptedException {
-        isOnWayland = System.getenv("WAYLAND_DISPLAY") != null;
         mainThread = Thread.currentThread();
         try {
             init();

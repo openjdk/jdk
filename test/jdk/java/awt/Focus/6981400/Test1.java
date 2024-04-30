@@ -27,8 +27,8 @@
  * @bug     6981400
  * @summary Tabbing between textfiled do not work properly when ALT+TAB
  * @author  anton.tarasov
- * @library ../../regtesthelpers
- * @build   Util
+ * @library /java/awt/regtesthelpers /test/lib
+ * @build   Util jdk.test.lib.Platform
  * @run     main Test1
  */
 
@@ -61,6 +61,7 @@ import java.util.List;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 
+import jdk.test.lib.Platform;
 import test.java.awt.regtesthelpers.Util;
 
 public class Test1 {
@@ -182,7 +183,7 @@ public class Test1 {
 
         Util.clickOnComp(compToClick, robot);
 
-        if (Util.isOnWayland()) {
+        if (Platform.isOnWayland()) {
             Util.clickOnComp(f0, robot);
         } else {
             Util.clickOnTitle(f0, robot);

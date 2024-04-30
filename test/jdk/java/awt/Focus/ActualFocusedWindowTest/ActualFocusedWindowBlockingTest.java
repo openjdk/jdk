@@ -26,8 +26,8 @@
   @key headful
   @bug       6314575
   @summary   Tests that previosly focused owned window doesn't steal focus when an owner's component requests focus.
-  @library   ../../regtesthelpers
-  @build     Util
+  @library /java/awt/regtesthelpers /test/lib
+  @build   Util jdk.test.lib.Platform
   @run       main ActualFocusedWindowBlockingTest
 */
 
@@ -45,6 +45,7 @@ import java.awt.event.AWTEventListener;
 import java.awt.event.FocusEvent;
 import java.awt.event.WindowEvent;
 
+import jdk.test.lib.Platform;
 import test.java.awt.regtesthelpers.Util;
 
 public class ActualFocusedWindowBlockingTest {
@@ -111,7 +112,7 @@ public class ActualFocusedWindowBlockingTest {
         clickOnCheckFocus(fButton);
         clickOnCheckFocus(aButton);
 
-        if (Util.isOnWayland()) {
+        if (Platform.isOnWayland()) {
             Util.clickOnComp(owner, robot);
         } else {
             Util.clickOnTitle(owner, robot);
@@ -138,7 +139,7 @@ public class ActualFocusedWindowBlockingTest {
     }
 
     void clickOnCheckFocus(Component c) {
-        if (c instanceof Frame && !Util.isOnWayland()) {
+        if (c instanceof Frame && !Platform.isOnWayland()) {
             Util.clickOnTitle((Frame)c, robot);
         } else {
             Util.clickOnComp(c, robot);

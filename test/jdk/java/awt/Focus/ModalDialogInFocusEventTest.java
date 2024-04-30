@@ -23,9 +23,9 @@
 
 /*
   @test
+  @key headful
   @bug 4531693 4636269 4681908 4688142 4691646 4721470
   @summary Showing modal dialog during dispatching SequencedEvent
-  @key headful
   @run main ModalDialogInFocusEventTest
 */
 
