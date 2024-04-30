@@ -206,11 +206,7 @@ public class FutureTask<V> implements RunnableFuture<V> {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * @since 19
-
-     * @throws    IllegalStateException {@inheritDoc}
      */
     @Override
     public V resultNow() {
@@ -229,11 +225,7 @@ public class FutureTask<V> implements RunnableFuture<V> {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * @since 19
-     *
-     * @throws    IllegalStateException {@inheritDoc}
      */
     @Override
     public Throwable exceptionNow() {
@@ -251,8 +243,6 @@ public class FutureTask<V> implements RunnableFuture<V> {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * @since 19
      */
     @Override

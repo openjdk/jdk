@@ -888,8 +888,6 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * @since 19
      */
     @Override
@@ -902,11 +900,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * @since 19
-     *
-     * @throws    IllegalStateException {@inheritDoc}
      */
     @Override
     public V resultNow() {
@@ -923,11 +917,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * @since 19
-     *
-     * @throws    IllegalStateException {@inheritDoc}
      */
     @Override
     public Throwable exceptionNow() {
