@@ -43,7 +43,7 @@ class ReservedSpace {
   int      _fd_for_heap;
   bool     _special;
   bool     _executable;
-  MEMFLAGS _nmt_flag;
+  MEMFLAGS _flag;
  private:
 
   // ReservedSpace
@@ -68,7 +68,7 @@ class ReservedSpace {
                char* requested_address, bool executable);
  public:
 
-  MEMFLAGS nmt_flag() { return _nmt_flag; }
+  MEMFLAGS nmt_flag() const { return _flag; }
 
   // Constructor
   ReservedSpace();
@@ -177,7 +177,7 @@ class VirtualSpace {
   // Need to know if commit should be executable.
   bool   _executable;
 
-  MEMFLAGS _nmt_flag;
+  MEMFLAGS _flag;
 
   // MPSS Support
   // Each virtualspace region has a lower, middle, and upper region.

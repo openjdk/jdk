@@ -60,7 +60,7 @@ void MutableSpace::numa_setup_pages(MemRegion mr, size_t page_size, bool clear_s
       size_t size = pointer_delta(end, start, sizeof(char));
       if (clear_space) {
         // Prefer page reallocation to migration.
-        os::free_memory((char*)start, size, page_size, mtGC);
+        os::free_memory((char*)start, size, page_size, mtJavaHeap);
       }
       os::numa_make_global((char*)start, size);
     }
