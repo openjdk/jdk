@@ -1388,7 +1388,7 @@ void Assembler::addb(Address dst, Register src) {
 }
 
 void Assembler::addb(Register dst, int imm8) {
-  (void) prefix_and_encode(dst->encoding(), true /* is_map1 */);
+  (void) prefix_and_encode(dst->encoding(), true);
   emit_arith_b(0x80, 0xC0, dst, imm8);
 }
 
@@ -1614,7 +1614,7 @@ void Assembler::vaesenclast(XMMRegister dst, XMMRegister nds, XMMRegister src, i
 
 void Assembler::andb(Address dst, Register src) {
   InstructionMark im(this);
-  prefix(dst, src, true /* is_map1 */);
+  prefix(dst, src, true);
   emit_int8(0x20);
   emit_operand(src, dst, 0);
 }
@@ -2711,7 +2711,7 @@ void Assembler::movlhps(XMMRegister dst, XMMRegister src) {
 void Assembler::movb(Register dst, Address src) {
   NOT_LP64(assert(dst->has_byte_register(), "must have byte register"));
   InstructionMark im(this);
-  prefix(src, dst, true /* is_map1 */);
+  prefix(src, dst, true);
   emit_int8((unsigned char)0x8A);
   emit_operand(dst, src, 0);
 }
@@ -3132,7 +3132,7 @@ void Assembler::movb(Address dst, int imm8) {
 void Assembler::movb(Address dst, Register src) {
   assert(src->has_byte_register(), "must have byte register");
   InstructionMark im(this);
-  prefix(dst, src, true /* is_map1 */);
+  prefix(dst, src, true);
   emit_int8((unsigned char)0x88);
   emit_operand(src, dst, 0);
 }
@@ -4227,7 +4227,7 @@ void Assembler::orb(Address dst, int imm8) {
 
 void Assembler::orb(Address dst, Register src) {
   InstructionMark im(this);
-  prefix(dst, src, true /* is_map1 */);
+  prefix(dst, src, true);
   emit_int8(0x08);
   emit_operand(src, dst, 0);
 }
@@ -6424,7 +6424,7 @@ void Assembler::testb(Register dst, int imm8, bool use_ral) {
       emit_int8(imm8);
     }
   } else {
-    (void) prefix_and_encode(dst->encoding(), true /* is_map1 */);
+    (void) prefix_and_encode(dst->encoding(), true);
     emit_arith_b(0xF6, 0xC0, dst, imm8);
   }
 }
@@ -6584,7 +6584,7 @@ void Assembler::xbegin(Label& abort, relocInfo::relocType rtype) {
 
 void Assembler::xchgb(Register dst, Address src) { // xchg
   InstructionMark im(this);
-  prefix(src, dst, true /* is_map1 */);
+  prefix(src, dst, true);
   emit_int8((unsigned char)0x86);
   emit_operand(dst, src, 0);
 }
@@ -6656,7 +6656,7 @@ void Assembler::xorb(Register dst, Address src) {
 
 void Assembler::xorb(Address dst, Register src) {
   InstructionMark im(this);
-  prefix(dst, src, true /* is_map1 */);
+  prefix(dst, src, true);
   emit_int8(0x30);
   emit_operand(src, dst, 0);
 }
