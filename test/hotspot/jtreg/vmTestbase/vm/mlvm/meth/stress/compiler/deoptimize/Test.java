@@ -150,8 +150,22 @@ public class Test extends MultiThreadedTest {
         }
     }
 
+    public class GCThread extends Thread {
+        public void run() {
+            try {
+                Thread.sleep(5000);
+                System.out.println("CLEANING UP!!!");
+                System.gc();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
     @Override
     protected boolean runThread(int threadNum) throws Throwable {
+        GCThread gcThread = new GCThread();
+        gcThread.start();
         if ( threadNum == 0 ) {
             sleepAndDeoptimize();
             return true;
@@ -165,7 +179,6 @@ public class Test extends MultiThreadedTest {
 
             MHTransformationGen.createAndCallSequence(retVal, dataSnapshot, _mh, _finalArgs, true);
         }
-
         return true;
     }
 
