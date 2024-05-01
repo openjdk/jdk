@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,8 +75,8 @@ static jbyte currentSessionID;
 /* Counter of active callbacks and flag for vm_death */
 static int      active_callbacks   = 0;
 static jboolean vm_death_callback_active = JNI_FALSE;
-static jrawMonitorID callbackLock;
-static jrawMonitorID callbackBlock;
+static DebugRawMonitor* callbackLock;
+static DebugRawMonitor* callbackBlock;
 
 /* Macros to surround callback code (non-VM_DEATH callbacks).
  *   Note that this just keeps a count of the non-VM_DEATH callbacks that
@@ -153,7 +153,7 @@ static jrawMonitorID callbackBlock;
  * can access the chains simultaneously while reading (the
  * normal activity of an event callback).
  */
-static jrawMonitorID handlerLock;
+static DebugRawMonitor* handlerLock;
 
 typedef struct HandlerChain_ {
     HandlerNode *first;
@@ -1476,10 +1476,9 @@ eventHandler_initialize(jbyte sessionID)
      */
     active_callbacks = 0;
     vm_death_callback_active = JNI_FALSE;
-    callbackLock = debugMonitorCreate("JDWP Callback Lock");
-    callbackBlock = debugMonitorCreate("JDWP Callback Block");
-
-    handlerLock = debugMonitorCreate("JDWP Event Handler Lock");
+    callbackLock = debugMonitorCreate(callbackLock_Rank, "JDWP Callback Lock");
+    callbackBlock = debugMonitorCreate(callbackBlock_Rank, "JDWP Callback Block");
+    handlerLock = debugMonitorCreate(handlerLock_Rank, "JDWP Event Handler Lock");
 
     for (i = EI_min; i <= EI_max; ++i) {
         getHandlerChain(i)->first = NULL;

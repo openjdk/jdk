@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,8 @@
 static jdwpTransportEnv *transport = NULL;
 static unsigned transportVersion = JDWPTRANSPORT_VERSION_1_0;
 
-static jrawMonitorID listenerLock;
-static jrawMonitorID sendLock;
+static DebugRawMonitor* listenerLock;
+static DebugRawMonitor* sendLock;
 
 /*
  * data structure used for passing transport info from thread to thread
@@ -397,8 +397,8 @@ void
 transport_initialize(void)
 {
     transport = NULL;
-    listenerLock = debugMonitorCreate("JDWP Transport Listener Monitor");
-    sendLock = debugMonitorCreate("JDWP Transport Send Monitor");
+    listenerLock = debugMonitorCreate(listenerLock_Rank, "JDWP Transport Listener Monitor");
+    sendLock = debugMonitorCreate(sendLock_Rank, "JDWP Transport Send Monitor");
 }
 
 void
