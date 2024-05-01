@@ -482,7 +482,8 @@ public class CLDRConverter {
         parentData.keySet().stream()
             .filter(key -> key.startsWith(PARENT_LOCALE_PREFIX))
             .forEach(key -> {
-                parentLocalesMap.put(key, new TreeSet<String>(Arrays.asList(((String)parentData.get(key)).split(" "))));
+                parentLocalesMap.put(key, new TreeSet<String>(
+                    Arrays.asList(((String)parentData.get(key)).split(" "))));
             });
 
         // Parse numberingSystems to get digit zero character information.
@@ -1229,7 +1230,7 @@ public class CLDRConverter {
                     String zone001 = handlerMetaZones.zidMap().get(meta);
                     return zone001 == null ? "" :
                             String.format("        \"%s\", \"%s\", \"%s\",",
-                                    id, meta, zone001);
+                                            id, meta, zone001);
                 })
                 .filter(s -> !s.isEmpty())
                 .sorted();
@@ -1322,10 +1323,10 @@ public class CLDRConverter {
             .map(line -> line.split("[\s\t]*;[\s\t]*", 3))
             .filter(a -> a[1].matches("basic|moderate|modern|comprehensive"))
             .collect(Collectors.toMap(
-                a -> Locale.forLanguageTag(a[0].replaceAll("_", "-")),
-                a -> a[1],
-                (v1, v2) -> v2, // should never happen
-                HashMap::new));
+                    a -> Locale.forLanguageTag(a[0].replaceAll("_", "-")),
+                    a -> a[1],
+                    (v1, v2) -> v2, // should never happen
+                    HashMap::new));
 
         // Add other common (non-seed) locales (below `basic` coverage level) as of v42
         ResourceBundle.getBundle(CLDRConverter.class.getPackageName() + ".OtherCommonLocales")

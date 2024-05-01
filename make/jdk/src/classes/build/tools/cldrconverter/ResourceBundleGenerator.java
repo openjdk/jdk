@@ -441,11 +441,11 @@ class ResourceBundleGenerator implements BundleGenerator {
     private static boolean isBaseLocale(String localeID) {
         localeID = localeID.replaceAll("-", "_");
         Locale locale = LOCALE_BUILDER
-            .clear()
-            .setLanguage(CLDRConverter.getLanguageCode(localeID))
-            .setRegion(CLDRConverter.getRegionCode(localeID))
-            .setScript(CLDRConverter.getScriptCode(localeID))
-            .build();
+                            .clear()
+                            .setLanguage(CLDRConverter.getLanguageCode(localeID))
+                            .setRegion(CLDRConverter.getRegionCode(localeID))
+                            .setScript(CLDRConverter.getScriptCode(localeID))
+                            .build();
         return CLDRConverter.BASE_LOCALES.contains(locale);
     }
 

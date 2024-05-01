@@ -29,9 +29,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
@@ -156,8 +154,8 @@ class SupplementalDataParseHandler extends AbstractLDMLHandler<Object> {
                     var parent = attributes.getValue("parent").replaceAll("_", "-");
 
                     parentLocalesMap.put(
-                            parent,
-                            attributes.getValue("locales").replaceAll("_", "-"));
+                        parent,
+                        attributes.getValue("locales").replaceAll("_", "-"));
 
                     if ("root".equals(parent)) {
                         CLDRConverter.nonlikelyScript = "nonlikelyScript".equals(attributes.getValue("localeRules"));

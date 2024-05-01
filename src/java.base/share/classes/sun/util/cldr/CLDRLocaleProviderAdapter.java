@@ -133,10 +133,10 @@ public class CLDRLocaleProviderAdapter extends JRELocaleProviderAdapter {
         if (calendarNameProvider == null) {
             @SuppressWarnings("removal")
             CalendarNameProvider provider = AccessController.doPrivileged(
-                (PrivilegedAction<CalendarNameProvider>) ()
-                -> new CLDRCalendarNameProviderImpl(
-                    getAdapterType(),
-                    getLanguageTagSet("FormatData")));
+                    (PrivilegedAction<CalendarNameProvider>) ()
+                    -> new CLDRCalendarNameProviderImpl(
+                            getAdapterType(),
+                            getLanguageTagSet("FormatData")));
 
             synchronized (this) {
                 if (calendarNameProvider == null) {
