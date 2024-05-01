@@ -1045,11 +1045,6 @@ JavaThread* JavaThread::active() {
   }
 }
 
-bool JavaThread::is_lock_owned(address adr) const {
-  assert(LockingMode != LM_LIGHTWEIGHT, "should not be called with new lightweight locking");
-  return Thread::is_lock_owned(adr);
-}
-
 oop JavaThread::exception_oop() const {
   return Atomic::load(&_exception_oop);
 }

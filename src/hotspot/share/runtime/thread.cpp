@@ -527,11 +527,6 @@ void Thread::print_owned_locks_on(outputStream* st) const {
 }
 #endif // ASSERT
 
-// We had to move these methods here, because vm threads get into ObjectSynchronizer::enter
-// However, there is a note in JavaThread::is_lock_owned() about the VM threads not being
-// used for compilation in the future. If that change is made, the need for these methods
-// should be revisited, and they should be removed if possible.
-
 bool Thread::is_lock_owned(address adr) const {
   assert(LockingMode != LM_LIGHTWEIGHT, "should not be called with new lightweight locking");
   return is_in_full_stack(adr);
