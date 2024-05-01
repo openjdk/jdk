@@ -27,7 +27,6 @@
  * @requires vm.simpleArch == "x64" | vm.simpleArch == "aarch64" | vm.simpleArch == "riscv64"
  * @library /
  * @modules jdk.internal.vm.ci/jdk.vm.ci.hotspot
- *          jdk.internal.vm.ci/jdk.vm.ci.hotspot.aarch64
  *          jdk.internal.vm.ci/jdk.vm.ci.meta
  *          jdk.internal.vm.ci/jdk.vm.ci.code
  *          jdk.internal.vm.ci/jdk.vm.ci.code.site

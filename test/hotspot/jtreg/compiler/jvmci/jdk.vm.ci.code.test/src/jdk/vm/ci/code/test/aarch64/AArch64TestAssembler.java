@@ -36,7 +36,6 @@ import jdk.vm.ci.code.site.ConstantReference;
 import jdk.vm.ci.code.site.DataSectionReference;
 import jdk.vm.ci.code.test.TestAssembler;
 import jdk.vm.ci.code.test.TestHotSpotVMConfig;
-import jdk.vm.ci.hotspot.aarch64.AArch64HotSpotRegisterConfig;
 import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
 import jdk.vm.ci.hotspot.HotSpotConstant;
 import jdk.vm.ci.hotspot.HotSpotForeignCallTarget;
@@ -351,7 +350,8 @@ public class AArch64TestAssembler extends TestAssembler {
         if (config.nmethodEntryBarrierConcurrentPatch) {
             code.emitInt(0xd50339bf); // dmb ishld
         }
-        emitLoadPointer(scratchRegister2, AArch64Kind.DWORD, AArch64HotSpotRegisterConfig.threadRegister, config.threadDisarmedOffset);
+        Register thread = AArch64.r28;
+        emitLoadPointer(scratchRegister2, AArch64Kind.DWORD, thread, config.threadDisarmedOffset);
         code.emitInt(0x6b09011f);             // cmp w8, w9
         emitBranch(ConditionFlag.EQ, 8);      // jump over slow path, runtime call
         emitCall(config.nmethodEntryBarrier);
