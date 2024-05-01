@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2023, BELLSOFT. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, BELLSOFT. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,12 +50,8 @@ import javax.print.attribute.PrintRequestAttribute;
  * The {@code toString()} method returns the IPP string representation of the
  * attribute value.
  */
-public class OutputBin extends EnumSyntax
-        implements DocAttribute, PrintRequestAttribute, PrintJobAttribute {
+public class OutputBin extends EnumSyntax implements PrintRequestAttribute, PrintJobAttribute {
 
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
     @Serial
     private static final long serialVersionUID = -3718893309873137109L;
 

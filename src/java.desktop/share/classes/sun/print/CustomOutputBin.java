@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2023, BELLSOFT. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, BELLSOFT. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,8 +56,8 @@ public class CustomOutputBin extends OutputBin {
     /**
      * Creates a custom output bin
      */
-    public static CustomOutputBin createOutputBin(String name, String choice) {
-        for(CustomOutputBin bin: customEnumTable) {
+    public static synchronized CustomOutputBin createOutputBin(String name, String choice) {
+        for (CustomOutputBin bin : customEnumTable) {
             if (bin.getChoiceName().equals(choice) && bin.getCustomName().equals(name)) {
                 return bin;
             }
@@ -65,9 +65,6 @@ public class CustomOutputBin extends OutputBin {
         return new CustomOutputBin(name, choice);
     }
 
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
     private static final long serialVersionUID = 3018751086294120717L;
 
     /**
