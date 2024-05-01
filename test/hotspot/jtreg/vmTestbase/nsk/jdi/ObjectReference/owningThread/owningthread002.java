@@ -207,7 +207,7 @@ public class owningthread002 {
                                      } else {
                                         complain("owningThread returned ThreadReference of virtual thread instead of null: " + thread.name());
                                      }
-                                     continue; 
+                                     continue;
                                  }
                                  if (thread.name().indexOf(owningthread002a.threadNamePrefix) < 0) {
                                      exitCode = Consts.TEST_FAILED;
