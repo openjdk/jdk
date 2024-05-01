@@ -72,7 +72,8 @@ public class TestEncodingDecodingLength {
             m.invoke(ENCODER, LARGE_MEM_SIZE, true);
         } catch (InvocationTargetException ex) {
             Throwable rootEx = ex.getCause();
-            assertEquals(OutOfMemoryError.class, rootEx.getClass(), "00ME should be thrown");
+            assertEquals(OutOfMemoryError.class, rootEx.getClass(),
+                    "OOME should be thrown with Integer.MAX_VALUE input");
             assertEquals("Encoded size is too large", rootEx.getMessage());
         }
     }
@@ -97,7 +98,10 @@ public class TestEncodingDecodingLength {
             */
             m.invoke(DECODER, src, -LARGE_MEM_SIZE + 1, 1);
         } catch (InvocationTargetException ex) {
-            fail("Decode should neither throw NASE or OOME: " + ex.getCause());
+            // 8210583 - decode no longer throws NASE
+            // 8217969 - decode no longer throws OOME
+            fail("Decode threw an unexpected exception with " +
+                    "Integer.MAX_VALUE sized input: " + ex.getCause());
         }
     }
 
