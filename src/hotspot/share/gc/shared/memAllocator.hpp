@@ -122,16 +122,16 @@ public:
 // suppression of JVMTI "resource exhausted" events and
 // throwing a shared, backtrace-less OOME instance.
 // Used for OOMEs that will not be propagated to user code.
-class SandboxedOOMEMark: public StackObj {
+class InternalOOMEMark: public StackObj {
  private:
   bool _outer;
   JavaThread* _thread;
 
  public:
-  SandboxedOOMEMark(JavaThread* thread) {
+  InternalOOMEMark(JavaThread* thread) {
     if (thread != nullptr) {
-      _outer = thread->in_sandboxed_oome_mark();
-      thread->set_in_sandboxed_oome_mark(true);
+      _outer = thread->in_internal_oome_mark();
+      thread->set_in_internal_oome_mark(true);
       _thread = thread;
     } else {
       _outer = false;
@@ -139,12 +139,12 @@ class SandboxedOOMEMark: public StackObj {
     }
   }
 
-  ~SandboxedOOMEMark() {
+  ~InternalOOMEMark() {
     if (_thread != nullptr) {
-      // Check that only SandboxedOOMEMark sets
-      // JavaThread::_in_sandboxed_oome_mark
-      assert(_thread->in_sandboxed_oome_mark(), "must be");
-      _thread->set_in_sandboxed_oome_mark(_outer);
+      // Check that only InternalOOMEMark sets
+      // JavaThread::_in_internal_oome_mark
+      assert(_thread->in_internal_oome_mark(), "must be");
+      _thread->set_in_internal_oome_mark(_outer);
     }
   }
 

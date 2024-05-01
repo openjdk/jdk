@@ -1251,7 +1251,7 @@ bool Deoptimization::realloc_objects(JavaThread* thread, frame* fr, RegisterMap*
 
       InstanceKlass* ik = InstanceKlass::cast(k);
       if (obj == nullptr && !cache_init_error) {
-        SandboxedOOMEMark som(THREAD);
+        InternalOOMEMark iom(THREAD);
 #if COMPILER2_OR_JVMCI
         if (EnableVectorSupport && VectorSupport::is_vector(ik)) {
           obj = VectorSupport::allocate_vector(ik, fr, reg_map, sv, THREAD);
@@ -1266,11 +1266,11 @@ bool Deoptimization::realloc_objects(JavaThread* thread, frame* fr, RegisterMap*
       TypeArrayKlass* ak = TypeArrayKlass::cast(k);
       assert(sv->field_size() % type2size[ak->element_type()] == 0, "non-integral array length");
       int len = sv->field_size() / type2size[ak->element_type()];
-      SandboxedOOMEMark som(THREAD);
+      InternalOOMEMark iom(THREAD);
       obj = ak->allocate(len, THREAD);
     } else if (k->is_objArray_klass()) {
       ObjArrayKlass* ak = ObjArrayKlass::cast(k);
-      SandboxedOOMEMark som(THREAD);
+      InternalOOMEMark iom(THREAD);
       obj = ak->allocate(sv->field_size(), THREAD);
     }
 

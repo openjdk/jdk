@@ -1397,7 +1397,7 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
   assert(!HAS_PENDING_EXCEPTION, "No exception should be present");
   // some prerequisites that are compiler specific
   if (comp->is_c2() || comp->is_jvmci()) {
-    SandboxedOOMEMark som(THREAD);
+    InternalOOMEMark iom(THREAD);
     method->constants()->resolve_string_constants(CHECK_AND_CLEAR_NONASYNC_NULL);
     // Resolve all classes seen in the signature of the method
     // we are compiling.

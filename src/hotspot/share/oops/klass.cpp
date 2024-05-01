@@ -874,7 +874,7 @@ void Klass::set_archived_java_mirror(int mirror_index) {
 void Klass::check_array_allocation_length(int length, int max_length, TRAPS) {
   if (length > max_length) {
     report_java_out_of_memory("Requested array size exceeds VM limit");
-    if (!THREAD->in_sandboxed_oome_mark()) {
+    if (!THREAD->in_internal_oome_mark()) {
       JvmtiExport::post_array_size_exhausted();
       THROW_OOP(Universe::out_of_memory_error_array_size());
     } else {

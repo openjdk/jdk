@@ -54,7 +54,7 @@ class ContinuationEntry;
 class DeoptResourceMark;
 class JNIHandleBlock;
 class JVMCIRuntime;
-class SandboxedOOMEMark;
+class InternalOOMEMark;
 
 class JvmtiDeferredUpdates;
 class JvmtiSampledObjectAllocEventCollector;
@@ -335,8 +335,8 @@ class JavaThread: public Thread {
   // of _attaching_via_jni and transitions to _attached_via_jni.
   volatile JNIAttachStates _jni_attach_state;
 
-  // In scope of a SandboxedOOMEMark?
-  bool _in_sandboxed_oome_mark;
+  // In scope of an InternalOOMEMark?
+  bool _in_internal_oome_mark;
 
 #if INCLUDE_JVMCI
   // The _pending_* fields below are used to communicate extra information
@@ -713,8 +713,8 @@ private:
   MemRegion deferred_card_mark() const           { return _deferred_card_mark; }
   void set_deferred_card_mark(MemRegion mr)      { _deferred_card_mark = mr;   }
 
-  bool in_sandboxed_oome_mark() const            { return _in_sandboxed_oome_mark; }
-  void set_in_sandboxed_oome_mark(bool b)        { _in_sandboxed_oome_mark = b;    }
+  bool in_internal_oome_mark() const            { return _in_internal_oome_mark; }
+  void set_in_internal_oome_mark(bool b)        { _in_internal_oome_mark = b;    }
 
 #if INCLUDE_JVMCI
   jlong pending_failed_speculation() const        { return _pending_failed_speculation; }

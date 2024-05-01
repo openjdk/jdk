@@ -100,11 +100,11 @@ static void deopt_caller() {
 //   2. null is written to JavaThread::_vm_result
 class RetryableAllocationMark {
  private:
-   SandboxedOOMEMark _som;
+   InternalOOMEMark _iom;
  public:
-  RetryableAllocationMark(JavaThread* thread, bool activate) : _som(activate ? thread : nullptr) {}
+  RetryableAllocationMark(JavaThread* thread, bool activate) : _iom(activate ? thread : nullptr) {}
   ~RetryableAllocationMark() {
-    JavaThread* THREAD = _som.thread();
+    JavaThread* THREAD = _iom.thread();
     if (THREAD != nullptr) {
       if (HAS_PENDING_EXCEPTION) {
         oop ex = PENDING_EXCEPTION;
