@@ -89,8 +89,11 @@ class CachedNMTInformation : public VirtualMemoryWalker {
   Range* _ranges;
   MEMFLAGS* _flags;
   size_t _count, _capacity;
+  mutable size_t _last;
+
 public:
-  CachedNMTInformation() : _ranges(nullptr), _flags(nullptr), _count(0), _capacity(0) {}
+  CachedNMTInformation() : _ranges(nullptr), _flags(nullptr),
+                           _count(0), _capacity(0), _last(0) {}
 
   ~CachedNMTInformation() {
     ALLOW_C_FUNCTION(free, ::free(_ranges);)
@@ -131,17 +134,16 @@ public:
     // We optimize for sequential lookups. Since this class is used when a list
     // of OS mappings is scanned (VirtualQuery, /proc/pid/maps), and these lists
     // are usually sorted in order of addresses, ascending.
-    static uintx last = 0;
-    if (to <= _ranges[last].from) {
+    if (to <= _ranges[_last].from) {
       // the range is to the right of the given section, we need to re-start the search
-      last = 0;
+      _last = 0;
     }
     MemFlagBitmap bm;
-    for(uintx i = last; i < _count; i++) {
+    for(uintx i = _last; i < _count; i++) {
       if (range_intersects(from, to, _ranges[i].from, _ranges[i].to)) {
         bm.set_flag(_flags[i]);
       } else if (to <= _ranges[i].from) {
-        last = i;
+        _last = i;
         break;
       }
     }

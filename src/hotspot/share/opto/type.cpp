@@ -399,11 +399,13 @@ const Type *Type::make( enum TYPES t ) {
 }
 
 //------------------------------cmp--------------------------------------------
-int Type::cmp( const Type *const t1, const Type *const t2 ) {
-  if( t1->_base != t2->_base )
-    return 1;                   // Missed badly
+bool Type::equals(const Type* t1, const Type* t2) {
+  if (t1->_base != t2->_base) {
+    return false; // Missed badly
+  }
+
   assert(t1 != t2 || t1->eq(t2), "eq must be reflexive");
-  return !t1->eq(t2);           // Return ZERO if equal
+  return t1->eq(t2);
 }
 
 const Type* Type::maybe_remove_speculative(bool include_speculative) const {
@@ -433,9 +435,13 @@ void Type::Initialize_shared(Compile* current) {
   Arena* shared_type_arena = new (mtCompiler)Arena(mtCompiler);
 
   current->set_type_arena(shared_type_arena);
-  _shared_type_dict =
-    new (shared_type_arena) Dict( (CmpKey)Type::cmp, (Hash)Type::uhash,
-                                  shared_type_arena, 128 );
+
+  // Map the boolean result of Type::equals into a comparator result that CmpKey expects.
+  CmpKey type_cmp = [](const void* t1, const void* t2) -> int32_t {
+    return Type::equals((Type*) t1, (Type*) t2) ? 0 : 1;
+  };
+
+  _shared_type_dict = new (shared_type_arena) Dict(type_cmp, (Hash) Type::uhash, shared_type_arena, 128);
   current->set_type_dict(_shared_type_dict);
 
   // Make shared pre-built types.
@@ -744,7 +750,7 @@ const Type *Type::hashcons(void) {
   // Since we just discovered a new Type, compute its dual right now.
   assert( !_dual, "" );         // No dual yet
   _dual = xdual();              // Compute the dual
-  if (cmp(this, _dual) == 0) {  // Handle self-symmetric
+  if (equals(this, _dual)) {    // Handle self-symmetric
     if (_dual != this) {
       delete _dual;
       _dual = this;
@@ -6344,7 +6350,8 @@ const Type    *TypeAryKlassPtr::xmeet( const Type *t ) const {
       // For instances when a subclass meets a superclass we fall
       // below the centerline when the superclass is exact. We need to
       // do the same here.
-      if (tp->klass()->equals(ciEnv::current()->Object_klass()) && this_interfaces->intersection_with(tp_interfaces)->eq(tp_interfaces) && !tp->klass_is_exact()) {
+      if (tp->klass()->equals(ciEnv::current()->Object_klass()) && this_interfaces->contains(tp_interfaces) &&
+          !tp->klass_is_exact()) {
         return TypeAryKlassPtr::make(ptr, _elem, _klass, offset);
       } else {
         // cannot subclass, so the meet has to fall badly below the centerline
@@ -6362,7 +6369,8 @@ const Type    *TypeAryKlassPtr::xmeet( const Type *t ) const {
         // For instances when a subclass meets a superclass we fall
         // below the centerline when the superclass is exact. We need
         // to do the same here.
-        if (tp->klass()->equals(ciEnv::current()->Object_klass()) && this_interfaces->intersection_with(tp_interfaces)->eq(tp_interfaces) && !tp->klass_is_exact()) {
+        if (tp->klass()->equals(ciEnv::current()->Object_klass()) && this_interfaces->contains(tp_interfaces) &&
+            !tp->klass_is_exact()) {
           // that is, my array type is a subtype of 'tp' klass
           return make(ptr, _elem, _klass, offset);
         }
@@ -6396,7 +6404,8 @@ template <class T1, class T2> bool TypePtr::is_java_subtype_of_helper_for_array(
   }
 
   if (this_one->is_instance_type(other)) {
-    return other->klass() == ciEnv::current()->Object_klass() && other->_interfaces->intersection_with(this_one->_interfaces)->eq(other->_interfaces) && other_exact;
+    return other->klass() == ciEnv::current()->Object_klass() && this_one->_interfaces->contains(other->_interfaces) &&
+           other_exact;
   }
 
   assert(this_one->is_array_type(other), "");
@@ -6458,14 +6467,20 @@ template <class T1, class T2> bool TypePtr::maybe_java_subtype_of_helper_for_arr
   if (other->klass() == ciEnv::current()->Object_klass() && other->_interfaces->empty() && other_exact) {
     return true;
   }
-  int dummy;
-  bool this_top_or_bottom = (this_one->base_element_type(dummy) == Type::TOP || this_one->base_element_type(dummy) == Type::BOTTOM);
-  if (!this_one->is_loaded() || !other->is_loaded() || this_top_or_bottom) {
+  if (!this_one->is_loaded() || !other->is_loaded()) {
     return true;
   }
   if (this_one->is_instance_type(other)) {
-    return other->klass()->equals(ciEnv::current()->Object_klass()) && other->_interfaces->intersection_with(this_one->_interfaces)->eq(other->_interfaces);
+    return other->klass()->equals(ciEnv::current()->Object_klass()) &&
+           this_one->_interfaces->contains(other->_interfaces);
   }
+
+  int dummy;
+  bool this_top_or_bottom = (this_one->base_element_type(dummy) == Type::TOP || this_one->base_element_type(dummy) == Type::BOTTOM);
+  if (this_top_or_bottom) {
+    return true;
+  }
+
   assert(this_one->is_array_type(other), "");
 
   const T1* other_ary = this_one->is_array_type(other);
