@@ -473,69 +473,6 @@ class CLibrary {
         // https://man7.org/linux/man-pages/man3/openpty.3.html
         LinkageError error = null;
         Optional<MemorySegment> openPtyAddr = lookup.find("openpty");
-        if (openPtyAddr.isEmpty()) {
-            StringBuilder sb = new StringBuilder();
-            sb.append("Unable to find openpty native method in static libraries and unable to load the util library.");
-            List<Throwable> suppressed = new ArrayList<>();
-            try {
-                System.loadLibrary("util");
-                openPtyAddr = lookup.find("openpty");
-            } catch (Throwable t) {
-                suppressed.add(t);
-            }
-            if (openPtyAddr.isEmpty()) {
-                String libUtilPath = System.getProperty("jdk.internal.org.jline.ffm.libutil");
-                if (libUtilPath != null && !libUtilPath.isEmpty()) {
-                    try {
-                        System.load(libUtilPath);
-                        openPtyAddr = lookup.find("openpty");
-                    } catch (Throwable t) {
-                        suppressed.add(t);
-                    }
-                }
-            }
-            if (openPtyAddr.isEmpty() && OSUtils.IS_LINUX) {
-                String hwName;
-                try {
-                    Process p = Runtime.getRuntime().exec(new String[] {"uname", "-m"});
-                    p.waitFor();
-                    try (InputStream in = p.getInputStream()) {
-                        hwName = readFully(in).trim();
-                        Path libDir = Paths.get("/usr/lib", hwName + "-linux-gnu");
-                        try (Stream<Path> stream = Files.list(libDir)) {
-                            List<Path> libs = stream.filter(
-                                            l -> l.getFileName().toString().startsWith("libutil.so."))
-                                    .collect(Collectors.toList());
-                            for (Path lib : libs) {
-                                try {
-                                    System.load(lib.toString());
-                                    openPtyAddr = lookup.find("openpty");
-                                    if (openPtyAddr.isPresent()) {
-                                        break;
-                                    }
-                                } catch (Throwable t) {
-                                    suppressed.add(t);
-                                }
-                            }
-                        }
-                    }
-                } catch (Throwable t) {
-                    suppressed.add(t);
-                }
-            }
-            if (openPtyAddr.isEmpty()) {
-                for (Throwable t : suppressed) {
-                    sb.append("\n\t- ").append(t.toString());
-                }
-                error = new LinkageError(sb.toString());
-                suppressed.forEach(error::addSuppressed);
-//                if (logger.isLoggable(Level.FINE)) {
-//                    logger.log(Level.WARNING, error.getMessage(), error);
-//                } else {
-//                    logger.log(Level.WARNING, error.getMessage());
-//                }
-            }
-        }
         if (openPtyAddr.isPresent()) {
             openpty = linker.downcallHandle(
                     openPtyAddr.get(),
