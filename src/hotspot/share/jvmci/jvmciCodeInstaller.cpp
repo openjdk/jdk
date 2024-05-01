@@ -771,10 +771,7 @@ JVMCI::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler,
       JVMCI_THROW_MSG_(IllegalArgumentException, "InstalledCode object must be a HotSpotNmethod when installing a HotSpotCompiledNmethod", JVMCI::ok);
     }
 
-    // We would like to be strict about the nmethod entry barrier but there are various test
-    // configurations which generate assembly without being a full compiler. So for now we enforce
-    // that JIT compiled methods must have an nmethod barrier.
-    bool install_default = JVMCIENV->get_HotSpotNmethod_isDefault(installed_code) != 0;
+    // Enforce that compiled methods have an nmethod barrier.
     if (_nmethod_entry_patch_offset == -1) {
       JVMCI_THROW_MSG_(IllegalArgumentException, "nmethod entry barrier is missing", JVMCI::ok);
     }
