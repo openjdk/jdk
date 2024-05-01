@@ -6126,24 +6126,28 @@ void Assembler::pblendw(XMMRegister dst, XMMRegister src, int imm8) {
 
 void Assembler::sha1rnds4(XMMRegister dst, XMMRegister src, int imm8) {
   assert(VM_Version::supports_sha(), "");
+  assert(dst->encoding() < 16 && src->encoding() < 16, "Instruction does not support extended registers");
   int encode = rex_prefix_and_encode(dst->encoding(), src->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_3A, /* rex_w */ false);
   emit_int24((unsigned char)0xCC, (0xC0 | encode), (unsigned char)imm8);
 }
 
 void Assembler::sha1nexte(XMMRegister dst, XMMRegister src) {
   assert(VM_Version::supports_sha(), "");
+  assert(dst->encoding() < 16 && src->encoding() < 16, "Instruction does not support extended registers");
   int encode = rex_prefix_and_encode(dst->encoding(), src->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_38, /* rex_w */ false);
   emit_int16((unsigned char)0xC8, (0xC0 | encode));
 }
 
 void Assembler::sha1msg1(XMMRegister dst, XMMRegister src) {
   assert(VM_Version::supports_sha(), "");
+  assert(dst->encoding() < 16 && src->encoding() < 16, "Instruction does not support extended registers");
   int encode = rex_prefix_and_encode(dst->encoding(), src->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_38, /* rex_w */ false);
   emit_int16((unsigned char)0xC9, (0xC0 | encode));
 }
 
 void Assembler::sha1msg2(XMMRegister dst, XMMRegister src) {
   assert(VM_Version::supports_sha(), "");
+  assert(dst->encoding() < 16 && src->encoding() < 16, "Instruction does not support extended registers");
   int encode = rex_prefix_and_encode(dst->encoding(), src->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_38, /* rex_w */ false);
   emit_int16((unsigned char)0xCA, (0xC0 | encode));
 }
@@ -6151,18 +6155,21 @@ void Assembler::sha1msg2(XMMRegister dst, XMMRegister src) {
 // xmm0 is implicit additional source to this instruction.
 void Assembler::sha256rnds2(XMMRegister dst, XMMRegister src) {
   assert(VM_Version::supports_sha(), "");
+  assert(dst->encoding() < 16 && src->encoding() < 16, "Instruction does not support extended registers");
   int encode = rex_prefix_and_encode(dst->encoding(), src->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_38, /* rex_w */ false);
   emit_int16((unsigned char)0xCB, (0xC0 | encode));
 }
 
 void Assembler::sha256msg1(XMMRegister dst, XMMRegister src) {
   assert(VM_Version::supports_sha(), "");
+  assert(dst->encoding() < 16 && src->encoding() < 16, "Instruction does not support extended registers");
   int encode = rex_prefix_and_encode(dst->encoding(), src->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_38, /* rex_w */ false);
   emit_int16((unsigned char)0xCC, (0xC0 | encode));
 }
 
 void Assembler::sha256msg2(XMMRegister dst, XMMRegister src) {
   assert(VM_Version::supports_sha(), "");
+  assert(dst->encoding() < 16 && src->encoding() < 16, "Instruction does not support extended registers");
   int encode = rex_prefix_and_encode(dst->encoding(), src->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_38, /* rex_w */ false);
   emit_int16((unsigned char)0xCD, (0xC0 | encode));
 }
@@ -6317,7 +6324,7 @@ void Assembler::sqrtss(XMMRegister dst, Address src) {
 }
 
 void Assembler::stmxcsr(Address dst) {
-  if (UseAVX > 0 ) {
+  if (UseAVX > 0 && !needs_rex2(dst.base(), dst.index()) ) {
     assert(VM_Version::supports_avx(), "");
     InstructionMark im(this);
     InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ true, /* no_mask_reg */ true, /* uses_vl */ false);
