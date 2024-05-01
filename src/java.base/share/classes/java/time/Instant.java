@@ -1166,17 +1166,10 @@ public final class Instant
      * Calculates the {@code Duration} until another {@code Instant}.
      * <p>
      * The start and end points are {@code this} and the specified instant.
-     * The result will be negative if the end is before the start.
-     * <p>
-     * There are two ways to determine the duration between two instants.
-     * The first is to invoke this method.
-     * The second is to use {@link Duration#between(Temporal, Temporal)}:
-     * <pre>
-     *   // two ways to determine the duration
-     *   duration = start.until(end);
-     *   duration = Duration.between(start, end);
-     * </pre>
-     * The choice should be made based on which makes the code more readable.
+     * The result will be negative if the end is before the start. Calling
+     * this method is equivalent to
+     * {@link Duration#between(Temporal, Temporal) Duration.between(this,
+     * endExclusive)}.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
