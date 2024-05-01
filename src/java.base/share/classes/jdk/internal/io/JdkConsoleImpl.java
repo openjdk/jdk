@@ -71,7 +71,7 @@ public final class JdkConsoleImpl implements JdkConsole {
     }
 
     @Override
-    public String input(String prompt) {
+    public String readln(String prompt) {
         String line = null;
         synchronized (writeLock) {
             synchronized(readLock) {

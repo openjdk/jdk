@@ -110,7 +110,7 @@ final class ProxyingConsole extends Console {
     public String readln(String prompt) {
         synchronized (writeLock) {
             synchronized (readLock) {
-                return delegate.input(prompt);
+                return delegate.readln(prompt);
             }
         }
     }

@@ -215,7 +215,7 @@ public class ConsoleImpl {
          * @throws IOError {@inheritDoc}
          */
         @Override
-        public String input(String prompt) {
+        public String readln(String prompt) {
             try {
                 return sendAndReceive(() -> {
                     remoteInput.write(Task.READ_LINE.ordinal());

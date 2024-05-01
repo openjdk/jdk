@@ -95,7 +95,7 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
         }
 
         @Override
-        public String input(String prompt) {
+        public String readln(String prompt) {
             try {
                 initJLineIfNeeded();
                 return jline.readLine(prompt);
