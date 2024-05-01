@@ -32,10 +32,9 @@ import java.util.Random;
 import java.lang.foreign.*;
 
 /*
- * @test
+ * @test id=array
  * @bug 8310190
  * @summary Test vectorization of loops over MemorySegment
- * @modules java.base/jdk.internal.misc
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestMemorySegment ByteArray
  * @run driver compiler.loopopts.superword.TestMemorySegment CharArray
@@ -44,15 +43,39 @@ import java.lang.foreign.*;
  * @run driver compiler.loopopts.superword.TestMemorySegment LongArray
  * @run driver compiler.loopopts.superword.TestMemorySegment FloatArray
  * @run driver compiler.loopopts.superword.TestMemorySegment DoubleArray
+ */
+
+/*
+ * @test id=buffer
+ * @bug 8310190
+ * @summary Test vectorization of loops over MemorySegment
+ * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestMemorySegment ByteBuffer
  * @run driver compiler.loopopts.superword.TestMemorySegment ByteBufferDirect
  * @run driver compiler.loopopts.superword.TestMemorySegment Native
  */
 
+/*
+ * @test id=native
+ * @bug 8310190
+ * @summary Test vectorization of loops over MemorySegment
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestMemorySegment Native
+ */
+
+/*
+ * @test id=mixed
+ * @bug 8310190
+ * @summary Test vectorization of loops over MemorySegment
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestMemorySegment MixedArray
+ * @run driver compiler.loopopts.superword.TestMemorySegment MixedBuffer
+ * @run driver compiler.loopopts.superword.TestMemorySegment Mixed
+ */
+
 public class TestMemorySegment {
     public static void main(String[] args) {
         TestFramework framework = new TestFramework(TestMemorySegmentImpl.class);
-        framework.addFlags("--add-modules", "java.base", "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED");
         framework.addFlags("-DmyVerySpecialArgument=" + args[0]); // forward the argument
         framework.start();
     }
@@ -92,6 +115,9 @@ class TestMemorySegmentImpl {
             case "ByteBuffer"       -> ( () -> { return newMemorySegmentOfByteBuffer(); } );
             case "ByteBufferDirect" -> ( () -> { return newMemorySegmentOfByteBufferDirect(); } );
             case "Native"           -> ( () -> { return newMemorySegmentOfNative(); } );
+            case "MixedArray"       -> ( () -> { return newMemorySegmentOfMixedArray(); } );
+            case "MixedBuffer"      -> ( () -> { return newMemorySegmentOfMixedBuffer(); } );
+            case "Mixed"            -> ( () -> { return newMemorySegmentOfMixed(); } );
             default -> throw new RuntimeException("Test argument not recognized: " + argv);
         };
 
@@ -180,6 +206,33 @@ class TestMemorySegmentImpl {
         // Auto arena: GC decides when there is no reference to the MemorySegment,
         // and then it deallocates the backing memory.
         return Arena.ofAuto().allocate(BACKING_SIZE, 1);
+    }
+
+    static MemorySegment newMemorySegmentOfMixedArray() {
+        switch(RANDOM.nextInt(7)) {
+            case 0  -> { return newMemorySegmentOfByteArray(); }
+            case 1  -> { return newMemorySegmentOfCharArray(); }
+            case 2  -> { return newMemorySegmentOfShortArray(); }
+            case 3  -> { return newMemorySegmentOfIntArray(); }
+            case 4  -> { return newMemorySegmentOfLongArray(); }
+            case 5  -> { return newMemorySegmentOfFloatArray(); }
+            default -> { return newMemorySegmentOfDoubleArray(); }
+	}
+    }
+
+    static MemorySegment newMemorySegmentOfMixedBuffer() {
+        switch(RANDOM.nextInt(2)) {
+            case 0  -> { return newMemorySegmentOfByteBuffer(); }
+            default -> { return newMemorySegmentOfByteBufferDirect(); }
+	}
+    }
+
+    static MemorySegment newMemorySegmentOfMixed() {
+        switch(RANDOM.nextInt(3)) {
+            case 0  -> { return newMemorySegmentOfMixedArray(); }
+            case 1  -> { return newMemorySegmentOfMixedBuffer(); }
+            default -> { return newMemorySegmentOfNative(); }
+	}
     }
 
     static void fillRandom(MemorySegment data) {
