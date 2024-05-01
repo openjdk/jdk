@@ -206,66 +206,6 @@ public sealed class Console implements Flushable permits ProxyingConsole {
     }
 
     /**
-     * A collection of static convenience methods that provide access to
-     * {@link System#console()} for implicitly declared classes.
-     *
-     * <p> Each of this class' methods calls a similarly-named method on
-     * {@code Console} returned by {@code System.console()}, or throws
-     * {@link IOError} if {@code System.console()} returns {@code null}.
-     *
-     * @since 23
-     */
-    @PreviewFeature(feature = PreviewFeature.Feature.IMPLICIT_CLASSES)
-    public static class Basic {
-
-        private Basic() {
-            throw new Error("no instances");
-        }
-
-        /**
-         * Calls {@link Console#println(Object) Console.println(obj)} on
-         * {@link System#console()}, or throws {@link IOError} if
-         * {@code System.console()} returns {@code null}.
-         *
-         * @param obj the object to print
-         */
-        public static void println(Object obj) {
-            con().println(obj);
-        }
-
-        /**
-         * Calls {@link Console#print(Object) Console.print(obj)} on
-         * {@link System#console()}, or throws {@link IOError} if
-         * {@code System.console()} returns {@code null}.
-         *
-         * @param obj the object to print
-         */
-        public static void print(Object obj) {
-            con().print(obj);
-        }
-
-        /**
-         * {@return the result of a call to {@link Console#input(String)
-         * Console.input(prompt)} on {@link System#console()}, or throws
-         * {@link IOError} if {@code System.console()} returns {@code null}}
-         *
-         * @param prompt the prompt string
-         */
-        public static String input(String prompt) {
-            return con().input(prompt);
-        }
-
-        private static Console con() {
-            var con = System.console();
-            if (con != null) {
-                return con;
-            } else {
-                throw new IOError(null);
-            }
-        }
-    }
-
-    /**
      * Writes a formatted string to this console's output stream using
      * the specified format string and arguments.
      *

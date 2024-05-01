@@ -40,11 +40,11 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 /*
  * @test
  * @bug 8305457
- * @summary java.io.Console.Basic tests
+ * @summary java.io.IO tests
  * @library /test/lib
- * @run junit Basic
+ * @run junit IO
  */
-public class Basic {
+public class IO {
 
     @ParameterizedTest
     @ValueSource(strings = {"println", "print"})
@@ -57,8 +57,8 @@ public class Basic {
         output.reportDiagnosticSummary();
         String out = output.getOutput();
         // The first half of the output is produced by Console, the second
-        // half is produced by Console.Basic: those halves must match.
-        // Executing Console and Console.Basic in the same VM (as opposed to
+        // half is produced by IO: those halves must match.
+        // Executing Console and IO in the same VM (as opposed to
         // consecutive VM runs, which are cleaner) to be able to compare string
         // representation of objects.
         assertFalse(out.isBlank());

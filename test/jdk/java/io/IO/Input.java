@@ -21,13 +21,13 @@
  * questions.
  */
 
-import java.io.Console;
+import java.io.IO;
 import java.io.IOException;
 
 public class Input {
 
     public static void main(String[] args) throws IOException {
         // to test that input does not interpret its argument as a format string
-        System.out.print( Console.Basic.input("%s") );
+        System.out.print( IO.input("%s") );
     }
 }

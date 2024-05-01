@@ -21,7 +21,7 @@
  * questions.
  */
 
-import java.io.Console;
+import java.io.IO;
 import java.util.function.Consumer;
 
 public class Print {
@@ -45,11 +45,11 @@ public class Print {
         switch (args[0]) {
             case "print" -> {
                 print(obj -> System.console().format("%s", obj).flush());
-                print(obj -> Console.Basic.print(obj));
+                print(obj -> IO.print(obj));
             }
             case "println" -> {
                 print(obj -> System.console().format("%s%n", obj).flush());
-                print(obj -> Console.Basic.println(obj));
+                print(obj -> IO.println(obj));
             }
             default -> throw new IllegalArgumentException();
         }

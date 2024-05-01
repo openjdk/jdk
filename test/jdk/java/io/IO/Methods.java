@@ -21,15 +21,15 @@
  * questions.
  */
 
-import java.io.Console;
+import java.io.IO;
 
 public class Methods {
 
     public static void main(String[] args) {
         switch (args[0]) {
-            case "println" -> Console.Basic.println("hello");
-            case "print" -> Console.Basic.print("hello");
-            case "input" -> Console.Basic.input("hello");
+            case "println" -> IO.println("hello");
+            case "print" -> IO.print("hello");
+            case "input" -> IO.input("hello");
             default -> throw new IllegalArgumentException(args[0]);
         }
     }
