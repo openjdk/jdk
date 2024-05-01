@@ -1362,7 +1362,7 @@ debugMonitorEnter(DebugRawMonitor *dbg_monitor)
 
         debugMonitorEnter_norank(monitor);
 
-        // Once we have entered the monitor, claim ownership of the DebugRawMonitor 
+        // Once we have entered the monitor, claim ownership of the DebugRawMonitor
         // by saving the thread into it.
         dbgRawMonitor_lock();
         JDI_ASSERT(dbg_monitor->ownerThread == NULL);
@@ -1440,7 +1440,7 @@ debugMonitorWait(DebugRawMonitor *dbg_monitor)
 
     debugMonitorWait_norank(monitor);
 
-    // Now that we have re-entered the monitor, reclaim ownership of the DebugRawMonitor 
+    // Now that we have re-entered the monitor, reclaim ownership of the DebugRawMonitor
     // by saving the thread into it and restoring the entry count.
     dbgRawMonitor_lock();
     dbg_monitor->ownerThread = thread;
