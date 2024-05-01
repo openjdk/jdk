@@ -2371,6 +2371,9 @@ public class ObjectInputStream
         }
 
         FieldValues fieldValues = new FieldValues(desc, true);
+        if (handles.lookupException(passHandle) != null) {
+            return null;     // slot marked with exception, don't create record
+        }
 
         // get canonical record constructor adapted to take two arguments:
         // - byte[] primValues
@@ -2464,8 +2467,11 @@ public class ObjectInputStream
                     if (slotValues != null) {
                         slotValues[i] = values;
                     } else if (obj != null) {
-                        values.defaultCheckFieldValues(obj);
-                        values.defaultSetFieldValues(obj);
+                        if (handles.lookupException(passHandle) == null) {
+                            // passHandle NOT marked with an exception; set field values
+                            values.defaultCheckFieldValues(obj);
+                            values.defaultSetFieldValues(obj);
+                        }
                     }
                 }
 
@@ -2484,7 +2490,8 @@ public class ObjectInputStream
             }
         }
 
-        if (obj != null && slotValues != null) {
+        if (obj != null && slotValues != null && handles.lookupException(passHandle) == null) {
+            // passHandle NOT marked with an exception
             // Check that the non-primitive types are assignable for all slots
             // before assigning.
             for (int i = 0; i < slots.length; i++) {
