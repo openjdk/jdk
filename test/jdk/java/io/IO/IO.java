@@ -86,6 +86,7 @@ public class IO {
                 "expect",
                 Path.of(testSrc, "script.exp").toAbsolutePath().toString(),
                 System.getProperty("test.jdk") + "/bin/java",
+                "--enable-preview",
                 Path.of(testSrc, "Input.java").toAbsolutePath().toString());
         output.reportDiagnosticSummary();
         assertEquals(0, output.getExitValue());

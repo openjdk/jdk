@@ -28,7 +28,6 @@ import static java.io.IO.input;
 public class Input {
 
     public static void main(String[] args) throws IOException {
-        // to test that input does not interpret its argument as a format string
-        System.out.print(input("%s"));
+        System.out.print(input("?"));
     }
 }

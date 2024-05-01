@@ -22,11 +22,12 @@
 #
 
 set java [lrange $argv 0 0]
-set file [lrange $argv 1 1]
+set opts [lrange $argv 1 1]
+set file [lrange $argv 2 2]
 
-spawn $java $file
+spawn $java $opts $file
 expect {
-    -exact "%s" {
+    -exact "?" {
         send "hello\r"
     }
     timeout {
