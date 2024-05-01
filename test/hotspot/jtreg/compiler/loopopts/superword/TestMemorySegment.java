@@ -147,6 +147,9 @@ class TestMemorySegmentImpl {
         tests.put("testIntLoop_longIndex_longInvar_byte", () -> {
             return testIntLoop_longIndex_longInvar_byte(copy(a), 0);
         });
+        tests.put("testIntLoop_intIndex_intInvar_byte", () -> {
+            return testIntLoop_intIndex_intInvar_byte(copy(a), 0);
+        });
 
         // Compute gold value for all test methods before compilation
         for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {
@@ -286,7 +289,8 @@ class TestMemorySegmentImpl {
                  "testIntLoop_longIndex_intInvar_sameAdr_byte",
                  "testIntLoop_longIndex_longInvar_sameAdr_byte",
                  "testIntLoop_longIndex_intInvar_byte",
-                 "testIntLoop_longIndex_longInvar_byte"})
+                 "testIntLoop_longIndex_longInvar_byte",
+                 "testIntLoop_intIndex_intInvar_byte"})
     void runTests() {
         for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {
             String name = entry.getKey();
@@ -396,6 +400,22 @@ class TestMemorySegmentImpl {
             byte v = a.get(ValueLayout.JAVA_BYTE, adr1);
             long adr2 = (long)(i) + (long)(invar);
             a.set(ValueLayout.JAVA_BYTE, adr2, (byte)(v + 1));
+        }
+        return new Object[]{ a };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "= 0",
+                  IRNode.ADD_VB,        "= 0",
+                  IRNode.STORE_VECTOR,  "= 0"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    // FAILS: RangeCheck cannot be eliminated because of int_index
+    static Object[] testIntLoop_intIndex_intInvar_byte(MemorySegment a, int invar) {
+        for (int i = 0; i < (int)a.byteSize(); i++) {
+            int int_index = i + invar;
+            byte v = a.get(ValueLayout.JAVA_BYTE, int_index);
+            a.set(ValueLayout.JAVA_BYTE, int_index, (byte)(v + 1));
         }
         return new Object[]{ a };
     }
