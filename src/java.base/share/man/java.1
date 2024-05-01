@@ -1104,7 +1104,7 @@ following:
 .RS
 .TP
 \f[V]all\f[R]
-Shows all categories of settings in verbose detail and then continues.
+Shows all categories of settings in \f[B]verbose\f[R] detail.
 .TP
 \f[V]locale\f[R]
 Shows settings related to locale.
@@ -1114,12 +1114,18 @@ Shows settings related to system properties.
 .TP
 \f[V]security\f[R]
 Shows all security settings.
-sub-category arguments for \f[V]security\f[R] include the following: *
-\f[V]security:all\f[R] : show all security settings and continue *
-\f[V]security:properties\f[R] : show security properties and continue *
-\f[V]security:providers\f[R] : show static security provider settings
-and continue * \f[V]security:tls\f[R] : show TLS related security
-settings and continue
+.RS
+.PP
+sub-category arguments for \f[V]security\f[R] include the following:
+.IP \[bu] 2
+\f[V]security:all\f[R] : shows all security settings
+.IP \[bu] 2
+\f[V]security:properties\f[R] : shows security properties
+.IP \[bu] 2
+\f[V]security:providers\f[R] : shows static security provider settings
+.IP \[bu] 2
+\f[V]security:tls\f[R] : shows TLS related security settings
+.RE
 .TP
 \f[V]vm\f[R]
 Shows the settings of the JVM.
