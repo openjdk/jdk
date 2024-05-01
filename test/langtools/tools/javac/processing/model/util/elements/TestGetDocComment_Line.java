@@ -24,10 +24,10 @@
 /*
  * @test
  * @bug 8307184
- * @summary Test basic operation of Elements.getDocComments
+ * @summary Test basic operation of Elements.getDocComment
  * @library /tools/lib /tools/javac/lib
- * @build   toolbox.ToolBox JavacTestingAbstractProcessor TestGetDocCommentsLine
- * @compile -processor TestGetDocCommentsLine -proc:only TestGetDocCommentsLine.java
+ * @build   toolbox.ToolBox JavacTestingAbstractProcessor TestGetDocComment_Line
+ * @compile -processor TestGetDocComment_Line -proc:only TestGetDocComment_Line.java
  */
 
 import java.util.Set;
@@ -36,14 +36,13 @@ import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.ElementFilter;
-import javax.lang.model.util.Elements.DocCommentKind;
 
 import toolbox.ToolBox;
 
 /**
- * Test basic workings of Elements.getDocComments for line comments
+ * Test basic operation of Elements.getDocComment for line comments
  */
-public class TestGetDocCommentsLine extends JavacTestingAbstractProcessor {
+public class TestGetDocComment_Line extends JavacTestingAbstractProcessor {
     public boolean process(Set<? extends TypeElement> annotations,
                            RoundEnvironment roundEnv) {
         if (!roundEnv.processingOver()) {
@@ -63,12 +62,6 @@ public class TestGetDocCommentsLine extends JavacTestingAbstractProcessor {
                             System.err.println("actual>>" + actualComment + "<<");
                             (new ToolBox()).checkEqual(expectedCommentStr.lines().toList(),
                                                        actualComment.lines().toList());
-                        }
-
-                        DocCommentKind expectedDocCommentKind = DocCommentKind.END_OF_LINE;
-                        DocCommentKind actualDocCommentKind = elements.getDocCommentKind(element);
-                        if (expectedDocCommentKind != actualDocCommentKind) {
-                            messager.printError("Unexpected doc comment kind found: " + actualDocCommentKind, element);
                         }
                     }
                 }

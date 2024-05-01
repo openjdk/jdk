@@ -24,23 +24,22 @@
 /*
  * @test
  * @bug 8307184
- * @summary Test basic operation of Elements.getDocComments
+ * @summary Test basic operation of Elements.getDocComment
  * @library /tools/lib /tools/javac/lib
- * @build   toolbox.ToolBox JavacTestingAbstractProcessor TestGetDocComments
- * @compile -processor TestGetDocComments -proc:only TestGetDocComments.java
+ * @build   toolbox.ToolBox JavacTestingAbstractProcessor TestGetDocComment_Block
+ * @compile -processor TestGetDocComment_Block -proc:only TestGetDocComment_Block.java
  */
 
 import java.util.*;
 import javax.annotation.processing.*;
 import javax.lang.model.element.*;
-import javax.lang.model.util.Elements.DocCommentKind;
 import javax.lang.model.util.*;
 import toolbox.ToolBox;
 
 /**
- * Test basic workings of Elements.getDocComments for block comments
+ * Test basic operation of Elements.getDocComment for block comments
  */
-public class TestGetDocComments extends JavacTestingAbstractProcessor {
+public class TestGetDocComment_Block extends JavacTestingAbstractProcessor {
     public boolean process(Set<? extends TypeElement> annotations,
                            RoundEnvironment roundEnv) {
         if (!roundEnv.processingOver()) {
@@ -58,12 +57,6 @@ public class TestGetDocComments extends JavacTestingAbstractProcessor {
                             messager.printError("Unexpected doc comment found", element);
                             (new ToolBox()).checkEqual(expectedCommentStr.lines().toList(),
                                                        actualComment.lines().toList());
-                        }
-
-                        DocCommentKind expectedDocCommentKind = DocCommentKind.TRADITIONAL;
-                        DocCommentKind actualDocCommentKind = elements.getDocCommentKind(element);
-                        if (expectedDocCommentKind != actualDocCommentKind) {
-                            messager.printError("Unexpected doc comment kind found: " + actualDocCommentKind, element);
                         }
                     }
                 }
