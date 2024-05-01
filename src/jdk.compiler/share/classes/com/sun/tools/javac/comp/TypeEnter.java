@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -340,29 +340,6 @@ public class TypeEnter implements Completer {
                 javaLang, env);
         }
 
-        private void staticImports(JCCompilationUnit tree, Env<AttrContext> env, ImportFilter staticImportFilter) {
-             if (preview.isEnabled() && preview.isPreview(Feature.STRING_TEMPLATES)) {
-                Lint prevLint = chk.setLint(lint.suppress(LintCategory.DEPRECATION, LintCategory.REMOVAL, LintCategory.PREVIEW));
-                boolean prevPreviewCheck = chk.disablePreviewCheck;
-
-                try {
-                    chk.disablePreviewCheck = true;
-                    String autoImports = """
-                            import static java.lang.StringTemplate.STR;
-                            """;
-                    Parser parser = parserFactory.newParser(autoImports, false, false, false, false);
-                    JCCompilationUnit importTree = parser.parseCompilationUnit();
-
-                    for (JCImport imp : importTree.getImports()) {
-                        doImport(imp);
-                    }
-                } finally {
-                    chk.setLint(prevLint);
-                    chk.disablePreviewCheck = prevPreviewCheck;
-                }
-            }
-        }
-
         private void resolveImports(JCCompilationUnit tree, Env<AttrContext> env) {
             if (tree.starImportScope.isFilled()) {
                 // we must have already processed this toplevel
@@ -371,7 +348,7 @@ public class TypeEnter implements Completer {
 
             ImportFilter prevStaticImportFilter = staticImportFilter;
             ImportFilter prevTypeImportFilter = typeImportFilter;
-            DiagnosticPosition prevLintPos = deferredLintHandler.immediate();
+            DiagnosticPosition prevLintPos = deferredLintHandler.immediate(lint);
             Lint prevLint = chk.setLint(lint);
             Env<AttrContext> prevEnv = this.env;
             try {
@@ -386,7 +363,6 @@ public class TypeEnter implements Completer {
                                          chk.importAccessible(sym, packge);
 
                 importJavaLang(tree, env, typeImportFilter);
-                staticImports(tree, env, staticImportFilter);
 
                 JCModuleDecl decl = tree.getModuleDecl();
 

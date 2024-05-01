@@ -1994,7 +1994,8 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
 
         @Override @DefinedBy(Api.LANGUAGE_MODEL)
         public Set<Modifier> getModifiers() {
-            long flags = flags();
+            // just in case the method is restricted but that is not a modifier
+            long flags = flags() & ~RESTRICTED;
             return Flags.asModifierSet((flags & DEFAULT) != 0 ? flags & ~ABSTRACT : flags);
         }
 

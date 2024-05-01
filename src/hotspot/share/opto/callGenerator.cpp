@@ -554,6 +554,10 @@ bool LateInlineVirtualCallGenerator::do_late_inline_check(Compile* C, JVMState* 
                                         true /*allow_intrinsics*/);
 
   if (cg != nullptr) {
+    if (!allow_inline && (C->print_inlining() || C->print_intrinsics())) {
+      C->print_inlining(method(), jvms->depth()-1, call_node()->jvms()->bci(), InliningResult::FAILURE,
+                        "late call devirtualization");
+    }
     assert(!cg->is_late_inline() || cg->is_mh_late_inline() || AlwaysIncrementalInline || StressIncrementalInlining, "we're doing late inlining");
     _inline_cg = cg;
     return true;

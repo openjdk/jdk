@@ -29,6 +29,8 @@
 #include "code/codeCache.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "compiler/compileTask.hpp"
+#include "gc/shared/barrierSet.hpp"
+#include "gc/shared/barrierSetNMethod.hpp"
 #include "jvm_io.h"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
@@ -36,11 +38,11 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/javaCalls.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/os.hpp"
 #include "jvmci/jniAccessMark.inline.hpp"
 #include "jvmci/jvmciCompiler.hpp"
@@ -415,6 +417,11 @@ class ExceptionTranslation: public StackObj {
   // Decodes the exception in `buffer` in `_to_env` and throws it.
   virtual void decode(JavaThread* THREAD, DecodeFormat format, jlong buffer) = 0;
 
+  static bool debug_translated_exception() {
+      const char* prop_value = Arguments::get_property("jdk.internal.vm.TranslatedException.debug");
+      return prop_value != nullptr && strcmp("true", prop_value) == 0;
+  }
+
  public:
   void doit(JavaThread* THREAD) {
     int buffer_size = 2048;
@@ -510,7 +517,7 @@ class HotSpotToSharedLibraryExceptionTranslation : public ExceptionTranslation {
     JNIAccessMark jni(_to_env, THREAD);
     jni()->CallStaticVoidMethod(JNIJVMCI::VMSupport::clazz(),
                                 JNIJVMCI::VMSupport::decodeAndThrowThrowable_method(),
-                                format, buffer, false);
+                                format, buffer, false, debug_translated_exception());
   }
  public:
   HotSpotToSharedLibraryExceptionTranslation(JVMCIEnv* hotspot_env, JVMCIEnv* jni_env, const Handle& throwable) :
@@ -543,6 +550,7 @@ class SharedLibraryToHotSpotExceptionTranslation : public ExceptionTranslation {
     jargs.push_int(format);
     jargs.push_long(buffer);
     jargs.push_int(true);
+    jargs.push_int(debug_translated_exception());
     JavaValue result(T_VOID);
     JavaCalls::call_static(&result,
                             vmSupport,
@@ -1424,7 +1432,7 @@ JVMCIPrimitiveArray JVMCIEnv::new_byteArray(int length, JVMCI_TRAPS) {
 JVMCIObjectArray JVMCIEnv::new_byte_array_array(int length, JVMCI_TRAPS) {
   JavaThread* THREAD = JavaThread::current(); // For exception macros.
   if (is_hotspot()) {
-    Klass* byteArrayArrayKlass = TypeArrayKlass::cast(Universe::byteArrayKlassObj  ())->array_klass(CHECK_(JVMCIObject()));
+    Klass* byteArrayArrayKlass = TypeArrayKlass::cast(Universe::byteArrayKlass())->array_klass(CHECK_(JVMCIObject()));
     objArrayOop result = ObjArrayKlass::cast(byteArrayArrayKlass) ->allocate(length, CHECK_(JVMCIObject()));
     return wrap(result);
   } else {
@@ -1716,18 +1724,20 @@ void JVMCIEnv::invalidate_nmethod_mirror(JVMCIObject mirror, bool deoptimize, JV
     JVMCI_THROW(NullPointerException);
   }
 
-  nmethod* nm = JVMCIENV->get_nmethod(mirror);
-  if (nm == nullptr) {
-    // Nothing to do
-    return;
-  }
-
   Thread* current = Thread::current();
   if (!mirror.is_hotspot() && !current->is_Java_thread()) {
     // Calling back into native might cause the execution to block, so only allow this when calling
     // from a JavaThread, which is the normal case anyway.
     JVMCI_THROW_MSG(IllegalArgumentException,
                     "Cannot invalidate HotSpotNmethod object in shared library VM heap from non-JavaThread");
+  }
+
+  JavaThread* thread = JavaThread::cast(current);
+  JVMCINMethodHandle nmethod_handle(thread);
+  nmethod* nm = JVMCIENV->get_nmethod(mirror, nmethod_handle);
+  if (nm == nullptr) {
+    // Nothing to do
+    return;
   }
 
   if (!deoptimize) {
@@ -1819,10 +1829,22 @@ CodeBlob* JVMCIEnv::get_code_blob(JVMCIObject obj) {
   return cb;
 }
 
-nmethod* JVMCIEnv::get_nmethod(JVMCIObject obj) {
+void JVMCINMethodHandle::set_nmethod(nmethod* nm) {
+  BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
+  if (bs_nm != nullptr) {
+    bs_nm->nmethod_entry_barrier(nm);
+  }
+  _thread->set_live_nmethod(nm);
+}
+
+nmethod* JVMCIEnv::get_nmethod(JVMCIObject obj, JVMCINMethodHandle& nmethod_handle) {
   CodeBlob* cb = get_code_blob(obj);
   if (cb != nullptr) {
-    return cb->as_nmethod_or_null();
+    nmethod* nm = cb->as_nmethod_or_null();
+    if (nm != nullptr) {
+      nmethod_handle.set_nmethod(nm);
+      return nm;
+    }
   }
   return nullptr;
 }
