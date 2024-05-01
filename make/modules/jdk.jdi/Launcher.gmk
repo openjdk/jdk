@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,10 @@
 #
 
 include LauncherCommon.gmk
+
+################################################################################
+## Build jdb
+################################################################################
 
 $(eval $(call SetupBuildLauncher, jdb, \
     MAIN_CLASS := com.sun.tools.example.debug.tty.TTY, \

@@ -1288,12 +1288,10 @@ inline void ConcurrentHashTable<CONFIG, F>::
 }
 
 template <typename CONFIG, MEMFLAGS F>
-inline bool ConcurrentHashTable<CONFIG, F>::
-  try_move_nodes_to(Thread* thread, ConcurrentHashTable<CONFIG, F>* to_cht)
+inline void ConcurrentHashTable<CONFIG, F>::
+  rehash_nodes_to(Thread* thread, ConcurrentHashTable<CONFIG, F>* to_cht)
 {
-  if (!try_resize_lock(thread)) {
-    return false;
-  }
+  assert(is_safepoint_safe(), "rehashing is at a safepoint - cannot be resizing");
   assert(_new_table == nullptr || _new_table == POISON_PTR, "Must be null");
   for (size_t bucket_it = 0; bucket_it < _table->_size; bucket_it++) {
     Bucket* bucket = _table->get_bucket(bucket_it);
@@ -1313,8 +1311,6 @@ inline bool ConcurrentHashTable<CONFIG, F>::
       }
     }
   }
-  unlock_resize_lock(thread);
-  return true;
 }
 
 #endif // SHARE_UTILITIES_CONCURRENTHASHTABLE_INLINE_HPP

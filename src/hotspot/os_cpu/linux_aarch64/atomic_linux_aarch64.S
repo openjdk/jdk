@@ -24,6 +24,7 @@
         .text
 
         .globl aarch64_atomic_fetch_add_8_default_impl
+        .hidden aarch64_atomic_fetch_add_8_default_impl
         .align 5
 aarch64_atomic_fetch_add_8_default_impl:
 #ifdef __ARM_FEATURE_ATOMICS
@@ -40,6 +41,7 @@ aarch64_atomic_fetch_add_8_default_impl:
         ret
 
         .globl aarch64_atomic_fetch_add_4_default_impl
+        .hidden aarch64_atomic_fetch_add_4_default_impl
         .align 5
 aarch64_atomic_fetch_add_4_default_impl:
 #ifdef __ARM_FEATURE_ATOMICS
@@ -56,6 +58,7 @@ aarch64_atomic_fetch_add_4_default_impl:
         ret
 
         .global aarch64_atomic_fetch_add_8_relaxed_default_impl
+        .hidden aarch64_atomic_fetch_add_8_relaxed_default_impl
         .align 5
 aarch64_atomic_fetch_add_8_relaxed_default_impl:
 #ifdef __ARM_FEATURE_ATOMICS
@@ -71,6 +74,7 @@ aarch64_atomic_fetch_add_8_relaxed_default_impl:
         ret
 
         .global aarch64_atomic_fetch_add_4_relaxed_default_impl
+        .hidden aarch64_atomic_fetch_add_4_relaxed_default_impl
         .align 5
 aarch64_atomic_fetch_add_4_relaxed_default_impl:
 #ifdef __ARM_FEATURE_ATOMICS
@@ -86,6 +90,7 @@ aarch64_atomic_fetch_add_4_relaxed_default_impl:
         ret
 
         .globl aarch64_atomic_xchg_4_default_impl
+        .hidden aarch64_atomic_xchg_4_default_impl
         .align 5
 aarch64_atomic_xchg_4_default_impl:
 #ifdef __ARM_FEATURE_ATOMICS
@@ -101,6 +106,7 @@ aarch64_atomic_xchg_4_default_impl:
         ret
 
         .globl aarch64_atomic_xchg_8_default_impl
+        .hidden aarch64_atomic_xchg_8_default_impl
         .align 5
 aarch64_atomic_xchg_8_default_impl:
 #ifdef __ARM_FEATURE_ATOMICS
@@ -116,6 +122,7 @@ aarch64_atomic_xchg_8_default_impl:
         ret
 
         .globl aarch64_atomic_cmpxchg_1_default_impl
+        .hidden aarch64_atomic_cmpxchg_1_default_impl
         .align 5
 aarch64_atomic_cmpxchg_1_default_impl:
 #ifdef __ARM_FEATURE_ATOMICS
@@ -136,6 +143,7 @@ aarch64_atomic_cmpxchg_1_default_impl:
         ret
 
         .globl aarch64_atomic_cmpxchg_4_default_impl
+        .hidden aarch64_atomic_cmpxchg_4_default_impl
         .align 5
 aarch64_atomic_cmpxchg_4_default_impl:
 #ifdef __ARM_FEATURE_ATOMICS
@@ -155,6 +163,7 @@ aarch64_atomic_cmpxchg_4_default_impl:
         ret
 
         .globl aarch64_atomic_cmpxchg_8_default_impl
+        .hidden aarch64_atomic_cmpxchg_8_default_impl
         .align 5
 aarch64_atomic_cmpxchg_8_default_impl:
 #ifdef __ARM_FEATURE_ATOMICS
@@ -174,6 +183,7 @@ aarch64_atomic_cmpxchg_8_default_impl:
         ret
 
         .globl aarch64_atomic_cmpxchg_4_release_default_impl
+        .hidden aarch64_atomic_cmpxchg_4_release_default_impl
         .align 5
 aarch64_atomic_cmpxchg_4_release_default_impl:
 #ifdef __ARM_FEATURE_ATOMICS
@@ -191,6 +201,7 @@ aarch64_atomic_cmpxchg_4_release_default_impl:
         ret
 
         .globl aarch64_atomic_cmpxchg_8_release_default_impl
+        .hidden aarch64_atomic_cmpxchg_8_release_default_impl
         .align 5
 aarch64_atomic_cmpxchg_8_release_default_impl:
 #ifdef __ARM_FEATURE_ATOMICS
@@ -208,6 +219,7 @@ aarch64_atomic_cmpxchg_8_release_default_impl:
         ret
 
         .globl aarch64_atomic_cmpxchg_4_seq_cst_default_impl
+        .hidden aarch64_atomic_cmpxchg_4_seq_cst_default_impl
         .align 5
 aarch64_atomic_cmpxchg_4_seq_cst_default_impl:
 #ifdef __ARM_FEATURE_ATOMICS
@@ -225,6 +237,7 @@ aarch64_atomic_cmpxchg_4_seq_cst_default_impl:
         ret
 
         .globl aarch64_atomic_cmpxchg_8_seq_cst_default_impl
+        .hidden aarch64_atomic_cmpxchg_8_seq_cst_default_impl
         .align 5
 aarch64_atomic_cmpxchg_8_seq_cst_default_impl:
 #ifdef __ARM_FEATURE_ATOMICS
@@ -242,6 +255,7 @@ aarch64_atomic_cmpxchg_8_seq_cst_default_impl:
         ret
 
 .globl aarch64_atomic_cmpxchg_1_relaxed_default_impl
+.hidden aarch64_atomic_cmpxchg_1_relaxed_default_impl
         .align 5
 aarch64_atomic_cmpxchg_1_relaxed_default_impl:
 #ifdef __ARM_FEATURE_ATOMICS
@@ -260,6 +274,7 @@ aarch64_atomic_cmpxchg_1_relaxed_default_impl:
         ret
 
         .globl aarch64_atomic_cmpxchg_4_relaxed_default_impl
+        .hidden aarch64_atomic_cmpxchg_4_relaxed_default_impl
         .align 5
 aarch64_atomic_cmpxchg_4_relaxed_default_impl:
 #ifdef __ARM_FEATURE_ATOMICS
@@ -277,6 +292,7 @@ aarch64_atomic_cmpxchg_4_relaxed_default_impl:
         ret
 
         .globl aarch64_atomic_cmpxchg_8_relaxed_default_impl
+        .hidden aarch64_atomic_cmpxchg_8_relaxed_default_impl
         .align 5
 aarch64_atomic_cmpxchg_8_relaxed_default_impl:
 #ifdef __ARM_FEATURE_ATOMICS

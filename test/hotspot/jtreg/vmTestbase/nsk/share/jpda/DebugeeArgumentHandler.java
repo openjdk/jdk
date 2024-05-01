@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,12 +108,12 @@ public class DebugeeArgumentHandler extends ArgumentParser {
     /**
      * Return name of the host where test executes, specified by
      * <code>-test.host</code> command line option or
-     * "<i>localhost</i>" string by default.
+     * empty string (represents an address of the loopback interface) by default.
      *
      * @see #setRawArguments(String[])
      */
     public String getTestHost() {
-        return options.getProperty("test.host", "localhost");
+        return options.getProperty("test.host", "");
     }
 
     /**

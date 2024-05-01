@@ -243,9 +243,13 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   __ load_const_optimized(R19_method, (intptr_t)entry);
   __ std(R19_method, in_bytes(JavaThread::callee_target_offset()), R16_thread);
 
+  __ push_cont_fastpath();
+
   __ ld(call_target_address, in_bytes(Method::from_compiled_offset()), R19_method);
   __ mtctr(call_target_address);
   __ bctrl();
+
+  __ pop_cont_fastpath();
 
   // return value shuffle
   if (!needs_return_buffer) {

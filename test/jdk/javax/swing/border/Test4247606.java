@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,36 +21,55 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 4247606
- * @summary BorderedPane appears wrong with Title Position Below Bottom
- * @author Andrey Pikalev
- * @run applet/manual=yesno Test4247606.html
- */
-
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Dimension;
 import javax.swing.BorderFactory;
-import javax.swing.JApplet;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.border.Border;
 import javax.swing.border.TitledBorder;
 
-public class Test4247606 extends JApplet {
-    public void init() {
-        JButton button = new JButton("Button"); // NON-NLS: the button text
+/*
+ * @test
+ * @bug 4247606
+ * @summary BorderedPane appears wrong with title position below bottom
+ * @library /java/awt/regtesthelpers
+ * @build PassFailJFrame
+ * @run main/manual Test4247606
+ */
+
+public class Test4247606 {
+    public static void main(String[] args) throws Exception {
+        String testInstructions = """
+                If the button does not fit into the titled border bounds
+                and cover the bottom border's line then test fails.
+                Otherwise test passes
+                """;
+
+        PassFailJFrame.builder()
+                .title("Test Instructions")
+                .instructions(testInstructions)
+                .rows(4)
+                .columns(35)
+                .splitUI(Test4247606::initializeTest)
+                .build()
+                .awaitAndCheck();
+    }
+
+    public static JComponent initializeTest() {
+        JButton button = new JButton("Button");
         button.setBorder(BorderFactory.createLineBorder(Color.red, 1));
 
-        TitledBorder border = new TitledBorder("Bordered Pane"); // NON-NLS: the panel title
+        TitledBorder border = new TitledBorder("Bordered Pane");
         border.setTitlePosition(TitledBorder.BELOW_BOTTOM);
 
         JPanel panel = create(button, border);
         panel.setBackground(Color.green);
+        panel.setPreferredSize(new Dimension(200, 150));
 
-        getContentPane().add(create(panel, BorderFactory.createEmptyBorder(10, 10, 10, 10)));
+        return create(panel, BorderFactory.createEmptyBorder(10, 10, 10, 10));
     }
 
     private static JPanel create(JComponent component, Border border) {

@@ -22,9 +22,9 @@
  */
 #include <jni.h>
 #include <jvmti.h>
-#include "agent_common.h"
+#include "agent_common.hpp"
 #include <string.h>
-#include "jvmti_tools.h"
+#include "jvmti_tools.hpp"
 extern "C" {
 #define FILE_NAME "nsk/jvmti/scenarios/hotswap/HS302/hs302t007r/MyClass"
 #define CLASS_NAME "Lnsk/jvmti/scenarios/hotswap/HS302/hs302t007r/MyClass;"

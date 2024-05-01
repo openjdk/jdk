@@ -128,7 +128,6 @@ class InterpreterOopMap: ResourceObj {
 
  public:
   InterpreterOopMap();
-  ~InterpreterOopMap();
 
   // Copy the OopMapCacheEntry in parameter "from" into this
   // InterpreterOopMap.  If the _bit_mask[0] in "from" points to
