@@ -216,34 +216,50 @@ public abstract class HttpExchange implements AutoCloseable, Request {
     public abstract void sendResponseHeaders(int rCode, long responseLength) throws IOException;
 
     /**
-     * convenience method to send a "no content response"
+     * convenience method to send a "no content response". after this method returns no further writes
+     * are permitted.
      * @param code the response code to send
      * @throws IOException if the response headers have already been sent or an I/O error occurs
      * @see HttpExchange#sendResponseHeaders(int, long)
      */
-    public final void sendResponseHeadersNoContent(int code) throws IOException {
+    public final void sendNoContentResponse(int code) throws IOException {
         sendResponseHeaders(code,NO_CONTENT);
     }
     /**
-     * convenience method to send a chunked response. the caller must close the returned output stream.
+     * convenience method to start sending a chunked response. the caller should write the response to
+     * the returned output stream, then close the output stream
      * @param code the response code to send
      * @throws IOException if the response headers have already been sent or an I/O error occurs
      * @return the stream to write the response to. the caller must close the stream.
      * @see HttpExchange#sendResponseHeaders(int, long)
      */
-    public final OutputStream sendResponseHeadersChunked(int code) throws IOException {
+    public final OutputStream beginChunkedResponse(int code) throws IOException {
         sendResponseHeaders(code,CHUNKED_CONTENT);
         return getResponseBody();
     }
     /**
-     * convenience method to send a fixed length response. the output stream is automatically closed and no
+     * convenience method to start sending a fixed length response. the caller should write the response to
+     * the returned output stream then close the stream. The number of bytes written to the stream must match
+     * the provided length.
+     * @param code the response code to send
+     * @param length the number of bytes that will be sent
+     * @throws IOException if the response headers have already been sent or an I/O error occurs
+     * @return the stream to write the response to. the caller must close the stream.
+     * @see HttpExchange#sendResponseHeaders(int, long)
+     */
+    public final OutputStream beginFixedLengthResponse(int code, long length) throws IOException {
+        sendResponseHeaders(code,length);
+        return getResponseBody();
+    }
+    /**
+     * convenience method to send a response using a byte[] array the output stream is automatically closed and no
      * further writes are permitted.
      * @param code the response code to send
      * @param data the data to send
      * @throws IOException if the response headers have already been sent or an I/O error occurs
      * @see HttpExchange#sendResponseHeaders(int, long)
      */
-    public final void sendResponseHeaders(int code,byte[] data) throws IOException {
+    public final void sendResponse(int code,byte[] data) throws IOException {
         sendResponseHeaders(code,data.length);
         try (var os = getResponseBody()) {
             os.write(data);
