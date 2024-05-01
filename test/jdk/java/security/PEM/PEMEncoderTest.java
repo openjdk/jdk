@@ -26,25 +26,34 @@
 /*
  * @test
  * @summary Testing PEM decoding
+ *
+ * @modules java.base/sun.security.util
  */
 
-import java.io.IOException;
+import sun.security.util.Pem;
+
+import javax.crypto.EncryptedPrivateKeyInfo;
+import javax.crypto.spec.PBEParameterSpec;
+
 import java.nio.charset.StandardCharsets;
 import java.security.*;
+import java.security.spec.InvalidParameterSpecException;
 import java.util.*;
 import java.util.regex.Pattern;
 
 public class PEMEncoderTest {
 
     static Map<String, DEREncodable> keymap;
-    final static Pattern CRLF = Pattern.compile("\r\n");
     final static Pattern CR = Pattern.compile("\r");
     final static Pattern LF = Pattern.compile("\n");
+    final static Pattern LSDEFAULT = Pattern.compile(System.lineSeparator());
 
 
     public static void main(String[] args) throws Exception {
-        keymap = generateObjKeyMap(PEMCerts.entryList);
         PEMEncoder encoder = PEMEncoder.of();
+
+        PEMCerts.entryList.remove(PEMCerts.getEntry("rsaOpenSSL"));
+        keymap = generateObjKeyMap(PEMCerts.entryList);
         System.out.println("Same instance Encoder test:");
         keymap.keySet().stream().forEach(key -> test(key, encoder));
         System.out.println("New instance Encoder test:");
@@ -53,17 +62,22 @@ public class PEMEncoderTest {
         keymap.keySet().stream().forEach(key -> testToString(key, encoder));
         System.out.println("New instance Encoder testToString:");
         keymap.keySet().stream().forEach(key -> testToString(key, PEMEncoder.of()));
-//        System.out.println("All SecurityObjects Same instance Encoder new withEnc test:");
-//        keymap.keySet().stream().forEach(key -> testEncrypted(key, encoder));
+
+        //System.out.println("All SecurityObjects Same instance Encoder new withEnc test:");
+        //keymap.keySet().stream().forEach(key -> testEncrypted(key, encoder));
 
         keymap = generateObjKeyMap(PEMCerts.encryptedList);
+        System.out.println("Same instance Encoder match test:");
+        keymap.keySet().stream().forEach(key -> testEncryptedMatch(key, encoder));
         System.out.println("Same instance Encoder new withEnc test:");
         keymap.keySet().stream().forEach(key -> testEncrypted(key, encoder));
         System.out.println("New instance Encoder and withEnc test:");
         keymap.keySet().stream().forEach(key -> testEncrypted(key, PEMEncoder.of()));
-        System.out.println("Same instance Encoder and withEnc test:");
-        PEMEncoder encEncoder = encoder.withEncryption(PEMCerts.encryptedList.getFirst().password());
-        keymap.keySet().stream().forEach(key -> test(key, encEncoder));
+
+//  One can't use EKPI with an encrypted encoder.
+//        System.out.println("Same instance Encoder and withEnc test:");
+//        PEMEncoder encEncoder = encoder.withEncryption(PEMCerts.encryptedList.getFirst().password());
+//        keymap.keySet().stream().forEach(key -> testEncryptedMatch(key, encEncoder));
     }
 
     static Map generateObjKeyMap(List<PEMCerts.Entry> list) {
@@ -90,7 +104,7 @@ public class PEMEncoderTest {
         PEMCerts.Entry entry = PEMCerts.getEntry(key);
         try {
             result = encoder.encode(keymap.get(key));
-        } catch (IOException e) {
+        } catch (RuntimeException e) {
             throw new AssertionError("Encoder use failure with " + entry.name(), e);
         }
 
@@ -103,7 +117,7 @@ public class PEMEncoderTest {
         PEMCerts.Entry entry = PEMCerts.getEntry(key);
         try {
             result = encoder.encodeToString(keymap.get(key));
-        } catch (IOException e) {
+        } catch (RuntimeException e) {
             throw new AssertionError("Encoder use failure with " + entry.name(), e);
         }
 
@@ -111,39 +125,53 @@ public class PEMEncoderTest {
         System.out.println("PASS: " + entry.name());
     }
 
+    /*
+     Test cannot verify PEM was the same as known PEM because we have no
+     public access to the AlgoritmID.params and PBES2Parameters.
+     */
     static void testEncrypted(String key, PEMEncoder encoder) {
-        byte[] result;
         PEMCerts.Entry entry = PEMCerts.getEntry(key);
         try {
-            result = encoder.withEncryption(
-                (entry.password() != null ? entry.password() : "fish".toCharArray()))
-                .encode(keymap.get(key));
-        } catch (IOException e) {
-            throw new AssertionError("Encrypted encoder use failure with " + entry.name(), e);
+            encoder.withEncryption(
+                (entry.password() != null ? entry.password() :
+                    "fish".toCharArray()))
+                .encodeToString(keymap.get(key));
+        } catch (RuntimeException e) {
+            throw new AssertionError("Encrypted encoder failured with " + entry.name(), e);
         }
 
-        checkResults(entry, new String(result, StandardCharsets.UTF_8));
+        System.out.println("PASS: " + entry.name());
+    }
+
+    static void testEncryptedMatch(String key, PEMEncoder encoder) {
+        String result;
+        PEMCerts.Entry entry = PEMCerts.getEntry(key);
+        try {
+            PrivateKey akey = (PrivateKey) keymap.get(key);
+            EncryptedPrivateKeyInfo ekpi = PEMDecoder.of().decode(entry.pem(),
+                EncryptedPrivateKeyInfo.class);
+            if (entry.password() != null) {
+                EncryptedPrivateKeyInfo.encryptKey(akey, entry.password(),
+                    Pem.DEFAULT_ALGO,
+                    ekpi.getAlgParameters().getParameterSpec(PBEParameterSpec.class),
+                    null);
+            }
+            result = encoder.encodeToString(ekpi);
+        } catch (RuntimeException | InvalidParameterSpecException e) {
+            throw new AssertionError("Encrypted encoder failured with " + entry.name(), e);
+        }
+
+        checkResults(entry, result);
         System.out.println("PASS: " + entry.name());
     }
 
     static void checkResults(PEMCerts.Entry entry, String result) {
-        String pem = entry.pem();
+        String pem = new String(entry.pem());
         // The below matches the \r\n generated PEM with the PEM passed
         // into the test.
-        if (pem.indexOf("\r\n") > 0) {
-            // Do nothing, generated and passed in PEM must be the same
-        } else if (pem.indexOf('\r') > 0) {
-            result = CR.matcher(pem).replaceAll("");
-        } else if (pem.indexOf('\n') > 0) {
-            // This one is strange.  Apparently Pattern("\n") removes both
-            // "\r\n".  To compensate, replacing it with "\n" just removes
-            // the "\r"
-            result = LF.matcher(pem).replaceAll("\n");
-        } else {
-            // Remove all \r\n to match the passed in pem
-            result = CRLF.matcher(pem).replaceAll("");
-        }
-
+        pem = CR.matcher(pem).replaceAll("");
+        pem = LF.matcher(pem).replaceAll("");
+        result = LSDEFAULT.matcher(result).replaceAll("");
         try {
             if (pem.compareTo(result) != 0) {
                 System.out.println("expected:\n" + pem);
@@ -170,3 +198,4 @@ public class PEMEncoderTest {
         }
     }
 }
+

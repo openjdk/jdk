@@ -32,9 +32,7 @@ import sun.security.util.Pem;
 import javax.crypto.EncryptedPrivateKeyInfo;
 import java.io.*;
 import java.security.cert.*;
-import java.security.spec.EncodedKeySpec;
-import java.security.spec.PKCS8EncodedKeySpec;
-import java.security.spec.X509EncodedKeySpec;
+import java.security.spec.*;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Objects;
@@ -70,7 +68,8 @@ import java.util.Objects;
  * methods must be used to retrieve the {@link PrivateKey}.
  * <p>
  * PEMDecoder supports the follow types:
- *     PRIVATE KEY, PUBLIC KEY, CERTIFICATE, CRL, and ENCRYPTED PRIVATE KEY.
+ *     PRIVATE KEY, RSA PRIVATE KEY, PUBLIC KEY, CERTIFICATE, CRL, and
+ *     ENCRYPTED PRIVATE KEY.
  *
  */
 
@@ -136,8 +135,8 @@ final public class PEMDecoder {
 
         if (password != null) {
             if (keyType != Pem.KeyType.ENCRYPTED_PRIVATE) {
-                throw new IllegalArgumentException("Decoder configured only for " +
-                    "encrypted PEM.");
+                throw new IllegalArgumentException("Decoder configured only " +
+                    "for encrypted PEM.");
             }
         }
 
@@ -196,8 +195,8 @@ final public class PEMDecoder {
                         RSAPrivateCrtKeyImpl.getKeySpec(decoder.decode(data)));
                 }
                 default ->
-                    throw new IllegalArgumentException("Unsupported type or not " +
-                        "properly formatted PEM");
+                    throw new IllegalArgumentException("Unsupported type or " +
+                        "not properly formatted PEM");
             };
         } catch (GeneralSecurityException e) {
             throw new IllegalArgumentException(e);
@@ -209,13 +208,15 @@ final public class PEMDecoder {
      *
      * @param str PEM data in a String.
      * @return an DEREncodable generated from the PEM data.
+     * @throws IllegalArgumentException on error in decoding or if the PEM is
+     * unsupported.
      */
     public DEREncodable decode(String str) {
         Objects.requireNonNull(str);
         try {
             return decode(new ByteArrayInputStream(str.getBytes()));
         } catch (IOException e) {
-            // There should be no IOE because all data is in a String
+            // With all data contained in the String, there are no IO ops.
             throw new IllegalArgumentException(e);
         }
     }
@@ -229,7 +230,9 @@ final public class PEMDecoder {
      *
      * @param is InputStream containing PEM data.
      * @return an DEREncodable generated from the PEM data.
-     * @throws IOException on an error in decoding or if the PEM is unsupported.
+     * @throws IOException on IO error with the InputStream.
+     * @throws IllegalArgumentException on error in decoding or if the PEM is
+     * unsupported.
      */
     public DEREncodable decode(InputStream is) throws IOException {
         Objects.requireNonNull(is);
@@ -260,6 +263,8 @@ final public class PEMDecoder {
      * @param tClass  the returned object class that implementing
      * {@link DEREncodable}.
      * @return The DEREncodable typecast to tClass.
+     * @throws IllegalArgumentException on error in decoding or if the PEM is
+     * unsupported.
      */
     public <S extends DEREncodable> S decode(String string, Class<S> tClass) {
         Objects.requireNonNull(string);
@@ -267,7 +272,7 @@ final public class PEMDecoder {
         try {
             return decode(new ByteArrayInputStream(string.getBytes()), tClass);
         } catch (IOException e) {
-            // There should be no IOE because all data is in a String
+            // With all data contained in the String, there are no IO ops.
             throw new IllegalArgumentException(e);
         }
     }
@@ -285,10 +290,10 @@ final public class PEMDecoder {
      * @param tClass the returned object class that implementing
      *   {@code DEREncodable}.
      * @return  tClass.
-     * @throws IOException on an error in decoding, unsupported PEM, or
-     * error casting to tClass.
+     * @throws IOException on IO error with the InputStream.
+     * @throws IllegalArgumentException on error in decoding or if the PEM is
+     *      * unsupported.
      */
-    @SuppressWarnings("unchecked")  // (Class<KeySpec>) tClass
     public <S extends DEREncodable> S decode(InputStream is, Class<S> tClass)
         throws IOException {
         Objects.requireNonNull(is);
@@ -302,53 +307,54 @@ final public class PEMDecoder {
             decode(pem.getData(), pem.getHeader(), pem.getFooter());
 
         /*
+         * If the object is a KeyPair, check if the tClass is set to class
+         * specific to a private or public key.  Because PKCS8v2 can be a
+         * KeyPair, it is possible for someone to assume all their PEM private
+         * keys are only PrivateKey and not KeyPair.
+         */
+        if (so instanceof KeyPair kp) {
+            if ((PrivateKey.class).isAssignableFrom(tClass) ||
+                (PKCS8EncodedKeySpec.class).isAssignableFrom(tClass)) {
+                so = kp.getPrivate();
+            }
+            if ((PublicKey.class).isAssignableFrom(tClass) ||
+                (X509EncodedKeySpec.class).isAssignableFrom(tClass)) {
+                so = kp.getPublic();
+            }
+        }
+
+        /*
          * KeySpec use getKeySpec after the Key has been generated.  Even though
          * returning a binary encoding after the Base64 decoding is ok when the
          * user wants PKCS8EncodedKeySpec, generating the key verifies the
          * binary encoding and allows the KeyFactory to use the provider's
          * KeySpec()
          */
-        if ((EncodedKeySpec.class).isAssignableFrom(tClass)) {
-            if (so instanceof KeyPair kp) {
-                // Since a public key is possible in an OAS PEM
-                if ((X509EncodedKeySpec.class).isAssignableFrom(tClass)) {
-                    so = kp.getPublic();
+
+        if ((EncodedKeySpec.class).isAssignableFrom(tClass) &&
+            so instanceof Key key) {
+            try {
+                // unchecked suppressed as we know tClass comes from KeySpec
+                // KeyType not relevant here.  We just want KeyFactory
+                if ((PKCS8EncodedKeySpec.class).isAssignableFrom(tClass)) {
+                    ((KeyFactory) getFactory(Pem.KeyType.PRIVATE,
+                        key.getAlgorithm())).getKeySpec(key,
+                        PKCS8EncodedKeySpec.class);
+                } else if ((X509EncodedKeySpec.class).isAssignableFrom(tClass)) {
+                    ((KeyFactory) getFactory(Pem.KeyType.PUBLIC,
+                        key.getAlgorithm()))
+                        .getKeySpec(key, X509EncodedKeySpec.class);
                 } else {
-                    // Default assumption is a private key from OAS PEM.
-                    so = kp.getPrivate();
+                    throw new IllegalArgumentException("Invalid KeySpec.");
                 }
-            }
-            /*
-            if (so instanceof Key key) {
-                try {
-                    // unchecked suppressed as we know tClass comes from KeySpec
-                    // KeyType not relevant here.  We just want KeyFactory
-                    so = ((KeyFactory) getFactory(Pem.KeyType.PRIVATE,
-                        key.getAlgorithm())).
-                        getKeySpec(key, (Class<KeySpec>) tClass);
-                } catch (InvalidKeySpecException e) {
-                    throw new IOException(e);
-                }
-            }
-             */
-        }
-
-        /*
-         * If the object is a KeyPair, check if the tClass is set to private
-         * or public key.  Because PKCS8v2 can be a KeyPair, it is possible for
-         * someone to assume all their PEM private keys are only PrivateKey and
-         * not KeyPair.
-         */
-        if (so instanceof KeyPair kp) {
-            if ((PrivateKey.class).isAssignableFrom(tClass)) {
-                so = kp.getPrivate();
-            }
-            if ((PublicKey.class).isAssignableFrom(tClass)) {
-                so = kp.getPublic();
+            } catch (InvalidKeySpecException e) {
+                throw new IllegalArgumentException("Invalid KeySpec " +
+                    "specified (" + tClass.getName() +") for key (" +
+                    key.getClass().getName() +")", e);
             }
         }
 
-            return tClass.cast(so);
+        return tClass.cast(so);
     }
 
     // Convenience method to avoid provider getInstance checks clutter

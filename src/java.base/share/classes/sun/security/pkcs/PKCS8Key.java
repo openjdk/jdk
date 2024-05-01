@@ -33,9 +33,7 @@ import sun.security.util.InternalPrivateKey;
 import sun.security.x509.AlgorithmId;
 import sun.security.x509.X509Key;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.security.*;
 import java.security.spec.InvalidKeySpecException;
@@ -144,12 +142,12 @@ public class PKCS8Key implements PrivateKey, InternalPrivateKey {
             }
 
             // OPTIONAL Context tag 0 for Attributes for PKCS8 v1 & v2
-            var result =
-                val.data.getOptionalImplicitContextSpecific(0,
-                    DerValue.tag_Sequence);
+            // Uses 0xA0 constructed define-length
+            var result = val.data.getOptionalConstructed(0,
+                DerValue.tag_Sequence);
             if (result.isPresent()) {
-                attributes = new DerInputStream(result.get().getDataBytes()).toByteArray();
-                //attributes = result.get().data.getSequence(0)''
+                attributes = new DerInputStream(result.get().getDataBytes()).
+                    toByteArray();
                 if (val.data.available() == 0) {
                     return;
                 }
@@ -299,8 +297,6 @@ public class PKCS8Key implements PrivateKey, InternalPrivateKey {
     }
 
     private byte[] generateEncoding() throws IOException {
-        //private byte[] generatePKCS8v2() throws IOException {
-
         DerOutputStream out = new DerOutputStream();
         out.putInteger((pubKeyEncoded == null) ? 0 : 1);
         algid.encode(out);
@@ -308,7 +304,8 @@ public class PKCS8Key implements PrivateKey, InternalPrivateKey {
 
         if (attributes != null) {
             out.writeImplicit(
-                DerValue.createTag(DerValue.TAG_CONTEXT, false, (byte) 0),
+                DerValue.createTag((byte) (DerValue.TAG_CONTEXT |
+                    DerValue.TAG_CONSTRUCT), false, (byte) 0),
                 new DerOutputStream().putOctetString(attributes));
 
         }

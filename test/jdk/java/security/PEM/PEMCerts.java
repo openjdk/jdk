@@ -283,7 +283,7 @@ class PEMCerts {
         -----END RSA PRIVATE KEY-----\
         """;
 
-    private static final String encEdECKey = """
+    /*private static final String encEdECKey = """
         -----BEGIN ENCRYPTED PRIVATE KEY-----
         MIGbMFcGCSqGSIb3DQEFDTBKMCkGCSqGSIb3DQEFDDAcBAiN0IkLjCkMPgICCAAw
         DAYIKoZIhvcNAgkFADAdBglghkgBZQMEASoEEEXsbu8teaHGYhCaRv46T40EQJpL
@@ -292,6 +292,15 @@ class PEMCerts {
         -----END ENCRYPTED PRIVATE KEY-----
         """;
 
+     */
+    private static final String encEdECKey = """
+        -----BEGIN ENCRYPTED PRIVATE KEY-----
+        MIGqMGYGCSqGSIb3DQEFDTBZMDgGCSqGSIb3DQEFDDArBBRyYnoNyrcqvubzch00
+        jyuAb5YizgICEAACARAwDAYIKoZIhvcNAgkFADAdBglghkgBZQMEAQIEEM8BgEgO
+        vdMyi46+Dw7cOjwEQLtx5ME0NOOo7vlCGm3H/4j+Tf5UXrMb1UrkPjqc8OiLbC0n
+        IycFtI70ciPjgwDSjtCcPxR8fSxJPrm2yOJsRVo=
+        -----END ENCRYPTED PRIVATE KEY-----
+        """;
 
     private static final String rsaCert = """
         -----BEGIN CERTIFICATE-----

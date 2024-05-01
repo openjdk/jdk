@@ -331,7 +331,7 @@ public final class EncryptedPrivateKeyInfo implements DEREncodable {
      * @throws SecurityException on a cryptographic errors.
      * @throws NullPointerException if {@code algorithm} is null.
      *
-     * @since 23
+     * @since 24
      */
     public static EncryptedPrivateKeyInfo encryptKey(PrivateKey key,
         char[] password, String algorithm, AlgorithmParameterSpec params,
@@ -363,7 +363,8 @@ public final class EncryptedPrivateKeyInfo implements DEREncodable {
         try {
             cipher.init(Cipher.ENCRYPT_MODE, skey, params);
             encryptedData = cipher.doFinal(key.getEncoded());
-            algid = new AlgorithmId(Pem.getPBEID(algorithm), cipher.getParameters());
+            algid = new AlgorithmId(Pem.getPBEID(algorithm),
+                cipher.getParameters());
             algid.encode(out);
             out.putOctetString(encryptedData);
         } catch (InvalidAlgorithmParameterException |
@@ -390,7 +391,7 @@ public final class EncryptedPrivateKeyInfo implements DEREncodable {
      * @throws IllegalArgumentException when arguments passed are incorrect.
      * @throws SecurityException on a cryptographic errors.
      *
-     * @since 23
+     * @since 24
      */
     public static EncryptedPrivateKeyInfo encryptKey(PrivateKey key,
         char[] password) {
@@ -402,27 +403,28 @@ public final class EncryptedPrivateKeyInfo implements DEREncodable {
      *
      * @param password the password used in the PBE encryption.
      * @return a PrivateKey
-     * @throws InvalidKeyException if an error occurs during parsing of the encrypted
-     * data or creation of the key object.
+     * @throws InvalidKeyException if an error occurs during parsing of the
+     * encrypted data or creation of the key object.
      *
-     * @since 23
+     * @since 24
      */
     public PrivateKey getKey(char[] password) throws InvalidKeyException {
         return getKey(password, null);
     }
     /**
-     * Return a PrivateKey from the object's encrypted data with a KeyFactory from the
-     * given Provider.
+     * Return a PrivateKey from the object's encrypted data with a KeyFactory
+     * from the given Provider.
      *
      * @param password the password
      * @param provider the KeyFactory provider used to generate the key.
      * @return a PrivateKey
-     * @throws InvalidKeyException if an error occurs during parsing of the encrypted
-     * data or creation of the key object.
+     * @throws InvalidKeyException if an error occurs during parsing of the
+     * encrypted data or creation of the key object.
      *
-     * @since 23
+     * @since 24
      */
-    public PrivateKey getKey(char[] password, Provider provider) throws InvalidKeyException {
+    public PrivateKey getKey(char[] password, Provider provider)
+        throws InvalidKeyException {
         try {
             PBEKeySpec pks = new PBEKeySpec(password);
             SecretKeyFactory skf;
@@ -445,10 +447,9 @@ public final class EncryptedPrivateKeyInfo implements DEREncodable {
      * encrypted data and return it.
      * @param decryptKey key used for decrypting the encrypted data.
      * @return the PKCS8EncodedKeySpec object.
-     * @exception NullPointerException if {@code decryptKey}
-     * is {@code null}.
-     * @exception NoSuchAlgorithmException if cannot find appropriate
-     * cipher to decrypt the encrypted data.
+     * @exception NullPointerException if {@code decryptKey} is {@code null}.
+     * @exception NoSuchAlgorithmException Cannot find appropriate cipher to
+     * decrypt.
      * @exception InvalidKeyException if {@code decryptKey}
      * cannot be used to decrypt the encrypted data or the decryption
      * result is not a valid PKCS8KeySpec.

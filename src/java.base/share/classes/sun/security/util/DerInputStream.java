@@ -409,4 +409,26 @@ public class DerInputStream {
             return Optional.empty();
         }
     }
+
+    /**
+     * Returns the restored DerValue if the next DerValue is
+     * an constructed define-length value tagged by {@code n}.
+     *
+     * @param n the expected tag
+     * @param tag the real tag for the IMPLICIT type
+     * @return the restored DerValue, or empty if not found or stream at end
+     * @throws IOException if an I/O error happens
+     */
+
+    public Optional<DerValue> getOptionalConstructed(int n, byte tag)
+        throws IOException {
+        if (checkNextTag(t -> (t & 0x0c0) == 0x080 && (t & 0x020) == 0x020 &&
+            (t & 0x01f) == n)) {
+            DerValue v = getDerValue(); // [n]
+            // restore tag because IMPLICIT has overwritten it
+            return Optional.of(v.withTag(tag));
+        } else {
+            return Optional.empty();
+        }
+    }
 }

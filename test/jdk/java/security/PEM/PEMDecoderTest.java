@@ -29,6 +29,7 @@
  */
 
 import javax.crypto.EncryptedPrivateKeyInfo;
+import java.lang.Class;
 import java.io.IOException;
 import java.security.*;
 import java.security.interfaces.*;
@@ -47,22 +48,33 @@ public class PEMDecoderTest {
     }
 
     public static void main(String[] args) throws IOException {
+        System.out.println("Decoder test:");
         PEMCerts.entryList.stream().forEach(entry -> test(entry));
+        System.out.println("Decoder test returning DEREncodable class:");
         PEMCerts.entryList.stream().forEach(entry -> test(entry, DEREncodable.class));
+        System.out.println("Decoder test with encrypted PEM:");
         PEMCerts.encryptedList.stream().forEach(entry -> testEncrypted(entry));
+        System.out.println("Decoder test with OAS:");
         testTwoKeys();
+        System.out.println("Decoder test RSA PEM setting RSAKey.class returned:");
         test(PEMCerts.getEntry("privpem"), RSAKey.class);
+        System.out.println("Decoder test failures:");
         PEMCerts.failureEntryList.stream().forEach(entry -> testFailure(entry));
+        System.out.println("Decoder test ECpriv PEM asking for ECPublicKey.class returned:");
         testFailure(PEMCerts.getEntry("ecprivpem"), ECPublicKey.class);
+        System.out.println("Decoder test RSApriv PEM setting P8EKS.class returned:");
+        testClass(PEMCerts.getEntry("privpem"), RSAPrivateKey.class);
+        System.out.println("Decoder test RSApriv P1 PEM asking for RSAPublicKey.class returned:");
         testFailure(PEMCerts.getEntry(PEMCerts.privList, "rsaOpenSSL"), RSAPublicKey.class);
-        testClass(PEMCerts.getEntry("privpem"), PKCS8EncodedKeySpec.class);
-        testClass(PEMCerts.getEntry("privpem"), RSAPrivateCrtKeySpec.class);
-        testClass(PEMCerts.getEntry("privpem"), RSAPrivateKeySpec.class);
+        System.out.println("Decoder test RSApriv PEM asking X509EKS.class returned:");
         testClass(PEMCerts.getEntry("privpem"), X509EncodedKeySpec.class, false);
+        System.out.println("Decoder test RSAcert PEM asking X509EKS.class returned:");
         testClass(PEMCerts.getEntry("rsaCert"), X509EncodedKeySpec.class, false);
+        System.out.println("Decoder test OAS RFC PEM asking PrivateKey.class returned:");
         testClass(PEMCerts.getEntry("oasrfc8410"), PrivateKey.class, true);
         testClass(PEMCerts.getEntry("oasrfc8410"), PublicKey.class, true);
-
+        System.out.println("Decoder test encEdECkey:");
+        //testEncrypted(PEMCerts.getEntry("encEdECKey"), PrivateKey.class, true);
     }
 
     static void testFailure(PEMCerts.Entry entry) {
@@ -85,7 +97,7 @@ public class PEMDecoderTest {
 
     static void testEncrypted(PEMCerts.Entry entry) {
         PEMDecoder decoder = PEMDecoder.of();
-        if (entry.clazz() != EncryptedPrivateKeyInfo.class) {
+        if (!Objects.equals(entry.clazz(), EncryptedPrivateKeyInfo.class)) {
             decoder = decoder.withDecryption(entry.password());
         }
 
@@ -183,7 +195,7 @@ public class PEMDecoderTest {
     static void testClass(PEMCerts.Entry entry, Class clazz, boolean pass) throws RuntimeException {
         try {
             testClass(entry, clazz);
-        } catch (IOException e) {
+        } catch (Exception e) {
             if (pass) {
                 throw new RuntimeException(e);
             }

@@ -89,7 +89,7 @@ public class Pem {
     public static final byte[] PKCS1FOOTER = "-----END RSA PRIVATE KEY-----"
         .getBytes(StandardCharsets.UTF_8);
 
-    public static final byte[] LINESEPARATOR = "\r\n"
+    public static final byte[] LINESEPARATOR = System.lineSeparator()
         .getBytes(StandardCharsets.UTF_8);
 
     private static final Pem NULLPEM = new Pem(null, null, null);
