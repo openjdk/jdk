@@ -21,7 +21,7 @@
  * questions.
  */
 
-import java.io.IO;
+import static java.io.IO.*;
 import java.util.function.Consumer;
 
 public class Print {
@@ -44,18 +44,18 @@ public class Print {
     public static void main(String[] args) {
         switch (args[0]) {
             case "print" -> {
-                print(obj -> System.console().format("%s", obj).flush());
-                print(obj -> IO.print(obj));
+                printObjects(obj -> System.console().format("%s", obj).flush());
+                printObjects(obj -> print(obj));
             }
             case "println" -> {
-                print(obj -> System.console().format("%s%n", obj).flush());
-                print(obj -> IO.println(obj));
+                printObjects(obj -> System.console().format("%s%n", obj).flush());
+                printObjects(obj -> println(obj));
             }
             default -> throw new IllegalArgumentException();
         }
     }
 
-    private static void print(Consumer<Object> printer) {
+    private static void printObjects(Consumer<Object> printer) {
         for (var obj : OBJECTS) {
             printer.accept(obj);
         }
