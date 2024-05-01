@@ -1617,9 +1617,10 @@ JDWP "Java(tm) Debug Wire Protocol"
             (object object "The object ID")
         )
         (Reply
-            (threadObject owner "The monitor owner, or null if it is not currently owned.")
-            (int entryCount "The number of times the monitor has been entered.")
-            (Repeat waiters "The total number of threads that are waiting to enter or re-enter "
+            (threadObject owner "The platform thread owning this monitor, or <code>nullptr</code> "
+                                "if owned` by a virtual thread or not owned.")
+            (int entryCount "The number of times the owning platform thread has entered the monitor.")
+            (Repeat waiters "The total number of platform threads that are waiting to enter or re-enter "
                             "the monitor, or waiting to be notified by the monitor."
                 (threadObject thread "A thread waiting for this monitor.")
             )
