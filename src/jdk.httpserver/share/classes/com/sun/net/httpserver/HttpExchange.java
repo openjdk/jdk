@@ -71,13 +71,12 @@ import java.net.URI;
 
 public abstract class HttpExchange implements AutoCloseable, Request {
     /**
-     * use in sendResponseHeaders() to signify no content in the response.
+     * Use in sendResponseHeaders() to signify no content in the response.
      * @see #sendResponseHeaders(int, long)
      *  */
     public static final long NO_CONTENT = -1L;
     /**
-     * use in sendResponseHeaders() to signify an indeterminate response length. The caller must
-     * close the getResponseBody() or this exchange.
+     * Use in sendResponseHeaders() to signify an indeterminate response length.
      * @see #sendResponseHeaders(int, long)
      *  */
     public static final long CHUNKED_CONTENT = 0L;
@@ -216,8 +215,8 @@ public abstract class HttpExchange implements AutoCloseable, Request {
     public abstract void sendResponseHeaders(int rCode, long responseLength) throws IOException;
 
     /**
-     * convenience method to send a "no content response". after this method returns no further writes
-     * are permitted.
+     * Convenience method to send the response headers with no response body.
+     * The exchange is also closed.
      * @param code the response code to send
      * @throws IOException if the response headers have already been sent or an I/O error occurs
      * @see HttpExchange#sendResponseHeaders(int, long)
@@ -226,8 +225,8 @@ public abstract class HttpExchange implements AutoCloseable, Request {
         sendResponseHeaders(code,NO_CONTENT);
     }
     /**
-     * convenience method to start sending a chunked response. the caller should write the response to
-     * the returned output stream, then close the output stream
+     * Convenience method to start sending a chunked response. The caller should write the response to
+     * the returned output stream, then close the output stream,
      * @param code the response code to send
      * @throws IOException if the response headers have already been sent or an I/O error occurs
      * @return the stream to write the response to. the caller must close the stream.
@@ -238,7 +237,7 @@ public abstract class HttpExchange implements AutoCloseable, Request {
         return getResponseBody();
     }
     /**
-     * convenience method to start sending a fixed length response. the caller should write the response to
+     * Convenience method to start sending a fixed length response. The caller should write the response to
      * the returned output stream then close the stream. The number of bytes written to the stream must match
      * the provided length.
      * @param code the response code to send
@@ -252,7 +251,7 @@ public abstract class HttpExchange implements AutoCloseable, Request {
         return getResponseBody();
     }
     /**
-     * convenience method to send a response using a byte[] array the output stream is automatically closed and no
+     * Convenience method to send a response using a byte[] array. The output stream is automatically closed and no
      * further writes are permitted.
      * @param code the response code to send
      * @param data the data to send
