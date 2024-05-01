@@ -25,8 +25,7 @@ package compiler.loopopts.superword;
 
 import compiler.lib.ir_framework.*;
 import jdk.test.lib.Utils;
-import jdk.internal.misc.Unsafe;
-import java.lang.reflect.Array;
+import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Random;
@@ -38,23 +37,31 @@ import java.lang.foreign.*;
  * @summary Test vectorization of loops over MemorySegment
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
- * @run main compiler.loopopts.superword.TestMemorySegment
+ * @run driver compiler.loopopts.superword.TestMemorySegment int
  */
 
 public class TestMemorySegment {
-    static int RANGE = 1024*64;
-    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
-    private static final Random RANDOM = Utils.getRandomInstance();
+    public static void main(String[] args) {
+        TestFramework framework = new TestFramework(TestMemorySegmentImpl.class);
+        framework.addFlags("--add-modules", "java.base", "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED");
+        framework.addFlags("-DmyVerySpecialArgument=" + args[0]); // forward the argument
+        framework.start();
+    }
+}
 
-    // Inputs
-    byte[] aB;
-    byte[] bB;
-    short[] aS;
-    short[] bS;
-    int[] aI;
-    int[] bI;
-    long[] aL;
-    long[] bL;
+class TestMemorySegmentImpl {
+    static final int BACKING_SIZE = 1024 * 64;
+    static final Random RANDOM = Utils.getRandomInstance();
+
+    interface TestFunction {
+        Object[] run();
+    }
+
+    interface MemorySegmentProvider {
+        MemorySegment newSegment();
+    }
+
+    MemorySegmentProvider provider;
 
     // List of tests
     Map<String,TestFunction> tests = new HashMap<String,TestFunction>();
@@ -62,54 +69,38 @@ public class TestMemorySegment {
     // List of gold, the results from the first run before compilation
     Map<String,Object[]> golds = new HashMap<String,Object[]>();
 
-    interface TestFunction {
-        Object[] run();
-    }
+    public TestMemorySegmentImpl () {
+        // Choose what backs the MemorySegment
+        String argv = System.getProperty("myVerySpecialArgument");
+        provider = switch (argv) {
+            case "int" -> ( () -> { return newOfByteArray(); } );
+            default -> throw new RuntimeException("Test argument not recognized: " + argv);
+        };
 
-    public static void main(String[] args) {
-        TestFramework framework = new TestFramework(TestMemorySegment.class);
-        framework.addFlags("--add-modules", "java.base", "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED");
-        framework.start();
-    }
-
-    public TestMemorySegment() {
-        // Generate input once
-        aB = generateB();
-        bB = generateB();
-        aS = generateS();
-        bS = generateS();
-        aI = generateI();
-        bI = generateI();
-        aL = generateL();
-        bL = generateL();
+        // Generate two MemorySegments as inputs
+        MemorySegment a = newSegment();
+        MemorySegment b = newSegment();
+        fillRandom(a);
+        fillRandom(b);
 
         // Add all tests to list
-        tests.put("testArrayBB", () -> {
-          return testArrayBB(aB.clone(), bB.clone());
-        });
         tests.put("testMemorySegmentBadExitCheck", () -> {
-          MemorySegment data = MemorySegment.ofArray(aB.clone());
-          return testMemorySegmentBadExitCheck(data);
+            return testMemorySegmentBadExitCheck(copy(a));
         });
-        tests.put("testMemorySegmentB", () -> {
-          MemorySegment data = MemorySegment.ofArray(aB.clone());
-          return testMemorySegmentB(data);
+        tests.put("testIntLoop_iv_byte", () -> {
+            return testIntLoop_iv_byte(copy(a));
         });
-        tests.put("testMemorySegmentBInvarI", () -> {
-          MemorySegment data = MemorySegment.ofArray(aB.clone());
-          return testMemorySegmentBInvarI(data, 101, RANGE-200);
+        tests.put("testIntLoop_longIndex_intInvar_sameAdr_byte", () -> {
+            return testIntLoop_longIndex_intInvar_sameAdr_byte(copy(a), 0);
         });
-        tests.put("testMemorySegmentBInvarL", () -> {
-          MemorySegment data = MemorySegment.ofArray(aB.clone());
-          return testMemorySegmentBInvarL(data, 101, RANGE-200);
+        tests.put("testIntLoop_longIndex_longInvar_sameAdr_byte", () -> {
+            return testIntLoop_longIndex_longInvar_sameAdr_byte(copy(a), 0);
         });
-        tests.put("testMemorySegmentBInvarIAdr", () -> {
-          MemorySegment data = MemorySegment.ofArray(aB.clone());
-          return testMemorySegmentBInvarI(data, 101, RANGE-200);
+        tests.put("testIntLoop_longIndex_intInvar_byte", () -> {
+            return testIntLoop_longIndex_intInvar_byte(copy(a), 0);
         });
-        tests.put("testMemorySegmentBInvarLAdr", () -> {
-          MemorySegment data = MemorySegment.ofArray(aB.clone());
-          return testMemorySegmentBInvarL(data, 101, RANGE-200);
+        tests.put("testIntLoop_longIndex_longInvar_byte", () -> {
+            return testIntLoop_longIndex_longInvar_byte(copy(a), 0);
         });
 
         // Compute gold value for all test methods before compilation
@@ -121,57 +112,64 @@ public class TestMemorySegment {
         }
     }
 
-    @Run(test = {"testArrayBB",
-                 "testMemorySegmentBadExitCheck",
-                 "testMemorySegmentB",
-                 "testMemorySegmentBInvarI",
-                 "testMemorySegmentBInvarL",
-                 "testMemorySegmentBInvarIAdr",
-                 "testMemorySegmentBInvarLAdr"})
-    public void runTests() {
-        for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {
-            String name = entry.getKey();
-            TestFunction test = entry.getValue();
-            // Recall gold value from before compilation
-            Object[] gold = golds.get(name);
-            // Compute new result
-            Object[] result = test.run();
-            // Compare gold and new result
-            verify(name, gold, result);
+    MemorySegment newSegment() {
+        return provider.newSegment();
+    }
+
+    MemorySegment copy(MemorySegment src) {
+        MemorySegment dst = newSegment();
+        MemorySegment.copy(src, 0, dst, 0, src.byteSize());
+        return dst;
+    }
+
+    static MemorySegment newOfByteArray() {
+        return MemorySegment.ofArray(new byte[BACKING_SIZE]);
+    }
+
+    static MemorySegment newOfCharArray() {
+        return MemorySegment.ofArray(new char[BACKING_SIZE / 2]);
+    }
+
+    static MemorySegment newOfShortArray() {
+        return MemorySegment.ofArray(new short[BACKING_SIZE / 2]);
+    }
+
+    static MemorySegment newOfIntArray() {
+        return MemorySegment.ofArray(new int[BACKING_SIZE / 4]);
+    }
+
+    static MemorySegment newOfLongArray() {
+        return MemorySegment.ofArray(new long[BACKING_SIZE / 8]);
+    }
+
+    static MemorySegment newOfFloatArray() {
+        return MemorySegment.ofArray(new float[BACKING_SIZE / 4]);
+    }
+
+    static MemorySegment newOfDoubleArray() {
+        return MemorySegment.ofArray(new double[BACKING_SIZE / 8]);
+    }
+
+    static MemorySegment newOfByteBuffer() {
+        return MemorySegment.ofBuffer(ByteBuffer.allocate(BACKING_SIZE));
+    }
+
+    static MemorySegment newOfByteBufferDirect() {
+        return MemorySegment.ofBuffer(ByteBuffer.allocateDirect(BACKING_SIZE));
+    }
+
+    static MemorySegment newOfNative() {
+        // Auto arena: GC decides when there is no reference to the MemorySegment,
+        // and then it deallocates the backing memory.
+        return Arena.ofAuto().allocate(BACKING_SIZE, 1);
+    }
+
+    static void fillRandom(MemorySegment data) {
+        for (int i = 0; i < (int)data.byteSize(); i += 8) {
+            data.set(ValueLayout.JAVA_LONG_UNALIGNED, i, RANDOM.nextLong());
         }
     }
 
-    static byte[] generateB() {
-        byte[] a = new byte[RANGE];
-        for (int i = 0; i < a.length; i++) {
-            a[i] = (byte)RANDOM.nextInt();
-        }
-        return a;
-    }
-
-    static short[] generateS() {
-        short[] a = new short[RANGE];
-        for (int i = 0; i < a.length; i++) {
-            a[i] = (short)RANDOM.nextInt();
-        }
-        return a;
-    }
-
-    static int[] generateI() {
-        int[] a = new int[RANGE];
-        for (int i = 0; i < a.length; i++) {
-            a[i] = RANDOM.nextInt();
-        }
-        return a;
-    }
-
-    static long[] generateL() {
-        long[] a = new long[RANGE];
-        for (int i = 0; i < a.length; i++) {
-            a[i] = RANDOM.nextLong();
-        }
-        return a;
-    }
 
     static void verify(String name, Object[] gold, Object[] result) {
         if (gold.length != result.length) {
@@ -186,191 +184,147 @@ public class TestMemorySegment {
                                            " gold[" + i + "] == result[" + i + "]");
             }
 
-            MemorySegment mg;
-            MemorySegment mr;
-            if (g.getClass().isArray()) {
-                if (g.getClass() != r.getClass() || !g.getClass().isArray() || !r.getClass().isArray()) {
-                    throw new RuntimeException("verify " + name + ": must both be array of same type:" +
-                                               " gold[" + i + "].getClass() = " + g.getClass().getSimpleName() +
-                                               " result[" + i + "].getClass() = " + r.getClass().getSimpleName());
+            if (!(g instanceof MemorySegment && r instanceof MemorySegment)) {
+                throw new RuntimeException("verify " + name + ": only MemorySegment supported, i=" + i);
+            }
+
+            MemorySegment mg = (MemorySegment)g;
+            MemorySegment mr = (MemorySegment)r;
+
+            if (mg.byteSize() != mr.byteSize()) {
+                throw new RuntimeException("verify " + name + ": MemorySegment must have same byteSize:" +
+                                       " gold[" + i + "].byteSize = " + mg.byteSize() +
+                                       " result[" + i + "].byteSize = " + mr.byteSize());
+            }
+
+            for (int j = 0; j < (int)mg.byteSize(); j++) {
+                byte vg = mg.get(ValueLayout.JAVA_BYTE, j);
+                byte vr = mr.get(ValueLayout.JAVA_BYTE, j);
+                if (vg != vr) {
+                    throw new RuntimeException("verify " + name + ": MemorySegment must have same content:" +
+                                               " gold[" + i + "][" + j + "] = " + vg +
+                                               " result[" + i + "][" + j + "] = " + vr);
                 }
-                if (Array.getLength(g) != Array.getLength(r)) {
-                        throw new RuntimeException("verify " + name + ": arrays must have same length:" +
-                                               " gold[" + i + "].length = " + Array.getLength(g) +
-                                               " result[" + i + "].length = " + Array.getLength(r));
-                }
-                Class c = g.getClass().getComponentType();
-                if (c == byte.class) {
-                    verifyB(name, i, (byte[])g, (byte[])r);
-                } else if (c == short.class) {
-                    verifyS(name, i, (short[])g, (short[])r);
-                } else if (c == int.class) {
-                    verifyI(name, i, (int[])g, (int[])r);
-                } else if (c == long.class) {
-                    verifyL(name, i, (long[])g, (long[])r);
-                } else {
-                    throw new RuntimeException("verify " + name + ": array type not supported for verify:" +
-                                           " gold[" + i + "].getClass() = " + g.getClass().getSimpleName() +
-                                           " result[" + i + "].getClass() = " + r.getClass().getSimpleName());
-                }
-	    } else if (g instanceof MemorySegment) {
-                mg = (MemorySegment)g;
-                if (!(r instanceof MemorySegment)) {
-                    throw new RuntimeException("verify " + name + ": was not both MemorySegment:" +
-                                           " gold[" + i + "].getClass() = " + g.getClass().getSimpleName() +
-                                           " result[" + i + "].getClass() = " + r.getClass().getSimpleName());
-                }
-                mr = (MemorySegment)r;
-            }
-            // TODO verify MemorySegment, size and content. Also do the same for the arrays?
-        }
-    }
-
-    static void verifyB(String name, int i, byte[] g, byte[] r) {
-        for (int j = 0; j < g.length; j++) {
-            if (g[j] != r[j]) {
-                throw new RuntimeException("verify " + name + ": arrays must have same content:" +
-                                           " gold[" + i + "][" + j + "] = " + g[j] +
-                                           " result[" + i + "][" + j + "] = " + r[j]);
             }
         }
     }
 
-    static void verifyS(String name, int i, short[] g, short[] r) {
-        for (int j = 0; j < g.length; j++) {
-            if (g[j] != r[j]) {
-                throw new RuntimeException("verify " + name + ": arrays must have same content:" +
-                                           " gold[" + i + "][" + j + "] = " + g[j] +
-                                           " result[" + i + "][" + j + "] = " + r[j]);
-            }
+    @Run(test = {"testMemorySegmentBadExitCheck",
+                 "testIntLoop_iv_byte",
+                 "testIntLoop_longIndex_intInvar_sameAdr_byte",
+                 "testIntLoop_longIndex_longInvar_sameAdr_byte",
+                 "testIntLoop_longIndex_intInvar_byte",
+                 "testIntLoop_longIndex_longInvar_byte"})
+    void runTests() {
+        for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {
+            String name = entry.getKey();
+            TestFunction test = entry.getValue();
+            // Recall gold value from before compilation
+            Object[] gold = golds.get(name);
+            // Compute new result
+            Object[] result = test.run();
+            // Compare gold and new result
+            verify(name, gold, result);
         }
-    }
-
-    static void verifyI(String name, int i, int[] g, int[] r) {
-        for (int j = 0; j < g.length; j++) {
-            if (g[j] != r[j]) {
-                throw new RuntimeException("verify " + name + ": arrays must have same content:" +
-                                           " gold[" + i + "][" + j + "] = " + g[j] +
-                                           " result[" + i + "][" + j + "] = " + r[j]);
-            }
-        }
-    }
-
-    static void verifyL(String name, int i, long[] g, long[] r) {
-        for (int j = 0; j < g.length; j++) {
-            if (g[j] != r[j]) {
-                throw new RuntimeException("verify " + name + ": arrays must have same content:" +
-                                           " gold[" + i + "][" + j + "] = " + g[j] +
-                                           " result[" + i + "][" + j + "] = " + r[j]);
-            }
-        }
-    }
-
-    @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
-                  IRNode.ADD_VB,        "> 0",
-                  IRNode.STORE_VECTOR,  "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-    static Object[] testArrayBB(byte[] a, byte[] b) {
-        for (int i = 0; i < a.length; i++) {
-            b[i+0] = (byte)(a[i] + 1);
-        }
-        return new Object[]{ a, b };
     }
 
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR_B, "= 0",
+                  IRNode.ADD_VB,        "= 0",
                   IRNode.STORE_VECTOR,  "= 0"},
+        applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     // FAILS
-    // Exit check: iv < long_value
+    // Exit check: iv < long_limit      ->     (long)iv < long_limit
+    // Thus, we have an int-iv, but a long-exit-check.
     // Is not properly recognized by either CountedLoop or LongCountedLoop
-    static Object[] testMemorySegmentBadExitCheck(MemorySegment m) {
-        for (int i = 0; i < m.byteSize(); i++) {
-            byte v = m.get(ValueLayout.JAVA_BYTE, i);
-            m.set(ValueLayout.JAVA_BYTE, i, (byte)(v + 1));
+    static Object[] testMemorySegmentBadExitCheck(MemorySegment a) {
+        for (int i = 0; i < a.byteSize(); i++) {
+            long adr = i;
+            byte v = a.get(ValueLayout.JAVA_BYTE, adr);
+            a.set(ValueLayout.JAVA_BYTE, adr, (byte)(v + 1));
         }
-        return new Object[]{ m };
+        return new Object[]{ a };
     }
 
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
                   IRNode.ADD_VB,        "> 0",
                   IRNode.STORE_VECTOR,  "> 0"},
+        applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-    static Object[] testMemorySegmentB(MemorySegment m) {
-        for (int i = 0; i < (int)m.byteSize(); i++) {
-            byte v = m.get(ValueLayout.JAVA_BYTE, i);
-            m.set(ValueLayout.JAVA_BYTE, i, (byte)(v + 1));
+    static Object[] testIntLoop_iv_byte(MemorySegment a) {
+        for (int i = 0; i < (int)a.byteSize(); i++) {
+            long adr = i;
+            byte v = a.get(ValueLayout.JAVA_BYTE, adr);
+            a.set(ValueLayout.JAVA_BYTE, adr, (byte)(v + 1));
         }
-        return new Object[]{ m };
-    }
-
-    @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_B, "= 0",
-                  IRNode.STORE_VECTOR,  "= 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-    // FAILS
-    // Note: the very similar "testMemorySegmentBInvarLAdr" does vectorize
-    // TODO investigate reason
-    static Object[] testMemorySegmentBInvarI(MemorySegment m, int invar, int size) {
-        for (int i = 0; i < size; i++) {
-            byte v = m.get(ValueLayout.JAVA_BYTE, i + invar);
-            m.set(ValueLayout.JAVA_BYTE, i + invar, (byte)(v + 1));
-        }
-        return new Object[]{ m };
-    }
-
-    @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_B, "= 0",
-                  IRNode.STORE_VECTOR,  "= 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-    // FAILS
-    // Note: the very similar "testMemorySegmentBInvarLAdr" does vectorize
-    // The reason seems to be that the load and store have a different invariant:
-    //
-    //   VPointer[mem:  676      LoadB, base:  482, adr:  482,  base[ 482] + offset(  63) + invar[3125] + scale(   1) * iv]
-    //   VPointer[mem: 1229     StoreB, base:  482, adr:  482,  base[ 482] + offset(  63) + invar[3127] + scale(   1) * iv]
-    //
-    //   3125 AddL = ((CastLL(Param 11) + ConvI2L(1460  Phi)) + 530  LoadL)
-    //   3127 AddL = (ConvI2L(1460  Phi) + (11 Param + 530  LoadL))
-    //
-    // TODO investigate reason. Maybe we can compare the invariants in a smarter way, if they are composite?
-    static Object[] testMemorySegmentBInvarL(MemorySegment m, long invar, int size) {
-        for (int i = 0; i < size; i++) {
-            byte v = m.get(ValueLayout.JAVA_BYTE, i + invar);
-            m.set(ValueLayout.JAVA_BYTE, i + invar, (byte)(v + 1));
-        }
-        return new Object[]{ m };
-    }
-
-    @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_B, "= 0",
-                  IRNode.STORE_VECTOR,  "= 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-    // FAILS
-    // Note: the very similar "testMemorySegmentBInvarLAdr" does vectorize
-    // TODO investigate reason
-    static Object[] testMemorySegmentBInvarIAdr(MemorySegment m, int invar, int size) {
-        for (int i = 0; i < size; i++) {
-            long adr = i + invar;
-            byte v = m.get(ValueLayout.JAVA_BYTE, adr);
-            m.set(ValueLayout.JAVA_BYTE, adr, (byte)(v + 1));
-        }
-        return new Object[]{ m };
+        return new Object[]{ a };
     }
 
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
                   IRNode.ADD_VB,        "> 0",
                   IRNode.STORE_VECTOR,  "> 0"},
+        applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-    static Object[] testMemorySegmentBInvarLAdr(MemorySegment m, long invar, int size) {
-        for (int i = 0; i < size; i++) {
-            long adr = i + invar;
-            byte v = m.get(ValueLayout.JAVA_BYTE, adr);
-            m.set(ValueLayout.JAVA_BYTE, adr, (byte)(v + 1));
+    static Object[] testIntLoop_longIndex_intInvar_sameAdr_byte(MemorySegment a, int invar) {
+        for (int i = 0; i < (int)a.byteSize(); i++) {
+            long adr = (long)(i) + (long)(invar);
+            byte v = a.get(ValueLayout.JAVA_BYTE, adr);
+            a.set(ValueLayout.JAVA_BYTE, adr, (byte)(v + 1));
         }
-        return new Object[]{ m };
+        return new Object[]{ a };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
+                  IRNode.ADD_VB,        "> 0",
+                  IRNode.STORE_VECTOR,  "> 0"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    static Object[] testIntLoop_longIndex_longInvar_sameAdr_byte(MemorySegment a, long invar) {
+        for (int i = 0; i < (int)a.byteSize(); i++) {
+            long adr = (long)(i) + (long)(invar);
+            byte v = a.get(ValueLayout.JAVA_BYTE, adr);
+            a.set(ValueLayout.JAVA_BYTE, adr, (byte)(v + 1));
+        }
+        return new Object[]{ a };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "= 0",
+                  IRNode.ADD_VB,        "= 0",
+                  IRNode.STORE_VECTOR,  "= 0"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    // FAILS: invariants are sorted differently, because of differently inserted Cast.
+    // See: JDK-8330274
+    static Object[] testIntLoop_longIndex_intInvar_byte(MemorySegment a, int invar) {
+        for (int i = 0; i < (int)a.byteSize(); i++) {
+            long adr1 = (long)(i) + (long)(invar);
+            byte v = a.get(ValueLayout.JAVA_BYTE, adr1);
+            long adr2 = (long)(i) + (long)(invar);
+            a.set(ValueLayout.JAVA_BYTE, adr2, (byte)(v + 1));
+        }
+        return new Object[]{ a };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "= 0",
+                  IRNode.ADD_VB,        "= 0",
+                  IRNode.STORE_VECTOR,  "= 0"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    // FAILS: invariants are sorted differently, because of differently inserted Cast.
+    // See: JDK-8330274
+    static Object[] testIntLoop_longIndex_longInvar_byte(MemorySegment a, long invar) {
+        for (int i = 0; i < (int)a.byteSize(); i++) {
+            long adr1 = (long)(i) + (long)(invar);
+            byte v = a.get(ValueLayout.JAVA_BYTE, adr1);
+            long adr2 = (long)(i) + (long)(invar);
+            a.set(ValueLayout.JAVA_BYTE, adr2, (byte)(v + 1));
+        }
+        return new Object[]{ a };
     }
 }
