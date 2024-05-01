@@ -133,8 +133,6 @@ class inputStream : public CHeapObjBase {
   //   definitely_done()   <= consumed all lines && (hit EOF || hit error)
   // These states are internal; the user can only look at next/done/error.
   //
-  // A call to set_current_line_position (re-)fetches the indicated line.
-  //
   // Relative to these states, everything already read from the input
   // before the first byte of the current line is logically present
   // (but not accessible) before _beg, while everything not yet read
@@ -327,19 +325,6 @@ class inputStream : public CHeapObjBase {
     // Example: read(b,s) { return fread(b, 1, s, _my_fp); }
     // Example: read(b,s) { return 0; } // never more than the initial buffer
 
-    // Give the current number of bytes already produced by the source.
-    // Give (size_t)-1 if this source does have a tracked position.
-    // A tracked position increments by the result of every call to read.
-    virtual size_t position() { return -1; }
-
-    // Give the remaining number of bytes which might be produced in the future.
-    // Give (size_t)-1 if this source does not keep track of that number.
-    virtual size_t remaining() { return -1; }
-
-    // Rewind so that the position appears to be the given one.
-    // Return the new position, or else (size_t)-1 if the request fails.
-    virtual size_t set_position(size_t position) { return -1; }
-
     // If it is backed by a resource that needs closing, do so.
     virtual void close() { }
   };
@@ -386,15 +371,6 @@ class FileInput : public inputStream::Input {
   virtual size_t read(char* buf, size_t size) {
     return _fs.read(buf, size);
   }
-  virtual size_t position() {
-    return _fs.position();
-  }
-  virtual size_t remaining() {
-    return _fs.remaining();
-  }
-  virtual size_t set_position(size_t position) {
-    return _fs.set_position(position);
-  }
   virtual void close() {
     _fs.close();
   }
@@ -425,20 +401,6 @@ class MemoryInput : public inputStream::Input {
       _offset += nr;
     }
     return nr;
-  }
-  virtual size_t position() {
-    return _offset;
-  }
-  virtual size_t remaining() {
-    return _limit - _offset;
-  }
-  virtual size_t set_position(size_t position) {
-    if (position <= _limit) {
-      _offset = position;
-    } else {
-      position = (size_t)-1;
-    }
-    return position;
   }
 };
 
