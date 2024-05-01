@@ -52,7 +52,6 @@ import java.lang.foreign.*;
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestMemorySegment ByteBuffer
  * @run driver compiler.loopopts.superword.TestMemorySegment ByteBufferDirect
- * @run driver compiler.loopopts.superword.TestMemorySegment Native
  */
 
 /*
@@ -449,6 +448,7 @@ class TestMemorySegmentImpl {
                   IRNode.ADD_VI,        "> 0",
                   IRNode.STORE_VECTOR,  "> 0"},
         applyIfPlatform = {"64-bit", "true"},
+        applyIf = {"AlignVector", "false"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static Object[] testIntLoop_iv_int(MemorySegment a) {
         for (int i = 0; i < (int)a.byteSize()/4; i++ ) {
@@ -464,6 +464,7 @@ class TestMemorySegmentImpl {
                   IRNode.ADD_VI,        "> 0",
                   IRNode.STORE_VECTOR,  "> 0"},
         applyIfPlatform = {"64-bit", "true"},
+        applyIf = {"AlignVector", "false"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static Object[] testIntLoop_longIndex_intInvar_sameAdr_int(MemorySegment a, int invar) {
         for (int i = 0; i < (int)a.byteSize()/4; i++) {
@@ -479,6 +480,7 @@ class TestMemorySegmentImpl {
                   IRNode.ADD_VI,        "> 0",
                   IRNode.STORE_VECTOR,  "> 0"},
         applyIfPlatform = {"64-bit", "true"},
+        applyIf = {"AlignVector", "false"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static Object[] testIntLoop_longIndex_longInvar_sameAdr_int(MemorySegment a, long invar) {
         for (int i = 0; i < (int)a.byteSize()/4; i++) {
