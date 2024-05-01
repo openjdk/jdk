@@ -201,7 +201,7 @@ public sealed class Console implements Flushable permits ProxyingConsole {
      * @since 23
      */
     @PreviewFeature(feature = PreviewFeature.Feature.IMPLICIT_CLASSES)
-    public String input(String prompt) {
+    public String readln(String prompt) {
         throw newUnsupportedOperationException();
     }
 

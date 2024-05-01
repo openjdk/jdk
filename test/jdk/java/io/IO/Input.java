@@ -23,11 +23,11 @@
 
 import java.io.IOException;
 
-import static java.io.IO.input;
+import static java.io.IO.readln;
 
 public class Input {
 
     public static void main(String[] args) throws IOException {
-        System.out.print(input("?"));
+        System.out.print(readln("?"));
     }
 }

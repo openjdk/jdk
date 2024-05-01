@@ -29,7 +29,7 @@ public class Methods {
         switch (args[0]) {
             case "println" -> println("hello");
             case "print" -> print("hello");
-            case "input" -> input("hello");
+            case "input" -> readln("hello");
             default -> throw new IllegalArgumentException(args[0]);
         }
     }

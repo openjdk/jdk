@@ -67,14 +67,14 @@ public class IO {
     }
 
     /**
-     * {@return the result of a call to {@link Console#input(String)
-     * Console.input(prompt)} on {@link System#console()}, or throws
+     * {@return the result of a call to {@link Console#readln(String)
+     * Console.readln(prompt)} on {@link System#console()}, or throws
      * {@link IOError} if {@code System.console()} returns {@code null}}
      *
      * @param prompt the prompt string
      */
-    public static String input(String prompt) {
-        return con().input(prompt);
+    public static String readln(String prompt) {
+        return con().readln(prompt);
     }
 
     private static Console con() {
