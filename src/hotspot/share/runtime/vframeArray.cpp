@@ -71,7 +71,7 @@ void vframeArrayElement::fill_in(compiledVFrame* vf, bool realloc_failures) {
   int index;
 
   {
-    Thread* current_thread = Thread::current();
+    JavaThread* current_thread = JavaThread::current();
     ResourceMark rm(current_thread);
     HandleMark hm(current_thread);
 
@@ -96,13 +96,14 @@ void vframeArrayElement::fill_in(compiledVFrame* vf, bool realloc_failures) {
           assert(monitor->owner() == nullptr || !monitor->owner()->is_unlocked(), "object must be null or locked");
           dest->set_obj(monitor->owner());
 
-          assert(current_thread->is_Java_thread(), "Must be a JavaThread");
-          assert(ObjectSynchronizer::current_thread_holds_lock((JavaThread*) current_thread, Handle(current_thread, dest->obj())),
+          assert(dest->obj() == nullptr ||
+                 ObjectSynchronizer::current_thread_holds_lock(current_thread, Handle(current_thread, dest->obj())),
                  "should be held, before move_to");
 
           monitor->lock()->move_to(monitor->owner(), dest->lock());
 
-          assert(ObjectSynchronizer::current_thread_holds_lock((JavaThread*) current_thread, Handle(current_thread, dest->obj())),
+          assert(dest->obj() == nullptr ||
+                 ObjectSynchronizer::current_thread_holds_lock(current_thread, Handle(current_thread, dest->obj())),
                  "should be held, after move_to");
         }
       }
@@ -314,9 +315,11 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
     top = iframe()->previous_monitor_in_interpreter_frame(top);
     BasicObjectLock* src = _monitors->at(index);
     top->set_obj(src->obj());
-    assert(ObjectSynchronizer::current_thread_holds_lock(thread, Handle(thread, src->obj())), "should be held, before move_to");
+    assert(src->obj() == nullptr || ObjectSynchronizer::current_thread_holds_lock(thread, Handle(thread, src->obj())),
+           "should be held, before move_to");
     src->lock()->move_to(src->obj(), top->lock());
-    assert(ObjectSynchronizer::current_thread_holds_lock(thread, Handle(thread, src->obj())), "should be held, after move_to");
+    assert(src->obj() == nullptr || ObjectSynchronizer::current_thread_holds_lock(thread, Handle(thread, src->obj())),
+           "should be held, after move_to");
   }
   if (ProfileInterpreter) {
     iframe()->interpreter_frame_set_mdp(0); // clear out the mdp.
