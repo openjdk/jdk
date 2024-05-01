@@ -150,6 +150,24 @@ class TestMemorySegmentImpl {
         tests.put("testIntLoop_intIndex_intInvar_byte", () -> {
             return testIntLoop_intIndex_intInvar_byte(copy(a), 0);
         });
+        tests.put("testIntLoop_iv_int", () -> {
+            return testIntLoop_iv_int(copy(a));
+        });
+        tests.put("testIntLoop_longIndex_intInvar_sameAdr_int", () -> {
+            return testIntLoop_longIndex_intInvar_sameAdr_int(copy(a), 0);
+        });
+        tests.put("testIntLoop_longIndex_longInvar_sameAdr_int", () -> {
+            return testIntLoop_longIndex_longInvar_sameAdr_int(copy(a), 0);
+        });
+        tests.put("testIntLoop_longIndex_intInvar_int", () -> {
+            return testIntLoop_longIndex_intInvar_int(copy(a), 0);
+        });
+        tests.put("testIntLoop_longIndex_longInvar_int", () -> {
+            return testIntLoop_longIndex_longInvar_int(copy(a), 0);
+        });
+        tests.put("testIntLoop_intIndex_intInvar_int", () -> {
+            return testIntLoop_intIndex_intInvar_int(copy(a), 0);
+        });
 
         // Compute gold value for all test methods before compilation
         for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {
@@ -290,7 +308,13 @@ class TestMemorySegmentImpl {
                  "testIntLoop_longIndex_longInvar_sameAdr_byte",
                  "testIntLoop_longIndex_intInvar_byte",
                  "testIntLoop_longIndex_longInvar_byte",
-                 "testIntLoop_intIndex_intInvar_byte"})
+                 "testIntLoop_intIndex_intInvar_byte",
+                 "testIntLoop_iv_int",
+                 "testIntLoop_longIndex_intInvar_sameAdr_int",
+                 "testIntLoop_longIndex_longInvar_sameAdr_int",
+                 "testIntLoop_longIndex_intInvar_int",
+                 "testIntLoop_longIndex_longInvar_int",
+                 "testIntLoop_intIndex_intInvar_int"})
     void runTests() {
         for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {
             String name = entry.getKey();
@@ -416,6 +440,103 @@ class TestMemorySegmentImpl {
             int int_index = i + invar;
             byte v = a.get(ValueLayout.JAVA_BYTE, int_index);
             a.set(ValueLayout.JAVA_BYTE, int_index, (byte)(v + 1));
+        }
+        return new Object[]{ a };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
+                  IRNode.ADD_VI,        "> 0",
+                  IRNode.STORE_VECTOR,  "> 0"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    static Object[] testIntLoop_iv_int(MemorySegment a) {
+        for (int i = 0; i < (int)a.byteSize()/4; i++ ) {
+            long adr = 4L * i;
+            int v = a.get(ValueLayout.JAVA_INT_UNALIGNED, adr);
+            a.set(ValueLayout.JAVA_INT_UNALIGNED, adr, (int)(v + 1));
+        }
+        return new Object[]{ a };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
+                  IRNode.ADD_VI,        "> 0",
+                  IRNode.STORE_VECTOR,  "> 0"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    static Object[] testIntLoop_longIndex_intInvar_sameAdr_int(MemorySegment a, int invar) {
+        for (int i = 0; i < (int)a.byteSize()/4; i++) {
+            long adr = 4L * (long)(i) + 4L * (long)(invar);
+            int v = a.get(ValueLayout.JAVA_INT_UNALIGNED, adr);
+            a.set(ValueLayout.JAVA_INT_UNALIGNED, adr, (int)(v + 1));
+        }
+        return new Object[]{ a };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
+                  IRNode.ADD_VI,        "> 0",
+                  IRNode.STORE_VECTOR,  "> 0"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    static Object[] testIntLoop_longIndex_longInvar_sameAdr_int(MemorySegment a, long invar) {
+        for (int i = 0; i < (int)a.byteSize()/4; i++) {
+            long adr = 4L * (long)(i) + 4L * (long)(invar);
+            int v = a.get(ValueLayout.JAVA_INT_UNALIGNED, adr);
+            a.set(ValueLayout.JAVA_INT_UNALIGNED, adr, (int)(v + 1));
+        }
+        return new Object[]{ a };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I, "= 0",
+                  IRNode.ADD_VI,        "= 0",
+                  IRNode.STORE_VECTOR,  "= 0"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    // FAILS: invariants are sorted differently, because of differently inserted Cast.
+    // See: JDK-8330274
+    static Object[] testIntLoop_longIndex_intInvar_int(MemorySegment a, int invar) {
+        for (int i = 0; i < (int)a.byteSize()/4; i++) {
+            long adr1 = 4L * (long)(i) + 4L * (long)(invar);
+            int v = a.get(ValueLayout.JAVA_INT_UNALIGNED, adr1);
+            long adr2 = 4L * (long)(i) + 4L * (long)(invar);
+            a.set(ValueLayout.JAVA_INT_UNALIGNED, adr2, (int)(v + 1));
+        }
+        return new Object[]{ a };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I, "= 0",
+                  IRNode.ADD_VI,        "= 0",
+                  IRNode.STORE_VECTOR,  "= 0"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    // FAILS: invariants are sorted differently, because of differently inserted Cast.
+    // See: JDK-8330274
+    static Object[] testIntLoop_longIndex_longInvar_int(MemorySegment a, long invar) {
+        for (int i = 0; i < (int)a.byteSize()/4; i++) {
+            long adr1 = 4L * (long)(i) + 4L * (long)(invar);
+            int v = a.get(ValueLayout.JAVA_INT_UNALIGNED, adr1);
+            long adr2 = 4L * (long)(i) + 4L * (long)(invar);
+            a.set(ValueLayout.JAVA_INT_UNALIGNED, adr2, (int)(v + 1));
+        }
+        return new Object[]{ a };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I, "= 0",
+                  IRNode.ADD_VI,        "= 0",
+                  IRNode.STORE_VECTOR,  "= 0"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    // FAILS: RangeCheck cannot be eliminated because of int_index
+    static Object[] testIntLoop_intIndex_intInvar_int(MemorySegment a, int invar) {
+        for (int i = 0; i < (int)a.byteSize()/4; i++) {
+            int int_index = i + invar;
+            int v = a.get(ValueLayout.JAVA_INT_UNALIGNED, 4L * int_index);
+            a.set(ValueLayout.JAVA_INT_UNALIGNED, 4L * int_index, (int)(v + 1));
         }
         return new Object[]{ a };
     }
