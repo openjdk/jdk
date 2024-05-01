@@ -100,12 +100,13 @@ inline HeapWord* HeapRegion::advance_to_block_containing_addr(const void* addr,
     cur_block = next_block;
     // Because the BOT is precise, we should never step into the next card
     // (i.e. crossing the card boundary).
-    assert(!G1BlockOffsetTablePart::is_crossing_card_boundary(cur_block, (HeapWord*)addr), "must be");
+    assert(!G1BlockOffsetTable::is_crossing_card_boundary(cur_block, (HeapWord*)addr), "must be");
   }
 }
 
 inline HeapWord* HeapRegion::block_start(const void* addr, HeapWord* const pb) const {
-  HeapWord* first_block = _bot_part.block_start_reaching_into_card(addr);
+  assert(addr >= bottom() && addr < top(), "invalid address");
+  HeapWord* first_block = _bot->block_start_reaching_into_card(addr);
   return advance_to_block_containing_addr(addr, pb, first_block);
 }
 
@@ -252,17 +253,13 @@ inline void HeapRegion::update_bot() {
   assert(next_addr == top(), "Should stop the scan at the limit.");
 }
 
-inline void HeapRegion::update_bot_for_obj(HeapWord* obj_start, size_t obj_size) {
-  assert(is_old(), "should only do BOT updates for old regions");
-
-  HeapWord* obj_end = obj_start + obj_size;
-
-  assert(is_in(obj_start), "obj_start must be in this region: " HR_FORMAT
-         " obj_start " PTR_FORMAT " obj_end " PTR_FORMAT,
+inline void HeapRegion::update_bot_for_block(HeapWord* start, HeapWord* end) {
+  assert(is_in(start), "The start address must be in this region: " HR_FORMAT
+         " start " PTR_FORMAT " end " PTR_FORMAT,
          HR_FORMAT_PARAMS(this),
-         p2i(obj_start), p2i(obj_end));
+         p2i(start), p2i(end));
 
-  _bot_part.update_for_block(obj_start, obj_end);
+  _bot->update_for_block(start, end);
 }
 
 inline HeapWord* HeapRegion::parsable_bottom() const {

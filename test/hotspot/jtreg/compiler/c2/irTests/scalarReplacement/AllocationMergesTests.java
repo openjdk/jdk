@@ -46,6 +46,7 @@ public class AllocationMergesTests {
                                    "-XX:CompileCommand=inline,*::charAt*",
                                    "-XX:CompileCommand=inline,*PicturePositions::*",
                                    "-XX:CompileCommand=inline,*Point::*",
+                                   "-XX:CompileCommand=inline,*Nested::*",
                                    "-XX:CompileCommand=exclude,*::dummy*");
     }
 
@@ -92,7 +93,9 @@ public class AllocationMergesTests {
                  "testSRAndNSR_NoTrap_C2",
                  "testSRAndNSR_Trap_C2",
                  "testString_one_C2",
-                 "testString_two_C2"
+                 "testString_two_C2",
+                 "testLoadNarrowKlass_C2",
+                 "testReReduce_C2"
                 })
     public void runner(RunInfo info) {
         invocations++;
@@ -147,6 +150,8 @@ public class AllocationMergesTests {
         Asserts.assertEQ(testSRAndNSR_NoTrap_Interp(cond1, x, y),                   testSRAndNSR_NoTrap_C2(cond1, x, y));
         Asserts.assertEQ(testString_one_Interp(cond1),                              testString_one_C2(cond1));
         Asserts.assertEQ(testString_two_Interp(cond1),                              testString_two_C2(cond1));
+        Asserts.assertEQ(testLoadNarrowKlass_Interp(cond1),                         testLoadNarrowKlass_C2(cond1));
+        Asserts.assertEQ(testReReduce_Interp(cond1, x, y),                          testReReduce_C2(cond1, x, y));
 
         Asserts.assertEQ(testSRAndNSR_Trap_Interp(false, cond1, cond2, x, y),
                          testSRAndNSR_Trap_C2(info.isTestC2Compiled("testSRAndNSR_Trap_C2"), cond1, cond2, x, y));
@@ -295,8 +300,7 @@ public class AllocationMergesTests {
     }
 
     @Test
-    @IR(counts = { IRNode.ALLOC, "2" })
-    // Merge won't be reduced because the inputs to the Phi have different Klasses
+    @IR(failOn = { IRNode.ALLOC })
     int testPollutedPolymorphic_C2(boolean cond, int l) { return testPollutedPolymorphic(cond, l); }
 
     @DontCompile
@@ -404,8 +408,7 @@ public class AllocationMergesTests {
     }
 
     @Test
-    @IR(counts = { IRNode.ALLOC, "1" })
-    // The merge won't be simplified because the merge with NULL
+    @IR(failOn = { IRNode.ALLOC })
     int testCondAfterMergeWithNull_C2(boolean cond1, boolean cond2, int x, int y) { return testCondAfterMergeWithNull(cond1, cond2, x, y); }
 
     @DontCompile
@@ -510,7 +513,6 @@ public class AllocationMergesTests {
 
     @Test
     @IR(counts = { IRNode.ALLOC, "1" })
-    // Merge won't be reduced because, among other things, one of the inputs is null.
     int testCmpMergeWithNull_Second_C2(boolean cond, int x, int y) { return testCmpMergeWithNull_Second(cond, x, y); }
 
     @DontCompile
@@ -530,8 +532,7 @@ public class AllocationMergesTests {
     }
 
     @Test
-    @IR(counts = { IRNode.ALLOC, "1" })
-    // The allocation won't be removed because the merge doesn't have exact type
+    @IR(failOn = { IRNode.ALLOC })
     int testObjectIdentity_C2(boolean cond, int x, int y) { return testObjectIdentity(cond, x, y); }
 
     @DontCompile
@@ -562,9 +563,7 @@ public class AllocationMergesTests {
     }
 
     @Test
-    @IR(counts = { IRNode.ALLOC, "2" })
-    // The initial allocation assigned to 's' will always be dead.
-    // The other two allocations assigned to 's' won't be removed because they have different type.
+    @IR(failOn = { IRNode.ALLOC })
     int testSubclassesTrapping_C2(boolean c1, boolean c2, int x, int y, int w, int z) { return testSubclassesTrapping(c1, c2, x, y, w, z); }
 
     @DontCompile
@@ -590,7 +589,7 @@ public class AllocationMergesTests {
     }
 
     @Test
-    @IR(counts = { IRNode.ALLOC, "2" })
+    @IR(failOn = { IRNode.ALLOC })
     int testCmpMergeWithNull_C2(boolean cond, int x, int y) { return testCmpMergeWithNull(cond, x, y); }
 
     @DontCompile
@@ -620,9 +619,7 @@ public class AllocationMergesTests {
     }
 
     @Test
-    @IR(counts = { IRNode.ALLOC, "2" })
-    // The unused allocation will be removed.
-    // The other two allocations assigned to 's' won't be removed because they have different type.
+    @IR(failOn = { IRNode.ALLOC })
     int testSubclasses_C2(boolean c1, boolean c2, int x, int y, int w, int z) { return testSubclasses(c1, c2, x, y, w, z); }
 
     @DontCompile
@@ -1231,7 +1228,7 @@ public class AllocationMergesTests {
     }
 
     @Test
-    @IR(counts = { IRNode.ALLOC, "0" })
+    @IR(failOn = { IRNode.ALLOC })
     char testString_one_C2(boolean cond1) { return testString_one(cond1); }
 
     @DontCompile
@@ -1252,11 +1249,67 @@ public class AllocationMergesTests {
     }
 
     @Test
-    @IR(counts = { IRNode.ALLOC, "0" })
+    @IR(failOn = { IRNode.ALLOC })
     char testString_two_C2(boolean cond1) { return testString_two(cond1); }
 
     @DontCompile
     char testString_two_Interp(boolean cond1) { return testString_two(cond1); }
+
+    // -------------------------------------------------------------------------
+
+    @ForceInline
+    Class testLoadNarrowKlass(boolean cond1) {
+        Object p = new Circle(10);
+
+        if (cond1) {
+            p = dummy(1, 2);
+        }
+
+        return p.getClass();
+    }
+
+    @Test
+    @IR(counts = { IRNode.ALLOC, "1" })
+    // The allocation won't be reduced because we don't support NarrowKlass
+    // loads under CastPPs.
+    Class testLoadNarrowKlass_C2(boolean cond1) { return testLoadNarrowKlass(cond1); }
+
+    @DontCompile
+    Class testLoadNarrowKlass_Interp(boolean cond1) { return testLoadNarrowKlass(cond1); }
+
+    // -------------------------------------------------------------------------
+
+    @ForceInline
+    int testReReduce(boolean cond, int x, int y) {
+        Nested A = new Nested(x, y);
+        Nested B = new Nested(y, x);
+        Nested C = new Nested(y, x);
+        Nested P = null;
+
+        if (x == y) {
+            A.other = B;
+            P = A;
+        } else if (x > y) {
+            P = B;
+        } else {
+            C.other = B;
+            P = C;
+        }
+
+        if (x == y)
+            dummy_defaults();
+
+        return P.x;
+    }
+
+    @Test
+    @IR(counts = { IRNode.ALLOC, "1" })
+    // The last allocation won't be reduced because it would cause the creation
+    // of a nested SafePointScalarMergeNode.
+    int testReReduce_C2(boolean cond1, int x, int y) { return testReReduce(cond1, x, y); }
+
+    @DontCompile
+    int testReReduce_Interp(boolean cond1, int x, int y) { return testReReduce(cond1, x, y); }
 
     // ------------------ Utility for Testing ------------------- //
 
@@ -1287,6 +1340,16 @@ public class AllocationMergesTests {
     @DontCompile
     static ADefaults dummy_defaults() {
         return new ADefaults();
+    }
+
+    static class Nested {
+        int x, y;
+        Nested other;
+        Nested(int x, int y) {
+            this.x = x;
+            this.y = y;
+            this.other = null;
+        }
     }
 
     static class Point {

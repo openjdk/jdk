@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -281,14 +281,6 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
     public JCTree visitLiteral(LiteralTree node, P p) {
         JCLiteral t = (JCLiteral) node;
         return M.at(t.pos).Literal(t.typetag, t.value);
-    }
-
-    @DefinedBy(Api.COMPILER_TREE)
-    public JCTree visitStringTemplate(StringTemplateTree node, P p) {
-        JCStringTemplate t = (JCStringTemplate) node;
-        JCExpression processor = copy(t.processor, p);
-        List<JCExpression> expressions = copy(t.expressions, p);
-        return M.at(t.pos).StringTemplate(processor, t.fragments, expressions);
     }
 
     @DefinedBy(Api.COMPILER_TREE)

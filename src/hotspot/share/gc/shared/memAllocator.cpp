@@ -250,19 +250,6 @@ HeapWord* MemAllocator::mem_allocate_outside_tlab(Allocation& allocation) const 
   return mem;
 }
 
-HeapWord* MemAllocator::mem_allocate_inside_tlab(Allocation& allocation) const {
-  assert(UseTLAB, "should use UseTLAB");
-
-  // Try allocating from an existing TLAB.
-  HeapWord* mem = mem_allocate_inside_tlab_fast();
-  if (mem != nullptr) {
-    return mem;
-  }
-
-  // Try refilling the TLAB and allocating the object in it.
-  return mem_allocate_inside_tlab_slow(allocation);
-}
-
 HeapWord* MemAllocator::mem_allocate_inside_tlab_fast() const {
   return _thread->tlab().allocate(_word_size);
 }
@@ -316,24 +303,20 @@ HeapWord* MemAllocator::mem_allocate_inside_tlab_slow(Allocation& allocation) co
          PTR_FORMAT " min: " SIZE_FORMAT ", desired: " SIZE_FORMAT,
          p2i(mem), min_tlab_size, new_tlab_size);
 
+  // ...and clear or zap just allocated TLAB, if needed.
   if (ZeroTLAB) {
-    // ..and clear it.
     Copy::zero_to_words(mem, allocation._allocated_tlab_size);
-  } else {
-    // ...and zap just allocated object.
-#ifdef ASSERT
+  } else if (ZapTLAB) {
     // Skip mangling the space corresponding to the object header to
     // ensure that the returned space is not considered parsable by
     // any concurrent GC thread.
     size_t hdr_size = oopDesc::header_size();
     Copy::fill_to_words(mem + hdr_size, allocation._allocated_tlab_size - hdr_size, badHeapWordVal);
-#endif // ASSERT
   }
 
   tlab.fill(mem, mem + _word_size, allocation._allocated_tlab_size);
   return mem;
 }
-
 
 HeapWord* MemAllocator::mem_allocate_slow(Allocation& allocation) const {
   // Allocation of an oop can always invoke a safepoint.

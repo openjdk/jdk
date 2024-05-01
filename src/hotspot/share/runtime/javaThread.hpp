@@ -120,7 +120,7 @@ class JavaThread: public Thread {
   // Deopt support
   DeoptResourceMark*  _deopt_mark;               // Holds special ResourceMark for deoptimization
 
-  CompiledMethod*       _deopt_nmethod;         // CompiledMethod that is currently being deoptimized
+  nmethod*      _deopt_nmethod;                  // nmethod that is currently being deoptimized
   vframeArray*  _vframe_array_head;              // Holds the heap of the active vframeArrays
   vframeArray*  _vframe_array_last;              // Holds last vFrameArray we popped
   // Holds updates by JVMTI agents for compiled frames that cannot be performed immediately. They
@@ -158,8 +158,6 @@ class JavaThread: public Thread {
   JNIHandleBlock* _free_handle_block;
 
  public:
-  volatile intptr_t _Stalled;
-
   // For tracking the heavyweight monitor the thread is pending on.
   ObjectMonitor* current_pending_monitor() {
     // Use Atomic::load() to prevent data race between concurrent modification and
@@ -319,6 +317,7 @@ class JavaThread: public Thread {
   bool                  _is_in_VTMS_transition;          // thread is in virtual thread mount state transition
   bool                  _is_in_tmp_VTMS_transition;      // thread is in temporary virtual thread mount state transition
   bool                  _is_disable_suspend;             // JVMTI suspend is temporarily disabled; used on current thread only
+  bool                  _VTMS_transition_mark;           // used for sync between VTMS transitions and disablers
 #ifdef ASSERT
   bool                  _is_VTMS_transition_disabler;    // thread currently disabled VTMS transitions
 #endif
@@ -381,6 +380,10 @@ class JavaThread: public Thread {
   jlong      _jvmci_reserved1;
   oop        _jvmci_reserved_oop0;
 
+  // This field is used to keep an nmethod visible to the GC so that it and its contained oops can
+  // be kept alive
+  nmethod*  _live_nmethod;
+
  public:
   static jlong* _jvmci_old_thread_counters;
   static void collect_counters(jlong* array, int length);
@@ -411,6 +414,15 @@ class JavaThread: public Thread {
 
   jlong get_jvmci_reserved1() {
     return _jvmci_reserved1;
+  }
+
+  void set_live_nmethod(nmethod* nm) {
+    assert(_live_nmethod == nullptr, "only one");
+    _live_nmethod = nm;
+  }
+
+  void clear_live_nmethod() {
+    _live_nmethod = nullptr;
   }
 
  private:
@@ -653,6 +665,9 @@ private:
   bool is_disable_suspend() const                { return _is_disable_suspend; }
   void toggle_is_disable_suspend()               { _is_disable_suspend = !_is_disable_suspend; };
 
+  bool VTMS_transition_mark() const              { return Atomic::load(&_VTMS_transition_mark); }
+  void set_VTMS_transition_mark(bool val)        { Atomic::store(&_VTMS_transition_mark, val); }
+
 #ifdef ASSERT
   bool is_VTMS_transition_disabler() const       { return _is_VTMS_transition_disabler; }
   void set_is_VTMS_transition_disabler(bool val);
@@ -688,8 +703,8 @@ private:
   void set_deopt_mark(DeoptResourceMark* value)  { _deopt_mark = value; }
   DeoptResourceMark* deopt_mark(void)            { return _deopt_mark; }
 
-  void set_deopt_compiled_method(CompiledMethod* nm)  { _deopt_nmethod = nm; }
-  CompiledMethod* deopt_compiled_method()        { return _deopt_nmethod; }
+  void set_deopt_compiled_method(nmethod* nm)    { _deopt_nmethod = nm; }
+  nmethod* deopt_compiled_method()               { return _deopt_nmethod; }
 
   Method*    callee_target() const               { return _callee_target; }
   void set_callee_target  (Method* x)            { _callee_target   = x; }
@@ -813,6 +828,7 @@ private:
   static ByteSize cont_entry_offset()         { return byte_offset_of(JavaThread, _cont_entry); }
   static ByteSize cont_fastpath_offset()      { return byte_offset_of(JavaThread, _cont_fastpath); }
   static ByteSize held_monitor_count_offset() { return byte_offset_of(JavaThread, _held_monitor_count); }
+  static ByteSize jni_monitor_count_offset()  { return byte_offset_of(JavaThread, _jni_monitor_count); }
 
 #if INCLUDE_JVMTI
   static ByteSize is_in_VTMS_transition_offset()     { return byte_offset_of(JavaThread, _is_in_VTMS_transition); }
@@ -893,11 +909,11 @@ private:
   void frames_do(void f(frame*, const RegisterMap*));
 
   // Memory operations
-  void oops_do_frames(OopClosure* f, CodeBlobClosure* cf);
-  void oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf);
+  void oops_do_frames(OopClosure* f, NMethodClosure* cf);
+  void oops_do_no_frames(OopClosure* f, NMethodClosure* cf);
 
   // GC operations
-  virtual void nmethods_do(CodeBlobClosure* cf);
+  virtual void nmethods_do(NMethodClosure* cf);
 
   // RedefineClasses Support
   void metadata_do(MetadataClosure* f);

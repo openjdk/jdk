@@ -4350,7 +4350,8 @@ void VM_RedefineClasses::redefine_single_class(Thread* current, jclass the_jclas
   the_class->vtable().initialize_vtable();
   the_class->itable().initialize_itable();
 
-  // Leave arrays of jmethodIDs and itable index cache unchanged
+  // Update jmethodID cache if present.
+  the_class->update_methods_jmethod_cache();
 
   // Copy the "source debug extension" attribute from new class version
   the_class->set_source_debug_extension(

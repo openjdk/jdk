@@ -77,17 +77,13 @@
 // Usage of r1 and r2 in the stubs allows to distinguish them.
 
 const int IC_pos_in_java_to_interp_stub = 8;
-#define __ _masm.
-address CompiledDirectCall::emit_to_interp_stub(CodeBuffer &cbuf, address mark/* = nullptr*/) {
+#define __ masm->
+address CompiledDirectCall::emit_to_interp_stub(MacroAssembler *masm, address mark/* = nullptr*/) {
 #ifdef COMPILER2
   if (mark == nullptr) {
     // Get the mark within main instrs section which is set to the address of the call.
-    mark = cbuf.insts_mark();
+    mark = __ inst_mark();
   }
-
-  // Note that the code buffer's insts_mark is always relative to insts.
-  // That's why we must use the macroassembler to generate a stub.
-  MacroAssembler _masm(&cbuf);
 
   // Start the stub.
   address stub = __ start_a_stub(CompiledDirectCall::to_interp_stub_size());

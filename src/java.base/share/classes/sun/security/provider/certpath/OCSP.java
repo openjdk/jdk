@@ -105,7 +105,7 @@ public final class OCSP {
      * problems.
      */
     private static final boolean USE_GET = initializeBoolean(
-            "com.sun.security.ocsp.useget", "true");
+            "com.sun.security.ocsp.useget", true);
 
     /**
      * Initialize the timeout length by getting the OCSP timeout
@@ -121,9 +121,9 @@ public final class OCSP {
         return timeoutVal;
     }
 
-    private static boolean initializeBoolean(String prop, String def) {
-        String flag = GetPropertyAction.privilegedGetProperty(prop, def);
-        boolean value = Boolean.parseBoolean(flag);
+    private static boolean initializeBoolean(String prop, boolean def) {
+        boolean value =
+                GetPropertyAction.privilegedGetBooleanProp(prop, def, debug);
         if (debug != null) {
             debug.println(prop + " set to " + value);
         }
