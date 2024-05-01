@@ -103,12 +103,14 @@ class inputStream : public CHeapObjBase {
   size_t _beg;          // offset in buffer to start of current line
   size_t _end;          // offset to end of known current line (else content_end)
   size_t _next;         // offset to known start of next line (else =end)
-  void*  _must_free;    // unless null, a malloc pointer which we must free
   size_t _line_count;   // increasing non-resettable count of lines read
   char   _small_buffer[SMALL_SIZE];  // stack-allocated buffer for holding lines;
                                      // will switch to C_HEAP allocation when necessary.
 
-  void handle_free();
+  bool has_c_heap_buffer() {
+    return _buffer != nullptr && _buffer != &_small_buffer[0];
+  }
+  void free_c_heap_buffer();
 
   // Buffer states
   //
@@ -233,7 +235,6 @@ class inputStream : public CHeapObjBase {
     _beg(0),
     _end(0),
     _next(0),
-    _must_free(nullptr),
     _line_count(0) {}
 
   // Take input from the given source.  Buffer only a modest amount.
@@ -244,7 +245,7 @@ class inputStream : public CHeapObjBase {
   }
 
   virtual ~inputStream() {
-    if (_must_free)         handle_free();
+    if (has_c_heap_buffer()) free_c_heap_buffer();
     if (_input != nullptr)  set_input(nullptr);
   }
 
@@ -403,16 +404,11 @@ class MemoryInput : public inputStream::Input {
   const void* _base;
   const size_t _limit;
   size_t      _offset;
-  const void* _must_free;  // unless null, a malloc pointer which we must free
 
  public:
   MemoryInput(const void* base, size_t size,
-              bool must_free = false,
               size_t offset = 0)
-    : _base(base), _limit(size), _offset(offset)
-  {
-    _must_free = must_free ? base : nullptr;
-  }
+    : _base(base), _limit(size), _offset(offset) {}
 
   MemoryInput(const char* start)
     : MemoryInput(start, 0, strlen(start))

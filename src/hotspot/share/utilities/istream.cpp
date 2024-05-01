@@ -271,24 +271,22 @@ bool inputStream::expand_buffer(size_t new_length) {
     COV(EXB_S);
     new_buf = &_small_buffer[0];
     new_length = sizeof(_small_buffer);
-  } else if (_buffer != nullptr && _buffer == _must_free) {
-    COV(EXB_R);
-    new_buf = REALLOC_C_HEAP_ARRAY(char, _buffer, new_length, mtInternal);
-    if (new_buf != nullptr) {
-      _must_free = new_buf;
-    }
-  } else {  // fresh allocation
+  } else if (_buffer == &_small_buffer[0]) {
+    // fresh alloc from c-heap
     COV(EXB_A);
     new_buf = NEW_C_HEAP_ARRAY(char, new_length, mtInternal);
     if (new_buf != nullptr) {
-      assert(_must_free == nullptr, "dropped free");
-      _must_free = new_buf;
       if (_content_end > 0) {
         assert(_content_end <= _buffer_size, "");
         ::memcpy(new_buf, _buffer, _content_end);  // copy only the active content
       }
     }
+  } else {
+    // realloc
+    COV(EXB_R);
+    new_buf = REALLOC_C_HEAP_ARRAY(char, _buffer, new_length, mtInternal);
   }
+
   if (new_buf == nullptr) {
     return false;   // do not further update _buffer etc.
   }
@@ -297,11 +295,9 @@ bool inputStream::expand_buffer(size_t new_length) {
   return true;
 }
 
-void inputStream::handle_free() {
-  void* to_free = _must_free;
-  if (to_free == nullptr)  return;
-  _must_free = nullptr;
-  FreeHeap(to_free);
+void inputStream::free_c_heap_buffer() {
+  FreeHeap(_buffer);
+  _buffer = nullptr;
 }
 
 #ifdef ASSERT
@@ -314,7 +310,7 @@ void inputStream::dump(const char* what) {
        hcl = (_beg < _content_end && _end < _next),
        ddn = (_beg == _content_end && _next > _content_end);
   tty->print_cr("%s%sistream %s%s%s%s%s [%d<%.*s>%d/%d..%d] LE=%d,"
-                " B=%llx%s[%d], LN=%d, MF=%llx",
+                " B=%llx%s[%d], LN=%d, CH=%d",
                 what ? what : "", what ? ": " : "",
                 _buffer == nullptr ? "U" : "",
                 ntr ? "R" : "",
@@ -331,7 +327,7 @@ void inputStream::dump(const char* what) {
                 _buffer == _small_buffer ? "(SB)" : "",
                 (int)_buffer_size,
                 (int)_line_count,
-                (unsigned long long)(intptr_t)_must_free);
+                has_c_heap_buffer());
   assert(is_sane(), "");
 }
 #endif
