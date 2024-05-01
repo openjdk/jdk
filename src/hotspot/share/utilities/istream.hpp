@@ -330,17 +330,6 @@ class inputStream : public CHeapObjBase {
   };
 };
 
-template<typename BlockClass>
-class BlockInputStream : public inputStream {
-  BlockClass _input;
- public:
-  template<typename... Arg>
-  BlockInputStream(Arg... arg)
-    : _input(arg...) {
-    set_input(&_input);
-  }
-};
-
 // for reading lines from files
 class FileInput : public inputStream::Input {
   NONCOPYABLE(FileInput);

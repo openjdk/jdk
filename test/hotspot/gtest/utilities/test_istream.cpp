@@ -29,6 +29,17 @@
 #include "utilities/istream.hpp"
 #include "unittest.hpp"
 
+template<typename BlockClass>
+class BlockInputStream : public inputStream {
+  BlockClass _input;
+ public:
+  template<typename... Arg>
+  BlockInputStream(Arg... arg)
+    : _input(arg...) {
+    set_input(&_input);
+  }
+};
+
 #define EXPECT_MEMEQ(s1, s2, len) \
   EXPECT_PRED_FORMAT3(CmpHelperMEMEQ, s1, s2, len)
 // cf. ::testing::internal::CmpHelperSTREQ
