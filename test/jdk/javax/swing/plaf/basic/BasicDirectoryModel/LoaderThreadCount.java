@@ -40,6 +40,7 @@ import javax.swing.JFileChooser;
 /*
  * @test
  * @bug 8325179
+ * @requires os.family == "windows"
  * @summary Verifies there's only one BasicDirectoryModel.FilesLoader thread
  *          at any given moment
  * @run main/othervm -Djava.awt.headless=true LoaderThreadCount
