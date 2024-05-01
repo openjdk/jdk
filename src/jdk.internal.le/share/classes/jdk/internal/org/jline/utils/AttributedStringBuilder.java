@@ -108,6 +108,14 @@ public class AttributedStringBuilder extends AttributedCharSequence implements A
         return append(Character.toString(c));
     }
 
+    public AttributedStringBuilder append(char c, int repeat) {
+        AttributedString s = new AttributedString(Character.toString(c), current);
+        while (repeat-- > 0) {
+            append(s);
+        }
+        return this;
+    }
+
     public AttributedStringBuilder append(CharSequence csq, AttributedStyle style) {
         return append(new AttributedString(csq, style));
     }

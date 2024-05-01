@@ -43,6 +43,9 @@ public interface Terminal extends Closeable, Flushable {
     // Signal support
     //
 
+    /**
+     * Types of signals.
+     */
     enum Signal {
         INT,
         QUIT,
@@ -52,11 +55,29 @@ public interface Terminal extends Closeable, Flushable {
         WINCH
     }
 
+    /**
+     * The SignalHandler defines the interface used to trap signals and perform specific behaviors.
+     * @see Terminal.Signal
+     * @see Terminal#handle(Signal, SignalHandler)
+     */
     interface SignalHandler {
 
+        /**
+         * The {@code SIG_DFL} value can be used to specify that the JVM default behavior
+         * should be used to handle this signal.
+         */
         SignalHandler SIG_DFL = NativeSignalHandler.SIG_DFL;
+
+        /**
+         * The {@code SIG_IGN} value can be used to ignore this signal and not perform
+         * any special processing.
+         */
         SignalHandler SIG_IGN = NativeSignalHandler.SIG_IGN;
 
+        /**
+         * Handle the signal.
+         * @param signal the signal
+         */
         void handle(Signal signal);
     }
 
@@ -72,6 +93,17 @@ public interface Terminal extends Closeable, Flushable {
      */
     SignalHandler handle(Signal signal, SignalHandler handler);
 
+    /**
+     * Raise the specific signal.
+     * This is not method usually called by non system terminals.
+     * When accessing a terminal through a SSH or Telnet connection, signals may be
+     * conveyed by the protocol and thus need to be raised when reaching the terminal code.
+     * The terminals do that automatically when the terminal input stream has a character
+     * mapped to {@link Attributes.ControlChar#VINTR}, {@link Attributes.ControlChar#VQUIT},
+     * or {@link Attributes.ControlChar#VSUSP}.
+     *
+     * @param signal the signal to raise
+     */
     void raise(Signal signal);
 
     //

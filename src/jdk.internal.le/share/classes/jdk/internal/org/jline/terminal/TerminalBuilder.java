@@ -17,12 +17,15 @@ import java.nio.charset.StandardCharsets;
 import java.nio.charset.UnsupportedCharsetException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.ServiceLoader;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -33,6 +36,7 @@ import jdk.internal.org.jline.terminal.impl.AbstractTerminal;
 import jdk.internal.org.jline.terminal.impl.DumbTerminal;
 import jdk.internal.org.jline.terminal.impl.DumbTerminalProvider;
 import jdk.internal.org.jline.terminal.spi.SystemStream;
+import jdk.internal.org.jline.terminal.spi.TerminalExt;
 import jdk.internal.org.jline.terminal.spi.TerminalProvider;
 import jdk.internal.org.jline.utils.Log;
 import jdk.internal.org.jline.utils.OSUtils;
@@ -102,6 +106,12 @@ public final class TerminalBuilder {
     public static final String PROP_REDIRECT_PIPE_CREATION_MODE_DEFAULT =
             String.join(",", PROP_REDIRECT_PIPE_CREATION_MODE_REFLECTION, PROP_REDIRECT_PIPE_CREATION_MODE_NATIVE);
 
+    public static final Set<String> DEPRECATED_PROVIDERS =
+            Collections.unmodifiableSet(new HashSet<>(Arrays.asList(PROP_PROVIDER_JNA, PROP_PROVIDER_JANSI)));
+
+    public static final String PROP_DISABLE_DEPRECATED_PROVIDER_WARNING =
+            "org.jline.terminal.disableDeprecatedProviderWarning";
+
     //
     // Terminal output control
     //
@@ -162,7 +172,7 @@ public final class TerminalBuilder {
     private Boolean color;
     private Attributes attributes;
     private Size size;
-    private boolean nativeSignals = false;
+    private boolean nativeSignals = true;
     private Function<InputStream, InputStream> inputStreamWrapper = in -> in;
     private Terminal.SignalHandler signalHandler = Terminal.SignalHandler.SIG_DFL;
     private boolean paused = false;
@@ -339,6 +349,12 @@ public final class TerminalBuilder {
         return this;
     }
 
+    /**
+     * Determines the default value for signal handlers.
+     * All signals will be mapped to the given handler.
+     * @param signalHandler the default signal handler
+     * @return The builder
+     */
     public TerminalBuilder signalHandler(Terminal.SignalHandler signalHandler) {
         this.signalHandler = signalHandler;
         return this;
@@ -364,6 +380,11 @@ public final class TerminalBuilder {
         return this;
     }
 
+    /**
+     * Builds the terminal.
+     * @return the newly created terminal, never {@code null}
+     * @throws IOException if an error occurs
+     */
     public Terminal build() throws IOException {
         Terminal override = TERMINAL_OVERRIDE.get();
         Terminal terminal = override != null ? override : doBuild();
@@ -504,6 +525,15 @@ public final class TerminalBuilder {
         if (terminal == null) {
             throw exception;
         }
+        if (terminal instanceof TerminalExt) {
+            TerminalExt te = (TerminalExt) terminal;
+            if (DEPRECATED_PROVIDERS.contains(te.getProvider().name())
+                    && !getBoolean(PROP_DISABLE_DEPRECATED_PROVIDER_WARNING, false)) {
+                Log.warn("The terminal provider " + te.getProvider().name()
+                        + " has been deprecated, check your configuration. This warning can be disabled by setting the system property "
+                        + PROP_DISABLE_DEPRECATED_PROVIDER_WARNING + " to true.");
+            }
+        }
         return terminal;
     }
 
@@ -634,6 +664,13 @@ public final class TerminalBuilder {
         return encoding;
     }
 
+    /**
+     * Get the list of available terminal providers.
+     * This list is sorted according to the {@link #PROP_PROVIDERS} system property.
+     * @param provider if not {@code null}, only this provider will be checked
+     * @param exception if a provider throws an exception, it will be added to this exception as a suppressed exception
+     * @return a list of terminal providers
+     */
     public List<TerminalProvider> getProviders(String provider, IllegalStateException exception) {
         List<TerminalProvider> providers = new ArrayList<>();
         // Check ffm provider

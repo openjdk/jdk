@@ -63,6 +63,7 @@ public abstract class AbstractWindowsTerminal<Console> extends AbstractTerminal 
     protected static final int ENABLE_MOUSE_INPUT = 0x0010;
     protected static final int ENABLE_INSERT_MODE = 0x0020;
     protected static final int ENABLE_QUICK_EDIT_MODE = 0x0040;
+    protected static final int ENABLE_EXTENDED_FLAGS = 0x0080;
 
     protected final Writer slaveInputPipe;
     protected final InputStream input;
@@ -200,6 +201,9 @@ public abstract class AbstractWindowsTerminal<Console> extends AbstractTerminal 
         }
         if (tracking != MouseTracking.Off) {
             mode |= ENABLE_MOUSE_INPUT;
+            // mouse events not send with quick edit mode
+            // to disable ENABLE_QUICK_EDIT_MODE just set extended flag
+            mode |= ENABLE_EXTENDED_FLAGS;
         }
         setConsoleMode(inConsole, mode);
     }

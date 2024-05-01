@@ -51,6 +51,10 @@ public class OSUtils {
     public static String INFOCMP_COMMAND;
     public static String TEST_COMMAND;
 
+    private static boolean isExecutable(File f) {
+        return f.canExecute() && !f.isDirectory();
+    }
+
     static {
         boolean cygwinOrMsys = OSUtils.IS_CYGWIN || OSUtils.IS_MSYSTEM;
         String suffix = cygwinOrMsys ? ".exe" : "";
@@ -64,19 +68,19 @@ public class OSUtils {
             String[] paths = path.split(File.pathSeparator);
             for (String p : paths) {
                 File ttyFile = new File(p, "tty" + suffix);
-                if (tty == null && ttyFile.canExecute()) {
+                if (tty == null && isExecutable(ttyFile)) {
                     tty = ttyFile.getAbsolutePath();
                 }
                 File sttyFile = new File(p, "stty" + suffix);
-                if (stty == null && sttyFile.canExecute()) {
+                if (stty == null && isExecutable(sttyFile)) {
                     stty = sttyFile.getAbsolutePath();
                 }
                 File infocmpFile = new File(p, "infocmp" + suffix);
-                if (infocmp == null && infocmpFile.canExecute()) {
+                if (infocmp == null && isExecutable(infocmpFile)) {
                     infocmp = infocmpFile.getAbsolutePath();
                 }
                 File testFile = new File(p, "test" + suffix);
-                if (test == null && testFile.canExecute()) {
+                if (test == null && isExecutable(testFile)) {
                     test = testFile.getAbsolutePath();
                 }
             }

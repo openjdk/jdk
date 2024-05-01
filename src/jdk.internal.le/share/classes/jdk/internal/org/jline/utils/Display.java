@@ -37,8 +37,8 @@ public class Display {
     protected final boolean fullScreen;
     protected List<AttributedString> oldLines = Collections.emptyList();
     protected int cursorPos;
-    private int columns;
-    private int columns1; // columns+1
+    protected int columns;
+    protected int columns1; // columns+1
     protected int rows;
     protected boolean reset;
     protected boolean delayLineWrap;
@@ -76,7 +76,7 @@ public class Display {
 
     public void resize(int rows, int columns) {
         if (rows == 0 || columns == 0) {
-            columns = Integer.MAX_VALUE - 1;
+            columns = 1;
             rows = 1;
         }
         if (this.rows != rows || this.columns != columns) {
@@ -316,8 +316,10 @@ public class Display {
                 }
             } else if (atRight) {
                 if (this.wrapAtEol) {
-                    terminal.writer().write(" \b");
-                    cursorPos++;
+                    if (!fullScreen || (fullScreen && lineIndex < numLines)) {
+                        terminal.writer().write(" \b");
+                        cursorPos++;
+                    }
                 } else {
                     terminal.puts(Capability.carriage_return); // CR / not newline.
                     cursorPos = curCol;

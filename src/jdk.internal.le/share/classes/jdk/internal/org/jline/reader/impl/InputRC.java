@@ -21,6 +21,7 @@ import java.util.Locale;
 import jdk.internal.org.jline.reader.LineReader;
 import jdk.internal.org.jline.reader.Macro;
 import jdk.internal.org.jline.reader.Reference;
+import jdk.internal.org.jline.terminal.Terminal;
 import jdk.internal.org.jline.utils.Log;
 
 public final class InputRC {
@@ -44,18 +45,23 @@ public final class InputRC {
         } else {
             br = new BufferedReader(r);
         }
-        reader.getVariables().putIfAbsent(LineReader.EDITING_MODE, "emacs");
-        reader.setKeyMap(LineReader.MAIN);
-        if ("vi".equals(reader.getVariable(LineReader.EDITING_MODE))) {
-            reader.getKeyMaps().put(LineReader.MAIN, reader.getKeyMaps().get(LineReader.VIINS));
-        } else if ("emacs".equals(reader.getVariable(LineReader.EDITING_MODE))) {
-            reader.getKeyMaps().put(LineReader.MAIN, reader.getKeyMaps().get(LineReader.EMACS));
+
+        Terminal terminal = reader.getTerminal();
+
+        if (Terminal.TYPE_DUMB.equals(terminal.getType()) || Terminal.TYPE_DUMB_COLOR.equals(terminal.getType())) {
+            reader.getVariables().putIfAbsent(LineReader.EDITING_MODE, "dumb");
+        } else {
+            reader.getVariables().putIfAbsent(LineReader.EDITING_MODE, "emacs");
         }
+
+        reader.setKeyMap(LineReader.MAIN);
         new InputRC(reader).parse(br);
         if ("vi".equals(reader.getVariable(LineReader.EDITING_MODE))) {
             reader.getKeyMaps().put(LineReader.MAIN, reader.getKeyMaps().get(LineReader.VIINS));
         } else if ("emacs".equals(reader.getVariable(LineReader.EDITING_MODE))) {
             reader.getKeyMaps().put(LineReader.MAIN, reader.getKeyMaps().get(LineReader.EMACS));
+        } else if ("dumb".equals(reader.getVariable(LineReader.EDITING_MODE))) {
+            reader.getKeyMaps().put(LineReader.MAIN, reader.getKeyMaps().get(LineReader.DUMB));
         }
     }
 

@@ -763,11 +763,16 @@ public class LineReaderImpl implements LineReader, Flushable {
                 throw e;
             }
         } finally {
-            boolean interrupted = Thread.interrupted();
+            AtomicBoolean interrupted = new AtomicBoolean(Thread.interrupted());
             try {
                 lock.lock();
 
                 this.reading = false;
+
+                Terminal.SignalHandler tmpHandler = terminal.handle(Signal.INT, s -> interrupted.set(true));
+                if (previousIntrHandler == null) {
+                    previousIntrHandler = tmpHandler;
+                }
 
                 cleanup();
                 if (originalAttributes != null) {
@@ -785,7 +790,7 @@ public class LineReaderImpl implements LineReader, Flushable {
             } finally {
                 lock.unlock();
                 startedReading.set(false);
-                if (interrupted) {
+                if (interrupted.get()) {
                     Thread.currentThread().interrupt();
                 }
             }
@@ -1194,17 +1199,19 @@ public class LineReaderImpl implements LineReader, Flushable {
         return str;
     }
 
-    protected void handleSignal(Signal signal) {
+    protected synchronized void handleSignal(Signal signal) {
         doAutosuggestion = false;
         if (signal == Signal.WINCH) {
-            Status status = Status.getStatus(terminal, false);
-            if (status != null) {
-                status.hardReset();
-            }
             size.copy(terminal.getBufferSize());
             display.resize(size.getRows(), size.getColumns());
-            // restores prompt but also prevents scrolling in consoleZ, see #492
-            // redrawLine();
+            Status status = Status.getStatus(terminal, false);
+            if (status != null) {
+                status.resize(size);
+                status.reset();
+            }
+            terminal.puts(Capability.carriage_return);
+            terminal.puts(Capability.clr_eos);
+            redrawLine();
             redisplay();
         } else if (signal == Signal.CONT) {
             terminal.enterRawMode();
@@ -3874,9 +3881,6 @@ public class LineReaderImpl implements LineReader, Flushable {
 
             Status status = Status.getStatus(terminal, false);
             if (status != null) {
-                if (terminal.getType().startsWith(AbstractWindowsTerminal.TYPE_WINDOWS)) {
-                    status.resize();
-                }
                 status.redraw();
             }
 
@@ -5006,10 +5010,14 @@ public class LineReaderImpl implements LineReader, Flushable {
         PostResult postResult = computePost(possible, null, null, completed);
         int lines = postResult.lines;
         int listMax = getInt(LIST_MAX, DEFAULT_LIST_MAX);
-        if (listMax > 0 && possible.size() >= listMax || lines >= size.getRows() - promptLines) {
+        int possibleSize = possible.size();
+        if (possibleSize == 0 || size.getRows() == 0) {
+            return false;
+        }
+        if (listMax > 0 && possibleSize >= listMax || lines >= size.getRows() - promptLines) {
             if (!forSuggestion) {
                 // prompt
-                post = () -> new AttributedString(getAppName() + ": do you wish to see all " + possible.size()
+                post = () -> new AttributedString(getAppName() + ": do you wish to see all " + possibleSize
                         + " possibilities (" + lines + " lines)?");
                 redisplay(true);
                 int c = readCharacter();
@@ -5200,17 +5208,16 @@ public class LineReaderImpl implements LineReader, Flushable {
             boolean groupName,
             boolean rowsFirst) {
         List<Object> strings = new ArrayList<>();
-        boolean customOrder = possible.stream().anyMatch(c -> c.sort() != 0);
         if (groupName) {
             Comparator<String> groupComparator = getGroupComparator();
-            Map<String, Map<Object, Candidate>> sorted;
+            Map<String, List<Candidate>> sorted;
             sorted = groupComparator != null ? new TreeMap<>(groupComparator) : new LinkedHashMap<>();
             for (Candidate cand : possible) {
                 String group = cand.group();
-                sorted.computeIfAbsent(group != null ? group : "", s -> new LinkedHashMap<>())
-                        .put((customOrder ? cand.sort() : cand.value()), cand);
+                sorted.computeIfAbsent(group != null ? group : "", s -> new ArrayList<>())
+                        .add(cand);
             }
-            for (Map.Entry<String, Map<Object, Candidate>> entry : sorted.entrySet()) {
+            for (Map.Entry<String, List<Candidate>> entry : sorted.entrySet()) {
                 String group = entry.getKey();
                 if (group.isEmpty() && sorted.size() > 1) {
                     group = getOthersGroupName();
@@ -5218,27 +5225,30 @@ public class LineReaderImpl implements LineReader, Flushable {
                 if (!group.isEmpty() && autoGroup) {
                     strings.add(group);
                 }
-                strings.add(new ArrayList<>(entry.getValue().values()));
+                List<Candidate> candidates = entry.getValue();
+                Collections.sort(candidates);
+                strings.add(candidates);
                 if (ordered != null) {
-                    ordered.addAll(entry.getValue().values());
+                    ordered.addAll(candidates);
                 }
             }
         } else {
             Set<String> groups = new LinkedHashSet<>();
-            TreeMap<Object, Candidate> sorted = new TreeMap<>();
+            List<Candidate> sorted = new ArrayList<>();
             for (Candidate cand : possible) {
                 String group = cand.group();
                 if (group != null) {
                     groups.add(group);
                 }
-                sorted.put((customOrder ? cand.sort() : cand.value()), cand);
+                sorted.add(cand);
             }
             if (autoGroup) {
                 strings.addAll(groups);
             }
-            strings.add(new ArrayList<>(sorted.values()));
+            Collections.sort(sorted);
+            strings.add(sorted);
             if (ordered != null) {
-                ordered.addAll(sorted.values());
+                ordered.addAll(sorted);
             }
         }
         return toColumns(strings, selection, completed, wcwidth, width, rowsFirst);

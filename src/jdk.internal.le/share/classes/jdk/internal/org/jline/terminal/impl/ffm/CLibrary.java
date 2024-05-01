@@ -144,30 +144,13 @@ class CLibrary {
 
         private static VarHandle adjust2LinuxHandle(VarHandle v) {
             if (OSUtils.IS_LINUX) {
-                try {
-                    v = MethodHandles.filterValue(
-                            v,
-                            MethodHandles.lookup()
-                                    .findStatic(
-                                            termios.class, "long2Int", MethodType.methodType(int.class, long.class)),
-                            MethodHandles.lookup()
-                                    .findStatic(
-                                            termios.class, "int2Long", MethodType.methodType(long.class, int.class)));
-                } catch (NoSuchMethodException ex) {
-                    ex.printStackTrace();
-                } catch (IllegalAccessException ex) {
-                    ex.printStackTrace();
-                }
+                MethodHandle id = MethodHandles.identity(int.class);
+                v = MethodHandles.filterValue(
+                        v,
+                        MethodHandles.explicitCastArguments(id, MethodType.methodType(int.class, long.class)),
+                        MethodHandles.explicitCastArguments(id, MethodType.methodType(long.class, int.class)));
             }
 
-            return v;
-        }
-
-        private static int long2Int(long v) {
-            return (int) v;
-        }
-
-        private static long int2Long(int v) {
             return v;
         }
 

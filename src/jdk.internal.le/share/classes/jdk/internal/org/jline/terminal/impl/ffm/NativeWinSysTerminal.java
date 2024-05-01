@@ -71,7 +71,7 @@ public class NativeWinSysTerminal extends AbstractWindowsTerminal<java.lang.fore
                     console = GetStdHandle(STD_ERROR_HANDLE);
                     break;
                 default:
-                    throw new IllegalArgumentException("Unsupport stream for console: " + systemStream);
+                    throw new IllegalArgumentException("Unsupported stream for console: " + systemStream);
             }
             java.lang.foreign.MemorySegment outMode = allocateInt(arena);
             if (GetConsoleMode(console, outMode) == 0) {

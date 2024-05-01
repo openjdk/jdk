@@ -139,6 +139,7 @@ public class ExecTerminalProvider implements TerminalProvider {
                     .start();
             return p.waitFor() == 0;
         } catch (Throwable t) {
+            Log.debug("ExecTerminalProvider failed 'test -t' for " + stream, t);
             // ignore
         }
         return false;
