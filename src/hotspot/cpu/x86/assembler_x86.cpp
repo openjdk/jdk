@@ -817,6 +817,13 @@ address Assembler::locate_operand(address inst, WhichOperand which) {
     NOT_LP64(assert(false, "64bit prefixes"));
     goto again_after_prefix;
 
+  case REX2:
+    NOT_LP64(assert(false, "64bit prefixes"));
+    if ((0xFF & *ip++) & REX2BIT_W) {
+      is_64bit = true;
+    }
+    goto again_after_prefix;
+
   case REX_W:
   case REX_WB:
   case REX_WX:
@@ -866,6 +873,14 @@ address Assembler::locate_operand(address inst, WhichOperand which) {
     case REX_WRXB:
       NOT_LP64(assert(false, "64bit prefix found"));
       goto again_after_size_prefix2;
+
+    case REX2:
+      NOT_LP64(assert(false, "64bit prefix found"));
+      if ((0xFF & *ip++) & REX2BIT_W) {
+        is_64bit = true;
+      }
+      goto again_after_size_prefix2;
+
     case 0x8B: // movw r, a
     case 0x89: // movw a, r
       debug_only(has_disp32 = true);
@@ -12806,6 +12821,35 @@ void Assembler::emit_data64(jlong data,
   emit_int64(data);
 }
 
+int Assembler::get_base_prefix_bits(int enc) {
+  int bits = 0;
+  if (enc & 16) bits |= REX2BIT_B4;
+  if (enc & 8) bits |= REX2BIT_B;
+  return bits;
+}
+
+int Assembler::get_index_prefix_bits(int enc) {
+  int bits = 0;
+  if (enc & 16) bits |= REX2BIT_X4;
+  if (enc & 8) bits |= REX2BIT_X;
+  return bits;
+}
+
+int Assembler::get_base_prefix_bits(Register base) {
+  return base->is_valid() ? get_base_prefix_bits(base->encoding()) : 0;
+}
+
+int Assembler::get_index_prefix_bits(Register index) {
+  return index->is_valid() ? get_index_prefix_bits(index->encoding()) : 0;
+}
+
+int Assembler::get_reg_prefix_bits(int enc) {
+  int bits = 0;
+  if (enc & 16) bits |= REX2BIT_R4;
+  if (enc & 8) bits |= REX2BIT_R;
+  return bits;
+}
+
 void Assembler::prefix(Register reg) {
   if (reg->encoding() >= 8) {
     prefix(REX_B);
@@ -12958,7 +13002,19 @@ int8_t Assembler::get_prefixq(Address adr) {
   return prfx;
 }
 
-int8_t Assembler::get_prefixq(Address adr, Register src) {
+int Assembler::get_prefixq_rex2(Address adr, bool is_map1) {
+  assert(UseAPX, "APX features not enabled");
+  int bits = REX2BIT_W;
+  if (is_map1) bits |= REX2BIT_M0;
+  bits |= get_base_prefix_bits(adr.base());
+  bits |= get_index_prefix_bits(adr.index());
+  return WREX2 | bits;
+}
+
+int Assembler::get_prefixq(Address adr, Register src, bool is_map1) {
+  if (adr.base_needs_rex2() || adr.index_needs_rex2() || src->encoding() >= 16) {
+    return get_prefixq_rex2(adr, src, is_map1);
+  }
   int8_t prfx = (int8_t)(REX_W +
                          ((int)adr.base_needs_rex()) +
                          ((int)adr.index_needs_rex() << 1) +
@@ -12994,7 +13050,17 @@ int8_t Assembler::get_prefixq(Address adr, Register src) {
     }
   }
 #endif
-  return prfx;
+  return is_map1 ? (((int16_t)prfx) << 8) | 0x0F : (int16_t)prfx;
+}
+
+int Assembler::get_prefixq_rex2(Address adr, Register src, bool is_map1) {
+  assert(UseAPX, "APX features not enabled");
+  int bits = REX2BIT_W;
+  if (is_map1) bits |= REX2BIT_M0;
+  bits |= get_base_prefix_bits(adr.base());
+  bits |= get_index_prefix_bits(adr.index());
+  bits |= get_reg_prefix_bits(src->encoding());
+  return WREX2 | bits;
 }
 
 void Assembler::prefixq(Address adr) {
@@ -13037,14 +13103,32 @@ void Assembler::prefixq(Address adr, XMMRegister src) {
   }
 }
 
-int Assembler::prefixq_and_encode(int reg_enc) {
+void Assembler::prefixq_rex2(Address adr, XMMRegister src) {
+  int bits = REX2BIT_W;
+  bits |= get_base_prefix_bits(adr.base());
+  bits |= get_index_prefix_bits(adr.index());
+  bits |= get_reg_prefix_bits(src->encoding());
+  prefix16(WREX2 | bits);
+}
+
+int Assembler::prefixq_and_encode(int reg_enc, bool is_map1) {
+  if (reg_enc >= 16) {
+    return prefixq_and_encode_rex2(reg_enc, is_map1);
+  }
   if (reg_enc < 8) {
     prefix(REX_W);
   } else {
     prefix(REX_WB);
     reg_enc -= 8;
   }
-  return reg_enc;
+  int opcode_prefix = is_map1 ? 0x0F00 : 0;
+  return opcode_prefix | reg_enc;
+}
+
+
+int Assembler::prefixq_and_encode_rex2(int reg_enc, bool is_map1) {
+  prefix16(WREX2 | REX2BIT_W | (is_map1 ? REX2BIT_M0: 0) | get_base_prefix_bits(reg_enc));
+  return reg_enc & 0x7;
 }
 
 int Assembler::prefixq_and_encode(int dst_enc, int src_enc) {
@@ -13064,7 +13148,21 @@ int Assembler::prefixq_and_encode(int dst_enc, int src_enc) {
     }
     dst_enc -= 8;
   }
-  return dst_enc << 3 | src_enc;
+  int opcode_prefix = is_map1 ? 0x0F00 : 0;
+  return opcode_prefix | (dst_enc << 3 | src_enc);
+}
+
+int Assembler::prefixq_and_encode_rex2(int dst_enc, int src_enc, bool is_map1) {
+  int init_bits = REX2BIT_W | (is_map1 ? REX2BIT_M0 : 0);
+  return prefix_and_encode_rex2(dst_enc, src_enc, init_bits);
+}
+
+void Assembler::emit_prefix_and_int8(int prefix, int b1) {
+  if ((prefix & 0xFF00) == 0) {
+    emit_int16(prefix, b1);
+  } else {
+    emit_int24((prefix & 0xFF00) >> 8, prefix & 0x00FF, b1);
+  }
 }
 
 void Assembler::adcq(Register dst, int32_t imm32) {
@@ -13848,7 +13946,7 @@ void Assembler::precompute_instructions() {
   ResourceMark rm;
 
   // Make a temporary buffer big enough for the routines we're capturing
-  int size = 256;
+  int size = UseAPX ? 512 : 256;
   char* tmp_code = NEW_RESOURCE_ARRAY(char, size);
   CodeBuffer buffer((address)tmp_code, size);
   MacroAssembler masm(&buffer);
@@ -13897,25 +13995,63 @@ void Assembler::popa() { // 64bit
 }
 
 void Assembler::popa_uncached() { // 64bit
-  movq(r15, Address(rsp, 0));
-  movq(r14, Address(rsp, wordSize));
-  movq(r13, Address(rsp, 2 * wordSize));
-  movq(r12, Address(rsp, 3 * wordSize));
-  movq(r11, Address(rsp, 4 * wordSize));
-  movq(r10, Address(rsp, 5 * wordSize));
-  movq(r9,  Address(rsp, 6 * wordSize));
-  movq(r8,  Address(rsp, 7 * wordSize));
-  movq(rdi, Address(rsp, 8 * wordSize));
-  movq(rsi, Address(rsp, 9 * wordSize));
-  movq(rbp, Address(rsp, 10 * wordSize));
-  // Skip rsp as it is restored automatically to the value
-  // before the corresponding pusha when popa is done.
-  movq(rbx, Address(rsp, 12 * wordSize));
-  movq(rdx, Address(rsp, 13 * wordSize));
-  movq(rcx, Address(rsp, 14 * wordSize));
-  movq(rax, Address(rsp, 15 * wordSize));
+  if (UseAPX) {
+    movq(r31, Address(rsp, 0));
+    movq(r30, Address(rsp, wordSize));
+    movq(r29, Address(rsp, 2 * wordSize));
+    movq(r28, Address(rsp, 3 * wordSize));
+    movq(r27, Address(rsp, 4 * wordSize));
+    movq(r26, Address(rsp, 5 * wordSize));
+    movq(r25, Address(rsp, 6 * wordSize));
+    movq(r24, Address(rsp, 7 * wordSize));
+    movq(r23, Address(rsp, 8 * wordSize));
+    movq(r22, Address(rsp, 9 * wordSize));
+    movq(r21, Address(rsp, 10 * wordSize));
+    movq(r20, Address(rsp, 11 * wordSize));
+    movq(r19, Address(rsp, 12 * wordSize));
+    movq(r18, Address(rsp, 13 * wordSize));
+    movq(r17, Address(rsp, 14 * wordSize));
+    movq(r16, Address(rsp, 15 * wordSize));
+    movq(r15, Address(rsp, 16 * wordSize));
+    movq(r14, Address(rsp, 17 * wordSize));
+    movq(r13, Address(rsp, 18 * wordSize));
+    movq(r12, Address(rsp, 19 * wordSize));
+    movq(r11, Address(rsp, 20 * wordSize));
+    movq(r10, Address(rsp, 21 * wordSize));
+    movq(r9,  Address(rsp, 22 * wordSize));
+    movq(r8,  Address(rsp, 23 * wordSize));
+    movq(rdi, Address(rsp, 24 * wordSize));
+    movq(rsi, Address(rsp, 25 * wordSize));
+    movq(rbp, Address(rsp, 26 * wordSize));
+    // Skip rsp as it is restored automatically to the value
+    // before the corresponding pusha when popa is done.
+    movq(rbx, Address(rsp, 28 * wordSize));
+    movq(rdx, Address(rsp, 29 * wordSize));
+    movq(rcx, Address(rsp, 30 * wordSize));
+    movq(rax, Address(rsp, 31 * wordSize));
 
-  addq(rsp, 16 * wordSize);
+    addq(rsp, 32 * wordSize);
+  } else {
+    movq(r15, Address(rsp, 0));
+    movq(r14, Address(rsp, wordSize));
+    movq(r13, Address(rsp, 2 * wordSize));
+    movq(r12, Address(rsp, 3 * wordSize));
+    movq(r11, Address(rsp, 4 * wordSize));
+    movq(r10, Address(rsp, 5 * wordSize));
+    movq(r9,  Address(rsp, 6 * wordSize));
+    movq(r8,  Address(rsp, 7 * wordSize));
+    movq(rdi, Address(rsp, 8 * wordSize));
+    movq(rsi, Address(rsp, 9 * wordSize));
+    movq(rbp, Address(rsp, 10 * wordSize));
+    // Skip rsp as it is restored automatically to the value
+    // before the corresponding pusha when popa is done.
+    movq(rbx, Address(rsp, 12 * wordSize));
+    movq(rdx, Address(rsp, 13 * wordSize));
+    movq(rcx, Address(rsp, 14 * wordSize));
+    movq(rax, Address(rsp, 15 * wordSize));
+
+    addq(rsp, 16 * wordSize);
+  }
 }
 
 // Does not actually store the value of rsp on the stack.
@@ -13927,26 +14063,63 @@ void Assembler::pusha() { // 64bit
 // Does not actually store the value of rsp on the stack.
 // The slot for rsp just contains an arbitrary value.
 void Assembler::pusha_uncached() { // 64bit
-  subq(rsp, 16 * wordSize);
-
-  movq(Address(rsp, 15 * wordSize), rax);
-  movq(Address(rsp, 14 * wordSize), rcx);
-  movq(Address(rsp, 13 * wordSize), rdx);
-  movq(Address(rsp, 12 * wordSize), rbx);
-  // Skip rsp as the value is normally not used. There are a few places where
-  // the original value of rsp needs to be known but that can be computed
-  // from the value of rsp immediately after pusha (rsp + 16 * wordSize).
-  movq(Address(rsp, 10 * wordSize), rbp);
-  movq(Address(rsp, 9 * wordSize), rsi);
-  movq(Address(rsp, 8 * wordSize), rdi);
-  movq(Address(rsp, 7 * wordSize), r8);
-  movq(Address(rsp, 6 * wordSize), r9);
-  movq(Address(rsp, 5 * wordSize), r10);
-  movq(Address(rsp, 4 * wordSize), r11);
-  movq(Address(rsp, 3 * wordSize), r12);
-  movq(Address(rsp, 2 * wordSize), r13);
-  movq(Address(rsp, wordSize), r14);
-  movq(Address(rsp, 0), r15);
+  if (UseAPX) {
+    subq(rsp, 32 * wordSize);
+    movq(Address(rsp, 31 * wordSize), rax);
+    movq(Address(rsp, 30 * wordSize), rcx);
+    movq(Address(rsp, 29 * wordSize), rdx);
+    movq(Address(rsp, 28 * wordSize), rbx);
+    // Skip rsp as the value is normally not used. There are a few places where
+    // the original value of rsp needs to be known but that can be computed
+    // from the value of rsp immediately after pusha (rsp + 16 * wordSize).
+    movq(Address(rsp, 26 * wordSize), rbp);
+    movq(Address(rsp, 25 * wordSize), rsi);
+    movq(Address(rsp, 24 * wordSize), rdi);
+    movq(Address(rsp, 23 * wordSize), r8);
+    movq(Address(rsp, 22 * wordSize), r9);
+    movq(Address(rsp, 21 * wordSize), r10);
+    movq(Address(rsp, 20 * wordSize), r11);
+    movq(Address(rsp, 19 * wordSize), r12);
+    movq(Address(rsp, 18 * wordSize), r13);
+    movq(Address(rsp, 17 * wordSize), r14);
+    movq(Address(rsp, 16 * wordSize), r15);
+    movq(Address(rsp, 15 * wordSize), r16);
+    movq(Address(rsp, 14 * wordSize), r17);
+    movq(Address(rsp, 13 * wordSize), r18);
+    movq(Address(rsp, 12 * wordSize), r19);
+    movq(Address(rsp, 11 * wordSize), r20);
+    movq(Address(rsp, 10 * wordSize), r21);
+    movq(Address(rsp, 9 * wordSize), r22);
+    movq(Address(rsp, 8 * wordSize), r23);
+    movq(Address(rsp, 7 * wordSize), r24);
+    movq(Address(rsp, 6 * wordSize), r25);
+    movq(Address(rsp, 5 * wordSize), r26);
+    movq(Address(rsp, 4 * wordSize), r27);
+    movq(Address(rsp, 3 * wordSize), r28);
+    movq(Address(rsp, 2 * wordSize), r29);
+    movq(Address(rsp, wordSize), r30);
+    movq(Address(rsp, 0), r31);
+  } else {
+    subq(rsp, 16 * wordSize);
+    movq(Address(rsp, 15 * wordSize), rax);
+    movq(Address(rsp, 14 * wordSize), rcx);
+    movq(Address(rsp, 13 * wordSize), rdx);
+    movq(Address(rsp, 12 * wordSize), rbx);
+    // Skip rsp as the value is normally not used. There are a few places where
+    // the original value of rsp needs to be known but that can be computed
+    // from the value of rsp immediately after pusha (rsp + 16 * wordSize).
+    movq(Address(rsp, 10 * wordSize), rbp);
+    movq(Address(rsp, 9 * wordSize), rsi);
+    movq(Address(rsp, 8 * wordSize), rdi);
+    movq(Address(rsp, 7 * wordSize), r8);
+    movq(Address(rsp, 6 * wordSize), r9);
+    movq(Address(rsp, 5 * wordSize), r10);
+    movq(Address(rsp, 4 * wordSize), r11);
+    movq(Address(rsp, 3 * wordSize), r12);
+    movq(Address(rsp, 2 * wordSize), r13);
+    movq(Address(rsp, wordSize), r14);
+    movq(Address(rsp, 0), r15);
+  }
 }
 
 void Assembler::vzeroupper() {

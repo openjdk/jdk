@@ -4088,6 +4088,11 @@ RegSet MacroAssembler::call_clobbered_gp_registers() {
 #else
   regs += RegSet::of(rax, rcx, rdx);
 #endif
+#ifdef _LP64
+  if (UseAPX) {
+    regs += RegSet::range(r16, as_Register(Register::number_of_registers - 1));
+  }
+#endif
   return regs;
 }
 

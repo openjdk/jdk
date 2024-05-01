@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,6 +92,7 @@ class NativeInstruction {
   void wrote(int offset);
 
  public:
+  bool has_rex2_prefix() const { return ubyte_at(0) == Assembler::REX2; }
 
   inline friend NativeInstruction* nativeInstruction_at(address address);
 };
@@ -104,6 +105,7 @@ inline NativeInstruction* nativeInstruction_at(address address) {
   return inst;
 }
 
+// PLT(procedure linkage table) call with relative displacement.
 class NativePltCall: public NativeInstruction {
 public:
   enum Intel_specific_constants {
@@ -220,19 +222,28 @@ inline NativeCall* nativeCall_before(address return_address) {
   return call;
 }
 
+// Call with target address in a general purpose register(indirect absolute addressing).
+// Encoding : FF /2  CALL r/m32
+// Primary Opcode: FF
+// Opcode Extension(part of ModRM.REG): /2
+// Operand ModRM.RM  = r/m32
 class NativeCallReg: public NativeInstruction {
  public:
   enum Intel_specific_constants {
     instruction_code            = 0xFF,
     instruction_offset          =    0,
     return_address_offset_norex =    2,
-    return_address_offset_rex   =    3
+    return_address_offset_rex   =    3,
+    return_address_offset_rex2  =    4
   };
 
   int next_instruction_offset() const  {
     if (ubyte_at(0) == NativeCallReg::instruction_code) {
       return return_address_offset_norex;
+    } else if (has_rex2_prefix()) {
+      return return_address_offset_rex2;
     } else {
+      assert((ubyte_at(0) & 0xF0) ==  Assembler::REX, "");
       return return_address_offset_rex;
     }
   }
@@ -240,28 +251,38 @@ class NativeCallReg: public NativeInstruction {
 
 // An interface for accessing/manipulating native mov reg, imm32 instructions.
 // (used to manipulate inlined 32bit data dll calls, etc.)
+// Instruction format for implied addressing mode immediate operand move to register instruction:
+//  [REX/REX2] [OPCODE] [IMM32]
 class NativeMovConstReg: public NativeInstruction {
 #ifdef AMD64
-  static const bool has_rex = true;
-  static const int rex_size = 1;
+  static const bool has_rex  = true;
+  static const int rex_size  = 1;
+  static const int rex2_size = 2;
 #else
-  static const bool has_rex = false;
-  static const int rex_size = 0;
+  static const bool has_rex  = false;
+  static const int rex_size  = 0;
+  static const int rex2_size = 0;
 #endif // AMD64
  public:
   enum Intel_specific_constants {
-    instruction_code            = 0xB8,
-    instruction_size            =    1 + rex_size + wordSize,
-    instruction_offset          =    0,
-    data_offset                 =    1 + rex_size,
-    next_instruction_offset     =    instruction_size,
-    register_mask               = 0x07
+    instruction_code             = 0xB8,
+    instruction_offset           =    0,
+    instruction_size_rex         =    1 + rex_size + wordSize,
+    instruction_size_rex2        =    1 + rex2_size + wordSize,
+    data_offset_rex              =    1 + rex_size,
+    data_offset_rex2             =    1 + rex2_size,
+    next_instruction_offset_rex  =    instruction_size_rex,
+    next_instruction_offset_rex2 =    instruction_size_rex2,
+    register_mask                = 0x07
   };
 
+  int instruction_size() const              { return has_rex2_prefix() ? instruction_size_rex2 : instruction_size_rex; }
+  int next_inst_offset() const              { return has_rex2_prefix() ? next_instruction_offset_rex2 : next_instruction_offset_rex; }
+  int data_byte_offset() const              { return has_rex2_prefix() ? data_offset_rex2 : data_offset_rex;}
   address instruction_address() const       { return addr_at(instruction_offset); }
-  address next_instruction_address() const  { return addr_at(next_instruction_offset); }
-  intptr_t data() const                     { return ptr_at(data_offset); }
-  void  set_data(intptr_t x)                { set_ptr_at(data_offset, x); }
+  address next_instruction_address() const  { return addr_at(next_inst_offset()); }
+  intptr_t data() const                     { return ptr_at(data_byte_offset()); }
+  void  set_data(intptr_t x)                { set_ptr_at(data_byte_offset(), x); }
 
   void  verify();
   void  print();
@@ -280,7 +301,10 @@ inline NativeMovConstReg* nativeMovConstReg_at(address address) {
 }
 
 inline NativeMovConstReg* nativeMovConstReg_before(address address) {
-  NativeMovConstReg* test = (NativeMovConstReg*)(address - NativeMovConstReg::instruction_size - NativeMovConstReg::instruction_offset);
+  int instruction_size = ((NativeInstruction*)(address))->has_rex2_prefix() ?
+                                  NativeMovConstReg::instruction_size_rex2 :
+                                  NativeMovConstReg::instruction_size_rex;
+  NativeMovConstReg* test = (NativeMovConstReg*)(address - instruction_size - NativeMovConstReg::instruction_offset);
 #ifdef ASSERT
   test->verify();
 #endif
@@ -313,7 +337,7 @@ class NativeMovConstRegPatching: public NativeMovConstReg {
 // macros.  For example: The load_unsigned_byte instruction generates
 // an xor reg,reg inst prior to generating the movb instruction.  This
 // class must skip the xor instruction.
-
+//
 class NativeMovRegMem: public NativeInstruction {
  public:
   enum Intel_specific_constants {
@@ -321,35 +345,48 @@ class NativeMovRegMem: public NativeInstruction {
     instruction_prefix_wide_hi          = Assembler::REX_WRXB,
     instruction_code_xor                = 0x33,
     instruction_extended_prefix         = 0x0F,
+
+    // Legacy encoding MAP1 instructions promotable to REX2 encoding.
     instruction_code_mem2reg_movslq     = 0x63,
     instruction_code_mem2reg_movzxb     = 0xB6,
     instruction_code_mem2reg_movsxb     = 0xBE,
     instruction_code_mem2reg_movzxw     = 0xB7,
     instruction_code_mem2reg_movsxw     = 0xBF,
+
     instruction_operandsize_prefix      = 0x66,
+
+    // Legacy encoding MAP0 instructions promotable to REX2 encoding.
     instruction_code_reg2mem            = 0x89,
     instruction_code_mem2reg            = 0x8b,
     instruction_code_reg2memb           = 0x88,
     instruction_code_mem2regb           = 0x8a,
+    instruction_code_lea                = 0x8d,
+
     instruction_code_float_s            = 0xd9,
     instruction_code_float_d            = 0xdd,
     instruction_code_long_volatile      = 0xdf,
+
+    // VEX/EVEX/Legacy encodeded MAP1 instructions promotable to REX2 encoding.
     instruction_code_xmm_ss_prefix      = 0xf3,
     instruction_code_xmm_sd_prefix      = 0xf2,
+
     instruction_code_xmm_code           = 0x0f,
+
+    // Address operand load/store/ldp are promotable to REX2 to accomodate
+    // extended SIB encoding.
     instruction_code_xmm_load           = 0x10,
     instruction_code_xmm_store          = 0x11,
     instruction_code_xmm_lpd            = 0x12,
 
-    instruction_code_lea                = 0x8d,
-
     instruction_VEX_prefix_2bytes       = Assembler::VEX_2bytes,
     instruction_VEX_prefix_3bytes       = Assembler::VEX_3bytes,
     instruction_EVEX_prefix_4bytes      = Assembler::EVEX_4bytes,
+    instruction_REX2_prefix             = Assembler::REX2,
 
     instruction_offset                  = 0,
     data_offset                         = 2,
-    next_instruction_offset             = 4
+    next_instruction_offset_rex         = 4,
+    next_instruction_offset_rex2        = 5
   };
 
   // helper
@@ -427,6 +464,7 @@ class NativeLoadAddress: public NativeMovRegMem {
 
 // destination is rbx or rax
 // mov rbx, [rip + offset]
+//FIXME: Currently not being used in hotspot code base, extend it to support REX2 prefix.
 class NativeLoadGot: public NativeInstruction {
 #ifdef AMD64
   static const bool has_rex = true;
@@ -532,6 +570,7 @@ inline NativeJump* nativeJump_at(address address) {
 }
 
 // far jump reg
+//FIXME: Currently not being used in hotspot code base, extend it to support REX2 prefix.
 class NativeFarJump: public NativeInstruction {
  public:
   address jump_destination() const;
@@ -551,7 +590,8 @@ inline NativeFarJump* nativeFarJump_at(address address) {
   return jump;
 }
 
-// Handles all kinds of jump on Intel. Long/far, conditional/unconditional
+// Handles all kinds of jump on Intel. Long/far, conditional/unconditional with relative offsets
+// barring register indirect jumps.
 class NativeGeneralJump: public NativeInstruction {
  public:
   enum Intel_specific_constants {
@@ -584,6 +624,8 @@ inline NativeGeneralJump* nativeGeneralJump_at(address address) {
   return jump;
 }
 
+//FIXME: Register indirect jump interface, currently not being used in hotspot code base,
+// extend it to support REX2 prefix if needed.
 class NativeGotJump: public NativeInstruction {
   enum Intel_specific_constants {
     rex_prefix = 0x41,
@@ -624,6 +666,7 @@ inline NativeGotJump* nativeGotJump_at(address addr) {
   return jump;
 }
 
+//FIXME: Currently not being used in hotspot code base, extend it to support REX2 prefix.
 class NativePopReg : public NativeInstruction {
  public:
   enum Intel_specific_constants {
@@ -707,19 +750,25 @@ inline bool NativeInstruction::is_cond_jump()    { return (int_at(0) & 0xF0FF) =
 inline bool NativeInstruction::is_safepoint_poll() {
 #ifdef AMD64
   const bool has_rex_prefix = ubyte_at(0) == NativeTstRegMem::instruction_rex_b_prefix;
-  const int test_offset = has_rex_prefix ? 1 : 0;
+  const int prefix_size = has_rex2_prefix() ? 2 : (has_rex_prefix ? 1 : 0);
 #else
   const int test_offset = 0;
 #endif
-  const bool is_test_opcode = ubyte_at(test_offset) == NativeTstRegMem::instruction_code_memXregl;
-  const bool is_rax_target = (ubyte_at(test_offset + 1) & NativeTstRegMem::modrm_mask) == NativeTstRegMem::modrm_reg;
+  const bool is_test_opcode = ubyte_at(prefix_size) == NativeTstRegMem::instruction_code_memXregl;
+  const bool is_rax_target = (ubyte_at(prefix_size + 1) & NativeTstRegMem::modrm_mask) == NativeTstRegMem::modrm_reg;
   return is_test_opcode && is_rax_target;
 }
 
 inline bool NativeInstruction::is_mov_literal64() {
 #ifdef AMD64
-  return ((ubyte_at(0) == Assembler::REX_W || ubyte_at(0) == Assembler::REX_WB) &&
-          (ubyte_at(1) & (0xff ^ NativeMovConstReg::register_mask)) == 0xB8);
+  bool valid_rex_prefix  = ubyte_at(0) == Assembler::REX_W || ubyte_at(0) == Assembler::REX_WB;
+  bool valid_rex2_prefix = ubyte_at(0) == Assembler::REX2  &&
+       (ubyte_at(1) == Assembler::REX2BIT_W  ||
+        ubyte_at(1) == Assembler::REX2BIT_WB ||
+        ubyte_at(1) == Assembler::REX2BIT_WB4);
+
+  int opcode = has_rex2_prefix() ? ubyte_at(2) : ubyte_at(1);
+  return ((valid_rex_prefix || valid_rex2_prefix) &&  (opcode & (0xff ^ NativeMovConstReg::register_mask)) == 0xB8);
 #else
   return false;
 #endif // AMD64

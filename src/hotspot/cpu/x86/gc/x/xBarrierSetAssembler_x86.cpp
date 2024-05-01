@@ -484,6 +484,25 @@ private:
     caller_saved.Insert(OptoReg::as_OptoReg(r11->as_VMReg()));
     caller_saved.Remove(OptoReg::as_OptoReg(stub->ref()->as_VMReg()));
 
+    if (UseAPX) {
+      caller_saved.Insert(OptoReg::as_OptoReg(r16->as_VMReg()));
+      caller_saved.Insert(OptoReg::as_OptoReg(r17->as_VMReg()));
+      caller_saved.Insert(OptoReg::as_OptoReg(r18->as_VMReg()));
+      caller_saved.Insert(OptoReg::as_OptoReg(r19->as_VMReg()));
+      caller_saved.Insert(OptoReg::as_OptoReg(r20->as_VMReg()));
+      caller_saved.Insert(OptoReg::as_OptoReg(r21->as_VMReg()));
+      caller_saved.Insert(OptoReg::as_OptoReg(r22->as_VMReg()));
+      caller_saved.Insert(OptoReg::as_OptoReg(r23->as_VMReg()));
+      caller_saved.Insert(OptoReg::as_OptoReg(r24->as_VMReg()));
+      caller_saved.Insert(OptoReg::as_OptoReg(r25->as_VMReg()));
+      caller_saved.Insert(OptoReg::as_OptoReg(r26->as_VMReg()));
+      caller_saved.Insert(OptoReg::as_OptoReg(r27->as_VMReg()));
+      caller_saved.Insert(OptoReg::as_OptoReg(r28->as_VMReg()));
+      caller_saved.Insert(OptoReg::as_OptoReg(r29->as_VMReg()));
+      caller_saved.Insert(OptoReg::as_OptoReg(r30->as_VMReg()));
+      caller_saved.Insert(OptoReg::as_OptoReg(r31->as_VMReg()));
+    }
+
     // Create mask of live registers
     RegMask live = stub->live();
     if (stub->tmp() != noreg) {
