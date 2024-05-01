@@ -43,29 +43,26 @@ import jdk.test.lib.net.URIBuilder;
 public class B8291637 {
     static CompletableFuture<Boolean> passed = new CompletableFuture<>();
 
-    static class Server extends Thread {
-        final ServerSocket serverSocket;
-        final int port;
+    static class Server extends Thread implements AutoCloseable {
         final String param; // the parameter to test "max" or "timeout"
+        final ServerSocket serverSocket = new ServerSocket(0);
+        final int port;
         volatile Socket s;
 
         public Server(String param) throws IOException {
-            serverSocket = new ServerSocket(0);
+            this.param = param;
             port = serverSocket.getLocalPort();
             setDaemon(true);
-            this.param = param;
         }
 
         public int getPort() {
             return port;
         }
 
-        public void close() {
-            try {
-                serverSocket.close();
-                if (s != null)
-                    s.close();
-            } catch (IOException e) {}
+        public void close() throws IOException {
+            serverSocket.close();
+            if (s != null)
+                s.close();
         }
 
         static final byte[] requestEnd = new byte[] {'\r', '\n', '\r', '\n' };
@@ -131,33 +128,29 @@ public class B8291637 {
     }
 
     public static void runTest(String param) throws Exception {
-        Server server = new Server(param);
-        int port = server.getPort();
-        server.start();
-        URL url = URIBuilder.newBuilder()
-                .scheme("http")
-                .loopback()
-                .port(port)
-                .path("/")
-                .toURL();
-        HttpURLConnection urlc = (HttpURLConnection) url.openConnection();
-        int count=0;
-        try (InputStream i = urlc.getInputStream()) {
-            int c;
-            byte[] buf = new byte[256];
-            while ((c = i.read(buf)) != -1) {
-                count += c;
+        try (Server server = new Server(param)) {
+            server.start();
+            URL url = URIBuilder.newBuilder()
+                    .scheme("http")
+                    .loopback()
+                    .port(server.getPort())
+                    .path("/")
+                    .toURL();
+            HttpURLConnection urlc = (HttpURLConnection) url.openConnection();
+            int count = 0;
+            try (InputStream i = urlc.getInputStream()) {
+                int c;
+                byte[] buf = new byte[256];
+                while ((c = i.read(buf)) != -1) {
+                    count += c;
+                }
             }
-        }
-        System.out.println("Read " + count);
-        try {
+            System.out.println("Read " + count);
             if (!passed.get()) {
                 throw new RuntimeException("Test failed");
             } else {
                 System.out.println("Test passed");
             }
-        } finally {
-            server.close();
         }
     }
 

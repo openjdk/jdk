@@ -26,7 +26,7 @@
  * @bug 5045306 6356004 6993490 8255124
  * @summary Http keep-alive implementation is not efficient
  * @library /test/lib
- * @run main B5045306
+ * @run main/othervm B5045306
  */
 
 import java.io.IOException;
