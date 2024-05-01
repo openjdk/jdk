@@ -2618,7 +2618,7 @@ void Assembler::jmpb_0(Label& L, const char* file, int line) {
 }
 
 void Assembler::ldmxcsr( Address src) {
-  if (UseAVX > 0 && !needs_rex2(src.base(), src.index()) ) {
+  if (UseAVX > 0 && !UseAPX ) {
     InstructionMark im(this);
     InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ true, /* no_mask_reg */ true, /* uses_vl */ false);
     vex_prefix(src, 0, 0, VEX_SIMD_NONE, VEX_OPCODE_0F, &attributes);
@@ -6324,7 +6324,7 @@ void Assembler::sqrtss(XMMRegister dst, Address src) {
 }
 
 void Assembler::stmxcsr(Address dst) {
-  if (UseAVX > 0 && !needs_rex2(dst.base(), dst.index()) ) {
+  if (UseAVX > 0 && !UseAPX  ) {
     assert(VM_Version::supports_avx(), "");
     InstructionMark im(this);
     InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ true, /* no_mask_reg */ true, /* uses_vl */ false);
@@ -13267,6 +13267,7 @@ void Assembler::emit_prefix_and_int8(int prefix, int b1) {
   if ((prefix & 0xFF00) == 0) {
     emit_int16(prefix, b1);
   } else {
+    assert((prefix & 0xFF00) != WREX2 || UseAPX, "APX features not enabled");
     emit_int24((prefix & 0xFF00) >> 8, prefix & 0x00FF, b1);
   }
 }
@@ -14003,8 +14004,7 @@ void Assembler::popcntq(Register dst, Address src) {
   assert(VM_Version::supports_popcnt(), "must support");
   InstructionMark im(this);
   emit_int8((unsigned char)0xF3);
-  prefixq(src, dst, true /* is_map1 */);
-  emit_int8((unsigned char)0xB8);
+  emit_prefix_and_int8(get_prefixq(src, dst, true /* is_map1 */), (unsigned char) 0xB8);
   emit_operand(dst, src, 0);
 }
 
