@@ -41,6 +41,7 @@
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -74,16 +75,18 @@ public class TestJcmdWithSideCar {
             mainContainer.start();
             mainContainer.waitForMainMethodStart(TIME_TO_WAIT_FOR_MAIN_METHOD_START);
 
-            long mainProcPid = testCase01();
+            for (AttachStrategy attachStrategy : EnumSet.allOf(AttachStrategy.class)) {
+                long mainProcPid = testCase01(attachStrategy);
 
-            // Excluding the test case below until JDK-8228850 is fixed
-            // JDK-8228850: jhsdb jinfo fails with ClassCastException:
-            // s.j.h.oops.TypeArray cannot be cast to s.j.h.oops.Instance
-            // mainContainer.assertIsAlive();
-            // testCase02(mainProcPid);
+                // Excluding the test case below until JDK-8228850 is fixed
+                // JDK-8228850: jhsdb jinfo fails with ClassCastException:
+                // s.j.h.oops.TypeArray cannot be cast to s.j.h.oops.Instance
+                // mainContainer.assertIsAlive();
+                // testCase02(mainProcPid, attachStrategy);
 
-            mainContainer.assertIsAlive();
-            testCase03(mainProcPid);
+                mainContainer.assertIsAlive();
+                testCase03(mainProcPid, attachStrategy);
+            }
 
             mainContainer.waitForAndCheck(TIME_TO_RUN_MAIN_PROCESS * 1000);
         } finally {
@@ -93,21 +96,21 @@ public class TestJcmdWithSideCar {
 
 
     // Run "jcmd -l" in a sidecar container, find a target process.
-    private static long testCase01() throws Exception {
-        OutputAnalyzer out = runSideCar(MAIN_CONTAINER_NAME, "/jdk/bin/jcmd", "-l")
+    private static long testCase01(AttachStrategy attachStrategy) throws Exception {
+        OutputAnalyzer out = runSideCar(MAIN_CONTAINER_NAME, attachStrategy, "/jdk/bin/jcmd", "-l")
             .shouldHaveExitValue(0)
             .shouldContain("sun.tools.jcmd.JCmd");
         long pid = findProcess(out, "EventGeneratorLoop");
         if (pid == -1) {
-            throw new RuntimeException("Could not find specified process");
+            throw new RuntimeException(attachStrategy + ": Could not find specified process");
         }
 
         return pid;
     }
 
     // run jhsdb jinfo <PID> (jhsdb uses PTRACE)
-    private static void testCase02(long pid) throws Exception {
-        runSideCar(MAIN_CONTAINER_NAME, "/jdk/bin/jhsdb", "jinfo", "--pid", "" + pid)
+    private static void testCase02(long pid, AttachStrategy attachStrategy) throws Exception {
+        runSideCar(MAIN_CONTAINER_NAME, attachStrategy, "/jdk/bin/jhsdb", "jinfo", "--pid", "" + pid)
             .shouldHaveExitValue(0)
             .shouldContain("Java System Properties")
             .shouldContain("VM Flags");
@@ -115,11 +118,11 @@ public class TestJcmdWithSideCar {
 
     // test jcmd with some commands (help, start JFR recording)
     // JCMD will use signal mechanism and Unix Socket
-    private static void testCase03(long pid) throws Exception {
-        runSideCar(MAIN_CONTAINER_NAME, "/jdk/bin/jcmd", "" + pid, "help")
+    private static void testCase03(long pid, AttachStrategy attachStrategy) throws Exception {
+        runSideCar(MAIN_CONTAINER_NAME, attachStrategy, "/jdk/bin/jcmd", "" + pid, "help")
             .shouldHaveExitValue(0)
             .shouldContain("VM.version");
-        runSideCar(MAIN_CONTAINER_NAME, "/jdk/bin/jcmd", "" + pid, "JFR.start")
+        runSideCar(MAIN_CONTAINER_NAME, attachStrategy, "/jdk/bin/jcmd", "" + pid, "JFR.start")
             .shouldHaveExitValue(0)
             .shouldContain("Started recording");
     }
@@ -127,21 +130,34 @@ public class TestJcmdWithSideCar {
 
     // JCMD relies on the attach mechanism (com.sun.tools.attach),
     // which in turn relies on JVMSTAT mechanism, which puts its mapped
-    // buffers in /tmp directory (hsperfdata_<user>). Thus, in sidecar
-    // we mount /tmp via --volumes-from from the main container.
-    private static OutputAnalyzer runSideCar(String mainContainerName, String whatToRun,
+    // buffers in /tmp directory (hsperfdata_<user>). Thus, in the sidecar
+    // we have two options:
+    // 1. mount /tmp from the main container using --volumes-from.
+    // 2. access /tmp from the main container via /proc/<pid>/root/tmp.
+    private static OutputAnalyzer runSideCar(String mainContainerName, AttachStrategy attachStrategy, String whatToRun,
                                              String... args) throws Exception {
-        List<String> cmd = new ArrayList<>();
-        String[] command = new String[] {
+        System.out.println("Attach strategy " + attachStrategy);
+
+        List<String> initialCommands = List.of(
             Container.ENGINE_COMMAND, "run",
             "--tty=true", "--rm",
             "--cap-add=SYS_PTRACE", "--sig-proxy=true",
-            "--pid=container:" + mainContainerName,
-            "--volumes-from", mainContainerName,
-            IMAGE_NAME, whatToRun
+            "--pid=container:" + mainContainerName
+        );
+
+        List<String> attachStrategyCommands = switch (attachStrategy) {
+            case TMP_MOUNTED_INTO_SIDECAR -> List.of("--volumes-from", mainContainerName);
+            case ACCESS_TMP_VIA_PROC_ROOT -> List.of();
         };
 
-        cmd.addAll(Arrays.asList(command));
+        List<String> imageAndCommand = List.of(
+            IMAGE_NAME, whatToRun
+        );
+
+        List<String> cmd = new ArrayList<>();
+        cmd.addAll(initialCommands);
+        cmd.addAll(attachStrategyCommands);
+        cmd.addAll(imageAndCommand);
         cmd.addAll(Arrays.asList(args));
         return DockerTestUtils.execute(cmd);
     }
@@ -241,7 +257,7 @@ public class TestJcmdWithSideCar {
                 try {
                     exitValue = p.exitValue();
                 } catch(IllegalThreadStateException ex) {
-                    System.out.println("IllegalThreadStateException occured when calling exitValue()");
+                    System.out.println("IllegalThreadStateException occurred when calling exitValue()");
                     retryCount--;
                 }
             } while (exitValue == -1 && retryCount > 0);
@@ -253,4 +269,8 @@ public class TestJcmdWithSideCar {
 
     }
 
+    private enum AttachStrategy {
+        TMP_MOUNTED_INTO_SIDECAR,
+        ACCESS_TMP_VIA_PROC_ROOT
+    }
 }

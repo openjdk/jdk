@@ -235,21 +235,33 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
     }
 
     private String findTargetProcessTmpDirectory(int pid, int ns_pid) throws IOException {
+        // We need to handle at least 4 different scenarios:
+        // 1. Caller and target processes share PID namespace and root filesystem (host to host).
+        // 2. Caller and target processes share PID namespace and root filesystem but the target process has elevated
+        //    privileges (host to host).
+        // 3. Caller and target processes share PID namespace but NOT root filesystem (container to container).
+        // 4. Caller and target processes share neither PID namespace nor root filesystem (host to container).
+        //
+        // Hence, we start out by trying to access the target process' /tmp folder through /proc/<pid>/root/tmp. This
+        // works in all cases except case 2. Even though both the caller and target process runs as the same user,
+        // access to the /proc/<pid>/root symlink is governed by ptrace access mode PTRACE_MODE_READ_FSCREDS, and if
+        // if the target process has elevated privileges set by setcap access is denied (see JDK-8226919).
+        // If /proc/<pid>/root is not readable, we fall back to trying /tmp.
+
         String root;
-        if (pid != ns_pid) {
-            // A process may not exist in the same mount namespace as the caller, e.g.
-            // if we are trying to attach to a JVM process inside a container.
-            // Instead, attach relative to the target root filesystem as exposed by
-            // procfs regardless of namespaces.
-            String procRootDirectory = "/proc/" + pid + "/root";
-            if (!Files.isReadable(Path.of(procRootDirectory))) {
+        String procRootDirectory = "/proc/" + pid + "/root";
+        if (Files.isReadable(Path.of(procRootDirectory))) {
+            root = procRootDirectory + "/" + tmpdir;
+        }
+        else {
+            if (pid != ns_pid) {
+                // Case 4, there is no point in trying /tmp because if different PID namespaces surely means different
+                // root filesystems too.
                 throw new IOException(
                         String.format("Unable to access root directory %s " +
                           "of target process %d", procRootDirectory, pid));
             }
 
-            root = procRootDirectory + "/" + tmpdir;
-        } else {
             root = tmpdir;
         }
         return root;
