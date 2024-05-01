@@ -42,13 +42,9 @@ import static java.nio.file.StandardOpenOption.*;
 public class BlockDeviceSize {
     private static final List<String> BLK_FNAMES = List.of("/dev/sda1", "/dev/nvme0n1") ;
 
-    public static Path getBlkPath(String blkFileName) {
-        return Paths.get(blkFileName);
-    }
-
     public static void main(String[] args) throws Throwable {
         for (String blkFname: BLK_FNAMES) {
-            Path blkPath = getBlkPath(blkFname);
+            Path blkPath = Paths.get(blkFname);
             try (FileChannel ch = FileChannel.open(blkPath, READ);
                  RandomAccessFile file = new RandomAccessFile(blkFname, "r")) {
 
