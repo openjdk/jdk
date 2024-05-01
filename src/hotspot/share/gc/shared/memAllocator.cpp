@@ -123,10 +123,9 @@ bool MemAllocator::Allocation::check_out_of_memory() {
   }
 
   const char* message = _overhead_limit_exceeded ? "GC overhead limit exceeded" : "Java heap space";
-  // -XX:+HeapDumpOnOutOfMemoryError and -XX:OnOutOfMemoryError support
-  report_java_out_of_memory(message);
-
   if (!_thread->in_internal_oome_mark()) {
+    // -XX:+HeapDumpOnOutOfMemoryError and -XX:OnOutOfMemoryError support
+    report_java_out_of_memory(message);
     if (JvmtiExport::should_post_resource_exhausted()) {
       JvmtiExport::post_resource_exhausted(
         JVMTI_RESOURCE_EXHAUSTED_OOM_ERROR | JVMTI_RESOURCE_EXHAUSTED_JAVA_HEAP,
