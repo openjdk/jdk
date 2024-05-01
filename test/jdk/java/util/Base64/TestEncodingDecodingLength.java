@@ -44,28 +44,32 @@ import static org.junit.jupiter.api.Assertions.fail;
 // the public API would require which has shown to cause intermittent issues
 public class TestEncodingDecodingLength {
 
-    private static final int size = Integer.MAX_VALUE - 8;
+    // A value large enough to test the desired memory conditions in encode and decode
+    private static final int LARGE_MEM_SIZE = Integer.MAX_VALUE - 8;
+    private static final Base64.Decoder DECODER = Base64.getDecoder();
+    private static final Base64.Encoder ENCODER = Base64.getEncoder();
 
-    // Effectively tests the overloaded Base64.Encoder.encode() methods and
-    // encodeToString() throw OOME instead of NASE with large array values.
-    // All the encode methods call encodedOutLength() which is where the OOME
-    // is expected to be thrown from
+    // Effectively tests that encode(byte[] src, byte[] dst) throws an
+    // IllegalArgumentException with array sized near Integer.MAX_VALUE. All the
+    // encode() methods call encodedOutLength(), which is where the OOME is expected
     @Test
-    public void largeEncodeTest() throws NoSuchMethodException,
-            IllegalAccessException, InvocationTargetException {
-        Base64.Encoder encoder = Base64.getEncoder();
-        Method m = encoder.getClass().getDeclaredMethod(
+    public void largeEncodeIAETest() throws IllegalAccessException,
+            InvocationTargetException, NoSuchMethodException {
+        Method m = getMethod(ENCODER,
                 "encodedOutLength", int.class, boolean.class);
-        m.setAccessible(true);
-
-        // IAE case
         // When throwOOME param is false, encodedOutLength should return -1 in
         // this situation, which encode() uses to throw IAE
-        assertEquals(-1, m.invoke(encoder, size, false));
+        assertEquals(-1, m.invoke(ENCODER, LARGE_MEM_SIZE, false));
+    }
 
-        // OOME case
+    // Effectively tests that the overloaded encode() and encodeToString() methods
+    // throw OutOfMemoryError with array/buffer sized near Integer.MAX_VALUE
+    @Test
+    public void largeEncodeOOMETest() throws IllegalAccessException, NoSuchMethodException {
+        Method m = getMethod(ENCODER,
+                "encodedOutLength", int.class, boolean.class);
         try {
-            m.invoke(encoder, size, true);
+            m.invoke(ENCODER, LARGE_MEM_SIZE, true);
         } catch (InvocationTargetException ex) {
             Throwable rootEx = ex.getCause();
             assertEquals(OutOfMemoryError.class, rootEx.getClass(), "00ME should be thrown");
@@ -73,26 +77,35 @@ public class TestEncodingDecodingLength {
         }
     }
 
-    // Effectively tests the overloaded Base64.Decoder.decode() methods do not
-    // throw OOME nor NASE with large array values. All the decode methods call
-    // decodedOutLength(), which is where the potential overflow situation occurs.
+    // Effectively tests that the overloaded decode() methods do not throw
+    // OOME nor NASE with array/buffer sized near Integer.MAX_VALUE All the decode
+    // methods call decodedOutLength(), which is where the previously thrown
+    // OOME or NASE would occur at.
     @Test
-    public void largeDecodeTest() throws NoSuchMethodException, IllegalAccessException {
-        Base64.Decoder decoder = Base64.getDecoder();
-        Method m = decoder.getClass().getDeclaredMethod(
+    public void largeDecodeTest() throws IllegalAccessException, NoSuchMethodException {
+        Method m = getMethod(DECODER,
                 "decodedOutLength", byte[].class, int.class, int.class);
-        m.setAccessible(true);
         byte[] src = {1};
         try {
-            // decodedOutLength() takes the src array, position, and limit as params.
-            // The src array will be indexed at limit-1 to search for padding.
-            // To avoid passing an array with Integer.MAX_VALUE memory allocated, we
-            // set position param to be -size. Since the initial length
-            // is calculated as limit - position. This mocks the potential overflow
-            // calculation and still allows the array to be indexed without an AIOBE.
-            m.invoke(decoder, src, -size + 1, 1);
+            /*
+             decodedOutLength() takes the src array, position, and limit as params.
+             The src array will be indexed at limit-1 to search for padding.
+             To avoid passing an array with Integer.MAX_VALUE memory allocated, we
+             set position param to be -size. Since the initial length
+             is calculated as limit - position. This mocks the potential overflow
+             calculation and still allows the array to be indexed without an AIOBE.
+            */
+            m.invoke(DECODER, src, -LARGE_MEM_SIZE + 1, 1);
         } catch (InvocationTargetException ex) {
             fail("Decode should neither throw NASE or OOME: " + ex.getCause());
         }
+    }
+
+    // Utility to get the private visibility method
+    private static Method getMethod(Object obj, String methodName, Class<?>... params)
+            throws NoSuchMethodException {
+        Method m = obj.getClass().getDeclaredMethod(methodName, params);
+        m.setAccessible(true);
+        return m;
     }
 }
