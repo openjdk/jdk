@@ -318,7 +318,7 @@ final class DCmdStart extends AbstractDCmd {
         return false;
     }
 
-    public String[] printStartupHelp() {
+    public String[] getStartupHelp() {
         Map<String, String> parameters = Map.of(
             "$SYNTAX", "-XX:StartFlightRecording:[options]",
             "$SOURCE", "-XX:StartFlightRecording:",
@@ -331,7 +331,7 @@ final class DCmdStart extends AbstractDCmd {
     }
 
     @Override
-    public String[] printHelp() {
+    public String[] getHelp() {
         Map<String, String> parameters = Map.of(
            "$SYNTAX", "JFR.start [options]",
            "$SOURCE", "$ jcmd <pid> JFR.start ",
