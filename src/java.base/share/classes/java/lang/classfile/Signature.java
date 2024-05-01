@@ -242,6 +242,7 @@ public sealed interface Signature {
         /**
          * {@return a bounded type arg}
          * @param boundType the bound
+         * @since 23
          */
         public static TypeArg.Bounded of(RefTypeSig boundType) {
             requireNonNull(boundType);
@@ -250,6 +251,7 @@ public sealed interface Signature {
 
         /**
          * {@return an unbounded type arg}
+         * @since 23
          */
         public static TypeArg.Unbounded unbounded() {
             return SignaturesImpl.UnboundedTypeArgImpl.INSTANCE;
@@ -258,6 +260,7 @@ public sealed interface Signature {
         /**
          * {@return an upper-bounded type arg}
          * @param boundType the upper bound
+         * @since 23
          */
         public static TypeArg.Bounded extendsOf(RefTypeSig boundType) {
             requireNonNull(boundType);
@@ -267,6 +270,7 @@ public sealed interface Signature {
         /**
          * {@return a lower-bounded type arg}
          * @param boundType the lower bound
+         * @since 23
          */
         public static TypeArg.Bounded superOf(RefTypeSig boundType) {
             requireNonNull(boundType);
@@ -277,6 +281,7 @@ public sealed interface Signature {
          * {@return a bounded type arg}
          * @param wildcard the wild card
          * @param boundType optional bound type
+         * @since 23
          */
         public static TypeArg.Bounded bounded(Bounded.WildcardIndicator wildcard, RefTypeSig boundType) {
             requireNonNull(wildcard);
