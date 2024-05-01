@@ -37,7 +37,16 @@ import java.lang.foreign.*;
  * @summary Test vectorization of loops over MemorySegment
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
- * @run driver compiler.loopopts.superword.TestMemorySegment int
+ * @run driver compiler.loopopts.superword.TestMemorySegment ByteArray
+ * @run driver compiler.loopopts.superword.TestMemorySegment CharArray
+ * @run driver compiler.loopopts.superword.TestMemorySegment ShortArray
+ * @run driver compiler.loopopts.superword.TestMemorySegment IntArray
+ * @run driver compiler.loopopts.superword.TestMemorySegment LongArray
+ * @run driver compiler.loopopts.superword.TestMemorySegment FloatArray
+ * @run driver compiler.loopopts.superword.TestMemorySegment DoubleArray
+ * @run driver compiler.loopopts.superword.TestMemorySegment ByteBuffer
+ * @run driver compiler.loopopts.superword.TestMemorySegment ByteBufferDirect
+ * @run driver compiler.loopopts.superword.TestMemorySegment Native
  */
 
 public class TestMemorySegment {
@@ -58,7 +67,7 @@ class TestMemorySegmentImpl {
     }
 
     interface MemorySegmentProvider {
-        MemorySegment newSegment();
+        MemorySegment newMemorySegment();
     }
 
     MemorySegmentProvider provider;
@@ -73,13 +82,22 @@ class TestMemorySegmentImpl {
         // Choose what backs the MemorySegment
         String argv = System.getProperty("myVerySpecialArgument");
         provider = switch (argv) {
-            case "int" -> ( () -> { return newOfByteArray(); } );
+            case "ByteArray"        -> ( () -> { return newMemorySegmentOfByteArray(); } );
+            case "CharArray"        -> ( () -> { return newMemorySegmentOfCharArray(); } );
+            case "ShortArray"       -> ( () -> { return newMemorySegmentOfShortArray(); } );
+            case "IntArray"         -> ( () -> { return newMemorySegmentOfIntArray(); } );
+            case "LongArray"        -> ( () -> { return newMemorySegmentOfLongArray(); } );
+            case "FloatArray"       -> ( () -> { return newMemorySegmentOfFloatArray(); } );
+            case "DoubleArray"      -> ( () -> { return newMemorySegmentOfDoubleArray(); } );
+            case "ByteBuffer"       -> ( () -> { return newMemorySegmentOfByteBuffer(); } );
+            case "ByteBufferDirect" -> ( () -> { return newMemorySegmentOfByteBufferDirect(); } );
+            case "Native"           -> ( () -> { return newMemorySegmentOfNative(); } );
             default -> throw new RuntimeException("Test argument not recognized: " + argv);
         };
 
         // Generate two MemorySegments as inputs
-        MemorySegment a = newSegment();
-        MemorySegment b = newSegment();
+        MemorySegment a = newMemorySegment();
+        MemorySegment b = newMemorySegment();
         fillRandom(a);
         fillRandom(b);
 
@@ -112,53 +130,53 @@ class TestMemorySegmentImpl {
         }
     }
 
-    MemorySegment newSegment() {
-        return provider.newSegment();
+    MemorySegment newMemorySegment() {
+        return provider.newMemorySegment();
     }
 
     MemorySegment copy(MemorySegment src) {
-        MemorySegment dst = newSegment();
+        MemorySegment dst = newMemorySegment();
         MemorySegment.copy(src, 0, dst, 0, src.byteSize());
         return dst;
     }
 
-    static MemorySegment newOfByteArray() {
+    static MemorySegment newMemorySegmentOfByteArray() {
         return MemorySegment.ofArray(new byte[BACKING_SIZE]);
     }
 
-    static MemorySegment newOfCharArray() {
+    static MemorySegment newMemorySegmentOfCharArray() {
         return MemorySegment.ofArray(new char[BACKING_SIZE / 2]);
     }
 
-    static MemorySegment newOfShortArray() {
+    static MemorySegment newMemorySegmentOfShortArray() {
         return MemorySegment.ofArray(new short[BACKING_SIZE / 2]);
     }
 
-    static MemorySegment newOfIntArray() {
+    static MemorySegment newMemorySegmentOfIntArray() {
         return MemorySegment.ofArray(new int[BACKING_SIZE / 4]);
     }
 
-    static MemorySegment newOfLongArray() {
+    static MemorySegment newMemorySegmentOfLongArray() {
         return MemorySegment.ofArray(new long[BACKING_SIZE / 8]);
     }
 
-    static MemorySegment newOfFloatArray() {
+    static MemorySegment newMemorySegmentOfFloatArray() {
         return MemorySegment.ofArray(new float[BACKING_SIZE / 4]);
     }
 
-    static MemorySegment newOfDoubleArray() {
+    static MemorySegment newMemorySegmentOfDoubleArray() {
         return MemorySegment.ofArray(new double[BACKING_SIZE / 8]);
     }
 
-    static MemorySegment newOfByteBuffer() {
+    static MemorySegment newMemorySegmentOfByteBuffer() {
         return MemorySegment.ofBuffer(ByteBuffer.allocate(BACKING_SIZE));
     }
 
-    static MemorySegment newOfByteBufferDirect() {
+    static MemorySegment newMemorySegmentOfByteBufferDirect() {
         return MemorySegment.ofBuffer(ByteBuffer.allocateDirect(BACKING_SIZE));
     }
 
-    static MemorySegment newOfNative() {
+    static MemorySegment newMemorySegmentOfNative() {
         // Auto arena: GC decides when there is no reference to the MemorySegment,
         // and then it deallocates the backing memory.
         return Arena.ofAuto().allocate(BACKING_SIZE, 1);
