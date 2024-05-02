@@ -1101,8 +1101,6 @@ public class CreateSymbolsTestImpl {
         CreateSymbols.ALLOW_NON_EXISTING_CLASSES = true;
         CreateSymbols.EXTENSION = ".class";
 
-        deleteRecursively(ctSym);
-
         List<VersionDescription> versions =
                 Arrays.asList(new VersionDescription(ver9Jar.toAbsolutePath().toString(), "9", null));
 
