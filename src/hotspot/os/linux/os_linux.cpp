@@ -3023,14 +3023,14 @@ void os::pd_realign_memory(char *addr, size_t bytes, size_t alignment_hint) {
   }
 }
 
-void os::pd_free_memory(char *addr, size_t bytes, size_t alignment_hint) {
+void os::pd_free_memory(char *addr, size_t bytes, size_t alignment_hint, MEMFLAGS flag) {
   // This method works by doing an mmap over an existing mmaping and effectively discarding
   // the existing pages. However it won't work for SHM-based large pages that cannot be
   // uncommitted at all. We don't do anything in this case to avoid creating a segment with
   // small pages on top of the SHM segment. This method always works for small pages, so we
   // allow that in any case.
   if (alignment_hint <= os::vm_page_size() || can_commit_large_page_memory()) {
-    commit_memory(addr, bytes, alignment_hint, !ExecMem);
+    commit_memory(addr, bytes, alignment_hint, !ExecMem, flag);
   }
 }
 
@@ -3637,7 +3637,7 @@ bool os::pd_create_stack_guard_pages(char* addr, size_t size) {
     }
   }
 
-  return os::commit_memory(addr, size, !ExecMem);
+  return os::commit_memory(addr, size, !ExecMem, mtThreadStack);
 }
 
 // If this is a growable mapping, remove the guard pages entirely by
@@ -3653,7 +3653,7 @@ bool os::remove_stack_guard_pages(char* addr, size_t size) {
     return ::munmap(addr, size) == 0;
   }
 
-  return os::uncommit_memory(addr, size);
+  return os::uncommit_memory(addr, size, !ExecMem, mtThreadStack);
 }
 
 // 'requested_addr' is only treated as a hint, the return value may or
@@ -3757,7 +3757,7 @@ static int anon_munmap(char * addr, size_t size) {
   return 1;
 }
 
-char* os::pd_reserve_memory(size_t bytes, bool exec) {
+char* os::pd_reserve_memory(size_t bytes, bool exec, MEMFLAGS flag) {
   return anon_mmap(nullptr, bytes);
 }
 
@@ -4214,7 +4214,7 @@ static char* reserve_memory_special_huge_tlbfs(size_t bytes,
 }
 
 char* os::pd_reserve_memory_special(size_t bytes, size_t alignment, size_t page_size,
-                                    char* req_addr, bool exec) {
+                                    char* req_addr, bool exec, MEMFLAGS flag) {
   assert(UseLargePages, "only for large pages");
 
   char* const addr = reserve_memory_special_huge_tlbfs(bytes, alignment, page_size, req_addr, exec);
@@ -4249,9 +4249,9 @@ bool os::can_commit_large_page_memory() {
   return UseTransparentHugePages;
 }
 
-char* os::pd_attempt_map_memory_to_file_at(char* requested_addr, size_t bytes, int file_desc) {
+char* os::pd_attempt_map_memory_to_file_at(char* requested_addr, size_t bytes, int file_desc, MEMFLAGS flag) {
   assert(file_desc >= 0, "file_desc is not valid");
-  char* result = pd_attempt_reserve_memory_at(requested_addr, bytes, !ExecMem);
+  char* result = pd_attempt_reserve_memory_at(requested_addr, bytes, !ExecMem, flag);
   if (result != nullptr) {
     if (replace_existing_mapping_with_file_mapping(result, bytes, file_desc) == nullptr) {
       vm_exit_during_initialization(err_msg("Error in mapping Java heap at the given filesystem directory"));
@@ -4263,7 +4263,7 @@ char* os::pd_attempt_map_memory_to_file_at(char* requested_addr, size_t bytes, i
 // Reserve memory at an arbitrary address, only if that area is
 // available (and not reserved for something else).
 
-char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, bool exec) {
+char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, bool exec, MEMFLAGS flag) {
   // Assert only that the size is a multiple of the page size, since
   // that's all that mmap requires, and since that's all we really know
   // about at this low abstraction level.  If we need higher alignment,
@@ -4655,7 +4655,7 @@ static void workaround_expand_exec_shield_cs_limit() {
    */
   char* hint = (char*)(os::Linux::initial_thread_stack_bottom() -
                        (StackOverflow::stack_guard_zone_size() + page_size));
-  char* codebuf = os::attempt_reserve_memory_at(hint, page_size);
+  char* codebuf = os::attempt_reserve_memory_at(hint, page_size, !ExecMem, mtInternal);
 
   if (codebuf == nullptr) {
     // JDK-8197429: There may be a stack gap of one megabyte between
@@ -4663,14 +4663,12 @@ static void workaround_expand_exec_shield_cs_limit() {
     // Linux kernel workaround for CVE-2017-1000364.  If we failed to
     // map our codebuf, try again at an address one megabyte lower.
     hint -= 1 * M;
-    codebuf = os::attempt_reserve_memory_at(hint, page_size);
+    codebuf = os::attempt_reserve_memory_at(hint, page_size, !ExecMem, mtInternal);
   }
 
-  if ((codebuf == nullptr) || (!os::commit_memory(codebuf, page_size, true))) {
+  if ((codebuf == nullptr) || (!os::commit_memory(codebuf, page_size, ExecMem, mtInternal))) {
     return; // No matter, we tried, best effort.
   }
-
-  MemTracker::record_virtual_memory_type((address)codebuf, mtInternal);
 
   log_info(os)("[CS limit NX emulation work-around, exec code at: %p]", codebuf);
 
@@ -5119,14 +5117,6 @@ int os::open(const char *path, int oflag, int mode) {
 #endif
 
   return fd;
-}
-
-
-// create binary file, rewriting existing file if required
-int os::create_binary_file(const char* path, bool rewrite_existing) {
-  int oflags = O_WRONLY | O_CREAT;
-  oflags |= rewrite_existing ? O_TRUNC : O_EXCL;
-  return ::open(path, oflags, S_IREAD | S_IWRITE);
 }
 
 // return current position of file pointer

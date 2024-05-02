@@ -168,7 +168,7 @@ class UnixChannelFactory {
 
         // for now use simple implementation
         FileDescriptor fdObj = open(-1, path, null, flags, mode);
-        return SimpleAsynchronousFileChannelImpl.open(fdObj, flags.read, flags.write, pool);
+        return SimpleAsynchronousFileChannelImpl.open(fdObj, path.toString(), flags.read, flags.write, pool);
     }
 
     /**
