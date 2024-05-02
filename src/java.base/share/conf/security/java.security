@@ -66,8 +66,8 @@
 # set, it expands to the empty string. When a profile.security file exists
 # (may be empty), it defines a default security profile. When it does not,
 # an error is thrown and explicit profile selection is required. In order
-# to prevent profile properties from being overridden, the include statement
-# may be placed at the end of this file.
+# to override properties defined in this file, the include statement may be
+# placed at the end.
 
 # In this file, various security properties are set for use by
 # java.security classes. This is where users can statically register
