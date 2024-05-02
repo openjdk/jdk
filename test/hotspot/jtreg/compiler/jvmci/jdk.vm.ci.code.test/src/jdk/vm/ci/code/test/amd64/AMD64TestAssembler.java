@@ -505,7 +505,7 @@ public class AMD64TestAssembler extends TestAssembler {
 
     @Override
     public void emitCall(long addr) {
-        Register target = emitLoadLong(addr);
+        Register target = emitLoadLong(AMD64.rax, addr);
         code.emitByte(0xFF); // CALL r/m64
         int enc = target.encoding;
         if (enc >= 8) {
