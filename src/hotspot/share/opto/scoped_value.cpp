@@ -317,30 +317,30 @@ void ScopedValueGetPatternMatcher::pattern_match() {
 //
 //            (1)                          (2)                               (3)                                      (4)
 // cache = scopedValueCache();  cache = scopedValueCache()  cache = currentThread.scopedValueCache;  cache = currentThread.scopedValueCache;
-// if (cache == null) {         if (cache == null) {        if (hits_in_cache(cache)) {              if (hits_in_cache(cache)) {            
-//   goto slow_call;              goto slow_call;             result = load_from_cache;                result = load_from_cache;            
-// }                            }                             goto region_fast_slow;                 } else {                               
-// if (first_entry_hits) {      if (first_entry_hits) {     } else {                                   if (cache == null) {                 
-//   result = first_entry;        result = first_entry;       if (cache == null) {                       goto slow_call;                    
-// } else {                     } else {                        goto slow_call;                        }                                    
-//   if (second_entry_hits) {     if (second_entry_hits) {    }                                        if (first_entry_hits) {              
-//     result = second_entry;       result = second_entry;    if (first_entry_hits) {                    halt;                              
-//   } else {                     } else {                      result = first_entry;                  } else {                             
-//     goto slow_call;              goto slow_call;           } else {                                   if (second_entry_hits) {           
-//   }                            }                             if (second_entry_hits) {                    halt;                           
-// }                            }                                 result = second_entry;                  } else {                          
-// continue:                    continue:                       } else {                                    goto slow_call;                 
-// ...                          halt;                             goto slow_call;                        }                                  
-// return;                                                      }                                      }                                    
-//                              slow_call:                    }                                      }                                      
-// slow_call:                   result = slowGet();         }                                        continue:                              
-// result = slowGet();          goto continue;              continue:                                ...                                    
-// goto continue;                                           halt;                                    return;                                
-//                                                          region_fast_slow;                                                               
-//                                                                                                   slow_call:                             
-//                                                          slow_call:                               result = slowGet();                    
-//                                                          result = slowGet();                      goto continue;                         
-//                                                          goto continue;                         
+// if (cache == null) {         if (cache == null) {        if (hits_in_cache(cache)) {              if (hits_in_cache(cache)) {
+//   goto slow_call;              goto slow_call;             result = load_from_cache;                result = load_from_cache;
+// }                            }                             goto region_fast_slow;                 } else {
+// if (first_entry_hits) {      if (first_entry_hits) {     } else {                                   if (cache == null) {
+//   result = first_entry;        result = first_entry;       if (cache == null) {                       goto slow_call;
+// } else {                     } else {                        goto slow_call;                        }
+//   if (second_entry_hits) {     if (second_entry_hits) {    }                                        if (first_entry_hits) {
+//     result = second_entry;       result = second_entry;    if (first_entry_hits) {                    halt;
+//   } else {                     } else {                      result = first_entry;                  } else {
+//     goto slow_call;              goto slow_call;           } else {                                   if (second_entry_hits) {
+//   }                            }                             if (second_entry_hits) {                    halt;
+// }                            }                                 result = second_entry;                  } else {
+// continue:                    continue:                       } else {                                    goto slow_call;
+// ...                          halt;                             goto slow_call;                        }
+// return;                                                      }                                      }
+//                              slow_call:                    }                                      }
+// slow_call:                   result = slowGet();         }                                        continue:
+// result = slowGet();          goto continue;              continue:                                ...
+// goto continue;                                           halt;                                    return;
+//                                                          region_fast_slow;
+//                                                                                                   slow_call:
+//                                                          slow_call:                               result = slowGet();
+//                                                          result = slowGet();                      goto continue;
+//                                                          goto continue;
 //
 //
 // the transformed graph includes 2 copies of the cache probing logic. One represented by the
@@ -1264,4 +1264,3 @@ bool PhaseIdealLoop::replace_scoped_value_result_by_dominator(ScopedValueGetResu
   }
   return false;
 }
-
