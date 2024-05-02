@@ -1778,6 +1778,8 @@ void InterpreterMacroAssembler::load_field_entry(Register cache, Register index,
   ldr(cache, Address(rcpool, ConstantPoolCache::field_entries_offset()));
   add(cache, cache, Array<ResolvedFieldEntry>::base_offset_in_bytes());
   lea(cache, Address(cache, index));
+  // Prevents stale data from being read after the bytecode is patched to the fast bytecode
+  membar(MacroAssembler::LoadLoad);
 }
 
 void InterpreterMacroAssembler::load_method_entry(Register cache, Register index, int bcp_offset) {

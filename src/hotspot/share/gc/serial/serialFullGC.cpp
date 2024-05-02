@@ -74,8 +74,6 @@
 #include "jvmci/jvmci.hpp"
 #endif
 
-uint                    SerialFullGC::_total_invocations = 0;
-
 Stack<oop, mtGC>              SerialFullGC::_marking_stack;
 Stack<ObjArrayTask, mtGC>     SerialFullGC::_objarray_stack;
 
@@ -113,7 +111,7 @@ public:
       // we don't start compacting before there is a significant gain to be made.
       // Occasionally, we want to ensure a full compaction, which is determined
       // by the MarkSweepAlwaysCompactCount parameter.
-      if ((SerialFullGC::total_invocations() % MarkSweepAlwaysCompactCount) != 0) {
+      if ((SerialHeap::heap()->total_full_collections() % MarkSweepAlwaysCompactCount) != 0) {
         _allowed_deadspace_words = (space->capacity() * ratio / 100) / HeapWordSize;
       } else {
         _active = false;
@@ -693,9 +691,6 @@ void SerialFullGC::invoke_at_safepoint(bool clear_all_softrefs) {
 #endif
 
   gch->trace_heap_before_gc(_gc_tracer);
-
-  // Increment the invocation count
-  _total_invocations++;
 
   // Capture used regions for old-gen to reestablish old-to-young invariant
   // after full-gc.

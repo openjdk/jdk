@@ -150,7 +150,7 @@ public final class ClassReaderImpl
     @Override
     public ClassEntry thisClassEntry() {
         if (thisClass == null) {
-            thisClass = readEntry(thisClassPos, ClassEntry.class);
+            thisClass = readClassEntry(thisClassPos);
         }
         return thisClass;
     }
@@ -339,6 +339,10 @@ public final class ClassReaderImpl
     // Constantpool
     @Override
     public PoolEntry entryByIndex(int index) {
+        return entryByIndex(index, 0, 0xff);
+    }
+
+    private PoolEntry entryByIndex(int index, int lowerBoundTag, int upperBoundTag) {
         if (index <= 0 || index >= constantPoolCount) {
             throw new ConstantPoolException("Bad CP index: " + index);
         }
@@ -349,6 +353,10 @@ public final class ClassReaderImpl
                 throw new ConstantPoolException("Unusable CP index: " + index);
             }
             int tag = readU1(offset);
+            if (tag < lowerBoundTag || tag > upperBoundTag) {
+                throw new ConstantPoolException(
+                        "Bad tag (" + tag + ") at index (" + index + ") position (" + offset + ")");
+            }
             final int q = offset + 1;
             info = switch (tag) {
                 case TAG_UTF8 -> new AbstractPoolEntry.Utf8EntryImpl(this, index, buffer, q + 2, readU2(q));
@@ -367,7 +375,7 @@ public final class ClassReaderImpl
                 case TAG_NAMEANDTYPE -> new AbstractPoolEntry.NameAndTypeEntryImpl(this, index, (AbstractPoolEntry.Utf8EntryImpl) readUtf8Entry(q),
                                                                                    (AbstractPoolEntry.Utf8EntryImpl) readUtf8Entry(q + 2));
                 case TAG_METHODHANDLE -> new AbstractPoolEntry.MethodHandleEntryImpl(this, index, readU1(q),
-                                                                                     (AbstractPoolEntry.AbstractMemberRefEntry) readEntry(q + 1));
+                                                                                     readEntry(q + 1, AbstractPoolEntry.AbstractMemberRefEntry.class, TAG_FIELDREF, TAG_INTERFACEMETHODREF));
                 case TAG_METHODTYPE -> new AbstractPoolEntry.MethodTypeEntryImpl(this, index, (AbstractPoolEntry.Utf8EntryImpl) readUtf8Entry(q));
                 case TAG_CONSTANTDYNAMIC -> new AbstractPoolEntry.ConstantDynamicEntryImpl(this, index, readU2(q), (AbstractPoolEntry.NameAndTypeEntryImpl) readNameAndTypeEntry(q + 2));
                 case TAG_INVOKEDYNAMIC -> new AbstractPoolEntry.InvokeDynamicEntryImpl(this, index, readU2(q), (AbstractPoolEntry.NameAndTypeEntryImpl) readNameAndTypeEntry(q + 2));
@@ -423,7 +431,15 @@ public final class ClassReaderImpl
 
     @Override
     public <T extends PoolEntry> T readEntry(int pos, Class<T> cls) {
-        var e = readEntry(pos);
+        return readEntry(pos, cls, 0, 0xff);
+    }
+
+    private <T extends PoolEntry> T readEntry(int pos, Class<T> cls, int expectedTag) {
+        return readEntry(pos, cls, expectedTag, expectedTag);
+    }
+
+    private <T extends PoolEntry> T readEntry(int pos, Class<T> cls, int lowerBoundTag, int upperBoundTag) {
+        var e = entryByIndex(readU2(pos), lowerBoundTag, upperBoundTag);
         if (cls.isInstance(e)) return cls.cast(e);
         throw new ConstantPoolException("Not a " + cls.getSimpleName() + " at index: " + readU2(pos));
     }
@@ -454,27 +470,27 @@ public final class ClassReaderImpl
 
     @Override
     public ModuleEntry readModuleEntry(int pos) {
-        return readEntry(pos, ModuleEntry.class);
+        return readEntry(pos, ModuleEntry.class, TAG_MODULE);
     }
 
     @Override
     public PackageEntry readPackageEntry(int pos) {
-        return readEntry(pos, PackageEntry.class);
+        return readEntry(pos, PackageEntry.class, TAG_PACKAGE);
     }
 
     @Override
     public ClassEntry readClassEntry(int pos) {
-        return readEntry(pos, ClassEntry.class);
+        return readEntry(pos, ClassEntry.class, TAG_CLASS);
     }
 
     @Override
     public NameAndTypeEntry readNameAndTypeEntry(int pos) {
-        return readEntry(pos, NameAndTypeEntry.class);
+        return readEntry(pos, NameAndTypeEntry.class, TAG_NAMEANDTYPE);
     }
 
     @Override
     public MethodHandleEntry readMethodHandleEntry(int pos) {
-        return readEntry(pos, MethodHandleEntry.class);
+        return readEntry(pos, MethodHandleEntry.class, TAG_METHODHANDLE);
     }
 
     @Override

@@ -35,9 +35,6 @@
 #include "runtime/mutexLocker.hpp"
 #include "utilities/align.hpp"
 #include "utilities/macros.hpp"
-#if INCLUDE_SERIALGC
-#include "gc/serial/serialBlockOffsetTable.hpp"
-#endif
 
 // A space is an abstraction for the "storage units" backing
 // up the generation abstraction. It includes specific
@@ -45,11 +42,6 @@
 // for iterating over objects and free blocks, etc.
 
 // Forward decls.
-class ContiguousSpace;
-class Generation;
-class ContiguousSpace;
-class CardTableRS;
-class DirtyCardToOopClosure;
 class GenSpaceMangler;
 
 // A space in which the free area is contiguous.  It therefore supports
