@@ -148,7 +148,7 @@ public:
     return _data[i];
   }
 
-  E* adr_at(int i) {
+  E* adr_at(int i) const {
     assert(0 <= i && i < _len, "illegal index %d for length %d", i, _len);
     return &_data[i];
   }
