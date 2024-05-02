@@ -86,7 +86,7 @@ class TypeConvertingMethodAdapter {
         ws = ws.asLoadable();
         wt = wt.asLoadable();
         if (ws != wt) {
-            cob.convertInstruction(ws, wt);
+            cob.conversion(ws, wt);
         }
     }
 

@@ -341,7 +341,7 @@ class InvokerBytecodeGenerator {
         clb.withMethod(CLASS_INIT_NAME, MTD_void, ACC_STATIC, new MethodBody(new Consumer<CodeBuilder>() {
             @Override
             public void accept(CodeBuilder cob) {
-                cob.constantInstruction(classDesc)
+                cob.loadConstant(classDesc)
                    .invokestatic(MRE_MethodHandles_classData);
                 if (classData.size() == 1) {
                     ClassData p = classData.get(0);
@@ -354,7 +354,7 @@ class InvokerBytecodeGenerator {
                     for (ClassData p : classData) {
                         // initialize the static field
                         cob.aload(0)
-                           .constantInstruction(index++)
+                           .loadConstant(index++)
                            .invokeinterface(MRE_List_get)
                            .checkcast(p.desc)
                            .putstatic(classDesc, p.name, p.desc);
@@ -366,11 +366,11 @@ class InvokerBytecodeGenerator {
     }
 
     private void emitLoadInsn(CodeBuilder cob, TypeKind type, int index) {
-        cob.loadInstruction(type, localsMap[index]);
+        cob.loadLocal(type, localsMap[index]);
     }
 
     private void emitStoreInsn(CodeBuilder cob, TypeKind type, int index) {
-        cob.storeInstruction(type, localsMap[index]);
+        cob.storeLocal(type, localsMap[index]);
     }
 
     /**
@@ -662,7 +662,7 @@ class InvokerBytecodeGenerator {
                                     continue;
                                 case ZERO:
                                     assert(name.arguments.length == 0);
-                                    cob.constantInstruction((ConstantDesc)name.type.basicTypeWrapper().zero());
+                                    cob.loadConstant((ConstantDesc)name.type.basicTypeWrapper().zero());
                                     continue;
                                 case NONE:
                                     // no intrinsic associated
@@ -702,7 +702,7 @@ class InvokerBytecodeGenerator {
         assert elementType != null;
         emitPushArguments(cob, name, 0);
         if (elementType.isPrimitive()) {
-            cob.arrayLoadInstruction(TypeKind.from(elementType));
+            cob.arrayLoad(TypeKind.from(elementType));
         } else {
             cob.aaload();
         }
@@ -713,7 +713,7 @@ class InvokerBytecodeGenerator {
         assert elementType != null;
         emitPushArguments(cob, name, 0);
         if (elementType.isPrimitive()) {
-            cob.arrayStoreInstruction(TypeKind.from(elementType));
+            cob.arrayStore(TypeKind.from(elementType));
         } else {
             cob.aastore();
         }
@@ -864,11 +864,11 @@ class InvokerBytecodeGenerator {
         // invocation
         if (member.isMethod()) {
             var methodTypeDesc = methodDesc(member.getMethodType());
-            cob.invokeInstruction(refKindOpcode(refKind), cdesc, mname, methodTypeDesc,
+            cob.invoke(refKindOpcode(refKind), cdesc, mname, methodTypeDesc,
                                   member.getDeclaringClass().isInterface());
         } else {
             var fieldTypeDesc = classDesc(member.getFieldType());
-            cob.fieldInstruction(refKindOpcode(refKind), cdesc, mname, fieldTypeDesc);
+            cob.fieldAccess(refKindOpcode(refKind), cdesc, mname, fieldTypeDesc);
         }
         // Issue a type assertion for the result, so we can avoid casts later.
         if (name.type == L_TYPE) {
@@ -1013,7 +1013,7 @@ class InvokerBytecodeGenerator {
         cob.goto_w(L_done);
 
         cob.labelBinding(L_rethrow);
-        cob.throwInstruction();
+        cob.athrow();
 
         cob.labelBinding(L_done);
 
@@ -1119,7 +1119,7 @@ class InvokerBytecodeGenerator {
             emitStoreInsn(cob, basicReturnType.basicTypeKind(), index);
         }
         emitPushArgument(cob, invoker, 1); // load cleanup
-        cob.constantInstruction(null);
+        cob.loadConstant(null);
         if (isNonVoid) {
             emitLoadInsn(cob, basicReturnType.basicTypeKind(), index);
         }
@@ -1151,15 +1151,11 @@ class InvokerBytecodeGenerator {
     }
 
     private void emitPopInsn(CodeBuilder cob, BasicType type) {
-        cob.stackInstruction(popInsnOpcode(type));
-    }
-
-    private static Opcode popInsnOpcode(BasicType type) {
-        return switch (type) {
-            case I_TYPE, F_TYPE, L_TYPE -> Opcode.POP;
-            case J_TYPE, D_TYPE -> Opcode.POP2;
+        switch (type) {
+            case I_TYPE, F_TYPE, L_TYPE -> cob.pop();
+            case J_TYPE, D_TYPE -> cob.pop2();
             default -> throw new InternalError("unknown type: " + type);
-        };
+        }
     }
 
     private Name emitTableSwitch(CodeBuilder cob, int pos, int numCases) {
@@ -1187,7 +1183,7 @@ class InvokerBytecodeGenerator {
         }
 
         emitPushArgument(cob, invoker, 0); // push switch input
-        cob.tableSwitchInstruction(0, numCases - 1, defaultLabel, cases);
+        cob.tableswitch(0, numCases - 1, defaultLabel, cases);
 
         cob.labelBinding(defaultLabel);
         emitPushArgument(cob, invoker, 1); // push default handle
@@ -1199,7 +1195,7 @@ class InvokerBytecodeGenerator {
             cob.labelBinding(cases.get(i).target());
             // Load the particular case:
             emitLoadInsn(cob, TypeKind.ReferenceType, casesLocal);
-            cob.constantInstruction(i);
+            cob.loadConstant(i);
             cob.aaload();
 
             // invoke it:
@@ -1410,7 +1406,7 @@ class InvokerBytecodeGenerator {
                                       int firstLoopStateSlot) {
         // load handle for clause
         emitPushClauseArray(cob, clauseDataSlot, handles);
-        cob.constantInstruction(clause);
+        cob.loadConstant(clause);
         cob.aaload();
         // load loop state (preceding the other arguments)
         if (pushLocalState) {
@@ -1425,7 +1421,7 @@ class InvokerBytecodeGenerator {
 
     private void emitPushClauseArray(CodeBuilder cob, int clauseDataSlot, int which) {
         emitLoadInsn(cob, TypeKind.ReferenceType, clauseDataSlot);
-        cob.constantInstruction(which - 1);
+        cob.loadConstant(which - 1);
         cob.aaload();
     }
 
@@ -1459,10 +1455,10 @@ class InvokerBytecodeGenerator {
             emitLoadInsn(cob, n.type.basicTypeKind(), n.index());
             emitImplicitConversion(cob, n.type, ptype, n);
         } else if ((arg == null || arg instanceof String) && bptype == L_TYPE) {
-            cob.constantInstruction((ConstantDesc)arg);
+            cob.loadConstant((ConstantDesc)arg);
         } else {
             if (Wrapper.isWrapperType(arg.getClass()) && bptype != L_TYPE) {
-                cob.constantInstruction((ConstantDesc)arg);
+                cob.loadConstant((ConstantDesc)arg);
             } else {
                 cob.getstatic(classDesc, classData(arg), CD_Object);
                 emitImplicitConversion(cob, L_TYPE, ptype, arg);
@@ -1503,7 +1499,7 @@ class InvokerBytecodeGenerator {
             emitImplicitConversion(cob, rtype, rclass, rn);
 
             // generate actual return statement
-            cob.returnInstruction(rtype.basicTypeKind());
+            cob.return_(rtype.basicTypeKind());
         }
     }
 
@@ -1524,16 +1520,7 @@ class InvokerBytecodeGenerator {
         //      float       -     f2i,i2b   f2i,i2s  f2i,i2c    f2i      f2l      <->      f2d
         //      double      -     d2i,i2b   d2i,i2s  d2i,i2c    d2i      d2l      d2f      <->
         if (from != to && from != TypeKind.BooleanType) try {
-            switch (to) {
-                case IntType, LongType, FloatType, DoubleType ->
-                    cob.convertInstruction(from, to);
-                case ByteType, ShortType, CharType -> {
-                    if (from != TypeKind.IntType) {
-                        cob.convertInstruction(from, TypeKind.IntType);
-                    }
-                    cob.convertInstruction(TypeKind.IntType, to);
-                }
-            }
+            cob.conversion(from, to);
         } catch (IllegalArgumentException e) {
             throw new IllegalStateException("unhandled prim cast: " + from + "2" + to);
         }
@@ -1568,14 +1555,14 @@ class InvokerBytecodeGenerator {
                             @Override
                             public void accept(CodeBuilder cob) {
                                 // create parameter array
-                                cob.constantInstruction(invokerType.parameterCount());
+                                cob.loadConstant(invokerType.parameterCount());
                                 cob.anewarray(CD_Object);
 
                                 // fill parameter array
                                 for (int i = 0; i < invokerType.parameterCount(); i++) {
                                     Class<?> ptype = invokerType.parameterType(i);
                                     cob.dup();
-                                    cob.constantInstruction(i);
+                                    cob.loadConstant(i);
                                     emitLoadInsn(cob, basicType(ptype).basicTypeKind(), i);
                                     // box if primitive type
                                     if (ptype.isPrimitive()) {
@@ -1597,7 +1584,7 @@ class InvokerBytecodeGenerator {
                                 }
 
                                 // return statement
-                                cob.returnInstruction(rtypeK);
+                                cob.return_(rtypeK);
                             }
                         });
                     }
@@ -1642,7 +1629,7 @@ class InvokerBytecodeGenerator {
                                 // Load arguments from array
                                 for (int i = 0; i < dstType.parameterCount(); i++) {
                                     cob.aload(1);
-                                    cob.constantInstruction(i);
+                                    cob.loadConstant(i);
                                     cob.aaload();
 
                                     // Maybe unbox
@@ -1694,7 +1681,7 @@ class InvokerBytecodeGenerator {
             clb.withMethod("dummy", MTD_void, ACC_STATIC, new MethodBody(new Consumer<CodeBuilder>() {
                 @Override
                 public void accept(CodeBuilder cob) {
-                    cob.constantInstruction(os.toString());
+                    cob.loadConstant(os.toString());
                     cob.pop();
                     cob.return_();
                 }

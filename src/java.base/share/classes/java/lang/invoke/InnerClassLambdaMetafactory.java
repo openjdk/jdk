@@ -424,7 +424,7 @@ import static java.lang.invoke.MethodType.methodType;
                         for (int i = 0; i < parameterCount; i++) {
                             cob.aload(0);
                             Class<?> argType = factoryType.parameterType(i);
-                            cob.loadInstruction(TypeKind.from(argType), cob.parameterSlot(i));
+                            cob.loadLocal(TypeKind.from(argType), cob.parameterSlot(i));
                             cob.putfield(lambdaClassDesc, argNames[i], argDescs[i]);
                         }
                         cob.return_();
@@ -451,11 +451,11 @@ import static java.lang.invoke.MethodType.methodType;
                            .ldc(implInfo.getName())
                            .ldc(implInfo.getMethodType().toMethodDescriptorString())
                            .ldc(dynamicMethodType.toMethodDescriptorString())
-                           .constantInstruction(argDescs.length)
+                           .loadConstant(argDescs.length)
                            .anewarray(CD_Object);
                         for (int i = 0; i < argDescs.length; i++) {
                             cob.dup()
-                               .constantInstruction(i)
+                               .loadConstant(i)
                                .aload(0)
                                .getfield(lambdaClassDesc, argNames[i], argDescs[i]);
                             TypeConvertingMethodAdapter.boxIfTypePrimitive(cob, TypeKind.from(argDescs[i]));
@@ -479,7 +479,7 @@ import static java.lang.invoke.MethodType.methodType;
                        .dup()
                        .ldc("Non-serializable lambda")
                        .invokespecial(CD_NOT_SERIALIZABLE_EXCEPTION, INIT_NAME, MTD_CTOR_NOT_SERIALIZABLE_EXCEPTION)
-                       .throwInstruction();
+                       .athrow();
                 }
             }));
         clb.withMethod(NAME_METHOD_READ_OBJECT, MTD_METHOD_READ_OBJECT, ACC_PRIVATE + ACC_FINAL,
@@ -490,7 +490,7 @@ import static java.lang.invoke.MethodType.methodType;
                        .dup()
                        .ldc("Non-serializable lambda")
                        .invokespecial(CD_NOT_SERIALIZABLE_EXCEPTION, INIT_NAME, MTD_CTOR_NOT_SERIALIZABLE_EXCEPTION)
-                       .throwInstruction();
+                       .athrow();
                 }
             }));
     }
@@ -525,7 +525,7 @@ import static java.lang.invoke.MethodType.methodType;
                     cob.invokevirtual(CD_MethodHandle, "invokeExact", methodDesc(mtype));
                 } else {
                     // Invoke the method we want to forward to
-                    cob.invokeInstruction(invocationOpcode(), implMethodClassDesc, implMethodName, implMethodDesc, implClass.isInterface());
+                    cob.invoke(invocationOpcode(), implMethodClassDesc, implMethodName, implMethodDesc, implClass.isInterface());
                 }
                 // Convert the return value (if any) and return it
                 // Note: if adapting from non-void to void, the 'return'
@@ -533,7 +533,7 @@ import static java.lang.invoke.MethodType.methodType;
                 Class<?> implReturnClass = implMethodType.returnType();
                 Class<?> samReturnClass = methodType.returnType();
                 TypeConvertingMethodAdapter.convertType(cob, implReturnClass, samReturnClass, samReturnClass);
-                cob.returnInstruction(TypeKind.from(samReturnClass));
+                cob.return_(TypeKind.from(samReturnClass));
             }
         });
     }
@@ -543,7 +543,7 @@ import static java.lang.invoke.MethodType.methodType;
         int captureArity = factoryType.parameterCount();
         for (int i = 0; i < samParametersLength; i++) {
             Class<?> argType = samType.parameterType(i);
-            cob.loadInstruction(TypeKind.from(argType), cob.parameterSlot(i));
+            cob.loadLocal(TypeKind.from(argType), cob.parameterSlot(i));
             TypeConvertingMethodAdapter.convertType(cob, argType, implMethodType.parameterType(captureArity + i), dynamicMethodType.parameterType(i));
         }
     }

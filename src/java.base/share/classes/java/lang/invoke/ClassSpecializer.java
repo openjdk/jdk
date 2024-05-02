@@ -678,7 +678,7 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
                     int nextSlotIndex() { return slotIndex >= 0 ? slotIndex + slotSize() : slotIndex; }
                     boolean isInHeap() { return slotIndex < 0; }
                     void emitLoadInstruction(CodeBuilder cob) {
-                        cob.loadInstruction(basicType.btKind, slotIndex);
+                        cob.loadLocal(basicType.btKind, slotIndex);
                     }
                 }
 
@@ -771,7 +771,7 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
                             // return a call to the corresponding "transform helper", something like this:
                             //   MY_SPECIES.transformHelper(whichtm).invokeBasic(ctarg, ..., argL0, ..., xarg)
                             cob.getstatic(classDesc, sdFieldName, CD_SPECIES_DATA)
-                               .constantInstruction(whichtm)
+                               .loadConstant(whichtm)
                                .invokevirtual(CD_SPECIES_DATA, "transformHelper", MTD_TRANFORM_HELPER);
 
                             List<Var> targs = AFTER_THIS.fromTypes(TTYPE.parameterList());
