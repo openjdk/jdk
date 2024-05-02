@@ -326,7 +326,7 @@ size_t ArchiveBuilder::estimate_archive_size() {
 
 address ArchiveBuilder::reserve_buffer() {
   size_t buffer_size = estimate_archive_size();
-  ReservedSpace rs(buffer_size, MetaspaceShared::core_region_alignment(), os::vm_page_size());
+  ReservedSpace rs(buffer_size, MetaspaceShared::core_region_alignment(), os::vm_page_size(), mtClassShared);
   if (!rs.is_reserved()) {
     log_error(cds)("Failed to reserve " SIZE_FORMAT " bytes of output buffer.", buffer_size);
     MetaspaceShared::unrecoverable_writing_error();
