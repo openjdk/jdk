@@ -40,6 +40,10 @@ private:
                           action, hr->get_type_str(), p2i(hr->bottom()), p2i(hr->top()), p2i(hr->end()));
   }
 
+  void mark_reclaim(HeapRegion* hr) {
+    print("MARK-RECLAIM", hr);
+  }
+
 public:
   // In some places we iterate over a list in order to generate output
   // for the list's elements. By exposing this we can avoid this
@@ -78,13 +82,19 @@ public:
     }
   }
 
-  void cleanup(HeapRegion* hr) {
+  void mark_reclaim(FreeRegionList* free_list);
+
+  void eager_reclaim(HeapRegion* hr) {
     if (is_active()) {
-      print("CLEANUP", hr);
+      print("EAGER-RECLAIM", hr);
     }
   }
 
-  void cleanup(FreeRegionList* free_list);
+  void evac_reclaim(HeapRegion* hr) {
+    if (is_active()) {
+      print("EVAC-RECLAIM", hr);
+    }
+  }
 
   void post_compaction(HeapRegion* hr) {
     if (is_active()) {
