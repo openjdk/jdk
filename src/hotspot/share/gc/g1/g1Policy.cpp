@@ -1310,7 +1310,7 @@ void G1Policy::decide_on_concurrent_start_pause() {
 void G1Policy::record_concurrent_mark_cleanup_end(bool has_rebuilt_remembered_sets) {
   bool mixed_gc_pending = false;
   if (has_rebuilt_remembered_sets) {
-    candidates()->calc_gc_efficiency();
+    candidates()->sort_marking_by_efficiency();
     mixed_gc_pending = next_gc_should_be_mixed();
   }
 

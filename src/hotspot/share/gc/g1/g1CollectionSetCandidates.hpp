@@ -129,7 +129,7 @@ public:
   // Comparison function to order regions in decreasing GC efficiency order. This
   // will cause regions with a lot of live objects and large remembered sets to end
   // up at the end of the list.
-  static int compare(G1CollectionSetCandidateInfo* ci1, G1CollectionSetCandidateInfo* ci2);
+  static int compare_gc_efficiency(G1CollectionSetCandidateInfo* ci1, G1CollectionSetCandidateInfo* ci2);
 
   static int compare_reclaimble_bytes(G1CollectionSetCandidateInfo* ci1, G1CollectionSetCandidateInfo* ci2);
 
@@ -213,7 +213,9 @@ public:
   // regions.
   uint last_marking_candidates_length() const { return _last_marking_candidates_length; }
 
-  void sort_by_efficiency();
+  void sort_retained_by_efficiency();
+
+  void sort_marking_by_efficiency();
 
   // Add the given region to the set of retained regions without regards to the
   // gc efficiency sorting. The retained regions must be re-sorted manually later.
@@ -227,8 +229,6 @@ public:
   const char* get_short_type_str(const HeapRegion* r) const;
 
   bool is_empty() const;
-
-  void calc_gc_efficiency();
 
   bool has_more_marking_candidates() const;
   uint marking_regions_length() const;

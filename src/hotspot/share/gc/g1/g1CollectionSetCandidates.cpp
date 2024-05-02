@@ -44,7 +44,7 @@ void G1CollectionCandidateList::append_unsorted(HeapRegion* r) {
 }
 
 void G1CollectionCandidateList::sort_by_efficiency() {
-  _candidates.sort(compare);
+  _candidates.sort(compare_gc_efficiency);
 }
 
 void G1CollectionCandidateList::remove(G1CollectionCandidateRegionList* other) {
@@ -94,7 +94,7 @@ void G1CollectionCandidateList::verify() {
 }
 #endif
 
-int G1CollectionCandidateList::compare(G1CollectionSetCandidateInfo* ci1, G1CollectionSetCandidateInfo* ci2) {
+int G1CollectionCandidateList::compare_gc_efficiency(G1CollectionSetCandidateInfo* ci1, G1CollectionSetCandidateInfo* ci2) {
   assert(ci1->_r != nullptr && ci2->_r != nullptr, "Should not be!");
 
   double gc_eff1 = ci1->_gc_efficiency;
@@ -102,7 +102,7 @@ int G1CollectionCandidateList::compare(G1CollectionSetCandidateInfo* ci1, G1Coll
 
   if (gc_eff1 > gc_eff2) {
     return -1;
-  } if (gc_eff1 < gc_eff2) {
+  } else if (gc_eff1 < gc_eff2) {
     return 1;
   } else {
     return 0;
@@ -124,9 +124,13 @@ int G1CollectionCandidateList::compare_reclaimble_bytes(G1CollectionSetCandidate
   size_t reclaimable1 = ci1->_r->reclaimable_bytes();
   size_t reclaimable2 = ci2->_r->reclaimable_bytes();
 
-  if (reclaimable1 == reclaimable2) return 0;
-  if (reclaimable1 > reclaimable2) return -1;
-  return 1;
+  if (reclaimable1 > reclaimable2) {
+    return -1;
+  } else if (reclaimable1 < reclaimable2) {
+    return 1;
+  } else {
+    return 0;
+  }
 }
 
 G1CollectionCandidateRegionList::G1CollectionCandidateRegionList() : _regions(2, mtGC) { }
@@ -193,13 +197,15 @@ void G1CollectionSetCandidates::clear() {
   _last_marking_candidates_length = 0;
 }
 
-void G1CollectionSetCandidates::calc_gc_efficiency() {
+void G1CollectionSetCandidates::sort_marking_by_efficiency() {
   G1CollectionCandidateListIterator iter = _marking_regions.begin();
   for (; iter != _marking_regions.end(); ++iter) {
     HeapRegion* hr = (*iter)->_r;
     (*iter)->_gc_efficiency = hr->calc_gc_efficiency();
   }
   _marking_regions.sort_by_efficiency();
+
+  _marking_regions.verify();
 }
 
 void G1CollectionSetCandidates::set_candidates_from_marking(G1CollectionSetCandidateInfo* candidate_infos,
@@ -219,7 +225,7 @@ void G1CollectionSetCandidates::set_candidates_from_marking(G1CollectionSetCandi
   verify();
 }
 
-void G1CollectionSetCandidates::sort_by_efficiency() {
+void G1CollectionSetCandidates::sort_retained_by_efficiency() {
   // From marking regions must always be sorted so no reason to actually sort
   // them.
   _marking_regions.verify();
