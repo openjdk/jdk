@@ -35,6 +35,7 @@ import java.awt.AWTEvent;
 import java.awt.Button;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.EventQueue;
 import java.awt.FlowLayout;
 import java.awt.Frame;
 import java.awt.KeyboardFocusManager;
@@ -57,7 +58,7 @@ public class ActualFocusedWindowBlockingTest {
     Button wButton = new Button("window button") {public String toString() {return "Window_Button";}};
     Button aButton = new Button("auxiliary button") {public String toString() {return "Auxiliary_Button";}};
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         ActualFocusedWindowBlockingTest app = new ActualFocusedWindowBlockingTest();
         app.init();
         app.start();
@@ -81,7 +82,7 @@ public class ActualFocusedWindowBlockingTest {
         tuneAndShowWindows(new Window[] {owner, win, frame});
     }
 
-    public void start() {
+    public void start() throws Exception {
         System.out.println("\nTest started:\n");
 
         // Test 1.
@@ -112,9 +113,9 @@ public class ActualFocusedWindowBlockingTest {
         clickOnCheckFocus(fButton);
         clickOnCheckFocus(aButton);
 
-        if (Platform.isOnWayland()) {
-            Util.clickOnComp(owner, robot);
-        } else {
+        EventQueue.invokeAndWait(owner::toFront);
+
+        if (!Platform.isOnWayland()) {
             Util.clickOnTitle(owner, robot);
         }
 
@@ -138,9 +139,12 @@ public class ActualFocusedWindowBlockingTest {
         robot.delay(500);
     }
 
-    void clickOnCheckFocus(Component c) {
-        if (c instanceof Frame && !Platform.isOnWayland()) {
-            Util.clickOnTitle((Frame)c, robot);
+    void clickOnCheckFocus(Component c) throws Exception {
+        if (c instanceof Frame) {
+            EventQueue.invokeAndWait(() -> ((Frame) c).toFront());
+            if (!Platform.isOnWayland()) {
+                Util.clickOnTitle((Frame) c, robot);
+            }
         } else {
             Util.clickOnComp(c, robot);
         }

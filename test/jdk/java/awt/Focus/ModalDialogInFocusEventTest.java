@@ -211,9 +211,8 @@ public class ModalDialogInFocusEventTest
 
     void clickOnFrameTitle(Frame frame) throws InterruptedException,
             InvocationTargetException {
-        if (isOnWayland) {
-            EventQueue.invokeAndWait(frame::toFront);
-        } else {
+        EventQueue.invokeAndWait(frame::toFront);
+        if (!isOnWayland) {
             System.out.println("click on title of " + frame.getName());
             int[] point = new int[2];
             EventQueue.invokeAndWait(() -> {

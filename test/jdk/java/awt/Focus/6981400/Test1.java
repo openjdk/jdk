@@ -60,6 +60,7 @@ import java.util.Arrays;
 import java.util.List;
 import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.SwingUtilities;
 
 import jdk.test.lib.Platform;
 import test.java.awt.regtesthelpers.Util;
@@ -87,7 +88,7 @@ public class Test1 {
 
     static boolean tracking;
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         Toolkit.getDefaultToolkit().addAWTEventListener(new AWTEventListener() {
             public void eventDispatched(AWTEvent e) {
                 System.out.println(e);
@@ -169,23 +170,27 @@ public class Test1 {
         System.out.println("\nTest passed.");
     }
 
-    public static void test(Component compToClick) {
+    public static void test(Component compToClick) throws Exception {
         tracking = true;
 
         robot.keyPress(KeyEvent.VK_TAB);
         robot.keyRelease(KeyEvent.VK_TAB);
+        robot.waitForIdle();
 
         robot.keyPress(KeyEvent.VK_TAB);
         robot.keyRelease(KeyEvent.VK_TAB);
+        robot.waitForIdle();
 
         robot.keyPress(KeyEvent.VK_TAB);
         robot.keyRelease(KeyEvent.VK_TAB);
+        robot.waitForIdle();
 
         Util.clickOnComp(compToClick, robot);
 
-        if (Platform.isOnWayland()) {
-            Util.clickOnComp(f0, robot);
-        } else {
+        robot.waitForIdle();
+        SwingUtilities.invokeAndWait(f0::toFront);
+
+        if (!Platform.isOnWayland()) {
             Util.clickOnTitle(f0, robot);
         }
 
