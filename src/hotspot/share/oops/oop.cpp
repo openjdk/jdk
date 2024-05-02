@@ -165,16 +165,6 @@ void oopDesc::set_narrow_klass(narrowKlass nk) {
 }
 #endif
 
-void* oopDesc::load_klass_raw(oop obj) {
-  if (UseCompressedClassPointers) {
-    narrowKlass narrow_klass = obj->_metadata._compressed_klass;
-    if (narrow_klass == 0) return nullptr;
-    return (void*)CompressedKlassPointers::decode_raw(narrow_klass);
-  } else {
-    return obj->_metadata._klass;
-  }
-}
-
 void* oopDesc::load_oop_raw(oop obj, int offset) {
   uintptr_t addr = (uintptr_t)(void*)obj + (uint)offset;
   if (UseCompressedOops) {

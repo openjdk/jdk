@@ -57,21 +57,19 @@ ShenandoahCollectionSet::ShenandoahCollectionSet(ShenandoahHeap* heap, ReservedS
   // subsystem for mapping not-yet-written-to pages to a single physical backing page,
   // but this is not guaranteed, and would confuse NMT and other memory accounting tools.
 
-  MemTracker::record_virtual_memory_type(_map_space.base(), mtGC);
-
   size_t page_size = os::vm_page_size();
 
   if (!_map_space.special()) {
     // Commit entire pages that cover the heap cset map.
     char* bot_addr = align_down(_cset_map, page_size);
     char* top_addr = align_up(_cset_map + _map_size, page_size);
-    os::commit_memory_or_exit(bot_addr, pointer_delta(top_addr, bot_addr, 1), false,
-                              "Unable to commit collection set bitmap: heap");
+    os::commit_memory_or_exit(bot_addr, pointer_delta(top_addr, bot_addr, 1), !ExecMem,
+                              mtGC, "Unable to commit collection set bitmap: heap");
 
     // Commit the zero page, if not yet covered by heap cset map.
     if (bot_addr != _biased_cset_map) {
-      os::commit_memory_or_exit(_biased_cset_map, page_size, false,
-                                "Unable to commit collection set bitmap: zero page");
+      os::commit_memory_or_exit(_biased_cset_map, page_size, !ExecMem,
+                                mtGC, "Unable to commit collection set bitmap: zero page");
     }
   }
 

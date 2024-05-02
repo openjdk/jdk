@@ -1590,7 +1590,7 @@ bool os::pd_commit_memory(char* addr, size_t size, bool exec) {
   int prot = exec ? PROT_READ|PROT_WRITE|PROT_EXEC : PROT_READ|PROT_WRITE;
 #if defined(__OpenBSD__)
   // XXX: Work-around mmap/MAP_FIXED bug temporarily on OpenBSD
-  Events::log(nullptr, "Protecting memory [" INTPTR_FORMAT "," INTPTR_FORMAT "] with protection modes %x", p2i(addr), p2i(addr+size), prot);
+  Events::log_memprotect(nullptr, "Protecting memory [" INTPTR_FORMAT "," INTPTR_FORMAT "] with protection modes %x", p2i(addr), p2i(addr+size), prot);
   if (::mprotect(addr, size, prot) == 0) {
     return true;
   } else {
@@ -1668,7 +1668,7 @@ void os::pd_commit_memory_or_exit(char* addr, size_t size,
 void os::pd_realign_memory(char *addr, size_t bytes, size_t alignment_hint) {
 }
 
-void os::pd_free_memory(char *addr, size_t bytes, size_t alignment_hint) {
+void os::pd_free_memory(char *addr, size_t bytes, size_t alignment_hint, MEMFLAGS flag) {
   ::madvise(addr, bytes, MADV_DONTNEED);
 }
 
@@ -1711,7 +1711,7 @@ bool os::numa_get_group_ids_for_range(const void** addresses, int* lgrp_ids, siz
 bool os::pd_uncommit_memory(char* addr, size_t size, bool exec) {
 #if defined(__OpenBSD__)
   // XXX: Work-around mmap/MAP_FIXED bug temporarily on OpenBSD
-  Events::log(nullptr, "Protecting memory [" INTPTR_FORMAT "," INTPTR_FORMAT "] with PROT_NONE", p2i(addr), p2i(addr+size));
+  Events::log_memprotect(nullptr, "Protecting memory [" INTPTR_FORMAT "," INTPTR_FORMAT "] with PROT_NONE", p2i(addr), p2i(addr+size));
   if (::mprotect(addr, size, PROT_NONE) == 0) {
     return true;
   } else {
@@ -1766,13 +1766,13 @@ bool os::pd_uncommit_memory(char* addr, size_t size, bool exec) {
 }
 
 bool os::pd_create_stack_guard_pages(char* addr, size_t size) {
-  return os::commit_memory(addr, size, !ExecMem);
+  return os::commit_memory(addr, size, !ExecMem, mtThreadStack);
 }
 
 // If this is a growable mapping, remove the guard pages entirely by
 // munmap()ping them.  If not, just call uncommit_memory().
 bool os::remove_stack_guard_pages(char* addr, size_t size) {
-  return os::uncommit_memory(addr, size);
+  return os::uncommit_memory(addr, size, !ExecMem, mtThreadStack);
 }
 
 // 'requested_addr' is only treated as a hint, the return value may or
@@ -1809,7 +1809,7 @@ static int anon_munmap(char * addr, size_t size) {
   }
 }
 
-char* os::pd_reserve_memory(size_t bytes, bool exec) {
+char* os::pd_reserve_memory(size_t bytes, bool exec, MEMFLAGS flag) {
   return anon_mmap(nullptr /* addr */, bytes, exec);
 }
 
@@ -1829,7 +1829,7 @@ static bool bsd_mprotect(char* addr, size_t size, int prot) {
   assert(addr == bottom, "sanity check");
 
   size = align_up(pointer_delta(addr, bottom, 1) + size, os::vm_page_size());
-  Events::log(nullptr, "Protecting memory [" INTPTR_FORMAT "," INTPTR_FORMAT "] with protection modes %x", p2i(bottom), p2i(bottom+size), prot);
+  Events::log_memprotect(nullptr, "Protecting memory [" INTPTR_FORMAT "," INTPTR_FORMAT "] with protection modes %x", p2i(bottom), p2i(bottom+size), prot);
   return ::mprotect(bottom, size, prot) == 0;
 }
 
@@ -1869,7 +1869,7 @@ void os::large_page_init() {
 }
 
 
-char* os::pd_reserve_memory_special(size_t bytes, size_t alignment, size_t page_size, char* req_addr, bool exec) {
+char* os::pd_reserve_memory_special(size_t bytes, size_t alignment, size_t page_size, char* req_addr, bool exec, MEMFLAGS flag) {
   fatal("os::reserve_memory_special should not be called on BSD.");
   return nullptr;
 }
@@ -1888,9 +1888,9 @@ bool os::can_commit_large_page_memory() {
   return false;
 }
 
-char* os::pd_attempt_map_memory_to_file_at(char* requested_addr, size_t bytes, int file_desc) {
+char* os::pd_attempt_map_memory_to_file_at(char* requested_addr, size_t bytes, int file_desc, MEMFLAGS flag) {
   assert(file_desc >= 0, "file_desc is not valid");
-  char* result = pd_attempt_reserve_memory_at(requested_addr, bytes, !ExecMem);
+  char* result = pd_attempt_reserve_memory_at(requested_addr, bytes, !ExecMem, flag);
   if (result != nullptr) {
     if (replace_existing_mapping_with_file_mapping(result, bytes, file_desc) == nullptr) {
       vm_exit_during_initialization(err_msg("Error in mapping Java heap at the given filesystem directory"));
@@ -1902,7 +1902,7 @@ char* os::pd_attempt_map_memory_to_file_at(char* requested_addr, size_t bytes, i
 // Reserve memory at an arbitrary address, only if that area is
 // available (and not reserved for something else).
 
-char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, bool exec) {
+char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, bool exec, MEMFLAGS flag) {
   // Assert only that the size is a multiple of the page size, since
   // that's all that mmap requires, and since that's all we really know
   // about at this low abstraction level.  If we need higher alignment,
@@ -1934,15 +1934,6 @@ size_t os::vm_min_address() {
   assert(is_aligned(_vm_min_address_default, os::vm_allocation_granularity()), "Sanity");
   return _vm_min_address_default;
 #endif
-}
-
-// Used to convert frequent JVM_Yield() to nops
-bool os::dont_yield() {
-  return DontYieldALot;
-}
-
-void os::naked_yield() {
-  sched_yield();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2140,16 +2131,25 @@ jint os::init_2(void) {
     if (status != 0) {
       log_info(os)("os::init_2 getrlimit failed: %s", os::strerror(errno));
     } else {
-      nbr_files.rlim_cur = nbr_files.rlim_max;
+      rlim_t rlim_original = nbr_files.rlim_cur;
 
-#ifdef __APPLE__
-      // Darwin returns RLIM_INFINITY for rlim_max, but fails with EINVAL if
-      // you attempt to use RLIM_INFINITY. As per setrlimit(2), OPEN_MAX must
-      // be used instead
-      nbr_files.rlim_cur = MIN(OPEN_MAX, nbr_files.rlim_cur);
-#endif
+      // On macOS according to setrlimit(2), OPEN_MAX must be used instead
+      // of RLIM_INFINITY, but testing on macOS >= 10.6, reveals that
+      // we can, in fact, use even RLIM_INFINITY, so try the max value
+      // that the system claims can be used first, same as other BSD OSes.
+      // However, some terminals (ksh) will internally use "int" type
+      // to store this value and since RLIM_INFINITY overflows an "int"
+      // we might end up with a negative value, so cap the system limit max
+      // at INT_MAX instead, just in case, for everyone.
+      nbr_files.rlim_cur = MIN(INT_MAX, nbr_files.rlim_max);
 
       status = setrlimit(RLIMIT_NOFILE, &nbr_files);
+      if (status != 0) {
+        // If that fails then try lowering the limit to either OPEN_MAX
+        // (which is safe) or the original limit, whichever was greater.
+        nbr_files.rlim_cur = MAX(OPEN_MAX, rlim_original);
+        status = setrlimit(RLIMIT_NOFILE, &nbr_files);
+      }
       if (status != 0) {
         log_info(os)("os::init_2 setrlimit failed: %s", os::strerror(errno));
       }
@@ -2382,14 +2382,6 @@ int os::open(const char *path, int oflag, int mode) {
   }
 
   return fd;
-}
-
-
-// create binary file, rewriting existing file if required
-int os::create_binary_file(const char* path, bool rewrite_existing) {
-  int oflags = O_WRONLY | O_CREAT;
-  oflags |= rewrite_existing ? O_TRUNC : O_EXCL;
-  return ::open(path, oflags, S_IREAD | S_IWRITE);
 }
 
 // return current position of file pointer

@@ -40,6 +40,7 @@
 #include "runtime/safefetch.hpp"
 #include "services/mallocLimit.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/vmError.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -226,6 +227,8 @@ void MallocTracker::deaccount(MallocHeader::FreeInfo free_info) {
 bool MallocTracker::print_pointer_information(const void* p, outputStream* st) {
   assert(MemTracker::enabled(), "NMT not enabled");
 
+#if !INCLUDE_ASAN
+
   address addr = (address)p;
 
   // Carefully feel your way upwards and try to find a malloc header. Then check if
@@ -303,5 +306,8 @@ bool MallocTracker::print_pointer_information(const void* p, outputStream* st) {
     }
     return true;
   }
+
+#endif // !INCLUDE_ASAN
+
   return false;
 }

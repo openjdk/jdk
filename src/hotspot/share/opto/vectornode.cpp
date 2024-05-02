@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -426,7 +426,7 @@ bool VectorNode::is_type_transition_to_int(Node* n) {
   return is_type_transition_short_to_int(n);
 }
 
-bool VectorNode::is_muladds2i(Node* n) {
+bool VectorNode::is_muladds2i(const Node* n) {
   if (n->Opcode() == Op_MulAddS2I) {
     return true;
   }
@@ -1668,7 +1668,7 @@ Node* VectorReinterpretNode::Identity(PhaseGVN *phase) {
     // "VectorReinterpret (VectorReinterpret node) ==> node" if:
     //   1) Types of 'node' and 'this' are identical
     //   2) Truncations are not introduced by the first VectorReinterpret
-    if (Type::cmp(bottom_type(), n->in(1)->bottom_type()) == 0 &&
+    if (Type::equals(bottom_type(), n->in(1)->bottom_type()) &&
         length_in_bytes() <= n->bottom_type()->is_vect()->length_in_bytes()) {
       return n->in(1);
     }
@@ -1676,16 +1676,16 @@ Node* VectorReinterpretNode::Identity(PhaseGVN *phase) {
   return this;
 }
 
-Node* VectorInsertNode::make(Node* vec, Node* new_val, int position) {
+Node* VectorInsertNode::make(Node* vec, Node* new_val, int position, PhaseGVN& gvn) {
   assert(position < (int)vec->bottom_type()->is_vect()->length(), "pos in range");
-  ConINode* pos = ConINode::make(position);
+  ConINode* pos = gvn.intcon(position);
   return new VectorInsertNode(vec, new_val, pos, vec->bottom_type()->is_vect());
 }
 
 Node* VectorUnboxNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   Node* n = obj()->uncast();
   if (EnableVectorReboxing && n->Opcode() == Op_VectorBox) {
-    if (Type::cmp(bottom_type(), n->in(VectorBoxNode::Value)->bottom_type()) == 0) {
+    if (Type::equals(bottom_type(), n->in(VectorBoxNode::Value)->bottom_type())) {
       // Handled by VectorUnboxNode::Identity()
     } else {
       VectorBoxNode* vbox = static_cast<VectorBoxNode*>(n);
@@ -1722,7 +1722,7 @@ Node* VectorUnboxNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 Node* VectorUnboxNode::Identity(PhaseGVN* phase) {
   Node* n = obj()->uncast();
   if (EnableVectorReboxing && n->Opcode() == Op_VectorBox) {
-    if (Type::cmp(bottom_type(), n->in(VectorBoxNode::Value)->bottom_type()) == 0) {
+    if (Type::equals(bottom_type(), n->in(VectorBoxNode::Value)->bottom_type())) {
       return n->in(VectorBoxNode::Value); // VectorUnbox (VectorBox v) ==> v
     } else {
       // Handled by VectorUnboxNode::Ideal().

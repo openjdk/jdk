@@ -306,18 +306,6 @@ public class ConstantPool extends Metadata implements ClassConstants {
     return getSymbolAt(signatureIndex);
   }
 
-  public static boolean isInvokedynamicIndex(int i) { return (i < 0); }
-
-  public static int  decodeInvokedynamicIndex(int i) { Assert.that(isInvokedynamicIndex(i),  ""); return ~i; }
-
-  // The invokedynamic points at a CP cache entry.  This entry points back
-  // at the original CP entry (CONSTANT_InvokeDynamic) and also (via f2) at an entry
-  // in the resolved_references array (which provides the appendix argument).
-  public int invokedynamicCPCacheIndex(int index) {
-    Assert.that(isInvokedynamicIndex(index), "should be a invokedynamic index");
-    return decodeInvokedynamicIndex(index);
-  }
-
   public int uncachedGetNameAndTypeRefIndexAt(int cp_index) {
     if (getTagAt(cp_index).isInvokeDynamic() || getTagAt(cp_index).isDynamicConstant()) {
       int poolIndex = invokeDynamicNameAndTypeRefIndexAt(cp_index);
