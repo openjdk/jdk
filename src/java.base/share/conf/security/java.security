@@ -32,21 +32,34 @@
 # The special "include" property can be defined one or multiple times in
 # this file with a filesystem path value. The effect of each definition
 # is to include a referred security properties file inline, adding all
-# its properties. Included files, as well as files pointed by
+# its properties and values. Included files, as well as files pointed by
 # java.security.properties, can include other files recursively. Paths
 # may be absolute or relative, and may contain system properties for
-# expansion in the form of ${system.property}. If a system property does
-# not have a value, it expands to the empty string. Each relative path
-# is resolved against the base file containing its "include" definition,
-# if local. An error will be thrown if a file cannot be included, either
-# because it does not exist, cannot be resolved, or is recursively
-# included more than once. For a secure JDK configuration, it is
-# important to check OS permissions assigned to any file included.
+# expansion in the form of ${system.property}. System properties in include
+# paths bring flexibility for users to switch between predefined security
+# profiles on a per-execution basis, as shown in one of the examples below.
+# If a system property does not have a value, it expands to the empty
+# string. This behavior enables the establishment of a default profile and
+# makes profile selection optional. Each relative path is resolved against
+# the base file containing its "include" definition, if local. An error will
+# be thrown if a file cannot be included, either because it does not exist,
+# cannot be resolved, or is recursively included more than once. For a
+# secure JDK configuration, it is important to check OS permissions assigned
+# to any file included.
 #
-# Example:
+# Examples:
+#
 #   include ${java.home}/conf/security/extra.security
-# or
+#
 #   include extra.security
+#
+#   include ${java.home}/conf/security/profile${SecurityProfile}.security
+#
+# Note: In the latter case, the file profile.security must exist and may
+# define a default security profile or be empty. Other files such as
+# profileFIPS.security may exist in the same directory and define alternative
+# profiles. To switch to an alternative profile on a per-execution basis,
+# a user can launch Java passing an argument such as -DSecurityProfile=FIPS.
 
 # In this file, various security properties are set for use by
 # java.security classes. This is where users can statically register

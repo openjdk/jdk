@@ -41,6 +41,7 @@ import java.net.InetSocketAddress;
 import java.net.URI;
 import java.nio.CharBuffer;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
@@ -188,9 +189,17 @@ public class ConfigFileTest {
             char specialChar, Executor.ExtraMode extraMode,
             boolean useRelativeIncludes) throws Exception {
         String suffix = specialChar + ".properties";
-        ExtraPropsFile extraFile = filesMgr.newExtraFile("extra" + suffix);
-        PropsFile file0 = filesMgr.newFile("file0" + suffix);
-        PropsFile file1 = filesMgr.newFile("file1" + suffix);
+        ExtraPropsFile extraFile;
+        PropsFile file0, file1;
+        try {
+            extraFile = filesMgr.newExtraFile("extra" + suffix);
+            file0 = filesMgr.newFile("file0" + suffix);
+            file1 = filesMgr.newFile("file1" + suffix);
+        } catch (InvalidPathException ipe) {
+            // The platform encoding may not allow to create files with some
+            // special characters. Skip the test in these cases.
+            return;
+        }
 
         if (useRelativeIncludes) {
             extraFile.addRelativeInclude(file0);
