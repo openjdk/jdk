@@ -527,11 +527,6 @@ void Thread::print_owned_locks_on(outputStream* st) const {
 }
 #endif // ASSERT
 
-bool Thread::is_lock_owned(address adr) const {
-  assert(LockingMode != LM_LIGHTWEIGHT, "should not be called with new lightweight locking");
-  return is_in_full_stack(adr);
-}
-
 bool Thread::set_as_starting_thread() {
   assert(_starting_thread == nullptr, "already initialized: "
          "_starting_thread=" INTPTR_FORMAT, p2i(_starting_thread));
