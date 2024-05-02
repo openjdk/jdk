@@ -468,7 +468,7 @@ public class ImportModule extends TestRunner {
                     .getOutputLines(Task.OutputKind.DIRECT);
 
         expectedErrors = List.of(
-                "Test.java:2:1: compiler.err.import.module.does.not.read: lib, test.module",
+                "Test.java:2:1: compiler.err.import.module.does.not.read: test.module, lib",
                 "Test.java:6:9: compiler.err.cant.resolve.location: kindname.class, Impl, , , (compiler.misc.location: kindname.class, test.Test, null)",
                 "- compiler.note.preview.filename: Test.java, DEFAULT",
                 "- compiler.note.preview.recompile",

@@ -364,7 +364,7 @@ public class TypeEnter implements Completer {
 
             ImportFilter prevStaticImportFilter = staticImportFilter;
             ImportFilter prevTypeImportFilter = typeImportFilter;
-            DiagnosticPosition prevLintPos = deferredLintHandler.immediate();
+            DiagnosticPosition prevLintPos = deferredLintHandler.immediate(lint);
             Lint prevLint = chk.setLint(lint);
             Env<AttrContext> prevEnv = this.env;
             try {
@@ -478,8 +478,8 @@ public class TypeEnter implements Completer {
                     if (env.toplevel.modle.isUnnamed()) {
                         log.error(tree.pos, Errors.ImportModuleDoesNotReadUnnamed(module));
                     } else {
-                        log.error(tree.pos, Errors.ImportModuleDoesNotRead(module,
-                                                                           env.toplevel.modle));
+                        log.error(tree.pos, Errors.ImportModuleDoesNotRead(env.toplevel.modle,
+                                                                           module));
                     }
                     //error recovery, make sure the module is completed:
                     module.getDirectives();

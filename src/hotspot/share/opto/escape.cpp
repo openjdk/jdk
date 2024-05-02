@@ -199,7 +199,9 @@ bool ConnectionGraph::compute_escape() {
         // Collect all MemBarStoreStore nodes so that depending on the
         // escape status of the associated Allocate node some of them
         // may be eliminated.
-        storestore_worklist.append(n->as_MemBarStoreStore());
+        if (!UseStoreStoreForCtor || n->req() > MemBarNode::Precedent) {
+          storestore_worklist.append(n->as_MemBarStoreStore());
+        }
         break;
       case Op_MemBarRelease:
         if (n->req() > MemBarNode::Precedent) {
@@ -490,11 +492,11 @@ bool ConnectionGraph::can_reduce_phi_check_inputs(PhiNode* ophi) const {
 // I require the 'other' input to be a constant so that I can move the Cmp
 // around safely.
 bool ConnectionGraph::can_reduce_cmp(Node* n, Node* cmp) const {
+  assert(cmp->Opcode() == Op_CmpP || cmp->Opcode() == Op_CmpN, "not expected node: %s", cmp->Name());
   Node* left = cmp->in(1);
   Node* right = cmp->in(2);
 
-  return (cmp->Opcode() == Op_CmpP || cmp->Opcode() == Op_CmpN) &&
-         (left == n || right == n) &&
+  return (left == n || right == n) &&
          (left->is_Con() || right->is_Con()) &&
          cmp->outcnt() == 1;
 }
@@ -557,8 +559,12 @@ bool ConnectionGraph::can_reduce_check_users(Node* n, uint nesting) const {
     } else if (use->is_CastPP()) {
       const Type* cast_t = _igvn->type(use);
       if (cast_t == nullptr || cast_t->make_ptr()->isa_instptr() == nullptr) {
-        NOT_PRODUCT(use->dump();)
-        NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Can NOT reduce Phi %d on invocation %d. CastPP is not to an instance.", n->_idx, _invocation);)
+#ifndef PRODUCT
+        if (TraceReduceAllocationMerges) {
+          tty->print_cr("Can NOT reduce Phi %d on invocation %d. CastPP is not to an instance.", n->_idx, _invocation);
+          use->dump();
+        }
+#endif
         return false;
       }
 
@@ -568,11 +574,18 @@ bool ConnectionGraph::can_reduce_check_users(Node* n, uint nesting) const {
         // CmpP/N used by the If controlling the cast.
         if (use->in(0)->is_IfTrue() || use->in(0)->is_IfFalse()) {
           Node* iff = use->in(0)->in(0);
-          Node* iff_cmp = iff->in(1)->in(1); // if->bool->cmp
-          if (!can_reduce_cmp(n, iff_cmp)) {
-            NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Can NOT reduce Phi %d on invocation %d. CastPP %d doesn't have simple control.", n->_idx, _invocation, use->_idx);)
-            NOT_PRODUCT(n->dump(5);)
-            return false;
+          if (iff->Opcode() == Op_If && iff->in(1)->is_Bool() && iff->in(1)->in(1)->is_Cmp()) {
+            Node* iff_cmp = iff->in(1)->in(1);
+            int opc = iff_cmp->Opcode();
+            if ((opc == Op_CmpP || opc == Op_CmpN) && !can_reduce_cmp(n, iff_cmp)) {
+#ifndef PRODUCT
+              if (TraceReduceAllocationMerges) {
+                tty->print_cr("Can NOT reduce Phi %d on invocation %d. CastPP %d doesn't have simple control.", n->_idx, _invocation, use->_idx);
+                n->dump(5);
+              }
+#endif
+              return false;
+            }
           }
         }
       }
@@ -697,10 +710,9 @@ Node* ConnectionGraph::specialize_cmp(Node* base, Node* curr_ctrl) {
 //
 Node* ConnectionGraph::specialize_castpp(Node* castpp, Node* base, Node* current_control) {
   Node* control_successor  = current_control->unique_ctrl_out();
-  Node* minus_one          = _igvn->transform(ConINode::make(-1));
   Node* cmp                = _igvn->transform(specialize_cmp(base, castpp->in(0)));
-  Node* boll               = _igvn->transform(new BoolNode(cmp, BoolTest::ne));
-  IfNode* if_ne            = _igvn->transform(new IfNode(current_control, boll, PROB_MIN, COUNT_UNKNOWN))->as_If();
+  Node* bol                = _igvn->transform(new BoolNode(cmp, BoolTest::ne));
+  IfNode* if_ne            = _igvn->transform(new IfNode(current_control, bol, PROB_MIN, COUNT_UNKNOWN))->as_If();
   Node* not_eq_control     = _igvn->transform(new IfTrueNode(if_ne));
   Node* yes_eq_control     = _igvn->transform(new IfFalseNode(if_ne));
   Node* end_region         = _igvn->transform(new RegionNode(3));
@@ -964,8 +976,8 @@ void ConnectionGraph::reduce_phi_on_cmp(Node* cmp) {
       Node* ncmp = _igvn->transform(cmp->clone());
       ncmp->set_req(1, ophi_input);
       ncmp->set_req(2, other);
-      Node* boll = _igvn->transform(new BoolNode(ncmp, mask));
-      res_phi_input = boll->as_Bool()->as_int_value(_igvn);
+      Node* bol = _igvn->transform(new BoolNode(ncmp, mask));
+      res_phi_input = bol->as_Bool()->as_int_value(_igvn);
     }
 
     res_phi->set_req(i, res_phi_input);
