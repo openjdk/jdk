@@ -40,9 +40,10 @@ import javax.swing.UnsupportedLookAndFeelException;
 
 /*
  * @test
- * @bug 8226990
+ * @bug 8226990 6462396
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
+ * @requires (os.family == "windows" | os.family == "linux")
  * @summary Test JTabbedPane's contentarea, tab area and tab color
  *          for different LAFs when opacity is enabled or disabled.
  * @run main/manual TestJTabbedPaneOpaqueColor
@@ -57,6 +58,7 @@ public class TestJTabbedPaneOpaqueColor {
             The TabbedPane is not opaque initially.
             For 'Content Opaque' and 'Tabs Opaque' to have effect, tab pane opacity should
             be set to false i.e. Opaque checkbox should be unchecked.
+            NOTE: For Nimbus LAF, tabs color are specific to nimbus style.
 
             Check the default behaviour of the tabbed pane:
               - the area behind tabs is transparent (it must be green).
@@ -64,6 +66,7 @@ public class TestJTabbedPaneOpaqueColor {
               - the content area is opaque (it must be gray).
 
             Test Case 1 - Test TabPane Opacity:
+            NOTE: For Nimbus LAF, tabs color are always gray in color.
 
             Verify the following with 'opaque' option:
             when checked:
@@ -75,8 +78,7 @@ public class TestJTabbedPaneOpaqueColor {
               - the tabs area is opaque (it must be red, except the selected tab which must be gray).
               - the content area is opaque (it must be gray).
 
-            Check this behaviour for other LAFs and tab layout.
-            NOTE: For Nimbus LAF, tabs color are specific to nimbus style.
+            Check this behaviour by clicking on present L&F button and tab layout.
 
             Test Case 2 - Test Content pane opacity:
             To test Content pane opacity, make sure "Opaque checkbox" is UNCHECKED.
@@ -87,19 +89,20 @@ public class TestJTabbedPaneOpaqueColor {
             when unchecked:
               - the content area should be transparent (it must be green).
 
-            Check this behavior for other LAFs and tab layout.
+            Check this behaviour by clicking on present L&F button and tab layout.
 
             Test Case 3 - Test Tabs opacity:
             To test Tabs opacity, make sure "Opaque checkbox" is UNCHECKED.
+            NOTE: For Nimbus LAF, tabs color are specific to nimbus style.
+                  All tabs are gray in color if tabs opaque is checked.
 
             Verify the following with 'tabs opaque' option:
             when checked:
               - the tabs are opaque (it must be red, except the selected tab which must be gray).
             when unchecked:
-              - the tabs are transparent (it must be gree).
+              - the tabs are transparent (it must be green).
 
-            Check this behaviour for other LAFs and tab layout.
-            NOTE: For Nimbus LAF, tabs color are specific to nimbus style.""";
+            Check this behaviour by clicking on present L&F button and tab layout.""";
 
     public static void main(String[] args) throws Exception {
         PassFailJFrame.builder()
