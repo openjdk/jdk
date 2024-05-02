@@ -31,9 +31,9 @@ import jdk.internal.javac.PreviewFeature;
  * A collection of static convenience methods that provide access to
  * {@linkplain System#console() system console} for implicitly declared classes.
  *
- * <p> Each of this class' methods calls a similarly-named method on
- * {@code Console} returned by {@code System.console()}, or throws
- * {@link IOError} if {@code System.console()} returns {@code null}.
+ * <p> Each of this class' methods throws {@link IOError} if the system console
+ * is {@code null}; otherwise, the effect is as if a similarly-named method
+ * had been called on that console.
  *
  * @since 23
  */
@@ -48,9 +48,9 @@ public class IO {
      * Writes a string representation of the specified object to the system
      * console, terminates the line and then flushes that console.
      *
-     * Calls {@link Console#println(Object) Console.println(obj)} on
-     * {@link System#console()}, or throws {@link IOError} if
-     * {@code System.console()} returns {@code null}.
+     * If {@code System.console()} returns {@code null}, throws {@code IOError}.
+     * Otherwise, the effect is as if {@link Console#println(Object) println(obj)}
+     * had been called on {@code System.console()}.
      *
      * @param obj the object to print
      */
@@ -62,9 +62,9 @@ public class IO {
      * Writes a string representation of the specified object to the system
      * console and then flushes that console.
      *
-     * Calls {@link Console#print(Object) Console.print(obj)} on
-     * {@link System#console()}, or throws {@link IOError} if
-     * {@code System.console()} returns {@code null}.
+     * If {@code System.console()} returns {@code null}, throws {@code IOError}.
+     * Otherwise, the effect is as if {@link Console#print(Object) print(obj)}
+     * had been called on {@code System.console()}.
      *
      * @param obj the object to print
      */
@@ -76,11 +76,15 @@ public class IO {
      * Provides a prompt on the system console, then reads a single line of
      * text from that console.
      *
-     * {@return the result of a call to {@link Console#readln(String)
-     * Console.readln(prompt)} on {@link System#console()}, or throws
-     * {@link IOError} if {@code System.console()} returns {@code null}}
+     * If {@code System.console()} returns {@code null}, throws {@code IOError}.
+     * Otherwise, the effect is as if {@link Console#readln(String) readln(prompt)}
+     * had been called on {@code System.console()}.
      *
      * @param prompt the prompt string
+     *
+     * @return a string containing the line read from the system console, not
+     * including any line-termination characters. Returns {@code null} if an
+     * end of stream has been reached without having read any characters.
      */
     public static String readln(String prompt) {
         return con().readln(prompt);
