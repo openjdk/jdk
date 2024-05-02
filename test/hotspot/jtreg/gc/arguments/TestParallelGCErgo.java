@@ -52,7 +52,7 @@ public class TestParallelGCErgo {
         ArrayList<String> flagList = new ArrayList<String>();
         flagList.add("-XX:+UseParallelGC");
         flagList.add("-Xms1g");
-        flagList.add("-Xmx4g");
+        flagList.add("-Xmx2g");
         flagList.add("-Xlog:gc+heap=trace");
         flagList.add("-version");
 
