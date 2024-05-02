@@ -1424,6 +1424,14 @@ Node* MinLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   return nullptr;
 }
 
+Node* MaxNode::Identity(PhaseGVN* phase) {
+  if (in(1) == in(2)) {
+      return in(1);
+  }
+
+  return AddNode::Identity(phase);
+}
+
 //------------------------------add_ring---------------------------------------
 const Type* MinFNode::add_ring(const Type* t0, const Type* t1 ) const {
   const TypeF* r0 = t0->isa_float_constant();

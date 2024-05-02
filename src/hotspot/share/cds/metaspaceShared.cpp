@@ -269,7 +269,7 @@ void MetaspaceShared::initialize_for_static_dump() {
   SharedBaseAddress = (size_t)_requested_base_address;
 
   size_t symbol_rs_size = LP64_ONLY(3 * G) NOT_LP64(128 * M);
-  _symbol_rs = ReservedSpace(symbol_rs_size);
+  _symbol_rs = ReservedSpace(symbol_rs_size, mtClassShared);
   if (!_symbol_rs.is_reserved()) {
     log_error(cds)("Unable to reserve memory for symbols: " SIZE_FORMAT " bytes.", symbol_rs_size);
     MetaspaceShared::unrecoverable_writing_error();
@@ -1270,12 +1270,10 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
     // Get the simple case out of the way first:
     // no compressed class space, simple allocation.
     archive_space_rs = ReservedSpace(archive_space_size, archive_space_alignment,
-                                     os::vm_page_size(), (char*)base_address);
+                                     os::vm_page_size(), mtClassShared, (char*)base_address);
     if (archive_space_rs.is_reserved()) {
       assert(base_address == nullptr ||
              (address)archive_space_rs.base() == base_address, "Sanity");
-      // Register archive space with NMT.
-      MemTracker::record_virtual_memory_type(archive_space_rs.base(), mtClassShared);
       return archive_space_rs.base();
     }
     return nullptr;
@@ -1319,21 +1317,18 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
       // via sequential file IO.
       address ccs_base = base_address + archive_space_size + gap_size;
       archive_space_rs = ReservedSpace(archive_space_size, archive_space_alignment,
-                                       os::vm_page_size(), (char*)base_address);
+                                       os::vm_page_size(), mtClassShared, (char*)base_address);
       class_space_rs   = ReservedSpace(class_space_size, class_space_alignment,
-                                       os::vm_page_size(), (char*)ccs_base);
+                                       os::vm_page_size(), mtClass, (char*)ccs_base);
     }
     if (!archive_space_rs.is_reserved() || !class_space_rs.is_reserved()) {
       release_reserved_spaces(total_space_rs, archive_space_rs, class_space_rs);
       return nullptr;
     }
-    // NMT: fix up the space tags
-    MemTracker::record_virtual_memory_type(archive_space_rs.base(), mtClassShared);
-    MemTracker::record_virtual_memory_type(class_space_rs.base(), mtClass);
   } else {
     if (use_archive_base_addr && base_address != nullptr) {
       total_space_rs = ReservedSpace(total_range_size, archive_space_alignment,
-                                     os::vm_page_size(), (char*) base_address);
+                                     os::vm_page_size(), mtClassShared, (char*) base_address);
     } else {
       // We did not manage to reserve at the preferred address, or were instructed to relocate. In that
       // case we reserve wherever possible, but the start address needs to be encodable as narrow Klass

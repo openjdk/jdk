@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,38 +19,11 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_GC_SHARED_SPACE_INLINE_HPP
-#define SHARE_GC_SHARED_SPACE_INLINE_HPP
+// key: compiler.warn.dangling.doc.comment
+// options: -Xlint:dangling-doc-comments
 
-#include "gc/shared/space.hpp"
-
-#include "gc/shared/collectedHeap.hpp"
-#include "gc/shared/spaceDecorator.hpp"
-#include "oops/oop.inline.hpp"
-#include "oops/oopsHierarchy.hpp"
-#include "runtime/prefetch.inline.hpp"
-#include "runtime/safepoint.hpp"
-
-#if INCLUDE_SERIALGC
-inline HeapWord* TenuredSpace::allocate(size_t size) {
-  HeapWord* res = ContiguousSpace::allocate(size);
-  if (res != nullptr) {
-    _offsets->update_for_block(res, res + size);
-  }
-  return res;
-}
-
-inline HeapWord* TenuredSpace::par_allocate(size_t size) {
-  HeapWord* res = ContiguousSpace::par_allocate(size);
-  if (res != nullptr) {
-    _offsets->update_for_block(res, res + size);
-  }
-  return res;
-}
-
-#endif // INCLUDE_SERIALGC
-
-#endif // SHARE_GC_SHARED_SPACE_INLINE_HPP
+/** Comment 1. */
+/** Comment 2. */
+class DanglingDocCommentWarning { }

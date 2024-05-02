@@ -633,7 +633,10 @@ bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode
         } else if (!reduce_merge_precheck) {
           safepoints->append_if_missing(sfpt);
         }
-      } else if (reduce_merge_precheck && (use->is_Phi() || use->is_EncodeP() || use->Opcode() == Op_MemBarRelease)) {
+      } else if (reduce_merge_precheck &&
+                 (use->is_Phi() || use->is_EncodeP() ||
+                  use->Opcode() == Op_MemBarRelease ||
+                  (UseStoreStoreForCtor && use->Opcode() == Op_MemBarStoreStore))) {
         // Nothing to do
       } else if (use->Opcode() != Op_CastP2X) { // CastP2X is used by card mark
         if (use->is_Phi()) {
@@ -2445,6 +2448,8 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
 //------------------------------expand_macro_nodes----------------------
 //  Returns true if a failure occurred.
 bool PhaseMacroExpand::expand_macro_nodes() {
+  // Do not allow new macro nodes once we started to expand
+  C->reset_allow_macro_nodes();
   if (StressMacroExpansion) {
     C->shuffle_macro_nodes();
   }
