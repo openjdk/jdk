@@ -473,8 +473,8 @@ void ScopedValueTransformer::remove_scoped_value_cache_call(Node* not_in_cache, 
   C->record_for_igvn(scoped_value_cache);
 }
 
-  // Either the if leads to a Halt: that branch is never taken or it leads to an uncommon trap and the probability is
-  // left unchanged.
+// Either the if leads to a Halt: that branch is never taken or it leads to an uncommon trap and the probability is
+// left unchanged.
 void ScopedValueTransformer::reset_iff_prob_and_cnt(IfNode* iff, bool expected, float cnt) {
   if (iff == nullptr) {
     return;
@@ -628,8 +628,6 @@ void ScopedValueGetHitsInCacheNode::verify() const {
 }
 #endif
 
-
-
 // Loop predication support
 bool PhaseIdealLoop::is_uncommon_or_multi_uncommon_trap_if_pattern(IfProjNode* proj) {
   if (proj->is_uncommon_trap_if_pattern()) {
@@ -642,7 +640,6 @@ bool PhaseIdealLoop::is_uncommon_or_multi_uncommon_trap_if_pattern(IfProjNode* p
   }
   return false;
 }
-
 
 // A ScopedValueGetHitsInCache check is loop invariant if the scoped value object it is applied to is loop invariant
 bool PhaseIdealLoop::loop_predication_for_scoped_value_get(IdealLoopTree* loop, IfProjNode* if_success_proj,
