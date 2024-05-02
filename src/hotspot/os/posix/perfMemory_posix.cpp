@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -65,14 +65,14 @@ static char* backing_store_file_name = nullptr;  // name of the backing store
 static char* create_standard_memory(size_t size) {
 
   // allocate an aligned chuck of memory
-  char* mapAddress = os::reserve_memory(size);
+  char* mapAddress = os::reserve_memory(size, !ExecMem, mtInternal);
 
   if (mapAddress == nullptr) {
     return nullptr;
   }
 
   // commit memory
-  if (!os::commit_memory(mapAddress, size, !ExecMem)) {
+  if (!os::commit_memory(mapAddress, size, !ExecMem, mtInternal)) {
     if (PrintMiscellaneous && Verbose) {
       warning("Could not commit PerfData memory\n");
     }

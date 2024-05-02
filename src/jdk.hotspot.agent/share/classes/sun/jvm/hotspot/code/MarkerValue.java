@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +22,17 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "gc/shared/softRefPolicy.hpp"
+package sun.jvm.hotspot.code;
 
-SoftRefPolicy::SoftRefPolicy() :
-    _should_clear_all_soft_refs(false),
-    _all_soft_refs_clear(false) {
-}
+import java.io.PrintStream;
 
-void SoftRefPolicy::cleared_all_soft_refs() {
-  _all_soft_refs_clear = true;
+/** A placeholder value that has no concrete meaning other than helping constructing
+ * other values.
+ */
+public class MarkerValue extends ScopeValue {
+    public boolean isMarker() { return true; }
+
+    public void printOn(PrintStream tty) {
+        tty.print("marker");
+    }
 }

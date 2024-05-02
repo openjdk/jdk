@@ -698,7 +698,7 @@ const int ObjectAlignmentInBytes = 8;
           "registering as parallel capable")                                \
                                                                             \
   product_pd(bool, DontYieldALot,                                           \
-          "Throw away obvious excess yield calls")                          \
+             "(Deprecated) Throw away obvious excess yield calls")          \
                                                                             \
   product(bool, DisablePrimordialThreadGuardPages, false, EXPERIMENTAL,     \
                "Disable the use of stack guard pages if the JVM is loaded " \
@@ -1312,9 +1312,6 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   develop(intx, MethodHistogramCutoff, 100,                                 \
           "The cutoff value for method invocation histogram (+CountCalls)") \
-                                                                            \
-  develop(intx, DontYieldALotInterval,    10,                               \
-          "Interval between which yields will be dropped (milliseconds)")   \
                                                                             \
   develop(intx, DeoptimizeALotInterval,     5,                              \
           "Number of exits until DeoptimizeALot kicks in")                  \

@@ -54,7 +54,7 @@ namespace {
     const size_t _size;
    public:
     static char* reserve_memory_special_huge_tlbfs(size_t bytes, size_t alignment, size_t page_size, char* req_addr, bool exec) {
-      return os::reserve_memory_special(bytes, alignment, page_size, req_addr, exec);
+      return os::reserve_memory_special(bytes, alignment, page_size, req_addr, exec, mtTest);
     }
     HugeTlbfsMemory(char* const ptr, size_t size) : _ptr(ptr), _size(size) { }
     ~HugeTlbfsMemory() {
@@ -224,7 +224,7 @@ class TestReserveMemorySpecial : AllStatic {
     if (!using_explicit_hugepages()) {
       return;
     }
-    char* addr = os::reserve_memory_special(size, alignment, page_size, nullptr, false);
+    char* addr = os::reserve_memory_special(size, alignment, page_size, nullptr, !ExecMem, mtTest);
     if (addr != nullptr) {
       small_page_write(addr, size);
       os::release_memory_special(addr, size);
@@ -281,7 +281,7 @@ class TestReserveMemorySpecial : AllStatic {
     for (int i = 0; i < num_sizes; i++) {
       const size_t size = sizes[i];
       for (size_t alignment = ag; is_aligned(size, alignment); alignment *= 2) {
-        char* p = os::reserve_memory_special(size, alignment, lp, nullptr, false);
+        char* p = os::reserve_memory_special(size, alignment, lp, nullptr, !ExecMem, mtTest);
         if (p != nullptr) {
           EXPECT_TRUE(is_aligned(p, alignment));
           small_page_write(p, size);
@@ -296,7 +296,7 @@ class TestReserveMemorySpecial : AllStatic {
       for (size_t alignment = ag; is_aligned(size, alignment); alignment *= 2) {
         // req_addr must be at least large page aligned.
         char* const req_addr = align_up(mapping1, MAX2(alignment, lp));
-        char* p = os::reserve_memory_special(size, alignment, lp, req_addr, false);
+        char* p = os::reserve_memory_special(size, alignment, lp, req_addr, !ExecMem, mtTest);
         if (p != nullptr) {
           EXPECT_EQ(p, req_addr);
           small_page_write(p, size);
@@ -311,7 +311,7 @@ class TestReserveMemorySpecial : AllStatic {
       for (size_t alignment = ag; is_aligned(size, alignment); alignment *= 2) {
         // req_addr must be at least large page aligned.
         char* const req_addr = align_up(mapping2, MAX2(alignment, lp));
-        char* p = os::reserve_memory_special(size, alignment, lp, req_addr, false);
+        char* p = os::reserve_memory_special(size, alignment, lp, req_addr, !ExecMem, mtTest);
         // as the area around req_addr contains already existing mappings, the API should always
         // return nullptr (as per contract, it cannot return another address)
         EXPECT_TRUE(p == nullptr);
@@ -355,9 +355,9 @@ TEST_VM(os_linux, pretouch_thp_and_use_concurrent) {
   const size_t size = 1 * G;
   const bool useThp = UseTransparentHugePages;
   UseTransparentHugePages = true;
-  char* const heap = os::reserve_memory(size, false, mtInternal);
+  char* const heap = os::reserve_memory(size, !ExecMem, mtInternal);
   EXPECT_NE(heap, nullptr);
-  EXPECT_TRUE(os::commit_memory(heap, size, false));
+  EXPECT_TRUE(os::commit_memory(heap, size, !ExecMem, mtInternal));
 
   {
     auto pretouch = [heap, size](Thread*, int) {
@@ -379,7 +379,7 @@ TEST_VM(os_linux, pretouch_thp_and_use_concurrent) {
   for (int i = 0; i < 1000; i++)
     EXPECT_EQ(*iptr++, i);
 
-  EXPECT_TRUE(os::uncommit_memory(heap, size, false));
+  EXPECT_TRUE(os::uncommit_memory(heap, size, !ExecMem, mtInternal));
   EXPECT_TRUE(os::release_memory(heap, size));
   UseTransparentHugePages = useThp;
 }

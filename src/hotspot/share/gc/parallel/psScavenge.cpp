@@ -419,11 +419,6 @@ bool PSScavenge::invoke_no_policy() {
     // Let the size policy know we're starting
     size_policy->minor_collection_begin();
 
-    // Verify no unmarked old->young roots
-    if (VerifyRememberedSets) {
-      heap->card_table()->verify_all_young_refs_imprecise();
-    }
-
     assert(young_gen->to_space()->is_empty(),
            "Attempt to scavenge with live objects in to_space");
     young_gen->to_space()->clear(SpaceDecorator::Mangle);
@@ -627,10 +622,6 @@ bool PSScavenge::invoke_no_policy() {
 #if COMPILER2_OR_JVMCI
     DerivedPointerTable::update_pointers();
 #endif
-
-    if (VerifyRememberedSets) {
-      heap->card_table()->verify_all_young_refs_imprecise();
-    }
 
     if (log_is_enabled(Debug, gc, heap, exit)) {
       accumulated_time()->stop();

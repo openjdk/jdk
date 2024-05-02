@@ -231,25 +231,25 @@ public record ClassRemapperImpl(Function<ClassDesc, ClassDesc> mapFunction) impl
         return (CodeBuilder cob, CodeElement coe) -> {
             switch (coe) {
                 case FieldInstruction fai ->
-                    cob.fieldInstruction(fai.opcode(), map(fai.owner().asSymbol()),
+                    cob.fieldAccess(fai.opcode(), map(fai.owner().asSymbol()),
                             fai.name().stringValue(), map(fai.typeSymbol()));
                 case InvokeInstruction ii ->
-                    cob.invokeInstruction(ii.opcode(), map(ii.owner().asSymbol()),
+                    cob.invoke(ii.opcode(), map(ii.owner().asSymbol()),
                             ii.name().stringValue(), mapMethodDesc(ii.typeSymbol()),
                             ii.isInterface());
                 case InvokeDynamicInstruction idi ->
-                    cob.invokeDynamicInstruction(DynamicCallSiteDesc.of(
+                    cob.invokedynamic(DynamicCallSiteDesc.of(
                             idi.bootstrapMethod(), idi.name().stringValue(),
                             mapMethodDesc(idi.typeSymbol()),
                             idi.bootstrapArgs().stream().map(this::mapConstantValue).toArray(ConstantDesc[]::new)));
                 case NewObjectInstruction c ->
-                    cob.newObjectInstruction(map(c.className().asSymbol()));
+                    cob.new_(map(c.className().asSymbol()));
                 case NewReferenceArrayInstruction c ->
                     cob.anewarray(map(c.componentType().asSymbol()));
                 case NewMultiArrayInstruction c ->
                     cob.multianewarray(map(c.arrayType().asSymbol()), c.dimensions());
                 case TypeCheckInstruction c ->
-                    cob.typeCheckInstruction(c.opcode(), map(c.type().asSymbol()));
+                    cob.with(TypeCheckInstruction.of(c.opcode(), map(c.type().asSymbol())));
                 case ExceptionCatch c ->
                     cob.exceptionCatch(c.tryStart(), c.tryEnd(), c.handler(),c.catchType()
                             .map(d -> TemporaryConstantPool.INSTANCE.classEntry(map(d.asSymbol()))));
@@ -260,7 +260,7 @@ public record ClassRemapperImpl(Function<ClassDesc, ClassDesc> mapFunction) impl
                     cob.localVariableType(c.slot(), c.name().stringValue(),
                             mapSignature(c.signatureSymbol()), c.startScope(), c.endScope());
                 case LoadConstantInstruction ldc ->
-                    cob.constantInstruction(ldc.opcode(),
+                    cob.loadConstant(ldc.opcode(),
                             mapConstantValue(ldc.constantValue()));
                 case RuntimeVisibleTypeAnnotationsAttribute aa ->
                     cob.with(RuntimeVisibleTypeAnnotationsAttribute.of(
