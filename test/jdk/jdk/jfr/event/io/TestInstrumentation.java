@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -328,7 +328,7 @@ public class TestInstrumentation implements ClassFileTransformer {
 
                     @Override
                     public void atStart(CodeBuilder cb) {
-                        cb.constantInstruction(key.toString());
+                        cb.loadConstant(key.toString());
                         cb.invokestatic(CD_InstrumentationCallback, "callback", MTD_callback);
                         log("instrumented " + key);
                     }
