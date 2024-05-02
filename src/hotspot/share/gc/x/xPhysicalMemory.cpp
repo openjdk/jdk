@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -279,13 +279,13 @@ void XPhysicalMemoryManager::try_enable_uncommit(size_t min_capacity, size_t max
 void XPhysicalMemoryManager::nmt_commit(uintptr_t offset, size_t size) const {
   // From an NMT point of view we treat the first heap view (marked0) as committed
   const uintptr_t addr = XAddress::marked0(offset);
-  MemTracker::record_virtual_memory_commit((void*)addr, size, CALLER_PC);
+  MemTracker::record_virtual_memory_commit((void*)addr, size, CALLER_PC, mtGC);
 }
 
 void XPhysicalMemoryManager::nmt_uncommit(uintptr_t offset, size_t size) const {
   const uintptr_t addr = XAddress::marked0(offset);
   ThreadCritical tc;
-  MemTracker::record_virtual_memory_uncommit((address)addr, size);
+  MemTracker::record_virtual_memory_uncommit((address)addr, size, mtGC);
 }
 
 void XPhysicalMemoryManager::alloc(XPhysicalMemory& pmem, size_t size) {

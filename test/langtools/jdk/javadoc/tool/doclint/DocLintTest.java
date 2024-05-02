@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8004834 8007610 8129909 8182765 8247815
+ * @bug 8004834 8007610 8129909 8182765 8247815 8296175
  * @summary Add doclint support into javadoc
  * @modules jdk.compiler/com.sun.tools.javac.main
  */
@@ -117,7 +117,10 @@ public class DocLintTest {
         // javadoc messages for bad options
         OPT_BADARG(ERROR, "error: Invalid argument for -Xdoclint option"),
         OPT_BADQUAL(ERROR, "error: Access qualifiers not permitted for -Xdoclint arguments"),
-        OPT_BADPACKAGEARG(ERROR, "error: Invalid argument for -Xdoclint/package option");
+        OPT_BADPACKAGEARG(ERROR, "error: Invalid argument for -Xdoclint/package option"),
+
+        // javadoc notice about markers for invalid input
+        JD_NOTE_MARK(NOTE, "The generated documentation contains diagnostic markers for invalid input.");
 
         final Diagnostic.Kind kind;
         final String text;
@@ -151,11 +154,13 @@ public class DocLintTest {
 
             test(List.of(htmlVersion),
                     Main.Result.ERROR,
-                    EnumSet.of(Message.DL_ERR10A, Message.DL_WRN14A));
+                    EnumSet.of(Message.DL_ERR10A, Message.DL_WRN14A,
+                            Message.JD_NOTE_MARK));
 
             test(List.of(htmlVersion, rawDiags),
                     Main.Result.ERROR,
-                    EnumSet.of(Message.DL_ERR10, Message.DL_WRN14));
+                    EnumSet.of(Message.DL_ERR10, Message.DL_WRN14,
+                            Message.JD_NOTE_MARK));
 
 //            test(List.of("-Xdoclint:none"),
 //                    Main.Result.OK,
@@ -163,7 +168,8 @@ public class DocLintTest {
 
             test(List.of(htmlVersion, rawDiags, "-Xdoclint"),
                     Main.Result.ERROR,
-                    EnumSet.of(Message.DL_ERR10, Message.DL_WRN14));
+                    EnumSet.of(Message.DL_ERR10, Message.DL_WRN14,
+                            Message.JD_NOTE_MARK));
 
             test(List.of(htmlVersion, rawDiags, "-Xdoclint:all/public"),
                     Main.Result.ERROR,
@@ -175,19 +181,21 @@ public class DocLintTest {
 
             test(List.of(htmlVersion, rawDiags, "-Xdoclint:missing"),
                     Main.Result.OK,
-                    EnumSet.of(Message.DL_WRN14));
+                    EnumSet.of(Message.DL_WRN14, Message.JD_NOTE_MARK));
 
             test(List.of(htmlVersion, rawDiags, "-private"),
                     Main.Result.ERROR,
-                    EnumSet.of(Message.DL_ERR6, Message.DL_ERR10, Message.DL_WRN14));
+                    EnumSet.of(Message.DL_ERR6, Message.DL_ERR10,
+                            Message.DL_WRN14, Message.JD_NOTE_MARK));
 
             test(List.of(htmlVersion, rawDiags, "-Xdoclint:missing,syntax", "-private"),
                     Main.Result.ERROR,
-                    EnumSet.of(Message.DL_ERR6, Message.DL_WRN14));
+                    EnumSet.of(Message.DL_ERR6, Message.DL_WRN14,
+                            Message.JD_NOTE_MARK));
 
             test(List.of(htmlVersion, rawDiags, "-Xdoclint:reference"),
                     Main.Result.ERROR,
-                    EnumSet.of(Message.DL_ERR10));
+                    EnumSet.of(Message.DL_ERR10, Message.JD_NOTE_MARK));
 
             test(List.of(htmlVersion, rawDiags, "-Xdoclint:badarg"),
                     Main.Result.ERROR,
@@ -199,12 +207,13 @@ public class DocLintTest {
             test(List.of(htmlVersion, rawDiags),
                     Main.Result.ERROR,
                     EnumSet.of(Message.DL_ERR_P1TEST, Message.DL_ERR_P2TEST,
-                            Message.DL_WARN_P1TEST, Message.DL_WARN_P2TEST));
+                            Message.DL_WARN_P1TEST, Message.DL_WARN_P2TEST, Message.JD_NOTE_MARK));
 
             test(List.of(htmlVersion, rawDiags, "-Xdoclint/package:p1"),
                     Main.Result.ERROR,
                     EnumSet.of(Message.DL_ERR_P1TEST,
-                            Message.DL_WARN_P1TEST));
+                            Message.DL_WARN_P1TEST,
+                            Message.JD_NOTE_MARK));
 
             test(List.of(htmlVersion, rawDiags, "-Xdoclint/package:*p"),
                     Main.Result.ERROR,

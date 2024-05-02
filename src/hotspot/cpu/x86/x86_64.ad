@@ -296,6 +296,9 @@ reg_class long_rcx_reg(RCX, RCX_H);
 // Singleton class for RDX long register
 reg_class long_rdx_reg(RDX, RDX_H);
 
+// Singleton class for R11 long register
+reg_class long_r11_reg(R11, R11_H);
+
 // Singleton class for RAX int register
 reg_class int_rax_reg(RAX);
 
@@ -2660,6 +2663,16 @@ operand rcx_RegL()
 operand rdx_RegL()
 %{
   constraint(ALLOC_IN_RC(long_rdx_reg));
+  match(RegL);
+  match(rRegL);
+
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand r11_RegL()
+%{
+  constraint(ALLOC_IN_RC(long_r11_reg));
   match(RegL);
   match(rRegL);
 
@@ -12072,6 +12085,31 @@ instruct partialSubtypeCheck(rdi_RegP result,
   ins_pipe(pipe_slow);
 %}
 
+instruct partialSubtypeCheckConstSuper(rsi_RegP sub, rax_RegP super_reg, immP super_con, rdi_RegP result,
+                                       rdx_RegL temp1, rcx_RegL temp2, rbx_RegP temp3, r11_RegL temp4,
+                                       rFlagsReg cr)
+%{
+  match(Set result (PartialSubtypeCheck sub (Binary super_reg super_con)));
+  predicate(UseSecondarySupersTable);
+  effect(KILL cr, TEMP temp1, TEMP temp2, TEMP temp3, TEMP temp4);
+
+  ins_cost(700);  // smaller than the next version
+  format %{ "partialSubtypeCheck $result, $sub, super" %}
+
+  ins_encode %{
+    u1 super_klass_slot = ((Klass*)$super_con$$constant)->hash_slot();
+    if (InlineSecondarySupersTest) {
+      __ lookup_secondary_supers_table($sub$$Register, $super_reg$$Register, $temp1$$Register, $temp2$$Register,
+                                       $temp3$$Register, $temp4$$Register, $result$$Register,
+                                       super_klass_slot);
+    } else {
+      __ call(RuntimeAddress(StubRoutines::lookup_secondary_supers_table_stub(super_klass_slot)));
+    }
+  %}
+
+  ins_pipe(pipe_slow);
+%}
+
 instruct partialSubtypeCheck_vs_Zero(rFlagsReg cr,
                                      rsi_RegP sub, rax_RegP super, rcx_RegI rcx,
                                      immP0 zero,
@@ -12431,6 +12469,8 @@ instruct Ret()
 // Also known as an 'interprocedural jump'.
 // Target of jump will eventually return to caller.
 // TailJump below removes the return address.
+// Don't use rbp for 'jump_target' because a MachEpilogNode has already been
+// emitted just above the TailCall which has reset rbp to the caller state.
 instruct TailCalljmpInd(no_rbp_RegP jump_target, rbx_RegP method_ptr)
 %{
   match(TailCall jump_target method_ptr);

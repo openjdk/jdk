@@ -298,7 +298,8 @@ class GetCurrentLocationClosure : public JvmtiUnitedHandshakeClosure {
   }
   void do_vthread(Handle target_h) {
     assert(_target_jt == nullptr || !_target_jt->is_exiting(), "sanity check");
-    // use jvmti_vthread() as vthread() can be outdated
+    // Use jvmti_vthread() instead of vthread() as target could have temporarily changed
+    // identity to carrier thread (see VirtualThread.switchToCarrierThread).
     assert(_target_jt == nullptr || _target_jt->jvmti_vthread() == target_h(), "sanity check");
     ResourceMark rm;
     javaVFrame *jvf = JvmtiEnvBase::get_vthread_jvf(target_h());
