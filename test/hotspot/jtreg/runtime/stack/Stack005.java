@@ -36,7 +36,7 @@
  *     before 1st StackOverflowError, and then tries to reproduce
  *     such StackOverflowError 100 times -- each time by trying to
  *     invoke the same recursive method for the given fixed depth
- *     of invocations (which is twice that depth just measured).
+ *     of invocations (which is 200 times that depth just measured).
  *     The test is deemed passed, if VM have not crashed.
  * COMMENTS
  *     This test crashes all HS versions (2.0, 1.3, 1.4) on all
@@ -64,7 +64,7 @@ public class Stack005 {
         System.out.println("Max. depth: " + depth);
         for (int i = 0; i < 100; i++) {
             try {
-                test.recurse(2 * depth);
+                test.recurse(200 * depth);
                 System.out.println("?");
             } catch (StackOverflowError | OutOfMemoryError err) {
                 // OK.

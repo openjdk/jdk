@@ -27,7 +27,7 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gcLogPrecious.hpp"
 #include "gc/shared/gc_globals.hpp"
-#include "gc/shared/space.inline.hpp"
+#include "gc/shared/space.hpp"
 #include "logging/log.hpp"
 #include "memory/virtualspace.hpp"
 #include "nmt/memTracker.hpp"
@@ -40,7 +40,6 @@
 #endif
 
 uint CardTable::_card_shift = 0;
-uint CardTable::_card_shift_in_words = 0;
 uint CardTable::_card_size = 0;
 uint CardTable::_card_size_in_words = 0;
 
@@ -51,7 +50,6 @@ void CardTable::initialize_card_size() {
   _card_size = GCCardSizeInBytes;
   _card_shift = log2i_exact(_card_size);
   _card_size_in_words = _card_size / sizeof(HeapWord);
-  _card_shift_in_words = _card_shift - LogHeapWordSize;
 
   log_info_p(gc, init)("CardTable entry size: " UINT32_FORMAT,  _card_size);
 }
@@ -84,9 +82,7 @@ void CardTable::initialize(void* region0_start, void* region1_start) {
 
   const size_t rs_align = _page_size == os::vm_page_size() ? 0 :
     MAX2(_page_size, os::vm_allocation_granularity());
-  ReservedSpace heap_rs(_byte_map_size, rs_align, _page_size);
-
-  MemTracker::record_virtual_memory_type((address)heap_rs.base(), mtGC);
+  ReservedSpace heap_rs(_byte_map_size, rs_align, _page_size, mtGC);
 
   os::trace_page_sizes("Card Table", num_bytes, num_bytes,
                        heap_rs.base(), heap_rs.size(), _page_size);
@@ -168,6 +164,7 @@ void CardTable::resize_covered_region(MemRegion new_region) {
                               delta.byte_size(),
                               _page_size,
                               !ExecMem,
+                              mtGCCardSet,
                               "card table expansion");
 
     memset(delta.start(), clean_card, delta.byte_size());
@@ -176,7 +173,9 @@ void CardTable::resize_covered_region(MemRegion new_region) {
     MemRegion delta = MemRegion(new_committed.end(),
                                 old_committed.word_size() - new_committed.word_size());
     bool res = os::uncommit_memory((char*)delta.start(),
-                                   delta.byte_size());
+                                   delta.byte_size(),
+                                   !ExecMem,
+                                   mtGCCardSet);
     assert(res, "uncommit should succeed");
   }
 
@@ -204,12 +203,10 @@ void CardTable::resize_covered_region(MemRegion new_region) {
 void CardTable::dirty_MemRegion(MemRegion mr) {
   assert(align_down(mr.start(), HeapWordSize) == mr.start(), "Unaligned start");
   assert(align_up  (mr.end(),   HeapWordSize) == mr.end(),   "Unaligned end"  );
+  assert(_covered[0].contains(mr) || _covered[1].contains(mr), "precondition");
   CardValue* cur  = byte_for(mr.start());
   CardValue* last = byte_after(mr.last());
-  while (cur < last) {
-    *cur = dirty_card;
-    cur++;
-  }
+  memset(cur, dirty_card, pointer_delta(last, cur, sizeof(CardValue)));
 }
 
 void CardTable::clear_MemRegion(MemRegion mr) {
@@ -229,15 +226,6 @@ void CardTable::clear_MemRegion(MemRegion mr) {
 uintx CardTable::ct_max_alignment_constraint() {
   // Calculate maximum alignment using GCCardSizeInBytes as card_size hasn't been set yet
   return GCCardSizeInBytes * os::vm_page_size();
-}
-
-void CardTable::invalidate(MemRegion mr) {
-  assert(align_down(mr.start(), HeapWordSize) == mr.start(), "Unaligned start");
-  assert(align_up  (mr.end(),   HeapWordSize) == mr.end(),   "Unaligned end"  );
-  for (int i = 0; i < max_covered_regions; i++) {
-    MemRegion mri = mr.intersection(_covered[i]);
-    if (!mri.is_empty()) dirty_MemRegion(mri);
-  }
 }
 
 #ifndef PRODUCT

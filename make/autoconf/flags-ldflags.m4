@@ -31,22 +31,11 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS],
   FLAGS_SETUP_LDFLAGS_HELPER
 
   # Setup the target toolchain
-
-  # The target dir matches the name of VM variant
-  TARGET_JVM_VARIANT_PATH=$JVM_VARIANT_MAIN
-
-  # On some platforms (mac) the linker warns about non existing -L dirs.
   FLAGS_SETUP_LDFLAGS_CPU_DEP([TARGET])
 
   # Setup the build toolchain
-
-  # When building a buildjdk, it's always only the server variant
-  BUILD_JVM_VARIANT_PATH=server
-
   FLAGS_SETUP_LDFLAGS_CPU_DEP([BUILD], [OPENJDK_BUILD_])
 
-  LDFLAGS_TESTEXE="${TARGET_LDFLAGS_JDK_LIBPATH}"
-  AC_SUBST(LDFLAGS_TESTEXE)
   AC_SUBST(ADLC_LDFLAGS)
 ])
 
@@ -155,7 +144,7 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
   fi
 
   # Export some intermediate variables for compatibility
-  LDFLAGS_CXX_JDK="$BASIC_LDFLAGS_ONLYCXX $BASIC_LDFLAGS_ONLYCXX_JDK_ONLY $DEBUGLEVEL_LDFLAGS_JDK_ONLY"
+  LDFLAGS_CXX_JDK="$DEBUGLEVEL_LDFLAGS_JDK_ONLY"
   AC_SUBST(LDFLAGS_CXX_JDK)
   AC_SUBST(LDFLAGS_CXX_PARTIAL_LINKING)
 ])
@@ -197,20 +186,11 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_CPU_DEP],
     fi
   fi
 
-  # JVM_VARIANT_PATH depends on if this is build or target...
-  if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
-    $1_LDFLAGS_JDK_LIBPATH="-libpath:\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base"
-  else
-    $1_LDFLAGS_JDK_LIBPATH="-L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base \
-        -L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base/${$1_JVM_VARIANT_PATH}"
-  fi
-
   # Export variables according to old definitions, prefix with $2 if present.
   LDFLAGS_JDK_COMMON="$BASIC_LDFLAGS $BASIC_LDFLAGS_JDK_ONLY \
       $OS_LDFLAGS $DEBUGLEVEL_LDFLAGS_JDK_ONLY ${$2EXTRA_LDFLAGS}"
   $2LDFLAGS_JDKLIB="$LDFLAGS_JDK_COMMON $BASIC_LDFLAGS_JDK_LIB_ONLY \
-      ${$1_LDFLAGS_JDK_LIBPATH} $SHARED_LIBRARY_FLAGS \
-      $REPRODUCIBLE_LDFLAGS $FILE_MACRO_LDFLAGS"
+      $SHARED_LIBRARY_FLAGS $REPRODUCIBLE_LDFLAGS $FILE_MACRO_LDFLAGS"
   $2LDFLAGS_JDKEXE="$LDFLAGS_JDK_COMMON $EXECUTABLE_LDFLAGS \
       ${$1_CPU_EXECUTABLE_LDFLAGS} $REPRODUCIBLE_LDFLAGS $FILE_MACRO_LDFLAGS"
 

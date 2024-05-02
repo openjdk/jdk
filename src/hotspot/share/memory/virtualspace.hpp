@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,19 +35,20 @@ class outputStream;
 class ReservedSpace {
   friend class VMStructs;
  protected:
-  char*  _base;
-  size_t _size;
-  size_t _noaccess_prefix;
-  size_t _alignment;
-  size_t _page_size;
-  bool   _special;
-  int    _fd_for_heap;
+  char*    _base;
+  size_t   _size;
+  size_t   _noaccess_prefix;
+  size_t   _alignment;
+  size_t   _page_size;
+  int      _fd_for_heap;
+  bool     _special;
+  bool     _executable;
+  MEMFLAGS _flag;
  private:
-  bool   _executable;
 
   // ReservedSpace
   ReservedSpace(char* base, size_t size, size_t alignment,
-                size_t page_size, bool special, bool executable);
+                size_t page_size, bool special, bool executable, MEMFLAGS flag);
  protected:
   // Helpers to clear and set members during initialization. Two members
   // require special treatment:
@@ -58,25 +59,28 @@ class ReservedSpace {
   //                       0 during initialization.
   void clear_members();
   void initialize_members(char* base, size_t size, size_t alignment,
-                          size_t page_size, bool special, bool executable);
+                          size_t page_size, bool special, bool executable, MEMFLAGS flag);
 
   void initialize(size_t size, size_t alignment, size_t page_size,
-                  char* requested_address, bool executable);
+                  char* requested_address, bool executable, MEMFLAGS flag);
 
   void reserve(size_t size, size_t alignment, size_t page_size,
                char* requested_address, bool executable);
  public:
+
+  MEMFLAGS nmt_flag() const { return _flag; }
+
   // Constructor
   ReservedSpace();
   // Initialize the reserved space with the given size. Depending on the size
   // a suitable page size and alignment will be used.
-  explicit ReservedSpace(size_t size);
+  explicit ReservedSpace(size_t size, MEMFLAGS flag);
   // Initialize the reserved space with the given size. The preferred_page_size
   // is used as the minimum page size/alignment. This may waste some space if
   // the given size is not aligned to that value, as the reservation will be
   // aligned up to the final alignment in this case.
-  ReservedSpace(size_t size, size_t preferred_page_size);
-  ReservedSpace(size_t size, size_t alignment, size_t page_size,
+  ReservedSpace(size_t size, size_t preferred_page_size, MEMFLAGS flag);
+  ReservedSpace(size_t size, size_t alignment, size_t page_size, MEMFLAGS flag,
                 char* requested_address = nullptr);
 
   // Accessors
@@ -95,10 +99,12 @@ class ReservedSpace {
   // This splits the space into two spaces, the first part of which will be returned.
   ReservedSpace first_part(size_t partition_size, size_t alignment);
   ReservedSpace last_part (size_t partition_size, size_t alignment);
+  ReservedSpace partition (size_t offset, size_t partition_size, size_t alignment);
 
   // These simply call the above using the default alignment.
   inline ReservedSpace first_part(size_t partition_size);
   inline ReservedSpace last_part (size_t partition_size);
+  inline ReservedSpace partition (size_t offset, size_t partition_size);
 
   // Alignment
   static size_t page_align_size_up(size_t size);
@@ -110,11 +116,10 @@ class ReservedSpace {
 
   // Put a ReservedSpace over an existing range
   static ReservedSpace space_for_range(char* base, size_t size, size_t alignment,
-                                       size_t page_size, bool special, bool executable);
+                                       size_t page_size, bool special, bool executable, MEMFLAGS flag);
 };
 
-ReservedSpace
-ReservedSpace::first_part(size_t partition_size)
+ReservedSpace ReservedSpace::first_part(size_t partition_size)
 {
   return first_part(partition_size, alignment());
 }
@@ -122,6 +127,11 @@ ReservedSpace::first_part(size_t partition_size)
 ReservedSpace ReservedSpace::last_part(size_t partition_size)
 {
   return last_part(partition_size, alignment());
+}
+
+ReservedSpace ReservedSpace::partition(size_t offset, size_t partition_size)
+{
+  return partition(offset, partition_size, alignment());
 }
 
 // Class encapsulating behavior specific of memory space reserved for Java heap.
@@ -172,6 +182,8 @@ class VirtualSpace {
 
   // Need to know if commit should be executable.
   bool   _executable;
+
+  MEMFLAGS _flag;
 
   // MPSS Support
   // Each virtualspace region has a lower, middle, and upper region.
