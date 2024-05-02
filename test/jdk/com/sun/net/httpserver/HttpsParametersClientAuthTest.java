@@ -50,6 +50,7 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsParameters;
 import com.sun.net.httpserver.HttpsServer;
+import jdk.internal.util.OperatingSystem;
 import jdk.test.lib.net.SimpleSSLContext;
 import jdk.test.lib.net.URIBuilder;
 import org.junit.jupiter.api.Test;
@@ -68,12 +69,16 @@ import static org.junit.jupiter.api.Assertions.fail;
  * @bug 8326381
  * @summary verifies that the setNeedClientAuth() and setWantClientAuth()
  *          methods on HttpsParameters class work as expected
+ * @modules java.base/jdk.internal.util
  * @library /test/lib
  * @build jdk.test.lib.net.SimpleSSLContext jdk.test.lib.net.URIBuilder
  * @run junit HttpsParametersClientAuthTest
  */
 public class HttpsParametersClientAuthTest {
 
+    private static final String WSAECONNABORTED_MSG =
+            "An established connection was aborted by the software in your host machine";
+    private static final boolean IS_WINDOWS = OperatingSystem.isWindows();
     private static final AtomicInteger TID = new AtomicInteger();
     private static final ThreadFactory SRV_THREAD_FACTORY = (r) -> {
         final Thread t = new Thread(r);
@@ -222,7 +227,9 @@ public class HttpsParametersClientAuthTest {
                         // verify it failed due to right reason
                         Throwable cause = ioe;
                         while (cause != null) {
-                            // either of SocketException or SSLHandshakeException are OK
+                            // either of SocketException or SSLHandshakeException are OK.
+                            // additionally on Windows we accept even IOException
+                            // caused by WSAECONNABORTED
                             if (cause instanceof SocketException se) {
                                 final String msg = se.getMessage();
                                 assertTrue(msg != null && msg.contains("Connection reset"),
@@ -235,6 +242,14 @@ public class HttpsParametersClientAuthTest {
                                         "unexpected message in SSLHandshakeException: " + msg);
                                 System.out.println("received the expected exception: " + she);
                                 break;
+                            } else if (IS_WINDOWS && cause instanceof IOException winIOE) {
+                                if (WSAECONNABORTED_MSG.equalsIgnoreCase(winIOE.getMessage())) {
+                                    // on Windows we sometimes receive this exception, which is
+                                    // acceptable
+                                    System.out.println("(windows) received the expected exception: "
+                                            + winIOE);
+                                    break;
+                                }
                             }
                             cause = cause.getCause();
                         }
