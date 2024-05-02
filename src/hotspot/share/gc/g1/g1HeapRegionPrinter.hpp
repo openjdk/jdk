@@ -31,7 +31,7 @@
 
 class FreeRegionList;
 
-class G1HRPrinter : public AllStatic {
+class G1HeapRegionPrinter : public AllStatic {
 
   // Print an action event.
   static void print(const char* action, HeapRegion* hr) {

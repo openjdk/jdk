@@ -27,7 +27,7 @@
 #include "gc/g1/g1HeapRegionPrinter.hpp"
 #include "gc/g1/g1HeapRegionSet.hpp"
 
-void G1HRPrinter::mark_reclaim(FreeRegionList* cleanup_list) {
+void G1HeapRegionPrinter::mark_reclaim(FreeRegionList* cleanup_list) {
   if (is_active()) {
     FreeRegionListIterator iter(cleanup_list);
     while (iter.more_available()) {
