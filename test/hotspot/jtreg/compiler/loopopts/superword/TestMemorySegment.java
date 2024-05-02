@@ -111,14 +111,28 @@ import java.lang.foreign.*;
  * @run driver compiler.loopopts.superword.TestMemorySegment Native
  */
 
-// TODO these do not yet fully vectorize - IR rules can fail
+// FAILS: mixed providers currently do not vectorize. Maybe there is some inlining issue.
+// /*
+//  * @test id=mixed-array
+//  * @bug 8310190
+//  * @summary Test vectorization of loops over MemorySegment
+//  * @library /test/lib /
+//  * @run driver compiler.loopopts.superword.TestMemorySegment MixedArray
+//  */
+//
+// /*
+//  * @test id=MixedBuffer
+//  * @bug 8310190
+//  * @summary Test vectorization of loops over MemorySegment
+//  * @library /test/lib /
+//  * @run driver compiler.loopopts.superword.TestMemorySegment MixedBuffer
+//  */
+//
 // /*
 //  * @test id=mixed
 //  * @bug 8310190
 //  * @summary Test vectorization of loops over MemorySegment
 //  * @library /test/lib /
-//  * @run driver compiler.loopopts.superword.TestMemorySegment MixedArray
-//  * @run driver compiler.loopopts.superword.TestMemorySegment MixedBuffer
 //  * @run driver compiler.loopopts.superword.TestMemorySegment Mixed
 //  */
 
