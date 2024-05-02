@@ -29,7 +29,7 @@ import jdk.internal.javac.PreviewFeature;
 
 /**
  * A collection of static convenience methods that provide access to
- * {@link System#console()} for implicitly declared classes.
+ * {@linkplain System#console() system console} for implicitly declared classes.
  *
  * <p> Each of this class' methods calls a similarly-named method on
  * {@code Console} returned by {@code System.console()}, or throws
@@ -45,6 +45,9 @@ public class IO {
     }
 
     /**
+     * Writes a string representation of the specified object to the system
+     * console, terminates the line and then flushes that console.
+     *
      * Calls {@link Console#println(Object) Console.println(obj)} on
      * {@link System#console()}, or throws {@link IOError} if
      * {@code System.console()} returns {@code null}.
@@ -56,6 +59,9 @@ public class IO {
     }
 
     /**
+     * Writes a string representation of the specified object to the system
+     * console and then flushes that console.
+     *
      * Calls {@link Console#print(Object) Console.print(obj)} on
      * {@link System#console()}, or throws {@link IOError} if
      * {@code System.console()} returns {@code null}.
@@ -67,6 +73,9 @@ public class IO {
     }
 
     /**
+     * Provides a prompt on the system console, then reads a single line of
+     * text from that console.
+     *
      * {@return the result of a call to {@link Console#readln(String)
      * Console.readln(prompt)} on {@link System#console()}, or throws
      * {@link IOError} if {@code System.console()} returns {@code null}}
