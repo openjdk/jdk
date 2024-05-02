@@ -2846,18 +2846,17 @@ void G1CollectedHeap::rebuild_region_sets(bool free_list_only) {
 // Methods for the mutator alloc region
 
 HeapRegion* G1CollectedHeap::new_mutator_alloc_region(size_t word_size,
-                                                      bool force,
                                                       uint node_index) {
   assert_heap_locked_or_at_safepoint(true /* should_be_vm_thread */);
   bool should_allocate = policy()->should_allocate_mutator_region();
-  if (force || should_allocate) {
+  if (should_allocate) {
     HeapRegion* new_alloc_region = new_region(word_size,
                                               HeapRegionType::Eden,
                                               false /* do_expand */,
                                               node_index);
     if (new_alloc_region != nullptr) {
       set_region_short_lived_locked(new_alloc_region);
-      G1HRPrinter::alloc(new_alloc_region, !should_allocate);
+      G1HRPrinter::alloc(new_alloc_region);
       _policy->remset_tracker()->update_at_allocate(new_alloc_region);
       return new_alloc_region;
     }

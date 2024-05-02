@@ -51,7 +51,7 @@ public:
 
   // The methods below are convenient wrappers for the print() method.
 
-  static void alloc(HeapRegion* hr, bool force = false) { print(force ? "ALLOC-FORCE" : "ALLOC", hr); }
+  static void alloc(HeapRegion* hr)                     { print("ALLOC", hr); }
 
   static void retire(HeapRegion* hr)                    { print("RETIRE", hr); }
 
