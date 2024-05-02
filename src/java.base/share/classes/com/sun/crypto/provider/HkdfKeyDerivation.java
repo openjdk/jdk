@@ -276,29 +276,21 @@ abstract class HkdfKeyDerivation extends KDFSpi {
         return kdfOutput;
     }
 
-    private static class HkdfExtExpBase extends HkdfKeyDerivation {
+    /*private static class HkdfExtExpBase extends HkdfKeyDerivation {
 
-        /**
-         * No-args constructor for HKDF Key Derivation
+        *//**
+         * ExtractExpand constructor for HKDF Key Derivation
          *
          * @param algParameterSpec
-         */
+         *//*
         public HkdfExtExpBase(AlgorithmParameterSpec algParameterSpec)
             throws InvalidAlgorithmParameterException {
             super(algParameterSpec);
         }
 
-    }
+    }*/
 
-    public static final class HkdfSHA224 extends HkdfExtExpBase {
-        public HkdfSHA224(AlgorithmParameterSpec algParameterSpec)
-            throws InvalidAlgorithmParameterException {
-            super(algParameterSpec);
-            hmacAlgName = "HmacSHA224";
-        }
-    }
-
-    public static final class HkdfSHA256 extends HkdfExtExpBase {
+    public static final class HkdfSHA256 extends HkdfKeyDerivation {
         public HkdfSHA256(AlgorithmParameterSpec algParameterSpec)
             throws InvalidAlgorithmParameterException {
             super(algParameterSpec);
@@ -306,7 +298,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
         }
     }
 
-    public static final class HkdfSHA384 extends HkdfExtExpBase {
+    public static final class HkdfSHA384 extends HkdfKeyDerivation {
         public HkdfSHA384(AlgorithmParameterSpec algParameterSpec)
             throws InvalidAlgorithmParameterException {
             super(algParameterSpec);
@@ -314,7 +306,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
         }
     }
 
-    public static final class HkdfSHA512 extends HkdfExtExpBase {
+    public static final class HkdfSHA512 extends HkdfKeyDerivation {
         public HkdfSHA512(AlgorithmParameterSpec algParameterSpec)
             throws InvalidAlgorithmParameterException {
             super(algParameterSpec);
@@ -322,28 +314,20 @@ abstract class HkdfKeyDerivation extends KDFSpi {
         }
     }
 
-    private static class HkdfExtractBase extends HkdfKeyDerivation {
+    /*private static class HkdfExtractBase extends HkdfKeyDerivation {
 
-        /**
-         * No-args constructor for HKDF Key Derivation
+        *//**
+         * Extract constructor for HKDF Key Derivation
          *
          * @param algParameterSpec
-         */
+         *//*
         public HkdfExtractBase(AlgorithmParameterSpec algParameterSpec)
             throws InvalidAlgorithmParameterException {
             super(algParameterSpec);
         }
-    }
+    }*/
 
-    public static final class HkdfExtractSHA224 extends HkdfExtractBase {
-        public HkdfExtractSHA224(AlgorithmParameterSpec algParameterSpec)
-            throws InvalidAlgorithmParameterException {
-            super(algParameterSpec);
-            hmacAlgName = "HmacSHA224";
-        }
-    }
-
-    public static final class HkdfExtractSHA256 extends HkdfExtractBase {
+    public static final class HkdfExtractSHA256 extends HkdfKeyDerivation {
         public HkdfExtractSHA256(AlgorithmParameterSpec algParameterSpec)
             throws InvalidAlgorithmParameterException {
             super(algParameterSpec);
@@ -351,7 +335,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
         }
     }
 
-    public static final class HkdfExtractSHA384 extends HkdfExtractBase {
+    public static final class HkdfExtractSHA384 extends HkdfKeyDerivation {
         public HkdfExtractSHA384(AlgorithmParameterSpec algParameterSpec)
             throws InvalidAlgorithmParameterException {
             super(algParameterSpec);
@@ -359,7 +343,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
         }
     }
 
-    public static final class HkdfExtractSHA512 extends HkdfExtractBase {
+    public static final class HkdfExtractSHA512 extends HkdfKeyDerivation {
         public HkdfExtractSHA512(AlgorithmParameterSpec algParameterSpec)
             throws InvalidAlgorithmParameterException {
             super(algParameterSpec);
@@ -367,28 +351,20 @@ abstract class HkdfKeyDerivation extends KDFSpi {
         }
     }
 
-    private static class HkdfExpandBase extends HkdfKeyDerivation {
+    /*private static class HkdfExpandBase extends HkdfKeyDerivation {
 
-        /**
-         * No-args constructor for HKDF Key Derivation
+        *//**
+         * Expand constructor for HKDF Key Derivation
          *
          * @param algParameterSpec
-         */
+         *//*
         public HkdfExpandBase(AlgorithmParameterSpec algParameterSpec)
             throws InvalidAlgorithmParameterException {
             super(algParameterSpec);
         }
-    }
+    }*/
 
-    public static final class HkdfExpandSHA224 extends HkdfExpandBase {
-        public HkdfExpandSHA224(AlgorithmParameterSpec algParameterSpec)
-            throws InvalidAlgorithmParameterException {
-            super(algParameterSpec);
-            hmacAlgName = "HmacSHA224";
-        }
-    }
-
-    public static final class HkdfExpandSHA256 extends HkdfExpandBase {
+    public static final class HkdfExpandSHA256 extends HkdfKeyDerivation {
         public HkdfExpandSHA256(AlgorithmParameterSpec algParameterSpec)
             throws InvalidAlgorithmParameterException {
             super(algParameterSpec);
@@ -396,7 +372,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
         }
     }
 
-    public static final class HkdfExpandSHA384 extends HkdfExpandBase {
+    public static final class HkdfExpandSHA384 extends HkdfKeyDerivation {
         public HkdfExpandSHA384(AlgorithmParameterSpec algParameterSpec)
             throws InvalidAlgorithmParameterException {
             super(algParameterSpec);
@@ -404,7 +380,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
         }
     }
 
-    public static final class HkdfExpandSHA512 extends HkdfExpandBase {
+    public static final class HkdfExpandSHA512 extends HkdfKeyDerivation {
         public HkdfExpandSHA512(AlgorithmParameterSpec algParameterSpec)
             throws InvalidAlgorithmParameterException {
             super(algParameterSpec);
