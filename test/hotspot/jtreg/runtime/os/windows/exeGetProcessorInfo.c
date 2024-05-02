@@ -21,16 +21,13 @@
  * questions.
  */
 
-#ifdef _WIN64
 #include <Windows.h>
 #include <malloc.h>
 #include <versionhelpers.h>
-#endif
 #include <stdio.h>
 
 int main()
 {
-#ifdef _WIN64
   DWORD active_processor_count = GetActiveProcessorCount(ALL_PROCESSOR_GROUPS);
   if (active_processor_count == 0) {
       printf("GetActiveProcessorCount failed with error: %x\n", GetLastError());
@@ -77,7 +74,4 @@ int main()
 
   free(group_array);
   return 0;
-#else
-  printf("Unsupported OS.");
-#endif
 }
