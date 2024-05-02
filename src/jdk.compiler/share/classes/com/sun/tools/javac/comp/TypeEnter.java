@@ -341,8 +341,8 @@ public class TypeEnter implements Completer {
                     (cls.mods.flags & IMPLICIT_CLASS) != 0;
             if (isImplicitClass) {
                 doModuleImport(make.ModuleImport(make.QualIdent(syms.java_base)));
-                if (peekTypeExists(env, syms.simpleIOType.tsym)) {
-                    doImport(make.Import(make.Select(make.QualIdent(syms.simpleIOType.tsym),
+                if (peekTypeExists(env, syms.ioType.tsym)) {
+                    doImport(make.Import(make.Select(make.QualIdent(syms.ioType.tsym),
                             names.asterisk), true));
                 }
             }

@@ -86,7 +86,7 @@ public class TestSymtabItems {
                 continue;
 
             // Temporarily ignore SimpleIO:
-            if (f.getName().toLowerCase().contains("simpleio"))
+            if (f.getName().toLowerCase().equals("ioType"))
                 continue;
 
             //both noModule and unnamedModule claim the unnamed package, ignore noModule for now:

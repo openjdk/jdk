@@ -135,7 +135,7 @@ public class ImplicitImports extends TestRunner {
     public void testImplicitSimpleIOImport(Path base) throws Exception {
         Path current = base.resolve(".");
 
-        Path patchClasses = prepareSimpleIOPatch(current);
+        Path patchClasses = prepareIOPatch(current);
 
         Path src = current.resolve("src");
         Path classes = current.resolve("classes");
@@ -178,7 +178,7 @@ public class ImplicitImports extends TestRunner {
     public void testNoImplicitImportsForOrdinaryClasses(Path base) throws Exception {
         Path current = base.resolve(".");
 
-        Path patchClasses = prepareSimpleIOPatch(current);
+        Path patchClasses = prepareIOPatch(current);
 
         Path src = current.resolve("src");
         Path classes = current.resolve("classes");
@@ -218,13 +218,13 @@ public class ImplicitImports extends TestRunner {
         }
     }
 
-    private Path prepareSimpleIOPatch(Path base) throws IOException {
+    private Path prepareIOPatch(Path base) throws IOException {
         Path patchSrc = base.resolve("patch-src");
         Path patchClasses = base.resolve("patch-classes");
         tb.writeJavaFiles(patchSrc,
                           """
                           package java.io;
-                          public class SimpleIO {
+                          public class IO {
                               public static void println(Object o) {
                                   System.out.println(o);
                               }
