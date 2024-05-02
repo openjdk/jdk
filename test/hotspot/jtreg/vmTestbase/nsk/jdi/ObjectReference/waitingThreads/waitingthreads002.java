@@ -113,7 +113,6 @@ public class waitingthreads002 {
 
             // Wait up to waitTime until all MyThreads will be blocked on entering in monitor
             int waitingCount = 0;
-            int expWaitingCount = 0;
             long oldTime = System.currentTimeMillis();
             while ((System.currentTimeMillis() - oldTime) <= waitTime && waitingCount < waitingthreads002a.threadCount) {
                 Iterator threads = debuggee.VM().allThreads().iterator();
@@ -125,7 +124,6 @@ public class waitingthreads002 {
                         waitingCount++;
                         // Virtual threads are not present in result returned by objRef.waitingThreads().
                         if (!thread.isVirtual()) {
-                            expWaitingCount++;
                         }
                     }
                 }
@@ -164,6 +162,8 @@ public class waitingthreads002 {
                     objRef = (ObjectReference) debuggeeClass.getValue(debuggeeClass.fieldByName(fieldName));
                     try {
                         List waitingThreads = objRef.waitingThreads();
+                        final boolean vthreadMode = "Virtual".equals(System.getProperty("test.thread.factory"));
+                        final int expWaitingCount = vthreadMode ? 0 : waitingthreads002a.threadCount;
                         if (waitingThreads.size() != expWaitingCount) {
                             exitStatus = Consts.TEST_FAILED;
                             complain("waitingThreads method returned list with unexpected size for " + fieldName +

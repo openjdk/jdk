@@ -166,7 +166,7 @@ public class ObjectMonitorUsage {
         Thread[] eThreads = null;
 
         synchronized (lockCheck) {
-            // Virtual threads are not supported by the GetObjectMonitorUsage.
+            // Virtual threads are not supported by GetObjectMonitorUsage.
             // Correct the expected values for the virtual thread case.
             int expEnteringCount = isVirtual ? 0 : NUMBER_OF_ENTERING_THREADS;
 
@@ -251,7 +251,7 @@ public class ObjectMonitorUsage {
         Thread[] eThreads = null;
 
         synchronized (lockCheck) {
-            // Virtual threads are not supported by the GetObjectMonitorUsage.
+            // Virtual threads are not supported by GetObjectMonitorUsage.
             // Correct the expected values for the virtual thread case.
             int expEnteringCount = isVirtual ? 0 : NUMBER_OF_ENTERING_THREADS;
             int expWaitingCount  = isVirtual ? 0 : NUMBER_OF_WAITING_THREADS;

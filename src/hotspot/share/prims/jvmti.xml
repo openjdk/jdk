@@ -8256,14 +8256,15 @@ class C2 extends C1 implements I2 {
         <field id="entry_count">
           <jint/>
           <description>
-            The number of times the owning platform thread has entered the monitor
+            The number of times the platform thread owning this monitor has entered it, 
+            or <code>0</code> if owned by a virtual thread or not owned
           </description>
         </field>
         <field id="waiter_count">
           <jint/>
           <description>
-            The number of platform threads waiting to own this monitor,
-            or <code>0</code> if the monitor is owned by a virtual thread or not owned
+            The number of platform threads waiting to own this monitor, or <code>0</code>
+            if only virtual threads are waiting or no threads are waiting
           </description>
         </field>
         <field id="waiters">
@@ -8275,8 +8276,8 @@ class C2 extends C1 implements I2 {
         <field id="notify_waiter_count">
           <jint/>
           <description>
-            The number of platform threads waiting to be notified by this monitor,
-            or <code>0</code> if the monitor is owned by a virtual thread or not owned
+            The number of platform threads waiting to own this monitor, or <code>0</code>
+            if only virtual threads are waiting or no threads are waiting
           </description>
         </field>
         <field id="notify_waiters">
