@@ -23,31 +23,36 @@
 
 /*
  * @test
- * @bug 8321278
- * @summary C2: Partial peeling fails with assert "last_peel <- first_not_peeled"
- * @run main/othervm -XX:CompileCommand=quiet -XX:CompileCommand=compileonly,TestPartialPeelingAtSingleInputRegion::test
- *                   -XX:-TieredCompilation -Xbatch -XX:PerMethodTrapLimit=0 TestPartialPeelingAtSingleInputRegion
- *
+ * @key stress randomness
+ * @bug 8329258
+ * @summary Test correct execution of the tail call at the end of the arraycopy stub.
+ * @requires vm.compiler2.enabled
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -Xbatch -XX:-TieredCompilation
+ *                   -XX:+StressGCM -XX:+StressLCM
+ *                   -XX:CompileCommand=quiet -XX:CompileCommand=compileonly,*::test
+ *                   compiler.arraycopy.TestTailCallInArrayCopyStub
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -Xbatch -XX:-TieredCompilation
+ *                   -XX:+StressGCM -XX:+StressLCM -XX:StressSeed=75451718
+ *                   -XX:CompileCommand=quiet -XX:CompileCommand=compileonly,*::test
+ *                   compiler.arraycopy.TestTailCallInArrayCopyStub
  */
 
-public class TestPartialPeelingAtSingleInputRegion {
+package compiler.arraycopy;
 
-    static void test() {
-        for (int i = 100; i > 10; --i) {
-            for (int j = i; j < 10; ++j) {
-                switch (j) {
-                case 1:
-                    if (j != 0) {
-                        return;
-                    }
-                }
-             }
+public class TestTailCallInArrayCopyStub {
+
+    public static void test(byte[] src, byte[] dst) {
+        try {
+            System.arraycopy(src, -1, dst, 0, src.length);
+        } catch (Exception e) {
+            // Expected
         }
     }
 
     public static void main(String[] args) {
+        byte[] array = new byte[5];
         for (int i = 0; i < 10_000; ++i) {
-            test();
+            test(array, array);
         }
     }
 }
