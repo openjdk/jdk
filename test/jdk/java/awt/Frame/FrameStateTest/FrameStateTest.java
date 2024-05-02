@@ -114,7 +114,7 @@ public class FrameStateTest implements ActionListener {
                 .title("Frame State and Size Test Instructions")
                 .instructions(INSTRUCTIONS)
                 .testTimeOut(10)
-                .rows(26)
+                .rows(27)
                 .columns(70)
                 .logArea(6)
                 .splitUIBottom(() -> new FrameStateTest().createPanel())
