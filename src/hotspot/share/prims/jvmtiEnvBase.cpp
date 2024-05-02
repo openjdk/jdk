@@ -2161,21 +2161,21 @@ JvmtiEnvBase::check_top_frame(Thread* current_thread, JavaThread* java_thread,
 
 jvmtiError
 JvmtiEnvBase::force_early_return(jthread thread, jvalue value, TosState tos) {
-  JavaThread* current = JavaThread::current();
-  HandleMark hm(current);
+  JavaThread* current_thread = JavaThread::current();
+  HandleMark hm(current_thread);
 
   JvmtiVTMSTransitionDisabler disabler(thread);
-  ThreadsListHandle tlh(current);
+  ThreadsListHandle tlh(current_thread);
 
   JavaThread* java_thread = nullptr;
   oop thread_obj = nullptr;
-  jvmtiError err = get_threadOop_and_JavaThread(tlh.list(), thread, current, &java_thread, &thread_obj);
+  jvmtiError err = get_threadOop_and_JavaThread(tlh.list(), thread, current_thread, &java_thread, &thread_obj);
 
   if (err != JVMTI_ERROR_NONE) {
     return err;
   }
-  Handle thread_handle(current, thread_obj);
-  bool self = java_thread == current;
+  Handle thread_handle(current_thread, thread_obj);
+  bool self = java_thread == current_thread;
 
   err = check_non_suspended_or_opaque_frame(java_thread, thread_obj, self);
   if (err != JVMTI_ERROR_NONE) {
@@ -2189,7 +2189,7 @@ JvmtiEnvBase::force_early_return(jthread thread, jvalue value, TosState tos) {
   }
 
   // Eagerly reallocate scalar replaced objects.
-  EscapeBarrier eb(true, current, java_thread);
+  EscapeBarrier eb(true, current_thread, java_thread);
   if (!eb.deoptimize_objects(0)) {
     // Reallocation of scalar replaced objects failed -> return with error
     return JVMTI_ERROR_OUT_OF_MEMORY;
