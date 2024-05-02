@@ -12431,8 +12431,8 @@ void Assembler::bzhiq(Register dst, Register src1, Register src2) {
 
 void Assembler::bzhil(Register dst, Register src1, Register src2) {
   assert(VM_Version::supports_bmi2(), "bit manipulation instructions not supported");
-  InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ true, /* no_mask_reg */ true, /* uses_vl */ false);
-  int encode = vex_prefix_and_encode(dst->encoding(), src2->encoding(), src1->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_38, &attributes);
+  InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
+  int encode = vex_prefix_and_encode(dst->encoding(), src2->encoding(), src1->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_38, &attributes, true);
   emit_int16((unsigned char)0xF5, (0xC0 | encode));
 }
 
@@ -14043,15 +14043,14 @@ void Assembler::notq(Register dst) {
 }
 
 void Assembler::btq(Register dst, Register src) {
-  int encode = prefixq_and_encode(src->encoding(), dst->encoding());
-  emit_int24(0x0F, (unsigned char)0xA3, (encode | 0xC0));
+  int encode = prefixq_and_encode(src->encoding(), dst->encoding(), true /* is_map1 */);
+  emit_opcode_prefix_and_encoding((unsigned char)0xA3, 0xC0, encode);
 }
 
 void Assembler::btq(Register src, int imm8) {
   assert(isByte(imm8), "not a byte");
-  int encode = prefixq_and_encode(src->encoding());
-  emit_int16(0x0f, 0xba);
-  emit_int8(0xe0|encode);
+  int encode = prefixq_and_encode(src->encoding(), true /* is_map1 */);
+  emit_opcode_prefix_and_encoding((unsigned char)0xBA, 0xE0, encode);
   emit_int8(imm8);
 }
 
