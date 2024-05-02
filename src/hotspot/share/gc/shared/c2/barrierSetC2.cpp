@@ -116,20 +116,14 @@ void BarrierStubC2::preserve(Register r) {
 }
 
 void BarrierStubC2::dont_preserve(Register r) {
-  const VMReg vm_reg = r->as_VMReg();
+  VMReg vm_reg = r->as_VMReg();
   assert(vm_reg->is_Register(), "r must be a general-purpose register");
-  OptoReg::Name reg = OptoReg::as_OptoReg(vm_reg);
-  // Subtract not only reg, but also all related OptoRegs that are sub-registers
-  // of the same general-purpose, processor register (e.g. {R11, R11_H} for r11
-  // in aarch64). We assume that all related OptoRegs have contiguous indices.
-  while (OptoReg::is_reg(reg)) {
-    const VMReg vm_reg = OptoReg::as_VMReg(reg);
-    if (!(vm_reg->is_Register()) || vm_reg->as_Register() != r) {
-      break;
-    }
-    _preserve.Remove(reg);
-    reg = OptoReg::add(reg, 1);
-  }
+  // Subtract the given register and all its sub-registers (e.g. {R11, R11_H}
+  // for r11 in aarch64).
+  do {
+    _preserve.Remove(OptoReg::as_OptoReg(vm_reg));
+    vm_reg = vm_reg->next();
+  } while (vm_reg->is_Register() && !vm_reg->is_concrete());
 }
 
 const RegMask& BarrierStubC2::preserve_set() const {
