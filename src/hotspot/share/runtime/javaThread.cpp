@@ -450,6 +450,7 @@ JavaThread::JavaThread() :
   _is_in_VTMS_transition(false),
   _is_in_tmp_VTMS_transition(false),
   _is_disable_suspend(false),
+  _VTMS_transition_mark(false),
 #ifdef ASSERT
   _is_VTMS_transition_disabler(false),
 #endif

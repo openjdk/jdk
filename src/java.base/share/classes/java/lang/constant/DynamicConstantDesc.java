@@ -87,12 +87,9 @@ public abstract non-sealed class DynamicConstantDesc<T>
                                   ClassDesc constantType,
                                   ConstantDesc... bootstrapArgs) {
         this.bootstrapMethod = requireNonNull(bootstrapMethod);
-        this.constantName = validateMemberName(requireNonNull(constantName), true);
+        this.constantName = validateMemberName(constantName, true);
         this.constantType = requireNonNull(constantType);
-        this.bootstrapArgs = requireNonNull(bootstrapArgs).clone();
-
-        if (constantName.length() == 0)
-            throw new IllegalArgumentException("Illegal invocation name: " + constantName);
+        this.bootstrapArgs = bootstrapArgs.length == 0 ? EMPTY_CONSTANTDESC : bootstrapArgs.clone();
     }
 
     /**
