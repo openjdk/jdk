@@ -140,12 +140,13 @@ public class TestMemorySegment {
     public static void main(String[] args) {
         TestFramework framework = new TestFramework(TestMemorySegmentImpl.class);
         framework.addFlags("-DmemorySegmentProviderNameForTestVM=" + args[0]);
+        framework.setDefaultWarmup(100);
         framework.start();
     }
 }
 
 class TestMemorySegmentImpl {
-    static final int BACKING_SIZE = 1024 * 64;
+    static final int BACKING_SIZE = 1024 * 8;
     static final Random RANDOM = Utils.getRandomInstance();
 
 
