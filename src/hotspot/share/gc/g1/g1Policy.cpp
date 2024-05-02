@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,13 +34,13 @@
 #include "gc/g1/g1ConcurrentRefine.hpp"
 #include "gc/g1/g1ConcurrentRefineStats.hpp"
 #include "gc/g1/g1CollectionSetChooser.hpp"
+#include "gc/g1/g1HeapRegion.inline.hpp"
+#include "gc/g1/g1HeapRegionRemSet.inline.hpp"
 #include "gc/g1/g1IHOPControl.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1SurvivorRegions.hpp"
 #include "gc/g1/g1YoungGenSizer.hpp"
-#include "gc/g1/heapRegion.inline.hpp"
-#include "gc/g1/heapRegionRemSet.inline.hpp"
 #include "gc/shared/concurrentGCBreakpoints.hpp"
 #include "gc/shared/gcPolicyCounters.hpp"
 #include "logging/log.hpp"
@@ -774,6 +774,10 @@ double G1Policy::logged_cards_processing_time() const {
   size_t logged_dirty_cards = phase_times()->sum_thread_work_items(G1GCPhaseTimes::MergeLB, G1GCPhaseTimes::MergeLBDirtyCards);
   size_t scan_heap_roots_cards = phase_times()->sum_thread_work_items(G1GCPhaseTimes::ScanHR, G1GCPhaseTimes::ScanHRScannedCards) +
                                  phase_times()->sum_thread_work_items(G1GCPhaseTimes::OptScanHR, G1GCPhaseTimes::ScanHRScannedCards);
+
+  double merge_logged_cards_time = average_time_ms(G1GCPhaseTimes::MergeLB) +
+                                   phase_times()->cur_distribute_log_buffers_time_ms();
+
   // Approximate the time spent processing cards from log buffers by scaling
   // the total processing time by the ratio of logged cards to total cards
   // processed.  There might be duplicate cards in different log buffers,
@@ -783,9 +787,9 @@ double G1Policy::logged_cards_processing_time() const {
   // counts are zero, which happens especially during early GCs.  So ascribe
   // all of the time to the logged cards unless there are more total cards.
   if (logged_dirty_cards >= scan_heap_roots_cards) {
-    return all_cards_processing_time + average_time_ms(G1GCPhaseTimes::MergeLB);
+    return all_cards_processing_time + merge_logged_cards_time;
   }
-  return (all_cards_processing_time * logged_dirty_cards / scan_heap_roots_cards) + average_time_ms(G1GCPhaseTimes::MergeLB);
+  return (all_cards_processing_time * logged_dirty_cards / scan_heap_roots_cards) + merge_logged_cards_time;
 }
 
 // Anything below that is considered to be zero
@@ -874,6 +878,7 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
       double avg_time_merge_cards = average_time_ms(G1GCPhaseTimes::MergeER) +
                                     average_time_ms(G1GCPhaseTimes::MergeRS) +
                                     average_time_ms(G1GCPhaseTimes::MergeLB) +
+                                    p->cur_distribute_log_buffers_time_ms() +
                                     average_time_ms(G1GCPhaseTimes::OptMergeRS);
       _analytics->report_cost_per_card_merge_ms(avg_time_merge_cards / total_cards_merged, is_young_only_pause);
     }
@@ -1180,7 +1185,7 @@ size_t G1Policy::desired_survivor_size(uint max_regions) const {
 }
 
 void G1Policy::print_age_table() {
-  _survivors_age_table.print_age_table(_tenuring_threshold);
+  _survivors_age_table.print_age_table();
 }
 
 // Calculates survivor space parameters.

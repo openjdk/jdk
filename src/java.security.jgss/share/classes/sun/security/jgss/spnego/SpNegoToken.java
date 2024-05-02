@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,9 +58,6 @@ abstract class SpNegoToken extends GSSToken {
     }
 
     private final int tokenType;
-
-    // property
-    static final boolean DEBUG = SpNegoContext.DEBUG;
 
     /**
      * The object identifier corresponding to the SPNEGO GSS-API

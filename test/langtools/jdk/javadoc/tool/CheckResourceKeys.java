@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -205,15 +205,17 @@ public class CheckResourceKeys {
                 }
             }
 
-            // special handling for strings in search.js.template
-            FileObject fo = fm.getFileForInput(javadocLoc,
-                    "jdk.javadoc.internal.doclets.formats.html",
-                    "resources/search.js.template");
-            CharSequence search_js = fo.getCharContent(true);
-            Pattern p = Pattern.compile("##REPLACE:(?<key>[A-Za-z0-9._]+)##");
-            Matcher m = p.matcher(search_js);
-            while (m.find()) {
-                results.add(m.group("key"));
+            // special handling for strings in .js.template files
+            for (String fileName : List.of("resources/search.js.template", "resources/script.js.template")) {
+                FileObject fo = fm.getFileForInput(javadocLoc,
+                        "jdk.javadoc.internal.doclets.formats.html",
+                        fileName);
+                CharSequence search_js = fo.getCharContent(true);
+                Pattern p = Pattern.compile("##REPLACE:(?<key>[A-Za-z0-9._]+)##");
+                Matcher m = p.matcher(search_js);
+                while (m.find()) {
+                    results.add(m.group("key"));
+                }
             }
 
             // special handling for code strings synthesized in

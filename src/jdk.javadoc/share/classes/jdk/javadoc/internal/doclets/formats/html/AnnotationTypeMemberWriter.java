@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,6 +90,8 @@ public class AnnotationTypeMemberWriter extends AbstractMemberWriter {
             addAnnotationDetailsMarker(target);
             Content annotationDetailsHeader = getAnnotationDetailsHeader();
             Content memberList = getMemberList();
+            writer.tableOfContents.addLink(HtmlIds.ANNOTATION_TYPE_ELEMENT_DETAIL, contents.annotationTypeDetailsLabel);
+            writer.tableOfContents.pushNestedList();
 
             for (Element member : members) {
                 currentMember = member;
@@ -98,9 +100,12 @@ public class AnnotationTypeMemberWriter extends AbstractMemberWriter {
                 buildAnnotationTypeMemberChildren(div);
                 annotationContent.add(div);
                 memberList.add(writer.getMemberListItem(annotationContent));
+                writer.tableOfContents.addLink(htmlIds.forMember((ExecutableElement) member).getFirst(),
+                        Text.of(name(member)));
             }
             Content annotationDetails = getAnnotationDetails(annotationDetailsHeader, memberList);
             target.add(annotationDetails);
+            writer.tableOfContents.popNestedList();
         }
     }
 
@@ -205,7 +210,7 @@ public class AnnotationTypeMemberWriter extends AbstractMemberWriter {
                 Text.of(name(member)));
         content.add(heading);
         return HtmlTree.SECTION(HtmlStyle.detail, content)
-                .setId(htmlIds.forMember(typeElement, (ExecutableElement) member));
+                .setId(htmlIds.forMember((ExecutableElement) member).getFirst());
     }
 
     protected Content getSignature(Element member) {

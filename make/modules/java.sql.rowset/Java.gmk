@@ -23,8 +23,6 @@
 # questions.
 #
 
-DISABLED_WARNINGS_java += this-escape
-
 DOCLINT += -Xdoclint:all/protected \
     '-Xdoclint/package:java.*,javax.*'
 CLEAN_FILES += $(wildcard \

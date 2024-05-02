@@ -443,11 +443,11 @@ Zone	Pacific/Fiji	11:55:44 -	LMT	1915 Oct 26 # Suva
 
 # French Polynesia
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone	Pacific/Gambier	 -8:59:48 -	LMT	1912 Oct # Rikitea
+Zone	Pacific/Gambier	 -8:59:48 -	LMT	1912 Oct  1 # Rikitea
 			 -9:00	-	-09
-Zone	Pacific/Marquesas -9:18:00 -	LMT	1912 Oct
+Zone	Pacific/Marquesas -9:18:00 -	LMT	1912 Oct  1
 			 -9:30	-	-0930
-Zone	Pacific/Tahiti	 -9:58:16 -	LMT	1912 Oct # Papeete
+Zone	Pacific/Tahiti	 -9:58:16 -	LMT	1912 Oct  1 # Papeete
 			-10:00	-	-10
 # Clipperton (near North America) is administered from French Polynesia;
 # it is uninhabited.
@@ -825,7 +825,7 @@ Zone Pacific/Apia	 12:33:04 -	LMT	1892 Jul  5
 # Solomon Is
 # excludes Bougainville, for which see Papua New Guinea
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone Pacific/Guadalcanal 10:39:48 -	LMT	1912 Oct # Honiara
+Zone Pacific/Guadalcanal 10:39:48 -	LMT	1912 Oct  1 # Honiara
 			11:00	-	+11
 
 # Tokelau
@@ -985,6 +985,10 @@ Zone	Pacific/Efate	11:13:16 -	LMT	1912 Jan 13 # Vila
 # For data circa 1899, a common source is:
 # Milne J. Civil time. Geogr J. 1899 Feb;13(2):173-94.
 # https://www.jstor.org/stable/1774359
+#
+# For the 1911/1912 establishment of standard time in French possessions, see:
+# Société Française de Physique, Recueil de constantes physiques (1913),
+# page 752, 18b.
 #
 # A reliable and entertaining source about time zones is
 # Derek Howse, Greenwich time and longitude, Philip Wilson Publishers (1997).
@@ -2062,7 +2066,7 @@ Zone	Pacific/Efate	11:13:16 -	LMT	1912 Jan 13 # Vila
 # ordaining - by a masterpiece of diplomatic flattery - that
 # the Fourth of July should be celebrated twice in that year."
 # This happened in 1892, according to the Evening News (Sydney) of 1892-07-20.
-# https://www.staff.science.uu.nl/~gent0113/idl/idl.htm
+# https://webspace.science.uu.nl/~gent0113/idl/idl_alaska_samoa.htm
 
 # Although Shanks & Pottenger says they both switched to UT -11:30
 # in 1911, and to -11 in 1950. many earlier sources give -11

@@ -319,4 +319,3 @@ public class MethodRemapper extends MethodVisitor {
                 .orDeprecatedValue(createAnnotationRemapper(annotationVisitor));
     }
 }
-

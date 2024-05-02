@@ -144,6 +144,11 @@ public class TestGeneralizedReductions {
         applyIfAnd = {"SuperWordReductions", "true","UsePopCountInstruction", "true"},
         counts = {IRNode.ADD_REDUCTION_VI, ">= 1",
                   IRNode.POPCOUNT_VL, ">= 1"})
+    @IR(applyIfPlatform = {"riscv64", "true"},
+        applyIfCPUFeature = {" v ", "true"},
+        applyIfAnd = {"SuperWordReductions", "true","UsePopCountInstruction", "true"},
+        counts = {IRNode.ADD_REDUCTION_VI, ">= 1",
+                  IRNode.POPCOUNT_VL, ">= 1"})
     private static long testMapReductionOnGlobalAccumulator(long[] array) {
         acc = 0;
         for (int i = 0; i < array.length; i++) {

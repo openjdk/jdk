@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 
 Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
@@ -2089,9 +2089,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Australia/Melbourne">
 				<exemplarCity>ମେଲବୋର୍ଣ୍ଣ</exemplarCity>
 			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>କ୍ୟୁରୀ</exemplarCity>
-			</zone>
 			<zone type="Australia/Hobart">
 				<exemplarCity>ହୋବାର୍ଟ୍‌</exemplarCity>
 			</zone>
@@ -2245,9 +2242,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Creston">
 				<exemplarCity>କ୍ରେଷ୍ଟୋନ୍</exemplarCity>
 			</zone>
-			<zone type="America/Yellowknife">
-				<exemplarCity>ୟେଲ୍ଲୋନାଇଫ୍</exemplarCity>
-			</zone>
 			<zone type="America/Edmonton">
 				<exemplarCity>ଏଡମୋନଟୋନ୍</exemplarCity>
 			</zone>
@@ -2266,29 +2260,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Resolute">
 				<exemplarCity>ରିସୋଲୁଟେ</exemplarCity>
 			</zone>
-			<zone type="America/Rainy_River">
-				<exemplarCity>ରେଇନି ରିଭର୍</exemplarCity>
-			</zone>
 			<zone type="America/Rankin_Inlet">
 				<exemplarCity>ରାନକିନ୍ ଇନଲେଟ୍</exemplarCity>
 			</zone>
 			<zone type="America/Coral_Harbour">
 				<exemplarCity>ଆଟିକୋକାନ୍</exemplarCity>
 			</zone>
-			<zone type="America/Thunder_Bay">
-				<exemplarCity>ଥଣ୍ଡର୍ ବେ</exemplarCity>
-			</zone>
-			<zone type="America/Nipigon">
-				<exemplarCity>ନିପିଗୋନ୍</exemplarCity>
-			</zone>
 			<zone type="America/Toronto">
 				<exemplarCity>ଟୋରୋଣ୍ଟୋ</exemplarCity>
 			</zone>
 			<zone type="America/Iqaluit">
 				<exemplarCity>ଇକ୍ଵାଲୁଇଟ୍</exemplarCity>
-			</zone>
-			<zone type="America/Pangnirtung">
-				<exemplarCity>ପାଙ୍ଗନିର୍ଟୁଙ୍ଗ</exemplarCity>
 			</zone>
 			<zone type="America/Moncton">
 				<exemplarCity>ମାନକଟୋନ୍</exemplarCity>
@@ -3103,17 +3085,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Africa/Dar_es_Salaam">
 				<exemplarCity>ଡର୍‌ ଇସ୍‌ ସାଲାମ</exemplarCity>
 			</zone>
-			<zone type="Europe/Uzhgorod">
-				<exemplarCity>ଉଜହୋରୋଦ୍</exemplarCity>
-			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>କିଏଭ୍</exemplarCity>
 			</zone>
 			<zone type="Europe/Simferopol">
 				<exemplarCity>ସିମଫେରୋପୋଲ୍</exemplarCity>
-			</zone>
-			<zone type="Europe/Zaporozhye">
-				<exemplarCity>ଜାପୋରୋଜହୟେ</exemplarCity>
 			</zone>
 			<zone type="Africa/Kampala">
 				<exemplarCity>କାମ୍ପାଲା</exemplarCity>
@@ -3132,9 +3108,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Pacific/Honolulu">
 				<exemplarCity>ହୋନୋଲୁଲୁ</exemplarCity>
-			</zone>
-			<zone type="Pacific/Johnston">
-				<exemplarCity>ଜନଷ୍ଟନ୍</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>ଆଙ୍କରେଜ୍</exemplarCity>
@@ -3831,11 +3804,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>ମକାଓ ଗ୍ରୀଷ୍ମ ସମୟ</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>ମାକ୍ୱେରୀ ଦ୍ୱୀପ ସମୟ</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>ମାଗାଡାନ୍ ସମୟ</generic>
@@ -3873,13 +3841,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Mawson">
 				<long>
 					<standard>ମାୱସନ୍‌ ସମୟ</standard>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic>ଉତ୍ତରପଶ୍ଚିମ ମେକ୍ସିକୋ ସମୟ</generic>
-					<standard>ଉତ୍ତରପଶ୍ଚିମ ମେକ୍ସିକୋ ମାନାଙ୍କ ସମୟ</standard>
-					<daylight>ଉତ୍ତରପଶ୍ଚିମ ମେକ୍ସିକୋ ଦିବାଲୋକ ସମୟ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import static java.util.ResourceBundle.Control;
 import java.util.Set;
 import java.util.function.IntUnaryOperator;
 import java.util.function.Predicate;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -98,8 +99,6 @@ public final class IncludeLocalesPlugin extends AbstractPlugin implements Resour
     private Predicate<String> predicate;
     private String userParam;
     private List<Locale.LanguageRange> priorityList;
-    private List<Locale> available;
-    private List<String> filtered;
 
     private static final ResourceBundleBasedAdapter CLDR_ADAPTER =
         (ResourceBundleBasedAdapter)LocaleProviderAdapter.forType(Type.CLDR);
@@ -130,10 +129,10 @@ public final class IncludeLocalesPlugin extends AbstractPlugin implements Resour
                                 Arrays.stream(CLDR_PARENT_LOCALES.getOrDefault(
                                     Locale.forLanguageTag(child), new String[0]))
                                         .filter(grandchild -> !grandchild.isEmpty()),
-                                List.of(child).stream()))
+                                Stream.of(child)))
                         .distinct()
                         .forEach(children::add);
-                    return new AbstractMap.SimpleEntry<String, List<String>>(parent, children);
+                    return new AbstractMap.SimpleEntry<>(parent, children);
                 })
         ).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,
                 (l1, l2) -> Stream.concat(l1.stream(), l2.stream()).distinct().toList()));
@@ -202,6 +201,7 @@ public final class IncludeLocalesPlugin extends AbstractPlugin implements Resour
         Optional<ResourcePoolModule> optMod = resources.moduleView().findModule(MODULENAME);
 
         // jdk.localedata module validation
+        List<Locale> available;
         if (optMod.isPresent()) {
             ResourcePoolModule module = optMod.get();
             Set<String> packages = module.packages();
@@ -214,9 +214,9 @@ public final class IncludeLocalesPlugin extends AbstractPlugin implements Resour
 
             available = Stream.concat(module.entries()
                                         .map(md -> p.matcher(md.path()))
-                                        .filter(m -> m.matches())
+                                        .filter(Matcher::matches)
                                         .map(m -> m.group("tag").replaceAll("_", "-")),
-                                    Stream.concat(Stream.of(jaJPJPTag), Stream.of(thTHTHTag)))
+                                    Stream.of(jaJPJPTag, thTHTHTag, "und"))
                 .distinct()
                 .sorted()
                 .map(IncludeLocalesPlugin::tagToLocale)
@@ -226,7 +226,7 @@ public final class IncludeLocalesPlugin extends AbstractPlugin implements Resour
             throw new PluginException(PluginsResourceBundle.getMessage(getName() + ".localedatanotfound"));
         }
 
-        filtered = filterLocales(available);
+        List<String> filtered = filterLocales(available);
 
         if (filtered.isEmpty()) {
             throw new PluginException(
@@ -259,6 +259,12 @@ public final class IncludeLocalesPlugin extends AbstractPlugin implements Resour
         // Add Taiwan resource bundles for Hong Kong
         if (tag.equals("zh-HK")) {
             files.addAll(includeLocaleFiles("zh_TW"));
+        }
+
+        // Make sure to retain sun.text/util.resources.ext packages
+        if (tag.equals("und")) {
+            files.add(".+sun/text/resources/ext/FormatData.class");
+            files.add(".+sun/util/resources/ext/TimeZoneNames.class");
         }
 
         return files;
@@ -346,13 +352,12 @@ public final class IncludeLocalesPlugin extends AbstractPlugin implements Resour
     }
 
     /*
-     * Filter list of locales according to the secified priorityList. Note
+     * Filter list of locales according to the specified priorityList. Note
      * that returned list of language tags may include extra ones, such as
      * compatibility ones (e.g., "iw" -> "iw", "he").
      */
     private List<String> filterLocales(List<Locale> locales) {
-        List<String> ret =
-            Locale.filter(priorityList, locales, Locale.FilteringMode.EXTENDED_FILTERING).stream()
+        return Locale.filter(priorityList, locales, Locale.FilteringMode.EXTENDED_FILTERING).stream()
                 .flatMap(loc -> Stream.concat(Control.getNoFallbackControl(Control.FORMAT_DEFAULT)
                                      .getCandidateLocales("", loc).stream(),
                                 CLDR_ADAPTER.getCandidateLocales("", loc).stream()))
@@ -367,8 +372,6 @@ public final class IncludeLocalesPlugin extends AbstractPlugin implements Resour
                 .flatMap(IncludeLocalesPlugin::localeToTags)
                 .distinct()
                 .toList();
-
-        return ret;
     }
 
     private static final Locale.Builder LOCALE_BUILDER = new Locale.Builder();
@@ -428,6 +431,6 @@ public final class IncludeLocalesPlugin extends AbstractPlugin implements Resour
                 break;
         }
 
-        return tags == null ? List.of(tag).stream() : tags.stream();
+        return tags == null ? Stream.of(tag) : tags.stream();
     }
 }

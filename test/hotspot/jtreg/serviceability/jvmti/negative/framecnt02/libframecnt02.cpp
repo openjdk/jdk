@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "jvmti.h"
-#include "jvmti_common.h"
+#include "jvmti_common.hpp"
 
 extern "C" {
 
@@ -32,7 +32,7 @@ extern "C" {
 #define PASSED 0
 #define STATUS_FAILED 2
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jint result = PASSED;
 
 JNIEXPORT jint JNICALL
@@ -40,7 +40,7 @@ Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   jint res;
 
   res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-  if (res != JNI_OK || jvmti == NULL) {
+  if (res != JNI_OK || jvmti == nullptr) {
     LOG("Wrong result of a valid call to GetEnv !\n");
     return JNI_ERR;
   }
@@ -54,7 +54,7 @@ Java_framecnt02_checkFrames(JNIEnv *env, jclass cls, jthread thr, jint thr_num) 
   jint frameCount;
 
   if (thr_num == 0) {
-    err = jvmti->GetFrameCount(thr, NULL);
+    err = jvmti->GetFrameCount(thr, nullptr);
     if (err != JVMTI_ERROR_NULL_POINTER) {
       LOG("Error expected: JVMTI_ERROR_NULL_POINTER, got: %s (%d)\n", TranslateError(err), err);
       result = STATUS_FAILED;

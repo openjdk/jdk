@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,10 @@
  */
 #include <string.h>
 #include "jvmti.h"
-#include "agent_common.h"
-#include "jni_tools.h"
-#include "jvmti_tools.h"
-#include "jvmti_FollowRefObjects.h"
+#include "agent_common.hpp"
+#include "jni_tools.hpp"
+#include "jvmti_tools.hpp"
+#include "jvmti_FollowRefObjects.hpp"
 
 extern "C" {
 
@@ -46,8 +46,8 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
            "    return an error if env. doesn't possess can_tag_objects capability\n");
 
     retCode = jvmti->FollowReferences((jint) 0,                 /* heap filter */
-                                      NULL,                     /* class */
-                                      NULL,                     /* inital object */
+                                      nullptr,                     /* class */
+                                      nullptr,                     /* inital object */
                                       &g_wrongHeapCallbacks,
                                       (const void *) &g_fakeUserData);
 
@@ -57,7 +57,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
     }
 
     retCode = jvmti->IterateThroughHeap((jint) 0,                 /* heap filter */
-                                        NULL,                     /* class */
+                                        nullptr,                     /* class */
                                         &g_wrongHeapCallbacks,
                                         (const void *) &g_fakeUserData);
 
@@ -115,7 +115,7 @@ JNIEXPORT jint JNI_OnLoad_followref005(JavaVM *jvm, char *options, void *reserve
 }
 #endif
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
-    jvmtiEnv* jvmti = NULL;
+    jvmtiEnv* jvmti = nullptr;
 
     if (!NSK_VERIFY(nsk_jvmti_parseOptions(options))) {
         return JNI_ERR;
@@ -123,7 +123,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     g_timeout = nsk_jvmti_getWaitTime() * 60 * 1000;
 
-    if (!NSK_VERIFY((jvmti = nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL)) {
+    if (!NSK_VERIFY((jvmti = nsk_jvmti_createJVMTIEnv(jvm, reserved)) != nullptr)) {
         return JNI_ERR;
     }
 
@@ -137,7 +137,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         }
     }
 
-    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, NULL))) {
+    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, nullptr))) {
         return JNI_ERR;
     }
 

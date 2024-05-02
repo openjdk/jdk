@@ -33,6 +33,7 @@
 */
 
 package compiler.vectorization;
+
 import compiler.lib.ir_framework.*;
 import java.util.Random;
 
@@ -63,16 +64,22 @@ public class TestPopCountVectorLong {
         for (int i = 0; i < LEN; ++i) {
             output[i] = Long.bitCount(input[i]);
         }
-        checkResult();
+        if (checkResult() > 0) {
+            throw new RuntimeException("Error!");
+        }
     }
 
-    public void checkResult() {
+    public int checkResult() {
+        int err = 0;
         for (int i = 0; i < LEN; ++i) {
             int expected = Long.bitCount(input[i]);
             if (output[i] != expected) {
-                throw new RuntimeException("Invalid result: output[" + i + "] = " + output[i] + " != " + expected);
+                err++;
+                System.err.println("Invalid result: output[" + i + "] = " + output[i] + " != " + expected +
+                                   ", input[" + i + "] == " + Long.toBinaryString(input[i]));
             }
         }
+        return err;
     }
 }
 

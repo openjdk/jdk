@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -215,13 +215,15 @@ public class DocFilesHandler {
 
         @Override
         protected Navigation getNavBar(PageMode pageMode, Element element) {
+            List<Content> subnavLinks = new ArrayList<>();
             var pkg = dfElement.getPackageElement();
-            Content mdleLinkContent = getModuleLink(utils.elementUtils.getModuleOf(element),
-                    contents.moduleLabel);
-            Content pkgLinkContent = getPackageLink(pkg, contents.packageLabel);
-            return super.getNavBar(pageMode, element)
-                    .setNavLinkModule(mdleLinkContent)
-                    .setNavLinkPackage(pkgLinkContent);
+            if (configuration.showModules) {
+                subnavLinks.add(getBreadcrumbLink(utils.elementUtils.getModuleOf(element), pkg.isUnnamed()));
+            }
+            if (!pkg.isUnnamed()) {
+                subnavLinks.add(getBreadcrumbLink(pkg, true));
+            }
+            return super.getNavBar(pageMode, element).setSubNavLinks(subnavLinks);
         }
 
         @Override

@@ -77,6 +77,11 @@ jlong OSContainer::memory_and_swap_limit_in_bytes() {
   return cgroup_subsystem->memory_and_swap_limit_in_bytes();
 }
 
+jlong OSContainer::memory_and_swap_usage_in_bytes() {
+  assert(cgroup_subsystem != nullptr, "cgroup subsystem not available");
+  return cgroup_subsystem->memory_and_swap_usage_in_bytes();
+}
+
 jlong OSContainer::memory_soft_limit_in_bytes() {
   assert(cgroup_subsystem != nullptr, "cgroup subsystem not available");
   return cgroup_subsystem->memory_soft_limit_in_bytes();
@@ -149,7 +154,7 @@ jlong OSContainer::pids_current() {
 
 void OSContainer::print_container_helper(outputStream* st, jlong j, const char* metrics) {
   st->print("%s: ", metrics);
-  if (j > 0) {
+  if (j >= 0) {
     if (j >= 1024) {
       st->print_cr(UINT64_FORMAT " k", uint64_t(j) / K);
     } else {

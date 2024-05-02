@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,7 +92,22 @@ public class ClassUseMapper {
     /**
      * Mapping of TypeElements to list of TypeElements which implement this interface.
      */
-    public Map<TypeElement, List<TypeElement>> classToImplementingClass = new HashMap<>();
+    public final Map<TypeElement, List<TypeElement>> classToImplementingClass = new HashMap<>();
+
+    /**
+     * Mapping of TypeElements to list of TypeElements which use them in superclass type parameters.
+     */
+    public final Map<TypeElement, List<TypeElement>> classToSubclassTypeParam = new HashMap<>();
+
+    /**
+     * Mapping of TypeElements to list of TypeElements which use them in superinterface type parameters.
+     */
+    public final Map<TypeElement, List<TypeElement>> classToSubinterfaceTypeParam = new HashMap<>();
+
+    /**
+     * Mapping of TypeElements to list of TypeElements which use them in implemented interface type parameters.
+     */
+    public final Map<TypeElement, List<TypeElement>> classToImplementsTypeParam = new HashMap<>();
 
     /**
      * Mapping of TypeElements to list of VariableElements declared as that class.
@@ -214,6 +229,18 @@ public class ClassUseMapper {
             PackageElement pkg = elementUtils.getPackageOf(aClass);
             mapAnnotations(classToPackageAnnotations, pkg, pkg);
             mapTypeParameters(classToClassTypeParam, aClass, aClass);
+            mapTypeParameters(classToSubclassTypeParam, aClass.getSuperclass(), aClass);
+
+            if (utils.isInterface(aClass)) {
+                for (var superinterface : aClass.getInterfaces()) {
+                    mapTypeParameters(classToSubinterfaceTypeParam, superinterface, aClass);
+                }
+            } else {
+                for (var superinterface : aClass.getInterfaces()) {
+                    mapTypeParameters(classToImplementsTypeParam, superinterface, aClass);
+                }
+            }
+
             mapAnnotations(classToClassAnnotations, aClass, aClass);
             VisibleMemberTable vmt = configuration.getVisibleMemberTable(aClass);
 

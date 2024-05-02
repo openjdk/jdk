@@ -1,0 +1,18 @@
+{
+  "files.associations": {
+    "type_traits": "cpp",
+    "random": "cpp",
+    "*.tcc": "cpp",
+    "ostream": "cpp",
+    "functional": "cpp",
+    "array": "cpp",
+    "compare": "cpp",
+    "tuple": "cpp",
+    "utility": "cpp",
+    "atomic": "cpp",
+    "numeric": "cpp",
+    "cmath": "cpp",
+    "cstdlib": "cpp",
+    "memory_resource": "cpp"
+  }
+}

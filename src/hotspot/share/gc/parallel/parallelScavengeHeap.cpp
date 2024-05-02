@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,7 +102,6 @@ jint ParallelScavengeHeap::initialize() {
   assert(old_gen()->max_gen_size() == old_rs.size(), "Consistency check");
 
   double max_gc_pause_sec = ((double) MaxGCPauseMillis)/1000.0;
-  double max_gc_minor_pause_sec = ((double) MaxGCMinorPauseMillis)/1000.0;
 
   const size_t eden_capacity = _young_gen->eden_space()->capacity_in_bytes();
   const size_t old_capacity = _old_gen->capacity_in_bytes();
@@ -113,7 +112,6 @@ jint ParallelScavengeHeap::initialize() {
                              young_gen()->to_space()->capacity_in_bytes(),
                              GenAlignment,
                              max_gc_pause_sec,
-                             max_gc_minor_pause_sec,
                              GCTimeRatio
                              );
 
@@ -124,7 +122,7 @@ jint ParallelScavengeHeap::initialize() {
   _gc_policy_counters =
     new PSGCAdaptivePolicyCounters("ParScav:MSC", 2, 2, _size_policy);
 
-  if (!PSParallelCompact::initialize()) {
+  if (!PSParallelCompact::initialize_aux_data()) {
     return JNI_ENOMEM;
   }
 
@@ -210,7 +208,8 @@ size_t ParallelScavengeHeap::used() const {
 }
 
 bool ParallelScavengeHeap::is_maximal_no_gc() const {
-  return old_gen()->is_maximal_no_gc() && young_gen()->is_maximal_no_gc();
+  // We don't expand young-gen except at a GC.
+  return old_gen()->is_maximal_no_gc();
 }
 
 

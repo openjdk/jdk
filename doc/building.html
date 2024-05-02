@@ -68,7 +68,8 @@ id="toc-native-compiler-toolchain-requirements">Native Compiler
 <li><a href="#apple-xcode" id="toc-apple-xcode">Apple Xcode</a></li>
 <li><a href="#microsoft-visual-studio"
 id="toc-microsoft-visual-studio">Microsoft Visual Studio</a></li>
-<li><a href="#ibm-xl-cc" id="toc-ibm-xl-cc">IBM XL C/C++</a></li>
+<li><a href="#ibm-open-xl-cc" id="toc-ibm-open-xl-cc">IBM Open XL
+C/C++</a></li>
 </ul></li>
 <li><a href="#boot-jdk-requirements" id="toc-boot-jdk-requirements">Boot
 JDK Requirements</a>
@@ -92,6 +93,8 @@ id="toc-build-tools-requirements">Build Tools Requirements</a>
 <li><a href="#autoconf" id="toc-autoconf">Autoconf</a></li>
 <li><a href="#gnu-make" id="toc-gnu-make">GNU Make</a></li>
 <li><a href="#gnu-bash" id="toc-gnu-bash">GNU Bash</a></li>
+<li><a href="#graphviz-and-pandoc" id="toc-graphviz-and-pandoc">Graphviz
+and Pandoc</a></li>
 </ul></li>
 <li><a href="#running-configure" id="toc-running-configure">Running
 Configure</a>
@@ -524,7 +527,7 @@ header files as provided by your distribution.</p>
 <p>The basic tooling is provided as part of the core operating system,
 but you will most likely need to install developer packages.</p>
 <p>For apt-based distributions (Debian, Ubuntu, etc), try this:</p>
-<pre><code>sudo apt-get install build-essential</code></pre>
+<pre><code>sudo apt-get install build-essential autoconf</code></pre>
 <p>For rpm-based distributions (Fedora, Red Hat, etc), try this:</p>
 <pre><code>sudo yum groupinstall &quot;Development Tools&quot;</code></pre>
 <p>For Alpine Linux, aside from basic tooling, install the GNU versions
@@ -560,7 +563,7 @@ system and toolchain.</p>
 </tr>
 <tr class="odd">
 <td>AIX</td>
-<td>IBM XL C/C++</td>
+<td>IBM Open XL C/C++</td>
 </tr>
 <tr class="even">
 <td>Windows</td>
@@ -599,18 +602,18 @@ to compile successfully without issues.</p>
 <p>All compilers are expected to be able to handle the C11 language
 standard for C, and C++14 for C++.</p>
 <h3 id="gcc">gcc</h3>
-<p>The minimum accepted version of gcc is 6.0. Older versions will not
+<p>The minimum accepted version of gcc is 10.0. Older versions will not
 be accepted by <code>configure</code>.</p>
 <p>The JDK is currently known to compile successfully with gcc version
 13.2 or newer.</p>
 <p>In general, any version between these two should be usable.</p>
 <h3 id="clang">clang</h3>
-<p>The minimum accepted version of clang is 3.5. Older versions will not
+<p>The minimum accepted version of clang is 13. Older versions will not
 be accepted by <code>configure</code>.</p>
 <p>To use clang instead of gcc on Linux, use
 <code>--with-toolchain-type=clang</code>.</p>
 <h3 id="apple-xcode">Apple Xcode</h3>
-<p>The oldest supported version of Xcode is 8.</p>
+<p>The oldest supported version of Xcode is 13.0.</p>
 <p>You will need the Xcode command line developer tools to be able to
 build the JDK. (Actually, <em>only</em> the command line tools are
 needed, not the IDE.) The simplest way to install these is to run:</p>
@@ -671,11 +674,10 @@ the following line: (note that the " characters are essential)</p>
 version number accordingly. If you have not installed the
 <code>BuildTools</code>, but e.g. <code>Professional</code>, adjust the
 product ID accordingly.</p>
-<h3 id="ibm-xl-cc">IBM XL C/C++</h3>
-<p>Please consult the AIX section of the <a
-href="https://wiki.openjdk.org/display/Build/Supported+Build+Platforms">Supported
-Build Platforms</a> OpenJDK Build Wiki page for details about which
-versions of XLC are supported.</p>
+<h3 id="ibm-open-xl-cc">IBM Open XL C/C++</h3>
+<p>The minimum accepted version of Open XL is 17.1.1.4. This is in
+essence clang 15, and will be treated as such by the OpenJDK build
+system.</p>
 <h2 id="boot-jdk-requirements">Boot JDK Requirements</h2>
 <p>Paradoxically, building the JDK requires a pre-existing JDK. This is
 called the "boot JDK". The boot JDK does not, however, have to be a JDK
@@ -862,6 +864,13 @@ e.g. <code>configure MAKE=/opt/gnu/make</code>.</p>
 href="https://www.gnu.org/software/bash">GNU Bash</a>. No other shells
 are supported.</p>
 <p>At least version 3.2 of GNU Bash must be used.</p>
+<h3 id="graphviz-and-pandoc">Graphviz and Pandoc</h3>
+<p>In order to build the full docs (see the
+<code>--enable-full-docs</code> configure option) <a
+href="https://www.graphviz.org">Graphviz</a> and <a
+href="https://pandoc.org">Pandoc</a> are required. Any recent versions
+should work. For reference, and subject to change, Oracle builds use
+Graphviz 9.0.0 and Pandoc 2.19.2.</p>
 <h2 id="running-configure">Running Configure</h2>
 <p>To build the JDK, you need a "configuration", which consists of a
 directory where to store the build output, coupled with information
@@ -2157,15 +2166,26 @@ you can create a directory under <code>build</code> and run
 <code>configure</code> from there, e.g.
 <code>mkdir build/&lt;name&gt; &amp;&amp; cd build/&lt;name&gt; &amp;&amp; bash ../../configure</code>.</p>
 <p>Then you can build that configuration using
-<code>make CONF_NAME=&lt;name&gt;</code> or
-<code>make CONF=&lt;pattern&gt;</code>, where
-<code>&lt;pattern&gt;</code> is a substring matching one or several
-configurations, e.g. <code>CONF=debug</code>. The special empty pattern
-(<code>CONF=</code>) will match <em>all</em> available configuration, so
-<code>make CONF= hotspot</code> will build the <code>hotspot</code>
-target for all configurations. Alternatively, you can execute
-<code>make</code> in the configuration directory, e.g.
-<code>cd build/&lt;name&gt; &amp;&amp; make</code>.</p>
+<code>make CONF=&lt;selector&gt;</code>, where
+<code>&lt;selector&gt;</code> is interpreted as follows:</p>
+<ul>
+<li>If <code>&lt;selector&gt;</code> exacly matches the name of a
+configuration, this and only this configuration will be selected.</li>
+<li>If <code>&lt;selector&gt;</code> matches (i.e. is a substring of)
+the names of several configurations, then all these configurations will
+be selected.</li>
+<li>If <code>&lt;selector&gt;</code> is empty (i.e. <code>CONF=</code>),
+then all configurations will be selected.</li>
+<li>If <code>&lt;selector&gt;</code> begins with <code>!</code>, then
+all configurations <strong>not</strong> matching the string following
+<code>!</code> will be selected.</li>
+</ul>
+<p>A more specialized version, <code>CONF_NAME=&lt;name&gt;</code> also
+exists, which will only match if the given <code>&lt;name&gt;</code>
+exactly matches a single configuration.</p>
+<p>Alternatively, you can execute <code>make</code> in the configuration
+directory, e.g. <code>cd build/&lt;name&gt; &amp;&amp; make</code>.</p>
+<p><code>make CONF_NAME=&lt;name&gt;</code> or</p>
 <h3 id="handling-reconfigurations">Handling Reconfigurations</h3>
 <p>If you update the repository and part of the configure script has
 changed, the build system will force you to re-run

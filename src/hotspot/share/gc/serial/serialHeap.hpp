@@ -66,7 +66,7 @@ class SerialHeap : public CollectedHeap {
   friend class Generation;
   friend class DefNewGeneration;
   friend class TenuredGeneration;
-  friend class GenMarkSweep;
+  friend class SerialFullGC;
   friend class VM_GenCollectForAllocation;
   friend class VM_GenCollectFull;
   friend class VM_GC_HeapInspection;
@@ -85,12 +85,11 @@ public:
 private:
   DefNewGeneration* _young_gen;
   TenuredGeneration* _old_gen;
-
+  HeapWord* _young_gen_saved_top;
+  HeapWord* _old_gen_saved_top;
 private:
   // The singleton CardTable Remembered Set.
   CardTableRS* _rem_set;
-
-  SoftRefPolicy _soft_ref_policy;
 
   GCPolicyCounters* _gc_policy_counters;
 
@@ -98,9 +97,6 @@ private:
   // The flag is cleared when an action is taken that might clear the
   // condition that caused that incremental collection to fail.
   bool _incremental_collection_failed;
-
-  // In support of ExplicitGCInvokesConcurrent functionality
-  unsigned int _full_collections_completed;
 
   // Collects the given generation.
   void collect_generation(Generation* gen, bool full, size_t size, bool is_tlab,
@@ -146,7 +142,6 @@ private:
 public:
   // Returns JNI_OK on success
   jint initialize() override;
-  virtual CardTableRS* create_rem_set(const MemRegion& reserved_region);
 
   // Does operations required after initialization has been done.
   void post_initialize() override;
@@ -157,16 +152,11 @@ public:
   MemRegion reserved_region() const { return _reserved; }
   bool is_in_reserved(const void* addr) const { return _reserved.contains(addr); }
 
-  SoftRefPolicy* soft_ref_policy() override { return &_soft_ref_policy; }
-
   // Performance Counter support
   GCPolicyCounters* counters()     { return _gc_policy_counters; }
 
   size_t capacity() const override;
   size_t used() const override;
-
-  // Save the "used_region" for both generations.
-  void save_used_regions();
 
   size_t max_capacity() const override;
 
@@ -188,10 +178,6 @@ public:
   bool is_in_young(const void* p) const;
 
   bool requires_barriers(stackChunkOop obj) const override;
-
-#ifdef ASSERT
-  bool is_in_partial_collection(const void* p);
-#endif
 
   // Optimized nmethod scanning support routines
   void register_nmethod(nmethod* nm) override;
@@ -233,16 +219,6 @@ public:
                               size_t requested_size,
                               size_t* actual_size) override;
 
-  // Total number of full collections completed.
-  unsigned int total_full_collections_completed() {
-    assert(_full_collections_completed <= _total_full_collections,
-           "Can't complete more collections than were started");
-    return _full_collections_completed;
-  }
-
-  // Update above counter, as appropriate, at the end of a stop-world GC cycle
-  unsigned int update_full_collections_completed();
-
   // Update the gc statistics for each generation.
   void update_gc_stats(Generation* current_generation, bool full) {
     _old_gen->update_gc_stats(current_generation, full);
@@ -259,19 +235,6 @@ public:
   bool print_location(outputStream* st, void* addr) const override;
 
   void print_heap_change(const PreGenGCValues& pre_gc_values) const;
-
-  // The functions below are helper functions that a subclass of
-  // "CollectedHeap" can use in the implementation of its virtual
-  // functions.
-
-  class GenClosure : public StackObj {
-   public:
-    virtual void do_generation(Generation* gen) = 0;
-  };
-
-  // Apply "cl.do_generation" to all generations in the heap
-  // If "old_to_young" determines the order.
-  void generation_iterate(GenClosure* cl, bool old_to_young);
 
   // Return "true" if all generations have reached the
   // maximal committed limit that they can reach, without a garbage
@@ -301,16 +264,12 @@ public:
                      OopClosure* strong_roots,
                      CLDClosure* strong_cld_closure,
                      CLDClosure* weak_cld_closure,
-                     CodeBlobToOopClosure* code_roots);
+                     NMethodToOopClosure* code_roots);
 
   // Set the saved marks of generations, if that makes sense.
   // In particular, if any generation might iterate over the oops
   // in other generations, it should call this method.
   void save_marks();
-
-  // Returns "true" iff no allocations have occurred since the last
-  // call to "save_marks".
-  bool no_allocs_since_save_marks();
 
   // Returns true if an incremental collection is likely to fail.
   // We optionally consult the young gen, if asked to do so;
@@ -377,26 +336,15 @@ public:
   GrowableArray<MemoryPool*> memory_pools() override;
 
   DefNewGeneration* young_gen() const {
-    assert(_young_gen->kind() == Generation::DefNew, "Wrong generation type");
-    return static_cast<DefNewGeneration*>(_young_gen);
+    return _young_gen;
   }
 
   TenuredGeneration* old_gen() const {
-    assert(_old_gen->kind() == Generation::MarkSweepCompact, "Wrong generation type");
-    return static_cast<TenuredGeneration*>(_old_gen);
+    return _old_gen;
   }
 
-  // Apply "cur->do_oop" or "older->do_oop" to all the oops in objects
-  // allocated since the last call to save_marks in the young generation.
-  // The "cur" closure is applied to references in the younger generation
-  // at "level", and the "older" closure to older generations.
-  template <typename OopClosureType1, typename OopClosureType2>
-  void oop_since_save_marks_iterate(OopClosureType1* cur,
-                                    OopClosureType2* older);
-
-  void young_process_roots(OopClosure* root_closure,
-                           OopIterateClosure* old_gen_closure,
-                           CLDClosure* cld_closure);
+  void scan_evacuated_objs(YoungGenScanClosure* young_cl,
+                           OldGenScanClosure* old_cl);
 
   void safepoint_synchronize_begin() override;
   void safepoint_synchronize_end() override;
