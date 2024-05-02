@@ -125,7 +125,7 @@ import java.lang.foreign.*;
 public class TestMemorySegment {
     public static void main(String[] args) {
         TestFramework framework = new TestFramework(TestMemorySegmentImpl.class);
-        framework.addFlags("-DmyVerySpecialArgument=" + args[0]); // forward the argument
+        framework.addFlags("-DmemorySegmentProviderNameForTestVM=" + args[0]);
         framework.start();
     }
 }
@@ -133,6 +133,7 @@ public class TestMemorySegment {
 class TestMemorySegmentImpl {
     static final int BACKING_SIZE = 1024 * 64;
     static final Random RANDOM = Utils.getRandomInstance();
+
 
     interface TestFunction {
         Object[] run();
@@ -142,18 +143,11 @@ class TestMemorySegmentImpl {
         MemorySegment newMemorySegment();
     }
 
-    MemorySegmentProvider provider;
+    static MemorySegmentProvider provider;
 
-    // List of tests
-    Map<String,TestFunction> tests = new HashMap<String,TestFunction>();
-
-    // List of gold, the results from the first run before compilation
-    Map<String,Object[]> golds = new HashMap<String,Object[]>();
-
-    public TestMemorySegmentImpl () {
-        // Choose what backs the MemorySegment
-        String argv = System.getProperty("myVerySpecialArgument");
-        provider = switch (argv) {
+    static {
+        String providerName = System.getProperty("memorySegmentProviderNameForTestVM");
+        provider = switch (providerName) {
             case "ByteArray"        -> ( () -> { return newMemorySegmentOfByteArray(); } );
             case "CharArray"        -> ( () -> { return newMemorySegmentOfCharArray(); } );
             case "ShortArray"       -> ( () -> { return newMemorySegmentOfShortArray(); } );
@@ -167,9 +161,17 @@ class TestMemorySegmentImpl {
             case "MixedArray"       -> ( () -> { return newMemorySegmentOfMixedArray(); } );
             case "MixedBuffer"      -> ( () -> { return newMemorySegmentOfMixedBuffer(); } );
             case "Mixed"            -> ( () -> { return newMemorySegmentOfMixed(); } );
-            default -> throw new RuntimeException("Test argument not recognized: " + argv);
+            default -> throw new RuntimeException("Test argument not recognized: " + providerName);
         };
+    }
 
+    // List of tests
+    Map<String,TestFunction> tests = new HashMap<String,TestFunction>();
+
+    // List of gold, the results from the first run before compilation
+    Map<String,Object[]> golds = new HashMap<String,Object[]>();
+
+    public TestMemorySegmentImpl () {
         // Generate two MemorySegments as inputs
         MemorySegment a = newMemorySegment();
         MemorySegment b = newMemorySegment();
