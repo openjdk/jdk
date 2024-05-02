@@ -35,9 +35,6 @@
 #include "runtime/mutexLocker.hpp"
 #include "utilities/align.hpp"
 #include "utilities/macros.hpp"
-#if INCLUDE_SERIALGC
-#include "gc/serial/serialBlockOffsetTable.hpp"
-#endif
 
 // A space is an abstraction for the "storage units" backing
 // up the generation abstraction. It includes specific
@@ -45,11 +42,6 @@
 // for iterating over objects and free blocks, etc.
 
 // Forward decls.
-class ContiguousSpace;
-class Generation;
-class ContiguousSpace;
-class CardTableRS;
-class DirtyCardToOopClosure;
 class GenSpaceMangler;
 
 // A space in which the free area is contiguous.  It therefore supports
@@ -160,28 +152,5 @@ public:
   // Debugging
   void verify() const;
 };
-
-#if INCLUDE_SERIALGC
-
-// Class TenuredSpace is used by TenuredGeneration; it supports an efficient
-// "block_start" operation via a SerialBlockOffsetTable.
-
-class TenuredSpace: public ContiguousSpace {
-  friend class VMStructs;
- protected:
-  SerialBlockOffsetTable* _offsets;
-
- public:
-  // Constructor
-  TenuredSpace(SerialBlockOffsetTable* offsets,
-               MemRegion mr);
-
-  // Add offset table update.
-  inline HeapWord* allocate(size_t word_size) override;
-  inline HeapWord* par_allocate(size_t word_size) override;
-
-  inline void update_for_block(HeapWord* start, HeapWord* end);
-};
-#endif //INCLUDE_SERIALGC
 
 #endif // SHARE_GC_SHARED_SPACE_HPP

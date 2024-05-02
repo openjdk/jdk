@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,12 +43,10 @@ G1RegionToSpaceMapper::G1RegionToSpaceMapper(ReservedSpace rs,
                                              MEMFLAGS type) :
   _listener(nullptr),
   _storage(rs, used_size, page_size),
-  _region_commit_map(rs.size() * commit_factor / region_granularity, mtGC),
+  _region_commit_map(rs.size() * commit_factor / region_granularity, type),
   _memory_type(type) {
   guarantee(is_power_of_2(page_size), "must be");
   guarantee(is_power_of_2(region_granularity), "must be");
-
-  MemTracker::record_virtual_memory_type((address)rs.base(), type);
 }
 
 // Used to manually signal a mapper to handle a set of regions as committed.

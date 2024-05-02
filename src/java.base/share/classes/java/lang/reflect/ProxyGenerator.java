@@ -689,7 +689,7 @@ final class ProxyGenerator {
                             .block(blockBuilder -> blockBuilder
                                     .aload(cob.parameterSlot(0))
                                     .invokevirtual(CD_MethodHandles_Lookup, "lookupClass", MTD_Class)
-                                    .constantInstruction(Opcode.LDC, CD_Proxy)
+                                    .ldc(CD_Proxy)
                                     .if_acmpne(blockBuilder.breakLabel())
                                     .aload(cob.parameterSlot(0))
                                     .invokevirtual(CD_MethodHandles_Lookup, "hasFullPrivilegeAccess", MTD_boolean)
@@ -763,11 +763,11 @@ final class ProxyGenerator {
 
                         if (parameterTypes.length > 0) {
                             // Create an array and fill with the parameters converting primitives to wrappers
-                            cob.constantInstruction(parameterTypes.length)
+                            cob.loadConstant(parameterTypes.length)
                                .anewarray(CE_Object);
                             for (int i = 0; i < parameterTypes.length; i++) {
                                 cob.dup()
-                                   .constantInstruction(i);
+                                   .loadConstant(i);
                                 codeWrapArgument(cob, parameterTypes[i], cob.parameterSlot(i));
                                 cob.aastore();
                             }
@@ -811,7 +811,7 @@ final class ProxyGenerator {
          */
         private void codeWrapArgument(CodeBuilder cob, Class<?> type, int slot) {
             if (type.isPrimitive()) {
-                cob.loadInstruction(TypeKind.from(type).asLoadable(), slot);
+                cob.loadLocal(TypeKind.from(type).asLoadable(), slot);
                 PrimitiveTypeInfo prim = PrimitiveTypeInfo.get(type);
                 cob.invokestatic(prim.wrapperMethodRef);
             } else {
@@ -830,7 +830,7 @@ final class ProxyGenerator {
 
                 cob.checkcast(prim.wrapperClass)
                    .invokevirtual(prim.unwrapMethodRef)
-                   .returnInstruction(TypeKind.from(type).asLoadable());
+                   .return_(TypeKind.from(type).asLoadable());
             } else {
                 cob.checkcast(toClassDesc(type))
                    .areturn();
@@ -847,13 +847,13 @@ final class ProxyGenerator {
             codeClassForName(cob, fromClass);
 
             cob.ldc(method.getName())
-               .constantInstruction(parameterTypes.length)
+               .loadConstant(parameterTypes.length)
                .anewarray(CE_Class);
 
             // Construct an array with the parameter types mapping primitives to Wrapper types
             for (int i = 0; i < parameterTypes.length; i++) {
                 cob.dup()
-                   .constantInstruction(i);
+                   .loadConstant(i);
                 if (parameterTypes[i].isPrimitive()) {
                     PrimitiveTypeInfo prim = PrimitiveTypeInfo.get(parameterTypes[i]);
                     cob.getstatic(prim.typeFieldRef);

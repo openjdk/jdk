@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 
 Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
@@ -1058,7 +1058,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="phonebook">tālruņu grāmatas kārtošanas secība</type>
 			<type key="collation" type="phonetic">Fonētiskā kārtošanas secība</type>
 			<type key="collation" type="pinyin">piņjiņa kārtošanas secība</type>
-			<type key="collation" type="reformed">Reformētā kārtošanas secība</type>
 			<type key="collation" type="search">vispārīga meklēšana</type>
 			<type key="collation" type="searchjl">Meklēt pēc Hangul sākuma līdzskaņa</type>
 			<type key="collation" type="standard">standarta kārtošanas secība</type>
@@ -1146,9 +1145,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[aā b c č d eē f g ģ h iī j k ķ l ļ m n ņ o p r s š t uū v z ž]</exemplarCharacters>
+		<exemplarCharacters>[a ā b c č d e ē f g ģ h i ī j k ķ l ļ m n ņ o p r s š t u ū v z ž]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[y ō q ŗ w x]</exemplarCharacters>
-		<exemplarCharacters type="index">[AĀ B C Č D EĒ F G Ģ H IĪY J K Ķ L Ļ M N Ņ O P Q R S Š T UŪ V W X Z Ž]</exemplarCharacters>
+		<exemplarCharacters type="index">[A Ā B C Č D E Ē F G Ģ H I Y Ī J K Ķ L Ļ M N Ņ O P Q R S Š T U Ū V W X Z Ž]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[  \- ‑ , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … '‘’‚ &quot;“”„ ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 		<ellipsis type="word-final">{0}…</ellipsis>
@@ -2462,9 +2461,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<regionFormat type="daylight">{0}: vasaras laiks</regionFormat>
 			<regionFormat type="standard">{0}: standarta laiks</regionFormat>
 			<fallbackFormat>{0} ({1})</fallbackFormat>
-			<zone type="America/Santa_Isabel">
-				<exemplarCity>Santaisabela</exemplarCity>
-			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>Universālais koordinētais laiks</standard>
@@ -2580,9 +2576,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Australia/Melbourne">
 				<exemplarCity>Melburna</exemplarCity>
-			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>Kari</exemplarCity>
 			</zone>
 			<zone type="Australia/Hobart">
 				<exemplarCity>Hobārta</exemplarCity>
@@ -2716,9 +2709,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Creston">
 				<exemplarCity>Krestona</exemplarCity>
 			</zone>
-			<zone type="America/Yellowknife">
-				<exemplarCity>Jelounaifa</exemplarCity>
-			</zone>
 			<zone type="America/Edmonton">
 				<exemplarCity>Edmontona</exemplarCity>
 			</zone>
@@ -2737,26 +2727,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Resolute">
 				<exemplarCity>Rezolūta</exemplarCity>
 			</zone>
-			<zone type="America/Rainy_River">
-				<exemplarCity>Reinirivera</exemplarCity>
-			</zone>
 			<zone type="America/Rankin_Inlet">
 				<exemplarCity>Rankininleta</exemplarCity>
 			</zone>
 			<zone type="America/Coral_Harbour">
 				<exemplarCity>Atikokana</exemplarCity>
 			</zone>
-			<zone type="America/Thunder_Bay">
-				<exemplarCity>Tanderbeja</exemplarCity>
-			</zone>
-			<zone type="America/Nipigon">
-				<exemplarCity>Nipigona</exemplarCity>
-			</zone>
 			<zone type="America/Iqaluit">
 				<exemplarCity>Ikaluita</exemplarCity>
-			</zone>
-			<zone type="America/Pangnirtung">
-				<exemplarCity>Pannirtuna</exemplarCity>
 			</zone>
 			<zone type="America/Moncton">
 				<exemplarCity>Monktona</exemplarCity>
@@ -3472,17 +3450,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Africa/Dar_es_Salaam">
 				<exemplarCity>Dāresalāma</exemplarCity>
 			</zone>
-			<zone type="Europe/Uzhgorod">
-				<exemplarCity>Užhoroda</exemplarCity>
-			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>Kijeva</exemplarCity>
 			</zone>
 			<zone type="Europe/Simferopol">
 				<exemplarCity>Simferopole</exemplarCity>
-			</zone>
-			<zone type="Europe/Zaporozhye">
-				<exemplarCity>Zaporožje</exemplarCity>
 			</zone>
 			<zone type="Pacific/Midway">
 				<exemplarCity>Midvejs</exemplarCity>
@@ -3498,9 +3470,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Pacific/Honolulu">
 				<exemplarCity>Honolulu</exemplarCity>
-			</zone>
-			<zone type="Pacific/Johnston">
-				<exemplarCity>Džonstona atols</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>Ankurāža</exemplarCity>
@@ -4145,11 +4114,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Lorda Hava salas vasaras laiks</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Makvorija salas laiks</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>Magadanas laiks</generic>
@@ -4187,13 +4151,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Mawson">
 				<long>
 					<standard>Mosonas laiks</standard>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic>Ziemeļrietumu Meksikas laiks</generic>
-					<standard>Ziemeļrietumu Meksikas ziemas laiks</standard>
-					<daylight>Ziemeļrietumu Meksikas vasaras laiks</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">

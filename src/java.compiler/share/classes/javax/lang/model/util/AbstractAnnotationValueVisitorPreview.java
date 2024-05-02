@@ -40,8 +40,10 @@ import javax.annotation.processing.ProcessingEnvironment;
  * @param <R> the return type of this visitor's methods
  * @param <P> the type of the additional parameter to this visitor's methods.
  *
- * @see <a href="AbstractAnnotationValueVisitor6.html#note_for_subclasses">
- * <strong>Compatibility note for subclasses</strong></a>
+ * @see javax.lang.model.util##expectedEvolution
+ * <strong>Expected visitor evolution</strong>
+ * @see AbstractAnnotationValueVisitor6##note_for_subclasses
+ * <strong>Compatibility note for subclasses</strong>
  * @see AbstractAnnotationValueVisitor6
  * @see AbstractAnnotationValueVisitor7
  * @see AbstractAnnotationValueVisitor8
