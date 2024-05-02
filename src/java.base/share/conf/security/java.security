@@ -32,41 +32,42 @@
 # The special "include" property can be defined one or multiple times in
 # this file with a filesystem path value. The effect of each definition
 # is to include a referred security properties file inline, adding all
-# its properties and values. Included files, as well as files pointed by
-# java.security.properties, can include other files recursively. Paths
-# may be absolute or relative, and may contain system properties for
-# expansion in the form of ${system.property}. System properties in include
-# paths bring flexibility for users to switch between predefined security
-# profiles on a per-execution basis, as shown in one of the examples below.
-# If a system property does not have a value, it expands to the empty
-# string. This behavior enables the establishment of a default profile and
-# makes profile selection optional. Each relative path is resolved against
-# the base file containing its "include" definition, if local. An error will
-# be thrown if a file cannot be included, either because it does not exist,
-# cannot be resolved, or is recursively included more than once. For a
-# secure JDK configuration, it is important to check OS permissions assigned
-# to any file included.
+# its properties. Security properties defined before an include statement
+# may be overridden by properties in the included file, if their names
+# match. Conversely, properties defined after an include statement may
+# override properties in the included file.
+#
+# Included files, as well as files pointed by java.security.properties,
+# can include other files recursively. Paths may be absolute or relative.
+# Each relative path is resolved against the base file containing its
+# "include" definition, if local. Paths may contain system properties for
+# expansion in the form of ${system.property}. If a system property does
+# not have a value, it expands to the empty string.
+#
+# System properties in included paths provide flexibility for users to
+# switch between predefined security profiles on a per-execution basis.
+# Profile selection may be required or optional depending on the files
+# layout, as shown in example #3 below.
+#
+# An error will be thrown if a file cannot be included, either because it
+# does not exist, cannot be resolved, or is recursively included more than
+# once. For a secure JDK configuration, it is important to check OS
+# permissions assigned to any file included.
 #
 # Examples:
+#   1) include ${java.home}/conf/security/extra.security
+#   2) include extra.security
+#   3) include ${java.home}/conf/security/profile${SecurityProfile}.security
 #
-#   include ${java.home}/conf/security/extra.security
-#
-#   include extra.security
-#
-#   include ${java.home}/conf/security/profile${SecurityProfile}.security
-#
-# Note: In the latter case, the SecurityProfile system property can be set to
-# select an existing security profile on a per-execution basis. For example,
-# if Java is launched with the argument -DSecurityProfile=FIPS, the profile
-# defined in the profileFIPS.security file is applied or an error thrown if
-# not found. Other files may exist in the same directory defining alternative
-# profiles. If SecurityProfile is not set, it expands to the empty string.
-# When a profile.security file exists (may be empty), it defines a default
-# security profile. When it does not exist, an error is thrown and explicit
-# profile selection is required. Security properties defined after an include
-# statement will override any matching property defined in a profile. In order
-# to avoid this behavior, the include statement may be placed at the end of
-# this file.
+# In example #3, if Java is launched with the argument -DSecurityProfile=FIPS,
+# the profile defined in profileFIPS.security is applied. An error is thrown
+# if this file is not found. Other files may exist in the same directory,
+# enabling the selection of alternative profiles. If SecurityProfile is not
+# set, it expands to the empty string. When a profile.security file exists
+# (may be empty), it defines a default security profile. When it does not,
+# an error is thrown and explicit profile selection is required. In order
+# to prevent profile properties from being overridden, the include statement
+# may be placed at the end of this file.
 
 # In this file, various security properties are set for use by
 # java.security classes. This is where users can statically register
