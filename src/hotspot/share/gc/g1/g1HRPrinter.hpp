@@ -28,8 +28,6 @@
 #include "gc/g1/g1HeapRegion.hpp"
 #include "logging/log.hpp"
 
-#define SKIP_RETIRED_FULL_REGIONS 1
-
 class FreeRegionList;
 
 class G1HRPrinter {
@@ -40,6 +38,10 @@ private:
   static void print(const char* action, HeapRegion* hr) {
     log_trace(gc, region)("G1HR %s(%s) [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT "]",
                           action, hr->get_type_str(), p2i(hr->bottom()), p2i(hr->top()), p2i(hr->end()));
+  }
+
+  void mark_reclaim(HeapRegion* hr) {
+    print("MARK-RECLAIM", hr);
   }
 
 public:
@@ -58,9 +60,7 @@ public:
 
   void retire(HeapRegion* hr) {
     if (is_active()) {
-      if (!SKIP_RETIRED_FULL_REGIONS || hr->top() < hr->end()) {
-        print("RETIRE", hr);
-      }
+      print("RETIRE", hr);
     }
   }
 
@@ -82,13 +82,19 @@ public:
     }
   }
 
-  void cleanup(HeapRegion* hr) {
+  void mark_reclaim(FreeRegionList* free_list);
+
+  void eager_reclaim(HeapRegion* hr) {
     if (is_active()) {
-      print("CLEANUP", hr);
+      print("EAGER-RECLAIM", hr);
     }
   }
 
-  void cleanup(FreeRegionList* free_list);
+  void evac_reclaim(HeapRegion* hr) {
+    if (is_active()) {
+      print("EVAC-RECLAIM", hr);
+    }
+  }
 
   void post_compaction(HeapRegion* hr) {
     if (is_active()) {
