@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,17 +19,41 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#include "precompiled.hpp"
-#include "gc/shared/softRefPolicy.hpp"
+/*
+ * @test
+ * @bug 8327512
+ * @summary Clashes between java.lang classes and custom-defined classes with
+ *          the same simple names
+ * @modules jdk.jshell/jdk.jshell
+ * @build KullaTesting
+ * @run testng JLCollisionTest
+ */
 
-SoftRefPolicy::SoftRefPolicy() :
-    _should_clear_all_soft_refs(false),
-    _all_soft_refs_clear(false) {
-}
+import org.testng.annotations.Test;
 
-void SoftRefPolicy::cleared_all_soft_refs() {
-  _all_soft_refs_clear = true;
+@Test
+public class JLCollisionTest extends KullaTesting {
+
+    public void testObject() {
+        assertEval("class Object {}");
+        assertEval("1");
+        assertEval("null");
+        assertEval("$2 = \"\"");
+    }
+
+    public void testThrowable() {
+        assertEval("class Throwable {}");
+        assertEval("1");
+        //var with an "enhanced" (non-denotable) type:
+        assertEval("var _ = new Object() {};");
+    }
+
+    public void testSuppressWarnings() {
+        assertEval("class SuppressWarnings {}");
+        //var with an "enhanced" (non-denotable) type:
+        assertEval("var _ = new Object() {};");
+    }
+
 }

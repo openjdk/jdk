@@ -1213,7 +1213,7 @@ G1RegionToSpaceMapper* G1CollectedHeap::create_aux_memory_mapper(const char* des
                                                                  size_t translation_factor) {
   size_t preferred_page_size = os::page_size_for_region_unaligned(size, 1);
   // Allocate a new reserved space, preferring to use large pages.
-  ReservedSpace rs(size, preferred_page_size);
+  ReservedSpace rs(size, preferred_page_size, mtGC);
   size_t page_size = rs.page_size();
   G1RegionToSpaceMapper* result  =
     G1RegionToSpaceMapper::create_mapper(rs,

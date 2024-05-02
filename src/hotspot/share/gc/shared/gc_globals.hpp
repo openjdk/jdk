@@ -494,9 +494,6 @@
   product(bool, UseCondCardMark, false,                                     \
           "Check for already marked card before updating card table")       \
                                                                             \
-  product(bool, VerifyRememberedSets, false, DIAGNOSTIC,                    \
-          "Verify GC remembered sets")                                      \
-                                                                            \
   product(bool, DisableExplicitGC, false,                                   \
           "Ignore calls to System.gc()")                                    \
                                                                             \

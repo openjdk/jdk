@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 
 Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
@@ -1287,7 +1287,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="phonebook">電話帳順</type>
 			<type key="collation" type="phonetic">音声順による並べ替え</type>
 			<type key="collation" type="pinyin">ピンイン順</type>
-			<type key="collation" type="reformed">リフォーム</type>
 			<type key="collation" type="search">汎用検索</type>
 			<type key="collation" type="searchjl">ハングル語頭子音による並べ替え</type>
 			<type key="collation" type="standard">標準並べ替え順序</type>
@@ -3625,9 +3624,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<regionFormat type="daylight">{0}夏時間</regionFormat>
 			<regionFormat type="standard">{0}標準時</regionFormat>
 			<fallbackFormat>{1}（{0}）</fallbackFormat>
-			<zone type="America/Santa_Isabel">
-				<exemplarCity>サンタイサベル</exemplarCity>
-			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>協定世界時</standard>
@@ -3749,9 +3745,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Australia/Melbourne">
 				<exemplarCity>メルボルン</exemplarCity>
-			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>カリー</exemplarCity>
 			</zone>
 			<zone type="Australia/Hobart">
 				<exemplarCity>ホバート</exemplarCity>
@@ -3906,9 +3899,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Creston">
 				<exemplarCity>クレストン</exemplarCity>
 			</zone>
-			<zone type="America/Yellowknife">
-				<exemplarCity>イエローナイフ</exemplarCity>
-			</zone>
 			<zone type="America/Edmonton">
 				<exemplarCity>エドモントン</exemplarCity>
 			</zone>
@@ -3927,29 +3917,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Resolute">
 				<exemplarCity>レゾリュート</exemplarCity>
 			</zone>
-			<zone type="America/Rainy_River">
-				<exemplarCity>レイニーリバー</exemplarCity>
-			</zone>
 			<zone type="America/Rankin_Inlet">
 				<exemplarCity>ランキンインレット</exemplarCity>
 			</zone>
 			<zone type="America/Coral_Harbour">
 				<exemplarCity>アティコカン</exemplarCity>
 			</zone>
-			<zone type="America/Thunder_Bay">
-				<exemplarCity>サンダーベイ</exemplarCity>
-			</zone>
-			<zone type="America/Nipigon">
-				<exemplarCity>ニピゴン</exemplarCity>
-			</zone>
 			<zone type="America/Toronto">
 				<exemplarCity>トロント</exemplarCity>
 			</zone>
 			<zone type="America/Iqaluit">
 				<exemplarCity>イカルイット</exemplarCity>
-			</zone>
-			<zone type="America/Pangnirtung">
-				<exemplarCity>パンナータング</exemplarCity>
 			</zone>
 			<zone type="America/Moncton">
 				<exemplarCity>モンクトン</exemplarCity>
@@ -4764,17 +4742,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Africa/Dar_es_Salaam">
 				<exemplarCity>ダルエスサラーム</exemplarCity>
 			</zone>
-			<zone type="Europe/Uzhgorod">
-				<exemplarCity>ウージュホロド</exemplarCity>
-			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>キーウ</exemplarCity>
 			</zone>
 			<zone type="Europe/Simferopol">
 				<exemplarCity>シンフェロポリ</exemplarCity>
-			</zone>
-			<zone type="Europe/Zaporozhye">
-				<exemplarCity>ザポリージャ</exemplarCity>
 			</zone>
 			<zone type="Africa/Kampala">
 				<exemplarCity>カンパラ</exemplarCity>
@@ -4793,9 +4765,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Pacific/Honolulu">
 				<exemplarCity>ホノルル</exemplarCity>
-			</zone>
-			<zone type="Pacific/Johnston">
-				<exemplarCity>ジョンストン島</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>アンカレッジ</exemplarCity>
@@ -5501,11 +5470,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>マカオ夏時間</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>マッコーリー島時間</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>マガダン時間</generic>
@@ -5543,13 +5507,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Mawson">
 				<long>
 					<standard>モーソン基地時間</standard>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic>メキシコ北西部時間</generic>
-					<standard>メキシコ北西部標準時</standard>
-					<daylight>メキシコ北西部夏時間</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">
