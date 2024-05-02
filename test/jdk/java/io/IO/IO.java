@@ -49,10 +49,56 @@ public class IO {
     @ParameterizedTest
     @ValueSource(strings = {"println", "print"})
     public void printTest(String mode) throws Exception {
-        var file = Path.of(System.getProperty("test.src", "."), "Print.java")
+        var file = Path.of(System.getProperty("test.src", "."), "Output.java")
                 .toAbsolutePath().toString();
         var pb = ProcessTools.createTestJavaProcessBuilder("--enable-preview", file, mode);
         OutputAnalyzer output = ProcessTools.executeProcess(pb);
+        assertEquals(0, output.getExitValue());
+        output.reportDiagnosticSummary();
+        String out = output.getOutput();
+        // The first half of the output is produced by Console, the second
+        // half is produced by IO: those halves must match.
+        // Executing Console and IO in the same VM (as opposed to
+        // consecutive VM runs, which are cleaner) to be able to compare string
+        // representation of objects.
+        assertFalse(out.isBlank());
+        assertEquals(out.substring(0, out.length() / 2),
+                out.substring(out.length() / 2));
+    }
+
+    /*
+     * printTest tests a _default_ console, which is normally
+     * jdk.internal.org.jline.JdkConsoleProviderImpl, whereas this test tests
+     * jdk.internal.io.JdkConsoleImpl. Those console implementations operate
+     * in different conditions and, thus, are tested separately.
+     *
+     * To test jdk.internal.io.JdkConsoleImpl one needs to ensure that both
+     * conditions are met:
+     *
+     *   - a non-existent console provider is requested
+     *   - isatty is true
+     *
+     * To achieve isatty, the test currently uses the EXPECT(1) Unix command,
+     * which does not work for Windows. Later, a library like pty4j or JPty
+     * might be used instead EXPECT, to cover both Unix and Windows.
+     */
+    @ParameterizedTest
+    @EnabledOnOs({OS.LINUX, OS.MAC})
+    @ValueSource(strings = {"println", "print"})
+    public void outputTestInteractive(String mode) throws Exception {
+        var expect = Paths.get("/usr/bin/expect"); // os-specific path
+        if (!Files.exists(expect) || !Files.isExecutable(expect)) {
+            throw new SkippedException("'" + expect + "' not found");
+        }
+        var testSrc = System.getProperty("test.src", ".");
+        OutputAnalyzer output = ProcessTools.executeProcess(
+                "expect",
+                Path.of(testSrc, "output.exp").toAbsolutePath().toString(),
+                System.getProperty("test.jdk") + "/bin/java",
+                "--enable-preview",
+                "-Djdk.console=gibberish",
+                Path.of(testSrc, "Output.java").toAbsolutePath().toString(),
+                mode);
         assertEquals(0, output.getExitValue());
         output.reportDiagnosticSummary();
         String out = output.getOutput();
@@ -84,7 +130,7 @@ public class IO {
         var testSrc = System.getProperty("test.src", ".");
         OutputAnalyzer output = ProcessTools.executeProcess(
                 "expect",
-                Path.of(testSrc, "script.exp").toAbsolutePath().toString(),
+                Path.of(testSrc, "input.exp").toAbsolutePath().toString(),
                 System.getProperty("test.jdk") + "/bin/java",
                 "--enable-preview",
                 Path.of(testSrc, "Input.java").toAbsolutePath().toString());
@@ -97,7 +143,7 @@ public class IO {
     public void nullConsole(String method) throws Exception {
         var file = Path.of(System.getProperty("test.src", "."), "Methods.java")
                 .toAbsolutePath().toString();
-        var pb = ProcessTools.createTestJavaProcessBuilder("-Djdk.console=java.base",
+        var pb = ProcessTools.createTestJavaProcessBuilder("-Djdk.console=gibberish",
                 "--enable-preview", file, method);
         OutputAnalyzer output = ProcessTools.executeProcess(pb);
         output.reportDiagnosticSummary();

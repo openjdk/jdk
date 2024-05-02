@@ -59,14 +59,14 @@ public final class JdkConsoleImpl implements JdkConsole {
     @Override
     public JdkConsole println(Object obj) {
         pw.println(obj);
-        // pw is constructed with autoFlush == true
+        // automatic flushing covers println
         return this;
     }
 
     @Override
     public JdkConsole print(Object obj) {
         pw.print(obj);
-        // pw is constructed with autoFlush == true
+        pw.flush(); // automatic flushing does not cover print
         return this;
     }
 
@@ -75,9 +75,10 @@ public final class JdkConsoleImpl implements JdkConsole {
         String line = null;
         synchronized (writeLock) {
             synchronized(readLock) {
-                if (!prompt.isEmpty())
+                if (!prompt.isEmpty()) {
                     pw.print(prompt);
                     pw.flush(); // automatic flushing does not cover print
+                }
                 try {
                     char[] ca = readline(false);
                     if (ca != null)

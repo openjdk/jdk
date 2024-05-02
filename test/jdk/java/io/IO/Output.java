@@ -24,7 +24,7 @@
 import static java.io.IO.*;
 import java.util.function.Consumer;
 
-public class Print {
+public class Output {
 
     private static final Object[] OBJECTS = {
             null,
