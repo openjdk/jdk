@@ -2352,7 +2352,8 @@ Node* PhaseIdealLoop::exact_limit( IdealLoopTree *loop ) {
   CountedLoopNode *cl = loop->_head->as_CountedLoop();
   assert(cl->is_valid_counted_loop(T_INT), "");
 
-  if (ABS(cl->stride_con()) == 1 ||
+  if (cl->stride_con() == 1 ||
+      cl->stride_con() == -1 ||
       cl->limit()->Opcode() == Op_LoopLimit) {
     // Old code has exact limit (it could be incorrect in case of int overflow).
     // Loop limit is exact with stride == 1. And loop may already have exact limit.
@@ -2962,14 +2963,22 @@ void OuterStripMinedLoopNode::adjust_strip_mined_loop(PhaseIterGVN* igvn) {
   CountedLoopEndNode* inner_cle = inner_cl->loopexit();
 
   int stride = inner_cl->stride_con();
-  jlong scaled_iters_long = ((jlong)LoopStripMiningIter) * ABS(stride);
+  // For a min int stride, LoopStripMiningIter * stride overflows the int range for all values of LoopStripMiningIter
+  // except 0 or 1. Those values are handled early on in this method and causes the method to return. So for a min int
+  // stride, the method is guaranteed to return at the next check below.
+  jlong scaled_iters_long = ((jlong)LoopStripMiningIter) * ABS((jlong)stride);
   int scaled_iters = (int)scaled_iters_long;
-  int short_scaled_iters = LoopStripMiningIterShortLoop* ABS(stride);
+  if ((jlong)scaled_iters != scaled_iters_long) {
+    // Remove outer loop and safepoint (too few iterations)
+    remove_outer_loop_and_safepoint(igvn);
+    return;
+  }
+  jlong short_scaled_iters = LoopStripMiningIterShortLoop * ABS(stride);
   const TypeInt* inner_iv_t = igvn->type(inner_iv_phi)->is_int();
   jlong iter_estimate = (jlong)inner_iv_t->_hi - (jlong)inner_iv_t->_lo;
   assert(iter_estimate > 0, "broken");
-  if ((jlong)scaled_iters != scaled_iters_long || iter_estimate <= short_scaled_iters) {
-    // Remove outer loop and safepoint (too few iterations)
+  if (iter_estimate <= short_scaled_iters) {
+    // Remove outer loop and safepoint: loop executes less than LoopStripMiningIterShortLoop
     remove_outer_loop_and_safepoint(igvn);
     return;
   }

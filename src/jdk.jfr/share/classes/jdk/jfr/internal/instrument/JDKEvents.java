@@ -57,7 +57,6 @@ import jdk.internal.platform.Metrics;
 public final class JDKEvents {
 
     private static final Class<?>[] eventClasses = {
-        FileForceEvent.class,
         FileReadEvent.class,
         FileWriteEvent.class,
         ActiveSettingEvent.class,
@@ -68,6 +67,7 @@ public final class JDKEvents {
         jdk.internal.event.ErrorThrownEvent.class,
         jdk.internal.event.ExceptionStatisticsEvent.class,
         jdk.internal.event.ExceptionThrownEvent.class,
+        jdk.internal.event.FileForceEvent.class,
         jdk.internal.event.ProcessStartEvent.class,
         jdk.internal.event.SecurityPropertyModificationEvent.class,
         jdk.internal.event.SecurityProviderServiceEvent.class,

@@ -416,7 +416,6 @@ class CompileReplay : public StackObj {
       int pool_index = 0;
 
       if (bytecode.is_invokedynamic()) {
-        index = cp->decode_invokedynamic_index(index);
         cp->cache()->set_dynamic_call(callInfo, index);
 
         appendix = cp->resolved_reference_from_indy(index);

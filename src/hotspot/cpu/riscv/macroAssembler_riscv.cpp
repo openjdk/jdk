@@ -228,20 +228,16 @@ void MacroAssembler::check_and_handle_popframe(Register java_thread) {}
 // has to be reset to 0. This is required to allow proper stack traversal.
 void MacroAssembler::set_last_Java_frame(Register last_java_sp,
                                          Register last_java_fp,
-                                         Register last_java_pc,
-                                         Register tmp) {
+                                         Register last_java_pc) {
 
   if (last_java_pc->is_valid()) {
-      sd(last_java_pc, Address(xthread,
-                               JavaThread::frame_anchor_offset() +
-                               JavaFrameAnchor::last_Java_pc_offset()));
+    sd(last_java_pc, Address(xthread,
+                             JavaThread::frame_anchor_offset() +
+                             JavaFrameAnchor::last_Java_pc_offset()));
   }
 
   // determine last_java_sp register
-  if (last_java_sp == sp) {
-    mv(tmp, sp);
-    last_java_sp = tmp;
-  } else if (!last_java_sp->is_valid()) {
+  if (!last_java_sp->is_valid()) {
     last_java_sp = esp;
   }
 
@@ -262,7 +258,7 @@ void MacroAssembler::set_last_Java_frame(Register last_java_sp,
   la(tmp, last_java_pc);
   sd(tmp, Address(xthread, JavaThread::frame_anchor_offset() + JavaFrameAnchor::last_Java_pc_offset()));
 
-  set_last_Java_frame(last_java_sp, last_java_fp, noreg, tmp);
+  set_last_Java_frame(last_java_sp, last_java_fp, noreg);
 }
 
 void MacroAssembler::set_last_Java_frame(Register last_java_sp,
@@ -3348,11 +3344,7 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
   mv(x10, super_klass);
 
 #ifndef PRODUCT
-  mv(t1, (address)&SharedRuntime::_partial_subtype_ctr);
-  Address pst_counter_addr(t1);
-  ld(t0, pst_counter_addr);
-  add(t0, t0, 1);
-  sd(t0, pst_counter_addr);
+  incrementw(ExternalAddress((address)&SharedRuntime::_partial_subtype_ctr));
 #endif // PRODUCT
 
   // We will consult the secondary-super array.
