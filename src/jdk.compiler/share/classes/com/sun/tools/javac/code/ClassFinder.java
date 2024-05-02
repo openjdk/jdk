@@ -241,7 +241,7 @@ public class ClassFinder {
      * available from the module system.
      */
     long getSupplementaryFlags(ClassSymbol c) {
-        if (jrtIndex == null || !jrtIndex.isInJRT(c.classfile) || c.name == names.module_info) {
+        if (c.name == names.module_info) {
             return 0;
         }
 
@@ -256,7 +256,7 @@ public class ClassFinder {
             long newFlags = 0;
             try {
                 ModuleSymbol owningModule = packge.modle;
-                if (owningModule == syms.noModule) {
+                if (owningModule == syms.noModule && jrtIndex != null && jrtIndex.isInJRT(c.classfile)) {
                     JRTIndex.CtSym ctSym = jrtIndex.getCtSym(packge.flatName());
                     Profile minProfile = Profile.DEFAULT;
                     if (ctSym.proprietary)
