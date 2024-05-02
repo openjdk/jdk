@@ -59,9 +59,7 @@ public abstract class CodePointIterator {
     public static CodePointIterator create(CharacterIterator iter) {
         return new CharacterIteratorCodePointIterator(iter);
     }
-
 }
-
 
 final class CharArrayCodePointIterator extends CodePointIterator {
     private char[] text;
