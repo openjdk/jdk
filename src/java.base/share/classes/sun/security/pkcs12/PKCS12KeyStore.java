@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -295,9 +295,13 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
      * (e.g., the given password is wrong).
      */
     public Key engineGetKey(String alias, char[] password)
-        throws NoSuchAlgorithmException, UnrecoverableKeyException
-    {
+        throws NoSuchAlgorithmException, UnrecoverableKeyException {
         Entry entry = entries.get(alias.toLowerCase(Locale.ENGLISH));
+        return internalGetKey(entry, password);
+    }
+
+    private Key internalGetKey(Entry entry, char[] password)
+            throws NoSuchAlgorithmException, UnrecoverableKeyException {
         Key key;
 
         if (!(entry instanceof KeyEntry)) {
@@ -321,7 +325,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
         try {
             // get the encrypted private key
             EncryptedPrivateKeyInfo encrInfo =
-                        new EncryptedPrivateKeyInfo(encrBytes);
+                    new EncryptedPrivateKeyInfo(encrBytes);
             encryptedKey = encrInfo.getEncryptedData();
 
             // parse Algorithm parameters
@@ -332,20 +336,20 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
 
         } catch (IOException ioe) {
             UnrecoverableKeyException uke =
-                new UnrecoverableKeyException("Private key not stored as "
-                                 + "PKCS#8 EncryptedPrivateKeyInfo: " + ioe);
+                    new UnrecoverableKeyException("Private key not stored as "
+                            + "PKCS#8 EncryptedPrivateKeyInfo: " + ioe);
             uke.initCause(ioe);
             throw uke;
         }
 
-       try {
+        try {
             PBEParameterSpec pbeSpec;
             int ic;
 
             if (algParams != null) {
                 try {
                     pbeSpec =
-                        algParams.getParameterSpec(PBEParameterSpec.class);
+                            algParams.getParameterSpec(PBEParameterSpec.class);
                 } catch (InvalidParameterSpecException ipse) {
                     throw new IOException("Invalid PBE algorithm parameters");
                 }
@@ -392,7 +396,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
 
                             if (debug != null) {
                                 debug.println("Retrieved a protected private key at alias" +
-                                        " '" + alias + "' (" +
+                                        " '" + entry.alias + "' (" +
                                         aid.getName() +
                                         " iterations: " + ic + ")");
                             }
@@ -433,7 +437,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
 
                             if (debug != null) {
                                 debug.println("Retrieved a protected secret key at alias " +
-                                        "'" + alias + "' (" +
+                                        "'" + entry.alias + "' (" +
                                         aid.getName() +
                                         " iterations: " + ic + ")");
                             }
@@ -450,8 +454,8 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
 
         } catch (Exception e) {
             UnrecoverableKeyException uke =
-                new UnrecoverableKeyException("Get Key failed: " +
-                                        e.getMessage());
+                    new UnrecoverableKeyException("Get Key failed: " +
+                            e.getMessage());
             uke.initCause(e);
             throw uke;
         }
@@ -471,6 +475,10 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
      */
     public Certificate[] engineGetCertificateChain(String alias) {
         Entry entry = entries.get(alias.toLowerCase(Locale.ENGLISH));
+        return internalGetCertificateChain(entry);
+    }
+
+    private Certificate[] internalGetCertificateChain(Entry entry) {
         if (entry instanceof PrivateKeyEntry privateKeyEntry) {
             if (privateKeyEntry.chain == null) {
                 return null;
@@ -478,8 +486,8 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
 
                 if (debug != null) {
                     debug.println("Retrieved a " +
-                        privateKeyEntry.chain.length +
-                        "-certificate chain at alias '" + alias + "'");
+                            privateKeyEntry.chain.length +
+                            "-certificate chain at alias '" + entry.alias + "'");
                 }
 
                 return privateKeyEntry.chain.clone();
@@ -1013,18 +1021,19 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
             debug.println("Removing entry at alias '" + alias + "'");
         }
 
-        Entry entry = entries.get(alias.toLowerCase(Locale.ENGLISH));
-        if (entry instanceof PrivateKeyEntry keyEntry) {
-            if (keyEntry.chain != null) {
-                certificateCount -= keyEntry.chain.length;
+        Entry entry = entries.remove(alias.toLowerCase(Locale.ENGLISH));
+        if (entry != null) {
+            if (entry instanceof PrivateKeyEntry keyEntry) {
+                if (keyEntry.chain != null) {
+                    certificateCount -= keyEntry.chain.length;
+                }
+                privateKeyCount--;
+            } else if (entry instanceof CertEntry) {
+                certificateCount--;
+            } else if (entry instanceof SecretKeyEntry) {
+                secretKeyCount--;
             }
-            privateKeyCount--;
-        } else if (entry instanceof CertEntry) {
-            certificateCount--;
-        } else if (entry instanceof SecretKeyEntry) {
-            secretKeyCount--;
         }
-        entries.remove(alias.toLowerCase(Locale.ENGLISH));
     }
 
     /**
@@ -1065,6 +1074,10 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
      */
     public boolean engineIsKeyEntry(String alias) {
         Entry entry = entries.get(alias.toLowerCase(Locale.ENGLISH));
+        return internalIsKeyEntry(entry);
+    }
+
+    private boolean internalIsKeyEntry(Entry entry) {
         return entry instanceof KeyEntry;
     }
 
@@ -1075,8 +1088,13 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
      * @return true if the entry identified by the given alias is a
      * <i>trusted certificate entry</i>, false otherwise.
      */
+
     public boolean engineIsCertificateEntry(String alias) {
         Entry entry = entries.get(alias.toLowerCase(Locale.ENGLISH));
+        return internalIsCertificateEntry(entry);
+    }
+
+    private boolean internalIsCertificateEntry(Entry entry) {
         return entry instanceof CertEntry certEntry &&
                 certEntry.trustedKeyUsage != null;
     }
@@ -1306,18 +1324,14 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
 
         Entry entry = entries.get(alias.toLowerCase(Locale.ENGLISH));
         if (protParam == null) {
-            if (engineIsCertificateEntry(alias)) {
-                if (entry instanceof CertEntry &&
-                    ((CertEntry) entry).trustedKeyUsage != null) {
-
-                    if (debug != null) {
-                        debug.println("Retrieved a trusted certificate at " +
+            if (internalIsCertificateEntry(entry)) {
+                if (debug != null) {
+                    debug.println("Retrieved a trusted certificate at " +
                             "alias '" + alias + "'");
-                    }
-
-                    return new KeyStore.TrustedCertificateEntry(
-                        ((CertEntry)entry).cert, entry.attributes);
                 }
+
+                return new KeyStore.TrustedCertificateEntry(
+                        ((CertEntry)entry).cert, entry.attributes);
             } else {
                 throw new UnrecoverableKeyException
                         ("requested entry requires a password");
@@ -1325,17 +1339,17 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
         }
 
         if (protParam instanceof KeyStore.PasswordProtection) {
-            if (engineIsCertificateEntry(alias)) {
+            if (internalIsCertificateEntry(entry)) {
                 throw new UnsupportedOperationException
                     ("trusted certificate entries are not password-protected");
-            } else if (engineIsKeyEntry(alias)) {
+            } else if (internalIsKeyEntry(entry)) {
                 KeyStore.PasswordProtection pp =
                         (KeyStore.PasswordProtection)protParam;
                 char[] password = pp.getPassword();
 
-                Key key = engineGetKey(alias, password);
+                Key key = internalGetKey(entry, password);
                 if (key instanceof PrivateKey) {
-                    Certificate[] chain = engineGetCertificateChain(alias);
+                    Certificate[] chain = internalGetCertificateChain(entry);
 
                     return new KeyStore.PrivateKeyEntry((PrivateKey)key, chain,
                         entry.attributes);
@@ -1345,7 +1359,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                     return new KeyStore.SecretKeyEntry((SecretKey)key,
                         entry.attributes);
                 }
-            } else if (!engineIsKeyEntry(alias)) {
+            } else {
                 throw new UnsupportedOperationException
                     ("untrusted certificate entries are not " +
                         "password-protected");

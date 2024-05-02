@@ -175,10 +175,20 @@ void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
 
   Universe_collectedHeap = Universe::heap();
   Universe_base_vtable_size = Universe::base_vtable_size();
-  Universe_narrow_oop_base = CompressedOops::base();
-  Universe_narrow_oop_shift = CompressedOops::shift();
-  Universe_narrow_klass_base = CompressedKlassPointers::base();
-  Universe_narrow_klass_shift = CompressedKlassPointers::shift();
+  if (UseCompressedOops) {
+    Universe_narrow_oop_base = CompressedOops::base();
+    Universe_narrow_oop_shift = CompressedOops::shift();
+  } else {
+    Universe_narrow_oop_base = nullptr;
+    Universe_narrow_oop_shift = 0;
+  }
+  if (UseCompressedClassPointers) {
+    Universe_narrow_klass_base = CompressedKlassPointers::base();
+    Universe_narrow_klass_shift = CompressedKlassPointers::shift();
+  } else {
+    Universe_narrow_klass_base = nullptr;
+    Universe_narrow_klass_shift = 0;
+  }
   Universe_non_oop_bits = Universe::non_oop_word();
   Universe_verify_oop_mask = Universe::verify_oop_mask();
   Universe_verify_oop_bits = Universe::verify_oop_bits();

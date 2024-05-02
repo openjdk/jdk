@@ -26,8 +26,8 @@
 #define SHARE_GC_G1_VMSTRUCTS_G1_HPP
 
 #include "gc/g1/g1CollectedHeap.hpp"
-#include "gc/g1/heapRegion.hpp"
-#include "gc/g1/heapRegionManager.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
+#include "gc/g1/g1HeapRegionManager.hpp"
 #include "utilities/macros.hpp"
 
 #define VM_STRUCTS_G1GC(nonstatic_field,                                      \

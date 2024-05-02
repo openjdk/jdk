@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,25 +40,6 @@
                     NativeCallStack(1) : FAKE_CALLSTACK)
 
 class MemBaseline;
-
-// Tracker is used for guarding 'release' semantics of virtual memory operation, to avoid
-// the other thread obtains and records the same region that is just 'released' by current
-// thread but before it can record the operation.
-class Tracker : public StackObj {
- public:
-  enum TrackerType {
-     uncommit,
-     release
-  };
-
- public:
-  Tracker(enum TrackerType type) : _type(type) { }
-  void record(address addr, size_t size);
- private:
-  enum TrackerType  _type;
-  // Virtual memory tracking data structures are protected by ThreadCritical lock.
-  ThreadCritical    _tc;
-};
 
 class MemTracker : AllStatic {
   friend class VirtualMemoryTrackerTest;
@@ -139,33 +120,49 @@ class MemTracker : AllStatic {
   //  (we do not do any reservations before that).
 
   static inline void record_virtual_memory_reserve(void* addr, size_t size, const NativeCallStack& stack,
-    MEMFLAGS flag = mtNone) {
+    MEMFLAGS flag) {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
       ThreadCritical tc;
       VirtualMemoryTracker::add_reserved_region((address)addr, size, stack, flag);
+    }
+  }
+
+  static inline void record_virtual_memory_release(address addr, size_t size) {
+    assert_post_init();
+    if (!enabled()) return;
+    if (addr != nullptr) {
+      VirtualMemoryTracker::remove_released_region((address)addr, size);
+    }
+  }
+
+  static inline void record_virtual_memory_uncommit(address addr, size_t size, MEMFLAGS flag) {
+    assert_post_init();
+    if (!enabled()) return;
+    if (addr != nullptr) {
+      VirtualMemoryTracker::remove_uncommitted_region((address)addr, size, flag);
     }
   }
 
   static inline void record_virtual_memory_reserve_and_commit(void* addr, size_t size,
-    const NativeCallStack& stack, MEMFLAGS flag = mtNone) {
+    const NativeCallStack& stack, MEMFLAGS flag) {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
       ThreadCritical tc;
       VirtualMemoryTracker::add_reserved_region((address)addr, size, stack, flag);
-      VirtualMemoryTracker::add_committed_region((address)addr, size, stack);
+      VirtualMemoryTracker::add_committed_region((address)addr, size, stack, flag);
     }
   }
 
   static inline void record_virtual_memory_commit(void* addr, size_t size,
-    const NativeCallStack& stack) {
+    const NativeCallStack& stack, MEMFLAGS flag) {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
       ThreadCritical tc;
-      VirtualMemoryTracker::add_committed_region((address)addr, size, stack);
+      VirtualMemoryTracker::add_committed_region((address)addr, size, stack, flag);
     }
   }
 
@@ -175,12 +172,12 @@ class MemTracker : AllStatic {
   //
   // The two new memory regions will be both registered under stack and
   //  memory flags of the original region.
-  static inline void record_virtual_memory_split_reserved(void* addr, size_t size, size_t split) {
+  static inline void record_virtual_memory_split_reserved(void* addr, size_t size, size_t split, MEMFLAGS flag, MEMFLAGS split_flag) {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
       ThreadCritical tc;
-      VirtualMemoryTracker::split_reserved_region((address)addr, size, split);
+      VirtualMemoryTracker::split_reserved_region((address)addr, size, split, flag, split_flag);
     }
   }
 

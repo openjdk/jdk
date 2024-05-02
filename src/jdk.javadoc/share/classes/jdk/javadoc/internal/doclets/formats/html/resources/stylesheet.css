@@ -257,6 +257,10 @@ ol.sub-nav-list li {
     list-style:none;
     scroll-snap-align: start;
 }
+ol.sub-nav-list li:not(:first-child) {
+    list-style-type: " > ";
+    margin-left: 20px;
+}
 ol.sub-nav-list a {
     padding: 3px;
 }

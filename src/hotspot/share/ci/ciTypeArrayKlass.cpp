@@ -44,7 +44,7 @@ ciTypeArrayKlass::ciTypeArrayKlass(Klass* k) : ciArrayKlass(k) {
 //
 // Implementation of make.
 ciTypeArrayKlass* ciTypeArrayKlass::make_impl(BasicType t) {
-  Klass* k = Universe::typeArrayKlassObj(t);
+  Klass* k = Universe::typeArrayKlass(t);
   return CURRENT_ENV->get_type_array_klass(k);
 }
 

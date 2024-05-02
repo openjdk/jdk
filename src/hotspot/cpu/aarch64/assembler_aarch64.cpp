@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020 Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -117,10 +117,6 @@ extern "C" {
       Disassembler::decode((address)start + len, (address)start);
     else
       Disassembler::decode((address)start, (address)start + len);
-  }
-
-  JNIEXPORT void das1(uintptr_t insn) {
-    das(insn, 1);
   }
 }
 

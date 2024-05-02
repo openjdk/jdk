@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7198834 8001440 8013086 8013903 8027289 8232860
+ * @bug 7198834 8001440 8013086 8013903 8027289 8232860 8174269
  * @summary Test any java.text.Format Locale provider related issues
  * @library /test/lib
  * @build LocaleProviders
@@ -68,8 +68,7 @@ public class LocaleProvidersFormat {
      */
     @Test
     public void simpleDateFormatWithTZNProvider() throws Throwable {
-        LocaleProviders.test("JRE,SPI", "bug8013086Test", "ja", "JP");
-        LocaleProviders.test("COMPAT,SPI", "bug8013086Test", "ja", "JP");
+        LocaleProviders.test("FALLBACK,SPI", "bug8013086Test", "ja", "JP");
     }
 
     /*
@@ -78,10 +77,10 @@ public class LocaleProvidersFormat {
      */
     @Test
     @EnabledOnOs(WINDOWS)
+    @EnabledIfSystemProperty(named = "user.language", matches = "ja")
+    @EnabledIfSystemProperty(named = "user.country", matches = "JP")
     public void windowsJapaneseDateFields() throws Throwable {
-        LocaleProviders.test("HOST,JRE", "bug8013903Test");
         LocaleProviders.test("HOST", "bug8013903Test");
-        LocaleProviders.test("HOST,COMPAT", "bug8013903Test");
     }
 
     /*
@@ -93,8 +92,7 @@ public class LocaleProvidersFormat {
     @EnabledIfSystemProperty(named = "user.language", matches = "zh")
     @EnabledIfSystemProperty(named = "user.country", matches = "CN")
     public void windowsChineseCurrencySymbol() throws Throwable {
-        LocaleProviders.test("JRE,HOST", "bug8027289Test", "FFE5");
-        LocaleProviders.test("COMPAT,HOST", "bug8027289Test", "FFE5");
+        LocaleProviders.test("FALLBACK,HOST", "bug8027289Test", "FFE5");
         LocaleProviders.test("HOST", "bug8027289Test", "00A5");
     }
 
