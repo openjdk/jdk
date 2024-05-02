@@ -3344,11 +3344,7 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
   mv(x10, super_klass);
 
 #ifndef PRODUCT
-  mv(t1, (address)&SharedRuntime::_partial_subtype_ctr);
-  Address pst_counter_addr(t1);
-  ld(t0, pst_counter_addr);
-  add(t0, t0, 1);
-  sd(t0, pst_counter_addr);
+  incrementw(ExternalAddress((address)&SharedRuntime::_partial_subtype_ctr));
 #endif // PRODUCT
 
   // We will consult the secondary-super array.
