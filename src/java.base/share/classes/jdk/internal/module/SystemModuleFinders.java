@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,11 +58,11 @@ import java.util.stream.StreamSupport;
 
 import jdk.internal.jimage.ImageLocation;
 import jdk.internal.jimage.ImageReader;
-import jdk.internal.jimage.ImageReaderFactory;
 import jdk.internal.access.JavaNetUriAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.StaticProperty;
 import jdk.internal.module.ModuleHashes.HashSupplier;
+import sun.nio.fs.DefaultFileSystemProvider;
 
 /**
  * The factory for SystemModules objects and for creating ModuleFinder objects
@@ -382,10 +382,41 @@ public final class SystemModuleFinders {
      * @apiNote This class must be loaded before a security manager is set.
      */
     private static class SystemImage {
-        static final ImageReader READER = ImageReaderFactory.getImageReader();
+        private static final String JAVA_HOME = StaticProperty.javaHome();
+        static final ImageReader READER;
+
+        static {
+             // Use the platform's default file system to avoid issues when
+             // the VM is configured to use a custom file system provider.
+            Path bootModulesJImage = DefaultFileSystemProvider.theFileSystem()
+                    .getPath(JAVA_HOME, "lib", "modules");
+            try {
+                READER = ImageReader.open(bootModulesJImage);
+            } catch (IOException io) {
+                throw new UncheckedIOException(io);
+            }
+        }
+
         static ImageReader reader() {
             return READER;
         }
+    }
+
+    /**
+     * Returns an instance of {@link ImageReader} to read the image file of the
+     * current runtime.
+     * <p>
+     * The returned {@code ImageReader} must not be closed by the calling code.
+     *
+     * @return an instance of {@link ImageReader}.
+     * @throws SecurityException if a security manager exists and its
+     *                           {@code checkPropertyAccess} method doesn't allow
+     *                           access to the {@code jdk.system.module.finder.disableFastPath}
+     *                           system property.
+     * @see java.lang.SecurityManager#checkPropertyAccess(java.lang.String)
+     */
+    public static ImageReader getSystemImageReader() {
+        return SystemImage.reader();
     }
 
     /**
