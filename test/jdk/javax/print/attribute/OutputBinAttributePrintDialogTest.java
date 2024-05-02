@@ -290,7 +290,7 @@ public class OutputBinAttributePrintDialogTest {
     private static String[] getPrintDialogInstructions(DialogTypeSelection dialogTypeSelection, OutputBin outputBin) {
         if (dialogTypeSelection == DialogTypeSelection.COMMON) {
             return new String[]{
-                    " - Select 'Page Setup' tab.",
+                    " - Select 'Appearance' tab.",
                     " - Select '" + outputBin + "' output tray from 'Output trays' combo box.",
                     " - Pres 'Print' button."
             };
