@@ -202,13 +202,12 @@ public:
   };
 };
 
-template <typename DerivedPointerClosureType>
-class EncodeGCModeConcurrentFrameClosure {
+class TransformStackChunkClosure {
   stackChunkOop _chunk;
-  DerivedPointerClosureType* _cl;
+  DerivedPointersSupport::RelativizeClosure* _cl;
 
 public:
-  EncodeGCModeConcurrentFrameClosure(stackChunkOop chunk, DerivedPointerClosureType* cl)
+  TransformStackChunkClosure(stackChunkOop chunk, DerivedPointersSupport::RelativizeClosure* cl)
     : _chunk(chunk),
       _cl(cl) {
   }
@@ -296,31 +295,11 @@ void stackChunkOopDesc::relativize_derived_pointers_concurrently() {
   }
 
   DerivedPointersSupport::RelativizeClosure derived_cl;
-  EncodeGCModeConcurrentFrameClosure<decltype(derived_cl)> frame_cl(this, &derived_cl);
+  TransformStackChunkClosure frame_cl(this, &derived_cl);
   iterate_stack(&frame_cl);
 
   release_relativization();
 }
-
-class TransformStackChunkClosure {
-  stackChunkOop _chunk;
-
-public:
-  TransformStackChunkClosure(stackChunkOop chunk) : _chunk(chunk) { }
-
-  template <ChunkFrames frame_kind, typename RegisterMapT>
-  bool do_frame(const StackChunkFrameStream<frame_kind>& f, const RegisterMapT* map) {
-    DerivedPointersSupport::RelativizeClosure derived_cl;
-    f.iterate_derived_pointers(&derived_cl, map);
-
-    BarrierSetStackChunk* bs_chunk = BarrierSet::barrier_set()->barrier_set_stack_chunk();
-    frame fr = f.to_frame();
-    FrameOopIterator<RegisterMapT> iterator(fr, map);
-    bs_chunk->encode_gc_mode(_chunk, &iterator);
-
-    return true;
-  }
-};
 
 void stackChunkOopDesc::transform() {
   assert(!is_gc_mode(), "Should only be called once per chunk");
@@ -330,7 +309,8 @@ void stackChunkOopDesc::transform() {
   set_has_bitmap(true);
   bitmap().clear();
 
-  TransformStackChunkClosure closure(this);
+  DerivedPointersSupport::RelativizeClosure derived_cl;
+  TransformStackChunkClosure closure(this, &derived_cl);
   iterate_stack(&closure);
 }
 
