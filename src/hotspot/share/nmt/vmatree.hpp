@@ -39,9 +39,13 @@
 // or from committed memory of a certain MEMFLAGS to committed memory of a different MEMFLAGS.
 // The set of points is stored in a balanced binary tree for efficient querying and updating.
 class VMATree {
+
+  // A position in memory.
+  using position = size_t;
+
   class AddressComparator {
   public:
-    static int cmp(size_t a, size_t b) {
+    static int cmp(position a, position b) {
       if (a < b) return -1;
       if (a == b) return 0;
       if (a > b) return 1;
@@ -111,7 +115,7 @@ public:
     }
   };
 
-  using VMATreap = TreapCHeap<size_t, IntervalChange, AddressComparator>;
+  using VMATreap = TreapCHeap<position, IntervalChange, AddressComparator>;
   using TreapNode = VMATreap::TreapNode;
   VMATreap tree;
 
@@ -130,24 +134,24 @@ public:
     }
   };
 
-  SummaryDiff register_mapping(size_t A, size_t B, StateType state, Metadata& metadata);
+  SummaryDiff register_mapping(position A, position B, StateType state, Metadata& metadata);
 
-  SummaryDiff reserve_mapping(size_t from, size_t sz, Metadata& metadata) {
+  SummaryDiff reserve_mapping(position from, position sz, Metadata& metadata) {
     return register_mapping(from, from + sz, StateType::Reserved, metadata);
   }
 
-  SummaryDiff commit_mapping(size_t from, size_t sz, Metadata& metadata) {
+  SummaryDiff commit_mapping(position from, position sz, Metadata& metadata) {
     return register_mapping(from, from + sz, StateType::Committed, metadata);
   }
 
-  SummaryDiff release_mapping(size_t from, size_t sz) {
+  SummaryDiff release_mapping(position from, position sz) {
     Metadata empty;
     return register_mapping(from, from + sz, StateType::Released, empty);
   }
 
   // Visit all nodes between [from, to) and call f on them.
   template<typename F>
-  void visit(size_t from, size_t to, F f) {
+  void visit(position from, position to, F f) {
     ResourceArea area(mtNMT);
     ResourceMark rm(&area);
     GrowableArray<TreapNode*> to_visit(&area, 16, 0, nullptr);

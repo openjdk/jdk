@@ -26,7 +26,7 @@
 #include "nmt/vmatree.hpp"
 #include "utilities/growableArray.hpp"
 
-VMATree::SummaryDiff VMATree::register_mapping(size_t A, size_t B, StateType state,
+VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType state,
                                                Metadata& metadata) {
   if (A == B) {
     // A 0-sized mapping isn't worth recording.
@@ -35,7 +35,7 @@ VMATree::SummaryDiff VMATree::register_mapping(size_t A, size_t B, StateType sta
 
   // AddressState saves the necessary information for performing online summary accounting.
   struct AddressState {
-    size_t address;
+    position address;
     IntervalChange state;
 
     const IntervalState& out() const {
