@@ -131,6 +131,8 @@ public:
   // up at the end of the list.
   static int compare(G1CollectionSetCandidateInfo* ci1, G1CollectionSetCandidateInfo* ci2);
 
+  static int compare_reclaimble_bytes(G1CollectionSetCandidateInfo* ci1, G1CollectionSetCandidateInfo* ci2);
+
   G1CollectionCandidateListIterator begin() {
     return G1CollectionCandidateListIterator(this, 0);
   }
@@ -225,6 +227,8 @@ public:
   const char* get_short_type_str(const HeapRegion* r) const;
 
   bool is_empty() const;
+
+  void calc_gc_efficiency();
 
   bool has_more_marking_candidates() const;
   uint marking_regions_length() const;

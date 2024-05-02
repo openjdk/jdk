@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/g1/g1CollectionSetCandidates.hpp"
+#include "gc/g1/g1CollectionSetCandidates.inline.hpp"
 #include "gc/g1/g1CollectionSetChooser.hpp"
 #include "gc/g1/g1HeapRegion.inline.hpp"
 #include "utilities/bitMap.inline.hpp"
@@ -95,16 +95,7 @@ void G1CollectionCandidateList::verify() {
 #endif
 
 int G1CollectionCandidateList::compare(G1CollectionSetCandidateInfo* ci1, G1CollectionSetCandidateInfo* ci2) {
-  // Make sure that null entries are moved to the end.
-  if (ci1->_r == nullptr) {
-    if (ci2->_r == nullptr) {
-      return 0;
-    } else {
-      return 1;
-    }
-  } else if (ci2->_r == nullptr) {
-    return -1;
-  }
+  assert(ci1->_r != nullptr && ci2->_r != nullptr, "Should not be!");
 
   double gc_eff1 = ci1->_gc_efficiency;
   double gc_eff2 = ci2->_gc_efficiency;
@@ -116,6 +107,26 @@ int G1CollectionCandidateList::compare(G1CollectionSetCandidateInfo* ci1, G1Coll
   } else {
     return 0;
   }
+}
+
+int G1CollectionCandidateList::compare_reclaimble_bytes(G1CollectionSetCandidateInfo* ci1, G1CollectionSetCandidateInfo* ci2) {
+  // Make sure that null entries are moved to the end.
+  if (ci1->_r == nullptr) {
+    if (ci2->_r == nullptr) {
+      return 0;
+    } else {
+      return 1;
+    }
+  } else if (ci2->_r == nullptr) {
+    return -1;
+  }
+
+  size_t reclaimable1 = ci1->_r->reclaimable_bytes();
+  size_t reclaimable2 = ci2->_r->reclaimable_bytes();
+
+  if (reclaimable1 == reclaimable2) return 0;
+  if (reclaimable1 > reclaimable2) return -1;
+  return 1;
 }
 
 G1CollectionCandidateRegionList::G1CollectionCandidateRegionList() : _regions(2, mtGC) { }
@@ -180,6 +191,15 @@ void G1CollectionSetCandidates::clear() {
     _contains_map[i] = CandidateOrigin::Invalid;
   }
   _last_marking_candidates_length = 0;
+}
+
+void G1CollectionSetCandidates::calc_gc_efficiency() {
+  G1CollectionCandidateListIterator iter = _marking_regions.begin();
+  for (; iter != _marking_regions.end(); ++iter) {
+    HeapRegion* hr = (*iter)->_r;
+    (*iter)->_gc_efficiency = hr->calc_gc_efficiency();
+  }
+  _marking_regions.sort_by_efficiency();
 }
 
 void G1CollectionSetCandidates::set_candidates_from_marking(G1CollectionSetCandidateInfo* candidate_infos,
