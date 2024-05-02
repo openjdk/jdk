@@ -116,7 +116,6 @@ void CppVtableCloner<T>::initialize(const char* name, CppVtableInfo* info) {
   int n = info->vtable_size();
   intptr_t* srcvtable = vtable_of(&tmp);
   intptr_t* dstvtable = info->cloned_vtable();
-  //tty->print_cr("vtable %p -> %p", srcvtable, dstvtable);
 
   // We already checked (and, if necessary, adjusted n) when the vtables were allocated, so we are
   // safe to do memcpy.

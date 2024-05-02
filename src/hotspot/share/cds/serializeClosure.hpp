@@ -49,7 +49,16 @@ public:
   virtual void do_bool(bool* p) = 0;
 
   // Read/write the region specified.
-  virtual void do_region(u_char* start, size_t size) = 0;
+  void do_region(u_char* start, size_t size) {
+    assert((intptr_t)start % sizeof(intptr_t) == 0, "bad alignment");
+    assert(size % sizeof(intptr_t) == 0, "bad size");
+    do_tag((int)size);
+    while (size > 0) {
+      do_ptr((void**)start);
+      start += sizeof(intptr_t);
+      size -= sizeof(intptr_t);
+    }
+}
 
   // Check/write the tag.  If reading, then compare the tag against
   // the passed in value and fail is they don't match.  This allows

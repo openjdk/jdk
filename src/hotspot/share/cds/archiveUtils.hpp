@@ -215,7 +215,6 @@ public:
     _dump_region->append_intptr_t((intptr_t)tag);
   }
 
-  void do_region(u_char* start, size_t size);
   bool reading() const { return false; }
 };
 
@@ -238,7 +237,6 @@ public:
   void do_int(int* p);
   void do_bool(bool *p);
   void do_tag(int tag);
-  void do_region(u_char* start, size_t size);
   bool reading() const { return true; }
 };
 
