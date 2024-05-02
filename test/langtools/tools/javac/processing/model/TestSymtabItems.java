@@ -85,8 +85,8 @@ public class TestSymtabItems {
             if (f.getName().toLowerCase().contains("methodhandle"))
                 continue;
 
-            // Temporarily ignore SimpleIO:
-            if (f.getName().toLowerCase().equals("ioType"))
+            // Temporarily ignore java.io.IO:
+            if (f.getName().equals("ioType"))
                 continue;
 
             //both noModule and unnamedModule claim the unnamed package, ignore noModule for now:
