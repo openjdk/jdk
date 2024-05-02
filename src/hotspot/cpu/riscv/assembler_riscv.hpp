@@ -1904,6 +1904,16 @@ enum Nf {
 
 #undef INSN
 
+#define INSN(NAME, op, funct3, Vs1, funct6)                                    \
+  void NAME(VectorRegister Vd, VectorRegister Vs2, VectorMask vm = unmasked) { \
+    patch_VArith(op, Vd, funct3, Vs1, Vs2, vm, funct6);                        \
+  }
+
+  // Vector Basic Bit-manipulation (Zvbb) Extension
+  INSN(vcpop_v,  0b1010111, 0b010, 0b01110, 0b010010);
+
+#undef INSN
+
 #undef patch_VArith
 
 // ====================================
@@ -2003,33 +2013,6 @@ enum Nf {
   INSN(roriw, 0b0011011, 0b101, 0b0110000);
 
 #undef INSN
-
-
-// ========================================
-// RISC-V Crypto Instructions Extension
-// ========================================
-
-#define patch_VArith(op, Reg, funct3, Reg_or_Imm5, Vs2, vm, funct6)            \
-    unsigned insn = 0;                                                         \
-    patch((address)&insn, 6, 0, op);                                           \
-    patch((address)&insn, 14, 12, funct3);                                     \
-    patch((address)&insn, 19, 15, Reg_or_Imm5);                                \
-    patch((address)&insn, 25, vm);                                             \
-    patch((address)&insn, 31, 26, funct6);                                     \
-    patch_reg((address)&insn, 7, Reg);                                         \
-    patch_reg((address)&insn, 20, Vs2);                                        \
-    emit(insn)
-
-#define INSN(NAME, op, funct3, Vs1, funct6)                                    \
-  void NAME(VectorRegister Rd, VectorRegister Vs2, VectorMask vm = unmasked) { \
-    patch_VArith(op, Rd, funct3, Vs1, Vs2, vm, funct6);                        \
-  }
-
-// Zvbb
-  INSN(vcpop_v,  0b1010111, 0b010, 0b01110, 0b010010);
-
-#undef INSN
-#undef patch_VArith
 
 // ========================================
 // RISC-V Compressed Instructions Extension
