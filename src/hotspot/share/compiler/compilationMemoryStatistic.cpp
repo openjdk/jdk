@@ -183,7 +183,6 @@ class MemStatEntry : public CHeapObj<mtInternal> {
   const Thread* _thread;
   // active limit for this compilation, if any
   size_t _limit;
-  bool _limit_crash;
 
   // peak usage, bytes, over all arenas
   size_t _total;
