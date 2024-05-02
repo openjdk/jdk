@@ -536,6 +536,31 @@ else # $(HAS_SPEC)=true
     endef
   endif
 
+  ##############################################################################
+  # Functions for timers
+  ##############################################################################
+
+  # Store the build times in this directory.
+  BUILDTIMESDIR=$(OUTPUTDIR)/make-support/build-times
+
+  # Record starting time for build of a sub repository.
+  define RecordStartTime
+	$(DATE) '+%Y %m %d %H %M %S' | $(AWK) '{ print $$1,$$2,$$3,$$4,$$5,$$6,($$4*3600+$$5*60+$$6) }' > $(BUILDTIMESDIR)/build_time_start_$(strip $1) && \
+	$(DATE) '+%Y-%m-%d %H:%M:%S' > $(BUILDTIMESDIR)/build_time_start_$(strip $1)_human_readable
+  endef
+
+  # Record ending time and calculate the difference and store it in a
+  # easy to read format. Handles builds that cross midnight. Expects
+  # that a build will never take 24 hours or more.
+  define RecordEndTime
+	$(DATE) '+%Y %m %d %H %M %S' | $(AWK) '{ print $$1,$$2,$$3,$$4,$$5,$$6,($$4*3600+$$5*60+$$6) }' > $(BUILDTIMESDIR)/build_time_end_$(strip $1)
+	$(DATE) '+%Y-%m-%d %H:%M:%S' > $(BUILDTIMESDIR)/build_time_end_$(strip $1)_human_readable
+	$(ECHO) `$(CAT) $(BUILDTIMESDIR)/build_time_start_$(strip $1)` `$(CAT) $(BUILDTIMESDIR)/build_time_end_$(strip $1)` $1 | \
+	    $(AWK) '{ F=$$7; T=$$14; if (F > T) { T+=3600*24 }; D=T-F; H=int(D/3600); \
+	    M=int((D-H*3600)/60); S=D-H*3600-M*60; printf("%02d:%02d:%02d %s\n",H,M,S,$$15); }' \
+	    > $(BUILDTIMESDIR)/build_time_diff_$(strip $1)
+  endef
+
   define StartGlobalTimer
 	$(RM) -r $(BUILDTIMESDIR) 2> /dev/null && \
 	$(MKDIR) -p $(BUILDTIMESDIR) && \

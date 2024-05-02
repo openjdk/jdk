@@ -26,8 +26,11 @@
 
 #include "precompiled.hpp"
 #include "memory/allocation.hpp"
+#include "oops/markWord.hpp"
+#include "oops/oop.inline.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/lockStack.inline.hpp"
+#include "runtime/objectMonitor.inline.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/stackWatermark.hpp"
 #include "runtime/stackWatermarkSet.inline.hpp"
@@ -35,6 +38,7 @@
 #include "utilities/copy.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/growableArray.hpp"
 #include "utilities/ostream.hpp"
 
 #include <type_traits>

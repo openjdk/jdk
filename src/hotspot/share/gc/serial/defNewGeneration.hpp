@@ -236,17 +236,6 @@ class DefNewGeneration: public Generation {
   // Save the tops for eden, from, and to
   void record_spaces_top();
 
-  // Accessing marks
-  void save_marks();
-
-  bool no_allocs_since_save_marks();
-
-  // Need to declare the full complement of closures, whether we'll
-  // override them or not, or get message from the compiler:
-  //   oop_since_save_marks_iterate_nv hides virtual function...
-  template <typename OopClosureType>
-  void oop_since_save_marks_iterate(OopClosureType* cl);
-
   // For Old collection (part of running Full GC), the DefNewGeneration can
   // contribute the free part of "to-space" as the scratch space.
   void contribute_scratch(void*& scratch, size_t& num_words);

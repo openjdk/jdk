@@ -48,8 +48,6 @@ import java.lang.classfile.BufWriter;
 import java.lang.classfile.Label;
 import java.lang.classfile.attribute.StackMapTableAttribute;
 import java.lang.classfile.Attributes;
-import java.lang.classfile.components.ClassPrinter;
-import java.lang.classfile.attribute.CodeAttribute;
 
 /**
  * StackMapGenerator is responsible for stack map frames generation.
@@ -836,36 +834,7 @@ public final class StackMapGenerator {
                 offset,
                 methodName,
                 methodDesc.parameterList().stream().map(ClassDesc::displayName).collect(Collectors.joining(","))));
-        //try to attach debug info about corrupted bytecode to the message
-        try {
-            var cc = ClassFile.of();
-            var clm = cc.parse(cc.build(cp.classEntry(thisType.sym()), cp, clb ->
-                    clb.withMethod(methodName, methodDesc, isStatic ? ACC_STATIC : 0, mb ->
-                            ((DirectMethodBuilder)mb).writeAttribute(new UnboundAttribute.AdHocAttribute<CodeAttribute>(Attributes.CODE) {
-                                @Override
-                                public void writeBody(BufWriter b) {
-                                    b.writeU2(-1);//max stack
-                                    b.writeU2(-1);//max locals
-                                    b.writeInt(bytecode.limit());
-                                    b.writeBytes(bytecode.array(), 0, bytecode.limit());
-                                    b.writeU2(0);//exception handlers
-                                    b.writeU2(0);//attributes
-                                }
-                    }))));
-            ClassPrinter.toYaml(clm.methods().get(0).code().get(), ClassPrinter.Verbosity.TRACE_ALL, sb::append);
-        } catch (Error | Exception suppresed) {
-            //fallback to bytecode hex dump
-            bytecode.rewind();
-            while (bytecode.position() < bytecode.limit()) {
-                sb.append("%n%04x:".formatted(bytecode.position()));
-                for (int i = 0; i < 16 && bytecode.position() < bytecode.limit(); i++) {
-                    sb.append(" %02x".formatted(bytecode.get()));
-                }
-            }
-            var err = new IllegalArgumentException(sb.toString());
-            err.addSuppressed(suppresed);
-            return err;
-        }
+        Util.dumpMethod(cp, thisType.sym(), methodName, methodDesc, isStatic ? ACC_STATIC : 0, bytecode, sb::append);
         return new IllegalArgumentException(sb.toString());
     }
 

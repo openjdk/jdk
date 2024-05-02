@@ -869,7 +869,7 @@ public:
   NoteStartOfMarkHRClosure() : HeapRegionClosure(), _cm(G1CollectedHeap::heap()->concurrent_mark()) { }
 
   bool do_heap_region(HeapRegion* r) override {
-    if (r->is_old_or_humongous() && !r->is_collection_set_candidate()) {
+    if (r->is_old_or_humongous() && !r->is_collection_set_candidate() && !r->in_collection_set()) {
       _cm->update_top_at_mark_start(r);
     }
     return false;
@@ -1317,7 +1317,7 @@ public:
     if (!_cleanup_list.is_empty()) {
       log_debug(gc)("Reclaimed %u empty regions", _cleanup_list.length());
       // Now print the empty regions list.
-      _g1h->hr_printer()->cleanup(&_cleanup_list);
+      _g1h->hr_printer()->mark_reclaim(&_cleanup_list);
       // And actually make them available.
       _g1h->prepend_to_freelist(&_cleanup_list);
     }

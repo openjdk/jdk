@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8330467
  * @modules jdk.compiler
  * @library /test/lib
  * @enablePreview
@@ -78,7 +79,8 @@ public class BasicTest {
 
     @BeforeTest
     static void setup() throws IOException {
-        compileSources(SRC_DIR, CLASSES_DIR, "--enable-preview", "--release", "23");
+        compileSources(SRC_DIR, CLASSES_DIR, "--enable-preview",
+                       "--release", Integer.toString(Runtime.version().feature()));
         hiddenClassBytes = Files.readAllBytes(CLASSES_DIR.resolve("HiddenClass.class"));
 
         // compile with --release 10 with no NestHost and NestMembers attribute
@@ -171,6 +173,20 @@ public class BasicTest {
     @Test
     public void testLambda() throws Throwable {
         HiddenTest t = (HiddenTest)defineHiddenClass("Lambda").newInstance();
+        try {
+            t.test();
+        } catch (Error e) {
+            if (!e.getMessage().equals("thrown by " + t.getClass().getName())) {
+                throw e;
+            }
+        }
+    }
+
+    // Define a hidden class that uses lambda and contains its implementation
+    // This verifies LambdaMetaFactory supports the caller which is a hidden class
+    @Test
+    public void testHiddenLambda() throws Throwable {
+        HiddenTest t = (HiddenTest)defineHiddenClass("HiddenLambda").newInstance();
         try {
             t.test();
         } catch (Error e) {

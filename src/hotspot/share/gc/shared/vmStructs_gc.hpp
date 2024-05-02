@@ -40,8 +40,6 @@
 #include "gc/parallel/vmStructs_parallelgc.hpp"
 #endif
 #if INCLUDE_SERIALGC
-#include "gc/serial/defNewGeneration.hpp"
-#include "gc/serial/generation.hpp"
 #include "gc/serial/vmStructs_serial.hpp"
 #endif
 #if INCLUDE_SHENANDOAHGC
@@ -100,7 +98,6 @@
   nonstatic_field(ContiguousSpace,             _bottom,                                       HeapWord*)                             \
   nonstatic_field(ContiguousSpace,             _end,                                          HeapWord*)                             \
   nonstatic_field(ContiguousSpace,             _top,                                          HeapWord*)                             \
-  nonstatic_field(ContiguousSpace,             _saved_mark_word,                              HeapWord*)                             \
                                                                                                                                      \
   nonstatic_field(MemRegion,                   _start,                                        HeapWord*)                             \
   nonstatic_field(MemRegion,                   _word_size,                                    size_t)

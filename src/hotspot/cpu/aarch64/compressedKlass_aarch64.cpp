@@ -57,19 +57,19 @@ static char* reserve_at_eor_compatible_address(size_t size, bool aslr) {
       0x7800, 0x7c00, 0x7e00, 0x7f00, 0x7f80, 0x7fc0, 0x7fe0, 0x7ff0, 0x7ff8,
       0x7ffc, 0x7ffe, 0x7fff
   };
-  static constexpr int num_immediates = sizeof(immediates) / sizeof(immediates[0]);
-  const int start_index = aslr ? os::next_random((int)os::javaTimeNanos()) : 0;
+  static constexpr unsigned num_immediates = sizeof(immediates) / sizeof(immediates[0]);
+  const unsigned start_index = aslr ? os::next_random((int)os::javaTimeNanos()) : 0;
   constexpr int max_tries = 64;
   for (int ntry = 0; result == nullptr && ntry < max_tries; ntry ++) {
     // As in os::attempt_reserve_memory_between, we alternate between higher and lower
     // addresses; this maximizes the chance of early success if part of the address space
     // is not accessible (e.g. 39-bit address space).
-    const int alt_index = (ntry & 1) ? 0 : num_immediates / 2;
-    const int index = (start_index + ntry + alt_index) % num_immediates;
+    const unsigned alt_index = (ntry & 1) ? 0 : num_immediates / 2;
+    const unsigned index = (start_index + ntry + alt_index) % num_immediates;
     const uint64_t immediate = ((uint64_t)immediates[index]) << 32;
     assert(immediate > 0 && Assembler::operand_valid_for_logical_immediate(/*is32*/false, immediate),
            "Invalid immediate %d " UINT64_FORMAT, index, immediate);
-    result = os::attempt_reserve_memory_at((char*)immediate, size, false);
+    result = os::attempt_reserve_memory_at((char*)immediate, size, !ExecMem, mtClass);
     if (result == nullptr) {
       log_trace(metaspace, map)("Failed to attach at " UINT64_FORMAT_X, immediate);
     }
@@ -112,7 +112,7 @@ char* CompressedKlassPointers::reserve_address_space_for_compressed_classes(size
   if (result == nullptr) {
     constexpr size_t alignment = nth_bit(32);
     log_debug(metaspace, map)("Trying to reserve at a 32-bit-aligned address");
-    result = os::reserve_memory_aligned(size, alignment, false);
+    result = os::reserve_memory_aligned(size, alignment, !ExecMem, mtClass);
   }
 
   return result;

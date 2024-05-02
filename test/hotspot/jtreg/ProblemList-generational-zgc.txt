@@ -106,6 +106,7 @@ serviceability/sa/jmap-hprof/JMapHProfLargeHeapProc.java      8307393   generic-
 serviceability/sa/jmap-hprof/JMapHProfLargeHeapTest.java      8307393   generic-all
 serviceability/sa/sadebugd/ClhsdbAttachToDebugServer.java     8307393   generic-all
 serviceability/sa/sadebugd/ClhsdbTestConnectArgument.java     8307393   generic-all
+serviceability/sa/ClhsdbTestAllocationMerge.java              8307393   generic-all
 serviceability/sa/sadebugd/DebugdConnectTest.java             8307393   generic-all
 serviceability/sa/sadebugd/DebugdUtils.java                   8307393   generic-all
 serviceability/sa/sadebugd/DisableRegistryTest.java           8307393   generic-all
