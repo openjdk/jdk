@@ -24,6 +24,7 @@
 #ifdef _WIN64
 #include <Windows.h>
 #include <malloc.h>
+#include <versionhelpers.h>
 #endif
 #include <stdio.h>
 
@@ -36,6 +37,7 @@ int main()
       return 1;
   }
 
+  printf("IsWindowsServer: %d\n", IsWindowsServer() ? 1 : 0);
   printf("Active processor count across all processor groups: %d\n", active_processor_count);
 
   USHORT group_count = 0;
