@@ -38,6 +38,7 @@ public class DaemonThreadTest {
     static class NormalThread extends Thread {
 
         NormalThread() {
+            setDaemon(false);
         }
 
         @Override
@@ -66,15 +67,7 @@ public class DaemonThreadTest {
     }
 
     private static void testNoDaemon() throws Exception {
-        Thread t = new NormalThread();
-        if (Thread.currentThread().isVirtual()) {
-            // If the NormalThread was created by a current virtual thread
-            // then the NormalThread too will be marked daemon (since virtual threads
-            // are always daemon). In that case, we explicitly reset daemon to false
-            // for the newly created thread.
-            t.setDaemon(false);
-        }
-        testThread(t, "");
+        testThread(new NormalThread(), "");
     }
 
     private static void testDaemon() throws Exception {
