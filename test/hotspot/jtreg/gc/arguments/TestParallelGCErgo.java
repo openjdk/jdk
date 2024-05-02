@@ -44,15 +44,24 @@ import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Platform;
 
 public class TestParallelGCErgo {
-    private static final long MINIMUM_HEAP_SIZE = 1024 * 1024 * 1024; // 1GB
-    private static final long EXPECTED_MIN_YOUNG = 357564416;  // default 1/3 of minimum heap + alignment
+    private static final long HEAPWORD_SIZE = Platform.is64bit() ? 8 : 4;
+    // Must be a power of 2
+    private static final long GEN_ALIGNMENT = 64 * 1024 * HEAPWORD_SIZE;
+
+    private static final long MINIMUM_HEAP_SIZE = 256 * 1024 * 1024; // 256M
+    private static final long EXPECTED_MIN_YOUNG = alignDown(MINIMUM_HEAP_SIZE / 3, GEN_ALIGNMENT);
     private static final long EXPECTED_MIN_OLD = MINIMUM_HEAP_SIZE - EXPECTED_MIN_YOUNG;  // heap size = young size + old size
+
+    // s has to be a power of 2
+    private static long alignDown(long s, long align) {
+        return s & (~(align-1));
+    }
 
     public static void main(String[] args) throws Exception {
         ArrayList<String> flagList = new ArrayList<String>();
         flagList.add("-XX:+UseParallelGC");
-        flagList.add("-Xms1g");
-        flagList.add("-Xmx2g");
+        flagList.add("-Xms256m");
+        flagList.add("-Xmx1g");
         flagList.add("-Xlog:gc+heap=trace");
         flagList.add("-version");
 
@@ -62,17 +71,17 @@ public class TestParallelGCErgo {
         String stdout = output.getStdout();
         long minimumHeap = getFlagValue("Minimum heap", stdout);
         if (minimumHeap != MINIMUM_HEAP_SIZE) {
-            throw new RuntimeException("Wrong value for MinHeapSize. Expected " + MINIMUM_HEAP_SIZE + " but got " + minimumHeap);
+            throw new RuntimeException("Wrong value for minimum heap. Expected " + MINIMUM_HEAP_SIZE + " but got " + minimumHeap);
         }
 
         long minimumYoung = getFlagValue("Minimum young", stdout);
         if (minimumYoung != EXPECTED_MIN_YOUNG) {
-            throw new RuntimeException("Wrong value for NewSize. Expected " + EXPECTED_MIN_YOUNG + " but got " + minimumYoung);
+            throw new RuntimeException("Wrong value for minimum young. Expected " + EXPECTED_MIN_YOUNG + " but got " + minimumYoung);
         }
 
         long minimumOld = getFlagValue("Minimum old", stdout);
         if (minimumOld != EXPECTED_MIN_OLD) {
-            throw new RuntimeException("Wrong value for OldSize. Expected " + EXPECTED_MIN_OLD + " but got " + minimumOld);
+            throw new RuntimeException("Wrong value for minimum old. Expected " + EXPECTED_MIN_OLD + " but got " + minimumOld);
         }
     }
 
