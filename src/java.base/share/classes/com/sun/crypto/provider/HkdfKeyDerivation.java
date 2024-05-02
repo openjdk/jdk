@@ -276,20 +276,6 @@ abstract class HkdfKeyDerivation extends KDFSpi {
         return kdfOutput;
     }
 
-    /*private static class HkdfExtExpBase extends HkdfKeyDerivation {
-
-        *//**
-         * ExtractExpand constructor for HKDF Key Derivation
-         *
-         * @param algParameterSpec
-         *//*
-        public HkdfExtExpBase(AlgorithmParameterSpec algParameterSpec)
-            throws InvalidAlgorithmParameterException {
-            super(algParameterSpec);
-        }
-
-    }*/
-
     public static final class HkdfSHA256 extends HkdfKeyDerivation {
         public HkdfSHA256(AlgorithmParameterSpec algParameterSpec)
             throws InvalidAlgorithmParameterException {
@@ -314,19 +300,6 @@ abstract class HkdfKeyDerivation extends KDFSpi {
         }
     }
 
-    /*private static class HkdfExtractBase extends HkdfKeyDerivation {
-
-        *//**
-         * Extract constructor for HKDF Key Derivation
-         *
-         * @param algParameterSpec
-         *//*
-        public HkdfExtractBase(AlgorithmParameterSpec algParameterSpec)
-            throws InvalidAlgorithmParameterException {
-            super(algParameterSpec);
-        }
-    }*/
-
     public static final class HkdfExtractSHA256 extends HkdfKeyDerivation {
         public HkdfExtractSHA256(AlgorithmParameterSpec algParameterSpec)
             throws InvalidAlgorithmParameterException {
@@ -350,19 +323,6 @@ abstract class HkdfKeyDerivation extends KDFSpi {
             hmacAlgName = "HmacSHA512";
         }
     }
-
-    /*private static class HkdfExpandBase extends HkdfKeyDerivation {
-
-        *//**
-         * Expand constructor for HKDF Key Derivation
-         *
-         * @param algParameterSpec
-         *//*
-        public HkdfExpandBase(AlgorithmParameterSpec algParameterSpec)
-            throws InvalidAlgorithmParameterException {
-            super(algParameterSpec);
-        }
-    }*/
 
     public static final class HkdfExpandSHA256 extends HkdfKeyDerivation {
         public HkdfExpandSHA256(AlgorithmParameterSpec algParameterSpec)
