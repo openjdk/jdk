@@ -190,6 +190,9 @@ class Abstract_VM_Version: AllStatic {
   // Is recursive lightweight locking implemented for this platform?
   constexpr static bool supports_recursive_lightweight_locking() { return false; }
 
+  // Does platform support secondary supers table lookup?
+  constexpr static bool supports_secondary_supers_table() { return false; }
+
   // Does platform support float16 instructions?
   static bool supports_float16() { return false; }
 

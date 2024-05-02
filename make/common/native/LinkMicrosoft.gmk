@@ -52,7 +52,7 @@ define CreateStaticLibraryMicrosoft
         endif
 	$$(call LogInfo, Building static library $$($1_BASENAME))
 	$$(call MakeDir, $$($1_OUTPUT_DIR) $$($1_SYMBOLS_DIR))
-	$$(call ExecuteWithLog, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_link, \
+	$$(call ExecuteWithLog, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_run_lib, \
 	    $$($1_LIB) -nologo $$(LIBFLAGS) -out:$$($1_TARGET) \
 	        $$($1_LD_OBJ_ARG) $$($1_RES))
 endef
@@ -98,7 +98,7 @@ define CreateDynamicLibraryOrExecutableMicrosoft
         endif
 	$$(call LogInfo, Linking $$($1_BASENAME))
 	$$(call MakeDir, $$($1_OUTPUT_DIR) $$($1_SYMBOLS_DIR))
-	$$(call ExecuteWithLog, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_link, \
+	$$(call ExecuteWithLog, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_run_ld, \
 	    $$($1_LD) -nologo $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) \
 	        $$($1_SYSROOT_LDFLAGS) -out:$$($1_TARGET) $$($1_LD_OBJ_ARG) \
 	        $$($1_RES) $$($1_LIBS) $$($1_EXTRA_LIBS)) \

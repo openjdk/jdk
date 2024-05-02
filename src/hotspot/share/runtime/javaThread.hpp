@@ -317,6 +317,7 @@ class JavaThread: public Thread {
   bool                  _is_in_VTMS_transition;          // thread is in virtual thread mount state transition
   bool                  _is_in_tmp_VTMS_transition;      // thread is in temporary virtual thread mount state transition
   bool                  _is_disable_suspend;             // JVMTI suspend is temporarily disabled; used on current thread only
+  bool                  _VTMS_transition_mark;           // used for sync between VTMS transitions and disablers
 #ifdef ASSERT
   bool                  _is_VTMS_transition_disabler;    // thread currently disabled VTMS transitions
 #endif
@@ -379,6 +380,10 @@ class JavaThread: public Thread {
   jlong      _jvmci_reserved1;
   oop        _jvmci_reserved_oop0;
 
+  // This field is used to keep an nmethod visible to the GC so that it and its contained oops can
+  // be kept alive
+  nmethod*  _live_nmethod;
+
  public:
   static jlong* _jvmci_old_thread_counters;
   static void collect_counters(jlong* array, int length);
@@ -409,6 +414,15 @@ class JavaThread: public Thread {
 
   jlong get_jvmci_reserved1() {
     return _jvmci_reserved1;
+  }
+
+  void set_live_nmethod(nmethod* nm) {
+    assert(_live_nmethod == nullptr, "only one");
+    _live_nmethod = nm;
+  }
+
+  void clear_live_nmethod() {
+    _live_nmethod = nullptr;
   }
 
  private:
@@ -651,6 +665,9 @@ private:
   bool is_disable_suspend() const                { return _is_disable_suspend; }
   void toggle_is_disable_suspend()               { _is_disable_suspend = !_is_disable_suspend; };
 
+  bool VTMS_transition_mark() const              { return Atomic::load(&_VTMS_transition_mark); }
+  void set_VTMS_transition_mark(bool val)        { Atomic::store(&_VTMS_transition_mark, val); }
+
 #ifdef ASSERT
   bool is_VTMS_transition_disabler() const       { return _is_VTMS_transition_disabler; }
   void set_is_VTMS_transition_disabler(bool val);
@@ -811,6 +828,7 @@ private:
   static ByteSize cont_entry_offset()         { return byte_offset_of(JavaThread, _cont_entry); }
   static ByteSize cont_fastpath_offset()      { return byte_offset_of(JavaThread, _cont_fastpath); }
   static ByteSize held_monitor_count_offset() { return byte_offset_of(JavaThread, _held_monitor_count); }
+  static ByteSize jni_monitor_count_offset()  { return byte_offset_of(JavaThread, _jni_monitor_count); }
 
 #if INCLUDE_JVMTI
   static ByteSize is_in_VTMS_transition_offset()     { return byte_offset_of(JavaThread, _is_in_VTMS_transition); }

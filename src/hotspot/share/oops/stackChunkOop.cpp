@@ -562,9 +562,9 @@ bool stackChunkOopDesc::verify(size_t* out_size, int* out_oops, int* out_frames,
   assert(!is_empty() || closure._cb == nullptr, "");
   if (closure._cb != nullptr && closure._cb->is_nmethod()) {
     assert(argsize() ==
-      (closure._cb->as_nmethod()->method()->num_stack_arg_slots()*VMRegImpl::stack_slot_size) >>LogBytesPerWord,
+      (closure._cb->as_nmethod()->num_stack_arg_slots()*VMRegImpl::stack_slot_size) >>LogBytesPerWord,
       "chunk argsize: %d bottom frame argsize: %d", argsize(),
-      (closure._cb->as_nmethod()->method()->num_stack_arg_slots()*VMRegImpl::stack_slot_size) >>LogBytesPerWord);
+      (closure._cb->as_nmethod()->num_stack_arg_slots()*VMRegImpl::stack_slot_size) >>LogBytesPerWord);
   }
 
   assert(closure._num_interpreted_frames == 0 || has_mixed_frames(), "");
