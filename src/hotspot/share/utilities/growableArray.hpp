@@ -153,11 +153,6 @@ public:
     return &_data[i];
   }
 
-  const E* adr_at(int i) const {
-    assert(0 <= i && i < _len, "illegal index %d for length %d", i, _len);
-    return &_data[i];
-  }
-
   E& first() {
     assert(_len > 0, "empty");
     return _data[0];
