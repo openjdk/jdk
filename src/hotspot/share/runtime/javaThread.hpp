@@ -52,9 +52,9 @@
 class AsyncExceptionHandshake;
 class ContinuationEntry;
 class DeoptResourceMark;
+class InternalOOMEMark;
 class JNIHandleBlock;
 class JVMCIRuntime;
-class InternalOOMEMark;
 
 class JvmtiDeferredUpdates;
 class JvmtiSampledObjectAllocEventCollector;
@@ -336,7 +336,7 @@ class JavaThread: public Thread {
   volatile JNIAttachStates _jni_attach_state;
 
   // In scope of an InternalOOMEMark?
-  bool _in_internal_oome_mark;
+  bool _is_in_internal_oome_mark;
 
 #if INCLUDE_JVMCI
   // The _pending_* fields below are used to communicate extra information
@@ -713,8 +713,9 @@ private:
   MemRegion deferred_card_mark() const           { return _deferred_card_mark; }
   void set_deferred_card_mark(MemRegion mr)      { _deferred_card_mark = mr;   }
 
-  bool in_internal_oome_mark() const            { return _in_internal_oome_mark; }
-  void set_in_internal_oome_mark(bool b)        { _in_internal_oome_mark = b;    }
+  // Is thread in scope of an InternalOOMEMark?
+  bool is_in_internal_oome_mark() const          { return _is_in_internal_oome_mark; }
+  void set_is_in_internal_oome_mark(bool b)      { _is_in_internal_oome_mark = b;    }
 
 #if INCLUDE_JVMCI
   jlong pending_failed_speculation() const        { return _pending_failed_speculation; }

@@ -455,7 +455,7 @@ JavaThread::JavaThread() :
 #endif
 #endif
   _jni_attach_state(_not_attaching_via_jni),
-  _in_internal_oome_mark(false),
+  _is_in_internal_oome_mark(false),
 #if INCLUDE_JVMCI
   _pending_deoptimization(-1),
   _pending_monitorenter(false),

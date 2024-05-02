@@ -104,7 +104,7 @@ class RetryableAllocationMark {
  public:
   RetryableAllocationMark(JavaThread* thread, bool activate) : _iom(activate ? thread : nullptr) {}
   ~RetryableAllocationMark() {
-    JavaThread* THREAD = _iom.thread();
+    JavaThread* THREAD = _iom.thread(); // For exception macros.
     if (THREAD != nullptr) {
       if (HAS_PENDING_EXCEPTION) {
         oop ex = PENDING_EXCEPTION;

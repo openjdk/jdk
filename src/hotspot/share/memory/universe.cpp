@@ -650,12 +650,12 @@ objArrayOop Universe::preallocated_out_of_memory_errors() {
 
 objArrayOop Universe::out_of_memory_errors() { return (objArrayOop)_out_of_memory_errors.resolve(); }
 
-oop Universe::out_of_memory_error_java_heap(bool omit_backtrace) {
-  oop oome = out_of_memory_errors()->obj_at(_oom_java_heap);
-  if (!omit_backtrace) {
-    oome = gen_out_of_memory_error(oome);
-  }
-  return oome;
+oop Universe::out_of_memory_error_java_heap() {
+  return gen_out_of_memory_error(out_of_memory_errors()->obj_at(_oom_java_heap));
+}
+
+oop Universe::out_of_memory_error_java_heap_without_backtrace() {
+  return out_of_memory_errors()->obj_at(_oom_java_heap);
 }
 
 oop Universe::out_of_memory_error_c_heap() {

@@ -271,7 +271,8 @@ class Universe: AllStatic {
   // OutOfMemoryError support. Returns an error with the required message. The returned error
   // may or may not have a backtrace. If error has a backtrace then the stack trace is already
   // filled in.
-  static oop out_of_memory_error_java_heap(bool omit_backtrace=false);
+  static oop out_of_memory_error_java_heap();
+  static oop out_of_memory_error_java_heap_without_backtrace();
   static oop out_of_memory_error_c_heap();
   static oop out_of_memory_error_metaspace();
   static oop out_of_memory_error_class_metaspace();

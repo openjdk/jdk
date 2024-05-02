@@ -128,10 +128,10 @@ class InternalOOMEMark: public StackObj {
   JavaThread* _thread;
 
  public:
-  InternalOOMEMark(JavaThread* thread) {
+  explicit InternalOOMEMark(JavaThread* thread) {
     if (thread != nullptr) {
-      _outer = thread->in_internal_oome_mark();
-      thread->set_in_internal_oome_mark(true);
+      _outer = thread->is_in_internal_oome_mark();
+      thread->set_is_in_internal_oome_mark(true);
       _thread = thread;
     } else {
       _outer = false;
@@ -142,13 +142,12 @@ class InternalOOMEMark: public StackObj {
   ~InternalOOMEMark() {
     if (_thread != nullptr) {
       // Check that only InternalOOMEMark sets
-      // JavaThread::_in_internal_oome_mark
-      assert(_thread->in_internal_oome_mark(), "must be");
-      _thread->set_in_internal_oome_mark(_outer);
+      // JavaThread::_is_in_internal_oome_mark
+      assert(_thread->is_in_internal_oome_mark(), "must be");
+      _thread->set_is_in_internal_oome_mark(_outer);
     }
   }
 
-  // Returns nullptr iff `activate` was false in the constructor.
   JavaThread* thread() const  { return _thread; }
 };
 
