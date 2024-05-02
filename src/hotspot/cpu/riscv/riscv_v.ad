@@ -3790,15 +3790,16 @@ instruct vconvF2HF(vReg dst, vReg src, vReg vtmp, vRegMask_V0 v0, iRegINoSp tmp)
 
 // ------------------------------ Popcount vector ------------------------------
 
-instruct vpopcount_mask(vReg dst, vReg src, vRegMask_V0 v0) %{
-  match(Set dst (PopCountVI src v0));
-  match(Set dst (PopCountVL src v0));
-  format %{ "vcpop_v $dst, $src, $v0\t# vcpop_v with mask" %}
+instruct vpopcount_mask(vReg dst_src, vRegMask_V0 v0) %{
+  match(Set dst_src (PopCountVI dst_src v0));
+  match(Set dst_src (PopCountVL dst_src v0));
+  ins_cost(VEC_COST);
+  format %{ "vcpop_v $dst_src, $dst_src, $v0\t# vcpop_v with mask" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     uint vlen = Matcher::vector_length(this);
     __ vsetvli_helper(bt, vlen);
-    __ vcpop_v(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg), __ VectorMask::v0_t);
+    __ vcpop_v(as_VectorRegister($dst_src$$reg), as_VectorRegister($dst_src$$reg), Assembler::v0_t);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -3806,6 +3807,7 @@ instruct vpopcount_mask(vReg dst, vReg src, vRegMask_V0 v0) %{
 instruct vpopcount(vReg dst, vReg src) %{
   match(Set dst (PopCountVI src));
   match(Set dst (PopCountVL src));
+  ins_cost(VEC_COST);
   format %{ "vcpop_v $dst, $src\t# vcpop_v without mask" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
