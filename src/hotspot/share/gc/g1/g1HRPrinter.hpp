@@ -40,7 +40,7 @@ private:
                           action, hr->get_type_str(), p2i(hr->bottom()), p2i(hr->top()), p2i(hr->end()));
   }
 
-  void mark_reclaim(HeapRegion* hr) {
+  void mark_reclaim(G1HeapRegion* hr) {
     print("MARK-RECLAIM", hr);
   }
 
@@ -90,7 +90,7 @@ public:
     }
   }
 
-  void evac_reclaim(HeapRegion* hr) {
+  void evac_reclaim(G1HeapRegion* hr) {
     if (is_active()) {
       print("EVAC-RECLAIM", hr);
     }
