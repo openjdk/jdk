@@ -51,7 +51,7 @@ ConnectionGraph::ConnectionGraph(Compile * C, PhaseIterGVN *igvn, int invocation
   // pushed to the ConnectionGraph. The code below bumps the initial capacity of
   // _nodes by 10% to account for these additional nodes. If capacity is exceeded
   // the array will be reallocated.
-  _nodes(C->comp_arena(), C->do_reduce_allocation_merges() ? C->unique()*1.10 : C->unique(), C->unique(), nullptr),
+  _nodes(C->comp_arena(), C->do_reduce_allocation_merges() ? C->unique()*1.30 : C->unique(), C->unique(), nullptr),
   _in_worklist(C->comp_arena()),
   _next_pidx(0),
   _collecting(true),
@@ -531,7 +531,7 @@ bool ConnectionGraph::can_reduce_check_users(Node* n, uint nesting) const {
   for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
     Node* use = n->fast_out(i);
 
-    if (use->is_SafePoint()) {
+    if (use->is_SafePoint() && nesting == 0) {
       if (use->is_Call() && use->as_Call()->has_non_debug_use(n)) {
         NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Can NOT reduce Phi %d on invocation %d. Call has non_debug_use().", n->_idx, _invocation);)
         return false;
@@ -539,13 +539,13 @@ bool ConnectionGraph::can_reduce_check_users(Node* n, uint nesting) const {
         NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Can NOT reduce Phi %d on invocation %d. It has already been reduced.", n->_idx, _invocation);)
         return false;
       }
-    } else if (use->is_AddP()) {
+    } else if (use->is_AddP() && nesting <= 1) {
       Node* addp = use;
       for (DUIterator_Fast jmax, j = addp->fast_outs(jmax); j < jmax; j++) {
         Node* use_use = addp->fast_out(j);
         const Type* load_type = _igvn->type(use_use);
 
-        if (!use_use->is_Load() || !use_use->as_Load()->can_split_through_phi_base(_igvn)) {
+        if (!use_use->is_Load() || !use_use->as_Load()->can_split_through_phi_base(_igvn, (nesting > 0))) {
           NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Can NOT reduce Phi %d on invocation %d. AddP user isn't a [splittable] Load(): %s", n->_idx, _invocation, use_use->Name());)
           return false;
         } else if (nesting > 0 && load_type->isa_narrowklass()) {
@@ -556,6 +556,18 @@ bool ConnectionGraph::can_reduce_check_users(Node* n, uint nesting) const {
     } else if (nesting > 0) {
       NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Can NOT reduce Phi %d on invocation %d. Unsupported user %s at nesting level %d.", n->_idx, _invocation, use->Name(), nesting);)
       return false;
+    } else if (use->is_Phi()) {
+      if (n->_idx == use->_idx) {
+        NOT_PRODUCT(if (TraceReduceAllocationMerges)tty->print_cr("Can NOT reduce Self loop nested Phi");)
+        return false;
+      } else {
+        if (!can_reduce_check_users(use->as_Phi(), nesting+1)) {
+          NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Can NOT reduce nested Phi %d ", use->_idx);)          
+          return false;
+	      } else {
+          NOT_PRODUCT(if (TraceReduceAllocationMerges)  tty->print_cr("Can reduce nested Phi %d ", use->_idx);)
+       }
+      }
     } else if (use->is_CastPP()) {
       const Type* cast_t = _igvn->type(use);
       if (cast_t == nullptr || cast_t->make_ptr()->isa_instptr() == nullptr) {
@@ -1021,6 +1033,10 @@ void ConnectionGraph::updates_after_load_split(Node* data_phi, Node* previous_lo
       // type for. If that's the case we are done with that input.
       PointsToNode* jobj_ptn = unique_java_object(base);
       if (jobj_ptn == nullptr || !jobj_ptn->scalar_replaceable()) {
+        // Now let's add the node to the connection graph
+        /*_nodes.at_grow(new_addp->_idx, nullptr);
+        add_field(new_addp, fn->escape_state(), fn->offset());
+        add_base(ptnode_adr(new_addp->_idx)->as_Field(), ptnode_adr(base->_idx));*/
         continue;
       }
 
@@ -1252,6 +1268,21 @@ bool ConnectionGraph::reduce_phi_on_safepoints_helper(Node* ophi, Node* cast, No
 }
 
 void ConnectionGraph::reduce_phi(PhiNode* ophi, GrowableArray<Node *>  &alloc_worklist, GrowableArray<Node *>  &memnode_worklist) {
+
+  Unique_Node_List nested_phis;
+  // Collect nested phi nodes
+  for (DUIterator_Fast imax, i = ophi->fast_outs(imax); i < imax; i++) {
+    Node* use = ophi->fast_out(i);
+    if (use->is_Phi() && use->_idx != ophi->_idx)  {
+      nested_phis.push(use);
+    }
+  }
+  // make sure to process child phi nodes before parent phi nodes in nested phi scenario
+  for (uint i=0; i<nested_phis.size(); i++) {
+    Node *nested_phi = nested_phis.at(i);	  
+    reduce_phi(nested_phi->as_Phi(), alloc_worklist, memnode_worklist);
+  }
+
   bool delay = _igvn->delay_transform();
   _igvn->set_delay_transform(true);
   _igvn->hash_delete(ophi);
@@ -2915,7 +2946,7 @@ void ConnectionGraph::adjust_scalar_replaceable_state(JavaObjectNode* jobj, Uniq
           continue;
         }
 
-        if (use_n->is_Phi() && can_reduce_phi(use_n->as_Phi())) {
+        if (ReduceAllocationMerges && use_n->is_Phi() && can_reduce_phi(use_n->as_Phi())) {
           candidates.push(use_n);
         } else {
           // Mark all objects as NSR if we can't remove the merge
