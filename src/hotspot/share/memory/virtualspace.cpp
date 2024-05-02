@@ -329,7 +329,7 @@ ReservedSpace ReservedSpace::last_part(size_t partition_size, size_t alignment) 
 
 ReservedSpace ReservedSpace::partition(size_t offset, size_t partition_size, size_t alignment) {
   assert(offset + partition_size <= size(), "partition failed");
-  ReservedSpace result(base() + offset, partition_size, alignment, page_size(), special(), executable());
+  ReservedSpace result(base() + offset, partition_size, alignment, page_size(), special(), executable(), nmt_flag());
   return result;
 }
 
