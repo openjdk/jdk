@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -65,7 +65,7 @@ public abstract class AbstractDelegateHttpsURLConnection extends
 
     protected abstract javax.net.ssl.HostnameVerifier getHostnameVerifier();
 
-    /**
+    /*
      * No user application is able to call these routines, as no one
      * should ever get access to an instance of
      * DelegateHttpsURLConnection (sun.* or com.*)

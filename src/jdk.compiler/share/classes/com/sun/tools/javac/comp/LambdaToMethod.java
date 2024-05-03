@@ -796,7 +796,7 @@ public class LambdaToMethod extends TreeTranslator {
             stmts = new ListBuffer<>();
             kInfo.deserializeCases.put(implMethodName, stmts);
         }
-        /****
+        /* **
         System.err.printf("+++++++++++++++++\n");
         System.err.printf("*functionalInterfaceClass: '%s'\n", functionalInterfaceClass);
         System.err.printf("*functionalInterfaceMethodName: '%s'\n", functionalInterfaceMethodName);

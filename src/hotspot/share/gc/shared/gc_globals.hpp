@@ -154,9 +154,6 @@
           "Never tenure objects in eden, may tenure on overflow "           \
           "(ParallelGC only)")                                              \
                                                                             \
-  product(bool, ScavengeBeforeFullGC, true,                                 \
-          "Scavenge youngest generation before each full GC.")              \
-                                                                            \
   product(bool, ExplicitGCInvokesConcurrent, false,                         \
           "A System.gc() request invokes a concurrent collection; "         \
           "(effective only when using concurrent collectors)")              \
@@ -496,9 +493,6 @@
                                                                             \
   product(bool, UseCondCardMark, false,                                     \
           "Check for already marked card before updating card table")       \
-                                                                            \
-  product(bool, VerifyRememberedSets, false, DIAGNOSTIC,                    \
-          "Verify GC remembered sets")                                      \
                                                                             \
   product(bool, DisableExplicitGC, false,                                   \
           "Ignore calls to System.gc()")                                    \

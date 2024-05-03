@@ -95,25 +95,7 @@ bool PhaseIdealLoop::split_up( Node *n, Node *blk1, Node *blk2 ) {
     return true;
   }
 
-  if (subgraph_has_opaque(n)) {
-    Unique_Node_List wq;
-    wq.push(n);
-    for (uint i = 0; i < wq.size(); i++) {
-      Node* m = wq.at(i);
-      if (m->is_If()) {
-        assert(assertion_predicate_has_loop_opaque_node(m->as_If()), "opaque node not reachable from if?");
-        TemplateAssertionPredicateExpression template_assertion_predicate_expression(m->in(1)->as_Opaque4());
-        Opaque4Node* cloned_opaque4_node = template_assertion_predicate_expression.clone(m->in(0), this);
-        _igvn.replace_input_of(m, 1, cloned_opaque4_node);
-      } else {
-        assert(!m->is_CFG(), "not CFG expected");
-        for (DUIterator_Fast jmax, j = m->fast_outs(jmax); j < jmax; j++) {
-          Node* u = m->fast_out(j);
-          wq.push(u);
-        }
-      }
-    }
-  }
+  clone_template_assertion_predicate_expression_down(n);
 
   if (n->Opcode() == Op_OpaqueZeroTripGuard) {
     // If this Opaque1 is part of the zero trip guard for a loop:
@@ -425,6 +407,27 @@ bool PhaseIdealLoop::clone_cmp_down(Node* n, const Node* blk1, const Node* blk2)
     }
   }
   return false;
+}
+
+// 'n' could be a node belonging to a Template Assertion Predicate Expression (i.e. any node between a Template
+// Assertion Predicate and its OpaqueLoop* nodes (included)). We cannot simply split this node up since this would
+// create a phi node inside the Template Assertion Predicate Expression - making it unrecognizable as such. Therefore,
+// we completely clone the entire Template Assertion Predicate Expression "down". This ensures that we have an
+// untouched copy that is still recognized by the Template Assertion Predicate matching code.
+void PhaseIdealLoop::clone_template_assertion_predicate_expression_down(Node* node) {
+  if (!TemplateAssertionPredicateExpressionNode::is_in_expression(node)) {
+    return;
+  }
+
+  TemplateAssertionPredicateExpressionNode template_assertion_predicate_expression_node(node);
+  auto clone_expression = [&](IfNode* template_assertion_predicate) {
+    Opaque4Node* opaque4_node = template_assertion_predicate->in(1)->as_Opaque4();
+    TemplateAssertionPredicateExpression template_assertion_predicate_expression(opaque4_node);
+    Node* new_ctrl = template_assertion_predicate->in(0);
+    Opaque4Node* cloned_opaque4_node = template_assertion_predicate_expression.clone(new_ctrl, this);
+    igvn().replace_input_of(template_assertion_predicate, 1, cloned_opaque4_node);
+  };
+  template_assertion_predicate_expression_node.for_each_template_assertion_predicate(clone_expression);
 }
 
 //------------------------------register_new_node------------------------------

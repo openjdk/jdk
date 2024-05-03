@@ -959,7 +959,7 @@ void InterpreterRuntime::resolve_invokedynamic(JavaThread* current) {
                                  index, bytecode, CHECK);
   } // end JvmtiHideSingleStepping
 
-  pool->cache()->set_dynamic_call(info, pool->decode_invokedynamic_index(index));
+  pool->cache()->set_dynamic_call(info, index);
 }
 
 // This function is the interface to the assembly code. It returns the resolved
