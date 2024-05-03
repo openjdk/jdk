@@ -225,7 +225,7 @@ void G1CollectionSetCandidates::set_candidates_from_marking(G1CollectionSetCandi
   verify();
 }
 
-void G1CollectionSetCandidates::sort_retained_by_efficiency() {
+void G1CollectionSetCandidates::sort_by_efficiency() {
   // From marking regions must always be sorted so no reason to actually sort
   // them.
   _marking_regions.verify();

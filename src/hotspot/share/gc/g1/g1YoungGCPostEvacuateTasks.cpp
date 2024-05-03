@@ -897,7 +897,7 @@ public:
     bool has_new_retained_regions = Atomic::load(&_num_retained_regions) != 0;
     if (has_new_retained_regions) {
       G1CollectionSetCandidates* candidates = _g1h->collection_set()->candidates();
-      candidates->sort_retained_by_efficiency();
+      candidates->sort_by_efficiency();
     }
 
     report_statistics();

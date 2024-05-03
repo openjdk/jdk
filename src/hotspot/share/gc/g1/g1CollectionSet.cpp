@@ -417,7 +417,7 @@ void G1CollectionSet::move_pinned_marking_to_retained(G1CollectionCandidateRegio
     assert(r->rem_set()->is_complete(), "must be complete");
     candidates()->add_retained_region_unsorted(r);
   }
-  candidates()->sort_retained_by_efficiency();
+  candidates()->sort_by_efficiency();
 }
 
 void G1CollectionSet::drop_pinned_retained_regions(G1CollectionCandidateRegionList* regions) {

@@ -213,7 +213,7 @@ public:
   // regions.
   uint last_marking_candidates_length() const { return _last_marking_candidates_length; }
 
-  void sort_retained_by_efficiency();
+  void sort_by_efficiency();
 
   void sort_marking_by_efficiency();
 
