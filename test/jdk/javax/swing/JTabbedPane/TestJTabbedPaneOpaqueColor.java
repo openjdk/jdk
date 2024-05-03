@@ -40,7 +40,7 @@ import javax.swing.UnsupportedLookAndFeelException;
 
 /*
  * @test
- * @bug 8226990 6462396
+ * @bug 8226990 6462396 4690946
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @requires (os.family == "windows" | os.family == "linux")
