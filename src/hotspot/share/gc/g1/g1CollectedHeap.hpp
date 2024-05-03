@@ -465,7 +465,7 @@ private:
   // These methods are the "callbacks" from the G1AllocRegion class.
 
   // For mutator alloc regions.
-  HeapRegion* new_mutator_alloc_region(size_t word_size, bool force, uint node_index);
+  HeapRegion* new_mutator_alloc_region(size_t word_size, uint node_index);
   void retire_mutator_alloc_region(HeapRegion* alloc_region,
                                    size_t allocated_bytes);
 
