@@ -8034,8 +8034,9 @@ instruct encodeKlass_not_null(iRegNNoSp dst, iRegP src) %{
    ins_pipe(ialu_reg);
 %}
 
-instruct decodeKlass_not_null(iRegPNoSp dst, iRegN src) %{
+instruct decodeKlass_not_null(iRegPNoSp dst, iRegN src, iRegN tmp) %{
   match(Set dst (DecodeNKlass src));
+  effect(TEMP tmp);
 
   ins_cost(INSN_COST * 3);
   format %{ "decode_klass_not_null $dst,$src" %}
@@ -8043,10 +8044,11 @@ instruct decodeKlass_not_null(iRegPNoSp dst, iRegN src) %{
   ins_encode %{
     Register src_reg = as_Register($src$$reg);
     Register dst_reg = as_Register($dst$$reg);
+    Register tmp_reg = as_Register($tmp$$reg);
     if (dst_reg != src_reg) {
-      __ decode_klass_not_null(dst_reg, src_reg);
+      __ decode_klass_not_null(dst_reg, src_reg, tmp_reg);
     } else {
-      __ decode_klass_not_null(dst_reg);
+      __ decode_klass_not_null(dst_reg, tmp_reg);
     }
   %}
 

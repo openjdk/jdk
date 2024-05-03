@@ -689,7 +689,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
     ldr(obj_reg, Address(lock_reg, obj_offset));
 
     if (DiagnoseSyncOnValueBasedClasses != 0) {
-      load_klass(tmp, obj_reg);
+      load_klass(tmp, obj_reg, tmp2);
       ldrw(tmp, Address(tmp, Klass::access_flags_offset()));
       tstw(tmp, JVM_ACC_IS_VALUE_BASED_CLASS);
       br(Assembler::NE, slow_case);
@@ -1550,7 +1550,7 @@ void InterpreterMacroAssembler::profile_obj_type(Register obj, const Address& md
   b(next);
 
   bind(update);
-  load_klass(obj, obj);
+  load_klass(obj, obj, rscratch1);
 
   ldr(rscratch1, mdo_addr);
   eor(obj, obj, rscratch1);

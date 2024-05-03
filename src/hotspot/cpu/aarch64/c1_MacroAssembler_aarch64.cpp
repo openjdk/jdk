@@ -74,7 +74,7 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
   null_check_offset = offset();
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
-    load_klass(hdr, obj);
+    load_klass(hdr, obj, temp);
     ldrw(hdr, Address(hdr, Klass::access_flags_offset()));
     tstw(hdr, JVM_ACC_IS_VALUE_BASED_CLASS);
     br(Assembler::NE, slow_case);

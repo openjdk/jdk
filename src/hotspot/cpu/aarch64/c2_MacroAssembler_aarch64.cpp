@@ -63,7 +63,7 @@ void C2_MacroAssembler::fast_lock(Register objectReg, Register boxReg, Register 
   ldr(disp_hdr, Address(oop, oopDesc::mark_offset_in_bytes()));
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
-    load_klass(tmp, oop);
+    load_klass(tmp, oop, tmpReg);
     ldrw(tmp, Address(tmp, Klass::access_flags_offset()));
     tstw(tmp, JVM_ACC_IS_VALUE_BASED_CLASS);
     br(Assembler::NE, cont);
@@ -237,7 +237,7 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register t1,
   Label slow_path;
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
-    load_klass(t1, obj);
+    load_klass(t1, obj, t2);
     ldrw(t1, Address(t1, Klass::access_flags_offset()));
     tstw(t1, JVM_ACC_IS_VALUE_BASED_CLASS);
     br(Assembler::NE, slow_path);

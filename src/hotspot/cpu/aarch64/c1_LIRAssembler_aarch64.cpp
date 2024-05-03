@@ -1331,7 +1331,7 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
   if (op->fast_check()) {
     // get object class
     // not a safepoint as obj null check happens earlier
-    __ load_klass(rscratch1, obj);
+    __ load_klass(rscratch1, obj, rscratch2);
     __ cmp( rscratch1, k_RInfo);
 
     __ br(Assembler::NE, *failure_target);
@@ -2549,7 +2549,7 @@ void LIR_Assembler::emit_load_klass(LIR_OpLoadKlass* op) {
 
   if (UseCompressedClassPointers) {
     __ ldrw(result, Address (obj, oopDesc::klass_offset_in_bytes()));
-    __ decode_klass_not_null(result);
+    __ decode_klass_not_null(result, rscratch1);
   } else {
     __ ldr(result, Address (obj, oopDesc::klass_offset_in_bytes()));
   }

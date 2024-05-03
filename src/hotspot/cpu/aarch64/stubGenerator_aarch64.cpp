@@ -1975,7 +1975,7 @@ class StubGenerator: public StubCodeGenerator {
                      gct1);
     __ cbz(copied_oop, L_store_element);
 
-    __ load_klass(r19_klass, copied_oop);// query the object klass
+    __ load_klass(r19_klass, copied_oop, gct1);// query the object klass
     generate_type_check(r19_klass, ckoff, ckval, L_store_element);
     // ======== end loop ========
 
@@ -2175,7 +2175,7 @@ class StubGenerator: public StubCodeGenerator {
     __ movw(scratch_length, length);        // length (elements count, 32-bits value)
     __ tbnz(scratch_length, 31, L_failed);  // i.e. sign bit set
 
-    __ load_klass(scratch_src_klass, src);
+    __ load_klass(scratch_src_klass, src, /*tmp*/ lh);
 #ifdef ASSERT
     //  assert(src->klass() != nullptr);
     {
@@ -2185,7 +2185,7 @@ class StubGenerator: public StubCodeGenerator {
       __ bind(L1);
       __ stop("broken null klass");
       __ bind(L2);
-      __ load_klass(rscratch1, dst);
+      __ load_klass(rscratch1, dst, /*tmp*/ lh);
       __ cbz(rscratch1, L1);     // this would be broken also
       BLOCK_COMMENT("} assert klasses not null done");
     }
@@ -2305,6 +2305,7 @@ class StubGenerator: public StubCodeGenerator {
 
     Label L_plain_copy, L_checkcast_copy;
     //  test array classes for subtyping
+    assert_different_registers(rscratch1, scratch_src_klass, scratch_length, src, dst);
     __ load_klass(r15, dst);
     __ cmp(scratch_src_klass, r15); // usual case is exact equality
     __ br(Assembler::NE, L_checkcast_copy);

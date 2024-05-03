@@ -874,9 +874,9 @@ public:
   void load_method_holder(Register holder, Register method);
 
   // oop manipulations
-  void load_klass(Register dst, Register src);
+  void load_klass(Register dst, Register src, Register tmp = rscratch1);
   void store_klass(Register dst, Register src);
-  void cmp_klass(Register oop, Register trial_klass, Register tmp);
+  void cmp_klass(Register oop, Register trial_klass, Register tmp, Register tmp2);
 
   void resolve_weak_handle(Register result, Register tmp1, Register tmp2);
   void resolve_oop_handle(Register result, Register tmp1, Register tmp2);
@@ -921,9 +921,9 @@ public:
   void set_narrow_oop(Register dst, jobject obj);
 
   void encode_klass_not_null(Register r);
-  void decode_klass_not_null(Register r);
+  void decode_klass_not_null(Register r, Register tmp);
   void encode_klass_not_null(Register dst, Register src);
-  void decode_klass_not_null(Register dst, Register src);
+  void decode_klass_not_null(Register dst, Register src, Register tmp);
 
   void set_narrow_klass(Register dst, Klass* k);
 

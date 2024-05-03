@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -420,7 +420,7 @@ void BarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Register
   __ cbnz(tmp1, error);
 
   // make sure klass is 'reasonable', which is not zero.
-  __ load_klass(obj, obj); // get klass
+  __ load_klass(obj, obj, tmp1); // get klass
   __ cbz(obj, error);      // if klass is null it is broken
 }
 

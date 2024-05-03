@@ -4816,10 +4816,10 @@ void MacroAssembler::load_method_holder(Register holder, Register method) {
   ldr(holder, Address(holder, ConstantPool::pool_holder_offset()));          // InstanceKlass*
 }
 
-void MacroAssembler::load_klass(Register dst, Register src) {
+void MacroAssembler::load_klass(Register dst, Register src, Register tmp) {
   if (UseCompressedClassPointers) {
     ldrw(dst, Address(src, oopDesc::klass_offset_in_bytes()));
-    decode_klass_not_null(dst);
+    decode_klass_not_null(dst, tmp);
   } else {
     ldr(dst, Address(src, oopDesc::klass_offset_in_bytes()));
   }
@@ -4872,19 +4872,21 @@ void MacroAssembler::load_mirror(Register dst, Register method, Register tmp1, R
   resolve_oop_handle(dst, tmp1, tmp2);
 }
 
-void MacroAssembler::cmp_klass(Register oop, Register trial_klass, Register tmp) {
+void MacroAssembler::cmp_klass(Register oop, Register trial_klass, Register tmp, Register tmp2) {
   if (UseCompressedClassPointers) {
     ldrw(tmp, Address(oop, oopDesc::klass_offset_in_bytes()));
-    if (CompressedKlassPointers::base() == nullptr) {
-      cmp(trial_klass, tmp, LSL, CompressedKlassPointers::shift());
-      return;
-    } else if (((uint64_t)CompressedKlassPointers::base() & 0xffffffff) == 0
-               && CompressedKlassPointers::shift() == 0) {
-      // Only the bottom 32 bits matter
-      cmpw(trial_klass, tmp);
-      return;
+    if (!UseIndirectKlassPointers) {
+      if (CompressedKlassPointers::base() == nullptr) {
+        cmp(trial_klass, tmp, LSL, CompressedKlassPointers::shift());
+        return;
+      } else if (((uint64_t)CompressedKlassPointers::base() & 0xffffffff) == 0
+                 && CompressedKlassPointers::shift() == 0) {
+        // Only the bottom 32 bits matter
+        cmpw(trial_klass, tmp);
+        return;
+      }
     }
-    decode_klass_not_null(tmp);
+    decode_klass_not_null(tmp, tmp2);
   } else {
     ldr(tmp, Address(oop, oopDesc::klass_offset_in_bytes()));
   }
@@ -5116,15 +5118,16 @@ void MacroAssembler::encode_klass_not_null(Register r) {
   encode_klass_not_null(r, r);
 }
 
-void  MacroAssembler::decode_klass_not_null(Register dst, Register src) {
+void  MacroAssembler::decode_klass_not_null(Register dst, Register src, Register tmp) {
   assert (UseCompressedClassPointers, "should only be used for compressed headers");
 
   if (UseIndirectKlassPointers) {
+    assert_different_registers(src, tmp);
     assert(KlassIdArray::base() != nullptr, "must be initialized first");
     // return KlassIdArray[src] where src is an index
-    lsl(src, src, LogKlassAlignmentInBytes);  // scale index by 8
-    add(src, src, (uint64_t)KlassIdArray::base());
-    lea(dst, src);  // extra load
+    lea(tmp, ExternalAddress(KlassIdArray::base()));
+    add(dst, tmp, src, Assembler::LSL, LogMinObjAlignmentInBytes);
+    ldr(dst, dst);
   } else {
     switch (klass_decode_mode()) {
     case KlassDecodeZero:
@@ -5165,8 +5168,8 @@ void  MacroAssembler::decode_klass_not_null(Register dst, Register src) {
   }
 }
 
-void  MacroAssembler::decode_klass_not_null(Register r) {
-  decode_klass_not_null(r, r);
+void  MacroAssembler::decode_klass_not_null(Register r, Register tmp) {
+  decode_klass_not_null(r, r, tmp);
 }
 
 void  MacroAssembler::set_narrow_oop(Register dst, jobject obj) {

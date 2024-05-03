@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -76,7 +76,7 @@ void MethodHandles::verify_klass(MacroAssembler* _masm,
   __ verify_oop(obj);
   __ cbz(obj, L_bad);
   __ push(RegSet::of(temp, temp2), sp);
-  __ load_klass(temp, obj);
+  __ load_klass(temp, obj, temp2);
   __ cmpptr(temp, ExternalAddress((address) klass_addr));
   __ br(Assembler::EQ, L_ok);
   intptr_t super_check_offset = klass->super_check_offset();
@@ -322,7 +322,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
         __ null_check(receiver_reg);
       } else {
         // load receiver klass itself
-        __ load_klass(temp1_recv_klass, receiver_reg);
+        __ load_klass(temp1_recv_klass, receiver_reg, temp2);
         __ verify_klass_ptr(temp1_recv_klass);
       }
       BLOCK_COMMENT("check_receiver {");
@@ -330,7 +330,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
       // Check the receiver against the MemberName.clazz
       if (VerifyMethodHandles && iid == vmIntrinsics::_linkToSpecial) {
         // Did not load it above...
-        __ load_klass(temp1_recv_klass, receiver_reg);
+        __ load_klass(temp1_recv_klass, receiver_reg, temp2);
         __ verify_klass_ptr(temp1_recv_klass);
       }
       if (VerifyMethodHandles && iid != vmIntrinsics::_linkToInterface) {
