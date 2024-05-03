@@ -53,7 +53,7 @@ public class TestJTabbedPaneOpaqueColor {
     private static JFrame frame;
     private static JTabbedPane tabPane;
     private static final String INSTRUCTIONS = """
-            The background color of panel (which contains the tabbed pane is green).
+            The background color of panel which contains the tabbed pane is green.
             The background color of the tabbed pane is red.
             The TabbedPane is not opaque initially.
             For 'Content Opaque' and 'Tabs Opaque' to have effect, tab pane opacity should
@@ -122,7 +122,6 @@ public class TestJTabbedPaneOpaqueColor {
         JTabbedPane tabPane = new JTabbedPane();
         tabPane.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
         tabPane.setTabPlacement(JTabbedPane.TOP);
-        PassFailJFrame.addTestWindow(frame);
         PassFailJFrame.positionTestWindow(
                 frame, PassFailJFrame.Position.HORIZONTAL);
         for (int i = 0; i < NUM_TABS; ++i) {

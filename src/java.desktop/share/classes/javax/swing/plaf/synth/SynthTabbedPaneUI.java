@@ -650,7 +650,7 @@ public class SynthTabbedPaneUI extends BasicTabbedPaneUI
         }
 
         if (isSelected) {
-            g.setColor( selectColor );
+            g.setColor(selectColor);
         } else {
             g.setColor(getUnselectedBackgroundAt(tabIndex));
         }
