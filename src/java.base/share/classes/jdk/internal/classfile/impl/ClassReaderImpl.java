@@ -399,13 +399,16 @@ public final class ClassReaderImpl
             int offset = cpOffset[index];
             int tag = readU1(offset);
             final int q = offset + 1;
-            if (tag != TAG_UTF8) throw new ConstantPoolException("Not a UTF8 - index: " + index);
-            AbstractPoolEntry.Utf8EntryImpl uinfo
-                    = new AbstractPoolEntry.Utf8EntryImpl(this, index, buffer, q + 2, readU2(q));
-            cp[index] = uinfo;
-            return uinfo;
+            if (tag == TAG_UTF8) {
+                AbstractPoolEntry.Utf8EntryImpl uinfo
+                        = new AbstractPoolEntry.Utf8EntryImpl(this, index, buffer, q + 2, readU2(q));
+                cp[index] = uinfo;
+                return uinfo;
+            }
+        } else if (info instanceof AbstractPoolEntry.Utf8EntryImpl utf8) {
+            return utf8;
         }
-        return (AbstractPoolEntry.Utf8EntryImpl) info;
+        throw new ConstantPoolException("Not a UTF8 - index: " + index);
     }
 
     @Override
