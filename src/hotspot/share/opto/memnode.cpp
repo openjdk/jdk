@@ -3516,13 +3516,13 @@ Node* StoreNode::Identity(PhaseGVN* phase) {
     // Ensure offsets match
     if (is_StoreVectorScatter()) {
       const Node* offsets = as_StoreVectorScatter()->in(StoreVectorScatterNode::Offsets);
-      if (mem->is_StoreVectorScatter() && offsets->eqv_uncast(mem->as_StoreVectorScatter()->in(StoreVectorScatterNode::Offsets))) {
+      if (offsets->eqv_uncast(mem->as_StoreVectorScatter()->in(StoreVectorScatterNode::Offsets))) {
         result = mem;
       }
     // Ensure masks match
     } else if (is_StoreVectorMasked()) {
       const Node* mask = as_StoreVectorMasked()->in(StoreVectorMaskedNode::Mask);
-      if (mem->is_StoreVectorMasked() && mask->eqv_uncast(mem->as_StoreVectorMasked()->in(StoreVectorMaskedNode::Mask))) {
+      if (mask->eqv_uncast(mem->as_StoreVectorMasked()->in(StoreVectorMaskedNode::Mask))) {
         result = mem;
       }
     // Ensure offsets and masks match
@@ -3530,12 +3530,10 @@ Node* StoreNode::Identity(PhaseGVN* phase) {
       const StoreVectorScatterMaskedNode* stv = as_StoreVectorScatterMasked();
       const Node* offsets = stv->in(StoreVectorScatterMaskedNode::Offsets);
       const Node* mask = stv->in(StoreVectorScatterMaskedNode::Mask);
-      if (mem->is_StoreVectorScatterMasked()) {
-        const StoreVectorScatterMaskedNode* svgm = mem->as_StoreVectorScatterMasked();
-        if (offsets->eqv_uncast(svgm->in(StoreVectorScatterMaskedNode::Offsets)) &&
-          mask->eqv_uncast(svgm->in(StoreVectorScatterMaskedNode::Mask))) {
-          result = mem;
-        }
+      const StoreVectorScatterMaskedNode* svgm = mem->as_StoreVectorScatterMasked();
+      if (offsets->eqv_uncast(svgm->in(StoreVectorScatterMaskedNode::Offsets)) &&
+        mask->eqv_uncast(svgm->in(StoreVectorScatterMaskedNode::Mask))) {
+        result = mem;
       }
     // Regular store (no offsets or mask)
     } else {
