@@ -177,19 +177,10 @@ public:
     }
   }
 
-private:
-  template<typename F>
-  void in_order_traversal_doer(F f, TreapNode* node) const {
-    if (node == nullptr) return;
-    in_order_traversal_doer(f, node->left());
-    f(node);
-    in_order_traversal_doer(f, node->right());
-  }
-
 public:
   template<typename F>
   void in_order_traversal(F f) const {
-    in_order_traversal_doer(f, tree._root);
+    tree.in_order_traversal(f);
   }
 };
 

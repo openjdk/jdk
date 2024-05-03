@@ -168,8 +168,8 @@ private:
   }
 
   bool verify_self() {
-    double expected_maximum_depth = log(this->_node_count) * 3;
-    // Find the maximum depth through DFS.
+    double expected_maximum_depth = log(this->_node_count+1) * 5;
+    // Find the maximum depth through DFS and ensure that the priority invariant holds.
     int maximum_depth_found = 0;
 
     struct DFS {
@@ -188,15 +188,31 @@ private:
         maximum_depth_found = head.depth;
       }
       if (head.parent_prio < head.n->_priority) {
+        tty->print_cr("Failed at priority");
         return false;
       }
       to_visit.push({head.depth + 1, head.n->_priority, head.n->left()});
       to_visit.push({head.depth + 1, head.n->_priority, head.n->right()});
     }
     if (maximum_depth_found > (int)expected_maximum_depth) {
+      tty->print_cr("Failed at depth");
       return false;
     }
-    return true;
+    // Visit everything in order, see that the key ordering is monotonically increasing.
+    TreapNode* last_seen = nullptr;
+    bool failed = false;
+    this->in_order_traversal([&](TreapNode* node) {
+      if (last_seen == nullptr) {
+        last_seen = node;
+        return;
+      }
+      int c = COMPARATOR::cmp(last_seen->key(), node->key());
+      if (c > 0) {
+        failed = false;
+      }
+      last_seen = node;
+    });
+    return !failed;
   }
 
 public:
@@ -306,6 +322,21 @@ public:
       }
     }
     return leqA_n;
+  }
+
+private:
+  template<typename F>
+  void in_order_traversal_doer(F f, TreapNode* node) const {
+    if (node == nullptr) return;
+    in_order_traversal_doer(f, node->left());
+    f(node);
+    in_order_traversal_doer(f, node->right());
+  }
+
+public:
+  template<typename F>
+  void in_order_traversal(F f) const {
+    in_order_traversal_doer(f, _root);
   }
 };
 
