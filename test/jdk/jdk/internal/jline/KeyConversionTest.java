@@ -63,7 +63,7 @@ public class KeyConversionTest {
         new AbstractWindowsTerminal<String>(null, SystemStream.Output,
                                             new StringWriter(), "", "windows",
                                             Charset.forName("UTF-8"), true,
-                                            SignalHandler.SIG_DFL, "", 0, 
+                                            SignalHandler.SIG_DFL, "", 0,
                                             "", 0, in -> in) {
             @Override
             protected int getConsoleMode(String console) {
