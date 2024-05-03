@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2170,7 +2170,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
               cast = phase->transform(cast);
               n = cast;
             }
-            cast = new CheckCastPPNode(r, uin, phi_type, ConstraintCastNode::StrongDependency, extra_types);
+            cast = new CheckCastPPNode(r, n, phi_type, ConstraintCastNode::StrongDependency, extra_types);
           }
           if (cast == nullptr) {
             cast = new CastPPNode(r, uin, phi_type, ConstraintCastNode::StrongDependency, extra_types);
@@ -2724,10 +2724,10 @@ Node* PhiNode::merge_through_phi(Node* root_phi, PhaseIterGVN* igvn) {
           cached_vbox = vbox;
         } else if (vbox->vec_type() != cached_vbox->vec_type()) {
           // TODO: vector type mismatch can be handled with additional reinterpret casts
-          assert(Type::cmp(vbox->vec_type(), cached_vbox->vec_type()) != 0, "inconsistent");
+          assert(!Type::equals(vbox->vec_type(), cached_vbox->vec_type()), "inconsistent");
           return nullptr; // not optimizable: vector type mismatch
         } else if (vbox->box_type() != cached_vbox->box_type()) {
-          assert(Type::cmp(vbox->box_type(), cached_vbox->box_type()) != 0, "inconsistent");
+          assert(!Type::equals(vbox->box_type(), cached_vbox->box_type()), "inconsistent");
           return nullptr; // not optimizable: box type mismatch
         }
       } else {

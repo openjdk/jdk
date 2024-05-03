@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -219,14 +219,19 @@ monitorInfo(PacketInputStream *in, PacketOutputStream *out)
             int i;
             (void)outStream_writeObjectRef(env, out, info.owner);
             (void)outStream_writeInt(out, info.entry_count);
-            (void)outStream_writeInt(out, info.waiter_count);
+            (void)outStream_writeInt(out, info.waiter_count + info.notify_waiter_count);
             for (i = 0; i < info.waiter_count; i++) {
                 (void)outStream_writeObjectRef(env, out, info.waiters[i]);
+            }
+            for (i = 0; i < info.notify_waiter_count; i++) {
+                (void)outStream_writeObjectRef(env, out, info.notify_waiters[i]);
             }
         }
 
         if (info.waiters != NULL )
             jvmtiDeallocate(info.waiters);
+        if (info.notify_waiters != NULL )
+            jvmtiDeallocate(info.notify_waiters);
 
     } END_WITH_LOCAL_REFS(env);
 

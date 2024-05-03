@@ -329,6 +329,10 @@ cmsToneCurve* AllocateToneCurveStruct(cmsContext ContextID, cmsUInt32Number nEnt
         return p;
 
 Error:
+    for (i=0; i < nSegments; i++) {
+        if (p ->Segments && p ->Segments[i].SampledPoints) _cmsFree(ContextID, p ->Segments[i].SampledPoints);
+        if (p ->SegInterp && p ->SegInterp[i]) _cmsFree(ContextID, p ->SegInterp[i]);
+    }
     if (p -> SegInterp) _cmsFree(ContextID, p -> SegInterp);
     if (p -> Segments) _cmsFree(ContextID, p -> Segments);
     if (p -> Evals) _cmsFree(ContextID, p -> Evals);
@@ -622,10 +626,16 @@ cmsFloat64Number DefaultEvalParametricFn(cmsInt32Number Type, const cmsFloat64Nu
     case 6:
         e = Params[1]*R + Params[2];
 
-        if (e < 0)
-            Val = Params[3];
-        else
-            Val = pow(e, Params[0]) + Params[3];
+        // On gamma 1.0, don't clamp
+        if (Params[0] == 1.0) {
+            Val = e + Params[3];
+        }
+        else {
+            if (e < 0)
+                Val = Params[3];
+            else
+                Val = pow(e, Params[0]) + Params[3];
+        }
         break;
 
     // ((Y - c) ^1/Gamma - b) / a
@@ -1520,13 +1530,13 @@ cmsFloat64Number CMSEXPORT cmsEstimateGamma(const cmsToneCurve* t, cmsFloat64Num
     return (sum / n);   // The mean
 }
 
+// Retrieve segments on tone curves
 
-// Retrieve parameters on one-segment tone curves
-
-cmsFloat64Number* CMSEXPORT cmsGetToneCurveParams(const cmsToneCurve* t)
+const cmsCurveSegment* CMSEXPORT cmsGetToneCurveSegment(cmsInt32Number n, const cmsToneCurve* t)
 {
     _cmsAssert(t != NULL);
 
-    if (t->nSegments != 1) return NULL;
-    return t->Segments[0].Params;
+    if (n < 0 || n >= (cmsInt32Number) t->nSegments) return NULL;
+    return t->Segments + n;
 }
+

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,8 @@ import org.ietf.jgss.*;
  * The extended GSSContext interface for supporting additional
  * functionalities not defined by {@code org.ietf.jgss.GSSContext},
  * such as querying context-specific attributes.
+ *
+ * @since 1.7
  */
 public interface ExtendedGSSContext extends GSSContext {
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,25 +36,21 @@ class RecordComponent: public MetaspaceObj {
     AnnotationArray* _type_annotations;
     u2 _name_index;
     u2 _descriptor_index;
-    u2 _attributes_count;
 
     // generic_signature_index gets set if the Record component has a Signature
     // attribute.  A zero value indicates that there was no Signature attribute.
     u2 _generic_signature_index;
 
   public:
-    RecordComponent(u2 name_index, u2 descriptor_index, u2 attributes_count,
-                    u2 generic_signature_index, AnnotationArray* annotations,
-                    AnnotationArray* type_annotations):
+    RecordComponent(u2 name_index, u2 descriptor_index, u2 generic_signature_index,
+                    AnnotationArray* annotations, AnnotationArray* type_annotations):
                     _annotations(annotations), _type_annotations(type_annotations),
                     _name_index(name_index), _descriptor_index(descriptor_index),
-                    _attributes_count(attributes_count),
                     _generic_signature_index(generic_signature_index) { }
 
     // Allocate instance of this class
     static RecordComponent* allocate(ClassLoaderData* loader_data,
                                      u2 name_index, u2 descriptor_index,
-                                     u2 attributes_count,
                                      u2 generic_signature_index,
                                      AnnotationArray* annotations,
                                      AnnotationArray* type_annotations, TRAPS);
@@ -68,8 +64,6 @@ class RecordComponent: public MetaspaceObj {
     void set_descriptor_index(u2 descriptor_index) {
       _descriptor_index = descriptor_index;
     }
-
-    u2 attributes_count() const { return _attributes_count; }
 
     u2 generic_signature_index() const { return _generic_signature_index; }
     void set_generic_signature_index(u2 generic_signature_index) {

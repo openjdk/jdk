@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -247,14 +247,6 @@ class ConstantPool : public Metadata {
   Array<Klass*>* resolved_klasses() const       { return _resolved_klasses; }
   void allocate_resolved_klasses(ClassLoaderData* loader_data, int num_klasses, TRAPS);
   void initialize_unresolved_klasses(ClassLoaderData* loader_data, TRAPS);
-
-  // Invokedynamic indexes.
-  // They must look completely different from normal indexes.
-  // The main reason is that byte swapping is sometimes done on normal indexes.
-  // Finally, it is helpful for debugging to tell the two apart.
-  static bool is_invokedynamic_index(int i) { return (i < 0); }
-  static int  decode_invokedynamic_index(int i) { assert(is_invokedynamic_index(i),  ""); return ~i; }
-  static int  encode_invokedynamic_index(int i) { assert(!is_invokedynamic_index(i), ""); return ~i; }
 
   // Given the per-instruction index of an indy instruction, report the
   // main constant pool entry for its bootstrap specifier.
@@ -539,7 +531,7 @@ class ConstantPool : public Metadata {
     int offset = build_int_from_shorts(operands->at(n+0),
                                        operands->at(n+1));
     // The offset itself must point into the second part of the array.
-    assert(offset == 0 || offset >= second_part && offset <= operands->length(), "oob (3)");
+    assert(offset == 0 || (offset >= second_part && offset <= operands->length()), "oob (3)");
     return offset;
   }
   static void operand_offset_at_put(Array<u2>* operands, int bsms_attribute_index, int offset) {
@@ -761,9 +753,9 @@ class ConstantPool : public Metadata {
 
   // Used by compiler to prevent classloading.
   static Method*          method_at_if_loaded      (const constantPoolHandle& this_cp, int which);
-  static bool       has_appendix_at_if_loaded      (const constantPoolHandle& this_cp, int which);
-  static oop            appendix_at_if_loaded      (const constantPoolHandle& this_cp, int which);
-  static bool has_local_signature_at_if_loaded     (const constantPoolHandle& this_cp, int which);
+  static bool       has_appendix_at_if_loaded      (const constantPoolHandle& this_cp, int which, Bytecodes::Code code);
+  static oop            appendix_at_if_loaded      (const constantPoolHandle& this_cp, int which, Bytecodes::Code code);
+  static bool has_local_signature_at_if_loaded     (const constantPoolHandle& this_cp, int which, Bytecodes::Code code);
   static Klass*            klass_at_if_loaded      (const constantPoolHandle& this_cp, int which);
 
   // Routines currently used for annotations (only called by jvm.cpp) but which might be used in the

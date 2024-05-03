@@ -38,7 +38,7 @@ private:
     // This would insulate from stalls when adjacent cells have returning
     // workers and contend over the cache line for current latency-critical
     // cell.
-    DEFINE_PAD_MINUS_SIZE(0, DEFAULT_CACHE_LINE_SIZE, 0);
+    DEFINE_PAD_MINUS_SIZE(0, DEFAULT_PADDING_SIZE, 0);
 
     Semaphore _sem;
 
@@ -81,14 +81,14 @@ private:
   Cell _cells[CELLS_COUNT];
 
   // Trailing padding to protect the last cell.
-  DEFINE_PAD_MINUS_SIZE(0, DEFAULT_CACHE_LINE_SIZE, 0);
+  DEFINE_PAD_MINUS_SIZE(0, DEFAULT_PADDING_SIZE, 0);
 
   volatile int _barrier_tag;
 
   // Trailing padding to insulate the rest of the barrier from adjacent
   // data structures. The leading padding is not needed, as cell padding
   // handles this for us.
-  DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, 0);
+  DEFINE_PAD_MINUS_SIZE(1, DEFAULT_PADDING_SIZE, 0);
 
   NONCOPYABLE(GenericWaitBarrier);
 

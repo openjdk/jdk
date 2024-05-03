@@ -114,6 +114,7 @@ public class InputSource {
      * @see #setEncoding
      * @see #setCharacterStream
      */
+    @SuppressWarnings("this-escape")
     public InputSource (String systemId)
     {
         setSystemId(systemId);
@@ -135,6 +136,7 @@ public class InputSource {
      * @see #setByteStream
      * @see #setCharacterStream
      */
+    @SuppressWarnings("this-escape")
     public InputSource (InputStream byteStream)
     {
         setByteStream(byteStream);
@@ -155,6 +157,7 @@ public class InputSource {
      * @see #setByteStream
      * @see #setCharacterStream
      */
+    @SuppressWarnings("this-escape")
     public InputSource (Reader characterStream)
     {
         setCharacterStream(characterStream);

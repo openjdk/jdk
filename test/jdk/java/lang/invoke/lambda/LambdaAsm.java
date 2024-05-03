@@ -25,35 +25,35 @@
  * @test
  * @bug 8027232
  * @library /test/lib/
- * @modules java.base/jdk.internal.org.objectweb.asm
- *          jdk.jdeps/com.sun.tools.classfile
- *          jdk.zipfs
+ * @modules jdk.zipfs
+ * @enablePreview
  * @compile LambdaAsm.java
  * @run main/othervm LambdaAsm
- * @summary ensures that j.l.i.InvokerByteCodeGenerator and ASM visitMethodInsn
- * generate  bytecodes with correct constant pool references
+ * @summary ensures that j.l.i.InvokerByteCodeGenerator and Class-File API
+ * generate bytecodes with correct constant pool references
  */
-import com.sun.tools.classfile.Attribute;
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.Code_attribute;
-import com.sun.tools.classfile.ConstantPool;
-import com.sun.tools.classfile.ConstantPool.CPInfo;
-import com.sun.tools.classfile.Instruction;
-import com.sun.tools.classfile.Method;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.lang.classfile.Attributes;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.Opcode;
+import java.lang.classfile.attribute.CodeAttribute;
+import java.lang.classfile.constantpool.ConstantPool;
+import java.lang.classfile.constantpool.MethodRefEntry;
+import java.lang.classfile.instruction.InvokeInstruction;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.MethodTypeDesc;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Path;
-import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.test.lib.compiler.CompilerUtils;
 import jdk.test.lib.process.OutputAnalyzer;
 
+import static java.lang.constant.ConstantDescs.*;
+import static java.lang.classfile.ClassFile.*;
 import static java.nio.file.Files.*;
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
 import static jdk.test.lib.process.ProcessTools.*;
 
 public class LambdaAsm {
@@ -99,16 +99,14 @@ public class LambdaAsm {
     }
 
     static void checkMethod(String cname, String mname, ConstantPool cp,
-            Code_attribute code) throws ConstantPool.InvalidIndex {
-        for (Instruction i : code.getInstructions()) {
-            String iname = i.getMnemonic();
-            if ("invokespecial".equals(iname)
-                    || "invokestatic".equals(iname)) {
-                int idx = i.getByte(2);
+            CodeAttribute code) throws IllegalArgumentException {
+        for (var inst : code.elements()) {
+            if (inst instanceof InvokeInstruction inv && (inv.opcode() == Opcode.INVOKESPECIAL
+                    || inv.opcode() == Opcode.INVOKEINTERFACE)) {
+                var ref = inv.method();
                 System.out.println("Verifying " + cname + ":" + mname +
-                        " instruction:" + iname + " index @" + idx);
-                CPInfo cpinfo = cp.get(idx);
-                if (cpinfo instanceof ConstantPool.CONSTANT_Methodref_info) {
+                        " instruction:" + inv.opcode() + " index @" + ref.index());
+                if (ref instanceof MethodRefEntry) {
                     throw new RuntimeException("unexpected CP type expected "
                             + "InterfaceMethodRef, got MethodRef, " + cname
                             + ", " + mname);
@@ -117,21 +115,20 @@ public class LambdaAsm {
         }
     }
 
-    static int checkMethod(ClassFile cf, String mthd) throws Exception {
-        if (cf.major_version < 52) {
+    static int checkMethod(ClassModel cf, String mthd) throws Exception {
+        if (cf.majorVersion() < 52) {
             throw new RuntimeException("unexpected class file version, in "
-                    + cf.getName() + "expected 52, got " + cf.major_version);
+                    + cf.thisClass().asInternalName() + "expected 52, got "
+                    + cf.majorVersion());
         }
         int count = 0;
-        for (Method m : cf.methods) {
-            String mname = m.getName(cf.constant_pool);
+        for (var m : cf.methods()) {
+            String mname = m.methodName().stringValue();
             if (mname.equals(mthd)) {
-                for (Attribute a : m.attributes) {
-                    if ("Code".equals(a.getName(cf.constant_pool))) {
-                        count++;
-                        checkMethod(cf.getName(), mname, cf.constant_pool,
-                                (Code_attribute) a);
-                    }
+                for (var a : m.findAttributes(Attributes.CODE)) {
+                    count++;
+                    checkMethod(cf.thisClass().asInternalName(), mname,
+                            cf.constantPool(), a);
                 }
             }
         }
@@ -146,9 +143,9 @@ public class LambdaAsm {
                 "A$I$$Lambda.*.class")) {
             for (Path p : ds) {
                 System.out.println(p.toFile());
-                ClassFile cf = ClassFile.read(p.toFile());
+                ClassModel cm = ClassFile.of().parse(p);
                 // Check those methods implementing Supplier.get
-                mcount += checkMethod(cf, "get");
+                mcount += checkMethod(cm, "get");
                 count++;
             }
         }
@@ -163,23 +160,21 @@ public class LambdaAsm {
     }
 
     static void verifyASM() throws Exception {
-        ClassWriter cw = new ClassWriter(0);
-        cw.visit(V1_8, ACC_PUBLIC, "X", null, "java/lang/Object", null);
-        MethodVisitor mv = cw.visitMethod(ACC_STATIC, "foo",
-                "()V", null, null);
-        mv.visitMaxs(2, 1);
-        mv.visitMethodInsn(INVOKESTATIC,
-                "java/util/function/Function.class",
-                "identity", "()Ljava/util/function/Function;", true);
-        mv.visitInsn(RETURN);
-        cw.visitEnd();
-        byte[] carray = cw.toByteArray();
+        var functionDesc = ClassDesc.ofInternalName("java/util/function/Function");
+        byte[] carray = ClassFile.of().build(ClassDesc.of("X"), clb -> clb
+                .withVersion(JAVA_8_VERSION, 0)
+                .withFlags(ACC_PUBLIC)
+                .withSuperclass(CD_Object)
+                .withMethodBody("foo", MTD_void, ACC_STATIC, cob -> cob
+                        .invokestatic(functionDesc, "identity", MethodTypeDesc.of(functionDesc), true)
+                )
+        );
         // for debugging
         // write((new File("X.class")).toPath(), carray, CREATE, TRUNCATE_EXISTING);
 
         // verify using javap/classfile reader
-        ClassFile cf = ClassFile.read(new ByteArrayInputStream(carray));
-        int mcount = checkMethod(cf, "foo");
+        ClassModel cm = ClassFile.of().parse(carray);
+        int mcount = checkMethod(cm, "foo");
         if (mcount < 1) {
             throw new RuntimeException("unexpected method count, expected 1" +
                     "but got " + mcount);

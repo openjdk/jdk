@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,7 +78,7 @@ bool PSVirtualSpace::expand_by(size_t bytes) {
 
   char* const base_addr = committed_high_addr();
   bool result = special() ||
-         os::commit_memory(base_addr, bytes, alignment(), !ExecMem);
+         os::commit_memory(base_addr, bytes, alignment(), !ExecMem, mtGC);
   if (result) {
     _committed_high_addr += bytes;
   }
@@ -95,7 +95,7 @@ bool PSVirtualSpace::shrink_by(size_t bytes) {
   }
 
   char* const base_addr = committed_high_addr() - bytes;
-  bool result = special() || os::uncommit_memory(base_addr, bytes);
+  bool result = special() || os::uncommit_memory(base_addr, bytes, !ExecMem, mtGC);
   if (result) {
     _committed_high_addr -= bytes;
   }
@@ -113,7 +113,7 @@ void PSVirtualSpace::verify() const {
 
   // Reserved region must be non-empty or both addrs must be 0.
   assert(reserved_low_addr() < reserved_high_addr() ||
-         reserved_low_addr() == nullptr && reserved_high_addr() == nullptr,
+         (reserved_low_addr() == nullptr && reserved_high_addr() == nullptr),
          "bad reserved addrs");
   assert(committed_low_addr() <= committed_high_addr(), "bad committed addrs");
 

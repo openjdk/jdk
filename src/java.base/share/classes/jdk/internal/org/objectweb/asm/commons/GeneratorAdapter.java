@@ -308,7 +308,7 @@ public class GeneratorAdapter extends LocalVariablesSorter {
       * Returns the internal names of the given types.
       *
       * @param types a set of types.
-      * @return the internal names of the given types.
+      * @return the internal names of the given types (see {@link Type#getInternalName()}).
       */
     private static String[] getInternalNames(final Type[] types) {
         String[] names = new String[types.length];
@@ -1386,7 +1386,8 @@ public class GeneratorAdapter extends LocalVariablesSorter {
       *
       * @param start beginning of the exception handler's scope (inclusive).
       * @param end end of the exception handler's scope (exclusive).
-      * @param exception internal name of the type of exceptions handled by the handler.
+      * @param exception internal name of the type of exceptions handled by the handler (see {@link
+      *     Type#getInternalName()}).
       */
     public void catchException(final Label start, final Label end, final Type exception) {
         Label catchLabel = new Label();
@@ -1398,4 +1399,3 @@ public class GeneratorAdapter extends LocalVariablesSorter {
         mark(catchLabel);
     }
 }
-

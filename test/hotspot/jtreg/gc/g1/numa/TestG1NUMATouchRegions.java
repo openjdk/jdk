@@ -181,7 +181,7 @@ public class TestG1NUMATouchRegions {
             return;
         }
 
-        ProcessBuilder pb_enabled = ProcessTools.createLimitedTestJavaProcessBuilder(
+        OutputAnalyzer output = ProcessTools.executeLimitedTestJava(
                                               "-Xbootclasspath/a:.",
                                               "-Xlog:pagesize,gc+heap+region=trace",
                                               "-XX:+UseG1GC",
@@ -195,7 +195,6 @@ public class TestG1NUMATouchRegions {
                                               largePagesSetting,
                                               "-XX:G1HeapRegionSize=" + regionSizeInMB + "m",
                                               GCTest.class.getName());
-        OutputAnalyzer output = new OutputAnalyzer(pb_enabled.start());
 
         // Check NUMA availability.
         if (status == NUMASupportStatus.NOT_CHECKED) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ import static org.testng.Assert.*;
 
 /*
  * @test
- * @bug 8209137
+ * @bug 8209137 8326233
  * @summary HttpClient[.Builder] API and behaviour checks
  * @library /test/lib
  * @build jdk.test.lib.net.SimpleSSLContext
@@ -270,6 +270,34 @@ public class HttpClientBuilderTest {
         c.setProtocols(new String[] { "D" });
         try (var closer = closeable(builder)) {
             assertTrue(closer.build().sslParameters().getProtocols()[0].equals("C"));
+        }
+        // test defaults for needClientAuth and wantClientAuth
+        builder.sslParameters(new SSLParameters());
+        try (var closer = closeable(builder)) {
+            assertFalse(closer.build().sslParameters().getNeedClientAuth(),
+                    "needClientAuth() was expected to be false");
+            assertFalse(closer.build().sslParameters().getWantClientAuth(),
+                    "wantClientAuth() was expected to be false");
+        }
+        // needClientAuth = true and thus wantClientAuth = false
+        SSLParameters needClientAuthParams = new SSLParameters();
+        needClientAuthParams.setNeedClientAuth(true);
+        builder.sslParameters(needClientAuthParams);
+        try (var closer = closeable(builder)) {
+            assertTrue(closer.build().sslParameters().getNeedClientAuth(),
+                    "needClientAuth() was expected to be true");
+            assertFalse(closer.build().sslParameters().getWantClientAuth(),
+                    "wantClientAuth() was expected to be false");
+        }
+        // wantClientAuth = true and thus needClientAuth = false
+        SSLParameters wantClientAuthParams = new SSLParameters();
+        wantClientAuthParams.setWantClientAuth(true);
+        builder.sslParameters(wantClientAuthParams);
+        try (var closer = closeable(builder)) {
+            assertTrue(closer.build().sslParameters().getWantClientAuth(),
+                    "wantClientAuth() was expected to be true");
+            assertFalse(closer.build().sslParameters().getNeedClientAuth(),
+                    "needClientAuth() was expected to be false");
         }
     }
 

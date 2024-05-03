@@ -87,6 +87,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
         this.bsmSize = parentBsmSize;
         this.myEntries = new PoolEntry[8];
         this.myBsmEntries = new BootstrapMethodEntryImpl[8];
+        this.doneFullScan = true;
     }
 
     @Override
@@ -189,10 +190,15 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
             // So we inflate the map with whatever we've got from the parent, and
             // later, if we miss, we do a one-time full inflation before creating
             // a new entry.
-            for (int i=1; i<parentSize; i++) {
+            for (int i=1; i<parentSize;) {
                 PoolEntry cpi = parent.cp[i];
-                if (cpi != null)
+                if (cpi == null) {
+                    doneFullScan = false;
+                    i++;
+                } else {
                     map.put(cpi.hashCode(), cpi.index());
+                    i += cpi.width();
+                }
             }
             for (int i = Math.max(parentSize, 1); i < size; ) {
                 PoolEntry cpi = myEntries[i - parentSize];

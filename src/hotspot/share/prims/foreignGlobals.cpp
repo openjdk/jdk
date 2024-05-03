@@ -140,7 +140,7 @@ int ForeignGlobals::compute_out_arg_bytes(const GrowableArray<VMStorage>& out_re
 
 int ForeignGlobals::java_calling_convention(const BasicType* signature, int num_args, GrowableArray<VMStorage>& out_regs) {
   VMRegPair* vm_regs = NEW_RESOURCE_ARRAY(VMRegPair, num_args);
-  int slots = SharedRuntime::java_calling_convention(signature, vm_regs, num_args);
+  int slots = align_up(SharedRuntime::java_calling_convention(signature, vm_regs, num_args), 2);
   for (int i = 0; i < num_args; i++) {
     VMRegPair pair = vm_regs[i];
     // note, we ignore second here. Signature should consist of register-size values. So there should be

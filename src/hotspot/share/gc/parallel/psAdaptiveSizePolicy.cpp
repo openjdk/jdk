@@ -41,7 +41,6 @@ PSAdaptiveSizePolicy::PSAdaptiveSizePolicy(size_t init_eden_size,
                                            size_t init_survivor_size,
                                            size_t space_alignment,
                                            double gc_pause_goal_sec,
-                                           double gc_minor_pause_goal_sec,
                                            uint gc_cost_ratio) :
      AdaptiveSizePolicy(init_eden_size,
                         init_promo_size,
@@ -50,12 +49,11 @@ PSAdaptiveSizePolicy::PSAdaptiveSizePolicy(size_t init_eden_size,
                         gc_cost_ratio),
      _avg_major_pause(new AdaptivePaddedAverage(AdaptiveTimeWeight, PausePadding)),
      _avg_base_footprint(new AdaptiveWeightedAverage(AdaptiveSizePolicyWeight)),
-     _gc_stats(),
+     _avg_promoted(new AdaptivePaddedNoZeroDevAverage(AdaptiveSizePolicyWeight, PromotedPadding)),
      _major_pause_old_estimator(new LinearLeastSquareFit(AdaptiveSizePolicyWeight)),
      _major_pause_young_estimator(new LinearLeastSquareFit(AdaptiveSizePolicyWeight)),
      _latest_major_mutator_interval_seconds(0),
      _space_alignment(space_alignment),
-     _gc_minor_pause_goal_sec(gc_minor_pause_goal_sec),
      _live_at_last_full_gc(init_promo_size),
      _change_old_gen_for_min_pauses(0),
      _change_young_gen_for_maj_pauses(0),
@@ -282,7 +280,7 @@ void PSAdaptiveSizePolicy::compute_eden_space_size(
     // at a time.
     adjust_eden_for_pause_time(&desired_eden_size);
 
-  } else if (_avg_minor_pause->padded_average() > gc_minor_pause_goal_sec()) {
+  } else if (_avg_minor_pause->padded_average() > gc_pause_goal_sec()) {
     // Adjust only for the minor pause time goal
     adjust_eden_for_minor_pause_time(&desired_eden_size);
 
@@ -583,12 +581,6 @@ void PSAdaptiveSizePolicy::adjust_eden_for_minor_pause_time(size_t* desired_eden
           decrease_young_gen_for_min_pauses_true);
     *desired_eden_size_ptr = *desired_eden_size_ptr -
       eden_decrement_aligned_down(*desired_eden_size_ptr);
-  } else {
-    // EXPERIMENTAL ADJUSTMENT
-    // Only record that the estimator indicated such an action.
-    // *desired_eden_size_ptr = *desired_eden_size_ptr + eden_heap_delta;
-    set_change_young_gen_for_min_pauses(
-      increase_young_gen_for_min_pauses_true);
   }
 }
 
@@ -609,12 +601,6 @@ void PSAdaptiveSizePolicy::adjust_promo_for_pause_time(size_t* desired_promo_siz
       set_change_old_gen_for_maj_pauses(decrease_old_gen_for_maj_pauses_true);
       promo_heap_delta = promo_decrement_aligned_down(*desired_promo_size_ptr);
       *desired_promo_size_ptr = _promo_size - promo_heap_delta;
-    } else {
-      // EXPERIMENTAL ADJUSTMENT
-      // Only record that the estimator indicated such an action.
-      // *desired_promo_size_ptr = _promo_size +
-      //   promo_increment_aligned_up(*desired_promo_size_ptr);
-      set_change_old_gen_for_maj_pauses(increase_old_gen_for_maj_pauses_true);
     }
   }
 
@@ -700,14 +686,6 @@ void PSAdaptiveSizePolicy::adjust_promo_for_throughput(bool is_full_gc,
           set_change_old_gen_for_throughput(
               increase_old_gen_for_throughput_true);
               _old_gen_change_for_major_throughput++;
-        } else {
-          // EXPERIMENTAL ADJUSTMENT
-          // Record that decreasing the old gen size would decrease
-          // the major collection cost but don't do it.
-          // *desired_promo_size_ptr = _promo_size -
-          //   promo_decrement_aligned_down(*desired_promo_size_ptr);
-          set_change_old_gen_for_throughput(
-                decrease_old_gen_for_throughput_true);
         }
 
         break;
@@ -787,14 +765,6 @@ void PSAdaptiveSizePolicy::adjust_eden_for_throughput(bool is_full_gc,
         set_change_young_gen_for_throughput(
           increase_young_gen_for_througput_true);
         _young_gen_change_for_minor_throughput++;
-      } else {
-        // EXPERIMENTAL ADJUSTMENT
-        // Record that decreasing the young gen size would decrease
-        // the minor collection cost but don't do it.
-        // *desired_eden_size_ptr = _eden_size -
-        //   eden_decrement_aligned_down(*desired_eden_size_ptr);
-        set_change_young_gen_for_throughput(
-          decrease_young_gen_for_througput_true);
       }
           break;
     default:

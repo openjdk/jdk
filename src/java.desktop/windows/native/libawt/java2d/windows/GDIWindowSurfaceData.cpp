@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -252,44 +252,6 @@ __inline HDC GetThreadDC(JNIEnv *env, GDIWinSDOps *wsdo) {
  * SurfaceData interface to talk to a Win32 drawable from native
  * code.
  */
-
-static BOOL GDIWinSD_CheckMonitorArea(GDIWinSDOps *wsdo,
-                                     SurfaceDataBounds *bounds,
-                                     HDC hDC)
-{
-    HWND hW = wsdo->window;
-    BOOL retCode = TRUE;
-
-    J2dTraceLn(J2D_TRACE_INFO, "GDIWinSD_CheckMonitorArea");
-    int numScreens;
-    {
-        Devices::InstanceAccess devices;
-        numScreens = devices->GetNumDevices();
-    }
-    if( numScreens > 1 ) {
-
-        LPMONITORINFO miInfo;
-        RECT rSect ={0,0,0,0};
-        RECT rView ={bounds->x1, bounds->y1, bounds->x2, bounds->y2};
-        retCode = FALSE;
-
-        miInfo = wsdo->device->GetMonitorInfo();
-
-        POINT ptOrig = {0, 0};
-        ::ClientToScreen(hW, &ptOrig);
-        ::OffsetRect(&rView,
-            (ptOrig.x), (ptOrig.y));
-
-        ::IntersectRect(&rSect,&rView,&(miInfo->rcMonitor));
-
-        if( FALSE == ::IsRectEmpty(&rSect) ) {
-            if( TRUE == ::EqualRect(&rSect,&rView) ) {
-                retCode = TRUE;
-            }
-        }
-    }
-    return retCode;
-}
 
 extern "C" {
 
@@ -551,111 +513,6 @@ GDIWindowSurfaceData_GetWindow(JNIEnv *env, GDIWinSDOps *wsdo)
 }
 
 } /* extern "C" */
-
-static jboolean GDIWinSD_SimpleClip(JNIEnv *env, GDIWinSDOps *wsdo,
-                                   SurfaceDataBounds *bounds,
-                                   HDC hDC)
-{
-    RECT rClip;
-
-    J2dTraceLn(J2D_TRACE_INFO, "GDIWinSD_SimpleClip");
-    if (hDC == NULL) {
-        return JNI_FALSE;
-    }
-
-    int nComplexity = ::GetClipBox(hDC, &rClip);
-
-    switch (nComplexity) {
-    case COMPLEXREGION:
-        {
-            J2dTraceLn(J2D_TRACE_VERBOSE,
-                       "  complex clipping region");
-            // if complex user/system clip, more detailed testing required
-            // check to see if the view itself has a complex clip.
-            // ::GetClipBox is only API which returns overlapped window status
-            // so we set the rView as our clip, and then see if resulting
-            // clip is complex.
-            // Only other way to figure this out would be to walk the
-            // overlapping windows (no API to get the actual visible clip
-            // list).  Then we'd still have to merge that info with the
-            // clip region for the dc (if it exists).
-            // REMIND: we can cache the CreateRectRgnIndirect result,
-            // and only override with ::SetRectRgn
-
-            // First, create a region handle (need existing HRGN for
-            // the following call).
-            HRGN rgnSave = ::CreateRectRgn(0, 0, 0, 0);
-            int  clipStatus = ::GetClipRgn(hDC, rgnSave);
-            if (-1 == clipStatus) {
-                J2dTraceLn(J2D_TRACE_WARNING,
-                           "GDIWinSD_SimpleClip: failed due to clip status");
-                ::DeleteObject(rgnSave);
-                return JNI_FALSE;
-            }
-            HRGN rgnBounds = ::CreateRectRgn(
-                bounds->x1 - wsdo->insets.left,
-                bounds->y1 - wsdo->insets.top,
-                bounds->x2 - wsdo->insets.left,
-                bounds->y2 - wsdo->insets.top);
-            ::SelectClipRgn(hDC, rgnBounds);
-            nComplexity = ::GetClipBox(hDC, &rClip);
-            ::SelectClipRgn(hDC, clipStatus? rgnSave: NULL);
-            ::DeleteObject(rgnSave);
-            ::DeleteObject(rgnBounds);
-
-            // Now, test the new clip box.  If it's still not a
-            // SIMPLE region, then our bounds must intersect part of
-            // the clipping article
-            if (SIMPLEREGION != nComplexity) {
-                J2dTraceLn(J2D_TRACE_WARNING,
-                           "GDIWinSD_SimpleClip: failed due to complexity");
-                return JNI_FALSE;
-            }
-        }
-        // NOTE: No break here - we want to fall through into the
-        // SIMPLE case, adjust our bounds by the new rClip rect
-        // and make sure that our locking bounds are not empty.
-    case SIMPLEREGION:
-        J2dTraceLn(J2D_TRACE_VERBOSE, "  simple clipping region");
-        // Constrain the bounds to the given clip box
-        if (bounds->x1 < rClip.left) {
-            bounds->x1 = rClip.left;
-        }
-        if (bounds->y1 < rClip.top) {
-            bounds->y1 = rClip.top;
-        }
-        if (bounds->x2 > rClip.right) {
-            bounds->x2 = rClip.right;
-        }
-        if (bounds->y2 > rClip.bottom) {
-            bounds->y2 = rClip.bottom;
-        }
-        // If the bounds are 0 or negative, then the bounds have
-        // been obscured by the clip box, so return FALSE
-        if ((bounds->x2 <= bounds->x1) ||
-            (bounds->y2 <= bounds->y1)) {
-            // REMIND: We should probably do something different here
-            // instead of simply returning FALSE.  Since the bounds are
-            // empty we won't end up drawing anything, so why spend the
-            // effort of returning false and having GDI do a LOCK_BY_DIB?
-            // Perhaps we need a new lock code that will indicate that we
-            // shouldn't bother drawing?
-            J2dTraceLn(J2D_TRACE_WARNING,
-                       "GDIWinSD_SimpleClip: failed due to empty bounds");
-            return JNI_FALSE;
-        }
-        break;
-    case NULLREGION:
-    case ERROR:
-    default:
-        J2dTraceLn1(J2D_TRACE_ERROR,
-                   "GDIWinSD_SimpleClip: failed due to incorrect complexity=%d",
-                    nComplexity);
-        return JNI_FALSE;
-    }
-
-    return JNI_TRUE;
-}
 
 static jint GDIWinSD_Lock(JNIEnv *env,
                          SurfaceDataOps *ops,

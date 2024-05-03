@@ -120,7 +120,7 @@ public final class JdkConsoleImpl implements JdkConsole {
                             ioe.addSuppressed(x);
                     }
                     if (ioe != null) {
-                        java.util.Arrays.fill(passwd, ' ');
+                        Arrays.fill(passwd, ' ');
                         try {
                             if (reader instanceof LineReader lr) {
                                 lr.zeroOut();

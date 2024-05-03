@@ -620,11 +620,16 @@ define SetupRunMicroTestBody
     $1_MICRO_WARMUP_TIME := -w $$(MICRO_WARMUP_TIME)
   endif
 
+# Microbenchmarks are executed from the root of the test image directory.
+# This enables JMH tests to add dependencies using relative paths such as
+# -Djava.library.path=micro/native
+
   run-test-$1: pre-run-test
 	$$(call LogWarn)
 	$$(call LogWarn, Running test '$$($1_TEST)')
 	$$(call MakeDir, $$($1_TEST_RESULTS_DIR) $$($1_TEST_SUPPORT_DIR))
 	$$(call ExecuteWithLog, $$($1_TEST_SUPPORT_DIR)/micro, ( \
+	    $$(CD) $$(TEST_IMAGE_DIR) && \
 	    $$(FIXPATH) $$($1_MICRO_TEST_JDK)/bin/java $$($1_MICRO_JAVA_OPTIONS) \
 	        -jar $$($1_MICRO_BENCHMARKS_JAR) \
 	        $$($1_MICRO_ITER) $$($1_MICRO_FORK) $$($1_MICRO_TIME) \

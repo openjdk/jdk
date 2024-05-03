@@ -218,7 +218,7 @@ MidiMessage* MIDI_IN_GetMessage(MidiDeviceHandle* handle) {
             return NULL;
         }
     }
-    jdk_message = (MidiMessage*) calloc(sizeof(MidiMessage), 1);
+    jdk_message = (MidiMessage*) calloc(1, sizeof(MidiMessage));
     if (!jdk_message) {
         ERROR0("< ERROR: MIDI_IN_GetMessage(): out of memory\n");
         return NULL;

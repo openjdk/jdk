@@ -24,15 +24,15 @@
 
 #include "precompiled.hpp"
 
+#include "gc/g1/g1HeapRegionSet.hpp"
 #include "gc/g1/g1HRPrinter.hpp"
-#include "gc/g1/heapRegionSet.hpp"
 
-void G1HRPrinter::cleanup(FreeRegionList* cleanup_list) {
+void G1HRPrinter::mark_reclaim(FreeRegionList* cleanup_list) {
   if (is_active()) {
     FreeRegionListIterator iter(cleanup_list);
     while (iter.more_available()) {
       HeapRegion* hr = iter.get_next();
-      cleanup(hr);
+      mark_reclaim(hr);
     }
   }
 }

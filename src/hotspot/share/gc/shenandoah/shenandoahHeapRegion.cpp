@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2013, 2019, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,7 +24,7 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/shared/space.inline.hpp"
+#include "gc/shared/space.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionSet.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
@@ -620,7 +620,7 @@ size_t ShenandoahHeapRegion::setup_sizes(size_t max_heap_size) {
 
 void ShenandoahHeapRegion::do_commit() {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
-  if (!heap->is_heap_region_special() && !os::commit_memory((char *) bottom(), RegionSizeBytes, false)) {
+  if (!heap->is_heap_region_special() && !os::commit_memory((char *) bottom(), RegionSizeBytes, !ExecMem, mtJavaHeap)) {
     report_java_out_of_memory("Unable to commit region");
   }
   if (!heap->commit_bitmap_slice(this)) {
@@ -634,7 +634,7 @@ void ShenandoahHeapRegion::do_commit() {
 
 void ShenandoahHeapRegion::do_uncommit() {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
-  if (!heap->is_heap_region_special() && !os::uncommit_memory((char *) bottom(), RegionSizeBytes)) {
+  if (!heap->is_heap_region_special() && !os::uncommit_memory((char *) bottom(), RegionSizeBytes, !ExecMem, mtJavaHeap)) {
     report_java_out_of_memory("Unable to uncommit region");
   }
   if (!heap->uncommit_bitmap_slice(this)) {

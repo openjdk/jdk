@@ -119,7 +119,7 @@ class TestEagerReclaimHumongousRegionsClearMarkBitsReclaimRegionFast {
 
 public class TestEagerReclaimHumongousRegionsClearMarkBits {
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        OutputAnalyzer output = ProcessTools.executeLimitedTestJava(
             "-XX:+UseG1GC",
             "-Xms128M",
             "-Xmx128M",
@@ -132,7 +132,6 @@ public class TestEagerReclaimHumongousRegionsClearMarkBits {
             "-XX:ConcGCThreads=1", // Want to make marking as slow as possible.
             "-XX:+G1VerifyBitmaps",
             TestEagerReclaimHumongousRegionsClearMarkBitsReclaimRegionFast.class.getName());
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
     }
 }

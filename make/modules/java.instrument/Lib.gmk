@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -26,43 +26,25 @@
 include LibCommon.gmk
 
 ################################################################################
+## Build libinstrument
+################################################################################
 
-ifeq ($(call isTargetOs, windows), true)
-  # equivalent of strcasecmp is stricmp on Windows
-  LIBINSTRUMENT_CFLAGS := -Dstrcasecmp=stricmp
-  WINDOWS_JLI_LIB := $(SUPPORT_OUTPUTDIR)/native/java.base/libjli/jli.lib
-endif
-
+# equivalent of strcasecmp is stricmp on Windows
 $(eval $(call SetupJdkLibrary, BUILD_LIBINSTRUMENT, \
     NAME := instrument, \
     OPTIMIZATION := LOW, \
-    CFLAGS := $(CFLAGS_JDKLIB) $(LIBINSTRUMENT_CFLAGS), \
+    CFLAGS_windows := -Dstrcasecmp=stricmp, \
     CFLAGS_debug := -DJPLIS_LOGGING, \
     CFLAGS_release := -DNO_JPLIS_LOGGING, \
-    EXTRA_HEADER_DIRS := java.base:libjli, \
-    LDFLAGS := $(LDFLAGS_JDKLIB) \
-        $(call SET_SHARED_LIBRARY_ORIGIN) \
-        $(LIBINSTRUMENT_LDFLAGS), \
-    LDFLAGS_linux := -L$(call FindLibDirForModule, java.base), \
-    LDFLAGS_macosx := -L$(call FindLibDirForModule, java.base), \
-    LDFLAGS_aix := -L$(SUPPORT_OUTPUTDIR)/native/java.base, \
-    LIBS := $(JDKLIB_LIBS), \
-    LIBS_unix := -ljava -ljvm $(LIBZ_LIBS), \
-    LIBS_linux := -ljli $(LIBDL), \
-    LIBS_aix := -liconv -ljli_static $(LIBDL), \
-    LIBS_macosx := -ljli -liconv -framework Cocoa -framework Security \
-        -framework ApplicationServices, \
-    LIBS_windows := jvm.lib $(WIN_JAVA_LIB) advapi32.lib \
-        $(WINDOWS_JLI_LIB), \
+    JDK_LIBS := java.base:libjava java.base:libjli java.base:libjvm, \
+    LIBS_unix := $(LIBZ_LIBS), \
+    LIBS_linux := $(LIBDL), \
+    LIBS_aix := $(LIBDL) -liconv, \
+    LIBS_macosx := -liconv \
+        -framework ApplicationServices \
+        -framework Cocoa \
+        -framework Security, \
+    LIBS_windows := advapi32.lib, \
 ))
 
-ifeq ($(call isTargetOs, aix), true)
-  $(BUILD_LIBINSTRUMENT): $(call FindStaticLib, java.base, jli_static)
-else
-  $(BUILD_LIBINSTRUMENT): $(call FindLib, java.base, jli)
-endif
-$(BUILD_LIBINSTRUMENT): $(call FindLib, java.base, java)
-
 TARGETS += $(BUILD_LIBINSTRUMENT)
-
-################################################################################

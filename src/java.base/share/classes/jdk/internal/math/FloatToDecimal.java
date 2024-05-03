@@ -35,7 +35,7 @@ import static jdk.internal.math.MathUtils.*;
 /**
  * This class exposes a method to render a {@code float} as a string.
  */
-final public class FloatToDecimal {
+public final class FloatToDecimal {
     /*
      * For full details about this code see the following references:
      *

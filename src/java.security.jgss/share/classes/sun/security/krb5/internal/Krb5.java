@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,8 @@
 
 package sun.security.krb5.internal;
 
-import sun.security.action.GetBooleanAction;
+import sun.security.action.GetPropertyAction;
+import sun.security.util.Debug;
 
 import java.util.Hashtable;
 
@@ -315,8 +316,8 @@ public class Krb5 {
     }
 
     // Warning: used by NativeCreds.c
-    public static final boolean DEBUG = GetBooleanAction
-            .privilegedGetProperty("sun.security.krb5.debug");
+    public static final Debug DEBUG = Debug.of("krb5", GetPropertyAction
+            .privilegedGetProperty("sun.security.krb5.debug"));
 
     public static final sun.security.util.HexDumpEncoder hexDumper =
         new sun.security.util.HexDumpEncoder();

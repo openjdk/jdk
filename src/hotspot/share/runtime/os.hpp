@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -152,6 +152,19 @@ typedef void (*java_call_t)(JavaValue* value, const methodHandle& method, JavaCa
 
 class MallocTracker;
 
+// Preserve errno across a range of calls
+
+class ErrnoPreserver {
+  int _e;
+
+public:
+  ErrnoPreserver() { _e = errno; }
+
+  ~ErrnoPreserver() { errno = _e; }
+
+  int saved_errno() { return _e; }
+};
+
 class os: AllStatic {
   friend class VMStructs;
   friend class JVMCIVMStructs;
@@ -191,13 +204,13 @@ class os: AllStatic {
   static PageSizes          _page_sizes;
 
   // The default value for os::vm_min_address() unless the platform knows better. This value
-  // is chosen to give us reasonable protection against NULL pointer dereferences while being
+  // is chosen to give us reasonable protection against null pointer dereferences while being
   // low enough to leave most of the valuable low-4gb address space open.
   static constexpr size_t _vm_min_address_default = 16 * M;
 
-  static char*  pd_reserve_memory(size_t bytes, bool executable);
+  static char*  pd_reserve_memory(size_t bytes, bool executable, MEMFLAGS flag);
 
-  static char*  pd_attempt_reserve_memory_at(char* addr, size_t bytes, bool executable);
+  static char*  pd_attempt_reserve_memory_at(char* addr, size_t bytes, bool executable, MEMFLAGS flag);
 
   static bool   pd_commit_memory(char* addr, size_t bytes, bool executable);
   static bool   pd_commit_memory(char* addr, size_t size, size_t alignment_hint,
@@ -212,21 +225,21 @@ class os: AllStatic {
   static bool   pd_uncommit_memory(char* addr, size_t bytes, bool executable);
   static bool   pd_release_memory(char* addr, size_t bytes);
 
-  static char*  pd_attempt_map_memory_to_file_at(char* addr, size_t bytes, int file_desc);
+  static char*  pd_attempt_map_memory_to_file_at(char* addr, size_t bytes, int file_desc, MEMFLAGS flag);
 
   static char*  pd_map_memory(int fd, const char* file_name, size_t file_offset,
-                           char *addr, size_t bytes, bool read_only = false,
-                           bool allow_exec = false);
-  static char*  pd_remap_memory(int fd, const char* file_name, size_t file_offset,
-                             char *addr, size_t bytes, bool read_only,
-                             bool allow_exec);
+                              char *addr, size_t bytes, bool read_only = false,
+                              bool allow_exec = false);
   static bool   pd_unmap_memory(char *addr, size_t bytes);
-  static void   pd_free_memory(char *addr, size_t bytes, size_t alignment_hint);
+  static void   pd_free_memory(char *addr, size_t bytes, size_t alignment_hint, MEMFLAGS flag);
   static void   pd_realign_memory(char *addr, size_t bytes, size_t alignment_hint);
 
-  static char*  pd_reserve_memory_special(size_t size, size_t alignment, size_t page_size,
+  // Returns 0 if pretouch is done via platform dependent method, or otherwise
+  // returns page_size that should be used for the common method.
+  static size_t pd_pretouch_memory(void* first, void* last, size_t page_size);
 
-                                          char* addr, bool executable);
+  static char*  pd_reserve_memory_special(size_t size, size_t alignment, size_t page_size,
+                                          char* addr, bool executable, MEMFLAGS flag);
   static bool   pd_release_memory_special(char* addr, size_t bytes);
 
   static size_t page_size_for_region(size_t region_size, size_t min_pages, bool must_be_aligned);
@@ -323,6 +336,9 @@ class os: AllStatic {
   // aggressively (e.g. clear caches) so that it becomes available.
   static julong available_memory();
   static julong free_memory();
+
+  static jlong total_swap_space();
+  static jlong free_swap_space();
 
   static julong physical_memory();
   static bool has_allocatable_memory_limit(size_t* limit);
@@ -431,30 +447,30 @@ class os: AllStatic {
   inline static size_t cds_core_region_alignment();
 
   // Reserves virtual memory.
-  static char*  reserve_memory(size_t bytes, bool executable = false, MEMFLAGS flags = mtNone);
+  static char*  reserve_memory(size_t bytes, bool executable, MEMFLAGS flags);
 
   // Reserves virtual memory that starts at an address that is aligned to 'alignment'.
-  static char*  reserve_memory_aligned(size_t size, size_t alignment, bool executable = false);
+  static char*  reserve_memory_aligned(size_t size, size_t alignment, bool executable, MEMFLAGS flag);
 
   // Attempts to reserve the virtual memory at [addr, addr + bytes).
   // Does not overwrite existing mappings.
-  static char*  attempt_reserve_memory_at(char* addr, size_t bytes, bool executable = false);
+  static char*  attempt_reserve_memory_at(char* addr, size_t bytes, bool executable, MEMFLAGS flag);
 
   // Given an address range [min, max), attempts to reserve memory within this area, with the given alignment.
   // If randomize is true, the location will be randomized.
-  static char* attempt_reserve_memory_between(char* min, char* max, size_t bytes, size_t alignment, bool randomize);
+  static char* attempt_reserve_memory_between(char* min, char* max, size_t bytes, size_t alignment, bool randomize, MEMFLAGS flag);
 
-  static bool   commit_memory(char* addr, size_t bytes, bool executable);
+  static bool   commit_memory(char* addr, size_t bytes, bool executable, MEMFLAGS flag);
   static bool   commit_memory(char* addr, size_t size, size_t alignment_hint,
-                              bool executable);
+                              bool executable, MEMFLAGS flag);
   // Same as commit_memory() that either succeeds or calls
   // vm_exit_out_of_memory() with the specified mesg.
   static void   commit_memory_or_exit(char* addr, size_t bytes,
-                                      bool executable, const char* mesg);
+                                      bool executable, MEMFLAGS flag, const char* mesg);
   static void   commit_memory_or_exit(char* addr, size_t size,
                                       size_t alignment_hint,
-                                      bool executable, const char* mesg);
-  static bool   uncommit_memory(char* addr, size_t bytes, bool executable = false);
+                                      bool executable, MEMFLAGS flag, const char* mesg);
+  static bool   uncommit_memory(char* addr, size_t bytes, bool executable, MEMFLAGS flag);
   static bool   release_memory(char* addr, size_t bytes);
 
   // Does the platform support trimming the native heap?
@@ -490,21 +506,18 @@ class os: AllStatic {
   static int create_file_for_heap(const char* dir);
   // Map memory to the file referred by fd. This function is slightly different from map_memory()
   // and is added to be used for implementation of -XX:AllocateHeapAt
-  static char* map_memory_to_file(size_t size, int fd);
-  static char* map_memory_to_file_aligned(size_t size, size_t alignment, int fd);
+  static char* map_memory_to_file(size_t size, int fd, MEMFLAGS flag);
+  static char* map_memory_to_file_aligned(size_t size, size_t alignment, int fd, MEMFLAGS flag);
   static char* map_memory_to_file(char* base, size_t size, int fd);
-  static char* attempt_map_memory_to_file_at(char* base, size_t size, int fd);
+  static char* attempt_map_memory_to_file_at(char* base, size_t size, int fd, MEMFLAGS flag);
   // Replace existing reserved memory with file mapping
   static char* replace_existing_mapping_with_file_mapping(char* base, size_t size, int fd);
 
   static char*  map_memory(int fd, const char* file_name, size_t file_offset,
-                           char *addr, size_t bytes, bool read_only = false,
-                           bool allow_exec = false, MEMFLAGS flags = mtNone);
-  static char*  remap_memory(int fd, const char* file_name, size_t file_offset,
-                             char *addr, size_t bytes, bool read_only,
-                             bool allow_exec);
+                           char *addr, size_t bytes, bool read_only,
+                           bool allow_exec, MEMFLAGS flag);
   static bool   unmap_memory(char *addr, size_t bytes);
-  static void   free_memory(char *addr, size_t bytes, size_t alignment_hint);
+  static void   free_memory(char *addr, size_t bytes, size_t alignment_hint, MEMFLAGS flag);
   static void   realign_memory(char *addr, size_t bytes, size_t alignment_hint);
 
   // NUMA-specific interface
@@ -526,7 +539,7 @@ class os: AllStatic {
   static char*  non_memory_address_word();
   // reserve, commit and pin the entire memory region
   static char*  reserve_memory_special(size_t size, size_t alignment, size_t page_size,
-                                       char* addr, bool executable);
+                                       char* addr, bool executable, MEMFLAGS flag);
   static bool   release_memory_special(char* addr, size_t bytes);
   static void   large_page_init();
   static size_t large_page_size();
@@ -789,6 +802,7 @@ class os: AllStatic {
   static void print_siginfo(outputStream* st, const void* siginfo);
   static void print_signal_handlers(outputStream* st, char* buf, size_t buflen);
   static void print_date_and_time(outputStream* st, char* buf, size_t buflen);
+  static void print_elapsed_time(outputStream* st, double time);
 
   static void print_user_info(outputStream* st);
   static void print_active_locale(outputStream* st);
@@ -1062,6 +1076,7 @@ class os: AllStatic {
                                 char pathSep);
   static bool set_boot_path(char fileSep, char pathSep);
 
+  static bool pd_dll_unload(void* libhandle, char* ebuf, int ebuflen);
 };
 
 // Note that "PAUSE" is almost always used with synchronization
