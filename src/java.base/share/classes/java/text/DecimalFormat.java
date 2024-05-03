@@ -2586,14 +2586,27 @@ public class DecimalFormat extends NumberFormat {
                     boolean[] stat = new boolean[STATUS_LENGTH];
                     DigitList exponentDigits = new DigitList();
 
-                    if (subparse(text, pos, "", symbols.getMinusSignText(), exponentDigits, true, stat) &&
-                            exponentDigits.fitsIntoLong(stat[STATUS_POSITIVE], true)) {
-                        position = pos.index; // Advance past the exponent
-                        exponent = (int)exponentDigits.getLong();
+                    if (subparse(text, pos, "", symbols.getMinusSignText(), exponentDigits, true, stat)) {
+                        // We parse the exponent with isExponent true, thus fitsIntoLong
+                        // only returns false here if the value exceeds Long.MAX_VALUE.
+                        // We do not need to worry about false being returned for faulty
+                        // values as they are ignored by DigitList
+                        if (exponentDigits.fitsIntoLong(stat[STATUS_POSITIVE], true)) {
+                            position = pos.index; // Advance past the exponent
+                            try {
+                                exponent = Math.toIntExact(exponentDigits.getLong());
+                            } catch (ArithmeticException ex) {
+                                // If overflow, Integer.MAX_VALUE is sufficient
+                                exponent = Integer.MAX_VALUE;
+                            }
+                        } else {
+                            // Value is greater than Long.MAX_VALUE, exponent field
+                            // is int, so assign it to the largest possible, Integer.MAX_VALUE
+                            exponent = Integer.MAX_VALUE;
+                        }
                         if (!stat[STATUS_POSITIVE]) {
                             exponent = -exponent;
                         }
-                        sawExponent = true;
                     }
                     break; // Whether we fail or succeed, we exit this loop
                 } else {
@@ -2628,7 +2641,12 @@ public class DecimalFormat extends NumberFormat {
             }
 
             // Adjust for exponent, if any
-            digits.decimalAt += exponent;
+            try {
+                digits.decimalAt = Math.addExact(digits.decimalAt, exponent);
+            } catch (ArithmeticException ex) {
+                // If overflow, Integer.MAX_VALUE is sufficient
+                digits.decimalAt = Integer.MAX_VALUE;
+            }
 
             // If none of the text string was recognized.  For example, parse
             // "x" with pattern "#0.00" (return index and error index both 0)
