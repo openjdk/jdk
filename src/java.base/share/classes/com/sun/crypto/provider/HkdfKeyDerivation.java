@@ -31,6 +31,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.ProviderException;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidParameterSpecException;
+import java.util.Collection;
 import java.util.List;
 import javax.crypto.KDFSpi;
 import javax.crypto.Mac;
@@ -100,8 +101,21 @@ abstract class HkdfKeyDerivation extends KDFSpi {
         try {
             // set up the HMAC instance
             hmacLen = setupHMAC(hmacAlgName);
-        } catch(NoSuchAlgorithmException nsae) {
+        } catch (NoSuchAlgorithmException nsae) {
             throw new ProviderException(nsae);
+        }
+
+        if (HKDFTYPE == HKDFTYPES.EXTRACT) {
+            // perform extract
+
+
+        } else if (HKDFTYPE == HKDFTYPES.EXPAND) {
+            // perform expand
+        } else if (HKDFTYPE == HKDFTYPES.EXTRACTEXPAND) {
+            // perform extract and then expand
+        } else {
+            // shouldn't happen; HKDFTYPE might be null?
+
         }
 
         return null;
@@ -129,7 +143,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
         try {
             // set up the HMAC instance
             hmacLen = setupHMAC(hmacAlgName);
-        } catch(NoSuchAlgorithmException nsae) {
+        } catch (NoSuchAlgorithmException nsae) {
             throw new ProviderException(nsae);
         }
 
@@ -147,10 +161,11 @@ abstract class HkdfKeyDerivation extends KDFSpi {
         // Also, JEP 305 came out in JDK 14, so we can't declare a variable in instanceof either
         if (kdfParameterSpec instanceof HKDFParameterSpec.Extract) {
             HKDFParameterSpec.Extract anExtract = (HKDFParameterSpec.Extract) kdfParameterSpec;
-            // set these values in the "if"
-            if ((ikms = anExtract.ikms()) == null && (salts = anExtract.salts()) == null) {
+            ikms = anExtract.ikms();
+            salts = anExtract.salts();
+            if (isNullOrEmpty(ikms) && isNullOrEmpty(salts)) {
                 throw new InvalidParameterSpecException(
-                    "IKM and salt cannot both be null for HKDFParameterSpec.Extract");
+                    "IKM and salt cannot both be null or empty for HKDFParameterSpec.Extract");
             }
             HKDFTYPE = HKDFTYPES.EXTRACT;
         } else if (kdfParameterSpec instanceof HKDFParameterSpec.Expand) {
@@ -172,9 +187,9 @@ abstract class HkdfKeyDerivation extends KDFSpi {
         } else if (kdfParameterSpec instanceof HKDFParameterSpec.ExtractExpand) {
             HKDFParameterSpec.ExtractExpand anExtractExpand =
                 (HKDFParameterSpec.ExtractExpand) kdfParameterSpec;
-            // set these values in the "if"
-            if ((ikms = anExtractExpand.ikms()) == null
-                && (salts = anExtractExpand.salts()) == null) {
+            ikms = anExtractExpand.ikms();
+            salts = anExtractExpand.salts();
+            if (isNullOrEmpty(ikms) && isNullOrEmpty(salts)) {
                 throw new InvalidParameterSpecException(
                     "IKM and salt cannot both be null for HKDFParameterSpec.Extract");
             }// set this value in the "if"
@@ -191,6 +206,12 @@ abstract class HkdfKeyDerivation extends KDFSpi {
                 "The KDFParameterSpec object was not of a recognized type");
         }
     }
+
+    private static boolean isNullOrEmpty(Collection<?> c) {
+        return c == null || c.isEmpty();
+    }
+
+    
 
     /**
      * Perform the HMAC-Extract operation.
