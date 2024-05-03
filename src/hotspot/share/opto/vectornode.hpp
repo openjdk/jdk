@@ -913,7 +913,7 @@ class LoadVectorGatherNode : public LoadVectorNode {
   }
   virtual int store_Opcode() const {
     // Ensure it is different from any store opcode
-    return Op_LoadVectorGather;
+    return -1;
   }
 };
 
@@ -1017,7 +1017,7 @@ class LoadVectorMaskedNode : public LoadVectorNode {
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
   virtual int store_Opcode() const {
     // Ensure it is different from any store opcode
-    return Op_LoadVectorMasked;
+    return -1;
   }
 };
 
@@ -1047,7 +1047,7 @@ class LoadVectorGatherMaskedNode : public LoadVectorNode {
                                                    idx == MemNode::ValueIn + 2); }
   virtual int store_Opcode() const {
     // Ensure it is different from any store opcode
-    return Op_LoadVectorGatherMasked;
+    return -1;
   }
 };
 
