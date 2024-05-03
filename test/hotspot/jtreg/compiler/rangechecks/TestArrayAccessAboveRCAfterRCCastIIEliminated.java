@@ -31,7 +31,7 @@
  *                   TestArrayAccessAboveRCAfterRCCastIIEliminated
  * @run main/othervm -XX:-TieredCompilation -XX:-UseOnStackReplacement -XX:-BackgroundCompilation
  *                   -XX:CompileCommand=dontinline,TestArrayAccessAboveRCAfterRCCastIIEliminated::notInlined
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+StressIGVN TestArrayAccessAboveRCAfterRCCastIIEliminated
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM TestArrayAccessAboveRCAfterRCCastIIEliminated
  * @run main/othervm TestArrayAccessAboveRCAfterRCCastIIEliminated
  * @run main/othervm -XX:CompileCommand=dontinline,TestArrayAccessAboveRCAfterRCCastIIEliminated::notInlined
  *                   TestArrayAccessAboveRCAfterRCCastIIEliminated
