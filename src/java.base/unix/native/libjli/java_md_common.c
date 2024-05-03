@@ -115,6 +115,7 @@ GetApplicationHomeFromDll(char *buf, jint bufsize)
     return JNI_FALSE;
 }
 
+#if defined(AIX)
 static jboolean
 LibjavaExists(const char *path) {
     char tmp[PATH_MAX + 1];
@@ -131,7 +132,7 @@ LibjavaExists(const char *path) {
  * one of the LD_LIBRARY_PATH and then truncating the path to it.
  */
 jboolean
-GetApplicationHomeFromLD_LIBRARY_PATH(char *buf, jint bufsize)
+GetApplicationHomeFromLibpath(char *buf, jint bufsize)
 {
     char *env = getenv(LD_LIBRARY_PATH);
     char *tmp;
@@ -152,6 +153,7 @@ GetApplicationHomeFromLD_LIBRARY_PATH(char *buf, jint bufsize)
     JLI_MemFree(envpath);
     return JNI_FALSE;
 }
+#endif
 
 /*
  * Return true if the named program exists
