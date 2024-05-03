@@ -21,6 +21,7 @@
  * questions.
  */
 
+import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.lang.Runtime.Version;
@@ -48,30 +49,39 @@ import jtreg.SkippedException;
 
 
 /*
-- This checker checks the values of the `@since` tag found in the documentation comment for an element against the release in which the element first appeared.
-- The source code containing the documentation comments is read from `src.zip` in the release of JDK used to run the test.
-- The releases used to determine the expected value of `@since` tags are taken from the historical data built into `javac`.
+This checker checks the values of the `@since` tag found in the documentation comment for an element against
+the release in which the element first appeared.
+The source code containing the documentation comments is read from `src.zip` in the release of JDK used to run the test.
+The releases used to determine the expected value of `@since` tags are taken from the historical data built into `javac`.
 
 The `@since` checker works as a two-step process:
-- In the first step, we process JDKs 9-current, only classfiles, producing a map `<unique-Element-ID`> => `<version(s)-where-it-was-introduced>`.
-    - "version(s)", because we handle versioning of Preview API, so there may be two versions (we use a class with two fields for preview and stable),
+In the first step, we process JDKs 9-current, only classfiles,
+  producing a map `<unique-Element-ID`> => `<version(s)-where-it-was-introduced>`.
+    - "version(s)", because we handle versioning of Preview API, so there may be two versions
+     (we use a class with two fields for preview and stable),
     one when it was introduced as a preview, and one when it went out of preview. More on that below.
-    - For each Element, we compute the unique ID, look into the map, and if there's nothing, record the current version as the originating version.
+    - For each Element, we compute the unique ID, look into the map, and if there's nothing,
+     record the current version as the originating version.
     - At the end of this step we have a map of the Real since values
 
-- In the second step, we look at "effective" `@since` tags in the mainline sources, from `src.zip` (if the test run doesn't have it, we throw a `jtreg.SkippedException`)
-    - We only check the specific MODULE whose name was passed as an argument in the test. In that module, we look for unqualified exports and test those packages.
-    -The `@since` checker verifies that for every API element, the real since value and the effective since value are the same, and reports an error if they are not.
+In the second step, we look at "effective" `@since` tags in the mainline sources, from `src.zip`
+ (if the test run doesn't have it, we throw a `jtreg.SkippedException`)
+    - We only check the specific MODULE whose name was passed as an argument in the test.
+      In that module, we look for unqualified exports and test those packages.
+    - The `@since` checker verifies that for every API element, the real since value and
+      the effective since value are the same, and reports an error if they are not.
 
-Important note : We only check code written since JDK 9 as the releases used to determine the expected value of @since tags
-                 are taken from the historical data built into javac which only goes back that far
+Important note : We only check code written since JDK 9 as the releases used to determine the expected value
+                 of @since tags are taken from the historical data built into javac which only goes back that far
 
 note on rules for Real and effective `@since:
 
-Real since value of an API element is computed as the oldest release in which the given API element was introduced. That is:
+Real since value of an API element is computed as the oldest release in which the given API element was introduced.
+That is:
 - for modules, classes and interfaces, the release in which the element with the given qualified name was introduced
 - for constructors, the release in which the constructor with the given VM descriptor was introduced
-- for methods and fields, the release in which the given method or field with the given VM descriptor became a member of its enclosing class or interface, whether direct or inherited
+- for methods and fields, the release in which the given method or field with the given VM descriptor became a member
+  of its enclosing class or interface, whether direct or inherited
 
 Effective since value of an API element is computed as follows:
 - if the given element has a @since tag in its javadoc, it is used
@@ -82,11 +92,15 @@ Special Handling for preview method, as per JEP 12:
 - When an element is still marked as preview, the `@since` should be the first JDK release where the element was added.
 - If the element is no longer marked as preview, the `@since` should be the first JDK release where it was no longer preview.
 
-note on legacy preview: Until JDK 14, the preview APIs were not marked in any machine-understandable way. It was deprecated, and had a comment in the javadoc.
-                        and the use of `@PreviewFeature` only became standard in JDK 17. So the checker has an explicit knowledge of these preview elements.
+note on legacy preview: Until JDK 14, the preview APIs were not marked in any machine-understandable way.
+                        It was deprecated, and had a comment in the javadoc.
+                        and the use of `@PreviewFeature` only became standard in JDK 17.
+                        So the checker has an explicit knowledge of these preview elements.
 
-note: The `<unique-Element-ID>` for methods looks like `method: <erased-return-descriptor> <binary-name-of-enclosing-class>.<method-name>(<ParameterDescriptor>)`.
-it is somewhat inspired from the VM Method Descriptors. But we use the erased return so that methods that were later generified remain the same.
+note: The `<unique-Element-ID>` for methods looks like
+      `method: <erased-return-descriptor> <binary-name-of-enclosing-class>.<method-name>(<ParameterDescriptor>)`.
+it is somewhat inspired from the VM Method Descriptors. But we use the erased return so that methods
+that were later generified remain the same.
 */
 
 
@@ -103,7 +117,7 @@ public class SinceChecker {
 
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {
-            throw new SkippedException("Test module not specified");
+            throw new IllegalArgumentException("Test module not specified");
         }
         SinceChecker sinceCheckerTestHelper = new SinceChecker();
         sinceCheckerTestHelper.checkModule(args[0]);
@@ -128,7 +142,7 @@ public class SinceChecker {
 
     private void processModuleElement(ModuleElement moduleElement, String releaseVersion, JavacTask ct) {
         for (ModuleElement.ExportsDirective ed : ElementFilter.exportsIn(moduleElement.getDirectives())) {
-            persistElement(moduleElement, moduleElement, ct.getTypes(), releaseVersion);
+            processElement(moduleElement, moduleElement, ct.getTypes(), releaseVersion);
             if (ed.getTargetModules() == null) {
                 processPackageElement(ed.getPackage(), releaseVersion, ct);
             }
@@ -136,7 +150,7 @@ public class SinceChecker {
     }
 
     private void processPackageElement(PackageElement pe, String releaseVersion, JavacTask ct) {
-        persistElement(pe, pe, ct.getTypes(), releaseVersion);
+        processElement(pe, pe, ct.getTypes(), releaseVersion);
         List<TypeElement> typeElements = ElementFilter.typesIn(pe.getEnclosedElements());
         for (TypeElement te : typeElements) {
             processClassElement(te, releaseVersion, ct.getTypes(), ct.getElements());
@@ -161,18 +175,18 @@ public class SinceChecker {
         if (!isDocumented(te)) {
             return;
         }
-        persistElement(te.getEnclosingElement(), te, types, version);
+        processElement(te.getEnclosingElement(), te, types, version);
         elements.getAllMembers(te).stream()
                 .filter(this::isDocumented)
                 .filter(this::isMember)
-                .forEach(element -> persistElement(te, element, types, version));
+                .forEach(element -> processElement(te, element, types, version));
         te.getEnclosedElements().stream()
                 .filter(element -> element.getKind().isDeclaredType())
                 .map(TypeElement.class::cast)
                 .forEach(nestedClass -> processClassElement(nestedClass, version, types, elements));
     }
 
-    public void persistElement(Element explicitOwner, Element element, Types types, String version) {
+    public void processElement(Element explicitOwner, Element element, Types types, String version) {
         String uniqueId = getElementName(explicitOwner, element, types);
         IntroducedIn introduced = classDictionary.computeIfAbsent(uniqueId, i -> new IntroducedIn());
         if (isPreview(element, uniqueId, version)) {
@@ -220,7 +234,7 @@ public class SinceChecker {
             URI uri = URI.create("jar:" + srcZip.toUri());
             try (FileSystem zipFO = FileSystems.newFileSystem(uri, Collections.emptyMap())) {
                 Path root = zipFO.getRootDirectories().iterator().next();
-                Path packagePath = root.resolve(moduleName);
+                Path moduleDirectory = root.resolve(moduleName);
                 try (StandardJavaFileManager fm =
                              tool.getStandardFileManager(null, null, null)) {
                     JavacTask ct = (JavacTask) tool.getTask(null,
@@ -233,10 +247,10 @@ public class SinceChecker {
                     Elements elements = ct.getElements();
                     elements.getModuleElement("java.base");
                     try (EffectiveSourceSinceHelper javadocHelper = EffectiveSourceSinceHelper.create(ct, List.of(root), this)) {
-                        processModuleCheck(elements.getModuleElement(moduleName), ct, packagePath, javadocHelper);
+                        processModuleCheck(elements.getModuleElement(moduleName), ct, moduleDirectory, javadocHelper);
                     } catch (Exception e) {
                         e.printStackTrace();
-                        error("Initiating javadocHelperFailed " + e.getMessage());
+                        error("Initiating javadocHelperFailed " + e);
                     }
                     if (errorCount > 0) {
                         throw new Exception("The `@since` checker found " + errorCount + " problems");
@@ -246,16 +260,16 @@ public class SinceChecker {
         }
     }
 
-    private void processModuleCheck(ModuleElement moduleElement, JavacTask ct, Path packagePath, EffectiveSourceSinceHelper javadocHelper) {
+    private void processModuleCheck(ModuleElement moduleElement, JavacTask ct, Path moduleDirectory, EffectiveSourceSinceHelper javadocHelper) {
         if (moduleElement == null) {
             error("Module element: was null because `elements.getModuleElement(moduleName)` returns null." +
                     "fixes are needed for this Module");
         }
-        String moduleVersion = getModuleVersionFromFile(packagePath);
+        String moduleVersion = getModuleVersionFromFile(moduleDirectory);
         checkModuleOrPackage(moduleVersion, moduleElement, ct, "Module: ");
         for (ModuleElement.ExportsDirective ed : ElementFilter.exportsIn(moduleElement.getDirectives())) {
             if (ed.getTargetModules() == null) {
-                String packageVersion = getPackageVersionFromFile(packagePath, ed);
+                String packageVersion = getPackageVersionFromFile(moduleDirectory, ed);
                 checkModuleOrPackage(packageVersion, ed.getPackage(), ct, "Package: ");
                 analyzePackageCheck(ed.getPackage(), ct, javadocHelper);
             }
@@ -277,8 +291,8 @@ public class SinceChecker {
         }
     }
 
-    private String getModuleVersionFromFile(Path packagePath) {
-        Path moduleInfoFile = packagePath.resolve("module-info.java");
+    private String getModuleVersionFromFile(Path moduleDirectory) {
+        Path moduleInfoFile = moduleDirectory.resolve("module-info.java");
         String version = null;
         if (Files.exists(moduleInfoFile)) {
             try {
@@ -293,11 +307,11 @@ public class SinceChecker {
         return version;
     }
 
-    private String getPackageVersionFromFile(Path packagePath, ModuleElement.ExportsDirective ed) {
-        Path pkgInfo = packagePath.resolve(ed.getPackage()
+    private String getPackageVersionFromFile(Path moduleDirectory, ModuleElement.ExportsDirective ed) {
+        Path pkgInfo = moduleDirectory.resolve(ed.getPackage()
                         .getQualifiedName()
                         .toString()
-                        .replaceAll("\\.", "/")
+                        .replace(".", File.separator)
                 )
                 .resolve("package-info.java");
 
