@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8145255
+ * @bug 8331008
  * @summary Tests for HKDF Expand and Extract Key Derivation Functions
  */
 
