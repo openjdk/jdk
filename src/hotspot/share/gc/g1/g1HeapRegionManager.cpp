@@ -30,6 +30,7 @@
 #include "gc/g1/g1HeapRegion.hpp"
 #include "gc/g1/g1HeapRegionManager.inline.hpp"
 #include "gc/g1/g1HeapRegionSet.inline.hpp"
+#include "gc/g1/g1HRPrinter.hpp"
 #include "gc/g1/g1NUMAStats.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "logging/logStream.hpp"
@@ -170,7 +171,7 @@ void HeapRegionManager::expand(uint start, uint num_regions, WorkerThreads* pret
       _regions.set_by_index(i, hr);
       _allocated_heapregions_length = MAX2(_allocated_heapregions_length, i + 1);
     }
-    G1CollectedHeap::heap()->hr_printer()->commit(hr);
+    G1HRPrinter::commit(hr);
   }
   activate_regions(start, num_regions);
 }
@@ -193,13 +194,12 @@ void HeapRegionManager::uncommit_regions(uint start, uint num_regions) {
   guarantee(num_regions > 0, "No point in calling this for zero regions");
 
   uint end = start + num_regions;
-  G1HRPrinter* printer = G1CollectedHeap::heap()->hr_printer();
-  if (printer->is_active()) {
+  if (G1HRPrinter::is_active()) {
     for (uint i = start; i < end; i++) {
       // Can't use at() here since region is no longer marked available.
       HeapRegion* hr = _regions.get_by_index(i);
       assert(hr != nullptr, "Region should still be present");
-      printer->uncommit(hr);
+      G1HRPrinter::uncommit(hr);
     }
   }
 
@@ -223,7 +223,7 @@ void HeapRegionManager::initialize_regions(uint start, uint num_regions) {
     hr->initialize();
     hr->set_node_index(G1NUMA::numa()->index_for_region(hr));
     insert_into_free_list(hr);
-    G1CollectedHeap::heap()->hr_printer()->active(hr);
+    G1HRPrinter::active(hr);
   }
 }
 
@@ -250,7 +250,7 @@ void HeapRegionManager::deactivate_regions(uint start, uint num_regions) {
   for (uint i = start; i < end; i++) {
     HeapRegion* hr = at(i);
     hr->set_node_index(G1NUMA::UnknownNodeIndex);
-    G1CollectedHeap::heap()->hr_printer()->inactive(hr);
+    G1HRPrinter::inactive(hr);
   }
 
   _committed_map.deactivate(start, end);
