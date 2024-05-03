@@ -586,12 +586,12 @@ JvmtiEnv::SetEventNotificationMode(jvmtiEventMode mode, jvmtiEvent event_type, j
     JvmtiEventController::set_user_enabled(this, nullptr, (oop) nullptr, event_type, enabled);
   } else {
     // We have a specified event_thread.
-    JavaThread* current_thread = JavaThread::current();
-    ThreadsListHandle tlh(current_thread);
+    JavaThread* current = JavaThread::current();
+    ThreadsListHandle tlh(current);
 
     JavaThread* java_thread = nullptr;
     oop thread_obj = nullptr;
-    jvmtiError err = get_threadOop_and_JavaThread(tlh.list(), event_thread, current_thread, &java_thread, &thread_obj);
+    jvmtiError err = get_threadOop_and_JavaThread(tlh.list(), event_thread, current, &java_thread, &thread_obj);
     if (err != JVMTI_ERROR_NONE) {
       return err;
     }
@@ -1076,12 +1076,12 @@ JvmtiEnv::SuspendAllVirtualThreads(jint except_count, const jthread* except_list
 jvmtiError
 JvmtiEnv::ResumeThread(jthread thread) {
   JvmtiVTMSTransitionDisabler disabler(true);
-  JavaThread* current_thread = JavaThread::current();
-  ThreadsListHandle tlh(current_thread);
+  JavaThread* current = JavaThread::current();
+  ThreadsListHandle tlh(current);
 
   JavaThread* java_thread = nullptr;
   oop thread_oop = nullptr;
-  jvmtiError err = get_threadOop_and_JavaThread(tlh.list(), thread, current_thread, &java_thread, &thread_oop);
+  jvmtiError err = get_threadOop_and_JavaThread(tlh.list(), thread, current, &java_thread, &thread_oop);
   if (err != JVMTI_ERROR_NONE) {
     return err;
   }
@@ -1783,17 +1783,16 @@ jvmtiError
 JvmtiEnv::NotifyFramePop(jthread thread, jint depth) {
   ResourceMark rm;
   JvmtiVTMSTransitionDisabler disabler(thread);
-  JavaThread* current_thread = JavaThread::current();
-  ThreadsListHandle tlh(current_thread);
+  JavaThread* current = JavaThread::current();
+  ThreadsListHandle tlh(current);
 
   JavaThread* java_thread = nullptr;
   oop thread_obj = nullptr;
-  jvmtiError err = get_threadOop_and_JavaThread(tlh.list(), thread, current_thread, &java_thread, &thread_obj);
+  jvmtiError err = get_threadOop_and_JavaThread(tlh.list(), thread, current, &java_thread, &thread_obj);
   if (err != JVMTI_ERROR_NONE) {
     return err;
   }
 
-  JavaThread* current = JavaThread::current();
   HandleMark hm(current);
   Handle thread_handle(current, thread_obj);
   JvmtiThreadState *state = JvmtiThreadState::state_for(java_thread, thread_handle);
