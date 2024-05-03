@@ -204,17 +204,16 @@ public:
 
 class TransformStackChunkClosure {
   stackChunkOop _chunk;
-  DerivedPointersSupport::RelativizeClosure* _cl;
 
 public:
   TransformStackChunkClosure(stackChunkOop chunk, DerivedPointersSupport::RelativizeClosure* cl)
-    : _chunk(chunk),
-      _cl(cl) {
+    : _chunk(chunk) {
   }
 
   template <ChunkFrames frame_kind, typename RegisterMapT>
   bool do_frame(const StackChunkFrameStream<frame_kind>& f, const RegisterMapT* map) {
-    f.iterate_derived_pointers(_cl, map);
+    DerivedPointersSupport::RelativizeClosure derived_cl;
+    f.iterate_derived_pointers(&derived_cl, map);
 
     BarrierSetStackChunk* bs_chunk = BarrierSet::barrier_set()->barrier_set_stack_chunk();
     frame fr = f.to_frame();
