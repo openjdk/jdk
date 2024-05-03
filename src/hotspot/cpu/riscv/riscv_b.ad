@@ -241,7 +241,7 @@ instruct bits_reverse_I(iRegINoSp dst, iRegIorL2I src)
   format %{ "bits_reverse_I  $dst, $src" %}
   ins_encode %{
     __ rev8($dst$$Register, $src$$Register);
-    __ rev_b($dst$$Register, $dst$$Register);
+    __ brev8($dst$$Register, $dst$$Register);
     __ srli($dst$$Register, $dst$$Register, 32);
   %}
   ins_pipe(ialu_reg);
@@ -254,7 +254,7 @@ instruct bits_reverse_L(iRegLNoSp dst, iRegL src)
   format %{ "bits_reverse_L  $dst, $src" %}
   ins_encode %{
     __ rev8($dst$$Register, $src$$Register);
-    __ rev_b($dst$$Register, $dst$$Register);
+    __ brev8($dst$$Register, $dst$$Register);
   %}
   ins_pipe(ialu_reg);
 %}
