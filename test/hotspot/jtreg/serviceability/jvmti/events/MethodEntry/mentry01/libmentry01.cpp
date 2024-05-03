@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #include <string.h>
 #include <inttypes.h>
 #include "jvmti.h"
-#include "jvmti_common.h"
+#include "jvmti_common.hpp"
 
 
 extern "C" {
@@ -45,7 +45,7 @@ typedef struct {
   const jlocation loc;
 } entry_info;
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jvmtiCapabilities caps;
 static jvmtiEventCallbacks callbacks;
 static jint result = PASSED;
@@ -78,7 +78,7 @@ void JNICALL MethodEntry(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread_obj, jmeth
     result = STATUS_FAILED;
     return;
   }
-  if (cls_sig != NULL && strcmp(cls_sig, "Lmentry01;") == 0) {
+  if (cls_sig != nullptr && strcmp(cls_sig, "Lmentry01;") == 0) {
     LOG(">>> retrieving method entry info ...\n");
 
     err = jvmti->GetMethodName(method, &entry.name, &entry.sig, &generic);
@@ -100,12 +100,12 @@ void JNICALL MethodEntry(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread_obj, jmeth
     LOG(">>> ... done\n");
 
     if (eventsCount < sizeof(entries)/sizeof(entry_info)) {
-      if (entry.name == NULL || strcmp(entry.name, entries[eventsCount].name) != 0) {
+      if (entry.name == nullptr || strcmp(entry.name, entries[eventsCount].name) != 0) {
         LOG("(entry#%" PRIuPTR ") wrong method name: \"%s\"", eventsCount, entry.name);
         LOG(", expected: \"%s\"\n", entries[eventsCount].name);
         result = STATUS_FAILED;
       }
-      if (entry.sig == NULL || strcmp(entry.sig, entries[eventsCount].sig) != 0) {
+      if (entry.sig == nullptr || strcmp(entry.sig, entries[eventsCount].sig) != 0) {
         LOG("(entry#%" PRIuPTR ") wrong method sig: \"%s\"", eventsCount, entry.sig);
         LOG(", expected: \"%s\"\n", entries[eventsCount].sig);
         result = STATUS_FAILED;
@@ -137,7 +137,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   jint res;
 
   res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-  if (res != JNI_OK || jvmti == NULL) {
+  if (res != JNI_OK || jvmti == nullptr) {
     LOG("Wrong result of a valid call to GetEnv!\n");
     return JNI_ERR;
   }
@@ -176,7 +176,7 @@ JNIEXPORT void JNICALL
 Java_mentry01_enable(JNIEnv *jni, jclass cls) {
   jvmtiError err;
 
-  if (jvmti == NULL) {
+  if (jvmti == nullptr) {
     return;
   }
 
@@ -188,7 +188,7 @@ Java_mentry01_enable(JNIEnv *jni, jclass cls) {
   }
   isVirtualExpected = jni->IsVirtualThread(thread);
 
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_METHOD_ENTRY, NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_METHOD_ENTRY, nullptr);
   if (err == JVMTI_ERROR_NONE) {
     eventsExpected = sizeof(entries)/sizeof(entry_info);
     eventsCount = 0;
@@ -202,7 +202,7 @@ JNIEXPORT jint JNICALL
 Java_mentry01_check(JNIEnv *jni, jclass cls) {
 
   jmethodID mid = jni->GetStaticMethodID(cls, "dummy", "()V");
-  if (mid == NULL) {
+  if (mid == nullptr) {
     LOG("Cannot find metod \"dummy()\"!\n");
     return STATUS_FAILED;
   }
@@ -219,13 +219,13 @@ JNIEXPORT void JNICALL
 Java_mentry01_chain(JNIEnv *jni, jclass cls) {
   jvmtiError err;
 
-  if (jvmti == NULL) {
+  if (jvmti == nullptr) {
     LOG("JVMTI client was not properly loaded!\n");
     result = STATUS_FAILED;
     return;
   }
 
-  err = jvmti->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_METHOD_ENTRY, NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_METHOD_ENTRY, nullptr);
   if (err != JVMTI_ERROR_NONE) {
     LOG("Failed to disable JVMTI_EVENT_METHOD_ENTRY event: %s (%d)\n", TranslateError(err), err);
     result = STATUS_FAILED;

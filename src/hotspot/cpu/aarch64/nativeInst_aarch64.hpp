@@ -691,16 +691,20 @@ public:
     return (insns & 0xffe0001fffffffff) == 0xf280001fd503201f;
   }
 
-  jint displacement() const {
+  bool decode(int32_t& oopmap_slot, int32_t& cb_offset) const {
     uint64_t movk_insns = *(uint64_t*)addr_at(4);
     uint32_t lo = (movk_insns >> 5) & 0xffff;
     uint32_t hi = (movk_insns >> (5 + 32)) & 0xffff;
-    uint32_t result = (hi << 16) | lo;
-
-    return (jint)result;
+    uint32_t data = (hi << 16) | lo;
+    if (data == 0) {
+      return false; // no information encoded
+    }
+    cb_offset = (data & 0xffffff);
+    oopmap_slot = (data >> 24) & 0xff;
+    return true; // decoding succeeded
   }
 
-  void patch(jint diff);
+  bool patch(int32_t oopmap_slot, int32_t cb_offset);
   void make_deopt();
 };
 

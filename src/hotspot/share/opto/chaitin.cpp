@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1789,10 +1789,20 @@ void PhaseChaitin::fixup_spills() {
 // Helper to stretch above; recursively discover the base Node for a
 // given derived Node.  Easy for AddP-related machine nodes, but needs
 // to be recursive for derived Phis.
-Node *PhaseChaitin::find_base_for_derived( Node **derived_base_map, Node *derived, uint &maxlrg ) {
+Node* PhaseChaitin::find_base_for_derived(Node** derived_base_map, Node* derived, uint& maxlrg) {
   // See if already computed; if so return it
-  if( derived_base_map[derived->_idx] )
+  if (derived_base_map[derived->_idx]) {
     return derived_base_map[derived->_idx];
+  }
+
+#ifdef ASSERT
+  if (derived->is_Mach() && derived->as_Mach()->ideal_Opcode() == Op_VerifyVectorAlignment) {
+    // Bypass the verification node
+    Node* base = find_base_for_derived(derived_base_map, derived->in(1), maxlrg);
+    derived_base_map[derived->_idx] = base;
+    return base;
+  }
+#endif
 
   // See if this happens to be a base.
   // NOTE: we use TypePtr instead of TypeOopPtr because we can have

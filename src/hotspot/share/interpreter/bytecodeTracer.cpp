@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -192,10 +192,13 @@ void BytecodeTracer::print_method_codes(const methodHandle& method, int from, in
   BytecodeStream s(method);
   s.set_interval(from, to);
 
-  ttyLocker ttyl;  // keep the following output coherent
+  // Keep output to st coherent: collect all lines and print at once.
+  ResourceMark rm;
+  stringStream ss;
   while (s.next() >= 0) {
-    method_printer.trace(method, s.bcp(), st);
+    method_printer.trace(method, s.bcp(), &ss);
   }
+  st->print("%s", ss.as_string());
 }
 
 void BytecodePrinter::print_constant(int cp_index, outputStream* st) {
@@ -552,8 +555,7 @@ void BytecodePrinter::print_attributes(int bci, outputStream* st) {
         int indy_index;
         int cp_index;
         if (is_linked()) {
-          int i = get_native_index_u4();
-          indy_index = ConstantPool::decode_invokedynamic_index(i);
+          indy_index = get_native_index_u4();
           cp_index = constants()->resolved_indy_entry_at(indy_index)->constant_pool_index();
         } else {
           indy_index = -1;
@@ -589,6 +591,10 @@ void BytecodePrinter::print_attributes(int bci, outputStream* st) {
 void BytecodePrinter::bytecode_epilog(int bci, outputStream* st) {
   MethodData* mdo = method()->method_data();
   if (mdo != nullptr) {
+
+    // Lock to read ProfileData, and ensure lock is not broken by a safepoint
+    MutexLocker ml(mdo->extra_data_lock(), Mutex::_no_safepoint_check_flag);
+
     ProfileData* data = mdo->bci_to_data(bci);
     if (data != nullptr) {
       st->print("  %d ", mdo->dp_to_di(data->dp()));

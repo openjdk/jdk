@@ -99,9 +99,7 @@ public class TestClassLoaderLeak {
         pbArgs.add(TestClassLoaderLeak.class.getName());
         pbArgs.add("test");
 
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(pbArgs.toArray(new String[0]));
-
-        OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
+        OutputAnalyzer analyzer = ProcessTools.executeLimitedTestJava(pbArgs.toArray(new String[0]));
 
         if (shouldPass) {
             analyzer.shouldHaveExitValue(0);

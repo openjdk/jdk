@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.awt.HeadlessException;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Robot;
+import java.awt.Toolkit;
 import java.awt.event.ActionListener;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
@@ -209,7 +210,11 @@ public class JFileChooserSetLocationTest {
     }
 
     public static void createUI() {
-        frame = new JFrame();
+        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+
+        int xPos = (int) screenSize.getWidth() / 2;
+        int yPos = (int) screenSize.getHeight() / 2;
+        frame = new JFrame("FileChooser set location test");
         panel = new JPanel();
         btn = new JButton(SHOW_DIALOG_OUTSIDE_THE_PANEL);
         btn1 = new JButton(SHOW_DIALOG_OVER_THE_PANEL);
@@ -238,6 +243,7 @@ public class JFileChooserSetLocationTest {
         frame.setLocationRelativeTo(null);
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         frame.pack();
+        frame.setLocation(xPos, yPos - 200);
         frame.setVisible(true);
     }
 
@@ -280,7 +286,6 @@ public class JFileChooserSetLocationTest {
             System.out.println(
                     "createDialog and set location to (" + x + ", " + y + ")");
             dialog.setLocation(x, y);
-
             return dialog;
         }
 
@@ -289,5 +294,4 @@ public class JFileChooserSetLocationTest {
         }
 
     }
-
 }

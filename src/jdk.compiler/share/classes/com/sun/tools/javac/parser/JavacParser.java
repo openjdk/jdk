@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,6 +111,12 @@ public class JavacParser implements Parser {
     /** End position mappings container */
     protected final AbstractEndPosTable endPosTable;
 
+    /** A map associating "other nearby documentation comments"
+     *  with the preferred documentation comment for a declaration. */
+    protected Map<Comment, List<Comment>> danglingComments = new HashMap<>();
+    /** Handler for deferred diagnostics. */
+    protected final DeferredLintHandler deferredLintHandler;
+
     // Because of javac's limited lookahead, some contexts are ambiguous in
     // the presence of type annotations even though they are not ambiguous
     // in the absence of type annotations.  Consider this code:
@@ -181,6 +187,7 @@ public class JavacParser implements Parser {
         this.names = fac.names;
         this.source = fac.source;
         this.preview = fac.preview;
+        this.deferredLintHandler = fac.deferredLintHandler;
         this.allowStringFolding = fac.options.getBoolean("allowStringFolding", true);
         this.keepDocComments = keepDocComments;
         this.parseModuleInfo = parseModuleInfo;
@@ -205,6 +212,7 @@ public class JavacParser implements Parser {
         this.names = parser.names;
         this.source = parser.source;
         this.preview = parser.preview;
+        this.deferredLintHandler = parser.deferredLintHandler;
         this.allowStringFolding = parser.allowStringFolding;
         this.keepDocComments = parser.keepDocComments;
         this.parseModuleInfo = false;
@@ -551,16 +559,119 @@ public class JavacParser implements Parser {
      */
     private final DocCommentTable docComments;
 
+    /** Record nearby documentation comments against the
+     *  primary documentation comment for a declaration.
+     *
+     *  Dangling documentation comments are handled as follows.
+     *  1. {@code Scanner} adds all doc comments to a queue of
+     *     recent doc comments. The queue is flushed whenever
+     *     it is known that the recent doc comments should be
+     *     ignored and should not cause any warnings.
+     *  2. The primary documentation comment is the one obtained
+     *     from the first token of any declaration.
+     *     (using {@code token.getDocComment()}.
+     *  3. At the end of the "signature" of the declaration
+     *     (that is, before any initialization or body for the
+     *     declaration) any other "recent" comments are saved
+     *     in a map using the primary comment as a key,
+     *     using this method, {@code saveDanglingComments}.
+     *  4. When the tree node for the declaration is finally
+     *     available, and the primary comment, if any,
+     *     is "attached", (in {@link #attach}) any related
+     *     dangling comments are also attached to the tree node
+     *     by registering them using the {@link #deferredLintHandler}.
+     *  5. (Later) Warnings may be generated for the dangling
+     *     comments, subject to the {@code -Xlint} and
+     *     {@code @SuppressWarnings}.
+     *
+     *  @param dc the primary documentation comment
+     */
+    private void saveDanglingDocComments(Comment dc) {
+        var recentComments = S.getDocComments();
+
+        switch (recentComments.size()) {
+            case 0:
+                // no recent comments
+                return;
+
+            case 1:
+                if (recentComments.peek() == dc) {
+                    // no other recent comments
+                    recentComments.remove();
+                    return;
+                }
+        }
+
+        var lb = new ListBuffer<Comment>();
+        while (!recentComments.isEmpty()) {
+            var c = recentComments.remove();
+            if (c != dc) {
+                lb.add(c);
+            }
+        }
+        danglingComments.put(dc, lb.toList());
+    }
+
     /** Make an entry into docComments hashtable,
      *  provided flag keepDocComments is set and given doc comment is non-null.
+     *  If there are any related "dangling comments", register
+     *  diagnostics to be handled later, when @SuppressWarnings
+     *  can be taken into account.
+     *
      *  @param tree   The tree to be used as index in the hashtable
      *  @param dc     The doc comment to associate with the tree, or null.
      */
     protected void attach(JCTree tree, Comment dc) {
         if (keepDocComments && dc != null) {
-//          System.out.println("doc comment = ");System.out.println(dc);//DEBUG
             docComments.putComment(tree, dc);
         }
+        reportDanglingComments(tree, dc);
+    }
+
+    /** Reports all dangling comments associated with the
+     *  primary comment for a declaration against the position
+     *  of the tree node for a declaration.
+     *
+     * @param tree the tree node for the declaration
+     * @param dc the primary comment for the declaration
+     */
+    void reportDanglingComments(JCTree tree, Comment dc) {
+        var list = danglingComments.remove(dc);
+        if (list != null) {
+            var prevPos = deferredLintHandler.setPos(tree);
+            try {
+                list.forEach(this::reportDanglingDocComment);
+            } finally {
+                deferredLintHandler.setPos(prevPos);
+            }
+        }
+    }
+
+    /**
+     * Reports an individual dangling comment using the {@link #deferredLintHandler}.
+     * The comment may or not may generate an actual diagnostic, depending on
+     * the settings for {@code -Xlint} and/or {@code @SuppressWarnings}.
+     *
+     * @param c the comment
+     */
+    void reportDanglingDocComment(Comment c) {
+        var pos = c.getPos();
+        if (pos != null) {
+            deferredLintHandler.report(lint -> {
+                if (lint.isEnabled(Lint.LintCategory.DANGLING_DOC_COMMENTS)) {
+                    log.warning(Lint.LintCategory.DANGLING_DOC_COMMENTS,
+                            pos, Warnings.DanglingDocComment);
+                }
+            });
+        }
+    }
+
+    /**
+     * Ignores any recent documentation comments found by the scanner,
+     * such as those that cannot be associated with a nearby declaration.
+     */
+    private void ignoreDanglingComments() {
+        S.getDocComments().clear();
     }
 
 /* -------- source positions ------- */
@@ -692,59 +803,6 @@ public class JavacParser implements Parser {
         return t;
     }
 
-    /**
-     * StringTemplate =
-     *    [STRINGFRAGMENT] [EmbeddedExpression]
-     *  | STRINGLITERAL
-     *
-     * EmbeddedExpression =
-     *  LBRACE term RBRACE
-     */
-    JCExpression stringTemplate(JCExpression processor) {
-        checkSourceLevel(Feature.STRING_TEMPLATES);
-        // Disable standalone string templates
-        if (processor == null) {
-            log.error(DiagnosticFlag.SYNTAX, token.pos,
-                    Errors.ProcessorMissingFromStringTemplateExpression);
-        }
-        int oldmode = mode;
-        selectExprMode();
-        Token stringToken = token;
-        int pos = stringToken.pos;
-        int endPos = stringToken.endPos;
-        TokenKind kind = stringToken.kind;
-        String string = token.stringVal();
-        List<String> fragments = List.of(string);
-        List<JCExpression> expressions = List.nil();
-        nextToken();
-        if (kind != STRINGLITERAL) {
-            while (token.kind == STRINGFRAGMENT) {
-                stringToken = token;
-                endPos = stringToken.endPos;
-                string = stringToken.stringVal();
-                fragments = fragments.append(string);
-                nextToken();
-             }
-            while (token.pos < endPos && token.kind != DEFAULT && token.kind != ERROR) {
-                accept(LBRACE);
-                JCExpression expression = token.kind == RBRACE ? F.at(pos).Literal(TypeTag.BOT, null)
-                                                               : term(EXPR);
-                expressions = expressions.append(expression);
-                if (token.kind != ERROR) {
-                    accept(RBRACE);
-                }
-            }
-            // clean up remaining expression tokens if error
-            while (token.pos < endPos && token.kind != DEFAULT) {
-                nextToken();
-            }
-            S.setPrevToken(stringToken);
-        }
-        JCExpression t = toP(F.at(pos).StringTemplate(processor, fragments, expressions));
-        setMode(oldmode);
-        return t;
-    }
-
     JCExpression literal(Name prefix) {
         return literal(prefix, token.pos);
     }
@@ -770,7 +828,7 @@ public class JavacParser implements Parser {
                     TypeTag.INT,
                     Convert.string2int(strval(prefix), token.radix()));
             } catch (NumberFormatException ex) {
-                log.error(DiagnosticFlag.SYNTAX, token.pos, Errors.IntNumberTooLarge(strval(prefix)));
+                reportIntegralLiteralError(prefix, pos);
             }
             break;
         case LONGLITERAL:
@@ -779,7 +837,7 @@ public class JavacParser implements Parser {
                     TypeTag.LONG,
                     Long.valueOf(Convert.string2long(strval(prefix), token.radix())));
             } catch (NumberFormatException ex) {
-                log.error(DiagnosticFlag.SYNTAX, token.pos, Errors.IntNumberTooLarge(strval(prefix)));
+                reportIntegralLiteralError(prefix, pos);
             }
             break;
         case FLOATLITERAL: {
@@ -861,6 +919,28 @@ public class JavacParser implements Parser {
         String strval(Name prefix) {
             String s = token.stringVal();
             return prefix.isEmpty() ? s : prefix + s;
+        }
+        void reportIntegralLiteralError(Name prefix, int pos) {
+            int radix = token.radix();
+            if (radix == 2 || radix == 8) {
+                //attempt to produce more user-friendly error message for
+                //binary and octal literals with wrong digits:
+                String value = strval(prefix);
+                char[] cs = value.toCharArray();
+                for (int i = 0; i < cs.length; i++) {
+                    char c = cs[i];
+                    int d = Character.digit(c, radix);
+                    if (d == (-1)) {
+                        Error err = radix == 2 ? Errors.IllegalDigitInBinaryLiteral
+                                               : Errors.IllegalDigitInOctalLiteral;
+                        log.error(DiagnosticFlag.SYNTAX,
+                                  token.pos + i,
+                                  err);
+                        return ;
+                    }
+                }
+            }
+            log.error(DiagnosticFlag.SYNTAX, token.pos, Errors.IntNumberTooLarge(strval(prefix)));
         }
 
     /** terms can be either expressions or types.
@@ -965,6 +1045,20 @@ public class JavacParser implements Parser {
         }
 
         return result;
+    }
+
+    protected JCExpression parseIntersectionType(int pos, JCExpression firstType) {
+        JCExpression t = firstType;
+        int pos1 = pos;
+        List<JCExpression> targets = List.of(t);
+        while (token.kind == AMP) {
+            accept(AMP);
+            targets = targets.prepend(parseType());
+        }
+        if (targets.length() > 1) {
+            t = toP(F.at(pos1).TypeIntersection(targets.reverse()));
+        }
+        return t;
     }
 
     public JCExpression unannotatedType(boolean allowVar) {
@@ -1337,15 +1431,7 @@ public class JavacParser implements Parser {
                     case CAST:
                        accept(LPAREN);
                        selectTypeMode();
-                       int pos1 = pos;
-                       List<JCExpression> targets = List.of(t = parseType());
-                       while (token.kind == AMP) {
-                           accept(AMP);
-                           targets = targets.prepend(parseType());
-                       }
-                       if (targets.length() > 1) {
-                           t = toP(F.at(pos1).TypeIntersection(targets.reverse()));
-                       }
+                       t = parseIntersectionType(pos, parseType());
                        accept(RPAREN);
                        selectExprMode();
                        JCExpression t1 = term3();
@@ -1394,14 +1480,6 @@ public class JavacParser implements Parser {
                 t = literal(names.empty);
             } else return illegal();
             break;
-         case STRINGFRAGMENT:
-             if (typeArgs == null && isMode(EXPR)) {
-                 selectExprMode();
-                 t = stringTemplate(null);
-             } else {
-                 return illegal();
-             }
-             break;
         case NEW:
             if (typeArgs != null) return illegal();
             if (isMode(EXPR)) {
@@ -1530,12 +1608,6 @@ public class JavacParser implements Parser {
                                 nextToken();
                                 if (token.kind == LT) typeArgs = typeArguments(false);
                                 t = innerCreator(pos1, typeArgs, t);
-                                typeArgs = null;
-                                break loop;
-                            case STRINGFRAGMENT:
-                            case STRINGLITERAL:
-                                if (typeArgs != null) return illegal();
-                                t = stringTemplate(t);
                                 typeArgs = null;
                                 break loop;
                             }
@@ -1761,12 +1833,6 @@ public class JavacParser implements Parser {
                     if (token.kind == LT) typeArgs = typeArguments(false);
                     t = innerCreator(pos2, typeArgs, t);
                     typeArgs = null;
-                } else if (token.kind == TokenKind.STRINGFRAGMENT ||
-                           token.kind == TokenKind.STRINGLITERAL) {
-                    if (typeArgs != null) {
-                        return illegal();
-                    }
-                    t = stringTemplate(t);
                 } else {
                     List<JCAnnotation> tyannos = null;
                     if (isMode(TYPE) && token.kind == MONKEYS_AT) {
@@ -2671,6 +2737,7 @@ public class JavacParser implements Parser {
         List<JCExpression> args = arguments();
         JCClassDecl body = null;
         if (token.kind == LBRACE) {
+            ignoreDanglingComments(); // ignore any comments from before the '{'
             int pos = token.pos;
             List<JCTree> defs = classInterfaceOrRecordBody(names.empty, false, false);
             JCModifiers mods = F.at(Position.NOPOS).Modifiers(0);
@@ -2723,6 +2790,7 @@ public class JavacParser implements Parser {
      */
     JCBlock block(int pos, long flags) {
         accept(LBRACE);
+        ignoreDanglingComments();   // ignore any comments from before the '{'
         List<JCStatement> stats = blockStatements();
         JCBlock t = F.at(pos).Block(flags, stats);
         while (token.kind == CASE || token.kind == DEFAULT) {
@@ -2754,6 +2822,7 @@ public class JavacParser implements Parser {
         ListBuffer<JCStatement> stats = new ListBuffer<>();
         while (true) {
             List<JCStatement> stat = blockStatement();
+            ignoreDanglingComments();  // ignore comments not consumed by the statement
             if (stat.isEmpty()) {
                 return stats.toList();
             } else {
@@ -2825,7 +2894,7 @@ public class JavacParser implements Parser {
                 return List.of(classOrRecordOrInterfaceOrEnumDeclaration(mods, dc));
             } else {
                 JCExpression t = parseType(true);
-                return localVariableDeclarations(mods, t);
+                return localVariableDeclarations(mods, t, dc);
             }
         }
         case ABSTRACT: case STRICTFP: {
@@ -2866,12 +2935,15 @@ public class JavacParser implements Parser {
                         int lookahead = 2;
                         int balance = 1;
                         boolean hasComma = false;
+                        boolean inTypeArgs = false;
                         Token l;
                         while ((l = S.token(lookahead)).kind != EOF && balance != 0) {
                             switch (l.kind) {
                                 case LPAREN: balance++; break;
                                 case RPAREN: balance--; break;
-                                case COMMA: if (balance == 1) hasComma = true; break;
+                                case COMMA: if (balance == 1 && !inTypeArgs) hasComma = true; break;
+                                case LT: inTypeArgs = true; break;
+                                case GT: inTypeArgs = false;
                             }
                             lookahead++;
                         }
@@ -2908,8 +2980,8 @@ public class JavacParser implements Parser {
                 }
             }
         }
+        dc = token.docComment();
         if (isRecordStart() && allowRecords) {
-            dc = token.docComment();
             return List.of(recordDeclaration(F.at(pos).Modifiers(0), dc));
         } else {
             Token prevToken = token;
@@ -2922,7 +2994,7 @@ public class JavacParser implements Parser {
                 pos = token.pos;
                 JCModifiers mods = F.at(Position.NOPOS).Modifiers(0);
                 F.at(pos);
-                return localVariableDeclarations(mods, t);
+                return localVariableDeclarations(mods, t, dc);
             } else {
                 // This Exec is an "ExpressionStatement"; it subsumes the terminating semicolon
                 t = checkExprStat(t);
@@ -2933,7 +3005,11 @@ public class JavacParser implements Parser {
         }
     }
     //where
-        private List<JCStatement> localVariableDeclarations(JCModifiers mods, JCExpression type) {
+        private List<JCStatement> localVariableDeclarations(JCModifiers mods, JCExpression type, Comment dc) {
+            if (dc != null) {
+                // ignore a well-placed doc comment, but save any misplaced ones
+                saveDanglingDocComments(dc);
+            }
             ListBuffer<JCStatement> stats =
                     variableDeclarators(mods, type, new ListBuffer<>(), true);
             // A "LocalVariableDeclarationStatement" subsumes the terminating semicolon
@@ -2961,6 +3037,7 @@ public class JavacParser implements Parser {
      *     | ";"
      */
     public JCStatement parseSimpleStatement() {
+        ignoreDanglingComments(); // ignore comments before statement
         int pos = token.pos;
         switch (token.kind) {
         case LBRACE:
@@ -3691,6 +3768,8 @@ public class JavacParser implements Parser {
             name = names.empty;
         }
 
+        saveDanglingDocComments(dc);
+
         if (token.kind == EQ) {
             nextToken();
             init = variableInitializer();
@@ -3934,8 +4013,9 @@ public class JavacParser implements Parser {
             // comes after before deciding how best to handle them.
             ListBuffer<JCTree> semiList = new ListBuffer<>();
             while (firstTypeDecl && mods == null && token.kind == SEMI) {
-                semiList.append(toP(F.at(token.pos).Skip()));
+                int pos = token.pos;
                 nextToken();
+                semiList.append(toP(F.at(pos).Skip()));
                 if (token.kind == EOF)
                     break OUTER;
             }
@@ -4262,6 +4342,9 @@ public class JavacParser implements Parser {
             implementing = typeList();
         }
         List<JCExpression> permitting = permitsClause(mods, "class");
+
+        saveDanglingDocComments(dc);
+
         List<JCTree> defs = classInterfaceOrRecordBody(name, false, false);
         JCClassDecl result = toP(F.at(pos).ClassDef(
             mods, name, typarams, extending, implementing, permitting, defs));
@@ -4284,6 +4367,9 @@ public class JavacParser implements Parser {
             nextToken();
             implementing = typeList();
         }
+
+        saveDanglingDocComments(dc);
+
         List<JCTree> defs = classInterfaceOrRecordBody(name, false, true);
         java.util.List<JCVariableDecl> fields = new ArrayList<>();
         for (JCVariableDecl field : headerFields) {
@@ -4343,6 +4429,9 @@ public class JavacParser implements Parser {
             extending = typeList();
         }
         List<JCExpression> permitting = permitsClause(mods, "interface");
+
+        saveDanglingDocComments(dc);
+
         List<JCTree> defs;
         defs = classInterfaceOrRecordBody(name, true, false);
         JCClassDecl result = toP(F.at(pos).ClassDef(
@@ -4387,6 +4476,8 @@ public class JavacParser implements Parser {
             nextToken();
             implementing = typeList();
         }
+
+        saveDanglingDocComments(dc);
 
         List<JCTree> defs = enumBody(name);
         mods.flags |= Flags.ENUM;
@@ -4515,8 +4606,12 @@ public class JavacParser implements Parser {
         int identPos = token.pos;
         Name name = ident();
         int createPos = token.pos;
+
+        saveDanglingDocComments(dc);
+
         List<JCExpression> args = (token.kind == LPAREN)
             ? arguments() : List.nil();
+
         JCClassDecl body = null;
         if (token.kind == LBRACE) {
             JCModifiers mods1 = F.at(Position.NOPOS).Modifiers(Flags.ENUM);
@@ -4621,6 +4716,7 @@ public class JavacParser implements Parser {
                 } else if (isRecord && (mods.flags & Flags.STATIC) == 0) {
                     log.error(DiagnosticFlag.SYNTAX, token.pos, Errors.InstanceInitializerNotAllowedInRecords);
                 }
+                ignoreDanglingComments();   // no declaration with which dangling comments can be associated
                 return List.of(block(pos, mods.flags));
             } else {
                 return constructorOrMethodOrFieldDeclaration(mods, className, isInterface, isRecord, dc);
@@ -4898,6 +4994,9 @@ public class JavacParser implements Parser {
                     thrown = qualidentList(true);
                 }
             }
+
+            saveDanglingDocComments(dc);
+
             JCBlock body = null;
             JCExpression defaultValue;
             if (token.kind == LBRACE) {

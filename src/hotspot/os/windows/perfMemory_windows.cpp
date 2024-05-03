@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,14 +55,14 @@ typedef BOOL (WINAPI *SetSecurityDescriptorControlFnPtr)(
 static char* create_standard_memory(size_t size) {
 
   // allocate an aligned chuck of memory
-  char* mapAddress = os::reserve_memory(size);
+  char* mapAddress = os::reserve_memory(size, !ExecMem, mtInternal);
 
   if (mapAddress == nullptr) {
     return nullptr;
   }
 
   // commit memory
-  if (!os::commit_memory(mapAddress, size, !ExecMem)) {
+  if (!os::commit_memory(mapAddress, size, !ExecMem, mtInternal)) {
     if (PrintMiscellaneous && Verbose) {
       warning("Could not commit PerfData memory\n");
     }
@@ -1803,9 +1803,9 @@ void PerfMemory::detach(char* addr, size_t bytes) {
 
   if (MemTracker::enabled()) {
     // it does not go through os api, the operation has to record from here
-    Tracker tkr(Tracker::release);
+    ThreadCritical tc;
     remove_file_mapping(addr);
-    tkr.record((address)addr, bytes);
+    MemTracker::record_virtual_memory_release((address)addr, bytes);
   } else {
     remove_file_mapping(addr);
   }

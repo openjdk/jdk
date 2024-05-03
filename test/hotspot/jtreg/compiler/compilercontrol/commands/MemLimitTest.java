@@ -39,7 +39,7 @@ import jdk.test.lib.process.ProcessTools;
 public class MemLimitTest {
 
     static void do_test(String option, boolean expectSuccess, int expectedValue) throws Exception {
-        OutputAnalyzer output = ProcessTools.executeTestJvm("-Xmx64m", "-XX:CompileCommand=" + option, "-version");
+        OutputAnalyzer output = ProcessTools.executeTestJava("-Xmx64m", "-XX:CompileCommand=" + option, "-version");
         if (expectSuccess) {
             output.shouldHaveExitValue(0);
             output.shouldNotContain("error occurred");

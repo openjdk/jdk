@@ -123,4 +123,3 @@ public class LookupSwitchInsnNode extends AbstractInsnNode {
         return clone.cloneAnnotations(this);
     }
 }
-

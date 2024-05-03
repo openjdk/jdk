@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -261,7 +261,8 @@ public final class Class<T> implements java.io.Serializable,
 
     /**
      * Returns a string describing this {@code Class}, including
-     * information about modifiers and type parameters.
+     * information about modifiers, {@link #isSealed() sealed}/{@code
+     * non-sealed} status, and type parameters.
      *
      * The string is formatted as a list of type modifiers, if any,
      * followed by the kind of type (empty string for primitive types
@@ -314,6 +315,11 @@ public final class Class<T> implements java.io.Serializable,
                     sb.append(' ');
                 }
 
+                // A class cannot be strictfp and sealed/non-sealed so
+                // it is sufficient to check for sealed-ness after all
+                // modifiers are printed.
+                addSealingInfo(modifiers, sb);
+
                 if (isAnnotation()) {
                     sb.append('@');
                 }
@@ -342,6 +348,49 @@ public final class Class<T> implements java.io.Serializable,
 
             return sb.toString();
         }
+    }
+
+    private void addSealingInfo(int modifiers, StringBuilder sb) {
+        // A class can be final XOR sealed XOR non-sealed.
+        if (Modifier.isFinal(modifiers)) {
+            return; // no-op
+        } else {
+            if (isSealed()) {
+                sb.append("sealed ");
+                return;
+            } else {
+                // Check for sealed ancestor, which implies this class
+                // is non-sealed.
+                if (hasSealedAncestor(this)) {
+                    sb.append("non-sealed ");
+                }
+            }
+        }
+    }
+
+    private boolean hasSealedAncestor(Class<?> clazz) {
+        // From JLS 8.1.1.2:
+        // "It is a compile-time error if a class has a sealed direct
+        // superclass or a sealed direct superinterface, and is not
+        // declared final, sealed, or non-sealed either explicitly or
+        // implicitly.
+        // Thus, an effect of the sealed keyword is to force all
+        // direct subclasses to explicitly declare whether they are
+        // final, sealed, or non-sealed. This avoids accidentally
+        // exposing a sealed class hierarchy to unwanted subclassing."
+
+        // Therefore, will just check direct superclass and
+        // superinterfaces.
+        var superclass = clazz.getSuperclass();
+        if (superclass != null && superclass.isSealed()) {
+            return true;
+        }
+        for (var superinterface : clazz.getInterfaces()) {
+            if (superinterface.isSealed()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     static String typeVarBounds(TypeVariable<?> typeVar) {

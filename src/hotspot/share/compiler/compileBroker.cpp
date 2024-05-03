@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -582,7 +582,7 @@ CompilerCounters::CompilerCounters() {
 // c2 uses explicit CompilerPhaseType idToPhase mapping in opto/phasetype.hpp,
 // so if c2 is used, it should be always registered first.
 // This function is called during vm initialization.
-void register_jfr_phasetype_serializer(CompilerType compiler_type) {
+static void register_jfr_phasetype_serializer(CompilerType compiler_type) {
   ResourceMark rm;
   static bool first_registration = true;
   if (compiler_type == compiler_jvmci) {
@@ -841,8 +841,15 @@ void DeoptimizeObjectsALotThread::deoptimize_objects_alot_loop_all() {
 
 
 JavaThread* CompileBroker::make_thread(ThreadType type, jobject thread_handle, CompileQueue* queue, AbstractCompiler* comp, JavaThread* THREAD) {
-  JavaThread* new_thread = nullptr;
+  Handle thread_oop(THREAD, JNIHandles::resolve_non_null(thread_handle));
 
+  if (java_lang_Thread::thread(thread_oop()) != nullptr) {
+    assert(type == compiler_t, "should only happen with reused compiler threads");
+    // The compiler thread hasn't actually exited yet so don't try to reuse it
+    return nullptr;
+  }
+
+  JavaThread* new_thread = nullptr;
   switch (type) {
     case compiler_t:
       assert(comp != nullptr, "Compiler instance missing.");
@@ -871,7 +878,6 @@ JavaThread* CompileBroker::make_thread(ThreadType type, jobject thread_handle, C
   // JavaThread due to lack of resources. We will handle that failure below.
   // Also check new_thread so that static analysis is happy.
   if (new_thread != nullptr && new_thread->osthread() != nullptr) {
-    Handle thread_oop(THREAD, JNIHandles::resolve_non_null(thread_handle));
 
     if (type == compiler_t) {
       CompilerThread::cast(new_thread)->set_compiler(comp);
@@ -1165,11 +1171,13 @@ void CompileBroker::compile_method_base(const methodHandle& method,
     tty->cr();
   }
 
-  // A request has been made for compilation.  Before we do any
-  // real work, check to see if the method has been compiled
-  // in the meantime with a definitive result.
-  if (compilation_is_complete(method, osr_bci, comp_level)) {
-    return;
+  if (compile_reason != CompileTask::Reason_DirectivesChanged) {
+    // A request has been made for compilation.  Before we do any
+    // real work, check to see if the method has been compiled
+    // in the meantime with a definitive result.
+    if (compilation_is_complete(method, osr_bci, comp_level)) {
+      return;
+    }
   }
 
 #ifndef PRODUCT
@@ -1214,11 +1222,13 @@ void CompileBroker::compile_method_base(const methodHandle& method,
       return;
     }
 
-    // We need to check again to see if the compilation has
-    // completed.  A previous compilation may have registered
-    // some result.
-    if (compilation_is_complete(method, osr_bci, comp_level)) {
-      return;
+    if (compile_reason != CompileTask::Reason_DirectivesChanged) {
+      // We need to check again to see if the compilation has
+      // completed.  A previous compilation may have registered
+      // some result.
+      if (compilation_is_complete(method, osr_bci, comp_level)) {
+        return;
+      }
     }
 
     // We now know that this compilation is not pending, complete,
@@ -1366,10 +1376,10 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
 
   if (osr_bci == InvocationEntryBci) {
     // standard compilation
-    CompiledMethod* method_code = method->code();
-    if (method_code != nullptr && method_code->is_nmethod()) {
+    nmethod* method_code = method->code();
+    if (method_code != nullptr && (compile_reason != CompileTask::Reason_DirectivesChanged)) {
       if (compilation_is_complete(method, osr_bci, comp_level)) {
-        return (nmethod*) method_code;
+        return method_code;
       }
     }
     if (method->is_not_compilable(comp_level)) {
@@ -1470,12 +1480,7 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
   // return requested nmethod
   // We accept a higher level osr method
   if (osr_bci == InvocationEntryBci) {
-    CompiledMethod* code = method->code();
-    if (code == nullptr) {
-      return (nmethod*) code;
-    } else {
-      return code->as_nmethod_or_null();
-    }
+    return method->code();
   }
   return method->lookup_osr_nmethod_for(osr_bci, comp_level, false);
 }
@@ -1500,7 +1505,7 @@ bool CompileBroker::compilation_is_complete(const methodHandle& method,
     if (method->is_not_compilable(comp_level)) {
       return true;
     } else {
-      CompiledMethod* result = method->code();
+      nmethod* result = method->code();
       if (result == nullptr) return false;
       return comp_level == result->comp_level();
     }
@@ -1544,7 +1549,7 @@ bool CompileBroker::compilation_is_prohibited(const methodHandle& method, int os
 
   // The method may be explicitly excluded by the user.
   double scale;
-  if (excluded || (CompilerOracle::has_option_value(method, CompileCommand::CompileThresholdScaling, scale) && scale == 0)) {
+  if (excluded || (CompilerOracle::has_option_value(method, CompileCommandEnum::CompileThresholdScaling, scale) && scale == 0)) {
     bool quietly = CompilerOracle::be_quiet();
     if (PrintCompilation && !quietly) {
       // This does not happen quietly...
@@ -1788,7 +1793,7 @@ bool CompileBroker::init_compiler_runtime() {
 void CompileBroker::free_buffer_blob_if_allocated(CompilerThread* thread) {
   BufferBlob* blob = thread->get_buffer_blob();
   if (blob != nullptr) {
-    blob->purge(true /* free_code_cache_data */, true /* unregister_nmethod */);
+    blob->purge();
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     CodeCache::free(blob);
   }
@@ -2121,7 +2126,8 @@ static void post_compilation_event(EventCompilation& event, CompileTask* task) {
                                         task->is_success(),
                                         task->osr_bci() != CompileBroker::standard_entry_bci,
                                         task->nm_total_size(),
-                                        task->num_inlined_bytecodes());
+                                        task->num_inlined_bytecodes(),
+                                        task->arena_bytes());
 }
 
 int DirectivesStack::_depth = 0;
@@ -2322,7 +2328,9 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
     compilable = ci_env.compilable();
 
     if (ci_env.failing()) {
-      failure_reason = ci_env.failure_reason();
+      // Duplicate the failure reason string, so that it outlives ciEnv
+      failure_reason = os::strdup(ci_env.failure_reason(), mtCompiler);
+      failure_reason_on_C_heap = true;
       retry_message = ci_env.retry_message();
       ci_env.report_failure(failure_reason);
     }

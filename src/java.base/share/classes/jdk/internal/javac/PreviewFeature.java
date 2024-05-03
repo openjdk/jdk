@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,14 +77,15 @@ public @interface PreviewFeature {
         SCOPED_VALUES,
         @JEP(number=462, title="Structured Concurrency", status="Second Preview")
         STRUCTURED_CONCURRENCY,
-        @JEP(number=457, title="ClassFile API", status="Preview")
+        @JEP(number=466, title="ClassFile API", status="Second Preview")
         CLASSFILE_API,
-        @JEP(number=461, title="Stream Gatherers", status="Preview")
+        @JEP(number=473, title="Stream Gatherers", status="Second Preview")
         STREAM_GATHERERS,
+        LANGUAGE_MODEL,
         /**
          * A key for testing.
          */
-        @JEP(number=0, title="Test Feature")
+        @JEP(number=2_147_483_647, title="Test Feature")
         TEST,
         ;
     }

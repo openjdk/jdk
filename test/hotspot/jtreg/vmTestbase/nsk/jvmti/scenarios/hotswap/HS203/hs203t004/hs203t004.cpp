@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <jvmti.h>
-#include "agent_common.h"
+#include "agent_common.hpp"
 #include <jni.h>
 #include <string.h>
-#include "jvmti_tools.h"
-#include "JVMTITools.h"
-#include "jni_tools.h"
+#include "jvmti_tools.hpp"
+#include "JVMTITools.hpp"
+#include "jni_tools.hpp"
 
 extern "C" {
 #define FILE_NAME "nsk/jvmti/scenarios/hotswap/HS203/hs203t004/MyThread"
@@ -43,14 +43,14 @@ JNIEXPORT void JNICALL callbackClassPrepare(jvmtiEnv *jvmti_env,
                                         jthread thread,
                                         jclass klass) {
     char * className;
-    className=NULL;
+    className=nullptr;
 
-    if (!NSK_JVMTI_VERIFY(jvmti_env->GetClassSignature(klass, &className, NULL))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetClassSignature(klass, &className, nullptr))) {
         NSK_COMPLAIN0("#error Agent :: while getting classname.\n");
         nsk_jvmti_agentFailed();
     } else {
         if (strcmp(className, CLASS_NAME) == 0) {
-            if (nsk_jvmti_enableNotification(jvmti_env, JVMTI_EVENT_COMPILED_METHOD_LOAD, NULL)) {
+            if (nsk_jvmti_enableNotification(jvmti_env, JVMTI_EVENT_COMPILED_METHOD_LOAD, nullptr)) {
                 NSK_DISPLAY0(" Agent :: notification enabled for COMPILED_METHOD_LOAD.\n");
                 if (!NSK_JVMTI_VERIFY(jvmti_env->GenerateEvents(JVMTI_EVENT_COMPILED_METHOD_LOAD))) {
                     NSK_COMPLAIN0("#error Agent :: occured while enabling compiled method events.\n");
@@ -83,16 +83,16 @@ JNIEXPORT void JNICALL callbackCompiledMethodLoad(jvmtiEnv *jvmti_env,
             char *className;
             char *methodName;
 
-            className = NULL;
-            methodName = NULL;
+            className = nullptr;
+            methodName = nullptr;
 
-            if (!NSK_JVMTI_VERIFY(jvmti_env->GetClassSignature(threadClass, &className, NULL))) {
+            if (!NSK_JVMTI_VERIFY(jvmti_env->GetClassSignature(threadClass, &className, nullptr))) {
                 NSK_COMPLAIN0("#error Agent :: while getting classname.\n");
                 nsk_jvmti_agentFailed();
                 return;
             }
 
-            if (!NSK_JVMTI_VERIFY(jvmti_env->GetMethodName(method, &methodName, NULL, NULL))) {
+            if (!NSK_JVMTI_VERIFY(jvmti_env->GetMethodName(method, &methodName, nullptr, nullptr))) {
                 NSK_COMPLAIN0("#error Agent :: while getting methodname.\n");
                 nsk_jvmti_agentFailed();
                 return;
@@ -115,13 +115,13 @@ JNIEXPORT void JNICALL callbackCompiledMethodLoad(jvmtiEnv *jvmti_env,
                 }
             }
 
-            if (className != NULL) {
+            if (className != nullptr) {
                 if (!NSK_JVMTI_VERIFY(jvmti_env->Deallocate((unsigned char *)className))) {
                     NSK_COMPLAIN1("#error Agent :: failed to Deallocate className = %s.", className);
                     nsk_jvmti_agentFailed();
                 }
             }
-            if (methodName != NULL) {
+            if (methodName != nullptr) {
                 if (!NSK_JVMTI_VERIFY(jvmti_env->Deallocate((unsigned char *)methodName))) {
                     NSK_COMPLAIN1("#error Agent :: failed to Deallocate methodName = %s.", methodName);
                     nsk_jvmti_agentFailed();
@@ -171,7 +171,7 @@ jint  Agent_Initialize(JavaVM *vm, char *options, void *reserved) {
             NSK_COMPLAIN0("#error Agent :: occured while setting event callback.\n");
             return JNI_ERR;
         }
-        if (nsk_jvmti_enableNotification(jvmti,JVMTI_EVENT_CLASS_PREPARE, NULL)) {
+        if (nsk_jvmti_enableNotification(jvmti,JVMTI_EVENT_CLASS_PREPARE, nullptr)) {
             NSK_DISPLAY0(" Agent :: Notifications are enabled.\n");
         } else {
             NSK_COMPLAIN0("#error Agent :: Error in enableing Notifications.\n");
@@ -214,7 +214,7 @@ Java_nsk_jvmti_scenarios_hotswap_HS203_hs203t004_hs203t004_popThreadFrame(JNIEnv
             } else {
                 if (NSK_JVMTI_VERIFY(
                         jvmti->SetEventNotificationMode(JVMTI_DISABLE,
-                                                        JVMTI_EVENT_COMPILED_METHOD_LOAD, NULL))) {
+                                                        JVMTI_EVENT_COMPILED_METHOD_LOAD, nullptr))) {
                     NSK_DISPLAY0(" Agent :: Disabled JVMTI_EVENT_COMPILED_METHOD_LOAD.\n");
                     retvalue = JNI_TRUE;
                 } else {

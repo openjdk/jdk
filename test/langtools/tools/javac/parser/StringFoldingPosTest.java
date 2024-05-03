@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020, Google LLC. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,15 +64,10 @@ public class StringFoldingPosTest {
     }
 
     private static JavaFileObject makeSource(String name, String code) {
-        return new SimpleJavaFileObject(
+        return SimpleJavaFileObject.forSource(
                 URI.create(
                         "file:/" + name.replace('.', '/') + JavaFileObject.Kind.SOURCE.extension),
-                JavaFileObject.Kind.SOURCE) {
-            @Override
-            public CharSequence getCharContent(boolean ignoreEncodingErrors) {
-                return code;
-            }
-        };
+                code);
     }
 
     private void run(

@@ -193,6 +193,7 @@ public class TreeMap<K,V>
      *         or are not mutually comparable
      * @throws NullPointerException if the specified map is null
      */
+    @SuppressWarnings("this-escape")
     public TreeMap(Map<? extends K, ? extends V> m) {
         comparator = null;
         putAll(m);

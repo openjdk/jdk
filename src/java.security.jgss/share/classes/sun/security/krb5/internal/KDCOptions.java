@@ -37,6 +37,8 @@ import sun.security.krb5.internal.util.KerberosFlags;
 import sun.security.util.*;
 import java.io.IOException;
 
+import static sun.security.krb5.internal.Krb5.DEBUG;
+
 /**
  * Implements the ASN.1 KDCOptions type.
  *
@@ -169,8 +171,6 @@ public class KDCOptions extends KerberosFlags {
         "RENEW",            //30;
         "VALIDATE",         //31;
     };
-
-    private boolean DEBUG = Krb5.DEBUG;
 
     public static KDCOptions with(int... flags) {
         KDCOptions options = new KDCOptions();
@@ -321,8 +321,8 @@ public class KDCOptions extends KerberosFlags {
                 }
             }
         } catch (KrbException e) {
-            if (DEBUG) {
-                System.out.println("Exception in getting default values for " +
+            if (DEBUG != null) {
+                DEBUG.println("Exception in getting default values for " +
                         "KDC Options from the configuration ");
                 e.printStackTrace();
 

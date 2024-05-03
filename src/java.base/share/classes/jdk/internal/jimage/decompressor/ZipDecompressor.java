@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
  */
 package jdk.internal.jimage.decompressor;
 
-import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.zip.Inflater;
 
 /**
@@ -44,21 +44,25 @@ final class ZipDecompressor implements ResourceDecompressor {
         return ZipDecompressorFactory.NAME;
     }
 
-    static byte[] decompress(byte[] bytesIn, int offset) throws Exception {
+    static byte[] decompress(byte[] bytesIn, int offset, long originalSize) throws Exception {
+        if (originalSize > Integer.MAX_VALUE) {
+            throw new OutOfMemoryError("Required array size too large");
+        }
+        byte[] bytesOut = new byte[(int) originalSize];
+
         Inflater inflater = new Inflater();
         inflater.setInput(bytesIn, offset, bytesIn.length - offset);
-        ByteArrayOutputStream stream = new ByteArrayOutputStream(bytesIn.length - offset);
-        byte[] buffer = new byte[1024];
 
-        while (!inflater.finished()) {
-            int count = inflater.inflate(buffer);
-            stream.write(buffer, 0, count);
+        int count = 0;
+        while (!inflater.finished() && count < originalSize) {
+            count += inflater.inflate(bytesOut, count, bytesOut.length - count);
         }
 
-        stream.close();
-
-        byte[] bytesOut = stream.toByteArray();
         inflater.end();
+
+        if (count != originalSize) {
+            throw new IOException("Resource content size mismatch");
+        }
 
         return bytesOut;
     }
@@ -66,7 +70,7 @@ final class ZipDecompressor implements ResourceDecompressor {
     @Override
     public byte[] decompress(StringsProvider reader, byte[] content, int offset,
             long originalSize) throws Exception {
-        byte[] decompressed = decompress(content, offset);
+        byte[] decompressed = decompress(content, offset, originalSize);
         return decompressed;
     }
 }

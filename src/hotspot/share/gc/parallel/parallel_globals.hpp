@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@
                           develop_pd,                                       \
                           product,                                          \
                           product_pd,                                       \
-                          notproduct,                                       \
                           range,                                            \
                           constraint)                                       \
   product(uintx, HeapMaximumCompactionInterval, 20,                         \
@@ -44,16 +43,6 @@
   product(bool, UseMaximumCompactionOnSystemGC, true,                       \
           "Use maximum compaction in the Parallel Old garbage collector "   \
           "for a system GC")                                                \
-                                                                            \
-  product(size_t, ParallelOldDeadWoodLimiterMean, 50,                       \
-          "The mean used by the parallel compact dead wood "                \
-          "limiter (a number between 0-100)")                               \
-          range(0, 100)                                                     \
-                                                                            \
-  product(size_t, ParallelOldDeadWoodLimiterStdDev, 80,                     \
-          "The standard deviation used by the parallel compact dead wood "  \
-          "limiter (a number between 0-100)")                               \
-          range(0, 100)                                                     \
                                                                             \
   product(bool, PSChunkLargeArrays, true,                                   \
           "Process large arrays in chunks")
