@@ -106,9 +106,6 @@ const char* inputStream::next_content(size_t& next_content_length) const {
 
 void inputStream::set_input(inputStream::Input* input) {
   clear_buffer();
-  if (_input != nullptr && _input != input) {
-    _input->close();
-  }
   _input = input;
   _input_state = IState::NTR_STATE;
 }

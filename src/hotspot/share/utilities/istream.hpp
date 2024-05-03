@@ -324,9 +324,6 @@ class inputStream : public CHeapObjBase {
     virtual size_t read(char* buf, size_t size) = 0;
     // Example: read(b,s) { return fread(b, 1, s, _my_fp); }
     // Example: read(b,s) { return 0; } // never more than the initial buffer
-
-    // If it is backed by a resource that needs closing, do so.
-    virtual void close() { }
   };
 };
 
@@ -359,9 +356,6 @@ class FileInput : public inputStream::Input {
  protected:
   virtual size_t read(char* buf, size_t size) {
     return _fs.read(buf, size);
-  }
-  virtual void close() {
-    _fs.close();
   }
 };
 
