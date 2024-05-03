@@ -91,10 +91,11 @@ void vframeArrayElement::fill_in(compiledVFrame* vf, bool realloc_failures) {
         MonitorInfo* monitor = list->at(index);
         assert(!monitor->owner_is_scalar_replaced() || realloc_failures, "object should be reallocated already");
         BasicObjectLock* dest = _monitors->at(index);
-        if (monitor->owner_is_scalar_replaced() || monitor->owner() == nullptr) {
+        if (monitor->owner_is_scalar_replaced()) {
           dest->set_obj(nullptr);
         } else {
-          assert(!monitor->owner()->is_unlocked(), "object must be null or locked");
+          assert(monitor->owner() != nullptr, "monitor owner must not be null");
+          assert(!monitor->owner()->is_unlocked(), "monitor must be locked");
           dest->set_obj(monitor->owner());
           assert(ObjectSynchronizer::current_thread_holds_lock(current_thread, Handle(current_thread, dest->obj())),
                  "should be held, before move_to");
