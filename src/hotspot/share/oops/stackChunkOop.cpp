@@ -206,7 +206,7 @@ class TransformStackChunkClosure {
   stackChunkOop _chunk;
 
 public:
-  TransformStackChunkClosure(stackChunkOop chunk, DerivedPointersSupport::RelativizeClosure* cl)
+  TransformStackChunkClosure(stackChunkOop chunk)
     : _chunk(chunk) {
   }
 
@@ -293,8 +293,7 @@ void stackChunkOopDesc::relativize_derived_pointers_concurrently() {
     return;
   }
 
-  DerivedPointersSupport::RelativizeClosure derived_cl;
-  TransformStackChunkClosure frame_cl(this, &derived_cl);
+  TransformStackChunkClosure frame_cl(this);
   iterate_stack(&frame_cl);
 
   release_relativization();
@@ -308,8 +307,7 @@ void stackChunkOopDesc::transform() {
   set_has_bitmap(true);
   bitmap().clear();
 
-  DerivedPointersSupport::RelativizeClosure derived_cl;
-  TransformStackChunkClosure closure(this, &derived_cl);
+  TransformStackChunkClosure closure(this);
   iterate_stack(&closure);
 }
 
