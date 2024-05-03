@@ -42,19 +42,19 @@
 
 // Dummy constructor
 ReservedSpace::ReservedSpace() : _base(nullptr), _size(0), _noaccess_prefix(0),
-    _alignment(0), _fd_for_heap(-1), _special(false), _executable(false), _flag(mtNone) {
+    _alignment(0), _special(false), _fd_for_heap(-1), _executable(false) {
 }
 
-ReservedSpace::ReservedSpace(size_t size, MEMFLAGS flag) : _fd_for_heap(-1), _flag(flag) {
+ReservedSpace::ReservedSpace(size_t size) : _fd_for_heap(-1) {
   // Want to use large pages where possible. If the size is
   // not large page aligned the mapping will be a mix of
   // large and normal pages.
   size_t page_size = os::page_size_for_region_unaligned(size, 1);
   size_t alignment = os::vm_allocation_granularity();
-  initialize(size, alignment, page_size, nullptr, false, flag);
+  initialize(size, alignment, page_size, nullptr, false);
 }
 
-ReservedSpace::ReservedSpace(size_t size, size_t preferred_page_size, MEMFLAGS flag) : _fd_for_heap(-1), _flag(flag) {
+ReservedSpace::ReservedSpace(size_t size, size_t preferred_page_size) : _fd_for_heap(-1) {
   // When a page size is given we don't want to mix large
   // and normal pages. If the size is not a multiple of the
   // page size it will be aligned up to achieve this.
@@ -63,46 +63,45 @@ ReservedSpace::ReservedSpace(size_t size, size_t preferred_page_size, MEMFLAGS f
     alignment = MAX2(preferred_page_size, alignment);
     size = align_up(size, alignment);
   }
-  initialize(size, alignment, preferred_page_size, nullptr, false, flag);
+  initialize(size, alignment, preferred_page_size, nullptr, false);
 }
 
 ReservedSpace::ReservedSpace(size_t size,
                              size_t alignment,
                              size_t page_size,
-                             MEMFLAGS flag,
-                             char* requested_address) : _fd_for_heap(-1), _flag(flag) {
-  initialize(size, alignment, page_size, requested_address, false, flag);
+                             char* requested_address) : _fd_for_heap(-1) {
+  initialize(size, alignment, page_size, requested_address, false);
 }
 
 ReservedSpace::ReservedSpace(char* base, size_t size, size_t alignment, size_t page_size,
-                             bool special, bool executable, MEMFLAGS flag) : _fd_for_heap(-1), _flag(flag) {
+                             bool special, bool executable) : _fd_for_heap(-1) {
   assert((size % os::vm_allocation_granularity()) == 0,
          "size not allocation aligned");
-  initialize_members(base, size, alignment, page_size, special, executable, flag);
+  initialize_members(base, size, alignment, page_size, special, executable);
 }
 
 // Helper method
-static char* attempt_map_or_reserve_memory_at(char* base, size_t size, int fd, bool executable, MEMFLAGS flag) {
+static char* attempt_map_or_reserve_memory_at(char* base, size_t size, int fd, bool executable) {
   if (fd != -1) {
-    return os::attempt_map_memory_to_file_at(base, size, fd, flag);
+    return os::attempt_map_memory_to_file_at(base, size, fd);
   }
-  return os::attempt_reserve_memory_at(base, size, executable, flag);
+  return os::attempt_reserve_memory_at(base, size, executable);
 }
 
 // Helper method
-static char* map_or_reserve_memory(size_t size, int fd, bool executable, MEMFLAGS flag) {
+static char* map_or_reserve_memory(size_t size, int fd, bool executable) {
   if (fd != -1) {
-    return os::map_memory_to_file(size, fd, flag);
+    return os::map_memory_to_file(size, fd);
   }
-  return os::reserve_memory(size, executable, flag);
+  return os::reserve_memory(size, executable);
 }
 
 // Helper method
-static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int fd, bool executable, MEMFLAGS flag) {
+static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int fd, bool executable) {
   if (fd != -1) {
-    return os::map_memory_to_file_aligned(size, alignment, fd, flag);
+    return os::map_memory_to_file_aligned(size, alignment, fd);
   }
-  return os::reserve_memory_aligned(size, alignment, executable, flag);
+  return os::reserve_memory_aligned(size, alignment, executable);
 }
 
 // Helper method
@@ -155,7 +154,7 @@ static void log_on_large_pages_failure(char* req_addr, size_t bytes) {
 }
 
 static char* reserve_memory(char* requested_address, const size_t size,
-                            const size_t alignment, int fd, bool exec, MEMFLAGS flag) {
+                            const size_t alignment, int fd, bool exec) {
   char* base;
   // If the memory was requested at a particular address, use
   // os::attempt_reserve_memory_at() to avoid mapping over something
@@ -164,19 +163,19 @@ static char* reserve_memory(char* requested_address, const size_t size,
     assert(is_aligned(requested_address, alignment),
            "Requested address " PTR_FORMAT " must be aligned to " SIZE_FORMAT,
            p2i(requested_address), alignment);
-    base = attempt_map_or_reserve_memory_at(requested_address, size, fd, exec, flag);
+    base = attempt_map_or_reserve_memory_at(requested_address, size, fd, exec);
   } else {
     // Optimistically assume that the OS returns an aligned base pointer.
     // When reserving a large address range, most OSes seem to align to at
     // least 64K.
-    base = map_or_reserve_memory(size, fd, exec, flag);
+    base = map_or_reserve_memory(size, fd, exec);
     // Check alignment constraints. This is only needed when there is
     // no requested address.
     if (!is_aligned(base, alignment)) {
       // Base not aligned, retry.
       unmap_or_release_memory(base, size, fd != -1 /*is_file_mapped*/);
       // Map using the requested alignment.
-      base = map_or_reserve_memory_aligned(size, alignment, fd, exec, flag);
+      base = map_or_reserve_memory_aligned(size, alignment, fd, exec);
     }
   }
 
@@ -184,14 +183,14 @@ static char* reserve_memory(char* requested_address, const size_t size,
 }
 
 static char* reserve_memory_special(char* requested_address, const size_t size,
-                                    const size_t alignment, const size_t page_size, bool exec, MEMFLAGS flag) {
+                                    const size_t alignment, const size_t page_size, bool exec) {
 
   log_trace(pagesize)("Attempt special mapping: size: " SIZE_FORMAT "%s, "
                       "alignment: " SIZE_FORMAT "%s",
                       byte_size_in_exact_unit(size), exact_unit_for_byte_size(size),
                       byte_size_in_exact_unit(alignment), exact_unit_for_byte_size(alignment));
 
-  char* base = os::reserve_memory_special(size, alignment, page_size, requested_address, exec, flag);
+  char* base = os::reserve_memory_special(size, alignment, page_size, requested_address, exec);
   if (base != nullptr) {
     // Check alignment constraints.
     assert(is_aligned(base, alignment),
@@ -203,19 +202,18 @@ static char* reserve_memory_special(char* requested_address, const size_t size,
 }
 
 void ReservedSpace::clear_members() {
-  initialize_members(nullptr, 0, 0, 0, false, false, mtNone);
+  initialize_members(nullptr, 0, 0, 0, false, false);
 }
 
 void ReservedSpace::initialize_members(char* base, size_t size, size_t alignment,
-                                       size_t page_size, bool special, bool executable, MEMFLAGS flag) {
+                                       size_t page_size, bool special, bool executable) {
   _base = base;
   _size = size;
-  _noaccess_prefix = 0;
   _alignment = alignment;
   _page_size = page_size;
   _special = special;
   _executable = executable;
-  _flag = flag;
+  _noaccess_prefix = 0;
 }
 
 void ReservedSpace::reserve(size_t size,
@@ -237,9 +235,9 @@ void ReservedSpace::reserve(size_t size,
     // When there is a backing file directory for this space then whether
     // large pages are allocated is up to the filesystem of the backing file.
     // So UseLargePages is not taken into account for this reservation.
-    char* base = reserve_memory(requested_address, size, alignment, _fd_for_heap, executable, _flag);
+    char* base = reserve_memory(requested_address, size, alignment, _fd_for_heap, executable);
     if (base != nullptr) {
-      initialize_members(base, size, alignment, os::vm_page_size(), true, executable, _flag);
+      initialize_members(base, size, alignment, os::vm_page_size(), true, executable);
     }
     // Always return, not possible to fall back to reservation not using a file.
     return;
@@ -252,10 +250,10 @@ void ReservedSpace::reserve(size_t size,
     // explicit large pages and these have to be committed up front to ensure
     // no reservations are lost.
     do {
-      char* base = reserve_memory_special(requested_address, size, alignment, page_size, executable, _flag);
+      char* base = reserve_memory_special(requested_address, size, alignment, page_size, executable);
       if (base != nullptr) {
         // Successful reservation using large pages.
-        initialize_members(base, size, alignment, page_size, true, executable, _flag);
+        initialize_members(base, size, alignment, page_size, true, executable);
         return;
       }
       page_size = os::page_sizes().next_smaller(page_size);
@@ -268,10 +266,10 @@ void ReservedSpace::reserve(size_t size,
   }
 
   // == Case 3 ==
-  char* base = reserve_memory(requested_address, size, alignment, -1, executable, _flag);
+  char* base = reserve_memory(requested_address, size, alignment, -1, executable);
   if (base != nullptr) {
     // Successful mapping.
-    initialize_members(base, size, alignment, page_size, false, executable, _flag);
+    initialize_members(base, size, alignment, page_size, false, executable);
   }
 }
 
@@ -279,8 +277,7 @@ void ReservedSpace::initialize(size_t size,
                                size_t alignment,
                                size_t page_size,
                                char* requested_address,
-                               bool executable,
-                               MEMFLAGS flag) {
+                               bool executable) {
   const size_t granularity = os::vm_allocation_granularity();
   assert((size & (granularity - 1)) == 0,
          "size not aligned to os::vm_allocation_granularity()");
@@ -292,9 +289,6 @@ void ReservedSpace::initialize(size_t size,
   assert(is_power_of_2(page_size), "Invalid page size");
 
   clear_members();
-
-  // _flag is cleared in clear_members in above call
-  _flag = flag;
 
   if (size == 0) {
     return;
@@ -316,20 +310,20 @@ void ReservedSpace::initialize(size_t size,
 
 ReservedSpace ReservedSpace::first_part(size_t partition_size, size_t alignment) {
   assert(partition_size <= size(), "partition failed");
-  ReservedSpace result(base(), partition_size, alignment, page_size(), special(), executable(), nmt_flag());
+  ReservedSpace result(base(), partition_size, alignment, page_size(), special(), executable());
   return result;
 }
 
 ReservedSpace ReservedSpace::last_part(size_t partition_size, size_t alignment) {
   assert(partition_size <= size(), "partition failed");
   ReservedSpace result(base() + partition_size, size() - partition_size,
-                       alignment, page_size(), special(), executable(), nmt_flag());
+                       alignment, page_size(), special(), executable());
   return result;
 }
 
 ReservedSpace ReservedSpace::partition(size_t offset, size_t partition_size, size_t alignment) {
   assert(offset + partition_size <= size(), "partition failed");
-  ReservedSpace result(base() + offset, partition_size, alignment, page_size(), special(), executable(), nmt_flag());
+  ReservedSpace result(base() + offset, partition_size, alignment, page_size(), special(), executable());
   return result;
 }
 
@@ -366,12 +360,12 @@ void ReservedSpace::release() {
 
 // Put a ReservedSpace over an existing range
 ReservedSpace ReservedSpace::space_for_range(char* base, size_t size, size_t alignment,
-                                             size_t page_size, bool special, bool executable, MEMFLAGS flag) {
+                                             size_t page_size, bool special, bool executable) {
   assert(is_aligned(base, os::vm_allocation_granularity()), "Unaligned base");
   assert(is_aligned(size, os::vm_page_size()), "Unaligned size");
   assert(os::page_sizes().contains(page_size), "Invalid pagesize");
   ReservedSpace space;
-  space.initialize_members(base, size, alignment, page_size, special, executable, flag);
+  space.initialize_members(base, size, alignment, page_size, special, executable);
   return space;
 }
 
@@ -613,17 +607,16 @@ void ReservedHeapSpace::initialize_compressed_heap(const size_t size, size_t ali
     // Last, desperate try without any placement.
     if (_base == nullptr) {
       log_trace(gc, heap, coops)("Trying to allocate at address null heap of size " SIZE_FORMAT_X, size + noaccess_prefix);
-      initialize(size + noaccess_prefix, alignment, page_size, nullptr, !ExecMem, nmt_flag());
+      initialize(size + noaccess_prefix, alignment, page_size, nullptr, false);
     }
   }
 }
 
 ReservedHeapSpace::ReservedHeapSpace(size_t size, size_t alignment, size_t page_size, const char* heap_allocation_directory) : ReservedSpace() {
+
   if (size == 0) {
     return;
   }
-  // _flag is used internally by initialize_compressed_heap
-  _flag = mtJavaHeap;
 
   if (heap_allocation_directory != nullptr) {
     _fd_for_heap = os::create_file_for_heap(heap_allocation_directory);
@@ -651,7 +644,7 @@ ReservedHeapSpace::ReservedHeapSpace(size_t size, size_t alignment, size_t page_
       establish_noaccess_prefix();
     }
   } else {
-    initialize(size, alignment, page_size, nullptr, false, nmt_flag());
+    initialize(size, alignment, page_size, nullptr, false);
   }
 
   assert(markWord::encode_pointer_as_mark(_base).decode_pointer() == _base,
@@ -659,6 +652,9 @@ ReservedHeapSpace::ReservedHeapSpace(size_t size, size_t alignment, size_t page_
   assert(markWord::encode_pointer_as_mark(&_base[size]).decode_pointer() == &_base[size],
          "area must be distinguishable from marks for mark-sweep");
 
+  if (base() != nullptr) {
+    MemTracker::record_virtual_memory_type((address)base(), mtJavaHeap);
+  }
 
   if (_fd_for_heap != -1) {
     ::close(_fd_for_heap);
@@ -674,7 +670,8 @@ MemRegion ReservedHeapSpace::region() const {
 ReservedCodeSpace::ReservedCodeSpace(size_t r_size,
                                      size_t rs_align,
                                      size_t rs_page_size) : ReservedSpace() {
-  initialize(r_size, rs_align, rs_page_size, /*requested address*/ nullptr, /*executable*/ true, mtCode);
+  initialize(r_size, rs_align, rs_page_size, /*requested address*/ nullptr, /*executable*/ true);
+  MemTracker::record_virtual_memory_type((address)base(), mtCode);
 }
 
 // VirtualSpace
@@ -695,7 +692,6 @@ VirtualSpace::VirtualSpace() {
   _upper_alignment        = 0;
   _special                = false;
   _executable             = false;
-  _flag                   = mtNone;
 }
 
 
@@ -717,7 +713,6 @@ bool VirtualSpace::initialize_with_granularity(ReservedSpace rs, size_t committe
 
   _special = rs.special();
   _executable = rs.executable();
-  _flag = rs.nmt_flag();
 
   // When a VirtualSpace begins life at a large size, make all future expansion
   // and shrinking occur aligned to a granularity of large pages.  This avoids
@@ -776,7 +771,6 @@ void VirtualSpace::release() {
   _upper_alignment        = 0;
   _special                = false;
   _executable             = false;
-  _flag                   = mtNone;
 }
 
 
@@ -842,8 +836,8 @@ static void pretouch_expanded_memory(void* start, void* end) {
   os::pretouch_memory(start, end);
 }
 
-static bool commit_expanded(char* start, size_t size, size_t alignment, bool pre_touch, bool executable, MEMFLAGS flag) {
-  if (os::commit_memory(start, size, alignment, executable, flag)) {
+static bool commit_expanded(char* start, size_t size, size_t alignment, bool pre_touch, bool executable) {
+  if (os::commit_memory(start, size, alignment, executable)) {
     if (pre_touch || AlwaysPreTouch) {
       pretouch_expanded_memory(start, start + size);
     }
@@ -932,7 +926,7 @@ bool VirtualSpace::expand_by(size_t bytes, bool pre_touch) {
   // Commit regions
   if (lower_needs > 0) {
     assert(lower_high() + lower_needs <= lower_high_boundary(), "must not expand beyond region");
-    if (!commit_expanded(lower_high(), lower_needs, _lower_alignment, pre_touch, _executable, _flag)) {
+    if (!commit_expanded(lower_high(), lower_needs, _lower_alignment, pre_touch, _executable)) {
       return false;
     }
     _lower_high += lower_needs;
@@ -940,7 +934,7 @@ bool VirtualSpace::expand_by(size_t bytes, bool pre_touch) {
 
   if (middle_needs > 0) {
     assert(middle_high() + middle_needs <= middle_high_boundary(), "must not expand beyond region");
-    if (!commit_expanded(middle_high(), middle_needs, _middle_alignment, pre_touch, _executable, _flag)) {
+    if (!commit_expanded(middle_high(), middle_needs, _middle_alignment, pre_touch, _executable)) {
       return false;
     }
     _middle_high += middle_needs;
@@ -948,7 +942,7 @@ bool VirtualSpace::expand_by(size_t bytes, bool pre_touch) {
 
   if (upper_needs > 0) {
     assert(upper_high() + upper_needs <= upper_high_boundary(), "must not expand beyond region");
-    if (!commit_expanded(upper_high(), upper_needs, _upper_alignment, pre_touch, _executable, _flag)) {
+    if (!commit_expanded(upper_high(), upper_needs, _upper_alignment, pre_touch, _executable)) {
       return false;
     }
     _upper_high += upper_needs;
@@ -1020,7 +1014,7 @@ void VirtualSpace::shrink_by(size_t size) {
     assert(middle_high_boundary() <= aligned_upper_new_high &&
            aligned_upper_new_high + upper_needs <= upper_high_boundary(),
            "must not shrink beyond region");
-    if (!os::uncommit_memory(aligned_upper_new_high, upper_needs, _executable, _flag)) {
+    if (!os::uncommit_memory(aligned_upper_new_high, upper_needs, _executable)) {
       debug_only(warning("os::uncommit_memory failed"));
       return;
     } else {
@@ -1031,7 +1025,7 @@ void VirtualSpace::shrink_by(size_t size) {
     assert(lower_high_boundary() <= aligned_middle_new_high &&
            aligned_middle_new_high + middle_needs <= middle_high_boundary(),
            "must not shrink beyond region");
-    if (!os::uncommit_memory(aligned_middle_new_high, middle_needs, _executable, _flag)) {
+    if (!os::uncommit_memory(aligned_middle_new_high, middle_needs, _executable)) {
       debug_only(warning("os::uncommit_memory failed"));
       return;
     } else {
@@ -1042,7 +1036,7 @@ void VirtualSpace::shrink_by(size_t size) {
     assert(low_boundary() <= aligned_lower_new_high &&
            aligned_lower_new_high + lower_needs <= lower_high_boundary(),
            "must not shrink beyond region");
-    if (!os::uncommit_memory(aligned_lower_new_high, lower_needs, _executable, _flag)) {
+    if (!os::uncommit_memory(aligned_lower_new_high, lower_needs, _executable)) {
       debug_only(warning("os::uncommit_memory failed"));
       return;
     } else {

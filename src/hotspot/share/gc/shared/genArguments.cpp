@@ -264,6 +264,9 @@ void GenArguments::initialize_size_info() {
       // size can be too small.
       initial_young_size =
         clamp(scale_by_NewRatio_aligned(InitialHeapSize, GenAlignment), NewSize, max_young_size);
+
+      // Derive MinNewSize from MinHeapSize
+      MinNewSize = MIN2(scale_by_NewRatio_aligned(MinHeapSize, GenAlignment), initial_young_size);
     }
   }
 

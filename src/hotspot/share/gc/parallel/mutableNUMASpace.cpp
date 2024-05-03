@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -227,7 +227,7 @@ void MutableNUMASpace::bias_region(MemRegion mr, uint lgrp_id) {
     // Then we uncommit the pages in the range.
     // The alignment_hint argument must be less than or equal to the small page
     // size if not using large pages or else this function does nothing.
-    os::free_memory((char*)aligned_region.start(), aligned_region.byte_size(), os_align, mtGC);
+    os::free_memory((char*)aligned_region.start(), aligned_region.byte_size(), os_align);
     // And make them local/first-touch biased.
     os::numa_make_local((char*)aligned_region.start(), aligned_region.byte_size(), checked_cast<int>(lgrp_id));
   }

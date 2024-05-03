@@ -58,6 +58,7 @@ package compiler.print;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -123,6 +124,20 @@ public class CompileCommandMemLimit {
             oa.shouldMatch("# *Internal Error.*");
             oa.shouldMatch("# *fatal error: " + ct + " *" + expectedNameIncl + ".*: Hit MemLimit .*limit: 4096.*");
             oa.shouldNotMatch(".*" + expectedNameExcl + ".*");
+            // Make sure we get a non-zero-sized replay file (JDK-8331314)
+            oa.shouldContain("# Compiler replay data is saved as:");
+            String replayfile = oa.firstMatch("# (\\S+replay_pid\\d+\\.log)", 1);
+            if (replayfile == null) {
+                throw new RuntimeException("Found no replay file in output");
+            }
+            File f = new File(replayfile);
+            if (!f.exists()) {
+                throw new RuntimeException("Replayfile " + replayfile + " not found");
+            }
+            if (f.length() == 0) {
+                throw new RuntimeException("Replayfile " + replayfile + " has size 0");
+            }
+
         } else {
             // Should see trace output when methods are compiled
             oa.shouldHaveExitValue(0)
