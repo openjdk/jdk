@@ -36,7 +36,7 @@
 #include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1EvacFailureRegions.inline.hpp"
 #include "gc/g1/g1EvacInfo.hpp"
-#include "gc/g1/g1HRPrinter.hpp"
+#include "gc/g1/g1HeapRegionPrinter.hpp"
 #include "gc/g1/g1MonitoringSupport.hpp"
 #include "gc/g1/g1ParScanThreadState.inline.hpp"
 #include "gc/g1/g1Policy.hpp"
@@ -262,7 +262,7 @@ void G1YoungCollector::wait_for_root_region_scanning() {
 class G1PrintCollectionSetClosure : public HeapRegionClosure {
 public:
   virtual bool do_heap_region(HeapRegion* r) {
-    G1HRPrinter::cset(r);
+    G1HeapRegionPrinter::cset(r);
     return false;
   }
 };
@@ -278,7 +278,7 @@ void G1YoungCollector::calculate_collection_set(G1EvacInfo* evacuation_info, dou
 
   concurrent_mark()->verify_no_collection_set_oops();
 
-  if (G1HRPrinter::is_active()) {
+  if (G1HeapRegionPrinter::is_active()) {
     G1PrintCollectionSetClosure cl;
     collection_set()->iterate(&cl);
     collection_set()->iterate_optional(&cl);

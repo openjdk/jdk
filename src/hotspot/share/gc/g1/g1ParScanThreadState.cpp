@@ -27,7 +27,7 @@
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
 #include "gc/g1/g1EvacFailureRegions.inline.hpp"
-#include "gc/g1/g1HRPrinter.hpp"
+#include "gc/g1/g1HeapRegionPrinter.hpp"
 #include "gc/g1/g1OopClosures.inline.hpp"
 #include "gc/g1/g1ParScanThreadState.inline.hpp"
 #include "gc/g1/g1RootClosures.hpp"
@@ -643,7 +643,7 @@ oop G1ParScanThreadState::handle_evacuation_failure_par(oop old, markWord m, siz
     HeapRegion* r = _g1h->heap_region_containing(old);
 
     if (_evac_failure_regions->record(_worker_id, r->hrm_index(), cause_pinned)) {
-      G1HRPrinter::evac_failure(r);
+      G1HeapRegionPrinter::evac_failure(r);
     }
 
     // Mark the failing object in the marking bitmap and later use the bitmap to handle

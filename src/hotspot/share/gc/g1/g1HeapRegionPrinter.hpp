@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_GC_G1_G1HRPRINTER_HPP
-#define SHARE_GC_G1_G1HRPRINTER_HPP
+#ifndef SHARE_GC_G1_G1HEAPREGIONPRINTER_HPP
+#define SHARE_GC_G1_G1HEAPREGIONPRINTER_HPP
 
 #include "gc/g1/g1HeapRegion.hpp"
 #include "logging/log.hpp"
@@ -31,7 +31,7 @@
 
 class FreeRegionList;
 
-class G1HRPrinter : public AllStatic {
+class G1HeapRegionPrinter : public AllStatic {
 
   // Print an action event.
   static void print(const char* action, HeapRegion* hr) {
@@ -78,4 +78,4 @@ public:
   static void uncommit(HeapRegion* hr)                  { print("UNCOMMIT", hr); }
 };
 
-#endif // SHARE_GC_G1_G1HRPRINTER_HPP
+#endif // SHARE_GC_G1_G1HEAPREGIONPRINTER_HPP
