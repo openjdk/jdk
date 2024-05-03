@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -296,15 +296,12 @@ class ReservedMemoryRegion : public VirtualMemoryRegion {
 
  public:
   ReservedMemoryRegion(address base, size_t size, const NativeCallStack& stack,
-    MEMFLAGS flag) :
+    MEMFLAGS flag = mtNone) :
     VirtualMemoryRegion(base, size), _stack(stack), _flag(flag) { }
 
 
   ReservedMemoryRegion(address base, size_t size) :
     VirtualMemoryRegion(base, size), _stack(NativeCallStack::empty_stack()), _flag(mtNone) { }
-
-  ReservedMemoryRegion(address base, size_t size, MEMFLAGS flag) :
-    VirtualMemoryRegion(base, size), _stack(NativeCallStack::empty_stack()), _flag(flag) { }
 
   // Copy constructor
   ReservedMemoryRegion(const ReservedMemoryRegion& rr) :
@@ -382,10 +379,10 @@ class VirtualMemoryTracker : AllStatic {
  public:
   static bool initialize(NMT_TrackingLevel level);
 
-  static bool add_reserved_region (address base_addr, size_t size, const NativeCallStack& stack, MEMFLAGS flag);
+  static bool add_reserved_region (address base_addr, size_t size, const NativeCallStack& stack, MEMFLAGS flag = mtNone);
 
-  static bool add_committed_region      (address base_addr, size_t size, const NativeCallStack& stack, MEMFLAGS flag);
-  static bool remove_uncommitted_region (address base_addr, size_t size, MEMFLAGS flag);
+  static bool add_committed_region      (address base_addr, size_t size, const NativeCallStack& stack);
+  static bool remove_uncommitted_region (address base_addr, size_t size);
   static bool remove_released_region    (address base_addr, size_t size);
   static bool remove_released_region    (ReservedMemoryRegion* rgn);
   static void set_reserved_region_type  (address addr, MEMFLAGS flag);

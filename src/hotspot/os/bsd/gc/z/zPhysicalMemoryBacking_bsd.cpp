@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,7 +79,7 @@ ZPhysicalMemoryBacking::ZPhysicalMemoryBacking(size_t max_capacity)
     _initialized(false) {
 
   // Reserve address space for backing memory
-  _base = (uintptr_t)os::reserve_memory(max_capacity, !ExecMem, mtJavaHeap);
+  _base = (uintptr_t)os::reserve_memory(max_capacity);
   if (_base == 0) {
     // Failed
     log_error_pd(gc)("Failed to reserve address space for backing memory");
