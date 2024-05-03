@@ -25,8 +25,7 @@
  * @bug 8290034
  * @summary Auto-vectorization of Reverse bit operation.
  * @requires vm.compiler2.enabled
- * @requires (os.simpleArch == "x64" & vm.cpu.features ~= ".*avx2.*") | os.arch == "aarch64" |
- *           (os.simpleArch == "riscv64" & vm.cpu.features ~= ".*zvbb.*")
+ * @requires (os.simpleArch == "x64" & vm.cpu.features ~= ".*avx2.*") | os.arch == "aarch64"
  * @library /test/lib /
  * @run driver compiler.vectorization.TestReverseBitsVector
  */
