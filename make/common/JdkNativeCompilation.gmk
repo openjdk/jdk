@@ -118,6 +118,8 @@ define ResolveLibPath
       else
         ifeq ($(STATIC_LIBS), true)
           $1_$2_LIBPATH := $$(SUPPORT_OUTPUTDIR)/native/$$($1_$2_MODULE)/lib$$($1_$2_NAME)/static
+        else ifeq ($$($1_$2_STATIC_LIBRARY), true)
+          $1_$2_LIBPATH := $$(SUPPORT_OUTPUTDIR)/native/$$($1_$2_MODULE)
         else
           $1_$2_LIBPATH := $$(SUPPORT_OUTPUTDIR)/modules_libs/$$($1_$2_MODULE)
         endif

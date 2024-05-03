@@ -54,30 +54,6 @@ uint8_t G1BlockOffsetTable::offset_array(uint8_t* addr) const {
   return Atomic::load(addr);
 }
 
-void G1BlockOffsetTable::set_offset_array_raw(uint8_t* addr, uint8_t offset) {
-  Atomic::store(addr, offset);
-}
-
-void G1BlockOffsetTable::set_offset_array(uint8_t* addr, uint8_t offset) {
-  check_address(addr, "Block offset table address out of range");
-  set_offset_array_raw(addr, offset);
-}
-
-void G1BlockOffsetTable::set_offset_array(uint8_t* addr, HeapWord* high, HeapWord* low) {
-  check_address(addr, "Block offset table address out of range");
-  assert(high >= low, "addresses out of order");
-  size_t offset = pointer_delta(high, low);
-  check_offset(offset, "offset too large");
-  set_offset_array(addr, (uint8_t)offset);
-}
-
-void G1BlockOffsetTable::set_offset_array(uint8_t* left, uint8_t* right, uint8_t offset) {
-  check_address(right, "Right block offset table address out of range");
-  assert(left <= right, "indexes out of order");
-  size_t num_cards = right - left + 1;
-  memset_with_concurrent_readers(left, offset, num_cards);
-}
-
 inline uint8_t* G1BlockOffsetTable::entry_for_addr(const void* const p) const {
   assert(_reserved.contains(p),
          "out of bounds access to block offset table");

@@ -216,7 +216,7 @@ $(eval $(call SetupBuildDemo, SampleTree, \
 ))
 
 $(eval $(call SetupBuildDemo, TableExample, \
-    DISABLED_WARNINGS := rawtypes unchecked deprecation this-escape, \
+    DISABLED_WARNINGS := rawtypes unchecked deprecation this-escape dangling-doc-comments, \
     DEMO_SUBDIR := jfc, \
 ))
 
