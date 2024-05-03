@@ -78,7 +78,7 @@ bool PSVirtualSpace::expand_by(size_t bytes) {
 
   char* const base_addr = committed_high_addr();
   bool result = special() ||
-         os::commit_memory(base_addr, bytes, alignment(), !ExecMem);
+         os::commit_memory(base_addr, bytes, alignment(), !ExecMem, mtGC);
   if (result) {
     _committed_high_addr += bytes;
   }
@@ -95,7 +95,7 @@ bool PSVirtualSpace::shrink_by(size_t bytes) {
   }
 
   char* const base_addr = committed_high_addr() - bytes;
-  bool result = special() || os::uncommit_memory(base_addr, bytes);
+  bool result = special() || os::uncommit_memory(base_addr, bytes, !ExecMem, mtGC);
   if (result) {
     _committed_high_addr -= bytes;
   }

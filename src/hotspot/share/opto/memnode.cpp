@@ -856,7 +856,7 @@ bool LoadNode::can_remove_control() const {
 uint LoadNode::size_of() const { return sizeof(*this); }
 bool LoadNode::cmp(const Node &n) const {
   LoadNode& load = (LoadNode &)n;
-  return !Type::cmp(_type, load._type) &&
+  return Type::equals(_type, load._type) &&
          _control_dependency == load._control_dependency &&
          _mo == load._mo;
 }
@@ -3108,8 +3108,8 @@ bool MergePrimitiveArrayStores::is_con_RShift(const Node* n, Node const*& base_o
       n->in(2)->is_ConI()) {
     base_out = n->in(1);
     shift_out = n->in(2)->get_int();
-    assert(shift_out >= 0, "must be positive");
-    return true;
+    // The shift must be positive:
+    return shift_out >= 0;
   }
   return false;
 }

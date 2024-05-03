@@ -67,7 +67,7 @@ void TestReserveMemorySpecial_test() {
   FLAG_SET_CMDLINE(UseNUMAInterleaving, false);
 
   const size_t large_allocation_size = os::large_page_size() * 4;
-  char* result = os::reserve_memory_special(large_allocation_size, os::large_page_size(), os::large_page_size(), nullptr, false);
+  char* result = os::reserve_memory_special(large_allocation_size, os::large_page_size(), os::large_page_size(), nullptr, !ExecMem, mtTest);
   if (result == nullptr) {
       // failed to allocate memory, skipping the test
       return;
@@ -77,12 +77,12 @@ void TestReserveMemorySpecial_test() {
   // Reserve another page within the recently allocated memory area. This should fail
   const size_t expected_allocation_size = os::large_page_size();
   char* expected_location = result + os::large_page_size();
-  char* actual_location = os::reserve_memory_special(expected_allocation_size, os::large_page_size(), os::large_page_size(), expected_location, false);
+  char* actual_location = os::reserve_memory_special(expected_allocation_size, os::large_page_size(), os::large_page_size(), expected_location, !ExecMem, mtTest);
   EXPECT_TRUE(actual_location == nullptr) << "Should not be allowed to reserve within present reservation";
 
   // Instead try reserving after the first reservation.
   expected_location = result + large_allocation_size;
-  actual_location = os::reserve_memory_special(expected_allocation_size, os::large_page_size(), os::large_page_size(), expected_location, false);
+  actual_location = os::reserve_memory_special(expected_allocation_size, os::large_page_size(), os::large_page_size(), expected_location, !ExecMem, mtTest);
   EXPECT_TRUE(actual_location != nullptr) << "Unexpected reservation failure, can’t verify correct location";
   EXPECT_TRUE(actual_location == expected_location) << "Reservation must be at requested location";
   MemoryReleaser m2(actual_location, os::large_page_size());
@@ -90,7 +90,7 @@ void TestReserveMemorySpecial_test() {
   // Now try to do a reservation with a larger alignment.
   const size_t alignment = os::large_page_size() * 2;
   const size_t new_large_size = alignment * 4;
-  char* aligned_request = os::reserve_memory_special(new_large_size, alignment, os::large_page_size(), nullptr, false);
+  char* aligned_request = os::reserve_memory_special(new_large_size, alignment, os::large_page_size(), nullptr, !ExecMem, mtTest);
   EXPECT_TRUE(aligned_request != nullptr) << "Unexpected reservation failure, can’t verify correct alignment";
   EXPECT_TRUE(is_aligned(aligned_request, alignment)) << "Returned address must be aligned";
   MemoryReleaser m3(aligned_request, new_large_size);

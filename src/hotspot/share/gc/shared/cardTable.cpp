@@ -82,9 +82,7 @@ void CardTable::initialize(void* region0_start, void* region1_start) {
 
   const size_t rs_align = _page_size == os::vm_page_size() ? 0 :
     MAX2(_page_size, os::vm_allocation_granularity());
-  ReservedSpace heap_rs(_byte_map_size, rs_align, _page_size);
-
-  MemTracker::record_virtual_memory_type((address)heap_rs.base(), mtGC);
+  ReservedSpace heap_rs(_byte_map_size, rs_align, _page_size, mtGC);
 
   os::trace_page_sizes("Card Table", num_bytes, num_bytes,
                        heap_rs.base(), heap_rs.size(), _page_size);
@@ -166,6 +164,7 @@ void CardTable::resize_covered_region(MemRegion new_region) {
                               delta.byte_size(),
                               _page_size,
                               !ExecMem,
+                              mtGCCardSet,
                               "card table expansion");
 
     memset(delta.start(), clean_card, delta.byte_size());
@@ -174,7 +173,9 @@ void CardTable::resize_covered_region(MemRegion new_region) {
     MemRegion delta = MemRegion(new_committed.end(),
                                 old_committed.word_size() - new_committed.word_size());
     bool res = os::uncommit_memory((char*)delta.start(),
-                                   delta.byte_size());
+                                   delta.byte_size(),
+                                   !ExecMem,
+                                   mtGCCardSet);
     assert(res, "uncommit should succeed");
   }
 
