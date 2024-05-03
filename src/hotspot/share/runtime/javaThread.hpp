@@ -672,7 +672,7 @@ private:
     return (_suspend_flags & (_obj_deopt JFR_ONLY(| _trace_flag))) != 0;
   }
 
-  // Fast-locking support (not for LM_LIGHTWEIGHT)
+  // Stack-locking support (not for LM_LIGHTWEIGHT)
   bool is_lock_owned(address adr) const;
 
   // Accessors for vframe array top
