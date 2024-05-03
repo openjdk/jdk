@@ -1093,7 +1093,17 @@ void Arguments::print_jvm_flags_on(outputStream* st) {
 void Arguments::print_jvm_args_on(outputStream* st) {
   if (_num_jvm_args > 0) {
     for (int i=0; i < _num_jvm_args; i++) {
-      st->print("%s ", _jvm_args_array[i]);
+      // quote any argument containing whitespaces
+      const char* const s = _jvm_args_array[i];
+      bool ws = false;
+      for (const char* p = s; *p && !ws; p++) {
+        ws = isspace(*p);
+      }
+      if (ws) {
+        st->print("\"%s\" ", s);
+      } else {
+        st->print("%s ", s);
+      }
     }
   }
 }
