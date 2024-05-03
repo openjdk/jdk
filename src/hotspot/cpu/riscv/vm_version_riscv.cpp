@@ -201,6 +201,7 @@ void VM_Version::initialize() {
     }
   } else {
     FLAG_SET_DEFAULT(UsePopCountInstruction, false);
+    FLAG_SET_DEFAULT(UseZbkb, false);
   }
 
   if (UseZicboz) {
