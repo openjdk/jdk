@@ -709,9 +709,10 @@ struct TestMultipleStaticAssertFormsInClassScope {
 static ucontext_t g_stored_assertion_context;
 
 void initialize_assert_poison() {
-  char* page = os::reserve_memory(os::vm_page_size(), !ExecMem, mtInternal);
+  char* page = os::reserve_memory(os::vm_page_size());
   if (page) {
-    if (os::commit_memory(page, os::vm_page_size(), !ExecMem, mtInternal) &&
+    MemTracker::record_virtual_memory_type(page, mtInternal);
+    if (os::commit_memory(page, os::vm_page_size(), false) &&
         os::protect_memory(page, os::vm_page_size(), os::MEM_PROT_NONE)) {
       g_assert_poison = page;
     }
