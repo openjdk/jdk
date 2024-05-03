@@ -119,15 +119,27 @@ public class SinceChecker {
         if (args.length == 0) {
             throw new IllegalArgumentException("Test module not specified");
         }
-        SinceChecker sinceCheckerTestHelper = new SinceChecker();
+        SinceChecker sinceCheckerTestHelper = new SinceChecker(args[0]);
         sinceCheckerTestHelper.checkModule(args[0]);
     }
 
-    private SinceChecker() throws IOException {
+    void error(String message) {
+        System. err.println(message);
+        errorCount++;
+    }
+
+    private SinceChecker(String moduleName) throws IOException {
         tool = ToolProvider.getSystemJavaCompiler();
         for (int i = 9; i <= Runtime.version().feature(); i++) {
-            JavacTask ct = (JavacTask) tool.getTask(null, null, null,
-                    List.of("--release", String.valueOf(i)),
+            DiagnosticListener<? super JavaFileObject> noErrors = d -> {
+                if (!d.getCode().equals("compiler.err.module.not.found")) {
+                    error(d.getMessage(null));
+                }
+            };
+            JavacTask ct = (JavacTask) tool.getTask(null,
+                    null,
+                    noErrors,
+                    List.of("--add-modules", moduleName, "--release", String.valueOf(i)),
                     null,
                     Collections.singletonList(SimpleJavaFileObject.forSource(URI.create("myfo:/Test.java"), "")));
             ct.analyze();
@@ -141,8 +153,8 @@ public class SinceChecker {
     }
 
     private void processModuleElement(ModuleElement moduleElement, String releaseVersion, JavacTask ct) {
+        processElement(moduleElement, moduleElement, ct.getTypes(), releaseVersion);
         for (ModuleElement.ExportsDirective ed : ElementFilter.exportsIn(moduleElement.getDirectives())) {
-            processElement(moduleElement, moduleElement, ct.getTypes(), releaseVersion);
             if (ed.getTargetModules() == null) {
                 processPackageElement(ed.getPackage(), releaseVersion, ct);
             }
@@ -213,11 +225,6 @@ public class SinceChecker {
                 && LEGACY_PREVIEW_METHODS.get(currentVersion).contains(uniqueId);
     }
 
-    void error(String message) {
-        System.err.println(message);
-        errorCount++;
-    }
-
     private void checkModule(String moduleName) throws Exception {
         Path home = Paths.get(System.getProperty("java.home"));
         Path srcZip = home.resolve("lib").resolve("src.zip");
@@ -227,34 +234,32 @@ public class SinceChecker {
             Path testJdk = Paths.get(System.getProperty("test.jdk"));
             srcZip = testJdk.getParent().resolve("images").resolve("jdk").resolve("lib").resolve("src.zip");
         }
-        if (!Files.exists(srcZip) && !Files.isDirectory(srcZip)) {
-            throw new SkippedException("Skipping Test because src.zip wasn't found");
+        if (!Files.isReadable(srcZip)) {
+            throw new SkippedException("Skipping Test because src.zip wasn't found or couldn't be read");
         }
-        if (Files.isReadable(srcZip)) {
-            URI uri = URI.create("jar:" + srcZip.toUri());
-            try (FileSystem zipFO = FileSystems.newFileSystem(uri, Collections.emptyMap())) {
-                Path root = zipFO.getRootDirectories().iterator().next();
-                Path moduleDirectory = root.resolve(moduleName);
-                try (StandardJavaFileManager fm =
-                             tool.getStandardFileManager(null, null, null)) {
-                    JavacTask ct = (JavacTask) tool.getTask(null,
-                            fm,
-                            null,
-                            List.of("--add-modules", moduleName, "-d", "."),
-                            null,
-                            Collections.singletonList(SimpleJavaFileObject.forSource(URI.create("myfo:/Test.java"), "")));
-                    ct.analyze();
-                    Elements elements = ct.getElements();
-                    elements.getModuleElement("java.base");
-                    try (EffectiveSourceSinceHelper javadocHelper = EffectiveSourceSinceHelper.create(ct, List.of(root), this)) {
-                        processModuleCheck(elements.getModuleElement(moduleName), ct, moduleDirectory, javadocHelper);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        error("Initiating javadocHelperFailed " + e);
-                    }
-                    if (errorCount > 0) {
-                        throw new Exception("The `@since` checker found " + errorCount + " problems");
-                    }
+        URI uri = URI.create("jar:" + srcZip.toUri());
+        try (FileSystem zipFO = FileSystems.newFileSystem(uri, Collections.emptyMap())) {
+            Path root = zipFO.getRootDirectories().iterator().next();
+            Path moduleDirectory = root.resolve(moduleName);
+            try (StandardJavaFileManager fm =
+                         tool.getStandardFileManager(null, null, null)) {
+                JavacTask ct = (JavacTask) tool.getTask(null,
+                        fm,
+                        null,
+                        List.of("--add-modules", moduleName, "-d", "."),
+                        null,
+                        Collections.singletonList(SimpleJavaFileObject.forSource(URI.create("myfo:/Test.java"), "")));
+                ct.analyze();
+                Elements elements = ct.getElements();
+                elements.getModuleElement("java.base");
+                try (EffectiveSourceSinceHelper javadocHelper = EffectiveSourceSinceHelper.create(ct, List.of(root), this)) {
+                    processModuleCheck(elements.getModuleElement(moduleName), ct, moduleDirectory, javadocHelper);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    error("Initiating javadocHelper Failed " + e);
+                }
+                if (errorCount > 0) {
+                    throw new Exception("The `@since` checker found " + errorCount + " problems");
                 }
             }
         }
@@ -348,7 +353,7 @@ public class SinceChecker {
                 .filter(this::isMember)
                 .forEach(element -> checkElement(te, element, types, javadocHelper, version, elementUtils));
         te.getEnclosedElements().stream()
-                .filter(element -> element.getKind().isDeclaredType())
+                .filter(element -> element.getKind().isDeclaredType() && element.getKind() != ElementKind.RECORD)
                 .map(TypeElement.class::cast)
                 .forEach(nestedClass -> analyzeClassCheck(nestedClass, currentjdkVersion, javadocHelper, types, elementUtils));
     }
@@ -367,7 +372,7 @@ public class SinceChecker {
         String sinceVersion = javadocHelper.effectiveSinceVersion(explicitOwner, element, types, elementUtils).toString();
         IntroducedIn mappedVersion = classDictionary.get(uniqueId);
         if (mappedVersion == null) {
-            error("Element :" + uniqueId + " was not mapped");
+            error("Element: " + uniqueId + " was not mapped");
             return;
         }
         String realMappedVersion = null;
@@ -464,7 +469,23 @@ public class SinceChecker {
 
     //these were preview in before the introduction of the @PreviewFeature
     {
+        LEGACY_PREVIEW_METHODS.put("9", Set.of(
+                "module: java.transaction.xa",
+                "module: jdk.unsupported.desktop",
+                "module: jdk.jpackage",
+                "module: java.net.http"
+        ));
+        LEGACY_PREVIEW_METHODS.put("10", Set.of(
+                "module: java.transaction.xa",
+                "module: java.net.http",
+                "module: jdk.unsupported.desktop",
+                "module: jdk.jpackage"
+        ));
+        LEGACY_PREVIEW_METHODS.put("11", Set.of(
+                "module: jdk.jpackage"
+        ));
         LEGACY_PREVIEW_METHODS.put("12", Set.of(
+                "module: jdk.jpackage",
                 "method: com.sun.source.tree.ExpressionTree com.sun.source.tree.BreakTree.getValue()",
                 "method: java.util.List com.sun.source.tree.CaseTree.getExpressions()",
                 "method: com.sun.source.tree.Tree com.sun.source.tree.CaseTree.getBody()",
@@ -478,6 +499,7 @@ public class SinceChecker {
         ));
 
         LEGACY_PREVIEW_METHODS.put("13", Set.of(
+                "module: jdk.jpackage",
                 "method: java.util.List com.sun.source.tree.CaseTree.getExpressions()",
                 "method: com.sun.source.tree.Tree com.sun.source.tree.CaseTree.getBody()",
                 "method: com.sun.source.tree.CaseTree.CaseKind com.sun.source.tree.CaseTree.getCaseKind()",
@@ -499,6 +521,7 @@ public class SinceChecker {
         ));
 
         LEGACY_PREVIEW_METHODS.put("14", Set.of(
+                "module: jdk.jpackage",
                 "class: javax.swing.plaf.basic.motif.MotifLookAndFeel",
                 "method: java.lang.Object com.sun.source.tree.TreeVisitor.visitYield(com.sun.source.tree.YieldTree,java.lang.Object)",
                 "method: java.lang.Object com.sun.source.util.SimpleTreeVisitor.visitYield(com.sun.source.tree.YieldTree,java.lang.Object)",
@@ -534,6 +557,7 @@ public class SinceChecker {
         ));
 
         LEGACY_PREVIEW_METHODS.put("15", Set.of(
+                "module: jdk.jpackage",
                 "field: jdk.jshell.Snippet.SubKind:RECORD_SUBKIND",
                 "class: javax.lang.model.element.RecordComponentElement",
                 "method: javax.lang.model.type.TypeMirror javax.lang.model.element.RecordComponentElement.asType()",
