@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -956,8 +956,8 @@ class StubGenerator: public StubCodeGenerator {
     Label L_skip_pld;
 
     {
-      // UnsafeCopyMemory page error: continue after ucm
-      UnsafeCopyMemoryMark ucmm(this, unsafe_copy, true);
+      // UnsafeMemoryAccess page error: continue after unsafe access
+      UnsafeMemoryAccessMark umam(this, unsafe_copy, true);
       // predecrease to exit when there is less than count_per_loop
       __ sub_32(count, count, count_per_loop);
 
@@ -1105,8 +1105,8 @@ class StubGenerator: public StubCodeGenerator {
     __ push(RegisterSet(R4,R10));
 
     {
-      // UnsafeCopyMemory page error: continue after ucm
-      UnsafeCopyMemoryMark ucmm(this, unsafe_copy, true);
+      // UnsafeMemoryAccess page error: continue after unsafe access
+      UnsafeMemoryAccessMark umam(this, unsafe_copy, true);
       __ sub_32(count, count, count_per_loop);
 
       const bool prefetch_before = pld_offset < 0;
@@ -1761,8 +1761,8 @@ class StubGenerator: public StubCodeGenerator {
     assert_different_registers(from, to, count, tmp);
 
     {
-      // UnsafeCopyMemory page error: continue after ucm
-      UnsafeCopyMemoryMark ucmm(this, unsafe_copy, true);
+      // UnsafeMemoryAccess page error: continue after unsafe access
+      UnsafeMemoryAccessMark umam(this, unsafe_copy, true);
       __ align(OptoLoopAlignment);
       Label L_small_loop;
       __ BIND(L_small_loop);
@@ -1900,8 +1900,8 @@ class StubGenerator: public StubCodeGenerator {
     __ push(RegisterSet(R4,R10));
 
     {
-      // UnsafeCopyMemory page error: continue after ucm
-      UnsafeCopyMemoryMark ucmm(this, unsafe_copy, true);
+      // UnsafeMemoryAccess page error: continue after unsafe access
+      UnsafeMemoryAccessMark umam(this, unsafe_copy, true);
       load_one(Rval, from, wordSize, forward);
 
       switch (bytes_per_count) {
@@ -2058,8 +2058,8 @@ class StubGenerator: public StubCodeGenerator {
 
     int count_required_to_align = 0;
     {
-      // UnsafeCopyMemoryMark page error: continue at UnsafeCopyMemory common_error_exit
-      UnsafeCopyMemoryMark ucmm(this, !aligned, false);
+      // UnsafeMemoryAccessMark page error: continue at UnsafeMemoryAccess common_error_exit
+      UnsafeMemoryAccessMark umam(this, !aligned, false);
       count_required_to_align = from_is_aligned ? 0 : align_src(from, to, count, tmp1, bytes_per_count, forward);
       assert (small_copy_limit >= count_required_to_align, "alignment could exhaust count");
     }
@@ -2092,9 +2092,9 @@ class StubGenerator: public StubCodeGenerator {
 
     int min_copy;
     if (forward) {
-      min_copy = generate_forward_aligned_copy_loop(from, to, count, bytes_per_count, !aligned /*add UnsafeCopyMemory entry*/);
+      min_copy = generate_forward_aligned_copy_loop(from, to, count, bytes_per_count, !aligned /*add UnsafeMemoryAccess entry*/);
     } else {
-      min_copy = generate_backward_aligned_copy_loop(from, to, count, bytes_per_count, !aligned /*add UnsafeCopyMemory entry*/);
+      min_copy = generate_backward_aligned_copy_loop(from, to, count, bytes_per_count, !aligned /*add UnsafeMemoryAccess entry*/);
     }
     assert(small_copy_limit >= count_required_to_align + min_copy, "first loop might exhaust count");
 
@@ -2105,7 +2105,7 @@ class StubGenerator: public StubCodeGenerator {
     __ ret();
 
     {
-      copy_small_array(from, to, count, tmp1, tmp2, bytes_per_count, forward, L_small_array /* entry */, !aligned /*add UnsafeCopyMemory entry*/);
+      copy_small_array(from, to, count, tmp1, tmp2, bytes_per_count, forward, L_small_array /* entry */, !aligned /*add UnsafeMemoryAccess entry*/);
 
       if (status) {
         __ mov(R0, 0); // OK
@@ -2116,7 +2116,7 @@ class StubGenerator: public StubCodeGenerator {
 
     if (! to_is_aligned) {
       __ BIND(L_unaligned_dst);
-      int min_copy_shifted = align_dst_and_generate_shifted_copy_loop(from, to, count, bytes_per_count, forward, !aligned /*add UnsafeCopyMemory entry*/);
+      int min_copy_shifted = align_dst_and_generate_shifted_copy_loop(from, to, count, bytes_per_count, forward, !aligned /*add UnsafeMemoryAccess entry*/);
       assert (small_copy_limit >= count_required_to_align + min_copy_shifted, "first loop might exhaust count");
 
       if (status) {
@@ -2862,7 +2862,7 @@ class StubGenerator: public StubCodeGenerator {
 #endif
 
     address ucm_common_error_exit       =  generate_unsafecopy_common_error_exit();
-    UnsafeCopyMemory::set_common_exit_stub_pc(ucm_common_error_exit);
+    UnsafeMemoryAccess::set_common_exit_stub_pc(ucm_common_error_exit);
 
     // these need always status in case they are called from generic_arraycopy
     StubRoutines::_jbyte_disjoint_arraycopy  = generate_primitive_copy(false, "jbyte_disjoint_arraycopy",  true, 1, true);
@@ -3134,8 +3134,8 @@ class StubGenerator: public StubCodeGenerator {
     // stub for throwing stack overflow error used both by interpreter and compiler
     StubRoutines::_throw_StackOverflowError_entry  = generate_throw_exception("StackOverflowError throw_exception", CAST_FROM_FN_PTR(address, SharedRuntime::throw_StackOverflowError));
 
-    if (UnsafeCopyMemory::_table == nullptr) {
-      UnsafeCopyMemory::create_table(32);
+    if (UnsafeMemoryAccess::_table == nullptr) {
+      UnsafeMemoryAccess::create_table(32 + 4); // 32 for copyMemory; 4 for setMemory
     }
 
     // integer division used both by interpreter and compiler

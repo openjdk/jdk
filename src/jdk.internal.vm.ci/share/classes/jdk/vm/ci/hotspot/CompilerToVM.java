@@ -23,9 +23,6 @@
 
 package jdk.vm.ci.hotspot;
 
-import static jdk.vm.ci.common.InitTimer.timer;
-import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
-
 import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
 
@@ -35,8 +32,10 @@ import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.code.InvalidInstalledCodeException;
 import jdk.vm.ci.code.stack.InspectedFrameVisitor;
 import jdk.vm.ci.common.InitTimer;
+import static jdk.vm.ci.common.InitTimer.timer;
 import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.Option;
+import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.ConstantReflectionProvider;
 import jdk.vm.ci.meta.JavaConstant;
@@ -429,11 +428,10 @@ final class CompilerToVM {
                     long callerMethodPointer);
 
     /**
-     * Converts the encoded indy index operand of an invokedynamic instruction
+     * Converts the indy index operand of an invokedynamic instruction
      * to an index directly into {@code constantPool}.
      *
      * @param resolve if {@true}, then resolve the entry (which may call a bootstrap method)
-     * @throws IllegalArgumentException if {@code encoded_indy_index} is not an encoded indy index
      * @return {@code JVM_CONSTANT_InvokeDynamic} constant pool entry index for the invokedynamic
      */
     int decodeIndyIndexToCPIndex(HotSpotConstantPool constantPool, int encoded_indy_index, boolean resolve) {
@@ -535,11 +533,11 @@ final class CompilerToVM {
      * opcode of the instruction for which the resolution was performed ({@code invokedynamic} or
      * {@code invokevirtual}), or {@code -1} otherwise.
      */
-    int isResolvedInvokeHandleInPool(HotSpotConstantPool constantPool, int cpi) {
-        return isResolvedInvokeHandleInPool(constantPool, constantPool.getConstantPoolPointer(), cpi);
+    int isResolvedInvokeHandleInPool(HotSpotConstantPool constantPool, int cpi, int opcode) {
+        return isResolvedInvokeHandleInPool(constantPool, constantPool.getConstantPoolPointer(), cpi, opcode);
     }
 
-    private native int isResolvedInvokeHandleInPool(HotSpotConstantPool constantPool, long constantPoolPointer, int cpi);
+    private native int isResolvedInvokeHandleInPool(HotSpotConstantPool constantPool, long constantPoolPointer, int cpi, int opcode);
 
     /**
      * Gets the list of type names (in the format of {@link JavaType#getName()}) denoting the
@@ -596,11 +594,11 @@ final class CompilerToVM {
      *              Otherwise, it's treated as a constant pool cache index
      *              for INVOKE{VIRTUAL,SPECIAL,STATIC,INTERFACE}.
      */
-    HotSpotObjectConstantImpl lookupAppendixInPool(HotSpotConstantPool constantPool, int which) {
-        return lookupAppendixInPool(constantPool, constantPool.getConstantPoolPointer(), which);
+    HotSpotObjectConstantImpl lookupAppendixInPool(HotSpotConstantPool constantPool, int which, int opcode) {
+        return lookupAppendixInPool(constantPool, constantPool.getConstantPoolPointer(), which, opcode);
     }
 
-    private native HotSpotObjectConstantImpl lookupAppendixInPool(HotSpotConstantPool constantPool, long constantPoolPointer, int which);
+    private native HotSpotObjectConstantImpl lookupAppendixInPool(HotSpotConstantPool constantPool, long constantPoolPointer, int which, int opcode);
 
     /**
      * Installs the result of a compilation into the code cache.

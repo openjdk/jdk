@@ -1711,6 +1711,13 @@ const char* os::errno_name(int e) {
   return errno_to_string(e, true);
 }
 
+// create binary file, rewriting existing file if required
+int os::create_binary_file(const char* path, bool rewrite_existing) {
+  int oflags = O_WRONLY | O_CREAT WINDOWS_ONLY(| O_BINARY);
+  oflags |= rewrite_existing ? O_TRUNC : O_EXCL;
+  return ::open(path, oflags, S_IREAD | S_IWRITE);
+}
+
 #define trace_page_size_params(size) byte_size_in_exact_unit(size), exact_unit_for_byte_size(size)
 
 void os::trace_page_sizes(const char* str,

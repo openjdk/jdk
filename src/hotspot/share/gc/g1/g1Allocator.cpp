@@ -31,6 +31,7 @@
 #include "gc/g1/g1HeapRegion.inline.hpp"
 #include "gc/g1/g1HeapRegionSet.inline.hpp"
 #include "gc/g1/g1HeapRegionType.hpp"
+#include "gc/g1/g1HRPrinter.hpp"
 #include "gc/g1/g1NUMA.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/shared/tlab_globals.hpp"
@@ -118,7 +119,7 @@ void G1Allocator::reuse_retained_old_region(G1EvacInfo* evacuation_info,
     // it's retired again.
     _g1h->old_set_remove(retained_region);
     old->set(retained_region);
-    _g1h->hr_printer()->reuse(retained_region);
+    G1HRPrinter::reuse(retained_region);
     evacuation_info->set_alloc_regions_used_before(retained_region->used());
   }
 }

@@ -4188,8 +4188,7 @@ void ClassFileParser::set_precomputed_flags(InstanceKlass* ik) {
   // If it cannot be fast-path allocated, set a bit in the layout helper.
   // See documentation of InstanceKlass::can_be_fastpath_allocated().
   assert(ik->size_helper() > 0, "layout_helper is initialized");
-  if ((!RegisterFinalizersAtInit && ik->has_finalizer())
-      || ik->is_abstract() || ik->is_interface()
+  if (ik->is_abstract() || ik->is_interface()
       || (ik->name() == vmSymbols::java_lang_Class() && ik->class_loader() == nullptr)
       || ik->size_helper() >= FastAllocateSizeLimit) {
     // Forbid fast-path allocation.

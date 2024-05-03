@@ -33,6 +33,7 @@
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/space.hpp"
+#include "gc/shared/spaceDecorator.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -264,12 +265,24 @@ void TenuredGeneration::compute_new_size_inner() {
   }
 }
 
-HeapWord* TenuredGeneration::block_start(const void* p) const {
-  return space()->block_start_const(p);
+HeapWord* TenuredGeneration::block_start(const void* addr) const {
+  HeapWord* cur_block = _bts->block_start_reaching_into_card(addr);
+
+  while (true) {
+    HeapWord* next_block = cur_block + cast_to_oop(cur_block)->size();
+    if (next_block > addr) {
+      assert(cur_block <= addr, "postcondition");
+      return cur_block;
+    }
+    cur_block = next_block;
+    // Because the BOT is precise, we should never step into the next card
+    // (i.e. crossing the card boundary).
+    assert(!SerialBlockOffsetTable::is_crossing_card_boundary(cur_block, (HeapWord*)addr), "must be");
+  }
 }
 
-void TenuredGeneration::scan_old_to_young_refs() {
-  _rs->scan_old_to_young_refs(space(), saved_mark_word());
+void TenuredGeneration::scan_old_to_young_refs(HeapWord* saved_top_in_old_gen) {
+  _rs->scan_old_to_young_refs(this, saved_top_in_old_gen);
 }
 
 TenuredGeneration::TenuredGeneration(ReservedSpace rs,
@@ -304,7 +317,8 @@ TenuredGeneration::TenuredGeneration(ReservedSpace rs,
   _used_at_prologue = 0;
   HeapWord* bottom = (HeapWord*) _virtual_space.low();
   HeapWord* end    = (HeapWord*) _virtual_space.high();
-  _the_space  = new TenuredSpace(_bts, MemRegion(bottom, end));
+  _the_space  = new ContiguousSpace();
+  _the_space->initialize(MemRegion(bottom, end), SpaceDecorator::Clear, SpaceDecorator::Mangle);
   // If we don't shrink the heap in steps, '_shrink_factor' is always 100%.
   _shrink_factor = ShrinkHeapInSteps ? 0 : 100;
   _capacity_at_prologue = 0;
@@ -404,7 +418,7 @@ void TenuredGeneration::update_counters() {
 }
 
 bool TenuredGeneration::promotion_attempt_is_safe(size_t max_promotion_in_bytes) const {
-  size_t available = max_contiguous_available();
+  size_t available = contiguous_available();
   size_t av_promo  = (size_t)_avg_promoted->padded_average();
   bool   res = (available >= av_promo) || (available >= max_promotion_in_bytes);
 
@@ -466,7 +480,7 @@ HeapWord*
 TenuredGeneration::expand_and_allocate(size_t word_size, bool is_tlab) {
   assert(!is_tlab, "TenuredGeneration does not support TLAB allocation");
   expand(word_size*HeapWordSize, _min_heap_delta_bytes);
-  return _the_space->allocate(word_size);
+  return allocate(word_size, is_tlab);
 }
 
 size_t TenuredGeneration::contiguous_available() const {
@@ -483,21 +497,12 @@ void TenuredGeneration::object_iterate(ObjectClosure* blk) {
 
 void TenuredGeneration::complete_loaded_archive_space(MemRegion archive_space) {
   // Create the BOT for the archive space.
-  TenuredSpace* space = _the_space;
   HeapWord* start = archive_space.start();
   while (start < archive_space.end()) {
     size_t word_size = cast_to_oop(start)->size();;
-    space->update_for_block(start, start + word_size);
+    _bts->update_for_block(start, start + word_size);
     start += word_size;
   }
-}
-
-void TenuredGeneration::save_marks() {
-  set_saved_mark_word();
-}
-
-bool TenuredGeneration::no_allocs_since_save_marks() {
-  return saved_mark_at_top();
 }
 
 void TenuredGeneration::gc_epilogue() {
