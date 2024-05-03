@@ -157,6 +157,7 @@ public class SynthTabbedPaneUI extends BasicTabbedPaneUI
         selectColor = UIManager.getColor("TabbedPane.selected");
         contentOpaque = UIManager.getBoolean("TabbedPane.contentOpaque");
         tabsOpaque = UIManager.getBoolean("TabbedPane.tabsOpaque");
+        unselectedBackground = UIManager.getColor("TabbedPane.unselectedBackground");
         updateStyle(tabPane);
     }
 

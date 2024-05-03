@@ -349,6 +349,7 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
         Color caretColor = table.getColor("caretColor");
         Color controlText = table.getColor("controlText");
         Color tabbedPaneBg = new ColorUIResource(238, 238, 238);
+        Color unselectedTabColor = new ColorUIResource(255, 255, 255);
 
         Object fieldInputMap = new UIDefaults.LazyInputMap(new Object[] {
                        "ctrl C", DefaultEditorKit.copyAction,
@@ -1025,6 +1026,7 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
             "TabbedPane.contentOpaque", Boolean.TRUE,
             "TabbedPane.tabsOpaque", Boolean.TRUE,
             "TabbedPane.contentAreaColor", tabbedPaneBg,
+            "TabbedPane.unselectedBackground", unselectedTabColor,
 
             "Table.scrollPaneBorder", zeroBorder,
             "Table.background", tableBg,
