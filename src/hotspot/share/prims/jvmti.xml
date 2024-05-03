@@ -8277,7 +8277,8 @@ class C2 extends C1 implements I2 {
           <jint/>
           <description>
             The number of platform threads waiting to own this monitor, or <code>0</code>
-            if only virtual threads are waiting or no threads are waiting
+            if only virtual threads are waiting to be notified or no threads are waiting
+            to be notified
           </description>
         </field>
         <field id="notify_waiters">

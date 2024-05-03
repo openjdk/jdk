@@ -1622,7 +1622,7 @@ JDWP "Java(tm) Debug Wire Protocol"
             (int entryCount "The number of times the owning platform thread has entered the monitor.")
             (Repeat waiters "The total number of platform threads that are waiting to enter or re-enter "
                             "the monitor, or waiting to be notified by the monitor."
-                (threadObject thread "A thread waiting for this monitor.")
+                (threadObject thread "A platform thread waiting for this monitor.")
             )
         )
         (ErrorSet
