@@ -52,9 +52,6 @@ private:
   // Allocate outside a TLAB. Could safepoint.
   HeapWord* mem_allocate_outside_tlab(Allocation& allocation) const;
 
-  // Fast-path TLAB allocation failed. Takes a slow-path and potentially safepoint.
-  HeapWord* mem_allocate_slow(Allocation& allocation) const;
-
 protected:
   MemAllocator(Klass* klass, size_t word_size, Thread* thread)
     : _thread(thread),
