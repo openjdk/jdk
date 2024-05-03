@@ -177,7 +177,7 @@ private:
       uint64_t parent_prio;
       TreapNode* n;
     };
-    GrowableArrayCHeap<TreapNode*, mtNMT> to_visit;
+    GrowableArrayCHeap<DFS, mtNMT> to_visit;
     uint64_t positive_infinity = 0xFFFFFFFFFFFFFFFF;
 
     to_visit.push({0, positive_infinity, this->_root});
