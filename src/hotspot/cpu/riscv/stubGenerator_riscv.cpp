@@ -77,10 +77,7 @@ class StubGenerator: public StubCodeGenerator {
 #define inc_counter_np(counter) ((void)0)
 #else
   void inc_counter_np_(uint& counter) {
-    __ la(t1, ExternalAddress((address)&counter));
-    __ lwu(t0, Address(t1, 0));
-    __ addiw(t0, t0, 1);
-    __ sw(t0, Address(t1, 0));
+    __ incrementw(ExternalAddress((address)&counter));
   }
 #define inc_counter_np(counter) \
   BLOCK_COMMENT("inc_counter " #counter); \
@@ -1136,9 +1133,9 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     {
-      // UnsafeCopyMemory page error: continue after ucm
+      // UnsafeMemoryAccess page error: continue after unsafe access
       bool add_entry = !is_oop && (!aligned || sizeof(jlong) == size);
-      UnsafeCopyMemoryMark ucmm(this, add_entry, true);
+      UnsafeMemoryAccessMark umam(this, add_entry, true);
       copy_memory(decorators, is_oop ? T_OBJECT : T_BYTE, aligned, s, d, count, size);
     }
 
@@ -1212,9 +1209,9 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     {
-      // UnsafeCopyMemory page error: continue after ucm
+      // UnsafeMemoryAccess page error: continue after unsafe access
       bool add_entry = !is_oop && (!aligned || sizeof(jlong) == size);
-      UnsafeCopyMemoryMark ucmm(this, add_entry, true);
+      UnsafeMemoryAccessMark umam(this, add_entry, true);
       copy_memory(decorators, is_oop ? T_OBJECT : T_BYTE, aligned, s, d, count, -size);
     }
 
@@ -2434,7 +2431,7 @@ class StubGenerator: public StubCodeGenerator {
       __ membar(__ LoadLoad);
     }
 
-    __ set_last_Java_frame(sp, fp, ra, t0);
+    __ set_last_Java_frame(sp, fp, ra);
 
     __ enter();
     __ add(t1, sp, wordSize);
@@ -5500,8 +5497,8 @@ static const int64_t right_3_bits = right_n_bits(3);
 
     StubRoutines::_forward_exception_entry = generate_forward_exception();
 
-    if (UnsafeCopyMemory::_table == nullptr) {
-      UnsafeCopyMemory::create_table(8 + 4); // 8 for copyMemory; 4 for setMemory
+    if (UnsafeMemoryAccess::_table == nullptr) {
+      UnsafeMemoryAccess::create_table(8 + 4); // 8 for copyMemory; 4 for setMemory
     }
 
     StubRoutines::_call_stub_entry =

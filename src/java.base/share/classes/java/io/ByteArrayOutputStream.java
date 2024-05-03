@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -159,8 +159,16 @@ public class ByteArrayOutputStream extends OutputStream {
      * @throws  NullPointerException if {@code out} is {@code null}.
      * @throws  IOException if an I/O error occurs.
      */
-    public synchronized void writeTo(OutputStream out) throws IOException {
-        out.write(buf, 0, count);
+    public void writeTo(OutputStream out) throws IOException {
+        if (Thread.currentThread().isVirtual()) {
+            byte[] bytes;
+            synchronized (this) {
+                bytes = Arrays.copyOf(buf, count);
+            }
+            out.write(bytes);
+        } else synchronized (this) {
+            out.write(buf, 0, count);
+        }
     }
 
     /**

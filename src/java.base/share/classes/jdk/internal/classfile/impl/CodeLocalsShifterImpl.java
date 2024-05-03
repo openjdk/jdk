@@ -50,15 +50,15 @@ public final class CodeLocalsShifterImpl implements CodeLocalsShifter {
     public void accept(CodeBuilder cob, CodeElement coe) {
         switch (coe) {
             case LoadInstruction li ->
-                cob.loadInstruction(
+                cob.loadLocal(
                         li.typeKind(),
                         shift(cob, li.slot(), li.typeKind()));
             case StoreInstruction si ->
-                cob.storeInstruction(
+                cob.storeLocal(
                         si.typeKind(),
                         shift(cob, si.slot(), si.typeKind()));
             case IncrementInstruction ii ->
-                cob.incrementInstruction(
+                cob.iinc(
                         shift(cob, ii.slot(), TypeKind.IntType),
                         ii.constant());
             case LocalVariable lv ->

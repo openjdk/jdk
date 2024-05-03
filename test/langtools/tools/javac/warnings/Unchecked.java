@@ -1,4 +1,4 @@
-/**
+/*
  * @test  /nodynamiccopyright/
  * @bug 4986256
  * @compile/ref=Unchecked.noLint.out                         -XDrawDiagnostics Unchecked.java

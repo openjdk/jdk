@@ -40,7 +40,6 @@
 #include "gc/g1/g1HeapRegionSet.hpp"
 #include "gc/g1/g1HeapTransition.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
-#include "gc/g1/g1HRPrinter.hpp"
 #include "gc/g1/g1MonitoringSupport.hpp"
 #include "gc/g1/g1MonotonicArenaFreeMemoryTask.hpp"
 #include "gc/g1/g1MonotonicArenaFreePool.hpp"
@@ -265,8 +264,6 @@ public:
   void update_parallel_gc_threads_cpu_time();
 private:
 
-  G1HRPrinter _hr_printer;
-
   // Return true if an explicit GC should start a concurrent cycle instead
   // of doing a STW full GC. A concurrent cycle should be started if:
   // (a) cause == _g1_humongous_allocation,
@@ -468,7 +465,7 @@ private:
   // These methods are the "callbacks" from the G1AllocRegion class.
 
   // For mutator alloc regions.
-  HeapRegion* new_mutator_alloc_region(size_t word_size, bool force, uint node_index);
+  HeapRegion* new_mutator_alloc_region(size_t word_size, uint node_index);
   void retire_mutator_alloc_region(HeapRegion* alloc_region,
                                    size_t allocated_bytes);
 
@@ -668,8 +665,6 @@ public:
   uint old_marking_cycles_completed() const {
     return _old_marking_cycles_completed;
   }
-
-  G1HRPrinter* hr_printer() { return &_hr_printer; }
 
   // Allocates a new heap region instance.
   HeapRegion* new_heap_region(uint hrs_index, MemRegion mr);
