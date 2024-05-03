@@ -470,7 +470,8 @@ public class Flow {
 
         protected void scanSyntheticBreak(TreeMaker make, JCTree swtch) {
             if (swtch.hasTag(SWITCH_EXPRESSION)) {
-                JCYield brk = make.at(Position.NOPOS).Yield(null);
+                JCYield brk = make.at(Position.NOPOS).Yield(make.Erroneous()
+                                                                .setType(swtch.type));
                 brk.target = swtch;
                 scan(brk);
             } else {

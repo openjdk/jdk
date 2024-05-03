@@ -218,6 +218,8 @@ class nmethod : public CodeBlob {
 
   // _consts_offset == _content_offset because SECT_CONSTS is first in code buffer
 
+  int _inline_insts_size;
+
   int _stub_offset;
 
   // Offsets for different stubs section parts
@@ -232,7 +234,6 @@ class nmethod : public CodeBlob {
   int16_t  _unwind_handler_offset;
   // Number of arguments passed on the stack
   uint16_t _num_stack_arg_slots;
-  uint16_t _skipped_instructions_size;
 
   // Offsets in mutable data section
   // _oops_offset == _data_offset,  offset where embedded oop table begins (inside data)
@@ -589,7 +590,7 @@ public:
   int     oops_count() const { assert(oops_size() % oopSize == 0, "");  return (oops_size() / oopSize) + 1; }
   int metadata_count() const { assert(metadata_size() % wordSize == 0, ""); return (metadata_size() / wordSize) + 1; }
 
-  int skipped_instructions_size () const { return _skipped_instructions_size; }
+  int inline_insts_size() const { return _inline_insts_size; }
   int total_size() const;
 
   // Containment

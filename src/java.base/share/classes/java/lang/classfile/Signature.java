@@ -185,88 +185,107 @@ public sealed interface Signature {
     /**
      * Models the type argument.
      *
+     * @sealedGraph
      * @since 22
      */
     @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
-    public sealed interface TypeArg
-            permits SignaturesImpl.TypeArgImpl {
+    public sealed interface TypeArg {
 
         /**
-         * Indicator for whether a wildcard has default bound, no bound,
-         * an upper bound, or a lower bound
-         *
-         * @since 22
+         * Models an unbounded type argument {@code *}.
+         * @since 23
          */
         @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
-        public enum WildcardIndicator {
-
-            /**
-             * default bound wildcard (empty)
-             */
-            DEFAULT,
-
-            /**
-             * unbounded indicator {@code *}
-             */
-            UNBOUNDED,
-
-            /**
-             * upper-bounded indicator {@code +}
-             */
-            EXTENDS,
-
-            /**
-             * lower-bounded indicator {@code -}
-             */
-            SUPER;
+        public sealed interface Unbounded extends TypeArg permits SignaturesImpl.UnboundedTypeArgImpl {
         }
 
-        /** {@return the wildcard indicator} */
-        WildcardIndicator wildcardIndicator();
+        /**
+         * Models a type argument with an explicit bound type.
+         * @since 23
+         */
+        @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
+        public sealed interface Bounded extends TypeArg permits SignaturesImpl.TypeArgImpl {
 
-        /** {@return the signature of the type bound, if any} */
-        Optional<RefTypeSig> boundType();
+            /**
+             * Models a type argument's wildcard indicator.
+             * @since 23
+             */
+            @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
+            public enum WildcardIndicator {
+
+                /**
+                 * No wildcard (empty), an exact type. Also known as
+                 * {@index invariant}.
+                 */
+                NONE,
+
+                /**
+                 * Upper-bound indicator {@code +}. Also known as
+                 * {@index covariant}.
+                 */
+                EXTENDS,
+
+                /**
+                 * Lower-bound indicator {@code -}. Also known as
+                 * {@index contravariant}.
+                 */
+                SUPER;
+            }
+
+            /** {@return the kind of wildcard} */
+            WildcardIndicator wildcardIndicator();
+
+            /** {@return the signature of the type bound} */
+            RefTypeSig boundType();
+        }
 
         /**
          * {@return a bounded type arg}
          * @param boundType the bound
+         * @since 23
          */
-        public static TypeArg of(RefTypeSig boundType) {
+        public static TypeArg.Bounded of(RefTypeSig boundType) {
             requireNonNull(boundType);
-            return of(WildcardIndicator.DEFAULT, Optional.of(boundType));
+            return bounded(Bounded.WildcardIndicator.NONE, boundType);
         }
 
         /**
          * {@return an unbounded type arg}
+         * @since 23
          */
-        public static TypeArg unbounded() {
-            return of(WildcardIndicator.UNBOUNDED, Optional.empty());
+        public static TypeArg.Unbounded unbounded() {
+            return SignaturesImpl.UnboundedTypeArgImpl.INSTANCE;
         }
 
         /**
          * {@return an upper-bounded type arg}
          * @param boundType the upper bound
+         * @since 23
          */
-        public static TypeArg extendsOf(RefTypeSig boundType) {
+        public static TypeArg.Bounded extendsOf(RefTypeSig boundType) {
             requireNonNull(boundType);
-            return of(WildcardIndicator.EXTENDS, Optional.of(boundType));
+            return bounded(Bounded.WildcardIndicator.EXTENDS, boundType);
         }
 
         /**
          * {@return a lower-bounded type arg}
          * @param boundType the lower bound
+         * @since 23
          */
-        public static TypeArg superOf(RefTypeSig boundType) {
+        public static TypeArg.Bounded superOf(RefTypeSig boundType) {
             requireNonNull(boundType);
-            return of(WildcardIndicator.SUPER, Optional.of(boundType));
+            return bounded(Bounded.WildcardIndicator.SUPER, boundType);
         }
 
         /**
          * {@return a bounded type arg}
          * @param wildcard the wild card
          * @param boundType optional bound type
+         * @since 23
          */
-        public static TypeArg of(WildcardIndicator wildcard, Optional<RefTypeSig> boundType) {
+        public static TypeArg.Bounded bounded(Bounded.WildcardIndicator wildcard, RefTypeSig boundType) {
+            requireNonNull(wildcard);
+            requireNonNull(boundType);
             return new SignaturesImpl.TypeArgImpl(wildcard, boundType);
         }
     }
