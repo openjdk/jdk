@@ -93,7 +93,7 @@ public:
     const size_t page_sz = os::vm_page_size();
     const size_t size = num_pages * page_sz;
     char* base = os::reserve_memory(size, !ExecMem, mtThreadStack);
-    bool result = os::commit_memory(base, size, !ExecMem, mtThreadStack);
+    bool result = os::commit_memory(base, size, !ExecMem);
     size_t index;
     ASSERT_NE(base, (char*)nullptr);
     for (index = 0; index < touch_pages; index ++) {
@@ -132,7 +132,7 @@ public:
     }
 
     // Cleanup
-    os::free_memory(base, size, page_sz, mtThreadStack);
+    os::free_memory(base, size, page_sz);
     VirtualMemoryTracker::remove_released_region((address)base, size);
 
     rmr = VirtualMemoryTracker::_reserved_regions->find(ReservedMemoryRegion((address)base, size));
@@ -162,7 +162,7 @@ public:
     const size_t size = num_pages * page_sz;
     char* base = os::reserve_memory(size, !ExecMem, mtTest);
     ASSERT_NE(base, (char*)nullptr);
-    result = os::commit_memory(base, size, !ExecMem, mtTest);
+    result = os::commit_memory(base, size, !ExecMem);
 
     ASSERT_TRUE(result);
     // touch all pages
