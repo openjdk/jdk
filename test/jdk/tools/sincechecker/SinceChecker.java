@@ -78,7 +78,7 @@ note on rules for Real and effective `@since:
 
 Real since value of an API element is computed as the oldest release in which the given API element was introduced.
 That is:
-- for modules, classes and interfaces, the release in which the element with the given qualified name was introduced
+- for modules, packages, classes and interfaces, the release in which the element with the given qualified name was introduced
 - for constructors, the release in which the constructor with the given VM descriptor was introduced
 - for methods and fields, the release in which the given method or field with the given VM descriptor became a member
   of its enclosing class or interface, whether direct or inherited
