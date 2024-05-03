@@ -128,6 +128,7 @@ public class TestStop {
                 b.commit();
 
                 inner.stop();
+
                 MarkEvent c = new MarkEvent();
                 c.id = "c";
                 c.commit();
