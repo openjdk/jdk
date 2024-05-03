@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,7 @@ E* MmapArrayAllocator<E>::allocate_or_null(size_t length, MEMFLAGS flags) {
     return nullptr;
   }
 
-  if (os::commit_memory(addr, size, !ExecMem, flags)) {
+  if (os::commit_memory(addr, size, !ExecMem)) {
     return (E*)addr;
   } else {
     os::release_memory(addr, size);
@@ -80,7 +80,7 @@ E* MmapArrayAllocator<E>::allocate(size_t length, MEMFLAGS flags) {
     vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "Allocator (reserve)");
   }
 
-  os::commit_memory_or_exit(addr, size, !ExecMem, flags, "Allocator (commit)");
+  os::commit_memory_or_exit(addr, size, !ExecMem, "Allocator (commit)");
 
   return (E*)addr;
 }

@@ -1438,7 +1438,14 @@ void G1ConcurrentMark::remark() {
 
       log_debug(gc, remset, tracking)("Remembered Set Tracking update regions total %u, selected %u",
                                         _g1h->num_regions(), cl.total_selected_for_rebuild());
+
       _needs_remembered_set_rebuild = (cl.total_selected_for_rebuild() > 0);
+
+      if (_needs_remembered_set_rebuild) {
+        // Prune rebuild candidates based on G1HeapWastePercent.
+        // Improves rebuild time in addition to remembered set memory usage.
+        G1CollectionSetChooser::build(_g1h->workers(), _g1h->num_regions(), _g1h->policy()->candidates());
+      }
     }
 
     if (log_is_enabled(Trace, gc, liveness)) {
