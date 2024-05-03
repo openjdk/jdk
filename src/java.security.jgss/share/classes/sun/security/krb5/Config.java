@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,8 @@ import sun.security.action.GetPropertyAction;
 import sun.security.krb5.internal.crypto.EType;
 import sun.security.krb5.internal.Krb5;
 import sun.security.util.SecurityProperties;
+
+import static sun.security.krb5.internal.Krb5.DEBUG;
 
 /**
  * This class maintains key-value pairs of Kerberos configurable constants
@@ -102,8 +104,6 @@ public class Config {
      * Hashtable used to store configuration information.
      */
     private Hashtable<String,Object> stanzaTable = new Hashtable<>();
-
-    private static boolean DEBUG = sun.security.krb5.internal.Krb5.DEBUG;
 
     // these are used for hexadecimal calculation.
     private static final int BASE16_0 = 1;
@@ -213,16 +213,16 @@ public class Config {
             if (fileName != null) {
                 configFile = loadConfigFile(fileName);
                 stanzaTable = parseStanzaTable(configFile);
-                if (DEBUG) {
-                    System.out.println("Loaded from Java config");
+                if (DEBUG != null) {
+                    DEBUG.println("Loaded from Java config");
                 }
             } else {
                 boolean found = false;
                 if (isMacosLionOrBetter()) {
                     try {
                         stanzaTable = SCDynamicStoreConfig.getConfig();
-                        if (DEBUG) {
-                            System.out.println("Loaded from SCDynamicStoreConfig");
+                        if (DEBUG != null) {
+                            DEBUG.println("Loaded from SCDynamicStoreConfig");
                         }
                         found = true;
                     } catch (IOException ioe) {
@@ -233,15 +233,15 @@ public class Config {
                     fileName = getNativeFileName();
                     configFile = loadConfigFile(fileName);
                     stanzaTable = parseStanzaTable(configFile);
-                    if (DEBUG) {
-                        System.out.println("Loaded from native config");
+                    if (DEBUG != null) {
+                        DEBUG.println("Loaded from native config");
                     }
                 }
             }
         } catch (IOException ioe) {
-            if (DEBUG) {
-                System.out.println("Exception thrown in loading config:");
-                ioe.printStackTrace(System.out);
+            if (DEBUG != null) {
+                DEBUG.println("Exception thrown in loading config:");
+                ioe.printStackTrace(DEBUG.getPrintStream());
             }
             throw new KrbException("krb5.conf loading failed");
         }
@@ -440,11 +440,11 @@ public class Config {
             try {
                 value = parseIntValue(result);
             } catch (NumberFormatException e) {
-                if (DEBUG) {
-                    System.out.println("Exception in getting value of " +
+                if (DEBUG != null) {
+                    DEBUG.println("Exception in getting value of " +
                                        Arrays.toString(keys) + ": " +
                                        e.getMessage());
-                    System.out.println("Setting " + Arrays.toString(keys) +
+                    DEBUG.println("Setting " + Arrays.toString(keys) +
                                        " to minimum value");
                 }
                 value = Integer.MIN_VALUE;
@@ -584,8 +584,8 @@ public class Config {
             Path file, List<String> content, Set<Path> dups)
             throws IOException {
 
-        if (DEBUG) {
-            System.out.println("Loading krb5 profile at " + file);
+        if (DEBUG != null) {
+            DEBUG.println("Loading krb5 profile at " + file);
         }
         if (!file.isAbsolute()) {
             throw new IOException("Profile path not absolute");
@@ -628,8 +628,8 @@ public class Config {
                             content, dups);
                 } else {
                     // Unsupported directives
-                    if (DEBUG) {
-                        System.out.println("Unknown directive: " + line);
+                    if (DEBUG != null) {
+                        DEBUG.println("Unknown directive: " + line);
                     }
                 }
             } else {
@@ -670,8 +670,8 @@ public class Config {
     private List<String> loadConfigFile(final String fileName)
             throws IOException, KrbException {
 
-        if (DEBUG) {
-            System.out.println("Loading config file from " + fileName);
+        if (DEBUG != null) {
+            DEBUG.println("Loading config file from " + fileName);
         }
         List<String> result = new ArrayList<>();
         List<String> raw = new ArrayList<>();
@@ -783,8 +783,8 @@ public class Config {
             throws KrbException {
         Hashtable<String,Object> current = stanzaTable;
         for (String line: v) {
-            if (DEBUG) {
-                System.out.println(line);
+            if (DEBUG != null) {
+                DEBUG.println(line);
             }
             // There are only 3 kinds of lines
             // 1. a = b
@@ -872,8 +872,8 @@ public class Config {
                 name = null;
             }
         }
-        if (DEBUG) {
-            System.out.println("Java config name: " + name);
+        if (DEBUG != null) {
+            DEBUG.println("Java config name: " + name);
         }
         return name;
     }
@@ -935,8 +935,8 @@ public class Config {
         } else {
             name =  "/etc/krb5.conf";
         }
-        if (DEBUG) {
-            System.out.println("Native config name: " + name);
+        if (DEBUG != null) {
+            DEBUG.println("Native config name: " + name);
         }
         return name;
     }
@@ -984,21 +984,21 @@ public class Config {
         String default_enctypes;
         default_enctypes = get("libdefaults", configName);
         if (default_enctypes == null && !configName.equals("permitted_enctypes")) {
-            if (DEBUG) {
-                System.out.println("Getting permitted_enctypes from libdefaults");
+            if (DEBUG != null) {
+                DEBUG.println("Getting permitted_enctypes from libdefaults");
             }
             default_enctypes = get("libdefaults", "permitted_enctypes");
         }
         int[] etype;
         if (default_enctypes == null) {
-            if (DEBUG) {
-                System.out.println("default_enctypes were null, using builtin default etypes for configuration " +
+            if (DEBUG != null) {
+                DEBUG.println("default_enctypes were null, using builtin default etypes for configuration " +
                     configName);
             }
             etype = EType.getBuiltInDefaults();
         } else {
-            if (DEBUG) {
-                System.out.println("default_enctypes:" + default_enctypes);
+            if (DEBUG != null) {
+                DEBUG.println("default_enctypes:" + default_enctypes);
             }
             String delim = " ";
             StringTokenizer st;
@@ -1032,12 +1032,13 @@ public class Config {
             }
         }
 
-        if (DEBUG) {
-            System.out.print("default etypes for " + configName + ":");
+        if (DEBUG != null) {
+            String s = "default etypes for " + configName + ":";
             for (int i = 0; i < etype.length; i++) {
-                System.out.print(" " + etype[i]);
+                s += " " + etype[i];
             }
-            System.out.println(".");
+            s += ".";
+            DEBUG.println(s);
         }
         return etype;
     }
@@ -1135,8 +1136,8 @@ public class Config {
      * This method was useless. Kept here in case some class still calls it.
      */
     public void resetDefaultRealm(String realm) {
-        if (DEBUG) {
-            System.out.println(">>> Config try resetting default kdc " + realm);
+        if (DEBUG != null) {
+            DEBUG.println(">>> Config try resetting default kdc " + realm);
         }
     }
 
@@ -1319,8 +1320,8 @@ public class Config {
      * @return the realm if correct, or null otherwise
      */
     private static String checkRealm(String mapRealm) {
-        if (DEBUG) {
-            System.out.println("getRealmFromDNS: trying " + mapRealm);
+        if (DEBUG != null) {
+            DEBUG.println("getRealmFromDNS: trying " + mapRealm);
         }
         String[] records = null;
         String newRealm = mapRealm;
@@ -1351,14 +1352,14 @@ public class Config {
         String kdcs = "";
         String[] srvs = null;
         // locate DNS SRV record using UDP
-        if (DEBUG) {
-            System.out.println("getKDCFromDNS using UDP");
+        if (DEBUG != null) {
+            DEBUG.println("getKDCFromDNS using UDP");
         }
         srvs = KrbServiceLocator.getKerberosService(realm, "_udp");
         if (srvs == null) {
             // locate DNS SRV record using TCP
-            if (DEBUG) {
-                System.out.println("getKDCFromDNS using TCP");
+            if (DEBUG != null) {
+                DEBUG.println("getKDCFromDNS using TCP");
             }
             srvs = KrbServiceLocator.getKerberosService(realm, "_tcp");
         }

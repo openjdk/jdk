@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -25,20 +25,30 @@
 
 include LauncherCommon.gmk
 
+################################################################################
+## Build jimage
+################################################################################
+
 $(eval $(call SetupBuildLauncher, jimage,\
     MAIN_CLASS := jdk.tools.jimage.Main, \
     CFLAGS := -DENABLE_ARG_FILES, \
 ))
 
+################################################################################
+## Build jlink
+################################################################################
+
 $(eval $(call SetupBuildLauncher, jlink,\
     MAIN_CLASS := jdk.tools.jlink.internal.Main, \
-    JAVA_ARGS :=  --add-modules ALL-DEFAULT, \
-    CFLAGS := -DENABLE_ARG_FILES \
-        -DEXPAND_CLASSPATH_WILDCARDS, \
+    JAVA_ARGS := --add-modules ALL-DEFAULT, \
+    CFLAGS := -DENABLE_ARG_FILES -DEXPAND_CLASSPATH_WILDCARDS, \
 ))
+
+################################################################################
+## Build jmod
+################################################################################
 
 $(eval $(call SetupBuildLauncher, jmod,\
     MAIN_CLASS := jdk.tools.jmod.Main, \
-    CFLAGS := -DENABLE_ARG_FILES \
-        -DEXPAND_CLASSPATH_WILDCARDS, \
+    CFLAGS := -DENABLE_ARG_FILES -DEXPAND_CLASSPATH_WILDCARDS, \
 ))

@@ -27,12 +27,14 @@
 
 #include "gc/shared/collectorCounters.hpp"
 #include "gc/shared/referenceProcessor.hpp"
+#include "gc/shared/space.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
 #include "memory/memRegion.hpp"
 #include "memory/virtualspace.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/perfData.hpp"
+#include "runtime/prefetch.inline.hpp"
 
 // A Generation models a heap area for similarly-aged objects.
 // It will contain one ore more spaces holding the actual objects.
@@ -41,7 +43,7 @@
 //
 // Generation                      - abstract base class
 // - DefNewGeneration              - allocation area (copy collected)
-// - TenuredGeneration             - tenured (old object) space (markSweepCompact)
+// - TenuredGeneration             - tenured (old object) space (mark-compact)
 //
 // The system configuration currently allowed is:
 //
@@ -97,8 +99,6 @@ class Generation: public CHeapObj<mtGC> {
   // The largest number of contiguous free bytes in the generation,
   // including expansion  (Assumes called at a safepoint.)
   virtual size_t contiguous_available() const = 0;
-  // The largest number of contiguous free bytes in this or any higher generation.
-  virtual size_t max_contiguous_available() const;
 
   MemRegion reserved() const { return _reserved; }
 
@@ -198,7 +198,6 @@ public:
   void set_gc_manager(GCMemoryManager* gc_manager) {
     _gc_manager = gc_manager;
   }
-
 };
 
 #endif // SHARE_GC_SERIAL_GENERATION_HPP

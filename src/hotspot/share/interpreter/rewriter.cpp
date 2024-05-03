@@ -305,15 +305,14 @@ void Rewriter::rewrite_invokedynamic(address bcp, int offset, bool reverse) {
     // must have a five-byte instruction format.  (Of course, other JVM
     // implementations can use the bytes for other purposes.)
     // Note: We use native_u4 format exclusively for 4-byte indexes.
-    Bytes::put_native_u4(p, ConstantPool::encode_invokedynamic_index(_invokedynamic_index));
+    Bytes::put_native_u4(p, (u2)_invokedynamic_index);
     _invokedynamic_index++;
 
     // Collect invokedynamic information before creating ResolvedInvokeDynamicInfo array
     _initialized_indy_entries.push(ResolvedIndyEntry((u2)resolved_index, (u2)cp_index));
   } else {
     // Should do nothing since we are not patching this bytecode
-    int cache_index = ConstantPool::decode_invokedynamic_index(
-                        Bytes::get_native_u4(p));
+    int cache_index = Bytes::get_native_u4(p);
     int cp_index = _initialized_indy_entries.at(cache_index).constant_pool_index();
     assert(_pool->tag_at(cp_index).is_invoke_dynamic(), "wrong index");
     // zero out 4 bytes
@@ -531,7 +530,7 @@ void Rewriter::rewrite_bytecodes(TRAPS) {
   // determine index maps for Method* rewriting
   compute_index_maps();
 
-  if (RegisterFinalizersAtInit && _klass->name() == vmSymbols::java_lang_Object()) {
+  if (_klass->name() == vmSymbols::java_lang_Object()) {
     bool did_rewrite = false;
     int i = _methods->length();
     while (i-- > 0) {

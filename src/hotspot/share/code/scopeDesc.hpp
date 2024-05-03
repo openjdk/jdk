@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ class SimpleScopeDesc : public StackObj {
   int _bci;
 
  public:
-  SimpleScopeDesc(CompiledMethod* code, address pc) {
+  SimpleScopeDesc(nmethod* code, address pc) {
     PcDesc* pc_desc = code->pc_desc_at(pc);
     assert(pc_desc != nullptr, "Must be able to find matching PcDesc");
     // save this here so we only have to look up the PcDesc once
@@ -61,7 +61,7 @@ class SimpleScopeDesc : public StackObj {
 class ScopeDesc : public ResourceObj {
  public:
   // Constructor
-  ScopeDesc(const CompiledMethod* code, PcDesc* pd, bool ignore_objects = false);
+  ScopeDesc(const nmethod* code, PcDesc* pd, bool ignore_objects = false);
 
   // Direct access to scope
   ScopeDesc* at_offset(int decode_offset) { return new ScopeDesc(this, decode_offset); }
@@ -120,7 +120,7 @@ class ScopeDesc : public ResourceObj {
   GrowableArray<ScopeValue*>* _objects;
 
   // Nmethod information
-  const CompiledMethod* _code;
+  const nmethod* _code;
 
   // Decoding operations
   void decode_body();

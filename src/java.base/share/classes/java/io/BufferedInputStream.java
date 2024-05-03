@@ -61,7 +61,7 @@ public class BufferedInputStream extends FilterInputStream {
 
     /**
      * As this class is used early during bootstrap, it's motivated to use
-     * Unsafe.compareAndSetObject instead of AtomicReferenceFieldUpdater
+     * Unsafe.compareAndSetReference instead of AtomicReferenceFieldUpdater
      * (or VarHandles) to reduce dependencies and improve startup time.
      */
     private static final Unsafe U = Unsafe.getUnsafe();

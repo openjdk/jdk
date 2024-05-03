@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -161,8 +161,8 @@ Node* GraphKit::box_vector(Node* vector, const TypeInstPtr* vbox_type, BasicType
 
 Node* GraphKit::unbox_vector(Node* v, const TypeInstPtr* vbox_type, BasicType elem_bt, int num_elem, bool shuffle_to_vector) {
   assert(EnableVectorSupport, "");
-  const TypeInstPtr* vbox_type_v = gvn().type(v)->is_instptr();
-  if (vbox_type->instance_klass() != vbox_type_v->instance_klass()) {
+  const TypeInstPtr* vbox_type_v = gvn().type(v)->isa_instptr();
+  if (vbox_type_v == nullptr || vbox_type->instance_klass() != vbox_type_v->instance_klass()) {
     return nullptr; // arguments don't agree on vector shapes
   }
   if (vbox_type_v->maybe_null()) {
@@ -302,6 +302,7 @@ bool LibraryCallKit::arch_supports_vector(int sopc, int num_elem, BasicType type
         is_supported = Matcher::match_rule_supported_vector_masked(sopc, num_elem, type);
       }
     }
+    is_supported |= Matcher::supports_vector_predicate_op_emulation(sopc, num_elem, type);
 
     if (!is_supported) {
     #ifndef PRODUCT
@@ -1036,8 +1037,20 @@ bool LibraryCallKit::inline_vector_mem_operation(bool is_store) {
 
   const bool needs_cpu_membar = is_mixed_access || is_mismatched_access;
 
-  bool mismatched_ms = from_ms->get_con() && !is_mask && arr_type != nullptr && arr_type->elem()->array_element_basic_type() != elem_bt;
+  // For non-masked mismatched memory segment vector read/write accesses, intrinsification can continue
+  // with unknown backing storage type and compiler can skip inserting explicit reinterpretation IR after
+  // loading from or before storing to backing storage which is mandatory for semantic correctness of
+  // big-endian memory layout.
+  bool mismatched_ms = LITTLE_ENDIAN_ONLY(false)
+      BIG_ENDIAN_ONLY(from_ms->get_con() && !is_mask && arr_type != nullptr &&
+                      arr_type->elem()->array_element_basic_type() != elem_bt);
   BasicType mem_elem_bt = mismatched_ms ? arr_type->elem()->array_element_basic_type() : elem_bt;
+  if (!is_java_primitive(mem_elem_bt)) {
+    if (C->print_intrinsics()) {
+      tty->print_cr("  ** non-primitive array element type");
+    }
+    return false;
+  }
   int mem_num_elem = mismatched_ms ? (num_elem * type2aelembytes(elem_bt)) / type2aelembytes(mem_elem_bt) : num_elem;
   if (arr_type != nullptr && !is_mask && !elem_consistent_with_arr(elem_bt, arr_type, mismatched_ms)) {
     if (C->print_intrinsics()) {
@@ -1500,8 +1513,8 @@ bool LibraryCallKit::inline_vector_gather_scatter(bool is_scatter) {
     }
 
     // Check whether the predicated gather/scatter node is supported by architecture.
-    if (!arch_supports_vector(is_scatter ? Op_StoreVectorScatterMasked : Op_LoadVectorGatherMasked, num_elem, elem_bt,
-                              (VectorMaskUseType) (VecMaskUseLoad | VecMaskUsePred))) {
+    VectorMaskUseType mask = (VectorMaskUseType) (VecMaskUseLoad | VecMaskUsePred);
+    if (!arch_supports_vector(is_scatter ? Op_StoreVectorScatterMasked : Op_LoadVectorGatherMasked, num_elem, elem_bt, mask)) {
       if (C->print_intrinsics()) {
         tty->print_cr("  ** not supported: arity=%d op=%s vlen=%d etype=%s is_masked_op=1",
                       is_scatter, is_scatter ? "scatterMasked" : "gatherMasked",
@@ -1522,7 +1535,8 @@ bool LibraryCallKit::inline_vector_gather_scatter(bool is_scatter) {
   }
 
   // Check that the vector holding indices is supported by architecture
-  if (!arch_supports_vector(Op_LoadVector, num_elem, T_INT, VecMaskNotUsed)) {
+  // For sub-word gathers expander receive index array.
+  if (!is_subword_type(elem_bt) && !arch_supports_vector(Op_LoadVector, num_elem, T_INT, VecMaskNotUsed)) {
       if (C->print_intrinsics()) {
         tty->print_cr("  ** not supported: arity=%d op=%s/loadindex vlen=%d etype=int is_masked_op=%d",
                       is_scatter, is_scatter ? "scatter" : "gather",
@@ -1564,12 +1578,15 @@ bool LibraryCallKit::inline_vector_gather_scatter(bool is_scatter) {
     return false;
   }
 
+  Node* index_vect = nullptr;
   const TypeInstPtr* vbox_idx_type = TypeInstPtr::make_exact(TypePtr::NotNull, vbox_idx_klass);
-  Node* index_vect = unbox_vector(argument(8), vbox_idx_type, T_INT, num_elem);
-  if (index_vect == nullptr) {
-    set_map(old_map);
-    set_sp(old_sp);
-    return false;
+  if (!is_subword_type(elem_bt)) {
+    index_vect = unbox_vector(argument(8), vbox_idx_type, T_INT, num_elem);
+    if (index_vect == nullptr) {
+      set_map(old_map);
+      set_sp(old_sp);
+      return false;
+    }
   }
 
   Node* mask = nullptr;
@@ -1608,10 +1625,23 @@ bool LibraryCallKit::inline_vector_gather_scatter(bool is_scatter) {
     set_memory(vstore, addr_type);
   } else {
     Node* vload = nullptr;
+    Node* index    = argument(11);
+    Node* indexMap = argument(12);
+    Node* indexM   = argument(13);
     if (mask != nullptr) {
-      vload = gvn().transform(new LoadVectorGatherMaskedNode(control(), memory(addr), addr, addr_type, vector_type, index_vect, mask));
+      if (is_subword_type(elem_bt)) {
+        Node* index_arr_base = array_element_address(indexMap, indexM, T_INT);
+        vload = gvn().transform(new LoadVectorGatherMaskedNode(control(), memory(addr), addr, addr_type, vector_type, index_arr_base, mask, index));
+      } else {
+        vload = gvn().transform(new LoadVectorGatherMaskedNode(control(), memory(addr), addr, addr_type, vector_type, index_vect, mask));
+      }
     } else {
-      vload = gvn().transform(new LoadVectorGatherNode(control(), memory(addr), addr, addr_type, vector_type, index_vect));
+      if (is_subword_type(elem_bt)) {
+        Node* index_arr_base = array_element_address(indexMap, indexM, T_INT);
+        vload = gvn().transform(new LoadVectorGatherNode(control(), memory(addr), addr, addr_type, vector_type, index_arr_base, index));
+      } else {
+        vload = gvn().transform(new LoadVectorGatherNode(control(), memory(addr), addr, addr_type, vector_type, index_vect));
+      }
     }
     Node* box = box_vector(vload, vbox_type, elem_bt, num_elem);
     set_result(box);
@@ -2599,7 +2629,7 @@ bool LibraryCallKit::inline_vector_convert() {
         op = gvn().transform(VectorCastNode::make(cast_vopc, op, elem_bt_to, num_elem_to));
       }
     }
-  } else if (Type::cmp(src_type, dst_type) != 0) {
+  } else if (!Type::equals(src_type, dst_type)) {
     assert(!is_cast, "must be reinterpret");
     op = gvn().transform(new VectorReinterpretNode(op, src_type, dst_type));
   }
@@ -2696,7 +2726,7 @@ bool LibraryCallKit::inline_vector_insert() {
     default: fatal("%s", type2name(elem_bt)); break;
   }
 
-  Node* operation = gvn().transform(VectorInsertNode::make(opd, insert_val, idx->get_con()));
+  Node* operation = gvn().transform(VectorInsertNode::make(opd, insert_val, idx->get_con(), gvn()));
 
   Node* vbox = box_vector(operation, vbox_type, elem_bt, num_elem);
   set_result(vbox);

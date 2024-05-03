@@ -68,16 +68,22 @@ ifeq ($(call check-jvm-feature, compiler2), true)
     ADLC_LDFLAGS += $(UBSAN_LDFLAGS)
   endif
 
-  $(eval $(call SetupNativeCompilation, BUILD_ADLC, \
+  ##############################################################################
+  ## Build adlc
+  ##############################################################################
+
+  $(eval $(call SetupJdkExecutable, BUILD_ADLC, \
       NAME := adlc, \
-      TYPE := EXECUTABLE, \
       TARGET_TYPE := BUILD, \
       LINK_TYPE := C++, \
       SRC := $(TOPDIR)/src/hotspot/share/adlc, \
       EXTRA_FILES := $(TOPDIR)/src/hotspot/share/opto/opcodes.cpp, \
+      DEFAULT_CFLAGS := false, \
       CFLAGS := $(ADLC_CFLAGS) $(ADLC_CFLAGS_WARNINGS), \
+      DEFAULT_LDFLAGS := false, \
       LDFLAGS := $(ADLC_LDFLAGS), \
       LIBS := $(ADLC_LIBS), \
+      DEFAULT_VERSIONINFO_RESOURCE := false, \
       OBJECT_DIR := $(JVM_VARIANT_OUTPUTDIR)/tools/adlc/objs, \
       OUTPUT_DIR := $(JVM_VARIANT_OUTPUTDIR)/tools/adlc, \
       DEBUG_SYMBOLS := false, \

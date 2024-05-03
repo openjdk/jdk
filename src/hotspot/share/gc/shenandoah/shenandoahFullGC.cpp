@@ -364,11 +364,13 @@ public:
       _compact_point = _to_region->bottom();
     }
 
-    // Object fits into current region, record new location:
+    // Object fits into current region, record new location, if object does not move:
     assert(_compact_point + obj_size <= _to_region->end(), "must fit");
     shenandoah_assert_not_forwarded(nullptr, p);
-    _preserved_marks->push_if_necessary(p, p->mark());
-    p->forward_to(cast_to_oop(_compact_point));
+    if (_compact_point != cast_from_oop<HeapWord*>(p)) {
+      _preserved_marks->push_if_necessary(p, p->mark());
+      p->forward_to(cast_to_oop(_compact_point));
+    }
     _compact_point += obj_size;
   }
 };
@@ -864,6 +866,7 @@ public:
     if (p->is_forwarded()) {
       HeapWord* compact_from = cast_from_oop<HeapWord*>(p);
       HeapWord* compact_to = cast_from_oop<HeapWord*>(p->forwardee());
+      assert(compact_from != compact_to, "Forwarded object should move");
       Copy::aligned_conjoint_words(compact_from, compact_to, size);
       oop new_obj = cast_to_oop(compact_to);
 
