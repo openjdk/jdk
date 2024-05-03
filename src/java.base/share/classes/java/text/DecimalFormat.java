@@ -2479,7 +2479,6 @@ public class DecimalFormat extends NumberFormat {
                     symbols.getGroupingSeparator();
             String exponentString = symbols.getExponentSeparator();
             boolean sawDecimal = false;
-            boolean sawExponent = false;
             boolean sawDigit = false;
             int exponent = 0; // Set to the exponent value, if any
 
@@ -2579,18 +2578,18 @@ public class DecimalFormat extends NumberFormat {
                     // require that they be followed by a digit.  Otherwise
                     // we backup and reprocess them.
                     backup = position;
-                } else if (checkExponent && !isExponent && text.regionMatches(position, exponentString, 0, exponentString.length())
-                        && !sawExponent) {
+                } else if (checkExponent && !isExponent
+                        && text.regionMatches(position, exponentString, 0, exponentString.length())) {
                     // Process the exponent by recursively calling this method.
                     ParsePosition pos = new ParsePosition(position + exponentString.length());
                     boolean[] stat = new boolean[STATUS_LENGTH];
                     DigitList exponentDigits = new DigitList();
 
                     if (subparse(text, pos, "", symbols.getMinusSignText(), exponentDigits, true, stat)) {
-                        // We parse the exponent with isExponent true, thus fitsIntoLong
-                        // only returns false here if the value exceeds Long.MAX_VALUE.
-                        // We do not need to worry about false being returned for faulty
-                        // values as they are ignored by DigitList
+                        // We parse the exponent with isExponent == true, thus fitsIntoLong()
+                        // only returns false here if the exponent DigitList value exceeds
+                        // Long.MAX_VALUE. We do not need to worry about false being
+                        // returned for faulty values as they are ignored by DigitList.
                         if (exponentDigits.fitsIntoLong(stat[STATUS_POSITIVE], true)) {
                             position = pos.index; // Advance past the exponent
                             try {

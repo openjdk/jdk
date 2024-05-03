@@ -123,7 +123,7 @@ public class LargeExponentsTest {
                 Arguments.of("1.23E32ABC9920", 1.23E32),
                 // 0 exponent
                 Arguments.of("1.23E0", 1.23),
-                // Trailing zeroes
+                // Leading zeroes
                 Arguments.of("1.23E0000123", 1.23E123),
                 // Trailing zeroes - Past Long.MAX_VALUE length
                 Arguments.of("1.23E00000000000000000000000000000000000000000123", 1.23E123),
