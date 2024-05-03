@@ -1012,6 +1012,8 @@ void CodeBuffer::log_section_sizes(const char* name) {
 }
 
 bool CodeBuffer::finalize_stubs() {
+  // Record size of code before we generate stubs in instructions section
+  _main_code_size = _insts.size();
   if (_finalize_stubs && !pd_finalize_stubs()) {
     // stub allocation failure
     return false;

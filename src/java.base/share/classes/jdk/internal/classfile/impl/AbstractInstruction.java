@@ -262,6 +262,9 @@ public abstract sealed class AbstractInstruction
 
             this.afterPad = pos + 1 + ((4 - ((pos + 1 - code.codeStart) & 3)) & 3);
             this.npairs = code.classReader.readInt(afterPad + 4);
+            if (npairs < 0 || npairs > code.codeLength >> 3) {
+                throw new IllegalArgumentException("Invalid lookupswitch npairs value: " + npairs);
+            }
         }
 
         static int size(CodeImpl code, int codeStart, int pos) {
@@ -314,6 +317,9 @@ public abstract sealed class AbstractInstruction
             int pad = ap - (pos + 1);
             int low = code.classReader.readInt(ap + 4);
             int high = code.classReader.readInt(ap + 8);
+            if (high < low || high - low > code.codeLength >> 2) {
+                throw new IllegalArgumentException("Invalid tableswitch values low: " + low + " high: " + high);
+            }
             int cnt = high - low + 1;
             return 1 + pad + 12 + cnt * 4;
         }
