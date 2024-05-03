@@ -6650,6 +6650,14 @@ void Assembler::xorw(Register dst, Register src) {
   emit_arith(0x33, 0xC0, dst, src);
 }
 
+void Assembler::xorw(Register dst, Address src) {
+  InstructionMark im(this);
+  emit_int8(0x66);
+  prefix(src, dst);
+  emit_int8(0x33);
+  emit_operand(dst, src, 0);
+}
+
 // AVX 3-operands scalar float-point arithmetic instructions
 
 void Assembler::vaddsd(XMMRegister dst, XMMRegister nds, Address src) {

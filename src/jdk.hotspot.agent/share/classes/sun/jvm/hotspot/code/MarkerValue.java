@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,35 +22,17 @@
  *
  */
 
-#ifndef SHARE_GC_SHARED_SPACE_INLINE_HPP
-#define SHARE_GC_SHARED_SPACE_INLINE_HPP
+package sun.jvm.hotspot.code;
 
-#include "gc/shared/space.hpp"
+import java.io.PrintStream;
 
-#include "gc/shared/collectedHeap.hpp"
-#include "gc/shared/spaceDecorator.hpp"
-#include "oops/oop.inline.hpp"
-#include "oops/oopsHierarchy.hpp"
-#include "runtime/prefetch.inline.hpp"
-#include "runtime/safepoint.hpp"
+/** A placeholder value that has no concrete meaning other than helping constructing
+ * other values.
+ */
+public class MarkerValue extends ScopeValue {
+    public boolean isMarker() { return true; }
 
-#if INCLUDE_SERIALGC
-inline HeapWord* TenuredSpace::allocate(size_t size) {
-  HeapWord* res = ContiguousSpace::allocate(size);
-  if (res != nullptr) {
-    _offsets->update_for_block(res, res + size);
-  }
-  return res;
+    public void printOn(PrintStream tty) {
+        tty.print("marker");
+    }
 }
-
-inline HeapWord* TenuredSpace::par_allocate(size_t size) {
-  HeapWord* res = ContiguousSpace::par_allocate(size);
-  if (res != nullptr) {
-    _offsets->update_for_block(res, res + size);
-  }
-  return res;
-}
-
-#endif // INCLUDE_SERIALGC
-
-#endif // SHARE_GC_SHARED_SPACE_INLINE_HPP
