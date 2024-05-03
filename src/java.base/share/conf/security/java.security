@@ -37,17 +37,12 @@
 # match. Conversely, properties defined after an include statement may
 # override properties in the included file.
 #
-# Included files, as well as files pointed by java.security.properties,
+# Included files, as well as files pointed to by java.security.properties,
 # can include other files recursively. Paths may be absolute or relative.
 # Each relative path is resolved against the base file containing its
 # "include" definition, if local. Paths may contain system properties for
 # expansion in the form of ${system.property}. If a system property does
 # not have a value, it expands to the empty string.
-#
-# System properties in included paths provide flexibility for users to
-# switch between predefined security profiles on a per-execution basis.
-# Profile selection may be required or optional depending on the files
-# layout, as shown in example #3 below.
 #
 # An error will be thrown if a file cannot be included, either because it
 # does not exist, cannot be resolved, or is recursively included more than
@@ -59,15 +54,6 @@
 #   2) include extra.security
 #   3) include ${java.home}/conf/security/profile${SecurityProfile}.security
 #
-# In example #3, if Java is launched with the argument -DSecurityProfile=FIPS,
-# the profile defined in profileFIPS.security is applied. An error is thrown
-# if this file is not found. Other files may exist in the same directory,
-# enabling the selection of alternative profiles. If SecurityProfile is not
-# set, it expands to the empty string. When a profile.security file exists
-# (may be empty), it defines a default security profile. When it does not,
-# an error is thrown and explicit profile selection is required. In order
-# to override properties defined in this file, the include statement may be
-# placed at the end.
 
 # In this file, various security properties are set for use by
 # java.security classes. This is where users can statically register
