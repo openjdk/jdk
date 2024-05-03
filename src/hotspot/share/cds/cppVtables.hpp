@@ -36,12 +36,14 @@ class CppVtableInfo;
 
 // Support for C++ vtables in CDS archive.
 class CppVtables : AllStatic {
+  static char* _vtables_serialized_top;
 public:
   static char* dumptime_init(ArchiveBuilder* builder);
   static void zero_archived_vtables();
   static intptr_t* get_archived_vtable(MetaspaceObj::Type msotype, address obj);
   static void serialize(SerializeClosure* sc);
   static bool is_valid_shared_method(const Method* m) NOT_CDS_RETURN_(false);
+  static char* vtables_serialized_top() { return _vtables_serialized_top; }
 };
 
 #endif // SHARE_CDS_CPPVTABLES_HPP

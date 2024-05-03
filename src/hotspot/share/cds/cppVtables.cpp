@@ -217,6 +217,7 @@ static CppVtableInfo* _index[_num_cloned_vtable_kinds];
 // Vtables are all fixed offsets from ArchiveBuilder::current()->rw_region()->base()
 // i.e ConstantPool is at offset 0x58. We can store these offsets and use the to
 // patch the pointers at runtime without storing them in the RW region
+char* CppVtables::_vtables_serialized_top = nullptr;
 
 char* CppVtables::dumptime_init(ArchiveBuilder* builder) {
   assert(CDSConfig::is_dumping_static_archive(), "cpp tables are only dumped into static archive");
@@ -235,6 +236,9 @@ void CppVtables::serialize(SerializeClosure* soc) {
   }
   if (soc->reading()) {
     CPP_VTABLE_TYPES_DO(INITIALIZE_VTABLE);
+  } else {
+    _vtables_serialized_top = soc->region_top();
+    tty->print_cr("Top: %p", (address)_vtables_serialized_top);
   }
 }
 

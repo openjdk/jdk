@@ -490,6 +490,7 @@ char* VM_PopulateDumpSharedSpace::dump_read_only_tables() {
   // Write the other data to the output array.
   DumpRegion* ro_region = ArchiveBuilder::current()->ro_region();
   char* start = ro_region->top();
+  // HERE
   WriteClosure wc(ro_region);
   MetaspaceShared::serialize(&wc);
 
@@ -512,7 +513,7 @@ void VM_PopulateDumpSharedSpace::doit() {
   builder.reserve_buffer();
 
   char* cloned_vtables = CppVtables::dumptime_init(&builder);
-  cloned_vtables = nullptr;
+  //cloned_vtables = nullptr;
 
   builder.sort_metadata_objs();
   builder.dump_rw_metadata();
@@ -543,6 +544,9 @@ void VM_PopulateDumpSharedSpace::doit() {
   FileMapInfo* mapinfo = new FileMapInfo(static_archive, true);
   mapinfo->populate_header(MetaspaceShared::core_region_alignment());
   mapinfo->set_serialized_data(serialized_data);
+  mapinfo->set_cloned_vtables(CppVtables::vtables_serialized_top());
+  address base = (address)builder.rw_region()->base();
+  tty->print_cr("Vtables start at %p + %lx", base, (address)CppVtables::vtables_serialized_top() - base);
   mapinfo->open_for_write();
   builder.write_archive(mapinfo, &_heap_info);
 

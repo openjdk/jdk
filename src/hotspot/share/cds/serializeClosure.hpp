@@ -58,7 +58,10 @@ public:
       start += sizeof(intptr_t);
       size -= sizeof(intptr_t);
     }
-}
+  }
+
+  // Address of the first element being written (write only)
+  virtual char* region_top() = 0;
 
   // Check/write the tag.  If reading, then compare the tag against
   // the passed in value and fail is they don't match.  This allows

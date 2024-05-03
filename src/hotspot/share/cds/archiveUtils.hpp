@@ -215,6 +215,10 @@ public:
     _dump_region->append_intptr_t((intptr_t)tag);
   }
 
+  char* region_top() {
+    return _dump_region->top();
+  }
+
   bool reading() const { return false; }
 };
 
@@ -238,6 +242,7 @@ public:
   void do_bool(bool *p);
   void do_tag(int tag);
   bool reading() const { return true; }
+  char* region_top() { return nullptr; }
 };
 
 class ArchiveUtils {

@@ -99,8 +99,11 @@ public class FileMapInfo {
     // size_t cloned_vtable_offset = header->_cloned_vtable_offset
     // CppVtableInfo** vtablesIndex = mapped_base_address + cloned_vtable_offset;
     Address mapped_base_address = get_AddressField(FileMapHeader_type, header, "_mapped_base_address");
-    long cloned_vtable_offset = get_CIntegerField(FileMapHeader_type, header, "_cloned_vtables_offset");
-    vtablesIndex = mapped_base_address.addOffsetTo(cloned_vtable_offset);
+    //long cloned_vtable_offset = get_CIntegerField(FileMapHeader_type, header, "_cloned_vtables_offset");
+    // vtablesIndex = mapped_base_address.addOffsetTo(cloned_vtable_offset);
+    vtablesIndex = get_AddressField(FileMapHeader_type, header, "_cloned_vtables_offset");
+    //System.out.printf("Mapped base: %s, cloned_vtable_offset: %x, Vtables: %s\n", mapped_base_address, cloned_vtable_offset, vtablesIndex);
+    System.out.printf("Mapped base: %s, Vtables: %s\n", mapped_base_address, vtablesIndex);
 
     // CDSFileMapRegion* rw_region = &header->_region[rw];
     // char* rwRegionBaseAddress = rw_region->_mapped_base;
@@ -183,8 +186,12 @@ public class FileMapInfo {
       //     &_index[InstanceKlass_Kind]->_cloned_vtable[0] == ((intptr_t**)ik)[0]
 
       for (int i=0; i < metadataTypeArray.length; i++) {
-        Address vtableInfoAddress = vtablesIndex.getAddressAt(i * addressSize); // = _index[i]
-        Address vtableAddress = vtableInfoAddress.addOffsetTo(addressSize); // = &_index[i]->_cloned_vtable[0]
+        long vtable_offset = vtablesIndex.getJLongAt(i * addressSize);
+        System.out.printf("Offset: %x\n", vtable_offset);
+        //Address vtableInfoAddress = vtablesIndex.getAddressAt(i * addressSize); // = _index[i]
+        //System.out.println(vtableInfoAddress);
+        //Address vtableAddress = vtableInfoAddress.addOffsetTo(addressSize); // = &_index[i]->_cloned_vtable[0]
+        Address vtableAddress = rwRegionBaseAddress.addOffsetTo(vtable_offset); // = &_index[i]->_cloned_vtable[0]
         vTableTypeMap.put(vtableAddress, metadataTypeArray[i]);
       }
     }
