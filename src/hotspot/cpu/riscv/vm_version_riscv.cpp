@@ -83,10 +83,6 @@ void VM_Version::initialize() {
     useRVA23U64Profile();
   }
 
-  if (FLAG_IS_DEFAULT(UseZvbb)) {
-    FLAG_SET_DEFAULT(UseZvbb, true);
-  }
-
   // Enable vendor specific features
 
   if (mvendorid.enabled()) {
@@ -247,6 +243,12 @@ void VM_Version::initialize() {
       warning("Chacha20 intrinsic requires RVV instructions (not available on this CPU)");
     }
     FLAG_SET_DEFAULT(UseChaCha20Intrinsics, false);
+  }
+
+  // UseZvbb (depends on RVV).
+  if (UseZvbb && !UseRVV) {
+    FLAG_SET_DEFAULT(UseZvbb, false);
+    warning("Cannot enable UseZvbb on cpu without RVV support.");
   }
 
   // SHA's
