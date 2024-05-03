@@ -50,9 +50,7 @@
  * <p> The principal supporting class is {@link RandomGeneratorFactory}. This
  * can be used to generate multiple random number generators for a specific
  * algorithm. {@link RandomGeneratorFactory} also provides methods for
- * selecting random number generator algorithms. RandomGeneratorFactory
- * registers implementations of {@link RandomGenerator} interface using the
- * {@linkplain java.util.ServiceLoader service loader API}.
+ * selecting random number generator algorithms.
  *
  * <p> An important subsidiary interface is
  * {@link RandomGenerator.StreamableGenerator}, which provides methods for

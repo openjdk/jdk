@@ -142,8 +142,9 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
          * @return Map of RandomGeneratorFactory classes.
          */
         private static Map<String, Provider<? extends RandomGenerator>> createFactoryMap() {
+            FactoryMapHolder.class.getModule().addUses(RandomGenerator.class);
             return ServiceLoader
-                .load(RandomGenerator.class)
+                .load(RandomGenerator.class, ClassLoader.getPlatformClassLoader())
                 .stream()
                 .filter(p -> !p.type().isInterface())
                 .collect(Collectors.toMap(p -> p.type().getSimpleName(), Function.identity()));
@@ -341,10 +342,6 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
      * {@link RandomGenerator} that utilize the {@code name}
      * <a href="package-summary.html#algorithms">algorithm</a>.
      *
-     * @implSpec Availability is determined by RandomGeneratorFactory using the
-     * {@linkplain java.util.ServiceLoader service loader API} to locate
-     * implementations of the RandomGenerator interface.
-     *
      * @param name  Name of random number generator
      * <a href="package-summary.html#algorithms">algorithm</a>
      * @param <T> Sub-interface of {@link RandomGenerator} to produce
@@ -379,10 +376,6 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
      * Returns a non-empty stream of available {@link RandomGeneratorFactory RandomGeneratorFactory(s)}.
      * <p>
      * RandomGenerators that are marked as deprecated are not included in the result.
-     *
-     * @implSpec Availability is determined by RandomGeneratorFactory using the
-     * {@linkplain java.util.ServiceLoader service loader API} to locate
-     * implementations of the RandomGenerator interface.
      *
      * @return a non-empty stream of all available {@link RandomGeneratorFactory RandomGeneratorFactory(s)}.
      */
