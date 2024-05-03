@@ -787,6 +787,7 @@ void JVMCINMethodData::initialize(int nmethod_mirror_index,
 {
   _failed_speculations = failed_speculations;
   _nmethod_mirror_index = nmethod_mirror_index;
+  guarantee(nmethod_entry_patch_offset != -1, "missing entry barrier");
   _nmethod_entry_patch_offset = nmethod_entry_patch_offset;
   if (nmethod_mirror_name != nullptr) {
     _has_name = true;
