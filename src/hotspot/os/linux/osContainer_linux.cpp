@@ -75,8 +75,8 @@ void OSContainer::init() {
    */
   const char *reason;
   bool any_mem_cpu_limit_present = false;
-  bool ctrl_ro = cgroup_subsystem->is_containerized();
-  if (ctrl_ro) {
+  bool controllers_read_only = cgroup_subsystem->is_containerized();
+  if (controllers_read_only) {
     // in-container case
     reason = " because all controllers are mounted read-only (container case)";
   } else {
@@ -91,7 +91,7 @@ void OSContainer::init() {
       reason = " because no cpu or memory limit is present";
     }
   }
-  _is_containerized = ctrl_ro || any_mem_cpu_limit_present;
+  _is_containerized = controllers_read_only || any_mem_cpu_limit_present;
   log_debug(os, container)("OSContainer::init: is_containerized() = %s%s",
                                                             _is_containerized ? "true" : "false",
                                                             reason);

@@ -293,7 +293,7 @@ class CgroupInfo : public StackObj {
     char* _name;
     int _hierarchy_id;
     bool _enabled;
-    bool _is_ro;            // whether or not the mount path is mounted read-only
+    bool _read_only;            // whether or not the mount path is mounted read-only
     bool _data_complete;    // indicating cgroup v1 data is complete for this controller
     char* _cgroup_path;     // cgroup controller path from /proc/self/cgroup
     char* _root_mount_path; // root mount path from /proc/self/mountinfo. Unused for cgroup v2
@@ -304,7 +304,7 @@ class CgroupInfo : public StackObj {
       _name = nullptr;
       _hierarchy_id = -1;
       _enabled = false;
-      _is_ro = false;
+      _read_only = false;
       _data_complete = false;
       _cgroup_path = nullptr;
       _root_mount_path = nullptr;
