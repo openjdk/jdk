@@ -32,7 +32,7 @@
 
 TEST_VM(NmtTreap, VerifyItThroughStressTest) {
   struct Cmp {
-    int cmp(int a, int b) {
+    static int cmp(int a, int b) {
       return a - b;
     }
   };
