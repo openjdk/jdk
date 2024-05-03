@@ -29,6 +29,7 @@
 #include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
+#include "utilities/macros.hpp"
 #include <stdint.h>
 
 // A Treap is a self-balanced binary tree where each node is equipped with a
@@ -83,6 +84,7 @@ class Treap {
 
   TreapNode* _root;
   uint64_t _prng_seed;
+  DEBUG_ONLY(int _node_count;)
 
 private:
   uint64_t prng_next() {
@@ -164,34 +166,44 @@ private:
       return find(node->_right, k DEBUG_ONLY(COMMA recur_count + 1));
     }
   }
+
+  bool verify_self();
+
 public:
   Treap(uint64_t seed = 1234)
-    : _root(nullptr),
-      _prng_seed(seed) {
+  : _root(nullptr),
+  _prng_seed(seed),
+  DEBUG_ONLY(_node_count(0)) {
   }
+
   ~Treap() {
     this->remove_all();
   }
 
   void upsert(const K& k, const V& v) {
-    // (LEQ_k, GT_k)
-    node_pair split_up = split(this->_root, k);
-    TreapNode* found = find(split_up.left, k);
+    assert(verify_self(), "invariant");
+
+    TreapNode* found = find(_root, k);
     if (found != nullptr) {
       // Already exists, update value.
       found->_value = v;
-      this->_root = merge(split_up.left, split_up.right);
       return;
     }
+    DEBUG_ONLY(_node_count++;)
     // Doesn't exist, make node
     void* node_place = ALLOCATOR::allocate(sizeof(TreapNode));
     uint64_t prio = prng_next();
     TreapNode* node = new (node_place) TreapNode(k, v, prio);
+
+    // (LEQ_k, GT_k)
+    node_pair split_up = split(this->_root, k);
     // merge(merge(LEQ_k, EQ_k), GT_k)
     this->_root = merge(merge(split_up.left, node), split_up.right);
   }
 
   void remove(const K& k) {
+    assert(verify_self(), "invariant");
+
     // (LEQ_k, GT_k)
     node_pair fst_split = split(this->_root, k, LEQ);
     // (LT_k, GEQ_k) == (LT_k, EQ_k) since it's from LEQ_k and keys are unique.
@@ -199,6 +211,7 @@ public:
 
     if (snd_split.right != nullptr) {
       // The key k existed, we delete it.
+      DEBUG_ONLY(_node_count--;)
       ALLOCATOR::free(snd_split.right);
     }
     // Merge together everything
@@ -207,6 +220,7 @@ public:
 
   // Delete all nodes.
   void remove_all() {
+    DEBUG_ONLY(_node_count = 0;)
     GrowableArrayCHeap<TreapNode*, mtNMT> to_delete;
     to_delete.push(this->_root);
 
