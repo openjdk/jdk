@@ -27,7 +27,8 @@
  * @requires vm.debug == true & vm.flavor == "server"
  * @summary Test which uses some special flags in order to test Node::find() in debug builds which could result in an endless loop or a stack overflow crash.
  *
- * @run main/othervm -Xbatch -XX:CompileCommand=option,*::*,bool,Vectorize,true -XX:CompileCommand=memlimit,TestFindNode::test,0 -XX:+PrintOpto -XX:+TraceLoopOpts compiler.c2.TestFindNode
+ * @run main/othervm -Xbatch -XX:CompileCommand=option,*::*,bool,Vectorize,true -XX:CompileCommand=memstat,compiler.c2.TestFindNode::*,print
+ *                           -XX:CompileCommand=memlimit,compiler.c2.TestFindNode::*,0 -XX:+PrintOpto -XX:+TraceLoopOpts compiler.c2.TestFindNode
  */
 package compiler.c2;
 
