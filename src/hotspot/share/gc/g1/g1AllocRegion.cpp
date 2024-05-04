@@ -130,13 +130,12 @@ size_t G1AllocRegion::retire(bool fill_up) {
   return waste;
 }
 
-HeapWord* G1AllocRegion::new_alloc_region_and_allocate(size_t word_size,
-                                                       bool force) {
+HeapWord* G1AllocRegion::new_alloc_region_and_allocate(size_t word_size) {
   assert_alloc_region(_alloc_region == _dummy_region, "pre-condition");
   assert_alloc_region(_used_bytes_before == 0, "pre-condition");
 
   trace("attempting region allocation");
-  G1HeapRegion* new_alloc_region = allocate_new_region(word_size, force);
+  G1HeapRegion* new_alloc_region = allocate_new_region(word_size);
   if (new_alloc_region != nullptr) {
     new_alloc_region->reset_pre_dummy_top();
     // Need to do this before the allocation
@@ -258,9 +257,8 @@ G1AllocRegion::G1AllocRegion(const char* name,
     _node_index(node_index)
  { }
 
-G1HeapRegion* MutatorAllocRegion::allocate_new_region(size_t word_size,
-                                                    bool force) {
-  return _g1h->new_mutator_alloc_region(word_size, force, _node_index);
+G1HeapRegion* MutatorAllocRegion::allocate_new_region(size_t word_size) {
+  return _g1h->new_mutator_alloc_region(word_size, _node_index);
 }
 
 void MutatorAllocRegion::retire_region(G1HeapRegion* alloc_region,
@@ -344,9 +342,7 @@ G1HeapRegion* MutatorAllocRegion::release() {
   return ret;
 }
 
-G1HeapRegion* G1GCAllocRegion::allocate_new_region(size_t word_size,
-                                                 bool force) {
-  assert(!force, "not supported for GC alloc regions");
+G1HeapRegion* G1GCAllocRegion::allocate_new_region(size_t word_size) {
   return _g1h->new_gc_alloc_region(word_size, _purpose, _node_index);
 }
 

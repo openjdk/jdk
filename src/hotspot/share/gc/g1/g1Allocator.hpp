@@ -121,8 +121,6 @@ public:
   // current allocation region, and then attempts an allocation using a new region.
   inline HeapWord* attempt_allocation_locked(size_t word_size);
 
-  inline HeapWord* attempt_allocation_force(size_t word_size);
-
   size_t unsafe_max_tlab_alloc();
   size_t used_in_alloc_regions();
 
