@@ -80,7 +80,7 @@ public class ImportTest extends KullaTesting {
         assertDeclareFail("import unknown.qqq;",
                 new ExpectedDiagnostic("compiler.err.doesnt.exist", 7, 18, 14, -1, -1, Diagnostic.Kind.ERROR));
         assertDeclareFail("import unknown.*;",
-                new ExpectedDiagnostic("compiler.err.doesnt.exist", 7, 7, 7, -1, -1, Diagnostic.Kind.ERROR));
+                new ExpectedDiagnostic("compiler.err.doesnt.exist", 7, 14, 7, -1, -1, Diagnostic.Kind.ERROR));
     }
 
     public void testBogusImportIgnoredInFuture() {
