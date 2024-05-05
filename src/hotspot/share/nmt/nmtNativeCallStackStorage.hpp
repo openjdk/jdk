@@ -25,6 +25,7 @@
 #ifndef SHARE_NMT_NMTNATIVECALLSTACKSTORAGE_HPP
 #define SHARE_NMT_NMTNATIVECALLSTACKSTORAGE_HPP
 
+#include "memory/allocation.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/nativeCallStack.hpp"
 
@@ -37,69 +38,80 @@
 // - To not store duplicates
 // - Have fast comparisons
 // - Have constant time access
-// We achieve this by storing them in a bog-standard closed addressing hashtable and never removing any elements.
+// We achieve this by using a closed hashtable for finding previously existing NCS:s and referring to them by an index that's smaller than a pointer.
 class NativeCallStackStorage : public CHeapObj<mtNMT> {
+public:
+  struct StackIndex {
+    friend NativeCallStackStorage;
+
+  private:
+    int32_t _stack_index;
+    StackIndex(int32_t stack_index)
+      : _stack_index(stack_index) {
+    }
+
+  public:
+    static bool equals(const StackIndex& a, const StackIndex& b) {
+      return a._stack_index == b._stack_index;
+    }
+    StackIndex()
+      : _stack_index(-1) {
+    }
+  };
+
 private:
   struct Link : public CHeapObj<mtNMT> {
     Link* next;
-    NativeCallStack stack;
-    Link(Link* next, NativeCallStack v)
+    StackIndex stack;
+    Link(Link* next, StackIndex v)
       : next(next),
         stack(v) {
     }
   };
-  NativeCallStack* put(const NativeCallStack& value) {
-    int bucket = value.calculate_hash() % nr_buckets;
-    Link* link = buckets.at(bucket);
+  StackIndex put(const NativeCallStack& value) {
+    int bucket = value.calculate_hash() % _nr_buckets;
+    Link* link = _buckets[bucket];
     while (link != nullptr) {
-      if (value.equals(link->stack)) {
-        return &link->stack;
+      if (value.equals(get(link->stack))) {
+        return link->stack;
       }
       link = link->next;
     }
-    Link* new_link = new Link(buckets.at(bucket), value);
-    buckets.at_put(bucket, new_link);
-    return &new_link->stack;
+    int idx = _stacks.append(value);
+    Link* new_link = new Link(_buckets[bucket], StackIndex(idx));
+    _buckets[bucket] = new_link;
+    return new_link->stack;
   }
 
   // Pick a prime number of buckets.
-  // 4099 gives a 50% probability of collisions at 76 stacks (as per birthday problem).
-  static const constexpr int nr_buckets = 4099;
-  GrowableArrayCHeap<Link*, mtNMT> buckets;
-  bool is_detailed_mode;
+  // 4099 gives a 50% probability of collisions at 76 stacks (as per birthday problem).    os::
+  static const constexpr int _nr_buckets = 4099;
+  Link** _buckets;
+  GrowableArrayCHeap<NativeCallStack, mtNMT> _stacks;
+  bool _is_detailed_mode;
 public:
-  struct StackIndex {
-    friend NativeCallStackStorage;
-  private:
-    NativeCallStack* _stack;
-    StackIndex(NativeCallStack* stack) : _stack(stack) {}
-  public:
-    static bool equals(const StackIndex& a, const StackIndex& b) {
-      return a._stack == b._stack;
-    }
-    StackIndex() : _stack(nullptr) {}
-    const NativeCallStack& stack() const {
-      return *_stack;
-    }
-  };
 
   StackIndex push(const NativeCallStack& stack) {
     // Not in detailed mode, so not tracking stacks.
-    if (!is_detailed_mode) {
-      return StackIndex(nullptr);
+    if (!_is_detailed_mode) {
+      return StackIndex();
     }
     return put(stack);
   }
 
   const inline NativeCallStack& get(StackIndex si) {
-    return *si._stack;
+    return _stacks.at(si._stack_index);
   }
 
   NativeCallStackStorage(bool is_detailed_mode)
-  :  buckets(), is_detailed_mode(is_detailed_mode) {
-    if (is_detailed_mode) {
-      buckets.at_grow(nr_buckets, nullptr);
+  :  _buckets(nullptr), _stacks(), _is_detailed_mode(is_detailed_mode) {
+    if (_is_detailed_mode) {
+      _buckets = NEW_C_HEAP_ARRAY(Link*, _nr_buckets, mtNMT);
     }
+  }
+
+  ~NativeCallStackStorage() {
+    FREE_C_HEAP_ARRAY(Link*, _buckets);
   }
 };
 

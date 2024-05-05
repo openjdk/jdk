@@ -98,8 +98,8 @@ public:
       return Metadata{sidx, flag()};
     }
 
-   const NativeCallStack& stack() const {
-      return sidx.stack();
+    const NativeCallStackStorage::StackIndex stack() const {
+     return sidx;
     }
   };
 
