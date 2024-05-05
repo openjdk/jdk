@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,14 +65,6 @@ void ZDriver::initialize() {
   _lock = new ZLock();
 }
 
-void ZDriver::lock() {
-  _lock->lock();
-}
-
-void ZDriver::unlock() {
-  _lock->unlock();
-}
-
 void ZDriver::set_minor(ZDriverMinor* minor) {
   _minor = minor;
 }
@@ -87,22 +79,6 @@ ZDriverMinor* ZDriver::minor() {
 
 ZDriverMajor* ZDriver::major() {
   return _major;
-}
-
-ZDriverLocker::ZDriverLocker() {
-  ZDriver::lock();
-}
-
-ZDriverLocker::~ZDriverLocker() {
-  ZDriver::unlock();
-}
-
-ZDriverUnlocker::ZDriverUnlocker() {
-  ZDriver::unlock();
-}
-
-ZDriverUnlocker::~ZDriverUnlocker() {
-  ZDriver::lock();
 }
 
 ZDriver::ZDriver()
@@ -205,7 +181,7 @@ void ZDriverMinor::run_thread() {
     // Wait for GC request
     const ZDriverRequest request = _port.receive();
 
-    ZDriverLocker locker;
+    ZLocker<ZLock> locker(_lock);
 
     abortpoint();
 
@@ -458,7 +434,7 @@ void ZDriverMajor::run_thread() {
     // Wait for GC request
     const ZDriverRequest request = _port.receive();
 
-    ZDriverLocker locker;
+    ZLocker<ZLock> locker(_lock);
 
     ZBreakpoint::at_before_gc();
 

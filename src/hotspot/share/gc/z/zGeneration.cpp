@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -976,12 +976,12 @@ ZGenerationOld::ZGenerationOld(ZPageTable* page_table, ZPageAllocator* page_allo
 class ZGenerationCollectionScopeOld : public StackObj {
 private:
   ZStatTimer      _stat_timer;
-  ZDriverUnlocker _unlocker;
+  ZUnlocker<ZLock>  _unlocker;
 
 public:
-  ZGenerationCollectionScopeOld(ConcurrentGCTimer* gc_timer)
+  ZGenerationCollectionScopeOld(ConcurrentGCTimer* gc_timer, ZLock* lock)
     : _stat_timer(ZPhaseGenerationOld, gc_timer),
-      _unlocker() {
+      _unlocker(lock) {
     // Update statistics and set the GC timer
     ZGeneration::old()->at_collection_start(gc_timer);
   }
@@ -997,7 +997,7 @@ bool ZGenerationOld::should_record_stats() {
 }
 
 void ZGenerationOld::collect(ConcurrentGCTimer* timer) {
-  ZGenerationCollectionScopeOld scope(timer);
+  ZGenerationCollectionScopeOld scope(timer, ZDriver::_lock);
 
   // Phase 1: Concurrent Mark
   concurrent_mark();
@@ -1036,7 +1036,7 @@ void ZGenerationOld::collect(ConcurrentGCTimer* timer) {
   abortpoint();
 
   {
-    ZDriverLocker locker;
+    ZLocker<ZLock> locker(ZDriver::_lock);
 
     // Phase 8: Concurrent Remap Roots
     concurrent_remap_young_roots();
@@ -1146,7 +1146,7 @@ void ZGenerationOld::pause_verify() {
   // young collections during this verification.
   if (ZVerifyRoots || ZVerifyObjects) {
     // Limited verification
-    ZDriverLocker locker;
+    ZLocker<ZLock> locker(ZDriver::_lock);
     VM_ZVerifyOld().pause();
   }
 }

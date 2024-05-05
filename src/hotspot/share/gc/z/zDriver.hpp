@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,18 +46,16 @@ class ZDriverMajor;
 class ZLock;
 
 class ZDriver : public ZThread {
-  friend class ZDriverLocker;
-  friend class ZDriverUnlocker;
+  friend class ZGenerationOld;
 
 private:
-  static ZLock*        _lock;
   static ZDriverMinor* _minor;
   static ZDriverMajor* _major;
 
   GCCause::Cause _gc_cause;
 
-  static void lock();
-  static void unlock();
+protected:
+  static ZLock*        _lock;
 
 public:
   static void initialize();
@@ -129,18 +127,6 @@ public:
 
   void set_used_at_start(size_t used);
   size_t used_at_start() const;
-};
-
-class ZDriverLocker : public StackObj {
-public:
-  ZDriverLocker();
-  ~ZDriverLocker();
-};
-
-class ZDriverUnlocker : public StackObj {
-public:
-  ZDriverUnlocker();
-  ~ZDriverUnlocker();
 };
 
 #endif // SHARE_GC_Z_ZDRIVER_HPP
