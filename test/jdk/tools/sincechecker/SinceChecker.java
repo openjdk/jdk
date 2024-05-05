@@ -349,11 +349,14 @@ public class SinceChecker {
             return;
         }
         checkElement(te.getEnclosingElement(), te, types, javadocHelper, version, elementUtils);
+        if( te.getKind() == ElementKind.RECORD){
+            return;
+        }
         te.getEnclosedElements().stream().filter(this::isDocumented)
                 .filter(this::isMember)
                 .forEach(element -> checkElement(te, element, types, javadocHelper, version, elementUtils));
         te.getEnclosedElements().stream()
-                .filter(element -> element.getKind().isDeclaredType() && element.getKind() != ElementKind.RECORD)
+                .filter(element -> element.getKind().isDeclaredType())
                 .map(TypeElement.class::cast)
                 .forEach(nestedClass -> analyzeClassCheck(nestedClass, currentjdkVersion, javadocHelper, types, elementUtils));
     }
@@ -369,7 +372,11 @@ public class SinceChecker {
             //mandated enum type methods
             return;
         }
-        String sinceVersion = javadocHelper.effectiveSinceVersion(explicitOwner, element, types, elementUtils).toString();
+        String sinceVersion = null;
+        var effectiveSince = javadocHelper.effectiveSinceVersion(explicitOwner, element, types, elementUtils);
+        if (effectiveSince != null) {
+            sinceVersion = effectiveSince.toString();
+        }
         IntroducedIn mappedVersion = classDictionary.get(uniqueId);
         if (mappedVersion == null) {
             error("Element: " + uniqueId + " was not mapped");
@@ -470,21 +477,25 @@ public class SinceChecker {
     //these were preview in before the introduction of the @PreviewFeature
     {
         LEGACY_PREVIEW_METHODS.put("9", Set.of(
+                "module: jdk.nio.mapmode",
                 "module: java.transaction.xa",
                 "module: jdk.unsupported.desktop",
                 "module: jdk.jpackage",
                 "module: java.net.http"
         ));
         LEGACY_PREVIEW_METHODS.put("10", Set.of(
+                "module: jdk.nio.mapmode",
                 "module: java.transaction.xa",
                 "module: java.net.http",
                 "module: jdk.unsupported.desktop",
                 "module: jdk.jpackage"
         ));
         LEGACY_PREVIEW_METHODS.put("11", Set.of(
+                "module: jdk.nio.mapmode",
                 "module: jdk.jpackage"
         ));
         LEGACY_PREVIEW_METHODS.put("12", Set.of(
+                "module: jdk.nio.mapmode",
                 "module: jdk.jpackage",
                 "method: com.sun.source.tree.ExpressionTree com.sun.source.tree.BreakTree.getValue()",
                 "method: java.util.List com.sun.source.tree.CaseTree.getExpressions()",
@@ -499,6 +510,7 @@ public class SinceChecker {
         ));
 
         LEGACY_PREVIEW_METHODS.put("13", Set.of(
+                "module: jdk.nio.mapmode",
                 "module: jdk.jpackage",
                 "method: java.util.List com.sun.source.tree.CaseTree.getExpressions()",
                 "method: com.sun.source.tree.Tree com.sun.source.tree.CaseTree.getBody()",
