@@ -73,6 +73,18 @@ inline WorkerThreads* ShenandoahHeap::safepoint_workers() {
   return _safepoint_workers;
 }
 
+inline void ShenandoahHeap::notify_gc_progress() {
+  Atomic::store(&_gc_no_progress_count, (size_t) 0);
+
+}
+inline void ShenandoahHeap::notify_gc_no_progress() {
+  Atomic::inc(&_gc_no_progress_count);
+}
+
+inline size_t ShenandoahHeap::get_gc_no_progress_count() const {
+  return Atomic::load(&_gc_no_progress_count);
+}
+
 inline size_t ShenandoahHeap::heap_region_index_containing(const void* addr) const {
   uintptr_t region_start = ((uintptr_t) addr);
   uintptr_t index = (region_start - (uintptr_t) base()) >> ShenandoahHeapRegion::region_size_bytes_shift();
@@ -244,7 +256,7 @@ inline bool ShenandoahHeap::cancelled_gc() const {
 }
 
 inline bool ShenandoahHeap::check_cancelled_gc_and_yield(bool sts_active) {
-  if (sts_active && ShenandoahSuspendibleWorkers && !cancelled_gc()) {
+  if (sts_active && !cancelled_gc()) {
     if (SuspendibleThreadSet::should_yield()) {
       SuspendibleThreadSet::yield();
     }

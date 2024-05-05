@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -36,6 +36,7 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/methodHandles.hpp"
+#include "prims/upcallLinker.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/continuationEntry.inline.hpp"
 #include "runtime/frame.inline.hpp"
@@ -960,7 +961,7 @@ class StubGenerator: public StubCodeGenerator {
     // need to copy backwards
   }
 
-  // This is common errorexit stub for UnsafeCopyMemory.
+  // This is common errorexit stub for UnsafeMemoryAccess.
   address generate_unsafecopy_common_error_exit() {
     address start_pc = __ pc();
     Register tmp1 = R6_ARG4;
@@ -1012,8 +1013,8 @@ class StubGenerator: public StubCodeGenerator {
 
     Label l_1, l_2, l_3, l_4, l_5, l_6, l_7, l_8, l_9, l_10;
     {
-      // UnsafeCopyMemory page error: continue at UnsafeCopyMemory common_error_exit
-      UnsafeCopyMemoryMark ucmm(this, !aligned, false);
+      // UnsafeMemoryAccess page error: continue at UnsafeMemoryAccess common_error_exit
+      UnsafeMemoryAccessMark umam(this, !aligned, false);
 
       // Don't try anything fancy if arrays don't have many elements.
       __ li(tmp3, 0);
@@ -1194,8 +1195,8 @@ class StubGenerator: public StubCodeGenerator {
     // that we don't have to optimize it.
     Label l_1, l_2;
     {
-      // UnsafeCopyMemory page error: continue at UnsafeCopyMemory common_error_exit
-      UnsafeCopyMemoryMark ucmm(this, !aligned, false);
+      // UnsafeMemoryAccess page error: continue at UnsafeMemoryAccess common_error_exit
+      UnsafeMemoryAccessMark umam(this, !aligned, false);
       __ b(l_2);
       __ bind(l_1);
       __ stbx(tmp1, R4_ARG2, R5_ARG3);
@@ -1281,8 +1282,8 @@ class StubGenerator: public StubCodeGenerator {
 
     Label l_1, l_2, l_3, l_4, l_5, l_6, l_7, l_8, l_9;
     {
-      // UnsafeCopyMemory page error: continue at UnsafeCopyMemory common_error_exit
-      UnsafeCopyMemoryMark ucmm(this, !aligned, false);
+      // UnsafeMemoryAccess page error: continue at UnsafeMemoryAccess common_error_exit
+      UnsafeMemoryAccessMark umam(this, !aligned, false);
       // don't try anything fancy if arrays don't have many elements
       __ li(tmp3, 0);
       __ cmpwi(CCR0, R5_ARG3, 9);
@@ -1465,8 +1466,8 @@ class StubGenerator: public StubCodeGenerator {
 
     Label l_1, l_2;
     {
-      // UnsafeCopyMemory page error: continue at UnsafeCopyMemory common_error_exit
-      UnsafeCopyMemoryMark ucmm(this, !aligned, false);
+      // UnsafeMemoryAccess page error: continue at UnsafeMemoryAccess common_error_exit
+      UnsafeMemoryAccessMark umam(this, !aligned, false);
       __ sldi(tmp1, R5_ARG3, 1);
       __ b(l_2);
       __ bind(l_1);
@@ -1624,8 +1625,8 @@ class StubGenerator: public StubCodeGenerator {
     address start = __ function_entry();
     assert_positive_int(R5_ARG3);
     {
-      // UnsafeCopyMemory page error: continue at UnsafeCopyMemory common_error_exit
-      UnsafeCopyMemoryMark ucmm(this, !aligned, false);
+      // UnsafeMemoryAccess page error: continue at UnsafeMemoryAccess common_error_exit
+      UnsafeMemoryAccessMark umam(this, !aligned, false);
       generate_disjoint_int_copy_core(aligned);
     }
     __ li(R3_RET, 0); // return 0
@@ -1776,8 +1777,8 @@ class StubGenerator: public StubCodeGenerator {
 
     array_overlap_test(nooverlap_target, 2);
     {
-      // UnsafeCopyMemory page error: continue at UnsafeCopyMemory common_error_exit
-      UnsafeCopyMemoryMark ucmm(this, !aligned, false);
+      // UnsafeMemoryAccess page error: continue at UnsafeMemoryAccess common_error_exit
+      UnsafeMemoryAccessMark umam(this, !aligned, false);
       generate_conjoint_int_copy_core(aligned);
     }
 
@@ -1902,8 +1903,8 @@ class StubGenerator: public StubCodeGenerator {
     address start = __ function_entry();
     assert_positive_int(R5_ARG3);
     {
-      // UnsafeCopyMemory page error: continue at UnsafeCopyMemory common_error_exit
-      UnsafeCopyMemoryMark ucmm(this, !aligned, false);
+      // UnsafeMemoryAccess page error: continue at UnsafeMemoryAccess common_error_exit
+      UnsafeMemoryAccessMark umam(this, !aligned, false);
       generate_disjoint_long_copy_core(aligned);
     }
     __ li(R3_RET, 0); // return 0
@@ -2033,8 +2034,8 @@ class StubGenerator: public StubCodeGenerator {
 
     array_overlap_test(nooverlap_target, 3);
     {
-      // UnsafeCopyMemory page error: continue at UnsafeCopyMemory common_error_exit
-      UnsafeCopyMemoryMark ucmm(this, !aligned, false);
+      // UnsafeMemoryAccess page error: continue at UnsafeMemoryAccess common_error_exit
+      UnsafeMemoryAccessMark umam(this, !aligned, false);
       generate_conjoint_long_copy_core(aligned);
     }
     __ li(R3_RET, 0); // return 0
@@ -3128,7 +3129,7 @@ class StubGenerator: public StubCodeGenerator {
     // the conjoint stubs use them.
 
     address ucm_common_error_exit       =  generate_unsafecopy_common_error_exit();
-    UnsafeCopyMemory::set_common_exit_stub_pc(ucm_common_error_exit);
+    UnsafeMemoryAccess::set_common_exit_stub_pc(ucm_common_error_exit);
 
     // non-aligned disjoint versions
     StubRoutines::_jbyte_disjoint_arraycopy       = generate_disjoint_byte_copy(false, "jbyte_disjoint_arraycopy");
@@ -3557,7 +3558,7 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-  address generate_nmethod_entry_barrier() {
+  address generate_method_entry_barrier() {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", "nmethod_entry_barrier");
 
@@ -3642,8 +3643,6 @@ class StubGenerator: public StubCodeGenerator {
 #define VALID_B64 0x80
 #define VB64(x) (VALID_B64 | x)
 
-#define VEC_ALIGN __attribute__ ((aligned(16)))
-
 #define BLK_OFFSETOF(x) (offsetof(constant_block, x))
 
 // In little-endian mode, the lxv instruction loads the element at EA into
@@ -3680,7 +3679,7 @@ class StubGenerator: public StubCodeGenerator {
       unsigned char pack_permute_val[16];
     } constant_block;
 
-    static const constant_block VEC_ALIGN const_block = {
+    alignas(16) static const constant_block const_block = {
 
       .offsetLUT_val = {
         ARRAY_TO_LXV_ORDER(
@@ -4262,7 +4261,7 @@ class StubGenerator: public StubCodeGenerator {
       unsigned char base64_48_63_URL_val[16];
     } constant_block;
 
-    static const constant_block VEC_ALIGN const_block = {
+    alignas(16) static const constant_block const_block = {
       .expand_permute_val = {
         ARRAY_TO_LXV_ORDER(
         0,  4,  5,  6,
@@ -4717,6 +4716,20 @@ class StubGenerator: public StubCodeGenerator {
 
 #endif // INCLUDE_JFR
 
+  // exception handler for upcall stubs
+  address generate_upcall_stub_exception_handler() {
+    StubCodeMark mark(this, "StubRoutines", "upcall stub exception handler");
+    address start = __ pc();
+
+    // Native caller has no idea how to handle exceptions,
+    // so we just crash here. Up to callee to catch exceptions.
+    __ verify_oop(R3_ARG1);
+    __ load_const_optimized(R12_scratch2, CAST_FROM_FN_PTR(uint64_t, UpcallLinker::handle_uncaught_exception), R0);
+    __ call_c(R12_scratch2);
+    __ should_not_reach_here();
+
+    return start;
+  }
 
   // Initialization
   void generate_initial_stubs() {
@@ -4732,8 +4745,8 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_call_stub_entry                  = generate_call_stub(StubRoutines::_call_stub_return_address);
     StubRoutines::_catch_exception_entry            = generate_catch_exception();
 
-    if (UnsafeCopyMemory::_table == nullptr) {
-      UnsafeCopyMemory::create_table(8);
+    if (UnsafeMemoryAccess::_table == nullptr) {
+      UnsafeMemoryAccess::create_table(8 + 4); // 8 for copyMemory; 4 for setMemory
     }
 
     // Build this early so it's available for the interpreter.
@@ -4791,11 +4804,13 @@ class StubGenerator: public StubCodeGenerator {
     // nmethod entry barriers for concurrent class unloading
     BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
     if (bs_nm != nullptr) {
-      StubRoutines::ppc::_nmethod_entry_barrier            = generate_nmethod_entry_barrier();
+      StubRoutines::_method_entry_barrier            = generate_method_entry_barrier();
     }
 
     // arraycopy stubs used by compilers
     generate_arraycopy_stubs();
+
+    StubRoutines::_upcall_stub_exception_handler = generate_upcall_stub_exception_handler();
   }
 
   void generate_compiler_stubs() {

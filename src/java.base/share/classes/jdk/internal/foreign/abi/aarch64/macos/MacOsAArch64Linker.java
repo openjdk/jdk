@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -39,7 +39,7 @@ import java.nio.ByteOrder;
 import java.util.Map;
 
 /**
- * ABI implementation for macOS on Apple silicon. Based on AAPCS with
+ * ABI implementation for macOS on Apple Silicon. Based on AAPCS with
  * changes to va_list and passing arguments on the stack.
  */
 public final class MacOsAArch64Linker extends AbstractLinker {
@@ -67,11 +67,6 @@ public final class MacOsAArch64Linker extends AbstractLinker {
     @Override
     protected UpcallStubFactory arrangeUpcall(MethodType targetType, FunctionDescriptor function, LinkerOptions options) {
         return CallArranger.MACOS.arrangeUpcall(targetType, function, options);
-    }
-
-    @Override
-    protected ByteOrder linkerByteOrder() {
-        return ByteOrder.LITTLE_ENDIAN;
     }
 
     @Override

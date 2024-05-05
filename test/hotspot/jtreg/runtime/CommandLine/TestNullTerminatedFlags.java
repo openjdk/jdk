@@ -50,15 +50,14 @@ public class TestNullTerminatedFlags {
             "-Xshare:on",
             "-Xshare:auto",
             "-Xshare:off",
-            "-Xdebug",
-            "-Xnoagent"
+            "-Xdebug"
         };
 
     public static void main(String args[]) throws Exception{
         for (String option : options) {
             String testOption = option + "junk";
             ProcessBuilder pb =
-                ProcessTools.createJavaProcessBuilder(testOption, "-version");
+                ProcessTools.createLimitedTestJavaProcessBuilder(testOption, "-version");
             new OutputAnalyzer(pb.start())
                     .shouldContain("Unrecognized option: " + testOption)
                     .shouldHaveExitValue(1);

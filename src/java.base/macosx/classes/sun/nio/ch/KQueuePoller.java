@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,17 +31,16 @@ import static sun.nio.ch.KQueue.*;
  * Poller implementation based on the kqueue facility.
  */
 class KQueuePoller extends Poller {
-    private static final int MAX_EVENTS_TO_POLL = 512;
-
     private final int kqfd;
     private final int filter;
+    private final int maxEvents;
     private final long address;
 
-    KQueuePoller(boolean read) throws IOException {
-        super(read);
+    KQueuePoller(boolean subPoller, boolean read) throws IOException {
         this.kqfd = KQueue.create();
         this.filter = (read) ? EVFILT_READ : EVFILT_WRITE;
-        this.address = KQueue.allocatePollArray(MAX_EVENTS_TO_POLL);
+        this.maxEvents = (subPoller) ? 64 : 512;
+        this.address = KQueue.allocatePollArray(maxEvents);
     }
 
     @Override
@@ -57,13 +56,16 @@ class KQueuePoller extends Poller {
     }
 
     @Override
-    void implDeregister(int fdVal) {
-        KQueue.register(kqfd, fdVal, filter, EV_DELETE);
+    void implDeregister(int fdVal, boolean polled) {
+        // event was deleted if already polled
+        if (!polled) {
+            KQueue.register(kqfd, fdVal, filter, EV_DELETE);
+        }
     }
 
     @Override
     int poll(int timeout) throws IOException {
-        int n = KQueue.poll(kqfd, address, MAX_EVENTS_TO_POLL, timeout);
+        int n = KQueue.poll(kqfd, address, maxEvents, timeout);
         int i = 0;
         while (i < n) {
             long keventAddress = KQueue.getEvent(address, i);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,23 +42,23 @@ public class CompressedClassSpaceSize {
         ProcessBuilder pb;
         OutputAnalyzer output;
         // Minimum size is 1MB
-        pb = ProcessTools.createJavaProcessBuilder("-XX:CompressedClassSpaceSize=0",
-                                                   "-version");
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:CompressedClassSpaceSize=0",
+                                                              "-version");
         output = new OutputAnalyzer(pb.start());
         output.shouldContain("outside the allowed range")
               .shouldHaveExitValue(1);
 
         // Invalid size of -1 should be handled correctly
-        pb = ProcessTools.createJavaProcessBuilder("-XX:CompressedClassSpaceSize=-1",
-                                                   "-version");
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:CompressedClassSpaceSize=-1",
+                                                              "-version");
         output = new OutputAnalyzer(pb.start());
         output.shouldContain("Improperly specified VM option 'CompressedClassSpaceSize=-1'")
               .shouldHaveExitValue(1);
 
 
         // Maximum size is 3GB
-        pb = ProcessTools.createJavaProcessBuilder("-XX:CompressedClassSpaceSize=4g",
-                                                   "-version");
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:CompressedClassSpaceSize=4g",
+                                                              "-version");
         output = new OutputAnalyzer(pb.start());
         output.shouldContain("outside the allowed range")
               .shouldHaveExitValue(1);
@@ -67,28 +67,28 @@ public class CompressedClassSpaceSize {
         // Make sure the minimum size is set correctly and printed
         // (Note: ccs size are rounded up to the next larger root chunk boundary (16m).
         // Note that this is **reserved** size and does not affect rss.
-        pb = ProcessTools.createJavaProcessBuilder("-XX:+UnlockDiagnosticVMOptions",
-                                                   "-XX:CompressedClassSpaceSize=1m",
-                                                   "-Xlog:gc+metaspace=trace",
-                                                   "-version");
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+UnlockDiagnosticVMOptions",
+                                                              "-XX:CompressedClassSpaceSize=1m",
+                                                              "-Xlog:gc+metaspace=trace",
+                                                              "-version");
         output = new OutputAnalyzer(pb.start());
         output.shouldMatch("Compressed class space.*16777216")
               .shouldHaveExitValue(0);
 
 
         // Make sure the maximum size is set correctly and printed
-        pb = ProcessTools.createJavaProcessBuilder("-XX:+UnlockDiagnosticVMOptions",
-                                                   "-XX:CompressedClassSpaceSize=3g",
-                                                   "-Xlog:gc+metaspace=trace",
-                                                   "-version");
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+UnlockDiagnosticVMOptions",
+                                                              "-XX:CompressedClassSpaceSize=3g",
+                                                              "-Xlog:gc+metaspace=trace",
+                                                              "-version");
         output = new OutputAnalyzer(pb.start());
         output.shouldMatch("Compressed class space.*3221225472")
               .shouldHaveExitValue(0);
 
 
-        pb = ProcessTools.createJavaProcessBuilder("-XX:-UseCompressedClassPointers",
-                                                   "-XX:CompressedClassSpaceSize=1m",
-                                                   "-version");
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:-UseCompressedClassPointers",
+                                                              "-XX:CompressedClassSpaceSize=1m",
+                                                              "-version");
         output = new OutputAnalyzer(pb.start());
         output.shouldContain("Setting CompressedClassSpaceSize has no effect when compressed class pointers are not used")
               .shouldHaveExitValue(0);

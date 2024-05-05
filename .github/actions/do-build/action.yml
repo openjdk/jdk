@@ -66,7 +66,7 @@ runs:
       shell: bash
 
     - name: 'Upload build logs'
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: failure-logs-${{ inputs.platform }}${{ inputs.debug-suffix }}
         path: failure-logs
@@ -74,7 +74,7 @@ runs:
 
       # This is the best way I found to abort the job with an error message
     - name: 'Notify about build failures'
-      uses: actions/github-script@v6
+      uses: actions/github-script@v7
       with:
         script: core.setFailed('Build failed. See summary for details.')
       if: steps.check.outputs.failure == 'true'

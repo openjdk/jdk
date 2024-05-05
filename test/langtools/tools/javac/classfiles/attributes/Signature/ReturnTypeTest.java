@@ -26,14 +26,10 @@
  * @bug 8049238
  * @summary Checks Signature attribute for array return type of method.
  * @library /tools/lib /tools/javac/lib ../lib
+ * @enablePreview
  * @modules java.desktop
  *          jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- *          java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
  *          java.base/jdk.internal.classfile.impl
  * @build toolbox.ToolBox InMemoryFileManager TestResult TestBase
  * @build ReturnTypeTest Driver ExpectedSignature ExpectedSignatureContainer

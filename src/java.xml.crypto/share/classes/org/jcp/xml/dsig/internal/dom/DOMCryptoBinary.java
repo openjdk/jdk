@@ -26,7 +26,8 @@
 package org.jcp.xml.dsig.internal.dom;
 
 import java.math.BigInteger;
-import javax.xml.crypto.*;
+
+import javax.xml.crypto.MarshalException;
 import javax.xml.crypto.dom.DOMCryptoContext;
 
 import com.sun.org.apache.xml.internal.security.utils.XMLUtils;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/compilationPolicy.hpp"
+#include "compiler/compilerOracle.hpp"
 #include "compiler/directivesParser.hpp"
 #include "compiler/methodMatcher.hpp"
 #include "gc/shared/concurrentGCBreakpoints.hpp"
@@ -56,11 +57,14 @@
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "nmt/mallocSiteTable.hpp"
+#include "nmt/memTracker.hpp"
 #include "oops/array.hpp"
 #include "oops/compressedOops.hpp"
 #include "oops/constantPool.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/method.inline.hpp"
+#include "oops/methodData.inline.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -82,15 +86,14 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
+#include "runtime/lockStack.hpp"
 #include "runtime/os.hpp"
 #include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/synchronizer.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vframe.hpp"
 #include "runtime/vm_version.hpp"
-#include "services/mallocSiteTable.hpp"
 #include "services/memoryService.hpp"
-#include "services/memTracker.hpp"
 #include "utilities/align.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
@@ -104,8 +107,8 @@
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentMark.hpp"
 #include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
-#include "gc/g1/heapRegionManager.hpp"
-#include "gc/g1/heapRegionRemSet.inline.hpp"
+#include "gc/g1/g1HeapRegionManager.hpp"
+#include "gc/g1/g1HeapRegionRemSet.inline.hpp"
 #endif // INCLUDE_G1GC
 #if INCLUDE_PARALLELGC
 #include "gc/parallel/parallelScavengeHeap.inline.hpp"
@@ -121,9 +124,9 @@
 #include "jvmci/jvmciRuntime.hpp"
 #endif
 #ifdef LINUX
-#include "os_linux.hpp"
-#include "osContainer_linux.hpp"
 #include "cgroupSubsystem_linux.hpp"
+#include "osContainer_linux.hpp"
+#include "os_linux.hpp"
 #endif
 
 #define CHECK_JNI_EXCEPTION_(env, value)                               \
@@ -381,7 +384,7 @@ WB_ENTRY(jboolean, WB_IsGCSupportedByJVMCICompiler(JNIEnv* env, jobject o, jint 
   if (EnableJVMCI) {
     // Enter the JVMCI env that will be used by the CompileBroker.
     JVMCIEnv jvmciEnv(thread, __FILE__, __LINE__);
-    return jvmciEnv.runtime()->is_gc_supported(&jvmciEnv, (CollectedHeap::Name)name);
+    return jvmciEnv.init_error() == JNI_OK && jvmciEnv.runtime()->is_gc_supported(&jvmciEnv, (CollectedHeap::Name)name);
   }
 #endif
   return false;
@@ -401,7 +404,7 @@ WB_ENTRY(jboolean, WB_isObjectInOldGen(JNIEnv* env, jobject o, jobject obj))
   if (UseG1GC) {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
     const HeapRegion* hr = g1h->heap_region_containing(p);
-    return !(hr->is_young());
+    return hr->is_old_or_humongous();
   }
 #endif
 #if INCLUDE_PARALLELGC
@@ -766,9 +769,9 @@ class VM_WhiteBoxDeoptimizeFrames : public VM_WhiteBoxOperation {
           if (f->can_be_deoptimized() && !f->is_deoptimized_frame()) {
             Deoptimization::deoptimize(t, *f);
             if (_make_not_entrant) {
-                CompiledMethod* cm = CodeCache::find_compiled(f->pc());
-                assert(cm != nullptr, "sanity check");
-                cm->make_not_entrant();
+                nmethod* nm = CodeCache::find_nmethod(f->pc());
+                assert(nm != nullptr, "did not find nmethod");
+                nm->make_not_entrant();
             }
             ++_result;
           }
@@ -818,7 +821,7 @@ WB_ENTRY(jint, WB_DeoptimizeMethod(JNIEnv* env, jobject o, jobject method, jbool
     if (is_osr) {
       result += mh->method_holder()->mark_osr_nmethods(&deopt_scope, mh());
     } else {
-      MutexLocker ml(CompiledMethod_lock, Mutex::_no_safepoint_check_flag);
+      MutexLocker ml(NMethodState_lock, Mutex::_no_safepoint_check_flag);
       if (mh->code() != nullptr) {
         deopt_scope.mark(mh->code());
         ++result;
@@ -837,7 +840,7 @@ WB_ENTRY(jboolean, WB_IsMethodCompiled(JNIEnv* env, jobject o, jobject method, j
   CHECK_JNI_EXCEPTION_(env, JNI_FALSE);
   MutexLocker mu(Compile_lock);
   methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
-  CompiledMethod* code = is_osr ? mh->lookup_osr_nmethod_for(InvocationEntryBci, CompLevel_none, false) : mh->code();
+  nmethod* code = is_osr ? mh->lookup_osr_nmethod_for(InvocationEntryBci, CompLevel_none, false) : mh->code();
   if (code == nullptr) {
     return JNI_FALSE;
   }
@@ -936,7 +939,7 @@ WB_ENTRY(jint, WB_GetMethodCompilationLevel(JNIEnv* env, jobject o, jobject meth
   jmethodID jmid = reflected_method_to_jmid(thread, env, method);
   CHECK_JNI_EXCEPTION_(env, CompLevel_none);
   methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
-  CompiledMethod* code = is_osr ? mh->lookup_osr_nmethod_for(InvocationEntryBci, CompLevel_none, false) : mh->code();
+  nmethod* code = is_osr ? mh->lookup_osr_nmethod_for(InvocationEntryBci, CompLevel_none, false) : mh->code();
   return (code != nullptr ? code->comp_level() : CompLevel_none);
 WB_END
 
@@ -1021,7 +1024,7 @@ WB_ENTRY(jint, WB_GetMethodEntryBci(JNIEnv* env, jobject o, jobject method))
   jmethodID jmid = reflected_method_to_jmid(thread, env, method);
   CHECK_JNI_EXCEPTION_(env, InvocationEntryBci);
   methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
-  CompiledMethod* code = mh->lookup_osr_nmethod_for(InvocationEntryBci, CompLevel_none, false);
+  nmethod* code = mh->lookup_osr_nmethod_for(InvocationEntryBci, CompLevel_none, false);
   return (code != nullptr && code->is_osr_method() ? code->osr_entry_bci() : InvocationEntryBci);
 WB_END
 
@@ -1095,8 +1098,8 @@ bool WhiteBox::compile_method(Method* method, int comp_level, int bci, JavaThrea
   }
   // Check code again because compilation may be finished before Compile_lock is acquired.
   if (bci == InvocationEntryBci) {
-    CompiledMethod* code = mh->code();
-    if (code != nullptr && code->as_nmethod_or_null() != nullptr) {
+    nmethod* code = mh->code();
+    if (code != nullptr) {
       return true;
     }
   } else if (mh->lookup_osr_nmethod_for(bci, comp_level, false) != nullptr) {
@@ -1226,7 +1229,6 @@ WB_ENTRY(void, WB_ClearMethodState(JNIEnv* env, jobject o, jobject method))
     for (int i = 0; i < arg_count; i++) {
       mdo->set_arg_modified(i, 0);
     }
-    MutexLocker mu(THREAD, mdo->extra_data_lock());
     mdo->clean_method_data(/*always_clean*/true);
   }
 
@@ -1555,7 +1557,7 @@ WB_ENTRY(jobjectArray, WB_GetNMethod(JNIEnv* env, jobject o, jobject method, jbo
   jmethodID jmid = reflected_method_to_jmid(thread, env, method);
   CHECK_JNI_EXCEPTION_(env, nullptr);
   methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
-  CompiledMethod* code = is_osr ? mh->lookup_osr_nmethod_for(InvocationEntryBci, CompLevel_none, false) : mh->code();
+  nmethod* code = is_osr ? mh->lookup_osr_nmethod_for(InvocationEntryBci, CompLevel_none, false) : mh->code();
   jobjectArray result = nullptr;
   if (code == nullptr) {
     return result;
@@ -1607,7 +1609,7 @@ CodeBlob* WhiteBox::allocate_code_blob(int size, CodeBlobType blob_type) {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     blob = (BufferBlob*) CodeCache::allocate(full_size, blob_type);
     if (blob != nullptr) {
-      ::new (blob) BufferBlob("WB::DummyBlob", full_size);
+      ::new (blob) BufferBlob("WB::DummyBlob", CodeBlobKind::Buffer, full_size);
     }
   }
   // Track memory usage statistic after releasing CodeCache_lock
@@ -1847,9 +1849,17 @@ WB_ENTRY(jboolean, WB_IsMonitorInflated(JNIEnv* env, jobject wb, jobject obj))
   return (jboolean) obj_oop->mark().has_monitor();
 WB_END
 
+WB_ENTRY(jint, WB_getLockStackCapacity(JNIEnv* env))
+  return (jint) LockStack::CAPACITY;
+WB_END
+
+WB_ENTRY(jboolean, WB_supportsRecursiveLightweightLocking(JNIEnv* env))
+  return (jboolean) VM_Version::supports_recursive_lightweight_locking();
+WB_END
+
 WB_ENTRY(jboolean, WB_DeflateIdleMonitors(JNIEnv* env, jobject wb))
   log_info(monitorinflation)("WhiteBox initiated DeflateIdleMonitors");
-  return ObjectSynchronizer::request_deflate_idle_monitors();
+  return ObjectSynchronizer::request_deflate_idle_monitors_from_wb();
 WB_END
 
 WB_ENTRY(void, WB_ForceSafepoint(JNIEnv* env, jobject wb))
@@ -1868,42 +1878,10 @@ WB_ENTRY(jlong, WB_GetConstantPool(JNIEnv* env, jobject wb, jclass klass))
   return (jlong) ik->constants();
 WB_END
 
-WB_ENTRY(jint, WB_GetConstantPoolCacheIndexTag(JNIEnv* env, jobject wb))
-  return ConstantPool::CPCACHE_INDEX_TAG;
-WB_END
-
-WB_ENTRY(jint, WB_GetConstantPoolCacheLength(JNIEnv* env, jobject wb, jclass klass))
-  InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve(klass)));
-  ConstantPool* cp = ik->constants();
-  if (cp->cache() == nullptr) {
-      return -1;
-  }
-  return cp->cache()->length();
-WB_END
-
 WB_ENTRY(jobjectArray, WB_GetResolvedReferences(JNIEnv* env, jobject wb, jclass klass))
   InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve(klass)));
   objArrayOop resolved_refs= ik->constants()->resolved_references();
   return (jobjectArray)JNIHandles::make_local(THREAD, resolved_refs);
-WB_END
-
-WB_ENTRY(jint, WB_ConstantPoolRemapInstructionOperandFromCache(JNIEnv* env, jobject wb, jclass klass, jint index))
-  InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve(klass)));
-  ConstantPool* cp = ik->constants();
-  if (cp->cache() == nullptr) {
-    THROW_MSG_0(vmSymbols::java_lang_IllegalStateException(), "Constant pool does not have a cache");
-  }
-  jint cpci = index;
-  jint cpciTag = ConstantPool::CPCACHE_INDEX_TAG;
-  if (cpciTag > cpci || cpci >= cp->cache()->length() + cpciTag) {
-    THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(), "Constant pool cache index is out of range");
-  }
-  jint cpi = cp->remap_instruction_operand_from_cache(cpci);
-  return cpi;
-WB_END
-
-WB_ENTRY(jint, WB_ConstantPoolEncodeIndyIndex(JNIEnv* env, jobject wb, jint index))
-  return ConstantPool::encode_invokedynamic_index(index);
 WB_END
 
 WB_ENTRY(jint, WB_getFieldEntriesLength(JNIEnv* env, jobject wb, jclass klass))
@@ -1918,10 +1896,28 @@ WB_END
 WB_ENTRY(jint, WB_getFieldCPIndex(JNIEnv* env, jobject wb, jclass klass, jint index))
   InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve(klass)));
   ConstantPool* cp = ik->constants();
-  if (cp->cache() == NULL) {
+  if (cp->cache() == nullptr) {
       return -1;
   }
   return cp->resolved_field_entry_at(index)->constant_pool_index();
+WB_END
+
+WB_ENTRY(jint, WB_getMethodEntriesLength(JNIEnv* env, jobject wb, jclass klass))
+  InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve(klass)));
+  ConstantPool* cp = ik->constants();
+  if (cp->cache() == nullptr) {
+    return -1;
+  }
+  return cp->resolved_method_entries_length();
+WB_END
+
+WB_ENTRY(jint, WB_getMethodCPIndex(JNIEnv* env, jobject wb, jclass klass, jint index))
+  InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve(klass)));
+  ConstantPool* cp = ik->constants();
+  if (cp->cache() == nullptr) {
+      return -1;
+  }
+  return cp->resolved_method_entry_at(index)->constant_pool_index();
 WB_END
 
 WB_ENTRY(jint, WB_getIndyInfoLength(JNIEnv* env, jobject wb, jclass klass))
@@ -1989,9 +1985,9 @@ static bool GetMethodOption(JavaThread* thread, JNIEnv* env, jobject method, jst
   ThreadToNativeFromVM ttnfv(thread);
   const char* flag_name = env->GetStringUTFChars(name, nullptr);
   CHECK_JNI_EXCEPTION_(env, false);
-  enum CompileCommand option = CompilerOracle::string_to_option(flag_name);
+  CompileCommandEnum option = CompilerOracle::string_to_option(flag_name);
   env->ReleaseStringUTFChars(name, flag_name);
-  if (option == CompileCommand::Unknown) {
+  if (option == CompileCommandEnum::Unknown) {
     return false;
   }
   if (!CompilerOracle::option_matches_type(option, *value)) {
@@ -2053,7 +2049,7 @@ WB_ENTRY(jobject, WB_GetMethodStringOption(JNIEnv* env, jobject wb, jobject meth
 WB_END
 
 WB_ENTRY(jobject, WB_GetDefaultArchivePath(JNIEnv* env, jobject wb))
-  const char* p = Arguments::get_default_shared_archive_path();
+  const char* p = CDSConfig::default_archive_path();
   ThreadToNativeFromVM ttn(thread);
   jstring path_string = env->NewStringUTF(p);
 
@@ -2603,6 +2599,32 @@ WB_ENTRY(void, WB_UnlockCritical(JNIEnv* env, jobject wb))
   GCLocker::unlock_critical(thread);
 WB_END
 
+WB_ENTRY(void, WB_PinObject(JNIEnv* env, jobject wb, jobject o))
+#if INCLUDE_G1GC
+  if (!UseG1GC) {
+    ShouldNotReachHere();
+    return;
+  }
+  oop obj = JNIHandles::resolve(o);
+  G1CollectedHeap::heap()->pin_object(thread, obj);
+#else
+  ShouldNotReachHere();
+#endif // INCLUDE_G1GC
+WB_END
+
+WB_ENTRY(void, WB_UnpinObject(JNIEnv* env, jobject wb, jobject o))
+#if INCLUDE_G1GC
+  if (!UseG1GC) {
+    ShouldNotReachHere();
+    return;
+  }
+  oop obj = JNIHandles::resolve(o);
+  G1CollectedHeap::heap()->unpin_object(thread, obj);
+#else
+  ShouldNotReachHere();
+#endif // INCLUDE_G1GC
+WB_END
+
 WB_ENTRY(jboolean, WB_SetVirtualThreadsNotifyJvmtiMode(JNIEnv* env, jobject wb, jboolean enable))
   if (!Continuations::enabled()) {
     tty->print_cr("WB error: must be Continuations::enabled()!");
@@ -2625,6 +2647,10 @@ WB_ENTRY(void, WB_PreTouchMemory(JNIEnv* env, jobject wb, jlong addr, jlong size
   if (from > to) {
     os::pretouch_memory(from, to, os::vm_page_size());
   }
+WB_END
+
+WB_ENTRY(void, WB_CleanMetaspaces(JNIEnv* env, jobject target))
+  ClassLoaderDataGraph::safepoint_and_clean_metaspaces();
 WB_END
 
 #define CC (char*)
@@ -2809,18 +2835,16 @@ static JNINativeMethod methods[] = {
                                                       (void*)&WB_AddModuleExportsToAll },
   {CC"deflateIdleMonitors", CC"()Z",                  (void*)&WB_DeflateIdleMonitors },
   {CC"isMonitorInflated0", CC"(Ljava/lang/Object;)Z", (void*)&WB_IsMonitorInflated  },
+  {CC"getLockStackCapacity", CC"()I",                 (void*)&WB_getLockStackCapacity },
+  {CC"supportsRecursiveLightweightLocking", CC"()Z",  (void*)&WB_supportsRecursiveLightweightLocking },
   {CC"forceSafepoint",     CC"()V",                   (void*)&WB_ForceSafepoint     },
   {CC"forceClassLoaderStatsSafepoint", CC"()V",       (void*)&WB_ForceClassLoaderStatsSafepoint },
   {CC"getConstantPool0",   CC"(Ljava/lang/Class;)J",  (void*)&WB_GetConstantPool    },
-  {CC"getConstantPoolCacheIndexTag0", CC"()I",  (void*)&WB_GetConstantPoolCacheIndexTag},
-  {CC"getConstantPoolCacheLength0", CC"(Ljava/lang/Class;)I",  (void*)&WB_GetConstantPoolCacheLength},
   {CC"getResolvedReferences0", CC"(Ljava/lang/Class;)[Ljava/lang/Object;", (void*)&WB_GetResolvedReferences},
-  {CC"remapInstructionOperandFromCPCache0",
-      CC"(Ljava/lang/Class;I)I",                      (void*)&WB_ConstantPoolRemapInstructionOperandFromCache},
-  {CC"encodeConstantPoolIndyIndex0",
-      CC"(I)I",                      (void*)&WB_ConstantPoolEncodeIndyIndex},
   {CC"getFieldEntriesLength0", CC"(Ljava/lang/Class;)I",  (void*)&WB_getFieldEntriesLength},
   {CC"getFieldCPIndex0",    CC"(Ljava/lang/Class;I)I", (void*)&WB_getFieldCPIndex},
+  {CC"getMethodEntriesLength0", CC"(Ljava/lang/Class;)I",  (void*)&WB_getMethodEntriesLength},
+  {CC"getMethodCPIndex0",    CC"(Ljava/lang/Class;I)I", (void*)&WB_getMethodCPIndex},
   {CC"getIndyInfoLength0", CC"(Ljava/lang/Class;)I",  (void*)&WB_getIndyInfoLength},
   {CC"getIndyCPIndex0",    CC"(Ljava/lang/Class;I)I", (void*)&WB_getIndyCPIndex},
   {CC"printClasses0",      CC"(Ljava/lang/String;I)Ljava/lang/String;", (void*)&WB_printClasses},
@@ -2911,8 +2935,11 @@ static JNINativeMethod methods[] = {
 
   {CC"lockCritical",    CC"()V",                      (void*)&WB_LockCritical},
   {CC"unlockCritical",  CC"()V",                      (void*)&WB_UnlockCritical},
+  {CC"pinObject",       CC"(Ljava/lang/Object;)V",    (void*)&WB_PinObject},
+  {CC"unpinObject",     CC"(Ljava/lang/Object;)V",    (void*)&WB_UnpinObject},
   {CC"setVirtualThreadsNotifyJvmtiMode", CC"(Z)Z",    (void*)&WB_SetVirtualThreadsNotifyJvmtiMode},
   {CC"preTouchMemory",  CC"(JJ)V",                    (void*)&WB_PreTouchMemory},
+  {CC"cleanMetaspaces", CC"()V",                      (void*)&WB_CleanMetaspaces},
 };
 
 

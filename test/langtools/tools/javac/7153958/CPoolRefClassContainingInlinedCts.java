@@ -25,19 +25,15 @@
  * @test
  * @bug 7153958 8073372
  * @summary add constant pool reference to class containing inlined constants
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
+ * @enablePreview
+ * @modules java.base/jdk.internal.classfile.impl
  * @compile pkg/ClassToBeStaticallyImportedA.java pkg/ClassToBeStaticallyImportedB.java CPoolRefClassContainingInlinedCts.java
  * @run main CPoolRefClassContainingInlinedCts
  */
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.constantpool.ClassEntry;
-import jdk.internal.classfile.constantpool.PoolEntry;
+import java.lang.classfile.*;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.constantpool.PoolEntry;
 import java.io.File;
 import java.io.IOException;
 
@@ -74,7 +70,7 @@ public class CPoolRefClassContainingInlinedCts {
         File testClasses = new File(System.getProperty("test.classes"));
         File file = new File(testClasses,
                 CPoolRefClassContainingInlinedCts.class.getName() + ".class");
-        ClassModel classFile = Classfile.of().parse(file.toPath());
+        ClassModel classFile = ClassFile.of().parse(file.toPath());
         for (PoolEntry cpInfo : classFile.constantPool()) {
             if (cpInfo instanceof ClassEntry classEntry) {
                 checkClassName(classEntry.asInternalName());

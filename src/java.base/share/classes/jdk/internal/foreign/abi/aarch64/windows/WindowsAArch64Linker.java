@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Arm Limited. All rights reserved.
  * Copyright (c) 2021, 2022, Microsoft. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -47,13 +47,12 @@ public final class WindowsAArch64Linker extends AbstractLinker {
 
     static final Map<String, MemoryLayout> CANONICAL_LAYOUTS =
             SharedUtils.canonicalLayouts(ValueLayout.JAVA_INT, ValueLayout.JAVA_LONG, ValueLayout.JAVA_CHAR);
-    private static WindowsAArch64Linker instance;
 
     public static WindowsAArch64Linker getInstance() {
-        if (instance == null) {
-            instance = new WindowsAArch64Linker();
+        class Holder {
+            private static final WindowsAArch64Linker INSTANCE =  new WindowsAArch64Linker();
         }
-        return instance;
+        return Holder.INSTANCE;
     }
 
     @Override
@@ -64,11 +63,6 @@ public final class WindowsAArch64Linker extends AbstractLinker {
     @Override
     protected UpcallStubFactory arrangeUpcall(MethodType targetType, FunctionDescriptor function, LinkerOptions options) {
         return CallArranger.WINDOWS.arrangeUpcall(targetType, function, options);
-    }
-
-    @Override
-    protected ByteOrder linkerByteOrder() {
-        return ByteOrder.LITTLE_ENDIAN;
     }
 
     @Override

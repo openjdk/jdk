@@ -247,11 +247,10 @@ void G1MonitoringSupport::recalculate_sizes() {
   _old_gen_used = _overall_used - MIN2(_overall_used, _eden_space_used + _survivor_space_used);
 
   uint survivor_list_length = _g1h->survivor_regions_count();
-  // Max length includes any potential extensions to the young gen
-  // we'll do when the GC locker is active.
-  uint young_list_max_length = _g1h->policy()->young_list_max_length();
-  assert(young_list_max_length >= survivor_list_length, "invariant");
-  uint eden_list_max_length = young_list_max_length - survivor_list_length;
+
+  uint young_list_target_length = _g1h->policy()->young_list_target_length();
+  assert(young_list_target_length >= survivor_list_length, "invariant");
+  uint eden_list_max_length = young_list_target_length - survivor_list_length;
 
   // First calculate the committed sizes that can be calculated independently.
   _survivor_space_committed = survivor_list_length * HeapRegion::GrainBytes;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, DataDog. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -36,7 +36,7 @@ import jdk.jfr.internal.Type;
 @Label("Container Memory Usage")
 @Category({"Operating System", "Memory"})
 @Description("Container memory usage related information")
-public final class ContainerMemoryUsageEvent extends AbstractJDKEvent {
+public final class ContainerMemoryUsageEvent extends AbstractPeriodicEvent {
     @Label("Memory Fail Count")
     @Description("Number of times that user memory requests in the container have exceeded the memory limit")
     public long memoryFailCount;

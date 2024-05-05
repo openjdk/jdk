@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -38,6 +38,7 @@
 #include "oops/methodData.hpp"
 #include "oops/resolvedFieldEntry.hpp"
 #include "oops/resolvedIndyEntry.hpp"
+#include "oops/resolvedMethodEntry.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/basicLock.hpp"
@@ -189,74 +190,11 @@ void InterpreterMacroAssembler::get_cache_index_at_bcp(Register index,
   } else if (index_size == sizeof(u4)) {
     // assert(EnableInvokeDynamic, "giant index used only for JSR 292");
     ldrw(index, Address(rbcp, bcp_offset));
-    // Check if the secondary index definition is still ~x, otherwise
-    // we have to change the following assembler code to calculate the
-    // plain index.
-    assert(ConstantPool::decode_invokedynamic_index(~123) == 123, "else change next line");
-    eonw(index, index, zr);  // convert to plain index
   } else if (index_size == sizeof(u1)) {
     load_unsigned_byte(index, Address(rbcp, bcp_offset));
   } else {
     ShouldNotReachHere();
   }
-}
-
-// Return
-// Rindex: index into constant pool
-// Rcache: address of cache entry - ConstantPoolCache::base_offset()
-//
-// A caller must add ConstantPoolCache::base_offset() to Rcache to get
-// the true address of the cache entry.
-//
-void InterpreterMacroAssembler::get_cache_and_index_at_bcp(Register cache,
-                                                           Register index,
-                                                           int bcp_offset,
-                                                           size_t index_size) {
-  assert_different_registers(cache, index);
-  assert_different_registers(cache, rcpool);
-  get_cache_index_at_bcp(index, bcp_offset, index_size);
-  assert(sizeof(ConstantPoolCacheEntry) == 4 * wordSize, "adjust code below");
-  // convert from field index to ConstantPoolCacheEntry
-  // aarch64 already has the cache in rcpool so there is no need to
-  // install it in cache. instead we pre-add the indexed offset to
-  // rcpool and return it in cache. All clients of this method need to
-  // be modified accordingly.
-  add(cache, rcpool, index, Assembler::LSL, 5);
-}
-
-
-void InterpreterMacroAssembler::get_cache_and_index_and_bytecode_at_bcp(Register cache,
-                                                                        Register index,
-                                                                        Register bytecode,
-                                                                        int byte_no,
-                                                                        int bcp_offset,
-                                                                        size_t index_size) {
-  get_cache_and_index_at_bcp(cache, index, bcp_offset, index_size);
-  // We use a 32-bit load here since the layout of 64-bit words on
-  // little-endian machines allow us that.
-  // n.b. unlike x86 cache already includes the index offset
-  lea(bytecode, Address(cache,
-                         ConstantPoolCache::base_offset()
-                         + ConstantPoolCacheEntry::indices_offset()));
-  ldarw(bytecode, bytecode);
-  const int shift_count = (1 + byte_no) * BitsPerByte;
-  ubfx(bytecode, bytecode, shift_count, BitsPerByte);
-}
-
-void InterpreterMacroAssembler::get_cache_entry_pointer_at_bcp(Register cache,
-                                                               Register tmp,
-                                                               int bcp_offset,
-                                                               size_t index_size) {
-  assert(cache != tmp, "must use different register");
-  get_cache_index_at_bcp(tmp, bcp_offset, index_size);
-  assert(sizeof(ConstantPoolCacheEntry) == 4 * wordSize, "adjust code below");
-  // convert from field index to ConstantPoolCacheEntry index
-  // and from word offset to byte offset
-  assert(exact_log2(in_bytes(ConstantPoolCacheEntry::size_in_bytes())) == 2 + LogBytesPerWord, "else change next line");
-  ldr(cache, Address(rfp, frame::interpreter_frame_cache_offset * wordSize));
-  // skip past the header
-  add(cache, cache, in_bytes(ConstantPoolCache::base_offset()));
-  add(cache, cache, tmp, Assembler::LSL, 2 + LogBytesPerWord);  // construct pointer to cache entry
 }
 
 void InterpreterMacroAssembler::get_method_counters(Register method,
@@ -293,18 +231,6 @@ void InterpreterMacroAssembler::load_resolved_klass_at_offset(
   ldr(klass, Address(cpool,  ConstantPool::resolved_klasses_offset())); // klass = cpool->_resolved_klasses
   add(klass, klass, temp, LSL, LogBytesPerWord);
   ldr(klass, Address(klass, Array<Klass*>::base_offset_in_bytes()));
-}
-
-void InterpreterMacroAssembler::load_resolved_method_at_index(int byte_no,
-                                                              Register method,
-                                                              Register cache) {
-  const int method_offset = in_bytes(
-    ConstantPoolCache::base_offset() +
-      ((byte_no == TemplateTable::f2_byte)
-       ? ConstantPoolCacheEntry::f2_offset()
-       : ConstantPoolCacheEntry::f1_offset()));
-
-  ldr(method, Address(cache, method_offset)); // get f1 Method*
 }
 
 // Generate a subtype check: branch to ok_is_subtype if sub_klass is a
@@ -770,7 +696,6 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
     }
 
     if (LockingMode == LM_LIGHTWEIGHT) {
-      ldr(tmp, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
       lightweight_lock(obj_reg, tmp, tmp2, tmp3, slow_case);
       b(count);
     } else if (LockingMode == LM_LEGACY) {
@@ -887,22 +812,6 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg)
 
     if (LockingMode == LM_LIGHTWEIGHT) {
       Label slow_case;
-
-      // Check for non-symmetric locking. This is allowed by the spec and the interpreter
-      // must handle it.
-      Register tmp = rscratch1;
-      // First check for lock-stack underflow.
-      ldrw(tmp, Address(rthread, JavaThread::lock_stack_top_offset()));
-      cmpw(tmp, (unsigned)LockStack::start_offset());
-      br(Assembler::LE, slow_case);
-      // Then check if the top of the lock-stack matches the unlocked object.
-      subw(tmp, tmp, oopSize);
-      ldr(tmp, Address(rthread, tmp));
-      cmpoop(tmp, obj_reg);
-      br(Assembler::NE, slow_case);
-
-      ldr(header_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
-      tbnz(header_reg, exact_log2(markWord::monitor_value), slow_case);
       lightweight_unlock(obj_reg, header_reg, swap_reg, tmp_reg, slow_case);
       b(count);
       bind(slow_case);
@@ -1631,7 +1540,7 @@ void InterpreterMacroAssembler::call_VM_base(Register oop_result,
 }
 
 void InterpreterMacroAssembler::profile_obj_type(Register obj, const Address& mdo_addr) {
-  assert_different_registers(obj, rscratch1);
+  assert_different_registers(obj, rscratch1, mdo_addr.base(), mdo_addr.index());
   Label update, next, none;
 
   verify_oop(obj);
@@ -1653,13 +1562,13 @@ void InterpreterMacroAssembler::profile_obj_type(Register obj, const Address& md
   tbnz(obj, exact_log2(TypeEntries::type_unknown), next);
   // already unknown. Nothing to do anymore.
 
-  ldr(rscratch1, mdo_addr);
   cbz(rscratch1, none);
   cmp(rscratch1, (u1)TypeEntries::null_seen);
   br(Assembler::EQ, none);
-  // There is a chance that the checks above (re-reading profiling
-  // data from memory) fail if another thread has just set the
+  // There is a chance that the checks above
+  // fail if another thread has just set the
   // profiling to this obj's klass
+  eor(obj, obj, rscratch1); // get back original value before XOR
   ldr(rscratch1, mdo_addr);
   eor(obj, obj, rscratch1);
   tst(obj, TypeEntries::type_klass_mask);
@@ -1672,6 +1581,10 @@ void InterpreterMacroAssembler::profile_obj_type(Register obj, const Address& md
   bind(none);
   // first time here. Set profile type.
   str(obj, mdo_addr);
+#ifdef ASSERT
+  andr(obj, obj, TypeEntries::type_mask);
+  verify_klass_ptr(obj);
+#endif
 
   bind(next);
 }
@@ -1864,5 +1777,19 @@ void InterpreterMacroAssembler::load_field_entry(Register cache, Register index,
   // Get address of field entries array
   ldr(cache, Address(rcpool, ConstantPoolCache::field_entries_offset()));
   add(cache, cache, Array<ResolvedFieldEntry>::base_offset_in_bytes());
+  lea(cache, Address(cache, index));
+  // Prevents stale data from being read after the bytecode is patched to the fast bytecode
+  membar(MacroAssembler::LoadLoad);
+}
+
+void InterpreterMacroAssembler::load_method_entry(Register cache, Register index, int bcp_offset) {
+  // Get index out of bytecode pointer
+  get_cache_index_at_bcp(index, bcp_offset, sizeof(u2));
+  mov(cache, sizeof(ResolvedMethodEntry));
+  mul(index, index, cache); // Scale the index to be the entry index * sizeof(ResolvedMethodEntry)
+
+  // Get address of field entries array
+  ldr(cache, Address(rcpool, ConstantPoolCache::method_entries_offset()));
+  add(cache, cache, Array<ResolvedMethodEntry>::base_offset_in_bytes());
   lea(cache, Address(cache, index));
 }

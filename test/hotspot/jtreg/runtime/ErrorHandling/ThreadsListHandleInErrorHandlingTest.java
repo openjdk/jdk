@@ -53,7 +53,7 @@ public class ThreadsListHandleInErrorHandlingTest {
     // Need to disable ShowRegistersOnAssert: that flag causes registers to be shown, which calls os::print_location,
     // which - as part of its checks - will iterate the threads list under a ThreadListHandle, changing the max nesting
     // counters and confusing this test.
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+    ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
         "-XX:+UnlockDiagnosticVMOptions",
         "-XX:+EnableThreadSMRStatistics",
         "-Xmx100M",

@@ -110,7 +110,7 @@ public class SocketReadEvent extends Event {
      * timestamp and the given start time.  If the duration is meets
      * or exceeds the configured value (determined by calling the generated method
      * {@link #shouldCommit(long)}), an event will be emitted by calling
-     * {@link #commit(long, long, String, String, int, long, long, boolean)}.
+     * {@link #emit(long, long, long, SocketAddress, long)}
      *
      * @param start  the start time
      * @param nbytes  how many bytes were transferred
@@ -120,14 +120,29 @@ public class SocketReadEvent extends Event {
     public static void offer(long start, long nbytes, SocketAddress remote, long timeout) {
         long duration = timestamp() - start;
         if (shouldCommit(duration)) {
-            boolean eof = nbytes < 0 ? true : false;
-            nbytes = nbytes < 0 ? 0 : nbytes;
-            if (remote instanceof InetSocketAddress isa) {
-                commit(start, duration, isa.getHostString(), isa.getAddress().getHostAddress(), isa.getPort(), timeout, nbytes, eof);
-            } else if (remote instanceof UnixDomainSocketAddress udsa) {
-                String path = "[" + udsa.getPath().toString() + "]";
-                commit(start, duration, "Unix domain socket", path, 0, timeout, nbytes, eof);
-            }
+            emit(start, duration, nbytes, remote, timeout);
+        }
+    }
+
+    /**
+     * Helper method to perform a common task of getting event data ready and
+     * then emitting the event by calling
+     * {@link #commit(long, long, String, String, int, long, long, boolean)}.
+     *
+     * @param start  the start time
+     * @param duration the duration
+     * @param nbytes  how many bytes were transferred
+     * @param remote  the address of the remote socket
+     * @param timeout  maximum time to wait
+     */
+    public static void emit(long start, long duration, long nbytes, SocketAddress remote, long timeout) {
+        boolean eof = nbytes < 0 ? true : false;
+        nbytes = nbytes < 0 ? 0 : nbytes;
+        if (remote instanceof InetSocketAddress isa) {
+            commit(start, duration, isa.getHostString(), isa.getAddress().getHostAddress(), isa.getPort(), timeout, nbytes, eof);
+        } else if (remote instanceof UnixDomainSocketAddress udsa) {
+            String path = "[" + udsa.getPath().toString() + "]";
+            commit(start, duration, "Unix domain socket", path, 0, timeout, nbytes, eof);
         }
     }
 

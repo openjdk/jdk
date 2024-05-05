@@ -25,18 +25,14 @@
  * @test
  * @bug 8046060
  * @summary Different results of floating point multiplication for lambda code block
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
+ * @modules jdk.jdeps/com.sun.tools.classfile
  * @compile -source 16 -target 16 LambdaTestStrictFPFlag.java
  * @run main LambdaTestStrictFPFlag
  */
 
 import java.io.*;
 import java.net.URL;
-import jdk.internal.classfile.*;
+import com.sun.tools.classfile.*;
 
 public class LambdaTestStrictFPFlag {
     public static void main(String[] args) throws Exception {
@@ -44,11 +40,12 @@ public class LambdaTestStrictFPFlag {
     }
 
     void run() throws Exception {
-        ClassModel cm = getClassFile("LambdaTestStrictFPFlag$Test.class");
+        ClassFile cf = getClassFile("LambdaTestStrictFPFlag$Test.class");
+        ConstantPool cp = cf.constant_pool;
         boolean found = false;
-        for (MethodModel meth: cm.methods()) {
-            if (meth.methodName().stringValue().startsWith("lambda$")) {
-                if ((meth.flags().flagsMask() & Classfile.ACC_STRICT) == 0){
+        for (Method meth: cf.methods) {
+            if (meth.getName(cp).startsWith("lambda$")) {
+                if ((meth.access_flags.flags & AccessFlags.ACC_STRICT) == 0) {
                     throw new Exception("strict flag missing from lambda");
                 }
                 found = true;
@@ -59,11 +56,30 @@ public class LambdaTestStrictFPFlag {
         }
     }
 
-    ClassModel getClassFile(String name) throws IOException {
+// this version of the code can be used when ClassFile API in not in a preview
+//    void run() throws Exception {
+//        ClassModel cm = getClassFile("LambdaTestStrictFPFlag$Test.class");
+//        boolean found = false;
+//        for (MethodModel meth: cm.methods()) {
+//            if (meth.methodName().stringValue().startsWith("lambda$")) {
+//                if ((meth.flags().flagsMask() & ClassFile.ACC_STRICT) == 0){
+//                    throw new Exception("strict flag missing from lambda");
+//                }
+//                found = true;
+//            }
+//        }
+//        if (!found) {
+//            throw new Exception("did not find lambda method");
+//        }
+//    }
+
+    ClassFile getClassFile(String name) throws IOException, ConstantPoolException {
         URL url = getClass().getResource(name);
-        assert url != null;
-        try (InputStream in = url.openStream()) {
-            return Classfile.of().parse(in.readAllBytes());
+        InputStream in = url.openStream();
+        try {
+            return ClassFile.read(in);
+        } finally {
+            in.close();
         }
     }
 

@@ -845,7 +845,7 @@ public final class JarSigner {
             };
         }
         // We now create authAttrs in block data, so "direct == false".
-        block = PKCS7.generateNewSignedData(sigalg, sigProvider, privateKey, certChain,
+        block = PKCS7.generateSignedData(sigalg, sigProvider, privateKey, certChain,
                 content, internalsf, false, timestamper);
 
         String sfFilename = sf.getMetaName();

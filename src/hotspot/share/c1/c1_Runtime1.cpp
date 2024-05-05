@@ -1054,16 +1054,12 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* current, Runtime1::StubID stub_
     LinkResolver::resolve_invoke(info, Handle(), pool, index, bc, CHECK);
     switch (bc) {
       case Bytecodes::_invokehandle: {
-        int cache_index = ConstantPool::decode_cpcache_index(index, true);
-        assert(cache_index >= 0 && cache_index < pool->cache()->length(), "unexpected cache index");
-        ConstantPoolCacheEntry* cpce = pool->cache()->entry_at(cache_index);
-        cpce->set_method_handle(pool, info);
-        appendix = Handle(current, cpce->appendix_if_resolved(pool)); // just in case somebody already resolved the entry
+        ResolvedMethodEntry* entry = pool->cache()->set_method_handle(index, info);
+        appendix = Handle(current, pool->cache()->appendix_if_resolved(entry));
         break;
       }
       case Bytecodes::_invokedynamic: {
-        int indy_index = pool->decode_invokedynamic_index(index);
-        appendix = Handle(current, pool->cache()->set_dynamic_call(info, indy_index));
+        appendix = Handle(current, pool->cache()->set_dynamic_call(info, index));
         break;
       }
       default: fatal("unexpected bytecode for load_appendix_patching_id");

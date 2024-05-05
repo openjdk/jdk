@@ -42,12 +42,8 @@ import org.testng.annotations.Test;
  * @bug 8252919
  * @library ../../lib
  * @summary Test --generate-jli-classes plugin
+ * @enablePreview
  * @modules java.base/jdk.internal.jimage
- *          java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
  *          jdk.jlink/jdk.tools.jlink.internal
  *          jdk.jlink/jdk.tools.jlink.internal.plugins
  *          jdk.jlink/jdk.tools.jmod

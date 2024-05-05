@@ -37,6 +37,7 @@ import javax.swing.SwingUtilities;
 /**
  * @test
  * @bug 8138749
+ * @key printer multimon
  * @summary PrinterJob.printDialog() does not support multi-mon,
  *           always displayed on primary
  * @run main/manual MultiMonPrintDlgTest

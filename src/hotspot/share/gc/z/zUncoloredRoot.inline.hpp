@@ -29,11 +29,12 @@
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zBarrier.inline.hpp"
 #include "gc/z/zHeap.inline.hpp"
+#include "gc/z/zBarrier.hpp"
 #include "oops/oop.hpp"
 
 template <typename ObjectFunctionT>
 inline void ZUncoloredRoot::barrier(ObjectFunctionT function, zaddress_unsafe* p, uintptr_t color) {
-  z_assert_is_barrier_safe();
+  z_verify_safepoints_are_blocked();
 
   const zaddress_unsafe addr = Atomic::load(p);
   assert_is_valid(addr);

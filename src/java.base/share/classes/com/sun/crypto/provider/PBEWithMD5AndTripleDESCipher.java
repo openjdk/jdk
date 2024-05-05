@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ import javax.crypto.*;
  */
 public final class PBEWithMD5AndTripleDESCipher extends CipherSpi {
 
-    private PBES1Core core;
+    private final PBES1Core core;
 
     /**
      * Creates an instance of this cipher, and initializes its mode (CBC) and

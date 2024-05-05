@@ -39,10 +39,10 @@ TEST_VM(PlaceholderTable, supername) {
   ThreadInVMfromNative tivfn(THREAD);
 
   // Assert messages assume these symbols are unique, and the refcounts start at one.
-  TempNewSymbol A = SymbolTable::new_symbol("abc2_8_2023_class");
-  TempNewSymbol D = SymbolTable::new_symbol("def2_8_2023_class");
+  Symbol* A = SymbolTable::new_symbol("abc2_8_2023_class");
+  Symbol* D = SymbolTable::new_symbol("def2_8_2023_class");
   Symbol* super = SymbolTable::new_symbol("super2_8_2023_supername");
-  TempNewSymbol interf = SymbolTable::new_symbol("interface2_8_2023_supername");
+  Symbol* interf = SymbolTable::new_symbol("interface2_8_2023_supername");
 
   ClassLoaderData* loader_data = ClassLoaderData::the_null_class_loader_data();
 
@@ -110,4 +110,9 @@ TEST_VM(PlaceholderTable, supername) {
   EXPECT_EQ(A->refcount(), 1) << "first lass name refcount should be 1";
   EXPECT_EQ(D->refcount(), 1) << "second class name refcount should be 1";
   EXPECT_EQ(super->refcount(), 0) << "super class name refcount should be 0 - was unloaded.";
+
+  // clean up temporary symbols
+  A->decrement_refcount();
+  D->decrement_refcount();
+  interf->decrement_refcount();
 }

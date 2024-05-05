@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -149,7 +149,7 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
     final int methodVtableIndexOffset = getFieldOffset("Method::_vtable_index", Integer.class, "int");
 
     final int methodDataOffset = getFieldOffset("Method::_method_data", Integer.class, "MethodData*");
-    final int methodCodeOffset = getFieldOffset("Method::_code", Integer.class, "CompiledMethod*");
+    final int methodCodeOffset = getFieldOffset("Method::_code", Integer.class, "nmethod*");
 
     final int methodFlagsForceInline = getConstant("MethodFlags::_misc_force_inline", Integer.class);
     final int methodFlagsDontInline = getConstant("MethodFlags::_misc_dont_inline", Integer.class);
@@ -219,7 +219,6 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
     final int constantPoolLengthOffset = getFieldOffset("ConstantPool::_length", Integer.class, "int");
     final int constantPoolFlagsOffset = getFieldOffset("ConstantPool::_flags", Integer.class, "u2");
 
-    final int constantPoolCpCacheIndexTag = getConstant("ConstantPool::CPCACHE_INDEX_TAG", Integer.class);
     final int constantPoolHasDynamicConstant = getConstant("ConstantPool::_has_dynamic_constant", Integer.class);
     final int constantPoolSourceFileNameIndexOffset = getFieldOffset("ConstantPool::_source_file_name_index", Integer.class, "u2");
 

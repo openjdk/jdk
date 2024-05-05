@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ extern "C" {
 
 #define ACC_STATIC 0x0008
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 
 JNIEXPORT
 jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved) {
@@ -41,7 +41,7 @@ jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved) {
 JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM *vm, char *options, void *reserved) {
   vm->GetEnv((void **)&jvmti, JVMTI_VERSION_11);
 
-  if (options != NULL && strcmp(options, "maintain_original_method_order") == 0) {
+  if (options != nullptr && strcmp(options, "maintain_original_method_order") == 0) {
     printf("Enabled capability: maintain_original_method_order\n");
     jvmtiCapabilities caps;
     memset(&caps, 0, sizeof(caps));
@@ -58,22 +58,22 @@ JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM *vm, char *options, void *reserved) {
 
 JNIEXPORT jobjectArray JNICALL Java_OverpassMethods_getJVMTIDeclaredMethods(JNIEnv *env, jclass static_klass, jclass klass) {
   jint method_count = 0;
-  jmethodID* methods = NULL;
+  jmethodID* methods = nullptr;
   jvmtiError err = jvmti->GetClassMethods(klass, &method_count, &methods);
   if (err != JVMTI_ERROR_NONE) {
     printf("GetClassMethods failed with error: %d\n", err);
-    return NULL;
+    return nullptr;
   }
 
   jclass method_cls = env->FindClass("java/lang/reflect/Method");
-  if (method_cls == NULL) {
+  if (method_cls == nullptr) {
     printf("FindClass (Method) failed\n");
-    return NULL;
+    return nullptr;
   }
-  jobjectArray array = env->NewObjectArray(method_count, method_cls, NULL);
-  if (array == NULL) {
+  jobjectArray array = env->NewObjectArray(method_count, method_cls, nullptr);
+  if (array == nullptr) {
     printf("NewObjectArray failed\n");
-    return NULL;
+    return nullptr;
   }
 
   for (int i = 0; i < method_count; i++) {
@@ -81,13 +81,13 @@ JNIEXPORT jobjectArray JNICALL Java_OverpassMethods_getJVMTIDeclaredMethods(JNIE
     err = jvmti->GetMethodModifiers(methods[i], &modifiers);
     if (err != JVMTI_ERROR_NONE) {
       printf("GetMethodModifiers failed with error: %d\n", err);
-      return NULL;
+      return nullptr;
     }
 
     jobject m = env->ToReflectedMethod(klass, methods[i], (modifiers & ACC_STATIC) == ACC_STATIC);
-    if (array == NULL) {
+    if (array == nullptr) {
       printf("ToReflectedMethod failed\n");
-      return NULL;
+      return nullptr;
     }
     env->SetObjectArrayElement(array, i, m);
 

@@ -28,12 +28,8 @@
  *          javac crash while creating LVT entry for a local variable defined in
  *          an inner block
  * @library /tools/javac/lib
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
+ * @enablePreview
+ * @modules java.base/jdk.internal.classfile.impl
  * @build JavacTestingAbstractProcessor LVTHarness
  * @run main LVTHarness
  */
@@ -59,8 +55,8 @@ import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
 
 import com.sun.source.util.JavacTask;
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.*;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
 
 import static javax.tools.StandardLocation.*;
 import static javax.tools.JavaFileObject.Kind.SOURCE;
@@ -126,7 +122,7 @@ public class LVTHarness {
     }
 
     void checkClassFile(File file) throws IOException {
-        ClassModel classFile = Classfile.of().parse(file.toPath());
+        ClassModel classFile = ClassFile.of().parse(file.toPath());
 
         //lets get all the methods in the class file.
         for (MethodModel method : classFile.methods()) {

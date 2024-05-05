@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,7 +79,7 @@ public class Basic {
             testAttributes(Files.getFileAttributeView(file, DosFileAttributeView.class));
 
             // Following tests use a symbolic link so skip if not supported
-            if (!TestUtil.supportsLinks(dir))
+            if (!TestUtil.supportsSymbolicLinks(dir))
                 return;
 
             Path link = dir.resolve("link");

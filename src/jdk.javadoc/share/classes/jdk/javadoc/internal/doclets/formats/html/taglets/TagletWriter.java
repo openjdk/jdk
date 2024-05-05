@@ -49,6 +49,8 @@ import jdk.javadoc.internal.doclets.formats.html.HtmlConfiguration;
 import jdk.javadoc.internal.doclets.formats.html.HtmlDocletWriter;
 import jdk.javadoc.internal.doclets.formats.html.HtmlIds;
 import jdk.javadoc.internal.doclets.formats.html.HtmlOptions;
+import jdk.javadoc.internal.doclets.formats.html.IndexWriter;
+import jdk.javadoc.internal.doclets.formats.html.SummaryListWriter;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
@@ -370,7 +372,8 @@ public class TagletWriter {
     @SuppressWarnings("preview")
     Content createAnchorAndSearchIndex(Element element, String tagText, Content tagContent, String desc, DocTree tree) {
         Content result;
-        if (context.isFirstSentence && context.inSummary || context.inTags.contains(DocTree.Kind.INDEX)) {
+        if (context.isFirstSentence && context.inSummary || context.inTags.contains(DocTree.Kind.INDEX)
+                || !htmlWriter.isIndexable()) {
             result = tagContent;
         } else {
             HtmlId id = HtmlIds.forText(tagText, htmlWriter.indexAnchorTable);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,8 @@
 #include <stdio.h>
 #include <string.h>
 #include "jvmti.h"
-#include "agent_common.h"
-#include "JVMTITools.h"
+#include "agent_common.hpp"
+#include "JVMTITools.hpp"
 
 extern "C" {
 
@@ -33,7 +33,7 @@ extern "C" {
 #define PASSED 0
 #define STATUS_FAILED 2
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jint result = PASSED;
 static jboolean printdump = JNI_FALSE;
 static const char* fields[] = { "const1", "fld", "xx" };
@@ -52,12 +52,12 @@ JNIEXPORT jint JNI_OnLoad_getfldecl002(JavaVM *jvm, char *options, void *reserve
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jint res;
 
-    if (options != NULL && strcmp(options, "printdump") == 0) {
+    if (options != nullptr && strcmp(options, "printdump") == 0) {
         printdump = JNI_TRUE;
     }
 
     res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-    if (res != JNI_OK || jvmti == NULL) {
+    if (res != JNI_OK || jvmti == nullptr) {
         printf("Wrong result of a valid call to GetEnv!\n");
         return JNI_ERR;
     }
@@ -73,7 +73,7 @@ Java_nsk_jvmti_GetFieldDeclaringClass_getfldecl002_check(JNIEnv *env,
     jclass declaringClass;
     char *sig, *generic;
 
-    if (jvmti == NULL) {
+    if (jvmti == nullptr) {
         printf("JVMTI client was not properly loaded!\n");
         result = STATUS_FAILED;
         return;
@@ -84,7 +84,7 @@ Java_nsk_jvmti_GetFieldDeclaringClass_getfldecl002_check(JNIEnv *env,
     } else {
         fid = env->GetFieldID(cls1, fields[i], "I");
     }
-    if (fid == NULL) {
+    if (fid == nullptr) {
         printf("(%d) cannot get field ID for %s:\"I\"\n", i, fields[i]);
         result = STATUS_FAILED;
         return;

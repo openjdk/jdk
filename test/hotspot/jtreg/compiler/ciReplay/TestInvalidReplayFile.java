@@ -54,7 +54,7 @@ public class TestInvalidReplayFile {
         w.flush();
         w.close();
 
-        ProcessBuilder pb = ProcessTools.createTestJvm(
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
                 "-XX:+UnlockDiagnosticVMOptions",
                 "-Xmx100M",
                 "-XX:+ReplayCompiles", "-XX:ReplayDataFile=./bogus-replay-file.txt");

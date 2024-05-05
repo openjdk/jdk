@@ -93,8 +93,8 @@ class JfrStackTrace : public JfrCHeapObj {
   void set_reached_root(bool reached_root) { _reached_root = reached_root; }
   void resolve_linenos() const;
 
-  bool record(JavaThread* current_thread, int skip);
-  bool record(JavaThread* current_thread, const frame& frame, int skip);
+  bool record(JavaThread* current_thread, int skip, int64_t stack_frame_id);
+  bool record(JavaThread* current_thread, const frame& frame, int skip, int64_t stack_frame_id);
   bool record_async(JavaThread* other_thread, const frame& frame);
 
   bool have_lineno() const { return _lineno; }

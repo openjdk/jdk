@@ -28,6 +28,7 @@
  * @bug 8280152
  * @library /test/lib
  *
+ * @requires vm.compiler2.enabled
  * @requires vm.opt.TieredCompilation == null
  * @requires os.arch=="aarch64" | os.arch=="riscv64"
  * @requires vm.debug
@@ -46,9 +47,10 @@ import jdk.test.lib.process.ProcessTools;
 public class SharedTrampolineTest {
     private final static int ITERATIONS_TO_HEAT_LOOP = 20_000;
 
-    private static void runTest(String test) throws Exception {
+    private static void runTest(String compiler, String test) throws Exception {
         String testClassName = SharedTrampolineTest.class.getName() + "$" + test;
         ArrayList<String> command = new ArrayList<String>();
+        command.add(compiler);
         command.add("-XX:+UnlockDiagnosticVMOptions");
         command.add("-Xbatch");
         command.add("-XX:+PrintRelocations");
@@ -58,7 +60,7 @@ public class SharedTrampolineTest {
         command.add(testClassName);
         command.add("a");
 
-        ProcessBuilder pb = ProcessTools.createTestJvm(command);
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(command);
 
         OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
 
@@ -72,7 +74,7 @@ public class SharedTrampolineTest {
     public static void main(String[] args) throws Exception {
         String[] tests = new String[] {"StaticMethodTest"};
         for (String test : tests) {
-            runTest(test);
+            runTest(args[0], test);
         }
     }
 

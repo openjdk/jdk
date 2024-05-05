@@ -28,7 +28,7 @@
 #include "gc/g1/g1FullCollector.inline.hpp"
 #include "gc/g1/g1FullGCCompactionPoint.hpp"
 #include "gc/g1/g1FullGCCompactTask.hpp"
-#include "gc/g1/heapRegion.inline.hpp"
+#include "gc/g1/g1HeapRegion.inline.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "logging/log.hpp"
 #include "oops/oop.inline.hpp"
@@ -67,6 +67,7 @@ void G1FullGCCompactTask::copy_object_to_new_location(oop obj) {
 }
 
 void G1FullGCCompactTask::compact_region(HeapRegion* hr) {
+  assert(!hr->has_pinned_objects(), "Should be no region with pinned objects in compaction queue");
   assert(!hr->is_humongous(), "Should be no humongous regions in compaction queue");
 
   if (!collector()->is_free(hr->hrm_index())) {

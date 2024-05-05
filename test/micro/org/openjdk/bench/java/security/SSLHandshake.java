@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,11 +80,12 @@ public class SSLHandshake {
         KeyStore ks = TestCertificates.getKeyStore();
         KeyStore ts = TestCertificates.getTrustStore();
 
-        KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
+        KeyManagerFactory kmf = KeyManagerFactory.getInstance(
+                KeyManagerFactory.getDefaultAlgorithm());
         kmf.init(ks, new char[0]);
 
-        TrustManagerFactory tmf =
-                TrustManagerFactory.getInstance("SunX509");
+        TrustManagerFactory tmf = TrustManagerFactory.getInstance(
+                TrustManagerFactory.getDefaultAlgorithm());
         tmf.init(ts);
 
         SSLContext sslCtx = SSLContext.getInstance(tlsVersion);

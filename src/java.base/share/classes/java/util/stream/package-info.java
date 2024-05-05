@@ -620,6 +620,19 @@
  * but in some cases equivalence may be relaxed to account for differences in
  * order.
  *
+ * <h3><a id="Extensibility">Extensibility</a></h3>
+ *
+ * <p>Implementing {@link java.util.stream.Collector};
+ * using the factory method {@code java.util.stream.Collector.of(...)}; or
+ * using the predefined collectors in {@link java.util.stream.Collectors} allows
+ * for user-defined, reusable, <em>terminal</em> operations.
+ *
+ * <p>Implementing {@link java.util.stream.Gatherer}; using the factory
+ * methods {@code java.util.stream.Gatherer.of(...)} and
+ * {@code java.util.stream.Gatherer.ofSequential(...)};
+ * or using the predefined gatherers in {@link java.util.stream.Gatherers}
+ * allows for user-defined, reusable, <em>intermediate</em> operations.
+ *
  * <h3><a id="ConcurrentReduction">Reduction, concurrency, and ordering</a></h3>
  *
  * With some complex reduction operations, for example a {@code collect()} that

@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 4886069 8023045
+ * @key printer
  * @summary Confirm that printer recognizes the Legal selection either by
  *          prompting the user to put Legal paper or automatically selecting
  *          the tray containing Legal Paper.  The printout image should not

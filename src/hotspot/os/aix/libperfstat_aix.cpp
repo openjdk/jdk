@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
  * Copyright (c) 2022, IBM Corp.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,6 +26,7 @@
 
 #include "libperfstat_aix.hpp"
 #include "misc_aix.hpp"
+#include "logging/log.hpp"
 #include "runtime/os.hpp"
 
 #include <dlfcn.h>
@@ -76,7 +77,7 @@ bool libperfstat::init() {
   char ebuf[512];
   g_libhandle = os::dll_load(libperfstat, ebuf, sizeof(ebuf));
   if (!g_libhandle) {
-    trcVerbose("Cannot load %s (error: %s)", libperfstat, ebuf);
+    log_warning(os)("Cannot load %s (error: %s)", libperfstat, ebuf);
     return false;
   }
 
@@ -114,7 +115,7 @@ bool libperfstat::init() {
 void libperfstat::cleanup() {
 
   if (g_libhandle) {
-    dlclose(g_libhandle);
+    os::dll_unload(g_libhandle);
     g_libhandle = nullptr;
   }
 
@@ -213,12 +214,8 @@ bool libperfstat::get_cpuinfo(cpuinfo_t* pci) {
 
   if (-1 == libperfstat::perfstat_cpu_total(nullptr, &psct, sizeof(PERFSTAT_CPU_TOTAL_T_LATEST), 1)) {
     if (-1 == libperfstat::perfstat_cpu_total(nullptr, &psct, sizeof(perfstat_cpu_total_t_71), 1)) {
-      if (-1 == libperfstat::perfstat_cpu_total(nullptr, &psct, sizeof(perfstat_cpu_total_t_61), 1)) {
-        if (-1 == libperfstat::perfstat_cpu_total(nullptr, &psct, sizeof(perfstat_cpu_total_t_53), 1)) {
-          trcVerbose("perfstat_cpu_total() failed (errno=%d)", errno);
-          return false;
-        }
-      }
+      log_warning(os)("perfstat_cpu_total() failed (errno=%d)", errno);
+      return false;
     }
   }
 
@@ -252,14 +249,8 @@ bool libperfstat::get_partitioninfo(partitioninfo_t* ppi) {
   if (-1 == libperfstat::perfstat_partition_total(nullptr, &pspt, sizeof(PERFSTAT_PARTITON_TOTAL_T_LATEST), 1)) {
     if (-1 == libperfstat::perfstat_partition_total(nullptr, &pspt, sizeof(perfstat_partition_total_t_71), 1)) {
       ame_details = false;
-      if (-1 == libperfstat::perfstat_partition_total(nullptr, &pspt, sizeof(perfstat_partition_total_t_61), 1)) {
-        if (-1 == libperfstat::perfstat_partition_total(nullptr, &pspt, sizeof(perfstat_partition_total_t_53), 1)) {
-          if (-1 == libperfstat::perfstat_partition_total(nullptr, &pspt, sizeof(perfstat_partition_total_t_53_5), 1)) {
-            trcVerbose("perfstat_partition_total() failed (errno=%d)", errno);
-            return false;
-          }
-        }
-      }
+      log_warning(os)("perfstat_partition_total() failed (errno=%d)", errno);
+      return false;
     }
   }
 
@@ -324,10 +315,8 @@ bool libperfstat::get_wparinfo(wparinfo_t* pwi) {
   memset (&pswt, '\0', sizeof(pswt));
 
   if (-1 == libperfstat::perfstat_wpar_total(nullptr, &pswt, sizeof(PERFSTAT_WPAR_TOTAL_T_LATEST), 1)) {
-    if (-1 == libperfstat::perfstat_wpar_total(nullptr, &pswt, sizeof(perfstat_wpar_total_t_61), 1)) {
-      trcVerbose("perfstat_wpar_total() failed (errno=%d)", errno);
-      return false;
-    }
+    log_warning(os)("perfstat_wpar_total() failed (errno=%d)", errno);
+    return false;
   }
 
   // WPAR type info.

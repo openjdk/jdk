@@ -25,13 +25,9 @@
  * @test
  * @bug 6964768 6964461 6964469 6964487 6964460 6964481 6980021
  * @summary need test program to validate javac resource bundles
+ * @enablePreview
  * @modules jdk.compiler/com.sun.tools.javac.code
  *          jdk.compiler/com.sun.tools.javac.resources:open
- *          java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
  *          java.base/jdk.internal.classfile.impl
  */
 
@@ -39,8 +35,8 @@ import java.io.*;
 import java.util.*;
 import java.util.regex.*;
 import javax.tools.*;
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.constantpool.*;
+import java.lang.classfile.*;
+import java.lang.classfile.constantpool.*;
 import com.sun.tools.javac.code.Lint.LintCategory;
 
 /**
@@ -496,7 +492,7 @@ public class CheckResourceKeys {
      */
     void scan(JavaFileObject fo, Set<String> results) throws IOException {
         try (InputStream in = fo.openInputStream()) {
-            ClassModel cm = Classfile.of().parse(in.readAllBytes());
+            ClassModel cm = ClassFile.of().parse(in.readAllBytes());
             for (PoolEntry pe : cm.constantPool()) {
                 if (pe instanceof Utf8Entry entry) {
                     String v = entry.stringValue();

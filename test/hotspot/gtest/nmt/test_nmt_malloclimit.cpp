@@ -24,14 +24,13 @@
 
 #include "precompiled.hpp"
 #include "memory/allocation.hpp"
+#include "nmt/memTracker.hpp"
+#include "nmt/nmtCommon.hpp"
 #include "runtime/os.hpp"
 #include "services/mallocLimit.hpp"
-#include "services/memTracker.hpp"
-#include "services/nmtCommon.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
-
 #include "testutils.hpp"
 #include "unittest.hpp"
 

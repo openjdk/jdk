@@ -1,4 +1,4 @@
-.\" Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+.\" Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
 .\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 .\"
 .\" This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@
 . ftr VB CB
 . ftr VBI CBI
 .\}
-.TH "JPACKAGE" "1" "2024" "JDK 22-ea" "JDK Commands"
+.TH "JPACKAGE" "1" "2024" "JDK 23-ea" "JDK Commands"
 .hy
 .SH NAME
 .PP
@@ -189,7 +189,7 @@ All files in the input directory will be packaged into the application
 image.
 .RE
 .TP
-\[ga]--app-content \f[I]additional-content\f[R][,\f[I]additional-content\f[R]...]
+\f[V]--app-content\f[R] \f[I]additional-content\f[R] [\f[V],\f[R]\f[I]additional-content\f[R]...]
 A comma separated list of paths to files and/or directories to add to
 the application payload.
 .RS
@@ -443,7 +443,7 @@ Group value of the RPM /.spec file or Section value of DEB control file
 Creates a shortcut for the application.
 .SS macOS platform options (available only when running on macOS):
 .TP
-\[aq]--mac-dmg-content \f[I]additional-content\f[R][,\f[I]additional-content\f[R]...]
+\f[V]--mac-dmg-content\f[R] \f[I]additional-content\f[R] [\f[V],\f[R]\f[I]additional-content\f[R]...]
 Include all the referenced content in the dmg.
 .RS
 .PP

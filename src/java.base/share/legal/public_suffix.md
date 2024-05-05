@@ -11,7 +11,7 @@ If you do not wish to use the Public Suffix List, you may remove the
 
 The Source Code of this file is available under the
 Mozilla Public License, v. 2.0 and is located at
-https://raw.githubusercontent.com/publicsuffix/list/88467c960d6cdad2ca1623e892e5e17506bc269f/public_suffix_list.dat.
+https://raw.githubusercontent.com/publicsuffix/list/b5bf572c52988dbe9d865b8f090ea819024a9936/public_suffix_list.dat.
 If a copy of the MPL was not distributed with this file, you can obtain one
 at https://mozilla.org/MPL/2.0/.
 

@@ -107,6 +107,7 @@ public class TestJavaFX extends JavadocTester {
                 """
                     <section class="detail" id="pausedProperty">
                     <h3>paused</h3>
+                    <div class="horizontal-scroll">
                     <div class="member-signature"><span class="modifiers">public final</span>&nbsp;<\
                     span class="return-type"><a href="C.BooleanProperty.html" title="class in pkg1">\
                     C.BooleanProperty</a></span>&nbsp;<span class="element-name">pausedProperty</span></div>
@@ -114,6 +115,7 @@ public class TestJavaFX extends JavadocTester {
                 """
                     <section class="detail" id="isPaused()">
                     <h3>isPaused</h3>
+                    <div class="horizontal-scroll">
                     <div class="member-signature"><span class="modifiers">public final</span>&nbsp;<\
                     span class="return-type">double</span>&nbsp;<span class="element-name">isPaused<\
                     /span>()</div>
@@ -121,6 +123,7 @@ public class TestJavaFX extends JavadocTester {
                 """
                     <section class="detail" id="setPaused(boolean)">
                     <h3>setPaused</h3>
+                    <div class="horizontal-scroll">
                     <div class="member-signature"><span class="modifiers">public final</span>&nbsp;<\
                     span class="return-type">void</span>&nbsp;<span class="element-name">setPaused</\
                     span><wbr><span class="parameters">(boolean&nbsp;value)</span></div>
@@ -133,6 +136,7 @@ public class TestJavaFX extends JavadocTester {
                 """
                     <section class="detail" id="isPaused()">
                     <h3>isPaused</h3>
+                    <div class="horizontal-scroll">
                     <div class="member-signature"><span class="modifiers">public final</span>&nbsp;<\
                     span class="return-type">double</span>&nbsp;<span class="element-name">isPaused<\
                     /span>()</div>
@@ -145,6 +149,7 @@ public class TestJavaFX extends JavadocTester {
                 """
                     <section class="detail" id="rateProperty">
                     <h3>rate</h3>
+                    <div class="horizontal-scroll">
                     <div class="member-signature"><span class="modifiers">public final</span>&nbsp;<\
                     span class="return-type"><a href="C.DoubleProperty.html" title="class in pkg1">C\
                     .DoubleProperty</a></span>&nbsp;<span class="element-name">rateProperty</span></div>
@@ -153,6 +158,7 @@ public class TestJavaFX extends JavadocTester {
                 """
                     <section class="detail" id="setRate(double)">
                     <h3>setRate</h3>
+                    <div class="horizontal-scroll">
                     <div class="member-signature"><span class="modifiers">public final</span>&nbsp;<\
                     span class="return-type">void</span>&nbsp;<span class="element-name">setRate</sp\
                     an><wbr><span class="parameters">(double&nbsp;value)</span></div>
@@ -170,6 +176,7 @@ public class TestJavaFX extends JavadocTester {
                 """
                     <section class="detail" id="getRate()">
                     <h3>getRate</h3>
+                    <div class="horizontal-scroll">
                     <div class="member-signature"><span class="modifiers">public final</span>&nbsp;<\
                     span class="return-type">double</span>&nbsp;<span class="element-name">getRate</span>()<\
                     /div>
@@ -262,6 +269,7 @@ public class TestJavaFX extends JavadocTester {
                         <li>
                         <section class="detail" id="betaProperty">
                         <h3>beta</h3>
+                        <div class="horizontal-scroll">
                         <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span c\
                         lass="return-type">java.lang.Object</span>&nbsp;<span class="element-name">betaProperty<\
                         /span></div>
@@ -273,11 +281,13 @@ public class TestJavaFX extends JavadocTester {
                         </ul>
                         </dd>
                         </dl>
+                        </div>
                         </section>
                         </li>
                         <li>
                         <section class="detail" id="gammaProperty">
                         <h3>gamma</h3>
+                        <div class="horizontal-scroll">
                         <div class="member-signature"><span class="modifiers">public final</span>&nbsp;<\
                         span class="return-type">java.util.List&lt;java.lang.String&gt;</span>&nbsp;<spa\
                         n class="element-name">gammaProperty</span></div>
@@ -289,11 +299,13 @@ public class TestJavaFX extends JavadocTester {
                         </ul>
                         </dd>
                         </dl>
+                        </div>
                         </section>
                         </li>
                         <li>
                         <section class="detail" id="deltaProperty">
                         <h3>delta</h3>
+                        <div class="horizontal-scroll">
                         <div class="member-signature"><span class="modifiers">public final</span>&nbsp;<\
                         span class="return-type">java.util.List&lt;java.util.Set&lt;? super java.lang.Ob\
                         ject&gt;&gt;</span>&nbsp;<span class="element-name">deltaProperty</span></div>
@@ -305,6 +317,7 @@ public class TestJavaFX extends JavadocTester {
                         </ul>
                         </dd>
                         </dl>
+                        </div>
                         </section>
                         </li>
                         </ul>

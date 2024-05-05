@@ -74,7 +74,7 @@
 
 #define read_csr(csr)                                           \
 ({                                                              \
-        register unsigned long __v;                             \
+        unsigned long __v;                                      \
         __asm__ __volatile__ ("csrr %0, %1"                     \
                               : "=r" (__v)                      \
                               : "i" (csr)                       \
@@ -115,6 +115,15 @@ void VM_Version::setup_cpu_available_features() {
   int i = 0;
   while (_feature_list[i] != nullptr) {
     if (_feature_list[i]->enabled()) {
+      // Change flag default
+      _feature_list[i]->update_flag();
+
+      // Feature will be disabled by update_flag() if flag
+      // is set to false by the user on the command line.
+      if (!_feature_list[i]->enabled()) {
+        continue;
+      }
+
       log_debug(os, cpu)("Enabled RV64 feature \"%s\" (%ld)",
              _feature_list[i]->pretty(),
              _feature_list[i]->value());
@@ -139,8 +148,6 @@ void VM_Version::setup_cpu_available_features() {
       if (_feature_list[i]->feature_bit() != 0) {
         _features |= _feature_list[i]->feature_bit();
       }
-      // Change flag default
-      _feature_list[i]->update_flag();
     }
     i++;
   }
@@ -169,13 +176,13 @@ void VM_Version::os_aux_features() {
 }
 
 VM_Version::VM_MODE VM_Version::parse_satp_mode(const char* vm_mode) {
-  if (!strcmp(vm_mode, "sv39")) {
+  if (!strncmp(vm_mode, "sv39", sizeof "sv39" - 1)) {
     return VM_SV39;
-  } else if (!strcmp(vm_mode, "sv48")) {
+  } else if (!strncmp(vm_mode, "sv48", sizeof "sv48" - 1)) {
     return VM_SV48;
-  } else if (!strcmp(vm_mode, "sv57")) {
+  } else if (!strncmp(vm_mode, "sv57", sizeof "sv57" - 1)) {
     return VM_SV57;
-  } else if (!strcmp(vm_mode, "sv64")) {
+  } else if (!strncmp(vm_mode, "sv64", sizeof "sv64" - 1)) {
     return VM_SV64;
   } else {
     return VM_MBARE;
@@ -197,7 +204,7 @@ char* VM_Version::os_uarch_additional_features() {
     if ((p = strchr(buf, ':')) != nullptr) {
       if (mode == VM_NOTSET) {
         if (strncmp(buf, "mmu", sizeof "mmu" - 1) == 0) {
-          mode = VM_Version::parse_satp_mode(p);
+          mode = VM_Version::parse_satp_mode(p + 2);
         }
       }
       if (ret == nullptr) {
@@ -240,15 +247,25 @@ void VM_Version::rivos_features() {
   ext_Zbb.enable_feature();
   ext_Zbs.enable_feature();
 
+  ext_Zcb.enable_feature();
+
+  ext_Zfh.enable_feature();
+
+  ext_Zicboz.enable_feature();
   ext_Zicsr.enable_feature();
   ext_Zifencei.enable_feature();
   ext_Zic64b.enable_feature();
   ext_Ztso.enable_feature();
-  ext_Zihintpause.enable_feature();
+
+  ext_Zvfh.enable_feature();
 
   unaligned_access.enable_feature(MISALIGNED_FAST);
   satp_mode.enable_feature(VM_SV48);
 
   // Features dependent on march/mimpid.
   // I.e. march.value() and mimplid.value()
+  if (mimpid.value() > 0x100) {
+    ext_Zacas.enable_feature();
+    ext_Zihintpause.enable_feature();
+  }
 }

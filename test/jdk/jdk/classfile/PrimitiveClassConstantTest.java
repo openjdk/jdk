@@ -33,7 +33,7 @@ import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.function.Supplier;
-import jdk.internal.classfile.Classfile;
+import java.lang.classfile.ClassFile;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -43,7 +43,7 @@ import static java.lang.constant.ConstantDescs.CD_int;
 import static java.lang.constant.ConstantDescs.CD_long;
 import static java.lang.constant.ConstantDescs.INIT_NAME;
 import static java.lang.constant.ConstantDescs.MTD_void;
-import static jdk.internal.classfile.Classfile.ACC_PUBLIC;
+import static java.lang.classfile.ClassFile.ACC_PUBLIC;
 
 public final class PrimitiveClassConstantTest {
 
@@ -51,7 +51,7 @@ public final class PrimitiveClassConstantTest {
     public void test() throws Throwable {
         ClassDesc ape = ClassDesc.of("Ape");
         var lookup = MethodHandles.lookup();
-        Class<?> a = lookup.defineClass(Classfile.of().build(ape, clb -> {
+        Class<?> a = lookup.defineClass(ClassFile.of().build(ape, clb -> {
             clb.withSuperclass(CD_Object);
             clb.withInterfaceSymbols(Supplier.class.describeConstable().orElseThrow());
             clb.withMethodBody(INIT_NAME, MTD_void, ACC_PUBLIC, cob -> {
@@ -60,7 +60,7 @@ public final class PrimitiveClassConstantTest {
                 cob.return_();
             });
             clb.withMethodBody("get", MethodTypeDesc.of(CD_Object), ACC_PUBLIC, cob -> {
-                cob.constantInstruction(CD_int);
+                cob.loadConstant(CD_int);
                 cob.areturn();
             });
             clb.withMethodBody("get2", MethodTypeDesc.of(CD_Class), ACC_PUBLIC, cob -> {

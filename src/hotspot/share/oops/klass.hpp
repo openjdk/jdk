@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -159,6 +159,12 @@ class Klass : public Metadata {
   // Provide access the corresponding instance java.lang.ClassLoader.
   ClassLoaderData* _class_loader_data;
 
+  // Bitmap and hash code used by hashed secondary supers.
+  uintx    _bitmap;
+  uint8_t  _hash_slot;
+
+  static uint8_t compute_hash_slot(Symbol* s);
+
   int _vtable_len;              // vtable length. This field may be read very often when we
                                 // have lots of itable dispatches (e.g., lambdas and streams).
                                 // Keep it away from the beginning of a Klass to avoid cacheline
@@ -193,9 +199,8 @@ private:
 
 protected:
 
-  // Constructor
   Klass(KlassKind kind);
-  Klass() : _kind(UnknownKlassKind) { assert(DumpSharedSpaces || UseSharedSpaces, "only for cds"); }
+  Klass();
 
   void* operator new(size_t size, ClassLoaderData* loader_data, size_t word_size, TRAPS) throw();
 
@@ -232,7 +237,10 @@ protected:
   void set_secondary_super_cache(Klass* k) { _secondary_super_cache = k; }
 
   Array<Klass*>* secondary_supers() const { return _secondary_supers; }
-  void set_secondary_supers(Array<Klass*>* k) { _secondary_supers = k; }
+  void set_secondary_supers(Array<Klass*>* k);
+  void set_secondary_supers(Array<Klass*>* k, uintx bitmap);
+
+  uint8_t hash_slot() const { return _hash_slot; }
 
   // Return the element of the _super chain of the given depth.
   // If there is no such element, return either null or this.
@@ -383,7 +391,26 @@ protected:
   void     set_subklass(Klass* s);
   void     set_next_sibling(Klass* s);
 
+ private:
+  static void  hash_insert(Klass* klass, GrowableArray<Klass*>* secondaries, uintx& bitmap);
+  static uintx hash_secondary_supers(Array<Klass*>* secondaries, bool rewrite);
+
  public:
+  // Secondary supers table support
+  static Array<Klass*>* pack_secondary_supers(ClassLoaderData* loader_data,
+                                              GrowableArray<Klass*>* primaries,
+                                              GrowableArray<Klass*>* secondaries,
+                                              uintx& bitmap,
+                                              TRAPS);
+
+  static uintx   compute_secondary_supers_bitmap(Array<Klass*>* secondary_supers);
+  static uint8_t compute_home_slot(Klass* k, uintx bitmap);
+
+  static constexpr int SECONDARY_SUPERS_TABLE_SIZE = sizeof(_bitmap) * 8;
+  static constexpr int SECONDARY_SUPERS_TABLE_MASK = SECONDARY_SUPERS_TABLE_SIZE - 1;
+
+  static constexpr uintx SECONDARY_SUPERS_BITMAP_EMPTY    = 0;
+  static constexpr uintx SECONDARY_SUPERS_BITMAP_FULL     = ~(uintx)0;
 
   // Compiler support
   static ByteSize super_offset()                 { return byte_offset_of(Klass, _super); }
@@ -400,6 +427,7 @@ protected:
   static ByteSize subklass_offset()              { return byte_offset_of(Klass, _subklass); }
   static ByteSize next_sibling_offset()          { return byte_offset_of(Klass, _next_sibling); }
 #endif
+  static ByteSize bitmap_offset()                { return byte_offset_of(Klass, _bitmap); }
 
   // Unpacking layout_helper:
   static const int _lh_neutral_value           = 0;  // neutral non-array non-instance value
@@ -583,7 +611,7 @@ protected:
     if (has_archived_mirror_index()) {
       // _java_mirror is not a valid OopHandle but rather an encoded reference in the shared heap
       return false;
-    } else if (_java_mirror.ptr_raw() == nullptr) {
+    } else if (_java_mirror.is_empty()) {
       return false;
     } else {
       return true;
@@ -712,6 +740,8 @@ protected:
   virtual void oop_print_value_on(oop obj, outputStream* st);
   virtual void oop_print_on      (oop obj, outputStream* st);
 
+  void print_secondary_supers_on(outputStream* st) const;
+
   virtual const char* internal_name() const = 0;
 
   // Verification
@@ -726,6 +756,8 @@ protected:
 
   // for error reporting
   static bool is_valid(Klass* k);
+
+  static void on_secondary_supers_verification_failure(Klass* super, Klass* sub, bool linear_result, bool table_result, const char* msg);
 };
 
 #endif // SHARE_OOPS_KLASS_HPP

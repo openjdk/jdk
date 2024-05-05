@@ -28,6 +28,9 @@ package javax.crypto.spec;
 import jdk.internal.access.SharedSecrets;
 
 import javax.crypto.SecretKey;
+import java.io.IOException;
+import java.io.InvalidObjectException;
+import java.io.ObjectInputStream;
 import java.security.MessageDigest;
 import java.security.spec.KeySpec;
 import java.util.Arrays;
@@ -60,7 +63,7 @@ public class SecretKeySpec implements KeySpec, SecretKey {
      *
      * @serial
      */
-    private final byte[] key;
+    private byte[] key;
 
     /**
      * The name of the algorithm associated with this key.
@@ -250,5 +253,27 @@ public class SecretKeySpec implements KeySpec, SecretKey {
      */
     void clear() {
         Arrays.fill(key, (byte)0);
+    }
+
+    /**
+     * Restores the state of this object from the stream.
+     *
+     * @param  stream the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
+     */
+    @java.io.Serial
+    private void readObject(ObjectInputStream stream)
+            throws IOException, ClassNotFoundException {
+        stream.defaultReadObject();
+
+        if (key == null || algorithm == null) {
+            throw new InvalidObjectException("Missing argument");
+        }
+
+        this.key = key.clone();
+        if (key.length == 0) {
+            throw new InvalidObjectException("Invalid key length");
+        }
     }
 }

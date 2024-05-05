@@ -97,7 +97,7 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   _gc_par_phases[GCWorkerEnd] = new WorkerDataArray<double>("GCWorkerEnd", "GC Worker End (ms):", max_gc_threads);
   _gc_par_phases[Other] = new WorkerDataArray<double>("Other", "GC Worker Other (ms):", max_gc_threads);
   _gc_par_phases[MergePSS] = new WorkerDataArray<double>("MergePSS", "Merge Per-Thread State (ms):", max_gc_threads);
-  _gc_par_phases[RestoreRetainedRegions] = new WorkerDataArray<double>("RestoreRetainedRegions", "Restore Retained Regions (ms):", max_gc_threads);
+  _gc_par_phases[RestoreEvacuationFailedRegions] = new WorkerDataArray<double>("RestoreEvacuationFailedRegions", "Restore Evacuation Failed Regions (ms):", max_gc_threads);
   _gc_par_phases[RemoveSelfForwards] = new WorkerDataArray<double>("RemoveSelfForwards", "Remove Self Forwards (ms):", max_gc_threads);
   _gc_par_phases[ClearCardTable] = new WorkerDataArray<double>("ClearLoggedCards", "Clear Logged Cards (ms):", max_gc_threads);
   _gc_par_phases[RecalculateUsed] = new WorkerDataArray<double>("RecalculateUsed", "Recalculate Used Memory (ms):", max_gc_threads);
@@ -123,26 +123,27 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   _gc_par_phases[MergeLB]->create_thread_work_items("Dirty Cards:", MergeLBDirtyCards);
   _gc_par_phases[MergeLB]->create_thread_work_items("Skipped Cards:", MergeLBSkippedCards);
 
-  _gc_par_phases[CodeRoots]->create_thread_work_items("Scanned Nmethods", CodeRootsScannedNMethods);
+  _gc_par_phases[CodeRoots]->create_thread_work_items("Scanned Nmethods:", CodeRootsScannedNMethods);
 
-  _gc_par_phases[OptCodeRoots]->create_thread_work_items("Scanned Nmethods", CodeRootsScannedNMethods);
+  _gc_par_phases[OptCodeRoots]->create_thread_work_items("Scanned Nmethods:", CodeRootsScannedNMethods);
 
-  _gc_par_phases[MergePSS]->create_thread_work_items("Copied Bytes", MergePSSCopiedBytes);
-  _gc_par_phases[MergePSS]->create_thread_work_items("LAB Waste", MergePSSLABWasteBytes);
-  _gc_par_phases[MergePSS]->create_thread_work_items("LAB Undo Waste", MergePSSLABUndoWasteBytes);
-  _gc_par_phases[MergePSS]->create_thread_work_items("Evac Fail Extra Cards", MergePSSEvacFailExtra);
+  _gc_par_phases[MergePSS]->create_thread_work_items("Copied Bytes:", MergePSSCopiedBytes);
+  _gc_par_phases[MergePSS]->create_thread_work_items("LAB Waste:", MergePSSLABWasteBytes);
+  _gc_par_phases[MergePSS]->create_thread_work_items("LAB Undo Waste:", MergePSSLABUndoWasteBytes);
+  _gc_par_phases[MergePSS]->create_thread_work_items("Evac Fail Extra Cards:", MergePSSEvacFailExtra);
 
-  _gc_par_phases[RestoreRetainedRegions]->create_thread_work_items("Evacuation Failed Regions:", RestoreRetainedRegionsFailedNum);
-  _gc_par_phases[RestoreRetainedRegions]->create_thread_work_items("New Retained Regions:", RestoreRetainedRegionsRetainedNum);
+  _gc_par_phases[RestoreEvacuationFailedRegions]->create_thread_work_items("Evacuation Failed Regions:", RestoreEvacFailureRegionsEvacFailedNum);
+  _gc_par_phases[RestoreEvacuationFailedRegions]->create_thread_work_items("Pinned Regions:", RestoreEvacFailureRegionsPinnedNum);
+  _gc_par_phases[RestoreEvacuationFailedRegions]->create_thread_work_items("Allocation Failed Regions:", RestoreEvacFailureRegionsAllocFailedNum);
 
   _gc_par_phases[RemoveSelfForwards]->create_thread_work_items("Forward Chunks:", RemoveSelfForwardChunksNum);
   _gc_par_phases[RemoveSelfForwards]->create_thread_work_items("Empty Forward Chunks:", RemoveSelfForwardEmptyChunksNum);
   _gc_par_phases[RemoveSelfForwards]->create_thread_work_items("Forward Objects:", RemoveSelfForwardObjectsNum);
   _gc_par_phases[RemoveSelfForwards]->create_thread_work_items("Forward Bytes:", RemoveSelfForwardObjectsBytes);
 
-  _gc_par_phases[EagerlyReclaimHumongousObjects]->create_thread_work_items("Humongous Total", EagerlyReclaimNumTotal);
-  _gc_par_phases[EagerlyReclaimHumongousObjects]->create_thread_work_items("Humongous Candidates", EagerlyReclaimNumCandidates);
-  _gc_par_phases[EagerlyReclaimHumongousObjects]->create_thread_work_items("Humongous Reclaimed", EagerlyReclaimNumReclaimed);
+  _gc_par_phases[EagerlyReclaimHumongousObjects]->create_thread_work_items("Humongous Total:", EagerlyReclaimNumTotal);
+  _gc_par_phases[EagerlyReclaimHumongousObjects]->create_thread_work_items("Humongous Candidates:", EagerlyReclaimNumCandidates);
+  _gc_par_phases[EagerlyReclaimHumongousObjects]->create_thread_work_items("Humongous Reclaimed:", EagerlyReclaimNumReclaimed);
 
   _gc_par_phases[SampleCollectionSetCandidates] = new WorkerDataArray<double>("SampleCandidates", "Sample CSet Candidates (ms):", max_gc_threads);
 
@@ -173,6 +174,7 @@ void G1GCPhaseTimes::reset() {
   _cur_merge_heap_roots_time_ms = 0.0;
   _cur_optional_merge_heap_roots_time_ms = 0.0;
   _cur_prepare_merge_heap_roots_time_ms = 0.0;
+  _cur_distribute_log_buffers_time_ms = 0.0;
   _cur_optional_prepare_merge_heap_roots_time_ms = 0.0;
   _cur_pre_evacuate_prepare_time_ms = 0.0;
   _cur_post_evacuate_cleanup_1_time_ms = 0.0;
@@ -458,6 +460,7 @@ double G1GCPhaseTimes::print_evacuate_initial_collection_set() const {
   debug_time("Prepare Merge Heap Roots", _cur_prepare_merge_heap_roots_time_ms);
   debug_phase_merge_remset();
 
+  debug_time("Distribute Log Buffers", _cur_distribute_log_buffers_time_ms);
   debug_phase(_gc_par_phases[MergeLB]);
 
   info_time("Evacuate Collection Set", _cur_collection_initial_evac_time_ms);
@@ -502,7 +505,7 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set(bool evacuation_failed
   debug_phase(_gc_par_phases[ClearCardTable], 1);
   debug_phase(_gc_par_phases[RecalculateUsed], 1);
   if (evacuation_failed) {
-    debug_phase(_gc_par_phases[RestoreRetainedRegions], 1);
+    debug_phase(_gc_par_phases[RestoreEvacuationFailedRegions], 1);
     debug_phase(_gc_par_phases[RemoveSelfForwards], 2);
   }
 
@@ -531,7 +534,7 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set(bool evacuation_failed
   trace_time("Serial Free Collection Set", _recorded_serial_free_cset_time_ms);
 
   debug_time("Rebuild Free List", _recorded_total_rebuild_freelist_time_ms);
-  trace_time("Serial Rebuild Free List ", _recorded_serial_rebuild_freelist_time_ms);
+  trace_time("Serial Rebuild Free List", _recorded_serial_rebuild_freelist_time_ms);
   trace_phase(_gc_par_phases[RebuildFreeList]);
 
   debug_time("Prepare For Mutator", _recorded_prepare_for_mutator_time_ms);

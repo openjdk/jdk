@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,17 +40,19 @@ import sun.security.action.GetBooleanAction;
  * This class implements an output stream filter for writing files in the
  * ZIP file format. Includes support for both compressed and uncompressed
  * entries.
- *
+ * <p> Unless otherwise noted, passing a {@code null} argument to a constructor
+ * or method in this class will cause a {@link NullPointerException} to be
+ * thrown.
  * @author      David Connelly
  * @since 1.1
  */
 public class ZipOutputStream extends DeflaterOutputStream implements ZipConstants {
 
     /**
-     * Whether to use ZIP64 for zip files with more than 64k entries.
-     * Until ZIP64 support in zip implementations is ubiquitous, this
-     * system property allows the creation of zip files which can be
-     * read by legacy zip implementations which tolerate "incorrect"
+     * Whether to use ZIP64 for ZIP files with more than 64k entries.
+     * Until ZIP64 support in ZIP implementations is ubiquitous, this
+     * system property allows the creation of ZIP files which can be
+     * read by legacy ZIP implementations which tolerate "incorrect"
      * total entry count fields, such as the ones in jdk6, and even
      * some in jdk7.
      */
@@ -231,7 +233,7 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
             // descriptor immediately following the compressed entry data.
             // Ignore the compressed size of a ZipEntry if it was implcitely set
             // while reading that ZipEntry from a  ZipFile or ZipInputStream because
-            // we can't know the compression level of the source zip file/stream.
+            // we can't know the compression level of the source ZIP file/stream.
             if (e.size  == -1 || e.csize == -1 || e.crc   == -1 || !e.csizeSet) {
                 e.flag = 8;
             }
@@ -732,7 +734,7 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
         writeShort(count);                // total number of directory entries
         writeInt(xlen);                   // length of central directory
         writeInt(xoff);                   // offset of central directory
-        if (comment != null) {            // zip file comment
+        if (comment != null) {            // ZIP file comment
             writeShort(comment.length);
             writeBytes(comment, 0, comment.length);
         } else {

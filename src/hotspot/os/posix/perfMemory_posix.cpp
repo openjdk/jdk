@@ -29,13 +29,13 @@
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
+#include "nmt/memTracker.hpp"
 #include "oops/oop.inline.hpp"
 #include "os_posix.inline.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/perfMemory.hpp"
-#include "services/memTracker.hpp"
 #include "utilities/exceptions.hpp"
 #if defined(LINUX)
 #include "os_linux.hpp"
@@ -1086,11 +1086,10 @@ static char* mmap_create_shared(size_t size) {
 static void unmap_shared(char* addr, size_t bytes) {
   int res;
   if (MemTracker::enabled()) {
-    // Note: Tracker contains a ThreadCritical.
-    Tracker tkr(Tracker::release);
+    ThreadCritical tc;
     res = ::munmap(addr, bytes);
     if (res == 0) {
-      tkr.record((address)addr, bytes);
+      MemTracker::record_virtual_memory_release((address)addr, bytes);
     }
   } else {
     res = ::munmap(addr, bytes);

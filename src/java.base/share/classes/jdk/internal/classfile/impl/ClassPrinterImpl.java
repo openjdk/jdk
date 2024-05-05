@@ -41,26 +41,26 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-import jdk.internal.classfile.Annotation;
+import java.lang.classfile.Annotation;
 
-import jdk.internal.classfile.AnnotationElement;
-import jdk.internal.classfile.AnnotationValue;
-import jdk.internal.classfile.AnnotationValue.*;
-import jdk.internal.classfile.Attribute;
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.components.ClassPrinter.*;
-import jdk.internal.classfile.CodeModel;
-import jdk.internal.classfile.Instruction;
-import jdk.internal.classfile.MethodModel;
-import jdk.internal.classfile.TypeAnnotation;
-import jdk.internal.classfile.attribute.*;
-import jdk.internal.classfile.attribute.StackMapFrameInfo.*;
-import jdk.internal.classfile.constantpool.*;
-import jdk.internal.classfile.instruction.*;
+import java.lang.classfile.AnnotationElement;
+import java.lang.classfile.AnnotationValue;
+import java.lang.classfile.AnnotationValue.*;
+import java.lang.classfile.Attribute;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.components.ClassPrinter.*;
+import java.lang.classfile.CodeModel;
+import java.lang.classfile.Instruction;
+import java.lang.classfile.MethodModel;
+import java.lang.classfile.TypeAnnotation;
+import java.lang.classfile.attribute.*;
+import java.lang.classfile.attribute.StackMapFrameInfo.*;
+import java.lang.classfile.constantpool.*;
+import java.lang.classfile.instruction.*;
 
-import static jdk.internal.classfile.Classfile.*;
-import jdk.internal.classfile.CompoundElement;
-import jdk.internal.classfile.FieldModel;
+import static java.lang.classfile.ClassFile.*;
+import java.lang.classfile.CompoundElement;
+import java.lang.classfile.FieldModel;
 import static jdk.internal.classfile.impl.ClassPrinterImpl.Style.*;
 
 public final class ClassPrinterImpl {
@@ -817,13 +817,15 @@ public final class ClassPrinterImpl {
                                 "owner", inv.owner().name().stringValue(),
                                 "method name", inv.name().stringValue(),
                                 "method type", inv.type().stringValue()));
-                        case InvokeDynamicInstruction invd -> in.with(leafs(
+                        case InvokeDynamicInstruction invd -> {
+                            in.with(leafs(
                                 "name", invd.name().stringValue(),
                                 "descriptor", invd.type().stringValue(),
-                                "kind", invd.bootstrapMethod().kind().name(),
-                                "owner", invd.bootstrapMethod().owner().descriptorString(),
-                                "method name", invd.bootstrapMethod().methodName(),
-                                "invocation type", invd.bootstrapMethod().invocationType().descriptorString()));
+                                "bootstrap method", invd.bootstrapMethod().kind().name()
+                                     + " " + Util.toInternalName(invd.bootstrapMethod().owner())
+                                     + "::" + invd.bootstrapMethod().methodName()));
+                            in.with(list("arguments", "arg", invd.bootstrapArgs().stream()));
+                        }
                         case NewObjectInstruction newo -> in.with(leaf(
                                 "type", newo.className().name().stringValue()));
                         case NewPrimitiveArrayInstruction newa -> in.with(leafs(
@@ -884,12 +886,15 @@ public final class ClassPrinterImpl {
                     bm -> {
                         var mh = bm.bootstrapMethod();
                         var mref = mh.reference();
-                        return map("bm",
+                        var bmNode = new MapNodeImpl(FLOW, "bm");
+                        bmNode.with(leafs(
+                                "index", bm.bsmIndex(),
                                 "kind", DirectMethodHandleDesc.Kind.valueOf(mh.kind(),
                                         mref instanceof InterfaceMethodRefEntry).name(),
-                                "owner", mref.owner().name().stringValue(),
-                                "name", mref.nameAndType().name().stringValue(),
-                                "type", mref.nameAndType().type().stringValue());
+                                "owner", mref.owner().asInternalName(),
+                                "name", mref.nameAndType().name().stringValue()));
+                        bmNode.with(list("args", "arg", bm.arguments().stream().map(LoadableConstantEntry::constantValue)));
+                        return bmNode;
                     })));
                 case ConstantValueAttribute cva ->
                     nodes.add(leaf("constant value", cva.constant().constantValue()));

@@ -30,9 +30,9 @@ import java.util.List;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.constant.ConstantDescs;
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.components.CodeStackTracker;
-import static jdk.internal.classfile.TypeKind.*;
+import java.lang.classfile.*;
+import java.lang.classfile.components.CodeStackTracker;
+import static java.lang.classfile.TypeKind.*;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -43,7 +43,7 @@ class StackTrackerTest {
 
     @Test
     void testStackTracker() {
-        Classfile.of().build(ClassDesc.of("Foo"), clb ->
+        ClassFile.of().build(ClassDesc.of("Foo"), clb ->
             clb.withMethodBody("m", MethodTypeDesc.of(ConstantDescs.CD_Void), 0, cob -> {
                 var stackTracker = CodeStackTracker.of(DoubleType, FloatType); //initial stack tracker pre-set
                 cob.transforming(stackTracker, stcb -> {
@@ -58,7 +58,7 @@ class StackTrackerTest {
                         assertIterableEquals(stackTracker.stack().get(), List.of(IntType, LongType, ReferenceType, DoubleType, FloatType));
                         tryb.ifThen(thb -> {
                             assertIterableEquals(stackTracker.stack().get(), List.of(LongType, ReferenceType, DoubleType, FloatType));
-                            thb.constantInstruction(ClassDesc.of("Phee"));
+                            thb.loadConstant(ClassDesc.of("Phee"));
                             assertIterableEquals(stackTracker.stack().get(), List.of(ReferenceType, LongType, ReferenceType, DoubleType, FloatType));
                             thb.athrow();
                             assertFalse(stackTracker.stack().isPresent());
@@ -79,7 +79,7 @@ class StackTrackerTest {
 
     @Test
     void testTrackingLost() {
-        Classfile.of().build(ClassDesc.of("Foo"), clb ->
+        ClassFile.of().build(ClassDesc.of("Foo"), clb ->
             clb.withMethodBody("m", MethodTypeDesc.of(ConstantDescs.CD_Void), 0, cob -> {
                 var stackTracker = CodeStackTracker.of();
                 cob.transforming(stackTracker, stcb -> {
@@ -91,7 +91,7 @@ class StackTrackerTest {
                     var l2 = stcb.newBoundLabel(); //back jump target
                     assertFalse(stackTracker.stack().isPresent()); //no stack
                     assertTrue(stackTracker.maxStackSize().isPresent()); //however still tracking
-                    stcb.constantInstruction(ClassDesc.of("Phee")); //stack instruction on unknown stack cause tracking lost
+                    stcb.loadConstant(ClassDesc.of("Phee")); //stack instruction on unknown stack cause tracking lost
                     assertFalse(stackTracker.stack().isPresent()); //no stack
                     assertFalse(stackTracker.maxStackSize().isPresent()); //because tracking lost
                     stcb.athrow();

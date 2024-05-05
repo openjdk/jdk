@@ -356,9 +356,12 @@ void Matcher::match( ) {
   // Recursively match trees from old space into new space.
   // Correct leaves of new-space Nodes; they point to old-space.
   _visited.clear();
-  C->set_cached_top_node(xform( C->top(), live_nodes ));
+  Node* const n = xform(C->top(), live_nodes);
+  if (C->failing()) return;
+  C->set_cached_top_node(n);
   if (!C->failing()) {
     Node* xroot =        xform( C->root(), 1 );
+    if (C->failing()) return;
     if (xroot == nullptr) {
       Matcher::soft_match_failure();  // recursive matching process failed
       assert(false, "instruction match failed");
@@ -1887,11 +1890,7 @@ MachNode *Matcher::ReduceInst( State *s, int rule, Node *&mem ) {
   }
 
   // Have mach nodes inherit GC barrier data
-  if (leaf->is_LoadStore()) {
-    mach->set_barrier_data(leaf->as_LoadStore()->barrier_data());
-  } else if (leaf->is_Mem()) {
-    mach->set_barrier_data(leaf->as_Mem()->barrier_data());
-  }
+  mach->set_barrier_data(MemNode::barrier_data(leaf));
 
   return ex;
 }
@@ -2475,7 +2474,22 @@ void Matcher::find_shared_post_visit(Node* n, uint opcode) {
       n->del_req(3);
       break;
     }
+    case Op_LoadVectorGather:
+      if (is_subword_type(n->bottom_type()->is_vect()->element_basic_type())) {
+        Node* pair = new BinaryNode(n->in(MemNode::ValueIn), n->in(MemNode::ValueIn+1));
+        n->set_req(MemNode::ValueIn, pair);
+        n->del_req(MemNode::ValueIn+1);
+      }
+      break;
     case Op_LoadVectorGatherMasked:
+      if (is_subword_type(n->bottom_type()->is_vect()->element_basic_type())) {
+        Node* pair2 = new BinaryNode(n->in(MemNode::ValueIn + 1), n->in(MemNode::ValueIn + 2));
+        Node* pair1 = new BinaryNode(n->in(MemNode::ValueIn), pair2);
+        n->set_req(MemNode::ValueIn, pair1);
+        n->del_req(MemNode::ValueIn+2);
+        n->del_req(MemNode::ValueIn+1);
+        break;
+      } // fall-through
     case Op_StoreVectorScatter: {
       Node* pair = new BinaryNode(n->in(MemNode::ValueIn), n->in(MemNode::ValueIn+1));
       n->set_req(MemNode::ValueIn, pair);
@@ -2495,6 +2509,14 @@ void Matcher::find_shared_post_visit(Node* n, uint opcode) {
       n->set_req(1, new BinaryNode(n->in(1), n->in(2)));
       n->set_req(2, n->in(3));
       n->del_req(3);
+      break;
+    }
+    case Op_PartialSubtypeCheck: {
+      if (UseSecondarySupersTable && n->in(2)->is_Con()) {
+        // PartialSubtypeCheck uses both constant and register operands for superclass input.
+        n->set_req(2, new BinaryNode(n->in(2), n->in(2)));
+        break;
+      }
       break;
     }
     default:
@@ -2790,6 +2812,12 @@ BasicType Matcher::vector_element_basic_type(const MachNode* use, const MachOper
   int def_idx = use->operand_index(opnd);
   Node* def = use->in(def_idx);
   return def->bottom_type()->is_vect()->element_basic_type();
+}
+
+bool Matcher::is_non_long_integral_vector(const Node* n) {
+  BasicType bt = vector_element_basic_type(n);
+  assert(bt != T_CHAR, "char is not allowed in vector");
+  return is_subword_type(bt) || bt == T_INT;
 }
 
 #ifdef ASSERT

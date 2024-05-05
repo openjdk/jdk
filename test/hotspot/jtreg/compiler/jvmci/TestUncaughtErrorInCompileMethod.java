@@ -83,7 +83,7 @@ public class TestUncaughtErrorInCompileMethod extends JVMCIServiceLocator {
     }
 
     static void testSubprocess(boolean fatalError) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:+UnlockExperimentalVMOptions",
             "-XX:+UseJVMCICompiler", "-Djvmci.Compiler=ErrorCompiler",
             "-XX:-TieredCompilation",

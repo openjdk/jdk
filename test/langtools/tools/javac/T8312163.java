@@ -2,9 +2,9 @@
  * @test /nodynamiccopyright/
  * @bug 8312163
  * @summary Crash in dominance check when compiling unnamed patterns
- * @enablePreview
  * @compile/fail/ref=T8312163.out -XDrawDiagnostics T8312163.java
  */
+
 public class T8312163 {
     sealed interface A permits B {}
     record B() implements A {}

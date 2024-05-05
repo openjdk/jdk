@@ -44,6 +44,7 @@ import org.testng.annotations.Test;
 
 /*
  * @test
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          jdk.management

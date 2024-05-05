@@ -1,0 +1,519 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2024 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-3.0
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="za"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="ar" draft="unconfirmed">Vah Ahlahbwz</language>
+			<language type="az" draft="unconfirmed">Vah Ahsaibaigyangh</language>
+			<language type="be" draft="unconfirmed">Vah Bwzngozlozswh</language>
+			<language type="bg" draft="unconfirmed">Vah Baujgyahliya</language>
+			<language type="bn" draft="unconfirmed">Vah Munggyahlah</language>
+			<language type="bo" draft="unconfirmed">Cangyij</language>
+			<language type="bs" draft="unconfirmed">Vah Bohswhnizya</language>
+			<language type="ca" draft="unconfirmed">Vah Gyahdailoznizya</language>
+			<language type="cs" draft="unconfirmed">Vah Cezgwz</language>
+			<language type="da" draft="unconfirmed">Vah Danhmwz</language>
+			<language type="de" draft="unconfirmed">Dwzyij</language>
+			<language type="el" draft="unconfirmed">Vah Hihlaz</language>
+			<language type="en" draft="contributed">Yinghyij</language>
+			<language type="eo" draft="unconfirmed">Sigaiyij</language>
+			<language type="es" draft="unconfirmed">Vah Sihbanhyaz</language>
+			<language type="et" draft="unconfirmed">Vah Aisahnizya</language>
+			<language type="eu" draft="unconfirmed">Vah Bahswhgwz</language>
+			<language type="fa" draft="unconfirmed">Vah Bohswh</language>
+			<language type="fi" draft="unconfirmed">Vah Fwnhlanz</language>
+			<language type="fil" draft="unconfirmed">Vah Feihlizbinh</language>
+			<language type="fj" draft="unconfirmed">Vah Feijci</language>
+			<language type="fo" draft="unconfirmed">Vah Fazloz</language>
+			<language type="fr" draft="unconfirmed">Fazyij</language>
+			<language type="ga" draft="unconfirmed">Vah Aiwjlanz</language>
+			<language type="gl" draft="unconfirmed">Vah Gyahlisihya</language>
+			<language type="haw" draft="unconfirmed">Vah Yaveihyiz</language>
+			<language type="he" draft="unconfirmed">Vah Hihbwzlaiz</language>
+			<language type="hi" draft="unconfirmed">Vah Yindi</language>
+			<language type="hmn" draft="unconfirmed">Myauzyij</language>
+			<language type="hr" draft="unconfirmed">Vah Gwzlozdiya</language>
+			<language type="hu" draft="unconfirmed">Vah Yunghyazli</language>
+			<language type="hy" draft="unconfirmed">Vah Yameijnizya</language>
+			<language type="id" draft="unconfirmed">Vah Yindunizsihya</language>
+			<language type="is" draft="unconfirmed">Vah Binghdauj</language>
+			<language type="it" draft="unconfirmed">Vah Yidali</language>
+			<language type="ja" draft="unconfirmed">Yizyij</language>
+			<language type="jbo" draft="unconfirmed">Vah Lozciz</language>
+			<language type="ka" draft="unconfirmed">Vah Gwzlujgizya</language>
+			<language type="kk" draft="unconfirmed">Vah Hahsahgwz</language>
+			<language type="km" draft="unconfirmed">Vah Gauhmenz</language>
+			<language type="ko" draft="unconfirmed">Hanzyij</language>
+			<language type="ky" draft="unconfirmed">Vah Gizwjgizswh</language>
+			<language type="la" draft="unconfirmed">Vah Lahdingh</language>
+			<language type="lb" draft="unconfirmed">Vah Luzswnhbauj</language>
+			<language type="lo" draft="unconfirmed">Vah Laojvoh</language>
+			<language type="lt" draft="unconfirmed">Vah Lizdauzvanj</language>
+			<language type="lv" draft="unconfirmed">Vah Lahdozveizya</language>
+			<language type="mi" draft="unconfirmed">Vah Mauzli</language>
+			<language type="mn" draft="unconfirmed">Vah Mungzguj</language>
+			<language type="ms" draft="unconfirmed">Vah Majlaiz</language>
+			<language type="mt" draft="unconfirmed">Vah Majwjdah</language>
+			<language type="my" draft="unconfirmed">Vah Menjden</language>
+			<language type="ne" draft="unconfirmed">Vah Nizbozwj</language>
+			<language type="nl" draft="unconfirmed">Vah Hozlanz</language>
+			<language type="no" draft="unconfirmed">Vah Nozveih</language>
+			<language type="pl" draft="unconfirmed">Vah Bohlanz</language>
+			<language type="pt" draft="unconfirmed">Vah Buzdauzyaz</language>
+			<language type="ro" draft="unconfirmed">Vah Lozmajnizya</language>
+			<language type="ru" draft="unconfirmed">Ngozyij</language>
+			<language type="sa" draft="unconfirmed">Fanzyij</language>
+			<language type="sk" draft="unconfirmed">Vah Swhlozfazgwz</language>
+			<language type="sl" draft="unconfirmed">Vah Swhlozvwnznizya</language>
+			<language type="sm" draft="unconfirmed">Vah Sazmozya</language>
+			<language type="so" draft="unconfirmed">Vah Sozmajlij</language>
+			<language type="sq" draft="unconfirmed">Vah Ahwjbahnizya</language>
+			<language type="sr" draft="unconfirmed">Saiwjveizya</language>
+			<language type="sv" draft="unconfirmed">Vah Suidenj</language>
+			<language type="sw" draft="unconfirmed">Vah swhvajhihlij</language>
+			<language type="tg" draft="unconfirmed">Vah Dazgizgwz</language>
+			<language type="th" draft="unconfirmed">Daiyij</language>
+			<language type="tk" draft="unconfirmed">Vah Dujguman</language>
+			<language type="tr" draft="unconfirmed">Vah Dujwjgiz</language>
+			<language type="ug" draft="unconfirmed">Vah Veizvuzwj</language>
+			<language type="uk" draft="unconfirmed">Vah Vuhgwzlanz</language>
+			<language type="und" draft="unconfirmed">Vah caengz rox</language>
+			<language type="uz" draft="unconfirmed">Vah Vuhsihbezgwz</language>
+			<language type="vi" draft="unconfirmed">Vah Yeznanz</language>
+			<language type="yue" draft="unconfirmed">Yezyij</language>
+			<language type="za" draft="contributed">Vahcuengh</language>
+			<language type="zh" draft="unconfirmed">Vahgun</language>
+			<language type="zh" alt="menu" draft="unconfirmed">Bujdunghva</language>
+		</languages>
+		<scripts>
+			<script type="Arab" draft="unconfirmed">Saw Ahlahbwz</script>
+			<script type="Bopo" draft="unconfirmed">Cuyinh Fuzhau</script>
+			<script type="Brai" draft="unconfirmed">Sawmengz</script>
+			<script type="Grek" draft="unconfirmed">Saw Hihlaz</script>
+			<script type="Hani" draft="unconfirmed">Sawgun</script>
+			<script type="Jpan" draft="unconfirmed">Yizvwnz</script>
+			<script type="Kore" draft="unconfirmed">Hanzvwnz</script>
+			<script type="Laoo" draft="unconfirmed">Saw Laojvoh</script>
+			<script type="Latn" draft="contributed">Lahdinghvwnz</script>
+			<script type="Mong" draft="unconfirmed">Saw Mungzguj</script>
+			<script type="Thai" draft="unconfirmed">Daivwnz</script>
+			<script type="Tibt" draft="unconfirmed">Cangvwnz</script>
+			<script type="Zsym" draft="unconfirmed">Fouzhauh</script>
+			<script type="Zyyy" draft="unconfirmed">Doengyungh</script>
+			<script type="Zzzz" draft="unconfirmed">Saw caengz rox</script>
+		</scripts>
+		<territories>
+			<territory type="001" draft="unconfirmed">seiqgyaiq</territory>
+			<territory type="002" draft="unconfirmed">Feihcouh</territory>
+			<territory type="003" draft="unconfirmed">Bwz Meijcouh</territory>
+			<territory type="005" draft="unconfirmed">Nanz Meijcouh</territory>
+			<territory type="009" draft="unconfirmed">Dayangzcouh</territory>
+			<territory type="011" draft="unconfirmed">Sih Feih</territory>
+			<territory type="013" draft="unconfirmed">Cungh Meijcouh</territory>
+			<territory type="014" draft="unconfirmed">Dungh Feih</territory>
+			<territory type="015" draft="unconfirmed">Bwz Feih</territory>
+			<territory type="017" draft="unconfirmed">Cungh Feih</territory>
+			<territory type="018" draft="unconfirmed">Nanz Feihcouh</territory>
+			<territory type="019" draft="unconfirmed">Meijcouh</territory>
+			<territory type="029" draft="unconfirmed">Dieg Gyahlwzbij</territory>
+			<territory type="030" draft="unconfirmed">Dungh Ya</territory>
+			<territory type="034" draft="unconfirmed">Nanz Ya</territory>
+			<territory type="035" draft="unconfirmed">Dunghnanzya</territory>
+			<territory type="039" draft="unconfirmed">Nanz Ouh</territory>
+			<territory type="142" draft="unconfirmed">Yacouh</territory>
+			<territory type="143" draft="unconfirmed">Cungh Ya</territory>
+			<territory type="145" draft="unconfirmed">Sih Ya</territory>
+			<territory type="150" draft="unconfirmed">Ouhcouh</territory>
+			<territory type="151" draft="unconfirmed">Dungh Ouh</territory>
+			<territory type="154" draft="unconfirmed">Bwz Ouh</territory>
+			<territory type="155" draft="unconfirmed">Sih Ouh</territory>
+			<territory type="419" draft="unconfirmed">Lahdingh Meihcouh</territory>
+			<territory type="AD" draft="unconfirmed">Anhdauwj</territory>
+			<territory type="AE" draft="unconfirmed">Azlenzciuz</territory>
+			<territory type="AF" draft="unconfirmed">Ahfuhan</territory>
+			<territory type="AI" draft="unconfirmed">Anhgveihlah</territory>
+			<territory type="AL" draft="unconfirmed">Ahwjbahnizya</territory>
+			<territory type="AM" draft="unconfirmed">Yameijnizya</territory>
+			<territory type="AO" draft="unconfirmed">Anhgohlah</territory>
+			<territory type="AR" draft="unconfirmed">Ahgwnhdingz</territory>
+			<territory type="AT" draft="unconfirmed">Audili</territory>
+			<territory type="AU" draft="unconfirmed">Audaliya</territory>
+			<territory type="AW" draft="unconfirmed">Ahlujbah</territory>
+			<territory type="AZ" draft="unconfirmed">Ahsaibaigyangh</territory>
+			<territory type="BA" draft="unconfirmed">Bohswhnizya caeuq Hwzsaigohveizna</territory>
+			<territory type="BB" draft="unconfirmed">Bahbahdohswh</territory>
+			<territory type="BD" draft="unconfirmed">Munggyahlahgoz</territory>
+			<territory type="BE" draft="unconfirmed">Bijlisiz</territory>
+			<territory type="BG" draft="unconfirmed">Baujgyahliya</territory>
+			<territory type="BH" draft="unconfirmed">Bahlinz</territory>
+			<territory type="BJ" draft="unconfirmed">Beiningz</territory>
+			<territory type="BM" draft="unconfirmed">Bwzmuda</territory>
+			<territory type="BN" draft="unconfirmed">Vwnzlaiz</territory>
+			<territory type="BO" draft="unconfirmed">Bohliveizya</territory>
+			<territory type="BR" draft="unconfirmed">Bahsih</territory>
+			<territory type="BS" draft="unconfirmed">Bahhahmaj</territory>
+			<territory type="BT" draft="unconfirmed">Budanh</territory>
+			<territory type="BW" draft="unconfirmed">Bozswvajnaz</territory>
+			<territory type="BY" draft="unconfirmed">Bwzngozlozswh</territory>
+			<territory type="BZ" draft="unconfirmed">Bwzlizswh</territory>
+			<territory type="CA" draft="unconfirmed">Gyahnazda</territory>
+			<territory type="CH" draft="unconfirmed">Suisw</territory>
+			<territory type="CL" draft="unconfirmed">Cili</territory>
+			<territory type="CM" draft="unconfirmed">Gahmwzlungz</territory>
+			<territory type="CN" draft="contributed">Cunghgoz</territory>
+			<territory type="CO" draft="unconfirmed">Gohlunzbijya</territory>
+			<territory type="CR" draft="unconfirmed">Gohswhdazlizgyah</territory>
+			<territory type="CU" draft="unconfirmed">Gujbah</territory>
+			<territory type="CV" draft="unconfirmed">Fozdwzgoz</territory>
+			<territory type="CY" draft="unconfirmed">Saibujluswh</territory>
+			<territory type="CZ" draft="unconfirmed">Cezgwz</territory>
+			<territory type="DE" draft="unconfirmed">Dwzgoz</territory>
+			<territory type="DK" draft="unconfirmed">Danhmwz</territory>
+			<territory type="DM" draft="unconfirmed">Dohmijnizgwz</territory>
+			<territory type="DO" draft="unconfirmed">Dohmijnizgyah Gunghozgoz</territory>
+			<territory type="DZ" draft="unconfirmed">Ahwjgizliya</territory>
+			<territory type="EC" draft="unconfirmed">Ngwzgyahdohwj</territory>
+			<territory type="EE" draft="unconfirmed">Aisahnizya</territory>
+			<territory type="EG" draft="unconfirmed">Aihgiz</territory>
+			<territory type="EH" draft="unconfirmed">Sih Sahhahlah</territory>
+			<territory type="ES" draft="unconfirmed">Sihbanhyaz</territory>
+			<territory type="ET" draft="unconfirmed">Aihsaiwzbizya</territory>
+			<territory type="EU" draft="unconfirmed">Ouhmungz</territory>
+			<territory type="FI" draft="unconfirmed">Fwnhlanz</territory>
+			<territory type="FJ" draft="unconfirmed">Feijci</territory>
+			<territory type="FR" draft="unconfirmed">Fazgoz</territory>
+			<territory type="GA" draft="unconfirmed">Gyahbungz</territory>
+			<territory type="GB" draft="unconfirmed">Yinghgoz</territory>
+			<territory type="GD" draft="unconfirmed">Gwzlinznazdaz</territory>
+			<territory type="GE" draft="unconfirmed">Gwzlujgizya</territory>
+			<territory type="GH" draft="unconfirmed">Gyahnaz</territory>
+			<territory type="GI" draft="unconfirmed">Cizbulozdoz</territory>
+			<territory type="GL" draft="unconfirmed">Gwzlingzlanz</territory>
+			<territory type="GM" draft="unconfirmed">Ganghbijya</territory>
+			<territory type="GN" draft="unconfirmed">Gijneiya</territory>
+			<territory type="GQ" draft="unconfirmed">Cizdau Gijneiya</territory>
+			<territory type="GR" draft="unconfirmed">Hihlaz</territory>
+			<territory type="GT" draft="unconfirmed">Veizdimajlah</territory>
+			<territory type="GU" draft="unconfirmed">Gvanhdauj</territory>
+			<territory type="GW" draft="unconfirmed">Gijneiyabijsau</territory>
+			<territory type="GY" draft="unconfirmed">Gveihyana</territory>
+			<territory type="HK" draft="unconfirmed">Yanghgangj Dwzbez Hingzcwnggih Cunghgoz</territory>
+			<territory type="HK" alt="short" draft="unconfirmed">Yanghgangj</territory>
+			<territory type="HN" draft="unconfirmed">Hungzduhlahswh</territory>
+			<territory type="HR" draft="unconfirmed">Gwzlozdiya</territory>
+			<territory type="HT" draft="unconfirmed">Haijdi</territory>
+			<territory type="HU" draft="unconfirmed">Yunghyazli</territory>
+			<territory type="ID" draft="unconfirmed">Yindunizsihya</territory>
+			<territory type="IE" draft="unconfirmed">Aiwjlanz</territory>
+			<territory type="IL" draft="unconfirmed">Yijswzlez</territory>
+			<territory type="IN" draft="unconfirmed">Yindu</territory>
+			<territory type="IQ" draft="unconfirmed">Yihlahgwz</territory>
+			<territory type="IR" draft="unconfirmed">Yihlangj</territory>
+			<territory type="IS" draft="unconfirmed">Binghdauj</territory>
+			<territory type="IT" draft="unconfirmed">Yidali</territory>
+			<territory type="JM" draft="unconfirmed">Yazmaijgyah</territory>
+			<territory type="JO" draft="unconfirmed">Yozdan</territory>
+			<territory type="JP" draft="unconfirmed">Yizbwnj</territory>
+			<territory type="KE" draft="unconfirmed">Gwnjnizya</territory>
+			<territory type="KG" draft="unconfirmed">Gizwjgizswhswhdanj</territory>
+			<territory type="KH" draft="unconfirmed">Genjbujsai</territory>
+			<territory type="KM" draft="unconfirmed">Gohmozloz</territory>
+			<territory type="KP" draft="unconfirmed">Cauzsenh</territory>
+			<territory type="KR" draft="unconfirmed">Hanzgoz</territory>
+			<territory type="KW" draft="unconfirmed">Gohveihdwz</territory>
+			<territory type="KZ" draft="unconfirmed">Hahsahgwzswhdanj</territory>
+			<territory type="LA" draft="unconfirmed">Laojvoh</territory>
+			<territory type="LB" draft="unconfirmed">Lizbahnwn</territory>
+			<territory type="LI" draft="unconfirmed">Lezcihdunhswdwngh</territory>
+			<territory type="LK" draft="unconfirmed">Swhlijlanzgaj</territory>
+			<territory type="LR" draft="unconfirmed">Libijlijya</territory>
+			<territory type="LS" draft="unconfirmed">Laizsozdoz</territory>
+			<territory type="LT" draft="unconfirmed">Lizdauzvanj</territory>
+			<territory type="LU" draft="unconfirmed">Luzswnhbauj</territory>
+			<territory type="LV" draft="unconfirmed">Lahdozveizya</territory>
+			<territory type="LY" draft="unconfirmed">Libijya</territory>
+			<territory type="MA" draft="unconfirmed">Mohlozgoh</territory>
+			<territory type="MC" draft="unconfirmed">Mohnazgoh</territory>
+			<territory type="MD" draft="unconfirmed">Mohwjdohvaj</territory>
+			<territory type="ME" draft="unconfirmed">Hwzsanh</territory>
+			<territory type="MG" draft="unconfirmed">Majdazgyahswhgyah</territory>
+			<territory type="MK" draft="unconfirmed">Bwz Majgizdun</territory>
+			<territory type="ML" draft="unconfirmed">Majlij</territory>
+			<territory type="MM" draft="unconfirmed">Menjden</territory>
+			<territory type="MN" draft="unconfirmed">Mungzguj</territory>
+			<territory type="MO" draft="unconfirmed">Aumwnz Dwzbez Hingzcwnggih Cunghgoz</territory>
+			<territory type="MO" alt="short" draft="unconfirmed">Aumwnz</territory>
+			<territory type="MR" draft="unconfirmed">Mauzlijdaznizya</territory>
+			<territory type="MT" draft="unconfirmed">Majwjdah</territory>
+			<territory type="MV" draft="unconfirmed">Majwjdaifuh</territory>
+			<territory type="MW" draft="unconfirmed">Majlahveiz</territory>
+			<territory type="MX" draft="unconfirmed">Mwzsihgoh</territory>
+			<territory type="MY" draft="unconfirmed">Majlaizsihya</territory>
+			<territory type="NA" draft="unconfirmed">Nazmijbijya</territory>
+			<territory type="NE" draft="unconfirmed">Nizyizwj</territory>
+			<territory type="NG" draft="unconfirmed">Nizyizliyah</territory>
+			<territory type="NI" draft="unconfirmed">Nizgyahlahgvah</territory>
+			<territory type="NL" draft="unconfirmed">Hozlanz</territory>
+			<territory type="NO" draft="unconfirmed">Nozveih</territory>
+			<territory type="NP" draft="unconfirmed">Nizbozwj</territory>
+			<territory type="NR" draft="unconfirmed">Naujluj</territory>
+			<territory type="NU" draft="unconfirmed">Niujaih</territory>
+			<territory type="NZ" draft="unconfirmed">Sinhsihlanz</territory>
+			<territory type="OM" draft="unconfirmed">Ahman</territory>
+			<territory type="PA" draft="unconfirmed">Bahnazmaj</territory>
+			<territory type="PE" draft="unconfirmed">Biluj</territory>
+			<territory type="PG" draft="unconfirmed">Bahbuyasinhgijneiya</territory>
+			<territory type="PH" draft="unconfirmed">Feihlizbinh</territory>
+			<territory type="PK" draft="unconfirmed">Bahgihswhdanj</territory>
+			<territory type="PL" draft="unconfirmed">Bohlanz</territory>
+			<territory type="PR" draft="unconfirmed">Bohdohlizgoz</territory>
+			<territory type="PS" draft="unconfirmed">Dieg Bahlwzswhdanj</territory>
+			<territory type="PS" alt="short" draft="unconfirmed">Bahlwzswhdanj</territory>
+			<territory type="PT" draft="unconfirmed">Buzdauzyaz</territory>
+			<territory type="PW" draft="unconfirmed">Bwzlauh</territory>
+			<territory type="PY" draft="unconfirmed">Bahlahgveih</territory>
+			<territory type="QA" draft="unconfirmed">Gajdajwj</territory>
+			<territory type="RO" draft="unconfirmed">Lozmajnizya</territory>
+			<territory type="RS" draft="unconfirmed">Saiwjveizya</territory>
+			<territory type="RU" draft="unconfirmed">Ngozlozswh</territory>
+			<territory type="RW" draft="unconfirmed">Luzvangdaz</territory>
+			<territory type="SA" draft="unconfirmed">Sahdwz Ahlahbwz</territory>
+			<territory type="SD" draft="unconfirmed">Suhdanh</territory>
+			<territory type="SE" draft="unconfirmed">Suidenj</territory>
+			<territory type="SG" draft="unconfirmed">Sinhgyahboh</territory>
+			<territory type="SH" draft="unconfirmed">Swnghwzlwznaz</territory>
+			<territory type="SI" draft="unconfirmed">Swhlozvwnznizya</territory>
+			<territory type="SK" draft="unconfirmed">Swhlozfazgwz</territory>
+			<territory type="SM" draft="unconfirmed">Swngmajlinoz</territory>
+			<territory type="SN" draft="unconfirmed">Saineigyahwj</territory>
+			<territory type="SO" draft="unconfirmed">Sozmajlij</territory>
+			<territory type="SR" draft="unconfirmed">Suhlijnanz</territory>
+			<territory type="SS" draft="unconfirmed">Nanz Suhdanh</territory>
+			<territory type="SV" draft="unconfirmed">Sazwjvajdoh</territory>
+			<territory type="SY" draft="unconfirmed">Siliya</territory>
+			<territory type="SZ" draft="unconfirmed">Swhveihswlanz</territory>
+			<territory type="TD" draft="unconfirmed">Cadwz</territory>
+			<territory type="TG" draft="unconfirmed">Dohgoh</territory>
+			<territory type="TH" draft="unconfirmed">Daigoz</territory>
+			<territory type="TJ" draft="unconfirmed">Dazgizgwzswhdanj</territory>
+			<territory type="TL" draft="unconfirmed">Dunghdivwn</territory>
+			<territory type="TM" draft="unconfirmed">Dujgumanswhdanj</territory>
+			<territory type="TN" draft="unconfirmed">Duznizswh</territory>
+			<territory type="TO" draft="unconfirmed">Tanghgyah</territory>
+			<territory type="TR" draft="unconfirmed">Dujwjgiz</territory>
+			<territory type="TW" draft="unconfirmed">Daizvanh</territory>
+			<territory type="TZ" draft="unconfirmed">Dajsanghnizya</territory>
+			<territory type="UA" draft="unconfirmed">Vuhgwzlanz</territory>
+			<territory type="UG" draft="unconfirmed">Vuhganhdaz</territory>
+			<territory type="UN" draft="unconfirmed">Lenzhozgoz</territory>
+			<territory type="US" draft="unconfirmed">Meijgoz</territory>
+			<territory type="UY" draft="unconfirmed">Vuhlahgveih</territory>
+			<territory type="UZ" draft="unconfirmed">Vuhsihbezgwzswhdanj</territory>
+			<territory type="VA" draft="unconfirmed">Fanzdigangh</territory>
+			<territory type="VE" draft="unconfirmed">Veijneisuilah</territory>
+			<territory type="VN" draft="unconfirmed">Yeznanz</territory>
+			<territory type="VU" draft="unconfirmed">Vajnujahduz</territory>
+			<territory type="WS" draft="unconfirmed">Sazmozya</territory>
+			<territory type="XK" draft="unconfirmed">Gohsozvo</territory>
+			<territory type="YE" draft="unconfirmed">Yejmwnz</territory>
+			<territory type="ZA" draft="unconfirmed">Nanz Feih</territory>
+			<territory type="ZM" draft="unconfirmed">Canbijya</territory>
+			<territory type="ZW" draft="unconfirmed">Cinhbahbuveiz</territory>
+		</territories>
+		<types>
+			<type key="calendar" type="chinese" draft="unconfirmed">liggaeuq</type>
+			<type key="calendar" type="gregorian" draft="unconfirmed">ligmoq</type>
+		</types>
+		<measurementSystemNames>
+			<measurementSystemName type="metric" draft="contributed">gunghci</measurementSystemName>
+			<measurementSystemName type="UK" draft="contributed">yinghci</measurementSystemName>
+			<measurementSystemName type="US" draft="contributed">meijci</measurementSystemName>
+		</measurementSystemNames>
+		<codePatterns>
+			<codePattern type="language" draft="contributed">Vah: {0}</codePattern>
+			<codePattern type="script" draft="contributed">Saw: {0}</codePattern>
+			<codePattern type="territory" draft="contributed">Dieg: {0}</codePattern>
+		</codePatterns>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[a b c d e f g h i j k l m n o p q r s t u v w x y z]</exemplarCharacters>
+		<exemplarCharacters type="index">[A B C D E F G H I J K L M N O P Q R S T U V W X Y Z]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … '‘’ &quot;“” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
+	</characters>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="wide">
+							<month type="1" draft="contributed">ndwenit</month>
+							<month type="2" draft="contributed">ndwenngeih</month>
+							<month type="3" draft="contributed">ndwensam</month>
+							<month type="4" draft="contributed">ndwenseiq</month>
+							<month type="5" draft="contributed">ndwenngux</month>
+							<month type="6" draft="contributed">ndwenloeg</month>
+							<month type="7" draft="contributed">ndwencaet</month>
+							<month type="8" draft="contributed">ndwenbet</month>
+							<month type="9" draft="contributed">ndwengouj</month>
+							<month type="10" draft="contributed">ndwencib</month>
+							<month type="11" draft="contributed">ndwencib’it</month>
+							<month type="12" draft="contributed">ndwencibngeih</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="wide">
+							<day type="sun" draft="contributed">ngoenzsinghgiz</day>
+							<day type="mon" draft="contributed">singhgizit</day>
+							<day type="tue" draft="contributed">singhgizngeih</day>
+							<day type="wed" draft="contributed">singhgizsam</day>
+							<day type="thu" draft="contributed">singhgizseiq</day>
+							<day type="fri" draft="contributed">singhgizhaj</day>
+							<day type="sat" draft="contributed">singhgizroek</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<dayPeriods>
+					<dayPeriodContext type="format">
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am" draft="contributed">banhaet</dayPeriod>
+							<dayPeriod type="pm" draft="contributed">banringzgvaq</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+				</dayPeriods>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="hm" draft="contributed">a h:mm</dateFormatItem>
+						<dateFormatItem id="hms" draft="contributed">a h:mm:ss</dateFormatItem>
+						<dateFormatItem id="hmsv" draft="contributed">v a h:mm:ss</dateFormatItem>
+						<dateFormatItem id="Hmsv" draft="contributed">v HH:mm:ss</dateFormatItem>
+						<dateFormatItem id="yMd" draft="contributed">y/M/d</dateFormatItem>
+						<dateFormatItem id="yMMMd" draft="contributed">'bi' y 'ndwen' M 'ngoenz' d</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
+		</calendars>
+		<fields>
+			<field type="year">
+				<displayName draft="unconfirmed">bi</displayName>
+				<relative type="-1" draft="unconfirmed">bi’gvaq</relative>
+				<relative type="0" draft="unconfirmed">bineix</relative>
+				<relative type="1" draft="unconfirmed">bimoq</relative>
+			</field>
+			<field type="month">
+				<displayName draft="unconfirmed">ndwen</displayName>
+			</field>
+			<field type="week">
+				<displayName draft="unconfirmed">singhgiz</displayName>
+			</field>
+			<field type="day">
+				<displayName draft="unconfirmed">ngoenz</displayName>
+				<relative type="-1" draft="unconfirmed">ngoenzlwenz</relative>
+				<relative type="0" draft="unconfirmed">ngoenzneix</relative>
+				<relative type="1" draft="unconfirmed">ngoenzcog</relative>
+			</field>
+			<field type="hour">
+				<displayName draft="unconfirmed">diemj</displayName>
+			</field>
+			<field type="hour-short">
+				<displayName draft="unconfirmed">Diemj</displayName>
+			</field>
+			<field type="minute">
+				<displayName draft="unconfirmed">faen</displayName>
+			</field>
+			<field type="minute-short">
+				<displayName draft="unconfirmed">Faen</displayName>
+			</field>
+			<field type="second">
+				<displayName draft="unconfirmed">miux</displayName>
+			</field>
+			<field type="second-short">
+				<displayName draft="unconfirmed">Miux</displayName>
+			</field>
+			<field type="zone">
+				<displayName draft="unconfirmed">sizgiz</displayName>
+			</field>
+		</fields>
+		<timeZoneNames>
+			<regionFormat draft="contributed">{0} Sizgenh</regionFormat>
+			<regionFormat type="daylight" draft="contributed">{0} Yaling Sizgenh</regionFormat>
+			<regionFormat type="standard" draft="contributed">{0} Byauhcunj Sizgenh</regionFormat>
+			<metazone type="GMT">
+				<long>
+					<standard draft="contributed">Gwzlinzveihci Byauhcunj Sizgenh</standard>
+				</long>
+			</metazone>
+		</timeZoneNames>
+	</dates>
+	<numbers>
+		<currencyFormats numberSystem="latn">
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencies>
+			<currency type="CNH">
+				<displayName draft="unconfirmed">yinzminzbi (lizan)</displayName>
+			</currency>
+			<currency type="CNY">
+				<displayName draft="unconfirmed">yinzminzbi</displayName>
+				<symbol draft="unconfirmed">¥</symbol>
+			</currency>
+			<currency type="USD">
+				<displayName draft="unconfirmed">meijyenz</displayName>
+				<symbol draft="unconfirmed">$</symbol>
+			</currency>
+		</currencies>
+		<minimalPairs>
+			<pluralMinimalPairs count="other" draft="unconfirmed">{0} ngoenz</pluralMinimalPairs>
+		</minimalPairs>
+	</numbers>
+	<units>
+		<unitLength type="long">
+			<coordinateUnit>
+				<displayName draft="unconfirmed">cujfanghyang</displayName>
+			</coordinateUnit>
+		</unitLength>
+		<unitLength type="short">
+			<coordinateUnit>
+				<displayName draft="unconfirmed">fanghyang</displayName>
+				<coordinateUnitPattern type="east" draft="unconfirmed">dunghgingh {0}</coordinateUnitPattern>
+				<coordinateUnitPattern type="north" draft="unconfirmed">bwzveij {0}</coordinateUnitPattern>
+				<coordinateUnitPattern type="south" draft="unconfirmed">nanzveij {0}</coordinateUnitPattern>
+				<coordinateUnitPattern type="west" draft="unconfirmed">sihgingh {0}</coordinateUnitPattern>
+			</coordinateUnit>
+		</unitLength>
+		<unitLength type="narrow">
+			<coordinateUnit>
+				<coordinateUnitPattern type="east" draft="unconfirmed">{0}E</coordinateUnitPattern>
+				<coordinateUnitPattern type="north" draft="unconfirmed">{0}N</coordinateUnitPattern>
+				<coordinateUnitPattern type="south" draft="unconfirmed">{0}S</coordinateUnitPattern>
+				<coordinateUnitPattern type="west" draft="unconfirmed">{0}W</coordinateUnitPattern>
+			</coordinateUnit>
+		</unitLength>
+	</units>
+	<listPatterns>
+		<listPattern>
+			<listPatternPart type="end" draft="unconfirmed">{0} caeuq {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} caeuq {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or">
+			<listPatternPart type="end" draft="unconfirmed">{0} roxnaeuz {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} roxnaeuz {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="unit-short">
+			<listPatternPart type="start" draft="unconfirmed">{0} {1}</listPatternPart>
+			<listPatternPart type="middle" draft="unconfirmed">{0} {1}</listPatternPart>
+			<listPatternPart type="end" draft="unconfirmed">{0} {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} {1}</listPatternPart>
+		</listPattern>
+	</listPatterns>
+</ldml>

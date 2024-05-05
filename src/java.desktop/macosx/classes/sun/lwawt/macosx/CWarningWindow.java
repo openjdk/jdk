@@ -245,7 +245,7 @@ public final class CWarningWindow extends CPlatformWindow
 
     @Override
     public void notifyKeyEvent(int id, long when, int modifiers, int keyCode,
-                               char keyChar, int keyLocation) {
+                               char keyChar, int keyLocation, int jextendedkeyCode) {
     }
 
     protected int getInitialStyleBits() {

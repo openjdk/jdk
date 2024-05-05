@@ -37,7 +37,6 @@ import jdk.internal.foreign.abi.CallingSequence;
 import jdk.internal.foreign.abi.CallingSequenceBuilder;
 import jdk.internal.foreign.abi.DowncallLinker;
 import jdk.internal.foreign.abi.LinkerOptions;
-import jdk.internal.foreign.abi.UpcallLinker;
 import jdk.internal.foreign.abi.SharedUtils;
 import jdk.internal.foreign.abi.VMStorage;
 import jdk.internal.foreign.abi.aarch64.linux.LinuxAArch64CallArranger;
@@ -152,8 +151,8 @@ public abstract class CallArranger {
 
         boolean forVariadicFunction = options.isVariadicFunction();
 
-        BindingCalculator argCalc = forUpcall ? new BoxBindingCalculator(true) : new UnboxBindingCalculator(true, forVariadicFunction);
-        BindingCalculator retCalc = forUpcall ? new UnboxBindingCalculator(false, forVariadicFunction) : new BoxBindingCalculator(false);
+        BindingCalculator argCalc = forUpcall ? new BoxBindingCalculator(true) : new UnboxBindingCalculator(true, forVariadicFunction, options.allowsHeapAccess());
+        BindingCalculator retCalc = forUpcall ? new UnboxBindingCalculator(false, forVariadicFunction, false) : new BoxBindingCalculator(false);
 
         boolean returnInMemory = isInMemoryReturn(cDesc.returnLayout());
         if (returnInMemory) {
@@ -246,8 +245,8 @@ public abstract class CallArranger {
                         | enough registers | some registers, but not enough  | no registers
         ----------------+------------------+---------------------------------+-------------------------
         Linux           | FW in regs       | CW on the stack                 | CW on the stack
-        MacOs, non-VA   | FW in regs       | FW on the stack                 | FW on the stack
-        MacOs, VA       | FW in regs       | CW on the stack                 | CW on the stack
+        macOS, non-VA   | FW in regs       | FW on the stack                 | FW on the stack
+        macOS, VA       | FW in regs       | CW on the stack                 | CW on the stack
         Windows, non-VF | FW in regs       | CW on the stack                 | CW on the stack
         Windows, VF     | FW in regs       | CW split between regs and stack | CW on the stack
         (where FW = Field-wise copy, CW = Chunk-wise copy, VA is a variadic argument, and VF is a variadic function)
@@ -257,7 +256,7 @@ public abstract class CallArranger {
                         | enough registers | some registers, but not enough  | no registers
         ----------------+------------------+---------------------------------+-------------------------
         Linux           | CW in regs       | CW on the stack                 | CW on the stack
-        MacOs           | CW in regs       | CW on the stack                 | CW on the stack
+        macOS           | CW in regs       | CW on the stack                 | CW on the stack
         Windows, non-VF | CW in regs       | CW on the stack                 | CW on the stack
         Windows, VF     | CW in regs       | CW split between regs and stack | CW on the stack
          */
@@ -389,11 +388,13 @@ public abstract class CallArranger {
     class UnboxBindingCalculator extends BindingCalculator {
         protected final boolean forArguments;
         protected final boolean forVariadicFunction;
+        private final boolean useAddressPairs;
 
-        UnboxBindingCalculator(boolean forArguments, boolean forVariadicFunction) {
+        UnboxBindingCalculator(boolean forArguments, boolean forVariadicFunction, boolean useAddressPairs) {
             super(forArguments, forVariadicFunction);
             this.forArguments = forArguments;
             this.forVariadicFunction = forVariadicFunction;
+            this.useAddressPairs = useAddressPairs;
         }
 
         @Override
@@ -433,9 +434,17 @@ public abstract class CallArranger {
                     bindings.vmStore(storage, long.class);
                 }
                 case POINTER -> {
-                    bindings.unboxAddress();
                     VMStorage storage = storageCalculator.nextStorage(StorageType.INTEGER, (ValueLayout) layout);
-                    bindings.vmStore(storage, long.class);
+                    if (useAddressPairs) {
+                        bindings.dup()
+                                .segmentBase()
+                                .vmStore(storage, Object.class)
+                                .segmentOffsetAllowHeap()
+                                .vmStore(null, long.class);
+                    } else {
+                        bindings.unboxAddress();
+                        bindings.vmStore(storage, long.class);
+                    }
                 }
                 case INTEGER -> {
                     VMStorage storage = storageCalculator.nextStorage(StorageType.INTEGER, (ValueLayout) layout);

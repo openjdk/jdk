@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @summary Basic functional test for
  *          Runtime.exec(String[] command, String[] env, File path) and
  *          Runtime.exec(String command, String[] env, File path).
- *
+ * @requires vm.flagless
  * @library /test/lib
  * @run testng/othervm SetCwd
  */

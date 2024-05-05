@@ -54,10 +54,8 @@ class JVMCINMethodData : public ResourceObj {
   // This is -1 if there is no mirror in the oops table.
   int _nmethod_mirror_index;
 
-  // This is the offset of the patchable part of the nmethod entry barrier sequence.  The meaning is
-  // somewhat platform dependent as the way patching is done varies by architecture.  Older JVMCI
-  // based compilers didn't emit the entry barrier so having a positive value for this offset
-  // confirms that the installed code supports the entry barrier.
+  // This is the offset of the patchable part of the nmethod entry barrier sequence. The meaning is
+  // somewhat platform dependent as the way patching is done varies by architecture.
   int _nmethod_entry_patch_offset;
 
   // Address of the failed speculations list to which a speculation
@@ -129,12 +127,7 @@ public:
   // Sets the mirror in nm's oops table.
   void set_nmethod_mirror(nmethod* nm, oop mirror);
 
-  bool has_entry_barrier() {
-    return _nmethod_entry_patch_offset != -1;
-  }
-
   int nmethod_entry_patch_offset() {
-    guarantee(_nmethod_entry_patch_offset != -1, "missing entry barrier");
     return _nmethod_entry_patch_offset;
   }
 };
@@ -231,8 +224,6 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
                                           int klass_index,
                                           bool& is_accessible,
                                           Klass* loading_klass);
-  static void   get_field_by_index_impl(InstanceKlass* loading_klass, fieldDescriptor& fd,
-                                        int field_index, Bytecodes::Code bc);
   static Method*  get_method_by_index_impl(const constantPoolHandle& cpool,
                                            int method_index, Bytecodes::Code bc,
                                            InstanceKlass* loading_klass);
@@ -280,8 +271,10 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
   // If the JavaVM was created by this call, then the thread-local JNI
   // interface pointer for the JavaVM is returned otherwise null is returned.
   // If this method tried to create the JavaVM but failed, the error code returned
-  // by JNI_CreateJavaVM is returned in create_JavaVM_err.
-  JNIEnv* init_shared_library_javavm(int* create_JavaVM_err);
+  // by JNI_CreateJavaVM is returned in create_JavaVM_err and, if available, an
+  // error message is malloc'ed and assigned to err_msg. The caller is responsible
+  // for freeing err_msg.
+  JNIEnv* init_shared_library_javavm(int* create_JavaVM_err, const char** err_msg);
 
   // Determines if the JVMCI shared library JavaVM exists for this runtime.
   bool has_shared_library_javavm() { return _shared_library_javavm != nullptr; }
@@ -317,11 +310,12 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
   // used when creating an IndirectHotSpotObjectConstantImpl in the
   // shared library JavaVM.
   jlong make_oop_handle(const Handle& obj);
+#ifdef ASSERT
+  static bool is_oop_handle(jlong handle);
+#endif
 
   // Releases all the non-null entries in _oop_handles whose referent is null.
   // Returns the number of handles released by this call.
-  // The method also resets _last_found_oop_handle_index to -1
-  // and _null_oop_handles to 0.
   int release_cleared_oop_handles();
 
   // Allocation and management of metadata handles.
@@ -414,8 +408,6 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
                                      int klass_index,
                                      bool& is_accessible,
                                      Klass* loading_klass);
-  static void   get_field_by_index(InstanceKlass* loading_klass, fieldDescriptor& fd,
-                                   int field_index, Bytecodes::Code bc);
   static Method*  get_method_by_index(const constantPoolHandle& cpool,
                                       int method_index, Bytecodes::Code bc,
                                       InstanceKlass* loading_klass);

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
     
+<xsd:schema xmlns:xsd="https://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
     <xsd:element name="graphDocument">
         <xsd:complexType>
             <xsd:sequence>

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -11,10 +11,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<language type="pis"/>
 	</identity>
 	<localeDisplayNames>
-		<localeDisplayPattern>
-			<localePattern>{0} ({1})</localePattern>
-			<localeSeparator>{0}, {1}</localeSeparator>
-		</localeDisplayPattern>
 		<languages>
 			<language type="en">Ingglis</language>
 			<language type="pis">Pijin</language>
@@ -27,8 +23,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</territories>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">metrik</measurementSystemName>
-			<measurementSystemName type="UK">UK</measurementSystemName>
-			<measurementSystemName type="US">US</measurementSystemName>
 		</measurementSystemNames>
 		<codePatterns>
 			<codePattern type="language">Langguis: {0}</codePattern>
@@ -39,14 +33,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	<characters>
 		<exemplarCharacters>[a b d e f g h i j k l m n o p r s t u v w y]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- ‑ / # % + 0 1 2 3 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‑ , ; \: ! ? . ' ‘ ’ &quot; “ ” ( ) + =]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‑ , ; \: ! ? . '‘’ &quot;“” ( ) + =]</exemplarCharacters>
 	</characters>
-	<delimiters>
-		<quotationStart>“</quotationStart>
-		<quotationEnd>”</quotationEnd>
-		<alternateQuotationStart>‘</alternateQuotationStart>
-		<alternateQuotationEnd>’</alternateQuotationEnd>
-	</delimiters>
 	<dates>
 		<calendars>
 			<calendar type="gregorian">
@@ -81,28 +69,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dayWidth>
 					</dayContext>
 				</days>
-				<dayPeriods>
-					<dayPeriodContext type="format">
-						<dayPeriodWidth type="wide">
-							<dayPeriod type="am">AM</dayPeriod>
-							<dayPeriod type="pm">PM</dayPeriod>
-						</dayPeriodWidth>
-					</dayPeriodContext>
-				</dayPeriods>
-				<dateTimeFormats>
-					<intervalFormats>
-						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
-					</intervalFormats>
-				</dateTimeFormats>
 			</calendar>
 		</calendars>
 		<timeZoneNames>
 			<gmtFormat>GMT {0}</gmtFormat>
-			<gmtZeroFormat>GMT</gmtZeroFormat>
 			<regionFormat>{0} Taem</regionFormat>
 			<regionFormat type="daylight">{0} Delaet Taem</regionFormat>
 			<regionFormat type="standard">{0} Standad Taem</regionFormat>
-			<fallbackFormat>{1} ({0})</fallbackFormat>
 			<metazone type="GMT">
 				<long>
 					<standard>Grinis Min Taem</standard>
@@ -111,24 +84,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</timeZoneNames>
 	</dates>
 	<numbers>
-		<defaultNumberingSystem>latn</defaultNumberingSystem>
-		<otherNumberingSystems>
-			<native>latn</native>
-		</otherNumberingSystems>
-		<symbols numberSystem="latn">
-			<decimal>.</decimal>
-			<group>,</group>
-			<percentSign>%</percentSign>
-			<plusSign>+</plusSign>
-			<minusSign>-</minusSign>
-		</symbols>
-		<decimalFormats numberSystem="latn">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern>#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-		</decimalFormats>
 		<currencies>
 			<currency type="SBD">
 				<symbol>$</symbol>

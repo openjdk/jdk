@@ -65,7 +65,7 @@ public class TestHtmlTableStyles extends JavadocTester {
                     <div class="caption"><span>Constructors</span></div>
                     <div class="summary-table two-column-summary">""",
                 """
-                    <div class="summary-table three-column-summary" aria-labelledby="method-summary-table-tab0">""");
+                    <div class="summary-table three-column-summary">""");
 
         checkOutput("pkg1/package-summary.html", true,
                 """

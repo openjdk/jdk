@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,7 +86,7 @@ import sun.security.action.GetPropertyAction;
  * char[] passwd;
  * if ((cons = System.console()) != null &&
  *     (passwd = cons.readPassword("[%s]", "Password:")) != null) {
- *     code: // @replace substring="code:" replacement="..."
+ *     ...
  *     java.util.Arrays.fill(passwd, ' ');
  * }
  * }
@@ -406,7 +406,8 @@ public sealed class Console implements Flushable permits ProxyingConsole {
             /*
              * The JdkConsole provider used for Console instantiation can be specified
              * with the system property "jdk.console", whose value designates the module
-             * name of the implementation, and which defaults to "java.base". If no
+             * name of the implementation, and which defaults to the value of
+             * {@code JdkConsoleProvider.DEFAULT_PROVIDER_MODULE_NAME}. If no
              * providers are available, or instantiation failed, java.base built-in
              * Console implementation is used.
              */

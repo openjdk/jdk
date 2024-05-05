@@ -171,6 +171,13 @@ public class WriterFactory {
     }
 
     /**
+     * {@return a new writer for the list of restricted methods in this release}
+     */
+    public HtmlDocletWriter newRestrictedListWriter() {
+        return new RestrictedListWriter(configuration);
+    }
+
+    /**
      * {@return a new writer for the "search" page}
      */
     public HtmlDocletWriter newSearchWriter() {

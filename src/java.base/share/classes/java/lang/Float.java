@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,10 +56,16 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * <h2><a id=equivalenceRelation>Floating-point Equality, Equivalence,
  * and Comparison</a></h2>
  *
- * The class {@code java.lang.Double} has a <a
- * href="Double.html#equivalenceRelation">discussion of equality,
- * equivalence, and comparison of floating-point values</a> that is
+ * The class {@code java.lang.Double} has a {@linkplain
+ * Double##equivalenceRelation discussion of equality,
+ * equivalence, and comparison of floating-point values} that is
  * equally applicable to {@code float} values.
+ *
+ * <h2><a id=decimalToBinaryConversion>Decimal &harr; Binary Conversion Issues</a></h2>
+ *
+ * The {@linkplain Double##decimalToBinaryConversion discussion of binary to
+ * decimal conversion issues} in {@code java.lang.Double} is also
+ * applicable to {@code float} values.
  *
  * @see <a href="https://standards.ieee.org/ieee/754/6210/">
  *      <cite>IEEE Standard for Floating-Point Arithmetic</cite></a>
@@ -483,10 +489,6 @@ public final class Float extends Number
      * Finally, after rounding a {@code Float} object representing
      * this {@code float} value is returned.
      *
-     * <p>To interpret localized string representations of a
-     * floating-point value, use subclasses of {@link
-     * java.text.NumberFormat}.
-     *
      * <p>Note that trailing format specifiers, specifiers that
      * determine the type of a floating-point literal
      * ({@code 1.0f} is a {@code float} value;
@@ -510,11 +512,22 @@ public final class Float extends Number
      * for {@link Double#valueOf Double.valueOf} lists a regular
      * expression which can be used to screen the input.
      *
+     * @apiNote To interpret localized string representations of a
+     * floating-point value, or string representations that have
+     * non-ASCII digits, use {@link java.text.NumberFormat}. For
+     * example,
+     * {@snippet lang="java" :
+     *     NumberFormat.getInstance(l).parse(s).floatValue();
+     * }
+     * where {@code l} is the desired locale, or
+     * {@link java.util.Locale#ROOT} if locale insensitive.
+     *
      * @param   s   the string to be parsed.
      * @return  a {@code Float} object holding the value
      *          represented by the {@code String} argument.
      * @throws  NumberFormatException  if the string does not contain a
      *          parsable number.
+     * @see Double##decimalToBinaryConversion Decimal &harr; Binary Conversion Issues
      */
     public static Float valueOf(String s) throws NumberFormatException {
         return new Float(parseFloat(s));
@@ -550,6 +563,7 @@ public final class Float extends Number
      * @throws NumberFormatException if the string does not contain a
      *               parsable {@code float}.
      * @see    java.lang.Float#valueOf(String)
+     * @see    Double##decimalToBinaryConversion Decimal &harr; Binary Conversion Issues
      * @since 1.2
      */
     public static float parseFloat(String s) throws NumberFormatException {

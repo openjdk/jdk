@@ -40,7 +40,9 @@ public class JCEMapper {
 
     private static Map<String, Algorithm> algorithmsMap = new ConcurrentHashMap<>();
 
-    private static String providerName;
+    private static String globalProviderName;
+
+    private static final ThreadLocal<String> threadSpecificProviderName = new ThreadLocal<>();
 
     /**
      * Method register
@@ -344,7 +346,10 @@ public class JCEMapper {
      * @return the default providerId.
      */
     public static String getProviderId() {
-        return providerName;
+        if (threadSpecificProviderName.get() != null) {
+            return threadSpecificProviderName.get();
+        }
+        return globalProviderName;
     }
 
     /**
@@ -355,7 +360,18 @@ public class JCEMapper {
      */
     public static void setProviderId(String provider) {
         JavaUtils.checkRegisterPermission();
-        providerName = provider;
+        globalProviderName = provider;
+    }
+
+    /**
+     * Sets the default Provider for this thread to obtain the security algorithms
+     * @param threadSpecificProviderName the default providerId.
+     * @throws SecurityException if a security manager is installed and the
+     *    caller does not have permission to register the JCE algorithm
+     */
+    public static void setThreadSpecificProviderName(String threadSpecificProviderName) {
+        JavaUtils.checkRegisterPermission();
+        JCEMapper.threadSpecificProviderName.set(threadSpecificProviderName);
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,14 +47,10 @@ protected:
 
 private:
   // Allocate in a TLAB. Could allocate a new TLAB, and therefore potentially safepoint.
-  HeapWord* mem_allocate_inside_tlab(Allocation& allocation) const;
   HeapWord* mem_allocate_inside_tlab_slow(Allocation& allocation) const;
 
   // Allocate outside a TLAB. Could safepoint.
   HeapWord* mem_allocate_outside_tlab(Allocation& allocation) const;
-
-  // Fast-path TLAB allocation failed. Takes a slow-path and potentially safepoint.
-  HeapWord* mem_allocate_slow(Allocation& allocation) const;
 
 protected:
   MemAllocator(Klass* klass, size_t word_size, Thread* thread)
@@ -97,6 +93,8 @@ class ObjArrayAllocator: public MemAllocator {
 protected:
   const int  _length;
   const bool _do_zero;
+
+  void mem_zap_end_padding(HeapWord* mem) const PRODUCT_RETURN;
 
 public:
   ObjArrayAllocator(Klass* klass, size_t word_size, int length, bool do_zero,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 // no precompiled headers
+#include "cds/cdsConfig.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/collectedHeap.hpp"
@@ -47,10 +48,10 @@
 #include "oops/oop.inline.hpp"
 #include "oops/resolvedFieldEntry.hpp"
 #include "oops/resolvedIndyEntry.hpp"
+#include "oops/resolvedMethodEntry.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
-#include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -1606,10 +1607,10 @@ run:
           ARRAY_INTRO(-3);
           int item = STACK_INT(-1);
           // if it is a T_BOOLEAN array, mask the stored value to 0/1
-          if (arrObj->klass() == Universe::boolArrayKlassObj()) {
+          if (arrObj->klass() == Universe::boolArrayKlass()) {
             item &= 1;
           } else {
-            assert(arrObj->klass() == Universe::byteArrayKlassObj(),
+            assert(arrObj->klass() == Universe::byteArrayKlass(),
                    "should be byte array otherwise");
           }
           ((typeArrayOop)arrObj)->byte_at_put(index, item);
@@ -1990,11 +1991,9 @@ run:
             size_t obj_size = ik->size_helper();
             HeapWord* result = THREAD->tlab().allocate(obj_size);
             if (result != nullptr) {
-              // Initialize object field block:
-              //   - if TLAB is pre-zeroed, we can skip this path
-              //   - in debug mode, ThreadLocalAllocBuffer::allocate mangles
-              //     this area, and we still need to initialize it
-              if (DEBUG_ONLY(true ||) !ZeroTLAB) {
+              // Initialize object field block.
+              if (!ZeroTLAB) {
+                // The TLAB was not pre-zeroed, we need to clear the memory here.
                 size_t hdr_size = oopDesc::header_size();
                 Copy::fill_to_words(result + hdr_size, obj_size - hdr_size, 0);
               }
@@ -2248,7 +2247,7 @@ run:
       }
 
       CASE(_invokedynamic): {
-        u4 index = cp->constant_pool()->decode_invokedynamic_index(Bytes::get_native_u4(pc+1)); // index is originally negative
+        u4 index = Bytes::get_native_u4(pc+1);
         ResolvedIndyEntry* indy_info = cp->resolved_indy_entry_at(index);
         if (!indy_info->is_resolved()) {
           CALL_VM(InterpreterRuntime::resolve_from_cache(THREAD, (Bytecodes::Code)opcode),
@@ -2275,20 +2274,20 @@ run:
       CASE(_invokehandle): {
 
         u2 index = Bytes::get_native_u2(pc+1);
-        ConstantPoolCacheEntry* cache = cp->entry_at(index);
+        ResolvedMethodEntry* entry = cp->resolved_method_entry_at(index);
 
-        if (! cache->is_resolved((Bytecodes::Code) opcode)) {
+        if (! entry->is_resolved((Bytecodes::Code) opcode)) {
           CALL_VM(InterpreterRuntime::resolve_from_cache(THREAD, (Bytecodes::Code)opcode),
                   handle_exception);
-          cache = cp->entry_at(index);
+          entry = cp->resolved_method_entry_at(index);
         }
 
-        Method* method = cache->f1_as_method();
+        Method* method = entry->method();
         if (VerifyOops) method->verify();
 
-        if (cache->has_appendix()) {
+        if (entry->has_appendix()) {
           constantPoolHandle cp(THREAD, METHOD->constants());
-          SET_STACK_OBJECT(cache->appendix_if_resolved(cp), 0);
+          SET_STACK_OBJECT(cp->cache()->appendix_if_resolved(entry), 0);
           MORE_STACK(1);
         }
 
@@ -2306,11 +2305,10 @@ run:
         // QQQ Need to make this as inlined as possible. Probably need to split all the bytecode cases
         // out so c++ compiler has a chance for constant prop to fold everything possible away.
 
-        ConstantPoolCacheEntry* cache = cp->entry_at(index);
-        if (!cache->is_resolved((Bytecodes::Code)opcode)) {
+        ResolvedMethodEntry* entry = cp->resolved_method_entry_at(index);
+        if (!entry->is_resolved((Bytecodes::Code)opcode)) {
           CALL_VM(InterpreterRuntime::resolve_from_cache(THREAD, (Bytecodes::Code)opcode),
                   handle_exception);
-          cache = cp->entry_at(index);
         }
 
         istate->set_msg(call_method);
@@ -2318,31 +2316,31 @@ run:
         // Special case of invokeinterface called for virtual method of
         // java.lang.Object.  See cpCache.cpp for details.
         Method* callee = nullptr;
-        if (cache->is_forced_virtual()) {
-          CHECK_NULL(STACK_OBJECT(-(cache->parameter_size())));
-          if (cache->is_vfinal()) {
-            callee = cache->f2_as_vfinal_method();
+        if (entry->is_forced_virtual()) {
+          CHECK_NULL(STACK_OBJECT(-(entry->number_of_parameters())));
+          if (entry->is_vfinal()) {
+            callee = entry->method();
           } else {
             // Get receiver.
-            int parms = cache->parameter_size();
+            int parms = entry->number_of_parameters();
             // Same comments as invokevirtual apply here.
             oop rcvr = STACK_OBJECT(-parms);
             VERIFY_OOP(rcvr);
             Klass* rcvrKlass = rcvr->klass();
-            callee = (Method*) rcvrKlass->method_at_vtable(cache->f2_as_index());
+            callee = (Method*) rcvrKlass->method_at_vtable(entry->table_index());
           }
-        } else if (cache->is_vfinal()) {
+        } else if (entry->is_vfinal()) {
           // private interface method invocations
           //
           // Ensure receiver class actually implements
           // the resolved interface class. The link resolver
           // does this, but only for the first time this
           // interface is being called.
-          int parms = cache->parameter_size();
+          int parms = entry->number_of_parameters();
           oop rcvr = STACK_OBJECT(-parms);
           CHECK_NULL(rcvr);
           Klass* recv_klass = rcvr->klass();
-          Klass* resolved_klass = cache->f1_as_klass();
+          Klass* resolved_klass = entry->interface_klass();
           if (!recv_klass->is_subtype_of(resolved_klass)) {
             ResourceMark rm(THREAD);
             char buf[200];
@@ -2351,7 +2349,7 @@ run:
               resolved_klass->external_name());
             VM_JAVA_ERROR(vmSymbols::java_lang_IncompatibleClassChangeError(), buf);
           }
-          callee = cache->f2_as_vfinal_method();
+          callee = entry->method();
         }
         if (callee != nullptr) {
           istate->set_callee(callee);
@@ -2364,18 +2362,18 @@ run:
         }
 
         // this could definitely be cleaned up QQQ
-        Method *interface_method = cache->f2_as_interface_method();
+        Method *interface_method = entry->method();
         InstanceKlass* iclass = interface_method->method_holder();
 
         // get receiver
-        int parms = cache->parameter_size();
+        int parms = entry->number_of_parameters();
         oop rcvr = STACK_OBJECT(-parms);
         CHECK_NULL(rcvr);
         InstanceKlass* int2 = (InstanceKlass*) rcvr->klass();
 
         // Receiver subtype check against resolved interface klass (REFC).
         {
-          Klass* refc = cache->f1_as_klass();
+          Klass* refc = entry->interface_klass();
           itableOffsetEntry* scan;
           for (scan = (itableOffsetEntry*) int2->start_of_itable();
                scan->interface_klass() != nullptr;
@@ -2428,30 +2426,30 @@ run:
       CASE(_invokestatic): {
         u2 index = Bytes::get_native_u2(pc+1);
 
-        ConstantPoolCacheEntry* cache = cp->entry_at(index);
+        ResolvedMethodEntry* entry = cp->resolved_method_entry_at(index);
         // QQQ Need to make this as inlined as possible. Probably need to split all the bytecode cases
         // out so c++ compiler has a chance for constant prop to fold everything possible away.
 
-        if (!cache->is_resolved((Bytecodes::Code)opcode)) {
+        if (!entry->is_resolved((Bytecodes::Code)opcode)) {
           CALL_VM(InterpreterRuntime::resolve_from_cache(THREAD, (Bytecodes::Code)opcode),
                   handle_exception);
-          cache = cp->entry_at(index);
+          entry = cp->resolved_method_entry_at(index);
         }
 
         istate->set_msg(call_method);
         {
           Method* callee;
           if ((Bytecodes::Code)opcode == Bytecodes::_invokevirtual) {
-            CHECK_NULL(STACK_OBJECT(-(cache->parameter_size())));
-            if (cache->is_vfinal()) {
-              callee = cache->f2_as_vfinal_method();
-              if (REWRITE_BYTECODES && !UseSharedSpaces && !Arguments::is_dumping_archive()) {
+            CHECK_NULL(STACK_OBJECT(-(entry->number_of_parameters())));
+            if (entry->is_vfinal()) {
+              callee = entry->method();
+              if (REWRITE_BYTECODES && !UseSharedSpaces && !CDSConfig::is_dumping_archive()) {
                 // Rewrite to _fast_invokevfinal.
                 REWRITE_AT_PC(Bytecodes::_fast_invokevfinal);
               }
             } else {
               // get receiver
-              int parms = cache->parameter_size();
+              int parms = entry->number_of_parameters();
               // this works but needs a resourcemark and seems to create a vtable on every call:
               // Method* callee = rcvr->klass()->vtable()->method_at(cache->f2_as_index());
               //
@@ -2477,13 +2475,13 @@ run:
                   However it seems to have a vtable in the right location. Huh?
                   Because vtables have the same offset for ArrayKlass and InstanceKlass.
               */
-              callee = (Method*) rcvrKlass->method_at_vtable(cache->f2_as_index());
+              callee = (Method*) rcvrKlass->method_at_vtable(entry->table_index());
             }
           } else {
             if ((Bytecodes::Code)opcode == Bytecodes::_invokespecial) {
-              CHECK_NULL(STACK_OBJECT(-(cache->parameter_size())));
+              CHECK_NULL(STACK_OBJECT(-(entry->number_of_parameters())));
             }
-            callee = cache->f1_as_method();
+            callee = entry->method();
           }
 
           istate->set_callee(callee);
@@ -2888,14 +2886,14 @@ run:
 
       CASE(_fast_invokevfinal): {
         u2 index = Bytes::get_native_u2(pc+1);
-        ConstantPoolCacheEntry* cache = cp->entry_at(index);
+        ResolvedMethodEntry* entry = cp->resolved_method_entry_at(index);
 
-        assert(cache->is_resolved(Bytecodes::_invokevirtual), "Should be resolved before rewriting");
+        assert(entry->is_resolved(Bytecodes::_invokevirtual), "Should be resolved before rewriting");
 
         istate->set_msg(call_method);
 
-        CHECK_NULL(STACK_OBJECT(-(cache->parameter_size())));
-        Method* callee = cache->f2_as_vfinal_method();
+        CHECK_NULL(STACK_OBJECT(-(entry->number_of_parameters())));
+        Method* callee = entry->method();
         istate->set_callee(callee);
         if (JVMTI_ENABLED && THREAD->is_interp_only_mode()) {
           istate->set_callee_entry_point(callee->interpreter_entry());

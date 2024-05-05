@@ -54,7 +54,7 @@ public class GSSNameElement implements GSSNameSpi {
     final long pName; // Pointer to the gss_name_t structure
     private String printableName;
     private Oid printableType;
-    final private GSSLibStub cStub;
+    private final GSSLibStub cStub;
 
     static final GSSNameElement DEF_ACCEPTOR = new GSSNameElement();
 

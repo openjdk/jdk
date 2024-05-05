@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -58,12 +58,49 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</territories>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[а б в г д е ё ж з и й к л м н о п р с т у ф х ц ч ш щ ъ ы ь э ю я]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[ӓ ә є җ ѕ і ԕ ҥ ԗ ў ѡ џ ѣ ԙ ѳ ѵ ѷ]</exemplarCharacters>
-		<exemplarCharacters type="index">[А Б В Г Д Е Ё Ж З И Й К Л М Н О П Р С Т У Ф Х Ц Ч Ш Щ Ъ Ы Ь Э Ю Я]</exemplarCharacters>
+		<exemplarCharacters>[а б в г д её ж з и й к л м н о п р с т у ф х ц ч ш щ ъ ы ь э ю я]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[ӓ ә є җ ѕ і ԕ ҥ ԗ ў ѡ џ ѣ ԙ ѳ ѵѷ]</exemplarCharacters>
+		<exemplarCharacters type="index">[А Б В Г Д ЕЁ Ж З И Й К Л М Н О П Р С Т У Ф Х Ц Ч Ш Щ Ъ Ы Ь Э Ю Я]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[  , % ‰ + − 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 		<exemplarCharacters type="punctuation">[, ; ! ? .]</exemplarCharacters>
 	</characters>
+	<dates>
+		<fields>
+			<field type="year">
+				<displayName draft="unconfirmed">киза</displayName>
+				<relative type="-1" draft="unconfirmed">меля</relative>
+				<relative type="0" draft="unconfirmed">тядде</relative>
+				<relative type="1" draft="unconfirmed">сай кизоня</relative>
+			</field>
+			<field type="month">
+				<displayName draft="unconfirmed">ков</displayName>
+				<relative type="-1" draft="unconfirmed">ётай ковть</relative>
+				<relative type="0" draft="unconfirmed">тя ковть</relative>
+				<relative type="1" draft="unconfirmed">сай ковть</relative>
+			</field>
+			<field type="week">
+				<displayName draft="unconfirmed">недяля</displayName>
+				<relative type="-1" draft="unconfirmed">ётай недялять</relative>
+				<relative type="0" draft="unconfirmed">тя недялять</relative>
+				<relative type="1" draft="unconfirmed">сай недялять</relative>
+			</field>
+			<field type="day">
+				<displayName draft="unconfirmed">ши</displayName>
+				<relative type="-1" draft="unconfirmed">исяк</relative>
+				<relative type="0" draft="unconfirmed">тячи</relative>
+				<relative type="1" draft="unconfirmed">ванды</relative>
+			</field>
+			<field type="hour">
+				<displayName draft="unconfirmed">част</displayName>
+			</field>
+			<field type="minute">
+				<displayName draft="unconfirmed">минута</displayName>
+			</field>
+			<field type="second">
+				<displayName draft="unconfirmed">секунда</displayName>
+			</field>
+		</fields>
+	</dates>
 	<numbers>
 		<currencies>
 			<currency type="RUB">

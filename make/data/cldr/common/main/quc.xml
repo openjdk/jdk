@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -18,16 +18,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="MK">Macedonia del Norte</territory>
 		</territories>
 	</localeDisplayNames>
-	<layout>
-		<orientation>
-			<characterOrder>left-to-right</characterOrder>
-			<lineOrder>top-to-bottom</lineOrder>
-		</orientation>
-	</layout>
 	<characters>
-		<exemplarCharacters>[a ä {aʼ} {bʼ} {ch} {chʼ} e {eʼ} i {iʼ} j k {kʼ} l m n o p q {qʼ} r s t {tz} {tzʼ} {tʼ} u {uʼ} v w x y]</exemplarCharacters>
+		<exemplarCharacters>[aä {aʼ} {bʼ} {ch} {chʼ} e {eʼ} i {iʼ} j k {kʼ} l m n o p q {qʼ} r s t {tz} {tzʼ} {tʼ} u {uʼ} v w x y]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[c d f g h ñ z]</exemplarCharacters>
-		<exemplarCharacters type="index">[A Ä {Bʼ} {CH} {CHʼ} E I J K {Kʼ} L M N O P Q {Qʼ} R S T {TZ} {TZʼ} {Tʼ} U V W X Y]</exemplarCharacters>
+		<exemplarCharacters type="index">[AÄ {Bʼ} {CH} {CHʼ} E I J K {Kʼ} L M N O P Q {Qʼ} R S T {TZ} {TZʼ} {Tʼ} U V W X Y]</exemplarCharacters>
 	</characters>
 	<numbers>
 		<currencies>

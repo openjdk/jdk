@@ -22,18 +22,14 @@
  */
 
 import java.io.*;
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.*;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
 
 /*
  * @test PresenceInner
  * @bug 6843077
  * @summary test that annotations in inner types count only once
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
+ * @enablePreview
  */
 
 public class PresenceInner {
@@ -45,7 +41,7 @@ public class PresenceInner {
         File javaFile = writeTestFile();
         File classFile = compileTestFile(javaFile);
 
-        ClassModel cm = Classfile.of().parse(classFile.toPath());
+        ClassModel cm = ClassFile.of().parse(classFile.toPath());
         test(cm);
         for (FieldModel fm : cm.fields()) {
             test(fm);
@@ -59,7 +55,7 @@ public class PresenceInner {
 
         // visit inner class
         File innerFile = new File("Test$1Inner.class");
-        ClassModel icm = Classfile.of().parse(innerFile.toPath());
+        ClassModel icm = ClassFile.of().parse(innerFile.toPath());
         test(icm);
         for (FieldModel fm : icm.fields()) {
             test(fm);

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -200,7 +200,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<exemplarCharacters>[a b c d e f g h i j k l m n o p r s t u v w y z]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[q x]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B C D E F G H I J K L M N O P R S T U V W Y Z]</exemplarCharacters>
-		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 	</characters>
 	<dates>
 		<calendars>
@@ -209,41 +208,31 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>EEEE, d MMMM y G</pattern>
-							<datetimeSkeleton>GyMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>d MMMM y G</pattern>
-							<datetimeSkeleton>GyMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>d MMM y G</pattern>
-							<datetimeSkeleton>GyMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>dd/MM/y GGGGG</pattern>
-							<datetimeSkeleton>GGGGGyMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
 				<dateTimeFormats>
 					<availableFormats>
-						<dateFormatItem id="d">d</dateFormatItem>
 						<dateFormatItem id="Ed">E d</dateFormatItem>
 						<dateFormatItem id="hm">h:mm a</dateFormatItem>
-						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
 						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
-						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
-						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">d/M</dateFormatItem>
 						<dateFormatItem id="MEd">E, M/d</dateFormatItem>
-						<dateFormatItem id="MMM">LLL</dateFormatItem>
-						<dateFormatItem id="MMMd">MMM d</dateFormatItem>
 						<dateFormatItem id="MMMEd">E, MMM d</dateFormatItem>
 						<dateFormatItem id="ms">m:ss</dateFormatItem>
 						<dateFormatItem id="y">y</dateFormatItem>
@@ -346,10 +335,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<dayPeriod type="am">wichishu</dayPeriod>
 							<dayPeriod type="pm">mchochil’l</dayPeriod>
 						</dayPeriodWidth>
-						<dayPeriodWidth type="wide">
-							<dayPeriod type="am">wichishu</dayPeriod>
-							<dayPeriod type="pm">mchochil’l</dayPeriod>
-						</dayPeriodWidth>
 					</dayPeriodContext>
 				</dayPeriods>
 				<eras>
@@ -366,25 +351,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>EEEE, d MMMM y</pattern>
-							<datetimeSkeleton>yMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>d MMMM y</pattern>
-							<datetimeSkeleton>yMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>d MMM y</pattern>
-							<datetimeSkeleton>yMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>dd/MM/y</pattern>
-							<datetimeSkeleton>yMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -392,44 +373,33 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<timeFormatLength type="full">
 						<timeFormat>
 							<pattern>HH:mm:ss zzzz</pattern>
-							<datetimeSkeleton>HHmmsszzzz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="long">
 						<timeFormat>
 							<pattern>HH:mm:ss z</pattern>
-							<datetimeSkeleton>HHmmssz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="medium">
 						<timeFormat>
 							<pattern>HH:mm:ss</pattern>
-							<datetimeSkeleton>HHmmss</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="short">
 						<timeFormat>
 							<pattern>HH:mm</pattern>
-							<datetimeSkeleton>HHmm</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 				</timeFormats>
 				<dateTimeFormats>
 					<availableFormats>
-						<dateFormatItem id="d">d</dateFormatItem>
 						<dateFormatItem id="Ed">E d</dateFormatItem>
 						<dateFormatItem id="hm">h:mm a</dateFormatItem>
-						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
 						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
-						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
-						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">d/M</dateFormatItem>
 						<dateFormatItem id="MEd">E, M/d</dateFormatItem>
-						<dateFormatItem id="MMM">LLL</dateFormatItem>
-						<dateFormatItem id="MMMd">MMM d</dateFormatItem>
 						<dateFormatItem id="MMMEd">E, MMM d</dateFormatItem>
 						<dateFormatItem id="ms">m:ss</dateFormatItem>
-						<dateFormatItem id="y">y</dateFormatItem>
 						<dateFormatItem id="yM">M/y</dateFormatItem>
 						<dateFormatItem id="yMd">d/M/y</dateFormatItem>
 						<dateFormatItem id="yMEd">E, M/d/y</dateFormatItem>
@@ -480,24 +450,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<decimal>,</decimal>
 			<group>.</group>
 		</symbols>
-		<currencyFormats numberSystem="latn">
-			<currencyFormatLength type="short">
-				<currencyFormat type="standard">
-					<pattern type="1000" count="other" draft="provisional">¤ 0K</pattern>
-					<pattern type="10000" count="other" draft="provisional">¤ 00K</pattern>
-					<pattern type="100000" count="other" draft="provisional">¤ 000K</pattern>
-					<pattern type="1000000" count="other" draft="provisional">¤ 0M</pattern>
-					<pattern type="10000000" count="other" draft="provisional">¤ 00M</pattern>
-					<pattern type="100000000" count="other" draft="provisional">¤ 000M</pattern>
-					<pattern type="1000000000" count="other" draft="provisional">¤ 0G</pattern>
-					<pattern type="10000000000" count="other" draft="provisional">¤ 00G</pattern>
-					<pattern type="100000000000" count="other" draft="provisional">¤ 000G</pattern>
-					<pattern type="1000000000000" count="other" draft="provisional">¤ 0T</pattern>
-					<pattern type="10000000000000" count="other" draft="provisional">¤ 00T</pattern>
-					<pattern type="100000000000000" count="other" draft="provisional">¤ 000T</pattern>
-				</currencyFormat>
-			</currencyFormatLength>
-		</currencyFormats>
 		<currencies>
 			<currency type="MZN">
 				<symbol>MTn</symbol>

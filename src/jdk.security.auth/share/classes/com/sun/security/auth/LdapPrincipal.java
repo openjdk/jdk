@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,9 @@
 
 package com.sun.security.auth;
 
+import java.io.IOException;
+import java.io.InvalidObjectException;
+import java.io.ObjectInputStream;
 import java.security.Principal;
 import javax.naming.InvalidNameException;
 import javax.naming.ldap.LdapName;
@@ -47,6 +50,7 @@ import javax.naming.ldap.LdapName;
  */
 public final class LdapPrincipal implements Principal, java.io.Serializable {
 
+    @java.io.Serial
     private static final long serialVersionUID = 6820120005580754861L;
 
     /**
@@ -134,5 +138,32 @@ public final class LdapPrincipal implements Principal, java.io.Serializable {
     // Create an LdapName object from a string distinguished name.
     private LdapName getLdapName(String name) throws InvalidNameException {
         return new LdapName(name);
+    }
+
+    /**
+     * Restores the state of this object from the stream.
+     *
+     * @param  stream the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
+     */
+    @java.io.Serial
+    private void readObject(ObjectInputStream stream)
+            throws IOException, ClassNotFoundException {
+        stream.defaultReadObject();
+        if ((name == null) || (nameString == null)) {
+            throw new InvalidObjectException(
+                    "null name/nameString is illegal");
+        }
+        try {
+            if (!name.equals(getLdapName(nameString))) {
+                throw new InvalidObjectException("Inconsistent names");
+            }
+        } catch  (InvalidNameException e) {
+            InvalidObjectException nse = new InvalidObjectException(
+                    "Invalid Name");
+            nse.initCause(e);
+            throw nse;
+        }
     }
 }

@@ -57,6 +57,22 @@ public final class StaticProperty {
     private static final String OS_NAME;
     private static final String OS_ARCH;
     private static final String OS_VERSION;
+    public static final String USER_LANGUAGE;
+    public static final String USER_LANGUAGE_DISPLAY;
+    public static final String USER_LANGUAGE_FORMAT;
+    public static final String USER_SCRIPT;
+    public static final String USER_SCRIPT_DISPLAY;
+    public static final String USER_SCRIPT_FORMAT;
+    public static final String USER_COUNTRY;
+    public static final String USER_COUNTRY_DISPLAY;
+    public static final String USER_COUNTRY_FORMAT;
+    public static final String USER_VARIANT;
+    public static final String USER_VARIANT_DISPLAY;
+    public static final String USER_VARIANT_FORMAT;
+    public static final String USER_EXTENSIONS;
+    public static final String USER_EXTENSIONS_DISPLAY;
+    public static final String USER_EXTENSIONS_FORMAT;
+    public static final String USER_REGION;
 
     private StaticProperty() {}
 
@@ -79,6 +95,22 @@ public final class StaticProperty {
         OS_NAME = getProperty(props, "os.name");
         OS_ARCH = getProperty(props, "os.arch");
         OS_VERSION = getProperty(props, "os.version");
+        USER_LANGUAGE = getProperty(props, "user.language", "en");
+        USER_LANGUAGE_DISPLAY = getProperty(props, "user.language.display", USER_LANGUAGE);
+        USER_LANGUAGE_FORMAT = getProperty(props, "user.language.format", USER_LANGUAGE);
+        USER_SCRIPT = getProperty(props, "user.script", "");
+        USER_SCRIPT_DISPLAY = getProperty(props, "user.script.display", USER_SCRIPT);
+        USER_SCRIPT_FORMAT = getProperty(props, "user.script.format", USER_SCRIPT);
+        USER_COUNTRY = getProperty(props, "user.country", "");
+        USER_COUNTRY_DISPLAY = getProperty(props, "user.country.display", USER_COUNTRY);
+        USER_COUNTRY_FORMAT = getProperty(props, "user.country.format", USER_COUNTRY);
+        USER_VARIANT = getProperty(props, "user.variant", "");
+        USER_VARIANT_DISPLAY = getProperty(props, "user.variant.display", USER_VARIANT);
+        USER_VARIANT_FORMAT = getProperty(props, "user.variant.format", USER_VARIANT);
+        USER_EXTENSIONS = getProperty(props, "user.extensions", "");
+        USER_EXTENSIONS_DISPLAY = getProperty(props, "user.extensions.display", USER_EXTENSIONS);
+        USER_EXTENSIONS_FORMAT = getProperty(props, "user.extensions.format", USER_EXTENSIONS);
+        USER_REGION = getProperty(props, "user.region", "");
     }
 
     private static String getProperty(Properties props, String key) {

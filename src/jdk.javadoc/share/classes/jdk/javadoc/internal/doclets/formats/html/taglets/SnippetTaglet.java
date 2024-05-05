@@ -376,9 +376,10 @@ public class SnippetTaglet extends BaseTaglet {
         StyledText externalSnippet = null;
 
         try {
-            Diags d = (text, pos) -> {
+            Diags d = (key, pos) -> {
                 var path = utils.getCommentHelper(holder)
                         .getDocTreePath(snippetTag.getBody());
+                var text = resources.getText(key);
                 config.getReporter().print(Diagnostic.Kind.WARNING,
                         path, pos, pos, pos, text);
             };
@@ -397,7 +398,7 @@ public class SnippetTaglet extends BaseTaglet {
 
         try {
             var finalFileObject = fileObject;
-            Diags d = (text, pos) -> messages.warning(finalFileObject, pos, pos, pos, text);
+            Diags d = (key, pos) -> messages.warning(finalFileObject, pos, pos, pos, key);
             if (externalContent != null) {
                 externalSnippet = parse(resources, d, language, externalContent);
             }
@@ -484,7 +485,7 @@ public class SnippetTaglet extends BaseTaglet {
     }
 
     public interface Diags {
-        void warn(String text, int pos);
+        void warn(String key, int pos);
     }
 
     private static String stringValueOf(AttributeTree at) throws BadSnippetException {

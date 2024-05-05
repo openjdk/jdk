@@ -42,13 +42,13 @@ public class InstanceMainTest extends TestHelper {
             }
             """,
 
-            // static dominating instance
+            // instance dominating static
             """
             class MainClass {
                 void main(String[] args) {
-                    throw new AssertionError();
                 }
                 static void main() {
+                    throw new AssertionError();
                 }
             }
             """,
@@ -81,12 +81,12 @@ public class InstanceMainTest extends TestHelper {
             }
             """,
 
-            // unnamed class static dominating instance
+            // main with args dominating main without args
             """
             void main(String[] args) {
-                throw new AssertionError();
             }
             static void main() {
+                throw new AssertionError();
             }
             """,
 
@@ -105,15 +105,15 @@ public class InstanceMainTest extends TestHelper {
             }
             """,
 
-            // instance main dominating super static
+            // instance main with args dominating super
             """
             class MainClass extends SuperClass {
                 void main() {
+                    throw new AssertionError();
                 }
             }
             class SuperClass {
                 void main(String[] args) {
-                    throw new AssertionError();
                 }
             }
             """,

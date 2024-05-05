@@ -6250,4 +6250,10 @@ public class LineReaderImpl implements LineReader, Flushable
         }
     }
 
+    // JDK specific modification
+    @Override
+    public void zeroOut() {
+        buf.zeroOut();
+        parsedLine = null;
+    }
 }

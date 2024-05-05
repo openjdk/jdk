@@ -26,6 +26,7 @@
 #include "cds/archiveHeapWriter.hpp"
 #include "cds/archiveHeapLoader.hpp"
 #include "cds/archiveBuilder.hpp"
+#include "cds/cdsConfig.hpp"
 #include "cds/classPrelinker.hpp"
 #include "cds/heapShared.hpp"
 #include "classfile/classLoaderData.hpp"
@@ -103,6 +104,10 @@ static bool tag_array_is_zero_initialized(Array<u1>* tags) {
 
 #endif
 
+ConstantPool::ConstantPool() {
+  assert(CDSConfig::is_dumping_static_archive() || UseSharedSpaces, "only for CDS");
+}
+
 ConstantPool::ConstantPool(Array<u1>* tags) :
   _tags(tags),
   _length(tags->length()) {
@@ -150,7 +155,7 @@ void ConstantPool::metaspace_pointers_do(MetaspaceClosure* it) {
 
   for (int i = 0; i < length(); i++) {
     // The only MSO's embedded in the CP entries are Symbols:
-    //   JVM_CONSTANT_String (normal and pseudo)
+    //   JVM_CONSTANT_String
     //   JVM_CONSTANT_Utf8
     constantTag ctag = tag_at(i);
     if (ctag.is_string() || ctag.is_utf8()) {
@@ -219,7 +224,7 @@ void ConstantPool::initialize_resolved_references(ClassLoaderData* loader_data,
     set_resolved_references(loader_data->add_handle(refs_handle));
 
     // Create a "scratch" copy of the resolved references array to archive
-    if (DumpSharedSpaces) {
+    if (CDSConfig::is_dumping_heap()) {
       objArrayOop scratch_references = oopFactory::new_objArray(vmClasses::Object_klass(), map_length, CHECK);
       HeapShared::add_scratch_resolved_references(this, scratch_references);
     }
@@ -638,50 +643,40 @@ Klass* ConstantPool::klass_at_if_loaded(const constantPoolHandle& this_cp, int w
 Method* ConstantPool::method_at_if_loaded(const constantPoolHandle& cpool,
                                                    int which) {
   if (cpool->cache() == nullptr)  return nullptr;  // nothing to load yet
-  int cache_index = decode_cpcache_index(which, true);
-  if (!(cache_index >= 0 && cache_index < cpool->cache()->length())) {
+  if (!(which >= 0 && which < cpool->resolved_method_entries_length())) {
     // FIXME: should be an assert
     log_debug(class, resolve)("bad operand %d in:", which); cpool->print();
     return nullptr;
   }
-  ConstantPoolCacheEntry* e = cpool->cache()->entry_at(cache_index);
-  return e->method_if_resolved(cpool);
+  return cpool->cache()->method_if_resolved(which);
 }
 
 
-bool ConstantPool::has_appendix_at_if_loaded(const constantPoolHandle& cpool, int which) {
+bool ConstantPool::has_appendix_at_if_loaded(const constantPoolHandle& cpool, int which, Bytecodes::Code code) {
   if (cpool->cache() == nullptr)  return false;  // nothing to load yet
-  if (is_invokedynamic_index(which)) {
-    int indy_index = decode_invokedynamic_index(which);
-    return cpool->resolved_indy_entry_at(indy_index)->has_appendix();
+  if (code == Bytecodes::_invokedynamic) {
+    return cpool->resolved_indy_entry_at(which)->has_appendix();
   } else {
-    int cache_index = decode_cpcache_index(which, true);
-    ConstantPoolCacheEntry* e = cpool->cache()->entry_at(cache_index);
-    return e->has_appendix();
+    return cpool->resolved_method_entry_at(which)->has_appendix();
   }
 }
 
-oop ConstantPool::appendix_at_if_loaded(const constantPoolHandle& cpool, int which) {
+oop ConstantPool::appendix_at_if_loaded(const constantPoolHandle& cpool, int which, Bytecodes::Code code) {
   if (cpool->cache() == nullptr)  return nullptr;  // nothing to load yet
-  if (is_invokedynamic_index(which)) {
-    int indy_index = decode_invokedynamic_index(which);
-    return cpool->resolved_reference_from_indy(indy_index);
+  if (code == Bytecodes::_invokedynamic) {
+    return cpool->resolved_reference_from_indy(which);
   } else {
-    int cache_index = decode_cpcache_index(which, true);
-    ConstantPoolCacheEntry* e = cpool->cache()->entry_at(cache_index);
-    return e->appendix_if_resolved(cpool);
+    return cpool->cache()->appendix_if_resolved(which);
   }
 }
 
 
-bool ConstantPool::has_local_signature_at_if_loaded(const constantPoolHandle& cpool, int which) {
+bool ConstantPool::has_local_signature_at_if_loaded(const constantPoolHandle& cpool, int which, Bytecodes::Code code) {
   if (cpool->cache() == nullptr)  return false;  // nothing to load yet
-  int cache_index = decode_cpcache_index(which, true);
-  if (is_invokedynamic_index(which)) {
-    return cpool->resolved_indy_entry_at(cache_index)->has_local_signature();
+  if (code == Bytecodes::_invokedynamic) {
+    return cpool->resolved_indy_entry_at(which)->has_local_signature();
   } else {
-    ConstantPoolCacheEntry* e = cpool->cache()->entry_at(cache_index);
-    return e->has_local_signature();
+    return cpool->resolved_method_entry_at(which)->has_local_signature();
   }
 }
 
@@ -701,10 +696,12 @@ int ConstantPool::to_cp_index(int index, Bytecodes::Code code) {
     case Bytecodes::_invokespecial:
     case Bytecodes::_invokestatic:
     case Bytecodes::_invokevirtual:
-      // TODO: handle resolved method entries with new structure
+    case Bytecodes::_fast_invokevfinal: // Bytecode interpreter uses this
+      return resolved_method_entry_at(index)->constant_pool_index();
     default:
-      // change byte-ordering and go via cache
-      return remap_instruction_operand_from_cache(index);
+      tty->print_cr("Unexpected bytecode: %d", code);
+      ShouldNotReachHere(); // All cases should have been handled
+      return -1;
   }
 }
 
@@ -739,21 +736,10 @@ u2 ConstantPool::uncached_klass_ref_index_at(int cp_index) {
 }
 
 u2 ConstantPool::klass_ref_index_at(int index, Bytecodes::Code code) {
-  guarantee(!ConstantPool::is_invokedynamic_index(index),
-            "an invokedynamic instruction does not have a klass");
   assert(code != Bytecodes::_invokedynamic,
             "an invokedynamic instruction does not have a klass");
   return uncached_klass_ref_index_at(to_cp_index(index, code));
 }
-
-int ConstantPool::remap_instruction_operand_from_cache(int operand) {
-  int cpc_index = operand;
-  DEBUG_ONLY(cpc_index -= CPCACHE_INDEX_TAG);
-  assert((int)(u2)cpc_index == cpc_index, "clean u2");
-  int member_index = cache()->entry_at(cpc_index)->constant_pool_index();
-  return member_index;
-}
-
 
 void ConstantPool::verify_constant_pool_resolve(const constantPoolHandle& this_cp, Klass* k, TRAPS) {
   if (!(k->is_instance_klass() || k->is_objArray_klass())) {
@@ -811,13 +797,16 @@ void ConstantPool::resolve_string_constants_impl(const constantPoolHandle& this_
   }
 }
 
-static Symbol* exception_message(const constantPoolHandle& this_cp, int which, constantTag tag, oop pending_exception) {
+static const char* exception_message(const constantPoolHandle& this_cp, int which, constantTag tag, oop pending_exception) {
+  // Note: caller needs ResourceMark
+
   // Dig out the detailed message to reuse if possible
-  Symbol* message = java_lang_Throwable::detail_message(pending_exception);
-  if (message != nullptr) {
-    return message;
+  const char* msg = java_lang_Throwable::message_as_utf8(pending_exception);
+  if (msg != nullptr) {
+    return msg;
   }
 
+  Symbol* message = nullptr;
   // Return specific message for the tag
   switch (tag.value()) {
   case JVM_CONSTANT_UnresolvedClass:
@@ -840,49 +829,48 @@ static Symbol* exception_message(const constantPoolHandle& this_cp, int which, c
     ShouldNotReachHere();
   }
 
-  return message;
+  return message != nullptr ? message->as_C_string() : nullptr;
 }
 
-static void add_resolution_error(const constantPoolHandle& this_cp, int which,
+static void add_resolution_error(JavaThread* current, const constantPoolHandle& this_cp, int which,
                                  constantTag tag, oop pending_exception) {
 
+  ResourceMark rm(current);
   Symbol* error = pending_exception->klass()->name();
   oop cause = java_lang_Throwable::cause(pending_exception);
 
   // Also dig out the exception cause, if present.
   Symbol* cause_sym = nullptr;
-  Symbol* cause_msg = nullptr;
+  const char* cause_msg = nullptr;
   if (cause != nullptr && cause != pending_exception) {
     cause_sym = cause->klass()->name();
-    cause_msg = java_lang_Throwable::detail_message(cause);
+    cause_msg = java_lang_Throwable::message_as_utf8(cause);
   }
 
-  Symbol* message = exception_message(this_cp, which, tag, pending_exception);
+  const char* message = exception_message(this_cp, which, tag, pending_exception);
   SystemDictionary::add_resolution_error(this_cp, which, error, message, cause_sym, cause_msg);
 }
 
 
 void ConstantPool::throw_resolution_error(const constantPoolHandle& this_cp, int which, TRAPS) {
   ResourceMark rm(THREAD);
-  Symbol* message = nullptr;
+  const char* message = nullptr;
   Symbol* cause = nullptr;
-  Symbol* cause_msg = nullptr;
+  const char* cause_msg = nullptr;
   Symbol* error = SystemDictionary::find_resolution_error(this_cp, which, &message, &cause, &cause_msg);
   assert(error != nullptr, "checking");
-  const char* cause_str = cause_msg != nullptr ? cause_msg->as_C_string() : nullptr;
 
   CLEAR_PENDING_EXCEPTION;
   if (message != nullptr) {
-    char* msg = message->as_C_string();
     if (cause != nullptr) {
-      Handle h_cause = Exceptions::new_exception(THREAD, cause, cause_str);
-      THROW_MSG_CAUSE(error, msg, h_cause);
+      Handle h_cause = Exceptions::new_exception(THREAD, cause, cause_msg);
+      THROW_MSG_CAUSE(error, message, h_cause);
     } else {
-      THROW_MSG(error, msg);
+      THROW_MSG(error, message);
     }
   } else {
     if (cause != nullptr) {
-      Handle h_cause = Exceptions::new_exception(THREAD, cause, cause_str);
+      Handle h_cause = Exceptions::new_exception(THREAD, cause, cause_msg);
       THROW_CAUSE(error, h_cause);
     } else {
       THROW(error);
@@ -904,7 +892,7 @@ void ConstantPool::save_and_throw_exception(const constantPoolHandle& this_cp, i
     // and OutOfMemoryError, etc, or if the thread was hit by stop()
     // Needs clarification to section 5.4.3 of the VM spec (see 6308271)
   } else if (this_cp->tag_at(cp_index).value() != error_tag) {
-    add_resolution_error(this_cp, cp_index, tag, PENDING_EXCEPTION);
+    add_resolution_error(THREAD, this_cp, cp_index, tag, PENDING_EXCEPTION);
     // CAS in the tag.  If a thread beat us to registering this error that's fine.
     // If another thread resolved the reference, this is a race condition. This
     // thread may have had a security manager or something temporary.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,8 @@ import java.io.IOException;
 import java.net.URI;
 
 import javax.swing.event.EventListenerList;
+
+import sun.awt.shell.ShellFolder;
 
 /**
  * Concrete implementation of the interface {@code DesktopPeer} for
@@ -102,18 +104,20 @@ final class WDesktopPeer implements DesktopPeer {
     }
 
     private void ShellExecute(File file, String verb) throws IOException {
-        String errMsg = ShellExecute(file.getAbsolutePath(), verb);
+        String errMsg = ShellFolder.invoke(
+                () -> ShellExecute(file.getAbsolutePath(), verb));
         if (errMsg != null) {
-            throw new IOException("Failed to " + verb + " " + file + ". Error message: " + errMsg);
+            throw new IOException("Failed to " + verb + " " + file +
+                                  ". Error message: " + errMsg);
         }
     }
 
     private void ShellExecute(URI uri, String verb) throws IOException {
-        String errmsg = ShellExecute(uri.toString(), verb);
-
+        String errmsg = ShellFolder.invoke(
+                () -> ShellExecute(uri.toString(), verb));
         if (errmsg != null) {
-            throw new IOException("Failed to " + verb + " " + uri
-                    + ". Error message: " + errmsg);
+            throw new IOException("Failed to " + verb + " " + uri +
+                                  ". Error message: " + errmsg);
         }
     }
 

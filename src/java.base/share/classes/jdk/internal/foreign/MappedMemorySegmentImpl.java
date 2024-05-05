@@ -48,8 +48,7 @@ final class MappedMemorySegmentImpl extends NativeMemorySegmentImpl {
 
     @Override
     ByteBuffer makeByteBuffer() {
-        return NIO_ACCESS.newMappedByteBuffer(unmapper, min, (int)length, null,
-                scope == MemorySessionImpl.GLOBAL ? null : this);
+        return NIO_ACCESS.newMappedByteBuffer(unmapper, min, (int)length, null, this);
     }
 
     @Override

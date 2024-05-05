@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -11,11 +11,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<language type="mt"/>
 	</identity>
 	<localeDisplayNames>
-		<localeDisplayPattern>
-			<localePattern>{0} ({1})</localePattern>
-			<localeSeparator>{0}, {1}</localeSeparator>
-			<localeKeyTypePattern>{0}: {1}</localeKeyTypePattern>
-		</localeDisplayPattern>
 		<languages>
 			<language type="aa">Afar</language>
 			<language type="ab">Abkażjan</language>
@@ -35,6 +30,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="am">Amhariku</language>
 			<language type="an">Aragoniż</language>
 			<language type="ang">Ingliż Antik</language>
+			<language type="ann" draft="unconfirmed">Obolo</language>
 			<language type="anp">Angika</language>
 			<language type="ar">Għarbi</language>
 			<language type="ar_001">Għarbi Standard Modern</language>
@@ -523,13 +519,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</languages>
 		<scripts>
 			<script type="Arab">Għarbi</script>
-			<script type="Brai" draft="unconfirmed">Braille</script>
+			<script type="Brai">Braille</script>
 			<script type="Cyrl">Ċirilliku</script>
 			<script type="Grek">Grieg</script>
 			<script type="Hans">Simplifikat</script>
 			<script type="Hans" alt="stand-alone">Han Simplifikat</script>
 			<script type="Hant">Tradizzjonali</script>
 			<script type="Hant" alt="stand-alone">Han Tradizzjonali</script>
+			<script type="Jpan">Ġappuniż</script>
+			<script type="Kore" draft="unconfirmed">Korean</script>
 			<script type="Latn">Latin</script>
 			<script type="Xpeo">Persjan Antik</script>
 			<script type="Zxxx">Mhux Miktub</script>
@@ -684,7 +682,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="IL">Iżrael</territory>
 			<territory type="IM">Isle of Man</territory>
 			<territory type="IN">l-Indja</territory>
-			<territory type="IO">Territorju Brittaniku tal-Oċean Indjan</territory>
+			<territory type="IO" draft="provisional">Territorju Brittaniku tal-Oċean Indjan</territory>
 			<territory type="IQ">l-Iraq</territory>
 			<territory type="IR">l-Iran</territory>
 			<territory type="IS">l-Iżlanda</territory>
@@ -794,6 +792,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="SX">Sint Maarten</territory>
 			<territory type="SY">is-Sirja</territory>
 			<territory type="SZ">l-Eswatini</territory> <!-- ir-Renju tal-Eswatini -->
+			<territory type="SZ" alt="variant" draft="unconfirmed">is-Swaziland</territory>
 			<territory type="TA">Tristan da Cunha</territory>
 			<territory type="TC">il-Gżejjer Turks u Caicos</territory>
 			<territory type="TD">iċ-Chad</territory>
@@ -857,8 +856,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="ethiopic">Kalendarju Etjopiku</type>
 			<type key="calendar" type="gregorian">Kalendarju Gregorjan</type>
 			<type key="calendar" type="hebrew">Kalendarju Ebrajk</type>
-			<type key="calendar" type="islamic">Kalendarju Iżlamiku</type>
-			<type key="calendar" type="islamic-civil">Kalendarju Islamiku-Ċivili</type>
+			<type key="calendar" type="islamic" draft="provisional">Kalendarju Iżlamiku</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">Kalendarju Islamiku-Ċivili</type>
 			<type key="calendar" type="iso8601">Kalendarju ISO-8601</type>
 			<type key="calendar" type="japanese">Kalendarju Ġappuniż</type>
 			<type key="collation" type="big5han">Ordni Ċiniż Tradizzjonali (Big5)</type>
@@ -873,8 +872,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</types>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">Metriku</measurementSystemName>
-			<measurementSystemName type="UK">UK</measurementSystemName>
-			<measurementSystemName type="US">US</measurementSystemName>
 		</measurementSystemNames>
 		<codePatterns>
 			<codePattern type="language">Lingwa: {0}</codePattern>
@@ -883,25 +880,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[a à b ċ d e è f ġ g {għ} h ħ i ì j k l m n o ò p q r s t u ù v w x ż z]</exemplarCharacters>
+		<exemplarCharacters>[aà b ċ d eè f ġ g {għ} h ħ iì j k l m n oò p q r s t uù v w x ż z]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[c y]</exemplarCharacters>
 		<exemplarCharacters type="index" draft="contributed">[A B Ċ C D E F Ġ G {GĦ} H Ħ I {IE*} J K L M N O P Q R S T U V W X Y Ż Z]</exemplarCharacters>
-		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‑ , ; \: ! ? . ' ‘ ’ &quot; “ ” ( ) \[ \] \{ \}]</exemplarCharacters>
-		<ellipsis type="final">{0}…</ellipsis>
-		<ellipsis type="initial">…{0}</ellipsis>
-		<ellipsis type="medial">{0}…{1}</ellipsis>
-		<ellipsis type="word-final">{0} …</ellipsis>
-		<ellipsis type="word-initial">… {0}</ellipsis>
-		<ellipsis type="word-medial">{0} … {1}</ellipsis>
-		<moreInformation>?</moreInformation>
+		<exemplarCharacters type="punctuation">[\- ‑ , ; \: ! ? . '‘’ &quot;“” ( ) \[ \] \{ \}]</exemplarCharacters>
 	</characters>
-	<delimiters>
-		<quotationStart>“</quotationStart>
-		<quotationEnd>”</quotationEnd>
-		<alternateQuotationStart>‘</alternateQuotationStart>
-		<alternateQuotationEnd>’</alternateQuotationEnd>
-	</delimiters>
 	<dates>
 		<calendars>
 			<calendar type="generic">
@@ -909,13 +892,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>EEEE, d 'ta'’ MMMM y G</pattern>
-							<datetimeSkeleton>GyMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>d 'ta'’ MMMM y G</pattern>
-							<datetimeSkeleton>GyMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
@@ -927,7 +908,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>dd/MM/y GGGGG</pattern>
-							<datetimeSkeleton>GGGGGyMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -938,62 +918,31 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
-						<dateFormatItem id="d">d</dateFormatItem>
-						<dateFormatItem id="E">ccc</dateFormatItem>
-						<dateFormatItem id="Ed">d, E</dateFormatItem>
-						<dateFormatItem id="Gy">G y</dateFormatItem>
-						<dateFormatItem id="M">L</dateFormatItem>
-						<dateFormatItem id="Md">MM-dd</dateFormatItem>
 						<dateFormatItem id="MEd">E, M/d</dateFormatItem>
-						<dateFormatItem id="MMM">LLL</dateFormatItem>
-						<dateFormatItem id="MMMd">MMM d</dateFormatItem>
 						<dateFormatItem id="MMMEd">E, d 'ta'’ MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d 'ta'’ MMMM</dateFormatItem>
-						<dateFormatItem id="y">G y</dateFormatItem>
 						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
-						<dateFormatItem id="yyyy">G y</dateFormatItem>
-						<dateFormatItem id="yyyyM">GGGGG y-MM</dateFormatItem>
 						<dateFormatItem id="yyyyMd">GGGGG dd-MM-y</dateFormatItem>
 						<dateFormatItem id="yyyyMEd">GGGGG E, dd-MM-y</dateFormatItem>
 						<dateFormatItem id="yyyyMMM">GGGGG MMM y</dateFormatItem>
 						<dateFormatItem id="yyyyMMMd">GGGGG dd MMM y</dateFormatItem>
 						<dateFormatItem id="yyyyMMMEd">GGGGG E, dd MMM y</dateFormatItem>
 						<dateFormatItem id="yyyyMMMM">GGGGG MMMM y</dateFormatItem>
-						<dateFormatItem id="yyyyQQQ">G y QQQ</dateFormatItem>
-						<dateFormatItem id="yyyyQQQQ">G y QQQQ</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
-						<intervalFormatFallback draft="unconfirmed">{0} – {1}</intervalFormatFallback>
-						<intervalFormatItem id="d">
-							<greatestDifference id="d">d–d</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="h">
 							<greatestDifference id="h" draft="unconfirmed">h–h a</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="H">
-							<greatestDifference id="H" draft="unconfirmed">HH–HH</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
 							<greatestDifference id="h" draft="unconfirmed">h:mm–h:mm a</greatestDifference>
 							<greatestDifference id="m" draft="unconfirmed">h:mm–h:mm a</greatestDifference>
 						</intervalFormatItem>
-						<intervalFormatItem id="Hm">
-							<greatestDifference id="H" draft="unconfirmed">HH:mm–HH:mm</greatestDifference>
-							<greatestDifference id="m" draft="unconfirmed">HH:mm–HH:mm</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
 							<greatestDifference id="h" draft="unconfirmed">h:mm–h:mm a v</greatestDifference>
 							<greatestDifference id="m" draft="unconfirmed">h:mm–h:mm a v</greatestDifference>
 						</intervalFormatItem>
-						<intervalFormatItem id="Hmv">
-							<greatestDifference id="H" draft="unconfirmed">HH:mm–HH:mm v</greatestDifference>
-							<greatestDifference id="m" draft="unconfirmed">HH:mm–HH:mm v</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="hv">
 							<greatestDifference id="h" draft="unconfirmed">h–h a v</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Hv">
-							<greatestDifference id="H" draft="unconfirmed">HH–HH v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
 							<greatestDifference id="M">M–M</greatestDifference>
@@ -1102,20 +1051,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
-						<monthWidth type="abbreviated">
-							<month type="1">Jan</month>
-							<month type="2">Fra</month>
-							<month type="3">Mar</month>
-							<month type="4">Apr</month>
-							<month type="5">Mej</month>
-							<month type="6">Ġun</month>
-							<month type="7">Lul</month>
-							<month type="8">Aww</month>
-							<month type="9">Set</month>
-							<month type="10">Ott</month>
-							<month type="11">Nov</month>
-							<month type="12">Diċ</month>
-						</monthWidth>
 						<monthWidth type="narrow">
 							<month type="1">Jn</month>
 							<month type="2">Fr</month>
@@ -1129,20 +1064,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="10">Ob</month>
 							<month type="11">Nv</month>
 							<month type="12">Dċ</month>
-						</monthWidth>
-						<monthWidth type="wide">
-							<month type="1">Jannar</month>
-							<month type="2">Frar</month>
-							<month type="3">Marzu</month>
-							<month type="4">April</month>
-							<month type="5">Mejju</month>
-							<month type="6">Ġunju</month>
-							<month type="7">Lulju</month>
-							<month type="8">Awwissu</month>
-							<month type="9">Settembru</month>
-							<month type="10">Ottubru</month>
-							<month type="11">Novembru</month>
-							<month type="12">Diċembru</month>
 						</monthWidth>
 					</monthContext>
 				</months>
@@ -1166,15 +1087,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="fri">Ġm</day>
 							<day type="sat">Sb</day>
 						</dayWidth>
-						<dayWidth type="short">
-							<day type="sun">Ħad</day>
-							<day type="mon">Tne</day>
-							<day type="tue">Tli</day>
-							<day type="wed">Erb</day>
-							<day type="thu">Ħam</day>
-							<day type="fri">Ġim</day>
-							<day type="sat">Sib</day>
-						</dayWidth>
 						<dayWidth type="wide">
 							<day type="sun">Il-Ħadd</day>
 							<day type="mon">It-Tnejn</day>
@@ -1186,15 +1098,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dayWidth>
 					</dayContext>
 					<dayContext type="stand-alone">
-						<dayWidth type="abbreviated">
-							<day type="sun">Ħad</day>
-							<day type="mon">Tne</day>
-							<day type="tue">Tli</day>
-							<day type="wed">Erb</day>
-							<day type="thu">Ħam</day>
-							<day type="fri">Ġim</day>
-							<day type="sat">Sib</day>
-						</dayWidth>
 						<dayWidth type="narrow">
 							<day type="sun">Ħd</day>
 							<day type="mon">Tn</day>
@@ -1203,24 +1106,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="thu">Ħm</day>
 							<day type="fri">Ġm</day>
 							<day type="sat">Sb</day>
-						</dayWidth>
-						<dayWidth type="short">
-							<day type="sun">Ħad</day>
-							<day type="mon">Tne</day>
-							<day type="tue">Tli</day>
-							<day type="wed">Erb</day>
-							<day type="thu">Ħam</day>
-							<day type="fri">Ġim</day>
-							<day type="sat">Sib</day>
-						</dayWidth>
-						<dayWidth type="wide">
-							<day type="sun">Il-Ħadd</day>
-							<day type="mon">It-Tnejn</day>
-							<day type="tue">It-Tlieta</day>
-							<day type="wed">L-Erbgħa</day>
-							<day type="thu">Il-Ħamis</day>
-							<day type="fri">Il-Ġimgħa</day>
-							<day type="sat">Is-Sibt</day>
 						</dayWidth>
 					</dayContext>
 				</days>
@@ -1232,32 +1117,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<quarter type="3">K3</quarter>
 							<quarter type="4">K4</quarter>
 						</quarterWidth>
-						<quarterWidth type="narrow">
-							<quarter type="1">1</quarter>
-							<quarter type="2">2</quarter>
-							<quarter type="3">3</quarter>
-							<quarter type="4">4</quarter>
-						</quarterWidth>
-						<quarterWidth type="wide">
-							<quarter type="1">1el kwart</quarter>
-							<quarter type="2">2ni kwart</quarter>
-							<quarter type="3">3et kwart</quarter>
-							<quarter type="4">4ba’ kwart</quarter>
-						</quarterWidth>
-					</quarterContext>
-					<quarterContext type="stand-alone">
-						<quarterWidth type="abbreviated">
-							<quarter type="1">K1</quarter>
-							<quarter type="2">K2</quarter>
-							<quarter type="3">K3</quarter>
-							<quarter type="4">K4</quarter>
-						</quarterWidth>
-						<quarterWidth type="narrow">
-							<quarter type="1">1</quarter>
-							<quarter type="2">2</quarter>
-							<quarter type="3">3</quarter>
-							<quarter type="4">4</quarter>
-						</quarterWidth>
 						<quarterWidth type="wide">
 							<quarter type="1">1el kwart</quarter>
 							<quarter type="2">2ni kwart</quarter>
@@ -1268,40 +1127,22 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</quarters>
 				<dayPeriods>
 					<dayPeriodContext type="format">
-						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="am">AM</dayPeriod>
-							<dayPeriod type="pm">PM</dayPeriod>
-						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
 							<dayPeriod type="am">am</dayPeriod>
 							<dayPeriod type="pm">pm</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="wide">
-							<dayPeriod type="am">AM</dayPeriod>
-							<dayPeriod type="pm">PM</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 					<dayPeriodContext type="stand-alone">
-						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="am">AM</dayPeriod>
-							<dayPeriod type="pm">PM</dayPeriod>
-						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
 							<dayPeriod type="am">am</dayPeriod>
 							<dayPeriod type="pm">pm</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="wide">
-							<dayPeriod type="am">AM</dayPeriod>
-							<dayPeriod type="pm">PM</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 				</dayPeriods>
 				<eras>
 					<eraNames>
 						<era type="0">Qabel Kristu</era>
-						<era type="0" alt="variant">QEK</era>
 						<era type="1">Wara Kristu</era>
-						<era type="1" alt="variant">EK</era>
 					</eraNames>
 					<eraAbbr>
 						<era type="0">QK</era>
@@ -1314,13 +1155,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>EEEE, d 'ta'’ MMMM y</pattern>
-							<datetimeSkeleton>yMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>d 'ta'’ MMMM y</pattern>
-							<datetimeSkeleton>yMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
@@ -1332,7 +1171,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>dd/MM/y</pattern>
-							<datetimeSkeleton>yMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -1340,25 +1178,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<timeFormatLength type="full">
 						<timeFormat>
 							<pattern>HH:mm:ss zzzz</pattern>
-							<datetimeSkeleton>HHmmsszzzz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="long">
 						<timeFormat>
 							<pattern>HH:mm:ss z</pattern>
-							<datetimeSkeleton>HHmmssz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="medium">
 						<timeFormat>
 							<pattern>HH:mm:ss</pattern>
-							<datetimeSkeleton>HHmmss</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="short">
 						<timeFormat>
 							<pattern>HH:mm</pattern>
-							<datetimeSkeleton>HHmm</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 				</timeFormats>
@@ -1384,37 +1218,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
-						<dateFormatItem id="Bh">h B</dateFormatItem>
-						<dateFormatItem id="Bhm">h:mm B</dateFormatItem>
-						<dateFormatItem id="Bhms">h:mm:ss B</dateFormatItem>
-						<dateFormatItem id="d">d</dateFormatItem>
-						<dateFormatItem id="E">ccc</dateFormatItem>
-						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
-						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
-						<dateFormatItem id="Ed">d, E</dateFormatItem>
 						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
-						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
 						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
-						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
-						<dateFormatItem id="Gy">G y</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM, y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d 'ta'’ MMM, y G</dateFormatItem>
 						<dateFormatItem id="h">h a</dateFormatItem>
-						<dateFormatItem id="H">HH</dateFormatItem>
 						<dateFormatItem id="hm">h:mm a</dateFormatItem>
-						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
 						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
-						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
-						<dateFormatItem id="Hmsv">HH:mm:ss v</dateFormatItem>
 						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
-						<dateFormatItem id="Hmv">HH:mm v</dateFormatItem>
-						<dateFormatItem id="M">L</dateFormatItem>
-						<dateFormatItem id="Md">MM-dd</dateFormatItem>
 						<dateFormatItem id="MEd">E, M-d</dateFormatItem>
-						<dateFormatItem id="MMM">LLL</dateFormatItem>
-						<dateFormatItem id="MMMd">MMM d</dateFormatItem>
 						<dateFormatItem id="MMMEd">E, d 'ta'’ MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d 'ta'’ MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="one">W 'ġimgħa' 'ta''' MMMM</dateFormatItem>
@@ -1422,9 +1236,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="MMMMW" count="few">W 'ġimgħat' 'ta''' MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="many">W-'il' 'ġimgħa' 'ta''' MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="other">W 'ġimgħa' 'ta''' MMMM</dateFormatItem>
-						<dateFormatItem id="ms">mm:ss</dateFormatItem>
-						<dateFormatItem id="y">y</dateFormatItem>
-						<dateFormatItem id="yM">y-MM</dateFormatItem>
 						<dateFormatItem id="yMd">M/d/y</dateFormatItem>
 						<dateFormatItem id="yMEd">E, d/M/y</dateFormatItem>
 						<dateFormatItem id="yMMM">MMM y</dateFormatItem>
@@ -1439,48 +1250,24 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yw" count="many">w-'il' 'ġimgħa' 'ta''' Y</dateFormatItem>
 						<dateFormatItem id="yw" count="other">w 'ġimgħa' 'ta''' Y</dateFormatItem>
 					</availableFormats>
-					<appendItems>
-						<appendItem request="Timezone">{0} {1}</appendItem>
-					</appendItems>
 					<intervalFormats>
-						<intervalFormatFallback draft="unconfirmed">{0} – {1}</intervalFormatFallback>
-						<intervalFormatItem id="d">
-							<greatestDifference id="d">d–d</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="h">
 							<greatestDifference id="a">h a – h a</greatestDifference>
 							<greatestDifference id="h">h – h a</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="H">
-							<greatestDifference id="H">HH–HH</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
 							<greatestDifference id="a">h:mm a – h:mm a</greatestDifference>
 							<greatestDifference id="h">h:mm–h:mm a</greatestDifference>
 							<greatestDifference id="m">h:mm–h:mm a</greatestDifference>
 						</intervalFormatItem>
-						<intervalFormatItem id="Hm">
-							<greatestDifference id="H">HH:mm–HH:mm</greatestDifference>
-							<greatestDifference id="m">HH:mm–HH:mm</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
 							<greatestDifference id="a">h:mm a – h:mm a v</greatestDifference>
 							<greatestDifference id="h">h:mm–h:mm a v</greatestDifference>
 							<greatestDifference id="m">h:mm–h:mm a v</greatestDifference>
 						</intervalFormatItem>
-						<intervalFormatItem id="Hmv">
-							<greatestDifference id="H">HH:mm–HH:mm v</greatestDifference>
-							<greatestDifference id="m">HH:mm–HH:mm v</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="hv">
 							<greatestDifference id="a">h a – h a v</greatestDifference>
 							<greatestDifference id="h">h–h a v</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Hv">
-							<greatestDifference id="H">HH–HH v</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="M">
-							<greatestDifference id="M">MM–MM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Md">
 							<greatestDifference id="d">dd/MM – dd/MM</greatestDifference>
@@ -1541,15 +1328,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</calendar>
 		</calendars>
 		<fields>
-			<field type="era">
-				<displayName>Era</displayName>
-			</field>
-			<field type="era-short">
-				<displayName>Era</displayName>
-			</field>
-			<field type="era-narrow">
-				<displayName>Era</displayName>
-			</field>
 			<field type="year">
 				<displayName>Sena</displayName>
 				<relative type="-1">is-sena l-oħra</relative>
@@ -1572,16 +1350,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="year-short">
 				<displayName>Sn</displayName>
-				<relative type="-1" draft="unconfirmed">is-sena l-oħra</relative>
-				<relative type="0" draft="unconfirmed">din is-sena</relative>
-				<relative type="1" draft="unconfirmed">is-sena d-dieħla</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">fi żmien sena</relativeTimePattern>
-					<relativeTimePattern count="two">fi żmien sentejn oħra</relativeTimePattern>
-					<relativeTimePattern count="few">fi żmien {0} snin oħra</relativeTimePattern>
-					<relativeTimePattern count="many">fi żmien {0}-il sena oħra</relativeTimePattern>
-					<relativeTimePattern count="other">fi żmien {0} sena oħra</relativeTimePattern>
-				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">sa sena ilu</relativeTimePattern>
 					<relativeTimePattern count="two">sentejn ilu</relativeTimePattern>
@@ -1592,16 +1360,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="year-narrow">
 				<displayName>Sena</displayName>
-				<relative type="-1" draft="unconfirmed">is-sena l-oħra</relative>
-				<relative type="0" draft="unconfirmed">din is-sena</relative>
-				<relative type="1" draft="unconfirmed">is-sena d-dieħla</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">fi żmien sena</relativeTimePattern>
-					<relativeTimePattern count="two">fi żmien sentejn oħra</relativeTimePattern>
-					<relativeTimePattern count="few">fi żmien {0} snin oħra</relativeTimePattern>
-					<relativeTimePattern count="many">fi żmien {0}-il sena oħra</relativeTimePattern>
-					<relativeTimePattern count="other">fi żmien {0} sena oħra</relativeTimePattern>
-				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">sena ilu</relativeTimePattern>
 					<relativeTimePattern count="two">sentejn ilu</relativeTimePattern>
@@ -1632,9 +1390,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="quarter-short">
 				<displayName>kwrt</displayName>
-				<relative type="-1">il-kwart ta’ sena li għadda</relative>
-				<relative type="0">il-kwart ta’ sena li qegħdin fih</relative>
-				<relative type="1">il-kwart li jmiss tas-sena</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">fil-kwart tas-sena li ġej</relativeTimePattern>
 					<relativeTimePattern count="two">f’{0} kwarti ta’ sena oħrajn</relativeTimePattern>
@@ -1652,22 +1407,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="quarter-narrow">
 				<displayName>l-ewwel kwart tas-sena, it-tieni kwart tas-sena, it-tielet kwart tas-sena, ir-raba’ kwart tas-sena</displayName>
-				<relative type="-1">il-kwart ta’ sena li għadda</relative>
-				<relative type="0">il-kwart ta’ sena li qegħdin fih</relative>
-				<relative type="1">il-kwart li jmiss tas-sena</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">fi kwart ta’ sena ieħor</relativeTimePattern>
 					<relativeTimePattern count="two">f’{0} kwarti ta’ sena oħrajn</relativeTimePattern>
 					<relativeTimePattern count="few">f’{0} kwarti ta’ sena oħrajn</relativeTimePattern>
 					<relativeTimePattern count="many">f’{0}-il kwart ta’ sena oħrajn</relativeTimePattern>
 					<relativeTimePattern count="other">f’{0} kwart ta’ sena oħrajn</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">fil-kwart tas-sena li għadda</relativeTimePattern>
-					<relativeTimePattern count="two">{0} kwarti ta’ sena ilu</relativeTimePattern>
-					<relativeTimePattern count="few">{0} kwarti ta’ sena ilu</relativeTimePattern>
-					<relativeTimePattern count="many">{0}-il kwart ta’ sena ilu</relativeTimePattern>
-					<relativeTimePattern count="other">{0} kwart ta’ sena ilu</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="month">
@@ -1692,9 +1437,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="month-short">
 				<displayName>Xahar</displayName>
-				<relative type="-1" draft="unconfirmed">ix-xahar li għadda</relative>
-				<relative type="0" draft="unconfirmed">dan ix-xahar</relative>
-				<relative type="1" draft="unconfirmed">ix-xahar id-dieħel</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">sa xahar ieħor</relativeTimePattern>
 					<relativeTimePattern count="two">sa xahrejn oħra</relativeTimePattern>
@@ -1711,17 +1453,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</relativeTime>
 			</field>
 			<field type="month-narrow">
-				<displayName>Xahar</displayName>
-				<relative type="-1" draft="unconfirmed">ix-xahar li għadda</relative>
-				<relative type="0" draft="unconfirmed">dan ix-xahar</relative>
-				<relative type="1" draft="unconfirmed">ix-xahar id-dieħel</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">sa xahar ieħor</relativeTimePattern>
-					<relativeTimePattern count="two">sa xahrejn oħra</relativeTimePattern>
-					<relativeTimePattern count="few">sa {0} xhur oħra</relativeTimePattern>
-					<relativeTimePattern count="many">sa {0}-il xahar oħra</relativeTimePattern>
-					<relativeTimePattern count="other">sa {0} xahar oħra</relativeTimePattern>
-				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">xahar ilu</relativeTimePattern>
 					<relativeTimePattern count="two">xahrejn ilu</relativeTimePattern>
@@ -1753,53 +1484,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="week-short">
 				<displayName>ġm</displayName>
-				<relative type="-1" draft="unconfirmed">il-ġimgħa li għaddiet</relative>
-				<relative type="0" draft="unconfirmed">din il-ġimgħa</relative>
-				<relative type="1" draft="unconfirmed">il-ġimgħa d-dieħla</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">sa ġimgħa oħra</relativeTimePattern>
-					<relativeTimePattern count="two">sa ġimagħtejn oħra</relativeTimePattern>
-					<relativeTimePattern count="few">sa {0} ġimgħat oħra</relativeTimePattern>
-					<relativeTimePattern count="many">sa {0}-il ġimgħa oħra</relativeTimePattern>
-					<relativeTimePattern count="other">sa {0} ġimgħa oħra</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">ġimgħa ilu</relativeTimePattern>
-					<relativeTimePattern count="two">ġimagħtejn ilu</relativeTimePattern>
-					<relativeTimePattern count="few">{0} ġimgħat ilu</relativeTimePattern>
-					<relativeTimePattern count="many">{0}-il ġimgħa ilu</relativeTimePattern>
-					<relativeTimePattern count="other">{0} ġimgħa ilu</relativeTimePattern>
-				</relativeTime>
-				<relativePeriod>fil-ġimgħa ta’ {0}</relativePeriod>
 			</field>
 			<field type="week-narrow">
 				<displayName draft="provisional">Ġimgħa</displayName>
-				<relative type="-1" draft="unconfirmed">il-ġimgħa li għaddiet</relative>
-				<relative type="0" draft="unconfirmed">din il-ġimgħa</relative>
-				<relative type="1" draft="unconfirmed">il-ġimgħa d-dieħla</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">sa ġimgħa oħra</relativeTimePattern>
-					<relativeTimePattern count="two">sa ġimagħtejn oħra</relativeTimePattern>
-					<relativeTimePattern count="few">sa {0} ġimgħat oħra</relativeTimePattern>
-					<relativeTimePattern count="many">sa {0}-il ġimgħa oħra</relativeTimePattern>
-					<relativeTimePattern count="other">sa {0} ġimgħa oħra</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">ġimgħa ilu</relativeTimePattern>
-					<relativeTimePattern count="two">ġimagħtejn ilu</relativeTimePattern>
-					<relativeTimePattern count="few">{0} ġimgħat ilu</relativeTimePattern>
-					<relativeTimePattern count="many">{0}-il ġimgħa ilu</relativeTimePattern>
-					<relativeTimePattern count="other">{0} ġimgħa ilu</relativeTimePattern>
-				</relativeTime>
-				<relativePeriod>fil-ġimgħa ta’ {0}</relativePeriod>
 			</field>
 			<field type="weekOfMonth">
-				<displayName>ġimgħa tax-xahar</displayName>
-			</field>
-			<field type="weekOfMonth-short">
-				<displayName>ġimgħa tax-xahar</displayName>
-			</field>
-			<field type="weekOfMonth-narrow">
 				<displayName>ġimgħa tax-xahar</displayName>
 			</field>
 			<field type="day">
@@ -1824,26 +1513,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="day-short">
 				<displayName>Jum</displayName>
-				<relative type="-1" draft="unconfirmed">lbieraħ</relative>
-				<relative type="0" draft="unconfirmed">illum</relative>
-				<relative type="1" draft="unconfirmed">għada</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">fi żmien ġurnata</relativeTimePattern>
-					<relativeTimePattern count="two">fi żmien jumejn oħra</relativeTimePattern>
-					<relativeTimePattern count="few">fi żmien {0} ġranet oħra</relativeTimePattern>
-					<relativeTimePattern count="many">fi żmien {0}-il ġurnata oħra</relativeTimePattern>
-					<relativeTimePattern count="other">fi żmien {0} ġurnata oħra</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">ġurnata ilu</relativeTimePattern>
-					<relativeTimePattern count="two">jumejn ilu</relativeTimePattern>
-					<relativeTimePattern count="few">{0} ġranet ilu</relativeTimePattern>
-					<relativeTimePattern count="many">{0}-il ġurnata ilu</relativeTimePattern>
-					<relativeTimePattern count="other">{0} ġurnata ilu</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="day-narrow">
-				<displayName>Jum</displayName>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">fi żmien ġurnata</relativeTimePattern>
 					<relativeTimePattern count="two">fi żmien jumejn oħra</relativeTimePattern>
@@ -1851,36 +1522,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="many">fi żmien {0}-il ġurnata oħra</relativeTimePattern>
 					<relativeTimePattern count="other">fi żmien {0} ġurnata oħra</relativeTimePattern>
 				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">ġurnata ilu</relativeTimePattern>
-					<relativeTimePattern count="two">jumejn ilu</relativeTimePattern>
-					<relativeTimePattern count="few">{0} ġranet ilu</relativeTimePattern>
-					<relativeTimePattern count="many">{0}-il ġurnata ilu</relativeTimePattern>
-					<relativeTimePattern count="other">{0} ġurnata ilu</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="dayOfYear">
-				<displayName>jum tas-sena</displayName>
-			</field>
-			<field type="dayOfYear-short">
-				<displayName draft="provisional">jum tas-sena</displayName>
-			</field>
-			<field type="dayOfYear-narrow">
 				<displayName>jum tas-sena</displayName>
 			</field>
 			<field type="weekday">
 				<displayName>jum tal-ġimgħa</displayName>
 			</field>
-			<field type="weekday-short">
-				<displayName>jum tal-ġimgħa</displayName>
-			</field>
-			<field type="weekday-narrow">
-				<displayName>jum tal-ġimgħa</displayName>
-			</field>
 			<field type="weekdayOfMonth">
-				<displayName>jum tax-xahar</displayName>
-			</field>
-			<field type="weekdayOfMonth-short">
 				<displayName>jum tax-xahar</displayName>
 			</field>
 			<field type="weekdayOfMonth-narrow">
@@ -1925,16 +1574,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</relativeTime>
 			</field>
 			<field type="sun-narrow">
-				<relative type="-1">il-Ħd. li għadda</relative>
-				<relative type="0">il-Ħd. li ġej</relative>
-				<relative type="1">il-Ħd. ta’ wara</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">sa Ħd. ieħor</relativeTimePattern>
-					<relativeTimePattern count="two">sa {0} Ħd. oħra</relativeTimePattern>
-					<relativeTimePattern count="few">sa {0} Ħd. oħra</relativeTimePattern>
-					<relativeTimePattern count="many">sa {0}-il Ħd. oħra</relativeTimePattern>
-					<relativeTimePattern count="other">sa {0} Ħd. oħra</relativeTimePattern>
-				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} Ħd. ilu</relativeTimePattern>
 					<relativeTimePattern count="two">{0} Ħd. ilu</relativeTimePattern>
@@ -1953,69 +1592,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">it-Tn. li ġej</relative>
 				<relative type="1">it-Tn. ta’ wara</relative>
 			</field>
-			<field type="mon-narrow">
-				<relative type="-1">it-Tn. li għadda</relative>
-				<relative type="0">it-Tn. li ġej</relative>
-				<relative type="1">it-Tn. ta’ wara</relative>
-			</field>
 			<field type="tue">
 				<relative type="-1">it-Tlieta li għaddiet</relative>
 				<relative type="0">it-Tlieta li ġejja</relative>
 				<relative type="1">it-Tlieta ta’ wara</relative>
 			</field>
-			<field type="fri">
-				<relative type="-1">last Friday</relative>
-				<relative type="0">this Friday</relative>
-				<relative type="1">next Friday</relative>
-			</field>
-			<field type="dayperiod-short">
-				<displayName>AM/PM</displayName>
-			</field>
 			<field type="dayperiod">
-				<displayName>AM/PM</displayName>
-			</field>
-			<field type="dayperiod-narrow">
 				<displayName>AM/PM</displayName>
 			</field>
 			<field type="hour">
 				<displayName>siegħa</displayName>
 				<relative type="0">din is-siegħa</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">fi żmien siegħa oħra</relativeTimePattern>
-					<relativeTimePattern count="two">fi żmien sagħtejn</relativeTimePattern>
-					<relativeTimePattern count="few">fi żmien {0} sigħat</relativeTimePattern>
-					<relativeTimePattern count="many">fi żmien {0}-il siegħa</relativeTimePattern>
-					<relativeTimePattern count="other">fi żmien {0} siegħa</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">siegħa ilu</relativeTimePattern>
-					<relativeTimePattern count="two">sagħtejn ilu</relativeTimePattern>
-					<relativeTimePattern count="few">{0} sigħat ilu</relativeTimePattern>
-					<relativeTimePattern count="many">{0}-il siegħa ilu</relativeTimePattern>
-					<relativeTimePattern count="other">{0} siegħa ilu</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="hour-short">
-				<displayName>siegħa</displayName>
-				<relative type="0" draft="unconfirmed">din is-siegħa</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">fi żmien siegħa oħra</relativeTimePattern>
-					<relativeTimePattern count="two">fi żmien sagħtejn</relativeTimePattern>
-					<relativeTimePattern count="few">fi żmien {0} sigħat</relativeTimePattern>
-					<relativeTimePattern count="many">fi żmien {0}-il siegħa</relativeTimePattern>
-					<relativeTimePattern count="other">fi żmien {0} siegħa</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">siegħa ilu</relativeTimePattern>
-					<relativeTimePattern count="two">sagħtejn ilu</relativeTimePattern>
-					<relativeTimePattern count="few">{0} sigħat ilu</relativeTimePattern>
-					<relativeTimePattern count="many">{0}-il siegħa ilu</relativeTimePattern>
-					<relativeTimePattern count="other">{0} siegħa ilu</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="hour-narrow">
-				<displayName>siegħa</displayName>
-				<relative type="0" draft="unconfirmed">din is-siegħa</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">fi żmien siegħa oħra</relativeTimePattern>
 					<relativeTimePattern count="two">fi żmien sagħtejn</relativeTimePattern>
@@ -2051,7 +1638,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="minute-short">
 				<displayName>min.</displayName>
-				<relative type="0" draft="unconfirmed">din il-minuta</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">sa min. oħra</relativeTimePattern>
 					<relativeTimePattern count="two">sa {0} min. oħra</relativeTimePattern>
@@ -2069,20 +1655,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="minute-narrow">
 				<displayName>m</displayName>
-				<relative type="0" draft="unconfirmed">din il-minuta</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">sa min. oħra</relativeTimePattern>
 					<relativeTimePattern count="two">sa {0} min. oħra</relativeTimePattern>
 					<relativeTimePattern count="few">sa {0} min. oħra</relativeTimePattern>
 					<relativeTimePattern count="many">sa {0}-il min</relativeTimePattern>
 					<relativeTimePattern count="other">sa {0} min. oħra</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">min. ilu</relativeTimePattern>
-					<relativeTimePattern count="two">{0} min. ilu</relativeTimePattern>
-					<relativeTimePattern count="few">{0} min. ilu</relativeTimePattern>
-					<relativeTimePattern count="many">{0}-il min. ilu</relativeTimePattern>
-					<relativeTimePattern count="other">{0} min. ilu</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="second">
@@ -2105,7 +1683,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="second-short">
 				<displayName>sek.</displayName>
-				<relative type="0" draft="unconfirmed">issa</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">sa sek. oħra</relativeTimePattern>
 					<relativeTimePattern count="two">sa {0} sek. oħra</relativeTimePattern>
@@ -2123,21 +1700,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="second-narrow">
 				<displayName>s</displayName>
-				<relative type="0" draft="unconfirmed">issa</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">sa sek. oħra</relativeTimePattern>
-					<relativeTimePattern count="two">sa {0} sek. oħra</relativeTimePattern>
-					<relativeTimePattern count="few">sa {0} sek. oħra</relativeTimePattern>
-					<relativeTimePattern count="many">sa {0}-il sek. oħra</relativeTimePattern>
-					<relativeTimePattern count="other">sa {0} sek. oħra</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">sek. ilu</relativeTimePattern>
-					<relativeTimePattern count="two">{0} sek. ilu</relativeTimePattern>
-					<relativeTimePattern count="few">{0} sek. ilu</relativeTimePattern>
-					<relativeTimePattern count="many">{0}-il sek. ilu</relativeTimePattern>
-					<relativeTimePattern count="other">{0} sek. ilu</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="zone">
 				<displayName>żona tal-ħin</displayName>
@@ -2145,332 +1707,24 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="zone-short">
 				<displayName>żona</displayName>
 			</field>
-			<field type="zone-narrow">
-				<displayName>żona</displayName>
-			</field>
 		</fields>
 		<timeZoneNames>
-			<hourFormat>+HH:mm;-HH:mm</hourFormat>
-			<gmtFormat>GMT{0}</gmtFormat>
-			<gmtZeroFormat>GMT</gmtZeroFormat>
 			<regionFormat>Ħin ta’ {0}</regionFormat>
-			<regionFormat type="daylight">{0} (+1)</regionFormat>
 			<regionFormat type="standard">{0} Ħin Standard</regionFormat>
-			<fallbackFormat>{1} ({0})</fallbackFormat>
 			<zone type="Etc/Unknown">
 				<exemplarCity>Belt Mhux Magħruf</exemplarCity>
-			</zone>
-			<zone type="Asia/Dubai">
-				<exemplarCity>Dubai</exemplarCity>
-			</zone>
-			<zone type="Asia/Kabul">
-				<exemplarCity>Kabul</exemplarCity>
-			</zone>
-			<zone type="America/Antigua">
-				<exemplarCity>Antigua</exemplarCity>
-			</zone>
-			<zone type="America/Anguilla">
-				<exemplarCity>Anguilla</exemplarCity>
 			</zone>
 			<zone type="Europe/Tirane">
 				<exemplarCity>Tirana</exemplarCity>
 			</zone>
-			<zone type="Asia/Yerevan">
-				<exemplarCity>Yerevan</exemplarCity>
-			</zone>
-			<zone type="Africa/Luanda">
-				<exemplarCity>Luanda</exemplarCity>
-			</zone>
-			<zone type="Antarctica/Rothera">
-				<exemplarCity>Rothera</exemplarCity>
-			</zone>
-			<zone type="Antarctica/Palmer">
-				<exemplarCity>Palmer</exemplarCity>
-			</zone>
-			<zone type="Antarctica/Troll">
-				<exemplarCity>Troll</exemplarCity>
-			</zone>
-			<zone type="Antarctica/Syowa">
-				<exemplarCity>Syowa</exemplarCity>
-			</zone>
-			<zone type="Antarctica/Mawson">
-				<exemplarCity>Mawson</exemplarCity>
-			</zone>
-			<zone type="Antarctica/Davis">
-				<exemplarCity>Davis</exemplarCity>
-			</zone>
-			<zone type="Antarctica/Vostok">
-				<exemplarCity>Vostok</exemplarCity>
-			</zone>
-			<zone type="Antarctica/Casey">
-				<exemplarCity>Casey</exemplarCity>
-			</zone>
-			<zone type="Antarctica/DumontDUrville">
-				<exemplarCity>Dumont d’Urville</exemplarCity>
-			</zone>
-			<zone type="Antarctica/McMurdo">
-				<exemplarCity>McMurdo</exemplarCity>
-			</zone>
-			<zone type="Pacific/Pago_Pago">
-				<exemplarCity>Pago Pago</exemplarCity>
-			</zone>
 			<zone type="Europe/Vienna">
 				<exemplarCity>Vjenna</exemplarCity>
-			</zone>
-			<zone type="Australia/Perth">
-				<exemplarCity>Perth</exemplarCity>
-			</zone>
-			<zone type="Australia/Eucla">
-				<exemplarCity>Eucla</exemplarCity>
-			</zone>
-			<zone type="Australia/Darwin">
-				<exemplarCity>Darwin</exemplarCity>
-			</zone>
-			<zone type="Australia/Adelaide">
-				<exemplarCity>Adelaide</exemplarCity>
-			</zone>
-			<zone type="Australia/Broken_Hill">
-				<exemplarCity>Broken Hill</exemplarCity>
-			</zone>
-			<zone type="Australia/Melbourne">
-				<exemplarCity>Melbourne</exemplarCity>
-			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>Currie</exemplarCity>
-			</zone>
-			<zone type="Australia/Hobart">
-				<exemplarCity>Hobart</exemplarCity>
-			</zone>
-			<zone type="Australia/Lindeman">
-				<exemplarCity>Lindeman</exemplarCity>
-			</zone>
-			<zone type="Australia/Sydney">
-				<exemplarCity>Sydney</exemplarCity>
-			</zone>
-			<zone type="Australia/Brisbane">
-				<exemplarCity>Brisbane</exemplarCity>
-			</zone>
-			<zone type="Antarctica/Macquarie">
-				<exemplarCity>Macquarie</exemplarCity>
-			</zone>
-			<zone type="Australia/Lord_Howe">
-				<exemplarCity>Lord Howe</exemplarCity>
-			</zone>
-			<zone type="America/Aruba">
-				<exemplarCity>Aruba</exemplarCity>
-			</zone>
-			<zone type="Europe/Mariehamn">
-				<exemplarCity>Mariehamn</exemplarCity>
-			</zone>
-			<zone type="Asia/Baku">
-				<exemplarCity>Baku</exemplarCity>
-			</zone>
-			<zone type="Europe/Sarajevo">
-				<exemplarCity>Sarajevo</exemplarCity>
-			</zone>
-			<zone type="America/Barbados">
-				<exemplarCity>Barbados</exemplarCity>
-			</zone>
-			<zone type="Asia/Dhaka">
-				<exemplarCity>Dhaka</exemplarCity>
 			</zone>
 			<zone type="Europe/Brussels">
 				<exemplarCity>Brussell</exemplarCity>
 			</zone>
-			<zone type="Africa/Ouagadougou">
-				<exemplarCity>Ouagadougou</exemplarCity>
-			</zone>
 			<zone type="Europe/Sofia">
 				<exemplarCity>Sofija</exemplarCity>
-			</zone>
-			<zone type="Asia/Bahrain">
-				<exemplarCity>Bahrain</exemplarCity>
-			</zone>
-			<zone type="Africa/Bujumbura">
-				<exemplarCity>Bujumbura</exemplarCity>
-			</zone>
-			<zone type="Africa/Porto-Novo">
-				<exemplarCity>Porto-Novo</exemplarCity>
-			</zone>
-			<zone type="America/St_Barthelemy">
-				<exemplarCity>St. Barthelemy</exemplarCity>
-			</zone>
-			<zone type="Atlantic/Bermuda">
-				<exemplarCity>Bermuda</exemplarCity>
-			</zone>
-			<zone type="Asia/Brunei">
-				<exemplarCity>Brunei</exemplarCity>
-			</zone>
-			<zone type="America/Kralendijk">
-				<exemplarCity>Kralendijk</exemplarCity>
-			</zone>
-			<zone type="America/Rio_Branco">
-				<exemplarCity>Rio Branco</exemplarCity>
-			</zone>
-			<zone type="America/Porto_Velho">
-				<exemplarCity>Porto Velho</exemplarCity>
-			</zone>
-			<zone type="America/Santarem">
-				<exemplarCity>Santarem</exemplarCity>
-			</zone>
-			<zone type="America/Sao_Paulo">
-				<exemplarCity>Sao Paulo</exemplarCity>
-			</zone>
-			<zone type="America/Recife">
-				<exemplarCity>Recife</exemplarCity>
-			</zone>
-			<zone type="America/Noronha">
-				<exemplarCity>Noronha</exemplarCity>
-			</zone>
-			<zone type="America/Nassau">
-				<exemplarCity>Nassau</exemplarCity>
-			</zone>
-			<zone type="Asia/Thimphu">
-				<exemplarCity>Thimphu</exemplarCity>
-			</zone>
-			<zone type="Africa/Gaborone">
-				<exemplarCity>Gaborone</exemplarCity>
-			</zone>
-			<zone type="Europe/Minsk">
-				<exemplarCity>Minsk</exemplarCity>
-			</zone>
-			<zone type="America/Belize">
-				<exemplarCity>Belize</exemplarCity>
-			</zone>
-			<zone type="America/Dawson">
-				<exemplarCity>Dawson</exemplarCity>
-			</zone>
-			<zone type="America/Whitehorse">
-				<exemplarCity>Whitehorse</exemplarCity>
-			</zone>
-			<zone type="America/Inuvik">
-				<exemplarCity>Inuvik</exemplarCity>
-			</zone>
-			<zone type="America/Vancouver">
-				<exemplarCity>Vancouver</exemplarCity>
-			</zone>
-			<zone type="America/Fort_Nelson">
-				<exemplarCity>Fort Nelson</exemplarCity>
-			</zone>
-			<zone type="America/Dawson_Creek">
-				<exemplarCity>Dawson Creek</exemplarCity>
-			</zone>
-			<zone type="America/Creston">
-				<exemplarCity>Creston</exemplarCity>
-			</zone>
-			<zone type="America/Yellowknife">
-				<exemplarCity>Yellowknife</exemplarCity>
-			</zone>
-			<zone type="America/Edmonton">
-				<exemplarCity>Edmonton</exemplarCity>
-			</zone>
-			<zone type="America/Swift_Current">
-				<exemplarCity>Swift Current</exemplarCity>
-			</zone>
-			<zone type="America/Cambridge_Bay">
-				<exemplarCity>Cambridge Bay</exemplarCity>
-			</zone>
-			<zone type="America/Regina">
-				<exemplarCity>Regina</exemplarCity>
-			</zone>
-			<zone type="America/Winnipeg">
-				<exemplarCity>Winnipeg</exemplarCity>
-			</zone>
-			<zone type="America/Resolute">
-				<exemplarCity>Resolute</exemplarCity>
-			</zone>
-			<zone type="America/Rainy_River">
-				<exemplarCity>Rainy River</exemplarCity>
-			</zone>
-			<zone type="America/Rankin_Inlet">
-				<exemplarCity>Rankin Inlet</exemplarCity>
-			</zone>
-			<zone type="America/Coral_Harbour">
-				<exemplarCity>Atikokan</exemplarCity>
-			</zone>
-			<zone type="America/Thunder_Bay">
-				<exemplarCity>Thunder Bay</exemplarCity>
-			</zone>
-			<zone type="America/Nipigon">
-				<exemplarCity>Nipigon</exemplarCity>
-			</zone>
-			<zone type="America/Toronto">
-				<exemplarCity>Toronto</exemplarCity>
-			</zone>
-			<zone type="America/Iqaluit">
-				<exemplarCity>Iqaluit</exemplarCity>
-			</zone>
-			<zone type="America/Pangnirtung">
-				<exemplarCity>Pangnirtung</exemplarCity>
-			</zone>
-			<zone type="America/Moncton">
-				<exemplarCity>Moncton</exemplarCity>
-			</zone>
-			<zone type="America/Halifax">
-				<exemplarCity>Halifax</exemplarCity>
-			</zone>
-			<zone type="America/Goose_Bay">
-				<exemplarCity>Goose Bay</exemplarCity>
-			</zone>
-			<zone type="America/Glace_Bay">
-				<exemplarCity>Glace Bay</exemplarCity>
-			</zone>
-			<zone type="America/Blanc-Sablon">
-				<exemplarCity>Blanc-Sablon</exemplarCity>
-			</zone>
-			<zone type="America/St_Johns">
-				<exemplarCity>St. John’s</exemplarCity>
-			</zone>
-			<zone type="Indian/Cocos">
-				<exemplarCity>Cocos</exemplarCity>
-			</zone>
-			<zone type="Africa/Kinshasa">
-				<exemplarCity>Kinshasa</exemplarCity>
-			</zone>
-			<zone type="Africa/Lubumbashi">
-				<exemplarCity>Lubumbashi</exemplarCity>
-			</zone>
-			<zone type="Africa/Bangui">
-				<exemplarCity>Bangui</exemplarCity>
-			</zone>
-			<zone type="Africa/Brazzaville">
-				<exemplarCity>Brazzaville</exemplarCity>
-			</zone>
-			<zone type="Europe/Zurich">
-				<exemplarCity>Zurich</exemplarCity>
-			</zone>
-			<zone type="Africa/Abidjan">
-				<exemplarCity>Abidjan</exemplarCity>
-			</zone>
-			<zone type="Pacific/Rarotonga">
-				<exemplarCity>Rarotonga</exemplarCity>
-			</zone>
-			<zone type="America/Santiago">
-				<exemplarCity>Santiago</exemplarCity>
-			</zone>
-			<zone type="Africa/Douala">
-				<exemplarCity>Douala</exemplarCity>
-			</zone>
-			<zone type="Asia/Urumqi">
-				<exemplarCity>Urumqi</exemplarCity>
-			</zone>
-			<zone type="Asia/Shanghai">
-				<exemplarCity>Shanghai</exemplarCity>
-			</zone>
-			<zone type="America/Costa_Rica">
-				<exemplarCity>Costa Rica</exemplarCity>
-			</zone>
-			<zone type="America/Havana">
-				<exemplarCity>Havana</exemplarCity>
-			</zone>
-			<zone type="Atlantic/Cape_Verde">
-				<exemplarCity>Cape Verde</exemplarCity>
-			</zone>
-			<zone type="America/Curacao">
-				<exemplarCity>Curacao</exemplarCity>
-			</zone>
-			<zone type="Indian/Christmas">
-				<exemplarCity>Christmas</exemplarCity>
 			</zone>
 			<zone type="Asia/Nicosia">
 				<exemplarCity>Nikosija</exemplarCity>
@@ -2478,119 +1732,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Europe/Prague">
 				<exemplarCity>Praga</exemplarCity>
 			</zone>
-			<zone type="Europe/Busingen">
-				<exemplarCity>Busingen</exemplarCity>
-			</zone>
-			<zone type="Europe/Berlin">
-				<exemplarCity>Berlin</exemplarCity>
-			</zone>
-			<zone type="Africa/Djibouti">
-				<exemplarCity>Djibouti</exemplarCity>
-			</zone>
-			<zone type="Europe/Copenhagen">
-				<exemplarCity>Copenhagen</exemplarCity>
-			</zone>
-			<zone type="America/Dominica">
-				<exemplarCity>Dominica</exemplarCity>
-			</zone>
-			<zone type="America/Santo_Domingo">
-				<exemplarCity>Santo Domingo</exemplarCity>
-			</zone>
 			<zone type="Africa/Algiers">
 				<exemplarCity>l-Alġier</exemplarCity>
-			</zone>
-			<zone type="Europe/Tallinn">
-				<exemplarCity>Tallinn</exemplarCity>
-			</zone>
-			<zone type="Africa/Cairo">
-				<exemplarCity>Cairo</exemplarCity>
-			</zone>
-			<zone type="Africa/El_Aaiun">
-				<exemplarCity>El Aaiun</exemplarCity>
-			</zone>
-			<zone type="Africa/Asmera">
-				<exemplarCity>Asmara</exemplarCity>
-			</zone>
-			<zone type="Atlantic/Canary">
-				<exemplarCity>Canary</exemplarCity>
-			</zone>
-			<zone type="Africa/Ceuta">
-				<exemplarCity>Ceuta</exemplarCity>
-			</zone>
-			<zone type="Europe/Madrid">
-				<exemplarCity>Madrid</exemplarCity>
-			</zone>
-			<zone type="Africa/Addis_Ababa">
-				<exemplarCity>Addis Ababa</exemplarCity>
-			</zone>
-			<zone type="Europe/Helsinki">
-				<exemplarCity>Helsinki</exemplarCity>
-			</zone>
-			<zone type="Pacific/Fiji">
-				<exemplarCity>Fiji</exemplarCity>
-			</zone>
-			<zone type="Atlantic/Stanley">
-				<exemplarCity>Stanley</exemplarCity>
-			</zone>
-			<zone type="Pacific/Truk">
-				<exemplarCity>Chuuk</exemplarCity>
-			</zone>
-			<zone type="Pacific/Ponape">
-				<exemplarCity>Pohnpei</exemplarCity>
-			</zone>
-			<zone type="Pacific/Kosrae">
-				<exemplarCity>Kosrae</exemplarCity>
-			</zone>
-			<zone type="Atlantic/Faeroe">
-				<exemplarCity>Faroe</exemplarCity>
 			</zone>
 			<zone type="Europe/Paris">
 				<exemplarCity>Pariġi</exemplarCity>
 			</zone>
-			<zone type="Africa/Libreville">
-				<exemplarCity>Libreville</exemplarCity>
-			</zone>
 			<zone type="Europe/London">
 				<exemplarCity>Londra</exemplarCity>
 			</zone>
-			<zone type="America/Grenada">
-				<exemplarCity>Grenada</exemplarCity>
-			</zone>
-			<zone type="Asia/Tbilisi">
-				<exemplarCity>Tbilisi</exemplarCity>
-			</zone>
-			<zone type="Europe/Guernsey">
-				<exemplarCity>Guernsey</exemplarCity>
-			</zone>
-			<zone type="Africa/Accra">
-				<exemplarCity>Accra</exemplarCity>
-			</zone>
 			<zone type="Europe/Gibraltar">
 				<exemplarCity>Ġibiltà</exemplarCity>
-			</zone>
-			<zone type="America/Thule">
-				<exemplarCity>Thule</exemplarCity>
-			</zone>
-			<zone type="America/Godthab">
-				<exemplarCity>Nuuk</exemplarCity>
-			</zone>
-			<zone type="America/Scoresbysund">
-				<exemplarCity>Ittoqqortoormiit</exemplarCity>
-			</zone>
-			<zone type="America/Danmarkshavn">
-				<exemplarCity>Danmarkshavn</exemplarCity>
-			</zone>
-			<zone type="Africa/Banjul">
-				<exemplarCity>Banjul</exemplarCity>
-			</zone>
-			<zone type="Africa/Conakry">
-				<exemplarCity>Conakry</exemplarCity>
-			</zone>
-			<zone type="America/Guadeloupe">
-				<exemplarCity>Guadeloupe</exemplarCity>
-			</zone>
-			<zone type="Africa/Malabo">
-				<exemplarCity>Malabo</exemplarCity>
 			</zone>
 			<zone type="Europe/Athens">
 				<exemplarCity>Ateni</exemplarCity>
@@ -2601,725 +1753,62 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Guatemala">
 				<exemplarCity>il-Gwatemala</exemplarCity>
 			</zone>
-			<zone type="Pacific/Guam">
-				<exemplarCity>Guam</exemplarCity>
-			</zone>
-			<zone type="Africa/Bissau">
-				<exemplarCity>Bissau</exemplarCity>
-			</zone>
-			<zone type="Asia/Hong_Kong">
-				<exemplarCity>Hong Kong</exemplarCity>
-			</zone>
-			<zone type="America/Tegucigalpa">
-				<exemplarCity>Tegucigalpa</exemplarCity>
-			</zone>
-			<zone type="Europe/Zagreb">
-				<exemplarCity>Zagreb</exemplarCity>
-			</zone>
-			<zone type="America/Port-au-Prince">
-				<exemplarCity>Port-au-Prince</exemplarCity>
-			</zone>
-			<zone type="Europe/Budapest">
-				<exemplarCity>Budapest</exemplarCity>
-			</zone>
-			<zone type="Asia/Jakarta">
-				<exemplarCity>Jakarta</exemplarCity>
-			</zone>
-			<zone type="Asia/Pontianak">
-				<exemplarCity>Pontianak</exemplarCity>
-			</zone>
-			<zone type="Asia/Makassar">
-				<exemplarCity>Makassar</exemplarCity>
-			</zone>
-			<zone type="Asia/Jayapura">
-				<exemplarCity>Jayapura</exemplarCity>
-			</zone>
-			<zone type="Europe/Dublin">
-				<exemplarCity>Dublin</exemplarCity>
-			</zone>
 			<zone type="Asia/Jerusalem">
 				<exemplarCity>Ġerusalemm</exemplarCity>
-			</zone>
-			<zone type="Europe/Isle_of_Man">
-				<exemplarCity>Isle of Man</exemplarCity>
-			</zone>
-			<zone type="Asia/Calcutta">
-				<exemplarCity>Kolkata</exemplarCity>
-			</zone>
-			<zone type="Indian/Chagos">
-				<exemplarCity>Chagos</exemplarCity>
-			</zone>
-			<zone type="Asia/Baghdad">
-				<exemplarCity>Baghdad</exemplarCity>
-			</zone>
-			<zone type="Asia/Tehran">
-				<exemplarCity>Tehran</exemplarCity>
-			</zone>
-			<zone type="Atlantic/Reykjavik">
-				<exemplarCity>Reykjavik</exemplarCity>
 			</zone>
 			<zone type="Europe/Rome">
 				<exemplarCity>Ruma</exemplarCity>
 			</zone>
-			<zone type="Europe/Jersey">
-				<exemplarCity>Jersey</exemplarCity>
-			</zone>
 			<zone type="America/Jamaica">
 				<exemplarCity>il-Ġamajka</exemplarCity>
-			</zone>
-			<zone type="Asia/Amman">
-				<exemplarCity>Amman</exemplarCity>
-			</zone>
-			<zone type="Asia/Tokyo">
-				<exemplarCity>Tokyo</exemplarCity>
-			</zone>
-			<zone type="Africa/Nairobi">
-				<exemplarCity>Nairobi</exemplarCity>
-			</zone>
-			<zone type="Asia/Bishkek">
-				<exemplarCity>Bishkek</exemplarCity>
-			</zone>
-			<zone type="Asia/Phnom_Penh">
-				<exemplarCity>Phnom Penh</exemplarCity>
 			</zone>
 			<zone type="Pacific/Enderbury">
 				<exemplarCity>Enderbury</exemplarCity>
 			</zone>
-			<zone type="Pacific/Kiritimati">
-				<exemplarCity>Kiritimati</exemplarCity>
-			</zone>
-			<zone type="Pacific/Tarawa">
-				<exemplarCity>Tarawa</exemplarCity>
-			</zone>
-			<zone type="Indian/Comoro">
-				<exemplarCity>Comoro</exemplarCity>
-			</zone>
-			<zone type="America/St_Kitts">
-				<exemplarCity>St. Kitts</exemplarCity>
-			</zone>
-			<zone type="Asia/Pyongyang">
-				<exemplarCity>Pyongyang</exemplarCity>
-			</zone>
-			<zone type="Asia/Seoul">
-				<exemplarCity>Seoul</exemplarCity>
-			</zone>
 			<zone type="Asia/Kuwait">
 				<exemplarCity>il-Belt tal-Kuwajt</exemplarCity>
-			</zone>
-			<zone type="America/Cayman">
-				<exemplarCity>Cayman</exemplarCity>
-			</zone>
-			<zone type="Asia/Aqtau">
-				<exemplarCity>Aqtau</exemplarCity>
-			</zone>
-			<zone type="Asia/Oral">
-				<exemplarCity>Oral</exemplarCity>
-			</zone>
-			<zone type="Asia/Aqtobe">
-				<exemplarCity>Aqtobe</exemplarCity>
-			</zone>
-			<zone type="Asia/Qyzylorda">
-				<exemplarCity>Qyzylorda</exemplarCity>
-			</zone>
-			<zone type="Asia/Almaty">
-				<exemplarCity>Almaty</exemplarCity>
-			</zone>
-			<zone type="Asia/Vientiane">
-				<exemplarCity>Vientiane</exemplarCity>
 			</zone>
 			<zone type="Asia/Beirut">
 				<exemplarCity>Bejrut</exemplarCity>
 			</zone>
-			<zone type="America/St_Lucia">
-				<exemplarCity>St. Lucia</exemplarCity>
-			</zone>
-			<zone type="Europe/Vaduz">
-				<exemplarCity>Vaduz</exemplarCity>
-			</zone>
-			<zone type="Asia/Colombo">
-				<exemplarCity>Colombo</exemplarCity>
-			</zone>
-			<zone type="Africa/Monrovia">
-				<exemplarCity>Monrovia</exemplarCity>
-			</zone>
-			<zone type="Africa/Maseru">
-				<exemplarCity>Maseru</exemplarCity>
-			</zone>
-			<zone type="Europe/Vilnius">
-				<exemplarCity>Vilnius</exemplarCity>
-			</zone>
 			<zone type="Europe/Luxembourg">
 				<exemplarCity>il-Lussemburgu</exemplarCity>
-			</zone>
-			<zone type="Europe/Riga">
-				<exemplarCity>Riga</exemplarCity>
-			</zone>
-			<zone type="Africa/Tripoli">
-				<exemplarCity>Tripoli</exemplarCity>
-			</zone>
-			<zone type="Africa/Casablanca">
-				<exemplarCity>Casablanca</exemplarCity>
-			</zone>
-			<zone type="Europe/Monaco">
-				<exemplarCity>Monaco</exemplarCity>
-			</zone>
-			<zone type="Europe/Chisinau">
-				<exemplarCity>Chisinau</exemplarCity>
-			</zone>
-			<zone type="Europe/Podgorica">
-				<exemplarCity>Podgorica</exemplarCity>
-			</zone>
-			<zone type="America/Marigot">
-				<exemplarCity>Marigot</exemplarCity>
-			</zone>
-			<zone type="Indian/Antananarivo">
-				<exemplarCity>Antananarivo</exemplarCity>
-			</zone>
-			<zone type="Pacific/Kwajalein">
-				<exemplarCity>Kwajalein</exemplarCity>
-			</zone>
-			<zone type="Pacific/Majuro">
-				<exemplarCity>Majuro</exemplarCity>
-			</zone>
-			<zone type="Europe/Skopje">
-				<exemplarCity>Skopje</exemplarCity>
-			</zone>
-			<zone type="Africa/Bamako">
-				<exemplarCity>Bamako</exemplarCity>
 			</zone>
 			<zone type="Asia/Rangoon">
 				<exemplarCity>Rangoon</exemplarCity>
 			</zone>
-			<zone type="Asia/Hovd">
-				<exemplarCity>Hovd</exemplarCity>
-			</zone>
-			<zone type="Asia/Ulaanbaatar">
-				<exemplarCity>Ulaanbaatar</exemplarCity>
-			</zone>
-			<zone type="Asia/Choibalsan">
-				<exemplarCity>Choibalsan</exemplarCity>
-			</zone>
 			<zone type="Asia/Macau">
 				<exemplarCity>Macau</exemplarCity>
-			</zone>
-			<zone type="Pacific/Saipan">
-				<exemplarCity>Saipan</exemplarCity>
-			</zone>
-			<zone type="America/Martinique">
-				<exemplarCity>Martinique</exemplarCity>
-			</zone>
-			<zone type="Africa/Nouakchott">
-				<exemplarCity>Nouakchott</exemplarCity>
-			</zone>
-			<zone type="America/Montserrat">
-				<exemplarCity>Montserrat</exemplarCity>
 			</zone>
 			<zone type="Europe/Malta">
 				<exemplarCity>Valletta</exemplarCity>
 			</zone>
-			<zone type="Indian/Mauritius">
-				<exemplarCity>Mauritius</exemplarCity>
-			</zone>
 			<zone type="Indian/Maldives">
 				<exemplarCity>il-Maldivi</exemplarCity>
-			</zone>
-			<zone type="Africa/Blantyre">
-				<exemplarCity>Blantyre</exemplarCity>
-			</zone>
-			<zone type="America/Tijuana">
-				<exemplarCity>Tijuana</exemplarCity>
-			</zone>
-			<zone type="America/Hermosillo">
-				<exemplarCity>Hermosillo</exemplarCity>
-			</zone>
-			<zone type="America/Mazatlan">
-				<exemplarCity>Mazatlan</exemplarCity>
-			</zone>
-			<zone type="America/Chihuahua">
-				<exemplarCity>Chihuahua</exemplarCity>
-			</zone>
-			<zone type="America/Bahia_Banderas">
-				<exemplarCity>Bahia Banderas</exemplarCity>
-			</zone>
-			<zone type="America/Ojinaga">
-				<exemplarCity>Ojinaga</exemplarCity>
-			</zone>
-			<zone type="America/Monterrey">
-				<exemplarCity>Monterrey</exemplarCity>
-			</zone>
-			<zone type="America/Mexico_City">
-				<exemplarCity>Mexico City</exemplarCity>
-			</zone>
-			<zone type="America/Matamoros">
-				<exemplarCity>Matamoros</exemplarCity>
-			</zone>
-			<zone type="America/Merida">
-				<exemplarCity>Merida</exemplarCity>
-			</zone>
-			<zone type="America/Cancun">
-				<exemplarCity>Cancun</exemplarCity>
-			</zone>
-			<zone type="Asia/Kuala_Lumpur">
-				<exemplarCity>Kuala Lumpur</exemplarCity>
-			</zone>
-			<zone type="Asia/Kuching">
-				<exemplarCity>Kuching</exemplarCity>
-			</zone>
-			<zone type="Africa/Maputo">
-				<exemplarCity>Maputo</exemplarCity>
-			</zone>
-			<zone type="Africa/Windhoek">
-				<exemplarCity>Windhoek</exemplarCity>
-			</zone>
-			<zone type="Pacific/Noumea">
-				<exemplarCity>Noumea</exemplarCity>
-			</zone>
-			<zone type="Africa/Niamey">
-				<exemplarCity>Niamey</exemplarCity>
-			</zone>
-			<zone type="Pacific/Norfolk">
-				<exemplarCity>Norfolk</exemplarCity>
-			</zone>
-			<zone type="Africa/Lagos">
-				<exemplarCity>Lagos</exemplarCity>
-			</zone>
-			<zone type="America/Managua">
-				<exemplarCity>Managua</exemplarCity>
-			</zone>
-			<zone type="Europe/Oslo">
-				<exemplarCity>Oslo</exemplarCity>
-			</zone>
-			<zone type="Asia/Katmandu">
-				<exemplarCity>Kathmandu</exemplarCity>
-			</zone>
-			<zone type="Pacific/Nauru">
-				<exemplarCity>Nauru</exemplarCity>
-			</zone>
-			<zone type="Pacific/Niue">
-				<exemplarCity>Niue</exemplarCity>
-			</zone>
-			<zone type="Pacific/Chatham">
-				<exemplarCity>Chatham</exemplarCity>
-			</zone>
-			<zone type="Pacific/Auckland">
-				<exemplarCity>Auckland</exemplarCity>
-			</zone>
-			<zone type="Asia/Muscat">
-				<exemplarCity>Muscat</exemplarCity>
-			</zone>
-			<zone type="America/Panama">
-				<exemplarCity>Panama</exemplarCity>
-			</zone>
-			<zone type="Pacific/Tahiti">
-				<exemplarCity>Tahiti</exemplarCity>
-			</zone>
-			<zone type="Pacific/Marquesas">
-				<exemplarCity>Marquesas</exemplarCity>
-			</zone>
-			<zone type="Pacific/Gambier">
-				<exemplarCity>Gambier</exemplarCity>
-			</zone>
-			<zone type="Pacific/Port_Moresby">
-				<exemplarCity>Port Moresby</exemplarCity>
-			</zone>
-			<zone type="Pacific/Bougainville">
-				<exemplarCity>Bougainville</exemplarCity>
-			</zone>
-			<zone type="Asia/Manila">
-				<exemplarCity>Manila</exemplarCity>
-			</zone>
-			<zone type="Asia/Karachi">
-				<exemplarCity>Karachi</exemplarCity>
 			</zone>
 			<zone type="Europe/Warsaw">
 				<exemplarCity>Varsavja</exemplarCity>
 			</zone>
-			<zone type="America/Miquelon">
-				<exemplarCity>Miquelon</exemplarCity>
-			</zone>
-			<zone type="Pacific/Pitcairn">
-				<exemplarCity>Pitcairn</exemplarCity>
-			</zone>
-			<zone type="America/Puerto_Rico">
-				<exemplarCity>Puerto Rico</exemplarCity>
-			</zone>
-			<zone type="Asia/Gaza">
-				<exemplarCity>Gaza</exemplarCity>
-			</zone>
-			<zone type="Asia/Hebron">
-				<exemplarCity>Hebron</exemplarCity>
-			</zone>
-			<zone type="Atlantic/Azores">
-				<exemplarCity>Azores</exemplarCity>
-			</zone>
-			<zone type="Atlantic/Madeira">
-				<exemplarCity>Madeira</exemplarCity>
-			</zone>
 			<zone type="Europe/Lisbon">
-				<exemplarCity>Lisbona</exemplarCity>
-			</zone>
-			<zone type="Pacific/Palau">
-				<exemplarCity>Palau</exemplarCity>
-			</zone>
-			<zone type="Asia/Qatar">
-				<exemplarCity>Qatar</exemplarCity>
-			</zone>
-			<zone type="Indian/Reunion">
-				<exemplarCity>Reunion</exemplarCity>
-			</zone>
-			<zone type="Europe/Bucharest">
-				<exemplarCity>Bucharest</exemplarCity>
+				<exemplarCity>Liżbona</exemplarCity>
 			</zone>
 			<zone type="Europe/Belgrade">
 				<exemplarCity>Belgrad</exemplarCity>
 			</zone>
-			<zone type="Europe/Kaliningrad">
-				<exemplarCity>Kaliningrad</exemplarCity>
-			</zone>
 			<zone type="Europe/Moscow">
 				<exemplarCity>Moska</exemplarCity>
-			</zone>
-			<zone type="Europe/Volgograd">
-				<exemplarCity>Volgograd</exemplarCity>
-			</zone>
-			<zone type="Europe/Astrakhan">
-				<exemplarCity>Astrakhan</exemplarCity>
-			</zone>
-			<zone type="Europe/Ulyanovsk">
-				<exemplarCity>Ulyanovsk</exemplarCity>
-			</zone>
-			<zone type="Europe/Kirov">
-				<exemplarCity>Kirov</exemplarCity>
-			</zone>
-			<zone type="Europe/Samara">
-				<exemplarCity>Samara</exemplarCity>
-			</zone>
-			<zone type="Asia/Yekaterinburg">
-				<exemplarCity>Yekaterinburg</exemplarCity>
-			</zone>
-			<zone type="Asia/Omsk">
-				<exemplarCity>Omsk</exemplarCity>
-			</zone>
-			<zone type="Asia/Novosibirsk">
-				<exemplarCity>Novosibirsk</exemplarCity>
-			</zone>
-			<zone type="Asia/Barnaul">
-				<exemplarCity>Barnaul</exemplarCity>
-			</zone>
-			<zone type="Asia/Tomsk">
-				<exemplarCity>Tomsk</exemplarCity>
-			</zone>
-			<zone type="Asia/Novokuznetsk">
-				<exemplarCity>Novokuznetsk</exemplarCity>
-			</zone>
-			<zone type="Asia/Krasnoyarsk">
-				<exemplarCity>Krasnoyarsk</exemplarCity>
-			</zone>
-			<zone type="Asia/Irkutsk">
-				<exemplarCity>Irkutsk</exemplarCity>
-			</zone>
-			<zone type="Asia/Chita">
-				<exemplarCity>Chita</exemplarCity>
-			</zone>
-			<zone type="Asia/Yakutsk">
-				<exemplarCity>Yakutsk</exemplarCity>
-			</zone>
-			<zone type="Asia/Vladivostok">
-				<exemplarCity>Vladivostok</exemplarCity>
-			</zone>
-			<zone type="Asia/Khandyga">
-				<exemplarCity>Khandyga</exemplarCity>
-			</zone>
-			<zone type="Asia/Sakhalin">
-				<exemplarCity>Sakhalin</exemplarCity>
-			</zone>
-			<zone type="Asia/Ust-Nera">
-				<exemplarCity>Ust-Nera</exemplarCity>
-			</zone>
-			<zone type="Asia/Magadan">
-				<exemplarCity>Magadan</exemplarCity>
-			</zone>
-			<zone type="Asia/Srednekolymsk">
-				<exemplarCity>Srednekolymsk</exemplarCity>
-			</zone>
-			<zone type="Asia/Kamchatka">
-				<exemplarCity>Kamchatka</exemplarCity>
-			</zone>
-			<zone type="Asia/Anadyr">
-				<exemplarCity>Anadyr</exemplarCity>
-			</zone>
-			<zone type="Africa/Kigali">
-				<exemplarCity>Kigali</exemplarCity>
-			</zone>
-			<zone type="Asia/Riyadh">
-				<exemplarCity>Riyadh</exemplarCity>
-			</zone>
-			<zone type="Pacific/Guadalcanal">
-				<exemplarCity>Guadalcanal</exemplarCity>
-			</zone>
-			<zone type="Indian/Mahe">
-				<exemplarCity>Mahe</exemplarCity>
-			</zone>
-			<zone type="Africa/Khartoum">
-				<exemplarCity>Khartoum</exemplarCity>
 			</zone>
 			<zone type="Europe/Stockholm">
 				<exemplarCity>Stokkolma</exemplarCity>
 			</zone>
-			<zone type="Asia/Singapore">
-				<exemplarCity>Singapore</exemplarCity>
-			</zone>
-			<zone type="Atlantic/St_Helena">
-				<exemplarCity>St. Helena</exemplarCity>
-			</zone>
-			<zone type="Europe/Ljubljana">
-				<exemplarCity>Ljubljana</exemplarCity>
-			</zone>
-			<zone type="Arctic/Longyearbyen">
-				<exemplarCity>Longyearbyen</exemplarCity>
-			</zone>
-			<zone type="Europe/Bratislava">
-				<exemplarCity>Bratislava</exemplarCity>
-			</zone>
-			<zone type="Africa/Freetown">
-				<exemplarCity>Freetown</exemplarCity>
-			</zone>
-			<zone type="Europe/San_Marino">
-				<exemplarCity>San Marino</exemplarCity>
-			</zone>
-			<zone type="Africa/Dakar">
-				<exemplarCity>Dakar</exemplarCity>
-			</zone>
-			<zone type="Africa/Mogadishu">
-				<exemplarCity>Mogadishu</exemplarCity>
-			</zone>
-			<zone type="America/Paramaribo">
-				<exemplarCity>Paramaribo</exemplarCity>
-			</zone>
-			<zone type="Africa/Juba">
-				<exemplarCity>Juba</exemplarCity>
-			</zone>
-			<zone type="Africa/Sao_Tome">
-				<exemplarCity>Sao Tome</exemplarCity>
-			</zone>
-			<zone type="America/El_Salvador">
-				<exemplarCity>El Salvador</exemplarCity>
-			</zone>
-			<zone type="America/Lower_Princes">
-				<exemplarCity>Lower Prince’s Quarter</exemplarCity>
-			</zone>
 			<zone type="Asia/Damascus">
 				<exemplarCity>Damasku</exemplarCity>
-			</zone>
-			<zone type="Africa/Mbabane">
-				<exemplarCity>Mbabane</exemplarCity>
-			</zone>
-			<zone type="America/Grand_Turk">
-				<exemplarCity>Grand Turk</exemplarCity>
-			</zone>
-			<zone type="Africa/Ndjamena">
-				<exemplarCity>Ndjamena</exemplarCity>
-			</zone>
-			<zone type="Indian/Kerguelen">
-				<exemplarCity>Kerguelen</exemplarCity>
-			</zone>
-			<zone type="Africa/Lome">
-				<exemplarCity>Lome</exemplarCity>
-			</zone>
-			<zone type="Asia/Bangkok">
-				<exemplarCity>Bangkok</exemplarCity>
-			</zone>
-			<zone type="Asia/Dushanbe">
-				<exemplarCity>Dushanbe</exemplarCity>
-			</zone>
-			<zone type="Pacific/Fakaofo">
-				<exemplarCity>Fakaofo</exemplarCity>
-			</zone>
-			<zone type="Asia/Dili">
-				<exemplarCity>Dili</exemplarCity>
-			</zone>
-			<zone type="Asia/Ashgabat">
-				<exemplarCity>Ashgabat</exemplarCity>
-			</zone>
-			<zone type="Africa/Tunis">
-				<exemplarCity>Tunis</exemplarCity>
-			</zone>
-			<zone type="Pacific/Tongatapu">
-				<exemplarCity>Tongatapu</exemplarCity>
-			</zone>
-			<zone type="Europe/Istanbul">
-				<exemplarCity>Istanbul</exemplarCity>
-			</zone>
-			<zone type="America/Port_of_Spain">
-				<exemplarCity>Port of Spain</exemplarCity>
-			</zone>
-			<zone type="Pacific/Funafuti">
-				<exemplarCity>Funafuti</exemplarCity>
-			</zone>
-			<zone type="Asia/Taipei">
-				<exemplarCity>Taipei</exemplarCity>
-			</zone>
-			<zone type="Africa/Dar_es_Salaam">
-				<exemplarCity>Dar es Salaam</exemplarCity>
-			</zone>
-			<zone type="Europe/Uzhgorod">
-				<exemplarCity>Uzhgorod</exemplarCity>
-			</zone>
-			<zone type="Europe/Kiev">
-				<exemplarCity>Kiev</exemplarCity>
-			</zone>
-			<zone type="Europe/Simferopol">
-				<exemplarCity>Simferopol</exemplarCity>
-			</zone>
-			<zone type="Europe/Zaporozhye">
-				<exemplarCity>Zaporozhye</exemplarCity>
-			</zone>
-			<zone type="Africa/Kampala">
-				<exemplarCity>Kampala</exemplarCity>
-			</zone>
-			<zone type="Pacific/Midway">
-				<exemplarCity>Midway</exemplarCity>
-			</zone>
-			<zone type="Pacific/Wake">
-				<exemplarCity>Wake</exemplarCity>
-			</zone>
-			<zone type="America/Adak">
-				<exemplarCity>Adak</exemplarCity>
-			</zone>
-			<zone type="America/Nome">
-				<exemplarCity>Nome</exemplarCity>
 			</zone>
 			<zone type="Pacific/Honolulu">
 				<exemplarCity>Honolulu</exemplarCity>
 			</zone>
-			<zone type="Pacific/Johnston">
-				<exemplarCity>Johnston</exemplarCity>
-			</zone>
-			<zone type="America/Anchorage">
-				<exemplarCity>Anchorage</exemplarCity>
-			</zone>
-			<zone type="America/Yakutat">
-				<exemplarCity>Yakutat</exemplarCity>
-			</zone>
-			<zone type="America/Sitka">
-				<exemplarCity>Sitka</exemplarCity>
-			</zone>
-			<zone type="America/Juneau">
-				<exemplarCity>Juneau</exemplarCity>
-			</zone>
-			<zone type="America/Metlakatla">
-				<exemplarCity>Metlakatla</exemplarCity>
-			</zone>
-			<zone type="America/Los_Angeles">
-				<exemplarCity>Los Angeles</exemplarCity>
-			</zone>
-			<zone type="America/Boise">
-				<exemplarCity>Boise</exemplarCity>
-			</zone>
-			<zone type="America/Phoenix">
-				<exemplarCity>Phoenix</exemplarCity>
-			</zone>
-			<zone type="America/Denver">
-				<exemplarCity>Denver</exemplarCity>
-			</zone>
-			<zone type="America/North_Dakota/Beulah">
-				<exemplarCity>Beulah, North Dakota</exemplarCity>
-			</zone>
-			<zone type="America/North_Dakota/New_Salem">
-				<exemplarCity>New Salem, North Dakota</exemplarCity>
-			</zone>
-			<zone type="America/North_Dakota/Center">
-				<exemplarCity>Center, North Dakota</exemplarCity>
-			</zone>
-			<zone type="America/Chicago">
-				<exemplarCity>Chicago</exemplarCity>
-			</zone>
-			<zone type="America/Menominee">
-				<exemplarCity>Menominee</exemplarCity>
-			</zone>
-			<zone type="America/Indiana/Vincennes">
-				<exemplarCity>Vincennes, Indiana</exemplarCity>
-			</zone>
-			<zone type="America/Indiana/Petersburg">
-				<exemplarCity>Petersburg, Indiana</exemplarCity>
-			</zone>
-			<zone type="America/Indiana/Tell_City">
-				<exemplarCity>Tell City, Indiana</exemplarCity>
-			</zone>
-			<zone type="America/Indiana/Knox">
-				<exemplarCity>Knox, Indiana</exemplarCity>
-			</zone>
-			<zone type="America/Indiana/Winamac">
-				<exemplarCity>Winamac, Indiana</exemplarCity>
-			</zone>
-			<zone type="America/Indiana/Marengo">
-				<exemplarCity>Marengo, Indiana</exemplarCity>
-			</zone>
-			<zone type="America/Indianapolis">
-				<exemplarCity>Indianapolis</exemplarCity>
-			</zone>
-			<zone type="America/Louisville">
-				<exemplarCity>Louisville</exemplarCity>
-			</zone>
-			<zone type="America/Indiana/Vevay">
-				<exemplarCity>Vevay, Indiana</exemplarCity>
-			</zone>
-			<zone type="America/Kentucky/Monticello">
-				<exemplarCity>Monticello, Kentucky</exemplarCity>
-			</zone>
-			<zone type="America/Detroit">
-				<exemplarCity>Detroit</exemplarCity>
-			</zone>
-			<zone type="America/New_York">
-				<exemplarCity>New York</exemplarCity>
-			</zone>
-			<zone type="America/Montevideo">
-				<exemplarCity>Montevideo</exemplarCity>
-			</zone>
-			<zone type="Asia/Samarkand">
-				<exemplarCity>Samarkand</exemplarCity>
-			</zone>
-			<zone type="Asia/Tashkent">
-				<exemplarCity>Tashkent</exemplarCity>
-			</zone>
 			<zone type="Europe/Vatican">
-				<exemplarCity>il-belt tal-Vatikan</exemplarCity>
-			</zone>
-			<zone type="America/St_Vincent">
-				<exemplarCity>St. Vincent</exemplarCity>
-			</zone>
-			<zone type="America/Tortola">
-				<exemplarCity>Tortola</exemplarCity>
-			</zone>
-			<zone type="America/St_Thomas">
-				<exemplarCity>St. Thomas</exemplarCity>
-			</zone>
-			<zone type="Asia/Saigon">
-				<exemplarCity>Ho Chi Minh</exemplarCity>
-			</zone>
-			<zone type="Pacific/Efate">
-				<exemplarCity>Efate</exemplarCity>
-			</zone>
-			<zone type="Pacific/Wallis">
-				<exemplarCity>Wallis</exemplarCity>
-			</zone>
-			<zone type="Pacific/Apia">
-				<exemplarCity>Apia</exemplarCity>
-			</zone>
-			<zone type="Asia/Aden">
-				<exemplarCity>Aden</exemplarCity>
-			</zone>
-			<zone type="Indian/Mayotte">
-				<exemplarCity>Mayotte</exemplarCity>
-			</zone>
-			<zone type="Africa/Johannesburg">
-				<exemplarCity>Johannesburg</exemplarCity>
-			</zone>
-			<zone type="Africa/Lusaka">
-				<exemplarCity>Lusaka</exemplarCity>
-			</zone>
-			<zone type="Africa/Harare">
-				<exemplarCity>Harare</exemplarCity>
+				<exemplarCity>il-Belt tal-Vatikan</exemplarCity>
 			</zone>
 			<metazone type="Europe_Central">
 				<long>
@@ -3348,6 +1837,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</short>
 			</metazone>
 			<metazone type="GMT">
+				<long>
+					<standard>Greenwich Mean Time</standard>
+				</long>
 				<short>
 					<standard>GMT</standard>
 				</short>
@@ -3355,56 +1847,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</timeZoneNames>
 	</dates>
 	<numbers>
-		<defaultNumberingSystem draft="contributed">latn</defaultNumberingSystem>
-		<otherNumberingSystems>
-			<native draft="contributed">latn</native>
-		</otherNumberingSystems>
-		<minimumGroupingDigits draft="contributed">1</minimumGroupingDigits>
-		<symbols numberSystem="latn">
-			<decimal>.</decimal>
-			<group>,</group>
-			<percentSign>%</percentSign>
-			<plusSign>+</plusSign>
-			<minusSign>-</minusSign>
-			<exponential>E</exponential>
-			<superscriptingExponent>×</superscriptingExponent>
-			<perMille>‰</perMille>
-			<infinity>∞</infinity>
-			<nan>NaN</nan>
-			<timeSeparator draft="contributed">:</timeSeparator>
-		</symbols>
-		<decimalFormats numberSystem="latn">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern>#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-		</decimalFormats>
-		<scientificFormats numberSystem="latn">
-			<scientificFormatLength>
-				<scientificFormat>
-					<pattern>#E0</pattern>
-				</scientificFormat>
-			</scientificFormatLength>
-		</scientificFormats>
-		<percentFormats numberSystem="latn">
-			<percentFormatLength>
-				<percentFormat>
-					<pattern>#,##0%</pattern>
-				</percentFormat>
-			</percentFormatLength>
-		</percentFormats>
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>¤#,##0.00</pattern>
 					<pattern alt="alphaNextToNumber" draft="provisional">¤ #,##0.00</pattern>
-					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
-				</currencyFormat>
-				<currencyFormat type="accounting">
-					<pattern>¤#,##0.00</pattern>
-					<pattern alt="alphaNextToNumber" draft="provisional">¤ #,##0.00</pattern>
-					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
@@ -3538,531 +1985,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
-			<currency type="AED">
-				<symbol draft="contributed">AED</symbol>
-			</currency>
-			<currency type="AFN">
-				<symbol draft="contributed">AFN</symbol>
-			</currency>
-			<currency type="ALL">
-				<symbol draft="contributed">ALL</symbol>
-			</currency>
-			<currency type="AMD">
-				<symbol draft="contributed">AMD</symbol>
-			</currency>
-			<currency type="ANG">
-				<symbol draft="contributed">ANG</symbol>
-			</currency>
-			<currency type="AOA">
-				<symbol draft="contributed">AOA</symbol>
-				<symbol alt="narrow" draft="contributed">Kz</symbol>
-			</currency>
-			<currency type="ARS">
-				<symbol draft="contributed">ARS</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
-			</currency>
-			<currency type="AUD">
-				<symbol draft="contributed">A$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
-			</currency>
-			<currency type="AWG">
-				<symbol draft="contributed">AWG</symbol>
-			</currency>
-			<currency type="AZN">
-				<symbol draft="contributed">AZN</symbol>
-			</currency>
-			<currency type="BAM">
-				<symbol draft="contributed">BAM</symbol>
-				<symbol alt="narrow" draft="contributed">KM</symbol>
-			</currency>
-			<currency type="BBD">
-				<symbol draft="contributed">BBD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
-			</currency>
-			<currency type="BDT">
-				<symbol draft="contributed">BDT</symbol>
-				<symbol alt="narrow" draft="contributed">৳</symbol>
-			</currency>
-			<currency type="BGN">
-				<symbol draft="contributed">BGN</symbol>
-			</currency>
-			<currency type="BHD">
-				<symbol draft="contributed">BHD</symbol>
-			</currency>
-			<currency type="BIF">
-				<symbol draft="contributed">BIF</symbol>
-			</currency>
-			<currency type="BMD">
-				<symbol draft="contributed">BMD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
-			</currency>
-			<currency type="BND">
-				<symbol draft="contributed">BND</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
-			</currency>
-			<currency type="BOB">
-				<symbol draft="contributed">BOB</symbol>
-				<symbol alt="narrow" draft="contributed">Bs</symbol>
-			</currency>
-			<currency type="BRL">
-				<symbol draft="contributed">R$</symbol>
-				<symbol alt="narrow" draft="contributed">R$</symbol>
-			</currency>
-			<currency type="BSD">
-				<symbol draft="contributed">BSD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
-			</currency>
-			<currency type="BTN">
-				<symbol draft="contributed">BTN</symbol>
-			</currency>
-			<currency type="BWP">
-				<symbol draft="contributed">BWP</symbol>
-				<symbol alt="narrow" draft="contributed">P</symbol>
-			</currency>
 			<currency type="BYN">
-				<symbol draft="contributed">BYN</symbol>
 				<symbol alt="narrow" draft="contributed">р.</symbol>
-			</currency>
-			<currency type="BYR">
-				<symbol draft="contributed">BYR</symbol>
-			</currency>
-			<currency type="BZD">
-				<symbol draft="contributed">BZD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
-			</currency>
-			<currency type="CDF">
-				<symbol draft="contributed">CDF</symbol>
-			</currency>
-			<currency type="CHF">
-				<symbol draft="contributed">CHF</symbol>
-			</currency>
-			<currency type="CLP">
-				<symbol draft="contributed">CLP</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
-			</currency>
-			<currency type="COP">
-				<symbol draft="contributed">COP</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
-			</currency>
-			<currency type="CRC">
-				<symbol draft="contributed">CRC</symbol>
-				<symbol alt="narrow" draft="contributed">₡</symbol>
-			</currency>
-			<currency type="CUC">
-				<symbol draft="contributed">CUC</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
-			</currency>
-			<currency type="CUP">
-				<symbol draft="contributed">CUP</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
-			</currency>
-			<currency type="CVE">
-				<symbol draft="contributed">CVE</symbol>
-			</currency>
-			<currency type="CZK">
-				<symbol draft="contributed">CZK</symbol>
-				<symbol alt="narrow" draft="contributed">Kč</symbol>
-			</currency>
-			<currency type="DJF">
-				<symbol draft="contributed">DJF</symbol>
-			</currency>
-			<currency type="DOP">
-				<symbol draft="contributed">DOP</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
-			</currency>
-			<currency type="DZD">
-				<symbol draft="contributed">DZD</symbol>
-			</currency>
-			<currency type="EGP">
-				<symbol draft="contributed">EGP</symbol>
-				<symbol alt="narrow" draft="contributed">E£</symbol>
-			</currency>
-			<currency type="ERN">
-				<symbol draft="contributed">ERN</symbol>
-			</currency>
-			<currency type="ETB">
-				<symbol draft="contributed">ETB</symbol>
 			</currency>
 			<currency type="EUR">
 				<displayName>ewro</displayName>
-				<displayName count="one">ewro</displayName>
-				<displayName count="two">ewro</displayName>
-				<displayName count="few">ewro</displayName>
-				<displayName count="many">ewro</displayName>
-				<displayName count="other">ewro</displayName>
-				<symbol>€</symbol>
-				<symbol alt="narrow" draft="contributed">€</symbol>
-			</currency>
-			<currency type="FJD">
-				<symbol draft="contributed">FJD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
-			</currency>
-			<currency type="FKP">
-				<symbol draft="contributed">FKP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
-			</currency>
-			<currency type="GEL">
-				<symbol draft="contributed">GEL</symbol>
-				<symbol alt="narrow" draft="contributed">₾</symbol>
-			</currency>
-			<currency type="GHS">
-				<symbol draft="contributed">GHS</symbol>
-			</currency>
-			<currency type="GIP">
-				<symbol draft="contributed">GIP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
-			</currency>
-			<currency type="GMD">
-				<symbol draft="contributed">GMD</symbol>
-			</currency>
-			<currency type="GNF">
-				<symbol draft="contributed">GNF</symbol>
-				<symbol alt="narrow" draft="contributed">FG</symbol>
-			</currency>
-			<currency type="GTQ">
-				<symbol draft="contributed">GTQ</symbol>
-				<symbol alt="narrow" draft="contributed">Q</symbol>
-			</currency>
-			<currency type="GYD">
-				<symbol draft="contributed">GYD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
-			</currency>
-			<currency type="HNL">
-				<symbol draft="contributed">HNL</symbol>
-				<symbol alt="narrow" draft="contributed">L</symbol>
-			</currency>
-			<currency type="HRK">
-				<symbol draft="contributed">HRK</symbol>
-				<symbol alt="narrow" draft="contributed">kn</symbol>
-			</currency>
-			<currency type="HTG">
-				<symbol draft="contributed">HTG</symbol>
-			</currency>
-			<currency type="HUF">
-				<symbol draft="contributed">HUF</symbol>
-				<symbol alt="narrow" draft="contributed">Ft</symbol>
-			</currency>
-			<currency type="IDR">
-				<symbol draft="contributed">IDR</symbol>
-				<symbol alt="narrow" draft="contributed">Rp</symbol>
-			</currency>
-			<currency type="ILS">
-				<symbol draft="contributed">₪</symbol>
-				<symbol alt="narrow" draft="contributed">₪</symbol>
-			</currency>
-			<currency type="INR">
-				<symbol draft="contributed">₹</symbol>
-				<symbol alt="narrow" draft="contributed">₹</symbol>
-			</currency>
-			<currency type="IQD">
-				<symbol draft="contributed">IQD</symbol>
-			</currency>
-			<currency type="IRR">
-				<symbol draft="contributed">IRR</symbol>
-			</currency>
-			<currency type="JMD">
-				<symbol draft="contributed">JMD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
-			</currency>
-			<currency type="JOD">
-				<symbol draft="contributed">JOD</symbol>
-			</currency>
-			<currency type="KES">
-				<symbol draft="contributed">KES</symbol>
-			</currency>
-			<currency type="KGS">
-				<symbol draft="contributed">KGS</symbol>
-			</currency>
-			<currency type="KHR">
-				<symbol draft="contributed">KHR</symbol>
-				<symbol alt="narrow" draft="contributed">៛</symbol>
-			</currency>
-			<currency type="KMF">
-				<symbol draft="contributed">KMF</symbol>
-				<symbol alt="narrow" draft="contributed">CF</symbol>
-			</currency>
-			<currency type="KPW">
-				<symbol draft="contributed">KPW</symbol>
-				<symbol alt="narrow" draft="contributed">₩</symbol>
-			</currency>
-			<currency type="KRW">
-				<symbol draft="contributed">₩</symbol>
-				<symbol alt="narrow" draft="contributed">₩</symbol>
-			</currency>
-			<currency type="KWD">
-				<symbol draft="contributed">KWD</symbol>
-			</currency>
-			<currency type="KYD">
-				<symbol draft="contributed">KYD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
-			</currency>
-			<currency type="KZT">
-				<symbol draft="contributed">KZT</symbol>
-				<symbol alt="narrow" draft="contributed">₸</symbol>
-			</currency>
-			<currency type="LAK">
-				<symbol draft="contributed">LAK</symbol>
-				<symbol alt="narrow" draft="contributed">₭</symbol>
-			</currency>
-			<currency type="LBP">
-				<symbol draft="contributed">LBP</symbol>
-				<symbol alt="narrow" draft="contributed">L£</symbol>
-			</currency>
-			<currency type="LKR">
-				<symbol draft="contributed">LKR</symbol>
-				<symbol alt="narrow" draft="contributed">Rs</symbol>
-			</currency>
-			<currency type="LRD">
-				<symbol draft="contributed">LRD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
-			</currency>
-			<currency type="LYD">
-				<symbol draft="contributed">LYD</symbol>
-			</currency>
-			<currency type="MAD">
-				<symbol draft="contributed">MAD</symbol>
-			</currency>
-			<currency type="MDL">
-				<symbol draft="contributed">MDL</symbol>
-			</currency>
-			<currency type="MGA">
-				<symbol draft="contributed">MGA</symbol>
-				<symbol alt="narrow" draft="contributed">Ar</symbol>
-			</currency>
-			<currency type="MKD">
-				<symbol draft="contributed">MKD</symbol>
-			</currency>
-			<currency type="MMK">
-				<symbol draft="contributed">MMK</symbol>
-				<symbol alt="narrow" draft="contributed">K</symbol>
-			</currency>
-			<currency type="MNT">
-				<symbol draft="contributed">MNT</symbol>
-				<symbol alt="narrow" draft="contributed">₮</symbol>
-			</currency>
-			<currency type="MOP">
-				<symbol draft="contributed">MOP</symbol>
-			</currency>
-			<currency type="MRO">
-				<symbol draft="contributed">MRO</symbol>
 			</currency>
 			<currency type="MTL">
 				<displayName>Lira Maltija</displayName>
 			</currency>
-			<currency type="MUR">
-				<symbol draft="contributed">MUR</symbol>
-				<symbol alt="narrow" draft="contributed">Rs</symbol>
-			</currency>
-			<currency type="MVR">
-				<symbol draft="contributed">MVR</symbol>
-			</currency>
-			<currency type="MWK">
-				<symbol draft="contributed">MWK</symbol>
-			</currency>
-			<currency type="MXN">
-				<symbol draft="contributed">MX$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
-			</currency>
-			<currency type="MYR">
-				<symbol draft="contributed">MYR</symbol>
-				<symbol alt="narrow" draft="contributed">RM</symbol>
-			</currency>
-			<currency type="MZN">
-				<symbol draft="contributed">MZN</symbol>
-			</currency>
-			<currency type="NAD">
-				<symbol draft="contributed">NAD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
-			</currency>
-			<currency type="NGN">
-				<symbol draft="contributed">NGN</symbol>
-				<symbol alt="narrow" draft="contributed">₦</symbol>
-			</currency>
-			<currency type="NIO">
-				<symbol draft="contributed">NIO</symbol>
-				<symbol alt="narrow" draft="contributed">C$</symbol>
-			</currency>
-			<currency type="NPR">
-				<symbol alt="narrow" draft="contributed">Rs</symbol>
-			</currency>
-			<currency type="NZD">
-				<symbol draft="contributed">NZ$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
-			</currency>
-			<currency type="OMR">
-				<symbol draft="contributed">OMR</symbol>
-			</currency>
-			<currency type="PAB">
-				<symbol draft="contributed">PAB</symbol>
-			</currency>
-			<currency type="PEN">
-				<symbol draft="contributed">PEN</symbol>
-			</currency>
-			<currency type="PGK">
-				<symbol draft="contributed">PGK</symbol>
-			</currency>
 			<currency type="PHP">
 				<symbol draft="contributed">PHP</symbol>
-				<symbol alt="narrow" draft="contributed">₱</symbol>
-			</currency>
-			<currency type="PKR">
-				<symbol draft="contributed">PKR</symbol>
-				<symbol alt="narrow" draft="contributed">Rs</symbol>
-			</currency>
-			<currency type="PLN">
-				<symbol draft="contributed">PLN</symbol>
-				<symbol alt="narrow" draft="contributed">zł</symbol>
-			</currency>
-			<currency type="PYG">
-				<symbol draft="contributed">PYG</symbol>
-				<symbol alt="narrow" draft="contributed">₲</symbol>
-			</currency>
-			<currency type="QAR">
-				<symbol draft="contributed">QAR</symbol>
-			</currency>
-			<currency type="RON">
-				<symbol draft="contributed">RON</symbol>
-			</currency>
-			<currency type="RSD">
-				<symbol draft="contributed">RSD</symbol>
-			</currency>
-			<currency type="RUB">
-				<symbol draft="contributed">RUB</symbol>
-				<symbol alt="narrow" draft="contributed">₽</symbol>
-			</currency>
-			<currency type="RWF">
-				<symbol draft="contributed">RWF</symbol>
-				<symbol alt="narrow" draft="contributed">RF</symbol>
-			</currency>
-			<currency type="SAR">
-				<symbol draft="contributed">SAR</symbol>
-			</currency>
-			<currency type="SBD">
-				<symbol draft="contributed">SBD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
-			</currency>
-			<currency type="SCR">
-				<symbol draft="contributed">SCR</symbol>
-			</currency>
-			<currency type="SDG">
-				<symbol draft="contributed">SDG</symbol>
-			</currency>
-			<currency type="SEK">
-				<symbol draft="contributed">SEK</symbol>
-				<symbol alt="narrow" draft="contributed">kr</symbol>
-			</currency>
-			<currency type="SGD">
-				<symbol draft="contributed">SGD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
-			</currency>
-			<currency type="SHP">
-				<symbol draft="contributed">SHP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
-			</currency>
-			<currency type="SLL">
-				<symbol draft="contributed">SLL</symbol>
-			</currency>
-			<currency type="SOS">
-				<symbol draft="contributed">SOS</symbol>
-			</currency>
-			<currency type="SRD">
-				<symbol draft="contributed">SRD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
-			</currency>
-			<currency type="SSP">
-				<symbol draft="contributed">SSP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
-			</currency>
-			<currency type="STD">
-				<symbol draft="contributed">STD</symbol>
-			</currency>
-			<currency type="STN">
-				<symbol draft="contributed">STN</symbol>
-				<symbol alt="narrow" draft="contributed">Db</symbol>
-			</currency>
-			<currency type="SYP">
-				<symbol draft="contributed">SYP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
-			</currency>
-			<currency type="SZL">
-				<symbol draft="contributed">SZL</symbol>
-			</currency>
-			<currency type="THB">
-				<symbol draft="contributed">THB</symbol>
-				<symbol alt="narrow" draft="contributed">฿</symbol>
-			</currency>
-			<currency type="TJS">
-				<symbol draft="contributed">TJS</symbol>
-			</currency>
-			<currency type="TMT">
-				<symbol draft="contributed">TMT</symbol>
-			</currency>
-			<currency type="TND">
-				<symbol draft="contributed">TND</symbol>
-			</currency>
-			<currency type="TOP">
-				<symbol draft="contributed">TOP</symbol>
-				<symbol alt="narrow" draft="contributed">T$</symbol>
-			</currency>
-			<currency type="TRY">
-				<symbol draft="contributed">TRY</symbol>
-				<symbol alt="narrow" draft="contributed">₺</symbol>
-				<symbol alt="variant" draft="contributed">TL</symbol>
-			</currency>
-			<currency type="TTD">
-				<symbol draft="contributed">TTD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
-			</currency>
-			<currency type="TWD">
-				<symbol draft="contributed">NT$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
-			</currency>
-			<currency type="TZS">
-				<symbol draft="contributed">TZS</symbol>
-			</currency>
-			<currency type="UAH">
-				<symbol draft="contributed">UAH</symbol>
-				<symbol alt="narrow" draft="contributed">₴</symbol>
-			</currency>
-			<currency type="UGX">
-				<symbol draft="contributed">UGX</symbol>
-			</currency>
-			<currency type="USD">
-				<symbol draft="contributed">US$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
-			</currency>
-			<currency type="UYU">
-				<symbol draft="contributed">UYU</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
-			</currency>
-			<currency type="UZS">
-				<symbol draft="contributed">UZS</symbol>
-			</currency>
-			<currency type="VEF">
-				<symbol draft="contributed">VEF</symbol>
-			</currency>
-			<currency type="VND">
-				<symbol draft="contributed">₫</symbol>
-				<symbol alt="narrow" draft="contributed">₫</symbol>
-			</currency>
-			<currency type="VUV">
-				<symbol draft="contributed">VUV</symbol>
-			</currency>
-			<currency type="WST">
-				<symbol draft="contributed">WST</symbol>
-			</currency>
-			<currency type="XAF">
-				<symbol draft="contributed">FCFA</symbol>
-			</currency>
-			<currency type="XCD">
-				<symbol draft="contributed">EC$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
-			</currency>
-			<currency type="XOF">
-				<symbol draft="contributed">F CFA</symbol>
-			</currency>
-			<currency type="XPF">
-				<symbol draft="contributed">CFPF</symbol>
 			</currency>
 			<currency type="XXX">
 				<displayName>Munita Mhix Magħrufa jew Mhix Valida</displayName>
@@ -4072,23 +2005,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="many">Munita Mhix Magħrufa jew Mhix Valida</displayName>
 				<displayName count="other">Munita Mhix Magħrufa jew Mhix Valida</displayName>
 			</currency>
-			<currency type="YER">
-				<symbol draft="contributed">YER</symbol>
-			</currency>
-			<currency type="ZAR">
-				<symbol draft="contributed">ZAR</symbol>
-			</currency>
-			<currency type="ZMW">
-				<symbol draft="contributed">ZMW</symbol>
-				<symbol alt="narrow" draft="contributed">ZK</symbol>
-			</currency>
 		</currencies>
-		<miscPatterns numberSystem="latn">
-			<pattern type="approximately">~{0}</pattern>
-			<pattern type="atLeast">≥{0}</pattern>
-			<pattern type="atMost">≤{0}</pattern>
-			<pattern type="range">{0}–{1}</pattern>
-		</miscPatterns>
 		<minimalPairs>
 			<pluralMinimalPairs count="one">jum</pluralMinimalPairs>
 			<pluralMinimalPairs count="two">jumejn</pluralMinimalPairs>
@@ -4099,23 +2016,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</numbers>
 	<units>
 		<unitLength type="long">
-			<unit type="angle-arc-minute">
-				<unitPattern count="one">{0}′</unitPattern>
-				<unitPattern count="two">{0}′</unitPattern>
-				<unitPattern count="few">{0}′</unitPattern>
-				<unitPattern count="many">{0}′</unitPattern>
-				<unitPattern count="other">{0}′</unitPattern>
-			</unit>
 			<unit type="concentr-karat">
 				<displayName>karati</displayName>
-				<unitPattern count="one">{0} kt</unitPattern>
-				<unitPattern count="two">{0} kt</unitPattern>
-				<unitPattern count="few">{0} kt</unitPattern>
-				<unitPattern count="many">{0} kt</unitPattern>
-				<unitPattern count="other">{0} kt</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
-				<displayName>L/km</displayName>
 				<unitPattern count="one">{0} litru kull kilometru</unitPattern>
 				<unitPattern count="two">{0} litri kull kilometru</unitPattern>
 				<unitPattern count="few">{0} litri kull kilometru</unitPattern>
@@ -4154,83 +2058,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="many">{0}-il millisekonda</unitPattern>
 				<unitPattern count="other">{0} millisekonda</unitPattern>
 			</unit>
-			<unit type="light-lux">
-				<displayName>lx</displayName>
-				<unitPattern count="one">{0} lx</unitPattern>
-				<unitPattern count="two">{0} lx</unitPattern>
-				<unitPattern count="few">{0} lx</unitPattern>
-				<unitPattern count="many">{0} lx</unitPattern>
-				<unitPattern count="other">{0} lx</unitPattern>
-			</unit>
 		</unitLength>
 		<unitLength type="short">
-			<unit type="concentr-karat">
-				<displayName>kt</displayName>
-				<unitPattern count="one">{0} kt</unitPattern>
-				<unitPattern count="two">{0} kt</unitPattern>
-				<unitPattern count="few">{0} kt</unitPattern>
-				<unitPattern count="many">{0} kt</unitPattern>
-				<unitPattern count="other">{0} kt</unitPattern>
-			</unit>
-			<unit type="consumption-liter-per-kilometer">
-				<displayName>L/km</displayName>
-				<unitPattern count="one">{0} L/km</unitPattern>
-				<unitPattern count="two">{0} L/km</unitPattern>
-				<unitPattern count="few">{0} L/km</unitPattern>
-				<unitPattern count="many">{0} L/km</unitPattern>
-				<unitPattern count="other">{0} L/km</unitPattern>
-			</unit>
-			<unit type="digital-terabyte">
-				<displayName>TB</displayName>
-				<unitPattern count="one">{0} TB</unitPattern>
-				<unitPattern count="two">{0} TB</unitPattern>
-				<unitPattern count="few">{0} TB</unitPattern>
-				<unitPattern count="many">{0} TB</unitPattern>
-				<unitPattern count="other">{0} TB</unitPattern>
-			</unit>
-			<unit type="digital-terabit">
-				<displayName>Tb</displayName>
-				<unitPattern count="one">{0} Tb</unitPattern>
-				<unitPattern count="two">{0} Tb</unitPattern>
-				<unitPattern count="few">{0} Tb</unitPattern>
-				<unitPattern count="many">{0} Tb</unitPattern>
-				<unitPattern count="other">{0} Tb</unitPattern>
-			</unit>
-			<unit type="digital-megabyte">
-				<displayName>MB</displayName>
-				<unitPattern count="one">{0} MB</unitPattern>
-				<unitPattern count="two">{0} MB</unitPattern>
-				<unitPattern count="few">{0} MB</unitPattern>
-				<unitPattern count="many">{0} MB</unitPattern>
-				<unitPattern count="other">{0} MB</unitPattern>
-			</unit>
-			<unit type="digital-megabit">
-				<unitPattern count="one">{0} Mb</unitPattern>
-				<unitPattern count="two">{0} Mb</unitPattern>
-				<unitPattern count="few">{0} Mb</unitPattern>
-				<unitPattern count="many">{0} Mb</unitPattern>
-				<unitPattern count="other">{0} Mb</unitPattern>
-			</unit>
 			<unit type="duration-millisecond">
 				<displayName>millisek</displayName>
-				<unitPattern count="one">{0} ms</unitPattern>
-				<unitPattern count="two">{0} ms</unitPattern>
-				<unitPattern count="few">{0} ms</unitPattern>
-				<unitPattern count="many">{0} ms</unitPattern>
-				<unitPattern count="other">{0} ms</unitPattern>
-			</unit>
-			<unit type="light-lux">
-				<displayName>lx</displayName>
-				<unitPattern count="one">{0} lx</unitPattern>
-				<unitPattern count="two">{0} lx</unitPattern>
-				<unitPattern count="few">{0} lx</unitPattern>
-				<unitPattern count="many">{0} lx</unitPattern>
-				<unitPattern count="other">{0} lx</unitPattern>
 			</unit>
 		</unitLength>
 		<unitLength type="narrow">
 			<unit type="duration-millisecond">
-				<displayName>millisek</displayName>
 				<unitPattern count="one">{0}ms</unitPattern>
 				<unitPattern count="two">{0}ms</unitPattern>
 				<unitPattern count="few">{0}ms</unitPattern>
@@ -4241,28 +2076,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</units>
 	<listPatterns>
 		<listPattern>
-			<listPatternPart type="start">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle">{0}, {1}</listPatternPart>
-			<listPatternPart type="end">{0}, u {1}</listPatternPart>
-			<listPatternPart type="2">{0} u {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="unit">
-			<listPatternPart type="start">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle">{0}, {1}</listPatternPart>
 			<listPatternPart type="end">{0}, u {1}</listPatternPart>
 			<listPatternPart type="2">{0} u {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="unit-narrow">
-			<listPatternPart type="start">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle">{0}, {1}</listPatternPart>
 			<listPatternPart type="end">{0}, {1}</listPatternPart>
 			<listPatternPart type="2">{0}, {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="unit-short">
-			<listPatternPart type="start">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle">{0}, {1}</listPatternPart>
-			<listPatternPart type="end">{0}, u {1}</listPatternPart>
-			<listPatternPart type="2">{0} u {1}</listPatternPart>
 		</listPattern>
 	</listPatterns>
 	<posix>
@@ -4271,4 +2090,27 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<nostr>le:l</nostr>
 		</messages>
 	</posix>
+	<personNames>
+		<nameOrderLocales order="givenFirst" draft="unconfirmed">und mt</nameOrderLocales>
+		<parameterDefault parameter="formality" draft="unconfirmed">informal</parameterDefault>
+		<sampleName item="nativeGS">
+			<nameField type="surname" draft="unconfirmed">Grech</nameField>
+		</sampleName>
+		<sampleName item="nativeGGS">
+			<nameField type="given" draft="unconfirmed">Maria Elena</nameField>
+			<nameField type="given2" draft="unconfirmed">Farrugia</nameField>
+			<nameField type="surname" draft="unconfirmed">Vella</nameField>
+		</sampleName>
+		<sampleName item="nativeFull">
+			<nameField type="title" draft="unconfirmed">Is-Sur</nameField>
+			<nameField type="given" draft="unconfirmed">Evaristu Muscat</nameField>
+			<nameField type="given-informal" draft="unconfirmed">Varist</nameField>
+			<nameField type="given2" draft="unconfirmed">George Mifsud</nameField>
+			<nameField type="surname-prefix" draft="unconfirmed">∅∅∅</nameField>
+			<nameField type="surname-core" draft="unconfirmed">Azzopardi</nameField>
+			<nameField type="surname2" draft="unconfirmed">∅∅∅</nameField>
+			<nameField type="generation" draft="unconfirmed">Jr</nameField>
+			<nameField type="credentials" draft="unconfirmed">MP</nameField>
+		</sampleName>
+	</personNames>
 </ldml>

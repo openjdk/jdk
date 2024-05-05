@@ -39,7 +39,7 @@ public class CDSJDITest {
         File jarClasslistFile = makeClassList(jarClasses);
         String appJar = buildJar(testname, jarClasses);
 
-        // These are the arguments passed to createJavaProcessBuilder() to launch
+        // These are the arguments passed to createLimitedTestJavaProcessBuilder() to launch
         // the JDI test.
         String[] testArgs = {
         // JVM Args:
@@ -67,7 +67,7 @@ public class CDSJDITest {
         };
 
         // Dump the archive
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-Xbootclasspath/a:" + appJar,
             "-XX:+UnlockDiagnosticVMOptions", "-XX:SharedArchiveFile=./SharedArchiveFile.jsa",
             "-XX:ExtraSharedClassListFile=" + jarClasslistFile.getPath(),
@@ -80,7 +80,7 @@ public class CDSJDITest {
         outputDump.shouldHaveExitValue(0);
 
         // Run the test specified JDI test
-        pb = ProcessTools.createTestJvm(testArgs);
+        pb = ProcessTools.createTestJavaProcessBuilder(testArgs);
         OutputAnalyzer outputRun = executeAndLog(pb, "exec");
         try {
             outputRun.shouldContain("sharing");

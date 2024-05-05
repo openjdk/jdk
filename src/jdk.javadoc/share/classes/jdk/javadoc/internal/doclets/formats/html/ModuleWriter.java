@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -191,9 +191,11 @@ public class ModuleWriter extends HtmlDocletWriter {
      */
     protected void buildContent() {
         Content moduleContent = getContentHeader();
-
-        addModuleSignature(moduleContent);
-        buildModuleDescription(moduleContent);
+        moduleContent.add(new HtmlTree(TagName.HR));
+        Content div = HtmlTree.DIV(HtmlStyle.horizontalScroll);
+        addModuleSignature(div);
+        buildModuleDescription(div);
+        moduleContent.add(div);
         buildSummary(moduleContent);
 
         addModuleContent(moduleContent);
@@ -249,8 +251,11 @@ public class ModuleWriter extends HtmlDocletWriter {
      *                      be added
      */
     protected void buildModuleDescription(Content moduleContent) {
+        tableOfContents.addLink(HtmlIds.TOP_OF_PAGE, contents.navDescription);
         if (!options.noComment()) {
+            tableOfContents.pushNestedList();
             addModuleDescription(moduleContent);
+            tableOfContents.popNestedList();
         }
     }
 
@@ -272,16 +277,7 @@ public class ModuleWriter extends HtmlDocletWriter {
     @Override
     protected Navigation getNavBar(PageMode pageMode, Element element) {
         return super.getNavBar(pageMode, element)
-                .setSubNavLinks(() -> List.of(
-                        links.createLink(HtmlIds.MODULE_DESCRIPTION, contents.navDescription,
-                            !utils.getFullBody(mdle).isEmpty() && !options.noComment()),
-                        links.createLink(HtmlIds.MODULES, contents.navModules,
-                            display(requires) || display(indirectModules)),
-                        links.createLink(HtmlIds.PACKAGES, contents.navPackages,
-                            display(packages) || display(indirectPackages) || display(indirectOpenPackages)),
-                        links.createLink(HtmlIds.SERVICES, contents.navServices,
-                            displayServices(uses, usesTrees) || displayServices(provides.keySet(), providesTrees))
-                ));
+                .setSubNavLinks(List.of(getBreadcrumbLink(mdle, true)));
     }
 
     protected Content getContentHeader() {
@@ -534,6 +530,7 @@ public class ModuleWriter extends HtmlDocletWriter {
 
     protected void addModulesSummary(Content summariesList) {
         if (display(requires) || display(indirectModules)) {
+            tableOfContents.addLink(HtmlIds.MODULES, contents.navModules);
             TableHeader requiresTableHeader =
                     new TableHeader(contents.modifierLabel, contents.moduleLabel,
                             contents.descriptionLabel);
@@ -578,6 +575,7 @@ public class ModuleWriter extends HtmlDocletWriter {
     protected void addPackagesSummary(Content summariesList) {
         if (display(packages)
                 || display(indirectPackages) || display(indirectOpenPackages)) {
+            tableOfContents.addLink(HtmlIds.PACKAGES, contents.navPackages);
             var section = HtmlTree.SECTION(HtmlStyle.packagesSummary)
                     .setId(HtmlIds.PACKAGES);
             addSummaryHeader(MarkerComments.START_OF_PACKAGES_SUMMARY, contents.navPackages, section);
@@ -748,6 +746,7 @@ public class ModuleWriter extends HtmlDocletWriter {
         boolean haveProvides = displayServices(provides.keySet(), providesTrees);
 
         if (haveProvides || haveUses) {
+            tableOfContents.addLink(HtmlIds.SERVICES, contents.navServices);
             var section = HtmlTree.SECTION(HtmlStyle.servicesSummary)
                     .setId(HtmlIds.SERVICES);
             addSummaryHeader(MarkerComments.START_OF_SERVICES_SUMMARY, contents.navServices, section);
@@ -882,12 +881,12 @@ public class ModuleWriter extends HtmlDocletWriter {
     }
 
     protected void addModuleSignature(Content moduleContent) {
-        moduleContent.add(new HtmlTree(TagName.HR));
         moduleContent.add(Signatures.getModuleSignature(mdle, this));
     }
 
     protected void addModuleContent(Content source) {
         bodyContents.addMainContent(source);
+        bodyContents.setSideContent(tableOfContents.toContent(false));
     }
 
     protected void addModuleFooter() {
@@ -921,5 +920,10 @@ public class ModuleWriter extends HtmlDocletWriter {
             }
             li.add(deprDiv);
         }
+    }
+
+    @Override
+    public boolean isIndexable() {
+        return true;
     }
 }

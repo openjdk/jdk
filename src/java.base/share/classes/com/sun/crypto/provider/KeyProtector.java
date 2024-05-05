@@ -78,7 +78,7 @@ final class KeyProtector {
 
     // the password used for protecting/recovering keys passed through this
     // key protector
-    private char[] password;
+    private final char[] password;
 
     /**
      * {@systemProperty jdk.jceks.iterationCount} property indicating the

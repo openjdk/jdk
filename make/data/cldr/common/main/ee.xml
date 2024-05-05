@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -11,11 +11,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<language type="ee"/>
 	</identity>
 	<localeDisplayNames>
-		<localeDisplayPattern>
-			<localePattern draft="unconfirmed">{0} ({1})</localePattern>
-			<localeSeparator draft="unconfirmed">{0}, {1}</localeSeparator>
-			<localeKeyTypePattern draft="unconfirmed">{0}: {1}</localeKeyTypePattern>
-		</localeDisplayPattern>
 		<languages>
 			<language type="ab">abkhaziagbe</language>
 			<language type="ady" draft="unconfirmed">adyghegbe</language>
@@ -562,7 +557,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="IL">Israel nutome</territory>
 			<territory type="IM">Aisle of Man nutome</territory>
 			<territory type="IN">India nutome</territory>
-			<territory type="IO">Britaintɔwo ƒe india ƒudome nutome</territory>
+			<territory type="IO" draft="provisional">Britaintɔwo ƒe india ƒudome nutome</territory>
 			<territory type="IQ">iraqdukɔ</territory>
 			<territory type="IR">Iran nutome</territory>
 			<territory type="IS">Aiseland nutome</territory>
@@ -730,8 +725,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="gregorian">Gregorian kalenda</type>
 			<type key="calendar" type="hebrew">hebritɔwo ƒe kalenda</type>
 			<type key="calendar" type="indian">india dukɔ ƒe kalenda</type>
-			<type key="calendar" type="islamic">islam subɔlawo ƒe kalenda</type>
-			<type key="calendar" type="islamic-civil">islam subɔlawo ƒe sivil kalenda</type>
+			<type key="calendar" type="islamic" draft="provisional">islam subɔlawo ƒe kalenda</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">islam subɔlawo ƒe sivil kalenda</type>
 			<type key="calendar" type="japanese">japantɔwo ƒe kalenda</type>
 			<type key="calendar" type="persian">persiatɔwo ƒe kalenda</type>
 			<type key="calendar" type="roc">china repɔbliktɔwo ƒe kalenda tso 1912</type>
@@ -741,10 +736,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="collation" type="gb2312han">chinagbe yeye ƒe ɖoɖomɔ nu</type>
 			<type key="collation" type="phonebook">fonegbalẽ me ɖoɖomɔ nu</type>
 			<type key="collation" type="pinyin">pinyin ɖoɖomɔ nu</type>
-			<type key="collation" type="reformed">nugbugbɔtoɖo ƒe ɖoɖomɔ nu</type>
 			<type key="collation" type="search">nudidi hena zazã gbadza</type>
 			<type key="collation" type="searchjl" draft="unconfirmed">nudidi le hangul ƒe ɖoɖo gbãtɔ nu</type>
-			<type key="collation" type="standard">standard</type>
 			<type key="collation" type="stroke">stroke ɖoɖomɔ nu</type>
 			<type key="collation" type="traditional">blema ɖoɖomɔ nu</type>
 			<type key="collation" type="unihan">ɖoɖomɔnutɔxɛ manɔŋu stroke ƒe ɖoɖo nu</type>
@@ -813,28 +806,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[a á à ã b d ɖ e é è ẽ ɛ {ɛ\u0301} {ɛ\u0300} {ɛ\u0303} f ƒ g ɣ h x i í ì ĩ k l m n ŋ o ó ò õ ɔ {ɔ\u0301} {ɔ\u0300} {ɔ\u0303} p r s t u ú ù ũ v ʋ w y z]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[ă â å ä ā æ c ç ĕ ê ë ĭ î ï j ñ ŏ ô ö ø œ q ŭ û ü ÿ]</exemplarCharacters>
+		<exemplarCharacters>[aáàã b d ɖ eéèẽ ɛ{ɛ́}{ɛ̀}{ɛ̃} f ƒ g ɣ h x iíìĩ k l m n ŋ oóòõ ɔ{ɔ́}{ɔ̀}{ɔ̃} p r s t uúùũ v ʋ w y z]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[ăâåäā æ cç ĕêë ĭîï j ñ ŏôöø œ q ŭûü ÿ]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B D Ɖ E Ɛ F Ƒ G Ɣ H X I K L M N Ŋ O Ɔ P R S T U V Ʋ W Y Z]</exemplarCharacters>
-		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] \{ \} § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
-		<ellipsis type="final" draft="unconfirmed">{0}…</ellipsis>
-		<ellipsis type="initial" draft="unconfirmed">…{0}</ellipsis>
-		<ellipsis type="medial" draft="unconfirmed">{0}…{1}</ellipsis>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … '‘’ &quot;“” ( ) \[ \] \{ \} § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 		<moreInformation>...</moreInformation>
 	</characters>
-	<delimiters>
-		<quotationStart>“</quotationStart>
-		<quotationEnd>”</quotationEnd>
-		<alternateQuotationStart>‘</alternateQuotationStart>
-		<alternateQuotationEnd>’</alternateQuotationEnd>
-	</delimiters>
 	<dates>
 		<calendars>
 			<calendar type="buddhist">
 				<dateTimeFormats>
 					<availableFormats>
-						<dateFormatItem id="h" draft="unconfirmed">a 'ga' h</dateFormatItem>
 						<dateFormatItem id="hm" draft="unconfirmed">a 'ga' h: 'aɖabaƒoƒo' mm</dateFormatItem>
 						<dateFormatItem id="hms" draft="unconfirmed">a 'ga' h: 'aɖabaƒoƒo' mm:ss</dateFormatItem>
 						<dateFormatItem id="ms" draft="unconfirmed">'ga' mm:ss</dateFormatItem>
@@ -887,20 +869,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="10" draft="unconfirmed">kele</month>
 							<month type="11" draft="unconfirmed">ade</month>
 							<month type="12" draft="unconfirmed">dzm</month>
-						</monthWidth>
-						<monthWidth type="wide">
-							<month type="1" draft="unconfirmed">dzove</month>
-							<month type="2" draft="unconfirmed">dzodze</month>
-							<month type="3" draft="unconfirmed">tedoxe</month>
-							<month type="4" draft="unconfirmed">afɔfiẽ</month>
-							<month type="5" draft="unconfirmed">damɛ</month>
-							<month type="6" draft="unconfirmed">masa</month>
-							<month type="7" draft="unconfirmed">siamlɔm</month>
-							<month type="8" draft="unconfirmed">deasiamime</month>
-							<month type="9" draft="unconfirmed">anyɔnyɔ</month>
-							<month type="10" draft="unconfirmed">kele</month>
-							<month type="11" draft="unconfirmed">adeɛmekpɔxe</month>
-							<month type="12" draft="unconfirmed">dzome</month>
 						</monthWidth>
 					</monthContext>
 				</months>
@@ -959,58 +927,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="13" draft="unconfirmed">ƒoave</month>
 						</monthWidth>
 					</monthContext>
-					<monthContext type="stand-alone">
-						<monthWidth type="abbreviated">
-							<month type="1" draft="unconfirmed">dzv</month>
-							<month type="2" draft="unconfirmed">dzd</month>
-							<month type="3" draft="unconfirmed">ted</month>
-							<month type="4" draft="unconfirmed">afɔ</month>
-							<month type="5" draft="unconfirmed">dam</month>
-							<month type="6" draft="unconfirmed">mas</month>
-							<month type="7" draft="unconfirmed">sia</month>
-							<month type="8" draft="unconfirmed">dea</month>
-							<month type="9" draft="unconfirmed">any</month>
-							<month type="10" draft="unconfirmed">kel</month>
-							<month type="11" draft="unconfirmed">ade</month>
-							<month type="12" draft="unconfirmed">dzm</month>
-							<month type="13" draft="unconfirmed">foa</month>
-						</monthWidth>
-						<monthWidth type="wide">
-							<month type="1" draft="unconfirmed">dzove</month>
-							<month type="2" draft="unconfirmed">dzodze</month>
-							<month type="3" draft="unconfirmed">tedoxe</month>
-							<month type="4" draft="unconfirmed">afɔfiẽ</month>
-							<month type="5" draft="unconfirmed">damɛ</month>
-							<month type="6" draft="unconfirmed">masa</month>
-							<month type="7" draft="unconfirmed">siamlɔm</month>
-							<month type="8" draft="unconfirmed">deasiamime</month>
-							<month type="9" draft="unconfirmed">anyɔnyɔ</month>
-							<month type="10" draft="unconfirmed">kele</month>
-							<month type="11" draft="unconfirmed">adeɛmekpɔxe</month>
-							<month type="12" draft="unconfirmed">dzome</month>
-							<month type="13" draft="unconfirmed">ƒoave</month>
-						</monthWidth>
-					</monthContext>
 				</months>
 			</calendar>
 			<calendar type="ethiopic">
 				<months>
 					<monthContext type="format">
-						<monthWidth type="abbreviated">
-							<month type="1" draft="unconfirmed">dzove</month>
-							<month type="2" draft="unconfirmed">dzodze</month>
-							<month type="3" draft="unconfirmed">tedoxe</month>
-							<month type="4" draft="unconfirmed">afɔfiẽ</month>
-							<month type="5" draft="unconfirmed">damɛ</month>
-							<month type="6" draft="unconfirmed">masa</month>
-							<month type="7" draft="unconfirmed">siamlɔm</month>
-							<month type="8" draft="unconfirmed">deasiamime</month>
-							<month type="9" draft="unconfirmed">anyɔnyɔ</month>
-							<month type="10" draft="unconfirmed">kele</month>
-							<month type="11" draft="unconfirmed">adeɛmekpɔxe</month>
-							<month type="12" draft="unconfirmed">dzome</month>
-							<month type="13" draft="unconfirmed">ƒoave</month>
-						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1" draft="unconfirmed">dzove</month>
 							<month type="2" draft="unconfirmed">dzodze</month>
@@ -1066,19 +987,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>EEEE, MMMM d 'lia' y G</pattern>
-							<datetimeSkeleton>GyMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>MMMM d 'lia' y G</pattern>
-							<datetimeSkeleton>GyMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>MMM d 'lia', y G</pattern>
-							<datetimeSkeleton>GyMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
@@ -1110,23 +1028,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
-						<dateFormatItem id="d">d</dateFormatItem>
-						<dateFormatItem id="E">ccc</dateFormatItem>
 						<dateFormatItem id="Ed">E d</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">MMM d 'lia', y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, MMM d 'lia' y G</dateFormatItem>
 						<dateFormatItem id="h">a 'ga' h</dateFormatItem>
-						<dateFormatItem id="H">HH</dateFormatItem>
 						<dateFormatItem id="hm">a 'ga' h:mm</dateFormatItem>
-						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
 						<dateFormatItem id="hms">a 'ga' h:mm:ss</dateFormatItem>
-						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
-						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">M/d</dateFormatItem>
 						<dateFormatItem id="MEd">E, M/d</dateFormatItem>
-						<dateFormatItem id="MMM">LLL</dateFormatItem>
 						<dateFormatItem id="MMMd">MMM d 'lia'</dateFormatItem>
 						<dateFormatItem id="MMMEd">E, MMM d 'lia'</dateFormatItem>
 						<dateFormatItem id="MMMMd">MMMM d 'lia'</dateFormatItem>
@@ -1145,41 +1056,23 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yyyyQQQQ">QQQQ y G</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
-						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
-						<intervalFormatItem id="d">
-							<greatestDifference id="d">d–d</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="h">
 							<greatestDifference id="a">a h – a h</greatestDifference>
 							<greatestDifference id="h">a h–h</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="H">
-							<greatestDifference id="H">HH–HH</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
 							<greatestDifference id="a">a 'ga' h:mm – a 'ga' h:mm</greatestDifference>
 							<greatestDifference id="h">a 'ga' h:mm - 'ga' h:mm</greatestDifference>
 							<greatestDifference id="m">a 'ga' h:mm – 'ga' h:mm</greatestDifference>
 						</intervalFormatItem>
-						<intervalFormatItem id="Hm">
-							<greatestDifference id="H">HH:mm–HH:mm</greatestDifference>
-							<greatestDifference id="m">HH:mm–HH:mm</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
 							<greatestDifference id="a">a 'ga' h:mm – a 'ga' h:mm v</greatestDifference>
 							<greatestDifference id="h">a 'ga' h:mm–h:mm v</greatestDifference>
 							<greatestDifference id="m">a h:mm–h:mm v</greatestDifference>
 						</intervalFormatItem>
-						<intervalFormatItem id="Hmv">
-							<greatestDifference id="H">HH:mm–HH:mm v</greatestDifference>
-							<greatestDifference id="m">HH:mm–HH:mm v</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="hv">
 							<greatestDifference id="a">a h – a h v</greatestDifference>
 							<greatestDifference id="h">a 'ga' h–h v</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Hv">
-							<greatestDifference id="H">HH–HH v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
 							<greatestDifference id="M">'ɣleti' M 'lia' – 'ɣleti' M 'lia'</greatestDifference>
@@ -1202,9 +1095,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<intervalFormatItem id="MMMEd">
 							<greatestDifference id="d">E, MMM d 'lia' – E, MMM d 'lia'</greatestDifference>
 							<greatestDifference id="M">E, MMM d 'lia' – E, MMM d 'lia'</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="y">
-							<greatestDifference id="y">G y–y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
 							<greatestDifference id="M">M/y – M/y G</greatestDifference>
@@ -1258,20 +1148,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="11">ade</month>
 							<month type="12">dzm</month>
 						</monthWidth>
-						<monthWidth type="narrow">
-							<month type="1">d</month>
-							<month type="2">d</month>
-							<month type="3">t</month>
-							<month type="4">a</month>
-							<month type="5">d</month>
-							<month type="6">m</month>
-							<month type="7">s</month>
-							<month type="8">d</month>
-							<month type="9">a</month>
-							<month type="10">k</month>
-							<month type="11">a</month>
-							<month type="12">d</month>
-						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">dzove</month>
 							<month type="2">dzodze</month>
@@ -1288,20 +1164,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
-						<monthWidth type="abbreviated">
-							<month type="1">dzv</month>
-							<month type="2">dzd</month>
-							<month type="3">ted</month>
-							<month type="4">afɔ</month>
-							<month type="5">dam</month>
-							<month type="6">mas</month>
-							<month type="7">sia</month>
-							<month type="8">dea</month>
-							<month type="9">any</month>
-							<month type="10">kel</month>
-							<month type="11">ade</month>
-							<month type="12">dzm</month>
-						</monthWidth>
 						<monthWidth type="narrow">
 							<month type="1">d</month>
 							<month type="2">d</month>
@@ -1316,43 +1178,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="11">a</month>
 							<month type="12">d</month>
 						</monthWidth>
-						<monthWidth type="wide">
-							<month type="1">dzove</month>
-							<month type="2">dzodze</month>
-							<month type="3">tedoxe</month>
-							<month type="4">afɔfĩe</month>
-							<month type="5">dama</month>
-							<month type="6">masa</month>
-							<month type="7">siamlɔm</month>
-							<month type="8">deasiamime</month>
-							<month type="9">anyɔnyɔ</month>
-							<month type="10">kele</month>
-							<month type="11">adeɛmekpɔxe</month>
-							<month type="12">dzome</month>
-						</monthWidth>
 					</monthContext>
 				</months>
 				<days>
 					<dayContext type="format">
 						<dayWidth type="abbreviated">
-							<day type="sun">kɔs</day>
-							<day type="mon">dzo</day>
-							<day type="tue">bla</day>
-							<day type="wed">kuɖ</day>
-							<day type="thu">yaw</day>
-							<day type="fri">fiɖ</day>
-							<day type="sat">mem</day>
-						</dayWidth>
-						<dayWidth type="narrow">
-							<day type="sun">k</day>
-							<day type="mon">d</day>
-							<day type="tue">b</day>
-							<day type="wed">k</day>
-							<day type="thu">y</day>
-							<day type="fri">f</day>
-							<day type="sat">m</day>
-						</dayWidth>
-						<dayWidth type="short">
 							<day type="sun">kɔs</day>
 							<day type="mon">dzo</day>
 							<day type="tue">bla</day>
@@ -1372,15 +1202,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dayWidth>
 					</dayContext>
 					<dayContext type="stand-alone">
-						<dayWidth type="abbreviated">
-							<day type="sun">kɔs</day>
-							<day type="mon">dzo</day>
-							<day type="tue">bla</day>
-							<day type="wed">kuɖ</day>
-							<day type="thu">yaw</day>
-							<day type="fri">fiɖ</day>
-							<day type="sat">mem</day>
-						</dayWidth>
 						<dayWidth type="narrow">
 							<day type="sun">k</day>
 							<day type="mon">d</day>
@@ -1390,48 +1211,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="fri">f</day>
 							<day type="sat">m</day>
 						</dayWidth>
-						<dayWidth type="short">
-							<day type="sun">kɔs</day>
-							<day type="mon">dzo</day>
-							<day type="tue">bla</day>
-							<day type="wed">kuɖ</day>
-							<day type="thu">yaw</day>
-							<day type="fri">fiɖ</day>
-							<day type="sat">mem</day>
-						</dayWidth>
-						<dayWidth type="wide">
-							<day type="sun">kɔsiɖa</day>
-							<day type="mon">dzoɖa</day>
-							<day type="tue">blaɖa</day>
-							<day type="wed">kuɖa</day>
-							<day type="thu">yawoɖa</day>
-							<day type="fri">fiɖa</day>
-							<day type="sat">memleɖa</day>
-						</dayWidth>
 					</dayContext>
 				</days>
 				<quarters>
 					<quarterContext type="format">
-						<quarterWidth type="abbreviated">
-							<quarter type="1">k1</quarter>
-							<quarter type="2">k2</quarter>
-							<quarter type="3">k3</quarter>
-							<quarter type="4">k4</quarter>
-						</quarterWidth>
-						<quarterWidth type="narrow">
-							<quarter type="1">1</quarter>
-							<quarter type="2">2</quarter>
-							<quarter type="3">3</quarter>
-							<quarter type="4">4</quarter>
-						</quarterWidth>
-						<quarterWidth type="wide">
-							<quarter type="1">kɔta gbãtɔ</quarter>
-							<quarter type="2">kɔta evelia</quarter>
-							<quarter type="3">kɔta etɔ̃lia</quarter>
-							<quarter type="4">kɔta enelia</quarter>
-						</quarterWidth>
-					</quarterContext>
-					<quarterContext type="stand-alone">
 						<quarterWidth type="abbreviated">
 							<quarter type="1">k1</quarter>
 							<quarter type="2">k2</quarter>
@@ -1461,61 +1244,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dayPeriodWidth type="narrow">
 							<dayPeriod type="am">ŋ</dayPeriod>
 							<dayPeriod type="pm">ɣ</dayPeriod>
-							<dayPeriod type="morning1">fɔŋli</dayPeriod>
-							<dayPeriod type="morning2">ŋdi</dayPeriod>
-							<dayPeriod type="afternoon1">ŋdɔ</dayPeriod>
-							<dayPeriod type="afternoon2">ɣetrɔ</dayPeriod>
-							<dayPeriod type="evening1">fiẽ</dayPeriod>
-							<dayPeriod type="night1">zã</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="wide">
-							<dayPeriod type="am">ŋdi</dayPeriod>
-							<dayPeriod type="pm">ɣetrɔ</dayPeriod>
-							<dayPeriod type="morning1">fɔŋli</dayPeriod>
-							<dayPeriod type="morning2">ŋdi</dayPeriod>
-							<dayPeriod type="afternoon1">ŋdɔ</dayPeriod>
-							<dayPeriod type="afternoon2">ɣetrɔ</dayPeriod>
-							<dayPeriod type="evening1">fiẽ</dayPeriod>
-							<dayPeriod type="night1">zã</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 					<dayPeriodContext type="stand-alone">
-						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="am">ŋdi</dayPeriod>
-							<dayPeriod type="pm">ɣetrɔ</dayPeriod>
-							<dayPeriod type="morning1">fɔŋli</dayPeriod>
-							<dayPeriod type="morning2">ŋdi</dayPeriod>
-							<dayPeriod type="afternoon1">ŋdɔ</dayPeriod>
-							<dayPeriod type="afternoon2">ɣetrɔ</dayPeriod>
-							<dayPeriod type="evening1">fiẽ</dayPeriod>
-							<dayPeriod type="night1">zã</dayPeriod>
-						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
 							<dayPeriod type="am">ŋ</dayPeriod>
 							<dayPeriod type="pm">ɣ</dayPeriod>
-							<dayPeriod type="morning1">fɔŋli</dayPeriod>
-							<dayPeriod type="morning2">ŋdi</dayPeriod>
-							<dayPeriod type="afternoon1">ŋdɔ</dayPeriod>
-							<dayPeriod type="afternoon2">ɣetrɔ</dayPeriod>
-							<dayPeriod type="evening1">fiẽ</dayPeriod>
-							<dayPeriod type="night1">zã</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="wide">
-							<dayPeriod type="am">ŋdi</dayPeriod>
-							<dayPeriod type="pm">ɣetrɔ</dayPeriod>
-							<dayPeriod type="morning1">fɔŋli</dayPeriod>
-							<dayPeriod type="morning2">ŋdi</dayPeriod>
-							<dayPeriod type="afternoon1">ŋdɔ</dayPeriod>
-							<dayPeriod type="afternoon2">ɣetrɔ</dayPeriod>
-							<dayPeriod type="evening1">fiẽ</dayPeriod>
-							<dayPeriod type="night1">zã</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 				</dayPeriods>
 				<eras>
 					<eraNames>
 						<era type="0">Hafi Yesu Va</era>
-						<era type="0" alt="variant">Bŋ</era>
 						<era type="1">Yesu ŋɔli</era>
 					</eraNames>
 					<eraAbbr>
@@ -1526,26 +1266,22 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</eraAbbr>
 					<eraNarrow>
 						<era type="0" draft="unconfirmed">hY</era>
-						<era type="1" draft="unconfirmed">Yŋ</era>
 					</eraNarrow>
 				</eras>
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>EEEE, MMMM d 'lia' y</pattern>
-							<datetimeSkeleton>yMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>MMMM d 'lia' y</pattern>
-							<datetimeSkeleton>yMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>MMM d 'lia', y</pattern>
-							<datetimeSkeleton>yMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
@@ -1606,8 +1342,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="Bh">'ga' h 'le' B 'me'</dateFormatItem>
 						<dateFormatItem id="Bhm">'ga' h 'aɖabaƒoƒo' mm 'le' B 'me'</dateFormatItem>
 						<dateFormatItem id="Bhms">h:mm:ss 'le' B 'me'</dateFormatItem>
-						<dateFormatItem id="d">d</dateFormatItem>
-						<dateFormatItem id="E">ccc</dateFormatItem>
 						<dateFormatItem id="EBhm">'ga' h:mm 'le' E B 'me'</dateFormatItem>
 						<dateFormatItem id="EBhms">'ga' h:mm:ss 'le' E B 'me'</dateFormatItem>
 						<dateFormatItem id="Ed">E d</dateFormatItem>
@@ -1620,19 +1354,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="GyMMMd">MMM d 'lia', y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, MMM d 'lia' y G</dateFormatItem>
 						<dateFormatItem id="h">a 'ga' h</dateFormatItem>
-						<dateFormatItem id="H">HH</dateFormatItem>
 						<dateFormatItem id="hm">a 'ga' h:mm</dateFormatItem>
-						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
 						<dateFormatItem id="hms">a 'ga' h:mm:ss</dateFormatItem>
-						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="hmsv">a 'ga' h:mm:ss 'le' v</dateFormatItem>
 						<dateFormatItem id="Hmsv">'ga' HH:mm:ss 'le' v</dateFormatItem>
 						<dateFormatItem id="hmv">a 'ga' h:mm 'le' v</dateFormatItem>
 						<dateFormatItem id="Hmv">'ga' HH:mm 'le' v</dateFormatItem>
-						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">M/d</dateFormatItem>
 						<dateFormatItem id="MEd">E, M/d</dateFormatItem>
-						<dateFormatItem id="MMM">LLL</dateFormatItem>
 						<dateFormatItem id="MMMd">MMM d 'lia'</dateFormatItem>
 						<dateFormatItem id="MMMEd">E, MMM d 'lia'</dateFormatItem>
 						<dateFormatItem id="MMMMd">MMMM d 'lia'</dateFormatItem>
@@ -1640,7 +1369,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="MMMMW" count="one">MMMM 'ƒe' 'kɔsiɖa' W 'lia'</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="other">MMMM 'ƒe' 'kɔsiɖa' W 'lia'</dateFormatItem>
 						<dateFormatItem id="ms">'aɖabaƒoƒo' mm:ss</dateFormatItem>
-						<dateFormatItem id="y">y</dateFormatItem>
 						<dateFormatItem id="yM">M/y</dateFormatItem>
 						<dateFormatItem id="yMd">M/d/y</dateFormatItem>
 						<dateFormatItem id="yMEd">E, M/d/y</dateFormatItem>
@@ -1653,45 +1381,24 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yw" count="one">'kɔsiɖa' w 'lia' 'le' 'ƒe' Y 'me'</dateFormatItem>
 						<dateFormatItem id="yw" count="other">'kɔsiɖa' w 'lia' 'le' 'ƒe' Y 'me'</dateFormatItem>
 					</availableFormats>
-					<appendItems>
-						<appendItem request="Timezone">{0} {1}</appendItem>
-					</appendItems>
 					<intervalFormats>
-						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
-						<intervalFormatItem id="d">
-							<greatestDifference id="d">d–d</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="h">
 							<greatestDifference id="a">a h – a h</greatestDifference>
 							<greatestDifference id="h">a h–h</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="H">
-							<greatestDifference id="H">HH–HH</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
 							<greatestDifference id="a">a 'ga' h:mm – a 'ga' h:mm</greatestDifference>
 							<greatestDifference id="h">a 'ga' h:mm - 'ga' h:mm</greatestDifference>
 							<greatestDifference id="m">a 'ga' h:mm – 'ga' h:mm</greatestDifference>
 						</intervalFormatItem>
-						<intervalFormatItem id="Hm">
-							<greatestDifference id="H">HH:mm–HH:mm</greatestDifference>
-							<greatestDifference id="m">HH:mm–HH:mm</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
 							<greatestDifference id="a">a 'ga' h:mm – a 'ga' h:mm v</greatestDifference>
 							<greatestDifference id="h">a 'ga' h:mm–h:mm v</greatestDifference>
 							<greatestDifference id="m">a h:mm–h:mm v</greatestDifference>
 						</intervalFormatItem>
-						<intervalFormatItem id="Hmv">
-							<greatestDifference id="H">HH:mm–HH:mm v</greatestDifference>
-							<greatestDifference id="m">HH:mm–HH:mm v</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="hv">
 							<greatestDifference id="a">a h – a h v</greatestDifference>
 							<greatestDifference id="h">a 'ga' h–h v</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Hv">
-							<greatestDifference id="H">HH–HH v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
 							<greatestDifference id="M">'ɣleti' M 'lia' – 'ɣleti' M 'lia'</greatestDifference>
@@ -1714,9 +1421,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<intervalFormatItem id="MMMEd">
 							<greatestDifference id="d">E, MMM d 'lia' – E, MMM d 'lia'</greatestDifference>
 							<greatestDifference id="M">E, MMM d 'lia' – E, MMM d 'lia'</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="y">
-							<greatestDifference id="y">y–y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
 							<greatestDifference id="M">M/y – M/y</greatestDifference>
@@ -1756,22 +1460,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<calendar type="hebrew">
 				<months>
 					<monthContext type="format">
-						<monthWidth type="abbreviated">
-							<month type="1" draft="unconfirmed">dzove</month>
-							<month type="2" draft="unconfirmed">dzodze</month>
-							<month type="3" draft="unconfirmed">tedoxe</month>
-							<month type="4" draft="unconfirmed">afɔfiẽ</month>
-							<month type="5" draft="unconfirmed">damɛ</month>
-							<month type="6" draft="unconfirmed">masa</month>
-							<month type="7" draft="unconfirmed">siamlɔm</month>
-							<month type="7" yeartype="leap" draft="unconfirmed">siamlɔm</month>
-							<month type="8" draft="unconfirmed">deasiamime</month>
-							<month type="9" draft="unconfirmed">anyɔnyɔ</month>
-							<month type="10" draft="unconfirmed">kele</month>
-							<month type="11" draft="unconfirmed">adeɛmekpɔxe</month>
-							<month type="12" draft="unconfirmed">dzome</month>
-							<month type="13" draft="unconfirmed">ƒoave</month>
-						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1" draft="unconfirmed">dzove</month>
 							<month type="2" draft="unconfirmed">dzodze</month>
@@ -1863,20 +1551,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
-						<monthWidth type="abbreviated">
-							<month type="1" draft="unconfirmed">dzv</month>
-							<month type="2" draft="unconfirmed">dzd</month>
-							<month type="3" draft="unconfirmed">ted</month>
-							<month type="4" draft="unconfirmed">afɔ</month>
-							<month type="5" draft="unconfirmed">dam</month>
-							<month type="6" draft="unconfirmed">mas</month>
-							<month type="7" draft="unconfirmed">sia</month>
-							<month type="8" draft="unconfirmed">dea</month>
-							<month type="9" draft="unconfirmed">any</month>
-							<month type="10" draft="unconfirmed">kel</month>
-							<month type="11" draft="unconfirmed">ade</month>
-							<month type="12" draft="unconfirmed">dzm</month>
-						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1" draft="unconfirmed">dzove</month>
 							<month type="2" draft="unconfirmed">dzodze</month>
@@ -1926,36 +1600,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="12" draft="unconfirmed">dzome</month>
 						</monthWidth>
 					</monthContext>
-					<monthContext type="stand-alone">
-						<monthWidth type="abbreviated">
-							<month type="1" draft="unconfirmed">dzv</month>
-							<month type="2" draft="unconfirmed">dzd</month>
-							<month type="3" draft="unconfirmed">ted</month>
-							<month type="4" draft="unconfirmed">afɔ</month>
-							<month type="5" draft="unconfirmed">dam</month>
-							<month type="6" draft="unconfirmed">mas</month>
-							<month type="7" draft="unconfirmed">sia</month>
-							<month type="8" draft="unconfirmed">dea</month>
-							<month type="9" draft="unconfirmed">any</month>
-							<month type="10" draft="unconfirmed">kel</month>
-							<month type="11" draft="unconfirmed">ade</month>
-							<month type="12" draft="unconfirmed">dzm</month>
-						</monthWidth>
-						<monthWidth type="wide">
-							<month type="1" draft="unconfirmed">dzove</month>
-							<month type="2" draft="unconfirmed">dzodze</month>
-							<month type="3" draft="unconfirmed">tedoxe</month>
-							<month type="4" draft="unconfirmed">afɔfiẽ</month>
-							<month type="5" draft="unconfirmed">damɛ</month>
-							<month type="6" draft="unconfirmed">masa</month>
-							<month type="7" draft="unconfirmed">siamlɔm</month>
-							<month type="8" draft="unconfirmed">deasiamime</month>
-							<month type="9" draft="unconfirmed">anyɔnyɔ</month>
-							<month type="10" draft="unconfirmed">kele</month>
-							<month type="11" draft="unconfirmed">adeɛmekpɔxe</month>
-							<month type="12" draft="unconfirmed">dzome</month>
-						</monthWidth>
-					</monthContext>
 				</months>
 			</calendar>
 			<calendar type="japanese">
@@ -1969,13 +1613,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern draft="unconfirmed">MMMM d 'lia', G y</pattern>
-							<datetimeSkeleton draft="unconfirmed">GyMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern draft="unconfirmed">MMM d 'lia', G y</pattern>
-							<datetimeSkeleton draft="unconfirmed">GyMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
@@ -1987,45 +1629,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</dateFormats>
 				<dateTimeFormats>
 					<availableFormats>
-						<dateFormatItem id="hms" draft="unconfirmed">a 'ga' h:mm:ss</dateFormatItem>
 						<dateFormatItem id="MMMEd" draft="unconfirmed">E MMM d 'lia'</dateFormatItem>
-						<dateFormatItem id="ms" draft="unconfirmed">'aɖabaƒoƒo' mm:ss</dateFormatItem>
 					</availableFormats>
 				</dateTimeFormats>
 			</calendar>
 			<calendar type="persian">
 				<months>
 					<monthContext type="format">
-						<monthWidth type="abbreviated">
-							<month type="1" draft="unconfirmed">dzv</month>
-							<month type="2" draft="unconfirmed">dzd</month>
-							<month type="3" draft="unconfirmed">ted</month>
-							<month type="4" draft="unconfirmed">afɔ</month>
-							<month type="5" draft="unconfirmed">dam</month>
-							<month type="6" draft="unconfirmed">mas</month>
-							<month type="7" draft="unconfirmed">sia</month>
-							<month type="8" draft="unconfirmed">dea</month>
-							<month type="9" draft="unconfirmed">any</month>
-							<month type="10" draft="unconfirmed">kel</month>
-							<month type="11" draft="unconfirmed">ade</month>
-							<month type="12" draft="unconfirmed">dzm</month>
-						</monthWidth>
-						<monthWidth type="wide">
-							<month type="1" draft="unconfirmed">dzove</month>
-							<month type="2" draft="unconfirmed">dzodze</month>
-							<month type="3" draft="unconfirmed">tedoxe</month>
-							<month type="4" draft="unconfirmed">afɔfiẽ</month>
-							<month type="5" draft="unconfirmed">damɛ</month>
-							<month type="6" draft="unconfirmed">masa</month>
-							<month type="7" draft="unconfirmed">siamlɔm</month>
-							<month type="8" draft="unconfirmed">deasiamime</month>
-							<month type="9" draft="unconfirmed">anyɔnyɔ</month>
-							<month type="10" draft="unconfirmed">kele</month>
-							<month type="11" draft="unconfirmed">adeɛmekpɔxe</month>
-							<month type="12" draft="unconfirmed">dzome</month>
-						</monthWidth>
-					</monthContext>
-					<monthContext type="stand-alone">
 						<monthWidth type="abbreviated">
 							<month type="1" draft="unconfirmed">dzv</month>
 							<month type="2" draft="unconfirmed">dzd</month>
@@ -2073,13 +1683,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern draft="unconfirmed">MMMM d 'lia', G y</pattern>
-							<datetimeSkeleton draft="unconfirmed">GyMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern draft="unconfirmed">MMM d 'lia', G y</pattern>
-							<datetimeSkeleton draft="unconfirmed">GyMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
@@ -2091,11 +1699,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</dateFormats>
 				<dateTimeFormats>
 					<availableFormats>
-						<dateFormatItem id="h" draft="unconfirmed">a 'ga' h</dateFormatItem>
-						<dateFormatItem id="hm" draft="unconfirmed">a 'ga' h:mm</dateFormatItem>
-						<dateFormatItem id="hms" draft="unconfirmed">a 'ga' h:mm:ss</dateFormatItem>
 						<dateFormatItem id="MMMEd" draft="unconfirmed">E MMM d 'lia'</dateFormatItem>
-						<dateFormatItem id="ms" draft="unconfirmed">'aɖabaƒoƒo' mm:ss</dateFormatItem>
 					</availableFormats>
 				</dateTimeFormats>
 			</calendar>
@@ -2119,18 +1723,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</relativeTime>
 			</field>
 			<field type="year-short">
-				<displayName>ƒe</displayName>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">le ƒe {0} me</relativeTimePattern>
-					<relativeTimePattern count="other">le ƒe {0} me</relativeTimePattern>
-				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">le ƒe {0} si va yi me</relativeTimePattern>
 					<relativeTimePattern count="other">le ƒe {0} si va yi me</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="year-narrow">
-				<displayName>ƒe</displayName>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">le ƒe {0} si gbɔna me</relativeTimePattern>
 					<relativeTimePattern count="other">le ƒe {0} si gbɔna me</relativeTimePattern>
@@ -2151,26 +1749,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other">kɔta {0} si va yi me</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="quarter-short">
-				<displayName>kɔta</displayName>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">le kɔta {0} si gbɔ na me</relativeTimePattern>
-					<relativeTimePattern count="other">le kɔta {0} si gbɔ na me</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">kɔta {0} si va yi me</relativeTimePattern>
-					<relativeTimePattern count="other">kɔta {0} si va yi me</relativeTimePattern>
-				</relativeTime>
-			</field>
 			<field type="quarter-narrow">
-				<displayName>kɔta</displayName>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">le kɔta {0} si gbɔna me</relativeTimePattern>
 					<relativeTimePattern count="other">le kɔta {0} si gbɔ na me</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">kɔta {0} si va yi me</relativeTimePattern>
-					<relativeTimePattern count="other">kɔta {0} si va yi me</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="month">
@@ -2186,12 +1768,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="one">ɣleti {0} si va yi</relativeTimePattern>
 					<relativeTimePattern count="other">ɣleti {0} si wo va yi</relativeTimePattern>
 				</relativeTime>
-			</field>
-			<field type="month-short">
-				<displayName>ɣleti</displayName>
-			</field>
-			<field type="month-narrow">
-				<displayName>ɣleti</displayName>
 			</field>
 			<field type="week">
 				<displayName>kɔsiɖa ɖeka</displayName>
@@ -2303,13 +1879,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 		</fields>
 		<timeZoneNames>
-			<hourFormat>+HH:mm;-HH:mm</hourFormat>
 			<gmtFormat>{0} GMT</gmtFormat>
-			<gmtZeroFormat>GMT</gmtZeroFormat>
 			<regionFormat>{0} gaƒoƒo me</regionFormat>
 			<regionFormat type="daylight">{0} kele gaƒoƒo me</regionFormat>
 			<regionFormat type="standard">{0} nutome gaƒoƒo me</regionFormat>
-			<fallbackFormat>{1} ({0})</fallbackFormat>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>Xexeme gaƒoƒoɖoanyi me</standard>
@@ -2318,803 +1891,24 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Etc/Unknown">
 				<exemplarCity>Du manya</exemplarCity>
 			</zone>
-			<zone type="Europe/Andorra">
-				<exemplarCity>Andorra</exemplarCity>
-			</zone>
-			<zone type="Asia/Dubai">
-				<exemplarCity>Dubai</exemplarCity>
-			</zone>
-			<zone type="Asia/Kabul">
-				<exemplarCity>Kabul</exemplarCity>
-			</zone>
-			<zone type="America/Antigua">
-				<exemplarCity>Antigua</exemplarCity>
-			</zone>
-			<zone type="America/Anguilla">
-				<exemplarCity>Anguilla</exemplarCity>
-			</zone>
-			<zone type="Europe/Tirane">
-				<exemplarCity>Tirane</exemplarCity>
-			</zone>
-			<zone type="Asia/Yerevan">
-				<exemplarCity>Yerevan</exemplarCity>
-			</zone>
-			<zone type="Africa/Luanda">
-				<exemplarCity>Luanda</exemplarCity>
-			</zone>
-			<zone type="Antarctica/Rothera">
-				<exemplarCity>Rothera</exemplarCity>
-			</zone>
-			<zone type="Antarctica/Palmer">
-				<exemplarCity>Palmer</exemplarCity>
-			</zone>
-			<zone type="Antarctica/Troll">
-				<exemplarCity>Troll</exemplarCity>
-			</zone>
-			<zone type="Antarctica/Syowa">
-				<exemplarCity>Syowa</exemplarCity>
-			</zone>
-			<zone type="Antarctica/Mawson">
-				<exemplarCity>Mawson</exemplarCity>
-			</zone>
-			<zone type="Antarctica/Davis">
-				<exemplarCity>Davis</exemplarCity>
-			</zone>
-			<zone type="Antarctica/Vostok">
-				<exemplarCity>Vostok</exemplarCity>
-			</zone>
-			<zone type="Antarctica/Casey">
-				<exemplarCity>Casey</exemplarCity>
-			</zone>
-			<zone type="Antarctica/DumontDUrville">
-				<exemplarCity>Dumont d’Urville</exemplarCity>
-			</zone>
-			<zone type="Antarctica/McMurdo">
-				<exemplarCity>McMurdo</exemplarCity>
-			</zone>
-			<zone type="America/Argentina/Rio_Gallegos">
-				<exemplarCity>Rio Gallegos</exemplarCity>
-			</zone>
-			<zone type="America/Mendoza">
-				<exemplarCity>Mendoza</exemplarCity>
-			</zone>
-			<zone type="America/Argentina/San_Juan">
-				<exemplarCity>San Juan</exemplarCity>
-			</zone>
-			<zone type="America/Argentina/Ushuaia">
-				<exemplarCity>Ushuaia</exemplarCity>
-			</zone>
-			<zone type="America/Argentina/La_Rioja">
-				<exemplarCity>La Rioja</exemplarCity>
-			</zone>
-			<zone type="America/Argentina/San_Luis">
-				<exemplarCity>San Luis</exemplarCity>
-			</zone>
-			<zone type="America/Catamarca">
-				<exemplarCity>Catamarca</exemplarCity>
-			</zone>
-			<zone type="America/Argentina/Salta">
-				<exemplarCity>Salta</exemplarCity>
-			</zone>
-			<zone type="America/Jujuy">
-				<exemplarCity>Jujuy</exemplarCity>
-			</zone>
-			<zone type="America/Argentina/Tucuman">
-				<exemplarCity>Tucuman</exemplarCity>
-			</zone>
-			<zone type="America/Cordoba">
-				<exemplarCity>Cordoba</exemplarCity>
-			</zone>
-			<zone type="America/Buenos_Aires">
-				<exemplarCity>Buenos Aires</exemplarCity>
-			</zone>
-			<zone type="Pacific/Pago_Pago">
-				<exemplarCity>Pago Pago</exemplarCity>
-			</zone>
-			<zone type="Europe/Vienna">
-				<exemplarCity>Vienna</exemplarCity>
-			</zone>
-			<zone type="Australia/Perth">
-				<exemplarCity>Perth</exemplarCity>
-			</zone>
-			<zone type="Australia/Eucla">
-				<exemplarCity>Eucla</exemplarCity>
-			</zone>
-			<zone type="Australia/Darwin">
-				<exemplarCity>Darwin</exemplarCity>
-			</zone>
-			<zone type="Australia/Adelaide">
-				<exemplarCity>Adelaide</exemplarCity>
-			</zone>
-			<zone type="Australia/Broken_Hill">
-				<exemplarCity>Broken Hill</exemplarCity>
-			</zone>
-			<zone type="Australia/Melbourne">
-				<exemplarCity>Melbourne</exemplarCity>
-			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>Currie</exemplarCity>
-			</zone>
-			<zone type="Australia/Hobart">
-				<exemplarCity>Hobart</exemplarCity>
-			</zone>
-			<zone type="Australia/Lindeman">
-				<exemplarCity>Lindeman</exemplarCity>
-			</zone>
-			<zone type="Australia/Sydney">
-				<exemplarCity>Sydney</exemplarCity>
-			</zone>
-			<zone type="Australia/Brisbane">
-				<exemplarCity>Brisbane</exemplarCity>
-			</zone>
-			<zone type="Antarctica/Macquarie">
-				<exemplarCity>Macquarie</exemplarCity>
-			</zone>
-			<zone type="Australia/Lord_Howe">
-				<exemplarCity>Lord Howe</exemplarCity>
-			</zone>
-			<zone type="America/Aruba">
-				<exemplarCity>Aruba</exemplarCity>
-			</zone>
-			<zone type="Europe/Mariehamn">
-				<exemplarCity>Mariehamn</exemplarCity>
-			</zone>
-			<zone type="Asia/Baku">
-				<exemplarCity>Baku</exemplarCity>
-			</zone>
-			<zone type="Europe/Sarajevo">
-				<exemplarCity>Sarajevo</exemplarCity>
-			</zone>
-			<zone type="America/Barbados">
-				<exemplarCity>Barbados</exemplarCity>
-			</zone>
-			<zone type="Asia/Dhaka">
-				<exemplarCity>Dhaka</exemplarCity>
-			</zone>
-			<zone type="Europe/Brussels">
-				<exemplarCity>Brussels</exemplarCity>
-			</zone>
-			<zone type="Africa/Ouagadougou">
-				<exemplarCity>Ouagadougou</exemplarCity>
-			</zone>
-			<zone type="Europe/Sofia">
-				<exemplarCity>Sofia</exemplarCity>
-			</zone>
-			<zone type="Asia/Bahrain">
-				<exemplarCity>Bahrain</exemplarCity>
-			</zone>
-			<zone type="Africa/Bujumbura">
-				<exemplarCity>Bujumbura</exemplarCity>
-			</zone>
-			<zone type="Africa/Porto-Novo">
-				<exemplarCity>Porto-Novo</exemplarCity>
-			</zone>
-			<zone type="America/St_Barthelemy">
-				<exemplarCity>St. Barthelemy</exemplarCity>
-			</zone>
-			<zone type="Atlantic/Bermuda">
-				<exemplarCity>Bermuda</exemplarCity>
-			</zone>
-			<zone type="Asia/Brunei">
-				<exemplarCity>Brunei</exemplarCity>
-			</zone>
-			<zone type="America/La_Paz">
-				<exemplarCity>La Paz</exemplarCity>
-			</zone>
-			<zone type="America/Kralendijk">
-				<exemplarCity>Kralendijk</exemplarCity>
-			</zone>
-			<zone type="America/Eirunepe">
-				<exemplarCity>Eirunepe</exemplarCity>
-			</zone>
-			<zone type="America/Rio_Branco">
-				<exemplarCity>Rio Branco</exemplarCity>
-			</zone>
-			<zone type="America/Porto_Velho">
-				<exemplarCity>Porto Velho</exemplarCity>
-			</zone>
-			<zone type="America/Boa_Vista">
-				<exemplarCity>Boa Vista</exemplarCity>
-			</zone>
-			<zone type="America/Manaus">
-				<exemplarCity>Manaus</exemplarCity>
-			</zone>
-			<zone type="America/Cuiaba">
-				<exemplarCity>Cuiaba</exemplarCity>
-			</zone>
-			<zone type="America/Santarem">
-				<exemplarCity>Santarem</exemplarCity>
-			</zone>
-			<zone type="America/Campo_Grande">
-				<exemplarCity>Campo Grande</exemplarCity>
-			</zone>
-			<zone type="America/Belem">
-				<exemplarCity>Belem</exemplarCity>
-			</zone>
-			<zone type="America/Araguaina">
-				<exemplarCity>Araguaina</exemplarCity>
-			</zone>
-			<zone type="America/Sao_Paulo">
-				<exemplarCity>Sao Paulo</exemplarCity>
-			</zone>
-			<zone type="America/Bahia">
-				<exemplarCity>Bahia</exemplarCity>
-			</zone>
-			<zone type="America/Fortaleza">
-				<exemplarCity>Fortaleza</exemplarCity>
-			</zone>
-			<zone type="America/Maceio">
-				<exemplarCity>Maceio</exemplarCity>
-			</zone>
-			<zone type="America/Recife">
-				<exemplarCity>Recife</exemplarCity>
-			</zone>
-			<zone type="America/Noronha">
-				<exemplarCity>Noronha</exemplarCity>
-			</zone>
-			<zone type="America/Nassau">
-				<exemplarCity>Nassau</exemplarCity>
-			</zone>
-			<zone type="Asia/Thimphu">
-				<exemplarCity>Thimphu</exemplarCity>
-			</zone>
-			<zone type="Africa/Gaborone">
-				<exemplarCity>Gaborone</exemplarCity>
-			</zone>
-			<zone type="Europe/Minsk">
-				<exemplarCity>Minsk</exemplarCity>
-			</zone>
-			<zone type="America/Belize">
-				<exemplarCity>Belize</exemplarCity>
-			</zone>
-			<zone type="America/Dawson">
-				<exemplarCity>Dawson</exemplarCity>
-			</zone>
-			<zone type="America/Whitehorse">
-				<exemplarCity>Whitehorse</exemplarCity>
-			</zone>
-			<zone type="America/Inuvik">
-				<exemplarCity>Inuvik</exemplarCity>
-			</zone>
-			<zone type="America/Vancouver">
-				<exemplarCity>Vancouver</exemplarCity>
-			</zone>
-			<zone type="America/Fort_Nelson">
-				<exemplarCity>Fort Nelson</exemplarCity>
-			</zone>
-			<zone type="America/Dawson_Creek">
-				<exemplarCity>Dawson Creek</exemplarCity>
-			</zone>
-			<zone type="America/Creston">
-				<exemplarCity>Creston</exemplarCity>
-			</zone>
-			<zone type="America/Yellowknife">
-				<exemplarCity>Yellowknife</exemplarCity>
-			</zone>
-			<zone type="America/Edmonton">
-				<exemplarCity>Edmonton</exemplarCity>
-			</zone>
-			<zone type="America/Swift_Current">
-				<exemplarCity>Swift Current</exemplarCity>
-			</zone>
-			<zone type="America/Cambridge_Bay">
-				<exemplarCity>Cambridge Bay</exemplarCity>
-			</zone>
-			<zone type="America/Regina">
-				<exemplarCity>Regina</exemplarCity>
-			</zone>
-			<zone type="America/Winnipeg">
-				<exemplarCity>Winnipeg</exemplarCity>
-			</zone>
-			<zone type="America/Resolute">
-				<exemplarCity>Resolute</exemplarCity>
-			</zone>
-			<zone type="America/Rainy_River">
-				<exemplarCity>Rainy River</exemplarCity>
-			</zone>
-			<zone type="America/Rankin_Inlet">
-				<exemplarCity>Rankin Inlet</exemplarCity>
-			</zone>
-			<zone type="America/Coral_Harbour">
-				<exemplarCity>Atikokan</exemplarCity>
-			</zone>
-			<zone type="America/Thunder_Bay">
-				<exemplarCity>Thunder Bay</exemplarCity>
-			</zone>
-			<zone type="America/Nipigon">
-				<exemplarCity>Nipigon</exemplarCity>
-			</zone>
-			<zone type="America/Toronto">
-				<exemplarCity>Toronto</exemplarCity>
-			</zone>
-			<zone type="America/Iqaluit">
-				<exemplarCity>Iqaluit</exemplarCity>
-			</zone>
-			<zone type="America/Pangnirtung">
-				<exemplarCity>Pangnirtung</exemplarCity>
-			</zone>
-			<zone type="America/Moncton">
-				<exemplarCity>Moncton</exemplarCity>
-			</zone>
-			<zone type="America/Halifax">
-				<exemplarCity>Halifax</exemplarCity>
-			</zone>
-			<zone type="America/Goose_Bay">
-				<exemplarCity>Goose Bay</exemplarCity>
-			</zone>
-			<zone type="America/Glace_Bay">
-				<exemplarCity>Glace Bay</exemplarCity>
-			</zone>
-			<zone type="America/Blanc-Sablon">
-				<exemplarCity>Blanc-Sablon</exemplarCity>
-			</zone>
-			<zone type="America/St_Johns">
-				<exemplarCity>St. John’s</exemplarCity>
-			</zone>
-			<zone type="Indian/Cocos">
-				<exemplarCity>Cocos</exemplarCity>
-			</zone>
-			<zone type="Africa/Kinshasa">
-				<exemplarCity>Kinshasa</exemplarCity>
-			</zone>
-			<zone type="Africa/Lubumbashi">
-				<exemplarCity>Lubumbashi</exemplarCity>
-			</zone>
-			<zone type="Africa/Bangui">
-				<exemplarCity>Bangui</exemplarCity>
-			</zone>
-			<zone type="Africa/Brazzaville">
-				<exemplarCity>Brazzaville</exemplarCity>
-			</zone>
-			<zone type="Europe/Zurich">
-				<exemplarCity>Zurich</exemplarCity>
-			</zone>
-			<zone type="Africa/Abidjan">
-				<exemplarCity>Abidjan</exemplarCity>
-			</zone>
-			<zone type="Pacific/Rarotonga">
-				<exemplarCity>Rarotonga</exemplarCity>
-			</zone>
-			<zone type="Pacific/Easter">
-				<exemplarCity>Easter</exemplarCity>
-			</zone>
-			<zone type="America/Punta_Arenas">
-				<exemplarCity>Punta Arenas</exemplarCity>
-			</zone>
-			<zone type="America/Santiago">
-				<exemplarCity>Santiago</exemplarCity>
-			</zone>
-			<zone type="Africa/Douala">
-				<exemplarCity>Douala</exemplarCity>
-			</zone>
-			<zone type="Asia/Urumqi">
-				<exemplarCity>Urumqi</exemplarCity>
-			</zone>
-			<zone type="Asia/Shanghai">
-				<exemplarCity>Shanghai</exemplarCity>
-			</zone>
-			<zone type="America/Bogota">
-				<exemplarCity>Bogota</exemplarCity>
-			</zone>
-			<zone type="America/Costa_Rica">
-				<exemplarCity>Costa Rica</exemplarCity>
-			</zone>
-			<zone type="America/Havana">
-				<exemplarCity>Havana</exemplarCity>
-			</zone>
-			<zone type="Atlantic/Cape_Verde">
-				<exemplarCity>Cape Verde</exemplarCity>
-			</zone>
-			<zone type="America/Curacao">
-				<exemplarCity>Curacao</exemplarCity>
-			</zone>
-			<zone type="Indian/Christmas">
-				<exemplarCity>Christmas</exemplarCity>
-			</zone>
-			<zone type="Asia/Nicosia">
-				<exemplarCity>Nicosia</exemplarCity>
-			</zone>
-			<zone type="Asia/Famagusta">
-				<exemplarCity>Famagusta</exemplarCity>
-			</zone>
-			<zone type="Europe/Prague">
-				<exemplarCity>Prague</exemplarCity>
-			</zone>
-			<zone type="Europe/Busingen">
-				<exemplarCity>Busingen</exemplarCity>
-			</zone>
-			<zone type="Europe/Berlin">
-				<exemplarCity>Berlin</exemplarCity>
-			</zone>
-			<zone type="Africa/Djibouti">
-				<exemplarCity>Djibouti</exemplarCity>
-			</zone>
-			<zone type="Europe/Copenhagen">
-				<exemplarCity>Copenhagen</exemplarCity>
-			</zone>
-			<zone type="America/Dominica">
-				<exemplarCity>Dominica</exemplarCity>
-			</zone>
-			<zone type="America/Santo_Domingo">
-				<exemplarCity>Santo Domingo</exemplarCity>
-			</zone>
-			<zone type="Africa/Algiers">
-				<exemplarCity>Algiers</exemplarCity>
-			</zone>
-			<zone type="Pacific/Galapagos">
-				<exemplarCity>Galapagos</exemplarCity>
-			</zone>
-			<zone type="America/Guayaquil">
-				<exemplarCity>Guayaquil</exemplarCity>
-			</zone>
-			<zone type="Europe/Tallinn">
-				<exemplarCity>Tallinn</exemplarCity>
-			</zone>
-			<zone type="Africa/Cairo">
-				<exemplarCity>Cairo</exemplarCity>
-			</zone>
-			<zone type="Africa/El_Aaiun">
-				<exemplarCity>El Aaiun</exemplarCity>
-			</zone>
-			<zone type="Africa/Asmera">
-				<exemplarCity>Asmara</exemplarCity>
-			</zone>
-			<zone type="Atlantic/Canary">
-				<exemplarCity>Canary</exemplarCity>
-			</zone>
-			<zone type="Africa/Ceuta">
-				<exemplarCity>Ceuta</exemplarCity>
-			</zone>
-			<zone type="Europe/Madrid">
-				<exemplarCity>Madrid</exemplarCity>
-			</zone>
-			<zone type="Africa/Addis_Ababa">
-				<exemplarCity>Addis Ababa</exemplarCity>
-			</zone>
-			<zone type="Europe/Helsinki">
-				<exemplarCity>Helsinki</exemplarCity>
-			</zone>
-			<zone type="Pacific/Fiji">
-				<exemplarCity>Fiji</exemplarCity>
-			</zone>
-			<zone type="Atlantic/Stanley">
-				<exemplarCity>Stanley</exemplarCity>
-			</zone>
-			<zone type="Pacific/Truk">
-				<exemplarCity>Chuuk</exemplarCity>
-			</zone>
-			<zone type="Pacific/Ponape">
-				<exemplarCity>Pohnpei</exemplarCity>
-			</zone>
-			<zone type="Pacific/Kosrae">
-				<exemplarCity>Kosrae</exemplarCity>
-			</zone>
-			<zone type="Atlantic/Faeroe">
-				<exemplarCity>Faroe</exemplarCity>
-			</zone>
-			<zone type="Europe/Paris">
-				<exemplarCity>Paris</exemplarCity>
-			</zone>
-			<zone type="Africa/Libreville">
-				<exemplarCity>Libreville</exemplarCity>
-			</zone>
 			<zone type="Europe/London">
 				<long>
 					<daylight>British dzomeŋɔli gaƒoƒo me</daylight>
 				</long>
-				<exemplarCity>London</exemplarCity>
-			</zone>
-			<zone type="America/Grenada">
-				<exemplarCity>Grenada</exemplarCity>
-			</zone>
-			<zone type="Asia/Tbilisi">
-				<exemplarCity>Tbilisi</exemplarCity>
-			</zone>
-			<zone type="America/Cayenne">
-				<exemplarCity>Cayenne</exemplarCity>
-			</zone>
-			<zone type="Europe/Guernsey">
-				<exemplarCity>Guernsey</exemplarCity>
-			</zone>
-			<zone type="Africa/Accra">
-				<exemplarCity>Accra</exemplarCity>
-			</zone>
-			<zone type="Europe/Gibraltar">
-				<exemplarCity>Gibraltar</exemplarCity>
-			</zone>
-			<zone type="America/Thule">
-				<exemplarCity>Thule</exemplarCity>
-			</zone>
-			<zone type="America/Godthab">
-				<exemplarCity>Nuuk</exemplarCity>
-			</zone>
-			<zone type="America/Scoresbysund">
-				<exemplarCity>Ittoqqortoormiit</exemplarCity>
-			</zone>
-			<zone type="America/Danmarkshavn">
-				<exemplarCity>Danmarkshavn</exemplarCity>
-			</zone>
-			<zone type="Africa/Banjul">
-				<exemplarCity>Banjul</exemplarCity>
-			</zone>
-			<zone type="Africa/Conakry">
-				<exemplarCity>Conakry</exemplarCity>
-			</zone>
-			<zone type="America/Guadeloupe">
-				<exemplarCity>Guadeloupe</exemplarCity>
-			</zone>
-			<zone type="Africa/Malabo">
-				<exemplarCity>Malabo</exemplarCity>
-			</zone>
-			<zone type="Europe/Athens">
-				<exemplarCity>Athens</exemplarCity>
-			</zone>
-			<zone type="Atlantic/South_Georgia">
-				<exemplarCity>South Georgia</exemplarCity>
-			</zone>
-			<zone type="America/Guatemala">
-				<exemplarCity>Guatemala</exemplarCity>
-			</zone>
-			<zone type="Pacific/Guam">
-				<exemplarCity>Guam</exemplarCity>
-			</zone>
-			<zone type="Africa/Bissau">
-				<exemplarCity>Bissau</exemplarCity>
-			</zone>
-			<zone type="America/Guyana">
-				<exemplarCity>Guyana</exemplarCity>
-			</zone>
-			<zone type="Asia/Hong_Kong">
-				<exemplarCity>Hong Kong</exemplarCity>
-			</zone>
-			<zone type="America/Tegucigalpa">
-				<exemplarCity>Tegucigalpa</exemplarCity>
-			</zone>
-			<zone type="Europe/Zagreb">
-				<exemplarCity>Zagreb</exemplarCity>
-			</zone>
-			<zone type="America/Port-au-Prince">
-				<exemplarCity>Port-au-Prince</exemplarCity>
-			</zone>
-			<zone type="Europe/Budapest">
-				<exemplarCity>Budapest</exemplarCity>
-			</zone>
-			<zone type="Asia/Jakarta">
-				<exemplarCity>Jakarta</exemplarCity>
-			</zone>
-			<zone type="Asia/Pontianak">
-				<exemplarCity>Pontianak</exemplarCity>
-			</zone>
-			<zone type="Asia/Makassar">
-				<exemplarCity>Makassar</exemplarCity>
-			</zone>
-			<zone type="Asia/Jayapura">
-				<exemplarCity>Jayapura</exemplarCity>
 			</zone>
 			<zone type="Europe/Dublin">
 				<long>
 					<daylight>Ireland nutome gaƒoƒo me</daylight>
 				</long>
-				<exemplarCity>Dublin</exemplarCity>
-			</zone>
-			<zone type="Asia/Jerusalem">
-				<exemplarCity>Jerusalem</exemplarCity>
-			</zone>
-			<zone type="Europe/Isle_of_Man">
-				<exemplarCity>Isle of Man</exemplarCity>
-			</zone>
-			<zone type="Asia/Calcutta">
-				<exemplarCity>Kolkata</exemplarCity>
-			</zone>
-			<zone type="Indian/Chagos">
-				<exemplarCity>Chagos</exemplarCity>
-			</zone>
-			<zone type="Asia/Baghdad">
-				<exemplarCity>Baghdad</exemplarCity>
-			</zone>
-			<zone type="Asia/Tehran">
-				<exemplarCity>Tehran</exemplarCity>
-			</zone>
-			<zone type="Atlantic/Reykjavik">
-				<exemplarCity>Reykjavik</exemplarCity>
-			</zone>
-			<zone type="Europe/Rome">
-				<exemplarCity>Rome</exemplarCity>
-			</zone>
-			<zone type="Europe/Jersey">
-				<exemplarCity>Jersey</exemplarCity>
-			</zone>
-			<zone type="America/Jamaica">
-				<exemplarCity>Jamaica</exemplarCity>
-			</zone>
-			<zone type="Asia/Amman">
-				<exemplarCity>Amman</exemplarCity>
-			</zone>
-			<zone type="Asia/Tokyo">
-				<exemplarCity>Tokyo</exemplarCity>
-			</zone>
-			<zone type="Africa/Nairobi">
-				<exemplarCity>Nairobi</exemplarCity>
-			</zone>
-			<zone type="Asia/Bishkek">
-				<exemplarCity>Bishkek</exemplarCity>
-			</zone>
-			<zone type="Asia/Phnom_Penh">
-				<exemplarCity>Phnom Penh</exemplarCity>
 			</zone>
 			<zone type="Pacific/Enderbury">
 				<exemplarCity>Enderbury</exemplarCity>
 			</zone>
-			<zone type="Pacific/Kiritimati">
-				<exemplarCity>Kiritimati</exemplarCity>
-			</zone>
-			<zone type="Pacific/Tarawa">
-				<exemplarCity>Tarawa</exemplarCity>
-			</zone>
-			<zone type="Indian/Comoro">
-				<exemplarCity>Comoro</exemplarCity>
-			</zone>
-			<zone type="America/St_Kitts">
-				<exemplarCity>St. Kitts</exemplarCity>
-			</zone>
-			<zone type="Asia/Pyongyang">
-				<exemplarCity>Pyongyang</exemplarCity>
-			</zone>
-			<zone type="Asia/Seoul">
-				<exemplarCity>Seoul</exemplarCity>
-			</zone>
-			<zone type="Asia/Kuwait">
-				<exemplarCity>Kuwait</exemplarCity>
-			</zone>
-			<zone type="America/Cayman">
-				<exemplarCity>Cayman</exemplarCity>
-			</zone>
-			<zone type="Asia/Aqtau">
-				<exemplarCity>Aqtau</exemplarCity>
-			</zone>
-			<zone type="Asia/Oral">
-				<exemplarCity>Oral</exemplarCity>
-			</zone>
-			<zone type="Asia/Atyrau">
-				<exemplarCity>Atyrau</exemplarCity>
-			</zone>
-			<zone type="Asia/Aqtobe">
-				<exemplarCity>Aqtobe</exemplarCity>
-			</zone>
-			<zone type="Asia/Qyzylorda">
-				<exemplarCity>Qyzylorda</exemplarCity>
-			</zone>
-			<zone type="Asia/Almaty">
-				<exemplarCity>Almaty</exemplarCity>
-			</zone>
-			<zone type="Asia/Vientiane">
-				<exemplarCity>Vientiane</exemplarCity>
-			</zone>
-			<zone type="Asia/Beirut">
-				<exemplarCity>Beirut</exemplarCity>
-			</zone>
-			<zone type="America/St_Lucia">
-				<exemplarCity>St. Lucia</exemplarCity>
-			</zone>
-			<zone type="Europe/Vaduz">
-				<exemplarCity>Vaduz</exemplarCity>
-			</zone>
-			<zone type="Asia/Colombo">
-				<exemplarCity>Colombo</exemplarCity>
-			</zone>
-			<zone type="Africa/Monrovia">
-				<exemplarCity>Monrovia</exemplarCity>
-			</zone>
-			<zone type="Africa/Maseru">
-				<exemplarCity>Maseru</exemplarCity>
-			</zone>
-			<zone type="Europe/Vilnius">
-				<exemplarCity>Vilnius</exemplarCity>
-			</zone>
-			<zone type="Europe/Luxembourg">
-				<exemplarCity>Luxembourg</exemplarCity>
-			</zone>
-			<zone type="Europe/Riga">
-				<exemplarCity>Riga</exemplarCity>
-			</zone>
-			<zone type="Africa/Tripoli">
-				<exemplarCity>Tripoli</exemplarCity>
-			</zone>
-			<zone type="Africa/Casablanca">
-				<exemplarCity>Casablanca</exemplarCity>
-			</zone>
-			<zone type="Europe/Monaco">
-				<exemplarCity>Monaco</exemplarCity>
-			</zone>
-			<zone type="Europe/Chisinau">
-				<exemplarCity>Chisinau</exemplarCity>
-			</zone>
-			<zone type="Europe/Podgorica">
-				<exemplarCity>Podgorica</exemplarCity>
-			</zone>
-			<zone type="America/Marigot">
-				<exemplarCity>Marigot</exemplarCity>
-			</zone>
-			<zone type="Indian/Antananarivo">
-				<exemplarCity>Antananarivo</exemplarCity>
-			</zone>
-			<zone type="Pacific/Kwajalein">
-				<exemplarCity>Kwajalein</exemplarCity>
-			</zone>
-			<zone type="Pacific/Majuro">
-				<exemplarCity>Majuro</exemplarCity>
-			</zone>
-			<zone type="Europe/Skopje">
-				<exemplarCity>Skopje</exemplarCity>
-			</zone>
-			<zone type="Africa/Bamako">
-				<exemplarCity>Bamako</exemplarCity>
-			</zone>
-			<zone type="Asia/Rangoon">
-				<exemplarCity>Yangon</exemplarCity>
-			</zone>
-			<zone type="Asia/Hovd">
-				<exemplarCity>Hovd</exemplarCity>
-			</zone>
-			<zone type="Asia/Ulaanbaatar">
-				<exemplarCity>Ulaanbaatar</exemplarCity>
-			</zone>
-			<zone type="Asia/Choibalsan">
-				<exemplarCity>Choibalsan</exemplarCity>
-			</zone>
 			<zone type="Asia/Macau">
 				<exemplarCity>Macau</exemplarCity>
 			</zone>
-			<zone type="Pacific/Saipan">
-				<exemplarCity>Saipan</exemplarCity>
-			</zone>
-			<zone type="America/Martinique">
-				<exemplarCity>Martinique</exemplarCity>
-			</zone>
-			<zone type="Africa/Nouakchott">
-				<exemplarCity>Nouakchott</exemplarCity>
-			</zone>
-			<zone type="America/Montserrat">
-				<exemplarCity>Montserrat</exemplarCity>
-			</zone>
-			<zone type="Europe/Malta">
-				<exemplarCity>Malta</exemplarCity>
-			</zone>
-			<zone type="Indian/Mauritius">
-				<exemplarCity>Mauritius</exemplarCity>
-			</zone>
-			<zone type="Indian/Maldives">
-				<exemplarCity>Maldives</exemplarCity>
-			</zone>
-			<zone type="Africa/Blantyre">
-				<exemplarCity>Blantyre</exemplarCity>
-			</zone>
-			<zone type="America/Tijuana">
-				<exemplarCity>Tijuana</exemplarCity>
-			</zone>
-			<zone type="America/Hermosillo">
-				<exemplarCity>Hermosillo</exemplarCity>
-			</zone>
-			<zone type="America/Mazatlan">
-				<exemplarCity>Mazatlan</exemplarCity>
-			</zone>
-			<zone type="America/Chihuahua">
-				<exemplarCity>Chihuahua</exemplarCity>
-			</zone>
 			<zone type="America/Bahia_Banderas">
 				<exemplarCity>Bahia Banderas</exemplarCity>
-			</zone>
-			<zone type="America/Ojinaga">
-				<exemplarCity>Ojinaga</exemplarCity>
-			</zone>
-			<zone type="America/Monterrey">
-				<exemplarCity>Monterrey</exemplarCity>
-			</zone>
-			<zone type="America/Mexico_City">
-				<exemplarCity>Mexico City</exemplarCity>
-			</zone>
-			<zone type="America/Matamoros">
-				<exemplarCity>Matamoros</exemplarCity>
 			</zone>
 			<zone type="America/Merida">
 				<exemplarCity>Merida</exemplarCity>
@@ -3122,482 +1916,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Cancun">
 				<exemplarCity>Cancun</exemplarCity>
 			</zone>
-			<zone type="Asia/Kuala_Lumpur">
-				<exemplarCity>Kuala Lumpur</exemplarCity>
-			</zone>
-			<zone type="Asia/Kuching">
-				<exemplarCity>Kuching</exemplarCity>
-			</zone>
-			<zone type="Africa/Maputo">
-				<exemplarCity>Maputo</exemplarCity>
-			</zone>
-			<zone type="Africa/Windhoek">
-				<exemplarCity>Windhoek</exemplarCity>
-			</zone>
-			<zone type="Pacific/Noumea">
-				<exemplarCity>Noumea</exemplarCity>
-			</zone>
-			<zone type="Africa/Niamey">
-				<exemplarCity>Niamey</exemplarCity>
-			</zone>
-			<zone type="Pacific/Norfolk">
-				<exemplarCity>Norfolk</exemplarCity>
-			</zone>
-			<zone type="Africa/Lagos">
-				<exemplarCity>Lagos</exemplarCity>
-			</zone>
-			<zone type="America/Managua">
-				<exemplarCity>Managua</exemplarCity>
-			</zone>
-			<zone type="Europe/Amsterdam">
-				<exemplarCity>Amsterdam</exemplarCity>
-			</zone>
-			<zone type="Europe/Oslo">
-				<exemplarCity>Oslo</exemplarCity>
-			</zone>
 			<zone type="Asia/Katmandu">
 				<exemplarCity>Kathmandu nutomegaƒoƒome</exemplarCity>
-			</zone>
-			<zone type="Pacific/Nauru">
-				<exemplarCity>Nauru</exemplarCity>
-			</zone>
-			<zone type="Pacific/Niue">
-				<exemplarCity>Niue</exemplarCity>
-			</zone>
-			<zone type="Pacific/Chatham">
-				<exemplarCity>Chatham</exemplarCity>
-			</zone>
-			<zone type="Pacific/Auckland">
-				<exemplarCity>Auckland</exemplarCity>
-			</zone>
-			<zone type="Asia/Muscat">
-				<exemplarCity>Muscat</exemplarCity>
-			</zone>
-			<zone type="America/Panama">
-				<exemplarCity>Panama</exemplarCity>
-			</zone>
-			<zone type="America/Lima">
-				<exemplarCity>Lima</exemplarCity>
-			</zone>
-			<zone type="Pacific/Tahiti">
-				<exemplarCity>Tahiti</exemplarCity>
-			</zone>
-			<zone type="Pacific/Marquesas">
-				<exemplarCity>Marquesas</exemplarCity>
-			</zone>
-			<zone type="Pacific/Gambier">
-				<exemplarCity>Gambier</exemplarCity>
-			</zone>
-			<zone type="Pacific/Port_Moresby">
-				<exemplarCity>Port Moresby</exemplarCity>
-			</zone>
-			<zone type="Pacific/Bougainville">
-				<exemplarCity>Bougainville</exemplarCity>
-			</zone>
-			<zone type="Asia/Manila">
-				<exemplarCity>Manila</exemplarCity>
-			</zone>
-			<zone type="Asia/Karachi">
-				<exemplarCity>Karachi</exemplarCity>
-			</zone>
-			<zone type="Europe/Warsaw">
-				<exemplarCity>Warsaw</exemplarCity>
-			</zone>
-			<zone type="America/Miquelon">
-				<exemplarCity>Miquelon</exemplarCity>
-			</zone>
-			<zone type="Pacific/Pitcairn">
-				<exemplarCity>Pitcairn</exemplarCity>
-			</zone>
-			<zone type="America/Puerto_Rico">
-				<exemplarCity>Puerto Rico</exemplarCity>
-			</zone>
-			<zone type="Asia/Gaza">
-				<exemplarCity>Gaza</exemplarCity>
-			</zone>
-			<zone type="Asia/Hebron">
-				<exemplarCity>Hebron</exemplarCity>
-			</zone>
-			<zone type="Atlantic/Azores">
-				<exemplarCity>Azores</exemplarCity>
-			</zone>
-			<zone type="Atlantic/Madeira">
-				<exemplarCity>Madeira</exemplarCity>
-			</zone>
-			<zone type="Europe/Lisbon">
-				<exemplarCity>Lisbon</exemplarCity>
-			</zone>
-			<zone type="Pacific/Palau">
-				<exemplarCity>Palau</exemplarCity>
-			</zone>
-			<zone type="America/Asuncion">
-				<exemplarCity>Asuncion</exemplarCity>
-			</zone>
-			<zone type="Asia/Qatar">
-				<exemplarCity>Qatar</exemplarCity>
-			</zone>
-			<zone type="Indian/Reunion">
-				<exemplarCity>Reunion</exemplarCity>
-			</zone>
-			<zone type="Europe/Bucharest">
-				<exemplarCity>Bucharest</exemplarCity>
-			</zone>
-			<zone type="Europe/Belgrade">
-				<exemplarCity>Belgrade</exemplarCity>
-			</zone>
-			<zone type="Europe/Kaliningrad">
-				<exemplarCity>Kaliningrad</exemplarCity>
-			</zone>
-			<zone type="Europe/Moscow">
-				<exemplarCity>Moscow</exemplarCity>
-			</zone>
-			<zone type="Europe/Volgograd">
-				<exemplarCity>Volgograd</exemplarCity>
-			</zone>
-			<zone type="Europe/Saratov">
-				<exemplarCity>Saratov</exemplarCity>
-			</zone>
-			<zone type="Europe/Astrakhan">
-				<exemplarCity>Astrakhan</exemplarCity>
-			</zone>
-			<zone type="Europe/Ulyanovsk">
-				<exemplarCity>Ulyanovsk</exemplarCity>
-			</zone>
-			<zone type="Europe/Kirov">
-				<exemplarCity>Kirov</exemplarCity>
-			</zone>
-			<zone type="Europe/Samara">
-				<exemplarCity>Samara</exemplarCity>
-			</zone>
-			<zone type="Asia/Yekaterinburg">
-				<exemplarCity>Yekaterinburg</exemplarCity>
-			</zone>
-			<zone type="Asia/Omsk">
-				<exemplarCity>Omsk</exemplarCity>
-			</zone>
-			<zone type="Asia/Novosibirsk">
-				<exemplarCity>Novosibirsk</exemplarCity>
-			</zone>
-			<zone type="Asia/Barnaul">
-				<exemplarCity>Barnaul</exemplarCity>
-			</zone>
-			<zone type="Asia/Tomsk">
-				<exemplarCity>Tomsk</exemplarCity>
-			</zone>
-			<zone type="Asia/Novokuznetsk">
-				<exemplarCity>Novokuznetsk</exemplarCity>
-			</zone>
-			<zone type="Asia/Krasnoyarsk">
-				<exemplarCity>Krasnoyarsk</exemplarCity>
-			</zone>
-			<zone type="Asia/Irkutsk">
-				<exemplarCity>Irkutsk</exemplarCity>
-			</zone>
-			<zone type="Asia/Chita">
-				<exemplarCity>Chita</exemplarCity>
-			</zone>
-			<zone type="Asia/Yakutsk">
-				<exemplarCity>Yakutsk</exemplarCity>
-			</zone>
-			<zone type="Asia/Vladivostok">
-				<exemplarCity>Vladivostok</exemplarCity>
-			</zone>
-			<zone type="Asia/Khandyga">
-				<exemplarCity>Khandyga</exemplarCity>
-			</zone>
-			<zone type="Asia/Sakhalin">
-				<exemplarCity>Sakhalin</exemplarCity>
-			</zone>
-			<zone type="Asia/Ust-Nera">
-				<exemplarCity>Ust-Nera</exemplarCity>
-			</zone>
-			<zone type="Asia/Magadan">
-				<exemplarCity>Magadan</exemplarCity>
-			</zone>
-			<zone type="Asia/Srednekolymsk">
-				<exemplarCity>Srednekolymsk</exemplarCity>
-			</zone>
-			<zone type="Asia/Kamchatka">
-				<exemplarCity>Kamchatka</exemplarCity>
-			</zone>
-			<zone type="Asia/Anadyr">
-				<exemplarCity>Anadyr</exemplarCity>
-			</zone>
-			<zone type="Africa/Kigali">
-				<exemplarCity>Kigali</exemplarCity>
-			</zone>
-			<zone type="Asia/Riyadh">
-				<exemplarCity>Riyadh</exemplarCity>
-			</zone>
-			<zone type="Pacific/Guadalcanal">
-				<exemplarCity>Guadalcanal</exemplarCity>
-			</zone>
-			<zone type="Indian/Mahe">
-				<exemplarCity>Mahe</exemplarCity>
-			</zone>
-			<zone type="Africa/Khartoum">
-				<exemplarCity>Khartoum</exemplarCity>
-			</zone>
-			<zone type="Europe/Stockholm">
-				<exemplarCity>Stockholm</exemplarCity>
-			</zone>
-			<zone type="Asia/Singapore">
-				<exemplarCity>Singapore</exemplarCity>
-			</zone>
-			<zone type="Atlantic/St_Helena">
-				<exemplarCity>St. Helena</exemplarCity>
-			</zone>
-			<zone type="Europe/Ljubljana">
-				<exemplarCity>Ljubljana</exemplarCity>
-			</zone>
-			<zone type="Arctic/Longyearbyen">
-				<exemplarCity>Longyearbyen</exemplarCity>
-			</zone>
-			<zone type="Europe/Bratislava">
-				<exemplarCity>Bratislava</exemplarCity>
-			</zone>
-			<zone type="Africa/Freetown">
-				<exemplarCity>Freetown</exemplarCity>
-			</zone>
-			<zone type="Europe/San_Marino">
-				<exemplarCity>San Marino</exemplarCity>
-			</zone>
-			<zone type="Africa/Dakar">
-				<exemplarCity>Dakar</exemplarCity>
-			</zone>
-			<zone type="Africa/Mogadishu">
-				<exemplarCity>Mogadishu</exemplarCity>
-			</zone>
-			<zone type="America/Paramaribo">
-				<exemplarCity>Paramaribo</exemplarCity>
-			</zone>
-			<zone type="Africa/Juba">
-				<exemplarCity>Juba</exemplarCity>
-			</zone>
-			<zone type="Africa/Sao_Tome">
-				<exemplarCity>Sao Tome</exemplarCity>
-			</zone>
-			<zone type="America/El_Salvador">
-				<exemplarCity>El Salvador</exemplarCity>
-			</zone>
-			<zone type="America/Lower_Princes">
-				<exemplarCity>Lower Prince’s Quarter</exemplarCity>
-			</zone>
-			<zone type="Asia/Damascus">
-				<exemplarCity>Damascus</exemplarCity>
-			</zone>
-			<zone type="Africa/Mbabane">
-				<exemplarCity>Mbabane</exemplarCity>
-			</zone>
-			<zone type="America/Grand_Turk">
-				<exemplarCity>Grand Turk</exemplarCity>
-			</zone>
-			<zone type="Africa/Ndjamena">
-				<exemplarCity>Ndjamena</exemplarCity>
-			</zone>
-			<zone type="Indian/Kerguelen">
-				<exemplarCity>Kerguelen</exemplarCity>
-			</zone>
-			<zone type="Africa/Lome">
-				<exemplarCity>Lome</exemplarCity>
-			</zone>
-			<zone type="Asia/Bangkok">
-				<exemplarCity>Bangkok</exemplarCity>
-			</zone>
-			<zone type="Asia/Dushanbe">
-				<exemplarCity>Dushanbe</exemplarCity>
-			</zone>
-			<zone type="Pacific/Fakaofo">
-				<exemplarCity>Fakaofo</exemplarCity>
-			</zone>
-			<zone type="Asia/Dili">
-				<exemplarCity>Dili</exemplarCity>
-			</zone>
-			<zone type="Asia/Ashgabat">
-				<exemplarCity>Ashgabat</exemplarCity>
-			</zone>
-			<zone type="Africa/Tunis">
-				<exemplarCity>Tunis</exemplarCity>
-			</zone>
-			<zone type="Pacific/Tongatapu">
-				<exemplarCity>Tongatapu</exemplarCity>
-			</zone>
-			<zone type="Europe/Istanbul">
-				<exemplarCity>Istanbul</exemplarCity>
-			</zone>
-			<zone type="America/Port_of_Spain">
-				<exemplarCity>Port of Spain</exemplarCity>
-			</zone>
-			<zone type="Pacific/Funafuti">
-				<exemplarCity>Funafuti</exemplarCity>
-			</zone>
-			<zone type="Asia/Taipei">
-				<exemplarCity>Taipei</exemplarCity>
-			</zone>
-			<zone type="Africa/Dar_es_Salaam">
-				<exemplarCity>Dar es Salaam</exemplarCity>
-			</zone>
-			<zone type="Europe/Uzhgorod">
-				<exemplarCity>Uzhgorod</exemplarCity>
 			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>Kiev</exemplarCity>
 			</zone>
-			<zone type="Europe/Simferopol">
-				<exemplarCity>Simferopol</exemplarCity>
-			</zone>
-			<zone type="Europe/Zaporozhye">
-				<exemplarCity>Zaporozhye</exemplarCity>
-			</zone>
-			<zone type="Africa/Kampala">
-				<exemplarCity>Kampala</exemplarCity>
-			</zone>
-			<zone type="Pacific/Midway">
-				<exemplarCity>Midway</exemplarCity>
-			</zone>
-			<zone type="Pacific/Wake">
-				<exemplarCity>Wake</exemplarCity>
-			</zone>
-			<zone type="America/Adak">
-				<exemplarCity>Adak</exemplarCity>
-			</zone>
-			<zone type="America/Nome">
-				<exemplarCity>Nome</exemplarCity>
-			</zone>
 			<zone type="Pacific/Honolulu">
 				<exemplarCity>Honolulu</exemplarCity>
-			</zone>
-			<zone type="Pacific/Johnston">
-				<exemplarCity>Johnston</exemplarCity>
-			</zone>
-			<zone type="America/Anchorage">
-				<exemplarCity>Anchorage</exemplarCity>
-			</zone>
-			<zone type="America/Yakutat">
-				<exemplarCity>Yakutat</exemplarCity>
-			</zone>
-			<zone type="America/Sitka">
-				<exemplarCity>Sitka</exemplarCity>
-			</zone>
-			<zone type="America/Juneau">
-				<exemplarCity>Juneau</exemplarCity>
-			</zone>
-			<zone type="America/Metlakatla">
-				<exemplarCity>Metlakatla</exemplarCity>
-			</zone>
-			<zone type="America/Los_Angeles">
-				<exemplarCity>Los Angeles</exemplarCity>
-			</zone>
-			<zone type="America/Boise">
-				<exemplarCity>Boise</exemplarCity>
-			</zone>
-			<zone type="America/Phoenix">
-				<exemplarCity>Phoenix</exemplarCity>
-			</zone>
-			<zone type="America/Denver">
-				<exemplarCity>Denver</exemplarCity>
-			</zone>
-			<zone type="America/North_Dakota/Beulah">
-				<exemplarCity>Beulah, North Dakota</exemplarCity>
-			</zone>
-			<zone type="America/North_Dakota/New_Salem">
-				<exemplarCity>New Salem, North Dakota</exemplarCity>
-			</zone>
-			<zone type="America/North_Dakota/Center">
-				<exemplarCity>Center, North Dakota</exemplarCity>
-			</zone>
-			<zone type="America/Chicago">
-				<exemplarCity>Chicago</exemplarCity>
-			</zone>
-			<zone type="America/Menominee">
-				<exemplarCity>Menominee</exemplarCity>
-			</zone>
-			<zone type="America/Indiana/Vincennes">
-				<exemplarCity>Vincennes, Indiana</exemplarCity>
-			</zone>
-			<zone type="America/Indiana/Petersburg">
-				<exemplarCity>Petersburg, Indiana</exemplarCity>
-			</zone>
-			<zone type="America/Indiana/Tell_City">
-				<exemplarCity>Tell City, Indiana</exemplarCity>
-			</zone>
-			<zone type="America/Indiana/Knox">
-				<exemplarCity>Knox, Indiana</exemplarCity>
-			</zone>
-			<zone type="America/Indiana/Winamac">
-				<exemplarCity>Winamac, Indiana</exemplarCity>
-			</zone>
-			<zone type="America/Indiana/Marengo">
-				<exemplarCity>Marengo, Indiana</exemplarCity>
-			</zone>
-			<zone type="America/Indianapolis">
-				<exemplarCity>Indianapolis</exemplarCity>
-			</zone>
-			<zone type="America/Louisville">
-				<exemplarCity>Louisville</exemplarCity>
-			</zone>
-			<zone type="America/Indiana/Vevay">
-				<exemplarCity>Vevay, Indiana</exemplarCity>
-			</zone>
-			<zone type="America/Kentucky/Monticello">
-				<exemplarCity>Monticello, Kentucky</exemplarCity>
-			</zone>
-			<zone type="America/Detroit">
-				<exemplarCity>Detroit</exemplarCity>
-			</zone>
-			<zone type="America/New_York">
-				<exemplarCity>New York</exemplarCity>
-			</zone>
-			<zone type="America/Montevideo">
-				<exemplarCity>Montevideo</exemplarCity>
-			</zone>
-			<zone type="Asia/Samarkand">
-				<exemplarCity>Samarkand</exemplarCity>
-			</zone>
-			<zone type="Asia/Tashkent">
-				<exemplarCity>Tashkent</exemplarCity>
-			</zone>
-			<zone type="Europe/Vatican">
-				<exemplarCity>Vatican</exemplarCity>
-			</zone>
-			<zone type="America/St_Vincent">
-				<exemplarCity>St. Vincent</exemplarCity>
-			</zone>
-			<zone type="America/Caracas">
-				<exemplarCity>Caracas</exemplarCity>
-			</zone>
-			<zone type="America/Tortola">
-				<exemplarCity>Tortola</exemplarCity>
-			</zone>
-			<zone type="America/St_Thomas">
-				<exemplarCity>St. Thomas</exemplarCity>
-			</zone>
-			<zone type="Asia/Saigon">
-				<exemplarCity>Ho Chi Minh</exemplarCity>
-			</zone>
-			<zone type="Pacific/Efate">
-				<exemplarCity>Efate</exemplarCity>
-			</zone>
-			<zone type="Pacific/Wallis">
-				<exemplarCity>Wallis</exemplarCity>
-			</zone>
-			<zone type="Pacific/Apia">
-				<exemplarCity>Apia</exemplarCity>
-			</zone>
-			<zone type="Asia/Aden">
-				<exemplarCity>Aden</exemplarCity>
-			</zone>
-			<zone type="Indian/Mayotte">
-				<exemplarCity>Mayotte</exemplarCity>
-			</zone>
-			<zone type="Africa/Johannesburg">
-				<exemplarCity>Johannesburg</exemplarCity>
-			</zone>
-			<zone type="Africa/Lusaka">
-				<exemplarCity>Lusaka</exemplarCity>
-			</zone>
-			<zone type="Africa/Harare">
-				<exemplarCity>Harare</exemplarCity>
 			</zone>
 			<metazone type="Acre">
 				<long>
@@ -4163,11 +2489,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight draft="unconfirmed">Makau ŋkekeme gaƒoƒome</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Macquarie Island gaƒoƒo me</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>Magadan gaƒoƒo me</generic>
@@ -4205,13 +2526,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<metazone type="Mawson">
 				<long>
 					<standard>Mawson gaƒoƒo me</standard>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic>Northwest Mexico gaƒoƒo me</generic>
-					<standard>Northwest Mexico nutome gaƒoƒo me</standard>
-					<daylight>Northwest Mexico kele gaƒoƒo me</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">
@@ -4557,23 +2871,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	<numbers>
 		<minimumGroupingDigits draft="contributed">3</minimumGroupingDigits>
 		<symbols numberSystem="latn">
-			<decimal>.</decimal>
-			<group>,</group>
-			<percentSign>%</percentSign>
-			<plusSign>+</plusSign>
-			<minusSign>-</minusSign>
-			<exponential>E</exponential>
-			<superscriptingExponent>×</superscriptingExponent>
-			<perMille>‰</perMille>
-			<infinity>∞</infinity>
 			<nan>mnn</nan>
 		</symbols>
 		<decimalFormats numberSystem="latn">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern>#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
 			<decimalFormatLength type="long">
 				<decimalFormat>
 					<pattern type="1000" count="one">akpe 0</pattern>
@@ -4604,53 +2904,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</decimalFormatLength>
 			<decimalFormatLength type="short">
 				<decimalFormat>
-					<pattern type="1000" count="one">0K</pattern>
-					<pattern type="1000" count="other">0K</pattern>
-					<pattern type="10000" count="one">00K</pattern>
-					<pattern type="10000" count="other">00K</pattern>
-					<pattern type="100000" count="one">000K</pattern>
-					<pattern type="100000" count="other">000K</pattern>
-					<pattern type="1000000" count="one">0M</pattern>
-					<pattern type="1000000" count="other">0M</pattern>
-					<pattern type="10000000" count="one">00M</pattern>
-					<pattern type="10000000" count="other">00M</pattern>
-					<pattern type="100000000" count="one">000M</pattern>
-					<pattern type="100000000" count="other">000M</pattern>
 					<pattern type="1000000000" count="one">0B</pattern>
 					<pattern type="1000000000" count="other">0B</pattern>
 					<pattern type="10000000000" count="one">00B</pattern>
 					<pattern type="10000000000" count="other">00B</pattern>
 					<pattern type="100000000000" count="one">000B</pattern>
 					<pattern type="100000000000" count="other">000B</pattern>
-					<pattern type="1000000000000" count="one">0T</pattern>
-					<pattern type="1000000000000" count="other">0T</pattern>
-					<pattern type="10000000000000" count="one">00T</pattern>
-					<pattern type="10000000000000" count="other">00T</pattern>
-					<pattern type="100000000000000" count="one">000T</pattern>
-					<pattern type="100000000000000" count="other">000T</pattern>
 				</decimalFormat>
 			</decimalFormatLength>
 		</decimalFormats>
-		<scientificFormats numberSystem="latn">
-			<scientificFormatLength>
-				<scientificFormat>
-					<pattern>#E0</pattern>
-				</scientificFormat>
-			</scientificFormatLength>
-		</scientificFormats>
-		<percentFormats numberSystem="latn">
-			<percentFormatLength>
-				<percentFormat>
-					<pattern>#,##0%</pattern>
-				</percentFormat>
-			</percentFormatLength>
-		</percentFormats>
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>¤#,##0.00</pattern>
 					<pattern alt="alphaNextToNumber" draft="provisional">¤ #,##0.00</pattern>
-					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
 					<pattern>¤#,##0.00;(¤#,##0.00)</pattern>
@@ -4710,245 +2977,144 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<pattern type="100000000000000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 000T</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
-			<unitPattern count="one">{1} {0}</unitPattern>
+			<unitPattern count="one">{0} {1}</unitPattern>
 			<unitPattern count="other">{1} {0}</unitPattern>
 		</currencyFormats>
 		<currencies>
 			<currency type="ADP">
 				<displayName>andorraga peseta</displayName>
-				<displayName count="one">andorraga peseta</displayName>
-				<displayName count="other">andorraga peseta</displayName>
 			</currency>
 			<currency type="AED">
 				<displayName>united arab emiratesga dirham</displayName>
-				<displayName count="one">united arab emiratesga dirham</displayName>
-				<displayName count="other">united arab emiratesga dirham</displayName>
 			</currency>
 			<currency type="AFA">
 				<displayName>afghanistanga afghani (1927–2002)</displayName>
-				<displayName count="one">afghanistanga afghani (1927–2002)</displayName>
-				<displayName count="other">afghanistanga afghani (1927–2002)</displayName>
 			</currency>
 			<currency type="AFN">
 				<displayName>afghanistanga afghani</displayName>
-				<displayName count="one">afghanistanga afghani</displayName>
-				<displayName count="other">afghanistanga afghani</displayName>
 			</currency>
 			<currency type="ALK">
 				<displayName>albaniaga lek (1946–1965)</displayName>
-				<displayName count="one">albaniaga lek (1946–1965)</displayName>
-				<displayName count="other">albaniaga lek (1946–1965)</displayName>
 			</currency>
 			<currency type="ALL">
 				<displayName>albaniaga lek</displayName>
-				<displayName count="one">albaniaga lek</displayName>
-				<displayName count="other">albaniaga lek</displayName>
-				<symbol draft="contributed">ALL</symbol>
 			</currency>
 			<currency type="AMD">
 				<displayName>armeniaga dram</displayName>
-				<displayName count="one">armeniaga dram</displayName>
-				<displayName count="other">armeniaga dram</displayName>
 			</currency>
 			<currency type="ANG">
 				<displayName>netherlands antilleaga guilder</displayName>
-				<displayName count="one">netherlands antilleaga guilder</displayName>
-				<displayName count="other">netherlands antilleaga guilder</displayName>
-				<symbol draft="contributed">ANG</symbol>
 			</currency>
 			<currency type="AOA">
 				<displayName>angolaga kwanza</displayName>
-				<displayName count="one">angolaga kwanza</displayName>
-				<displayName count="other">angolaga kwanza</displayName>
 			</currency>
 			<currency type="AOK">
 				<displayName>angolaga kwanza (1977–1991)</displayName>
-				<displayName count="one">angolaga kwanza (1977–1991)</displayName>
-				<displayName count="other">angolaga kwanza (1977–1991)</displayName>
 			</currency>
 			<currency type="AON">
 				<displayName>angolaga kwanza (1990–2000)</displayName>
-				<displayName count="one">angolaga kwanza (1990–2000)</displayName>
-				<displayName count="other">angolaga kwanza (1990–2000)</displayName>
 			</currency>
 			<currency type="AOR">
 				<displayName>angolaga kwanza xoxotɔ (1995–1999)</displayName>
-				<displayName count="one">angolaga kwanza xoxotɔ (1995–1999)</displayName>
-				<displayName count="other">angolaga kwanza xoxotɔ (1995–1999)</displayName>
 			</currency>
 			<currency type="ARA">
 				<displayName>argentinaga austral</displayName>
-				<displayName count="one">argentinaga austral</displayName>
-				<displayName count="other">argentinaga austral</displayName>
 			</currency>
 			<currency type="ARL">
 				<displayName>argentinaga peso ley (1970–1983)</displayName>
-				<displayName count="one">argentinaga peso ley (1970–1983)</displayName>
-				<displayName count="other">argentinaga peso ley (1970–1983)</displayName>
 			</currency>
 			<currency type="ARM">
 				<displayName>argentinaga peso (1881–1970)</displayName>
-				<displayName count="one">argentinaga peso (1881–1970)</displayName>
-				<displayName count="other">argentinaga peso (1881–1970)</displayName>
 			</currency>
 			<currency type="ARP">
 				<displayName>argentinaga peso (1983–1985)</displayName>
-				<displayName count="one">argentinaga peso (1983–1985)</displayName>
-				<displayName count="other">argentinaga peso (1983–1985)</displayName>
 			</currency>
 			<currency type="ARS">
 				<displayName>argentinaga peso</displayName>
-				<displayName count="one">argentinaga peso</displayName>
-				<displayName count="other">argentinaga peso</displayName>
-				<symbol draft="contributed">ARS</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="ATS">
 				<displayName>ɔstriaga schilling</displayName>
-				<displayName count="one">ɔstriaga schilling</displayName>
-				<displayName count="other">ɔstriaga schilling</displayName>
 			</currency>
 			<currency type="AUD">
 				<displayName>Australiaga dollar</displayName>
-				<displayName count="one">Australiaga dollar</displayName>
-				<displayName count="other">Australiaga dollar</displayName>
 				<symbol draft="contributed">AU$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="AWG">
 				<displayName>arubaga lorin</displayName>
 				<displayName count="one">arubaga florin</displayName>
 				<displayName count="other">arubaga florin</displayName>
-				<symbol draft="contributed">AWG</symbol>
 			</currency>
 			<currency type="AZM">
 				<displayName>azerbaidzanga manat (1993–2006)</displayName>
-				<displayName count="one">azerbaidzanga manat (1993–2006)</displayName>
-				<displayName count="other">azerbaidzanga manat (1993–2006)</displayName>
 			</currency>
 			<currency type="AZN">
 				<displayName>azerbaidzanga manat</displayName>
-				<displayName count="one">azerbaidzanga manat</displayName>
-				<displayName count="other">azerbaidzanga manat</displayName>
 			</currency>
 			<currency type="BAD">
 				<displayName>bosnia-herzegovinaga dinar (1992–1994)</displayName>
-				<displayName count="one">bosnia-herzegovinaga dinar (1992–1994)</displayName>
-				<displayName count="other">bosnia-herzegovinaga dinar (1992–1994)</displayName>
 			</currency>
 			<currency type="BAM">
 				<displayName>bosnia-herzegovinaga convertible mark</displayName>
-				<displayName count="one">bosnia-herzegovinaga convertible mark</displayName>
-				<displayName count="other">bosnia-herzegovinaga convertible mark</displayName>
-				<symbol draft="contributed">BAM</symbol>
-				<symbol alt="narrow" draft="contributed">KM</symbol>
 			</currency>
 			<currency type="BAN">
 				<displayName>bosnia kple herzegovinaga dinar yeyètɔ (1994–1997)</displayName>
-				<displayName count="one">bosnia kple herzegovinaga dinar yeyètɔ (1994–1997)</displayName>
-				<displayName count="other">bosnia kple herzegovinaga dinar yeyètɔ (1994–1997)</displayName>
 			</currency>
 			<currency type="BBD">
 				<displayName>barbadosga dollar</displayName>
-				<displayName count="one">barbadosga dollar</displayName>
-				<displayName count="other">barbadosga dollar</displayName>
-				<symbol draft="contributed">BBD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="BDT">
 				<displayName>bangladeshga taka</displayName>
-				<displayName count="one">bangladeshga taka</displayName>
-				<displayName count="other">bangladeshga taka</displayName>
 			</currency>
 			<currency type="BEC">
 				<displayName>beldziumga franc (convertible)</displayName>
-				<displayName count="one">beldziumga franc (convertible)</displayName>
-				<displayName count="other">beldziumga franc (convertible)</displayName>
 			</currency>
 			<currency type="BEF">
 				<displayName>beldziumga franc</displayName>
-				<displayName count="one">beldziumga franc</displayName>
-				<displayName count="other">beldziumga franc</displayName>
 			</currency>
 			<currency type="BEL">
 				<displayName>beldziumga franc (financial)</displayName>
-				<displayName count="one">beldziumga franc (financial)</displayName>
-				<displayName count="other">beldziumga franc (financial)</displayName>
 			</currency>
 			<currency type="BGL">
 				<displayName>bɔlgariaga hard lev</displayName>
-				<displayName count="one">bɔlgariaga hard lev</displayName>
-				<displayName count="other">bɔlgariaga hard lev</displayName>
 			</currency>
 			<currency type="BGM">
 				<displayName>bɔlgariaga socialist lev</displayName>
-				<displayName count="one">bɔlgariaga socialist lev</displayName>
-				<displayName count="other">bɔlgariaga socialist lev</displayName>
 			</currency>
 			<currency type="BGN">
 				<displayName>bulgariaga lev</displayName>
-				<displayName count="one">bulgariaga lev</displayName>
-				<displayName count="other">bulgariaga lev</displayName>
-				<symbol draft="contributed">BGN</symbol>
 			</currency>
 			<currency type="BGO">
 				<displayName>bulgariaga lev (1879–1952)</displayName>
-				<displayName count="one">bulgariaga lev (1879–1952)</displayName>
-				<displayName count="other">bulgariaga lev (1879–1952)</displayName>
 			</currency>
 			<currency type="BHD">
 				<displayName>bahrainga dinar</displayName>
-				<displayName count="one">bahrainga dinar</displayName>
-				<displayName count="other">bahrainga dinar</displayName>
 			</currency>
 			<currency type="BIF">
 				<displayName>burundiga franc</displayName>
-				<displayName count="one">burundiga franc</displayName>
-				<displayName count="other">burundiga franc</displayName>
 			</currency>
 			<currency type="BMD">
 				<displayName>bermudaga dollar</displayName>
-				<displayName count="one">bermudaga dollar</displayName>
-				<displayName count="other">bermudaga dollar</displayName>
-				<symbol draft="contributed">BMD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="BND">
 				<displayName>bruneiga dollar</displayName>
-				<displayName count="one">bruneiga dollar</displayName>
-				<displayName count="other">bruneiga dollar</displayName>
 			</currency>
 			<currency type="BOB">
 				<displayName>boliviaga boliviano</displayName>
-				<displayName count="one">boliviaga boliviano</displayName>
-				<displayName count="other">boliviaga boliviano</displayName>
-				<symbol draft="contributed">BOB</symbol>
-				<symbol alt="narrow" draft="contributed">Bs</symbol>
 			</currency>
 			<currency type="BOL">
 				<displayName>boliviaga boliviano (1863–1963)</displayName>
-				<displayName count="one">boliviaga boliviano (1863–1963)</displayName>
-				<displayName count="other">boliviaga boliviano (1863–1963)</displayName>
 			</currency>
 			<currency type="BOP">
 				<displayName>boliviaga peso</displayName>
-				<displayName count="one">boliviaga peso</displayName>
-				<displayName count="other">boliviaga peso</displayName>
 			</currency>
 			<currency type="BOV">
 				<displayName>boliviaga mvdol</displayName>
-				<displayName count="one">boliviaga mvdol</displayName>
-				<displayName count="other">boliviaga mvdol</displayName>
 			</currency>
 			<currency type="BRB">
 				<displayName>braziliaga cruzeiro xoxotɔ (1967–1986)</displayName>
-				<displayName count="one">braziliaga cruzeiro xoxotɔ (1967–1986)</displayName>
-				<displayName count="other">braziliaga cruzeiro xoxotɔ (1967–1986)</displayName>
 			</currency>
 			<currency type="BRC">
 				<displayName>brazilia cruzado (1986–1989)</displayName>
-				<displayName count="one">brazilia cruzado (1986–1989)</displayName>
-				<displayName count="other">brazilia cruzado (1986–1989)</displayName>
 			</currency>
 			<currency type="BRE">
 				<displayName>braziliaga cruzeiro xoxotɔ gbãtɔ (1990–1993)</displayName>
@@ -4957,47 +3123,27 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="BRL">
 				<displayName>braziliaga real</displayName>
-				<displayName count="one">braziliaga real</displayName>
-				<displayName count="other">braziliaga real</displayName>
-				<symbol draft="contributed">R$</symbol>
-				<symbol alt="narrow" draft="contributed">R$</symbol>
 			</currency>
 			<currency type="BRN">
 				<displayName>brazilia cruzado xoxotɔ (1989–1990)</displayName>
-				<displayName count="one">brazilia cruzado xoxotɔ (1989–1990)</displayName>
-				<displayName count="other">brazilia cruzado xoxotɔ (1989–1990)</displayName>
 			</currency>
 			<currency type="BRR">
 				<displayName>braziliaga cruzeiro (1993–1994)</displayName>
-				<displayName count="one">braziliaga cruzeiro (1993–1994)</displayName>
-				<displayName count="other">braziliaga cruzeiro (1993–1994)</displayName>
 			</currency>
 			<currency type="BRZ">
 				<displayName>braziliaga cruzeiro (1942–1967)</displayName>
-				<displayName count="one">braziliaga cruzeiro (1942–1967)</displayName>
-				<displayName count="other">braziliaga cruzeiro (1942–1967)</displayName>
 			</currency>
 			<currency type="BSD">
 				<displayName>bahamasga dollar</displayName>
-				<displayName count="one">bahamasga dollar</displayName>
-				<displayName count="other">bahamasga dollar</displayName>
-				<symbol draft="contributed">BSD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="BTN">
 				<displayName>bhutanga ngultrum</displayName>
-				<displayName count="one">bhutanga ngultrum</displayName>
-				<displayName count="other">bhutanga ngultrum</displayName>
 			</currency>
 			<currency type="BUK">
 				<displayName>burmaga kyat</displayName>
-				<displayName count="one">burmaga kyat</displayName>
-				<displayName count="other">burmaga kyat</displayName>
 			</currency>
 			<currency type="BWP">
 				<displayName>botswanaga pula</displayName>
-				<displayName count="one">botswanaga pula</displayName>
-				<displayName count="other">botswanaga pula</displayName>
 			</currency>
 			<currency type="BYB">
 				<displayName>belarusiaga ruble yeytɔ (1994–1999)</displayName>
@@ -5008,7 +3154,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>belarusiaga ruble</displayName>
 				<displayName count="one">belarusiaga ruble</displayName>
 				<displayName count="other">belarusiaga rublewo</displayName>
-				<symbol draft="contributed">BYN</symbol>
 				<symbol alt="narrow" draft="contributed">р.</symbol>
 			</currency>
 			<currency type="BYR">
@@ -5018,22 +3163,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="BZD">
 				<displayName>belizega dollar</displayName>
-				<displayName count="one">belizega dollar</displayName>
-				<displayName count="other">belizega dollar</displayName>
-				<symbol draft="contributed">BZD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CAD">
 				<displayName>canadaga dollar</displayName>
-				<displayName count="one">canadaga dollar</displayName>
-				<displayName count="other">canadaga dollar</displayName>
-				<symbol draft="contributed">CA$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CDF">
 				<displayName>kongoga franc</displayName>
-				<displayName count="one">kongoga franc</displayName>
-				<displayName count="other">kongoga franc</displayName>
 			</currency>
 			<currency type="CHE">
 				<displayName>WIR euro CHE</displayName>
@@ -5042,9 +3177,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="CHF">
 				<displayName>switzerlandga franc</displayName>
-				<displayName count="one">switzerlandga franc</displayName>
-				<displayName count="other">switzerlandga franc</displayName>
-				<symbol draft="contributed">CHF</symbol>
 			</currency>
 			<currency type="CHW">
 				<displayName>WIR euro CHW</displayName>
@@ -5053,20 +3185,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="CLE">
 				<displayName>tsilega escudo</displayName>
-				<displayName count="one">tsilega escudo</displayName>
-				<displayName count="other">tsilega escudo</displayName>
 			</currency>
 			<currency type="CLF">
 				<displayName>tsilegakɔnta dzidzenu UF</displayName>
-				<displayName count="one">tsilegakɔnta dzidzenu UF</displayName>
-				<displayName count="other">tsilegakɔnta dzidzenu UF</displayName>
 			</currency>
 			<currency type="CLP">
 				<displayName>chilega peso</displayName>
-				<displayName count="one">chilega peso</displayName>
-				<displayName count="other">chilega peso</displayName>
-				<symbol draft="contributed">CLP</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CNX">
 				<displayName>tsainatɔwo ƒe gadzraɖoƒe dollar</displayName>
@@ -5075,75 +3199,39 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="CNY">
 				<displayName>Chinesega yuan</displayName>
-				<displayName count="one">Chinesega yuan</displayName>
-				<displayName count="other">Chinesega yuan</displayName>
-				<symbol draft="contributed">CN¥</symbol>
-				<symbol alt="narrow" draft="contributed">¥</symbol>
 			</currency>
 			<currency type="COP">
 				<displayName>colombiaga peso</displayName>
-				<displayName count="one">colombiaga peso</displayName>
-				<displayName count="other">colombiaga peso</displayName>
-				<symbol draft="contributed">COP</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="COU">
 				<displayName>kolombiaga vavãtɔ</displayName>
-				<displayName count="one">kolombiaga vavãtɔ</displayName>
-				<displayName count="other">kolombiaga vavãtɔ</displayName>
 			</currency>
 			<currency type="CRC">
 				<displayName>costa ricaga colón</displayName>
-				<displayName count="one">costa ricaga colón</displayName>
-				<displayName count="other">costa ricaga colón</displayName>
-				<symbol draft="contributed">CRC</symbol>
-				<symbol alt="narrow" draft="contributed">₡</symbol>
 			</currency>
 			<currency type="CSD">
 				<displayName>serbiaga dinar (2002–2006)</displayName>
-				<displayName count="one">serbiaga dinar (2002–2006)</displayName>
-				<displayName count="other">serbiaga dinar (2002–2006)</displayName>
 			</currency>
 			<currency type="CSK">
 				<displayName>tsɛkoslovakiaga hard koruna</displayName>
-				<displayName count="one">tsɛkoslovakiaga hard koruna</displayName>
-				<displayName count="other">tsɛkoslovakiaga hard koruna</displayName>
 			</currency>
 			<currency type="CUC">
 				<displayName>cubaga convertible peso</displayName>
-				<displayName count="one">cubaga convertible peso</displayName>
-				<displayName count="other">cubaga convertible peso</displayName>
-				<symbol draft="contributed">CUC</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CUP">
 				<displayName>cubaga peso</displayName>
-				<displayName count="one">cubaga peso</displayName>
-				<displayName count="other">cubaga peso</displayName>
-				<symbol draft="contributed">CUP</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CVE">
 				<displayName>kape verdega escudo</displayName>
-				<displayName count="one">kape verdega escudo</displayName>
-				<displayName count="other">kape verdega escudo</displayName>
 			</currency>
 			<currency type="CYP">
 				<displayName>saipriɔtga pound</displayName>
-				<displayName count="one">saipriɔtga pound</displayName>
-				<displayName count="other">saipriɔtga pound</displayName>
 			</currency>
 			<currency type="CZK">
 				<displayName>czechga koruna</displayName>
-				<displayName count="one">czechga koruna</displayName>
-				<displayName count="other">czechga koruna</displayName>
-				<symbol draft="contributed">CZK</symbol>
-				<symbol alt="narrow" draft="contributed">Kč</symbol>
 			</currency>
 			<currency type="DDM">
 				<displayName>ɣedzeƒe germaniaga mark</displayName>
-				<displayName count="one">ɣedzeƒe germaniaga mark</displayName>
-				<displayName count="other">ɣedzeƒe germaniaga mark</displayName>
 			</currency>
 			<currency type="DEM">
 				<displayName>germaniaga mark</displayName>
@@ -5157,52 +3245,32 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="DKK">
 				<displayName>denmarkga krone</displayName>
-				<displayName count="one">denmarkga krone</displayName>
-				<displayName count="other">denmarkga krone</displayName>
-				<symbol draft="contributed">DKK</symbol>
-				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="DOP">
 				<displayName>dominicaga peso</displayName>
 				<displayName count="one">dominikaga peso</displayName>
 				<displayName count="other">dominikaga peso</displayName>
-				<symbol draft="contributed">DOP</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="DZD">
 				<displayName>aldzeriaga dinar</displayName>
-				<displayName count="one">aldzeriaga dinar</displayName>
-				<displayName count="other">aldzeriaga dinar</displayName>
 			</currency>
 			<currency type="ECS">
 				<displayName>ekuadɔga sucre</displayName>
-				<displayName count="one">ekuadɔga sucre</displayName>
-				<displayName count="other">ekuadɔga sucre</displayName>
 			</currency>
 			<currency type="ECV">
 				<displayName>ekuadɔ dzidzenu matrɔmatrɔ</displayName>
-				<displayName count="one">ekuadɔ dzidzenu matrɔmatrɔ</displayName>
-				<displayName count="other">ekuadɔ dzidzenu matrɔmatrɔ</displayName>
 			</currency>
 			<currency type="EEK">
 				<displayName>estoniaga kroon</displayName>
-				<displayName count="one">estoniaga kroon</displayName>
-				<displayName count="other">estoniaga kroon</displayName>
 			</currency>
 			<currency type="EGP">
 				<displayName>egyptega pound</displayName>
-				<displayName count="one">egyptega pound</displayName>
-				<displayName count="other">egyptega pound</displayName>
 			</currency>
 			<currency type="ERN">
 				<displayName>eritreaga nakfa</displayName>
-				<displayName count="one">eritreaga nakfa</displayName>
-				<displayName count="other">eritreaga nakfa</displayName>
 			</currency>
 			<currency type="ESA">
 				<displayName>spaniaga peseta (A)</displayName>
-				<displayName count="one">spaniaga peseta (A)</displayName>
-				<displayName count="other">spaniaga peseta (A)</displayName>
 			</currency>
 			<currency type="ESB">
 				<displayName>spaniaga peseta (Convertible)</displayName>
@@ -5216,48 +3284,28 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="ETB">
 				<displayName>ethiopiaga birr</displayName>
-				<displayName count="one">ethiopiaga birr</displayName>
-				<displayName count="other">ethiopiaga birr</displayName>
 			</currency>
 			<currency type="EUR">
 				<displayName count="one">euro</displayName>
 				<displayName count="other">euro</displayName>
-				<symbol draft="contributed">€</symbol>
-				<symbol alt="narrow" draft="contributed">€</symbol>
 			</currency>
 			<currency type="FIM">
 				<displayName>finlandga markka</displayName>
-				<displayName count="one">finlandga markka</displayName>
-				<displayName count="other">finlandga markka</displayName>
 			</currency>
 			<currency type="FJD">
 				<displayName>fidziga dollar</displayName>
-				<displayName count="one">fidziga dollar</displayName>
-				<displayName count="other">fidziga dollar</displayName>
 			</currency>
 			<currency type="FKP">
 				<displayName>falkland islands pound</displayName>
-				<displayName count="one">falkland islands pound</displayName>
-				<displayName count="other">falkland islands pound</displayName>
-				<symbol draft="contributed">FKP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="FRF">
 				<displayName>frentsiga franc</displayName>
-				<displayName count="one">frentsiga franc</displayName>
-				<displayName count="other">frentsiga franc</displayName>
 			</currency>
 			<currency type="GBP">
 				<displayName>britainga pound</displayName>
-				<displayName count="one">britainga pound</displayName>
-				<displayName count="other">britainga pound</displayName>
-				<symbol draft="contributed">£</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="GEK">
 				<displayName>dzɔdziaga kupon larit</displayName>
-				<displayName count="one">dzɔdziaga kupon larit</displayName>
-				<displayName count="other">dzɔdziaga kupon larit</displayName>
 			</currency>
 			<currency type="GEL">
 				<displayName>dzɔdziaga lari</displayName>
@@ -5266,154 +3314,82 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="GHC">
 				<displayName>ghana siɖi (1979–2007)</displayName>
-				<displayName count="one">ghana siɖi (1979–2007)</displayName>
-				<displayName count="other">ghana siɖi (1979–2007)</displayName>
 			</currency>
 			<currency type="GHS">
 				<displayName>ghana siɖi</displayName>
-				<displayName count="one">ghana siɖi</displayName>
-				<displayName count="other">ghana siɖi</displayName>
 				<symbol>GH₵</symbol>
 			</currency>
 			<currency type="GIP">
 				<displayName>gilbratarga pound</displayName>
-				<displayName count="one">gilbratarga pound</displayName>
-				<displayName count="other">gilbratarga pound</displayName>
-				<symbol draft="contributed">GIP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="GMD">
 				<displayName>gambiaga dalasi</displayName>
-				<displayName count="one">gambiaga dalasi</displayName>
-				<displayName count="other">gambiaga dalasi</displayName>
 			</currency>
 			<currency type="GNF">
 				<displayName>giniga franc</displayName>
-				<displayName count="one">giniga franc</displayName>
-				<displayName count="other">giniga franc</displayName>
 			</currency>
 			<currency type="GNS">
 				<displayName>giniga syli</displayName>
-				<displayName count="one">giniga syli</displayName>
-				<displayName count="other">giniga syli</displayName>
 			</currency>
 			<currency type="GQE">
 				<displayName>ekuatorial giniga ekwele</displayName>
-				<displayName count="one">ekuatorial giniga ekwele</displayName>
-				<displayName count="other">ekuatorial giniga ekwele</displayName>
 			</currency>
 			<currency type="GRD">
 				<displayName>grisiga drachma</displayName>
-				<displayName count="one">grisiga drachma</displayName>
-				<displayName count="other">grisiga drachma</displayName>
 			</currency>
 			<currency type="GTQ">
 				<displayName>guatemalaga quetzal</displayName>
-				<displayName count="one">guatemalaga quetzal</displayName>
-				<displayName count="other">guatemalaga quetzal</displayName>
-				<symbol draft="contributed">GTQ</symbol>
-				<symbol alt="narrow" draft="contributed">Q</symbol>
 			</currency>
 			<currency type="GWE">
 				<displayName>pɔtugaltɔwo ƒe giniga escudo</displayName>
-				<displayName count="one">pɔtugaltɔwo ƒe giniga escudo</displayName>
-				<displayName count="other">pɔtugaltɔwo ƒe giniga escudo</displayName>
 			</currency>
 			<currency type="GWP">
 				<displayName>gini-bisau peso</displayName>
-				<displayName count="one">gini-bisau peso</displayName>
-				<displayName count="other">gini-bisau peso</displayName>
 			</currency>
 			<currency type="GYD">
 				<displayName>guyanaga dollar</displayName>
-				<displayName count="one">guyanaga dollar</displayName>
-				<displayName count="other">guyanaga dollar</displayName>
-				<symbol draft="contributed">GYD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="HKD">
 				<displayName>Hong Kongga dollar</displayName>
-				<displayName count="one">Hong Kongga dollar</displayName>
-				<displayName count="other">Hong Kongga dollar</displayName>
-				<symbol draft="contributed">HK$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="HNL">
 				<displayName>honduraga lempira</displayName>
-				<displayName count="one">honduraga lempira</displayName>
-				<displayName count="other">honduraga lempira</displayName>
-				<symbol draft="contributed">HNL</symbol>
-				<symbol alt="narrow" draft="contributed">L</symbol>
 			</currency>
 			<currency type="HRD">
 				<displayName>kroatiaga dinar</displayName>
-				<displayName count="one">kroatiaga dinar</displayName>
-				<displayName count="other">kroatiaga dinar</displayName>
 			</currency>
 			<currency type="HRK">
 				<displayName>croatiaga kuna</displayName>
-				<displayName count="one">croatiaga kuna</displayName>
-				<displayName count="other">croatiaga kuna</displayName>
-				<symbol draft="contributed">HRK</symbol>
-				<symbol alt="narrow" draft="contributed">kn</symbol>
 			</currency>
 			<currency type="HTG">
 				<displayName>haitiga gourde</displayName>
-				<displayName count="one">haitiga gourde</displayName>
-				<displayName count="other">haitiga gourde</displayName>
-				<symbol draft="contributed">HTG</symbol>
 			</currency>
 			<currency type="HUF">
 				<displayName>hungariaga forint</displayName>
-				<displayName count="one">hungariaga forint</displayName>
-				<displayName count="other">hungariaga forint</displayName>
-				<symbol draft="contributed">HUF</symbol>
-				<symbol alt="narrow" draft="contributed">Ft</symbol>
 			</currency>
 			<currency type="IDR">
 				<displayName>Indonesiaga rupiah</displayName>
-				<displayName count="one">Indonesiaga rupiah</displayName>
-				<displayName count="other">Indonesiaga rupiah</displayName>
-				<symbol draft="contributed">IDR</symbol>
-				<symbol alt="narrow" draft="contributed">Rp</symbol>
 			</currency>
 			<currency type="IEP">
 				<displayName>ireland pound</displayName>
-				<displayName count="one">ireland pound</displayName>
-				<displayName count="other">ireland pound</displayName>
 			</currency>
 			<currency type="ILP">
 				<displayName>israelga pound</displayName>
-				<displayName count="one">israelga pound</displayName>
-				<displayName count="other">israelga pound</displayName>
 			</currency>
 			<currency type="ILR">
 				<displayName>israelga sheqel (1980–1985)</displayName>
-				<displayName count="one">israelga sheqel (1980–1985)</displayName>
-				<displayName count="other">israelga sheqel (1980–1985)</displayName>
 			</currency>
 			<currency type="ILS">
 				<displayName>israelga yeyetɔ sheqel</displayName>
-				<displayName count="one">israelga yeyetɔ sheqel</displayName>
-				<displayName count="other">israelga yeyetɔ sheqel</displayName>
-				<symbol draft="unconfirmed">₪</symbol>
 			</currency>
 			<currency type="INR">
 				<displayName>Indiaga rupee</displayName>
-				<displayName count="one">Indiaga rupee</displayName>
-				<displayName count="other">Indiaga rupee</displayName>
-				<symbol draft="contributed">₹</symbol>
-				<symbol alt="narrow" draft="contributed">₹</symbol>
 			</currency>
 			<currency type="IQD">
 				<displayName>irakga dinar</displayName>
-				<displayName count="one">irakga dinar</displayName>
-				<displayName count="other">irakga dinar</displayName>
 			</currency>
 			<currency type="IRR">
 				<displayName>iranga rial</displayName>
-				<displayName count="one">iranga rial</displayName>
-				<displayName count="other">iranga rial</displayName>
 			</currency>
 			<currency type="ISJ">
 				<displayName>aiselandga króna (1918–1981)</displayName>
@@ -5422,118 +3398,66 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="ISK">
 				<displayName>icelandga króna</displayName>
-				<displayName count="one">icelandga króna</displayName>
-				<displayName count="other">icelandga króna</displayName>
-				<symbol draft="contributed">ISK</symbol>
-				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="ITL">
 				<displayName>italiaga lira</displayName>
-				<displayName count="one">italiaga lira</displayName>
-				<displayName count="other">italiaga lira</displayName>
 			</currency>
 			<currency type="JMD">
 				<displayName>jamaicaga dollar</displayName>
-				<displayName count="one">jamaicaga dollar</displayName>
-				<displayName count="other">jamaicaga dollar</displayName>
-				<symbol draft="contributed">JMD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="JOD">
 				<displayName>yɔdanga dinar</displayName>
-				<displayName count="one">yɔdanga dinar</displayName>
-				<displayName count="other">yɔdanga dinar</displayName>
 			</currency>
 			<currency type="JPY">
 				<displayName>Japanesega yen</displayName>
-				<displayName count="one">Japanesega yen</displayName>
-				<displayName count="other">Japanesega yen</displayName>
-				<symbol draft="contributed">JP¥</symbol>
-				<symbol alt="narrow" draft="contributed">¥</symbol>
 			</currency>
 			<currency type="KES">
 				<displayName>kenyaga shilling</displayName>
-				<displayName count="one">kenyaga shilling</displayName>
-				<displayName count="other">kenyaga shilling</displayName>
 			</currency>
 			<currency type="KGS">
 				<displayName>kirgistanga som</displayName>
-				<displayName count="one">kirgistanga som</displayName>
-				<displayName count="other">kirgistanga som</displayName>
 			</currency>
 			<currency type="KHR">
 				<displayName>kambodiaga riel</displayName>
-				<displayName count="one">kambodiaga riel</displayName>
-				<displayName count="other">kambodiaga riel</displayName>
 			</currency>
 			<currency type="KMF">
 				<displayName>komoroga franc</displayName>
-				<displayName count="one">komoroga franc</displayName>
-				<displayName count="other">komoroga franc</displayName>
 			</currency>
 			<currency type="KPW">
 				<displayName>dziehe koreaga won</displayName>
-				<displayName count="one">dziehe koreaga won</displayName>
-				<displayName count="other">dziehe koreaga won</displayName>
 			</currency>
 			<currency type="KRH">
 				<displayName>anyiehe koreaga hwan (1953–1962)</displayName>
-				<displayName count="one">anyiehe koreaga hwan (1953–1962)</displayName>
-				<displayName count="other">anyiehe koreaga hwan (1953–1962)</displayName>
 			</currency>
 			<currency type="KRO">
 				<displayName>anyiehe koreaga won (1945–1953)</displayName>
-				<displayName count="one">anyiehe koreaga won (1945–1953)</displayName>
-				<displayName count="other">anyiehe koreaga won (1945–1953)</displayName>
 			</currency>
 			<currency type="KRW">
 				<displayName>South Koreaga won</displayName>
-				<displayName count="one">South Koreaga won</displayName>
-				<displayName count="other">South Koreaga won</displayName>
-				<symbol draft="contributed">₩</symbol>
-				<symbol alt="narrow" draft="contributed">₩</symbol>
 			</currency>
 			<currency type="KWD">
 				<displayName>kuwaitga dinar</displayName>
-				<displayName count="one">kuwaitga dinar</displayName>
-				<displayName count="other">kuwaitga dinar</displayName>
 			</currency>
 			<currency type="KYD">
 				<displayName>cayman islandsga dollar</displayName>
-				<displayName count="one">cayman islandsga dollar</displayName>
-				<displayName count="other">cayman islandsga dollar</displayName>
-				<symbol draft="contributed">KYD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="KZT">
 				<displayName>kazakhstanga tenge</displayName>
-				<displayName count="one">kazakhstanga tenge</displayName>
-				<displayName count="other">kazakhstanga tenge</displayName>
 			</currency>
 			<currency type="LAK">
 				<displayName>laosga kip</displayName>
-				<displayName count="one">laosga kip</displayName>
-				<displayName count="other">laosga kip</displayName>
 			</currency>
 			<currency type="LBP">
 				<displayName>lebanonga pound</displayName>
-				<displayName count="one">lebanonga pound</displayName>
-				<displayName count="other">lebanonga pound</displayName>
 			</currency>
 			<currency type="LKR">
 				<displayName>sri lankaga rupee</displayName>
-				<displayName count="one">sri lankaga rupee</displayName>
-				<displayName count="other">sri lankaga rupee</displayName>
 			</currency>
 			<currency type="LRD">
 				<displayName>liberiaga dollar</displayName>
-				<displayName count="one">liberiaga dollar</displayName>
-				<displayName count="other">liberiaga dollar</displayName>
 			</currency>
 			<currency type="LSL">
 				<displayName>lesotoga loti</displayName>
-				<displayName count="one">lesotoga loti</displayName>
-				<displayName count="other">lesotoga loti</displayName>
 			</currency>
 			<currency type="LTL">
 				<displayName>lithuaniaga litas</displayName>
@@ -5542,23 +3466,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="LTT">
 				<displayName>lithuaniaga talonas</displayName>
-				<displayName count="one">lithuaniaga talonas</displayName>
-				<displayName count="other">lithuaniaga talonas</displayName>
 			</currency>
 			<currency type="LUC">
 				<displayName>lazembɔgga convertible franc</displayName>
-				<displayName count="one">lazembɔgga convertible franc</displayName>
-				<displayName count="other">lazembɔgga convertible franc</displayName>
 			</currency>
 			<currency type="LUF">
 				<displayName>lazembɔgga franc</displayName>
-				<displayName count="one">lazembɔgga franc</displayName>
-				<displayName count="other">lazembɔgga franc</displayName>
 			</currency>
 			<currency type="LUL">
 				<displayName>lazembɔgga gadzikpɔ franc</displayName>
-				<displayName count="one">lazembɔgga gadzikpɔ franc</displayName>
-				<displayName count="other">lazembɔgga gadzikpɔ franc</displayName>
 			</currency>
 			<currency type="LVL">
 				<displayName>latviaga lats</displayName>
@@ -5567,55 +3483,35 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="LVR">
 				<displayName>latviaga ruble</displayName>
-				<displayName count="one">latviaga ruble</displayName>
-				<displayName count="other">latviaga ruble</displayName>
 			</currency>
 			<currency type="LYD">
 				<displayName>libyaga dinar</displayName>
-				<displayName count="one">libyaga dinar</displayName>
-				<displayName count="other">libyaga dinar</displayName>
 			</currency>
 			<currency type="MAD">
 				<displayName>morokoga dirham</displayName>
-				<displayName count="one">morokoga dirham</displayName>
-				<displayName count="other">morokoga dirham</displayName>
 			</currency>
 			<currency type="MAF">
 				<displayName>morokoga franc</displayName>
-				<displayName count="one">morokoga franc</displayName>
-				<displayName count="other">morokoga franc</displayName>
 			</currency>
 			<currency type="MCF">
 				<displayName>monegaskga franc</displayName>
-				<displayName count="one">monegaskga franc</displayName>
-				<displayName count="other">monegaskga franc</displayName>
 			</currency>
 			<currency type="MDC">
 				<displayName>moldovaga cupon</displayName>
-				<displayName count="one">moldovaga cupon</displayName>
-				<displayName count="other">moldovaga cupon</displayName>
 			</currency>
 			<currency type="MDL">
 				<displayName>moldovaga leu</displayName>
-				<displayName count="one">moldovaga leu</displayName>
-				<displayName count="other">moldovaga leu</displayName>
-				<symbol draft="contributed">MDL</symbol>
 			</currency>
 			<currency type="MGA">
 				<displayName>malagasega ariary</displayName>
-				<displayName count="one">malagasega ariary</displayName>
-				<displayName count="other">malagasega ariary</displayName>
 			</currency>
 			<currency type="MGF">
 				<displayName>malagasega franc</displayName>
-				<displayName count="one">malagasega franc</displayName>
-				<displayName count="other">malagasega franc</displayName>
 			</currency>
 			<currency type="MKD">
 				<displayName>marcedoniaga denar</displayName>
 				<displayName count="one">makedoniaga denar</displayName>
 				<displayName count="other">marcedoniaga denar</displayName>
-				<symbol draft="contributed">MKD</symbol>
 			</currency>
 			<currency type="MKN">
 				<displayName>makedoniaga denar (1992–1993)</displayName>
@@ -5624,145 +3520,84 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="MLF">
 				<displayName>maliga franc</displayName>
-				<displayName count="one">maliga franc</displayName>
-				<displayName count="other">maliga franc</displayName>
 			</currency>
 			<currency type="MMK">
 				<displayName>myanmaga kyat</displayName>
-				<displayName count="one">myanmaga kyat</displayName>
-				<displayName count="other">myanmaga kyat</displayName>
 			</currency>
 			<currency type="MNT">
 				<displayName>mongoliaga tugrik</displayName>
-				<displayName count="one">mongoliaga tugrik</displayName>
-				<displayName count="other">mongoliaga tugrik</displayName>
 			</currency>
 			<currency type="MOP">
 				<displayName>makanesega pataca</displayName>
-				<displayName count="one">makanesega pataca</displayName>
-				<displayName count="other">makanesega pataca</displayName>
 			</currency>
 			<currency type="MRO">
 				<displayName>mɔritaniaga ouguiya (1973–2017)</displayName>
-				<displayName count="one">mɔritaniaga ouguiya (1973–2017)</displayName>
-				<displayName count="other">mɔritaniaga ouguiya (1973–2017)</displayName>
 			</currency>
 			<currency type="MRU">
 				<displayName>mɔritaniaga ouguiya</displayName>
-				<displayName count="one">mɔritaniaga ouguiya</displayName>
-				<displayName count="other">mɔritaniaga ouguiya</displayName>
 			</currency>
 			<currency type="MTL">
 				<displayName>maltaga lira</displayName>
-				<displayName count="one">maltaga lira</displayName>
-				<displayName count="other">maltaga lira</displayName>
 			</currency>
 			<currency type="MTP">
 				<displayName>maltaga pound</displayName>
-				<displayName count="one">maltaga pound</displayName>
-				<displayName count="other">maltaga pound</displayName>
 			</currency>
 			<currency type="MUR">
 				<displayName>mɔritiusga rupee</displayName>
-				<displayName count="one">mɔritiusga rupee</displayName>
-				<displayName count="other">mɔritiusga rupee</displayName>
 			</currency>
 			<currency type="MVR">
 				<displayName>maldiviaga rufiyaa</displayName>
-				<displayName count="one">maldiviaga rufiyaa</displayName>
-				<displayName count="other">maldiviaga rufiyaa</displayName>
 			</currency>
 			<currency type="MWK">
 				<displayName draft="unconfirmed">malawiga kwacha</displayName>
-				<displayName count="one" draft="unconfirmed">malawiga kwacha</displayName>
-				<displayName count="other" draft="unconfirmed">malawiga kwacha</displayName>
 			</currency>
 			<currency type="MXN">
 				<displayName>mexicoga peso</displayName>
-				<displayName count="one">mexicoga peso</displayName>
-				<displayName count="other">mexicoga peso</displayName>
-				<symbol draft="contributed">MX$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="MYR">
 				<displayName>malaysiaga ringit</displayName>
-				<displayName count="one">malaysiaga ringit</displayName>
-				<displayName count="other">malaysiaga ringit</displayName>
 			</currency>
 			<currency type="MZN">
 				<displayName draft="unconfirmed">mozambikga metikal</displayName>
 			</currency>
 			<currency type="NAD">
 				<displayName draft="unconfirmed">namibiaga dollar</displayName>
-				<displayName count="one" draft="unconfirmed">namibiaga dollar</displayName>
-				<displayName count="other" draft="unconfirmed">namibiaga dollar</displayName>
 			</currency>
 			<currency type="NGN">
 				<displayName>naidzeriaga naira</displayName>
-				<displayName count="one">naidzeriaga naira</displayName>
-				<displayName count="other">naidzeriaga naira</displayName>
 			</currency>
 			<currency type="NIC">
 				<displayName>nikaraguaga córdoba (1988–1991)</displayName>
-				<displayName count="one">nikaraguaga córdoba (1988–1991)</displayName>
-				<displayName count="other">nikaraguaga córdoba (1988–1991)</displayName>
 			</currency>
 			<currency type="NIO">
 				<displayName>nicaraguaga córdoba</displayName>
-				<displayName count="one">nicaraguaga córdoba</displayName>
-				<displayName count="other">nicaraguaga córdoba</displayName>
-				<symbol draft="contributed">NIO</symbol>
-				<symbol alt="narrow" draft="contributed">C$</symbol>
 			</currency>
 			<currency type="NLG">
 				<displayName>hollandga guilder</displayName>
-				<displayName count="one">hollandga guilder</displayName>
-				<displayName count="other">hollandga guilder</displayName>
 			</currency>
 			<currency type="NOK">
 				<displayName>norwayga krone</displayName>
-				<displayName count="one">norwayga krone</displayName>
-				<displayName count="other">norwayga krone</displayName>
-				<symbol draft="contributed">NOK</symbol>
-				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="NPR">
 				<displayName>nepalga rupee</displayName>
-				<displayName count="one">nepalga rupee</displayName>
-				<displayName count="other">nepalga rupee</displayName>
 			</currency>
 			<currency type="NZD">
 				<displayName>new zealanɖga dollar</displayName>
-				<displayName count="one">new zealanɖga dollar</displayName>
-				<displayName count="other">new zealanɖga dollar</displayName>
-				<symbol draft="unconfirmed">NZ$</symbol>
 			</currency>
 			<currency type="OMR">
 				<displayName>omanga rial</displayName>
-				<displayName count="one">omanga rial</displayName>
-				<displayName count="other">omanga rial</displayName>
 			</currency>
 			<currency type="PAB">
 				<displayName>panamaga balboa</displayName>
-				<displayName count="one">panamaga balboa</displayName>
-				<displayName count="other">panamaga balboa</displayName>
-				<symbol draft="contributed">PAB</symbol>
 			</currency>
 			<currency type="PEI">
 				<displayName>peruga inti</displayName>
-				<displayName count="one">peruga inti</displayName>
-				<displayName count="other">peruga inti</displayName>
 			</currency>
 			<currency type="PEN">
 				<displayName>peruga sol</displayName>
-				<displayName count="one">peruga sol</displayName>
-				<displayName count="other">peruga sol</displayName>
-				<symbol draft="contributed">PEN</symbol>
 			</currency>
 			<currency type="PES">
 				<displayName>peruga sol (1863–1965)</displayName>
-				<displayName count="one">peruga sol (1863–1965)</displayName>
-				<displayName count="other">peruga sol (1863–1965)</displayName>
 			</currency>
 			<currency type="PGK">
 				<displayName>papua new guineaga kina</displayName>
@@ -5781,10 +3616,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="PLN">
 				<displayName>polandga zloty</displayName>
-				<displayName count="one">polandga zloty</displayName>
-				<displayName count="other">polandga zloty</displayName>
-				<symbol draft="contributed">PLN</symbol>
-				<symbol alt="narrow" draft="contributed">zł</symbol>
 			</currency>
 			<currency type="PLZ">
 				<displayName>polanɖga zloty (1950–1995)</displayName>
@@ -5793,244 +3624,141 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="PTE">
 				<displayName>pɔtugalga escudo</displayName>
-				<displayName count="one">pɔtugalga escudo</displayName>
-				<displayName count="other">pɔtugalga escudo</displayName>
 			</currency>
 			<currency type="PYG">
 				<displayName>paraguayga guarani</displayName>
-				<displayName count="one">paraguayga guarani</displayName>
-				<displayName count="other">paraguayga guarani</displayName>
-				<symbol draft="contributed">PYG</symbol>
-				<symbol alt="narrow" draft="contributed">₲</symbol>
 			</currency>
 			<currency type="QAR">
 				<displayName>katarga rial</displayName>
-				<displayName count="one">katarga rial</displayName>
-				<displayName count="other">katarga rial</displayName>
 			</currency>
 			<currency type="RHD">
 				<displayName>rhodesiaga dollar</displayName>
-				<displayName count="one">rhodesiaga dollar</displayName>
-				<displayName count="other">rhodesiaga dollar</displayName>
 			</currency>
 			<currency type="ROL">
 				<displayName>romaniaga leu (1952–2006)</displayName>
-				<displayName count="one">romaniaga leu (1952–2006)</displayName>
-				<displayName count="other">romaniaga leu (1952–2006)</displayName>
 			</currency>
 			<currency type="RON">
 				<displayName>romaniaga leu</displayName>
-				<displayName count="one">romaniaga leu</displayName>
-				<displayName count="other">romaniaga leu</displayName>
-				<symbol draft="contributed">RON</symbol>
-				<symbol alt="narrow" draft="contributed">lei</symbol>
 			</currency>
 			<currency type="RSD">
 				<displayName>serbiaga dinar</displayName>
-				<displayName count="one">serbiaga dinar</displayName>
-				<displayName count="other">serbiaga dinar</displayName>
-				<symbol draft="contributed">RSD</symbol>
 			</currency>
 			<currency type="RUB">
 				<displayName>russiaga ruble</displayName>
-				<displayName count="one">russiaga ruble</displayName>
-				<displayName count="other">russiaga ruble</displayName>
-				<symbol draft="contributed">RUB</symbol>
-				<symbol alt="narrow" draft="contributed">₽</symbol>
 			</currency>
 			<currency type="RUR">
 				<displayName>rɔtsiaga ruble (1991–1998)</displayName>
-				<displayName count="one">rɔtsiaga ruble (1991–1998)</displayName>
-				<displayName count="other">rɔtsiaga ruble (1991–1998)</displayName>
 			</currency>
 			<currency type="RWF">
 				<displayName>rwandaga franc</displayName>
-				<displayName count="one">rwandaga franc</displayName>
-				<displayName count="other">rwandaga franc</displayName>
 			</currency>
 			<currency type="SAR">
 				<displayName>Saudi Arabiaga riyal</displayName>
-				<displayName count="one">Saudi Arabiaga riyal</displayName>
-				<displayName count="other">Saudi Arabiaga riyal</displayName>
-				<symbol draft="contributed">SAR</symbol>
 			</currency>
 			<currency type="SBD">
 				<displayName>solomon ƒudomekpo dukɔwo ƒe ga dollar</displayName>
-				<displayName count="one">solomon ƒudomekpo dukɔwo ƒe ga dollar</displayName>
-				<displayName count="other">solomon ƒudomekpo dukɔwo ƒe ga dollar</displayName>
 			</currency>
 			<currency type="SCR">
 				<displayName>sɛtselsga rupee</displayName>
-				<displayName count="one">sɛtselsga rupee</displayName>
-				<displayName count="other">sɛtselsga rupee</displayName>
 			</currency>
 			<currency type="SDD">
 				<displayName>sudanga dinar (1992–2007)</displayName>
-				<displayName count="one">sudanga dinar (1992–2007)</displayName>
-				<displayName count="other">sudanga dinar (1992–2007)</displayName>
 			</currency>
 			<currency type="SDG">
 				<displayName>sudanga pound</displayName>
-				<displayName count="one">sudanga pound</displayName>
-				<displayName count="other">sudanga pound</displayName>
 			</currency>
 			<currency type="SDP">
 				<displayName>sudanga pound (1957–1998)</displayName>
-				<displayName count="one">sudanga pound (1957–1998)</displayName>
-				<displayName count="other">sudanga pound (1957–1998)</displayName>
 			</currency>
 			<currency type="SEK">
 				<displayName>swedenga krone</displayName>
-				<displayName count="one">swedenga krone</displayName>
-				<displayName count="other">swedenga krone</displayName>
-				<symbol draft="contributed">SEK</symbol>
-				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="SGD">
 				<displayName>singapɔga dollar</displayName>
-				<displayName count="one">singapɔga dollar</displayName>
-				<displayName count="other">singapɔga dollar</displayName>
 			</currency>
 			<currency type="SHP">
 				<displayName>saint helenaga pound</displayName>
-				<displayName count="one">saint helenaga pound</displayName>
-				<displayName count="other">saint helenaga pound</displayName>
 			</currency>
 			<currency type="SIT">
 				<displayName>slovaniaga tolar</displayName>
-				<displayName count="one">slovaniaga tolar</displayName>
-				<displayName count="other">slovaniaga tolar</displayName>
 			</currency>
 			<currency type="SKK">
 				<displayName>slovakga koruna</displayName>
 				<displayName count="one">slovakiaga koruna</displayName>
 				<displayName count="other">slovakiaga koruna</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>sierra leonega leone</displayName>
-				<displayName count="one">sierra leonega leone</displayName>
-				<displayName count="other">sierra leonega leone</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>sierra leonega leone (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>somaliaga shilling</displayName>
-				<displayName count="one">somaliaga shilling</displayName>
-				<displayName count="other">somaliaga shilling</displayName>
 			</currency>
 			<currency type="SRD">
 				<displayName>surinamga dollar</displayName>
-				<displayName count="one">surinamga dollar</displayName>
-				<displayName count="other">surinamga dollar</displayName>
-				<symbol draft="contributed">SRD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="SRG">
 				<displayName>surinamega guilder</displayName>
-				<displayName count="one">surinamega guilder</displayName>
-				<displayName count="other">surinamega guilder</displayName>
 			</currency>
 			<currency type="SSP">
 				<displayName draft="unconfirmed">anyiehe sudanga pound</displayName>
-				<displayName count="one" draft="unconfirmed">anyiehe sudanga pound</displayName>
-				<displayName count="other" draft="unconfirmed">anyiehe sudanga pound</displayName>
 			</currency>
 			<currency type="STD">
 				<displayName>são tomé kple príncipega dobra (1977–2017)</displayName>
-				<displayName count="one">são tomé kple príncipega dobra (1977–2017)</displayName>
-				<displayName count="other">são tomé kple príncipega dobra (1977–2017)</displayName>
 			</currency>
 			<currency type="STN">
 				<displayName>são tomé kple príncipega dobra</displayName>
-				<displayName count="one">são tomé kple príncipega dobra</displayName>
-				<displayName count="other">são tomé kple príncipega dobra</displayName>
 			</currency>
 			<currency type="SUR">
 				<displayName>sovietga rouble</displayName>
-				<displayName count="one">sovietga rouble</displayName>
-				<displayName count="other">sovietga rouble</displayName>
 			</currency>
 			<currency type="SVC">
 				<displayName>salvadɔga colón</displayName>
-				<displayName count="one">salvadɔga colón</displayName>
-				<displayName count="other">salvadɔga colón</displayName>
 			</currency>
 			<currency type="SYP">
 				<displayName>syriaga pound</displayName>
-				<displayName count="one">syriaga pound</displayName>
-				<displayName count="other">syriaga pound</displayName>
 			</currency>
 			<currency type="SZL">
 				<displayName>swaziga lilangeni</displayName>
-				<displayName count="one">swaziga lilangeni</displayName>
-				<displayName count="other">swaziga lilangeni</displayName>
 			</currency>
 			<currency type="THB">
 				<displayName>Thailandga baht</displayName>
-				<displayName count="one">Thailandga baht</displayName>
-				<displayName count="other">Thailandga baht</displayName>
 				<symbol draft="contributed">฿</symbol>
-				<symbol alt="narrow" draft="contributed">฿</symbol>
 			</currency>
 			<currency type="TJR">
 				<displayName>tajikistanga ruble</displayName>
-				<displayName count="one">tajikistanga ruble</displayName>
-				<displayName count="other">tajikistanga ruble</displayName>
 			</currency>
 			<currency type="TJS">
 				<displayName>tajikistanga somoni</displayName>
-				<displayName count="one">tajikistanga somoni</displayName>
-				<displayName count="other">tajikistanga somoni</displayName>
 			</currency>
 			<currency type="TMM">
 				<displayName>turkmenistanga manat (1993–2009)</displayName>
-				<displayName count="one">turkmenistanga manat (1993–2009)</displayName>
-				<displayName count="other">turkmenistanga manat (1993–2009)</displayName>
 			</currency>
 			<currency type="TMT">
 				<displayName>turkmenistanga manat</displayName>
-				<displayName count="one">turkmenistanga manat</displayName>
-				<displayName count="other">turkmenistanga manat</displayName>
 			</currency>
 			<currency type="TND">
 				<displayName>tunisiaga dinar</displayName>
-				<displayName count="one">tunisiaga dinar</displayName>
-				<displayName count="other">tunisiaga dinar</displayName>
 			</currency>
 			<currency type="TOP">
 				<displayName>tonagaga pa’anga</displayName>
-				<displayName count="one">tonagaga pa’anga</displayName>
-				<displayName count="other">tonagaga pa’anga</displayName>
 			</currency>
 			<currency type="TPE">
 				<displayName>timɔga escudo</displayName>
-				<displayName count="one">timɔga escudo</displayName>
-				<displayName count="other">timɔga escudo</displayName>
 			</currency>
 			<currency type="TRL">
 				<displayName>tɛkiiga lira (1922–2005)</displayName>
-				<displayName count="one">tɛkiiga lira (1922–2005)</displayName>
-				<displayName count="other">tɛkiiga lira (1922–2005)</displayName>
 			</currency>
 			<currency type="TRY">
 				<displayName>Turkishga lira</displayName>
-				<displayName count="one">Turkishga lira</displayName>
-				<displayName count="other">Turkishga lira</displayName>
-				<symbol draft="contributed">TRY</symbol>
-				<symbol alt="narrow" draft="contributed">₺</symbol>
-				<symbol alt="variant" draft="contributed">TL</symbol>
 			</currency>
 			<currency type="TTD">
 				<displayName>trinidad &amp; tobagoga dollar</displayName>
-				<displayName count="one">trinidad &amp; tobagoga dollar</displayName>
-				<displayName count="other">trinidad &amp; tobagoga dollar</displayName>
-				<symbol draft="contributed">TTD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="TWD">
 				<displayName>Taiwanga dollar</displayName>
-				<displayName count="one">Taiwanga dollar</displayName>
-				<displayName count="other">Taiwanga dollar</displayName>
-				<symbol draft="contributed">NT$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="TZS">
 				<displayName>Tanzaniatɔwofɛgadudu</displayName>
@@ -6039,10 +3767,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="UAH">
 				<displayName>ukrainega hryvnia</displayName>
-				<displayName count="one">ukrainega hryvnia</displayName>
-				<displayName count="other">ukrainega hryvnia</displayName>
-				<symbol draft="contributed">UAH</symbol>
-				<symbol alt="narrow" draft="contributed">₴</symbol>
 			</currency>
 			<currency type="UAK">
 				<displayName>ukrainega karbovanet</displayName>
@@ -6051,115 +3775,66 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="UGS">
 				<displayName>ugandaga shilling (1966–1987)</displayName>
-				<displayName count="one">ugandaga shilling (1966–1987)</displayName>
-				<displayName count="other">ugandaga shilling (1966–1987)</displayName>
 			</currency>
 			<currency type="UGX">
 				<displayName>ugandaga shilling</displayName>
-				<displayName count="one">ugandaga shilling</displayName>
-				<displayName count="other">ugandaga shilling</displayName>
 			</currency>
 			<currency type="USD">
 				<displayName>us ga dollar</displayName>
-				<displayName count="one">us ga dollar</displayName>
-				<displayName count="other">us ga dollar</displayName>
-				<symbol draft="contributed">US$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="USN">
 				<displayName>us ga dollar (ŋkeke si gbɔna tɔ)</displayName>
-				<displayName count="one">us ga dollar (ŋkeke si gbɔna tɔ)</displayName>
-				<displayName count="other">us ga dollar (ŋkeke si gbɔna tɔ)</displayName>
 			</currency>
 			<currency type="USS">
 				<displayName>us ga dollar (ŋkeke ma ke tɔ)</displayName>
-				<displayName count="one">us ga dollar (ŋkeke ma ke tɔ)</displayName>
-				<displayName count="other">us ga dollar (ŋkeke ma ke tɔ)</displayName>
 			</currency>
 			<currency type="UYI">
 				<displayName>uruguayga peso UYI</displayName>
-				<displayName count="one">uruguayga peso UYI</displayName>
-				<displayName count="other">uruguayga peso UYI</displayName>
 			</currency>
 			<currency type="UYP">
 				<displayName>uruguayga peso (1975–1993)</displayName>
-				<displayName count="one">uruguayga peso (1975–1993)</displayName>
-				<displayName count="other">uruguayga peso (1975–1993)</displayName>
 			</currency>
 			<currency type="UYU">
 				<displayName>uruguayga peso</displayName>
-				<displayName count="one">uruguayga peso</displayName>
-				<displayName count="other">uruguayga peso</displayName>
-				<symbol draft="contributed">UYU</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="UZS">
 				<displayName>uzbekistanga som</displayName>
-				<displayName count="one">uzbekistanga som</displayName>
-				<displayName count="other">uzbekistanga som</displayName>
 			</currency>
 			<currency type="VEB">
 				<displayName>venezuelaga bolívar (1871–2008)</displayName>
-				<displayName count="one">venezuelaga bolívar (1871–2008)</displayName>
-				<displayName count="other">venezuelaga bolívar (1871–2008)</displayName>
 			</currency>
 			<currency type="VEF">
 				<displayName>venezuelaga bolívar (2008–2018)</displayName>
-				<displayName count="one">venezuelaga bolívar (2008–2018)</displayName>
-				<displayName count="other">venezuelaga bolívar (2008–2018)</displayName>
-				<symbol draft="contributed">VEF</symbol>
-				<symbol alt="narrow" draft="contributed">Bs</symbol>
 			</currency>
 			<currency type="VES">
 				<displayName>venezuelaga bolívar</displayName>
-				<displayName count="one">venezuelaga bolívar</displayName>
-				<displayName count="other">venezuelaga bolívar</displayName>
 			</currency>
 			<currency type="VND">
 				<displayName>vietnamga dong</displayName>
-				<displayName count="one">vietnamga dong</displayName>
-				<displayName count="other">vietnamga dong</displayName>
-				<symbol draft="unconfirmed">₫</symbol>
 			</currency>
 			<currency type="VNN">
 				<displayName>vietnamga dong (1978–1985)</displayName>
-				<displayName count="one">vietnamga dong (1978–1985)</displayName>
-				<displayName count="other">vietnamga dong (1978–1985)</displayName>
 			</currency>
 			<currency type="VUV">
 				<displayName>vanuatuga vatu</displayName>
-				<displayName count="one">vanuatuga vatu</displayName>
-				<displayName count="other">vanuatuga vatu</displayName>
 			</currency>
 			<currency type="WST">
 				<displayName>samaoga tala</displayName>
-				<displayName count="one">samaoga tala</displayName>
-				<displayName count="other">samaoga tala</displayName>
 			</currency>
 			<currency type="XAF">
 				<displayName>ɣetoɖofe afrikaga CFA franc BEAC</displayName>
-				<displayName count="one">ɣetoɖofe afrikaga CFA franc BEAC</displayName>
-				<displayName count="other">ɣetoɖofe afrikaga CFA franc BEAC</displayName>
 			</currency>
 			<currency type="XAG">
 				<displayName>klosalo</displayName>
-				<displayName count="one">klosalo</displayName>
-				<displayName count="other">klosalo</displayName>
 			</currency>
 			<currency type="XAU">
 				<displayName>sika</displayName>
-				<displayName count="one">sika</displayName>
-				<displayName count="other">sika</displayName>
 			</currency>
 			<currency type="XBA">
 				<displayName>europa dzidzenu xba</displayName>
-				<displayName count="one">europa dzidzenu xba</displayName>
-				<displayName count="other">europa dzidzenu xba</displayName>
 			</currency>
 			<currency type="XBB">
 				<displayName>europa gadzidzenu xbb</displayName>
-				<displayName count="one">europa gadzidzenu xbb</displayName>
-				<displayName count="other">europa gadzidzenu xbb</displayName>
 			</currency>
 			<currency type="XBC">
 				<displayName>europa kɔnta dzidzenu xbc</displayName>
@@ -6173,20 +3848,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="XCD">
 				<displayName>east caribbeanga dollar</displayName>
-				<displayName count="one">east caribbeanga dollar</displayName>
-				<displayName count="other">east caribbeanga dollar</displayName>
-				<symbol draft="contributed">EC$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="XDR">
 				<displayName>gaɖuɖu ɖoɖo tɔxɛ</displayName>
-				<displayName count="one">gaɖuɖu ɖoɖo tɔxɛ</displayName>
-				<displayName count="other">gaɖuɖu ɖoɖo tɔxɛ</displayName>
 			</currency>
 			<currency type="XEU">
 				<displayName>europa gaɖuɖu</displayName>
-				<displayName count="one">europa gaɖuɖu</displayName>
-				<displayName count="other">europa gaɖuɖu</displayName>
 			</currency>
 			<currency type="XFO">
 				<displayName>fransemega sika franc</displayName>
@@ -6195,33 +3862,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="XFU">
 				<displayName>frentsi UIC-franc</displayName>
-				<displayName count="one">frentsi UIC-franc</displayName>
-				<displayName count="other">frentsi UIC-franc</displayName>
 			</currency>
 			<currency type="XOF">
 				<displayName>ɣetoɖofe afrikaga CFA franc BCEAO</displayName>
-				<displayName count="one">ɣetoɖofe afrikaga CFA franc BCEAO</displayName>
-				<displayName count="other">ɣetoɖofe afrikaga CFA franc BCEAO</displayName>
 			</currency>
 			<currency type="XPD">
 				<displayName>palladiumga</displayName>
-				<displayName count="one">palladiumga</displayName>
-				<displayName count="other">palladiumga</displayName>
 			</currency>
 			<currency type="XPF">
 				<displayName>CFP ga franc</displayName>
-				<displayName count="one">CFP ga franc</displayName>
-				<displayName count="other">CFP ga franc</displayName>
 			</currency>
 			<currency type="XPT">
 				<displayName>platinum</displayName>
-				<displayName count="one">platinum</displayName>
-				<displayName count="other">platinum</displayName>
 			</currency>
 			<currency type="XRE">
 				<displayName>RINET gadodo XRE</displayName>
-				<displayName count="one">RINET gadodo XRE</displayName>
-				<displayName count="other">RINET gadodo XRE</displayName>
 			</currency>
 			<currency type="XTS">
 				<displayName>gaɖuɖu dodokpɔ dzesi xts</displayName>
@@ -6230,65 +3885,39 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="XXX">
 				<displayName>gaɖuɖu manya</displayName>
-				<displayName count="one">gaɖuɖu manya</displayName>
-				<displayName count="other">gaɖuɖu manya</displayName>
 			</currency>
 			<currency type="YDD">
 				<displayName>yemeniga dinar</displayName>
-				<displayName count="one">yemeniga dinar</displayName>
-				<displayName count="other">yemeniga dinar</displayName>
 			</currency>
 			<currency type="YER">
 				<displayName>yemeniga rial</displayName>
-				<displayName count="one">yemeniga rial</displayName>
-				<displayName count="other">yemeniga rial</displayName>
 			</currency>
 			<currency type="YUD">
 				<displayName>yugoslaviaga hard dinar (1966–1990)</displayName>
-				<displayName count="one">yugoslaviaga hard dinar (1966–1990)</displayName>
-				<displayName count="other">yugoslaviaga hard dinar (1966–1990)</displayName>
 			</currency>
 			<currency type="YUM">
 				<displayName>yugoslaviaga yeyetɔ dinar (1994–2002)</displayName>
-				<displayName count="one">yugoslaviaga yeyetɔ dinar (1994–2002)</displayName>
-				<displayName count="other">yugoslaviaga yeyetɔ dinar (1994–2002)</displayName>
 			</currency>
 			<currency type="YUN">
 				<displayName>yugoslaviaga convertible dinar (1990–1992)</displayName>
-				<displayName count="one">yugoslaviaga convertible dinar (1990–1992)</displayName>
-				<displayName count="other">yugoslaviaga convertible dinar (1990–1992)</displayName>
 			</currency>
 			<currency type="YUR">
 				<displayName>yugoslaviaga dinar (1992–1993)</displayName>
-				<displayName count="one">yugoslaviaga dinar (1992–1993)</displayName>
-				<displayName count="other">yugoslaviaga dinar (1992–1993)</displayName>
 			</currency>
 			<currency type="ZAL">
 				<displayName>anyiehe afrikaga rand (gadzikpɔtɔ)</displayName>
-				<displayName count="one">anyiehe afrikaga rand (gadzikpɔtɔ)</displayName>
-				<displayName count="other">anyiehe afrikaga rand (gadzikpɔtɔ)</displayName>
 			</currency>
 			<currency type="ZAR">
 				<displayName>South Africaga rand</displayName>
-				<displayName count="one">South Africaga rand</displayName>
-				<displayName count="other">South Africaga rand</displayName>
-				<symbol draft="contributed">ZAR</symbol>
-				<symbol alt="narrow" draft="contributed">R</symbol>
 			</currency>
 			<currency type="ZMK">
 				<displayName>zambiaga kwacha (1968–2012)</displayName>
-				<displayName count="one">zambiaga kwacha (1968–2012)</displayName>
-				<displayName count="other">zambiaga kwacha (1968–2012)</displayName>
 			</currency>
 			<currency type="ZMW">
 				<displayName>zambiaga kwacha</displayName>
-				<displayName count="one">zambiaga kwacha</displayName>
-				<displayName count="other">zambiaga kwacha</displayName>
 			</currency>
 			<currency type="ZRN">
 				<displayName>zairega yeyetɔ zaire</displayName>
-				<displayName count="one">zairega yeyetɔ zaire</displayName>
-				<displayName count="other">zairega yeyetɔ zaire</displayName>
 			</currency>
 			<currency type="ZRZ">
 				<displayName>zairega zaire (1971–1993)</displayName>
@@ -6297,23 +3926,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="ZWD">
 				<displayName>zimbabwega dollar (1980–2008)</displayName>
-				<displayName count="one">zimbabwega dollar (1980–2008)</displayName>
-				<displayName count="other">zimbabwega dollar (1980–2008)</displayName>
 			</currency>
 			<currency type="ZWL">
 				<displayName>zimbabwega dollar (2009)</displayName>
-				<displayName count="one">zimbabwega dollar (2009)</displayName>
-				<displayName count="other">zimbabwega dollar (2009)</displayName>
 			</currency>
 			<currency type="ZWR">
 				<displayName>zimbabwega dollar (2008)</displayName>
-				<displayName count="one">zimbabwega dollar (2008)</displayName>
-				<displayName count="other">zimbabwega dollar (2008)</displayName>
 			</currency>
 		</currencies>
 		<miscPatterns numberSystem="latn">
 			<pattern type="atLeast">{0}+</pattern>
-			<pattern type="range">{0}–{1}</pattern>
 		</miscPatterns>
 		<minimalPairs>
 			<ordinalMinimalPairs ordinal="other" draft="contributed">{0}lia</ordinalMinimalPairs>
@@ -6321,33 +3943,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</numbers>
 	<units>
 		<unitLength type="long">
-			<unit type="duration-year">
-				<displayName>ƒewo</displayName>
-				<unitPattern count="one">ƒe {0}</unitPattern>
-				<unitPattern count="other">ƒe {0}</unitPattern>
-			</unit>
-			<unit type="duration-month">
-				<displayName>ɣletiwo</displayName>
-				<unitPattern count="one">ɣleti {0}</unitPattern>
-				<unitPattern count="other">ɣleti {0}</unitPattern>
-			</unit>
-			<unit type="duration-week">
-				<displayName>kɔsiɖawo</displayName>
-				<unitPattern count="one">kɔsiɖa {0}</unitPattern>
-				<unitPattern count="other">kɔsiɖa {0}</unitPattern>
-			</unit>
-			<unit type="duration-day">
-				<displayName>ŋkekewo</displayName>
-				<unitPattern count="one">ŋkeke {0}</unitPattern>
-				<unitPattern count="other">ŋkeke {0}</unitPattern>
-			</unit>
-			<unit type="duration-hour">
-				<displayName>gaƒoƒowo</displayName>
-				<unitPattern count="one">gaƒoƒo {0}</unitPattern>
-				<unitPattern count="other">gaƒoƒo {0}</unitPattern>
-			</unit>
 			<unit type="duration-minute">
-				<displayName>aɖabaƒoƒowo</displayName>
 				<unitPattern count="one">aɖabaƒoƒo {0}</unitPattern>
 				<unitPattern count="other">aɖabaƒoƒo {0}</unitPattern>
 			</unit>
@@ -6406,33 +4002,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<unitLength type="narrow">
 			<unit type="duration-year">
 				<displayName>ƒe</displayName>
-				<unitPattern count="one">ƒe {0}</unitPattern>
-				<unitPattern count="other">ƒe {0}</unitPattern>
-			</unit>
-			<unit type="duration-month">
-				<displayName>ɣletiwo</displayName>
-				<unitPattern count="one">ɣleti {0}</unitPattern>
-				<unitPattern count="other">ɣleti {0}</unitPattern>
 			</unit>
 			<unit type="duration-week">
 				<displayName>kɔsiɖa</displayName>
-				<unitPattern count="one">kɔsiɖa {0}</unitPattern>
-				<unitPattern count="other">kɔsiɖa {0}</unitPattern>
 			</unit>
 			<unit type="duration-day">
 				<displayName>ŋkeke</displayName>
-				<unitPattern count="one">ŋkeke {0}</unitPattern>
-				<unitPattern count="other">ŋkeke {0}</unitPattern>
 			</unit>
 			<unit type="duration-hour">
 				<displayName>gaƒoƒo</displayName>
-				<unitPattern count="one">gaƒoƒo {0}</unitPattern>
-				<unitPattern count="other">gaƒoƒo {0}</unitPattern>
 			</unit>
 			<unit type="duration-minute">
 				<displayName>aɖabaƒoƒo</displayName>
-				<unitPattern count="one">a {0}</unitPattern>
-				<unitPattern count="other">a {0}</unitPattern>
 			</unit>
 			<unit type="duration-second">
 				<unitPattern count="one">s {0}</unitPattern>
@@ -6451,26 +4032,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</units>
 	<listPatterns>
 		<listPattern>
-			<listPatternPart type="start">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle">{0}, {1}</listPatternPart>
-			<listPatternPart type="end">{0}, kple {1}</listPatternPart>
-			<listPatternPart type="2">{0} kple {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="unit">
-			<listPatternPart type="start">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle">{0}, {1}</listPatternPart>
-			<listPatternPart type="end">{0}, kple {1}</listPatternPart>
-			<listPatternPart type="2">{0} kple {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="unit-narrow">
-			<listPatternPart type="start">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle">{0}, {1}</listPatternPart>
-			<listPatternPart type="end">{0}, kple {1}</listPatternPart>
-			<listPatternPart type="2">{0} kple {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="unit-short">
-			<listPatternPart type="start">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle">{0}, {1}</listPatternPart>
 			<listPatternPart type="end">{0}, kple {1}</listPatternPart>
 			<listPatternPart type="2">{0} kple {1}</listPatternPart>
 		</listPattern>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ public class JImageToolTest {
         args.add("jdk.tools.jimage.Main");
         args.addAll(Arrays.asList(jimageArgs));
 
-        ProcessBuilder builder = ProcessTools.createJavaProcessBuilder(args.toArray(new String[args.size()]));
+        ProcessBuilder builder = ProcessTools.createLimitedTestJavaProcessBuilder(args.toArray(new String[args.size()]));
         int res = builder.inheritIO().start().waitFor();
 
         if (res != 0) {

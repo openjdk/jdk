@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @key headful
+ * @key headful printer
  * @bug 6195901 6195923 6195928 6195933 6491273 6888734
  * @summary No SecurityException should be thrown when printing to a file
             using the given policy.

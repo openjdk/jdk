@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,24 +85,14 @@ JNIEXPORT jstring JNICALL Java_sun_awt_windows_WDesktopPeer_ShellExecute
 
     // 6457572: ShellExecute possibly changes FPU control word - saving it here
     unsigned oldcontrol87 = _control87(0, 0);
-    HRESULT hr = ::CoInitializeEx(NULL, COINIT_APARTMENTTHREADED |
-                                        COINIT_DISABLE_OLE1DDE);
-    HINSTANCE retval;
-    DWORD error;
-    if (SUCCEEDED(hr)) {
-        retval = ::ShellExecute(NULL, verb_c, fileOrUri_c, NULL, NULL,
-                                SW_SHOWNORMAL);
-        error = ::GetLastError();
-        ::CoUninitialize();
-    }
+    HINSTANCE retval = ::ShellExecute(NULL, verb_c, fileOrUri_c, NULL, NULL,
+                                      SW_SHOWNORMAL);
+    DWORD error = ::GetLastError();
     _control87(oldcontrol87, 0xffffffff);
 
     JNU_ReleaseStringPlatformChars(env, fileOrUri_j, fileOrUri_c);
     JNU_ReleaseStringPlatformChars(env, verb_j, verb_c);
 
-    if (FAILED(hr)) {
-        return JNU_NewStringPlatform(env, L"CoInitializeEx() failed.");
-    }
     if ((int)((intptr_t)retval) <= 32) {
         // ShellExecute failed.
         LPTSTR buffer = NULL;

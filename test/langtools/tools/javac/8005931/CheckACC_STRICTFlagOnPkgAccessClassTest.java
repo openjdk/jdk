@@ -25,12 +25,8 @@
  * @test
  * @bug 8005931
  * @summary javac doesn't set ACC_STRICT for classes with package access
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.impl
+ * @enablePreview
+ * @modules java.base/jdk.internal.classfile.impl
  * @run main CheckACC_STRICTFlagOnPkgAccessClassTest
  */
 
@@ -45,7 +41,7 @@ import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
 import javax.tools.ToolProvider;
 import com.sun.source.util.JavacTask;
-import jdk.internal.classfile.*;
+import java.lang.classfile.*;
 
 public class CheckACC_STRICTFlagOnPkgAccessClassTest {
 
@@ -93,10 +89,10 @@ public class CheckACC_STRICTFlagOnPkgAccessClassTest {
     }
 
     void check() throws IOException {
-        ClassModel classFileToCheck = Classfile.of().parse(new File("Test.class").toPath());
+        ClassModel classFileToCheck = ClassFile.of().parse(new File("Test.class").toPath());
 
         for (MethodModel method : classFileToCheck.methods()) {
-            if ((method.flags().flagsMask() & Classfile.ACC_STRICT) == 0) {
+            if ((method.flags().flagsMask() & ClassFile.ACC_STRICT) == 0) {
                 errors.add(String.format(offendingMethodErrorMessage,
                         method.methodName().stringValue(),
                         classFileToCheck.thisClass().asInternalName()));

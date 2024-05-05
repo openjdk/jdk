@@ -24,18 +24,14 @@
 /*
  * @test 6716452
  * @summary need a method to get an index of an attribute
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
+ * @enablePreview
  */
 
 import java.io.*;
 import java.nio.file.Files;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.*;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
 
 public class T6716452 {
     public static void main(String[] args) throws Exception {
@@ -45,7 +41,7 @@ public class T6716452 {
     public void run() throws Exception {
         File javaFile = writeTestFile();
         File classFile = compileTestFile(javaFile);
-        ClassModel cm = Classfile.of().parse(classFile.toPath());
+        ClassModel cm = ClassFile.of().parse(classFile.toPath());
         for (MethodModel mm: cm.methods()) {
             test(mm);
         }
