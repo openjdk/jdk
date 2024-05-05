@@ -42,7 +42,7 @@ public class threadgroup001 {
     static final int JDWP_COMMAND_ID = JDWP.Command.ThreadReference.ThreadGroup;
 
     public static void main (String argv[]) {
-        int result = run(argv,System.out);
+        int result = run(argv, System.out);
         if (result != 0) {
             throw new RuntimeException("Test failed");
         }

@@ -64,7 +64,7 @@ public class subclasses002 {
     //------------------------------------------------------- immutable common methods
 
     public static void main(String argv[]) {
-        int result = run(argv,System.out);
+        int result = run(argv, System.out);
         if (result != 0) {
             throw new RuntimeException("TEST FAILED with result " + result);
         }

@@ -46,7 +46,7 @@ public class srcfile001 {
     static final String TESTED_CLASS_SRCFILENAME = "srcfile001a.java";
 
     public static void main (String argv[]) {
-        int result = run(argv,System.out);
+        int result = run(argv, System.out);
         if (result != 0) {
             throw new RuntimeException("Test failed");
         }

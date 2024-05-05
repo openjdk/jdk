@@ -41,7 +41,7 @@ public class type003 {
     private final static String classToChekName = prefix + "type003aClassToCheck";
 
     public static void main(String argv[]) {
-        int result = run(argv,System.out);
+        int result = run(argv, System.out);
         if (result != 0) {
             throw new RuntimeException("TEST FAILED with result " + result);
         }

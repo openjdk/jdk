@@ -55,7 +55,7 @@ public class remove_l001 {
     private int tot_res = FAILED;
 
     public static void main(String argv[]) {
-        int result = run(argv,System.out);
+        int result = run(argv, System.out);
         if (result != 0) {
             throw new RuntimeException("TEST FAILED with result " + result);
         }

@@ -61,7 +61,7 @@ public class fields001 {
     static final int FIELD_MODIFIER_FLAGS = JDWP.ModifierFlag.PUBLIC;
 
     public static void main (String argv[]) {
-        int result = run(argv,System.out);
+        int result = run(argv, System.out);
         if (result != 0) {
             throw new RuntimeException("Test failed");
         }

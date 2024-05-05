@@ -59,7 +59,7 @@ import nsk.share.jdi.*;
 
 public class VMOutOfMemoryException001 extends TestDebuggerType2 {
     public static void main(String argv[]) {
-        int result = run(argv,System.out);
+        int result = run(argv, System.out);
         if (result != 0) {
             throw new RuntimeException("TEST FAILED with result " + result);
         }

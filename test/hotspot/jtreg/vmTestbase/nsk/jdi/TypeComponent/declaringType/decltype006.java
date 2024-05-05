@@ -102,7 +102,7 @@ public class decltype006 {
     private final static String overInterName = prefix + "decltype006aOverridenInter";
 
     public static void main(String argv[]) {
-        int result = run(argv,System.out);
+        int result = run(argv, System.out);
         if (result != 0) {
             throw new RuntimeException("TEST FAILED with result " + result);
         }

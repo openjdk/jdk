@@ -71,7 +71,7 @@ public class instancecounts001 extends HeapwalkingDebugger {
     private boolean forceGC;
 
     public static void main(String argv[]) {
-        int result = run(argv,System.out);
+        int result = run(argv, System.out);
         if (result != 0) {
             throw new RuntimeException("TEST FAILED with result " + result);
         }
