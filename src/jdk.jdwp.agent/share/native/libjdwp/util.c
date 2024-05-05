@@ -1291,7 +1291,9 @@ verifyMonitorRank(JNIEnv *env, DebugRawMonitorRank rank, jthread thread)
     // Iterate over all the monitors and makes sure we don't already hold one that
     // has a higher rank than the monitor we are about to enter.
     DebugRawMonitorRank i;
-    for (i = 0; i < NUM_DEBUG_RAW_MONITORS; i++) {
+    DebugRawMonitorRank firstRank =
+        (rank < FIRST_LEAF_DEBUG_RAW_MONITOR ? rank : FIRST_LEAF_DEBUG_RAW_MONITOR);
+    for (i = firstRank; i < NUM_DEBUG_RAW_MONITORS; i++) {
         DebugRawMonitor* dbg_monitor = &dbg_monitors[i];
         if (dbg_monitor->monitor == NULL) {
             continue; // ignore uninitialzed monitors
