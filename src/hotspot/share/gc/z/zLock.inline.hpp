@@ -121,14 +121,14 @@ template <typename T>
 inline ZUnlocker<T>::ZUnlocker(T* lock)
   : _lock(lock) {
   if (_lock != nullptr) {
-    _lock->lock();
+    _lock->unlock();
   }
 }
 
 template <typename T>
 inline ZUnlocker<T>::~ZUnlocker() {
   if (_lock != nullptr) {
-    _lock->unlock();
+    _lock->lock();
   }
 }
 
