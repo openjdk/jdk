@@ -2313,7 +2313,7 @@ int MacroAssembler::corrected_idivl(Register result, Register ra, Register rb,
     sdivw(result, ra, rb);
   } else {
     sdivw(scratch, ra, rb);
-    Assembler::msubw(result, scratch, rb, ra);
+    msubw(result, scratch, rb, ra);
   }
 
   return idivl_offset;
@@ -2343,7 +2343,7 @@ int MacroAssembler::corrected_idivq(Register result, Register ra, Register rb,
     sdiv(result, ra, rb);
   } else {
     sdiv(scratch, ra, rb);
-    Assembler::msub(result, scratch, rb, ra);
+    msub(result, scratch, rb, ra);
   }
 
   return idivq_offset;

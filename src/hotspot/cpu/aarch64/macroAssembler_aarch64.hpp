@@ -437,10 +437,38 @@ class MacroAssembler: public Assembler {
     Assembler::INSN(Rd, Rn, Rm, Ra);                                          \
   }
 
-  WRAP(madd) WRAP(msub) WRAP(maddw) WRAP(msubw)
+  WRAP(madd) WRAP(maddw)
   WRAP(smaddl) WRAP(smsubl) WRAP(umaddl) WRAP(umsubl)
 #undef WRAP
 
+
+  inline void msub(Register Rd, Register Rn, Register Rm, Register Ra) {
+    if (VM_Version::supports_a53mac() && Ra != zr)
+      nop();
+    if (VM_Version::is_neoverse_n_series()) {
+      /* On Neoverse N series, MSUB uses the same ALU with SDIV.
+       * The combination of MUL/SUB can utilize multiple ALUS,
+       * and is much faster than MSUB. */
+      mul(rscratch1, Rn, Rm);
+      sub(Rd, Ra, rscratch1);
+    } else {
+      Assembler::msub(Rd, Rn, Rm, Ra);
+    }
+  }
+
+  inline void msubw(Register Rd, Register Rn, Register Rm, Register Ra) {
+    if (VM_Version::supports_a53mac() && Ra != zr)
+      nop();
+    if (VM_Version::is_neoverse_n_series()) {
+      /* On Neoverse N series, MSUB uses the same ALU with SDIV.
+       * The combination of MUL/SUB can utilize multiple ALUS,
+       * and is much faster than MSUB. */
+      mulw(rscratch1, Rn, Rm);
+      subw(Rd, Ra, rscratch1);
+    } else {
+      Assembler::msubw(Rd, Rn, Rm, Ra);
+    }
+  }
 
   // macro assembly operations needed for aarch64
 
