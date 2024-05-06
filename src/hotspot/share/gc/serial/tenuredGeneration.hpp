@@ -27,11 +27,11 @@
 
 #include "gc/serial/cSpaceCounters.hpp"
 #include "gc/serial/generation.hpp"
+#include "gc/serial/serialBlockOffsetTable.hpp"
 #include "gc/shared/generationCounters.hpp"
 #include "gc/shared/space.hpp"
 #include "utilities/macros.hpp"
 
-class SerialBlockOffsetTable;
 class CardTableRS;
 class ContiguousSpace;
 

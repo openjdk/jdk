@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -152,7 +152,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="collation" type="gb2312han">ordre de tri chinois simplifié - GB2312</type>
 			<type key="collation" type="phonebook">ordre de tri de l’annuaire</type>
 			<type key="collation" type="pinyin">ordre de tri pinyin</type>
-			<type key="collation" type="reformed">ordre de tri réformé</type>
 			<type key="collation" type="searchjl" draft="contributed">Rechercher par consonne initiale en hangeul</type>
 			<type key="collation" type="stroke">ordre de tri des traits</type>
 			<type key="collation" type="traditional">ordre de tri traditionnel</type>
@@ -1526,13 +1525,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>heure avancée de Maurice</daylight>
 				</long>
 			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic>heure du Nord-Ouest du Mexique</generic>
-					<standard>heure normale du Nord-Ouest du Mexique</standard>
-					<daylight>heure avancée du Nord-Ouest du Mexique</daylight>
-				</long>
-			</metazone>
 			<metazone type="Mexico_Pacific">
 				<long>
 					<generic>heure du Pacifique mexicain</generic>
@@ -2676,10 +2668,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="energy-calorie">
 				<unitPattern count="one">{0} cal</unitPattern>
 				<unitPattern count="other">{0} cal</unitPattern>
-			</unit>
-			<unit type="energy-foodcalorie">
-				<unitPattern count="one">{0} kcal</unitPattern>
-				<unitPattern count="other">{0} kcal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<unitPattern count="one">{0} kJ</unitPattern>

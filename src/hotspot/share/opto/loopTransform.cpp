@@ -2790,7 +2790,7 @@ Node* PhaseIdealLoop::add_range_check_elimination_assertion_predicate(IdealLoopT
                                                                       jint stride_con, Node* value,
                                                                       const bool is_template) {
   bool overflow = false;
-  BoolNode* bol = rc_predicate(loop, ctrl, scale_con, offset, value, nullptr, stride_con,
+  BoolNode* bol = rc_predicate(ctrl, scale_con, offset, value, nullptr, stride_con,
                                limit, (stride_con > 0) != (scale_con > 0), overflow);
   Node* opaque_assertion_predicate;
   if (is_template) {
