@@ -23,6 +23,12 @@
 
 package indify;
 
+import java.lang.classfile.Attribute;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.FieldModel;
+import java.lang.classfile.MethodModel;
+import java.lang.classfile.constantpool.*;
+import java.nio.file.Files;
 import java.util.*;
 import java.io.*;
 import java.lang.reflect.Modifier;
@@ -261,6 +267,7 @@ public class Indify {
 
     public void indifyFile(File f, File dest) throws IOException {
         if (verbose)  System.err.println("reading "+f);
+        Bytecode bytecode = new Bytecode(f); //creating new bytecode instance to trigger
         ClassFile cf = new ClassFile(f);
         Logic logic = new Logic(cf);
         boolean changed = logic.transform();
@@ -1114,6 +1121,15 @@ public class Indify {
         return new DataInputStream(new BufferedInputStream(new FileInputStream(f)));
     }
 
+    private byte[] openInputIntoBytes(File f) throws IOException{
+        try{
+            return Files.readAllBytes(f.toPath());
+        }
+        catch(IOException e){
+            throw new IOException("Error reading file: "+f);
+        }
+    }
+
     private DataOutputStream openOutput(File f) throws IOException {
         if (!overwrite && f.exists())
             throw new IOException("file already exists: "+f);
@@ -1226,6 +1242,55 @@ public class Indify {
     }
     private static void writeOutputs(DataOutputStream out, Object... data) throws IOException {
         for (Object x : data)  writeOutput(out, x);
+    }
+
+    public class Bytecode {
+        Bytecode(File f) throws IOException {
+            byte[] bytes = openInputIntoBytes(f);
+            try{
+                parseFrom(bytes);
+            } catch (Exception e){
+                throw new IOException("Error parsing file: "+f, e);
+            }
+        }
+        public ClassModel classModel;
+        public int magicNumber, classFileVersion, accessFlags;
+        public ClassEntry thisClass, superClass;
+        public final List<MethodModel>  methods = new ArrayList<>();
+        public final List<FieldModel>   fields = new ArrayList<>();
+        public final List<Attribute<?>> attributes = new ArrayList<>();
+        public final List<ClassEntry>   interfaces = new ArrayList<>();
+        public final List<PoolEntry>    pool = new ArrayList<>();
+
+        public void parseFrom(byte[] bytes) throws IOException {
+            List<VerifyError> errors = java.lang.classfile.ClassFile.of().verify(bytes);
+            if (!errors.isEmpty()) {
+                for (VerifyError e : errors) {
+                    System.err.println(e.getMessage());
+                }
+                throw new IOException("verification failed");
+            }
+            classModel = java.lang.classfile.ClassFile.of().parse(bytes);
+
+            for (PoolEntry poolEntry : classModel.constantPool()) {
+                this.pool.add(poolEntry);
+            }
+
+
+            magicNumber = MAGIC_NUMBER;
+            classFileVersion = classModel.majorVersion();
+            accessFlags = classModel.flags().flagsMask();
+
+            thisClass = classModel.thisClass();
+            superClass = (classModel.superclass().isPresent() ? classModel.superclass().get() : null);
+
+            methods.addAll(classModel.methods());
+            fields.addAll(classModel.fields());
+            attributes.addAll(classModel.attributes());
+
+            interfaces.addAll(classModel.interfaces());
+
+        }
     }
 
     public abstract static class Outer {
