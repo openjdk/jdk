@@ -3035,7 +3035,7 @@ void os::pd_free_memory(char *addr, size_t bytes, size_t alignment_hint) {
 }
 
 size_t os::pd_pretouch_memory(void* first, void* last, size_t page_size) {
-  if (HugePages::thp_mode() != THPMode::always && UseTransparentHugePages) {
+  if (HugePages::thp_mode() != THPMode::always && !UseTransparentHugePages) {
     // No THP. Use the platform-independent pretouch memory code.
     return page_size;
   }
