@@ -5063,7 +5063,7 @@ void Compile::remove_speculative_types(PhaseIterGVN &igvn) {
 
 // Auxiliary methods to support randomized stressing/fuzzing.
 
-void Compile::initialize_stress_seed(DirectiveSet* directive) {
+void Compile::initialize_stress_seed(const DirectiveSet* directive) {
   if (FLAG_IS_DEFAULT(StressSeed) || (FLAG_IS_ERGO(StressSeed) && directive->RepeatCompilationOption)) {
     _stress_seed = static_cast<uint>(Ticks::now().nanoseconds());
     FLAG_SET_ERGO(StressSeed, _stress_seed);
