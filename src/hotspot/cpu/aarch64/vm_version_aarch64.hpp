@@ -165,7 +165,7 @@ enum Neoverse_CPU_Model {
 
   static bool is_neoverse_family() {
     return _cpu == CPU_ARM
-	  && (model_is(CPU_MODEL_NEOVERSE_N1) || model_is(CPU_MODEL_NEOVERSE_N2) ||
+          && (model_is(CPU_MODEL_NEOVERSE_N1) || model_is(CPU_MODEL_NEOVERSE_N2) ||
               model_is(CPU_MODEL_NEOVERSE_V1) || model_is(CPU_MODEL_NEOVERSE_V2));
   }
 
