@@ -839,15 +839,33 @@ public class VectorGatherMaskFoldingTest {
         Asserts.assertNotEquals(res2, longVector);
     }
 
+    @Test
+    @IR(counts = { IRNode.STORE_VECTOR_MASKED, ">= 1", IRNode.LOAD_VECTOR_MASKED, ">= 1" }, applyIfCPUFeatureOr = {"avx512", "true", "sve", "true"})
+    public static void testLongVectorStoreLoadMaskedVector() {
+        long[] res = new long[L_SPECIES.length()];
+        longVector.intoArray(res, 0, longVectorMask);
+        LongVector res2 = LongVector.fromArray(L_SPECIES, res, 0, longVectorMask);
+        Asserts.assertNotEquals(res2, longVector);
+    }
+
 
     // IntVector tests
 
     @Test
     @IR(counts = { IRNode.STORE_VECTOR_SCATTER, ">= 1", IRNode.LOAD_VECTOR_GATHER, ">= 1" }, applyIfCPUFeatureOr = {"avx512", "true", "sve", "true"})
     public static void testIntVectorLoadGatherStoreScatterDuplicateOffsetsVector() {
-        int[] res = new int[L_SPECIES.length()];
+        int[] res = new int[I_SPECIES.length()];
         intVector.intoArray(res, 0, duplicateIntOffsets, 0);
         IntVector res2 = IntVector.fromArray(I_SPECIES, res, 0, duplicateIntOffsets, 0);
+        Asserts.assertNotEquals(res2, intVector);
+    }
+
+    @Test
+    @IR(counts = { IRNode.STORE_VECTOR_MASKED, ">= 1", IRNode.LOAD_VECTOR_MASKED, ">= 1" }, applyIfCPUFeatureOr = {"avx512", "true", "sve", "true"})
+    public static void testIntVectorStoreLoadMaskedVector() {
+        int[] res = new int[I_SPECIES.length()];
+        intVector.intoArray(res, 0, intVectorMask);
+        IntVector res2 = IntVector.fromArray(I_SPECIES, res, 0, intVectorMask);
         Asserts.assertNotEquals(res2, intVector);
     }
 
@@ -857,9 +875,18 @@ public class VectorGatherMaskFoldingTest {
     @Test
     @IR(counts = { IRNode.STORE_VECTOR_SCATTER, ">= 1", IRNode.LOAD_VECTOR_GATHER, ">= 1" }, applyIfCPUFeatureOr = {"avx512", "true", "sve", "true"})
     public static void testDoubleVectorLoadGatherStoreScatterDuplicateOffsetsVector() {
-        double[] res = new double[L_SPECIES.length()];
+        double[] res = new double[D_SPECIES.length()];
         doubleVector.intoArray(res, 0, duplicateDoubleOffsets, 0);
         DoubleVector res2 = DoubleVector.fromArray(D_SPECIES, res, 0, duplicateDoubleOffsets, 0);
+        Asserts.assertNotEquals(res2, doubleVector);
+    }
+
+    @Test
+    @IR(counts = { IRNode.STORE_VECTOR_MASKED, ">= 1", IRNode.LOAD_VECTOR_MASKED, ">= 1" }, applyIfCPUFeatureOr = {"avx512", "true", "sve", "true"})
+    public static void testDoubleVectorStoreLoadMaskedVector() {
+        double[] res = new double[D_SPECIES.length()];
+        doubleVector.intoArray(res, 0, doubleVectorMask);
+        DoubleVector res2 = DoubleVector.fromArray(D_SPECIES, res, 0, doubleVectorMask);
         Asserts.assertNotEquals(res2, doubleVector);
     }
 
@@ -869,11 +896,21 @@ public class VectorGatherMaskFoldingTest {
     @Test
     @IR(counts = { IRNode.STORE_VECTOR_SCATTER, ">= 1", IRNode.LOAD_VECTOR_GATHER, ">= 1" }, applyIfCPUFeatureOr = {"avx512", "true", "sve", "true"})
     public static void testFloatVectorLoadGatherStoreScatterDuplicateOffsetsVector() {
-        float[] res = new float[L_SPECIES.length()];
+        float[] res = new float[F_SPECIES.length()];
         floatVector.intoArray(res, 0, duplicateFloatOffsets, 0);
         FloatVector res2 = FloatVector.fromArray(F_SPECIES, res, 0, duplicateFloatOffsets, 0);
         Asserts.assertNotEquals(res2, floatVector);
     }
+
+    @Test
+    @IR(counts = { IRNode.STORE_VECTOR_MASKED, ">= 1", IRNode.LOAD_VECTOR_MASKED, ">= 1" }, applyIfCPUFeatureOr = {"avx512", "true", "sve", "true"})
+    public static void testFloatVectorStoreLoadMaskedVector() {
+        float[] res = new float[F_SPECIES.length()];
+        floatVector.intoArray(res, 0, floatVectorMask);
+        FloatVector res2 = FloatVector.fromArray(F_SPECIES, res, 0, floatVectorMask);
+        Asserts.assertNotEquals(res2, floatVector);
+    }
+
 
     public static void main(String[] args) {
         TestFramework testFramework = new TestFramework();
