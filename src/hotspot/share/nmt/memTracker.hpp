@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,7 +120,7 @@ class MemTracker : AllStatic {
   //  (we do not do any reservations before that).
 
   static inline void record_virtual_memory_reserve(void* addr, size_t size, const NativeCallStack& stack,
-    MEMFLAGS flag) {
+    MEMFLAGS flag = mtNone) {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
@@ -137,32 +137,32 @@ class MemTracker : AllStatic {
     }
   }
 
-  static inline void record_virtual_memory_uncommit(address addr, size_t size, MEMFLAGS flag) {
+  static inline void record_virtual_memory_uncommit(address addr, size_t size) {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
-      VirtualMemoryTracker::remove_uncommitted_region((address)addr, size, flag);
+      VirtualMemoryTracker::remove_uncommitted_region((address)addr, size);
     }
   }
 
   static inline void record_virtual_memory_reserve_and_commit(void* addr, size_t size,
-    const NativeCallStack& stack, MEMFLAGS flag) {
+    const NativeCallStack& stack, MEMFLAGS flag = mtNone) {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
       ThreadCritical tc;
       VirtualMemoryTracker::add_reserved_region((address)addr, size, stack, flag);
-      VirtualMemoryTracker::add_committed_region((address)addr, size, stack, flag);
+      VirtualMemoryTracker::add_committed_region((address)addr, size, stack);
     }
   }
 
   static inline void record_virtual_memory_commit(void* addr, size_t size,
-    const NativeCallStack& stack, MEMFLAGS flag) {
+    const NativeCallStack& stack) {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
       ThreadCritical tc;
-      VirtualMemoryTracker::add_committed_region((address)addr, size, stack, flag);
+      VirtualMemoryTracker::add_committed_region((address)addr, size, stack);
     }
   }
 

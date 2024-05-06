@@ -369,11 +369,11 @@ public record ClassRemapperImpl(Function<ClassDesc, ClassDesc> mapFunction) impl
                 Signature.ClassTypeSig.of(
                         cts.outerType().map(this::mapSignature).orElse(null),
                         map(cts.classDesc()),
-                        cts.typeArgs().stream()
-                                .map(ta -> Signature.TypeArg.of(
-                                        ta.wildcardIndicator(),
-                                        ta.boundType().map(this::mapSignature)))
-                                .toArray(Signature.TypeArg[]::new));
+                        cts.typeArgs().stream().map(ta -> switch (ta) {
+                            case Signature.TypeArg.Unbounded u -> u;
+                            case Signature.TypeArg.Bounded bta -> Signature.TypeArg.bounded(
+                                    bta.wildcardIndicator(), mapSignature(bta.boundType()));
+                        }).toArray(Signature.TypeArg[]::new));
             default -> signature;
         };
     }
