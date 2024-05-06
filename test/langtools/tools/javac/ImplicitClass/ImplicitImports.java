@@ -242,4 +242,44 @@ public class ImplicitImports extends TestRunner {
 
         return patchClasses;
     }
+
+    @Test
+    public void testWithExplicitImport(Path base) throws Exception {
+        Path current = base.resolve(".");
+        Path src = current.resolve("src");
+        Path classes = current.resolve("classes");
+        tb.writeFile(src.resolve("Test.java"),
+                     """
+                     import java.lang.*;
+                     public static void main(String... args) {
+                         List<String> l = new ArrayList<>();
+                         System.out.println(l.getClass().getName());
+                     }
+                     """);
+
+        Files.createDirectories(classes);
+
+        new JavacTask(tb)
+            .options("--enable-preview", "--release", SOURCE_VERSION)
+            .outdir(classes)
+            .files(tb.findJavaFiles(src))
+            .run(Task.Expect.SUCCESS)
+            .writeAll();
+
+        var out = new JavaTask(tb)
+                .classpath(classes.toString())
+                .className("Test")
+                .vmOptions("--enable-preview")
+                .run()
+                .writeAll()
+                .getOutputLines(Task.OutputKind.STDOUT);
+
+        var expectedOut = List.of("java.util.ArrayList");
+
+        if (!Objects.equals(expectedOut, out)) {
+            throw new AssertionError("Incorrect Output, expected: " + expectedOut +
+                                      ", actual: " + out);
+
+        }
+    }
 }

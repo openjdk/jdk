@@ -102,7 +102,6 @@ public class TypeEnter implements Completer {
     private final Log log;
     private final Check chk;
     private final Attr attr;
-    private final DeferredAttr deferredAttr;
     private final Symtab syms;
     private final TreeMaker make;
     private final Todo todo;
@@ -130,7 +129,6 @@ public class TypeEnter implements Completer {
         log = Log.instance(context);
         chk = Check.instance(context);
         attr = Attr.instance(context);
-        deferredAttr = DeferredAttr.instance(context);
         syms = Symtab.instance(context);
         make = TreeMaker.instance(context);
         todo = Todo.instance(context);
@@ -335,25 +333,27 @@ public class TypeEnter implements Completer {
             importAll(make.at(tree.pos()).Import(make.Select(make.QualIdent(javaLang.owner), javaLang), false),
                 javaLang, env);
 
-            List<JCTree> defs = tree.defs;
+            List<JCTree> defs = tree.getTypeDecls();
             boolean isImplicitClass = !defs.isEmpty() &&
                     defs.head instanceof JCClassDecl cls &&
                     (cls.mods.flags & IMPLICIT_CLASS) != 0;
             if (isImplicitClass) {
                 doModuleImport(make.ModuleImport(make.QualIdent(syms.java_base)));
-                if (peekTypeExists(env, syms.ioType.tsym)) {
+                if (peekTypeExists(syms.ioType.tsym)) {
                     doImport(make.Import(make.Select(make.QualIdent(syms.ioType.tsym),
                             names.asterisk), true));
                 }
             }
         }
 
-        //check if the given class exists, without producing side-effects:
-        private boolean peekTypeExists(Env<AttrContext> env, TypeSymbol type) {
-            JCExpression expr = make.Select(make.QualIdent(type), names._class);
-            return !deferredAttr.attribSpeculative(expr, env, attr.unknownExprInfo)
-                                .type
-                                .isErroneous();
+        private boolean peekTypeExists(TypeSymbol type) {
+            try {
+                type.complete();
+                return !type.type.isErroneous();
+            } catch (CompletionFailure cf) {
+                //does not exist
+                return false;
+            }
         }
 
         private void resolveImports(JCCompilationUnit tree, Env<AttrContext> env) {
