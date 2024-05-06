@@ -1280,7 +1280,8 @@ assertIsCurrentThread(JNIEnv *env, jthread thread, jthread current_thread)
         return; // This assert is not reliable if the VM is exiting
     }
     if (!isSameObject(env, thread, current_thread)) {
-        tty_message("ERROR: Threads not the same: %p %p\n", thread, current_thread);
+        tty_message("ERROR: Threads are not the same: \"%s\" \"%s\"",
+                    getThreadName(thread), getThreadName(current_thread));
         dumpRawMonitors();
         JDI_ASSERT(JNI_FALSE);
     }
