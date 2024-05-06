@@ -40,7 +40,7 @@ import static java.nio.file.StandardOpenOption.*;
 
 
 public class BlockDeviceSize {
-    private static final List<String> BLK_FNAMES = List.of("/dev/sda1", "/dev/nvme0n1") ;
+    private static final List<String> BLK_FNAMES = List.of("/dev/sda1", "/dev/nvme0n1", "/dev/xvda1") ;
 
     public static void main(String[] args) throws Throwable {
         for (String blkFname: BLK_FNAMES) {
