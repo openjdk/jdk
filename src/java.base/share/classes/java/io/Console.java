@@ -230,12 +230,7 @@ public sealed class Console implements Flushable permits ProxyingConsole {
      * output stream using the specified format string and arguments with
      * the {@link Locale##default_locale default format locale}.
      *
-     * <p> An invocation of this method of the form
-     * {@code con.printf(format, args)} behaves in exactly the same way
-     * as the invocation of
-     * {@snippet lang=java :
-     *     con.format(format, args)
-     * }
+     * @implSpec This is the same as calling {@code format(format, args)}.
      *
      * @param  format
      *         A format string as described in {@link
@@ -271,6 +266,9 @@ public sealed class Console implements Flushable permits ProxyingConsole {
      * A convenience method to write a formatted string to this console's
      * output stream using the specified format string and arguments with
      * the specified {@code locale}.
+     *
+     * @implSpec This is the same as calling
+     *         {@code format(locale, format, args)}.
      *
      * @param  locale The {@linkplain Locale locale} to apply during
      *         formatting.  If {@code locale} is {@code null} then no localization
