@@ -108,9 +108,8 @@ class inputStream : public CHeapObjBase {
                                      // will switch to C_HEAP allocation when necessary.
 
   bool has_c_heap_buffer() {
-    return _buffer != nullptr && _buffer != &_small_buffer[0];
+    return _buffer != &_small_buffer[0];
   }
-  void free_c_heap_buffer();
 
   // Buffer states
   //
@@ -142,7 +141,7 @@ class inputStream : public CHeapObjBase {
   // when next is called.
 
   bool is_sane() const {
-    assert((_buffer == nullptr) == (_buffer_size == 0), "");
+    assert(_buffer != nullptr, "");
     assert(_content_end <= _buffer_size, "");
     assert(_beg <= _end && _end <= _content_end, "");
     assert(_end <= _next && _next <= _content_end + NEXT_PHANTOM, "");
@@ -242,10 +241,7 @@ class inputStream : public CHeapObjBase {
     set_input(input);
   }
 
-  virtual ~inputStream() {
-    if (has_c_heap_buffer()) free_c_heap_buffer();
-    if (_input != nullptr)  set_input(nullptr);
-  }
+  virtual ~inputStream();
 
   // Discards any previous input and sets the given input source.
   void set_input(Input* input);

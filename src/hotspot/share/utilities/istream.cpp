@@ -283,9 +283,14 @@ bool inputStream::expand_buffer(size_t new_length) {
   return true;
 }
 
-void inputStream::free_c_heap_buffer() {
-  FreeHeap(_buffer);
-  _buffer = nullptr;
+inputStream::~inputStream() {
+  if (has_c_heap_buffer()) {
+    FreeHeap(_buffer);
+    DEBUG_ONLY(_buffer = (char*)0xdeadbeef); // sanity
+  }
+  if (_input != nullptr)  {
+    set_input(nullptr);
+  }
 }
 
 #ifdef ASSERT
