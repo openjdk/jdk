@@ -632,11 +632,11 @@ JavaMain(void* _args)
             ret = invokeStaticMainWithArgs(env, mainClass, mainArgs);
         }
     } else {
-       if (noArgMain) {
+        if (noArgMain) {
             ret = invokeInstanceMainWithoutArgs(env, mainClass);
-       } else {
+        } else {
             ret = invokeInstanceMainWithArgs(env, mainClass, mainArgs);
-       }
+        }
     }
     if (!ret) {
         CHECK_EXCEPTION_LEAVE(1);
