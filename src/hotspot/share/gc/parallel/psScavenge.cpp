@@ -84,7 +84,7 @@ ParallelScavengeTracer        PSScavenge::_gc_tracer;
 CollectorCounters*            PSScavenge::_counters = nullptr;
 
 static void scavenge_roots_work(ParallelRootType::Value root_type, uint worker_id) {
-  assert(ParallelScavengeHeap::heap()->is_gc_active(), "called outside gc");
+  assert(ParallelScavengeHeap::heap()->is_stw_gc_active(), "called outside gc");
 
   PSPromotionManager* pm = PSPromotionManager::gc_thread_promotion_manager(worker_id);
   PSPromoteRootsClosure  roots_to_old_closure(pm);
@@ -115,7 +115,7 @@ static void scavenge_roots_work(ParallelRootType::Value root_type, uint worker_i
 }
 
 static void steal_work(TaskTerminator& terminator, uint worker_id) {
-  assert(ParallelScavengeHeap::heap()->is_gc_active(), "called outside gc");
+  assert(ParallelScavengeHeap::heap()->is_stw_gc_active(), "called outside gc");
 
   PSPromotionManager* pm =
     PSPromotionManager::gc_thread_promotion_manager(worker_id);
@@ -232,11 +232,11 @@ public:
 bool PSScavenge::invoke() {
   assert(SafepointSynchronize::is_at_safepoint(), "should be at safepoint");
   assert(Thread::current() == (Thread*)VMThread::vm_thread(), "should be in vm thread");
-  assert(!ParallelScavengeHeap::heap()->is_gc_active(), "not reentrant");
+  assert(!ParallelScavengeHeap::heap()->is_stw_gc_active(), "not reentrant");
 
   ParallelScavengeHeap* const heap = ParallelScavengeHeap::heap();
   PSAdaptiveSizePolicy* policy = heap->size_policy();
-  IsGCActiveMark mark;
+  IsSTWGCActiveMark mark;
 
   const bool scavenge_done = PSScavenge::invoke_no_policy();
   const bool need_full_gc = !scavenge_done;
@@ -264,7 +264,7 @@ class PSThreadRootsTaskClosure : public ThreadClosure {
 public:
   PSThreadRootsTaskClosure(uint worker_id) : _worker_id(worker_id) { }
   virtual void do_thread(Thread* thread) {
-    assert(ParallelScavengeHeap::heap()->is_gc_active(), "called outside gc");
+    assert(ParallelScavengeHeap::heap()->is_stw_gc_active(), "called outside gc");
 
     PSPromotionManager* pm = PSPromotionManager::gc_thread_promotion_manager(_worker_id);
     PSScavengeRootsClosure roots_closure(pm);

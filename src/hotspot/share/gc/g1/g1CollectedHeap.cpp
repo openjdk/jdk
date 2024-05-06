@@ -2399,7 +2399,7 @@ void G1CollectedHeap::expand_heap_after_young_collection(){
 
 bool G1CollectedHeap::do_collection_pause_at_safepoint() {
   assert_at_safepoint_on_vm_thread();
-  guarantee(!is_gc_active(), "collection is not reentrant");
+  guarantee(!is_stw_gc_active(), "collection is not reentrant");
 
   do_collection_pause_at_safepoint_helper();
   return true;
@@ -2469,7 +2469,7 @@ void G1CollectedHeap::flush_region_pin_cache() {
 void G1CollectedHeap::do_collection_pause_at_safepoint_helper() {
   ResourceMark rm;
 
-  IsGCActiveMark active_gc_mark;
+  IsSTWGCActiveMark active_gc_mark;
   GCIdMark gc_id_mark;
   SvcGCMarker sgcm(SvcGCMarker::MINOR);
 

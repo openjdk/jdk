@@ -1342,8 +1342,8 @@ bool Universe::release_fullgc_alot_dummy() {
   return true;
 }
 
-bool Universe::is_gc_active() {
-  return heap()->is_gc_active();
+bool Universe::is_stw_gc_active() {
+  return heap()->is_stw_gc_active();
 }
 
 bool Universe::is_in_heap(const void* p) {
