@@ -58,7 +58,7 @@ static size_t bound_minus_alignment(size_t desired_size,
                                     size_t maximum_size,
                                     size_t alignment) {
   size_t max_minus = maximum_size - alignment;
-  return desired_size < max_minus ? desired_size : max_minus;
+  return MIN2(desired_size, max_minus);
 }
 
 void GenArguments::initialize_alignments() {
