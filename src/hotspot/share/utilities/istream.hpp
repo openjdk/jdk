@@ -193,7 +193,7 @@ class inputStream : public CHeapObjBase {
   // more input, set the state up to indicate we are done.
   bool fill_buffer();
 
-  // Find some room in the buffer so we call read on it.
+  // Find some room in the buffer so we can call read on it.
   // This might call expand_buffer but will try not to.
   // The assumption is that read already buffers slow I/O calls.
   // The purpose for the small buffer managed here is to store whole lines,
@@ -227,8 +227,8 @@ class inputStream : public CHeapObjBase {
     _input(nullptr),
     _input_state(IState::NTR_STATE),
     _line_ending(0),
-    _buffer(nullptr),
-    _buffer_size(0),
+    _buffer(&_small_buffer[0]),
+    _buffer_size(sizeof(_small_buffer)),
     _content_end(0),
     _beg(0),
     _end(0),

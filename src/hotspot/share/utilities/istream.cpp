@@ -38,9 +38,9 @@
   */
 #define DO_COV_CASES(COV_FN) \
   COV_FN(NXT_L) COV_FN(NXT_N) COV_FN(FIB_P) COV_FN(FIB_E) COV_FN(FIB_N) \
-  COV_FN(FIB_L) COV_FN(PFB_X) COV_FN(PFB_C) COV_FN(PFB_P) COV_FN(PFB_A) \
+  COV_FN(FIB_L) COV_FN(PFB_C) COV_FN(PFB_P) COV_FN(PFB_A) \
   COV_FN(PFB_G) COV_FN(PFB_H) COV_FN(SBC_C) COV_FN(SBC_B) COV_FN(SBC_N) \
-  COV_FN(SBC_L) COV_FN(EXB_S) COV_FN(EXB_R) COV_FN(EXB_A)
+  COV_FN(SBC_L) COV_FN(EXB_R) COV_FN(EXB_A)
   /**/
 #define COV_COUNT(casename) coverage_case_##casename
 #define DECLARE_COV_CASE(casename) static int COV_COUNT(casename);
@@ -111,9 +111,9 @@ void inputStream::set_input(inputStream::Input* input) {
 }
 
 bool inputStream::fill_buffer() {
+  size_t fill_offset, fill_length;
   assert(!definitely_done(), "");  // caller responsibility
   while (need_to_read()) {
-    size_t fill_offset, fill_length;
     prepare_to_fill_buffer(fill_offset, fill_length);
     if (error())  return false;
     assert(fill_length > 0, "");
@@ -162,12 +162,6 @@ bool inputStream::fill_buffer() {
 void inputStream::prepare_to_fill_buffer(size_t& fill_offset,
                                          size_t& fill_length) {
   assert(need_to_read(), "");  // _next pointer out of the way
-  if (_buffer_size == 0) {
-    COV(PFB_X);
-    expand_buffer(sizeof(_small_buffer));
-    assert(_buffer_size > 0, "");
-    // and continue with at least a little buffer
-  }
   size_t end = _content_end;
   if (_beg == end) { // if no partial line present...
     COV(PFB_C);
@@ -264,24 +258,21 @@ void inputStream::set_buffer_content(size_t content_start,
 bool inputStream::expand_buffer(size_t new_length) {
   assert(new_length > _buffer_size, "");
   char* new_buf = nullptr;
-  if (new_length <= sizeof(_small_buffer)) {
-    COV(EXB_S);
-    new_buf = &_small_buffer[0];
-    new_length = sizeof(_small_buffer);
-  } else if (_buffer == &_small_buffer[0]) {
+  assert(new_length > sizeof(_small_buffer), "");
+  if (_buffer == &_small_buffer[0]) {
     // fresh alloc from c-heap
     COV(EXB_A);
     new_buf = NEW_C_HEAP_ARRAY(char, new_length, mtInternal);
-    if (new_buf != nullptr) {
-      if (_content_end > 0) {
-        assert(_content_end <= _buffer_size, "");
-        ::memcpy(new_buf, _buffer, _content_end);  // copy only the active content
-      }
+    assert(new_buf != nullptr, "would have exited VM if OOM");
+    if (_content_end > 0) {
+      assert(_content_end <= _buffer_size, "");
+      ::memcpy(new_buf, _buffer, _content_end);  // copy only the active content
     }
   } else {
     // realloc
     COV(EXB_R);
     new_buf = REALLOC_C_HEAP_ARRAY(char, _buffer, new_length, mtInternal);
+    assert(new_buf != nullptr, "would have exited VM if OOM");
   }
 
   if (new_buf == nullptr) {
