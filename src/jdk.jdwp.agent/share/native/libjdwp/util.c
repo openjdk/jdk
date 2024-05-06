@@ -1236,10 +1236,13 @@ getThreadName(jthread thread)
 {
     jvmtiThreadInfo info;
     jvmtiError error;
+    JNIEnv *env = getEnv();
 
     memset(&info, 0, sizeof(info));
-    error = JVMTI_FUNC_PTR(gdata->jvmti,GetThreadInfo)
-            (gdata->jvmti, thread, &info);
+    WITH_LOCAL_REFS(env, 2) {
+        error = JVMTI_FUNC_PTR(gdata->jvmti,GetThreadInfo)
+                (gdata->jvmti, thread, &info);
+    } END_WITH_LOCAL_REFS(env);
     return info.name;
 }
 
