@@ -270,7 +270,7 @@ public sealed interface ClassDesc
      * @return whether this {@linkplain ClassDesc} describes an array type
      */
     default boolean isArray() {
-        return descriptorString().startsWith("[");
+        return descriptorString().charAt(0) == '[';
     }
 
     /**
@@ -288,7 +288,7 @@ public sealed interface ClassDesc
      * @return whether this {@linkplain ClassDesc} describes a class or interface type
      */
     default boolean isClassOrInterface() {
-        return descriptorString().startsWith("L");
+        return descriptorString().charAt(0) == 'L';
     }
 
     /**

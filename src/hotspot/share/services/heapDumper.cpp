@@ -2604,6 +2604,18 @@ int HeapDumper::dump(const char* path, outputStream* out, int compression, bool 
     out->print_cr("Dumping heap to %s ...", path);
     timer()->start();
   }
+
+  if (_oome && num_dump_threads > 1) {
+    // Each additional parallel writer requires several MB of internal memory
+    // (DumpWriter buffer, DumperClassCacheTable, GZipCompressor buffers).
+    // For the OOM handling we may already be limited in memory.
+    // Lets ensure we have at least 20MB per thread.
+    julong max_threads = os::free_memory() / (20 * M);
+    if (num_dump_threads > max_threads) {
+      num_dump_threads = MAX2<uint>(1, (uint)max_threads);
+    }
+  }
+
   // create JFR event
   EventHeapDump event;
 

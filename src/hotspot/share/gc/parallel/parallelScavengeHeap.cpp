@@ -787,6 +787,9 @@ void ParallelScavengeHeap::verify(VerifyOption option /* ignored */) {
 
     log_debug(gc, verify)("Eden");
     young_gen()->verify();
+
+    log_debug(gc, verify)("CardTable");
+    card_table()->verify_all_young_refs_imprecise();
   }
 }
 

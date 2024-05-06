@@ -3108,8 +3108,8 @@ bool MergePrimitiveArrayStores::is_con_RShift(const Node* n, Node const*& base_o
       n->in(2)->is_ConI()) {
     base_out = n->in(1);
     shift_out = n->in(2)->get_int();
-    assert(shift_out >= 0, "must be positive");
-    return true;
+    // The shift must be positive:
+    return shift_out >= 0;
   }
   return false;
 }
