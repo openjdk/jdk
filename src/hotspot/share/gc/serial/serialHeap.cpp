@@ -443,7 +443,7 @@ bool SerialHeap::do_young_gc(bool clear_soft_refs) {
   if (!is_young_gc_safe()) {
     return false;
   }
-  IsGCActiveMark active_gc_mark;
+  IsSTWGCActiveMark active_gc_mark;
   SvcGCMarker sgcm(SvcGCMarker::MINOR);
   GCIdMark gc_id_mark;
   GCTraceCPUTime tcpu(_young_gen->gc_tracer());
@@ -711,7 +711,7 @@ void SerialHeap::do_full_collection(bool clear_all_soft_refs) {
 }
 
 void SerialHeap::do_full_collection_no_gc_locker(bool clear_all_soft_refs) {
-  IsGCActiveMark gc_active_mark;
+  IsSTWGCActiveMark gc_active_mark;
   SvcGCMarker sgcm(SvcGCMarker::FULL);
   GCIdMark gc_id_mark;
   GCTraceCPUTime tcpu(SerialFullGC::gc_tracer());
