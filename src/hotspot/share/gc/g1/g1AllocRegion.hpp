@@ -83,10 +83,8 @@ private:
   void update_alloc_region(HeapRegion* alloc_region);
 
   // Allocate a new active region and use it to perform a word_size
-  // allocation. The force parameter will be passed on to
-  // G1CollectedHeap::allocate_new_alloc_region() and tells it to try
-  // to allocate a new region even if the max has been reached.
-  HeapWord* new_alloc_region_and_allocate(size_t word_size, bool force);
+  // allocation.
+  HeapWord* new_alloc_region_and_allocate(size_t word_size);
 
   // Perform an allocation out of a new allocation region, retiring the current one.
   inline HeapWord* attempt_allocation_using_new_region(size_t min_word_size,
@@ -132,7 +130,7 @@ protected:
   // For convenience as subclasses use it.
   static G1CollectedHeap* _g1h;
 
-  virtual HeapRegion* allocate_new_region(size_t word_size, bool force) = 0;
+  virtual HeapRegion* allocate_new_region(size_t word_size) = 0;
   virtual void retire_region(HeapRegion* alloc_region,
                              size_t allocated_bytes) = 0;
 
@@ -172,12 +170,6 @@ public:
                                              size_t desired_word_size,
                                              size_t* actual_word_size);
 
-  // Should be called to allocate a new region even if the max of this
-  // type of regions has been reached. Should only be called if other
-  // allocation attempts have failed and we are not holding a valid
-  // active region.
-  inline HeapWord* attempt_allocation_force(size_t word_size);
-
   // Should be called before we start using this object.
   virtual void init();
 
@@ -213,7 +205,7 @@ private:
   // in it and the free size in the currently retained region, if any.
   bool should_retain(HeapRegion* region);
 protected:
-  virtual HeapRegion* allocate_new_region(size_t word_size, bool force);
+  virtual HeapRegion* allocate_new_region(size_t word_size);
   virtual void retire_region(HeapRegion* alloc_region, size_t allocated_bytes);
   virtual size_t retire(bool fill_up);
 public:
@@ -249,7 +241,7 @@ protected:
   G1EvacStats* _stats;
   G1HeapRegionAttr::region_type_t _purpose;
 
-  virtual HeapRegion* allocate_new_region(size_t word_size, bool force);
+  virtual HeapRegion* allocate_new_region(size_t word_size);
   virtual void retire_region(HeapRegion* alloc_region, size_t allocated_bytes);
 
   virtual size_t retire(bool fill_up);

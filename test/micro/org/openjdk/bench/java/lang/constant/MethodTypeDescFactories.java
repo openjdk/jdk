@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,11 +54,14 @@ public class MethodTypeDescFactories {
 
     private static final ClassDesc DUMMY_CD = ClassDesc.of("Dummy_invalid");
 
+    /** Dots will be replaced by the descriptor of this benchmark class. */
     @Param({
             "(Ljava/lang/Object;Ljava/lang/String;)I",
             "()V",
             "([IJLjava/lang/String;Z)Ljava/util/List;",
-            "()[Ljava/lang/String;"
+            "()[Ljava/lang/String;",
+            "(..IIJ)V",
+            "(.....................)."
     })
     public String descString;
     public MethodTypeDesc desc;
@@ -68,6 +71,7 @@ public class MethodTypeDescFactories {
 
     @Setup
     public void setup() {
+        descString = descString.replaceAll("\\.", MethodTypeDescFactories.class.descriptorString());
         desc = MethodTypeDesc.ofDescriptor(descString);
         ret = desc.returnType();
         args = desc.parameterArray();

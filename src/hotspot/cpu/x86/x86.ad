@@ -10249,7 +10249,7 @@ instruct mask_opers_evex(kReg dst, kReg src1, kReg src2, kReg kscratch) %{
   ins_encode %{
     const MachNode* mask1 = static_cast<const MachNode*>(this->in(this->operand_index($src1)));
     const MachNode* mask2 = static_cast<const MachNode*>(this->in(this->operand_index($src2)));
-    assert(0 == Type::cmp(mask1->bottom_type(), mask2->bottom_type()), "");
+    assert(Type::equals(mask1->bottom_type(), mask2->bottom_type()), "Mask types must be equal");
     uint masklen = Matcher::vector_length(this);
     masklen = (masklen < 16 && !VM_Version::supports_avx512dq()) ? 16 : masklen;
     __ masked_op(this->ideal_Opcode(), masklen, $dst$$KRegister, $src1$$KRegister, $src2$$KRegister);
