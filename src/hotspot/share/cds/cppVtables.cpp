@@ -231,14 +231,17 @@ char* CppVtables::dumptime_init(ArchiveBuilder* builder) {
 }
 
 void CppVtables::serialize(SerializeClosure* soc) {
+  if (!soc->reading()) {
+    _vtables_serialized_top = soc->region_top();
+  }
   for (int i = 0; i < _num_cloned_vtable_kinds; i++) {
     soc->do_ptr(&_index[i]);
   }
   if (soc->reading()) {
     CPP_VTABLE_TYPES_DO(INITIALIZE_VTABLE);
   } else {
-    _vtables_serialized_top = soc->region_top();
-    tty->print_cr("Top: %p", (address)_vtables_serialized_top);
+    tty->print_cr("Top: %p offset = %zu", (address)_vtables_serialized_top,
+                  ArchiveBuilder::current()->buffer_to_offset((address)_vtables_serialized_top));
   }
 }
 
