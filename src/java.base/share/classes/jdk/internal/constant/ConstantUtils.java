@@ -27,7 +27,6 @@ package jdk.internal.constant;
 import sun.invoke.util.Wrapper;
 
 import java.lang.constant.ClassDesc;
-import java.lang.constant.Constable;
 import java.lang.constant.ConstantDesc;
 import java.lang.constant.ConstantDescs;
 import java.util.ArrayList;
@@ -229,7 +228,7 @@ public final class ConstantUtils {
             return Wrapper.forPrimitiveType(descriptor.charAt(start)).classDescriptor();
         }
         // Pre-verified in parseMethodDescriptor; avoid redundant verification
-        return ReferenceClassDescImpl.ofTrusted(descriptor.substring(start, start + len));
+        return ReferenceClassDescImpl.ofValidated(descriptor.substring(start, start + len));
     }
 
     private static final char JVM_SIGNATURE_ARRAY = '[';

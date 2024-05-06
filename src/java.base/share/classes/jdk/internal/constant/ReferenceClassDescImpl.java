@@ -65,7 +65,7 @@ public final class ReferenceClassDescImpl implements ClassDesc {
      * @param descriptor a field descriptor string for a class or interface type
      * @jvms 4.3.2 Field Descriptors
      */
-    public static ReferenceClassDescImpl ofTrusted(String descriptor) {
+    public static ReferenceClassDescImpl ofValidated(String descriptor) {
         return new ReferenceClassDescImpl(descriptor);
     }
 

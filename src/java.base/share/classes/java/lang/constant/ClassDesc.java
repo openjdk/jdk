@@ -221,7 +221,7 @@ public sealed interface ClassDesc
         if (desc.length() == 1 && desc.charAt(0) == 'V') {
             throw new IllegalArgumentException(String.format("not a valid reference type descriptor: %sV", "[".repeat(rank)));
         }
-        return ReferenceClassDescImpl.ofTrusted("[".repeat(rank) + descriptorString());
+        return ReferenceClassDescImpl.ofValidated("[".repeat(rank) + descriptorString());
     }
 
     /**
@@ -248,7 +248,7 @@ public sealed interface ClassDesc
         String desc = descriptorString();
         StringBuilder sb = new StringBuilder(desc.length() + nestedName.length() + 1);
         sb.append(desc, 0, desc.length() - 1).append('$').append(nestedName).append(';');
-        return ReferenceClassDescImpl.ofTrusted(sb.toString());
+        return ReferenceClassDescImpl.ofValidated(sb.toString());
     }
 
     /**
@@ -317,7 +317,7 @@ public sealed interface ClassDesc
             if (desc.length() == 2) {
                 return Wrapper.forBasicType(desc.charAt(1)).classDescriptor();
             } else {
-                return ReferenceClassDescImpl.ofTrusted(desc.substring(1));
+                return ReferenceClassDescImpl.ofValidated(desc.substring(1));
             }
         }
         return null;
