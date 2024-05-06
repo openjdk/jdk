@@ -23,11 +23,10 @@
 
 /**
  * @test
- * @bug 8331535
- * @summary Verify the jdk.internal.le's console provider works properly.
- * @modules jdk.internal.le
+ * @bug 8331681
+ * @summary Verify the java.base's console provider handles the prompt correctly.
  * @library /test/lib
- * @run main/othervm -Djdk.console=jdk.internal.le JLineConsoleProviderTest
+ * @run main/othervm --limit-modules java.base ConsolePromptTest
  */
 
 import java.lang.reflect.Method;
@@ -36,12 +35,12 @@ import java.util.Objects;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
-public class JLineConsoleProviderTest {
+public class ConsolePromptTest {
 
     public static void main(String... args) throws Throwable {
-        for (Method m : JLineConsoleProviderTest.class.getDeclaredMethods()) {
+        for (Method m : ConsolePromptTest.class.getDeclaredMethods()) {
             if (m.getName().startsWith("test")) {
-                m.invoke(new JLineConsoleProviderTest());
+                m.invoke(new ConsolePromptTest());
             }
         }
     }
