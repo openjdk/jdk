@@ -107,6 +107,9 @@ public:
   :  _buckets(nullptr), _stacks(), _is_detailed_mode(is_detailed_mode) {
     if (_is_detailed_mode) {
       _buckets = NEW_C_HEAP_ARRAY(Link*, _nr_buckets, mtNMT);
+      for (int i = 0; i < _nr_buckets; i++) {
+        _buckets[i] = nullptr;
+      }
     }
   }
 
