@@ -267,7 +267,7 @@ public class Indify {
 
     public void indifyFile(File f, File dest) throws IOException {
         if (verbose)  System.err.println("reading "+f);
-        Bytecode bytecode = new Bytecode(f); //creating new bytecode instance to trigger
+        Bytecode bytecode = new Bytecode(f); //creating new bytecode instance to trigger the api to read the class file for debugging
         ClassFile cf = new ClassFile(f);
         Logic logic = new Logic(cf);
         boolean changed = logic.transform();
