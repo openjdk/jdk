@@ -2084,7 +2084,7 @@ void PSParallelCompact::fill_dead_objs_in_dense_prefix(uint worker_id, uint num_
   }
 
   // end_addr is inclusive to handle regions starting with dead space.
-  while(cur_addr <= end_addr) {
+  while (cur_addr <= end_addr) {
     // Use prefix_end to handle trailing obj in each worker region-chunk.
     HeapWord* live_start = bitmap->find_obj_beg(cur_addr, prefix_end);
     if (cur_addr != live_start) {
