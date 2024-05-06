@@ -1274,18 +1274,16 @@ dumpRawMonitors() {
 }
 
 static void
-assertIsCurrentThread(JNIEnv *env, jthread thread)
+assertIsCurrentThread(JNIEnv *env, jthread thread, jthread current_thread)
 {
     if (gdata->vmDead) {
         return; // This assert is not reliable if the VM is exiting
     }
-    jthread current_thread = threadControl_currentThread();
     if (!isSameObject(env, thread, current_thread)) {
         tty_message("ERROR: Threads not the same: %p %p\n", thread, current_thread);
         dumpRawMonitors();
         JDI_ASSERT(JNI_FALSE);
     }
-    JNI_FUNC_PTR(env,DeleteLocalRef)(env, current_thread);
 }
 
 static void
@@ -1390,17 +1388,18 @@ debugMonitorExit(DebugRawMonitor *dbg_monitor)
         return;
     }
 
-    JNIEnv *env = getEnv();
     jthread current_thread = threadControl_currentThread();
 
     if (gdata->vmDead && current_thread == NULL) {
         return;
     }
-    JNI_FUNC_PTR(env,DeleteLocalRef)(env, current_thread);
 
     JDI_ASSERT(dbg_monitor->entryCount > 0);
+
     // Assert that the current thread owns this monitor.
-    assertIsCurrentThread(env, dbg_monitor->ownerThread);
+    JNIEnv *env = getEnv();
+    assertIsCurrentThread(env, dbg_monitor->ownerThread, current_thread);
+    JNI_FUNC_PTR(env,DeleteLocalRef)(env, current_thread);
 
     dbg_monitor->entryCount--;
     if (dbg_monitor->entryCount == 0) {
@@ -1430,12 +1429,13 @@ debugMonitorWait(DebugRawMonitor *dbg_monitor)
     if (gdata->vmDead && current_thread == NULL) {
         return;
     }
-    JNIEnv *env = getEnv();
-    JNI_FUNC_PTR(env,DeleteLocalRef)(env, current_thread);
 
     JDI_ASSERT(thread != NULL);
+
     // Assert that the current thread owns this monitor.
-    assertIsCurrentThread(env, dbg_monitor->ownerThread);
+    JNIEnv *env = getEnv();
+    assertIsCurrentThread(env, dbg_monitor->ownerThread, current_thread);
+    JNI_FUNC_PTR(env,DeleteLocalRef)(env, current_thread);
 
     // Release ownership of the DebugRawMonitor before RawMonitorWait actually exits it.
     dbgRawMonitor_lock();
@@ -1468,11 +1468,11 @@ debugMonitorNotify(DebugRawMonitor *dbg_monitor)
     if (gdata->vmDead && current_thread == NULL) {
         return;
     }
-    JNIEnv *env = getEnv();
-    JNI_FUNC_PTR(env,DeleteLocalRef)(env, current_thread);
 
     // Assert that the current thread owns this monitor.
-    assertIsCurrentThread(getEnv(), dbg_monitor->ownerThread);
+    JNIEnv *env = getEnv();
+    assertIsCurrentThread(env, dbg_monitor->ownerThread, current_thread);
+    JNI_FUNC_PTR(env,DeleteLocalRef)(env, current_thread);
 
     debugMonitorNotify_norank(monitor);
 }
@@ -1492,11 +1492,11 @@ debugMonitorNotifyAll(DebugRawMonitor *dbg_monitor)
     if (gdata->vmDead && current_thread == NULL) {
         return;
     }
-    JNIEnv *env = getEnv();
-    JNI_FUNC_PTR(env,DeleteLocalRef)(env, current_thread);
 
     // Assert that the current thread owns this monitor.
-    assertIsCurrentThread(env, dbg_monitor->ownerThread);
+    JNIEnv *env = getEnv();
+    assertIsCurrentThread(env, dbg_monitor->ownerThread, current_thread);
+    JNI_FUNC_PTR(env,DeleteLocalRef)(env, current_thread);
 
     debugMonitorNotifyAll_norank(monitor);
 }
