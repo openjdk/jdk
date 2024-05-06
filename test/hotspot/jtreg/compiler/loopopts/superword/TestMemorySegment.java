@@ -340,14 +340,14 @@ class TestMemorySegmentImpl {
             case 4  -> { return newMemorySegmentOfLongArray(); }
             case 5  -> { return newMemorySegmentOfFloatArray(); }
             default -> { return newMemorySegmentOfDoubleArray(); }
-	}
+        }
     }
 
     static MemorySegment newMemorySegmentOfMixedBuffer() {
         switch(RANDOM.nextInt(2)) {
             case 0  -> { return newMemorySegmentOfByteBuffer(); }
             default -> { return newMemorySegmentOfByteBufferDirect(); }
-	}
+        }
     }
 
     static MemorySegment newMemorySegmentOfMixed() {
@@ -355,7 +355,7 @@ class TestMemorySegmentImpl {
             case 0  -> { return newMemorySegmentOfMixedArray(); }
             case 1  -> { return newMemorySegmentOfMixedBuffer(); }
             default -> { return newMemorySegmentOfNative(); }
-	}
+        }
     }
 
     static void fillRandom(MemorySegment data) {
