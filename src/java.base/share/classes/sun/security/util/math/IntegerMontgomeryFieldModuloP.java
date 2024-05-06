@@ -36,4 +36,5 @@ import java.math.BigInteger;
 
 public interface IntegerMontgomeryFieldModuloP extends IntegerFieldModuloP {
     ImmutableIntegerModuloP fromMontgomery(ImmutableIntegerModuloP m);
+    IntegerFieldModuloP residueField();
 }

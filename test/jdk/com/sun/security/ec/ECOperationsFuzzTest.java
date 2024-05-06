@@ -65,8 +65,7 @@ public class ECOperationsFuzzTest {
         private static void check(MutablePoint reference, MutablePoint testValue, long seed, int iter) {
                 AffinePoint affineRef = reference.asAffine();
                 AffinePoint affine = testValue.asAffine();
-                if (!affineRef.getX().asBigInteger().equals(affine.getX().asBigInteger()) ||
-                    !affineRef.getY().asBigInteger().equals(affine.getY().asBigInteger())) {
+                if (!affineRef.equals(affine)) {
                         throw new RuntimeException("Found error with seed "+seed +"at iteration "+ iter);
                 }
         }
@@ -106,13 +105,13 @@ public class ECOperationsFuzzTest {
                 AffinePoint montAffineGenerator = AffinePoint.fromECPoint(generator, point.getField());
 
                 MutablePoint refProjGenerator = new ProjectivePoint.Mutable(
-                        refAffineGenerator.getX().mutable(),
-                        refAffineGenerator.getY().mutable(),
+                        refAffineGenerator.getX(false).mutable(),
+                        refAffineGenerator.getY(false).mutable(),
                         referencePoint.getField().get1().mutable());
 
                 MutablePoint projGenerator = new ProjectivePoint.Mutable(
-                        montAffineGenerator.getX().mutable(),
-                        montAffineGenerator.getY().mutable(),
+                        montAffineGenerator.getX(false).mutable(),
+                        montAffineGenerator.getY(false).mutable(),
                         point.getField().get1().mutable());
 
                 for (int i = 0; i < repeat; i++) {

@@ -28,6 +28,7 @@ package sun.security.util.math.intpoly;
 import sun.security.util.math.ImmutableIntegerModuloP;
 import sun.security.util.math.IntegerMontgomeryFieldModuloP;
 import sun.security.util.math.SmallValue;
+import sun.security.util.math.IntegerFieldModuloP;
 import java.lang.Math;
 import java.math.BigInteger;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
@@ -56,6 +57,10 @@ public final class MontgomeryIntegerPolynomialP256 extends IntegerPolynomial imp
 
     private MontgomeryIntegerPolynomialP256() {
         super(BITS_PER_LIMB, NUM_LIMBS, MAX_ADDS, MODULUS);
+    }
+
+    public IntegerFieldModuloP residueField() {
+        return IntegerPolynomialP256.ONE;
     }
 
     //(224%nat,-1)::(192%nat,1)::(96%nat,1)::(0%nat,-1)::nil.
