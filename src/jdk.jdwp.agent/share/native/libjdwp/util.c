@@ -1262,7 +1262,7 @@ dumpRawMonitors() {
     int i;
     for (i = 0; i < NUM_DEBUG_RAW_MONITORS; i++) {
         DebugRawMonitor* dbg_monitor = &dbg_monitors[i];
-        if (dbg_monitor == NULL) {
+        if (dbg_monitor->monitor == NULL) {
             continue;
         }
         jthread thread = dbg_monitor->ownerThread;
