@@ -399,11 +399,13 @@ const Type *Type::make( enum TYPES t ) {
 }
 
 //------------------------------cmp--------------------------------------------
-int Type::cmp( const Type *const t1, const Type *const t2 ) {
-  if( t1->_base != t2->_base )
-    return 1;                   // Missed badly
+bool Type::equals(const Type* t1, const Type* t2) {
+  if (t1->_base != t2->_base) {
+    return false; // Missed badly
+  }
+
   assert(t1 != t2 || t1->eq(t2), "eq must be reflexive");
-  return !t1->eq(t2);           // Return ZERO if equal
+  return t1->eq(t2);
 }
 
 const Type* Type::maybe_remove_speculative(bool include_speculative) const {
@@ -433,9 +435,13 @@ void Type::Initialize_shared(Compile* current) {
   Arena* shared_type_arena = new (mtCompiler)Arena(mtCompiler);
 
   current->set_type_arena(shared_type_arena);
-  _shared_type_dict =
-    new (shared_type_arena) Dict( (CmpKey)Type::cmp, (Hash)Type::uhash,
-                                  shared_type_arena, 128 );
+
+  // Map the boolean result of Type::equals into a comparator result that CmpKey expects.
+  CmpKey type_cmp = [](const void* t1, const void* t2) -> int32_t {
+    return Type::equals((Type*) t1, (Type*) t2) ? 0 : 1;
+  };
+
+  _shared_type_dict = new (shared_type_arena) Dict(type_cmp, (Hash) Type::uhash, shared_type_arena, 128);
   current->set_type_dict(_shared_type_dict);
 
   // Make shared pre-built types.
@@ -744,7 +750,7 @@ const Type *Type::hashcons(void) {
   // Since we just discovered a new Type, compute its dual right now.
   assert( !_dual, "" );         // No dual yet
   _dual = xdual();              // Compute the dual
-  if (cmp(this, _dual) == 0) {  // Handle self-symmetric
+  if (equals(this, _dual)) {    // Handle self-symmetric
     if (_dual != this) {
       delete _dual;
       _dual = this;

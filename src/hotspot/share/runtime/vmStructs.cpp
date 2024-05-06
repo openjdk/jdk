@@ -576,14 +576,15 @@
   nonstatic_field(nmethod,                     _orig_pc_offset,                               int)                                   \
   nonstatic_field(nmethod,                     _stub_offset,                                  int)                                   \
   nonstatic_field(nmethod,                     _metadata_offset,                              u2)                                    \
-  nonstatic_field(nmethod,                     _scopes_pcs_offset,                            u2)                                    \
+  nonstatic_field(nmethod,                     _scopes_pcs_offset,                            int)                                    \
   nonstatic_field(nmethod,                     _scopes_data_offset,                           int)                                   \
-  nonstatic_field(nmethod,                     _dependencies_offset,                          u2)                                    \
-  nonstatic_field(nmethod,                     _handler_table_offset,                         int)                                   \
-  nonstatic_field(nmethod,                     _nul_chk_table_offset,                         int)                                   \
+  nonstatic_field(nmethod,                     _handler_table_offset,                         u2)                                    \
+  nonstatic_field(nmethod,                     _nul_chk_table_offset,                         u2)                                    \
   nonstatic_field(nmethod,                     _entry_offset,                                 u2)                                    \
   nonstatic_field(nmethod,                     _verified_entry_offset,                        u2)                                    \
   nonstatic_field(nmethod,                     _osr_entry_point,                              address)                               \
+  nonstatic_field(nmethod,                     _immutable_data,                               address)                               \
+  nonstatic_field(nmethod,                     _immutable_data_size,                          int)                                   \
   nonstatic_field(nmethod,                     _compile_id,                                   int)                                   \
   nonstatic_field(nmethod,                     _comp_level,                                   CompLevel)                             \
   volatile_nonstatic_field(nmethod,            _exception_cache,                              ExceptionCache*)                       \

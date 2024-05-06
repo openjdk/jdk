@@ -484,7 +484,7 @@ void SerialHeap::do_collection(bool full,
   assert(my_thread->is_VM_thread(), "only VM thread");
   assert(Heap_lock->is_locked(),
          "the requesting thread should have the Heap_lock");
-  guarantee(!is_gc_active(), "collection is not reentrant");
+  guarantee(!is_stw_gc_active(), "collection is not reentrant");
 
   if (GCLocker::check_active_before_gc()) {
     return; // GC is disabled (e.g. JNI GetXXXCritical operation)
@@ -495,10 +495,10 @@ void SerialHeap::do_collection(bool full,
 
   ClearedAllSoftRefs casr(do_clear_all_soft_refs, soft_ref_policy());
 
-  IsGCActiveMark active_gc_mark;
+  IsSTWGCActiveMark active_gc_mark;
 
   bool complete = full && (max_generation == OldGen);
-  bool old_collects_young = complete && !ScavengeBeforeFullGC;
+  bool old_collects_young = complete;
   bool do_young_collection = !old_collects_young && _young_gen->should_collect(full, size, is_tlab);
 
   const PreGenGCValues pre_gc_values = get_pre_gc_values();

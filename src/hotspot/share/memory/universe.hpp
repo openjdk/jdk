@@ -295,7 +295,7 @@ class Universe: AllStatic {
   // The particular choice of collected heap.
   static CollectedHeap* heap() { return _collectedHeap; }
 
-  DEBUG_ONLY(static bool is_gc_active();)
+  DEBUG_ONLY(static bool is_stw_gc_active();)
   DEBUG_ONLY(static bool is_in_heap(const void* p);)
   DEBUG_ONLY(static bool is_in_heap_or_null(const void* p) { return p == nullptr || is_in_heap(p); })
 
