@@ -112,9 +112,8 @@ public class TestDwarf {
         runAndCheck(new Flags("-Xmx100M", "-XX:ErrorHandlerTest=15", "-XX:TestCrashInErrorHandler=14", "--version"));
         runAndCheck(new Flags("-XX:+CrashGCForDumpingJavaThread", "--version"));
         runAndCheck(new Flags("-Xmx10m", "-XX:+CrashOnOutOfMemoryError", TestDwarf.class.getCanonicalName(), "outOfMemory"));
-        // Use -XX:-TieredCompilation as C1 is currently not aborting the VM (JDK-8264899).
         runAndCheck(new Flags(TestDwarf.class.getCanonicalName(), "unsafeAccess"));
-        runAndCheck(new Flags("-XX:-TieredCompilation", "-XX:+UnlockDiagnosticVMOptions", "-XX:AbortVMOnException=MyException",
+        runAndCheck(new Flags("-XX:+UnlockDiagnosticVMOptions", "-XX:AbortVMOnException=MyException",
                               TestDwarf.class.getCanonicalName(), "abortVMOnException"));
         if (Platform.isX64() || Platform.isX86()) {
             // Not all platforms raise SIGFPE but x86_32 and x86_64 do.
