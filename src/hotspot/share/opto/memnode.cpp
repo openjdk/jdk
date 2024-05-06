@@ -3503,7 +3503,10 @@ Node* StoreNode::Identity(PhaseGVN* phase) {
       val->in(MemNode::Address)->eqv_uncast(adr) &&
       val->in(MemNode::Memory )->eqv_uncast(mem) &&
       val->as_Load()->store_Opcode() == Opcode()) {
-    result = mem;
+    // Ensure vector type is the same
+    if (!is_StoreVector() || as_StoreVector()->vect_type() == mem->as_LoadVector()->vect_type()) {
+      result = mem;
+    }
   }
 
   // Two stores in a row of the same value?
@@ -3512,32 +3515,42 @@ Node* StoreNode::Identity(PhaseGVN* phase) {
       mem->in(MemNode::Address)->eqv_uncast(adr) &&
       mem->in(MemNode::ValueIn)->eqv_uncast(val) &&
       mem->Opcode() == Opcode()) {
-    // Handle StoreVector with offsets and masks
-    // Ensure offsets match
-    if (is_StoreVectorScatter()) {
-      const Node* offsets = as_StoreVectorScatter()->in(StoreVectorScatterNode::Offsets);
-      if (offsets->eqv_uncast(mem->as_StoreVectorScatter()->in(StoreVectorScatterNode::Offsets))) {
-        result = mem;
-      }
-    // Ensure masks match
-    } else if (is_StoreVectorMasked()) {
-      const Node* mask = as_StoreVectorMasked()->in(StoreVectorMaskedNode::Mask);
-      if (mask->eqv_uncast(mem->as_StoreVectorMasked()->in(StoreVectorMaskedNode::Mask))) {
-        result = mem;
-      }
-    // Ensure offsets and masks match
-    } else if (is_StoreVectorScatterMasked()) {
-      const StoreVectorScatterMaskedNode* stv = as_StoreVectorScatterMasked();
-      const Node* offsets = stv->in(StoreVectorScatterMaskedNode::Offsets);
-      const Node* mask = stv->in(StoreVectorScatterMaskedNode::Mask);
-      const StoreVectorScatterMaskedNode* svgm = mem->as_StoreVectorScatterMasked();
-      if (offsets->eqv_uncast(svgm->in(StoreVectorScatterMaskedNode::Offsets)) &&
-        mask->eqv_uncast(svgm->in(StoreVectorScatterMaskedNode::Mask))) {
-        result = mem;
-      }
-    // Regular store (no offsets or mask)
-    } else {
+    // Not a vector
+    if (!is_StoreVector()) {
       result = mem;
+    } else {
+      // Ensure that vector types match
+      const TypeVect* vect_type = as_StoreVector()->vect_type();
+      const TypeVect* mem_vect_type = mem->as_StoreVector()->vect_type();
+      if (vect_type == mem_vect_type) {
+        // Handle StoreVector with offsets and masks
+        // Ensure offsets match
+        if (is_StoreVectorScatter()) {
+          const Node* offsets = as_StoreVectorScatter()->in(StoreVectorScatterNode::Offsets);
+          if (offsets->eqv_uncast(mem->as_StoreVectorScatter()->in(StoreVectorScatterNode::Offsets))) {
+            result = mem;
+          }
+        // Ensure masks match
+        } else if (is_StoreVectorMasked()) {
+          const Node* mask = as_StoreVectorMasked()->in(StoreVectorMaskedNode::Mask);
+          if (mask->eqv_uncast(mem->as_StoreVectorMasked()->in(StoreVectorMaskedNode::Mask))) {
+            result = mem;
+          }
+        // Ensure offsets and masks match
+        } else if (is_StoreVectorScatterMasked()) {
+          const StoreVectorScatterMaskedNode* stv = as_StoreVectorScatterMasked();
+          const Node* offsets = stv->in(StoreVectorScatterMaskedNode::Offsets);
+          const Node* mask = stv->in(StoreVectorScatterMaskedNode::Mask);
+          const StoreVectorScatterMaskedNode* svgm = mem->as_StoreVectorScatterMasked();
+          if (offsets->eqv_uncast(svgm->in(StoreVectorScatterMaskedNode::Offsets)) &&
+            mask->eqv_uncast(svgm->in(StoreVectorScatterMaskedNode::Mask))) {
+            result = mem;
+          }
+        // Regular store (no offsets or mask)
+        } else {
+          result = mem;
+        }
+      }
     }
   }
 
