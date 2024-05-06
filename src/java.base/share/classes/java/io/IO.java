@@ -73,8 +73,8 @@ public class IO {
     }
 
     /**
-     * Provides a prompt on the system console, then reads a single line of
-     * text from that console.
+     * Writes a prompt as if by calling {@code print}, then reads a single line
+     * of text from the system console.
      *
      * If {@code System.console()} returns {@code null}, throws {@code IOError}.
      * Otherwise, the effect is as if {@link Console#readln(String) readln(prompt)}
