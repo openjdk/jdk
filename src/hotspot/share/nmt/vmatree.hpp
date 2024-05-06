@@ -149,34 +149,6 @@ public:
     return register_mapping(from, from + sz, StateType::Released, empty);
   }
 
-  // Visit all nodes between [from, to) and call f on them.
-  template<typename F>
-  void visit(position from, position to, F f) {
-    ResourceArea area(mtNMT);
-    ResourceMark rm(&area);
-    GrowableArray<TreapNode*> to_visit(&area, 16, 0, nullptr);
-    to_visit.push(tree._root);
-    TreapNode* head = nullptr;
-    while (!to_visit.is_empty()) {
-      head = to_visit.pop();
-      if (head == nullptr) continue;
-
-      int cmp_from = AddressComparator::cmp(head->key(), from);
-      int cmp_to = AddressComparator::cmp(head->key(), to);
-      if (cmp_from >= 0 && cmp_to < 0) {
-        f(head);
-      }
-      if (cmp_to >= 0) {
-        to_visit.push(head->left());
-      } else if (cmp_from >= 0) {
-        to_visit.push(head->left());
-        to_visit.push(head->right());
-      } else {
-        to_visit.push(head->right());
-      }
-    }
-  }
-
 public:
   template<typename F>
   void in_order_traversal(F f) const {

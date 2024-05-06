@@ -156,6 +156,7 @@ private:
     if (node == nullptr) {
       return nullptr;
     }
+
     if (COMPARATOR::cmp(node->_key, k) == 0) { // EQ
       return node;
     }
@@ -188,14 +189,12 @@ private:
         maximum_depth_found = head.depth;
       }
       if (head.parent_prio < head.n->_priority) {
-        tty->print_cr("Failed at priority");
         return false;
       }
       to_visit.push({head.depth + 1, head.n->_priority, head.n->left()});
       to_visit.push({head.depth + 1, head.n->_priority, head.n->right()});
     }
     if (maximum_depth_found > (int)expected_maximum_depth) {
-      tty->print_cr("Failed at depth");
       return false;
     }
     // Visit everything in order, see that the key ordering is monotonically increasing.
@@ -334,9 +333,35 @@ private:
   }
 
 public:
+
+  // Visit all TreapNodes in ascending key order.
   template<typename F>
   void in_order_traversal(F f) const {
     in_order_traversal_doer(f, _root);
+  }
+
+  // Visit all TreapNodes where key is in range [from, to)
+  template<typename F>
+  void visit_range(const K& from, const K& to, F f) {
+    GrowableArrayCHeap<TreapNode*, mtNMT> to_visit;
+    to_visit.push(_root);
+    TreapNode* head = nullptr;
+    while (!to_visit.is_empty()) {
+      head = to_visit.pop();
+      if (head == nullptr) continue;
+
+      int cmp_from = COMPARATOR::cmp(head->key(), from);
+      int cmp_to = COMPARATOR::cmp(head->key(), to);
+      if (cmp_from < 0) {
+        to_visit.push(head->right());
+      } else if (cmp_to >= 0) {
+        to_visit.push(head->left());
+      } else if (cmp_from >= 0 && cmp_to < 0) {
+        f(head);
+        to_visit.push(head->left());
+        to_visit.push(head->right());
+      }
+    }
   }
 };
 

@@ -136,49 +136,23 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
 
   // Find all nodes between (A, B] and record their addresses. Also update B's
   // outgoing state.
-  { // Iterate over each node which is larger than A
-    GrowableArrayCHeap<TreapNode*, mtNMT> to_visit;
-    to_visit.push(tree._root);
-    TreapNode* head = nullptr;
-    while (!to_visit.is_empty()) {
-      head = to_visit.pop();
-      if (head == nullptr) continue;
-
-      int cmp_A = AddressComparator::cmp(head->key(), A);
-      int cmp_B = AddressComparator::cmp(head->key(), B);
-      if (cmp_B > 0) {
-        // head > B
-        to_visit.push(head->left());
-      } else if (cmp_A <= 0) {
-        // head <= A
-        to_visit.push(head->right());
-      } else if (cmp_A > 0 && cmp_B <= 0) {
-        // A < head <= B
-        to_visit.push(head->left());
-        to_visit.push(head->right());
-
-        stB.out = head->val().out;
-        if (cmp_B < 0) {
-          // Record all nodes preceding B.
-          to_be_deleted_inbetween_a_b.push({head->key(), head->val()});
-        } else if (cmp_B == 0) {
-          // Re-purpose B node, unless it would result in a noop node, in
-          // which case record old node at B for deletion and summary accounting.
-          if (stB.is_noop()) {
-            to_be_deleted_inbetween_a_b.push(AddressState{B, head->val()});
-          } else {
-            head->val() = stB;
-          }
-          B_needs_insert = false;
-        } else {
-          assert(false, "Cannot happen.");
-        }
+  tree.visit_range(A + 1, B + 1, [&](TreapNode* head) {
+    int cmp_B = AddressComparator::cmp(head->key(), B);
+    stB.out = head->val().out;
+    if (cmp_B < 0) {
+      // Record all nodes preceding B.
+      to_be_deleted_inbetween_a_b.push({head->key(), head->val()});
+    } else if (cmp_B == 0) {
+      // Re-purpose B node, unless it would result in a noop node, in
+      // which case record old node at B for deletion and summary accounting.
+      if (stB.is_noop()) {
+        to_be_deleted_inbetween_a_b.push(AddressState{B, head->val()});
       } else {
-        // Impossible.
-        assert(false, "Cannot happen.");
+        head->val() = stB;
       }
+      B_needs_insert = false;
     }
-  }
+  });
 
   // Insert B node if needed
   if (B_needs_insert && // Was not already inserted

@@ -66,7 +66,7 @@ TEST_VM_F(VMATreeTest, LowLevel) {
       tree.reserve_mapping(i * 100, 100, md);
     }
     int found_nodes = 0;
-    tree.visit(0, 999999, [&](Node* x) {
+    tree.tree.visit_range(0, 999999, [&](Node* x) {
       found_nodes++;
     });
     EXPECT_EQ(2, found_nodes) << "Adjacent reservations should result in exactly 2 nodes";
@@ -76,7 +76,7 @@ TEST_VM_F(VMATreeTest, LowLevel) {
       tree.reserve_mapping(i * 100, 100, md);
     }
     found_nodes = 0;
-    tree.visit(0, 999999, [&](Node* x) {
+    tree.tree.visit_range(0, 999999, [&](Node* x) {
       found_nodes++;
     });
     EXPECT_EQ(2, found_nodes) << "Adjacent reservations should result in exactly 2 nodes";
@@ -87,7 +87,7 @@ TEST_VM_F(VMATreeTest, LowLevel) {
       tree2.reserve_mapping(i * 100, 100, md);
     }
     found_nodes = 0;
-    tree2.visit(0, 999999, [&](Node* x) {
+    tree2.tree.visit_range(0, 999999, [&](Node* x) {
       found_nodes++;
     });
     EXPECT_EQ(2, found_nodes) << "Adjacent reservations should result in exactly 2 nodes";
@@ -100,7 +100,7 @@ TEST_VM_F(VMATreeTest, LowLevel) {
       tree2.reserve_mapping(i * 100, 101, md);
     }
     int found_nodes = 0;
-    tree2.visit(0, 999999, [&](Node* x) {
+    tree2.tree.visit_range(0, 999999, [&](Node* x) {
       found_nodes++;
     });
     EXPECT_EQ(2, found_nodes) << "Adjacent reservations should result in exactly 2 nodes";
@@ -138,7 +138,7 @@ TEST_VM_F(VMATreeTest, LowLevel) {
       return false;
     };
     int i = 0;
-    tree.visit(0, 300, [&](Node* x) {
+    tree.tree.visit_range(0, 300, [&](Node* x) {
       if (i < 16) {
         found[i] = x->key();
       }
@@ -159,7 +159,7 @@ TEST_VM_F(VMATreeTest, LowLevel) {
       tree.commit_mapping(i*100, 100, md);
     }
     int found_nodes = 0;
-    tree.visit(0, 999999, [&](Node* x) {
+    tree.tree.visit_range(0, 999999, [&](Node* x) {
       found_nodes++;
       VMATree::IntervalChange& v = x->val();
       EXPECT_TRUE((v.in.type() == VMATree::StateType::Released && v.out.type() == VMATree::StateType::Committed) ||
@@ -187,7 +187,7 @@ TEST_VM_F(VMATreeTest, LowLevel) {
     tree.reserve_mapping(0, 100, md);
     tree.reserve_mapping(100, 100, md2);
     int found_nodes = 0;
-    tree.visit(0, 99999, [&](Node* x) {
+    tree.tree.visit_range(0, 99999, [&](Node* x) {
       found_nodes++;
     });
     EXPECT_EQ(3, found_nodes);
@@ -200,7 +200,7 @@ TEST_VM_F(VMATreeTest, LowLevel) {
     tree.commit_mapping(50, 50, md2);
     tree.reserve_mapping(0, 100, md);
     int found_nodes = 0;
-    tree.visit(0, 99999, [&](Node* x) {
+    tree.tree.visit_range(0, 99999, [&](Node* x) {
       EXPECT_TRUE(x->key() == 0 || x->key() == 100);
       if (x->key() == 0) {
         EXPECT_EQ(x->val().out.metadata().flag, mtTest);
@@ -219,7 +219,7 @@ TEST_VM_F(VMATreeTest, LowLevel) {
     tree.reserve_mapping(0, 50, md2);
     tree.reserve_mapping(50, 50, md3);
     int found_nodes = 0;
-    tree.visit(0, 99999, [&](Node* x) {
+    tree.tree.visit_range(0, 99999, [&](Node* x) {
       found_nodes++;
     });
     EXPECT_EQ(3, found_nodes);
@@ -238,7 +238,7 @@ TEST_VM_F(VMATreeTest, LowLevel) {
     Tree tree;
     tree.reserve_mapping(0, 100, md);
     tree.commit_mapping(0, 100, md2);
-    tree.visit(0, 99999, [&](Node* x) {
+    tree.tree.visit_range(0, 99999, [&](Node* x) {
       if (x->key() == 0) {
         EXPECT_EQ(mtTest, x->val().out.metadata().flag);
       }
