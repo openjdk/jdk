@@ -218,8 +218,8 @@ private:
 public:
   Treap(uint64_t seed = static_cast<uint64_t>(os::random()))
   : _root(nullptr),
-  _prng_seed(seed),
-  DEBUG_ONLY(_node_count(0)) {
+  _prng_seed(seed)
+  DEBUG_ONLY(COMMA _node_count(0)) {
   }
 
   ~Treap() {
