@@ -28,18 +28,18 @@
 #include "memory/allocation.hpp"
 
 // This class provides a method for block structured setting of the
-// _is_gc_active state without requiring accessors in CollectedHeap
+// _is_stw_gc_active state without requiring accessors in CollectedHeap
 
-class IsGCActiveMark : public StackObj {
+class IsSTWGCActiveMark : public StackObj {
  public:
-  IsGCActiveMark();
-  ~IsGCActiveMark();
+  IsSTWGCActiveMark();
+  ~IsSTWGCActiveMark();
 };
 
-class DisableIsGCActiveMark : public StackObj {
+class DisableIsSTWGCActiveMark : public StackObj {
  public:
-  DisableIsGCActiveMark();
-  ~DisableIsGCActiveMark();
+  DisableIsSTWGCActiveMark();
+  ~DisableIsSTWGCActiveMark();
 };
 
 #endif // SHARE_GC_SHARED_ISGCACTIVEMARK_HPP

@@ -147,7 +147,7 @@ void MemAllocator::Allocation::verify_before() {
   JavaThread* THREAD = _thread; // For exception macros.
   assert(!HAS_PENDING_EXCEPTION, "Should not allocate with exception pending");
   debug_only(check_for_valid_allocation_state());
-  assert(!Universe::heap()->is_gc_active(), "Allocation during gc not allowed");
+  assert(!Universe::heap()->is_stw_gc_active(), "Allocation during GC pause not allowed");
 }
 
 #ifdef ASSERT
