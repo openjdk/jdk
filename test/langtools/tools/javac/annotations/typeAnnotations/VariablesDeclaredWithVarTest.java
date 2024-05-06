@@ -110,15 +110,15 @@ public class VariablesDeclaredWithVarTest {
     }
 
     void findAnnotations(ClassModel cf, MethodModel m, List<TypeAnnotation> annos) {
-        findAnnotations(cf, m, Attributes.RUNTIME_VISIBLE_TYPE_ANNOTATIONS, annos);
-        findAnnotations(cf, m, Attributes.RUNTIME_INVISIBLE_TYPE_ANNOTATIONS, annos);
+        findAnnotations(cf, m, Attributes.runtimeVisibleTypeAnnotations(), annos);
+        findAnnotations(cf, m, Attributes.runtimeInvisibleTypeAnnotations(), annos);
     }
 
     <T extends Attribute<T>> void findAnnotations(ClassModel cf, AttributedElement m, AttributeMapper<T> attrName, List<TypeAnnotation> annos) {
         Attribute<T> attr = m.findAttribute(attrName).orElse(null);
         addAnnos(annos, attr);
         if (m instanceof MethodModel) {
-            CodeAttribute cattr = m.findAttribute(Attributes.CODE).orElse(null);
+            CodeAttribute cattr = m.findAttribute(Attributes.code()).orElse(null);
             if (cattr != null) {
                 attr = cattr.findAttribute(attrName).orElse(null);
                 addAnnos(annos, attr);
