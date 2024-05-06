@@ -41,7 +41,7 @@ VALID_TOOLCHAINS_all="gcc clang microsoft"
 VALID_TOOLCHAINS_linux="gcc clang"
 VALID_TOOLCHAINS_macosx="clang"
 VALID_TOOLCHAINS_aix="clang"
-VALID_TOOLCHAINS_windows="microsoft"
+VALID_TOOLCHAINS_windows="microsoft gcc"
 
 # Toolchain descriptions
 TOOLCHAIN_DESCRIPTION_clang="clang/LLVM"
@@ -174,7 +174,7 @@ AC_DEFUN([TOOLCHAIN_SETUP_FILENAME_PATTERNS],
     LIBRARY_PREFIX=
     SHARED_LIBRARY_SUFFIX='.dll'
     STATIC_LIBRARY_SUFFIX='.lib'
-    OBJ_SUFFIX='.obj'
+    OBJ_SUFFIX='.o'
     EXECUTABLE_SUFFIX='.exe'
   else
     LIBRARY_PREFIX=lib
@@ -307,7 +307,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_POST_DETECTION],
 [
   # Restore old path, except for the microsoft toolchain, which requires the
   # toolchain path to remain in place. Otherwise the compiler will not work in
-  # some siutations in later configure checks.
+  # some situations in later configure checks.
   if test "x$TOOLCHAIN_TYPE" != "xmicrosoft"; then
     PATH="$OLD_PATH"
   fi
@@ -613,9 +613,15 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
     TOOLCHAIN_VERIFY_LINK_BINARY(LD)
     LDCXX="$LD"
   else
-    # All other toolchains use the compiler to link.
-    LD="$CC"
-    LDCXX="$CXX"
+    if test "x$TOOLCHAIN_TYPE" = xgcc && test "x$OPENJDK_TARGET_OS" = xwindows; then
+      # Special case needed here if we're on Windows as the gcc linker needs mixed paths
+      LD="$FIXPATH_BASE -m exec $CC"
+      LDCXX="$FIXPATH_BASE -m exec $CXX"
+    else
+      # All other toolchains use the compiler to link.
+      LD="$CC"
+      LDCXX="$CXX"
+    fi
   fi
   AC_SUBST(LD)
   # FIXME: it should be CXXLD, according to standard (cf CXXCPP)
@@ -706,6 +712,14 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_EXTRA],
     UTIL_LOOKUP_TOOLCHAIN_PROGS(DUMPBIN, dumpbin)
   fi
 
+  if test "x$TOOLCHAIN_TYPE" = xgcc && test "x$OPENJDK_TARGET_OS" = xwindows; then
+    UTIL_LOOKUP_TOOLCHAIN_PROGS(STRIP, strip, , NOFIXPATH)
+    UTIL_LOOKUP_TOOLCHAIN_PROGS(NM, nm gcc-nm, , NOFIXPATH)
+    # Setup the resource compiler
+    UTIL_LOOKUP_TOOLCHAIN_PROGS(RC, windres, , NOFIXPATH)
+    UTIL_LOOKUP_TOOLCHAIN_PROGS(OBJCOPY, gobjcopy objcopy, , NOFIXPATH)
+  fi
+
   if test "x$OPENJDK_TARGET_OS" != xwindows; then
     UTIL_LOOKUP_TOOLCHAIN_PROGS(STRIP, strip)
     if test "x$TOOLCHAIN_TYPE" = xgcc; then
@@ -721,7 +735,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_EXTRA],
     UTIL_LOOKUP_TOOLCHAIN_PROGS(OBJCOPY, gobjcopy objcopy)
   fi
 
-  UTIL_LOOKUP_TOOLCHAIN_PROGS(OBJDUMP, gobjdump objdump)
+  UTIL_LOOKUP_TOOLCHAIN_PROGS(OBJDUMP, gobjdump objdump, , NOFIXPATH)
 
   case $TOOLCHAIN_TYPE in
     gcc|clang)

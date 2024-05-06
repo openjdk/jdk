@@ -83,7 +83,7 @@ define SetupCompilerFlags
   # Pickup extra OPENJDK_TARGET_OS_TYPE, OPENJDK_TARGET_OS, TOOLCHAIN_TYPE and
   # OPENJDK_TARGET_OS plus OPENJDK_TARGET_CPU pair dependent variables for CFLAGS.
   $1_EXTRA_CFLAGS := $$($1_CFLAGS_$(OPENJDK_TARGET_OS_TYPE)) $$($1_CFLAGS_$(OPENJDK_TARGET_OS)) \
-      $$($1_CFLAGS_$(TOOLCHAIN_TYPE)) \
+      $$($1_CFLAGS_$(TOOLCHAIN_TYPE)) $$($1_CFLAGS_$(TOOLCHAIN_TYPE)_$(OPENJDK_TARGET_OS)) \
       $$($1_CFLAGS_$(OPENJDK_TARGET_OS)_$(OPENJDK_TARGET_CPU))
 
   ifneq ($(DEBUG_LEVEL), release)
@@ -102,10 +102,11 @@ define SetupCompilerFlags
     $1_EXTRA_CFLAGS += $$(STATIC_LIBS_CFLAGS)
   endif
 
-  # Pickup extra OPENJDK_TARGET_OS_TYPE, OPENJDK_TARGET_OS and/or TOOLCHAIN_TYPE
-  # dependent variables for CXXFLAGS.
+  # Pickup extra OPENJDK_TARGET_OS_TYPE, OPENJDK_TARGET_OS and TOOLCHAIN_TYPE dependent
+  # variables for CXXFLAGS, and additionally the pair dependent TOOLCHAIN_TYPE plus
+  # OPENJDK_TARGET_OS.
   $1_EXTRA_CXXFLAGS := $$($1_CXXFLAGS_$(OPENJDK_TARGET_OS_TYPE)) $$($1_CXXFLAGS_$(OPENJDK_TARGET_OS)) \
-      $$($1_CXXFLAGS_$(TOOLCHAIN_TYPE))
+      $$($1_CXXFLAGS_$(TOOLCHAIN_TYPE)) $$($1_CXXFLAGS_$(TOOLCHAIN_TYPE)_$(OPENJDK_TARGET_OS))
 
   ifneq ($(DEBUG_LEVEL), release)
     # Pickup extra debug dependent variables for CXXFLAGS

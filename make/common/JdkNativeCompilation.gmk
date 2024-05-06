@@ -113,7 +113,7 @@ define ResolveLibPath
   ifneq ($$($1_$2_MODULE), gtest)
     ifneq ($$($1_$2_NAME), jvm)
       # This is the common case
-      ifeq ($$(call isTargetOs, windows), true)
+      ifeq ($(TOOLCHAIN_TYPE), microsoft)
         $1_$2_LIBPATH := $$(SUPPORT_OUTPUTDIR)/native/$$($1_$2_MODULE)/lib$$($1_$2_NAME)
       else
         ifeq ($(STATIC_LIBS), true)
@@ -132,7 +132,7 @@ define ResolveLibPath
       else
         $1_$2_JVM_VARIANT_PATH := $(JVM_VARIANT_MAIN)
       endif
-      ifeq ($$(call isTargetOs, windows), true)
+      ifeq ($(TOOLCHAIN_TYPE), microsoft)
         ifeq ($(STATIC_LIBS), true)
           $1_$2_LIBPATH := $$(HOTSPOT_OUTPUTDIR)/variant-$$($1_$2_JVM_VARIANT_PATH)/libjvm/objs/static
         else
@@ -149,7 +149,7 @@ define ResolveLibPath
   else
     # Special treatment for virtual module "gtest"
     ifeq ($$($1_$2_NAME), jvm)
-      ifeq ($$(call isTargetOs, windows), true)
+      ifeq ($(TOOLCHAIN_TYPE), microsoft)
         ifeq ($(STATIC_LIBS), true)
           $1_$2_LIBPATH := $$(JVM_OUTPUTDIR)/gtest/objs/static
         else
@@ -208,7 +208,7 @@ define AddJdkLibrary
   $1_EXTRA_HEADER_DIRS += $$($1_$2_MODULE):lib$$($1_$2_NAME)
 
   ifneq ($(STATIC_LIBS), true)
-    ifeq ($$(call isTargetOs, windows), true)
+    ifeq ($(TOOLCHAIN_TYPE), microsoft)
       ifeq ($$(filter -libpath:$$($1_$2_LIBPATH), $$($1_LDFLAGS)), )
         $1_LDFLAGS += -libpath:$$($1_$2_LIBPATH)
       endif

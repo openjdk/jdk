@@ -76,12 +76,46 @@ AC_DEFUN_ONCE([LIB_SETUP_STD_LIBS],
       OPENJDK_BUILD_JVM_LDFLAGS="$OPENJDK_BUILD_JVM_LDFLAGS $STATIC_STDCXX_FLAGS"
       AC_MSG_RESULT([static])
     fi
+  elif test "x$OPENJDK_TARGET_OS" = xwindows; then
+    if test "x$TOOLCHAIN_TYPE" = xgcc; then
+      # Test if stdc++ can be linked statically.
+      AC_MSG_CHECKING([if static link of stdc++ is possible])
+      STATIC_STDCXX_FLAGS="-static-libstdc++ -static-libgcc"
+      AC_LANG_PUSH(C++)
+      OLD_LIBS="$LIBS"
+      LIBS="$STATIC_STDCXX_FLAGS"
+      AC_LINK_IFELSE([AC_LANG_PROGRAM([], [return 0;])],
+          [has_static_libstdcxx=yes],
+          [has_static_libstdcxx=no])
+      LIBS="$OLD_LIBS"
+      AC_LANG_POP(C++)
+      AC_MSG_RESULT([$has_static_libstdcxx])
+      if test "x$with_stdc__lib" = xstatic && test "x$has_static_libstdcxx" = xno; then
+        AC_MSG_ERROR([Static linking of libstdc++ was not possible!])
+      fi
+      # If dynamic was requested, it's available since it would fail above otherwise.
+      # If dynamic wasn't requested, go with static unless it isn't available.
+      AC_MSG_CHECKING([how to link with libstdc++])
+      if test "x$with_stdc__lib" = xdynamic || test "x$has_static_libstdcxx" = xno ; then
+        AC_MSG_RESULT([dynamic])
+      else
+        LIBCXX="$LIBCXX $STATIC_STDCXX_FLAGS"
+        JVM_LDFLAGS="$JVM_LDFLAGS $STATIC_STDCXX_FLAGS"
+        ADLC_LDFLAGS="$ADLC_LDFLAGS $STATIC_STDCXX_FLAGS"
+        # Ideally, we should test stdc++ for the BUILD toolchain separately. For now
+        # just use the same setting as for the TARGET toolchain.
+        OPENJDK_BUILD_JVM_LDFLAGS="$OPENJDK_BUILD_JVM_LDFLAGS $STATIC_STDCXX_FLAGS"
+        AC_MSG_RESULT([static])
+      fi
+    fi
   fi
 
   AC_SUBST(LIBCXX)
 
   # Setup Windows runtime dlls
   if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
-    TOOLCHAIN_SETUP_VS_RUNTIME_DLLS
+    if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
+      TOOLCHAIN_SETUP_VS_RUNTIME_DLLS
+    fi
   fi
 ])

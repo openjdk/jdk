@@ -157,9 +157,14 @@ AC_DEFUN_ONCE([LIB_SETUP_LIBRARIES],
   fi
 
   if test "x$OPENJDK_TARGET_OS" = xwindows; then
-    BASIC_JVM_LIBS="$BASIC_JVM_LIBS kernel32.lib user32.lib gdi32.lib winspool.lib \
-        comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib powrprof.lib uuid.lib \
-        ws2_32.lib winmm.lib version.lib psapi.lib"
+    # Only Visual C++ requires static import libraries
+    if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
+      BASIC_JVM_LIBS="$BASIC_JVM_LIBS kernel32.lib user32.lib gdi32.lib winspool.lib \
+          comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib powrprof.lib uuid.lib \
+          ws2_32.lib winmm.lib version.lib psapi.lib"
+    elif test "x$TOOLCHAIN_TYPE" = xgcc; then
+      BASIC_JVM_LIBS="$BASIC_JVM_LIBS -lpowrprof -lws2_32 -lwinmm -lversion -lpsapi"
+    fi
   fi
   LIB_SETUP_JVM_LIBS(BUILD)
   LIB_SETUP_JVM_LIBS(TARGET)

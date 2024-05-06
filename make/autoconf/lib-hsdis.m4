@@ -257,13 +257,18 @@ AC_DEFUN([LIB_SETUP_HSDIS_BINUTILS],
   disasm_header="<dis-asm.h>"
 
   if test "x$BINUTILS_INSTALL_DIR" = xsystem; then
-    AC_CHECK_LIB(bfd, bfd_openr, [ HSDIS_LIBS="-lbfd" ], [ binutils_system_error="libbfd not found" ])
-    AC_CHECK_LIB(opcodes, disassembler, [ HSDIS_LIBS="$HSDIS_LIBS -lopcodes" ], [ binutils_system_error="libopcodes not found" ])
-    AC_CHECK_LIB(z, deflate, [ HSDIS_LIBS="$HSDIS_LIBS -lz" ], [ binutils_system_error="libz not found" ])
-    # libiberty is not required on Ubuntu
-    AC_CHECK_LIB(iberty, xmalloc, [ HSDIS_LIBS="$HSDIS_LIBS -liberty" ])
-    AC_CHECK_LIB(sframe, frame, [ HSDIS_LIBS="$HSDIS_LIBS -lsframe" ], )
-    HSDIS_CFLAGS="-DLIBARCH_$OPENJDK_TARGET_CPU_LEGACY_LIB"
+    if test "x$OPENJDK_TARGET_OS" = xlinux; then
+      AC_CHECK_LIB(bfd, bfd_openr, [ HSDIS_LIBS="-lbfd" ], [ binutils_system_error="libbfd not found" ])
+      AC_CHECK_LIB(opcodes, disassembler, [ HSDIS_LIBS="$HSDIS_LIBS -lopcodes" ], [ binutils_system_error="libopcodes not found" ])
+      AC_CHECK_LIB(z, deflate, [ HSDIS_LIBS="$HSDIS_LIBS -lz" ], [ binutils_system_error="libz not found" ])
+      # libiberty is not required on Ubuntu
+      AC_CHECK_LIB(iberty, xmalloc, [ HSDIS_LIBS="$HSDIS_LIBS -liberty" ])
+      AC_CHECK_LIB(sframe, frame, [ HSDIS_LIBS="$HSDIS_LIBS -lsframe" ], )
+      HSDIS_CFLAGS="-DLIBARCH_$OPENJDK_TARGET_CPU_LEGACY_LIB"
+    elif test "x$OPENJDK_TARGET_OS" = xwindows; then
+      HSDIS_LIBS="-lbfd -lopcodes -l:libz.a -liberty -lsframe -l:libintl.a -l:libiconv.a -l:libzstd.a"
+      HSDIS_CFLAGS="-DLIBARCH_$OPENJDK_TARGET_CPU_LEGACY_LIB"
+    fi
   elif test "x$BINUTILS_INSTALL_DIR" != x; then
     disasm_header="\"$BINUTILS_INSTALL_DIR/include/dis-asm.h\""
     if test -e $BINUTILS_INSTALL_DIR/lib/libbfd.a && \
@@ -306,12 +311,14 @@ AC_DEFUN([LIB_SETUP_HSDIS_BINUTILS],
   AC_MSG_CHECKING([for binutils to use with hsdis])
   case "x$BINUTILS_INSTALL_DIR" in
     xsystem)
-      if test "x$OPENJDK_TARGET_OS" != xlinux; then
+      if test "x$OPENJDK_TARGET_OS" != xlinux && test "x$OPENJDK_TARGET_OS" != xwindows; then
         AC_MSG_RESULT([invalid])
-        AC_MSG_ERROR([binutils on system is supported for Linux only])
+        AC_MSG_ERROR([binutils on system is supported for Linux and Windows only])
       elif test "x$binutils_system_error" = x; then
         AC_MSG_RESULT([system])
-        HSDIS_CFLAGS="$HSDIS_CFLAGS -DSYSTEM_BINUTILS"
+        if test "x$OPENJDK_TARGET_OS" = xlinux; then
+          HSDIS_CFLAGS="$HSDIS_CFLAGS -DSYSTEM_BINUTILS"
+        fi
       else
         AC_MSG_RESULT([invalid])
         AC_MSG_ERROR([$binutils_system_error])

@@ -46,8 +46,12 @@ define CreateDebugSymbols
 
         # Setup where the platform specific debuginfo files end up
         ifeq ($(call isTargetOs, windows), true)
-          $1_DEBUGINFO_FILES := $$($1_SYMBOLS_DIR)/$$($1_BASENAME).pdb \
-              $$($1_SYMBOLS_DIR)/$$($1_BASENAME).map
+          ifeq ($(TOOLCHAIN_TYPE), gcc)
+            $1_DEBUGINFO_FILES := $$($1_SYMBOLS_DIR)/$$($1_BASENAME).pdb
+          else ifeq ($(TOOLCHAIN_TYPE), microsoft)
+            $1_DEBUGINFO_FILES := $$($1_SYMBOLS_DIR)/$$($1_BASENAME).pdb \
+                $$($1_SYMBOLS_DIR)/$$($1_BASENAME).map
+          endif
           $1_DEBUGINFO_ZIP := $$($1_SYMBOLS_DIR)/$$($1_BASENAME).diz
         else ifeq ($(call isTargetOs, macosx), true)
           $1_DEBUGINFO_FILES := \
@@ -60,10 +64,14 @@ define CreateDebugSymbols
         endif
 
         ifeq ($(call isTargetOs, windows), true)
-          $1_EXTRA_LDFLAGS += -debug "-pdb:$$($1_SYMBOLS_DIR)/$$($1_BASENAME).pdb" \
-              "-map:$$($1_SYMBOLS_DIR)/$$($1_BASENAME).map"
-          ifeq ($(SHIP_DEBUG_SYMBOLS), public)
-            $1_EXTRA_LDFLAGS += "-pdbstripped:$$($1_SYMBOLS_DIR)/$$($1_BASENAME).stripped.pdb"
+          ifeq ($(TOOLCHAIN_TYPE), gcc)
+            $1_EXTRA_LDFLAGS += -Wl$(COMMA)--pdb=$$($1_SYMBOLS_DIR)/$$($1_BASENAME).pdb
+          else ifeq ($(TOOLCHAIN_TYPE), microsoft)
+            $1_EXTRA_LDFLAGS += -debug "-pdb:$$($1_SYMBOLS_DIR)/$$($1_BASENAME).pdb" \
+                "-map:$$($1_SYMBOLS_DIR)/$$($1_BASENAME).map"
+            ifeq ($(SHIP_DEBUG_SYMBOLS), public)
+              $1_EXTRA_LDFLAGS += "-pdbstripped:$$($1_SYMBOLS_DIR)/$$($1_BASENAME).stripped.pdb"
+            endif
           endif
         endif
 

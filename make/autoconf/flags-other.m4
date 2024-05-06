@@ -93,6 +93,10 @@ AC_DEFUN([FLAGS_SETUP_RCFLAGS],
     if test "x$DEBUG_LEVEL" = xrelease; then
       RCFLAGS="$RCFLAGS -DNDEBUG"
     fi
+  elif test "x$TOOLCHAIN_TYPE" = xgcc && test "x$OPENJDK_TARGET_OS" = xwindows; then
+    if test "x$DEBUG_LEVEL" = xrelease; then
+      RCFLAGS="$RCFLAGS -DNDEBUG"
+    fi
   fi
   AC_SUBST(RCFLAGS)
 ])

@@ -46,12 +46,16 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
 [
   # Setup basic LDFLAGS
   if test "x$TOOLCHAIN_TYPE" = xgcc; then
-    # Add -z,defs, to forbid undefined symbols in object files.
-    # add -z,relro (mark relocations read only) for all libs
-    # add -z,now ("full relro" - more of the Global Offset Table GOT is marked read only)
-    # add --no-as-needed to disable default --as-needed link flag on some GCC toolchains
-    BASIC_LDFLAGS="-Wl,-z,defs -Wl,-z,relro -Wl,-z,now -Wl,--no-as-needed -Wl,--exclude-libs,ALL"
-    # Linux : remove unused code+data in link step
+    if test "x$OPENJDK_TARGET_OS" = xlinux; then
+      # Add -z,defs, to forbid undefined symbols in object files.
+      # add -z,relro (mark relocations read only) for all libs
+      # add -z,now ("full relro" - more of the Global Offset Table GOT is marked read only)
+      # add --no-as-needed to disable default --as-needed link flag on some GCC toolchains
+      BASIC_LDFLAGS="-Wl,-z,defs -Wl,-z,relro -Wl,-z,now -Wl,--no-as-needed -Wl,--exclude-libs,ALL"
+    elif test "x$OPENJDK_TARGET_OS" = xwindows; then
+      BASIC_LDFLAGS="-Wl,--no-undefined -fno-stack-protector -Wl,--exclude-libs,ALL"
+    fi
+    # gcc : remove unused code+data in link step
     if test "x$ENABLE_LINKTIME_GC" = xtrue; then
       if test "x$OPENJDK_TARGET_CPU" = xs390x; then
         BASIC_LDFLAGS="$BASIC_LDFLAGS -Wl,--gc-sections"
@@ -60,7 +64,11 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
       fi
     fi
 
-    BASIC_LDFLAGS_JVM_ONLY=""
+    if test "x$OPENJDK_TARGET_OS" = xwindows; then
+      BASIC_LDFLAGS_JVM_ONLY="-Wl,--exclude-all-symbols -Wl,--subsystem,windows"
+    else
+      BASIC_LDFLAGS_JVM_ONLY=""
+    fi
 
     LDFLAGS_CXX_PARTIAL_LINKING="$MACHINE_FLAG -r"
 
@@ -86,7 +94,8 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
   fi
 
   if (test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang) \
-      && test "x$OPENJDK_TARGET_OS" != xaix; then
+      && test "x$OPENJDK_TARGET_OS" != xaix \
+      && test "x$OPENJDK_TARGET_OS" != xwindows; then
     if test -n "$HAS_NOEXECSTACK"; then
       BASIC_LDFLAGS="$BASIC_LDFLAGS -Wl,-z,noexecstack"
     fi
@@ -118,10 +127,12 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
 
   # Setup LDFLAGS for linking executables
   if test "x$TOOLCHAIN_TYPE" = xgcc; then
-    # Enabling pie on 32 bit builds prevents the JVM from allocating a continuous
-    # java heap.
-    if test "x$OPENJDK_TARGET_CPU_BITS" != "x32"; then
-      EXECUTABLE_LDFLAGS="$EXECUTABLE_LDFLAGS -pie"
+    if test "x$OPENJDK_TARGET_OS" != xwindows; then
+      # Enabling pie on 32 bit builds prevents the JVM from allocating a continuous
+      # java heap.
+      if test "x$OPENJDK_TARGET_CPU_BITS" != "x32"; then
+        EXECUTABLE_LDFLAGS="$EXECUTABLE_LDFLAGS -pie"
+      fi
     fi
   fi
 
@@ -164,14 +175,22 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_CPU_DEP],
       $1_CPU_LDFLAGS="$ARM_ARCH_TYPE_FLAGS $ARM_FLOAT_TYPE_FLAGS"
     fi
 
-    # MIPS ABI does not support GNU hash style
-    if test "x${OPENJDK_$1_CPU}" = xmips ||
-       test "x${OPENJDK_$1_CPU}" = xmipsel ||
-       test "x${OPENJDK_$1_CPU}" = xmips64 ||
-       test "x${OPENJDK_$1_CPU}" = xmips64el; then
-      $1_CPU_LDFLAGS="${$1_CPU_LDFLAGS} -Wl,--hash-style=sysv"
+    if test "x$OPENJDK_TARGET_OS" != xwindows; then
+      # MIPS ABI does not support GNU hash style
+      if test "x${OPENJDK_$1_CPU}" = xmips ||
+         test "x${OPENJDK_$1_CPU}" = xmipsel ||
+         test "x${OPENJDK_$1_CPU}" = xmips64 ||
+         test "x${OPENJDK_$1_CPU}" = xmips64el; then
+        $1_CPU_LDFLAGS="${$1_CPU_LDFLAGS} -Wl,--hash-style=sysv"
+      else
+        $1_CPU_LDFLAGS="${$1_CPU_LDFLAGS} -Wl,--hash-style=gnu"
+      fi
     else
-      $1_CPU_LDFLAGS="${$1_CPU_LDFLAGS} -Wl,--hash-style=gnu"
+      if test "x${OPENJDK_$1_CPU_BITS}" = "x32"; then
+        $1_CPU_EXECUTABLE_LDFLAGS="-Wl,--stack=327680"
+      elif test "x${OPENJDK_$1_CPU_BITS}" = "x64"; then
+        $1_CPU_EXECUTABLE_LDFLAGS="-Wl,--stack=1048576"
+      fi
     fi
 
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then

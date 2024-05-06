@@ -165,15 +165,15 @@ ifeq ($(call check-jvm-feature, link-time-opt), true)
   # Set JVM_OPTIMIZATION directly so other jvm-feature flags can override it
   # later on if desired
   JVM_OPTIMIZATION := HIGHEST_JVM
-  ifeq ($(call isCompiler, gcc), true)
-    JVM_CFLAGS_FEATURES += -flto=auto -fuse-linker-plugin -fno-strict-aliasing -fno-fat-lto-objects
-    JVM_LDFLAGS_FEATURES += $(CXX_O_FLAG_HIGHEST_JVM) -flto=auto -fuse-linker-plugin -fno-strict-aliasing
-  else ifeq ($(call isCompiler, microsoft), true)
-    JVM_CFLAGS_FEATURES += -GL
+  ifeq ($(TOOLCHAIN_TYPE), gcc)
+    JVM_CFLAGS_FEATURES += -flto=$(JOBS) -fuse-linker-plugin -fno-strict-aliasing -fno-fat-lto-objects
+    JVM_LDFLAGS_FEATURES += $(CXX_O_FLAG_HIGHEST_JVM) -flto=$(JOBS) -fuse-linker-plugin -fno-strict-aliasing
+  else ifeq ($(TOOLCHAIN_TYPE), microsoft)
+    JVM_CFLAGS_FEATURES += -GL -Gy
     JVM_LDFLAGS_FEATURES += -LTCG:INCREMENTAL
   endif
 else
-  ifeq ($(call isCompiler, gcc), true)
+  ifeq ($(TOOLCHAIN_TYPE), gcc)
     JVM_LDFLAGS_FEATURES += -O1
   endif
 endif
