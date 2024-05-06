@@ -228,6 +228,12 @@ bool JVMCIGlobals::gc_supports_jvmci() {
 
 void JVMCIGlobals::check_jvmci_supported_gc() {
   if (EnableJVMCI) {
+    // Special handling for ZGC; JVMCI does not support generational mode
+    if (UseZGC && ZGenerational && FLAG_IS_DEFAULT(ZGenerational)) {
+      log_info(gc, jvmci)("JVMCI only supports deprecated non-generational ZGC");
+      FLAG_SET_ERGO(ZGenerational, false);
+    }
+
     // Check if selected GC is supported by JVMCI and Java compiler
     if (!gc_supports_jvmci()) {
       log_warning(gc, jvmci)("Setting EnableJVMCI to false as selected GC does not support JVMCI: %s", GCConfig::hs_err_name());
