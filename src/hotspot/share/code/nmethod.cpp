@@ -131,6 +131,7 @@ struct java_nmethod_stats_struct {
   uint relocation_size;
   uint consts_size;
   uint insts_size;
+  uint inline_insts_size;
   uint stub_size;
   uint oops_size;
   uint metadata_size;
@@ -151,6 +152,7 @@ struct java_nmethod_stats_struct {
     relocation_size     += nm->relocation_size();
     consts_size         += nm->consts_size();
     insts_size          += nm->insts_size();
+    inline_insts_size   += nm->inline_insts_size();
     stub_size           += nm->stub_size();
     oops_size           += nm->oops_size();
     metadata_size       += nm->metadata_size();
@@ -184,6 +186,9 @@ struct java_nmethod_stats_struct {
     }
     if (insts_size != 0) {
       tty->print_cr("   main code     = %u (%f%%)", insts_size, (insts_size * 100.0f)/total_nm_size);
+    }
+    if (inline_insts_size != 0) {
+      tty->print_cr("     inline code = %u (%f%%)", inline_insts_size, (inline_insts_size * 100.0f)/total_nm_size);
     }
     if (stub_size != 0) {
       tty->print_cr("   stub code     = %u (%f%%)", stub_size, (stub_size * 100.0f)/total_nm_size);
@@ -1253,7 +1258,15 @@ void nmethod::init_defaults(CodeBuffer *code_buffer, CodeOffsets* offsets) {
 
   CHECKED_CAST(_entry_offset,              uint16_t, (offsets->value(CodeOffsets::Entry)));
   CHECKED_CAST(_verified_entry_offset,     uint16_t, (offsets->value(CodeOffsets::Verified_Entry)));
-  CHECKED_CAST(_skipped_instructions_size, uint16_t, (code_buffer->total_skipped_instructions_size()));
+
+  int size = code_buffer->main_code_size();
+  assert(size >= 0, "should be initialized");
+  // Use instructions section size if it is 0 (e.g. native wrapper)
+  if (size == 0) size = code_size(); // requires _stub_offset to be set
+  assert(size <= code_size(), "incorrect size: %d > %d", size, code_size());
+  _inline_insts_size = size - _verified_entry_offset
+                     - code_buffer->total_skipped_instructions_size();
+  assert(_inline_insts_size >= 0, "sanity");
 }
 
 // Post initialization

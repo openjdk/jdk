@@ -183,9 +183,10 @@ class SignaturesTest {
     void testClassSignatureClassDesc() throws IOException {
         var observerCf = ClassFile.of().parse(Path.of(System.getProperty("test.classes"), "SignaturesTest$Observer.class"));
         var sig = observerCf.findAttribute(Attributes.SIGNATURE).orElseThrow().asClassSignature();
-        var innerSig = (ClassTypeSig) sig.superclassSignature() // ArrayList
-                .typeArgs().getFirst() // Outer<String>.Inner<Long>
-                .boundType().orElseThrow(); // assert it's exact bound
+        var arrayListSig = sig.superclassSignature(); // ArrayList
+        var arrayListTypeArg = (TypeArg.Bounded) arrayListSig.typeArgs().getFirst(); // Outer<String>.Inner<Long>
+        assertEquals(TypeArg.Bounded.WildcardIndicator.NONE, arrayListTypeArg.wildcardIndicator());
+        var innerSig = (ClassTypeSig) arrayListTypeArg.boundType();
         assertEquals("Inner", innerSig.className(), "simple name in signature");
         assertEquals(Outer.Inner.class.describeConstable().orElseThrow(), innerSig.classDesc(),
                 "ClassDesc derived from signature");
