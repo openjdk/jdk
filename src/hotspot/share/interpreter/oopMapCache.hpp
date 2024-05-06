@@ -179,6 +179,11 @@ class OopMapCache : public CHeapObj<mtClass> {
 
   // Compute an oop map without updating the cache or grabbing any locks (for debugging)
   static void compute_one_oop_map(const methodHandle& method, int bci, InterpreterOopMap* entry);
+
+  // Check if we need to clean up old entries
+  static bool has_cleanup_work();
+
+  // Clean up the old entries
   static void cleanup_old_entries();
 };
 
