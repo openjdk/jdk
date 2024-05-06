@@ -44,9 +44,8 @@
 // TreapNode has LEQ nodes on the left, GT nodes on the right.
 template<typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
 class Treap {
-  friend class VMATree;
   friend class VMATreeTest;
-
+public:
   class TreapNode {
     friend Treap;
     uint64_t _priority;
@@ -82,11 +81,11 @@ class Treap {
     }
   };
 
+private:
   TreapNode* _root;
   uint64_t _prng_seed;
   DEBUG_ONLY(int _node_count;)
 
-private:
   uint64_t prng_next() {
     // Taken directly off of JFRPrng
     static const uint64_t PrngMult = 0x5DEECE66DLL;
