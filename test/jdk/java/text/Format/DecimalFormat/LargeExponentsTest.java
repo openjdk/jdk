@@ -34,7 +34,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.text.NumberFormat;
-import java.text.ParseException;
+import java.text.ParsePosition;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -49,14 +49,16 @@ public class LargeExponentsTest {
     // Exponent symbol is 'E'
     private static final NumberFormat FMT = NumberFormat.getInstance(Locale.US);
 
-    // Check that the parsed value is equal to the expected.
-    // We are mainly checking that an exponent > Integer.MAX_VALUE no longer parses to 0
-    // and that an exponent > Long.MAX_VALUE no longer parses to the mantissa.
+    // Check that the parsed value and parse position index are both equal to the expected values.
+    // We are mainly checking that an exponent > Integer.MAX_VALUE no longer
+    // parses to 0 and that an exponent > Long.MAX_VALUE no longer parses to the mantissa.
     @ParameterizedTest
     @MethodSource({"largeExponentValues", "smallExponentValues", "bugReportValues", "edgeCases"})
-    public void overflowTest(String parseString, Double expectedValue) throws ParseException {
-        Number actualValue = FMT.parse(parseString);
+    public void overflowTest(String parseString, Double expectedValue) {
+        ParsePosition pp = new ParsePosition(0);
+        Number actualValue = FMT.parse(parseString, pp);
         assertEquals(expectedValue, (double)actualValue);
+        assertEquals(parseString.length(), pp.getIndex());
     }
 
     // Generate large enough exponents that should all be parsed as infinity
@@ -117,10 +119,6 @@ public class LargeExponentsTest {
     // Some odd edge case values to ensure parse correctness
     private static Stream<Arguments> edgeCases() {
         return Stream.of(
-                // Decimal in exponent, everything past decimal is ignored
-                Arguments.of("1.23E33.332", 1.23E33),
-                // Non-numeric value in exponent, ignores subsequent chars
-                Arguments.of("1.23E32ABC9920", 1.23E32),
                 // 0 exponent
                 Arguments.of("1.23E0", 1.23),
                 // Leading zeroes

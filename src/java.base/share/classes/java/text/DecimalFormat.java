@@ -2591,7 +2591,6 @@ public class DecimalFormat extends NumberFormat {
                         // Long.MAX_VALUE. We do not need to worry about false being
                         // returned for faulty values as they are ignored by DigitList.
                         if (exponentDigits.fitsIntoLong(stat[STATUS_POSITIVE], true)) {
-                            position = pos.index; // Advance past the exponent
                             try {
                                 exponent = Math.toIntExact(exponentDigits.getLong());
                             } catch (ArithmeticException ex) {
@@ -2603,6 +2602,7 @@ public class DecimalFormat extends NumberFormat {
                             // is int, so assign it to the largest possible, Integer.MAX_VALUE
                             exponent = Integer.MAX_VALUE;
                         }
+                        position = pos.index; // Advance past the exponent
                         if (!stat[STATUS_POSITIVE]) {
                             exponent = -exponent;
                         }
