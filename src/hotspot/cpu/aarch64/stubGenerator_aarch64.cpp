@@ -86,10 +86,7 @@ class StubGenerator: public StubCodeGenerator {
 #define inc_counter_np(counter) ((void)0)
 #else
   void inc_counter_np_(uint& counter) {
-    __ lea(rscratch2, ExternalAddress((address)&counter));
-    __ ldrw(rscratch1, Address(rscratch2));
-    __ addw(rscratch1, rscratch1, 1);
-    __ strw(rscratch1, Address(rscratch2));
+    __ incrementw(ExternalAddress((address)&counter));
   }
 #define inc_counter_np(counter) \
   BLOCK_COMMENT("inc_counter " #counter); \
