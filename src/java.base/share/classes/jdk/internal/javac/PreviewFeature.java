@@ -79,8 +79,10 @@ public @interface PreviewFeature {
         STRUCTURED_CONCURRENCY,
         @JEP(number=466, title="ClassFile API", status="Second Preview")
         CLASSFILE_API,
-        @JEP(number=461, title="Stream Gatherers", status="Preview")
+        @JEP(number=473, title="Stream Gatherers", status="Second Preview")
         STREAM_GATHERERS,
+        @JEP(number=476, title="Module Import Declarations", status="Preview")
+        MODULE_IMPORTS,
         LANGUAGE_MODEL,
         /**
          * A key for testing.

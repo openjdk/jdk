@@ -146,7 +146,7 @@ class MacroAssembler: public Assembler {
   // last Java Frame (fills frame anchor)
   void set_last_Java_frame(Register last_java_sp, Register last_java_fp, address last_java_pc, Register tmp);
   void set_last_Java_frame(Register last_java_sp, Register last_java_fp, Label &last_java_pc, Register tmp);
-  void set_last_Java_frame(Register last_java_sp, Register last_java_fp, Register last_java_pc, Register tmp);
+  void set_last_Java_frame(Register last_java_sp, Register last_java_fp, Register last_java_pc);
 
   // thread in the default location (xthread)
   void reset_last_Java_frame(bool clear_fp);
@@ -762,13 +762,6 @@ public:
 
   template<typename T, ENABLE_IF(std::is_integral<T>::value)>
   inline void mv(Register Rd, T o)                    { li(Rd, (int64_t)o); }
-
-  void mv(Register Rd, Address dest) {
-    assert(dest.getMode() == Address::literal, "Address mode should be Address::literal");
-    relocate(dest.rspec(), [&] {
-      movptr(Rd, dest.target());
-    });
-  }
 
   void mv(Register Rd, RegisterOrConstant src) {
     if (src.is_register()) {

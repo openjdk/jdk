@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,11 +67,11 @@ JVMFlag::Error CICompilerCountConstraintFunc(intx value, bool verbose) {
   }
 }
 
-JVMFlag::Error AllocatePrefetchStepSizeConstraintFunc(intx value, bool verbose) {
+JVMFlag::Error AllocatePrefetchStepSizeConstraintFunc(int value, bool verbose) {
   if (AllocatePrefetchStyle == 3) {
     if (value % wordSize != 0) {
       JVMFlag::printError(verbose,
-                          "AllocatePrefetchStepSize (" INTX_FORMAT ") must be multiple of %d\n",
+                          "AllocatePrefetchStepSize (%d) must be multiple of %d\n",
                           value, wordSize);
       return JVMFlag::VIOLATES_CONSTRAINT;
     }

@@ -570,8 +570,7 @@ bool ConstantPoolCache::save_and_throw_indy_exc(
   Symbol* error = PENDING_EXCEPTION->klass()->name();
   const char* message = java_lang_Throwable::message_as_utf8(PENDING_EXCEPTION);
 
-  int encoded_index = ResolutionErrorTable::encode_indy_index(
-                          ConstantPool::encode_invokedynamic_index(index));
+  int encoded_index = ResolutionErrorTable::encode_indy_index(index);
   SystemDictionary::add_resolution_error(cpool, encoded_index, error, message);
   resolved_indy_entry_at(index)->set_resolution_failed();
   return true;
@@ -590,8 +589,7 @@ oop ConstantPoolCache::set_dynamic_call(const CallInfo &call_info, int index) {
     // Before we got here, another thread got a LinkageError exception during
     // resolution.  Ignore our success and throw their exception.
     guarantee(index >= 0, "Invalid indy index");
-    int encoded_index = ResolutionErrorTable::encode_indy_index(
-                          ConstantPool::encode_invokedynamic_index(index));
+    int encoded_index = ResolutionErrorTable::encode_indy_index(index);
     JavaThread* THREAD = JavaThread::current(); // For exception macros.
     constantPoolHandle cp(THREAD, constant_pool());
     ConstantPool::throw_resolution_error(cp, encoded_index, THREAD);

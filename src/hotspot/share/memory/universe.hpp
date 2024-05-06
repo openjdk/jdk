@@ -229,8 +229,8 @@ class Universe: AllStatic {
 
   static oop          null_ptr_exception_instance();
   static oop          arithmetic_exception_instance();
-  static oop          virtual_machine_error_instance();
-  static oop          vm_exception()                  { return virtual_machine_error_instance(); }
+  static oop          internal_error_instance();
+  static oop          vm_exception()                  { return internal_error_instance(); }
 
   static Array<Klass*>* the_array_interfaces_array()  { return _the_array_interfaces_array; }
   static uintx        the_array_interfaces_bitmap()   { return _the_array_interfaces_bitmap; }
@@ -295,7 +295,7 @@ class Universe: AllStatic {
   // The particular choice of collected heap.
   static CollectedHeap* heap() { return _collectedHeap; }
 
-  DEBUG_ONLY(static bool is_gc_active();)
+  DEBUG_ONLY(static bool is_stw_gc_active();)
   DEBUG_ONLY(static bool is_in_heap(const void* p);)
   DEBUG_ONLY(static bool is_in_heap_or_null(const void* p) { return p == nullptr || is_in_heap(p); })
 

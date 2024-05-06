@@ -787,6 +787,7 @@ void JVMCINMethodData::initialize(int nmethod_mirror_index,
 {
   _failed_speculations = failed_speculations;
   _nmethod_mirror_index = nmethod_mirror_index;
+  guarantee(nmethod_entry_patch_offset != -1, "missing entry barrier");
   _nmethod_entry_patch_offset = nmethod_entry_patch_offset;
   if (nmethod_mirror_name != nullptr) {
     _has_name = true;
@@ -878,7 +879,7 @@ static OopStorage* object_handles() {
 }
 
 jlong JVMCIRuntime::make_oop_handle(const Handle& obj) {
-  assert(!Universe::heap()->is_gc_active(), "can't extend the root set during GC");
+  assert(!Universe::heap()->is_stw_gc_active(), "can't extend the root set during GC pause");
   assert(oopDesc::is_oop(obj()), "not an oop");
 
   oop* ptr = OopHandle(object_handles(), obj()).ptr_raw();
@@ -1856,9 +1857,8 @@ Method* JVMCIRuntime::get_method_by_index_impl(const constantPoolHandle& cpool,
                                                int index, Bytecodes::Code bc,
                                                InstanceKlass* accessor) {
   if (bc == Bytecodes::_invokedynamic) {
-    int indy_index = cpool->decode_invokedynamic_index(index);
-    if (cpool->resolved_indy_entry_at(indy_index)->is_resolved()) {
-      return cpool->resolved_indy_entry_at(indy_index)->method();
+    if (cpool->resolved_indy_entry_at(index)->is_resolved()) {
+      return cpool->resolved_indy_entry_at(index)->method();
     }
 
     return nullptr;
