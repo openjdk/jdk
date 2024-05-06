@@ -34,6 +34,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.text.NumberFormat;
+import java.text.ParseException;
 import java.text.ParsePosition;
 import java.util.ArrayList;
 import java.util.List;
@@ -54,11 +55,24 @@ public class LargeExponentsTest {
     // parses to 0 and that an exponent > Long.MAX_VALUE no longer parses to the mantissa.
     @ParameterizedTest
     @MethodSource({"largeExponentValues", "smallExponentValues", "bugReportValues", "edgeCases"})
-    public void overflowTest(String parseString, Double expectedValue) {
+    public void overflowTest(String parseString, Double expectedValue) throws ParseException {
+        checkParse(parseString, expectedValue);
+        checkParseWithPP(parseString, expectedValue);
+    }
+
+    // Checks the parse(String, ParsePosition) method
+    public void checkParse(String parseString, Double expectedValue) {
         ParsePosition pp = new ParsePosition(0);
         Number actualValue = FMT.parse(parseString, pp);
         assertEquals(expectedValue, (double)actualValue);
         assertEquals(parseString.length(), pp.getIndex());
+    }
+
+    // Checks the parse(String) method
+    public void checkParseWithPP(String parseString, Double expectedValue)
+            throws ParseException {
+        Number actualValue = FMT.parse(parseString);
+        assertEquals(expectedValue, (double)actualValue);
     }
 
     // Generate large enough exponents that should all be parsed as infinity
