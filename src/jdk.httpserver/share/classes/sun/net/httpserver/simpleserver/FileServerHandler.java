@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -139,6 +139,10 @@ public final class FileServerHandler implements HttpHandler {
     }
 
     private void handleNotFound(HttpExchange exchange) throws IOException {
+        if (isFavIconRequest(exchange)) {
+            serveDefaultFavIcon(exchange, !exchange.getRequestMethod().equals("HEAD"));
+            return;
+        }
         String fileNotFound = ResourceBundleHelper.getMessage("html.not.found");
         var bytes = (openHTML
                 + "<h1>" + fileNotFound + "</h1>\n"
@@ -249,6 +253,36 @@ public final class FileServerHandler implements HttpHandler {
         Path htm = path.resolve("index.htm");
         return Files.exists(html) ? html : Files.exists(htm) ? htm : null;
     }
+
+    private static boolean isFavIconRequest(HttpExchange exchange) {
+        return "/favicon.ico".equals(exchange.getRequestURI().getPath());
+    }
+
+    private void serveDefaultFavIcon(HttpExchange exchange, boolean writeBody)
+            throws IOException
+    {
+        var respHdrs = exchange.getResponseHeaders();
+        var icon = "/sun/net/httpserver/simpleserver/resources/favicon.ico";
+        try (var stream = getClass().getModule().getResourceAsStream(icon)) {
+            var bytes = stream.readAllBytes();
+            respHdrs.set("Content-Type", "image/x-icon");
+            // TODO respHdrs.set("Last-Modified", getLastModified(...));
+            if (writeBody) {
+                exchange.sendResponseHeaders(200, bytes.length);
+                try (OutputStream os = exchange.getResponseBody()) {
+                    os.write(bytes);
+                }
+            } else {
+                respHdrs.set("Content-Length", Integer.toString(bytes.length));
+                exchange.sendResponseHeaders(200, -1);
+            }
+        } catch (Exception e) {
+            logger.log(System.Logger.Level.TRACE,
+                    "FileServerHandler: reading default favicon.ico failed", e);
+            handleNotFound(exchange);
+        }
+    }
+
 
     private void serveFile(HttpExchange exchange, Path path, boolean writeBody)
         throws IOException
