@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 
 Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
@@ -1791,9 +1791,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<regionFormat>{0} වේලාව</regionFormat>
 			<regionFormat type="daylight">{0} දිවාආලෝක වේලාව</regionFormat>
 			<regionFormat type="standard">{0} සම්මත වේලාව</regionFormat>
-			<zone type="America/Santa_Isabel">
-				<exemplarCity>සැන්ටා ඉසබෙල්</exemplarCity>
-			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>සමකක්ෂ සාර්ව වේලාව</standard>
@@ -1915,9 +1912,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Australia/Melbourne">
 				<exemplarCity>මෙල්බෝර්න්</exemplarCity>
-			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>කුරී</exemplarCity>
 			</zone>
 			<zone type="Australia/Hobart">
 				<exemplarCity>හෝබාර්ට්</exemplarCity>
@@ -2072,9 +2066,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Creston">
 				<exemplarCity>ක්‍රෙස්ටන්</exemplarCity>
 			</zone>
-			<zone type="America/Yellowknife">
-				<exemplarCity>යෙලෝනයිෆ්</exemplarCity>
-			</zone>
 			<zone type="America/Edmonton">
 				<exemplarCity>එඩ්මන්ටන්</exemplarCity>
 			</zone>
@@ -2093,29 +2084,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Resolute">
 				<exemplarCity>රෙසොලුට්</exemplarCity>
 			</zone>
-			<zone type="America/Rainy_River">
-				<exemplarCity>රෙයිනි ගඟ</exemplarCity>
-			</zone>
 			<zone type="America/Rankin_Inlet">
 				<exemplarCity>රැන්කින් පිවිසුම</exemplarCity>
 			</zone>
 			<zone type="America/Coral_Harbour">
 				<exemplarCity>ඇටිකොකන්</exemplarCity>
 			</zone>
-			<zone type="America/Thunder_Bay">
-				<exemplarCity>තන්ඩර් බොක්ක</exemplarCity>
-			</zone>
-			<zone type="America/Nipigon">
-				<exemplarCity>නිපිගන්</exemplarCity>
-			</zone>
 			<zone type="America/Toronto">
 				<exemplarCity>ටොරන්ටෝ</exemplarCity>
 			</zone>
 			<zone type="America/Iqaluit">
 				<exemplarCity>ඉකාලුයිට්</exemplarCity>
-			</zone>
-			<zone type="America/Pangnirtung">
-				<exemplarCity>පැන්නීටන්</exemplarCity>
 			</zone>
 			<zone type="America/Moncton">
 				<exemplarCity>මොන්ක්ටන්</exemplarCity>
@@ -2930,17 +2909,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Africa/Dar_es_Salaam">
 				<exemplarCity>දාර් එස් සලාම්</exemplarCity>
 			</zone>
-			<zone type="Europe/Uzhgorod">
-				<exemplarCity>උස්ගොරෝඩ්</exemplarCity>
-			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>කිව්</exemplarCity>
 			</zone>
 			<zone type="Europe/Simferopol">
 				<exemplarCity>සිම්ෆෙරෝපොල්</exemplarCity>
-			</zone>
-			<zone type="Europe/Zaporozhye">
-				<exemplarCity>සපොරෝසියේ</exemplarCity>
 			</zone>
 			<zone type="Africa/Kampala">
 				<exemplarCity>කම්පාලා</exemplarCity>
@@ -2959,9 +2932,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Pacific/Honolulu">
 				<exemplarCity>හොනොලුලු</exemplarCity>
-			</zone>
-			<zone type="Pacific/Johnston">
-				<exemplarCity>ජොන්ස්ටන්</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>ඇනකොරාජ්</exemplarCity>
@@ -3603,11 +3573,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>ලෝර්ඩ් හෝව් දිවා වේලාව</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>මැක්කුඅරි දුපත් වේලාව</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>මෙගඩන් වේලාව</generic>
@@ -3645,13 +3610,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Mawson">
 				<long>
 					<standard>මොව්සන් වේලාව</standard>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic>වයඹ මෙක්සිකෝ වේලාව</generic>
-					<standard>වයඹ මෙක්සිකෝ සම්මත වේලාව</standard>
-					<daylight>වයඹ මෙක්සිකෝ දිවාආලෝක වේලාව</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">

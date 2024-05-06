@@ -21,7 +21,7 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="phonebk" description="Phonebook style ordering (such as in German)" alias="phonebook"/>
             <type name="phonetic" description="Phonetic ordering (sorting based on pronunciation)"/>
             <type name="pinyin" description="Pinyin ordering for Latin and for CJK characters (used in Chinese)"/>
-            <type name="reformed" description="Reformed ordering (such as in Swedish)"/>
+            <type name="reformed" description="Reformed ordering (such as in Swedish)" deprecated="true"/>
             <type name="search" description="Special collation type for string search" since="1.9"/>
             <type name="searchjl" description="Special collation type for Korean initial consonant search" since="2.0.1"/>
             <type name="standard" description="Default ordering for each language"/>

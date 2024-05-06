@@ -33,14 +33,12 @@
 
 class JavaThread;
 class Metadata;
+class MetadataClosure;
+class OopClosure;
 class Thread;
 class ThreadClosure;
 class ThreadsList;
 class outputStream;
-
-class CodeBlobClosure;
-class MetadataClosure;
-class OopClosure;
 
 // The active thread queue. It also keeps track of the current used
 // thread priorities.
@@ -106,9 +104,9 @@ public:
 
   // Apply "f->do_oop" to all root oops in all threads.
   // This version may only be called by sequential code.
-  static void oops_do(OopClosure* f, CodeBlobClosure* cf);
+  static void oops_do(OopClosure* f, NMethodClosure* cf);
   // This version may be called by sequential or parallel code.
-  static void possibly_parallel_oops_do(bool is_par, OopClosure* f, CodeBlobClosure* cf);
+  static void possibly_parallel_oops_do(bool is_par, OopClosure* f, NMethodClosure* cf);
 
   // RedefineClasses support
   static void metadata_do(MetadataClosure* f);

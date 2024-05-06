@@ -420,7 +420,7 @@ To use clang instead of gcc on Linux, use `--with-toolchain-type=clang`.
 
 ### Apple Xcode
 
-The oldest supported version of Xcode is 8.
+The oldest supported version of Xcode is 13.0.
 
 You will need the Xcode command line developer tools to be able to build the
 JDK. (Actually, *only* the command line tools are needed, not the IDE.) The

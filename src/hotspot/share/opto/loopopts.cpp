@@ -467,7 +467,7 @@ Node* PhaseIdealLoop::remix_address_expressions_add_left_shift(Node* n, IdealLoo
       Node* zero = _igvn.integercon(0, bt);
       set_ctrl(zero, C->root());
       Node* neg = SubNode::make(zero, add->in(2), bt);
-      register_new_node(neg, get_ctrl(add->in(2)));
+      register_new_node_with_ctrl_of(neg, add->in(2));
       add = AddNode::make(add->in(1), neg, bt);
       register_new_node(add, add_ctrl);
     }
@@ -654,13 +654,13 @@ Node *PhaseIdealLoop::convert_add_to_muladd(Node* n) {
             if ((adr1->in(AddPNode::Base) == adr3->in(AddPNode::Base)) &&
                 (adr2->in(AddPNode::Base) == adr4->in(AddPNode::Base))) {
               nn = new MulAddS2INode(mul_in1, mul_in2, mul_in3, mul_in4);
-              register_new_node(nn, get_ctrl(n));
+              register_new_node_with_ctrl_of(nn, n);
               _igvn.replace_node(n, nn);
               return nn;
             } else if ((adr1->in(AddPNode::Base) == adr4->in(AddPNode::Base)) &&
                        (adr2->in(AddPNode::Base) == adr3->in(AddPNode::Base))) {
               nn = new MulAddS2INode(mul_in1, mul_in2, mul_in4, mul_in3);
-              register_new_node(nn, get_ctrl(n));
+              register_new_node_with_ctrl_of(nn, n);
               _igvn.replace_node(n, nn);
               return nn;
             }
@@ -2268,7 +2268,7 @@ void PhaseIdealLoop::clone_loop_handle_data_uses(Node* old, Node_List &old_new,
           // that access. If that condition is replaced by an identical dominating one, then an unpinned load would risk
           // floating above its range check.
           pinned_clone->set_req(0, phi);
-          register_new_node(pinned_clone, get_ctrl(use));
+          register_new_node_with_ctrl_of(pinned_clone, use);
           _igvn.replace_node(use, pinned_clone);
           continue;
         }
@@ -3914,7 +3914,7 @@ bool PhaseIdealLoop::partial_peel( IdealLoopTree *loop, Node_List &old_new ) {
         // floating above its range check.
         Node* pinned_clone = n_clone->pin_array_access_node();
         if (pinned_clone != nullptr) {
-          register_new_node(pinned_clone, get_ctrl(n_clone));
+          register_new_node_with_ctrl_of(pinned_clone, n_clone);
           old_new.map(n->_idx, pinned_clone);
           _igvn.replace_node(n_clone, pinned_clone);
           n_clone = pinned_clone;
@@ -4502,7 +4502,7 @@ void DataNodeGraph::clone_data_nodes(Node* new_ctrl) {
   }
 }
 
-// Clone the given node and set it up properly. Set `new_ctrl` as ctrl.
+// Clone the given node and set it up properly. Set 'new_ctrl' as ctrl.
 void DataNodeGraph::clone(Node* node, Node* new_ctrl) {
   Node* clone = node->clone();
   _phase->igvn().register_new_node_with_optimizer(clone);
@@ -4522,4 +4522,31 @@ void DataNodeGraph::rewire_clones_to_cloned_inputs() {
       }
     }
   });
+}
+
+// Clone all non-OpaqueLoop* nodes and apply the provided transformation strategy for OpaqueLoop* nodes.
+// Set 'new_ctrl' as ctrl for all cloned non-OpaqueLoop* nodes.
+void DataNodeGraph::clone_data_nodes_and_transform_opaque_loop_nodes(
+    const TransformStrategyForOpaqueLoopNodes& transform_strategy,
+    Node* new_ctrl) {
+  for (uint i = 0; i < _data_nodes.size(); i++) {
+    Node* data_node = _data_nodes[i];
+    if (data_node->is_Opaque1()) {
+      transform_opaque_node(transform_strategy, data_node);
+    } else {
+      clone(data_node, new_ctrl);
+    }
+  }
+}
+
+void DataNodeGraph::transform_opaque_node(const TransformStrategyForOpaqueLoopNodes& transform_strategy, Node* node) {
+  Node* transformed_node;
+  if (node->is_OpaqueLoopInit()) {
+    transformed_node = transform_strategy.transform_opaque_init(node->as_OpaqueLoopInit());
+  } else {
+    assert(node->is_OpaqueLoopStride(), "must be OpaqueLoopStrideNode");
+    transformed_node = transform_strategy.transform_opaque_stride(node->as_OpaqueLoopStride());
+  }
+  // Add an orig->new mapping to correctly update the inputs of the copied graph in rewire_clones_to_cloned_inputs().
+  _orig_to_new.put(node, transformed_node);
 }
