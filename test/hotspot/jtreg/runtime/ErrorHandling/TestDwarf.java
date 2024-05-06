@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,7 +108,7 @@ public class TestDwarf {
     // Crash the VM in different ways in order to verify that DWARF parsing is able to print the source information
     // in the hs_err_files for each VM and C stack frame.
     private static void test() throws Exception {
-        runAndCheck(new Flags("-Xcomp", "-XX:CICrashAt=1", "--version"));
+        runAndCheck(new Flags("-Xcomp", "-XX:+CICountNative", "-XX:CICrashAt=1", "--version"));
         runAndCheck(new Flags("-Xmx100M", "-XX:ErrorHandlerTest=15", "-XX:TestCrashInErrorHandler=14", "--version"));
         runAndCheck(new Flags("-XX:+CrashGCForDumpingJavaThread", "--version"));
         runAndCheck(new Flags("-Xmx10m", "-XX:+CrashOnOutOfMemoryError", TestDwarf.class.getCanonicalName(), "outOfMemory"));
