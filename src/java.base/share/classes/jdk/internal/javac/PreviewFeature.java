@@ -79,7 +79,7 @@ public @interface PreviewFeature {
         STRUCTURED_CONCURRENCY,
         @JEP(number=466, title="ClassFile API", status="Second Preview")
         CLASSFILE_API,
-        @JEP(number=461, title="Stream Gatherers", status="Preview")
+        @JEP(number=473, title="Stream Gatherers", status="Second Preview")
         STREAM_GATHERERS,
         LANGUAGE_MODEL,
         /**

@@ -47,6 +47,7 @@
 #include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1GCPauseType.hpp"
 #include "gc/g1/g1HeapRegion.inline.hpp"
+#include "gc/g1/g1HeapRegionPrinter.hpp"
 #include "gc/g1/g1HeapRegionRemSet.inline.hpp"
 #include "gc/g1/g1HeapRegionSet.inline.hpp"
 #include "gc/g1/g1HeapSizingPolicy.hpp"
@@ -325,7 +326,7 @@ G1CollectedHeap::humongous_obj_allocate_initialize_regions(HeapRegion* first_hr,
   for (uint i = first; i <= last; ++i) {
     HeapRegion *hr = region_at(i);
     _humongous_set.add(hr);
-    _hr_printer.alloc(hr);
+    G1HeapRegionPrinter::alloc(hr);
   }
 
   return new_obj;
@@ -524,7 +525,7 @@ HeapWord* G1CollectedHeap::alloc_archive_region(size_t word_size, HeapWord* pref
     r->set_top(top);
 
     r->set_old();
-    _hr_printer.alloc(r);
+    G1HeapRegionPrinter::alloc(r);
     _old_set.add(r);
   };
 
@@ -710,17 +711,12 @@ HeapWord* G1CollectedHeap::attempt_allocation_at_safepoint(size_t word_size,
 }
 
 class PostCompactionPrinterClosure: public HeapRegionClosure {
-private:
-  G1HRPrinter* _hr_printer;
 public:
   bool do_heap_region(HeapRegion* hr) {
     assert(!hr->is_young(), "not expecting to find young regions");
-    _hr_printer->post_compaction(hr);
+    G1HeapRegionPrinter::post_compaction(hr);
     return false;
   }
-
-  PostCompactionPrinterClosure(G1HRPrinter* hr_printer)
-    : _hr_printer(hr_printer) { }
 };
 
 void G1CollectedHeap::print_heap_after_full_collection() {
@@ -728,8 +724,8 @@ void G1CollectedHeap::print_heap_after_full_collection() {
   // We should do this after we potentially resize the heap so
   // that all the COMMIT / UNCOMMIT events are generated before
   // the compaction events.
-  if (_hr_printer.is_active()) {
-    PostCompactionPrinterClosure cl(hr_printer());
+  if (G1HeapRegionPrinter::is_active()) {
+    PostCompactionPrinterClosure cl;
     heap_region_iterate(&cl);
   }
 }
@@ -1152,7 +1148,6 @@ G1CollectedHeap::G1CollectedHeap() :
   _monitoring_support(nullptr),
   _num_humongous_objects(0),
   _num_humongous_reclaim_candidates(0),
-  _hr_printer(),
   _collector_state(),
   _old_marking_cycles_started(0),
   _old_marking_cycles_completed(0),
@@ -2851,18 +2846,17 @@ void G1CollectedHeap::rebuild_region_sets(bool free_list_only) {
 // Methods for the mutator alloc region
 
 HeapRegion* G1CollectedHeap::new_mutator_alloc_region(size_t word_size,
-                                                      bool force,
                                                       uint node_index) {
   assert_heap_locked_or_at_safepoint(true /* should_be_vm_thread */);
   bool should_allocate = policy()->should_allocate_mutator_region();
-  if (force || should_allocate) {
+  if (should_allocate) {
     HeapRegion* new_alloc_region = new_region(word_size,
                                               HeapRegionType::Eden,
                                               false /* do_expand */,
                                               node_index);
     if (new_alloc_region != nullptr) {
       set_region_short_lived_locked(new_alloc_region);
-      _hr_printer.alloc(new_alloc_region, !should_allocate);
+      G1HeapRegionPrinter::alloc(new_alloc_region);
       _policy->remset_tracker()->update_at_allocate(new_alloc_region);
       return new_alloc_region;
     }
@@ -2878,7 +2872,7 @@ void G1CollectedHeap::retire_mutator_alloc_region(HeapRegion* alloc_region,
   collection_set()->add_eden_region(alloc_region);
   increase_used(allocated_bytes);
   _eden.add_used_bytes(allocated_bytes);
-  _hr_printer.retire(alloc_region);
+  G1HeapRegionPrinter::retire(alloc_region);
 
   // We update the eden sizes here, when the region is retired,
   // instead of when it's allocated, since this is the point that its
@@ -2925,7 +2919,7 @@ HeapRegion* G1CollectedHeap::new_gc_alloc_region(size_t word_size, G1HeapRegionA
     }
     _policy->remset_tracker()->update_at_allocate(new_alloc_region);
     register_region_with_region_attr(new_alloc_region);
-    _hr_printer.alloc(new_alloc_region);
+    G1HeapRegionPrinter::alloc(new_alloc_region);
     return new_alloc_region;
   }
   return nullptr;
@@ -2946,7 +2940,7 @@ void G1CollectedHeap::retire_gc_alloc_region(HeapRegion* alloc_region,
   if (during_im && allocated_bytes > 0) {
     _cm->add_root_region(alloc_region);
   }
-  _hr_printer.retire(alloc_region);
+  G1HeapRegionPrinter::retire(alloc_region);
 }
 
 HeapRegion* G1CollectedHeap::alloc_highest_free_region() {
