@@ -956,14 +956,15 @@ public:
     return layout_helper_to_size_helper(layout_helper());
   }
 
-  // This bit is initialized in classFileParser.cpp.
-  // It is false under any of the following conditions:
+  // This bit is initialized to false by default.
+  // It remains false under any of the following conditions:
   //  - the class is abstract (including any interface)
   //  - the class size is larger than FastAllocateSizeLimit
-  //  - the class is java/lang/Class, which cannot be allocated directly
+  //  - the class is java/lang/Class or java/lang/StackChunk, which cannot be allocated directly
   bool can_be_fastpath_allocated() const {
     return !layout_helper_needs_slow_path(layout_helper());
   }
+  void reset_can_be_fastpath_allocated();
 
   // Java itable
   klassItable itable() const;        // return klassItable wrapper

@@ -1509,23 +1509,25 @@ instanceOop InstanceKlass::register_finalizer(instanceOop i, TRAPS) {
   return h_i();
 }
 
-instanceOop InstanceKlass::allocate_instance(TRAPS) {
-  assert(!is_abstract() && !is_interface(), "Should not create this object");
-  int size = size_helper();  // Query before forming handle.
-  instanceOop i = (instanceOop)Universe::heap()->obj_allocate(this, size, CHECK_NULL);
-
+void InstanceKlass::reset_can_be_fastpath_allocated() {
   // InstanceKlasses are initialized as not being able to be fastpath allocated.
   // If it can be fastpath allocated, reset a bit in the layout helper, for next time.
   if (!can_be_fastpath_allocated()) {
-    if (this != vmClasses::Class_klass() ||
-       (this != vmClasses::StackChunk_klass() && class_loader() == nullptr) || // null classloader?
+    int size = size_helper();
+    if (this != vmClasses::Class_klass() &&
+       !(name() == vmSymbols::jdk_internal_vm_StackChunk() && class_loader() == nullptr) &&
        size < FastAllocateSizeLimit) {
       // Allow fast-path allocation if not above.
       const int lh = Klass::instance_layout_helper(size, false);
       set_layout_helper(lh);
     }
   }
-  return i;
+}
+
+instanceOop InstanceKlass::allocate_instance(TRAPS) {
+  assert(!is_abstract() && !is_interface(), "Should not create this object");
+  int size = size_helper();  // Query before forming handle. what?
+  return (instanceOop)Universe::heap()->obj_allocate(this, size, THREAD);
 }
 
 instanceOop InstanceKlass::allocate_instance(oop java_class, TRAPS) {

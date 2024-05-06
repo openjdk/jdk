@@ -26,6 +26,7 @@
 #include "classfile/classLoaderData.hpp"
 #include "memory/allocation.inline.hpp"
 #include "oops/array.hpp"
+#include "oops/instanceKlass.hpp"
 #include "oops/klass.hpp"
 #include "oops/klassIdArray.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -55,6 +56,11 @@ void KlassIdArray::add_klass(Klass* k) {
   _the_compressed_klasses[kid] = k;
   // Store release
   k->set_compressed_id(kid);
+
+  // Reset fastpath allocation for this class
+  if (k->is_instance_klass()) {
+    InstanceKlass::cast(k)->reset_can_be_fastpath_allocated();
+  }
 
   _next++;
   if (_next > TOTAL_SIZE) {
