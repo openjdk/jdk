@@ -196,11 +196,16 @@ void G1BarrierSetC2::pre_barrier(GraphKit* kit,
     assert(pre_val == nullptr, "loaded already?");
     assert(val_type != nullptr, "need a type");
 
+    if (use_ReduceInitialCardMarks() && obj == kit->just_allocated_object(kit->control())) {
+      // In SATB pre write barrier is used to gray the object disconnected from the graph
+      // which is not necessary for just allocated object
+      return;
+    }
+
     if (use_ReduceInitialCardMarks()
         && g1_can_remove_pre_barrier(kit, &kit->gvn(), adr, bt, alias_idx)) {
       return;
     }
-
   } else {
     // In this case both val_type and alias_idx are unused.
     assert(pre_val != nullptr, "must be loaded already");
