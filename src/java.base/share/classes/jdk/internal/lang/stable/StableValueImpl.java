@@ -109,14 +109,14 @@ public final class StableValueImpl<V> implements StableValue<V> {
         // Now, fall back to volatile semantics.
         return orThrowVolatile();
 
-/*
-        // This is intentionally an old switch statement as it generates
+/*        // This is intentionally an old switch statement as it generates
         // more compact byte code.
         switch (state) {
             case UNSET:    { throw StableUtil.notSet();}
-            case NON_NULL: { return value; }
             case NULL:     { return null; }
+            case NON_NULL: { return value; }
             case ERROR:    { throw StableUtil.error(this); }
+            case DUMMY:    { throw shouldNotReachHere(); }
         }
         throw shouldNotReachHere();*/
 
@@ -127,10 +127,11 @@ public final class StableValueImpl<V> implements StableValue<V> {
         // This is intentionally an old switch statement as it generates
         // more compact byte code.
         switch (stateVolatile()) {
-            case UNSET:    { throw StableUtil.notSet();}
-            case NON_NULL: { return valueVolatile(); }
+            case UNSET:    { throw StableUtil.notSet(); }
             case NULL:     { return null; }
+            case NON_NULL: { return valueVolatile(); }
             case ERROR:    { throw StableUtil.error(this); }
+            case DUMMY:    { throw shouldNotReachHere(); }
         }
         throw shouldNotReachHere();
     }
@@ -197,7 +198,7 @@ public final class StableValueImpl<V> implements StableValue<V> {
         // This is intentionally an old switch statement as it generates
         // more compact byte code.
         switch (stateVolatile()) {
-            case UNSET:    { return computeIfUnsetVolatile0(supplier);}
+            case UNSET:    { return computeIfUnsetVolatile0(supplier); }
             case NON_NULL: { return valueVolatile(); }
             case NULL:     { return null; }
             case ERROR:    { throw StableUtil.error(this); }

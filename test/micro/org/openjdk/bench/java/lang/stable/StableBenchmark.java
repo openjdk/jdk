@@ -52,27 +52,35 @@ import java.util.function.Supplier;
 @Threads(Threads.MAX)   // Benchmark under contention
 public class StableBenchmark {
 
-    private static final int ITERATIONS = 20;
+    private static final int ITERATIONS = 17;
     private static final int VALUE = 42;
+    private static final int VALUE2 = 23;
 
-    private final StableValue<Integer> stable = init(StableValue.of());
+    private final StableValue<Integer> stable = init(StableValue.of(), VALUE);
+    private final StableValue<Integer> stable2 = init(StableValue.of(), VALUE2);
     private final StableValue<List<Integer>> stableHoldingList = StableValue.of();
+    private final StableValue<List<Integer>> stableHoldingList2 = StableValue.of();
     private final Supplier<Integer> dcl = new Dcl<>(() -> VALUE);
-    private final List<StableValue<Integer>> list = StableValue.ofList(1);
+    private final Supplier<Integer> dcl2 = new Dcl<>(() -> VALUE2);
+    private final List<StableValue<Integer>> list = StableValue.ofList(2);
     private final AtomicReference<Integer> atomic = new AtomicReference<>(VALUE);
+    private final AtomicReference<Integer> atomic2 = new AtomicReference<>(VALUE2);
     private final Supplier<Integer> supplier = () -> VALUE;
+    private final Supplier<Integer> supplier2 = () -> VALUE2;
 
     @Setup
     public void setup() {
         list.getFirst().trySet(VALUE);
+        list.get(1).trySet(VALUE2);
         stableHoldingList.trySet(List.of(VALUE));
+        stableHoldingList.trySet(List.of(VALUE2));
     }
 
     @Benchmark
     public int atomic() {
         int sum = 0;
         for (int i = 0; i < ITERATIONS; i++) {
-            sum += atomic.get();
+            sum += atomic.get() + atomic2.get();
         }
         return sum;
     }
@@ -81,7 +89,7 @@ public class StableBenchmark {
     public int dcl() {
         int sum = 0;
         for (int i = 0; i < ITERATIONS; i++) {
-            sum += dcl.get();
+            sum += dcl.get() + dcl2.get();
         }
         return sum;
     }
@@ -90,7 +98,7 @@ public class StableBenchmark {
     public int stable() {
         int sum = 0;
         for (int i = 0; i < ITERATIONS; i++) {
-            sum += stable.orThrow();
+            sum += stable.orThrow() + stable2.orThrow();
         }
         return sum;
     }
@@ -99,7 +107,7 @@ public class StableBenchmark {
     public int stableHoldingList() {
         int sum = 0;
         for (int i = 0; i < ITERATIONS; i++) {
-            sum += stableHoldingList.orThrow().get(0);
+            sum += stableHoldingList.orThrow().get(0) + stableHoldingList2.orThrow().get(0);
         }
         return sum;
     }
@@ -108,7 +116,7 @@ public class StableBenchmark {
     public int stableList() {
         int sum = 0;
         for (int i = 0; i < ITERATIONS; i++) {
-            sum += list.get(0).orThrow();
+            sum += list.get(0).orThrow() + list.get(1).orThrow();
         }
         return sum;
     }
@@ -118,13 +126,13 @@ public class StableBenchmark {
     public int supplier() {
         int sum = 0;
         for (int i = 0; i < ITERATIONS; i++) {
-            sum += supplier.get();
+            sum += supplier.get() + supplier2.get();
         }
         return sum;
     }
 
-    private static StableValue<Integer> init(StableValue<Integer> m) {
-        m.trySet(VALUE);
+    private static StableValue<Integer> init(StableValue<Integer> m, Integer value) {
+        m.trySet(value);
         return m;
     }
 

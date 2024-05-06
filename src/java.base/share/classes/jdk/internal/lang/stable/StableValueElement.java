@@ -37,6 +37,7 @@ public record StableValueElement<V>(
     @ForceInline
     @Override
     public V orThrow() {
+        // Todo: consider UNSAFE.getReference(elements, ...) as we have checked the index
         // Optimistically try plain semantics first
         final V e = elements[index];
         if (e != null) {

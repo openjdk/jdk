@@ -31,12 +31,10 @@ import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Scope;
-import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
@@ -54,28 +52,34 @@ import java.util.function.Supplier;
 public class StableBenchmarkRaw {
 
     private static final int VALUE = 42;
+    private static final int VALUE2 = 13;
 
-    private final StableValue<Integer> stable = init(StableValue.of());
+    // Use two distinct values to prevent inlining of values
+
+    private final StableValue<Integer> stable = init(StableValue.of(), VALUE);
+    private final StableValue<Integer> stable2 = init(StableValue.of(), VALUE2);
     private final Supplier<Integer> dcl = new Dcl<>(() -> VALUE);
+    private final Supplier<Integer> dcl2 = new Dcl<>(() -> VALUE2);
     private final AtomicReference<Integer> atomic = new AtomicReference<>(VALUE);
+    private final AtomicReference<Integer> atomic2 = new AtomicReference<>(VALUE2);
 
     @Benchmark
     public int atomic() {
-        return atomic.get();
+        return atomic.get() + atomic2.get();
     }
 
     @Benchmark
     public int dcl() {
-        return dcl.get();
+        return dcl.get() + dcl2.get();
     }
 
     @Benchmark
     public int stable() {
-        return stable.orThrow();
+        return stable.orThrow() + stable2.orThrow();
     }
 
-    private static StableValue<Integer> init(StableValue<Integer> m) {
-        m.trySet(VALUE);
+    private static StableValue<Integer> init(StableValue<Integer> m, Integer value) {
+        m.trySet(value);
         return m;
     }
 
