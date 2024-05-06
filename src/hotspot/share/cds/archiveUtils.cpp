@@ -310,6 +310,7 @@ void WriteClosure::do_ptr(void** p) {
   if (ptr != nullptr && !ArchiveBuilder::current()->is_in_buffer_space(ptr)) {
     ptr = ArchiveBuilder::current()->get_buffered_addr(ptr);
   }
+  // null pointers do not need to be converted to offsets
   if (ptr != nullptr) {
     size_t offset = ArchiveBuilder::current()->buffer_to_offset(ptr);
     ptr = (address)offset;

@@ -214,34 +214,31 @@ void CppVtableCloner<T>::init_orig_cpp_vtptr(int kind) {
 //     _index[ConstantPool_Kind]->cloned_vtable()  == ((intptr_t**)cp)[0]
 //     _index[InstanceKlass_Kind]->cloned_vtable() == ((intptr_t**)ik)[0]
 static CppVtableInfo* _index[_num_cloned_vtable_kinds];
-// Vtables are all fixed offsets from ArchiveBuilder::current()->rw_region()->base()
-// i.e ConstantPool is at offset 0x58. We can store these offsets and use the to
-// patch the pointers at runtime without storing them in the RW region
-char* CppVtables::_vtables_serialized_top = nullptr;
 
-char* CppVtables::dumptime_init(ArchiveBuilder* builder) {
+// Vtables are all fixed offsets from ArchiveBuilder::current()->mapped_base()
+// E.g. ConstantPool is at offset 0x58. We can archive these offsets in the
+// RO region and use them to alculate their location at runtime without storing
+// the pointers in the RW region
+char* CppVtables::_vtables_serialized_base = nullptr;
+
+void CppVtables::dumptime_init(ArchiveBuilder* builder) {
   assert(CDSConfig::is_dumping_static_archive(), "cpp tables are only dumped into static archive");
 
   CPP_VTABLE_TYPES_DO(ALLOCATE_AND_INITIALIZE_VTABLE);
 
   size_t cpp_tables_size = builder->rw_region()->top() - builder->rw_region()->base();
   builder->alloc_stats()->record_cpp_vtables((int)cpp_tables_size);
-
-  return (char*)_index;
 }
 
 void CppVtables::serialize(SerializeClosure* soc) {
   if (!soc->reading()) {
-    _vtables_serialized_top = soc->region_top();
+    _vtables_serialized_base = soc->region_top();
   }
   for (int i = 0; i < _num_cloned_vtable_kinds; i++) {
     soc->do_ptr(&_index[i]);
   }
   if (soc->reading()) {
     CPP_VTABLE_TYPES_DO(INITIALIZE_VTABLE);
-  } else {
-    tty->print_cr("Top: %p offset = %zu", (address)_vtables_serialized_top,
-                  ArchiveBuilder::current()->buffer_to_offset((address)_vtables_serialized_top));
   }
 }
 

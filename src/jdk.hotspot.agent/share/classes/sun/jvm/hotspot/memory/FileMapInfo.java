@@ -102,7 +102,6 @@ public class FileMapInfo {
     mapped_base_address = get_AddressField(FileMapHeader_type, header, "_mapped_base_address");
     long cloned_vtable_offset = get_CIntegerField(FileMapHeader_type, header, "_cloned_vtables_offset");
     vtablesIndex = mapped_base_address.addOffsetTo(cloned_vtable_offset);
-    System.out.printf("Mapped base: %s, Vtables: %s\n", mapped_base_address, vtablesIndex);
 
     // CDSFileMapRegion* rw_region = &header->_region[rw];
     // char* rwRegionBaseAddress = rw_region->_mapped_base;
@@ -221,7 +220,6 @@ public class FileMapInfo {
 
         // vtableAddress = &t->_cloned_vtable[0]
         Address vtableAddress = vtableInfoAddress.addOffsetTo(addressSize);
-        System.out.printf("vtable %d offset = %d, address = %s, type = %s\n", i, vtable_offset, vtableAddress, metadataTypeArray[i]);
 
         vTableTypeMap.put(vtableAddress, metadataTypeArray[i]);
       }
