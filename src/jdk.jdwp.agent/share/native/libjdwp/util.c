@@ -1276,6 +1276,9 @@ dumpRawMonitors() {
 static void
 assertIsCurrentThread(JNIEnv *env, jthread thread, jthread current_thread)
 {
+    if (!gdata->assertOn) {
+        return;
+    }
     if (gdata->vmDead) {
         return; // This assert is not reliable if the VM is exiting
     }
