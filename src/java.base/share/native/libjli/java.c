@@ -638,8 +638,9 @@ JavaMain(void* _args)
             ret = invokeInstanceMainWithArgs(env, mainClass, mainArgs);
        }
     }
-
-    CHECK_EXCEPTION_LEAVE(1);
+    if (!ret) {
+        CHECK_EXCEPTION_LEAVE(1);
+    }
 
     /*
      * The launcher's exit code (in the absence of calls to
