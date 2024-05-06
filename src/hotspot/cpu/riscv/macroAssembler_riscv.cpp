@@ -731,7 +731,10 @@ void MacroAssembler::la(Register Rd, const address addr, int32_t &offset) {
     offset = ((int32_t)distance << 20) >> 20;
   } else {
     assert(!CodeCache::contains(addr), "Must be");
-    movptr(Rd, addr, offset);
+    // The load of the address will be generated with
+    // position independent instruction.
+    // Hence relocations will not change them.
+    mv(Rd, addr, offset); // li
   }
 }
 
