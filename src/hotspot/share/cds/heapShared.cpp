@@ -288,7 +288,6 @@ bool HeapShared::archive_object(oop obj) {
     CachedOopInfo info = make_cached_oop_info(obj);
     archived_object_cache()->put_when_absent(obj, info);
     archived_object_cache()->maybe_grow();
-    ArchiveBuilder::current()->set_needs_compressed_id_index(obj->klass());
     mark_native_pointers(obj);
 
     if (log_is_enabled(Debug, cds, heap)) {
@@ -574,38 +573,34 @@ void HeapShared::archive_objects(ArchiveHeapInfo *heap_info) {
     ArchiveBuilder::OtherROAllocMark mark;
     ArchiveBuilder* builder = ArchiveBuilder::current();
 
+    // Save classes that had instances allocated, even if the instances weren't shared.
     int len = 0;
     for (int i = 0; i < builder->klasses()->length(); i++) {
-      if (builder->needs_compressed_id_index(builder->klasses()->at(i))) {
+      if (builder->klasses()->at(i)->compressed_id() != 0) {
         len++;
       }
     }
 
-    // Indices start at one.
-    _compressed_id_klasses = builder->new_ro_array<Klass*>(len + 1);
+    // Indices in the compressed_id_klass array start at one.
+    int id_index = 1;
+    _compressed_id_klasses = builder->new_ro_array<Klass*>(len + id_index);
 
-    for (int i = 0, j = 1; i < builder->klasses()->length(); i++) {
+    for (int i = 0; i < builder->klasses()->length(); i++) {
       Klass* src_klass = builder->klasses()->at(i);
       Klass* buffered_klass = builder->get_buffered_addr(src_klass);
-      if (builder->needs_compressed_id_index(src_klass)) {
-        _compressed_id_klasses->at_put(j, buffered_klass);
-        ArchivePtrMarker::mark_pointer((address**)_compressed_id_klasses->adr_at(j));
-        builder->set_compressed_id_index(src_klass, j);
-        buffered_klass->set_compressed_id(j);
+      if (src_klass->compressed_id() != 0) {
+        // Save all src_klass in the archive array.
+        _compressed_id_klasses->at_put(id_index, buffered_klass);
+        ArchivePtrMarker::mark_pointer((address**)_compressed_id_klasses->adr_at(id_index));
+        // For updating objects of this Klass type.
+        builder->set_compressed_id_index(src_klass, id_index);
+        buffered_klass->set_compressed_id(id_index);
 
         if (log_is_enabled(Info, cds, logging)) {
           ResourceMark rm;
-          log_info(cds, logging)("class ID = %4d for %s", j, src_klass->external_name());
+          log_info(cds, logging)("class ID = %4d for %s", id_index, src_klass->external_name());
         }
-        j++;
-      } else {
-        buffered_klass->set_compressed_id(0);  // restore unshareable info hasn't been called yet?
-        // Reset the class so that it is not fastpath allocated.
-        if (src_klass->is_instance_klass()) {
-          InstanceKlass* ik = InstanceKlass::cast(src_klass);
-          const int lh = Klass::instance_layout_helper(ik->size_helper(), true);
-          buffered_klass->set_layout_helper(lh);
-        }
+        id_index++;
       }
     }
   }

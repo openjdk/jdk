@@ -214,17 +214,6 @@ int ArchiveBuilder::compressed_id_index(Klass* src_klass) const {
   return p->compressed_id_index();
 }
 
-void ArchiveBuilder::set_needs_compressed_id_index(Klass* src_klass) {
-  SourceObjInfo* p = _src_obj_table.get((address)src_klass);
-  assert(p != nullptr, "regenerated object should always be dumped");
-  p->set_needs_compressed_id_index(true);
-}
-
-bool ArchiveBuilder::needs_compressed_id_index(Klass* src_klass) const {
-  SourceObjInfo* p = _src_obj_table.get((address)src_klass);
-  return p->needs_compressed_id_index();
-}
-
 class GatherKlassesAndSymbols : public UniqueMetaspaceClosure {
   ArchiveBuilder* _builder;
 
