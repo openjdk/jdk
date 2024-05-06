@@ -206,8 +206,9 @@ public sealed interface ClassDesc
         if (rank <= 0) {
             throw new IllegalArgumentException("rank " + rank + " is not a positive value");
         }
+        String desc = descriptorString();
         try {
-            int currentDepth = arrayDepth(descriptorString());
+            int currentDepth = arrayDepth(desc);
             netRank = Math.addExact(currentDepth, rank);
             if (netRank > MAX_ARRAY_TYPE_DESC_DIMENSIONS) {
                 throw new IllegalArgumentException("rank: " + netRank +
@@ -216,6 +217,9 @@ public sealed interface ClassDesc
             }
         } catch (ArithmeticException ae) {
             throw new IllegalArgumentException("Integer overflow in rank computation");
+        }
+        if (desc.length() == 1 && desc.charAt(0) == 'V') {
+            throw new IllegalArgumentException(String.format("not a valid reference type descriptor: %sV", "[".repeat(rank)));
         }
         return ReferenceClassDescImpl.ofTrusted("[".repeat(rank) + descriptorString());
     }
