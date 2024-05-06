@@ -624,19 +624,12 @@ private:
   // Is use->in(u_idx) a vector use?
   bool is_vector_use(Node* use, int u_idx) const;
 
-
-
-  // TODO the whole type conversion stuff, input/output types maybe?
-
   // Return the longer type for vectorizable type-conversion node or illegal type for other nodes.
   BasicType longer_type_for_conversion(Node* n) const;
 
-  // TODO desc, or place somewhere better
   static bool requires_long_to_int_conversion(int opc);
 
-  // TODO place?
   bool is_velt_basic_type_compatible_use_def(Node* use, int idx) const;
-
 
   static LoadNode::ControlDependency control_dependency(Node_List* p);
 

@@ -500,7 +500,10 @@ void SuperWord::find_adjacent_memop_pairs() {
     }
   });
 
-  // Sort VPointers into groups.
+  // Sort the VPointers. This does 2 things:
+  //  - Separate the VPointer into groups (e.g. all LoadI of the same base and invar). We only need to find adjacent memops inside
+  //    the group. This decreases the work.
+  //  - Sort by offset inside the VPointers. This decreases the work needed to determine adjacent memops inside a group.
   vpointers.sort(VPointer::cmp_for_sort);
 
 #ifndef PRODUCT
@@ -509,7 +512,7 @@ void SuperWord::find_adjacent_memop_pairs() {
   }
 #endif
 
-  // For each group:
+  // For each group, find the adjacent memops:
   int group_start = 0;
   while (group_start < vpointers.length()) {
     int group_end = group_start + 1;
@@ -532,6 +535,7 @@ void SuperWord::find_adjacent_memop_pairs() {
 #endif
 }
 
+// Find adjacent memops for a single group, e.g. for all LoadI of the same base, invar, etc.
 void SuperWord::find_adjacent_memop_pairs_in_group(const GrowableArray<const VPointer*> &vpointers, const int group_start, int group_end) {
 #ifndef PRODUCT
   if (is_trace_superword_adjacent_memops()) {
@@ -677,8 +681,6 @@ bool SuperWord::can_pack_into_pair(Node* s1, Node* s2) {
   BasicType bt2 = velt_basic_type(s2);
   if(!is_java_primitive(bt1) || !is_java_primitive(bt2))
     return false;
-
-  // TODO consider just checking input and output types have vectors?
   BasicType longer_bt = longer_type_for_conversion(s1);
   if (Matcher::max_vector_size_auto_vectorization(bt1) < 2 ||
       (longer_bt != T_ILLEGAL && Matcher::max_vector_size_auto_vectorization(longer_bt) < 2)) {
