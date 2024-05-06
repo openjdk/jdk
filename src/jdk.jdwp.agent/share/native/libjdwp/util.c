@@ -1422,19 +1422,19 @@ debugMonitorWait(DebugRawMonitor *dbg_monitor)
         return;
     }
 
-    jthread thread = dbg_monitor->ownerThread;
-    int entryCount = dbg_monitor->entryCount;
+    jthread savedOwnerThread = dbg_monitor->ownerThread;
+    int savedEntryCount = dbg_monitor->entryCount;
     jthread current_thread = threadControl_currentThread();
 
     if (gdata->vmDead && current_thread == NULL) {
         return;
     }
 
-    JDI_ASSERT(thread != NULL);
+    JDI_ASSERT(savedOwnerThread != NULL);
 
     // Assert that the current thread owns this monitor.
     JNIEnv *env = getEnv();
-    assertIsCurrentThread(env, dbg_monitor->ownerThread, current_thread);
+    assertIsCurrentThread(env, savedOwnerThread, current_thread);
     JNI_FUNC_PTR(env,DeleteLocalRef)(env, current_thread);
 
     // Release ownership of the DebugRawMonitor before RawMonitorWait actually exits it.
@@ -1448,8 +1448,8 @@ debugMonitorWait(DebugRawMonitor *dbg_monitor)
     // Now that we have re-entered the monitor, reclaim ownership of the DebugRawMonitor
     // by saving the thread into it and restoring the entry count.
     dbgRawMonitor_lock();
-    dbg_monitor->ownerThread = thread;
-    dbg_monitor->entryCount = entryCount;
+    dbg_monitor->ownerThread = savedOwnerThread;
+    dbg_monitor->entryCount = savedEntryCount;
     dbgRawMonitor_unlock();
 }
 
