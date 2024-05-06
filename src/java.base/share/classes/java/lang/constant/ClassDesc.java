@@ -128,7 +128,7 @@ public sealed interface ClassDesc
      * not in the correct format
      */
     static ClassDesc of(String packageName, String className) {
-        validateBinaryClassName(requireNonNull(packageName));
+        validateBinaryClassName(packageName);
         if (packageName.isEmpty()) {
             return of(className);
         }
