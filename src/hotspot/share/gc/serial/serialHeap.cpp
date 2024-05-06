@@ -439,7 +439,7 @@ bool SerialHeap::is_young_gc_safe() const {
   return _old_gen->promotion_attempt_is_safe(_young_gen->used());
 }
 
-bool SerialHeap::do_young_gc(DefNewGeneration* young_gen, bool clear_soft_refs) {
+bool SerialHeap::do_young_gc(bool clear_soft_refs) {
   if (!is_young_gc_safe()) {
     return false;
   }
@@ -448,8 +448,8 @@ bool SerialHeap::do_young_gc(DefNewGeneration* young_gen, bool clear_soft_refs) 
   GCIdMark gc_id_mark;
   GCTraceCPUTime tcpu(_young_gen->gc_tracer());
   GCTraceTime(Info, gc) t("Pause Young", nullptr, gc_cause(), true);
-  TraceCollectorStats tcs(young_gen->counters());
-  TraceMemoryManagerStats tmms(young_gen->gc_manager(), gc_cause(), "end of minor GC");
+  TraceCollectorStats tcs(_young_gen->counters());
+  TraceMemoryManagerStats tmms(_young_gen->gc_manager(), gc_cause(), "end of minor GC");
   print_heap_before_gc();
   const PreGenGCValues pre_gc_values = get_pre_gc_values();
 
@@ -465,11 +465,11 @@ bool SerialHeap::do_young_gc(DefNewGeneration* young_gen, bool clear_soft_refs) 
 
   save_marks();
 
-  bool result = young_gen->collect(clear_soft_refs);
+  bool result = _young_gen->collect(clear_soft_refs);
 
   COMPILER2_OR_JVMCI_PRESENT(DerivedPointerTable::update_pointers());
 
-  update_gc_stats(young_gen, false);
+  update_gc_stats(_young_gen, false);
 
   if (should_verify && VerifyAfterGC) {
     Universe::verify("After GC");
@@ -487,11 +487,6 @@ bool SerialHeap::do_young_gc(DefNewGeneration* young_gen, bool clear_soft_refs) 
   print_heap_after_gc();
 
   return result;
-}
-
-bool SerialHeap::should_do_full_collection(size_t size, bool full, bool is_tlab,
-                                           SerialHeap::GenerationType max_gen) const {
-  return max_gen == OldGen && _old_gen->should_collect(full, size, is_tlab);
 }
 
 void SerialHeap::register_nmethod(nmethod* nm) {
@@ -650,7 +645,7 @@ void SerialHeap::collect_at_safepoint_no_gc_locker(bool full) {
   bool clear_soft_refs = must_clear_all_soft_refs();
 
   if (!full) {
-    bool success = do_young_gc(_young_gen, clear_soft_refs);
+    bool success = do_young_gc(clear_soft_refs);
     if (success) {
       return;
     }

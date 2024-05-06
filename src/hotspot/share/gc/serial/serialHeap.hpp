@@ -96,7 +96,7 @@ private:
   // condition that caused that incremental collection to fail.
   bool _incremental_collection_failed;
 
-  bool do_young_gc(DefNewGeneration* young_gen, bool clear_soft_refs);
+  bool do_young_gc(bool clear_soft_refs);
 
   // Reserve aligned space for the heap as needed by the contained generations.
   ReservedHeapSpace allocate(size_t alignment);
@@ -296,10 +296,6 @@ private:
 
   // Save the tops of the spaces in all generations
   void record_gen_tops_before_GC() PRODUCT_RETURN;
-
-  // Return true if we need to perform full collection.
-  bool should_do_full_collection(size_t size, bool full,
-                                 bool is_tlab, GenerationType max_gen) const;
 
 private:
   MemoryPool* _eden_pool;
