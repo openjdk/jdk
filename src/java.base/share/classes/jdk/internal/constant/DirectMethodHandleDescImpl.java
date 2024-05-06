@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,25 +22,28 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package java.lang.constant;
+package jdk.internal.constant;
 
+import java.lang.constant.ClassDesc;
+import java.lang.constant.DirectMethodHandleDesc;
+import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.Objects;
 
 import static java.lang.constant.ConstantDescs.CD_void;
-import static java.lang.constant.ConstantUtils.validateClassOrInterface;
-import static java.lang.constant.ConstantUtils.validateMemberName;
 import static java.lang.constant.DirectMethodHandleDesc.Kind.CONSTRUCTOR;
 import static java.util.Objects.requireNonNull;
+import static jdk.internal.constant.ConstantUtils.validateClassOrInterface;
+import static jdk.internal.constant.ConstantUtils.validateMemberName;
 
 /**
  * A <a href="package-summary.html#nominal">nominal descriptor</a> for a direct
  * {@link MethodHandle}.  A {@linkplain DirectMethodHandleDescImpl} corresponds to
  * a {@code Constant_MethodHandle_info} entry in the constant pool of a classfile.
  */
-final class DirectMethodHandleDescImpl implements DirectMethodHandleDesc {
+public final class DirectMethodHandleDescImpl implements DirectMethodHandleDesc {
 
     private final Kind kind;
     private final ClassDesc owner;
@@ -62,7 +65,7 @@ final class DirectMethodHandleDescImpl implements DirectMethodHandleDesc {
      * is not {@code void}
      * @jvms 4.2.2 Unqualified Names
      */
-    DirectMethodHandleDescImpl(Kind kind, ClassDesc owner, String name, MethodTypeDesc type) {
+    public DirectMethodHandleDescImpl(Kind kind, ClassDesc owner, String name, MethodTypeDesc type) {
         if (kind == CONSTRUCTOR)
             name = "<init>";
 
@@ -82,12 +85,11 @@ final class DirectMethodHandleDescImpl implements DirectMethodHandleDesc {
         this.kind = kind;
         this.owner = owner;
         this.name = name;
-        if (kind.isVirtualMethod())
-            this.invocationType = type.insertParameterTypes(0, owner);
-        else if (kind == CONSTRUCTOR)
-            this.invocationType = type.changeReturnType(owner);
-        else
-            this.invocationType = type;
+        this.invocationType = switch (kind) {
+            case VIRTUAL, SPECIAL, INTERFACE_VIRTUAL, INTERFACE_SPECIAL -> type.insertParameterTypes(0, owner);
+            case CONSTRUCTOR -> type.changeReturnType(owner);
+            default -> type;
+        };
     }
 
     private static void validateFieldType(MethodTypeDesc type, boolean isSetter, boolean isVirtual) {

@@ -22,10 +22,12 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package java.lang.constant;
+package jdk.internal.constant;
 
 import jdk.internal.vm.annotation.Stable;
 
+import java.lang.constant.ClassDesc;
+import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.security.AccessController;
@@ -41,7 +43,7 @@ import static java.util.Objects.requireNonNull;
  * {@link MethodType}.  A {@linkplain MethodTypeDescImpl} corresponds to a
  * {@code Constant_MethodType_info} entry in the constant pool of a classfile.
  */
-final class MethodTypeDescImpl implements MethodTypeDesc {
+public final class MethodTypeDescImpl implements MethodTypeDesc {
     private final ClassDesc returnType;
     private final @Stable ClassDesc[] argTypes;
     private @Stable String cachedDescriptorString;
@@ -65,7 +67,7 @@ final class MethodTypeDescImpl implements MethodTypeDesc {
      * @param returnType a {@link ClassDesc} describing the return type
      * @param trustedArgTypes {@link ClassDesc}s describing the trusted parameter types
      */
-    static MethodTypeDescImpl ofTrusted(ClassDesc returnType, ClassDesc[] trustedArgTypes) {
+    public static MethodTypeDescImpl ofTrusted(ClassDesc returnType, ClassDesc[] trustedArgTypes) {
         requireNonNull(returnType);
         if (trustedArgTypes.length == 0) // implicit null check
             return new MethodTypeDescImpl(returnType, ConstantUtils.EMPTY_CLASSDESC);
@@ -86,7 +88,7 @@ final class MethodTypeDescImpl implements MethodTypeDesc {
      * method descriptor
      * @jvms 4.3.3 Method Descriptors
      */
-    static MethodTypeDescImpl ofDescriptor(String descriptor) {
+    public static MethodTypeDescImpl ofDescriptor(String descriptor) {
         // Implicit null-check of descriptor
         List<ClassDesc> ptypes = ConstantUtils.parseMethodDescriptor(descriptor);
         int args = ptypes.size() - 1;
