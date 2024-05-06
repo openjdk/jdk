@@ -76,8 +76,6 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 public class HttpsParametersClientAuthTest {
 
-    private static final String WSAECONNABORTED_MSG =
-            "An established connection was aborted by the software in your host machine";
     private static final boolean IS_WINDOWS = OperatingSystem.isWindows();
     private static final AtomicInteger TID = new AtomicInteger();
     private static final ThreadFactory SRV_THREAD_FACTORY = (r) -> {
@@ -225,11 +223,11 @@ public class HttpsParametersClientAuthTest {
                             throw ioe;
                         }
                         // verify it failed due to right reason
-                        Throwable cause = ioe;
+                        Throwable cause = ioe.getCause();
                         while (cause != null) {
                             // either of SocketException or SSLHandshakeException are OK.
                             // additionally on Windows we accept even IOException
-                            // caused by WSAECONNABORTED
+                            // (caused by WSAECONNABORTED)
                             if (cause instanceof SocketException se) {
                                 final String msg = se.getMessage();
                                 assertTrue(msg != null && msg.contains("Connection reset"),
@@ -243,13 +241,11 @@ public class HttpsParametersClientAuthTest {
                                 System.out.println("received the expected exception: " + she);
                                 break;
                             } else if (IS_WINDOWS && cause instanceof IOException winIOE) {
-                                if (WSAECONNABORTED_MSG.equalsIgnoreCase(winIOE.getMessage())) {
-                                    // on Windows we sometimes receive this exception, which is
-                                    // acceptable
-                                    System.out.println("(windows) received the expected exception: "
-                                            + winIOE);
-                                    break;
-                                }
+                                // on Windows we sometimes receive this exception, which is
+                                // acceptable
+                                System.out.println("(windows) received the expected exception: "
+                                        + winIOE);
+                                break;
                             }
                             cause = cause.getCause();
                         }
