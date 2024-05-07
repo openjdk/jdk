@@ -151,15 +151,9 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
   // b) Perform summary accounting
   SummaryDiff diff;
 
-  AddressState GEQ_B;
-  TreapNode* geqB_n = tree.closest_geq(B);
-  if (geqB_n != nullptr) {
-    GEQ_B = {geqB_n->key(), geqB_n->val()};
-  }
-
   if (to_be_deleted_inbetween_a_b.length() == 0 && LEQ_A_found) {
     // We must have smashed a hole in an existing region (or replaced it entirely).
-    // LEQ_A - A - B - GEQ_B
+    // LEQ_A - A - B - (some node >= B)
     auto& rescom = diff.flag[NMTUtil::flag_to_index(LEQ_A.out().flag())];
     if (LEQ_A.out().type() == StateType::Reserved) {
       rescom.reserve -= B - A;
@@ -186,8 +180,16 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
     prev = delete_me;
   }
 
+  AddressState GEQ_B;
+  bool GEQ_B_found = false;
+  TreapNode* geqB_n = tree.closest_geq(B);
+  if (geqB_n != nullptr) {
+    GEQ_B = {geqB_n->key(), geqB_n->val()};
+    GEQ_B_found = true;
+  }
+
   if (prev.address != A && prev.out().type() != StateType::Released &&
-      GEQ_B.in().type() != StateType::Released) {
+      GEQ_B_found && GEQ_B.in().type() != StateType::Released) {
     // There was some node inside of (A, B) and it is connected to GEQ_B
     // A - prev - B - GEQ_B
     // It might be that prev.address == B == GEQ_B.address, this is fine.
