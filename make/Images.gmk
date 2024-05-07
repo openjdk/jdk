@@ -32,7 +32,6 @@ include CopyFiles.gmk
 include Execute.gmk
 include Modules.gmk
 include Utils.gmk
-include JavaCompilation.gmk
 
 JDK_TARGETS :=
 JRE_TARGETS :=
@@ -97,6 +96,10 @@ JLINK_DISABLE_WARNINGS := | ( $(GREP) -v -e "WARNING: Using incubator module" ||
 JDK_IMAGE_SUPPORT_DIR := $(SUPPORT_OUTPUTDIR)/images/jdk
 JRE_IMAGE_SUPPORT_DIR := $(SUPPORT_OUTPUTDIR)/images/jre
 
+ifeq ($(JLINK_PRODUCE_RUNTIME_LINK_JDK), true)
+  JLINK_JDK_EXTRA_OPTS := $(JLINK_JDK_EXTRA_OPTS) --generate-linkable-runtime
+endif
+
 $(eval $(call SetupExecute, jlink_jdk, \
     WARN := Creating jdk image, \
     DEPS := $(JDK_JMODS) $(BASE_RELEASE_FILE) \
@@ -110,42 +113,6 @@ $(eval $(call SetupExecute, jlink_jdk, \
 ))
 
 JLINK_JDK_TARGETS := $(jlink_jdk)
-
-ifeq ($(JLINK_PRODUCE_RUNTIME_LINK_JDK), true)
-  RL_DELTA_GEN_CLASSES := $(BUILDTOOLS_OUTPUTDIR)/linkdeltaproducer-classes
-
-  FLAGS_DIFF_GEN := --add-modules jdk.jlink \
-      --add-exports=jdk.jlink/jdk.tools.jlink.internal.runtimelink=ALL-UNNAMED \
-      --add-exports=java.base/jdk.internal.module=ALL-UNNAMED \
-      --add-exports=java.base/jdk.internal.jimage=ALL-UNNAMED \
-      #
-
-  # Compile diff generator classes with the 'buildjdk' compiler, as it
-  # needs classes from the just built jdk.jlink module
-  $(eval $(call SetupJavaCompilation, BUILD_JDK_RUNLINK_CLASSES, \
-      COMPILER := buildjdk, \
-      SRC := $(TOPDIR)/make/jdk/src/classes, \
-      INCLUDES := build/tools/linkdeltaproducer, \
-      BIN := $(RL_DELTA_GEN_CLASSES), \
-      JAVAC_FLAGS := $(FLAGS_DIFF_GEN), \
-  ))
-
-  $(eval $(call SetupExecute, diff_runtime_jdk, \
-      WARN := Creating diff file for runtime linking support, \
-      DEPS := $(BUILD_JDK_RUNLINK_CLASSES) $(jlink_jdk), \
-      OUTPUT_DIR := $(JDK_IMAGE_DIR), \
-      SUPPORT_DIR := $(DEFAULT_JDK_IMAGE_SUPPORT_DIR), \
-      COMMAND := $(BUILD_JAVA) \
-                 $(FLAGS_DIFF_GEN) \
-                 -cp $(RL_DELTA_GEN_CLASSES) \
-                 build.tools.linkdeltaproducer.LinkDeltaProducer \
-                 $(IMAGES_OUTPUTDIR)/jmods \
-                 $(JDK_IMAGE_DIR)/lib/modules \
-                 $(JDK_IMAGE_DIR)/lib/runtime-image-link.delta, \
-  ))
-
-  JLINK_JDK_TARGETS += $(diff_runtime_jdk)
-endif
 
 $(eval $(call SetupExecute, jlink_jre, \
     WARN := Creating legacy jre image, \

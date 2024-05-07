@@ -149,6 +149,7 @@ public final class Jlink {
         private final ModuleFinder finder;
         private final boolean linkFromRuntimeImage;
         private final boolean ignoreModifiedRuntime;
+        private final boolean generateRuntimeImage;
 
         /**
          * jlink configuration,
@@ -161,12 +162,14 @@ public final class Jlink {
                                   Set<String> modules,
                                   ModuleFinder finder,
                                   boolean linkFromRuntimeImage,
-                                  boolean ignoreModifiedRuntime) {
+                                  boolean ignoreModifiedRuntime,
+                                  boolean generateRuntimeImage) {
             this.output = output;
             this.modules = Objects.requireNonNull(modules);
             this.finder = finder;
             this.linkFromRuntimeImage = linkFromRuntimeImage;
             this.ignoreModifiedRuntime = ignoreModifiedRuntime;
+            this.generateRuntimeImage = generateRuntimeImage;
         }
 
         /**
@@ -197,6 +200,10 @@ public final class Jlink {
 
         public boolean ignoreModifiedRuntime() {
             return ignoreModifiedRuntime;
+        }
+
+        public boolean isGenerateRuntimeImage() {
+            return generateRuntimeImage;
         }
 
         /**

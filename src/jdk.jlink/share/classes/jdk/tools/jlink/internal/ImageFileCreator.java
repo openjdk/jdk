@@ -24,9 +24,11 @@
  */
 package jdk.tools.jlink.internal;
 
+import static jdk.tools.jlink.internal.JlinkTask.DIFF_PATTERN;
 import static jdk.tools.jlink.internal.JlinkTask.RESPATH_PATTERN;
 
 import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -35,6 +37,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -48,6 +51,10 @@ import java.util.stream.Stream;
 import jdk.tools.jlink.internal.Archive.Entry;
 import jdk.tools.jlink.internal.Archive.Entry.EntryType;
 import jdk.tools.jlink.internal.ResourcePoolManager.CompressedModuleData;
+import jdk.tools.jlink.internal.runtimelink.JimageDiffGenerator;
+import jdk.tools.jlink.internal.runtimelink.JimageDiffGenerator.ImageResource;
+import jdk.tools.jlink.internal.runtimelink.ResourceDiff;
+import jdk.tools.jlink.internal.runtimelink.ResourcePoolReader;
 import jdk.tools.jlink.internal.runtimelink.RuntimeImageLinkException;
 import jdk.tools.jlink.plugin.PluginException;
 import jdk.tools.jlink.plugin.ResourcePool;
@@ -79,34 +86,38 @@ public final class ImageFileCreator {
     // This resource is being used in JLinkTask which passes its contents to
     // JRTArchive for further processing.
     private static final String RESPATH = "/" + JLINK_MOD_NAME + "/" + RESPATH_PATTERN;
+    private static final String DIFF_PATH = "/" + JLINK_MOD_NAME + "/" + DIFF_PATTERN;
     private static final byte[] EMPTY_RESOURCE_BYTES = new byte[] {};
 
     private final Map<String, List<Entry>> entriesForModule = new HashMap<>();
     private final ImagePluginStack plugins;
-    private ImageFileCreator(ImagePluginStack plugins) {
+    private final boolean generateRuntimeImage;
+    private ImageFileCreator(ImagePluginStack plugins, boolean generateRuntimeImage) {
         this.plugins = Objects.requireNonNull(plugins);
+        this.generateRuntimeImage = generateRuntimeImage;
     }
 
     public static ExecutableImage create(Set<Archive> archives,
             ImagePluginStack plugins)
             throws IOException {
         return ImageFileCreator.create(archives, ByteOrder.nativeOrder(),
-                plugins);
+                plugins, false);
     }
 
     public static ExecutableImage create(Set<Archive> archives,
             ByteOrder byteOrder)
             throws IOException {
         return ImageFileCreator.create(archives, byteOrder,
-                new ImagePluginStack());
+                new ImagePluginStack(), false);
     }
 
     public static ExecutableImage create(Set<Archive> archives,
             ByteOrder byteOrder,
-            ImagePluginStack plugins)
+            ImagePluginStack plugins,
+            boolean generateRuntimeImage)
             throws IOException
     {
-        ImageFileCreator image = new ImageFileCreator(plugins);
+        ImageFileCreator image = new ImageFileCreator(plugins, generateRuntimeImage);
         try {
             image.readAllEntries(archives);
             // write to modular image
@@ -138,7 +149,7 @@ public final class ImageFileCreator {
 
     public static void recreateJimage(Path jimageFile,
             Set<Archive> archives,
-            ImagePluginStack pluginSupport)
+            ImagePluginStack pluginSupport, boolean generateRuntimeImage)
             throws IOException {
         try {
             Map<String, List<Entry>> entriesForModule
@@ -155,7 +166,7 @@ public final class ImageFileCreator {
             try (OutputStream fos = Files.newOutputStream(jimageFile);
                     BufferedOutputStream bos = new BufferedOutputStream(fos);
                     DataOutputStream out = new DataOutputStream(bos)) {
-                generateJImage(pool, writer, pluginSupport, out);
+                generateJImage(pool, writer, pluginSupport, out, generateRuntimeImage);
             }
         } finally {
             //Close all archives
@@ -173,7 +184,7 @@ public final class ImageFileCreator {
                 entriesForModule, byteOrder, writer);
         ResourcePool result;
         try (DataOutputStream out = plugins.getJImageFileOutputStream()) {
-            result = generateJImage(allContent, writer, plugins, out);
+            result = generateJImage(allContent, writer, plugins, out, generateRuntimeImage);
         }
 
         //Handle files.
@@ -193,13 +204,20 @@ public final class ImageFileCreator {
     private static ResourcePool generateJImage(ResourcePoolManager allContent,
             BasicImageWriter writer,
             ImagePluginStack pluginSupport,
-            DataOutputStream out
+            DataOutputStream out,
+            boolean generateRuntimeImage
     ) throws IOException {
         ResourcePool resultResources;
         try {
             resultResources = pluginSupport.visitResources(allContent);
             // Keep track of resources for runtime image based linking
             resultResources = addNonClassResourcesTrackFiles(resultResources, writer);
+            // Generate the diff between the input resources, coming from jmods
+            // in 'allContent' to the plugin- or otherwise-generated-content in
+            // 'resultResources'
+            if (generateRuntimeImage) {
+                resultResources = addRessourceDiffFiles(allContent.resourcePool(), resultResources, writer);
+            }
         } catch (PluginException pe) {
             if (JlinkTask.DEBUG) {
                 pe.printStackTrace();
@@ -223,7 +241,7 @@ public final class ImageFileCreator {
 
         List<ResourcePoolEntry> content = new ArrayList<>();
         List<String> paths = new ArrayList<>();
-                 // the order of traversing the resources and the order of
+        // the order of traversing the resources and the order of
         // the module content being written must be the same
         resultResources.entries().forEach(res -> {
             if (res.type().equals(ResourcePoolEntry.Type.CLASS_OR_RESOURCE)) {
@@ -271,6 +289,79 @@ public final class ImageFileCreator {
         out.close();
 
         return resultResources;
+    }
+
+    @SuppressWarnings("try")
+    private static ResourcePool addRessourceDiffFiles(ResourcePool jmodContent,
+            ResourcePool resultContent, BasicImageWriter writer) {
+        JimageDiffGenerator generator = new JimageDiffGenerator();
+        List<ResourceDiff> diff;
+        try (ImageResource jmods = new ResourcePoolReader(jmodContent);
+             ImageResource jimage = new ResourcePoolReader(resultContent)) {
+            diff = generator.generateDiff(jmods, jimage);
+        } catch (Exception e) {
+            throw new AssertionError("Failed to generate the runtime image diff", e);
+        }
+        Set<String> modules = resultContent.moduleView().modules().map(a -> a.name()).collect(Collectors.toSet());
+        // Add resource diffs for the resource files we are about to add
+        modules.stream().forEach(m -> {
+            String resourceName = String.format(DIFF_PATH, m);
+            ResourceDiff.Builder builder = new ResourceDiff.Builder();
+            ResourceDiff d = builder.setKind(ResourceDiff.Kind.ADDED)
+                                    .setName(resourceName)
+                                    .build();
+            diff.add(d);
+        });
+        Map<String, List<ResourceDiff>> perModDiffs = preparePerModuleDiffs(diff, modules);
+        return addDiffResourcesFiles(modules, perModDiffs, resultContent, writer);
+    }
+
+    private static Map<String, List<ResourceDiff>> preparePerModuleDiffs(List<ResourceDiff> resDiffs, Set<String> modules) {
+        Map<String, List<ResourceDiff>> modToDiff = new HashMap<>();
+        resDiffs.forEach(d -> {
+            int secondSlash = d.getName().indexOf("/", 1);
+            if (secondSlash == -1) {
+                throw new AssertionError("Module name not present");
+            }
+            String module = d.getName().substring(1, secondSlash);
+            List<ResourceDiff> perModDiff = modToDiff.computeIfAbsent(module, a -> new ArrayList<>());
+            perModDiff.add(d);
+        });
+        Map<String, List<ResourceDiff>> allModsToDiff = new HashMap<>();
+        modules.stream().forEach(m -> {
+            List<ResourceDiff> d = modToDiff.get(m);
+            if (d == null) {
+                // Not all modules will have a diff
+                allModsToDiff.put(m, Collections.emptyList());
+            } else {
+                allModsToDiff.put(m, d);
+            }
+        });
+        return allModsToDiff;
+    }
+
+    private static ResourcePool addDiffResourcesFiles(Set<String> modules, Map<String, List<ResourceDiff>> perModDiffs, ResourcePool resultResources, BasicImageWriter writer) {
+        ResourcePoolManager mgr = createPoolManager(resultResources, writer);
+        ResourcePoolBuilder out = mgr.resourcePoolBuilder();
+        modules.stream().sorted().forEach(module -> {
+            String mResource = String.format(DIFF_PATH, module);
+            List<ResourceDiff> diff = perModDiffs.get(module);
+            if (diff == null) {
+                // We create empty resource files for modules in the resource
+                // pool view, but which don't themselves have a diff to packaged
+                // modules
+                out.add(ResourcePoolEntry.create(mResource, EMPTY_RESOURCE_BYTES));
+            } else {
+                ByteArrayOutputStream bout = new ByteArrayOutputStream();
+                try {
+                    ResourceDiff.write(diff, bout);
+                } catch (IOException e) {
+                    throw new AssertionError("Failed to write resource diff file for module " + module, e);
+                }
+                out.add(ResourcePoolEntry.create(mResource, bout.toByteArray()));
+            }
+        });
+        return out.build();
     }
 
     private static ResourcePool addNonClassResourcesTrackFiles(ResourcePool resultResources, BasicImageWriter writer) {

@@ -33,6 +33,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * Class representing a difference between a jimage resource. For all intents
@@ -267,4 +268,23 @@ public class ResourceDiff implements Comparable<ResourceDiff> {
         }
         return b;
     }
+
+    public static void printDiffs(List<ResourceDiff> diffs) {
+        for (ResourceDiff diff: diffs.stream().sorted().collect(Collectors.toList())) {
+            switch (diff.getKind()) {
+            case ADDED:
+                System.out.println("Only added in opt: " + diff.getName());
+                break;
+            case MODIFIED:
+                System.out.println("Modified in opt: " + diff.getName());
+                break;
+            case REMOVED:
+                System.out.println("Removed in opt: " + diff.getName());
+                break;
+            default:
+                break;
+            }
+        }
+    }
+
 }

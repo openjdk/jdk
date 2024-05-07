@@ -685,18 +685,24 @@ public class VMProps implements Callable<Map<String, String>> {
     }
 
     private String runtimeLinkable() {
-        // Only runtime-linkable JDK images have the delta file with the
-        // appropriate integer header in the JDK tree.
-        Path deltaFile = Path.of(System.getProperty("java.home"),
-                                 "lib",
-                                 "runtime-image-link.delta");
-        try (DataInputStream din = new DataInputStream(new FileInputStream(deltaFile.toFile()))) {
-            int header = din.readInt();
-            int expected = 0xabba;
-            if (header == expected) {
-                return Boolean.TRUE.toString();
-            } else {
+        // jdk.jlink module has the following resource indicating a runtime-linkable
+        // image. It's the diff file for runtime linking of the java.base module.
+        String linkableRuntimeResource = "jdk/tools/jlink/internal/runtimelink/diff_java.base";
+        try {
+            ModuleFinder finder = ModuleFinder.ofSystem();
+            Optional<ModuleReference> ref = finder.find("jdk.jlink");
+            if (ref.isEmpty()) {
+                // No jdk.jlink in the current image
                 return Boolean.FALSE.toString();
+            }
+            try (ModuleReader reader = ref.get().open()) {
+                Optional<InputStream> inOpt = reader.open(linkableRuntimeResource);
+                if (inOpt.isPresent()) {
+                    inOpt.get().close();
+                    return Boolean.TRUE.toString();
+                } else {
+                    return Boolean.FALSE.toString();
+                }
             }
         } catch (Throwable t) {
             return Boolean.FALSE.toString();

@@ -71,8 +71,6 @@ import tests.JImageGenerator;
  */
 public class IntegrationTest {
 
-    private static final List<Integer> ordered = new ArrayList<>();
-
     public static class MyPostProcessor implements PostProcessor, Plugin {
 
         public static final String NAME = "mypostprocessor";
@@ -159,7 +157,7 @@ public class IntegrationTest {
         limits.add("java.management");
         JlinkConfiguration config = new Jlink.JlinkConfiguration(output,
                 mods,
-                JlinkTask.newModuleFinder(modulePaths, limits, mods), false, true);
+                JlinkTask.newModuleFinder(modulePaths, limits, mods), false, false, false);
 
         List<Plugin> lst = new ArrayList<>();
 
