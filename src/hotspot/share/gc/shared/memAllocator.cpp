@@ -147,7 +147,7 @@ void MemAllocator::Allocation::verify_before() {
   JavaThread* THREAD = _thread; // For exception macros.
   assert(!HAS_PENDING_EXCEPTION, "Should not allocate with exception pending");
   debug_only(check_for_valid_allocation_state());
-  assert(!Universe::heap()->is_gc_active(), "Allocation during gc not allowed");
+  assert(!Universe::heap()->is_stw_gc_active(), "Allocation during GC pause not allowed");
 }
 
 #ifdef ASSERT
@@ -318,7 +318,15 @@ HeapWord* MemAllocator::mem_allocate_inside_tlab_slow(Allocation& allocation) co
   return mem;
 }
 
-HeapWord* MemAllocator::mem_allocate_slow(Allocation& allocation) const {
+HeapWord* MemAllocator::mem_allocate(Allocation& allocation) const {
+  if (UseTLAB) {
+    // Try allocating from an existing TLAB.
+    HeapWord* mem = mem_allocate_inside_tlab_fast();
+    if (mem != nullptr) {
+      return mem;
+    }
+  }
+
   // Allocation of an oop can always invoke a safepoint.
   debug_only(allocation._thread->check_for_valid_safepoint_state());
 
@@ -331,18 +339,6 @@ HeapWord* MemAllocator::mem_allocate_slow(Allocation& allocation) const {
   }
 
   return mem_allocate_outside_tlab(allocation);
-}
-
-HeapWord* MemAllocator::mem_allocate(Allocation& allocation) const {
-  if (UseTLAB) {
-    // Try allocating from an existing TLAB.
-    HeapWord* mem = mem_allocate_inside_tlab_fast();
-    if (mem != nullptr) {
-      return mem;
-    }
-  }
-
-  return mem_allocate_slow(allocation);
 }
 
 oop MemAllocator::allocate() const {

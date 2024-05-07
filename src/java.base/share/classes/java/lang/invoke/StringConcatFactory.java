@@ -1124,7 +1124,7 @@ public final class StringConcatFactory {
                         }
                     }
                     len += args.parameterCount() * ARGUMENT_SIZE_FACTOR;
-                    cb.constantInstruction(len);
+                    cb.loadConstant(len);
                     cb.invokespecial(STRING_BUILDER, "<init>", INT_CONSTRUCTOR_TYPE);
 
                     // At this point, we have a blank StringBuilder on stack, fill it in with .append calls.
@@ -1137,7 +1137,7 @@ public final class StringConcatFactory {
                             }
                             Class<?> cl = args.parameterType(c);
                             TypeKind kind = TypeKind.from(cl);
-                            cb.loadInstruction(kind, off);
+                            cb.loadLocal(kind, off);
                             off += kind.slotSize();
                             MethodTypeDesc desc = getSBAppendDesc(cl);
                             cb.invokevirtual(STRING_BUILDER, "append", desc);

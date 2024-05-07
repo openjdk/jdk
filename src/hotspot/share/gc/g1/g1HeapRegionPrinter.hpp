@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,19 +22,16 @@
  *
  */
 
-#ifndef SHARE_GC_G1_G1HRPRINTER_HPP
-#define SHARE_GC_G1_G1HRPRINTER_HPP
+#ifndef SHARE_GC_G1_G1HEAPREGIONPRINTER_HPP
+#define SHARE_GC_G1_G1HEAPREGIONPRINTER_HPP
 
 #include "gc/g1/g1HeapRegion.hpp"
 #include "logging/log.hpp"
-
-#define SKIP_RETIRED_FULL_REGIONS 1
+#include "memory/allStatic.hpp"
 
 class FreeRegionList;
 
-class G1HRPrinter {
-
-private:
+class G1HeapRegionPrinter : public AllStatic {
 
   // Print an action event.
   static void print(const char* action, HeapRegion* hr) {
@@ -42,83 +39,43 @@ private:
                           action, hr->get_type_str(), p2i(hr->bottom()), p2i(hr->top()), p2i(hr->end()));
   }
 
+  static void mark_reclaim(HeapRegion* hr) {
+    print("MARK-RECLAIM", hr);
+  }
+
 public:
   // In some places we iterate over a list in order to generate output
   // for the list's elements. By exposing this we can avoid this
   // iteration if the printer is not active.
-  bool is_active() { return log_is_enabled(Trace, gc, region); }
+  static bool is_active() { return log_is_enabled(Trace, gc, region); }
 
   // The methods below are convenient wrappers for the print() method.
 
-  void alloc(HeapRegion* hr, bool force = false) {
-    if (is_active()) {
-      print((force) ? "ALLOC-FORCE" : "ALLOC", hr);
-    }
-  }
+  static void alloc(HeapRegion* hr)                     { print("ALLOC", hr); }
 
-  void retire(HeapRegion* hr) {
-    if (is_active()) {
-      if (!SKIP_RETIRED_FULL_REGIONS || hr->top() < hr->end()) {
-        print("RETIRE", hr);
-      }
-    }
-  }
+  static void retire(HeapRegion* hr)                    { print("RETIRE", hr); }
 
-  void reuse(HeapRegion* hr) {
-    if (is_active()) {
-      print("REUSE", hr);
-    }
-  }
+  static void reuse(HeapRegion* hr)                     { print("REUSE", hr); }
 
-  void cset(HeapRegion* hr) {
-    if (is_active()) {
-      print("CSET", hr);
-    }
-  }
+  static void cset(HeapRegion* hr)                      { print("CSET", hr); }
 
-  void evac_failure(HeapRegion* hr) {
-    if (is_active()) {
-      print("EVAC-FAILURE", hr);
-    }
-  }
+  static void evac_failure(HeapRegion* hr)              { print("EVAC-FAILURE", hr); }
 
-  void cleanup(HeapRegion* hr) {
-    if (is_active()) {
-      print("CLEANUP", hr);
-    }
-  }
+  static void mark_reclaim(FreeRegionList* free_list);
 
-  void cleanup(FreeRegionList* free_list);
+  static void eager_reclaim(HeapRegion* hr)             { print("EAGER-RECLAIM", hr); }
 
-  void post_compaction(HeapRegion* hr) {
-    if (is_active()) {
-      print("POST-COMPACTION", hr);
-    }
-  }
+  static void evac_reclaim(HeapRegion* hr)              { print("EVAC-RECLAIM", hr); }
 
-  void commit(HeapRegion* hr) {
-    if (is_active()) {
-      print("COMMIT", hr);
-    }
-  }
+  static void post_compaction(HeapRegion* hr)           { print("POST-COMPACTION", hr); }
 
-  void active(HeapRegion* hr) {
-    if (is_active()) {
-      print("ACTIVE", hr);
-    }
-  }
+  static void commit(HeapRegion* hr)                    { print("COMMIT", hr); }
 
-  void inactive(HeapRegion* hr) {
-    if (is_active()) {
-      print("INACTIVE", hr);
-    }
-  }
+  static void active(HeapRegion* hr)                    { print("ACTIVE", hr); }
 
-  void uncommit(HeapRegion* hr) {
-    if (is_active()) {
-      print("UNCOMMIT", hr);
-    }
-  }
+  static void inactive(HeapRegion* hr)                  { print("INACTIVE", hr); }
+
+  static void uncommit(HeapRegion* hr)                  { print("UNCOMMIT", hr); }
 };
 
-#endif // SHARE_GC_G1_G1HRPRINTER_HPP
+#endif // SHARE_GC_G1_G1HEAPREGIONPRINTER_HPP

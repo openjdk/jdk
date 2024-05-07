@@ -54,7 +54,7 @@
 ArenaStatCounter::ArenaStatCounter() :
   _current(0), _start(0), _peak(0),
   _na(0), _ra(0),
-  _limit(0), _hit_limit(false),
+  _limit(0), _hit_limit(false), _limit_in_process(false),
   _na_at_peak(0), _ra_at_peak(0), _live_nodes_at_peak(0)
 {}
 
@@ -483,17 +483,22 @@ void CompilationMemoryStatistic::on_arena_change(ssize_t diff, const Arena* aren
   CompilerThread* const th = Thread::current()->as_Compiler_thread();
 
   ArenaStatCounter* const arena_stat = th->arena_stat();
+  if (arena_stat->limit_in_process()) {
+    return; // avoid recursion on limit hit
+  }
+
   bool hit_limit_before = arena_stat->hit_limit();
 
   if (arena_stat->account(diff, (int)arena->get_tag())) { // new peak?
 
     // Limit handling
     if (arena_stat->hit_limit()) {
-
       char name[1024] = "";
       bool print = false;
       bool crash = false;
       CompilerType ct = compiler_none;
+
+      arena_stat->set_limit_in_process(true); // prevent recursive limit hits
 
       // get some more info
       const CompileTask* const task = th->task();
@@ -533,6 +538,8 @@ void CompilationMemoryStatistic::on_arena_change(ssize_t diff, const Arena* aren
       } else {
         inform_compilation_about_oom(ct);
       }
+
+      arena_stat->set_limit_in_process(false);
     }
   }
 }
