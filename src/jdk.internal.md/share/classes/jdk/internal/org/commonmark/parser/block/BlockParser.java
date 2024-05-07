@@ -66,6 +66,10 @@ public interface BlockParser {
 
     BlockContinue tryContinue(ParserState parserState);
 
+    /**
+     * Add the part of a line that belongs to this block parser to parse (i.e. without any container block markers).
+     * Note that the line will only include a {@link SourceLine#getSourceSpan()} if source spans are enabled for inlines.
+     */
     void addLine(SourceLine line);
 
     /**

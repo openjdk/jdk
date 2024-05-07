@@ -32,8 +32,8 @@
 
 package jdk.internal.org.commonmark.internal;
 
-import jdk.internal.org.commonmark.internal.inline.Position;
 import jdk.internal.org.commonmark.node.Text;
+import jdk.internal.org.commonmark.parser.beta.Position;
 
 /**
  * Opening bracket for links (<code>[</code>) or images (<code>![</code>).

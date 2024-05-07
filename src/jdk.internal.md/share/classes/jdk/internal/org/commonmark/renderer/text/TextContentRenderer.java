@@ -41,6 +41,9 @@ import jdk.internal.org.commonmark.renderer.Renderer;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Renders nodes to plain text content with minimal markup-like additions.
+ */
 public class TextContentRenderer implements Renderer {
 
     private final boolean stripNewlines;
@@ -62,7 +65,7 @@ public class TextContentRenderer implements Renderer {
     }
 
     /**
-     * Create a new builder for configuring an {@link TextContentRenderer}.
+     * Create a new builder for configuring a {@link TextContentRenderer}.
      *
      * @return a builder
      */
@@ -84,7 +87,7 @@ public class TextContentRenderer implements Renderer {
     }
 
     /**
-     * Builder for configuring an {@link TextContentRenderer}. See methods for default configuration.
+     * Builder for configuring a {@link TextContentRenderer}. See methods for default configuration.
      */
     public static class Builder {
 

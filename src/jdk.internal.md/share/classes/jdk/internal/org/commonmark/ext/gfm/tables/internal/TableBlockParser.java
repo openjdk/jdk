@@ -33,7 +33,6 @@
 package jdk.internal.org.commonmark.ext.gfm.tables.internal;
 
 import jdk.internal.org.commonmark.ext.gfm.tables.*;
-import jdk.internal.org.commonmark.internal.util.Parsing;
 import jdk.internal.org.commonmark.node.Block;
 import jdk.internal.org.commonmark.node.Node;
 import jdk.internal.org.commonmark.node.SourceSpan;
@@ -41,6 +40,7 @@ import jdk.internal.org.commonmark.parser.InlineParser;
 import jdk.internal.org.commonmark.parser.SourceLine;
 import jdk.internal.org.commonmark.parser.SourceLines;
 import jdk.internal.org.commonmark.parser.block.*;
+import jdk.internal.org.commonmark.text.Characters;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -49,11 +49,11 @@ public class TableBlockParser extends AbstractBlockParser {
 
     private final TableBlock block = new TableBlock();
     private final List<SourceLine> rowLines = new ArrayList<>();
-    private final List<TableCell.Alignment> columns;
+    private final List<TableCellInfo> columns;
 
     private boolean canHaveLazyContinuationLines = true;
 
-    private TableBlockParser(List<TableCell.Alignment> columns, SourceLine headerLine) {
+    private TableBlockParser(List<TableCellInfo> columns, SourceLine headerLine) {
         this.columns = columns;
         this.rowLines.add(headerLine);
     }
@@ -71,11 +71,11 @@ public class TableBlockParser extends AbstractBlockParser {
     @Override
     public BlockContinue tryContinue(ParserState state) {
         CharSequence content = state.getLine().getContent();
-        int pipe = Parsing.find('|', content, state.getNextNonSpaceIndex());
+        int pipe = Characters.find('|', content, state.getNextNonSpaceIndex());
         if (pipe != -1) {
             if (pipe == state.getNextNonSpaceIndex()) {
                 // If we *only* have a pipe character (and whitespace), that is not a valid table row and ends the table.
-                if (Parsing.skipSpaceTab(content, pipe + 1, content.length()) == content.length()) {
+                if (Characters.skipSpaceTab(content, pipe + 1, content.length()) == content.length()) {
                     // We also don't want the pipe to be added via lazy continuation.
                     canHaveLazyContinuationLines = false;
                     return BlockContinue.none();
@@ -152,12 +152,14 @@ public class TableBlockParser extends AbstractBlockParser {
         }
 
         if (column < columns.size()) {
-            tableCell.setAlignment(columns.get(column));
+            TableCellInfo cellInfo = columns.get(column);
+            tableCell.setAlignment(cellInfo.getAlignment());
+            tableCell.setWidth(cellInfo.getWidth());
         }
 
         CharSequence content = cell.getContent();
-        int start = Parsing.skipSpaceTab(content, 0, content.length());
-        int end = Parsing.skipSpaceTabBackwards(content, content.length() - 1, start);
+        int start = Characters.skipSpaceTab(content, 0, content.length());
+        int end = Characters.skipSpaceTabBackwards(content, content.length() - 1, start);
         inlineParser.parse(SourceLines.of(cell.substring(start, end + 1)), tableCell);
 
         return tableCell;
@@ -165,14 +167,14 @@ public class TableBlockParser extends AbstractBlockParser {
 
     private static List<SourceLine> split(SourceLine line) {
         CharSequence row = line.getContent();
-        int nonSpace = Parsing.skipSpaceTab(row, 0, row.length());
+        int nonSpace = Characters.skipSpaceTab(row, 0, row.length());
         int cellStart = nonSpace;
         int cellEnd = row.length();
         if (row.charAt(nonSpace) == '|') {
             // This row has leading/trailing pipes - skip the leading pipe
             cellStart = nonSpace + 1;
             // Strip whitespace from the end but not the pipe or we could miss an empty ("||") cell
-            int nonSpaceEnd = Parsing.skipSpaceTabBackwards(row, row.length() - 1, cellStart);
+            int nonSpaceEnd = Characters.skipSpaceTabBackwards(row, row.length() - 1, cellStart);
             cellEnd = nonSpaceEnd + 1;
         }
         List<SourceLine> cells = new ArrayList<>();
@@ -219,11 +221,12 @@ public class TableBlockParser extends AbstractBlockParser {
     // -|-
     // |-|-|
     // --- | ---
-    private static List<TableCell.Alignment> parseSeparator(CharSequence s) {
-        List<TableCell.Alignment> columns = new ArrayList<>();
+    private static List<TableCellInfo> parseSeparator(CharSequence s) {
+        List<TableCellInfo> columns = new ArrayList<>();
         int pipes = 0;
         boolean valid = false;
         int i = 0;
+        int width = 0;
         while (i < s.length()) {
             char c = s.charAt(i);
             switch (c) {
@@ -248,10 +251,12 @@ public class TableBlockParser extends AbstractBlockParser {
                     if (c == ':') {
                         left = true;
                         i++;
+                        width++;
                     }
                     boolean haveDash = false;
                     while (i < s.length() && s.charAt(i) == '-') {
                         i++;
+                        width++;
                         haveDash = true;
                     }
                     if (!haveDash) {
@@ -261,8 +266,10 @@ public class TableBlockParser extends AbstractBlockParser {
                     if (i < s.length() && s.charAt(i) == ':') {
                         right = true;
                         i++;
+                        width++;
                     }
-                    columns.add(getAlignment(left, right));
+                    columns.add(new TableCellInfo(getAlignment(left, right), width));
+                    width = 0;
                     // Next, need another pipe
                     pipes = 0;
                     break;
@@ -299,10 +306,10 @@ public class TableBlockParser extends AbstractBlockParser {
         @Override
         public BlockStart tryStart(ParserState state, MatchedBlockParser matchedBlockParser) {
             List<SourceLine> paragraphLines = matchedBlockParser.getParagraphLines().getLines();
-            if (paragraphLines.size() == 1 && Parsing.find('|', paragraphLines.get(0).getContent(), 0) != -1) {
+            if (paragraphLines.size() == 1 && Characters.find('|', paragraphLines.get(0).getContent(), 0) != -1) {
                 SourceLine line = state.getLine();
                 SourceLine separatorLine = line.substring(state.getIndex(), line.getContent().length());
-                List<TableCell.Alignment> columns = parseSeparator(separatorLine.getContent());
+                List<TableCellInfo> columns = parseSeparator(separatorLine.getContent());
                 if (columns != null && !columns.isEmpty()) {
                     SourceLine paragraph = paragraphLines.get(0);
                     List<SourceLine> headerCells = split(paragraph);
@@ -314,6 +321,24 @@ public class TableBlockParser extends AbstractBlockParser {
                 }
             }
             return BlockStart.none();
+        }
+    }
+
+    private static class TableCellInfo {
+        private final TableCell.Alignment alignment;
+        private final int width;
+
+        public TableCell.Alignment getAlignment() {
+            return alignment;
+        }
+
+        public int getWidth() {
+            return width;
+        }
+
+        public TableCellInfo(TableCell.Alignment alignment, int width) {
+            this.alignment = alignment;
+            this.width = width;
         }
     }
 }

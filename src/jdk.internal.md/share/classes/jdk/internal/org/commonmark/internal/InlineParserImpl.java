@@ -32,16 +32,17 @@
 
 package jdk.internal.org.commonmark.internal;
 
-import jdk.internal.org.commonmark.internal.inline.Scanner;
 import jdk.internal.org.commonmark.internal.inline.*;
 import jdk.internal.org.commonmark.internal.util.Escaping;
 import jdk.internal.org.commonmark.internal.util.LinkScanner;
-import jdk.internal.org.commonmark.internal.util.Parsing;
 import jdk.internal.org.commonmark.node.*;
 import jdk.internal.org.commonmark.parser.InlineParser;
 import jdk.internal.org.commonmark.parser.InlineParserContext;
 import jdk.internal.org.commonmark.parser.SourceLines;
+import jdk.internal.org.commonmark.parser.beta.Position;
+import jdk.internal.org.commonmark.parser.beta.Scanner;
 import jdk.internal.org.commonmark.parser.delimiter.DelimiterProcessor;
+import jdk.internal.org.commonmark.text.Characters;
 
 import java.util.*;
 
@@ -514,12 +515,12 @@ public class InlineParserImpl implements InlineParser, InlineParserState {
 
         if (c == '\n') {
             // We parsed until the end of the line. Trim any trailing spaces and remember them (for hard line breaks).
-            int end = Parsing.skipBackwards(' ', content, content.length() - 1, 0) + 1;
+            int end = Characters.skipBackwards(' ', content, content.length() - 1, 0) + 1;
             trailingSpaces = content.length() - end;
             content = content.substring(0, end);
         } else if (c == Scanner.END) {
             // For the last line, both tabs and spaces are trimmed for some reason (checked with commonmark.js).
-            int end = Parsing.skipSpaceTabBackwards(content, content.length() - 1, 0) + 1;
+            int end = Characters.skipSpaceTabBackwards(content, content.length() - 1, 0) + 1;
             content = content.substring(0, end);
         }
 
@@ -557,10 +558,10 @@ public class InlineParserImpl implements InlineParser, InlineParserState {
         int after = scanner.peekCodePoint();
 
         // We could be more lazy here, in most cases we don't need to do every match case.
-        boolean beforeIsPunctuation = before == Scanner.END || Parsing.isPunctuationCodePoint(before);
-        boolean beforeIsWhitespace = before == Scanner.END || Parsing.isWhitespaceCodePoint(before);
-        boolean afterIsPunctuation = after == Scanner.END || Parsing.isPunctuationCodePoint(after);
-        boolean afterIsWhitespace = after == Scanner.END || Parsing.isWhitespaceCodePoint(after);
+        boolean beforeIsPunctuation = before == Scanner.END || Characters.isPunctuationCodePoint(before);
+        boolean beforeIsWhitespace = before == Scanner.END || Characters.isWhitespaceCodePoint(before);
+        boolean afterIsPunctuation = after == Scanner.END || Characters.isPunctuationCodePoint(after);
+        boolean afterIsWhitespace = after == Scanner.END || Characters.isWhitespaceCodePoint(after);
 
         boolean leftFlanking = !afterIsWhitespace &&
                 (!afterIsPunctuation || beforeIsWhitespace || beforeIsPunctuation);

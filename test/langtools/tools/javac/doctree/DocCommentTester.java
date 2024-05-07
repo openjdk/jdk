@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import javax.lang.model.element.Name;
+import javax.lang.model.util.Elements;
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
@@ -990,8 +991,8 @@ public class DocCommentTester {
             }
             boolean normalizeTags = !annos.contains("@NormalizeTags(false)");
 
-            DocTrees.CommentKind ck = trees.getDocCommentKind(path);
-            boolean isLineComment = ck == DocTrees.CommentKind.LINE;
+            Elements.DocCommentKind ck = trees.getDocCommentKind(path);
+            boolean isLineComment = ck == Elements.DocCommentKind.END_OF_LINE;
             String raw = trees.getDocComment(path).stripTrailing();
             String normRaw = normalize(raw, isLineComment, normalizeTags);
 

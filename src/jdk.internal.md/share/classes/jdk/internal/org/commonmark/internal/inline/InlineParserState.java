@@ -32,6 +32,9 @@
 
 package jdk.internal.org.commonmark.internal.inline;
 
+import jdk.internal.org.commonmark.parser.beta.Position;
+import jdk.internal.org.commonmark.parser.beta.Scanner;
+
 public interface InlineParserState {
 
     /**

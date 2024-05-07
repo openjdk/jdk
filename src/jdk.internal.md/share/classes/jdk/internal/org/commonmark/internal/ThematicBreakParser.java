@@ -40,6 +40,10 @@ public class ThematicBreakParser extends AbstractBlockParser {
 
     private final ThematicBreak block = new ThematicBreak();
 
+    public ThematicBreakParser(String literal) {
+        block.setLiteral(literal);
+    }
+
     @Override
     public Block getBlock() {
         return block;
@@ -61,7 +65,8 @@ public class ThematicBreakParser extends AbstractBlockParser {
             int nextNonSpace = state.getNextNonSpaceIndex();
             CharSequence line = state.getLine().getContent();
             if (isThematicBreak(line, nextNonSpace)) {
-                return BlockStart.of(new ThematicBreakParser()).atIndex(line.length());
+                var literal = String.valueOf(line.subSequence(state.getIndex(), line.length()));
+                return BlockStart.of(new ThematicBreakParser(literal)).atIndex(line.length());
             } else {
                 return BlockStart.none();
             }

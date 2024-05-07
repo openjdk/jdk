@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@ package com.sun.tools.javac.parser;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import javax.lang.model.util.Elements.DocCommentKind;
 
 import com.sun.source.doctree.DocCommentTree;
 
@@ -71,6 +73,16 @@ public class LazyDocCommentTable implements DocCommentTable {
     public Comment getComment(JCTree tree) {
         Entry e = table.get(tree);
         return (e == null) ? null : e.comment;
+    }
+
+    @Override
+    public DocCommentKind getCommentKind(JCTree tree) {
+        Comment c = getComment(tree);
+        return (c == null) ? null : switch (c.getStyle()) {
+            case JAVADOC_BLOCK -> DocCommentKind.TRADITIONAL;
+            case JAVADOC_LINE -> DocCommentKind.END_OF_LINE;
+            default -> throw new IllegalStateException(c.getStyle().toString());
+        };
     }
 
     @Override

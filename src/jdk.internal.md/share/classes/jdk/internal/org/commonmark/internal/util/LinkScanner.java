@@ -32,7 +32,7 @@
 
 package jdk.internal.org.commonmark.internal.util;
 
-import jdk.internal.org.commonmark.internal.inline.Scanner;
+import jdk.internal.org.commonmark.parser.beta.Scanner;
 
 public class LinkScanner {
 
@@ -46,7 +46,7 @@ public class LinkScanner {
             switch (scanner.peek()) {
                 case '\\':
                     scanner.next();
-                    if (Parsing.isEscapable(scanner.peek())) {
+                    if (isEscapable(scanner.peek())) {
                         scanner.next();
                     }
                     break;
@@ -76,7 +76,7 @@ public class LinkScanner {
                 switch (scanner.peek()) {
                     case '\\':
                         scanner.next();
-                        if (Parsing.isEscapable(scanner.peek())) {
+                        if (isEscapable(scanner.peek())) {
                             scanner.next();
                         }
                         break;
@@ -132,7 +132,7 @@ public class LinkScanner {
             char c = scanner.peek();
             if (c == '\\') {
                 scanner.next();
-                if (Parsing.isEscapable(scanner.peek())) {
+                if (isEscapable(scanner.peek())) {
                     scanner.next();
                 }
             } else if (c == endDelimiter) {
@@ -160,7 +160,7 @@ public class LinkScanner {
                     return !empty;
                 case '\\':
                     scanner.next();
-                    if (Parsing.isEscapable(scanner.peek())) {
+                    if (isEscapable(scanner.peek())) {
                         scanner.next();
                     }
                     break;
@@ -191,5 +191,44 @@ public class LinkScanner {
             empty = false;
         }
         return true;
+    }
+
+    private static boolean isEscapable(char c) {
+        switch (c) {
+            case '!':
+            case '"':
+            case '#':
+            case '$':
+            case '%':
+            case '&':
+            case '\'':
+            case '(':
+            case ')':
+            case '*':
+            case '+':
+            case ',':
+            case '-':
+            case '.':
+            case '/':
+            case ':':
+            case ';':
+            case '<':
+            case '=':
+            case '>':
+            case '?':
+            case '@':
+            case '[':
+            case '\\':
+            case ']':
+            case '^':
+            case '_':
+            case '`':
+            case '{':
+            case '|':
+            case '}':
+            case '~':
+                return true;
+        }
+        return false;
     }
 }

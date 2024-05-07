@@ -1155,7 +1155,7 @@ public abstract class HtmlDocletWriter {
 
         if (utils.isExecutableElement(element)) {
             ExecutableElement ee = (ExecutableElement)element;
-            HtmlId id = isProperty ? htmlIds.forProperty(ee) : htmlIds.forMember(ee);
+            HtmlId id = isProperty ? htmlIds.forProperty(ee) : htmlIds.forMember(ee).getFirst();
             return getLink(new HtmlLinkInfo(configuration, context, typeElement)
                 .label(label)
                 .fragment(id.name())
@@ -1965,6 +1965,7 @@ public abstract class HtmlDocletWriter {
      * @return the output
      */
     public Content invalidTagOutput(String summary, Optional<Content> detail) {
+        messages.setContainsDiagnosticMarkers();
         if (detail.isEmpty() || detail.get().isEmpty()) {
             return HtmlTree.SPAN(HtmlStyle.invalidTag, Text.of(summary));
         }

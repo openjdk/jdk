@@ -37,6 +37,7 @@ import jdk.internal.org.commonmark.node.*;
 import jdk.internal.org.commonmark.parser.*;
 import jdk.internal.org.commonmark.parser.block.*;
 import jdk.internal.org.commonmark.parser.delimiter.DelimiterProcessor;
+import jdk.internal.org.commonmark.text.Characters;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -144,7 +145,7 @@ public class DocumentParser implements ParserState {
     public Document parse(String input) {
         int lineStart = 0;
         int lineBreak;
-        while ((lineBreak = Parsing.findLineBreak(input, lineStart)) != -1) {
+        while ((lineBreak = Characters.findLineBreak(input, lineStart)) != -1) {
             String line = input.substring(lineStart, lineBreak);
             parseLine(line);
             if (lineBreak + 1 < input.length() && input.charAt(lineBreak) == '\r' && input.charAt(lineBreak + 1) == '\n') {
@@ -262,7 +263,7 @@ public class DocumentParser implements ParserState {
             findNextNonSpace();
 
             // this is a little performance optimization:
-            if (isBlank() || (indent < Parsing.CODE_BLOCK_INDENT && Parsing.isLetter(this.line.getContent(), nextNonSpace))) {
+            if (isBlank() || (indent < Parsing.CODE_BLOCK_INDENT && Characters.isLetter(this.line.getContent(), nextNonSpace))) {
                 setNewIndex(nextNonSpace);
                 break;
             }
@@ -347,7 +348,7 @@ public class DocumentParser implements ParserState {
         column = 0;
         columnIsInTab = false;
 
-        CharSequence lineContent = Parsing.prepareLine(ln);
+        CharSequence lineContent = prepareLine(ln);
         SourceSpan sourceSpan = null;
         if (includeSourceSpans != IncludeSourceSpans.NONE) {
             sourceSpan = SourceSpan.of(lineIndex, 0, lineContent.length());
@@ -571,6 +572,35 @@ public class DocumentParser implements ParserState {
             // separate interface (e.g. BlockParserWithInlines) so that we only have to remember those that actually
             // have inlines to parse.
             allBlockParsers.add(blockParser);
+        }
+    }
+
+    /**
+     * Prepares the input line replacing {@code \0}
+     */
+    private static CharSequence prepareLine(CharSequence line) {
+        // Avoid building a new string in the majority of cases (no \0)
+        StringBuilder sb = null;
+        int length = line.length();
+        for (int i = 0; i < length; i++) {
+            char c = line.charAt(i);
+            if (c == '\0') {
+                if (sb == null) {
+                    sb = new StringBuilder(length);
+                    sb.append(line, 0, i);
+                }
+                sb.append('\uFFFD');
+            } else {
+                if (sb != null) {
+                    sb.append(c);
+                }
+            }
+        }
+
+        if (sb != null) {
+            return sb.toString();
+        } else {
+            return line;
         }
     }
 

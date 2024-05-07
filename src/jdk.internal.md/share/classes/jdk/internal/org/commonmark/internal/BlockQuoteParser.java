@@ -36,6 +36,7 @@ import jdk.internal.org.commonmark.internal.util.Parsing;
 import jdk.internal.org.commonmark.node.Block;
 import jdk.internal.org.commonmark.node.BlockQuote;
 import jdk.internal.org.commonmark.parser.block.*;
+import jdk.internal.org.commonmark.text.Characters;
 
 public class BlockQuoteParser extends AbstractBlockParser {
 
@@ -62,7 +63,7 @@ public class BlockQuoteParser extends AbstractBlockParser {
         if (isMarker(state, nextNonSpace)) {
             int newColumn = state.getColumn() + state.getIndent() + 1;
             // optional following space or tab
-            if (Parsing.isSpaceOrTab(state.getLine().getContent(), nextNonSpace + 1)) {
+            if (Characters.isSpaceOrTab(state.getLine().getContent(), nextNonSpace + 1)) {
                 newColumn++;
             }
             return BlockContinue.atColumn(newColumn);
@@ -82,7 +83,7 @@ public class BlockQuoteParser extends AbstractBlockParser {
             if (isMarker(state, nextNonSpace)) {
                 int newColumn = state.getColumn() + state.getIndent() + 1;
                 // optional following space or tab
-                if (Parsing.isSpaceOrTab(state.getLine().getContent(), nextNonSpace + 1)) {
+                if (Characters.isSpaceOrTab(state.getLine().getContent(), nextNonSpace + 1)) {
                     newColumn++;
                 }
                 return BlockStart.of(new BlockQuoteParser()).atColumn(newColumn);

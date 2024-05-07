@@ -35,16 +35,16 @@ package jdk.internal.org.commonmark.internal.renderer.text;
 import jdk.internal.org.commonmark.node.OrderedList;
 
 public class OrderedListHolder extends ListHolder {
-    private final char delimiter;
+    private final String delimiter;
     private int counter;
 
     public OrderedListHolder(ListHolder parent, OrderedList list) {
         super(parent);
-        delimiter = list.getDelimiter();
-        counter = list.getStartNumber();
+        delimiter = list.getMarkerDelimiter() != null ? list.getMarkerDelimiter() : ".";
+        counter = list.getMarkerStartNumber() != null ? list.getMarkerStartNumber() : 1;
     }
 
-    public char getDelimiter() {
+    public String getDelimiter() {
         return delimiter;
     }
 

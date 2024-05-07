@@ -32,14 +32,14 @@
 
 package jdk.internal.org.commonmark.internal;
 
-import jdk.internal.org.commonmark.internal.inline.Position;
-import jdk.internal.org.commonmark.internal.inline.Scanner;
 import jdk.internal.org.commonmark.internal.util.Escaping;
 import jdk.internal.org.commonmark.internal.util.LinkScanner;
 import jdk.internal.org.commonmark.node.LinkReferenceDefinition;
 import jdk.internal.org.commonmark.node.SourceSpan;
 import jdk.internal.org.commonmark.parser.SourceLine;
 import jdk.internal.org.commonmark.parser.SourceLines;
+import jdk.internal.org.commonmark.parser.beta.Position;
+import jdk.internal.org.commonmark.parser.beta.Scanner;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -132,6 +132,10 @@ public class LinkReferenceDefinitionParser {
     }
 
     private boolean startDefinition(Scanner scanner) {
+        // Finish any outstanding references now. We don't do this earlier because we need addSourceSpan to have been
+        // called before we do it.
+        finishReference();
+
         scanner.whitespace();
         if (!scanner.next('[')) {
             return false;
@@ -237,7 +241,6 @@ public class LinkReferenceDefinitionParser {
                 title.append('\n');
             }
         } else {
-            finishReference();
             // There might be another reference instead, try that for the same character.
             state = State.START_DEFINITION;
         }
@@ -267,7 +270,6 @@ public class LinkReferenceDefinitionParser {
             return false;
         }
         referenceValid = true;
-        finishReference();
         paragraphLines.clear();
 
         // See if there's another definition.

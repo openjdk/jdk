@@ -33,6 +33,7 @@
 package jdk.internal.org.commonmark.internal.inline;
 
 import jdk.internal.org.commonmark.node.Node;
+import jdk.internal.org.commonmark.parser.beta.Position;
 
 public class ParsedInlineImpl extends ParsedInline {
     private final Node node;

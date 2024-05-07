@@ -38,6 +38,7 @@ import jdk.internal.org.commonmark.node.IndentedCodeBlock;
 import jdk.internal.org.commonmark.node.Paragraph;
 import jdk.internal.org.commonmark.parser.SourceLine;
 import jdk.internal.org.commonmark.parser.block.*;
+import jdk.internal.org.commonmark.text.Characters;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -72,7 +73,7 @@ public class IndentedCodeBlockParser extends AbstractBlockParser {
     public void closeBlock() {
         int lastNonBlank = lines.size() - 1;
         while (lastNonBlank >= 0) {
-            if (!Parsing.isBlank(lines.get(lastNonBlank))) {
+            if (!Characters.isBlank(lines.get(lastNonBlank))) {
                 break;
             }
             lastNonBlank--;

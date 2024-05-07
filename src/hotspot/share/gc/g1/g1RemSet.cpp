@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -531,7 +531,7 @@ class G1ScanHRForRegionClosure : public HeapRegionClosure {
       return;
     }
 
-    HeapWord* scan_end = MIN2(card_start + (num_cards << BOTConstants::log_card_size_in_words()), top);
+    HeapWord* scan_end = MIN2(card_start + (num_cards << (CardTable::card_shift() - LogHeapWordSize)), top);
     if (_scanned_to >= scan_end) {
       return;
     }
@@ -734,17 +734,17 @@ void G1RemSet::scan_heap_roots(G1ParScanThreadState* pss,
   p->record_or_add_thread_work_item(scan_phase, worker_id, cl.heap_roots_found(), G1GCPhaseTimes::ScanHRFoundRoots);
 }
 
-// Wrapper around a CodeBlobClosure to count the number of code blobs scanned.
-class G1ScanAndCountCodeBlobClosure : public CodeBlobClosure {
-  CodeBlobClosure* _cl;
+// Wrapper around a NMethodClosure to count the number of nmethods scanned.
+class G1ScanAndCountNMethodClosure : public NMethodClosure {
+  NMethodClosure* _cl;
   size_t _count;
 
 public:
-  G1ScanAndCountCodeBlobClosure(CodeBlobClosure* cl) : _cl(cl), _count(0) {
+  G1ScanAndCountNMethodClosure(NMethodClosure* cl) : _cl(cl), _count(0) {
   }
 
-  void do_code_blob(CodeBlob* cb) override {
-    _cl->do_code_blob(cb);
+  void do_nmethod(nmethod* nm) override {
+    _cl->do_nmethod(nm);
     _count++;
   }
 
@@ -820,7 +820,7 @@ public:
     {
       EventGCPhaseParallel event;
       G1EvacPhaseWithTrimTimeTracker timer(_pss, _code_root_scan_time, _code_trim_partially_time);
-      G1ScanAndCountCodeBlobClosure cl(_pss->closures()->weak_codeblobs());
+      G1ScanAndCountNMethodClosure cl(_pss->closures()->weak_nmethods());
 
       // Scan the code root list attached to the current region
       r->code_roots_do(&cl);
@@ -1133,7 +1133,7 @@ class G1MergeHeapRootsTask : public WorkerTask {
       // so the bitmap for the regions in the collection set must be cleared if not already.
       if (should_clear_region(hr)) {
         _g1h->clear_bitmap_for_region(hr);
-        hr->reset_top_at_mark_start();
+        _g1h->concurrent_mark()->reset_top_at_mark_start(hr);
       } else {
         assert_bitmap_clear(hr, _g1h->concurrent_mark()->mark_bitmap());
       }

@@ -32,9 +32,11 @@
 
 package jdk.internal.org.commonmark.internal.inline;
 
-import jdk.internal.org.commonmark.internal.util.AsciiMatcher;
+import jdk.internal.org.commonmark.text.AsciiMatcher;
 import jdk.internal.org.commonmark.internal.util.Html5Entities;
 import jdk.internal.org.commonmark.node.Text;
+import jdk.internal.org.commonmark.parser.beta.Position;
+import jdk.internal.org.commonmark.parser.beta.Scanner;
 
 /**
  * Attempts to parse a HTML entity or numeric character reference.

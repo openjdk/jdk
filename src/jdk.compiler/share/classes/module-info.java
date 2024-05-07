@@ -153,6 +153,8 @@ import javax.tools.StandardLocation;
  *                                                      from other files
  * <tr><th scope="row">{@code cast}                 <td>use of unnecessary casts
  * <tr><th scope="row">{@code classfile}            <td>issues related to classfile contents
+ * <tr><th scope="row">{@code dangling-doc-comments} <td>issues related to "dangling" documentation comments,
+ *                                                       not attached to a declaration
  * <tr><th scope="row">{@code deprecation}          <td>use of deprecated items
  * <tr><th scope="row">{@code dep-ann}              <td>items marked as deprecated in a documentation comment but not
  *                                                      using the {@code @Deprecated} annotation

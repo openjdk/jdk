@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -220,6 +220,12 @@ public class DocTreeMaker implements DocTreeFactory {
         // so that here in this code we can just supply a lambda as follows:
         //   i -> Position.NOPOS
         Comment c = new Comment() {
+
+            @Override
+            public JCDiagnostic.DiagnosticPosition getPos() {
+                return null;
+            }
+
             @Override
             public int getSourcePos(int index) {
                 return Position.NOPOS;

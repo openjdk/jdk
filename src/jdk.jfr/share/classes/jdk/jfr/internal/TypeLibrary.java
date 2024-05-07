@@ -263,7 +263,7 @@ public final class TypeLibrary {
         // STRUCT
         String superType = null;
         boolean eventType = false;
-        if (jdk.internal.event.Event.class.isAssignableFrom(clazz)) {
+        if (isEventClass(clazz)) {
             superType = Type.SUPER_TYPE_EVENT;
             eventType= true;
         }
@@ -289,6 +289,16 @@ public final class TypeLibrary {
             type.log("Added", LogTag.JFR_METADATA, LogLevel.INFO);
         }
         return type;
+    }
+
+    private static boolean isEventClass(Class<?> clazz) {
+        if (jdk.internal.event.Event.class.isAssignableFrom(clazz)) {
+            return true;
+        }
+        if (MirrorEvent.class.isAssignableFrom(clazz)) {
+            return true;
+        }
+        return false;
     }
 
     private static void addAnnotations(Class<?> clazz, Type type, List<AnnotationElement> dynamicAnnotations) {
