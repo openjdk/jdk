@@ -132,6 +132,39 @@ public class BigIntegers {
         bh.consume(tmp);
     }
 
+    /** Test divide with huge/small numbers */
+    @Benchmark
+    @OperationsPerInvocation(TESTSIZE * TESTSIZE)
+    public void testHugeSmallDivide(Blackhole bh) {
+        for (BigInteger s : hugeArray) {
+            for (BigInteger t : smallArray) {
+                bh.consume(s.divide(t));
+            }
+        }
+    }
+
+    /** Test divide with large/small numbers */
+    @Benchmark
+    @OperationsPerInvocation(TESTSIZE * TESTSIZE)
+    public void testLargeSmallDivide(Blackhole bh) {
+        for (BigInteger s : largeArray) {
+            for (BigInteger t : smallArray) {
+                bh.consume(s.divide(t));
+            }
+        }
+    }
+
+    /** Test divide with huge/large numbers */
+    @Benchmark
+    @OperationsPerInvocation(TESTSIZE * TESTSIZE)
+    public void testHugeLargeDivide(Blackhole bh) {
+        for (BigInteger s : hugeArray) {
+            for (BigInteger t : largeArray) {
+                bh.consume(s.divide(t));
+            }
+        }
+    }
+
     /** Invokes the multiply method of BigInteger with various different values. */
     @Benchmark
     @OperationsPerInvocation(TESTSIZE)

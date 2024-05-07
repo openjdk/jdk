@@ -194,6 +194,39 @@ public class BigDecimals {
         bh.consume(tmp);
     }
 
+    /** Test divide with huge/small numbers */
+    @Benchmark
+    @OperationsPerInvocation(TEST_SIZE * TEST_SIZE)
+    public void testHugeSmallDivide(Blackhole bh) {
+        for (BigDecimal s : hugeArray) {
+            for (BigDecimal t : smallArray) {
+                bh.consume(s.divide(t, RoundingMode.DOWN));
+            }
+        }
+    }
+
+    /** Test divide with large/small numbers */
+    @Benchmark
+    @OperationsPerInvocation(TEST_SIZE * TEST_SIZE)
+    public void testLargeSmallDivide(Blackhole bh) {
+        for (BigDecimal s : largeArray) {
+            for (BigDecimal t : smallArray) {
+                bh.consume(s.divide(t, RoundingMode.DOWN));
+            }
+        }
+    }
+
+    /** Test divide with huge/large numbers */
+    @Benchmark
+    @OperationsPerInvocation(TEST_SIZE * TEST_SIZE)
+    public void testHugeLargeDivide(Blackhole bh) {
+        for (BigDecimal s : hugeArray) {
+            for (BigDecimal t : largeArray) {
+                bh.consume(s.divide(t, RoundingMode.DOWN));
+            }
+        }
+    }
+
     /** Invokes the compareTo method of BigDecimal with various different values. */
     @Benchmark
     @OperationsPerInvocation(TEST_SIZE - 1)

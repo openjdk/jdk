@@ -5681,17 +5681,8 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         tmp = (dividendHi << shift) | (dividendLo >>> 64 - shift);
         long u2 = tmp & LONG_MASK;
         long q1, r_tmp;
-        if (v1 == 1) {
-            q1 = tmp;
-            r_tmp = 0;
-        } else if (tmp >= 0) {
-            q1 = tmp / v1;
-            r_tmp = tmp - q1 * v1;
-        } else {
-            long[] rq = divRemNegativeLong(tmp, v1);
-            q1 = rq[1];
-            r_tmp = rq[0];
-        }
+        q1 = Long.divideUnsigned(tmp,v1);
+        r_tmp = Long.remainderUnsigned(tmp,v1);
 
         while(q1 >= DIV_NUM_BASE || unsignedLongCompare(q1*v0, make64(r_tmp, u1))) {
             q1--;
@@ -5703,17 +5694,8 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         tmp = mulsub(u2,u1,v1,v0,q1);
         u1 = tmp & LONG_MASK;
         long q0;
-        if (v1 == 1) {
-            q0 = tmp;
-            r_tmp = 0;
-        } else if (tmp >= 0) {
-            q0 = tmp / v1;
-            r_tmp = tmp - q0 * v1;
-        } else {
-            long[] rq = divRemNegativeLong(tmp, v1);
-            q0 = rq[1];
-            r_tmp = rq[0];
-        }
+        q0 = Long.divideUnsigned(tmp,v1);
+        r_tmp = Long.remainderUnsigned(tmp,v1);
 
         while(q0 >= DIV_NUM_BASE || unsignedLongCompare(q0*v0,make64(r_tmp,u0))) {
             q0--;
@@ -5791,37 +5773,6 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             }
             return new BigDecimal(unscaledVal, INFLATED, scale, n+1);
         }
-    }
-
-    /**
-     * Calculate the quotient and remainder of dividing a negative long by
-     * another long.
-     *
-     * @param n the numerator; must be negative
-     * @param d the denominator; must not be unity
-     * @return a two-element {@code long} array with the remainder and quotient in
-     *         the initial and final elements, respectively
-     */
-    private static long[] divRemNegativeLong(long n, long d) {
-        assert n < 0 : "Non-negative numerator " + n;
-        assert d != 1 : "Unity denominator";
-
-        // Approximate the quotient and remainder
-        long q = (n >>> 1) / (d >>> 1);
-        long r = n - q * d;
-
-        // Correct the approximation
-        while (r < 0) {
-            r += d;
-            q--;
-        }
-        while (r >= d) {
-            r -= d;
-            q++;
-        }
-
-        // n - q*d == r && 0 <= r < d, hence we're done.
-        return new long[] {r, q};
     }
 
     private static long make64(long hi, long lo) {
