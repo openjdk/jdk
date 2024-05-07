@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -955,6 +955,7 @@ class SocketChannelImpl
             try {
                 writeLock.lock();
                 try {
+                    ensureOpen();
                     boolean blocking = isBlocking();
                     boolean connected = false;
                     try {
@@ -1053,6 +1054,7 @@ class SocketChannelImpl
                     if (isConnected())
                         return true;
 
+                    ensureOpen();
                     boolean blocking = isBlocking();
                     boolean connected = false;
                     try {

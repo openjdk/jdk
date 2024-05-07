@@ -500,4 +500,16 @@ public:
   void vector_rearrange_int_float(BasicType bt, XMMRegister dst, XMMRegister shuffle,
                                   XMMRegister src, int vlen_enc);
 
+
+  void vgather_subword(BasicType elem_ty, XMMRegister dst,  Register base, Register idx_base, Register offset,
+                       Register mask, XMMRegister xtmp1, XMMRegister xtmp2, XMMRegister xtmp3, Register rtmp,
+                       Register midx, Register length, int vector_len, int vlen_enc);
+
+#ifdef _LP64
+  void vgather8b_masked_offset(BasicType elem_bt, XMMRegister dst, Register base, Register idx_base,
+                               Register offset, Register mask, Register midx, Register rtmp, int vlen_enc);
+#endif
+  void vgather8b_offset(BasicType elem_bt, XMMRegister dst, Register base, Register idx_base,
+                              Register offset, Register rtmp, int vlen_enc);
+
 #endif // CPU_X86_C2_MACROASSEMBLER_X86_HPP

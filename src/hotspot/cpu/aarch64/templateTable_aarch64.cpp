@@ -2355,7 +2355,9 @@ void TemplateTable::load_resolved_field_entry(Register obj,
   __ load_unsigned_byte(flags, Address(cache, in_bytes(ResolvedFieldEntry::flags_offset())));
 
   // TOS state
-  __ load_unsigned_byte(tos_state, Address(cache, in_bytes(ResolvedFieldEntry::type_offset())));
+  if (tos_state != noreg) {
+    __ load_unsigned_byte(tos_state, Address(cache, in_bytes(ResolvedFieldEntry::type_offset())));
+  }
 
   // Klass overwrite register
   if (is_static) {
@@ -3069,13 +3071,9 @@ void TemplateTable::fast_storefield(TosState state)
 
   // access constant pool cache
   __ load_field_entry(r2, r1);
-  __ push(r0);
-  // R1: field offset, R2: TOS, R3: flags
-  load_resolved_field_entry(r2, r2, r0, r1, r3);
-  __ pop(r0);
 
-  // Must prevent reordering of the following cp cache loads with bytecode load
-  __ membar(MacroAssembler::LoadLoad);
+  // R1: field offset, R2: field holder, R3: flags
+  load_resolved_field_entry(r2, r2, noreg, r1, r3);
 
   {
     Label notVolatile;
@@ -3162,9 +3160,6 @@ void TemplateTable::fast_accessfield(TosState state)
 
   // access constant pool cache
   __ load_field_entry(r2, r1);
-
-  // Must prevent reordering of the following cp cache loads with bytecode load
-  __ membar(MacroAssembler::LoadLoad);
 
   __ load_sized_value(r1, Address(r2, in_bytes(ResolvedFieldEntry::field_offset_offset())), sizeof(int), true /*is_signed*/);
   __ load_unsigned_byte(r3, Address(r2, in_bytes(ResolvedFieldEntry::flags_offset())));
@@ -3611,7 +3606,7 @@ void TemplateTable::_new() {
   __ ldrw(r3,
           Address(r4,
                   Klass::layout_helper_offset()));
-  // test to see if it has a finalizer or is malformed in some way
+  // test to see if it is malformed in some way
   __ tbnz(r3, exact_log2(Klass::_lh_instance_slow_path_bit), slow_case);
 
   // Allocate the instance:
