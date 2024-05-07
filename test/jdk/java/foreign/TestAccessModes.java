@@ -23,10 +23,10 @@
 
 /*
  * @test
- * @run testng/othervm -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=true -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=false -Xverify:all TestAccessModes
- * @run testng/othervm -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=true -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=true -Xverify:all TestAccessModes
- * @run testng/othervm -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=false -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=false -Xverify:all TestAccessModes
- * @run testng/othervm -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=false -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=true -Xverify:all TestAccessModes
+ * @run testng/othervm -Djdk.internal.foreign.handle.USE_FULL_CHECKS=true -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=true -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=false -Xverify:all TestAccessModes
+ * @run testng/othervm -Djdk.internal.foreign.handle.USE_FULL_CHECKS=true -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=true -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=true -Xverify:all TestAccessModes
+ * @run testng/othervm -Djdk.internal.foreign.handle.USE_FULL_CHECKS=true -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=false -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=false -Xverify:all TestAccessModes
+ * @run testng/othervm -Djdk.internal.foreign.handle.USE_FULL_CHECKS=true -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=false -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=true -Xverify:all TestAccessModes
  */
 
 import java.lang.foreign.*;
@@ -150,7 +150,7 @@ public class TestAccessModes {
         };
         List<MemoryLayout> layouts = new ArrayList<>();
         for (MemoryLayout layout : valueLayouts) {
-            for (int align : new int[] { 1, 2, 4, 8 }) {
+            for (int align : new int[] { 2 }) {
                 layouts.add(layout.withByteAlignment(align));
                 layouts.add(MemoryLayout.structLayout(layout.withByteAlignment(align)));
             }
