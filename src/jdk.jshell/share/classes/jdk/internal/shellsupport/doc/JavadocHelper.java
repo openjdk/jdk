@@ -57,6 +57,7 @@ import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.Elements;
+import javax.lang.model.util.Elements.DocCommentKind;
 import javax.tools.ForwardingJavaFileManager;
 import javax.tools.JavaCompiler;
 import javax.tools.JavaFileManager;
@@ -82,7 +83,6 @@ import com.sun.source.util.DocSourcePositions;
 import com.sun.source.util.DocTreePath;
 import com.sun.source.util.DocTreeScanner;
 import com.sun.source.util.DocTrees;
-import com.sun.source.util.DocTrees.CommentKind;
 import com.sun.source.util.JavacTask;
 import com.sun.source.util.TreePath;
 import com.sun.source.util.TreePathScanner;
@@ -231,7 +231,7 @@ public abstract class JavadocHelper implements AutoCloseable {
             if (docComment == null)
                 return null;
 
-            CommentKind docCommentKind = trees.getDocCommentKind(el);
+            DocCommentKind docCommentKind = trees.getDocCommentKind(el);
             Pair<DocCommentTree, Integer> parsed = parseDocComment(task, docComment, docCommentKind);
             DocCommentTree docCommentTree = parsed.fst;
             int offset = parsed.snd;
@@ -291,7 +291,7 @@ public abstract class JavadocHelper implements AutoCloseable {
                         if (node.getFullBody().isEmpty()) {
                             //there is no body in the javadoc, add synthetic {@inheritDoc}, which
                             //will be automatically filled in visitInheritDoc:
-                            DocCommentTree dc = parseDocComment(task, "{@inheritDoc}", CommentKind.BLOCK).fst;
+                            DocCommentTree dc = parseDocComment(task, "{@inheritDoc}", DocCommentKind.TRADITIONAL).fst;
                             syntheticTrees.put(dc, "*\n");
                             interestingParent.push(dc);
                             boolean prevInSynthetic = inSynthetic;
@@ -430,7 +430,7 @@ public abstract class JavadocHelper implements AutoCloseable {
                         return null;
                     }
                     Pair<DocCommentTree, Integer> parsed =
-                            parseDocComment(inheritedJavacTask, inherited, CommentKind.BLOCK);
+                            parseDocComment(inheritedJavacTask, inherited, DocCommentKind.TRADITIONAL);
                     DocCommentTree inheritedDocTree = parsed.fst;
                     int offset = parsed.snd;
                     List<List<? extends DocTree>> inheritedText = new ArrayList<>();
@@ -633,19 +633,19 @@ public abstract class JavadocHelper implements AutoCloseable {
             }
 
          private DocTree parseBlockTag(JavacTask task, String blockTag) {
-            DocCommentTree dc = parseDocComment(task, blockTag, CommentKind.BLOCK).fst;
+            DocCommentTree dc = parseDocComment(task, blockTag, DocCommentKind.TRADITIONAL).fst;
 
             return dc.getBlockTags().get(0);
         }
 
-        private Pair<DocCommentTree, Integer> parseDocComment(JavacTask task, String javadoc, CommentKind docCommentKind) {
+        private Pair<DocCommentTree, Integer> parseDocComment(JavacTask task, String javadoc, DocCommentKind docCommentKind) {
             DocTrees trees = DocTrees.instance(task);
             try {
                 URI uri;
                 Kind kind;
                 String content;
                 int offset;
-                if (docCommentKind == CommentKind.BLOCK) {
+                if (docCommentKind == DocCommentKind.TRADITIONAL) {
                     uri = new URI("mem:///doc.html");
                     kind = Kind.HTML;
                     content = "<body>" + javadoc + "</body>";
