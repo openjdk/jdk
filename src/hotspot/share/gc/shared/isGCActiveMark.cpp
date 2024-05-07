@@ -29,7 +29,8 @@
 #include "utilities/debug.hpp"
 
 // This class provides a method for block structured setting of the
-// _is_stw_gc_active state without requiring accessors in CollectedHeap
+// _is_stw_gc_active / _is_any_gc_active state without requiring
+// accessors in CollectedHeap
 
 IsSTWGCActiveMark::IsSTWGCActiveMark() {
   CollectedHeap* heap = Universe::heap();
@@ -41,4 +42,21 @@ IsSTWGCActiveMark::~IsSTWGCActiveMark() {
   CollectedHeap* heap = Universe::heap();
   assert(heap->is_stw_gc_active(), "Sanity");
   heap->_is_stw_gc_active = false;
+}
+
+IsAnyGCActiveMark::IsAnyGCActiveMark() {
+  CollectedHeap* heap = Universe::heap();
+  _doit = !heap->is_any_gc_active();
+  if (_doit) {
+    assert(!heap->is_any_gc_active(), "Sanity");
+    heap->_is_any_gc_active = true;
+  }
+}
+
+IsAnyGCActiveMark::~IsAnyGCActiveMark() {
+  CollectedHeap* heap = Universe::heap();
+  if (_doit) {
+    assert(heap->is_any_gc_active(), "Sanity");
+    heap->_is_any_gc_active = false;
+  }
 }

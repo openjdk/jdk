@@ -392,6 +392,7 @@ static uint select_active_worker_threads(const XDriverRequest& request) {
 class XDriverGCScope : public StackObj {
 private:
   GCIdMark                   _gc_id;
+  IsAnyGCActiveMark          _gc_active_mark;
   GCCause::Cause             _gc_cause;
   GCCauseSetter              _gc_cause_setter;
   XStatTimer                 _timer;
@@ -400,6 +401,7 @@ private:
 public:
   XDriverGCScope(const XDriverRequest& request) :
       _gc_id(),
+      _gc_active_mark(),
       _gc_cause(request.cause()),
       _gc_cause_setter(XCollectedHeap::heap(), _gc_cause),
       _timer(XPhaseCycle),

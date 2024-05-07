@@ -91,6 +91,7 @@ class CollectedHeap : public CHeapObj<mtGC> {
   friend class VMStructs;
   friend class JVMCIVMStructs;
   friend class IsSTWGCActiveMark; // Block structured external access to _is_stw_gc_active
+  friend class IsAnyGCActiveMark; // Block structured external access to _is_any_gc_active
   friend class MemAllocator;
   friend class ParallelObjectIterator;
 
@@ -112,6 +113,7 @@ class CollectedHeap : public CHeapObj<mtGC> {
   MemRegion _reserved;
 
   bool _is_stw_gc_active;
+  bool _is_any_gc_active;
 
   // (Minimum) Alignment reserve for TLABs and PLABs.
   static size_t _lab_alignment_reserve;
@@ -375,6 +377,9 @@ protected:
 
   // Returns "true" iff there is a stop-world GC in progress.
   bool is_stw_gc_active() const { return _is_stw_gc_active; }
+
+  // Returns "true" iff there is a GC in progress.
+  bool is_any_gc_active() const { return _is_any_gc_active; }
 
   // Total number of GC collections (started)
   unsigned int total_collections() const { return _total_collections; }

@@ -25,6 +25,7 @@
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/gcId.hpp"
+#include "gc/shared/isGCActiveMark.hpp"
 #include "gc/z/zAbort.inline.hpp"
 #include "gc/z/zBreakpoint.hpp"
 #include "gc/z/zCollectedHeap.hpp"
@@ -168,6 +169,7 @@ size_t ZDriverMinor::used_at_start() const {
 class ZDriverScopeMinor : public StackObj {
 private:
   GCIdMark                     _gc_id;
+  IsAnyGCActiveMark            _gc_active_mark;
   GCCause::Cause               _gc_cause;
   ZGCCauseSetter<ZDriverMinor> _gc_cause_setter;
   ZStatTimer                   _stat_timer;
@@ -176,6 +178,7 @@ private:
 public:
   ZDriverScopeMinor(const ZDriverRequest& request, ConcurrentGCTimer* gc_timer)
     : _gc_id(),
+      _gc_active_mark(),
       _gc_cause(request.cause()),
       _gc_cause_setter(ZDriver::minor(), _gc_cause),
       _stat_timer(ZPhaseCollectionMinor, gc_timer),
@@ -380,6 +383,7 @@ size_t ZDriverMajor::used_at_start() const {
 class ZDriverScopeMajor : public StackObj {
 private:
   GCIdMark                     _gc_id;
+  IsAnyGCActiveMark            _gc_active_mark;
   GCCause::Cause               _gc_cause;
   ZGCCauseSetter<ZDriverMajor> _gc_cause_setter;
   ZStatTimer                   _stat_timer;
@@ -388,6 +392,7 @@ private:
 public:
   ZDriverScopeMajor(const ZDriverRequest& request, ConcurrentGCTimer* gc_timer)
     : _gc_id(),
+      _gc_active_mark(),
       _gc_cause(request.cause()),
       _gc_cause_setter(ZDriver::major(), _gc_cause),
       _stat_timer(ZPhaseCollectionMajor, gc_timer),

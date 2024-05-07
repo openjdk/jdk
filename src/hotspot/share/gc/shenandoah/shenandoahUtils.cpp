@@ -40,6 +40,7 @@ ShenandoahPhaseTimings::Phase ShenandoahTimingsTracker::_current_phase = Shenand
 
 ShenandoahGCSession::ShenandoahGCSession(GCCause::Cause cause) :
   _heap(ShenandoahHeap::heap()),
+  _gc_active_mark(),
   _timer(_heap->gc_timer()),
   _tracer(_heap->tracer()) {
   assert(!ShenandoahGCPhase::is_current_phase_valid(), "No current GC phase");

@@ -45,6 +45,7 @@ class GCTimer;
 class ShenandoahGCSession : public StackObj {
 private:
   ShenandoahHeap* const _heap;
+  IsAnyGCActiveMark const _gc_active_mark;
   GCTimer*  const _timer;
   GCTracer* const _tracer;
 

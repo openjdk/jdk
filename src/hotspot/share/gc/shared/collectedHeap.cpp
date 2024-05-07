@@ -244,6 +244,7 @@ CollectedHeap::CollectedHeap() :
   _used_at_last_gc(0),
   _soft_ref_policy(),
   _is_stw_gc_active(false),
+  _is_any_gc_active(false),
   _last_whole_heap_examined_time_ns(os::javaTimeNanos()),
   _total_collections(0),
   _total_full_collections(0),

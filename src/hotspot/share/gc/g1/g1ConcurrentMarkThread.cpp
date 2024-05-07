@@ -36,6 +36,7 @@
 #include "gc/shared/concurrentGCBreakpoints.hpp"
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
+#include "gc/shared/isGCActiveMark.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
@@ -120,6 +121,7 @@ void G1ConcurrentMarkThread::run_service() {
     assert(in_progress(), "must be");
 
     GCIdMark gc_id_mark;
+    IsAnyGCActiveMark gc_active_mark;
     FormatBuffer<128> title("Concurrent %s Cycle", _state == FullMark ? "Mark" : "Undo");
     GCTraceConcTime(Info, gc) tt(title);
 
