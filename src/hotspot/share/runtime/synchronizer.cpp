@@ -942,19 +942,6 @@ static markWord read_stable_mark(oop obj) {
   }
 }
 
-#ifdef ASSERT
-static Thread* volatile cds_dump_java_thread = nullptr;
-static bool runs_on_one_thread_only () {
-  Thread* const t = Atomic::load(&cds_dump_java_thread);
-  Thread* const cur = Thread::current();
-  if (t == nullptr) {
-    Atomic::cmpxchg(&cds_dump_java_thread, t, cur);
-    return true;
-  }
-  return t == cur;
-}
-#endif
-
 // hashCode() generation :
 //
 // Possibilities:
@@ -1004,12 +991,6 @@ static inline intptr_t get_next_hash(Thread* current, oop obj) {
     v = (v ^ (v >> 19)) ^ (t ^ (t >> 8));
     current->_hashStateW = v;
     value = v;
-#ifdef ASSERT
-    // Verify that during CDS dumping, only a single thread
-    // ever calls ihash
-    assert(!CDSConfig::is_dumping_archive() || runs_on_one_thread_only(),
-        "Only one thread should generate ihash during CDS dumps");
-#endif
   }
 
   value &= markWord::hash_mask;
