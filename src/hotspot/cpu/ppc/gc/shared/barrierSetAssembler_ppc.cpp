@@ -282,7 +282,7 @@ OptoReg::Name BarrierSetAssembler::refine_register(const Node* node, OptoReg::Na
 #define __ _masm->
 
 SaveLiveRegisters::SaveLiveRegisters(MacroAssembler *masm, BarrierStubC2 *stub)
-  : _masm(masm), _reg_mask(stub->live()), _result_reg(stub->result()) {
+  : _masm(masm), _reg_mask(stub->preserve_set()) {
 
   const int register_save_size = iterate_over_register_mask(ACTION_COUNT_ONLY) * BytesPerWord;
   _frame_size = align_up(register_save_size, frame::alignment_in_bytes)
@@ -316,11 +316,6 @@ int SaveLiveRegisters::iterate_over_register_mask(IterationAction action, int of
     const VMReg vm_reg = OptoReg::as_VMReg(opto_reg);
     if (vm_reg->is_Register()) {
       Register std_reg = vm_reg->as_Register();
-
-      // '_result_reg' will hold the end result of the operation. Its content must thus not be preserved.
-      if (std_reg == _result_reg) {
-        continue;
-      }
 
       if (std_reg->encoding() >= R2->encoding() && std_reg->encoding() <= R12->encoding()) {
         reg_save_index++;

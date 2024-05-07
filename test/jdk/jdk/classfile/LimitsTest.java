@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8320360 8330684 8331320
+ * @bug 8320360 8330684 8331320 8331655
  * @summary Testing ClassFile limits.
  * @run junit LimitsTest
  */
@@ -36,6 +36,7 @@ import java.lang.classfile.ClassFile;
 import java.lang.classfile.Opcode;
 import java.lang.classfile.attribute.CodeAttribute;
 import java.lang.classfile.constantpool.ConstantPoolException;
+import java.lang.classfile.constantpool.IntegerEntry;
 import jdk.internal.classfile.impl.DirectMethodBuilder;
 import jdk.internal.classfile.impl.LabelContext;
 import jdk.internal.classfile.impl.UnboundAttribute;
@@ -104,6 +105,14 @@ class LimitsTest {
     void testInvalidClassEntry() {
         assertThrows(ConstantPoolException.class, () -> ClassFile.of().parse(new byte[]{(byte)0xCA, (byte)0xFE, (byte)0xBA, (byte)0xBE,
             0, 0, 0, 0, 0, 2, ClassFile.TAG_METHODREF, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}).thisClass());
+    }
+
+    @Test
+    void testInvalidUtf8Entry() {
+        var cp = ClassFile.of().parse(new byte[]{(byte)0xCA, (byte)0xFE, (byte)0xBA, (byte)0xBE,
+            0, 0, 0, 0, 0, 3, ClassFile.TAG_INTEGER, 0, 0, 0, 0, ClassFile.TAG_NAMEANDTYPE, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}).constantPool();
+        assertTrue(cp.entryByIndex(1) instanceof IntegerEntry); //parse valid int entry first
+        assertThrows(ConstantPoolException.class, () -> cp.entryByIndex(2));
     }
 
     @Test

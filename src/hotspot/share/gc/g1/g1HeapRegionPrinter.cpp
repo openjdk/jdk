@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,10 @@
 
 #include "precompiled.hpp"
 
+#include "gc/g1/g1HeapRegionPrinter.hpp"
 #include "gc/g1/g1HeapRegionSet.hpp"
-#include "gc/g1/g1HRPrinter.hpp"
 
-void G1HRPrinter::mark_reclaim(FreeRegionList* cleanup_list) {
+void G1HeapRegionPrinter::mark_reclaim(FreeRegionList* cleanup_list) {
   if (is_active()) {
     FreeRegionListIterator iter(cleanup_list);
     while (iter.more_available()) {
