@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,32 +27,24 @@
 #include "gc/serial/cardTableRS.hpp"
 #include "gc/serial/generation.hpp"
 #include "gc/serial/serialHeap.inline.hpp"
-#include "gc/shared/space.inline.hpp"
+#include "gc/shared/space.hpp"
 #include "memory/iterator.inline.hpp"
 #include "utilities/align.hpp"
 
-void CardTableRS::scan_old_to_young_refs(TenuredSpace* sp) {
-  verify_used_region_at_save_marks(sp);
-
-  const MemRegion urasm = sp->used_region_at_save_marks();
-  if (!urasm.is_empty()) {
-    OldGenScanClosure cl(SerialHeap::heap()->young_gen());
-    non_clean_card_iterate(sp, urasm, &cl, this);
-  }
-}
-
-#ifdef ASSERT
-void CardTableRS::verify_used_region_at_save_marks(Space* sp) const {
-  MemRegion ur    = sp->used_region();
-  MemRegion urasm = sp->used_region_at_save_marks();
+void CardTableRS::scan_old_to_young_refs(TenuredGeneration* tg, HeapWord* saved_top) {
+  const MemRegion ur    = tg->used_region();
+  const MemRegion urasm = MemRegion(tg->space()->bottom(), saved_top);
 
   assert(ur.contains(urasm),
-         "Did you forget to call save_marks()? "
          "[" PTR_FORMAT ", " PTR_FORMAT ") is not contained in "
          "[" PTR_FORMAT ", " PTR_FORMAT ")",
          p2i(urasm.start()), p2i(urasm.end()), p2i(ur.start()), p2i(ur.end()));
+
+  if (!urasm.is_empty()) {
+    OldGenScanClosure cl(SerialHeap::heap()->young_gen());
+    non_clean_card_iterate(tg, urasm, &cl);
+  }
 }
-#endif
 
 void CardTableRS::maintain_old_to_young_invariant(TenuredGeneration* old_gen,
                                                   bool is_young_gen_empty) {
@@ -71,7 +63,7 @@ void CardTableRS::maintain_old_to_young_invariant(TenuredGeneration* old_gen,
   }
 }
 
-class CheckForUnmarkedOops : public BasicOopIterateClosure {
+class SerialCheckForUnmarkedOops : public BasicOopIterateClosure {
   DefNewGeneration* _young_gen;
   CardTableRS* _card_table;
   HeapWord*    _unmarked_addr;
@@ -88,7 +80,7 @@ class CheckForUnmarkedOops : public BasicOopIterateClosure {
   }
 
  public:
-  CheckForUnmarkedOops(DefNewGeneration* young_gen, CardTableRS* card_table) :
+  SerialCheckForUnmarkedOops(DefNewGeneration* young_gen, CardTableRS* card_table) :
     _young_gen(young_gen),
     _card_table(card_table),
     _unmarked_addr(nullptr) {}
@@ -114,7 +106,7 @@ void CardTableRS::verify() {
     }
 
     void do_object(oop obj) override {
-      CheckForUnmarkedOops object_check(_young_gen, _card_table);
+      SerialCheckForUnmarkedOops object_check(_young_gen, _card_table);
       obj->oop_iterate(&object_check);
       // If this obj is imprecisely-marked, the card for obj-start must be dirty.
       if (object_check.has_unmarked_oop()) {
@@ -175,7 +167,6 @@ CardTable::CardValue* CardTableRS::find_first_dirty_card(CardValue* const start_
 template<typename Func>
 CardTable::CardValue* CardTableRS::find_first_clean_card(CardValue* const start_card,
                                                          CardValue* const end_card,
-                                                         CardTableRS* ct,
                                                          Func& object_start) {
   for (CardValue* current_card = start_card; current_card < end_card; /* empty */) {
     if (is_dirty(current_card)) {
@@ -184,7 +175,7 @@ CardTable::CardValue* CardTableRS::find_first_clean_card(CardValue* const start_
     }
 
     // A potential candidate.
-    HeapWord* addr = ct->addr_for(current_card);
+    HeapWord* addr = addr_for(current_card);
     HeapWord* obj_start_addr = object_start(addr);
 
     if (obj_start_addr == addr) {
@@ -200,7 +191,7 @@ CardTable::CardValue* CardTableRS::find_first_clean_card(CardValue* const start_
     }
 
     // Final card occupied by obj.
-    CardValue* obj_final_card = ct->byte_for(obj_start_addr + obj->size() - 1);
+    CardValue* obj_final_card = byte_for(obj_start_addr + obj->size() - 1);
     if (is_clean(obj_final_card)) {
       return obj_final_card;
     }
@@ -233,10 +224,9 @@ static void scan_obj_with_limit(oop obj,
   }
 }
 
-void CardTableRS::non_clean_card_iterate(TenuredSpace* sp,
+void CardTableRS::non_clean_card_iterate(TenuredGeneration* tg,
                                          MemRegion mr,
-                                         OldGenScanClosure* cl,
-                                         CardTableRS* ct) {
+                                         OldGenScanClosure* cl) {
   struct {
     HeapWord* start_addr;
     HeapWord* end_addr;
@@ -247,7 +237,7 @@ void CardTableRS::non_clean_card_iterate(TenuredSpace* sp,
       assert(cached_obj.start_addr != nullptr, "inv");
       return cached_obj.start_addr;
     }
-    HeapWord* result = sp->block_start_const(addr);
+    HeapWord* result = tg->block_start(addr);
 
     cached_obj.start_addr = result;
     cached_obj.end_addr = result + cast_to_oop(result)->size();
@@ -255,8 +245,8 @@ void CardTableRS::non_clean_card_iterate(TenuredSpace* sp,
     return result;
   };
 
-  CardValue* const start_card = ct->byte_for(mr.start());
-  CardValue* const end_card = ct->byte_for(mr.last()) + 1;
+  CardValue* const start_card = byte_for(mr.start());
+  CardValue* const end_card = byte_for(mr.last()) + 1;
 
   // if mr.end() is not card-aligned, that final card should not be cleared
   // because it can be annotated dirty due to old-to-young pointers in
@@ -271,16 +261,15 @@ void CardTableRS::non_clean_card_iterate(TenuredSpace* sp,
       return;
     }
 
-    HeapWord* const addr_l = ct->addr_for(dirty_l);
+    HeapWord* const addr_l = addr_for(dirty_l);
     HeapWord* obj_addr = object_start(addr_l);
 
     CardValue* const dirty_r = find_first_clean_card(dirty_l + 1,
                                                      end_card,
-                                                     ct,
                                                      object_start);
     assert(dirty_l < dirty_r, "inv");
     HeapWord* const addr_r = dirty_r == end_card ? mr.end()
-                                                 : ct->addr_for(dirty_r);
+                                                 : addr_for(dirty_r);
 
     clear_cards(MIN2(dirty_l, clear_limit_card),
                 MIN2(dirty_r, clear_limit_card));

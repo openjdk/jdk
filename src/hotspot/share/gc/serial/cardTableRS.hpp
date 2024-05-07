@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,7 @@
 #include "oops/oop.hpp"
 
 class OldGenScanClosure;
-class Space;
 class TenuredGeneration;
-class TenuredSpace;
 
 // This RemSet uses a card table both as shared data structure
 // for a mod ref barrier set and for the rem set information.
@@ -56,15 +54,12 @@ class CardTableRS : public CardTable {
   template<typename Func>
   CardValue* find_first_clean_card(CardValue* start_card,
                                    CardValue* end_card,
-                                   CardTableRS* ct,
                                    Func& object_start);
 
 public:
   CardTableRS(MemRegion whole_heap);
 
-  void scan_old_to_young_refs(TenuredSpace* sp);
-
-  virtual void verify_used_region_at_save_marks(Space* sp) const NOT_DEBUG_RETURN;
+  void scan_old_to_young_refs(TenuredGeneration* tg, HeapWord* saved_top);
 
   void inline_write_ref_field_gc(void* field) {
     CardValue* byte = byte_for(field);
@@ -87,10 +82,9 @@ public:
   // Iterate over the portion of the card-table which covers the given
   // region mr in the given space and apply cl to any dirty sub-regions
   // of mr. Clears the dirty cards as they are processed.
-  void non_clean_card_iterate(TenuredSpace* sp,
+  void non_clean_card_iterate(TenuredGeneration* tg,
                               MemRegion mr,
-                              OldGenScanClosure* cl,
-                              CardTableRS* ct);
+                              OldGenScanClosure* cl);
 
   bool is_in_young(const void* p) const override;
 };

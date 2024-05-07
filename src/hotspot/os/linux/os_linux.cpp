@@ -25,7 +25,6 @@
 
 // no precompiled headers
 #include "classfile/vmSymbols.hpp"
-#include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/disassembler.hpp"
@@ -86,6 +85,8 @@
 #endif
 
 // put OS-includes here
+# include <ctype.h>
+# include <stdlib.h>
 # include <sys/types.h>
 # include <sys/mman.h>
 # include <sys/stat.h>
@@ -303,18 +304,41 @@ jlong os::total_swap_space() {
   return  (jlong)(si.totalswap * si.mem_unit);
 }
 
-jlong os::free_swap_space() {
-  if (OSContainer::is_containerized()) {
-    // TODO add a good implementation
+static jlong host_free_swap() {
+  struct sysinfo si;
+  int ret = sysinfo(&si);
+  if (ret != 0) {
     return -1;
-  } else {
-    struct sysinfo si;
-    int ret = sysinfo(&si);
-    if (ret != 0) {
-      return -1;
-    }
-    return (jlong)(si.freeswap * si.mem_unit);
   }
+  return (jlong)(si.freeswap * si.mem_unit);
+}
+
+jlong os::free_swap_space() {
+  jlong host_free_swap_val = host_free_swap();
+  if (OSContainer::is_containerized()) {
+    jlong mem_swap_limit = OSContainer::memory_and_swap_limit_in_bytes();
+    jlong mem_limit = OSContainer::memory_limit_in_bytes();
+    if (mem_swap_limit >= 0 && mem_limit >= 0) {
+      jlong delta_limit = mem_swap_limit - mem_limit;
+      if (delta_limit <= 0) {
+        return 0;
+      }
+      jlong mem_swap_usage = OSContainer::memory_and_swap_usage_in_bytes();
+      jlong mem_usage = OSContainer::memory_usage_in_bytes();
+      if (mem_swap_usage > 0 && mem_usage > 0) {
+        jlong delta_usage = mem_swap_usage - mem_usage;
+        if (delta_usage >= 0) {
+          jlong free_swap = delta_limit - delta_usage;
+          return free_swap >= 0 ? free_swap : 0;
+        }
+      }
+    }
+    // unlimited or not supported. Fall through to return host value
+    log_trace(os,container)("os::free_swap_space: container_swap_limit=" JLONG_FORMAT
+                            " container_mem_limit=" JLONG_FORMAT " returning host value: " JLONG_FORMAT,
+                            mem_swap_limit, mem_limit, host_free_swap_val);
+  }
+  return host_free_swap_val;
 }
 
 julong os::physical_memory() {
@@ -341,6 +365,22 @@ static void next_line(FILE *f) {
   do {
     c = fgetc(f);
   } while (c != '\n' && c != EOF);
+}
+
+void os::Linux::kernel_version(long* major, long* minor) {
+  *major = -1;
+  *minor = -1;
+
+  struct utsname buffer;
+  int ret = uname(&buffer);
+  if (ret != 0) {
+    log_warning(os)("uname(2) failed to get kernel version: %s", os::errno_name(ret));
+    return;
+  }
+  int nr_matched = sscanf(buffer.release, "%ld.%ld", major, minor);
+  if (nr_matched != 2) {
+    log_warning(os)("Parsing kernel version failed, expected 2 version numbers, only matched %d", nr_matched);
+  }
 }
 
 bool os::Linux::get_tick_information(CPUPerfTicks* pticks, int which_logical_cpu) {
@@ -591,17 +631,6 @@ void os::init_system_properties_values() {
 #undef DEFAULT_LIBPATH
 #undef SYS_EXT_DIR
 #undef EXTENSIONS_DIR
-}
-
-////////////////////////////////////////////////////////////////////////////////
-// breakpoint support
-
-void os::breakpoint() {
-  BREAKPOINT;
-}
-
-extern "C" void breakpoint() {
-  // use debugger to set breakpoint here
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -2246,6 +2275,8 @@ void os::Linux::print_proc_sys_info(outputStream* st) {
                       "/proc/sys/kernel/threads-max", st);
   _print_ascii_file_h("/proc/sys/vm/max_map_count (maximum number of memory map areas a process may have)",
                       "/proc/sys/vm/max_map_count", st);
+  _print_ascii_file_h("/proc/sys/vm/swappiness (control to define how aggressively the kernel swaps out anonymous memory)",
+                      "/proc/sys/vm/swappiness", st);
   _print_ascii_file_h("/proc/sys/kernel/pid_max (system-wide limit on number of process identifiers)",
                       "/proc/sys/kernel/pid_max", st);
 }
@@ -2880,11 +2911,20 @@ int os::Linux::commit_memory_impl(char* addr, size_t size, bool exec) {
       numa_make_global(addr, size);
     }
     return 0;
+  } else {
+    ErrnoPreserver ep;
+    log_trace(os, map)("mmap failed: " RANGEFMT " errno=(%s)",
+                       RANGEFMTARGS(addr, size),
+                       os::strerror(ep.saved_errno()));
   }
 
   int err = errno;  // save errno from mmap() call above
 
   if (!recoverable_mmap_error(err)) {
+    ErrnoPreserver ep;
+    log_trace(os, map)("mmap failed: " RANGEFMT " errno=(%s)",
+                       RANGEFMTARGS(addr, size),
+                       os::strerror(ep.saved_errno()));
     warn_fail_commit_memory(addr, size, exec, err);
     vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "committing reserved memory.");
   }
@@ -2932,7 +2972,7 @@ void os::pd_commit_memory_or_exit(char* addr, size_t size, bool exec,
   #define MADV_POPULATE_WRITE MADV_POPULATE_WRITE_value
 #else
   // Sanity-check our assumed default value if we build with a new enough libc.
-  static_assert(MADV_POPULATE_WRITE == MADV_POPULATE_WRITE_value);
+  STATIC_ASSERT(MADV_POPULATE_WRITE == MADV_POPULATE_WRITE_value);
 #endif
 
 // Note that the value for MAP_FIXED_NOREPLACE differs between architectures, but all architectures
@@ -2942,7 +2982,7 @@ void os::pd_commit_memory_or_exit(char* addr, size_t size, bool exec,
   #define MAP_FIXED_NOREPLACE MAP_FIXED_NOREPLACE_value
 #else
   // Sanity-check our assumed default value if we build with a new enough libc.
-  static_assert(MAP_FIXED_NOREPLACE == MAP_FIXED_NOREPLACE_value, "MAP_FIXED_NOREPLACE != MAP_FIXED_NOREPLACE_value");
+  STATIC_ASSERT(MAP_FIXED_NOREPLACE == MAP_FIXED_NOREPLACE_value);
 #endif
 
 int os::Linux::commit_memory_impl(char* addr, size_t size,
@@ -3416,7 +3456,14 @@ struct bitmask* os::Linux::_numa_membind_bitmask;
 bool os::pd_uncommit_memory(char* addr, size_t size, bool exec) {
   uintptr_t res = (uintptr_t) ::mmap(addr, size, PROT_NONE,
                                      MAP_PRIVATE|MAP_FIXED|MAP_NORESERVE|MAP_ANONYMOUS, -1, 0);
-  return res  != (uintptr_t) MAP_FAILED;
+  if (res == (uintptr_t) MAP_FAILED) {
+    ErrnoPreserver ep;
+    log_trace(os, map)("mmap failed: " RANGEFMT " errno=(%s)",
+                       RANGEFMTARGS(addr, size),
+                       os::strerror(ep.saved_errno()));
+    return false;
+  }
+  return true;
 }
 
 static address get_stack_commited_bottom(address bottom, size_t size) {
@@ -3635,8 +3682,14 @@ static char* anon_mmap(char* requested_addr, size_t bytes) {
   // touch an uncommitted page. Otherwise, the read/write might
   // succeed if we have enough swap space to back the physical page.
   char* addr = (char*)::mmap(requested_addr, bytes, PROT_NONE, flags, -1, 0);
-
-  return addr == MAP_FAILED ? nullptr : addr;
+  if (addr == MAP_FAILED) {
+    ErrnoPreserver ep;
+    log_trace(os, map)("mmap failed: " RANGEFMT " errno=(%s)",
+                       RANGEFMTARGS(requested_addr, bytes),
+                       os::strerror(ep.saved_errno()));
+    return nullptr;
+  }
+  return addr;
 }
 
 // Allocate (using mmap, NO_RESERVE, with small pages) at either a given request address
@@ -3657,7 +3710,12 @@ static char* anon_mmap_aligned(char* req_addr, size_t bytes, size_t alignment) {
   if (start != nullptr) {
     if (req_addr != nullptr) {
       if (start != req_addr) {
-        ::munmap(start, extra_size);
+        if (::munmap(start, extra_size) != 0) {
+          ErrnoPreserver ep;
+          log_trace(os, map)("munmap failed: " RANGEFMT " errno=(%s)",
+                             RANGEFMTARGS(start, extra_size),
+                             os::strerror(ep.saved_errno()));
+        }
         start = nullptr;
       }
     } else {
@@ -3665,10 +3723,22 @@ static char* anon_mmap_aligned(char* req_addr, size_t bytes, size_t alignment) {
       char* const end_aligned = start_aligned + bytes;
       char* const end = start + extra_size;
       if (start_aligned > start) {
-        ::munmap(start, start_aligned - start);
+        const size_t l = start_aligned - start;
+        if (::munmap(start, l) != 0) {
+          ErrnoPreserver ep;
+          log_trace(os, map)("munmap failed: " RANGEFMT " errno=(%s)",
+                             RANGEFMTARGS(start, l),
+                             os::strerror(ep.saved_errno()));
+        }
       }
       if (end_aligned < end) {
-        ::munmap(end_aligned, end - end_aligned);
+        const size_t l = end - end_aligned;
+        if (::munmap(end_aligned, l) != 0) {
+          ErrnoPreserver ep;
+          log_trace(os, map)("munmap failed: " RANGEFMT " errno=(%s)",
+                             RANGEFMTARGS(end_aligned, l),
+                             os::strerror(ep.saved_errno()));
+        }
       }
       start = start_aligned;
     }
@@ -3677,7 +3747,14 @@ static char* anon_mmap_aligned(char* req_addr, size_t bytes, size_t alignment) {
 }
 
 static int anon_munmap(char * addr, size_t size) {
-  return ::munmap(addr, size) == 0;
+  if (::munmap(addr, size) != 0) {
+    ErrnoPreserver ep;
+    log_trace(os, map)("munmap failed: " RANGEFMT " errno=(%s)",
+                       RANGEFMTARGS(addr, size),
+                       os::strerror(ep.saved_errno()));
+    return 0;
+  }
+  return 1;
 }
 
 char* os::pd_reserve_memory(size_t bytes, bool exec) {
@@ -3709,7 +3786,7 @@ static bool linux_mprotect(char* addr, size_t size, int prot) {
 #ifdef CAN_SHOW_REGISTERS_ON_ASSERT
   if (addr != g_assert_poison)
 #endif
-  Events::log(nullptr, "Protecting memory [" INTPTR_FORMAT "," INTPTR_FORMAT "] with protection modes %x", p2i(bottom), p2i(bottom+size), prot);
+  Events::log_memprotect(nullptr, "Protecting memory [" INTPTR_FORMAT "," INTPTR_FORMAT "] with protection modes %x", p2i(bottom), p2i(bottom+size), prot);
   return ::mprotect(bottom, size, prot) == 0;
 }
 
@@ -3936,8 +4013,12 @@ void os::Linux::large_page_init() {
     // In THP mode:
     // - os::large_page_size() is the *THP page size*
     // - os::pagesizes() has two members, the THP page size and the system page size
-    assert(HugePages::thp_pagesize() > 0, "Missing OS info");
     _large_page_size = HugePages::thp_pagesize();
+    if (_large_page_size == 0) {
+        log_info(pagesize) ("Cannot determine THP page size (kernel < 4.10 ?)");
+        _large_page_size = HugePages::thp_pagesize_fallback();
+        log_info(pagesize) ("Assuming THP page size to be: " EXACTFMT " (heuristics)", EXACTFMTARGS(_large_page_size));
+    }
     _page_sizes.add(_large_page_size);
     _page_sizes.add(os::vm_page_size());
     // +UseTransparentHugePages implies +UseLargePages
@@ -4107,7 +4188,12 @@ static char* reserve_memory_special_huge_tlbfs(size_t bytes,
   if (!large_committed) {
     // Failed to commit large pages, so we need to unmap the
     // reminder of the orinal reservation.
-    ::munmap(small_start, small_size);
+    if (::munmap(small_start, small_size) != 0) {
+      ErrnoPreserver ep;
+      log_trace(os, map)("munmap failed: " RANGEFMT " errno=(%s)",
+                         RANGEFMTARGS(small_start, small_size),
+                         os::strerror(ep.saved_errno()));
+    }
     return nullptr;
   }
 
@@ -4116,7 +4202,12 @@ static char* reserve_memory_special_huge_tlbfs(size_t bytes,
   if (!small_committed) {
     // Failed to commit the remaining size, need to unmap
     // the large pages part of the reservation.
-    ::munmap(aligned_start, large_bytes);
+    if (::munmap(aligned_start, large_bytes) != 0) {
+      ErrnoPreserver ep;
+      log_trace(os, map)("munmap failed: " RANGEFMT " errno=(%s)",
+                         RANGEFMTARGS(aligned_start, large_bytes),
+                         os::strerror(ep.saved_errno()));
+    }
     return nullptr;
   }
   return aligned_start;
@@ -4189,7 +4280,10 @@ char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, bool 
 
   if (addr != nullptr) {
     // mmap() is successful but it fails to reserve at the requested address
-    log_trace(os, map)("Kernel rejected " PTR_FORMAT ", offered " PTR_FORMAT ".", p2i(requested_addr), p2i(addr));
+    log_trace(os, map)("Kernel rejected " PTR_FORMAT
+                       ", offered " PTR_FORMAT ".",
+                       p2i(requested_addr),
+                       p2i(addr));
     anon_munmap(addr, bytes);
   }
 
@@ -4214,25 +4308,6 @@ size_t os::vm_min_address() {
     value = MAX2(_vm_min_address_default, value);
   }
   return value;
-}
-
-// Used to convert frequent JVM_Yield() to nops
-bool os::dont_yield() {
-  return DontYieldALot;
-}
-
-// Linux CFS scheduler (since 2.6.23) does not guarantee sched_yield(2) will
-// actually give up the CPU. Since skip buddy (v2.6.28):
-//
-// * Sets the yielding task as skip buddy for current CPU's run queue.
-// * Picks next from run queue, if empty, picks a skip buddy (can be the yielding task).
-// * Clears skip buddies for this run queue (yielding task no longer a skip buddy).
-//
-// An alternative is calling os::naked_short_nanosleep with a small number to avoid
-// getting re-scheduled immediately.
-//
-void os::naked_yield() {
-  sched_yield();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -5046,14 +5121,6 @@ int os::open(const char *path, int oflag, int mode) {
   return fd;
 }
 
-
-// create binary file, rewriting existing file if required
-int os::create_binary_file(const char* path, bool rewrite_existing) {
-  int oflags = O_WRONLY | O_CREAT;
-  oflags |= rewrite_existing ? O_TRUNC : O_EXCL;
-  return ::open(path, oflags, S_IREAD | S_IWRITE);
-}
-
 // return current position of file pointer
 jlong os::current_file_offset(int fd) {
   return (jlong)::lseek(fd, (off_t)0, SEEK_CUR);
@@ -5062,51 +5129,6 @@ jlong os::current_file_offset(int fd) {
 // move file pointer to the specified offset
 jlong os::seek_to_file_offset(int fd, jlong offset) {
   return (jlong)::lseek(fd, (off_t)offset, SEEK_SET);
-}
-
-// Map a block of memory.
-char* os::pd_map_memory(int fd, const char* file_name, size_t file_offset,
-                        char *addr, size_t bytes, bool read_only,
-                        bool allow_exec) {
-  int prot;
-  int flags = MAP_PRIVATE;
-
-  if (read_only) {
-    prot = PROT_READ;
-  } else {
-    prot = PROT_READ | PROT_WRITE;
-  }
-
-  if (allow_exec) {
-    prot |= PROT_EXEC;
-  }
-
-  if (addr != nullptr) {
-    flags |= MAP_FIXED;
-  }
-
-  char* mapped_address = (char*)mmap(addr, (size_t)bytes, prot, flags,
-                                     fd, file_offset);
-  if (mapped_address == MAP_FAILED) {
-    return nullptr;
-  }
-  return mapped_address;
-}
-
-
-// Remap a block of memory.
-char* os::pd_remap_memory(int fd, const char* file_name, size_t file_offset,
-                          char *addr, size_t bytes, bool read_only,
-                          bool allow_exec) {
-  // same as map_memory() on this OS
-  return os::map_memory(fd, file_name, file_offset, addr, bytes, read_only,
-                        allow_exec);
-}
-
-
-// Unmap a block of memory.
-bool os::pd_unmap_memory(char* addr, size_t bytes) {
-  return munmap(addr, bytes) == 0;
 }
 
 static jlong slow_thread_cpu_time(Thread *thread, bool user_sys_cpu_time);

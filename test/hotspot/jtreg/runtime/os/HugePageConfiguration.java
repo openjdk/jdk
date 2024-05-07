@@ -86,6 +86,20 @@ class HugePageConfiguration {
         return _thpPageSize;
     }
 
+    // Returns the THP page size (if exposed by the kernel) or a guessed THP page size.
+    // Mimics HugePages::thp_pagesize_fallback() method in hotspot (must be kept in sync with it).
+    public long getThpPageSizeOrFallback() {
+        long pageSize = getThpPageSize();
+        if (pageSize != 0) {
+            return pageSize;
+        }
+        pageSize = getExplicitDefaultHugePageSize();
+        if (pageSize != 0) {
+            return Math.min(pageSize, 16 * 1024 * 1024);
+        }
+        return 2 * 1024 * 1024;
+    }
+
     // Returns true if the THP support is enabled
     public boolean supportsTHP() {
         return _thpMode == THPMode.always || _thpMode == THPMode.madvise;

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2022, 2023, Arm Limited. All rights reserved.
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -290,7 +290,8 @@ public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
     // No true dependency in read-forward case.
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         applyIf = {"AlignVector", "false"},
-        counts = {IRNode.STORE_VECTOR, ">0"})
+        counts = {IRNode.STORE_VECTOR, ">0",
+                  IRNode.MUL_VS, ">0"}) // expect maximum size
     public char[] charArrayWithDependencePos() {
         char[] res = new char[SIZE];
         System.arraycopy(chars, 0, res, 0, SIZE);
@@ -301,8 +302,10 @@ public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
     }
 
     @Test
-    // Note that this case cannot be vectorized due to data dependence.
-    @IR(failOn = {IRNode.STORE_VECTOR})
+    // Data dependency at distance 2: restrict vector size to 2
+    @IR(applyIfCPUFeatureOr = {"sse2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0",
+                  IRNode.MUL_VS, IRNode.VECTOR_SIZE_2, ">0"}) // size 2 only
     public char[] charArrayWithDependenceNeg() {
         char[] res = new char[SIZE];
         System.arraycopy(chars, 0, res, 0, SIZE);
@@ -354,8 +357,10 @@ public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
     }
 
     @Test
-    // Note that this case cannot be vectorized due to data dependence.
-    @IR(failOn = {IRNode.STORE_VECTOR})
+    // Data dependency at distance 4: restrict vector size to 4
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0",
+                  IRNode.OR_VB, IRNode.VECTOR_SIZE_4, ">0"}) // size 4 only
     public boolean[] booleanArrayWithDependenceNeg() {
         boolean[] res = new boolean[SIZE];
         System.arraycopy(booleans, 0, res, 0, SIZE);

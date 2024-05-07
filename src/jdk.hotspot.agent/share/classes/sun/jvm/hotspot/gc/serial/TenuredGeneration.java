@@ -74,10 +74,6 @@ public class TenuredGeneration extends Generation {
   public long free()                { return theSpace().free();                                    }
   public long contiguousAvailable() { return theSpace().free() + virtualSpace().uncommittedSize(); }
 
-  public void spaceIterate(SpaceClosure blk, boolean usedOnly) {
-    blk.doSpace(theSpace());
-  }
-
   public void liveRegionsIterate(LiveRegionsClosure closure) {
     closure.doLiveRegions(theSpace());
   }

@@ -606,13 +606,14 @@ void LIR_Assembler::emit_op0(LIR_Op0* op) {
       Unimplemented();
       break;
 
-    case lir_std_entry:
+    case lir_std_entry: {
       // init offsets
       offsets()->set_value(CodeOffsets::OSR_Entry, _masm->offset());
-      _masm->align(CodeEntryAlignment);
       if (needs_icache(compilation()->method())) {
-        check_icache();
+        int offset = check_icache();
+        offsets()->set_value(CodeOffsets::Entry, offset);
       }
+      _masm->align(CodeEntryAlignment);
       offsets()->set_value(CodeOffsets::Verified_Entry, _masm->offset());
       _masm->verified_entry(compilation()->directive()->BreakAtExecuteOption);
       if (needs_clinit_barrier_on_entry(compilation()->method())) {
@@ -621,6 +622,7 @@ void LIR_Assembler::emit_op0(LIR_Op0* op) {
       build_frame();
       offsets()->set_value(CodeOffsets::Frame_Complete, _masm->offset());
       break;
+    }
 
     case lir_osr_entry:
       offsets()->set_value(CodeOffsets::OSR_Entry, _masm->offset());

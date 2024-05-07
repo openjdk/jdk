@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,8 +38,8 @@
 
 package java.text;
 
-import java.io.InvalidObjectException;
 import java.io.IOException;
+import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.math.BigInteger;
@@ -52,109 +52,117 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+
 import sun.util.locale.provider.LocaleProviderAdapter;
 import sun.util.locale.provider.LocaleServiceProviderPool;
 
 /**
  * {@code NumberFormat} is the abstract base class for all number
  * formats. This class provides the interface for formatting and parsing
- * numbers. {@code NumberFormat} also provides methods for determining
- * which locales have number formats, and what their names are.
+ * numbers in a localized manner. This enables code that can be completely
+ * independent of the locale conventions for decimal points, thousands-separators,
+ * the particular decimal digits used, or whether the number format is even
+ * decimal. For example, this class could be used within an application to
+ * produce a number in a currency format according to the conventions of the desired
+ * locale.
  *
- * <p>
- * {@code NumberFormat} helps you to format and parse numbers for any locale.
- * Your code can be completely independent of the locale conventions for
- * decimal points, thousands-separators, or even the particular decimal
- * digits used, or whether the number format is even decimal.
+ * <h2 id="factory_methods">Getting a NumberFormat</h2>
+ * To get a {@code NumberFormat} for the default Locale, use one of the static
+ * factory methods that return a concrete subclass of {@code NumberFormat}.
+ * The following formats all provide an example of formatting the {@code Number}
+ * "2000.50" with the {@link java.util.Locale#US US} locale as the default locale.
+ * <ul>
+ * <li> Use {@link #getInstance()} or {@link #getNumberInstance()} to get
+ * a decimal format. For example, {@code "2,000.5"}.
+ * <li> Use {@link #getIntegerInstance()} to get an integer number format.
+ * For example, {@code "2,000"}.
+ * <li> Use {@link #getCurrencyInstance} to get a currency number format.
+ * For example, {@code "$2,000.50"}.
+ * <li> Use {@link #getCompactNumberInstance} to get a compact number format.
+ * For example, {@code "2K"}.
+ * <li> Use {@link #getPercentInstance} to get a format for displaying percentages.
+ * For example, {@code "200,050%"}.
+ * </ul>
  *
- * <p>
- * To format a number for the current Locale, use one of the factory
- * class methods:
- * <blockquote>
- * {@snippet lang=java :
- * myString = NumberFormat.getInstance().format(myNumber);
- * }
- * </blockquote>
- * If you are formatting multiple numbers, it is
- * more efficient to get the format and use it multiple times so that
- * the system doesn't have to fetch the information about the local
- * language and country conventions multiple times.
- * <blockquote>
- * {@snippet lang=java :
- * NumberFormat nf = NumberFormat.getInstance();
- * for (var myNumber : numbers) {
- *     output.println(nf.format(myNumber) + "; ");
- * }
- * }
- * </blockquote>
- * To format a number for a different Locale, specify it in the
- * call to {@code getInstance}.
- * <blockquote>
- * {@snippet lang=java :
- * NumberFormat nf = NumberFormat.getInstance(Locale.FRENCH);
- * }
- * </blockquote>
+ * Alternatively, if a {@code NumberFormat} for a different locale is required, use
+ * one of the overloaded factory methods that take {@code Locale} as a parameter,
+ * for example, {@link #getIntegerInstance(Locale)}. If the installed locale-sensitive
+ * service implementation does not support the given {@code Locale}, the parent
+ * locale chain will be looked up, and a {@code Locale} used that is supported.
  *
- * <p>If the locale contains "nu" (numbers) and/or "rg" (region override)
+ * <h3>Locale Extensions</h3>
+ * Formatting behavior can be changed when using a locale that contains any of the following
  * <a href="../util/Locale.html#def_locale_extension">Unicode extensions</a>,
- * the decimal digits, and/or the country used for formatting are overridden.
+ * <ul>
+ * <li> "nu"
+ * (<a href="https://unicode.org/reports/tr35/#UnicodeNumberSystemIdentifier">
+ * Numbering System</a>) - Overrides the decimal digits used
+ * <li> "rg"
+ * (<a href="https://unicode.org/reports/tr35/#RegionOverride">
+ * Region Override</a>) - Overrides the country used
+ * <li> "cf"
+ * (<a href="https://www.unicode.org/reports/tr35/tr35.html#UnicodeCurrencyFormatIdentifier">
+ * Currency Format style</a>) - Overrides the Currency Format style used
+ * </ul>
+ * <p>
  * If both "nu" and "rg" are specified, the decimal digits from the "nu"
  * extension supersedes the implicit one from the "rg" extension.
+ * Although <a href="../util/Locale.html#def_locale_extension">Unicode extensions</a>
+ * defines various keys and values, actual locale-sensitive service implementations
+ * in a Java Runtime Environment might not support any particular Unicode locale
+ * attributes or key/type pairs.
+ * <p>Below is an example of a "US" locale currency format with accounting style,
+ * <blockquote>{@code NumberFormat.getCurrencyInstance(Locale.forLanguageTag("en-US-u-cf-account"));}</blockquote>
+ * With this style, a negative value is formatted enclosed in parentheses, instead
+ * of being prepended with a minus sign.
  *
- * <p>You can also use a {@code NumberFormat} to parse numbers:
- * <blockquote>
+ * <h2>Using NumberFormat</h2>
+ * The following is an example of formatting and parsing in a localized fashion,
  * {@snippet lang=java :
- * myNumber = nf.parse(myString);
+ * NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(Locale.US);
+ * currencyFormat.format(100000); // returns "$100,000.00"
+ * currencyFormat.parse("$100,000.00"); // returns 100000
  * }
- * </blockquote>
- * Use {@code getInstance} or {@code getNumberInstance} to get the
- * normal number format. Use {@code getIntegerInstance} to get an
- * integer number format. Use {@code getCurrencyInstance} to get the
- * currency number format. Use {@code getCompactNumberInstance} to get the
- * compact number format to format a number in shorter form. For example,
- * {@code 2000} can be formatted as {@code "2K"} in
- * {@link java.util.Locale#US US locale}. Use {@code getPercentInstance}
- * to get a format for displaying percentages. With this format, a fraction
- * like 0.53 is displayed as 53%.
+ *
+ * <h2>Customizing NumberFormat</h2>
+ * {@code NumberFormat} provides API to customize formatting and parsing behavior,
+ * <ul>
+ * <li> {@link #setParseIntegerOnly(boolean)}; when {@code true}, will only return the
+ * integer portion of the number parsed from the String.
+ * <li> {@link #setMinimumFractionDigits(int)}; Use to adjust the expected digits when
+ * formatting. Use any of the other minimum/maximum or fraction/integer setter methods
+ * in the same manner.
+ * <li> {@link #setGroupingUsed(boolean)}; when {@code true}, formatted numbers will be displayed
+ * with grouping separators. Additionally, when {@code false}, parsing will not expect
+ * grouping separators in the parsed String.
+ * <li> {@link #setStrict(boolean)}; when {@code true}, parsing will be done strictly.
+ * The behavior of strict parsing should be referred to in the implementing
+ * {@code NumberFormat} subclass.
+ * </ul>
  *
  * <p>
- * You can also control the display of numbers with such methods as
- * {@code setMinimumFractionDigits}.
- * If you want even more control over the format or parsing,
- * or want to give your users more control,
- * you can try casting the {@code NumberFormat} you get from the factory methods
- * to a {@code DecimalFormat} or {@code CompactNumberFormat} depending on
- * the factory method used. This will work for the vast majority of locales;
- * just remember to put it in a {@code try} block in case you encounter
- * an unusual one.
- *
- * <p>
- * NumberFormat and DecimalFormat are designed such that some controls
- * work for formatting and others work for parsing.  The following is
- * the detailed description for each these control methods,
- * <p>
- * setParseIntegerOnly : only affects parsing, e.g.
- * if true,  "3456.78" &rarr; 3456 (and leaves the parse position just after index 6)
- * if false, "3456.78" &rarr; 3456.78 (and leaves the parse position just after index 8)
- * This is independent of formatting.  If you want to not show a decimal point
- * where there might be no digits after the decimal point, use
- * setDecimalSeparatorAlwaysShown.
- * <p>
- * setDecimalSeparatorAlwaysShown : only affects formatting, and only where
- * there might be no digits after the decimal point, such as with a pattern
- * like "#,##0.##", e.g.,
- * if true,  3456.00 &rarr; "3,456."
- * if false, 3456.00 &rarr; "3456"
- * This is independent of parsing.  If you want parsing to stop at the decimal
- * point, use setParseIntegerOnly.
+ * To provide more control over formatting or parsing behavior, type checking can
+ * be done to safely convert to an implementing subclass of {@code NumberFormat}; this
+ * provides additional methods defined by the subclass.
+ * For example,
+ * {@snippet lang=java :
+ * NumberFormat nFmt = NumberFormat.getInstance(Locale.US);
+ * if (nFmt instanceof DecimalFormat dFmt) {
+ *     dFmt.setDecimalSeparatorAlwaysShown(true);
+ *     dFmt.format(100); // returns "100."
+ * }
+ * }
+ * The {@code NumberFormat} subclass returned by the factory methods is dependent
+ * on the locale-service provider implementation installed, and may not always
+ * be {@link DecimalFormat} or {@link CompactNumberFormat}.
  *
  * <p>
  * You can also use forms of the {@code parse} and {@code format}
  * methods with {@code ParsePosition} and {@code FieldPosition} to
  * allow you to:
  * <ul>
- * <li> progressively parse through pieces of a string
- * <li> align the decimal point and other areas
+ * <li> Progressively parse through pieces of a string
+ * <li> Align the decimal point and other areas
  * </ul>
  * For example, you can align numbers in two ways:
  * <ol>
@@ -175,23 +183,42 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  *      numbers: "(12)" for -12.
  * </ol>
  *
- * <h2><a id="synchronization">Synchronization</a></h2>
- *
+ * <h2><a id="leniency">Leniency</a></h2>
+ * {@code NumberFormat} by default, parses leniently. Subclasses may consider
+ * implementing strict parsing and as such, overriding and providing
+ * implementations for the optional {@link #isStrict()} and {@link
+ * #setStrict(boolean)} methods.
  * <p>
+ * Lenient parsing should be used when attempting to parse a number
+ * out of a String that contains non-numerical or non-format related values.
+ * For example, using a {@link Locale#US} currency format to parse the number
+ * {@code 1000} out of the String "$1,000.00 was paid".
+ * <p>
+ * Strict parsing should be used when attempting to ensure a String adheres exactly
+ * to a locale's conventions, and can thus serve to validate input. For example, successfully
+ * parsing the number {@code 1000.55} out of the String "1.000,55" confirms the String
+ * exactly adhered to the {@link Locale#GERMANY} numerical conventions.
+ *
+ * <h2><a id="synchronization">Synchronization</a></h2>
  * Number formats are generally not synchronized.
  * It is recommended to create separate format instances for each thread.
  * If multiple threads access a format concurrently, it must be synchronized
  * externally.
  *
- * @implSpec The {@link #format(double, StringBuffer, FieldPosition)},
+ * @implSpec
+ * Null Parameter Handling
+ * <ul>
+ * <li> The {@link #format(double, StringBuffer, FieldPosition)},
  * {@link #format(long, StringBuffer, FieldPosition)} and
  * {@link #parse(String, ParsePosition)} methods may throw
  * {@code NullPointerException}, if any of their parameter is {@code null}.
  * The subclass may provide its own implementation and specification about
  * {@code NullPointerException}.
+ * </ul>
  *
- * <p>
- * The default implementation provides rounding modes defined
+ * Default RoundingMode
+ * <ul>
+ * <li> The default implementation provides rounding modes defined
  * in {@link java.math.RoundingMode} for formatting numbers. It
  * uses the {@linkplain java.math.RoundingMode#HALF_EVEN
  * round half-even algorithm}. To change the rounding mode use
@@ -200,10 +227,14 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * configured to round floating point numbers using half-even
  * rounding (see {@link java.math.RoundingMode#HALF_EVEN
  * RoundingMode.HALF_EVEN}) for formatting.
+ * </ul>
  *
+ * @spec         https://www.unicode.org/reports/tr35
+ *               Unicode Locale Data Markup Language (LDML)
  * @see          DecimalFormat
  * @see          ChoiceFormat
  * @see          CompactNumberFormat
+ * @see          Locale
  * @author       Mark Davis
  * @author       Helena Shih
  * @since 1.1
@@ -285,23 +316,11 @@ public abstract class NumberFormat extends Format  {
     }
 
     /**
-     * Parses text from a string to produce a {@code Number}.
-     * <p>
-     * The method attempts to parse text starting at the index given by
-     * {@code pos}.
-     * If parsing succeeds, then the index of {@code pos} is updated
-     * to the index after the last character used (parsing does not necessarily
-     * use all characters up to the end of the string), and the parsed
-     * number is returned. The updated {@code pos} can be used to
-     * indicate the starting point for the next call to this method.
-     * If an error occurs, then the index of {@code pos} is not
-     * changed, the error index of {@code pos} is set to the index of
-     * the character where the error occurred, and null is returned.
-     * <p>
-     * See the {@link #parse(String, ParsePosition)} method for more information
-     * on number parsing.
+     * {@inheritDoc Format}
      *
-     * @param source A {@code String}, part of which should be parsed.
+     * @implSpec This implementation is equivalent to calling {@code parse(source,
+     *           pos)}.
+     * @param source the {@code String} to parse
      * @param pos A {@code ParsePosition} object with index and error
      *            index information as described above.
      * @return A {@code Number} parsed from the string. In case of
@@ -399,33 +418,44 @@ public abstract class NumberFormat extends Format  {
                                         FieldPosition pos);
 
     /**
-     * Returns a Long if possible (e.g., within the range [Long.MIN_VALUE,
+     * Parses text from the beginning of the given string to produce a {@code Number}.
+     * <p>
+     * This method attempts to parse text starting at the index given by the
+     * {@code ParsePosition}. If parsing succeeds, then the index of the {@code
+     * ParsePosition} is updated to the index after the last character used
+     * (parsing does not necessarily use all characters up to the end of the
+     * string), and the parsed number is returned. The updated {@code
+     * ParsePosition} can be used to indicate the starting
+     * point for the next call to this method. If an error occurs, then the
+     * index of the {@code ParsePosition} is not changed, the error index of the
+     * {@code ParsePosition} is set to the index of the character where the error
+     * occurred, and {@code null} is returned.
+     * <p>
+     * This method will return a Long if possible (e.g., within the range [Long.MIN_VALUE,
      * Long.MAX_VALUE] and with no decimals), otherwise a Double.
-     * If IntegerOnly is set, will stop at a decimal
-     * point (or equivalent; e.g., for rational numbers "1 2/3", will stop
-     * after the 1).
-     * Does not throw an exception; if no object can be parsed, index is
-     * unchanged!
      *
-     * @param source the String to parse
-     * @param parsePosition the parse position
-     * @return the parsed value
-     * @see java.text.NumberFormat#isParseIntegerOnly
-     * @see java.text.Format#parseObject
+     * @param source the {@code String} to parse
+     * @param parsePosition A {@code ParsePosition} object with index and error
+     *            index information as described above.
+     * @return A {@code Number} parsed from the string. In case of
+     *         failure, returns {@code null}.
+     * @throws NullPointerException if {@code source} or {@code ParsePosition}
+     *         is {@code null}.
+     * @see #isStrict()
      */
     public abstract Number parse(String source, ParsePosition parsePosition);
 
     /**
-     * Parses text from the beginning of the given string to produce a number.
-     * The method may not use the entire text of the given string.
+     * Parses text from the beginning of the given string to produce a {@code Number}.
      * <p>
-     * See the {@link #parse(String, ParsePosition)} method for more information
-     * on number parsing.
+     * This method will return a Long if possible (e.g., within the range [Long.MIN_VALUE,
+     * Long.MAX_VALUE] and with no decimals), otherwise a Double.
      *
-     * @param source A {@code String} whose beginning should be parsed.
+     * @param source A {@code String}, to be parsed from the beginning.
      * @return A {@code Number} parsed from the string.
-     * @throws    ParseException if the beginning of the specified string
-     *            cannot be parsed.
+     * @throws ParseException if parsing fails
+     * @throws NullPointerException if {@code source} is {@code null}.
+     * @see #isStrict()
      */
     public Number parse(String source) throws ParseException {
         ParsePosition parsePosition = new ParsePosition(0);
@@ -461,6 +491,44 @@ public abstract class NumberFormat extends Format  {
      */
     public void setParseIntegerOnly(boolean value) {
         parseIntegerOnly = value;
+    }
+
+    /**
+     * {@return {@code true} if this format will parse numbers strictly;
+     * {@code false} otherwise}
+     *
+     * @implSpec The default implementation always throws {@code
+     * UnsupportedOperationException}. Subclasses should override this method
+     * when implementing strict parsing.
+     * @throws    UnsupportedOperationException if the implementation of this
+     *            method does not support this operation
+     * @see ##leniency Leniency Section
+     * @see #setStrict(boolean)
+     * @since 23
+     */
+    public boolean isStrict() {
+        throw new UnsupportedOperationException("Subclasses should override this " +
+                "method when implementing strict parsing");
+    }
+
+    /**
+     * Change the leniency value for parsing. Parsing can either be strict or lenient,
+     * by default it is lenient.
+     *
+     * @implSpec The default implementation always throws {@code
+     * UnsupportedOperationException}. Subclasses should override this method
+     * when implementing strict parsing.
+     * @param strict {@code true} if parsing should be done strictly;
+     *               {@code false} otherwise
+     * @throws    UnsupportedOperationException if the implementation of this
+     *            method does not support this operation
+     * @see ##leniency Leniency Section
+     * @see #isStrict()
+     * @since 23
+     */
+    public void setStrict(boolean strict) {
+        throw new UnsupportedOperationException("Subclasses should override this " +
+                "method when implementing strict parsing");
     }
 
     //============== Locale Stuff =====================
@@ -678,6 +746,33 @@ public abstract class NumberFormat extends Format  {
     }
 
     /**
+     * This method compares the passed NumberFormat to a number of pre-defined
+     * style NumberFormat instances, (created with the passed locale). Returns a
+     * matching FormatStyle string if found, otherwise null.
+     * This method is used by MessageFormat to provide string pattens for NumberFormat
+     * Subformats. Any future pre-defined NumberFormat styles should be added to this method.
+     */
+    static String matchToStyle(NumberFormat fmt, Locale locale) {
+        if (fmt.equals(NumberFormat.getInstance(locale))) {
+            return "";
+        } else if (fmt.equals(NumberFormat.getCurrencyInstance(locale))) {
+            return "currency";
+        } else if (fmt.equals(NumberFormat.getPercentInstance(locale))) {
+            return "percent";
+        } else if (fmt.equals(NumberFormat.getIntegerInstance(locale))) {
+            return "integer";
+        } else if (fmt.equals(NumberFormat.getCompactNumberInstance(locale,
+                NumberFormat.Style.SHORT))) {
+            return "compact_short";
+        } else if (fmt.equals(NumberFormat.getCompactNumberInstance(locale,
+                NumberFormat.Style.LONG))) {
+            return "compact_long";
+        } else {
+            return null;
+        }
+    }
+
+    /**
      * Returns an array of all locales for which the
      * {@code get*Instance} methods of this class can return
      * localized instances.
@@ -732,12 +827,12 @@ public abstract class NumberFormat extends Format  {
             return false;
         }
         NumberFormat other = (NumberFormat) obj;
-        return (maximumIntegerDigits == other.maximumIntegerDigits
+        return maximumIntegerDigits == other.maximumIntegerDigits
             && minimumIntegerDigits == other.minimumIntegerDigits
             && maximumFractionDigits == other.maximumFractionDigits
             && minimumFractionDigits == other.minimumFractionDigits
             && groupingUsed == other.groupingUsed
-            && parseIntegerOnly == other.parseIntegerOnly);
+            && parseIntegerOnly == other.parseIntegerOnly;
     }
 
     /**

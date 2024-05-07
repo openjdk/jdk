@@ -191,9 +191,6 @@ void VM_Version::initialize() {
     if (FLAG_IS_DEFAULT(UseSIMDForMemoryOps)) {
       FLAG_SET_DEFAULT(UseSIMDForMemoryOps, true);
     }
-    if (FLAG_IS_DEFAULT(AlwaysMergeDMB)) {
-      FLAG_SET_DEFAULT(AlwaysMergeDMB, true);
-    }
   }
 
   // Cortex A53

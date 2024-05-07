@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "gc/g1/g1FullCollector.inline.hpp"
 #include "gc/g1/g1FullGCCompactionPoint.hpp"
-#include "gc/g1/heapRegion.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "utilities/debug.hpp"

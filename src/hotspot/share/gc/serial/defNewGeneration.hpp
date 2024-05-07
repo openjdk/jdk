@@ -201,9 +201,6 @@ class DefNewGeneration: public Generation {
   // Return true if the expansion was successful.
   bool expand(size_t bytes);
 
-  // DefNewGeneration cannot currently expand except at
-  // a GC.
-  virtual bool is_maximal_no_gc() const { return true; }
 
   // Iteration
   void object_iterate(ObjectClosure* blk);
@@ -237,18 +234,7 @@ class DefNewGeneration: public Generation {
   void gc_epilogue(bool full);
 
   // Save the tops for eden, from, and to
-  virtual void record_spaces_top();
-
-  // Accessing marks
-  void save_marks();
-
-  bool no_allocs_since_save_marks();
-
-  // Need to declare the full complement of closures, whether we'll
-  // override them or not, or get message from the compiler:
-  //   oop_since_save_marks_iterate_nv hides virtual function...
-  template <typename OopClosureType>
-  void oop_since_save_marks_iterate(OopClosureType* cl);
+  void record_spaces_top();
 
   // For Old collection (part of running Full GC), the DefNewGeneration can
   // contribute the free part of "to-space" as the scratch space.

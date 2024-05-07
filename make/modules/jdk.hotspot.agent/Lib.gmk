@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -26,57 +26,55 @@
 include LibCommon.gmk
 
 ################################################################################
+## Build libsaproc
+################################################################################
 
-ifeq ($(call isTargetOs, linux), true)
-  SA_CFLAGS := -D_FILE_OFFSET_BITS=64
-
-else ifeq ($(call isTargetOs, macosx), true)
-  SA_CFLAGS := -D_GNU_SOURCE -mno-omit-leaf-frame-pointer \
+ifeq ($(call isTargetOs, macosx), true)
+  LIBSAPROC_CFLAGS := -D_GNU_SOURCE -mno-omit-leaf-frame-pointer \
       -mstack-alignment=16 -fPIC
-  LIBSA_EXTRA_SRC := $(SUPPORT_OUTPUTDIR)/gensrc/jdk.hotspot.agent
+  LIBSAPROC_EXTRA_SRC := $(SUPPORT_OUTPUTDIR)/gensrc/jdk.hotspot.agent
 else ifeq ($(call isTargetOs, windows), true)
-  SA_CFLAGS := -D_WINDOWS -D_DEBUG -D_CONSOLE -EHsc
+  LIBSAPROC_CFLAGS := -D_WINDOWS -D_DEBUG -D_CONSOLE -EHsc
   ifeq ($(call isTargetCpu, x86_64), true)
-    SA_CXXFLAGS := -DWIN64
+    LIBSAPROC_CXXFLAGS := -DWIN64
   else
     # Only add /RTC1 flag for debug builds as it's
     # incompatible with release type builds. See
     # https://msdn.microsoft.com/en-us/library/8wtf2dfz.aspx
-    ifeq ($(DEBUG_LEVEL),slowdebug)
-      SA_CXXFLAGS := -RTC1
+    ifeq ($(DEBUG_LEVEL), slowdebug)
+      LIBSAPROC_CXXFLAGS := -RTC1
     endif
   endif
 endif
 
-SA_TOOLCHAIN := $(TOOLCHAIN_DEFAULT)
 ifeq ($(call isTargetOs, linux), true)
-  SA_TOOLCHAIN := TOOLCHAIN_LINK_CXX
+  LIBSAPROC_LINK_TYPE := C++
+else
+  LIBSAPROC_LINK_TYPE := C
 endif
 
-################################################################################
-
-$(eval $(call SetupJdkLibrary, BUILD_LIBSA, \
+$(eval $(call SetupJdkLibrary, BUILD_LIBSAPROC, \
     NAME := saproc, \
-    TOOLCHAIN := $(SA_TOOLCHAIN), \
+    LINK_TYPE := $(LIBSAPROC_LINK_TYPE), \
     OPTIMIZATION := HIGH, \
+    EXTRA_HEADER_DIRS := java.base:libjvm, \
     DISABLED_WARNINGS_gcc := sign-compare, \
     DISABLED_WARNINGS_gcc_ps_core.c := pointer-arith, \
     DISABLED_WARNINGS_clang_ps_core.c := pointer-arith, \
     DISABLED_WARNINGS_clang := sign-compare, \
     DISABLED_WARNINGS_clang_libproc_impl.c := format-nonliteral, \
     DISABLED_WARNINGS_clang_sadis.c := format-nonliteral, \
-    CFLAGS := $(CFLAGS_JDKLIB) $(SA_CFLAGS), \
-    CXXFLAGS := $(CXXFLAGS_JDKLIB) $(SA_CFLAGS) $(SA_CXXFLAGS), \
-    EXTRA_SRC := $(LIBSA_EXTRA_SRC), \
-    LDFLAGS := $(LDFLAGS_JDKLIB) $(call SET_SHARED_LIBRARY_ORIGIN), \
-    LIBS := $(LIBCXX), \
-    LIBS_unix := -ljava, \
+    CFLAGS := $(LIBSAPROC_CFLAGS), \
+    CXXFLAGS := $(LIBSAPROC_CFLAGS) $(LIBSAPROC_CXXFLAGS), \
+    EXTRA_SRC := $(LIBSAPROC_EXTRA_SRC), \
+    JDK_LIBS := java.base:libjava, \
     LIBS_linux := $(LIBDL), \
-    LIBS_macosx := -framework Foundation \
-        -framework JavaRuntimeSupport -framework Security -framework CoreFoundation, \
-    LIBS_windows := dbgeng.lib $(WIN_JAVA_LIB), \
+    LIBS_macosx := \
+        -framework CoreFoundation \
+        -framework Foundation \
+        -framework JavaRuntimeSupport \
+        -framework Security, \
+    LIBS_windows := dbgeng.lib, \
 ))
 
-TARGETS += $(BUILD_LIBSA)
-
-################################################################################
+TARGETS += $(BUILD_LIBSAPROC)

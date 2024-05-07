@@ -272,12 +272,9 @@ public class PackageWriter extends HtmlDocletWriter {
     protected Navigation getNavBar(PageMode pageMode, Element element) {
         List<Content> subnavLinks = new ArrayList<>();
         if (configuration.showModules) {
-            ModuleElement mdle = configuration.docEnv.getElementUtils().getModuleOf(packageElement);
-            subnavLinks.add(links.createLink(pathToRoot.resolve(docPaths.moduleSummary(mdle)),
-                    Text.of(mdle.getQualifiedName())));
+            subnavLinks.add(getBreadcrumbLink(utils.elementUtils.getModuleOf(packageElement), false));
         }
-        subnavLinks.add(links.createLink(pathString(packageElement, DocPaths.PACKAGE_SUMMARY),
-                getLocalizedPackageName(packageElement), HtmlStyle.currentSelection, ""));
+        subnavLinks.add(getBreadcrumbLink(packageElement, true));
         return super.getNavBar(pageMode, element).setSubNavLinks(subnavLinks);
     }
 

@@ -47,7 +47,7 @@ static intptr_t* const  good_addressN = dataN + 1;
 static int* const       good_address32 = data32 + 1;
 
 
-void test_safefetchN_positive() {
+static void test_safefetchN_positive() {
   intptr_t a = SafeFetchN(good_addressN, 1);
   ASSERT_EQ(patternN, a);
 }

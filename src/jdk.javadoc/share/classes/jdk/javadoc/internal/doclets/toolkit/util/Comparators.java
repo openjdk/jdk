@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,12 +32,14 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.PrimitiveType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.SimpleElementVisitor14;
 import javax.lang.model.util.SimpleTypeVisitor9;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 
@@ -143,7 +145,11 @@ public class Comparators {
                     if (result != 0) {
                         return result;
                     }
-                    return compareModuleNames(e1, e2);
+                    result = compareModuleNames(e1, e2);
+                    if (result != 0) {
+                        return result;
+                    }
+                    return compareTypeParameters(e1, e2);
                 }
             };
         }
@@ -264,7 +270,10 @@ public class Comparators {
                     result = compareFullyQualifiedNames(e1, e2);
                     if (result != 0)
                         return result;
-                    return compareModuleNames(e1, e2);
+                    result = compareModuleNames(e1, e2);
+                    if (result != 0)
+                        return result;
+                    return compareTypeParameters(e1, e2);
                 }
             };
         }
@@ -364,7 +373,14 @@ public class Comparators {
                     if (result != 0) {
                         return result;
                     }
-                    return compareModuleNames(e1, e2);
+                    result = compareModuleNames(e1, e2);
+                    if (result != 0) {
+                        return result;
+                    }
+                    // this might not be needed: if e1 != e2 and both are
+                    // executables they must differ in FQN and thus we
+                    // shouldn't reach here
+                    return compareTypeParameters(e1, e2);
                 }
             };
         }
@@ -421,6 +437,21 @@ public class Comparators {
                 }
 
             }.visit(t);
+        }
+
+        protected final int compareTypeParameters(Element e1, Element e2) {
+            if (!e1.getKind().isExecutable() || !e2.getKind().isExecutable())
+                return 0;
+            var typeParameters1 = ((ExecutableElement) e1).getTypeParameters();
+            var typeParameters2 = ((ExecutableElement) e2).getTypeParameters();
+            var parameters1 = typeParameters1.toArray(new TypeParameterElement[0]);
+            var parameters2 = typeParameters2.toArray(new TypeParameterElement[0]);
+            return Arrays.compare(parameters1, parameters2, (p1, p2) -> {
+                var bounds1 = p1.getBounds().toArray(new TypeMirror[0]);
+                var bounds2 = p2.getBounds().toArray(new TypeMirror[0]);
+                return Arrays.compare(bounds1, bounds2, (b1, b2) ->
+                        utils.compareStrings(true, b1.toString(), b2.toString()));
+            });
         }
 
         /**

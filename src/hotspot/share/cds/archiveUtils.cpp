@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,12 +46,16 @@
 #include "utilities/globalDefinitions.hpp"
 
 CHeapBitMap* ArchivePtrMarker::_ptrmap = nullptr;
+CHeapBitMap* ArchivePtrMarker::_rw_ptrmap = nullptr;
+CHeapBitMap* ArchivePtrMarker::_ro_ptrmap = nullptr;
 VirtualSpace* ArchivePtrMarker::_vs;
 
 bool ArchivePtrMarker::_compacted;
 
 void ArchivePtrMarker::initialize(CHeapBitMap* ptrmap, VirtualSpace* vs) {
   assert(_ptrmap == nullptr, "initialize only once");
+  assert(_rw_ptrmap == nullptr, "initialize only once");
+  assert(_ro_ptrmap == nullptr, "initialize only once");
   _vs = vs;
   _compacted = false;
   _ptrmap = ptrmap;
@@ -65,6 +69,37 @@ void ArchivePtrMarker::initialize(CHeapBitMap* ptrmap, VirtualSpace* vs) {
 
   // We need one bit per pointer in the archive.
   _ptrmap->initialize(estimated_archive_size / sizeof(intptr_t));
+}
+
+void ArchivePtrMarker::initialize_rw_ro_maps(CHeapBitMap* rw_ptrmap, CHeapBitMap* ro_ptrmap) {
+  address* rw_bottom = (address*)ArchiveBuilder::current()->rw_region()->base();
+  address* ro_bottom = (address*)ArchiveBuilder::current()->ro_region()->base();
+
+  _rw_ptrmap = rw_ptrmap;
+  _ro_ptrmap = ro_ptrmap;
+
+  size_t rw_size = ArchiveBuilder::current()->rw_region()->used() / sizeof(address);
+  size_t ro_size = ArchiveBuilder::current()->ro_region()->used() / sizeof(address);
+  // ro_start is the first bit in _ptrmap that covers the pointer that would sit at ro_bottom.
+  // E.g., if rw_bottom = (address*)100
+  //          ro_bottom = (address*)116
+  //       then for 64-bit platform:
+  //          ro_start = ro_bottom - rw_bottom = (116 - 100) / sizeof(address) = 2;
+  size_t ro_start = ro_bottom - rw_bottom;
+
+  // Note: ptrmap is big enough only to cover the last pointer in ro_region.
+  // See ArchivePtrMarker::compact()
+  _rw_ptrmap->initialize(rw_size);
+  _ro_ptrmap->initialize(_ptrmap->size() - ro_start);
+
+  for (size_t rw_bit = 0; rw_bit < _rw_ptrmap->size(); rw_bit++) {
+    _rw_ptrmap->at_put(rw_bit, _ptrmap->at(rw_bit));
+  }
+
+  for(size_t ro_bit = ro_start; ro_bit < _ptrmap->size(); ro_bit++) {
+    _ro_ptrmap->at_put(ro_bit-ro_start, _ptrmap->at(ro_bit));
+  }
+  assert(_ptrmap->size() - ro_start == _ro_ptrmap->size(), "must be");
 }
 
 void ArchivePtrMarker::mark_pointer(address* ptr_loc) {

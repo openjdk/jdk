@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import java.util.List;
 import static sun.security.util.SecurityConstants.PROVIDER_VER;
 import static sun.security.util.SecurityProviderConstants.*;
 
-/**
+/*
  * The "SunJCE" Cryptographic Service Provider.
  *
  * @author Jan Luehe
@@ -549,7 +549,7 @@ public final class SunJCE extends Provider {
                 "com.sun.crypto.provider.AESParameters", null);
 
         ps("AlgorithmParameters", "GCM",
-                "com.sun.crypto.provider.GCMParameters");
+                "sun.security.util.GCMParameters");
 
         ps("AlgorithmParameters", "RC2",
                 "com.sun.crypto.provider.RC2Parameters");
