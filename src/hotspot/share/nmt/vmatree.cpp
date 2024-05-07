@@ -47,21 +47,6 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
     }
   };
 
-  // We will need the nodes which are closest to A from the left side and closest to B from the right side.
-  // Motivating example: reserve(0,100, mtNMT); reserve(50,75, mtTest);
-  // This will require the 2nd call to know which region the second reserve 'smashes' a hole into for proper summary accounting.
-  // LEQ_A is figured out a bit later on, as we need to find it for other purposes anyway.
-  bool LEQ_A_found = false;
-  AddressState LEQ_A;
-  bool GEQ_B_found = false;
-  AddressState GEQ_B;
-  TreapNode* geqB_n = tree.closest_geq(B);
-  if (geqB_n != nullptr) {
-    GEQ_B = {geqB_n->key(), geqB_n->val()};
-    GEQ_B_found = true;
-  }
-
-  SummaryDiff diff;
   IntervalChange stA{
       IntervalState{StateType::Released, Metadata{}},
       IntervalState{              state,   metadata}
@@ -70,6 +55,14 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
       IntervalState{              state,   metadata},
       IntervalState{StateType::Released, Metadata{}}
   };
+
+  // We will need the nodes which are closest to A from the left side and closest to B from the right side.
+  // Motivating example: reserve(0,100, mtNMT); reserve(50,75, mtTest);
+  // This example would require the 2nd call to know which region the second reserve 'smashes' a hole into for proper summary accounting.
+  // LEQ_A is figured out a bit later on, as we need to find it for other purposes anyway.
+  bool LEQ_A_found = false;
+  AddressState LEQ_A;
+
   // First handle A.
   // Find closest node that is LEQ A
   TreapNode* leqA_n = tree.closest_leq(A);
@@ -134,9 +127,9 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
   GrowableArrayCHeap<AddressState, mtNMT> to_be_deleted_inbetween_a_b;
   bool B_needs_insert = true;
 
-  // Find all nodes between (A, B] and record their addresses. Also update B's
+  // Find all nodes between (A, B] and record their addresses and values. Also update B's
   // outgoing state.
-  tree.visit_range(A + 1, B + 1, [&](TreapNode* head) {
+  tree.visit_range_in_order(A + 1, B + 1, [&](TreapNode* head) {
     int cmp_B = AddressComparator::cmp(head->key(), B);
     stB.out = head->val().out;
     if (cmp_B < 0) {
@@ -162,11 +155,18 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
   }
 
   // We now need to:
-  // 1. Delete all nodes between (A, B]. Including B in the case of a noop.
-  // 2. Perform summary accounting
+  // a) Delete all nodes between (A, B]. Including B in the case of a noop.
+  // b) Perform summary accounting
+  SummaryDiff diff;
 
-  if (to_be_deleted_inbetween_a_b.length() == 0 && LEQ_A_found && GEQ_B_found) {
-    // We have smashed a hole in an existing region (or replaced it entirely).
+  AddressState GEQ_B;
+  TreapNode* geqB_n = tree.closest_geq(B);
+  if (geqB_n != nullptr) {
+    GEQ_B = {geqB_n->key(), geqB_n->val()};
+  }
+
+  if (to_be_deleted_inbetween_a_b.length() == 0 && LEQ_A_found) {
+    // We must have smashed a hole in an existing region (or replaced it entirely).
     // LEQ_A - A - B - GEQ_B
     auto& rescom = diff.flag[NMTUtil::flag_to_index(LEQ_A.out().flag())];
     if (LEQ_A.out().type() == StateType::Reserved) {
@@ -177,16 +177,10 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
     }
   }
 
-  // Sort the found nodes in ascending order by address. This is for summary accounting purposes.
-  to_be_deleted_inbetween_a_b.sort([](AddressState* a, AddressState* b) -> int {
-    return -AddressComparator::cmp(a->address, b->address);
-  });
-
   // Track the previous node.
   AddressState prev{A, stA};
-  while (to_be_deleted_inbetween_a_b.length() > 0) {
-    const AddressState delete_me = to_be_deleted_inbetween_a_b.top();
-    to_be_deleted_inbetween_a_b.pop();
+  for (int i = 0; i < to_be_deleted_inbetween_a_b.length(); i++) {
+    const AddressState delete_me = to_be_deleted_inbetween_a_b.at(i);
     // Delete node in (A, B]
     tree.remove(delete_me.address);
     // Perform summary accounting

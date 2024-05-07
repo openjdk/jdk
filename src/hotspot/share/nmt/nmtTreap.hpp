@@ -199,7 +199,7 @@ private:
     // Visit everything in order, see that the key ordering is monotonically increasing.
     TreapNode* last_seen = nullptr;
     bool failed = false;
-    this->in_order_traversal([&](TreapNode* node) {
+    this->visit_in_order([&](TreapNode* node) {
       if (last_seen == nullptr) {
         last_seen = node;
         return;
@@ -322,43 +322,51 @@ public:
     return leqA_n;
   }
 
-private:
-  template<typename F>
-  void in_order_traversal_doer(F f, TreapNode* node) const {
-    if (node == nullptr) return;
-    in_order_traversal_doer(f, node->left());
-    f(node);
-    in_order_traversal_doer(f, node->right());
-  }
-
-public:
-
   // Visit all TreapNodes in ascending key order.
   template<typename F>
-  void in_order_traversal(F f) const {
-    in_order_traversal_doer(f, _root);
+  void visit_in_order(F f) const {
+    GrowableArrayCHeap<TreapNode*, mtNMT> to_visit;
+    TreapNode* head = _root;
+    while (!to_visit.is_empty() || head != nullptr) {
+      while (head != nullptr) {
+        to_visit.push(head);
+        head = head->left();
+      }
+      head = to_visit.pop();
+      f(head);
+      head = head->right();
+    }
   }
 
-  // Visit all TreapNodes where key is in range [from, to)
+  // Visit all TreapNodes in ascending order whose keys are in range [from, to).
   template<typename F>
-  void visit_range(const K& from, const K& to, F f) {
+  void visit_range_in_order(const K& from, const K& to, F f) {
     GrowableArrayCHeap<TreapNode*, mtNMT> to_visit;
-    to_visit.push(_root);
-    TreapNode* head = nullptr;
-    while (!to_visit.is_empty()) {
-      head = to_visit.pop();
-      if (head == nullptr) continue;
+    TreapNode* head = _root;
+    while (!to_visit.is_empty() || head != nullptr) {
+      while (head != nullptr) {
+        int cmp_from = COMPARATOR::cmp(head->key(), from);
+        to_visit.push(head);
+        if (cmp_from >= 0) {
+          head = head->left();
+        } else {
+          // We've reached a node which is strictly less than from
+          // We don't need to visit any further to the left.
+          break;
+        }
+      }
 
-      int cmp_from = COMPARATOR::cmp(head->key(), from);
-      int cmp_to = COMPARATOR::cmp(head->key(), to);
-      if (cmp_from < 0) {
-        to_visit.push(head->right());
-      } else if (cmp_to >= 0) {
-        to_visit.push(head->left());
-      } else if (cmp_from >= 0 && cmp_to < 0) {
+      head = to_visit.pop();
+
+      const int cmp_from = COMPARATOR::cmp(head->key(), from);
+      const int cmp_to = COMPARATOR::cmp(head->key(), to);
+      if (cmp_from >= 0 && cmp_to < 0) {
         f(head);
-        to_visit.push(head->left());
-        to_visit.push(head->right());
+      }
+      if (cmp_to < 0) {
+        head = head->right();
+      } else {
+        head = nullptr;
       }
     }
   }

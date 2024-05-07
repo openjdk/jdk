@@ -64,7 +64,7 @@ void MemoryFileTracker::print_report_on(const MemoryFile* device, outputStream* 
   stream->print_cr("Memory map of %s", device->_descriptive_name);
   stream->cr();
   VMATree::TreapNode* prev = nullptr;
-  device->_tree.in_order_traversal([&](VMATree::TreapNode* current) {
+  device->_tree.visit_in_order([&](VMATree::TreapNode* current) {
     if (prev == nullptr) {
       // Must be first node.
       prev = current;

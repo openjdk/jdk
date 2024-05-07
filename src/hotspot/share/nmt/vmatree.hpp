@@ -151,8 +151,8 @@ public:
 
 public:
   template<typename F>
-  void in_order_traversal(F f) const {
-    tree.in_order_traversal(f);
+  void visit_in_order(F f) const {
+    tree.visit_in_order(f);
   }
 };
 
