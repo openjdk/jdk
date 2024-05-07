@@ -126,7 +126,7 @@ oop ZObjArrayAllocator::initialize(HeapWord* mem) const {
       yield_for_safepoint();
 
       // Deal with safepoints
-      if (!seen_gc_safepoint && gc_safepoint_happened()) {
+      if (is_reference_type(element_type) && !seen_gc_safepoint && gc_safepoint_happened()) {
         // The first time we observe a GC safepoint in the yield point,
         // we have to restart processing with 11 remembered bits.
         seen_gc_safepoint = true;

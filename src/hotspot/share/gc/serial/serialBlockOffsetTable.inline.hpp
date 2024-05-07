@@ -27,14 +27,14 @@
 
 #include "gc/serial/serialBlockOffsetTable.hpp"
 
-inline uint8_t* SerialBlockOffsetSharedArray::entry_for_addr(const void* const p) const {
+inline uint8_t* SerialBlockOffsetTable::entry_for_addr(const void* const p) const {
   assert(_reserved.contains(p),
          "out of bounds access to block offset array");
   uint8_t* result = &_offset_base[uintptr_t(p) >> CardTable::card_shift()];
   return result;
 }
 
-inline HeapWord* SerialBlockOffsetSharedArray::addr_for_entry(const uint8_t* const p) const {
+inline HeapWord* SerialBlockOffsetTable::addr_for_entry(const uint8_t* const p) const {
   size_t delta = pointer_delta(p, _offset_base, sizeof(uint8_t));
   HeapWord* result = (HeapWord*) (delta << CardTable::card_shift());
   assert(_reserved.contains(result),

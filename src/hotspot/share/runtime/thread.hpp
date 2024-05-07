@@ -48,7 +48,9 @@ class HandleArea;
 class HandleMark;
 class ICRefillVerifier;
 class JvmtiRawMonitor;
+class NMethodClosure;
 class Metadata;
+class OopClosure;
 class OSThread;
 class ParkEvent;
 class ResourceArea;
@@ -58,8 +60,6 @@ class ThreadsList;
 class ThreadsSMRSupport;
 class VMErrorCallback;
 
-class OopClosure;
-class CodeBlobClosure;
 
 DEBUG_ONLY(class ResourceMark;)
 
@@ -443,10 +443,10 @@ class Thread: public ThreadShadow {
   // GC support
   // Apply "f->do_oop" to all root oops in "this".
   //   Used by JavaThread::oops_do.
-  // Apply "cf->do_code_blob" (if !nullptr) to all code blobs active in frames
-  virtual void oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf);
-  virtual void oops_do_frames(OopClosure* f, CodeBlobClosure* cf) {}
-  void oops_do(OopClosure* f, CodeBlobClosure* cf);
+  // Apply "cf->do_nmethod" (if !nullptr) to all nmethods active in frames
+  virtual void oops_do_no_frames(OopClosure* f, NMethodClosure* cf);
+  virtual void oops_do_frames(OopClosure* f, NMethodClosure* cf) {}
+  void oops_do(OopClosure* f, NMethodClosure* cf);
 
   // Handles the parallel case for claim_threads_do.
  private:

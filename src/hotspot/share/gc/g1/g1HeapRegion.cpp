@@ -188,7 +188,10 @@ void HeapRegion::set_starts_humongous(HeapWord* obj_top, size_t fill_size) {
   _type.set_starts_humongous();
   _humongous_start_region = this;
 
-  _bot_part.set_for_starts_humongous(obj_top, fill_size);
+  _bot->update_for_block(bottom(), obj_top);
+  if (fill_size > 0) {
+    _bot->update_for_block(obj_top, obj_top + fill_size);
+  }
 }
 
 void HeapRegion::set_continues_humongous(HeapRegion* first_hr) {
@@ -219,7 +222,7 @@ HeapRegion::HeapRegion(uint hrm_index,
   _bottom(mr.start()),
   _end(mr.end()),
   _top(nullptr),
-  _bot_part(bot, this),
+  _bot(bot),
   _pre_dummy_top(nullptr),
   _rem_set(nullptr),
   _hrm_index(hrm_index),
@@ -286,7 +289,7 @@ void HeapRegion::remove_code_root(nmethod* nm) {
   rem_set()->remove_code_root(nm);
 }
 
-void HeapRegion::code_roots_do(CodeBlobClosure* blk) const {
+void HeapRegion::code_roots_do(NMethodClosure* blk) const {
   rem_set()->code_roots_do(blk);
 }
 
@@ -328,28 +331,27 @@ public:
   bool has_oops_in_region() { return _has_oops_in_region; }
 };
 
-class VerifyCodeRootCodeBlobClosure: public CodeBlobClosure {
+class VerifyCodeRootNMethodClosure: public NMethodClosure {
   const HeapRegion* _hr;
   bool _failures;
 public:
-  VerifyCodeRootCodeBlobClosure(const HeapRegion* hr) :
+  VerifyCodeRootNMethodClosure(const HeapRegion* hr) :
     _hr(hr), _failures(false) {}
 
-  void do_code_blob(CodeBlob* cb) {
-    nmethod* nm = (cb == nullptr) ? nullptr : cb->as_compiled_method()->as_nmethod_or_null();
-    if (nm != nullptr) {
-      // Verify that the nemthod is live
-      VerifyCodeRootOopClosure oop_cl(_hr);
-      nm->oops_do(&oop_cl);
-      if (!oop_cl.has_oops_in_region()) {
-        log_error(gc, verify)("region [" PTR_FORMAT "," PTR_FORMAT "] has nmethod " PTR_FORMAT " in its code roots with no pointers into region",
-                              p2i(_hr->bottom()), p2i(_hr->end()), p2i(nm));
-        _failures = true;
-      } else if (oop_cl.failures()) {
-        log_error(gc, verify)("region [" PTR_FORMAT "," PTR_FORMAT "] has other failures for nmethod " PTR_FORMAT,
-                              p2i(_hr->bottom()), p2i(_hr->end()), p2i(nm));
-        _failures = true;
-      }
+  void do_nmethod(nmethod* nm) {
+    assert(nm != nullptr, "Sanity");
+
+    // Verify that the nmethod is live
+    VerifyCodeRootOopClosure oop_cl(_hr);
+    nm->oops_do(&oop_cl);
+    if (!oop_cl.has_oops_in_region()) {
+      log_error(gc, verify)("region [" PTR_FORMAT "," PTR_FORMAT "] has nmethod " PTR_FORMAT " in its code roots with no pointers into region",
+          p2i(_hr->bottom()), p2i(_hr->end()), p2i(nm));
+      _failures = true;
+    } else if (oop_cl.failures()) {
+      log_error(gc, verify)("region [" PTR_FORMAT "," PTR_FORMAT "] has other failures for nmethod " PTR_FORMAT,
+          p2i(_hr->bottom()), p2i(_hr->end()), p2i(nm));
+      _failures = true;
     }
   }
 
@@ -395,10 +397,10 @@ bool HeapRegion::verify_code_roots(VerifyOption vo) const {
     return has_code_roots;
   }
 
-  VerifyCodeRootCodeBlobClosure cb_cl(this);
-  code_roots_do(&cb_cl);
+  VerifyCodeRootNMethodClosure nm_cl(this);
+  code_roots_do(&nm_cl);
 
-  return cb_cl.failures();
+  return nm_cl.failures();
 }
 
 void HeapRegion::print() const { print_on(tty); }
@@ -433,39 +435,61 @@ void HeapRegion::print_on(outputStream* st) const {
 }
 
 static bool is_oop_safe(oop obj) {
-  if (!oopDesc::is_oop(obj)) {
-    log_error(gc, verify)(PTR_FORMAT " not an oop", p2i(obj));
+  // Make a few sanity checks of the class before calling the full-fledged
+  // is_oop check (which also performs its own klass verification).
+  Klass* klass = obj->klass_without_asserts();
+
+  if (klass == nullptr) {
+    log_error(gc, verify)("Object " PTR_FORMAT " has a null klass", p2i(obj));
     return false;
   }
 
-  // Now examine the Klass a little more closely.
-  Klass* klass = obj->klass_raw();
-
-  bool is_metaspace_object = Metaspace::contains(klass);
-  if (!is_metaspace_object) {
+  if (!Metaspace::contains(klass)) {
     log_error(gc, verify)("klass " PTR_FORMAT " of object " PTR_FORMAT " "
-                          "not metadata", p2i(klass), p2i(obj));
+                          "is not in metaspace", p2i(klass), p2i(obj));
     return false;
-  } else if (!klass->is_klass()) {
+  }
+
+  if (!klass->is_klass()) {
     log_error(gc, verify)("klass " PTR_FORMAT " of object " PTR_FORMAT " "
                           "not a klass", p2i(klass), p2i(obj));
+    return false;
+  }
+
+  // Now, perform the more in-depth verification of the object.
+  if (!oopDesc::is_oop(obj)) {
+    log_error(gc, verify)(PTR_FORMAT " not an oop", p2i(obj));
     return false;
   }
 
   return true;
 }
 
-// Closure that glues together validity check for oop references (first),
-// then optionally verifies the remembered set for that reference.
-class G1VerifyLiveAndRemSetClosure : public BasicOopIterateClosure {
-  VerifyOption _vo;
-  oop _containing_obj;
-  size_t _num_failures;
+class G1VerifyFailureCounter {
+  size_t _count;
+
+public:
+  G1VerifyFailureCounter() : _count(0) {}
 
   // Increases the failure counter and return whether this has been the first failure.
   bool record_failure() {
-    _num_failures++;
-    return _num_failures == 1;
+    _count++;
+    return _count == 1;
+  }
+
+  size_t count() const { return _count; }
+};
+
+// Closure that glues together validity check for oop references (first),
+// then optionally verifies the remembered set for that reference.
+class G1VerifyLiveAndRemSetClosure : public BasicOopIterateClosure {
+  const VerifyOption _vo;
+  const oop _containing_obj;
+  G1VerifyFailureCounter* const _failures;
+
+  // Increases the failure counter and return whether this has been the first failure.
+  bool record_failure() {
+    return _failures->record_failure();
   }
 
   static void print_object(outputStream* out, oop obj) {
@@ -479,17 +503,21 @@ class G1VerifyLiveAndRemSetClosure : public BasicOopIterateClosure {
   template <class T>
   struct Checker {
     G1CollectedHeap* _g1h;
-    G1VerifyLiveAndRemSetClosure* _cl;
+    G1VerifyFailureCounter* _failures;
     oop _containing_obj;
     T* _p;
     oop _obj;
 
-    Checker(G1VerifyLiveAndRemSetClosure* cl, oop containing_obj, T* p, oop obj) :
+    Checker(G1VerifyFailureCounter* failures, oop containing_obj, T* p, oop obj) :
       _g1h(G1CollectedHeap::heap()),
-      _cl(cl),
+      _failures(failures),
       _containing_obj(containing_obj),
       _p(p),
       _obj(obj) { }
+
+    bool record_failure() {
+      return _failures->record_failure();
+    }
 
     void print_containing_obj(outputStream* out, HeapRegion* from) {
       log_error(gc, verify)("Field " PTR_FORMAT " of obj " PTR_FORMAT " in region " HR_FORMAT,
@@ -509,7 +537,8 @@ class G1VerifyLiveAndRemSetClosure : public BasicOopIterateClosure {
     VerifyOption _vo;
     bool _is_in_heap;
 
-    LiveChecker(G1VerifyLiveAndRemSetClosure* cl, oop containing_obj, T* p, oop obj, VerifyOption vo) : Checker<T>(cl, containing_obj, p, obj) {
+    LiveChecker(G1VerifyFailureCounter* failures, oop containing_obj, T* p, oop obj, VerifyOption vo)
+      : Checker<T>(failures, containing_obj, p, obj) {
       _vo = vo;
       _is_in_heap = this->_g1h->is_in(obj);
     }
@@ -525,7 +554,7 @@ class G1VerifyLiveAndRemSetClosure : public BasicOopIterateClosure {
 
       MutexLocker x(G1RareEvent_lock, Mutex::_no_safepoint_check_flag);
 
-      if (this->_cl->record_failure()) {
+      if (this->record_failure()) {
         log.error("----------");
       }
 
@@ -551,7 +580,8 @@ class G1VerifyLiveAndRemSetClosure : public BasicOopIterateClosure {
     CardValue _cv_obj;
     CardValue _cv_field;
 
-    RemSetChecker(G1VerifyLiveAndRemSetClosure* cl, oop containing_obj, T* p, oop obj) : Checker<T>(cl, containing_obj, p, obj) {
+    RemSetChecker(G1VerifyFailureCounter* failures, oop containing_obj, T* p, oop obj)
+      : Checker<T>(failures, containing_obj, p, obj) {
       _from = this->_g1h->heap_region_containing(p);
       _to = this->_g1h->heap_region_containing(obj);
 
@@ -578,7 +608,7 @@ class G1VerifyLiveAndRemSetClosure : public BasicOopIterateClosure {
 
       MutexLocker x(G1RareEvent_lock, Mutex::_no_safepoint_check_flag);
 
-      if (this->_cl->record_failure()) {
+      if (this->record_failure()) {
         log.error("----------");
       }
       log.error("Missing rem set entry:");
@@ -591,43 +621,38 @@ class G1VerifyLiveAndRemSetClosure : public BasicOopIterateClosure {
 
   template <class T>
   void do_oop_work(T* p) {
-    assert(_containing_obj != nullptr, "must be");
-    assert(!G1CollectedHeap::heap()->is_obj_dead_cond(_containing_obj, _vo), "Precondition");
-
-    if (num_failures() >= G1MaxVerifyFailures) {
-      return;
-    }
-
+    // Check for null references first - they are fairly common and since there is
+    // nothing to do for them anyway (they can't fail verification), it makes sense
+    // to handle them first.
     T heap_oop = RawAccess<>::oop_load(p);
     if (CompressedOops::is_null(heap_oop)) {
       return;
     }
+
+    if (_failures->count() >= G1MaxVerifyFailures) {
+      return;
+    }
+
     oop obj = CompressedOops::decode_raw_not_null(heap_oop);
 
-    LiveChecker<T> live_check(this, _containing_obj, p, obj, _vo);
+    LiveChecker<T> live_check(_failures, _containing_obj, p, obj, _vo);
     if (live_check.failed()) {
       live_check.report_error();
       // There is no point in doing remset verification if the reference is bad.
       return;
     }
 
-    RemSetChecker<T> remset_check(this, _containing_obj, p, obj);
+    RemSetChecker<T> remset_check(_failures, _containing_obj, p, obj);
     if (remset_check.failed()) {
       remset_check.report_error();
     }
   }
 
 public:
-  G1VerifyLiveAndRemSetClosure(G1CollectedHeap* g1h, VerifyOption vo) :
-    _vo(vo),
-    _containing_obj(nullptr),
-    _num_failures(0) { }
-
-  void set_containing_obj(oop const obj) {
-    _containing_obj = obj;
-  }
-
-  size_t num_failures() const { return _num_failures; }
+  G1VerifyLiveAndRemSetClosure(oop containing_obj, VerifyOption vo, G1VerifyFailureCounter* failures)
+    : _vo(vo),
+      _containing_obj(containing_obj),
+      _failures(failures) {}
 
   virtual inline void do_oop(narrowOop* p) { do_oop_work(p); }
   virtual inline void do_oop(oop* p) { do_oop_work(p); }
@@ -636,9 +661,7 @@ public:
 bool HeapRegion::verify_liveness_and_remset(VerifyOption vo) const {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
-  G1VerifyLiveAndRemSetClosure cl(g1h, vo);
-
-  size_t other_failures = 0;
+  G1VerifyFailureCounter failures;
 
   HeapWord* p;
   for (p = bottom(); p < top(); p += block_size(p)) {
@@ -649,13 +672,13 @@ bool HeapRegion::verify_liveness_and_remset(VerifyOption vo) const {
     }
 
     if (is_oop_safe(obj)) {
-      cl.set_containing_obj(obj);
+      G1VerifyLiveAndRemSetClosure cl(obj, vo, &failures);
       obj->oop_iterate(&cl);
     } else {
-      other_failures++;
+      failures.record_failure();
     }
 
-    if ((cl.num_failures() + other_failures) >= G1MaxVerifyFailures) {
+    if (failures.count() >= G1MaxVerifyFailures) {
       return true;
     }
   }
@@ -665,7 +688,7 @@ bool HeapRegion::verify_liveness_and_remset(VerifyOption vo) const {
                           p2i(p), p2i(top()));
     return true;
   }
-  return (cl.num_failures() + other_failures) != 0;
+  return failures.count() != 0;
 }
 
 bool HeapRegion::verify(VerifyOption vo) const {
@@ -674,11 +697,6 @@ bool HeapRegion::verify(VerifyOption vo) const {
 
   if (verify_liveness_and_remset(vo)) {
     return true;
-  }
-
-  // Only regions in old generation contain valid BOT.
-  if (!is_empty() && !is_young()) {
-    _bot_part.verify();
   }
 
   if (is_humongous()) {
@@ -706,10 +724,6 @@ void HeapRegion::mangle_unused_area() {
 }
 #endif
 
-void HeapRegion::update_bot_for_block(HeapWord* start, HeapWord* end) {
-  _bot_part.update_for_block(start, end);
-}
-
 void HeapRegion::object_iterate(ObjectClosure* blk) {
   HeapWord* p = bottom();
   while (p < top()) {
@@ -723,7 +737,7 @@ void HeapRegion::object_iterate(ObjectClosure* blk) {
 void HeapRegion::fill_with_dummy_object(HeapWord* address, size_t word_size, bool zap) {
   // Keep the BOT in sync for old generation regions.
   if (is_old()) {
-    update_bot_for_obj(address, word_size);
+    update_bot_for_block(address, address + word_size);
   }
   // Fill in the object.
   CollectedHeap::fill_with_object(address, word_size, zap);

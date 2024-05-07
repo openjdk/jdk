@@ -40,7 +40,7 @@ class outputStream;
 class HeapRegionRemSet : public CHeapObj<mtGC> {
   friend class VMStructs;
 
-  // A set of code blobs (nmethods) whose code contains pointers into
+  // A set of nmethods whose code contains pointers into
   // the region that owns this RSet.
   G1CodeRootSet _code_roots;
 
@@ -152,8 +152,8 @@ public:
   void remove_code_root(nmethod* nm);
   void bulk_remove_code_roots();
 
-  // Applies blk->do_code_blob() to each of the entries in _code_roots
-  void code_roots_do(CodeBlobClosure* blk) const;
+  // Applies blk->do_nmethod() to each of the entries in _code_roots
+  void code_roots_do(NMethodClosure* blk) const;
   // Clean out code roots not having an oop pointing into this region any more.
   void clean_code_roots(HeapRegion* hr);
 

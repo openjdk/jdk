@@ -66,11 +66,11 @@ inline void frame::init(intptr_t* sp, intptr_t* fp, address pc) {
 inline void frame::setup(address pc) {
   adjust_unextended_sp();
 
-  address original_pc = CompiledMethod::get_deopt_original_pc(this);
+  address original_pc = get_deopt_original_pc();
   if (original_pc != nullptr) {
     _pc = original_pc;
     _deopt_state = is_deoptimized;
-    assert(_cb == nullptr || _cb->as_compiled_method()->insts_contains_inclusive(_pc),
+    assert(_cb == nullptr || _cb->as_nmethod()->insts_contains_inclusive(_pc),
            "original PC must be in the main code section of the compiled method (or must be immediately following it)");
   } else {
     if (_cb == SharedRuntime::deopt_blob()) {
@@ -164,7 +164,7 @@ inline frame::frame(intptr_t* sp, intptr_t* fp) {
   _cb = CodeCache::find_blob(_pc);
   adjust_unextended_sp();
 
-  address original_pc = CompiledMethod::get_deopt_original_pc(this);
+  address original_pc = get_deopt_original_pc();
   if (original_pc != nullptr) {
     _pc = original_pc;
     _deopt_state = is_deoptimized;
@@ -226,8 +226,8 @@ inline int frame::frame_size() const {
 }
 
 inline int frame::compiled_frame_stack_argsize() const {
-  assert(cb()->is_compiled(), "");
-  return (cb()->as_compiled_method()->method()->num_stack_arg_slots() * VMRegImpl::stack_slot_size) >> LogBytesPerWord;
+  assert(cb()->is_nmethod(), "");
+  return (cb()->as_nmethod()->num_stack_arg_slots() * VMRegImpl::stack_slot_size) >> LogBytesPerWord;
 }
 
 inline void frame::interpreted_frame_oop_map(InterpreterOopMap* mask) const {
@@ -397,7 +397,7 @@ inline frame frame::sender_for_compiled_frame(RegisterMap* map) const {
     // Tell GC to use argument oopmaps for some runtime stubs that need it.
     // For C1, the runtime stub might not have oop maps, so set this flag
     // outside of update_register_map.
-    if (!_cb->is_compiled()) { // compiled frames do not use callee-saved registers
+    if (!_cb->is_nmethod()) { // compiled frames do not use callee-saved registers
       map->set_include_argument_oops(_cb->caller_must_gc_arguments(map->thread()));
       if (oop_map() != nullptr) {
         _oop_map->update_register_map(this, map);

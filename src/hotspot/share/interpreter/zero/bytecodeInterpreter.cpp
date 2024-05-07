@@ -1607,10 +1607,10 @@ run:
           ARRAY_INTRO(-3);
           int item = STACK_INT(-1);
           // if it is a T_BOOLEAN array, mask the stored value to 0/1
-          if (arrObj->klass() == Universe::boolArrayKlassObj()) {
+          if (arrObj->klass() == Universe::boolArrayKlass()) {
             item &= 1;
           } else {
-            assert(arrObj->klass() == Universe::byteArrayKlassObj(),
+            assert(arrObj->klass() == Universe::byteArrayKlass(),
                    "should be byte array otherwise");
           }
           ((typeArrayOop)arrObj)->byte_at_put(index, item);
@@ -2247,7 +2247,7 @@ run:
       }
 
       CASE(_invokedynamic): {
-        u4 index = cp->constant_pool()->decode_invokedynamic_index(Bytes::get_native_u4(pc+1)); // index is originally negative
+        u4 index = Bytes::get_native_u4(pc+1);
         ResolvedIndyEntry* indy_info = cp->resolved_indy_entry_at(index);
         if (!indy_info->is_resolved()) {
           CALL_VM(InterpreterRuntime::resolve_from_cache(THREAD, (Bytecodes::Code)opcode),

@@ -35,8 +35,8 @@ endif
 $(eval $(call SetupJdkLibrary, BUILD_LIBVERIFY, \
     NAME := verify, \
     OPTIMIZATION := $(LIBVERIFY_OPTIMIZATION), \
-    JDK_LIBS_unix := -ljvm, \
-    JDK_LIBS_windows := jvm.lib, \
+    EXTRA_HEADER_DIRS := libjava, \
+    JDK_LIBS := libjvm, \
 ))
 
 TARGETS += $(BUILD_LIBVERIFY)
@@ -58,9 +58,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJAVA, \
     java_props_md.c_CFLAGS := \
         -DARCHPROPNAME='"$(OPENJDK_TARGET_CPU_OSARCH)"', \
     DISABLED_WARNINGS_gcc_ProcessImpl_md.c := unused-result, \
-    LDFLAGS_macosx := -L$(SUPPORT_OUTPUTDIR)/native/$(MODULE)/, \
-    JDK_LIBS_unix := -ljvm, \
-    JDK_LIBS_windows := jvm.lib, \
+    JDK_LIBS := libjvm, \
     LIBS_linux := $(LIBDL), \
     LIBS_aix := $(LIBDL) $(LIBM),\
     LIBS_macosx := \
@@ -71,8 +69,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJAVA, \
 ))
 
 TARGETS += $(BUILD_LIBJAVA)
-
-$(BUILD_LIBJAVA): $(BUILD_LIBVERIFY)
 
 ################################################################################
 ## Build libzip
@@ -96,12 +92,9 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBZIP, \
     DISABLED_WARNINGS_gcc_zip_util.c := unused-function, \
     DISABLED_WARNINGS_clang := deprecated-non-prototype, \
     DISABLED_WARNINGS_clang_gzwrite.c := format-nonliteral, \
-    JDK_LIBS_unix := -ljava -ljvm, \
-    JDK_LIBS_windows := $(WIN_JAVA_LIB) jvm.lib, \
+    JDK_LIBS := libjava libjvm, \
     LIBS_unix := $(LIBZ_LIBS), \
 ))
-
-$(BUILD_LIBZIP): $(BUILD_LIBJAVA)
 
 TARGETS += $(BUILD_LIBZIP)
 
@@ -113,14 +106,12 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJIMAGE, \
     NAME := jimage, \
     LINK_TYPE := C++, \
     OPTIMIZATION := LOW, \
+    EXTRA_HEADER_DIRS := libjava, \
     CFLAGS_unix := -UDEBUG, \
     LDFLAGS := $(LDFLAGS_CXX_JDK), \
-    JDK_LIBS_unix := -ljvm, \
-    JDK_LIBS_windows := jvm.lib, \
+    JDK_LIBS := libjvm, \
     LIBS_unix := $(LIBDL), \
 ))
-
-$(BUILD_LIBJIMAGE): $(BUILD_LIBJAVA)
 
 TARGETS += $(BUILD_LIBJIMAGE)
 
@@ -173,6 +164,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJLI, \
     TYPE := $(BUILD_LIBJLI_TYPE), \
     EXCLUDE_FILES := $(LIBJLI_EXCLUDE_FILES), \
     EXTRA_FILES := $(LIBJLI_EXTRA_FILES), \
+    EXTRA_HEADER_DIRS := libjvm, \
     OPTIMIZATION := HIGH, \
     CFLAGS := $(LIBJLI_CFLAGS) $(LIBZ_CFLAGS), \
     DISABLED_WARNINGS_gcc := unused-function, \
