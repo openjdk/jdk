@@ -170,33 +170,22 @@ idx_t ShenandoahSimpleBitMap::find_first_consecutive_set_bits(idx_t beg, idx_t e
   }
 
   // The following loop minimizes the number of spans probed in order to find num_bits consecutive bits.
-  // For example, if bit_number = beg = 0, num_bits = 8, and element bits equals 00111111_11000001_11111100_10011000B,
-  // we need 5 probes to find the match at bit offset 22.
+  // For example, if bit_number = beg = 0, num_bits = 8, and element bits equals 00111111_11000000_00000000_10011000B,
+  // we need only 3 probes to find the match at bit offset 22.
   //
   // Let beg = 0
-  // element_bits = 00111111_11000001_11111100_10011000B;
+  // element_bits = 00111111_11000000_00000000_10011000B;
   //                                           ________   (the searched span)
   //                                           ^   ^  ^- bit_number = beg = 0
   //                                           |   +-- next_start_candidate_1 (where next 1 is found)
   //                                           +------ next_start_candidate_2 (start of the trailing 1s within span)
   // Let beg = 7
-  // element_bits = 00111111_11000001_11111100_10011000B;
-  //                                  __________   (the searched span)
-  //                                       ^ ^- bit_number = beg = 7
-  //                                       +-- next_start_candidate_1 (where next 1 is found)
-  //                                       +------ next_start_candidate_2 (start of the trailing 1s within span)
-  // Let beg = 10
-  // element_bits = 00111111_11000001_11111100_10011000B;
-  //                              ^_________   (the searched span)
-  //                              |        ^- bit_number = beg = 11
-  //                              |        +-- next_start_candidate_1 (where next 1 is found)
-  //                              +------------ next_start_candidate_2 (there are no trailing 1s within span)
-  // Let beg = 18
-  // element_bits = 00111111_11000001_11111100_10011000B;
-  //                      _________   (the searched span)
-  //                          ^   ^- bit_number = beg = 18
-  //                          +----- next_start_candidate_1 (where next 1 is found)
-  //                          +------------ next_start_candidate_2 (there are no trailing 1s within span)
+  // element_bits = 00111111_11000000_00000000_10011000B;
+  //                          ^     ^ __________   (the searched span)
+  //                          |     |          ^- bit_number = beg = 7
+  //                          |     +------------ next_start_candidate_2 (there are no trailing 1s within span)
+  //                          +------------------ next_start_candidate_1 (where next 1 is found)
+  // Let beg = 22
   // Let beg = 22
   // element_bits = 00111111_11000001_11111100_10011000B;
   //                  _________   (the searched span)
