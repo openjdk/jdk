@@ -347,6 +347,7 @@ public:
   BoolNode* negate(PhaseGVN* phase);
   virtual int Opcode() const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+  const Type* Value_cmpu_and_mask(PhaseValues* phase) const;
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual const Type *bottom_type() const { return TypeInt::BOOL; }
   uint match_edge(uint idx) const { return 0; }

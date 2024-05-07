@@ -1801,19 +1801,17 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   //    }
 }
 
+
 //------------------------------Value------------------------------------------
-// Simplify a Bool (convert condition codes to boolean (1 or 0)) node,
-// based on local information.   If the input is constant, do it.
-const Type* BoolNode::Value(PhaseGVN* phase) const {
+// Change ((x & m) u<= m) or ((m & x) u<= m) to always true
+// Same with ((x & m) u< m+1) and ((m & x) u< m+1)
+const Type* BoolNode::Value_cmpu_and_mask(PhaseValues* phase) const {
   Node* cmp = in(1);
-  if (cmp != nullptr && cmp->is_Sub()) {
-    int cop = cmp->Opcode();
+  if (cmp != nullptr && cmp->Opcode() == Op_CmpU) {
     Node* cmp1 = cmp->in(1);
     Node* cmp2 = cmp->in(2);
 
-    // Change ((x & m) u<= m) or ((m & x) u<= m) to always true
-    // Same with ((x & m) u< m+1) and ((m & x) u< m+1)
-    if (cop == Op_CmpU && cmp1->Opcode() == Op_AndI) {
+    if (cmp1->Opcode() == Op_AndI) {
       Node* bound = nullptr;
       if (_test._test == BoolTest::le) {
         bound = cmp2;
@@ -1825,6 +1823,17 @@ const Type* BoolNode::Value(PhaseGVN* phase) const {
         return TypeInt::ONE;
       }
     }
+  }
+
+  return nullptr;
+}
+
+// Simplify a Bool (convert condition codes to boolean (1 or 0)) node,
+// based on local information.   If the input is constant, do it.
+const Type* BoolNode::Value(PhaseGVN* phase) const {
+  const Type* t = Value_cmpu_and_mask(phase);
+  if (t != nullptr) {
+    return t;
   }
 
   return _test.cc2logical( phase->type( in(1) ) );
