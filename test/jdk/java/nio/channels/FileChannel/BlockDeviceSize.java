@@ -24,7 +24,7 @@
 /* @test
  * @bug 8054029 8313368
  * @requires (os.family == "linux")
- * @summary Block devices should not report size=0 on Linux
+ * @summary FileChannel.size() should be equal to RandomAccessFile.size() and > 0 for block devs on Linux
  * @run main/manual BlockDeviceSize
  */
 
@@ -53,6 +53,9 @@ public class BlockDeviceSize {
                 if (size1 != size2) {
                     throw new RuntimeException("size differs when retrieved" +
                             " in different ways: " + size1 + " != " + size2);
+                }
+                if (size1 == 0) {
+                    throw new RuntimeException("size() for a block device size returns zero");
                 }
                 System.out.println("OK");
 
