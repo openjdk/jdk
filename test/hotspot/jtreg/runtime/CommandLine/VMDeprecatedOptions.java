@@ -60,7 +60,6 @@ public class VMDeprecatedOptions {
             {"UseNotificationThread", "true"},
             {"PreserveAllAnnotations", "true"},
             {"AllowRedefinitionToAddDeleteMethods", "true"},
-            {"UseEmptySlotsInSupers", "true"},
 
             // deprecated alias flags (see also aliased_jvm_flags):
             {"CreateMinidumpOnCrash", "false"}
@@ -69,9 +68,6 @@ public class VMDeprecatedOptions {
         if (Platform.isX86() || Platform.isX64()) {
           deprecated.addAll(
             Arrays.asList(new String[][] {
-              {"UseRTMLocking",         "false"},
-              {"UseRTMDeopt",           "false"},
-              {"RTMRetryCount",         "5"}
             })
           );
         }

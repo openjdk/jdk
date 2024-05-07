@@ -143,6 +143,11 @@ public enum Source {
       * 23, tbd
       */
     JDK23("23"),
+
+    /**
+      * 24, tbd
+      */
+    JDK24("24"),
     ; // Reduce code churn when appending new constants
 
     private static final Context.Key<Source> sourceKey = new Context.Key<>();
@@ -195,6 +200,7 @@ public enum Source {
 
     public Target requiredTarget() {
         return switch(this) {
+        case JDK24  -> Target.JDK1_24;
         case JDK23  -> Target.JDK1_23;
         case JDK22  -> Target.JDK1_22;
         case JDK21  -> Target.JDK1_21;
@@ -341,6 +347,7 @@ public enum Source {
         case JDK21  -> RELEASE_21;
         case JDK22  -> RELEASE_22;
         case JDK23  -> RELEASE_23;
+        case JDK24  -> RELEASE_24;
         default     -> null;
         };
     }
