@@ -42,15 +42,3 @@ IsSTWGCActiveMark::~IsSTWGCActiveMark() {
   assert(heap->is_stw_gc_active(), "Sanity");
   heap->_is_stw_gc_active = false;
 }
-
-DisableIsSTWGCActiveMark::DisableIsSTWGCActiveMark() {
-  CollectedHeap* heap = Universe::heap();
-  assert(heap->is_stw_gc_active(), "Not reentrant");
-  heap->_is_stw_gc_active = false;
-}
-
-DisableIsSTWGCActiveMark::~DisableIsSTWGCActiveMark() {
-  CollectedHeap* heap = Universe::heap();
-  assert(!heap->is_stw_gc_active(), "Sanity");
-  heap->_is_stw_gc_active = true;
-}
