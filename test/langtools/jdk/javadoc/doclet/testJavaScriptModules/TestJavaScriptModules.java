@@ -55,7 +55,7 @@ public class TestJavaScriptModules extends JavadocTester {
                     */
                    public class Test {}
                    """);
-        tb.writeFile("script.mjs", """
+        tb.writeFile("module.mjs", """
                    var x = 1;
                    """);
         tb.writeFile("module1.js", """
@@ -105,7 +105,7 @@ public class TestJavaScriptModules extends JavadocTester {
     @Test
     public void test(Path base) {
         javadoc("-d", base.resolve("out").toString(),
-                "--add-script", "script.mjs",
+                "--add-script", "module.mjs",
                 "--add-script", "module1.js",
                 "--add-script", "module2.js",
                 "--add-script", "module3.js",
@@ -122,7 +122,7 @@ public class TestJavaScriptModules extends JavadocTester {
 
         checkOutput("Test.html", true,
                 """
-                    <script type="module" src="script-files/script.mjs"></script>""",
+                    <script type="module" src="script-files/module.mjs"></script>""",
                 """
                     <script type="module" src="script-files/module1.js"></script>""",
                 """
