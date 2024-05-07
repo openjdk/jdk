@@ -312,8 +312,7 @@ void WriteClosure::do_ptr(void** p) {
   }
   // null pointers do not need to be converted to offsets
   if (ptr != nullptr) {
-    size_t offset = ArchiveBuilder::current()->buffer_to_offset(ptr);
-    ptr = (address)offset;
+    ptr = (address)ArchiveBuilder::current()->buffer_to_offset(ptr);
   }
   _dump_region->append_intptr_t((intptr_t)ptr, false);
 }
@@ -323,11 +322,7 @@ void ReadClosure::do_ptr(void** p) {
   intptr_t obj = nextPtr();
   assert((intptr_t)obj >= 0 || (intptr_t)obj < -100,
          "hit tag while initializing ptrs.");
-  if (obj != 0) {
-    *p = (void*)(SharedBaseAddress + obj);
-  } else {
-    *p = (void*)obj;
-  }
+  *p = obj != 0 ? (void*)(SharedBaseAddress + obj) : (void*)obj;
 }
 
 void ReadClosure::do_u4(u4* p) {

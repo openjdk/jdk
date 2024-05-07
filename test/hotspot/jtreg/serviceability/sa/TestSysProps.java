@@ -65,7 +65,7 @@ public class TestSysProps {
             }
         }
         if (numProps != expectedCount) {
-            throw new RuntimeException("Wrong number of " + cmdName + " properties: " + numProps + " Expected: " + expectedCount);
+            throw new RuntimeException("Wrong number of " + cmdName + " properties: " + numProps);
         }
     }
 

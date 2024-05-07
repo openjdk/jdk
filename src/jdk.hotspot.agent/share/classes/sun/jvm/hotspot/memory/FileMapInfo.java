@@ -183,7 +183,7 @@ public class FileMapInfo {
       //   ...
       // };
       //
-      // The following loop compues the following
+      // The loop below computes the following
       //     CppVtableInfo* t_ConstantPool  = mapped_base_address + info[0];
       //     CppVtableInfo* t_InstanceKlass = mapped_base_address + info[1];
       //     ...
@@ -213,7 +213,6 @@ public class FileMapInfo {
 
       for (int i=0; i < metadataTypeArray.length; i++) {
         long vtable_offset = vtablesIndex.getJLongAt(i * addressSize); // long offset = _index[i]
-        System.out.printf("Offset: %x\n", vtable_offset);
 
         // CppVtableInfo* t = the address of the CppVtableInfo for the i-th table
         Address vtableInfoAddress = mapped_base_address.addOffsetTo(vtable_offset);
