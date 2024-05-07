@@ -181,9 +181,9 @@ idx_t ShenandoahSimpleBitMap::find_first_consecutive_set_bits(idx_t beg, idx_t e
   //                                           +------ next_start_candidate_2 (start of the trailing 1s within span)
   // Let beg = 7
   // element_bits = 00111111_11000000_00000000_10011000B;
-  //                          ^     ^ __________   (the searched span)
-  //                          |     |          ^- bit_number = beg = 7
-  //                          |     +------------ next_start_candidate_2 (there are no trailing 1s within span)
+  //                          ^       ^_________   (the searched span)
+  //                          |       |        ^- bit_number = beg = 7
+  //                          |       +---------- next_start_candidate_2 (there are no trailing 1s within span)
   //                          +------------------ next_start_candidate_1 (where next 1 is found)
   // Let beg = 22
   // Let beg = 22
