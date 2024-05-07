@@ -32,7 +32,7 @@ import java.lang.Throwable;
 import java.lang.reflect.Field;
 
 /**
- * Helper class for enabling JFR tracing.
+ * Helper class to enable JFR tracing.
  */
 public final class JFRTracing {
 
