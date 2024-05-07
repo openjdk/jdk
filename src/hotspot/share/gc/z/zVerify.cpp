@@ -240,16 +240,6 @@ public:
   }
 };
 
-class ZVerifyCodeBlobClosure : public CodeBlobToOopClosure {
-public:
-  ZVerifyCodeBlobClosure(OopClosure* cl)
-    : CodeBlobToOopClosure(cl, false /* fix_relocations */) {}
-
-  virtual void do_code_blob(CodeBlob* cb) {
-    CodeBlobToOopClosure::do_code_blob(cb);
-  }
-};
-
 class ZVerifyOldOopClosure : public BasicOopIterateClosure {
 private:
   const bool _verify_weaks;

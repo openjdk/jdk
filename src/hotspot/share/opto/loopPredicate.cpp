@@ -365,12 +365,15 @@ void PhaseIdealLoop::get_assertion_predicates(Node* predicate, Unique_Node_List&
 // Clone an Assertion Predicate for an unswitched loop. OpaqueLoopInit and OpaqueLoopStride nodes are cloned and uncommon
 // traps are kept for the predicate (a Halt node is used later when creating pre/main/post loops and copying this cloned
 // predicate again).
-IfProjNode* PhaseIdealLoop::clone_assertion_predicate_for_unswitched_loops(Node* iff, IfProjNode* predicate,
+IfProjNode* PhaseIdealLoop::clone_assertion_predicate_for_unswitched_loops(IfNode* template_assertion_predicate,
+                                                                           IfProjNode* predicate,
                                                                            Deoptimization::DeoptReason reason,
                                                                            ParsePredicateSuccessProj* parse_predicate_proj) {
-  Node* bol = create_bool_from_template_assertion_predicate(iff, nullptr, nullptr, parse_predicate_proj);
-  IfProjNode* if_proj = create_new_if_for_predicate(parse_predicate_proj, nullptr, reason, iff->Opcode(), false);
-  _igvn.replace_input_of(if_proj->in(0), 1, bol);
+  TemplateAssertionPredicateExpression template_assertion_predicate_expression(
+      template_assertion_predicate->in(1)->as_Opaque4());
+  Opaque4Node* cloned_opaque4_node = template_assertion_predicate_expression.clone(parse_predicate_proj, this);
+  IfProjNode* if_proj = create_new_if_for_predicate(parse_predicate_proj, nullptr, reason, template_assertion_predicate->Opcode(), false);
+  _igvn.replace_input_of(if_proj->in(0), 1, cloned_opaque4_node);
   _igvn.replace_input_of(parse_predicate_proj->in(0), 0, if_proj);
   set_idom(parse_predicate_proj->in(0), if_proj, dom_depth(if_proj));
   return if_proj;
@@ -929,7 +932,7 @@ bool PhaseIdealLoop::loop_predication_should_follow_branches(IdealLoopTree* loop
         CountedLoopNode* cl = head->as_CountedLoop();
         if (cl->phi() != nullptr) {
           const TypeInt* t = _igvn.type(cl->phi())->is_int();
-          float worst_case_trip_cnt = ((float)t->_hi - t->_lo) / ABS(cl->stride_con());
+          float worst_case_trip_cnt = ((float)t->_hi - t->_lo) / ABS((float)cl->stride_con());
           if (worst_case_trip_cnt < loop_trip_cnt) {
             loop_trip_cnt = worst_case_trip_cnt;
           }
@@ -1244,7 +1247,7 @@ bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree* loop, IfProjNod
     IfNode* upper_bound_iff = upper_bound_proj->in(0)->as_If();
     _igvn.hash_delete(upper_bound_iff);
     upper_bound_iff->set_req(1, upper_bound_bol);
-    if (TraceLoopPredicate) tty->print_cr("upper bound check if: %d", lower_bound_iff->_idx);
+    if (TraceLoopPredicate) tty->print_cr("upper bound check if: %d", upper_bound_iff->_idx);
 
     // Fall through into rest of the cleanup code which will move any dependent nodes to the skeleton predicates of the
     // upper bound test. We always need to create skeleton predicates in order to properly remove dead loops when later

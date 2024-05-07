@@ -26,6 +26,8 @@
 include LibCommon.gmk
 
 ################################################################################
+## Build libjsvml
+################################################################################
 
 ifeq ($(call isTargetOs, linux windows)+$(call isTargetCpu, x86_64)+$(INCLUDE_COMPILER2), true+true+true)
   $(eval $(call SetupJdkLibrary, BUILD_LIBJSVML, \
@@ -35,5 +37,3 @@ ifeq ($(call isTargetOs, linux windows)+$(call isTargetCpu, x86_64)+$(INCLUDE_CO
 
   TARGETS += $(BUILD_LIBJSVML)
 endif
-
-################################################################################
