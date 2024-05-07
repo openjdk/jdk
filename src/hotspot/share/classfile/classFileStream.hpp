@@ -49,7 +49,7 @@ class ClassFileStream: public ResourceObj {
 
  protected:
   const u1* clone_buffer() const;
-  const char* const clone_source() const;
+  const char* clone_source() const;
 
  public:
   static const bool verify;

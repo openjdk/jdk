@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -698,6 +698,8 @@ getProcessID() {
  * (in order to keep this index valid when the list resets from underneath,
  * ensure to call getCurrentQueryIndexForProcess() before every query involving
  * Process object instance data).
+ *
+ * Returns -1 on failure.
  */
 static int
 currentQueryIndexForProcess(void) {
@@ -775,8 +777,7 @@ static int
 getCurrentQueryIndexForProcess() {
     int currentQueryIndex = currentQueryIndexForProcess();
 
-    assert(currentQueryIndex >= 0 &&
-           currentQueryIndex < numberOfJavaProcessesAtInitialization);
+    assert(currentQueryIndex < numberOfJavaProcessesAtInitialization);
 
     return currentQueryIndex;
 }
@@ -1310,11 +1311,10 @@ perfGetProcessCPULoad() {
     }
 
     currentQueryIndex = getCurrentQueryIndexForProcess();
-
-    if (getPerformanceData(&processTotalCPULoad[currentQueryIndex].query,
-                           processTotalCPULoad[currentQueryIndex].counter,
-                           &cv,
-                           PDH_FMT_DOUBLE | PDH_FMT_NOCAP100) == 0) {
+    if (currentQueryIndex >= 0 && getPerformanceData(&processTotalCPULoad[currentQueryIndex].query,
+                                                     processTotalCPULoad[currentQueryIndex].counter,
+                                                     &cv,
+                                                     PDH_FMT_DOUBLE | PDH_FMT_NOCAP100) == 0) {
         double d = cv.doubleValue / cpuFactor;
         d = min(1, d);
         d = max(0, d);

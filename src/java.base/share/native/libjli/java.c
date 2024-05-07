@@ -85,6 +85,7 @@ static jboolean _is_java_args = JNI_FALSE;
 static jboolean _have_classpath = JNI_FALSE;
 static const char *_fVersion;
 static jboolean _wc_enabled = JNI_FALSE;
+static jboolean dumpSharedSpaces = JNI_FALSE; /* -Xshare:dump */
 
 /*
  * Entries for splash screen environment variables.
@@ -177,7 +178,7 @@ static void FreeKnownVMs();
 static jboolean IsWildCardEnabled();
 
 
-#define SOURCE_LAUNCHER_MAIN_ENTRY "jdk.compiler/com.sun.tools.javac.launcher.Main"
+#define SOURCE_LAUNCHER_MAIN_ENTRY "jdk.compiler/com.sun.tools.javac.launcher.SourceLauncher"
 
 /*
  * This reports error.  VM will not be created and no usage is printed.
@@ -386,6 +387,84 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
         } \
     } while (JNI_FALSE)
 
+#define CHECK_EXCEPTION_FAIL() \
+    do { \
+        if ((*env)->ExceptionOccurred(env)) { \
+            (*env)->ExceptionClear(env); \
+            return 0; \
+        } \
+    } while (JNI_FALSE)
+
+
+#define CHECK_EXCEPTION_NULL_FAIL(mainObject) \
+    do { \
+        if ((*env)->ExceptionOccurred(env)) { \
+            (*env)->ExceptionClear(env); \
+            return 0; \
+        } else if (mainObject == NULL) { \
+            return 0; \
+        } \
+    } while (JNI_FALSE)
+
+/*
+ * Invoke a static main with arguments. Returns 1 (true) if successful otherwise
+ * processes the pending exception from GetStaticMethodID and returns 0 (false).
+ */
+int
+invokeStaticMainWithArgs(JNIEnv *env, jclass mainClass, jobjectArray mainArgs) {
+    jmethodID mainID = (*env)->GetStaticMethodID(env, mainClass, "main",
+                                  "([Ljava/lang/String;)V");
+    CHECK_EXCEPTION_FAIL();
+    (*env)->CallStaticVoidMethod(env, mainClass, mainID, mainArgs);
+    return 1;
+}
+
+/*
+ * Invoke an instance main with arguments. Returns 1 (true) if successful otherwise
+ * processes the pending exception from GetMethodID and returns 0 (false).
+ */
+int
+invokeInstanceMainWithArgs(JNIEnv *env, jclass mainClass, jobjectArray mainArgs) {
+    jmethodID constructor = (*env)->GetMethodID(env, mainClass, "<init>", "()V");
+    CHECK_EXCEPTION_FAIL();
+    jobject mainObject = (*env)->NewObject(env, mainClass, constructor);
+    CHECK_EXCEPTION_NULL_FAIL(mainObject);
+    jmethodID mainID = (*env)->GetMethodID(env, mainClass, "main",
+                                 "([Ljava/lang/String;)V");
+    CHECK_EXCEPTION_FAIL();
+    (*env)->CallVoidMethod(env, mainObject, mainID, mainArgs);
+    return 1;
+ }
+
+/*
+ * Invoke a static main without arguments. Returns 1 (true) if successful otherwise
+ * processes the pending exception from GetStaticMethodID and returns 0 (false).
+ */
+int
+invokeStaticMainWithoutArgs(JNIEnv *env, jclass mainClass) {
+    jmethodID mainID = (*env)->GetStaticMethodID(env, mainClass, "main",
+                                       "()V");
+    CHECK_EXCEPTION_FAIL();
+    (*env)->CallStaticVoidMethod(env, mainClass, mainID);
+    return 1;
+}
+
+/*
+ * Invoke an instance main without arguments. Returns 1 (true) if successful otherwise
+ * processes the pending exception from GetMethodID and returns 0 (false).
+ */
+int
+invokeInstanceMainWithoutArgs(JNIEnv *env, jclass mainClass) {
+    jmethodID constructor = (*env)->GetMethodID(env, mainClass, "<init>", "()V");
+    CHECK_EXCEPTION_FAIL();
+    jobject mainObject = (*env)->NewObject(env, mainClass, constructor);
+    CHECK_EXCEPTION_NULL_FAIL(mainObject);
+    jmethodID mainID = (*env)->GetMethodID(env, mainClass, "main",
+                                 "()V");
+    CHECK_EXCEPTION_FAIL();
+    (*env)->CallVoidMethod(env, mainObject, mainID);
+    return 1;
+}
 
 int
 JavaMain(void* _args)
@@ -402,9 +481,6 @@ JavaMain(void* _args)
     jclass mainClass = NULL;
     jclass appClass = NULL; // actual application class being launched
     jobjectArray mainArgs;
-    jmethodID mainID;
-    jmethodID constructor;
-    jobject mainObject;
     int ret = 0;
     jlong start = 0, end = 0;
 
@@ -455,6 +531,14 @@ JavaMain(void* _args)
         LEAVE();
     }
 
+    /*
+     * -Xshare:dump does not have a main class so the VM can safely exit now
+     */
+    if (dumpSharedSpaces) {
+        CHECK_EXCEPTION_LEAVE(1);
+        LEAVE();
+    }
+
     /* If the user specified neither a class name nor a JAR file */
     if (printXUsage || printUsage || what == 0 || mode == LM_UNKNOWN) {
         PrintUsage(env, printXUsage);
@@ -482,9 +566,6 @@ JavaMain(void* _args)
     ret = 1;
 
     /*
-     * Get the application's main class. It also checks if the main
-     * method exists.
-     *
      * See bugid 5030265.  The Main-Class name has already been parsed
      * from the manifest, but not parsed properly for UTF-8 support.
      * Hence the code here ignores the value previously extracted and
@@ -514,7 +595,7 @@ JavaMain(void* _args)
      * consistent in the UI we need to track and report the application main class.
      */
     appClass = GetApplicationClass(env);
-    NULL_CHECK_RETURN_VALUE(appClass, -1);
+    CHECK_EXCEPTION_NULL_LEAVE(appClass);
 
     /* Build platform specific argument array */
     mainArgs = CreateApplicationArgs(env, argv, argc);
@@ -536,59 +617,15 @@ JavaMain(void* _args)
     CHECK_EXCEPTION_LEAVE(1);
 
     /*
-     * The LoadMainClass not only loads the main class, it will also ensure
-     * that the main method's signature is correct, therefore further checking
-     * is not required. The main method is invoked here so that extraneous java
-     * stacks are not in the application stack trace.
+     * The main method is invoked here so that extraneous java stacks are not in
+     * the application stack trace.
      */
-#define MAIN_WITHOUT_ARGS 1
-#define MAIN_NONSTATIC 2
-
-    jclass helperClass = GetLauncherHelperClass(env);
-    jmethodID getMainType = (*env)->GetStaticMethodID(env, helperClass,
-                                                      "getMainType",
-                                                      "()I");
-    CHECK_EXCEPTION_NULL_LEAVE(getMainType);
-    int mainType = (*env)->CallStaticIntMethod(env, helperClass, getMainType);
-    CHECK_EXCEPTION_LEAVE(mainType);
-
-    switch (mainType) {
-    case 0: {
-        mainID = (*env)->GetStaticMethodID(env, mainClass, "main",
-                                           "([Ljava/lang/String;)V");
-        CHECK_EXCEPTION_NULL_LEAVE(mainID);
-        (*env)->CallStaticVoidMethod(env, mainClass, mainID, mainArgs);
-        break;
-        }
-    case MAIN_WITHOUT_ARGS: {
-        mainID = (*env)->GetStaticMethodID(env, mainClass, "main",
-                                           "()V");
-        CHECK_EXCEPTION_NULL_LEAVE(mainID);
-        (*env)->CallStaticVoidMethod(env, mainClass, mainID);
-        break;
-        }
-    case MAIN_NONSTATIC: {
-        constructor = (*env)->GetMethodID(env, mainClass, "<init>", "()V");
-        CHECK_EXCEPTION_NULL_LEAVE(constructor);
-        mainObject = (*env)->NewObject(env, mainClass, constructor);
-        CHECK_EXCEPTION_NULL_LEAVE(mainObject);
-        mainID = (*env)->GetMethodID(env, mainClass, "main",
-                                     "([Ljava/lang/String;)V");
-        CHECK_EXCEPTION_NULL_LEAVE(mainID);
-        (*env)->CallVoidMethod(env, mainObject, mainID, mainArgs);
-        break;
-        }
-    case MAIN_NONSTATIC | MAIN_WITHOUT_ARGS: {
-        constructor = (*env)->GetMethodID(env, mainClass, "<init>", "()V");
-        CHECK_EXCEPTION_NULL_LEAVE(constructor);
-        mainObject = (*env)->NewObject(env, mainClass, constructor);
-        CHECK_EXCEPTION_NULL_LEAVE(mainObject);
-        mainID = (*env)->GetMethodID(env, mainClass, "main",
-                                     "()V");
-        CHECK_EXCEPTION_NULL_LEAVE(mainID);
-        (*env)->CallVoidMethod(env, mainObject, mainID);
-        break;
-        }
+    if (!invokeStaticMainWithArgs(env, mainClass, mainArgs) &&
+        !invokeInstanceMainWithArgs(env, mainClass, mainArgs) &&
+        !invokeStaticMainWithoutArgs(env, mainClass) &&
+        !invokeInstanceMainWithoutArgs(env, mainClass)) {
+        ret = 1;
+        LEAVE();
     }
 
     /*
@@ -1390,7 +1427,7 @@ ParseArguments(int *pargc, char ***pargv,
         } else if (JLI_StrCmp(arg, "-tm") == 0) {
             AddOption("-Xtm", NULL);
         } else if (JLI_StrCmp(arg, "-debug") == 0) {
-            AddOption("-Xdebug", NULL);
+            JLI_ReportErrorMessage(ARG_DEPRECATED, "-debug");
         } else if (JLI_StrCmp(arg, "-noclassgc") == 0) {
             AddOption("-Xnoclassgc", NULL);
         } else if (JLI_StrCmp(arg, "-Xfuture") == 0) {
@@ -1432,6 +1469,13 @@ ParseArguments(int *pargc, char ***pargv,
             }
             AddOption(arg, NULL);
         }
+
+        /*
+        * Check for CDS option
+        */
+        if (JLI_StrCmp(arg, "-Xshare:dump") == 0) {
+            dumpSharedSpaces = JNI_TRUE;
+        }
     }
 
     if (*pwhat == NULL && --argc >= 0) {
@@ -1440,7 +1484,7 @@ ParseArguments(int *pargc, char ***pargv,
 
     if (*pwhat == NULL) {
         /* LM_UNKNOWN okay for options that exit */
-        if (!listModules && !describeModule && !validateModules) {
+        if (!listModules && !describeModule && !validateModules && !dumpSharedSpaces) {
             *pret = 1;
         }
     } else if (mode == LM_UNKNOWN) {
@@ -1577,8 +1621,9 @@ NewPlatformStringArray(JNIEnv *env, char **strv, int strc)
 }
 
 /*
- * Loads a class and verifies that the main class is present and it is ok to
- * call it for more details refer to the java implementation.
+ * Calls LauncherHelper::checkAndLoadMain to verify that the main class
+ * is present, it is ok to load the main class and then load the main class.
+ * For more details refer to the java implementation.
  */
 static jclass
 LoadMainClass(JNIEnv *env, int mode, char *name)

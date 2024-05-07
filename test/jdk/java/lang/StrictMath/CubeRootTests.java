@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ import jdk.test.lib.RandomFactory;
 public class CubeRootTests {
     private CubeRootTests(){}
 
-    public static void main(String [] argv) {
+    public static void main(String... args) {
         int failures = 0;
 
         failures += testCubeRoot();
@@ -470,7 +470,16 @@ public class CubeRootTests {
             {0x0.0000000ffffffp-1022,   0x1.ffffff5555552p-351},
             {0x0.0000ffffffap-1022,     0x1.ffffffcp-347},
             {0x0.0000ffffffff8p-1022,   0x1.ffffffffaaaabp-347},
-            {0x0.0fffffffffffbp-1022,   0x1.fffffffffffcbp-343}
+            {0x0.0fffffffffffbp-1022,   0x1.fffffffffffcbp-343},
+
+            // Empirical worst-case points in other libraries with
+            // larger worst-case errors than FDLIBM
+            { 0x1.7a337e1ba1ec2p-257,   0x1.6f59116ea884dp-86},
+            { 0x0.7ffffffffffffp-1022,  0x1.fffffffffffffp-342},
+            {-0x1.00ddafe7d9deep-885,  -0x1.0049d002f249fp-295},
+            { 0x1.fed1fe9f1122dp+11,    0x1.ff9b410e1f8b4p3},
+            {-0x1.55cd285f321f6p-64,   -0x1.bf7a40bced214p-22},
+            { 0x1.fffb101d89c1dp-332,   0x1.965e9bf0fb7fbp-111},
         };
 
         for(double[] testCase: testCases)

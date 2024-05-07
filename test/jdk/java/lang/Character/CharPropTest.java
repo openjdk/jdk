@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8202771 8221431 8229831
+ * @bug 8202771 8221431 8229831 8296246
  * @summary Check j.l.Character.isDigit/isLetter/isLetterOrDigit/isSpaceChar
  * /isWhitespace/isTitleCase/isISOControl/isIdentifierIgnorable
  * /isJavaIdentifierStart/isJavaIdentifierPart/isUnicodeIdentifierStart
@@ -292,7 +292,11 @@ public class CharPropTest {
         return codePoint == 0x00B7 ||
                codePoint == 0x0387 ||
               (codePoint >= 0x1369 && codePoint <= 0x1371) ||
-               codePoint == 0x19DA;
+               codePoint == 0x19DA ||
+               codePoint == 0x200C ||
+               codePoint == 0x200D ||
+               codePoint == 0x30FB ||
+               codePoint == 0xFF65;
     }
 
     private static void printDiff(int codePoint, String method, boolean actual, boolean expected) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,6 +70,7 @@ public class GZIPInputStream extends InflaterInputStream {
      *
      * @throws    ZipException if a GZIP format error has occurred or the
      *                         compression method used is unsupported
+     * @throws    NullPointerException if {@code in} is null
      * @throws    IOException if an I/O error has occurred
      * @throws    IllegalArgumentException if {@code size <= 0}
      */
@@ -85,6 +86,7 @@ public class GZIPInputStream extends InflaterInputStream {
      *
      * @throws    ZipException if a GZIP format error has occurred or the
      *                         compression method used is unsupported
+     * @throws    NullPointerException if {@code in} is null
      * @throws    IOException if an I/O error has occurred
      */
     public GZIPInputStream(InputStream in) throws IOException {
@@ -235,23 +237,17 @@ public class GZIPInputStream extends InflaterInputStream {
             (readUInt(in) != (inf.getBytesWritten() & 0xffffffffL)))
             throw new ZipException("Corrupt GZIP trailer");
 
-        // If there are more bytes available in "in" or
-        // the leftover in the "inf" is > 26 bytes:
-        // this.trailer(8) + next.header.min(10) + next.trailer(8)
         // try concatenated case
-        if (this.in.available() > 0 || n > 26) {
-            int m = 8;                  // this.trailer
-            try {
-                m += readHeader(in);    // next.header
-            } catch (IOException ze) {
-                return true;  // ignore any malformed, do nothing
-            }
-            inf.reset();
-            if (n > m)
-                inf.setInput(buf, len - n + m, n - m);
-            return false;
+        int m = 8;                  // this.trailer
+        try {
+            m += readHeader(in);    // next.header
+        } catch (IOException ze) {
+            return true;  // ignore any malformed, do nothing
         }
-        return true;
+        inf.reset();
+        if (n > m)
+            inf.setInput(buf, len - n + m, n - m);
+        return false;
     }
 
     /*

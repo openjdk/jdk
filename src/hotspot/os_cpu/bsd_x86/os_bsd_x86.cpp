@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 #include "asm/macroAssembler.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
-#include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jvm.h"
@@ -79,7 +78,7 @@
 # include <pthread_np.h>
 #endif
 
-// needed by current_stack_region() workaround for Mavericks
+// needed by current_stack_base_and_size() workaround for Mavericks
 #if defined(__APPLE__)
 # include <errno.h>
 # include <sys/types.h>
@@ -351,7 +350,7 @@ frame os::get_sender_for_C_frame(frame* fr) {
   return frame(fr->sender_sp(), fr->link(), fr->sender_pc());
 }
 
-intptr_t* _get_previous_fp() {
+static intptr_t* _get_previous_fp() {
 #if defined(__clang__) || defined(__llvm__)
   intptr_t **ebp;
   __asm__("mov %%" SPELL_REG_FP ", %0":"=r"(ebp));
@@ -441,20 +440,18 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
         // here if the underlying file has been truncated.
         // Do not crash the VM in such a case.
         CodeBlob* cb = CodeCache::find_blob(pc);
-        CompiledMethod* nm = (cb != nullptr) ? cb->as_compiled_method_or_null() : nullptr;
-        bool is_unsafe_arraycopy = thread->doing_unsafe_access() && UnsafeCopyMemory::contains_pc(pc);
-        if ((nm != nullptr && nm->has_unsafe_access()) || is_unsafe_arraycopy) {
+        nmethod* nm = (cb != nullptr) ? cb->as_nmethod_or_null() : nullptr;
+        bool is_unsafe_memory_access = thread->doing_unsafe_access() && UnsafeMemoryAccess::contains_pc(pc);
+        if ((nm != nullptr && nm->has_unsafe_access()) || is_unsafe_memory_access) {
           address next_pc = Assembler::locate_next_instruction(pc);
-          if (is_unsafe_arraycopy) {
-            next_pc = UnsafeCopyMemory::page_error_continue_pc(pc);
+          if (is_unsafe_memory_access) {
+            next_pc = UnsafeMemoryAccess::page_error_continue_pc(pc);
           }
           stub = SharedRuntime::handle_unsafe_access(thread, next_pc);
         }
-      }
-      else
-
+      } else
 #ifdef AMD64
-      if (sig == SIGFPE  &&
+      if (sig == SIGFPE &&
           (info->si_code == FPE_INTDIV || info->si_code == FPE_FLTDIV
            // Workaround for macOS ARM incorrectly reporting FPE_FLTINV for "div by 0"
            // instead of the expected FPE_FLTDIV when running x86_64 binary under Rosetta emulation
@@ -524,8 +521,8 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
                sig == SIGBUS && /* info->si_code == BUS_OBJERR && */
                thread->doing_unsafe_access()) {
         address next_pc = Assembler::locate_next_instruction(pc);
-        if (UnsafeCopyMemory::contains_pc(pc)) {
-          next_pc = UnsafeCopyMemory::page_error_continue_pc(pc);
+        if (UnsafeMemoryAccess::contains_pc(pc)) {
+          next_pc = UnsafeMemoryAccess::page_error_continue_pc(pc);
         }
         stub = SharedRuntime::handle_unsafe_access(thread, next_pc);
     }
@@ -709,13 +706,15 @@ size_t os::Posix::default_stack_size(os::ThreadType thr_type) {
 //    |                        |/
 // P2 +------------------------+ Thread::stack_base()
 //
-// ** P1 (aka bottom) and size ( P2 = P1 - size) are the address and stack size returned from
-//    pthread_attr_getstack()
+// ** P1 (aka bottom) and size are the address and stack size
+//    returned from pthread_attr_getstack().
+// ** P2 (aka stack top or base) = P1 + size
 
-static void current_stack_region(address * bottom, size_t * size) {
+void os::current_stack_base_and_size(address* base, size_t* size) {
+  address bottom;
 #ifdef __APPLE__
   pthread_t self = pthread_self();
-  void *stacktop = pthread_get_stackaddr_np(self);
+  *base = (address) pthread_get_stackaddr_np(self);
   *size = pthread_get_stacksize_np(self);
   // workaround for OS X 10.9.0 (Mavericks)
   // pthread_get_stacksize_np returns 128 pages even though the actual size is 2048 pages
@@ -738,7 +737,7 @@ static void current_stack_region(address * bottom, size_t * size) {
       }
     }
   }
-  *bottom = (address) stacktop - *size;
+  bottom = *base - *size;
 #elif defined(__OpenBSD__)
   stack_t ss;
   int rslt = pthread_stackseg_np(pthread_self(), &ss);
@@ -746,8 +745,9 @@ static void current_stack_region(address * bottom, size_t * size) {
   if (rslt != 0)
     fatal("pthread_stackseg_np failed with error = %d", rslt);
 
-  *bottom = (address)((char *)ss.ss_sp - ss.ss_size);
-  *size   = ss.ss_size;
+  *base = (address) ss.ss_sp;
+  *size = ss.ss_size;
+  bottom = *base - *size;
 #else
   pthread_attr_t attr;
 
@@ -762,30 +762,17 @@ static void current_stack_region(address * bottom, size_t * size) {
   if (rslt != 0)
     fatal("pthread_attr_get_np failed with error = %d", rslt);
 
-  if (pthread_attr_getstackaddr(&attr, (void **)bottom) != 0 ||
-    pthread_attr_getstacksize(&attr, size) != 0) {
+  if (pthread_attr_getstackaddr(&attr, (void **)&bottom) != 0 ||
+      pthread_attr_getstacksize(&attr, size) != 0) {
     fatal("Can not locate current stack attributes!");
   }
 
+  *base = bottom + *size;
+
   pthread_attr_destroy(&attr);
 #endif
-  assert(os::current_stack_pointer() >= *bottom &&
-         os::current_stack_pointer() < *bottom + *size, "just checking");
-}
-
-address os::current_stack_base() {
-  address bottom;
-  size_t size;
-  current_stack_region(&bottom, &size);
-  return (bottom + size);
-}
-
-size_t os::current_stack_size() {
-  // stack size includes normal stack and HotSpot guard pages
-  address bottom;
-  size_t size;
-  current_stack_region(&bottom, &size);
-  return size;
+  assert(os::current_stack_pointer() >= bottom &&
+         os::current_stack_pointer() < *base, "just checking");
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -854,7 +841,7 @@ void os::print_tos_pc(outputStream *st, const void *context) {
   // point to garbage if entry point in an nmethod is corrupted. Leave
   // this at the end, and hope for the best.
   address pc = os::Posix::ucontext_get_pc(uc);
-  print_instructions(st, pc, sizeof(char));
+  print_instructions(st, pc);
   st->cr();
 }
 

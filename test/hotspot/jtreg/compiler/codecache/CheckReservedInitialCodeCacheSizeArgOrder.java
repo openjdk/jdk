@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,8 +42,8 @@ public class CheckReservedInitialCodeCacheSizeArgOrder {
         ProcessBuilder pb1,  pb2;
         OutputAnalyzer out1, out2;
 
-        pb1 = ProcessTools.createJavaProcessBuilder("-XX:InitialCodeCacheSize=4m", "-XX:ReservedCodeCacheSize=8m", "-version");
-        pb2 = ProcessTools.createJavaProcessBuilder("-XX:ReservedCodeCacheSize=8m", "-XX:InitialCodeCacheSize=4m", "-version");
+        pb1 = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:InitialCodeCacheSize=4m", "-XX:ReservedCodeCacheSize=8m", "-version");
+        pb2 = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:ReservedCodeCacheSize=8m", "-XX:InitialCodeCacheSize=4m", "-version");
 
         out1 = new OutputAnalyzer(pb1.start());
         out2 = new OutputAnalyzer(pb2.start());

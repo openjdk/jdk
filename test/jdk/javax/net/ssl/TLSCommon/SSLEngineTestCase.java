@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,7 +134,7 @@ abstract public class SSLEngineTestCase {
      * e.g. "TLSv1", "TLSv1.1", "TLSv1.2", "DTLSv1.0", "DTLSv1.2".
      */
     public static final String TESTED_SECURITY_PROTOCOL
-            = System.getProperty("test.security.protocol", "TLS");
+            = System.getProperty("test.security.protocol");
     /**
      * Test mode: "norm", "norm_sni" or "krb".
      * Modes "norm" and "norm_sni" are used to run
@@ -738,13 +738,18 @@ abstract public class SSLEngineTestCase {
                     case "TLSv1.1":
                         runTests(Ciphers.SUPPORTED_NON_KRB_NON_SHA_CIPHERS);
                         break;
-                    case "DTLSv1.1":
+                    case "DTLS":
+                    case "DTLSv1.2":
+                    case "TLS":
                     case "TLSv1.2":
                         runTests(Ciphers.SUPPORTED_NON_KRB_CIPHERS);
                         break;
                     case "TLSv1.3":
                         runTests(Ciphers.TLS13_CIPHERS);
                         break;
+                    default:
+                        throw new Error("Test error: Unsupported test " +
+                                "security protocol: " + TESTED_SECURITY_PROTOCOL);
                 }
                 break;
             case "krb":

@@ -105,7 +105,7 @@ final class LauncherData {
     }
 
     private void verifyIsModular(boolean isModular) {
-        if ((moduleInfo != null) != isModular) {
+        if ((moduleInfo == null) == isModular) {
             throw new IllegalStateException();
         }
     }
@@ -266,14 +266,10 @@ final class LauncherData {
     private static String getStringParam(Map<String, ? super Object> params,
             String paramName) {
         Optional<Object> value = Optional.ofNullable(params.get(paramName));
-        if (value.isPresent()) {
-            return value.get().toString();
-        }
-        return null;
+        return value.map(Object::toString).orElse(null);
     }
 
-    private static <T> T getPathParam(Map<String, ? super Object> params,
-            String paramName, Supplier<T> func) throws ConfigException {
+    private static <T> T getPathParam(String paramName, Supplier<T> func) throws ConfigException {
         try {
             return func.get();
         } catch (InvalidPathException ex) {
@@ -285,7 +281,7 @@ final class LauncherData {
 
     private static Path getPathParam(Map<String, ? super Object> params,
             String paramName) throws ConfigException {
-        return getPathParam(params, paramName, () -> {
+        return getPathParam(paramName, () -> {
             String value = getStringParam(params, paramName);
             Path result = null;
             if (value != null) {
@@ -304,7 +300,7 @@ final class LauncherData {
             runtimePath = runtimePath.resolve("lib");
             modulePath = Stream.of(modulePath, List.of(runtimePath))
                     .flatMap(List::stream)
-                    .collect(Collectors.toUnmodifiableList());
+                    .toList();
         }
 
         return modulePath;
@@ -312,13 +308,9 @@ final class LauncherData {
 
     private static List<Path> getPathListParameter(String paramName,
             Map<String, ? super Object> params) throws ConfigException {
-        return getPathParam(params, paramName, () -> {
-            String value = (String) params.get(paramName);
-            return (value == null) ? List.of() :
-                    List.of(value.split(File.pathSeparator)).stream()
-                    .map(Path::of)
-                    .collect(Collectors.toUnmodifiableList());
-        });
+        return getPathParam(paramName, () ->
+                params.get(paramName) instanceof String value ?
+                        Stream.of(value.split(File.pathSeparator)).map(Path::of).toList() : List.of());
     }
 
     private String qualifiedClassName;

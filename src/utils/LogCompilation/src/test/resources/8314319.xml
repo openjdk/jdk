@@ -1,0 +1,526 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<hotspot_log version='160 1' process='111885' time_ms='1692059856062'>
+<vm_version>
+<name>
+OpenJDK 64-Bit Server VM
+</name>
+</vm_version>
+<compilation_log thread='111900'>
+<start_compile_thread name='C2 CompilerThread0' thread='111900' process='111885' stamp='0.410'/>
+<task_queued compile_id='457' method='java.util.AbstractCollection addAll (Ljava/util/Collection;)Z' bytes='42' count='6656' backedge_count='7100' iicount='6656' decompiles='1' bimorphic_or_optimized_type_check_traps='4' blocking='1' stamp='11.681' comment='tiered' hot_count='6656'/>
+<nmethod compile_id='457' compiler='c2' entry='0x00007fbaa497bba0' size='6296' address='0x00007fbaa497b890' relocation_offset='368' insts_offset='784' stub_offset='3088' scopes_data_offset='3312' scopes_pcs_offset='3800' dependencies_offset='5784' handler_table_offset='5800' nul_chk_table_offset='6208' oops_offset='3184' metadata_offset='3192' method='java.util.AbstractCollection addAll (Ljava/util/Collection;)Z' bytes='42' count='6656' backedge_count='7100' iicount='6656' decompiles='1' bimorphic_or_optimized_type_check_traps='4' stamp='11.907'/>
+<task compile_id='457' method='java.util.AbstractCollection addAll (Ljava/util/Collection;)Z' bytes='42' count='6656' backedge_count='7100' iicount='6656' decompiles='1' bimorphic_or_optimized_type_check_traps='4' blocking='1' stamp='11.681'>
+<type id='1205' name='boolean'/>
+<klass id='1362' name='java.util.Collection' flags='1537'/>
+<klass id='1319' name='java.util.AbstractCollection' flags='1025'/>
+<method id='1387' holder='1319' name='addAll' return='1205' arguments='1362' flags='1' bytes='42' iicount='6656'/>
+<parse method='1387' uses='6656.000000' stamp='11.682'>
+<observe trap='bimorphic_or_optimized_type_check' count='4' total='4'/>
+<bc code='185' bci='3'/>
+<klass id='1389' name='java.util.HashSet' flags='1'/>
+<klass id='1390' name='java.util.Arrays$ArrayList' flags='10'/>
+<klass id='1338' name='java.util.Iterator' flags='1537'/>
+<method id='1395' holder='1362' name='iterator' return='1338' flags='1025' bytes='0' iicount='1'/>
+<call method='1395' count='4996' prof_factor='1.000000' virtual='1' inline='1' receiver='1389' receiver_count='4959' receiver2='1390' receiver2_count='30'/>
+<method id='1399' holder='1389' name='iterator' return='1338' flags='1' bytes='13' compile_id='456' compiler='c2' iicount='6784'/>
+<call method='1399' count='4996' prof_factor='1.000000' inline='1'/>
+<inline_fail reason='already compiled into a big method'/>
+<predicted_call bci='3' exact='1' klass='1389'/>
+<uncommon_trap bci='3' reason='null_check' action='maybe_recompile' debug_id='0'/>
+<virtual_call bci='3'/>
+<predicted_call bci='3' exact='0' klass='1389'/>
+<direct_call bci='3'/>
+<bc code='185' bci='10'/>
+<klass id='1391' name='java.util.HashMap$KeyIterator' flags='16'/>
+<klass id='1392' name='java.util.Arrays$ArrayItr' flags='10'/>
+<method id='1396' holder='1338' name='hasNext' return='1205' flags='1025' bytes='0' iicount='1'/>
+<call method='1396' count='10906' prof_factor='1.000000' virtual='1' inline='1' receiver='1391' receiver_count='10641' receiver2='1392' receiver2_count='30'/>
+<klass id='1404' name='java.util.HashMap$HashIterator' flags='1024'/>
+<method id='1405' holder='1404' name='hasNext' return='1205' flags='17' bytes='13' compile_id='213' compiler='c2' iicount='6784'/>
+<call method='1405' count='10906' prof_factor='1.000000' inline='1'/>
+<inline_success reason='inline (hot)'/>
+<predicted_call bci='10' exact='1' klass='1391'/>
+<uncommon_trap bci='10' reason='null_check' action='maybe_recompile' debug_id='0'/>
+<virtual_call bci='10'/>
+<predicted_call bci='10' exact='0' klass='1404'/>
+<parse method='1405' uses='14541.000000' stamp='11.684'>
+<bc code='198' bci='4'/>
+<branch target_bci='11' taken='1125' not_taken='5660' cnt='6785.000000' prob='                0.17'/>
+<parse_done nodes='177' live='174' memory='37368' stamp='11.684'/>
+</parse>
+<bc code='153' bci='15'/>
+<branch target_bci='40' taken='6661' not_taken='7880' cnt='14541.000000' prob='                0.46'/>
+<uncommon_trap bci='15' reason='predicate' action='maybe_recompile' debug_id='0'/>
+<uncommon_trap bci='15' reason='profile_predicate' action='maybe_recompile' debug_id='0'/>
+<uncommon_trap bci='15' reason='loop_limit_check' action='maybe_recompile' debug_id='0'/>
+<bc code='185' bci='19'/>
+<klass id='1393' name='java.util.LinkedHashMap$LinkedKeyIterator' flags='16'/>
+<klass id='1218' name='java.lang.Object' flags='1'/>
+<method id='1397' holder='1338' name='next' return='1218' flags='1025' bytes='0' iicount='1'/>
+<call method='1397' count='5910' prof_factor='1.000000' virtual='1' inline='1' receiver='1391' receiver_count='5679' receiver2='1393' receiver2_count='231'/>
+<method id='1409' holder='1391' name='next' return='1218' flags='17' bytes='8' compile_id='263' compiler='c2' iicount='6784'/>
+<call method='1409' count='5910' prof_factor='1.000000' inline='1'/>
+<inline_success reason='inline (hot)'/>
+<method id='1411' holder='1393' name='next' return='1218' flags='17' bytes='8' iicount='519'/>
+<call method='1411' count='5910' prof_factor='1.000000' inline='1'/>
+<inline_success reason='inline (hot)'/>
+<predicted_call bci='19' exact='1' klass='1391'/>
+<predicted_call bci='19' exact='1' klass='1393'/>
+<uncommon_trap bci='19' reason='bimorphic_or_optimized_type_check' action='maybe_recompile' debug_id='0'/>
+<predicted_call bci='19' exact='0' klass='1393'/>
+<parse method='1411' uses='7880.000000' stamp='11.686'>
+<bc code='182' bci='1'/>
+<klass id='1413' name='java.util.LinkedHashMap$Entry' flags='8'/>
+<klass id='1412' name='java.util.LinkedHashMap$LinkedHashIterator' flags='1024'/>
+<method id='1414' holder='1412' name='nextNode' return='1413' flags='16' bytes='68' compile_id='318' compiler='c2' iicount='6784'/>
+<call method='1414' count='-1' prof_factor='1.000000' inline='1'/>
+<klass id='1418' name='java.util.NoSuchElementException' unloaded='1'/>
+<uncommon_trap method='1414' bci='31' reason='unloaded' action='reinterpret' index='42' debug_id='0' klass='1418'/>
+<klass id='1419' name='java.util.ConcurrentModificationException' unloaded='1'/>
+<uncommon_trap method='1414' bci='19' reason='unloaded' action='reinterpret' index='39' debug_id='0' klass='1419'/>
+<inline_fail reason='already compiled into a medium method'/>
+<predicted_call bci='1' exact='0' klass='1412'/>
+<direct_call bci='1'/>
+<bc code='182' bci='4'/>
+<klass id='1406' name='java.util.HashMap$Node' flags='8'/>
+<method id='1415' holder='1406' name='getKey' return='1218' flags='17' bytes='5' compile_id='52' compiler='c2' iicount='128'/>
+<call method='1415' count='-1' prof_factor='1.000000' inline='1'/>
+<inline_success reason='accessor'/>
+<predicted_call bci='4' exact='0' klass='1406'/>
+<uncommon_trap bci='4' reason='null_check' action='maybe_recompile' debug_id='0'/>
+<parse method='1415' uses='-1.000000' stamp='11.687'>
+<parse_done nodes='349' live='340' memory='75984' stamp='11.687'/>
+</parse>
+<parse_done nodes='350' live='340' memory='76248' stamp='11.687'/>
+</parse>
+<predicted_call bci='19' exact='0' klass='1391'/>
+<parse method='1409' uses='7880.000000' stamp='11.687'>
+<bc code='182' bci='1'/>
+<method id='1410' holder='1404' name='nextNode' return='1406' flags='16' bytes='100' compile_id='198' compiler='c2' iicount='3584'/>
+<call method='1410' count='5121' prof_factor='1.000000' inline='1'/>
+<uncommon_trap method='1410' bci='31' reason='unloaded' action='reinterpret' index='42' debug_id='0' klass='1418'/>
+<uncommon_trap method='1410' bci='19' reason='unloaded' action='reinterpret' index='39' debug_id='0' klass='1419'/>
+<inline_fail reason='already compiled into a big method'/>
+<predicted_call bci='1' exact='0' klass='1404'/>
+<direct_call bci='1'/>
+<bc code='180' bci='4'/>
+<uncommon_trap bci='4' reason='null_check' action='maybe_recompile' debug_id='0'/>
+<parse_done nodes='405' live='393' memory='87792' stamp='11.688'/>
+</parse>
+<bc code='182' bci='29'/>
+<klass id='1394' name='java.util.LinkedHashSet' flags='1'/>
+<method id='1398' holder='1319' name='add' return='1205' arguments='1218' flags='1' bytes='8' iicount='1'/>
+<call method='1398' count='5910' prof_factor='1.000000' virtual='1' inline='1' receiver='1389' receiver_count='5679' receiver2='1394' receiver2_count='231'/>
+<method id='1424' holder='1389' name='add' return='1205' arguments='1218' flags='1' bytes='20' compile_id='260' compiler='c2' iicount='6784'/>
+<call method='1424' count='5910' prof_factor='1.000000' inline='1'/>
+<inline_success reason='inline (hot)'/>
+<call method='1424' count='5910' prof_factor='1.000000' inline='1'/>
+<inline_success reason='inline (hot)'/>
+<predicted_call bci='29' exact='1' klass='1389'/>
+<predicted_call bci='29' exact='1' klass='1394'/>
+<uncommon_trap bci='29' reason='bimorphic_or_optimized_type_check' action='maybe_recompile' debug_id='0'/>
+<predicted_call bci='29' exact='0' klass='1389'/>
+<parse method='1424' uses='7880.000000' stamp='11.689'>
+<bc code='182' bci='8'/>
+<klass id='1400' name='java.util.HashMap' flags='1'/>
+<method id='1425' holder='1400' name='put' return='1218' arguments='1218 1218' flags='1' bytes='13' compile_id='256' compiler='c2' iicount='6784'/>
+<dependency type='unique_concrete_method_4' ctxk='1400' x='1425' x2='1400' x3='1425'/>
+<call method='1425' count='5121' prof_factor='1.000000' inline='1'/>
+<inline_success reason='inline (hot)'/>
+<predicted_call bci='8' exact='0' klass='1400'/>
+<uncommon_trap bci='8' reason='null_check' action='maybe_recompile' debug_id='0'/>
+<parse method='1425' uses='6785.000000' stamp='11.691'>
+<bc code='184' bci='2'/>
+<type id='1211' name='int'/>
+<method id='1431' holder='1400' name='hash' return='1211' arguments='1218' flags='24' bytes='20' compile_id='63' compiler='c2' iicount='6912'/>
+<call method='1431' count='5121' prof_factor='1.000000' inline='1'/>
+<inline_success reason='inline (hot)'/>
+<parse method='1431' uses='6785.000000' stamp='11.691'>
+<observe trap='bimorphic_or_optimized_type_check' count='4' total='8'/>
+<bc code='199' bci='1'/>
+<branch target_bci='8' taken='6913' not_taken='0' cnt='6913.000000' prob='always'/>
+<uncommon_trap bci='1' reason='unstable_if' action='reinterpret' debug_id='0' comment='taken always'/>
+<bc code='182' bci='9'/>
+<klass id='1219' name='java.lang.String' flags='17'/>
+<klass id='1436' name='java.lang.module.ResolvedModule' flags='17'/>
+<method id='1434' holder='1218' name='hashCode' return='1211' flags='257' bytes='0' iicount='14485'/>
+<call method='1434' count='5253' prof_factor='0.981626' virtual='1' inline='1' receiver='1219' receiver_count='4606' receiver2='1436' receiver2_count='628'/>
+<intrinsic id='_hashCode' virtual='1' nodes='53'/>
+<parse_done nodes='587' live='571' memory='131792' stamp='11.692'/>
+</parse>
+<bc code='182' bci='9'/>
+<method id='1432' holder='1400' name='putVal' return='1218' arguments='1211 1218 1218 1205 1205' flags='16' bytes='300' compile_id='212' compiler='c2' iicount='11904'/>
+<call method='1432' count='5121' prof_factor='1.000000' inline='1'/>
+<inline_fail reason='already compiled into a big method'/>
+<predicted_call bci='9' exact='0' klass='1400'/>
+<direct_call bci='9'/>
+<parse_done nodes='617' live='600' memory='139944' stamp='11.693'/>
+</parse>
+<bc code='199' bci='11'/>
+<branch target_bci='18' taken='1' not_taken='6784' cnt='6785.000000' prob='                0.00'/>
+<parse_done nodes='636' live='618' memory='144824' stamp='11.694'/>
+</parse>
+<predicted_call bci='29' exact='0' klass='1389'/>
+<parse method='1424' uses='7880.000000' stamp='11.694'>
+<bc code='182' bci='8'/>
+<dependency type='unique_concrete_method_4' ctxk='1400' x='1425' x2='1400' x3='1425'/>
+<call method='1425' count='5121' prof_factor='1.000000' inline='1'/>
+<inline_success reason='inline (hot)'/>
+<predicted_call bci='8' exact='0' klass='1400'/>
+<uncommon_trap bci='8' reason='null_check' action='maybe_recompile' debug_id='0'/>
+<parse method='1425' uses='6785.000000' stamp='11.695'>
+<bc code='184' bci='2'/>
+<call method='1431' count='5121' prof_factor='1.000000' inline='1'/>
+<inline_success reason='inline (hot)'/>
+<parse method='1431' uses='6785.000000' stamp='11.695'>
+<observe trap='bimorphic_or_optimized_type_check' count='4' total='12'/>
+<bc code='199' bci='1'/>
+<branch target_bci='8' taken='6913' not_taken='0' cnt='6913.000000' prob='always'/>
+<uncommon_trap bci='1' reason='unstable_if' action='reinterpret' debug_id='0' comment='taken always'/>
+<bc code='182' bci='9'/>
+<call method='1434' count='5253' prof_factor='0.981626' virtual='1' inline='1' receiver='1219' receiver_count='4606' receiver2='1436' receiver2_count='628'/>
+<intrinsic id='_hashCode' virtual='1' nodes='46'/>
+<parse_done nodes='763' live='742' memory='172504' stamp='11.696'/>
+</parse>
+<bc code='182' bci='9'/>
+<call method='1432' count='5121' prof_factor='1.000000' inline='1'/>
+<inline_fail reason='already compiled into a big method'/>
+<predicted_call bci='9' exact='0' klass='1400'/>
+<direct_call bci='9'/>
+<parse_done nodes='793' live='771' memory='179816' stamp='11.696'/>
+</parse>
+<bc code='199' bci='11'/>
+<branch target_bci='18' taken='1' not_taken='6784' cnt='6785.000000' prob='                0.00'/>
+<parse_done nodes='812' live='789' memory='184056' stamp='11.696'/>
+</parse>
+<bc code='153' bci='32'/>
+<branch target_bci='37' taken='0' not_taken='7880' cnt='7880.000000' prob='never'/>
+<uncommon_trap bci='32' reason='unstable_if' action='reinterpret' debug_id='0' comment='taken never'/>
+<bc code='185' bci='10'/>
+<call method='1396' count='10906' prof_factor='1.000000' virtual='1' inline='1' receiver='1391' receiver_count='10641' receiver2='1392' receiver2_count='30'/>
+<call method='1405' count='10906' prof_factor='1.000000' inline='1'/>
+<inline_success reason='inline (hot)'/>
+<predicted_call bci='10' exact='1' klass='1391'/>
+<virtual_call bci='10'/>
+<predicted_call bci='10' exact='0' klass='1404'/>
+<parse method='1405' uses='14541.000000' stamp='11.697'>
+<bc code='198' bci='4'/>
+<branch target_bci='11' taken='1125' not_taken='5660' cnt='6785.000000' prob='                0.17'/>
+<parse_done nodes='903' live='878' memory='203696' stamp='11.698'/>
+</parse>
+<bc code='153' bci='15'/>
+<branch target_bci='40' taken='6661' not_taken='7880' cnt='7880.000000' prob='                0.46'/>
+<parse_done nodes='924' live='898' memory='209200' stamp='11.698'/>
+</parse>
+<method id='1446' holder='1412' name='hasNext' return='1205' flags='17' bytes='13' compile_id='317' compiler='c2' iicount='6784'/>
+<dependency type='unique_concrete_method_4' ctxk='1393' x='1446' x2='1338' x3='1396'/>
+<dependency type='unique_concrete_method_4' ctxk='1391' x='1405' x2='1338' x3='1396'/>
+<loop_tree>
+<loop idx='975' inner_loop='1' >
+</loop>
+</loop_tree>
+<loop_tree>
+<loop idx='1196' inner_loop='1' >
+</loop>
+<loop idx='975' inner_loop='1' >
+</loop>
+</loop_tree>
+<loop_tree>
+<loop idx='1196' inner_loop='1' >
+</loop>
+<loop idx='975' inner_loop='1' >
+</loop>
+</loop_tree>
+<loop_tree>
+<loop idx='1496' inner_loop='1' >
+</loop>
+<loop idx='1196' inner_loop='1' >
+</loop>
+<loop idx='975' inner_loop='1' >
+</loop>
+</loop_tree>
+<loop_tree>
+<loop idx='1496' inner_loop='1' >
+</loop>
+<loop idx='1196' inner_loop='1' >
+</loop>
+<loop idx='975' inner_loop='1' >
+</loop>
+</loop_tree>
+<loop_tree>
+<loop idx='1496' inner_loop='1' >
+</loop>
+<loop idx='1196' inner_loop='1' >
+</loop>
+<loop idx='1949' inner_loop='1' >
+</loop>
+<loop idx='975' inner_loop='1' >
+</loop>
+</loop_tree>
+<loop_tree>
+<loop idx='1496' inner_loop='1' >
+</loop>
+<loop idx='1196' inner_loop='1' >
+</loop>
+<loop idx='1949' inner_loop='1' >
+</loop>
+<loop idx='975' inner_loop='1' >
+</loop>
+</loop_tree>
+<loop_tree>
+<loop idx='1496' inner_loop='1' >
+</loop>
+<loop idx='1196' inner_loop='1' >
+</loop>
+<loop idx='1949' inner_loop='1' >
+</loop>
+<loop idx='975' inner_loop='1' >
+</loop>
+</loop_tree>
+<late_inline method='1396'  inline_id='0'>
+<jvms bci='10' method='1387'/>
+</late_inline>
+<call method='1446' count='10906' prof_factor='1.000000'/>
+<predicted_call bci='10' exact='0' klass='1412'/>
+<direct_call bci='10'/>
+<failure reason='retry without subsuming loads' phase='compile'/>
+<parse method='1387' uses='6656.000000' stamp='11.779'>
+<observe trap='bimorphic_or_optimized_type_check' count='4' total='4'/>
+<bc code='185' bci='3'/>
+<call method='1395' count='4996' prof_factor='1.000000' virtual='1' inline='1' receiver='1389' receiver_count='4959' receiver2='1390' receiver2_count='30'/>
+<call method='1399' count='4996' prof_factor='1.000000' inline='1'/>
+<inline_fail reason='already compiled into a big method'/>
+<predicted_call bci='3' exact='1' klass='1389'/>
+<uncommon_trap bci='3' reason='null_check' action='maybe_recompile' debug_id='0'/>
+<virtual_call bci='3'/>
+<predicted_call bci='3' exact='0' klass='1389'/>
+<direct_call bci='3'/>
+<bc code='185' bci='10'/>
+<call method='1396' count='10906' prof_factor='1.000000' virtual='1' inline='1' receiver='1391' receiver_count='10641' receiver2='1392' receiver2_count='30'/>
+<call method='1405' count='10906' prof_factor='1.000000' inline='1'/>
+<inline_success reason='inline (hot)'/>
+<predicted_call bci='10' exact='1' klass='1391'/>
+<uncommon_trap bci='10' reason='null_check' action='maybe_recompile' debug_id='0'/>
+<virtual_call bci='10'/>
+<predicted_call bci='10' exact='0' klass='1404'/>
+<parse method='1405' uses='14541.000000' stamp='11.781'>
+<bc code='198' bci='4'/>
+<branch target_bci='11' taken='1125' not_taken='5660' cnt='6785.000000' prob='                0.17'/>
+<parse_done nodes='177' live='174' memory='37368' stamp='11.781'/>
+</parse>
+<bc code='153' bci='15'/>
+<branch target_bci='40' taken='6661' not_taken='7880' cnt='14541.000000' prob='                0.46'/>
+<uncommon_trap bci='15' reason='predicate' action='maybe_recompile' debug_id='0'/>
+<uncommon_trap bci='15' reason='profile_predicate' action='maybe_recompile' debug_id='0'/>
+<uncommon_trap bci='15' reason='loop_limit_check' action='maybe_recompile' debug_id='0'/>
+<bc code='185' bci='19'/>
+<call method='1397' count='5910' prof_factor='1.000000' virtual='1' inline='1' receiver='1391' receiver_count='5679' receiver2='1393' receiver2_count='231'/>
+<call method='1409' count='5910' prof_factor='1.000000' inline='1'/>
+<inline_success reason='inline (hot)'/>
+<call method='1411' count='5910' prof_factor='1.000000' inline='1'/>
+<inline_success reason='inline (hot)'/>
+<predicted_call bci='19' exact='1' klass='1391'/>
+<predicted_call bci='19' exact='1' klass='1393'/>
+<uncommon_trap bci='19' reason='bimorphic_or_optimized_type_check' action='maybe_recompile' debug_id='0'/>
+<predicted_call bci='19' exact='0' klass='1393'/>
+<parse method='1411' uses='7880.000000' stamp='11.782'>
+<bc code='182' bci='1'/>
+<call method='1414' count='-1' prof_factor='1.000000' inline='1'/>
+<inline_fail reason='already compiled into a medium method'/>
+<predicted_call bci='1' exact='0' klass='1412'/>
+<direct_call bci='1'/>
+<bc code='182' bci='4'/>
+<call method='1415' count='-1' prof_factor='1.000000' inline='1'/>
+<inline_success reason='accessor'/>
+<predicted_call bci='4' exact='0' klass='1406'/>
+<uncommon_trap bci='4' reason='null_check' action='maybe_recompile' debug_id='0'/>
+<parse method='1415' uses='-1.000000' stamp='11.783'>
+<parse_done nodes='349' live='340' memory='75984' stamp='11.783'/>
+</parse>
+<parse_done nodes='350' live='340' memory='76248' stamp='11.783'/>
+</parse>
+<predicted_call bci='19' exact='0' klass='1391'/>
+<parse method='1409' uses='7880.000000' stamp='11.783'>
+<bc code='182' bci='1'/>
+<call method='1410' count='5121' prof_factor='1.000000' inline='1'/>
+<inline_fail reason='already compiled into a big method'/>
+<predicted_call bci='1' exact='0' klass='1404'/>
+<direct_call bci='1'/>
+<bc code='180' bci='4'/>
+<uncommon_trap bci='4' reason='null_check' action='maybe_recompile' debug_id='0'/>
+<parse_done nodes='405' live='393' memory='87792' stamp='11.784'/>
+</parse>
+<bc code='182' bci='29'/>
+<call method='1398' count='5910' prof_factor='1.000000' virtual='1' inline='1' receiver='1389' receiver_count='5679' receiver2='1394' receiver2_count='231'/>
+<call method='1424' count='5910' prof_factor='1.000000' inline='1'/>
+<inline_success reason='inline (hot)'/>
+<call method='1424' count='5910' prof_factor='1.000000' inline='1'/>
+<inline_success reason='inline (hot)'/>
+<predicted_call bci='29' exact='1' klass='1389'/>
+<predicted_call bci='29' exact='1' klass='1394'/>
+<uncommon_trap bci='29' reason='bimorphic_or_optimized_type_check' action='maybe_recompile' debug_id='0'/>
+<predicted_call bci='29' exact='0' klass='1389'/>
+<parse method='1424' uses='7880.000000' stamp='11.785'>
+<bc code='182' bci='8'/>
+<dependency type='unique_concrete_method_4' ctxk='1400' x='1425' x2='1400' x3='1425'/>
+<call method='1425' count='5121' prof_factor='1.000000' inline='1'/>
+<inline_success reason='inline (hot)'/>
+<predicted_call bci='8' exact='0' klass='1400'/>
+<uncommon_trap bci='8' reason='null_check' action='maybe_recompile' debug_id='0'/>
+<parse method='1425' uses='6785.000000' stamp='11.786'>
+<bc code='184' bci='2'/>
+<call method='1431' count='5121' prof_factor='1.000000' inline='1'/>
+<inline_success reason='inline (hot)'/>
+<parse method='1431' uses='6785.000000' stamp='11.786'>
+<observe trap='bimorphic_or_optimized_type_check' count='4' total='8'/>
+<bc code='199' bci='1'/>
+<branch target_bci='8' taken='6913' not_taken='0' cnt='6913.000000' prob='always'/>
+<uncommon_trap bci='1' reason='unstable_if' action='reinterpret' debug_id='0' comment='taken always'/>
+<bc code='182' bci='9'/>
+<call method='1434' count='5253' prof_factor='0.981626' virtual='1' inline='1' receiver='1219' receiver_count='4606' receiver2='1436' receiver2_count='628'/>
+<intrinsic id='_hashCode' virtual='1' nodes='53'/>
+<parse_done nodes='587' live='571' memory='131792' stamp='11.787'/>
+</parse>
+<bc code='182' bci='9'/>
+<call method='1432' count='5121' prof_factor='1.000000' inline='1'/>
+<inline_fail reason='already compiled into a big method'/>
+<predicted_call bci='9' exact='0' klass='1400'/>
+<direct_call bci='9'/>
+<parse_done nodes='617' live='600' memory='139944' stamp='11.788'/>
+</parse>
+<bc code='199' bci='11'/>
+<branch target_bci='18' taken='1' not_taken='6784' cnt='6785.000000' prob='                0.00'/>
+<parse_done nodes='636' live='618' memory='144824' stamp='11.788'/>
+</parse>
+<predicted_call bci='29' exact='0' klass='1389'/>
+<parse method='1424' uses='7880.000000' stamp='11.788'>
+<bc code='182' bci='8'/>
+<dependency type='unique_concrete_method_4' ctxk='1400' x='1425' x2='1400' x3='1425'/>
+<call method='1425' count='5121' prof_factor='1.000000' inline='1'/>
+<inline_success reason='inline (hot)'/>
+<predicted_call bci='8' exact='0' klass='1400'/>
+<uncommon_trap bci='8' reason='null_check' action='maybe_recompile' debug_id='0'/>
+<parse method='1425' uses='6785.000000' stamp='11.789'>
+<bc code='184' bci='2'/>
+<call method='1431' count='5121' prof_factor='1.000000' inline='1'/>
+<inline_success reason='inline (hot)'/>
+<parse method='1431' uses='6785.000000' stamp='11.789'>
+<observe trap='bimorphic_or_optimized_type_check' count='4' total='12'/>
+<bc code='199' bci='1'/>
+<branch target_bci='8' taken='6913' not_taken='0' cnt='6913.000000' prob='always'/>
+<uncommon_trap bci='1' reason='unstable_if' action='reinterpret' debug_id='0' comment='taken always'/>
+<bc code='182' bci='9'/>
+<call method='1434' count='5253' prof_factor='0.981626' virtual='1' inline='1' receiver='1219' receiver_count='4606' receiver2='1436' receiver2_count='628'/>
+<intrinsic id='_hashCode' virtual='1' nodes='46'/>
+<parse_done nodes='763' live='742' memory='172504' stamp='11.790'/>
+</parse>
+<bc code='182' bci='9'/>
+<call method='1432' count='5121' prof_factor='1.000000' inline='1'/>
+<inline_fail reason='already compiled into a big method'/>
+<predicted_call bci='9' exact='0' klass='1400'/>
+<direct_call bci='9'/>
+<parse_done nodes='793' live='771' memory='179816' stamp='11.791'/>
+</parse>
+<bc code='199' bci='11'/>
+<branch target_bci='18' taken='1' not_taken='6784' cnt='6785.000000' prob='                0.00'/>
+<parse_done nodes='812' live='789' memory='184056' stamp='11.791'/>
+</parse>
+<bc code='153' bci='32'/>
+<branch target_bci='37' taken='0' not_taken='7880' cnt='7880.000000' prob='never'/>
+<uncommon_trap bci='32' reason='unstable_if' action='reinterpret' debug_id='0' comment='taken never'/>
+<bc code='185' bci='10'/>
+<call method='1396' count='10906' prof_factor='1.000000' virtual='1' inline='1' receiver='1391' receiver_count='10641' receiver2='1392' receiver2_count='30'/>
+<call method='1405' count='10906' prof_factor='1.000000' inline='1'/>
+<inline_success reason='inline (hot)'/>
+<predicted_call bci='10' exact='1' klass='1391'/>
+<virtual_call bci='10'/>
+<predicted_call bci='10' exact='0' klass='1404'/>
+<parse method='1405' uses='14541.000000' stamp='11.792'>
+<bc code='198' bci='4'/>
+<branch target_bci='11' taken='1125' not_taken='5660' cnt='6785.000000' prob='                0.17'/>
+<parse_done nodes='903' live='878' memory='203696' stamp='11.792'/>
+</parse>
+<bc code='153' bci='15'/>
+<branch target_bci='40' taken='6661' not_taken='7880' cnt='7880.000000' prob='                0.46'/>
+<parse_done nodes='924' live='898' memory='209200' stamp='11.793'/>
+</parse>
+<dependency type='unique_concrete_method_4' ctxk='1393' x='1446' x2='1338' x3='1396'/>
+<dependency type='unique_concrete_method_4' ctxk='1391' x='1405' x2='1338' x3='1396'/>
+<loop_tree>
+<loop idx='975' inner_loop='1' >
+</loop>
+</loop_tree>
+<loop_tree>
+<loop idx='1196' inner_loop='1' >
+</loop>
+<loop idx='975' inner_loop='1' >
+</loop>
+</loop_tree>
+<loop_tree>
+<loop idx='1196' inner_loop='1' >
+</loop>
+<loop idx='975' inner_loop='1' >
+</loop>
+</loop_tree>
+<loop_tree>
+<loop idx='1496' inner_loop='1' >
+</loop>
+<loop idx='1196' inner_loop='1' >
+</loop>
+<loop idx='975' inner_loop='1' >
+</loop>
+</loop_tree>
+<loop_tree>
+<loop idx='1496' inner_loop='1' >
+</loop>
+<loop idx='1196' inner_loop='1' >
+</loop>
+<loop idx='975' inner_loop='1' >
+</loop>
+</loop_tree>
+<loop_tree>
+<loop idx='1496' inner_loop='1' >
+</loop>
+<loop idx='1196' inner_loop='1' >
+</loop>
+<loop idx='1949' inner_loop='1' >
+</loop>
+<loop idx='975' inner_loop='1' >
+</loop>
+</loop_tree>
+<loop_tree>
+<loop idx='1496' inner_loop='1' >
+</loop>
+<loop idx='1196' inner_loop='1' >
+</loop>
+<loop idx='1949' inner_loop='1' >
+</loop>
+<loop idx='975' inner_loop='1' >
+</loop>
+</loop_tree>
+<loop_tree>
+<loop idx='1496' inner_loop='1' >
+</loop>
+<loop idx='1196' inner_loop='1' >
+</loop>
+<loop idx='1949' inner_loop='1' >
+</loop>
+<loop idx='975' inner_loop='1' >
+</loop>
+</loop_tree>
+<late_inline method='1396'  inline_id='0'>
+<jvms bci='10' method='1387'/>
+</late_inline>
+<call method='1446' count='10906' prof_factor='1.000000'/>
+<predicted_call bci='10' exact='0' klass='1412'/>
+<direct_call bci='10'/>
+<regalloc attempts='1' success='1'/>
+<dependency type='unique_concrete_method_4' ctxk='1400' x='1425' x2='1400' x3='1425'/>
+<dependency type='unique_concrete_method_4' ctxk='1393' x='1446' x2='1338' x3='1396'/>
+<dependency type='unique_concrete_method_4' ctxk='1391' x='1405' x2='1338' x3='1396'/>
+<code_cache total_blobs='1284' nmethods='457' adapters='776' free_code_cache='48025856'/>
+<task_done success='1' nmsize='2400' count='6656' backedge_count='7100' inlined_bytes='158' stamp='11.908'/>
+</task>
+</compilation_log>
+<hotspot_log_done stamp='105.034'/>
+</hotspot_log>

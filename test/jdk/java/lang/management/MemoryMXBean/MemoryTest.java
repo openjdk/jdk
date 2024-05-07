@@ -78,7 +78,7 @@
  * @author  Mandy Chung
  *
  * @modules jdk.management
- * @run main MemoryTest 3 3
+ * @run main/othervm -XX:+UseG1GC MemoryTest 3 3
  */
 
 /*

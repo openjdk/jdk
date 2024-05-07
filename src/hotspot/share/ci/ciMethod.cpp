@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@
 #include "ci/ciUtilities.inline.hpp"
 #include "compiler/abstractCompiler.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
+#include "compiler/compilerOracle.hpp"
 #include "compiler/methodLiveness.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/linkResolver.hpp"
@@ -441,6 +442,9 @@ int ciMethod::check_overflow(int c, Bytecodes::Code code) {
     case Bytecodes::_aastore:    // fall-through
     case Bytecodes::_checkcast:  // fall-through
     case Bytecodes::_instanceof: {
+      if (VM_Version::profile_all_receivers_at_type_check()) {
+        return (c < 0 ? max_jint : c); // always non-negative
+      }
       return (c > 0 ? min_jint : c); // always non-positive
     }
     default: {
@@ -1059,7 +1063,7 @@ MethodCounters* ciMethod::ensure_method_counters() {
 // ------------------------------------------------------------------
 // ciMethod::has_option
 //
-bool ciMethod::has_option(enum CompileCommand option) {
+bool ciMethod::has_option(CompileCommandEnum option) {
   check_is_loaded();
   VM_ENTRY_MARK;
   methodHandle mh(THREAD, get_Method());
@@ -1069,7 +1073,7 @@ bool ciMethod::has_option(enum CompileCommand option) {
 // ------------------------------------------------------------------
 // ciMethod::has_option_value
 //
-bool ciMethod::has_option_value(enum CompileCommand option, double& value) {
+bool ciMethod::has_option_value(CompileCommandEnum option, double& value) {
   check_is_loaded();
   VM_ENTRY_MARK;
   methodHandle mh(THREAD, get_Method());
@@ -1122,13 +1126,14 @@ int ciMethod::code_size_for_inlining() {
 // not highly relevant to an inlined method.  So we use the more
 // specific accessor nmethod::insts_size.
 // Also some instructions inside the code are excluded from inline
-// heuristic (e.g. post call nop instructions; see InlineSkippedInstructionsCounter)
+// heuristic (e.g. post call nop instructions and GC barriers;
+// see InlineSkippedInstructionsCounter).
 int ciMethod::inline_instructions_size() {
   if (_inline_instructions_size == -1) {
     GUARDED_VM_ENTRY(
-      CompiledMethod* code = get_Method()->code();
+      nmethod* code = get_Method()->code();
       if (code != nullptr && (code->comp_level() == CompLevel_full_optimization)) {
-        int isize = code->insts_end() - code->verified_entry_point() - code->skipped_instructions_size();
+        int isize = code->inline_insts_size();
         _inline_instructions_size = isize > 0 ? isize : 0;
       } else {
         _inline_instructions_size = 0;
@@ -1142,7 +1147,7 @@ int ciMethod::inline_instructions_size() {
 // ciMethod::log_nmethod_identity
 void ciMethod::log_nmethod_identity(xmlStream* log) {
   GUARDED_VM_ENTRY(
-    CompiledMethod* code = get_Method()->code();
+    nmethod* code = get_Method()->code();
     if (code != nullptr) {
       code->log_identity(log);
     }

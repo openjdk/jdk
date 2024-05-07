@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@ import org.testng.Assert;
 
 import java.io.File;
 import java.nio.file.Files;
-import java.io.IOException;
 import java.util.List;
 
 import jdk.test.lib.hprof.HprofParser;
@@ -50,7 +49,7 @@ import jdk.test.lib.dcmd.PidJcmdExecutor;
 public class HeapDumpTest {
     protected String heapDumpArgs = "";
 
-    public void run(CommandExecutor executor, boolean overwrite) throws IOException {
+    public void run(CommandExecutor executor, boolean overwrite) throws Exception {
         File dump = new File("jcmd.gc.heap_dump." + System.currentTimeMillis() + ".hprof");
         if (!overwrite && dump.exists()) {
             dump.delete();
@@ -61,37 +60,18 @@ public class HeapDumpTest {
         String cmd = "GC.heap_dump " + (overwrite ? "-overwrite " : "") + heapDumpArgs + " " + dump.getAbsolutePath();
         executor.execute(cmd);
 
-        verifyHeapDump(dump);
+        HprofParser.parseAndVerify(dump);
         dump.delete();
-    }
-
-    private void verifyHeapDump(File dump) {
-        Assert.assertTrue(dump.exists() && dump.isFile(), "Could not create dump file " + dump.getAbsolutePath());
-        try {
-            File out = HprofParser.parse(dump);
-
-            Assert.assertTrue(out != null && out.exists() && out.isFile(), "Could not find hprof parser output file");
-            List<String> lines = Files.readAllLines(out.toPath());
-            Assert.assertTrue(lines.size() > 0, "hprof parser output file is empty");
-            for (String line : lines) {
-                Assert.assertFalse(line.matches(".*WARNING(?!.*Failed to resolve object.*constantPoolOop.*).*"));
-            }
-
-            out.delete();
-        } catch (Exception e) {
-            e.printStackTrace();
-            Assert.fail("Could not parse dump file " + dump.getAbsolutePath());
-        }
     }
 
     /* GC.heap_dump is not available over JMX, running jcmd pid executor instead */
     @Test
-    public void pid() throws IOException {
+    public void pid() throws Exception {
         run(new PidJcmdExecutor(), false);
     }
 
     @Test
-    public void pidRewrite() throws IOException {
+    public void pidRewrite() throws Exception {
         run(new PidJcmdExecutor(), true);
     }
 }

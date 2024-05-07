@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -326,6 +326,15 @@ class XFramePeer extends XDecoratedPeer implements FramePeer {
 
     void setExtendedState(int newState) {
         XWM.getWM().setExtendedState(this, newState);
+    }
+
+    @Override
+    public void toFront() {
+        if ((state & Frame.ICONIFIED) != 0) {
+            changeState(state & ~Frame.ICONIFIED);
+        }
+
+        super.toFront();
     }
 
     public void handlePropertyNotify(XEvent xev) {

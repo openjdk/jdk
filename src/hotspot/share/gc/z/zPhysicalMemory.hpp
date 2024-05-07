@@ -32,16 +32,16 @@
 
 class ZPhysicalMemorySegment : public CHeapObj<mtGC> {
 private:
-  zoffset _start;
-  zoffset _end;
-  bool    _committed;
+  zoffset     _start;
+  zoffset_end _end;
+  bool        _committed;
 
 public:
   ZPhysicalMemorySegment();
   ZPhysicalMemorySegment(zoffset start, size_t size, bool committed);
 
   zoffset start() const;
-  zoffset end() const;
+  zoffset_end end() const;
   size_t size() const;
 
   bool is_committed() const;
@@ -83,9 +83,6 @@ class ZPhysicalMemoryManager {
 private:
   ZPhysicalMemoryBacking _backing;
   ZMemoryManager         _manager;
-
-  void nmt_commit(zoffset offset, size_t size) const;
-  void nmt_uncommit(zoffset offset, size_t size) const;
 
   void pretouch_view(zaddress addr, size_t size) const;
   void map_view(zaddress_unsafe addr, const ZPhysicalMemory& pmem) const;

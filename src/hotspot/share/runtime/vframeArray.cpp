@@ -133,7 +133,7 @@ void vframeArrayElement::fill_in(compiledVFrame* vf, bool realloc_failures) {
         _locals->add( new StackValue());
         break;
       case T_INT:
-        _locals->add( new StackValue(value->get_int()));
+        _locals->add( new StackValue(value->get_intptr()));
         break;
       default:
         ShouldNotReachHere();
@@ -160,7 +160,7 @@ void vframeArrayElement::fill_in(compiledVFrame* vf, bool realloc_failures) {
         _expressions->add( new StackValue());
         break;
       case T_INT:
-        _expressions->add( new StackValue(value->get_int()));
+        _expressions->add( new StackValue(value->get_intptr()));
         break;
       default:
         ShouldNotReachHere();
@@ -342,7 +342,7 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
     assert(!is_bottom_frame || !(caller->is_compiled_caller() && addr >= caller->unextended_sp()), "overwriting caller frame!");
     switch(value->type()) {
       case T_INT:
-        *addr = value->get_int();
+        *addr = value->get_intptr();
 #ifndef PRODUCT
         if (PrintDeoptimizationDetails) {
           tty->print_cr(" - Reconstructed expression %d (INT): %d", i, (int)(*addr));
@@ -350,7 +350,7 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
 #endif // !PRODUCT
         break;
       case T_OBJECT:
-        *addr = value->get_int(T_OBJECT);
+        *addr = value->get_intptr(T_OBJECT);
 #ifndef PRODUCT
         if (PrintDeoptimizationDetails) {
           tty->print(" - Reconstructed expression %d (OBJECT): ", i);
@@ -386,7 +386,7 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
     assert(!is_bottom_frame || !(caller->is_compiled_caller() && addr >= caller->unextended_sp()), "overwriting caller frame!");
     switch(value->type()) {
       case T_INT:
-        *addr = value->get_int();
+        *addr = value->get_intptr();
 #ifndef PRODUCT
         if (PrintDeoptimizationDetails) {
           tty->print_cr(" - Reconstructed local %d (INT): %d", i, (int)(*addr));
@@ -394,7 +394,7 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
 #endif // !PRODUCT
         break;
       case T_OBJECT:
-        *addr = value->get_int(T_OBJECT);
+        *addr = value->get_intptr(T_OBJECT);
 #ifndef PRODUCT
         if (PrintDeoptimizationDetails) {
           tty->print(" - Reconstructed local %d (OBJECT): ", i);

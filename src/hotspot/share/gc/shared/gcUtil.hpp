@@ -143,11 +143,6 @@ class AdaptivePaddedAverage : public AdaptiveWeightedAverage {
     AdaptiveWeightedAverage(weight),
     _padded_avg(0.0), _deviation(0.0), _padding(padding) {}
 
-  // Placement support
-  void* operator new(size_t ignored, void* p) throw() { return p; }
-  // Allocator
-  void* operator new(size_t size) throw();
-
   // Accessor
   float padded_average() const         { return _padded_avg; }
   float deviation()      const         { return _deviation;  }

@@ -30,7 +30,6 @@
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
-#include "gc/shenandoah/shenandoahPacer.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "utilities/sizes.hpp"
 
@@ -163,7 +162,7 @@ private:
   void report_illegal_transition(const char* method);
 
 public:
-  static const int region_states_num() {
+  static int region_states_num() {
     return _REGION_STATES_NUM;
   }
 

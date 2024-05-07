@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,18 +24,19 @@
 #ifndef SHARE_GC_Z_Z_GLOBALS_HPP
 #define SHARE_GC_Z_Z_GLOBALS_HPP
 
-#include "zPageAge.hpp"
+#include "gc/z/zGlobals.hpp"
+#include "gc/z/zPageAge.hpp"
 
 #define GC_Z_FLAGS(develop,                                                 \
                    develop_pd,                                              \
                    product,                                                 \
                    product_pd,                                              \
-                   notproduct,                                              \
                    range,                                                   \
                    constraint)                                              \
                                                                             \
   product(double, ZYoungCompactionLimit, 25.0,                              \
           "Maximum allowed garbage in young pages")                         \
+          range(0, 100)                                                     \
                                                                             \
   product(double, ZCollectionIntervalMinor, -1,                             \
           "Force Minor GC at a fixed time interval (in seconds)")           \
@@ -68,7 +69,17 @@
                                                                             \
   product(int, ZTenuringThreshold, -1, DIAGNOSTIC,                          \
           "Young generation tenuring threshold, -1 for dynamic computation")\
-          range(-1, static_cast<int>(ZPageAgeMax))
+          range(-1, static_cast<int>(ZPageAgeMax))                          \
+                                                                            \
+  develop(size_t, ZForceDiscontiguousHeapReservations, 0,                   \
+          "The gc will attempt to split the heap reservation into this "    \
+          "many reservations, subject to available virtual address space "  \
+          "and invariant restrictions. Higher virtual addresses are "       \
+          "preferred "                                                      \
+          "0: Disabled "                                                    \
+          "1: Attempt contiguous reservation starting at a higher address " \
+          "N: Force that many reservations, if possible")                   \
+          range(0, ZMaxVirtualReservations)
 
 // end of GC_Z_FLAGS
 

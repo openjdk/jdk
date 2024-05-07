@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -168,7 +168,16 @@ int main(int argc, const char * argv[]) {
 
     /* Get the path to the java binary, which is in a known position relative
      * to our current position, which is in argv[0]. */
-    if (getJavaPath(argv[argi++], java, RELATIVE_DEPTH) != 0) {
+    int error = getJavaPath(argv[argi++], java, RELATIVE_DEPTH);
+#ifdef __linux__
+    /* Try to read the symbolic link to the current binary
+     * if the java path can not be resolved from argv[0]. */
+    if (error != 0) {
+        error = getJavaPath("/proc/self/exe", java, RELATIVE_DEPTH);
+    }
+#endif
+
+    if (error != 0) {
         errorExit(errno, MISSING_JAVA_MSG);
     }
     alen = (argc + 2) * (sizeof (const char *));

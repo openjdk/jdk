@@ -31,6 +31,9 @@
 static int j2dTraceLevel = J2D_TRACE_INVALID;
 static FILE *j2dTraceFile = NULL;
 
+static void
+J2dTraceInit();
+
 JNIEXPORT void JNICALL
 J2dTraceImpl(int level, jboolean cr, const char *string, ...)
 {
@@ -72,7 +75,7 @@ J2dTraceImpl(int level, jboolean cr, const char *string, ...)
     }
 }
 
-JNIEXPORT void JNICALL
+static void
 J2dTraceInit()
 {
     char *j2dTraceLevelString = getenv("J2D_TRACE_LEVEL");

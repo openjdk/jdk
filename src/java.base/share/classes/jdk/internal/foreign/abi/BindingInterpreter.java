@@ -27,12 +27,13 @@ package jdk.internal.foreign.abi;
 import java.lang.foreign.SegmentAllocator;
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.LinkedList;
 import java.util.List;
 
 public class BindingInterpreter {
 
     static void unbox(Object arg, List<Binding> bindings, StoreFunc storeFunc, SegmentAllocator allocator) {
-        Deque<Object> stack = new ArrayDeque<>();
+        Deque<Object> stack = new LinkedList<>(); // Use LinkedList as a null-friendly Deque for null segment bases
 
         stack.push(arg);
         for (Binding b : bindings) {
@@ -49,12 +50,12 @@ public class BindingInterpreter {
     }
 
     @FunctionalInterface
-    interface StoreFunc {
-        void store(VMStorage storage, Class<?> type, Object o);
+    public interface StoreFunc {
+        void store(VMStorage storage, Object o);
     }
 
     @FunctionalInterface
-    interface LoadFunc {
+    public interface LoadFunc {
         Object load(VMStorage storage, Class<?> type);
     }
 }

@@ -161,11 +161,6 @@ public:
     return bytecode().get_index_u2(cur_bc_raw(), is_wide);
   }
 
-  // Get 2-byte index in native byte order.  (Rewriter::rewrite makes these.)
-  int get_index_u2_cpcache() const {
-    return bytecode().get_index_u2_cpcache(cur_bc_raw());
-  }
-
   // Get 4-byte index, for invokedynamic.
   int get_index_u4() const {
     return bytecode().get_index_u4(cur_bc_raw());
@@ -229,7 +224,7 @@ public:
   // object (ciConstant.as_object()->is_loaded() == false).
   ciConstant  get_constant();
   constantTag get_constant_pool_tag(int index) const;
-  BasicType   get_basic_type_for_constant_at(int index) const;
+  BasicType   get_basic_type_for_constant_at(int cp_index) const;
 
   constantTag get_raw_pool_tag_at(int index) const;
 

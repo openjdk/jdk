@@ -27,6 +27,7 @@
 
 #include "asm/register.hpp"
 #include "runtime/globals.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/count_leading_zeros.hpp"
 #include "utilities/powerOfTwo.hpp"
 

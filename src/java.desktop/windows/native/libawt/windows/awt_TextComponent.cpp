@@ -53,11 +53,13 @@ struct EnableEditingStruct {
  * AwtTextComponent fields
  */
 
+jmethodID AwtTextComponent::canAccessClipboardMID;
+AwtTextComponent::OleCallback AwtTextComponent::sm_oleCallback;
+WNDPROC AwtTextComponent::sm_pDefWindowProc = NULL;
+
 /************************************************************************
  * AwtTextComponent methods
  */
-
-jmethodID AwtTextComponent::canAccessClipboardMID;
 
 AwtTextComponent::AwtTextComponent() {
     m_synthetic = FALSE;
@@ -911,8 +913,6 @@ Java_sun_awt_windows_WTextComponentPeer_initIDs(JNIEnv *env, jclass cls)
 }
 
 
-AwtTextComponent::OleCallback AwtTextComponent::sm_oleCallback;
-
 /************************************************************************
  * Inner class OleCallback definition.
  */
@@ -1039,8 +1039,6 @@ AwtTextComponent::OleCallback::GetContextMenu(WORD seltype,
  * response to particular item selection and forward it back to the RichEdit control.
  * (See AwtTextArea::WmContextMenu for more details).
  */
-
-WNDPROC AwtTextComponent::sm_pDefWindowProc = NULL;
 
 LRESULT
 AwtTextComponent::EditProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {

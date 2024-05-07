@@ -45,6 +45,40 @@
 #define RISCV_HWPROBE_KEY_IMA_EXT_0     4
 #define   RISCV_HWPROBE_IMA_FD                  (1 << 0)
 #define   RISCV_HWPROBE_IMA_C                   (1 << 1)
+#define   RISCV_HWPROBE_IMA_V                   (1 << 2)
+#define   RISCV_HWPROBE_EXT_ZBA                 (1 << 3)
+#define   RISCV_HWPROBE_EXT_ZBB                 (1 << 4)
+#define   RISCV_HWPROBE_EXT_ZBS                 (1 << 5)
+#define   RISCV_HWPROBE_EXT_ZICBOZ              (1 << 6)
+#define   RISCV_HWPROBE_EXT_ZBC                 (1 << 7)
+#define   RISCV_HWPROBE_EXT_ZBKB                (1 << 8)
+#define   RISCV_HWPROBE_EXT_ZBKC                (1 << 9)
+#define   RISCV_HWPROBE_EXT_ZBKX                (1 << 10)
+#define   RISCV_HWPROBE_EXT_ZKND                (1 << 11)
+#define   RISCV_HWPROBE_EXT_ZKNE                (1 << 12)
+#define   RISCV_HWPROBE_EXT_ZKNH                (1 << 13)
+#define   RISCV_HWPROBE_EXT_ZKSED               (1 << 14)
+#define   RISCV_HWPROBE_EXT_ZKSH                (1 << 15)
+#define   RISCV_HWPROBE_EXT_ZKT                 (1 << 16)
+#define   RISCV_HWPROBE_EXT_ZVBB                (1 << 17)
+#define   RISCV_HWPROBE_EXT_ZVBC                (1 << 18)
+#define   RISCV_HWPROBE_EXT_ZVKB                (1 << 19)
+#define   RISCV_HWPROBE_EXT_ZVKG                (1 << 20)
+#define   RISCV_HWPROBE_EXT_ZVKNED              (1 << 21)
+#define   RISCV_HWPROBE_EXT_ZVKNHA              (1 << 22)
+#define   RISCV_HWPROBE_EXT_ZVKNHB              (1 << 23)
+#define   RISCV_HWPROBE_EXT_ZVKSED              (1 << 24)
+#define   RISCV_HWPROBE_EXT_ZVKSH               (1 << 25)
+#define   RISCV_HWPROBE_EXT_ZVKT                (1 << 26)
+#define   RISCV_HWPROBE_EXT_ZFH                 (1 << 27)
+#define   RISCV_HWPROBE_EXT_ZFHMIN              (1 << 28)
+#define   RISCV_HWPROBE_EXT_ZIHINTNTL           (1 << 29)
+#define   RISCV_HWPROBE_EXT_ZVFH                (1 << 30)
+#define   RISCV_HWPROBE_EXT_ZVFHMIN             (1 << 31)
+#define   RISCV_HWPROBE_EXT_ZFA                 (1ULL << 32)
+#define   RISCV_HWPROBE_EXT_ZTSO                (1ULL << 33)
+#define   RISCV_HWPROBE_EXT_ZACAS               (1ULL << 34)
+#define   RISCV_HWPROBE_EXT_ZICOND              (1ULL << 35)
 
 #define RISCV_HWPROBE_KEY_CPUPERF_0     5
 #define   RISCV_HWPROBE_MISALIGNED_UNKNOWN      (0 << 0)
@@ -100,7 +134,7 @@ static bool is_valid(int64_t key) {
 
 static bool is_set(int64_t key, uint64_t value_mask) {
   if (is_valid(key)) {
-    return query[key].value & value_mask != 0;
+    return (query[key].value & value_mask) != 0;
   }
   return false;
 }
@@ -128,6 +162,21 @@ void RiscvHwprobe::add_features_from_query_result() {
   }
   if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_IMA_C)) {
     VM_Version::ext_C.enable_feature();
+  }
+  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_IMA_V)) {
+    VM_Version::ext_V.enable_feature();
+  }
+  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZBA)) {
+    VM_Version::ext_Zba.enable_feature();
+  }
+  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZBB)) {
+    VM_Version::ext_Zbb.enable_feature();
+  }
+  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZBS)) {
+    VM_Version::ext_Zbs.enable_feature();
+  }
+  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZFH)) {
+    VM_Version::ext_Zfh.enable_feature();
   }
   if (is_valid(RISCV_HWPROBE_KEY_CPUPERF_0)) {
     VM_Version::unaligned_access.enable_feature(

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.consumer.RecordedThread;
 import jdk.jfr.consumer.RecordingFile;
 import jdk.test.lib.Asserts;
+import jdk.test.lib.Utils;
 
 /**
  * @test
@@ -78,7 +79,7 @@ public class TestManyVirtualThreads {
             }
 
             r.stop();
-            Path p = Files.createTempFile("test", ".jfr");
+            Path p = Utils.createTempFile("test", ".jfr");
             r.dump(p);
             long size = Files.size(p);
             Asserts.assertLessThan(size, 100_000_000L, "Size of recording looks suspiciously large");
@@ -89,11 +90,11 @@ public class TestManyVirtualThreads {
                 RecordedThread t = e.getThread();
                 Asserts.assertNotNull(t);
                 Asserts.assertTrue(t.isVirtual());
+                Asserts.assertEquals(t.getOSName(), null);
+                Asserts.assertEquals(t.getOSThreadId(), -1L);
                 Asserts.assertEquals(t.getJavaName(), ""); // vthreads default name is the empty string.
-                Asserts.assertEquals(t.getOSName(), "");
-                Asserts.assertEquals(t.getThreadGroup().getName(), "VirtualThreads");
                 Asserts.assertGreaterThan(t.getJavaThreadId(), 0L);
-                Asserts.assertEquals(t.getOSThreadId(), 0L);
+                Asserts.assertEquals(t.getThreadGroup().getName(), "VirtualThreads");
             }
         }
     }

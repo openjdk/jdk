@@ -185,12 +185,24 @@ class CAccessible extends CFRetainedResource implements Accessible {
                         if (newValue != null && !newValue.equals(oldValue)) {
                             valueChanged(ptr);
                         }
+
+                        // Notify native side to handle check box style menuitem
+                        if (parentRole == AccessibleRole.POPUP_MENU && newValue != null
+                                && ((AccessibleState)newValue) == AccessibleState.FOCUSED) {
+                            menuItemSelected(ptr);
+                        }
                     }
 
                     // Do send radio button state changes to native side
                     if (thisRole == AccessibleRole.RADIO_BUTTON) {
                         if (newValue != null && !newValue.equals(oldValue)) {
                             valueChanged(ptr);
+                        }
+
+                        // Notify native side to handle radio button style menuitem
+                        if (parentRole == AccessibleRole.POPUP_MENU && newValue != null
+                            && ((AccessibleState)newValue) == AccessibleState.FOCUSED) {
+                            menuItemSelected(ptr);
                         }
                     }
 

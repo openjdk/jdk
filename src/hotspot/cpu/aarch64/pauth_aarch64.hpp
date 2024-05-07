@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Arm Limited. All rights reserved.
+ * Copyright (c) 2021, 2023, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,9 +77,9 @@ inline bool pauth_ptr_is_raw(address ptr) {
 // Strip a return value (same as pauth_strip_pointer). When debug is enabled then authenticate
 // instead.
 //
-inline address pauth_strip_verifiable(address ret_addr, address modifier) {
+inline address pauth_strip_verifiable(address ret_addr) {
   if (VM_Version::use_rop_protection()) {
-    DEBUG_ONLY(ret_addr = pauth_authenticate_return_address(ret_addr, modifier);)
+    DEBUG_ONLY(ret_addr = pauth_authenticate_return_address(ret_addr);)
     NOT_DEBUG(ret_addr = pauth_strip_pointer(ret_addr));
   }
   return ret_addr;

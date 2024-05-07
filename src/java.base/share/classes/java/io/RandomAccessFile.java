@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,6 +71,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
     private final FileDescriptor fd;
 
     private final boolean rw;
+    private final boolean sync;  // O_SYNC or O_DSYNC
 
     /**
      * The path of the referenced file
@@ -92,7 +93,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
 
     /**
      * Creates a random access file stream to read from, and optionally
-     * to write to, a file with the specified name. A new
+     * to write to, a file with the specified pathname. A new
      * {@link FileDescriptor} object is created to represent the
      * connection to the file.
      *
@@ -103,25 +104,25 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      *
      * <p>
      * If there is a security manager, its {@code checkRead} method
-     * is called with the {@code name} argument
+     * is called with the {@code pathname} argument
      * as its argument to see if read access to the file is allowed.
      * If the mode allows writing, the security manager's
      * {@code checkWrite} method
-     * is also called with the {@code name} argument
+     * is also called with the {@code pathname} argument
      * as its argument to see if write access to the file is allowed.
      *
-     * @param      name   the system-dependent filename
-     * @param      mode   the access <a href="#mode">mode</a>
+     * @param      pathname   the system-dependent pathname string
+     * @param      mode       the access <a href="#mode">mode</a>
      * @throws     IllegalArgumentException  if the mode argument is not equal
      *             to one of {@code "r"}, {@code "rw"}, {@code "rws"}, or
      *             {@code "rwd"}
      * @throws     FileNotFoundException
-     *             if the mode is {@code "r"} but the given string does not
+     *             if the mode is {@code "r"} but the given pathname string does not
      *             denote an existing regular file, or if the mode begins with
-     *             {@code "rw"} but the given string does not denote an
+     *             {@code "rw"} but the given pathname string does not denote an
      *             existing, writable regular file and a new regular file of
-     *             that name cannot be created, or if some other error occurs
-     *             while opening or creating the file
+     *             that pathname cannot be created, or if some other error
+     *             occurs while opening or creating the file
      * @throws     SecurityException   if a security manager exists and its
      *             {@code checkRead} method denies read access to the file
      *             or the mode is {@code "rw"} and the security manager's
@@ -129,12 +130,11 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @see        java.lang.SecurityException
      * @see        java.lang.SecurityManager#checkRead(java.lang.String)
      * @see        java.lang.SecurityManager#checkWrite(java.lang.String)
-     * @revised 1.4
      */
-    public RandomAccessFile(String name, String mode)
+    public RandomAccessFile(String pathname, String mode)
         throws FileNotFoundException
     {
-        this(name != null ? new File(name) : null, mode);
+        this(pathname != null ? new File(pathname) : null, mode);
     }
 
     /**
@@ -192,8 +192,8 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * called with the pathname of the {@code file} argument as its
      * argument to see if read access to the file is allowed.  If the mode
      * allows writing, the security manager's {@code checkWrite} method is
-     * also called with the path argument to see if write access to the file is
-     * allowed.
+     * also called with the pathname of the {@code file} argument to see if
+     * write access to the file is allowed.
      *
      * @param      file   the file object
      * @param      mode   the access mode, as described
@@ -206,8 +206,8 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      *             not denote an existing regular file, or if the mode begins
      *             with {@code "rw"} but the given file object does not denote
      *             an existing, writable regular file and a new regular file of
-     *             that name cannot be created, or if some other error occurs
-     *             while opening or creating the file
+     *             that pathname cannot be created, or if some other error
+     *             occurs while opening or creating the file
      * @throws      SecurityException  if a security manager exists and its
      *             {@code checkRead} method denies read access to the file
      *             or the mode is {@code "rw"} and the security manager's
@@ -215,8 +215,8 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @see        java.lang.SecurityManager#checkRead(java.lang.String)
      * @see        java.lang.SecurityManager#checkWrite(java.lang.String)
      * @see        java.nio.channels.FileChannel#force(boolean)
-     * @revised 1.4
      */
+    @SuppressWarnings("this-escape")
     public RandomAccessFile(File file, String mode)
         throws FileNotFoundException
     {
@@ -230,21 +230,25 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
         int imode = -1;
 
         boolean rw = false;
+        boolean sync = false;
         if (mode.equals("r"))
             imode = O_RDONLY;
         else if (mode.startsWith("rw")) {
             imode = O_RDWR;
             rw = true;
             if (mode.length() > 2) {
-                if (mode.equals("rws"))
+                if (mode.equals("rws")) {
                     imode |= O_SYNC;
-                else if (mode.equals("rwd"))
+                    sync = true;
+                } else if (mode.equals("rwd")) {
                     imode |= O_DSYNC;
-                else
+                    sync = true;
+                } else
                     imode = -1;
             }
         }
         this.rw = rw;
+        this.sync = sync;
 
         if (openAndDelete)
             imode |= O_TEMPORARY;
@@ -309,8 +313,8 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
             synchronized (this) {
                 fc = this.channel;
                 if (fc == null) {
-                    this.channel = fc = FileChannelImpl.open(fd, path, true,
-                        rw, false, this);
+                    fc = FileChannelImpl.open(fd, path, true, rw, sync, false, this);
+                    this.channel = fc;
                     if (closed) {
                         try {
                             fc.close();
@@ -351,12 +355,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      *             defined above
      */
     private void open(String name, int mode) throws FileNotFoundException {
-        long comp = Blocker.begin();
-        try {
-            open0(name, mode);
-        } finally {
-            Blocker.end(comp);
-        }
+        open0(name, mode);
     }
 
     // 'Read' primitives
@@ -377,12 +376,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      *                          end-of-file has been reached.
      */
     public int read() throws IOException {
-        long comp = Blocker.begin();
-        try {
-            return read0();
-        } finally {
-            Blocker.end(comp);
-        }
+        return read0();
     }
 
     private native int read0() throws IOException;
@@ -395,12 +389,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @throws    IOException If an I/O error has occurred.
      */
     private int readBytes(byte[] b, int off, int len) throws IOException {
-        long comp = Blocker.begin();
-        try {
-            return readBytes0(b, off, len);
-        } finally {
-            Blocker.end(comp);
-        }
+        return readBytes0(b, off, len);
     }
 
     private native int readBytes0(byte[] b, int off, int len) throws IOException;
@@ -548,11 +537,11 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @throws     IOException  if an I/O error occurs.
      */
     public void write(int b) throws IOException {
-        long comp = Blocker.begin();
+        boolean attempted = Blocker.begin(sync);
         try {
             write0(b);
         } finally {
-            Blocker.end(comp);
+            Blocker.end(attempted);
         }
     }
 
@@ -567,11 +556,11 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @throws    IOException If an I/O error has occurred.
      */
     private void writeBytes(byte[] b, int off, int len) throws IOException {
-        long comp = Blocker.begin();
+        boolean attempted = Blocker.begin(sync);
         try {
             writeBytes0(b, off, len);
         } finally {
-            Blocker.end(comp);
+            Blocker.end(attempted);
         }
     }
 
@@ -631,12 +620,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
         if (pos < 0) {
             throw new IOException("Negative seek offset");
         }
-        long comp = Blocker.begin();
-        try {
-            seek0(pos);
-        } finally {
-            Blocker.end(comp);
-        }
+        seek0(pos);
     }
 
     private native void seek0(long pos) throws IOException;
@@ -648,12 +632,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @throws     IOException  if an I/O error occurs.
      */
     public long length() throws IOException {
-        long comp = Blocker.begin();
-        try {
-            return length0();
-        } finally {
-            Blocker.end(comp);
-        }
+        return length0();
     }
 
     private native long length0() throws IOException;
@@ -662,28 +641,30 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * Sets the length of this file.
      *
      * <p> If the present length of the file as returned by the
-     * {@code length} method is greater than the {@code newLength}
-     * argument then the file will be truncated.  In this case, if the file
-     * offset as returned by the {@code getFilePointer} method is greater
-     * than {@code newLength} then after this method returns the offset
-     * will be equal to {@code newLength}.
+     * {@linkplain #length length} method is greater than the desired length
+     * of the file specified by the {@code newLength} argument, then the file
+     * will be truncated.
      *
-     * <p> If the present length of the file as returned by the
-     * {@code length} method is smaller than the {@code newLength}
-     * argument then the file will be extended.  In this case, the contents of
-     * the extended portion of the file are not defined.
+     * <p> If the present length of the file is smaller than the desired length,
+     * then the file will be extended.  The contents of the extended portion of
+     * the file are not defined.
+     *
+     * <p> If the present length of the file is equal to the desired length,
+     * then the file and its length will be unchanged.
+     *
+     * <p> In all cases, after this method returns, the file offset as returned
+     * by the {@linkplain #getFilePointer getFilePointer} method will equal the
+     * minimum of the desired length and the file offset before this method was
+     * called, even if the length is unchanged.  In other words, this method
+     * constrains the file offset to the closed interval {@code [0,newLength]}.
      *
      * @param      newLength    The desired length of the file
-     * @throws     IOException  If an I/O error occurs
+     * @throws     IOException  If the argument is negative or
+     *                          if some other I/O error occurs
      * @since      1.2
      */
     public void setLength(long newLength) throws IOException {
-        long comp = Blocker.begin();
-        try {
-            setLength0(newLength);
-        } finally {
-            Blocker.end(comp);
-        }
+        setLength0(newLength);
     }
 
     private native void setLength0(long newLength) throws IOException;
@@ -703,8 +684,6 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * this method should be prepared to handle possible reentrant invocation.
      *
      * @throws     IOException  if an I/O error occurs.
-     *
-     * @revised 1.4
      */
     public void close() throws IOException {
         if (closed) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -155,7 +155,10 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1Encrypt
     } else {
       outBufP = (*env)->GetPrimitiveArrayCritical(env, jOut, NULL);
       if (outBufP == NULL) {
-          goto cleanup;
+        if (directIn == 0) {
+          (*env)->ReleasePrimitiveArrayCritical(env, jIn, inBufP, JNI_ABORT);
+        }
+        return 0;
       }
     }
 
@@ -166,15 +169,13 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1Encrypt
                                     (CK_BYTE_PTR)(outBufP + jOutOfs),
                                     &ckEncryptedLen);
 
-    ckAssertReturnValueOK(env, rv);
-
-cleanup:
-    if (directIn == 0 && inBufP != NULL) {
+    if (directIn == 0) {
         (*env)->ReleasePrimitiveArrayCritical(env, jIn, inBufP, JNI_ABORT);
     }
-    if (directOut == 0 && outBufP != NULL) {
+    if (directOut == 0) {
         (*env)->ReleasePrimitiveArrayCritical(env, jOut, outBufP, 0);
     }
+    ckAssertReturnValueOK(env, rv);
     return ckEncryptedLen;
 }
 #endif
@@ -221,7 +222,10 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1EncryptUpdate
     } else {
       outBufP = (*env)->GetPrimitiveArrayCritical(env, jOut, NULL);
       if (outBufP == NULL) {
-          goto cleanup;
+        if (directIn == 0) {
+          (*env)->ReleasePrimitiveArrayCritical(env, jIn, inBufP, JNI_ABORT);
+        }
+        return 0;
       }
     }
 
@@ -232,15 +236,13 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1EncryptUpdate
                                           (CK_BYTE_PTR)(outBufP + jOutOfs),
                                           &ckEncryptedPartLen);
 
-    ckAssertReturnValueOK(env, rv);
-
-cleanup:
-    if (directIn == 0 && inBufP != NULL) {
+    if (directIn == 0) {
         (*env)->ReleasePrimitiveArrayCritical(env, jIn, inBufP, JNI_ABORT);
     }
-    if (directOut == 0 && outBufP != NULL) {
+    if (directOut == 0) {
         (*env)->ReleasePrimitiveArrayCritical(env, jOut, outBufP, 0);
     }
+    ckAssertReturnValueOK(env, rv);
     return ckEncryptedPartLen;
 }
 #endif
@@ -391,7 +393,10 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1Decrypt
     } else {
       outBufP = (*env)->GetPrimitiveArrayCritical(env, jOut, NULL);
       if (outBufP == NULL) {
-          goto cleanup;
+        if (directIn == 0) {
+          (*env)->ReleasePrimitiveArrayCritical(env, jIn, inBufP, JNI_ABORT);
+        }
+        return 0;
       }
     }
     ckOutLen = jOutLen;
@@ -401,15 +406,13 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1Decrypt
                                     (CK_BYTE_PTR)(outBufP + jOutOfs),
                                     &ckOutLen);
 
-    ckAssertReturnValueOK(env, rv);
-
-cleanup:
-    if (directIn == 0 && inBufP != NULL) {
+    if (directIn == 0) {
         (*env)->ReleasePrimitiveArrayCritical(env, jIn, inBufP, JNI_ABORT);
     }
-    if (directOut == 0 && outBufP != NULL) {
+    if (directOut == 0) {
         (*env)->ReleasePrimitiveArrayCritical(env, jOut, outBufP, 0);
     }
+    ckAssertReturnValueOK(env, rv);
     return ckOutLen;
 }
 #endif
@@ -456,7 +459,10 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1DecryptUpdate
     } else {
       outBufP = (*env)->GetPrimitiveArrayCritical(env, jOut, NULL);
       if (outBufP == NULL) {
-          goto cleanup;
+        if (directIn == 0) {
+          (*env)->ReleasePrimitiveArrayCritical(env, jIn, inBufP, JNI_ABORT);
+        }
+        return 0;
       }
     }
 
@@ -465,15 +471,14 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1DecryptUpdate
                                           (CK_BYTE_PTR)(inBufP + jInOfs), jInLen,
                                           (CK_BYTE_PTR)(outBufP + jOutOfs),
                                           &ckDecryptedPartLen);
-    ckAssertReturnValueOK(env, rv);
 
-cleanup:
-    if (directIn == 0 && inBufP != NULL) {
+    if (directIn == 0) {
         (*env)->ReleasePrimitiveArrayCritical(env, jIn, inBufP, JNI_ABORT);
     }
-    if (directOut == 0 && outBufP != NULL) {
+    if (directOut == 0) {
         (*env)->ReleasePrimitiveArrayCritical(env, jOut, outBufP, 0);
     }
+    ckAssertReturnValueOK(env, rv);
     return ckDecryptedPartLen;
 }
 

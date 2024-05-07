@@ -154,7 +154,7 @@ public:
   CodeBuffer* init_buffer();
 
   // Write out basic block data to code buffer
-  void fill_buffer(CodeBuffer* cb, uint* blk_starts);
+  void fill_buffer(C2_MacroAssembler* masm, uint* blk_starts);
 
   // Compute the information for the exception tables
   void FillExceptionTables(uint cnt, uint *call_returns, uint *inct_starts, Label *blk_labels);
@@ -210,6 +210,7 @@ public:
   bool valid_bundle_info(const Node *n);
 
   bool starts_bundle(const Node *n) const;
+  bool contains_as_owner(GrowableArray<MonitorValue*> *monarray, ObjectValue *ov) const;
 
   // Dump formatted assembly
 #if defined(SUPPORT_OPTO_ASSEMBLY)

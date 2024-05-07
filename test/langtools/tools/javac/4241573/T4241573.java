@@ -25,12 +25,13 @@
  * @test
  * @bug 4241573
  * @summary SourceFile attribute includes full path
- * @modules jdk.jdeps/com.sun.tools.classfile
+ * @enablePreview
+ * @modules java.base/jdk.internal.classfile.impl
  */
 
-import com.sun.tools.classfile.Attribute;
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.SourceFile_attribute;
+import java.lang.classfile.*;
+import java.lang.classfile.Attributes;
+import java.lang.classfile.attribute.*;
 import java.io.*;
 import java.util.*;
 import java.util.jar.*;
@@ -107,9 +108,9 @@ public class T4241573 {
     void verifySourceFileAttribute(File f) {
         System.err.println("verify: " + f);
         try {
-            ClassFile cf = ClassFile.read(f);
-            SourceFile_attribute sfa = (SourceFile_attribute) cf.getAttribute(Attribute.SourceFile);
-            String found = sfa.getSourceFile(cf.constant_pool);
+            ClassModel cf = ClassFile.of().parse(f.toPath());
+            SourceFileAttribute sfa = cf.findAttribute(Attributes.SOURCE_FILE).orElseThrow();
+            String found = sfa.sourceFile().stringValue();
             String expect = f.getName().replaceAll("([$.].*)?\\.class", ".java");
             if (!expect.equals(found)) {
                 error("bad value found: " + found + ", expected: " + expect);

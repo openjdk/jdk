@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARED_CDS_CDSHEAPVERIFIER_HPP
-#define SHARED_CDS_CDSHEAPVERIFIER_HPP
+#ifndef SHARE_CDS_CDSHEAPVERIFIER_HPP
+#define SHARE_CDS_CDSHEAPVERIFIER_HPP
 
 #include "cds/heapShared.hpp"
 #include "memory/iterator.hpp"
@@ -88,4 +88,4 @@ public:
 };
 
 #endif // INCLUDE_CDS_JAVA_HEAP
-#endif // SHARED_CDS_CDSHEAPVERIFIER_HPP
+#endif // SHARE_CDS_CDSHEAPVERIFIER_HPP

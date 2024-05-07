@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,8 @@
 #include <stdio.h>
 #include <string.h>
 #include "jvmti.h"
-#include "jni_tools.h"
-#include "agent_common.h"
+#include "jni_tools.hpp"
+#include "agent_common.hpp"
 
 extern "C" {
 
@@ -64,10 +64,10 @@ static jrawMonitorID jraw_monitor;
 
 
 #define MAX_FRAMES_CNT  30
-static jvmtiStackInfo  *stack_buf1    = NULL;
-static jvmtiStackInfo  *stack_buf2    = NULL;
-static jthread         *thread_list   = NULL;
-static jvmtiThreadInfo *thread_info   = NULL;
+static jvmtiStackInfo  *stack_buf1    = nullptr;
+static jvmtiStackInfo  *stack_buf2    = nullptr;
+static jthread         *thread_list   = nullptr;
+static jvmtiThreadInfo *thread_info   = nullptr;
 static jint             threads_count = 0;
 
 
@@ -191,10 +191,10 @@ void compare_one_stack_trace(int ti,
     static const char* TEST_THREAD_NAME_PREFIX = "getallstktr001-";
     size_t PFX_LEN = strlen(TEST_THREAD_NAME_PREFIX);
 
-    if (thr_info->name != NULL) {
+    if (thr_info->name != nullptr) {
         printf("compare stack #%d: thread: %s\n", ti, thr_info->name);
     } else {
-        printf("compare stack #%d: thread is NULL\n", ti);
+        printf("compare stack #%d: thread is null\n", ti);
         return;
     }
 

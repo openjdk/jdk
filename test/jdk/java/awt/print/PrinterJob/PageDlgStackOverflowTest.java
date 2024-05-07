@@ -28,6 +28,7 @@ import javax.print.attribute.standard.DialogTypeSelection;
 /**
  * @test
  * @bug 8039412
+ * @key printer
  * @run main/manual PageDlgStackOverflowTest
  * @summary Calling pageDialog() after printDialog with
  *          DialogTypeSelection.NATIVE should not result in StackOverflowError

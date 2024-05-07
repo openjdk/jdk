@@ -26,7 +26,8 @@
  * @bug 6695379
  * @summary Copy method annotations and parameter annotations to synthetic
  * bridge methods
- * @modules jdk.jdeps/com.sun.tools.classfile
+ * @enablePreview
+ * @modules java.base/jdk.internal.classfile.impl
  *          jdk.compiler/com.sun.tools.javac.util
  * @run main AnnotationsAreNotCopiedToBridgeMethodsTest
  */
@@ -40,11 +41,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import com.sun.tools.classfile.AccessFlags;
-import com.sun.tools.classfile.Attribute;
-import com.sun.tools.classfile.Attributes;
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.Method;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
 import com.sun.tools.javac.util.Assert;
 
 public class AnnotationsAreNotCopiedToBridgeMethodsTest {
@@ -61,22 +59,15 @@ public class AnnotationsAreNotCopiedToBridgeMethodsTest {
                 "$CovariantReturnType$VisibilityChange.class"));
     }
 
-    void checkClassFile(final Path cfilePath) throws Exception {
-        ClassFile classFile = ClassFile.read(
-                new BufferedInputStream(Files.newInputStream(cfilePath)));
-        for (Method method : classFile.methods) {
-            if (method.access_flags.is(AccessFlags.ACC_BRIDGE)) {
-                checkForAttr(method.attributes,
-                        "Annotations hasn't been copied to bridge method",
-                        Attribute.RuntimeVisibleAnnotations,
-                        Attribute.RuntimeVisibleParameterAnnotations);
+    <A extends Attribute<A>> void checkClassFile(final Path cfilePath) throws Exception {
+        ClassModel classFile = ClassFile.of().parse(cfilePath);
+        for (MethodModel method : classFile.methods()) {
+            if ((method.flags().flagsMask() & ClassFile.ACC_BRIDGE) != 0) {
+                Assert.checkNonNull(method.findAttribute(Attributes.RUNTIME_VISIBLE_ANNOTATIONS),
+                        "Annotations hasn't been copied to bridge method");
+                Assert.checkNonNull(method.findAttribute(Attributes.RUNTIME_VISIBLE_PARAMETER_ANNOTATIONS),
+                        "Annotations hasn't been copied to bridge method");
             }
-        }
-    }
-
-    void checkForAttr(Attributes attrs, String errorMsg, String... attrNames) {
-        for (String attrName : attrNames) {
-            Assert.checkNonNull(attrs.get(attrName), errorMsg);
         }
     }
 

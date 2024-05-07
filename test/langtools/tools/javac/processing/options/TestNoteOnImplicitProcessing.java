@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8310061
+ * @bug 8310061 8315534
  * @summary Verify a note is issued for implicit annotation processing
  *
  * @library /tools/lib /tools/javac/lib
@@ -34,15 +34,22 @@
  * @run main TestNoteOnImplicitProcessing
  */
 
-import java.io.RandomAccessFile;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
-import java.nio.file.Files;
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.io.StringWriter;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
 import javax.annotation.processing.Processor;
+import javax.tools.JavaCompiler;
+import javax.tools.JavaCompiler.CompilationTask;
+import javax.tools.JavaFileObject;
+import javax.tools.StandardJavaFileManager;
+import javax.tools.ToolProvider;
 
 import toolbox.JavacTask;
 import toolbox.Task;
@@ -290,4 +297,89 @@ public class TestNoteOnImplicitProcessing extends TestRunner {
             throw new RuntimeException("Expected note not printed");
         }
     }
+
+    @Test
+    public void processorsViaAPI(Path base, Path jarFile) throws Exception {
+        ClassLoader cl = new URLClassLoader(new URL[] {jarFile.toUri().toURL()});
+        Class<?> processorClass = Class.forName(processorName, true, cl);
+        StringWriter compilerOut = new StringWriter();
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        JavaCompiler provider = ToolProvider.getSystemJavaCompiler();
+        PrintStream oldOut = System.out;
+
+        try (StandardJavaFileManager jfm = provider.getStandardFileManager(null, null, null)) {
+            System.setOut(new PrintStream(out, true, StandardCharsets.UTF_8));
+            Iterable<? extends JavaFileObject> inputFile = jfm.getJavaFileObjects("HelloWorldTest.java");
+
+            {
+                List<String> options = List.of("-classpath", jarFile.toString(), "-XDrawDiagnostics");
+                CompilationTask task = provider.getTask(compilerOut, null, null, options, null, inputFile);
+
+                task.call();
+
+                verifyMessages(out, compilerOut, true);
+            }
+
+            {
+                List<String> options = List.of("-classpath", jarFile.toString(), "-XDrawDiagnostics");
+                CompilationTask task = provider.getTask(compilerOut, null, null, options, null, inputFile);
+                Processor processor =
+                        (Processor) processorClass.getDeclaredConstructor().newInstance();
+
+                task.setProcessors(List.of(processor));
+                task.call();
+
+                verifyMessages(out, compilerOut, false);
+            }
+
+            {
+                List<String> options = List.of("-classpath", jarFile.toString(), "-XDrawDiagnostics");
+                com.sun.source.util.JavacTask task =
+                        (com.sun.source.util.JavacTask) provider.getTask(compilerOut, null, null, options, null, inputFile);
+
+                task.analyze();
+
+                verifyMessages(out, compilerOut, true);
+            }
+
+            {
+                List<String> options = List.of("-classpath", jarFile.toString(), "-XDrawDiagnostics");
+                com.sun.source.util.JavacTask task =
+                        (com.sun.source.util.JavacTask) provider.getTask(compilerOut, null, null, options, null, inputFile);
+
+                Processor processor =
+                        (Processor) processorClass.getDeclaredConstructor().newInstance();
+
+                task.setProcessors(List.of(processor));
+                task.analyze();
+
+                verifyMessages(out, compilerOut, false);
+            }
+        } finally {
+            System.setOut(oldOut);
+        }
+    }
+
+    private void verifyMessages(ByteArrayOutputStream out, StringWriter compilerOut, boolean expectedNotePresent) {
+        if (!out.toString(StandardCharsets.UTF_8).contains("ImplicitProcTestProc run")) {
+            throw new RuntimeException("Expected processor message not printed");
+        }
+
+        out.reset();
+
+        boolean printed = compilerOut.toString().contains("- compiler.note.implicit.annotation.processing");
+
+        if (!expectedNotePresent && printed) {
+            throw new RuntimeException("Unexpected note printed");
+        }
+
+        if (expectedNotePresent && !printed) {
+            throw new RuntimeException("Expected note not printed");
+        }
+
+        StringBuffer compilerOutData = compilerOut.getBuffer();
+
+        compilerOutData.delete(0, compilerOutData.length());
+    }
+
 }

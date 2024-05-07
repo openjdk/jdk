@@ -31,6 +31,7 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/jniHandles.inline.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 #define FOREIGN_ABI "jdk/internal/foreign/abi/"
@@ -73,12 +74,12 @@ JavaThread* UpcallLinker::maybe_attach_and_get_thread() {
 }
 
 // modelled after JavaCallWrapper::JavaCallWrapper
-JavaThread* UpcallLinker::on_entry(UpcallStub::FrameData* context) {
+JavaThread* UpcallLinker::on_entry(UpcallStub::FrameData* context, jobject receiver) {
   JavaThread* thread = maybe_attach_and_get_thread();
   guarantee(thread->thread_state() == _thread_in_native, "wrong thread state for upcall");
   context->thread = thread;
 
-  assert(thread->can_call_java(), "must be able to call Java");
+  guarantee(thread->can_call_java(), "must be able to call Java");
 
   // Allocate handle block for Java code. This must be done before we change thread_state to _thread_in_Java,
   // since it can potentially block.
@@ -107,6 +108,8 @@ JavaThread* UpcallLinker::on_entry(UpcallStub::FrameData* context) {
 
   debug_only(thread->inc_java_call_counter());
   thread->set_active_handles(context->new_handles);     // install new handle block and reset Java frame linkage
+
+  thread->set_vm_result(JNIHandles::resolve(receiver));
 
   return thread;
 }
@@ -175,12 +178,10 @@ JVM_ENTRY(jlong, UL_MakeUpcallStub(JNIEnv *env, jclass unused, jobject mh, jobje
     assert(i == total_out_args, "");
     ret_type = ss.type();
   }
-  // skip receiver
-  BasicType* in_sig_bt = out_sig_bt + 1;
-  int total_in_args = total_out_args - 1;
 
   return (jlong) UpcallLinker::make_upcall_stub(
-    mh_j, entry, in_sig_bt, total_in_args, out_sig_bt, total_out_args, ret_type, abi, conv, needs_return_buffer, checked_cast<int>(ret_buf_size));
+    mh_j, entry, out_sig_bt, total_out_args, ret_type,
+    abi, conv, needs_return_buffer, checked_cast<int>(ret_buf_size));
 JVM_END
 
 #define CC (char*)  /*cast a literal from (const char*)*/

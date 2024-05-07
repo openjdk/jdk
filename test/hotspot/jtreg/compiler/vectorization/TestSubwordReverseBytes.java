@@ -54,7 +54,7 @@ public class TestSubwordReverseBytes {
     }
 
     @Test
-    @IR(failOn = {IRNode.REVERSE_BYTES_V})
+    @IR(failOn = {IRNode.REVERSE_BYTES_VS})
     public static int[] testShortReverseBytes() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -75,7 +75,7 @@ public class TestSubwordReverseBytes {
     }
 
     @Test
-    @IR(failOn = {IRNode.REVERSE_BYTES_V})
+    @IR(failOn = {IRNode.REVERSE_BYTES_VS})
     public static int[] testCharacterReverseBytes() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {

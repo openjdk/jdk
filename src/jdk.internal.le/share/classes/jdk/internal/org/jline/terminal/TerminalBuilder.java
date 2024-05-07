@@ -506,7 +506,8 @@ public final class TerminalBuilder {
                 }
                 terminal = new DumbTerminal(name, color ? Terminal.TYPE_DUMB_COLOR : Terminal.TYPE_DUMB,
                         new FileInputStream(FileDescriptor.in),
-                        new FileOutputStream(console == TerminalProvider.Stream.Output ? FileDescriptor.out : FileDescriptor.err),
+                        //JDK change: always write into stdout:
+                        new FileOutputStream(FileDescriptor.out),
                         encoding, signalHandler);
             }
         } else {

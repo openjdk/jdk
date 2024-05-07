@@ -79,6 +79,11 @@ module java.base {
     exports java.io;
     exports java.lang;
     exports java.lang.annotation;
+    exports java.lang.classfile;
+    exports java.lang.classfile.attribute;
+    exports java.lang.classfile.components;
+    exports java.lang.classfile.constantpool;
+    exports java.lang.classfile.instruction;
     exports java.lang.constant;
     exports java.lang.foreign;
     exports java.lang.invoke;
@@ -148,9 +153,14 @@ module java.base {
     // module declaration be annotated with jdk.internal.javac.ParticipatesInPreview
     exports jdk.internal.javac to
         java.compiler,
+        java.desktop, // for ScopedValue
         jdk.compiler,
         jdk.incubator.vector, // participates in preview features
-        jdk.jshell;
+        jdk.jartool, // participates in preview features
+        jdk.jdeps, // participates in preview features
+        jdk.jfr, // participates in preview features
+        jdk.jlink,   // participates in preview features
+        jdk.jshell; // participates in preview features
     exports jdk.internal.access to
         java.desktop,
         java.logging,
@@ -184,19 +194,6 @@ module java.base {
         jdk.jlink;
     exports jdk.internal.logger to
         java.logging;
-    exports jdk.internal.classfile to
-        jdk.jartool,
-        jdk.jlink,
-        jdk.jshell;
-    exports jdk.internal.classfile.attribute to
-        jdk.jartool,
-        jdk.jlink;
-    exports jdk.internal.classfile.constantpool to
-        jdk.jartool,
-        jdk.jlink;
-    exports jdk.internal.classfile.instruction to
-        jdk.jlink,
-        jdk.jshell;
     exports jdk.internal.org.objectweb.asm to
         jdk.jfr;
     exports jdk.internal.org.objectweb.asm.tree to
@@ -231,6 +228,7 @@ module java.base {
         java.instrument,
         java.management.rmi,
         jdk.jartool,
+        jdk.compiler,
         jdk.jfr,
         jdk.jlink,
         jdk.jpackage;
@@ -322,25 +320,21 @@ module java.base {
         java.sql.rowset;
     exports sun.security.action to
         java.desktop,
-        java.security.jgss,
-        jdk.crypto.ec;
+        java.security.jgss;
     exports sun.security.internal.interfaces to
         jdk.crypto.cryptoki;
     exports sun.security.internal.spec to
         jdk.crypto.cryptoki;
     exports sun.security.jca to
         java.smartcardio,
-        jdk.crypto.ec,
         jdk.crypto.cryptoki,
         jdk.naming.dns;
     exports sun.security.pkcs to
-        jdk.crypto.ec,
         jdk.jartool;
     exports sun.security.provider to
         java.rmi,
         java.security.jgss,
         jdk.crypto.cryptoki,
-        jdk.crypto.ec,
         jdk.security.auth;
     exports sun.security.provider.certpath to
         java.naming,
@@ -359,17 +353,11 @@ module java.base {
         java.security.sasl,
         java.smartcardio,
         java.xml.crypto,
-        jdk.crypto.ec,
         jdk.crypto.cryptoki,
         jdk.jartool,
         jdk.security.auth,
         jdk.security.jgss;
-    exports sun.security.util.math to
-        jdk.crypto.ec;
-    exports sun.security.util.math.intpoly to
-        jdk.crypto.ec;
     exports sun.security.x509 to
-        jdk.crypto.ec,
         jdk.crypto.cryptoki,
         jdk.jartool;
     exports sun.security.validator to

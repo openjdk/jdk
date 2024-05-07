@@ -517,6 +517,90 @@ public interface Path
     }
 
     /**
+     * Resolves a path against this path, and then iteratively resolves any
+     * additional paths.
+     *
+     * <p> This method resolves {@code first} against this {@code Path} as if
+     * by calling {@link #resolve(Path)}. If {@code more} has one or more
+     * elements then it resolves the first element against the result, then
+     * iteratively resolves all subsequent elements. This method returns the
+     * result from the final resolve.
+     *
+     * @implSpec
+     * The default implementation is equivalent to the result obtained with:
+     * {@snippet lang=java :
+     *     Path result = resolve(first);
+     *     for (Path p : more) {
+     *         result = result.resolve(p);
+     *     }
+     * }
+     *
+     * @param   first
+     *          the first path to resolve against this path
+     * @param   more
+     *          additional paths to iteratively resolve
+     *
+     * @return  the resulting path
+     *
+     * @see #resolve(Path)
+     * @since 22
+     */
+    default Path resolve(Path first, Path... more) {
+        Path result = resolve(first);
+        for (Path p : more) {
+            result = result.resolve(p);
+        }
+        return result;
+    }
+
+    /**
+     * Converts a path string to a path, resolves that path against this path,
+     * and then iteratively performs the same procedure for any additional
+     * path strings.
+     *
+     * <p> This method converts {@code first} to a {@code Path} and resolves
+     * that {@code Path} against this {@code Path} as if by calling
+     * {@link #resolve(String)}. If {@code more} has one or more elements
+     * then it converts the first element to a path, resolves that path against
+     * the result, then iteratively converts and resolves all subsequent
+     * elements. This method returns the result from the final resolve.
+     *
+     * @implSpec
+     * The default implementation is equivalent to the result obtained with:
+     * {@snippet lang=java :
+     * Path result = resolve(first);
+     * for (String s : more) {
+     *     result = result.resolve(s);
+     * }
+     * }
+     *
+     * @param   first
+     *          the first path string to convert to a path and
+     *          resolve against this path
+     *
+     * @param   more
+     *          additional path strings to be iteratively converted to
+     *          paths and resolved
+     *
+     * @return  the resulting path
+     *
+     * @throws  InvalidPathException
+     *          if a path string cannot be converted to a Path.
+     *
+     * @see #resolve(Path,Path...)
+     * @see #resolve(String)
+     *
+     * @since 22
+     */
+    default Path resolve(String first, String... more) {
+        Path result = resolve(first);
+        for (String s : more) {
+            result = result.resolve(s);
+        }
+        return result;
+    }
+
+    /**
      * Resolves the given path against this path's {@link #getParent parent}
      * path. This is useful where a file name needs to be <i>replaced</i> with
      * another file name. For example, suppose that the name separator is
@@ -984,6 +1068,7 @@ public interface Path
      * @return  {@code true} if, and only if, the given object is a {@code Path}
      *          that is identical to this {@code Path}
      */
+    @Override
     boolean equals(Object other);
 
     /**
@@ -995,10 +1080,11 @@ public interface Path
      *
      * @return  the hash-code value for this path
      */
+    @Override
     int hashCode();
 
     /**
-     * Returns the string representation of this path.
+     * {@return the string representation of this path}
      *
      * <p> If this path was created by converting a path string using the
      * {@link FileSystem#getPath getPath} method then the path string returned
@@ -1006,8 +1092,7 @@ public interface Path
      *
      * <p> The returned path string uses the default name {@link
      * FileSystem#getSeparator separator} to separate names in the path.
-     *
-     * @return  the string representation of this path
      */
+    @Override
     String toString();
 }

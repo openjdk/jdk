@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -536,7 +536,7 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
 
     /**
      * Return the requested attribute from the certificate.
-     *
+     * <p>
      * Note that the X509CertInfo is not cloned for performance reasons.
      * Callers must ensure that they do not modify it. All other
      * attributes are cloned.
@@ -1218,7 +1218,7 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
         for (GeneralName gname : names.names()) {
             GeneralNameInterface name = gname.getName();
             List<Object> nameEntry = new ArrayList<>(2);
-            nameEntry.add(Integer.valueOf(name.getType()));
+            nameEntry.add(name.getType());
             switch (name.getType()) {
             case GeneralNameInterface.NAME_RFC822:
                 nameEntry.add(((RFC822Name) name).getName());
@@ -1630,5 +1630,21 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
                 return null;
             }
         }
+    }
+
+    /**
+     * Restores the state of this object from the stream.
+     * <p>
+     * Deserialization of this object is not supported.
+     *
+     * @param  stream the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
+     */
+    @java.io.Serial
+    private void readObject(ObjectInputStream stream)
+            throws IOException, ClassNotFoundException {
+        throw new InvalidObjectException(
+                "X509CertImpls are not directly deserializable");
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,7 @@ public class ReaderUtil {
         //
         // For now we use a brute-force approach although we could
         // attempt to analyze the congruences.  If passPeriod and
-        // sourceSubsamling are relatively prime, the period will be
+        // sourceSubsampling are relatively prime, the period will be
         // their product.  If they share a common factor, either the
         // period will be equal to the larger value, or the sequences
         // will be completely disjoint, depending on the relationship
@@ -226,7 +226,7 @@ public class ReaderUtil {
      * it in byte array.
      * @param length the size of data to decode
      *
-     * @return array of size length when decode succeeeds
+     * @return array of size length when decode succeeds
      *
      * @throws IOException if decoding of stream fails
      */

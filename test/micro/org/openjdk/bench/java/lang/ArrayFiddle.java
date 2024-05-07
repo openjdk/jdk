@@ -60,7 +60,7 @@ import java.util.concurrent.TimeUnit;
 @Measurement(iterations = 5, time = 2)
 @Fork(3)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
-@State(Scope.Benchmark)
+@State(Scope.Thread)
 public class ArrayFiddle {
     @Param("999")
     public int size;

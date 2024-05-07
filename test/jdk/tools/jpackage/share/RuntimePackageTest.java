@@ -25,7 +25,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashSet;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -34,6 +33,8 @@ import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.TKit;
 import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.Executor;
+import jdk.jpackage.test.JavaTool;
 import jdk.jpackage.test.LinuxHelper;
 import static jdk.jpackage.test.TKit.assertTrue;
 import static jdk.jpackage.test.TKit.assertFalse;
@@ -101,9 +102,25 @@ public class RuntimePackageTest {
         return new PackageTest()
         .forTypes(types)
         .addInitializer(cmd -> {
-            cmd.addArguments("--runtime-image", Optional.ofNullable(
-                    JPackageCommand.DEFAULT_RUNTIME_IMAGE).orElse(Path.of(
-                            System.getProperty("java.home"))));
+            final Path runtimeImageDir;
+            if (JPackageCommand.DEFAULT_RUNTIME_IMAGE != null) {
+                runtimeImageDir = JPackageCommand.DEFAULT_RUNTIME_IMAGE;
+            } else {
+                runtimeImageDir = TKit.createTempDirectory("runtime").resolve("data");
+
+                new Executor()
+                .setToolProvider(JavaTool.JLINK)
+                .dumpOutput()
+                .addArguments(
+                        "--output", runtimeImageDir.toString(),
+                        "--compress=0",
+                        "--add-modules", "ALL-MODULE-PATH",
+                        "--strip-debug",
+                        "--no-header-files",
+                        "--no-man-pages")
+                .execute();
+            }
+            cmd.addArguments("--runtime-image", runtimeImageDir);
             // Remove --input parameter from jpackage command line as we don't
             // create input directory in the test and jpackage fails
             // if --input references non existant directory.

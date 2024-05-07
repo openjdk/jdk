@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,7 +134,9 @@ static inline void commit(EventType& event) {
   }
  }
 
-void CompilerEvent::CompilationEvent::post(EventCompilation& event, int compile_id, CompilerType compiler_type, Method* method, int compile_level, bool success, bool is_osr, int code_size, int inlined_bytecodes) {
+void CompilerEvent::CompilationEvent::post(EventCompilation& event, int compile_id, CompilerType compiler_type, Method* method,
+    int compile_level, bool success, bool is_osr, int code_size,
+    int inlined_bytecodes, size_t arenaBytes) {
   event.set_compileId(compile_id);
   event.set_compiler(compiler_type);
   event.set_method(method);
@@ -143,6 +145,7 @@ void CompilerEvent::CompilationEvent::post(EventCompilation& event, int compile_
   event.set_isOsr(is_osr);
   event.set_codeSize(code_size);
   event.set_inlinedBytes(inlined_bytecodes);
+  event.set_arenaBytes(arenaBytes);
   commit(event);
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package jdk.internal.access;
 
 import java.io.InputStream;
 import java.lang.annotation.Annotation;
+import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.lang.module.ModuleDescriptor;
@@ -45,7 +46,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.stream.Stream;
 
-import jdk.internal.javac.PreviewFeature;
 import jdk.internal.misc.CarrierThreadLocal;
 import jdk.internal.module.ServicesCatalog;
 import jdk.internal.reflect.ConstantPool;
@@ -64,6 +64,11 @@ public interface JavaLangAccess {
      * and parameter types.
      */
     List<Method> getDeclaredPublicMethods(Class<?> klass, String name, Class<?>... parameterTypes);
+
+    /**
+     * Return most specific method that matches name and parameterTypes.
+     */
+    Method findMethod(Class<?> klass, boolean publicOnly, String name, Class<?>... parameterTypes);
 
     /**
      * Return the constant pool for a class.
@@ -265,6 +270,12 @@ public interface JavaLangAccess {
     Module addEnableNativeAccess(Module m);
 
     /**
+     * Updates module named {@code name} in layer {@code layer} to allow access to restricted methods.
+     * Returns true iff the given module exists in the given layer.
+     */
+    boolean addEnableNativeAccess(ModuleLayer layer, String name);
+
+    /**
      * Updates all unnamed modules to allow access to restricted methods.
      */
     void addEnableNativeAccessToAllUnnamed();
@@ -273,7 +284,7 @@ public interface JavaLangAccess {
      * Ensure that the given module has native access. If not, warn or
      * throw exception depending on the configuration.
      */
-    void ensureNativeAccess(Module m, Class<?> owner, String methodName);
+    void ensureNativeAccess(Module m, Class<?> owner, String methodName, Class<?> currentClass);
 
     /**
      * Returns the ServicesCatalog for the given Layer.
@@ -354,6 +365,15 @@ public interface JavaLangAccess {
     char getUTF16Char(byte[] bytes, int index);
 
     /**
+     * Put the char at index in a byte[] in internal UTF-16 representation,
+     * with no bounds checks.
+     *
+     * @param bytes the UTF-16 encoded bytes
+     * @param index of the char to retrieve, 0 <= index < (bytes.length >> 1)
+     */
+    void putCharUTF16(byte[] bytes, int index, int ch);
+
+    /**
      * Encode the given string into a sequence of bytes using utf8.
      *
      * @param s the string to encode
@@ -407,6 +427,12 @@ public interface JavaLangAccess {
     MethodHandle stringConcatHelper(String name, MethodType methodType);
 
     /**
+     * Prepends constant and the stringly representation of value into buffer,
+     * given the coder and final index. Index is measured in chars, not in bytes!
+     */
+    long stringConcatHelperPrepend(long indexCoder, byte[] buf, String value);
+
+    /**
      * Get the string concat initial coder
      */
     long stringConcatInitialCoder();
@@ -416,23 +442,10 @@ public interface JavaLangAccess {
      */
     long stringConcatMix(long lengthCoder, String constant);
 
-   /**
-    * Get the coder for the supplied character.
-    */
-   @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
-   long stringConcatCoder(char value);
-
-   /**
-    * Update lengthCoder for StringBuilder.
-    */
-   @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
-   long stringBuilderConcatMix(long lengthCoder, StringBuilder sb);
-
     /**
-     * Prepend StringBuilder content.
+     * Mix value length and coder into current length and coder.
      */
-    @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
-   long stringBuilderConcatPrepend(long lengthCoder, byte[] buf, StringBuilder sb);
+    long stringConcatMix(long lengthCoder, char value);
 
     /**
      * Join strings
@@ -445,6 +458,12 @@ public interface JavaLangAccess {
      * @see java.lang.invoke.MethodHandles.Lookup#defineHiddenClass(byte[], boolean, MethodHandles.Lookup.ClassOption...)
      */
     Object classData(Class<?> c);
+
+    int stringSize(long i);
+
+    int getCharsLatin1(long i, int index, byte[] buf);
+
+    int getCharsUTF16(long i, int index, byte[] buf);
 
     long findNative(ClassLoader loader, String entry);
 
@@ -574,4 +593,20 @@ public interface JavaLangAccess {
      * explicitly set otherwise <qualified-class-name> @<id>
      */
     String getLoaderNameID(ClassLoader loader);
+
+    /**
+     * Copy the string bytes to an existing segment, avoiding intermediate copies.
+     */
+    void copyToSegmentRaw(String string, MemorySegment segment, long offset);
+
+    /**
+     * Are the string bytes compatible with the given charset?
+     */
+    boolean bytesCompatible(String string, Charset charset);
+
+    /**
+     * Is a security manager already set or allowed to be set
+     * (using -Djava.security.manager=allow)?
+     */
+    boolean allowSecurityManager();
 }

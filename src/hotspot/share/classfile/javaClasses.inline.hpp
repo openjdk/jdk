@@ -39,10 +39,6 @@ void java_lang_String::set_coder(oop string, jbyte coder) {
   string->byte_field_put(_coder_offset, coder);
 }
 
-void java_lang_String::set_value_raw(oop string, typeArrayOop buffer) {
-  string->obj_field_put_raw(_value_offset, buffer);
-}
-
 void java_lang_String::set_value(oop string, typeArrayOop buffer) {
   string->obj_field_put(_value_offset, buffer);
 }

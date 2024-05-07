@@ -39,7 +39,7 @@
 
   // PPC implementation uses VSX load/store instructions (if
   // SuperwordUseVSX) which support 4 byte but not arbitrary alignment
-  static const bool misaligned_vectors_ok() {
+  static constexpr bool misaligned_vectors_ok() {
     return false;
   }
 
@@ -133,6 +133,11 @@
     return false;
   }
 
+  // Does target support predicated operation emulation.
+  static bool supports_vector_predicate_op_emulation(int vopc, int vlen, BasicType bt) {
+    return false;
+  }
+
   // Does the CPU supports vector variable rotate instructions?
   static constexpr bool supports_vector_variable_rotates(void) {
     return false;
@@ -155,7 +160,7 @@
 
   // true means we have fast l2f conversion
   // false means that conversion is done by runtime call
-  static const bool convL2FSupported(void) {
+  static bool convL2FSupported(void) {
     // fcfids can do the conversion (>= Power7).
     // fcfid + frsp showed rounding problem when result should be 0x3f800001.
     return VM_Version::has_fcfids();
@@ -193,6 +198,11 @@
         return 30;
       }
     }
+  }
+
+  // Is SIMD sort supported for this CPU?
+  static bool supports_simd_sort(BasicType bt) {
+    return false;
   }
 
 #endif // CPU_PPC_MATCHER_PPC_HPP

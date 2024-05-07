@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 8186801 8186751
+ * @bug 8186801 8186751 8310631
  * @summary Test the charset mappings
  * @modules jdk.charsets
  */
@@ -569,11 +569,9 @@ public class TestCharsetMapping {
 
     public static void main(String args[]) throws Exception {
         Path dir = Paths.get(System.getProperty("test.src", ".") +
-                             "/../../../../src/java.base/share/data/charsetmapping");
+            "/../../../../../make/data/charsetmapping").normalize();
         if (!Files.exists(dir)) {
-            // not inside jdk repo, no mappings, exit silently
-            log.println("Nothing done, not in a jdk repo: ");
-            return;
+            throw new Exception("charsetmapping files cannot be located in " + dir);
         }
         if (args.length > 0 && "-v".equals(args[0])) {
             // For debugging: java CoderTest [-v]
@@ -608,7 +606,8 @@ public class TestCharsetMapping {
                            + " vs " + cs.name() + "]");
             }
             // test aliases()
-            if (!cs.aliases().equals(csinfo.aliases)) {
+            if (!cs.aliases().equals(csinfo.aliases)
+                && !csname.equals("GB18030")) {  // no alias in "charsets" file
                 errors++;
                 log.printf("    [error wrong aliases]");
                 if (verbose) {
@@ -625,6 +624,19 @@ public class TestCharsetMapping {
             }
 
             if (!csinfo.loadMappings(dir)) {
+                // Ignore these cs, as mapping files are not provided
+                if (csinfo.csName.equals("x-IBM942C") ||
+                        csinfo.csName.equals("x-IBM943C") ||
+                        csinfo.csName.equals("x-IBM834") ||
+                        csinfo.csName.equals("x-IBM949C") ||
+                        csinfo.csName.equals("x-IBM964") ||
+                        csinfo.csName.equals("x-IBM29626C"))
+                {
+                    log.println("    [**** skipped, mapping file is not provided]");
+                    known++;
+                    continue;
+                }
+
                 log.println("    [error loading mappings failed]");
                 errors++;
                 continue;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,8 +125,7 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
 
         Group group = diagramViewModel.getGroup();
         group.getChangedEvent().addListener(g -> closeOnRemovedOrEmptyGroup());
-        if (group.getParent() instanceof GraphDocument) {
-            final GraphDocument doc = (GraphDocument) group.getParent();
+        if (group.getParent() instanceof GraphDocument doc) {
             doc.getChangedEvent().addListener(d -> closeOnRemovedOrEmptyGroup());
         }
 
@@ -175,6 +174,11 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
         toolBar.addSeparator();
         ButtonGroup layoutButtons = new ButtonGroup();
 
+        JToggleButton stableSeaLayoutButton = new JToggleButton(new EnableStableSeaLayoutAction(this));
+        stableSeaLayoutButton.setSelected(diagramViewModel.getShowStableSea());
+        layoutButtons.add(stableSeaLayoutButton);
+        toolBar.add(stableSeaLayoutButton);
+
         JToggleButton seaLayoutButton = new JToggleButton(new EnableSeaLayoutAction(this));
         seaLayoutButton.setSelected(diagramViewModel.getShowSea());
         layoutButtons.add(seaLayoutButton);
@@ -190,6 +194,17 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
         cfgLayoutButton.setSelected(diagramViewModel.getShowCFG());
         layoutButtons.add(cfgLayoutButton);
         toolBar.add(cfgLayoutButton);
+
+        diagramViewModel.getGraphChangedEvent().addListener(model -> {
+            // HierarchicalStableLayoutManager is not reliable for difference graphs
+            boolean isDiffGraph = model.getGraph().isDiffGraph();
+            // deactivate HierarchicalStableLayoutManager for difference graphs
+            stableSeaLayoutButton.setEnabled(!isDiffGraph);
+            if (stableSeaLayoutButton.isSelected() && isDiffGraph) {
+                // fallback to HierarchicalLayoutManager for difference graphs
+                seaLayoutButton.setSelected(true);
+            }
+        });
 
         toolBar.addSeparator();
         toolBar.add(new JToggleButton(new PredSuccAction(diagramViewModel.getShowNodeHull())));
@@ -293,8 +308,7 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
             l.add(m.getSelectedTopComponent());
             l.addAll(Arrays.asList(manager.getOpenedTopComponents(m)));
             for (TopComponent t : l) {
-                if (t instanceof EditorTopComponent) {
-                    EditorTopComponent etc = (EditorTopComponent) t;
+                if (t instanceof EditorTopComponent etc) {
                     if (etc.getModel().getGroup().getGraphs().contains(graph)) {
                         return etc;
                     }
@@ -304,17 +318,31 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
         return null;
     }
 
+    public static void closeAllInstances() {
+        WindowManager manager = WindowManager.getDefault();
+        for (Mode mode : manager.getModes()) {
+            TopComponent[] openedTopComponents = manager.getOpenedTopComponents(mode);
+            for (TopComponent tc : openedTopComponents) {
+                if (tc instanceof EditorTopComponent etc) {
+                    etc.close();
+                }
+            }
+        }
+    }
+
     @Override
     public int getPersistenceType() {
         return TopComponent.PERSISTENCE_NEVER;
     }
 
     private void closeOnRemovedOrEmptyGroup() {
-        Group group = getModel().getGroup();
-        if (!group.getParent().getElements().contains(group) ||
-            group.getGraphs().isEmpty()) {
-            close();
-        }
+        SwingUtilities.invokeLater(() -> {
+            Group group = getModel().getGroup();
+            if (!group.getParent().getElements().contains(group) ||
+                    group.getGraphs().isEmpty()) {
+                close();
+            }
+        });
     }
 
     public void addSelectedNodes(Collection<InputNode> nodes, boolean showIfHidden) {
@@ -389,8 +417,7 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
         WindowManager manager = WindowManager.getDefault();
         for (Mode m : manager.getModes()) {
             for (TopComponent topComponent : manager.getOpenedTopComponents(m)) {
-                if (topComponent instanceof EditorTopComponent) {
-                    EditorTopComponent editor = (EditorTopComponent) topComponent;
+                if (topComponent instanceof EditorTopComponent editor) {
                     editor.setBoldDisplayName(false);
                 }
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,9 @@
 
 /*
  * @test
- * @library /java/text/testlib
  * @summary test International Number Format API
  * @modules jdk.localedata
+ * @run junit IntlTestNumberFormatAPI
  */
 /*
 (C) Copyright Taligent, Inc. 1996, 1997 - All Rights Reserved
@@ -42,23 +42,24 @@ attribution to Taligent may not be removed.
 import java.text.*;
 import java.util.*;
 
-public class IntlTestNumberFormatAPI extends IntlTest
-{
-    public static void main(String[] args) throws Exception {
-        new IntlTestNumberFormatAPI().run(args);
-    }
+import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.fail;
+
+public class IntlTestNumberFormatAPI
+{
     // This test checks various generic API methods in DecimalFormat to achieve 100% API coverage.
+    @Test
     public void TestAPI()
     {
         Locale reservedLocale = Locale.getDefault();
         try {
-            logln("NumberFormat API test---"); logln("");
+            System.out.println("NumberFormat API test---"); System.out.println("");
             Locale.setDefault(Locale.ENGLISH);
 
             // ======= Test constructors
 
-            logln("Testing NumberFormat constructors");
+            System.out.println("Testing NumberFormat constructors");
 
             NumberFormat def = NumberFormat.getInstance();
 
@@ -76,15 +77,15 @@ public class IntlTestNumberFormatAPI extends IntlTest
 
             // ======= Test equality
 
-            logln("Testing equality operator");
+            System.out.println("Testing equality operator");
 
             if( per_fr.equals(cur_fr) ) {
-                errln("ERROR: == failed");
+                fail("ERROR: == failed");
             }
 
             // ======= Test various format() methods
 
-            logln("Testing various format() methods");
+            System.out.println("Testing various format() methods");
 
 //          final double d = -10456.0037; // this appears as
                                           // -10456.003700000001 on NT
@@ -105,27 +106,27 @@ public class IntlTestNumberFormatAPI extends IntlTest
             FieldPosition pos4 = new FieldPosition(0);
 
             res1 = cur_fr.format(d);
-            logln( "" + d + " formatted to " + res1);
+            System.out.println( "" + d + " formatted to " + res1);
 
             res2 = cur_fr.format(l);
-            logln("" + l + " formatted to " + res2);
+            System.out.println("" + l + " formatted to " + res2);
 
             res3 = cur_fr.format(d, res3, pos1);
-            logln( "" + d + " formatted to " + res3);
+            System.out.println( "" + d + " formatted to " + res3);
 
             res4 = cur_fr.format(l, res4, pos2);
-            logln("" + l + " formatted to " + res4);
+            System.out.println("" + l + " formatted to " + res4);
 
             res5 = cur_fr.format(d, res5, pos3);
-            logln("" + d + " formatted to " + res5);
+            System.out.println("" + d + " formatted to " + res5);
 
             res6 = cur_fr.format(l, res6, pos4);
-            logln("" + l + " formatted to " + res6);
+            System.out.println("" + l + " formatted to " + res6);
 
 
             // ======= Test parse()
 
-            logln("Testing parse()");
+            System.out.println("Testing parse()");
 
 //          String text = new String("-10,456.0037");
             String text = new String("-10456,0037");
@@ -133,70 +134,70 @@ public class IntlTestNumberFormatAPI extends IntlTest
             ParsePosition pos01 = new ParsePosition(0);
             double d1 = ((Number)fr.parseObject(text, pos)).doubleValue();
             if(d1 != d) {
-                errln("ERROR: Roundtrip failed (via parse()) for " + text);
+                fail("ERROR: Roundtrip failed (via parse()) for " + text);
             }
-            logln(text + " parsed into " + d1);
+            System.out.println(text + " parsed into " + d1);
 
             double d2 = fr.parse(text, pos01).doubleValue();
             if(d2 != d) {
-                errln("ERROR: Roundtrip failed (via parse()) for " + text);
+                fail("ERROR: Roundtrip failed (via parse()) for " + text);
             }
-            logln(text + " parsed into " + d2);
+            System.out.println(text + " parsed into " + d2);
 
             double d3 = 0;
             try {
                 d3 = fr.parse(text).doubleValue();
             }
             catch (ParseException e) {
-                errln("ERROR: parse() failed");
+                fail("ERROR: parse() failed");
             }
             if(d3 != d) {
-                errln("ERROR: Roundtrip failed (via parse()) for " + text);
+                fail("ERROR: Roundtrip failed (via parse()) for " + text);
             }
-            logln(text + " parsed into " + d3);
+            System.out.println(text + " parsed into " + d3);
 
 
             // ======= Test getters and setters
 
-            logln("Testing getters and setters");
+            System.out.println("Testing getters and setters");
 
             final Locale[] locales = NumberFormat.getAvailableLocales();
             long count = locales.length;
-            logln("Got " + count + " locales" );
+            System.out.println("Got " + count + " locales" );
             for(int i = 0; i < count; i++) {
                 String name;
                 name = locales[i].getDisplayName();
-                logln(name);
+                System.out.println(name);
             }
 
             fr.setParseIntegerOnly( def.isParseIntegerOnly() );
             if(fr.isParseIntegerOnly() != def.isParseIntegerOnly() ) {
-                    errln("ERROR: setParseIntegerOnly() failed");
+                    fail("ERROR: setParseIntegerOnly() failed");
             }
 
             fr.setGroupingUsed( def.isGroupingUsed() );
             if(fr.isGroupingUsed() != def.isGroupingUsed() ) {
-                    errln("ERROR: setGroupingUsed() failed");
+                    fail("ERROR: setGroupingUsed() failed");
             }
 
             fr.setMaximumIntegerDigits( def.getMaximumIntegerDigits() );
             if(fr.getMaximumIntegerDigits() != def.getMaximumIntegerDigits() ) {
-                    errln("ERROR: setMaximumIntegerDigits() failed");
+                    fail("ERROR: setMaximumIntegerDigits() failed");
             }
 
             fr.setMinimumIntegerDigits( def.getMinimumIntegerDigits() );
             if(fr.getMinimumIntegerDigits() != def.getMinimumIntegerDigits() ) {
-                    errln("ERROR: setMinimumIntegerDigits() failed");
+                    fail("ERROR: setMinimumIntegerDigits() failed");
             }
 
             fr.setMaximumFractionDigits( def.getMaximumFractionDigits() );
             if(fr.getMaximumFractionDigits() != def.getMaximumFractionDigits() ) {
-                    errln("ERROR: setMaximumFractionDigits() failed");
+                    fail("ERROR: setMaximumFractionDigits() failed");
             }
 
             fr.setMinimumFractionDigits( def.getMinimumFractionDigits() );
             if(fr.getMinimumFractionDigits() != def.getMinimumFractionDigits() ) {
-                    errln("ERROR: setMinimumFractionDigits() failed");
+                    fail("ERROR: setMinimumFractionDigits() failed");
             }
 
             // ======= Test getStaticClassID()

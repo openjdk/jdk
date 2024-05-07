@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,7 @@ public class TestPackageAnnotation extends JavadocTester {
                     <h1 title="Package pkg1" class="title">Package pkg1</h1>
                     </div>
                     <hr>
+                    <div class="horizontal-scroll">
                     <div class="package-signature"><span class="annotations">@Deprecated(since="1&lt;2&gt;3")
                     </span>package <span class="element-name">pkg1</span></div>
                     """);
@@ -91,6 +92,7 @@ public class TestPackageAnnotation extends JavadocTester {
                     <h1 title="Package pkg3" class="title">Package pkg3</h1>
                     </div>
                     <hr>
+                    <div class="horizontal-scroll">
                     <div class="package-signature"><span class="annotations">@Deprecated(since="1&lt;2&gt;3")
                     </span>package <span class="element-name">pkg3</span></div>
                     """);

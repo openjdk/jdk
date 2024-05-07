@@ -171,11 +171,7 @@ class DigestAuthentication extends AuthenticationInfo {
 
         private static final int cnoncelen = 40; /* number of characters in cnonce */
 
-        private static Random   random;
-
-        static {
-            random = new Random();
-        }
+        private static final Random random = new Random();
 
         Parameters () {
             serverQop = false;

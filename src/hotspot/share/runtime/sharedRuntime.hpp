@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,9 +46,6 @@ class SharedRuntime: AllStatic {
   friend class VMStructs;
 
  private:
-  static bool resolve_sub_helper_internal(methodHandle callee_method, const frame& caller_frame,
-                                          CompiledMethod* caller_nm, bool is_virtual, bool is_optimized,
-                                          Handle receiver, CallInfo& call_info, Bytecodes::Code invoke_code, TRAPS);
   static methodHandle resolve_sub_helper(bool is_virtual, bool is_optimized, TRAPS);
 
   // Shared stub locations
@@ -184,7 +181,7 @@ class SharedRuntime: AllStatic {
   static address exception_handler_for_return_address(JavaThread* current, address return_address);
 
   // exception handling and implicit exceptions
-  static address compute_compiled_exc_handler(CompiledMethod* nm, address ret_pc, Handle& exception,
+  static address compute_compiled_exc_handler(nmethod* nm, address ret_pc, Handle& exception,
                                               bool force_unwind, bool top_frame_only, bool& recursive_exception_occurred);
   enum ImplicitExceptionKind {
     IMPLICIT_NULL,
@@ -331,7 +328,7 @@ class SharedRuntime: AllStatic {
   // deopt blob
   static void generate_deopt_blob(void);
 
-  static bool handle_ic_miss_helper_internal(Handle receiver, CompiledMethod* caller_nm, const frame& caller_frame,
+  static bool handle_ic_miss_helper_internal(Handle receiver, nmethod* caller_nm, const frame& caller_frame,
                                              methodHandle callee_method, Bytecodes::Code bc, CallInfo& call_info,
                                              bool& needs_ic_stub_refill, TRAPS);
 
@@ -351,6 +348,9 @@ class SharedRuntime: AllStatic {
   static void monitor_enter_helper(oopDesc* obj, BasicLock* lock, JavaThread* thread);
 
   static void monitor_exit_helper(oopDesc* obj, BasicLock* lock, JavaThread* current);
+
+  // Issue UL warning for unlocked JNI monitor on virtual thread termination
+  static void log_jni_monitor_still_held();
 
  private:
   static Handle find_callee_info(Bytecodes::Code& bc, CallInfo& callinfo, TRAPS);
@@ -387,8 +387,7 @@ class SharedRuntime: AllStatic {
   // to be filled by the c_calling_convention method. On other architectures,
   // null is being passed as the second VMRegPair array, so arguments are either
   // passed in a register OR in a stack slot.
-  static int c_calling_convention(const BasicType *sig_bt, VMRegPair *regs, VMRegPair *regs2,
-                                  int total_args_passed);
+  static int c_calling_convention(const BasicType *sig_bt, VMRegPair *regs, int total_args_passed);
 
   static int vector_calling_convention(VMRegPair *regs,
                                        uint num_bits,
@@ -500,6 +499,7 @@ class SharedRuntime: AllStatic {
   static void complete_monitor_unlocking_C(oopDesc* obj, BasicLock* lock, JavaThread* current);
 
   // Resolving of calls
+  static address get_resolved_entry        (JavaThread* current, methodHandle callee_method);
   static address resolve_static_call_C     (JavaThread* current);
   static address resolve_virtual_call_C    (JavaThread* current);
   static address resolve_opt_virtual_call_C(JavaThread* current);
@@ -528,34 +528,36 @@ class SharedRuntime: AllStatic {
   static void trace_ic_miss(address at);
 
  public:
-  static int _ic_miss_ctr;                       // total # of IC misses
-  static int _wrong_method_ctr;
-  static int _resolve_static_ctr;
-  static int _resolve_virtual_ctr;
-  static int _resolve_opt_virtual_ctr;
-  static int _implicit_null_throws;
-  static int _implicit_div0_throws;
+  static uint _ic_miss_ctr;                      // total # of IC misses
+  static uint _wrong_method_ctr;
+  static uint _resolve_static_ctr;
+  static uint _resolve_virtual_ctr;
+  static uint _resolve_opt_virtual_ctr;
+  static uint _implicit_null_throws;
+  static uint _implicit_div0_throws;
 
-  static int _jbyte_array_copy_ctr;        // Slow-path byte array copy
-  static int _jshort_array_copy_ctr;       // Slow-path short array copy
-  static int _jint_array_copy_ctr;         // Slow-path int array copy
-  static int _jlong_array_copy_ctr;        // Slow-path long array copy
-  static int _oop_array_copy_ctr;          // Slow-path oop array copy
-  static int _checkcast_array_copy_ctr;    // Slow-path oop array copy, with cast
-  static int _unsafe_array_copy_ctr;       // Slow-path includes alignment checks
-  static int _generic_array_copy_ctr;      // Slow-path includes type decoding
-  static int _slow_array_copy_ctr;         // Slow-path failed out to a method call
+  static uint _jbyte_array_copy_ctr;       // Slow-path byte array copy
+  static uint _jshort_array_copy_ctr;      // Slow-path short array copy
+  static uint _jint_array_copy_ctr;        // Slow-path int array copy
+  static uint _jlong_array_copy_ctr;       // Slow-path long array copy
+  static uint _oop_array_copy_ctr;         // Slow-path oop array copy
+  static uint _checkcast_array_copy_ctr;   // Slow-path oop array copy, with cast
+  static uint _unsafe_array_copy_ctr;      // Slow-path includes alignment checks
+  static uint _generic_array_copy_ctr;     // Slow-path includes type decoding
+  static uint _slow_array_copy_ctr;        // Slow-path failed out to a method call
 
-  static int _new_instance_ctr;            // 'new' object requires GC
-  static int _new_array_ctr;               // 'new' array requires GC
-  static int _multi2_ctr, _multi3_ctr, _multi4_ctr, _multi5_ctr;
-  static int _find_handler_ctr;            // find exception handler
-  static int _rethrow_ctr;                 // rethrow exception
-  static int _mon_enter_stub_ctr;          // monitor enter stub
-  static int _mon_exit_stub_ctr;           // monitor exit stub
-  static int _mon_enter_ctr;               // monitor enter slow
-  static int _mon_exit_ctr;                // monitor exit slow
-  static int _partial_subtype_ctr;         // SubRoutines::partial_subtype_check
+  static uint _unsafe_set_memory_ctr;      // Slow-path includes alignment checks
+
+  static uint _new_instance_ctr;           // 'new' object requires GC
+  static uint _new_array_ctr;              // 'new' array requires GC
+  static uint _multi2_ctr, _multi3_ctr, _multi4_ctr, _multi5_ctr;
+  static uint _find_handler_ctr;           // find exception handler
+  static uint _rethrow_ctr;                // rethrow exception
+  static uint _mon_enter_stub_ctr;         // monitor enter stub
+  static uint _mon_exit_stub_ctr;          // monitor exit stub
+  static uint _mon_enter_ctr;              // monitor enter slow
+  static uint _mon_exit_ctr;               // monitor exit slow
+  static uint _partial_subtype_ctr;        // SubRoutines::partial_subtype_check
 
   // Statistics code
   // stats for "normal" compiled calls (non-interface)
@@ -575,10 +577,11 @@ class SharedRuntime: AllStatic {
   static address nof_interface_calls_addr()             { return (address)&_nof_interface_calls; }
   static address nof_inlined_interface_calls_addr()     { return (address)&_nof_inlined_interface_calls; }
   static void print_call_statistics(uint64_t comp_total);
-  static void print_statistics();
   static void print_ic_miss_histogram();
 
 #endif // PRODUCT
+
+  static void print_statistics() PRODUCT_RETURN;
 };
 
 

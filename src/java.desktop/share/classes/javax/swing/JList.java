@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1769,7 +1769,7 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
      * during construction to initialize the list's selection model
      * property.
      *
-     * @return a {@code DefaultListSelecitonModel}, used to initialize
+     * @return a {@code DefaultListSelectionModel}, used to initialize
      *         the list's selection model property during construction
      * @see #setSelectionModel
      * @see DefaultListSelectionModel

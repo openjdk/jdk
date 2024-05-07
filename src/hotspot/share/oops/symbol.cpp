@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-
 #include "precompiled.hpp"
+#include "cds/archiveBuilder.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/classLoaderData.hpp"
@@ -74,11 +74,8 @@ Symbol::Symbol(const Symbol& s1) {
 
 #if INCLUDE_CDS
 void Symbol::update_identity_hash() {
-  // This is called at a safepoint during dumping of a static CDS archive. The caller should have
-  // called os::init_random() with a deterministic seed and then iterate all archived Symbols in
-  // a deterministic order.
   assert(SafepointSynchronize::is_at_safepoint(), "must be at a safepoint");
-  _hash_and_refcount =  pack_hash_and_refcount((short)os::random(), PERM_REFCOUNT);
+  _hash_and_refcount =  pack_hash_and_refcount((short)ArchiveBuilder::current()->entropy(), PERM_REFCOUNT);
 }
 
 void Symbol::set_permanent() {
@@ -390,11 +387,9 @@ void Symbol::print() const { print_on(tty); }
 // The print_value functions are present in all builds, to support the
 // disassembler and error reporting.
 void Symbol::print_value_on(outputStream* st) const {
-  st->print("'");
-  for (int i = 0; i < utf8_length(); i++) {
-    st->print("%c", char_at(i));
-  }
-  st->print("'");
+  st->print_raw("'", 1);
+  st->print_raw((const char*)base(), utf8_length());
+  st->print_raw("'", 1);
 }
 
 void Symbol::print_value() const { print_value_on(tty); }

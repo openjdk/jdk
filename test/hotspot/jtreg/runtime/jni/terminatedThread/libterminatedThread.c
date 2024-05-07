@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@
 #include <string.h>
 
 #include "jni.h"
+
+#define STACK_SIZE 0x100000
 
 JavaVM* jvm;
 jobject nativeThread;
@@ -79,11 +81,14 @@ Java_TestTerminatedThread_createTerminatedThread
     fprintf(stderr, "Test ERROR. Can't extract JavaVM: %d\n", res);
     exit(1);
   }
-
-  if ((res = pthread_create(&thread, NULL, thread_start, NULL)) != 0) {
+  pthread_attr_t attr;
+  pthread_attr_init(&attr);
+  pthread_attr_setstacksize(&attr, STACK_SIZE);
+  if ((res = pthread_create(&thread, &attr, thread_start, NULL)) != 0) {
     fprintf(stderr, "TEST ERROR: pthread_create failed: %s (%d)\n", strerror(res), res);
     exit(1);
   }
+  pthread_attr_destroy(&attr);
 
   if ((res = pthread_join(thread, NULL)) != 0) {
     fprintf(stderr, "TEST ERROR: pthread_join failed: %s (%d)\n", strerror(res), res);

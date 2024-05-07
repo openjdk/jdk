@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,10 +42,12 @@
 #include "opto/movenode.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/opaquenode.hpp"
+#include "opto/predicates.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
-#include "opto/superword.hpp"
+#include "opto/vectorization.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 //=============================================================================
@@ -175,7 +177,7 @@ Node *PhaseIdealLoop::get_early_ctrl_for_expensive(Node *n, Node* earliest) {
     // expensive nodes will notice the loop and skip over it to try to
     // move the node further up.
     if (ctl->is_CountedLoop() && ctl->in(1) != nullptr && ctl->in(1)->in(0) != nullptr && ctl->in(1)->in(0)->is_If()) {
-      if (!ctl->in(1)->as_Proj()->is_uncommon_trap_if_pattern(Deoptimization::Reason_none)) {
+      if (!ctl->in(1)->as_Proj()->is_uncommon_trap_if_pattern()) {
         break;
       }
       next = idom(ctl->in(1)->in(0));
@@ -189,7 +191,7 @@ Node *PhaseIdealLoop::get_early_ctrl_for_expensive(Node *n, Node* earliest) {
       } else if (parent_ctl->is_CountedLoopEnd() && parent_ctl->as_CountedLoopEnd()->loopnode() != nullptr) {
         next = parent_ctl->as_CountedLoopEnd()->loopnode()->init_control();
       } else if (parent_ctl->is_If()) {
-        if (!ctl->as_Proj()->is_uncommon_trap_if_pattern(Deoptimization::Reason_none)) {
+        if (!ctl->as_Proj()->is_uncommon_trap_if_pattern()) {
           break;
         }
         assert(idom(ctl) == parent_ctl, "strange");
@@ -343,15 +345,11 @@ IdealLoopTree* PhaseIdealLoop::create_outer_strip_mined_loop(BoolNode *test, Nod
 
 void PhaseIdealLoop::insert_loop_limit_check_predicate(ParsePredicateSuccessProj* loop_limit_check_parse_proj,
                                                        Node* cmp_limit, Node* bol) {
+  assert(loop_limit_check_parse_proj->in(0)->is_ParsePredicate(), "must be parse predicate");
   Node* new_predicate_proj = create_new_if_for_predicate(loop_limit_check_parse_proj, nullptr,
                                                          Deoptimization::Reason_loop_limit_check,
                                                          Op_If);
   Node* iff = new_predicate_proj->in(0);
-  assert(iff->Opcode() == Op_If, "bad graph shape");
-  Node* conv = iff->in(1);
-  assert(conv->Opcode() == Op_Conv2B, "bad graph shape");
-  Node* opaq = conv->in(1);
-  assert(opaq->Opcode() == Op_Opaque1, "bad graph shape");
   cmp_limit = _igvn.register_new_node_with_optimizer(cmp_limit);
   bol = _igvn.register_new_node_with_optimizer(bol);
   set_subtree_ctrl(bol, false);
@@ -493,19 +491,19 @@ PhiNode* PhaseIdealLoop::loop_iv_phi(Node* xphi, Node* phi_incr, Node* x, IdealL
   return phi;
 }
 
-static int check_stride_overflow(jlong stride_con, const TypeInteger* limit_t, BasicType bt) {
-  if (stride_con > 0) {
-    if (limit_t->lo_as_long() > (max_signed_integer(bt) - stride_con)) {
+static int check_stride_overflow(jlong final_correction, const TypeInteger* limit_t, BasicType bt) {
+  if (final_correction > 0) {
+    if (limit_t->lo_as_long() > (max_signed_integer(bt) - final_correction)) {
       return -1;
     }
-    if (limit_t->hi_as_long() > (max_signed_integer(bt) - stride_con)) {
+    if (limit_t->hi_as_long() > (max_signed_integer(bt) - final_correction)) {
       return 1;
     }
   } else {
-    if (limit_t->hi_as_long() < (min_signed_integer(bt) - stride_con)) {
+    if (limit_t->hi_as_long() < (min_signed_integer(bt) - final_correction)) {
       return -1;
     }
-    if (limit_t->lo_as_long() < (min_signed_integer(bt) - stride_con)) {
+    if (limit_t->lo_as_long() < (min_signed_integer(bt) - final_correction)) {
       return 1;
     }
   }
@@ -561,19 +559,12 @@ Node* PhaseIdealLoop::loop_nest_replace_iv(Node* iv_to_replace, Node* inner_iv, 
 void PhaseIdealLoop::add_parse_predicate(Deoptimization::DeoptReason reason, Node* inner_head, IdealLoopTree* loop,
                                          SafePointNode* sfpt) {
   if (!C->too_many_traps(reason)) {
-    Node* cont = _igvn.intcon(1);
-    Node* opaq = new Opaque1Node(C, cont);
-    _igvn.register_new_node_with_optimizer(opaq);
-    Node* bol = new Conv2BNode(opaq);
-    _igvn.register_new_node_with_optimizer(bol);
-    set_subtree_ctrl(bol, false);
-    ParsePredicateNode* iff = new ParsePredicateNode(inner_head->in(LoopNode::EntryControl), bol, reason);
-    register_control(iff, loop, inner_head->in(LoopNode::EntryControl));
-    Node* if_false = new IfFalseNode(iff);
-    register_control(if_false, _ltree_root, iff);
-    Node* if_true = new IfTrueNode(iff);
-    register_control(if_true, loop, iff);
-    C->add_parse_predicate_opaq(opaq);
+    ParsePredicateNode* parse_predicate = new ParsePredicateNode(inner_head->in(LoopNode::EntryControl), reason, &_igvn);
+    register_control(parse_predicate, loop, inner_head->in(LoopNode::EntryControl));
+    Node* if_false = new IfFalseNode(parse_predicate);
+    register_control(if_false, _ltree_root, parse_predicate);
+    Node* if_true = new IfTrueNode(parse_predicate);
+    register_control(if_true, loop, parse_predicate);
 
     int trap_request = Deoptimization::make_trap_request(reason, Deoptimization::Action_maybe_recompile);
     address call_addr = SharedRuntime::uncommon_trap_blob()->entry_point();
@@ -629,7 +620,7 @@ static bool no_side_effect_since_safepoint(Compile* C, Node* x, Node* mem, Merge
   SafePointNode* safepoint = nullptr;
   for (DUIterator_Fast imax, i = x->fast_outs(imax); i < imax; i++) {
     Node* u = x->fast_out(i);
-    if (u->is_Phi() && u->bottom_type() == Type::MEMORY) {
+    if (u->is_memory_phi()) {
       Node* m = u->in(LoopNode::LoopBackControl);
       if (u->adr_type() == TypePtr::BOTTOM) {
         if (m->is_MergeMem() && mem->is_MergeMem()) {
@@ -767,7 +758,7 @@ SafePointNode* PhaseIdealLoop::find_safepoint(Node* back_control, Node* x, Ideal
 //     // inner_incr := AddI(inner_phi, intcon(stride))
 //     inner_incr = inner_phi + stride;
 //     if (inner_incr < inner_iters_actual) {
-//       ... use phi=>(outer_phi+inner_phi) and incr=>(outer_phi+inner_incr) ...
+//       ... use phi=>(outer_phi+inner_phi) ...
 //       continue;
 //     }
 //     else break;
@@ -801,13 +792,14 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
   }
 #endif
 
-  jlong stride_con = head->stride_con();
-  assert(stride_con != 0, "missed some peephole opt");
+  jlong stride_con_long = head->stride_con();
+  assert(stride_con_long != 0, "missed some peephole opt");
   // We can't iterate for more than max int at a time.
-  if (stride_con != (jint)stride_con) {
+  if (stride_con_long != (jint)stride_con_long || stride_con_long == min_jint) {
     assert(bt == T_LONG, "only for long loops");
     return false;
   }
+  jint stride_con = checked_cast<jint>(stride_con_long);
   // The number of iterations for the integer count loop: guarantee no
   // overflow: max_jint - stride_con max. -1 so there's no need for a
   // loop limit check if the exit test is <= or >=.
@@ -864,6 +856,28 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
     // not a loop after all
     return false;
   }
+
+  if (range_checks.size() > 0) {
+    // This transformation requires peeling one iteration. Also, if it has range checks and they are eliminated by Loop
+    // Predication, then 2 Hoisted Check Predicates are added for one range check. Finally, transforming a long range
+    // check requires extra logic to be executed before the loop is entered and for the outer loop. As a result, the
+    // transformations can't pay off for a small number of iterations: roughly, if the loop runs for 3 iterations, it's
+    // going to execute as many range checks once transformed with range checks eliminated (1 peeled iteration with
+    // range checks + 2 predicates per range checks) as it would have not transformed. It also has to pay for the extra
+    // logic on loop entry and for the outer loop.
+    loop->compute_trip_count(this);
+    if (head->is_CountedLoop() && head->as_CountedLoop()->has_exact_trip_count()) {
+      if (head->as_CountedLoop()->trip_count() <= 3) {
+        return false;
+      }
+    } else {
+      loop->compute_profile_trip_cnt(this);
+      if (!head->is_profile_trip_failed() && head->profile_trip_cnt() <= 3) {
+        return false;
+      }
+    }
+  }
+
   julong orig_iters = (julong)hi->hi_as_long() - lo->lo_as_long();
   iters_limit = checked_cast<int>(MIN2((julong)iters_limit, orig_iters));
 
@@ -927,11 +941,19 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
   // inner_iters_max may not fit in a signed integer (iterating from
   // Long.MIN_VALUE to Long.MAX_VALUE for instance). Use an unsigned
   // min.
-  Node* inner_iters_actual = MaxNode::unsigned_min(inner_iters_max, inner_iters_limit, TypeInteger::make(0, iters_limit, Type::WidenMin, bt), _igvn);
+  const TypeInteger* inner_iters_actual_range = TypeInteger::make(0, iters_limit, Type::WidenMin, bt);
+  Node* inner_iters_actual = MaxNode::unsigned_min(inner_iters_max, inner_iters_limit, inner_iters_actual_range, _igvn);
 
   Node* inner_iters_actual_int;
   if (bt == T_LONG) {
     inner_iters_actual_int = new ConvL2INode(inner_iters_actual);
+    _igvn.register_new_node_with_optimizer(inner_iters_actual_int);
+    // When the inner loop is transformed to a counted loop, a loop limit check is not expected to be needed because
+    // the loop limit is less or equal to max_jint - stride - 1 (if stride is positive but a similar argument exists for
+    // a negative stride). We add a CastII here to guarantee that, when the counted loop is created in a subsequent loop
+    // opts pass, an accurate range of values for the limits is found.
+    const TypeInt* inner_iters_actual_int_range = TypeInt::make(0, iters_limit, Type::WidenMin);
+    inner_iters_actual_int = new CastIINode(outer_head, inner_iters_actual_int, inner_iters_actual_int_range, ConstraintCastNode::UnconditionalDependency);
     _igvn.register_new_node_with_optimizer(inner_iters_actual_int);
   } else {
     inner_iters_actual_int = inner_iters_actual;
@@ -945,7 +967,7 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
   }
 
   // Clone the iv data nodes as an integer iv
-  Node* int_stride = _igvn.intcon(checked_cast<int>(stride_con));
+  Node* int_stride = _igvn.intcon(stride_con);
   set_ctrl(int_stride, C->root());
   Node* inner_phi = new PhiNode(x->in(0), TypeInt::INT);
   Node* inner_incr = new AddINode(inner_phi, int_stride);
@@ -976,10 +998,6 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
   // Replace inner loop long iv phi as inner loop int iv phi + outer
   // loop iv phi
   Node* iv_add = loop_nest_replace_iv(phi, inner_phi, outer_phi, head, bt);
-
-  // Replace inner loop long iv incr with inner loop int incr + outer
-  // loop iv phi
-  loop_nest_replace_iv(incr, inner_incr, outer_phi, head, bt);
 
   set_subtree_ctrl(inner_iters_actual_int, body_populated);
 
@@ -1029,7 +1047,7 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
   //       back_control: fallthrough;
   //     else
   //       inner_exit_branch: break;  //exit_branch->clone()
-  //     ... use phi=>(outer_phi+inner_phi) and incr=>(outer_phi+inner_incr) ...
+  //     ... use phi=>(outer_phi+inner_phi) ...
   //     inner_phi = inner_phi + stride;  // inner_incr
   //   }
   //   outer_exit_test:  //exit_test->clone(), in(0):=inner_exit_branch
@@ -1044,7 +1062,7 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
     register_new_node(outer_phi, outer_head);
   }
 
-  transform_long_range_checks(checked_cast<int>(stride_con), range_checks, outer_phi, inner_iters_actual_int,
+  transform_long_range_checks(stride_con, range_checks, outer_phi, inner_iters_actual_int,
                               inner_phi, iv_add, inner_head);
   // Peel one iteration of the loop and use the safepoint at the end
   // of the peeled iteration to insert Parse Predicates. If no well
@@ -1081,7 +1099,7 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
   return true;
 }
 
-int PhaseIdealLoop::extract_long_range_checks(const IdealLoopTree* loop, jlong stride_con, int iters_limit, PhiNode* phi,
+int PhaseIdealLoop::extract_long_range_checks(const IdealLoopTree* loop, jint stride_con, int iters_limit, PhiNode* phi,
                                               Node_List& range_checks) {
   const jlong min_iters = 2;
   jlong reduced_iters_limit = iters_limit;
@@ -1090,14 +1108,16 @@ int PhaseIdealLoop::extract_long_range_checks(const IdealLoopTree* loop, jlong s
     Node* c = loop->_body.at(i);
     if (c->is_IfProj() && c->in(0)->is_RangeCheck()) {
       IfProjNode* if_proj = c->as_IfProj();
-      CallStaticJavaNode* call = if_proj->is_uncommon_trap_if_pattern(Deoptimization::Reason_none);
+      CallStaticJavaNode* call = if_proj->is_uncommon_trap_if_pattern();
       if (call != nullptr) {
         Node* range = nullptr;
         Node* offset = nullptr;
         jlong scale = 0;
         if (loop->is_range_check_if(if_proj, this, T_LONG, phi, range, offset, scale) &&
             loop->is_invariant(range) && loop->is_invariant(offset) &&
-            original_iters_limit / ABS(scale * stride_con) >= min_iters) {
+            scale != min_jlong &&
+            original_iters_limit / ABS(scale) >= min_iters * ABS(stride_con)) {
+          assert(scale == (jint)scale, "scale should be an int");
           reduced_iters_limit = MIN2(reduced_iters_limit, original_iters_limit/ABS(scale));
           range_checks.push(c);
         }
@@ -1764,50 +1784,207 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
   C->print_method(PHASE_BEFORE_CLOOPS, 3);
 
   // ===================================================
-  // Generate loop limit check to avoid integer overflow
-  // in cases like next (cyclic loops):
+  // We can only convert this loop to a counted loop if we can guarantee that the iv phi will never overflow at runtime.
+  // This is an implicit assumption taken by some loop optimizations. We therefore must ensure this property at all cost.
+  // At this point, we've already excluded some trivial cases where an overflow could have been proven statically.
+  // But even though we cannot prove that an overflow will *not* happen, we still want to speculatively convert this loop
+  // to a counted loop. This can be achieved by adding additional iv phi overflow checks before the loop. If they fail,
+  // we trap and resume execution before the loop without having executed any iteration of the loop, yet.
   //
-  // for (i=0; i <= max_jint; i++) {}
-  // for (i=0; i <  max_jint; i+=2) {}
+  // These additional iv phi overflow checks can be inserted as Loop Limit Check Predicates above the Loop Limit Check
+  // Parse Predicate which captures a JVM state just before the entry of the loop. If there is no such Parse Predicate,
+  // we cannot generate a Loop Limit Check Predicate and thus cannot speculatively convert the loop to a counted loop.
+  //
+  // In the following, we only focus on int loops with stride > 0 to keep things simple. The argumentation and proof
+  // for stride < 0 is analogously. For long loops, we would replace max_int with max_long.
   //
   //
-  // Limit check predicate depends on the loop test:
+  // The loop to be converted does not always need to have the often used shape:
   //
-  // for(;i != limit; i++)       --> limit <= (max_jint)
-  // for(;i <  limit; i+=stride) --> limit <= (max_jint - stride + 1)
-  // for(;i <= limit; i+=stride) --> limit <= (max_jint - stride    )
+  //                                                 i = init
+  //     i = init                                loop:
+  //     do {                                        ...
+  //         // ...               equivalent         i+=stride
+  //         i+=stride               <==>            if (i < limit)
+  //     } while (i < limit);                          goto loop
+  //                                             exit:
+  //                                                 ...
   //
+  // where the loop exit check uses the post-incremented iv phi and a '<'-operator.
+  //
+  // We could also have '<='-operator (or '>='-operator for negative strides) or use the pre-incremented iv phi value
+  // in the loop exit check:
+  //
+  //         i = init
+  //     loop:
+  //         ...
+  //         if (i <= limit)
+  //             i+=stride
+  //             goto loop
+  //     exit:
+  //         ...
+  //
+  // Let's define the following terms:
+  // - iv_pre_i: The pre-incremented iv phi before the i-th iteration.
+  // - iv_post_i: The post-incremented iv phi after the i-th iteration.
+  //
+  // The iv_pre_i and iv_post_i have the following relation:
+  //      iv_pre_i + stride = iv_post_i
+  //
+  // When converting a loop to a counted loop, we want to have a canonicalized loop exit check of the form:
+  //     iv_post_i < adjusted_limit
+  //
+  // If that is not the case, we need to canonicalize the loop exit check by using different values for adjusted_limit:
+  // (LE1) iv_post_i < limit: Already canonicalized. We can directly use limit as adjusted_limit.
+  //           -> adjusted_limit = limit.
+  // (LE2) iv_post_i <= limit:
+  //           iv_post_i < limit + 1
+  //           -> adjusted limit = limit + 1
+  // (LE3) iv_pre_i < limit:
+  //           iv_pre_i + stride < limit + stride
+  //           iv_post_i < limit + stride
+  //           -> adjusted_limit = limit + stride
+  // (LE4) iv_pre_i <= limit:
+  //           iv_pre_i < limit + 1
+  //           iv_pre_i + stride < limit + stride + 1
+  //           iv_post_i < limit + stride + 1
+  //           -> adjusted_limit = limit + stride + 1
+  //
+  // Note that:
+  //     (AL) limit <= adjusted_limit.
+  //
+  // The following loop invariant has to hold for counted loops with n iterations (i.e. loop exit check true after n-th
+  // loop iteration) and a canonicalized loop exit check to guarantee that no iv_post_i over- or underflows:
+  // (INV) For i = 1..n, min_int <= iv_post_i <= max_int
+  //
+  // To prove (INV), we require the following two conditions/assumptions:
+  // (i): adjusted_limit - 1 + stride <= max_int
+  // (ii): init < limit
+  //
+  // If we can prove (INV), we know that there can be no over- or underflow of any iv phi value. We prove (INV) by
+  // induction by assuming (i) and (ii).
+  //
+  // Proof by Induction
+  // ------------------
+  // > Base case (i = 1): We show that (INV) holds after the first iteration:
+  //     min_int <= iv_post_1 = init + stride <= max_int
+  // Proof:
+  //     First, we note that (ii) implies
+  //         (iii) init <= limit - 1
+  //     max_int >= adjusted_limit - 1 + stride   [using (i)]
+  //             >= limit - 1 + stride            [using (AL)]
+  //             >= init + stride                 [using (iii)]
+  //             >= min_int                       [using stride > 0, no underflow]
+  // Thus, no overflow happens after the first iteration and (INV) holds for i = 1.
+  //
+  // Note that to prove the base case we need (i) and (ii).
+  //
+  // > Induction Hypothesis (i = j, j > 1): Assume that (INV) holds after the j-th iteration:
+  //     min_int <= iv_post_j <= max_int
+  // > Step case (i = j + 1): We show that (INV) also holds after the j+1-th iteration:
+  //     min_int <= iv_post_{j+1} = iv_post_j + stride <= max_int
+  // Proof:
+  // If iv_post_j >= adjusted_limit:
+  //     We exit the loop after the j-th iteration, and we don't execute the j+1-th iteration anymore. Thus, there is
+  //     also no iv_{j+1}. Since (INV) holds for iv_j, there is nothing left to prove.
+  // If iv_post_j < adjusted_limit:
+  //     First, we note that:
+  //         (iv) iv_post_j <= adjusted_limit - 1
+  //     max_int >= adjusted_limit - 1 + stride    [using (i)]
+  //             >= iv_post_j + stride             [using (iv)]
+  //             >= min_int                        [using stride > 0, no underflow]
+  //
+  // Note that to prove the step case we only need (i).
+  //
+  // Thus, by assuming (i) and (ii), we proved (INV).
+  //
+  //
+  // It is therefore enough to add the following two Loop Limit Check Predicates to check assumptions (i) and (ii):
+  //
+  // (1) Loop Limit Check Predicate for (i):
+  //     Using (i): adjusted_limit - 1 + stride <= max_int
+  //
+  //     This condition is now restated to use limit instead of adjusted_limit:
+  //
+  //     To prevent an overflow of adjusted_limit -1 + stride itself, we rewrite this check to
+  //         max_int - stride + 1 >= adjusted_limit
+  //     We can merge the two constants into
+  //         canonicalized_correction = stride - 1
+  //     which gives us
+  //        max_int - canonicalized_correction >= adjusted_limit
+  //
+  //     To directly use limit instead of adjusted_limit in the predicate condition, we split adjusted_limit into:
+  //         adjusted_limit = limit + limit_correction
+  //     Since stride > 0 and limit_correction <= stride + 1, we can restate this with no over- or underflow into:
+  //         max_int - canonicalized_correction - limit_correction >= limit
+  //     Since canonicalized_correction and limit_correction are both constants, we can replace them with a new constant:
+  //         final_correction = canonicalized_correction + limit_correction
+  //     which gives us:
+  //
+  //     Final predicate condition:
+  //         max_int - final_correction >= limit
+  //
+  // (2) Loop Limit Check Predicate for (ii):
+  //     Using (ii): init < limit
+  //
+  //     This Loop Limit Check Predicate is not required if we can prove at compile time that either:
+  //        (2.1) type(init) < type(limit)
+  //             In this case, we know:
+  //                 all possible values of init < all possible values of limit
+  //             and we can skip the predicate.
+  //
+  //        (2.2) init < limit is already checked before (i.e. found as a dominating check)
+  //            In this case, we do not need to re-check the condition and can skip the predicate.
+  //            This is often found for while- and for-loops which have the following shape:
+  //
+  //                if (init < limit) { // Dominating test. Do not need the Loop Limit Check Predicate below.
+  //                    i = init;
+  //                    if (init >= limit) { trap(); } // Here we would insert the Loop Limit Check Predicate
+  //                    do {
+  //                        i += stride;
+  //                    } while (i < limit);
+  //                }
+  //
+  //        (2.3) init + stride <= max_int
+  //            In this case, there is no overflow of the iv phi after the first loop iteration.
+  //            In the proof of the base case above we showed that init + stride <= max_int by using assumption (ii):
+  //                init < limit
+  //            In the proof of the step case above, we did not need (ii) anymore. Therefore, if we already know at
+  //            compile time that init + stride <= max_int then we have trivially proven the base case and that
+  //            there is no overflow of the iv phi after the first iteration. In this case, we don't need to check (ii)
+  //            again and can skip the predicate.
 
-  // Check if limit is excluded to do more precise int overflow check.
-  bool incl_limit = (bt == BoolTest::le || bt == BoolTest::ge);
-  jlong stride_m  = stride_con - (incl_limit ? 0 : (stride_con > 0 ? 1 : -1));
 
-  // If compare points directly to the phi we need to adjust
-  // the compare so that it points to the incr. Limit have
-  // to be adjusted to keep trip count the same and the
-  // adjusted limit should be checked for int overflow.
-  Node* adjusted_limit = limit;
-  if (phi_incr != nullptr) {
-    stride_m  += stride_con;
-  }
+  // Accounting for (LE3) and (LE4) where we use pre-incremented phis in the loop exit check.
+  const jlong limit_correction_for_pre_iv_exit_check = (phi_incr != nullptr) ? stride_con : 0;
 
-  Node *init_control = x->in(LoopNode::EntryControl);
+  // Accounting for (LE2) and (LE4) where we use <= or >= in the loop exit check.
+  const bool includes_limit = (bt == BoolTest::le || bt == BoolTest::ge);
+  const jlong limit_correction_for_le_ge_exit_check = (includes_limit ? (stride_con > 0 ? 1 : -1) : 0);
 
-  int sov = check_stride_overflow(stride_m, limit_t, iv_bt);
+  const jlong limit_correction = limit_correction_for_pre_iv_exit_check + limit_correction_for_le_ge_exit_check;
+  const jlong canonicalized_correction = stride_con + (stride_con > 0 ? -1 : 1);
+  const jlong final_correction = canonicalized_correction + limit_correction;
+
+  int sov = check_stride_overflow(final_correction, limit_t, iv_bt);
+  Node* init_control = x->in(LoopNode::EntryControl);
+
   // If sov==0, limit's type always satisfies the condition, for
   // example, when it is an array length.
   if (sov != 0) {
     if (sov < 0) {
       return false;  // Bailout: integer overflow is certain.
     }
+    // (1) Loop Limit Check Predicate is required because we could not statically prove that
+    //     limit + final_correction = adjusted_limit - 1 + stride <= max_int
     assert(!x->as_Loop()->is_loop_nest_inner_loop(), "loop was transformed");
-    // Generate loop's limit check.
-    // Loop limit check predicate should be near the loop.
-    if (!ParsePredicates::is_loop_limit_check_predicate_proj(init_control)) {
-      // The limit check predicate is not generated if this method trapped here before.
+    const Predicates predicates(init_control);
+    const PredicateBlock* loop_limit_check_predicate_block = predicates.loop_limit_check_predicate_block();
+    if (!loop_limit_check_predicate_block->has_parse_predicate()) {
+      // The Loop Limit Check Parse Predicate is not generated if this method trapped here before.
 #ifdef ASSERT
       if (TraceLoopLimitCheck) {
-        tty->print("missing loop limit check:");
+        tty->print("Missing Loop Limit Check Parse Predicate:");
         loop->dump_head();
         x->dump(1);
       }
@@ -1815,10 +1992,8 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
       return false;
     }
 
-    ParsePredicateSuccessProj* loop_limit_check_parse_predicate_proj = init_control->as_IfTrue();
-    ParsePredicateNode* parse_predicate = loop_limit_check_parse_predicate_proj->in(0)->as_ParsePredicate();
-
-    if (!is_dominator(get_ctrl(limit), parse_predicate->in(0))) {
+    ParsePredicateNode* loop_limit_check_parse_predicate = loop_limit_check_predicate_block->parse_predicate();
+    if (!is_dominator(get_ctrl(limit), loop_limit_check_parse_predicate->in(0))) {
       return false;
     }
 
@@ -1826,65 +2001,81 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
     Node* bol;
 
     if (stride_con > 0) {
-      cmp_limit = CmpNode::make(limit, _igvn.integercon(max_signed_integer(iv_bt) - stride_m, iv_bt), iv_bt);
+      cmp_limit = CmpNode::make(limit, _igvn.integercon(max_signed_integer(iv_bt) - final_correction, iv_bt), iv_bt);
       bol = new BoolNode(cmp_limit, BoolTest::le);
     } else {
-      cmp_limit = CmpNode::make(limit, _igvn.integercon(min_signed_integer(iv_bt) - stride_m, iv_bt), iv_bt);
+      cmp_limit = CmpNode::make(limit, _igvn.integercon(min_signed_integer(iv_bt) - final_correction, iv_bt), iv_bt);
       bol = new BoolNode(cmp_limit, BoolTest::ge);
     }
 
-    insert_loop_limit_check_predicate(loop_limit_check_parse_predicate_proj, cmp_limit, bol);
+    insert_loop_limit_check_predicate(init_control->as_IfTrue(), cmp_limit, bol);
   }
 
-  // Now we need to canonicalize loop condition.
-  if (bt == BoolTest::ne) {
-    assert(stride_con == 1 || stride_con == -1, "simple increment only");
-    if (stride_con > 0 && init_t->hi_as_long() < limit_t->lo_as_long()) {
-      // 'ne' can be replaced with 'lt' only when init < limit.
-      bt = BoolTest::lt;
-    } else if (stride_con < 0 && init_t->lo_as_long() > limit_t->hi_as_long()) {
-      // 'ne' can be replaced with 'gt' only when init > limit.
-      bt = BoolTest::gt;
-    } else {
-      if (!ParsePredicates::is_loop_limit_check_predicate_proj(init_control)) {
-        // The limit check predicate is not generated if this method trapped here before.
+  // (2.3)
+  const bool init_plus_stride_could_overflow =
+          (stride_con > 0 && init_t->hi_as_long() > max_signed_integer(iv_bt) - stride_con) ||
+          (stride_con < 0 && init_t->lo_as_long() < min_signed_integer(iv_bt) - stride_con);
+  // (2.1)
+  const bool init_gte_limit = (stride_con > 0 && init_t->hi_as_long() >= limit_t->lo_as_long()) ||
+                              (stride_con < 0 && init_t->lo_as_long() <= limit_t->hi_as_long());
+
+  if (init_gte_limit && // (2.1)
+     ((bt == BoolTest::ne || init_plus_stride_could_overflow) && // (2.3)
+      !has_dominating_loop_limit_check(init_trip, limit, stride_con, iv_bt, init_control))) { // (2.2)
+    // (2) Iteration Loop Limit Check Predicate is required because neither (2.1), (2.2), nor (2.3) holds.
+    // We use the following condition:
+    // - stride > 0: init < limit
+    // - stride < 0: init > limit
+    //
+    // This predicate is always required if we have a non-equal-operator in the loop exit check (where stride = 1 is
+    // a requirement). We transform the loop exit check by using a less-than-operator. By doing so, we must always
+    // check that init < limit. Otherwise, we could have a different number of iterations at runtime.
+
+    const Predicates predicates(init_control);
+    const PredicateBlock* loop_limit_check_predicate_block = predicates.loop_limit_check_predicate_block();
+    if (!loop_limit_check_predicate_block->has_parse_predicate()) {
+      // The Loop Limit Check Parse Predicate is not generated if this method trapped here before.
 #ifdef ASSERT
-        if (TraceLoopLimitCheck) {
-          tty->print("missing loop limit check:");
-          loop->dump_head();
-          x->dump(1);
-        }
+      if (TraceLoopLimitCheck) {
+        tty->print("Missing Loop Limit Check Parse Predicate:");
+        loop->dump_head();
+        x->dump(1);
+      }
 #endif
-        return false;
-      }
-      ParsePredicateSuccessProj* loop_limit_check_parse_predicate_proj = init_control->as_IfTrue();
-      ParsePredicateNode* parse_predicate = init_control->in(0)->as_ParsePredicate();
+      return false;
+    }
 
-      if (!is_dominator(get_ctrl(limit), parse_predicate->in(0)) ||
-          !is_dominator(get_ctrl(init_trip), parse_predicate->in(0))) {
-        return false;
-      }
+    ParsePredicateNode* loop_limit_check_parse_predicate = loop_limit_check_predicate_block->parse_predicate();
+    Node* parse_predicate_entry = loop_limit_check_parse_predicate->in(0);
+    if (!is_dominator(get_ctrl(limit), parse_predicate_entry) ||
+        !is_dominator(get_ctrl(init_trip), parse_predicate_entry)) {
+      return false;
+    }
 
-      Node* cmp_limit;
-      Node* bol;
+    Node* cmp_limit;
+    Node* bol;
 
-      if (stride_con > 0) {
-        cmp_limit = CmpNode::make(init_trip, limit, iv_bt);
-        bol = new BoolNode(cmp_limit, BoolTest::lt);
-      } else {
-        cmp_limit = CmpNode::make(init_trip, limit, iv_bt);
-        bol = new BoolNode(cmp_limit, BoolTest::gt);
-      }
+    if (stride_con > 0) {
+      cmp_limit = CmpNode::make(init_trip, limit, iv_bt);
+      bol = new BoolNode(cmp_limit, BoolTest::lt);
+    } else {
+      cmp_limit = CmpNode::make(init_trip, limit, iv_bt);
+      bol = new BoolNode(cmp_limit, BoolTest::gt);
+    }
 
-      insert_loop_limit_check_predicate(loop_limit_check_parse_predicate_proj, cmp_limit, bol);
+    insert_loop_limit_check_predicate(init_control->as_IfTrue(), cmp_limit, bol);
+  }
 
-      if (stride_con > 0) {
-        // 'ne' can be replaced with 'lt' only when init < limit.
-        bt = BoolTest::lt;
-      } else if (stride_con < 0) {
-        // 'ne' can be replaced with 'gt' only when init > limit.
-        bt = BoolTest::gt;
-      }
+  if (bt == BoolTest::ne) {
+    // Now we need to canonicalize the loop condition if it is 'ne'.
+    assert(stride_con == 1 || stride_con == -1, "simple increment only - checked before");
+    if (stride_con > 0) {
+      // 'ne' can be replaced with 'lt' only when init < limit. This is ensured by the inserted predicate above.
+      bt = BoolTest::lt;
+    } else {
+      assert(stride_con < 0, "must be");
+      // 'ne' can be replaced with 'gt' only when init > limit. This is ensured by the inserted predicate above.
+      bt = BoolTest::gt;
     }
   }
 
@@ -1929,6 +2120,7 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
   }
 #endif
 
+  Node* adjusted_limit = limit;
   if (phi_incr != nullptr) {
     // If compare points directly to the phi we need to adjust
     // the compare so that it points to the incr. Limit have
@@ -1942,7 +2134,7 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
     adjusted_limit = gvn->transform(AddNode::make(limit, stride, iv_bt));
   }
 
-  if (incl_limit) {
+  if (includes_limit) {
     // The limit check guaranties that 'limit <= (max_jint - stride)' so
     // we can convert 'i <= limit' to 'i < limit+1' since stride != 0.
     //
@@ -2123,13 +2315,45 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
   return true;
 }
 
+// Check if there is a dominating loop limit check of the form 'init < limit' starting at the loop entry.
+// If there is one, then we do not need to create an additional Loop Limit Check Predicate.
+bool PhaseIdealLoop::has_dominating_loop_limit_check(Node* init_trip, Node* limit, const jlong stride_con,
+                                                     const BasicType iv_bt, Node* loop_entry) {
+  // Eagerly call transform() on the Cmp and Bool node to common them up if possible. This is required in order to
+  // successfully find a dominated test with the If node below.
+  Node* cmp_limit;
+  Node* bol;
+  if (stride_con > 0) {
+    cmp_limit = _igvn.transform(CmpNode::make(init_trip, limit, iv_bt));
+    bol = _igvn.transform(new BoolNode(cmp_limit, BoolTest::lt));
+  } else {
+    cmp_limit = _igvn.transform(CmpNode::make(init_trip, limit, iv_bt));
+    bol = _igvn.transform(new BoolNode(cmp_limit, BoolTest::gt));
+  }
+
+  // Check if there is already a dominating init < limit check. If so, we do not need a Loop Limit Check Predicate.
+  IfNode* iff = new IfNode(loop_entry, bol, PROB_MIN, COUNT_UNKNOWN);
+  // Also add fake IfProj nodes in order to call transform() on the newly created IfNode.
+  IfFalseNode* if_false = new IfFalseNode(iff);
+  IfTrueNode* if_true = new IfTrueNode(iff);
+  Node* dominated_iff = _igvn.transform(iff);
+  // ConI node? Found dominating test (IfNode::dominated_by() returns a ConI node).
+  const bool found_dominating_test = dominated_iff != nullptr && dominated_iff->is_ConI();
+
+  // Kill the If with its projections again in the next IGVN round by cutting it off from the graph.
+  _igvn.replace_input_of(iff, 0, C->top());
+  _igvn.replace_input_of(iff, 1, C->top());
+  return found_dominating_test;
+}
+
 //----------------------exact_limit-------------------------------------------
 Node* PhaseIdealLoop::exact_limit( IdealLoopTree *loop ) {
   assert(loop->_head->is_CountedLoop(), "");
   CountedLoopNode *cl = loop->_head->as_CountedLoop();
   assert(cl->is_valid_counted_loop(T_INT), "");
 
-  if (ABS(cl->stride_con()) == 1 ||
+  if (cl->stride_con() == 1 ||
+      cl->stride_con() == -1 ||
       cl->limit()->Opcode() == Op_LoopLimit) {
     // Old code has exact limit (it could be incorrect in case of int overflow).
     // Loop limit is exact with stride == 1. And loop may already have exact limit.
@@ -2570,41 +2794,14 @@ SafePointNode* CountedLoopNode::outer_safepoint() const {
   return l->outer_safepoint();
 }
 
-Node* CountedLoopNode::skip_predicates_from_entry(Node* ctrl) {
-    while (ctrl != nullptr && ctrl->is_Proj() && ctrl->in(0) != nullptr && ctrl->in(0)->is_If() &&
-           !is_zero_trip_guard_if(ctrl->in(0)->as_If()) &&
-           (ctrl->in(0)->as_If()->proj_out_or_null(1-ctrl->as_Proj()->_con) == nullptr ||
-             (ctrl->in(0)->as_If()->proj_out(1-ctrl->as_Proj()->_con)->outcnt() == 1 &&
-              ctrl->in(0)->as_If()->proj_out(1-ctrl->as_Proj()->_con)->unique_out()->Opcode() == Op_Halt))) {
-      ctrl = ctrl->in(0)->in(0);
-    }
-
-    return ctrl;
-  }
-
-bool CountedLoopNode::is_zero_trip_guard_if(const IfNode* iff) {
-  if (iff->in(1) == nullptr || !iff->in(1)->is_Bool()) {
-    return false;
-  }
-  if (iff->in(1)->in(1) == nullptr || iff->in(1)->in(1)->Opcode() != Op_CmpI) {
-    return false;
-  }
-  if (iff->in(1)->in(1)->in(1) != nullptr && iff->in(1)->in(1)->in(1)->Opcode() == Op_OpaqueZeroTripGuard) {
-    return true;
-  }
-  if (iff->in(1)->in(1)->in(2) != nullptr && iff->in(1)->in(1)->in(2)->Opcode() == Op_OpaqueZeroTripGuard) {
-    return true;
-  }
-  return false;
-}
-
-Node* CountedLoopNode::skip_predicates() {
+Node* CountedLoopNode::skip_assertion_predicates_with_halt() {
   Node* ctrl = in(LoopNode::EntryControl);
   if (is_main_loop()) {
     ctrl = skip_strip_mined()->in(LoopNode::EntryControl);
   }
   if (is_main_loop() || is_post_loop()) {
-    return skip_predicates_from_entry(ctrl);
+    AssertionPredicatesWithHalt assertion_predicates(ctrl);
+    return assertion_predicates.entry();
   }
   return ctrl;
 }
@@ -2677,7 +2874,7 @@ void OuterStripMinedLoopNode::fix_sunk_stores(CountedLoopEndNode* inner_cle, Loo
 #ifdef ASSERT
         for (DUIterator_Fast jmax, j = inner_cl->fast_outs(jmax); j < jmax; j++) {
           Node* uu = inner_cl->fast_out(j);
-          if (uu->is_Phi() && uu->bottom_type() == Type::MEMORY) {
+          if (uu->is_memory_phi()) {
             if (uu->adr_type() == igvn->C->get_adr_type(igvn->C->get_alias_index(u->adr_type()))) {
               assert(phi == uu, "what's that phi?");
             } else if (uu->adr_type() == TypePtr::BOTTOM) {
@@ -2766,14 +2963,22 @@ void OuterStripMinedLoopNode::adjust_strip_mined_loop(PhaseIterGVN* igvn) {
   CountedLoopEndNode* inner_cle = inner_cl->loopexit();
 
   int stride = inner_cl->stride_con();
-  jlong scaled_iters_long = ((jlong)LoopStripMiningIter) * ABS(stride);
+  // For a min int stride, LoopStripMiningIter * stride overflows the int range for all values of LoopStripMiningIter
+  // except 0 or 1. Those values are handled early on in this method and causes the method to return. So for a min int
+  // stride, the method is guaranteed to return at the next check below.
+  jlong scaled_iters_long = ((jlong)LoopStripMiningIter) * ABS((jlong)stride);
   int scaled_iters = (int)scaled_iters_long;
-  int short_scaled_iters = LoopStripMiningIterShortLoop* ABS(stride);
+  if ((jlong)scaled_iters != scaled_iters_long) {
+    // Remove outer loop and safepoint (too few iterations)
+    remove_outer_loop_and_safepoint(igvn);
+    return;
+  }
+  jlong short_scaled_iters = LoopStripMiningIterShortLoop * ABS(stride);
   const TypeInt* inner_iv_t = igvn->type(inner_iv_phi)->is_int();
   jlong iter_estimate = (jlong)inner_iv_t->_hi - (jlong)inner_iv_t->_lo;
   assert(iter_estimate > 0, "broken");
-  if ((jlong)scaled_iters != scaled_iters_long || iter_estimate <= short_scaled_iters) {
-    // Remove outer loop and safepoint (too few iterations)
+  if (iter_estimate <= short_scaled_iters) {
+    // Remove outer loop and safepoint: loop executes less than LoopStripMiningIterShortLoop
     remove_outer_loop_and_safepoint(igvn);
     return;
   }
@@ -3978,14 +4183,14 @@ void IdealLoopTree::dump_head() {
   if (_irreducible) tty->print(" IRREDUCIBLE");
   Node* entry = _head->is_Loop() ? _head->as_Loop()->skip_strip_mined(-1)->in(LoopNode::EntryControl)
                                  : _head->in(LoopNode::EntryControl);
-  ParsePredicates parse_predicates(entry);
-  if (parse_predicates.loop_limit_check_predicate_proj() != nullptr) {
+  const Predicates predicates(entry);
+  if (predicates.loop_limit_check_predicate_block()->is_non_empty()) {
     tty->print(" limit_check");
   }
-  if (UseProfiledLoopPredicate && parse_predicates.profiled_loop_predicate_proj() != nullptr) {
+  if (UseProfiledLoopPredicate && predicates.profiled_loop_predicate_block()->is_non_empty()) {
     tty->print(" profile_predicated");
   }
-  if (UseLoopPredicate && parse_predicates.loop_predicate_proj() != nullptr) {
+  if (UseLoopPredicate && predicates.loop_predicate_block()->is_non_empty()) {
     tty->print(" predicated");
   }
   if (_head->is_CountedLoop()) {
@@ -4013,7 +4218,6 @@ void IdealLoopTree::dump_head() {
     if (cl->is_post_loop()) tty->print(" post");
     if (cl->is_vectorized_loop()) tty->print(" vector");
     if (range_checks_present()) tty->print(" rc ");
-    if (cl->is_multiversioned()) tty->print(" multi ");
   }
   if (_has_call) tty->print(" has_call");
   if (_has_sfpt) tty->print(" has_sfpt");
@@ -4079,75 +4283,107 @@ void PhaseIdealLoop::log_loop_tree() {
   }
 }
 
-//---------------------collect_potentially_useful_predicates-----------------------
-// Helper function to collect potentially useful predicates to prevent them from
-// being eliminated by PhaseIdealLoop::eliminate_useless_predicates
-void PhaseIdealLoop::collect_potentially_useful_predicates(IdealLoopTree* loop, Unique_Node_List &useful_predicates) {
-  if (loop->_child) { // child
-    collect_potentially_useful_predicates(loop->_child, useful_predicates);
+// Eliminate all Parse and Template Assertion Predicates that are not associated with a loop anymore. The eliminated
+// predicates will be removed during the next round of IGVN.
+void PhaseIdealLoop::eliminate_useless_predicates() {
+  if (C->parse_predicate_count() == 0 && C->template_assertion_predicate_count() == 0) {
+    return; // No predicates left.
   }
 
-  // self (only loops that we can apply loop predication may use their predicates)
-  if (loop->_head->is_Loop() &&
-      !loop->_irreducible    &&
-      !loop->tail()->is_top()) {
-    LoopNode* lpn = loop->_head->as_Loop();
-    Node* entry = lpn->in(LoopNode::EntryControl);
-    ParsePredicates parse_predicates(entry);
-    ProjNode* predicate_proj = parse_predicates.loop_limit_check_predicate_proj();
-    if (predicate_proj != nullptr) { // right pattern that can be used by loop predication
-      assert(predicate_proj->in(0)->in(1)->in(1)->Opcode() == Op_Opaque1, "must be");
-      useful_predicates.push(predicate_proj->in(0)->in(1)->in(1)); // good one
-    }
-    if (UseProfiledLoopPredicate) {
-      predicate_proj = parse_predicates.profiled_loop_predicate_proj();
-      if (predicate_proj != nullptr) { // right pattern that can be used by loop predication
-        useful_predicates.push(predicate_proj->in(0)->in(1)->in(1)); // good one
-        get_assertion_predicates(predicate_proj, useful_predicates, true);
-      }
-    }
+  eliminate_useless_parse_predicates();
+  eliminate_useless_template_assertion_predicates();
+}
 
-    if (UseLoopPredicate) {
-      predicate_proj = parse_predicates.loop_predicate_proj();
-      if (predicate_proj != nullptr) { // right pattern that can be used by loop predication
-        useful_predicates.push(predicate_proj->in(0)->in(1)->in(1)); // good one
-        get_assertion_predicates(predicate_proj, useful_predicates, true);
-      }
-    }
+// Eliminate all Parse Predicates that do not belong to a loop anymore by marking them useless. These will be removed
+// during the next round of IGVN.
+void PhaseIdealLoop::eliminate_useless_parse_predicates() {
+  mark_all_parse_predicates_useless();
+  if (C->has_loops()) {
+    mark_loop_associated_parse_predicates_useful();
   }
+  add_useless_parse_predicates_to_igvn_worklist();
+}
 
-  if (loop->_next) { // sibling
-    collect_potentially_useful_predicates(loop->_next, useful_predicates);
+void PhaseIdealLoop::mark_all_parse_predicates_useless() const {
+  for (int i = 0; i < C->parse_predicate_count(); i++) {
+    C->parse_predicate(i)->mark_useless();
   }
 }
 
-//------------------------eliminate_useless_predicates-----------------------------
-// Eliminate all inserted predicates if they could not be used by loop predication.
-// Note: it will also eliminates loop limits check predicate since it also uses
-// Opaque1 node (see Parse::add_predicate()).
-void PhaseIdealLoop::eliminate_useless_predicates() {
-  if (C->parse_predicate_count() == 0 && C->template_assertion_predicate_count() == 0) {
-    return; // no predicate left
+void PhaseIdealLoop::mark_loop_associated_parse_predicates_useful() {
+  for (LoopTreeIterator iterator(_ltree_root); !iterator.done(); iterator.next()) {
+    IdealLoopTree* loop = iterator.current();
+    if (loop->can_apply_loop_predication()) {
+      mark_useful_parse_predicates_for_loop(loop);
+    }
   }
+}
 
-  Unique_Node_List useful_predicates; // to store useful predicates
+void PhaseIdealLoop::mark_useful_parse_predicates_for_loop(IdealLoopTree* loop) {
+  Node* entry = loop->_head->as_Loop()->skip_strip_mined()->in(LoopNode::EntryControl);
+  const Predicates predicates(entry);
+  ParsePredicateIterator iterator(predicates);
+  while (iterator.has_next()) {
+    iterator.next()->mark_useful();
+  }
+}
+
+void PhaseIdealLoop::add_useless_parse_predicates_to_igvn_worklist() {
+  for (int i = 0; i < C->parse_predicate_count(); i++) {
+    ParsePredicateNode* parse_predicate_node = C->parse_predicate(i);
+    if (parse_predicate_node->is_useless()) {
+      _igvn._worklist.push(parse_predicate_node);
+    }
+  }
+}
+
+
+// Eliminate all Template Assertion Predicates that do not belong to their originally associated loop anymore by
+// replacing the Opaque4 node of the If node with true. These nodes will be removed during the next round of IGVN.
+void PhaseIdealLoop::eliminate_useless_template_assertion_predicates() {
+  Unique_Node_List useful_predicates;
   if (C->has_loops()) {
-    collect_potentially_useful_predicates(_ltree_root->_child, useful_predicates);
+    collect_useful_template_assertion_predicates(useful_predicates);
+  }
+  eliminate_useless_template_assertion_predicates(useful_predicates);
+}
+
+void PhaseIdealLoop::collect_useful_template_assertion_predicates(Unique_Node_List& useful_predicates) {
+  for (LoopTreeIterator iterator(_ltree_root); !iterator.done(); iterator.next()) {
+    IdealLoopTree* loop = iterator.current();
+    if (loop->can_apply_loop_predication()) {
+      collect_useful_template_assertion_predicates_for_loop(loop, useful_predicates);
+    }
+  }
+}
+
+void PhaseIdealLoop::collect_useful_template_assertion_predicates_for_loop(IdealLoopTree* loop,
+                                                                           Unique_Node_List &useful_predicates) {
+  Node* entry = loop->_head->as_Loop()->skip_strip_mined()->in(LoopNode::EntryControl);
+  const Predicates predicates(entry);
+  if (UseProfiledLoopPredicate) {
+    const PredicateBlock* profiled_loop_predicate_block = predicates.profiled_loop_predicate_block();
+    if (profiled_loop_predicate_block->has_parse_predicate()) {
+      IfProjNode* parse_predicate_proj = profiled_loop_predicate_block->parse_predicate_success_proj();
+      get_assertion_predicates(parse_predicate_proj, useful_predicates, true);
+    }
   }
 
-  for (int i = C->parse_predicate_count(); i > 0; i--) {
-     Node* n = C->parse_predicate_opaque1_node(i - 1);
-     assert(n->Opcode() == Op_Opaque1, "must be");
-     if (!useful_predicates.member(n)) { // not in the useful list
-       _igvn.replace_node(n, n->in(1));
-     }
+  if (UseLoopPredicate) {
+    const PredicateBlock* loop_predicate_block = predicates.loop_predicate_block();
+    if (loop_predicate_block->has_parse_predicate()) {
+      IfProjNode* parse_predicate_proj = loop_predicate_block->parse_predicate_success_proj();
+      get_assertion_predicates(parse_predicate_proj, useful_predicates, true);
+    }
   }
+}
 
+void PhaseIdealLoop::eliminate_useless_template_assertion_predicates(Unique_Node_List& useful_predicates) {
   for (int i = C->template_assertion_predicate_count(); i > 0; i--) {
-    Node* n = C->template_assertion_predicate_opaq_node(i - 1);
-    assert(n->Opcode() == Op_Opaque4, "must be");
-    if (!useful_predicates.member(n)) { // not in the useful list
-      _igvn.replace_node(n, n->in(2));
+    Node* opaque4 = C->template_assertion_predicate_opaq_node(i - 1);
+    assert(opaque4->Opcode() == Op_Opaque4, "must be");
+    if (!useful_predicates.member(opaque4)) { // not in the useful list
+      _igvn.replace_node(opaque4, opaque4->in(2));
     }
   }
 }
@@ -4466,6 +4702,7 @@ void PhaseIdealLoop::build_and_optimize() {
   NOT_PRODUCT( C->verify_graph_edges(); )
   worklist.push(C->top());
   build_loop_late( visited, worklist, nstack );
+  if (C->failing()) { return; }
 
   if (_verify_only) {
     C->restore_major_progress(old_progress);
@@ -4585,7 +4822,7 @@ void PhaseIdealLoop::build_and_optimize() {
   }
 
   // Perform loop predication before iteration splitting
-  if (C->has_loops() && !C->major_progress() && (C->parse_predicate_count() > 0)) {
+  if (UseLoopPredicate && C->has_loops() && !C->major_progress() && (C->parse_predicate_count() > 0)) {
     _ltree_root->_child->loop_predication(this);
   }
 
@@ -4638,58 +4875,38 @@ void PhaseIdealLoop::build_and_optimize() {
   // until no more loop optimizations could be done.
   // After that switch predicates off and do more loop optimizations.
   if (!C->major_progress() && (C->parse_predicate_count() > 0)) {
-     C->cleanup_parse_predicates(_igvn);
+    C->mark_parse_predicate_nodes_useless(_igvn);
+    assert(C->parse_predicate_count() == 0, "should be zero now");
      if (TraceLoopOpts) {
        tty->print_cr("PredicatesOff");
      }
      C->set_major_progress();
   }
 
-  // Convert scalar to superword operations at the end of all loop opts.
-  if (UseSuperWord && C->has_loops() && !C->major_progress()) {
-    // SuperWord transform
-    SuperWord sw(this);
+  // Auto-vectorize main-loop
+  if (C->do_superword() && C->has_loops() && !C->major_progress()) {
+    Compile::TracePhase tp("autoVectorize", &timers[_t_autoVectorize]);
+
+    // Shared data structures for all AutoVectorizations, to reduce allocations
+    // of large arrays.
+    VSharedData vshared;
     for (LoopTreeIterator iter(_ltree_root); !iter.done(); iter.next()) {
       IdealLoopTree* lpt = iter.current();
-      if (lpt->is_counted()) {
-        CountedLoopNode *cl = lpt->_head->as_CountedLoop();
+      AutoVectorizeStatus status = auto_vectorize(lpt, vshared);
 
-        if (cl->is_rce_post_loop() && !cl->is_vectorized_loop()) {
-          assert(PostLoopMultiversioning, "multiversioning must be enabled");
-          // Check that the rce'd post loop is encountered first, multiversion after all
-          // major main loop optimization are concluded
-          if (!C->major_progress()) {
-            IdealLoopTree *lpt_next = lpt->_next;
-            if (lpt_next && lpt_next->is_counted()) {
-              CountedLoopNode *cl = lpt_next->_head->as_CountedLoop();
-              if (cl->is_post_loop() && lpt_next->range_checks_present()) {
-                if (!cl->is_multiversioned()) {
-                  if (multi_version_post_loops(lpt, lpt_next) == false) {
-                    // Cause the rce loop to be optimized away if we fail
-                    cl->mark_is_multiversioned();
-                    cl->set_slp_max_unroll(0);
-                    poison_rce_post_loop(lpt);
-                  }
-                }
-              }
-            }
-            sw.transform_loop(lpt, true);
-          }
-        } else if (cl->is_main_loop()) {
-          if (!sw.transform_loop(lpt, true)) {
-            // Instigate more unrolling for optimization when vectorization fails.
-            if (cl->has_passed_slp()) {
-              C->set_major_progress();
-              cl->set_notpassed_slp();
-              cl->mark_do_unroll_only();
-            }
-          }
+      if (status == AutoVectorizeStatus::TriedAndFailed) {
+        // We tried vectorization, but failed. From now on only unroll the loop.
+        CountedLoopNode* cl = lpt->_head->as_CountedLoop();
+        if (cl->has_passed_slp()) {
+          C->set_major_progress();
+          cl->set_notpassed_slp();
+          cl->mark_do_unroll_only();
         }
       }
     }
   }
 
-  // Move UnorderedReduction out of counted loop. Can be introduced by SuperWord.
+  // Move UnorderedReduction out of counted loop. Can be introduced by AutoVectorization.
   if (C->has_loops() && !C->major_progress()) {
     for (LoopTreeIterator iter(_ltree_root); !iter.done(); iter.next()) {
       IdealLoopTree* lpt = iter.current();
@@ -4720,6 +4937,7 @@ void PhaseIdealLoop::verify() const {
   bool success = true;
 
   PhaseIdealLoop phase_verify(_igvn, this);
+  if (C->failing()) return;
 
   // Verify ctrl and idom of every node.
   success &= verify_idom_and_nodes(C->root(), &phase_verify);
@@ -4873,7 +5091,7 @@ bool PhaseIdealLoop::verify_loop_ctrl(Node* n, const PhaseIdealLoop* phase_verif
   }
 }
 
-int compare_tree(IdealLoopTree* const& a, IdealLoopTree* const& b) {
+static int compare_tree(IdealLoopTree* const& a, IdealLoopTree* const& b) {
   assert(a != nullptr && b != nullptr, "must be");
   return a->_head->_idx - b->_head->_idx;
 }
@@ -5387,11 +5605,12 @@ int PhaseIdealLoop::build_loop_tree_impl( Node *n, int pre_order ) {
         if( !n->is_CallStaticJava() || !n->as_CallStaticJava()->_name ) {
           Node *iff = n->in(0)->in(0);
           // No any calls for vectorized loops.
-          if( UseSuperWord || !iff->is_If() ||
-              (n->in(0)->Opcode() == Op_IfFalse &&
-               (1.0 - iff->as_If()->_prob) >= 0.01) ||
-              (iff->as_If()->_prob >= 0.01) )
+          if (C->do_superword() ||
+              !iff->is_If() ||
+              (n->in(0)->Opcode() == Op_IfFalse && (1.0 - iff->as_If()->_prob) >= 0.01) ||
+              iff->as_If()->_prob >= 0.01) {
             innermost->_has_call = 1;
+          }
         }
       } else if( n->is_Allocate() && n->as_Allocate()->_is_scalar_replaceable ) {
         // Disable loop optimizations if the loop has a scalar replaceable
@@ -5706,7 +5925,7 @@ Node* CountedLoopNode::is_canonical_loop_entry() {
   if (!is_main_loop() && !is_post_loop()) {
     return nullptr;
   }
-  Node* ctrl = skip_predicates();
+  Node* ctrl = skip_assertion_predicates_with_halt();
 
   if (ctrl == nullptr || (!ctrl->is_IfTrue() && !ctrl->is_IfFalse())) {
     return nullptr;
@@ -5741,6 +5960,27 @@ Node* CountedLoopNode::is_canonical_loop_entry() {
   assert(found_opaque == res, "wrong pattern");
 #endif
   return res ? cmpzm->in(input) : nullptr;
+}
+
+// Find pre loop end from main loop. Returns nullptr if none.
+CountedLoopEndNode* CountedLoopNode::find_pre_loop_end() {
+  assert(is_main_loop(), "Can only find pre-loop from main-loop");
+  // The loop cannot be optimized if the graph shape at the loop entry is
+  // inappropriate.
+  if (is_canonical_loop_entry() == nullptr) {
+    return nullptr;
+  }
+
+  Node* p_f = skip_assertion_predicates_with_halt()->in(0)->in(0);
+  if (!p_f->is_IfFalse() || !p_f->in(0)->is_CountedLoopEnd()) {
+    return nullptr;
+  }
+  CountedLoopEndNode* pre_end = p_f->in(0)->as_CountedLoopEnd();
+  CountedLoopNode* loop_node = pre_end->loopnode();
+  if (loop_node == nullptr || !loop_node->is_pre_loop()) {
+    return nullptr;
+  }
+  return pre_end;
 }
 
 //------------------------------get_late_ctrl----------------------------------
@@ -5972,6 +6212,7 @@ void PhaseIdealLoop::build_loop_late( VectorSet &visited, Node_List &worklist, N
       } else {
         // All of n's children have been processed, complete post-processing.
         build_loop_late_post(n);
+        if (C->failing()) { return; }
         if (nstack.is_empty()) {
           // Finished all nodes on stack.
           // Process next node on the worklist.
@@ -6118,13 +6359,15 @@ void PhaseIdealLoop::build_loop_late_post_work(Node *n, bool pinned) {
   Node *legal = LCA;            // Walk 'legal' up the IDOM chain
   Node *least = legal;          // Best legal position so far
   while( early != legal ) {     // While not at earliest legal
-#ifdef ASSERT
     if (legal->is_Start() && !early->is_Root()) {
+#ifdef ASSERT
       // Bad graph. Print idom path and fail.
       dump_bad_graph("Bad graph detected in build_loop_late", n, early, LCA);
       assert(false, "Bad graph detected in build_loop_late");
-    }
 #endif
+      C->record_method_not_compilable("Bad graph detected in build_loop_late");
+      return;
+    }
     // Find least loop nesting depth
     legal = idom(legal);        // Bump up the IDOM tree
     // Check for lower nesting depth
@@ -6142,7 +6385,7 @@ void PhaseIdealLoop::build_loop_late_post_work(Node *n, bool pinned) {
       if (!new_ctrl->is_Proj()) {
         break;
       }
-      CallStaticJavaNode* call = new_ctrl->as_Proj()->is_uncommon_trap_if_pattern(Deoptimization::Reason_none);
+      CallStaticJavaNode* call = new_ctrl->as_Proj()->is_uncommon_trap_if_pattern();
       if (call == nullptr) {
         break;
       }

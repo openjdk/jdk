@@ -84,14 +84,14 @@ public class SyncOnValueBasedClassTest {
     public static void main(String[] args) throws Exception {
         generateTests();
         for (int i = 0; i < fatalTests.length; i++) {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(fatalTests[i]);
+            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(fatalTests[i]);
             OutputAnalyzer output = ProcessTools.executeProcess(pb);
             output.shouldContain("fatal error: Synchronizing on object");
             output.shouldNotContain("synchronization on value based class did not fail");
             output.shouldNotHaveExitValue(0);
         }
         for (int i = 0; i < logTests.length; i++) {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(logTests[i]);
+            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(logTests[i]);
             OutputAnalyzer output = ProcessTools.executeProcess(pb);
             output.shouldHaveExitValue(0);
             checkOutput(output);
@@ -171,7 +171,7 @@ public class SyncOnValueBasedClassTest {
                                   "", "SyncOnValueBasedClassTest$VTTest" };
         // Fatal test
         vtTest[2] = "-XX:DiagnoseSyncOnValueBasedClasses=1";
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(vtTest);
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(vtTest);
         OutputAnalyzer output = ProcessTools.executeProcess(pb);
         output.shouldContain("fatal error: Synchronizing on object");
         output.shouldNotContain("synchronization on value based class did not fail");
@@ -179,7 +179,7 @@ public class SyncOnValueBasedClassTest {
 
         // Log test
         vtTest[2] = "-XX:DiagnoseSyncOnValueBasedClasses=2";
-        pb = ProcessTools.createJavaProcessBuilder(vtTest);
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(vtTest);
         output = ProcessTools.executeProcess(pb);
         output.shouldHaveExitValue(0);
         output.shouldContain("Synchronizing on object");

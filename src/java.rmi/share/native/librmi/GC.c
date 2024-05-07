@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,13 @@
 
 #include <jni.h>
 #include <jvm.h>
+#include "jni_util.h"
 #include "sun_rmi_transport_GC.h"
 
+/*
+ * Declare library specific JNI_Onload entry if static build
+ */
+DEF_STATIC_JNI_OnLoad
 
 JNIEXPORT jlong JNICALL
 Java_sun_rmi_transport_GC_maxObjectInspectionAge(JNIEnv *env, jclass cls)

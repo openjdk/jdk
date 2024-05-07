@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,8 @@
 /*
  * @test
  * @bug 8224829
- * @summary AsyncSSLSocketClose.java has timing issue
+ * @summary AsyncSSLSocketClose.java has timing issue.
+ * @library /javax/net/ssl/templates
  * @run main/othervm BlockedAsyncClose
  */
 
@@ -38,52 +39,41 @@ import java.io.*;
 import java.net.SocketException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
-public class BlockedAsyncClose implements Runnable {
+/*
+ * To manually verify that the write thread was blocked when socket.close() is called,
+ * run the test with -Djavax.net.debug=ssl. You should see the message
+ * "SSLSocket output duplex close failed: SO_LINGER timeout, close_notify message cannot be sent."
+ */
+public class BlockedAsyncClose extends SSLContextTemplate implements Runnable {
     SSLSocket socket;
     SSLServerSocket ss;
 
     // Is the socket ready to close?
     private final CountDownLatch closeCondition = new CountDownLatch(1);
-
-    // Where do we find the keystores?
-    static String pathToStores = "../../../../javax/net/ssl/etc";
-    static String keyStoreFile = "keystore";
-    static String trustStoreFile = "truststore";
-    static String passwd = "passphrase";
+    private final Lock writeLock = new ReentrantLock();
 
     public static void main(String[] args) throws Exception {
-        String keyFilename =
-            System.getProperty("test.src", "./") + "/" + pathToStores +
-                "/" + keyStoreFile;
-        String trustFilename =
-            System.getProperty("test.src", "./") + "/" + pathToStores +
-                "/" + trustStoreFile;
-
-        System.setProperty("javax.net.ssl.keyStore", keyFilename);
-        System.setProperty("javax.net.ssl.keyStorePassword", passwd);
-        System.setProperty("javax.net.ssl.trustStore", trustFilename);
-        System.setProperty("javax.net.ssl.trustStorePassword", passwd);
-
-        new BlockedAsyncClose();
+        new BlockedAsyncClose().runTest();
     }
 
-    public BlockedAsyncClose() throws Exception {
-        SSLServerSocketFactory sslssf =
-                (SSLServerSocketFactory)SSLServerSocketFactory.getDefault();
+    public void runTest() throws Exception {
+        SSLServerSocketFactory sslssf = createServerSSLContext().getServerSocketFactory();
         InetAddress loopback = InetAddress.getLoopbackAddress();
         ss = (SSLServerSocket)sslssf.createServerSocket();
         ss.bind(new InetSocketAddress(loopback, 0));
 
-        SSLSocketFactory sslsf =
-            (SSLSocketFactory)SSLSocketFactory.getDefault();
+        SSLSocketFactory sslsf = createClientSSLContext().getSocketFactory();
         socket = (SSLSocket)sslsf.createSocket(loopback, ss.getLocalPort());
         SSLSocket serverSoc = (SSLSocket)ss.accept();
         ss.close();
 
-        (new Thread(this)).start();
+        new Thread(this).start();
         serverSoc.startHandshake();
 
         boolean closeIsReady = closeCondition.await(90L, TimeUnit.SECONDS);
@@ -94,23 +84,22 @@ public class BlockedAsyncClose implements Runnable {
         }
 
         socket.setSoLinger(true, 10);
-        System.out.println("Calling Socket.close");
 
-        // Sleep for a while so that the write thread blocks by hitting the
-        // output stream buffer limit.
-        Thread.sleep(1000);
+        // if the writeLock is not released by the other thread within 10
+        // seconds it is probably blocked, and we can try to close the socket
+        while (writeLock.tryLock(10, TimeUnit.SECONDS)) {
+            writeLock.unlock();
+        }
 
+        System.out.println("Calling socket.close()");
         socket.close();
-        System.out.println("ssl socket get closed");
         System.out.flush();
     }
 
     // block in write
     public void run() {
         byte[] ba = new byte[1024];
-        for (int i = 0; i < ba.length; i++) {
-            ba[i] = 0x7A;
-        }
+        Arrays.fill(ba, (byte) 0x7A);
 
         try {
             OutputStream os = socket.getOutputStream();
@@ -128,8 +117,16 @@ public class BlockedAsyncClose implements Runnable {
             // write more
             while (true) {
                 count += ba.length;
+
                 System.out.println(count + " bytes to be written");
+
+                writeLock.lock();
                 os.write(ba);
+                // This isn't in a try/finally. If an exception is thrown
+                // and the lock is released, the main thread will
+                // loop until the test times out. So don't release it.
+                writeLock.unlock();
+
                 System.out.println(count + " bytes written");
             }
         } catch (SocketException se) {
@@ -144,4 +141,3 @@ public class BlockedAsyncClose implements Runnable {
         }
     }
 }
-

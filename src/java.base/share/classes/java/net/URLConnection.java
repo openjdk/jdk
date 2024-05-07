@@ -308,7 +308,7 @@ public abstract class URLConnection {
 
         if (map == null) {
             fileNameMap = map = new FileNameMap() {
-                private FileNameMap internalMap =
+                private final FileNameMap internalMap =
                     sun.net.www.MimeTable.loadTable();
 
                 public String getContentTypeFor(String fileName) {

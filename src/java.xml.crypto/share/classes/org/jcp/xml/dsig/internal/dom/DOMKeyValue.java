@@ -101,6 +101,7 @@ public abstract class DOMKeyValue<K extends PublicKey> extends DOMStructure impl
         }
     }
 
+    @Override
     public PublicKey getPublicKey() throws KeyException {
         if (publicKey == null) {
             throw new KeyException("can't convert KeyValue to PublicKey");
@@ -198,6 +199,7 @@ public abstract class DOMKeyValue<K extends PublicKey> extends DOMStructure impl
             super(elem);
         }
 
+        @Override
         void marshalPublicKey(Node parent, Document doc, String dsPrefix,
             DOMCryptoContext context) throws MarshalException {
             Element rsaElem = DOMUtils.createElement(doc, "RSAKeyValue",

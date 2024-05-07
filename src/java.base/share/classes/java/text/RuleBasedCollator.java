@@ -278,6 +278,7 @@ public class RuleBasedCollator extends Collator{
      * example, build rule "a &lt; ? &lt; d" will cause the constructor to
      * throw the ParseException because the '?' is not quoted.
      */
+    @SuppressWarnings("this-escape")
     public RuleBasedCollator(String rules) throws ParseException {
         this(rules, Collator.CANONICAL_DECOMPOSITION);
     }
@@ -729,9 +730,9 @@ public class RuleBasedCollator extends Collator{
      * @return true if the current table-based collation object is the same
      * as the table-based collation object obj; false otherwise.
      */
+    @Override
     public boolean equals(Object obj) {
-        if (obj == null) return false;
-        if (!super.equals(obj)) return false;  // super does class check
+        if (!super.equals(obj)) return false;  // super does null and class checks
         RuleBasedCollator other = (RuleBasedCollator) obj;
         // all other non-transient information is also contained in rules.
         return (getRules().equals(other.getRules()));
@@ -740,6 +741,7 @@ public class RuleBasedCollator extends Collator{
     /**
      * Generates the hash code for the table-based collation object
      */
+    @Override
     public int hashCode() {
         return getRules().hashCode();
     }

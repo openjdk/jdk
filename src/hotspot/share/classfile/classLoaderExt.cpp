@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "cds/cds_globals.hpp"
+#include "cds/cdsConfig.hpp"
 #include "cds/dynamicArchive.hpp"
 #include "cds/filemap.hpp"
 #include "cds/heapShared.hpp"
@@ -48,6 +49,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/stringUtils.hpp"
 
 jshort ClassLoaderExt::_app_class_paths_start_index = ClassLoaderExt::max_classpath_index;
@@ -69,7 +71,7 @@ void ClassLoaderExt::append_boot_classpath(ClassPathEntry* new_entry) {
 }
 
 void ClassLoaderExt::setup_app_search_path(JavaThread* current) {
-  Arguments::assert_is_dumping_archive();
+  assert(CDSConfig::is_dumping_archive(), "sanity");
   int start_index = ClassLoader::num_boot_classpath_entries();
   _app_class_paths_start_index = checked_cast<jshort>(start_index);
   char* app_class_path = os::strdup_check_oom(Arguments::get_appclasspath(), mtClass);
@@ -120,7 +122,7 @@ void ClassLoaderExt::process_module_table(JavaThread* current, ModuleEntryTable*
 }
 
 void ClassLoaderExt::setup_module_paths(JavaThread* current) {
-  Arguments::assert_is_dumping_archive();
+  assert(CDSConfig::is_dumping_archive(), "sanity");
   int start_index = ClassLoader::num_boot_classpath_entries() +
                     ClassLoader::num_app_classpath_entries();
   _app_module_paths_start_index = checked_cast<jshort>(start_index);
@@ -215,7 +217,7 @@ void ClassLoaderExt::process_jar_manifest(JavaThread* current, ClassPathEntry* e
     if (dir_tail == nullptr) {
       dir_len = 0;
     } else {
-      dir_len = dir_tail - dir_name + 1;
+      dir_len = pointer_delta_as_int(dir_tail, dir_name) + 1;
     }
 
     // Split the cp_attr by spaces, and add each file
@@ -256,7 +258,7 @@ void ClassLoaderExt::setup_search_paths(JavaThread* current) {
 }
 
 void ClassLoaderExt::record_result(const s2 classpath_index, InstanceKlass* result, bool redefined) {
-  Arguments::assert_is_dumping_archive();
+  assert(CDSConfig::is_dumping_archive(), "sanity");
 
   // We need to remember where the class comes from during dumping.
   oop loader = result->class_loader();
@@ -274,11 +276,11 @@ void ClassLoaderExt::record_result(const s2 classpath_index, InstanceKlass* resu
   result->set_shared_classpath_index(classpath_index);
   result->set_shared_class_loader_type(classloader_type);
 #if INCLUDE_CDS_JAVA_HEAP
-  if (DumpSharedSpaces && AllowArchivingWithJavaAgent && classloader_type == ClassLoader::BOOT_LOADER &&
-      classpath_index < 0 && HeapShared::can_write() && redefined) {
-    // During static dump, classes for the built-in loaders are always loaded from
-    // known locations (jimage, classpath or modulepath), so classpath_index should
-    // always be >= 0.
+  if (CDSConfig::is_dumping_heap() && AllowArchivingWithJavaAgent && classloader_type == ClassLoader::BOOT_LOADER &&
+      classpath_index < 0 && redefined) {
+    // When dumping the heap (which happens only during static dump), classes for the built-in
+    // loaders are always loaded from known locations (jimage, classpath or modulepath),
+    // so classpath_index should always be >= 0.
     // The only exception is when a java agent is used during dump time (for testing
     // purposes only). If a class is transformed by the agent, the CodeSource of
     // this class may point to an unknown location. This may break heap object archiving,

@@ -53,7 +53,7 @@ public class TestDisableAutoVectOpcodes {
     }
 
     @Test
-    @IR(failOn = {IRNode.VECTOR_CAST_D2X})
+    @IR(failOn = {IRNode.VECTOR_CAST_D2I})
     private static void testConvD2I() {
         for(int i = 0; i < SIZE; i++) {
             inta[i] = (int) (doublea[i]);
@@ -61,7 +61,7 @@ public class TestDisableAutoVectOpcodes {
     }
 
     @Test
-    @IR(failOn = {IRNode.VECTOR_CAST_L2X})
+    @IR(failOn = {IRNode.VECTOR_CAST_L2F})
     private static void testConvL2F() {
         for(int i = 0; i < SIZE; i++) {
             floata[i] = (float) (longa[i]);

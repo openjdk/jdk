@@ -33,5 +33,3 @@ address StubRoutines::Arm::_partial_subtype_check = nullptr;
 
 address StubRoutines::_atomic_load_long_entry = nullptr;
 address StubRoutines::_atomic_store_long_entry = nullptr;
-
-address StubRoutines::Arm::_method_entry_barrier = nullptr;

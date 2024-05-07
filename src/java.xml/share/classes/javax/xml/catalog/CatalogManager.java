@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,12 +77,40 @@ public final class CatalogManager {
     /**
      * Creates an instance of a {@code CatalogResolver} using the specified catalog.
      *
+     * @apiNote The {@code CatalogResolver} created by this method delegates to
+     * the underlying {@code catalog}'s RESOLVE property. The {@code CatalogResolver}
+     * created by {@link #catalogResolver(Catalog, CatalogResolver.NotFoundAction)
+     * catalogResover(Catalog, CatalogResolver.NotFoundAction)} is based on the
+     * specified action type when it is unable to resolve a reference.
+     *
      * @param catalog the catalog instance
      * @return an instance of a {@code CatalogResolver}
      */
     public static CatalogResolver catalogResolver(Catalog catalog) {
         if (catalog == null) CatalogMessages.reportNPEOnNull("catalog", null);
         return new CatalogResolverImpl(catalog);
+    }
+
+    /**
+     * Creates a {@code CatalogResolver} that resolves external references with the given
+     * {@code catalog} and {@link CatalogResolver.NotFoundAction action} type
+     * that determines the behavior when unable to resolve a reference.
+     * <p>
+     * The {@link CatalogResolver.NotFoundAction action} types are mapped to the values
+     * of the {@link CatalogFeatures.Feature#RESOLVE RESOLVE} property.
+     *
+     * @param catalog the catalog instance
+     * @param action the action to be taken when unable to resolve a reference
+     *
+     * @return a {@code CatalogResolver} with the {@code catalog} and {@code action} type
+     *
+     * @since 22
+     */
+    public static CatalogResolver catalogResolver(Catalog catalog, CatalogResolver.NotFoundAction action) {
+        if (catalog == null) CatalogMessages.reportNPEOnNull("catalog", null);
+        if (action == null) CatalogMessages.reportNPEOnNull("action", null);
+
+        return new CatalogResolverImpl(catalog, action);
     }
 
     /**

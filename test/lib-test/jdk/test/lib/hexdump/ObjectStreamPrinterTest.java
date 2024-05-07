@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,10 @@
 
 package jdk.test.lib.hexdump;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.Arguments;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -47,54 +49,52 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /*
  * @test
  * @summary Check ObjectStreamPrinter formatting
  * @library /test/lib
- * @run testng/othervm -DDEBUG=true jdk.test.lib.hexdump.ObjectStreamPrinterTest
+ * @run junit/othervm -DDEBUG=true jdk.test.lib.hexdump.ObjectStreamPrinterTest
  */
 
 /**
  * Test of the formatter is fairly coarse, formatting several
  * sample classes and spot checking the result string for key strings.
  */
-@Test
-public class ObjectStreamPrinterTest {
+class ObjectStreamPrinterTest {
 
     // Override with (-DDEBUG=true) to see all the output
     private static boolean DEBUG = Boolean.getBoolean("DEBUG");
 
-    @DataProvider(name = "serializables")
-    Object[][] serializables() {
-        return new Object[][]{
-                {new Object[]{"abc", "def"}, 0, 0, 2},
-                {new Object[]{0, 1}, 2, 2, 0},
-                {new Object[]{TimeUnit.DAYS, TimeUnit.SECONDS}, 2, 0, 2},
-                {new Object[]{List.of("one", "two", "three")}, 1, 1, 3},
-                {new Object[]{genList()}, 1, 1, 2},
-                {new Object[]{genMap()}, 1, 1, 5},
-                {new Object[]{genProxy()}, 5, 2, 9},
-                {new Object[]{new char[]{'x', 'y', 'z'},
+    static Stream<Arguments> serializables() {
+        return Stream.of(
+                Arguments.of(new Object[]{"abc", "def"}, 0, 0, 2),
+                Arguments.of(new Object[]{0, 1}, 2, 2, 0),
+                Arguments.of(new Object[]{TimeUnit.DAYS, TimeUnit.SECONDS}, 2, 0, 2),
+                Arguments.of(new Object[]{List.of("one", "two", "three")}, 1, 1, 3),
+                Arguments.of(new Object[]{genList()}, 1, 1, 2),
+                Arguments.of(new Object[]{genMap()}, 1, 1, 5),
+                Arguments.of(new Object[]{genProxy()}, 5, 2, 9),
+                Arguments.of(new Object[]{new char[]{'x', 'y', 'z'},
                         new byte[]{0x61, 0x62, 0x63}, new int[]{4, 5, 6},
                         new float[]{1.0f, 2.0f, 3.1415927f},
                         new boolean[]{true, false, true},
-                        new Object[]{"first", 3, 3.14159f}}, 9, 2, 1},
-                { new Object[] {new XYPair(3, 5)}, 1, 1, 0},
-        };
+                        new Object[]{"first", 3, 3.14159f}}, 9, 2, 1),
+                Arguments.of(new Object[] {new XYPair(3, 5)}, 1, 1, 0)
+        );
     }
 
-    @DataProvider(name = "SingleObjects")
-    Object[][] sources() {
-        return new Object[][]{
-                {"A Simple", new A(), 1, 1, 0},
-                {"BNoDefaultRO has no call to defaultReadObject", new BNoDefaultRO(), 2, 1, 1},
-                {"BDefaultRO has call to defaultReadObject", new BDefaultRO(), 2, 1, 1},
-                {"CNoDefaultRO extends BNoDefaultRO with no fields", new CNoDefaultRO(), 3, 1, 3},
-                {"CDefaultRO extends BDefaultRO with no fields", new CDefaultRO(), 3, 1, 3},
-        };
+    static Stream<Arguments> sources(){
+        return Stream.of(
+                Arguments.of("A Simple", new A(), 1, 1, 0),
+                Arguments.of("BNoDefaultRO has no call to defaultReadObject", new BNoDefaultRO(), 2, 1, 1),
+                Arguments.of("BDefaultRO has call to defaultReadObject", new BDefaultRO(), 2, 1, 1),
+                Arguments.of("CNoDefaultRO extends BNoDefaultRO with no fields", new CNoDefaultRO(), 3, 1, 3),
+                Arguments.of("CDefaultRO extends BDefaultRO with no fields", new CDefaultRO(), 3, 1, 3)
+        );
     }
 
 
@@ -109,8 +109,9 @@ public class ObjectStreamPrinterTest {
      * @param strings the expected count of strings
      * @throws IOException if any I/O exception occurs
      */
-    @Test(dataProvider = "serializables")
-    public void testFormat(Object[] objs, int descriptors, int objects, int strings) throws IOException {
+    @ParameterizedTest
+    @MethodSource("serializables")
+    void testFormat(Object[] objs, int descriptors, int objects, int strings) throws IOException {
         byte[] bytes = serializeObjects(objs);
 
         String result = HexPrinter.simple()
@@ -133,8 +134,9 @@ public class ObjectStreamPrinterTest {
      * @param strings the expected count of strings
      * @throws IOException if any I/O exception occurs
      */
-    @Test(dataProvider = "serializables", enabled=true)
-    static void standAlonePrinter(Object[] objs, int descriptors, int objects, int strings) throws IOException{
+    @ParameterizedTest
+    @MethodSource("serializables")
+    void standAlonePrinter(Object[] objs, int descriptors, int objects, int strings) throws IOException{
         byte[] bytes = serializeObjects(objs);
         StringBuilder sb = new StringBuilder();
 
@@ -170,8 +172,9 @@ public class ObjectStreamPrinterTest {
      * @param strings the expected count of strings
      * @throws IOException if any I/O exception occurs
      */
-    @Test(dataProvider = "SingleObjects")
-    static void singleObjects(String label, Object o, int descriptors, int objects, int strings) throws IOException {
+    @ParameterizedTest
+    @MethodSource("sources")
+    void singleObjects(String label, Object o, int descriptors, int objects, int strings) throws IOException {
         if (DEBUG)
             System.out.println("Case: " + label);
         ByteArrayOutputStream boas = new ByteArrayOutputStream();
@@ -198,7 +201,7 @@ public class ObjectStreamPrinterTest {
      * @throws IOException if any I/O exception occurs
      */
     @Test
-    static void longString() throws IOException {
+    void longString() throws IOException {
         String large = " 123456789abcedf".repeat(0x1000);
 
         ByteArrayOutputStream boas = new ByteArrayOutputStream();
@@ -230,7 +233,7 @@ public class ObjectStreamPrinterTest {
      * @throws IOException if an I/O exception occurs
      */
     @Test
-    static void testMain() throws IOException {
+    void testMain() throws IOException {
         Object[] objs = {genList()};
         byte[] bytes = serializeObjects(objs);   // A serialized List
         Path p = Path.of("scratch.tmp");
@@ -269,17 +272,17 @@ public class ObjectStreamPrinterTest {
         for (int i = result.indexOf(key); i >= 0; i = result.indexOf(key, i + 1)) {
             count++;
         }
-        assertEquals(count, expectedCount, "Occurrences of " + key);
+        assertEquals(expectedCount, count, "Occurrences of " + key);
     }
 
-    public static List<String> genList() {
+    static List<String> genList() {
         List<String> l = new ArrayList<>();
         l.add("abc");
         l.add("def");
         return l;
     }
 
-    public static Map<String, String> genMap() {
+    static Map<String, String> genMap() {
         Map<String, String> map = new HashMap<>();
         map.put("1", "One");
         map.put("2", "Two");
@@ -287,7 +290,7 @@ public class ObjectStreamPrinterTest {
         return map;
     }
 
-    public static Object genProxy() {
+    static Object genProxy() {
         InvocationHandler h = (InvocationHandler & Serializable) (Object proxy, Method method, Object[] args) -> null;
         Class<?>[] intf = new Class<?>[]{Serializable.class, DataInput.class, DataOutput.class};
         return Proxy.newProxyInstance(ClassLoader.getSystemClassLoader(), intf, h);

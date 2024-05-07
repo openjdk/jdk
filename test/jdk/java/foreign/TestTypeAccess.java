@@ -24,7 +24,6 @@
 
 /*
  * @test
- * @enablePreview
  * @run testng TestTypeAccess
  */
 
@@ -43,7 +42,7 @@ public class TestTypeAccess {
 
     @Test(expectedExceptions=ClassCastException.class)
     public void testMemoryAddressCoordinateAsString() {
-        int v = (int)INT_HANDLE.get("string");
+        int v = (int)INT_HANDLE.get("string", 0L);
     }
 
     @Test(expectedExceptions=WrongMethodTypeException.class)
@@ -54,8 +53,8 @@ public class TestTypeAccess {
     @Test(expectedExceptions=ClassCastException.class)
     public void testMemoryAddressValueGetAsString() {
         try (Arena arena = Arena.ofConfined()) {
-            MemorySegment s = arena.allocate(8, 8);;
-            String address = (String)ADDR_HANDLE.get(s);
+            MemorySegment s = arena.allocate(8, 8);
+            String address = (String)ADDR_HANDLE.get(s, 0L);
         }
     }
 
@@ -63,15 +62,15 @@ public class TestTypeAccess {
     public void testMemoryAddressValueSetAsString() {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment s = arena.allocate(8, 8);;
-            ADDR_HANDLE.set(s, "string");
+            ADDR_HANDLE.set(s, 0L, "string");
         }
     }
 
     @Test(expectedExceptions=WrongMethodTypeException.class)
     public void testMemoryAddressValueGetAsPrimitive() {
         try (Arena arena = Arena.ofConfined()) {
-            MemorySegment s = arena.allocate(8, 8);;
-            int address = (int)ADDR_HANDLE.get(s);
+            MemorySegment s = arena.allocate(8, 8);
+            int address = (int)ADDR_HANDLE.get(s, 0L);
         }
     }
 

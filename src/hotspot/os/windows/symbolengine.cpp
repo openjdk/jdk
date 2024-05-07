@@ -111,7 +111,7 @@ public:
       _p = _fallback_buffer;
       _capacity = (int)(sizeof(_fallback_buffer) / sizeof(T));
     }
-    _p[0] = '\0';
+    _p[0] = 0;
     imprint_sentinel();
   }
 
@@ -123,7 +123,7 @@ public:
     }
     _p = _fallback_buffer;
     _capacity = (int)(sizeof(_fallback_buffer) / sizeof(T));
-    _p[0] = '\0';
+    _p[0] = 0;
     imprint_sentinel();
   }
 
@@ -574,6 +574,11 @@ bool SymbolEngine::recalc_search_path(bool* p_search_path_was_updated) {
 
   return recalc_search_path_locked(p_search_path_was_updated);
 
+}
+
+bool SymbolEngine::refreshModuleList() {
+  SymbolEngineEntry entry_guard;
+  return WindowsDbgHelp::symRefreshModuleList(::GetCurrentProcess());
 }
 
 bool SymbolEngine::get_source_info(const void* addr, char* buf, size_t buflen,

@@ -340,6 +340,7 @@ public class DerValue {
      *
      * This is a public constructor.
      */
+    @SuppressWarnings("this-escape")
     public DerValue(byte[] encoding) throws IOException {
         this(encoding.clone(), 0, encoding.length, true, false);
     }
@@ -487,6 +488,7 @@ public class DerValue {
      * @param in the input stream holding a single DER datum,
      *  which may be followed by additional data
      */
+    @SuppressWarnings("this-escape")
     public DerValue(InputStream in) throws IOException {
         this(in, true);
     }
@@ -1133,7 +1135,8 @@ public class DerValue {
     @Override
     public String toString() {
         return String.format("DerValue(%02x, %s, %d, %d)",
-                0xff & tag, buffer, start, end);
+                0xff & tag, HexFormat.of().withUpperCase().formatHex(buffer),
+                start, end);
     }
 
     /**
@@ -1260,9 +1263,7 @@ public class DerValue {
     }
 
     /**
-     * Returns a hashcode for this DerValue.
-     *
-     * @return a hashcode for this DerValue.
+     * {@return a hashcode for this DerValue}
      */
     @Override
     public int hashCode() {

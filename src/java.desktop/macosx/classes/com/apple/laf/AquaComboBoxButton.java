@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,32 @@
 
 package com.apple.laf;
 
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Graphics;
+import java.awt.Insets;
 
-import javax.swing.*;
+import javax.accessibility.AccessibleContext;
+import javax.swing.ButtonModel;
+import javax.swing.CellRendererPane;
+import javax.swing.DefaultButtonModel;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JList;
+import javax.swing.JPanel;
+import javax.swing.ListCellRenderer;
+import javax.swing.UIManager;
 import javax.swing.plaf.UIResource;
 
+import apple.laf.JRSUIConstants.AlignmentHorizontal;
+import apple.laf.JRSUIConstants.AlignmentVertical;
+import apple.laf.JRSUIConstants.ArrowsOnly;
+import apple.laf.JRSUIConstants.Focused;
+import apple.laf.JRSUIConstants.IndicatorOnly;
+import apple.laf.JRSUIConstants.Size;
+import apple.laf.JRSUIConstants.State;
+import apple.laf.JRSUIConstants.Widget;
 import apple.laf.JRSUIState;
-import apple.laf.JRSUIConstants.*;
 
 @SuppressWarnings("serial") // Superclass is not serializable across versions
 class AquaComboBoxButton extends JButton {
@@ -169,12 +188,15 @@ class AquaComboBoxButton extends JButton {
         }
     }
 
-    protected void doRendererPaint(final Graphics g, final ButtonModel buttonModel, final boolean editable, final Insets insets, int left, int top, int width, int height) {
+    private Component getRendererComponent() {
         final ListCellRenderer<Object> renderer = comboBox.getRenderer();
 
+        return renderer.getListCellRendererComponent(list, comboBox.getSelectedItem(), -1, false, false);
+    }
+
+    protected void doRendererPaint(final Graphics g, final ButtonModel buttonModel, final boolean editable, final Insets insets, int left, int top, int width, int height) {
         // fake it out! not renderPressed
-        final Component c = renderer.getListCellRendererComponent(list, comboBox.getSelectedItem(), -1, false, false);
-        // System.err.println("Renderer: " + renderer);
+        final Component c = getRendererComponent();
 
         if (!editable && !AquaComboBoxUI.isTableCellEditor(comboBox)) {
             final int indentLeft = 10;
@@ -232,5 +254,26 @@ class AquaComboBoxButton extends JButton {
 
         // Remove component from renderer pane, allowing it to be gc'ed.
         rendererPane.remove(c);
+    }
+
+    @Override
+    public AccessibleContext getAccessibleContext() {
+        if (accessibleContext == null) {
+            accessibleContext = new AccessibleAquaComboBoxButton();
+        }
+        return accessibleContext;
+    }
+
+    private final class AccessibleAquaComboBoxButton extends AccessibleJButton {
+        @Override
+        public String getAccessibleName() {
+            String name = super.getAccessibleName();
+            if ((name == null || name.isEmpty())
+                && (!comboBox.isEditable() && comboBox.getSelectedItem() != null)) {
+                    Component c = getRendererComponent();
+                    name = c.getAccessibleContext().getAccessibleName();
+            }
+            return name;
+        }
     }
 }

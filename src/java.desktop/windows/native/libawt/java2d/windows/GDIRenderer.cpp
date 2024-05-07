@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,8 @@
  * questions.
  */
 
+#include <cmath>                /* for cos(), sin(), etc */
+
 #include "jni_util.h"
 #include "awt.h"
 #include "sun_java2d_windows_GDIRenderer.h"
@@ -34,8 +36,6 @@
 #include "awt_Brush.h"
 
 #include "GraphicsPrimitiveMgr.h"
-
-#include <math.h>                /* for cos(), sin(), etc */
 
 #define MAX_CLAMP_BND (1<<26)
 #define MIN_CLAMP_BND (-MAX_CLAMP_BND)
@@ -876,20 +876,6 @@ Java_sun_java2d_windows_GDIRenderer_doShape
 }
 
 } /* extern "C" */
-
-INLINE BOOL RectInMonitorRect(RECT *rCheck, RECT *rContainer)
-{
-    // Assumption: left <= right, top <= bottom
-    if (rCheck->left >= rContainer->left &&
-        rCheck->right <= rContainer->right &&
-        rCheck->top >= rContainer->top &&
-        rCheck->bottom <= rContainer->bottom)
-    {
-        return TRUE;
-    } else {
-        return FALSE;
-    }
-}
 
 /*
  * Class:     sun_java2d_windows_GDIRenderer

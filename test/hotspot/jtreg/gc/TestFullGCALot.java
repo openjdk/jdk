@@ -37,4 +37,3 @@ public class TestFullGCALot {
         System.out.println("Hello world!");
     }
 }
-

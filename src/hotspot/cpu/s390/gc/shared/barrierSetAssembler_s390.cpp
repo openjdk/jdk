@@ -132,7 +132,7 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm) {
   __ block_comment("nmethod_entry_barrier (nmethod_entry_barrier) {");
 
     // Load jump addr:
-    __ load_const(Z_R1_scratch, (uint64_t)StubRoutines::zarch::nmethod_entry_barrier()); // 2*6 bytes
+    __ load_const(Z_R1_scratch, (uint64_t)StubRoutines::method_entry_barrier()); // 2*6 bytes
 
     // Load value from current java object:
     __ z_lg(Z_R0_scratch, in_bytes(bs_nm->thread_disarmed_guard_value_offset()), Z_thread); // 6 bytes
@@ -147,3 +147,11 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm) {
     // Fall through to method body.
   __ block_comment("} nmethod_entry_barrier (nmethod_entry_barrier)");
 }
+
+#ifdef COMPILER2
+
+OptoReg::Name BarrierSetAssembler::refine_register(const Node* node, OptoReg::Name opto_reg) {
+  Unimplemented(); // This must be implemented to support late barrier expansion.
+}
+
+#endif // COMPILER2

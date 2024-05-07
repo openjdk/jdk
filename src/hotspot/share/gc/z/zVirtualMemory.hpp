@@ -24,6 +24,7 @@
 #ifndef SHARE_GC_Z_ZVIRTUALMEMORY_HPP
 #define SHARE_GC_Z_ZVIRTUALMEMORY_HPP
 
+#include "gc/z/zAddress.hpp"
 #include "gc/z/zMemory.hpp"
 
 class ZVirtualMemory {
@@ -46,7 +47,11 @@ public:
 };
 
 class ZVirtualMemoryManager {
+  friend class ZMapperTest;
+
 private:
+  static size_t calculate_min_range(size_t size);
+
   ZMemoryManager _manager;
   size_t         _reserved;
   bool           _initialized;
@@ -63,7 +68,7 @@ private:
   size_t reserve_discontiguous(size_t size);
   bool reserve(size_t max_capacity);
 
-  void nmt_reserve(zaddress_unsafe start, size_t size);
+  DEBUG_ONLY(size_t force_reserve_discontiguous(size_t size);)
 
 public:
   ZVirtualMemoryManager(size_t max_capacity);

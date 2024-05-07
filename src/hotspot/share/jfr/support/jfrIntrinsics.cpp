@@ -56,6 +56,7 @@ void* JfrIntrinsicSupport::write_checkpoint(JavaThread* jt) {
   assert(JfrThreadLocal::is_vthread(jt), "invariant");
   const u2 vthread_thread_local_epoch = JfrThreadLocal::vthread_epoch(jt);
   const u2 current_epoch = ThreadIdAccess::current_epoch();
+  MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, jt));
   if (vthread_thread_local_epoch == current_epoch) {
     // After the epoch test in the intrinsic, the thread sampler interleaved
     // and suspended the thread. As part of taking a sample, it updated
@@ -69,6 +70,17 @@ void* JfrIntrinsicSupport::write_checkpoint(JavaThread* jt) {
   ThreadInVMfromJava transition(jt);
   JfrThreadLocal::set_vthread_epoch(jt, vthread_tid, ThreadIdAccess::current_epoch());
   return JfrJavaEventWriter::event_writer(jt);
+}
+
+void* JfrIntrinsicSupport::return_lease(JavaThread* jt) {
+  DEBUG_ONLY(assert_precondition(jt);)
+  ThreadStateTransition::transition_from_java(jt, _thread_in_native);
+  assert(jt->jfr_thread_local()->has_java_event_writer(), "invariant");
+  assert(jt->jfr_thread_local()->shelved_buffer() != nullptr, "invariant");
+  JfrJavaEventWriter::flush(jt->jfr_thread_local()->java_event_writer(), 0, 0, jt);
+  assert(jt->jfr_thread_local()->shelved_buffer() == nullptr, "invariant");
+  ThreadStateTransition::transition_from_native(jt, _thread_in_Java);
+  return nullptr;
 }
 
 void JfrIntrinsicSupport::load_barrier(const Klass* klass) {

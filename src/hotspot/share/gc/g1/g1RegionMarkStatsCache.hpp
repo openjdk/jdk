@@ -48,8 +48,6 @@ struct G1RegionMarkStats {
   // are updated by the atomic mark. We do not remark objects after overflow.
   void clear_during_overflow() {
   }
-
-  bool is_clear() const { return _live_words == 0; }
 };
 
 // Per-marking thread cache for the region mark statistics.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,6 +61,7 @@ class CastDDNode;
 class CastVVNode;
 class CastIINode;
 class CastLLNode;
+class CastPPNode;
 class CatchNode;
 class CatchProjNode;
 class CheckCastPPNode;
@@ -70,6 +71,7 @@ class CodeBuffer;
 class ConstraintCastNode;
 class ConNode;
 class ConINode;
+class ConvertNode;
 class CompareAndSwapNode;
 class CompareAndExchangeNode;
 class CountedLoopNode;
@@ -129,8 +131,13 @@ class MoveNode;
 class MulNode;
 class MultiNode;
 class MultiBranchNode;
+class NegNode;
+class NegVNode;
 class NeverBranchNode;
 class Opaque1Node;
+class OpaqueLoopInitNode;
+class OpaqueLoopStrideNode;
+class Opaque4Node;
 class OuterStripMinedLoopNode;
 class OuterStripMinedLoopEndNode;
 class Node;
@@ -158,6 +165,7 @@ class RegionNode;
 class RootNode;
 class SafePointNode;
 class SafePointScalarObjectNode;
+class SafePointScalarMergeNode;
 class StartNode;
 class State;
 class StoreNode;
@@ -174,6 +182,7 @@ class StoreVectorMaskedNode;
 class LoadVectorGatherNode;
 class StoreVectorNode;
 class StoreVectorScatterNode;
+class VerifyVectorAlignmentNode;
 class VectorMaskCmpNode;
 class VectorUnboxNode;
 class VectorSet;
@@ -182,6 +191,7 @@ class ShiftVNode;
 class ExpandVNode;
 class CompressVNode;
 class CompressMNode;
+class C2_MacroAssembler;
 
 
 #ifndef OPTO_DU_ITERATOR_ASSERT
@@ -201,6 +211,8 @@ typedef uint   DUIterator;
 typedef Node** DUIterator_Fast;
 typedef Node** DUIterator_Last;
 #endif
+
+typedef ResizeableResourceHashtable<Node*, Node*, AnyObj::RESOURCE_AREA, mtCompiler> OrigToNewHashtable;
 
 // Node Sentinel
 #define NodeSentinel (Node*)-1
@@ -444,7 +456,7 @@ protected:
   }
   // Light version of set_req() to init inputs after node creation.
   void init_req( uint i, Node *n ) {
-    assert( i == 0 && this == n ||
+    assert( (i == 0 && this == n) ||
             is_not_dead(n), "can not use dead node");
     assert( i < _cnt, "oob");
     assert( !VerifyHashTableKeys || _hash_lock == 0,
@@ -706,6 +718,7 @@ public:
         DEFINE_CLASS_ID(CastFF, ConstraintCast, 3)
         DEFINE_CLASS_ID(CastDD, ConstraintCast, 4)
         DEFINE_CLASS_ID(CastVV, ConstraintCast, 5)
+        DEFINE_CLASS_ID(CastPP, ConstraintCast, 6)
       DEFINE_CLASS_ID(CMove, Type, 3)
       DEFINE_CLASS_ID(SafePointScalarObject, Type, 4)
       DEFINE_CLASS_ID(DecodeNarrowPtr, Type, 5)
@@ -724,8 +737,11 @@ public:
         DEFINE_CLASS_ID(CompressM, Vector, 6)
         DEFINE_CLASS_ID(Reduction, Vector, 7)
           DEFINE_CLASS_ID(UnorderedReduction, Reduction, 0)
+        DEFINE_CLASS_ID(NegV, Vector, 8)
       DEFINE_CLASS_ID(Con, Type, 8)
           DEFINE_CLASS_ID(ConI, Con, 0)
+      DEFINE_CLASS_ID(SafePointScalarMerge, Type, 9)
+      DEFINE_CLASS_ID(Convert, Type, 10)
 
 
     DEFINE_CLASS_ID(Proj,  Node, 3)
@@ -776,10 +792,14 @@ public:
     DEFINE_CLASS_ID(ClearArray, Node, 14)
     DEFINE_CLASS_ID(Halt,     Node, 15)
     DEFINE_CLASS_ID(Opaque1,  Node, 16)
-    DEFINE_CLASS_ID(Move,     Node, 17)
-    DEFINE_CLASS_ID(LShift,   Node, 18)
+      DEFINE_CLASS_ID(OpaqueLoopInit, Opaque1, 0)
+      DEFINE_CLASS_ID(OpaqueLoopStride, Opaque1, 1)
+    DEFINE_CLASS_ID(Opaque4,  Node, 17)
+    DEFINE_CLASS_ID(Move,     Node, 18)
+    DEFINE_CLASS_ID(LShift,   Node, 19)
+    DEFINE_CLASS_ID(Neg,      Node, 20)
 
-    _max_classes  = ClassMask_LShift
+    _max_classes  = ClassMask_Neg
   };
   #undef DEFINE_CLASS_ID
 
@@ -829,9 +849,9 @@ protected:
   }
 
 public:
-  const juint class_id() const { return _class_id; }
+  juint class_id() const { return _class_id; }
 
-  const juint flags() const { return _flags; }
+  juint flags() const { return _flags; }
 
   void add_flag(juint fl) { init_flags(fl); }
 
@@ -879,10 +899,12 @@ public:
   DEFINE_CLASS_QUERY(CastII)
   DEFINE_CLASS_QUERY(CastLL)
   DEFINE_CLASS_QUERY(ConI)
+  DEFINE_CLASS_QUERY(CastPP)
   DEFINE_CLASS_QUERY(ConstraintCast)
   DEFINE_CLASS_QUERY(ClearArray)
   DEFINE_CLASS_QUERY(CMove)
   DEFINE_CLASS_QUERY(Cmp)
+  DEFINE_CLASS_QUERY(Convert)
   DEFINE_CLASS_QUERY(CountedLoop)
   DEFINE_CLASS_QUERY(CountedLoopEnd)
   DEFINE_CLASS_QUERY(DecodeNarrowPtr)
@@ -939,8 +961,13 @@ public:
   DEFINE_CLASS_QUERY(Mul)
   DEFINE_CLASS_QUERY(Multi)
   DEFINE_CLASS_QUERY(MultiBranch)
+  DEFINE_CLASS_QUERY(Neg)
+  DEFINE_CLASS_QUERY(NegV)
   DEFINE_CLASS_QUERY(NeverBranch)
   DEFINE_CLASS_QUERY(Opaque1)
+  DEFINE_CLASS_QUERY(Opaque4)
+  DEFINE_CLASS_QUERY(OpaqueLoopInit)
+  DEFINE_CLASS_QUERY(OpaqueLoopStride)
   DEFINE_CLASS_QUERY(OuterStripMinedLoop)
   DEFINE_CLASS_QUERY(OuterStripMinedLoopEnd)
   DEFINE_CLASS_QUERY(Parm)
@@ -953,6 +980,7 @@ public:
   DEFINE_CLASS_QUERY(Root)
   DEFINE_CLASS_QUERY(SafePoint)
   DEFINE_CLASS_QUERY(SafePointScalarObject)
+  DEFINE_CLASS_QUERY(SafePointScalarMerge)
   DEFINE_CLASS_QUERY(Start)
   DEFINE_CLASS_QUERY(Store)
   DEFINE_CLASS_QUERY(Sub)
@@ -1116,7 +1144,21 @@ public:
   // Set control or add control as precedence edge
   void ensure_control_or_add_prec(Node* c);
 
-//----------------- Code Generation
+  // Visit boundary uses of the node and apply a callback function for each.
+  // Recursively traverse uses, stopping and applying the callback when
+  // reaching a boundary node, defined by is_boundary. Note: the function
+  // definition appears after the complete type definition of Node_List.
+  template <typename Callback, typename Check>
+  void visit_uses(Callback callback, Check is_boundary) const;
+
+  // Returns a clone of the current node that's pinned (if the current node is not) for nodes found in array accesses
+  // (Load and range check CastII nodes).
+  // This is used when an array access is made dependent on 2 or more range checks (range check smearing or Loop Predication).
+  virtual Node* pin_array_access_node() const {
+    return nullptr;
+  }
+
+  //----------------- Code Generation
 
   // Ideal register class for Matching.  Zero means unmatched instruction
   // (these are cloned instead of converted to machine nodes).
@@ -1140,9 +1182,8 @@ public:
 
   // Print as assembly
   virtual void format( PhaseRegAlloc *, outputStream* st = tty ) const;
-  // Emit bytes starting at parameter 'ptr'
-  // Bump 'ptr' by the number of output bytes
-  virtual void emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const;
+  // Emit bytes using C2_MacroAssembler
+  virtual void emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const;
   // Size of instruction in bytes
   virtual uint size(PhaseRegAlloc *ra_) const;
 
@@ -1209,6 +1250,9 @@ public:
 
   // Whether this is a memory-writing machine node.
   bool is_memory_writer() const { return is_Mach() && bottom_type()->has_memory(); }
+
+  // Whether this is a memory phi node
+  bool is_memory_phi() const { return is_Phi() && bottom_type() == Type::MEMORY; }
 
 //----------------- Printing, etc
 #ifndef PRODUCT
@@ -1613,6 +1657,35 @@ public:
   void dump_simple() const;
 };
 
+// Definition must appear after complete type definition of Node_List
+template <typename Callback, typename Check>
+void Node::visit_uses(Callback callback, Check is_boundary) const {
+  ResourceMark rm;
+  VectorSet visited;
+  Node_List worklist;
+
+  // The initial worklist consists of the direct uses
+  for (DUIterator_Fast kmax, k = fast_outs(kmax); k < kmax; k++) {
+    Node* out = fast_out(k);
+    if (!visited.test_set(out->_idx)) { worklist.push(out); }
+  }
+
+  while (worklist.size() > 0) {
+    Node* use = worklist.pop();
+    // Apply callback on boundary nodes
+    if (is_boundary(use)) {
+      callback(use);
+    } else {
+      // Not a boundary node, continue search
+      for (DUIterator_Fast kmax, k = use->fast_outs(kmax); k < kmax; k++) {
+        Node* out = use->fast_out(k);
+        if (!visited.test_set(out->_idx)) { worklist.push(out); }
+      }
+    }
+  }
+}
+
+
 //------------------------------Unique_Node_List-------------------------------
 class Unique_Node_List : public Node_List {
   friend class VMStructs;
@@ -1635,6 +1708,22 @@ public:
     if( !_in_worklist.test_set(b->_idx) )
       Node_List::push(b);
   }
+  void push_non_cfg_inputs_of(const Node* node) {
+    for (uint i = 1; i < node->req(); i++) {
+      Node* input = node->in(i);
+      if (input != nullptr && !input->is_CFG()) {
+        push(input);
+      }
+    }
+  }
+
+  void push_outputs_of(const Node* node) {
+    for (DUIterator_Fast imax, i = node->fast_outs(imax); i < imax; i++) {
+      Node* output = node->fast_out(i);
+      push(output);
+    }
+  }
+
   Node *pop() {
     if( _clock_index >= size() ) _clock_index = 0;
     Node *b = at(_clock_index);

@@ -66,8 +66,9 @@ public class SATestUtils {
                 if (Platform.isHardenedOSX()) {
                     throw new SkippedException("SA Attach not expected to work. JDK is hardened.");
                 }
-                if (!Platform.isRoot() && !canAddPrivileges()) {
-                    throw new SkippedException("SA Attach not expected to work. Insufficient privileges (not root and can't use sudo).");
+                if (needsPrivileges() && !canAddPrivileges()) {
+                    throw new SkippedException("SA Attach not expected to work. Insufficient privileges " +
+                                               "(developer mode disabled, not root, and can't use sudo).");
                 }
             }
         } catch (IOException e) {
@@ -77,10 +78,53 @@ public class SATestUtils {
 
     /**
      * Returns true if this platform is expected to require extra privileges (running using sudo).
+     * If we are running as root or developer mode is enabled, then sudo is not needed.
      */
     public static boolean needsPrivileges() {
-        return Platform.isOSX() && !Platform.isRoot();
+        if (!Platform.isOSX()) {
+            return false;
+        }
+        if (Platform.isRoot()) {
+            return false;
+        }
+        return !developerModeEnabled();
     }
+
+    /*
+     * Run "DevToolsSecurity --status" to see if developer mode is enabled.
+     */
+    private static boolean developerModeEnabled() {
+        List<String> cmd = new ArrayList<String>();
+        cmd.add("DevToolsSecurity");
+        cmd.add("--status");
+        ProcessBuilder pb = new ProcessBuilder(cmd);
+        Process p;
+        try {
+            p = pb.start();
+            try {
+                p.waitFor();
+            } catch (InterruptedException e) {
+                throw new RuntimeException("DevToolsSecurity process interrupted", e);
+            }
+
+            String out = new String(p.getInputStream().readAllBytes());
+            String err = new String(p.getErrorStream().readAllBytes());
+            System.out.print("DevToolsSecurity stdout: " + out);
+            if (out.equals("")) System.out.println();
+            System.out.print("DevToolsSecurity stderr: " + err);
+            if (err.equals("")) System.out.println();
+
+            if (out.contains("Developer mode is currently enabled")) {
+                return true;
+            }
+            if (out.contains("Developer mode is currently disabled")) {
+                return false;
+            }
+            throw new RuntimeException("DevToolsSecurity failed to generate expected output: " + out);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+  }
 
     /**
      * Returns true if a no-password sudo is expected to work properly.
@@ -218,9 +262,16 @@ public class SATestUtils {
      * to timeout. For that reason we don't run this test when privileges are needed. Note
      * it does appear to run fine as root, so we still allow it to run on OSX when privileges
      * are not required.
+     *
+     * Note that we also can't run these tests even if OSX developer mode is enabled (see
+     * developerModeEnabled()). For the most part the test runs fine, but some reason you end up
+     * needing to provide admin credentials as the test shuts down. If you don't, it just hangs forever.
+     * And even after providing the credetials, the test still fails with a timeout.
+     *
+     * JDK-8314133 has been filed for these issues.
      */
     public static void validateSADebugDPrivileges() {
-        if (needsPrivileges()) {
+        if (Platform.isOSX() && !Platform.isRoot()) {
             throw new SkippedException("Cannot run this test on OSX if adding privileges is required.");
         }
     }

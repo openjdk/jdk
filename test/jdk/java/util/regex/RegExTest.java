@@ -2041,6 +2041,58 @@ public class RegExTest {
         check(pattern, toSupplementaries("abcdefghijkk"), true);
     }
 
+    @Test
+    public static void ciBackRefTest() {
+        Pattern pattern = Pattern.compile("(?i)(a*)bc\\1");
+        check(pattern, "zzzaabcazzz", true);
+
+        pattern = Pattern.compile("(?i)(a*)bc\\1");
+        check(pattern, "zzzaabcaazzz", true);
+
+        pattern = Pattern.compile("(?i)(abc)(def)\\1");
+        check(pattern, "abcdefabc", true);
+
+        pattern = Pattern.compile("(?i)(abc)(def)\\3");
+        check(pattern, "abcdefabc", false);
+
+        for (int i = 1; i < 10; i++) {
+            // Make sure backref 1-9 are always accepted
+            pattern = Pattern.compile("(?i)abcdef\\" + i);
+            // and fail to match if the target group does not exit
+            check(pattern, "abcdef", false);
+        }
+
+        pattern = Pattern.compile("(?i)(a)(b)(c)(d)(e)(f)(g)(h)(i)(j)\\11");
+        check(pattern, "abcdefghija", false);
+        check(pattern, "abcdefghija1", true);
+
+        pattern = Pattern.compile("(?i)(a)(b)(c)(d)(e)(f)(g)(h)(i)(j)(k)\\11");
+        check(pattern, "abcdefghijkk", true);
+
+        pattern = Pattern.compile("(?i)(a)bcdefghij\\11");
+        check(pattern, "abcdefghija1", true);
+
+        // Supplementary character tests
+        pattern = Pattern.compile("(?i)" + toSupplementaries("(a*)bc\\1"));
+        check(pattern, toSupplementaries("zzzaabcazzz"), true);
+
+        pattern = Pattern.compile("(?i)" + toSupplementaries("(a*)bc\\1"));
+        check(pattern, toSupplementaries("zzzaabcaazzz"), true);
+
+        pattern = Pattern.compile("(?i)" + toSupplementaries("(abc)(def)\\1"));
+        check(pattern, toSupplementaries("abcdefabc"), true);
+
+        pattern = Pattern.compile("(?i)" + toSupplementaries("(abc)(def)\\3"));
+        check(pattern, toSupplementaries("abcdefabc"), false);
+
+        pattern = Pattern.compile("(?i)" + toSupplementaries("(a)(b)(c)(d)(e)(f)(g)(h)(i)(j)\\11"));
+        check(pattern, toSupplementaries("abcdefghija"), false);
+        check(pattern, toSupplementaries("abcdefghija1"), true);
+
+        pattern = Pattern.compile("(?i)" + toSupplementaries("(a)(b)(c)(d)(e)(f)(g)(h)(i)(j)(k)\\11"));
+        check(pattern, toSupplementaries("abcdefghijkk"), true);
+    }
+
     /**
      * Unicode Technical Report #18, section 2.6 End of Line
      * There is no empty line to be matched in the sequence \u000D\u000A

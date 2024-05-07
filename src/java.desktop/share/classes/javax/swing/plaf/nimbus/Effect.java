@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,9 +43,15 @@ abstract class Effect {
     // Abstract Methods
 
     /**
-     * Get the type of this effect, one of UNDER,BLENDED,OVER. UNDER means the result of apply effect should be painted
-     * under the src image. BLENDED means the result of apply sffect contains a modified src image so just it should be
-     * painted. OVER means the result of apply effect should be painted over the src image.
+     * Get the type of this effect, one of {@code UNDER}, {@code BLENDED}, {@code OVER}.
+     * <ul>
+     *   <li><b>{@code UNDER}</b> means the result of applying the effect
+     *       should be painted under the src image.</li>
+     *   <li><b>{@code BLENDED}</b> means the result of applying the effect
+     *       contains a modified src image, so it should just be painted.</li>
+     *   <li><b>{@code OVER}</b> means the result of applying the effect
+     *       should be painted over the src image.</li>
+     * </ul>
      *
      * @return The effect type
      */
@@ -68,7 +74,7 @@ abstract class Effect {
      *            the area the need effect applied to it
      * @param h   The height of the src image to apply effect to, this allow the src and dst buffers to be bigger than
      *            the area the need effect applied to it
-     * @return The result of appl
+     * @return The result of applying the effect
      */
     abstract BufferedImage applyEffect(BufferedImage src, BufferedImage dst, int w, int h);
 

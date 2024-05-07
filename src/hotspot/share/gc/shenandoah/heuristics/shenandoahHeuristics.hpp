@@ -25,6 +25,7 @@
 #ifndef SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHHEURISTICS_HPP
 #define SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHHEURISTICS_HPP
 
+#include "gc/shenandoah/heuristics/shenandoahSpaceInfo.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
@@ -58,6 +59,11 @@
 class ShenandoahCollectionSet;
 class ShenandoahHeapRegion;
 
+/*
+ * Shenandoah heuristics are primarily responsible for deciding when to start
+ * a collection cycle and choosing which regions will be evacuated during the
+ * cycle.
+ */
 class ShenandoahHeuristics : public CHeapObj<mtGC> {
   static const intx Concurrent_Adjust   = -1; // recover from penalties
   static const intx Degenerated_Penalty = 10; // how much to penalize average GC duration history on Degenerated GC
@@ -69,10 +75,10 @@ protected:
     size_t _garbage;
   } RegionData;
 
-  RegionData* _region_data;
+  // Source of information about the memory space managed by this heuristic
+  ShenandoahSpaceInfo* _space_info;
 
-  uint _degenerated_cycles_in_a_row;
-  uint _successful_cycles_in_a_row;
+  RegionData* _region_data;
 
   double _cycle_start;
   double _last_cycle_end;
@@ -93,7 +99,7 @@ protected:
   void adjust_penalty(intx step);
 
 public:
-  ShenandoahHeuristics();
+  ShenandoahHeuristics(ShenandoahSpaceInfo* space_info);
   virtual ~ShenandoahHeuristics();
 
   void record_metaspace_oom()     { _metaspace_oom.set(); }
@@ -121,7 +127,6 @@ public:
   virtual void choose_collection_set(ShenandoahCollectionSet* collection_set);
 
   virtual bool can_unload_classes();
-  virtual bool can_unload_classes_normal();
   virtual bool should_unload_classes();
 
   virtual const char* name() = 0;

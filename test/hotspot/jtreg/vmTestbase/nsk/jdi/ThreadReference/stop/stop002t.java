@@ -38,7 +38,7 @@ public class stop002t {
     volatile boolean stopLooping1 = false;
     volatile boolean stopLooping2 = false;
     volatile static int testNumReady = 0;
-    static final boolean vthreadMode = "Virtual".equals(System.getProperty("main.wrapper"));
+    static final boolean vthreadMode = "Virtual".equals(System.getProperty("test.thread.factory"));
 
     public static void main(String args[]) {
         System.exit(run(args) + Consts.JCK_STATUS_BASE);

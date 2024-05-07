@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -25,7 +23,7 @@
 
 /*
  * @test
- * @summary Testing Classfile annotations.
+ * @summary Testing ClassFile annotations.
  * @run junit AnnotationTest
  */
 import java.lang.constant.ClassDesc;
@@ -38,9 +36,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import jdk.internal.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
+import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
+import java.lang.classfile.*;
+import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import org.junit.jupiter.api.Test;
 
 import static java.util.stream.Collectors.toList;
@@ -127,7 +125,7 @@ class AnnotationTest {
 
     @Test
     void testAnnos() {
-        var cc = Classfile.of();
+        var cc = ClassFile.of();
         byte[] bytes = cc.build(ClassDesc.of("Foo"), cb -> {
             ((DirectClassBuilder) cb).writeAttribute(buildAnnotationsWithCPB(cb.constantPool()));
             cb.withMethod("foo", MethodTypeDesc.of(CD_void), 0, mb -> mb.with(buildAnnotationsWithCPB(mb.constantPool())));
@@ -173,7 +171,7 @@ class AnnotationTest {
 
     @Test
     void testAnnosNoCPB() {
-        var cc = Classfile.of();
+        var cc = ClassFile.of();
         byte[] bytes = cc.build(ClassDesc.of("Foo"), cb -> {
             ((DirectClassBuilder) cb).writeAttribute(buildAnnotations());
             cb.withMethod("foo", MethodTypeDesc.of(CD_void), 0, mb -> mb.with(buildAnnotations()));

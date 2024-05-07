@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,28 +116,33 @@ public abstract sealed class MappedByteBuffer
     }
 
     UnmapperProxy unmapper() {
-        return fd != null ?
-                new UnmapperProxy() {
-                    @Override
-                    public long address() {
-                        return address;
-                    }
+        return fd == null
+                ? null
+                : new UnmapperProxy() {
 
-                    @Override
-                    public FileDescriptor fileDescriptor() {
-                        return fd;
-                    }
+            // Ensure safe publication as MappedByteBuffer.this.address is not final
+            private final long addr = address;
 
-                    @Override
-                    public boolean isSync() {
-                        return isSync;
-                    }
+            @Override
+            public long address() {
+                return addr;
+            }
 
-                    @Override
-                    public void unmap() {
-                        Unsafe.getUnsafe().invokeCleaner(MappedByteBuffer.this);
-                    }
-                } : null;
+            @Override
+            public FileDescriptor fileDescriptor() {
+                return fd;
+            }
+
+            @Override
+            public boolean isSync() {
+                return isSync;
+            }
+
+            @Override
+            public void unmap() {
+                Unsafe.getUnsafe().invokeCleaner(MappedByteBuffer.this);
+            }
+        };
     }
 
     /**
@@ -417,6 +422,7 @@ public abstract sealed class MappedByteBuffer
 
     /**
      * {@inheritDoc}
+     * @throws  ReadOnlyBufferException {@inheritDoc}
      */
     @Override
     public abstract MappedByteBuffer compact();

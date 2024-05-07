@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,9 @@
 #include <stdio.h>
 #include <string.h>
 #include "jvmti.h"
-#include "jni_tools.h"
-#include "agent_common.h"
-#include "JVMTITools.h"
+#include "jni_tools.hpp"
+#include "agent_common.hpp"
+#include "JVMTITools.hpp"
 
 extern "C" {
 
@@ -34,12 +34,12 @@ extern "C" {
 #define STATUS_PASSED 0
 #define STATUS_FAILED 2
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jvmtiEventCallbacks callbacks;
 static jint result = STATUS_PASSED;
 static jboolean printdump = JNI_FALSE;
-static jmethodID mid = NULL;
-static jvmtiLocalVariableEntry *table = NULL;
+static jmethodID mid = nullptr;
+static jvmtiLocalVariableEntry *table = nullptr;
 static jint entryCount = 0;
 static jint methodExitCnt = -1;
 
@@ -140,7 +140,7 @@ MethodExit(jvmtiEnv *jvmti_env,
 
     jvmtiError err;
     jlocation location;
-    jmethodID frame_method = NULL;
+    jmethodID frame_method = nullptr;
 
     if (mid != method) {
         return;
@@ -181,12 +181,12 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jvmtiError err;
     static jvmtiCapabilities caps;
 
-    if (options != NULL && strcmp(options, "printdump") == 0) {
+    if (options != nullptr && strcmp(options, "printdump") == 0) {
         printdump = JNI_TRUE;
     }
 
     res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-    if (res != JNI_OK || jvmti == NULL) {
+    if (res != JNI_OK || jvmti == nullptr) {
         printf("Wrong result of a valid call to GetEnv!\n");
         return JNI_ERR;
     }
@@ -233,12 +233,12 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 JNIEXPORT void JNICALL
 Java_nsk_jvmti_unit_GetLocalVariable_getlocal003_instMeth(JNIEnv *env, jobject inst) {
     jvmtiError err;
-    jobject obj = NULL;
+    jobject obj = nullptr;
 
     printf("\n Native instMeth: started\n");
 
     // Test GetLocalInstance with native instance method instMeth() frame
-    err = jvmti->GetLocalInstance(NULL, 0, &obj);
+    err = jvmti->GetLocalInstance(nullptr, 0, &obj);
     printf(" Native instMeth: GetLocalInstance: %s (%d)\n", TranslateError(err), err);
     if (err != JVMTI_ERROR_NONE) {
         printf("FAIL: GetLocalInstance failed to get instance for native instance method frame\n");
@@ -250,7 +250,7 @@ Java_nsk_jvmti_unit_GetLocalVariable_getlocal003_instMeth(JNIEnv *env, jobject i
     }
 
     // Test GetLocalInstance with java instance method meth01() frame
-    err = jvmti->GetLocalInstance(NULL, 1, &obj);
+    err = jvmti->GetLocalInstance(nullptr, 1, &obj);
     printf(" Native instMeth: GetLocalInstance: %s (%d)\n", TranslateError(err), err);
     if (err != JVMTI_ERROR_NONE) {
         printf("FAIL: GetLocalInstance failed to get instance for java instance method frame\n");
@@ -266,18 +266,18 @@ Java_nsk_jvmti_unit_GetLocalVariable_getlocal003_instMeth(JNIEnv *env, jobject i
 JNIEXPORT void JNICALL
 Java_nsk_jvmti_unit_GetLocalVariable_getlocal003_getMeth(JNIEnv *env, jclass cls) {
     jvmtiError err;
-    jobject obj = NULL;
+    jobject obj = nullptr;
 
     printf("\n Native getMeth: started\n");
 
-    if (jvmti == NULL) {
+    if (jvmti == nullptr) {
         printf("JVMTI client was not properly loaded!\n");
         result = STATUS_FAILED;
         return;
     }
 
     mid = env->GetStaticMethodID(cls, "staticMeth", "(I)I");
-    if (mid == NULL) {
+    if (mid == nullptr) {
         printf("Cannot find Method ID for staticMeth\n");
         result = STATUS_FAILED;
         return;
@@ -291,7 +291,7 @@ Java_nsk_jvmti_unit_GetLocalVariable_getlocal003_getMeth(JNIEnv *env, jclass cls
         return;
     }
 
-    err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_METHOD_EXIT, NULL);
+    err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_METHOD_EXIT, nullptr);
     if (err != JVMTI_ERROR_NONE) {
         printf("Failed to enable metod exit event: %s (%d)\n",
                TranslateError(err), err);
@@ -299,7 +299,7 @@ Java_nsk_jvmti_unit_GetLocalVariable_getlocal003_getMeth(JNIEnv *env, jclass cls
     }
 
     // Test GetLocalInstance with native static method getMeth() frame
-    err = jvmti->GetLocalInstance(NULL, 0, &obj);
+    err = jvmti->GetLocalInstance(nullptr, 0, &obj);
     printf(" Native getMeth: GetLocalInstance: %s (%d)\n", TranslateError(err), err);
     if (err != JVMTI_ERROR_INVALID_SLOT) {
         printf("FAIL: GetLocalInstance failed to return JVMTI_ERROR_INVALID_SLOT for native static method frame\n");
@@ -307,7 +307,7 @@ Java_nsk_jvmti_unit_GetLocalVariable_getlocal003_getMeth(JNIEnv *env, jclass cls
     }
 
     // Test GetLocalInstance with java static method run() frame
-    err = jvmti->GetLocalInstance(NULL, 1, &obj);
+    err = jvmti->GetLocalInstance(nullptr, 1, &obj);
     printf(" Native getMeth: GetLocalInstance: %s (%d)\n", TranslateError(err), err);
     if (err != JVMTI_ERROR_INVALID_SLOT) {
         printf("FAIL: GetLocalInstance failed to return JVMTI_ERROR_INVALID_SLOT for java static method frame\n");
@@ -329,7 +329,7 @@ Java_nsk_jvmti_unit_GetLocalVariable_getlocal003_checkLoc(JNIEnv *env,
     jint i, j;
     int  overlap = 0;
 
-    if (jvmti == NULL) {
+    if (jvmti == nullptr) {
         printf("JVMTI client was not properly loaded!\n");
         result = STATUS_FAILED;
         return;
@@ -337,7 +337,7 @@ Java_nsk_jvmti_unit_GetLocalVariable_getlocal003_checkLoc(JNIEnv *env,
     printf("\n checkLoc: START\n");
 
     mid = env->GetStaticMethodID(cls, "staticMeth", "(I)I");
-    if (mid == NULL) {
+    if (mid == nullptr) {
         printf("Cannot find Method ID for staticMeth\n");
         result = STATUS_FAILED;
         return;

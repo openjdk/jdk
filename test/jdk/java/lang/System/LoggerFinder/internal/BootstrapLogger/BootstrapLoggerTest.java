@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,9 +53,10 @@ import jdk.internal.logger.LazyLoggers;
  * @summary JDK implementation specific unit test for JDK internal artifacts.
             Tests the behavior of bootstrap loggers (and SimpleConsoleLoggers
  *          too).
+ * @library ../../lib
  * @modules java.base/jdk.internal.logger:+open
  *          java.logging
- * @build BootstrapLoggerUtils LogStream
+ * @build LogStream
  * @run main/othervm BootstrapLoggerTest NO_SECURITY
  * @run main/othervm -Djava.security.manager=allow BootstrapLoggerTest SECURE
  * @run main/othervm/timeout=120 -Djava.security.manager=allow BootstrapLoggerTest SECURE_AND_WAIT

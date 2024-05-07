@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,17 @@
 
 #include CPU_HEADER_INLINE(continuationHelper)
 
+#ifndef CPU_OVERRIDES_RETURN_ADDRESS_ACCESSORS
+inline address ContinuationHelper::return_address_at(intptr_t* sp) {
+  return *(address*)sp;
+}
+
+inline void ContinuationHelper::patch_return_address_at(intptr_t* sp,
+                                                        address pc) {
+  *(address*)sp = pc;
+}
+#endif // !CPU_OVERRIDES_RETURN_ADDRESS_ACCESSORS
+
 inline bool ContinuationHelper::NonInterpretedUnknownFrame::is_instance(const frame& f) {
   return !f.is_interpreted_frame();
 }
@@ -46,7 +57,11 @@ inline bool ContinuationHelper::Frame::is_stub(CodeBlob* cb) {
 }
 
 inline Method* ContinuationHelper::Frame::frame_method(const frame& f) {
-  return f.is_interpreted_frame() ? f.interpreter_frame_method() : f.cb()->as_compiled_method()->method();
+  return f.is_interpreted_frame() ? f.interpreter_frame_method() : f.cb()->as_nmethod()->method();
+}
+
+inline address ContinuationHelper::Frame::return_pc(const frame& f) {
+  return return_address_at((intptr_t *)return_pc_address(f));
 }
 
 #ifdef ASSERT
@@ -64,8 +79,8 @@ inline intptr_t* ContinuationHelper::Frame::frame_top(const frame &f) {
 inline bool ContinuationHelper::Frame::is_deopt_return(address pc, const frame& sender) {
   if (sender.is_interpreted_frame()) return false;
 
-  CompiledMethod* cm = sender.cb()->as_compiled_method();
-  return cm->is_deopt_pc(pc);
+  nmethod* nm = sender.cb()->as_nmethod();
+  return nm->is_deopt_pc(pc);
 }
 
 #endif
@@ -75,7 +90,7 @@ inline bool ContinuationHelper::InterpretedFrame::is_instance(const frame& f) {
 }
 
 inline address ContinuationHelper::InterpretedFrame::return_pc(const frame& f) {
-  return *return_pc_address(f);
+  return return_address_at((intptr_t *)return_pc_address(f));
 }
 
 inline int ContinuationHelper::InterpretedFrame::size(const frame&f) {
@@ -147,16 +162,16 @@ bool ContinuationHelper::CompiledFrame::is_owning_locks(JavaThread* thread, Regi
   assert(!f.is_interpreted_frame(), "");
   assert(CompiledFrame::is_instance(f), "");
 
-  CompiledMethod* cm = f.cb()->as_compiled_method();
-  assert(!cm->is_compiled() || !cm->as_compiled_method()->is_native_method(), ""); // See compiledVFrame::compiledVFrame(...) in vframe_hp.cpp
+  nmethod* nm = f.cb()->as_nmethod();
+  assert(!nm->is_native_method(), ""); // See compiledVFrame::compiledVFrame(...) in vframe_hp.cpp
 
-  if (!cm->has_monitors()) {
+  if (!nm->has_monitors()) {
     return false;
   }
 
   frame::update_map_with_saved_link(map, Frame::callee_link_address(f)); // the monitor object could be stored in the link register
   ResourceMark rm;
-  for (ScopeDesc* scope = cm->scope_desc_at(f.pc()); scope != nullptr; scope = scope->sender()) {
+  for (ScopeDesc* scope = nm->scope_desc_at(f.pc()); scope != nullptr; scope = scope->sender()) {
     GrowableArray<MonitorValue*>* mons = scope->monitors();
     if (mons == nullptr || mons->is_empty()) {
       continue;
@@ -171,7 +186,7 @@ bool ContinuationHelper::CompiledFrame::is_owning_locks(JavaThread* thread, Regi
       StackValue* owner_sv = StackValue::create_stack_value(&f, map, ov); // it is an oop
       oop owner = owner_sv->get_obj()();
       if (owner != nullptr) {
-        //assert(cm->has_monitors(), "");
+        //assert(nm->has_monitors(), "");
         return true;
       }
     }

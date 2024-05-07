@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -54,14 +54,14 @@ void check_marked_address(const MetaWord* p, uintx pattern) {
 // The filled range can be checked with check_range_for_pattern. One also can only check
 // a sub range of the original range.
 void fill_range_with_pattern(MetaWord* p, size_t word_size, uintx pattern) {
-  assert(word_size > 0 && p != NULL, "sanity");
+  assert(word_size > 0 && p != nullptr, "sanity");
   for (MetaWord* p2 = p; p2 < p + word_size; p2++) {
     mark_address(p2, pattern);
   }
 }
 
 void check_range_for_pattern(const MetaWord* p, size_t word_size, uintx pattern) {
-  assert(p != NULL, "sanity");
+  assert(p != nullptr, "sanity");
   const MetaWord* p2 = p;
   while (p2 < p + word_size) {
     check_marked_address(p2, pattern);
@@ -74,19 +74,19 @@ void check_range_for_pattern(const MetaWord* p, size_t word_size, uintx pattern)
 // Use check_marked_range to check the range. In contrast to check_range_for_pattern, only the original
 // range can be checked.
 void mark_range(MetaWord* p, size_t word_size, uintx pattern) {
-  assert(word_size > 0 && p != NULL, "sanity");
+  assert(word_size > 0 && p != nullptr, "sanity");
   mark_address(p, pattern);
   mark_address(p + word_size - 1, pattern);
 }
 
 void check_marked_range(const MetaWord* p, size_t word_size, uintx pattern) {
-  assert(word_size > 0 && p != NULL, "sanity");
+  assert(word_size > 0 && p != nullptr, "sanity");
   check_marked_address(p, pattern);
   check_marked_address(p + word_size - 1, pattern);
 }
 
 void mark_range(MetaWord* p, size_t word_size) {
-  assert(word_size > 0 && p != NULL, "sanity");
+  assert(word_size > 0 && p != nullptr, "sanity");
   uintx pattern = (uintx)p2i(p);
   mark_range(p, word_size, pattern);
 }

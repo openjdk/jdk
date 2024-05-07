@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -628,7 +628,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
             "Button.font", ControlFont,
             "Button.background", ControlBackgroundColor,
             // Button.foreground, Button.shadow, Button.darkShadow,
-            // Button.disabledForground, and Button.disabledShadow are only
+            // Button.disabledForeground, and Button.disabledShadow are only
             // used for Windows Classic. Windows XP will use colors
             // from the current visual style.
             "Button.foreground", ControlTextColor,
@@ -1344,7 +1344,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
                               "KP_DOWN", "selectNextRow",
                            "shift DOWN", "selectNextRowExtendSelection",
                         "shift KP_DOWN", "selectNextRowExtendSelection",
-                      "ctrl shift DOWN", "selectNextRowExtendSelection",
+                      "ctrl shift DOWN", "selectLastRowExtendSelection",
                    "ctrl shift KP_DOWN", "selectNextRowExtendSelection",
                             "ctrl DOWN", "selectNextRowChangeLead",
                          "ctrl KP_DOWN", "selectNextRowChangeLead",
@@ -1352,7 +1352,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
                                 "KP_UP", "selectPreviousRow",
                              "shift UP", "selectPreviousRowExtendSelection",
                           "shift KP_UP", "selectPreviousRowExtendSelection",
-                        "ctrl shift UP", "selectPreviousRowExtendSelection",
+                        "ctrl shift UP", "selectFirstRowExtendSelection",
                      "ctrl shift KP_UP", "selectPreviousRowExtendSelection",
                               "ctrl UP", "selectPreviousRowChangeLead",
                            "ctrl KP_UP", "selectPreviousRowChangeLead",

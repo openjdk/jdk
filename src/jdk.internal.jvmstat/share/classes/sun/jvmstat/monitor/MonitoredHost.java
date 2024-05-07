@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ import sun.jvmstat.monitor.event.HostListener;
  * @see HostListener
  */
 public abstract class MonitoredHost {
-    private static Map<HostIdentifier, MonitoredHost> monitoredHosts =
+    private static final Map<HostIdentifier, MonitoredHost> monitoredHosts =
                 new HashMap<HostIdentifier, MonitoredHost>();
 
     /*
@@ -133,13 +133,6 @@ public abstract class MonitoredHost {
         return getMonitoredHost(hostId);
     }
 
-
-    /*
-     * Load the MonitoredHostServices
-     */
-    private static ServiceLoader<MonitoredHostService> monitoredHostServiceLoader =
-        ServiceLoader.load(MonitoredHostService.class, MonitoredHostService.class.getClassLoader());
-
     /**
      * Factory method to construct a MonitoredHost instance to manage the
      * connection to the host indicated by {@code hostId}.
@@ -167,9 +160,12 @@ public abstract class MonitoredHost {
 
         hostId = resolveHostId(hostId);
 
-        for (MonitoredHostService mhs : monitoredHostServiceLoader) {
+        ServiceLoader<MonitoredHostService> services = ServiceLoader.load(
+                MonitoredHostService.class, MonitoredHostService.class.getClassLoader());
+        for (MonitoredHostService mhs : services) {
             if (mhs.getScheme().equals(hostId.getScheme())) {
                 mh = mhs.getMonitoredHost(hostId);
+                break;
             }
         }
 

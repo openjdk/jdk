@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 4798312
- * @summary In Windows, javap doesn't load classes from rt.jar
+ * @summary In Windows, javap doesn't load classes from the runtime image
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -725,7 +725,7 @@ abstract class CMap {
 
         char[] subHeaderKey = new char[256];
          /* Store subheaders in individual arrays
-          * A SubHeader entry theortically looks like {
+          * A SubHeader entry theoretically looks like {
           *   char firstCode;
           *   char entryCount;
           *   short idDelta;

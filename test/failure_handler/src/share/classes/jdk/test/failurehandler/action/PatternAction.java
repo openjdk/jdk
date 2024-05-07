@@ -36,6 +36,7 @@ public class PatternAction implements Action {
 
     private final SimpleAction action;
     private final String[] originalArgs;
+    private final String originalSuccessArtifacts;
 
     public PatternAction(String id, Properties properties)
             throws InvalidValueException {
@@ -47,6 +48,11 @@ public class PatternAction implements Action {
         action = new SimpleAction(name != null ? ("pattern." + name) : "pattern", id, properties);
         ValueHandler.apply(this, properties, id);
         originalArgs = action.args.clone();
+        ActionParameters params = action.getParameters();
+        // just like the "args" the "successArtifacts" param can also contain pattern that
+        // this PatternAction will (sometimes repeatedly) replace, so we keep track of
+        // the original (un-replaced text)
+        originalSuccessArtifacts = params == null ? null : params.successArtifacts;
     }
 
     public ProcessBuilder prepareProcess(HtmlSection section,
@@ -63,9 +69,9 @@ public class PatternAction implements Action {
             args[i] = args[i].replace("%java", helper.findApp("java").getAbsolutePath());
         }
         // replace occurrences of the pattern in the "successArtifacts" param
-        String successArtifacts = action.getParameters().successArtifacts;
-        if (successArtifacts != null) {
-            action.getParameters().successArtifacts = successArtifacts.replaceAll(pattern, value);
+        if (originalSuccessArtifacts != null) {
+            action.getParameters().successArtifacts = originalSuccessArtifacts.replaceAll(pattern,
+                    value);
         }
         return action.prepareProcess(section.getWriter(), helper);
     }

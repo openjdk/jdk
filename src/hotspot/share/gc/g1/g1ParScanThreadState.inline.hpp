@@ -96,6 +96,28 @@ G1OopStarChunkedList* G1ParScanThreadState::oops_into_optional_region(const Heap
   return &_oops_into_optional_regions[hr->index_in_opt_cset()];
 }
 
+template <class T> bool G1ParScanThreadState::enqueue_if_new(T* p) {
+  size_t card_index = ct()->index_for(p);
+  // If the card hasn't been added to the buffer, do it.
+  if (_last_enqueued_card != card_index) {
+    _rdc_local_qset.enqueue(ct()->byte_for_index(card_index));
+    _last_enqueued_card = card_index;
+    return true;
+  } else {
+    return false;
+  }
+}
+
+template <class T> void G1ParScanThreadState::enqueue_card_into_evac_fail_region(T* p, oop obj) {
+  assert(!HeapRegion::is_in_same_region(p, obj), "Should have filtered out cross-region references already.");
+  assert(!_g1h->heap_region_containing(p)->is_survivor(), "Should have filtered out from-newly allocated survivor references already.");
+  assert(_g1h->heap_region_containing(obj)->in_collection_set(), "Only for enqeueing reference into collection set region");
+
+  if (enqueue_if_new(p)) {
+    _evac_failure_enqueued_cards++;
+  }
+}
+
 template <class T> void G1ParScanThreadState::write_ref_field_post(T* p, oop obj) {
   assert(obj != nullptr, "Must be");
   if (HeapRegion::is_in_same_region(p, obj)) {
@@ -109,11 +131,13 @@ template <class T> void G1ParScanThreadState::write_ref_field_post(T* p, oop obj
   }
   G1HeapRegionAttr dest_attr = _g1h->region_attr(obj);
   // References to the current collection set are references to objects that failed
-  // evacuation. Currently these regions are always relabelled as old without
-  // remembered sets, so skip them.
+  // evacuation. Proactively collect remembered sets (cards) for them as likely they
+  // are sparsely populated (and have few references). We will decide later to keep
+  // or drop the region.
   if (dest_attr.is_in_cset()) {
     assert(obj->is_forwarded(), "evac-failed but not forwarded: " PTR_FORMAT, p2i(obj));
     assert(obj->forwardee() == obj, "evac-failed but not self-forwarded: " PTR_FORMAT, p2i(obj));
+    enqueue_card_into_evac_fail_region(p, obj);
     return;
   }
   enqueue_card_if_tracked(dest_attr, p, obj);
@@ -137,12 +161,7 @@ template <class T> void G1ParScanThreadState::enqueue_card_if_tracked(G1HeapRegi
   if (!region_attr.remset_is_tracked()) {
     return;
   }
-  size_t card_index = ct()->index_for(p);
-  // If the card hasn't been added to the buffer, do it.
-  if (_last_enqueued_card != card_index) {
-    _rdc_local_qset.enqueue(ct()->byte_for_index(card_index));
-    _last_enqueued_card = card_index;
-  }
+  enqueue_if_new(p);
 }
 
 #endif // SHARE_GC_G1_G1PARSCANTHREADSTATE_INLINE_HPP

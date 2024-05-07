@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,14 +73,14 @@ class TestGenCollectorPolicy {
 
       ASSERT_NO_FATAL_FAILURE(setter1->execute());
 
-      if (setter2 != NULL) {
+      if (setter2 != nullptr) {
         ASSERT_NO_FATAL_FAILURE(setter2->execute());
       }
 
       ASSERT_NO_FATAL_FAILURE(checker->execute());
     }
     static void test(Executor* setter, Executor* checker) {
-      test(setter, NULL, checker);
+      test(setter, nullptr, checker);
     }
   };
 

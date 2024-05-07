@@ -129,7 +129,7 @@ public class TestChurnNotifications {
     static volatile Object sink;
 
     public static void main(String[] args) throws Exception {
-        final long startTime = System.currentTimeMillis();
+        final long startTimeNanos = System.nanoTime();
 
         final AtomicLong churnBytes = new AtomicLong();
 
@@ -176,8 +176,8 @@ public class TestChurnNotifications {
         // Look at test timeout to figure out how long we can wait without breaking into timeout.
         // Default to 1/4 of the remaining time in 1s steps.
         final long STEP_MS = 1000;
-        long spentTime = System.currentTimeMillis() - startTime;
-        long maxTries = (Utils.adjustTimeout(Utils.DEFAULT_TEST_TIMEOUT) - spentTime) / STEP_MS / 4;
+        long spentTimeNanos = System.nanoTime() - startTimeNanos;
+        long maxTries = (Utils.adjustTimeout(Utils.DEFAULT_TEST_TIMEOUT) - (spentTimeNanos / 1_000_000L)) / STEP_MS / 4;
 
         // Wait until enough notifications are accrued to match minimum boundary.
         long tries = 0;

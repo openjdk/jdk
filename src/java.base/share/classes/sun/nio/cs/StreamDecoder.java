@@ -42,6 +42,8 @@ import java.nio.charset.CoderResult;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.UnsupportedCharsetException;
+import java.util.Arrays;
+
 import jdk.internal.misc.InternalLock;
 
 public class StreamDecoder extends Reader {
@@ -271,6 +273,25 @@ public class StreamDecoder extends Reader {
         return !closed;
     }
 
+    public void fillZeroToPosition() throws IOException {
+        Object lock = this.lock;
+        if (lock instanceof InternalLock locker) {
+            locker.lock();
+            try {
+                lockedFillZeroToPosition();
+            } finally {
+                locker.unlock();
+            }
+        } else {
+            synchronized (lock) {
+                lockedFillZeroToPosition();
+            }
+        }
+    }
+
+    private void lockedFillZeroToPosition() {
+        Arrays.fill(bb.array(), bb.arrayOffset(), bb.arrayOffset() + bb.position(), (byte)0);
+    }
 
     // -- Charset-based stream decoder impl --
 

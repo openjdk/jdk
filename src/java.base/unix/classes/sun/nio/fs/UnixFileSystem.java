@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.FileStore;
 import java.nio.file.FileSystem;
+import java.nio.file.FileSystemException;
 import java.nio.file.LinkOption;
 import java.nio.file.LinkPermission;
 import java.nio.file.Path;
@@ -51,7 +52,6 @@ import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
-import jdk.internal.misc.Blocker;
 import sun.nio.ch.DirectBuffer;
 import sun.nio.ch.IOStatus;
 import sun.security.action.GetPropertyAction;
@@ -519,6 +519,8 @@ abstract class UnixFileSystem
         try {
             mkdir(target, attrs.mode());
         } catch (UnixException x) {
+            if (x.errno() == EEXIST && flags.replaceExisting)
+                throw new FileSystemException(target.toString());
             x.rethrowAsIOException(target);
         }
 
@@ -665,6 +667,8 @@ abstract class UnixFileSystem
                             O_EXCL),
                            attrs.mode());
             } catch (UnixException x) {
+                if (x.errno() == EEXIST && flags.replaceExisting)
+                    throw new FileSystemException(target.toString());
                 x.rethrowAsIOException(target);
             }
 
@@ -677,7 +681,6 @@ abstract class UnixFileSystem
                 // Some forms of direct copy do not work on zero size files
                 if (!directCopyNotSupported && attrs.size() > 0) {
                     // copy bytes to target using platform function
-                    long comp = Blocker.begin();
                     try {
                         int res = directCopy(fo, fi, addressToPollForCancel);
                         if (res == 0) {
@@ -687,8 +690,6 @@ abstract class UnixFileSystem
                         }
                     } catch (UnixException x) {
                         x.rethrowAsIOException(source, target);
-                    } finally {
-                        Blocker.end(comp);
                     }
                 }
 
@@ -698,14 +699,11 @@ abstract class UnixFileSystem
                     ByteBuffer buf =
                         sun.nio.ch.Util.getTemporaryDirectBuffer(bufferSize);
                     try {
-                        long comp = Blocker.begin();
                         try {
                             bufferedCopy(fo, fi, ((DirectBuffer)buf).address(),
                                           bufferSize, addressToPollForCancel);
                         } catch (UnixException x) {
                             x.rethrowAsIOException(source, target);
-                        } finally {
-                            Blocker.end(comp);
                         }
                     } finally {
                         sun.nio.ch.Util.releaseTemporaryDirectBuffer(buf);
@@ -783,6 +781,8 @@ abstract class UnixFileSystem
                 }
             }
         } catch (UnixException x) {
+            if (x.errno() == EEXIST && flags.replaceExisting)
+                throw new FileSystemException(target.toString());
             x.rethrowAsIOException(target);
         }
     }
@@ -797,6 +797,8 @@ abstract class UnixFileSystem
         try {
             mknod(target, attrs.mode(), attrs.rdev());
         } catch (UnixException x) {
+            if (x.errno() == EEXIST && flags.replaceExisting)
+                throw new FileSystemException(target.toString());
             x.rethrowAsIOException(target);
         }
         boolean done = false;
@@ -882,6 +884,12 @@ abstract class UnixFileSystem
         // get attributes of source file (don't follow links)
         try {
             sourceAttrs = UnixFileAttributes.get(source, false);
+            if (sourceAttrs.isDirectory()) {
+                // ensure source can be moved
+                int errno = access(source, W_OK);
+                if (errno != 0)
+                    new UnixException(errno).rethrowAsIOException(source);
+            }
         } catch (UnixException x) {
             x.rethrowAsIOException(source);
         }
@@ -901,10 +909,9 @@ abstract class UnixFileSystem
         if (targetExists) {
             if (sourceAttrs.isSameFile(targetAttrs))
                 return;  // nothing to do as files are identical
-            if (!flags.replaceExisting) {
+            if (!flags.replaceExisting)
                 throw new FileAlreadyExistsException(
                     target.getPathForExceptionMessage());
-            }
 
             // attempt to delete target
             try {
@@ -916,12 +923,14 @@ abstract class UnixFileSystem
             } catch (UnixException x) {
                 // target is non-empty directory that can't be replaced.
                 if (targetAttrs.isDirectory() &&
-                   (x.errno() == EEXIST || x.errno() == ENOTEMPTY))
-                {
+                    (x.errno() == EEXIST || x.errno() == ENOTEMPTY)) {
                     throw new DirectoryNotEmptyException(
                         target.getPathForExceptionMessage());
                 }
-                x.rethrowAsIOException(target);
+                // ignore file not found otherwise rethrow
+                if (x.errno() != ENOENT) {
+                    x.rethrowAsIOException(target);
+                }
             }
         }
 
@@ -1010,6 +1019,15 @@ abstract class UnixFileSystem
             sm.checkPermission(new LinkPermission("symbolic"));
         }
 
+        // ensure source can be copied
+        if (!sourceAttrs.isSymbolicLink() || flags.followLinks) {
+            // the access(2) system call always follows links so it
+            // is suppressed if the source is an unfollowed link
+            int errno = access(source, R_OK);
+            if (errno != 0)
+                new UnixException(errno).rethrowAsIOException(source);
+        }
+
         // get attributes of target file (don't follow links)
         try {
             targetAttrs = UnixFileAttributes.get(target, false);
@@ -1028,6 +1046,7 @@ abstract class UnixFileSystem
             if (!flags.replaceExisting)
                 throw new FileAlreadyExistsException(
                     target.getPathForExceptionMessage());
+
             try {
                 if (targetAttrs.isDirectory()) {
                     rmdir(target);
@@ -1037,12 +1056,14 @@ abstract class UnixFileSystem
             } catch (UnixException x) {
                 // target is non-empty directory that can't be replaced.
                 if (targetAttrs.isDirectory() &&
-                   (x.errno() == EEXIST || x.errno() == ENOTEMPTY))
-                {
+                    (x.errno() == EEXIST || x.errno() == ENOTEMPTY)) {
                     throw new DirectoryNotEmptyException(
                         target.getPathForExceptionMessage());
                 }
-                x.rethrowAsIOException(target);
+                // ignore file not found otherwise rethrow
+                if (x.errno() != ENOENT) {
+                    x.rethrowAsIOException(target);
+                }
             }
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,7 +116,7 @@ class OopMapBlock {
   }
 
   // sizeof(OopMapBlock) in words.
-  static const int size_in_words() {
+  static int size_in_words() {
     return align_up((int)sizeof(OopMapBlock), wordSize) >>
       LogBytesPerWord;
   }
@@ -145,7 +145,7 @@ class InstanceKlass: public Klass {
   InstanceKlass(const ClassFileParser& parser, KlassKind kind = Kind, ReferenceType reference_type = REF_NONE);
 
  public:
-  InstanceKlass() { assert(DumpSharedSpaces || UseSharedSpaces, "only for CDS"); }
+  InstanceKlass();
 
   // See "The Java Virtual Machine Specification" section 2.16.2-5 for a detailed description
   // of the class loading & initialization procedure, and the use of the states.
@@ -237,9 +237,9 @@ class InstanceKlass: public Klass {
   JavaThread* volatile _init_thread;        // Pointer to current thread doing initialization (to handle recursive initialization)
 
   OopMapCache*    volatile _oop_map_cache;   // OopMapCache for all methods in the klass (allocated lazily)
-  JNIid*          _jni_ids;              // First JNI identifier for static fields in this class
-  jmethodID*      volatile _methods_jmethod_ids;  // jmethodIDs corresponding to method_idnum, or null if none
-  nmethodBucket*  volatile _dep_context;          // packed DependencyContext structure
+  JNIid*          _jni_ids;                  // First JNI identifier for static fields in this class
+  jmethodID* volatile _methods_jmethod_ids;  // jmethodIDs corresponding to method_idnum, or null if none
+  nmethodBucket*  volatile _dep_context;     // packed DependencyContext structure
   uint64_t        volatile _dep_context_last_cleaned;
   nmethod*        _osr_nmethods_head;    // Head of list of on-stack replacement nmethods for this class
 #if INCLUDE_JVMTI
@@ -347,6 +347,7 @@ class InstanceKlass: public Klass {
   ObjArrayKlass* array_klasses() const     { return _array_klasses; }
   inline ObjArrayKlass* array_klasses_acquire() const; // load with acquire semantics
   inline void release_set_array_klasses(ObjArrayKlass* k); // store with release semantics
+  void set_array_klasses(ObjArrayKlass* k) { _array_klasses = k; }
 
   // methods
   Array<Method*>* methods() const          { return _methods; }
@@ -494,6 +495,14 @@ public:
   static void check_prohibited_package(Symbol* class_name,
                                        ClassLoaderData* loader_data,
                                        TRAPS);
+
+  JavaThread* init_thread()  { return Atomic::load(&_init_thread); }
+  // We can safely access the name as long as we hold the _init_monitor.
+  const char* init_thread_name() {
+    assert(_init_monitor->owned_by_self(), "Must hold _init_monitor here");
+    return init_thread()->name_raw();
+  }
+
  public:
   // initialization state
   bool is_loaded() const                   { return init_state() >= loaded; }
@@ -503,7 +512,7 @@ public:
   bool is_not_initialized() const          { return init_state() <  being_initialized; }
   bool is_being_initialized() const        { return init_state() == being_initialized; }
   bool is_in_error_state() const           { return init_state() == initialization_error; }
-  bool is_init_thread(JavaThread *thread)  { return thread == Atomic::load(&_init_thread); }
+  bool is_init_thread(JavaThread *thread)  { return thread == init_thread(); }
   ClassState  init_state() const           { return Atomic::load(&_init_state); }
   const char* init_state_name() const;
   bool is_rewritten() const                { return _misc_flags.rewritten(); }
@@ -785,14 +794,9 @@ public:
 
   // jmethodID support
   jmethodID get_jmethod_id(const methodHandle& method_h);
-  jmethodID get_jmethod_id_fetch_or_update(size_t idnum,
-                     jmethodID new_id, jmethodID* new_jmeths,
-                     jmethodID* to_dealloc_id_p,
-                     jmethodID** to_dealloc_jmeths_p);
-  static void get_jmethod_id_length_value(jmethodID* cache, size_t idnum,
-                size_t *length_p, jmethodID* id_p);
   void ensure_space_for_methodids(int start_offset = 0);
   jmethodID jmethod_id_or_null(Method* method);
+  void update_methods_jmethod_cache();
 
   // annotations support
   Annotations* annotations() const          { return _annotations; }
@@ -955,7 +959,6 @@ public:
   // This bit is initialized in classFileParser.cpp.
   // It is false under any of the following conditions:
   //  - the class is abstract (including any interface)
-  //  - the class has a finalizer (if !RegisterFinalizersAtInit)
   //  - the class size is larger than FastAllocateSizeLimit
   //  - the class is java/lang/Class, which cannot be allocated directly
   bool can_be_fastpath_allocated() const {
@@ -1064,23 +1067,20 @@ public:
     Atomic::store(&_init_thread, thread);
   }
 
-  // The RedefineClasses() API can cause new method idnums to be needed
-  // which will cause the caches to grow. Safety requires different
-  // cache management logic if the caches can grow instead of just
-  // going from null to non-null.
-  bool idnum_can_increment() const      { return has_been_redefined(); }
   inline jmethodID* methods_jmethod_ids_acquire() const;
   inline void release_set_methods_jmethod_ids(jmethodID* jmeths);
+  // This nulls out jmethodIDs for all methods in 'klass'
+  static void clear_jmethod_ids(InstanceKlass* klass);
+  jmethodID update_jmethod_id(jmethodID* jmeths, Method* method, int idnum);
 
-  // Lock during initialization
 public:
   // Returns the array class for the n'th dimension
-  virtual Klass* array_klass(int n, TRAPS);
-  virtual Klass* array_klass_or_null(int n);
+  virtual ArrayKlass* array_klass(int n, TRAPS);
+  virtual ArrayKlass* array_klass_or_null(int n);
 
   // Returns the array class with this class as element type
-  virtual Klass* array_klass(TRAPS);
-  virtual Klass* array_klass_or_null();
+  virtual ArrayKlass* array_klass(TRAPS);
+  virtual ArrayKlass* array_klass_or_null();
 
   static void clean_initialization_error_table();
 
@@ -1164,6 +1164,11 @@ public:
   void print_class_load_logging(ClassLoaderData* loader_data,
                                 const ModuleEntry* module_entry,
                                 const ClassFileStream* cfs) const;
+ private:
+  void print_class_load_cause_logging() const;
+  void print_class_load_helper(ClassLoaderData* loader_data,
+                               const ModuleEntry* module_entry,
+                               const ClassFileStream* cfs) const;
 };
 
 // for adding methods

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,12 +44,14 @@ class ConstantOopReadValue;
 class ConstantOopWriteValue;
 class LocationValue;
 class ObjectValue;
+class ObjectMergeValue;
 
 class ScopeValue: public AnyObj {
  public:
   // Testers
   virtual bool is_location() const { return false; }
   virtual bool is_object() const { return false; }
+  virtual bool is_object_merge() const { return false; }
   virtual bool is_auto_box() const { return false; }
   virtual bool is_marker() const { return false; }
   virtual bool is_constant_int() const { return false; }
@@ -71,6 +73,11 @@ class ScopeValue: public AnyObj {
   ObjectValue* as_ObjectValue() {
     assert(is_object(), "must be");
     return (ObjectValue*)this;
+  }
+
+  ObjectMergeValue* as_ObjectMergeValue() {
+    assert(is_object_merge(), "must be");
+    return (ObjectMergeValue*)this;
   }
 
   LocationValue* as_LocationValue() {
@@ -126,35 +133,41 @@ class ObjectValue: public ScopeValue {
   GrowableArray<ScopeValue*> _field_values;
   Handle                     _value;
   bool                       _visited;
+  bool                       _is_scalar_replaced;      // Whether this ObjectValue describes an object scalar replaced or just
+                                                       // an object (possibly null) participating in an allocation merge.
+  bool                       _is_root;   // Will be true if this object is referred to
+                                         // as a local/expression/monitor in the JVMs.
+                                         // Otherwise false, meaning it's just a candidate
+                                         // in an object allocation merge.
  public:
-  ObjectValue(int id, ScopeValue* klass)
+  ObjectValue(int id, ScopeValue* klass = nullptr, bool is_scalar_replaced = true)
      : _id(id)
      , _klass(klass)
      , _field_values()
      , _value()
-     , _visited(false) {
-    assert(klass->is_constant_oop(), "should be constant java mirror oop");
+     , _visited(false)
+     , _is_scalar_replaced(is_scalar_replaced)
+     , _is_root(true) {
+    assert(klass == nullptr || klass->is_constant_oop(), "should be constant java mirror oop");
   }
 
-  ObjectValue(int id)
-     : _id(id)
-     , _klass(nullptr)
-     , _field_values()
-     , _value()
-     , _visited(false) {}
-
   // Accessors
-  bool                        is_object() const         { return true; }
-  int                         id() const                { return _id; }
-  ScopeValue*                 klass() const             { return _klass; }
-  GrowableArray<ScopeValue*>* field_values()            { return &_field_values; }
-  ScopeValue*                 field_at(int i) const     { return _field_values.at(i); }
-  int                         field_size()              { return _field_values.length(); }
-  Handle                      value() const             { return _value; }
-  bool                        is_visited() const        { return _visited; }
+  bool                        is_object() const           { return true; }
+  int                         id() const                  { return _id; }
+  virtual ScopeValue*         klass() const               { return _klass; }
+  virtual GrowableArray<ScopeValue*>* field_values()      { return &_field_values; }
+  virtual ScopeValue*         field_at(int i) const       { return _field_values.at(i); }
+  virtual int                 field_size()                { return _field_values.length(); }
+  virtual Handle              value() const               { return _value; }
+  bool                        is_visited() const          { return _visited; }
+  bool                        is_scalar_replaced() const  { return _is_scalar_replaced; }
+  bool                        is_root() const             { return _is_root; }
 
-  void                        set_value(oop value);
-  void                        set_visited(bool visited) { _visited = visited; }
+  void                        set_id(int id)                   { _id = id; }
+  virtual void                set_value(oop value);
+  void                        set_visited(bool visited)        { _visited = visited; }
+  void                        set_is_scalar_replaced(bool scd) { _is_scalar_replaced = scd; }
+  void                        set_root(bool root)              { _is_root = root; }
 
   // Serialization of debugging information
   void read_object(DebugInfoReadStream* stream);
@@ -163,6 +176,65 @@ class ObjectValue: public ScopeValue {
   // Printing
   void print_on(outputStream* st) const;
   void print_fields_on(outputStream* st) const;
+};
+
+// An ObjectMergeValue describes objects that were inputs to a Phi in C2 and at
+// least one of them was scalar replaced.
+// '_selector' is an integer value that will be '-1' if during the execution of
+// the C2 compiled code the path taken was that of the Phi input that was NOT
+// scalar replaced. In that case '_merge_pointer' is a pointer to an already
+// allocated object. If '_selector' is not '-1' then it should be the index of
+// an object in '_possible_objects'. That object is an ObjectValue describing an
+// object that was scalar replaced.
+
+class ObjectMergeValue: public ObjectValue {
+protected:
+  ScopeValue*                _selector;
+  ScopeValue*                _merge_pointer;
+  GrowableArray<ScopeValue*> _possible_objects;
+
+  // This holds the ObjectValue that should be used in place of this
+  // ObjectMergeValue. I.e., it's the ScopeValue from _possible_objects that was
+  // selected by 'select()' or is a on-the-fly created ScopeValue representing
+  // the _merge_pointer if _selector is -1.
+  //
+  // We need to keep this reference around because there will be entries in
+  // ScopeDesc that reference this ObjectMergeValue directly. After
+  // rematerialization ObjectMergeValue will be just a wrapper for the
+  // Objectvalue pointed by _selected.
+  ObjectValue*               _selected;
+public:
+  ObjectMergeValue(int id, ScopeValue* merge_pointer, ScopeValue* selector)
+     : ObjectValue(id, nullptr, false)
+     , _selector(selector)
+     , _merge_pointer(merge_pointer)
+     , _possible_objects()
+     , _selected(nullptr) {}
+
+  ObjectMergeValue(int id)
+     : ObjectValue(id, nullptr, false)
+     , _selector(nullptr)
+     , _merge_pointer(nullptr)
+     , _possible_objects()
+     , _selected(nullptr) {}
+
+  bool                        is_object_merge() const         { return true; }
+  ScopeValue*                 selector() const                { return _selector; }
+  ScopeValue*                 merge_pointer() const           { return _merge_pointer; }
+  GrowableArray<ScopeValue*>* possible_objects()              { return &_possible_objects; }
+  ObjectValue*                select(frame& fr, RegisterMap& reg_map) ;
+
+  ScopeValue*                 klass() const                   { ShouldNotReachHere(); return nullptr; }
+  GrowableArray<ScopeValue*>* field_values()                  { ShouldNotReachHere(); return nullptr; }
+  ScopeValue*                 field_at(int i) const           { ShouldNotReachHere(); return nullptr; }
+  int                         field_size()                    { ShouldNotReachHere(); return -1; }
+
+  Handle                      value() const;
+  void                        set_value(oop value)            { assert(_selected != nullptr, "Should call select() first."); _selected->set_value(value); }
+
+  // Serialization of debugging information
+  void read_object(DebugInfoReadStream* stream);
+  void write_on(DebugInfoWriteStream* stream);
 };
 
 class AutoBoxObjectValue : public ObjectValue {
@@ -297,11 +369,11 @@ class MonitorValue: public ResourceObj {
 
 class DebugInfoReadStream : public CompressedReadStream {
  private:
-  const CompiledMethod* _code;
-  const CompiledMethod* code() const { return _code; }
+  const nmethod* _code;
+  const nmethod* code() const { return _code; }
   GrowableArray<ScopeValue*>* _obj_pool;
  public:
-  DebugInfoReadStream(const CompiledMethod* code, int offset, GrowableArray<ScopeValue*>* obj_pool = nullptr) :
+  DebugInfoReadStream(const nmethod* code, int offset, GrowableArray<ScopeValue*>* obj_pool = nullptr) :
     CompressedReadStream(code->scopes_data_begin(), offset) {
     _code = code;
     _obj_pool = obj_pool;
@@ -316,6 +388,7 @@ class DebugInfoReadStream : public CompressedReadStream {
     return o;
   }
   ScopeValue* read_object_value(bool is_auto_box);
+  ScopeValue* read_object_merge_value();
   ScopeValue* get_cached_object();
   // BCI encoding is mostly unsigned, but -1 is a distinguished value
   int read_bci() { return read_int() + InvocationEntryBci; }

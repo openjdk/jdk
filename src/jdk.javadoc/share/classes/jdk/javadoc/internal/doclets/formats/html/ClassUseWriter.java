@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
-import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassTree;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassUseMapper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
@@ -60,6 +60,9 @@ public class ClassUseWriter extends SubWriterHolderWriter {
     final TypeElement typeElement;
     Set<PackageElement> pkgToPackageAnnotations = null;
     final Map<PackageElement, List<Element>> pkgToClassTypeParameter;
+    final Map<PackageElement, List<Element>> pkgToSubclassTypeParameter;
+    final Map<PackageElement, List<Element>> pkgToSubinterfaceTypeParameter;
+    final Map<PackageElement, List<Element>> pkgToImplementsTypeParameter;
     final Map<PackageElement, List<Element>> pkgToClassAnnotations;
     final Map<PackageElement, List<Element>> pkgToMethodTypeParameter;
     final Map<PackageElement, List<Element>> pkgToMethodArgTypeParameter;
@@ -81,28 +84,33 @@ public class ClassUseWriter extends SubWriterHolderWriter {
     final Map<PackageElement, List<Element>> pkgToConstructorArgTypeParameter;
     final Map<PackageElement, List<Element>> pkgToConstructorThrows;
     final SortedSet<PackageElement> pkgSet;
-    final MethodWriterImpl methodSubWriter;
-    final ConstructorWriterImpl constrSubWriter;
-    final FieldWriterImpl fieldSubWriter;
-    final NestedClassWriterImpl classSubWriter;
+    final MethodWriter methodSubWriter;
+    final ConstructorWriter constrSubWriter;
+    final FieldWriter fieldSubWriter;
+    final NestedClassWriter classSubWriter;
 
     /**
-     * Constructor.
+     * Creates a writer for a page listing the uses of a type element.
      *
-     * @param filename the file to be generated.
+     * @param configuration the configuration
+     * @param mapper a "mapper" containing the usage information
+     * @param typeElement the type element
      */
     public ClassUseWriter(HtmlConfiguration configuration,
-                          ClassUseMapper mapper, DocPath filename,
+                          ClassUseMapper mapper,
                           TypeElement typeElement) {
-        super(configuration, filename);
+        super(configuration, pathFor(configuration, typeElement));
         this.typeElement = typeElement;
         if (mapper.classToPackageAnnotations.containsKey(typeElement)) {
-            pkgToPackageAnnotations = new TreeSet<>(comparators.makeClassUseComparator());
+            pkgToPackageAnnotations = new TreeSet<>(comparators.classUseComparator());
             pkgToPackageAnnotations.addAll(mapper.classToPackageAnnotations.get(typeElement));
         }
         configuration.currentTypeElement = typeElement;
-        this.pkgSet = new TreeSet<>(comparators.makePackageComparator());
+        this.pkgSet = new TreeSet<>(comparators.packageComparator());
         this.pkgToClassTypeParameter = pkgDivide(mapper.classToClassTypeParam);
+        this.pkgToSubclassTypeParameter = pkgDivide(mapper.classToSubclassTypeParam);
+        this.pkgToSubinterfaceTypeParameter = pkgDivide(mapper.classToSubinterfaceTypeParam);
+        this.pkgToImplementsTypeParameter = pkgDivide(mapper.classToImplementsTypeParam);
         this.pkgToClassAnnotations = pkgDivide(mapper.classToClassAnnotations);
         this.pkgToMethodTypeParameter = pkgDivide(mapper.classToMethodTypeParam);
         this.pkgToMethodArgTypeParameter = pkgDivide(mapper.classToMethodArgTypeParam);
@@ -132,22 +140,29 @@ public class ClassUseWriter extends SubWriterHolderWriter {
                     + pkgSet + " with: " + mapper.classToPackage.get(this.typeElement));
         }
 
-        methodSubWriter = new MethodWriterImpl(this);
-        constrSubWriter = new ConstructorWriterImpl(this);
+        methodSubWriter = new MethodWriter(this);
+        constrSubWriter = new ConstructorWriter(this);
         constrSubWriter.setFoundNonPubConstructor(true);
-        fieldSubWriter = new FieldWriterImpl(this);
-        classSubWriter = new NestedClassWriterImpl(this);
+        fieldSubWriter = new FieldWriter(this);
+        classSubWriter = new NestedClassWriter(this);
+    }
+
+    private static DocPath pathFor(HtmlConfiguration configuration, TypeElement typeElement) {
+        return configuration.docPaths.forPackage(typeElement)
+                .resolve(DocPaths.CLASS_USE)
+                .resolve(configuration.docPaths.forName( typeElement));
     }
 
     /**
-     * Write out class use pages.
+     * Write out class use and package use pages.
      *
      * @param configuration the configuration for this doclet
      * @param classTree the class tree hierarchy
-     * @throws DocFileIOException if there is an error while generating the documentation
+     * @throws DocletException if there is an error while generating the documentation
      */
-    public static void generate(HtmlConfiguration configuration, ClassTree classTree) throws DocFileIOException  {
-        ClassUseMapper mapper = new ClassUseMapper(configuration, classTree);
+    public static void generate(HtmlConfiguration configuration, ClassTree classTree) throws DocletException {
+        var writerFactory = configuration.getWriterFactory();
+        var mapper = new ClassUseMapper(configuration, classTree);
         boolean nodeprecated = configuration.getOptions().noDeprecated();
         Utils utils = configuration.utils;
         for (TypeElement aClass : configuration.getIncludedTypeElements()) {
@@ -155,15 +170,16 @@ public class ClassUseWriter extends SubWriterHolderWriter {
             // as deprecated, do not generate the class-use page. We will still generate
             // the class-use page if the class is marked as deprecated but the containing
             // package is not since it could still be linked from that package-use page.
-            if (!(nodeprecated &&
-                  utils.isDeprecated(utils.containingPackage(aClass))))
-                ClassUseWriter.generate(configuration, mapper, aClass);
+            if (!(nodeprecated && utils.isDeprecated(utils.containingPackage(aClass)))) {
+                writerFactory.newClassUseWriter(aClass, mapper).buildPage();
+            }
         }
         for (PackageElement pkg : configuration.packages) {
             // If -nodeprecated option is set and the package is marked
             // as deprecated, do not generate the package-use page.
-            if (!(nodeprecated && utils.isDeprecated(pkg)))
-                PackageUseWriter.generate(configuration, mapper, pkg);
+            if (!(nodeprecated && utils.isDeprecated(pkg))) {
+                writerFactory.newPackageUseWriter(pkg, mapper).buildPage();
+            }
         }
     }
 
@@ -171,7 +187,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
         Map<PackageElement, List<Element>> map = new HashMap<>();
         List<? extends Element> elements = classMap.get(typeElement);
         if (elements != null) {
-            elements.sort(comparators.makeClassUseComparator());
+            elements.sort(comparators.classUseComparator());
             for (Element e : elements) {
                 PackageElement pkg = utils.containingPackage(e);
                 pkgSet.add(pkg);
@@ -182,26 +198,12 @@ public class ClassUseWriter extends SubWriterHolderWriter {
     }
 
     /**
-     * Generate a class page.
-     *
-     * @throws DocFileIOException if there is a problem while generating the documentation
-     */
-    public static void generate(HtmlConfiguration configuration, ClassUseMapper mapper,
-                                TypeElement typeElement) throws DocFileIOException {
-        ClassUseWriter clsgen;
-        DocPath path = configuration.docPaths.forPackage(typeElement)
-                              .resolve(DocPaths.CLASS_USE)
-                              .resolve(configuration.docPaths.forName( typeElement));
-        clsgen = new ClassUseWriter(configuration, mapper, path, typeElement);
-        clsgen.generateClassUseFile();
-    }
-
-    /**
      * Generate the class use elements.
      *
      * @throws DocFileIOException if there is a problem while generating the documentation
      */
-    protected void generateClassUseFile() throws DocFileIOException {
+    @Override
+    public void buildPage() throws DocFileIOException {
         HtmlTree body = getClassUseHeader();
         Content mainContent = new ContentBuilder();
         if (pkgSet.size() > 0) {
@@ -342,6 +344,15 @@ public class ClassUseWriter extends SubWriterHolderWriter {
         classSubWriter.addUseInfo(pkgToImplementingClass.get(pkg),
                 contents.getContent("doclet.ClassUse_ImplementingClass", classLink,
                 pkgLink), content);
+        classSubWriter.addUseInfo(pkgToSubclassTypeParameter.get(pkg),
+                contents.getContent("doclet.ClassUse_SubclassTypeParameter", classLink,
+                pkgLink), content);
+        classSubWriter.addUseInfo(pkgToSubinterfaceTypeParameter.get(pkg),
+                contents.getContent("doclet.ClassUse_SubinterfaceTypeParameter", classLink,
+                pkgLink), content);
+        classSubWriter.addUseInfo(pkgToImplementsTypeParameter.get(pkg),
+                contents.getContent("doclet.ClassUse_ImplementsTypeParameter", classLink,
+                pkgLink), content);
         fieldSubWriter.addUseInfo(pkgToField.get(pkg),
                 contents.getContent("doclet.ClassUse_Field", classLink,
                 pkgLink), content);
@@ -422,14 +433,18 @@ public class ClassUseWriter extends SubWriterHolderWriter {
 
     @Override
     protected Navigation getNavBar(PageMode pageMode, Element element) {
-        Content mdleLinkContent = getModuleLink(utils.elementUtils.getModuleOf(typeElement),
-                contents.moduleLabel);
-        Content classLinkContent = getLink(new HtmlLinkInfo(
-                configuration, HtmlLinkInfo.Kind.PLAIN, typeElement)
-                .label(resources.getText("doclet.Class"))
-                .skipPreview(true));
-        return super.getNavBar(pageMode, element)
-                .setNavLinkModule(mdleLinkContent)
-                .setNavLinkClass(classLinkContent);
+        List<Content> subnavLinks = new ArrayList<>();
+        if (configuration.showModules) {
+            subnavLinks.add(getBreadcrumbLink(utils.elementUtils.getModuleOf(typeElement), false));
+        }
+        // We may generate a class-use page for an otherwise undocumented page in the condition below.
+        boolean isUndocumented = options.noDeprecated() && utils.isDeprecated(typeElement);
+        subnavLinks.add(getBreadcrumbLink(utils.containingPackage(typeElement), isUndocumented));
+        if (!isUndocumented) {
+            subnavLinks.add(getBreadcrumbLink(typeElement, true));
+        }
+
+        return super.getNavBar(pageMode, element).setSubNavLinks(subnavLinks);
     }
 }
+

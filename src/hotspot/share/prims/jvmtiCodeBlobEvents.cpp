@@ -234,7 +234,7 @@ jvmtiError JvmtiCodeBlobEvents::generate_compiled_method_load_events(JvmtiEnv* e
       // Save events to the queue for posting outside the CodeCache_lock.
       MutexLocker mu(java_thread, CodeCache_lock, Mutex::_no_safepoint_check_flag);
       // Iterate over non-profiled and profiled nmethods
-      NMethodIterator iter(NMethodIterator::only_not_unloading);
+      NMethodIterator iter(NMethodIterator::not_unloading);
       while(iter.next()) {
         nmethod* current = iter.method();
         current->post_compiled_method_load_event(state);
@@ -271,9 +271,7 @@ void JvmtiCodeBlobEvents::build_jvmti_addr_location_map(nmethod *nm,
 
   if (!mh->is_native()) {
     PcDesc *pcd;
-    int pcds_in_method;
-
-    pcds_in_method = (nm->scopes_pcs_end() - nm->scopes_pcs_begin());
+    int pcds_in_method = pointer_delta_as_int(nm->scopes_pcs_end(), nm->scopes_pcs_begin());
     map = NEW_C_HEAP_ARRAY(jvmtiAddrLocationMap, pcds_in_method, mtInternal);
 
     address scopes_data = nm->scopes_data_begin();

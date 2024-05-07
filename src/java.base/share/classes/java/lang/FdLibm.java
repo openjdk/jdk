@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1696,7 +1696,7 @@ final class FdLibm {
      *        This formula has one division fewer than the one above; however,
      *        it requires more multiplications and additions. Also x must be
      *        scaled in advance to avoid spurious overflow in evaluating the
-     *        expression 3y*y+x. Hence it is not recommended uless division
+     *        expression 3y*y+x. Hence it is not recommended unless division
      *        is slow. If division is very slow, then one should use the
      *        reciproot algorithm given in section B.
      *
@@ -3005,7 +3005,6 @@ final class FdLibm {
 
             hx  = __HI(x);  // high word of x
             xsb = hx & SIGN_BIT;                 // sign bit of x
-            y = Math.abs(x);
             hx &= EXP_SIGNIF_BITS;               // high word of |x|
 
             // filter out huge and non-finite argument
@@ -3156,7 +3155,7 @@ final class FdLibm {
                 return h*StrictMath.exp(Math.abs(x));
             }
 
-            // |x| in [log(maxdouble), overflowthresold]
+            // |x| in [log(maxdouble), overflowthreshold]
             lx = __LO(x);
             if (ix < 0x4086_33CE ||
                 ((ix == 0x4086_33ce) &&
@@ -3166,7 +3165,7 @@ final class FdLibm {
                 return t * w;
             }
 
-            // |x| > overflowthresold, sinh(x) overflow
+            // |x| > overflowthreshold, sinh(x) overflow
             return x * shuge;
         }
     }
@@ -3231,7 +3230,7 @@ final class FdLibm {
                 return 0.5*StrictMath.exp(Math.abs(x));
             }
 
-            // |x| in [log(maxdouble), overflowthresold]
+            // |x| in [log(maxdouble), overflowthreshold]
             lx = __LO(x);
             if (ix<0x4086_33CE ||
                 ((ix == 0x4086_33ce) &&
@@ -3241,7 +3240,7 @@ final class FdLibm {
                 return t*w;
             }
 
-            // |x| > overflowthresold, cosh(x) overflow
+            // |x| > overflowthreshold, cosh(x) overflow
             return huge*huge;
         }
     }

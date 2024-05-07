@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2018, 2021, Red Hat, Inc. All rights reserved.
- * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
+ * Copyright (c) 2018, 2023, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,14 +53,25 @@ void LIR_OpShenandoahCompareAndSwap::emit_code(LIR_Assembler *masm) {
     __ encode_heap_oop(new_val, new_val);
   }
 
-  // Due to the memory barriers emitted in ShenandoahBarrierSetC1::atomic_cmpxchg_at_resolved,
-  // there is no need to specify stronger memory semantics.
+  // There might be a volatile load before this Unsafe CAS.
+  if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
+    __ sync();
+  } else {
+    __ lwsync();
+  }
+
   ShenandoahBarrierSet::assembler()->cmpxchg_oop(masm->masm(), addr, cmp_val, new_val, tmp1, tmp2,
                                                  false, result);
 
   if (UseCompressedOops) {
     __ decode_heap_oop(cmp_val);
     __ decode_heap_oop(new_val);
+  }
+
+  if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
+    __ isync();
+  } else {
+    __ sync();
   }
 
   __ block_comment("} LIR_OpShenandoahCompareAndSwap (shenandaohgc)");
@@ -80,14 +91,6 @@ LIR_Opr ShenandoahBarrierSetC1::atomic_cmpxchg_at_resolved(LIRAccess &access, LI
   if (access.is_oop()) {
     LIRGenerator* gen = access.gen();
 
-    if (ShenandoahCASBarrier) {
-      if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
-        __ membar();
-      } else {
-        __ membar_release();
-      }
-    }
-
     if (ShenandoahSATBBarrier) {
       pre_barrier(gen, access.access_emit_info(), access.decorators(), access.resolved_addr(),
                   LIR_OprFact::illegalOpr);
@@ -104,12 +107,6 @@ LIR_Opr ShenandoahBarrierSetC1::atomic_cmpxchg_at_resolved(LIRAccess &access, LI
 
       __ append(new LIR_OpShenandoahCompareAndSwap(addr, cmp_value.result(), new_value.result(), t1, t2, result));
 
-      if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
-        __ membar_acquire();
-      } else {
-        __ membar();
-      }
-
       return result;
     }
   }
@@ -124,12 +121,6 @@ LIR_Opr ShenandoahBarrierSetC1::atomic_xchg_at_resolved(LIRAccess &access, LIRIt
   LIR_Opr result = gen->new_register(type);
   value.load_item();
   LIR_Opr value_opr = value.result();
-
-  if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
-    __ membar();
-  } else {
-    __ membar_release();
-  }
 
   if (access.is_oop()) {
     value_opr = iu_barrier(access.gen(), value_opr, access.access_emit_info(), access.decorators());
@@ -150,12 +141,6 @@ LIR_Opr ShenandoahBarrierSetC1::atomic_xchg_at_resolved(LIRAccess &access, LIRIt
     if (ShenandoahSATBBarrier) {
       pre_barrier(access.gen(), access.access_emit_info(), access.decorators(), LIR_OprFact::illegalOpr, result);
     }
-  }
-
-  if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
-    __ membar_acquire();
-  } else {
-    __ membar();
   }
 
   return result;

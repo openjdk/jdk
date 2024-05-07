@@ -31,6 +31,12 @@ const int BytesPerInstWord = 4;
 
 const int StackAlignmentInBytes = 16;
 
+#ifdef AIX
+const size_t pd_segfault_address = -1;
+#else
+const size_t pd_segfault_address = 1024;
+#endif
+
 // Indicates whether the C calling conventions require that
 // 32-bit integer argument values are extended to 64 bits.
 const bool CCallingConventionRequiresIntsAsLongs = true;
@@ -42,8 +48,11 @@ const bool CCallingConventionRequiresIntsAsLongs = true;
 // PPC64 is not specified as multi-copy-atomic
 // So we must not #define CPU_MULTI_COPY_ATOMIC
 
-// The expected size in bytes of a cache line, used to pad data structures.
+// The expected size in bytes of a cache line.
 #define DEFAULT_CACHE_LINE_SIZE 128
+
+// The default padding size for data structures to avoid false sharing.
+#define DEFAULT_PADDING_SIZE DEFAULT_CACHE_LINE_SIZE
 
 #define SUPPORT_RESERVED_STACK_AREA
 

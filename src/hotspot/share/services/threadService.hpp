@@ -38,7 +38,7 @@
 #include "services/management.hpp"
 
 class DeadlockCycle;
-class ObjectMonitorsHashtable;
+class ObjectMonitorsView;
 class OopClosure;
 class StackFrameInfo;
 class ThreadConcurrentLocks;
@@ -103,8 +103,8 @@ public:
 
   static jlong get_total_thread_count()       { return _total_threads_count->get_value(); }
   static jlong get_peak_thread_count()        { return _peak_threads_count->get_value(); }
-  static jlong get_live_thread_count()        { return _atomic_threads_count; }
-  static jlong get_daemon_thread_count()      { return _atomic_daemon_threads_count; }
+  static int get_live_thread_count()          { return _atomic_threads_count; }
+  static int get_daemon_thread_count()        { return _atomic_daemon_threads_count; }
 
   static jlong exited_allocated_bytes()       { return Atomic::load(&_exited_allocated_bytes); }
   static void incr_exited_allocated_bytes(jlong size) {
@@ -264,7 +264,7 @@ public:
   ThreadConcurrentLocks* get_concurrent_locks()     { return _concurrent_locks; }
 
   void        dump_stack_at_safepoint(int max_depth, bool with_locked_monitors,
-                                      ObjectMonitorsHashtable* table, bool full);
+                                      ObjectMonitorsView* monitors, bool full);
   void        set_concurrent_locks(ThreadConcurrentLocks* l) { _concurrent_locks = l; }
   void        metadata_do(void f(Metadata*));
 };
@@ -287,7 +287,7 @@ class ThreadStackTrace : public CHeapObj<mtInternal> {
   int             get_stack_depth()     { return _depth; }
 
   void            add_stack_frame(javaVFrame* jvf);
-  void            dump_stack_at_safepoint(int max_depth, ObjectMonitorsHashtable* table, bool full);
+  void            dump_stack_at_safepoint(int max_depth, ObjectMonitorsView* monitors, bool full);
   Handle          allocate_fill_stack_trace_element_array(TRAPS);
   void            metadata_do(void f(Metadata*));
   GrowableArray<OopHandle>* jni_locked_monitors() { return _jni_locked_monitors; }

@@ -46,4 +46,3 @@ private:
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHSTWMARK_HPP
-

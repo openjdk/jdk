@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -231,12 +231,10 @@ class WindowsWatchService
         public boolean equals(Object obj) {
             if (obj == this)
                 return true;
-            if (!(obj instanceof FileKey))
-                return false;
-            FileKey other = (FileKey)obj;
-            if (this.volSerialNumber != other.volSerialNumber) return false;
-            if (this.fileIndexHigh != other.fileIndexHigh) return false;
-            return this.fileIndexLow == other.fileIndexLow;
+            return obj instanceof FileKey other
+                    && this.volSerialNumber == other.volSerialNumber
+                    && this.fileIndexHigh == other.fileIndexHigh
+                    && this.fileIndexLow == other.fileIndexLow;
         }
     }
 

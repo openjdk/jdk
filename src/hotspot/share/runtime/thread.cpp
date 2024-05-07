@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -34,6 +34,7 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
+#include "nmt/memTracker.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
@@ -45,7 +46,6 @@
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.inline.hpp"
-#include "services/memTracker.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/spinYield.hpp"
 #if INCLUDE_JFR
@@ -73,6 +73,7 @@ Thread::Thread() {
   set_lgrp_id(-1);
   DEBUG_ONLY(clear_suspendible_thread();)
   DEBUG_ONLY(clear_indirectly_suspendible_thread();)
+  DEBUG_ONLY(clear_indirectly_safepoint_thread();)
 
   // allocated data structures
   set_osthread(nullptr);
@@ -169,8 +170,11 @@ void Thread::record_stack_base_and_size() {
   // any members being initialized. Do not rely on Thread::current() being set.
   // If possible, refrain from doing anything which may crash or assert since
   // quite probably those crash dumps will be useless.
-  set_stack_base(os::current_stack_base());
-  set_stack_size(os::current_stack_size());
+  address base;
+  size_t size;
+  os::current_stack_base_and_size(&base, &size);
+  set_stack_base(base);
+  set_stack_size(size);
 
   // Set stack limits after thread is initialized.
   if (is_Java_thread()) {
@@ -395,7 +399,7 @@ bool Thread::claim_par_threads_do(uintx claim_token) {
   return false;
 }
 
-void Thread::oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf) {
+void Thread::oops_do_no_frames(OopClosure* f, NMethodClosure* cf) {
   // Do oop for ThreadShadow
   f->do_oop((oop*)&_pending_exception);
   handle_area()->oops_do(f);
@@ -425,7 +429,7 @@ public:
   }
 };
 
-void Thread::oops_do(OopClosure* f, CodeBlobClosure* cf) {
+void Thread::oops_do(OopClosure* f, NMethodClosure* cf) {
   // Record JavaThread to GC thread
   RememberProcessedThread rpt(this);
   oops_do_no_frames(f, cf);
@@ -450,10 +454,10 @@ void Thread::print_on(outputStream* st, bool print_extended_info) const {
     }
 
     st->print("cpu=%.2fms ",
-              os::thread_cpu_time(const_cast<Thread*>(this), true) / 1000000.0
+              (double)os::thread_cpu_time(const_cast<Thread*>(this), true) / 1000000.0
               );
     st->print("elapsed=%.2fs ",
-              _statistical_info.getElapsedTime() / 1000.0
+              (double)_statistical_info.getElapsedTime() / 1000.0
               );
     if (is_Java_thread() && (PrintExtendedThreadInfo || print_extended_info)) {
       size_t allocated_bytes = (size_t) const_cast<Thread*>(this)->cooked_allocated_bytes();
@@ -487,9 +491,11 @@ void Thread::print_on_error(outputStream* st, char* buf, int buflen) const {
   if (os_thr != nullptr) {
     st->fill_to(67);
     if (os_thr->get_state() != ZOMBIE) {
+      // Use raw field members for stack base/size as this could be
+      // called before a thread has run enough to initialize them.
       st->print(" [id=%d, stack(" PTR_FORMAT "," PTR_FORMAT ") (" PROPERFMT ")]",
-                osthread()->thread_id(), p2i(stack_end()), p2i(stack_base()),
-                PROPERFMTARGS(stack_size()));
+                osthread()->thread_id(), p2i(_stack_base - _stack_size), p2i(_stack_base),
+                PROPERFMTARGS(_stack_size));
     } else {
       st->print(" terminated");
     }

@@ -51,7 +51,7 @@ final class JVMEventTask extends EventTask {
     public void execute(long timestamp, PeriodicType periodicType) {
         try {
             lock.lock();
-            JVM.getJVM().emitEvent(getEventType().getId(), timestamp, periodicType.ordinal());
+            JVM.emitEvent(getEventType().getId(), timestamp, periodicType.ordinal());
         } finally {
             lock.unlock();
         }

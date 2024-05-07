@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@
 #include "memory/resourceArea.hpp"
 #include "oops/klass.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/method.inline.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/handles.hpp"
@@ -387,9 +388,7 @@ void Dependencies::copy_to(nmethod* nm) {
   address beg = nm->dependencies_begin();
   address end = nm->dependencies_end();
   guarantee(end - beg >= (ptrdiff_t) size_in_bytes(), "bad sizing");
-  Copy::disjoint_words((HeapWord*) content_bytes(),
-                       (HeapWord*) beg,
-                       size_in_bytes() / sizeof(HeapWord));
+  (void)memcpy(beg, content_bytes(), size_in_bytes());
   assert(size_in_bytes() % sizeof(HeapWord) == 0, "copy by words");
 }
 

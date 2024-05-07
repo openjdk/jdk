@@ -131,7 +131,10 @@
     object_field(VMIntrinsicMethod, name, "Ljava/lang/String;")                                               \
     object_field(VMIntrinsicMethod, descriptor, "Ljava/lang/String;")                                         \
     int_field(VMIntrinsicMethod, id)                                                                          \
-    jvmci_constructor(VMIntrinsicMethod, "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;I)V")        \
+    boolean_field(VMIntrinsicMethod, isAvailable)                                                             \
+    boolean_field(VMIntrinsicMethod, c1Supported)                                                             \
+    boolean_field(VMIntrinsicMethod, c2Supported)                                                             \
+    jvmci_constructor(VMIntrinsicMethod, "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;IZZZ)V")     \
   end_class                                                                                                   \
   start_class(HotSpotCompilationRequestResult, jdk_vm_ci_hotspot_HotSpotCompilationRequestResult)             \
     object_field(HotSpotCompilationRequestResult, failureMessage, "Ljava/lang/String;")                       \
@@ -243,11 +246,11 @@
   start_class(InternalError, java_lang_InternalError)                                                         \
     jvmci_constructor(InternalError, "(Ljava/lang/String;)V")                                                 \
   end_class                                                                                                   \
-  start_class(OutOfMemoryError, java_lang_OutOfMemoryError)                                                         \
-    jvmci_constructor(OutOfMemoryError, "(Ljava/lang/String;)V")                                                 \
+  start_class(OutOfMemoryError, java_lang_OutOfMemoryError)                                                   \
+    jvmci_constructor(OutOfMemoryError, "(Ljava/lang/String;)V")                                              \
   end_class                                                                                                   \
-  start_class(ClassNotFoundException, java_lang_ClassNotFoundException)                                       \
-    jvmci_constructor(ClassNotFoundException, "(Ljava/lang/String;)V")                                        \
+  start_class(NoClassDefFoundError, java_lang_NoClassDefFoundError)                                           \
+    jvmci_constructor(NoClassDefFoundError, "(Ljava/lang/String;)V")                                          \
   end_class                                                                                                   \
   start_class(InvalidInstalledCodeException, jdk_vm_ci_code_InvalidInstalledCodeException)                    \
     jvmci_constructor(InvalidInstalledCodeException, "(Ljava/lang/String;)V")                                 \

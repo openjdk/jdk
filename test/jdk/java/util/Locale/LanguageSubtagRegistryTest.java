@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,11 @@
 
 /*
  * @test
- * @bug 8040211 8191404 8203872 8222980 8225435 8241082 8242010 8247432
- *      8258795 8267038 8287180 8302512 8304761 8306031 8308021
+ * @bug 8025703 8040211 8191404 8203872 8222980 8225435 8241082 8242010 8247432
+ *      8258795 8267038 8287180 8302512 8304761 8306031 8308021 8313702 8318322
+ *      8327631
  * @summary Checks the IANA language subtag registry data update
- *          (LSR Revision: 2023-05-11) with Locale and Locale.LanguageRange
+ *          (LSR Revision: 2024-03-07) with Locale and Locale.LanguageRange
  *          class methods.
  * @run main LanguageSubtagRegistryTest
  */
@@ -45,9 +46,9 @@ public class LanguageSubtagRegistryTest {
 
     private static final String ACCEPT_LANGUAGE =
         "Accept-Language: aam, adp, aeb, ajs, aog, apc, ajp, aue, bcg, bic, bpp, cey, cbr, cnp, cqu, crr, csp, csx, dif, dmw, dsz, ehs, ema,"
-        + " en-gb-oed, gti, iba, jks, kdz, kjh, kmb, koj, kru, ksp, kwq, kxe, kzk, lgs, lii, lmm, lsb, lsc, lsn, lsv, lsw, lvi, mtm,"
-        + " ngv, nns, ola, oyb, pat, phr, plu, pnd, pub, rib, rnb, rsn, scv, snz, sqx, suj, szy, taj, tdg, tjj, tjp, tpn, tvx,"
-        + " umi, uss, uth, ysm, zko, wkr;q=0.9, ar-hyw;q=0.8, yug;q=0.5, gfx;q=0.4";
+        + " en-gb-oed, gti, iba, ilw, jks, kdz, kjh, kmb, koj, kru, ksp, kwq, kxe, kzk, lgs, lii, lmm, lsb, lsc, lsn, lsv, lsw, lvi, meg, mtm,"
+        + " ngv, nns, ola, oyb, pat, pcr, phr, plu, pnd, pub, rib, rnb, rsn, scv, snz, sqx, suj, szy, taj, tdg, tjj, tjp, tpn, tvx,"
+        + " umi, uss, uth, xia, yos, ysm, zko, wkr;q=0.9, ar-hyw;q=0.8, yug;q=0.5, gfx;q=0.4";
     private static final List<LanguageRange> EXPECTED_RANGE_LIST = List.of(
             new LanguageRange("aam", 1.0),
             new LanguageRange("aas", 1.0),
@@ -102,6 +103,8 @@ public class LanguageSubtagRegistryTest {
             new LanguageRange("iba", 1.0),
             new LanguageRange("snb", 1.0),
             new LanguageRange("blg", 1.0),
+            new LanguageRange("ilw", 1.0),
+            new LanguageRange("gal", 1.0),
             new LanguageRange("jks", 1.0),
             new LanguageRange("sgn-jks", 1.0),
             new LanguageRange("kdz", 1.0),
@@ -140,6 +143,8 @@ public class LanguageSubtagRegistryTest {
             new LanguageRange("lsw", 1.0),
             new LanguageRange("sgn-lsw", 1.0),
             new LanguageRange("lvi", 1.0),
+            new LanguageRange("meg", 1.0),
+            new LanguageRange("cir", 1.0),
             new LanguageRange("mtm", 1.0),
             new LanguageRange("ymt", 1.0),
             new LanguageRange("ngv", 1.0),
@@ -154,6 +159,8 @@ public class LanguageSubtagRegistryTest {
             new LanguageRange("jeg", 1.0),
             new LanguageRange("pat", 1.0),
             new LanguageRange("kxr", 1.0),
+            new LanguageRange("pcr", 1.0),
+            new LanguageRange("adx", 1.0),
             new LanguageRange("phr", 1.0),
             new LanguageRange("pmu", 1.0),
             new LanguageRange("plu", 1.0),
@@ -188,6 +195,10 @@ public class LanguageSubtagRegistryTest {
             new LanguageRange("szd", 1.0),
             new LanguageRange("uss", 1.0),
             new LanguageRange("uth", 1.0),
+            new LanguageRange("xia", 1.0),
+            new LanguageRange("acn", 1.0),
+            new LanguageRange("yos", 1.0),
+            new LanguageRange("zom", 1.0),
             new LanguageRange("ysm", 1.0),
             new LanguageRange("sgn-ysm", 1.0),
             new LanguageRange("zko", 1.0),

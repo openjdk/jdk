@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,15 +121,5 @@ class Headings {
      */
     static class TypeUse {
         static final TagName SUMMARY_HEADING = TagName.H2;
-    }
-
-    /**
-     * Headings for index frames pages.
-     */
-    static class IndexFrames {
-        /** Heading for a list of module names in an index frame. */
-        static final TagName MODULE_HEADING = TagName.H2;
-        /** Heading for a list of package names in an index frame. */
-        static final TagName PACKAGE_HEADING = TagName.H2;
     }
 }

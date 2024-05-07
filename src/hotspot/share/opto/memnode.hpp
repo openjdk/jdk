@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,7 +93,7 @@ protected:
   }
 
   virtual Node* find_previous_arraycopy(PhaseValues* phase, Node* ld_alloc, Node*& mem, bool can_see_stored_value) const { return nullptr; }
-  ArrayCopyNode* find_array_copy_clone(PhaseValues* phase, Node* ld_alloc, Node* mem) const;
+  ArrayCopyNode* find_array_copy_clone(Node* ld_alloc, Node* mem) const;
   static bool check_if_adr_maybe_raw(Node* adr);
 
 public:
@@ -125,6 +125,9 @@ public:
     return 0;
 #endif
   }
+
+  // Return the barrier data of n, if available, or 0 otherwise.
+  static uint8_t barrier_data(const Node* n);
 
   // Map a load or store opcode to its corresponding store opcode.
   // (Return -1 if unknown.)
@@ -199,7 +202,7 @@ private:
   // this field.
   const MemOrd _mo;
 
-  AllocateNode* is_new_object_mark_load(PhaseGVN *phase) const;
+  AllocateNode* is_new_object_mark_load() const;
 
 protected:
   virtual bool cmp(const Node &n) const;
@@ -244,8 +247,11 @@ public:
   // try to hook me up to the exact initializing store.
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
 
+  // Return true if it's possible to split the Load through a Phi merging the bases
+  bool can_split_through_phi_base(PhaseGVN *phase);
+
   // Split instance field load through Phi.
-  Node* split_through_phi(PhaseGVN *phase);
+  Node* split_through_phi(PhaseGVN *phase, bool ignore_missing_instance_id = false);
 
   // Recover original value from boxed values
   Node *eliminate_autobox(PhaseIterGVN *igvn);
@@ -289,6 +295,8 @@ public:
   bool has_unknown_control_dependency() const  { return _control_dependency == UnknownControl; }
   bool has_pinned_control_dependency() const   { return _control_dependency == Pinned; }
 
+  LoadNode* pin_array_access_node() const;
+
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
 #endif
@@ -314,6 +322,8 @@ protected:
   virtual bool depends_only_on_test() const {
     return adr_type() != TypeRawPtr::BOTTOM && _control_dependency == DependsOnlyOnTest;
   }
+
+  LoadNode* clone_pinned() const;
 };
 
 //------------------------------LoadBNode--------------------------------------
@@ -785,7 +795,7 @@ public:
     StoreNode(c, mem, adr, at, val, oop_store, MemNode::release),
     _oop_alias_idx(oop_alias_idx) {
     assert(_oop_alias_idx >= Compile::AliasIdxRaw ||
-           _oop_alias_idx == Compile::AliasIdxBot && !Compile::current()->do_aliasing(),
+           (_oop_alias_idx == Compile::AliasIdxBot && !Compile::current()->do_aliasing()),
            "bad oop alias idx");
   }
   virtual int Opcode() const;

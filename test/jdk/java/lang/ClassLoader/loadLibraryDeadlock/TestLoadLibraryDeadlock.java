@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, BELLSOFT. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -38,12 +38,13 @@ import jdk.test.lib.process.*;
 import jdk.test.lib.util.FileUtils;
 
 import java.lang.ProcessBuilder;
-import java.lang.Process;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.io.*;
 import java.util.*;
-import java.util.concurrent.*;
 import java.util.spi.ToolProvider;
+
+import static jdk.test.lib.process.ProcessTools.*;
 
 public class TestLoadLibraryDeadlock {
 
@@ -108,53 +109,6 @@ public class TestLoadLibraryDeadlock {
         );
     }
 
-    private static Process runJavaCommand(String... command) throws Throwable {
-        String java = JDKToolFinder.getJDKTool("java");
-        List<String> commands = new ArrayList<>();
-        Collections.addAll(commands, java);
-        Collections.addAll(commands, command);
-        System.out.println("COMMAND: " + String.join(" ", commands));
-        return new ProcessBuilder(commands.toArray(new String[0]))
-                .redirectErrorStream(true)
-                .directory(new File(testClassPath))
-                .start();
-    }
-
-    private static OutputAnalyzer jcmd(long pid, String command) throws Throwable {
-        String jcmd = JDKToolFinder.getJDKTool("jcmd");
-        return runCommandInTestClassPath(jcmd,
-                String.valueOf(pid),
-                command
-        );
-    }
-
-    private static String readAvailable(final InputStream is) throws Throwable {
-        final List<String> list = Collections.synchronizedList(new ArrayList<String>());
-        ExecutorService executor = Executors.newFixedThreadPool(2);
-        Future<String> future = executor.submit(new Callable<String>() {
-            public String call() {
-                String result = new String();
-                BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-                try {
-                    while(true) {
-                        String s = reader.readLine();
-                        if (s.length() > 0) {
-                            list.add(s);
-                            result += s + "\n";
-                        }
-                    }
-                } catch (IOException ignore) {}
-                return result;
-            }
-        });
-        try {
-            return future.get(1000, TimeUnit.MILLISECONDS);
-        } catch (Exception ignoreAll) {
-            future.cancel(true);
-            return String.join("\n", list);
-        }
-    }
-
     private final static long countLines(OutputAnalyzer output, String string) {
         return output.asLines()
                      .stream()
@@ -162,22 +116,17 @@ public class TestLoadLibraryDeadlock {
                      .count();
     }
 
-    private final static void dump(OutputAnalyzer output) {
-        output.asLines()
-              .stream()
-              .forEach(s -> System.out.println(s));
-    }
-
     public static void main(String[] args) throws Throwable {
         genKey()
                 .shouldHaveExitValue(0);
 
-        FileUtils.deleteFileIfExistsWithRetry(
-                Paths.get(testClassPath, "a.jar"));
-        FileUtils.deleteFileIfExistsWithRetry(
-                Paths.get(testClassPath, "b.jar"));
-        FileUtils.deleteFileIfExistsWithRetry(
-                Paths.get(testClassPath, "c.jar"));
+        Path aJar = Path.of(testClassPath, "a.jar");
+        Path bJar = Path.of(testClassPath, "b.jar");
+        Path cJar = Path.of(testClassPath, "c.jar");
+
+        FileUtils.deleteFileIfExistsWithRetry(aJar);
+        FileUtils.deleteFileIfExistsWithRetry(bJar);
+        FileUtils.deleteFileIfExistsWithRetry(cJar);
 
         createJar("a.jar",
                 "LoadLibraryDeadlock.class",
@@ -194,24 +143,13 @@ public class TestLoadLibraryDeadlock {
                 .shouldHaveExitValue(0);
 
         // load trigger class
-        Process process = runJavaCommand("-cp",
-                "a.jar" + classPathSeparator +
-                "b.jar" + classPathSeparator +
-                "c.jar",
+        OutputAnalyzer outputAnalyzer = executeCommand(createTestJavaProcessBuilder("-cp",
+                aJar.toString() + classPathSeparator +
+                bJar.toString() + classPathSeparator +
+                cJar.toString(),
                 "-Djava.library.path=" + testLibraryPath,
-                "LoadLibraryDeadlock");
-
-        // wait for a while to grab some output
-        process.waitFor(5, TimeUnit.SECONDS);
-
-        // dump available output
-        String output = readAvailable(process.getInputStream());
-        OutputAnalyzer outputAnalyzer = new OutputAnalyzer(output);
-        dump(outputAnalyzer);
-
-        // if the process is still running, get the thread dump
-        OutputAnalyzer outputAnalyzerJcmd = jcmd(process.pid(), "Thread.print");
-        dump(outputAnalyzerJcmd);
+                "LoadLibraryDeadlock"));
+        outputAnalyzer.shouldHaveExitValue(0);
 
         Asserts.assertTrue(
                 countLines(outputAnalyzer, "Java-level deadlock") == 0,
@@ -231,19 +169,20 @@ public class TestLoadLibraryDeadlock {
                 "Unable to load native library.");
 
         Asserts.assertTrue(
-                countLines(outputAnalyzer, "Signed jar loaded.") > 0,
-                "Unable to load signed jar.");
+                countLines(outputAnalyzer, "Class1 loaded from " + toLocationString(bJar)) > 0,
+                "Unable to load " + toLocationString(bJar));
+
+        Asserts.assertTrue(
+                countLines(outputAnalyzer, "Class2 loaded from " + toLocationString(cJar)) > 0,
+                "Unable to load signed " + toLocationString(cJar));
 
         Asserts.assertTrue(
                 countLines(outputAnalyzer, "Signed jar loaded from native library.") > 0,
                 "Unable to load signed jar from native library.");
+    }
 
-        if (!process.waitFor(5, TimeUnit.SECONDS)) {
-            // if the process is still frozen, fail the test even though
-            // the "deadlock" text hasn't been found
-            process.destroyForcibly();
-            Asserts.assertTrue(process.waitFor() == 0,
-                    "Process frozen.");
-        }
+    private static String toLocationString(Path path) {
+        // same format as returned by LoadLibraryDeadlock::getLocation
+        return path.toUri().getPath();
     }
 }

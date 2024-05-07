@@ -1,0 +1,10 @@
+EnumExtern.java:16:31: compiler.warn.ineffectual.serial.field.enum: serialVersionUID
+EnumExtern.java:17:46: compiler.warn.ineffectual.serial.field.enum: serialPersistentFields
+EnumExtern.java:19:18: compiler.warn.ineffectual.serial.method.enum: writeObject
+EnumExtern.java:23:20: compiler.warn.ineffectual.serial.method.enum: writeReplace
+EnumExtern.java:27:18: compiler.warn.ineffectual.serial.method.enum: readObject
+EnumExtern.java:32:18: compiler.warn.ineffectual.serial.method.enum: readObjectNoData
+EnumExtern.java:36:20: compiler.warn.ineffectual.serial.method.enum: readResolve
+EnumExtern.java:42:17: compiler.warn.ineffectual.extern.method.enum: writeExternal
+EnumExtern.java:47:17: compiler.warn.ineffectual.extern.method.enum: readExternal
+9 warnings

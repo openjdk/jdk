@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8170859
- * @summary Basic test for incubator modules in jmods and images
+ * @requires vm.flagless
  * @library /test/lib
  * @key intermittent
  * @modules jdk.compiler jdk.jartool jdk.jlink
@@ -32,6 +32,7 @@
  *        jdk.test.lib.util.FileUtils
  *        jdk.test.lib.compiler.CompilerUtils
  * @run testng/othervm ImageModules
+ * @summary Basic test for incubator modules in jmods and images
  */
 
 import java.io.ByteArrayOutputStream;

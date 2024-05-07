@@ -26,9 +26,10 @@
  * @bug 8042251
  * @summary Test that inner classes have in its inner classes attribute enclosing classes and its immediate members.
  * @library /tools/lib /tools/javac/lib ../lib
+ * @enablePreview
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- *          jdk.jdeps/com.sun.tools.classfile
+ *          java.base/jdk.internal.classfile.impl
  * @build toolbox.ToolBox InMemoryFileManager TestResult TestBase
  * @run main InnerClassesHierarchyTest
  */
@@ -40,8 +41,9 @@ import java.lang.annotation.Annotation;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import com.sun.tools.classfile.*;
-import com.sun.tools.classfile.InnerClasses_attribute.Info;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
+import java.lang.classfile.constantpool.*;
 
 public class InnerClassesHierarchyTest extends TestResult {
 
@@ -55,13 +57,12 @@ public class InnerClassesHierarchyTest extends TestResult {
         FilenameFilter filter =
                 (dir, name) -> name.matches(outerClassName + ".*\\.class");
         for (File file : Arrays.asList(classDir.listFiles(filter))) {
-            ClassFile classFile = readClassFile(file);
-            String className = classFile.getName();
-            for (ConstantPool.CPInfo info : classFile.constant_pool.entries()) {
-                if (info instanceof ConstantPool.CONSTANT_Class_info) {
-                    ConstantPool.CONSTANT_Class_info classInfo =
-                            (ConstantPool.CONSTANT_Class_info) info;
-                    String cpClassName = classInfo.getBaseName();
+            ClassModel classFile = readClassFile(file);
+            String className = classFile.thisClass().name().stringValue();
+            for (PoolEntry pe : classFile.constantPool()) {
+                if (pe instanceof ClassEntry classInfo
+                        && classInfo.asSymbol().isClassOrInterface()) {
+                    String cpClassName = classInfo.asInternalName();
                     if (isInnerClass(cpClassName)) {
                         get(className).add(cpClassName);
                     }
@@ -96,9 +97,8 @@ public class InnerClassesHierarchyTest extends TestResult {
                 if (!currentClassName.startsWith(outerClassName)) {
                     continue;
                 }
-                ClassFile cf = readClassFile(currentClassName);
-                InnerClasses_attribute attr = (InnerClasses_attribute)
-                        cf.getAttribute(Attribute.InnerClasses);
+                ClassModel cf = readClassFile(currentClassName);
+                InnerClassesAttribute attr = cf.findAttribute(Attributes.INNER_CLASSES).orElse(null);
                 checkNotNull(attr, "Class should not contain "
                         + "inner classes attribute : " + currentClassName);
                 checkTrue(innerClasses.containsKey(currentClassName),
@@ -107,12 +107,13 @@ public class InnerClassesHierarchyTest extends TestResult {
                 if (setClasses == null) {
                     continue;
                 }
-                checkEquals(attr.number_of_classes,
+                checkEquals(attr.classes().size(),
                         setClasses.size(),
                         "Check number of inner classes : " + setClasses);
-                for (Info info : attr.classes) {
+                for (InnerClassInfo info : attr.classes()) {
+                    if (!info.innerClass().asSymbol().isClassOrInterface()) continue;
                     String innerClassName = info
-                            .getInnerClassInfo(cf.constant_pool).getBaseName();
+                            .innerClass().asInternalName();
                     checkTrue(setClasses.contains(innerClassName),
                             currentClassName + " contains inner class : "
                                     + innerClassName);

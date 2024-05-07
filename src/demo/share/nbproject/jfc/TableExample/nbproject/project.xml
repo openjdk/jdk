@@ -39,7 +39,6 @@
             <properties>
                 <property-file>user.build.properties</property-file>
                 <property-file>build.properties</property-file>
-                <property name="nbjdk.bootclasspath">${nbjdk.home}/jre/lib/rt.jar</property>
             </properties>
             <folders>
                 <source-folder>

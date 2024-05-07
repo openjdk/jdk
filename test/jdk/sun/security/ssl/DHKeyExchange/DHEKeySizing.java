@@ -32,58 +32,55 @@
  * @summary make ephemeral DH key match the length of the certificate key
  * @library /javax/net/ssl/templates
  * @run main/othervm -Djdk.tls.client.enableSessionTicketExtension=false
- *      DHEKeySizing TLS_DHE_RSA_WITH_AES_128_CBC_SHA  false 1643 267
+ *      DHEKeySizing TLS_DHE_RSA_WITH_AES_128_CBC_SHA 1643 267 TLSv1
  * @run main/othervm -Djsse.enableFFDHE=false
  *      -Djdk.tls.client.enableSessionTicketExtension=false
- *      DHEKeySizing SSL_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA true 1259 75
- * @run main/othervm -Djsse.enableFFDHE=false
- *      -Djdk.tls.ephemeralDHKeySize=matched
- *      -Djdk.tls.client.enableSessionTicketExtension=false
- *      DHEKeySizing SSL_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA true 1259 75
- * @run main/othervm -Djsse.enableFFDHE=false
- *      -Djdk.tls.ephemeralDHKeySize=legacy
- *      -Djdk.tls.client.enableSessionTicketExtension=false
- *      DHEKeySizing SSL_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA true 1259 75
- * @run main/othervm -Djsse.enableFFDHE=false
- *      -Djdk.tls.ephemeralDHKeySize=1024
- *      -Djdk.tls.client.enableSessionTicketExtension=false
- *      DHEKeySizing SSL_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA true 1259 75
- *
- * @run main/othervm -Djsse.enableFFDHE=false
- *      -Djdk.tls.client.enableSessionTicketExtension=false
- *      DHEKeySizing SSL_DH_anon_EXPORT_WITH_DES40_CBC_SHA true 233 75
- *
- * @run main/othervm -Djsse.enableFFDHE=false
- *      -Djdk.tls.client.enableSessionTicketExtension=false
- *      DHEKeySizing TLS_DHE_RSA_WITH_AES_128_CBC_SHA  false 1643 267
- * @run main/othervm -Djsse.enableFFDHE=false
- *      -Djdk.tls.ephemeralDHKeySize=legacy
- *      -Djdk.tls.client.enableSessionTicketExtension=false
- *      DHEKeySizing TLS_DHE_RSA_WITH_AES_128_CBC_SHA  false 1323 107
+ *      DHEKeySizing SSL_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA 1259 75 TLSv1.1
  * @run main/othervm -Djsse.enableFFDHE=false
  *      -Djdk.tls.ephemeralDHKeySize=matched
  *      -Djdk.tls.client.enableSessionTicketExtension=false
- *      DHEKeySizing TLS_DHE_RSA_WITH_AES_128_CBC_SHA  false 1643 267
+ *      DHEKeySizing SSL_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA 1259 75 TLSv1.2
+ * @run main/othervm -Djsse.enableFFDHE=false
+ *      -Djdk.tls.ephemeralDHKeySize=legacy
+ *      -Djdk.tls.client.enableSessionTicketExtension=false
+ *      DHEKeySizing SSL_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA 1259 75 TLSv1
  * @run main/othervm -Djsse.enableFFDHE=false
  *      -Djdk.tls.ephemeralDHKeySize=1024
  *      -Djdk.tls.client.enableSessionTicketExtension=false
- *      DHEKeySizing TLS_DHE_RSA_WITH_AES_128_CBC_SHA  false 1387 139
- *
+ *      DHEKeySizing SSL_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA 1259 75 TLSv1.1
  * @run main/othervm -Djsse.enableFFDHE=false
  *      -Djdk.tls.client.enableSessionTicketExtension=false
- *      DHEKeySizing SSL_DH_anon_WITH_RC4_128_MD5  false 617 267
+ *      DHEKeySizing SSL_DH_anon_EXPORT_WITH_DES40_CBC_SHA 233 75 TLSv1.2
+ * @run main/othervm -Djsse.enableFFDHE=false
+ *      -Djdk.tls.client.enableSessionTicketExtension=false
+ *      DHEKeySizing TLS_DHE_RSA_WITH_AES_128_CBC_SHA 1643 267 TLSv1
+ * @run main/othervm -Djsse.enableFFDHE=false
+ *      -Djdk.tls.ephemeralDHKeySize=legacy
+ *      -Djdk.tls.client.enableSessionTicketExtension=false
+ *      DHEKeySizing TLS_DHE_RSA_WITH_AES_128_CBC_SHA 1323 107 TLSv1.1
+ * @run main/othervm -Djsse.enableFFDHE=false
+ *      -Djdk.tls.ephemeralDHKeySize=matched
+ *      -Djdk.tls.client.enableSessionTicketExtension=false
+ *      DHEKeySizing TLS_DHE_RSA_WITH_AES_128_CBC_SHA 1645 267 TLSv1.2
+ * @run main/othervm -Djsse.enableFFDHE=false
+ *      -Djdk.tls.ephemeralDHKeySize=1024
+ *      -Djdk.tls.client.enableSessionTicketExtension=false
+ *      DHEKeySizing TLS_DHE_RSA_WITH_AES_128_CBC_SHA 1387 139 TLSv1
+ * @run main/othervm -Djsse.enableFFDHE=false
+ *      -Djdk.tls.client.enableSessionTicketExtension=false
+ *      DHEKeySizing SSL_DH_anon_WITH_RC4_128_MD5 617 267 TLSv1.1
  * @run main/othervm -Djsse.enableFFDHE=false
  *      -Djdk.tls.client.enableSessionTicketExtension=false
  *      -Djdk.tls.ephemeralDHKeySize=legacy
- *      DHEKeySizing SSL_DH_anon_WITH_RC4_128_MD5  false 297 107
+ *      DHEKeySizing SSL_DH_anon_WITH_RC4_128_MD5 297 107 TLSv1.2
  * @run main/othervm -Djsse.enableFFDHE=false
  *      -Djdk.tls.client.enableSessionTicketExtension=false
  *      -Djdk.tls.ephemeralDHKeySize=matched
- *      DHEKeySizing SSL_DH_anon_WITH_RC4_128_MD5  false 617 267
+ *      DHEKeySizing SSL_DH_anon_WITH_RC4_128_MD5 617 267 TLSv1
  * @run main/othervm -Djsse.enableFFDHE=false
  *      -Djdk.tls.client.enableSessionTicketExtension=false
  *      -Djdk.tls.ephemeralDHKeySize=1024
- *      DHEKeySizing SSL_DH_anon_WITH_RC4_128_MD5  false 361 139
+ *      DHEKeySizing SSL_DH_anon_WITH_RC4_128_MD5 361 139 TLSv1.1
  */
 
 /*
@@ -133,10 +130,12 @@ public class DHEKeySizing extends SSLEngineTemplate {
     // key length bias because of the stripping of leading zero bytes of
     // negotiated DH keys.
     //
-    // This is an effort to mimum intermittent failure when we cannot
+    // This is an effort to minimize intermittent failures when we cannot
     // estimate what's the exact number of leading zero bytes of
     // negotiated DH keys.
     private final static int KEY_LEN_BIAS = 6;
+
+    private static String protocol;
 
     private void checkResult(ByteBuffer bbIn, ByteBuffer bbOut,
             SSLEngineResult result,
@@ -175,8 +174,8 @@ public class DHEKeySizing extends SSLEngineTemplate {
         }
     }
 
-    private void test(String cipherSuite, boolean exportable,
-            int lenServerKeyEx, int lenClientKeyEx) throws Exception {
+    private void test(String cipherSuite, int lenServerKeyEx,
+            int lenClientKeyEx) throws Exception {
 
         SSLEngineResult result1;        // clientEngine's results from last operation
         SSLEngineResult result2;        // serverEngine's results from last operation
@@ -316,15 +315,16 @@ public class DHEKeySizing extends SSLEngineTemplate {
         if (args.length != 4) {
             System.out.println(
                 "Usage: java DHEKeySizing cipher-suite " +
-                "exportable(true|false)\n" +
-                "    size-of-server-hello-record size-of-client-key-exchange");
+                "size-of-server-hello-record\n" +
+                "    size-of-client-key-exchange protocol");
             throw new Exception("Incorrect usage!");
         }
 
+        protocol = args[3];
+
         (new DHEKeySizing()).test(args[0],
-                Boolean.parseBoolean(args[1]),
-                Integer.parseInt(args[2]),
-                Integer.parseInt(args[3]));
+                Integer.parseInt(args[1]),
+                Integer.parseInt(args[2]));
         System.out.println("Test Passed.");
     }
 
@@ -359,12 +359,12 @@ public class DHEKeySizing extends SSLEngineTemplate {
 
     @Override
     protected ContextParameters getClientContextParameters() {
-        return new ContextParameters("TLSv1", "PKIX", "NewSunX509");
+        return new ContextParameters(protocol, "PKIX", "NewSunX509");
     }
 
     @Override
     protected ContextParameters getServerContextParameters() {
-        return new ContextParameters("TLSv1", "PKIX", "NewSunX509");
+        return new ContextParameters(protocol, "PKIX", "NewSunX509");
     }
 
     private static void log(String str) {

@@ -184,7 +184,8 @@ public final class HotSpotVMConfigStore {
             printConfigLine(runtime, "[vmconfig:constant] %s = %d[0x%x]%n", e.getKey(), e.getValue(), e.getValue());
         }
         for (VMIntrinsicMethod e : getIntrinsics()) {
-            printConfigLine(runtime, "[vmconfig:intrinsic] %d = %s.%s %s%n", e.id, e.declaringClass, e.name, e.descriptor);
+            printConfigLine(runtime, "[vmconfig:intrinsic] %d = (available:%b c1Supported:%b c2Supported:%b) %s.%s %s%n",
+                            e.id, e.isAvailable, e.c1Supported, e.c2Supported, e.declaringClass, e.name, e.descriptor);
         }
     }
 

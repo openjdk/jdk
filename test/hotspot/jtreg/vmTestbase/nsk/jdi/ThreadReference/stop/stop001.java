@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,7 +69,7 @@ public class stop001 {
     static final int PASSED = 0;
     static final int FAILED = 2;
     static final int PASS_BASE = 95;
-    static final boolean vthreadMode = "Virtual".equals(System.getProperty("main.wrapper"));
+    static final boolean vthreadMode = "Virtual".equals(System.getProperty("test.thread.factory"));
 
     //----------------------------------------------------- templete parameters
     static final String
@@ -81,7 +81,9 @@ public class stop001 {
 
     public static void main (String argv[]) {
         int result = run(argv, System.out);
-        System.exit(result + PASS_BASE);
+        if (result != 0) {
+            throw new RuntimeException("TEST FAILED with result " + result);
+        }
     }
 
     public static int run (String argv[], PrintStream out) {

@@ -28,6 +28,7 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
+import java.util.BitSet;
 
 /**
  * Represents a resolved Java method. Methods, like fields and types, are resolved through

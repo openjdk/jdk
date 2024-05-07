@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/resolvedIndyEntry.hpp"
 #include "oops/symbolHandle.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/frame.inline.hpp"
@@ -110,6 +111,27 @@ void CallInfo::set_handle(Klass* resolved_klass,
   assert(!resolved_method->has_vtable_index(), "");
   set_common(resolved_klass, resolved_method, resolved_method, CallInfo::direct_call, vtable_index, CHECK);
   _resolved_appendix = resolved_appendix;
+}
+
+// Redefinition safepoint may have updated the method. Make sure the new version of the method is returned.
+// Callers are responsible for not safepointing and storing this method somewhere safe where redefinition
+// can replace it if runs again.  Safe places are constant pool cache and code cache metadata.
+// The old method is safe in CallInfo since its a methodHandle (it won't get deleted), and accessed with these
+// accessors.
+Method* CallInfo::resolved_method() const {
+  if (JvmtiExport::can_hotswap_or_post_breakpoint() && _resolved_method->is_old()) {
+    return _resolved_method->get_new_method();
+  } else {
+    return _resolved_method();
+  }
+}
+
+Method* CallInfo::selected_method() const {
+  if (JvmtiExport::can_hotswap_or_post_breakpoint() && _selected_method->is_old()) {
+    return _selected_method->get_new_method();
+  } else {
+    return _selected_method();
+  }
 }
 
 void CallInfo::set_common(Klass* resolved_klass,
@@ -1085,13 +1107,6 @@ void LinkResolver::resolve_static_call(CallInfo& result,
     resolved_method = linktime_resolve_static_method(new_info, CHECK);
   }
 
-  if (resolved_method->is_continuation_native_intrinsic()
-      && resolved_method->from_interpreted_entry() == nullptr) { // does a load_acquire
-    methodHandle mh(THREAD, resolved_method);
-    // Generate a compiled form of the enterSpecial intrinsic.
-    AdapterHandlerLibrary::create_native_wrapper(mh);
-  }
-
   // setup result
   result.set_static(resolved_klass, methodHandle(THREAD, resolved_method), CHECK);
   JFR_ONLY(Jfr::on_resolution(result, CHECK);)
@@ -1699,12 +1714,11 @@ void LinkResolver::resolve_invokeinterface(CallInfo& result, Handle recv, const 
 }
 
 bool LinkResolver::resolve_previously_linked_invokehandle(CallInfo& result, const LinkInfo& link_info, const constantPoolHandle& pool, int index, TRAPS) {
-  int cache_index = ConstantPool::decode_cpcache_index(index, true);
-  ConstantPoolCacheEntry* cpce = pool->cache()->entry_at(cache_index);
-  if (!cpce->is_f1_null()) {
+  ResolvedMethodEntry* method_entry = pool->cache()->resolved_method_entry_at(index);
+  if (method_entry->method() != nullptr) {
     Klass* resolved_klass = link_info.resolved_klass();
-    methodHandle method(THREAD, cpce->f1_as_method());
-    Handle     appendix(THREAD, cpce->appendix_if_resolved(pool));
+    methodHandle method(THREAD, method_entry->method());
+    Handle     appendix(THREAD, pool->cache()->appendix_if_resolved(method_entry));
     result.set_handle(resolved_klass, method, appendix, CHECK_false);
     JFR_ONLY(Jfr::on_resolution(result, CHECK_false);)
     return true;
@@ -1765,11 +1779,10 @@ void LinkResolver::resolve_handle_call(CallInfo& result,
 }
 
 void LinkResolver::resolve_invokedynamic(CallInfo& result, const constantPoolHandle& pool, int indy_index, TRAPS) {
-  int index = pool->decode_invokedynamic_index(indy_index);
-  int pool_index = pool->resolved_indy_entry_at(index)->constant_pool_index();
+  int pool_index = pool->resolved_indy_entry_at(indy_index)->constant_pool_index();
 
   // Resolve the bootstrap specifier (BSM + optional arguments).
-  BootstrapInfo bootstrap_specifier(pool, pool_index, index);
+  BootstrapInfo bootstrap_specifier(pool, pool_index, indy_index);
 
   // Check if CallSite has been bound already or failed already, and short circuit:
   {

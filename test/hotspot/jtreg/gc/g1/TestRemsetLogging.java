@@ -85,4 +85,3 @@ public class TestRemsetLogging {
         TestRemsetLoggingTools.expectRSetSummaries(result, 1, 2);
     }
 }
-

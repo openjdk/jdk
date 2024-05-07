@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,11 +48,11 @@ public class PanamaPoint extends CLayouts implements AutoCloseable {
         System.loadLibrary("Point");
         SymbolLookup loaderLibs = SymbolLookup.loaderLookup();
         MH_distance = abi.downcallHandle(
-                loaderLibs.find("distance").get(),
+                loaderLibs.findOrThrow("distance"),
                 FunctionDescriptor.of(C_DOUBLE, LAYOUT, LAYOUT)
         );
         MH_distance_ptrs = abi.downcallHandle(
-                loaderLibs.find("distance_ptrs").get(),
+                loaderLibs.findOrThrow("distance_ptrs"),
                 FunctionDescriptor.of(C_DOUBLE, C_POINTER, C_POINTER)
         );
     }
@@ -68,19 +68,19 @@ public class PanamaPoint extends CLayouts implements AutoCloseable {
     }
 
     public void setX(int x) {
-        VH_x.set(segment, x);
+        VH_x.set(segment, 0L, x);
     }
 
     public int getX() {
-        return (int) VH_x.get(segment);
+        return (int) VH_x.get(segment, 0L);
     }
 
     public void setY(int y) {
-        VH_y.set(segment, y);
+        VH_y.set(segment, 0L, y);
     }
 
     public int getY() {
-        return (int) VH_y.get(segment);
+        return (int) VH_y.get(segment, 0L);
     }
 
     public double distanceTo(PanamaPoint other) {

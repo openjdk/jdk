@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -417,7 +417,7 @@ public abstract class JVMOption {
         runJava.add(optionValue);
         runJava.add(JVMStartup.class.getName());
 
-        out = new OutputAnalyzer(ProcessTools.createJavaProcessBuilder(runJava).start());
+        out = new OutputAnalyzer(ProcessTools.createLimitedTestJavaProcessBuilder(runJava).start());
 
         exitCode = out.getExitValue();
         String exitCodeString = null;

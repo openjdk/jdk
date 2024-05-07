@@ -1,0 +1,4369 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2024 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-3.0
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="blo"/>
+	</identity>
+	<localeDisplayNames>
+		<localeDisplayPattern>
+			<localeKeyTypePattern>{0} : {1}</localeKeyTypePattern>
+		</localeDisplayPattern>
+		<languages>
+			<language type="ar">gɩlaaribuja</language>
+			<language type="ar_001">gɩlaaribuja ŋgɩɖee kǝ ba na fʊba na</language>
+			<language type="blo">anii kagɩja</language>
+			<language type="bn">baŋglaa kagɩja</language>
+			<language type="de">gɩjaamaja</language>
+			<language type="en">gɛɛshɩ</language>
+			<language type="en_GB" alt="short">gɛɛshɩ (GT)</language>
+			<language type="en_US">gɛɛshɩ (Ganɔ gaɖɔŋkɔnɔ kabʊtǝna Amalɩka nɩ)</language>
+			<language type="en_US" alt="short">gɛɛshɩ (GKA)</language>
+			<language type="es">gɩspaŋja</language>
+			<language type="es_419">gɩspaŋja (latɛŋ kaAmalɩkatǝna)</language>
+			<language type="fr">gɩfɔnɔ</language>
+			<language type="hi_Latn">hinɖii kagɩja (latɛŋ kʊja)</language>
+			<language type="hi_Latn" alt="variant">hiŋgliishɩ kagɩja</language>
+			<language type="id">Ɛnɖonosii kagɩja</language>
+			<language type="it">gɩtaliija</language>
+			<language type="ja">gɩjapaŋja</language>
+			<language type="ko">Koree kagɩja</language>
+			<language type="nl">Holanɖ kagɩja</language>
+			<language type="pl">Polanɖ kagɩja</language>
+			<language type="pt">gɩpɔrtigalja</language>
+			<language type="ru">gɩrɔɔshɩyaja</language>
+			<language type="th">taɩ kagɩja</language>
+			<language type="tr">gɩturkiija</language>
+			<language type="und">gɩkrǝ ŋgɩɖee kʊyɔʊ ʊ mana ma</language>
+			<language type="zh">gɩcaɩnaja manɖarɛŋ</language>
+			<language type="zh" alt="menu">gɩcaɩnaja, manɖarɛŋ</language>
+			<language type="zh_Hans">gɩcaɩnaja gɩburoka</language>
+			<language type="zh_Hans" alt="long">gɩcaɩnaja manɖarɛŋ gɩburoka</language>
+			<language type="zh_Hant">gɩcaɩnaja tututu</language>
+			<language type="zh_Hant" alt="long">gɩcaɩnaja manɖarɛŋ tututu</language>
+		</languages>
+		<scripts>
+			<script type="Arab">laaribu kʊja</script>
+			<script type="Cyrl">Siril kʊja</script>
+			<script type="Hans">aburoka</script>
+			<script type="Hans" alt="stand-alone">Han (aburoka)</script>
+			<script type="Hant">tututu</script>
+			<script type="Hant" alt="stand-alone">Han (tututu)</script>
+			<script type="Jpan">Japaŋ kʊja</script>
+			<script type="Kore">Koree kʊja</script>
+			<script type="Latn">latɛŋ kʊja</script>
+			<script type="Zsym">ɩlamba</script>
+			<script type="Zxxx">kǝ ba ŋɔn na</script>
+			<script type="Zzzz">ʊŋɔn nɖee kʊyɔʊ ʊ mana ma</script>
+		</scripts>
+		<territories>
+			<territory type="001">nɖulinya</territory>
+			<territory type="002">Garɩɖontǝna</territory>
+			<territory type="003">Gamalɩkatǝna gʊnyɩpɛnɛlaŋ</territory>
+			<territory type="005">Gamalɩkatǝna gʊnyɩsonolaŋ</territory>
+			<territory type="009">Oseyanii</territory>
+			<territory type="011">Garɩɖontǝna gɩteŋshilelaŋ</territory>
+			<territory type="013">Gamalɩkatǝna gɩcɩɩca</territory>
+			<territory type="014">Garɩɖontǝna gajakalaŋ</territory>
+			<territory type="015">Garɩɖontǝna gʊnyɩpɛnɛlaŋ</territory>
+			<territory type="017">Garɩɖontǝna gɩcɩɩca</territory>
+			<territory type="018">Garɩɖontǝna gʊnyɩsonolaŋ</territory>
+			<territory type="019">Gamalɩkatǝna</territory>
+			<territory type="021">Gamalɩkatǝna kagʊnyɩpɛnɛlaŋ</territory>
+			<territory type="029">Karayiib</territory>
+			<territory type="030">Gacǝlǝŋtǝna gajakalaŋ</territory>
+			<territory type="034">Gacǝlǝŋtǝna gʊnyɩsonolaŋ</territory>
+			<territory type="035">Gacǝlǝŋtǝna gʊsono na gajakayɛlaŋ kʊfɔɔ nɩ</territory>
+			<territory type="039">Garɩfɔntǝna gʊnyɩsonolaŋ</territory>
+			<territory type="053">Ɔstracǝlǝŋtǝna</territory>
+			<territory type="054">Melanesiya</territory>
+			<territory type="057">Mikronesiya kagʊsaʊ</territory>
+			<territory type="061">Polinesiya</territory>
+			<territory type="142">Gacǝlǝŋtǝna</territory>
+			<territory type="143">Gacǝlǝŋtǝna gɩcɩɩca</territory>
+			<territory type="145">Gacǝlǝŋtǝna gɩteŋshilelaŋ</territory>
+			<territory type="150">Garɩfɔntǝna</territory>
+			<territory type="151">Garɩfɔntǝna gajakalaŋ</territory>
+			<territory type="154">Garɩfɔntǝna gʊnyɩpɛnɛlaŋ</territory>
+			<territory type="155">Garɩfɔntǝna gɩteŋshilelaŋ</territory>
+			<territory type="202">Garɩɖontǝna Sahara katǝntǝn</territory>
+			<territory type="419">Latɛŋ kaAmalɩkatǝna</territory>
+			<territory type="AC">Asɛnsiyɔɔn kaAtukǝltǝna</territory>
+			<territory type="AD">Anɖɔraa</territory>
+			<territory type="AE">Emiir baGanɔ gaɖɔŋkɔnɔ kaAlaaributǝna</territory>
+			<territory type="AF">Afganistan</territory>
+			<territory type="AG">Antiguwaa na Barbuɖaa</territory>
+			<territory type="AI">Aŋguwilaa</territory>
+			<territory type="AL">Albanii</territory>
+			<territory type="AM">Armenii</territory>
+			<territory type="AO">Aŋgolaa</territory>
+			<territory type="AQ">Gatutaltǝna</territory>
+			<territory type="AR">Arjantin</territory>
+			<territory type="AS">Samowa Amalɩka kaja</territory>
+			<territory type="AT">Otrish</territory>
+			<territory type="AU">Ɔstraliya</territory>
+			<territory type="AW">Arubaa</territory>
+			<territory type="AX">Ɔɔlanɖ kaBʊtǝlǝltǝna</territory>
+			<territory type="AZ">Asɛrbaɩjaŋ</territory>
+			<territory type="BA">Bɔsniya na Hɛrsegɔfina</territory>
+			<territory type="BB">Barbaɖɔɔsɩ</territory>
+			<territory type="BD">Baŋglaɖɛɛshɩ</territory>
+			<territory type="BE">Bɛljiiki</territory>
+			<territory type="BF">Burkinaa</territory>
+			<territory type="BG">Bulgarii</territory>
+			<territory type="BH">Barɛɛn</territory>
+			<territory type="BI">Burunɖii</territory>
+			<territory type="BJ">Benɛɛ</territory>
+			<territory type="BL">Sɛŋ-Batolomayɔ</territory>
+			<territory type="BM">Bɛrmuɖaa</territory>
+			<territory type="BN">Brunɛɩ</territory>
+			<territory type="BO">Bolifiya</territory>
+			<territory type="BQ">Holanɖ kaKarayiib</territory>
+			<territory type="BR">Bresil</territory>
+			<territory type="BS">Bahamaasɩ</territory>
+			<territory type="BT">Butan</territory>
+			<territory type="BV">Bufee kaAtukǝltǝna</territory>
+			<territory type="BW">Bɔsʊwanaa</territory>
+			<territory type="BY">Belaruus</territory>
+			<territory type="BZ">Beliis</territory>
+			<territory type="CA">Kanaɖaa</territory>
+			<territory type="CC">Kokoos (Kiiliŋ) kaBʊtukǝltǝna</territory>
+			<territory type="CD">Koŋgoo Kinshasaa</territory>
+			<territory type="CD" alt="variant">Koŋgoo Sayiir</territory>
+			<territory type="CF">Santrafrika</territory>
+			<territory type="CG">Koŋgoo Brasafil</territory>
+			<territory type="CG" alt="variant">Koŋgoo kaRepibliiki</territory>
+			<territory type="CH">Suwis</territory>
+			<territory type="CI">Koɖifʊaa</territory>
+			<territory type="CI" alt="variant">Aɩfɔrɩ Kɔɔst</territory>
+			<territory type="CK">Kʊkʊ kaBʊtukǝltǝna</territory>
+			<territory type="CL">Shilii</territory>
+			<territory type="CM">Kamerun</territory>
+			<territory type="CN">Caɩna</territory>
+			<territory type="CO">Kolɔmbii</territory>
+			<territory type="CP">Klipɛɛtɔn kaAtukǝltǝna</territory>
+			<territory type="CQ">Sark</territory>
+			<territory type="CR">Kɔsta Rikaa</territory>
+			<territory type="CU">Kubaa</territory>
+			<territory type="CV">Kapfɛɛr</territory>
+			<territory type="CW">Kurasawuu</territory>
+			<territory type="CX">Nowɛl kaAtukǝltǝna</territory>
+			<territory type="CY">Ciprɔs</territory>
+			<territory type="CZ">Cɛk</territory>
+			<territory type="CZ" alt="variant">Cɛk kaRepibliiki</territory>
+			<territory type="DE">Gajaamatǝna</territory>
+			<territory type="DG">Ɖiyego Garsiya</territory>
+			<territory type="DJ">Jibutii</territory>
+			<territory type="DK">Ɖanǝmark</territory>
+			<territory type="DM">Ɖominikaa</territory>
+			<territory type="DO">Ɖominikaa kaRepibliiki</territory>
+			<territory type="DZ">Aljerii</territory>
+			<territory type="EA">Seyuta na Meliliya</territory>
+			<territory type="EC">Ekuwaɖɔɔr</territory>
+			<territory type="EE">Ɛstoniya</territory>
+			<territory type="EG">Ejipti</territory>
+			<territory type="EH">Sarawii</territory>
+			<territory type="ER">Eritree</territory>
+			<territory type="ES">Ɛspanyǝ</territory>
+			<territory type="ET">Etiyopii</territory>
+			<territory type="EU">Ganɔ gaɖɔŋkɔnɔ kaBʊtǝna Garɩfɔntǝna nɩ</territory>
+			<territory type="EZ">Eroo kaBʊtǝna</territory>
+			<territory type="FI">Fɛnlanɖ</territory>
+			<territory type="FJ">Fiji</territory>
+			<territory type="FK">Fɔklanɖ kaBʊtukǝltǝna</territory>
+			<territory type="FK" alt="variant">Fɔklanɖ kaBʊtukǝltǝna (Malfina kaBʊtukǝltǝna)</territory>
+			<territory type="FM">Mikronesiya</territory>
+			<territory type="FO">Faroi kaBʊtukǝltǝna</territory>
+			<territory type="FR">Gafɔntǝna</territory>
+			<territory type="GA">Gabɔŋ</territory>
+			<territory type="GB">Gagɛɛshɩtǝna</territory>
+			<territory type="GB" alt="short">GT</territory>
+			<territory type="GD">Grenaɖaa</territory>
+			<territory type="GE">Jɔrjiya</territory>
+			<territory type="GF">Guyanaa Gafɔntǝna kaja</territory>
+			<territory type="GG">Gǝrǝnsɛɩ</territory>
+			<territory type="GH">Gana</territory>
+			<territory type="GI">Gibraltaa</territory>
+			<territory type="GL">Grinlanɖ</territory>
+			<territory type="GM">Gambii</territory>
+			<territory type="GN">Ginee</territory>
+			<territory type="GP">Guwaɖeluupu</territory>
+			<territory type="GQ">Ginee Malabo</territory>
+			<territory type="GR">Grɛs</territory>
+			<territory type="GS">Jɔrjiya gʊnyɩsonolaŋ kaja na Sanɖuush gʊnyɩsonolaŋ kaBʊtukǝltǝna</territory>
+			<territory type="GT">Guwatemalaa</territory>
+			<territory type="GU">Guwam</territory>
+			<territory type="GW">Ginee Bisoo</territory>
+			<territory type="GY">Guyanaa</territory>
+			<territory type="HK">Hɔŋ Kɔŋ Caɩna kaja</territory>
+			<territory type="HK" alt="short">Hɔŋ Kɔŋ</territory>
+			<territory type="HM">Hɛɛrɖ na Mɛkɖɔnalɖ kaBʊtukǝltǝna</territory>
+			<territory type="HN">Hɔnɖuraasɩ</territory>
+			<territory type="HR">Krowasii</territory>
+			<territory type="HT">Hayitii</territory>
+			<territory type="HU">Ɔŋgrii</territory>
+			<territory type="IC">Kanarii kaBʊtukǝltǝna</territory>
+			<territory type="ID">Ɛnɖonosii</territory>
+			<territory type="IE">Irlanɖ</territory>
+			<territory type="IL">Yishraɛl</territory>
+			<territory type="IM">Man kaAtukǝltǝna</territory>
+			<territory type="IN">Inɖiya</territory>
+			<territory type="IO">Gɛɛshɩ kaAtǝna Inɖiya kaTeŋku nɩ</territory>
+			<territory type="IO" alt="chagos">Cagɔɔsɩ kaBʊtukǝltǝna</territory>
+			<territory type="IQ">Ɩraakɩ</territory>
+			<territory type="IR">Iraŋ</territory>
+			<territory type="IS">Islanɖ</territory>
+			<territory type="IT">Italii</territory>
+			<territory type="JE">Jersei</territory>
+			<territory type="JM">Jamaɩka</territory>
+			<territory type="JO">Jɔrɖanii</territory>
+			<territory type="JP">Japaŋ</territory>
+			<territory type="KE">Keniya</territory>
+			<territory type="KG">Kirgistan</territory>
+			<territory type="KH">Kamboɖiya</territory>
+			<territory type="KI">Kiribatii</territory>
+			<territory type="KM">Komɔɔr</territory>
+			<territory type="KN">Sɛŋ Kits na Nefis</territory>
+			<territory type="KP">Koree gʊnyɩpɛnɛlaŋ</territory>
+			<territory type="KR">Koree gʊnyɩsonolaŋ</territory>
+			<territory type="KW">Koweeti</territory>
+			<territory type="KY">Kayimaan kaBʊtukǝltǝna</territory>
+			<territory type="KZ">Kasastan</territory>
+			<territory type="LA">Lawɔs</territory>
+			<territory type="LB">Liibaaŋ</territory>
+			<territory type="LC">Sɛŋ Lusiya</territory>
+			<territory type="LI">Liishtɛntaɩn</territory>
+			<territory type="LK">Siri Laŋkaa</territory>
+			<territory type="LR">Liberiya</territory>
+			<territory type="LS">Lesotoo</territory>
+			<territory type="LT">Lituwaniya</territory>
+			<territory type="LU">Lusɛmbuur</territory>
+			<territory type="LV">Lɛtfiya</territory>
+			<territory type="LY">Libii</territory>
+			<territory type="MA">Morooko</territory>
+			<territory type="MC">Monakoo</territory>
+			<territory type="MD">Mɔlɖafiya</territory>
+			<territory type="ME">Mɔntenegroo</territory>
+			<territory type="MF">Sɛŋ Martɛɛŋ</territory>
+			<territory type="MG">Maɖagaskaa</territory>
+			<territory type="MH">Marshal kaBʊtukǝltǝna</territory>
+			<territory type="MK">Maseɖoniya gʊnyɩpɛnɛlaŋ kaja</territory>
+			<territory type="ML">Malii</territory>
+			<territory type="MM">Miyanmaa (Birmanii)</territory>
+			<territory type="MN">Mɔŋgolii</territory>
+			<territory type="MO">Makawoo Caɩna kaja</territory>
+			<territory type="MO" alt="short">Makawoo</territory>
+			<territory type="MP">Mariyan kaBʊtukǝltǝna gʊnyɩpɛnɛlaŋ</territory>
+			<territory type="MQ">Martiniiki</territory>
+			<territory type="MR">Moritanii</territory>
+			<territory type="MS">Mɔnsɛraatɩ</territory>
+			<territory type="MT">Malta</territory>
+			<territory type="MU">Imoris</territory>
+			<territory type="MV">Malɖiifu</territory>
+			<territory type="MW">Malawii</territory>
+			<territory type="MX">Mɛsik</territory>
+			<territory type="MY">Malɛsii</territory>
+			<territory type="MZ">Mosambii</territory>
+			<territory type="NA">Namibii</territory>
+			<territory type="NC">Kaleɖonii afɔlɩ</territory>
+			<territory type="NE">Nijɛr</territory>
+			<territory type="NF">Nɔrfook kaAtukǝltǝna</territory>
+			<territory type="NG">Nanjiiriya</territory>
+			<territory type="NI">Nikaraguwaa</territory>
+			<territory type="NL">Holanɖ</territory>
+			<territory type="NO">Nɔrfɛsh</territory>
+			<territory type="NP">Neepal</territory>
+			<territory type="NR">Nawuru</territory>
+			<territory type="NU">Niwuye</territory>
+			<territory type="NZ">Selanɖ afɔlɩ</territory>
+			<territory type="NZ" alt="variant">Awoteyarowa Selanɖ afɔlɩ</territory>
+			<territory type="OM">Oman</territory>
+			<territory type="PA">Panamaa</territory>
+			<territory type="PE">Peruu</territory>
+			<territory type="PF">Polinesiya Gafɔntǝna kaja</territory>
+			<territory type="PG">Papuasii Ginee afɔlɩ</territory>
+			<territory type="PH">Filipiin</territory>
+			<territory type="PK">Pakistan</territory>
+			<territory type="PL">Polanɖ</territory>
+			<territory type="PM">Sɛŋ-Petrɔs na Mikelɔŋ</territory>
+			<territory type="PN">Pɩtkɛɛn kaBʊtukǝltǝna</territory>
+			<territory type="PR">Pɔrto Rikoo</territory>
+			<territory type="PS">Palɛstiin kAsàʊ</territory>
+			<territory type="PS" alt="short">Palɛstiin</territory>
+			<territory type="PT">Pɔrtigal</territory>
+			<territory type="PW">Palawoo</territory>
+			<territory type="PY">Paraguwee</territory>
+			<territory type="QA">Kataa</territory>
+			<territory type="QO">Oseyanii kasaʊlǝŋka</territory>
+			<territory type="RE">Reeniyɔŋ</territory>
+			<territory type="RO">Romanii</territory>
+			<territory type="RS">Sɛrbii</territory>
+			<territory type="RU">Rɔɔshɩya</territory>
+			<territory type="RW">Rʊwanɖaa</territory>
+			<territory type="SA">Sauɖiya</territory>
+			<territory type="SB">Salomɔɔn kaBʊtukǝltǝna</territory>
+			<territory type="SC">Seshɛl</territory>
+			<territory type="SD">Suɖaŋ</territory>
+			<territory type="SE">Sʊwɛɖ</territory>
+			<territory type="SG">Siŋgapuur</territory>
+			<territory type="SH">Sɛŋ Elenaa (kaAtukǝltǝna)</territory>
+			<territory type="SI">Slofeniya</territory>
+			<territory type="SJ">Sǝfalbaaɖ na Yan Mayɛn</territory>
+			<territory type="SK">Slofakii</territory>
+			<territory type="SL">Seraleyɔn</territory>
+			<territory type="SM">Sɛŋ Marinoo</territory>
+			<territory type="SN">Senegal</territory>
+			<territory type="SO">Somalii</territory>
+			<territory type="SR">Surinam</territory>
+			<territory type="SS">Suɖaŋ gʊnyɩsonolaŋ</territory>
+			<territory type="ST">Saotomee</territory>
+			<territory type="SV">Ɛl Salfaɖɔɔr</territory>
+			<territory type="SX">Sɛŋ Martɛɛŋ (Holanɖ kaja)</territory>
+			<territory type="SY">Sirii</territory>
+			<territory type="SZ">Ɛsʊwatinii</territory>
+			<territory type="SZ" alt="variant">Sʊwasilanɖ</territory>
+			<territory type="TA">Tristan ɖa Kuna</territory>
+			<territory type="TC">Turkisii na Kayɩkɔɔsɩ kaBʊtukǝltǝna</territory>
+			<territory type="TD">Caɖ</territory>
+			<territory type="TF">Gafɔntǝna kaBʊtǝna gʊnyɩsonolaŋ kabʊja</territory>
+			<territory type="TG">Togoo</territory>
+			<territory type="TH">Taɩlanɖ</territory>
+			<territory type="TJ">Tajikistan</territory>
+			<territory type="TK">Tokelaʊ</territory>
+			<territory type="TL">Timɔɔ gajakalaŋ</territory>
+			<territory type="TM">Turkmenistan</territory>
+			<territory type="TN">Tunisii</territory>
+			<territory type="TO">Tɔŋga</territory>
+			<territory type="TR">Turkii</territory>
+			<territory type="TT">Triniɖaaɖ na Tobagoo</territory>
+			<territory type="TV">Tufalu</territory>
+			<territory type="TW">Taɩwan</territory>
+			<territory type="TZ">Taŋsanii</territory>
+			<territory type="UA">Ikrɛɛn</territory>
+			<territory type="UG">Uganɖaa</territory>
+			<territory type="UM">Ganɔ gaɖɔŋkɔnɔ kaBʊtǝna Amalɩka nɩ kaBʊtukǝltǝna bʊlǝŋka</territory>
+			<territory type="UN">Ganɔ gaɖɔŋkɔnɔ kaBʊtǝna nɖulinya nɩ</territory>
+			<territory type="US">Ganɔ gaɖɔŋkɔnɔ kaBʊtǝna Amalɩka nɩ</territory>
+			<territory type="US" alt="short">GKA</territory>
+			<territory type="UY">Uruguwee</territory>
+			<territory type="UZ">Usbeekistan</territory>
+			<territory type="VA">Fatikaŋ kaMpá</territory>
+			<territory type="VC">Sɛŋ Fɩnsaŋ na Grenaɖiniisi</territory>
+			<territory type="VE">Fenesuwelaa</territory>
+			<territory type="VG">Fɩrjɩɩn kǝBʊtukǝltǝna Gɛɛshɩ kabʊja</territory>
+			<territory type="VI">Fɩrjɩɩn kaBʊtukǝltǝna Amalɩka kabʊja</territory>
+			<territory type="VN">Fɛtnam</territory>
+			<territory type="VU">Fanuwatu</territory>
+			<territory type="WF">Walis na Futuna</territory>
+			<territory type="WS">Samowa</territory>
+			<territory type="XA">sǝɖoo-aksaŋ</territory>
+			<territory type="XB">sǝɖoo-biɖi</territory>
+			<territory type="XK">Kɔsofoo</territory>
+			<territory type="YE">Yemɛn</territory>
+			<territory type="YT">Mayɔɔtɩ</territory>
+			<territory type="ZA">Sautafrika</territory>
+			<territory type="ZM">Sambii</territory>
+			<territory type="ZW">Simbabʊwee</territory>
+			<territory type="ZZ">gʊsaʊɩ kʊyɔʊ ʊ mana ma</territory>
+		</territories>
+		<keys>
+			<key type="calendar">ɩshilé n’ɩŋɔrɔ ɩtʊrka</key>
+		</keys>
+		<types>
+			<type key="calendar" type="buddhist">Buɖa kǝbaja bɩshilé na bɩŋɔrɔ ɩtʊrka</type>
+			<type key="calendar" type="chinese">Caɩna kɩshilé na kɩŋɔrɔ ɩtʊrka</type>
+			<type key="calendar" type="coptic">Kɔpǝt kǝbaja bɩshilé na bɩŋɔrɔ ɩtʊrka</type>
+			<type key="calendar" type="dangi">ɖaŋgi kɩshilé na kɩŋɔrɔ ɩtʊrka</type>
+			<type key="calendar" type="ethiopic">Etiyopii kɩshilé na kɩŋɔrɔ ɩtʊrka</type>
+			<type key="calendar" type="ethiopic-amete-alem">Etiyopii kɩshilé na kɩŋɔrɔ ɩtʊrka (Amete Alɛm)</type>
+			<type key="calendar" type="gregorian">Gregɔɔ ‘ɩshilé n’‘ɩŋɔrɔ ɩtʊrka</type>
+			<type key="calendar" type="hebrew">Yahuuɖi kǝbaja bɩshilé na bɩŋɔrɔ ɩtʊrka</type>
+			<type key="calendar" type="indian">Inɖiya kɩshilé na kɩŋɔrɔ ɩtʊrka</type>
+			<type key="calendar" type="islamic">gɩnǝma kɩshilé na kɩŋɔrɔ ɩtʊrka</type>
+			<type key="calendar" type="islamic-civil">gɩnǝma kɩshilé na kɩŋɔrɔ ɩtʊrka aɖʊ (gatǝna kʊsǝu katam)</type>
+			<type key="calendar" type="islamic-rgsa">gɩnǝma kɩshilé na kɩŋɔrɔ ɩtʊrka akʊn aŋɔrɔ (Sauɖiya)</type>
+			<type key="calendar" type="islamic-tbla">gɩnǝma kɩshilé na kɩŋɔrɔ ɩtʊrka aɖʊ (ɩŋɔripi ɩceuka katam)</type>
+			<type key="calendar" type="islamic-umalqura">gɩnǝma kɩshilé na kɩŋɔrɔ ɩtʊrka (Um al-Kra)</type>
+			<type key="calendar" type="iso8601">ISO-8601 kɩshilé na kɩŋɔrɔ ɩtʊrka</type>
+			<type key="calendar" type="japanese">Japaŋ kɩshilé na kɩŋɔrɔ ɩtʊrka</type>
+			<type key="calendar" type="persian">Pɛrs kǝbaja bɩshilé na kɩŋɔrɔ ɩtʊrka</type>
+			<type key="calendar" type="roc">miŋguwo kɩshilé na kɩŋɔrɔ ɩtʊrka</type>
+			<type key="collation" type="standard">ɩbii kʊnyaʊ ɖeiɖei</type>
+			<type key="numbers" type="latn">latɛŋ</type>
+		</types>
+		<measurementSystemNames>
+			<measurementSystemName type="metric">mɛta kʊfaŋʊ kayaashɩ</measurementSystemName>
+			<measurementSystemName type="UK">Gɛɛshɩ kʊfaŋʊ kayaashɩ</measurementSystemName>
+			<measurementSystemName type="US">Amalɩka kʊfaŋʊ kayaashɩ</measurementSystemName>
+		</measurementSystemNames>
+		<codePatterns>
+			<codePattern type="language">gɩkrǝ : {0}</codePattern>
+			<codePattern type="script">ʊŋɔn kagʊsʊ̀rá : {0}</codePattern>
+			<codePattern type="territory">gʊsaʊ : {0}</codePattern>
+		</codePatterns>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[aáàâ b c ɖ eéèê ǝ{ǝ́}{ǝ̀}{ǝ̂} ɛ{ɛ́}{ɛ̀}{ɛ̂} f g {gb} h iíìî ɩ{ɩ́}{ɩ̀}{ɩ̂} j k {kp} l mḿ{m̀} nńǹ {ny} ŋ{ŋ́}{ŋ̀} {ŋm} oóòô ɔ{ɔ́}{ɔ̀}{ɔ̂} p r s {sh} t uúùû ʊ{ʊ́}{ʊ̀}{ʊ̂} w y]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[ăǎåäãā{a̰} æ ɓ ćç d ɗ ĕěëẽēḛ {ǝ̃}{ǝ̄}{ǝ̰} {ə̌} {ɛ̌}{ɛ̃}{ɛ̄}{ɛ̰} ƒ ɣ {hw} ĭǐïĩīḭ ĳ {ɩ̃}{ɩ̄}{ɩ̰} {m̌}{m̄} ňñ{n̄} {ŋw} ŏǒöõøō{o̰} œ {ɔ̌}{ɔ̃}{ɔ̄}{ɔ̰} ř šſ ß ŭǔüūṵ {̃ũ} {ʊ̌}{ʊ̃}{ʊ̄}{ʊ̰} v ʋ x {xw} ÿ ƴ z ʒ {̃ʼ}]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[   \- ‑ , . % ‰ ‱ + 0 1 2² 3³ 4 5 6 7 8 9 {ʲᵃ} {ᵏᵃ}]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[_ \- ‐‑ – — ― , ; \: ! ? . … '‘’ ‹ › &quot;“” « » ( ) \[ \] \{ \} § @ * / \\ \&amp; # % ‰ ‱ † ‡ • ‣ ‧ ′ ″ ° &lt; = &gt; | ¦ ~]</exemplarCharacters>
+	</characters>
+	<delimiters>
+		<quotationStart>«</quotationStart>
+		<quotationEnd>»</quotationEnd>
+		<alternateQuotationStart>“</alternateQuotationStart>
+		<alternateQuotationEnd>”</alternateQuotationEnd>
+	</delimiters>
+	<dates>
+		<calendars>
+			<calendar type="generic">
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>EEEE, MMMM d y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern>MMMM d y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern>MMM d y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>M/d/y GGGGG</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<dateTimeFormatLength type="full">
+						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="long">
+						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="medium">
+						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="short">
+						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<availableFormats>
+						<dateFormatItem id="Ed">E d</dateFormatItem>
+						<dateFormatItem id="Ehm">E, h a mm</dateFormatItem>
+						<dateFormatItem id="EHm">E, HH:mm</dateFormatItem>
+						<dateFormatItem id="Ehms">E, h a mm:ss</dateFormatItem>
+						<dateFormatItem id="EHms">E, HH:mm:ss</dateFormatItem>
+						<dateFormatItem id="Gy">y G</dateFormatItem>
+						<dateFormatItem id="GyMd">M/d/y GGGGG</dateFormatItem>
+						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMd">MMM d y G</dateFormatItem>
+						<dateFormatItem id="GyMMMEd">E, MMM d y G</dateFormatItem>
+						<dateFormatItem id="hm">h a mm</dateFormatItem>
+						<dateFormatItem id="hms">h a mm:ss</dateFormatItem>
+						<dateFormatItem id="Md">M/d</dateFormatItem>
+						<dateFormatItem id="MEd">E, M/d</dateFormatItem>
+						<dateFormatItem id="MMMEd">E, MMM d</dateFormatItem>
+						<dateFormatItem id="y">y G</dateFormatItem>
+						<dateFormatItem id="yyyy">y G</dateFormatItem>
+						<dateFormatItem id="yyyyM">M/y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMd">M/d/y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">E, M/d/y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMMM">MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMd">MMM d y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMEd">E, MMM d y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMM">MMMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyQQQ">QQQ y G</dateFormatItem>
+						<dateFormatItem id="yyyyQQQQ">QQQQ y G</dateFormatItem>
+					</availableFormats>
+					<intervalFormats>
+						<intervalFormatFallback>{0} halɩ {1}</intervalFormatFallback>
+						<intervalFormatItem id="d">
+							<greatestDifference id="d">d – d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Gy">
+							<greatestDifference id="G">y G – y G</greatestDifference>
+							<greatestDifference id="y">y – y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyM">
+							<greatestDifference id="G">M/y GGGGG – M/y GGGGG</greatestDifference>
+							<greatestDifference id="M">M/y – M/y GGGGG</greatestDifference>
+							<greatestDifference id="y">M/y – M/y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMd">
+							<greatestDifference id="d">M/d/y – M/d/y GGGGG</greatestDifference>
+							<greatestDifference id="G">M/d/y GGGGG – M/d/y GGGGG</greatestDifference>
+							<greatestDifference id="M">M/d/y – M/d/y GGGGG</greatestDifference>
+							<greatestDifference id="y">M/d/y – M/d/y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMEd">
+							<greatestDifference id="d">E, M/d/y – E, M/d/y GGGGG</greatestDifference>
+							<greatestDifference id="G">E, M/d/y GGGGG – E, M/d/y GGGGG</greatestDifference>
+							<greatestDifference id="M">E, M/d/y – E, M/d/y GGGGG</greatestDifference>
+							<greatestDifference id="y">E, M/d/y – E, M/d/y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMM">
+							<greatestDifference id="G">MMM y G – MMM y G</greatestDifference>
+							<greatestDifference id="M">MMM – MMM y G</greatestDifference>
+							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMd">
+							<greatestDifference id="d">MMM d – d y G</greatestDifference>
+							<greatestDifference id="G">MMM d y G – MMM d y G</greatestDifference>
+							<greatestDifference id="M">MMM d – MMM d y G</greatestDifference>
+							<greatestDifference id="y">MMM d y – MMM d y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMEd">
+							<greatestDifference id="d">E, MMM d – E, MMM d y G</greatestDifference>
+							<greatestDifference id="G">E, MMM d y G – E, MMM d y G</greatestDifference>
+							<greatestDifference id="M">E, MMM d – E, MMM d y G</greatestDifference>
+							<greatestDifference id="y">E, MMM d y – E, MMM d y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="M">
+							<greatestDifference id="M">M – M</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Md">
+							<greatestDifference id="d">M/d – M/d</greatestDifference>
+							<greatestDifference id="M">M/d – M/d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MEd">
+							<greatestDifference id="d">E, M/d – E, M/d</greatestDifference>
+							<greatestDifference id="M">E, M/d – E, M/d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMM">
+							<greatestDifference id="M">MMM – MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMd">
+							<greatestDifference id="d">MMM d – d</greatestDifference>
+							<greatestDifference id="M">MMM d – MMM d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMEd">
+							<greatestDifference id="d">E, MMM d – E, MMM d</greatestDifference>
+							<greatestDifference id="M">E, MMM d – E, MMM d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="y">
+							<greatestDifference id="y">y – y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yM">
+							<greatestDifference id="M">M/y – M/y GGGGG</greatestDifference>
+							<greatestDifference id="y">M/y – M/y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMd">
+							<greatestDifference id="d">M/d/y – M/d/y GGGGG</greatestDifference>
+							<greatestDifference id="M">M/d/y – M/d/y GGGGG</greatestDifference>
+							<greatestDifference id="y">M/d/y – M/d/y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMEd">
+							<greatestDifference id="d">E, M/d/y – E, M/d/y GGGGG</greatestDifference>
+							<greatestDifference id="M">E, M/d/y – E, M/d/y GGGGG</greatestDifference>
+							<greatestDifference id="y">E, M/d/y – E, M/d/y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMM">
+							<greatestDifference id="M">MMM – MMM y G</greatestDifference>
+							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMd">
+							<greatestDifference id="d">MMM d – d y G</greatestDifference>
+							<greatestDifference id="M">MMM d – MMM d y G</greatestDifference>
+							<greatestDifference id="y">MMM d y – MMM d y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMEd">
+							<greatestDifference id="d">E, MMM d – E, MMM d y G</greatestDifference>
+							<greatestDifference id="M">E, MMM d – E, MMM d y G</greatestDifference>
+							<greatestDifference id="y">E, MMM d y – E, MMM d y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMM">
+							<greatestDifference id="M">MMMM – MMMM y G</greatestDifference>
+							<greatestDifference id="y">MMMM y – MMMM y G</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1">kaw</month>
+							<month type="2">kpa</month>
+							<month type="3">ci</month>
+							<month type="4">ɖʊ</month>
+							<month type="5">ɖu5</month>
+							<month type="6">ɖu6</month>
+							<month type="7">la</month>
+							<month type="8">kǝu</month>
+							<month type="9">fʊm</month>
+							<month type="10">cim</month>
+							<month type="11">pom</month>
+							<month type="12">bʊn</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1">ɩjikawǝrka kaŋɔrɔ</month>
+							<month type="2">ɩjikpaka kaŋɔrɔ</month>
+							<month type="3">arɛ́cika kaŋɔrɔ</month>
+							<month type="4">njɩbɔ nɖʊka kaŋɔrɔ</month>
+							<month type="5">acafʊnɖuka kaŋɔrɔ</month>
+							<month type="6">anɔɔɖuka kaŋɔrɔ</month>
+							<month type="7">alàlaka kaŋɔrɔ</month>
+							<month type="8">ɩjikǝuka kaŋɔrɔ</month>
+							<month type="9">abofʊmka kaŋɔrɔ</month>
+							<month type="10">ɩjicimka kaŋɔrɔ</month>
+							<month type="11">acapomka kaŋɔrɔ</month>
+							<month type="12">anɔɔbʊnka kaŋɔrɔ</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="abbreviated">
+							<day type="sun">alah</day>
+							<day type="mon">aɖɩt</day>
+							<day type="tue">atal</day>
+							<day type="wed">alar</day>
+							<day type="thu">alam</day>
+							<day type="fri">arɩs</day>
+							<day type="sat">asib</day>
+						</dayWidth>
+						<dayWidth type="short">
+							<day type="sun">alh</day>
+							<day type="mon">aɖt</day>
+							<day type="tue">atl</day>
+							<day type="wed">alr</day>
+							<day type="thu">alm</day>
+							<day type="fri">ars</day>
+							<day type="sat">asb</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun">alahaɖɩ</day>
+							<day type="mon">aɖɩtɛnɛɛ</day>
+							<day type="tue">atalaata</day>
+							<day type="wed">alaarba</day>
+							<day type="thu">alaamɩshɩ</day>
+							<day type="fri">arɩsǝma</day>
+							<day type="sat">asiibi</day>
+						</dayWidth>
+					</dayContext>
+					<dayContext type="stand-alone">
+						<dayWidth type="narrow">
+							<day type="sun">lh</day>
+							<day type="mon">ɖt</day>
+							<day type="tue">tl</day>
+							<day type="wed">lr</day>
+							<day type="thu">lm</day>
+							<day type="fri">rs</day>
+							<day type="sat">sb</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<quarters>
+					<quarterContext type="format">
+						<quarterWidth type="abbreviated">
+							<quarter type="1">ɩ1</quarter>
+							<quarter type="2">ɩ2</quarter>
+							<quarter type="3">ɩ3</quarter>
+							<quarter type="4">ɩ4</quarter>
+						</quarterWidth>
+						<quarterWidth type="wide">
+							<quarter type="1">ɩŋɔrɩriu ɩsǝbaka</quarter>
+							<quarter type="2">ɩŋɔrɩriu ɩnyɩʊtaja</quarter>
+							<quarter type="3">ɩŋɔrɩriu ɩriutaja</quarter>
+							<quarter type="4">ɩŋɔrɩriu ɩnantaja</quarter>
+						</quarterWidth>
+					</quarterContext>
+					<quarterContext type="stand-alone">
+						<quarterWidth type="wide">
+							<quarter type="1">ɩŋɔrɩriu 1ka</quarter>
+							<quarter type="2">ɩŋɔrɩriu 2ja</quarter>
+							<quarter type="3">ɩŋɔrɩriu 3ja</quarter>
+							<quarter type="4">ɩŋɔrɩriu 4ja</quarter>
+						</quarterWidth>
+					</quarterContext>
+				</quarters>
+				<dayPeriods>
+					<dayPeriodContext type="format">
+						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="am">1ka</dayPeriod>
+							<dayPeriod type="pm">2ja</dayPeriod>
+							<dayPeriod type="morning1">asʊbaa</dayPeriod>
+							<dayPeriod type="morning2">gajaka</dayPeriod>
+							<dayPeriod type="afternoon1">gɩshilikɔnɔ</dayPeriod>
+							<dayPeriod type="afternoon2">gɩteŋshile</dayPeriod>
+							<dayPeriod type="evening1">gɩjibɔŋɔ</dayPeriod>
+							<dayPeriod type="night1">gajanɩ</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="morning1">asb</dayPeriod>
+							<dayPeriod type="morning2">gjk</dayPeriod>
+							<dayPeriod type="afternoon1">gshk</dayPeriod>
+							<dayPeriod type="afternoon2">gtsh</dayPeriod>
+							<dayPeriod type="evening1">gjb</dayPeriod>
+							<dayPeriod type="night1">gjn</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am">ʊshilè kʊboɖu</dayPeriod>
+							<dayPeriod type="pm">ʊshilè kʊsasʊ</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+					<dayPeriodContext type="stand-alone">
+						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="morning1">asb</dayPeriod>
+							<dayPeriod type="morning2">gjk</dayPeriod>
+							<dayPeriod type="afternoon1">gshk</dayPeriod>
+							<dayPeriod type="afternoon2">gtsh</dayPeriod>
+							<dayPeriod type="evening1">gjb</dayPeriod>
+							<dayPeriod type="night1">gjn</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="morning1">asʊbaa</dayPeriod>
+							<dayPeriod type="morning2">gajaka</dayPeriod>
+							<dayPeriod type="afternoon1">gɩshilikɔnɔ</dayPeriod>
+							<dayPeriod type="afternoon2">gɩteŋshile</dayPeriod>
+							<dayPeriod type="evening1">gɩjibɔŋɔ</dayPeriod>
+							<dayPeriod type="night1">gajanɩ</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+				</dayPeriods>
+				<eras>
+					<eraNames>
+						<era type="0">naa Ba Ye Ŋʊm Annabi Ɩsa</era>
+						<era type="0" alt="variant">naa Nnyǝmǝ kaSaamanɩ a Ye Pɩ</era>
+						<era type="1">Annabi Ɩsa Abʊŋʊma Kaŋkǝm</era>
+						<era type="1" alt="variant">Nnyǝmǝ KaSaamanɩ</era>
+					</eraNames>
+					<eraAbbr>
+						<era type="0">naaBYŊAƖ</era>
+						<era type="0" alt="variant">naaNSYP</era>
+						<era type="1">AƖAK</era>
+						<era type="1" alt="variant">NKS</era>
+					</eraAbbr>
+				</eras>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>EEEE, MMMM d y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern>MMMM d y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern>MMM d y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>M/d/y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<timeFormats>
+					<timeFormatLength type="full">
+						<timeFormat>
+							<pattern>HH:mm:ss zzzz</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="long">
+						<timeFormat>
+							<pattern>HH:mm:ss z</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="medium">
+						<timeFormat>
+							<pattern>HH:mm:ss</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="short">
+						<timeFormat>
+							<pattern>HH:mm</pattern>
+						</timeFormat>
+					</timeFormatLength>
+				</timeFormats>
+				<dateTimeFormats>
+					<dateTimeFormatLength type="full">
+						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="long">
+						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="medium">
+						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="short">
+						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<availableFormats>
+						<dateFormatItem id="Bhm">h B mm</dateFormatItem>
+						<dateFormatItem id="Bhms">h B mm:ss</dateFormatItem>
+						<dateFormatItem id="EBhm">E h B mm</dateFormatItem>
+						<dateFormatItem id="EBhms">E h B mm:ss</dateFormatItem>
+						<dateFormatItem id="Ed">E d</dateFormatItem>
+						<dateFormatItem id="Ehm">E h a mm</dateFormatItem>
+						<dateFormatItem id="Ehms">E h a mm:ss</dateFormatItem>
+						<dateFormatItem id="Gy">y G</dateFormatItem>
+						<dateFormatItem id="GyMd">M/d/y G</dateFormatItem>
+						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMd">MMM d y G</dateFormatItem>
+						<dateFormatItem id="GyMMMEd">E, MMM d y G</dateFormatItem>
+						<dateFormatItem id="hm">h a mm</dateFormatItem>
+						<dateFormatItem id="hms">h a mm:ss</dateFormatItem>
+						<dateFormatItem id="hmsv">h a mm:ss v</dateFormatItem>
+						<dateFormatItem id="hmv">h a mm v</dateFormatItem>
+						<dateFormatItem id="Md">M/d</dateFormatItem>
+						<dateFormatItem id="MEd">E, M/d</dateFormatItem>
+						<dateFormatItem id="MMMEd">E, MMM d</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="zero">MMMM 'abɔkɔɩ' W'ja'</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="one">MMMM 'abɔkɔɩ' W'ja'</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="other">MMMM 'abɔkɔɩ' W'ja'</dateFormatItem>
+						<dateFormatItem id="yM">M/y</dateFormatItem>
+						<dateFormatItem id="yMd">M/d/y</dateFormatItem>
+						<dateFormatItem id="yMEd">E, M/d/y</dateFormatItem>
+						<dateFormatItem id="yMMM">MMM y</dateFormatItem>
+						<dateFormatItem id="yMMMd">MMM d y</dateFormatItem>
+						<dateFormatItem id="yMMMEd">E, MMM d y</dateFormatItem>
+						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
+						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
+						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
+						<dateFormatItem id="yw" count="zero">Y 'kabɔkɔɩ' w'ja'</dateFormatItem>
+						<dateFormatItem id="yw" count="one">Y 'kabɔkɔɩ' w'ja'</dateFormatItem>
+						<dateFormatItem id="yw" count="other">Y 'kabɔkɔɩ' w'ja'</dateFormatItem>
+					</availableFormats>
+					<intervalFormats>
+						<intervalFormatFallback>{0} halɩ {1}</intervalFormatFallback>
+						<intervalFormatItem id="d">
+							<greatestDifference id="d">d – d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Gy">
+							<greatestDifference id="G">y G – y G</greatestDifference>
+							<greatestDifference id="y">y – y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyM">
+							<greatestDifference id="G">M/y G – M/y G</greatestDifference>
+							<greatestDifference id="M">M/y – M/y G</greatestDifference>
+							<greatestDifference id="y">M/y – M/y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMd">
+							<greatestDifference id="d">M/d/y – M/d/y G</greatestDifference>
+							<greatestDifference id="G">M/d/y G – M/d/y G</greatestDifference>
+							<greatestDifference id="M">M/d/y – M/d/y G</greatestDifference>
+							<greatestDifference id="y">M/d/y – M/d/y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMEd">
+							<greatestDifference id="d">E, M/d/y – E, M/d/y G</greatestDifference>
+							<greatestDifference id="G">E, M/d/y G – E, M/d/y G</greatestDifference>
+							<greatestDifference id="M">E, M/d/y – E, M/d/y G</greatestDifference>
+							<greatestDifference id="y">E, M/d/y – E, M/d/y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMM">
+							<greatestDifference id="G">MMM y G – MMM y G</greatestDifference>
+							<greatestDifference id="M">MMM – MMM y G</greatestDifference>
+							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMd">
+							<greatestDifference id="d">MMM d – d y G</greatestDifference>
+							<greatestDifference id="G">MMM d y G – MMM d y G</greatestDifference>
+							<greatestDifference id="M">MMM d – MMM d y G</greatestDifference>
+							<greatestDifference id="y">MMM d y – MMM d y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMEd">
+							<greatestDifference id="d">E, MMM d – E, MMM d y G</greatestDifference>
+							<greatestDifference id="G">E, MMM d y G – E, MMM d y G</greatestDifference>
+							<greatestDifference id="M">E, MMM d – E, MMM d y G</greatestDifference>
+							<greatestDifference id="y">E, MMM d y – E, MMM d y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="h">
+							<greatestDifference id="h">h a – h a</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="H">
+							<greatestDifference id="H">HH – HH</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hm">
+							<greatestDifference id="a">h a mm – h a mm</greatestDifference>
+							<greatestDifference id="h">h a mm – h a mm</greatestDifference>
+							<greatestDifference id="m">h a mm – h a mm</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hm">
+							<greatestDifference id="H">HH:mm – HH:mm</greatestDifference>
+							<greatestDifference id="m">HH:mm – HH:mm</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hmv">
+							<greatestDifference id="a">h a mm a – h a mm v</greatestDifference>
+							<greatestDifference id="h">h a mm – h a mm v</greatestDifference>
+							<greatestDifference id="m">h a mm – h a mm v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hmv">
+							<greatestDifference id="H">HH:mm – HH:mm v</greatestDifference>
+							<greatestDifference id="m">HH:mm – HH:mm v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hv">
+							<greatestDifference id="a">h a – h a v</greatestDifference>
+							<greatestDifference id="h">h a – h a v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hv">
+							<greatestDifference id="H">HH – HH v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="M">
+							<greatestDifference id="M">M – M</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Md">
+							<greatestDifference id="d">M/d – M/d</greatestDifference>
+							<greatestDifference id="M">M/d – M/d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MEd">
+							<greatestDifference id="d">E, M/d – E, M/d</greatestDifference>
+							<greatestDifference id="M">E, M/d – E, M/d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMM">
+							<greatestDifference id="M">MMM – MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMd">
+							<greatestDifference id="d">MMM d – d</greatestDifference>
+							<greatestDifference id="M">MMM d – MMM d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMEd">
+							<greatestDifference id="d">E, MMM d – E, MMM d</greatestDifference>
+							<greatestDifference id="M">E, MMM d – E, MMM d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="y">
+							<greatestDifference id="y">y – y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yM">
+							<greatestDifference id="M">M/y – M/y</greatestDifference>
+							<greatestDifference id="y">M/y – M/y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMd">
+							<greatestDifference id="d">M/d/y – M/d/y</greatestDifference>
+							<greatestDifference id="M">M/d/y – M/d/y</greatestDifference>
+							<greatestDifference id="y">M/d/y – M/d/y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMEd">
+							<greatestDifference id="d">E, M/d/y – E, M/d/y</greatestDifference>
+							<greatestDifference id="M">E, M/d/y – E, M/d/y</greatestDifference>
+							<greatestDifference id="y">E, M/d/y – E, M/d/y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMM">
+							<greatestDifference id="M">MMM – MMM y</greatestDifference>
+							<greatestDifference id="y">MMM y – MMM y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMd">
+							<greatestDifference id="d">MMM d – d y</greatestDifference>
+							<greatestDifference id="M">MMM d – MMM d y</greatestDifference>
+							<greatestDifference id="y">MMM d y – MMM d y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMEd">
+							<greatestDifference id="d">E, MMM d – E, MMM d y</greatestDifference>
+							<greatestDifference id="M">E, MMM d – E, MMM d y</greatestDifference>
+							<greatestDifference id="y">E, MMM d y – E, MMM d y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMM">
+							<greatestDifference id="M">MMMM – MMMM y</greatestDifference>
+							<greatestDifference id="y">MMMM y – MMMM y</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
+				</dateTimeFormats>
+			</calendar>
+		</calendars>
+		<fields>
+			<field type="era">
+				<displayName>saamanɩ</displayName>
+			</field>
+			<field type="year">
+				<displayName>gaja</displayName>
+				<relative type="-1">gaja gaboŋoka</relative>
+				<relative type="0">gaja ŋgaɖe</relative>
+				<relative type="1">gaja gafɔlɩ</relative>
+			</field>
+			<field type="year-short">
+				<displayName>gj.</displayName>
+				<relative type="-1">gj. boŋo</relative>
+				<relative type="0">gj. ɖe</relative>
+				<relative type="1">gj. fɔlɩ</relative>
+			</field>
+			<field type="year-narrow">
+				<displayName>gj</displayName>
+				<relative type="-1">gj boŋo</relative>
+				<relative type="0">gj ɖe</relative>
+				<relative type="1">gj fɔlɩ</relative>
+			</field>
+			<field type="quarter">
+				<displayName>ɩŋɔrɩriu</displayName>
+			</field>
+			<field type="quarter-short">
+				<displayName>ɩŋɔ.</displayName>
+			</field>
+			<field type="quarter-narrow">
+				<displayName>ɩŋɔ</displayName>
+			</field>
+			<field type="month">
+				<displayName>aŋɔrɔ</displayName>
+				<relative type="-1">aŋɔrɔ aboŋoka</relative>
+				<relative type="0">aŋɔrɔ nnɖe</relative>
+				<relative type="1">aŋɔrɔ afɔlɩ</relative>
+			</field>
+			<field type="month-short">
+				<displayName>aŋ.</displayName>
+				<relative type="-1">aŋ. boŋo</relative>
+				<relative type="0">aŋ. ɖe</relative>
+				<relative type="1">aŋ. fɔlɩ</relative>
+			</field>
+			<field type="month-narrow">
+				<displayName>aŋ</displayName>
+				<relative type="-1">aŋ boŋo</relative>
+				<relative type="0">aŋ ɖe</relative>
+				<relative type="1">aŋ fɔlɩ</relative>
+			</field>
+			<field type="week">
+				<displayName>bɔkɔɩ</displayName>
+				<relative type="-1">bɔkɔɩ aboŋoka</relative>
+				<relative type="0">bɔkɔɩ nnɖe</relative>
+				<relative type="1">bɔkɔɩ afɔlɩ</relative>
+				<relativePeriod>{0} kabɔkɔɩ</relativePeriod>
+			</field>
+			<field type="week-short">
+				<displayName>bk.</displayName>
+				<relative type="-1">bk. boŋo</relative>
+				<relative type="0">bk. ɖe</relative>
+				<relative type="1">bk. fɔlɩ</relative>
+			</field>
+			<field type="week-narrow">
+				<displayName>bk</displayName>
+				<relative type="-1">bk boŋo</relative>
+				<relative type="0">bk ɖe</relative>
+				<relative type="1">bk fɔlɩ</relative>
+			</field>
+			<field type="day">
+				<displayName>ʊshilé</displayName>
+				<relative type="-1">galaɩ</relative>
+				<relative type="0">ʊrɔŋ</relative>
+				<relative type="1">gacǝŋ</relative>
+			</field>
+			<field type="day-short">
+				<displayName>ʊsh.</displayName>
+			</field>
+			<field type="day-narrow">
+				<displayName>ʊsh</displayName>
+			</field>
+			<field type="weekday">
+				<displayName>bɔkɔɩ kʊshilé</displayName>
+			</field>
+			<field type="sun">
+				<relative type="-1">alahaɖɩ aboŋoka</relative>
+				<relative type="0">alahaɖɩ nnɖe</relative>
+				<relative type="1">alahaɖɩ afɔlɩ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="zero">na ce alahaɖɩ {0} nɩ</relativeTimePattern>
+					<relativeTimePattern count="one">na ce alahaɖɩ {0} nɩ</relativeTimePattern>
+					<relativeTimePattern count="other">na ce alahaɖɩ {0} nɩ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="zero">ɩ ɖoo alahaɖɩ {0}</relativeTimePattern>
+					<relativeTimePattern count="one">ɩ ɖoo alahaɖɩ {0}</relativeTimePattern>
+					<relativeTimePattern count="other">ɩ ɖoo alahaɖɩ {0}</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="mon">
+				<relative type="-1">aɖɩtɛnɛɛ aboŋoka</relative>
+				<relative type="0">aɖɩtɛnɛɛ nnɖe</relative>
+				<relative type="1">aɖɩtɛnɛɛ afɔlɩ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="zero">na ce aɖɩtɛnɛɛ {0} nɩ</relativeTimePattern>
+					<relativeTimePattern count="one">na ce aɖɩtɛnɛɛ {0} nɩ</relativeTimePattern>
+					<relativeTimePattern count="other">na ce aɖɩtɛnɛɛ {0} nɩ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="zero">ɩ ɖoo aɖɩtɛnɛɛ {0}</relativeTimePattern>
+					<relativeTimePattern count="one">ɩ ɖoo aɖɩtɛnɛɛ {0}</relativeTimePattern>
+					<relativeTimePattern count="other">ɩ ɖoo aɖɩtɛnɛɛ {0}</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="tue">
+				<relative type="-1">atalaata aboŋoka</relative>
+				<relative type="0">atalaata nnɖe</relative>
+				<relative type="1">atalaata afɔlɩ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="zero">na ce atalaata {0} nɩ</relativeTimePattern>
+					<relativeTimePattern count="one">na ce atalaata {0} nɩ</relativeTimePattern>
+					<relativeTimePattern count="other">na ce atalaata {0} nɩ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="zero">ɩ ɖoo atalaata {0}</relativeTimePattern>
+					<relativeTimePattern count="one">ɩ ɖoo atalaata {0}</relativeTimePattern>
+					<relativeTimePattern count="other">ɩ ɖoo atalaata {0}</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="wed">
+				<relative type="-1">alaarba aboŋoka</relative>
+				<relative type="0">alaarba nnɖe</relative>
+				<relative type="1">alaarba afɔlɩ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="zero">na ce alaarba {0} nɩ</relativeTimePattern>
+					<relativeTimePattern count="one">na ce alaarba {0} nɩ</relativeTimePattern>
+					<relativeTimePattern count="other">na ce alaarba {0} nɩ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="zero">ɩ ɖoo alaarba {0}</relativeTimePattern>
+					<relativeTimePattern count="one">ɩ ɖoo alaarba {0}</relativeTimePattern>
+					<relativeTimePattern count="other">ɩ ɖoo alaarba {0}</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="thu">
+				<relative type="-1">alaamɩshɩ aboŋoka</relative>
+				<relative type="0">alaamɩshɩ nnɖe</relative>
+				<relative type="1">alaamɩshɩ afɔlɩ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="zero">na ce alaamɩshɩ {0} nɩ</relativeTimePattern>
+					<relativeTimePattern count="one">na ce alaamɩshɩ {0} nɩ</relativeTimePattern>
+					<relativeTimePattern count="other">na ce alaamɩshɩ {0} nɩ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="zero">ɩ ɖoo alaamɩshɩ {0}</relativeTimePattern>
+					<relativeTimePattern count="one">ɩ ɖoo alaamɩshɩ {0}</relativeTimePattern>
+					<relativeTimePattern count="other">ɩ ɖoo alaamɩshɩ {0}</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="fri">
+				<relative type="-1">arɩsǝma aboŋoka</relative>
+				<relative type="0">arɩsǝma nnɖe</relative>
+				<relative type="1">arɩsǝma afɔlɩ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="zero">na ce arɩsǝma {0} nɩ</relativeTimePattern>
+					<relativeTimePattern count="one">na ce arɩsǝma {0} nɩ</relativeTimePattern>
+					<relativeTimePattern count="other">na ce arɩsǝma {0} nɩ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="zero">ɩ ɖoo arɩsǝma {0}</relativeTimePattern>
+					<relativeTimePattern count="one">ɩ ɖoo arɩsǝma {0}</relativeTimePattern>
+					<relativeTimePattern count="other">ɩ ɖoo arɩsǝma {0}</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sat">
+				<relative type="-1">asiibi aboŋoka</relative>
+				<relative type="0">asiibi nnɖe</relative>
+				<relative type="1">asiibi afɔlɩ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="zero">na ce asiibi {0} nɩ</relativeTimePattern>
+					<relativeTimePattern count="one">na ce asiibi {0} nɩ</relativeTimePattern>
+					<relativeTimePattern count="other">na ce asiibi {0} nɩ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="zero">ɩ ɖoo asiibi {0}</relativeTimePattern>
+					<relativeTimePattern count="one">ɩ ɖoo asiibi {0}</relativeTimePattern>
+					<relativeTimePattern count="other">ɩ ɖoo asiibi {0}</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="dayperiod">
+				<displayName>ʊshilé kaŋkǝlǝ́</displayName>
+			</field>
+			<field type="hour">
+				<displayName>gakɔŋkɔŋɔ̀</displayName>
+				<relative type="0">gakɔŋkɔŋɔ̀ ŋgaɖe</relative>
+			</field>
+			<field type="hour-short">
+				<displayName>gk.</displayName>
+			</field>
+			<field type="hour-narrow">
+				<displayName>gk</displayName>
+			</field>
+			<field type="minute">
+				<displayName>gʊnaŋa</displayName>
+				<relative type="0">gʊnaŋa ŋgʊɖe</relative>
+			</field>
+			<field type="minute-short">
+				<displayName>gn.</displayName>
+			</field>
+			<field type="minute-narrow">
+				<displayName>gn</displayName>
+			</field>
+			<field type="second">
+				<displayName>gɩpi</displayName>
+				<relative type="0">nnyǝmǝ</relative>
+			</field>
+			<field type="second-short">
+				<displayName>gp.</displayName>
+			</field>
+			<field type="second-narrow">
+				<displayName>gp</displayName>
+			</field>
+			<field type="zone">
+				<displayName>gakɔŋkɔŋɔ̀ kansaʊ</displayName>
+			</field>
+		</fields>
+		<timeZoneNames>
+			<gmtFormat>{0} Gk</gmtFormat>
+			<gmtZeroFormat>Gk</gmtZeroFormat>
+			<regionFormat>{0} kaakɔŋkɔŋɔ̀</regionFormat>
+			<regionFormat type="daylight">{0} kaakɔŋkɔŋɔ̀ gafʊbaka</regionFormat>
+			<regionFormat type="standard">{0} kaakɔŋkɔŋɔ̀ ɖeiɖei</regionFormat>
+			<zone type="Etc/UTC">
+				<long>
+					<standard>Ɖulinya aŋunii kaakɔŋkɔŋɔ̀</standard>
+				</long>
+				<short>
+					<standard>ƉAK</standard>
+				</short>
+			</zone>
+			<zone type="Etc/Unknown">
+				<exemplarCity>mpá nɖee kʊyɔʊ ʊ mana ma</exemplarCity>
+			</zone>
+			<zone type="Europe/Andorra">
+				<exemplarCity>Anɖɔraa</exemplarCity>
+			</zone>
+			<zone type="Asia/Dubai">
+				<exemplarCity>Ɖubaɩ</exemplarCity>
+			</zone>
+			<zone type="America/Antigua">
+				<exemplarCity>Antiguwaa</exemplarCity>
+			</zone>
+			<zone type="America/Anguilla">
+				<exemplarCity>Aŋguwilaa</exemplarCity>
+			</zone>
+			<zone type="Europe/Tirane">
+				<exemplarCity>Tiranaa</exemplarCity>
+			</zone>
+			<zone type="Asia/Yerevan">
+				<exemplarCity>Yerefaan</exemplarCity>
+			</zone>
+			<zone type="Africa/Luanda">
+				<exemplarCity>Luwanɖaa</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Rothera">
+				<exemplarCity>Roteraa</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Palmer">
+				<exemplarCity>Palmɛɛr</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Troll">
+				<exemplarCity>Trɔl</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Syowa">
+				<exemplarCity>Siyowaa</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Mawson">
+				<exemplarCity>Mɔsɔn</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Davis">
+				<exemplarCity>Ɖefis</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Vostok">
+				<exemplarCity>Fɔstɔk</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Casey">
+				<exemplarCity>Keesi</exemplarCity>
+			</zone>
+			<zone type="Antarctica/DumontDUrville">
+				<exemplarCity>Ɖimɔn Ɖirfil</exemplarCity>
+			</zone>
+			<zone type="Antarctica/McMurdo">
+				<exemplarCity>MɛkMɔrɖoo</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/Rio_Gallegos">
+				<exemplarCity>Riyo Galegɔs</exemplarCity>
+			</zone>
+			<zone type="America/Mendoza">
+				<exemplarCity>Mɛnɖɔsaa</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/San_Juan">
+				<exemplarCity>San Huwan</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/Ushuaia">
+				<exemplarCity>Ushuweyaa</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/La_Rioja">
+				<exemplarCity>La Riyɔha</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/San_Luis">
+				<exemplarCity>San Luwis</exemplarCity>
+			</zone>
+			<zone type="America/Catamarca">
+				<exemplarCity>Katamarkaa</exemplarCity>
+			</zone>
+			<zone type="America/Jujuy">
+				<exemplarCity>Huhuyi</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/Tucuman">
+				<exemplarCity>Tukuman</exemplarCity>
+			</zone>
+			<zone type="America/Cordoba">
+				<exemplarCity>Kɔrɖobaa</exemplarCity>
+			</zone>
+			<zone type="America/Buenos_Aires">
+				<exemplarCity>Buwenɔs Airɛs</exemplarCity>
+			</zone>
+			<zone type="Pacific/Pago_Pago">
+				<exemplarCity>Pago Pagoo</exemplarCity>
+			</zone>
+			<zone type="Europe/Vienna">
+				<exemplarCity>Fiyɛna</exemplarCity>
+			</zone>
+			<zone type="Australia/Perth">
+				<exemplarCity>Pɛrt</exemplarCity>
+			</zone>
+			<zone type="Australia/Eucla">
+				<exemplarCity>Uklaa</exemplarCity>
+			</zone>
+			<zone type="Australia/Darwin">
+				<exemplarCity>Ɖarfin</exemplarCity>
+			</zone>
+			<zone type="Australia/Adelaide">
+				<exemplarCity>Aɖelɛɛɖ</exemplarCity>
+			</zone>
+			<zone type="Australia/Broken_Hill">
+				<exemplarCity>Brokǝn Hil</exemplarCity>
+			</zone>
+			<zone type="Australia/Melbourne">
+				<exemplarCity>Mɛlbɔrn</exemplarCity>
+			</zone>
+			<zone type="Australia/Hobart">
+				<exemplarCity>Hobaa</exemplarCity>
+			</zone>
+			<zone type="Australia/Lindeman">
+				<exemplarCity>Linɖeman</exemplarCity>
+			</zone>
+			<zone type="Australia/Sydney">
+				<exemplarCity>Siɖnee</exemplarCity>
+			</zone>
+			<zone type="Australia/Brisbane">
+				<exemplarCity>Brisbɛn</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Macquarie">
+				<exemplarCity>Makarii</exemplarCity>
+			</zone>
+			<zone type="Australia/Lord_Howe">
+				<exemplarCity>Lɔrɖ Hoo</exemplarCity>
+			</zone>
+			<zone type="America/Aruba">
+				<exemplarCity>Arubaa</exemplarCity>
+			</zone>
+			<zone type="Europe/Mariehamn">
+				<exemplarCity>Mariyeham</exemplarCity>
+			</zone>
+			<zone type="Asia/Baku">
+				<exemplarCity>Bakuu</exemplarCity>
+			</zone>
+			<zone type="Europe/Sarajevo">
+				<exemplarCity>Sarayefoo</exemplarCity>
+			</zone>
+			<zone type="America/Barbados">
+				<exemplarCity>Barbaɖɔɔsɩ</exemplarCity>
+			</zone>
+			<zone type="Asia/Dhaka">
+				<exemplarCity>Ɖakaa</exemplarCity>
+			</zone>
+			<zone type="Europe/Brussels">
+				<exemplarCity>Brisɛl</exemplarCity>
+			</zone>
+			<zone type="Africa/Ouagadougou">
+				<exemplarCity>Wagaɖugu</exemplarCity>
+			</zone>
+			<zone type="Europe/Sofia">
+				<exemplarCity>Sofiya</exemplarCity>
+			</zone>
+			<zone type="Asia/Bahrain">
+				<exemplarCity>Barɛɛn</exemplarCity>
+			</zone>
+			<zone type="Africa/Bujumbura">
+				<exemplarCity>Bujumburaa</exemplarCity>
+			</zone>
+			<zone type="Africa/Porto-Novo">
+				<exemplarCity>Pɔrto Nofoo</exemplarCity>
+			</zone>
+			<zone type="America/St_Barthelemy">
+				<exemplarCity>Sɛŋ-Batolomayɔ</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Bermuda">
+				<exemplarCity>Bɛrmuɖaa</exemplarCity>
+			</zone>
+			<zone type="Asia/Brunei">
+				<exemplarCity>Brunɛɩ</exemplarCity>
+			</zone>
+			<zone type="America/La_Paz">
+				<exemplarCity>La Pas</exemplarCity>
+			</zone>
+			<zone type="America/Kralendijk">
+				<exemplarCity>Kralɛnɖaɩk</exemplarCity>
+			</zone>
+			<zone type="America/Eirunepe">
+				<exemplarCity>Ɛɩrunepee</exemplarCity>
+			</zone>
+			<zone type="America/Rio_Branco">
+				<exemplarCity>Riyo Braŋkoo</exemplarCity>
+			</zone>
+			<zone type="America/Porto_Velho">
+				<exemplarCity>Pɔrto Feloo</exemplarCity>
+			</zone>
+			<zone type="America/Boa_Vista">
+				<exemplarCity>Bowa Fistaa</exemplarCity>
+			</zone>
+			<zone type="America/Manaus">
+				<exemplarCity>Manaʊs</exemplarCity>
+			</zone>
+			<zone type="America/Cuiaba">
+				<exemplarCity>Kuyabaa</exemplarCity>
+			</zone>
+			<zone type="America/Santarem">
+				<exemplarCity>Santarɛm</exemplarCity>
+			</zone>
+			<zone type="America/Campo_Grande">
+				<exemplarCity>Campo Granɖee</exemplarCity>
+			</zone>
+			<zone type="America/Belem">
+				<exemplarCity>Belɛm</exemplarCity>
+			</zone>
+			<zone type="America/Araguaina">
+				<exemplarCity>Araguweena</exemplarCity>
+			</zone>
+			<zone type="America/Sao_Paulo">
+				<exemplarCity>Sao Pauloo</exemplarCity>
+			</zone>
+			<zone type="America/Bahia">
+				<exemplarCity>Bahiyaa</exemplarCity>
+			</zone>
+			<zone type="America/Fortaleza">
+				<exemplarCity>Fɔrtalɛsaa</exemplarCity>
+			</zone>
+			<zone type="America/Maceio">
+				<exemplarCity>Masɛɩyoo</exemplarCity>
+			</zone>
+			<zone type="America/Recife">
+				<exemplarCity>Resife</exemplarCity>
+			</zone>
+			<zone type="America/Noronha">
+				<exemplarCity>Norɔnya</exemplarCity>
+			</zone>
+			<zone type="America/Nassau">
+				<exemplarCity>Nasau</exemplarCity>
+			</zone>
+			<zone type="Asia/Thimphu">
+				<exemplarCity>Timfu</exemplarCity>
+			</zone>
+			<zone type="Europe/Minsk">
+				<exemplarCity>Mɩns</exemplarCity>
+			</zone>
+			<zone type="America/Belize">
+				<exemplarCity>Beliis</exemplarCity>
+			</zone>
+			<zone type="America/Dawson">
+				<exemplarCity>Ɖɔɔsǝn</exemplarCity>
+			</zone>
+			<zone type="America/Whitehorse">
+				<exemplarCity>Waɩthɔɔs</exemplarCity>
+			</zone>
+			<zone type="America/Inuvik">
+				<exemplarCity>Inufik</exemplarCity>
+			</zone>
+			<zone type="America/Vancouver">
+				<exemplarCity>Fɛŋkuufa</exemplarCity>
+			</zone>
+			<zone type="America/Fort_Nelson">
+				<exemplarCity>Fɔɔr Nɛlsɔn</exemplarCity>
+			</zone>
+			<zone type="America/Dawson_Creek">
+				<exemplarCity>Ɖɔɔsǝn Kriik</exemplarCity>
+			</zone>
+			<zone type="America/Creston">
+				<exemplarCity>Krɛstɔn</exemplarCity>
+			</zone>
+			<zone type="America/Edmonton">
+				<exemplarCity>Ɛɖmɔntɔn</exemplarCity>
+			</zone>
+			<zone type="America/Swift_Current">
+				<exemplarCity>Sǝwɩftɩ Kǝrɛɛntɩ</exemplarCity>
+			</zone>
+			<zone type="America/Cambridge_Bay">
+				<exemplarCity>Kambriijɩ Baɩ</exemplarCity>
+			</zone>
+			<zone type="America/Regina">
+				<exemplarCity>Regiina</exemplarCity>
+			</zone>
+			<zone type="America/Winnipeg">
+				<exemplarCity>Winipɛɛg</exemplarCity>
+			</zone>
+			<zone type="America/Resolute">
+				<exemplarCity>Rɛsoluut</exemplarCity>
+			</zone>
+			<zone type="America/Rankin_Inlet">
+				<exemplarCity>Raŋkɩn Ɩnlɛɛtɩ</exemplarCity>
+			</zone>
+			<zone type="America/Toronto">
+				<exemplarCity>Torɔntoo</exemplarCity>
+			</zone>
+			<zone type="America/Iqaluit">
+				<exemplarCity>Ikaluwiit</exemplarCity>
+			</zone>
+			<zone type="America/Moncton">
+				<exemplarCity>Mɔŋtɔn</exemplarCity>
+			</zone>
+			<zone type="America/Halifax">
+				<exemplarCity>Halifaas</exemplarCity>
+			</zone>
+			<zone type="America/Goose_Bay">
+				<exemplarCity>Guus Baɩ</exemplarCity>
+			</zone>
+			<zone type="America/Glace_Bay">
+				<exemplarCity>Glaas Baɩ</exemplarCity>
+			</zone>
+			<zone type="America/Blanc-Sablon">
+				<exemplarCity>Blaŋ-Sablɔŋ</exemplarCity>
+			</zone>
+			<zone type="America/St_Johns">
+				<exemplarCity>Sɛŋ Jɔɔns</exemplarCity>
+			</zone>
+			<zone type="Indian/Cocos">
+				<exemplarCity>Kokoos</exemplarCity>
+			</zone>
+			<zone type="Africa/Kinshasa">
+				<exemplarCity>Kinshasaa</exemplarCity>
+			</zone>
+			<zone type="Africa/Lubumbashi">
+				<exemplarCity>Lubumbashii</exemplarCity>
+			</zone>
+			<zone type="Africa/Bangui">
+				<exemplarCity>Baŋgii</exemplarCity>
+			</zone>
+			<zone type="Africa/Brazzaville">
+				<exemplarCity>Brasafil</exemplarCity>
+			</zone>
+			<zone type="Europe/Zurich">
+				<exemplarCity>Suriik</exemplarCity>
+			</zone>
+			<zone type="Africa/Abidjan">
+				<exemplarCity>Abijaŋ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Rarotonga">
+				<exemplarCity>Rarotɔŋga</exemplarCity>
+			</zone>
+			<zone type="Pacific/Easter">
+				<exemplarCity>Ista</exemplarCity>
+			</zone>
+			<zone type="America/Santiago">
+				<exemplarCity>Santiyagoo</exemplarCity>
+			</zone>
+			<zone type="Africa/Douala">
+				<exemplarCity>Ɖuwalaa</exemplarCity>
+			</zone>
+			<zone type="Asia/Urumqi">
+				<exemplarCity>Urumkii</exemplarCity>
+			</zone>
+			<zone type="Asia/Shanghai">
+				<exemplarCity>Shaŋgaɩ</exemplarCity>
+			</zone>
+			<zone type="America/Costa_Rica">
+				<exemplarCity>Kɔsta Rikaa</exemplarCity>
+			</zone>
+			<zone type="America/Havana">
+				<exemplarCity>Hafanaa</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Cape_Verde">
+				<exemplarCity>Kapfɛɛr</exemplarCity>
+			</zone>
+			<zone type="America/Curacao">
+				<exemplarCity>Kurasaawu</exemplarCity>
+			</zone>
+			<zone type="Indian/Christmas">
+				<exemplarCity>Nowɛl</exemplarCity>
+			</zone>
+			<zone type="Asia/Nicosia">
+				<exemplarCity>Nikosiya</exemplarCity>
+			</zone>
+			<zone type="Asia/Famagusta">
+				<exemplarCity>Famagustaa</exemplarCity>
+			</zone>
+			<zone type="Europe/Prague">
+				<exemplarCity>Praag</exemplarCity>
+			</zone>
+			<zone type="Europe/Busingen">
+				<exemplarCity>Busiŋgɛn</exemplarCity>
+			</zone>
+			<zone type="Europe/Berlin">
+				<exemplarCity>Bɛrlɛŋ</exemplarCity>
+			</zone>
+			<zone type="Africa/Djibouti">
+				<exemplarCity>Jibutii</exemplarCity>
+			</zone>
+			<zone type="Europe/Copenhagen">
+				<exemplarCity>Kopenaag</exemplarCity>
+			</zone>
+			<zone type="America/Dominica">
+				<exemplarCity>Ɖominikaa</exemplarCity>
+			</zone>
+			<zone type="America/Santo_Domingo">
+				<exemplarCity>Santo Ɖomɩŋgo</exemplarCity>
+			</zone>
+			<zone type="Africa/Algiers">
+				<exemplarCity>Aljɛɛr</exemplarCity>
+			</zone>
+			<zone type="Pacific/Galapagos">
+				<exemplarCity>Galapagɔs</exemplarCity>
+			</zone>
+			<zone type="America/Guayaquil">
+				<exemplarCity>Guwayakil</exemplarCity>
+			</zone>
+			<zone type="Europe/Tallinn">
+				<exemplarCity>Talin</exemplarCity>
+			</zone>
+			<zone type="Africa/Cairo">
+				<exemplarCity>Kairoo</exemplarCity>
+			</zone>
+			<zone type="Africa/El_Aaiun">
+				<exemplarCity>Ɛl Ayun</exemplarCity>
+			</zone>
+			<zone type="Africa/Asmera">
+				<exemplarCity>Asmaraa</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Canary">
+				<exemplarCity>Kanarii</exemplarCity>
+			</zone>
+			<zone type="Africa/Ceuta">
+				<exemplarCity>Seyuta</exemplarCity>
+			</zone>
+			<zone type="Europe/Madrid">
+				<exemplarCity>Maɖriiɖ</exemplarCity>
+			</zone>
+			<zone type="Africa/Addis_Ababa">
+				<exemplarCity>Aɖis Abeba</exemplarCity>
+			</zone>
+			<zone type="Europe/Helsinki">
+				<exemplarCity>Hɛlsiŋkii</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Stanley">
+				<exemplarCity>Stanlɛɩ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Truk">
+				<exemplarCity>Cuuk</exemplarCity>
+			</zone>
+			<zone type="Pacific/Ponape">
+				<exemplarCity>Poonpee</exemplarCity>
+			</zone>
+			<zone type="Pacific/Kosrae">
+				<exemplarCity>Kɔsrɛɛ</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Faeroe">
+				<exemplarCity>Faroi</exemplarCity>
+			</zone>
+			<zone type="Europe/Paris">
+				<exemplarCity>Parii</exemplarCity>
+			</zone>
+			<zone type="Africa/Libreville">
+				<exemplarCity>Librǝfil</exemplarCity>
+			</zone>
+			<zone type="Europe/London">
+				<long>
+					<daylight>Gagɛɛshɩtǝna kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+				<exemplarCity>Lɔnɖɔn</exemplarCity>
+			</zone>
+			<zone type="America/Grenada">
+				<exemplarCity>Grenaaɖa</exemplarCity>
+			</zone>
+			<zone type="Asia/Tbilisi">
+				<exemplarCity>Tiblisii</exemplarCity>
+			</zone>
+			<zone type="America/Cayenne">
+				<exemplarCity>Kayɛɛn</exemplarCity>
+			</zone>
+			<zone type="Europe/Guernsey">
+				<exemplarCity>Gǝrǝnsɛɩ</exemplarCity>
+			</zone>
+			<zone type="Africa/Accra">
+				<exemplarCity>Akraa</exemplarCity>
+			</zone>
+			<zone type="Europe/Gibraltar">
+				<exemplarCity>Gibraltaa</exemplarCity>
+			</zone>
+			<zone type="America/Thule">
+				<exemplarCity>Tuule</exemplarCity>
+			</zone>
+			<zone type="America/Scoresbysund">
+				<exemplarCity>Itokɔrtoomiiti</exemplarCity>
+			</zone>
+			<zone type="America/Danmarkshavn">
+				<exemplarCity>Ɖanǝmarkɩhaʊn</exemplarCity>
+			</zone>
+			<zone type="Africa/Conakry">
+				<exemplarCity>Konakrii</exemplarCity>
+			</zone>
+			<zone type="America/Guadeloupe">
+				<exemplarCity>Guwaɖeluupu</exemplarCity>
+			</zone>
+			<zone type="Africa/Malabo">
+				<exemplarCity>Malaboo</exemplarCity>
+			</zone>
+			<zone type="Europe/Athens">
+				<exemplarCity>Atɛn</exemplarCity>
+			</zone>
+			<zone type="Atlantic/South_Georgia">
+				<exemplarCity>Jɔrjiya gʊnyɩsonolaŋ kaja</exemplarCity>
+			</zone>
+			<zone type="America/Guatemala">
+				<exemplarCity>Guwatemalaa</exemplarCity>
+			</zone>
+			<zone type="Pacific/Guam">
+				<exemplarCity>Guwam</exemplarCity>
+			</zone>
+			<zone type="Africa/Bissau">
+				<exemplarCity>Bisoo</exemplarCity>
+			</zone>
+			<zone type="America/Guyana">
+				<exemplarCity>Guyanaa</exemplarCity>
+			</zone>
+			<zone type="Asia/Hong_Kong">
+				<exemplarCity>Hɔŋ Kɔŋ</exemplarCity>
+			</zone>
+			<zone type="America/Tegucigalpa">
+				<exemplarCity>Tegusigalpa</exemplarCity>
+			</zone>
+			<zone type="Europe/Zagreb">
+				<exemplarCity>Sagrɛb</exemplarCity>
+			</zone>
+			<zone type="America/Port-au-Prince">
+				<exemplarCity>Pɔɔr o Prɛŋs</exemplarCity>
+			</zone>
+			<zone type="Europe/Budapest">
+				<exemplarCity>Buɖapɛs</exemplarCity>
+			</zone>
+			<zone type="Asia/Jakarta">
+				<exemplarCity>Jakataa</exemplarCity>
+			</zone>
+			<zone type="Asia/Pontianak">
+				<exemplarCity>Pɔntiyanak</exemplarCity>
+			</zone>
+			<zone type="Asia/Makassar">
+				<exemplarCity>Makasaar</exemplarCity>
+			</zone>
+			<zone type="Asia/Jayapura">
+				<exemplarCity>Jayapuraa</exemplarCity>
+			</zone>
+			<zone type="Europe/Dublin">
+				<long>
+					<daylight>Irlanɖ kaakɔŋkɔŋɔ̀</daylight>
+				</long>
+				<exemplarCity>Ɖɔblɛŋ</exemplarCity>
+			</zone>
+			<zone type="Asia/Jerusalem">
+				<exemplarCity>Yerusalɛm</exemplarCity>
+			</zone>
+			<zone type="Europe/Isle_of_Man">
+				<exemplarCity>Man kaAtukǝltǝna</exemplarCity>
+			</zone>
+			<zone type="Asia/Calcutta">
+				<exemplarCity>Kɔlkata</exemplarCity>
+			</zone>
+			<zone type="Indian/Chagos">
+				<exemplarCity>Shagɔs</exemplarCity>
+			</zone>
+			<zone type="Asia/Baghdad">
+				<exemplarCity>Bagɖaaɖ</exemplarCity>
+			</zone>
+			<zone type="Asia/Tehran">
+				<exemplarCity>Teeraan</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Reykjavik">
+				<exemplarCity>Rɛɩkyafik</exemplarCity>
+			</zone>
+			<zone type="Europe/Rome">
+				<exemplarCity>Room</exemplarCity>
+			</zone>
+			<zone type="Europe/Jersey">
+				<exemplarCity>Jersei</exemplarCity>
+			</zone>
+			<zone type="America/Jamaica">
+				<exemplarCity>Jamaɩka</exemplarCity>
+			</zone>
+			<zone type="Asia/Amman">
+				<exemplarCity>Amaan</exemplarCity>
+			</zone>
+			<zone type="Asia/Tokyo">
+				<exemplarCity>Tokiyoo</exemplarCity>
+			</zone>
+			<zone type="Africa/Nairobi">
+				<exemplarCity>Nairobii</exemplarCity>
+			</zone>
+			<zone type="Asia/Bishkek">
+				<exemplarCity>Bishkɛk</exemplarCity>
+			</zone>
+			<zone type="Asia/Phnom_Penh">
+				<exemplarCity>Nɔm Pɛn</exemplarCity>
+			</zone>
+			<zone type="Pacific/Kanton">
+				<exemplarCity>Kantɔn</exemplarCity>
+			</zone>
+			<zone type="Pacific/Kiritimati">
+				<exemplarCity>Kirimatii</exemplarCity>
+			</zone>
+			<zone type="Pacific/Tarawa">
+				<exemplarCity>Tarawaa</exemplarCity>
+			</zone>
+			<zone type="Indian/Comoro">
+				<exemplarCity>Komoroo</exemplarCity>
+			</zone>
+			<zone type="America/St_Kitts">
+				<exemplarCity>Sɛŋ Kits</exemplarCity>
+			</zone>
+			<zone type="Asia/Pyongyang">
+				<exemplarCity>Pɩyɔŋyaŋ</exemplarCity>
+			</zone>
+			<zone type="Asia/Seoul">
+				<exemplarCity>Sewul</exemplarCity>
+			</zone>
+			<zone type="Asia/Kuwait">
+				<exemplarCity>Koweeti</exemplarCity>
+			</zone>
+			<zone type="America/Cayman">
+				<exemplarCity>Kayimaan</exemplarCity>
+			</zone>
+			<zone type="Asia/Aqtau">
+				<exemplarCity>Aktaʊ</exemplarCity>
+			</zone>
+			<zone type="Asia/Oral">
+				<exemplarCity>Oraal</exemplarCity>
+			</zone>
+			<zone type="Asia/Atyrau">
+				<exemplarCity>Atiraʊ</exemplarCity>
+			</zone>
+			<zone type="Asia/Aqtobe">
+				<exemplarCity>Aktobee</exemplarCity>
+			</zone>
+			<zone type="Asia/Qostanay">
+				<exemplarCity>Kɔstanaɩ</exemplarCity>
+			</zone>
+			<zone type="Asia/Qyzylorda">
+				<exemplarCity>Kisilɔrɖaa</exemplarCity>
+			</zone>
+			<zone type="Asia/Almaty">
+				<exemplarCity>Almatii</exemplarCity>
+			</zone>
+			<zone type="Asia/Vientiane">
+				<exemplarCity>Fiyentiyan</exemplarCity>
+			</zone>
+			<zone type="Asia/Beirut">
+				<exemplarCity>Beiruut</exemplarCity>
+			</zone>
+			<zone type="America/St_Lucia">
+				<exemplarCity>Sɛŋ Lusiya</exemplarCity>
+			</zone>
+			<zone type="Europe/Vaduz">
+				<exemplarCity>Faɖus</exemplarCity>
+			</zone>
+			<zone type="Asia/Colombo">
+				<exemplarCity>Kolomboo</exemplarCity>
+			</zone>
+			<zone type="Africa/Monrovia">
+				<exemplarCity>Monrofiyaa</exemplarCity>
+			</zone>
+			<zone type="Africa/Maseru">
+				<exemplarCity>Maseruu</exemplarCity>
+			</zone>
+			<zone type="Europe/Vilnius">
+				<exemplarCity>Filniyus</exemplarCity>
+			</zone>
+			<zone type="Europe/Luxembourg">
+				<exemplarCity>Lusɛmbuur</exemplarCity>
+			</zone>
+			<zone type="Europe/Riga">
+				<exemplarCity>Rigaa</exemplarCity>
+			</zone>
+			<zone type="Africa/Tripoli">
+				<exemplarCity>Tripolii</exemplarCity>
+			</zone>
+			<zone type="Africa/Casablanca">
+				<exemplarCity>Kasablaŋkaa</exemplarCity>
+			</zone>
+			<zone type="Europe/Monaco">
+				<exemplarCity>Monakoo</exemplarCity>
+			</zone>
+			<zone type="Europe/Chisinau">
+				<exemplarCity>Shisinoo</exemplarCity>
+			</zone>
+			<zone type="Europe/Podgorica">
+				<exemplarCity>Poɖgorikaa</exemplarCity>
+			</zone>
+			<zone type="America/Marigot">
+				<exemplarCity>Marigoo</exemplarCity>
+			</zone>
+			<zone type="Indian/Antananarivo">
+				<exemplarCity>Antananarifoo</exemplarCity>
+			</zone>
+			<zone type="Pacific/Kwajalein">
+				<exemplarCity>Kwajalɛɛn</exemplarCity>
+			</zone>
+			<zone type="Pacific/Majuro">
+				<exemplarCity>Majuroo</exemplarCity>
+			</zone>
+			<zone type="Europe/Skopje">
+				<exemplarCity>Skɔpyɛ</exemplarCity>
+			</zone>
+			<zone type="Africa/Bamako">
+				<exemplarCity>Bamakoo</exemplarCity>
+			</zone>
+			<zone type="Asia/Rangoon">
+				<exemplarCity>Yaŋgɔn</exemplarCity>
+			</zone>
+			<zone type="Asia/Hovd">
+				<exemplarCity>Hɔfɖǝ</exemplarCity>
+			</zone>
+			<zone type="Asia/Ulaanbaatar">
+				<exemplarCity>Ulanbatɔɔr</exemplarCity>
+			</zone>
+			<zone type="Asia/Choibalsan">
+				<exemplarCity>Koibalsaan</exemplarCity>
+			</zone>
+			<zone type="Asia/Macau">
+				<exemplarCity>Makawoo</exemplarCity>
+			</zone>
+			<zone type="Pacific/Saipan">
+				<exemplarCity>Saɩpan</exemplarCity>
+			</zone>
+			<zone type="America/Martinique">
+				<exemplarCity>Martiniiki</exemplarCity>
+			</zone>
+			<zone type="Africa/Nouakchott">
+				<exemplarCity>Nuwakcɔt</exemplarCity>
+			</zone>
+			<zone type="America/Montserrat">
+				<exemplarCity>Mɔnsɛraatɩ</exemplarCity>
+			</zone>
+			<zone type="Indian/Mauritius">
+				<exemplarCity>Imoris</exemplarCity>
+			</zone>
+			<zone type="Indian/Maldives">
+				<exemplarCity>Malɖiifu</exemplarCity>
+			</zone>
+			<zone type="Africa/Blantyre">
+				<exemplarCity>Blantiir</exemplarCity>
+			</zone>
+			<zone type="America/Tijuana">
+				<exemplarCity>Tihuwana</exemplarCity>
+			</zone>
+			<zone type="America/Hermosillo">
+				<exemplarCity>Ɛrmosiloo</exemplarCity>
+			</zone>
+			<zone type="America/Ciudad_Juarez">
+				<exemplarCity>Siwuɖaaɖ Huwarɛs</exemplarCity>
+			</zone>
+			<zone type="America/Mazatlan">
+				<exemplarCity>Masatǝlan</exemplarCity>
+			</zone>
+			<zone type="America/Chihuahua">
+				<exemplarCity>Shiwawaa</exemplarCity>
+			</zone>
+			<zone type="America/Bahia_Banderas">
+				<exemplarCity>Bahiiya ɖe Banɖeraasɩ</exemplarCity>
+			</zone>
+			<zone type="America/Ojinaga">
+				<exemplarCity>Ojinaaga</exemplarCity>
+			</zone>
+			<zone type="America/Monterrey">
+				<exemplarCity>Mɔntɛrɛɩ</exemplarCity>
+			</zone>
+			<zone type="America/Mexico_City">
+				<exemplarCity>Mɛsiko Siti</exemplarCity>
+			</zone>
+			<zone type="America/Matamoros">
+				<exemplarCity>Matamoroos</exemplarCity>
+			</zone>
+			<zone type="America/Merida">
+				<exemplarCity>Meriiɖa</exemplarCity>
+			</zone>
+			<zone type="America/Cancun">
+				<exemplarCity>Kaŋkun</exemplarCity>
+			</zone>
+			<zone type="Asia/Kuala_Lumpur">
+				<exemplarCity>Kuwala Lumpuur</exemplarCity>
+			</zone>
+			<zone type="Asia/Kuching">
+				<exemplarCity>Kuciŋ</exemplarCity>
+			</zone>
+			<zone type="Africa/Maputo">
+				<exemplarCity>Maputoo</exemplarCity>
+			</zone>
+			<zone type="Africa/Windhoek">
+				<exemplarCity>Winɖhuk</exemplarCity>
+			</zone>
+			<zone type="Pacific/Noumea">
+				<exemplarCity>Numeya</exemplarCity>
+			</zone>
+			<zone type="Africa/Niamey">
+				<exemplarCity>Nyɛmɛ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Norfolk">
+				<exemplarCity>Nɔrfook</exemplarCity>
+			</zone>
+			<zone type="Africa/Lagos">
+				<exemplarCity>Legɔs</exemplarCity>
+			</zone>
+			<zone type="America/Managua">
+				<exemplarCity>Manaaguwa</exemplarCity>
+			</zone>
+			<zone type="Europe/Amsterdam">
+				<exemplarCity>Amstɛrɖam</exemplarCity>
+			</zone>
+			<zone type="Europe/Oslo">
+				<exemplarCity>Ɔsloo</exemplarCity>
+			</zone>
+			<zone type="Asia/Katmandu">
+				<exemplarCity>Katmanɖuu</exemplarCity>
+			</zone>
+			<zone type="Pacific/Nauru">
+				<exemplarCity>Nawuru</exemplarCity>
+			</zone>
+			<zone type="Pacific/Niue">
+				<exemplarCity>Niwuye</exemplarCity>
+			</zone>
+			<zone type="Pacific/Chatham">
+				<exemplarCity>Shatam</exemplarCity>
+			</zone>
+			<zone type="Pacific/Auckland">
+				<exemplarCity>Ɔɔklanɖ</exemplarCity>
+			</zone>
+			<zone type="Asia/Muscat">
+				<exemplarCity>Muskaat</exemplarCity>
+			</zone>
+			<zone type="America/Panama">
+				<exemplarCity>Panamaa</exemplarCity>
+			</zone>
+			<zone type="America/Lima">
+				<exemplarCity>Limaa</exemplarCity>
+			</zone>
+			<zone type="Pacific/Tahiti">
+				<exemplarCity>Tahitii</exemplarCity>
+			</zone>
+			<zone type="Pacific/Marquesas">
+				<exemplarCity>Markesas</exemplarCity>
+			</zone>
+			<zone type="Pacific/Gambier">
+				<exemplarCity>Gambiyee</exemplarCity>
+			</zone>
+			<zone type="Pacific/Port_Moresby">
+				<exemplarCity>Pɔɔr Mɔrɛsbii</exemplarCity>
+			</zone>
+			<zone type="Pacific/Bougainville">
+				<exemplarCity>Bugɛɛŋfil</exemplarCity>
+			</zone>
+			<zone type="Asia/Manila">
+				<exemplarCity>Manilaa</exemplarCity>
+			</zone>
+			<zone type="Asia/Karachi">
+				<exemplarCity>Karacɩ</exemplarCity>
+			</zone>
+			<zone type="Europe/Warsaw">
+				<exemplarCity>Warsaʊ</exemplarCity>
+			</zone>
+			<zone type="America/Miquelon">
+				<exemplarCity>Mikelɔŋ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Pitcairn">
+				<exemplarCity>Pɩtkɛɛn</exemplarCity>
+			</zone>
+			<zone type="America/Puerto_Rico">
+				<exemplarCity>Pɔrto Rikoo</exemplarCity>
+			</zone>
+			<zone type="Asia/Gaza">
+				<exemplarCity>Gasaa</exemplarCity>
+			</zone>
+			<zone type="Asia/Hebron">
+				<exemplarCity>Hebrɔn</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Azores">
+				<exemplarCity>Asɔɔr</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Madeira">
+				<exemplarCity>Maɖeiraa</exemplarCity>
+			</zone>
+			<zone type="Europe/Lisbon">
+				<exemplarCity>Lisbɔn</exemplarCity>
+			</zone>
+			<zone type="Pacific/Palau">
+				<exemplarCity>Palawoo</exemplarCity>
+			</zone>
+			<zone type="America/Asuncion">
+				<exemplarCity>Asunsiyɔn</exemplarCity>
+			</zone>
+			<zone type="Asia/Qatar">
+				<exemplarCity>Kataa</exemplarCity>
+			</zone>
+			<zone type="Indian/Reunion">
+				<exemplarCity>Reeniyɔŋ</exemplarCity>
+			</zone>
+			<zone type="Europe/Bucharest">
+				<exemplarCity>Bukarɛs</exemplarCity>
+			</zone>
+			<zone type="Europe/Belgrade">
+				<exemplarCity>Bɛlgraaɖ</exemplarCity>
+			</zone>
+			<zone type="Europe/Kaliningrad">
+				<exemplarCity>Kaliniŋgraaɖ</exemplarCity>
+			</zone>
+			<zone type="Europe/Moscow">
+				<exemplarCity>Moskuu</exemplarCity>
+			</zone>
+			<zone type="Europe/Volgograd">
+				<exemplarCity>Fɔlgograaɖ</exemplarCity>
+			</zone>
+			<zone type="Europe/Saratov">
+				<exemplarCity>Saratɔɔf</exemplarCity>
+			</zone>
+			<zone type="Europe/Astrakhan">
+				<exemplarCity>Astrakaan</exemplarCity>
+			</zone>
+			<zone type="Europe/Ulyanovsk">
+				<exemplarCity>Ulyanɔɔf</exemplarCity>
+			</zone>
+			<zone type="Europe/Kirov">
+				<exemplarCity>Kirɔɔf</exemplarCity>
+			</zone>
+			<zone type="Europe/Samara">
+				<exemplarCity>Samaraa</exemplarCity>
+			</zone>
+			<zone type="Asia/Yekaterinburg">
+				<exemplarCity>Yekaterinbuu</exemplarCity>
+			</zone>
+			<zone type="Asia/Omsk">
+				<exemplarCity>Ɔmsǝkǝ</exemplarCity>
+			</zone>
+			<zone type="Asia/Novosibirsk">
+				<exemplarCity>Nofosibirk</exemplarCity>
+			</zone>
+			<zone type="Asia/Barnaul">
+				<exemplarCity>Barnawul</exemplarCity>
+			</zone>
+			<zone type="Asia/Tomsk">
+				<exemplarCity>Tɔmsǝkǝ</exemplarCity>
+			</zone>
+			<zone type="Asia/Novokuznetsk">
+				<exemplarCity>Nofokusnɛk</exemplarCity>
+			</zone>
+			<zone type="Asia/Krasnoyarsk">
+				<exemplarCity>Krasnoyark</exemplarCity>
+			</zone>
+			<zone type="Asia/Irkutsk">
+				<exemplarCity>Irkut</exemplarCity>
+			</zone>
+			<zone type="Asia/Chita">
+				<exemplarCity>Shitaa</exemplarCity>
+			</zone>
+			<zone type="Asia/Yakutsk">
+				<exemplarCity>Yakut</exemplarCity>
+			</zone>
+			<zone type="Asia/Vladivostok">
+				<exemplarCity>Flaɖifɔstɔk</exemplarCity>
+			</zone>
+			<zone type="Asia/Khandyga">
+				<exemplarCity>Kanɖigaa</exemplarCity>
+			</zone>
+			<zone type="Asia/Sakhalin">
+				<exemplarCity>Sakalin</exemplarCity>
+			</zone>
+			<zone type="Asia/Ust-Nera">
+				<exemplarCity>Ust-Neraa</exemplarCity>
+			</zone>
+			<zone type="Asia/Magadan">
+				<exemplarCity>Magaɖan</exemplarCity>
+			</zone>
+			<zone type="Asia/Srednekolymsk">
+				<exemplarCity>Srɛɖnɛkɔlim</exemplarCity>
+			</zone>
+			<zone type="Asia/Kamchatka">
+				<exemplarCity>Kamshatkaa</exemplarCity>
+			</zone>
+			<zone type="Asia/Anadyr">
+				<exemplarCity>Anaɖiir</exemplarCity>
+			</zone>
+			<zone type="Africa/Kigali">
+				<exemplarCity>Kigalii</exemplarCity>
+			</zone>
+			<zone type="Asia/Riyadh">
+				<exemplarCity>Riyaaɖ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Guadalcanal">
+				<exemplarCity>Guwaɖalkanal</exemplarCity>
+			</zone>
+			<zone type="Indian/Mahe">
+				<exemplarCity>Mahee</exemplarCity>
+			</zone>
+			<zone type="Africa/Khartoum">
+				<exemplarCity>Kartuum</exemplarCity>
+			</zone>
+			<zone type="Europe/Stockholm">
+				<exemplarCity>Stɔkhɔlm</exemplarCity>
+			</zone>
+			<zone type="Asia/Singapore">
+				<exemplarCity>Siŋgapuur</exemplarCity>
+			</zone>
+			<zone type="Atlantic/St_Helena">
+				<exemplarCity>Sɛŋ Elenaa</exemplarCity>
+			</zone>
+			<zone type="Europe/Ljubljana">
+				<exemplarCity>Yubǝlyana</exemplarCity>
+			</zone>
+			<zone type="Arctic/Longyearbyen">
+				<exemplarCity>Lɔŋyiirbiyɛn</exemplarCity>
+			</zone>
+			<zone type="Europe/Bratislava">
+				<exemplarCity>Bratislafa</exemplarCity>
+			</zone>
+			<zone type="Africa/Freetown">
+				<exemplarCity>Friitaʊn</exemplarCity>
+			</zone>
+			<zone type="Europe/San_Marino">
+				<exemplarCity>San Marinoo</exemplarCity>
+			</zone>
+			<zone type="Africa/Dakar">
+				<exemplarCity>Ɖakaar</exemplarCity>
+			</zone>
+			<zone type="Africa/Mogadishu">
+				<exemplarCity>Mogaɖishuu</exemplarCity>
+			</zone>
+			<zone type="America/Paramaribo">
+				<exemplarCity>Paramariboo</exemplarCity>
+			</zone>
+			<zone type="Africa/Juba">
+				<exemplarCity>Jubaa</exemplarCity>
+			</zone>
+			<zone type="Africa/Sao_Tome">
+				<exemplarCity>Saotome kampá</exemplarCity>
+			</zone>
+			<zone type="America/El_Salvador">
+				<exemplarCity>Ɛl Salfaɖɔɔr</exemplarCity>
+			</zone>
+			<zone type="America/Lower_Princes">
+				<exemplarCity>Lowɛɛ Prɛŋs Kwata</exemplarCity>
+			</zone>
+			<zone type="Asia/Damascus">
+				<exemplarCity>Ɖamaskɔɔsɩ</exemplarCity>
+			</zone>
+			<zone type="Africa/Mbabane">
+				<exemplarCity>Mbabanee</exemplarCity>
+			</zone>
+			<zone type="America/Grand_Turk">
+				<exemplarCity>Granɖ Turk</exemplarCity>
+			</zone>
+			<zone type="Africa/Ndjamena">
+				<exemplarCity>Njamenaa</exemplarCity>
+			</zone>
+			<zone type="Indian/Kerguelen">
+				<exemplarCity>Kɛrgelɛɛn</exemplarCity>
+			</zone>
+			<zone type="Africa/Lome">
+				<exemplarCity>Lʊmɛ</exemplarCity>
+			</zone>
+			<zone type="Asia/Bangkok">
+				<exemplarCity>Baŋkɔk</exemplarCity>
+			</zone>
+			<zone type="Asia/Dushanbe">
+				<exemplarCity>Ɖushanbee</exemplarCity>
+			</zone>
+			<zone type="Pacific/Fakaofo">
+				<exemplarCity>Fakawofoo</exemplarCity>
+			</zone>
+			<zone type="Asia/Dili">
+				<exemplarCity>Ɖilii</exemplarCity>
+			</zone>
+			<zone type="Asia/Ashgabat">
+				<exemplarCity>Ashgabaat</exemplarCity>
+			</zone>
+			<zone type="Africa/Tunis">
+				<exemplarCity>Tiniis</exemplarCity>
+			</zone>
+			<zone type="Pacific/Tongatapu">
+				<exemplarCity>Tɔŋgatapuu</exemplarCity>
+			</zone>
+			<zone type="Europe/Istanbul">
+				<exemplarCity>Istambuul</exemplarCity>
+			</zone>
+			<zone type="America/Port_of_Spain">
+				<exemplarCity>Pɔɔr ɔf Spɛɛn</exemplarCity>
+			</zone>
+			<zone type="Pacific/Funafuti">
+				<exemplarCity>Funafutii</exemplarCity>
+			</zone>
+			<zone type="Asia/Taipei">
+				<exemplarCity>Taɩpei</exemplarCity>
+			</zone>
+			<zone type="Africa/Dar_es_Salaam">
+				<exemplarCity>Ɖarɛsalaam</exemplarCity>
+			</zone>
+			<zone type="Europe/Kiev">
+				<exemplarCity>Kiyɛf</exemplarCity>
+			</zone>
+			<zone type="Africa/Kampala">
+				<exemplarCity>Kampalaa</exemplarCity>
+			</zone>
+			<zone type="Pacific/Midway">
+				<exemplarCity>Miɖwee</exemplarCity>
+			</zone>
+			<zone type="Pacific/Wake">
+				<exemplarCity>Week</exemplarCity>
+			</zone>
+			<zone type="America/Adak">
+				<exemplarCity>Aɖak</exemplarCity>
+			</zone>
+			<zone type="America/Anchorage">
+				<exemplarCity>Aŋkɔraajɩ</exemplarCity>
+			</zone>
+			<zone type="America/Sitka">
+				<exemplarCity>Sitkaa</exemplarCity>
+			</zone>
+			<zone type="America/Juneau">
+				<exemplarCity>Jinoo</exemplarCity>
+			</zone>
+			<zone type="America/Metlakatla">
+				<exemplarCity>Metelakatelaa</exemplarCity>
+			</zone>
+			<zone type="America/Los_Angeles">
+				<exemplarCity>Lɔs Anjɛlɛɛs</exemplarCity>
+			</zone>
+			<zone type="America/Boise">
+				<exemplarCity>Bɔwaasɩ</exemplarCity>
+			</zone>
+			<zone type="America/Phoenix">
+				<exemplarCity>Finiis</exemplarCity>
+			</zone>
+			<zone type="America/Denver">
+				<exemplarCity>Ɖɛnfa</exemplarCity>
+			</zone>
+			<zone type="America/North_Dakota/Beulah">
+				<exemplarCity>Biula, Nɔɔr Ɖakoota</exemplarCity>
+			</zone>
+			<zone type="America/North_Dakota/New_Salem">
+				<exemplarCity>Niu Salɛm, Nɔɔr Ɖakota</exemplarCity>
+			</zone>
+			<zone type="America/North_Dakota/Center">
+				<exemplarCity>Sɛnta, Nɔɔr Ɖakoota</exemplarCity>
+			</zone>
+			<zone type="America/Chicago">
+				<exemplarCity>Shikagoo</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Vincennes">
+				<exemplarCity>Fɛŋsɛn, Ɩnɖiyaana</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Petersburg">
+				<exemplarCity>Petɛrsbuur, Ɩnɖiyaana</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Tell_City">
+				<exemplarCity>Tɛl Siti, Ɩnɖiyaana</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Knox">
+				<exemplarCity>Nɔk, Ɩnɖiyaana</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Winamac">
+				<exemplarCity>Winamaak, Ɩnɖiyaana</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Marengo">
+				<exemplarCity>Marɛŋgo, Ɩnɖiyaana</exemplarCity>
+			</zone>
+			<zone type="America/Indianapolis">
+				<exemplarCity>Ɩnɖiyaanapoli</exemplarCity>
+			</zone>
+			<zone type="America/Louisville">
+				<exemplarCity>Luwifiil</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Vevay">
+				<exemplarCity>Fefɛɩ, Ɩnɖiyaana</exemplarCity>
+			</zone>
+			<zone type="America/Kentucky/Monticello">
+				<exemplarCity>Mɔntishɛɛlo, Kɛntaki</exemplarCity>
+			</zone>
+			<zone type="America/Detroit">
+				<exemplarCity>Ɖitrɔɔɩ</exemplarCity>
+			</zone>
+			<zone type="America/New_York">
+				<exemplarCity>Niu Yɔrk</exemplarCity>
+			</zone>
+			<zone type="America/Montevideo">
+				<exemplarCity>Mɔntefiɖeyoo</exemplarCity>
+			</zone>
+			<zone type="Asia/Samarkand">
+				<exemplarCity>Samarkanɖ</exemplarCity>
+			</zone>
+			<zone type="Asia/Tashkent">
+				<exemplarCity>Tashkɛnt</exemplarCity>
+			</zone>
+			<zone type="Europe/Vatican">
+				<exemplarCity>Fatikaŋ</exemplarCity>
+			</zone>
+			<zone type="America/St_Vincent">
+				<exemplarCity>Sɛŋ Fɩnsaŋ</exemplarCity>
+			</zone>
+			<zone type="America/Caracas">
+				<exemplarCity>Karakaas</exemplarCity>
+			</zone>
+			<zone type="America/Tortola">
+				<exemplarCity>Tɔrtɔlaa</exemplarCity>
+			</zone>
+			<zone type="America/St_Thomas">
+				<exemplarCity>Sɛŋ Tomaasɩ</exemplarCity>
+			</zone>
+			<zone type="Asia/Saigon">
+				<exemplarCity>Ho Ci Min kaMpá</exemplarCity>
+			</zone>
+			<zone type="Pacific/Efate">
+				<exemplarCity>Efatee</exemplarCity>
+			</zone>
+			<zone type="Pacific/Wallis">
+				<exemplarCity>Walis</exemplarCity>
+			</zone>
+			<zone type="Pacific/Apia">
+				<exemplarCity>Apiya</exemplarCity>
+			</zone>
+			<zone type="Asia/Aden">
+				<exemplarCity>Aɖɛn</exemplarCity>
+			</zone>
+			<zone type="Indian/Mayotte">
+				<exemplarCity>Mayɔɔtɩ</exemplarCity>
+			</zone>
+			<zone type="Africa/Johannesburg">
+				<exemplarCity>Yohanɛsbuur</exemplarCity>
+			</zone>
+			<zone type="Africa/Lusaka">
+				<exemplarCity>Lusakaa</exemplarCity>
+			</zone>
+			<zone type="Africa/Harare">
+				<exemplarCity>Hararee</exemplarCity>
+			</zone>
+			<metazone type="Afghanistan">
+				<long>
+					<standard>Afganistan kaakɔŋkɔŋɔ̀</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Central">
+				<long>
+					<standard>Garɩɖontǝna gɩcɩɩca kaakɔŋkɔŋɔ̀</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Eastern">
+				<long>
+					<standard>Garɩɖontǝna gajakalaŋ kaakɔŋkɔŋɔ̀</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Southern">
+				<long>
+					<standard>Garɩɖontǝna gʊnyɩsonolaŋ kaakɔŋkɔŋɔ̀</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Western">
+				<long>
+					<generic>Garɩɖontǝna gɩteŋshilelaŋ kaakɔŋkɔŋɔ̀</generic>
+					<standard>Garɩɖontǝna gɩteŋshilelaŋ kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Garɩɖontǝna gɩteŋshilelaŋ kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Alaska">
+				<long>
+					<generic>Alaskaa kaakɔŋkɔŋɔ̀</generic>
+					<standard>Alaskaa kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Alaskaa kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Amazon">
+				<long>
+					<generic>Amasɔn kaakɔŋkɔŋɔ̀</generic>
+					<standard>Amasɔn kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Amasɔn kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Central">
+				<long>
+					<generic>Amalɩka gʊnyɩpɛnɛlaŋ kagɩcɩɩca kaakɔŋkɔŋɔ̀</generic>
+					<standard>Amalɩka gʊnyɩpɛnɛlaŋ kagɩcɩɩca kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Amalɩka gʊnyɩpɛnɛlaŋ kagɩcɩɩca kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Eastern">
+				<long>
+					<generic>Amalɩka gʊnyɩpɛnɛlaŋ kaajakalaŋ kaakɔŋkɔŋɔ̀</generic>
+					<standard>Amalɩka gʊnyɩpɛnɛlaŋ kaajakalaŋ kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Amalɩka gʊnyɩpɛnɛlaŋ kaajakalaŋ kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Mountain">
+				<long>
+					<generic>Amalɩka gʊnyɩpɛnɛlaŋ kabʊnʊ kaakɔŋkɔŋɔ̀</generic>
+					<standard>Amalɩka gʊnyɩpɛnɛlaŋ kabʊnʊ kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Amalɩka gʊnyɩpɛnɛlaŋ kabʊnʊ kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Pacific">
+				<long>
+					<generic>Amalɩka kapasifika kaakɔŋkɔŋɔ̀</generic>
+					<standard>Amalɩka kapasifika kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Amalɩka kapasifika kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Apia">
+				<long>
+					<generic>Apiya kaakɔŋkɔŋɔ̀</generic>
+					<standard>Apiya kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Apiya kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Arabian">
+				<long>
+					<generic>Galaaributǝna kaakɔŋkɔŋɔ̀</generic>
+					<standard>Galaaributǝna kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Galaaributǝna kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Argentina">
+				<long>
+					<generic>Arjantin kaakɔŋkɔŋɔ̀</generic>
+					<standard>Arjantin kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Arjantin kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Argentina_Western">
+				<long>
+					<generic>Arjantin gɩteŋshilelaŋ kaakɔŋkɔŋɔ̀</generic>
+					<standard>Arjantin gɩteŋshilelaŋ kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Arjantin gɩteŋshilelaŋ kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Armenia">
+				<long>
+					<generic>Armenii kaakɔŋkɔŋɔ̀</generic>
+					<standard>Armenii kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Armenii kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Atlantic">
+				<long>
+					<generic>Amalɩka katǝlantika kaakɔŋkɔŋɔ̀</generic>
+					<standard>Amalɩka katǝlantika kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Amalɩka katǝlantika kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_Central">
+				<long>
+					<generic>Ɔstraliya kagɩcɩɩca kaakɔŋkɔŋɔ̀</generic>
+					<standard>Ɔstraliya kagɩcɩɩca kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Ɔstraliya kagɩcɩɩca kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_CentralWestern">
+				<long>
+					<generic>Ɔstraliya kagɩcɩɩca gɩteŋshilelaŋ kaakɔŋkɔŋɔ̀</generic>
+					<standard>Ɔstraliya kagɩcɩɩca gɩteŋshilelaŋ kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Ɔstraliya kagɩcɩɩca gɩteŋshilelaŋ kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_Eastern">
+				<long>
+					<generic>Ɔstraliya kaajakalaŋ kaakɔŋkɔŋɔ̀</generic>
+					<standard>Ɔstraliya kaajakalaŋ kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Ɔstraliya kaajakalaŋ kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_Western">
+				<long>
+					<generic>Ɔstraliya kagɩteŋshilelaŋ kaakɔŋkɔŋɔ̀</generic>
+					<standard>Ɔstraliya kagɩteŋshilelaŋ kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Ɔstraliya kagɩteŋshilelaŋ kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Azerbaijan">
+				<long>
+					<generic>Asɛrbaɩjaŋ kaakɔŋkɔŋɔ̀</generic>
+					<standard>Asɛrbaɩjaŋ kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Asɛrbaɩjaŋ kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Azores">
+				<long>
+					<generic>Asɔɔr kaakɔŋkɔŋɔ̀</generic>
+					<standard>Asɔɔr kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Asɔɔr kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Bangladesh">
+				<long>
+					<generic>Baŋglaɖɛɛshɩ kaakɔŋkɔŋɔ̀</generic>
+					<standard>Baŋglaɖɛɛshɩ kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Baŋglaɖɛɛshɩ kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Bhutan">
+				<long>
+					<standard>Butan kaakɔŋkɔŋɔ̀</standard>
+				</long>
+			</metazone>
+			<metazone type="Bolivia">
+				<long>
+					<standard>Bolifiya kaakɔŋkɔŋɔ̀</standard>
+				</long>
+			</metazone>
+			<metazone type="Brasilia">
+				<long>
+					<generic>Brasiliya kaakɔŋkɔŋɔ̀</generic>
+					<standard>Brasiliya kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Brasiliya kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Brunei">
+				<long>
+					<standard>Brunɛɩ Ɖarusalaam kaakɔŋkɔŋɔ̀</standard>
+				</long>
+			</metazone>
+			<metazone type="Cape_Verde">
+				<long>
+					<generic>Kapfɛɛr kaakɔŋkɔŋɔ̀</generic>
+					<standard>Kapfɛɛr kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Kapfɛɛr kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Chamorro">
+				<long>
+					<standard>Shamoroo kaakɔŋkɔŋɔ̀</standard>
+				</long>
+			</metazone>
+			<metazone type="Chatham">
+				<long>
+					<generic>Shatam kaakɔŋkɔŋɔ̀</generic>
+					<standard>Shatam kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Shatam kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Chile">
+				<long>
+					<generic>Shilii kaakɔŋkɔŋɔ̀</generic>
+					<standard>Shilii kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Shilii kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="China">
+				<long>
+					<generic>Caɩna kaakɔŋkɔŋɔ̀</generic>
+					<standard>Caɩna kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Caɩna kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Choibalsan">
+				<long>
+					<generic>Koibalsaan kaakɔŋkɔŋɔ̀</generic>
+					<standard>Koibalsaan kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Koibalsaan kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Christmas">
+				<long>
+					<standard>Nowɛl kaAtukǝltǝna kaakɔŋkɔŋɔ̀</standard>
+				</long>
+			</metazone>
+			<metazone type="Cocos">
+				<long>
+					<standard>Kokoos kaBʊtukǝltǝna kaakɔŋkɔŋɔ̀</standard>
+				</long>
+			</metazone>
+			<metazone type="Colombia">
+				<long>
+					<generic>Kolɔmbii kaakɔŋkɔŋɔ̀</generic>
+					<standard>Kolɔmbii kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Kolɔmbii kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Cook">
+				<long>
+					<generic>Kʊkʊ kaBʊtukǝltǝna kaakɔŋkɔŋɔ̀</generic>
+					<standard>Kʊkʊ kaBʊtukǝltǝna kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Kʊkʊ kaBʊtukǝltǝna kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Cuba">
+				<long>
+					<generic>Kubaa kaakɔŋkɔŋɔ̀</generic>
+					<standard>Kubaa kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Kubaa kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Davis">
+				<long>
+					<standard>Ɖefis kaakɔŋkɔŋɔ̀</standard>
+				</long>
+			</metazone>
+			<metazone type="DumontDUrville">
+				<long>
+					<standard>Ɖimɔn Ɖirfil kaakɔŋkɔŋɔ̀</standard>
+				</long>
+			</metazone>
+			<metazone type="East_Timor">
+				<long>
+					<standard>Timɔɔ gajakalaŋ kaakɔŋkɔŋɔ̀</standard>
+				</long>
+			</metazone>
+			<metazone type="Easter">
+				<long>
+					<generic>Paakɩ kaAatukǝltǝna kaakɔŋkɔŋɔ̀</generic>
+					<standard>Paakɩ kaAtukǝltǝna kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Paakɩ kaAtukǝltǝna kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Ecuador">
+				<long>
+					<standard>Ekuwaɖɔɔr kaakɔŋkɔŋɔ̀</standard>
+				</long>
+			</metazone>
+			<metazone type="Europe_Central">
+				<long>
+					<generic>Garɩfɔntǝna gɩcɩɩca kaakɔŋkɔŋɔ̀</generic>
+					<standard>Garɩfɔntǝna gɩcɩɩca kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Garɩfɔntǝna gɩcɩɩca kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Europe_Eastern">
+				<long>
+					<generic>Garɩfɔntǝna gajakalaŋ kaakɔŋkɔŋɔ̀</generic>
+					<standard>Garɩfɔntǝna gajakalaŋ kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Garɩfɔntǝna gajakalaŋ kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Europe_Further_Eastern">
+				<long>
+					<standard>Garɩfɔntǝna gajakalaŋ kaajakalaŋ kaakɔŋkɔŋɔ̀</standard>
+				</long>
+			</metazone>
+			<metazone type="Europe_Western">
+				<long>
+					<generic>Garɩfɔntǝna gɩteŋshilelaŋ kaakɔŋkɔŋɔ̀</generic>
+					<standard>Garɩfɔntǝna gɩteŋshilelaŋ kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Garɩfɔntǝna gɩteŋshilelaŋ kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Falkland">
+				<long>
+					<generic>Fɔklanɖ kaBʊtukǝltǝna kaakɔŋkɔŋɔ̀</generic>
+					<standard>Fɔklanɖ kaBʊtukǝltǝna kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Fɔklanɖ kaBʊtukǝltǝna kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Fiji">
+				<long>
+					<generic>Fiji kaakɔŋkɔŋɔ̀</generic>
+					<standard>Fiji kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Fiji kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="French_Guiana">
+				<long>
+					<standard>Guyanaa Gafɔntǝna kaja kaakɔŋkɔŋɔ̀</standard>
+				</long>
+			</metazone>
+			<metazone type="French_Southern">
+				<long>
+					<standard>Gafɔntǝna gʊnyɩsonolaŋ na Gatutaltǝna kaakɔŋkɔŋɔ̀</standard>
+				</long>
+			</metazone>
+			<metazone type="Galapagos">
+				<long>
+					<standard>Galapagɔs kaakɔŋkɔŋɔ̀</standard>
+				</long>
+			</metazone>
+			<metazone type="Gambier">
+				<long>
+					<standard>Gambiyee kaakɔŋkɔŋɔ̀</standard>
+				</long>
+			</metazone>
+			<metazone type="Georgia">
+				<long>
+					<generic>Jɔrjiya kaakɔŋkɔŋɔ̀</generic>
+					<standard>Jɔrjiya kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Jɔrjiya kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Gilbert_Islands">
+				<long>
+					<standard>Jilbɛɛr kaBʊtukǝltǝna kaakɔŋkɔŋɔ̀</standard>
+				</long>
+			</metazone>
+			<metazone type="GMT">
+				<long>
+					<standard>Griinwish kaakɔŋkɔŋɔ̀</standard>
+				</long>
+				<short>
+					<standard draft="contributed">Gk</standard>
+				</short>
+			</metazone>
+			<metazone type="Greenland_Eastern">
+				<long>
+					<generic>Grinlanɖ gajakalaŋ kaakɔŋkɔŋɔ̀</generic>
+					<standard>Grinlanɖ gajakalaŋ kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Grinlanɖ gajakalaŋ kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Greenland_Western">
+				<long>
+					<generic>Grinlanɖ gɩteŋshilelaŋ kaakɔŋkɔŋɔ̀</generic>
+					<standard>Grinlanɖ gɩteŋshilelaŋ kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Grinlanɖ gɩteŋshilelaŋ kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Guam">
+				<long>
+					<standard>Guwam kaakɔŋkɔŋɔ̀</standard>
+				</long>
+			</metazone>
+			<metazone type="Gulf">
+				<long>
+					<standard>Gɔlf kaakɔŋkɔŋɔ̀</standard>
+				</long>
+			</metazone>
+			<metazone type="Guyana">
+				<long>
+					<standard>Guyanaa kaakɔŋkɔŋɔ̀</standard>
+				</long>
+			</metazone>
+			<metazone type="Hawaii_Aleutian">
+				<long>
+					<generic>Awayɩɩ n’Alewutii kaakɔŋkɔŋɔ̀</generic>
+					<standard>Awayɩɩ n’Alewutii kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Awayɩɩ n’Alewutii kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Hong_Kong">
+				<long>
+					<generic>Hɔŋ Kɔŋ kaakɔŋkɔŋɔ̀</generic>
+					<standard>Hɔŋ Kɔŋ kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Hɔŋ Kɔŋ kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Hovd">
+				<long>
+					<generic>Hɔfɖǝ kaakɔŋkɔŋɔ̀</generic>
+					<standard>Hɔfɖǝ kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Hɔfɖǝ kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="India">
+				<long>
+					<standard>Inɖiya kaakɔŋkɔŋɔ̀</standard>
+				</long>
+			</metazone>
+			<metazone type="Indian_Ocean">
+				<long>
+					<standard>Inɖiya kateŋku kaakɔŋkɔŋɔ̀</standard>
+				</long>
+			</metazone>
+			<metazone type="Indochina">
+				<long>
+					<standard>Inɖicaɩna kaakɔŋkɔŋɔ̀</standard>
+				</long>
+			</metazone>
+			<metazone type="Indonesia_Central">
+				<long>
+					<standard>Ɛnɖonosii kagɩcɩɩca kaakɔŋkɔŋɔ̀</standard>
+				</long>
+			</metazone>
+			<metazone type="Indonesia_Eastern">
+				<long>
+					<standard>Ɛnɖonosii kaajakalaŋ kaakɔŋkɔŋɔ̀</standard>
+				</long>
+			</metazone>
+			<metazone type="Indonesia_Western">
+				<long>
+					<standard>Ɛnɖonosii kagɩteŋshilelaŋ kaakɔŋkɔŋɔ̀</standard>
+				</long>
+			</metazone>
+			<metazone type="Iran">
+				<long>
+					<generic>Iraŋ kaakɔŋkɔŋɔ̀</generic>
+					<standard>Iraŋ kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Iraŋ kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Irkutsk">
+				<long>
+					<generic>Irkut kaakɔŋkɔŋɔ̀</generic>
+					<standard>Irkut kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Irkut kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Israel">
+				<long>
+					<generic>Yishraɛl kaakɔŋkɔŋɔ̀</generic>
+					<standard>Yishraɛl kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Yishraɛl kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Japan">
+				<long>
+					<generic>Japaŋ kaakɔŋkɔŋɔ̀</generic>
+					<standard>Japaŋ kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Japaŋ kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan_Eastern">
+				<long>
+					<standard>Kasastan gajakalaŋ kaakɔŋkɔŋɔ̀</standard>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan_Western">
+				<long>
+					<standard>Kasastan gɩteŋshilelaŋ kaakɔŋkɔŋɔ̀</standard>
+				</long>
+			</metazone>
+			<metazone type="Korea">
+				<long>
+					<generic>Koree kaakɔŋkɔŋɔ̀</generic>
+					<standard>Koree kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Koree kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kosrae">
+				<long>
+					<standard>Kɔsrɛɛ kaakɔŋkɔŋɔ̀</standard>
+				</long>
+			</metazone>
+			<metazone type="Krasnoyarsk">
+				<long>
+					<generic>Krasnoyark kaakɔŋkɔŋɔ̀</generic>
+					<standard>Krasnoyark kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Krasnoyark kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kyrgystan">
+				<long>
+					<standard>Kirgistan kaakɔŋkɔŋɔ̀</standard>
+				</long>
+			</metazone>
+			<metazone type="Lanka">
+				<long>
+					<standard>Siri Laŋkaa kaakɔŋkɔŋɔ̀</standard>
+				</long>
+			</metazone>
+			<metazone type="Line_Islands">
+				<long>
+					<standard>Laɩn kaBʊtukǝltǝna kaakɔŋkɔŋɔ̀</standard>
+				</long>
+			</metazone>
+			<metazone type="Lord_Howe">
+				<long>
+					<generic>Lɔrɖ Hoo kaakɔŋkɔŋɔ̀</generic>
+					<standard>Lɔrɖ Hoo kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Lɔrɖ Hoo kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Macau">
+				<long>
+					<generic>Makawoo kaakɔŋkɔŋɔ̀</generic>
+					<standard>Makawoo kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>akawoo kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Magadan">
+				<long>
+					<generic>Magaɖan kaakɔŋkɔŋɔ̀</generic>
+					<standard>Magaɖan kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Magaɖan kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Malaysia">
+				<long>
+					<standard>Malɛsii kaakɔŋkɔŋɔ̀</standard>
+				</long>
+			</metazone>
+			<metazone type="Maldives">
+				<long>
+					<standard>Malɖiifu kaakɔŋkɔŋɔ̀</standard>
+				</long>
+			</metazone>
+			<metazone type="Marquesas">
+				<long>
+					<standard>Markesas kaakɔŋkɔŋɔ̀</standard>
+				</long>
+			</metazone>
+			<metazone type="Marshall_Islands">
+				<long>
+					<standard>Marshal kaBʊtukǝltǝna kaakɔŋkɔŋɔ̀</standard>
+				</long>
+			</metazone>
+			<metazone type="Mauritius">
+				<long>
+					<generic>Imoris kaakɔŋkɔŋɔ̀</generic>
+					<standard>Imoris kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Imoris kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Mawson">
+				<long>
+					<standard>Mɔsɔn kaakɔŋkɔŋɔ̀</standard>
+				</long>
+			</metazone>
+			<metazone type="Mexico_Pacific">
+				<long>
+					<generic>Mɛsik kapasifika kaakɔŋkɔŋɔ̀</generic>
+					<standard>Mɛsik kapasifika kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Mɛsik kapasifika kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Mongolia">
+				<long>
+					<generic>Ulanbatɔɔr kaakɔŋkɔŋɔ̀</generic>
+					<standard>Ulanbatɔɔr kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Ulanbatɔɔr kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Moscow">
+				<long>
+					<generic>Moskuu kaakɔŋkɔŋɔ̀</generic>
+					<standard>Moskuu kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Moskuu kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Myanmar">
+				<long>
+					<standard>Miyanmaa kaakɔŋkɔŋɔ̀</standard>
+				</long>
+			</metazone>
+			<metazone type="Nauru">
+				<long>
+					<standard>Nawuru kaakɔŋkɔŋɔ̀</standard>
+				</long>
+			</metazone>
+			<metazone type="Nepal">
+				<long>
+					<standard>Neepal kaakɔŋkɔŋɔ̀</standard>
+				</long>
+			</metazone>
+			<metazone type="New_Caledonia">
+				<long>
+					<generic>Kaleɖonii afɔlɩ kaakɔŋkɔŋɔ̀</generic>
+					<standard>Kaleɖonii afɔlɩ kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Kaleɖonii afɔlɩ kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="New_Zealand">
+				<long>
+					<generic>Selanɖ afɔlɩ kaakɔŋkɔŋɔ̀</generic>
+					<standard>Selanɖ afɔlɩ kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Selanɖ afɔlɩ kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Newfoundland">
+				<long>
+					<generic>Faʊnɖlanɖ afɔlɩ kaakɔŋkɔŋɔ̀</generic>
+					<standard>Faʊnɖlanɖ afɔlɩ kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Faʊnɖlanɖ afɔlɩ kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Niue">
+				<long>
+					<standard>Niwuye kaakɔŋkɔŋɔ̀</standard>
+				</long>
+			</metazone>
+			<metazone type="Norfolk">
+				<long>
+					<generic>Nɔrfook kaAtukǝltǝna kaakɔŋkɔŋɔ̀</generic>
+					<standard>Nɔrfook kaAtukǝltǝna kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Nɔrfook kaAtukǝltǝna kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Noronha">
+				<long>
+					<generic>Fɛrnanɖo ɖe Norɔnya kaakɔŋkɔŋɔ̀</generic>
+					<standard>Fɛrnanɖo ɖe Norɔnya kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Fɛrnanɖo ɖe Norɔnya kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="North_Mariana">
+				<long>
+					<standard>Mariyan kǝbʊtukǝltǝna gʊnyɩpɛnɛlaŋ kaakɔŋkɔŋɔ̀</standard>
+				</long>
+			</metazone>
+			<metazone type="Novosibirsk">
+				<long>
+					<generic>Nofosibirk kaakɔŋkɔŋɔ̀</generic>
+					<standard>Nofosibirk kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Nofosibirk kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Omsk">
+				<long>
+					<generic>Ɔmsǝkǝ kaakɔŋkɔŋɔ̀</generic>
+					<standard>Ɔmsǝkǝ kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Ɔmsǝkǝ kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Pakistan">
+				<long>
+					<generic>Pakistan kaakɔŋkɔŋɔ̀</generic>
+					<standard>Pakistan kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Pakistan kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Palau">
+				<long>
+					<standard>Palawoo kaakɔŋkɔŋɔ̀</standard>
+				</long>
+			</metazone>
+			<metazone type="Papua_New_Guinea">
+				<long>
+					<standard>Papuasii Ginee afɔlɩ kaakɔŋkɔŋɔ̀</standard>
+				</long>
+			</metazone>
+			<metazone type="Paraguay">
+				<long>
+					<generic>Paraguwee kaakɔŋkɔŋɔ̀</generic>
+					<standard>Paraguwee kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Paraguwee kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Peru">
+				<long>
+					<generic>Peruu kaakɔŋkɔŋɔ̀</generic>
+					<standard>Peruu kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Peruu kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Philippines">
+				<long>
+					<generic>Filipiin kaakɔŋkɔŋɔ̀</generic>
+					<standard>Filipiin kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Filipiin kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Phoenix_Islands">
+				<long>
+					<standard>Foeniis kaBʊtukǝltǝna kaakɔŋkɔŋɔ̀</standard>
+				</long>
+			</metazone>
+			<metazone type="Pierre_Miquelon">
+				<long>
+					<generic>Sɛŋ-Petrɔs na Mikelɔŋ kaakɔŋkɔŋɔ̀</generic>
+					<standard>Sɛŋ-Petrɔs na Mikelɔŋ kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Sɛŋ-Petrɔs na Mikelɔŋ kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Pitcairn">
+				<long>
+					<standard>Pɩtkɛɛn kaBʊtukǝltǝna kaakɔŋkɔŋɔ̀</standard>
+				</long>
+			</metazone>
+			<metazone type="Ponape">
+				<long>
+					<standard>Ponapee kaakɔŋkɔŋɔ̀</standard>
+				</long>
+			</metazone>
+			<metazone type="Pyongyang">
+				<long>
+					<standard>Pɩyɔŋyaŋ kaakɔŋkɔŋɔ̀</standard>
+				</long>
+			</metazone>
+			<metazone type="Reunion">
+				<long>
+					<standard>Reeniyɔŋ kaakɔŋkɔŋɔ̀</standard>
+				</long>
+			</metazone>
+			<metazone type="Rothera">
+				<long>
+					<standard>Roteraa kaakɔŋkɔŋɔ̀</standard>
+				</long>
+			</metazone>
+			<metazone type="Sakhalin">
+				<long>
+					<generic>Sakalin kaakɔŋkɔŋɔ̀</generic>
+					<standard>Sakalin kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Sakalin kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Samoa">
+				<long>
+					<generic>Samowa kaakɔŋkɔŋɔ̀</generic>
+					<standard>Samowa kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Samowa kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Seychelles">
+				<long>
+					<standard>Seshɛl kaakɔŋkɔŋɔ̀</standard>
+				</long>
+			</metazone>
+			<metazone type="Singapore">
+				<long>
+					<standard>Siŋgapuur kaakɔŋkɔŋɔ̀</standard>
+				</long>
+			</metazone>
+			<metazone type="Solomon">
+				<long>
+					<standard>Salomɔɔn kaBʊtukǝltǝna kaakɔŋkɔŋɔ̀</standard>
+				</long>
+			</metazone>
+			<metazone type="South_Georgia">
+				<long>
+					<standard>Jɔrjiya gʊnyɩsono kaakɔŋkɔŋɔ̀</standard>
+				</long>
+			</metazone>
+			<metazone type="Suriname">
+				<long>
+					<standard>Surinam kaakɔŋkɔŋɔ̀</standard>
+				</long>
+			</metazone>
+			<metazone type="Syowa">
+				<long>
+					<standard>Siyowaa kaakɔŋkɔŋɔ̀</standard>
+				</long>
+			</metazone>
+			<metazone type="Tahiti">
+				<long>
+					<standard>Tahitii kaakɔŋkɔŋɔ̀</standard>
+				</long>
+			</metazone>
+			<metazone type="Taipei">
+				<long>
+					<generic>Taɩpei kaakɔŋkɔŋɔ̀</generic>
+					<standard>Taɩpei kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Taɩpei kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Tajikistan">
+				<long>
+					<standard>Tajikistan kaakɔŋkɔŋɔ̀</standard>
+				</long>
+			</metazone>
+			<metazone type="Tokelau">
+				<long>
+					<standard>Tokelaʊ kaakɔŋkɔŋɔ̀</standard>
+				</long>
+			</metazone>
+			<metazone type="Tonga">
+				<long>
+					<generic>Tɔŋga kaakɔŋkɔŋɔ̀</generic>
+					<standard>Tɔŋga kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Tɔŋga kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Truk">
+				<long>
+					<standard>Cuuk kaakɔŋkɔŋɔ̀</standard>
+				</long>
+			</metazone>
+			<metazone type="Turkmenistan">
+				<long>
+					<generic>Turkmenistan kaakɔŋkɔŋɔ̀</generic>
+					<standard>Turkmenistan kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Turkmenistan kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Tuvalu">
+				<long>
+					<standard>Tufalu kaakɔŋkɔŋɔ̀</standard>
+				</long>
+			</metazone>
+			<metazone type="Uruguay">
+				<long>
+					<generic>Uruguwee kaakɔŋkɔŋɔ̀</generic>
+					<standard>Uruguwee kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Uruguwee kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Uzbekistan">
+				<long>
+					<generic>Usbeekistan kaakɔŋkɔŋɔ̀</generic>
+					<standard>Usbeekistan kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Usbeekistan kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Vanuatu">
+				<long>
+					<generic>Fanuwatu kaakɔŋkɔŋɔ̀</generic>
+					<standard>Fanuwatu kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Fanuwatu kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Venezuela">
+				<long>
+					<standard>Fenesuwelaa kaakɔŋkɔŋɔ̀</standard>
+				</long>
+			</metazone>
+			<metazone type="Vladivostok">
+				<long>
+					<generic>Flaɖifɔstɔk kaakɔŋkɔŋɔ̀</generic>
+					<standard>Flaɖifɔstɔk kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Flaɖifɔstɔk kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Volgograd">
+				<long>
+					<generic>Fɔlgograaɖ kaakɔŋkɔŋɔ̀</generic>
+					<standard>Fɔlgograaɖ kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Fɔlgograaɖ kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Vostok">
+				<long>
+					<standard>Fɔstɔk kaakɔŋkɔŋɔ̀</standard>
+				</long>
+			</metazone>
+			<metazone type="Wake">
+				<long>
+					<standard>Week kaBʊtukǝltǝna kaakɔŋkɔŋɔ̀</standard>
+				</long>
+			</metazone>
+			<metazone type="Wallis">
+				<long>
+					<standard>Walis na Futuna kaakɔŋkɔŋɔ̀</standard>
+				</long>
+			</metazone>
+			<metazone type="Yakutsk">
+				<long>
+					<generic>Yakut kaakɔŋkɔŋɔ̀</generic>
+					<standard>Yakut kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Yakut kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Yekaterinburg">
+				<long>
+					<generic>Yekaterinbuu kaakɔŋkɔŋɔ̀</generic>
+					<standard>Yekaterinbuu kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
+					<daylight>Yekaterinbuu kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Yukon">
+				<long>
+					<standard>Yukɔn kaakɔŋkɔŋɔ̀</standard>
+				</long>
+			</metazone>
+		</timeZoneNames>
+	</dates>
+	<numbers>
+		<symbols numberSystem="latn">
+			<decimal>,</decimal>
+			<group> </group>
+		</symbols>
+		<percentFormats numberSystem="latn">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern>% #,#0;% -#,#0</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<currencyFormats numberSystem="latn">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern>¤ #,##0.00;¤ -#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="zero">{0} {1}</unitPattern>
+			<unitPattern count="one">{0} {1}</unitPattern>
+			<unitPattern count="other">{1} {0}</unitPattern>
+		</currencyFormats>
+		<currencies>
+			<currency type="AED">
+				<displayName>Emiir baGanɔ gaɖɔŋkɔnɔ kaAlaaributǝna kaɖiram</displayName>
+				<displayName count="zero">baa Emiir baGanɔ gaɖɔŋkɔnɔ kaAlaaributǝna kaɖiram</displayName>
+				<displayName count="one">Emiir baGanɔ gaɖɔŋkɔnɔ kaAlaaributǝna kaɖiram</displayName>
+				<displayName count="other">Emiir baGanɔ gaɖɔŋkɔnɔ kaAlaaributǝna kɩɖiram</displayName>
+			</currency>
+			<currency type="AFN">
+				<displayName>Afganistan kahafganii</displayName>
+				<displayName count="zero">baa Afganistan kahafganii</displayName>
+				<displayName count="one">Afganistan kahafganii</displayName>
+				<displayName count="other">Afganistan kɩhafganii</displayName>
+			</currency>
+			<currency type="ALL">
+				<displayName>Albanii kalɛɛkɩ</displayName>
+				<displayName count="zero">baa Albanii kalɛɛkɩ</displayName>
+				<displayName count="one">Albanii kalɛɛkɩ</displayName>
+				<displayName count="other">Albanii kɩlɛɛkɩ</displayName>
+			</currency>
+			<currency type="AMD">
+				<displayName>Armenii kaɖram</displayName>
+				<displayName count="zero">baa Armenii kaɖram</displayName>
+				<displayName count="one">Armenii kaɖram</displayName>
+				<displayName count="other">Armenii kɩɖram</displayName>
+			</currency>
+			<currency type="ANG">
+				<displayName>Holanɖ kaKarayiib kafɔlɔrɛŋ</displayName>
+				<displayName count="zero">baa Holanɖ kaKarayiib kafɔlɔrɛŋ</displayName>
+				<displayName count="one">Holanɖ kaKarayiib kafɔlɔrɛŋ</displayName>
+				<displayName count="other">Holanɖ kaKarayiib kɩfɔlɔrɛŋ</displayName>
+			</currency>
+			<currency type="AOA">
+				<displayName>Aŋgolaa kakʊwansa</displayName>
+				<displayName count="zero">baa Aŋgolaa kakʊwansa</displayName>
+				<displayName count="one">Aŋgolaa kakʊwansa</displayName>
+				<displayName count="other">Aŋgolaa kɩkʊwansa</displayName>
+			</currency>
+			<currency type="ARS">
+				<displayName>Arjantin kapɛsoo</displayName>
+				<displayName count="zero">baa Arjantin kapɛsoo</displayName>
+				<displayName count="one">Arjantin kapɛsoo</displayName>
+				<displayName count="other">Arjantin kɩpɛsoo</displayName>
+			</currency>
+			<currency type="AUD">
+				<displayName>Ɔstraliya kaɖala</displayName>
+				<displayName count="zero">baa Ɔstraliya kaɖala</displayName>
+				<displayName count="one">Ɔstraliya kaɖala</displayName>
+				<displayName count="other">Ɔstraliya kɩɖala</displayName>
+			</currency>
+			<currency type="AWG">
+				<displayName>Arubaa kafɔlɔrɛŋ</displayName>
+				<displayName count="zero">baa Arubaa kafɔlɔrɛŋ</displayName>
+				<displayName count="one">Arubaa kafɔlɔrɛŋ</displayName>
+				<displayName count="other">Arubaa kɩfɔlɔrɛŋ</displayName>
+			</currency>
+			<currency type="AZN">
+				<displayName>Asɛrbaɩjaŋ kamanaatɩ</displayName>
+				<displayName count="zero">baa Asɛrbaɩjaŋ kamanaatɩ</displayName>
+				<displayName count="one">Asɛrbaɩjaŋ kamanaatɩ</displayName>
+				<displayName count="other">Asɛrbaɩjaŋ kɩmanaatɩ</displayName>
+			</currency>
+			<currency type="BAM">
+				<displayName>Bɔsniya na Hɛrsegɔfina kamarkɩ</displayName>
+				<displayName count="zero">baa Bɔsniya na Hɛrsegɔfina kamarkɩ</displayName>
+				<displayName count="one">Bɔsniya na Hɛrsegɔfina kamarkɩ</displayName>
+				<displayName count="other">Bɔsniya na Hɛrsegɔfina kɩmarkɩ</displayName>
+			</currency>
+			<currency type="BBD">
+				<displayName>Barbaɖɔɔsɩ kaɖala</displayName>
+				<displayName count="zero">baa Barbaɖɔɔsɩ kaɖala</displayName>
+				<displayName count="one">Barbaɖɔɔsɩ kaɖala</displayName>
+				<displayName count="other">Barbaɖɔɔsɩ kɩɖala</displayName>
+			</currency>
+			<currency type="BDT">
+				<displayName>Baŋglaɖɛɛshɩ kataka</displayName>
+				<displayName count="zero">baa Baŋglaɖɛɛshɩ kataka</displayName>
+				<displayName count="one">Baŋglaɖɛɛshɩ kataka</displayName>
+				<displayName count="other">Baŋglaɖɛɛshɩ kɩtaka</displayName>
+			</currency>
+			<currency type="BGN">
+				<displayName>Bulgarii kalɛɛfʊ</displayName>
+				<displayName count="zero">baa Bulgarii kalɛɛfʊ</displayName>
+				<displayName count="one">Bulgarii kalɛɛfʊ</displayName>
+				<displayName count="other">Bulgarii kɩlɛɛfʊ</displayName>
+			</currency>
+			<currency type="BHD">
+				<displayName>Barɛɛn kaɖinaa</displayName>
+				<displayName count="zero">baa Barɛɛn kaɖinaa</displayName>
+				<displayName count="one">Barɛɛn kaɖinaa</displayName>
+				<displayName count="other">Barɛɛn kɩɖinaa</displayName>
+			</currency>
+			<currency type="BIF">
+				<displayName>Burunɖii kafaraŋ</displayName>
+				<displayName count="zero">baa Burunɖii kafaraŋ</displayName>
+				<displayName count="one">Burunɖii kafaraŋ</displayName>
+				<displayName count="other">Burunɖii kɩfaraŋ</displayName>
+			</currency>
+			<currency type="BMD">
+				<displayName>Bɛrmuɖaa kaɖala</displayName>
+				<displayName count="zero">baa Bɛrmuɖaa kaɖala</displayName>
+				<displayName count="one">Bɛrmuɖaa kaɖala</displayName>
+				<displayName count="other">Bɛrmuɖaa kɩɖala</displayName>
+			</currency>
+			<currency type="BND">
+				<displayName>Brunɛɩ kaɖala</displayName>
+				<displayName count="zero">baa Brunɛɩ kaɖala</displayName>
+				<displayName count="one">Brunɛɩ kaɖala</displayName>
+				<displayName count="other">Brunɛɩ kɩɖala</displayName>
+			</currency>
+			<currency type="BOB">
+				<displayName>Bolifiya kabolifiyano</displayName>
+				<displayName count="zero">baa Bolifiya kabolifiyano</displayName>
+				<displayName count="one">Bolifiya kabolifiyano</displayName>
+				<displayName count="other">Bolifiya kɩbolifiyano</displayName>
+			</currency>
+			<currency type="BRL">
+				<displayName>Bresil kareyal</displayName>
+				<displayName count="zero">baa Bresil kareyal</displayName>
+				<displayName count="one">Bresil kareyal</displayName>
+				<displayName count="other">Bresil kɩreyal</displayName>
+			</currency>
+			<currency type="BSD">
+				<displayName>Bahamaasɩ kaɖala</displayName>
+				<displayName count="zero">baa Bahamaasɩ kaɖala</displayName>
+				<displayName count="one">Bahamaasɩ kaɖala</displayName>
+				<displayName count="other">Bahamaasɩ kɩɖala</displayName>
+			</currency>
+			<currency type="BTN">
+				<displayName>Butan kaŋgulturɔm</displayName>
+				<displayName count="zero">baa Butan kaŋgulturɔm</displayName>
+				<displayName count="one">Butan kaŋgulturɔm</displayName>
+				<displayName count="other">Butan kɩŋgulturɔm</displayName>
+			</currency>
+			<currency type="BWP">
+				<displayName>Bɔsʊwanaa kapula</displayName>
+				<displayName count="zero">baa Bɔsʊwanaa kapula</displayName>
+				<displayName count="one">Bɔsʊwanaa kapula</displayName>
+				<displayName count="other">Bɔsʊwanaa kɩpula</displayName>
+			</currency>
+			<currency type="BYN">
+				<displayName>Belaruus karubǝl</displayName>
+				<displayName count="zero">baa Belaruus karubǝl</displayName>
+				<displayName count="one">Belaruus karubǝl</displayName>
+				<displayName count="other">Belaruus kɩrubǝl</displayName>
+			</currency>
+			<currency type="BZD">
+				<displayName>Beliis kaɖala</displayName>
+				<displayName count="zero">baa Beliis kaɖala</displayName>
+				<displayName count="one">Beliis kaɖala</displayName>
+				<displayName count="other">Beliis kɩɖala</displayName>
+			</currency>
+			<currency type="CAD">
+				<displayName>Kanaɖaa kaɖala</displayName>
+				<displayName count="zero">baa Kanaɖaa kaɖala</displayName>
+				<displayName count="one">Kanaɖaa kaɖala</displayName>
+				<displayName count="other">Kanaɖaa kɩɖala</displayName>
+			</currency>
+			<currency type="CDF">
+				<displayName>Koŋgoo kafaraŋ</displayName>
+				<displayName count="zero">baa Koŋgoo kafaraŋ</displayName>
+				<displayName count="one">Koŋgoo kafaraŋ</displayName>
+				<displayName count="other">Koŋgoo kɩfaraŋ</displayName>
+			</currency>
+			<currency type="CHF">
+				<displayName>Suwis kafaraŋ</displayName>
+				<displayName count="zero">baa Suwis kafaraŋ</displayName>
+				<displayName count="one">Suwis kafaraŋ</displayName>
+				<displayName count="other">Suwis kɩfaraŋ</displayName>
+			</currency>
+			<currency type="CLP">
+				<displayName>Shilii kapɛsoo</displayName>
+				<displayName count="zero">baa Shilii kapɛsoo</displayName>
+				<displayName count="one">Shilii kapɛsoo</displayName>
+				<displayName count="other">Shilii kɩpɛsoo</displayName>
+			</currency>
+			<currency type="CNH">
+				<displayName>Caɩna kayuwan ba sǝ̂ra afʊba ma</displayName>
+				<displayName count="zero">baa Caɩna kayuwan ba sǝ̂ra afʊba ma</displayName>
+				<displayName count="one">Caɩna kayuwan ba sǝ̂ra afʊba ma</displayName>
+				<displayName count="other">Caɩna kɩyuwan ba sǝ̂ra afʊba ma</displayName>
+			</currency>
+			<currency type="CNY">
+				<displayName>Caɩna kayuwan</displayName>
+				<displayName count="zero">baa Caɩna kayuwan</displayName>
+				<displayName count="one">Caɩna kayuwan</displayName>
+				<displayName count="other">Caɩna kɩyuwan</displayName>
+			</currency>
+			<currency type="COP">
+				<displayName>Kolɔmbii kapɛsoo</displayName>
+				<displayName count="zero">baa Kolɔmbii kapɛsoo</displayName>
+				<displayName count="one">Kolɔmbii kapɛsoo</displayName>
+				<displayName count="other">Kolɔmbii kɩpɛsoo</displayName>
+			</currency>
+			<currency type="CRC">
+				<displayName>Kɔsta Rikaa kakolɔn</displayName>
+				<displayName count="zero">baa Kɔsta Rikaa kakolɔn</displayName>
+				<displayName count="one">Kɔsta Rikaa kakolɔn</displayName>
+				<displayName count="other">Kɔsta Rikaa kɩkolɔn</displayName>
+			</currency>
+			<currency type="CUC">
+				<displayName>Kubaa kapɛsoo ba sǝ̂ra afʊba ma</displayName>
+				<displayName count="zero">baa Kubaa kapɛsoo ba sǝ̂ra afʊba ma</displayName>
+				<displayName count="one">Kubaa kapɛsoo ba sǝ̂ra afʊba ma</displayName>
+				<displayName count="other">Kubaa kɩpɛsoo ba sǝ̂ra afʊba ma</displayName>
+			</currency>
+			<currency type="CUP">
+				<displayName>Kubaa kapɛsoo</displayName>
+				<displayName count="zero">baa Kubaa kapɛsoo</displayName>
+				<displayName count="one">Kubaa kapɛsoo</displayName>
+				<displayName count="other">Kubaa kɩpɛsoo</displayName>
+			</currency>
+			<currency type="CVE">
+				<displayName>Kapfɛɛr kahɛskuɖoo</displayName>
+				<displayName count="zero">baa Kapfɛɛr kahɛskuɖoo</displayName>
+				<displayName count="one">Kapfɛɛr kahɛskuɖoo</displayName>
+				<displayName count="other">Kapfɛɛr kɩhɛskuɖoo</displayName>
+			</currency>
+			<currency type="CZK">
+				<displayName>Cɛk kakrona</displayName>
+				<displayName count="zero">baa Cɛk kakrona</displayName>
+				<displayName count="one">Cɛk kakrona</displayName>
+				<displayName count="other">Cɛk kɩkrona</displayName>
+			</currency>
+			<currency type="DJF">
+				<displayName>Jibutii kafaraŋ</displayName>
+				<displayName count="zero">baa Jibutii kafaraŋ</displayName>
+				<displayName count="one">Jibutii kafaraŋ</displayName>
+				<displayName count="other">Jibutii kɩfaraŋ</displayName>
+			</currency>
+			<currency type="DKK">
+				<displayName>Ɖanǝmark kakrona</displayName>
+				<displayName count="zero">baa Ɖanǝmark kakrona</displayName>
+				<displayName count="one">Ɖanǝmark kakrona</displayName>
+				<displayName count="other">Ɖanǝmark kɩkrona</displayName>
+			</currency>
+			<currency type="DOP">
+				<displayName>Ɖominikaa kapɛsoo</displayName>
+				<displayName count="zero">baa Ɖominikaa kapɛsoo</displayName>
+				<displayName count="one">Ɖominikaa kapɛsoo</displayName>
+				<displayName count="other">Ɖominikaa kɩpɛsoo</displayName>
+			</currency>
+			<currency type="DZD">
+				<displayName>Aljerii kaɖinaa</displayName>
+				<displayName count="zero">baa Aljerii kaɖinaa</displayName>
+				<displayName count="one">Aljerii kaɖinaa</displayName>
+				<displayName count="other">Aljerii kɩɖinaa</displayName>
+			</currency>
+			<currency type="EGP">
+				<displayName>Ejipti kapɔŋ</displayName>
+				<displayName count="zero">baa Ejipti kapɔŋ</displayName>
+				<displayName count="one">Ejipti kapɔŋ</displayName>
+				<displayName count="other">Ejipti kɩpɔŋ</displayName>
+			</currency>
+			<currency type="ERN">
+				<displayName>Eritree kanafka</displayName>
+				<displayName count="zero">baa Eritree kanafka</displayName>
+				<displayName count="one">Eritree kanafka</displayName>
+				<displayName count="other">Eritree kɩnafka</displayName>
+			</currency>
+			<currency type="ETB">
+				<displayName>Etiyopii kabiir</displayName>
+				<displayName count="zero">baa Etiyopii kabiir</displayName>
+				<displayName count="one">Etiyopii kabiir</displayName>
+				<displayName count="other">Etiyopii kɩbiir</displayName>
+			</currency>
+			<currency type="EUR">
+				<displayName>eroo</displayName>
+				<displayName count="zero">baa eroo</displayName>
+				<displayName count="one">eroo</displayName>
+				<displayName count="other">eroo mána</displayName>
+			</currency>
+			<currency type="FJD">
+				<displayName>Fiji kaɖala</displayName>
+				<displayName count="zero">baa Fiji kaɖala</displayName>
+				<displayName count="one">Fiji kaɖala</displayName>
+				<displayName count="other">Fiji kɩɖala</displayName>
+			</currency>
+			<currency type="FKP">
+				<displayName>Fɔklanɖ kaBʊtukǝltǝna kapɔŋ</displayName>
+				<displayName count="zero">baa Fɔklanɖ kaBʊtukǝltǝna kapɔŋ</displayName>
+				<displayName count="one">Fɔklanɖ kaBʊtukǝltǝna kapɔŋ</displayName>
+				<displayName count="other">Fɔklanɖ kaBʊtukǝltǝna kɩpɔŋ</displayName>
+			</currency>
+			<currency type="GBP">
+				<displayName>Gagɛɛshɩtǝna kapɔŋ</displayName>
+				<displayName count="zero">baa Gagɛɛshɩtǝna kapɔŋ</displayName>
+				<displayName count="one">Gagɛɛshɩtǝna kapɔŋ</displayName>
+				<displayName count="other">Gagɛɛshɩtǝna kɩpɔŋ</displayName>
+			</currency>
+			<currency type="GEL">
+				<displayName>Jɔrjiya kalari</displayName>
+				<displayName count="zero">baa Jɔrjiya kalari</displayName>
+				<displayName count="one">Jɔrjiya kalari</displayName>
+				<displayName count="other">Jɔrjiya kɩlari</displayName>
+			</currency>
+			<currency type="GHS">
+				<displayName>Gana kasiɖi</displayName>
+				<displayName count="zero">baa Gana kasiɖi</displayName>
+				<displayName count="one">Gana kasiɖi</displayName>
+				<displayName count="other">Gana kɩsiɖi</displayName>
+			</currency>
+			<currency type="GIP">
+				<displayName>Gibraltaa kapɔŋ</displayName>
+				<displayName count="zero">baa Gibraltaa kapɔŋ</displayName>
+				<displayName count="one">Gibraltaa kapɔŋ</displayName>
+				<displayName count="other">Gibraltaa kɩpɔŋ</displayName>
+			</currency>
+			<currency type="GMD">
+				<displayName>Gambii kaɖalaasi</displayName>
+				<displayName count="zero">baa Gambii kaɖalaasi</displayName>
+				<displayName count="one">Gambii kaɖalaasi</displayName>
+				<displayName count="other">Gambii kɩɖalaasi</displayName>
+			</currency>
+			<currency type="GNF">
+				<displayName>Ginee kafaraŋ</displayName>
+				<displayName count="zero">baa Ginee kafaraŋ</displayName>
+				<displayName count="one">Ginee kafaraŋ</displayName>
+				<displayName count="other">Ginee kɩfaraŋ</displayName>
+			</currency>
+			<currency type="GTQ">
+				<displayName>Guwatemalaa kakesaal</displayName>
+				<displayName count="zero">baa Guwatemalaa kakesaal</displayName>
+				<displayName count="one">Guwatemalaa kakesaal</displayName>
+				<displayName count="other">Guwatemalaa kɩkesaal</displayName>
+			</currency>
+			<currency type="GYD">
+				<displayName>Guyanaa kaɖala</displayName>
+				<displayName count="zero">baa Guyanaa kaɖala</displayName>
+				<displayName count="one">Guyanaa kaɖala</displayName>
+				<displayName count="other">Guyanaa kɩɖala</displayName>
+			</currency>
+			<currency type="HKD">
+				<displayName>Hɔŋ Kɔŋ kaɖala</displayName>
+				<displayName count="zero">baa Hɔŋ Kɔŋ kaɖala</displayName>
+				<displayName count="one">Hɔŋ Kɔŋ kaɖala</displayName>
+				<displayName count="other">Hɔŋ Kɔŋ kɩɖala</displayName>
+			</currency>
+			<currency type="HNL">
+				<displayName>Hɔnɖuraasɩ kalampira</displayName>
+				<displayName count="zero">baa Hɔnɖuraasɩ kalampira</displayName>
+				<displayName count="one">Hɔnɖuraasɩ kalampira</displayName>
+				<displayName count="other">Hɔnɖuraasɩ kɩlampira</displayName>
+			</currency>
+			<currency type="HRK">
+				<displayName>Krowasii kakuna</displayName>
+				<displayName count="zero">baa Krowasii kakuna</displayName>
+				<displayName count="one">Krowasii kakuna</displayName>
+				<displayName count="other">Krowasii kɩkuna</displayName>
+			</currency>
+			<currency type="HTG">
+				<displayName>Hayitii kaguurɖi</displayName>
+				<displayName count="zero">baa Hayitii kaguurɖi</displayName>
+				<displayName count="one">Hayitii kaguurɖi</displayName>
+				<displayName count="other">Hayitii kɩguurɖi</displayName>
+			</currency>
+			<currency type="HUF">
+				<displayName>Ɔŋgrii kafɔrɩntɩ</displayName>
+				<displayName count="zero">baa Ɔŋgrii kafɔrɩntɩ</displayName>
+				<displayName count="one">Ɔŋgrii kafɔrɩntɩ</displayName>
+				<displayName count="other">Ɔŋgrii kɩfɔrɩntɩ</displayName>
+			</currency>
+			<currency type="IDR">
+				<displayName>Ɛnɖonosii karupiyaa</displayName>
+				<displayName count="zero">baa Ɛnɖonosii karupiyaa</displayName>
+				<displayName count="one">Ɛnɖonosii karupiyaa</displayName>
+				<displayName count="other">Ɛnɖonosii kɩrupiyaa</displayName>
+			</currency>
+			<currency type="ILS">
+				<displayName>Yishraɛl kashekɛl afɔlɩ</displayName>
+				<displayName count="zero">baa Yishraɛl kashekɛl afɔlɩ</displayName>
+				<displayName count="one">Yishraɛl kashekɛl afɔlɩ</displayName>
+				<displayName count="other">Yishraɛl kɩshekɛl bafɔlɩ</displayName>
+			</currency>
+			<currency type="INR">
+				<displayName>Inɖiya karupii</displayName>
+				<displayName count="zero">baa Inɖiya karupii</displayName>
+				<displayName count="one">Inɖiya karupii</displayName>
+				<displayName count="other">Inɖiya kɩrupii</displayName>
+			</currency>
+			<currency type="IQD">
+				<displayName>Ɩraakɩ kaɖinaa</displayName>
+				<displayName count="zero">baa Ɩraakɩ kaɖinaa</displayName>
+				<displayName count="one">Ɩraakɩ kaɖinaa</displayName>
+				<displayName count="other">Ɩraakɩ kɩɖinaa</displayName>
+			</currency>
+			<currency type="IRR">
+				<displayName>Iraŋ kariyal</displayName>
+				<displayName count="zero">baa Iraŋ kariyal</displayName>
+				<displayName count="one">Iraŋ kariyal</displayName>
+				<displayName count="other">Iraŋ kɩriyal</displayName>
+			</currency>
+			<currency type="ISK">
+				<displayName>Islanɖ kakrona</displayName>
+				<displayName count="zero">baa Islanɖ kakrona</displayName>
+				<displayName count="one">Islanɖ kakrona</displayName>
+				<displayName count="other">Islanɖ kɩkrona</displayName>
+			</currency>
+			<currency type="JMD">
+				<displayName>Jamaɩka kaɖala</displayName>
+				<displayName count="zero">baa Jamaɩka kaɖala</displayName>
+				<displayName count="one">Jamaɩka kaɖala</displayName>
+				<displayName count="other">Jamaɩka kɩɖala</displayName>
+			</currency>
+			<currency type="JOD">
+				<displayName>Jɔrɖanii kaɖinaa</displayName>
+				<displayName count="zero">baa Jɔrɖanii kaɖinaa</displayName>
+				<displayName count="one">Jɔrɖanii kaɖinaa</displayName>
+				<displayName count="other">Jɔrɖanii kɩɖinaa</displayName>
+			</currency>
+			<currency type="JPY">
+				<displayName>Japaŋ kayɛn</displayName>
+				<displayName count="zero">baa Japaŋ kayɛn</displayName>
+				<displayName count="one">Japaŋ kayɛn</displayName>
+				<displayName count="other">Japaŋ kɩyɛn</displayName>
+			</currency>
+			<currency type="KES">
+				<displayName>Keniya kashílè</displayName>
+				<displayName count="zero">baa Keniya kashílè</displayName>
+				<displayName count="one">Keniya kashílè</displayName>
+				<displayName count="other">Keniya kɩshílè</displayName>
+			</currency>
+			<currency type="KGS">
+				<displayName>Kirgistan kasɔm</displayName>
+				<displayName count="zero">baa Kirgistan kasɔm</displayName>
+				<displayName count="one">Kirgistan kasɔm</displayName>
+				<displayName count="other">Kirgistan kɩsɔm</displayName>
+			</currency>
+			<currency type="KHR">
+				<displayName>Kamboɖiya kariyɛl</displayName>
+				<displayName count="zero">baa Kamboɖiya kariyɛl</displayName>
+				<displayName count="one">Kamboɖiya kariyɛl</displayName>
+				<displayName count="other">Kamboɖiya kɩriyɛl</displayName>
+			</currency>
+			<currency type="KMF">
+				<displayName>Komɔɔr kafaraŋ</displayName>
+				<displayName count="zero">baa Komɔɔr kafaraŋ</displayName>
+				<displayName count="one">Komɔɔr kafaraŋ</displayName>
+				<displayName count="other">Komɔɔr kɩfaraŋ</displayName>
+			</currency>
+			<currency type="KPW">
+				<displayName>Koree gʊnyɩpɛnɛlaŋ kawɔn</displayName>
+				<displayName count="zero">baa Koree gʊnyɩpɛnɛlaŋ kawɔn</displayName>
+				<displayName count="one">Koree gʊnyɩpɛnɛlaŋ kawɔn</displayName>
+				<displayName count="other">Koree gʊnyɩpɛnɛlaŋ kɩwɔn</displayName>
+			</currency>
+			<currency type="KRW">
+				<displayName>Koree gʊnyɩsonolaŋ kawɔn</displayName>
+				<displayName count="zero">baa Koree gʊnyɩsonolaŋ kawɔn</displayName>
+				<displayName count="one">Koree gʊnyɩsonolaŋ kawɔn</displayName>
+				<displayName count="other">Koree gʊnyɩsonolaŋ kɩwɔn</displayName>
+			</currency>
+			<currency type="KWD">
+				<displayName>Koweeti kaɖinaa</displayName>
+				<displayName count="zero">baa Koweeti kaɖinaa</displayName>
+				<displayName count="one">Koweeti kaɖinaa</displayName>
+				<displayName count="other">Koweeti kɩɖinaa</displayName>
+			</currency>
+			<currency type="KYD">
+				<displayName>Kayimaan kaBʊtukǝltǝna kaɖala</displayName>
+				<displayName count="zero">baa Kayimaan kaBʊtukǝltǝna kaɖala</displayName>
+				<displayName count="one">Kayimaan kaBʊtukǝltǝna kaɖala</displayName>
+				<displayName count="other">Kayimaan kaBʊtukǝltǝna kɩɖala</displayName>
+			</currency>
+			<currency type="KZT">
+				<displayName>Kasastan katɛŋgɛ</displayName>
+				<displayName count="zero">baa Kasastan katɛŋgɛ</displayName>
+				<displayName count="one">Kasastan katɛŋgɛ</displayName>
+				<displayName count="other">Kasastan kɩtɛŋgɛ</displayName>
+			</currency>
+			<currency type="LAK">
+				<displayName>Lawɔs kakip</displayName>
+				<displayName count="zero">baa Lawɔs kakip</displayName>
+				<displayName count="one">Lawɔs kakip</displayName>
+				<displayName count="other">Lawɔs kɩkip</displayName>
+			</currency>
+			<currency type="LBP">
+				<displayName>Liibaaŋ kapɔŋ</displayName>
+				<displayName count="zero">baa Liibaaŋ kapɔŋ</displayName>
+				<displayName count="one">Liibaaŋ kapɔŋ</displayName>
+				<displayName count="other">Liibaaŋ kɩpɔŋ</displayName>
+			</currency>
+			<currency type="LKR">
+				<displayName>Siri Laŋkaa karupii</displayName>
+				<displayName count="zero">baa Siri Laŋkaa karupii</displayName>
+				<displayName count="one">Siri Laŋkaa karupii</displayName>
+				<displayName count="other">Siri Laŋkaa kɩrupii</displayName>
+			</currency>
+			<currency type="LRD">
+				<displayName>Liberiya kaɖala</displayName>
+				<displayName count="zero">baa Liberiya kaɖala</displayName>
+				<displayName count="one">Liberiya kaɖala</displayName>
+				<displayName count="other">Liberiya kɩɖala</displayName>
+			</currency>
+			<currency type="LSL">
+				<displayName>Lesotoo kaloti</displayName>
+				<displayName count="zero">baa Lesotoo kaloti</displayName>
+				<displayName count="one">Lesotoo kaloti</displayName>
+				<displayName count="other">Lesotoo kɩloti</displayName>
+			</currency>
+			<currency type="LYD">
+				<displayName>Libii kaɖinaa</displayName>
+				<displayName count="zero">baa Libii kaɖinaa</displayName>
+				<displayName count="one">Libii kaɖinaa</displayName>
+				<displayName count="other">Libii kɩɖinaa</displayName>
+			</currency>
+			<currency type="MAD">
+				<displayName>Morooko kaɖiram</displayName>
+				<displayName count="zero">baa Morooko kaɖiram</displayName>
+				<displayName count="one">Morooko kaɖiram</displayName>
+				<displayName count="other">Morooko kɩɖiram</displayName>
+			</currency>
+			<currency type="MDL">
+				<displayName>Molɖafiya kalewu</displayName>
+				<displayName count="zero">baa Molɖafiya kalewu</displayName>
+				<displayName count="one">Molɖafiya kalewu</displayName>
+				<displayName count="other">Molɖafiya kɩlewu</displayName>
+			</currency>
+			<currency type="MGA">
+				<displayName>Maɖagaskaa kaharɩyaarɩ</displayName>
+				<displayName count="zero">baa Maɖagaskaa kaharɩyaarɩ</displayName>
+				<displayName count="one">Maɖagaskaa kaharɩyaarɩ</displayName>
+				<displayName count="other">Maɖagaskaa kɩharɩyaarɩ</displayName>
+			</currency>
+			<currency type="MKD">
+				<displayName>Maseɖoniya kaɖenaa</displayName>
+				<displayName count="zero">baa Maseɖoniya kaɖenaa</displayName>
+				<displayName count="one">Maseɖoniya kaɖenaa</displayName>
+				<displayName count="other">Maseɖoniya kɩɖenaa</displayName>
+			</currency>
+			<currency type="MMK">
+				<displayName>Miyanmaa kakiyaatɩ</displayName>
+				<displayName count="zero">baa Miyanmaa kakiyaatɩ</displayName>
+				<displayName count="one">Miyanmaa kakiyaatɩ</displayName>
+				<displayName count="other">Miyanmaa kɩkiyaatɩ</displayName>
+			</currency>
+			<currency type="MNT">
+				<displayName>Mɔŋgolii katugiriiki</displayName>
+				<displayName count="zero">baa Mɔŋgolii katugiriiki</displayName>
+				<displayName count="one">Mɔŋgolii katugiriiki</displayName>
+				<displayName count="other">Mɔŋgolii kɩtugiriiki</displayName>
+			</currency>
+			<currency type="MOP">
+				<displayName>Makawoo kapataka</displayName>
+				<displayName count="zero">baa Makawoo kapataka</displayName>
+				<displayName count="one">Makawoo kapataka</displayName>
+				<displayName count="other">Makawoo kɩpataka</displayName>
+			</currency>
+			<currency type="MRU">
+				<displayName>Moritanii kahugiya</displayName>
+				<displayName count="zero">baa Moritanii kahugiya</displayName>
+				<displayName count="one">Moritanii kahugiya</displayName>
+				<displayName count="other">Moritanii kɩhugiya</displayName>
+			</currency>
+			<currency type="MUR">
+				<displayName>Imoris karupii</displayName>
+				<displayName count="zero">baa Imoris karupii</displayName>
+				<displayName count="one">Imoris karupii</displayName>
+				<displayName count="other">Imoris kɩrupii</displayName>
+			</currency>
+			<currency type="MVR">
+				<displayName>Malɖiifu karufiyaa</displayName>
+				<displayName count="zero">baa Malɖiifu karufiyaa</displayName>
+				<displayName count="one">Malɖiifu karufiyaa</displayName>
+				<displayName count="other">Malɖiifu kɩrufiyaa</displayName>
+			</currency>
+			<currency type="MWK">
+				<displayName>Malawii kakʊwaasha</displayName>
+				<displayName count="zero">baa Malawii kakʊwaasha</displayName>
+				<displayName count="one">Malawii kakʊwaasha</displayName>
+				<displayName count="other">Malawii kɩkʊwaasha</displayName>
+			</currency>
+			<currency type="MXN">
+				<displayName>Mɛsik kapɛsoo</displayName>
+				<displayName count="zero">baa Mɛsik kapɛsoo</displayName>
+				<displayName count="one">Mɛsik kapɛsoo</displayName>
+				<displayName count="other">Mɛsik kɩpɛsoo</displayName>
+			</currency>
+			<currency type="MYR">
+				<displayName>Malɛsii kariŋgiiti</displayName>
+				<displayName count="zero">baa Malɛsii kariŋgiiti</displayName>
+				<displayName count="one">Malɛsii kariŋgiiti</displayName>
+				<displayName count="other">Malɛsii kɩriŋgiiti</displayName>
+			</currency>
+			<currency type="MZN">
+				<displayName>Mosambii kametikal</displayName>
+				<displayName count="zero">baa Mosambii kametikal</displayName>
+				<displayName count="one">Mosambii kametikal</displayName>
+				<displayName count="other">Mosambii kɩmetikal</displayName>
+			</currency>
+			<currency type="NAD">
+				<displayName>Namibii kaɖala</displayName>
+				<displayName count="zero">baa Namibii kaɖala</displayName>
+				<displayName count="one">Namibii kaɖala</displayName>
+				<displayName count="other">Namibii kɩɖala</displayName>
+			</currency>
+			<currency type="NGN">
+				<displayName>Nanjiiriya kanɛɛra</displayName>
+				<displayName count="zero">baa Nanjiiriya kanɛɛra</displayName>
+				<displayName count="one">Nanjiiriya kanɛɛra</displayName>
+				<displayName count="other">Nanjiiriya kɩnɛɛra</displayName>
+			</currency>
+			<currency type="NIO">
+				<displayName>Nikaraguwaa kakɔrɖoba</displayName>
+				<displayName count="zero">baa Nikaraguwaa kakɔrɖoba</displayName>
+				<displayName count="one">Nikaraguwaa kakɔrɖoba</displayName>
+				<displayName count="other">Nikaraguwaa kɩkɔrɖoba</displayName>
+			</currency>
+			<currency type="NOK">
+				<displayName>Nɔrfɛsh kakrona</displayName>
+				<displayName count="zero">baa Nɔrfɛsh kakrona</displayName>
+				<displayName count="one">Nɔrfɛsh kakrona</displayName>
+				<displayName count="other">Nɔrfɛsh kɩkrona</displayName>
+			</currency>
+			<currency type="NPR">
+				<displayName>Neepal karupii</displayName>
+				<displayName count="zero">baa Neepal karupii</displayName>
+				<displayName count="one">Neepal karupii</displayName>
+				<displayName count="other">Neepal kɩrupii</displayName>
+			</currency>
+			<currency type="NZD">
+				<displayName>Selanɖ afɔlɩ kaɖala</displayName>
+				<displayName count="zero">baa Selanɖ afɔlɩ kaɖala</displayName>
+				<displayName count="one">Selanɖ afɔlɩ kaɖala</displayName>
+				<displayName count="other">Selanɖ afɔlɩ kɩɖala</displayName>
+			</currency>
+			<currency type="OMR">
+				<displayName>Oman kariyal</displayName>
+				<displayName count="zero">baa Oman kariyal</displayName>
+				<displayName count="one">Oman kariyal</displayName>
+				<displayName count="other">Oman kɩriyal</displayName>
+			</currency>
+			<currency type="PAB">
+				<displayName>Panamaa kabalbowa</displayName>
+				<displayName count="zero">baa Panamaa kabalbowa</displayName>
+				<displayName count="one">Panamaa kabalbowa</displayName>
+				<displayName count="other">Panamaa kɩbalbowa</displayName>
+			</currency>
+			<currency type="PEN">
+				<displayName>Peruu kasol</displayName>
+				<displayName count="zero">baa Peruu kasol</displayName>
+				<displayName count="one">Peruu kasol</displayName>
+				<displayName count="other">Peruu kɩsol</displayName>
+			</currency>
+			<currency type="PGK">
+				<displayName>Papuasii Ginee afɔlɩ kakina</displayName>
+				<displayName count="zero">baa Papuasii Ginee afɔlɩ kakina</displayName>
+				<displayName count="one">Papuasii Ginee afɔlɩ kakina</displayName>
+				<displayName count="other">Papuasii Ginee afɔlɩ kɩkina</displayName>
+			</currency>
+			<currency type="PHP">
+				<displayName>Filipiin kapɛsoo</displayName>
+				<displayName count="zero">baa Filipiin kapɛsoo</displayName>
+				<displayName count="one">Filipiin kapɛsoo</displayName>
+				<displayName count="other">Filipiin kɩpɛsoo</displayName>
+			</currency>
+			<currency type="PKR">
+				<displayName>Pakistan karupii</displayName>
+				<displayName count="zero">baa Pakistan karupii</displayName>
+				<displayName count="one">Pakistan karupii</displayName>
+				<displayName count="other">Pakistan kɩrupii</displayName>
+			</currency>
+			<currency type="PLN">
+				<displayName>Polanɖ kasǝlɔɔtɩ</displayName>
+				<displayName count="zero">baa Polanɖ kasǝlɔɔtɩ</displayName>
+				<displayName count="one">Polanɖ kasǝlɔɔtɩ</displayName>
+				<displayName count="other">Polanɖ kɩsǝlɔɔtɩ</displayName>
+			</currency>
+			<currency type="PYG">
+				<displayName>Paraguwee kaguwarani</displayName>
+				<displayName count="zero">baa Paraguwee kaguwarani</displayName>
+				<displayName count="one">Paraguwee kaguwarani</displayName>
+				<displayName count="other">Paraguwee kɩguwarani</displayName>
+			</currency>
+			<currency type="QAR">
+				<displayName>Kataa kariyal</displayName>
+				<displayName count="zero">baa Kataa kariyal</displayName>
+				<displayName count="one">Kataa kariyal</displayName>
+				<displayName count="other">Kataa kɩriyal</displayName>
+			</currency>
+			<currency type="RON">
+				<displayName>Romanii kalewu</displayName>
+				<displayName count="zero">baa Romanii kalewu</displayName>
+				<displayName count="one">Romanii kalewu</displayName>
+				<displayName count="other">Romanii kɩlewu</displayName>
+			</currency>
+			<currency type="RSD">
+				<displayName>Sɛrbii kaɖinaa</displayName>
+				<displayName count="zero">baa Sɛrbii kaɖinaa</displayName>
+				<displayName count="one">Sɛrbii kaɖinaa</displayName>
+				<displayName count="other">Sɛrbii kɩɖinaa</displayName>
+			</currency>
+			<currency type="RUB">
+				<displayName>Rɔɔshɩya karubǝl</displayName>
+				<displayName count="zero">baa Rɔɔshɩya karubǝl</displayName>
+				<displayName count="one">Rɔɔshɩya karubǝl</displayName>
+				<displayName count="other">Rɔɔshɩya kɩrubǝl</displayName>
+			</currency>
+			<currency type="RWF">
+				<displayName>Rʊwanɖaa kafaraŋ</displayName>
+				<displayName count="zero">baa Rʊwanɖaa kafaraŋ</displayName>
+				<displayName count="one">Rʊwanɖaa kafaraŋ</displayName>
+				<displayName count="other">Rʊwanɖaa kɩfaraŋ</displayName>
+			</currency>
+			<currency type="SAR">
+				<displayName>Sauɖiya kariyal</displayName>
+				<displayName count="zero">baa Sauɖiya kariyal</displayName>
+				<displayName count="one">Sauɖiya kariyal</displayName>
+				<displayName count="other">Sauɖiya kɩriyal</displayName>
+			</currency>
+			<currency type="SBD">
+				<displayName>Salomɔɔn kaBʊtukǝltǝna kaɖala</displayName>
+				<displayName count="zero">baa Salomɔɔn kaBʊtukǝltǝna kaɖala</displayName>
+				<displayName count="one">Salomɔɔn kaBʊtukǝltǝna kaɖala</displayName>
+				<displayName count="other">Salomɔɔn kaBʊtukǝltǝna kɩɖala</displayName>
+			</currency>
+			<currency type="SCR">
+				<displayName>Seshɛl karupii</displayName>
+				<displayName count="zero">baa Seshɛl karupii</displayName>
+				<displayName count="one">Seshɛl karupii</displayName>
+				<displayName count="other">Seshɛl kɩrupii</displayName>
+			</currency>
+			<currency type="SDG">
+				<displayName>Suɖaŋ kapɔŋ</displayName>
+				<displayName count="zero">baa Suɖaŋ kapɔŋ</displayName>
+				<displayName count="one">Suɖaŋ kapɔŋ</displayName>
+				<displayName count="other">Suɖaŋ kɩpɔŋ</displayName>
+			</currency>
+			<currency type="SEK">
+				<displayName>Sʊwɛɖ kakrona</displayName>
+				<displayName count="zero">baa Sʊwɛɖ kakrona</displayName>
+				<displayName count="one">Sʊwɛɖ kakrona</displayName>
+				<displayName count="other">Sʊwɛɖ kɩkrona</displayName>
+			</currency>
+			<currency type="SGD">
+				<displayName>Siŋgapuur kaɖala</displayName>
+				<displayName count="zero">baa Siŋgapuur kaɖala</displayName>
+				<displayName count="one">Siŋgapuur kaɖala</displayName>
+				<displayName count="other">Siŋgapuur kɩɖala</displayName>
+			</currency>
+			<currency type="SHP">
+				<displayName>Sɛŋ Elenaa kapɔŋ</displayName>
+				<displayName count="zero">baa Sɛŋ Elenaa kapɔŋ</displayName>
+				<displayName count="one">Sɛŋ Elenaa kapɔŋ</displayName>
+				<displayName count="other">Sɛŋ Elenaa kɩpɔŋ</displayName>
+			</currency>
+			<currency type="SLE">
+				<displayName>Seraleyɔn kaleyɔn</displayName>
+				<displayName count="zero">baa Seraleyɔn kaleyɔn</displayName>
+				<displayName count="one">Seraleyɔn kaleyɔn</displayName>
+				<displayName count="other">Seraleyɔn kɩleyɔn</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>Seraleyɔn kaleyɔn (1964—2022)</displayName>
+				<displayName count="zero">baa Seraleyɔn kaleyɔn (1964—2022)</displayName>
+				<displayName count="one">Seraleyɔn kaleyɔn (1964—2022)</displayName>
+				<displayName count="other">Seraleyɔn kɩleyɔn (1964—2022)</displayName>
+			</currency>
+			<currency type="SOS">
+				<displayName>Somalii kashílè</displayName>
+				<displayName count="zero">baa Somalii kashílè</displayName>
+				<displayName count="one">Somalii kashílè</displayName>
+				<displayName count="other">Somalii kɩshílè</displayName>
+			</currency>
+			<currency type="SRD">
+				<displayName>Surinam kaɖala</displayName>
+				<displayName count="zero">baa Surinam kaɖala</displayName>
+				<displayName count="one">Surinam kaɖala</displayName>
+				<displayName count="other">Surinam kɩɖala</displayName>
+			</currency>
+			<currency type="SSP">
+				<displayName>Suɖaŋ gʊnyɩsonolaŋ kapɔŋ</displayName>
+				<displayName count="zero">baa Suɖaŋ gʊnyɩsonolaŋ kapɔŋ</displayName>
+				<displayName count="one">Suɖaŋ gʊnyɩsonolaŋ kapɔŋ</displayName>
+				<displayName count="other">Suɖaŋ gʊnyɩsonolaŋ kɩpɔŋ</displayName>
+			</currency>
+			<currency type="STN">
+				<displayName>Saotomee kaɖobra</displayName>
+				<displayName count="zero">baa Saotomee kaɖobra</displayName>
+				<displayName count="one">Saotomee kaɖobra</displayName>
+				<displayName count="other">Saotomee kɩɖobra</displayName>
+			</currency>
+			<currency type="SYP">
+				<displayName>Sirii kapɔŋ</displayName>
+				<displayName count="zero">baa Sirii kapɔŋ</displayName>
+				<displayName count="one">Sirii kapɔŋ</displayName>
+				<displayName count="other">Sirii kɩpɔŋ</displayName>
+			</currency>
+			<currency type="SZL">
+				<displayName>Sʊwasilanɖ kalilaŋgenii</displayName>
+				<displayName count="zero">baa Sʊwasilanɖ kalilaŋgenii</displayName>
+				<displayName count="one">Sʊwasilanɖ kalilaŋgenii</displayName>
+				<displayName count="other">Sʊwasilanɖ kɩlilaŋgenii</displayName>
+			</currency>
+			<currency type="THB">
+				<displayName>Taɩlanɖ kabaatɩ</displayName>
+				<displayName count="zero">baa Taɩlanɖ kabaatɩ</displayName>
+				<displayName count="one">Taɩlanɖ kabaatɩ</displayName>
+				<displayName count="other">Taɩlanɖ kɩbaatɩ</displayName>
+			</currency>
+			<currency type="TJS">
+				<displayName>Tajikistan kasomooni</displayName>
+				<displayName count="zero">baa Tajikistan kasomooni</displayName>
+				<displayName count="one">Tajikistan kasomooni</displayName>
+				<displayName count="other">Tajikistan kɩsomooni</displayName>
+			</currency>
+			<currency type="TMT">
+				<displayName>Turkmenistan kamanaatɩ</displayName>
+				<displayName count="zero">baa Turkmenistan kamanaatɩ</displayName>
+				<displayName count="one">Turkmenistan kamanaatɩ</displayName>
+				<displayName count="other">Turkmenistan kɩmanaatɩ</displayName>
+			</currency>
+			<currency type="TND">
+				<displayName>Tunisii kaɖinaa</displayName>
+				<displayName count="zero">baa Tunisii kaɖinaa</displayName>
+				<displayName count="one">Tunisii kaɖinaa</displayName>
+				<displayName count="other">Tunisii kɩɖinaa</displayName>
+			</currency>
+			<currency type="TOP">
+				<displayName>Tɔŋga kapaŋga</displayName>
+				<displayName count="zero">baa Tɔŋga kapaŋga</displayName>
+				<displayName count="one">Tɔŋga kapaŋga</displayName>
+				<displayName count="other">Tɔŋga kɩpaŋga</displayName>
+			</currency>
+			<currency type="TRY">
+				<displayName>Turkii kalira</displayName>
+				<displayName count="zero">baa Turkii kalira</displayName>
+				<displayName count="one">Turkii kalira</displayName>
+				<displayName count="other">Turkii kɩlira</displayName>
+			</currency>
+			<currency type="TTD">
+				<displayName>Triniɖaaɖ na Tobagoo kaɖala</displayName>
+				<displayName count="zero">baa Triniɖaaɖ na Tobagoo kaɖala</displayName>
+				<displayName count="one">Triniɖaaɖ na Tobagoo kaɖala</displayName>
+				<displayName count="other">Triniɖaaɖ na Tobagoo kɩɖala</displayName>
+			</currency>
+			<currency type="TWD">
+				<displayName>Taɩwan kaɖala afɔlɩ</displayName>
+				<displayName count="zero">baa Taɩwan kaɖala afɔlɩ</displayName>
+				<displayName count="one">Taɩwan kaɖala afɔlɩ</displayName>
+				<displayName count="other">Taɩwan kɩɖala bafɔlɩ</displayName>
+			</currency>
+			<currency type="TZS">
+				<displayName>Taŋsanii kashílè</displayName>
+				<displayName count="zero">baa Taŋsanii kashílè</displayName>
+				<displayName count="one">Taŋsanii kashílè</displayName>
+				<displayName count="other">Taŋsanii kɩshílè</displayName>
+			</currency>
+			<currency type="UAH">
+				<displayName>Ikrɛɛn karifniya</displayName>
+				<displayName count="zero">baa Ikrɛɛn karifniya</displayName>
+				<displayName count="one">Ikrɛɛn karifniya</displayName>
+				<displayName count="other">Ikrɛɛn kɩrifniya</displayName>
+			</currency>
+			<currency type="UGX">
+				<displayName>Uganɖaa kashílè</displayName>
+				<displayName count="zero">baa Uganɖaa kashílè</displayName>
+				<displayName count="one">Uganɖaa kashílè</displayName>
+				<displayName count="other">Uganɖaa kɩshílè</displayName>
+			</currency>
+			<currency type="USD">
+				<displayName>Amalɩka kaɖala</displayName>
+				<displayName count="zero">baa Amalɩka kaɖala</displayName>
+				<displayName count="one">Amalɩka kaɖala</displayName>
+				<displayName count="other">Amalɩka kɩɖala</displayName>
+			</currency>
+			<currency type="UYU">
+				<displayName>Uruguwee kapɛsoo</displayName>
+				<displayName count="zero">baa Uruguwee kapɛsoo</displayName>
+				<displayName count="one">Uruguwee kapɛsoo</displayName>
+				<displayName count="other">Uruguwee kɩpɛsoo</displayName>
+			</currency>
+			<currency type="UZS">
+				<displayName>Usbeekistan kasɔm</displayName>
+				<displayName count="zero">baa Usbeekistan kasɔm</displayName>
+				<displayName count="one">Usbeekistan kasɔm</displayName>
+				<displayName count="other">Usbeekistan kɩsɔm</displayName>
+			</currency>
+			<currency type="VES">
+				<displayName>Fenesuwelaa kabolifar</displayName>
+				<displayName count="zero">baa Fenesuwelaa kabolifar</displayName>
+				<displayName count="one">Fenesuwelaa kabolifar</displayName>
+				<displayName count="other">Fenesuwelaa kɩbolifar</displayName>
+			</currency>
+			<currency type="VND">
+				<displayName>Fɛtnam kaɖɔŋgɩ</displayName>
+				<displayName count="zero">baa Fɛtnam kaɖɔŋgɩ</displayName>
+				<displayName count="one">Fɛtnam kaɖɔŋgɩ</displayName>
+				<displayName count="other">Fɛtnam kɩɖɔŋgɩ</displayName>
+			</currency>
+			<currency type="VUV">
+				<displayName>Fanuwatu kafatu</displayName>
+				<displayName count="zero">baa Fanuwatu kafatu</displayName>
+				<displayName count="one">Fanuwatu kafatu</displayName>
+				<displayName count="other">Fanuwatu kɩfatu</displayName>
+			</currency>
+			<currency type="WST">
+				<displayName>Samowa katala</displayName>
+				<displayName count="zero">baa Samowa katala</displayName>
+				<displayName count="one">Samowa katala</displayName>
+				<displayName count="other">Samowa kɩtala</displayName>
+			</currency>
+			<currency type="XAF">
+				<displayName>Garɩɖontǝna gɩcɩɩca kasɛɛfa</displayName>
+				<displayName count="zero">baa Garɩɖontǝna gɩcɩɩca kasɛɛfa</displayName>
+				<displayName count="one">Garɩɖontǝna gɩcɩɩca kasɛɛfa</displayName>
+				<displayName count="other">Garɩɖontǝna gɩcɩɩca kɩsɛɛfa</displayName>
+			</currency>
+			<currency type="XCD">
+				<displayName>Karayiib gajakalaŋ kaɖala</displayName>
+				<displayName count="zero">baa Karayiib gajakalaŋ kaɖala</displayName>
+				<displayName count="one">Karayiib gajakalaŋ kaɖala</displayName>
+				<displayName count="other">Karayiib gajakalaŋ kɩɖala</displayName>
+			</currency>
+			<currency type="XOF">
+				<displayName>Garɩɖontǝna gɩteŋshilelaŋ kasɛɛfa</displayName>
+				<displayName count="zero">baa Garɩɖontǝna gɩteŋshilelaŋ kasɛɛfa</displayName>
+				<displayName count="one">Garɩɖontǝna gɩteŋshilelaŋ kasɛɛfa</displayName>
+				<displayName count="other">Garɩɖontǝna gɩteŋshilelaŋ kɩsɛɛfa</displayName>
+			</currency>
+			<currency type="XPF">
+				<displayName>Polinesiya Gafɔntǝna kaja kafaraŋ</displayName>
+				<displayName count="zero">baa Polinesiya Gafɔntǝna kaja kafaraŋ</displayName>
+				<displayName count="one">Polinesiya Gafɔntǝna kaja kafaraŋ</displayName>
+				<displayName count="other">Polinesiya Gafɔntǝna kaja kɩfaraŋ</displayName>
+			</currency>
+			<currency type="XXX">
+				<displayName>gɩtanɩɩ kʊyɔʊ ʊ mana ma</displayName>
+				<displayName count="zero">baa gɩtanɩɩ kʊyɔʊ ʊ mana ma</displayName>
+				<displayName count="one">gɩtanɩɩ kʊyɔʊ ʊ mana ma</displayName>
+				<displayName count="other">ɩtanɩɩ kʊyɔʊ ʊ mana ma</displayName>
+			</currency>
+			<currency type="YER">
+				<displayName>Yemɛn kariyal</displayName>
+				<displayName count="zero">baa Yemɛn kariyal</displayName>
+				<displayName count="one">Yemɛn kariyal</displayName>
+				<displayName count="other">Yemɛn kɩriyal</displayName>
+			</currency>
+			<currency type="ZAR">
+				<displayName>Sautafrika karanɖɩ</displayName>
+				<displayName count="zero">baa Sautafrika karanɖɩ</displayName>
+				<displayName count="one">Sautafrika karanɖɩ</displayName>
+				<displayName count="other">Sautafrika kɩranɖɩ</displayName>
+			</currency>
+			<currency type="ZMW">
+				<displayName>Sambii kakʊwaasha</displayName>
+				<displayName count="zero">baa Sambii kakʊwaasha</displayName>
+				<displayName count="one">Sambii kakʊwaasha</displayName>
+				<displayName count="other">Sambii kɩkʊwaasha</displayName>
+			</currency>
+		</currencies>
+		<minimalPairs>
+			<pluralMinimalPairs count="zero" draft="contributed">baa ʊshilé {0}</pluralMinimalPairs>
+			<pluralMinimalPairs count="one" draft="contributed">ʊshilé {0}</pluralMinimalPairs>
+			<pluralMinimalPairs count="other" draft="contributed">ɩshilé {0}</pluralMinimalPairs>
+			<ordinalMinimalPairs ordinal="other">Tɔ̂ɔ n’ʊnyɩŋca {0}ja na gʊnyɩsono.</ordinalMinimalPairs>
+		</minimalPairs>
+	</numbers>
+	<units>
+		<unitLength type="long">
+			<compoundUnit type="per">
+				<compoundUnitPattern>{0} {1} nɩ</compoundUnitPattern>
+			</compoundUnit>
+			<coordinateUnit>
+				<coordinateUnitPattern type="east">{0} gajakalaŋ</coordinateUnitPattern>
+				<coordinateUnitPattern type="north">{0} gʊnyɩpɛnɛlaŋ</coordinateUnitPattern>
+				<coordinateUnitPattern type="south">{0} gʊnyɩsonolaŋ</coordinateUnitPattern>
+				<coordinateUnitPattern type="west">{0} gɩteŋshilelaŋ</coordinateUnitPattern>
+			</coordinateUnit>
+		</unitLength>
+		<unitLength type="short">
+			<coordinateUnit>
+				<displayName>ʊtǝŋu</displayName>
+				<coordinateUnitPattern type="east">{0} gjl</coordinateUnitPattern>
+				<coordinateUnitPattern type="north">{0} gpl</coordinateUnitPattern>
+				<coordinateUnitPattern type="south">{0} gsl</coordinateUnitPattern>
+				<coordinateUnitPattern type="west">{0} gshl</coordinateUnitPattern>
+			</coordinateUnit>
+		</unitLength>
+	</units>
+	<listPatterns>
+		<listPattern>
+			<listPatternPart type="end">{0} na {1}</listPatternPart>
+			<listPatternPart type="2">{0} na {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or">
+			<listPatternPart type="end">{0} koo {1}</listPatternPart>
+			<listPatternPart type="2">{0} koo {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="standard-short">
+			<listPatternPart type="end">{0} &amp; {1}</listPatternPart>
+			<listPatternPart type="2">{0} &amp; {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="unit-narrow">
+			<listPatternPart type="end">{0}, {1}</listPatternPart>
+			<listPatternPart type="2">{0}, {1}</listPatternPart>
+		</listPattern>
+	</listPatterns>
+</ldml>

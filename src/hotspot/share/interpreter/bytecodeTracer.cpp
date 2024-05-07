@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,9 @@
 #include "oops/constantPool.inline.hpp"
 #include "oops/methodData.hpp"
 #include "oops/method.hpp"
+#include "oops/resolvedFieldEntry.hpp"
 #include "oops/resolvedIndyEntry.hpp"
+#include "oops/resolvedMethodEntry.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/osThread.hpp"
@@ -190,10 +192,13 @@ void BytecodeTracer::print_method_codes(const methodHandle& method, int from, in
   BytecodeStream s(method);
   s.set_interval(from, to);
 
-  ttyLocker ttyl;  // keep the following output coherent
+  // Keep output to st coherent: collect all lines and print at once.
+  ResourceMark rm;
+  stringStream ss;
   while (s.next() >= 0) {
-    method_printer.trace(method, s.bcp(), st);
+    method_printer.trace(method, s.bcp(), &ss);
   }
+  st->print("%s", ss.as_string());
 }
 
 void BytecodePrinter::print_constant(int cp_index, outputStream* st) {
@@ -323,13 +328,6 @@ void BytecodePrinter::print_bsm(int cp_index, outputStream* st) {
     }
   }
   st->print_cr("  }");
-}
-
-void BytecodePrinter::print_cpcache_entry(int cpc_index, outputStream* st) {
-  ConstantPool* constants = method()->constants();
-  ConstantPoolCacheEntry* cpce = constants->cache()->entry_at(cpc_index);
-  st->print("  ConstantPoolCacheEntry: ");
-  cpce->print(st, cpc_index, constants->cache());
 }
 
 void BytecodePrinter::print_attributes(int bci, outputStream* st) {
@@ -501,8 +499,8 @@ void BytecodePrinter::print_attributes(int bci, outputStream* st) {
       {
         int cp_index;
         if (is_linked()) {
-          int cpcache_index = get_native_index_u2();
-          cp_index = cpcache()->entry_at(cpcache_index)->constant_pool_index();
+          int field_index = get_native_index_u2();
+          cp_index = cpcache()->resolved_field_entry_at(field_index)->constant_pool_index();
         } else {
           cp_index = get_Java_index_u2();
         }
@@ -515,20 +513,24 @@ void BytecodePrinter::print_attributes(int bci, outputStream* st) {
     case Bytecodes::_invokestatic:
       {
         int cp_index;
-        int cpcache_index;
         if (is_linked()) {
-          cpcache_index = get_native_index_u2();
-          cp_index = cpcache()->entry_at(cpcache_index)->constant_pool_index();
+          int method_index = get_native_index_u2();
+          ResolvedMethodEntry* method_entry = cpcache()->resolved_method_entry_at(method_index);
+          cp_index = method_entry->constant_pool_index();
+          print_field_or_method(cp_index, st);
+
+          if (raw_code() == Bytecodes::_invokehandle &&
+              ClassPrinter::has_mode(_flags, ClassPrinter::PRINT_METHOD_HANDLE)) {
+            assert(is_linked(), "invokehandle is only in rewritten methods");
+            method_entry->print_on(st);
+            if (method_entry->has_appendix()) {
+              st->print("  appendix: ");
+              constants()->resolved_reference_from_method(method_index)->print_on(st);
+            }
+          }
         } else {
-          cpcache_index = -1;
           cp_index = get_Java_index_u2();
-        }
-        print_field_or_method(cp_index, st);
-        if (raw_code() == Bytecodes::_invokehandle &&
-            ClassPrinter::has_mode(_flags, ClassPrinter::PRINT_METHOD_HANDLE)) {
-          assert(is_linked(), "invokehandle is only in rewritten methods");
-          assert(cpcache_index >= 0, "must be");
-          print_cpcache_entry(cpcache_index, st);
+          print_field_or_method(cp_index, st);
         }
       }
       break;
@@ -537,8 +539,8 @@ void BytecodePrinter::print_attributes(int bci, outputStream* st) {
       {
         int cp_index;
         if (is_linked()) {
-          int cpcache_index = get_native_index_u2();
-          cp_index = cpcache()->entry_at(cpcache_index)->constant_pool_index();
+          int method_index = get_native_index_u2();
+          cp_index = cpcache()->resolved_method_entry_at(method_index)->constant_pool_index();
         } else {
           cp_index = get_Java_index_u2();
         }
@@ -553,8 +555,7 @@ void BytecodePrinter::print_attributes(int bci, outputStream* st) {
         int indy_index;
         int cp_index;
         if (is_linked()) {
-          int i = get_native_index_u4();
-          indy_index = ConstantPool::decode_invokedynamic_index(i);
+          indy_index = get_native_index_u4();
           cp_index = constants()->resolved_indy_entry_at(indy_index)->constant_pool_index();
         } else {
           indy_index = -1;
@@ -590,6 +591,10 @@ void BytecodePrinter::print_attributes(int bci, outputStream* st) {
 void BytecodePrinter::bytecode_epilog(int bci, outputStream* st) {
   MethodData* mdo = method()->method_data();
   if (mdo != nullptr) {
+
+    // Lock to read ProfileData, and ensure lock is not broken by a safepoint
+    MutexLocker ml(mdo->extra_data_lock(), Mutex::_no_safepoint_check_flag);
+
     ProfileData* data = mdo->bci_to_data(bci);
     if (data != nullptr) {
       st->print("  %d ", mdo->dp_to_di(data->dp()));

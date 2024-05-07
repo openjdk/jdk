@@ -22,7 +22,6 @@ package com.sun.org.apache.xerces.internal.jaxp;
 
 import com.sun.org.apache.xerces.internal.parsers.DOMParser;
 import com.sun.org.apache.xerces.internal.util.SAXMessageFormatter;
-import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
 import com.sun.org.apache.xerces.internal.utils.XMLSecurityPropertyManager;
 import java.util.HashMap;
 import java.util.Map;
@@ -32,6 +31,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.validation.Schema;
 import jdk.xml.internal.JdkProperty;
+import jdk.xml.internal.XMLSecurityManager;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXNotRecognizedException;
 import org.xml.sax.SAXNotSupportedException;
@@ -39,7 +39,7 @@ import org.xml.sax.SAXNotSupportedException;
 /**
  * @author Rajiv Mordani
  * @author Edwin Goei
- * @LastModified: Mar 2023
+ * @LastModified: July 2023
  */
 public class DocumentBuilderFactoryImpl extends DocumentBuilderFactory {
     /** These are DocumentBuilderFactory attributes not DOM attributes */
@@ -79,6 +79,8 @@ public class DocumentBuilderFactoryImpl extends DocumentBuilderFactory {
         }
 
         try {
+            // read system properties for compatibility
+            fSecurityManager.readSystemProperties();
             return new DocumentBuilderImpl(this, attributes, features, fSecureProcess);
         } catch (SAXException se) {
             // Handles both SAXNotSupportedException, SAXNotRecognizedException
@@ -232,6 +234,7 @@ public class DocumentBuilderFactoryImpl extends DocumentBuilderFactory {
                         "jaxp-secureprocessing-feature", null));
             }
             fSecureProcess = value;
+            fSecurityManager.setSecureProcessing(fSecureProcess);
             features.put(name, value ? Boolean.TRUE : Boolean.FALSE);
             return;
         }

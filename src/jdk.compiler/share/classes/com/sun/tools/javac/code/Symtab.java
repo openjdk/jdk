@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -163,6 +163,7 @@ public class Symtab {
      */
     public final Type objectType;
     public final Type objectMethodsType;
+    public final Type exactConversionsSupportType;
     public final Type objectsType;
     public final Type classType;
     public final Type classLoaderType;
@@ -220,6 +221,7 @@ public class Symtab {
     public final Type functionalInterfaceType;
     public final Type previewFeatureType;
     public final Type previewFeatureInternalType;
+    public final Type restrictedType;
     public final Type typeDescriptorType;
     public final Type recordType;
     public final Type switchBootstrapsType;
@@ -235,13 +237,10 @@ public class Symtab {
     public final Type objectOutputStreamType;
     public final Type ioExceptionType;
     public final Type objectStreamExceptionType;
+    // For externalization lint checking
     public final Type externalizableType;
-
-    // For string templates
-    public final Type stringTemplateType;
-    public final Type templateRuntimeType;
-    public final Type processorType;
-    public final Type linkageType;
+    public final Type objectInputType;
+    public final Type objectOutputType;
 
     /** The symbol representing the length field of an array.
      */
@@ -541,6 +540,7 @@ public class Symtab {
         // Enter predefined classes. All are assumed to be in the java.base module.
         objectType = enterClass("java.lang.Object");
         objectMethodsType = enterClass("java.lang.runtime.ObjectMethods");
+        exactConversionsSupportType = enterClass("java.lang.runtime.ExactConversionsSupport");
         objectsType = enterClass("java.util.Objects");
         classType = enterClass("java.lang.Class");
         stringType = enterClass("java.lang.String");
@@ -607,6 +607,7 @@ public class Symtab {
         functionalInterfaceType = enterClass("java.lang.FunctionalInterface");
         previewFeatureType = enterClass("jdk.internal.javac.PreviewFeature");
         previewFeatureInternalType = enterSyntheticAnnotation("jdk.internal.PreviewFeature+Annotation");
+        restrictedType = enterClass("jdk.internal.javac.Restricted");
         typeDescriptorType = enterClass("java.lang.invoke.TypeDescriptor");
         recordType = enterClass("java.lang.Record");
         switchBootstrapsType = enterClass("java.lang.runtime.SwitchBootstraps");
@@ -622,6 +623,8 @@ public class Symtab {
         ioExceptionType = enterClass("java.io.IOException");
         objectStreamExceptionType = enterClass("java.io.ObjectStreamException");
         externalizableType = enterClass("java.io.Externalizable");
+        objectInputType  = enterClass("java.io.ObjectInput");
+        objectOutputType = enterClass("java.io.ObjectOutput");
         synthesizeEmptyInterfaceIfMissing(autoCloseableType);
         synthesizeEmptyInterfaceIfMissing(cloneableType);
         synthesizeEmptyInterfaceIfMissing(serializableType);
@@ -631,12 +634,6 @@ public class Symtab {
         synthesizeBoxTypeIfMissing(doubleType);
         synthesizeBoxTypeIfMissing(floatType);
         synthesizeBoxTypeIfMissing(voidType);
-
-        // For string templates
-        stringTemplateType = enterClass("java.lang.StringTemplate");
-        templateRuntimeType = enterClass("java.lang.runtime.TemplateRuntime");
-        processorType = enterClass("java.lang.StringTemplate$Processor");
-        linkageType = enterClass("java.lang.StringTemplate$Processor$Linkage");
 
         // Enter a synthetic class that is used to mark internal
         // proprietary classes in ct.sym.  This class does not have a

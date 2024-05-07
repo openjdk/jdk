@@ -31,14 +31,20 @@ class JVMCIEnv;
 
 #define JVMCIENV __jvmci_env__
 #define JVMCI_TRAPS  JVMCIEnv* JVMCIENV
+#define PEER_JVMCIENV __peer_jvmci_env__
 
-#define JNI_JVMCIENV(thread, env)                                     \
+#define JVMCIENV_FROM_JNI(thread, env)                                     \
   JVMCIEnv __stack_jvmci_env__(thread, env, __FILE__, __LINE__);      \
   JVMCIEnv* JVMCIENV = &__stack_jvmci_env__
 
-#define THREAD_JVMCIENV(thread)                               \
+#define JVMCIENV_FROM_THREAD(thread)                               \
   JVMCIEnv __stack_jvmci_env__(thread, __FILE__, __LINE__);   \
   JVMCIEnv* JVMCIENV = &__stack_jvmci_env__
+
+#define PEER_JVMCIENV_FROM_THREAD(thread, is_hotspot)                  \
+  JVMCIEnv __peer_stack_jvmci_env__(thread, is_hotspot, __FILE__, __LINE__);   \
+  JVMCIEnv* PEER_JVMCIENV = &__peer_stack_jvmci_env__
+
 
 #define JVMCI_PENDING_EXCEPTION                        (JVMCIENV->pending_exception())
 #define JVMCI_HAS_PENDING_EXCEPTION                    (JVMCIENV->has_pending_exception())

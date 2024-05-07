@@ -40,6 +40,7 @@ import sun.jvm.hotspot.types.Type;
 import sun.jvm.hotspot.types.TypeDataBase;
 import sun.jvm.hotspot.types.WrongTypeException;
 import sun.jvm.hotspot.utilities.Assert;
+import sun.jvm.hotspot.utilities.U1Array;
 
 // A Method represents a Java method
 
@@ -375,5 +376,21 @@ public class Method extends Metadata {
     return getMethodHolder().getName().asString() + " " +
       OopUtilities.escapeString(getName().asString()) + " " +
       getSignature().asString();
+  }
+
+  public U1Array getAnnotations() {
+    return getConstMethod().getMethodAnnotations();
+  }
+
+  public U1Array getParameterAnnotations() {
+    return getConstMethod().getParameterAnnotations();
+  }
+
+  public U1Array getTypeAnnotations() {
+    return getConstMethod().getTypeAnnotations();
+  }
+
+  public U1Array getAnnotationDefault() {
+    return getConstMethod().getDefaultAnnotations();
   }
 }

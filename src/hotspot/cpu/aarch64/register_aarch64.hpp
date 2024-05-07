@@ -27,6 +27,7 @@
 #define CPU_AARCH64_REGISTER_AARCH64_HPP
 
 #include "asm/register.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 class VMRegImpl;
@@ -401,5 +402,8 @@ inline FloatRegister AbstractRegSet<FloatRegister>::first() {
 inline Register as_Register(FloatRegister reg) {
   return as_Register(reg->encoding());
 }
+
+// High-level register class of an OptoReg or a VMReg register.
+enum RC { rc_bad, rc_int, rc_float, rc_predicate, rc_stack };
 
 #endif // CPU_AARCH64_REGISTER_AARCH64_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @library /java/text/testlib
  * @summary test G7 Collation
  * @modules jdk.localedata
+ * @run junit G7Test
  */
 /*
  *
@@ -54,13 +55,13 @@ import java.text.Collator;
 import java.text.RuleBasedCollator;
 import java.util.Locale;
 
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.fail;
+
 // G7 test program for printing out test results
 
-public class G7Test extends CollatorTest {
-
-    public static void main(String[] args) throws Exception {
-        new G7Test().run(args);
-    }
+public class G7Test {
 
     private static final String testCases[] = {
         "black-birds",              // 0
@@ -158,6 +159,7 @@ public class G7Test extends CollatorTest {
          2,  3,  4,  5, 20,  6,  8, 10,  7, 29
     };
 
+    @Test
     public void TestG7Data() {
         for (int i = 0; i < locales.length; i++) {
             Collator myCollation= null;
@@ -167,14 +169,14 @@ public class G7Test extends CollatorTest {
                 myCollation = Collator.getInstance(locales[i]);
                 tblColl1 = new RuleBasedCollator(((RuleBasedCollator)myCollation).getRules());
             } catch (Exception foo) {
-                errln("Exception: " + foo.getMessage() +
+                fail("Exception: " + foo.getMessage() +
                       " Locale : " + locales[i].getDisplayName() +
                       " getRules failed\n");
                 continue;
             }
             for (int j = 0; j < FIXEDTESTSET; j++) {
                 for (int n = j+1; n < FIXEDTESTSET; n++) {
-                    doTest(tblColl1, testCases[G7Results[i][j]],
+                    TestUtils.doCollatorTest(tblColl1, testCases[G7Results[i][j]],
                            testCases[G7Results[i][n]], -1);
                 }
             }
@@ -185,6 +187,7 @@ public class G7Test extends CollatorTest {
     /*
      * Demo Test 1 : Create a new table collation with rules "& Z < p, P"
      */
+    @Test
     public void TestDemoTest1() {
         int j = 0;
         final Collator myCollation = Collator.getInstance(Locale.US);
@@ -196,13 +199,13 @@ public class G7Test extends CollatorTest {
             tblColl = new RuleBasedCollator(newRules);
             for (j = 0; j < FIXEDTESTSET; j++) {
                 for (int n = j+1; n < FIXEDTESTSET; n++) {
-                    doTest(tblColl, testCases[Test1Results[j]],
+                    TestUtils.doCollatorTest(tblColl, testCases[Test1Results[j]],
                            testCases[Test1Results[n]], -1);
                 }
             }
             tblColl = null;
         } catch (Exception foo) {
-            errln("Exception: " + foo.getMessage() +
+            fail("Exception: " + foo.getMessage() +
                   "\nDemo Test 1 Table Collation object creation failed.");
         }
     }
@@ -211,6 +214,7 @@ public class G7Test extends CollatorTest {
      * Demo Test 2 : Create a new table collation with rules
      *     "& C < ch , cH, Ch, CH"
      */
+    @Test
     public void TestDemoTest2() {
         final Collator myCollation = Collator.getInstance(Locale.US);
         final String defRules = ((RuleBasedCollator)myCollation).getRules();
@@ -220,12 +224,12 @@ public class G7Test extends CollatorTest {
             RuleBasedCollator tblColl = new RuleBasedCollator(newRules);
             for (int j = 0; j < TOTALTESTSET; j++) {
                 for (int n = j+1; n < TOTALTESTSET; n++) {
-                    doTest(tblColl, testCases[Test2Results[j]],
+                    TestUtils.doCollatorTest(tblColl, testCases[Test2Results[j]],
                            testCases[Test2Results[n]], -1);
                 }
             }
         } catch (Exception foo) {
-            errln("Exception: " + foo.getMessage() +
+            fail("Exception: " + foo.getMessage() +
                   "\nDemo Test 2 Table Collation object creation failed.\n");
         }
     }
@@ -234,6 +238,7 @@ public class G7Test extends CollatorTest {
      * Demo Test 3 : Create a new table collation with rules
      *     "& Question'-'mark ; '?' & Hash'-'mark ; '#' & Ampersand ; '&'"
      */
+    @Test
     public void TestDemoTest3() {
         final Collator myCollation = Collator.getInstance(Locale.US);
         final String defRules = ((RuleBasedCollator)myCollation).getRules();
@@ -244,12 +249,12 @@ public class G7Test extends CollatorTest {
             tblColl = new RuleBasedCollator(newRules);
             for (int j = 0; j < TOTALTESTSET; j++) {
                 for (int n = j+1; n < TOTALTESTSET; n++) {
-                    doTest(tblColl, testCases[Test3Results[j]],
+                    TestUtils.doCollatorTest(tblColl, testCases[Test3Results[j]],
                            testCases[Test3Results[n]], -1);
                 }
             }
         } catch (Exception foo) {
-            errln("Exception: " + foo.getMessage() +
+            fail("Exception: " + foo.getMessage() +
                   "\nDemo Test 3 Table Collation object creation failed.");
         }
     }
@@ -258,6 +263,7 @@ public class G7Test extends CollatorTest {
      * Demo Test 4 : Create a new table collation with rules
      *     " & aa ; a'-' & ee ; e'-' & ii ; i'-' & oo ; o'-' & uu ; u'-' "
      */
+    @Test
     public void TestDemoTest4() {
         final Collator myCollation = Collator.getInstance(Locale.US);
         final String defRules = ((RuleBasedCollator)myCollation).getRules();
@@ -268,12 +274,12 @@ public class G7Test extends CollatorTest {
             tblColl = new RuleBasedCollator(newRules);
             for (int j = 0; j < TOTALTESTSET; j++) {
                 for (int n = j+1; n < TOTALTESTSET; n++) {
-                    doTest(tblColl, testCases[Test4Results[j]],
+                    TestUtils.doCollatorTest(tblColl, testCases[Test4Results[j]],
                            testCases[Test4Results[n]], -1);
                 }
             }
         } catch (Exception foo) {
-            errln("Exception: " + foo.getMessage() +
+            fail("Exception: " + foo.getMessage() +
                   "\nDemo Test 4 Table Collation object creation failed.");
         }
         tblColl = null;

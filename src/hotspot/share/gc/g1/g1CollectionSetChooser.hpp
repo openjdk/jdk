@@ -25,7 +25,7 @@
 #ifndef SHARE_GC_G1_G1COLLECTIONSETCHOOSER_HPP
 #define SHARE_GC_G1_G1COLLECTIONSETCHOOSER_HPP
 
-#include "gc/g1/heapRegion.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "memory/allStatic.hpp"
 #include "runtime/globals.hpp"
@@ -46,12 +46,6 @@ public:
   static bool region_occupancy_low_enough_for_evac(size_t live_bytes) {
     return live_bytes < mixed_gc_live_threshold_bytes();
   }
-
-  // Determine whether to add the given region to the collection set candidates or
-  // not. Currently, we skip regions that we will never move during young gc, and
-  // regions which liveness is over the occupancy threshold.
-  // Regions also need a complete remembered set to be a candidate.
-  static bool should_add(HeapRegion* hr);
 
   // Build and return set of collection set candidates sorted by decreasing gc
   // efficiency.

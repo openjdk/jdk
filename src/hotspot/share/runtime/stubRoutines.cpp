@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #include "asm/macroAssembler.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/access.inline.hpp"
+#include "oops/klass.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/vectorSupport.hpp"
 #include "runtime/continuation.hpp"
@@ -40,10 +41,10 @@
 #include "opto/runtime.hpp"
 #endif
 
-UnsafeCopyMemory* UnsafeCopyMemory::_table                      = nullptr;
-int UnsafeCopyMemory::_table_length                             = 0;
-int UnsafeCopyMemory::_table_max_length                         = 0;
-address UnsafeCopyMemory::_common_exit_stub_pc                  = nullptr;
+UnsafeMemoryAccess* UnsafeMemoryAccess::_table                  = nullptr;
+int UnsafeMemoryAccess::_table_length                           = 0;
+int UnsafeMemoryAccess::_table_max_length                       = 0;
+address UnsafeMemoryAccess::_common_exit_stub_pc                = nullptr;
 
 // Implementation of StubRoutines - for a description
 // of how to extend it, see the header file.
@@ -108,6 +109,8 @@ address StubRoutines::_checkcast_arraycopy               = nullptr;
 address StubRoutines::_checkcast_arraycopy_uninit        = nullptr;
 address StubRoutines::_unsafe_arraycopy                  = nullptr;
 address StubRoutines::_generic_arraycopy                 = nullptr;
+
+address StubRoutines::_unsafe_setmemory                  = nullptr;
 
 address StubRoutines::_jbyte_fill;
 address StubRoutines::_jshort_fill;
@@ -176,12 +179,24 @@ address StubRoutines::_hf2f = nullptr;
 address StubRoutines::_vector_f_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_SVML_OP] = {{nullptr}, {nullptr}};
 address StubRoutines::_vector_d_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_SVML_OP] = {{nullptr}, {nullptr}};
 
+address StubRoutines::_method_entry_barrier = nullptr;
+address StubRoutines::_array_sort = nullptr;
+address StubRoutines::_array_partition  = nullptr;
+
 address StubRoutines::_cont_thaw          = nullptr;
 address StubRoutines::_cont_returnBarrier = nullptr;
 address StubRoutines::_cont_returnBarrierExc = nullptr;
 
 JFR_ONLY(RuntimeStub* StubRoutines::_jfr_write_checkpoint_stub = nullptr;)
 JFR_ONLY(address StubRoutines::_jfr_write_checkpoint = nullptr;)
+JFR_ONLY(RuntimeStub* StubRoutines::_jfr_return_lease_stub = nullptr;)
+JFR_ONLY(address StubRoutines::_jfr_return_lease = nullptr;)
+
+address StubRoutines::_upcall_stub_exception_handler = nullptr;
+
+address StubRoutines::_lookup_secondary_supers_table_slow_path_stub = nullptr;
+address StubRoutines::_lookup_secondary_supers_table_stubs[Klass::SECONDARY_SUPERS_TABLE_SIZE] = { nullptr };
+
 
 // Initialization
 //
@@ -191,14 +206,14 @@ JFR_ONLY(address StubRoutines::_jfr_write_checkpoint = nullptr;)
 
 extern void StubGenerator_generate(CodeBuffer* code, StubCodeGenerator::StubsKind kind); // only interface to generators
 
-void UnsafeCopyMemory::create_table(int max_size) {
-  UnsafeCopyMemory::_table = new UnsafeCopyMemory[max_size];
-  UnsafeCopyMemory::_table_max_length = max_size;
+void UnsafeMemoryAccess::create_table(int max_size) {
+  UnsafeMemoryAccess::_table = new UnsafeMemoryAccess[max_size];
+  UnsafeMemoryAccess::_table_max_length = max_size;
 }
 
-bool UnsafeCopyMemory::contains_pc(address pc) {
-  for (int i = 0; i < UnsafeCopyMemory::_table_length; i++) {
-    UnsafeCopyMemory* entry = &UnsafeCopyMemory::_table[i];
+bool UnsafeMemoryAccess::contains_pc(address pc) {
+  for (int i = 0; i < UnsafeMemoryAccess::_table_length; i++) {
+    UnsafeMemoryAccess* entry = &UnsafeMemoryAccess::_table[i];
     if (pc >= entry->start_pc() && pc < entry->end_pc()) {
       return true;
     }
@@ -206,9 +221,9 @@ bool UnsafeCopyMemory::contains_pc(address pc) {
   return false;
 }
 
-address UnsafeCopyMemory::page_error_continue_pc(address pc) {
-  for (int i = 0; i < UnsafeCopyMemory::_table_length; i++) {
-    UnsafeCopyMemory* entry = &UnsafeCopyMemory::_table[i];
+address UnsafeMemoryAccess::page_error_continue_pc(address pc) {
+  for (int i = 0; i < UnsafeMemoryAccess::_table_length; i++) {
+    UnsafeMemoryAccess* entry = &UnsafeMemoryAccess::_table[i];
     if (pc >= entry->start_pc() && pc < entry->end_pc()) {
       return entry->error_exit_pc();
     }
@@ -276,43 +291,6 @@ void StubRoutines::initialize_compiler_stubs() {
   }
 }
 
-#ifdef ASSERT
-typedef void (*arraycopy_fn)(address src, address dst, int count);
-
-// simple tests of generated arraycopy functions
-static void test_arraycopy_func(address func, int alignment) {
-  int v = 0xcc;
-  int v2 = 0x11;
-  jlong lbuffer[8];
-  jlong lbuffer2[8];
-  address fbuffer  = (address) lbuffer;
-  address fbuffer2 = (address) lbuffer2;
-  unsigned int i;
-  for (i = 0; i < sizeof(lbuffer); i++) {
-    fbuffer[i] = v; fbuffer2[i] = v2;
-  }
-  // C++ does not guarantee jlong[] array alignment to 8 bytes.
-  // Use middle of array to check that memory before it is not modified.
-  address buffer  = align_up((address)&lbuffer[4], BytesPerLong);
-  address buffer2 = align_up((address)&lbuffer2[4], BytesPerLong);
-  // do an aligned copy
-  ((arraycopy_fn)func)(buffer, buffer2, 0);
-  for (i = 0; i < sizeof(lbuffer); i++) {
-    assert(fbuffer[i] == v && fbuffer2[i] == v2, "shouldn't have copied anything");
-  }
-  // adjust destination alignment
-  ((arraycopy_fn)func)(buffer, buffer2 + alignment, 0);
-  for (i = 0; i < sizeof(lbuffer); i++) {
-    assert(fbuffer[i] == v && fbuffer2[i] == v2, "shouldn't have copied anything");
-  }
-  // adjust source alignment
-  ((arraycopy_fn)func)(buffer + alignment, buffer2, 0);
-  for (i = 0; i < sizeof(lbuffer); i++) {
-    assert(fbuffer[i] == v && fbuffer2[i] == v2, "shouldn't have copied anything");
-  }
-}
-#endif // ASSERT
-
 void StubRoutines::initialize_final_stubs() {
   if (_final_stubs_code == nullptr) {
     _final_stubs_code = initialize_stubs(StubCodeGenerator::Final_stubs,
@@ -321,89 +299,7 @@ void StubRoutines::initialize_final_stubs() {
                                          "StubRoutines (final stubs)",
                                          "_final_stubs_code_size");
   }
-
-#ifdef ASSERT
-
-  MACOS_AARCH64_ONLY(os::current_thread_enable_wx(WXExec));
-
-#define TEST_ARRAYCOPY(type)                                                    \
-  test_arraycopy_func(          type##_arraycopy(),          sizeof(type));     \
-  test_arraycopy_func(          type##_disjoint_arraycopy(), sizeof(type));     \
-  test_arraycopy_func(arrayof_##type##_arraycopy(),          sizeof(HeapWord)); \
-  test_arraycopy_func(arrayof_##type##_disjoint_arraycopy(), sizeof(HeapWord))
-
-  // Make sure all the arraycopy stubs properly handle zero count
-  TEST_ARRAYCOPY(jbyte);
-  TEST_ARRAYCOPY(jshort);
-  TEST_ARRAYCOPY(jint);
-  TEST_ARRAYCOPY(jlong);
-
-#undef TEST_ARRAYCOPY
-
-#define TEST_FILL(type)                                                                      \
-  if (_##type##_fill != nullptr) {                                                              \
-    union {                                                                                  \
-      double d;                                                                              \
-      type body[96];                                                                         \
-    } s;                                                                                     \
-                                                                                             \
-    int v = 32;                                                                              \
-    for (int offset = -2; offset <= 2; offset++) {                                           \
-      for (int i = 0; i < 96; i++) {                                                         \
-        s.body[i] = 1;                                                                       \
-      }                                                                                      \
-      type* start = s.body + 8 + offset;                                                     \
-      for (int aligned = 0; aligned < 2; aligned++) {                                        \
-        if (aligned) {                                                                       \
-          if (((intptr_t)start) % HeapWordSize == 0) {                                       \
-            ((void (*)(type*, int, int))StubRoutines::_arrayof_##type##_fill)(start, v, 80); \
-          } else {                                                                           \
-            continue;                                                                        \
-          }                                                                                  \
-        } else {                                                                             \
-          ((void (*)(type*, int, int))StubRoutines::_##type##_fill)(start, v, 80);           \
-        }                                                                                    \
-        for (int i = 0; i < 96; i++) {                                                       \
-          if (i < (8 + offset) || i >= (88 + offset)) {                                      \
-            assert(s.body[i] == 1, "what?");                                                 \
-          } else {                                                                           \
-            assert(s.body[i] == 32, "what?");                                                \
-          }                                                                                  \
-        }                                                                                    \
-      }                                                                                      \
-    }                                                                                        \
-  }                                                                                          \
-
-  TEST_FILL(jbyte);
-  TEST_FILL(jshort);
-  TEST_FILL(jint);
-
-#undef TEST_FILL
-
-#define TEST_COPYRTN(type) \
-  test_arraycopy_func(CAST_FROM_FN_PTR(address, Copy::conjoint_##type##s_atomic),  sizeof(type)); \
-  test_arraycopy_func(CAST_FROM_FN_PTR(address, Copy::arrayof_conjoint_##type##s), (int)MAX2(sizeof(HeapWord), sizeof(type)))
-
-  // Make sure all the copy runtime routines properly handle zero count
-  TEST_COPYRTN(jbyte);
-  TEST_COPYRTN(jshort);
-  TEST_COPYRTN(jint);
-  TEST_COPYRTN(jlong);
-
-#undef TEST_COPYRTN
-
-  test_arraycopy_func(CAST_FROM_FN_PTR(address, Copy::conjoint_words), sizeof(HeapWord));
-  test_arraycopy_func(CAST_FROM_FN_PTR(address, Copy::disjoint_words), sizeof(HeapWord));
-  test_arraycopy_func(CAST_FROM_FN_PTR(address, Copy::disjoint_words_atomic), sizeof(HeapWord));
-  // Aligned to BytesPerLong
-  test_arraycopy_func(CAST_FROM_FN_PTR(address, Copy::aligned_conjoint_words), sizeof(jlong));
-  test_arraycopy_func(CAST_FROM_FN_PTR(address, Copy::aligned_disjoint_words), sizeof(jlong));
-
-  MACOS_AARCH64_ONLY(os::current_thread_enable_wx(WXWrite));
-
-#endif
 }
-
 
 void initial_stubs_init()      { StubRoutines::initialize_initial_stubs(); }
 void continuation_stubs_init() { StubRoutines::initialize_continuation_stubs(); }
@@ -627,20 +523,20 @@ StubRoutines::select_arraycopy_function(BasicType t, bool aligned, bool disjoint
 #undef RETURN_STUB_PARM
 }
 
-UnsafeCopyMemoryMark::UnsafeCopyMemoryMark(StubCodeGenerator* cgen, bool add_entry, bool continue_at_scope_end, address error_exit_pc) {
+UnsafeMemoryAccessMark::UnsafeMemoryAccessMark(StubCodeGenerator* cgen, bool add_entry, bool continue_at_scope_end, address error_exit_pc) {
   _cgen = cgen;
   _ucm_entry = nullptr;
   if (add_entry) {
     address err_exit_pc = nullptr;
     if (!continue_at_scope_end) {
-      err_exit_pc = error_exit_pc != nullptr ? error_exit_pc : UnsafeCopyMemory::common_exit_stub_pc();
+      err_exit_pc = error_exit_pc != nullptr ? error_exit_pc : UnsafeMemoryAccess::common_exit_stub_pc();
     }
     assert(err_exit_pc != nullptr || continue_at_scope_end, "error exit not set");
-    _ucm_entry = UnsafeCopyMemory::add_to_table(_cgen->assembler()->pc(), nullptr, err_exit_pc);
+    _ucm_entry = UnsafeMemoryAccess::add_to_table(_cgen->assembler()->pc(), nullptr, err_exit_pc);
   }
 }
 
-UnsafeCopyMemoryMark::~UnsafeCopyMemoryMark() {
+UnsafeMemoryAccessMark::~UnsafeMemoryAccessMark() {
   if (_ucm_entry != nullptr) {
     _ucm_entry->set_end_pc(_cgen->assembler()->pc());
     if (_ucm_entry->error_exit_pc() == nullptr) {

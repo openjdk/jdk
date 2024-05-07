@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -596,6 +596,7 @@ public class AVA implements DerEncoder {
         this(in.getDerValue());
     }
 
+    @Override
     public boolean equals(Object obj) {
         if (this == obj) {
             return true;
@@ -608,10 +609,9 @@ public class AVA implements DerEncoder {
     }
 
     /**
-     * Returns a hashcode for this AVA.
-     *
-     * @return a hashcode for this AVA.
+     * {@return a hashcode for this AVA}
      */
+    @Override
     public int hashCode() {
         return toRFC2253CanonicalString().hashCode();
     }

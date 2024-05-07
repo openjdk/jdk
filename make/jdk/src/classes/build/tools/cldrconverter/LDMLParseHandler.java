@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
@@ -812,12 +813,35 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
                         && ((currentContainer.getqName().equals("decimalFormatLength"))
                         || (currentContainer.getqName().equals("currencyFormat"))
                         || (currentContainer.getqName().equals("percentFormat"))
+                        || (currentContainer.getqName().equals("listPattern"))
                         || (currentCalendarType != null && !currentCalendarType.lname().startsWith("islamic-")))) { // ignore islamic variants
                     pushAliasEntry(qName, attributes, attributes.getValue("path"));
                 } else {
                     pushIgnoredContainer(qName);
                 }
             }
+            break;
+
+        // ListPatterns
+        case "listPattern":
+            currentStyle = Optional.ofNullable(attributes.getValue("type")).orElse("standard");
+            pushStringArrayEntry(qName, attributes, "ListPatterns_" + currentStyle, 5);
+            break;
+        case "listPatternPart":
+            type = attributes.getValue("type");
+            pushStringArrayElement(qName, attributes,
+                switch (type) {
+                    case "start" -> 0;
+                    case "middle" -> 1;
+                    case "end" -> 2;
+                    case "2" -> 3;
+                    case "3" -> 4;
+                    default -> throw new IllegalArgumentException(
+                        """
+                        The "type" attribute value for "listPatternPart" element is not recognized: %s
+                        """.formatted(type)
+                    );
+                });
             break;
 
         default:
@@ -973,6 +997,9 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
                     "NumberPatterns/" +
                     (type.equals("standard") ? containerqName.replaceFirst("Format", "") : type);
             break;
+        case "listPattern":
+            keyName = type;
+            break;
         default:
             keyName = "";
             break;
@@ -1032,6 +1059,19 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
         start = path.indexOf(typeKey);
         if (start != -1) {
             String style = path.substring(start + typeKey.length(), path.indexOf("']", start));
+            return toJDKKey(qName, "", style);
+        }
+
+        // listPattern
+        if (path.indexOf("../listPattern") != -1) {
+            typeKey = "[@type='";
+            start = path.indexOf(typeKey);
+            String style;
+            if (start != -1) {
+                style = "ListPatterns_" + path.substring(start + typeKey.length(), path.indexOf("']", start));
+            } else {
+                style = "ListPatterns_standard";
+            }
             return toJDKKey(qName, "", style);
         }
 
@@ -1107,6 +1147,10 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
         case "timeFormatLength":
             currentStyle = "";
             break;
+        case "listPattern":
+            currentStyle = "";
+            putIfEntry();
+            break;
         default:
             putIfEntry();
         }
@@ -1126,6 +1170,12 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
                 KeyContainer kc = (KeyContainer)entry.getParent();
                 CLDRConverter.aliases.put(
                         toJDKKey(containerqName, "", kc.getKey()),
+                        getTarget(entry.getKey(), "", "", "")
+                );
+            } else if (containerqName.equals("listPattern")) {
+                var sae = (StringArrayEntry)entry.getParent();
+                CLDRConverter.aliases.put(
+                        toJDKKey(containerqName, "", sae.getKey()),
                         getTarget(entry.getKey(), "", "", "")
                 );
             } else {

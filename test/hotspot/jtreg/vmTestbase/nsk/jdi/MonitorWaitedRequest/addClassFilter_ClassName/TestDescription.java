@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,7 @@
  * @build nsk.share.jdi.ClassFilterTest_ClassName
  *        nsk.share.jdi.JDIEventsDebuggee
  *        nsk.share.jdi.MonitorEventsDebuggee
- * @run main/othervm
+ * @run driver
  *      nsk.share.jdi.ClassFilterTest_ClassName
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

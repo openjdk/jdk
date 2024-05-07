@@ -51,7 +51,6 @@ class ThreadBuilders {
      * @throws UnsupportedOperationException if custom schedulers are not supported
      */
     static Thread.Builder.OfVirtual virtualThreadBuilder(Executor scheduler) {
-        Thread.Builder.OfVirtual builder = Thread.ofVirtual();
         try {
             return (Thread.Builder.OfVirtual) VTBUILDER_CTOR.newInstance(scheduler);
         } catch (InvocationTargetException e) {

@@ -419,6 +419,7 @@ class Bytecodes: AllStatic {
                                                            || code == _fconst_0 || code == _dconst_0); }
   static bool        is_return      (Code code)    { return (_ireturn <= code && code <= _return); }
   static bool        is_invoke      (Code code)    { return (_invokevirtual <= code && code <= _invokedynamic); }
+  static bool        is_field_code  (Code code)    { return (_getstatic <= java_code(code) && java_code(code) <= _putfield); }
   static bool        has_receiver   (Code code)    { assert(is_invoke(code), "");  return code == _invokevirtual ||
                                                                                           code == _invokespecial ||
                                                                                           code == _invokeinterface; }

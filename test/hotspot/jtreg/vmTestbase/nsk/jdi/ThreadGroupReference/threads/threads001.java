@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +77,9 @@ public class threads001 {
 
     public static void main (String argv[]) {
         int result = run(argv, System.out);
-        System.exit(result + PASS_BASE);
+        if (result != 0) {
+            throw new RuntimeException("TEST FAILED with result " + result);
+        }
     }
 
     public static int run (String argv[], PrintStream out) {
@@ -134,8 +136,8 @@ public class threads001 {
     private int runThis (String argv[], PrintStream out) {
 
         Debugee debuggee;
-        boolean usingWrapper = System.getProperty("main.wrapper") != null;
-        boolean usingVThreadWrapper = "Virtual".equals(System.getProperty("main.wrapper"));
+        boolean usingTTF = System.getProperty("test.thread.factory") != null;
+        boolean usingVirtualTTF = "Virtual".equals(System.getProperty("test.thread.factory"));
 
         argsHandler     = new ArgumentHandler(argv);
         logHandler      = new Log(out, argsHandler);
@@ -253,10 +255,10 @@ public class threads001 {
                  * the "VirtualThreads" ThreadGroup, and threfore do not show up in group1.
                  */
                 int expectedNumThreads;
-                if (usingVThreadWrapper) {
+                if (usingVirtualTTF) {
                     expectedNumThreads = 1;
                 } else {
-                    expectedNumThreads = usingWrapper ? 3 : 2;
+                    expectedNumThreads = usingTTF ? 3 : 2;
                 }
                 if (threads.size() < expectedNumThreads) {
                     log3("ERROR: threads.size() < 2 for group1 : " + threads.size() );
@@ -277,7 +279,7 @@ public class threads001 {
                     if (s1.equals("Thread2"))
                         nThread2 += 1;
                 }
-                if (nMain != 1 && !usingVThreadWrapper) {
+                if (nMain != 1 && !usingVirtualTTF) {
                     log3("ERROR: # of 'main' threads != 1  : " + nMain);
                     expresult = 1;
                 }

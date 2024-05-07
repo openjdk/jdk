@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@ import static jdk.vm.ci.hotspot.HotSpotCompiledCodeStream.Tag.RAW_CONSTANT;
 import static jdk.vm.ci.hotspot.HotSpotCompiledCodeStream.Tag.REGISTER_NARROW_OOP;
 import static jdk.vm.ci.hotspot.HotSpotCompiledCodeStream.Tag.REGISTER_OOP;
 import static jdk.vm.ci.hotspot.HotSpotCompiledCodeStream.Tag.REGISTER_PRIMITIVE;
+import static jdk.vm.ci.hotspot.HotSpotCompiledCodeStream.Tag.REGISTER_VECTOR;
 import static jdk.vm.ci.hotspot.HotSpotCompiledCodeStream.Tag.SITE_CALL;
 import static jdk.vm.ci.hotspot.HotSpotCompiledCodeStream.Tag.SITE_DATA_PATCH;
 import static jdk.vm.ci.hotspot.HotSpotCompiledCodeStream.Tag.SITE_EXCEPTION_HANDLER;
@@ -61,6 +62,7 @@ import static jdk.vm.ci.hotspot.HotSpotCompiledCodeStream.Tag.SITE_SAFEPOINT;
 import static jdk.vm.ci.hotspot.HotSpotCompiledCodeStream.Tag.STACK_SLOT_NARROW_OOP;
 import static jdk.vm.ci.hotspot.HotSpotCompiledCodeStream.Tag.STACK_SLOT_OOP;
 import static jdk.vm.ci.hotspot.HotSpotCompiledCodeStream.Tag.STACK_SLOT_PRIMITIVE;
+import static jdk.vm.ci.hotspot.HotSpotCompiledCodeStream.Tag.STACK_SLOT_VECTOR;
 import static jdk.vm.ci.hotspot.HotSpotCompiledCodeStream.Tag.VIRTUAL_OBJECT_ID;
 import static jdk.vm.ci.hotspot.HotSpotCompiledCodeStream.Tag.VIRTUAL_OBJECT_ID2;
 
@@ -171,9 +173,11 @@ final class HotSpotCompiledCodeStream implements AutoCloseable {
         REGISTER_PRIMITIVE,
         REGISTER_OOP,
         REGISTER_NARROW_OOP,
+        REGISTER_VECTOR,
         STACK_SLOT_PRIMITIVE,
         STACK_SLOT_OOP,
         STACK_SLOT_NARROW_OOP,
+        STACK_SLOT_VECTOR,
         VIRTUAL_OBJECT_ID,
         VIRTUAL_OBJECT_ID2,
         NULL_CONSTANT,
@@ -1029,6 +1033,10 @@ final class HotSpotCompiledCodeStream implements AutoCloseable {
         return oopValue.getPlatformKind() != runtime.getHostJVMCIBackend().getTarget().arch.getWordKind();
     }
 
+    private boolean isVector(Value value) {
+        return value.getPlatformKind().getVectorLength() > 1;
+    }
+
     private void writeJavaValue(JavaValue value, JavaKind kind) {
         if (value == Value.ILLEGAL) {
             writeTag(ILLEGAL);
@@ -1039,12 +1047,30 @@ final class HotSpotCompiledCodeStream implements AutoCloseable {
             writeTag(NULL_CONSTANT);
         } else if (value instanceof RegisterValue) {
             RegisterValue reg = (RegisterValue) value;
-            Tag tag = kind == JavaKind.Object ? (isNarrowOop(reg) ? REGISTER_NARROW_OOP : REGISTER_OOP) : REGISTER_PRIMITIVE;
+            Tag tag;
+            if (kind == JavaKind.Object) {
+                if (isVector(reg)) {
+                    tag = REGISTER_VECTOR;
+                } else {
+                    tag = isNarrowOop(reg) ? REGISTER_NARROW_OOP : REGISTER_OOP;
+                }
+            } else {
+                tag = REGISTER_PRIMITIVE;
+            }
             writeTag(tag);
             writeRegister(reg.getRegister());
         } else if (value instanceof StackSlot) {
             StackSlot slot = (StackSlot) value;
-            Tag tag = kind == JavaKind.Object ? (isNarrowOop(slot) ? STACK_SLOT_NARROW_OOP : STACK_SLOT_OOP) : STACK_SLOT_PRIMITIVE;
+            Tag tag;
+            if (kind == JavaKind.Object) {
+                if (isVector(slot)) {
+                    tag = STACK_SLOT_VECTOR;
+                } else {
+                    tag = isNarrowOop(slot) ? STACK_SLOT_NARROW_OOP : STACK_SLOT_OOP;
+                }
+            } else {
+                tag = STACK_SLOT_PRIMITIVE;
+            }
             writeTag(tag);
             writeS2("offset", slot.getRawOffset());
             writeBoolean("addRawFrameSize", slot.getRawAddFrameSize());

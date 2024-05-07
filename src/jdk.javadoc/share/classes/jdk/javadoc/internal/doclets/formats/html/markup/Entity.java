@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 
 package jdk.javadoc.internal.doclets.formats.html.markup;
 
-import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.formats.html.Content;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -38,6 +38,8 @@ public class Entity extends Content {
     public static final Entity GREATER_THAN = new Entity("&gt;");
     public static final Entity AMPERSAND = new Entity("&amp;");
     public static final Entity NO_BREAK_SPACE = new Entity("&nbsp;");
+    public static final Entity LEFT_POINTING_ANGLE = new Entity("&#10094;");
+    public static final Entity RIGHT_POINTING_ANGLE = new Entity("&#10095;");
 
     public final String text;
 
@@ -70,7 +72,6 @@ public class Entity extends Content {
     public int charCount() {
         return 1;
     }
-
 
     /**
      * Escapes the special HTML characters in a given string using the appropriate

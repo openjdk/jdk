@@ -539,7 +539,7 @@ public sealed class RecordedObject
             case UnsignedValue(Integer i) -> i;
             case UnsignedValue(Short s) -> Short.toUnsignedInt(s);
             case UnsignedValue(Byte b) -> Byte.toUnsignedInt(b);
-            case null, default -> throw newIllegalArgumentException(name, "short");
+            case null, default -> throw newIllegalArgumentException(name, "int");
         };
     }
 

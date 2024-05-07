@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,6 @@ import static java.nio.file.LinkOption.*;
  */
 public final class Options {
 
-    private static final JVM jvm = JVM.getJVM();
     private static final long WAIT_INTERVAL = 1000; // ms;
 
     private static final long MIN_MAX_CHUNKSIZE = 1024 * 1024;
@@ -72,7 +71,7 @@ public final class Options {
         if (max < MIN_MAX_CHUNKSIZE) {
             throw new IllegalArgumentException("Max chunk size must be at least " + MIN_MAX_CHUNKSIZE);
         }
-        jvm.setFileNotification(max);
+        JVM.setFileNotification(max);
         maxChunkSize = max;
     }
 
@@ -81,7 +80,7 @@ public final class Options {
     }
 
     public static synchronized void setMemorySize(long memSize) {
-        jvm.setMemorySize(memSize);
+        JVM.setMemorySize(memSize);
         memorySize = memSize;
     }
 
@@ -90,7 +89,7 @@ public final class Options {
     }
 
     public static synchronized void setThreadBufferSize(long threadBufSize) {
-        jvm.setThreadBufferSize(threadBufSize);
+        JVM.setThreadBufferSize(threadBufSize);
         threadBufferSize = threadBufSize;
     }
 
@@ -103,7 +102,7 @@ public final class Options {
     }
 
     public static synchronized void setGlobalBufferCount(long globalBufCount) {
-        jvm.setGlobalBufferCount(globalBufCount);
+        JVM.setGlobalBufferCount(globalBufCount);
         globalBufferCount = globalBufCount;
     }
 
@@ -112,7 +111,7 @@ public final class Options {
     }
 
     public static synchronized void setGlobalBufferSize(long globalBufsize) {
-        jvm.setGlobalBufferSize(globalBufsize);
+        JVM.setGlobalBufferSize(globalBufsize);
         globalBufferSize = globalBufsize;
     }
 
@@ -124,15 +123,15 @@ public final class Options {
                 throw new IOException("Cannot write JFR emergency dump to " + path.toString());
             }
         }
-        jvm.setDumpPath(path == null ? null : path.toString());
+        JVM.setDumpPath(path == null ? null : path.toString());
     }
 
     public static synchronized SafePath getDumpPath() {
-        return new SafePath(jvm.getDumpPath());
+        return new SafePath(JVM.getDumpPath());
     }
 
     public static synchronized void setStackDepth(Integer stackTraceDepth) {
-        jvm.setStackDepth(stackTraceDepth);
+        JVM.setStackDepth(stackTraceDepth);
         stackDepth = stackTraceDepth;
     }
 

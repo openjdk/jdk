@@ -4333,8 +4333,7 @@ public final class Arrays {
         }
         int result = 1;
         for (long element : a) {
-            int elementHash = (int)(element ^ (element >>> 32));
-            result = 31 * result + elementHash;
+            result = 31 * result + Long.hashCode(element);
         }
         return result;
     }
@@ -4469,7 +4468,7 @@ public final class Arrays {
 
         int result = 1;
         for (boolean element : a)
-            result = 31 * result + (element ? 1231 : 1237);
+            result = 31 * result + Boolean.hashCode(element);
 
         return result;
     }
@@ -4496,7 +4495,7 @@ public final class Arrays {
 
         int result = 1;
         for (float element : a)
-            result = 31 * result + Float.floatToIntBits(element);
+            result = 31 * result + Float.hashCode(element);
 
         return result;
     }
@@ -4523,8 +4522,7 @@ public final class Arrays {
 
         int result = 1;
         for (double element : a) {
-            long bits = Double.doubleToLongBits(element);
-            result = 31 * result + (int)(bits ^ (bits >>> 32));
+            result = 31 * result + Double.hashCode(element);
         }
         return result;
     }
@@ -4557,7 +4555,7 @@ public final class Arrays {
         int result = 1;
 
         for (Object element : a)
-            result = 31 * result + (element == null ? 0 : element.hashCode());
+            result = 31 * result + Objects.hashCode(element);
 
         return result;
     }

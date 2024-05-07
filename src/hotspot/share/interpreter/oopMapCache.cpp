@@ -55,6 +55,8 @@ class OopMapCacheEntry: private InterpreterOopMap {
   // Deallocate bit masks and initialize fields
   void flush();
 
+  static void deallocate(OopMapCacheEntry* const entry);
+
  private:
   void allocate_bit_mask();   // allocates the bit mask on C heap f necessary
   void deallocate_bit_mask(); // allocates the bit mask on C heap f necessary
@@ -177,18 +179,6 @@ InterpreterOopMap::InterpreterOopMap() {
 #ifdef ASSERT
   _resource_allocate_bit_mask = true;
 #endif
-}
-
-InterpreterOopMap::~InterpreterOopMap() {
-  // The expectation is that the bit mask was allocated
-  // last in this resource area.  That would make the free of the
-  // bit_mask effective (see how FREE_RESOURCE_ARRAY does a free).
-  // If it was not allocated last, there is not a correctness problem
-  // but the space for the bit_mask is not freed.
-  assert(_resource_allocate_bit_mask, "Trying to free C heap space");
-  if (mask_size() > small_mask_limit) {
-    FREE_RESOURCE_ARRAY(uintptr_t, _bit_mask[0], mask_word_size());
-  }
 }
 
 bool InterpreterOopMap::is_empty() const {
@@ -401,12 +391,18 @@ void OopMapCacheEntry::flush() {
   initialize();
 }
 
+void OopMapCacheEntry::deallocate(OopMapCacheEntry* const entry) {
+  entry->flush();
+  FREE_C_HEAP_OBJ(entry);
+}
 
 // Implementation of OopMapCache
 
 void InterpreterOopMap::resource_copy(OopMapCacheEntry* from) {
   assert(_resource_allocate_bit_mask,
     "Should not resource allocate the _bit_mask");
+  assert(from->has_valid_mask(),
+    "Cannot copy entry with an invalid mask");
 
   set_method(from->method());
   set_bci(from->bci());
@@ -474,8 +470,7 @@ void OopMapCache::flush() {
     OopMapCacheEntry* entry = _array[i];
     if (entry != nullptr) {
       _array[i] = nullptr;  // no barrier, only called in OopMapCache destructor
-      entry->flush();
-      FREE_C_HEAP_OBJ(entry);
+      OopMapCacheEntry::deallocate(entry);
     }
   }
 }
@@ -494,8 +489,7 @@ void OopMapCache::flush_obsolete_entries() {
            entry->method()->name()->as_C_string(), entry->method()->signature()->as_C_string(), i);
       }
       _array[i] = nullptr;
-      entry->flush();
-      FREE_C_HEAP_OBJ(entry);
+      OopMapCacheEntry::deallocate(entry);
     }
   }
 }
@@ -542,8 +536,7 @@ void OopMapCache::lookup(const methodHandle& method,
     // at this time. We give the caller of lookup() a copy of the
     // interesting info via parameter entry_for, but we don't add it to
     // the cache. See the gory details in Method*.cpp.
-    tmp->flush();
-    FREE_C_HEAP_OBJ(tmp);
+    OopMapCacheEntry::deallocate(tmp);
     return;
   }
 
@@ -566,7 +559,7 @@ void OopMapCache::lookup(const methodHandle& method,
   if (put_at(probe + 0, tmp, old)) {
     enqueue_for_cleanup(old);
   } else {
-    enqueue_for_cleanup(tmp);
+    OopMapCacheEntry::deallocate(tmp);
   }
 
   assert(!entry_for->is_empty(), "A non-empty oop map should be returned");
@@ -601,8 +594,7 @@ void OopMapCache::cleanup_old_entries() {
                           entry->method()->name_and_sig_as_C_string(), entry->bci());
     }
     OopMapCacheEntry* next = entry->_next;
-    entry->flush();
-    FREE_C_HEAP_OBJ(entry);
+    OopMapCacheEntry::deallocate(entry);
     entry = next;
   }
 }
@@ -612,7 +604,8 @@ void OopMapCache::compute_one_oop_map(const methodHandle& method, int bci, Inter
   OopMapCacheEntry* tmp = NEW_C_HEAP_OBJ(OopMapCacheEntry, mtClass);
   tmp->initialize();
   tmp->fill(method, bci);
-  entry->resource_copy(tmp);
-  tmp->flush();
-  FREE_C_HEAP_OBJ(tmp);
+  if (tmp->has_valid_mask()) {
+    entry->resource_copy(tmp);
+  }
+  OopMapCacheEntry::deallocate(tmp);
 }

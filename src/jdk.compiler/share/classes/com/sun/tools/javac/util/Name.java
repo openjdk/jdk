@@ -27,11 +27,13 @@ package com.sun.tools.javac.util;
 
 import com.sun.tools.javac.jvm.ClassFile;
 import com.sun.tools.javac.jvm.PoolConstant;
+import com.sun.tools.javac.jvm.PoolReader;
 import com.sun.tools.javac.util.DefinedBy.Api;
 
-/** An abstraction for internal compiler strings. They are stored in
- *  Utf8 format. Names are stored in a Name.Table, and are unique within
- *  that table.
+/** An abstraction for internal compiler strings.
+ *
+ *  <p>
+ *  Names are stored in a {@link Name.Table}, and are unique within that table.
  *
  *  <p><b>This is NOT part of any supported API.
  *  If you write code that depends on this, you do so at your own risk.
@@ -40,75 +42,101 @@ import com.sun.tools.javac.util.DefinedBy.Api;
  */
 public abstract class Name implements javax.lang.model.element.Name, PoolConstant, Comparable<Name> {
 
+    /**
+     * The {@link Table} that contains this instance.
+     */
     public final Table table;
 
+    /**
+     * Constructor.
+     *
+     * @param table the {@link Table} that will contain this instance
+     */
     protected Name(Table table) {
         this.table = table;
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    @DefinedBy(Api.LANGUAGE_MODEL)
-    public boolean contentEquals(CharSequence cs) {
-        return toString().equals(cs.toString());
-    }
+// PoolConstant
 
     @Override
-    public int poolTag() {
+    public final int poolTag() {
         return ClassFile.CONSTANT_Utf8;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+// CharSequence
+
+    @Override
     public int length() {
         return toString().length();
     }
 
     /**
-     * {@inheritDoc}
+     *  {@inheritDoc}
+     *
+     *  <p>
+     *  The implementation in {@link Name} invokes {@link Object#toString}
+     *  on this instance and then delegates to {@link String#charAt}.
      */
+    @Override
     public char charAt(int index) {
         return toString().charAt(index);
     }
 
     /**
-     * {@inheritDoc}
+     *  {@inheritDoc}
+     *
+     *  <p>
+     *  The implementation in {@link Name} invokes {@link Object#toString}
+     *  on this instance and then delegates to {@link String#subSequence}.
      */
+    @Override
     public CharSequence subSequence(int start, int end) {
         return toString().subSequence(start, end);
     }
 
-    /** Return the concatenation of this name and name `n'.
+    @Override
+    public abstract String toString();
+
+// javax.lang.model.element.Name
+
+    /**
+     *  {@inheritDoc}
+     *
+     *  <p>
+     *  The implementation in {@link Name} invokes {@link Object#toString}
+     *  on this instance and then delegates to {@link String#equals}.
      */
-    public Name append(Name n) {
-        int len = getByteLength();
-        byte[] bs = new byte[len + n.getByteLength()];
-        getBytes(bs, 0);
-        n.getBytes(bs, len);
-        try {
-            return table.fromUtf(bs, 0, bs.length, Convert.Validation.NONE);
-        } catch (InvalidUtfException e) {
-            throw new AssertionError(e);
-        }
+    @DefinedBy(Api.LANGUAGE_MODEL)
+    @Override
+    public boolean contentEquals(CharSequence cs) {
+        return toString().equals(cs.toString());
     }
 
-    /** Return the concatenation of this name, the given ASCII
-     *  character, and name `n'.
-     */
-    public Name append(char c, Name n) {
-        int len = getByteLength();
-        byte[] bs = new byte[len + 1 + n.getByteLength()];
-        getBytes(bs, 0);
-        bs[len] = (byte) c;
-        n.getBytes(bs, len+1);
-        try {
-            return table.fromUtf(bs, 0, bs.length, Convert.Validation.NONE);
-        } catch (InvalidUtfException e) {
-            throw new AssertionError(e);
-        }
+    @DefinedBy(Api.LANGUAGE_MODEL)
+    @Override
+    public final boolean equals(Object obj) {
+        if (obj == this)
+            return true;
+        if (obj == null || obj.getClass() != getClass())
+            return false;
+        final Name that = (Name)obj;
+        return table == that.table && nameEquals(that);
     }
+
+    @DefinedBy(Api.LANGUAGE_MODEL)
+    @Override
+    public abstract int hashCode();
+
+    /**
+     * Subclass check for equality.
+     *
+     * <p>
+     * This method can assume that the given instance is the same type
+     * as this instance and is associated to the same {@link Table}.
+     */
+    protected abstract boolean nameEquals(Name that);
+
+// Comparable
 
     /** Order names lexicographically.
      *
@@ -119,168 +147,161 @@ public abstract class Name implements javax.lang.model.element.Name, PoolConstan
      */
     @Override
     public int compareTo(Name name) {
-        byte[] buf1 = getByteArray();
-        byte[] buf2 = name.getByteArray();
-        int off1 = getByteOffset();
-        int off2 = name.getByteOffset();
-        int len1 = getByteLength();
-        int len2 = name.getByteLength();
-        while (len1 > 0 && len2 > 0) {
-            int val1 = buf1[off1++] & 0xff;
-            int val2 = buf2[off2++] & 0xff;
-            if (val1 == 0xc0 && (buf1[off1] & 0x3f) == 0) {
-                val1 = 0;       // char 0x0000 encoded in two bytes
-                off1++;
-                len1--;
-            }
-            if (val2 == 0xc0 && (buf2[off2] & 0x3f) == 0) {
-                val2 = 0;       // char 0x0000 encoded in two bytes
-                off2++;
-                len2--;
-            }
-            int diff = val1 - val2;
-            if (diff != 0)
-                return diff;
-            len1--;
-            len2--;
-        }
-        return len1 > 0 ? 1 : len2 > 0 ? -1 : 0;
+        return toString().compareTo(name.toString());
     }
 
-    /** Return true if this is the empty name.
+// Other methods
+
+    /** Return the concatenation of this name and the given name.
+     *  The given name must come from the same table as this one.
+     */
+    public Name append(Name name) {
+        return table.fromString(toString() + name.toString());
+    }
+
+    /** Return the concatenation of this name, the given ASCII
+     *  character, and the given name.
+     *  The given name must come from the same table as this one.
+     */
+    public Name append(char c, Name name) {
+        return table.fromString(toString() + c + name.toString());
+    }
+
+    /** Determine if this is the empty name.
+     *  <p>
+     *  The implementation in {@link Name} compares {@link #length()} to zero.
      */
     public boolean isEmpty() {
-        return getByteLength() == 0;
+        return length() == 0;
     }
 
-    /** Returns last occurrence of byte b in this name, -1 if not found.
+    /** Returns last occurrence of the given ASCII character in this name, -1 if not found.
+     *  <p>
+     *  The implementation in {@link Name} converts this instance to {@link String}
+     *  and then delegates to {@link String#lastIndexOf(int)}.
      */
-    public int lastIndexOf(byte b) {
-        byte[] bytes = getByteArray();
-        int offset = getByteOffset();
-        int i = getByteLength() - 1;
-        while (i >= 0 && bytes[offset + i] != b) i--;
-        return i;
+    public int lastIndexOfAscii(char ch) {
+        return toString().lastIndexOf(ch);
     }
 
-    /** Does this name start with prefix?
+    /** Determine whether this name has the given Name as a prefix.
+     *  <p>
+     *  The implementation in {@link Name} converts this and the given instance
+     *  to {@link String} and then delegates to {@link String#startsWith}.
      */
     public boolean startsWith(Name prefix) {
-        byte[] thisBytes = this.getByteArray();
-        int thisOffset   = this.getByteOffset();
-        int thisLength   = this.getByteLength();
-        byte[] prefixBytes = prefix.getByteArray();
-        int prefixOffset   = prefix.getByteOffset();
-        int prefixLength   = prefix.getByteLength();
-
-        if (thisLength < prefixLength)
-            return false;
-
-        int i = 0;
-        while (i < prefixLength &&
-               thisBytes[thisOffset + i] == prefixBytes[prefixOffset + i])
-            i++;
-        return i == prefixLength;
+        return toString().startsWith(prefix.toString());
     }
 
-    /** Returns the sub-name starting at position start, up to and
-     *  excluding position end.
+    /** Returns the sub-name extending between two character positions.
+     *  <p>
+     *  The implementation in {@link Name} converts this instance to {@link String},
+     *  delegates to {@link String#substring(int, int)} and then {@link Table#fromString}.
+     *  @param start starting character offset, inclusive
+     *  @param end ending character offset, exclusive
+     *  @throws IndexOutOfBoundsException if bounds are out of range or invalid
      */
     public Name subName(int start, int end) {
-        if (end < start) end = start;
-        try {
-            return table.fromUtf(getByteArray(), getByteOffset() + start, end - start, Convert.Validation.NONE);
-        } catch (InvalidUtfException e) {
-            throw new AssertionError(e);
-        }
+        return table.fromString(toString().substring(start, end));
     }
 
-    /** Return the string representation of this name.
+    /** Returns the suffix of this name starting at the given offset.
+     *  <p>
+     *  The implementation in {@link Name} converts this instance to {@link String},
+     *  delegates to {@link String#substring(int)}, and then to {@link Table#fromString}.
+     *  @param off starting character offset
+     *  @throws IndexOutOfBoundsException if {@code off} is out of range or invalid
      */
-    @Override
-    public String toString() {
-        try {
-            return Convert.utf2string(getByteArray(), getByteOffset(), getByteLength(), Convert.Validation.NONE);
-        } catch (InvalidUtfException e) {
-            throw new AssertionError(e);
-        }
+    public Name subName(int off) {
+        return table.fromString(toString().substring(off));
     }
 
-    /** Return the Utf8 representation of this name.
+    /** Return the Modified UTF-8 encoding of this name.
+     *  <p>
+     *  The implementation in {@link Name} populates a new byte array of length
+     *  {@link #getUtf8Length} with data from {@link #getUtf8Bytes}.
      */
     public byte[] toUtf() {
-        byte[] bs = new byte[getByteLength()];
-        getBytes(bs, 0);
+        byte[] bs = new byte[getUtf8Length()];
+        getUtf8Bytes(bs, 0);
         return bs;
     }
 
-    /* Get a "reasonably small" value that uniquely identifies this name
-     * within its name table.
+    /** Get the length of the Modified UTF-8 encoding of this name.
      */
-    public abstract int getIndex();
+    public abstract int getUtf8Length();
 
-    /** Get the length (in bytes) of this name.
+    /** Write the Modified UTF-8 encoding of this name into the given
+     *  buffer starting at the specified offset.
      */
-    public abstract int getByteLength();
+    public abstract void getUtf8Bytes(byte buf[], int off);
 
-    /** Returns i'th byte of this name.
+// Mapping
+
+    /** Maps the Modified UTF-8 encoding of a {@link Name} to something.
      */
-    public abstract byte getByteAt(int i);
-
-    /** Copy all bytes of this name to buffer cs, starting at start.
-     */
-    public void getBytes(byte cs[], int start) {
-        System.arraycopy(getByteArray(), getByteOffset(), cs, start, getByteLength());
-    }
-
-    /** Get the underlying byte array for this name. The contents of the
-     * array must not be modified.
-     */
-    public abstract byte[] getByteArray();
-
-    /** Get the start offset of this name within its byte array.
-     */
-    public abstract int getByteOffset();
-
+    @FunctionalInterface
     public interface NameMapper<X> {
         X map(byte[] bytes, int offset, int len);
     }
 
+    /** Decode this name's Modified UTF-8 encoding into something.
+     */
     public <X> X map(NameMapper<X> mapper) {
-        return mapper.map(getByteArray(), getByteOffset(), getByteLength());
+        byte[] buf = toUtf();
+        return mapper.map(buf, 0, buf.length);
     }
 
-    /** An abstraction for the hash table used to create unique Name instances.
+// Table
+
+    /** An abstraction for the hash table used to create unique {@link Name} instances.
      */
     public abstract static class Table {
+
         /** Standard name table.
          */
         public final Names names;
 
-        Table(Names names) {
+        protected Table(Names names) {
             this.names = names;
         }
 
-        /** Get the name from the characters in cs[start..start+len-1].
+        /** Get the unique {@link Name} corresponding to the given characters.
+         *  @param buf character buffer
+         *  @param off starting offset
+         *  @param len number of characters
+         *  @return the corresponding {@link Name}
          */
-        public abstract Name fromChars(char[] cs, int start, int len);
+        public abstract Name fromChars(char[] cs, int off, int len);
 
-        /** Get the name for the characters in string s.
+        /** Get the unique {@link Name} corresponding to the given string.
+         *  <p>
+         *  The implementation in {@link Table} delegates to {@link String#toCharArray}
+         *  and then {@link #fromChars}.
+         *  @param s character string
          */
         public Name fromString(String s) {
             char[] cs = s.toCharArray();
             return fromChars(cs, 0, cs.length);
         }
 
-        /** Get the name for the bytes in array cs.
-         *  Assume that bytes are in strictly valid "Modified UTF-8" format.
+        /** Get the unique {@link Name} corresponding to the given Modified UTF-8 encoding.
+         *  <p>
+         *  The implementation in {@link Table} delegates to {@link #fromUtf(byte[], int, int)}.
+         *  @param buf character string
+         *  @return the corresponding {@link Name}
+         *  @throws IllegalArgumentException if the data is not valid Modified UTF-8
          */
         public Name fromUtf(byte[] cs) throws InvalidUtfException {
             return fromUtf(cs, 0, cs.length, Convert.Validation.STRICT);
         }
 
-        /** get the name for the bytes in cs[start..start+len-1].
-         *  Assume that bytes are in utf8 format.
+        /** Get the unique {@link Name} corresponding to the given Modified UTF-8 encoding.
+         *  @param buf character buffer
+         *  @param off starting offset
+         *  @param len number of bytes
+         *  @return the corresponding {@link Name}
+         *  @throws IllegalArgumentException if the data is not valid Modified UTF-8
          *  @throws InvalidUtfException if invalid Modified UTF-8 is encountered
          */
         public abstract Name fromUtf(byte[] cs, int start, int len, Convert.Validation validation)
@@ -289,28 +310,5 @@ public abstract class Name implements javax.lang.model.element.Name, PoolConstan
         /** Release any resources used by this table.
          */
         public abstract void dispose();
-
-        /** The hashcode of a name.
-         */
-        protected static int hashValue(byte bytes[], int offset, int length) {
-            int h = 0;
-            int off = offset;
-
-            for (int i = 0; i < length; i++) {
-                h = (h << 5) - h + bytes[off++];
-            }
-            return h;
-        }
-
-        /** Compare two subarrays
-         */
-        protected static boolean equals(byte[] bytes1, int offset1,
-                byte[] bytes2, int offset2, int length) {
-            int i = 0;
-            while (i < length && bytes1[offset1 + i] == bytes2[offset2 + i]) {
-                i++;
-            }
-            return i == length;
-        }
     }
 }

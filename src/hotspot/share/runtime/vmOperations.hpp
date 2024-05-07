@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
 #include "runtime/vmOperation.hpp"
 #include "runtime/threadSMR.hpp"
 
-class ObjectMonitorsHashtable;
+class ObjectMonitorsView;
 
 // A hodge podge of commonly used VM Operations
 
@@ -52,11 +52,6 @@ class VM_Halt: public VM_EmptyOperation {
 class VM_SafepointALot: public VM_EmptyOperation {
  public:
   VMOp_Type type() const { return VMOp_SafepointALot; }
-};
-
-class VM_Cleanup: public VM_EmptyOperation {
- public:
-  VMOp_Type type() const { return VMOp_Cleanup; }
 };
 
 // empty vm op, evaluated just to force a safepoint
@@ -95,6 +90,20 @@ class VM_CleanClassLoaderDataMetaspaces : public VM_Operation {
  public:
   VM_CleanClassLoaderDataMetaspaces() {}
   VMOp_Type type() const                         { return VMOp_CleanClassLoaderDataMetaspaces; }
+  void doit();
+};
+
+class VM_RehashStringTable : public VM_Operation {
+ public:
+  VM_RehashStringTable() {}
+  VMOp_Type type() const                         { return VMOp_RehashStringTable; }
+  void doit();
+};
+
+class VM_RehashSymbolTable : public VM_Operation {
+ public:
+  VM_RehashSymbolTable() {}
+  VMOp_Type type() const                         { return VMOp_RehashSymbolTable; }
   void doit();
 };
 
@@ -204,7 +213,7 @@ class VM_ThreadDump : public VM_Operation {
   bool                           _with_locked_synchronizers;
 
   void snapshot_thread(JavaThread* java_thread, ThreadConcurrentLocks* tcl,
-                       ObjectMonitorsHashtable* table);
+                       ObjectMonitorsView* monitors);
 
  public:
   VM_ThreadDump(ThreadDumpResult* result,

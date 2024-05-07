@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
  * @library /test/lib ..
  * @library ../../../../java/security/testlibrary
  * @key randomness
- * @modules jdk.crypto.cryptoki jdk.crypto.ec/sun.security.ec
+ * @modules jdk.crypto.cryptoki java.base/sun.security.ec
  * @run main/othervm ReadPKCS12
  * @run main/othervm -Djava.security.manager=allow ReadPKCS12 sm policy
  */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,14 +64,14 @@ public class DefaultPolicy {
     }
 
     private static void checkPolicy(Policy p) throws Exception {
-        // check if jdk.crypto.ec module has been de-privileged
+        // check if jdk.crypto.cryptoki module has been de-privileged
         CodeSource cs =
-            new CodeSource(new URL("jrt:/jdk.crypto.ec"), (CodeSigner[])null);
+            new CodeSource(new URL("jrt:/jdk.crypto.cryptoki"), (CodeSigner[])null);
         ProtectionDomain pd = new ProtectionDomain(cs, null, null, null);
         if (p.implies(pd, new AllPermission())) {
             throw new Exception("module should not be granted AllPermission");
         }
-        if (!p.implies(pd, new RuntimePermission("loadLibrary.sunec"))) {
+        if (!p.implies(pd, new RuntimePermission("loadLibrary.j2pkcs11"))) {
             throw new Exception("module should be granted RuntimePermission");
         }
     }

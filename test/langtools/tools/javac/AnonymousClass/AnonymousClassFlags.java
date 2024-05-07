@@ -25,7 +25,8 @@
  * @test
  * @bug 8161013
  * @summary Verify that anonymous class binaries have the correct flags set
- * @modules jdk.jdeps/com.sun.tools.classfile
+ * @enablePreview
+ * @modules java.base/jdk.internal.classfile.impl
  * @run main AnonymousClassFlags
  */
 
@@ -33,8 +34,9 @@ import java.util.*;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import com.sun.tools.classfile.*;
-import static com.sun.tools.classfile.AccessFlags.*;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.InnerClassInfo;
+import java.lang.classfile.attribute.InnerClassesAttribute;
 
 public class AnonymousClassFlags {
     public static void main(String[] args) throws Exception {
@@ -89,10 +91,10 @@ public class AnonymousClassFlags {
         instanceMethod();
 
         Path outerFile = Paths.get(classesDir, getClass().getName() + ".class");
-        ClassFile outerClass = ClassFile.read(outerFile);
+        ClassModel outerClass = ClassFile.of().parse(outerFile);
         for (Map.Entry<String,Integer> entry : anonClasses.entrySet()) {
             Path innerFile = Paths.get(classesDir, entry.getKey() + ".class");
-            ClassFile innerClass = ClassFile.read(innerFile);
+            ClassModel innerClass = ClassFile.of().parse(innerFile);
             String name = entry.getKey();
             int expected = entry.getValue();
             assertInnerFlags(outerClass, name, expected);
@@ -101,11 +103,11 @@ public class AnonymousClassFlags {
         }
     }
 
-    static void assertClassFlags(ClassFile classFile, String name, int expected) {
-        int mask = ACC_PUBLIC | ACC_FINAL | ACC_INTERFACE | ACC_ABSTRACT |
-                   ACC_SYNTHETIC | ACC_ANNOTATION | ACC_ENUM;
-        int classExpected = (expected & mask) | ACC_SUPER;
-        int classActual = classFile.access_flags.flags;
+    static void assertClassFlags(ClassModel classFile, String name, int expected) {
+        int mask = ClassFile.ACC_PUBLIC | ClassFile.ACC_FINAL | ClassFile.ACC_INTERFACE | ClassFile.ACC_ABSTRACT |
+                   ClassFile.ACC_SYNTHETIC | ClassFile.ACC_ANNOTATION | ClassFile.ACC_ENUM;
+        int classExpected = (expected & mask) | ClassFile.ACC_SUPER;
+        int classActual = classFile.flags().flagsMask();
         if (classActual != classExpected) {
             throw new AssertionError("Incorrect access_flags for class " + name +
                                      ": expected=" + classExpected + ", actual=" + classActual);
@@ -113,27 +115,27 @@ public class AnonymousClassFlags {
 
     }
 
-    static void assertInnerFlags(ClassFile classFile, String name, int expected) throws ConstantPoolException {
-        int innerActual = lookupInnerFlags(classFile, name).flags;
+    static void assertInnerFlags(ClassModel classFile, String name, int expected) {
+        int innerActual = lookupInnerFlags(classFile, name);
         if (innerActual != expected) {
             throw new AssertionError("Incorrect inner_class_access_flags for class " + name +
-                                     " in class " + classFile.getName() +
+                                     " in class " + classFile.thisClass().asInternalName() +
                                      ": expected=" + expected + ", actual=" + innerActual);
         }
     }
 
-    private static AccessFlags lookupInnerFlags(ClassFile classFile, String innerName) throws ConstantPoolException {
-        InnerClasses_attribute inners = (InnerClasses_attribute) classFile.getAttribute("InnerClasses");
+    private static int lookupInnerFlags(ClassModel classFile, String innerName) {
+        InnerClassesAttribute inners = classFile.findAttribute(Attributes.INNER_CLASSES).orElse(null);
         if (inners == null) {
-            throw new AssertionError("InnerClasses attribute missing in class " + classFile.getName());
+            throw new AssertionError("InnerClasses attribute missing in class " + classFile.thisClass().asInternalName());
         }
-        for (InnerClasses_attribute.Info info : inners.classes) {
-            String entryName = info.getInnerClassInfo(classFile.constant_pool).getName();
+        for (InnerClassInfo info: inners.classes()) {
+            String entryName = info.innerClass().asInternalName();
             if (innerName.equals(entryName)) {
-                return info.inner_class_access_flags;
+                return info.flagsMask();
             }
         }
-        throw new AssertionError("No InnerClasses entry in class " + classFile.getName() + " for class " + innerName);
+        throw new AssertionError("No InnerClasses entry in class " + classFile.thisClass().asInternalName() + " for class " + innerName);
     }
 
 }

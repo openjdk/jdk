@@ -29,7 +29,7 @@
 #include "gc/g1/g1BarrierSetRuntime.hpp"
 #include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1ThreadLocalData.hpp"
-#include "gc/g1/heapRegion.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
 #include "opto/arraycopynode.hpp"
 #include "opto/compile.hpp"
 #include "opto/escape.hpp"
@@ -94,7 +94,7 @@ bool G1BarrierSetC2::g1_can_remove_pre_barrier(GraphKit* kit,
                                                uint adr_idx) const {
   intptr_t offset = 0;
   Node* base = AddPNode::Ideal_base_and_offset(adr, phase, offset);
-  AllocateNode* alloc = AllocateNode::Ideal_allocation(base, phase);
+  AllocateNode* alloc = AllocateNode::Ideal_allocation(base);
 
   if (offset == Type::OffsetBot) {
     return false; // cannot unalias unless there are precise offsets
@@ -142,7 +142,7 @@ bool G1BarrierSetC2::g1_can_remove_pre_barrier(GraphKit* kit,
 
       if (st_base != base
           && MemNode::detect_ptr_independence(base, alloc, st_base,
-                                              AllocateNode::Ideal_allocation(st_base, phase),
+                                              AllocateNode::Ideal_allocation(st_base),
                                               phase)) {
         // Success:  The bases are provably independent.
         mem = mem->in(MemNode::Memory);
@@ -307,7 +307,7 @@ bool G1BarrierSetC2::g1_can_remove_post_barrier(GraphKit* kit,
                                                 Node* adr) const {
   intptr_t      offset = 0;
   Node*         base   = AddPNode::Ideal_base_and_offset(adr, phase, offset);
-  AllocateNode* alloc  = AllocateNode::Ideal_allocation(base, phase);
+  AllocateNode* alloc  = AllocateNode::Ideal_allocation(base);
 
   if (offset == Type::OffsetBot) {
     return false; // cannot unalias unless there are precise offsets
@@ -389,7 +389,7 @@ void G1BarrierSetC2::post_barrier(GraphKit* kit,
 
   if (use_ReduceInitialCardMarks() && obj == kit->just_allocated_object(kit->control())) {
     // We can skip marks on a freshly-allocated object in Eden.
-    // Keep this code in sync with new_deferred_store_barrier() in runtime.cpp.
+    // Keep this code in sync with CardTableBarrierSet::on_slowpath_allocation_exit.
     // That routine informs GC to take appropriate compensating steps,
     // upon a slow-path allocation, so as to make this card-mark
     // elision safe.
@@ -454,7 +454,7 @@ void G1BarrierSetC2::post_barrier(GraphKit* kit,
     // Should be able to do an unsigned compare of region_size instead of
     // and extra shift. Do we have an unsigned compare??
     // Node* region_size = __ ConI(1 << HeapRegion::LogOfHRGrainBytes);
-    Node* xor_res =  __ URShiftX ( __ XorX( cast,  __ CastPX(__ ctrl(), val)), __ ConI(HeapRegion::LogOfHRGrainBytes));
+    Node* xor_res =  __ URShiftX ( __ XorX( cast,  __ CastPX(__ ctrl(), val)), __ ConI(checked_cast<jint>(HeapRegion::LogOfHRGrainBytes)));
 
     // if (xor_res == 0) same region so skip
     __ if_then(xor_res, BoolTest::ne, zeroX, likely); {

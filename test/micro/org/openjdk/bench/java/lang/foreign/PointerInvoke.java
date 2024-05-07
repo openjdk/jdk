@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -45,7 +43,7 @@ import java.util.concurrent.TimeUnit;
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @State(org.openjdk.jmh.annotations.Scope.Thread)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
-@Fork(value = 3, jvmArgsAppend = { "--enable-native-access=ALL-UNNAMED", "--enable-preview" })
+@Fork(value = 3, jvmArgsAppend = { "--enable-native-access=ALL-UNNAMED", "-Djava.library.path=micro/native" })
 public class PointerInvoke extends CLayouts {
 
     Arena arena = Arena.ofConfined();
@@ -60,13 +58,13 @@ public class PointerInvoke extends CLayouts {
     static {
         Linker abi = Linker.nativeLinker();
         SymbolLookup loaderLibs = SymbolLookup.loaderLookup();
-        F_LONG_LONG = abi.downcallHandle(loaderLibs.find("id_long_long").get(),
+        F_LONG_LONG = abi.downcallHandle(loaderLibs.findOrThrow("id_long_long"),
                 FunctionDescriptor.of(C_LONG_LONG, C_LONG_LONG));
-        F_PTR_LONG = abi.downcallHandle(loaderLibs.find("id_ptr_long").get(),
+        F_PTR_LONG = abi.downcallHandle(loaderLibs.findOrThrow("id_ptr_long"),
                 FunctionDescriptor.of(C_LONG_LONG, C_POINTER));
-        F_LONG_PTR = abi.downcallHandle(loaderLibs.find("id_long_ptr").get(),
+        F_LONG_PTR = abi.downcallHandle(loaderLibs.findOrThrow("id_long_ptr"),
                 FunctionDescriptor.of(C_POINTER, C_LONG_LONG));
-        F_PTR_PTR = abi.downcallHandle(loaderLibs.find("id_ptr_ptr").get(),
+        F_PTR_PTR = abi.downcallHandle(loaderLibs.findOrThrow("id_ptr_ptr"),
                 FunctionDescriptor.of(C_POINTER, C_POINTER));
     }
 

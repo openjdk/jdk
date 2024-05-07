@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "logging/log.hpp"
+#include "nmt/memTracker.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/orderAccess.hpp"
@@ -31,7 +32,6 @@
 #include "runtime/osThread.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/stackWatermarkSet.hpp"
-#include "services/memTracker.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 uintptr_t SafepointMechanism::_poll_word_armed_value;

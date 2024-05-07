@@ -34,10 +34,10 @@
 #include "jfr/utilities/jfrIterator.hpp"
 #include "jfr/utilities/jfrLinkedList.inline.hpp"
 #include "memory/resourceArea.hpp"
+#include "nmt/memTracker.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/semaphore.hpp"
 #include "runtime/thread.inline.hpp"
-#include "services/memTracker.hpp"
 #include "utilities/macros.hpp"
 
 class JfrSerializerRegistration : public JfrCHeapObj {

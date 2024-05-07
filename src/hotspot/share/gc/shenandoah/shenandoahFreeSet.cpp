@@ -154,7 +154,7 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
   HeapWord* result = nullptr;
   size_t size = req.size();
 
-  if (ShenandoahElasticTLAB && req.is_lab_alloc()) {
+  if (req.is_lab_alloc()) {
     size_t free = align_down(r->free() >> LogHeapWordSize, MinObjAlignment);
     if (size > free) {
       size = free;
@@ -279,7 +279,7 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req) {
     }
 
     end++;
-  };
+  }
 
   size_t remainder = words_size & ShenandoahHeapRegion::region_size_words_mask();
 

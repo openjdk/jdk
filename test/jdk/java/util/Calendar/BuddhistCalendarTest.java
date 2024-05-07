@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,191 +24,200 @@
 /*
  * @test
  * @bug 4817812 4847186 4956227 4956479
- * @summary Confirm that BuddhistCalendar's add(), roll() and toString() work correctly with Buddhist Era years.
+ * @summary Confirm that BuddhistCalendar's add(), roll(), set(), and toString()
+ *          work correctly with Buddhist Era years.
+ * @run junit BuddhistCalendarTest
  */
 
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.Locale;
-import static java.util.Calendar.*;
+import java.util.stream.Stream;
+
+import static java.util.Calendar.APRIL;
+import static java.util.Calendar.DATE;
+import static java.util.Calendar.DECEMBER;
+import static java.util.Calendar.ERA;
+import static java.util.Calendar.FEBRUARY;
+import static java.util.Calendar.JANUARY;
+import static java.util.Calendar.MAY;
+import static java.util.Calendar.MONTH;
+import static java.util.Calendar.WEEK_OF_YEAR;
+import static java.util.Calendar.YEAR;
+
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class BuddhistCalendarTest {
 
     private static final Locale THAI_LOCALE = Locale.of("th", "TH");
 
-    public static void main(String[] args) {
-        testAddRoll();
-        testToString();
-        testException();
-        testLeastMax();
+    /*
+     * Test some add values for the BuddhistCalendar. This test compares the same field
+     * as the one added.
+     */
+    @ParameterizedTest
+    @MethodSource("addDataProvider")
+    public void buddhistAddTest(Calendar cal, int amount, int fieldToAdd) {
+        int base = cal.get(YEAR);
+        cal.add(fieldToAdd, amount);
+        int yearAfterRoll = cal.get(YEAR);
+        assertEquals(yearAfterRoll, base+amount, String.format(
+                "Added: %s to field: %s", amount, fieldToAdd));
     }
 
-    /**
-     * 4817812
+    /*
+     * Given in the format: Calendar, amount to add, and field to add.
+     * Test adding of positive and negative year values.
      */
-    static void testAddRoll() {
-        Calendar cal;
-        int base, year;
+    private static Stream<Arguments> addDataProvider() {
+        return Stream.of(
+                Arguments.of(getBuddhistCalendar(), 1, YEAR),
+                Arguments.of(getBuddhistCalendar(), -3, YEAR)
+        );
+    }
 
-        /*
-         * Test: BuddhistCalendar.add(YEAR)
-         */
-        cal = getBuddhistCalendar();
-        base = cal.get(YEAR);
-        cal.add(YEAR, 1);
-        year = cal.get(YEAR);
-        check(year, base+1, "add(+YEAR)");
+    /*
+     * Test some add values for the BuddhistCalendar. Compare a bigger field
+     * (year) than the one added (month). Larger field should roll over.
+     */
+    @ParameterizedTest
+    @MethodSource("alternateAddDataProvider")
+    public void buddhistAlternateAddTest(Calendar cal, int amount, int fieldToAdd) {
+        int base = cal.get(YEAR);
+        cal.add(fieldToAdd, amount);
+        int yearAfterRoll = cal.get(YEAR);
+        assertEquals(yearAfterRoll, (amount>0) ? (base+1): (base-1), String.format(
+                "Added: %s to field: %s", amount, fieldToAdd));
+    }
 
-        cal = getBuddhistCalendar();
-        base = cal.get(YEAR);
-        cal.add(YEAR, -3);
-        year = cal.get(YEAR);
-        check(year, base-3, "add(-YEAR)");
+    /*
+     * Given in the format: Calendar, amount to add, and field to add.
+     * Test adding of positive and negative month values.
+     */
+    private static Stream<Arguments> alternateAddDataProvider() {
+        return Stream.of(
+                Arguments.of(getBuddhistCalendarBuilder().set(MONTH, DECEMBER).build(), 2, MONTH),
+                Arguments.of(getBuddhistCalendarBuilder().set(MONTH, FEBRUARY).build(), -4, MONTH)
+                );
+    }
 
-        /*
-         * Test BuddhistCalendar.add(MONTH)
-         */
-        cal = getBuddhistCalendar();
-        base = cal.get(YEAR);
-        cal.set(MONTH, DECEMBER);
-        cal.add(MONTH, 2);
-        year = cal.get(YEAR);
-        check(year, base+1, "add(+MONTH)");
+    /*
+     * Test some roll values for the BuddhistCalendar. Compare same field
+     * that was rolled, value should change.
+     */
+    @ParameterizedTest
+    @MethodSource("rollProvider")
+    public void buddhistRollTest(Calendar cal, int amount, int fieldToRoll) {
+        int base = cal.get(YEAR);
+        cal.roll(fieldToRoll, amount);
+        int year = cal.get(YEAR);
+        assertEquals(year, base+amount, "Rolling field should change value");
+    }
 
-        cal = getBuddhistCalendar();
-        base = cal.get(YEAR);
-        cal.set(MONTH, FEBRUARY);
-        cal.add(MONTH, -4);
-        year = cal.get(YEAR);
-        check(year, base-1, "add(-MONTH)");
+    /*
+     * Given in the format: Calendar, amount to roll, and field to roll.
+     * Test rolling of positive and negative year values.
+     */
+    private static Stream<Arguments> rollProvider() {
+        return Stream.of(
+                Arguments.of(getBuddhistCalendar(), 2, YEAR),
+                Arguments.of(getBuddhistCalendar(), -4, YEAR)
+        );
+    }
 
-        /*
-         * Test BuddhistCalendar.roll(YEAR)
-         */
-        cal = getBuddhistCalendar();
-        base = cal.get(YEAR);
-        cal.roll(YEAR, 2);
-        year = cal.get(YEAR);
-        check(year, base+2, "roll(+YEAR)");
+    /*
+     * Set some calendar values and roll, however, measure a different
+     * field than the field that was rolled. Rolling should not change the
+     * larger field.
+     */
+    @ParameterizedTest
+    @MethodSource("alternateRollProvider")
+    public void buddhistAlternateRollTest(Calendar cal, int amount, int fieldToRoll) {
+        int base = cal.get(YEAR);
+        cal.roll(fieldToRoll, amount);
+        int year = cal.get(YEAR);
+        assertEquals(year, base, "Rolling smaller field should not change bigger field");
+    }
 
-        cal = getBuddhistCalendar();
-        base = cal.get(YEAR);
-        cal.roll(YEAR, -4);
-        year = cal.get(YEAR);
-        check(year, base-4, "roll(-YEAR)");
+    /*
+     * Given in the format: Calendar, amount to roll, and field to roll.
+     * Test rolling of positive and negative week_of_year values.
+     */
+    private static Stream<Arguments> alternateRollProvider() {
+        return Stream.of(
+                Arguments.of(getBuddhistCalendarBuilder().set(YEAR, 2543)
+                        .set(MONTH, DECEMBER).set(DATE, 31).build(), 10, WEEK_OF_YEAR),
+                Arguments.of(getBuddhistCalendarBuilder().set(YEAR, 2543)
+                        .set(MONTH, JANUARY).set(DATE, 1).build(), -10, WEEK_OF_YEAR)
+        );
+    }
 
-        /*
-         * Test BuddhistCalendar.roll(WEEK_OF_YEAR)
-         */
-        cal = getBuddhistCalendar();
-        cal.set(YEAR, 2543);   // A.D.2000
-        cal.set(MONTH, DECEMBER);
-        cal.set(DATE, 31);
-        base = cal.get(YEAR);
-        check(base, 2543, "roll(+WEEK_OF_YEAR)");
-        cal.roll(WEEK_OF_YEAR, 10);
-        year = cal.get(YEAR);
-        check(year, base, "roll(+WEEK_OF_YEAR)");
-
-        cal = getBuddhistCalendar();
-        cal.set(YEAR, 2543);   // A.D.2000
-        cal.set(MONTH, JANUARY);
-        cal.set(DATE, 1);
-        base = cal.get(YEAR);
-        check(base, 2543, "roll(+WEEK_OF_YEAR)");
-        cal.roll(WEEK_OF_YEAR, -10);
-        year = cal.get(YEAR);
-        check(year, base, "roll(-WEEK_OF_YEAR)");
-
-        /*
-         * Test Calendar.set(year, month, date)
-         */
-        cal = getBuddhistCalendar();
-        base = cal.get(YEAR);
+    // Test the overloaded set() methods. Check year value.
+    @Test
+    public void buddhistSetTest() {
+        Calendar cal = getBuddhistCalendar();
         cal.set(3001, APRIL, 10);
-        year = cal.get(YEAR);
-        check(year, 3001, "set(year, month, date)");
-
-        /*
-         * Test Calendar.set(year, month, date, hour, minute)
-         */
-        cal = getBuddhistCalendar();
-        base = cal.get(YEAR);
+        assertEquals(cal.get(YEAR), 3001);
         cal.set(3020, MAY, 20, 9, 10);
-        year = cal.get(YEAR);
-        check(year, 3020, "set(year, month, date, hour, minute)");
-
-        /*
-         * Test Calendar.set(year, month, date, hour, minute, second)
-         */
-        cal = getBuddhistCalendar();
-        base = cal.get(YEAR);
-        cal.set(3120, MAY, 20, 9, 10, 52);
-        year = cal.get(YEAR);
-        check(year, 3120, "set(year, month, date, hour, minute, second)");
-
-        /*
-         * Test BuddhistCalendar.getActualMaximum(YEAR);
-         *    set(YEAR)/get(YEAR) in this method doesn't affect the real
-         *    YEAR value because a clone is used with set()&get().
-         */
-        cal = getBuddhistCalendar();
-        base = cal.get(YEAR);
-        int limit = cal.getActualMaximum(YEAR);
-        year = cal.get(YEAR);
-        check(year, base, "BuddhistCalendar.getActualMaximum(YEAR)");
-
-        /*
-         * Test BuddhistCalendar.getActualMinimum(YEAR);
-         *   This doesn't call set(YEAR) nor get(YEAR), though.
-         */
-        cal = getBuddhistCalendar();
-        base = cal.get(YEAR);
-        limit = cal.getActualMinimum(YEAR);
-        year = cal.get(YEAR);
-        check(year, base, "BuddhistCalendar.getActualMinimum(YEAR)");
+        assertEquals(cal.get(YEAR), 3020);
+        cal.set(3120, MAY, 20, 9, 10, 52 );
+        assertEquals(cal.get(YEAR), 3120);
     }
 
-    /**
-     * 4847186: BuddhistCalendar: toString() returns Gregorian year
+    /*
+     * Test BuddhistCalendar.getActualMaximum(YEAR);
+     * set(YEAR)/get(YEAR) in this method doesn't affect the real
+     * YEAR value because a clone is used with set() and get().
      */
-    static void testToString() {
+    @Test
+    public void buddhistActualMaximumTest() {
+        Calendar cal = getBuddhistCalendar();
+        int base = cal.get(YEAR);
+        int ignored = cal.getActualMaximum(YEAR);
+        int year = cal.get(YEAR);
+        assertEquals(year, base, "BuddhistCalendar.getActualMaximum(YEAR)");
+    }
+
+    // Test BuddhistCalendar.getActualMinimum(YEAR), doesn't call set(YEAR) nor get(YEAR).
+    @Test
+    public void buddhistActualMinimumTest() {
+        Calendar cal = getBuddhistCalendar();
+        int base = cal.get(YEAR);
+        int ignored = cal.getActualMinimum(YEAR);
+        int year = cal.get(YEAR);
+        assertEquals(year, base, "BuddhistCalendar.getActualMinimum(YEAR)");
+    }
+
+    // 4847186: BuddhistCalendar: toString() returns Gregorian year
+    @Test
+    public void buddhistToStringTest() {
         Calendar cal = getBuddhistCalendar();
         int year = cal.get(YEAR);
         String s = cal.toString();
         String y = s.replaceAll(".+,YEAR=(\\d+),.+", "$1");
-        if (Integer.parseInt(y) != year) {
-            throw new RuntimeException("toString(): wrong year value: got " + y
-                                       + ", expected " + year);
-        }
+        assertEquals(year, Integer.parseInt(y), "Wrong year value");
     }
 
-    /**
-     * 4956479: BuddhistCalendar methods may return wrong values after exception
-     */
-    static void testException() {
+    // 4956479: BuddhistCalendar methods may return wrong values after exception
+    @Test
+    public void buddhistValuesAfterExceptionTest() {
         Calendar cal = getBuddhistCalendar();
         int year = cal.get(YEAR);
-        boolean exceptionOccurred = false;
-        try {
-            cal.add(100, +1); // cause exception
-        } catch (Exception e) {
-            exceptionOccurred = true;
-        }
-        if (!exceptionOccurred) {
-            throw new RuntimeException("testException: test case failed: no exception thrown");
-        }
+        assertThrows(IllegalArgumentException.class, ()-> cal.add(100, +1));
         int year2 = cal.get(YEAR);
-        if (year2 != year) {
-            throw new RuntimeException("wrong year value after exception: got " + year2
-                                       + ", expected " + year);
-        }
+        assertEquals(year2, year, "Wrong year value after exception thrown");
     }
 
-    /**
-     * 4956227: getLeastMaximum(WEEK_OF_MONTH) return diff. val. for Greg. and Buddhist Calendar
-     */
-    static void testLeastMax() {
+    // 4956227: getLeastMaximum(WEEK_OF_MONTH) return diff. val. for Greg. and Buddhist Calendar
+    @Test
+    public void buddhistLeastMaximumTest() {
         Calendar bc = getBuddhistCalendar();
         // Specify THAI_LOCALE to get the same params for WEEK
         // calculations (6904680).
@@ -219,25 +228,17 @@ public class BuddhistCalendarTest {
             }
             int bn = bc.getLeastMaximum(f);
             int gn = gc.getLeastMaximum(f);
-            if (bn != gn) {
-                throw new RuntimeException("inconsistent Least Max value for " + Koyomi.getFieldName(f)
-                                           + ": Buddhist=" + bn
-                                           + ": Gregorian=" + gn);
-            }
+            assertEquals(bn, gn, "Inconsistent Least Max value for " + Koyomi.getFieldName(f));
         }
     }
 
-    /**
-     * @return a BuddhistCalendar
-     */
-    static Calendar getBuddhistCalendar() {
+    // Utility to get a new Buddhist Calendar Builder (to allow setting of other values)
+    private static Calendar.Builder getBuddhistCalendarBuilder() {
+        return new Calendar.Builder().setLocale(THAI_LOCALE);
+    }
+
+    // Utility to get a new Buddhist calendar
+    private static Calendar getBuddhistCalendar() {
         return Calendar.getInstance(THAI_LOCALE);
-    }
-
-    static void check(int got, int expected, String s) {
-        if (got != expected) {
-            throw new RuntimeException("Failed: " +
-                s + ": got:" + got + ", expected:" + expected);
-        }
     }
 }

@@ -332,7 +332,7 @@ class LambdaForm {
         this.isCompiled = false;
     }
 
-    // root factory pre/post processing and calls simple cosntructor
+    // root factory pre/post processing and calls simple constructor
     private static LambdaForm create(int arity, Name[] names, int result, boolean forceInline, MethodHandle customized, Kind kind) {
         names = names.clone();
         assert(namesOK(arity, names));
@@ -571,7 +571,7 @@ class LambdaForm {
         return true;
     }
 
-    /** Invoke this form on the given arguments. */
+    // /** Invoke this form on the given arguments. */
     // final Object invoke(Object... args) throws Throwable {
     //     // NYI: fit this into the fast path?
     //     return interpretWithArguments(args);
@@ -923,9 +923,9 @@ class LambdaForm {
         return invocationCounter == -1;
     }
 
+    /** Interpretively invoke this form on the given arguments. */
     @Hidden
     @DontInline
-    /** Interpretively invoke this form on the given arguments. */
     Object interpretWithArguments(Object... argumentValues) throws Throwable {
         if (TRACE_INTERPRETER)
             return interpretWithArgumentsTracing(argumentValues);
@@ -940,9 +940,9 @@ class LambdaForm {
         return rv;
     }
 
+    /** Evaluate a single Name within this form, applying its function to its arguments. */
     @Hidden
     @DontInline
-    /** Evaluate a single Name within this form, applying its function to its arguments. */
     Object interpretName(Name name, Object[] values) throws Throwable {
         if (TRACE_INTERPRETER)
             traceInterpreter("| interpretName", name.debugString(), (Object[]) null);

@@ -30,6 +30,7 @@
 #include "code/oopRecorder.hpp"
 #include "code/relocInfo.hpp"
 #include "memory/allocation.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
@@ -226,7 +227,8 @@ class AbstractAssembler : public ResourceObj  {
   bool isByte(int x) const             { return 0 <= x && x < 0x100; }
   bool isShiftCount(int x) const       { return 0 <= x && x < 32; }
 
-  // Instruction boundaries (required when emitting relocatable values).
+  // Mark instruction boundaries, this is required when emitting relocatable values.
+  // Basically, all instructions that directly or indirectly use Assembler::emit_data* methods.
   class InstructionMark: public StackObj {
    private:
     AbstractAssembler* _assm;
@@ -290,6 +292,20 @@ class AbstractAssembler : public ResourceObj  {
   };
 #endif
 
+  // sign-extended tolerant cast needed by callers of emit_int8 and emit_int16
+  // Some callers pass signed types that need to fit into the unsigned type so check
+  // that the range is correct.
+  template <typename T>
+  constexpr T narrow_cast(int x) const {
+    if (x < 0) {
+      using stype = std::make_signed_t<T>;
+      assert(x >= std::numeric_limits<stype>::min(), "too negative"); // >= -128 for 8 bits
+      return static_cast<T>(x);  // cut off sign bits
+    } else {
+      return checked_cast<T>(x);
+    }
+  }
+
  public:
 
   // Creation
@@ -298,15 +314,22 @@ class AbstractAssembler : public ResourceObj  {
   // ensure buf contains all code (call this before using/copying the code)
   void flush();
 
-  void emit_int8(   uint8_t x1)                                     { code_section()->emit_int8(x1); }
+  void emit_int8(       int x1)                                     { code_section()->emit_int8(narrow_cast<uint8_t>(x1)); }
 
-  void emit_int16(  uint16_t x)                                     { code_section()->emit_int16(x); }
-  void emit_int16(  uint8_t x1, uint8_t x2)                         { code_section()->emit_int16(x1, x2); }
+  void emit_int16(       int x)                                     { code_section()->emit_int16(narrow_cast<uint16_t>(x)); }
 
-  void emit_int24(  uint8_t x1, uint8_t x2, uint8_t x3)             { code_section()->emit_int24(x1, x2, x3); }
+  void emit_int16(      int x1,     int x2)                         { code_section()->emit_int16(narrow_cast<uint8_t>(x1),
+                                                                                                 narrow_cast<uint8_t>(x2)); }
+
+  void emit_int24(      int x1,     int x2,     int x3)             { code_section()->emit_int24(narrow_cast<uint8_t>(x1),
+                                                                                                 narrow_cast<uint8_t>(x2),
+                                                                                                 narrow_cast<uint8_t>(x3)); }
 
   void emit_int32(  uint32_t x)                                     { code_section()->emit_int32(x); }
-  void emit_int32(  uint8_t x1, uint8_t x2, uint8_t x3, uint8_t x4) { code_section()->emit_int32(x1, x2, x3, x4); }
+  void emit_int32(      int x1,     int x2,     int x3,     int x4) { code_section()->emit_int32(narrow_cast<uint8_t>(x1),
+                                                                                                 narrow_cast<uint8_t>(x2),
+                                                                                                 narrow_cast<uint8_t>(x3),
+                                                                                                 narrow_cast<uint8_t>(x4)); }
 
   void emit_int64(  uint64_t x)                                     { code_section()->emit_int64(x); }
 
@@ -337,12 +360,14 @@ class AbstractAssembler : public ResourceObj  {
   }
 
   static bool is_uimm12(uint64_t x) { return is_uimm(x, 12); }
+  static bool is_uimm32(uint64_t x) { return is_uimm(x, 32); }
 
   // Accessors
   CodeSection*  code_section() const   { return _code_section; }
   CodeBuffer*   code()         const   { return code_section()->outer(); }
   int           sect()         const   { return code_section()->index(); }
   address       pc()           const   { return code_section()->end();   }
+  address       begin()        const   { return code_section()->start(); }
   int           offset()       const   { return code_section()->size();  }
   int           locator()      const   { return CodeBuffer::locator(offset(), sect()); }
 
@@ -351,10 +376,11 @@ class AbstractAssembler : public ResourceObj  {
 
   void   register_skipped(int size) { code_section()->register_skipped(size); }
 
-  address       inst_mark() const { return code_section()->mark();       }
-  void      set_inst_mark()       {        code_section()->set_mark();   }
-  void    clear_inst_mark()       {        code_section()->clear_mark(); }
-
+  address       inst_mark() const         { return code_section()->mark();          }
+  void      set_inst_mark()               {        code_section()->set_mark();      }
+  void      set_inst_mark(address addr)   {        code_section()->set_mark(addr);  }
+  void    clear_inst_mark()               {        code_section()->clear_mark();    }
+  void set_inst_end(address addr)         {        code_section()->set_end(addr);   }
 
   // Constants in code
   void relocate(RelocationHolder const& rspec, int format = 0) {
@@ -365,6 +391,12 @@ class AbstractAssembler : public ResourceObj  {
   }
   void relocate(   relocInfo::relocType rtype, int format = 0) {
     code_section()->relocate(code_section()->end(), rtype, format);
+  }
+  void relocate(address addr, relocInfo::relocType rtype, int format = 0) {
+    code_section()->relocate(addr, rtype, format);
+  }
+  void relocate(address addr, RelocationHolder const& rspec, int format = 0) {
+    code_section()->relocate(addr, rspec, format);
   }
 
   static int code_fill_byte();         // used to pad out odd-sized code buffers

@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "asm/codeBuffer.hpp"
+#include "code/compiledIC.hpp"
 #include "code/oopRecorder.inline.hpp"
 #include "compiler/disassembler.hpp"
 #include "logging/log.hpp"
@@ -65,17 +66,17 @@
 // The structure of the CodeBuffer while code is being accumulated:
 //
 //    _total_start ->    \
-//    _insts._start ->              +----------------+
+//    _consts._start ->             +----------------+
+//                                  |                |
+//                                  |   Constants    |
+//                                  |                |
+//    _insts._start ->              |----------------|
 //                                  |                |
 //                                  |     Code       |
 //                                  |                |
 //    _stubs._start ->              |----------------|
 //                                  |                |
 //                                  |    Stubs       | (also handlers for deopt/exception)
-//                                  |                |
-//    _consts._start ->             |----------------|
-//                                  |                |
-//                                  |   Constants    |
 //                                  |                |
 //                                  +----------------+
 //    + _total_size ->              |                |
@@ -1011,6 +1012,8 @@ void CodeBuffer::log_section_sizes(const char* name) {
 }
 
 bool CodeBuffer::finalize_stubs() {
+  // Record size of code before we generate stubs in instructions section
+  _main_code_size = _insts.size();
   if (_finalize_stubs && !pd_finalize_stubs()) {
     // stub allocation failure
     return false;
@@ -1061,11 +1064,6 @@ void CodeSection::print(const char* name) {
 }
 
 void CodeBuffer::print() {
-  if (this == nullptr) {
-    tty->print_cr("null CodeBuffer pointer");
-    return;
-  }
-
   tty->print_cr("CodeBuffer:");
   for (int n = 0; n < (int)SECT_LIMIT; n++) {
     // print each section

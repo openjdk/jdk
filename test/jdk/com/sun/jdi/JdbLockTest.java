@@ -39,7 +39,7 @@ class JdbLockTestTarg {
     static String jj = "jj";
     public static void main(String args[]) {
         synchronized(jj) {
-            Thread xx = TestScaffold.newThread(new Sleeper());
+            Thread xx = DebuggeeWrapper.newThread(new Sleeper());
             xx.start();
             // Give the sleeper a chance to run and get to
             // the synchronized statement.

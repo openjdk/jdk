@@ -36,7 +36,7 @@
 . ftr VB CB
 . ftr VBI CBI
 .\}
-.TH "JARSIGNER" "1" "2024" "JDK 22-ea" "JDK Commands"
+.TH "JARSIGNER" "1" "2024" "JDK 23-ea" "JDK Commands"
 .hy
 .SH NAME
 .PP
@@ -318,7 +318,7 @@ l l l l.
 T{
 keyalg
 T}@T{
-keysize
+key size
 T}@T{
 default sigalg
 T}@T{
@@ -420,6 +420,9 @@ Otherwise, jarsigner will use parameters that are determined by the size
 of the key as specified in the table above.
 For example, an 3072-bit RSASSA-PSS key will use RSASSA-PSS as the
 signature algorithm and SHA-384 as the hash and MGF1 algorithms.
+.IP \[bu] 2
+If a key algorithm is not listed in this table, the \f[V].DSA\f[R]
+extension is used when signing a JAR file.
 .PP
 These default signature algorithms can be overridden by using the
 \f[V]-sigalg\f[R] option.
@@ -805,8 +808,8 @@ Specifies the name of the message digest algorithm to use when digesting
 the entries of a JAR file.
 .RS
 .PP
-For a list of standard message digest algorithm names, see Java Security
-Standard Algorithm Names.
+For a list of standard message digest algorithm names, see the Java
+Security Standard Algorithm Names Specification.
 .PP
 If this option isn\[aq]t specified, then \f[V]SHA-384\f[R] is used.
 There must either be a statically installed provider supplying an
@@ -830,8 +833,8 @@ implementation of the specified algorithm or you must specify one with
 the \f[V]-addprovider\f[R] or \f[V]-providerClass\f[R] option;
 otherwise, the command doesn\[aq]t succeed.
 .PP
-For a list of standard message digest algorithm names, see Java Security
-Standard Algorithm Names.
+For a list of standard signature algorithm names, see the Java Security
+Standard Algorithm Names Specification.
 .RE
 .TP
 \f[V]-verify\f[R]
@@ -946,8 +949,8 @@ If this option isn\[aq]t specified, SHA-384 will be used.
 .PP
 See \f[B]Supported Algorithms\f[R].
 .PP
-For a list of standard message digest algorithm names, see Java Security
-Standard Algorithm Names.
+For a list of standard message digest algorithm names, see the Java
+Security Standard Algorithm Names Specification.
 .RE
 .TP
 \f[V]-internalsf\f[R]

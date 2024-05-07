@@ -97,7 +97,7 @@ static int array_offset(const Edge& edge) {
   UnifiedOopRef reference = edge.reference();
   assert(!reference.is_null(), "invariant");
   assert(ref_owner->is_array(), "invariant");
-  const objArrayOop ref_owner_array = static_cast<const objArrayOop>(ref_owner);
+  const objArrayOop ref_owner_array = static_cast<objArrayOop>(ref_owner);
   const int offset = (int)pointer_delta(reference.addr<HeapWord*>(), ref_owner_array->base(), heapOopSize);
   assert(offset >= 0 && offset < ref_owner_array->length(), "invariant");
   return offset;

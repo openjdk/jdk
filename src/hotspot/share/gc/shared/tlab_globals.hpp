@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@
                    develop_pd,                                              \
                    product,                                                 \
                    product_pd,                                              \
-                   notproduct,                                              \
                    range,                                                   \
                    constraint)                                              \
                                                                             \
@@ -45,9 +44,6 @@
                                                                             \
   product(bool, ZeroTLAB, false,                                            \
           "Zero out the newly created TLAB")                                \
-                                                                            \
-  product(bool, TLABStats, true,                                            \
-          "Provide more detailed and expensive TLAB statistics.")           \
                                                                             \
   product(size_t, MinTLABSize, 2*K,                                         \
           "Minimum allowed TLAB size (in bytes)")                           \
@@ -70,10 +66,13 @@
           "Allocation averaging weight")                                    \
           range(0, 100)                                                     \
                                                                             \
+  /* At GC all TLABs are retired, and each thread's active  */              \
+  /* TLAB is assumed to be half full on average. The        */              \
+  /* remaining space is waste, proportional to TLAB size.   */              \
+  product(uintx, TLABWasteTargetPercent, 1,                                 \
+          "Percentage of Eden that can be wasted (half-full TLABs at GC)")  \
   /* Limit the lower bound of this flag to 1 as it is used  */              \
   /* in a division expression.                              */              \
-  product(uintx, TLABWasteTargetPercent, 1,                                 \
-          "Percentage of Eden that can be wasted")                          \
           range(1, 100)                                                     \
                                                                             \
   product(uintx, TLABRefillWasteFraction,    64,                            \

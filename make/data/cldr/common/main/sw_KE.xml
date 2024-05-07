@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -232,7 +232,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="GT">Gwatemala</territory>
 			<territory type="GU">Guami</territory>
 			<territory type="HR">Kroashia</territory>
-			<territory type="IO">Himaya ya Uingereza katika Bahari Hindi</territory>
 			<territory type="JO">Yordani</territory>
 			<territory type="LA">Laosi</territory>
 			<territory type="LB">Lebanoni</territory>
@@ -720,11 +719,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Saa za Majira ya Joto za Krasnoyarsk</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Saa za Makwuarie</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>Saa za Magadan</generic>
@@ -747,13 +741,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Saa za Morisi</generic>
 					<standard>Saa za Wastani za Morisi</standard>
 					<daylight>Saa za Majira ya Joto za Morisi</daylight>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic>Saa za Kaskazini Magharibi mwa Meksiko</generic>
-					<standard>Saa za Wastani za Kaskazini Magharibi mwa Meksiko</standard>
-					<daylight>Saa za Mchana za Kaskazini Magharibi mwa Meksiko</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mongolia">
@@ -1034,7 +1021,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<pattern type="100000000000000" count="other">¤ T000;¤-T000</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
-			<currencyPatternAppendISO>{0} ¤¤</currencyPatternAppendISO>
 		</currencyFormats>
 		<currencies>
 			<currency type="AED">
@@ -1268,7 +1254,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="other">riali za Omani</displayName>
 			</currency>
 			<currency type="PAB">
-				<displayName count="one">balboa ya Panama</displayName>
+				<displayName count="one">balboa za Panama</displayName>
 				<displayName count="other">balboa za Panama</displayName>
 			</currency>
 			<currency type="PKR">
@@ -1311,10 +1297,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="one">dola ya Singapoo</displayName>
 				<displayName count="other">dola za Singapoo</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>Leoni ya Siera Leoni</displayName>
 				<displayName count="one">leoni ya Siera Leoni</displayName>
 				<displayName count="other">leoni za Siera Leoni</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>Leoni ya Siera Leoni (1964—2022)</displayName>
+				<displayName count="one">leoni ya Siera Leoni (1964—2022)</displayName>
+				<displayName count="other">leoni za Siera Leoni (1964—2022)</displayName>
 			</currency>
 			<currency type="SSP">
 				<displayName>Pauni ya Sudani Kusini</displayName>
@@ -1395,9 +1386,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</numbers>
 	<units>
 		<unitLength type="long">
-			<unit type="duration-decade">
-				<displayName>mwongo</displayName>
-			</unit>
 			<unit type="duration-microsecond">
 				<displayName>maikrosekunde</displayName>
 				<unitPattern count="one">maikroseunde {0}</unitPattern>
@@ -1420,11 +1408,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">nuka {0} kwa kila inchi</unitPattern>
 				<unitPattern count="other">nukta {0} kwa kila inchi</unitPattern>
 			</unit>
-			<unit type="length-micrometer">
-				<displayName>maikromita</displayName>
-				<unitPattern count="one">maikromita {0}</unitPattern>
-				<unitPattern count="other">maikromita {0}</unitPattern>
-			</unit>
 			<unit type="length-light-year">
 				<unitPattern count="one">miaka {0} ya mwanga</unitPattern>
 				<unitPattern count="other">miaka {0} ya mwanga</unitPattern>
@@ -1432,11 +1415,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="length-solar-radius">
 				<unitPattern count="one">nusu kipenyo {0} cha jua</unitPattern>
 				<unitPattern count="other">nusu vipenyo {0} vya jua</unitPattern>
-			</unit>
-			<unit type="pressure-bar">
-				<displayName>baa</displayName>
-				<unitPattern count="one">baa {0}</unitPattern>
-				<unitPattern count="other">baa {0}</unitPattern>
 			</unit>
 			<unit type="pressure-pascal">
 				<unitPattern count="one">Pa {0}</unitPattern>
@@ -1455,7 +1433,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="graphics-pixel">
 				<unitPattern count="one">pikseli {0}</unitPattern>
-				<unitPattern count="other">pikseli {0}</unitPattern>
+				<unitPattern count="other">px {0}</unitPattern>
 			</unit>
 			<unit type="graphics-megapixel">
 				<displayName>megapikseli</displayName>
@@ -1466,14 +1444,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">maikromita {0}</unitPattern>
 			</unit>
 			<unit type="length-parsec">
-				<unitPattern count="one">pc {0}</unitPattern>
+				<unitPattern count="one">kila sekunde {0}</unitPattern>
 				<unitPattern count="other">kila sekunde {0}</unitPattern>
 			</unit>
 			<unit type="length-astronomical-unit">
 				<displayName>kipimo cha astronomia</displayName>
 			</unit>
 			<unit type="pressure-millimeter-ofhg">
-				<unitPattern count="one">mmHg {0}</unitPattern>
+				<unitPattern count="one">mm Hg {0}</unitPattern>
 				<unitPattern count="other">mm Hg {0}</unitPattern>
 			</unit>
 			<unit type="pressure-bar">
@@ -1489,16 +1467,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="consumption-mile-per-gallon-imperial">
 				<displayName>maili/gal Imp</displayName>
 			</unit>
-			<unit type="duration-decade">
-				<displayName>mwongo</displayName>
-			</unit>
-			<unit type="graphics-pixel">
-				<unitPattern count="one">pikseli {0}</unitPattern>
-				<unitPattern count="other">pikseli {0}</unitPattern>
-			</unit>
-			<unit type="graphics-megapixel">
-				<displayName>megapikseli</displayName>
-			</unit>
 			<unit type="length-millimeter">
 				<unitPattern count="one">mm{0}</unitPattern>
 				<unitPattern count="other">mm{0}</unitPattern>
@@ -1508,14 +1476,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">maikromita {0}</unitPattern>
 				<unitPattern count="other">maikromita {0}</unitPattern>
 			</unit>
-			<unit type="length-parsec">
-				<unitPattern count="one">pc {0}</unitPattern>
-				<unitPattern count="other">kila sekunde {0}</unitPattern>
-			</unit>
 			<unit type="length-astronomical-unit">
 				<displayName>kipimo cha astronomia</displayName>
 			</unit>
 			<unit type="pressure-millimeter-ofhg">
+				<unitPattern count="one">mm Hg {0}</unitPattern>
 				<unitPattern count="other">mm Hg {0}</unitPattern>
 			</unit>
 			<unit type="pressure-bar">

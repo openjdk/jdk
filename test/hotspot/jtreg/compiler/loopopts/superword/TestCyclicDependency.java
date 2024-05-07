@@ -240,7 +240,7 @@ public class TestCyclicDependency {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.ADD_VI, "> 0", IRNode.STORE_VECTOR, "> 0"},
+    @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0", IRNode.ADD_VI, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static void test0(int[] dataI, float[] dataF) {
         for (int i = 0; i < RANGE; i++) {
@@ -346,7 +346,7 @@ public class TestCyclicDependency {
     }
 
     @Test
-    @IR(counts = {IRNode.ADD_VF, "> 0"},
+    @IR(counts = {IRNode.ADD_VF, IRNode.VECTOR_SIZE + "min(max_int, max_float)", "> 0"},
         applyIf = {"AlignVector", "false"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     // Some aarch64 machines have AlignVector == true, like ThunderX2

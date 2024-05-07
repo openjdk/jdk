@@ -524,8 +524,8 @@ void AwtScrollPane::_SetSpans(void *param)
         DTRACE_PRINTLN5("%x: WScrollPanePeer.setSpans(%d, %d, %d, %d)", self,
             parentWidth, parentHeight, childWidth, childHeight);
         s->RecalcSizes(parentWidth, parentHeight, childWidth, childHeight);
-        s->VerifyState();
         s->SetInsets(env);
+        s->VerifyState();
     }
 ret:
    env->DeleteGlobalRef(self);
@@ -804,7 +804,7 @@ Java_sun_awt_windows_WScrollPanePeer_setSpans(JNIEnv *env, jobject self,
     sss->childWidth = childWidth;
     sss->childHeight = childHeight;
 
-    AwtToolkit::GetInstance().InvokeFunctionLater(AwtScrollPane::_SetSpans, sss);
+    AwtToolkit::GetInstance().InvokeFunction(AwtScrollPane::_SetSpans, sss);
     // global ref and sss are deleted in _SetSpans
 
     CATCH_BAD_ALLOC;

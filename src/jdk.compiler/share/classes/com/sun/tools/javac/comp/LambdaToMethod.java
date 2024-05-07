@@ -796,7 +796,7 @@ public class LambdaToMethod extends TreeTranslator {
             stmts = new ListBuffer<>();
             kInfo.deserializeCases.put(implMethodName, stmts);
         }
-        /****
+        /* **
         System.err.printf("+++++++++++++++++\n");
         System.err.printf("*functionalInterfaceClass: '%s'\n", functionalInterfaceClass);
         System.err.printf("*functionalInterfaceMethodName: '%s'\n", functionalInterfaceMethodName);
@@ -1569,8 +1569,15 @@ public class LambdaToMethod extends TreeTranslator {
         public void visitVarDef(JCVariableDecl tree) {
             TranslationContext<?> context = context();
             if (context != null && context instanceof LambdaTranslationContext lambdaContext) {
-                if (frameStack.head.tree.hasTag(LAMBDA)) {
-                    lambdaContext.addSymbol(tree.sym, LOCAL_VAR);
+                for (Frame frame : frameStack) {
+                    if (frame.tree.hasTag(VARDEF)) {
+                        //skip variable frames inside a lambda:
+                        continue;
+                    } else if (frame.tree.hasTag(LAMBDA)) {
+                        lambdaContext.addSymbol(tree.sym, LOCAL_VAR);
+                    } else {
+                        break;
+                    }
                 }
                 // Check for type variables (including as type arguments).
                 // If they occur within class nested in a lambda, mark for erasure

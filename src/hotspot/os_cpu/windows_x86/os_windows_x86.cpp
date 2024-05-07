@@ -25,7 +25,6 @@
 // no precompiled headers
 #include "asm/macroAssembler.hpp"
 #include "classfile/vmSymbols.hpp"
-#include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jvm.h"
@@ -244,6 +243,9 @@ bool os::win32::platform_print_native_stack(outputStream* st, const void* contex
   stk.AddrPC.Offset       = ctx.Rip;
   stk.AddrPC.Mode         = AddrModeFlat;
 
+  // Ensure we consider dynamically loaded dll's
+  SymbolEngine::refreshModuleList();
+
   int count = 0;
   address lastpc_internal = 0;
   while (count++ < StackPrintLimit) {
@@ -265,6 +267,8 @@ bool os::win32::platform_print_native_stack(outputStream* st, const void* contex
         int line_no;
         if (SymbolEngine::get_source_info(pc, buf, sizeof(buf), &line_no)) {
           st->print("  (%s:%d)", buf, line_no);
+        } else {
+          st->print("  (no source info available)");
         }
         st->cr();
       }
@@ -464,7 +468,7 @@ void os::print_tos_pc(outputStream *st, const void *context) {
   // point to garbage if entry point in an nmethod is corrupted. Leave
   // this at the end, and hope for the best.
   address pc = os::fetch_frame_from_context(uc).pc();
-  print_instructions(st, pc, sizeof(char));
+  print_instructions(st, pc);
   st->cr();
 }
 

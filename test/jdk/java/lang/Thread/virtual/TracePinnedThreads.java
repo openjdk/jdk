@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8284161 8289284
+ * @bug 8284161 8289284 8322846
  * @summary Basic test of debugging option to trace pinned threads
  * @requires vm.continuations
  * @library /test/lib
@@ -34,6 +34,7 @@
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.time.Duration;
+import java.util.concurrent.Executors;
 import java.util.concurrent.locks.LockSupport;
 
 import jdk.test.lib.thread.VThreadRunner;
@@ -67,8 +68,8 @@ class TracePinnedThreads {
                 park();
             }
         });
+        assertContains(output, "reason:MONITOR");
         assertContains(output, "<== monitors:1");
-        assertDoesNotContain(output, "(Native Method)");
     }
 
     /**
@@ -78,8 +79,68 @@ class TracePinnedThreads {
     void testPinnedCausedByNativeMethod() throws Exception {
         System.loadLibrary("TracePinnedThreads");
         String output = run(() -> invokePark());
+        assertContains(output, "reason:NATIVE");
         assertContains(output, "(Native Method)");
-        assertDoesNotContain(output, "<== monitors");
+    }
+
+    /**
+     * Test parking in class initializer.
+     */
+    @Test
+    void testPinnedCausedByClassInitializer() throws Exception {
+        class C {
+            static {
+                park();
+            }
+        }
+        String output = run(C::new);
+        assertContains(output, "reason:NATIVE");
+        assertContains(output, "<clinit>");
+    }
+
+    /**
+     * Test contention writing to System.out when pinned. The test creates four threads
+     * that write to System.out when pinned, this is enough to potentially deadlock
+     * without the changes in JDK-8322846.
+     */
+    @Test
+    void testContention() throws Exception {
+        // use several classes to avoid duplicate stack traces
+        class C1 {
+            synchronized void print() {
+                System.out.println("hello");
+            }
+        }
+        class C2 {
+            synchronized void print() {
+                System.out.println("hello");
+            }
+        }
+        class C3 {
+            synchronized void print() {
+                System.out.println("hello");
+            }
+        }
+        class C4 {
+            synchronized void print() {
+                System.out.println("hello");
+            }
+        }
+
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            executor.submit(() -> {
+                new C1().print();
+            });
+            executor.submit(() -> {
+                new C2().print();
+            });
+            executor.submit(() -> {
+                new C3().print();
+            });
+            executor.submit(() -> {
+                new C4().print();
+            });
+        }
     }
 
     /**

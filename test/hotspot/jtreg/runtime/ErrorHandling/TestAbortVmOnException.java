@@ -25,6 +25,7 @@
  * @test TestAbortVmOnException
  * @summary Test -XX:AbortVMOnException=MyAbortException with C1 compilation
  * @library /test/lib
+ * @requires vm.flagless
  * @run driver TestAbortVmOnException
  * @bug 8264899
  */
@@ -59,12 +60,12 @@ public class TestAbortVmOnException {
 
     private static Process runProcess(String exceptionName, boolean withMessage, String exceptionMessage) throws IOException {
         if (exceptionMessage == null) {
-            return ProcessTools.createJavaProcessBuilder("-XX:+UnlockDiagnosticVMOptions",
+            return ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+UnlockDiagnosticVMOptions",
                 "-XX:AbortVMOnException=" + exceptionName, "-Xcomp", "-XX:TieredStopAtLevel=3", "-XX:-CreateCoredumpOnCrash",
                 "-XX:CompileCommand=compileonly,TestAbortVmOnException::*", TestAbortVmOnException.class.getName(),
                 withMessage ? "throwExceptionWithMessage" : "throwException").start();
         } else {
-            return ProcessTools.createJavaProcessBuilder("-XX:+UnlockDiagnosticVMOptions",
+            return ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+UnlockDiagnosticVMOptions",
                 "-XX:AbortVMOnException=" + exceptionName, "-XX:AbortVMOnExceptionMessage=" + exceptionMessage,
                 "-Xcomp", "-XX:TieredStopAtLevel=3", "-XX:-CreateCoredumpOnCrash", "-XX:CompileCommand=compileonly,TestAbortVmOnException::*",
                 TestAbortVmOnException.class.getName(),withMessage ? "throwExceptionWithMessage" : "throwException").start();

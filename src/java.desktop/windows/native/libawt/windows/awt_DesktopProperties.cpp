@@ -23,6 +23,8 @@
  * questions.
  */
 
+#include <cmath>
+
 #include "awt.h"
 #include "mmsystem.h"
 #include "jlong.h"
@@ -34,8 +36,6 @@
 #include "zmouse.h"
 #include <shellapi.h>
 #include <shlobj.h>
-
-#include "math.h"
 
 // WDesktopProperties fields
 jfieldID AwtDesktopProperties::pDataID = 0;

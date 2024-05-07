@@ -100,4 +100,27 @@ public class TestIndyStringConcat {
         return false;
     }
 
+// this version of the code can be used when ClassFile API in not in a preview
+//    public static boolean hasStringConcatFactoryCall(String methodName) throws Exception {
+//        ClassModel classFile = ClassFile.of().parse(new File(System.getProperty("test.classes", "."),
+//                TestIndyStringConcat.class.getName() + ".class").toPath());
+//
+//        for (MethodModel method : classFile.methods()) {
+//            if (method.methodName().equalsString(methodName)) {
+//                CodeAttribute code = method.findAttribute(Attributes.CODE).orElseThrow();
+//                for (CodeElement i : code.elementList()) {
+//                    if (i instanceof InvokeDynamicInstruction) {
+//                        InvokeDynamicInstruction indy = (InvokeDynamicInstruction) i;
+//                        BootstrapMethodEntry bsmSpec = indy.invokedynamic().bootstrap();
+//                        MethodHandleEntry bsmInfo = bsmSpec.bootstrapMethod();
+//                        if (bsmInfo.reference().owner().asInternalName().equals("java/lang/invoke/StringConcatFactory")) {
+//                            return true;
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//        return false;
+//    }
+
 }

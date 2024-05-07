@@ -212,7 +212,6 @@ public class Test6603011 implements Runnable {
     }
 
     // Try a few divisors outside the typical range.
-    // The values below have been observed in rt.jar.
     test_divisor(101, apploader);
     test_divisor(400, apploader);
     test_divisor(1000, apploader);

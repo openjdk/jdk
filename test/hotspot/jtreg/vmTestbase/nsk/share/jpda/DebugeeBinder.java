@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -180,7 +180,7 @@ public class DebugeeBinder extends Log.Logger implements Finalizable {
             try {
                 pipeServerSocket = new ServerSocket();
                 pipeServerSocket.setReuseAddress(false);
-                pipeServerSocket.bind(null);
+                pipeServerSocket.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
 
             } catch (IOException e) {
                 e.printStackTrace(getOutStream());
@@ -328,8 +328,6 @@ public class DebugeeBinder extends Log.Logger implements Finalizable {
         args.add(classPath);
  */
 
-        args.add("-Xdebug");
-
         String server;
         if (argumentHandler.isAttachingConnector()) {
             server = "y";
@@ -352,9 +350,9 @@ public class DebugeeBinder extends Log.Logger implements Finalizable {
 
         args.add(jdwpArgs);
 
-        if(System.getProperty("main.wrapper") != null) {
+        if (System.getProperty("test.thread.factory") != null) {
             args.add(MainWrapper.class.getName());
-            args.add(System.getProperty("main.wrapper"));
+            args.add(System.getProperty("test.thread.factory"));
         }
 
         if (classToExecute != null) {

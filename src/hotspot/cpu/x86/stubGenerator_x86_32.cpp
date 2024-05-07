@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,7 +90,7 @@ class StubGenerator: public StubCodeGenerator {
 #ifdef PRODUCT
 #define inc_counter_np(counter) ((void)0)
 #else
-  void inc_counter_np_(int& counter) {
+  void inc_counter_np_(uint& counter) {
     __ incrementl(ExternalAddress((address)&counter));
   }
 #define inc_counter_np(counter) \
@@ -1131,8 +1131,8 @@ class StubGenerator: public StubCodeGenerator {
     bs->arraycopy_prologue(_masm, decorators, t, from, to, count);
     {
       bool add_entry = (t != T_OBJECT && (!aligned || t == T_INT));
-      // UnsafeCopyMemory page error: continue after ucm
-      UnsafeCopyMemoryMark ucmm(this, add_entry, true);
+      // UnsafeMemoryAccess page error: continue after unsafe access
+      UnsafeMemoryAccessMark umam(this, add_entry, true);
       __ subptr(to, from); // to --> to_from
       __ cmpl(count, 2<<shift); // Short arrays (< 8 bytes) copy by element
       __ jcc(Assembler::below, L_copy_4_bytes); // use unsigned cmp
@@ -1321,8 +1321,8 @@ class StubGenerator: public StubCodeGenerator {
 
     {
       bool add_entry = (t != T_OBJECT && (!aligned || t == T_INT));
-      // UnsafeCopyMemory page error: continue after ucm
-      UnsafeCopyMemoryMark ucmm(this, add_entry, true);
+      // UnsafeMemoryAccess page error: continue after unsafe access
+      UnsafeMemoryAccessMark umam(this, add_entry, true);
       // copy from high to low
       __ cmpl(count, 2<<shift); // Short arrays (< 8 bytes) copy by element
       __ jcc(Assembler::below, L_copy_4_bytes); // use unsigned cmp
@@ -1450,8 +1450,8 @@ class StubGenerator: public StubCodeGenerator {
     BLOCK_COMMENT("Entry:");
 
     {
-      // UnsafeCopyMemory page error: continue after ucm
-      UnsafeCopyMemoryMark ucmm(this, true, true);
+      // UnsafeMemoryAccess page error: continue after unsafe access
+      UnsafeMemoryAccessMark umam(this, true, true);
       __ subptr(to, from); // to --> to_from
       if (UseXMMForArrayCopy) {
         xmm_copy_forward(from, to_from, count);
@@ -1505,8 +1505,8 @@ class StubGenerator: public StubCodeGenerator {
     __ jump_cc(Assembler::aboveEqual, nooverlap);
 
     {
-      // UnsafeCopyMemory page error: continue after ucm
-      UnsafeCopyMemoryMark ucmm(this, true, true);
+      // UnsafeMemoryAccess page error: continue after unsafe access
+      UnsafeMemoryAccessMark umam(this, true, true);
 
       __ jmpb(L_copy_8_bytes);
 
@@ -3965,8 +3965,8 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::x86::_fpu_cntrl_wrd_trunc = 0x0D7F;
     // Round to nearest, 24-bit mode, exceptions masked
     StubRoutines::x86::_fpu_cntrl_wrd_24    = 0x007F;
-    // Round to nearest, 64-bit mode, exceptions masked
-    StubRoutines::x86::_mxcsr_std           = 0x1F80;
+    // Round to nearest, 64-bit mode, exceptions masked, flags specialized
+    StubRoutines::x86::_mxcsr_std           = EnableX86ECoreOpts ? 0x1FBF : 0x1F80;
     // Note: the following two constants are 80-bit values
     //       layout is critical for correct loading by FPU.
     // Bias for strict fp multiply/divide
@@ -4011,7 +4011,6 @@ class StubGenerator: public StubCodeGenerator {
     Register java_thread = rdi;
     __ get_thread(java_thread);
     __ reset_last_Java_frame(java_thread, true);
-    __ resolve_global_jobject(rax, java_thread, rdx);
   }
 
   // For c2: c_rarg0 is junk, call to runtime to write a checkpoint.
@@ -4044,6 +4043,7 @@ class StubGenerator: public StubCodeGenerator {
     jfr_prologue(the_pc, _masm);
     __ call_VM_leaf(CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::write_checkpoint), 1);
     jfr_epilogue(_masm);
+    __ resolve_global_jobject(rax, rdi, rdx);
     __ leave();
     __ ret(0);
 
@@ -4052,6 +4052,47 @@ class StubGenerator: public StubCodeGenerator {
 
     RuntimeStub* stub = // codeBlob framesize is in words (not VMRegImpl::slot_size)
       RuntimeStub::new_runtime_stub("jfr_write_checkpoint", &code, frame_complete,
+                                    (framesize >> (LogBytesPerWord - LogBytesPerInt)),
+                                    oop_maps, false);
+    return stub;
+  }
+
+  // For c2: call to return a leased buffer.
+  static RuntimeStub* generate_jfr_return_lease() {
+    enum layout {
+      FPUState_off = 0,
+      rbp_off = FPUStateSizeInWords,
+      rdi_off,
+      rsi_off,
+      rcx_off,
+      rbx_off,
+      saved_argument_off,
+      saved_argument_off2, // 2nd half of double
+      framesize
+    };
+
+    int insts_size = 1024;
+    int locs_size = 64;
+    CodeBuffer code("jfr_return_lease", insts_size, locs_size);
+    OopMapSet* oop_maps = new OopMapSet();
+    MacroAssembler* masm = new MacroAssembler(&code);
+    MacroAssembler* _masm = masm;
+
+    address start = __ pc();
+    __ enter();
+    int frame_complete = __ pc() - start;
+    address the_pc = __ pc();
+    jfr_prologue(the_pc, _masm);
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::return_lease), 1);
+    jfr_epilogue(_masm);
+    __ leave();
+    __ ret(0);
+
+    OopMap* map = new OopMap(framesize, 1); // rbp
+    oop_maps->add_gc_map(the_pc - start, map);
+
+    RuntimeStub* stub = // codeBlob framesize is in words (not VMRegImpl::slot_size)
+      RuntimeStub::new_runtime_stub("jfr_return_lease", &code, frame_complete,
                                     (framesize >> (LogBytesPerWord - LogBytesPerInt)),
                                     oop_maps, false);
     return stub;
@@ -4080,8 +4121,8 @@ class StubGenerator: public StubCodeGenerator {
     create_control_words();
 
     // Initialize table for copy memory (arraycopy) check.
-    if (UnsafeCopyMemory::_table == nullptr) {
-      UnsafeCopyMemory::create_table(16);
+    if (UnsafeMemoryAccess::_table == nullptr) {
+      UnsafeMemoryAccess::create_table(16 + 4); // 16 for copyMemory; 4 for setMemory
     }
 
     StubRoutines::x86::_verify_mxcsr_entry         = generate_verify_mxcsr();
@@ -4148,9 +4189,17 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_cont_returnBarrier = generate_cont_returnBarrier();
     StubRoutines::_cont_returnBarrierExc = generate_cont_returnBarrier_exception();
 
-    JFR_ONLY(StubRoutines::_jfr_write_checkpoint_stub = generate_jfr_write_checkpoint();)
-    JFR_ONLY(StubRoutines::_jfr_write_checkpoint = StubRoutines::_jfr_write_checkpoint_stub->entry_point();)
+    JFR_ONLY(generate_jfr_stubs();)
   }
+
+#if INCLUDE_JFR
+  void generate_jfr_stubs() {
+    StubRoutines::_jfr_write_checkpoint_stub = generate_jfr_write_checkpoint();
+    StubRoutines::_jfr_write_checkpoint = StubRoutines::_jfr_write_checkpoint_stub->entry_point();
+    StubRoutines::_jfr_return_lease_stub = generate_jfr_return_lease();
+    StubRoutines::_jfr_return_lease = StubRoutines::_jfr_return_lease_stub->entry_point();
+  }
+#endif // INCLUDE_JFR
 
   void generate_final_stubs() {
     // Generates all stubs and initializes the entry points
@@ -4169,7 +4218,7 @@ class StubGenerator: public StubCodeGenerator {
 
     BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
     if (bs_nm != nullptr) {
-      StubRoutines::x86::_method_entry_barrier = generate_method_entry_barrier();
+      StubRoutines::_method_entry_barrier = generate_method_entry_barrier();
     }
   }
 

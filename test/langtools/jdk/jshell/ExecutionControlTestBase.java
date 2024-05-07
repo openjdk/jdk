@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,28 +25,14 @@ import javax.tools.Diagnostic;
 
 import org.testng.annotations.Test;
 import jdk.jshell.VarSnippet;
-import java.net.InetAddress;
 
 import static jdk.jshell.Snippet.Status.VALID;
 import static jdk.jshell.Snippet.SubKind.*;
 
 public class ExecutionControlTestBase extends KullaTesting {
 
-    String standardListenSpec() {
-        String loopback = InetAddress.getLoopbackAddress().getHostAddress();
-        return "jdi:hostname(" + loopback + ")";
-    }
-
-    String standardLaunchSpec() {
-        return "jdi:launch(true)";
-    }
-
-    String standardJdiSpec() {
-        return "jdi";
-    }
-
-    String standardSpecs() {
-        return "5(" + standardListenSpec() + "), 6(" + standardLaunchSpec() + "), 7(" + standardJdiSpec() + ")";
+    String alwaysPassingSpec() {
+        return "5(local)";
     }
 
     @Test

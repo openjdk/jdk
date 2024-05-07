@@ -111,8 +111,7 @@ public interface VariableElement extends Element {
      * @jls 6.1 Declarations
      * @jls 14.4 Local Variable Declarations
      *
-     * @since 21
+     * @since 22
      */
-    @PreviewFeature(feature=PreviewFeature.Feature.UNNAMED, reflective = true)
     default boolean isUnnamed() { return getSimpleName().isEmpty(); }
 }

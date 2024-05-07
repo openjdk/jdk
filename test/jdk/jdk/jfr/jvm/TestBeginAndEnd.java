@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 package jdk.jfr.jvm;
 
+import jdk.jfr.internal.JVMSupport;
 import jdk.jfr.internal.JVM;
 
 /**
@@ -37,11 +38,10 @@ public class TestBeginAndEnd {
     private final static long MAX_CHUNK_SIZE = 12 * 1024 * 1024;
 
     public static void main(String... args) {
-        JVM jvm = JVM.getJVM();
-        jvm.createNativeJFR();
-        jvm.setFileNotification(MAX_CHUNK_SIZE);
-        jvm.beginRecording();
-        jvm.endRecording();
-        jvm.destroyNativeJFR();
+        JVMSupport.createJFR();
+        JVM.setFileNotification(MAX_CHUNK_SIZE);
+        JVM.beginRecording();
+        JVM.endRecording();
+        JVMSupport.destroyJFR();
     }
 }

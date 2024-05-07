@@ -30,6 +30,8 @@
 #include "jfr/recorder/storage/jfrBuffer.hpp"
 #include "jfr/support/jfrMethodLookup.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
+#include "jfrStackFilter.hpp"
+#include "jfrStackFilterRegistry.hpp"
 #include "memory/allocation.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "runtime/continuation.hpp"
@@ -46,10 +48,10 @@ static void copy_frames(JfrStackFrame** lhs_frames, u4 length, const JfrStackFra
   }
 }
 
-JfrStackFrame::JfrStackFrame(const traceid& id, int bci, int type, const InstanceKlass* ik) :
+JfrStackFrame::JfrStackFrame(const traceid& id, int bci, u1 type, const InstanceKlass* ik) :
   _klass(ik), _methodid(id), _line(0), _bci(bci), _type(type) {}
 
-JfrStackFrame::JfrStackFrame(const traceid& id, int bci, int type, int lineno, const InstanceKlass* ik) :
+JfrStackFrame::JfrStackFrame(const traceid& id, int bci, u1 type, int lineno, const InstanceKlass* ik) :
   _klass(ik), _methodid(id), _line(lineno), _bci(bci), _type(type) {}
 
 JfrStackTrace::JfrStackTrace(JfrStackFrame* frames, u4 max_frames) :
@@ -138,9 +140,9 @@ void JfrStackFrame::write(JfrCheckpointWriter& cpw) const {
 
 class JfrVframeStream : public vframeStreamCommon {
  private:
+  bool _vthread;
   const ContinuationEntry* _cont_entry;
   bool _async_mode;
-  bool _vthread;
   bool step_to_sender();
   void next_frame();
  public:
@@ -165,8 +167,9 @@ JfrVframeStream::JfrVframeStream(JavaThread* jt, const frame& fr, bool stop_at_j
                                  RegisterMap::UpdateMap::skip,
                                  RegisterMap::ProcessFrames::skip,
                                  walk_continuation(jt))),
-    _cont_entry(JfrThreadLocal::is_vthread(jt) ? jt->last_continuation() : nullptr),
-    _async_mode(async_mode), _vthread(JfrThreadLocal::is_vthread(jt)) {
+    _vthread(JfrThreadLocal::is_vthread(jt)),
+    _cont_entry(_vthread ? jt->last_continuation() : nullptr),
+    _async_mode(async_mode) {
   assert(!_vthread || _cont_entry != nullptr, "invariant");
   _reg_map.set_async(async_mode);
   _frame = fr;
@@ -233,6 +236,7 @@ bool JfrStackTrace::record_async(JavaThread* jt, const frame& frame) {
   assert(jt != nullptr, "invariant");
   assert(!_lineno, "invariant");
   Thread* current_thread = Thread::current();
+  assert(current_thread->is_JfrSampler_thread(), "invariant");
   assert(jt != current_thread, "invariant");
   // Explicitly monitor the available space of the thread-local buffer used for enqueuing klasses as part of tagging methods.
   // We do this because if space becomes sparse, we cannot rely on the implicit allocation of a new buffer as part of the
@@ -256,7 +260,7 @@ bool JfrStackTrace::record_async(JavaThread* jt, const frame& frame) {
       return false;
     }
     const traceid mid = JfrTraceId::load(method);
-    int type = vfs.is_interpreted_frame() ? JfrStackFrame::FRAME_INTERPRETER : JfrStackFrame::FRAME_JIT;
+    u1 type = vfs.is_interpreted_frame() ? JfrStackFrame::FRAME_INTERPRETER : JfrStackFrame::FRAME_JIT;
     int bci = 0;
     if (method->is_native()) {
       type = JfrStackFrame::FRAME_NATIVE;
@@ -282,9 +286,10 @@ bool JfrStackTrace::record_async(JavaThread* jt, const frame& frame) {
   return count > 0;
 }
 
-bool JfrStackTrace::record(JavaThread* jt, const frame& frame, int skip) {
+bool JfrStackTrace::record(JavaThread* jt, const frame& frame, int skip, int64_t stack_filter_id) {
   assert(jt != nullptr, "invariant");
   assert(jt == Thread::current(), "invariant");
+  assert(jt->thread_state() != _thread_in_native, "invariant");
   assert(!_lineno, "invariant");
   // Must use ResetNoHandleMark here to bypass if any NoHandleMark exist on stack.
   // This is because RegisterMap uses Handles to support continuations.
@@ -299,6 +304,7 @@ bool JfrStackTrace::record(JavaThread* jt, const frame& frame, int skip) {
     }
     vfs.next_vframe();
   }
+  const JfrStackFilter* stack_filter = JfrStackFilterRegistry::lookup(stack_filter_id);
   _hash = 1;
   while (!vfs.at_end()) {
     if (count >= _max_frames) {
@@ -306,8 +312,14 @@ bool JfrStackTrace::record(JavaThread* jt, const frame& frame, int skip) {
       break;
     }
     const Method* method = vfs.method();
+    if (stack_filter != nullptr) {
+      if (stack_filter->match(method)) {
+        vfs.next_vframe();
+        continue;
+      }
+    }
     const traceid mid = JfrTraceId::load(method);
-    int type = vfs.is_interpreted_frame() ? JfrStackFrame::FRAME_INTERPRETER : JfrStackFrame::FRAME_JIT;
+    u1 type = vfs.is_interpreted_frame() ? JfrStackFrame::FRAME_INTERPRETER : JfrStackFrame::FRAME_JIT;
     int bci = 0;
     if (method->is_native()) {
       type = JfrStackFrame::FRAME_NATIVE;
@@ -332,13 +344,13 @@ bool JfrStackTrace::record(JavaThread* jt, const frame& frame, int skip) {
   return count > 0;
 }
 
-bool JfrStackTrace::record(JavaThread* current_thread, int skip) {
+bool JfrStackTrace::record(JavaThread* current_thread, int skip, int64_t stack_filter_id) {
   assert(current_thread != nullptr, "invariant");
   assert(current_thread == Thread::current(), "invariant");
   if (!current_thread->has_last_Java_frame()) {
     return false;
   }
-  return record(current_thread, current_thread->last_frame(), skip);
+  return record(current_thread, current_thread->last_frame(), skip, stack_filter_id);
 }
 
 void JfrStackFrame::resolve_lineno() const {

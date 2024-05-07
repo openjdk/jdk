@@ -37,8 +37,8 @@ import tests.Result;
  * @summary Test non-ASCII path in custom JRE
  * @library ../lib
  *          /test/lib
+ * @enablePreview
  * @modules java.base/jdk.internal.jimage
- *          jdk.jdeps/com.sun.tools.classfile
  *          jdk.jlink/jdk.tools.jimage
  * @build tests.*
  * @run main/othervm JImageNonAsciiNameTest

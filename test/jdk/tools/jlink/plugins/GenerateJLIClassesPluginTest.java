@@ -42,8 +42,8 @@ import org.testng.annotations.Test;
  * @bug 8252919
  * @library ../../lib
  * @summary Test --generate-jli-classes plugin
+ * @enablePreview
  * @modules java.base/jdk.internal.jimage
- *          jdk.jdeps/com.sun.tools.classfile
  *          jdk.jlink/jdk.tools.jlink.internal
  *          jdk.jlink/jdk.tools.jlink.internal.plugins
  *          jdk.jlink/jdk.tools.jmod

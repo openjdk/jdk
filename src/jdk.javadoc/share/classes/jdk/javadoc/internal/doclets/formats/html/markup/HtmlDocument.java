@@ -29,7 +29,7 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
 
-import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.formats.html.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 

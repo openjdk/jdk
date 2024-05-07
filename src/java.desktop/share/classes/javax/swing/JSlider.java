@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -361,7 +361,7 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
 
 
     /**
-     * We pass Change events along to the listeners with the
+     * We pass Change events along to the listeners with
      * the slider (instead of the model itself) as the event source.
      */
     private class ModelListener implements ChangeListener, Serializable {
@@ -930,7 +930,7 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
         }
 
         if ( increment <= 0 ) {
-            throw new IllegalArgumentException( "Label incremement must be > 0" );
+            throw new IllegalArgumentException( "Label increment must be > 0" );
         }
 
         class SmartHashtable extends Hashtable<Integer, JComponent> implements PropertyChangeListener {
@@ -1595,7 +1595,7 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
             if (i < 0 || i > 1) {
                 return false;
             }
-            //0 is increment, 1 is decrrement
+            //0 is increment, 1 is decrement
             int delta = ((i > 0) ? -1 : 1);
             JSlider.this.setValue(oldModelValue + delta);
             return true;

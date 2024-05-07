@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,22 +44,19 @@ public class FileKey {
         return fk;
     }
 
+    @Override
     public int hashCode() {
         return (int)(st_dev ^ (st_dev >>> 32)) +
                (int)(st_ino ^ (st_ino >>> 32));
     }
 
+    @Override
     public boolean equals(Object obj) {
         if (obj == this)
             return true;
-        if (!(obj instanceof FileKey))
-            return false;
-        FileKey other = (FileKey)obj;
-        if ((this.st_dev != other.st_dev) ||
-            (this.st_ino != other.st_ino)) {
-            return false;
-        }
-        return true;
+        return obj instanceof FileKey other
+                && (this.st_dev == other.st_dev)
+                && (this.st_ino == other.st_ino);
     }
 
     private native void init(FileDescriptor fd) throws IOException;

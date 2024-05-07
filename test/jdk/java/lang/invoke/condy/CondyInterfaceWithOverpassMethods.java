@@ -25,18 +25,19 @@
  * @test
  * @bug 8186046
  * @summary Test for an interface using condy with default overpass methods
- * @library /lib/testlibrary/bytecode
- * @build jdk.experimental.bytecode.BasicClassBuilder
+ * @library /java/lang/invoke/common
+ * @build test.java.lang.invoke.lib.InstructionHelper
+ * @enablePreview
  * @run testng CondyInterfaceWithOverpassMethods
  * @run testng/othervm -XX:+UnlockDiagnosticVMOptions -XX:UseBootstrapCallInfo=3 CondyInterfaceWithOverpassMethods
  */
 
-import jdk.experimental.bytecode.BasicClassBuilder;
-import jdk.experimental.bytecode.Flag;
-import jdk.experimental.bytecode.TypedCodeBuilder;
+import java.lang.classfile.ClassFile;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
+import test.java.lang.invoke.lib.InstructionHelper;
 
+import java.lang.constant.*;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 
@@ -70,24 +71,32 @@ public class CondyInterfaceWithOverpassMethods {
         Class<?> thisClass = CondyInterfaceWithOverpassMethods.class;
 
         String genClassName = thisClass.getSimpleName() + "$Code";
-        String bsmClassName = thisClass.getCanonicalName().replace('.', '/');
+        String bsmClassName = thisClass.descriptorString();
         String bsmMethodName = "bsm";
         String bsmDescriptor = MethodType.methodType(Object.class, MethodHandles.Lookup.class,
-                                                     String.class, Class.class).toMethodDescriptorString();
+                String.class, Class.class).toMethodDescriptorString();
 
-        byte[] byteArray = new BasicClassBuilder(genClassName, 55, 0)
-                .withFlags(Flag.ACC_INTERFACE, Flag.ACC_ABSTRACT)
-                .withSuperclass("java/lang/Object")
-                .withSuperinterface(thisClass.getCanonicalName().replace('.', '/') + "$" + A.class.getSimpleName())
-                .withMethod("y", "()Ljava/lang/String;", M ->
-                        M.withFlags(Flag.ACC_PUBLIC)
-                                .withCode(TypedCodeBuilder::new, C ->
-                                        C.ldc("String", "Ljava/lang/String;", bsmClassName, bsmMethodName, bsmDescriptor,
-                                              S -> {})
-                                                .areturn()
-                                ))
-                .build();
-
+        byte[] byteArray = ClassFile.of().build(ClassDesc.of(genClassName), classBuilder -> classBuilder
+                .withFlags(ClassFile.ACC_INTERFACE + ClassFile.ACC_ABSTRACT)
+                .withSuperclass(ConstantDescs.CD_Object)
+                .withInterfaceSymbols(InstructionHelper.classDesc(A.class))
+                .withMethod("y", MethodTypeDesc.of(ConstantDescs.CD_String), ClassFile.ACC_PUBLIC, methodBuilder -> methodBuilder
+                        .withCode(codeBuilder -> codeBuilder
+                                .ldc(DynamicConstantDesc.ofNamed(
+                                                MethodHandleDesc.of(
+                                                        DirectMethodHandleDesc.Kind.STATIC,
+                                                        ClassDesc.ofDescriptor(bsmClassName),
+                                                        bsmMethodName,
+                                                        bsmDescriptor
+                                                ),
+                                                "String",
+                                                ConstantDescs.CD_String
+                                        )
+                                )
+                                .areturn()
+                        )
+                )
+        );
         gc = MethodHandles.lookup().defineClass(byteArray);
     }
 
