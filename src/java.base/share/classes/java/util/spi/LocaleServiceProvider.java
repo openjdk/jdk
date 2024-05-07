@@ -152,6 +152,9 @@ import java.util.Locale;
  * supported by the Java runtime environment. The following table lists the
  * version of CLDR used in each JDK release. Unless otherwise specified, all
  * update releases in a given JDK release family use the same CLDR version.
+ * Note that the CLDR locale data are subject to change. Users should not assume
+ * that the locale data remain the same across CLDR versions. Otherwise, unexpected
+ * incompatible behaviors may occur, such as an exception on parsing a date.
  * <table class="striped">
  * <caption style="display:none">JDK releases and supported CLDR versions</caption>
  * <thead>
