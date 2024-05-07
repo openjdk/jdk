@@ -67,8 +67,8 @@ public class IO {
     }
 
     /*
-     * printTest tests a _default_ console, which is normally
-     * jdk.internal.org.jline.JdkConsoleProviderImpl, whereas this test tests
+     * Unlike printTest, which tests a _default_ console that is normally
+     * jdk.internal.org.jline.JdkConsoleProviderImpl, this test tests
      * jdk.internal.io.JdkConsoleImpl. Those console implementations operate
      * in different conditions and, thus, are tested separately.
      *

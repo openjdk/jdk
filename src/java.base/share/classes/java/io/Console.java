@@ -186,7 +186,7 @@ public sealed class Console implements Flushable permits ProxyingConsole {
 
     /**
      * Writes a prompt as if by calling {@code print}, then reads a single line
-     * of text from this system console.
+     * of text from this console.
      *
      * @param  prompt
      *         A prompt string.
