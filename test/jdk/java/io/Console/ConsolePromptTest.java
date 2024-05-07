@@ -27,6 +27,7 @@
  * @summary Verify the java.base's console provider handles the prompt correctly.
  * @library /test/lib
  * @run main/othervm --limit-modules java.base ConsolePromptTest
+ * @run main/othervm -Djdk.console=java.base java.base ConsolePromptTest
  */
 
 import java.lang.reflect.Method;
