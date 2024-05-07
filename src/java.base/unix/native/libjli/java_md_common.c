@@ -117,7 +117,8 @@ GetApplicationHomeFromDll(char *buf, jint bufsize)
 
 #if defined(AIX)
 static jboolean
-LibjavaExists(const char *path) {
+LibjavaExists(const char *path)
+{
     char tmp[PATH_MAX + 1];
     struct stat statbuf;
     JLI_Snprintf(tmp, PATH_MAX, "%s/%s", path, JAVA_DLL);
@@ -136,7 +137,7 @@ GetApplicationHomeFromLibpath(char *buf, jint bufsize)
 {
     char *env = getenv(LD_LIBRARY_PATH);
     char *tmp;
-    char* save_ptr = NULL;
+    char *save_ptr = NULL;
     char *envpath = JLI_StringDup(env);
     for (tmp = strtok_r(envpath, ":", &save_ptr); tmp != NULL; tmp = strtok_r(NULL, ":", &save_ptr)) {
         if (LibjavaExists(tmp)) {
