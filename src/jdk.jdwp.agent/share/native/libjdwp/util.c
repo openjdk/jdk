@@ -1200,7 +1200,7 @@ debugMonitorCreate(DebugRawMonitorRank dbg_monitor_rank, char *name)
     JDI_ASSERT(monitor != NULL);
 
     // Need to lock during initialization so verifyMonitorRank() can be guaranteed that
-    // if the monitor field is not NULL, then the monitor if fully initialized.
+    // if the monitor field is not NULL, then the monitor is fully initialized.
     if (gdata->rankedMonitors) {
         dbgRawMonitor_lock();
     }
