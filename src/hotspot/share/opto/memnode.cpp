@@ -1164,9 +1164,8 @@ Node* MemNode::can_see_stored_value(Node* st, PhaseValues* phase) const {
       if (store_Opcode() != st->Opcode()) {
         return nullptr;
       }
-      // LoadVector/StoreVector need additional checks
+      // LoadVector/StoreVector needs additional check to ensure the types match.
       if (st->is_StoreVector()) {
-        // Ensure that types match
         const TypeVect*  in_vt = st->as_StoreVector()->vect_type();
         const TypeVect* out_vt = as_LoadVector()->vect_type();
         if (in_vt != out_vt) {
