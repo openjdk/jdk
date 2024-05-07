@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "cds/cdsConfig.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "jfr/jfrEvents.hpp"
