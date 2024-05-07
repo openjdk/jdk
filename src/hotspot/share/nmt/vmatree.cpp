@@ -56,19 +56,14 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
       IntervalState{StateType::Released, Metadata{}}
   };
 
-
-  bool LEQ_A_found = false;
-  AddressState LEQ_A;
-
   // First handle A.
   // Find closest node that is LEQ A
+  bool LEQ_A_found = false;
+  AddressState LEQ_A;
   TreapNode* leqA_n = tree.closest_leq(A);
   if (leqA_n == nullptr) {
-    // No match.
-    if (stA.is_noop()) {
-      // nothing to do.
-    } else {
-      // Add new node.
+    // No match. We add the A node directly, unless it would have no effect.
+    if (!stA.is_noop()) {
       tree.upsert(A, stA);
     }
   } else {
