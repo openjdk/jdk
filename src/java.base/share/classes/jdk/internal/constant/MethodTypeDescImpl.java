@@ -96,7 +96,7 @@ public final class MethodTypeDescImpl implements MethodTypeDesc {
                 ? ptypes.subList(1, args + 1).toArray(ConstantUtils.EMPTY_CLASSDESC)
                 : ConstantUtils.EMPTY_CLASSDESC;
 
-        MethodTypeDescImpl result = ofTrusted(ptypes.get(0), paramTypes);
+        MethodTypeDescImpl result = new MethodTypeDescImpl(ptypes.get(0), paramTypes);
         result.cachedDescriptorString = descriptor;
         return result;
     }
