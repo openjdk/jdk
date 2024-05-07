@@ -167,8 +167,8 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
   AddressState prev{A, stA};
   for (int i = 0; i < to_be_deleted_inbetween_a_b.length(); i++) {
     const AddressState delete_me = to_be_deleted_inbetween_a_b.at(i);
-    // Delete node in (A, B]
     tree.remove(delete_me.address);
+
     // Perform summary accounting
     auto& rescom = diff.flag[NMTUtil::flag_to_index(delete_me.in().flag())];
     if (delete_me.in().type() == StateType::Reserved) {
@@ -180,19 +180,10 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
     prev = delete_me;
   }
 
-  AddressState GEQ_B;
-  bool GEQ_B_found = false;
-  TreapNode* geqB_n = tree.closest_geq(B);
-  if (geqB_n != nullptr) {
-    GEQ_B = {geqB_n->key(), geqB_n->val()};
-    GEQ_B_found = true;
-  }
-
-  if (prev.address != A && prev.out().type() != StateType::Released &&
-      GEQ_B_found && GEQ_B.in().type() != StateType::Released) {
-    // There was some node inside of (A, B) and it is connected to GEQ_B
-    // A - prev - B - GEQ_B
-    // It might be that prev.address == B == GEQ_B.address, this is fine.
+  if (prev.address != A && prev.out().type() != StateType::Released) {
+    // The last node wasn't released, so it must be connected to a node outside of (A, B)
+    // A - prev - B - (some node >= B)
+    // It might be that prev.address == B == (some node >= B), this is fine.
     if (prev.out().type() == StateType::Reserved) {
       auto& rescom = diff.flag[NMTUtil::flag_to_index(prev.out().flag())];
       rescom.reserve -= B - prev.address;
