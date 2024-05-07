@@ -3514,7 +3514,6 @@ Node* StoreNode::Identity(PhaseGVN* phase) {
       mem->in(MemNode::Address)->eqv_uncast(adr) &&
       mem->in(MemNode::ValueIn)->eqv_uncast(val) &&
       mem->Opcode() == Opcode()) {
-    // Not a vector
     if (!is_StoreVector()) {
       result = mem;
     } else {
