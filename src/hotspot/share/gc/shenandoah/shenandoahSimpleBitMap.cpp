@@ -28,7 +28,7 @@
 
 ShenandoahSimpleBitMap::ShenandoahSimpleBitMap(size_t num_bits) :
     _num_bits(num_bits),
-    _num_words((num_bits + (BitsPerWord - 1)) / BitsPerWord),
+    _num_words(align_up(num_bits, BitsPerWord) / BitsPerWord),
     _bitmap(NEW_C_HEAP_ARRAY(uintx, _num_words, mtGC))
 {
   clear_all();
@@ -45,17 +45,26 @@ size_t ShenandoahSimpleBitMap::count_leading_ones(idx_t start_idx) const {
   size_t array_idx = start_idx >> LogBitsPerWord;
   uintx element_bits = _bitmap[array_idx];
   uintx bit_number = start_idx & right_n_bits(LogBitsPerWord);
-  uintx omit_mask = right_n_bits(bit_number);
-  uintx mask = ((uintx) 0 - 1) & ~omit_mask;
-  if ((element_bits & mask) == mask) {
-    size_t counted_ones = BitsPerWord - bit_number;
-    return counted_ones + count_leading_ones(start_idx - counted_ones);
-  } else {
-    // Return number of consecutive ones starting with the_bit and including more significant bits.
-    uintx aligned = element_bits >> bit_number;
-    uintx complement = ~aligned;;
-    return count_trailing_zeros<uintx>(complement);
+  uintx mask = ~right_n_bits(bit_number);
+  size_t counted_ones = 0;
+  while ((element_bits & mask) == mask) {
+    // All bits numbered >= bit_number are set
+    size_t found_ones = BitsPerWord - bit_number;
+    counted_ones += found_ones;
+    // Dead code: do not need to compute: start_idx += found_ones;
+    // Strength reduction:                array_idx = (start_idx >> LogBitsPerWord)
+    array_idx++;
+    element_bits = _bitmap[array_idx];
+    // Constant folding:                  bit_number = start_idx & right_n_bits(LogBitsPerWord);
+    bit_number = 0;
+    // Constant folding:                  mask = ~right_n_bits(bit_number);
+    mask = ~0;
   }
+
+  // Add in number of consecutive ones starting with the_bit and including more significant bits and return result
+  uintx aligned = element_bits >> bit_number;
+  uintx complement = ~aligned;
+  return counted_ones + count_trailing_zeros<uintx>(complement);
 }
 
 size_t ShenandoahSimpleBitMap::count_trailing_ones(idx_t last_idx) const {
@@ -65,15 +74,24 @@ size_t ShenandoahSimpleBitMap::count_trailing_ones(idx_t last_idx) const {
   uintx bit_number = last_idx & right_n_bits(LogBitsPerWord);
   // All ones from bit 0 to the_bit
   uintx mask = right_n_bits(bit_number + 1);
-  if ((element_bits & mask) == mask) {
-    size_t counted_ones = bit_number + 1;
-    return counted_ones + count_trailing_ones(last_idx - counted_ones);
-  } else {
-    // Return number of consecutive ones starting with the_bit and including less significant bits
-    uintx aligned = element_bits << (BitsPerWord - (bit_number + 1));
-    uintx complement = ~aligned;
-    return count_leading_zeros<uintx>(complement);
+  size_t counted_ones = 0;
+  while ((element_bits & mask) == mask) {
+    // All bits numbered <= bit_number are set
+    size_t found_ones = bit_number + 1;
+    counted_ones += found_ones;
+    // Dead code: do not need to compute: last_idx -= found_ones;
+    array_idx--;
+    element_bits = _bitmap[array_idx];
+    // Constant folding:                  bit_number = last_idx & right_n_bits(LogBitsPerWord);
+    bit_number = BitsPerWord - 1;
+    // Constant folding:                  mask = right_n_bits(bit_number + 1);
+    mask = ~0;
   }
+
+  // Add in number of consecutive ones starting with the_bit and including less significant bits and return result
+  uintx aligned = element_bits << (BitsPerWord - (bit_number + 1));
+  uintx complement = ~aligned;
+  return counted_ones + count_leading_zeros<uintx>(complement);
 }
 
 bool ShenandoahSimpleBitMap::is_forward_consecutive_ones(idx_t start_idx, idx_t count) const {
@@ -150,6 +168,41 @@ idx_t ShenandoahSimpleBitMap::find_first_consecutive_set_bits(idx_t beg, idx_t e
     uintx mask_out = right_n_bits(bit_number);
     element_bits &= ~mask_out;
   }
+
+  // The following loop minimizes the number of spans probed in order to find num_bits consecutive bits.
+  // For example, if bit_number = beg = 0, num_bits = 8, and element bits equals 00111111_11000001_11111100_10011000B,
+  // we need 5 probes to find the match at bit offset 22.
+  //
+  // Let beg = 0
+  // element_bits = 00111111_11000001_11111100_10011000B;
+  //                                           ________   (the searched span)
+  //                                           ^   ^  ^- bit_number = beg = 0
+  //                                           |   +-- next_start_candidate_1 (where next 1 is found)
+  //                                           +------ next_start_candidate_2 (start of the trailing 1s within span)
+  // Let beg = 7
+  // element_bits = 00111111_11000001_11111100_10011000B;
+  //                                  __________   (the searched span)
+  //                                       ^ ^- bit_number = beg = 7
+  //                                       +-- next_start_candidate_1 (where next 1 is found)
+  //                                       +------ next_start_candidate_2 (start of the trailing 1s within span)
+  // Let beg = 10
+  // element_bits = 00111111_11000001_11111100_10011000B;
+  //                              ^_________   (the searched span)
+  //                              |        ^- bit_number = beg = 11
+  //                              |        +-- next_start_candidate_1 (where next 1 is found)
+  //                              +------------ next_start_candidate_2 (there are no trailing 1s within span)
+  // Let beg = 18
+  // element_bits = 00111111_11000001_11111100_10011000B;
+  //                      _________   (the searched span)
+  //                          ^   ^- bit_number = beg = 18
+  //                          +----- next_start_candidate_1 (where next 1 is found)
+  //                          +------------ next_start_candidate_2 (there are no trailing 1s within span)
+  // Let beg = 22
+  // element_bits = 00111111_11000001_11111100_10011000B;
+  //                  _________   (the searched span)
+  //                          ^- bit_number = beg = 18
+  // Here, is_forward_consecutive_ones(22, 8) succeeds and we report the match
+
   while (true) {
     if (element_bits == 0) {
       // move to the next element
@@ -205,6 +258,8 @@ idx_t ShenandoahSimpleBitMap::find_last_consecutive_set_bits(const idx_t beg, id
     uintx mask_in = right_n_bits(bit_number + 1);
     element_bits &= mask_in;
   }
+
+  // See comment in find_first_consecutive_set_bits to understand how this loop works.
   while (true) {
     if (element_bits == 0) {
       // move to the previous element
