@@ -1292,6 +1292,8 @@ assertIsCurrentThread(JNIEnv *env, jthread thread, jthread current_thread)
 static void
 verifyMonitorRank(JNIEnv *env, DebugRawMonitorRank rank, jthread thread)
 {
+    // We must hold the dbgRawMonitor when calling verifyMonitorRank()
+
     // Iterate over all the monitors and makes sure we don't already hold one that
     // has a higher rank than the monitor we are about to enter.
     DebugRawMonitorRank i;
@@ -1363,6 +1365,7 @@ debugMonitorEnter(DebugRawMonitor *dbg_monitor)
         // We have already entered this monitor, so nothing to do except bump entryCount below.
         dbgRawMonitor_unlock();
     } else {
+        // We must hold the dbgRawMonitor when calling verifyMonitorRank()
         verifyMonitorRank(env, dbg_monitor->rank, current_thread);
         dbgRawMonitor_unlock();
 
@@ -1425,6 +1428,7 @@ debugMonitorWait(DebugRawMonitor *dbg_monitor)
         return;
     }
 
+    JNIEnv *env = getEnv();
     jthread savedOwnerThread = dbg_monitor->ownerThread;
     int savedEntryCount = dbg_monitor->entryCount;
     jthread current_thread = threadControl_currentThread();
@@ -1436,15 +1440,22 @@ debugMonitorWait(DebugRawMonitor *dbg_monitor)
     JDI_ASSERT(savedOwnerThread != NULL);
 
     // Assert that the current thread owns this monitor.
-    JNIEnv *env = getEnv();
     assertIsCurrentThread(env, savedOwnerThread, current_thread);
-    JNI_FUNC_PTR(env,DeleteLocalRef)(env, current_thread);
 
-    // Release ownership of the DebugRawMonitor before RawMonitorWait actually exits it.
-    dbgRawMonitor_lock();
-    dbg_monitor->ownerThread = NULL;
-    dbg_monitor->entryCount = 0;
-    dbgRawMonitor_unlock();
+    {
+      dbgRawMonitor_lock();
+
+      // Release ownership of the DebugRawMonitor before RawMonitorWait actually exits it.
+      dbg_monitor->ownerThread = NULL;
+      dbg_monitor->entryCount = 0;
+
+      // Doing a wait ends up doing an exit and then an enter after the wait completes.
+      // We must do the same rank verificaton as is done during a monitor enter.
+      // We must hold the dbgRawMonitor when calling verifyMonitorRank()
+      verifyMonitorRank(env, dbg_monitor->rank, current_thread);
+    
+      dbgRawMonitor_unlock();
+    }
 
     debugMonitorWait_norank(monitor);
 
@@ -1454,6 +1465,8 @@ debugMonitorWait(DebugRawMonitor *dbg_monitor)
     dbg_monitor->ownerThread = savedOwnerThread;
     dbg_monitor->entryCount = savedEntryCount;
     dbgRawMonitor_unlock();
+
+    JNI_FUNC_PTR(env,DeleteLocalRef)(env, current_thread);
 }
 
 void
