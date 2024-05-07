@@ -396,7 +396,7 @@ OptoReg::Name BarrierSetAssembler::refine_register(const Node* node, OptoReg::Na
 
 void SaveLiveRegisters::initialize(BarrierStubC2* stub) {
   // Record registers that needs to be saved/restored
-  RegMaskIterator rmi(stub->live());
+  RegMaskIterator rmi(stub->preserve_set());
   while (rmi.has_next()) {
     const OptoReg::Name opto_reg = rmi.next();
     if (OptoReg::is_reg(opto_reg)) {
@@ -414,12 +414,8 @@ void SaveLiveRegisters::initialize(BarrierStubC2* stub) {
     }
   }
 
-  // Remove C-ABI SOE registers, tmp regs and _ref register that will be updated
-  if (stub->result() != noreg) {
-    _gp_regs -= RegSet::range(x18, x27) + RegSet::of(x2) + RegSet::of(x8, x9) + RegSet::of(x5, stub->result());
-  } else {
-    _gp_regs -= RegSet::range(x18, x27) + RegSet::of(x2, x5) + RegSet::of(x8, x9);
-  }
+  // Remove C-ABI SOE registers and tmp regs
+  _gp_regs -= RegSet::range(x18, x27) + RegSet::of(x2, x5) + RegSet::of(x8, x9);
 }
 
 SaveLiveRegisters::SaveLiveRegisters(MacroAssembler* masm, BarrierStubC2* stub)
