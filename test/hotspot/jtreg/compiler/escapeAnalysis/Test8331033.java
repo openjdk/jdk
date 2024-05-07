@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,9 @@
  * @test
  * @bug 8331033
  * @summary EA fails with "EA unexpected CallLeaf unsafe_setmemory" after JDK-8329331
+ * @requires vm.compMode != "Xint"
  *
- * @run main/othervm -XX:+PrintEscapeAnalysis -Xbatch -XX:-TieredCompilation  Test8331033
+ * @run main/othervm -Xbatch -XX:-TieredCompilation  Test8331033
  *
  */
 import java.lang.foreign.*;
@@ -45,15 +46,6 @@ class MyClass {
   }
 }
 
-/*
- * Escape Analysis:
- * // Adaptation for C2 of the escape analysis algorithm described in:
- * //
- * // [Choi99] Jong-Deok Shoi, Manish Gupta, Mauricio Seffano,
- * // Vugranam C. Sreedhar, Sam Midkiff,
- * // "Escape Analysis for Java", Proceedings of ACM SIGPLAN
- * // OOPSLA Conference, November 1, 1999
- */
 public class Test8331033 {
 
   public static int micro1(int ctr) {
