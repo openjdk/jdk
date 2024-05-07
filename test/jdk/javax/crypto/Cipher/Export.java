@@ -24,38 +24,78 @@
 /**
  * @test
  * @bug 8325513
+ * @library /test/lib
+ * @modules java.base/javax.crypto:+open
  * @summary Try out the export method
- * @key randomness
  */
 
-import java.util.*;
-import java.nio.*;
+import jdk.test.lib.Asserts;
 
-import java.security.*;
-
-import javax.crypto.*;
-import javax.crypto.spec.*;
+import javax.crypto.Cipher;
+import javax.crypto.CipherSpi;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+import java.nio.charset.StandardCharsets;
+import java.security.AlgorithmParameters;
+import java.security.Key;
+import java.security.SecureRandom;
+import java.security.spec.AlgorithmParameterSpec;
 
 public class Export {
     public static void main(String[] args) throws Exception {
-        SecretKey sk = new SecretKeySpec(new byte[32], "X");
-        Cipher c1 = Cipher.getInstance("X", new ProviderImpl());
-        c1.init(Cipher.ENCRYPT_MODE, c1);
-        SecretKey sk1 = c.export(new byte[32], 32);
-        Cipher c2 = Cipher.getInstance("X", new ProviderImpl());
-        c2.init(Cipher.ENCRYPT_MODE, c1);
-        SecretKey sk2 = c.export(new byte[32], 32);
-        Asserts.assertByteArrayEquals(sk1.getEncoded(), sk2.getEncoded());
-    }
 
-    static class ProviderImpl extends Provider {
-        ProviderImpl() {
-            super("MyProvider", "0.0", "New cipher supporting export");
-            put("Cipher.X", "Export$CipherImpl");
-        }
+        SecretKey sk = new SecretKeySpec(s2b("key"), "X");
+
+        Cipher c1 = newCipher();
+        c1.init(Cipher.ENCRYPT_MODE, sk);
+        SecretKey sk11 = c1.export(s2b("hi"), "X", 32);
+        SecretKey sk12 = c1.export(s2b("ho"), "X", 32);
+
+        Cipher c2 = newCipher();
+        c2.init(Cipher.ENCRYPT_MODE, sk);
+        SecretKey sk21 = c2.export(s2b("hi"), "X", 32);
+
+        Asserts.assertEqualsByteArray(sk11.getEncoded(), sk21.getEncoded());
+        Asserts.assertNotEqualsByteArray(sk11.getEncoded(), sk12.getEncoded());
     }
 
     static class CipherImpl extends CipherSpi {
 
+        protected void engineSetMode(String mode) { }
+        protected void engineSetPadding(String padding) { }
+        protected int engineGetBlockSize() { return 0; }
+        protected int engineGetOutputSize(int inputLen) { return 0; }
+        protected byte[] engineGetIV() { return new byte[0]; }
+        protected AlgorithmParameters engineGetParameters() { return null; }
+        protected void engineInit(int opmode, Key key, AlgorithmParameterSpec params, SecureRandom random) { }
+        protected void engineInit(int opmode, Key key, AlgorithmParameters params, SecureRandom random) { }
+        protected byte[] engineUpdate(byte[] input, int inputOffset, int inputLen) { return new byte[0]; }
+        protected int engineUpdate(byte[] input, int inputOffset, int inputLen, byte[] output, int outputOffset) { return 0; }
+        protected byte[] engineDoFinal(byte[] input, int inputOffset, int inputLen) { return new byte[0]; }
+        protected int engineDoFinal(byte[] input, int inputOffset, int inputLen, byte[] output, int outputOffset) { return 0; }
+
+        byte[] keyBytes;
+        protected void engineInit(int opmode, Key key, SecureRandom random) {
+            keyBytes = key.getEncoded();
+        }
+
+        @Override
+        protected SecretKey engineExport(byte[] context, String algorithm, int length) {
+            byte[] output = new byte[length];
+            for (int i = 0; i < length; i++) {
+                output[i] = (byte)(context[i % context.length] ^ keyBytes[i % keyBytes.length]);
+            }
+            return new SecretKeySpec(output, algorithm);
+        }
+    }
+
+    static Cipher newCipher() throws Exception {
+        var ctor = Cipher.class.getDeclaredConstructor(CipherSpi.class, String.class);
+        ctor.setAccessible(true);
+        return ctor.newInstance(new CipherImpl(), "X");
+    }
+
+    static byte[] s2b(String s) {
+        return s.getBytes(StandardCharsets.UTF_8);
     }
 }
