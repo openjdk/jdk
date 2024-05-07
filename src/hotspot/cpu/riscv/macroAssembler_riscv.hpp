@@ -611,7 +611,7 @@ class MacroAssembler: public Assembler {
   // jump register: jalr x0, offset(rs)
   void jr(Register Rd, int32_t offset = 0);
 
-  // call: la + jalr x1
+  // call: la/li + jalr x1
   void call(const address dest, Register temp = t0);
 
   // jalr: jalr x1, offset(rs)

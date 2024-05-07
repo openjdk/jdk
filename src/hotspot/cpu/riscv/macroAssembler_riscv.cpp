@@ -724,8 +724,8 @@ void MacroAssembler::la(Register Rd, const address addr) {
 }
 
 void MacroAssembler::la(Register Rd, const address addr, int32_t &offset) {
-  int64_t distance = addr - pc();
   if (is_32bit_offset_from_codecache((int64_t)addr)) {
+    int64_t distance = addr - pc();
     assert(is_valid_32bit_offset(distance), "Must be");
     auipc(Rd, (int32_t)distance + 0x800);
     offset = ((int32_t)distance << 20) >> 20;
@@ -934,7 +934,11 @@ void MacroAssembler::call(const address dest, Register temp) {
   assert_cond(dest != nullptr);
   assert(temp != noreg, "expecting a register");
   int32_t offset = 0;
-  la(temp, dest, offset);
+  if (is_32bit_offset_from_codecache((int64_t)dest)) {
+    la(temp, dest, offset);
+  } else {
+    mv(temp, dest, offset);
+  }
   Assembler::jalr(x1, temp, offset);
 }
 
