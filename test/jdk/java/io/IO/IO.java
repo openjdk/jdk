@@ -34,8 +34,7 @@ import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.*;
 
 /*
  * @test
@@ -54,8 +53,9 @@ public class IO {
         var pb = ProcessTools.createTestJavaProcessBuilder("--enable-preview", file, mode);
         OutputAnalyzer output = ProcessTools.executeProcess(pb);
         assertEquals(0, output.getExitValue());
+        assertTrue(output.getStderr().isEmpty());
         output.reportDiagnosticSummary();
-        String out = output.getOutput();
+        String out = output.getStdout();
         // The first half of the output is produced by Console, the second
         // half is produced by IO: those halves must match.
         // Executing Console and IO in the same VM (as opposed to
@@ -100,8 +100,9 @@ public class IO {
                 Path.of(testSrc, "Output.java").toAbsolutePath().toString(),
                 mode);
         assertEquals(0, output.getExitValue());
+        assertTrue(output.getStderr().isEmpty());
         output.reportDiagnosticSummary();
-        String out = output.getOutput();
+        String out = output.getStdout();
         // The first half of the output is produced by Console, the second
         // half is produced by IO: those halves must match.
         // Executing Console and IO in the same VM (as opposed to
