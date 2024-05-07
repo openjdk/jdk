@@ -26,6 +26,7 @@
 #include "jvm.h"
 #include "nmt/nmtCommon.hpp"
 #include "nmt/mallocHeader.hpp"
+#include "nmt/mallocHeader.inline.hpp"
 #include "nmt/memoryLogRecorder.hpp"
 #include "nmt/memTracker.hpp"
 #include "runtime/arguments.hpp"
@@ -125,7 +126,12 @@ When estimating the NMT impact, from memory overhead point of view, we have a ch
       in that same run. Of course we will get a better estimate with an average accross multiple runs,
       each one with NMT on.
 
- */
+ 
+  ./build/xcode/build/jdk/bin/java -XX:+UnlockDiagnosticVMOptions \
+     -XX:NMTBenchmarkRecordedDir=/Volumes/Work/bugs/8317453/recordings/J2Ddemo/ \
+     -XX:NMTBenchmarkRecordedPID=44103
+  
+*/
 
 #define MEMORY_LOG_FILE "hs_nmt_pid%p_memory_record.log"
 #define THREADS_LOG_FILE "hs_nmt_pid%p_threads_record.log"
@@ -344,13 +350,6 @@ void NMT_MemoryLogRecorder::printActualSizesFor(const char* list) {
 #define IS_REALLOC(e) ((e->requested > 0) && (e->old != nullptr))
 #define IS_MALOC(e) ((e->requested > 0) && (e->old == nullptr))
 
-/*
-
- ./build/xcode/build/jdk/bin/java -XX:+UnlockDiagnosticVMOptions \
-    -XX:NMTBenchmarkRecordedDir=/Volumes/Work/bugs/8317453/recordings/J2Ddemo/ \
-    -XX:NMTBenchmarkRecordedPID=44103
- 
- */
 static bool _create_file_path_with_pid(const char *path, const char *file, char* file_path, int pid) {
   char *tmp_path = NEW_C_HEAP_ARRAY(char, JVM_MAXPATHLEN, mtNMT);
   strcpy(tmp_path, path);
@@ -365,6 +364,42 @@ static bool _create_file_path_with_pid(const char *path, const char *file, char*
   }
 }
 
+typedef struct file_info {
+  void*   ptr;
+  size_t  size;
+  int     fd;
+} file_info;
+
+static file_info _open_file_and_read(const char* pattern, const char* path, int pid) {
+  file_info info = { nullptr, 0, -1 };
+
+  char *file_path = NEW_C_HEAP_ARRAY(char, JVM_MAXPATHLEN, mtNMT);
+  if (!_create_file_path_with_pid(path, pattern, file_path, pid)) {
+    tty->print("Can't construct path [%s:%s:%d].", pattern, path, pid);
+    return info;
+  }
+
+  info.fd = os::open(file_path, O_RDONLY, 0);
+  if (info.fd == -1) {
+    int e = errno;
+    tty->print("Can't open file [%s].", file_path);
+    tty->print_raw_cr(os::strerror(e));
+    return info;
+  }
+
+  struct stat file_info;
+  ::fstat(info.fd, &file_info);
+  info.size = file_info.st_size;
+  ::lseek(info.fd, 0, SEEK_SET);
+
+  info.ptr = ::mmap(NULL, info.size, PROT_READ, MAP_PRIVATE, info.fd, 0);
+  assert(info.ptr != MAP_FAILED);
+
+  FREE_C_HEAP_ARRAY(char, file_path);
+
+  return info;
+}
+
 void NMT_MemoryLogRecorder::replay(const char* path, const int pid) {
   if ((path != nullptr) && (strlen(path) > 0)) {
 #if defined(LINUX) || defined(__APPLE__)
@@ -373,124 +408,144 @@ void NMT_MemoryLogRecorder::replay(const char* path, const int pid) {
     // ???
 #endif
 
-    char *records_file_path = NEW_C_HEAP_ARRAY(char, JVM_MAXPATHLEN, mtNMT);
-    if (!_create_file_path_with_pid(path, MEMORY_LOG_FILE, records_file_path, pid)) {
-      tty->print("Can't construct records_file_path [%s].", records_file_path);
-      return;
+    // compare the recorded and current levels of NMT and exit if different
+    file_info log_fi = _open_file_and_read(INFO_LOG_FILE, path, pid);
+    size_t* status_file_bytes = (size_t*)log_fi.ptr;
+    NMT_TrackingLevel recorded_nmt_level = (NMT_TrackingLevel)status_file_bytes[0];
+    if (NMTUtil::parse_tracking_level(NativeMemoryTracking) != recorded_nmt_level) {
+      tty->print("NativeMemoryTracking mismatch [%u != %u].\n", recorded_nmt_level, NMTUtil::parse_tracking_level(NativeMemoryTracking));
+      tty->print("Re-run with \"-XX:NativeMemoryTracking=%s\"\n", NMTUtil::tracking_level_to_string(recorded_nmt_level));
+      os::exit(-1);
     }
-    int records_fd = os::open(records_file_path, O_RDONLY, 0);
-    {
-      if (records_fd == -1) {
-        int e = errno;
-        tty->print("Can't open memory recorder report [%s].", records_file_path);
-        tty->print_raw_cr(os::strerror(e));
-      } else {
-        struct stat file_info;
-        ::fstat(records_fd, &file_info);
-        off_t sizeFile = file_info.st_size;
-        off_t count = sizeFile/sizeof(Entry);
-        ::lseek(records_fd, 0, SEEK_SET);
-        off_t sizePointers = count*sizeof(address);
-        address *pointers = (address*)::mmap(NULL, sizePointers, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_NORESERVE|MAP_ANONYMOUS, -1, 0);
-        assert(pointers != MAP_FAILED);
-        Entry *entries = (Entry*)::mmap(NULL, sizeFile, PROT_READ, MAP_PRIVATE, records_fd, 0);
-        assert(entries != MAP_FAILED);
-        char *benchmark_file_path = NEW_C_HEAP_ARRAY(char, JVM_MAXPATHLEN, mtNMT);
-        if (!_create_file_path_with_pid(path, BENCHMARK_LOG_FILE, benchmark_file_path, pid)) {
-          tty->print("Can't construct benchmark_file_path [%s].", benchmark_file_path);
+
+    // open records file for reading the memory allocations to "play back"
+    file_info records_fi = _open_file_and_read(MEMORY_LOG_FILE, path, pid);
+    Entry* records_file_entries = (Entry*)records_fi.ptr;
+    off_t count = (records_fi.size / sizeof(Entry));
+    size_t size_pointers = count * sizeof(address);
+    address *pointers = (address*)::mmap(NULL, size_pointers, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_NORESERVE|MAP_ANONYMOUS, -1, 0);
+    assert(pointers != MAP_FAILED);
+
+    // open benchmark file for writing the results
+    char *benchmark_file_path = NEW_C_HEAP_ARRAY(char, JVM_MAXPATHLEN, mtNMT);
+    if (!_create_file_path_with_pid(path, BENCHMARK_LOG_FILE, benchmark_file_path, pid)) {
+      tty->print("Can't construct benchmark_file_path [%s].", benchmark_file_path);
+      os::exit(-1);
+    }
+    int benchmark_fd = _prepare_log_file(benchmark_file_path, nullptr);
+    if (benchmark_fd == -1) {
+      tty->print("Can't open [%s].", benchmark_file_path);
+      os::exit(-1);
+    }
+
+    jlong total = 0;
+    jlong max_time = 0;
+    for (off_t i = 0; i < count; i++) {
+      Entry *e = &records_file_entries[i];
+      MEMFLAGS flags = NMTUtil::index_to_flag((int)e->flags);
+      int frameCount;
+      for (frameCount = 0; frameCount < NMT_TrackingStackDepth; frameCount++) {
+        if (e->stack[frameCount] == 0) {
+          break;
         }
-        int benchmark_fd = _prepare_log_file(benchmark_file_path, nullptr);
-        if (benchmark_fd != -1) {
-          jlong total = 0;
-          jlong max_time = 0;
-          for (off_t i = 0; i < count; i++) {
-            pointers[i] = nullptr;
-            Entry *e = &entries[i];
-            MEMFLAGS flags = NMTUtil::index_to_flag((int)e->flags);
-            int frameCount;
-            for (frameCount = 0; frameCount < NMT_TrackingStackDepth; frameCount++) {
-              if (e->stack[frameCount] == 0) {
-                break;
-              }
-            }
-            NativeCallStack stack = NativeCallStack::empty_stack();
-            if (frameCount > 0) {
-              stack = NativeCallStack(e->stack, frameCount);
-            }
-            size_t requested = 0;
-            size_t actual = 0;
-            jlong start = 0;
-            {
-              requested = e->requested;
-              if (IS_MALOC(e)) {
-                start = os::javaTimeNanos();
-                pointers[i] = (address)os::malloc(e->requested, flags, stack);
-              } else if (IS_REALLOC(e)) {
-                // look for preceeding allocation to this realloc
-                for (off_t j = i; j >= 0; j--) {
-                  Entry *p = &entries[j];
-                  if (e->old == p->ptr) {
-                    start = os::javaTimeNanos();
-                    pointers[i] = (address)os::realloc(pointers[j], e->requested, flags, stack);
-                    pointers[j] = nullptr;
-                    break;
-                  }
-                }
-              } else if (IS_FREE(e)) {
-                // look for the allocation for this free
-                for (off_t j = i; j >= 0; j--) {
-                  Entry *p = &entries[j];
-                  if (e->ptr == p->ptr) {
-                    start = os::javaTimeNanos();
-                    os::free(pointers[j]);
-                    pointers[i] = nullptr;
-                    pointers[j] = nullptr;
-                    break;
-                  }
-                }
-              }
-#if defined(LINUX)
-        ALLOW_C_FUNCTION(::malloc_usable_size, actual = ::malloc_usable_size(pointers[i]);)
-#elif defined(WINDOWS)
-        ALLOW_C_FUNCTION(::_msize, actual = ::_msize(pointers[i]);)
-#elif defined(__APPLE__)
-        ALLOW_C_FUNCTION(::malloc_size, actual = ::malloc_size(pointers[i]);)
-#endif
-            }
-            jlong duration = (start > 0) ? os::javaTimeNanos() - start : 0;
-            max_time = MAX(max_time, duration);
-            //fprintf(stderr, " %9ld:%9ld:%9ld %d:%d:%d\n", requested, actual, duration, IS_MALOC(e), IS_REALLOC(e), IS_FREE(e));
-            total += duration;
-            _write_and_check(benchmark_fd, &duration, sizeof(duration));
-            _write_and_check(benchmark_fd, &requested, sizeof(requested));
-            _write_and_check(benchmark_fd, &actual, sizeof(actual));
-            char type = (IS_MALOC(e) * 1) | (IS_REALLOC(e) * 2) | (IS_FREE(e) * 4);
-            _write_and_check(benchmark_fd, &type, sizeof(type));
-          }
-          fprintf(stderr, "%s,%ld,%ld\n", benchmark_file_path, total, max_time);
-          _close_and_check(benchmark_fd);
-          FREE_C_HEAP_ARRAY(char, benchmark_file_path);
-        }
-        for (off_t i = 0; i < count; i++) {
-          if (pointers[i] != nullptr) {
-            os::free(pointers[i]);
-            pointers[i] = nullptr;
-          }
-        }
-        munmap((void*)pointers, sizePointers);
-        munmap((void*)entries, sizeFile);
-        _close_and_check(records_fd);
       }
-      os::exit(0);
+      NativeCallStack stack = NativeCallStack::empty_stack();
+      if (frameCount > 0) {
+        stack = NativeCallStack(e->stack, frameCount);
+      }
+      size_t requested = 0;
+      size_t actual = 0;
+
+      pointers[i] = nullptr;
+      jlong start = 0;
+      jlong end = 0;
+      {
+        requested = e->requested;
+        if (IS_MALOC(e)) {
+          start = os::javaTimeNanos();
+          {
+            pointers[i] = (address)os::malloc(e->requested, flags, stack);
+          }
+          end = os::javaTimeNanos();
+        } else if (IS_REALLOC(e)) {
+          // the recorded "realloc" was captured in a different process,
+          // so find the corresponding "malloc" or "realloc" in this process
+          for (off_t j = i; j >= 0; j--) {
+            Entry *p = &records_file_entries[j];
+            if (e->old == p->ptr) {
+              start = os::javaTimeNanos();
+              {
+                pointers[i] = (address)os::realloc(pointers[j], e->requested, flags, stack);
+              }
+              end = os::javaTimeNanos();
+              pointers[j] = nullptr;
+              break;
+            }
+          }
+        } else if (IS_FREE(e)) {
+          // the recorded "free" was captured in a different process,
+          // so find the corresponding "malloc" or "realloc" in this process
+          for (off_t j = i; j >= 0; j--) {
+            Entry *p = &records_file_entries[j];
+            if (e->ptr == p->ptr) {
+              start = os::javaTimeNanos();
+              {
+                os::free(pointers[j]);
+              }
+              end = os::javaTimeNanos();
+              pointers[i] = nullptr;
+              pointers[j] = nullptr;
+              break;
+            }
+          }
+        }
+        void* outer_ptr = pointers[i];
+        if ((outer_ptr != nullptr) && (MemTracker::enabled())) {
+          outer_ptr = MallocHeader::resolve_checked(outer_ptr);
+        }
+#if defined(LINUX)
+  ALLOW_C_FUNCTION(::malloc_usable_size, actual = ::malloc_usable_size(outer_ptr);)
+#elif defined(WINDOWS)
+  ALLOW_C_FUNCTION(::_msize, actual = ::_msize(outer_ptr);)
+#elif defined(__APPLE__)
+  ALLOW_C_FUNCTION(::malloc_size, actual = ::malloc_size(outer_ptr);)
+#endif
+      }
+      jlong duration = (start > 0) ? (end - start) : 0;
+      max_time = MAX(max_time, duration);
+      total += duration;
+      
+      _write_and_check(benchmark_fd, &duration, sizeof(duration));
+      _write_and_check(benchmark_fd, &requested, sizeof(requested));
+      _write_and_check(benchmark_fd, &actual, sizeof(actual));
+      char type = (IS_MALOC(e) * 1) | (IS_REALLOC(e) * 2) | (IS_FREE(e) * 4);
+      _write_and_check(benchmark_fd, &type, sizeof(type));
+      //fprintf(stderr, " %9ld:%9ld:%9ld %d:%d:%d\n", requested, actual, duration, IS_MALOC(e), IS_REALLOC(e), IS_FREE(e));
     }
-    FREE_C_HEAP_ARRAY(char, records_file_path);
+    fprintf(stderr, "%s,%ld,%ld\n", benchmark_file_path, total, max_time);
+    
+    _close_and_check(log_fi.fd);
+    _close_and_check(records_fi.fd);
+    _close_and_check(benchmark_fd);
+    FREE_C_HEAP_ARRAY(char, benchmark_file_path);
+
+    for (off_t i = 0; i < count; i++) {
+      if (pointers[i] != nullptr) {
+        os::free(pointers[i]);
+        pointers[i] = nullptr;
+      }
+    }
+    munmap((void*)pointers, size_pointers);
 
 #if defined(LINUX) || defined(__APPLE__)
     pthread_mutex_unlock(&_mutex);
 #elif defined(WINDOWS)
     // ???
 #endif
+    
+    os::exit(0);
   }
+  os::exit(-1);
 }
 
 void NMT_MemoryLogRecorder::initialize(intx limit) {
