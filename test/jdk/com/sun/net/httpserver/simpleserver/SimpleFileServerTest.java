@@ -76,6 +76,8 @@ public class SimpleFileServerTest {
     static final boolean ENABLE_LOGGING = true;
     static final Logger LOGGER = Logger.getLogger("com.sun.net.httpserver");
 
+    static final String EXPECTED_LAST_MODIFIED_OF_FAVICON = "Mon, 23 May 1995 11:11:11 GMT";
+
     @BeforeTest
     public void setup() throws IOException {
         if (ENABLE_LOGGING) {
@@ -155,6 +157,7 @@ public class SimpleFileServerTest {
             var response = client.send(request, BodyHandlers.ofString());
             assertEquals(response.statusCode(), 200);
             assertEquals(response.headers().firstValue("content-type").get(), "image/x-icon");
+            assertEquals(response.headers().firstValue("last-modified").get(), EXPECTED_LAST_MODIFIED_OF_FAVICON);
 
             // expect custom (and broken) icon
             var file = Files.writeString(root.resolve("favicon.ico"), "broken icon", CREATE);
@@ -174,6 +177,7 @@ public class SimpleFileServerTest {
             response = client.send(request, BodyHandlers.ofString());
             assertEquals(response.statusCode(), 200);
             assertEquals(response.headers().firstValue("content-type").get(), "image/x-icon");
+            assertEquals(response.headers().firstValue("last-modified").get(), EXPECTED_LAST_MODIFIED_OF_FAVICON);
         } finally {
             server.stop(0);
         }
@@ -192,6 +196,7 @@ public class SimpleFileServerTest {
             var response = client.send(request, BodyHandlers.ofString());
             assertEquals(response.statusCode(), 200);
             assertEquals(response.headers().firstValue("content-type").get(), "image/x-icon");
+            assertEquals(response.headers().firstValue("last-modified").get(), EXPECTED_LAST_MODIFIED_OF_FAVICON);
             assertEquals(response.body(), "");
         } finally {
             server.stop(0);

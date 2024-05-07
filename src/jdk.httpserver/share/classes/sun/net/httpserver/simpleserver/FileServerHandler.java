@@ -57,6 +57,9 @@ public final class FileServerHandler implements HttpHandler {
     private static final List<String> SUPPORTED_METHODS = List.of("HEAD", "GET");
     private static final List<String> UNSUPPORTED_METHODS =
             List.of("CONNECT", "DELETE", "OPTIONS", "PATCH", "POST", "PUT", "TRACE");
+    private static final String FAVICON_RESOURCE_PATH =
+            "/sun/net/httpserver/simpleserver/resources/favicon.ico";
+    private static final String FAVICON_LAST_MODIFIED = "Mon, 23 May 1995 11:11:11 GMT";
 
     private final Path root;
     private final UnaryOperator<String> mimeTable;
@@ -139,10 +142,6 @@ public final class FileServerHandler implements HttpHandler {
     }
 
     private void handleNotFound(HttpExchange exchange) throws IOException {
-        if (isFavIconRequest(exchange)) {
-            serveDefaultFavIcon(exchange, !exchange.getRequestMethod().equals("HEAD"));
-            return;
-        }
         String fileNotFound = ResourceBundleHelper.getMessage("html.not.found");
         var bytes = (openHTML
                 + "<h1>" + fileNotFound + "</h1>\n"
@@ -262,11 +261,10 @@ public final class FileServerHandler implements HttpHandler {
             throws IOException
     {
         var respHdrs = exchange.getResponseHeaders();
-        var icon = "/sun/net/httpserver/simpleserver/resources/favicon.ico";
-        try (var stream = getClass().getModule().getResourceAsStream(icon)) {
+        try (var stream = getClass().getModule().getResourceAsStream(FAVICON_RESOURCE_PATH)) {
             var bytes = stream.readAllBytes();
             respHdrs.set("Content-Type", "image/x-icon");
-            // TODO respHdrs.set("Last-Modified", getLastModified(...));
+            respHdrs.set("Last-Modified", FAVICON_LAST_MODIFIED);
             if (writeBody) {
                 exchange.sendResponseHeaders(200, bytes.length);
                 try (OutputStream os = exchange.getResponseBody()) {
@@ -276,10 +274,6 @@ public final class FileServerHandler implements HttpHandler {
                 respHdrs.set("Content-Length", Integer.toString(bytes.length));
                 exchange.sendResponseHeaders(200, -1);
             }
-        } catch (Exception e) {
-            logger.log(System.Logger.Level.TRACE,
-                    "FileServerHandler: reading default favicon.ico failed", e);
-            handleNotFound(exchange);
         }
     }
 
@@ -405,17 +399,26 @@ public final class FileServerHandler implements HttpHandler {
         assert List.of("GET", "HEAD").contains(exchange.getRequestMethod());
         try (exchange) {
             discardRequestBody(exchange);
+            boolean isHeadRequest = exchange.getRequestMethod().equals("HEAD");
             Path path = mapToPath(exchange, root);
             if (path != null) {
                 exchange.setAttribute("request-path", path.toString());  // store for OutputFilter
                 if (!Files.exists(path) || !Files.isReadable(path) || isHiddenOrSymLink(path)) {
                     handleNotFound(exchange);
-                } else if (exchange.getRequestMethod().equals("HEAD")) {
+                } else if (isHeadRequest) {
                     handleHEAD(exchange, path);
                 } else {
                     handleGET(exchange, path);
                 }
             } else {
+                if (isFavIconRequest(exchange)) {
+                    try {
+                        serveDefaultFavIcon(exchange, !isHeadRequest);
+                        return;
+                    } catch (IOException ignore) {
+                        // fall through to send the not-found response
+                    }
+                }
                 exchange.setAttribute("request-path", "could not resolve request URI path");
                 handleNotFound(exchange);
             }
