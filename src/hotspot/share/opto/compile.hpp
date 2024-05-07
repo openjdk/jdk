@@ -1278,6 +1278,9 @@ private:
   int random();
   bool randomized_select(int count);
 
+  // seed random number generation and log the seed for repeatability.
+  void initialize_stress_seed(const DirectiveSet* directive);
+
   // supporting clone_map
   CloneMap&     clone_map();
   void          set_clone_map(Dict* d);
