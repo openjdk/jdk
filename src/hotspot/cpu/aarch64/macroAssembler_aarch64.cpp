@@ -5539,23 +5539,24 @@ address MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
   Label DONE, SAME;
   Register tmp1 = rscratch1;
   Register tmp2 = rscratch2;
-  Register cnt2 = tmp2;  // cnt2 only used in array length compare
   int elem_per_word = wordSize/elem_size;
   int log_elem_size = exact_log2(elem_size);
+  int klass_offset  = arrayOopDesc::klass_offset_in_bytes();
   int length_offset = arrayOopDesc::length_offset_in_bytes();
   int base_offset
     = arrayOopDesc::base_offset_in_bytes(elem_size == 2 ? T_CHAR : T_BYTE);
   // When the base is not aligned to 8 bytes, then we let
   // the compare loop include the array length, and skip
   // the explicit comparison of length.
-  bool is_8aligned = is_aligned(base_offset, BytesPerWord);
+  bool length_is_8aligned = is_aligned(length_offset, BytesPerWord);
   assert(is_aligned(base_offset, BytesPerWord) || is_aligned(length_offset, BytesPerWord),
          "base_offset or length_offset must be 8-byte aligned");
   assert(is_aligned(base_offset, BytesPerWord) || base_offset == length_offset + BytesPerInt,
          "base_offset must be 8-byte aligned or no padding between base and length");
-  int start_offset = is_8aligned ? base_offset : length_offset;
+  int start_offset = length_is_8aligned ? length_offset : klass_offset;
   assert(is_aligned(start_offset, BytesPerWord), "start offset must be 8-byte-aligned");
-  int extra_length = is_8aligned ? 0 : BytesPerInt / elem_size;
+  int extra_length = length_is_8aligned ? base_offset - length_offset : base_offset - klass_offset;
+  extra_length = extra_length / elem_size; // We count in elements, not bytes.
   int stubBytesThreshold = 3 * 64 + (UseSIMDForArrayEquals ? 0 : 16);
 
   assert(elem_size == 1 || elem_size == 2, "must be char or byte");
@@ -5589,20 +5590,9 @@ address MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
     //      return false;
     bind(A_IS_NOT_NULL);
     ldrw(cnt1, Address(a1, length_offset));
-    if (is_8aligned) {
-      // Check if lenghts are equal. When bases are
-      // not aligned, we compare the lengths in the
-      // main loop and don't need to compare it
-      // explicitely ahead of the loop.
-      ldrw(cnt2, Address(a2, length_offset));
-      eorw(tmp5, cnt1, cnt2);
-      cbnzw(tmp5, DONE);
-    } else {
-      assert(extra_length != 0, "expect extra length");
-      // Increase loop counter by size of length field.
-      addw(cnt1, cnt1, extra_length);
-      // We don't need cnt2 on that path.
-    }
+    assert(extra_length != 0, "expect extra length");
+    // Increase loop counter by size of length field.
+    addw(cnt1, cnt1, extra_length);
     lea(a1, Address(a1, start_offset));
     lea(a2, Address(a2, start_offset));
     // Check for short strings, i.e. smaller than wordSize.
@@ -5667,15 +5657,10 @@ address MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
     cbz(a1, DONE);
     ldrw(cnt1, Address(a1, length_offset));
     cbz(a2, DONE);
-    if (is_8aligned) {
-      // cnt2 only needed when doing explicit length-compares.
-      ldrw(cnt2, Address(a2, length_offset));
-    } else {
-      assert(extra_length != 0, "expect extra length");
-      // Increase loop counter by size of length field.
-      addw(cnt1, cnt1, extra_length);
-      // We don't need cnt2 on that path.
-    }
+    assert(extra_length != 0, "expect extra length");
+    // Increase loop counter by size of length field.
+    addw(cnt1, cnt1, extra_length);
+
     // on most CPUs a2 is still "locked"(surprisingly) in ldrw and it's
     // faster to perform another branch before comparing a1 and a2
     cmp(cnt1, (u1)elem_per_word);
@@ -5685,14 +5670,6 @@ address MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
     br(GE, STUB);
     ldr(tmp4, Address(pre(a2, start_offset)));
     sub(tmp5, zr, cnt1, LSL, 3 + log_elem_size);
-    if (is_8aligned) {
-      // Check if lenghts are equal. When bases are
-      // not aligned, we compare the lengths in the
-      // main loop and don't need to compare it
-      // explicitely ahead of the loop.
-      cmp(cnt2, cnt1);
-      br(NE, DONE);
-    }
 
     // Main 16 byte comparison loop with 2 exits
     bind(NEXT_DWORD); {
@@ -5725,14 +5702,6 @@ address MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
 
     bind(STUB);
     ldr(tmp4, Address(pre(a2, start_offset)));
-    if (is_8aligned) {
-      // Check if lenghts are equal. When bases are
-      // not aligned, we compare the lengths in the
-      // main loop and don't need to compare it
-      // explicitely ahead of the loop.
-      cmp(cnt2, cnt1);
-      br(NE, DONE);
-    }
     if (elem_size == 2) { // convert to byte counter
       lsl(cnt1, cnt1, 1);
     }
@@ -5753,19 +5722,6 @@ address MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
     mov(result, a2);
     b(DONE);
     bind(SHORT);
-    if (is_8aligned) {
-      // Check if lenghts are equal. When bases are
-      // not aligned, we compare the lengths in the
-      // main loop and don't need to compare it
-      // explicitely ahead of the loop.
-      cmp(cnt2, cnt1);
-      br(NE, DONE);
-      // We only need to check if length == 0 when
-      // bases are aligned, because otherwise we'll
-      // compare array lengths in 'the loops', and
-      // cnt1 can not be 0.
-      cbz(cnt1, SAME);
-    }
     sub(tmp5, zr, cnt1, LSL, 3 + log_elem_size);
     ldr(tmp3, Address(a1, start_offset));
     ldr(tmp4, Address(a2, start_offset));
