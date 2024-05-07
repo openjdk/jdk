@@ -36,10 +36,4 @@ class IsSTWGCActiveMark : public StackObj {
   ~IsSTWGCActiveMark();
 };
 
-class DisableIsSTWGCActiveMark : public StackObj {
- public:
-  DisableIsSTWGCActiveMark();
-  ~DisableIsSTWGCActiveMark();
-};
-
 #endif // SHARE_GC_SHARED_ISGCACTIVEMARK_HPP
