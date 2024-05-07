@@ -133,6 +133,9 @@ public class LargeExponentsTest {
     // Some odd edge case values to ensure parse correctness
     private static Stream<Arguments> edgeCases() {
         return Stream.of(
+                // Exponent itself does not cause underflow, but decimalAt adjustment
+                // based off mantissa should. decimalAt(-1) + exponent(Integer.MIN_VALUE) = underflow
+                Arguments.of("0.0123E-2147483648", 0.0),
                 // 0 exponent
                 Arguments.of("1.23E0", 1.23),
                 // Leading zeroes

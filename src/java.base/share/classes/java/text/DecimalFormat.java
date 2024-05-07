@@ -2593,19 +2593,20 @@ public class DecimalFormat extends NumberFormat {
                         if (exponentDigits.fitsIntoLong(stat[STATUS_POSITIVE], true)) {
                             try {
                                 exponent = Math.toIntExact(exponentDigits.getLong());
+                                if (!stat[STATUS_POSITIVE]) {
+                                    exponent = -exponent;
+                                }
                             } catch (ArithmeticException ex) {
-                                // If overflow, Integer.MAX_VALUE is sufficient
-                                exponent = Integer.MAX_VALUE;
+                                // For all overflow and underflow, determine
+                                // appropriate value based off positive status
+                                exponent = stat[STATUS_POSITIVE] ?
+                                        Integer.MAX_VALUE : Integer.MIN_VALUE;
                             }
                         } else {
-                            // Value is greater than Long.MAX_VALUE, exponent field
-                            // is int, so assign it to the largest possible, Integer.MAX_VALUE
-                            exponent = Integer.MAX_VALUE;
+                            exponent = stat[STATUS_POSITIVE] ?
+                                    Integer.MAX_VALUE : Integer.MIN_VALUE;
                         }
                         position = pos.index; // Advance past the exponent
-                        if (!stat[STATUS_POSITIVE]) {
-                            exponent = -exponent;
-                        }
                     }
                     break; // Whether we fail or succeed, we exit this loop
                 } else {
@@ -2643,8 +2644,9 @@ public class DecimalFormat extends NumberFormat {
             try {
                 digits.decimalAt = Math.addExact(digits.decimalAt, exponent);
             } catch (ArithmeticException ex) {
-                // If overflow, Integer.MAX_VALUE is sufficient
-                digits.decimalAt = Integer.MAX_VALUE;
+                // Depending on overflow/underflow, adjust exponent value
+                digits.decimalAt = digits.decimalAt + exponent > 0
+                        ? Integer.MIN_VALUE : Integer.MAX_VALUE;
             }
 
             // If none of the text string was recognized.  For example, parse
