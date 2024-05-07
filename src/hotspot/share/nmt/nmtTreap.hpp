@@ -355,9 +355,7 @@ public:
           break;
         }
       }
-
       head = to_visit.pop();
-
       const int cmp_from = COMPARATOR::cmp(head->key(), from);
       const int cmp_to = COMPARATOR::cmp(head->key(), to);
       if (cmp_from >= 0 && cmp_to < 0) {
