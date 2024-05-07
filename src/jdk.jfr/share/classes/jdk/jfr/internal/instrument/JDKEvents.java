@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Properties;
 
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.event.JFRTracing;
 import jdk.internal.event.ThrowableTracer;
 import jdk.jfr.Event;
 import jdk.jfr.events.ActiveRecordingEvent;
@@ -41,8 +42,6 @@ import jdk.jfr.events.ContainerCPUThrottlingEvent;
 import jdk.jfr.events.ContainerMemoryUsageEvent;
 import jdk.jfr.events.DirectBufferStatisticsEvent;
 import jdk.jfr.events.FileForceEvent;
-import jdk.jfr.events.FileReadEvent;
-import jdk.jfr.events.FileWriteEvent;
 import jdk.jfr.events.InitialSecurityPropertyEvent;
 
 import jdk.jfr.internal.JVM;
@@ -57,8 +56,6 @@ import jdk.internal.platform.Metrics;
 public final class JDKEvents {
 
     private static final Class<?>[] eventClasses = {
-        FileReadEvent.class,
-        FileWriteEvent.class,
         ActiveSettingEvent.class,
         ActiveRecordingEvent.class,
         // jdk.internal.event.* classes need their mirror
@@ -68,6 +65,8 @@ public final class JDKEvents {
         jdk.internal.event.ExceptionStatisticsEvent.class,
         jdk.internal.event.ExceptionThrownEvent.class,
         jdk.internal.event.FileForceEvent.class,
+        jdk.internal.event.FileReadEvent.class,
+        jdk.internal.event.FileWriteEvent.class,
         jdk.internal.event.ProcessStartEvent.class,
         jdk.internal.event.SecurityPropertyModificationEvent.class,
         jdk.internal.event.SecurityProviderServiceEvent.class,
@@ -88,10 +87,6 @@ public final class JDKEvents {
 
     // This is a list of the classes with instrumentation code that should be applied.
     private static final Class<?>[] instrumentationClasses = new Class<?>[] {
-        FileInputStreamInstrumentor.class,
-        FileOutputStreamInstrumentor.class,
-        RandomAccessFileInstrumentor.class,
-        FileChannelImplInstrumentor.class
     };
 
     private static final Class<?>[] targetClasses = new Class<?>[instrumentationClasses.length];
@@ -118,7 +113,7 @@ public final class JDKEvents {
                 PeriodicEvents.addJDKEvent(InitialSecurityPropertyEvent.class, emitInitialSecurityProperties);
 
                 initializeContainerEvents();
-                ThrowableTracer.enable();
+                JFRTracing.enable();
                 initializationTriggered = true;
             }
         } catch (Exception e) {

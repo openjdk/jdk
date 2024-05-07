@@ -28,6 +28,7 @@ package java.io;
 import java.nio.channels.FileChannel;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.access.JavaIOFileDescriptorAccess;
+import jdk.internal.event.FileWriteEvent;
 import sun.nio.ch.FileChannelImpl;
 
 
@@ -67,6 +68,9 @@ public class FileOutputStream extends OutputStream
      */
     private static final JavaIOFileDescriptorAccess FD_ACCESS =
         SharedSecrets.getJavaIOFileDescriptorAccess();
+
+    // Flag that determines if file writes should be traced by JFR
+    static boolean jfrTracing;
 
     /**
      * The system dependent file descriptor.
@@ -307,6 +311,10 @@ public class FileOutputStream extends OutputStream
     @Override
     public void write(int b) throws IOException {
         boolean append = FD_ACCESS.getAppend(fd);
+        if (jfrTracing) {
+            traceWrite(b, append);
+            return;
+        }
         write(b, append);
     }
 
@@ -332,6 +340,10 @@ public class FileOutputStream extends OutputStream
     @Override
     public void write(byte[] b) throws IOException {
         boolean append = FD_ACCESS.getAppend(fd);
+        if (jfrTracing) {
+            traceWriteBytes(b, 0, b.length, append);
+            return;
+        }
         writeBytes(b, 0, b.length, append);
     }
 
@@ -348,6 +360,10 @@ public class FileOutputStream extends OutputStream
     @Override
     public void write(byte[] b, int off, int len) throws IOException {
         boolean append = FD_ACCESS.getAppend(fd);
+        if (jfrTracing) {
+            traceWriteBytes(b, off, len, append);
+            return;
+        }
         writeBytes(b, off, len, append);
     }
 
@@ -460,5 +476,43 @@ public class FileOutputStream extends OutputStream
 
     static {
         initIDs();
+    }
+
+    private void traceWrite(int b, boolean append) throws IOException {
+        if (!FileWriteEvent.enabled()) {
+            write(b, append);
+            return;
+        }
+        long bytesWritten = 0;
+        long start = 0;
+        try {
+            start = FileWriteEvent.timestamp();
+            write(b, append);
+            bytesWritten = 1;
+        } finally {
+            long duration = FileWriteEvent.timestamp() - start;
+            if (FileWriteEvent.shouldCommit(duration)) {
+                FileWriteEvent.commit(start, duration, path, bytesWritten);
+            }
+        }
+    }
+
+    private void traceWriteBytes(byte b[], int off, int len, boolean append) throws IOException {
+        if (!FileWriteEvent.enabled()) {
+            writeBytes(b, off, len, append);
+            return;
+        }
+        long bytesWritten = 0;
+        long start = 0;
+        try {
+            start = FileWriteEvent.timestamp();
+            writeBytes(b, off, len, append);
+            bytesWritten = len;
+        } finally {
+            long duration = FileWriteEvent.timestamp() - start;
+            if (FileWriteEvent.shouldCommit(duration)) {
+                FileWriteEvent.commit(start, duration, path, bytesWritten);
+            }
+        }
     }
 }
