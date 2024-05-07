@@ -37,6 +37,7 @@ import org.openjdk.jmh.infra.Blackhole;
 
 import java.lang.classfile.TypeKind;
 import java.lang.constant.ClassDesc;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
@@ -54,7 +55,7 @@ import java.util.concurrent.TimeUnit;
 public class TypeKindBench {
 
     public enum ClassType {
-        PRIMITIVE, REFERENCE;
+        PRIMITIVE, REFERENCE, MIXED;
     }
 
     @Param
@@ -64,12 +65,22 @@ public class TypeKindBench {
 
     @Setup
     public void setup() {
-        final List<Class<?>> candidates = type == ClassType.REFERENCE
-                ? List.of(Character.class, String.class, Integer.class,
+        var references = List.of(Character.class, String.class, Integer.class,
                 Long.class, Object.class, int[].class, TypeKindBench.class,
-                Byte[].class, boolean[][].class)
-                : List.of(int.class, long.class, void.class, double.class,
+                Byte[].class, boolean[][].class);
+        var primitives = List.of(int.class, long.class, void.class, double.class,
                 float.class, boolean.class, char.class, short.class, byte.class);
+        final List<Class<?>> candidates = switch (type) {
+            case REFERENCE -> references;
+            case PRIMITIVE -> primitives;
+            case MIXED -> {
+                var list = new ArrayList<Class<?>>(references.size() + primitives.size());
+                list.addAll(references);
+                list.addAll(primitives);
+                yield list;
+            }
+        };
+
         classes = ThreadLocalRandom.current()
                 .ints(100, 0, candidates.size())
                 .mapToObj(candidates::get)
