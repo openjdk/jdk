@@ -288,9 +288,6 @@ inputStream::~inputStream() {
     FreeHeap(_buffer);
     DEBUG_ONLY(_buffer = (char*)0xdeadbeef); // sanity
   }
-  if (_input != nullptr)  {
-    set_input(nullptr);
-  }
 }
 
 #ifdef ASSERT
