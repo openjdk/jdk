@@ -5554,6 +5554,7 @@ address MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
   assert(is_aligned(base_offset, BytesPerWord) || base_offset == length_offset + BytesPerInt,
          "base_offset must be 8-byte aligned or no padding between base and length");
   int start_offset = is_8aligned ? base_offset : length_offset;
+  assert(is_aligned(start_offset, BytesPerWord), "start offset must be 8-byte-aligned");
   int extra_length = is_8aligned ? 0 : BytesPerInt / elem_size;
   int stubBytesThreshold = 3 * 64 + (UseSIMDForArrayEquals ? 0 : 16);
 
@@ -5588,11 +5589,6 @@ address MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
     //      return false;
     bind(A_IS_NOT_NULL);
     ldrw(cnt1, Address(a1, length_offset));
-    if (extra_length != 0) {
-      // Increase loop counter by size of length field.
-      addw(cnt1, cnt1, extra_length);
-      // We don't need cnt2 on that path.
-    }
     if (is_8aligned) {
       // Check if lenghts are equal. When bases are
       // not aligned, we compare the lengths in the
@@ -5601,6 +5597,11 @@ address MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
       ldrw(cnt2, Address(a2, length_offset));
       eorw(tmp5, cnt1, cnt2);
       cbnzw(tmp5, DONE);
+    } else {
+      assert(extra_length != 0, "expect extra length");
+      // Increase loop counter by size of length field.
+      addw(cnt1, cnt1, extra_length);
+      // We don't need cnt2 on that path.
     }
     lea(a1, Address(a1, start_offset));
     lea(a2, Address(a2, start_offset));
@@ -5669,8 +5670,8 @@ address MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
     if (is_8aligned) {
       // cnt2 only needed when doing explicit length-compares.
       ldrw(cnt2, Address(a2, length_offset));
-    }
-    if (extra_length != 0) {
+    } else {
+      assert(extra_length != 0, "expect extra length");
       // Increase loop counter by size of length field.
       addw(cnt1, cnt1, extra_length);
       // We don't need cnt2 on that path.
@@ -5766,8 +5767,8 @@ address MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
       cbz(cnt1, SAME);
     }
     sub(tmp5, zr, cnt1, LSL, 3 + log_elem_size);
-    ldr(tmp3, Address(pre(a1, start_offset)));
-    ldr(tmp4, Address(pre(a2, start_offset)));
+    ldr(tmp3, Address(a1, start_offset));
+    ldr(tmp4, Address(a2, start_offset));
     bind(LAST_CHECK);
     eor(tmp4, tmp3, tmp4);
     lslv(tmp5, tmp4, tmp5);
