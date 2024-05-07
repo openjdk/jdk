@@ -22,13 +22,13 @@
  *
  */
 
-#ifdef ASSERT
-
 #include "precompiled.hpp"
 #include "memory/allocation.hpp"
 #include "nmt/nmtTreap.hpp"
 #include "runtime/os.hpp"
 #include "unittest.hpp"
+
+#ifdef ASSERT
 
 TEST_VM(NmtTreap, VerifyItThroughStressTest) {
   struct Cmp {
