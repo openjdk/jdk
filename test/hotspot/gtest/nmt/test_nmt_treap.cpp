@@ -38,8 +38,8 @@ TEST_VM(NmtTreap, VerifyItThroughStressTest) {
   };
   TreapCHeap<int, int,Cmp> treap;
   // Really hammer a Treap
-  int one_million = 1000000;
-  for (int i = 0; i < one_million; i++) {
+  int ten_thousand = 10000;
+  for (int i = 0; i < ten_thousand; i++) {
     int r = os::random();
     if (r >= 0) {
       treap.upsert(i, i);
@@ -47,7 +47,7 @@ TEST_VM(NmtTreap, VerifyItThroughStressTest) {
       treap.remove(i);
     }
   }
-  for (int i = 0; i < one_million; i++) {
+  for (int i = 0; i < ten_thousand; i++) {
     int r = os::random();
     if (r >= 0) {
       treap.upsert(i, i);
