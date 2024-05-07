@@ -3546,6 +3546,7 @@ Node* StoreNode::Identity(PhaseGVN* phase) {
           }
         // Regular store (no offsets or mask)
         } else {
+          assert(Opcode() = Op_StoreVector, "just a plain vector store, no offset or mask");
           result = mem;
         }
       }
