@@ -28,12 +28,10 @@
 #include "memory/allocation.hpp"
 
 // This class provides a method for block structured setting of the
-// _is_stw_gc_active, _is_any_gc_active state without requiring
+// _is_stw_gc_active, _any_gc_count state without requiring
 // accessors in CollectedHeap
 
 class IsAnyGCActiveMark : public StackObj {
- private:
-  bool _skip;
  public:
   IsAnyGCActiveMark();
   ~IsAnyGCActiveMark();
