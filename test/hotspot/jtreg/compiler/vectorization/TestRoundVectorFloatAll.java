@@ -28,55 +28,26 @@
  *
  * @library /test/lib /
  * @modules java.base/jdk.internal.math
- * @run main/othervm -XX:+PrintIdeal -XX:-TieredCompilation -XX:CompileThresholdScaling=0.3 -XX:+UseSuperWord -XX:CompileCommand=compileonly,compiler.vectorization.TestRoundVectorFloatAll::test* compiler.vectorization.TestRoundVectorFloatAll
- * @run main/othervm -XX:+PrintIdeal -XX:-TieredCompilation -XX:CompileThresholdScaling=0.3 -XX:MaxVectorSize=8 -XX:+UseSuperWord -XX:CompileCommand=compileonly,compiler.vectorization.TestRoundVectorFloatAll::test* compiler.vectorization.TestRoundVectorFloatAll
- * @run main/othervm -XX:+PrintIdeal -XX:-TieredCompilation -XX:CompileThresholdScaling=0.3 -XX:MaxVectorSize=16 -XX:+UseSuperWord -XX:CompileCommand=compileonly,compiler.vectorization.TestRoundVectorFloatAll::test* compiler.vectorization.TestRoundVectorFloatAll
- * @run main/othervm -XX:+PrintIdeal -XX:-TieredCompilation -XX:CompileThresholdScaling=0.3 -XX:MaxVectorSize=32 -XX:+UseSuperWord -XX:CompileCommand=compileonly,compiler.vectorization.TestRoundVectorFloatAll::test* compiler.vectorization.TestRoundVectorFloatAll
+ * @run main/othervm -XX:-TieredCompilation -XX:CompileThresholdScaling=0.3 -XX:+UseSuperWord -XX:CompileCommand=compileonly,compiler.vectorization.TestRoundVectorFloatAll::test* compiler.vectorization.TestRoundVectorFloatAll
+ * @run main/othervm -XX:-TieredCompilation -XX:CompileThresholdScaling=0.3 -XX:MaxVectorSize=8 -XX:+UseSuperWord -XX:CompileCommand=compileonly,compiler.vectorization.TestRoundVectorFloatAll::test* compiler.vectorization.TestRoundVectorFloatAll
+ * @run main/othervm -XX:-TieredCompilation -XX:CompileThresholdScaling=0.3 -XX:MaxVectorSize=16 -XX:+UseSuperWord -XX:CompileCommand=compileonly,compiler.vectorization.TestRoundVectorFloatAll::test* compiler.vectorization.TestRoundVectorFloatAll
+ * @run main/othervm -XX:-TieredCompilation -XX:CompileThresholdScaling=0.3 -XX:MaxVectorSize=32 -XX:+UseSuperWord -XX:CompileCommand=compileonly,compiler.vectorization.TestRoundVectorFloatAll::test* compiler.vectorization.TestRoundVectorFloatAll
  */
 
 package compiler.vectorization;
 
-import jdk.internal.math.FloatConsts;
+import java.util.Random;
+import static compiler.lib.golden.GoldenRound.golden_round;
 
 public class TestRoundVectorFloatAll {
+  private static final Random rand = new Random();
+
   private static final int ITERS  = 11000;
-  private static final int ARRLEN = 997;
+  private static final int ARRLEN = rand.nextInt(4096-997) + 997;
   private static final float ADD_INIT = -7500.f;
 
   public static void main(String args[]) {
     test();
-  }
-
-  static int golden_round(float a) {
-    // below code is copied from java.base/share/classes/java/lang/Math.java
-    //  public static int round(float a) { ... }
-
-    int intBits = Float.floatToRawIntBits(a);
-    int biasedExp = (intBits & FloatConsts.EXP_BIT_MASK)
-            >> (FloatConsts.SIGNIFICAND_WIDTH - 1);
-    int shift = (FloatConsts.SIGNIFICAND_WIDTH - 2
-            + FloatConsts.EXP_BIAS) - biasedExp;
-    if ((shift & -32) == 0) { // shift >= 0 && shift < 32
-        // a is a finite number such that pow(2,-32) <= ulp(a) < 1
-        int r = ((intBits & FloatConsts.SIGNIF_BIT_MASK)
-                | (FloatConsts.SIGNIF_BIT_MASK + 1));
-        if (intBits < 0) {
-            r = -r;
-        }
-        // In the comments below each Java expression evaluates to the value
-        // the corresponding mathematical expression:
-        // (r) evaluates to a / ulp(a)
-        // (r >> shift) evaluates to floor(a * 2)
-        // ((r >> shift) + 1) evaluates to floor((a + 1/2) * 2)
-        // (((r >> shift) + 1) >> 1) evaluates to floor(a + 1/2)
-        return ((r >> shift) + 1) >> 1;
-    } else {
-        // a is either
-        // - a finite number with abs(a) < exp(2,FloatConsts.SIGNIFICAND_WIDTH-32) < 1/2
-        // - a finite number with ulp(a) >= 1 and hence a is a mathematical integer
-        // - an infinity or NaN
-        return (int) a;
-    }
   }
 
   static void test() {
