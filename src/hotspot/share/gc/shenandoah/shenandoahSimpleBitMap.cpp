@@ -206,11 +206,13 @@ idx_t ShenandoahSimpleBitMap::find_first_consecutive_set_bits(idx_t beg, idx_t e
     } else if (is_forward_consecutive_ones(beg, num_bits)) {
       return beg;
     } else {
-      // There is at least one non-zero bit within the masked element_bits.  Find it.
+      // There is at least one non-zero bit within the masked element_bits. Arrange to skip over bits that
+      // cannot be part of a consecutive-ones match.
       uintx next_set_bit = count_trailing_zeros<uintx>(element_bits);
       uintx next_start_candidate_1 = (array_idx << LogBitsPerWord) + next_set_bit;
 
-      // There is at least one zero bit in this span.  Align the next probe at the start of trailing ones for probed span.
+      // There is at least one zero bit in this span. Align the next probe at the start of trailing ones for probed span,
+      // or align at end of span if this span has no trailing ones.
       size_t trailing_ones = count_trailing_ones(beg + num_bits - 1);
       uintx next_start_candidate_2 = beg + num_bits - trailing_ones;
 
@@ -263,11 +265,13 @@ idx_t ShenandoahSimpleBitMap::find_last_consecutive_set_bits(const idx_t beg, id
     } else if (is_backward_consecutive_ones(end, num_bits)) {
       return end + 1 - num_bits;
     } else {
-      // There is at least one non-zero bit within the masked element_bits.  Find it.
+      // There is at least one non-zero bit within the masked element_bits. Arrange to skip over bits that
+      // cannot be part of a consecutive-ones match.
       uintx next_set_bit = BitsPerWord - (1 + count_leading_zeros<uintx>(element_bits));
       uintx next_last_candidate_1 = (array_idx << LogBitsPerWord) + next_set_bit;
 
-      // There is at least one zero bit in this span.  Align the next probe at the end of leading ones for probed span.
+      // There is at least one zero bit in this span.  Align the next probe at the end of leading ones for probed span,
+      // or align before start of span if this span has no leading ones.
       size_t leading_ones = count_leading_ones(end - (num_bits - 1));
       uintx next_last_candidate_2 = end - (num_bits - leading_ones);
 
