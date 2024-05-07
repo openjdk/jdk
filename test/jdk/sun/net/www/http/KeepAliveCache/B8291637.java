@@ -137,15 +137,9 @@ public class B8291637 {
                     .path("/")
                     .toURL();
             HttpURLConnection urlc = (HttpURLConnection) url.openConnection();
-            int count = 0;
             try (InputStream i = urlc.getInputStream()) {
-                int c;
-                byte[] buf = new byte[256];
-                while ((c = i.read(buf)) != -1) {
-                    count += c;
-                }
+                System.out.println("Read " + i.readAllBytes().length);
             }
-            System.out.println("Read " + count);
             if (!passed.get()) {
                 throw new RuntimeException("Test failed");
             } else {
