@@ -86,7 +86,6 @@ public class stoplis001 {
         this.out = out;
         log = new Log(out, argHandler);
 
-        Map<String,? extends com.sun.jdi.connect.Connector.Argument> cArgs1 = initConnector(argHandler.getTransportPort());
         Map<String,? extends com.sun.jdi.connect.Connector.Argument> cArgs2 = initConnector(null);
         if ((addr = startListen(cArgs2)) == null) {
             log.complain("FAILURE: unable to start listening the address " +
@@ -95,6 +94,12 @@ public class stoplis001 {
         }
         else
             log.display("TEST: start listening the address " + addr);
+
+        // argHandler.getTransportPort() returns a free port (different from the port allocated by startListen(cArgs2))
+        Map<String,? extends com.sun.jdi.connect.Connector.Argument> cArgs1 = initConnector(argHandler.getTransportPort());
+
+        log.display("cArgs1: " + cArgs1);
+        log.display("cArgs2: " + cArgs2);
 
 /* Check that an Exception is thrown if ListeningConnector.stopListening
  has been invoked with argument map different from the one given for

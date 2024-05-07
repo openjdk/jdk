@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
 
 CompiledICProtectionBehaviour* CompiledICProtectionBehaviour::_current = nullptr;
 
-bool DefaultICProtectionBehaviour::lock(CompiledMethod* method) {
+bool DefaultICProtectionBehaviour::lock(nmethod* method) {
   if (is_safe(method)) {
     return false;
   }
@@ -37,10 +37,10 @@ bool DefaultICProtectionBehaviour::lock(CompiledMethod* method) {
   return true;
 }
 
-void DefaultICProtectionBehaviour::unlock(CompiledMethod* method) {
+void DefaultICProtectionBehaviour::unlock(nmethod* method) {
   CompiledIC_lock->unlock();
 }
 
-bool DefaultICProtectionBehaviour::is_safe(CompiledMethod* method) {
+bool DefaultICProtectionBehaviour::is_safe(nmethod* method) {
   return SafepointSynchronize::is_at_safepoint() || CompiledIC_lock->owned_by_self();
 }

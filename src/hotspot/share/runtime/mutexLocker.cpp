@@ -37,7 +37,7 @@
 // Mutexes used in the VM (see comment in mutexLocker.hpp):
 
 Mutex*   Patching_lock                = nullptr;
-Mutex*   CompiledMethod_lock          = nullptr;
+Mutex*   NMethodState_lock            = nullptr;
 Monitor* SystemDictionary_lock        = nullptr;
 Mutex*   InvokeMethodTypeTable_lock   = nullptr;
 Monitor* InvokeMethodIntrinsicTable_lock = nullptr;
@@ -100,7 +100,6 @@ Mutex*   tty_lock                     = nullptr;
 Mutex*   RawMonitor_lock              = nullptr;
 Mutex*   PerfDataMemAlloc_lock        = nullptr;
 Mutex*   PerfDataManager_lock         = nullptr;
-Mutex*   OopMapCacheAlloc_lock        = nullptr;
 
 Mutex*   FreeList_lock                = nullptr;
 Mutex*   OldSets_lock                 = nullptr;
@@ -327,7 +326,7 @@ void mutex_init() {
   MUTEX_DEFL(VtableStubs_lock               , PaddedMutex  , CompiledIC_lock);  // Also holds DumpTimeTable_lock
   MUTEX_DEFL(CodeCache_lock                 , PaddedMonitor, VtableStubs_lock);
   MUTEX_DEFL(DirectivesStack_lock           , PaddedMutex  , CodeCache_lock);
-  MUTEX_DEFL(CompiledMethod_lock            , PaddedMutex  , CodeCache_lock);
+  MUTEX_DEFL(NMethodState_lock              , PaddedMutex  , CodeCache_lock);
 
   MUTEX_DEFL(Threads_lock                   , PaddedMonitor, CompileThread_lock, true);
   MUTEX_DEFL(Compile_lock                   , PaddedMutex  , MethodCompileQueue_lock);
@@ -349,7 +348,6 @@ void mutex_init() {
     MUTEX_DEFL(PSOldGenExpand_lock          , PaddedMutex  , Heap_lock, true);
   }
 #endif
-  MUTEX_DEFL(OopMapCacheAlloc_lock          , PaddedMutex  ,  Threads_lock, true);
   MUTEX_DEFL(Module_lock                    , PaddedMutex  ,  ClassLoaderDataGraph_lock);
   MUTEX_DEFL(SystemDictionary_lock          , PaddedMonitor, Module_lock);
   MUTEX_DEFL(JNICritical_lock               , PaddedMonitor, AdapterHandlerLibrary_lock); // used for JNI critical regions
