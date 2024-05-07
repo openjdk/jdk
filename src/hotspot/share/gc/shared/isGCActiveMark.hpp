@@ -32,15 +32,15 @@
 // accessors in CollectedHeap
 
 class IsAnyGCActiveMark : public StackObj {
-private:
-  bool _doit;
-public:
+ private:
+  bool _skip;
+ public:
   IsAnyGCActiveMark();
   ~IsAnyGCActiveMark();
 };
 
 class IsSTWGCActiveMark : public IsAnyGCActiveMark {
-public:
+ public:
   IsSTWGCActiveMark();
   ~IsSTWGCActiveMark();
 };

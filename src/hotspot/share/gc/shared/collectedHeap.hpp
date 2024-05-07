@@ -91,7 +91,7 @@ class CollectedHeap : public CHeapObj<mtGC> {
   friend class VMStructs;
   friend class JVMCIVMStructs;
   friend class IsSTWGCActiveMark; // Block structured external access to _is_stw_gc_active
-  friend class IsAnyGCActiveMark; // Block structured external access to _is_any_gc_active
+  friend class IsAnyGCActiveMark; // Block structured external access to _any_gc_count;
   friend class MemAllocator;
   friend class ParallelObjectIterator;
 
@@ -112,8 +112,12 @@ class CollectedHeap : public CHeapObj<mtGC> {
   // Not used by all GCs
   MemRegion _reserved;
 
+  // Number of GCs currently running. Can be modified concurrently
+  // by different parts of GC subsystems. Updated atomically.
+  volatile int _any_gc_count;
+
+  // Number of STW GCs currently running. Only modified at safepoint.
   bool _is_stw_gc_active;
-  bool _is_any_gc_active;
 
   // (Minimum) Alignment reserve for TLABs and PLABs.
   static size_t _lab_alignment_reserve;
@@ -379,7 +383,7 @@ protected:
   bool is_stw_gc_active() const { return _is_stw_gc_active; }
 
   // Returns "true" iff there is a GC in progress.
-  bool is_any_gc_active() const { return _is_any_gc_active; }
+  bool is_any_gc_active() const { return Atomic::load(&_any_gc_count) > 0; }
 
   // Total number of GC collections (started)
   unsigned int total_collections() const { return _total_collections; }
