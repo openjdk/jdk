@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package com.sun.source.tree;
 
+import jdk.internal.javac.PreviewFeature;
+
 /**
  * A tree node for an import declaration.
  *
@@ -47,6 +49,12 @@ public interface ImportTree extends Tree {
      * @return true if this is a static import
      */
     boolean isStatic();
+    /**
+     * {@return true if this is an module import declaration.}
+     * @since 23
+     */
+    @PreviewFeature(feature=PreviewFeature.Feature.MODULE_IMPORTS, reflective=true)
+    boolean isModule();
 
     /**
      * Returns the qualified identifier for the declaration(s)
