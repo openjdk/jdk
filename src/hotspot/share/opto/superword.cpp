@@ -3325,7 +3325,7 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
 
   // We chose an aw that is the maximal possible vector width for the type of
   // align_to_ref.
-  const int aw       = MAX2(ObjectAlignmentInBytes, vector_width_in_bytes(align_to_ref));
+  const int aw       = vector_width_in_bytes(align_to_ref);
   const int stride   = iv_stride();
   const int scale    = align_to_ref_p.scale_in_bytes();
   const int offset   = align_to_ref_p.offset_in_bytes();
