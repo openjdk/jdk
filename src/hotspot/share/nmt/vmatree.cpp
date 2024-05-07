@@ -56,10 +56,7 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
       IntervalState{StateType::Released, Metadata{}}
   };
 
-  // We will need the nodes which are closest to A from the left side and closest to B from the right side.
-  // Motivating example: reserve(0,100, mtNMT); reserve(50,75, mtTest);
-  // This example would require the 2nd call to know which region the second reserve 'smashes' a hole into for proper summary accounting.
-  // LEQ_A is figured out a bit later on, as we need to find it for other purposes anyway.
+
   bool LEQ_A_found = false;
   AddressState LEQ_A;
 
