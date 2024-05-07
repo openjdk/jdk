@@ -36,6 +36,7 @@ import java.util.stream.Stream;
 
 import jdk.test.lib.util.JarBuilder;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -60,15 +61,12 @@ public class JarExtractTest {
             );
 
     private static final byte[] FILE_CONTENT = "Hello world!!!".getBytes(StandardCharsets.UTF_8);
-    private static final String LEADING_SLASH_PRESERVED_ENTRY = "/tmp/8173970/f1.txt";
     // the jar that will get extracted in the tests
     private Path testJarPath;
     private static Collection<Path> filesToDelete = new ArrayList<>();
 
     @BeforeEach
     public void createTestJar() throws Exception {
-        Files.deleteIfExists(Path.of(LEADING_SLASH_PRESERVED_ENTRY));
-
         final String tmpDir = Files.createTempDirectory("8173970-").toString();
         testJarPath = Path.of(tmpDir, "8173970-test.jar");
         final JarBuilder builder = new JarBuilder(testJarPath.toString());
@@ -86,8 +84,6 @@ public class JarExtractTest {
         builder.addEntry("d1/d2/d3/f2.txt", FILE_CONTENT);
         builder.addEntry("d1/d4/", new byte[0]);
         builder.build();
-
-        filesToDelete.add(Path.of(LEADING_SLASH_PRESERVED_ENTRY));
     }
 
     @AfterEach
@@ -98,6 +94,8 @@ public class JarExtractTest {
                 Files.delete(p);
             } catch (IOException ioe) {
                 //ignore
+                System.err.println("ignoring exception: " + ioe
+                        + " that happened when deleting: " + p);
             }
         }
     }
@@ -255,27 +253,47 @@ public class JarExtractTest {
      */
     @Test
     public void testExtractNoDestDirWithPFlag() throws Exception {
+        // run this test only on those systems where "/tmp" directory is available and we
+        // can write to it
+        Assumptions.assumeTrue(Files.isDirectory(Path.of("/tmp")),
+                "skipping test, since /tmp isn't a directory");
+        // try and write into "/tmp"
+        final Path tmpDir;
+        try {
+            tmpDir = Files.createTempDirectory(Path.of("/tmp"), "8173970-").toAbsolutePath();
+        } catch (IOException ioe) {
+            Assumptions.abort("skipping test, since /tmp cannot be written to: " + ioe);
+            return;
+        }
+        final String leadingSlashEntryName = tmpDir.toString() + "/foo/f1.txt";
         // create a jar which has leading slash (/) and dot-dot (..) preserved in entry names
-        final Path jarPath = createJarWithPFlagSemantics();
+        final Path jarPath = createJarWithPFlagSemantics(leadingSlashEntryName);
         final List<String[]> cmdArgs = new ArrayList<>();
         cmdArgs.add(new String[]{"-xvfP", jarPath.toString()});
         cmdArgs.add(new String[]{"--extract", "-v", "-P", "-f", jarPath.toString()});
-        for (final String[] args : cmdArgs) {
-            printJarCommand(args);
-            final int exitCode = JAR_TOOL.run(System.out, System.err, args);
-            assertEquals(0, exitCode, "Failed to extract " + jarPath);
-            final String dest = ".";
-            assertTrue(Files.isDirectory(Path.of(dest)), dest + " is not a directory");
-            final Path d1 = Path.of(dest, "d1");
-            assertTrue(Files.isDirectory(d1), d1 + " directory is missing or not a directory");
-            final Path d2 = Path.of(dest, "d1", "d2");
-            assertTrue(Files.isDirectory(d2), d2 + " directory is missing or not a directory");
-            final Path f1 = Path.of(LEADING_SLASH_PRESERVED_ENTRY);
-            assertTrue(Files.isRegularFile(f1), f1 + " is missing or not a file");
-            assertArrayEquals(FILE_CONTENT, Files.readAllBytes(f1), "Unexpected content in file " + f1);
-            final Path f2 = Path.of("d1/d2/../f2.txt");
-            assertTrue(Files.isRegularFile(f2), f2 + " is missing or not a file");
-            assertArrayEquals(FILE_CONTENT, Files.readAllBytes(f2), "Unexpected content in file " + f2);
+        try {
+            for (final String[] args : cmdArgs) {
+                printJarCommand(args);
+                final int exitCode = JAR_TOOL.run(System.out, System.err, args);
+                assertEquals(0, exitCode, "Failed to extract " + jarPath);
+                final String dest = ".";
+                assertTrue(Files.isDirectory(Path.of(dest)), dest + " is not a directory");
+                final Path d1 = Path.of(dest, "d1");
+                assertTrue(Files.isDirectory(d1), d1 + " directory is missing or not a directory");
+                final Path d2 = Path.of(dest, "d1", "d2");
+                assertTrue(Files.isDirectory(d2), d2 + " directory is missing or not a directory");
+                final Path f1 = Path.of(leadingSlashEntryName);
+                assertTrue(Files.isRegularFile(f1), f1 + " is missing or not a file");
+                assertArrayEquals(FILE_CONTENT, Files.readAllBytes(f1),
+                        "Unexpected content in file " + f1);
+                final Path f2 = Path.of("d1/d2/../f2.txt");
+                assertTrue(Files.isRegularFile(f2), f2 + " is missing or not a file");
+                assertArrayEquals(FILE_CONTENT, Files.readAllBytes(f2),
+                        "Unexpected content in file " + f2);
+            }
+        } finally {
+            // clean up the file that might have been extracted into "/tmp/...." directory
+            Files.deleteIfExists(Path.of(leadingSlashEntryName));
         }
     }
 
@@ -457,13 +475,14 @@ public class JarExtractTest {
      * Creates a jar whose entries have a leading slash and the dot-dot character preserved.
      * This is the same as creating a jar using {@code jar -cfP somejar.jar <file1> <file2> ...}
      */
-    private static Path createJarWithPFlagSemantics() throws IOException {
-        final String tmpDir = Files.createTempDirectory(Path.of("."), "8173970-").toString();
-        final Path jarPath = Path.of(tmpDir, "8173970-test-withpflag.jar");
+    private static Path createJarWithPFlagSemantics(String leadingSlashEntryName)
+            throws IOException {
+        final Path tmpDir = Files.createTempDirectory(Path.of("."), "8173970-").toAbsolutePath();
+        final Path jarPath = tmpDir.resolve("8173970-test-withpflag.jar");
         final JarBuilder builder = new JarBuilder(jarPath.toString());
         builder.addEntry("d1/", new byte[0]);
         builder.addEntry("d1/d2/", new byte[0]);
-        builder.addEntry(LEADING_SLASH_PRESERVED_ENTRY, FILE_CONTENT);
+        builder.addEntry(leadingSlashEntryName, FILE_CONTENT);
         builder.addEntry("d1/d2/../f2.txt", FILE_CONTENT);
         builder.build();
         return jarPath;
