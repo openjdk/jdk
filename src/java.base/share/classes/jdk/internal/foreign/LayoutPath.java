@@ -26,6 +26,8 @@
 package jdk.internal.foreign;
 
 import jdk.internal.vm.annotation.ForceInline;
+import sun.security.action.GetPropertyAction;
+
 import java.lang.foreign.AddressLayout;
 import java.lang.foreign.GroupLayout;
 import java.lang.foreign.MemoryLayout;
@@ -66,6 +68,9 @@ public class LayoutPath {
     private static final MethodHandle MH_CHECK_ALIGN;
     private static final MethodHandle MH_SEGMENT_RESIZE;
     private static final MethodHandle MH_ADD;
+
+    private static final boolean USE_FULL_CHECKS = Boolean.parseBoolean(
+            GetPropertyAction.privilegedGetProperty("jdk.internal.foreign.handle.USE_FULL_CHECKS", "false"));
 
     static {
         try {
@@ -206,7 +211,7 @@ public class LayoutPath {
 
         // If we have an enclosing layout, drop the alignment check for the accessed element,
         // we check the root layout instead
-        ValueLayout accessedLayout = enclosing != null ? valueLayout.withByteAlignment(1) : valueLayout;
+        ValueLayout accessedLayout = (enclosing != null && !USE_FULL_CHECKS) ? valueLayout.withByteAlignment(1) : valueLayout;
         VarHandle handle = accessedLayout.varHandle();
         handle = MethodHandles.collectCoordinates(handle, 1, offsetHandle());
 
