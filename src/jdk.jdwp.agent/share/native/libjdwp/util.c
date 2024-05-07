@@ -1453,7 +1453,7 @@ debugMonitorWait(DebugRawMonitor *dbg_monitor)
       // We must do the same rank verificaton as is done during a monitor enter.
       // We must hold the dbgRawMonitor when calling verifyMonitorRank()
       verifyMonitorRank(env, dbg_monitor->rank, current_thread);
-    
+
       dbgRawMonitor_unlock();
     }
 
