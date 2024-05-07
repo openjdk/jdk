@@ -107,7 +107,7 @@ Thread::Thread() {
   // If we are dumping, keep ihashes constant. Note that during dumping we only
   // ever run one java thread, and no other thread should generate ihashes either,
   // so using a constant seed should work fine.
-  _hashStateX = CDSConfig::is_dumping_archive() ? 0x12345678 : os::random();
+  _hashStateX = CDSConfig::is_dumping_static_archive() ? 0x12345678 : os::random();
   _hashStateY = 842502087;
   _hashStateZ = 0x8767;    // (int)(3579807591LL & 0xffff) ;
   _hashStateW = 273326509;
