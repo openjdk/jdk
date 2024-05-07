@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,16 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/shared/softRefPolicy.hpp"
 
-SoftRefPolicy::SoftRefPolicy() :
-    _should_clear_all_soft_refs(false),
-    _all_soft_refs_clear(false) {
-}
+#include "gc/g1/g1HeapRegionPrinter.hpp"
+#include "gc/g1/g1HeapRegionSet.hpp"
 
-void SoftRefPolicy::cleared_all_soft_refs() {
-  _all_soft_refs_clear = true;
+void G1HeapRegionPrinter::mark_reclaim(FreeRegionList* cleanup_list) {
+  if (is_active()) {
+    FreeRegionListIterator iter(cleanup_list);
+    while (iter.more_available()) {
+      HeapRegion* hr = iter.get_next();
+      mark_reclaim(hr);
+    }
+  }
 }

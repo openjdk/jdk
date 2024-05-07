@@ -187,6 +187,10 @@ public class TestMergeStores {
         testGroups.put("test600", new HashMap<String,TestFunction>());
         testGroups.get("test600").put("test600R", (_,i) -> { return test600R(aB.clone(), aI.clone(), i); });
         testGroups.get("test600").put("test600a", (_,i) -> { return test600a(aB.clone(), aI.clone(), i); });
+
+        testGroups.put("test700", new HashMap<String,TestFunction>());
+        testGroups.get("test700").put("test700R", (_,i) -> { return test700R(aI.clone(), i); });
+        testGroups.get("test700").put("test700a", (_,i) -> { return test700a(aI.clone(), i); });
     }
 
     @Warmup(100)
@@ -220,7 +224,8 @@ public class TestMergeStores {
                  "test500a",
                  "test501a",
                  "test502a",
-                 "test600a"})
+                 "test600a",
+                 "test700a"})
     public void runTests(RunInfo info) {
         // Repeat many times, so that we also have multiple iterations for post-warmup to potentially recompile
         int iters = info.isWarmUp() ? 1_000 : 50_000;
@@ -1296,4 +1301,22 @@ public class TestMergeStores {
         return new Object[]{ aB, aI };
     }
 
+    @DontCompile
+    static Object[] test700R(int[] a, long v1) {
+        a[0] = (int)(v1 >> -1);
+        a[1] = (int)(v1 >> -2);
+        return new Object[]{ a };
+    }
+
+    @Test
+    @IR(counts = {IRNode.STORE_B_OF_CLASS, "int\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+                  IRNode.STORE_C_OF_CLASS, "int\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+                  IRNode.STORE_I_OF_CLASS, "int\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "2",
+                  IRNode.STORE_L_OF_CLASS, "int\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0"})
+    static Object[] test700a(int[] a, long v1) {
+        // Negative shift: cannot optimize
+        a[0] = (int)(v1 >> -1);
+        a[1] = (int)(v1 >> -2);
+        return new Object[]{ a };
+    }
 }

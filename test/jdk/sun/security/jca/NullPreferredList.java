@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,20 +19,23 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#include "precompiled.hpp"
+import java.security.*;
 
-#include "gc/g1/g1HeapRegionSet.hpp"
-#include "gc/g1/g1HRPrinter.hpp"
+/**
+ * @test
+ * @bug 8328864
+ * @summary Test that ProviderList.getService checks configs when
+ * ProviderList.getProvider fails for preferred providers.
+ * @run main/othervm
+ *  -Djava.security.properties=${test.src}/app-security.properties NullPreferredList
+ */
 
-void G1HRPrinter::cleanup(FreeRegionList* cleanup_list) {
-  if (is_active()) {
-    FreeRegionListIterator iter(cleanup_list);
-    while (iter.more_available()) {
-      HeapRegion* hr = iter.get_next();
-      cleanup(hr);
+public class NullPreferredList {
+
+    public static void main(final String[] args) throws Exception {
+        final KeyStore ks = KeyStore.getInstance("PKCS12");
+        System.out.println("Got keystore " + ks);
     }
-  }
 }
