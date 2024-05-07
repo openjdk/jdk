@@ -3541,7 +3541,7 @@ Node* StoreNode::Identity(PhaseGVN* phase) {
           const Node* mask = stv->in(StoreVectorScatterMaskedNode::Mask);
           const StoreVectorScatterMaskedNode* svgm = mem->as_StoreVectorScatterMasked();
           if (offsets->eqv_uncast(svgm->in(StoreVectorScatterMaskedNode::Offsets)) &&
-            mask->eqv_uncast(svgm->in(StoreVectorScatterMaskedNode::Mask))) {
+              mask->eqv_uncast(svgm->in(StoreVectorScatterMaskedNode::Mask))) {
             result = mem;
           }
         // Regular store (no offsets or mask)
