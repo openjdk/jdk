@@ -32,6 +32,7 @@ import org.junit.jupiter.api.Test;
 import java.lang.classfile.TypeKind;
 
 import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class TypeKindTest {
     @Test
@@ -44,5 +45,34 @@ class TypeKindTest {
 
         assertThrows(IllegalArgumentException.class, () -> TypeKind.fromNewarrayCode(-1));
         assertThrows(IllegalArgumentException.class, () -> TypeKind.fromNewarrayCode(21));
+    }
+
+    @Test
+    void testMapping() {
+        for (char c : "BCDFIJSZVL[".toCharArray()) {
+            var s = String.valueOf(c);
+            assertEquals(fromDescriptorSwitch(s), TypeKind.fromDescriptor(s));
+        }
+
+        assertThrows(IllegalArgumentException.class, () -> TypeKind.fromDescriptor("E"));
+        // hash of P same as [
+        assertThrows(IllegalArgumentException.class, () -> TypeKind.fromDescriptor("P"));
+    }
+
+    // The known correct switch-based version of fromDescriptor
+    private static TypeKind fromDescriptorSwitch(String s) {
+        return switch (s.charAt(0)) {
+            case '[', 'L' -> TypeKind.ReferenceType;
+            case 'B' -> TypeKind.ByteType;
+            case 'C' -> TypeKind.CharType;
+            case 'Z' -> TypeKind.BooleanType;
+            case 'S' -> TypeKind.ShortType;
+            case 'I' -> TypeKind.IntType;
+            case 'F' -> TypeKind.FloatType;
+            case 'J' -> TypeKind.LongType;
+            case 'D' -> TypeKind.DoubleType;
+            case 'V' -> TypeKind.VoidType;
+            default -> throw new IllegalArgumentException("Bad type: " + s);
+        };
     }
 }
