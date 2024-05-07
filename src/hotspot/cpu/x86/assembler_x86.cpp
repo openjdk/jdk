@@ -11751,7 +11751,7 @@ void Assembler::vex_prefix(bool vex_r, bool vex_b, bool vex_x, int nds_enc, VexS
 }
 
 // This is a 4 byte encoding
-void Assembler::evex_prefix(bool vex_r, bool vex_b, bool vex_x, bool evex_r, bool evex_b, bool evex_v,
+void Assembler::evex_prefix(bool vex_r, bool vex_b, bool vex_x, bool evex_r, bool eevex_b, bool evex_v,
                        bool eevex_x, int nds_enc, VexSimdPrefix pre, VexOpcode opc) {
   // EVEX 0x62 prefix
   // byte1 = EVEX_4bytes;
@@ -11761,11 +11761,11 @@ void Assembler::evex_prefix(bool vex_r, bool vex_b, bool vex_x, bool evex_r, boo
   // EVEX.b is not currently used for broadcast of single element or data rounding modes
   _attributes->set_evex_encoding(evex_encoding);
 
-  // P0: byte 2, initialized to RXBR`00mm
+  // P0: byte 2, initialized to RXBR'0mmm
   // instead of not'd
   int byte2 = (vex_r ? VEX_R : 0) | (vex_x ? VEX_X : 0) | (vex_b ? VEX_B : 0) | (evex_r ? EVEX_Rb : 0);
   byte2 = (~byte2) & 0xF0;
-  byte2 |= evex_b ? EEVEX_B : 0;
+  byte2 |= eevex_b ? EEVEX_B : 0;
   // confine opc opcode extensions in mm bits to lower two bits
   // of form {0F, 0F_38, 0F_3A, 0F_3C}
   byte2 |= opc;
@@ -11843,9 +11843,9 @@ void Assembler::vex_prefix(Address adr, int nds_enc, int xreg_enc, VexSimdPrefix
       evex_v = (nds_enc >= 16);
     }
     bool eevex_x = adr.index_needs_rex2();
-    bool evex_b = adr.base_needs_rex2();
+    bool eevex_b = adr.base_needs_rex2();
     attributes->set_is_evex_instruction();
-    evex_prefix(vex_r, vex_b, vex_x, evex_r, evex_b, evex_v, eevex_x, nds_enc, pre, opc);
+    evex_prefix(vex_r, vex_b, vex_x, evex_r, eevex_b, evex_v, eevex_x, nds_enc, pre, opc);
   } else {
     if (UseAVX > 2 && attributes->is_rex_vex_w_reverted()) {
       attributes->set_rex_vex_w(false);
