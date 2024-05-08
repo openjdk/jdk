@@ -165,17 +165,19 @@ public final class BaseLocale {
         // instance which guarantees the locale components are properly cased/interned.
         return CACHE.intern(new BaseLocale(language, script, region, variant),
                 // Avoid lambdas since this may be on the bootstrap path in many locales
-                new UnaryOperator<BaseLocale>() {
-                    @Override
-                    public BaseLocale apply(BaseLocale b) {
-                        return new BaseLocale(
-                                LocaleUtils.toLowerString(b.language).intern(),
-                                LocaleUtils.toTitleString(b.script).intern(),
-                                LocaleUtils.toUpperString(b.region).intern(),
-                                b.variant.intern());
-                    }
-                });
+                INTERNER);
     }
+
+    public static final UnaryOperator<BaseLocale> INTERNER = new UnaryOperator<>() {
+        @Override
+        public BaseLocale apply(BaseLocale b) {
+            return new BaseLocale(
+                    LocaleUtils.toLowerString(b.language).intern(),
+                    LocaleUtils.toTitleString(b.script).intern(),
+                    LocaleUtils.toUpperString(b.region).intern(),
+                    b.variant.intern());
+        }
+    };
 
     public static String convertOldISOCodes(String language) {
         return switch (language) {
