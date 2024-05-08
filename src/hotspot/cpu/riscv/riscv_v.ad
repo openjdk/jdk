@@ -3768,7 +3768,7 @@ instruct vreverse_bytes_masked(vReg dst, vReg src, vRegMask_V0 v0) %{
     __ vsetvli_helper(bt, vlen);
     __ vrev8_v(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg), Assembler::v0_t);
   %}
-  ins_pipe( pipe_slow );
+  ins_pipe(pipe_slow);
 %}
 
 instruct vreverse_bytes(vReg dst, vReg src) %{
@@ -3780,7 +3780,7 @@ instruct vreverse_bytes(vReg dst, vReg src) %{
     __ vsetvli_helper(bt, vlen);
     __ vrev8_v(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg));
   %}
-  ins_pipe( pipe_slow );
+  ins_pipe(pipe_slow);
 %}
 
 // ---------------- Convert Half Floating to Floating Vector Operations ----------------
