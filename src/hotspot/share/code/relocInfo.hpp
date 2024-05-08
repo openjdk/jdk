@@ -130,11 +130,7 @@ class nmethod;
 //   Instruction types: memory (load), set (load address)
 //   Data:  []       an oop stored in 4 bytes of instruction
 //          [n]      n is the index of an oop in the CodeBlob's oop pool
-//          [[N]n l] and l is a byte offset to be applied to the oop
-//          [Nn Ll]  both index and offset may be 32 bits if necessary
-//   Here is a special hack, used only by the old compiler:
-//          [[N]n 00] the value is the __address__ of the nth oop in the pool
-//   (Note that the offset allows optimal references to class variables.)
+//          [Nn]     index may be 32 bits if necessary
 //
 // relocInfo::internal_word_type -- an address within the same CodeBlob
 // relocInfo::section_word_type -- same, but can refer to another section
@@ -960,13 +956,12 @@ class CallRelocation : public Relocation {
 
 class oop_Relocation : public DataRelocation {
  public:
-  // encode in one of these formats:  [] [n] [n l] [Nn l] [Nn Ll]
-  // an oop in the CodeBlob's oop pool
+  // an oop in the CodeBlob's oop pool; encoded as [n] or [Nn]
   static RelocationHolder spec(int oop_index) {
     assert(oop_index > 0, "must be a pool-resident oop");
     return RelocationHolder::construct<oop_Relocation>(oop_index);
   }
-  // an oop in the instruction stream
+  // an oop in the instruction stream; encoded as []
   static RelocationHolder spec_for_immediate() {
     // If no immediate oops are generated, we can skip some walks over nmethods.
     // Assert that they don't get generated accidentally!
@@ -990,7 +985,7 @@ class oop_Relocation : public DataRelocation {
  public:
   int oop_index() { return _oop_index; }
 
-  // data is packed in "2_ints" format:  [i o] or [Ii Oo]
+  // oop_index is packed in "1_int" format:  [n] or [Nn]
   void pack_data_to(CodeSection* dest) override;
   void unpack_data() override;
 
@@ -1012,13 +1007,12 @@ class oop_Relocation : public DataRelocation {
 class metadata_Relocation : public DataRelocation {
 
  public:
-  // encode in one of these formats:  [] [n] [n l] [Nn l] [Nn Ll]
-  // an metadata in the CodeBlob's metadata pool
+  // an metadata in the CodeBlob's metadata pool; encoded as [n] or [Nn]
   static RelocationHolder spec(int metadata_index) {
     assert(metadata_index > 0, "must be a pool-resident metadata");
     return RelocationHolder::construct<metadata_Relocation>(metadata_index);
   }
-  // an metadata in the instruction stream
+  // an metadata in the instruction stream; encoded as []
   static RelocationHolder spec_for_immediate() {
     const int metadata_index = 0;
     return RelocationHolder::construct<metadata_Relocation>(metadata_index);
@@ -1043,7 +1037,7 @@ class metadata_Relocation : public DataRelocation {
  public:
   int metadata_index() { return _metadata_index; }
 
-  // data is packed in "2_ints" format:  [i o] or [Ii Oo]
+  // metadata_index is packed in "1_int" format:  [n] or [Nn]
   void pack_data_to(CodeSection* dest) override;
   void unpack_data() override;
 
