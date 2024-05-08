@@ -167,6 +167,7 @@ private:
     }
   }
 
+#ifdef ASSERT
   bool verify_self() {
     double expected_maximum_depth = log(this->_node_count+1) * 5;
     // Find the maximum depth through DFS and ensure that the priority invariant holds.
@@ -212,6 +213,7 @@ private:
     });
     return !failed;
   }
+#endif // ASSERT
 
 public:
   Treap(uint64_t seed = static_cast<uint64_t>(os::random()))
