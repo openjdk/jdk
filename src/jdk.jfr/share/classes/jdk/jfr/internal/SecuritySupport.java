@@ -291,7 +291,6 @@ public final class SecuritySupport {
             for (Path path : ds) {
                 SafePath s = new SafePath(path);
                 String text = s.toString();
-                System.out.println(text);
                 if (text.endsWith(".jfc") && !SecuritySupport.isDirectory(s)) {
                     list.add(s);
                 }
