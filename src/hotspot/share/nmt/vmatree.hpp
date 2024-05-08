@@ -120,6 +120,7 @@ public:
 
 private:
   VMATreap _tree;
+
 public:
   VMATree() : _tree() {}
 
