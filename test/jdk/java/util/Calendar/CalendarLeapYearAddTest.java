@@ -28,13 +28,14 @@
  * @run junit CalendarLeapYearAddTest
  */
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.Calendar;
 import java.util.Locale;
+import java.util.stream.Stream;
 
 import static java.util.Calendar.*;
 import static java.util.Calendar.MONTH;
@@ -42,252 +43,79 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class CalendarLeapYearAddTest {
 
-    private TestInfo testInfo;
-
-    @BeforeEach
-    void init(TestInfo testInfo) {
-        this.testInfo = testInfo;
-    }
-
     /**
-     * 8331646 Calendar month add for leap year
+     * 8331646 Calendar add for leap year
      */
-    @ParameterizedTest(name = "testMonthAddLeapYear")
-    @ValueSource(ints = {1})
-    public void testMonthAddLeapYear(int value) {
+    @ParameterizedTest
+    @MethodSource("calendarAddSource")
+    public void testAddLeapYear(String testName, int calendarDate, int calendarMonth, int calendarYear,
+                                int value, int calendarField, int expectedDate, int expectedMonth,
+                                int expectedYear) {
         Calendar calendar = Calendar.getInstance();
-        calendar.set(2024, 1, 29, 15, 0, 0);
-        calendar.add(Calendar.MONTH, value);
-        /* when added a month date jumps to 29th of March 2024 */
-        assertEquals(29, calendar.get(DATE), testInfo.getDisplayName()
-                + " Expected 29th of March 2024 but got " + calendar.getTime());
-        assertEquals(MARCH, calendar.get(MONTH), testInfo.getDisplayName()
-                + " Expected March but got " + calendar.getDisplayName(MONTH, LONG, Locale.getDefault()));
-    }
-
-    /**
-     * 8331646 Calendar 1 month subtract for leap year
-     */
-    @ParameterizedTest(name = "testOneMonthSubtractLeapYear")
-    @ValueSource(ints = {-1})
-    public void testOneMonthSubtractLeapYear(int value) {
-        Calendar calendar = Calendar.getInstance();
-        calendar.set(2024, 2, 31, 15, 0, 0);
-        calendar.add(Calendar.MONTH, value);
-        /* when added a month date jumps to 29th of March 2024 */
-        assertEquals(29, calendar.get(DATE), testInfo.getDisplayName()
-                + " Expected 29th of February 2024 but got " + calendar.getTime());
-        assertEquals(FEBRUARY, calendar.get(MONTH), testInfo.getDisplayName()
-                + " Expected February but got " + calendar.getDisplayName(MONTH, LONG, Locale.getDefault()));
-    }
-
-    /**
-     * 8331646 Calendar 2 month subtract for leap year
-     */
-    @ParameterizedTest(name = "testTwoMonthSubtractLeapYear")
-    @ValueSource(ints = {-2})
-    public void testTwoMonthSubtractLeapYear(int value) {
-        Calendar calendar = Calendar.getInstance();
-        calendar.set(2024, 3, 30, 15, 0, 0);
-        calendar.add(Calendar.MONTH, value);
-        /* when added a month date jumps to 29th of March 2024 */
-        assertEquals(29, calendar.get(DATE), testInfo.getDisplayName()
-                + " Expected 29th of February 2024 but got " + calendar.getTime());
-        assertEquals(FEBRUARY, calendar.get(MONTH), testInfo.getDisplayName()
-                + " Expected February but got " + calendar.getDisplayName(MONTH, LONG, Locale.getDefault()));
-    }
-
-    /**
-     * 8331646 Calendar month add/subtract for leap year
-     */
-    @ParameterizedTest(name = "testMonthAddSubtractLeapYear")
-    @ValueSource(ints = {1})
-    public void testMonthAddSubtractLeapYear(int value) {
-        Calendar calendar = Calendar.getInstance();
-        calendar.set(2024, 1, 29, 15, 0, 0);
-        calendar.add(Calendar.MONTH, value);
-        /* when added a month date jumps to 29th of March 2024,
-           subtracting month in a leap year returns 29th of February 2024  */
-        calendar.add(Calendar.MONTH, -value);
-        assertEquals(29, calendar.get(DATE), testInfo.getDisplayName()
-                + " Expected 29th of February 2024 but got " + calendar.getTime());
-        assertEquals(FEBRUARY, calendar.get(MONTH), testInfo.getDisplayName()
-                + " Expected February but got " + calendar.getDisplayName(MONTH, LONG, Locale.getDefault()));
+        calendar.set(calendarYear, calendarMonth, calendarDate);
+        calendar.add(calendarField, value);
+        assertEquals(expectedDate, calendar.get(DATE), testName
+                + " Expected " + expectedDate + " of " + expectedMonth + expectedYear + " but got " + calendar.getTime());
+        assertEquals(expectedMonth, calendar.get(MONTH), testName
+                + " Expected " + expectedMonth + " but got " + calendar.getDisplayName(MONTH, LONG, Locale.getDefault()));
     }
 
     /**
      * 8331646 Calendar month and year add/subtract for leap/non-leap year
      */
-    @ParameterizedTest(name = "testMonthYearAddSubtractNonLeapYear")
-    @ValueSource(ints = {1})
-    public void testMonthYearAddSubtractNonLeapYear(int value) {
+    @Test
+    public void testMonthYearAddSubtractNonLeapYear() {
         Calendar calendar = Calendar.getInstance();
         calendar.set(2024, 1, 29, 15, 0, 0);
-        calendar.add(Calendar.MONTH, value);
-        calendar.add(YEAR, -value);
-        calendar.add(Calendar.MONTH, -value);
+        calendar.add(Calendar.MONTH, 1);
+        calendar.add(YEAR, -1);
+        calendar.add(Calendar.MONTH, -1);
         /* When month added date jumps to 29th of March 2024, after year subtracted date jumps to 29th of March 2023
            after month subtracted date jumps to 28th of Feb 2023 as non leap year
          */
-        assertEquals(28, calendar.get(DATE), testInfo.getDisplayName()
-                + " Expected 28th of February 2024 but got " + calendar.getTime());
-        assertEquals(FEBRUARY, calendar.get(MONTH), testInfo.getDisplayName()
-                + " Expected February but got " + calendar.getDisplayName(MONTH, LONG, Locale.getDefault()));
+        assertEquals(28, calendar.get(DATE),
+                "testMonthYearAddSubtractNonLeapYear Expected 28th of February 2024 but got " + calendar.getTime());
+        assertEquals(FEBRUARY, calendar.get(MONTH),
+                " testMonthYearAddSubtractNonLeapYear Expected February but got " + calendar.getDisplayName(MONTH, LONG, Locale.getDefault()));
     }
 
     /**
-     * 8331646 Calendar month add/subtract for leap year jumping from March 31st to February 29th and back to March 29th
+     * 8331646 Calendar add/subtract for leap year
      */
-    @ParameterizedTest(name = "testMonthAddSubtractLeapYearReversed")
-    @ValueSource(ints = {1})
-    public void testMonthAddSubtractLeapYearReversed(int value) {
+    @ParameterizedTest
+    @MethodSource("calendarAddSubtractSource")
+    public void testAddSubtractLeapYear(String testName, int calendarDate, int calendarMonth, int calendarYear,
+                                        int firstValue, int secondValue, int calendarField, int expectedDate,
+                                        int expectedMonth, int expectedYear) {
         Calendar calendar = Calendar.getInstance();
-        calendar.set(2024, 2, 31, 15, 0, 0);
-        calendar.add(MONTH, -value);
-        calendar.add(MONTH, value);
-        /* when month removed date jumps to 29th of February,
-           adding a month results in 29th of March 2024 as it's leap year
-        */
-        assertEquals(29,calendar.get(DATE), testInfo.getDisplayName()
-                + " Expected 29th of March 2024 but got " + calendar.getTime());
-        assertEquals(MARCH, calendar.get(MONTH), testInfo.getDisplayName()
-                + " Expected March but got " + calendar.getDisplayName(MONTH, LONG, Locale.getDefault()));
+        calendar.set(calendarYear, calendarMonth, calendarDate);
+        calendar.add(calendarField, firstValue);
+        calendar.add(calendarField, secondValue);
+        assertEquals(expectedDate, calendar.get(DATE), testName
+                + " Expected " + expectedDate + " of " + expectedMonth + expectedYear + " but got " + calendar.getTime());
+        assertEquals(expectedMonth, calendar.get(MONTH), testName
+                + " Expected " + expectedMonth + " but got " + calendar.getDisplayName(MONTH, LONG, Locale.getDefault()));
     }
 
-    /**
-     * 8331646 Calendar year add/subtract for leap year
-     */
-    @ParameterizedTest(name = "testYearAddSubtractLeapYear")
-    @ValueSource(ints = {1})
-    public void testYearAddSubtractLeapYear(int value) {
-        Calendar calendar = Calendar.getInstance();
-        calendar.set(2024, 1, 29, 15, 0, 0);
-        calendar.add(YEAR, value);
-        calendar.add(YEAR, -value);
-        /* when evaluated to no leap year date jumps to 28 of Feb 2023, removing year results in 28th of Feb 2024 */
-        assertEquals(28, calendar.get(DATE), testInfo.getDisplayName()
-                + " Expected 28th of February 2024 but got " + calendar.getTime());
-        assertEquals(FEBRUARY, calendar.get(MONTH), testInfo.getDisplayName()
-                + " Expected February but got " + calendar.getDisplayName(MONTH, LONG, Locale.getDefault()));
+    private static Stream<Arguments> calendarAddSubtractSource() {
+        return Stream.of(
+                Arguments.of("testMonthAddSubtractLeapYearReversed", 31, 2, 2024, -1, 1, MONTH, 29, MARCH, 2024),
+                Arguments.of("testMonthAddSubtractLeapYear", 29, 1, 2024, 1, -1, MONTH, 29, FEBRUARY, 2024),
+                Arguments.of("testYearAddSubtractLeapYear", 29, 1, 2024, 1, -1, YEAR, 28, FEBRUARY, 2024),
+                Arguments.of("testDayOfYearAddSubtractLeapYear", 29, 1, 2024, 365, -365, DAY_OF_YEAR, 29, FEBRUARY, 2024),
+                Arguments.of("testDateAddSubtractLeapYear", 29, 1, 2024, 365, -365, DATE, 29, FEBRUARY, 2024),
+                Arguments.of("testWeekOfYearAddSubtractLeapYear", 29, 1, 2024, 52, -52, WEEK_OF_YEAR, 29, FEBRUARY, 2024),
+                Arguments.of("testDateOfMonthAddSubtractLeapYear", 29, 1, 2024, 31, -31, DAY_OF_MONTH, 29, FEBRUARY, 2024),
+                Arguments.of("testDayOfWeekInMonthAddSubtractLeapYear", 29, 1, 2024, 6, -6, DAY_OF_WEEK_IN_MONTH, 29, FEBRUARY, 2024),
+                Arguments.of("testDayOfWeekAddSubtractLeapYear", 29, 1, 2024, 6, -6, DAY_OF_WEEK, 29, FEBRUARY, 2024)
+        );
     }
 
-    /**
-     * 8331646 Calendar year add/subtract for leap year
-     */
-    @ParameterizedTest(name = "testYearDayAddSubtractLeapYearReversed")
-    @ValueSource(ints = {1})
-    public void testYearDayAddSubtractLeapYearReversed(int value) {
-        Calendar calendar = Calendar.getInstance();
-        calendar.set(2023, 1, 28, 15, 0, 0);
-        calendar.add(YEAR, value);
-        calendar.add(DATE, value);
-        assertEquals(29, calendar.get(DATE), testInfo.getDisplayName()
-                + " Expected 29th of February 2024 but got " + calendar.getTime());
-        calendar.add(YEAR, -value);
-        /* when evaluated to leap year + 1 day the date jumps to 29th of Feb 2024,
-         removing year results in 28th of Feb 2023 */
-        assertEquals(28, calendar.get(DATE), testInfo.getDisplayName()
-                + " Expected 28th of February 2023 but got " + calendar.getTime());
-        assertEquals(FEBRUARY, calendar.get(MONTH), testInfo.getDisplayName()
-                + " Expected February but got " + calendar.getDisplayName(MONTH, LONG, Locale.getDefault()));
-    }
-
-    /**
-     * 8331646 Calendar day of year add/subtract for leap year
-     */
-    @ParameterizedTest(name = "testDayOfYearAddSubtractLeapYear")
-    @ValueSource(ints = {365})
-    public void testDayOfYearAddSubtractLeapYear(int value) {
-        Calendar calendar = Calendar.getInstance();
-        calendar.set(2024, 1, 29, 15, 0, 0);
-        calendar.add(DAY_OF_YEAR, value);
-        calendar.add(DAY_OF_YEAR, -value);
-        /* adding/subtracting same amount of days should land on the same day in leap year*/
-        assertEquals(29, calendar.get(DATE), testInfo.getDisplayName()
-                + " Expected 29th of February 2024 but got " + calendar.getTime());
-        assertEquals(FEBRUARY, calendar.get(MONTH), testInfo.getDisplayName()
-                + " Expected February but got " + calendar.getDisplayName(MONTH, LONG, Locale.getDefault()));
-    }
-
-    /**
-     * 8331646 Calendar date add/subtract for leap year
-     */
-    @ParameterizedTest(name = "testDateAddSubtractLeapYear")
-    @ValueSource(ints = {365})
-    public void testDateAddSubtractLeapYear(int value) {
-        Calendar calendar = Calendar.getInstance();
-        calendar.set(2024, 1, 29, 15, 0, 0);
-        calendar.add(DATE, value);
-        calendar.add(DATE, -value);
-        /* DATE behaves as date DAY_OF_YEAR */
-        assertEquals(29, calendar.get(DATE), testInfo.getDisplayName()
-                + " Expected 29th of February 2024 but got " + calendar.getTime());
-        assertEquals(FEBRUARY, calendar.get(MONTH), testInfo.getDisplayName()
-                + " Expected February but got " + calendar.getDisplayName(MONTH, LONG, Locale.getDefault()));
-    }
-
-    /**
-     * 8331646 Calendar week of the year add/subtract for leap year
-     */
-    @ParameterizedTest(name = "testWeekOfYearAddSubtractLeapYear")
-    @ValueSource(ints = {52})
-    public void testWeekOfYearAddSubtractLeapYear(int value) {
-        Calendar calendar = Calendar.getInstance();
-        calendar.set(2024, 1, 29, 15, 0, 0);
-        calendar.add(WEEK_OF_YEAR, value);
-        calendar.add(WEEK_OF_YEAR, -value);
-        /* adding year in weeks should not mess the date*/
-        assertEquals(29, calendar.get(DATE), testInfo.getDisplayName()
-                + " Expected 29th of February 2024 but got " + calendar.getTime());
-        assertEquals(FEBRUARY, calendar.get(MONTH), testInfo.getDisplayName()
-                + " Expected February but got " + calendar.getDisplayName(MONTH, LONG, Locale.getDefault()));
-    }
-
-    /**
-     * 8331646 Calendar day of month add/subtract for leap year
-     */
-    @ParameterizedTest(name = "testDateOfMonthAddSubtractLeapYear")
-    @ValueSource(ints = {31})
-    public void testDateOfMonthAddSubtractLeapYear(int value) {
-        Calendar calendar = Calendar.getInstance();
-        calendar.set(2024, 1, 29, 15, 0, 0);
-        calendar.add(DAY_OF_MONTH, value);
-        calendar.add(DAY_OF_MONTH, -value);
-        assertEquals(29, calendar.get(DATE), testInfo.getDisplayName()
-                + " Expected 29th of February 2024 but got " + calendar.getTime());
-        assertEquals(FEBRUARY, calendar.get(MONTH), testInfo.getDisplayName()
-                + " Expected February but got " + calendar.getDisplayName(MONTH, LONG, Locale.getDefault()));
-    }
-
-    /**
-     * 8331646 Calendar day of week add/subtract for leap year
-     */
-    @ParameterizedTest(name = "testDayOfWeekAddSubtractLeapYear")
-    @ValueSource(ints = {6})
-    public void testDayOfWeekAddSubtractLeapYear(int value) {
-        Calendar calendar = Calendar.getInstance();
-        calendar.set(2024, 1, 29, 15, 0, 0);
-        calendar.add(DAY_OF_WEEK, value);
-        calendar.add(DAY_OF_WEEK, -value);
-        assertEquals(29, calendar.get(DATE), testInfo.getDisplayName()
-                + " Expected 29th of February 2024 but got " + calendar.getTime());
-        assertEquals(FEBRUARY, calendar.get(MONTH), testInfo.getDisplayName()
-                + " Expected February but got " + calendar.getDisplayName(MONTH, LONG, Locale.getDefault()));
-    }
-
-    /**
-     * 8331646 Calendar day of week in month add/subtract for leap year
-     */
-    @ParameterizedTest(name = "testDayOfWeekInMonthAddSubtractLeapYear")
-    @ValueSource(ints = {6})
-    public void testDayOfWeekInMonthAddSubtractLeapYear(int value) {
-        Calendar calendar = Calendar.getInstance();
-        calendar.set(2024, 1, 29, 15, 0, 0);
-        calendar.add(DAY_OF_WEEK_IN_MONTH, value);
-        calendar.add(DAY_OF_WEEK_IN_MONTH, -value);
-        assertEquals(29, calendar.get(DATE), testInfo.getDisplayName()
-                + " Expected 29th of February 2024 but got " + calendar.getTime());
-        assertEquals(FEBRUARY, calendar.get(MONTH), testInfo.getDisplayName()
-                + " Expected February but got " + calendar.getDisplayName(MONTH, LONG, Locale.getDefault()));
+    private static Stream<Arguments> calendarAddSource() {
+        return Stream.of(
+                Arguments.of("testMonthAddLeapYear", 29, 1, 2024, 1, MONTH, 29, MARCH, 2024),
+                Arguments.of("testOneMonthSubtractLeapYear", 31, 2, 2024, -1, MONTH, 29, FEBRUARY, 2024),
+                Arguments.of("testTwoMonthSubtractLeapYear", 30, 3, 2024, -2, MONTH, 29, FEBRUARY, 2024)
+        );
     }
 }
