@@ -142,11 +142,9 @@
 //  * 63-48 Fixed (16-bits, always zero)
 //
 
-// Default value if probing is not implemented for a certain platform: 64TB
-// It is also restricted by implicit assumptions in the code, for instance
+// Max address bit is restricted by implicit assumptions in the code, for instance
 // the bit layout of XForwardingEntry or Partial array entry (see XMarkStackEntry) in mark stack
 static const size_t DEFAULT_MAX_ADDRESS_BIT = 46;
-// Minimum value returned, if probing fails: 64GB
 static const size_t MINIMUM_MAX_ADDRESS_BIT = 36;
 
 static size_t probe_valid_max_address_bit() {
