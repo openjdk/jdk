@@ -3852,7 +3852,7 @@ public class Resolve {
         Assert.check((v.flags_field & STATIC) == 0);
 
         // The symbol must appear in the LHS of an assignment statement
-        if (!env.tree.hasTag(ASSIGN))
+        if (!(env.tree instanceof JCAssign assign))
             return false;
 
         // The assignment statement must not be within a lambda
@@ -3860,8 +3860,8 @@ public class Resolve {
             return false;
 
         // Get the symbol's qualifier, if any
-        JCExpression lhs = TreeInfo.skipParens(((JCAssign)env.tree).lhs);
-        JCExpression base = lhs.hasTag(SELECT) ? ((JCFieldAccess)lhs).selected : null;
+        JCExpression lhs = TreeInfo.skipParens(assign.lhs);
+        JCExpression base = lhs instanceof JCFieldAccess select ? select.selected : null;
 
         // If an early reference, the field must not be declared in a superclass
         if (isEarlyReference(env, base, v) && v.owner != env.enclClass.sym)
