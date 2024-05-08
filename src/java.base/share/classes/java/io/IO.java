@@ -51,11 +51,13 @@ public class IO {
      * Writes a string representation of the specified object to the system
      * console, terminates the line and then flushes that console.
      *
-     * If {@code System.console()} returns {@code null}, throws {@code IOError}.
-     * Otherwise, the effect is as if {@link Console#println(Object) println(obj)}
+     * <p> The effect is as if {@link Console#println(Object) println(obj)}
      * had been called on {@code System.console()}.
      *
      * @param obj the object to print
+     *
+     * @throws IOError if {@code System.console()} returns {@code null},
+     *                 or if an I/O error occurs
      */
     public static void println(Object obj) {
         con().println(obj);
@@ -65,11 +67,13 @@ public class IO {
      * Writes a string representation of the specified object to the system
      * console and then flushes that console.
      *
-     * If {@code System.console()} returns {@code null}, throws {@code IOError}.
-     * Otherwise, the effect is as if {@link Console#print(Object) print(obj)}
+     * <p> The effect is as if {@link Console#print(Object) print(obj)}
      * had been called on {@code System.console()}.
      *
      * @param obj the object to print
+     *
+     * @throws IOError if {@code System.console()} returns {@code null},
+     *                 or if an I/O error occurs
      */
     public static void print(Object obj) {
         con().print(obj);
@@ -79,8 +83,7 @@ public class IO {
      * Writes a prompt as if by calling {@code print}, then reads a single line
      * of text from the system console.
      *
-     * If {@code System.console()} returns {@code null}, throws {@code IOError}.
-     * Otherwise, the effect is as if {@link Console#readln(String) readln(prompt)}
+     * <p> The effect is as if {@link Console#readln(String) readln(prompt)}
      * had been called on {@code System.console()}.
      *
      * @param prompt the prompt string
@@ -88,6 +91,9 @@ public class IO {
      * @return a string containing the line read from the system console, not
      * including any line-termination characters. Returns {@code null} if an
      * end of stream has been reached without having read any characters.
+     *
+     * @throws IOError if {@code System.console()} returns {@code null},
+     *                 or if an I/O error occurs
      */
     public static String readln(String prompt) {
         return con().readln(prompt);
