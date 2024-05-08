@@ -204,14 +204,6 @@ public class ConsoleImpl {
          * {@inheritDoc}
          */
         @Override
-        public JdkConsole printf(Locale locale, String format, Object... args) {
-            return format(locale, format, args);
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
         public String readLine(Locale locale, String format, Object... args) {
             try {
                 return sendAndReceive(() -> {

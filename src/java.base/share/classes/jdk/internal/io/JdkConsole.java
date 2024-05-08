@@ -39,7 +39,6 @@ public interface JdkConsole {
     PrintWriter writer();
     Reader reader();
     JdkConsole format(Locale locale, String format, Object ... args);
-    JdkConsole printf(Locale locale, String format, Object ... args);
     String readLine(Locale locale, String format, Object ... args);
     String readLine();
     char[] readPassword(Locale locale, String format, Object ... args);

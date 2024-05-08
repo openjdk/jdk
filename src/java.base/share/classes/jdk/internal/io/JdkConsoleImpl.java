@@ -64,11 +64,6 @@ public final class JdkConsoleImpl implements JdkConsole {
     }
 
     @Override
-    public JdkConsole printf(Locale locale, String format, Object ... args) {
-        return format(locale, format, args);
-    }
-
-    @Override
     public String readLine(Locale locale, String format, Object ... args) {
         String line = null;
         synchronized (writeLock) {

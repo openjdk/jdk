@@ -91,11 +91,6 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
         }
 
         @Override
-        public JdkConsole printf(Locale locale, String format, Object ... args) {
-            return format(locale, format, args);
-        }
-
-        @Override
         public String readLine(Locale locale, String format, Object ... args) {
             try {
                 initJLineIfNeeded();

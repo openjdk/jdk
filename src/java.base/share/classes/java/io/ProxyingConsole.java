@@ -114,7 +114,7 @@ final class ProxyingConsole extends Console {
     @Override
     public Console printf(Locale locale, String format, Object ... args) {
         synchronized (writeLock) {
-            delegate.printf(locale, format, args);
+            delegate.format(locale, format, args);
         }
         return this;
     }
