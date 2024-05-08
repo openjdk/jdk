@@ -3759,11 +3759,14 @@ instruct vsignum_reg(vReg dst, vReg zero, vReg one, vRegMask_V0 v0) %{
 
 // -------------------------------- Reverse Bytes Vector Operations ------------------------
 
-instruct vreverse_bytes_mask(vReg dst, vReg src, vRegMask_V0 v0) %{
+instruct vreverse_bytes_masked(vReg dst, vReg src, vRegMask_V0 v0) %{
   match(Set dst (ReverseBytesV src v0));
-  format %{ "vector_reverse_byte $dst, $src, v0.t" %}
+  format %{ "vreverse_bytes_masked $dst, $src, v0.t" %}
   ins_encode %{
-    __ vrev8_v(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg), __ VectorMask::v0_t);
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    uint vlen = Matcher::vector_length(this);
+    __ vsetvli_helper(bt, vlen);
+    __ vrev8_v(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg), Assembler::v0_t);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -3772,6 +3775,9 @@ instruct vreverse_bytes(vReg dst, vReg src) %{
   match(Set dst (ReverseBytesV src));
   format %{ "vreverse_bytes $dst, $src" %}
   ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    uint vlen = Matcher::vector_length(this);
+    __ vsetvli_helper(bt, vlen);
     __ vrev8_v(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg));
   %}
   ins_pipe( pipe_slow );
@@ -3811,7 +3817,7 @@ instruct vconvF2HF(vReg dst, vReg src, vReg vtmp, vRegMask_V0 v0, iRegINoSp tmp)
 
 // ------------------------------ Popcount vector ------------------------------
 
-instruct vpopcount_mask(vReg dst, vReg src, vRegMask_V0 v0) %{
+instruct vpopcount_masked(vReg dst, vReg src, vRegMask_V0 v0) %{
   match(Set dst (PopCountVI src v0));
   match(Set dst (PopCountVL src v0));
   ins_cost(VEC_COST);
