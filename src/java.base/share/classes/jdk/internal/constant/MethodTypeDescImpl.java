@@ -69,13 +69,29 @@ public final class MethodTypeDescImpl implements MethodTypeDesc {
      */
     public static MethodTypeDescImpl ofTrusted(ClassDesc returnType, ClassDesc[] trustedArgTypes) {
         requireNonNull(returnType);
-        if (trustedArgTypes.length == 0) // implicit null check
+        // implicit null checks of trustedArgTypes and all elements
+        for (ClassDesc cd : trustedArgTypes) {
+            validateArgument(cd);
+        }
+        return ofValidated(returnType, trustedArgTypes);
+    }
+
+    private static ClassDesc validateArgument(ClassDesc arg) {
+        if (arg.descriptorString().charAt(0) == 'V') // implicit null check
+            throw new IllegalArgumentException("Void parameters not permitted");
+        return arg;
+    }
+
+    /**
+     * Constructs a {@linkplain MethodTypeDesc} with the specified pre-validated return type
+     * and a pre-validated trusted parameter types array.
+     *
+     * @param returnType a {@link ClassDesc} describing the return type
+     * @param trustedArgTypes {@link ClassDesc}s describing the trusted parameter types
+     */
+    public static MethodTypeDescImpl ofValidated(ClassDesc returnType, ClassDesc[] trustedArgTypes) {
+        if (trustedArgTypes.length == 0)
             return new MethodTypeDescImpl(returnType, ConstantUtils.EMPTY_CLASSDESC);
-
-        for (ClassDesc cd : trustedArgTypes)
-            if (cd.descriptorString().charAt(0) == 'V') // implicit null check
-                throw new IllegalArgumentException("Void parameters not permitted");
-
         return new MethodTypeDescImpl(returnType, trustedArgTypes);
     }
 
@@ -96,7 +112,7 @@ public final class MethodTypeDescImpl implements MethodTypeDesc {
                 ? ptypes.subList(1, args + 1).toArray(ConstantUtils.EMPTY_CLASSDESC)
                 : ConstantUtils.EMPTY_CLASSDESC;
 
-        MethodTypeDescImpl result = new MethodTypeDescImpl(ptypes.get(0), paramTypes);
+        MethodTypeDescImpl result = ofValidated(ptypes.get(0), paramTypes);
         result.cachedDescriptorString = descriptor;
         return result;
     }
@@ -129,14 +145,14 @@ public final class MethodTypeDescImpl implements MethodTypeDesc {
 
     @Override
     public MethodTypeDesc changeReturnType(ClassDesc returnType) {
-        return new MethodTypeDescImpl(requireNonNull(returnType), argTypes);
+        return ofValidated(requireNonNull(returnType), argTypes);
     }
 
     @Override
     public MethodTypeDesc changeParameterType(int index, ClassDesc paramType) {
         ClassDesc[] newArgs = argTypes.clone();
-        newArgs[index] = paramType;
-        return ofTrusted(returnType, newArgs);
+        newArgs[index] = validateArgument(paramType);
+        return ofValidated(returnType, newArgs);
     }
 
     @Override
@@ -151,13 +167,16 @@ public final class MethodTypeDescImpl implements MethodTypeDesc {
         if (end < argTypes.length) {
             System.arraycopy(argTypes, end, newArgs, start, argTypes.length - end);
         }
-        return ofTrusted(returnType, newArgs);
+        return ofValidated(returnType, newArgs);
     }
 
     @Override
     public MethodTypeDesc insertParameterTypes(int pos, ClassDesc... paramTypes) {
         if (pos < 0 || pos > argTypes.length)
             throw new IndexOutOfBoundsException(pos);
+
+        for (ClassDesc param : paramTypes)
+            validateArgument(param);
 
         ClassDesc[] newArgs = new ClassDesc[argTypes.length + paramTypes.length];
         if (pos > 0) {
@@ -167,7 +186,7 @@ public final class MethodTypeDescImpl implements MethodTypeDesc {
         if (pos < argTypes.length) {
             System.arraycopy(argTypes, pos, newArgs, pos + paramTypes.length, argTypes.length - pos);
         }
-        return ofTrusted(returnType, newArgs);
+        return ofValidated(returnType, newArgs);
     }
 
     @Override
