@@ -5681,8 +5681,8 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         tmp = (dividendHi << shift) | (dividendLo >>> 64 - shift);
         long u2 = tmp & LONG_MASK;
         long q1, r_tmp;
-        q1 = Long.divideUnsigned(tmp,v1);
-        r_tmp = Long.remainderUnsigned(tmp,v1);
+        q1 = Long.divideUnsigned(tmp, v1);
+        r_tmp = Long.remainderUnsigned(tmp, v1);
 
         while(q1 >= DIV_NUM_BASE || unsignedLongCompare(q1*v0, make64(r_tmp, u1))) {
             q1--;
@@ -5694,8 +5694,8 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         tmp = mulsub(u2,u1,v1,v0,q1);
         u1 = tmp & LONG_MASK;
         long q0;
-        q0 = Long.divideUnsigned(tmp,v1);
-        r_tmp = Long.remainderUnsigned(tmp,v1);
+        q0 = Long.divideUnsigned(tmp, v1);
+        r_tmp = Long.remainderUnsigned(tmp, v1);
 
         while(q0 >= DIV_NUM_BASE || unsignedLongCompare(q0*v0,make64(r_tmp,u0))) {
             q0--;
