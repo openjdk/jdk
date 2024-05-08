@@ -32,16 +32,15 @@ import java.util.function.BiConsumer;
 import javax.tools.JavaFileObject;
 
 import com.sun.tools.javac.code.*;
+import com.sun.tools.javac.code.Directive.ExportsDirective;
+import com.sun.tools.javac.code.Directive.RequiresDirective;
 import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.code.Scope.ImportFilter;
-import com.sun.tools.javac.code.Scope.ImportScope;
 import com.sun.tools.javac.code.Scope.NamedImportScope;
 import com.sun.tools.javac.code.Scope.StarImportScope;
 import com.sun.tools.javac.code.Scope.WriteableScope;
 import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.comp.Annotate.AnnotationTypeMetadata;
-import com.sun.tools.javac.parser.Parser;
-import com.sun.tools.javac.parser.ParserFactory;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.DefinedBy.Api;
@@ -57,7 +56,6 @@ import static com.sun.tools.javac.code.Scope.LookupKind.NON_RECURSIVE;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
 import static com.sun.tools.javac.code.TypeTag.CLASS;
 import static com.sun.tools.javac.code.TypeTag.ERROR;
-import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 
 import static com.sun.tools.javac.code.TypeTag.*;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
@@ -114,8 +112,6 @@ public class TypeEnter implements Completer {
     private final Lint lint;
     private final TypeEnvs typeEnvs;
     private final Dependencies dependencies;
-    private final ParserFactory parserFactory;
-    private final Preview preview;
 
     public static TypeEnter instance(Context context) {
         TypeEnter instance = context.get(typeEnterKey);
@@ -143,8 +139,6 @@ public class TypeEnter implements Completer {
         lint = Lint.instance(context);
         typeEnvs = TypeEnvs.instance(context);
         dependencies = Dependencies.instance(context);
-        parserFactory = ParserFactory.instance(context);
-        preview = Preview.instance(context);
         Source source = Source.instance(context);
         allowDeprecationOnImport = Feature.DEPRECATION_ON_IMPORT.allowedInSource(source);
     }
@@ -370,9 +364,7 @@ public class TypeEnter implements Completer {
                 if (tree.getPackage() != null && decl == null)
                     checkClassPackageClash(tree.getPackage());
 
-                for (JCImport imp : tree.getImports()) {
-                    doImport(imp);
-                }
+                handleImports(tree.getImports());
 
                 if (decl != null) {
                     DiagnosticPosition prevCheckDeprecatedLintPos = deferredLintHandler.setPos(decl.pos());
@@ -391,6 +383,16 @@ public class TypeEnter implements Completer {
                 deferredLintHandler.setPos(prevLintPos);
                 this.staticImportFilter = prevStaticImportFilter;
                 this.typeImportFilter = prevTypeImportFilter;
+            }
+        }
+
+        private void handleImports(List<JCImportBase> imports) {
+            for (JCImportBase imp : imports) {
+                if (imp instanceof JCModuleImport mimp) {
+                    doModuleImport(mimp);
+                } else {
+                    doImport((JCImport) imp);
+                }
             }
         }
 
@@ -442,6 +444,57 @@ public class TypeEnter implements Completer {
                     chk.checkCanonical(imp);
                     importNamed(tree.pos(), c, env, tree);
                 }
+            }
+        }
+
+        private void doModuleImport(JCModuleImport tree) {
+            Name moduleName = TreeInfo.fullName(tree.module);
+            ModuleSymbol module = syms.getModule(moduleName);
+
+            if (module != null) {
+                if (!env.toplevel.modle.readModules.contains(module)) {
+                    if (env.toplevel.modle.isUnnamed()) {
+                        log.error(tree.pos, Errors.ImportModuleDoesNotReadUnnamed(module));
+                    } else {
+                        log.error(tree.pos, Errors.ImportModuleDoesNotRead(env.toplevel.modle,
+                                                                           module));
+                    }
+                    //error recovery, make sure the module is completed:
+                    module.getDirectives();
+                }
+
+                List<ModuleSymbol> todo = List.of(module);
+                Set<ModuleSymbol> seenModules = new HashSet<>();
+
+                while (!todo.isEmpty()) {
+                    ModuleSymbol currentModule = todo.head;
+
+                    todo = todo.tail;
+
+                    if (!seenModules.add(currentModule)) {
+                        continue;
+                    }
+
+                    for (ExportsDirective export : currentModule.exports) {
+                        if (export.modules != null && !export.modules.contains(env.toplevel.packge.modle)) {
+                            continue;
+                        }
+
+                        PackageSymbol pkg = export.getPackage();
+                        JCImport nestedImport = make.at(tree.pos)
+                                .Import(make.Select(make.QualIdent(pkg), names.asterisk), false);
+
+                        doImport(nestedImport);
+                    }
+
+                    for (RequiresDirective requires : currentModule.requires) {
+                        if (requires.isTransitive()) {
+                            todo = todo.prepend(requires.module);
+                        }
+                    }
+                }
+            } else {
+                log.error(tree.pos, Errors.ImportModuleNotFound(moduleName));
             }
         }
 

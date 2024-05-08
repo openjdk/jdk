@@ -73,6 +73,9 @@ source %{
           return false;
         }
         break;
+      case Op_PopCountVL:
+      case Op_PopCountVI:
+        return UseZvbb;
       case Op_LoadVectorGather:
       case Op_LoadVectorGatherMasked:
         if (is_subword_type(bt)) {
@@ -3780,6 +3783,37 @@ instruct vconvF2HF(vReg dst, vReg src, vReg vtmp, vRegMask_V0 v0, iRegINoSp tmp)
     __ float_to_float16_v(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg),
                           as_VectorRegister($vtmp$$reg), $tmp$$Register,
                           Matcher::vector_length(this));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+
+// ------------------------------ Popcount vector ------------------------------
+
+instruct vpopcount_mask(vReg dst, vReg src, vRegMask_V0 v0) %{
+  match(Set dst (PopCountVI src v0));
+  match(Set dst (PopCountVL src v0));
+  ins_cost(VEC_COST);
+  format %{ "vcpop_v $dst, $src, $v0\t# vcpop_v with mask" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    uint vlen = Matcher::vector_length(this);
+    __ vsetvli_helper(bt, vlen);
+    __ vcpop_v(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg), Assembler::v0_t);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vpopcount(vReg dst, vReg src) %{
+  match(Set dst (PopCountVI src));
+  match(Set dst (PopCountVL src));
+  ins_cost(VEC_COST);
+  format %{ "vcpop_v $dst, $src\t# vcpop_v without mask" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    uint vlen = Matcher::vector_length(this);
+    __ vsetvli_helper(bt, vlen);
+    __ vcpop_v(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg));
   %}
   ins_pipe(pipe_slow);
 %}

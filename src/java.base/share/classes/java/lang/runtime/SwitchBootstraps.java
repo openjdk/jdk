@@ -414,7 +414,7 @@ public class SwitchBootstraps {
             cb.ireturn();
             cb.labelBinding(nonNullLabel);
             if (labelConstants.length == 0) {
-                cb.constantInstruction(0)
+                cb.loadConstant(0)
                         .ireturn();
                 return;
             }
@@ -454,7 +454,7 @@ public class SwitchBootstraps {
                             // Object o = ...
                             // o instanceof Wrapped(float)
                             cb.aload(SELECTOR_OBJ);
-                            cb.instanceof_(Wrapper.forBasicType(classLabel)
+                            cb.instanceOf(Wrapper.forBasicType(classLabel)
                                     .wrapperType()
                                     .describeConstable()
                                     .orElseThrow());
@@ -464,7 +464,7 @@ public class SwitchBootstraps {
                             // o instanceof float
                             Label notNumber = cb.newLabel();
                             cb.aload(SELECTOR_OBJ);
-                            cb.instanceof_(ConstantDescs.CD_Number);
+                            cb.instanceOf(ConstantDescs.CD_Number);
                             if (selectorType == long.class || selectorType == float.class || selectorType == double.class ||
                                 selectorType == Long.class || selectorType == Float.class || selectorType == Double.class) {
                                 cb.ifeq(next);
@@ -493,7 +493,7 @@ public class SwitchBootstraps {
                                 cb.goto_(compare);
                                 cb.labelBinding(notNumber);
                                 cb.aload(SELECTOR_OBJ);
-                                cb.instanceof_(ConstantDescs.CD_Character);
+                                cb.instanceOf(ConstantDescs.CD_Character);
                                 cb.ifeq(next);
                                 cb.aload(SELECTOR_OBJ);
                                 cb.checkcast(ConstantDescs.CD_Character);
@@ -514,11 +514,11 @@ public class SwitchBootstraps {
                         Optional<ClassDesc> classLabelConstableOpt = classLabel.describeConstable();
                         if (classLabelConstableOpt.isPresent()) {
                             cb.aload(SELECTOR_OBJ);
-                            cb.instanceof_(classLabelConstableOpt.orElseThrow());
+                            cb.instanceOf(classLabelConstableOpt.orElseThrow());
                             cb.ifeq(next);
                         } else {
                             cb.aload(EXTRA_CLASS_LABELS);
-                            cb.constantInstruction(extraClassLabels.size());
+                            cb.loadConstant(extraClassLabels.size());
                             cb.invokeinterface(ConstantDescs.CD_List,
                                     "get",
                                     MethodTypeDesc.of(ConstantDescs.CD_Object,
@@ -537,7 +537,7 @@ public class SwitchBootstraps {
                     int enumIdx = enumDescs.size();
                     enumDescs.add(enumLabel);
                     cb.aload(ENUM_CACHE);
-                    cb.constantInstruction(enumIdx);
+                    cb.loadConstant(enumIdx);
                     cb.invokestatic(ConstantDescs.CD_Integer,
                             "valueOf",
                             MethodTypeDesc.of(ConstantDescs.CD_Integer,
@@ -561,7 +561,7 @@ public class SwitchBootstraps {
                     Label compare = cb.newLabel();
                     Label notNumber = cb.newLabel();
                     cb.aload(SELECTOR_OBJ);
-                    cb.instanceof_(ConstantDescs.CD_Number);
+                    cb.instanceOf(ConstantDescs.CD_Number);
                     cb.ifeq(notNumber);
                     cb.aload(SELECTOR_OBJ);
                     cb.checkcast(ConstantDescs.CD_Number);
@@ -571,7 +571,7 @@ public class SwitchBootstraps {
                     cb.goto_(compare);
                     cb.labelBinding(notNumber);
                     cb.aload(SELECTOR_OBJ);
-                    cb.instanceof_(ConstantDescs.CD_Character);
+                    cb.instanceOf(ConstantDescs.CD_Character);
                     cb.ifeq(next);
                     cb.aload(SELECTOR_OBJ);
                     cb.checkcast(ConstantDescs.CD_Character);
@@ -587,9 +587,9 @@ public class SwitchBootstraps {
                         element.caseLabel() instanceof Double ||
                         element.caseLabel() instanceof Boolean)) {
                     if (element.caseLabel() instanceof Boolean c) {
-                        cb.constantInstruction(c ? 1 : 0);
+                        cb.loadConstant(c ? 1 : 0);
                     } else {
-                        cb.constantInstruction((ConstantDesc) element.caseLabel());
+                        cb.loadConstant((ConstantDesc) element.caseLabel());
                     }
                     cb.invokestatic(element.caseLabel().getClass().describeConstable().orElseThrow(),
                             "valueOf",
@@ -605,11 +605,11 @@ public class SwitchBootstraps {
                     throw new InternalError("Unsupported label type: " +
                             element.caseLabel().getClass());
                 }
-                cb.constantInstruction(idx);
+                cb.loadConstant(idx);
                 cb.ireturn();
             }
             cb.labelBinding(dflt);
-            cb.constantInstruction(cases.size());
+            cb.loadConstant(cases.size());
             cb.ireturn();
         };
     }
