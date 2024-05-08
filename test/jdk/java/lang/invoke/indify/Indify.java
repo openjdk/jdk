@@ -269,7 +269,7 @@ public class Indify {
         if (verbose)  System.err.println("reading "+f);
         Bytecode bytecode = new Bytecode(f); //creating new bytecode instance to trigger the api to read the class file for debugging
         ClassFile cf = new ClassFile(f);
-        Logic logic = new Logic(cf);
+        Logic logic = new Logic(cf, bytecode);
         boolean changed = logic.transform();
         logic.reportPatternMethods(quiet, keepgoing);
         if (changed || all) {
@@ -367,7 +367,7 @@ public class Indify {
         private Class<?> transformAndLoadClass(File f) throws ClassNotFoundException, IOException {
             if (verbose)  System.err.println("Loading class from "+f);
             ClassFile cf = new ClassFile(f);
-            Logic logic = new Logic(cf);
+            Logic logic = new Logic(cf, new Bytecode(f));
             boolean changed = logic.transform();
             if (verbose && !changed)  System.err.println("(no change)");
             logic.reportPatternMethods(!verbose, keepgoing);
@@ -379,15 +379,23 @@ public class Indify {
     private class Logic {
         // Indify logic, per se.
         ClassFile cf;
+        Bytecode bytecode;
         final char[] poolMarks;
+        final char[] pool_Marks;
         final Map<Method,Constant> constants = new HashMap<>();
+        final Map<MethodModel,PoolEntry> constants2 = new HashMap<>();
         final Map<Method,String> indySignatures = new HashMap<>();
-        Logic(ClassFile cf) {
+        final Map<MethodModel,String> indy_Signatures = new HashMap<>();
+        Logic(ClassFile cf, Bytecode bytecode) {
             this.cf = cf;
+            this.bytecode = bytecode;
             poolMarks = new char[cf.pool.size()];
+            pool_Marks = new char[bytecode.pool.size()];
         }
         boolean transform() {
             if (!initializeMarks())  return false;
+            if (!intialize_Marks())  return false;
+            boolean areEqual = Arrays.equals(poolMarks, pool_Marks);
             if (!findPatternMethods())  return false;
             Pool pool = cf.pool;
             //for (Constant c : cp)  System.out.println("  # "+c);
@@ -540,7 +548,69 @@ public class Indify {
             }
             if (!quiet)  System.err.flush();
         }
-
+        boolean intialize_Marks(){
+            boolean changed = false;
+            for(;;) {
+                boolean changed1 = false;
+                int cpindex = -1;
+                for(PoolEntry poolEntry : bytecode.pool){
+                    ++cpindex;
+                    if(poolEntry == null) continue; //TODO: the pool list has the first element null as we can get entries based on the index of list
+                    char mark = pool_Marks[cpindex];
+                    if (mark != 0) continue;
+                    int tagg = poolEntry.tag();  //TODO: should be removed
+                    switch (tagg) {
+                        case TAG_UTF8:
+                            mark = nameMark(((Utf8Entry) poolEntry).stringValue());
+                            break;
+                        case TAG_NAMEANDTYPE:
+                            NameAndTypeEntry nameAndTypeEntry = (NameAndTypeEntry) poolEntry;
+                            int ref1 = nameAndTypeEntry.name().index();
+                            int ref2 = nameAndTypeEntry.type().index();
+                            mark = nameAndType_Mark(ref1, ref2);
+                            break;
+                        case TAG_CLASS:{
+                            int n1 = ((ClassEntry) poolEntry).name().index();
+                            char nmark = pool_Marks[n1];
+                            if ("DJ".indexOf(nmark) >= 0)
+                                mark = nmark;
+                            break;
+                        }
+                        case TAG_FIELDREF:
+                        case TAG_METHODREF: {
+                            MemberRefEntry memberRefEntry = (MemberRefEntry) poolEntry;
+                            int cl = memberRefEntry.owner().index();
+                            int nt = memberRefEntry.nameAndType().index();
+                            char classMark = pool_Marks[cl];
+                            if (classMark != 0) {
+                                mark = classMark;  // it is a java.lang.invoke.* or java.lang.* method
+                                break;
+                            }
+                            String cls = ((ClassEntry) bytecode.pool.get(cl)).name().stringValue();
+                            if (cls.equals(bytecode.thisClass.name().stringValue())) {
+                                switch (pool_Marks[nt]) {
+                                    case 'T':
+                                    case 'H':
+                                    case 'I':
+                                        mark = pool_Marks[nt];
+                                        break;
+                                }
+                            }
+                            break;
+                        }
+                        default: break;
+                    }
+                    if (mark != 0) {
+                        pool_Marks[cpindex] = mark;
+                        changed1 = true;
+                    }
+                }
+                if (!changed1)
+                    break;
+                changed = true;
+            }
+            return changed;
+        }
         // mark constant pool entries according to participation in patterns
         boolean initializeMarks() {
             boolean changed = false;
@@ -621,6 +691,19 @@ public class Indify {
             default:  return 0;
             }
             if (matchType(descr, requiredType))  return mark;
+            return 0;
+        }
+        char nameAndType_Mark(int ref1, int ref2){
+            char mark = pool_Marks[ref1];
+            if (mark == 0) return 0;
+            String descriptor = ((Utf8Entry) bytecode.pool.get(ref2)).stringValue();
+            String requiredType;
+            switch (pool_Marks[ref1]){
+                case 'H', 'I': requiredType = "()Ljava/lang/invoke/MethodHandle;";  break;
+                case 'T': requiredType = "()Ljava/lang/invoke/MethodType;";    break;
+                default:  return 0;
+            }
+            if(matchType(descriptor, requiredType)) return mark;
             return 0;
         }
 
@@ -1272,6 +1355,7 @@ public class Indify {
             }
             classModel = java.lang.classfile.ClassFile.of().parse(bytes);
 
+            pool.addFirst(null);
             for (PoolEntry poolEntry : classModel.constantPool()) {
                 this.pool.add(poolEntry);
             }
