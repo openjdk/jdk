@@ -148,6 +148,7 @@ private:
   char* _end;
   uintx _max_delta;
   bool _is_packed;
+  bool _has_protzone;
   ReservedSpace* _rs;
   VirtualSpace* _vs;
 
@@ -156,7 +157,8 @@ private:
 public:
   DumpRegion(const char* name, uintx max_delta = 0)
     : _name(name), _base(nullptr), _top(nullptr), _end(nullptr),
-      _max_delta(max_delta), _is_packed(false) {}
+      _max_delta(max_delta), _is_packed(false),
+      _has_protzone(0), _rs(nullptr), _vs(nullptr) {}
 
   char* expand_top_to(char* newtop);
   char* allocate(size_t num_bytes);
@@ -172,6 +174,8 @@ public:
   bool is_allocatable() const {
     return !is_packed() && _base != nullptr;
   }
+  bool has_protzone() const { return _has_protzone; }
+  void allocate_protzone();
 
   void print(size_t total_bytes) const;
   void print_out_of_space_msg(const char* failing_region, size_t needed_bytes);

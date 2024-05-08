@@ -154,6 +154,7 @@ public:
   char*  mapped_end()               const { return mapped_base()        + used_aligned(); }
   bool   read_only()                const { return _read_only != 0; }
   bool   allow_exec()               const { return _allow_exec != 0; }
+  bool   has_protzone()             const { return _has_protzone != 0; }
   bool   mapped_from_file()         const { return _mapped_from_file != 0; }
   size_t oopmap_offset()            const { assert_is_heap_region();     return _oopmap_offset; }
   size_t oopmap_size_in_bits()      const { assert_is_heap_region();     return _oopmap_size_in_bits; }
@@ -165,7 +166,7 @@ public:
   void set_mapped_base(char* p)      { _mapped_base = p; }
   void set_mapped_from_file(bool v)  { _mapped_from_file = v; }
   void init(int region_index, size_t mapping_offset, size_t size, bool read_only,
-            bool allow_exec, int crc);
+            bool allow_exec, bool has_protzone, int crc);
   void init_oopmap(size_t offset, size_t size_in_bits);
   void init_ptrmap(size_t offset, size_t size_in_bits);
   bool has_ptrmap()                  { return _ptrmap_size_in_bits != 0; }
@@ -444,7 +445,7 @@ public:
   void  open_for_write();
   void  write_header();
   void  write_region(int region, char* base, size_t size,
-                     bool read_only, bool allow_exec);
+                     bool read_only, bool allow_exec, bool has_protzone);
   size_t remove_bitmap_leading_zeros(CHeapBitMap* map);
   char* write_bitmap_region(CHeapBitMap* rw_ptrmap, CHeapBitMap* ro_ptrmap, ArchiveHeapInfo* heap_info,
                             size_t &size_in_bytes);

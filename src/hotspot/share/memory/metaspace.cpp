@@ -37,6 +37,7 @@
 #include "memory/metaspace/chunkManager.hpp"
 #include "memory/metaspace/commitLimiter.hpp"
 #include "memory/metaspace/internalStats.hpp"
+#include "memory/metaspace/metachunk.hpp"
 #include "memory/metaspace/metaspaceCommon.hpp"
 #include "memory/metaspace/metaspaceContext.hpp"
 #include "memory/metaspace/metaspaceReporter.hpp"
@@ -65,6 +66,7 @@
 
 using metaspace::ChunkManager;
 using metaspace::CommitLimiter;
+using metaspace::Metachunk;
 using metaspace::MetaspaceContext;
 using metaspace::MetaspaceReporter;
 using metaspace::RunningCounters;
@@ -712,9 +714,10 @@ void Metaspace::global_initialize() {
       log_warning(metaspace)("CDS active - ignoring CompressedClassSpaceBaseAddress.");
     }
     MetaspaceShared::initialize_runtime_shared_and_meta_spaces();
-    // If any of the archived space fails to map, UseSharedSpaces
-    // is reset to false.
-  }
+    // If CDS initialization failed, UseSharedSpaces will have been reset to false,
+    // no class space initialization will have happened, and we will execute the
+    // branch below as fallback (proceeding without loading CDS archives).
+  } // End: case (a)
 #endif // INCLUDE_CDS
 
 #ifdef _LP64
@@ -722,7 +725,7 @@ void Metaspace::global_initialize() {
   if (using_class_space() && !class_space_is_initialized()) {
     assert(!UseSharedSpaces, "CDS archive is not mapped at this point");
 
-    // case (b) (No CDS)
+    // case (b) (No CDS, or dumping archive)
     ReservedSpace rs;
     const size_t size = align_up(CompressedClassSpaceSize, Metaspace::reserve_alignment());
 
@@ -767,7 +770,7 @@ void Metaspace::global_initialize() {
                    CompressedClassSpaceSize));
     }
 
-    // Mark class space as such
+    // NMT: Mark class space as such
     MemTracker::record_virtual_memory_type((address)rs.base(), mtClass);
 
     // Initialize space
@@ -775,7 +778,29 @@ void Metaspace::global_initialize() {
 
     // Set up compressed class pointer encoding.
     CompressedKlassPointers::initialize((address)rs.base(), rs.size());
-  }
+
+    // At this point, narrow Klass encoding has been initialized, so we know the encoding
+    // base. If we don't run zero-based, we must prevent a Klass from being placed at the
+    // very start of the class space, since its nKlass would be 0, which is a reserved value.
+    // We also protect the first page of this range, to easily catch accidental nKlass=0
+    // dereferences.
+    if (CompressedKlassPointers::base() != nullptr) {
+      const size_t protzone_size = os::vm_page_size();
+      const size_t protzone_wordsize = protzone_size / BytesPerWord;
+      const metaspace::chunklevel_t lvl = metaspace::chunklevel::level_fitting_word_size(protzone_wordsize);
+      // allocate chunk
+      Metachunk* const chunk = MetaspaceContext::context_class()->cm()->get_chunk(lvl);
+      const address protzone_base = (address) chunk->base();
+      assert(protzone_base == CompressedKlassPointers::base(), "Very first chunk should be located at class space"
+             "start, hence at decoding base (" PTR_FORMAT ")", p2i(protzone_base));
+      assert(chunk->word_size() == protzone_wordsize, "Chunk should be exactly one page sized");
+      WINDOWS_ONLY(chunk->ensure_committed(protzone_wordsize);) // Needed on Windows to protect memory
+      const bool prot = os::protect_memory((char*)protzone_base, protzone_size, os::MEM_PROT_NONE, true);
+      assert(prot, "Failed to memprotect the first page of metaspace");
+      log_info(metaspace)("Protected no-access zone (class space): " RANGEFMT, RANGEFMTARGS(protzone_base, protzone_size));
+    }
+
+  } // End: case (b)
 
 #endif
 
@@ -783,20 +808,6 @@ void Metaspace::global_initialize() {
   MetaspaceContext::initialize_nonclass_space_context();
 
   _tracer = new MetaspaceTracer();
-
-  // We must prevent the very first address of the ccs from being used to store
-  // metadata, since that address would translate to a narrow pointer of 0, and the
-  // VM does not distinguish between "narrow 0 as in null" and "narrow 0 as in start
-  //  of ccs".
-  // Before Elastic Metaspace that did not happen due to the fact that every Metachunk
-  // had a header and therefore could not allocate anything at offset 0.
-#ifdef _LP64
-  if (using_class_space()) {
-    // The simplest way to fix this is to allocate a tiny dummy chunk right at the
-    // start of ccs and do not use it for anything.
-    MetaspaceContext::context_class()->cm()->get_chunk(metaspace::chunklevel::HIGHEST_CHUNK_LEVEL);
-  }
-#endif
 
 #ifdef _LP64
   if (UseCompressedClassPointers) {

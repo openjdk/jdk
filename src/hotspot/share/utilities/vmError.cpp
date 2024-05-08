@@ -1053,6 +1053,10 @@ void VMError::report(outputStream* st, bool _verbose) {
     os::print_siginfo(st, _siginfo);
     st->cr();
 
+  STEP_IF("suspected zero nKlass access", _verbose && _siginfo != nullptr)
+    check_narrow_klass_protzone_violation(st, _siginfo);
+    st->cr();
+
   STEP_IF("CDS archive access warning", _verbose && _siginfo != nullptr)
     // Print an explicit hint if we crashed on access to the CDS archive.
     check_failing_cds_access(st, _siginfo);

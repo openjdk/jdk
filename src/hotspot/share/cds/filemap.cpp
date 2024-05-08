@@ -1434,13 +1434,14 @@ size_t FileMapRegion::used_aligned() const {
 }
 
 void FileMapRegion::init(int region_index, size_t mapping_offset, size_t size, bool read_only,
-                         bool allow_exec, int crc) {
+                         bool allow_exec, bool has_protzone, int crc) {
   _is_heap_region = HeapShared::is_heap_region(region_index);
   _is_bitmap_region = (region_index == MetaspaceShared::bm);
   _mapping_offset = mapping_offset;
   _used = size;
   _read_only = read_only;
   _allow_exec = allow_exec;
+  _has_protzone = has_protzone;
   _crc = crc;
   _mapped_from_file = false;
   _mapped_base = nullptr;
@@ -1510,6 +1511,7 @@ void FileMapRegion::print(outputStream* st, int region_index) {
   st->print_cr("- crc:                            0x%08x", _crc);
   st->print_cr("- read_only:                      %d", _read_only);
   st->print_cr("- allow_exec:                     %d", _allow_exec);
+  st->print_cr("- has_protzone:                   %d", _has_protzone);
   st->print_cr("- is_heap_region:                 %d", _is_heap_region);
   st->print_cr("- is_bitmap_region:               %d", _is_bitmap_region);
   st->print_cr("- mapped_from_file:               %d", _mapped_from_file);
@@ -1524,7 +1526,7 @@ void FileMapRegion::print(outputStream* st, int region_index) {
 }
 
 void FileMapInfo::write_region(int region, char* base, size_t size,
-                               bool read_only, bool allow_exec) {
+                               bool read_only, bool allow_exec, bool has_protzone) {
   assert(CDSConfig::is_dumping_archive(), "sanity");
 
   FileMapRegion* r = region_at(region);
@@ -1559,12 +1561,13 @@ void FileMapInfo::write_region(int region, char* base, size_t size,
   int crc = ClassLoader::crc32(0, base, (jint)size);
   if (size > 0) {
     log_info(cds)("Shared file region (%s) %d: " SIZE_FORMAT_W(8)
-                   " bytes, addr " INTPTR_FORMAT " file offset 0x%08" PRIxPTR
-                   " crc 0x%08x",
-                   region_name(region), region, size, p2i(requested_base), _file_offset, crc);
+                   " bytes, addr " INTPTR_FORMAT ", file offset 0x%08" PRIxPTR ","
+                   " exec %d, protzone %d, crc 0x%08x",
+                   region_name(region), region, size, p2i(requested_base), _file_offset,
+                   allow_exec, has_protzone, crc);
   }
 
-  r->init(region, mapping_offset, size, read_only, allow_exec, crc);
+  r->init(region, mapping_offset, size, read_only, allow_exec, has_protzone, crc);
 
   if (base != nullptr) {
     write_bytes_aligned(base, size);
@@ -1639,14 +1642,15 @@ char* FileMapInfo::write_bitmap_region(CHeapBitMap* rw_ptrmap, CHeapBitMap* ro_p
     written = write_bitmap(heap_info->ptrmap(), buffer, written);
   }
 
-  write_region(MetaspaceShared::bm, (char*)buffer, size_in_bytes, /*read_only=*/true, /*allow_exec=*/false);
+  write_region(MetaspaceShared::bm, (char*)buffer,
+               size_in_bytes, /*read_only=*/true, /*allow_exec=*/false, /*has_protzone=*/false);
   return buffer;
 }
 
 size_t FileMapInfo::write_heap_region(ArchiveHeapInfo* heap_info) {
   char* buffer_start = heap_info->buffer_start();
   size_t buffer_size = heap_info->buffer_byte_size();
-  write_region(MetaspaceShared::hp, buffer_start, buffer_size, false, false);
+  write_region(MetaspaceShared::hp, buffer_start, buffer_size, false, false, false);
   header()->set_heap_roots_offset(heap_info->heap_roots_offset());
   return buffer_size;
 }
@@ -1822,6 +1826,7 @@ bool FileMapInfo::read_region(int i, char* base, size_t size, bool do_commit) {
 }
 
 MapArchiveResult FileMapInfo::map_region(int i, intx addr_delta, char* mapped_base_address, ReservedSpace rs) {
+  assert(mapped_base_address != nullptr, "sanity");
   assert(!HeapShared::is_heap_region(i), "sanity");
   FileMapRegion* r = region_at(i);
   size_t size = r->used_aligned();
@@ -1854,7 +1859,6 @@ MapArchiveResult FileMapInfo::map_region(int i, intx addr_delta, char* mapped_ba
       return MAP_ARCHIVE_OTHER_FAILURE; // oom or I/O error.
     } else {
       assert(r->mapped_base() != nullptr, "must be initialized");
-      return MAP_ARCHIVE_SUCCESS;
     }
   } else {
     // Note that this may either be a "fresh" mapping into unreserved address
@@ -1876,9 +1880,18 @@ MapArchiveResult FileMapInfo::map_region(int i, intx addr_delta, char* mapped_ba
 
     r->set_mapped_from_file(true);
     r->set_mapped_base(requested_addr);
-
-    return MAP_ARCHIVE_SUCCESS;
   }
+
+  // After mapping successfully, protect no-access zone if one exists
+  if (r->has_protzone()) {
+    assert(requested_addr == mapped_base_address,
+           "This should only happen for the very first region in the archive");
+    const size_t protzone_len = MetaspaceShared::core_region_alignment();
+    os::protect_memory(requested_addr, protzone_len, os::MEM_PROT_NONE, true);
+    log_info(cds)("Protected no-access zone (CDS): " RANGEFMT, RANGEFMTARGS(requested_addr, protzone_len));
+  }
+
+  return MAP_ARCHIVE_SUCCESS;
 }
 
 // The return value is the location of the archive relocation bitmap.

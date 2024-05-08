@@ -383,9 +383,15 @@ address ArchiveBuilder::reserve_buffer() {
   }
 
   if (CDSConfig::is_dumping_static_archive()) {
-    // We don't want any valid object to be at the very bottom of the archive.
-    // See ArchivePtrMarker::mark_pointer().
-    rw_region()->allocate(16);
+    // At runtime, the start of the archive will be mapped to the start of the
+    // encoding range. We don't want any valid Klass to be mapped at the very
+    // bottom of the archive, since its address would translate to a narrow Klass
+    // id of 0 (null).
+    // In addition to that, we want to catch accidental dereferences of a decoded
+    // narrow Klass id of 0. Therefore, we will protect the first page of the
+    // archive, and here, we need to leave space for it.
+    // See also ArchivePtrMarker::mark_pointer().
+    rw_region()->allocate_protzone();
   }
 
   return buffer_bottom;
@@ -1343,7 +1349,8 @@ void ArchiveBuilder::write_archive(FileMapInfo* mapinfo, ArchiveHeapInfo* heap_i
 }
 
 void ArchiveBuilder::write_region(FileMapInfo* mapinfo, int region_idx, DumpRegion* dump_region, bool read_only,  bool allow_exec) {
-  mapinfo->write_region(region_idx, dump_region->base(), dump_region->used(), read_only, allow_exec);
+  mapinfo->write_region(region_idx, dump_region->base(), dump_region->used(),
+                        read_only, allow_exec, dump_region->has_protzone());
 }
 
 void ArchiveBuilder::print_region_stats(FileMapInfo *mapinfo, ArchiveHeapInfo* heap_info) {

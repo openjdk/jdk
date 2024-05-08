@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,17 @@ void VMError::check_failing_cds_access(outputStream* st, const void* siginfo) {
     }
   }
 #endif
+}
+
+void VMError::check_narrow_klass_protzone_violation(outputStream* st, const void* siginfo) {
+  if (UseCompressedClassPointers && CompressedKlassPointers::base() != nullptr && siginfo != nullptr) {
+    const EXCEPTION_RECORD* const er = (const EXCEPTION_RECORD*)siginfo;
+    if (er->ExceptionCode == EXCEPTION_ACCESS_VIOLATION) {
+      if ((address)(er->ExceptionInformation[1]) == CompressedKlassPointers::base()) {
+          st->print("Fault address is narrow Klass base - dereferencing a zero nKlass?");
+      }
+    }
+  }
 }
 
 // Error reporting cancellation: there is no easy way to implement this on Windows, because we do
