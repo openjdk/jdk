@@ -117,9 +117,11 @@ public:
 
   using VMATreap = TreapCHeap<position, IntervalChange, AddressComparator>;
   using TreapNode = VMATreap::TreapNode;
-  VMATreap tree;
 
-  VMATree() : tree() {}
+private:
+  VMATreap _tree;
+public:
+  VMATree() : _tree() {}
 
   struct SingleDiff {
     int64_t reserve;
@@ -152,7 +154,7 @@ public:
 public:
   template<typename F>
   void visit_in_order(F f) const {
-    tree.visit_in_order(f);
+    _tree.visit_in_order(f);
   }
 };
 

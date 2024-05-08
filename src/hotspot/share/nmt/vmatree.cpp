@@ -60,11 +60,11 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
   // Find closest node that is LEQ A
   bool LEQ_A_found = false;
   AddressState LEQ_A;
-  TreapNode* leqA_n = tree.closest_leq(A);
+  TreapNode* leqA_n = _tree.closest_leq(A);
   if (leqA_n == nullptr) {
     // No match. We add the A node directly, unless it would have no effect.
     if (!stA.is_noop()) {
-      tree.upsert(A, stA);
+      _tree.upsert(A, stA);
     }
   } else {
     LEQ_A_found = true;
@@ -86,7 +86,7 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
       stB.in = stA.out;
       if (stA.is_noop()) {
         // invalidates leqA_n
-        tree.remove(leqA_n->key());
+        _tree.remove(leqA_n->key());
       } else {
         // If the state is not matching then we have different operations, such as:
         // reserve [x1, A); ... commit [A, x2); or
@@ -107,7 +107,7 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
         // Nothing to do.
       } else {
         // Add new node.
-        tree.upsert(A, stA);
+        _tree.upsert(A, stA);
       }
     }
   }
@@ -121,7 +121,7 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
 
   // Find all nodes between (A, B] and record their addresses and values. Also update B's
   // outgoing state.
-  tree.visit_range_in_order(A + 1, B + 1, [&](TreapNode* head) {
+  _tree.visit_range_in_order(A + 1, B + 1, [&](TreapNode* head) {
     int cmp_B = AddressComparator::cmp(head->key(), B);
     stB.out = head->val().out;
     if (cmp_B < 0) {
@@ -143,7 +143,7 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
   if (B_needs_insert && // Was not already inserted
       !stB.is_noop())   // The operation is differing
     {
-    tree.upsert(B, stB);
+    _tree.upsert(B, stB);
   }
 
   // We now need to:
@@ -167,7 +167,7 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
   AddressState prev{A, stA};
   for (int i = 0; i < to_be_deleted_inbetween_a_b.length(); i++) {
     const AddressState delete_me = to_be_deleted_inbetween_a_b.at(i);
-    tree.remove(delete_me.address);
+    _tree.remove(delete_me.address);
 
     // Perform summary accounting
     auto& rescom = diff.flag[NMTUtil::flag_to_index(delete_me.in().flag())];

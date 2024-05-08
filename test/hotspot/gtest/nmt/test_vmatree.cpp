@@ -31,7 +31,7 @@
 class VMATreeTest : public testing::Test {
 public:
   VMATree::TreapNode* treap_of(VMATree& tree) {
-    return tree.tree._root;
+    return _tree.tree._root;
   }
 
   NativeCallStack make_stack(size_t a, size_t b, size_t c, size_t d) {
@@ -61,12 +61,12 @@ TEST_VM_F(VMATreeTest, LowLevel) {
 
   // Adjacent reservations should result in exactly 2 nodes
   auto adjacent_2_nodes = [&](VMATree::Metadata& md) {
-    Tree tree;
+    Tree _tree;
     for (int i = 0; i < 100; i++) {
       tree.reserve_mapping(i * 100, 100, md);
     }
     int found_nodes = 0;
-    tree.tree.visit_range_in_order(0, 999999, [&](Node* x) {
+    tree._tree.visit_range_in_order(0, 999999, [&](Node* x) {
       found_nodes++;
     });
     EXPECT_EQ(2, found_nodes) << "Adjacent reservations should result in exactly 2 nodes";
@@ -87,7 +87,7 @@ TEST_VM_F(VMATreeTest, LowLevel) {
       tree2.reserve_mapping(i * 100, 100, md);
     }
     found_nodes = 0;
-    tree2.tree.visit_range_in_order(0, 999999, [&](Node* x) {
+    tree2._tree.visit_range_in_order(0, 999999, [&](Node* x) {
       found_nodes++;
     });
     EXPECT_EQ(2, found_nodes) << "Adjacent reservations should result in exactly 2 nodes";
@@ -100,7 +100,7 @@ TEST_VM_F(VMATreeTest, LowLevel) {
       tree2.reserve_mapping(i * 100, 101, md);
     }
     int found_nodes = 0;
-    tree2.tree.visit_range_in_order(0, 999999, [&](Node* x) {
+    tree2._tree.visit_range_in_order(0, 999999, [&](Node* x) {
       found_nodes++;
     });
     EXPECT_EQ(2, found_nodes) << "Adjacent reservations should result in exactly 2 nodes";
@@ -108,7 +108,7 @@ TEST_VM_F(VMATreeTest, LowLevel) {
 
   // After removing all ranges we should be left with an entirely empty tree
   auto remove_all_leaves_empty_tree = [&](VMATree::Metadata& md) {
-    Tree tree;
+    Tree _tree;
     tree.reserve_mapping(0, 100*100, md);
     for (int i = 0; i < 100; i++) {
       tree.release_mapping(i*100, 100);
@@ -125,7 +125,7 @@ TEST_VM_F(VMATreeTest, LowLevel) {
 
   // Committing in middle of reservation ends with a sequence of 4 nodes
   auto commit_middle = [&](VMATree::Metadata& md) {
-    Tree tree;
+    Tree _tree;
     tree.reserve_mapping(0, 100, md);
     tree.commit_mapping(50, 25, md);
 
@@ -153,13 +153,13 @@ TEST_VM_F(VMATreeTest, LowLevel) {
 
   // Committing in a whole reserved range results in 2 nodes
   auto commit_whole = [&](VMATree::Metadata& md) {
-    Tree tree;
+    Tree _tree;
     tree.reserve_mapping(0, 100*100, md);
     for (int i = 0; i < 100; i++) {
       tree.commit_mapping(i*100, 100, md);
     }
     int found_nodes = 0;
-    tree.tree.visit_range_in_order(0, 999999, [&](Node* x) {
+    tree._tree.visit_range_in_order(0, 999999, [&](Node* x) {
       found_nodes++;
       VMATree::IntervalChange& v = x->val();
       EXPECT_TRUE((v.in.type() == VMATree::StateType::Released && v.out.type() == VMATree::StateType::Committed) ||
@@ -181,7 +181,7 @@ TEST_VM_F(VMATreeTest, LowLevel) {
   commit_whole(md);
 
   { // Identical operation but different metadata should not merge
-    Tree tree;
+    Tree _tree;
     VMATree::Metadata md{si1, mtTest };
     VMATree::Metadata md2{si2, mtNMT };
     tree.reserve_mapping(0, 100, md);
@@ -200,7 +200,7 @@ TEST_VM_F(VMATreeTest, LowLevel) {
     tree.commit_mapping(50, 50, md2);
     tree.reserve_mapping(0, 100, md);
     int found_nodes = 0;
-    tree.tree.visit_range_in_order(0, 99999, [&](Node* x) {
+    tree._tree.visit_range_in_order(0, 99999, [&](Node* x) {
       EXPECT_TRUE(x->key() == 0 || x->key() == 100);
       if (x->key() == 0) {
         EXPECT_EQ(x->val().out.metadata().flag, mtTest);
