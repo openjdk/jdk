@@ -1508,7 +1508,7 @@ public class Resolve {
                         (sym.flags() & STATIC) == 0) {
                     if (staticOnly)
                         return new StaticError(sym);
-                    if (env1.info.ctorPrologue && !isAllowedInPrologue(env1, (VarSymbol)sym))
+                    if (env1.info.ctorPrologue && !isAllowedEarlyReference(env1, (VarSymbol)sym))
                         return new RefBeforeCtorCalledError(sym);
                 }
                 return sym;
@@ -3776,7 +3776,7 @@ public class Resolve {
                 if (sym != null) {
                     if (staticOnly)
                         sym = new StaticError(sym);
-                    else if (env1.info.ctorPrologue && sym.kind == VAR && !isAllowedInPrologue(env1, (VarSymbol)sym))
+                    else if (env1.info.ctorPrologue && sym.kind == VAR && !isAllowedEarlyReference(env1, (VarSymbol)sym))
                         sym = new RefBeforeCtorCalledError(sym);
                     return accessBase(sym, pos, env.enclClass.sym.type,
                                   name, true);
@@ -3830,7 +3830,7 @@ public class Resolve {
     }
 
     /**
-     * Determine if an instance field may appear in a constructor prologue.
+     * Determine if an early instance field reference may appear in a constructor prologue.
      *
      * <p>
      * This is only allowed when:
@@ -3842,9 +3842,10 @@ public class Resolve {
      * <p>
      * Note, this method doesn't catch all such scenarios, because this method
      * is invoked for symbol "x" only for "x = 42" but not for "this.x = 42".
+     * We also don't verify that the field has no initializer, which is required.
      * To catch those cases, we rely on similar logic in Attr.checkAssignable().
      */
-    private boolean isAllowedInPrologue(Env<AttrContext> env, VarSymbol v) {
+    private boolean isAllowedEarlyReference(Env<AttrContext> env, VarSymbol v) {
 
         // Check assumptions
         Assert.check(env.info.ctorPrologue);
