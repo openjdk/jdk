@@ -150,7 +150,7 @@ public class TestAccessModes {
         };
         List<MemoryLayout> layouts = new ArrayList<>();
         for (MemoryLayout layout : valueLayouts) {
-            for (int align : new int[] { 2 }) {
+            for (int align : new int[] { 1, 2, 4, 8 }) {
                 layouts.add(layout.withByteAlignment(align));
                 layouts.add(MemoryLayout.structLayout(layout.withByteAlignment(align)));
             }
