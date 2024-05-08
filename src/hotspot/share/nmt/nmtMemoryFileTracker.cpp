@@ -139,6 +139,18 @@ void MemoryFileTracker::Instance::print_report_on(const MemoryFile* device,
   _tracker->print_report_on(device, stream, scale);
 }
 
+void MemoryFileTracker::Instance::print_all_reports_on(outputStream* stream, size_t scale) {
+  const GrowableArrayCHeap<MemoryFileTracker::MemoryFile*, mtNMT>& devices =
+      MemoryFileTracker::Instance::devices();
+  stream->cr();
+  stream->print_cr("Memory file details");
+  stream->cr();
+  for (int i = 0; i < devices.length(); i++) {
+    MemoryFileTracker::MemoryFile* dev = devices.at(i);
+    MemoryFileTracker::Instance::print_report_on(dev, stream, scale);
+  }
+}
+
 const GrowableArrayCHeap<MemoryFileTracker::MemoryFile*, mtNMT>& MemoryFileTracker::Instance::devices() {
   return _tracker->devices();
 };

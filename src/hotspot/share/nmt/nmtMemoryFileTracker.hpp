@@ -106,6 +106,7 @@ public:
     static void summary_snapshot(VirtualMemorySnapshot* snapshot);
 
     static void print_report_on(const MemoryFile* device, outputStream* stream, size_t scale);
+    static void print_all_reports_on(outputStream* stream, size_t scale);
 
     static const GrowableArrayCHeap<MemoryFile*, mtNMT>& devices();
   };
