@@ -44,8 +44,6 @@ import javax.swing.plaf.synth.SynthLookAndFeel;
 public class TestMenuMnemonicOnAltPress {
 
     private static JFrame frame;
-    private static JMenuBar menuBar;
-    private static JMenu fileMenu;
 
     private static final AtomicInteger mnemonicHideCount = new AtomicInteger(0);
     private static final AtomicInteger mnemonicShowCount = new AtomicInteger(0);
@@ -96,8 +94,8 @@ public class TestMenuMnemonicOnAltPress {
 
     private static void createAndShowUI() {
         frame = new JFrame("Test Menu Mnemonic Show/Hide");
-        menuBar  = new JMenuBar();
-        fileMenu = new JMenu("File");
+        JMenuBar menuBar  = new JMenuBar();
+        JMenu fileMenu = new JMenu("File");
         fileMenu.setMnemonic(KeyEvent.VK_F);
         JMenuItem item1 = new JMenuItem("Item-1");
         JMenuItem item2 = new JMenuItem("Item-2");

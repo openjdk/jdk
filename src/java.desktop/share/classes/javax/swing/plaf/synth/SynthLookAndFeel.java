@@ -1063,7 +1063,7 @@ public class SynthLookAndFeel extends BasicLookAndFeel {
      * @since 23
      */
     public static void setMnemonicHidden(boolean hide) {
-        if (UIManager.getBoolean("Button.showMnemonics") == true) {
+        if (UIManager.getBoolean("Button.showMnemonics")) {
             // Do not hide mnemonics if the UI defaults do not support this
             isMnemonicHidden = false;
         } else {
@@ -1080,7 +1080,7 @@ public class SynthLookAndFeel extends BasicLookAndFeel {
      * @since 23
      */
     public static boolean isMnemonicHidden() {
-        if (UIManager.getBoolean("Button.showMnemonics") == true) {
+        if (UIManager.getBoolean("Button.showMnemonics")) {
             // Do not hide mnemonics if the UI defaults do not support this
             isMnemonicHidden = false;
         }
