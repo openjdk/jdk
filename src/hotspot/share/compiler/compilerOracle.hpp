@@ -179,6 +179,7 @@ class CompilerOracle : AllStatic {
   // Reads from string instead of file
   static bool parse_from_string(const char* option_string, bool (*parser)(char*));
   static bool parse_from_line(char* line);
+  static bool parse_from_line_quietly(char* line);
   static bool parse_compile_only(char* line);
 
   // Fast check if there is any option set that compile control needs to know about

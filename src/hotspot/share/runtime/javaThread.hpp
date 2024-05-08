@@ -52,6 +52,7 @@
 class AsyncExceptionHandshake;
 class ContinuationEntry;
 class DeoptResourceMark;
+class InternalOOMEMark;
 class JNIHandleBlock;
 class JVMCIRuntime;
 
@@ -335,6 +336,8 @@ class JavaThread: public Thread {
   // of _attaching_via_jni and transitions to _attached_via_jni.
   volatile JNIAttachStates _jni_attach_state;
 
+  // In scope of an InternalOOMEMark?
+  bool _is_in_internal_oome_mark;
 
 #if INCLUDE_JVMCI
   // The _pending_* fields below are used to communicate extra information
@@ -349,10 +352,6 @@ class JavaThread: public Thread {
 
   // Specifies if the DeoptReason for the last uncommon trap was Reason_transfer_to_interpreter
   bool      _pending_transfer_to_interpreter;
-
-  // True if in a runtime call from compiled code that will deoptimize
-  // and re-execute a failed heap allocation in the interpreter.
-  bool      _in_retryable_allocation;
 
   // An id of a speculation that JVMCI compiled code can use to further describe and
   // uniquely identify the speculative optimization guarded by an uncommon trap.
@@ -718,6 +717,10 @@ private:
   MemRegion deferred_card_mark() const           { return _deferred_card_mark; }
   void set_deferred_card_mark(MemRegion mr)      { _deferred_card_mark = mr;   }
 
+  // Is thread in scope of an InternalOOMEMark?
+  bool is_in_internal_oome_mark() const          { return _is_in_internal_oome_mark; }
+  void set_is_in_internal_oome_mark(bool b)      { _is_in_internal_oome_mark = b;    }
+
 #if INCLUDE_JVMCI
   jlong pending_failed_speculation() const        { return _pending_failed_speculation; }
   void set_pending_monitorenter(bool b)           { _pending_monitorenter = b; }
@@ -726,9 +729,6 @@ private:
   void set_pending_transfer_to_interpreter(bool b) { _pending_transfer_to_interpreter = b; }
   void set_jvmci_alternate_call_target(address a) { assert(_jvmci._alternate_call_target == nullptr, "must be"); _jvmci._alternate_call_target = a; }
   void set_jvmci_implicit_exception_pc(address a) { assert(_jvmci._implicit_exception_pc == nullptr, "must be"); _jvmci._implicit_exception_pc = a; }
-
-  virtual bool in_retryable_allocation() const    { return _in_retryable_allocation; }
-  void set_in_retryable_allocation(bool b)        { _in_retryable_allocation = b; }
 
   JVMCIRuntime* libjvmci_runtime() const          { return _libjvmci_runtime; }
   void set_libjvmci_runtime(JVMCIRuntime* rt) {
