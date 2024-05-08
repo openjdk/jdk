@@ -3766,6 +3766,7 @@ public class Resolve {
                        Env<AttrContext> env,
                        TypeSymbol c,
                        Name name) {
+        Assert.check(name == names._this || name == names._super);
         Env<AttrContext> env1 = env;
         boolean staticOnly = false;
         while (env1.outer != null) {
