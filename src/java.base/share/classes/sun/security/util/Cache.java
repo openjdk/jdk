@@ -26,7 +26,6 @@
 package sun.security.util;
 
 import java.util.*;
-import java.lang.ref.*;
 
 /**
  * Abstract base class and factory for caches. A cache is a key-value mapping.
@@ -137,6 +136,10 @@ public abstract class Cache<K,V> {
         return new MemoryCache<>(true, size, timeout);
     }
 
+    public static <K,V> Cache<K,V> newSoftMemoryQueue(int size, int timeout) {
+        return new MemoryQueue<>(true, size, timeout);
+    }
+
     /**
      * Return a new memory cache with the specified maximum size, unlimited
      * lifetime for entries, with the values held by standard references.
@@ -245,7 +248,7 @@ class NullCache<K,V> extends Cache<K,V> {
     }
 
 }
-
+/*
 class MemoryCache<K,V> extends Cache<K,V> {
 
     private static final float LOAD_FACTOR = 0.75f;
@@ -284,6 +287,7 @@ class MemoryCache<K,V> extends Cache<K,V> {
      * This method should be called at the beginning of each public
      * method.
      */
+/*
     private void emptyQueue() {
         if (queue == null) {
             return;
@@ -319,6 +323,7 @@ class MemoryCache<K,V> extends Cache<K,V> {
     /**
      * Scan all entries and remove all expired ones.
      */
+/*
     private void expungeExpiredEntries() {
         emptyQueue();
         if (lifetime == 0) {
@@ -592,3 +597,4 @@ class MemoryCache<K,V> extends Cache<K,V> {
     }
 
 }
+*/

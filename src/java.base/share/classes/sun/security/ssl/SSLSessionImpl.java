@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@ import java.util.Arrays;
 import java.util.Queue;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -73,7 +72,7 @@ import javax.net.ssl.SSLSessionContext;
  *
  * @author David Brownell
  */
-final class SSLSessionImpl extends ExtendedSSLSession {
+final public class SSLSessionImpl extends ExtendedSSLSession {
 
     /*
      * The state of a single session, as described in section 7.1
@@ -778,7 +777,22 @@ final class SSLSessionImpl extends ExtendedSSLSession {
     }
 
     byte[] getPskIdentity() {
-        return pskIdentity;
+        sessionLock.lock();
+        try {
+            return pskIdentity;
+        } finally {
+            sessionLock.unlock();
+        }
+    }
+
+    public boolean isPSK() {
+        sessionLock.lock();
+        try {
+            if (pskIdentity == null || pskIdentity.length == 0) return false;
+        } finally {
+            sessionLock.unlock();
+        }
+        return true;
     }
 
     void setPeerCertificates(X509Certificate[] peer) {

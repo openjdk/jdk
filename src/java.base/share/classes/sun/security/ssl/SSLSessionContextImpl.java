@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSessionContext;
 
@@ -87,8 +88,13 @@ final class SSLSessionContextImpl implements SSLSessionContext {
         cacheLimit = getDefaults(server);    // default cache size
 
         // use soft reference
-        sessionCache = Cache.newSoftMemoryCache(cacheLimit, timeout);
-        sessionHostPortCache = Cache.newSoftMemoryCache(cacheLimit, timeout);
+        if (server) {
+            sessionCache = Cache.newSoftMemoryCache(cacheLimit, timeout);
+            sessionHostPortCache = Cache.newSoftMemoryCache(cacheLimit, timeout);
+        } else {
+            sessionCache = Cache.newSoftMemoryCache(cacheLimit, timeout);
+            sessionHostPortCache = Cache.newSoftMemoryQueue(cacheLimit, timeout);
+        }
         if (server) {
             keyHashMap = new ConcurrentHashMap<>();
             // Should be "randomly generated" according to RFC 5077,
@@ -404,4 +410,17 @@ final class SSLSessionContextImpl implements SSLSessionContext {
                                   Collections.emptyEnumeration();
         }
     }
+/*
+    public NSTRecord getNST(String id) {
+        var q = nstCache.get(id);
+        if (q == null) return null;
+
+        return q.poll();
+    }
+
+    public NSTRecord putNST(String id, NSTRecord nst) {
+        nstCache.get(id);
+    }
+
+ */
 }

@@ -328,11 +328,20 @@ abstract public class TLSBase {
             connect();
         }
 
-        // Connect to server.  Maybe runnable in the future
         public SSLSocket connect() {
             try {
                 sslContext = SSLContext.getInstance("TLS");
                 sslContext.init(TLSBase.getKeyManager(km), TLSBase.getTrustManager(tm), null);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+            return getNewSession();
+        }
+
+        // Connect to server.  Maybe runnable in the future
+        public SSLSocket getNewSession() {
+            try {
+
                 sock = (SSLSocket)sslContext.getSocketFactory().createSocket();
                 sock.connect(new InetSocketAddress("localhost", serverPort));
                 System.err.println("Client connected using port " +
