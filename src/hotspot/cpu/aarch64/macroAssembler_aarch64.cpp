@@ -5545,17 +5545,15 @@ address MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
   int length_offset = arrayOopDesc::length_offset_in_bytes();
   int base_offset
     = arrayOopDesc::base_offset_in_bytes(elem_size == 2 ? T_CHAR : T_BYTE);
-  // When the base is not aligned to 8 bytes, then we let
-  // the compare loop include the array length, and skip
-  // the explicit comparison of length.
-  bool length_is_8aligned = is_aligned(length_offset, BytesPerWord);
-  assert(is_aligned(base_offset, BytesPerWord) || is_aligned(length_offset, BytesPerWord),
-         "base_offset or length_offset must be 8-byte aligned");
-  assert(is_aligned(base_offset, BytesPerWord) || base_offset == length_offset + BytesPerInt,
-         "base_offset must be 8-byte aligned or no padding between base and length");
-  int start_offset = length_is_8aligned ? length_offset : klass_offset;
-  assert(is_aligned(start_offset, BytesPerWord), "start offset must be 8-byte-aligned");
-  int extra_length = length_is_8aligned ? base_offset - length_offset : base_offset - klass_offset;
+  // When the length offset is not aligned to 8 bytes,
+  // then we align it down, this is valid as the new
+  // offset will always be the klass which is the same
+  // for type arrays.
+  int start_offset = align_down(length_offset, BytesPerWord);
+  int extra_length = base_offset - start_offset;
+  assert(start_offset == length_offset || start_offset == klass_offset, 
+         "start offset must be 8-byte-aligned or be the klass offset");
+  assert(base_offset != start_offset, "must include the length field");
   extra_length = extra_length / elem_size; // We count in elements, not bytes.
   int stubBytesThreshold = 3 * 64 + (UseSIMDForArrayEquals ? 0 : 16);
 
@@ -5590,7 +5588,6 @@ address MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
     //      return false;
     bind(A_IS_NOT_NULL);
     ldrw(cnt1, Address(a1, length_offset));
-    assert(extra_length != 0, "expect extra length");
     // Increase loop counter by size of length field.
     addw(cnt1, cnt1, extra_length);
     lea(a1, Address(a1, start_offset));
@@ -5657,7 +5654,6 @@ address MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
     cbz(a1, DONE);
     ldrw(cnt1, Address(a1, length_offset));
     cbz(a2, DONE);
-    assert(extra_length != 0, "expect extra length");
     // Increase loop counter by size of length field.
     addw(cnt1, cnt1, extra_length);
 
