@@ -647,6 +647,7 @@ void Type::Initialize_shared(Compile* current) {
 
   _const_basic_type[T_NARROWOOP]   = TypeNarrowOop::BOTTOM;
   _const_basic_type[T_NARROWKLASS] = Type::BOTTOM;
+  _const_basic_type[T_METADATA]    = Type::BOTTOM;
   _const_basic_type[T_BOOLEAN]     = TypeInt::BOOL;
   _const_basic_type[T_CHAR]        = TypeInt::CHAR;
   _const_basic_type[T_BYTE]        = TypeInt::BYTE;
@@ -671,6 +672,7 @@ void Type::Initialize_shared(Compile* current) {
   _zero_type[T_LONG]        = TypeLong::ZERO;
   _zero_type[T_FLOAT]       = TypeF::ZERO;
   _zero_type[T_DOUBLE]      = TypeD::ZERO;
+  _zero_type[T_METADATA]    = TypePtr::NULL_PTR;
   _zero_type[T_OBJECT]      = TypePtr::NULL_PTR;
   _zero_type[T_ARRAY]       = TypePtr::NULL_PTR; // null array is null oop
   _zero_type[T_ADDRESS]     = TypePtr::NULL_PTR; // raw pointers use the same null
