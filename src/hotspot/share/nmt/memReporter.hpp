@@ -30,9 +30,6 @@
 #include "nmt/memBaseline.hpp"
 #include "nmt/nmtCommon.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
-#include "nmt/nmtMemoryFileTracker.hpp"
-#include "oops/instanceKlass.hpp"
-#include "runtime/mutexLocker.hpp"
 
 /*
  * Base class that provides helpers

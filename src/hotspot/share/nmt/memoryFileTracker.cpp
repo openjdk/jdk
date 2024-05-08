@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "memory/allocation.hpp"
 #include "nmt/nmtCommon.hpp"
-#include "nmt/nmtMemoryFileTracker.hpp"
+#include "nmt/memoryFileTracker.hpp"
 #include "nmt/nmtNativeCallStackStorage.hpp"
 #include "nmt/vmatree.hpp"
 #include "runtime/mutex.hpp"

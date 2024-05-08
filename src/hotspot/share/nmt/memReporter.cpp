@@ -28,6 +28,7 @@
 #include "memory/metaspaceUtils.hpp"
 #include "nmt/mallocTracker.hpp"
 #include "nmt/memReporter.hpp"
+#include "nmt/memoryFileTracker.hpp"
 #include "nmt/threadStackTracker.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
 #include "utilities/globalDefinitions.hpp"

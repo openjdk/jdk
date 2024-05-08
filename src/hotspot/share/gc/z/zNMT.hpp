@@ -30,7 +30,7 @@
 #include "gc/z/zVirtualMemory.hpp"
 #include "memory/allStatic.hpp"
 #include "nmt/memTracker.hpp"
-#include "nmt/nmtMemoryFileTracker.hpp"
+#include "nmt/memoryFileTracker.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/nativeCallStack.hpp"
 

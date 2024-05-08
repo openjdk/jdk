@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_NMT_NMTMEMORYFILETRACKER_HPP
-#define SHARE_NMT_NMTMEMORYFILETRACKER_HPP
+#ifndef SHARE_NMT_MEMORYFILETRACKER_HPP
+#define SHARE_NMT_MEMORYFILETRACKER_HPP
 
 #include "memory/allocation.hpp"
 #include "nmt/nmtCommon.hpp"
@@ -112,4 +112,4 @@ public:
   };
 };
 
-#endif // SHARE_NMT_NMTMEMORYFILETRACKER_HPP
+#endif // SHARE_NMT_MEMORYFILETRACKER_HPP
