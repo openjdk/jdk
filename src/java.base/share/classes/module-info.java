@@ -423,7 +423,6 @@ module java.base {
         java.security.SecureRandom,
         java.util.Random,
         java.util.SplittableRandom,
-
         jdk.internal.random.L32X64MixRandom,
         jdk.internal.random.L64X128MixRandom,
         jdk.internal.random.L64X128StarStarRandom,
