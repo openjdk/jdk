@@ -3517,38 +3517,17 @@ Node* StoreNode::Identity(PhaseGVN* phase) {
     if (!is_StoreVector()) {
       result = mem;
     } else {
-      // Ensure that vector types match
-      const TypeVect* vect_type = as_StoreVector()->vect_type();
-      const TypeVect* mem_vect_type = mem->as_StoreVector()->vect_type();
-      if (vect_type == mem_vect_type) {
-        // Handle StoreVector with offsets and masks
-        // Ensure offsets match
-        if (is_StoreVectorScatter()) {
-          const Node* offsets = as_StoreVectorScatter()->in(StoreVectorScatterNode::Offsets);
-          if (offsets->eqv_uncast(mem->as_StoreVectorScatter()->in(StoreVectorScatterNode::Offsets))) {
-            result = mem;
-          }
-        // Ensure masks match
-        } else if (is_StoreVectorMasked()) {
-          const Node* mask = as_StoreVectorMasked()->in(StoreVectorMaskedNode::Mask);
-          if (mask->eqv_uncast(mem->as_StoreVectorMasked()->in(StoreVectorMaskedNode::Mask))) {
-            result = mem;
-          }
-        // Ensure offsets and masks match
-        } else if (is_StoreVectorScatterMasked()) {
-          const StoreVectorScatterMaskedNode* stv = as_StoreVectorScatterMasked();
-          const Node* offsets = stv->in(StoreVectorScatterMaskedNode::Offsets);
-          const Node* mask = stv->in(StoreVectorScatterMaskedNode::Mask);
-          const StoreVectorScatterMaskedNode* svgm = mem->as_StoreVectorScatterMasked();
-          if (offsets->eqv_uncast(svgm->in(StoreVectorScatterMaskedNode::Offsets)) &&
-              mask->eqv_uncast(svgm->in(StoreVectorScatterMaskedNode::Mask))) {
-            result = mem;
-          }
-        // Regular store (no offsets or mask)
-        } else {
-          assert(Opcode() == Op_StoreVector, "just a plain vector store, no offset or mask");
-          result = mem;
-        }
+      const StoreVectorNode* store_vector = as_StoreVector();
+      const StoreVectorNode* mem_vector = mem->as_StoreVector();
+      const Node* store_offsets = store_vector->offsets();
+      const Node* mem_offsets = mem_vector->offsets();
+      const Node* store_mask = store_vector->mask();
+      const Node* mem_mask = mem_vector->mask();
+      // Ensure types, offsets, and masks match
+      if (store_vector->vect_type() == mem_vector->vect_type() &&
+          (store_offsets == mem_offsets ||  store_offsets->eqv_uncast(mem_offsets)) &&
+          (store_mask == mem_mask ||  store_mask->eqv_uncast(mem_mask))) {
+        result = mem;
       }
     }
   }

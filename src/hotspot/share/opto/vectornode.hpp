@@ -947,6 +947,8 @@ class StoreVectorNode : public StoreNode {
 
   // Needed for proper cloning.
   virtual uint size_of() const { return sizeof(*this); }
+  virtual Node* mask() const { return nullptr; }
+  virtual Node* offsets() const { return nullptr; }
 
 #ifdef ASSERT
   // When AlignVector is enabled, SuperWord only creates aligned vector loads and stores.
@@ -974,6 +976,7 @@ class StoreVectorNode : public StoreNode {
    virtual uint match_edge(uint idx) const { return idx == MemNode::Address ||
                                                     idx == MemNode::ValueIn ||
                                                     idx == MemNode::ValueIn + 1; }
+   virtual Node* offsets() const { return in(Offsets); }
 };
 
 //------------------------------StoreVectorMaskedNode--------------------------------
@@ -994,6 +997,7 @@ class StoreVectorMaskedNode : public StoreVectorNode {
     return idx > 1;
   }
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+  virtual Node* mask() const { return in(Mask); }
 };
 
 //------------------------------LoadVectorMaskedNode--------------------------------
@@ -1072,6 +1076,8 @@ class StoreVectorScatterMaskedNode : public StoreVectorNode {
                                                     idx == MemNode::ValueIn ||
                                                     idx == MemNode::ValueIn + 1 ||
                                                     idx == MemNode::ValueIn + 2; }
+   virtual Node* mask() const { return in(Mask); }
+   virtual Node* offsets() const { return in(Offsets); }
 };
 
 // Verify that memory address (adr) is aligned. The mask specifies the
