@@ -763,6 +763,21 @@ Node* ConnectionGraph::split_castpp_load_through_phi(Node* curr_addp, Node* curr
     }
   }
 
+  // The data_phi merging the loads needs to be nullable if we are loading
+  // pointers
+  if (load_type->make_ptr() != nullptr) {
+    const Type* new_t = _igvn->type(data_phi);
+    if (load_type->isa_narrowoop()) {
+      new_t = load_type->meet(TypeNarrowOop::NULL_PTR);
+    } else if (load_type->isa_narrowklass()) {
+      new_t = load_type->meet(TypeNarrowKlass::NULL_PTR);
+    } else if (load_type->isa_ptr()) {
+      new_t = load_type->meet(TypePtr::NULL_PTR);
+    }
+    _igvn->set_type(data_phi,  new_t);
+    data_phi->raise_bottom_type(new_t);
+  }
+
   // Takes care of updating CG and split_unique_types worklists due to cloned
   // AddP->Load.
   updates_after_load_split(data_phi, curr_load, alloc_worklist);
