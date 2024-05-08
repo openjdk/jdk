@@ -1015,12 +1015,6 @@ public final class Locale implements Cloneable, Serializable {
         private final LocaleExtensions exts;
         private final int hash;
 
-        private LocaleKey() {
-            base = null;
-            exts = null;
-            hash = 0;
-        }
-
         private LocaleKey(BaseLocale baseLocale, LocaleExtensions extensions) {
             base = baseLocale;
             exts = extensions;
