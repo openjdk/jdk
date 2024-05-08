@@ -586,7 +586,7 @@ public class Indify {
                                 mark = classMark;  // it is a java.lang.invoke.* or java.lang.* method
                                 break;
                             }
-                            String cls = ((ClassEntry) bytecode.pool.get(cl)).name().stringValue();
+                            String cls = (bytecode.pool.get(cl) instanceof ClassEntry) ? ((ClassEntry) bytecode.pool.get(cl)).name().stringValue() : "";
                             if (cls.equals(bytecode.thisClass.name().stringValue())) {
                                 switch (pool_Marks[nt]) {
                                     case 'T':
@@ -696,7 +696,7 @@ public class Indify {
         char nameAndType_Mark(int ref1, int ref2){
             char mark = pool_Marks[ref1];
             if (mark == 0) return 0;
-            String descriptor = ((Utf8Entry) bytecode.pool.get(ref2)).stringValue();
+            String descriptor = (bytecode.pool.get(ref2) instanceof Utf8Entry) ? ((Utf8Entry) bytecode.pool.get(ref2)).stringValue() : "";
             String requiredType;
             switch (pool_Marks[ref1]){
                 case 'H', 'I': requiredType = "()Ljava/lang/invoke/MethodHandle;";  break;
