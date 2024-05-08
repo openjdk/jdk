@@ -48,6 +48,7 @@ import java.io.Serializable;
 import java.text.DateFormat;
 import java.text.MessageFormat;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 import java.util.spi.LocaleNameProvider;
 import java.util.stream.Stream;
 
@@ -980,32 +981,49 @@ public final class Locale implements Cloneable, Serializable {
         return getInstance(baseloc, extensions);
     }
 
+
     static Locale getInstance(BaseLocale baseloc, LocaleExtensions extensions) {
         if (extensions == null) {
             Locale locale = CONSTANT_LOCALES.get(baseloc);
             if (locale != null) {
                 return locale;
             }
-            return LOCALE_CACHE.computeIfAbsent(baseloc, Locale::createLocale);
+            return LOCALE_CACHE.computeIfAbsent(baseloc, LOCALE_LOOKUP);
         } else {
             LocaleKey key = new LocaleKey(baseloc, extensions);
-            return LOCALE_CACHE.computeIfAbsent(key, Locale::createLocale);
+            return LOCALE_CACHE.computeIfAbsent(key, LOCALE_LOOKUP);
         }
     }
 
-    private static final ReferencedKeyMap<Object, Locale> LOCALE_CACHE = ReferencedKeyMap.create(true, ConcurrentHashMap::new);
-    private static Locale createLocale(Object key) {
-        if (key instanceof BaseLocale base) {
-            return new Locale(base, null);
-        }
-        LocaleKey lk = (LocaleKey)key;
-        return new Locale(lk.base, lk.exts);
-    }
+    private static final ReferencedKeyMap<Object, Locale> LOCALE_CACHE
+            = ReferencedKeyMap.create(true, ReferencedKeyMap.concurrentHashMapSupplier());
 
-    private static final class LocaleKey {
+    private static final LocaleKey LOCALE_LOOKUP = new LocaleKey();
+
+    private static final class LocaleKey implements Function<Object, Locale> {
+
+        @Override
+        public Locale apply(Object key) {
+            return createLocale(key);
+        }
+
+        private Locale createLocale(Object key) {
+            if (key instanceof BaseLocale base) {
+                return new Locale(base, null);
+            }
+            LocaleKey lk = (LocaleKey)key;
+            return new Locale(lk.base, lk.exts);
+        }
+
         private final BaseLocale base;
         private final LocaleExtensions exts;
         private final int hash;
+
+        private LocaleKey() {
+            base = null;
+            exts = null;
+            hash = 0;
+        }
 
         private LocaleKey(BaseLocale baseLocale, LocaleExtensions extensions) {
             base = baseLocale;
