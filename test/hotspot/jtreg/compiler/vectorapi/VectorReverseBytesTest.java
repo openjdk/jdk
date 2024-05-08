@@ -42,8 +42,7 @@ import jdk.test.lib.Utils;
  * @library /test/lib /
  * @summary [vectorapi] REVERSE_BYTES for byte type should not emit any instructions
  * @requires vm.compiler2.enabled
- * @requires (os.simpleArch == "x64" & vm.cpu.features ~= ".*avx2.*") |
- *           os.arch == "aarch64" |
+ * @requires (os.simpleArch == "x64" & vm.cpu.features ~= ".*avx2.*") | os.arch == "aarch64" |
  *           (os.arch == "riscv64" & vm.cpu.features ~= ".*zvbb.*")
  * @modules jdk.incubator.vector
  *
