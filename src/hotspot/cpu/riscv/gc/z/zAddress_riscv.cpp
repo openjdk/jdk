@@ -37,7 +37,8 @@
 #include <sys/mman.h>
 #endif // LINUX
 
-static const size_t DEFAULT_MAX_ADDRESS_BIT = ZMaxAddressOffsetBits - 1;
+// Default value if probe is not implemented for a certain platform: 128TB
+static const size_t DEFAULT_MAX_ADDRESS_BIT = 47;
 // Minimum value returned, if probing fails: 64GB
 static const size_t MINIMUM_MAX_ADDRESS_BIT = 36;
 
@@ -91,7 +92,8 @@ static size_t probe_valid_max_address_bit() {
 }
 
 size_t ZPlatformAddressOffsetBits() {
-  const static size_t max_address_offset_bits = probe_valid_max_address_bit() + 1;
+  const static size_t valid_max_address_offset_bits = probe_valid_max_address_bit() + 1;
+  const size_t max_address_offset_bits = valid_max_address_offset_bits - 3;
   const size_t min_address_offset_bits = max_address_offset_bits - 2;
   const size_t address_offset = round_up_power_of_2(MaxHeapSize * ZVirtualToPhysicalRatio);
   const size_t address_offset_bits = log2i_exact(address_offset);
