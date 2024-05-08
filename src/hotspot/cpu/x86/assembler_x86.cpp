@@ -555,6 +555,10 @@ bool Assembler::needs_rex2(Register reg1, Register reg2, Register reg3) {
          (reg3->is_valid() && reg3->encoding() >= 16);
 }
 
+bool Assembler::needs_eevex(Register reg1, Register reg2, Register reg3) {
+  return needs_rex2(reg1, reg2, reg3);
+}
+
 static bool is_valid_encoding(int reg_enc) {
   return reg_enc >= 0;
 }
@@ -1968,7 +1972,7 @@ void Assembler::cpuid() {
 // F2 REX.W 0F 38 F1 / r CRC32 r64, r / m64  RM        Valid             N.E.              Accumulate CRC32 on r / m64. v
 void Assembler::crc32(Register crc, Register v, int8_t sizeInBytes) {
   assert(VM_Version::supports_sse4_2(), "");
-  if (needs_rex2(crc, v)) {
+  if (needs_eevex(crc, v)) {
     InstructionAttr attributes(AVX_128bit, /* rex_w */ sizeInBytes == 8, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
     int encode = vex_prefix_and_encode(crc->encoding(), 0, v->encoding(), sizeInBytes == 2 ? VEX_SIMD_66 : VEX_SIMD_NONE, VEX_OPCODE_0F_3C, &attributes, true);
     emit_int16(sizeInBytes == 1 ? (unsigned char)0xF0 : (unsigned char)0xF1, (0xC0 | encode));
@@ -2015,7 +2019,7 @@ void Assembler::crc32(Register crc, Register v, int8_t sizeInBytes) {
 void Assembler::crc32(Register crc, Address adr, int8_t sizeInBytes) {
   assert(VM_Version::supports_sse4_2(), "");
   InstructionMark im(this);
-  if (needs_rex2(crc, adr.base(), adr.index())) {
+  if (needs_eevex(crc, adr.base(), adr.index())) {
     InstructionAttr attributes(AVX_128bit, /* vex_w */ sizeInBytes == 8, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
     attributes.set_address_attributes(/* tuple_type */ EVEX_NOSCALE, /* input_size_in_bits */ EVEX_64bit);
     vex_prefix(adr, 0, crc->encoding(), sizeInBytes == 2 ? VEX_SIMD_66 : VEX_SIMD_NONE, VEX_OPCODE_0F_3C, &attributes);
