@@ -43,6 +43,23 @@
 #include "utilities/istream.hpp"
 #include "utilities/parseInteger.hpp"
 
+// Default compile commands, if defined, are parsed before any of the
+// explicitly defined compile commands. Thus, explicitly defined compile
+// commands take precedence over default compile commands. The effect is
+// as if the default compile commands had been specified at the start of
+// the command line.
+static const char* const default_compile_commands[] = {
+#ifdef ASSERT
+    // In debug builds, impose a (generous) per-compilation memory limit
+    // to catch pathological compilations during testing. The suboption
+    // "crash" will cause the JVM to assert.
+    //
+    // Note: to disable the default limit at the command line,
+    // set a limit of 0 (e.g. -XX:CompileCommand=MemLimit,*.*,0).
+    "MemLimit,*.*,1G~crash",
+#endif
+    nullptr };
+
 static const char* optiontype_names[] = {
 #define enum_of_types(type, name) name,
         OPTION_TYPES(enum_of_types)
@@ -906,6 +923,14 @@ public:
     }
 };
 
+bool CompilerOracle::parse_from_line_quietly(char* line) {
+  const bool quiet0 = _quiet;
+  _quiet = true;
+  const bool result = parse_from_line(line);
+  _quiet = quiet0;
+  return result;
+}
+
 bool CompilerOracle::parse_from_line(char* line) {
   if ((line[0] == '\0') || (line[0] == '#')) {
     return true;
@@ -1082,6 +1107,14 @@ bool CompilerOracle::parse_from_string(const char* str,
 
 bool compilerOracle_init() {
   bool success = true;
+  // Register default compile commands first - any commands specified via CompileCommand will
+  // supersede these default commands.
+  for (int i = 0; default_compile_commands[i] != nullptr; i ++) {
+    char* s = os::strdup(default_compile_commands[i]);
+    success = CompilerOracle::parse_from_line_quietly(s);
+    os::free(s);
+    assert(success, "default compile command \"%s\" failed to parse", default_compile_commands[i]);
+  }
   if (!CompilerOracle::parse_from_string(CompileCommand, CompilerOracle::parse_from_line)) {
     success = false;
   }

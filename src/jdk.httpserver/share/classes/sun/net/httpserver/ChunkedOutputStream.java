@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,8 +137,14 @@ class ChunkedOutputStream extends FilterOutputStream
         if (closed) {
             return;
         }
-        flush();
         try {
+            /*
+            * write any pending chunk data. manually write chunk rather than
+            * calling flush to avoid sending small packets
+            */
+            if (count > 0) {
+                writeChunk();
+            }
             /* write an empty chunk */
             writeChunk();
             out.flush();
