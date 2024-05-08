@@ -37,8 +37,7 @@ MemoryFileTracker* MemoryFileTracker::Instance::_tracker = nullptr;
 PlatformMutex* MemoryFileTracker::Instance::_mutex = nullptr;
 
 MemoryFileTracker::MemoryFileTracker(bool is_detailed_mode)
-: _stack_storage(is_detailed_mode), _devices() {
-}
+  : _stack_storage(is_detailed_mode), _devices() {}
 
 void MemoryFileTracker::allocate_memory(MemoryFile* device, size_t offset,
                                         size_t size, const NativeCallStack& stack,
@@ -76,7 +75,8 @@ void MemoryFileTracker::print_report_on(const MemoryFile* device, outputStream* 
     if (pval.out.type() == VMATree::StateType::Reserved) {
       const auto& start_addr = prev->key();
       const auto& end_addr = current->key();
-      stream->print_cr("[" PTR_FORMAT " - " PTR_FORMAT "] allocated " SIZE_FORMAT "%s" " for %s", start_addr, end_addr,
+      stream->print_cr("[" PTR_FORMAT " - " PTR_FORMAT "] allocated " SIZE_FORMAT "%s" " for %s",
+                       start_addr, end_addr,
                        NMTUtil::amount_in_scale(end_addr - start_addr, scale),
                        NMTUtil::scale_name(scale),
                        NMTUtil::flag_to_name(pval.out.flag()));
@@ -122,8 +122,7 @@ void MemoryFileTracker::Instance::allocate_memory(MemoryFile* device, size_t off
   _tracker->allocate_memory(device, offset, size, stack, flag);
 }
 
-void MemoryFileTracker::Instance::free_memory(MemoryFile* device, size_t offset,
-                                              size_t size) {
+void MemoryFileTracker::Instance::free_memory(MemoryFile* device, size_t offset, size_t size) {
   _tracker->free_memory(device, offset, size);
 }
 
