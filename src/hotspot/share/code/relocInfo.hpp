@@ -129,8 +129,7 @@ class nmethod;
 //   Value:  an oop, or else the address (handle) of an oop
 //   Instruction types: memory (load), set (load address)
 //   Data:  []       an oop stored in 4 bytes of instruction
-//          [n]      n is the index of an oop in the CodeBlob's oop pool
-//          [Nn]     index may be 32 bits if necessary
+//          [[N]n]   the index of an oop in the CodeBlob's oop pool
 //
 // relocInfo::internal_word_type -- an address within the same CodeBlob
 // relocInfo::section_word_type -- same, but can refer to another section
