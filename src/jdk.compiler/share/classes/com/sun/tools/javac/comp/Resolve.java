@@ -3776,7 +3776,7 @@ public class Resolve {
                 if (sym != null) {
                     if (staticOnly)
                         sym = new StaticError(sym);
-                    else if (env1.info.ctorPrologue && sym.kind == VAR && !isAllowedEarlyReference(env1, (VarSymbol)sym))
+                    else if (env1.info.ctorPrologue && !isAllowedEarlyReference(env1, (VarSymbol)sym))
                         sym = new RefBeforeCtorCalledError(sym);
                     return accessBase(sym, pos, env.enclClass.sym.type,
                                   name, true);
