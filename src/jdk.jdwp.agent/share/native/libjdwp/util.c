@@ -1294,7 +1294,7 @@ verifyMonitorRank(JNIEnv *env, DebugRawMonitorRank rank, jthread thread)
 {
     // We must hold the dbgRawMonitor when calling verifyMonitorRank()
 
-    // Iterate over all the monitors and makes sure we don't already hold one that
+    // Iterate over all the monitors and make sure we don't already hold one that
     // has a higher rank than the monitor we are about to enter.
     DebugRawMonitorRank i;
     DebugRawMonitorRank firstRank =
