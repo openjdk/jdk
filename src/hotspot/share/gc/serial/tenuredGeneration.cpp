@@ -55,8 +55,7 @@ bool TenuredGeneration::grow_by(size_t bytes) {
 
     // Fix for bug #4668531
     if (ZapUnusedHeapArea) {
-      MemRegion mangle_region(space()->end(),
-      (HeapWord*)_virtual_space.high());
+      MemRegion mangle_region(space()->end(), (HeapWord*)_virtual_space.high());
       SpaceMangler::mangle_region(mangle_region);
     }
 
@@ -485,14 +484,6 @@ void TenuredGeneration::complete_loaded_archive_space(MemRegion archive_space) {
 void TenuredGeneration::gc_epilogue() {
   // update the generation and space performance counters
   update_counters();
-  if (ZapUnusedHeapArea) {
-    _the_space->check_mangled_unused_area_complete();
-  }
-}
-
-void TenuredGeneration::record_spaces_top() {
-  assert(ZapUnusedHeapArea, "Not mangling unused space");
-  _the_space->set_top_for_allocations();
 }
 
 void TenuredGeneration::verify() {

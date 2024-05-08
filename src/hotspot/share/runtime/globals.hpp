@@ -473,9 +473,6 @@ const int ObjectAlignmentInBytes = 8;
   develop(bool, ZapUnusedHeapArea, trueInDebug,                             \
           "Zap unused heap space")                                          \
                                                                             \
-  develop(bool, CheckZapUnusedHeapArea, false,                              \
-          "Check zapping of unused heap space")                             \
-                                                                            \
   develop(bool, ZapFillerObjects, trueInDebug,                              \
           "Zap filler objects")                                             \
                                                                             \
