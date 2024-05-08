@@ -40,8 +40,6 @@ define ProcessMarkdown
 
   # Only continue if this target file hasn't been processed already. This lets
   # the first found source file override any other with the same name.
-  $$(call PrintVar, $1_$2_INPUT_FILE)
-  $$(call PrintVar, $1_$2_OUTPUT_FILE_PROCESSED)
   ifeq ($$($1_$2_OUTPUT_FILE_PROCESSED), )
     $1_$2_OUTPUT_FILE_PROCESSED := true
 
