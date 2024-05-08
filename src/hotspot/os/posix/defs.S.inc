@@ -27,5 +27,5 @@
 #define DECLARE_FUNC(func) \
     .globl func ; \
     .hidden func ; \
-    .type func, @function ; \
+    .type func, %function ; \
     func
