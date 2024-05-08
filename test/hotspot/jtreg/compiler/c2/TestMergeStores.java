@@ -54,6 +54,8 @@ public class TestMergeStores {
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
     private static final Random RANDOM = Utils.getRandomInstance();
 
+    private static final boolean IS_BIG_ENDIAN = UNSAFE.isBigEndian();
+
     // Inputs
     byte[] aB = new byte[RANGE];
     byte[] bB = new byte[RANGE];
@@ -112,7 +114,7 @@ public class TestMergeStores {
         testGroups.get("test2").put("test2b", (_,_) -> { return test2b(aB.clone(), offset1, vL1); });
         testGroups.get("test2").put("test2c", (_,_) -> { return test2c(aB.clone(), offset1, vL1); });
         testGroups.get("test2").put("test2d", (_,_) -> { return test2d(aB.clone(), offset1, vL1); });
-        testGroups.get("test2").put("test2e", (_,_) -> { return test2d(aB.clone(), offset1, vL1); });
+        testGroups.get("test2").put("test2e", (_,_) -> { return test2e(aB.clone(), offset1, vL1); });
 
         testGroups.put("test3", new HashMap<String,TestFunction>());
         testGroups.get("test3").put("test3R", (_,_) -> { return test3R(aB.clone(), offset1, vL1); });
@@ -191,6 +193,10 @@ public class TestMergeStores {
         testGroups.put("test700", new HashMap<String,TestFunction>());
         testGroups.get("test700").put("test700R", (_,i) -> { return test700R(aI.clone(), i); });
         testGroups.get("test700").put("test700a", (_,i) -> { return test700a(aI.clone(), i); });
+
+        testGroups.put("test800", new HashMap<String,TestFunction>());
+        testGroups.get("test800").put("test800R", (_,_) -> { return test800R(aB.clone(), offset1, vL1); });
+        testGroups.get("test800").put("test800a", (_,_) -> { return test800a(aB.clone(), offset1, vL1); });
     }
 
     @Warmup(100)
@@ -225,7 +231,8 @@ public class TestMergeStores {
                  "test501a",
                  "test502a",
                  "test600a",
-                 "test700a"})
+                 "test700a",
+                 "test800a"})
     public void runTests(RunInfo info) {
         // Repeat many times, so that we also have multiple iterations for post-warmup to potentially recompile
         int iters = info.isWarmUp() ? 1_000 : 50_000;
@@ -412,6 +419,39 @@ public class TestMergeStores {
                                   (byte)(value >> 56));
     }
 
+    // -------------------------------------------
+    // -------      Big-Endian API      ----------
+    // -------------------------------------------
+
+    // Store a short BE into an array using store bytes in an array
+    @ForceInline
+    static void storeShortBE(byte[] bytes, int offset, short value) {
+        storeBytes(bytes, offset, (byte)(value >> 8),
+                                  (byte)(value >> 0));
+    }
+
+    // Store an int BE into an array using store bytes in an array
+    @ForceInline
+    static void storeIntBE(byte[] bytes, int offset, int value) {
+        storeBytes(bytes, offset, (byte)(value >> 24),
+                                  (byte)(value >> 16),
+                                  (byte)(value >> 8 ),
+                                  (byte)(value >> 0 ));
+    }
+
+    // Store an int BE into an array using store bytes in an array
+    @ForceInline
+    static void storeLongBE(byte[] bytes, int offset, long value) {
+        storeBytes(bytes, offset, (byte)(value >> 56),
+                                  (byte)(value >> 48),
+                                  (byte)(value >> 40),
+                                  (byte)(value >> 32),
+                                  (byte)(value >> 24),
+                                  (byte)(value >> 16),
+                                  (byte)(value >> 8 ),
+                                  (byte)(value >> 0 ));
+    }
+
     // Store 2 bytes into an array
     @ForceInline
     static void storeBytes(byte[] bytes, int offset, byte b0, byte b1) {
@@ -476,7 +516,7 @@ public class TestMergeStores {
     static Object[] test1b(byte[] a) {
         // Add custom null check, to ensure the unsafe access always recognizes its type as an array store
         if (a == null) {return null;}
-        UNSAFE.putLongUnaligned(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET, 0xdeadbeefbaadbabeL);
+        UNSAFE.putLongUnaligned(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET, 0xdeadbeefbaadbabeL, false /* bigEndian */);
         return new Object[]{ a };
     }
 
@@ -576,14 +616,25 @@ public class TestMergeStores {
 
     @DontCompile
     static Object[] test2R(byte[] a, int offset, long v) {
-        a[offset + 0] = (byte)(v >> 0);
-        a[offset + 1] = (byte)(v >> 8);
-        a[offset + 2] = (byte)(v >> 16);
-        a[offset + 3] = (byte)(v >> 24);
-        a[offset + 4] = (byte)(v >> 32);
-        a[offset + 5] = (byte)(v >> 40);
-        a[offset + 6] = (byte)(v >> 48);
-        a[offset + 7] = (byte)(v >> 56);
+        if (IS_BIG_ENDIAN) {
+            a[offset + 0] = (byte)(v >> 56);
+            a[offset + 1] = (byte)(v >> 48);
+            a[offset + 2] = (byte)(v >> 40);
+            a[offset + 3] = (byte)(v >> 32);
+            a[offset + 4] = (byte)(v >> 24);
+            a[offset + 5] = (byte)(v >> 16);
+            a[offset + 6] = (byte)(v >> 8);
+            a[offset + 7] = (byte)(v >> 0);
+        } else {
+            a[offset + 0] = (byte)(v >> 0);
+            a[offset + 1] = (byte)(v >> 8);
+            a[offset + 2] = (byte)(v >> 16);
+            a[offset + 3] = (byte)(v >> 24);
+            a[offset + 4] = (byte)(v >> 32);
+            a[offset + 5] = (byte)(v >> 40);
+            a[offset + 6] = (byte)(v >> 48);
+            a[offset + 7] = (byte)(v >> 56);
+        }
         return new Object[]{ a };
     }
 
@@ -591,14 +642,25 @@ public class TestMergeStores {
     @IR(counts = {IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"},
         applyIf = {"UseUnalignedAccesses", "true"})
     static Object[] test2a(byte[] a, int offset, long v) {
-        a[offset + 0] = (byte)(v >> 0);
-        a[offset + 1] = (byte)(v >> 8);
-        a[offset + 2] = (byte)(v >> 16);
-        a[offset + 3] = (byte)(v >> 24);
-        a[offset + 4] = (byte)(v >> 32);
-        a[offset + 5] = (byte)(v >> 40);
-        a[offset + 6] = (byte)(v >> 48);
-        a[offset + 7] = (byte)(v >> 56);
+        if (IS_BIG_ENDIAN) {
+            a[offset + 0] = (byte)(v >> 56);
+            a[offset + 1] = (byte)(v >> 48);
+            a[offset + 2] = (byte)(v >> 40);
+            a[offset + 3] = (byte)(v >> 32);
+            a[offset + 4] = (byte)(v >> 24);
+            a[offset + 5] = (byte)(v >> 16);
+            a[offset + 6] = (byte)(v >> 8);
+            a[offset + 7] = (byte)(v >> 0);
+        } else {
+            a[offset + 0] = (byte)(v >> 0);
+            a[offset + 1] = (byte)(v >> 8);
+            a[offset + 2] = (byte)(v >> 16);
+            a[offset + 3] = (byte)(v >> 24);
+            a[offset + 4] = (byte)(v >> 32);
+            a[offset + 5] = (byte)(v >> 40);
+            a[offset + 6] = (byte)(v >> 48);
+            a[offset + 7] = (byte)(v >> 56);
+        }
         return new Object[]{ a };
     }
 
@@ -616,38 +678,65 @@ public class TestMergeStores {
     @IR(counts = {IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"},
         applyIf = {"UseUnalignedAccesses", "true"})
     static Object[] test2c(byte[] a, int offset, long v) {
-        storeLongLE(a, offset, v);
+        if (IS_BIG_ENDIAN) {
+            storeLongBE(a, offset, v);
+        } else {
+            storeLongLE(a, offset, v);
+        }
         return new Object[]{ a };
     }
 
     @Test
     // No optimization, casting long -> int -> byte does not work
     static Object[] test2d(byte[] a, int offset, long v) {
-        storeIntLE(a, offset + 0, (int)(v >> 0));
-        storeIntLE(a, offset + 4, (int)(v >> 32));
+        if (IS_BIG_ENDIAN) {
+            storeIntBE(a, offset + 0, (int)(v >> 32));
+            storeIntBE(a, offset + 4, (int)(v >> 0));
+        } else {
+            storeIntLE(a, offset + 0, (int)(v >> 0));
+            storeIntLE(a, offset + 4, (int)(v >> 32));
+        }
         return new Object[]{ a };
     }
 
     @Test
     // No optimization, casting long -> short -> byte does not work
     static Object[] test2e(byte[] a, int offset, long v) {
-        storeShortLE(a, offset + 0, (short)(v >> 0));
-        storeShortLE(a, offset + 2, (short)(v >> 16));
-        storeShortLE(a, offset + 4, (short)(v >> 32));
-        storeShortLE(a, offset + 6, (short)(v >> 48));
+        if (IS_BIG_ENDIAN) {
+            storeShortBE(a, offset + 0, (short)(v >> 48));
+            storeShortBE(a, offset + 2, (short)(v >> 32));
+            storeShortBE(a, offset + 4, (short)(v >> 16));
+            storeShortBE(a, offset + 6, (short)(v >> 0));
+        } else {
+            storeShortLE(a, offset + 0, (short)(v >> 0));
+            storeShortLE(a, offset + 2, (short)(v >> 16));
+            storeShortLE(a, offset + 4, (short)(v >> 32));
+            storeShortLE(a, offset + 6, (short)(v >> 48));
+        }
         return new Object[]{ a };
     }
 
     @DontCompile
     static Object[] test3R(byte[] a, int offset, long v) {
-        a[offset + 0] = (byte)(v >> 0);
-        a[offset + 1] = (byte)(v >> 8);
-        a[offset + 2] = (byte)(v >> 16);
-        a[offset + 3] = (byte)(v >> 24);
-        a[offset + 4] = (byte)(v >> 0);
-        a[offset + 5] = (byte)(v >> 8);
-        a[offset + 6] = (byte)(v >> 16);
-        a[offset + 7] = (byte)(v >> 24);
+        if (IS_BIG_ENDIAN) {
+            a[offset + 0] = (byte)(v >> 24);
+            a[offset + 1] = (byte)(v >> 16);
+            a[offset + 2] = (byte)(v >> 8);
+            a[offset + 3] = (byte)(v >> 0);
+            a[offset + 4] = (byte)(v >> 24);
+            a[offset + 5] = (byte)(v >> 16);
+            a[offset + 6] = (byte)(v >> 8);
+            a[offset + 7] = (byte)(v >> 0);
+        } else {
+            a[offset + 0] = (byte)(v >> 0);
+            a[offset + 1] = (byte)(v >> 8);
+            a[offset + 2] = (byte)(v >> 16);
+            a[offset + 3] = (byte)(v >> 24);
+            a[offset + 4] = (byte)(v >> 0);
+            a[offset + 5] = (byte)(v >> 8);
+            a[offset + 6] = (byte)(v >> 16);
+            a[offset + 7] = (byte)(v >> 24);
+        }
         return new Object[]{ a };
     }
 
@@ -655,14 +744,25 @@ public class TestMergeStores {
     @IR(counts = {IRNode.STORE_I_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "2"},
         applyIf = {"UseUnalignedAccesses", "true"})
     static Object[] test3a(byte[] a, int offset, long v) {
-        a[offset + 0] = (byte)(v >> 0);
-        a[offset + 1] = (byte)(v >> 8);
-        a[offset + 2] = (byte)(v >> 16);
-        a[offset + 3] = (byte)(v >> 24);
-        a[offset + 4] = (byte)(v >> 0);
-        a[offset + 5] = (byte)(v >> 8);
-        a[offset + 6] = (byte)(v >> 16);
-        a[offset + 7] = (byte)(v >> 24);
+        if (IS_BIG_ENDIAN) {
+            a[offset + 0] = (byte)(v >> 24);
+            a[offset + 1] = (byte)(v >> 16);
+            a[offset + 2] = (byte)(v >> 8);
+            a[offset + 3] = (byte)(v >> 0);
+            a[offset + 4] = (byte)(v >> 24);
+            a[offset + 5] = (byte)(v >> 16);
+            a[offset + 6] = (byte)(v >> 8);
+            a[offset + 7] = (byte)(v >> 0);
+        } else {
+            a[offset + 0] = (byte)(v >> 0);
+            a[offset + 1] = (byte)(v >> 8);
+            a[offset + 2] = (byte)(v >> 16);
+            a[offset + 3] = (byte)(v >> 24);
+            a[offset + 4] = (byte)(v >> 0);
+            a[offset + 5] = (byte)(v >> 8);
+            a[offset + 6] = (byte)(v >> 16);
+            a[offset + 7] = (byte)(v >> 24);
+        }
         return new Object[]{ a };
     }
 
@@ -672,18 +772,32 @@ public class TestMergeStores {
         a[offset +  1] = (byte)0xFF;
         a[offset +  2] = v4;
         a[offset +  3] = (byte)0x42;
-        a[offset +  4] = (byte)(v1 >> 0);
-        a[offset +  5] = (byte)(v1 >> 8);
+        if (IS_BIG_ENDIAN) {
+            a[offset +  4] = (byte)(v1 >> 8);
+            a[offset +  5] = (byte)(v1 >> 0);
+        } else {
+            a[offset +  4] = (byte)(v1 >> 0);
+            a[offset +  5] = (byte)(v1 >> 8);
+        }
         a[offset +  6] = (byte)0xAB;
         a[offset +  7] = (byte)0xCD;
         a[offset +  8] = (byte)0xEF;
         a[offset +  9] = (byte)0x01;
-        a[offset + 10] = (byte)(v2 >> 0);
-        a[offset + 11] = (byte)(v2 >> 8);
-        a[offset + 12] = (byte)(v2 >> 16);
-        a[offset + 13] = (byte)(v2 >> 24);
-        a[offset + 14] = (byte)(v3 >> 0);
-        a[offset + 15] = (byte)(v3 >> 8);
+        if (IS_BIG_ENDIAN) {
+            a[offset + 10] = (byte)(v2 >> 24);
+            a[offset + 11] = (byte)(v2 >> 16);
+            a[offset + 12] = (byte)(v2 >> 8);
+            a[offset + 13] = (byte)(v2 >> 0);
+            a[offset + 14] = (byte)(v3 >> 8);
+            a[offset + 15] = (byte)(v3 >> 0);
+        } else {
+            a[offset + 10] = (byte)(v2 >> 0);
+            a[offset + 11] = (byte)(v2 >> 8);
+            a[offset + 12] = (byte)(v2 >> 16);
+            a[offset + 13] = (byte)(v2 >> 24);
+            a[offset + 14] = (byte)(v3 >> 0);
+            a[offset + 15] = (byte)(v3 >> 8);
+        }
         a[offset + 16] = (byte)0xEF;
         return new Object[]{ a };
     }
@@ -699,18 +813,32 @@ public class TestMergeStores {
         a[offset +  1] = (byte)0xFF;
         a[offset +  2] = v4;
         a[offset +  3] = (byte)0x42;
-        a[offset +  4] = (byte)(v1 >> 0);
-        a[offset +  5] = (byte)(v1 >> 8);
+        if (IS_BIG_ENDIAN) {
+            a[offset +  4] = (byte)(v1 >> 8);
+            a[offset +  5] = (byte)(v1 >> 0);
+        } else {
+            a[offset +  4] = (byte)(v1 >> 0);
+            a[offset +  5] = (byte)(v1 >> 8);
+        }
         a[offset +  6] = (byte)0xAB;
         a[offset +  7] = (byte)0xCD;
         a[offset +  8] = (byte)0xEF;
         a[offset +  9] = (byte)0x01;
-        a[offset + 10] = (byte)(v2 >> 0);
-        a[offset + 11] = (byte)(v2 >> 8);
-        a[offset + 12] = (byte)(v2 >> 16);
-        a[offset + 13] = (byte)(v2 >> 24);
-        a[offset + 14] = (byte)(v3 >> 0);
-        a[offset + 15] = (byte)(v3 >> 8);
+        if (IS_BIG_ENDIAN) {
+            a[offset + 10] = (byte)(v2 >> 24);
+            a[offset + 11] = (byte)(v2 >> 16);
+            a[offset + 12] = (byte)(v2 >> 8);
+            a[offset + 13] = (byte)(v2 >> 0);
+            a[offset + 14] = (byte)(v3 >> 8);
+            a[offset + 15] = (byte)(v3 >> 0);
+        } else {
+            a[offset + 10] = (byte)(v2 >> 0);
+            a[offset + 11] = (byte)(v2 >> 8);
+            a[offset + 12] = (byte)(v2 >> 16);
+            a[offset + 13] = (byte)(v2 >> 24);
+            a[offset + 14] = (byte)(v3 >> 0);
+            a[offset + 15] = (byte)(v3 >> 8);
+        }
         a[offset + 16] = (byte)0xEF;
         return new Object[]{ a };
     }
@@ -792,9 +920,15 @@ public class TestMergeStores {
 
     @DontCompile
     static Object[] test7R(byte[] a, int offset1, int v1) {
-        a[offset1 +  1] = (byte)(v1 >> 8);
-        a[offset1 +  2] = (byte)(v1 >> 16);
-        a[offset1 +  3] = (byte)(v1 >> 24);
+        if (IS_BIG_ENDIAN) {
+            a[offset1 +  1] = (byte)(v1 >> 24);
+            a[offset1 +  2] = (byte)(v1 >> 16);
+            a[offset1 +  3] = (byte)(v1 >> 8);
+        } else {
+            a[offset1 +  1] = (byte)(v1 >> 8);
+            a[offset1 +  2] = (byte)(v1 >> 16);
+            a[offset1 +  3] = (byte)(v1 >> 24);
+        }
         return new Object[]{ a };
     }
 
@@ -804,9 +938,15 @@ public class TestMergeStores {
                   IRNode.STORE_I_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
                   IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0"})
     static Object[] test7a(byte[] a, int offset1, int v1) {
-        a[offset1 +  1] = (byte)(v1 >> 8);
-        a[offset1 +  2] = (byte)(v1 >> 16);
-        a[offset1 +  3] = (byte)(v1 >> 24);
+        if (IS_BIG_ENDIAN) {
+            a[offset1 +  1] = (byte)(v1 >> 24);
+            a[offset1 +  2] = (byte)(v1 >> 16);
+            a[offset1 +  3] = (byte)(v1 >> 8);
+        } else {
+            a[offset1 +  1] = (byte)(v1 >> 8);
+            a[offset1 +  2] = (byte)(v1 >> 16);
+            a[offset1 +  3] = (byte)(v1 >> 24);
+        }
         return new Object[]{ a };
     }
 
@@ -904,18 +1044,33 @@ public class TestMergeStores {
         a[offset +  1] = (short)0xFFFF;
         a[offset +  2] = v3;
         a[offset +  3] = (short)0x4242;
-        a[offset +  4] = (short)(v1 >>  0);
-        a[offset +  5] = (short)(v1 >> 16);
-        a[offset +  6] = (short)0xAB11;
-        a[offset +  7] = (short)0xCD36;
-        a[offset +  8] = (short)0xEF89;
-        a[offset +  9] = (short)0x0156;
-        a[offset + 10] = (short)(v1 >> 0);
-        a[offset + 11] = (short)(v1 >> 16);
-        a[offset + 12] = (short)(v1 >> 32);
-        a[offset + 13] = (short)(v1 >> 48);
-        a[offset + 14] = (short)(v2 >> 0);
-        a[offset + 15] = (short)(v2 >> 16);
+        if (IS_BIG_ENDIAN) {
+            a[offset +  4] = (short)(v1 >> 16);
+            a[offset +  5] = (short)(v1 >>  0);
+            a[offset +  6] = (short)0xAB11;
+            a[offset +  7] = (short)0xCD36;
+            a[offset +  8] = (short)0xEF89;
+            a[offset +  9] = (short)0x0156;
+            a[offset + 10] = (short)(v1 >> 48);
+            a[offset + 11] = (short)(v1 >> 32);
+            a[offset + 12] = (short)(v1 >> 16);
+            a[offset + 13] = (short)(v1 >> 0);
+            a[offset + 14] = (short)(v2 >> 16);
+            a[offset + 15] = (short)(v2 >> 0);
+        } else {
+            a[offset +  4] = (short)(v1 >>  0);
+            a[offset +  5] = (short)(v1 >> 16);
+            a[offset +  6] = (short)0xAB11;
+            a[offset +  7] = (short)0xCD36;
+            a[offset +  8] = (short)0xEF89;
+            a[offset +  9] = (short)0x0156;
+            a[offset + 10] = (short)(v1 >> 0);
+            a[offset + 11] = (short)(v1 >> 16);
+            a[offset + 12] = (short)(v1 >> 32);
+            a[offset + 13] = (short)(v1 >> 48);
+            a[offset + 14] = (short)(v2 >> 0);
+            a[offset + 15] = (short)(v2 >> 16);
+        }
         a[offset + 16] = (short)0xEFEF;
         return new Object[]{ a };
     }
@@ -931,18 +1086,33 @@ public class TestMergeStores {
         a[offset +  1] = (short)0xFFFF;
         a[offset +  2] = v3;
         a[offset +  3] = (short)0x4242;
-        a[offset +  4] = (short)(v1 >>  0);
-        a[offset +  5] = (short)(v1 >> 16);
-        a[offset +  6] = (short)0xAB11;
-        a[offset +  7] = (short)0xCD36;
-        a[offset +  8] = (short)0xEF89;
-        a[offset +  9] = (short)0x0156;
-        a[offset + 10] = (short)(v1 >> 0);
-        a[offset + 11] = (short)(v1 >> 16);
-        a[offset + 12] = (short)(v1 >> 32);
-        a[offset + 13] = (short)(v1 >> 48);
-        a[offset + 14] = (short)(v2 >> 0);
-        a[offset + 15] = (short)(v2 >> 16);
+        if (IS_BIG_ENDIAN) {
+            a[offset +  4] = (short)(v1 >> 16);
+            a[offset +  5] = (short)(v1 >>  0);
+            a[offset +  6] = (short)0xAB11;
+            a[offset +  7] = (short)0xCD36;
+            a[offset +  8] = (short)0xEF89;
+            a[offset +  9] = (short)0x0156;
+            a[offset + 10] = (short)(v1 >> 48);
+            a[offset + 11] = (short)(v1 >> 32);
+            a[offset + 12] = (short)(v1 >> 16);
+            a[offset + 13] = (short)(v1 >> 0);
+            a[offset + 14] = (short)(v2 >> 16);
+            a[offset + 15] = (short)(v2 >> 0);
+        } else {
+            a[offset +  4] = (short)(v1 >>  0);
+            a[offset +  5] = (short)(v1 >> 16);
+            a[offset +  6] = (short)0xAB11;
+            a[offset +  7] = (short)0xCD36;
+            a[offset +  8] = (short)0xEF89;
+            a[offset +  9] = (short)0x0156;
+            a[offset + 10] = (short)(v1 >> 0);
+            a[offset + 11] = (short)(v1 >> 16);
+            a[offset + 12] = (short)(v1 >> 32);
+            a[offset + 13] = (short)(v1 >> 48);
+            a[offset + 14] = (short)(v2 >> 0);
+            a[offset + 15] = (short)(v2 >> 16);
+        }
         a[offset + 16] = (short)0xEFEF;
         return new Object[]{ a };
     }
@@ -1041,16 +1211,28 @@ public class TestMergeStores {
         a[offset +  1] = 0xFFFFFFFF;
         a[offset +  2] = v2;
         a[offset +  3] = 0x42424242;
-        a[offset +  4] = (int)(v1 >>  0);
-        a[offset +  5] = (int)(v1 >> 32);
+        if (IS_BIG_ENDIAN) {
+            a[offset +  4] = (int)(v1 >> 32);
+            a[offset +  5] = (int)(v1 >>  0);
+        } else {
+            a[offset +  4] = (int)(v1 >>  0);
+            a[offset +  5] = (int)(v1 >> 32);
+        }
         a[offset +  6] = 0xAB110129;
         a[offset +  7] = 0xCD360183;
         a[offset +  8] = 0xEF890173;
         a[offset +  9] = 0x01560124;
-        a[offset + 10] = (int)(v1 >> 0);
-        a[offset + 11] = (int)(v1 >> 32);
-        a[offset + 12] = (int)(v1 >> 0);
-        a[offset + 13] = (int)(v1 >> 32);
+        if (IS_BIG_ENDIAN) {
+            a[offset + 10] = (int)(v1 >> 32);
+            a[offset + 11] = (int)(v1 >> 0);
+            a[offset + 12] = (int)(v1 >> 32);
+            a[offset + 13] = (int)(v1 >> 0);
+        } else {
+            a[offset + 10] = (int)(v1 >> 0);
+            a[offset + 11] = (int)(v1 >> 32);
+            a[offset + 12] = (int)(v1 >> 0);
+            a[offset + 13] = (int)(v1 >> 32);
+        }
         a[offset + 14] = v2;
         a[offset + 15] = v2;
         a[offset + 16] = 0xEFEFEFEF;
@@ -1068,16 +1250,28 @@ public class TestMergeStores {
         a[offset +  1] = 0xFFFFFFFF;
         a[offset +  2] = v2;
         a[offset +  3] = 0x42424242;
-        a[offset +  4] = (int)(v1 >>  0);
-        a[offset +  5] = (int)(v1 >> 32);
+        if (IS_BIG_ENDIAN) {
+            a[offset +  4] = (int)(v1 >> 32);
+            a[offset +  5] = (int)(v1 >>  0);
+        } else {
+            a[offset +  4] = (int)(v1 >>  0);
+            a[offset +  5] = (int)(v1 >> 32);
+        }
         a[offset +  6] = 0xAB110129;
         a[offset +  7] = 0xCD360183;
         a[offset +  8] = 0xEF890173;
         a[offset +  9] = 0x01560124;
-        a[offset + 10] = (int)(v1 >> 0);
-        a[offset + 11] = (int)(v1 >> 32);
-        a[offset + 12] = (int)(v1 >> 0);
-        a[offset + 13] = (int)(v1 >> 32);
+        if (IS_BIG_ENDIAN) {
+            a[offset + 10] = (int)(v1 >> 32);
+            a[offset + 11] = (int)(v1 >> 0);
+            a[offset + 12] = (int)(v1 >> 32);
+            a[offset + 13] = (int)(v1 >> 0);
+        } else {
+            a[offset + 10] = (int)(v1 >> 0);
+            a[offset + 11] = (int)(v1 >> 32);
+            a[offset + 12] = (int)(v1 >> 0);
+            a[offset + 13] = (int)(v1 >> 32);
+        }
         a[offset + 14] = v2;
         a[offset + 15] = v2;
         a[offset + 16] = 0xEFEFEFEF;
@@ -1148,26 +1342,49 @@ public class TestMergeStores {
     // 502a: during warmup never violate RangeCheck -> compile once with merged stores
     //       but then after warmup violate RangeCheck -> recompile without merged stores
     static Object[] test500R(byte[] a, int offset, long v) {
-        int idx = 0;
-        try {
-            a[offset + 0] = (byte)(v >> 0);
-            idx = 1;
-            a[offset + 1] = (byte)(v >> 8);
-            idx = 2;
-            a[offset + 2] = (byte)(v >> 16);
-            idx = 3;
-            a[offset + 3] = (byte)(v >> 24);
-            idx = 4;
-            a[offset + 4] = (byte)(v >> 32);
-            idx = 5;
-            a[offset + 5] = (byte)(v >> 40);
-            idx = 6;
-            a[offset + 6] = (byte)(v >> 48);
-            idx = 7;
-            a[offset + 7] = (byte)(v >> 56);
-            idx = 8;
-        } catch (ArrayIndexOutOfBoundsException _) {}
-        return new Object[]{ a, new int[]{ idx } };
+        if (IS_BIG_ENDIAN) {
+            int idx = 0;
+            try {
+                a[offset + 0] = (byte)(v >> 56);
+                idx = 1;
+                a[offset + 1] = (byte)(v >> 48);
+                idx = 2;
+                a[offset + 2] = (byte)(v >> 40);
+                idx = 3;
+                a[offset + 3] = (byte)(v >> 32);
+                idx = 4;
+                a[offset + 4] = (byte)(v >> 24);
+                idx = 5;
+                a[offset + 5] = (byte)(v >> 16);
+                idx = 6;
+                a[offset + 6] = (byte)(v >> 8);
+                idx = 7;
+                a[offset + 7] = (byte)(v >> 0);
+                idx = 8;
+            } catch (ArrayIndexOutOfBoundsException _) {}
+            return new Object[]{ a, new int[]{ idx } };
+        } else {
+            int idx = 0;
+            try {
+                a[offset + 0] = (byte)(v >> 0);
+                idx = 1;
+                a[offset + 1] = (byte)(v >> 8);
+                idx = 2;
+                a[offset + 2] = (byte)(v >> 16);
+                idx = 3;
+                a[offset + 3] = (byte)(v >> 24);
+                idx = 4;
+                a[offset + 4] = (byte)(v >> 32);
+                idx = 5;
+                a[offset + 5] = (byte)(v >> 40);
+                idx = 6;
+                a[offset + 6] = (byte)(v >> 48);
+                idx = 7;
+                a[offset + 7] = (byte)(v >> 56);
+                idx = 8;
+            } catch (ArrayIndexOutOfBoundsException _) {}
+            return new Object[]{ a, new int[]{ idx } };
+        }
     }
 
     @Test
@@ -1177,82 +1394,165 @@ public class TestMergeStores {
                   IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"}, // expect merged
         applyIf = {"UseUnalignedAccesses", "true"})
     static Object[] test500a(byte[] a, int offset, long v) {
-        int idx = 0;
-        try {
-            a[offset + 0] = (byte)(v >> 0);
-            idx = 1;
-            a[offset + 1] = (byte)(v >> 8);
-            idx = 2;
-            a[offset + 2] = (byte)(v >> 16);
-            idx = 3;
-            a[offset + 3] = (byte)(v >> 24);
-            idx = 4;
-            a[offset + 4] = (byte)(v >> 32);
-            idx = 5;
-            a[offset + 5] = (byte)(v >> 40);
-            idx = 6;
-            a[offset + 6] = (byte)(v >> 48);
-            idx = 7;
-            a[offset + 7] = (byte)(v >> 56);
-            idx = 8;
-        } catch (ArrayIndexOutOfBoundsException _) {}
-        return new Object[]{ a, new int[]{ idx } };
+        if (IS_BIG_ENDIAN) {
+            int idx = 0;
+            try {
+                a[offset + 0] = (byte)(v >> 56);
+                idx = 1;
+                a[offset + 1] = (byte)(v >> 48);
+                idx = 2;
+                a[offset + 2] = (byte)(v >> 40);
+                idx = 3;
+                a[offset + 3] = (byte)(v >> 32);
+                idx = 4;
+                a[offset + 4] = (byte)(v >> 24);
+                idx = 5;
+                a[offset + 5] = (byte)(v >> 16);
+                idx = 6;
+                a[offset + 6] = (byte)(v >> 8);
+                idx = 7;
+                a[offset + 7] = (byte)(v >> 0);
+                idx = 8;
+            } catch (ArrayIndexOutOfBoundsException _) {}
+            return new Object[]{ a, new int[]{ idx } };
+        } else {
+            int idx = 0;
+            try {
+                a[offset + 0] = (byte)(v >> 0);
+                idx = 1;
+                a[offset + 1] = (byte)(v >> 8);
+                idx = 2;
+                a[offset + 2] = (byte)(v >> 16);
+                idx = 3;
+                a[offset + 3] = (byte)(v >> 24);
+                idx = 4;
+                a[offset + 4] = (byte)(v >> 32);
+                idx = 5;
+                a[offset + 5] = (byte)(v >> 40);
+                idx = 6;
+                a[offset + 6] = (byte)(v >> 48);
+                idx = 7;
+                a[offset + 7] = (byte)(v >> 56);
+                idx = 8;
+            } catch (ArrayIndexOutOfBoundsException _) {}
+            return new Object[]{ a, new int[]{ idx } };
+        }
     }
 
     @Test
     @IR(counts = {IRNode.STORE_B_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "8", // No optimization because of too many RangeChecks
                   IRNode.STORE_C_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
                   IRNode.STORE_I_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
-                  IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0"})
+                  IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0"},
+        applyIfPlatform = {"little-endian", "true"})
+    @IR(counts = {IRNode.STORE_B_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "7",
+                  IRNode.STORE_C_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1",
+                  IRNode.STORE_I_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+                  IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0"},
+        applyIf = {"UseUnalignedAccesses", "true"},
+        applyIfPlatform = {"big-endian", "true"})
     static Object[] test501a(byte[] a, int offset, long v) {
-        int idx = 0;
-        try {
-            a[offset + 0] = (byte)(v >> 0);
-            idx = 1;
-            a[offset + 1] = (byte)(v >> 8);
-            idx = 2;
-            a[offset + 2] = (byte)(v >> 16);
-            idx = 3;
-            a[offset + 3] = (byte)(v >> 24);
-            idx = 4;
-            a[offset + 4] = (byte)(v >> 32);
-            idx = 5;
-            a[offset + 5] = (byte)(v >> 40);
-            idx = 6;
-            a[offset + 6] = (byte)(v >> 48);
-            idx = 7;
-            a[offset + 7] = (byte)(v >> 56);
-            idx = 8;
-        } catch (ArrayIndexOutOfBoundsException _) {}
-        return new Object[]{ a, new int[]{ idx } };
+        if (IS_BIG_ENDIAN) {
+            int idx = 0;
+            try {
+                a[offset + 0] = (byte)(v >> 56);
+                idx = 1;
+                a[offset + 1] = (byte)(v >> 48);
+                idx = 2;
+                a[offset + 2] = (byte)(v >> 40);
+                idx = 3;
+                a[offset + 3] = (byte)(v >> 32);
+                idx = 4;
+                a[offset + 4] = (byte)(v >> 24);
+                idx = 5;
+                a[offset + 5] = (byte)(v >> 16);
+                idx = 6;
+                a[offset + 6] = (byte)(v >> 8); // 2 lowest StoreB are merged. 7th StoreB is
+                idx = 7;                        // needed if RC for a[offset + 7] fails.
+                a[offset + 7] = (byte)(v >> 0);
+                idx = 8;
+            } catch (ArrayIndexOutOfBoundsException _) {}
+            return new Object[]{ a, new int[]{ idx } };
+        } else {
+            int idx = 0;
+            try {
+                a[offset + 0] = (byte)(v >> 0);
+                idx = 1;
+                a[offset + 1] = (byte)(v >> 8);
+                idx = 2;
+                a[offset + 2] = (byte)(v >> 16);
+                idx = 3;
+                a[offset + 3] = (byte)(v >> 24);
+                idx = 4;
+                a[offset + 4] = (byte)(v >> 32);
+                idx = 5;
+                a[offset + 5] = (byte)(v >> 40);
+                idx = 6;
+                a[offset + 6] = (byte)(v >> 48);
+                idx = 7;
+                a[offset + 7] = (byte)(v >> 56);
+                idx = 8;
+            } catch (ArrayIndexOutOfBoundsException _) {}
+            return new Object[]{ a, new int[]{ idx } };
+        }
     }
 
     @Test
     @IR(counts = {IRNode.STORE_B_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "8", // No optimization because of too many RangeChecks
                   IRNode.STORE_C_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
                   IRNode.STORE_I_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
-                  IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0"})
+                  IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0"},
+        applyIfPlatform = {"little-endian", "true"})
+    @IR(counts = {IRNode.STORE_B_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "7",
+                  IRNode.STORE_C_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1",
+                  IRNode.STORE_I_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+                  IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0"},
+        applyIf = {"UseUnalignedAccesses", "true"},
+        applyIfPlatform = {"big-endian", "true"})
     static Object[] test502a(byte[] a, int offset, long v) {
-        int idx = 0;
-        try {
-            a[offset + 0] = (byte)(v >> 0);
-            idx = 1;
-            a[offset + 1] = (byte)(v >> 8);
-            idx = 2;
-            a[offset + 2] = (byte)(v >> 16);
-            idx = 3;
-            a[offset + 3] = (byte)(v >> 24);
-            idx = 4;
-            a[offset + 4] = (byte)(v >> 32);
-            idx = 5;
-            a[offset + 5] = (byte)(v >> 40);
-            idx = 6;
-            a[offset + 6] = (byte)(v >> 48);
-            idx = 7;
-            a[offset + 7] = (byte)(v >> 56);
-            idx = 8;
-        } catch (ArrayIndexOutOfBoundsException _) {}
-        return new Object[]{ a, new int[]{ idx } };
+        if (IS_BIG_ENDIAN) {
+            int idx = 0;
+            try {
+                a[offset + 0] = (byte)(v >> 56);
+                idx = 1;
+                a[offset + 1] = (byte)(v >> 48);
+                idx = 2;
+                a[offset + 2] = (byte)(v >> 40);
+                idx = 3;
+                a[offset + 3] = (byte)(v >> 32);
+                idx = 4;
+                a[offset + 4] = (byte)(v >> 24);
+                idx = 5;
+                a[offset + 5] = (byte)(v >> 16);
+                idx = 6;
+                a[offset + 6] = (byte)(v >> 8); // 2 lowest StoreB are merged. 7th StoreB is
+                idx = 7;                        // needed if RC for a[offset + 7] fails.
+                a[offset + 7] = (byte)(v >> 0);
+                idx = 8;
+            } catch (ArrayIndexOutOfBoundsException _) {}
+            return new Object[]{ a, new int[]{ idx } };
+        } else {
+            int idx = 0;
+            try {
+                a[offset + 0] = (byte)(v >> 0);
+                idx = 1;
+                a[offset + 1] = (byte)(v >> 8);
+                idx = 2;
+                a[offset + 2] = (byte)(v >> 16);
+                idx = 3;
+                a[offset + 3] = (byte)(v >> 24);
+                idx = 4;
+                a[offset + 4] = (byte)(v >> 32);
+                idx = 5;
+                a[offset + 5] = (byte)(v >> 40);
+                idx = 6;
+                a[offset + 6] = (byte)(v >> 48);
+                idx = 7;
+                a[offset + 7] = (byte)(v >> 56);
+                idx = 8;
+            } catch (ArrayIndexOutOfBoundsException _) {}
+            return new Object[]{ a, new int[]{ idx } };
+        }
     }
 
     @DontCompile
@@ -1317,6 +1617,57 @@ public class TestMergeStores {
         // Negative shift: cannot optimize
         a[0] = (int)(v1 >> -1);
         a[1] = (int)(v1 >> -2);
+        return new Object[]{ a };
+    }
+
+    @DontCompile
+    static Object[] test800R(byte[] a, int offset, long v) {
+        if (IS_BIG_ENDIAN) {
+            a[offset + 0] = (byte)(v >> 40);
+            a[offset + 1] = (byte)(v >> 32);
+            a[offset + 2] = (byte)(v >> 24);
+            a[offset + 3] = (byte)(v >> 16);
+            a[offset + 4] = (byte)(v >> 8);
+            a[offset + 5] = (byte)(v >> 0);
+        } else {
+            a[offset + 0] = (byte)(v >> 0);
+            a[offset + 1] = (byte)(v >> 8);
+            a[offset + 2] = (byte)(v >> 16);
+            a[offset + 3] = (byte)(v >> 24);
+            a[offset + 4] = (byte)(v >> 32);
+            a[offset + 5] = (byte)(v >> 40);
+        }
+        return new Object[]{ a };
+    }
+
+    @Test
+    @IR(counts = {IRNode.STORE_B_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "6",
+                  IRNode.STORE_C_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+                  IRNode.STORE_I_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+                  IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0"},
+        applyIfPlatform = {"little-endian", "true"})
+    @IR(counts = {IRNode.STORE_B_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "2",
+                  IRNode.STORE_C_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+                  IRNode.STORE_I_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1",
+                  IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0"},
+        applyIf = {"UseUnalignedAccesses", "true"},
+        applyIfPlatform = {"big-endian", "true"})
+    static Object[] test800a(byte[] a, int offset, long v) {
+        if (IS_BIG_ENDIAN) {
+            a[offset + 0] = (byte)(v >> 40);
+            a[offset + 1] = (byte)(v >> 32);
+            a[offset + 2] = (byte)(v >> 24);  // The lowest stores in the Memory chain can be merged.
+            a[offset + 3] = (byte)(v >> 16);  // This is possible because the input for the merged store
+            a[offset + 4] = (byte)(v >> 8);   // does not require a right shift.
+            a[offset + 5] = (byte)(v >> 0);
+        } else {
+            a[offset + 0] = (byte)(v >> 0);
+            a[offset + 1] = (byte)(v >> 8);
+            a[offset + 2] = (byte)(v >> 16); // The merge is tried with the lowest store in the Memory chain.
+            a[offset + 3] = (byte)(v >> 24); // It fails because the 2 highest stores are ignored aiming for a 4 byte store
+            a[offset + 4] = (byte)(v >> 32); // but this would then require a right shift by 16 to get the input
+            a[offset + 5] = (byte)(v >> 40); // for the merge store.
+        }
         return new Object[]{ a };
     }
 }
