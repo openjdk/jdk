@@ -379,9 +379,9 @@ public class Indify {
     private class Logic {
         // Indify logic, per se.
         ClassFile cf;
-        Bytecode bytecode;
+        Bytecode bytecode; //this is temporary for debugging
         final char[] poolMarks;
-        final char[] pool_Marks;
+        final char[] pool_Marks; //this is temporary for debugging
         final Map<Method,Constant> constants = new HashMap<>();
         final Map<Method,String> indySignatures = new HashMap<>();
         Logic(ClassFile cf, Bytecode bytecode) {
