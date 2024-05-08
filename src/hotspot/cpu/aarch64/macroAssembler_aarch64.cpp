@@ -5546,7 +5546,7 @@ address MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
   int base_offset
     = arrayOopDesc::base_offset_in_bytes(elem_size == 2 ? T_CHAR : T_BYTE);
   // When the length offset is not aligned to 8 bytes,
-  // then we align it down, this is valid as the new
+  // then we align it down. This is valid because the new
   // offset will always be the klass which is the same
   // for type arrays.
   int start_offset = align_down(length_offset, BytesPerWord);
