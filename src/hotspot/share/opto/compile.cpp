@@ -740,19 +740,9 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
   PhaseGVN gvn;
   set_initial_gvn(&gvn);
 
-  // If any phase is randomized for stress testing, seed random number
-  // generation and log the seed for repeatability.
   if (StressLCM || StressGCM || StressIGVN || StressCCP ||
       StressIncrementalInlining || StressMacroExpansion || StressBailout) {
-    if (FLAG_IS_DEFAULT(StressSeed) || (FLAG_IS_ERGO(StressSeed) && directive->RepeatCompilationOption)) {
-      _stress_seed = static_cast<uint>(Ticks::now().nanoseconds());
-      FLAG_SET_ERGO(StressSeed, _stress_seed);
-    } else {
-      _stress_seed = StressSeed;
-    }
-    if (_log != nullptr) {
-      _log->elem("stress_test seed='%u'", _stress_seed);
-    }
+    initialize_stress_seed(directive);
   }
 
   print_inlining_init();
@@ -858,11 +848,6 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
 
   if (failing())  return;
   NOT_PRODUCT( verify_graph_edges(); )
-
-  if (StressLCM || StressGCM || StressIGVN || StressCCP ||
-      StressIncrementalInlining || StressMacroExpansion) {
-    initialize_stress_seed(directive);
-  }
 
   // Now optimize
   Optimize();
@@ -989,7 +974,7 @@ Compile::Compile( ciEnv* ci_env,
   _types = new (comp_arena()) Type_Array(comp_arena());
   _node_hash = new (comp_arena()) NodeHash(comp_arena(), 255);
 
-  if (StressLCM || StressGCM) {
+  if (StressLCM || StressGCM || StressBailout) {
     initialize_stress_seed(directive);
   }
 
