@@ -175,7 +175,9 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
     __ enter();
     ExternalAddress target(slow_case_addr);
     __ relocate(target.rspec(), [&] {
-      __ call(target.target());
+      int32_t offset;
+      __ la(t0, target.target(), offset);
+      __ jalr(t0, offset);
     });
     __ leave();
     __ ret();
