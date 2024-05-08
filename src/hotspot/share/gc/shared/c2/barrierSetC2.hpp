@@ -227,6 +227,7 @@ public:
   }
 
   virtual bool needs_liveness_data(const MachNode* mach) const = 0;
+  virtual bool needs_livein_data() const = 0;
 };
 
 // This class represents the slow path in a C2 barrier. It is defined by a
@@ -238,14 +239,28 @@ protected:
   const MachNode* _node;
   Label           _entry;
   Label           _continuation;
+  RegMask         _preserve;
+
+  // Registers that are live-in/live-out of the entire memory access
+  // implementation (possibly including multiple barriers). Whether live-in or
+  // live-out registers are returned depends on
+  // BarrierSetC2State::needs_livein_data().
+  RegMask& live() const;
 
 public:
   BarrierStubC2(const MachNode* node);
-  RegMask& live() const;
+
+  // Entry point to the stub.
   Label* entry();
+  // Return point from the stub (typically end of barrier).
   Label* continuation();
 
-  virtual Register result() const = 0;
+  // Preserve the value in reg across runtime calls in this barrier.
+  void preserve(Register reg);
+  // Do not preserve the value in reg across runtime calls in this barrier.
+  void dont_preserve(Register reg);
+  // Set of registers whose value needs to be preserved across runtime calls in this barrier.
+  const RegMask& preserve_set() const;
 };
 
 // This is the top-level class for the backend of the Access API in C2.

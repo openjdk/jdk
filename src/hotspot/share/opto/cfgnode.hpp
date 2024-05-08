@@ -493,6 +493,11 @@ class ParsePredicateNode : public IfNode {
     _useless = false;
   }
 
+  // Return the uncommon trap If projection of this Parse Predicate.
+  ParsePredicateUncommonProj* uncommon_proj() const {
+    return proj_out(0)->as_IfFalse();
+  }
+
   Node* uncommon_trap() const;
 
   Node* Ideal(PhaseGVN* phase, bool can_reshape) {
