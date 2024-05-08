@@ -988,32 +988,28 @@ public final class Locale implements Cloneable, Serializable {
             if (locale != null) {
                 return locale;
             }
-            return LOCALE_CACHE.computeIfAbsent(baseloc, LOCALE_LOOKUP);
+            return LOCALE_CACHE.computeIfAbsent(baseloc, LOCALE_CREATOR);
         } else {
             LocaleKey key = new LocaleKey(baseloc, extensions);
-            return LOCALE_CACHE.computeIfAbsent(key, LOCALE_LOOKUP);
+            return LOCALE_CACHE.computeIfAbsent(key, LOCALE_CREATOR);
         }
     }
 
     private static final ReferencedKeyMap<Object, Locale> LOCALE_CACHE
             = ReferencedKeyMap.create(true, ReferencedKeyMap.concurrentHashMapSupplier());
 
-    private static final LocaleKey LOCALE_LOOKUP = new LocaleKey();
-
-    private static final class LocaleKey implements Function<Object, Locale> {
-
+    private static final Function<Object, Locale> LOCALE_CREATOR = new Function<>() {
         @Override
         public Locale apply(Object key) {
-            return createLocale(key);
-        }
-
-        private Locale createLocale(Object key) {
             if (key instanceof BaseLocale base) {
                 return new Locale(base, null);
             }
             LocaleKey lk = (LocaleKey)key;
             return new Locale(lk.base, lk.exts);
         }
+    };
+
+    private static final class LocaleKey {
 
         private final BaseLocale base;
         private final LocaleExtensions exts;
