@@ -383,9 +383,7 @@ public class Indify {
         final char[] poolMarks;
         final char[] pool_Marks;
         final Map<Method,Constant> constants = new HashMap<>();
-        final Map<MethodModel,PoolEntry> constants2 = new HashMap<>();
         final Map<Method,String> indySignatures = new HashMap<>();
-        final Map<MethodModel,String> indy_Signatures = new HashMap<>();
         Logic(ClassFile cf, Bytecode bytecode) {
             this.cf = cf;
             this.bytecode = bytecode;
