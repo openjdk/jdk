@@ -627,9 +627,11 @@ public sealed interface MemoryLayout
      *     (but not less) than the alignment constraint of the selected value layout.</li>
      *     <li>The size of the accessed memory segment (taking into account the base offset {@code B}),
      *     must be equal or greater than the {@linkplain #byteSize() size} of the root layout
-     *     (this layout), or an {@link IndexOutOfBoundsException} is thrown. Note that, as the selected value
-     *     layout is nested inside the root layout, this also implies that {@code O + A <= S},
-     *     where {@code O} is the accessed offset (computed as above),
+     *     (this layout), or an {@link IndexOutOfBoundsException} is thrown.
+     *     <li>The offset of the access operation (computed as above) must fall inside
+     *     the spatial bounds of the accessed memory segment, or an
+     *     {@link IndexOutOfBoundsException} is thrown. This is the case when
+     *     {@code O + A <= S}, where {@code O} is the accessed offset (computed as above),
      *     {@code A} is the size of the selected layout and {@code S} is the size of the
      *     accessed memory segment.</li>
      *     <li>If the provided layout path has an open path element whose size is {@code S},
@@ -825,11 +827,13 @@ public sealed interface MemoryLayout
      *     (but not less) than the alignment constraint of the selected layout.</li>
      *     <li>The size of the accessed memory segment (taking into account the base offset {@code B}),
      *     must be equal or greater than the {@linkplain #byteSize() size} of the root layout
-     *     (this layout), or an {@link IndexOutOfBoundsException} is thrown. Note that, as the selected value
-     *     layout is nested inside the root layout, this also implies that {@code O + A <= S},
-     *     where {@code O} is the start offset of the slicing operation (computed as above),
-     *     {@code A} is the size of the selected layout and {@code S} is the size of the
-     *     accessed memory segment.</li>
+     *     (this layout), or an {@link IndexOutOfBoundsException} is thrown.
+     *     <li>The start offset of the slicing operation (computed as above) must fall
+     *     inside the spatial bounds of the accessed memory segment, or an
+     *     {@link IndexOutOfBoundsException} is thrown. This is the case when
+     *     {@code O + A <= S}, where {@code O} is the start offset of
+     *     the slicing operation (computed as above), {@code A} is the size of the
+     *     selected layout and {@code S} is the size of the accessed memory segment.</li>
      *     <li>If the provided layout path has an open path element whose size is {@code S},
      *     its corresponding trailing {@code long} coordinate value {@code I} must be
      *     {@code 0 <= I < S}, or an {@link IndexOutOfBoundsException} is thrown.</li>
