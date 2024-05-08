@@ -175,17 +175,20 @@ public final class MethodTypeDescImpl implements MethodTypeDesc {
         if (pos < 0 || pos > argTypes.length)
             throw new IndexOutOfBoundsException(pos);
 
-        for (ClassDesc param : paramTypes)
-            validateArgument(param);
-
         ClassDesc[] newArgs = new ClassDesc[argTypes.length + paramTypes.length];
         if (pos > 0) {
             System.arraycopy(argTypes, 0, newArgs, 0, pos);
         }
         System.arraycopy(paramTypes, 0, newArgs, pos, paramTypes.length);
+        int destPos = pos + paramTypes.length;
         if (pos < argTypes.length) {
-            System.arraycopy(argTypes, pos, newArgs, pos + paramTypes.length, argTypes.length - pos);
+            System.arraycopy(argTypes, pos, newArgs, destPos, argTypes.length - pos);
         }
+        // Validate after copying to avoid TOCTOU
+        for (int i = pos; i < destPos; i++) {
+            validateArgument(argTypes[i]);
+        }
+
         return ofValidated(returnType, newArgs);
     }
 
