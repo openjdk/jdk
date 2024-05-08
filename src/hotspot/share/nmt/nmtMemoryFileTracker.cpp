@@ -41,8 +41,8 @@ MemoryFileTracker::MemoryFileTracker(bool is_detailed_mode)
 }
 
 void MemoryFileTracker::allocate_memory(MemoryFile* device, size_t offset,
-                                        size_t size, MEMFLAGS flag,
-                                        const NativeCallStack& stack) {
+                                        size_t size, const NativeCallStack& stack,
+                                        MEMFLAGS flag) {
   NativeCallStackStorage::StackIndex sidx = _stack_storage.push(stack);
   VMATree::Metadata metadata(sidx, flag);
   VMATree::SummaryDiff diff = device->_tree.reserve_mapping(offset, size, metadata);
@@ -117,8 +117,8 @@ bool MemoryFileTracker::Instance::initialize(NMT_TrackingLevel tracking_level) {
 }
 
 void MemoryFileTracker::Instance::allocate_memory(MemoryFile* device, size_t offset,
-                                                  size_t size, MEMFLAGS flag,
-                                                  const NativeCallStack& stack) {
+                                                  size_t size, const NativeCallStack& stack,
+                                                  MEMFLAGS flag) {
   _tracker->allocate_memory(device, offset, size, flag, stack);
 }
 

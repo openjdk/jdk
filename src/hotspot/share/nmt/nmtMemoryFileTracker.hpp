@@ -65,8 +65,8 @@ private:
 public:
   MemoryFileTracker(bool is_detailed_mode);
 
-  void allocate_memory(MemoryFile* device, size_t offset, size_t size, MEMFLAGS flag,
-                       const NativeCallStack& stack);
+  void allocate_memory(MemoryFile* device, size_t offset, size_t size, const NativeCallStack& stack,
+                       MEMFLAGS flag);
   void free_memory(MemoryFile* device, size_t offset, size_t size);
 
   MemoryFile* make_device(const char* descriptive_name);
@@ -98,7 +98,7 @@ public:
     static void free_device(MemoryFile* device);
 
     static void allocate_memory(MemoryFile* device, size_t offset, size_t size,
-                                MEMFLAGS flag, const NativeCallStack& stack);
+                                const NativeCallStack& stack, MEMFLAGS flag);
     static void free_memory(MemoryFile* device, size_t offset, size_t size);
 
     static const VirtualMemorySnapshot& summary_for(const MemoryFile* device);

@@ -33,15 +33,15 @@ public:
   void basics() {
     MemoryFileTracker tracker(false);
     MemoryFileTracker::MemoryFile* dev = tracker.make_device("test");
-    tracker.allocate_memory(dev, 0, 100, mtTest, CALLER_PC);
+    tracker.allocate_memory(dev, 0, 100, CALLER_PC, mtTest);
     EXPECT_EQ(dev->_summary.by_type(mtTest)->reserved(), sz(100));
-    tracker.allocate_memory(dev, 100, 100, mtTest, CALLER_PC);
+    tracker.allocate_memory(dev, 100, 100, CALLER_PC, mtTest);
     EXPECT_EQ(dev->_summary.by_type(mtTest)->reserved(), sz(200));
-    tracker.allocate_memory(dev, 200, 100, mtTest, CALLER_PC);
+    tracker.allocate_memory(dev, 200, 100, CALLER_PC, mtTest);
     EXPECT_EQ(dev->_summary.by_type(mtTest)->reserved(), sz(300));
     tracker.free_memory(dev, 0, 300);
     EXPECT_EQ(dev->_summary.by_type(mtTest)->reserved(), sz(0));
-    tracker.allocate_memory(dev, 0, 100, mtTest, CALLER_PC);
+    tracker.allocate_memory(dev, 0, 100, CALLER_PC, mtTest);
     EXPECT_EQ(dev->_summary.by_type(mtTest)->reserved(), sz(100));
     tracker.free_memory(dev, 50, 10);
     EXPECT_EQ(dev->_summary.by_type(mtTest)->reserved(), sz(90));

@@ -183,12 +183,12 @@ class MemTracker : AllStatic {
   }
 
   static inline void allocate_memory_in(MemoryFileTracker::MemoryFile* device, size_t offset, size_t size,
-                                        MEMFLAGS flag, const NativeCallStack& stack) {
+                                       const NativeCallStack& stack, MEMFLAGS flag) {
     assert(device != nullptr, "must be");
     assert_post_init();
     if (!enabled()) return;
     MemoryFileTracker::Instance::Locker lock;
-    MemoryFileTracker::Instance::allocate_memory(device, offset, size, flag, stack);
+    MemoryFileTracker::Instance::allocate_memory(device, offset, size, stack, flag);
   }
 
   static inline void free_memory_in(MemoryFileTracker::MemoryFile* device,

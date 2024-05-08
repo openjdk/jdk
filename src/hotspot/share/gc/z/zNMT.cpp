@@ -42,7 +42,7 @@ void ZNMT::reserve(zaddress_unsafe start, size_t size) {
 }
 
 void ZNMT::commit(zoffset offset, size_t size) {
-  MemTracker::allocate_memory_in(ZNMT::_device, untype(offset), size, mtJavaHeap, CALLER_PC);
+  MemTracker::allocate_memory_in(ZNMT::_device, untype(offset), size, CALLER_PC, mtJavaHeap);
 }
 
 void ZNMT::uncommit(zoffset offset, size_t size) {
