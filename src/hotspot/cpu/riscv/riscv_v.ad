@@ -3761,7 +3761,7 @@ instruct vsignum_reg(vReg dst, vReg zero, vReg one, vRegMask_V0 v0) %{
 
 instruct vreverse_bytes_masked(vReg dst, vReg src, vRegMask_V0 v0) %{
   match(Set dst (ReverseBytesV src v0));
-  format %{ "vreverse_bytes_masked $dst, $src, v0.t" %}
+  format %{ "vreverse_bytes_masked $dst, $src, v0" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     uint vlen = Matcher::vector_length(this);
