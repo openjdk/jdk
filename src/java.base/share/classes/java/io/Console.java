@@ -148,7 +148,8 @@ public sealed class Console implements Flushable permits ProxyingConsole {
 
     /**
      * Writes a string representation of the specified object to this console's
-     * output stream, terminates the line and then flushes the console.
+     * output stream, terminates the line using {@link System#lineSeparator()}
+     * and then flushes the console.
      *
      * <p> The string representation of the specified object is obtained as if
      * by calling {@link String#valueOf(Object)}.
