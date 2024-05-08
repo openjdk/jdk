@@ -119,7 +119,7 @@ bool MemoryFileTracker::Instance::initialize(NMT_TrackingLevel tracking_level) {
 void MemoryFileTracker::Instance::allocate_memory(MemoryFile* device, size_t offset,
                                                   size_t size, const NativeCallStack& stack,
                                                   MEMFLAGS flag) {
-  _tracker->allocate_memory(device, offset, size, flag, stack);
+  _tracker->allocate_memory(device, offset, size, stack, flag);
 }
 
 void MemoryFileTracker::Instance::free_memory(MemoryFile* device, size_t offset,
