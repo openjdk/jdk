@@ -47,6 +47,11 @@ JVM_LDFLAGS += \
 
 JVM_ASFLAGS += $(EXTRA_ASFLAGS)
 
+JVM_ASFLAGS += \
+        -I$(TOPDIR)/src/hotspot/os/$(HOTSPOT_TARGET_OS) \
+        -I$(TOPDIR)/src/hotspot/os/$(HOTSPOT_TARGET_OS_TYPE) \
+        #
+
 JVM_LIBS += \
     $(JVM_LIBS_FEATURES) \
     #
