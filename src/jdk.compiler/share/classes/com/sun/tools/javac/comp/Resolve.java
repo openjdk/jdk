@@ -3863,17 +3863,35 @@ public class Resolve {
         JCExpression lhs = TreeInfo.skipParens(((JCAssign)env.tree).lhs);
         JCExpression base = lhs.hasTag(SELECT) ? ((JCFieldAccess)lhs).selected : null;
 
-        // The symbol must not be an instance field inherited from a superclass
-        if (v.owner.kind == TYP &&
-                types.isSubtype(env.enclClass.type, v.owner.type) &&
-                v.owner != env.enclClass.sym &&
-                (base == null ||
-                  TreeInfo.isExplicitThisReference(types, (ClassType)env.enclClass.type, base))) {
+        // If an early reference, the field must not be declared in a superclass
+        if (isEarlyReference(env, base, v) && v.owner != env.enclClass.sym)
             return false;
-        }
 
         // OK
         return true;
+    }
+
+    /**
+     * Determine if the variable appearance constitutes an early reference to the current class.
+     *
+     * <p>
+     * This means the variable is an instance field of the current class and it appears
+     * in an early initialization context of it (i.e., one of its constructor prologues).
+     *
+     * <p>
+     * Such a reference is only allowed for assignments to non-initialized fields that are
+     * not inherited from a superclass, though that is not enforced by this method.
+     *
+     * @param env    The current environment
+     * @param base   Variable qualifier, if any, otherwise null
+     * @param v      The variable
+     */
+    public boolean isEarlyReference(Env<AttrContext> env, JCTree base, VarSymbol v) {
+        return env.info.ctorPrologue &&
+            (v.flags() & STATIC) == 0 &&
+            v.owner.kind == TYP &&
+            types.isSubtype(env.enclClass.type, v.owner.type) &&
+            (base == null || TreeInfo.isExplicitThisReference(types, (ClassType)env.enclClass.type, base));
     }
 
     /**

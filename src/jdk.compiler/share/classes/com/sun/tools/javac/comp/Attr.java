@@ -310,11 +310,7 @@ public class Attr extends JCTree.Visitor {
         }
 
         // Check instance field assignments that appear in constructor prologues
-        if (env.info.ctorPrologue &&
-            v.owner.kind == TYP &&
-            (v.flags() & STATIC) == 0 &&
-            types.isSubtype(env.enclClass.type, v.owner.type) &&
-            (base == null || TreeInfo.isExplicitThisReference(types, (ClassType)env.enclClass.type, base))) {
+        if (rs.isEarlyReference(env, base, v)) {
 
             // Field may not be inherited from a superclass
             if (v.owner != env.enclClass.sym) {
