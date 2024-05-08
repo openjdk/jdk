@@ -1904,6 +1904,16 @@ enum Nf {
 
 #undef INSN
 
+#define INSN(NAME, op, funct3, Vs1, funct6)                                    \
+  void NAME(VectorRegister Vd, VectorRegister Vs2, VectorMask vm = unmasked) { \
+    patch_VArith(op, Vd, funct3, Vs1, Vs2, vm, funct6);                        \
+  }
+
+  // Vector Basic Bit-manipulation (Zvbb) Extension
+  INSN(vcpop_v,  0b1010111, 0b010, 0b01110, 0b010010);
+
+#undef INSN
+
 #undef patch_VArith
 
 // ====================================
