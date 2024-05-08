@@ -445,9 +445,9 @@ class MacroAssembler: public Assembler {
   inline void msub(Register Rd, Register Rn, Register Rm, Register Ra) {
     if (VM_Version::supports_a53mac() && Ra != zr)
       nop();
-    if (VM_Version::is_neoverse_n_series()) {
-      /* On Neoverse N series, MSUB uses the same ALU with SDIV.
-       * The combination of MUL/SUB can utilize multiple ALUS,
+    if (VM_Version::is_neoverse_family()) {
+      /* On Neoverse, MSUB uses the same ALU with SDIV.
+       * The combination of MUL/SUB can utilize multiple ALUs,
        * and is much faster than MSUB. */
       mul(rscratch1, Rn, Rm);
       sub(Rd, Ra, rscratch1);
@@ -459,9 +459,9 @@ class MacroAssembler: public Assembler {
   inline void msubw(Register Rd, Register Rn, Register Rm, Register Ra) {
     if (VM_Version::supports_a53mac() && Ra != zr)
       nop();
-    if (VM_Version::is_neoverse_n_series()) {
-      /* On Neoverse N series, MSUB uses the same ALU with SDIV.
-       * The combination of MUL/SUB can utilize multiple ALUS,
+    if (VM_Version::is_neoverse_family()) {
+      /* On Neoverse, MSUB uses the same ALU with SDIV.
+       * The combination of MUL/SUB can utilize multiple ALUs,
        * and is much faster than MSUB. */
       mulw(rscratch1, Rn, Rm);
       subw(Rd, Ra, rscratch1);
