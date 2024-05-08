@@ -350,7 +350,7 @@ class FileInput : public inputStream::Input {
   bool is_open() const { return _fs.is_open(); }
 
  protected:
-  virtual size_t read(char* buf, size_t size) {
+  size_t read(char* buf, size_t size) override {
     return _fs.read(buf, size);
   }
 };
@@ -370,7 +370,7 @@ class MemoryInput : public inputStream::Input {
   { }
 
  protected:
-  virtual size_t read(char* buf, size_t size) {
+  size_t read(char* buf, size_t size) override {
     size_t nr = size;
     if (nr > _limit - _offset) {
       nr = _limit - _offset;
