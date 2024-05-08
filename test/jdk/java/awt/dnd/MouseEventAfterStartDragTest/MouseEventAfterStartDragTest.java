@@ -52,6 +52,8 @@ import javax.swing.SwingUtilities;
  */
 public final class MouseEventAfterStartDragTest implements AWTEventListener {
     final Frame frame = new Frame();
+    volatile Point srcPoint;
+    volatile Dimension d;
     volatile MouseEvent lastMouseEvent = null;
     volatile boolean passed = true;
     final DragSource dragSource = DragSource.getDefaultDragSource();
@@ -59,10 +61,10 @@ public final class MouseEventAfterStartDragTest implements AWTEventListener {
 
     final MouseMotionListener mouseMotionListener = new MouseMotionAdapter() {
         public void mouseDragged(MouseEvent e) {
-            System.err.println("mouseDragged: " + e
+            System.out.println("mouseDragged: " + e
                     + ", hash:" + e.hashCode());
             if (lastMouseEvent != null && !e.equals(lastMouseEvent)) {
-                System.err.println("Unexpected: " + e
+                System.out.println("Unexpected: " + e
                         + ", hash:" + e.hashCode());
                 passed = false;
             }
@@ -71,20 +73,20 @@ public final class MouseEventAfterStartDragTest implements AWTEventListener {
 
     final DragSourceListener dragSourceListener = new DragSourceAdapter() {
         public void dragDropEnd(DragSourceDragEvent dsde) {
-            System.err.println("dragDropEnd: " + dsde);
+            System.out.println("dragDropEnd: " + dsde);
             lastMouseEvent = null;
         }
     };
 
     final DragGestureListener dragGestureListener = new DragGestureListener() {
         public void dragGestureRecognized(DragGestureEvent dge) {
-            System.err.println("dragGestureRecognized: " + dge);
+            System.out.println("dragGestureRecognized: " + dge);
             Object[] events = dge.toArray();
             Object lastEvent = events[events.length - 1];
             if (lastEvent instanceof MouseEvent) {
                 lastMouseEvent = (MouseEvent) lastEvent;
             }
-            System.err.println("The last mouse event: " + lastMouseEvent
+            System.out.println("The last mouse event: " + lastMouseEvent
                     + ", hash:" + lastMouseEvent.hashCode());
             dge.startDrag(null, transferable, dragSourceListener);
         }
@@ -128,8 +130,10 @@ public final class MouseEventAfterStartDragTest implements AWTEventListener {
         robot.setAutoDelay(45);
         robot.waitForIdle();
 
-        final Point srcPoint = frame.getLocationOnScreen();
-        Dimension d = frame.getSize();
+        SwingUtilities.invokeAndWait(() -> {
+            srcPoint = frame.getLocationOnScreen();
+            d = frame.getSize();
+        });
         srcPoint.translate(d.width / 2, d.height / 2);
 
         if (!pointInComponent(robot, srcPoint, frame)) {
@@ -145,18 +149,18 @@ public final class MouseEventAfterStartDragTest implements AWTEventListener {
             return;
         }
 
-        robot.mousePress(InputEvent.BUTTON1_MASK);
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.mouseMove(srcPoint.x, srcPoint.y);
-        System.err.println("srcPoint = " + srcPoint);
+        System.out.println("srcPoint = " + srcPoint);
         for (; !srcPoint.equals(dstPoint);
              srcPoint.translate(sign(dstPoint.x - srcPoint.x),
                      sign(dstPoint.y - srcPoint.y))) {
             robot.mouseMove(srcPoint.x, srcPoint.y);
-            System.err.println("srcPoint = " + srcPoint);
+            System.out.println("srcPoint = " + srcPoint);
         }
 
-        robot.mouseRelease(InputEvent.BUTTON1_MASK);
-        System.err.println("done");
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+        System.out.println("done");
         robot.waitForIdle();
         robot.delay(MOUSE_RELEASE_TIMEOUT);
 
@@ -165,8 +169,12 @@ public final class MouseEventAfterStartDragTest implements AWTEventListener {
         }
     }
 
-    public void dispose() {
-        frame.dispose();
+    public void dispose() throws Exception {
+        SwingUtilities.invokeAndWait(() -> {
+            if (frame != null) {
+                frame.dispose();
+            }
+        });
     }
 
     public void reset() {
@@ -187,9 +195,9 @@ public final class MouseEventAfterStartDragTest implements AWTEventListener {
         robot.waitForIdle();
         reset();
         robot.mouseMove(p.x, p.y);
-        robot.mousePress(InputEvent.BUTTON1_MASK);
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         synchronized (SYNC_LOCK) {
-            robot.mouseRelease(InputEvent.BUTTON1_MASK);
+            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
             SYNC_LOCK.wait(MOUSE_RELEASE_TIMEOUT);
         }
 
