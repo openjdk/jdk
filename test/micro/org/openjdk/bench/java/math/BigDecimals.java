@@ -133,15 +133,6 @@ public class BigDecimals {
         }
     }
 
-    /** Invokes the toString method of BigDecimal with various different values. */
-    @Benchmark
-    @OperationsPerInvocation(TEST_SIZE)
-    public void testToString(Blackhole bh) {
-        for (BigDecimal s : bigDecimals) {
-            bh.consume(s.toString());
-        }
-    }
-
     /**
      * Invokes the setScale method of BigDecimal with various different values.
      */
@@ -234,33 +225,6 @@ public class BigDecimals {
         BigDecimal c = bigDecimals[0];
         for (BigDecimal s : bigDecimals) {
             bh.consume(c.compareTo(s));
-        }
-    }
-
-    /** Test BigDecimal.toString() with huge numbers larger than MAX_LONG */
-    @Benchmark
-    @OperationsPerInvocation(TEST_SIZE)
-    public void testHugeToString(Blackhole bh) {
-        for (BigDecimal s : hugeArray) {
-            bh.consume(s.toString());
-        }
-    }
-
-    /** Test BigDecimal.toString() with large numbers less than MAX_LONG but larger than MAX_INT */
-    @Benchmark
-    @OperationsPerInvocation(TEST_SIZE)
-    public void testLargeToString(Blackhole bh) {
-        for (BigDecimal s : largeArray) {
-            bh.consume(s.toString());
-        }
-    }
-
-    /** Test BigDecimal.toString() with small numbers less than MAX_INT */
-    @Benchmark
-    @OperationsPerInvocation(TEST_SIZE)
-    public void testSmallToString(Blackhole bh) {
-        for (BigDecimal s : smallArray) {
-            bh.consume(s.toString());
         }
     }
 }
