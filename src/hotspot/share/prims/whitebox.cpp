@@ -842,6 +842,9 @@ WB_ENTRY(jint, WB_DeoptimizeMethod(JNIEnv* env, jobject o, jobject method, jbool
   {
     MutexLocker mu(Compile_lock);
     methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
+#if INCLUDE_WX_NEW
+    auto _wx = WXLazyMark(thread);
+#endif
     if (is_osr) {
       result += mh->method_holder()->mark_osr_nmethods(&deopt_scope, mh());
     } else {
@@ -1645,6 +1648,9 @@ CodeBlob* WhiteBox::allocate_code_blob(int size, CodeBlobType blob_type) {
   }
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+#if INCLUDE_WX_NEW
+    auto _wx = WXWriteMark(Thread::current());
+#endif
     blob = (BufferBlob*) CodeCache::allocate(full_size, blob_type);
     if (blob != nullptr) {
       ::new (blob) BufferBlob("WB::DummyBlob", CodeBlobKind::Buffer, full_size);

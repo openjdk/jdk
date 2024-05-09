@@ -34,6 +34,7 @@
 #include "opto/runtime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/globals_extension.hpp"
+#include "runtime/threadWXSetters.inline.hpp"
 #include "utilities/macros.hpp"
 
 
@@ -63,6 +64,9 @@ const char* C2Compiler::retry_no_superword() {
 void compiler_stubs_init(bool in_compiler_thread);
 
 bool C2Compiler::init_c2_runtime() {
+#if INCLUDE_WX_NEW
+  auto _wx = WXWriteMark(JavaThread::current());
+#endif
 
 #ifdef ASSERT
   if (!AlignVector && VerifyAlignVector) {
@@ -127,6 +131,10 @@ void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, boo
   bool do_locks_coarsening = EliminateLocks;
   bool do_superword = UseSuperWord;
 
+#if INCLUDE_WX_NEW
+  auto _wx = WXLazyMark(JavaThread::current());
+#endif
+
   while (!env->failing()) {
     ResourceMark rm;
     // Attempt to compile while subsuming loads into machine instructions.
@@ -138,6 +146,11 @@ void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, boo
                     do_locks_coarsening,
                     do_superword,
                     install_code);
+#if 0
+#if INCLUDE_WX_NEW
+  auto _wx = WXWriteMark(JavaThread::current());
+#endif
+#endif
     Compile C(env, target, entry_bci, options, directive);
 
     // Check result and retry if appropriate.

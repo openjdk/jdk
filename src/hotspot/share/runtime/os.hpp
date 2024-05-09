@@ -1072,10 +1072,10 @@ class os: AllStatic {
   static char*  build_agent_function_name(const char *sym, const char *cname,
                                           bool is_absolute_path);
 
-#if defined(__APPLE__) && defined(AARCH64)
+#if INCLUDE_WX
   // Enables write or execute access to writeable and executable pages.
-  static void current_thread_enable_wx(WXMode mode);
-#endif // __APPLE__ && AARCH64
+  static void current_thread_enable_wx(WXMode mode, bool use_new_code = false);
+#endif
 
  protected:
   static volatile unsigned int _rand_seed;    // seed for random number generator

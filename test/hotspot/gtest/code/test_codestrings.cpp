@@ -28,6 +28,8 @@
 #include "asm/macroAssembler.inline.hpp"
 #include "compiler/disassembler.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/threadWXSetters.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 #include "utilities/vmassert_uninstall.hpp"
@@ -272,6 +274,12 @@ TEST_VM(codestrings, DISABLED_validate)
 TEST_VM(codestrings, validate)
 #endif
 {
+    JavaThread* THREAD = JavaThread::current();
+    ThreadInVMfromNative invm(THREAD);
+#if INCLUDE_WX_NEW
+    auto _wx = WXWriteMark(THREAD);
+#endif
+
     code_buffer_test();
     buffer_blob_test();
 }

@@ -27,6 +27,7 @@
 #include "gc/shared/scavengableNMethods.hpp"
 #include "gc/shared/scavengableNMethodsData.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "runtime/threadWXSetters.inline.hpp"
 #include "utilities/debug.hpp"
 
 static ScavengableNMethodsData gc_data(nmethod* nm) {
@@ -131,6 +132,16 @@ bool ScavengableNMethods::has_scavengable_oops(nmethod* nm) {
 void ScavengableNMethods::nmethods_do_and_prune(NMethodToOopClosure* cl) {
   assert_locked_or_safepoint(CodeCache_lock);
 
+#if INCLUDE_WX_NEW
+  Thread* current = Thread::current();
+  auto _wx = WXLazyMark(current);
+  // FIXME - need something like MaybeWrite mode, changes to write mode, but doesn't
+  // assert if no writes happen
+  // or conditional Write scope?
+  bool cond = _head != nullptr && (DEBUG_ONLY(true /* clear_marked() */ ||) cl != nullptr);
+  auto _wx_w = WXConditionalWriteMark(current, cond);
+#endif
+
   DEBUG_ONLY(mark_on_list_nmethods());
 
   nmethod* prev = nullptr;
@@ -166,13 +177,27 @@ void ScavengableNMethods::prune_nmethods_not_into_young() {
 void ScavengableNMethods::prune_unlinked_nmethods() {
   assert_locked_or_safepoint(CodeCache_lock);
 
+#if INCLUDE_WX_NEW
+  Thread* current = Thread::current();
+  bool w_cond = (head != nullptr);
+  auto _wx_w = WXConditionalWriteMark(current, w_cond);
+  if (w_cond) {
+    // We set write mode above, expecting writes to happen, but there is no
+    // guarantee with more conditionals inside the loop.  Here we simulate
+    // a single write to make sure the write scope is marked as needed,
+    // which satisfies a debug check for unneeded write scopes.  The alternative
+    // is to use fine-grained write scopes inside the loop, which could hurt
+    // performance.
+    REQUIRE_THREAD_WX_MODE_WRITE
+#endif
+
   DEBUG_ONLY(mark_on_list_nmethods());
 
   nmethod* prev = nullptr;
   nmethod* cur = _head;
   while (cur != nullptr) {
     ScavengableNMethodsData data = gc_data(cur);
-    DEBUG_ONLY(data.clear_marked());
+    DEBUG_ONLY(data.clear_marked()); // W^X=W
     assert(data.on_list(), "else shouldn't be on this list");
 
     nmethod* const next = data.next();
@@ -215,12 +240,24 @@ void ScavengableNMethods::unlist_nmethod(nmethod* nm, nmethod* prev) {
 #ifndef PRODUCT
 // Temporarily mark nmethods that are claimed to be on the scavenge list.
 void ScavengableNMethods::mark_on_list_nmethods() {
+#if INCLUDE_WX_NEW
+  Thread* current = Thread::current();
+#if 0
+  auto _wx = WXLazyMark(current);
+#endif
+  auto _wx_w = WXWriteMark(current); REQUIRE_THREAD_WX_MODE_WRITE // FIXME
+#endif
   NMethodIterator iter(NMethodIterator::all);
   while(iter.next()) {
     nmethod* nm = iter.method();
     ScavengableNMethodsData data = gc_data(nm);
     assert(data.not_marked(), "clean state");
     if (data.on_list()) {
+#if 0
+#if INCLUDE_WX_NEW
+      auto _wx = WXWriteMark(current);
+#endif
+#endif
       data.set_marked();
     }
   }

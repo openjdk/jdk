@@ -386,6 +386,10 @@ int Compilation::compile_java_method() {
     BAILOUT_("mdo allocation failed", no_frame_size);
   }
 
+#if INCLUDE_WX_NEW
+  auto _wx = WXWriteMark(Thread::current());
+#endif
+
   {
     PhaseTraceTime timeit(_t_buildIR);
     build_hir();

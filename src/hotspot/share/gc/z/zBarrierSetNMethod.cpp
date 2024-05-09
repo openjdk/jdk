@@ -55,7 +55,7 @@ bool ZBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
     return true;
   }
 
-  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, Thread::current()));
+  WX_OLD_ONLY(ThreadWXEnable wx(WXWrite, Thread::current()));
 
   if (nm->is_unloading()) {
     log_develop_trace(gc, nmethod)("nmethod: " PTR_FORMAT " visited by entry (unloading)", p2i(nm));

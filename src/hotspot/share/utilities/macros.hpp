@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -641,6 +641,50 @@
 #define INCLUDE_ASAN 1
 #else
 #define INCLUDE_ASAN 0
+#endif
+
+#if defined(__APPLE__) && defined(AARCH64)
+#define WX_HW 1
+#define WX_EMUL 0
+#else
+#define WX_HW 0
+#ifdef ASSERT
+#define WX_EMUL 1
+#define AssertWX 1
+#define AssertWXAtThreadSync 1
+#define WXLazyForceExec 0
+#define WXLazyNoRestore 1
+#else
+#define WX_EMUL 0
+#endif
+#endif
+
+#if WX_HW || WX_EMUL
+#define INCLUDE_WX 1
+#define INCLUDE_WX_OLD 1
+#define INCLUDE_WX_NEW 1
+#else
+#define INCLUDE_WX 0
+#define INCLUDE_WX_OLD 0
+#define INCLUDE_WX_NEW 0
+#endif
+
+#if INCLUDE_WX
+#define WX_ONLY(x) x
+#if INCLUDE_WX_OLD
+#define WX_OLD_ONLY(x) x
+#else
+#define WX_OLD_ONLY(x)
+#endif
+#if INCLUDE_WX_NEW
+#define WX_NEW_ONLY(x) x
+#else
+#define WX_NEW_ONLY(x)
+#endif
+#else
+#define WX_ONLY(x)
+#define WX_OLD_ONLY(x)
+#define WX_NEW_ONLY(x)
 #endif
 
 #endif // SHARE_UTILITIES_MACROS_HPP

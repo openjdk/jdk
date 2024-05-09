@@ -70,6 +70,7 @@
 #include "runtime/os.hpp"
 #include "runtime/perfData.hpp"
 #include "runtime/threadCritical.hpp"
+#include "runtime/threadWXSetters.inline.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/vm_version.hpp"
 #include "services/management.hpp"
@@ -686,6 +687,9 @@ void ClassLoader::add_to_exploded_build_list(JavaThread* current, Symbol* module
 }
 
 jzfile* ClassLoader::open_zip_file(const char* canonical_path, char** error_msg, JavaThread* thread) {
+#if INCLUDE_WX_NEW
+  auto _wx = WXExecMark(thread);
+#endif
   // enable call to C land
   ThreadToNativeFromVM ttn(thread);
   HandleMark hm(thread);

@@ -235,7 +235,7 @@ static JRT_LEAF(intptr_t*, thaw(JavaThread* thread, int kind))
   DEBUG_ONLY(PauseNoSafepointVerifier pnsv(&__nsv);)
 
   // we might modify the code cache via BarrierSetNMethod::nmethod_entry_barrier
-  MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, thread));
+  WX_OLD_ONLY(ThreadWXEnable __wx(WXWrite, thread));
   return ConfigT::thaw(thread, (Continuation::thaw_kind)kind);
 JRT_END
 
@@ -2281,6 +2281,10 @@ NOINLINE intptr_t* Thaw<ConfigT>::thaw_slow(stackChunkOop chunk, Continuation::t
     }
     return sp;
   }
+
+#if INCLUDE_WX_NEW
+  auto _wx = WXLazyMark(Thread::current());
+#endif
 
   LogTarget(Trace, continuations) lt;
   if (lt.develop_is_enabled()) {

@@ -37,7 +37,13 @@
                                                                         \
   AARCH64_ONLY(develop(bool, AssertWXAtThreadSync, true,                \
           "Conservatively check W^X thread state at possible safepoint" \
-          "or handshake"))
+          "or handshake"))                                              \
+  AARCH64_ONLY(develop(bool, AssertWX, false,                           \
+          "Enable extra W^X state checking."))                          \
+  AARCH64_ONLY(develop(bool, UseOldWX, false WX_OLD_ONLY(|| true),      \
+          "Choose old W^X implementation."))                            \
+  AARCH64_ONLY(develop(bool, UseNewWX, false WX_NEW_ONLY(|| true),      \
+          "Choose new W^X implementation."))                            \
 
 // end of RUNTIME_OS_FLAGS
 

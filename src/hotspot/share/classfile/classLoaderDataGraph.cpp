@@ -412,6 +412,11 @@ bool ClassLoaderDataGraph::do_unloading() {
   uint loaders_processed = 0;
   uint loaders_removed = 0;
 
+  // Anticipate nmethod::is_unloading()
+#if INCLUDE_WX_NEW
+  auto _wx = WXLazyMark(Thread::current());
+#endif
+
   for (ClassLoaderData* data = _head; data != nullptr; data = data->next()) {
     if (data->is_alive()) {
       prev = data;

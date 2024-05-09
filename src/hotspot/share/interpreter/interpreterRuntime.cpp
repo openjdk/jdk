@@ -72,6 +72,7 @@
 #include "runtime/stubRoutines.hpp"
 #include "runtime/synchronizer.inline.hpp"
 #include "runtime/threadCritical.hpp"
+#include "runtime/threadWXSetters.inline.hpp"
 #include "utilities/align.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/copy.hpp"
@@ -1017,7 +1018,7 @@ JRT_END
 
 nmethod* InterpreterRuntime::frequency_counter_overflow(JavaThread* current, address branch_bcp) {
   // Enable WXWrite: the function is called directly by interpreter.
-  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, current));
+  WX_OLD_ONLY(ThreadWXEnable wx(WXWrite, current));
 
   // frequency_counter_overflow_inner can throw async exception.
   nmethod* nm = frequency_counter_overflow_inner(current, branch_bcp);
@@ -1339,7 +1340,11 @@ void SignatureHandlerLibrary::add(const methodHandle& method) {
     if (UseFastSignatureHandlers && method->size_of_parameters() <= Fingerprinter::fp_max_size_of_parameters) {
       // use customized signature handler
       MutexLocker mu(SignatureHandlerLibrary_lock);
+#if INCLUDE_WX_NEW
+      auto _wx = WXLazyMark(Thread::current());
+#endif
       // make sure data structure is initialized
+      // may require WXWrite
       initialize();
       // lookup method signature's fingerprint
       uint64_t fingerprint = Fingerprinter(method).fingerprint();
@@ -1350,6 +1355,9 @@ void SignatureHandlerLibrary::add(const methodHandle& method) {
       if (handler_index < 0) {
         ResourceMark rm;
         ptrdiff_t align_offset = align_up(_buffer, CodeEntryAlignment) - (address)_buffer;
+#if INCLUDE_WX_NEW
+        auto _wx = WXWriteMark(Thread::current());
+#endif
         CodeBuffer buffer((address)(_buffer + align_offset),
                           checked_cast<int>(SignatureHandlerLibrary::buffer_size - align_offset));
         InterpreterRuntime::SignatureHandlerGenerator(method, &buffer).generate(fingerprint);

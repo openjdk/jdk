@@ -939,6 +939,9 @@ void JVMCIEnv::fthrow_error(const char* file, int line, const char* format, ...)
   char msg[max_msg_size];
   os::vsnprintf(msg, max_msg_size, format, ap);
   va_end(ap);
+#if INCLUDE_WX_NEW
+  auto _wx = WXExecMark(JavaThread::current());
+#endif
   JavaThread* THREAD = JavaThread::current();
   if (is_hotspot()) {
     Handle h_loader;
@@ -1781,7 +1784,11 @@ void JVMCIEnv::invalidate_nmethod_mirror(JVMCIObject mirror, bool deoptimize, JV
     // Do not clear the address field here as the Java code may still
     // want to later call this method with deoptimize == true. That requires
     // the address field to still be pointing at the nmethod.
-   } else {
+  } else {
+#if INCLUDE_WX_NEW
+    auto _wx = WXLazyMark(thread);
+#endif
+
     // Deoptimize the nmethod immediately.
     DeoptimizationScope deopt_scope;
     deopt_scope.mark(nm);

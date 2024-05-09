@@ -28,6 +28,7 @@
 #include "asm/macroAssembler.hpp"
 #include "code/vmreg.hpp"
 #include "memory/allStatic.hpp"
+#include "runtime/threadWXSetters.inline.hpp"
 #include "utilities/checkedCast.hpp"
 
 // A VtableStub holds an individual code stub for a pair (vtable index, #args) for either itables or vtables
@@ -140,7 +141,7 @@ class VtableStub {
 
   VtableStub(bool is_vtable_stub, short index)
         : _next(nullptr), _index(index), _ame_offset(-1), _npe_offset(-1),
-          _type(is_vtable_stub ? Type::vtable_stub : Type::itable_stub) {}
+          _type(is_vtable_stub ? Type::vtable_stub : Type::itable_stub) { REQUIRE_THREAD_WX_MODE_WRITE }
   VtableStub* next() const                       { return _next; }
   int index() const                              { return _index; }
   static VMReg receiver_location()               { return _receiver_location; }

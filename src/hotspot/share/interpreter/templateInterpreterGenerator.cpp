@@ -53,6 +53,9 @@ static const BasicType types[Interpreter::number_of_result_handlers] = {
 };
 
 void TemplateInterpreterGenerator::generate_all() {
+#if INCLUDE_WX_NEW
+  auto _wx = WXWriteMark(Thread::current());
+#endif
   { CodeletMark cm(_masm, "slow signature handler");
     AbstractInterpreter::_slow_signature_handler = generate_slow_signature_handler();
   }

@@ -105,6 +105,10 @@ bool BarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
     return true;
   }
 
+#if INCLUDE_WX_NEW
+  auto _wx = WXWriteMark(Thread::current());
+#endif
+
   // If the nmethod is the only thing pointing to the oops, and we are using a
   // SATB GC, then it is important that this code marks them live.
   // Also, with concurrent GC, it is possible that frames in continuation stack
@@ -167,7 +171,7 @@ void BarrierSetNMethod::arm_all_nmethods() {
 int BarrierSetNMethod::nmethod_stub_entry_barrier(address* return_address_ptr) {
   // Enable WXWrite: the function is called directly from nmethod_entry_barrier
   // stub.
-  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, Thread::current()));
+  WX_OLD_ONLY(ThreadWXEnable wx(WXWrite, Thread::current()));
 
   address return_address = *return_address_ptr;
   AARCH64_PORT_ONLY(return_address = pauth_strip_pointer(return_address));

@@ -149,9 +149,37 @@ inline JavaThreadState JavaThread::thread_state() const    {
 #endif
 }
 
+#if INCLUDE_WX_NEW
+inline void JavaThread::check_wx(JavaThreadState s) const {
+#ifdef ASSERT
+  if (!AssertWXAtThreadSync) {
+    return;
+  }
+  if (s == _thread_blocked && _thread_state == _thread_in_vm) {
+    return;
+  }
+  if (s == _thread_in_vm && _thread_state == _thread_blocked) {
+    return;
+  }
+  if (is_Compiler_thread()) {
+    if (s == _thread_in_native || s == _thread_in_vm) {
+      return;
+    }
+  }
+  assert(!wx_state().is_lazy(), "thread state transition while in lazy mode");
+  REQUIRE_THREAD_WX_MODE_EXEC
+#endif
+}
+#endif
+
 inline void JavaThread::set_thread_state(JavaThreadState s) {
   assert(current_or_null() == nullptr || current_or_null() == this,
          "state change should only be called by the current thread");
+#if INCLUDE_WX_NEW
+  if (AssertWXAtThreadSync) {
+    check_wx(s);
+  }
+#endif
 #if defined(PPC64) || defined (AARCH64) || defined(RISCV64)
   // Use membars when accessing volatile _thread_state. See
   // Threads::create_vm() for size checks.

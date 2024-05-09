@@ -179,7 +179,7 @@ TEST_VM(ThreadsTest, claim_overflow) {
 TEST_VM(ThreadsTest, fast_jni_in_vm) {
   JavaThread* current = JavaThread::current();
   JNIEnv* env = current->jni_environment();
-  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, current));
+  WX_OLD_ONLY(ThreadWXEnable wx(WXWrite, current));
 
   // DirectByteBuffer is an easy way to trigger GetIntField,
   // see JDK-8262896

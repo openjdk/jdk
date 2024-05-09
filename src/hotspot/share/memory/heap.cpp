@@ -162,6 +162,7 @@ void CodeHeap::mark_segmap_as_used(size_t beg, size_t end, bool is_FreeBlock_joi
 }
 
 void CodeHeap::invalidate(size_t beg, size_t end, size_t hdr_size) {
+  REQUIRE_THREAD_WX_MODE_WRITE
 #ifndef PRODUCT
   // Fill the given range with some bad value.
   // length is expected to be in segment_size units.
@@ -269,6 +270,7 @@ bool CodeHeap::expand_by(size_t size) {
 
 
 void* CodeHeap::allocate(size_t instance_size) {
+  REQUIRE_THREAD_WX_MODE_WRITE
   size_t number_of_segments = size_to_segments(instance_size + header_size());
   assert(segments_to_size(number_of_segments) >= sizeof(FreeBlock), "not enough room for FreeList");
   assert_locked_or_safepoint(CodeCache_lock);

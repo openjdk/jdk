@@ -38,6 +38,7 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/init.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/nonJavaThread.hpp"
 #include "runtime/orderAccess.hpp"
@@ -137,8 +138,7 @@ Thread::Thread(MemTag mem_tag) {
     // If the main thread creates other threads before the barrier set that is an error.
     assert(Thread::current_or_null() == nullptr, "creating thread before barrier set");
   }
-
-  MACOS_AARCH64_ONLY(DEBUG_ONLY(_wx_init = false));
+  WX_OLD_ONLY(DEBUG_ONLY(_wx_init = false));
 }
 
 #ifdef ASSERT
@@ -211,7 +211,9 @@ void Thread::call_run() {
 
   // Perform common initialization actions
 
-  MACOS_AARCH64_ONLY(this->init_wx());
+#if INCLUDE_WX
+  this->init_wx();
+#endif
 
   register_thread_stack_with_NMT();
 
@@ -603,3 +605,43 @@ void Thread::SpinRelease(volatile int * adr) {
   // more than covers this on all platforms.
   *adr = 0;
 }
+
+#if INCLUDE_WX
+void Thread::assert_can_change_wx_state(WXState wx_state) const {
+#if 0
+  // FIXME
+  guarantee((wx_mode(wx_state) == os::WXWrite) == ((wx_depth() % 2) == 1), "Strange W^X pattern");
+#endif
+  if (is_Worker_thread() || is_ConcurrentGC_thread()) {
+    // GC threads set WXWrite at startup
+    guarantee(wx_depth() <= 1, "Unexpected GC thread W^X depth");
+    return;
+  }
+  if (is_VM_thread()) {
+    // X --> W, should never request W --> X
+    guarantee(wx_depth() <= 1, "Unexpected CompilerThread W^X depth");
+    return;
+  }
+  guarantee(is_Java_thread(), "Not allowed to change W^X state");
+  JavaThreadState state = JavaThread::cast(this)->thread_state();
+  if (is_Compiler_thread()) {
+    // X --> W --> X (register_method --> gc_on_allocation)
+    guarantee(wx_depth() <= 2, "Unexpected CompilerThread W^X depth");
+    guarantee(state == _thread_in_vm || state == _thread_in_native ||
+              (can_call_java() && state == _thread_in_Java),
+              "CompilerThread W^X change from unexpected thread state %d", state);
+    return;
+  }
+  int max_in_init_depth = 3;   // X --> W --> X --> W (universe_post_init)
+  int max_post_init_depth = 2; // X --> W --> X       (AdapterBlob::create --> gc_on_allocation)
+  int max_depth = is_init_completed() ? max_post_init_depth : max_in_init_depth;
+  guarantee(wx_depth() <= max_depth, "Unexpected JavaThread W^X depth");
+  guarantee(state == _thread_in_vm || (can_call_java() && state == _thread_in_Java),
+            "JavaThread W^X change from unexpected thread state %d", state);
+}
+
+#if 0
+const Thread::WXEnable Thread::_wx_root_scope;
+#endif
+
+#endif

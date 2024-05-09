@@ -1899,6 +1899,12 @@ void CompileBroker::compiler_thread_loop() {
     log->end_elem();
   }
 
+  // If we switch to WXWrite (C1/C2), stay there, otherwise
+  // remain in WXExec (JVMCI).
+#if INCLUDE_WX_NEW
+  auto _wx = WXLazyMark(thread);
+#endif
+
   // If compiler thread/runtime initialization fails, exit the compiler thread
   if (!init_compiler_runtime()) {
     return;

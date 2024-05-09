@@ -1059,6 +1059,10 @@ void ciEnv::register_method(ciMethod* target,
     assert(offsets->value(CodeOffsets::Deopt) != -1, "must have deopt entry");
     assert(offsets->value(CodeOffsets::Exceptions) != -1, "must have exception entry");
 
+#if INCLUDE_WX_NEW
+    auto _wx = WXWriteMark(THREAD);
+#endif
+
     nm =  nmethod::new_nmethod(method,
                                compile_id(),
                                entry_bci,

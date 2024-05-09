@@ -37,6 +37,9 @@
 #include "os_posix.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
+#if 1
+#include "runtime/atomic.hpp"
+#endif
 #include "runtime/arguments.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -199,9 +202,11 @@ NOINLINE frame os::current_frame() {
 
 bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
                                              ucontext_t* uc, JavaThread* thread) {
+#if INCLUDE_WX_OLD
   // Enable WXWrite: this function is called by the signal handler at arbitrary
   // point of execution.
   ThreadWXEnable wx(WXWrite, thread);
+#endif
 
   // decide if this trap can be handled by a stub
   address stub = nullptr;
@@ -210,6 +215,12 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
 
   //%note os_trap_1
   if (info != nullptr && uc != nullptr && thread != nullptr) {
+#if INCLUDE_WX_NEW
+    // Enable WXExec: this function is called by the signal handler at arbitrary
+    // point of execution.
+    auto _wx = WXExecMark(thread);
+#endif
+
     pc = (address) os::Posix::ucontext_get_pc(uc);
 
     // Handle ALL stack overflow variations here
@@ -488,8 +499,26 @@ int os::extra_bang_size_in_bytes() {
   return 0;
 }
 
-void os::current_thread_enable_wx(WXMode mode) {
-  pthread_jit_write_protect_np(mode == WXExec);
+#ifndef PRODUCT
+static uint _wx_changes[2] = {0};
+static uint _wx_changes_total = 0;
+#endif
+
+void os::current_thread_enable_wx(WXMode mode, bool use_new_code) {
+#ifndef PRODUCT
+  Atomic::inc(&_wx_changes[use_new_code ? 1 : 0]);
+  Atomic::inc(&_wx_changes_total);
+  if (is_power_of_2(_wx_changes_total)) {
+    log_develop_info(wx, perf)("WX transitions: old %d new %d total %d %.1f:%.1f",
+      _wx_changes[0], _wx_changes[1], _wx_changes_total,
+      100.0 * _wx_changes[0] / _wx_changes_total,
+      100.0 * _wx_changes[1] / _wx_changes_total);
+  }
+#endif
+
+  if (use_new_code ? UseNewWX : UseOldWX && !UseNewWX) {
+    pthread_jit_write_protect_np(mode == WXExec);
+  }
 }
 
 static inline void atomic_copy64(const volatile void *src, volatile void *dst) {

@@ -33,6 +33,7 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/perfData.hpp"
+#include "runtime/threadWXSetters.inline.hpp"
 #include "utilities/exceptions.hpp"
 
 PerfCounter* DependencyContext::_perf_total_buckets_allocated_count   = nullptr;
@@ -67,6 +68,9 @@ void DependencyContext::init() {
 // deoptimization.
 //
 void DependencyContext::mark_dependent_nmethods(DeoptimizationScope* deopt_scope, DepChange& changes) {
+#if INCLUDE_WX_NEW
+  auto _wx = WXLazyMark(Thread::current());
+#endif
   for (nmethodBucket* b = dependencies_not_unloading(); b != nullptr; b = b->next_not_unloading()) {
     nmethod* nm = b->get_nmethod();
     if (nm->is_marked_for_deoptimization()) {

@@ -81,6 +81,9 @@ static void verify_processing_context() {
 }
 
 void StackWatermarkSet::before_unwind(JavaThread* jt) {
+#if INCLUDE_WX_NEW
+  auto _wx = WXLazyMark(jt);
+#endif
   verify_processing_context();
   assert(jt->has_last_Java_frame(), "must have a Java frame");
   for (StackWatermark* current = head(jt); current != nullptr; current = current->next()) {
@@ -90,6 +93,9 @@ void StackWatermarkSet::before_unwind(JavaThread* jt) {
 }
 
 void StackWatermarkSet::after_unwind(JavaThread* jt) {
+#if INCLUDE_WX_NEW
+  auto _wx = WXLazyMark(jt);
+#endif
   verify_processing_context();
   assert(jt->has_last_Java_frame(), "must have a Java frame");
   for (StackWatermark* current = head(jt); current != nullptr; current = current->next()) {
@@ -103,6 +109,9 @@ void StackWatermarkSet::on_iteration(JavaThread* jt, const frame& fr) {
     // Don't perform barrier when error reporting walks the stack.
     return;
   }
+#if INCLUDE_WX_NEW
+  auto _wx = WXLazyMark(Thread::current());
+#endif
   verify_processing_context();
   for (StackWatermark* current = head(jt); current != nullptr; current = current->next()) {
     current->on_iteration(fr);
@@ -114,6 +123,9 @@ void StackWatermarkSet::on_iteration(JavaThread* jt, const frame& fr) {
 void StackWatermarkSet::on_safepoint(JavaThread* jt) {
   StackWatermark* watermark = get(jt, StackWatermarkKind::gc);
   if (watermark != nullptr) {
+#if INCLUDE_WX_NEW
+    auto _wx = WXLazyMark(jt);
+#endif
     watermark->on_safepoint();
   }
 }

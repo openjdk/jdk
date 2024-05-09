@@ -31,6 +31,7 @@
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safepoint.hpp"
+#include "runtime/threadWXSetters.inline.hpp"
 
 WorkerTaskDispatcher::WorkerTaskDispatcher() :
     _task(nullptr),
@@ -195,6 +196,10 @@ WorkerThread::WorkerThread(const char* name_prefix, uint name_suffix, WorkerTask
 
 void WorkerThread::run() {
   os::set_priority(this, NearMaxPriority);
+
+#if INCLUDE_WX_NEW
+  auto _wx = WXWriteMark(this);
+#endif
 
   while (true) {
     _dispatcher->worker_run_task();

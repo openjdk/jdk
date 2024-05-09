@@ -393,7 +393,7 @@ UNSAFE_ENTRY_SCOPED(void, Unsafe_SetMemory0(JNIEnv *env, jobject unsafe, jobject
   {
     GuardUnsafeAccess guard(thread);
     if (StubRoutines::unsafe_setmemory() != nullptr) {
-      MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXExec, thread));
+      WX_OLD_ONLY(ThreadWXEnable wx(WXExec, thread));
       StubRoutines::UnsafeSetMemory_stub()(p, sz, value);
     } else {
       Copy::fill_to_memory_atomic(p, sz, value);
@@ -412,7 +412,7 @@ UNSAFE_ENTRY_SCOPED(void, Unsafe_CopyMemory0(JNIEnv *env, jobject unsafe, jobjec
   {
     GuardUnsafeAccess guard(thread);
     if (StubRoutines::unsafe_arraycopy() != nullptr) {
-      MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXExec, thread));
+      WX_OLD_ONLY(ThreadWXEnable wx(WXExec, thread));
       StubRoutines::UnsafeArrayCopy_stub()(src, dst, sz);
     } else {
       Copy::conjoint_memory_atomic(src, dst, sz);
@@ -444,14 +444,14 @@ UNSAFE_LEAF (void, Unsafe_WriteBack0(JNIEnv *env, jobject unsafe, jlong line)) {
   }
 #endif
 
-  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXExec, Thread::current()));
+  WX_OLD_ONLY(ThreadWXEnable wx(WXExec, Thread::current()));
   assert(StubRoutines::data_cache_writeback() != nullptr, "sanity");
   (StubRoutines::DataCacheWriteback_stub())(addr_from_java(line));
 } UNSAFE_END
 
 static void doWriteBackSync0(bool is_pre)
 {
-  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXExec, Thread::current()));
+  WX_OLD_ONLY(ThreadWXEnable wx(WXExec, Thread::current()));
   assert(StubRoutines::data_cache_writeback_sync() != nullptr, "sanity");
   (StubRoutines::DataCacheWritebackSync_stub())(is_pre);
 }

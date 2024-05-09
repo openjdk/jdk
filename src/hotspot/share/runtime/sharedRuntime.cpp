@@ -72,6 +72,7 @@
 #include "runtime/stackWatermarkSet.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/synchronizer.inline.hpp"
+#include "runtime/threadWXSetters.inline.hpp"
 #include "runtime/timerTrace.hpp"
 #include "runtime/vframe.inline.hpp"
 #include "runtime/vframeArray.hpp"
@@ -108,6 +109,9 @@ const char *SharedRuntime::_stub_names[] = {
 
 //----------------------------generate_stubs-----------------------------------
 void SharedRuntime::generate_initial_stubs() {
+#if INCLUDE_WX_NEW
+  auto _wx = WXWriteMark(Thread::current());
+#endif
   // Build this early so it's available for the interpreter.
   _throw_StackOverflowError_blob =
     generate_throw_exception(SharedStubId::throw_StackOverflowError_id,
@@ -115,6 +119,9 @@ void SharedRuntime::generate_initial_stubs() {
 }
 
 void SharedRuntime::generate_stubs() {
+#if INCLUDE_WX_NEW
+  auto _wx = WXWriteMark(Thread::current());
+#endif
   _wrong_method_blob =
     generate_resolve_blob(SharedStubId::wrong_method_id,
                           CAST_FROM_FN_PTR(address, SharedRuntime::handle_wrong_method));
@@ -180,6 +187,9 @@ void SharedRuntime::generate_jfr_stubs() {
   const char* timer_msg = "SharedRuntime generate_jfr_stubs";
   TraceTime timer(timer_msg, TRACETIME_LOG(Info, startuptime));
 
+#if INCLUDE_WX_NEW
+  auto _wx = WXWriteMark(Thread::current());
+#endif
   _jfr_write_checkpoint_blob = generate_jfr_write_checkpoint();
   _jfr_return_lease_blob = generate_jfr_return_lease();
 }
@@ -1415,12 +1425,17 @@ methodHandle SharedRuntime::resolve_helper(bool is_virtual, bool is_optimized, T
 
 
   CompiledICLocker ml(caller_nm);
+#if INCLUDE_WX_NEW
+  auto _wx = WXWriteMark(current);
+#endif
   if (is_virtual && !is_optimized) {
     CompiledIC* inline_cache = CompiledIC_before(caller_nm, caller_frame.pc());
+    REQUIRE_THREAD_WX_MODE_WRITE
     inline_cache->update(&call_info, receiver->klass());
   } else {
     // Callsite is a direct call - set it to the destination method
     CompiledDirectCall* callsite = CompiledDirectCall::before(caller_frame.pc());
+    REQUIRE_THREAD_WX_MODE_WRITE
     callsite->set(callee_method);
   }
 
@@ -1691,6 +1706,9 @@ methodHandle SharedRuntime::reresolve_call_site(TRAPS) {
     //       we will wind up in the interprter (thru a c2i with c2).
     //
     CompiledICLocker ml(caller_nm);
+#if INCLUDE_WX_NEW
+    auto _wx = WXWriteMark(current);
+#endif
     address call_addr = caller_nm->call_instruction_address(pc);
 
     if (call_addr != nullptr) {
@@ -1805,7 +1823,7 @@ JRT_LEAF(void, SharedRuntime::fixup_callers_callsite(Method* method, address cal
 
   // write lock needed because we might patch call site by set_to_clean()
   // and is_unloading() can modify nmethod's state
-  MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, JavaThread::current()));
+  WX_OLD_ONLY(ThreadWXEnable __wx(WXWrite, JavaThread::current()));
 
   CodeBlob* cb = CodeCache::find_blob(caller_pc);
   if (cb == nullptr || !cb->is_nmethod() || !callee->is_in_use() || callee->is_unloading()) {
@@ -1842,6 +1860,10 @@ JRT_LEAF(void, SharedRuntime::fixup_callers_callsite(Method* method, address cal
   }
 
   CompiledDirectCall* callsite = CompiledDirectCall::before(return_pc);
+  // write lock needed because we might patch call site by set_to_clean()
+#if INCLUDE_WX_NEW
+  auto _wx = WXWriteMark(Thread::current());
+#endif
   callsite->set_to_clean();
 JRT_END
 
@@ -2805,6 +2827,10 @@ bool AdapterHandlerLibrary::generate_adapter_code(AdapterBlob*& adapter_blob,
     ClassLoader::perf_method_adapters_count()->inc();
   }
 
+#if INCLUDE_WX_NEW
+  auto _wx = WXWriteMark(Thread::current());
+#endif
+
   BufferBlob* buf = buffer_blob(); // the temporary code buffer in CodeCache
   CodeBuffer buffer(buf);
   short buffer_locs[20];
@@ -3127,6 +3153,9 @@ void AdapterHandlerLibrary::create_native_wrapper(const methodHandle& method) {
     ResourceMark rm;
     BufferBlob*  buf = buffer_blob(); // the temporary code buffer in CodeCache
     if (buf != nullptr) {
+#if INCLUDE_WX_NEW
+      auto _wx = WXWriteMark(Thread::current());
+#endif
       CodeBuffer buffer(buf);
 
       if (method->is_continuation_enter_intrinsic()) {

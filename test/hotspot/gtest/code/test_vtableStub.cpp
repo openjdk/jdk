@@ -24,6 +24,7 @@
 
 #include "code/vtableStubs.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/threadWXSetters.inline.hpp"
 #include "unittest.hpp"
 
 #ifndef ZERO
@@ -31,6 +32,9 @@
 TEST_VM(code, vtableStubs) {
   // Should be in VM to use locks
   ThreadInVMfromNative ThreadInVMfromNative(JavaThread::current());
+#if INCLUDE_WX_NEW
+  auto _wx = WXWriteMark(JavaThread::current());
+#endif
 
   VtableStubs::find_vtable_stub(0); // min vtable index
   for (int i = 0; i < 15; i++) {
@@ -43,6 +47,10 @@ TEST_VM(code, vtableStubs) {
 TEST_VM(code, itableStubs) {
   // Should be in VM to use locks
   ThreadInVMfromNative ThreadInVMfromNative(JavaThread::current());
+#if INCLUDE_WX_NEW
+  auto _wx = WXWriteMark(JavaThread::current());
+#endif
+
 
   VtableStubs::find_itable_stub(0); // min itable index
   for (int i = 0; i < 15; i++) {

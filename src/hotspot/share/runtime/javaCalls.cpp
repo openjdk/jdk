@@ -94,14 +94,14 @@ JavaCallWrapper::JavaCallWrapper(const methodHandle& callee_method, Handle recei
   DEBUG_ONLY(_thread->inc_java_call_counter());
   _thread->set_active_handles(new_handles);     // install new handle block and reset Java frame linkage
 
-  MACOS_AARCH64_ONLY(_thread->enable_wx(WXExec));
+  WX_OLD_ONLY(_thread->enable_wx(WXExec));
 }
 
 
 JavaCallWrapper::~JavaCallWrapper() {
   assert(_thread == JavaThread::current(), "must still be the same thread");
 
-  MACOS_AARCH64_ONLY(_thread->enable_wx(WXWrite));
+  WX_OLD_ONLY(_thread->enable_wx(WXWrite));
 
   // restore previous handle block & Java frame linkage
   JNIHandleBlock *_old_handles = _thread->active_handles();
@@ -316,6 +316,9 @@ Handle JavaCalls::construct_new_instance(InstanceKlass* klass, Symbol* construct
 
 
 void JavaCalls::call(JavaValue* result, const methodHandle& method, JavaCallArguments* args, TRAPS) {
+#if INCLUDE_WX_NEW
+  auto _wx = WXExecMark(THREAD);
+#endif
   // Check if we need to wrap a potential OS exception handler around thread.
   // This is used for e.g. Win32 structured exception handlers.
   // Need to wrap each and every time, since there might be native code down the
@@ -412,6 +415,9 @@ void JavaCalls::call_helper(JavaValue* result, const methodHandle& method, JavaC
 #endif
         }
       }
+
+      REQUIRE_THREAD_WX_MODE_EXEC
+
       StubRoutines::call_stub()(
         (address)&link,
         // (intptr_t*)&(result->_value), // see NOTE above (compiler problem)

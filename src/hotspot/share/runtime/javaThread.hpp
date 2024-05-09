@@ -610,6 +610,9 @@ private:
   inline ThreadSafepointState* safepoint_state() const;
   inline void set_safepoint_state(ThreadSafepointState* state);
   inline bool is_at_poll_safepoint();
+#if INCLUDE_WX_NEW
+  inline void check_wx(JavaThreadState s) const;
+#endif
 
   // JavaThread termination and lifecycle support:
   void smr_delete();

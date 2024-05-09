@@ -81,6 +81,8 @@ void NativeCall::set_destination_mt_safe(address dest) {
          CompiledICLocker::is_safe(addr_at(0)),
          "concurrent code patching");
 
+  REQUIRE_THREAD_WX_MODE_WRITE
+
   address addr_call = addr_at(0);
   bool reachable = Assembler::reachable_from_branch_at(addr_call, dest);
   assert(NativeCall::is_call_at(addr_call), "unexpected code at call site");

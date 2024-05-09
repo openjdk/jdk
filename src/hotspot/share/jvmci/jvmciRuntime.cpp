@@ -1968,6 +1968,12 @@ static bool after_compiler_upcall(JVMCIEnv* JVMCIENV, JVMCICompiler* compiler, c
 }
 
 void JVMCIRuntime::compile_method(JVMCIEnv* JVMCIENV, JVMCICompiler* compiler, const methodHandle& method, int entry_bci) {
+  // Compiler thread loop runs as WXLazyWrite.  If we need to switch to WXExec here,
+  // then it means we are mixing C1/C2 tasks with JVMCI tasks in the same thread.
+#if INCLUDE_WX_NEW
+  auto _wx = WXExecMark(JavaThread::current());
+#endif
+
   JVMCI_EXCEPTION_CONTEXT
 
   JVMCICompileState* compile_state = JVMCIENV->compile_state();

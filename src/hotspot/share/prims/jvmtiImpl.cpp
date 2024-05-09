@@ -913,6 +913,9 @@ void JvmtiDeferredEventQueue::post(JvmtiEnv* env) {
 }
 
 void JvmtiDeferredEventQueue::run_nmethod_entry_barriers() {
+#if INCLUDE_WX_NEW
+  auto _wx = WXLazyMark(Thread::current());
+#endif
   for(QueueNode* node = _queue_head; node != nullptr; node = node->next()) {
      node->event().run_nmethod_entry_barriers();
   }

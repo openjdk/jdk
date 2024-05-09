@@ -61,6 +61,7 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/safepointVerifiers.hpp"
+#include "runtime/threadWXSetters.inline.hpp"
 #include "runtime/vmThread.hpp"
 #include "sanitizers/leak.hpp"
 #include "services/memoryService.hpp"
@@ -506,6 +507,8 @@ CodeBlob* CodeCache::allocate(uint size, CodeBlobType code_blob_type, bool handl
   if (size == 0) {
     return nullptr;
   }
+  REQUIRE_THREAD_WX_MODE_WRITE
+
   CodeBlob* cb = nullptr;
 
   // Get CodeHeap for the given CodeBlobType
@@ -574,6 +577,9 @@ CodeBlob* CodeCache::allocate(uint size, CodeBlobType code_blob_type, bool handl
 }
 
 void CodeCache::free(CodeBlob* cb) {
+#if INCLUDE_WX_NEW
+  auto _wx = WXWriteMark(Thread::current());
+#endif
   assert_locked_or_safepoint(CodeCache_lock);
   CodeHeap* heap = get_code_heap(cb);
   print_trace("free", cb);
@@ -603,6 +609,9 @@ void CodeCache::free_unused_tail(CodeBlob* cb, size_t used) {
   // which provides the memory (see BufferBlob::create() in codeBlob.cpp).
   used += CodeBlob::align_code_offset(cb->header_size());
 
+#if INCLUDE_WX_NEW
+  auto _wx = WXWriteMark(Thread::current());
+#endif
   // Get heap for given CodeBlob and deallocate its unused tail
   get_code_heap(cb)->deallocate_tail(cb, used);
   // Adjust the sizes of the CodeBlob
@@ -1145,6 +1154,9 @@ void CodeCache::initialize() {
 }
 
 void codeCache_init() {
+#if INCLUDE_WX_NEW
+  auto _wx = WXWriteMark(Thread::current());
+#endif
   CodeCache::initialize();
 }
 
@@ -1224,6 +1236,9 @@ static void check_live_nmethods_dependencies(DepChange& changes) {
 
 void CodeCache::mark_for_deoptimization(DeoptimizationScope* deopt_scope, KlassDepChange& changes) {
   MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+#if INCLUDE_WX_NEW
+  auto _wx = WXLazyMark(Thread::current());
+#endif
 
   // search the hierarchy looking for nmethods which are affected by the loading of this class
 
@@ -1302,6 +1317,9 @@ void CodeCache::mark_dependents_for_evol_deoptimization(DeoptimizationScope* deo
   reset_old_method_table();
 
   NMethodIterator iter(NMethodIterator::all);
+#if INCLUDE_WX_NEW
+  auto _wx = WXLazyMark(Thread::current());
+#endif
   while(iter.next()) {
     nmethod* nm = iter.method();
     // Walk all alive nmethods to check for old Methods.
@@ -1317,6 +1335,9 @@ void CodeCache::mark_dependents_for_evol_deoptimization(DeoptimizationScope* deo
 void CodeCache::mark_all_nmethods_for_evol_deoptimization(DeoptimizationScope* deopt_scope) {
   assert(SafepointSynchronize::is_at_safepoint(), "Can only do this at a safepoint!");
   NMethodIterator iter(NMethodIterator::all);
+#if INCLUDE_WX_NEW
+  auto _wx = WXLazyMark(Thread::current());
+#endif
   while(iter.next()) {
     nmethod* nm = iter.method();
     if (!nm->method()->is_method_handle_intrinsic()) {
@@ -1336,6 +1357,9 @@ void CodeCache::mark_all_nmethods_for_evol_deoptimization(DeoptimizationScope* d
 void CodeCache::mark_all_nmethods_for_deoptimization(DeoptimizationScope* deopt_scope) {
   MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
   NMethodIterator iter(NMethodIterator::not_unloading);
+#if INCLUDE_WX_NEW
+  auto _wx = WXLazyMark(Thread::current());
+#endif
   while(iter.next()) {
     nmethod* nm = iter.method();
     if (!nm->is_native_method()) {
@@ -1346,6 +1370,9 @@ void CodeCache::mark_all_nmethods_for_deoptimization(DeoptimizationScope* deopt_
 
 void CodeCache::mark_for_deoptimization(DeoptimizationScope* deopt_scope, Method* dependee) {
   MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+#if INCLUDE_WX_NEW
+  auto _wx = WXLazyMark(Thread::current());
+#endif
 
   NMethodIterator iter(NMethodIterator::not_unloading);
   while(iter.next()) {
@@ -1358,6 +1385,9 @@ void CodeCache::mark_for_deoptimization(DeoptimizationScope* deopt_scope, Method
 
 void CodeCache::make_marked_nmethods_deoptimized() {
   RelaxedNMethodIterator iter(RelaxedNMethodIterator::not_unloading);
+#if INCLUDE_WX_NEW
+  auto _wx = WXWriteMark(Thread::current());
+#endif
   while(iter.next()) {
     nmethod* nm = iter.method();
     if (nm->is_marked_for_deoptimization() && !nm->has_been_deoptimized() && nm->can_be_deoptimized()) {

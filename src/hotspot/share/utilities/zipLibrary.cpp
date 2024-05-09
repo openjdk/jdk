@@ -28,6 +28,7 @@
 #include "runtime/os.inline.hpp"
 #include "runtime/semaphore.inline.hpp"
 #include "runtime/thread.inline.hpp"
+#include "runtime/threadWXSetters.inline.hpp"
 #include "utilities/zipLibrary.hpp"
 
  // Entry points in zip.dll for loading zip/jar file entries
@@ -149,6 +150,9 @@ static void initialize(bool vm_exit_on_failure = true) {
   if (is_loaded()) {
     return;
   }
+#if INCLUDE_WX_NEW
+  auto _wx = WXExecMark(Thread::current());
+#endif
   ZipLibraryLoaderLock lock;
   if (not_loaded()) {
     load_zip_library(vm_exit_on_failure);

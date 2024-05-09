@@ -589,6 +589,7 @@ oop oop_Relocation::oop_value() {
 
 
 void oop_Relocation::fix_oop_relocation() {
+  REQUIRE_THREAD_WX_MODE_WRITE
   if (!oop_is_immediate()) {
     // get the oop from the pool, and re-insert it into the instruction:
     set_value(value());

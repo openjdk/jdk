@@ -656,10 +656,12 @@ public:
   void print_dependencies_on(outputStream* out) PRODUCT_RETURN;
   void flush_dependencies();
 
+#define WX_W REQUIRE_THREAD_WX_MODE_WRITE
+
   template<typename T>
   T* gc_data() const                              { return reinterpret_cast<T*>(_gc_data); }
   template<typename T>
-  void set_gc_data(T* gc_data)                    { _gc_data = reinterpret_cast<void*>(gc_data); }
+  void set_gc_data(T* gc_data)                    { WX_W _gc_data = reinterpret_cast<void*>(gc_data); }
 
   bool  has_unsafe_access() const                 { return _has_unsafe_access; }
   void  set_has_unsafe_access(bool z)             { _has_unsafe_access = z; }
@@ -800,7 +802,7 @@ public:
   int      osr_entry_bci()    const { assert(is_osr_method(), "wrong kind of nmethod"); return _entry_bci; }
   address  osr_entry()        const { assert(is_osr_method(), "wrong kind of nmethod"); return _osr_entry_point; }
   nmethod* osr_link()         const { return _osr_link; }
-  void     set_osr_link(nmethod *n) { _osr_link = n; }
+  void     set_osr_link(nmethod *n) { REQUIRE_THREAD_WX_MODE_WRITE _osr_link = n; }
   void     invalidate_osr_method();
 
   int num_stack_arg_slots(bool rounded = true) const {
@@ -877,7 +879,7 @@ public:
 
   // used by jvmti to track if the load events has been reported
   bool  load_reported() const                     { return _load_reported; }
-  void  set_load_reported()                       { _load_reported = true; }
+  void  set_load_reported()                       { REQUIRE_THREAD_WX_MODE_WRITE _load_reported = true; }
 
  public:
   // ScopeDesc retrieval operation

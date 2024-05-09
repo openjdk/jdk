@@ -484,6 +484,10 @@ void VMThread::loop() {
   no_op.set_calling_thread(_vm_thread);
   safepointALot_op.set_calling_thread(_vm_thread);
 
+#if INCLUDE_WX_NEW
+  auto _wx = WXLazyMark(Thread::current());
+#endif
+
   while (true) {
     if (should_terminate()) break;
     wait_for_operation();

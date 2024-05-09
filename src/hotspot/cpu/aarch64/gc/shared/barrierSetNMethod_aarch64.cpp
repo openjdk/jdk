@@ -33,6 +33,7 @@
 #include "runtime/javaThread.hpp"
 #include "runtime/registerMap.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/threadWXSetters.inline.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/formatBuffer.hpp"
@@ -118,6 +119,10 @@ public:
   }
 
   void set_value(int value) {
+#if INCLUDE_WX_NEW
+    auto _wx = WXWriteMark(Thread::current());
+#endif
+    REQUIRE_THREAD_WX_MODE_WRITE
     Atomic::release_store(guard_addr(), value);
   }
 

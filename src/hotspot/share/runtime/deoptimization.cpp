@@ -134,8 +134,13 @@ void DeoptimizationScope::mark(nmethod* nm, bool inc_recompile_counts) {
     return;
   }
 
+#if INCLUDE_WX_NEW
+  auto _wx = WXWriteMark(Thread::current());
+#endif
+
   nmethod::DeoptimizationStatus status =
     inc_recompile_counts ? nmethod::deoptimize : nmethod::deoptimize_noupdate;
+  REQUIRE_THREAD_WX_MODE_WRITE
   Atomic::store(&nm->_deoptimization_status, status);
 
   // Make sure active is not committed
@@ -2617,7 +2622,7 @@ Deoptimization::update_method_data_from_interpreter(MethodData* trap_mdo, int tr
 
 Deoptimization::UnrollBlock* Deoptimization::uncommon_trap(JavaThread* current, jint trap_request, jint exec_mode) {
   // Enable WXWrite: current function is called from methods compiled by C2 directly
-  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, current));
+  WX_OLD_ONLY(ThreadWXEnable wx(WXWrite, current));
 
   // Still in Java no safepoints
   {

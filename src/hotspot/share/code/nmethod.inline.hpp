@@ -30,6 +30,7 @@
 #include "code/nativeInst.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/frame.hpp"
+#include "runtime/threadWXSetters.inline.hpp"
 
 inline bool nmethod::is_deopt_pc(address pc) { return is_deopt_entry(pc) || is_deopt_mh_entry(pc); }
 
@@ -57,6 +58,5 @@ address ExceptionCache::handler_at(int index) {
 
 // increment_count is only called under lock, but there may be concurrent readers.
 inline void ExceptionCache::increment_count() { Atomic::release_store(&_count, _count + 1); }
-
 
 #endif // SHARE_CODE_NMETHOD_INLINE_HPP

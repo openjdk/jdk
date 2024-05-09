@@ -52,6 +52,7 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/jniHandles.inline.hpp"
+#include "runtime/threadWXSetters.inline.hpp"
 #include "runtime/timerTrace.hpp"
 #include "runtime/reflection.hpp"
 #include "runtime/safepointVerifiers.hpp"
@@ -83,6 +84,9 @@ MethodHandlesAdapterBlob* MethodHandles::_adapter_code = nullptr;
  * failed and true otherwise.
  */
 void MethodHandles::generate_adapters() {
+#if INCLUDE_WX_NEW
+  auto _wx = WXWriteMark(Thread::current());
+#endif
   assert(vmClasses::MethodHandle_klass() != nullptr, "should be present");
   assert(_adapter_code == nullptr, "generate only once");
 

@@ -33,6 +33,7 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/linkedlist.hpp"
 #include "utilities/resizeableResourceHash.hpp"
+#include "runtime/threadWXSetters.inline.hpp"
 #include "utilities/macros.hpp"
 
 template <typename T>
@@ -155,6 +156,8 @@ class CodeSection {
     _skipped_instructions_size = cs->_skipped_instructions_size;
   }
 
+  address     writable_end() const  { REQUIRE_THREAD_WX_MODE_WRITE return _end; }
+
  public:
   address     start() const         { return _start; }
   address     mark() const          { return _mark; }
@@ -220,24 +223,24 @@ class CodeSection {
 
   // Code emission
   void emit_int8(uint8_t x1) {
-    address curr = end();
+    address curr = writable_end();
     *((uint8_t*)  curr++) = x1;
     set_end(curr);
   }
 
   template <typename T>
-  void emit_native(T x) { put_native(end(), x); set_end(end() + sizeof x); }
+  void emit_native(T x) { put_native(writable_end(), x); set_end(end() + sizeof x); }
 
   void emit_int16(uint16_t x) { emit_native(x); }
   void emit_int16(uint8_t x1, uint8_t x2) {
-    address curr = end();
+    address curr = writable_end();
     *((uint8_t*)  curr++) = x1;
     *((uint8_t*)  curr++) = x2;
     set_end(curr);
   }
 
   void emit_int24(uint8_t x1, uint8_t x2, uint8_t x3)  {
-    address curr = end();
+    address curr = writable_end();
     *((uint8_t*)  curr++) = x1;
     *((uint8_t*)  curr++) = x2;
     *((uint8_t*)  curr++) = x3;
@@ -246,7 +249,7 @@ class CodeSection {
 
   void emit_int32(uint32_t x) { emit_native(x); }
   void emit_int32(uint8_t x1, uint8_t x2, uint8_t x3, uint8_t x4)  {
-    address curr = end();
+    address curr = writable_end();
     *((uint8_t*)  curr++) = x1;
     *((uint8_t*)  curr++) = x2;
     *((uint8_t*)  curr++) = x3;

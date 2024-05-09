@@ -40,6 +40,7 @@
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/threadWXSetters.inline.hpp"
 #include "utilities/align.hpp"
 
 // frequently used constants
@@ -717,6 +718,10 @@ JVMCI::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler,
     char* speculations,
     int speculations_len,
     JVMCI_TRAPS) {
+
+#if INCLUDE_WX_NEW
+  auto _wx = WXWriteMark(JavaThread::current());
+#endif
 
   JavaThread* thread = JavaThread::current();
   HotSpotCompiledCodeStream* stream = new HotSpotCompiledCodeStream(thread, (const u1*) compiled_code_buffer, with_type_info, object_pool);

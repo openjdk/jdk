@@ -469,3 +469,23 @@ extern "C" {
     memmove(to, from, count * 8);
   }
 };
+
+#if WX_EMUL
+#ifndef PRODUCT
+static uint _wx_changes[2] = {0};
+static uint _wx_changes_total = 0;
+#endif
+
+void os::current_thread_enable_wx(WXMode mode, bool use_new_code) {
+#ifndef PRODUCT
+  Atomic::inc(&_wx_changes[use_new_code ? 1 : 0]);
+  Atomic::inc(&_wx_changes_total);
+  if (is_power_of_2(_wx_changes_total)) {
+    log_develop_info(wx, perf)("WX transitions: old %d new %d total %d %.1f:%.1f",
+      _wx_changes[0], _wx_changes[1], _wx_changes_total,
+      100.0 * _wx_changes[0] / _wx_changes_total,
+      100.0 * _wx_changes[1] / _wx_changes_total);
+  }
+#endif
+}
+#endif

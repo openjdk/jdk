@@ -58,7 +58,7 @@ public:
   static void nmethod_patch_barriers(nmethod* nm);
 
   static void nmethod_oops_do(nmethod* nm, OopClosure* cl);
-  static void nmethod_oops_do_inner(nmethod* nm, OopClosure* cl);
+  static void nmethod_oops_do_inner(nmethod* nm, OopClosure* cl, bool fix_relocations = true);
 
   static void nmethods_do_begin(bool secondary);
   static void nmethods_do_end(bool secondary);

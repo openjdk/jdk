@@ -156,7 +156,7 @@ void JfrJvmtiAgent::retransform_classes(JNIEnv* env, jobjectArray classes_array,
   }
   ResourceMark rm(THREAD);
   // WXWrite is needed before entering the vm below and in callee methods.
-  MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, THREAD));
+  WX_OLD_ONLY(ThreadWXEnable __wx(WXWrite, THREAD));
   jclass* const classes = create_classes_array(classes_count, CHECK);
   assert(classes != nullptr, "invariant");
   for (jint i = 0; i < classes_count; i++) {

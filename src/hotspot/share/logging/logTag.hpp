@@ -218,7 +218,8 @@ class outputStream;
   LOG_TAG(vmoperation) \
   LOG_TAG(vmthread) \
   LOG_TAG(vtables) \
-  LOG_TAG(vtablestubs)
+  LOG_TAG(vtablestubs) \
+  NOT_PRODUCT(WX_ONLY(LOG_TAG(wx))) \
 
 #define PREFIX_LOG_TAG(T) (LogTag::_##T)
 

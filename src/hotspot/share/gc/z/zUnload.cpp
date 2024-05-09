@@ -81,7 +81,7 @@ public:
       return false;
     }
     ZIsUnloadingOopClosure cl(nm);
-    ZNMethod::nmethod_oops_do_inner(nm, &cl);
+    ZNMethod::nmethod_oops_do_inner(nm, &cl, false /* fix_relocations */);
     return cl.is_unloading();
   }
 };

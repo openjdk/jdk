@@ -257,7 +257,7 @@ void ZNMethod::nmethod_oops_do(nmethod* nm, OopClosure* cl) {
   ZNMethod::nmethod_oops_do_inner(nm, cl);
 }
 
-void ZNMethod::nmethod_oops_do_inner(nmethod* nm, OopClosure* cl) {
+void ZNMethod::nmethod_oops_do_inner(nmethod* nm, OopClosure* cl, bool fix_relocations) {
   // Process oops table
   {
     oop* const begin = nm->oops_begin();
@@ -282,7 +282,7 @@ void ZNMethod::nmethod_oops_do_inner(nmethod* nm, OopClosure* cl) {
   }
 
   // Process non-immediate oops
-  if (data->has_non_immediate_oops()) {
+  if (fix_relocations && data->has_non_immediate_oops()) {
     nm->fix_oop_relocations();
   }
 }

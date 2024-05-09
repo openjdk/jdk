@@ -44,7 +44,7 @@ void* JfrIntrinsicSupport::write_checkpoint(JavaThread* jt) {
   assert(JfrThreadLocal::is_vthread(jt), "invariant");
   const traceid vthread_tid = JfrThreadLocal::vthread_id(jt);
   // Transition before reading the epoch generation, now as _thread_in_vm.
-  MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, jt));
+  WX_OLD_ONLY(ThreadWXEnable __wx(WXWrite, jt));
   ThreadInVMfromJava transition(jt);
   JfrThreadLocal::set_vthread_epoch(jt, vthread_tid, ThreadIdAccess::current_epoch());
   return JfrJavaEventWriter::event_writer(jt);
@@ -52,7 +52,7 @@ void* JfrIntrinsicSupport::write_checkpoint(JavaThread* jt) {
 
 void* JfrIntrinsicSupport::return_lease(JavaThread* jt) {
   DEBUG_ONLY(assert_precondition(jt);)
-  MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, jt));
+  WX_OLD_ONLY(ThreadWXEnable __wx(WXWrite, jt));
   ThreadInVMfromJava transition(jt);
   assert(jt->jfr_thread_local()->has_java_event_writer(), "invariant");
   assert(jt->jfr_thread_local()->shelved_buffer() != nullptr, "invariant");

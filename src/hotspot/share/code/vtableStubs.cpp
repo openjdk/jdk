@@ -212,6 +212,9 @@ address VtableStubs::find_stub(bool is_vtable_stub, int vtable_index) {
     MutexLocker ml(VtableStubs_lock, Mutex::_no_safepoint_check_flag);
     s = lookup(is_vtable_stub, vtable_index);
     if (s == nullptr) {
+#if INCLUDE_WX_NEW
+      auto _wx = WXWriteMark(Thread::current());
+#endif
       if (is_vtable_stub) {
         s = create_vtable_stub(vtable_index);
       } else {

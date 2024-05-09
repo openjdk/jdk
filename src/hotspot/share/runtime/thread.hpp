@@ -39,6 +39,9 @@
 #include "runtime/threadStatisticalInfo.hpp"
 #include "runtime/unhandledOops.hpp"
 #include "utilities/globalDefinitions.hpp"
+#if 1
+#include "utilities/vmError.hpp"
+#endif
 #include "utilities/macros.hpp"
 #if INCLUDE_JFR
 #include "jfr/support/jfrThreadExtension.hpp"
@@ -59,7 +62,6 @@ class ThreadClosure;
 class ThreadsList;
 class ThreadsSMRSupport;
 class VMErrorCallback;
-
 
 DEBUG_ONLY(class ResourceMark;)
 
@@ -608,18 +610,127 @@ protected:
   static void SpinAcquire(volatile int * Lock);
   static void SpinRelease(volatile int * Lock);
 
-#if defined(__APPLE__) && defined(AARCH64)
+  // Lazy mode allows lazy transitions between Write and Exec.
+  class WXState {
+    WXMode _mode;
+    bool   _lazy;
+   public:
+    WXState(WXMode mode, bool lazy = false) : _mode(mode), _lazy(lazy) {}
+    WXMode wx_mode() const { return _mode; }
+    void set_wx_mode(WXMode mode) { _mode = mode; }
+    bool is_lazy() const { return _lazy; }
+    const char* name() const {
+      return _lazy ?
+        _mode == WXWrite ? "WXWrite (lazy)" : "WXExec (lazy)"
+      :
+        _mode == WXWrite ? "WXWrite" : "WXExec";
+    }
+    bool operator== (const WXState s) const { return _mode == s._mode && _lazy == s._lazy; }
+    bool operator!= (const WXState s) const { return !(*this == s); }
+  };
+
+#if INCLUDE_WX
+#if INCLUDE_WX_OLD
  private:
   DEBUG_ONLY(bool _wx_init);
   WXMode _wx_state;
+  inline void set_os_wx_mode_old(WXMode mode);
  public:
-  void init_wx();
   WXMode enable_wx(WXMode new_state);
 
   void assert_wx_state(WXMode expected) {
     assert(_wx_state == expected, "wrong state");
   }
-#endif // __APPLE__ && AARCH64
+#endif
+#if INCLUDE_WX_NEW
+
+  static WXState wx_lazy_state(WXState s) {
+    return WXState(s.wx_mode(), true /* lazy */);
+  }
+
+  class WXEnable;
+
+ private:
+  friend class WXEnable;
+
+  static const WXEnable _wx_root_scope;
+
+  struct wx {
+    WXState         _state;
+#ifdef ASSERT
+    bool            _init;
+    uint            _writes_required;
+    uint            _writes_required_at_last_x2w;
+    uint            _depth;
+#if 0
+    const WXEnable* _scope;
+#endif
+#if INCLUDE_WX_OLD
+    uint            _changes_old;
+#endif
+#if INCLUDE_WX_NEW
+    uint            _changes_new;
+#endif
+    const char*     _last_change_file;
+    int             _last_change_line;
+    void set_last_change_loc(const char* FILE, int LINE) {
+      _last_change_file = FILE; _last_change_line = LINE;
+    }
+    const char* last_change_file() const { return _last_change_file; }
+    int last_change_line() const { return _last_change_line; }
+#else
+    void set_last_change_loc(const char* FILE, int LINE) {}
+    const char* last_change_file() const { return "<unknown>"; }
+    int last_change_line() const { return -1; }
+#endif
+    wx() : _state(WXExec) {
+#ifdef ASSERT
+#if 0
+      _scope = &_wx_root_scope;
+#endif
+      _depth = 0;
+      _init = false;
+      _writes_required = 0;
+      _writes_required_at_last_x2w = 0;
+      _last_change_file = __FILE__;
+      _last_change_line = __LINE__;
+#if INCLUDE_WX_OLD
+      _changes_old = 0;
+#endif
+      _changes_new = 0;
+#endif
+    }
+  } _wx;
+
+  inline void set_os_wx_mode_new(WXMode mode);
+
+  WXState set_wx_state(WXState new_state, const char* FILE, int LINE);
+
+ public:
+  void init_wx();
+  WXState wx_state() const { return _wx._state; }
+  WXState wx_lazy_state() const { return wx_lazy_state(_wx._state); }
+#if 0
+  const WXEnable* wx_scope() const { return _wx._scope; }
+  void set_wx_scope(const WXEnable* s) { _wx._scope = s; }
+#endif
+#ifdef ASSERT
+  void set_last_wx_change_loc(const char* FILE, int LINE) { _wx.set_last_change_loc(FILE, LINE); }
+  const char* last_wx_change_file() const { return _wx.last_change_file(); }
+  int last_wx_change_line() const { return _wx.last_change_line(); }
+  int inc_wx_depth(int i) { return _wx._depth += i; }
+  int wx_depth() const    { return _wx._depth; }
+  void inc_wx_writes_required() { _wx._writes_required += 1; }
+  uint wx_writes_required() const { return _wx._writes_required; }
+  uint wx_writes_required_at_last_x2w() const { return _wx._writes_required_at_last_x2w; }
+  void set_wx_writes_required_at_last_x2w() { _wx._writes_required_at_last_x2w = _wx._writes_required; }
+  void assert_can_change_wx_state(WXState new_state) const;
+
+  inline void require_wx_mode(WXMode expected, const char* FILE, int LINE);
+#endif
+
+#endif // INCLUDE_WX_NEW
+#endif // INCLUDE_WX
 
  private:
   bool _in_asgct = false;
