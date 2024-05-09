@@ -170,22 +170,24 @@ AC_DEFUN([LIB_BUILD_BINUTILS],
     # On Windows, we cannot build with the normal Microsoft CL, but must instead use
     # a separate mingw toolchain.
     if test "x$OPENJDK_BUILD_OS" = xwindows; then
-      if test "x$OPENJDK_TARGET_CPU" = "xx86"; then
-        target_base="i686-w64-mingw32"
-      else
-        target_base="$OPENJDK_TARGET_CPU-w64-mingw32"
-      fi
-      binutils_cc="$target_base-gcc"
-      binutils_target="--host=$target_base --target=$target_base"
-      # Somehow the uint typedef is not included when building with mingw
-      binutils_cflags="-Duint=unsigned"
-      compiler_version=`$binutils_cc --version 2>&1`
-      if ! [ [[ "$compiler_version" =~ GCC ]] ]; then
-        AC_MSG_NOTICE([Could not find correct mingw compiler $binutils_cc.])
-        HELP_MSG_MISSING_DEPENDENCY([$binutils_cc])
-        AC_MSG_ERROR([Cannot continue. $HELP_MSG])
-      else
-        AC_MSG_NOTICE([Using compiler $binutils_cc with version $compiler_version])
+      if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
+        if test "x$OPENJDK_TARGET_CPU" = "xx86"; then
+          target_base="i686-w64-mingw32"
+        else
+          target_base="$OPENJDK_TARGET_CPU-w64-mingw32"
+        fi
+        binutils_cc="$target_base-gcc"
+        binutils_target="--host=$target_base --target=$target_base"
+        # Somehow the uint typedef is not included when building with mingw
+        binutils_cflags="-Duint=unsigned"
+        compiler_version=`$binutils_cc --version 2>&1`
+        if ! [ [[ "$compiler_version" =~ GCC ]] ]; then
+          AC_MSG_NOTICE([Could not find correct mingw compiler $binutils_cc.])
+          HELP_MSG_MISSING_DEPENDENCY([$binutils_cc])
+          AC_MSG_ERROR([Cannot continue. $HELP_MSG])
+        else
+          AC_MSG_NOTICE([Using compiler $binutils_cc with version $compiler_version])
+        fi
       fi
     elif test "x$OPENJDK_BUILD_OS" = xmacosx; then
       if test "x$OPENJDK_TARGET_CPU" = "xaarch64"; then
