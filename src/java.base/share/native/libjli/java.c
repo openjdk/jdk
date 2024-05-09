@@ -415,13 +415,13 @@ invokeStaticMainWithArgs(JNIEnv *env, jclass mainClass, jobjectArray mainArgs) {
  */
 int
 invokeInstanceMainWithArgs(JNIEnv *env, jclass mainClass, jobjectArray mainArgs) {
-    jmethodID mainID =
-        (*env)->GetMethodID(env, mainClass, "main", "([Ljava/lang/String;)V");
-    CHECK_EXCEPTION_NULL_FAIL(mainID);
     jmethodID constructor = (*env)->GetMethodID(env, mainClass, "<init>", "()V");
     CHECK_EXCEPTION_NULL_FAIL(constructor);
     jobject mainObject = (*env)->NewObject(env, mainClass, constructor);
     CHECK_EXCEPTION_NULL_FAIL(mainObject);
+    jmethodID mainID =
+        (*env)->GetMethodID(env, mainClass, "main", "([Ljava/lang/String;)V");
+    CHECK_EXCEPTION_NULL_FAIL(mainID);
     (*env)->CallVoidMethod(env, mainObject, mainID, mainArgs);
     return 1;
 }
@@ -449,7 +449,8 @@ invokeInstanceMainWithoutArgs(JNIEnv *env, jclass mainClass) {
     CHECK_EXCEPTION_NULL_FAIL(constructor);
     jobject mainObject = (*env)->NewObject(env, mainClass, constructor);
     CHECK_EXCEPTION_NULL_FAIL(mainObject);
-    jmethodID mainID = (*env)->GetMethodID(env, mainClass, "main", "()V");
+    jmethodID mainID = (*env)->GetMethodID(env, mainClass, "main",
+                                 "()V");
     CHECK_EXCEPTION_NULL_FAIL(mainID);
     (*env)->CallVoidMethod(env, mainObject, mainID);
     return 1;
@@ -614,7 +615,6 @@ JavaMain(void* _args)
      * The main method is invoked here so that extraneous java stacks are not in
      * the application stack trace.
      */
-
 
     helperClass = GetLauncherHelperClass(env);
     isStaticMainField = (*env)->GetStaticFieldID(env, helperClass, "isStaticMain", "Z");
