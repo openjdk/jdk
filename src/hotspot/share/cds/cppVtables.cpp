@@ -232,7 +232,7 @@ void CppVtables::dumptime_init(ArchiveBuilder* builder) {
 
 void CppVtables::serialize(SerializeClosure* soc) {
   if (!soc->reading()) {
-    _vtables_serialized_base = soc->region_top();
+    _vtables_serialized_base = (char*)ArchiveBuilder::current()->buffer_top();
   }
   for (int i = 0; i < _num_cloned_vtable_kinds; i++) {
     soc->do_ptr(&_index[i]);

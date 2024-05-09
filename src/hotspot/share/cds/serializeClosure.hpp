@@ -48,8 +48,8 @@ public:
   // Read/write the bool pointed to by p.
   virtual void do_bool(bool* p) = 0;
 
-  // Read/write the region specified.
-  void do_region(u_char* start, size_t size) {
+  // Iterate on the pointers from p[0] through p[num_pointers-1]
+  void do_ptrs(u_char* start, size_t size) {
     assert((intptr_t)start % sizeof(intptr_t) == 0, "bad alignment");
     assert(size % sizeof(intptr_t) == 0, "bad size");
     do_tag((int)size);

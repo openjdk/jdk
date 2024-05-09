@@ -322,7 +322,7 @@ void ReadClosure::do_ptr(void** p) {
   intptr_t obj = nextPtr();
   assert((intptr_t)obj >= 0 || (intptr_t)obj < -100,
          "hit tag while initializing ptrs.");
-  *p = obj != 0 ? (void*)(SharedBaseAddress + obj) : (void*)obj;
+  *p = (void*)obj != nullptr ? (void*)(SharedBaseAddress + obj) : (void*)obj;
 }
 
 void ReadClosure::do_u4(u4* p) {
