@@ -25,14 +25,8 @@
 # This script does not expect/verify anything and is only used to simulate tty #
 ################################################################################
 
-set java [lrange $argv 0 0]
-set opt1 [lrange $argv 1 1]
-set opt2 [lrange $argv 2 2]
-set opt3 [lrange $argv 3 3]
-set file [lrange $argv 4 4]
-
 # Use `noecho` below, otherwise, expect will output the expanded "spawn ..."
 # command, which will interfere with asserting output from the java test
 
-spawn -noecho $java $opt1 $opt2 $opt3 $file
+spawn -noecho {*}$argv
 expect eof
