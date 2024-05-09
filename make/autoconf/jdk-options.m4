@@ -673,7 +673,7 @@ AC_DEFUN([JDKOPT_ENABLE_DISABLE_CDS_ARCHIVE],
 #
 AC_DEFUN([JDKOPT_ENABLE_DISABLE_COMPATIBLE_CDS_ALIGNMENT],
 [
-  UTIL_ARG_ENABLE(NAME: compatible-cds-alignment, DEFAULT: false,
+  UTIL_ARG_ENABLE(NAME: compatible-cds-alignment, DEFAULT: true,
       RESULT: ENABLE_COMPATIBLE_CDS_ALIGNMENT,
       DESC: [enable use alternative compatible cds core region alignment],
       DEFAULT_DESC: [disabled],
