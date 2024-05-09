@@ -40,6 +40,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/os.hpp"
+#include "utilities/istream.hpp"
 #include "utilities/parseInteger.hpp"
 
 // Default compile commands, if defined, are parsed before any of the
@@ -1081,53 +1082,27 @@ bool CompilerOracle::parse_from_file() {
     return true;
   }
 
-  char token[1024];
-  int  pos = 0;
-  int  c = getc(stream);
+  FileInput input(stream, /*need_close=*/ true);
+  return parse_from_input(&input, parse_from_line);
+}
+
+bool CompilerOracle::parse_from_input(inputStream::Input* input,
+                                      CompilerOracle::
+                                      parse_from_line_fn_t* parse_from_line) {
   bool success = true;
-  while(c != EOF && pos < (int)(sizeof(token)-1)) {
-    if (c == '\n') {
-      token[pos++] = '\0';
-      if (!parse_from_line(token)) {
-        success = false;
-      }
-      pos = 0;
-    } else {
-      token[pos++] = c;
+  for (inputStream in(input); !in.done(); in.next()) {
+    if (!parse_from_line(in.current_line())) {
+      success = false;
     }
-    c = getc(stream);
   }
-  token[pos++] = '\0';
-  if (!parse_from_line(token)) {
-    success = false;
-  }
-  fclose(stream);
   return success;
 }
 
-bool CompilerOracle::parse_from_string(const char* str, bool (*parse_line)(char*)) {
-  char token[1024];
-  int  pos = 0;
-  const char* sp = str;
-  int  c = *sp++;
-  bool success = true;
-  while (c != '\0' && pos < (int)(sizeof(token)-1)) {
-    if (c == '\n') {
-      token[pos++] = '\0';
-      if (!parse_line(token)) {
-        success = false;
-      }
-      pos = 0;
-    } else {
-      token[pos++] = c;
-    }
-    c = *sp++;
-  }
-  token[pos++] = '\0';
-  if (!parse_line(token)) {
-    success = false;
-  }
-  return success;
+bool CompilerOracle::parse_from_string(const char* str,
+                                       CompilerOracle::
+                                       parse_from_line_fn_t* parse_from_line) {
+  MemoryInput input(str, strlen(str));
+  return parse_from_input(&input, parse_from_line);
 }
 
 bool compilerOracle_init() {

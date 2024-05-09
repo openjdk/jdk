@@ -1887,8 +1887,9 @@ enum Nf {
   }
 
   // Vector Bit-manipulation used in Cryptography (Zvkb) Extension
-  INSN(vbrev8_v, 0b1010111, 0b010, 0b01000, 0b010010);
-  INSN(vrev8_v,  0b1010111, 0b010, 0b01001, 0b010010);
+  INSN(vbrev_v,  0b1010111, 0b010, 0b01010, 0b010010); // reverse bits in every element
+  INSN(vbrev8_v, 0b1010111, 0b010, 0b01000, 0b010010); // reverse bits in every byte of element
+  INSN(vrev8_v,  0b1010111, 0b010, 0b01001, 0b010010); // reverse bytes in every elememt
 
 #undef INSN
 

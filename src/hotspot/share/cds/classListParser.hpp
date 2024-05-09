@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "utilities/exceptions.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
+#include "utilities/istream.hpp"
 #include "utilities/resizeableResourceHash.hpp"
 
 #define LAMBDA_PROXY_TAG "@lambda-proxy"
@@ -80,14 +81,6 @@ private:
 
   enum {
     _unspecified      = -999,
-
-    // Max number of bytes allowed per line in the classlist.
-    // Theoretically Java class names could be 65535 bytes in length. Also, an input line
-    // could have a very long path name up to JVM_MAXPATHLEN bytes in length. In reality,
-    // 4K bytes is more than enough.
-    _max_allowed_line_len = 4096,
-    _line_buf_extra       = 10, // for detecting input too long
-    _line_buf_size        = _max_allowed_line_len + _line_buf_extra
   };
 
   // Use a small initial size in debug build to test resizing logic
@@ -96,16 +89,14 @@ private:
   static volatile Thread* _parsing_thread; // the thread that created _instance
   static ClassListParser* _instance; // the singleton.
   const char* _classlist_file;
-  FILE* _file;
 
   ID2KlassTable _id2klass_table;
 
-  // The following field contains information from the *current* line being
-  // parsed.
-  char                _line[_line_buf_size];  // The buffer that holds the current line. Some characters in
+  FileInput           _file_input;
+  inputStream         _input_stream;
+  char*               _line;                  // The buffer that holds the current line. Some characters in
                                               // the buffer may be overwritten by '\0' during parsing.
   int                 _line_len;              // Original length of the input line.
-  int                 _line_no;               // Line number for current line being parsed
   const char*         _class_name;
   GrowableArray<const char*>* _indy_items;    // items related to invoke dynamic for archiving lambda proxy classes
   int                 _id;
@@ -132,6 +123,8 @@ private:
   bool parse_one_line();
   Klass* load_current_class(Symbol* class_name_symbol, TRAPS);
 
+  size_t lineno() { return _input_stream.lineno(); }
+  FILE* do_open(const char* file);
   ClassListParser(const char* file, ParseMode _parse_mode);
   ~ClassListParser();
 
@@ -183,6 +176,7 @@ public:
       error("%s id %d is not yet loaded", which, id);
     }
   }
+  void check_class_name(const char* class_name);
 
   const char* current_class_name() {
     return _class_name;
