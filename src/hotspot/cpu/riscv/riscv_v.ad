@@ -3849,15 +3849,15 @@ instruct vpopcount(vReg dst, vReg src) %{
 
 // ------------------------------ CountLeadingZerosV --------------------------
 
-instruct vcountLeadingZeros_masked(vReg dst, vReg src, vRegMask_V0 v0) %{
-  match(Set dst (CountLeadingZerosV src v0));
+instruct vcountLeadingZeros_masked(vReg dst_src, vRegMask_V0 v0) %{
+  match(Set dst_src (CountLeadingZerosV dst_src v0));
   ins_cost(VEC_COST);
-  format %{ "vcount_leading_zeros_masked $dst, $src, v0" %}
+  format %{ "vcount_leading_zeros_masked $dst_src, $dst_src, v0" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     uint vlen = Matcher::vector_length(this);
     __ vsetvli_helper(bt, vlen);
-    __ vclz_v(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg), Assembler::v0_t);
+    __ vclz_v(as_VectorRegister($dst_src$$reg), as_VectorRegister($dst_src$$reg), Assembler::v0_t);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -3877,15 +3877,15 @@ instruct vcountLeadingZeros(vReg dst, vReg src) %{
 
 // ------------------------------ CountTrailingZerosV --------------------------
 
-instruct vcountTrailingZeros_masked(vReg dst, vReg src, vRegMask_V0 v0) %{
-  match(Set dst (CountTrailingZerosV src v0));
+instruct vcountTrailingZeros_masked(vReg dst_src, vRegMask_V0 v0) %{
+  match(Set dst_src (CountTrailingZerosV dst_src v0));
   ins_cost(VEC_COST);
-  format %{ "vcount_trailing_zeros_masked $dst, $src, v0" %}
+  format %{ "vcount_trailing_zeros_masked $dst_src, $dst_src, v0" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     uint vlen = Matcher::vector_length(this);
     __ vsetvli_helper(bt, vlen);
-    __ vctz_v(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg), Assembler::v0_t);
+    __ vctz_v(as_VectorRegister($dst_src$$reg), as_VectorRegister($dst_src$$reg), Assembler::v0_t);
   %}
   ins_pipe(pipe_slow);
 %}
