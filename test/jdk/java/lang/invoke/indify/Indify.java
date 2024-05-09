@@ -23,10 +23,7 @@
 
 package indify;
 
-import java.lang.classfile.Attribute;
-import java.lang.classfile.ClassModel;
-import java.lang.classfile.FieldModel;
-import java.lang.classfile.MethodModel;
+import java.lang.classfile.*;
 import java.lang.classfile.constantpool.*;
 import java.nio.file.Files;
 import java.util.*;
@@ -1344,13 +1341,23 @@ public class Indify {
         public final List<PoolEntry>    pool = new ArrayList<>();
 
         public void parseFrom(byte[] bytes) throws IOException {
-            List<VerifyError> errors = java.lang.classfile.ClassFile.of().verify(bytes);
-            if (!errors.isEmpty()) {
-                for (VerifyError e : errors) {
-                    System.err.println(e.getMessage());
+            ClassHierarchyResolver classHierarchyResolver = classDesc -> {
+                // Treat all classes as interfaces
+                return ClassHierarchyResolver.ClassHierarchyInfo.ofInterface();
+            };
+
+            try {
+                List<VerifyError> errors = java.lang.classfile.ClassFile.of(ClassHierarchyResolverOption.of(classHierarchyResolver)).verify(bytes);
+                if (!errors.isEmpty()) {
+                    for (VerifyError e : errors) {
+                        System.err.println(e.getMessage());
+                    }
+                    throw new IOException("Verification failed");
                 }
-                throw new IOException("verification failed");
+            } catch (IOException e) {
+                System.err.println(e.getMessage());
             }
+
             classModel = java.lang.classfile.ClassFile.of().parse(bytes);
 
             pool.addFirst(null);
@@ -1371,7 +1378,6 @@ public class Indify {
             attributes.addAll(classModel.attributes());
 
             interfaces.addAll(classModel.interfaces());
-
         }
     }
 
