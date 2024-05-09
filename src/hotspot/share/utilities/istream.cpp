@@ -286,7 +286,7 @@ bool inputStream::expand_buffer(size_t new_length) {
 inputStream::~inputStream() {
   if (has_c_heap_buffer()) {
     FreeHeap(_buffer);
-    DEBUG_ONLY(_buffer = (char*)0xdeadbeef); // sanity
+    DEBUG_ONLY(_buffer = (char*)((uintptr_t)0xdeadbeef)); // sanity
   }
 }
 
