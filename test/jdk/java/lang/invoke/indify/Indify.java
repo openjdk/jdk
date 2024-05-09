@@ -598,7 +598,7 @@ public class Indify {
                             }
                             String cls = (bytecode.classModel.constantPool().entryByIndex(cl) instanceof ClassEntry) ?
                                     ((ClassEntry) bytecode.classModel.constantPool().entryByIndex(cl)).name().stringValue() : "";
-                            if (cls.equals(bytecode.thisClass.name().stringValue())) {
+                            if (cls.equals(bytecode.classModel.thisClass().name().stringValue())) {
                                 mark = switch (poolMarks[nt]) {
                                     case 'T', 'H', 'I' -> poolMarks[nt];
                                     default -> mark;
@@ -1316,24 +1316,9 @@ public class Indify {
 
             classModel = java.lang.classfile.ClassFile.of().parse(bytes);
 
-            pool.addFirst(null);
-            for (PoolEntry poolEntry : classModel.constantPool()) {
-                this.pool.add(poolEntry);
-            }
-
-
             magicNumber = MAGIC_NUMBER;
             classFileVersion = classModel.majorVersion();
             accessFlags = classModel.flags().flagsMask();
-
-            thisClass = classModel.thisClass();
-            superClass = (classModel.superclass().isPresent() ? classModel.superclass().get() : null);
-
-            methods.addAll(classModel.methods());
-            fields.addAll(classModel.fields());
-            attributes.addAll(classModel.attributes());
-
-            interfaces.addAll(classModel.interfaces());
         }
     }
 
