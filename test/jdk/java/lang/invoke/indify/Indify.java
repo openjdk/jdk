@@ -553,9 +553,9 @@ public class Indify {
          * @return true if any marks were changed, false otherwise.
          */
         boolean initializeMarks() {
-            boolean changed = false;
+            boolean anyMarksChanged = false;
             for (;;) {
-                boolean changed1 = false;
+                boolean someMarksChangedInLoop = false;
                 for (PoolEntry poolEntry : bytecode.classModel.constantPool()) {
                     // Get the index directly from PoolEntry
                     if (poolEntry == null) {
@@ -579,28 +579,28 @@ public class Indify {
                             mark = nameAndType_Mark(ref1, ref2);
                             break;
                         case TAG_CLASS: {
-                            int n1 = ((ClassEntry) poolEntry).name().index();
-                            char nmark = poolMarks[n1];
-                            if ("DJ".indexOf(nmark) >= 0) {
-                                mark = nmark;
+                            int nameIndex = ((ClassEntry) poolEntry).name().index();
+                            char nameMark = poolMarks[nameIndex];
+                            if ("DJ".indexOf(nameMark) >= 0) {
+                                mark = nameMark;
                             }
                             break;
                         }
                         case TAG_FIELDREF:
                         case TAG_METHODREF: {
                             MemberRefEntry memberRefEntry = (MemberRefEntry) poolEntry;
-                            int cl = memberRefEntry.owner().index();
-                            int nt = memberRefEntry.nameAndType().index();
-                            char classMark = poolMarks[cl];
+                            int classIndex = memberRefEntry.owner().index();
+                            int nameAndTypeIndex = memberRefEntry.nameAndType().index();
+                            char classMark = poolMarks[classIndex];
                             if (classMark != 0) {
                                 mark = classMark;  // java.lang.invoke.* or java.lang.* method
                                 break;
                             }
-                            String cls = (bytecode.classModel.constantPool().entryByIndex(cl) instanceof ClassEntry) ?
-                                    ((ClassEntry) bytecode.classModel.constantPool().entryByIndex(cl)).name().stringValue() : "";
+                            String cls = (bytecode.classModel.constantPool().entryByIndex(classIndex) instanceof ClassEntry) ?
+                                    ((ClassEntry) bytecode.classModel.constantPool().entryByIndex(classIndex)).name().stringValue() : "";
                             if (cls.equals(bytecode.classModel.thisClass().name().stringValue())) {
-                                mark = switch (poolMarks[nt]) {
-                                    case 'T', 'H', 'I' -> poolMarks[nt];
+                                mark = switch (poolMarks[nameAndTypeIndex]) {
+                                    case 'T', 'H', 'I' -> poolMarks[nameAndTypeIndex];
                                     default -> mark;
                                 };
                             }
@@ -612,15 +612,15 @@ public class Indify {
 
                     if (mark != 0) {
                         poolMarks[cpIndex] = mark;
-                        changed1 = true;
+                        someMarksChangedInLoop = true;
                     }
                 }
-                if (!changed1) {
+                if (!someMarksChangedInLoop) {
                     break;
                 }
-                changed = true;
+                anyMarksChanged = true;
             }
-            return changed;
+            return anyMarksChanged;
         }
         char nameMark(String s) {
             if (s.startsWith("MT_"))                return 'T';
