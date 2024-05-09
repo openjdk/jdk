@@ -58,6 +58,7 @@
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/referenceProcessorPhaseTimes.hpp"
 #include "gc/shared/spaceDecorator.inline.hpp"
+#include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/weakProcessor.inline.hpp"
 #include "gc/shared/workerPolicy.hpp"
@@ -1269,9 +1270,9 @@ bool PSParallelCompact::invoke(bool maximum_heap_compaction) {
          "should be in vm thread");
 
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
-  assert(!heap->is_gc_active(), "not reentrant");
+  assert(!heap->is_stw_gc_active(), "not reentrant");
 
-  IsGCActiveMark mark;
+  IsSTWGCActiveMark mark;
 
   const bool clear_all_soft_refs =
     heap->soft_ref_policy()->should_clear_all_soft_refs();
@@ -1492,7 +1493,7 @@ private:
 public:
   PCAddThreadRootsMarkingTaskClosure(uint worker_id) : _worker_id(worker_id) { }
   void do_thread(Thread* thread) {
-    assert(ParallelScavengeHeap::heap()->is_gc_active(), "called outside gc");
+    assert(ParallelScavengeHeap::heap()->is_stw_gc_active(), "called outside gc");
 
     ResourceMark rm;
 
@@ -1509,7 +1510,7 @@ public:
 };
 
 void steal_marking_work(TaskTerminator& terminator, uint worker_id) {
-  assert(ParallelScavengeHeap::heap()->is_gc_active(), "called outside gc");
+  assert(ParallelScavengeHeap::heap()->is_stw_gc_active(), "called outside gc");
 
   ParCompactionManager* cm =
     ParCompactionManager::gc_thread_compaction_manager(worker_id);
@@ -1986,7 +1987,7 @@ void PSParallelCompact::write_block_fill_histogram()
 #endif // #ifdef ASSERT
 
 static void compaction_with_stealing_work(TaskTerminator* terminator, uint worker_id) {
-  assert(ParallelScavengeHeap::heap()->is_gc_active(), "called outside gc");
+  assert(ParallelScavengeHeap::heap()->is_stw_gc_active(), "called outside gc");
 
   ParCompactionManager* cm =
     ParCompactionManager::gc_thread_compaction_manager(worker_id);
