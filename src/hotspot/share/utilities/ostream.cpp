@@ -590,59 +590,6 @@ long fileStream::fileSize() {
   return size;
 }
 
-#ifdef _WINDOWS
-#define ftello _ftelli64
-#define fseeko _fseeki64
-#define OFF_T  __int64
-#endif
-
-#ifndef OFF_T
-#define OFF_T off_t
-#endif
-
-size_t fileStream::position() {
-  if (_file == nullptr)  return NO_SIZE;
-#if _LP64
-  typedef OFF_T position_t;
-  position_t p = ::ftello(_file);
-#else
-  typedef long position_t;
-  position_t p = ::ftell(_file);
-#endif
-  if (p == (position_t) -1)  return NO_SIZE;
-  size_t result = (size_t) p;
-  if (p != (position_t) result)  return NO_SIZE;
-  return (size_t) p;
-}
-
-size_t fileStream::set_position(size_t position) {
-  if (_file == nullptr)  return NO_SIZE;
-  int res = -1;
-#if _LP64
-  res = ::fseeko(_file, (OFF_T) position, SEEK_SET);
-#else
-  res = ::fseek(_file, (long) position, SEEK_SET);
-#endif
-  if (res != 0)  return NO_SIZE;
-  // re-read position; why not...
-  return this->position();
-}
-
-size_t fileStream::remaining() {
-  if (_file == nullptr)  return -1;
-  size_t p1 = position();
-  if (p1 == NO_SIZE)  return p1;
-  if (::fseek(_file, 0, SEEK_END) != 0) {
-    return NO_SIZE;
-  }
-  size_t p2 = position();
-  p1 = set_position(p1);
-  if (p2 == NO_SIZE || p1 == NO_SIZE) {
-    return NO_SIZE;
-  }
-  return (p2 < p1) ? 0 : p2 - p1;
-}
-
 fileStream::~fileStream() {
   if (_file != nullptr) {
     close();

@@ -235,7 +235,6 @@ class fileStream : public outputStream {
   FILE* _file;
   bool  _need_close;
  public:
-  static constexpr size_t NO_SIZE = (size_t) -1;  // sentinel for query gone wrong
   fileStream() { _file = nullptr; _need_close = false; }
   fileStream(const char* file_name);
   fileStream(const char* file_name, const char* opentype);
@@ -258,9 +257,6 @@ class fileStream : public outputStream {
   }
   long fileSize();
   void flush();
-  size_t position();  // return NO_SIZE on failure
-  size_t set_position(size_t position);  // return new position or NO_SIZE on failure
-  size_t remaining();  // return remaining file size or NO_SIZE on failure
 };
 
 // unlike fileStream, fdStream does unbuffered I/O by calling
