@@ -223,9 +223,14 @@ void ShenandoahBarrierSetAssembler::satb_write_barrier_pre(MacroAssembler* masm,
   Address index(thread, in_bytes(ShenandoahThreadLocalData::satb_mark_queue_index_offset()));
   Address buffer(thread, in_bytes(ShenandoahThreadLocalData::satb_mark_queue_buffer_offset()));
 
-  Address gc_state(thread, in_bytes(ShenandoahThreadLocalData::gc_state_offset()));
-  __ testb(gc_state, ShenandoahHeap::MARKING);
-  __ jcc(Assembler::zero, done);
+  // Is marking active?
+  if (in_bytes(SATBMarkQueue::byte_width_of_active()) == 4) {
+    __ cmpl(in_progress, 0);
+  } else {
+    assert(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1, "Assumption");
+    __ cmpb(in_progress, 0);
+  }
+  __ jcc(Assembler::equal, done);
 
   // Do we need to load the previous value?
   if (obj != noreg) {
