@@ -386,7 +386,7 @@ public class Indify {
             poolMarks = new char[bytecode.classModel.constantPool().size()];
         }
         boolean transform() {
-            if (!initialize_Marks())  return false;
+            if (!initializeMarks())  return false;
             if (!findPatternMethods())  return false;
             Pool pool = cf.pool;
             //for (Constant c : cp)  System.out.println("  # "+c);
@@ -539,7 +539,8 @@ public class Indify {
             }
             if (!quiet)  System.err.flush();
         }
-        boolean initialize_Marks() {
+
+        boolean initializeMarks() {
             boolean changed = false;
             for (;;) {
                 boolean changed1 = false;
@@ -555,8 +556,7 @@ public class Indify {
                         continue;
                     }
 
-                    int tag = poolEntry.tag();
-                    switch (tag) {
+                    switch (poolEntry.tag()) {
                         case TAG_UTF8:
                             mark = nameMark(((Utf8Entry) poolEntry).stringValue());
                             break;
@@ -587,13 +587,10 @@ public class Indify {
                             String cls = (bytecode.classModel.constantPool().entryByIndex(cl) instanceof ClassEntry) ?
                                     ((ClassEntry) bytecode.classModel.constantPool().entryByIndex(cl)).name().stringValue() : "";
                             if (cls.equals(bytecode.thisClass.name().stringValue())) {
-                                switch (poolMarks[nt]) {
-                                    case 'T':
-                                    case 'H':
-                                    case 'I':
-                                        mark = poolMarks[nt];
-                                        break;
-                                }
+                                mark = switch (poolMarks[nt]) {
+                                    case 'T', 'H', 'I' -> poolMarks[nt];
+                                    default -> mark;
+                                };
                             }
                             break;
                         }
