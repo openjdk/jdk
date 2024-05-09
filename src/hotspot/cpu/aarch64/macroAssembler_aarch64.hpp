@@ -446,7 +446,7 @@ class MacroAssembler: public Assembler {
     if (VM_Version::supports_a53mac() && Ra != zr)
       nop();
     if (VM_Version::is_neoverse_family()) {
-      /* On Neoverse, MSUB uses the same ALU with SDIV.
+      /* On Neoverse, MSUB uses the same ALU with other instructions (e.g. SDIV).
        * The combination of MUL/SUB can utilize multiple ALUs,
        * and can be somewhat faster than MSUB. */
       mul(rscratch1, Rn, Rm);
@@ -460,7 +460,7 @@ class MacroAssembler: public Assembler {
     if (VM_Version::supports_a53mac() && Ra != zr)
       nop();
     if (VM_Version::is_neoverse_family()) {
-      /* On Neoverse, MSUB uses the same ALU with SDIV.
+      /* On Neoverse, MSUB uses the same ALU with other instructions (e.g. SDIV).
        * The combination of MUL/SUB can utilize multiple ALUs,
        * and can be somewhat faster than MSUB. */
       mulw(rscratch1, Rn, Rm);
