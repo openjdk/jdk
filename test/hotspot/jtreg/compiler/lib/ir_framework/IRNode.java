@@ -1164,9 +1164,19 @@ public class IRNode {
         vectorNode(COUNTTRAILINGZEROS_VL, "CountTrailingZerosV", TYPE_LONG);
     }
 
+    public static final String COUNTTRAILINGZEROS_VI = VECTOR_PREFIX + "COUNTTRAILINGZEROS_VI" + POSTFIX;
+    static {
+        vectorNode(COUNTTRAILINGZEROS_VI, "CountTrailingZerosV", TYPE_INT);
+    }
+
     public static final String COUNTLEADINGZEROS_VL = VECTOR_PREFIX + "COUNTLEADINGZEROS_VL" + POSTFIX;
     static {
         vectorNode(COUNTLEADINGZEROS_VL, "CountLeadingZerosV", TYPE_LONG);
+    }
+
+    public static final String COUNTLEADINGZEROS_VI = VECTOR_PREFIX + "COUNTLEADINGZEROS_VI" + POSTFIX;
+    static {
+        vectorNode(COUNTLEADINGZEROS_VI, "CountLeadingZerosV", TYPE_INT);
     }
 
     public static final String POPULATE_INDEX = PREFIX + "POPULATE_INDEX" + POSTFIX;
