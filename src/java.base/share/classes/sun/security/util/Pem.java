@@ -76,9 +76,9 @@ public class Pem {
     /**
      * CRL PEM header & footer
      */
-    public static final byte[] CRLHEADER = "-----BEGIN CRL-----"
+    public static final byte[] CRLHEADER = "-----BEGIN X509 CRL-----"
         .getBytes(StandardCharsets.UTF_8);
-    public static final byte[] CRLFOOTER = "-----END CRL-----"
+    public static final byte[] CRLFOOTER = "-----END X509 CRL-----"
         .getBytes(StandardCharsets.UTF_8);
 
     /**

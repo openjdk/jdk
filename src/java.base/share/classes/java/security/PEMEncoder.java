@@ -171,7 +171,7 @@ final public class PEMEncoder {
      * Encoded a given {@code DEREncodable} into PEM.
      *
      * @param so the object that implements DEREncodable.
-     * @return a PEM encoded string of the given DEREncodable.
+     * @return a PEM encoded byte[] of the given DEREncodable.
      * @throws IllegalArgumentException when the passed object returns a null
      * binary encoding. An exception is thrown when PEMEncoder is
      * configured for encryption while encoding a DEREncodable that does
