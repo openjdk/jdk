@@ -24,6 +24,8 @@
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.stream.Stream;
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
@@ -31,6 +33,8 @@ import jtreg.SkippedException;
 import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -121,23 +125,34 @@ public class IO {
      * or JPty might be used instead EXPECT, to cover both Unix and Windows.
      */
     @ParameterizedTest
-    @ValueSource(strings = {"?"}) // TODO: add %s and maybe %%s after 8331535 has been fixed
+    @MethodSource("args")
     @EnabledOnOs({OS.LINUX, OS.MAC})
-    public void inputTestInteractive(String prompt) throws Exception {
+    public void inputTestInteractive(String console, String prompt) throws Exception {
         var expect = Paths.get("/usr/bin/expect"); // os-specific path
         if (!Files.exists(expect) || !Files.isExecutable(expect)) {
             throw new SkippedException("'" + expect + "' not found");
         }
         var testSrc = System.getProperty("test.src", ".");
-        OutputAnalyzer output = ProcessTools.executeProcess(
-                "expect",
-                Path.of(testSrc, "input.exp").toAbsolutePath().toString(),
-                System.getProperty("test.jdk") + "/bin/java",
-                "--enable-preview",
-                Path.of(testSrc, "Input.java").toAbsolutePath().toString(),
-                prompt);
+        var command = new ArrayList<String>();
+        command.add("expect");
+        command.add(Path.of(testSrc, "input.exp").toAbsolutePath().toString());
+        command.add(System.getProperty("test.jdk") + "/bin/java");
+        command.add("--enable-preview");
+        if (console != null)
+            command.add("-Djdk.console=" + console);
+        command.add(Path.of(testSrc, "Input.java").toAbsolutePath().toString());
+        command.add(prompt == null ? "0" : "1");
+        command.add(String.valueOf(prompt));
+        OutputAnalyzer output = ProcessTools.executeProcess(command.toArray(new String[]{}));
         output.reportDiagnosticSummary();
         assertEquals(0, output.getExitValue());
+    }
+
+    public static Stream<Arguments> args() {
+        // TODO: add %s and maybe %%s after 8331535 has been fixed
+        // cross product: consoles x prompts
+        return Stream.of(null, "gibberish").flatMap(console -> Stream.of(null, "?")
+                .map(prompt -> new String[]{console, prompt}).map(Arguments::of));
     }
 
     @ParameterizedTest

@@ -28,6 +28,9 @@ import static java.io.IO.readln;
 public class Input {
 
     public static void main(String[] args) throws IOException {
-        System.out.print(readln(args[0]));
+        if (args[0].equals("0"))
+            System.out.print(readln(null));
+        else
+            System.out.print(readln(args[1]));
     }
 }

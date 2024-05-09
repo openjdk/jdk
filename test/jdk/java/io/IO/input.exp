@@ -21,12 +21,9 @@
 # questions.
 #
 
-set java [lrange $argv 0 0]
-set opts [lrange $argv 1 1]
-set file [lrange $argv 2 2]
-set prompt [lrange $argv 3 3]
+set prompt [lindex $argv $argc-1]
 
-spawn $java $opts $file $prompt
+spawn {*}$argv
 expect {
     -exact "$prompt" {
         send "hello\r"
