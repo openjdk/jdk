@@ -75,10 +75,8 @@ public final class JdkConsoleImpl implements JdkConsole {
         String line = null;
         synchronized (writeLock) {
             synchronized(readLock) {
-                if (!prompt.isEmpty()) {
-                    pw.print(prompt);
-                    pw.flush(); // automatic flushing does not cover print
-                }
+                pw.print(prompt);
+                pw.flush(); // automatic flushing does not cover print
                 try {
                     char[] ca = readline(false);
                     if (ca != null)

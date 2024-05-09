@@ -155,7 +155,8 @@ public sealed class Console implements Flushable permits ProxyingConsole {
      * by calling {@link String#valueOf(Object)}.
      *
      * @param  obj
-     *         An object whose string representation is to be written.
+     *         An object whose string representation is to be written,
+     *         may be {@code null}.
      *
      * @return  This console
      *
@@ -174,7 +175,8 @@ public sealed class Console implements Flushable permits ProxyingConsole {
      * by calling {@link String#valueOf(Object)}.
      *
      * @param  obj
-     *         An object whose string representation is to be written.
+     *         An object whose string representation is to be written,
+     *         may be {@code null}.
      *
      * @return  This console
      *
@@ -190,7 +192,7 @@ public sealed class Console implements Flushable permits ProxyingConsole {
      * of text from this console.
      *
      * @param  prompt
-     *         A prompt string.
+     *         A prompt string, may be {@code null}.
      *
      * @throws IOError
      *         If an I/O error occurs.

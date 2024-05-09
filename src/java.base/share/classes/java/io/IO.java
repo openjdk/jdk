@@ -54,7 +54,7 @@ public class IO {
      * <p> The effect is as if {@link Console#println(Object) println(obj)}
      * had been called on {@code System.console()}.
      *
-     * @param obj the object to print
+     * @param obj the object to print, may be {@code null}
      *
      * @throws IOError if {@code System.console()} returns {@code null},
      *                 or if an I/O error occurs
@@ -70,7 +70,7 @@ public class IO {
      * <p> The effect is as if {@link Console#print(Object) print(obj)}
      * had been called on {@code System.console()}.
      *
-     * @param obj the object to print
+     * @param obj the object to print, may be {@code null}
      *
      * @throws IOError if {@code System.console()} returns {@code null},
      *                 or if an I/O error occurs
@@ -86,7 +86,7 @@ public class IO {
      * <p> The effect is as if {@link Console#readln(String) readln(prompt)}
      * had been called on {@code System.console()}.
      *
-     * @param prompt the prompt string
+     * @param prompt the prompt string, may be {@code null}
      *
      * @return a string containing the line read from the system console, not
      * including any line-termination characters. Returns {@code null} if an
