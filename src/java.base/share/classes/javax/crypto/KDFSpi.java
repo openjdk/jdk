@@ -31,11 +31,15 @@ import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidParameterSpecException;
 
 /**
- * This class defines the <i>Service Provider Interface</i> (<b>SPI</b>) for the
- * <code>KeyDerivation</code> class.
+ * This class defines the <i>Service Provider Interface</i> (<b>SPI</b>) for
+ * the {@code KDF} class.
  * <p>
- * All the abstract methods in this class must be implemented by each cryptographic service provider
- * who wishes to supply the implementation of a particular key derivation algorithm.
+ * All the abstract methods in this class must be implemented by each
+ * cryptographic service provider who wishes to supply the implementation of a
+ * particular key derivation algorithm.
+ *
+ *
+ * @since 23
  */
 public abstract class KDFSpi {
 
@@ -50,10 +54,12 @@ public abstract class KDFSpi {
      * TODO: additional description
      *
      * @param algParameterSpec
-     *     the initialization parameters for the KDF algorithm (may be {@code null})
+     *     the initialization parameters for the {@code KDF} algorithm (may be
+     *     {@code null})
      *
      * @throws InvalidAlgorithmParameterException
-     *     if the initialization parameters are inappropriate for this {@code KDFSpi}
+     *     if the initialization parameters are inappropriate for this
+     *     {@code KDFSpi}
      */
     protected KDFSpi(AlgorithmParameterSpec algParameterSpec)
         throws InvalidAlgorithmParameterException {
@@ -62,7 +68,7 @@ public abstract class KDFSpi {
 
 
     /**
-     * Derive a key, returned as a {@code Key}.
+     * Derive a key, returned as a {@code SecretKey}.
      * <p>
      * TODO: additional description
      *
@@ -71,19 +77,20 @@ public abstract class KDFSpi {
      * @param kdfParameterSpec
      *     derivation parameters
      *
-     * @return a {@code SecretKey} object corresponding to a key built from the KDF output and according
-     * to the derivation parameters.
+     * @return a {@code SecretKey} object corresponding to a key built from the
+     * KDF output and according to the derivation parameters.
      *
      * @throws InvalidParameterSpecException
-     *     if the information contained within the {@code DerivationParameterSpec} is invalid or
-     *     incorrect for the type of key to be derived, or specifies a type of output that is not a
-     *     key (e.g. raw data)
+     *     if the information contained within the
+     *     {@code KDFParameterSpec} is invalid or incorrect for the type
+     *     of key to be derived, or specifies a type of output that is not a key
+     *     (e.g. raw data)
      * @throws IllegalStateException
-     *     if the key derivation implementation cannot support additional calls to {@code deriveKey}
-     *     or if all {@code DerivationParameterSpec} objects provided at initialization have been
-     *     processed.
+     *     if the key derivation implementation cannot support additional calls
+     *     to {@code deriveKey}
      */
-    protected abstract SecretKey engineDeriveKey(String alg, KDFParameterSpec kdfParameterSpec)
+    protected abstract SecretKey engineDeriveKey(String alg,
+                                                 KDFParameterSpec kdfParameterSpec)
         throws InvalidParameterSpecException;
 
     /**
@@ -94,19 +101,20 @@ public abstract class KDFSpi {
      * @param kdfParameterSpec
      *     derivation parameters
      *
-     * @return a byte array whose length matches the length field in the processed
-     * {@code DerivationParameterSpec} and containing the next bytes of output from the key
-     * derivation function.
+     * @return a byte array whose length matches the length field in the
+     * processed {@code KDFParameterSpec} and containing the next bytes
+     * of output from the key derivation function.
      *
      * @throws InvalidParameterSpecException
-     *     if the {@code DerivationParameterSpec} being applied to this method is of a type other
-     *     than "data".
+     *     if the information contained within the
+     *     {@code KDFParameterSpec} is invalid or incorrect for the type
+     *     of key to be derived
      * @throws IllegalStateException
-     *     if the key derivation implementation cannot support additional calls to
-     *     {@code deriveData } or if all {@code DerivationParameterSpec} objects have been
-     *     processed.
+     *     if the key derivation implementation cannot support additional calls
+     *     to {@code deriveData }
      */
-    protected abstract byte[] engineDeriveData(KDFParameterSpec kdfParameterSpec)
+    protected abstract byte[] engineDeriveData(
+        KDFParameterSpec kdfParameterSpec)
         throws InvalidParameterSpecException;
 
 }

@@ -40,25 +40,30 @@ import sun.security.jca.GetInstance.Instance;
 import javax.crypto.spec.KDFParameterSpec;
 
 /**
- * This class provides the functionality of a key derivation algorithm for the Java Cryptographic
- * Extension (JCE) framework.
+ * This class provides the functionality of a key derivation algorithm for JCE.
  * <p>
- * {@code KeyDerivation} objects will be instantiated through the {@code getInstance} family of
- * methods.  Key derivation algorithm names will follow a naming convention of
- * <I>algorithm</I>/<I>PRF</I>.  The algorithm field will be the KDF name
- * (e.g. HKDF, TLS-PRF, PBKDF2, etc.), while the PRF specifier identifies the underlying
- * pseudorandom function (e.g. HmacSHA256).  For instance, a KDF implementation of HKDF using
- * HMAC-SHA256 will have an algorithm string of "HKDF/HmacSHA256".  In some cases the PRF portion of
- * the algorithm specifier may be omitted if the KDF algorithm has a fixed or default PRF.
+ * {@code KDF} objects are instantiated through the {@code getInstance} family
+ * of methods.  Key derivation algorithm names follow a naming convention
+ * of <I>algorithm</I>/<I>PRF</I>.  The algorithm field is the KDF algorithm
+ * (e.g. HKDF, TLS-PRF, PBKDF2, etc.), while the PRF specifier identifies the
+ * underlying pseudorandom function (e.g. HmacSHA256).  For instance, a KDF
+ * implementation of HKDF using HMAC-SHA256 will have an algorithm string of
+ * "HKDF/HmacSHA256".  In some cases the PRF portion of the algorithm specifier
+ * may be omitted if the KDF algorithm has a fixed or default PRF.
  * <p>
  * TODO: finish this javadoc
+ *
+ * @since 23
  */
 
 public final class KDF {
-    private static final Debug debug = Debug.getInstance("jca", "KeyDerivation");
+    private static final Debug debug = Debug.getInstance("jca",
+                                                         "KeyDerivation");
 
-    private static final Debug pdebug = Debug.getInstance("provider", "Provider");
-    private static final boolean skipDebug = Debug.isOn("engine=") && !Debug.isOn("keyderive");
+    private static final Debug pdebug = Debug.getInstance("provider",
+                                                          "Provider");
+    private static final boolean skipDebug = Debug.isOn("engine=")
+                                             && !Debug.isOn("keyderive");
 
     // The provider
     private Provider provider;
@@ -72,9 +77,6 @@ public final class KDF {
     // Additional KDF configuration parameters
     private final AlgorithmParameterSpec algorithmParameterSpec;
 
-    // Has this object been initialized?
-    private boolean initialized = false;
-
     // next service to try in provider selection
     // null once provider is selected
     private Service firstService;
@@ -86,7 +88,7 @@ public final class KDF {
     private final Object lock;
 
     /**
-     * Instantiates a KeyDerivation object.
+     * Instantiates a KDF object.
      *
      * @param keyDerivSpi
      *     the delegate
@@ -97,8 +99,8 @@ public final class KDF {
      * @param algParameterSpec
      *     the algorithm parameters
      */
-    protected KDF(KDFSpi keyDerivSpi, Provider provider, String algorithm,
-                  AlgorithmParameterSpec algParameterSpec) {
+    private KDF(KDFSpi keyDerivSpi, Provider provider, String algorithm,
+                AlgorithmParameterSpec algParameterSpec) {
         this.spi = keyDerivSpi;
         this.provider = provider;
         this.algorithm = algorithm;
@@ -107,23 +109,24 @@ public final class KDF {
     }
 
     /**
-     * Returns the algorithm name of this {@code KeyDerivation} object.
+     * Returns the algorithm name of this {@code KDF} object.
      *
      * <p>This is the same name that was specified in one of the
-     * {@code getInstance} calls that created this {@code KeyDerivation} object.
+     * {@code getInstance} calls that created this {@code KDF}
+     * object.
      *
-     * @return the algorithm name of this {@code KeyDerivation} object.
+     * @return the algorithm name of this {@code KDF} object
      */
-    public final String getAlgorithm() {
+    public String getAlgorithm() {
         return this.algorithm;
     }
 
     /**
-     * Returns the provider of this {@code KeyDerivation} object.
+     * Returns the provider of this {@code KDF} object.
      *
-     * @return the provider of this {@code KeyDerivation} object.
+     * @return the provider of this {@code KDF} object.
      */
-    private final Provider getProvider() {
+    private Provider getProvider() {
         chooseFirstProvider();
         return this.provider;
     }
@@ -141,23 +144,26 @@ public final class KDF {
      * @return a {@code KDF} object
      *
      * @throws NoSuchAlgorithmException
-     *     if no {@code Provider} supports a {@code KDFSpi} implementation for the specified
-     *     algorithm.
+     *     if no {@code Provider} supports a {@code KDFSpi} implementation for
+     *     the specified algorithm.
      */
-    public static KDF getInstance(String algorithm) throws NoSuchAlgorithmException {
-        KDF instance = null;
+    public static KDF getInstance(String algorithm)
+        throws NoSuchAlgorithmException {
+        KDF instance;
         try {
             instance = getInstance(algorithm, (AlgorithmParameterSpec) null);
         } catch (InvalidParameterSpecException e) {
             throw new NoSuchAlgorithmException(
-                "Received an InvalidParameterSpecException. Does this algorithm require an "
+                "Received an InvalidParameterSpecException. Does this "
+                + "algorithm require an "
                 + "AlgorithmParameterSpec?");
         }
         return instance;
     }
 
     /**
-     * Creates an instance of the {@code KDF} object with a specific {@code Provider}.
+     * Creates an instance of the {@code KDF} object with a specific
+     * {@code Provider}.
      *
      * @param algorithm
      *     the key derivation algorithm to use
@@ -167,26 +173,30 @@ public final class KDF {
      * @return a {@code KDF} object
      *
      * @throws NoSuchAlgorithmException
-     *     if no {@code Provider} supports a {@code KDFSpi} implementation for the specified
-     *     algorithm.
+     *     if no {@code Provider} supports a {@code KDFSpi} implementation for
+     *     the specified algorithm.
      * @throws NoSuchProviderException
-     *     if the specified provider is not registered in the security provider list.
+     *     if the specified provider is not registered in the security provider
+     *     list.
      */
     public static KDF getInstance(String algorithm, String provider)
         throws NoSuchAlgorithmException, NoSuchProviderException {
-        KDF instance = null;
+        KDF instance;
         try {
-            instance = getInstance(algorithm, (AlgorithmParameterSpec) null, provider);
+            instance = getInstance(algorithm, null,
+                                   provider);
         } catch (InvalidParameterSpecException e) {
             throw new NoSuchAlgorithmException(
-                "Received an InvalidParameterSpecException. Does this algorithm require an "
+                "Received an InvalidParameterSpecException. Does this "
+                + "algorithm require an "
                 + "AlgorithmParameterSpec?");
         }
         return instance;
     }
 
     /**
-     * Creates an instance of the {@code KDF} object using a supplied {@code Provider} instance.
+     * Creates an instance of the {@code KDF} object using a supplied
+     * {@code Provider} instance.
      *
      * @param algorithm
      *     the key derivation algorithm to use
@@ -196,17 +206,19 @@ public final class KDF {
      * @return a {@code KDF} object
      *
      * @throws NoSuchAlgorithmException
-     *     if no {@code Provider} supports a {@code KDFSpi} implementation for the specified
-     *     algorithm.
+     *     if no {@code Provider} supports a {@code KDFSpi} implementation for
+     *     the specified algorithm.
      */
     public static KDF getInstance(String algorithm, Provider provider)
         throws NoSuchAlgorithmException {
-        KDF instance = null;
+        KDF instance;
         try {
-            instance = getInstance(algorithm, (AlgorithmParameterSpec) null, provider);
+            instance = getInstance(algorithm, null,
+                                   provider);
         } catch (InvalidParameterSpecException e) {
             throw new NoSuchAlgorithmException(
-                "Received an InvalidParameterSpecException. Does this algorithm require an "
+                "Received an InvalidParameterSpecException. Does this "
+                + "algorithm require an "
                 + "AlgorithmParameterSpec?");
         }
         return instance;
@@ -218,107 +230,128 @@ public final class KDF {
      * @param algorithm
      *     the key derivation algorithm to use
      * @param algParameterSpec
-     *     the {@code AlgorithmParameterSpec} used to configure this KDF's algorithm or {@code null}
-     *     if no additional parameters were provided.
+     *     the {@code AlgorithmParameterSpec} used to configure this KDF's
+     *     algorithm or {@code null} if no additional parameters were provided.
      *
      * @return a {@code KDF} object
      *
      * @throws NoSuchAlgorithmException
-     *     if no {@code Provider} supports a {@code KDFSpi} implementation for the specified
-     *     algorithm.
+     *     if no {@code Provider} supports a {@code KDFSpi} implementation for
+     *     the specified algorithm.
      * @throws InvalidParameterSpecException
      *     if the {@code AlgorithmParameterSpec} is an invalid value
      */
-    public static KDF getInstance(String algorithm, AlgorithmParameterSpec algParameterSpec)
+    public static KDF getInstance(String algorithm,
+                                  AlgorithmParameterSpec algParameterSpec)
         throws NoSuchAlgorithmException, InvalidParameterSpecException {
         Objects.requireNonNull(algorithm, "null algorithm name");
         try {
-            Instance instance = GetInstance.getInstance("KDF", KDFSpi.class, algorithm,
+            Instance instance = GetInstance.getInstance("KDF", KDFSpi.class,
+                                                        algorithm,
                                                         algParameterSpec);
             if (!JceSecurity.canUseProvider(instance.provider)) {
-                String msg = "JCE cannot authenticate the provider " + instance.provider.getName();
+                String msg = "JCE cannot authenticate the provider "
+                             + instance.provider.getName();
                 throw new SecurityException(msg);
             }
-            return new KDF((KDFSpi) instance.impl, instance.provider, algorithm, algParameterSpec);
+            return new KDF((KDFSpi) instance.impl, instance.provider, algorithm,
+                           algParameterSpec);
 
         } catch (NoSuchAlgorithmException nsae) {
-            throw new NoSuchAlgorithmException("Algorithm " + algorithm + " not available", nsae);
+            throw new NoSuchAlgorithmException(
+                "Algorithm " + algorithm + " not available", nsae);
         }
     }
 
     /**
-     * Creates an instance of the {@code KDF} object with a specific {@code Provider}.
+     * Creates an instance of the {@code KDF} object with a specific
+     * {@code Provider}.
      *
      * @param algorithm
      *     the key derivation algorithm to use
      * @param algParameterSpec
-     *     the {@code AlgorithmParameterSpec} used to configure this KDF's algorithm or {@code null}
-     *     if no additional parameters were provided.
+     *     the {@code AlgorithmParameterSpec} used to configure this KDF's
+     *     algorithm or {@code null} if no additional parameters were provided.
      * @param provider
      *     the provider to use for this key derivation
      *
      * @return a {@code KDF} object
      *
      * @throws NoSuchAlgorithmException
-     *     if no {@code Provider} supports a {@code KDFSpi} implementation for the specified
-     *     algorithm.
+     *     if no {@code Provider} supports a {@code KDFSpi} implementation for
+     *     the specified algorithm.
      * @throws NoSuchProviderException
-     *     if the specified provider is not registered in the security provider list.
+     *     if the specified provider is not registered in the security provider
+     *     list.
      * @throws InvalidParameterSpecException
      *     if the {@code AlgorithmParameterSpec} is an invalid value
      */
-    public static KDF getInstance(String algorithm, AlgorithmParameterSpec algParameterSpec,
+    public static KDF getInstance(String algorithm,
+                                  AlgorithmParameterSpec algParameterSpec,
                                   String provider)
-        throws NoSuchAlgorithmException, NoSuchProviderException, InvalidParameterSpecException {
+        throws NoSuchAlgorithmException, NoSuchProviderException,
+               InvalidParameterSpecException {
         Objects.requireNonNull(algorithm, "null algorithm name");
         try {
-            Instance instance = GetInstance.getInstance("KDF", KDFSpi.class, algorithm,
-                                                        algParameterSpec, provider);
+            Instance instance = GetInstance.getInstance("KDF", KDFSpi.class,
+                                                        algorithm,
+                                                        algParameterSpec,
+                                                        provider);
             if (!JceSecurity.canUseProvider(instance.provider)) {
-                String msg = "JCE cannot authenticate the provider " + instance.provider.getName();
+                String msg = "JCE cannot authenticate the provider "
+                             + instance.provider.getName();
                 throw new NoSuchProviderException(msg);
             }
-            return new KDF((KDFSpi) instance.impl, instance.provider, algorithm, algParameterSpec);
+            return new KDF((KDFSpi) instance.impl, instance.provider, algorithm,
+                           algParameterSpec);
 
         } catch (NoSuchAlgorithmException nsae) {
-            throw new NoSuchAlgorithmException("Algorithm " + algorithm + " not available", nsae);
+            throw new NoSuchAlgorithmException(
+                "Algorithm " + algorithm + " not available", nsae);
         }
     }
 
     /**
-     * Creates an instance of the {@code KDF} object using a supplied {@code Provider} instance.
+     * Creates an instance of the {@code KDF} object using a supplied
+     * {@code Provider} instance.
      *
      * @param algorithm
      *     the key derivation algorithm to use
      * @param algParameterSpec
-     *     the {@code AlgorithmParameterSpec} used to configure this KDF's algorithm or {@code null}
-     *     if no additional parameters were provided.
+     *     the {@code AlgorithmParameterSpec} used to configure this KDF's
+     *     algorithm or {@code null} if no additional parameters were provided.
      * @param provider
      *     the provider
      *
      * @return a {@code KDF} object
      *
      * @throws NoSuchAlgorithmException
-     *     if no {@code Provider} supports a {@code KDFSpi} implementation for the specified
-     *     algorithm.
+     *     if no {@code Provider} supports a {@code KDFSpi} implementation for
+     *     the specified algorithm.
      * @throws InvalidParameterSpecException
      *     if the {@code AlgorithmParameterSpec} is an invalid value
      */
-    public static KDF getInstance(String algorithm, AlgorithmParameterSpec algParameterSpec,
+    public static KDF getInstance(String algorithm,
+                                  AlgorithmParameterSpec algParameterSpec,
                                   Provider provider)
         throws NoSuchAlgorithmException, InvalidParameterSpecException {
         Objects.requireNonNull(algorithm, "null algorithm name");
         try {
-            Instance instance = GetInstance.getInstance("KDF", KDFSpi.class, algorithm,
-                                                        algParameterSpec, provider);
+            Instance instance = GetInstance.getInstance("KDF", KDFSpi.class,
+                                                        algorithm,
+                                                        algParameterSpec,
+                                                        provider);
             if (!JceSecurity.canUseProvider(instance.provider)) {
-                String msg = "JCE cannot authenticate the provider " + instance.provider.getName();
+                String msg = "JCE cannot authenticate the provider "
+                             + instance.provider.getName();
                 throw new SecurityException(msg);
             }
-            return new KDF((KDFSpi) instance.impl, instance.provider, algorithm, algParameterSpec);
+            return new KDF((KDFSpi) instance.impl, instance.provider, algorithm,
+                           algParameterSpec);
 
         } catch (NoSuchAlgorithmException nsae) {
-            throw new NoSuchAlgorithmException("Algorithm " + algorithm + " not available", nsae);
+            throw new NoSuchAlgorithmException(
+                "Algorithm " + algorithm + " not available", nsae);
         }
     }
 
@@ -332,22 +365,23 @@ public final class KDF {
      * @param kdfParameterSpec
      *     derivation parameters
      *
-     * @return a {@code SecretKey} object corresponding to a key built from the KDF output and according
-     * to the derivation parameters.
+     * @return a {@code SecretKey} object corresponding to a key built from the
+     * KDF output and according to the derivation parameters.
      *
      * @throws InvalidParameterSpecException
-     *     if the information contained within the {@code KDFParameterSpec} is invalid or incorrect
-     *     for the type of key to be derived, or specifies a type of output that is not a key (e.g.
-     *     raw data)
+     *     if the information contained within the {@code KDFParameterSpec} is
+     *     invalid or incorrect for the type of key to be derived, or specifies
+     *     a type of output that is not a key (e.g. raw data)
      * @throws IllegalStateException
-     *     if the key derivation implementation cannot support additional calls to {@code deriveKey}
-     *     or if all {@code KDFParameterSpec} objects provided at initialization have been
-     *     processed.
+     *     if the key derivation implementation cannot support additional calls
+     *     to {@code deriveKey} or if all {@code KDFParameterSpec} objects
+     *     provided at initialization have been processed.
      * @throws InvalidAlgorithmParameterException
      *     TODO: fill this in
      */
     public SecretKey deriveKey(String alg, KDFParameterSpec kdfParameterSpec)
-        throws InvalidParameterSpecException, InvalidAlgorithmParameterException {
+        throws InvalidParameterSpecException,
+               InvalidAlgorithmParameterException {
         return spi.engineDeriveKey(alg, kdfParameterSpec);
     }
 
@@ -359,17 +393,17 @@ public final class KDF {
      * @param kdfParameterSpec
      *     derivation parameters
      *
-     * @return a byte array whose length matches the length field in the processed
-     * {@code DerivationParameterSpec} and containing the next bytes of output from the key
-     * derivation function.
+     * @return a byte array whose length matches the length field in the
+     * processed {@code DerivationParameterSpec} and containing the next bytes
+     * of output from the key derivation function.
      *
      * @throws InvalidParameterSpecException
-     *     if the {@code DerivationParameterSpec} being applied to this method is of a type other
-     *     than "data".
+     *     if the {@code DerivationParameterSpec} being applied to this method
+     *     is of a type other than "data".
      * @throws IllegalStateException
-     *     if the key derivation implementation cannot support additional calls to
-     *     {@code deriveData } or if all {@code DerivationParameterSpec} objects have been
-     *     processed.
+     *     if the key derivation implementation cannot support additional calls
+     *     to {@code deriveData } or if all {@code DerivationParameterSpec}
+     *     objects have been processed.
      * @throws UnsupportedOperationException
      *     if the derived key material is not extractable
      */
@@ -382,8 +416,9 @@ public final class KDF {
     private static int warnCount = 10;
 
     /**
-     * Choose the Spi from the first provider available. Used if delayed provider selection is not
-     * possible because init() is not the first method called.
+     * Choose the Spi from the first provider available. Used if delayed
+     * provider selection is not possible because init() is not the first method
+     * called.
      */
     void chooseFirstProvider() {
         if ((spi != null) || (serviceIterator == null)) {
@@ -396,10 +431,13 @@ public final class KDF {
             if (debug != null) {
                 int w = --warnCount;
                 if (w >= 0) {
-                    debug.println("KeyDerivation.init() not first method called, disabling delayed "
-                                  + "provider selection");
+                    debug.println(
+                        "KDF.init() not first method called, "
+                        + "disabling delayed "
+                        + "provider selection");
                     if (w == 0) {
-                        debug.println("Further warnings of this type will be suppressed");
+                        debug.println(
+                            "Further warnings of this type will be suppressed");
                     }
                     new Exception("Call trace").printStackTrace();
                 }
@@ -418,7 +456,7 @@ public final class KDF {
                 }
                 try {
                     Object obj = s.newInstance(null);
-                    if (obj instanceof KDFSpi == false) {
+                    if (!(obj instanceof KDFSpi)) {
                         continue;
                     }
                     spi = (KDFSpi) obj;
@@ -432,7 +470,7 @@ public final class KDF {
                 }
             }
             ProviderException e = new ProviderException(
-                "Could not construct KeyDerivationSpi instance");
+                "Could not construct KDFSpi instance");
             if (lastException != null) {
                 e.initCause(lastException);
             }

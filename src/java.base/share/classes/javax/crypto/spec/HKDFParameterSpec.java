@@ -31,23 +31,24 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Parameters for the combined Extract-Only, Expand-Only, or Extract-then-Expand operations of the
- * HMAC-based Key Derivation Function (HKDF). The HKDF function is defined in <a
- * href="http://tools.ietf.org/html/rfc5869">RFC 5869</a>.
+ * Parameters for the combined Extract-Only, Expand-Only, or Extract-then-Expand
+ * operations of the HMAC-based Key Derivation Function (HKDF). The HKDF
+ * function is defined in <a href="http://tools.ietf.org/html/rfc5869">RFC
+ * 5869</a>.
  *
  * @since 23
  */
-public interface HKDFParameterSpec extends KDFParameterSpec {
+public sealed interface HKDFParameterSpec extends KDFParameterSpec {
 
     /**
-     * This builder helps with the mutation required by the {@code Extract} scenario.
+     * This builder helps with the mutation required by the {@code Extract}
+     * scenario.
      */
     final class Builder {
 
         Extract extract = null;
         List<SecretKey> ikms = new ArrayList<>();
         List<SecretKey> salts = new ArrayList<>();
-        SecretKey prk = null;
 
         Builder() {}
 
@@ -69,16 +70,19 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
         public Extract extractOnly() {
             if (this.ikms.isEmpty() && this.salts.isEmpty()) {
                 throw new IllegalStateException(
-                    "this `Builder` must have either at least one IKM value, at least one salt "
+                    "this `Builder` must have either at least one IKM value, "
+                    + "at least one salt "
                     + "value, or values for both before calling `extractOnly`");
             } else {
-                this.extract = new Extract(List.copyOf(ikms), List.copyOf(salts));
+                this.extract = new Extract(List.copyOf(ikms),
+                                           List.copyOf(salts));
                 return this.extract;
             }
         }
 
         /**
-         * Akin to a {@code Builder.build()} method for an {@code ExtractExpand}
+         * Akin to a {@code Builder.build()} method for an
+         * {@code ExtractExpand}
          *
          * @param info
          *     the info
@@ -90,19 +94,23 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
         public ExtractExpand andExpand(byte[] info, int length) {
             if (extract == null) {
                 throw new IllegalStateException(
-                    "`thenExpand` can only be called on a `Builder` when `ofTypeExtract` has "
+                    "`thenExpand` can only be called on a `Builder` when "
+                    + "`ofTypeExtract` has "
                     + "been called");
             }
-            return extractExpand(new Extract(List.copyOf(ikms), List.copyOf(salts)), info, length);
+            return extractExpand(
+                new Extract(List.copyOf(ikms), List.copyOf(salts)), info,
+                length);
         }
 
         /**
-         * {@code addIKM} may be called when the ikm value is to be assembled piece-meal or if part
-         * of the IKM is to be supplied by a hardware crypto device. This method appends to the
-         * existing list of values or creates a new list if there are none yet.
+         * {@code addIKM} may be called when the ikm value is to be assembled
+         * piece-meal or if part of the IKM is to be supplied by a hardware
+         * crypto device. This method appends to the existing list of values or
+         * creates a new list if there are none yet.
          * <p>
-         * This supports the use-case where a label can be applied to the IKM but the actual value
-         * of the IKM is not yet available.
+         * This supports the use-case where a label can be applied to the IKM
+         * but the actual value of the IKM is not yet available.
          *
          * @param ikm
          *     the ikm value (null values will not be added)
@@ -117,12 +125,13 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
         }
 
         /**
-         * {@code addIKM} may be called when the ikm value is to be assembled piece-meal or if part
-         * of the IKM is to be supplied by a hardware crypto device. This method appends to the
-         * existing list of values or creates a new list if there are none yet.
+         * {@code addIKM} may be called when the ikm value is to be assembled
+         * piece-meal or if part of the IKM is to be supplied by a hardware
+         * crypto device. This method appends to the existing list of values or
+         * creates a new list if there are none yet.
          * <p>
-         * This supports the use-case where a label can be applied to the IKM but the actual value
-         * of the IKM is not yet available.
+         * This supports the use-case where a label can be applied to the IKM
+         * but the actual value of the IKM is not yet available.
          *
          * @param ikm
          *     the ikm value (null or empty values will not be added)
@@ -138,12 +147,13 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
         }
 
         /**
-         * {@code addSalt} may be called when the salt value is to be assembled piece-meal or if
-         * part of the salt is to be supplied by a hardware crypto device. This method appends to
-         * the existing list of values or creates a new list if there are none yet.
+         * {@code addSalt} may be called when the salt value is to be assembled
+         * piece-meal or if part of the salt is to be supplied by a hardware
+         * crypto device. This method appends to the existing list of values or
+         * creates a new list if there are none yet.
          * <p>
-         * This supports the use-case where a label can be applied to the salt but the actual value
-         * of the salt is not yet available.
+         * This supports the use-case where a label can be applied to the salt
+         * but the actual value of the salt is not yet available.
          *
          * @param salt
          *     the salt value (null values will not be added)
@@ -158,12 +168,13 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
         }
 
         /**
-         * {@code addSalt} may be called when the salt value is to be assembled piece-meal or if
-         * part of the salt is to be supplied by a hardware crypto device. This method appends to
-         * the existing list of values or creates a new list if there are none yet.
+         * {@code addSalt} may be called when the salt value is to be assembled
+         * piece-meal or if part of the salt is to be supplied by a hardware
+         * crypto device. This method appends to the existing list of values or
+         * creates a new list if there are none yet.
          * <p>
-         * This supports the use-case where a label can be applied to the salt but the actual value
-         * of the salt is not yet available.
+         * This supports the use-case where a label can be applied to the salt
+         * but the actual value of the salt is not yet available.
          *
          * @param salt
          *     the salt value (null or empty values will not be added)
@@ -180,11 +191,12 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
     }
 
     /**
-     * Static helper-method that may be used to initialize a {@code Builder} with an empty
-     * {@code Extract}
+     * Static helper-method that may be used to initialize a {@code Builder}
+     * with an empty {@code Extract}
      * <p>
-     * Note: one or more of the methods {@code addIKM} or {@code addSalt} should be called next,
-     * before calling build methods, such as {@code Builder.extractOnly()}
+     * Note: one or more of the methods {@code addIKM} or {@code addSalt} should
+     * be called next, before calling build methods, such as
+     * {@code Builder.extractOnly()}
      *
      * @return a {@code Builder} to mutate
      */
@@ -193,7 +205,8 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
     }
 
     /**
-     * Static helper-method that may be used to initialize an {@code Expand} object
+     * Static helper-method that may be used to initialize an {@code Expand}
+     * object
      *
      * @param prk
      *     the PRK (may be null)
@@ -209,11 +222,12 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
     }
 
     /**
-     * Static helper-method that may be used to initialize an {@code ExtractExpand} object
+     * Static helper-method that may be used to initialize an
+     * {@code ExtractExpand} object
      * <p>
-     * Note: one or more of the methods {@code addIKM} or {@code addSalt} should be called on the
-     * {@code Extract} parameter, before calling this method, since {@code ExtractExpand} is
-     * immutable
+     * Note: one or more of the methods {@code addIKM} or {@code addSalt} should
+     * be called on the {@code Extract} parameter, before calling this method,
+     * since {@code ExtractExpand} is immutable
      *
      * @param ext
      *     a pre-generated {@code Extract}
@@ -232,7 +246,7 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
      * Defines the input parameters of an Extract operation as defined in <a
      * href="http://tools.ietf.org/html/rfc5869">RFC 5869</a>.
      */
-    class Extract implements HKDFParameterSpec {
+    final class Extract implements HKDFParameterSpec {
 
         // HKDF-Extract(salt, IKM) -> PRK
         private final List<SecretKey> ikms;
@@ -271,12 +285,12 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
      * Defines the input parameters of an Expand operation as defined in <a
      * href="http://tools.ietf.org/html/rfc5869">RFC 5869</a>.
      */
-    class Expand implements HKDFParameterSpec {
+    final class Expand implements HKDFParameterSpec {
 
         // HKDF-Expand(PRK, info, L) -> OKM
-        private SecretKey pseudoRandomKey = null;
-        private byte[] info = null;
-        private int length = -1;
+        private final SecretKey pseudoRandomKey;
+        private final byte[] info;
+        private final int length;
 
         /**
          * Constructor that may be used to initialize an {@code Expand} object
@@ -313,7 +327,7 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
          * @return the info value
          */
         public byte[] info() {
-            return info;
+            return (info == null)? null : info.clone();
         }
 
         /**
@@ -328,18 +342,19 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
     }
 
     /**
-     * Defines the input parameters of an ExtractExpand operation as defined in <a
-     * href="http://tools.ietf.org/html/rfc5869">RFC 5869</a>.
+     * Defines the input parameters of an ExtractExpand operation as defined in
+     * <a href="http://tools.ietf.org/html/rfc5869">RFC 5869</a>.
      */
-    class ExtractExpand implements HKDFParameterSpec {
+    final class ExtractExpand implements HKDFParameterSpec {
         private final Extract ext;
         private final Expand exp;
 
         /**
-         * Constructor that may be used to initialize an {@code ExtractExpand} object
+         * Constructor that may be used to initialize an {@code ExtractExpand}
+         * object
          * <p>
-         * Note: {@code addIKMValue} and {@code addSaltValue} may be called afterward to supply
-         * additional values, if desired
+         * Note: {@code addIKMValue} and {@code addSaltValue} may be called
+         * afterward to supply additional values, if desired
          *
          * @param ext
          *     a pre-generated {@code Extract}
@@ -350,7 +365,8 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
          */
         private ExtractExpand(Extract ext, byte[] info, int length) {
             if (ext == null) {
-                throw new IllegalArgumentException("ext (the Extract parameter) must not be null");
+                throw new IllegalArgumentException(
+                    "ext (the Extract parameter) must not be null");
             } else {
                 this.ext = ext;
             }

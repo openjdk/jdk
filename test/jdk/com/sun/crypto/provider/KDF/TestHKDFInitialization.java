@@ -41,13 +41,16 @@ public class TestHKDFInitialization {
         throws NoSuchAlgorithmException, InvalidParameterSpecException,
                InvalidAlgorithmParameterException {
 
-        byte[] ikm = new BigInteger("0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b",
-                                    16).toByteArray();
-        byte[] salt = new BigInteger("000102030405060708090a0b0c", 16).toByteArray();
+        byte[] ikm = new BigInteger(
+            "0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b",
+            16).toByteArray();
+        byte[] salt = new BigInteger("000102030405060708090a0b0c",
+                                     16).toByteArray();
         byte[] info = new BigInteger("f0f1f2f3f4f5f6f7f8f9", 16).toByteArray();
 
         KDFParameterSpec kdfParameterSpec = HKDFParameterSpec.extractExpand(
-            HKDFParameterSpec.extract().addIKM(ikm).addSalt(salt).extractOnly(), info, 42);
+            HKDFParameterSpec.extract().addIKM(ikm).addSalt(salt).extractOnly(),
+            info, 42);
 
         // OR THIS WAY NOW
         /*KDFParameterSpec kdfParameterSpec2 =
@@ -55,7 +58,8 @@ public class TestHKDFInitialization {
                              .addIKM(ikm)
                              .addSalt(salt).andExpand(info, 42);*/
 
-        KDF kdfHkdf = KDF.getInstance("HKDF/HmacSHA256", (AlgorithmParameterSpec) null);
+        KDF kdfHkdf = KDF.getInstance("HKDF/HmacSHA256",
+                                      (AlgorithmParameterSpec) null);
 
         kdfHkdf.deriveKey("AES", kdfParameterSpec);
 

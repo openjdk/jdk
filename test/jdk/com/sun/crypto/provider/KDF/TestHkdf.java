@@ -45,7 +45,8 @@ import java.util.Objects;
 public class TestHkdf {
     public static class TestData {
         public TestData(String name, String algStr, String ikmStr,
-                        String saltStr, String infoStr, int oLen, String expPrkStr,
+                        String saltStr, String infoStr, int oLen,
+                        String expPrkStr,
                         String expOkmStr) {
             testName = Objects.requireNonNull(name);
             algName = Objects.requireNonNull(algStr);
@@ -79,28 +80,38 @@ public class TestHkdf {
                          "f0f1f2f3f4f5f6f7f8f9",
                          42,
                          "077709362c2e32df0ddc3f0dc47bba6390b6c73bb50f9c3122ec844ad7c2b3e5",
-                         "3cb25f25faacd57a90434f64d0362f2a2d2d0a90cf1a5a4c5db02d56ecc4c5bf" +
+                         "3cb25f25faacd57a90434f64d0362f2a2d2d0a90cf1a5a4c5db02d56ecc4c5bf"
+                         +
                          "34007208d5b887185865"));
         add(new TestData("RFC 5689 Test Case 2", "HKDF/HmacSHA256",
-                         "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f" +
-                         "202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f" +
+                         "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f"
+                         +
+                         "202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f"
+                         +
                          "404142434445464748494a4b4c4d4e4f",
-                         "606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f" +
-                         "808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f" +
+                         "606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f"
+                         +
+                         "808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f"
+                         +
                          "a0a1a2a3a4a5a6a7a8a9aaabacadaeaf",
-                         "b0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecf" +
-                         "d0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeef" +
+                         "b0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecf"
+                         +
+                         "d0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeef"
+                         +
                          "f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff",
                          82,
                          "06a6b88c5853361a06104c9ceb35b45cef760014904671014a193f40c15fc244",
-                         "b11e398dc80327a1c8e7f78c596a49344f012eda2d4efad8a050cc4c19afa97c" +
-                         "59045a99cac7827271cb41c65e590e09da3275600c2f09b8367793a9aca3db71" +
+                         "b11e398dc80327a1c8e7f78c596a49344f012eda2d4efad8a050cc4c19afa97c"
+                         +
+                         "59045a99cac7827271cb41c65e590e09da3275600c2f09b8367793a9aca3db71"
+                         +
                          "cc30c58179ec3e87c14c01d5c1f3434f1d87"));
         add(new TestData("RFC 5689 Test Case 3", "HKDF/HmacSHA256",
                          "0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b",
                          null, null, 42,
                          "19ef24a32c717b167f33a91d6f648bdf96596776afdb6377ac434c1c293ccb04",
-                         "8da4e775a563c18f715f802a063c5a31b8a11f5c5ee1879ec3454e5f3c738d2d" +
+                         "8da4e775a563c18f715f802a063c5a31b8a11f5c5ee1879ec3454e5f3c738d2d"
+                         +
                          "9d201395faa4b61a96c8"));
     }};
 
@@ -126,7 +137,8 @@ public class TestHkdf {
     }
 
     private static boolean runVector(TestData testData)
-        throws InvalidParameterSpecException, InvalidAlgorithmParameterException,
+        throws InvalidParameterSpecException,
+               InvalidAlgorithmParameterException,
                InvalidKeyException {
         String kdfName, prfName;
         KDF kdfHkdf, kdfExtract, kdfExpand;
@@ -155,9 +167,10 @@ public class TestHkdf {
 
         // *** HKDF-Extract-only testing
         // Create KDFParameterSpec for the Extract-only operation
-        KDFParameterSpec kdfParameterSpecExtract = HKDFParameterSpec.extract().addIKM(ikmKey)
-                                                                    .addSalt(testData.salt)
-                                                                    .extractOnly();
+        KDFParameterSpec kdfParameterSpecExtract =
+            HKDFParameterSpec.extract().addIKM(ikmKey)
+                             .addSalt(testData.salt)
+                             .extractOnly();
         actualPRK = kdfExtract.deriveKey("RAW", kdfParameterSpecExtract);
 
         // Re-run the KDF to give us raw output data
@@ -170,8 +183,9 @@ public class TestHkdf {
         // *** HKDF Expand-Only testing
         // For these tests, we'll use the actualPRK as the input key
         // Create KDFParameterSpec for key output and raw byte output
-        KDFParameterSpec kdfParameterSpecExpand = HKDFParameterSpec.expand(actualPRK, testData.info,
-                                                                           testData.outLen);
+        KDFParameterSpec kdfParameterSpecExpand = HKDFParameterSpec.expand(
+            actualPRK, testData.info,
+            testData.outLen);
         actualOKM = kdfExpand.deriveKey("RAW", kdfParameterSpecExpand);
 
         // Re-run the KDF to give us raw output data
@@ -185,10 +199,11 @@ public class TestHkdf {
         // We can reuse the KDFParameterSpec from the Expand-only test
 
         // Use the KDF to make us a key
-        KDFParameterSpec kdfParameterSpecExtractExpand = HKDFParameterSpec.extract().addIKM(ikmKey)
-                                                                          .addSalt(testData.salt)
-                                                                          .andExpand(testData.info,
-                                                                                     testData.outLen);
+        KDFParameterSpec kdfParameterSpecExtractExpand =
+            HKDFParameterSpec.extract().addIKM(ikmKey)
+                             .addSalt(testData.salt)
+                             .andExpand(testData.info,
+                                        testData.outLen);
         actualOKM = kdfHkdf.deriveKey("RAW", kdfParameterSpecExtractExpand);
 
         // Re-run the KDF to give us raw output data
@@ -202,7 +217,8 @@ public class TestHkdf {
     }
 
     /**
-     * Compare key-based and data-based productions from the KDF against an expected output value.
+     * Compare key-based and data-based productions from the KDF against an
+     * expected output value.
      *
      * @param outKey
      *     the KDF output in key form
@@ -211,7 +227,8 @@ public class TestHkdf {
      * @param expectedOut
      *     the expected value
      *
-     * @return true if the underlying data for outKey, outData and expectedOut are the same.
+     * @return true if the underlying data for outKey, outData and expectedOut
+     * are the same.
      */
     private static boolean compareKeyAndData(Key outKey, byte[] outData,
                                              byte[] expectedOut) {
@@ -225,7 +242,8 @@ public class TestHkdf {
             System.out.println("Expected:\n" +
                                dumpHexBytes(outData, 16, "\n", " "));
             System.out.println("Actual:\n" +
-                               dumpHexBytes(outKey.getEncoded(), 16, "\n", " "));
+                               dumpHexBytes(outKey.getEncoded(), 16, "\n",
+                                            " "));
             System.out.println();
         }
 
@@ -250,8 +268,8 @@ public class TestHkdf {
      * @param data
      *     The array of bytes to dump to stdout.
      * @param itemsPerLine
-     *     The number of bytes to display per line if the {@code lineDelim} character is blank then
-     *     all bytes will be printed on a single line.
+     *     The number of bytes to display per line if the {@code lineDelim}
+     *     character is blank then all bytes will be printed on a single line.
      * @param lineDelim
      *     The delimiter between lines
      * @param itemDelim

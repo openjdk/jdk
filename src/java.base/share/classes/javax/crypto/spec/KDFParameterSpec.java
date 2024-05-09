@@ -29,8 +29,7 @@ package javax.crypto.spec;
  * A (transparent) specification of key derivation parameters.
  *
  * <P> This interface contains no methods or constants. Its only purpose
- * is to group (and provide type safety for) all parameter specifications. All KDF parameter
- * specifications must implement this interface.
+ * is to group (and provide type safety for) all KDF parameter specifications.
  *
  * @since 23
  */
