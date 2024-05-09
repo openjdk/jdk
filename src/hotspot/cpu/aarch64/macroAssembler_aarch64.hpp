@@ -462,7 +462,7 @@ class MacroAssembler: public Assembler {
     if (VM_Version::is_neoverse_family()) {
       /* On Neoverse, MSUB uses the same ALU with SDIV.
        * The combination of MUL/SUB can utilize multiple ALUs,
-       * and is much faster than MSUB. */
+       * and can be somewhat faster than MSUB. */
       mulw(rscratch1, Rn, Rm);
       subw(Rd, Ra, rscratch1);
     } else {
