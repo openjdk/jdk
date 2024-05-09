@@ -40,7 +40,7 @@ import java.lang.constant.ClassDesc;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -81,7 +81,9 @@ public class TypeKindBench {
             }
         };
 
-        classes = ThreadLocalRandom.current()
+        // Use fixed seed to ensure results are comparable across
+        // different JVMs
+        classes = new Random(0xbf5fe40dd887d9e2L)
                 .ints(100, 0, candidates.size())
                 .mapToObj(candidates::get)
                 .toArray(Class<?>[]::new);
