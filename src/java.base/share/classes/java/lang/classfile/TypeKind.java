@@ -27,7 +27,6 @@ package java.lang.classfile;
 
 import java.lang.invoke.TypeDescriptor;
 import jdk.internal.javac.PreviewFeature;
-import jdk.internal.vm.annotation.Stable;
 
 /**
  * Describes the types that can be part of a field or method descriptor.
@@ -59,7 +58,6 @@ public enum TypeKind {
 
     private final String name;
     private final String descriptor;
-    private final char descriptorChar;
     private final int newarrayCode;
 
     /** {@return the human-readable name corresponding to this type} */
@@ -103,7 +101,6 @@ public enum TypeKind {
         this.name = name;
         this.descriptor = descriptor;
         this.newarrayCode = newarrayCode;
-        this.descriptorChar = descriptor.charAt(0);
     }
 
     /**
@@ -136,11 +133,19 @@ public enum TypeKind {
         if (s.isEmpty()) { // implicit null check
             throw new IllegalArgumentException("Empty descriptor");
         }
-        var ret = fromChar(s.charAt(0));
-        if (ret == null) {
-            throw new IllegalArgumentException("Bad type: " + s);
-        }
-        return ret;
+        return switch (s.charAt(0)) {
+            case '[', 'L' -> TypeKind.ReferenceType;
+            case 'B' -> TypeKind.ByteType;
+            case 'C' -> TypeKind.CharType;
+            case 'Z' -> TypeKind.BooleanType;
+            case 'S' -> TypeKind.ShortType;
+            case 'I' -> TypeKind.IntType;
+            case 'F' -> TypeKind.FloatType;
+            case 'J' -> TypeKind.LongType;
+            case 'D' -> TypeKind.DoubleType;
+            case 'V' -> TypeKind.VoidType;
+            default -> throw new IllegalArgumentException("Bad type: " + s);
+        };
     }
 
     /**
@@ -151,23 +156,5 @@ public enum TypeKind {
         return descriptor.isPrimitive() // implicit null check
                 ? fromDescriptor(descriptor.descriptorString())
                 : TypeKind.ReferenceType;
-    }
-
-    private static final @Stable TypeKind[] TABLE = new TypeKind[16];
-
-    static {
-        for (TypeKind kind : values()) {
-            char c = kind.descriptorChar;
-            TABLE[(c + (c >> 1)) & 0xf] = kind;
-        }
-        TABLE[8] = TypeKind.ReferenceType; // hash for '['
-    }
-
-    private static TypeKind fromChar(char c) {
-        var tk = TABLE[(c + (c >> 1)) & 0xf];
-        if (tk.descriptorChar == c || c == '[') {
-            return tk;
-        }
-        return null;
     }
 }
