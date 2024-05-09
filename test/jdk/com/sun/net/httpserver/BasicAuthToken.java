@@ -87,7 +87,7 @@ public class BasicAuthToken {
             String statusLine = reader.readLine();
             System.err.println(statusLine);
 
-            if (statusLine.startsWith("HTTP/1.1 401")) {
+            if (!statusLine.startsWith("HTTP/1.1 200")) {
                 throw new RuntimeException("Basic Authentication failed: case-insensitive token" +
                         " used to identify authentication scheme  sent by client parsed incorrectly");
             }
