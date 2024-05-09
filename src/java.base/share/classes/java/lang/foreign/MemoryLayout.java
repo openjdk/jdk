@@ -631,6 +631,9 @@ public sealed interface MemoryLayout
      *     {@code O + A <= S}, where {@code O} is the accessed offset (computed as above),
      *     {@code A} is the size of the selected layout and {@code S} is the size of the
      *     accessed memory segment.</li>
+     *     <li>If the provided layout path has an open path element whose size is {@code S},
+     *     its corresponding trailing {@code long} coordinate value {@code I} must be
+     *     {@code 0 < I < S}, or an {@link IndexOutOfBoundsException} is thrown.</li>
      *     <li>The accessed memory segment must be
      *     {@link MemorySegment#isAccessibleBy(Thread) accessible} from the thread
      *     performing the access operation, or a {@link WrongThreadException} is thrown.</li>
@@ -735,11 +738,40 @@ public sealed interface MemoryLayout
      * O = this.byteOffsetHandle(P).invokeExact(this.scale(B, I0), I1, I2, ... In);
      * }
      * <p>
-     * More formally, this method can be obtained from the {@link #varHandle(PathElement...)},
+     * More formally, the method handle returned by this method is obtained from {@link #varHandle(PathElement...)},
      * as follows:
      * {@snippet lang = "java":
      * MethodHandles.collectCoordinates(varHandle(elements), 1, scaleHandle())
      * }
+     * <p>
+     * Accessing a memory segment using the var handle returned by this method is subject
+     * to the following checks:
+     * <ul>
+     *     <li>The physical address of the accessed memory segment must be
+     *     <a href="MemorySegment.html#segment-alignment">aligned</a> according to the
+     *     {@linkplain #byteAlignment() alignment constraint} of the root layout
+     *     (this layout), or an {@link IllegalArgumentException} is thrown. Note
+     *     that the alignment constraint of the root layout can be more strict
+     *     (but not less) than the alignment constraint of the selected value layout.</li>
+     *     <li>The offset of the access operation (computed as above) must fall inside
+     *     the spatial bounds of the accessed memory segment, or an
+     *     {@link IndexOutOfBoundsException} is thrown. This is the case when
+     *     {@code O + A <= S}, where {@code O} is the accessed offset (computed as above),
+     *     {@code A} is the size of the selected layout and {@code S} is the size of the
+     *     accessed memory segment.</li>
+     *     <li>If the provided layout path has an open path element whose size is {@code S},
+     *     its corresponding trailing {@code long} coordinate value {@code I} must be
+     *     {@code 0 < I < S}, or an {@link IndexOutOfBoundsException} is thrown.</li>
+     *     <li>The accessed memory segment must be
+     *     {@link MemorySegment#isAccessibleBy(Thread) accessible} from the thread
+     *     performing the access operation, or a {@link WrongThreadException} is thrown.</li>
+     *     <li>For write operations, the accessed memory segment must not be
+     *     {@link MemorySegment#isReadOnly() read only}, or an
+     *     {@link IllegalArgumentException} is thrown.</li>
+     *     <li>The {@linkplain MemorySegment#scope() scope} associated with the accessed
+     *     segment must be {@linkplain MemorySegment.Scope#isAlive() alive}, or an
+     *     {@link IllegalStateException} is thrown.</li>
+     * </ul>
      *
      * @apiNote
      * As the leading index coordinate {@code I0} is not bound by any sequence layout, it
@@ -796,6 +828,9 @@ public sealed interface MemoryLayout
      *     {@code O + A <= S}, where {@code O} is the start offset of
      *     the slicing operation (computed as above), {@code A} is the size of the
      *     selected layout and {@code S} is the size of the accessed memory segment.</li>
+     *     <li>If the provided layout path has an open path element whose size is {@code S},
+     *     its corresponding trailing {@code long} coordinate value {@code I} must be
+     *     {@code 0 < I < S}, or an {@link IndexOutOfBoundsException} is thrown.</li>
      * </ul>
      *
      * @apiNote The returned method handle can be used to obtain a memory segment slice,
