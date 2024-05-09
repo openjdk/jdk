@@ -11836,7 +11836,7 @@ void Assembler::vex_prefix(Address adr, int nds_enc, int xreg_enc, VexSimdPrefix
   }
 
   clear_managed();
-  if (UseAVX > 2 && !attributes->is_legacy_mode())
+  if ((UseAVX > 2 || UseAPX) && !attributes->is_legacy_mode())
   {
     bool evex_r = (xreg_enc >= 16);
     bool evex_v;
@@ -11895,7 +11895,7 @@ int Assembler::vex_prefix_and_encode(int dst_enc, int nds_enc, int src_enc, VexS
   }
 
   clear_managed();
-  if (UseAVX > 2 && !attributes->is_legacy_mode())
+  if ((UseAVX > 2 || UseAPX) && !attributes->is_legacy_mode())
   {
     bool evex_r = (dst_enc >= 16);
     bool evex_v = (nds_enc >= 16);
