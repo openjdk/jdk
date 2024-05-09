@@ -386,9 +386,6 @@ final class NewSessionTicket {
                 return null;
             }
 
-            SessionId newId = new SessionId(true,
-                hc.sslContext.getSecureRandom());
-
             SecretKey resumptionMasterSecret =
                 hc.handshakeSession.getResumptionMasterSecret();
             if (resumptionMasterSecret == null) {
@@ -404,24 +401,30 @@ final class NewSessionTicket {
             final int NUMOFNSTM = 3;
             // Output the handshake message.
             for (int i = 0; i < NUMOFNSTM; i++) {
+
+                SessionId newId = new SessionId(true,
+                    hc.sslContext.getSecureRandom());
+
                 NewSessionTicketMessage nstm = generateNST(hc,
                     sessionTimeoutSeconds, newId, sessionCache);
                 if (nstm != null) {
                     // should never be null
                     nstm.write(hc.handshakeOutput);
-                    hc.handshakeOutput.flush();
-
-                    // See note on TransportContext.needHandshakeFinishedStatus.
-                    //
-                    // Reset the needHandshakeFinishedStatus flag.  The delivery
-                    // of this post-handshake message will indicate the FINISHED
-                    // handshake status.  It is not needed to have a follow-on
-                    // SSLEngine.wrap() any longer.
-                    if (hc.conContext.needHandshakeFinishedStatus) {
-                        hc.conContext.needHandshakeFinishedStatus = false;
-                    }
                 }
             }
+
+            hc.handshakeOutput.flush();
+
+            // See note on TransportContext.needHandshakeFinishedStatus.
+            //
+            // Reset the needHandshakeFinishedStatus flag.  The delivery
+            // of this post-handshake message will indicate the FINISHED
+            // handshake status.  It is not needed to have a follow-on
+            // SSLEngine.wrap() any longer.
+            if (hc.conContext.needHandshakeFinishedStatus) {
+                hc.conContext.needHandshakeFinishedStatus = false;
+            }
+
             // clean the post handshake context
             hc.conContext.finishPostHandshake();
 
@@ -469,8 +472,7 @@ final class NewSessionTicket {
             if (!hc.statelessResumption ||
                 !hc.handshakeSession.isStatelessable()) {
                 nstm = new T13NewSessionTicketMessage(hc, sessionTimeoutSeconds,
-                    hc.sslContext.getSecureRandom(), nonceArr,
-                    newId.getId());
+                    hc.sslContext.getSecureRandom(), nonceArr, newId.getId());
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                         "Produced NewSessionTicket post-handshake message",
