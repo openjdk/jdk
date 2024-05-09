@@ -250,7 +250,7 @@ class JrtFileSystem extends FileSystem {
         return image.getResource(node);
     }
 
-    /////////////// Implementation details below this point //////////
+    //-------- Implementation details below this point --------
 
     // static utility methods
     static ReadOnlyFileSystemException readOnly() {

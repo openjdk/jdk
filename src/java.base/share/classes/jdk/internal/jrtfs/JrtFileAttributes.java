@@ -92,7 +92,7 @@ final class JrtFileAttributes  implements BasicFileAttributes {
         return node.resolveLink(true);
     }
 
-    ///////// jrtfs specific attributes ///////////
+    //-------- jrtfs specific attributes --------
     /**
      * Compressed resource file. If not available or not applicable, 0L is
      * returned.
