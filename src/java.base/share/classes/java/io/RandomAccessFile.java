@@ -549,13 +549,13 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      */
     public void write(int b) throws IOException {
         if (jfrTracing) {
-            traceWriteImpl(b);
+            traceImplWrite(b);
             return;
         }
-        writeImpl(b);
+        implWrite(b);
     }
 
-    private void writeImpl(int b) throws IOException {
+    private void implWrite(int b) throws IOException {
         boolean attempted = Blocker.begin(sync);
         try {
             write0(b);
@@ -576,13 +576,13 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      */
     private void writeBytes(byte[] b, int off, int len) throws IOException {
         if (jfrTracing) {
-            traceWriteBytesImpl(b, off, len);
+            traceImplWriteBytes(b, off, len);
             return;
         }
-        writeBytesImpl(b, off, len);
+        implWriteBytes(b, off, len);
     }
 
-    private void writeBytesImpl(byte[] b, int off, int len) throws IOException {
+    private void implWriteBytes(byte[] b, int off, int len) throws IOException {
         boolean attempted = Blocker.begin(sync);
         try {
             writeBytes0(b, off, len);
@@ -1272,16 +1272,16 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
         return bytesRead;
     }
 
-    private void traceWriteImpl(int b) throws IOException {
+    private void traceImplWrite(int b) throws IOException {
         if (!FileWriteEvent.enabled()) {
-            writeImpl(b);
+            implWrite(b);
             return;
         }
         long bytesWritten = 0;
         long start = 0;
         try {
             start = FileWriteEvent.timestamp();
-            writeImpl(b);
+            implWrite(b);
             bytesWritten = 1;
         } finally {
             long duration = FileWriteEvent.timestamp() - start;
@@ -1291,16 +1291,16 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
         }
     }
 
-    private void traceWriteBytesImpl(byte b[], int off, int len) throws IOException {
+    private void traceImplWriteBytes(byte b[], int off, int len) throws IOException {
         if (!FileWriteEvent.enabled()) {
-            writeBytesImpl(b, off, len);
+            implWriteBytes(b, off, len);
             return;
         }
         long bytesWritten = 0;
         long start = 0;
         try {
             start = FileWriteEvent.timestamp();
-            writeBytesImpl(b, off, len);
+            ImplWriteBytes(b, off, len);
             bytesWritten = len;
         } finally {
             long duration = FileWriteEvent.timestamp() - start;
