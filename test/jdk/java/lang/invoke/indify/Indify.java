@@ -378,19 +378,15 @@ public class Indify {
         ClassFile cf;
         Bytecode bytecode; //this is temporary for debugging
         final char[] poolMarks;
-        final char[] pool_Marks; //this is temporary for debugging
         final Map<Method,Constant> constants = new HashMap<>();
         final Map<Method,String> indySignatures = new HashMap<>();
         Logic(ClassFile cf, Bytecode bytecode) {
             this.cf = cf;
             this.bytecode = bytecode;
-            poolMarks = new char[cf.pool.size()];
-            pool_Marks = new char[bytecode.pool.size()];
+            poolMarks = new char[bytecode.classModel.constantPool().size()];
         }
         boolean transform() {
-            if (!initializeMarks())  return false;
-            if (!intialize_Marks())  return false;
-            boolean areEqual = Arrays.equals(poolMarks, pool_Marks);
+            if (!initialize_Marks())  return false;
             if (!findPatternMethods())  return false;
             Pool pool = cf.pool;
             //for (Constant c : cp)  System.out.println("  # "+c);
@@ -543,18 +539,24 @@ public class Indify {
             }
             if (!quiet)  System.err.flush();
         }
-        boolean intialize_Marks(){
+        boolean initialize_Marks() {
             boolean changed = false;
-            for(;;) {
+            for (;;) {
                 boolean changed1 = false;
-                int cpindex = -1;
-                for(PoolEntry poolEntry : bytecode.pool){
-                    ++cpindex;
-                    if(poolEntry == null) continue; //TODO: the pool list has the first element null as we can get entries based on the index of list
-                    char mark = pool_Marks[cpindex];
-                    if (mark != 0) continue;
-                    int tagg = poolEntry.tag();  //TODO: should be removed
-                    switch (tagg) {
+                for (PoolEntry poolEntry : bytecode.classModel.constantPool()) {
+                    // Get the index directly from PoolEntry
+                    if (poolEntry == null) {
+                        continue; // Skip null entries
+                    }
+                    int cpIndex = poolEntry.index();
+
+                    char mark = poolMarks[cpIndex];
+                    if (mark != 0) {
+                        continue;
+                    }
+
+                    int tag = poolEntry.tag();
+                    switch (tag) {
                         case TAG_UTF8:
                             mark = nameMark(((Utf8Entry) poolEntry).stringValue());
                             break;
@@ -564,11 +566,12 @@ public class Indify {
                             int ref2 = nameAndTypeEntry.type().index();
                             mark = nameAndType_Mark(ref1, ref2);
                             break;
-                        case TAG_CLASS:{
+                        case TAG_CLASS: {
                             int n1 = ((ClassEntry) poolEntry).name().index();
-                            char nmark = pool_Marks[n1];
-                            if ("DJ".indexOf(nmark) >= 0)
+                            char nmark = poolMarks[n1];
+                            if ("DJ".indexOf(nmark) >= 0) {
                                 mark = nmark;
+                            }
                             break;
                         }
                         case TAG_FIELDREF:
@@ -576,93 +579,41 @@ public class Indify {
                             MemberRefEntry memberRefEntry = (MemberRefEntry) poolEntry;
                             int cl = memberRefEntry.owner().index();
                             int nt = memberRefEntry.nameAndType().index();
-                            char classMark = pool_Marks[cl];
+                            char classMark = poolMarks[cl];
                             if (classMark != 0) {
-                                mark = classMark;  // it is a java.lang.invoke.* or java.lang.* method
+                                mark = classMark;  // java.lang.invoke.* or java.lang.* method
                                 break;
                             }
-                            String cls = (bytecode.pool.get(cl) instanceof ClassEntry) ? ((ClassEntry) bytecode.pool.get(cl)).name().stringValue() : "";
+                            String cls = (bytecode.classModel.constantPool().entryByIndex(cl) instanceof ClassEntry) ?
+                                    ((ClassEntry) bytecode.classModel.constantPool().entryByIndex(cl)).name().stringValue() : "";
                             if (cls.equals(bytecode.thisClass.name().stringValue())) {
-                                switch (pool_Marks[nt]) {
+                                switch (poolMarks[nt]) {
                                     case 'T':
                                     case 'H':
                                     case 'I':
-                                        mark = pool_Marks[nt];
+                                        mark = poolMarks[nt];
                                         break;
                                 }
                             }
                             break;
                         }
-                        default: break;
+                        default:
+                            break;
                     }
+
                     if (mark != 0) {
-                        pool_Marks[cpindex] = mark;
+                        poolMarks[cpIndex] = mark;
                         changed1 = true;
                     }
                 }
-                if (!changed1)
+                if (!changed1) {
                     break;
+                }
                 changed = true;
             }
             return changed;
         }
         // mark constant pool entries according to participation in patterns
-        boolean initializeMarks() {
-            boolean changed = false;
-            for (;;) {
-                boolean changed1 = false;
-                int cpindex = -1;
-                for (Constant e : cf.pool) {
-                    ++cpindex;
-                    if (e == null)  continue;
-                    char mark = poolMarks[cpindex];
-                    if (mark != 0)  continue;
-                    switch (e.tag) {
-                    case TAG_UTF8:
-                        mark = nameMark(e.itemString()); break;
-                    case TAG_NAMEANDTYPE:
-                        mark = nameAndTypeMark(e.itemIndexes()); break;
-                    case TAG_CLASS: {
-                        int n1 = e.itemIndex();
-                        char nmark = poolMarks[(char)n1];
-                        if ("DJ".indexOf(nmark) >= 0)
-                            mark = nmark;
-                        break;
-                    }
-                    case TAG_FIELDREF:
-                    case TAG_METHODREF: {
-                        Short[] n12 = e.itemIndexes();
-                        short cl = n12[0];
-                        short nt = n12[1];
-                        char cmark = poolMarks[(char)cl];
-                        if (cmark != 0) {
-                            mark = cmark;  // it is a java.lang.invoke.* or java.lang.* method
-                            break;
-                        }
-                        String cls = cf.pool.getString((byte) TAG_CLASS, cl);
-                        if (cls.equals(cf.nameString())) {
-                            switch (poolMarks[(char)nt]) {
-                            // it is a private MH/MT/INDY method
-                            case 'T': case 'H': case 'I':
-                                mark = poolMarks[(char)nt];
-                                break;
-                            }
-                        }
-                        break;
-                    }
-                    default:  break;
-                    }
-                    if (mark != 0) {
-                        poolMarks[cpindex] = mark;
-                        changed1 = true;
-                    }
-                }
-                if (!changed1)
-                    break;
-                changed = true;
-            }
-            return changed;
-        }
         char nameMark(String s) {
             if (s.startsWith("MT_"))                return 'T';
             else if (s.startsWith("MH_"))           return 'H';
@@ -670,9 +621,6 @@ public class Indify {
             else if (s.startsWith("java/lang/invoke/"))  return 'D';
             else if (s.startsWith("java/lang/"))    return 'J';
             return 0;
-        }
-        char nameAndTypeMark(Short[] n12) {
-            return nameAndTypeMark(n12[0], n12[1]);
         }
         char nameAndTypeMark(short n1, short n2) {
             char mark = poolMarks[(char)n1];
@@ -689,11 +637,11 @@ public class Indify {
             return 0;
         }
         char nameAndType_Mark(int ref1, int ref2){
-            char mark = pool_Marks[ref1];
+            char mark = poolMarks[ref1];
             if (mark == 0) return 0;
-            String descriptor = (bytecode.pool.get(ref2) instanceof Utf8Entry) ? ((Utf8Entry) bytecode.pool.get(ref2)).stringValue() : "";
+            String descriptor = (bytecode.classModel.constantPool().entryByIndex(ref2) instanceof Utf8Entry) ? ((Utf8Entry) bytecode.classModel.constantPool().entryByIndex(ref2)).stringValue() : "";
             String requiredType;
-            switch (pool_Marks[ref1]){
+            switch (poolMarks[ref1]){
                 case 'H', 'I': requiredType = "()Ljava/lang/invoke/MethodHandle;";  break;
                 case 'T': requiredType = "()Ljava/lang/invoke/MethodType;";    break;
                 default:  return 0;
