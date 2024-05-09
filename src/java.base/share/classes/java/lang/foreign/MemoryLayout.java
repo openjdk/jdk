@@ -571,6 +571,10 @@ public sealed interface MemoryLayout
      * derived from the size of the element layout of a sequence, and
      * {@code c_1}, {@code c_2}, ... {@code c_m} are other <em>static</em> offset
      * constants (such as field offsets) which are derived from the layout path.
+     * <p>
+     * The returned method handle throws {@link IndexOutOfBoundsException} if the provided layout path has an open
+     * path element whose size is {@code S}, and its corresponding trailing {@code long} parameter
+     * has a value {@code I} such that {@code I >= S} or {@code I < 0}.
      *
      * @apiNote The returned method handle can be used to compute a layout offset,
      *          similarly to {@link #byteOffset(PathElement...)}, but more flexibly, as
@@ -609,7 +613,7 @@ public sealed interface MemoryLayout
      * offset {@code O} of the access operation is computed as follows:
      *
      * {@snippet lang = "java":
-     * O = this.offsetHandle(P).invokeExact(B, I1, I2, ... In);
+     * O = this.byteOffsetHandle(P).invokeExact(B, I1, I2, ... In);
      * }
      * <p>
      * Accessing a memory segment using the var handle returned by this method is subject
@@ -728,7 +732,7 @@ public sealed interface MemoryLayout
      * offset {@code O} of the access operation is computed as follows:
      *
      * {@snippet lang = "java":
-     * O = this.offsetHandle(P).invokeExact(this.scale(B, I0), I1, I2, ... In);
+     * O = this.byteOffsetHandle(P).invokeExact(this.scale(B, I0), I1, I2, ... In);
      * }
      * <p>
      * More formally, this method can be obtained from the {@link #varHandle(PathElement...)},
@@ -838,7 +842,8 @@ public sealed interface MemoryLayout
      *     layout as its target layout.</li>
      * </ul>
      * Sequence path elements selecting more than one sequence element layout are called
-     * <a href="MemoryLayout.html#open-path-elements">open path elements</a>.
+     * <a href="MemoryLayout.html#open-path-elements">open path elements</a>. The <em>size</em>
+     * of an open path element determines the number of element layouts that can be selected by it.
      *
      * @implSpec
      * Implementations of this interface are immutable, thread-safe and
@@ -906,6 +911,7 @@ public sealed interface MemoryLayout
          *    <li>if {@code F > 0}, then {@code B = ceilDiv(C - S, F)}</li>
          *    <li>if {@code F < 0}, then {@code B = ceilDiv(-(S + 1), -F)}</li>
          * </ul>
+         * That is, the size of the returned open path element is {@code B}.
          *
          * @param start the index of the first sequence element to be selected
          * @param step the step factor at which subsequence sequence elements are to be
@@ -924,7 +930,7 @@ public sealed interface MemoryLayout
          * <p>
          * The exact sequence element selected by this layout is expressed as an index
          * {@code I}. If {@code C} is the sequence element count, it follows that
-         * {@code 0 <= I < C}.
+         * {@code 0 <= I < C}. That is, {@code C} is the size of the returned open path element.
          */
         static PathElement sequenceElement() {
             return LayoutPath.SequenceElement.instance();
