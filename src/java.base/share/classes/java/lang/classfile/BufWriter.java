@@ -24,7 +24,6 @@
  */
 package java.lang.classfile;
 
-import java.nio.ByteBuffer;
 import java.util.List;
 
 import java.lang.classfile.constantpool.ConstantPool;
