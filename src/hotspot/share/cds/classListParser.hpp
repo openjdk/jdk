@@ -124,7 +124,7 @@ private:
   Klass* load_current_class(Symbol* class_name_symbol, TRAPS);
 
   size_t lineno() { return _input_stream.lineno(); }
-
+  FILE* do_open(const char* file);
   ClassListParser(const char* file, ParseMode _parse_mode);
   ~ClassListParser();
 

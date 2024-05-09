@@ -58,7 +58,7 @@ ClassListParser* ClassListParser::_instance = nullptr;
 ClassListParser::ClassListParser(const char* file, ParseMode parse_mode) :
     _classlist_file(file),
     _id2klass_table(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE),
-    _file_input(file),
+    _file_input(do_open(file), /* need_close=*/true),
     _input_stream(&_file_input) {
   log_info(cds)("Parsing %s%s", file,
                 (parse_mode == _parse_lambda_forms_invokers_only) ? " (lambda form invokers only)" : "");
@@ -76,6 +76,19 @@ ClassListParser::ClassListParser(const char* file, ParseMode parse_mode) :
   assert(_instance == nullptr, "must be singleton");
   _instance = this;
   Atomic::store(&_parsing_thread, Thread::current());
+}
+
+FILE* ClassListParser::do_open(const char* file) {
+  // Use os::open() because neither fopen() nor os::fopen()
+  // can handle long path name on Windows. (See JDK-8216184)
+  int fd = os::open(file, O_RDONLY, S_IREAD);
+  FILE* fp = nullptr;
+  if (fd != -1) {
+    // Obtain a FILE* from the file descriptor so that _input_stream
+    // can be used in ClassListParser::parse()
+    fp = os::fdopen(fd, "r");
+  }
+  return fp;
 }
 
 bool ClassListParser::is_parsing_thread() {
