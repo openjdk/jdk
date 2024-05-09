@@ -54,8 +54,8 @@ final class MethodTypeDescImpl implements MethodTypeDesc {
      * @param validatedArgTypes {@link ClassDesc}s describing the trusted and validated parameter types
      */
     private MethodTypeDescImpl(ClassDesc returnType, ClassDesc[] validatedArgTypes) {
-        this.returnType = requireNonNull(returnType);
-        this.argTypes = requireNonNull(validatedArgTypes);
+        this.returnType = returnType;
+        this.argTypes = validatedArgTypes;
     }
 
     /**
@@ -66,12 +66,12 @@ final class MethodTypeDescImpl implements MethodTypeDesc {
      * @param trustedArgTypes {@link ClassDesc}s describing the trusted parameter types
      */
     static MethodTypeDescImpl ofTrusted(ClassDesc returnType, ClassDesc[] trustedArgTypes) {
-        Objects.requireNonNull(returnType);
+        requireNonNull(returnType);
         if (trustedArgTypes.length == 0) // implicit null check
             return new MethodTypeDescImpl(returnType, ConstantUtils.EMPTY_CLASSDESC);
 
         for (ClassDesc cd : trustedArgTypes)
-            if (cd.isPrimitive() && cd.descriptorString().charAt(0) == 'V') // implicit null check
+            if (cd.descriptorString().charAt(0) == 'V') // implicit null check
                 throw new IllegalArgumentException("Void parameters not permitted");
 
         return new MethodTypeDescImpl(returnType, trustedArgTypes);
@@ -127,7 +127,7 @@ final class MethodTypeDescImpl implements MethodTypeDesc {
 
     @Override
     public MethodTypeDesc changeReturnType(ClassDesc returnType) {
-        return new MethodTypeDescImpl(returnType, argTypes);
+        return new MethodTypeDescImpl(requireNonNull(returnType), argTypes);
     }
 
     @Override
@@ -143,8 +143,12 @@ final class MethodTypeDescImpl implements MethodTypeDesc {
         Objects.checkFromToIndex(start, end, argTypes.length);
 
         ClassDesc[] newArgs = new ClassDesc[argTypes.length - (end - start)];
-        System.arraycopy(argTypes, 0, newArgs, 0, start);
-        System.arraycopy(argTypes, end, newArgs, start, argTypes.length - end);
+        if (start > 0) {
+            System.arraycopy(argTypes, 0, newArgs, 0, start);
+        }
+        if (end < argTypes.length) {
+            System.arraycopy(argTypes, end, newArgs, start, argTypes.length - end);
+        }
         return ofTrusted(returnType, newArgs);
     }
 
@@ -154,10 +158,13 @@ final class MethodTypeDescImpl implements MethodTypeDesc {
             throw new IndexOutOfBoundsException(pos);
 
         ClassDesc[] newArgs = new ClassDesc[argTypes.length + paramTypes.length];
-        System.arraycopy(argTypes, 0, newArgs, 0, pos);
+        if (pos > 0) {
+            System.arraycopy(argTypes, 0, newArgs, 0, pos);
+        }
         System.arraycopy(paramTypes, 0, newArgs, pos, paramTypes.length);
-        System.arraycopy(argTypes, pos, newArgs, pos+paramTypes.length, argTypes.length - pos);
-
+        if (pos < argTypes.length) {
+            System.arraycopy(argTypes, pos, newArgs, pos + paramTypes.length, argTypes.length - pos);
+        }
         return ofTrusted(returnType, newArgs);
     }
 
