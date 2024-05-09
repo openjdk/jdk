@@ -83,7 +83,7 @@ public class IO {
      *
      * To achieve isatty, the test currently uses the EXPECT(1) Unix command,
      * which does not work for Windows. Later, a library like pty4j or JPty
-     * might be used instead EXPECT, to cover both Unix and Windows.
+     * might be used instead of EXPECT, to cover both Unix and Windows.
      */
     @ParameterizedTest
     @EnabledOnOs({OS.LINUX, OS.MAC})
@@ -122,7 +122,7 @@ public class IO {
      *
      * To simulate a terminal, the test currently uses the EXPECT(1) Unix
      * command, which does not work for Windows. Later, a library like pty4j
-     * or JPty might be used instead EXPECT, to cover both Unix and Windows.
+     * or JPty might be used instead of EXPECT, to cover both Unix and Windows.
      */
     @ParameterizedTest
     @MethodSource("args")
