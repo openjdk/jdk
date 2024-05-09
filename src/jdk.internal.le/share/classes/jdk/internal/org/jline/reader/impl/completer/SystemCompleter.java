@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2020, the original author or authors.
+ * Copyright (c) 2002-2020, the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -22,8 +22,8 @@ import jdk.internal.org.jline.utils.AttributedString;
  * @author <a href="mailto:matti.rintanikkola@gmail.com">Matti Rinta-Nikkola</a>
  */
 public class SystemCompleter implements Completer {
-    private Map<String,List<Completer>> completers = new HashMap<>();
-    private Map<String,String> aliasCommand = new HashMap<>();
+    private Map<String, List<Completer>> completers = new HashMap<>();
+    private Map<String, String> aliasCommand = new HashMap<>();
     private StringsCompleter commands;
     private boolean compiled = false;
 
@@ -44,9 +44,9 @@ public class SystemCompleter implements Completer {
                     commands.complete(reader, commandLine, candidates);
                 } else if (reader.getParser().validVariableName(buffer.substring(0, eq))) {
                     String curBuf = buffer.substring(0, eq + 1);
-                    for (String c: completers.keySet()) {
-                        candidates.add(new Candidate(AttributedString.stripAnsi(curBuf+c)
-                                    , c, null, null, null, null, true));
+                    for (String c : completers.keySet()) {
+                        candidates.add(
+                                new Candidate(AttributedString.stripAnsi(curBuf + c), c, null, null, null, null, true));
                     }
                 }
             } else {
@@ -81,7 +81,7 @@ public class SystemCompleter implements Completer {
     }
 
     public void add(List<String> commands, Completer completer) {
-        for (String c: commands) {
+        for (String c : commands) {
             add(c, completer);
         }
     }
@@ -104,22 +104,22 @@ public class SystemCompleter implements Completer {
         if (other.isCompiled()) {
             throw new IllegalStateException();
         }
-        for (Map.Entry<String, List<Completer>> entry: other.getCompleters().entrySet()) {
-            for (Completer c: entry.getValue()) {
+        for (Map.Entry<String, List<Completer>> entry : other.getCompleters().entrySet()) {
+            for (Completer c : entry.getValue()) {
                 add(entry.getKey(), c);
             }
         }
         addAliases(other.getAliases());
     }
 
-    public void addAliases(Map<String,String> aliasCommand) {
+    public void addAliases(Map<String, String> aliasCommand) {
         if (compiled) {
             throw new IllegalStateException();
         }
         this.aliasCommand.putAll(aliasCommand);
     }
 
-    private Map<String,String> getAliases() {
+    private Map<String, String> getAliases() {
         return aliasCommand;
     }
 
@@ -128,7 +128,7 @@ public class SystemCompleter implements Completer {
             return;
         }
         Map<String, List<Completer>> compiledCompleters = new HashMap<>();
-        for (Map.Entry<String, List<Completer>> entry: completers.entrySet()) {
+        for (Map.Entry<String, List<Completer>> entry : completers.entrySet()) {
             if (entry.getValue().size() == 1) {
                 compiledCompleters.put(entry.getKey(), entry.getValue());
             } else {
@@ -143,8 +143,7 @@ public class SystemCompleter implements Completer {
         compiled = true;
     }
 
-    public Map<String,List<Completer>> getCompleters() {
+    public Map<String, List<Completer>> getCompleters() {
         return completers;
     }
-
 }
