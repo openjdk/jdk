@@ -425,7 +425,7 @@ class SuperWord : public ResourceObj {
   // Decide if loop can eventually be vectorized, and what unrolling factor is required.
   static void unrolling_analysis(const VLoop &vloop, int &local_loop_unroll_factor);
 
-  // VLoop Accessors
+  // VLoop accessors
   PhaseIdealLoop* phase()     const { return _vloop.phase(); }
   PhaseIterGVN& igvn()        const { return _vloop.phase()->igvn(); }
   IdealLoopTree* lpt()        const { return _vloop.lpt(); }
@@ -434,7 +434,7 @@ class SuperWord : public ResourceObj {
   int iv_stride()             const { return cl()->stride_con(); }
   bool in_bb(const Node* n)   const { return _vloop.in_bb(n); }
 
-  // VLoopReductions Accessors
+  // VLoopReductions accessors
   bool is_marked_reduction(const Node* n) const {
     return _vloop_analyzer.reductions().is_marked_reduction(n);
   }
@@ -443,12 +443,12 @@ class SuperWord : public ResourceObj {
     return _vloop_analyzer.reductions().is_marked_reduction_pair(n1, n2);
   }
 
-  // VLoopMemorySlices Accessors
+  // VLoopMemorySlices accessors
   bool same_memory_slice(MemNode* n1, MemNode* n2) const {
     return _vloop_analyzer.memory_slices().same_memory_slice(n1, n2);
   }
 
-  // VLoopBody Accessors
+  // VLoopBody accessors
   const GrowableArray<Node*>& body() const {
     return _vloop_analyzer.body().body();
   }
@@ -457,7 +457,7 @@ class SuperWord : public ResourceObj {
     return _vloop_analyzer.body().bb_idx(n);
   }
 
-  // VLoopTypes Accessors
+  // VLoopTypes accessors
   const Type* velt_type(Node* n) const {
     return _vloop_analyzer.types().velt_type(n);
   }
@@ -482,7 +482,7 @@ class SuperWord : public ResourceObj {
     return _vloop_analyzer.types().vector_width_in_bytes(n);
   }
 
-  // VLoopDependencyGraph Accessors
+  // VLoopDependencyGraph accessors
   const VLoopDependencyGraph& dependency_graph() const {
     return _vloop_analyzer.dependency_graph();
   }
@@ -493,6 +493,11 @@ class SuperWord : public ResourceObj {
 
   bool mutually_independent(const Node_List* nodes) const {
     return _vloop_analyzer.dependency_graph().mutually_independent(nodes);
+  }
+
+  // VLoopVPointer accessors
+  const VPointer& vpointer(const MemNode* mem) const {
+    return _vloop_analyzer.vpointers().vpointer(mem);
   }
 
 #ifndef PRODUCT

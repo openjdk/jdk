@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -29,29 +29,34 @@ endif
 
 ################################################################################
 #
-# Common utility functions
+# Basic utility functions available to MakeBase.gmk itself
 #
 ################################################################################
 
-### Debug functions
+# String equals
+equals = \
+    $(if $(strip $1)$(strip $2),$(strip \
+      $(and $(findstring $(strip $1),$(strip $2)),\
+        $(findstring $(strip $2),$(strip $1)))), \
+      true \
+    )
 
-# Prints the name and value of a variable
-PrintVar = \
-    $(info $(strip $1) >$($(strip $1))<)
+# Convert the string given to upper case, without any $(shell)
+# Inspired by http://lists.gnu.org/archive/html/help-make/2013-09/msg00009.html
+uppercase_table := a,A b,B c,C d,D e,E f,F g,G h,H i,I j,J k,K l,L m,M n,N o,O \
+    p,P q,Q r,R s,S t,T u,U v,V w,W x,X y,Y z,Z
 
-################################################################################
-# This macro translates $ into \$ to protect the $ from expansion in the shell.
-# To make this macro resilient against already escaped strings, first remove
-# any present escapes before escaping so that no double escapes are added.
-EscapeDollar = $(subst $$,\$$,$(subst \$$,$$,$(strip $1)))
+uppercase_internal = \
+  $(if $(strip $1), $$(subst $(firstword $1), $(call uppercase_internal, \
+      $(wordlist 2, $(words $1), $1), $2)), $2)
 
-################################################################################
-# This macro works just like EscapeDollar above, but for #.
-EscapeHash = $(subst \#,\\\#,$(subst \\\#,\#,$(strip $1)))
-
-################################################################################
-# This macro translates $ into $$ to protect the string from make itself.
-DoubleDollar = $(subst $$,$$$$,$(strip $1))
+# Convert a string to upper case. Works only on a-z.
+# $1 - The string to convert
+uppercase = \
+  $(strip \
+    $(eval uppercase_result := $(call uppercase_internal, $(uppercase_table), $1)) \
+    $(uppercase_result) \
+  )
 
 ################################################################################
 # Creates a sequence of increasing numbers (inclusive).
@@ -69,21 +74,140 @@ _sequence-do = \
       $(call _sequence-do,$1))
 
 ################################################################################
+# This macro translates $ into \$ to protect the $ from expansion in the shell.
+# To make this macro resilient against already escaped strings, first remove
+# any present escapes before escaping so that no double escapes are added.
+EscapeDollar = $(subst $$,\$$,$(subst \$$,$$,$(strip $1)))
+
+################################################################################
+# This macro works just like EscapeDollar above, but for #.
+EscapeHash = $(subst \#,\\\#,$(subst \\\#,\#,$(strip $1)))
+
+################################################################################
+# This macro translates $ into $$ to protect the string from make itself.
+DoubleDollar = $(subst $$,$$$$,$(strip $1))
+
+################################################################################
+# ShellQuote
+#
+# Quotes a string with single quotes and replaces single quotes with '\'' so
+# that the contents survives being given to the shell.
+ShellQuote = \
+    $(SQUOTE)$(subst $(SQUOTE),$(SQUOTE)\$(SQUOTE)$(SQUOTE),$(strip $1))$(SQUOTE)
+
+################################################################################
+# Write to and read from file
+
+# Param 1 - File to read
+ReadFile = \
+    $(shell $(CAT) $1)
+
+# Param 1 - Text to write
+# Param 2 - File to write to
+ifeq ($(HAS_FILE_FUNCTION), true)
+  WriteFile = \
+      $(file >$2,$(strip $1))
+else
+  # Use printf to get consistent behavior on all platforms.
+  WriteFile = \
+      $(shell $(PRINTF) "%s\n" $(strip $(call ShellQuote, $1)) > $2)
+endif
+
+# Param 1 - Text to write
+# Param 2 - File to write to
+ifeq ($(HAS_FILE_FUNCTION), true)
+  AppendFile = \
+      $(file >>$2,$(strip $1))
+else
+  # Use printf to get consistent behavior on all platforms.
+  AppendFile = \
+      $(shell $(PRINTF) "%s\n" $(strip $(call ShellQuote, $1)) >> $2)
+endif
+
+################################################################################
+# Make directory without forking mkdir if not needed.
+#
+# If a directory with an encoded space is provided, the wildcard function
+# sometimes returns false answers (typically if the dir existed when the
+# makefile was parsed, but was deleted by a previous rule). In that case, always
+# call mkdir regardless of what wildcard says.
+#
+# 1: List of directories to create
+MakeDir = \
+    $(strip \
+        $(eval MakeDir_dirs_to_make := $(strip $(foreach d, $1, \
+          $(if $(findstring ?, $d), '$(call DecodeSpace, $d)', \
+            $(if $(wildcard $d), , $d) \
+          ) \
+        ))) \
+        $(if $(MakeDir_dirs_to_make), $(shell $(MKDIR) -p $(MakeDir_dirs_to_make))) \
+    )
+
+################################################################################
+# Check if our build or target conforms to certain restrictions. This set of
+# functions all work in similar ways, testing the property that the name
+# implies, so e.g. isTargetCpu test the CPU of the target system.
+#
+# $1 - A property, or a space separated list of properties to test for.
+#
+# Returns true if the actual property matches one of the properties in the list,
+# and false otherwise.
+#
+# Examples: $(call isTargetOs, linux windows) will return true when executed
+# on either linux or windows, and false otherwise.
+# $(call isBuildCpuArch, x86) will return true iff the build CPU Arch is x86.
+
+isTargetOs = \
+  $(strip $(if $(filter $(OPENJDK_TARGET_OS), $1), true, false))
+
+isTargetOsType = \
+  $(strip $(if $(filter $(OPENJDK_TARGET_OS_TYPE), $1), true, false))
+
+isTargetCpu = \
+  $(strip $(if $(filter $(OPENJDK_TARGET_CPU), $1), true, false))
+
+isTargetCpuArch = \
+  $(strip $(if $(filter $(OPENJDK_TARGET_CPU_ARCH), $1), true, false))
+
+isTargetCpuBits = \
+  $(strip $(if $(filter $(OPENJDK_TARGET_CPU_BITS), $1), true, false))
+
+isBuildOs = \
+  $(strip $(if $(filter $(OPENJDK_BUILD_OS), $1), true, false))
+
+isBuildOsType = \
+  $(strip $(if $(filter $(OPENJDK_BUILD_OS_TYPE), $1), true, false))
+
+isBuildOsEnv = \
+  $(strip $(if $(filter $(OPENJDK_BUILD_OS_ENV), $1), true, false))
+
+isBuildCpu = \
+  $(strip $(if $(filter $(OPENJDK_BUILD_CPU), $1), true, false))
+
+isBuildCpuArch = \
+  $(strip $(if $(filter $(OPENJDK_BUILD_CPU_ARCH), $1), true, false))
+
+isCompiler = \
+  $(strip $(if $(filter $(TOOLCHAIN_TYPE), $1), true, false))
+
+################################################################################
+#
+# Common utility functions
+#
+################################################################################
+
+### Debug functions
+
+# Prints the name and value of a variable
+PrintVar = \
+    $(info $(strip $1) >$($(strip $1))<)
+
+
+################################################################################
 # Strip both arguments. Append the first argument to the second argument. If the
 # first argument is empty, return the empty string.
 IfAppend = \
     $(if $(strip $1),$(strip $1)$(strip $2),)
-
-################################################################################
-# Replace question marks with space in string. This macro needs to be called on
-# files from FindFiles in case any of them contains space in their file name,
-# since FindFiles replaces space with ?.
-# Param 1 - String to replace in
-DecodeSpace = \
-    $(subst ?,$(SPACE),$(strip $1))
-
-EncodeSpace = \
-    $(subst $(SPACE),?,$(strip $1))
 
 ################################################################################
 # Assign a variable only if it is empty
@@ -91,65 +215,6 @@ EncodeSpace = \
 # Param 2 - Value to assign
 SetIfEmpty = \
     $(if $($(strip $1)),,$(eval $(strip $1) := $2))
-
-################################################################################
-# Take two paths and return the path of the last common directory.
-# Ex: /foo/bar/baz, /foo/bar/banan -> /foo/bar
-#     foo/bar/baz, /foo/bar -> <empty>
-#
-# The x prefix is used to preserve the presence of the initial slash
-# On Windows paths are treated as case-insensitive
-#
-# $1 - Path to compare
-# $2 - Other path to compare
-FindCommonPathPrefix = \
-    $(call DecodeSpace,$(patsubst x%,%,$(subst $(SPACE),/,$(strip \
-        $(call FindCommonPathPrefixHelper1, \
-            $(subst /,$(SPACE),x$(call EncodeSpace,$(strip $1))), \
-            $(subst /,$(SPACE),x$(call EncodeSpace,$(strip $2)))) \
-    ))))
-
-FindCommonPathPrefixHelper1 = \
-    $(if $(filter $(OPENJDK_TARGET_OS), windows), \
-        $(call FindCommonPathPrefixHelper2,$(call uppercase,$1),$(call uppercase,$2),$1), \
-        $(call FindCommonPathPrefixHelper2,$1,$2,$1))
-
-FindCommonPathPrefixHelper2 = \
-    $(if $(call equals, $(firstword $1), $(firstword $2)), \
-      $(if $(call equals, $(firstword $1),),, \
-        $(firstword $3) \
-        $(call FindCommonPathPrefixHelper2, \
-            $(wordlist 2, $(words $1), $1), \
-            $(wordlist 2, $(words $2), $2), \
-            $(wordlist 2, $(words $3), $3) \
-        ) \
-      ) \
-    )
-
-# Computes the relative path from a directory to a file
-# $1 - File to compute the relative path to
-# $2 - Directory to compute the relative path from
-RelativePath = \
-    $(call DecodeSpace,$(strip $(call RelativePathHelper,$(call EncodeSpace \
-        ,$(strip $1)),$(call EncodeSpace \
-        ,$(strip $2)),$(call EncodeSpace \
-        ,$(call FindCommonPathPrefix,$1,$2)))))
-
-RelativePathHelper = \
-    $(eval $3_prefix_length := $(words $(subst /,$(SPACE),$3))) \
-    $(eval $1_words := $(subst /,$(SPACE),$1)) \
-    $(eval $2_words := $(subst /,$(SPACE),$2)) \
-    $(if $(call equals,$($3_prefix_length),0),, \
-        $(eval $1_words := $(wordlist 2,$(words $($1_words)),$(wordlist \
-            $($3_prefix_length),$(words $($1_words)),$($1_words)))) \
-        $(eval $2_words := $(wordlist 2,$(words $($2_words)),$(wordlist \
-            $($3_prefix_length),$(words $($2_words)),$($2_words)))) \
-    ) \
-    $(eval $1_suffix := $(subst $(SPACE),/,$($1_words))) \
-    $(eval $2_dotdots := $(subst $(SPACE),/,$(foreach d,$($2_words),..))) \
-    $(if $($1_suffix), \
-        $(if $($2_dotdots), $($2_dotdots)/$($1_suffix), $($1_suffix)), \
-        $(if $($2_dotdots), $($2_dotdots), .))
 
 ################################################################################
 # Filter out duplicate sub strings while preserving order. Keeps the first occurrence.
@@ -173,37 +238,12 @@ dups = \
     $(strip $(foreach v, $(sort $1), $(if $(filter-out 1, \
         $(words $(filter $v, $1))), $v)))
 
-# String equals
-equals = \
-    $(if $(strip $1)$(strip $2),$(strip \
-      $(and $(findstring $(strip $1),$(strip $2)),\
-        $(findstring $(strip $2),$(strip $1)))), \
-      true \
-    )
-
 # Remove a whole list of prefixes
 # $1 - List of prefixes
 # $2 - List of elements to process
 remove-prefixes = \
     $(strip $(if $1,$(patsubst $(firstword $1)%,%,\
       $(call remove-prefixes,$(filter-out $(firstword $1),$1),$2)),$2))
-
-# Convert the string given to upper case, without any $(shell)
-# Inspired by http://lists.gnu.org/archive/html/help-make/2013-09/msg00009.html
-uppercase_table := a,A b,B c,C d,D e,E f,F g,G h,H i,I j,J k,K l,L m,M n,N o,O \
-    p,P q,Q r,R s,S t,T u,U v,V w,W x,X y,Y z,Z
-
-uppercase_internal = \
-  $(if $(strip $1), $$(subst $(firstword $1), $(call uppercase_internal, \
-      $(wordlist 2, $(words $1), $1), $2)), $2)
-
-# Convert a string to upper case. Works only on a-z.
-# $1 - The string to convert
-uppercase = \
-  $(strip \
-    $(eval uppercase_result := $(call uppercase_internal, $(uppercase_table), $1)) \
-    $(uppercase_result) \
-  )
 
 ################################################################################
 # Boolean operators.
@@ -291,14 +331,6 @@ define ParseKeywordVariableBody
 endef
 
 ################################################################################
-# ShellQuote
-#
-# Quotes a string with single quotes and replaces single quotes with '\'' so
-# that the contents survives being given to the shell.
-ShellQuote = \
-    $(SQUOTE)$(subst $(SQUOTE),$(SQUOTE)\$(SQUOTE)$(SQUOTE),$(strip $1))$(SQUOTE)
-
-################################################################################
 # Find lib dir for module
 # Param 1 - module name
 FindLibDirForModule = \
@@ -328,53 +360,6 @@ check-jvm-variant = \
     $(if $(filter-out $(VALID_JVM_VARIANTS), $1), \
       $(error Internal error: Invalid variant tested: $1)) \
     $(if $(filter $1, $(JVM_VARIANTS)), true, false))
-
-################################################################################
-# Check if our build or target conforms to certain restrictions. This set of
-# functions all work in similar ways, testing the property that the name
-# implies, so e.g. isTargetCpu test the CPU of the target system.
-#
-# $1 - A property, or a space separated list of properties to test for.
-#
-# Returns true if the actual property matches one of the properties in the list,
-# and false otherwise.
-#
-# Examples: $(call isTargetOs, linux windows) will return true when executed
-# on either linux or windows, and false otherwise.
-# $(call isBuildCpuArch, x86) will return true iff the build CPU Arch is x86.
-
-isTargetOs = \
-  $(strip $(if $(filter $(OPENJDK_TARGET_OS), $1), true, false))
-
-isTargetOsType = \
-  $(strip $(if $(filter $(OPENJDK_TARGET_OS_TYPE), $1), true, false))
-
-isTargetCpu = \
-  $(strip $(if $(filter $(OPENJDK_TARGET_CPU), $1), true, false))
-
-isTargetCpuArch = \
-  $(strip $(if $(filter $(OPENJDK_TARGET_CPU_ARCH), $1), true, false))
-
-isTargetCpuBits = \
-  $(strip $(if $(filter $(OPENJDK_TARGET_CPU_BITS), $1), true, false))
-
-isBuildOs = \
-  $(strip $(if $(filter $(OPENJDK_BUILD_OS), $1), true, false))
-
-isBuildOsType = \
-  $(strip $(if $(filter $(OPENJDK_BUILD_OS_TYPE), $1), true, false))
-
-isBuildOsEnv = \
-  $(strip $(if $(filter $(OPENJDK_BUILD_OS_ENV), $1), true, false))
-
-isBuildCpu = \
-  $(strip $(if $(filter $(OPENJDK_BUILD_CPU), $1), true, false))
-
-isBuildCpuArch = \
-  $(strip $(if $(filter $(OPENJDK_BUILD_CPU_ARCH), $1), true, false))
-
-isCompiler = \
-  $(strip $(if $(filter $(TOOLCHAIN_TYPE), $1), true, false))
 
 ################################################################################
 # Converts a space separated list to a comma separated list.

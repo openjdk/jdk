@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -177,6 +177,41 @@ public class TreeInfo {
                 return true;
             case SELECT:
                 return isThisQualifier(((JCFieldAccess)tree).selected);
+            default:
+                return false;
+        }
+    }
+
+    /** Check if the given tree is an explicit reference to the 'this' instance of the
+     *  class currently being compiled. This is true if tree is:
+     *  - An unqualified 'this' identifier
+     *  - A 'super' identifier qualified by a class name whose type is 'currentClass' or a supertype
+     *  - A 'this' identifier qualified by a class name whose type is 'currentClass' or a supertype
+     *    but also NOT an enclosing outer class of 'currentClass'.
+     */
+    public static boolean isExplicitThisReference(Types types, Type.ClassType currentClass, JCTree tree) {
+        switch (tree.getTag()) {
+            case PARENS:
+                return isExplicitThisReference(types, currentClass, skipParens(tree));
+            case IDENT: {
+                JCIdent ident = (JCIdent)tree;
+                Names names = ident.name.table.names;
+                return ident.name == names._this || ident.name == names._super;
+            }
+            case SELECT: {
+                JCFieldAccess select = (JCFieldAccess)tree;
+                Type selectedType = types.erasure(select.selected.type);
+                if (!selectedType.hasTag(TypeTag.CLASS))
+                    return false;
+                Symbol.ClassSymbol currentClassSym = (Symbol.ClassSymbol)((Type.ClassType)types.erasure(currentClass)).tsym;
+                Symbol.ClassSymbol selectedClassSym = (Symbol.ClassSymbol)((Type.ClassType)selectedType).tsym;
+                Names names = select.name.table.names;
+                return currentClassSym.isSubClass(selectedClassSym, types) &&
+                        (select.name == names._super ||
+                        (select.name == names._this &&
+                            (currentClassSym == selectedClassSym ||
+                            !currentClassSym.isEnclosedBy(selectedClassSym))));
+            }
             default:
                 return false;
         }
@@ -371,7 +406,6 @@ public class TreeInfo {
             case PLUS_ASG: case MINUS_ASG:
             case MUL_ASG: case DIV_ASG: case MOD_ASG:
             case APPLY: case NEWCLASS:
-            case STRING_TEMPLATE:
             case ERRONEOUS:
                 return true;
             default:
@@ -586,10 +620,6 @@ public class TreeInfo {
             case BINDINGPATTERN: {
                 JCBindingPattern node = (JCBindingPattern)tree;
                 return getStartPos(node.var);
-            }
-            case STRING_TEMPLATE: {
-                JCStringTemplate node = (JCStringTemplate) tree;
-                return node.processor == null ? node.pos : getStartPos(node.processor);
             }
             case ERRONEOUS: {
                 JCErroneous node = (JCErroneous)tree;

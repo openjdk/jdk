@@ -30,10 +30,8 @@
 #include "code/codeCache.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/serial/cardTableRS.hpp"
-#include "gc/serial/defNewGeneration.inline.hpp"
-#include "gc/serial/genMarkSweep.hpp"
-#include "gc/serial/markSweep.hpp"
-#include "gc/serial/serialHeap.hpp"
+#include "gc/serial/serialFullGC.hpp"
+#include "gc/serial/serialHeap.inline.hpp"
 #include "gc/serial/serialMemoryPools.hpp"
 #include "gc/serial/serialVMOperations.hpp"
 #include "gc/serial/tenuredGeneration.inline.hpp"
@@ -250,7 +248,7 @@ void SerialHeap::post_initialize() {
 
   def_new_gen->ref_processor_init();
 
-  MarkSweep::initialize();
+  SerialFullGC::initialize();
 
   ScavengableNMethods::initialize(&_is_scavengable);
 }
@@ -486,7 +484,7 @@ void SerialHeap::do_collection(bool full,
   assert(my_thread->is_VM_thread(), "only VM thread");
   assert(Heap_lock->is_locked(),
          "the requesting thread should have the Heap_lock");
-  guarantee(!is_gc_active(), "collection is not reentrant");
+  guarantee(!is_stw_gc_active(), "collection is not reentrant");
 
   if (GCLocker::check_active_before_gc()) {
     return; // GC is disabled (e.g. JNI GetXXXCritical operation)
@@ -497,10 +495,10 @@ void SerialHeap::do_collection(bool full,
 
   ClearedAllSoftRefs casr(do_clear_all_soft_refs, soft_ref_policy());
 
-  IsGCActiveMark active_gc_mark;
+  IsSTWGCActiveMark active_gc_mark;
 
   bool complete = full && (max_generation == OldGen);
-  bool old_collects_young = complete && !ScavengeBeforeFullGC;
+  bool old_collects_young = complete;
   bool do_young_collection = !old_collects_young && _young_gen->should_collect(full, size, is_tlab);
 
   const PreGenGCValues pre_gc_values = get_pre_gc_values();
@@ -561,7 +559,7 @@ void SerialHeap::do_collection(bool full,
 
   if (do_full_collection) {
     GCIdMark gc_id_mark;
-    GCTraceCPUTime tcpu(GenMarkSweep::gc_tracer());
+    GCTraceCPUTime tcpu(SerialFullGC::gc_tracer());
     GCTraceTime(Info, gc) t("Pause Full", nullptr, gc_cause(), true);
 
     print_heap_before_gc();
@@ -586,7 +584,7 @@ void SerialHeap::do_collection(bool full,
 
     ClassUnloadingContext ctx(1 /* num_nmethod_unlink_workers */,
                               false /* unregister_nmethods_during_purge */,
-                              false /* lock_codeblob_free_separately */);
+                              false /* lock_nmethod_free_separately */);
 
     collect_generation(_old_gen,
                        full,
@@ -726,29 +724,18 @@ HeapWord* SerialHeap::satisfy_failed_allocation(size_t size, bool is_tlab) {
   return nullptr;
 }
 
-#ifdef ASSERT
-class AssertNonScavengableClosure: public OopClosure {
-public:
-  virtual void do_oop(oop* p) {
-    assert(!SerialHeap::heap()->is_in_partial_collection(*p),
-      "Referent should not be scavengable.");  }
-  virtual void do_oop(narrowOop* p) { ShouldNotReachHere(); }
-};
-static AssertNonScavengableClosure assert_is_non_scavengable_closure;
-#endif
-
 void SerialHeap::process_roots(ScanningOption so,
                                OopClosure* strong_roots,
                                CLDClosure* strong_cld_closure,
                                CLDClosure* weak_cld_closure,
-                               CodeBlobToOopClosure* code_roots) {
+                               NMethodToOopClosure* code_roots) {
   // General roots.
   assert(code_roots != nullptr, "code root closure should always be set");
 
   ClassLoaderDataGraph::roots_cld_do(strong_cld_closure, weak_cld_closure);
 
   // Only process code roots from thread stacks if we aren't visiting the entire CodeCache anyway
-  CodeBlobToOopClosure* roots_from_code_p = (so & SO_AllCodeCache) ? nullptr : code_roots;
+  NMethodToOopClosure* roots_from_code_p = (so & SO_AllCodeCache) ? nullptr : code_roots;
 
   Threads::oops_do(strong_roots, roots_from_code_p);
 
@@ -765,17 +752,38 @@ void SerialHeap::process_roots(ScanningOption so,
 
     // CMSCollector uses this to do intermediate-strength collections.
     // We scan the entire code cache, since CodeCache::do_unloading is not called.
-    CodeCache::blobs_do(code_roots);
+    CodeCache::nmethods_do(code_roots);
   }
-  // Verify that the code cache contents are not subject to
-  // movement by a scavenging collection.
-  DEBUG_ONLY(CodeBlobToOopClosure assert_code_is_non_scavengable(&assert_is_non_scavengable_closure, !CodeBlobToOopClosure::FixRelocations));
-  DEBUG_ONLY(ScavengableNMethods::asserted_non_scavengable_nmethods_do(&assert_code_is_non_scavengable));
 }
 
-bool SerialHeap::no_allocs_since_save_marks() {
-  return _young_gen->no_allocs_since_save_marks() &&
-         _old_gen->no_allocs_since_save_marks();
+template <typename OopClosureType>
+static void oop_iterate_from(OopClosureType* blk, ContiguousSpace* space, HeapWord** from) {
+  assert(*from != nullptr, "precondition");
+  HeapWord* t;
+  HeapWord* p = *from;
+
+  const intx interval = PrefetchScanIntervalInBytes;
+  do {
+    t = space->top();
+    while (p < t) {
+      Prefetch::write(p, interval);
+      p += cast_to_oop(p)->oop_iterate_size(blk);
+    }
+  } while (t < space->top());
+
+  *from = space->top();
+}
+
+void SerialHeap::scan_evacuated_objs(YoungGenScanClosure* young_cl,
+                                     OldGenScanClosure* old_cl) {
+  ContiguousSpace* to_space = young_gen()->to();
+  do {
+    oop_iterate_from(young_cl, to_space, &_young_gen_saved_top);
+    oop_iterate_from(old_cl, old_gen()->space(), &_old_gen_saved_top);
+    // Recheck to-space only, because postcondition of oop_iterate_from is no
+    // unscanned objs
+  } while (_young_gen_saved_top != to_space->top());
+  guarantee(young_gen()->promo_failure_scan_is_complete(), "Failed to finish scan");
 }
 
 // public collection interfaces
@@ -870,16 +878,6 @@ bool SerialHeap::is_in(const void* p) const {
   return _young_gen->is_in(p) || _old_gen->is_in(p);
 }
 
-#ifdef ASSERT
-// Don't implement this by using is_in_young().  This method is used
-// in some cases to check that is_in_young() is correct.
-bool SerialHeap::is_in_partial_collection(const void* p) {
-  assert(is_in_reserved(p) || p == nullptr,
-    "Does not work if address is non-null and outside of the heap");
-  return p < _young_gen->reserved().end() && p != nullptr;
-}
-#endif
-
 void SerialHeap::object_iterate(ObjectClosure* cl) {
   _young_gen->object_iterate(cl);
   _old_gen->object_iterate(cl);
@@ -951,8 +949,8 @@ bool SerialHeap::is_maximal_no_gc() const {
 }
 
 void SerialHeap::save_marks() {
-  _young_gen->save_marks();
-  _old_gen->save_marks();
+  _young_gen_saved_top = _young_gen->to()->top();
+  _old_gen_saved_top = _old_gen->space()->top();
 }
 
 void SerialHeap::verify(VerifyOption option /* ignored */) {

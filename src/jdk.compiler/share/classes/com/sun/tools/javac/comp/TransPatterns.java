@@ -106,7 +106,6 @@ import com.sun.tools.javac.tree.JCTree.LetExpr;
 import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.tree.TreeScanner;
 import com.sun.tools.javac.util.Assert;
-import com.sun.tools.javac.util.JCDiagnostic;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.List;
 
@@ -393,7 +392,7 @@ public class TransPatterns extends TreeTranslator {
                               boolean hasUnconditionalPattern,
                               boolean patternSwitch) {
         if (patternSwitch) {
-            Type seltype = selector.type.hasTag(BOT)
+            Type seltype = selector.type.hasTag(BOT) || target.usesReferenceOnlySelectorTypes()
                     ? syms.objectType
                     : selector.type;
 
@@ -496,14 +495,12 @@ public class TransPatterns extends TreeTranslator {
                          .toArray(s -> new LoadableConstant[s]);
 
             boolean enumSelector = seltype.tsym.isEnum();
-            boolean primitiveSelector = seltype.isPrimitive();
             Name bootstrapName = enumSelector ? names.enumSwitch : names.typeSwitch;
             MethodSymbol bsm = rs.resolveInternalMethod(tree.pos(), env, syms.switchBootstrapsType,
                     bootstrapName, staticArgTypes, List.nil());
 
-            Type resolvedSelectorType = seltype;
             MethodType indyType = new MethodType(
-                    List.of(resolvedSelectorType, syms.intType),
+                    List.of(seltype, syms.intType),
                     syms.intType,
                     List.nil(),
                     syms.methodClass

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,35 +51,6 @@
 
 static const ZStatCriticalPhase ZCriticalPhaseRelocationStall("Relocation Stall");
 static const ZStatSubPhase ZSubPhaseConcurrentRelocateRememberedSetFlipPromotedYoung("Concurrent Relocate Remset FP", ZGenerationId::young);
-
-static uintptr_t forwarding_index(ZForwarding* forwarding, zoffset from_offset) {
-  return (from_offset - forwarding->start()) >> forwarding->object_alignment_shift();
-}
-
-static zaddress forwarding_find(ZForwarding* forwarding, zoffset from_offset, ZForwardingCursor* cursor) {
-  const uintptr_t from_index = forwarding_index(forwarding, from_offset);
-  const ZForwardingEntry entry = forwarding->find(from_index, cursor);
-  return entry.populated() ? ZOffset::address(to_zoffset(entry.to_offset())) : zaddress::null;
-}
-
-static zaddress forwarding_find(ZForwarding* forwarding, zaddress_unsafe from_addr, ZForwardingCursor* cursor) {
-  return forwarding_find(forwarding, ZAddress::offset(from_addr), cursor);
-}
-
-static zaddress forwarding_find(ZForwarding* forwarding, zaddress from_addr, ZForwardingCursor* cursor) {
-  return forwarding_find(forwarding, ZAddress::offset(from_addr), cursor);
-}
-
-static zaddress forwarding_insert(ZForwarding* forwarding, zoffset from_offset, zaddress to_addr, ZForwardingCursor* cursor) {
-  const uintptr_t from_index = forwarding_index(forwarding, from_offset);
-  const zoffset to_offset = ZAddress::offset(to_addr);
-  const zoffset to_offset_final = forwarding->insert(from_index, to_offset, cursor);
-  return ZOffset::address(to_offset_final);
-}
-
-static zaddress forwarding_insert(ZForwarding* forwarding, zaddress from_addr, zaddress to_addr, ZForwardingCursor* cursor) {
-  return forwarding_insert(forwarding, ZAddress::offset(from_addr), to_addr, cursor);
-}
 
 ZRelocateQueue::ZRelocateQueue()
   : _lock(),
@@ -368,7 +339,7 @@ static zaddress relocate_object_inner(ZForwarding* forwarding, zaddress from_add
   ZUtils::object_copy_disjoint(from_addr, to_addr, size);
 
   // Insert forwarding
-  const zaddress to_addr_final = forwarding_insert(forwarding, from_addr, to_addr, cursor);
+  const zaddress to_addr_final = forwarding->insert(from_addr, to_addr, cursor);
 
   if (to_addr_final != to_addr) {
     // Already relocated, try undo allocation
@@ -382,7 +353,7 @@ zaddress ZRelocate::relocate_object(ZForwarding* forwarding, zaddress_unsafe fro
   ZForwardingCursor cursor;
 
   // Lookup forwarding
-  zaddress to_addr = forwarding_find(forwarding, from_addr, &cursor);
+  zaddress to_addr = forwarding->find(from_addr, &cursor);
   if (!is_null(to_addr)) {
     // Already relocated
     return to_addr;
@@ -409,8 +380,7 @@ zaddress ZRelocate::relocate_object(ZForwarding* forwarding, zaddress_unsafe fro
 }
 
 zaddress ZRelocate::forward_object(ZForwarding* forwarding, zaddress_unsafe from_addr) {
-  ZForwardingCursor cursor;
-  const zaddress to_addr = forwarding_find(forwarding, from_addr, &cursor);
+  const zaddress to_addr = forwarding->find(from_addr);
   assert(!is_null(to_addr), "Should be forwarded: " PTR_FORMAT, untype(from_addr));
   return to_addr;
 }
@@ -626,7 +596,7 @@ private:
 
     // Lookup forwarding
     {
-      const zaddress to_addr = forwarding_find(_forwarding, from_addr, &cursor);
+      const zaddress to_addr = _forwarding->find(from_addr, &cursor);
       if (!is_null(to_addr)) {
         // Already relocated
         increase_other_forwarded(size);
@@ -650,7 +620,7 @@ private:
     }
 
     // Insert forwarding
-    const zaddress to_addr = forwarding_insert(_forwarding, from_addr, allocated_addr, &cursor);
+    const zaddress to_addr = _forwarding->insert(from_addr, allocated_addr, &cursor);
     if (to_addr != allocated_addr) {
       // Already relocated, undo allocation
       _allocator->undo_alloc_object(to_page, to_addr, size);

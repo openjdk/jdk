@@ -179,8 +179,9 @@ more tab-completion friendly. For more complex test runs, the
 <p>The test specifications given in <code>TEST</code> is parsed into
 fully qualified test descriptors, which clearly and unambigously show
 which tests will be run. As an example, <code>:tier1</code> will expand
-to
-<code>jtreg:$(TOPDIR)/test/hotspot/jtreg:tier1 jtreg:$(TOPDIR)/test/jdk:tier1 jtreg:$(TOPDIR)/test/langtools:tier1 jtreg:$(TOPDIR)/test/nashorn:tier1 jtreg:$(TOPDIR)/test/jaxp:tier1</code>.
+to include all subcomponent test directories that define `tier1`,
+for example:
+<code>jtreg:$(TOPDIR)/test/hotspot/jtreg:tier1 jtreg:$(TOPDIR)/test/jdk:tier1 jtreg:$(TOPDIR)/test/langtools:tier1 ...</code>.
 You can always submit a list of fully qualified test descriptors in the
 <code>TEST</code> variable if you want to shortcut the parser.</p>
 <h3 id="common-test-groups">Common Test Groups</h3>
