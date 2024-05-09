@@ -28,7 +28,6 @@ import java.nio.file.Paths;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jtreg.SkippedException;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -121,9 +120,10 @@ public class IO {
      * command, which does not work for Windows. Later, a library like pty4j
      * or JPty might be used instead EXPECT, to cover both Unix and Windows.
      */
-    @Test
+    @ParameterizedTest
+    @ValueSource(strings = {"?"}) // TODO: add %s and maybe %%s after 8331535 has been fixed
     @EnabledOnOs({OS.LINUX, OS.MAC})
-    public void inputTestInteractive() throws Exception {
+    public void inputTestInteractive(String prompt) throws Exception {
         var expect = Paths.get("/usr/bin/expect"); // os-specific path
         if (!Files.exists(expect) || !Files.isExecutable(expect)) {
             throw new SkippedException("'" + expect + "' not found");
@@ -134,7 +134,8 @@ public class IO {
                 Path.of(testSrc, "input.exp").toAbsolutePath().toString(),
                 System.getProperty("test.jdk") + "/bin/java",
                 "--enable-preview",
-                Path.of(testSrc, "Input.java").toAbsolutePath().toString());
+                Path.of(testSrc, "Input.java").toAbsolutePath().toString(),
+                prompt);
         output.reportDiagnosticSummary();
         assertEquals(0, output.getExitValue());
     }

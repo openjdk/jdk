@@ -24,10 +24,11 @@
 set java [lrange $argv 0 0]
 set opts [lrange $argv 1 1]
 set file [lrange $argv 2 2]
+set prompt [lrange $argv 3 3]
 
-spawn $java $opts $file
+spawn $java $opts $file $prompt
 expect {
-    -exact "?" {
+    -exact "$prompt" {
         send "hello\r"
     }
     timeout {
