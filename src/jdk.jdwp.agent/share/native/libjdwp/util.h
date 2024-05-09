@@ -354,53 +354,56 @@ jvmtiError getSourceDebugExtension(jclass clazz, char **extensionPtr);
 
 /*
  * The following enum represents the rank of each lock (JVMTI RawMonitor) that
- * the debug agent uses. Locks must be aquired in rank order (lowest numbered
- * rank first).
+ * the debug agent uses. Locks must be aquired in rank order (highest numbered
+ * rank first). The list is in order from lowest rank to highest rank.
  */
 typedef enum {
-    // This lock is held by debugLoop_run() while replying to commands, so it needs
-    // to be ranked before the sendLock. Also it needs to come before the handlerLock
-    // since handlers are installed while holding this lock. Lastly it needs
-    // to be ranked before callbackLock because of the rare case where
-    // debugLoop_run() is holding this lock (as it always does) but ends up
-    // triggering a JVMTI event, which will cause callbackBlock to be entered.
-    vmDeathLockForDebugLoop_Rank = 0, // debug loop lock
-
-    // cbVMDeath() enters callbackBlock before callbackLock. All other event handlers
-    // are executed while holding callbackLock, so it needs to rank before all the
-    // other locks since they are all used during event handling.
-    callbackBlock_Rank, // event handler lock
-    callbackLock_Rank, // event handler lock
-
-    // This lock is grabbed in commandLoop(), which eventually leads to
-    // threadControl getLocks() grabbing the group of 7 locks a bit further below.
-    vmDeathLock_Rank, // event helper lock
-
-    // popFrameProceedLock must be ranked before popFrameEventLock, which must
-    // be ranked before threadLock. popFrameEventLock must be ranked after vmDeathLock.
-    popFrameProceedLock_Rank, // thread control lock
-    popFrameEventLock_Rank, // thread control lock
-
-    // This part of this list is determined by the order that locks are acquired in
-    // the threadControl getLocks() function.
-    handlerLock_Rank, // event handler lock
-    stepLock_Rank,
-    invokerLock_Rank,
-    commandQueueLock_Rank, // event helper lock
-    commandCompleteLock_Rank, // event helper lock
-    threadLock_Rank, // thread control lock
-    refLock_Rank, // common ref lock
-
-    // Must come before initMonitor
-    listenerLock_Rank,  // transport lock
-
-    // Only leaf locks below this point. No other locks should be entered
-    // while any of these locks are held
-    FIRST_LEAF_DEBUG_RAW_MONITOR,
-    sendLock_Rank = FIRST_LEAF_DEBUG_RAW_MONITOR, // transport lock
+    sendLock_Rank = 0, // transport lock
     cmdQueueLock_Rank, // debug loop lock
     blockCommandLoopLock_Rank, // event helper lock
     initMonitor_Rank, // debug init lock
+    LAST_LEAF_DEBUG_RAW_MONITOR = initMonitor_Rank,
+
+    // Only non-leaf locks below this point. No other locks should be entered
+    // while any of the above leaf locks are held.
+
+    // Must rank higher than initMonitor
+    listenerLock_Rank, // transport lock
+
+    // This part of the list is determined by the order that locks are acquired in
+    // the threadControl getLocks() function.
+    refLock_Rank, // common ref lock
+    threadLock_Rank, // thread control lock
+    commandCompleteLock_Rank, // event helper lock
+    commandQueueLock_Rank, // event helper lock
+    invokerLock_Rank,
+    stepLock_Rank,
+    handlerLock_Rank, // event handler lock
+
+    // popFrameEventLock and popFrameProceedLock have special handling in
+    // verifyMonitorRank(). See comment there. They must be ranked higher than
+    // threadLock. popFrameEventLock must be ranked lower than vmDeathLock.
+    popFrameEventLock_Rank, // thread control lock
+    popFrameProceedLock_Rank, // thread control lock
+
+    // This lock is grabbed in commandLoop(), which eventually leads to
+    // threadControl getLocks() grabbing the group of 7 locks
+    // above, so it must be ranked higher than handlerLock.
+    vmDeathLock_Rank, // event helper lock
+
+    // cbVMDeath() enters callbackBlock before callbackLock. All other event handlers
+    // are executed while holding callbackLock, so it needs to rank higher than all
+    // the other locks since they are all used during event handling.
+    callbackLock_Rank, // event handler lock
+    callbackBlock_Rank, // event handler lock
+
+    // This lock is held by debugLoop_run() while replying to commands, so it needs
+    // to be ranked higher than sendLock. Also it needs to rank higher than handlerLock
+    // since handlers are installed while holding this lock. Lastly it needs
+    // to be ranked higher than callbackBlock because of the rare case where
+    // debugLoop_run() is holding this lock (as it always does) but ends up
+    // triggering a JVMTI event, which will cause callbackBlock to be entered.
+    vmDeathLockForDebugLoop_Rank, // debug loop lock
 
     NUM_DEBUG_RAW_MONITORS
 } DebugRawMonitorRank;

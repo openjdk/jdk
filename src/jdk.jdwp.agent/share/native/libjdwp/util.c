@@ -1295,16 +1295,20 @@ verifyMonitorRank(JNIEnv *env, DebugRawMonitorRank rank, jthread thread)
     // We must hold the dbgRawMonitor when calling verifyMonitorRank()
 
     // Iterate over all the monitors and make sure we don't already hold one that
-    // has a higher rank than the monitor we are about to enter.
+    // has a higher rank than the monitor we are about to enter. Also, if we are
+    // entering a leaf monitor, make sure we don't already hold a leaf monitor.
+    // The loop normally starts with the first monitor (0) and stops at rank-1 
+    // However, if the monitor we are entering is a leaf monitor,
+    // then we must iterate over all the leaf monitors no matter what the rank is.
+    // Thus the special "highestRankCheck" logic.
     DebugRawMonitorRank i;
-    DebugRawMonitorRank firstRank =
-        (rank < FIRST_LEAF_DEBUG_RAW_MONITOR ? rank : FIRST_LEAF_DEBUG_RAW_MONITOR);
-    for (i = firstRank; i < NUM_DEBUG_RAW_MONITORS; i++) {
+    DebugRawMonitorRank highestRankCheck =
+        (rank > LAST_LEAF_DEBUG_RAW_MONITOR ? rank - 1 : LAST_LEAF_DEBUG_RAW_MONITOR);
+    for (i = 0; i <= highestRankCheck; i++) {
         DebugRawMonitor* dbg_monitor = &dbg_monitors[i];
         if (dbg_monitor->monitor == NULL) {
             continue; // ignore uninitialzed monitors
         }
-        JDI_ASSERT(i == dbg_monitor->rank);
         if (dbg_monitor->ownerThread == NULL) {
             continue; // ignore unowned monitors
         }
@@ -1313,32 +1317,38 @@ verifyMonitorRank(JNIEnv *env, DebugRawMonitorRank rank, jthread thread)
         }
 
         /*
-         * dbg_monitor is a monitor that the thread currently holds. We need to
-         * do two verificatons of its rank:
-         *   1. The held monitor's rank is not higher than the rank of the monitor
-         *      we are trying to enter.
-         *   2. The held monitor is not a leaf monitor, because we should not be entering
-         *      any additional monitors while holding a leaf monitor.
+         * At this point we already know we have some sort of rank violation because
+         * we know that we own the monitor we are iterating over, and one or both
+         * of the following are true:
+         *  - The monitor has a lower rank than the monitor we are entering.
+         *  - The monitor is a leaf monitor, and we can't enter any monitor
+         *    while holding a leaf monitor.
+         * We just need to figure out which rank violation it is. It's also possible
+         * for both to be true, so we print two error messages in that case.
          */
-        if (dbg_monitor->rank > rank || dbg_monitor->rank >= FIRST_LEAF_DEBUG_RAW_MONITOR ) {
-          // At this point we have found a rank order violation.
-          if (dbg_monitor->rank == popFrameEventLock_Rank && rank == popFrameProceedLock_Rank) {
-              // For reasons too complex to explain here, this is one exception that is safe so
-              // we allow it. See the long comment for these locks in threadControl.c.
-              continue;
-          }
-          char* threadName = getThreadName(thread);
-          if (dbg_monitor->rank > rank) {
-              tty_message("DebugRawMonitor rank failure: (%s: %d > %d) for thread (%s)",
-                          dbg_monitor->name, dbg_monitor->rank, rank, threadName);
-          } else {
-              tty_message("DebugRawMonitor rank failure: (%s is a held leaf monitor) for thread (%s)",
-                          dbg_monitor->name, threadName);
-          }
-          jvmtiDeallocate(threadName);
-          dumpRawMonitors();
-          JDI_ASSERT(JNI_FALSE);
+
+        if (dbg_monitor->rank == popFrameEventLock_Rank && rank == popFrameProceedLock_Rank) {
+            // For reasons too complex to explain here, this is one exception that is safe so
+            // we allow it. See the long comment for these locks in threadControl.c.
+            continue;
         }
+
+        char* threadName = getThreadName(thread);
+        jboolean rank_error = JNI_FALSE;
+        if (dbg_monitor->rank > rank) {
+            tty_message("DebugRawMonitor rank failure: (%s: %d > %d) for thread (%s)",
+                        dbg_monitor->name, dbg_monitor->rank, rank, threadName);
+            rank_error = JNI_TRUE;
+        } 
+        if (dbg_monitor->rank < LAST_LEAF_DEBUG_RAW_MONITOR ) {
+            tty_message("DebugRawMonitor rank failure: (%s is a held leaf monitor) for thread (%s)",
+                        dbg_monitor->name, threadName);
+            rank_error = JNI_TRUE;
+        }
+        JDI_ASSERT(rank_error); // We better have found something wrong with the rank
+        jvmtiDeallocate(threadName);
+        dumpRawMonitors();
+        JDI_ASSERT(JNI_FALSE);
     }
 }
 
