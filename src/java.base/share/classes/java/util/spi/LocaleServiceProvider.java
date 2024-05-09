@@ -155,6 +155,8 @@ import java.util.Locale;
  * Note that the CLDR locale data are subject to change. Users should not assume
  * that the locale data remain the same across CLDR versions. Otherwise, unexpected
  * incompatible behaviors may occur, such as an exception on parsing a date.
+ * Refer to <a href="https://cldr.unicode.org/index/downloads">CLDR Releases</a>
+ * for the deltas between their releases.
  * <table class="striped">
  * <caption style="display:none">JDK releases and supported CLDR versions</caption>
  * <thead>
@@ -267,7 +269,7 @@ public abstract class LocaleServiceProvider {
         for (Locale available : getAvailableLocales()) {
             if (locale.equals(available.stripExtensions())) {
                 return true;
-}
+            }
         }
         return false;
     }
