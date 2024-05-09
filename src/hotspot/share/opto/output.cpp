@@ -1280,7 +1280,6 @@ void PhaseOutput::estimate_buffer_size(int& const_req) {
   }
 
   // Compute prolog code size
-  _method_size = 0;
   _frame_slots = OptoReg::reg2stack(C->matcher()->_old_SP) + C->regalloc()->_framesize;
   assert(_frame_slots >= 0 && _frame_slots < 1000000, "sanity check");
 
@@ -1324,8 +1323,9 @@ CodeBuffer* PhaseOutput::init_buffer() {
 
   int pad_req   = NativeCall::instruction_size;
 
+  // GC barrier stubs are generated in code section
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-  stub_req += bs->estimate_stub_size();
+  code_req += bs->estimate_stub_size();
 
   // nmethod and CodeBuffer count stubs & constants as part of method's code.
   // class HandlerImpl is platform-specific and defined in the *.ad files.
@@ -1334,9 +1334,9 @@ CodeBuffer* PhaseOutput::init_buffer() {
   stub_req += MAX_stubs_size;   // ensure per-stub margin
   code_req += MAX_inst_size;    // ensure per-instruction margin
 
-  if (StressCodeBuffers)
+  if (StressCodeBuffers) {
     code_req = const_req = stub_req = exception_handler_req = deopt_handler_req = 0x10;  // force expansion
-
+  }
   int total_req =
           const_req +
           code_req +
@@ -1345,9 +1345,10 @@ CodeBuffer* PhaseOutput::init_buffer() {
           exception_handler_req +
           deopt_handler_req;               // deopt handler
 
-  if (C->has_method_handle_invokes())
-    total_req += deopt_handler_req;  // deopt MH handler
-
+  if (C->has_method_handle_invokes()) {
+    total_req += deopt_handler_req;        // deopt MH handler
+    stub_req  += deopt_handler_req;
+  }
   CodeBuffer* cb = code_buffer();
   cb->initialize(total_req, _buf_sizes._reloc);
 

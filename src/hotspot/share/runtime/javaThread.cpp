@@ -450,16 +450,17 @@ JavaThread::JavaThread() :
   _is_in_VTMS_transition(false),
   _is_in_tmp_VTMS_transition(false),
   _is_disable_suspend(false),
+  _VTMS_transition_mark(false),
 #ifdef ASSERT
   _is_VTMS_transition_disabler(false),
 #endif
 #endif
   _jni_attach_state(_not_attaching_via_jni),
+  _is_in_internal_oome_mark(false),
 #if INCLUDE_JVMCI
   _pending_deoptimization(-1),
   _pending_monitorenter(false),
   _pending_transfer_to_interpreter(false),
-  _in_retryable_allocation(false),
   _pending_failed_speculation(0),
   _jvmci{nullptr},
   _libjvmci_runtime(nullptr),
