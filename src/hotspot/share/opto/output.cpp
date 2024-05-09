@@ -1280,7 +1280,6 @@ void PhaseOutput::estimate_buffer_size(int& const_req) {
   }
 
   // Compute prolog code size
-  _method_size = 0;
   _frame_slots = OptoReg::reg2stack(C->matcher()->_old_SP) + C->regalloc()->_framesize;
   assert(_frame_slots >= 0 && _frame_slots < 1000000, "sanity check");
 
