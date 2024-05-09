@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@
 #include "asm/macroAssembler.inline.hpp"
 #include "compiler/disassembler.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/threadWXSetters.inline.hpp"
 
 #include "utilities/vmassert_uninstall.hpp"
 #include <regex>
@@ -269,6 +271,12 @@ TEST_VM(codestrings, DISABLED_validate)
 TEST_VM(codestrings, validate)
 #endif
 {
+    JavaThread* THREAD = JavaThread::current();
+    ThreadInVMfromNative invm(THREAD);
+#if INCLUDE_WX_NEW
+    auto _wx = WXWriteMark(THREAD);
+#endif
+
     code_buffer_test();
     buffer_blob_test();
 }

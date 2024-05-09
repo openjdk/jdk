@@ -49,7 +49,7 @@ public:
   static void set_guard_value(nmethod* nm, int value);
 
   static void nmethod_oops_do(nmethod* nm, OopClosure* cl);
-  static void nmethod_oops_do_inner(nmethod* nm, OopClosure* cl);
+  static void nmethod_oops_do_inner(nmethod* nm, OopClosure* cl, bool fix_relocations = true);
 
   static void nmethod_oops_barrier(nmethod* nm);
 

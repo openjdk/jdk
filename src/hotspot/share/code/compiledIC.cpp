@@ -198,10 +198,12 @@ void CompiledIC::ensure_initialized(CallInfo* call_info, Klass* receiver_klass) 
 
 void CompiledIC::set_to_clean() {
   log_debug(inlinecache)("IC@" INTPTR_FORMAT ": set to clean", p2i(_call->instruction_address()));
+  REQUIRE_THREAD_WX_MODE_WRITE
   _call->set_destination_mt_safe(SharedRuntime::get_resolve_virtual_call_stub());
 }
 
 void CompiledIC::set_to_monomorphic() {
+  REQUIRE_THREAD_WX_MODE_WRITE
   assert(data()->is_initialized(), "must be initialized");
   Method* method = data()->speculated_method();
   nmethod* code = method->code();
@@ -257,6 +259,7 @@ void CompiledIC::set_to_megamorphic(CallInfo* call_info) {
   log_trace(inlinecache)("IC@" INTPTR_FORMAT ": to megamorphic %s entry: " INTPTR_FORMAT,
                          p2i(_call->instruction_address()), call_info->selected_method()->print_value_string(), p2i(entry));
 
+  REQUIRE_THREAD_WX_MODE_WRITE
   _call->set_destination_mt_safe(entry);
   assert(is_megamorphic(), "sanity check");
 }
@@ -321,6 +324,7 @@ void CompiledIC::verify() {
 // ----------------------------------------------------------------------------
 
 void CompiledDirectCall::set_to_clean() {
+  REQUIRE_THREAD_WX_MODE_WRITE
   // in_use is unused but needed to match template function in nmethod
   assert(CompiledICLocker::is_safe(instruction_address()), "mt unsafe call");
   // Reset call site

@@ -431,7 +431,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // Initialize the os module
   os::init();
 
-  MACOS_AARCH64_ONLY(os::current_thread_enable_wx(WXWrite));
+  WX_OLD_ONLY(os::current_thread_enable_wx(WXWrite));
 
   // Record VM creation timing statistics
   TraceVmCreationTime create_vm_timer;
@@ -525,13 +525,15 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   // Attach the main thread to this os thread
   JavaThread* main_thread = new JavaThread();
-  main_thread->set_thread_state(_thread_in_vm);
   main_thread->initialize_thread_current();
+  main_thread->set_thread_state(_thread_in_vm);
+#if INCLUDE_WX
+  main_thread->init_wx();
+#endif
   // must do this before set_active_handles
   main_thread->record_stack_base_and_size();
   main_thread->register_thread_stack_with_NMT();
   main_thread->set_active_handles(JNIHandleBlock::allocate_block());
-  MACOS_AARCH64_ONLY(main_thread->init_wx());
 
   if (!main_thread->set_as_starting_thread()) {
     vm_shutdown_during_initialization(
@@ -548,6 +550,10 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // Initialize Java-Level synchronization subsystem
   ObjectMonitor::Initialize();
   ObjectSynchronizer::initialize();
+
+#if INCLUDE_WX_NEW
+  auto _wx = WXLazyMark(main_thread);
+#endif
 
   // Initialize global modules
   jint status = init_globals();

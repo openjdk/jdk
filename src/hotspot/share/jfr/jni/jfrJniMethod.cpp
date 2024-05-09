@@ -105,7 +105,7 @@ NO_TRANSITION(void, jfr_set_enabled(JNIEnv* env, jclass jvm, jlong event_type_id
   JfrEventSetting::set_enabled(event_type_id, JNI_TRUE == enabled);
   if (EventOldObjectSample::eventId == event_type_id) {
     JavaThread* thread = JavaThread::thread_from_jni_environment(env);
-    MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, thread));
+    WX_OLD_ONLY(ThreadWXEnable __wx(WXWrite, thread));
     ThreadInVMfromNative transition(thread);
     if (JNI_TRUE == enabled) {
       LeakProfiler::start(JfrOptionSet::old_object_queue_size());

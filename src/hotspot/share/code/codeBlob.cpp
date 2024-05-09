@@ -172,6 +172,9 @@ RuntimeBlob::RuntimeBlob(
 void RuntimeBlob::free(RuntimeBlob* blob) {
   assert(blob != nullptr, "caller must check for nullptr");
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
+#if INCLUDE_WX_NEW
+  auto _wx = WXWriteMark(Thread::current());
+#endif
   blob->purge();
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
@@ -229,6 +232,9 @@ BufferBlob::BufferBlob(const char* name, CodeBlobKind kind, int size)
 
 BufferBlob* BufferBlob::create(const char* name, uint buffer_size) {
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
+#if INCLUDE_WX_NEW
+  auto _wx = WXWriteMark(Thread::current());
+#endif
 
   BufferBlob* blob = nullptr;
   unsigned int size = sizeof(BufferBlob);
@@ -254,6 +260,9 @@ BufferBlob::BufferBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int 
 // Used by gtest
 BufferBlob* BufferBlob::create(const char* name, CodeBuffer* cb) {
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
+#if INCLUDE_WX_NEW
+  auto _wx = WXWriteMark(Thread::current());
+#endif
 
   BufferBlob* blob = nullptr;
   unsigned int size = CodeBlob::allocation_size(cb, sizeof(BufferBlob));
@@ -320,7 +329,9 @@ VtableBlob::VtableBlob(const char* name, int size) :
 }
 
 VtableBlob* VtableBlob::create(const char* name, int buffer_size) {
-  assert(JavaThread::current()->thread_state() == _thread_in_vm, "called with the wrong state");
+#if INCLUDE_WX_NEW
+  auto _wx = WXWriteMark(Thread::current());
+#endif
 
   VtableBlob* blob = nullptr;
   unsigned int size = sizeof(VtableBlob);

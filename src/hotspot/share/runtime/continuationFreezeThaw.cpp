@@ -249,7 +249,7 @@ static JRT_LEAF(intptr_t*, thaw(JavaThread* thread, int kind))
   ResetNoHandleMark rnhm;
 
   // we might modify the code cache via BarrierSetNMethod::nmethod_entry_barrier
-  MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, thread));
+  WX_OLD_ONLY(ThreadWXEnable __wx(WXWrite, thread));
   return ConfigT::thaw(thread, (Continuation::thaw_kind)kind);
 JRT_END
 
@@ -1995,6 +1995,9 @@ inline bool ThawBase::seen_by_gc() {
 }
 
 NOINLINE intptr_t* ThawBase::thaw_slow(stackChunkOop chunk, bool return_barrier) {
+#if INCLUDE_WX_NEW
+  auto _wx = WXLazyMark(Thread::current());
+#endif
   LogTarget(Trace, continuations) lt;
   if (lt.develop_is_enabled()) {
     LogStream ls(lt);

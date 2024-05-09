@@ -1062,7 +1062,7 @@ class os: AllStatic {
 
 #if defined(__APPLE__) && defined(AARCH64)
   // Enables write or execute access to writeable and executable pages.
-  static void current_thread_enable_wx(WXMode mode);
+  static void current_thread_enable_wx(WXMode mode, bool use_new_code = false);
 #endif // __APPLE__ && AARCH64
 
  protected:

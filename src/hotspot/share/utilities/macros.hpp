@@ -641,4 +641,30 @@
 #define INCLUDE_ASAN 0
 #endif
 
+#if defined(__APPLE__) && defined(AARCH64)
+#define INCLUDE_WX 1
+#define INCLUDE_WX_OLD 1
+#define INCLUDE_WX_NEW 1
+#else
+#define INCLUDE_WX 0
+#define INCLUDE_WX_OLD 0
+#define INCLUDE_WX_NEW 0
+#endif
+
+#if INCLUDE_WX
+#define WX_ONLY(x) x
+#if INCLUDE_WX_OLD
+#define WX_OLD_ONLY(x) x
+#else
+#define WX_OLD_ONLY(x)
+#endif
+#if INCLUDE_WX_NEW
+#define WX_NEW_ONLY(x) x
+#else
+#define WX_NEW_ONLY(x)
+#endif
+#else
+#define WX_ONLY(x)
+#endif
+
 #endif // SHARE_UTILITIES_MACROS_HPP

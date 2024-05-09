@@ -79,7 +79,7 @@ public:
     XReentrantLock* const lock = XNMethod::lock_for_nmethod(nm);
     XLocker<XReentrantLock> locker(lock);
     XIsUnloadingOopClosure cl;
-    XNMethod::nmethod_oops_do_inner(nm, &cl);
+    XNMethod::nmethod_oops_do_inner(nm, &cl, false /* fix_relocations */);
     return cl.is_unloading();
   }
 };

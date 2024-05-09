@@ -40,6 +40,7 @@
 #include "memory/resourceArea.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/threadWXSetters.inline.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/macros.hpp"
@@ -62,6 +63,10 @@ void Compiler::init_c1_runtime() {
 
 
 void Compiler::initialize() {
+#if INCLUDE_WX_NEW
+  auto _wx = WXWriteMark(Thread::current());
+#endif
+
   // Buffer blob must be allocated per C1 compiler thread at startup
   BufferBlob* buffer_blob = init_buffer_blob();
 

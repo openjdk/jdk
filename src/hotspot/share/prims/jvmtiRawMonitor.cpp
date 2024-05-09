@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,10 @@ void JvmtiPendingMonitors::transition_raw_monitors() {
          "Java thread has not been created yet or more than one java thread "
          "is running. Raw monitor transition will not work");
   JavaThread* current_java_thread = JavaThread::current();
-  {
+  if (count() > 0) {
+#if INCLUDE_WX_NEW
+    auto _wx = WXExecMark(Thread::current());
+#endif
     ThreadToNativeFromVM ttnfvm(current_java_thread);
     for (int i = 0; i < count(); i++) {
       JvmtiRawMonitor* rmonitor = monitors()->at(i);

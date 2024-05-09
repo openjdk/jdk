@@ -882,7 +882,7 @@ public:
 
   // used by jvmti to track if the load events has been reported
   bool  load_reported() const                     { return _load_reported; }
-  void  set_load_reported()                       { _load_reported = true; }
+  void  set_load_reported()                       { REQUIRE_THREAD_WX_MODE_WRITE _load_reported = true; }
 
  public:
   // ScopeDesc retrieval operation

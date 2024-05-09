@@ -33,7 +33,7 @@
 
 #define WB_ENTRY(result_type, header) JNI_ENTRY(result_type, header) \
   ClearPendingJniExcCheck _clearCheck(env); \
-  MACOS_AARCH64_ONLY(ThreadWXEnable _wx(WXWrite, thread));
+  WX_OLD_ONLY(ThreadWXEnable _wx(WXWrite, thread));
 
 #define WB_END JNI_END
 

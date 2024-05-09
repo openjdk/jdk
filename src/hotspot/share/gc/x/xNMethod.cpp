@@ -207,7 +207,7 @@ void XNMethod::nmethod_oops_do(nmethod* nm, OopClosure* cl) {
   XNMethod::nmethod_oops_do_inner(nm, cl);
 }
 
-void XNMethod::nmethod_oops_do_inner(nmethod* nm, OopClosure* cl) {
+void XNMethod::nmethod_oops_do_inner(nmethod* nm, OopClosure* cl, bool fix_relocations) {
   // Process oops table
   {
     oop* const begin = nm->oops_begin();
@@ -233,7 +233,7 @@ void XNMethod::nmethod_oops_do_inner(nmethod* nm, OopClosure* cl) {
   }
 
   // Process non-immediate oops
-  if (oops->has_non_immediates()) {
+  if (fix_relocations && oops->has_non_immediates()) {
     nm->fix_oop_relocations();
   }
 }

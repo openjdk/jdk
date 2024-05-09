@@ -35,6 +35,7 @@
 #include "runtime/timerTrace.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "runtime/threadWXSetters.inline.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
 #ifdef COMPILER2
@@ -239,6 +240,9 @@ static BufferBlob* initialize_stubs(StubCodeGenerator::StubsKind kind,
                                     const char* timer_msg,
                                     const char* buffer_name,
                                     const char* assert_msg) {
+#if INCLUDE_WX_NEW
+  auto _wx = WXWriteMark(Thread::current());
+#endif
   ResourceMark rm;
   TraceTime timer(timer_msg, TRACETIME_LOG(Info, startuptime));
   // Add extra space for large CodeEntryAlignment

@@ -377,10 +377,10 @@ void JavaThread::check_possible_safepoint() {
   clear_unhandled_oops();
 #endif // CHECK_UNHANDLED_OOPS
 
+#if INCLUDE_WX_OLD
   // Macos/aarch64 should be in the right state for safepoint (e.g.
   // deoptimization needs WXWrite).  Crashes caused by the wrong state rarely
   // happens in practice, making such issues hard to find and reproduce.
-#if defined(__APPLE__) && defined(AARCH64)
   if (AssertWXAtThreadSync) {
     assert_wx_state(WXWrite);
   }
@@ -1254,7 +1254,7 @@ void JavaThread::check_special_condition_for_native_trans(JavaThread *thread) {
   thread->set_thread_state(_thread_in_vm);
 
   // Enable WXWrite: called directly from interpreter native wrapper.
-  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, thread));
+  WX_OLD_ONLY(ThreadWXEnable wx(WXWrite, thread));
 
   SafepointMechanism::process_if_requested_with_exit_check(thread, true /* check asyncs */);
 
@@ -1447,7 +1447,8 @@ void JavaThread::verify_states_for_handshake() {
 
 void JavaThread::nmethods_do(NMethodClosure* cf) {
   DEBUG_ONLY(verify_frame_info();)
-  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, Thread::current());)
+  WX_OLD_ONLY(ThreadWXEnable wx(WXWrite, Thread::current());)
+  REQUIRE_THREAD_WX_MODE_WRITE
 
   if (has_last_Java_frame()) {
     // Traverse the execution stack
