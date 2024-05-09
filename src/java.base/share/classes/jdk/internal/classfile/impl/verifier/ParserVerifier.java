@@ -146,9 +146,10 @@ public record ParserVerifier(ClassModel classModel) {
     }
 
     private void verifyFields(List<VerifyError> errors) {
-        var fields = new HashSet<String>();
+        record F(Utf8Entry name, Utf8Entry type) {};
+        var fields = new HashSet<F>();
         for (var f : classModel.fields()) try {
-            if (!fields.add(f.fieldName().stringValue() + f.fieldType().stringValue())) {
+            if (!fields.add(new F(f.fieldName(), f.fieldType()))) {
                 errors.add(new VerifyError("Duplicate field name %s with signature %s in %s".formatted(f.fieldName().stringValue(), f.fieldType().stringValue(), toString(classModel))));
             }
             verifyFieldName(f.fieldName().stringValue());
@@ -158,9 +159,10 @@ public record ParserVerifier(ClassModel classModel) {
     }
 
     private void verifyMethods(List<VerifyError> errors) {
-        var methods = new HashSet<String>();
+        record M(Utf8Entry name, Utf8Entry type) {};
+        var methods = new HashSet<M>();
         for (var m : classModel.methods()) try {
-            if (!methods.add(m.methodName().stringValue() + m.methodType().stringValue())) {
+            if (!methods.add(new M(m.methodName(), m.methodType()))) {
                 errors.add(new VerifyError("Duplicate method name %s with signature %s in %s".formatted(m.methodName().stringValue(), m.methodType().stringValue(), toString(classModel))));
             }
             if (m.methodName().equalsString(CLASS_INIT_NAME)
