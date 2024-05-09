@@ -219,7 +219,7 @@ public class ConsoleImpl {
             try {
                 return sendAndReceive(() -> {
                     remoteInput.write(Task.READ_LINE.ordinal());
-                    char[] chars = prompt.toCharArray();
+                    char[] chars = (prompt == null ? "null" : prompt).toCharArray();
                     sendChars(chars, 0, chars.length);
                     char[] line = readChars();
                     return new String(line);
