@@ -49,13 +49,13 @@ public:
   virtual void do_bool(bool* p) = 0;
 
   // Iterate on the pointers from p[0] through p[num_pointers-1]
-  void do_ptrs(u_char* start, size_t size) {
-    assert((intptr_t)start % sizeof(intptr_t) == 0, "bad alignment");
+  void do_ptrs(void** p, size_t size) {
+    assert((intptr_t)p % sizeof(intptr_t) == 0, "bad alignment");
     assert(size % sizeof(intptr_t) == 0, "bad size");
     do_tag((int)size);
     while (size > 0) {
-      do_ptr((void**)start);
-      start += sizeof(intptr_t);
+      do_ptr(p);
+      p++;
       size -= sizeof(intptr_t);
     }
   }
