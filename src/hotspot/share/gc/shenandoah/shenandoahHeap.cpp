@@ -1108,189 +1108,47 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
 }
 
 HeapWord* ShenandoahHeap::allocate_memory_under_lock(ShenandoahAllocRequest& req, bool& in_new_region) {
-  bool try_smaller_lab_size = false;
-  size_t smaller_lab_size;
-  {
-    // promotion_eligible pertains only to PLAB allocations, denoting that the PLAB is allowed to allocate for promotions.
-    bool promotion_eligible = false;
-    bool allow_allocation = true;
-    bool plab_alloc = false;
-    size_t requested_bytes = req.size() * HeapWordSize;
-    HeapWord* result = nullptr;
+  // If we are dealing with mutator allocation, then we may need to block for safepoint.
+  // We cannot block for safepoint for GC allocations, because there is a high chance
+  // we are already running at safepoint or from stack watermark machinery, and we cannot
+  // block again.
+  ShenandoahHeapLocker locker(lock(), req.is_mutator_alloc());
 
-    // If we are dealing with mutator allocation, then we may need to block for safepoint.
-    // We cannot block for safepoint for GC allocations, because there is a high chance
-    // we are already running at safepoint or from stack watermark machinery, and we cannot
-    // block again.
-    ShenandoahHeapLocker locker(lock(), req.is_mutator_alloc());
-    Thread* thread = Thread::current();
-
-    if (mode()->is_generational()) {
-      if (req.affiliation() == YOUNG_GENERATION) {
-        if (req.is_mutator_alloc()) {
-          size_t young_words_available = young_generation()->available() / HeapWordSize;
-          if (req.is_lab_alloc() && (req.min_size() < young_words_available)) {
-            // Allow ourselves to try a smaller lab size even if requested_bytes <= young_available.  We may need a smaller
-            // lab size because young memory has become too fragmented.
-            try_smaller_lab_size = true;
-            smaller_lab_size = (young_words_available < req.size())? young_words_available: req.size();
-          } else if (req.size() > young_words_available) {
-            // Can't allocate because even min_size() is larger than remaining young_available
-            log_info(gc, ergo)("Unable to shrink %s alloc request of minimum size: " SIZE_FORMAT
-                               ", young words available: " SIZE_FORMAT, req.type_string(),
-                               HeapWordSize * (req.is_lab_alloc()? req.min_size(): req.size()), young_words_available);
-            return nullptr;
-          }
-        }
-      } else {                    // reg.affiliation() == OLD_GENERATION
-        assert(req.type() != ShenandoahAllocRequest::_alloc_gclab, "GCLAB pertains only to young-gen memory");
-        if (req.type() ==  ShenandoahAllocRequest::_alloc_plab) {
-          plab_alloc = true;
-          size_t promotion_avail = old_generation()->get_promoted_reserve();
-          size_t promotion_expended = old_generation()->get_promoted_expended();
-          if (promotion_expended + requested_bytes > promotion_avail) {
-            promotion_avail = 0;
-            if (old_generation()->get_evacuation_reserve() == 0) {
-              // There are no old-gen evacuations in this pass.  There's no value in creating a plab that cannot
-              // be used for promotions.
-              allow_allocation = false;
-            }
-          } else {
-            promotion_avail = promotion_avail - (promotion_expended + requested_bytes);
-            promotion_eligible = true;
-          }
-        } else if (req.is_promotion()) {
-          // This is a shared alloc for promotion
-          size_t promotion_avail = old_generation()->get_promoted_reserve();
-          size_t promotion_expended = old_generation()->get_promoted_expended();
-          if (promotion_expended + requested_bytes > promotion_avail) {
-            promotion_avail = 0;
-          } else {
-            promotion_avail = promotion_avail - (promotion_expended + requested_bytes);
-          }
-          if (promotion_avail == 0) {
-            // We need to reserve the remaining memory for evacuation.  Reject this allocation.  The object will be
-            // evacuated to young-gen memory and promoted during a future GC pass.
-            return nullptr;
-          }
-          // Else, we'll allow the allocation to proceed.  (Since we hold heap lock, the tested condition remains true.)
-        } else {
-          // This is a shared allocation for evacuation.  Memory has already been reserved for this purpose.
-        }
-      }
-    } // This ends the is_generational() block
-
-    // First try the original request.  If TLAB request size is greater than available, allocate() will attempt to downsize
-    // request to fit within available memory.
-    result = (allow_allocation)? _free_set->allocate(req, in_new_region): nullptr;
-    if (result != nullptr) {
-      if (req.is_old()) {
-        ShenandoahThreadLocalData::reset_plab_promoted(thread);
-        if (req.is_gc_alloc()) {
-          bool disable_plab_promotions = false;
-          if (req.type() ==  ShenandoahAllocRequest::_alloc_plab) {
-            if (promotion_eligible) {
-              size_t actual_size = req.actual_size() * HeapWordSize;
-              // The actual size of the allocation may be larger than the requested bytes (due to alignment on card boundaries).
-              // If this puts us over our promotion budget, we need to disable future PLAB promotions for this thread.
-              if (old_generation()->get_promoted_expended() + actual_size <= old_generation()->get_promoted_reserve()) {
-                // Assume the entirety of this PLAB will be used for promotion.  This prevents promotion from overreach.
-                // When we retire this plab, we'll unexpend what we don't really use.
-                ShenandoahThreadLocalData::enable_plab_promotions(thread);
-                old_generation()->expend_promoted(actual_size);
-                ShenandoahThreadLocalData::set_plab_preallocated_promoted(thread, actual_size);
-              } else {
-                disable_plab_promotions = true;
-              }
-            } else {
-              disable_plab_promotions = true;
-            }
-            if (disable_plab_promotions) {
-              // Disable promotions in this thread because entirety of this PLAB must be available to hold old-gen evacuations.
-              ShenandoahThreadLocalData::disable_plab_promotions(thread);
-              ShenandoahThreadLocalData::set_plab_preallocated_promoted(thread, 0);
-            }
-          } else if (req.is_promotion()) {
-            // Shared promotion.  Assume size is requested_bytes.
-            old_generation()->expend_promoted(requested_bytes);
-          }
-        }
-
-        // Register the newly allocated object while we're holding the global lock since there's no synchronization
-        // built in to the implementation of register_object().  There are potential races when multiple independent
-        // threads are allocating objects, some of which might span the same card region.  For example, consider
-        // a card table's memory region within which three objects are being allocated by three different threads:
-        //
-        // objects being "concurrently" allocated:
-        //    [-----a------][-----b-----][--------------c------------------]
-        //            [---- card table memory range --------------]
-        //
-        // Before any objects are allocated, this card's memory range holds no objects.  Note that allocation of object a
-        //   wants to set the starts-object, first-start, and last-start attributes of the preceding card region.
-        //   allocation of object b wants to set the starts-object, first-start, and last-start attributes of this card region.
-        //   allocation of object c also wants to set the starts-object, first-start, and last-start attributes of this
-        //   card region.
-        //
-        // The thread allocating b and the thread allocating c can "race" in various ways, resulting in confusion, such as
-        // last-start representing object b while first-start represents object c.  This is why we need to require all
-        // register_object() invocations to be "mutually exclusive" with respect to each card's memory range.
-        card_scan()->register_object(result);
-      }
-    } else {
-      // The allocation failed.  If this was a plab allocation, We've already retired it and no longer have a plab.
-      if (req.is_old() && req.is_gc_alloc() && (req.type() == ShenandoahAllocRequest::_alloc_plab)) {
-        // We don't need to disable PLAB promotions because there is no PLAB.  We leave promotions enabled because
-        // this allows the surrounding infrastructure to retry alloc_plab_slow() with a smaller PLAB size.
-        ShenandoahThreadLocalData::set_plab_preallocated_promoted(thread, 0);
-      }
-    }
-    if ((result != nullptr) || !try_smaller_lab_size) {
-      return result;
-    }
-    // else, fall through to try_smaller_lab_size
-  } // This closes the block that holds the heap lock, releasing the lock.
-
-  // We failed to allocate the originally requested lab size.  Let's see if we can allocate a smaller lab size.
-  if (req.size() == smaller_lab_size) {
-    // If we were already trying to allocate min size, no value in attempting to repeat the same.  End the recursion.
+  // Make sure the old generation has room for either evacuations or promotions before trying to allocate.
+  if (req.is_old() && !old_generation()->can_allocate(req)) {
     return nullptr;
   }
 
-  // We arrive here if the tlab allocation request can be resized to fit within young_available
-  assert((req.affiliation() == YOUNG_GENERATION) && req.is_lab_alloc() && req.is_mutator_alloc() &&
-         (smaller_lab_size < req.size()), "Only shrink allocation request size for TLAB allocations");
+  // If TLAB request size is greater than available, allocate() will attempt to downsize request to fit within available
+  // memory.
+  HeapWord* result = _free_set->allocate(req, in_new_region);
 
-  // By convention, ShenandoahAllocationRequest is primarily read-only.  The only mutable instance data is represented by
-  // actual_size(), which is overwritten with the size of the allocaion when the allocation request is satisfied.  We use a
-  // recursive call here rather than introducing new methods to mutate the existing ShenandoahAllocationRequest argument.
-  // Mutation of the existing object might result in astonishing results if calling contexts assume the content of immutable
-  // fields remain constant.  The original TLAB allocation request was for memory that exceeded the current capacity.  We'll
-  // attempt to allocate a smaller TLAB.  If this is successful, we'll update actual_size() of our incoming
-  // ShenandoahAllocRequest.  If the recursive request fails, we'll simply return nullptr.
-
-  // Note that we've relinquished the HeapLock and some other thread may perform additional allocation before our recursive
-  // call reacquires the lock.  If that happens, we will need another recursive call to further reduce the size of our request
-  // for each time another thread allocates young memory during the brief intervals that the heap lock is available to
-  // interfering threads.  We expect this interference to be rare.  The recursion bottoms out when young_available is
-  // smaller than req.min_size().  The inner-nested call to allocate_memory_under_lock() uses the same min_size() value
-  // as this call, but it uses a preferred size() that is smaller than our preferred size, and is no larger than what we most
-  // recently saw as the memory currently available within the young generation.
-
-  // TODO: At the expense of code clarity, we could rewrite this recursive solution to use iteration.  We need at most one
-  // extra instance of the ShenandoahAllocRequest, which we can re-initialize multiple times inside a loop, with one iteration
-  // of the loop required for each time the existing solution would recurse.  An iterative solution would be more efficient
-  // in CPU time and stack memory utilization.  The expectation is that it is very rare that we would recurse more than once
-  // so making this change is not currently seen as a high priority.
-
-  ShenandoahAllocRequest smaller_req = ShenandoahAllocRequest::for_tlab(req.min_size(), smaller_lab_size);
-
-  // Note that shrinking the preferred size gets us past the gatekeeper that checks whether there's available memory to
-  // satisfy the allocation request.  The reality is the actual TLAB size is likely to be even smaller, because it will
-  // depend on how much memory is available within mutator regions that are not yet fully used.
-  HeapWord* result = allocate_memory_under_lock(smaller_req, in_new_region);
-  if (result != nullptr) {
-    req.set_actual_size(smaller_req.actual_size());
+  // Record the plab configuration for this result and register the object.
+  if (result != nullptr && req.is_old()) {
+    old_generation()->configure_plab_for_current_thread(req);
+    if (req.type() == ShenandoahAllocRequest::_alloc_shared_gc) {
+      // Register the newly allocated object while we're holding the global lock since there's no synchronization
+      // built in to the implementation of register_object().  There are potential races when multiple independent
+      // threads are allocating objects, some of which might span the same card region.  For example, consider
+      // a card table's memory region within which three objects are being allocated by three different threads:
+      //
+      // objects being "concurrently" allocated:
+      //    [-----a------][-----b-----][--------------c------------------]
+      //            [---- card table memory range --------------]
+      //
+      // Before any objects are allocated, this card's memory range holds no objects.  Note that allocation of object a
+      // wants to set the starts-object, first-start, and last-start attributes of the preceding card region.
+      // Allocation of object b wants to set the starts-object, first-start, and last-start attributes of this card region.
+      // Allocation of object c also wants to set the starts-object, first-start, and last-start attributes of this
+      // card region.
+      //
+      // The thread allocating b and the thread allocating c can "race" in various ways, resulting in confusion, such as
+      // last-start representing object b while first-start represents object c.  This is why we need to require all
+      // register_object() invocations to be "mutually exclusive" with respect to each card's memory range.
+      card_scan()->register_object(result);
+    }
   }
+
   return result;
 }
 

@@ -60,12 +60,22 @@ private:
   // for evacuations within the old generation and
   // for promotions from the young generation into the old generation.
   PLAB* _plab;
-  size_t _plab_size;
 
-  size_t _plab_evacuated;
+  // Heuristics will grow the desired size of plabs.
+  size_t _plab_desired_size;
+
+  // Once the plab has been allocated, and we know the actual size, we record it here.
+  size_t _plab_actual_size;
+
+  // As the plab is used for promotions, this value is incremented. When the plab is
+  // retired, the difference between 'actual_size' and 'promoted' will be returned to
+  // the old generation's promotion reserve (i.e., it will be 'unexpended').
   size_t _plab_promoted;
-  size_t _plab_preallocated_promoted;
-  bool   _plab_allows_promotion; // If false, no more promotion by this thread during this evacuation phase.
+
+  // If false, no more promotion by this thread during this evacuation phase.
+  bool   _plab_allows_promotion;
+
+  // If true, evacuations may attempt to allocate a smaller plab if the original size fails.
   bool   _plab_retries_enabled;
 
   ShenandoahEvacuationStats* _evacuation_stats;
@@ -110,17 +120,9 @@ public:
     data(thread)->_gclab = new PLAB(PLAB::min_size());
     data(thread)->_gclab_size = 0;
 
-    // TODO:
-    //   Only initialize _plab if (!Universe::is_fully_initialized() || ShenandoahHeap::heap()->mode()->is_generational())
-    //   Otherwise, set _plab to nullptr
-    // Problem is there is code sprinkled throughout that asserts (plab != nullptr) that need to be fixed up.  Perhaps
-    // those assertions are overzealous.
-
-    // In theory, plabs are only need if heap->mode()->is_generational().  However, some threads
-    // instantiated before we are able to answer that question.
     if (ShenandoahHeap::heap()->mode()->is_generational()) {
       data(thread)->_plab = new PLAB(align_up(PLAB::min_size(), CardTable::card_size_in_words()));
-      data(thread)->_plab_size = 0;
+      data(thread)->_plab_desired_size = 0;
     }
   }
 
@@ -157,11 +159,11 @@ public:
   }
 
   static size_t plab_size(Thread* thread) {
-    return data(thread)->_plab_size;
+    return data(thread)->_plab_desired_size;
   }
 
   static void set_plab_size(Thread* thread, size_t v) {
-    data(thread)->_plab_size = v;
+    data(thread)->_plab_desired_size = v;
   }
 
   static void enable_plab_retries(Thread* thread) {
@@ -188,23 +190,6 @@ public:
     return data(thread)->_plab_allows_promotion;
   }
 
-  static void reset_plab_evacuated(Thread* thread) {
-    data(thread)->_plab_evacuated = 0;
-  }
-
-  static void add_to_plab_evacuated(Thread* thread, size_t increment) {
-    data(thread)->_plab_evacuated += increment;
-  }
-
-  static void subtract_from_plab_evacuated(Thread* thread, size_t increment) {
-    // TODO: Assert underflow
-    data(thread)->_plab_evacuated -= increment;
-  }
-
-  static size_t get_plab_evacuated(Thread* thread) {
-    return data(thread)->_plab_evacuated;
-  }
-
   static void reset_plab_promoted(Thread* thread) {
     data(thread)->_plab_promoted = 0;
   }
@@ -214,7 +199,7 @@ public:
   }
 
   static void subtract_from_plab_promoted(Thread* thread, size_t increment) {
-    // TODO: Assert underflow
+    assert(data(thread)->_plab_promoted >= increment, "Cannot subtract more than remaining promoted");
     data(thread)->_plab_promoted -= increment;
   }
 
@@ -222,12 +207,12 @@ public:
     return data(thread)->_plab_promoted;
   }
 
-  static void set_plab_preallocated_promoted(Thread* thread, size_t value) {
-    data(thread)->_plab_preallocated_promoted = value;
+  static void set_plab_actual_size(Thread* thread, size_t value) {
+    data(thread)->_plab_actual_size = value;
   }
 
-  static size_t get_plab_preallocated_promoted(Thread* thread) {
-    return data(thread)->_plab_preallocated_promoted;
+  static size_t get_plab_actual_size(Thread* thread) {
+    return data(thread)->_plab_actual_size;
   }
 
   static void add_paced_time(Thread* thread, double v) {

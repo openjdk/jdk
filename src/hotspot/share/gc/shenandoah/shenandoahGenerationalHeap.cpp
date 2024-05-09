@@ -333,8 +333,6 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
           ShenandoahThreadLocalData::plab(thread)->undo_allocation(copy, size);
           if (is_promotion) {
             ShenandoahThreadLocalData::subtract_from_plab_promoted(thread, size * HeapWordSize);
-          } else {
-            ShenandoahThreadLocalData::subtract_from_plab_evacuated(thread, size * HeapWordSize);
           }
           break;
         }
@@ -383,8 +381,6 @@ inline HeapWord* ShenandoahGenerationalHeap::allocate_from_plab(Thread* thread, 
 
   if (is_promotion) {
     ShenandoahThreadLocalData::add_to_plab_promoted(thread, size * HeapWordSize);
-  } else {
-    ShenandoahThreadLocalData::add_to_plab_evacuated(thread, size * HeapWordSize);
   }
   return obj;
 }
@@ -499,7 +495,7 @@ HeapWord* ShenandoahGenerationalHeap::allocate_new_plab(size_t min_size, size_t 
 // would allow smaller and faster in-line implementation of alloc_from_plab().  Since plabs are aligned on card-table boundaries,
 // this object registration loop can be performed without acquiring a lock.
 void ShenandoahGenerationalHeap::retire_plab(PLAB* plab, Thread* thread) {
-  // We don't enforce limits on plab_evacuated.  We let it consume all available old-gen memory in order to reduce
+  // We don't enforce limits on plab evacuations.  We let it consume all available old-gen memory in order to reduce
   // probability of an evacuation failure.  We do enforce limits on promotion, to make sure that excessive promotion
   // does not result in an old-gen evacuation failure.  Note that a failed promotion is relatively harmless.  Any
   // object that fails to promote in the current cycle will be eligible for promotion in a subsequent cycle.
@@ -509,10 +505,9 @@ void ShenandoahGenerationalHeap::retire_plab(PLAB* plab, Thread* thread) {
   //  1. Some of the plab may have been dedicated to evacuations.
   //  2. Some of the plab may have been abandoned due to waste (at the end of the plab).
   size_t not_promoted =
-          ShenandoahThreadLocalData::get_plab_preallocated_promoted(thread) - ShenandoahThreadLocalData::get_plab_promoted(thread);
+          ShenandoahThreadLocalData::get_plab_actual_size(thread) - ShenandoahThreadLocalData::get_plab_promoted(thread);
   ShenandoahThreadLocalData::reset_plab_promoted(thread);
-  ShenandoahThreadLocalData::reset_plab_evacuated(thread);
-  ShenandoahThreadLocalData::set_plab_preallocated_promoted(thread, 0);
+  ShenandoahThreadLocalData::set_plab_actual_size(thread, 0);
   if (not_promoted > 0) {
     old_generation()->unexpend_promoted(not_promoted);
   }
