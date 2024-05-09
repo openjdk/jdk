@@ -62,7 +62,8 @@
  * <h2>Reachability</h2>
  *
  * A <em>reachable</em> object is any object that can be accessed in any potential
- * continuing computation from any live thread (as stated in {@jls 12.6.1}).
+ * continuing computation from any
+ * {@linkplain java.lang.Thread#isAlive live thread} (as stated in {@jls 12.6.1}).
  *
  * <p> Going from strongest to weakest, the different levels of
  * reachability reflect the life cycle of an object.  They are
