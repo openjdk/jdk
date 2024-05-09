@@ -64,11 +64,10 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 public abstract sealed class IntegerPolynomial implements IntegerFieldModuloP
     permits IntegerPolynomial1305, IntegerPolynomial25519,
-            IntegerPolynomial448, IntegerPolynomialP256, MontgomeryIntegerPolynomialP256,
-            IntegerPolynomialP384, IntegerPolynomialP521,
-            IntegerPolynomialModBinP, P256OrderField,
-            P384OrderField, P521OrderField,
-            Curve25519OrderField,
+            IntegerPolynomial448, IntegerPolynomialP256,
+            MontgomeryIntegerPolynomialP256, IntegerPolynomialP384,
+            IntegerPolynomialP521, IntegerPolynomialModBinP, P256OrderField,
+            P384OrderField, P521OrderField, Curve25519OrderField,
             Curve448OrderField {
 
     protected static final BigInteger TWO = BigInteger.valueOf(2);

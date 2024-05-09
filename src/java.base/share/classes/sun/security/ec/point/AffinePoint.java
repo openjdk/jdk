@@ -95,14 +95,22 @@ public class AffinePoint {
             // both fields same
             xEquals = x.asBigInteger().equals(p.x.asBigInteger());
             yEquals = y.asBigInteger().equals(p.y.asBigInteger());
-        } else if (thisMont) { // mismatched fields should not happen in production, but useful in testing
-            IntegerMontgomeryFieldModuloP field = (IntegerMontgomeryFieldModuloP)x.getField();
-            xEquals = x.asBigInteger().equals(field.getElement(p.x.asBigInteger()).asBigInteger());
-            yEquals = y.asBigInteger().equals(field.getElement(p.y.asBigInteger()).asBigInteger());
+        } else if (thisMont) {
+            // mismatched fields should not happen in production, but useful in
+            // testing
+            IntegerMontgomeryFieldModuloP field =
+                (IntegerMontgomeryFieldModuloP)x.getField();
+            xEquals = x.asBigInteger().equals(
+                field.getElement(p.x.asBigInteger()).asBigInteger());
+            yEquals = y.asBigInteger().equals(
+                field.getElement(p.y.asBigInteger()).asBigInteger());
         } else {
-            IntegerMontgomeryFieldModuloP field = (IntegerMontgomeryFieldModuloP)p.x.getField();
-            xEquals = field.getElement(x.asBigInteger()).asBigInteger().equals(p.x.asBigInteger());
-            yEquals = field.getElement(y.asBigInteger()).asBigInteger().equals(p.y.asBigInteger());
+            IntegerMontgomeryFieldModuloP field =
+                (IntegerMontgomeryFieldModuloP)p.x.getField();
+            xEquals = field.getElement(
+                x.asBigInteger()).asBigInteger().equals(p.x.asBigInteger());
+            yEquals = field.getElement(
+                y.asBigInteger()).asBigInteger().equals(p.y.asBigInteger());
         }
         return xEquals && yEquals;
     }

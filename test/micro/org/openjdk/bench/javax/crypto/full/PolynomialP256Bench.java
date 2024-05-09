@@ -51,7 +51,8 @@ import sun.security.util.math.ImmutableIntegerModuloP;
 public class PolynomialP256Bench {
     final MontgomeryIntegerPolynomialP256 montField = MontgomeryIntegerPolynomialP256.ONE;
     final IntegerPolynomialP256 residueField = IntegerPolynomialP256.ONE;
-    final BigInteger refx = new BigInteger("6b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c296", 16);
+    final BigInteger refx =
+        new BigInteger("6b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c296", 16);
     final ImmutableIntegerModuloP x = residueField.getElement(refx);
     final ImmutableIntegerModuloP X = montField.getElement(refx);
     final ImmutableIntegerModuloP one = montField.get1();
