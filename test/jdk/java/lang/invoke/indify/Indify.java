@@ -540,6 +540,18 @@ public class Indify {
             if (!quiet)  System.err.flush();
         }
 
+        /**
+         * Initializes the marks for the constant pool entries.
+         * <p>
+         * This method iterates through the constant pool and assigns marks to each entry
+         * based on its type and value. These marks are used to identify specific types of
+         * constant pool entries .
+         * <p>
+         * The method iterates until no changes are made to the pool marks array in a complete pass.
+         * This ensures that all dependent entries are processed correctly.
+         *
+         * @return true if any marks were changed, false otherwise.
+         */
         boolean initializeMarks() {
             boolean changed = false;
             for (;;) {
@@ -610,7 +622,6 @@ public class Indify {
             }
             return changed;
         }
-        // mark constant pool entries according to participation in patterns
         char nameMark(String s) {
             if (s.startsWith("MT_"))                return 'T';
             else if (s.startsWith("MH_"))           return 'H';
