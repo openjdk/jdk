@@ -389,6 +389,31 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
 
     private native int read0() throws IOException;
 
+    private int traceRead0() throws IOException {
+        if (!FileReadEvent.enabled()) {
+            return read0();
+        }
+        int result = 0;
+        long bytesRead = 0;
+        boolean endOfFile = false;
+        long start = 0;
+        try {
+            start = FileReadEvent.timestamp();
+            result = read0();
+            if (result < 0) {
+                endOfFile = true;
+            } else {
+                bytesRead = 1;
+            }
+        } finally {
+            long duration = FileReadEvent.timestamp() - start;
+            if (FileReadEvent.shouldCommit(duration)) {
+                FileReadEvent.commit(start, duration, path, bytesRead, endOfFile);
+            }
+        }
+        return result;
+    }
+
     /**
      * Reads a sub array as a sequence of bytes.
      * @param     b the buffer into which the data is read.
@@ -404,6 +429,28 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
     }
 
     private native int readBytes0(byte[] b, int off, int len) throws IOException;
+
+    private int traceReadBytes0(byte b[], int off, int len) throws IOException {
+        if (!FileReadEvent.enabled()) {
+            return readBytes0(b, off, len);
+        }
+        int bytesRead = 0;
+        long start = 0;
+        try {
+            start = FileReadEvent.timestamp();
+            bytesRead = readBytes0(b, off, len);
+        } finally {
+            long duration = FileReadEvent.timestamp() - start;
+            if (FileReadEvent.shouldCommit(duration)) {
+                if (bytesRead < 0) {
+                    FileReadEvent.commit(start, duration, path, 0L, true);
+                } else {
+                    FileReadEvent.commit(start, duration, path, bytesRead, false);
+                }
+            }
+        }
+        return bytesRead;
+    }
 
     /**
      * Reads up to {@code len} bytes of data from this file into an
@@ -564,6 +611,25 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
         }
     }
 
+    private void traceImplWrite(int b) throws IOException {
+        if (!FileWriteEvent.enabled()) {
+            implWrite(b);
+            return;
+        }
+        long bytesWritten = 0;
+        long start = 0;
+        try {
+            start = FileWriteEvent.timestamp();
+            implWrite(b);
+            bytesWritten = 1;
+        } finally {
+            long duration = FileWriteEvent.timestamp() - start;
+            if (FileWriteEvent.shouldCommit(duration)) {
+                FileWriteEvent.commit(start, duration, path, bytesWritten);
+            }
+        }
+    }
+
     private native void write0(int b) throws IOException;
 
     /**
@@ -588,6 +654,25 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
             writeBytes0(b, off, len);
         } finally {
             Blocker.end(attempted);
+        }
+    }
+
+    private void traceImplWriteBytes(byte b[], int off, int len) throws IOException {
+        if (!FileWriteEvent.enabled()) {
+            implWriteBytes(b, off, len);
+            return;
+        }
+        long bytesWritten = 0;
+        long start = 0;
+        try {
+            start = FileWriteEvent.timestamp();
+            implWriteBytes(b, off, len);
+            bytesWritten = len;
+        } finally {
+            long duration = FileWriteEvent.timestamp() - start;
+            if (FileWriteEvent.shouldCommit(duration)) {
+                FileWriteEvent.commit(start, duration, path, bytesWritten);
+            }
         }
     }
 
@@ -1223,91 +1308,6 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      */
     public final void writeUTF(String str) throws IOException {
         DataOutputStream.writeUTF(str, this);
-    }
-
-    private int traceRead0() throws IOException {
-        if (!FileReadEvent.enabled()) {
-            return read0();
-        }
-        int result = 0;
-        long bytesRead = 0;
-        boolean endOfFile = false;
-        long start = 0;
-        try {
-            start = FileReadEvent.timestamp();
-            result = read0();
-            if (result < 0) {
-                endOfFile = true;
-            } else {
-                bytesRead = 1;
-            }
-        } finally {
-            long duration = FileReadEvent.timestamp() - start;
-            if (FileReadEvent.shouldCommit(duration)) {
-                FileReadEvent.commit(start, duration, path, bytesRead, endOfFile);
-            }
-        }
-        return result;
-    }
-
-    private int traceReadBytes0(byte b[], int off, int len) throws IOException {
-        if (!FileReadEvent.enabled()) {
-            return readBytes0(b, off, len);
-        }
-        int bytesRead = 0;
-        long start = 0;
-        try {
-            start = FileReadEvent.timestamp();
-            bytesRead = readBytes0(b, off, len);
-        } finally {
-            long duration = FileReadEvent.timestamp() - start;
-            if (FileReadEvent.shouldCommit(duration)) {
-                if (bytesRead < 0) {
-                    FileReadEvent.commit(start, duration, path, 0L, true);
-                } else {
-                    FileReadEvent.commit(start, duration, path, bytesRead, false);
-                }
-            }
-        }
-        return bytesRead;
-    }
-
-    private void traceImplWrite(int b) throws IOException {
-        if (!FileWriteEvent.enabled()) {
-            implWrite(b);
-            return;
-        }
-        long bytesWritten = 0;
-        long start = 0;
-        try {
-            start = FileWriteEvent.timestamp();
-            implWrite(b);
-            bytesWritten = 1;
-        } finally {
-            long duration = FileWriteEvent.timestamp() - start;
-            if (FileWriteEvent.shouldCommit(duration)) {
-                FileWriteEvent.commit(start, duration, path, bytesWritten);
-            }
-        }
-    }
-
-    private void traceImplWriteBytes(byte b[], int off, int len) throws IOException {
-        if (!FileWriteEvent.enabled()) {
-            implWriteBytes(b, off, len);
-            return;
-        }
-        long bytesWritten = 0;
-        long start = 0;
-        try {
-            start = FileWriteEvent.timestamp();
-            ImplWriteBytes(b, off, len);
-            bytesWritten = len;
-        } finally {
-            long duration = FileWriteEvent.timestamp() - start;
-            if (FileWriteEvent.shouldCommit(duration)) {
-                FileWriteEvent.commit(start, duration, path, bytesWritten);
-            }
-        }
     }
 
     private static native void initIDs();

@@ -301,6 +301,25 @@ public class FileOutputStream extends OutputStream
      */
     private native void write(int b, boolean append) throws IOException;
 
+    private void traceWrite(int b, boolean append) throws IOException {
+        if (!FileWriteEvent.enabled()) {
+            write(b, append);
+            return;
+        }
+        long bytesWritten = 0;
+        long start = 0;
+        try {
+            start = FileWriteEvent.timestamp();
+            write(b, append);
+            bytesWritten = 1;
+        } finally {
+            long duration = FileWriteEvent.timestamp() - start;
+            if (FileWriteEvent.shouldCommit(duration)) {
+                FileWriteEvent.commit(start, duration, path, bytesWritten);
+            }
+        }
+    }
+
     /**
      * Writes the specified byte to this file output stream. Implements
      * the {@code write} method of {@code OutputStream}.
@@ -329,6 +348,25 @@ public class FileOutputStream extends OutputStream
      */
     private native void writeBytes(byte[] b, int off, int len, boolean append)
         throws IOException;
+
+    private void traceWriteBytes(byte b[], int off, int len, boolean append) throws IOException {
+        if (!FileWriteEvent.enabled()) {
+            writeBytes(b, off, len, append);
+            return;
+        }
+        long bytesWritten = 0;
+        long start = 0;
+        try {
+            start = FileWriteEvent.timestamp();
+            writeBytes(b, off, len, append);
+            bytesWritten = len;
+        } finally {
+            long duration = FileWriteEvent.timestamp() - start;
+            if (FileWriteEvent.shouldCommit(duration)) {
+                FileWriteEvent.commit(start, duration, path, bytesWritten);
+            }
+        }
+    }
 
     /**
      * Writes {@code b.length} bytes from the specified byte array
@@ -476,43 +514,5 @@ public class FileOutputStream extends OutputStream
 
     static {
         initIDs();
-    }
-
-    private void traceWrite(int b, boolean append) throws IOException {
-        if (!FileWriteEvent.enabled()) {
-            write(b, append);
-            return;
-        }
-        long bytesWritten = 0;
-        long start = 0;
-        try {
-            start = FileWriteEvent.timestamp();
-            write(b, append);
-            bytesWritten = 1;
-        } finally {
-            long duration = FileWriteEvent.timestamp() - start;
-            if (FileWriteEvent.shouldCommit(duration)) {
-                FileWriteEvent.commit(start, duration, path, bytesWritten);
-            }
-        }
-    }
-
-    private void traceWriteBytes(byte b[], int off, int len, boolean append) throws IOException {
-        if (!FileWriteEvent.enabled()) {
-            writeBytes(b, off, len, append);
-            return;
-        }
-        long bytesWritten = 0;
-        long start = 0;
-        try {
-            start = FileWriteEvent.timestamp();
-            writeBytes(b, off, len, append);
-            bytesWritten = len;
-        } finally {
-            long duration = FileWriteEvent.timestamp() - start;
-            if (FileWriteEvent.shouldCommit(duration)) {
-                FileWriteEvent.commit(start, duration, path, bytesWritten);
-            }
-        }
     }
 }
