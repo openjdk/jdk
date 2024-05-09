@@ -24,14 +24,15 @@
 /**
  * @test
  * @bug 8144100
- * @run main/othervm BasicAuthToken
  * @summary checking token sent by client should be done in case-insensitive manner
+ * @run main/othervm BasicAuthToken
  */
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.Base64;
@@ -40,8 +41,8 @@ import com.sun.net.httpserver.BasicAuthenticator;
 import com.sun.net.httpserver.HttpServer;
 
 public class BasicAuthToken {
-    static final String CRLF = "\r\n";
-    static final String someContext = "/test";
+    private static final String CRLF = "\r\n";
+    private static final String someContext = "/test";
 
     public static void main(String[] args) throws Exception {
         HttpServer server = server();
@@ -55,14 +56,14 @@ public class BasicAuthToken {
     static HttpServer server() throws Exception {
         String realm = "someRealm";
         ServerAuthenticator authenticator = new ServerAuthenticator(realm);
-        HttpServer server = HttpServer.create(new InetSocketAddress(0), 0);
+        HttpServer server = HttpServer.create(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), 0);
         server.createContext(someContext, exchange -> {
             if (authenticator.authenticate(exchange) instanceof Authenticator.Failure) {
-                exchange.sendResponseHeaders(401, 0);
+                exchange.sendResponseHeaders(401, -1);
                 exchange.close();
                 return;
             }
-            exchange.sendResponseHeaders(200, 1);
+            exchange.sendResponseHeaders(200, -1);
             exchange.close();
         }).setAuthenticator(authenticator);
         server.start();
@@ -70,7 +71,7 @@ public class BasicAuthToken {
     }
 
     static void client(int port) throws Exception {
-        try (Socket socket = new Socket("localhost", port)) {
+        try (Socket socket = new Socket(InetAddress.getLoopbackAddress(), port)) {
             BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
             BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             String credentials = "username:password";
@@ -90,17 +91,26 @@ public class BasicAuthToken {
                 throw new RuntimeException("Basic Authentication failed: case-insensitive token" +
                         " used to identify authentication scheme  sent by client parsed incorrectly");
             }
+            assert ServerAuthenticator.wasChecked() : "Authenticator was not correctly invoked";
         }
     }
 
+
     static class ServerAuthenticator extends BasicAuthenticator {
+        private static boolean invoked = false;
+
         ServerAuthenticator(String realm) {
             super(realm);
+        }
+
+        public static boolean wasChecked() {
+            return invoked;
         }
 
         @Override
         public boolean checkCredentials(String username, String password) {
             String validUsername = "username", validPassword = "password";
+            invoked = true;
             return username.equals(validUsername) && password.equals(validPassword);
         }
     }
