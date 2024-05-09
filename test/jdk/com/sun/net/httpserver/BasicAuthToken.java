@@ -97,7 +97,7 @@ public class BasicAuthToken {
 
 
     static class ServerAuthenticator extends BasicAuthenticator {
-        private static boolean invoked = false;
+        private static volatile boolean invoked = false;
 
         ServerAuthenticator(String realm) {
             super(realm);
