@@ -99,15 +99,15 @@ abstract class HkdfKeyDerivation extends KDFSpi {
     protected SecretKey engineDeriveKey(String alg, KDFParameterSpec kdfParameterSpec)
         throws InvalidParameterSpecException {
 
-        // inspect KDFParameterSpec object
-        inspectKDFParameterSpec(kdfParameterSpec);
-
         try {
             // set up the HMAC instance
             hmacLen = setupHMAC(hmacAlgName);
         } catch (NoSuchAlgorithmException nsae) {
             throw new ProviderException(nsae);
         }
+
+        // inspect KDFParameterSpec object
+        inspectKDFParameterSpec(kdfParameterSpec);
 
         if (HKDFTYPE == HKDFTYPES.EXTRACT) {
             // perform extract
@@ -164,15 +164,15 @@ abstract class HkdfKeyDerivation extends KDFSpi {
     protected byte[] engineDeriveData(KDFParameterSpec kdfParameterSpec)
         throws InvalidParameterSpecException {
 
-        // inspect KDFParameterSpec object
-        inspectKDFParameterSpec(kdfParameterSpec);
-
         try {
             // set up the HMAC instance
             hmacLen = setupHMAC(hmacAlgName);
         } catch (NoSuchAlgorithmException nsae) {
             throw new ProviderException(nsae);
         }
+
+        // inspect KDFParameterSpec object
+        inspectKDFParameterSpec(kdfParameterSpec);
 
         if (HKDFTYPE == HKDFTYPES.EXTRACT) {
             // perform extract
