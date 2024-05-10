@@ -11921,7 +11921,7 @@ int Assembler::vex_prefix_and_encode(int dst_enc, int nds_enc, int src_enc, VexS
 
 void Assembler::simd_prefix(XMMRegister xreg, XMMRegister nds, Address adr, VexSimdPrefix pre,
                             VexOpcode opc, InstructionAttr *attributes) {
-  if (UseAVX > 0) {
+  if (UseAVX > 0 || (UseAPX && needs_eevex(adr.base(), adr.index()))) {
     int xreg_enc = xreg->encoding();
     int nds_enc = nds->is_valid() ? nds->encoding() : 0;
     vex_prefix(adr, nds_enc, xreg_enc, pre, opc, attributes);
@@ -11935,7 +11935,7 @@ int Assembler::simd_prefix_and_encode(XMMRegister dst, XMMRegister nds, XMMRegis
                                       VexOpcode opc, InstructionAttr *attributes, bool src_is_gpr) {
   int dst_enc = dst->encoding();
   int src_enc = src->encoding();
-  if (UseAVX > 0) {
+  if (UseAVX > 0 || (UseAPX && needs_eevex(dst_enc, src_enc))) {
     int nds_enc = nds->is_valid() ? nds->encoding() : 0;
     return vex_prefix_and_encode(dst_enc, nds_enc, src_enc, pre, opc, attributes, src_is_gpr);
   } else {
