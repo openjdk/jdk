@@ -37,6 +37,8 @@ import java.lang.invoke.MethodType;
 import java.lang.invoke.VarHandle;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
 import jdk.internal.access.SharedSecrets;
@@ -88,6 +90,24 @@ public final class Utils {
     }
 
     public static VarHandle makeSegmentViewVarHandle(ValueLayout layout, boolean nested) {
+        final class VarHandleCache {
+            private static final Map<ValueLayout, VarHandle> HANDLE_MAP_TOPLEVEL = new ConcurrentHashMap<>();
+            private static final Map<ValueLayout, VarHandle> HANDLE_MAP_NESTED = new ConcurrentHashMap<>();
+        }
+        return nested ?
+                VarHandleCache.HANDLE_MAP_NESTED.computeIfAbsent(layout.withoutName(), Utils::makeNestedSegmentViewVarHandle) :
+                VarHandleCache.HANDLE_MAP_TOPLEVEL.computeIfAbsent(layout.withoutName(), Utils::makeToplevelSegmentViewVarHandle);
+    }
+
+    private static VarHandle makeToplevelSegmentViewVarHandle(ValueLayout layout) {
+        return makeSegmentViewVarHandleInternal(layout, false);
+    }
+
+    private static VarHandle makeNestedSegmentViewVarHandle(ValueLayout layout) {
+        return makeSegmentViewVarHandleInternal(layout, true);
+    }
+
+    private static VarHandle makeSegmentViewVarHandleInternal(ValueLayout layout, boolean nested) {
         Class<?> baseCarrier = layout.carrier();
         if (layout.carrier() == MemorySegment.class) {
             baseCarrier = switch ((int) ValueLayout.ADDRESS.byteSize()) {

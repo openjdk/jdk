@@ -160,13 +160,9 @@ public final class ValueLayouts {
 
         @ForceInline
         public final VarHandle varHandle() {
-            final class VarHandleCache {
-                private static final Map<ValueLayout, VarHandle> HANDLE_MAP = new ConcurrentHashMap<>();
-            }
             if (handle == null) {
                 // this store to stable field is safe, because return value of 'makeMemoryAccessVarHandle' has stable identity
-                handle = VarHandleCache.HANDLE_MAP
-                        .computeIfAbsent(withoutName(), l -> Utils.makeSegmentViewVarHandle(l, false));
+                handle = Utils.makeSegmentViewVarHandle((ValueLayout) this, false);
             }
             return handle;
         }
