@@ -137,11 +137,10 @@ void NMTDCmd::execute(DCmdSource source, TRAPS) {
       output()->print_cr("No detail baseline for comparison");
     }
   } else if (_statistics.value()) {
-    NMT_TrackingLevel tracking = MemTracker::tracking_level();
-    if (tracking == NMT_detail || tracking == NMT_summary) {
+    if (MemTracker::enabled()) {
       MemTracker::tuning_statistics(output());
     } else {
-      output()->print_cr("Detail or summary tracking is not enabled");
+      output()->print_cr("Native memory tracking is not enabled");
     }
   } else {
     ShouldNotReachHere();
