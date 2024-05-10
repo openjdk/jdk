@@ -5551,7 +5551,7 @@ address MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
   // for type arrays.
   int start_offset = align_down(length_offset, BytesPerWord);
   int extra_length = base_offset - start_offset;
-  assert(start_offset == length_offset || start_offset == klass_offset, 
+  assert(start_offset == length_offset || start_offset == klass_offset,
          "start offset must be 8-byte-aligned or be the klass offset");
   assert(base_offset != start_offset, "must include the length field");
   extra_length = extra_length / elem_size; // We count in elements, not bytes.
