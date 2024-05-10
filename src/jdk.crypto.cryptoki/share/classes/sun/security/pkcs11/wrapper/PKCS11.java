@@ -794,7 +794,7 @@ public class PKCS11 {
             long hKey) throws PKCS11Exception;
 
     /**
-     * C_GCMEncryptInitWithRetry initializes an GCM encryption operation and retry
+     * C_GCMEncryptInitWithRetry initializes a GCM encryption operation and retry
      * with alternative param structure for max compatibility.
      * (Encryption and decryption)
      *
@@ -804,7 +804,7 @@ public class PKCS11 {
      *         (PKCS#11 param: CK_MECHANISM_PTR pMechanism)
      * @param hKey the handle of the encryption key
      *         (PKCS#11 param: CK_OBJECT_HANDLE hKey)
-     * @param useNormativeVerFirst which version of params to use first
+     * @param useNormativeVerFirst whether to use normative version of GCM parameter first
      * @exception PKCS11Exception If function returns other value than CKR_OK.
      * @preconditions
      * @postconditions
@@ -916,7 +916,7 @@ public class PKCS11 {
      *         (PKCS#11 param: CK_MECHANISM_PTR pMechanism)
      * @param hKey the handle of the decryption key
      *         (PKCS#11 param: CK_OBJECT_HANDLE hKey)
-     * @param useNormativeVerFirst which version of params to use first
+     * @param useNormativeVerFirst whether to use normative version of GCM parameter first
      * @exception PKCS11Exception If function returns other value than CKR_OK.
      * @preconditions
      * @postconditions
