@@ -310,18 +310,11 @@ void WriteClosure::do_ptr(void** p) {
   if (ptr != nullptr && !ArchiveBuilder::current()->is_in_buffer_space(ptr)) {
     ptr = ArchiveBuilder::current()->get_buffered_addr(ptr);
   }
-  _dump_region->append_intptr_t((intptr_t)ptr, true);
-}
-
-void WriteClosure::do_region(u_char* start, size_t size) {
-  assert((intptr_t)start % sizeof(intptr_t) == 0, "bad alignment");
-  assert(size % sizeof(intptr_t) == 0, "bad size");
-  do_tag((int)size);
-  while (size > 0) {
-    do_ptr((void**)start);
-    start += sizeof(intptr_t);
-    size -= sizeof(intptr_t);
+  // null pointers do not need to be converted to offsets
+  if (ptr != nullptr) {
+    ptr = (address)ArchiveBuilder::current()->buffer_to_offset(ptr);
   }
+  _dump_region->append_intptr_t((intptr_t)ptr, false);
 }
 
 void ReadClosure::do_ptr(void** p) {
@@ -329,7 +322,7 @@ void ReadClosure::do_ptr(void** p) {
   intptr_t obj = nextPtr();
   assert((intptr_t)obj >= 0 || (intptr_t)obj < -100,
          "hit tag while initializing ptrs.");
-  *p = (void*)obj;
+  *p = (void*)obj != nullptr ? (void*)(SharedBaseAddress + obj) : (void*)obj;
 }
 
 void ReadClosure::do_u4(u4* p) {
@@ -353,17 +346,6 @@ void ReadClosure::do_tag(int tag) {
   // do_int(&old_tag);
   assert(tag == old_tag, "old tag doesn't match");
   FileMapInfo::assert_mark(tag == old_tag);
-}
-
-void ReadClosure::do_region(u_char* start, size_t size) {
-  assert((intptr_t)start % sizeof(intptr_t) == 0, "bad alignment");
-  assert(size % sizeof(intptr_t) == 0, "bad size");
-  do_tag((int)size);
-  while (size > 0) {
-    *(intptr_t*)start = nextPtr();
-    start += sizeof(intptr_t);
-    size -= sizeof(intptr_t);
-  }
 }
 
 void ArchiveUtils::log_to_classlist(BootstrapInfo* bootstrap_specifier, TRAPS) {
