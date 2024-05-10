@@ -25,19 +25,21 @@
 
 package javax.crypto;
 
-import java.security.*;
-import java.security.spec.AlgorithmParameterSpec;
-import java.security.spec.InvalidParameterSpecException;
-import java.security.Provider.Service;
-import java.security.NoSuchAlgorithmException;
-import java.util.Iterator;
-import java.util.Objects;
-
-import sun.security.util.Debug;
-import sun.security.jca.*;
+import sun.security.jca.GetInstance;
 import sun.security.jca.GetInstance.Instance;
+import sun.security.util.Debug;
 
 import javax.crypto.spec.KDFParameterSpec;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.Provider;
+import java.security.Provider.Service;
+import java.security.ProviderException;
+import java.security.spec.AlgorithmParameterSpec;
+import java.security.spec.InvalidParameterSpecException;
+import java.util.Iterator;
+import java.util.Objects;
 
 /**
  * This class provides the functionality of a key derivation algorithm for JCE.
@@ -159,7 +161,7 @@ public final class KDF {
         throws NoSuchAlgorithmException {
         try {
             return getInstance(algorithm, (AlgorithmParameterSpec) null);
-        } catch (InvalidParameterSpecException e) {
+        } catch (InvalidAlgorithmParameterException e) {
             throw new NoSuchAlgorithmException(
                 "Received an InvalidParameterSpecException. Does this "
                 + "algorithm require an "
@@ -191,8 +193,8 @@ public final class KDF {
         throws NoSuchAlgorithmException, NoSuchProviderException {
         try {
             return getInstance(algorithm, null,
-                                   provider);
-        } catch (InvalidParameterSpecException e) {
+                               provider);
+        } catch (InvalidAlgorithmParameterException e) {
             throw new NoSuchAlgorithmException(
                 "Received an InvalidParameterSpecException. Does this "
                 + "algorithm require an "
@@ -221,8 +223,8 @@ public final class KDF {
         throws NoSuchAlgorithmException {
         try {
             return getInstance(algorithm, null,
-                                   provider);
-        } catch (InvalidParameterSpecException e) {
+                               provider);
+        } catch (InvalidAlgorithmParameterException e) {
             throw new NoSuchAlgorithmException(
                 "Received an InvalidParameterSpecException. Does this "
                 + "algorithm require an "
@@ -244,14 +246,14 @@ public final class KDF {
      * @throws NoSuchAlgorithmException
      *     if no {@code Provider} supports a {@code KDFSpi} implementation for
      *     the specified algorithm
-     * @throws InvalidParameterSpecException
+     * @throws InvalidAlgorithmParameterException
      *     if the {@code AlgorithmParameterSpec} is an invalid value
      * @throws NullPointerException
      *     if the algorithm is {@code null}
      */
     public static KDF getInstance(String algorithm,
                                   AlgorithmParameterSpec algParameterSpec)
-        throws NoSuchAlgorithmException, InvalidParameterSpecException {
+        throws NoSuchAlgorithmException, InvalidAlgorithmParameterException {
         Objects.requireNonNull(algorithm, "null algorithm name");
         // make sure there is at least one service from a signed provider
         Iterator<Service> t = GetInstance.getServices("KDF", algorithm);
@@ -286,7 +288,7 @@ public final class KDF {
      * @throws NoSuchProviderException
      *     if the specified provider is not registered in the security provider
      *     list
-     * @throws InvalidParameterSpecException
+     * @throws InvalidAlgorithmParameterException
      *     if the {@code AlgorithmParameterSpec} is an invalid value
      * @throws NullPointerException
      *     if the algorithm is {@code null}
@@ -295,7 +297,7 @@ public final class KDF {
                                   AlgorithmParameterSpec algParameterSpec,
                                   String provider)
         throws NoSuchAlgorithmException, NoSuchProviderException,
-               InvalidParameterSpecException {
+               InvalidAlgorithmParameterException {
         Objects.requireNonNull(algorithm, "null algorithm name");
         try {
             Instance instance = GetInstance.getInstance("KDF", KDFSpi.class,
@@ -311,8 +313,7 @@ public final class KDF {
                            algParameterSpec);
 
         } catch (NoSuchAlgorithmException nsae) {
-            throw new NoSuchAlgorithmException(
-                "Algorithm " + algorithm + " not available", nsae);
+            return handleException(nsae);
         }
     }
 
@@ -333,7 +334,7 @@ public final class KDF {
      * @throws NoSuchAlgorithmException
      *     if no {@code Provider} supports a {@code KDFSpi} implementation for
      *     the specified algorithm
-     * @throws InvalidParameterSpecException
+     * @throws InvalidAlgorithmParameterException
      *     if the {@code AlgorithmParameterSpec} is an invalid value
      * @throws NullPointerException
      *     if the algorithm is {@code null}
@@ -341,7 +342,7 @@ public final class KDF {
     public static KDF getInstance(String algorithm,
                                   AlgorithmParameterSpec algParameterSpec,
                                   Provider provider)
-        throws NoSuchAlgorithmException, InvalidParameterSpecException {
+        throws NoSuchAlgorithmException, InvalidAlgorithmParameterException {
         Objects.requireNonNull(algorithm, "null algorithm name");
         try {
             Instance instance = GetInstance.getInstance("KDF", KDFSpi.class,
@@ -357,9 +358,18 @@ public final class KDF {
                            algParameterSpec);
 
         } catch (NoSuchAlgorithmException nsae) {
-            throw new NoSuchAlgorithmException(
-                "Algorithm " + algorithm + " not available", nsae);
+            return handleException(nsae);
         }
+    }
+
+    private static KDF handleException(NoSuchAlgorithmException e)
+        throws NoSuchAlgorithmException,
+               InvalidAlgorithmParameterException {
+        Throwable cause = e.getCause();
+        if (cause instanceof InvalidAlgorithmParameterException) {
+            throw (InvalidAlgorithmParameterException) cause;
+        }
+        throw e;
     }
 
     /**
@@ -373,7 +383,7 @@ public final class KDF {
      *     derivation parameters
      *
      * @return a {@code SecretKey} object corresponding to a key built from the
-     * KDF output and according to the derivation parameters
+     *     KDF output and according to the derivation parameters
      *
      * @throws InvalidParameterSpecException
      *     if the information contained within the {@code KDFParameterSpec} is
@@ -439,8 +449,8 @@ public final class KDF {
      *     derivation parameters
      *
      * @return a byte array whose length matches the length field in the
-     * processed {@code DerivationParameterSpec} and containing the next bytes
-     * of output from the key derivation function
+     *     processed {@code DerivationParameterSpec} and containing the next
+     *     bytes of output from the key derivation function
      *
      * @throws InvalidParameterSpecException
      *     if the {@code DerivationParameterSpec} being applied to this method
