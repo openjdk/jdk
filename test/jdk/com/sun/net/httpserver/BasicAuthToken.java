@@ -21,11 +21,11 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 8144100
  * @summary checking token sent by client should be done in case-insensitive manner
- * @run main/othervm BasicAuthToken
+ * @run main BasicAuthToken
  */
 
 import java.io.BufferedReader;
@@ -88,10 +88,11 @@ public class BasicAuthToken {
             System.err.println(statusLine);
 
             if (!statusLine.startsWith("HTTP/1.1 200")) {
-                throw new RuntimeException("Basic Authentication failed: case-insensitive token" +
-                        " used to identify authentication scheme  sent by client parsed incorrectly");
+                throw new RuntimeException("unexpected status line: " + statusLine);
             }
-            assert ServerAuthenticator.wasChecked() : "Authenticator was not correctly invoked";
+            if (!ServerAuthenticator.wasChecked()) {
+                throw new RuntimeException("Authenticator wasn't invoked");
+            }
         }
     }
 
