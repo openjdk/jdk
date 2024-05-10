@@ -189,7 +189,7 @@ public class KeyBoardNavigation {
                 .rows(30)
                 .columns(50)
                 .testUI(KeyBoardNavigation::initTest)
-                .testTimeOut(10000)
+                .testTimeOut(10)
                 .build()
                 .awaitAndCheck();
     }
@@ -270,7 +270,7 @@ public class KeyBoardNavigation {
                                 up/down
                 Left/Right Arrow - Deselect current selection;
                                    move focus one cell left/right
-                FN + Up Arrow/FN + Down Arrow - Deselect current selection;
+                FN+Up Arrow/FN+Down Arrow - Deselect current selection;
                                    scroll up/down one JViewport view;
                                    first visible cell in current column gets focus
                 Control-FN+Up Arrow/FN+Down Arrow - Deselect current selection;
