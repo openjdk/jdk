@@ -436,11 +436,12 @@ public final class KDF {
                 }
                 try {
                     KDFSpi spi = (KDFSpi) s.newInstance(algorithmParameterSpec);
+                    SecretKey result = spi.engineDeriveKey(alg, kdfParameterSpec);
                     provider = s.getProvider();
                     this.spi = spi;
                     firstService = null;
                     serviceIterator = null;
-                    return spi.engineDeriveKey(alg, kdfParameterSpec);
+                    return result;
                 } catch (Exception e) {
                     if (lastException == null) {
                         lastException = e;
@@ -505,11 +506,12 @@ public final class KDF {
                 }
                 try {
                     KDFSpi spi = (KDFSpi) s.newInstance(algorithmParameterSpec);
+                    byte[] result = spi.engineDeriveData(kdfParameterSpec);
                     provider = s.getProvider();
                     this.spi = spi;
                     firstService = null;
                     serviceIterator = null;
-                    return spi.engineDeriveData(kdfParameterSpec);
+                    return result;
                 } catch (Exception e) {
                     if (lastException == null) {
                         lastException = e;
