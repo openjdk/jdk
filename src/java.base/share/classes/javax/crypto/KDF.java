@@ -409,12 +409,6 @@ public final class KDF {
      *     if the information contained within the {@code KDFParameterSpec} is
      *     invalid or incorrect for the type of key to be derived, or specifies
      *     a type of output that is not a key (e.g. raw data)
-     * @throws IllegalStateException
-     *     if the key derivation implementation cannot support additional calls
-     *     to {@code deriveKey} or if all {@code KDFParameterSpec} objects
-     *     provided at initialization have been processed
-     * @throws UnsupportedOperationException
-     *     if the derived key material is not extractable
      *
      */
     public SecretKey deriveKey(String alg, KDFParameterSpec kdfParameterSpec)
@@ -474,16 +468,12 @@ public final class KDF {
      *     derivation parameters
      *
      * @return a byte array whose length matches the length field in the
-     *     processed {@code DerivationParameterSpec} and containing the next
+     *     processed {@code KDFParameterSpec} and containing the next
      *     bytes of output from the key derivation function
      *
      * @throws InvalidParameterSpecException
-     *     if the {@code DerivationParameterSpec} being applied to this method
-     *     is of a type other than "data"
-     * @throws IllegalStateException
-     *     if the key derivation implementation cannot support additional calls
-     *     to {@code deriveData } or if all {@code DerivationParameterSpec}
-     *     objects have been processed
+     *     if the information contained within the {@code KDFParameterSpec} is
+     *     invalid or incorrect for the type of key to be derived
      * @throws UnsupportedOperationException
      *     if the derived key material is not extractable
      */

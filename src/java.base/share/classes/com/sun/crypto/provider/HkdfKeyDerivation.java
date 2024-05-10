@@ -89,11 +89,9 @@ abstract class HkdfKeyDerivation extends KDFSpi {
      * @return a derived {@code SecretKey} object of the specified algorithm
      *
      * @throws InvalidParameterSpecException
-     *     if the information contained within the current {@code KDFParameterSpec} is invalid or
-     *     incorrect for the type of key to be derived
-     * @throws IllegalStateException
-     *     if the key derivation implementation cannot support additional calls to
-     *     {@code deriveKey}
+     *     if the information contained within the {@code KDFParameterSpec} is
+     *     invalid or incorrect for the type of key to be derived, or specifies
+     *     a type of output that is not a key (e.g. raw data)
      */
     @Override
     protected SecretKey engineDeriveKey(String alg, KDFParameterSpec kdfParameterSpec)
@@ -154,11 +152,10 @@ abstract class HkdfKeyDerivation extends KDFSpi {
      * @return a derived {@code byte[]}
      *
      * @throws InvalidParameterSpecException
-     *     if the information contained within the current {@code KDFParameterSpec} is invalid or
-     *     incorrect
-     * @throws IllegalStateException
-     *     if the key derivation implementation cannot support additional calls to
-     *     {@code deriveData}
+     *     if the information contained within the {@code KDFParameterSpec} is
+     *     invalid or incorrect for the type of key to be derived
+     * @throws UnsupportedOperationException
+     *     if the derived key material is not extractable
      */
     @Override
     protected byte[] engineDeriveData(KDFParameterSpec kdfParameterSpec)

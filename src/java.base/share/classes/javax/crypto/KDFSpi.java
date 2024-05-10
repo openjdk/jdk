@@ -94,9 +94,6 @@ public abstract class KDFSpi {
      *     if the information contained within the {@code KDFParameterSpec} is
      *     invalid or incorrect for the type of key to be derived, or specifies
      *     a type of output that is not a key (e.g. raw data)
-     * @throws IllegalStateException
-     *     if the key derivation implementation cannot support additional calls
-     *     to {@code deriveKey}
      */
     protected abstract SecretKey engineDeriveKey(String alg,
                                                  KDFParameterSpec kdfParameterSpec)
@@ -121,9 +118,8 @@ public abstract class KDFSpi {
      * @throws InvalidParameterSpecException
      *     if the information contained within the {@code KDFParameterSpec} is
      *     invalid or incorrect for the type of key to be derived
-     * @throws IllegalStateException
-     *     if the key derivation implementation cannot support additional calls
-     *     to {@code deriveData }
+     * @throws UnsupportedOperationException
+     *     if the derived key material is not extractable
      */
     protected abstract byte[] engineDeriveData(
         KDFParameterSpec kdfParameterSpec)
