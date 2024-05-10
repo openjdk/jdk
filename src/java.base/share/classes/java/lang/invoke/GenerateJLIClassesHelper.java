@@ -227,7 +227,7 @@ class GenerateJLIClassesHelper {
         }
 
         public static boolean checkInvokerTypeParams(MethodType mt) {
-            return (mt.parameterCount() > 2 &&
+            return (mt.parameterCount() >= 2 &&
                     mt.parameterType(0) == Object.class &&
                     mt.parameterType(1) == Object.class);
         }
