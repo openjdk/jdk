@@ -84,7 +84,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
     }
 
     /**
-     * TODO: description
+     * Derive a key, returned as a {@code SecretKey}.
      *
      * @return a derived {@code SecretKey} object of the specified algorithm
      *
@@ -149,7 +149,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
     }
 
     /**
-     * TODO: description
+     * Obtain raw data from a key derivation function.
      *
      * @return a derived {@code byte[]}
      *
