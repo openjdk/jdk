@@ -1611,6 +1611,7 @@ public abstract class HtmlDocletWriter {
      * @return the output
      */
     public Content invalidTagOutput(String summary, Optional<Content> detail) {
+        messages.setContainsDiagnosticMarkers();
         if (detail.isEmpty() || detail.get().isEmpty()) {
             return HtmlTree.SPAN(HtmlStyle.invalidTag, Text.of(summary));
         }

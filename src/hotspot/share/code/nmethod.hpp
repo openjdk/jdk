@@ -101,45 +101,34 @@ class PcDescCache {
   volatile PcDescPtr _pc_descs[cache_size]; // last cache_size pc_descs found
  public:
   PcDescCache() { debug_only(_pc_descs[0] = nullptr); }
-  void    reset_to(PcDesc* initial_pc_desc);
+  void    init_to(PcDesc* initial_pc_desc);
   PcDesc* find_pc_desc(int pc_offset, bool approximate);
   void    add_pc_desc(PcDesc* pc_desc);
   PcDesc* last_pc_desc() { return _pc_descs[0]; }
 };
 
-class PcDescSearch {
-private:
-  address _code_begin;
-  PcDesc* _lower;
-  PcDesc* _upper;
-public:
-  PcDescSearch(address code, PcDesc* lower, PcDesc* upper) :
-    _code_begin(code), _lower(lower), _upper(upper)
-  {
-  }
-
-  address code_begin() const { return _code_begin; }
-  PcDesc* scopes_pcs_begin() const { return _lower; }
-  PcDesc* scopes_pcs_end() const { return _upper; }
-};
-
-class PcDescContainer {
+class PcDescContainer : public CHeapObj<mtCode> {
 private:
   PcDescCache _pc_desc_cache;
 public:
-  PcDescContainer() {}
+  PcDescContainer(PcDesc* initial_pc_desc) { _pc_desc_cache.init_to(initial_pc_desc); }
 
-  PcDesc* find_pc_desc_internal(address pc, bool approximate, const PcDescSearch& search);
-  void    reset_to(PcDesc* initial_pc_desc) { _pc_desc_cache.reset_to(initial_pc_desc); }
+  PcDesc* find_pc_desc_internal(address pc, bool approximate, address code_begin,
+                                PcDesc* lower, PcDesc* upper);
 
-  PcDesc* find_pc_desc(address pc, bool approximate, const PcDescSearch& search) {
-    address base_address = search.code_begin();
+  PcDesc* find_pc_desc(address pc, bool approximate, address code_begin, PcDesc* lower, PcDesc* upper)
+#ifdef PRODUCT
+  {
     PcDesc* desc = _pc_desc_cache.last_pc_desc();
-    if (desc != nullptr && desc->pc_offset() == pc - base_address) {
+    assert(desc != nullptr, "PcDesc cache should be initialized already");
+    if (desc->pc_offset() == (pc - code_begin)) {
+      // Cached value matched
       return desc;
     }
-    return find_pc_desc_internal(pc, approximate, search);
+    return find_pc_desc_internal(pc, approximate, code_begin, lower, upper);
   }
+#endif
+  ;
 };
 
 // nmethods (native methods) are the compiled code versions of Java methods.
@@ -188,10 +177,28 @@ class nmethod : public CodeBlob {
 
   Method*   _method;
 
-  // To support simple linked-list chaining of nmethods:
-  nmethod*  _osr_link;         // from InstanceKlass::osr_nmethods_head
+  // To reduce header size union fields which usages do not overlap.
+  union {
+    // To support simple linked-list chaining of nmethods:
+    nmethod*  _osr_link; // from InstanceKlass::osr_nmethods_head
+    struct {
+      // These are used for compiled synchronized native methods to
+      // locate the owner and stack slot for the BasicLock. They are
+      // needed because there is no debug information for compiled native
+      // wrappers and the oop maps are insufficient to allow
+      // frame::retrieve_receiver() to work. Currently they are expected
+      // to be byte offsets from the Java stack pointer for maximum code
+      // sharing between platforms. JVMTI's GetLocalInstance() uses these
+      // offsets to find the receiver for non-static native wrapper frames.
+      ByteSize _native_receiver_sp_offset;
+      ByteSize _native_basic_lock_sp_offset;
+    };
+  };
 
-  PcDescContainer _pc_desc_container;
+  // nmethod's read-only data
+  address _immutable_data;
+
+  PcDescContainer* _pc_desc_container;
   ExceptionCache* volatile _exception_cache;
 
   void* _gc_data;
@@ -200,52 +207,58 @@ class nmethod : public CodeBlob {
   static nmethod*    volatile _oops_do_mark_nmethods;
   oops_do_mark_link* volatile _oops_do_mark_link;
 
-  // offsets for entry points
-  address _entry_point;                      // entry point with class check
-  address _verified_entry_point;             // entry point without class check
-  address _osr_entry_point;                  // entry point for on stack replacement
-
   CompiledICData* _compiled_ic_data;
 
-  // Shared fields for all nmethod's
-  int _entry_bci;      // != InvocationEntryBci if this nmethod is an on-stack replacement method
+  // offsets for entry points
+  address  _osr_entry_point;       // entry point for on stack replacement
+  uint16_t _entry_offset;          // entry point with class check
+  uint16_t _verified_entry_offset; // entry point without class check
+  int      _entry_bci;             // != InvocationEntryBci if this nmethod is an on-stack replacement method
+  int      _immutable_data_size;
 
-  // Offsets for different nmethod parts
-  int  _exception_offset;
+  // _consts_offset == _content_offset because SECT_CONSTS is first in code buffer
+
+  int _inline_insts_size;
+
+  int _stub_offset;
+
+  // Offsets for different stubs section parts
+  int _exception_offset;
   // All deoptee's will resume execution at this location described by
   // this offset.
   int _deopt_handler_offset;
   // All deoptee's at a MethodHandle call site will resume execution
   // at this location described by this offset.
   int _deopt_mh_handler_offset;
-  // Offset of the unwind handler if it exists
-  int _unwind_handler_offset;
+  // Offset (from insts_end) of the unwind handler if it exists
+  int16_t  _unwind_handler_offset;
+  // Number of arguments passed on the stack
+  uint16_t _num_stack_arg_slots;
 
-  int _consts_offset;
-  int _stub_offset;
-  int _oops_offset;                       // offset to where embedded oop table begins (inside data)
-  int _metadata_offset;                   // embedded meta data table
-  int _scopes_data_offset;
-  int _scopes_pcs_offset;
-  int _dependencies_offset;
-  int _handler_table_offset;
-  int _nul_chk_table_offset;
+  // Offsets in mutable data section
+  // _oops_offset == _data_offset,  offset where embedded oop table begins (inside data)
+  uint16_t _metadata_offset; // embedded meta data table
 #if INCLUDE_JVMCI
-  int _speculations_offset;
-  int _jvmci_data_offset;
+  uint16_t _jvmci_data_offset;
 #endif
-  int _nmethod_end_offset;
-  int _skipped_instructions_size;
+
+  // Offset in immutable data section
+  // _dependencies_offset == 0
+  uint16_t _nul_chk_table_offset;
+  uint16_t _handler_table_offset; // This table could be big in C1 code
+  int      _scopes_pcs_offset;
+  int      _scopes_data_offset;
+#if INCLUDE_JVMCI
+  int      _speculations_offset;
+#endif
 
   // location in frame (offset for sp) that deopt can store the original
   // pc during a deopt.
   int _orig_pc_offset;
 
-  int _compile_id;                        // which compilation made this nmethod
-
-  CompilerType _compiler_type;            // which compiler made this nmethod (u1)
-
-  bool _is_unlinked;
+  int          _compile_id;            // which compilation made this nmethod
+  CompLevel    _comp_level;            // compilation level (s1)
+  CompilerType _compiler_type;         // which compiler made this nmethod (u1)
 
 #if INCLUDE_RTM_OPT
   // RTM state at compile time. Used during deoptimization to decide
@@ -253,24 +266,8 @@ class nmethod : public CodeBlob {
   RTMState _rtm_state;
 #endif
 
-  // These are used for compiled synchronized native methods to
-  // locate the owner and stack slot for the BasicLock. They are
-  // needed because there is no debug information for compiled native
-  // wrappers and the oop maps are insufficient to allow
-  // frame::retrieve_receiver() to work. Currently they are expected
-  // to be byte offsets from the Java stack pointer for maximum code
-  // sharing between platforms. JVMTI's GetLocalInstance() uses these
-  // offsets to find the receiver for non-static native wrapper frames.
-  ByteSize _native_receiver_sp_offset;
-  ByteSize _native_basic_lock_sp_offset;
-
-  CompLevel _comp_level;               // compilation level (s1)
-
   // Local state used to keep track of whether unloading is happening or not
   volatile uint8_t _is_unloading_state;
-
-  // used by jvmti to track if an event has been posted for this nmethod.
-  bool _load_reported;
 
   // Protected by NMethodState_lock
   volatile signed char _state;         // {not_installed, in_use, not_entrant}
@@ -280,7 +277,9 @@ class nmethod : public CodeBlob {
           _has_method_handle_invokes:1,// Has this method MethodHandle invokes?
           _has_wide_vectors:1,         // Preserve wide vectors at safepoints
           _has_monitors:1,             // Fastpath monitor detection for continuations
-          _has_flushed_dependencies:1; // Used for maintenance of dependencies (under CodeCache_lock)
+          _has_flushed_dependencies:1, // Used for maintenance of dependencies (under CodeCache_lock)
+          _is_unlinked:1,              // mark during class unloading
+          _load_reported:1;            // used by jvmti to track if an event has been posted for this nmethod
 
   enum DeoptimizationStatus : u1 {
     not_marked,
@@ -295,6 +294,12 @@ class nmethod : public CodeBlob {
     return Atomic::load(&_deoptimization_status);
   }
 
+  // Initialize fields to their default values
+  void init_defaults(CodeBuffer *code_buffer, CodeOffsets* offsets);
+
+  // Post initialization
+  void post_init();
+
   // For native wrappers
   nmethod(Method* method,
           CompilerType type,
@@ -307,12 +312,14 @@ class nmethod : public CodeBlob {
           ByteSize basic_lock_sp_offset,       /* synchronized natives only */
           OopMapSet* oop_maps);
 
-  // Creation support
+  // For normal JIT compiled code
   nmethod(Method* method,
           CompilerType type,
           int nmethod_size,
+          int immutable_data_size,
           int compile_id,
           int entry_bci,
+          address immutable_data,
           CodeOffsets* offsets,
           int orig_pc_offset,
           DebugInformationRecorder *recorder,
@@ -351,11 +358,9 @@ class nmethod : public CodeBlob {
   // Inform external interfaces that a compiled method has been unloaded
   void post_compiled_method_unload();
 
-  // Initialize fields to their default values
-  void init_defaults();
-
   PcDesc* find_pc_desc(address pc, bool approximate) {
-    return _pc_desc_container.find_pc_desc(pc, approximate, PcDescSearch(code_begin(), scopes_pcs_begin(), scopes_pcs_end()));
+    if (_pc_desc_container == nullptr) return nullptr; // native method
+    return _pc_desc_container->find_pc_desc(pc, approximate, code_begin(), scopes_pcs_begin(), scopes_pcs_end());
   }
 
   // STW two-phase nmethod root processing helpers.
@@ -521,62 +526,71 @@ public:
   const char*  compiler_name       () const;
 
   // boundaries for different parts
-  address consts_begin          () const { return           header_begin() + _consts_offset           ; }
-  address consts_end            () const { return           header_begin() +  code_offset()           ; }
-  address insts_begin           () const { return           header_begin() +  code_offset()           ; }
+  address consts_begin          () const { return           content_begin(); }
+  address consts_end            () const { return           code_begin()   ; }
+  address insts_begin           () const { return           code_begin()   ; }
   address insts_end             () const { return           header_begin() + _stub_offset             ; }
   address stub_begin            () const { return           header_begin() + _stub_offset             ; }
-  address stub_end              () const { return           header_begin() + _oops_offset             ; }
+  address stub_end              () const { return           data_begin()   ; }
   address exception_begin       () const { return           header_begin() + _exception_offset        ; }
   address deopt_handler_begin   () const { return           header_begin() + _deopt_handler_offset    ; }
   address deopt_mh_handler_begin() const { return           header_begin() + _deopt_mh_handler_offset ; }
-  address unwind_handler_begin  () const { return _unwind_handler_offset != -1 ? (header_begin() + _unwind_handler_offset) : nullptr; }
-  oop*    oops_begin            () const { return (oop*)   (header_begin() + _oops_offset)            ; }
-  oop*    oops_end              () const { return (oop*)   (header_begin() + _metadata_offset)        ; }
+  address unwind_handler_begin  () const { return _unwind_handler_offset != -1 ? (insts_end() - _unwind_handler_offset) : nullptr; }
 
-  Metadata** metadata_begin     () const { return (Metadata**) (header_begin() + _metadata_offset)    ; }
-  Metadata** metadata_end       () const { return (Metadata**) (header_begin() + _scopes_data_offset) ; }
+  // mutable data
+  oop*    oops_begin            () const { return (oop*)        data_begin(); }
+  oop*    oops_end              () const { return (oop*)       (data_begin() + _metadata_offset)      ; }
+  Metadata** metadata_begin     () const { return (Metadata**) (data_begin() + _metadata_offset)      ; }
+#if INCLUDE_JVMCI
+  Metadata** metadata_end       () const { return (Metadata**) (data_begin() + _jvmci_data_offset)    ; }
+  address jvmci_data_begin      () const { return               data_begin() + _jvmci_data_offset     ; }
+  address jvmci_data_end        () const { return               data_end(); }
+#else
+  Metadata** metadata_end       () const { return (Metadata**)  data_end(); }
+#endif
 
-  address scopes_data_begin     () const { return           header_begin() + _scopes_data_offset      ; }
-  address scopes_data_end       () const { return           header_begin() + _scopes_pcs_offset       ; }
-  PcDesc* scopes_pcs_begin      () const { return (PcDesc*)(header_begin() + _scopes_pcs_offset)      ; }
-  PcDesc* scopes_pcs_end        () const { return (PcDesc*)(header_begin() + _dependencies_offset)    ; }
-  address dependencies_begin    () const { return           header_begin() + _dependencies_offset     ; }
-  address dependencies_end      () const { return           header_begin() + _handler_table_offset    ; }
-  address handler_table_begin   () const { return           header_begin() + _handler_table_offset    ; }
-  address handler_table_end     () const { return           header_begin() + _nul_chk_table_offset    ; }
-  address nul_chk_table_begin   () const { return           header_begin() + _nul_chk_table_offset    ; }
+  // immutable data
+  address immutable_data_begin  () const { return           _immutable_data; }
+  address immutable_data_end    () const { return           _immutable_data + _immutable_data_size ; }
+  address dependencies_begin    () const { return           _immutable_data; }
+  address dependencies_end      () const { return           _immutable_data + _nul_chk_table_offset; }
+  address nul_chk_table_begin   () const { return           _immutable_data + _nul_chk_table_offset; }
+  address nul_chk_table_end     () const { return           _immutable_data + _handler_table_offset; }
+  address handler_table_begin   () const { return           _immutable_data + _handler_table_offset; }
+  address handler_table_end     () const { return           _immutable_data + _scopes_pcs_offset   ; }
+  PcDesc* scopes_pcs_begin      () const { return (PcDesc*)(_immutable_data + _scopes_pcs_offset)  ; }
+  PcDesc* scopes_pcs_end        () const { return (PcDesc*)(_immutable_data + _scopes_data_offset) ; }
+  address scopes_data_begin     () const { return           _immutable_data + _scopes_data_offset  ; }
 
 #if INCLUDE_JVMCI
-  address nul_chk_table_end     () const { return           header_begin() + _speculations_offset     ; }
-  address speculations_begin    () const { return           header_begin() + _speculations_offset     ; }
-  address speculations_end      () const { return           header_begin() + _jvmci_data_offset       ; }
-  address jvmci_data_begin      () const { return           header_begin() + _jvmci_data_offset       ; }
-  address jvmci_data_end        () const { return           header_begin() + _nmethod_end_offset      ; }
+  address scopes_data_end       () const { return           _immutable_data + _speculations_offset ; }
+  address speculations_begin    () const { return           _immutable_data + _speculations_offset ; }
+  address speculations_end      () const { return            immutable_data_end(); }
 #else
-  address nul_chk_table_end     () const { return           header_begin() + _nmethod_end_offset      ; }
+  address scopes_data_end       () const { return            immutable_data_end(); }
 #endif
 
   // Sizes
-  int consts_size       () const { return int(          consts_end       () -           consts_begin       ()); }
-  int insts_size        () const { return int(          insts_end        () -           insts_begin        ()); }
-  int stub_size         () const { return int(          stub_end         () -           stub_begin         ()); }
-  int oops_size         () const { return int((address) oops_end         () - (address) oops_begin         ()); }
-  int metadata_size     () const { return int((address) metadata_end     () - (address) metadata_begin     ()); }
-  int scopes_data_size  () const { return int(          scopes_data_end  () -           scopes_data_begin  ()); }
-  int scopes_pcs_size   () const { return int((intptr_t)scopes_pcs_end   () - (intptr_t)scopes_pcs_begin   ()); }
-  int dependencies_size () const { return int(          dependencies_end () -           dependencies_begin ()); }
-  int handler_table_size() const { return int(          handler_table_end() -           handler_table_begin()); }
-  int nul_chk_table_size() const { return int(          nul_chk_table_end() -           nul_chk_table_begin()); }
+  int immutable_data_size() const { return _immutable_data_size; }
+  int consts_size        () const { return int(          consts_end       () -           consts_begin       ()); }
+  int insts_size         () const { return int(          insts_end        () -           insts_begin        ()); }
+  int stub_size          () const { return int(          stub_end         () -           stub_begin         ()); }
+  int oops_size          () const { return int((address) oops_end         () - (address) oops_begin         ()); }
+  int metadata_size      () const { return int((address) metadata_end     () - (address) metadata_begin     ()); }
+  int scopes_data_size   () const { return int(          scopes_data_end  () -           scopes_data_begin  ()); }
+  int scopes_pcs_size    () const { return int((intptr_t)scopes_pcs_end   () - (intptr_t)scopes_pcs_begin   ()); }
+  int dependencies_size  () const { return int(          dependencies_end () -           dependencies_begin ()); }
+  int handler_table_size () const { return int(          handler_table_end() -           handler_table_begin()); }
+  int nul_chk_table_size () const { return int(          nul_chk_table_end() -           nul_chk_table_begin()); }
 #if INCLUDE_JVMCI
-  int speculations_size () const { return int(          speculations_end () -           speculations_begin ()); }
-  int jvmci_data_size   () const { return int(          jvmci_data_end   () -           jvmci_data_begin   ()); }
+  int speculations_size  () const { return int(          speculations_end () -           speculations_begin ()); }
+  int jvmci_data_size    () const { return int(          jvmci_data_end   () -           jvmci_data_begin   ()); }
 #endif
 
   int     oops_count() const { assert(oops_size() % oopSize == 0, "");  return (oops_size() / oopSize) + 1; }
   int metadata_count() const { assert(metadata_size() % wordSize == 0, ""); return (metadata_size() / wordSize) + 1; }
 
-  int skipped_instructions_size () const { return _skipped_instructions_size; }
+  int inline_insts_size() const { return _inline_insts_size; }
   int total_size() const;
 
   // Containment
@@ -594,8 +608,8 @@ public:
   bool nul_chk_table_contains  (address addr) const { return nul_chk_table_begin() <= addr && addr < nul_chk_table_end(); }
 
   // entry points
-  address entry_point() const          { return _entry_point;          } // normal entry point
-  address verified_entry_point() const { return _verified_entry_point; } // if klass is correct
+  address entry_point() const          { return code_begin() + _entry_offset;          } // normal entry point
+  address verified_entry_point() const { return code_begin() + _verified_entry_offset; } // if klass is correct
 
   enum : signed char { not_installed = -1, // in construction, only the owner doing the construction is
                                            // allowed to advance state
@@ -614,9 +628,6 @@ public:
   bool is_cold();
   bool is_unloading();
   void do_unloading(bool unloading_occurred);
-
-  bool is_unlinked() const             { return _is_unlinked; }
-  void set_is_unlinked()               { assert(!_is_unlinked, "already unlinked"); _is_unlinked = true; }
 
 #if INCLUDE_RTM_OPT
   // rtm state accessing and manipulating
@@ -677,6 +688,12 @@ public:
     _has_flushed_dependencies = z;
   }
 
+  bool  is_unlinked() const                       { return _is_unlinked; }
+  void  set_is_unlinked()                         {
+     assert(!_is_unlinked, "already unlinked");
+      _is_unlinked = true;
+  }
+
   int   comp_level() const                        { return _comp_level; }
 
   // Support for oops in scopes and relocs:
@@ -721,7 +738,6 @@ protected:
   // Note: _exception_cache may be read and cleaned concurrently.
   ExceptionCache* exception_cache() const         { return _exception_cache; }
   ExceptionCache* exception_cache_acquire() const;
-  void set_exception_cache(ExceptionCache *ec)    { _exception_cache = ec; }
 
 public:
   address handler_for_exception_and_pc(Handle exception, address pc);
@@ -750,7 +766,7 @@ public:
     return (addr >= code_begin() && addr < verified_entry_point());
   }
 
-  void preserve_callee_argument_oops(frame fr, const RegisterMap *reg_map, OopClosure* f) override;
+  void preserve_callee_argument_oops(frame fr, const RegisterMap *reg_map, OopClosure* f);
 
   // implicit exceptions support
   address continuation_for_implicit_div0_exception(address pc) { return continuation_for_implicit_exception(pc, true); }
@@ -786,11 +802,15 @@ public:
   void unlink_from_method();
 
   // On-stack replacement support
-  int   osr_entry_bci() const                     { assert(is_osr_method(), "wrong kind of nmethod"); return _entry_bci; }
-  address  osr_entry() const                      { assert(is_osr_method(), "wrong kind of nmethod"); return _osr_entry_point; }
-  void  invalidate_osr_method();
-  nmethod* osr_link() const                       { return _osr_link; }
-  void     set_osr_link(nmethod *n)               { _osr_link = n; }
+  int      osr_entry_bci()    const { assert(is_osr_method(), "wrong kind of nmethod"); return _entry_bci; }
+  address  osr_entry()        const { assert(is_osr_method(), "wrong kind of nmethod"); return _osr_entry_point; }
+  nmethod* osr_link()         const { return _osr_link; }
+  void     set_osr_link(nmethod *n) { _osr_link = n; }
+  void     invalidate_osr_method();
+
+  int num_stack_arg_slots(bool rounded = true) const {
+    return rounded ? align_up(_num_stack_arg_slots, 2) : _num_stack_arg_slots;
+  }
 
   // Verify calls to dead methods have been cleaned.
   void verify_clean_inline_caches();
@@ -799,7 +819,7 @@ public:
   void unlink();
 
   // Deallocate this nmethod - called by the GC
-  void purge(bool free_code_cache_data, bool unregister_nmethod) override;
+  void purge(bool unregister_nmethod);
 
   // See comment at definition of _last_seen_on_stack
   void mark_as_maybe_on_stack();
@@ -964,16 +984,17 @@ public:
 
   // JVMTI's GetLocalInstance() support
   ByteSize native_receiver_sp_offset() {
+    assert(is_native_method(), "sanity");
     return _native_receiver_sp_offset;
   }
   ByteSize native_basic_lock_sp_offset() {
+    assert(is_native_method(), "sanity");
     return _native_basic_lock_sp_offset;
   }
 
   // support for code generation
-  static ByteSize verified_entry_point_offset() { return byte_offset_of(nmethod, _verified_entry_point); }
-  static ByteSize osr_entry_point_offset()      { return byte_offset_of(nmethod, _osr_entry_point); }
-  static ByteSize state_offset()                { return byte_offset_of(nmethod, _state); }
+  static ByteSize osr_entry_point_offset() { return byte_offset_of(nmethod, _osr_entry_point); }
+  static ByteSize state_offset()           { return byte_offset_of(nmethod, _state); }
 
   void metadata_do(MetadataClosure* f);
 

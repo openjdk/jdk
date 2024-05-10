@@ -1,6 +1,6 @@
 //
 // Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
-// Copyright (c) 2020, 2023, Arm Limited. All rights reserved.
+// Copyright (c) 2020, 2024, Arm Limited. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -169,14 +169,18 @@ source %{
       case Op_VectorMaskGen:
       case Op_LoadVectorMasked:
       case Op_StoreVectorMasked:
-      case Op_LoadVectorGather:
       case Op_StoreVectorScatter:
-      case Op_LoadVectorGatherMasked:
       case Op_StoreVectorScatterMasked:
       case Op_PopulateIndex:
       case Op_CompressM:
       case Op_CompressV:
         if (UseSVE == 0) {
+          return false;
+        }
+        break;
+      case Op_LoadVectorGather:
+      case Op_LoadVectorGatherMasked:
+        if (UseSVE == 0 || is_subword_type(bt)) {
           return false;
         }
         break;

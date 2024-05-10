@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -77,10 +77,7 @@ class StubGenerator: public StubCodeGenerator {
 #define inc_counter_np(counter) ((void)0)
 #else
   void inc_counter_np_(uint& counter) {
-    __ la(t1, ExternalAddress((address)&counter));
-    __ lwu(t0, Address(t1, 0));
-    __ addiw(t0, t0, 1);
-    __ sw(t0, Address(t1, 0));
+    __ incrementw(ExternalAddress((address)&counter));
   }
 #define inc_counter_np(counter) \
   BLOCK_COMMENT("inc_counter " #counter); \
@@ -127,8 +124,9 @@ class StubGenerator: public StubCodeGenerator {
   //     [ return_from_Java     ] <--- sp
   //     [ argument word n      ]
   //      ...
-  // -34 [ argument word 1      ]
-  // -33 [ saved f27            ] <--- sp_after_call
+  // -35 [ argument word 1      ]
+  // -34 [ saved FRM in Floating-point Control and Status Register ] <--- sp_after_call
+  // -33 [ saved f27            ]
   // -32 [ saved f26            ]
   // -31 [ saved f25            ]
   // -30 [ saved f24            ]
@@ -165,8 +163,9 @@ class StubGenerator: public StubCodeGenerator {
 
   // Call stub stack layout word offsets from fp
   enum call_stub_layout {
-    sp_after_call_off  = -33,
+    sp_after_call_off  = -34,
 
+    frm_off            = sp_after_call_off,
     f27_off            = -33,
     f26_off            = -32,
     f25_off            = -31,
@@ -214,6 +213,7 @@ class StubGenerator: public StubCodeGenerator {
 
     const Address sp_after_call (fp, sp_after_call_off  * wordSize);
 
+    const Address frm_save      (fp, frm_off           * wordSize);
     const Address call_wrapper  (fp, call_wrapper_off   * wordSize);
     const Address result        (fp, result_off         * wordSize);
     const Address result_type   (fp, result_type_off    * wordSize);
@@ -295,6 +295,16 @@ class StubGenerator: public StubCodeGenerator {
     __ fsd(f25, f25_save);
     __ fsd(f26, f26_save);
     __ fsd(f27, f27_save);
+
+    __ frrm(t0);
+    __ sd(t0, frm_save);
+    // Set frm to the state we need. We do want Round to Nearest. We
+    // don't want non-IEEE rounding modes.
+    Label skip_fsrmi;
+    guarantee(__ RoundingMode::rne == 0, "must be");
+    __ beqz(t0, skip_fsrmi);
+    __ fsrmi(__ RoundingMode::rne);
+    __ bind(skip_fsrmi);
 
     // install Java thread in global register now we have saved
     // whatever value it held
@@ -414,6 +424,14 @@ class StubGenerator: public StubCodeGenerator {
     __ ld(x18, x18_save);
 
     __ ld(x9, x9_save);
+
+    // restore frm
+    Label skip_fsrm;
+    __ ld(t0, frm_save);
+    __ frrm(t1);
+    __ beq(t0, t1, skip_fsrm);
+    __ fsrm(t0);
+    __ bind(skip_fsrm);
 
     __ ld(c_rarg0, call_wrapper);
     __ ld(c_rarg1, result);
@@ -1115,9 +1133,9 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     {
-      // UnsafeCopyMemory page error: continue after ucm
+      // UnsafeMemoryAccess page error: continue after unsafe access
       bool add_entry = !is_oop && (!aligned || sizeof(jlong) == size);
-      UnsafeCopyMemoryMark ucmm(this, add_entry, true);
+      UnsafeMemoryAccessMark umam(this, add_entry, true);
       copy_memory(decorators, is_oop ? T_OBJECT : T_BYTE, aligned, s, d, count, size);
     }
 
@@ -1191,9 +1209,9 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     {
-      // UnsafeCopyMemory page error: continue after ucm
+      // UnsafeMemoryAccess page error: continue after unsafe access
       bool add_entry = !is_oop && (!aligned || sizeof(jlong) == size);
-      UnsafeCopyMemoryMark ucmm(this, add_entry, true);
+      UnsafeMemoryAccessMark umam(this, add_entry, true);
       copy_memory(decorators, is_oop ? T_OBJECT : T_BYTE, aligned, s, d, count, -size);
     }
 
@@ -2413,7 +2431,7 @@ class StubGenerator: public StubCodeGenerator {
       __ membar(__ LoadLoad);
     }
 
-    __ set_last_Java_frame(sp, fp, ra, t0);
+    __ set_last_Java_frame(sp, fp, ra);
 
     __ enter();
     __ add(t1, sp, wordSize);
@@ -5479,8 +5497,8 @@ static const int64_t right_3_bits = right_n_bits(3);
 
     StubRoutines::_forward_exception_entry = generate_forward_exception();
 
-    if (UnsafeCopyMemory::_table == nullptr) {
-      UnsafeCopyMemory::create_table(8);
+    if (UnsafeMemoryAccess::_table == nullptr) {
+      UnsafeMemoryAccess::create_table(8 + 4); // 8 for copyMemory; 4 for setMemory
     }
 
     StubRoutines::_call_stub_entry =

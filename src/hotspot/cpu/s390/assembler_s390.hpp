@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -352,10 +352,6 @@ class AddressLiteral {
 
   relocInfo::relocType rtype()       const { return _rspec.type(); }
   const RelocationHolder&    rspec() const { return _rspec; }
-
-  RelocationHolder rspec(int offset) const {
-    return offset == 0 ? _rspec : _rspec.plus(offset);
-  }
 };
 
 // Convenience classes

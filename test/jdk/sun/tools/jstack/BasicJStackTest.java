@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,11 @@ import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.JDKToolLauncher;
 
+import jtreg.SkippedException;
+
 /*
  * @test
- * @bug 8273187
+ * @bug 8273187 8308033
  * @summary Unit test for jstack utility
  * @library /test/lib
  * @run main BasicJStackTest
@@ -42,6 +44,13 @@ public class BasicJStackTest {
     private static ProcessBuilder processBuilder = new ProcessBuilder();
 
     public static void main(String[] args) throws Exception {
+        if (Thread.currentThread().isVirtual()) {
+            // This test runs jstack against the current process and then asserts the
+            // presence of current thread in the stacktraces. We skip this test
+            // when the current thread is a virtual thread since "jstack" command doesn't
+            // print the stacktraces of virtual threads.
+            throw new SkippedException("skipping test since current thread is a virtual thread");
+        }
         testJstackNoArgs();
         testJstack_l();
         testJstackUTF8Encoding();
