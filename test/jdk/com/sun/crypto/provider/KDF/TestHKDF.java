@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 8331008
+ * @run main TestHKDF
  * @summary Tests for HKDF Expand and Extract Key Derivation Functions
  * @enablePreview
  */

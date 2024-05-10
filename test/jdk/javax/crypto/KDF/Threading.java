@@ -24,44 +24,45 @@
 /*
  * @test
  * @bug 8331008
- * @run main TestHKDFInitialization
- * @summary Tests for HKDF Expand and Extract Key Derivation Functions
+ * @library /test/lib
+ * @run testng Threading
+ * @summary multi-threading test for KDF
  * @enablePreview
  */
 
+import org.testng.annotations.BeforeClass;
+
 import javax.crypto.KDF;
+import javax.crypto.SecretKey;
 import javax.crypto.spec.HKDFParameterSpec;
 import javax.crypto.spec.KDFParameterSpec;
 import java.math.BigInteger;
-import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
-import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidParameterSpecException;
+import java.util.HexFormat;
 
-public class TestHKDFInitialization {
-    public static void main(String[] args)
-        throws NoSuchAlgorithmException, InvalidParameterSpecException,
-               InvalidAlgorithmParameterException {
+public class Threading {
+    KDF kdfUnderTest;
+    byte[] ikm = new BigInteger("0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b",
+                                16).toByteArray();
+    byte[] salt = new BigInteger("000102030405060708090a0b0c",
+                                 16).toByteArray();
+    byte[] info = new BigInteger("f0f1f2f3f4f5f6f7f8f9", 16).toByteArray();
+    KDFParameterSpec kdfParameterSpec = HKDFParameterSpec.extractExpand(
+        HKDFParameterSpec.extract().addIKM(ikm).addSalt(salt).extractOnly(),
+        info, 42);
+    String expectedResult =
+        "666b33562ebc5e2f041774192e0534efca06f82a5fca17ec8c6ae1b9f5466adba1d77d06480567ddd2d1";
 
-        byte[] ikm = new BigInteger(
-            "0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b",
-            16).toByteArray();
-        byte[] salt = new BigInteger("000102030405060708090a0b0c",
-                                     16).toByteArray();
-        byte[] info = new BigInteger("f0f1f2f3f4f5f6f7f8f9", 16).toByteArray();
+    @BeforeClass
+    public void setUp() throws NoSuchAlgorithmException {
+        kdfUnderTest = KDF.getInstance("HKDFWithHmacSHA256");
+    }
 
-        KDFParameterSpec kdfParameterSpec = HKDFParameterSpec.extractExpand(
-            HKDFParameterSpec.extract().addIKM(ikm).addSalt(salt).extractOnly(),
-            info, 42);
-
-        // OR THIS WAY NOW
-        /*KDFParameterSpec kdfParameterSpec2 =
-            HKDFParameterSpec.extract()
-                             .addIKM(ikm)
-                             .addSalt(salt).andExpand(info, 42);*/
-
-        KDF kdfHkdf = KDF.getInstance("HKDFWithHmacSHA256",
-                                      (AlgorithmParameterSpec) null);
-
+    @Test(threadPoolSize = 50, invocationCount = 10000, timeOut = 10)
+    public void testDeriveKey() throws InvalidParameterSpecException {
+        SecretKey result = kdfUnderTest.deriveKey("AES", kdfParameterSpec);
+        assert (HexFormat.of().formatHex(result.getEncoded()).equals(
+            expectedResult));
     }
 }
