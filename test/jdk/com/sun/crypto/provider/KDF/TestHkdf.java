@@ -74,7 +74,7 @@ public class TestHkdf {
     }
 
     public static final List<TestData> testList = new LinkedList<TestData>() {{
-        add(new TestData("RFC 5689 Test Case 1", "HKDF/HmacSHA256",
+        add(new TestData("RFC 5689 Test Case 1", "HkdfSHA256",
                          "0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b",
                          "000102030405060708090a0b0c",
                          "f0f1f2f3f4f5f6f7f8f9",
@@ -83,7 +83,7 @@ public class TestHkdf {
                          "3cb25f25faacd57a90434f64d0362f2a2d2d0a90cf1a5a4c5db02d56ecc4c5bf"
                          +
                          "34007208d5b887185865"));
-        add(new TestData("RFC 5689 Test Case 2", "HKDF/HmacSHA256",
+        add(new TestData("RFC 5689 Test Case 2", "HkdfSHA256",
                          "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f"
                          +
                          "202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f"
@@ -106,7 +106,7 @@ public class TestHkdf {
                          "59045a99cac7827271cb41c65e590e09da3275600c2f09b8367793a9aca3db71"
                          +
                          "cc30c58179ec3e87c14c01d5c1f3434f1d87"));
-        add(new TestData("RFC 5689 Test Case 3", "HKDF/HmacSHA256",
+        add(new TestData("RFC 5689 Test Case 3", "HkdfSHA256",
                          "0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b",
                          null, null, 42,
                          "19ef24a32c717b167f33a91d6f648bdf96596776afdb6377ac434c1c293ccb04",
@@ -147,14 +147,10 @@ public class TestHkdf {
         SecretKey actualOKM;
         byte[] deriveData;
 
-        // Get an instance of the HKDF Extract/Expand derivation engine
-        String[] tokens = testData.algName.split("/");
-        kdfName = tokens[0];
-        prfName = tokens[1];
         try {
             kdfHkdf = KDF.getInstance(testData.algName);
-            kdfExtract = KDF.getInstance("HKDF-Extract/" + prfName);
-            kdfExpand = KDF.getInstance("HKDF-Expand/" + prfName);
+            kdfExtract = KDF.getInstance(testData.algName);
+            kdfExpand = KDF.getInstance(testData.algName);
         } catch (NoSuchAlgorithmException nsae) {
             InvalidParameterSpecException exc =
                 new InvalidParameterSpecException();

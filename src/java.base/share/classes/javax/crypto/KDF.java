@@ -105,7 +105,7 @@ public final class KDF {
         this.provider = provider;
         this.algorithm = algorithm;
         this.algorithmParameterSpec = algParameterSpec;
-        this.lock = null;
+        this.lock = new Object();
     }
 
     /**
@@ -122,17 +122,12 @@ public final class KDF {
     }
 
     /**
-     * Returns the provider of this {@code KDF} object.
+     * Returns the name of the provider.
      *
-     * @return the provider of this {@code KDF} object.
+     * @return the name of the provider
      */
-    private Provider getProvider() {
-        chooseFirstProvider();
-        return this.provider;
-    }
-
-    private String getProviderName() {
-        return (provider == null) ? "(no provider)" : provider.getName();
+    public String providerName() {
+        return provider.getName();
     }
 
     /**
@@ -382,6 +377,7 @@ public final class KDF {
     public SecretKey deriveKey(String alg, KDFParameterSpec kdfParameterSpec)
         throws InvalidParameterSpecException,
                InvalidAlgorithmParameterException {
+        chooseFirstProvider();
         return spi.engineDeriveKey(alg, kdfParameterSpec);
     }
 
@@ -409,6 +405,7 @@ public final class KDF {
      */
     public byte[] deriveData(KDFParameterSpec kdfParameterSpec)
         throws InvalidParameterSpecException {
+        chooseFirstProvider();
         return spi.engineDeriveData(kdfParameterSpec);
     }
 
@@ -428,20 +425,6 @@ public final class KDF {
             if (spi != null) {
                 return;
             }
-            if (debug != null) {
-                int w = --warnCount;
-                if (w >= 0) {
-                    debug.println(
-                        "KDF.init() not first method called, "
-                        + "disabling delayed "
-                        + "provider selection");
-                    if (w == 0) {
-                        debug.println(
-                            "Further warnings of this type will be suppressed");
-                    }
-                    new Exception("Call trace").printStackTrace();
-                }
-            }
             Exception lastException = null;
             while ((firstService != null) || serviceIterator.hasNext()) {
                 Service s;
@@ -451,11 +434,11 @@ public final class KDF {
                 } else {
                     s = serviceIterator.next();
                 }
-                if (JceSecurity.canUseProvider(s.getProvider()) == false) {
+                if (!JceSecurity.canUseProvider(s.getProvider())) {
                     continue;
                 }
                 try {
-                    Object obj = s.newInstance(null);
+                    Object obj = s.newInstance(algorithmParameterSpec);
                     if (!(obj instanceof KDFSpi)) {
                         continue;
                     }
