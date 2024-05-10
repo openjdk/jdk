@@ -237,7 +237,7 @@ public class ResumptionUpdateBoundValues extends SSLContextTemplate {
         Thread t;
         while ((t = threads.take()) != Thread.currentThread()) {
             System.out.printf("  joining: %s%n", t);
-            t.join(3000L);
+            t.join(4000L);
         }
         serverReady = false;
         System.gc();
