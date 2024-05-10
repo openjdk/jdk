@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -170,19 +170,17 @@ final class SimpleFileServerImpl {
             if (!addrSpecified) {
                 writer.println(ResourceBundleHelper.getMessage("loopback.info"));
             }
-            String url;
             if (inetAddr instanceof Inet6Address && addr.contains(":") && !addr.startsWith("[")) {
-                // RFC-2732, section 2:
+                // we use the "addr" when printing the URL, so make sure it
+                // conforms to RFC-2732, section 2:
                 // To use a literal IPv6 address in a URL, the literal
                 // address should be enclosed in "[" and "]" characters.
-                url = "http://[" + addr + "]:" + port + "/";
-            } else {
-                url = "http://" + addr + ":" + port + "/";
+                addr = "[" + addr + "]";
             }
             if (isAnyLocal) {
-                writer.println(ResourceBundleHelper.getMessage("msg.start.anylocal", root, port, url));
+                writer.println(ResourceBundleHelper.getMessage("msg.start.anylocal", root, addr, port));
             } else {
-                writer.println(ResourceBundleHelper.getMessage("msg.start.other", root, addr, port, url));
+                writer.println(ResourceBundleHelper.getMessage("msg.start.other", root, addr, port));
             }
         }
 
