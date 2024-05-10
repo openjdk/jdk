@@ -63,11 +63,11 @@ abstract class HkdfKeyDerivation extends KDFSpi {
     protected byte[] info;
     protected int length;
 
-    protected enum HKDFTYPES {
+    protected enum HKDF_TYPE {
         EXTRACT, EXPAND, EXTRACTEXPAND
     }
 
-    protected HKDFTYPES HKDFTYPE;
+    protected HKDF_TYPE hkdfType;
 
     /**
      * The sole constructor.
@@ -109,7 +109,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
         // inspect KDFParameterSpec object
         inspectKDFParameterSpec(kdfParameterSpec);
 
-        if (HKDFTYPE == HKDFTYPES.EXTRACT) {
+        if (hkdfType == HKDF_TYPE.EXTRACT) {
             // perform extract
             try {
                 byte[] extractResult = hkdfExtract(initialKeyMaterial,
@@ -120,7 +120,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
                     "an HKDF Extract could not be initialized with the given key or salt material");
             }
 
-        } else if (HKDFTYPE == HKDFTYPES.EXPAND) {
+        } else if (hkdfType == HKDF_TYPE.EXPAND) {
             // perform expand
             try {
                 byte[] expandResult = hkdfExpand(this.pseudoRandomKey, this.info, this.length);
@@ -130,7 +130,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
                     "an HKDF Expand could not be initialized with the given key material");
             }
 
-        } else if (HKDFTYPE == HKDFTYPES.EXTRACTEXPAND) {
+        } else if (hkdfType == HKDF_TYPE.EXTRACTEXPAND) {
             // perform extract and then expand
             try {
                 byte[] extractResult = hkdfExtract(initialKeyMaterial,
@@ -174,7 +174,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
         // inspect KDFParameterSpec object
         inspectKDFParameterSpec(kdfParameterSpec);
 
-        if (HKDFTYPE == HKDFTYPES.EXTRACT) {
+        if (hkdfType == HKDF_TYPE.EXTRACT) {
             // perform extract
             try {
                 return hkdfExtract(initialKeyMaterial, (salt == null) ? null : salt.getEncoded());
@@ -183,7 +183,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
                     "an HKDF Extract could not be initialized with the given key or salt material");
             }
 
-        } else if (HKDFTYPE == HKDFTYPES.EXPAND) {
+        } else if (hkdfType == HKDF_TYPE.EXPAND) {
             // perform expand
             try {
                 return Arrays.copyOf(hkdfExpand(this.pseudoRandomKey, this.info, this.length),
@@ -193,7 +193,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
                     "an HKDF Expand could not be initialized with the given key material");
             }
 
-        } else if (HKDFTYPE == HKDFTYPES.EXTRACTEXPAND) {
+        } else if (hkdfType == HKDF_TYPE.EXTRACTEXPAND) {
             // perform extract and then expand
             try {
                 byte[] extractResult = hkdfExtract(initialKeyMaterial,
@@ -237,7 +237,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
                 throw new InvalidParameterSpecException(
                     "Issue encountered when combining ikm or salt values into single keys");
             }
-            HKDFTYPE = HKDFTYPES.EXTRACT;
+            hkdfType = HKDF_TYPE.EXTRACT;
         } else if (kdfParameterSpec instanceof HKDFParameterSpec.Expand) {
             HKDFParameterSpec.Expand anExpand = (HKDFParameterSpec.Expand) kdfParameterSpec;
             // set this value in the "if"
@@ -257,7 +257,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
                 throw new InvalidParameterSpecException("Requested length " +
                                                         "exceeds maximum allowed key stream length");
             }
-            HKDFTYPE = HKDFTYPES.EXPAND;
+            hkdfType = HKDF_TYPE.EXPAND;
         } else if (kdfParameterSpec instanceof HKDFParameterSpec.ExtractExpand) {
             HKDFParameterSpec.ExtractExpand anExtractExpand =
                 (HKDFParameterSpec.ExtractExpand) kdfParameterSpec;
@@ -288,7 +288,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
                 throw new InvalidParameterSpecException("Requested length " +
                                                         "exceeds maximum allowed key stream length");
             }
-            HKDFTYPE = HKDFTYPES.EXTRACTEXPAND;
+            hkdfType = HKDF_TYPE.EXTRACTEXPAND;
         } else {
             throw new InvalidParameterSpecException(
                 "The KDFParameterSpec object was not of a recognized type");
