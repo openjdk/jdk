@@ -60,7 +60,6 @@ public class VMDeprecatedOptions {
             {"UseNotificationThread", "true"},
             {"PreserveAllAnnotations", "true"},
             {"AllowRedefinitionToAddDeleteMethods", "true"},
-            {"UseEmptySlotsInSupers", "true"},
 
             // deprecated alias flags (see also aliased_jvm_flags):
             {"CreateMinidumpOnCrash", "false"}
