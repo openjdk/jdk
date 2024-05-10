@@ -773,6 +773,7 @@ private:
   bool needs_rex2(Register reg1, Register reg2 = noreg, Register reg3 = noreg);
 
   bool needs_eevex(Register reg1, Register reg2 = noreg, Register reg3 = noreg);
+  bool needs_eevex(int enc1, int enc2 = -1, int enc3 = -1);
 
   void rex_prefix(Address adr, XMMRegister xreg,
                   VexSimdPrefix pre, VexOpcode opc, bool rex_w);
