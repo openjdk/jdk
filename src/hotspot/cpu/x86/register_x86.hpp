@@ -392,7 +392,7 @@ class ConcreteRegisterImpl : public AbstractRegisterImpl {
 template <>
 inline Register AbstractRegSet<Register>::first() {
   size_t first = _bitset & -_bitset;
-  return first ? as_Register(exact_log2(first)) : noreg;
+  return first != 0 ? as_Register(exact_log2(first)) : noreg;
 }
 
 template <>
@@ -405,7 +405,7 @@ inline Register AbstractRegSet<Register>::last() {
 template <>
 inline XMMRegister AbstractRegSet<XMMRegister>::first() {
   size_t first = _bitset & -_bitset;
-  return first ? as_XMMRegister(exact_log2(first)) : xnoreg;
+  return first != 0 ? as_XMMRegister(exact_log2(first)) : xnoreg;
 }
 
 template <>

@@ -260,8 +260,9 @@ inline constexpr bool different_registers(AbstractRegSet<R> allocated_regs, R fi
 
 template<typename R, typename... Rx>
 inline constexpr bool different_registers(AbstractRegSet<R> allocated_regs, R first_register, Rx... more_registers) {
-  if (allocated_regs.contains(first_register))
+  if (allocated_regs.contains(first_register)) {
     return false;
+  }
   return different_registers(allocated_regs + first_register, more_registers...);
 }
 
@@ -271,24 +272,14 @@ inline constexpr bool different_registers(R first_register, Rx... more_registers
 }
 
 template<typename R, typename... Rx>
-inline constexpr bool different_registers(R reg1, R reg2) {
-  return reg1 != reg2;
-}
-
-template<typename R, typename... Rx>
-inline constexpr bool different_registers(R reg1, R reg2, R reg3) {
-  return reg1 != reg2 && reg2 != reg3 && reg1 != reg3;
-}
-
-template<typename R, typename... Rx>
 inline void assert_different_registers(R first_register, Rx... more_registers) {
 #ifdef ASSERT
-  if (! different_registers(first_register, more_registers...)) {
+  if (!different_registers(first_register, more_registers...)) {
     const R regs[] = { first_register, more_registers... };
     // Find a duplicate entry.
     for (size_t i = 0; i < ARRAY_SIZE(regs) - 1; ++i) {
       for (size_t j = i + 1; j < ARRAY_SIZE(regs); ++j) {
-        assert(! regs[i]->is_valid() || regs[i] != regs[j],
+        assert(!regs[i]->is_valid() || regs[i] != regs[j],
                "Multiple uses of register: %s", regs[i]->name());
       }
     }
