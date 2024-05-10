@@ -1891,6 +1891,9 @@ enum Nf {
   INSN(vbrev8_v, 0b1010111, 0b010, 0b01000, 0b010010); // reverse bits in every byte of element
   INSN(vrev8_v,  0b1010111, 0b010, 0b01001, 0b010010); // reverse bytes in every elememt
 
+  INSN(vclz_v,  0b1010111, 0b010, 0b01100, 0b010010); // count leading zeros
+  INSN(vctz_v,  0b1010111, 0b010, 0b01101, 0b010010); // count trailing zeros
+
 #undef INSN
 
 #define INSN(NAME, op, funct3, vm, funct6)                                   \
