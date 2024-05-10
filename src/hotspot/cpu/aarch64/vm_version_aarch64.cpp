@@ -212,7 +212,7 @@ void VM_Version::initialize() {
     }
   }
 
-  if (is_neoverse_family()) {
+  if (is_neoverse()) {
     if (FLAG_IS_DEFAULT(UseSIMDForMemoryOps)) {
       FLAG_SET_DEFAULT(UseSIMDForMemoryOps, true);
     }

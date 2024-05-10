@@ -163,8 +163,9 @@ enum Neoverse_CPU_Model {
     return _model == cpu_model || _model2 == cpu_model;
   }
 
-  static bool is_neoverse_family() {
-    switch(_cpu) {
+
+  static bool is_neoverse() {
+    switch(_model) {
       case CPU_MODEL_NEOVERSE_N1:
       case CPU_MODEL_NEOVERSE_N2:
       case CPU_MODEL_NEOVERSE_V1:
