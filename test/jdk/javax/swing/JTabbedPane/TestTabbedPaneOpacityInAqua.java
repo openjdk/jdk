@@ -78,7 +78,7 @@ public class TestTabbedPaneOpacityInAqua {
               - the tabs are transparent (it must be either gray or green).
               - if Content Opaque checkbox is checked then tabs are gray.
               - if Content Opaque checkbox is unchecked then tabs are green.
-              
+
             Test Case 3 - Test Tab Pane opacity:
             To test Content pane opacity, make sure "Content Opaque checkbox" is UNCHECKED.
 
