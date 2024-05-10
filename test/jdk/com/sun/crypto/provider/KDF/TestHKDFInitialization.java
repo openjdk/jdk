@@ -58,7 +58,7 @@ public class TestHKDFInitialization {
                              .addIKM(ikm)
                              .addSalt(salt).andExpand(info, 42);*/
 
-        KDF kdfHkdf = KDF.getInstance("HkdfSHA256",
+        KDF kdfHkdf = KDF.getInstance("HKDFWithHmacSHA256",
                                       (AlgorithmParameterSpec) null);
 
         kdfHkdf.deriveKey("AES", kdfParameterSpec);

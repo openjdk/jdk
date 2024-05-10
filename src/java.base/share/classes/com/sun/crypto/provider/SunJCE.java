@@ -460,11 +460,11 @@ public final class SunJCE extends Provider {
         /*
          * Key Derivation engines
          */
-        ps("KDF", "HkdfSHA256",
+        ps("KDF", "HKDFWithHmacSHA256",
                 "com.sun.crypto.provider.HkdfKeyDerivation$HkdfSHA256");
-        ps("KDF", "HkdfSHA384",
+        ps("KDF", "HKDFWithHmacSHA384",
                 "com.sun.crypto.provider.HkdfKeyDerivation$HkdfSHA384");
-        ps("KDF", "HkdfSHA512",
+        ps("KDF", "HKDFWithHmacSHA512",
                 "com.sun.crypto.provider.HkdfKeyDerivation$HkdfSHA512");
 
         /*

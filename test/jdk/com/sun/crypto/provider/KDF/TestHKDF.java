@@ -42,7 +42,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 
-public class TestHkdf {
+public class TestHKDF {
     public static class TestData {
         public TestData(String name, String algStr, String ikmStr,
                         String saltStr, String infoStr, int oLen,
@@ -74,7 +74,7 @@ public class TestHkdf {
     }
 
     public static final List<TestData> testList = new LinkedList<TestData>() {{
-        add(new TestData("RFC 5689 Test Case 1", "HkdfSHA256",
+        add(new TestData("RFC 5689 Test Case 1", "HKDFWithHmacSHA256",
                          "0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b",
                          "000102030405060708090a0b0c",
                          "f0f1f2f3f4f5f6f7f8f9",
@@ -83,7 +83,7 @@ public class TestHkdf {
                          "3cb25f25faacd57a90434f64d0362f2a2d2d0a90cf1a5a4c5db02d56ecc4c5bf"
                          +
                          "34007208d5b887185865"));
-        add(new TestData("RFC 5689 Test Case 2", "HkdfSHA256",
+        add(new TestData("RFC 5689 Test Case 2", "HKDFWithHmacSHA256",
                          "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f"
                          +
                          "202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f"
@@ -106,7 +106,7 @@ public class TestHkdf {
                          "59045a99cac7827271cb41c65e590e09da3275600c2f09b8367793a9aca3db71"
                          +
                          "cc30c58179ec3e87c14c01d5c1f3434f1d87"));
-        add(new TestData("RFC 5689 Test Case 3", "HkdfSHA256",
+        add(new TestData("RFC 5689 Test Case 3", "HKDFWithHmacSHA256",
                          "0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b",
                          null, null, 42,
                          "19ef24a32c717b167f33a91d6f648bdf96596776afdb6377ac434c1c293ccb04",
