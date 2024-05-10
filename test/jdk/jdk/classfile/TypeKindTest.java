@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,31 +19,30 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_CDS_CPPVTABLES_HPP
-#define SHARE_CDS_CPPVTABLES_HPP
+/*
+ * @test
+ * @summary Testing TypeKind.
+ * @bug 8331744
+ * @run junit TypeKindTest
+ */
+import org.junit.jupiter.api.Test;
 
-#include "memory/allocation.hpp"
-#include "memory/allStatic.hpp"
-#include "utilities/globalDefinitions.hpp"
+import java.lang.classfile.TypeKind;
 
-class ArchiveBuilder;
-class Method;
-class SerializeClosure;
-class CppVtableInfo;
+import static org.junit.Assert.assertThrows;
 
-// Support for C++ vtables in CDS archive.
-class CppVtables : AllStatic {
-  static char* _vtables_serialized_base;
-public:
-  static void dumptime_init(ArchiveBuilder* builder);
-  static void zero_archived_vtables();
-  static intptr_t* get_archived_vtable(MetaspaceObj::Type msotype, address obj);
-  static void serialize(SerializeClosure* sc);
-  static bool is_valid_shared_method(const Method* m) NOT_CDS_RETURN_(false);
-  static char* vtables_serialized_base() { return _vtables_serialized_base; }
-};
+class TypeKindTest {
+    @Test
+    void testContracts() {
+        assertThrows(NullPointerException.class, () -> TypeKind.from(null));
 
-#endif // SHARE_CDS_CPPVTABLES_HPP
+        assertThrows(NullPointerException.class, () -> TypeKind.fromDescriptor(null));
+        assertThrows(IllegalArgumentException.class, () -> TypeKind.fromDescriptor(""));
+        assertThrows(IllegalArgumentException.class, () -> TypeKind.fromDescriptor("int"));
+
+        assertThrows(IllegalArgumentException.class, () -> TypeKind.fromNewarrayCode(-1));
+        assertThrows(IllegalArgumentException.class, () -> TypeKind.fromNewarrayCode(21));
+    }
+}

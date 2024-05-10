@@ -530,10 +530,8 @@ void ArchiveHeapWriter::update_header_for_requested_obj(oop requested_obj, oop s
   fake_oop->set_narrow_klass(nk);
 
   // We need to retain the identity_hash, because it may have been used by some hashtables
-  // in the shared heap. This also has the side effect of pre-initializing the
-  // identity_hash for all shared objects, so they are less likely to be written
-  // into during run time, increasing the potential of memory sharing.
-  if (src_obj != nullptr) {
+  // in the shared heap.
+  if (src_obj != nullptr && !src_obj->fast_no_hash_check()) {
     intptr_t src_hash = src_obj->identity_hash();
     fake_oop->set_mark(markWord::prototype().copy_set_hash(src_hash));
     assert(fake_oop->mark().is_unlocked(), "sanity");
