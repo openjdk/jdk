@@ -288,7 +288,7 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
     final class Expand implements HKDFParameterSpec {
 
         // HKDF-Expand(PRK, info, L) -> OKM
-        private final SecretKey pseudoRandomKey;
+        private final SecretKey prk;
         private final byte[] info;
         private final int length;
 
@@ -304,7 +304,7 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
          */
         private Expand(SecretKey prk, byte[] info, int length) {
             // a null prk could be indicative of ExtractExpand
-            this.pseudoRandomKey = prk;
+            this.prk = prk;
             this.info = (info == null) ? null : info.clone();
             if (length < 1) {
                 throw new IllegalArgumentException("length must be >= 1");
@@ -318,7 +318,7 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
          * @return the PRK value
          */
         public SecretKey prk() {
-            return pseudoRandomKey;
+            return prk;
         }
 
         /**

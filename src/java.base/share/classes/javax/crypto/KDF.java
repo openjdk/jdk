@@ -55,17 +55,19 @@ import java.util.Objects;
  * <p>
  * TODO: finish this javadoc
  *
+ * @see SecretKey
+ *
  * @since 23
  */
 
 public final class KDF {
     private static final Debug debug = Debug.getInstance("jca",
-                                                         "KeyDerivation");
+                                                         "KDF");
 
     private static final Debug pdebug = Debug.getInstance("provider",
                                                           "Provider");
     private static final boolean skipDebug = Debug.isOn("engine=")
-                                             && !Debug.isOn("keyderive");
+                                             && !Debug.isOn("kdf");
 
     // The provider
     private Provider provider;
