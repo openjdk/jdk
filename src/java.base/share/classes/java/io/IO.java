@@ -41,7 +41,7 @@ import jdk.internal.javac.PreviewFeature;
  * @since 23
  */
 @PreviewFeature(feature = PreviewFeature.Feature.IMPLICIT_CLASSES)
-public class IO {
+public final class IO {
 
     private IO() {
         throw new Error("no instances");
