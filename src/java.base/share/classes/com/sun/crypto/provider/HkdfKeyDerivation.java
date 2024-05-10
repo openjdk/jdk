@@ -253,6 +253,10 @@ abstract class HkdfKeyDerivation extends KDFSpi {
             if ((length = anExpand.length()) <= 0) {
                 throw new InvalidParameterSpecException("length cannot be <= 0");
             }
+            if (length > (hmacLen * 255)) {
+                throw new InvalidParameterSpecException("Requested length " +
+                                                        "exceeds maximum allowed key stream length");
+            }
             HKDFTYPE = HKDFTYPES.EXPAND;
         } else if (kdfParameterSpec instanceof HKDFParameterSpec.ExtractExpand) {
             HKDFParameterSpec.ExtractExpand anExtractExpand =
@@ -279,6 +283,10 @@ abstract class HkdfKeyDerivation extends KDFSpi {
             // set this value in the "if"
             if ((length = anExtractExpand.length()) <= 0) {
                 throw new InvalidParameterSpecException("length cannot be <= 0");
+            }
+            if (length > (hmacLen * 255)) {
+                throw new InvalidParameterSpecException("Requested length " +
+                                                        "exceeds maximum allowed key stream length");
             }
             HKDFTYPE = HKDFTYPES.EXTRACTEXPAND;
         } else {
