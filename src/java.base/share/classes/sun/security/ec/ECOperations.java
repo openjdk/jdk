@@ -698,7 +698,10 @@ public class ECOperations {
                         AffinePoint v = points[d][w].asAffine();
                         if (!m.equals(v)) {
                             java.util.HexFormat hex = java.util.HexFormat.of();
-                            throw new RuntimeException();
+                            throw new RuntimeException(
+                                "Bad multiple found at [" +d+"]["+w+"]" + 
+                                hex.formatHex(s) + " " + m.getX().asBigInteger()
+                            );
                         }
                     }
                 }
