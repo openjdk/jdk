@@ -249,8 +249,8 @@ public abstract class Snippet {
          * A record declaration.
          * A {@code SubKind} of {@link Kind#TYPE_DECL}.
          * @jls 8.10 Record Types
-         * @since 14
          *
+         * @since 17
          */
         RECORD_SUBKIND(Kind.TYPE_DECL),
 

@@ -158,6 +158,8 @@ public abstract class SourceCodeAnalysis {
      * @param input The input String to convert
      * @return usually a singleton list of Snippet, but may be empty or multiple
      * @throws IllegalStateException if the {@code JShell} instance is closed.
+     *
+     * @since 10
      */
     public abstract List<Snippet> sourceToSnippets(String input);
 
