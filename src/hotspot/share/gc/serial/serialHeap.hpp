@@ -252,7 +252,7 @@ public:
   };
 
  protected:
-  virtual void gc_prologue(bool full);
+  virtual void gc_prologue();
   virtual void gc_epilogue(bool full);
 
  public:
