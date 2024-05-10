@@ -147,9 +147,6 @@ public:
   void post_initialize() override;
 
   bool is_young_gen(const Generation* gen) const { return gen == _young_gen; }
-  bool is_old_gen(const Generation* gen) const { return gen == _old_gen; }
-
-  MemRegion reserved_region() const { return _reserved; }
   bool is_in_reserved(const void* addr) const { return _reserved.contains(addr); }
 
   // Performance Counter support
@@ -235,15 +232,6 @@ public:
   bool print_location(outputStream* st, void* addr) const override;
 
   void print_heap_change(const PreGenGCValues& pre_gc_values) const;
-
-  // The functions below are helper functions that a subclass of
-  // "CollectedHeap" can use in the implementation of its virtual
-  // functions.
-
-  class GenClosure : public StackObj {
-   public:
-    virtual void do_generation(Generation* gen) = 0;
-  };
 
   // Return "true" if all generations have reached the
   // maximal committed limit that they can reach, without a garbage

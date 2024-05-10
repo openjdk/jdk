@@ -318,6 +318,7 @@ class Compile : public Phase {
   uintx                 _max_node_limit;        // Max unique node count during a single compilation.
 
   bool                  _post_loop_opts_phase;  // Loop opts are finished.
+  bool                  _allow_macro_nodes;     // True if we allow creation of macro nodes.
 
   int                   _major_progress;        // Count of something big happening
   bool                  _inlining_progress;     // progress doing incremental inlining?
@@ -786,6 +787,9 @@ private:
   bool       post_loop_opts_phase() { return _post_loop_opts_phase;  }
   void   set_post_loop_opts_phase() { _post_loop_opts_phase = true;  }
   void reset_post_loop_opts_phase() { _post_loop_opts_phase = false; }
+
+  bool       allow_macro_nodes() { return _allow_macro_nodes;  }
+  void reset_allow_macro_nodes() { _allow_macro_nodes = false;  }
 
   void record_for_post_loop_opts_igvn(Node* n);
   void remove_from_post_loop_opts_igvn(Node* n);
@@ -1273,6 +1277,9 @@ private:
   // Auxiliary methods for randomized fuzzing/stressing
   int random();
   bool randomized_select(int count);
+
+  // seed random number generation and log the seed for repeatability.
+  void initialize_stress_seed(const DirectiveSet* directive);
 
   // supporting clone_map
   CloneMap&     clone_map();

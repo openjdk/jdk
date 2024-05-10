@@ -43,17 +43,12 @@ G1BlockOffsetTable::G1BlockOffsetTable(MemRegion heap, G1RegionToSpaceMapper* st
                      p2i(bot_reserved.start()), bot_reserved.byte_size(), p2i(bot_reserved.end()));
 }
 
-void G1BlockOffsetTable::set_offset_array_raw(uint8_t* addr, uint8_t offset) {
+void G1BlockOffsetTable::set_offset_array(uint8_t* addr, uint8_t offset) {
+  check_address(addr, "Block offset table address out of range");
   Atomic::store(addr, offset);
 }
 
-void G1BlockOffsetTable::set_offset_array(uint8_t* addr, uint8_t offset) {
-  check_address(addr, "Block offset table address out of range");
-  set_offset_array_raw(addr, offset);
-}
-
 void G1BlockOffsetTable::set_offset_array(uint8_t* addr, HeapWord* high, HeapWord* low) {
-  check_address(addr, "Block offset table address out of range");
   assert(high >= low, "addresses out of order");
   size_t offset = pointer_delta(high, low);
   check_offset(offset, "offset too large");
