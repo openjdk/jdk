@@ -31,25 +31,31 @@
  *          jdk.compiler/jdk.internal.shellsupport.doc
  * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask
  * @run testng JavadocHelperTest
+ * @key randomness
  */
 
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.DirectoryStream;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Random;
+import java.util.function.BooleanSupplier;
 import java.util.function.Function;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 
 import javax.lang.model.element.Element;
-import javax.lang.model.element.Modifier;
+import javax.lang.model.element.ModuleElement;
+import javax.lang.model.element.ModuleElement.ExportsDirective;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.ElementFilter;
 import javax.tools.Diagnostic.Kind;
@@ -65,7 +71,6 @@ import com.sun.source.util.JavacTask;
 import jdk.internal.shellsupport.doc.JavadocHelper;
 import org.testng.annotations.Test;
 import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
 
 @Test
@@ -381,11 +386,35 @@ public class JavadocHelperTest {
 
     }
 
+    private static long getSeed() {
+        long seed;
+        try {
+            // Throws NumberFormatException if the property is undefined
+            seed = Long.parseLong(System.getProperty("seed"));
+        } catch (NumberFormatException e) {
+            seed = new Random().nextLong();
+        }
+        System.out.println("Random Seed: " + seed);
+        return seed;
+    }
+
     /*
-     * This retrieves the doc comments of java.lang.StringBuilder members, which is where
-     * the crash in JDK-8189778 occurred. Full test moved to FullJavaDocHelperTest.java.
+     * Retrieves doc comments for a random subset of JDK classes.
+     * Set the system property `seed` to a random seed to reproduce
+     * a specific run of this test.
      */
-    public void testStringBuilderDocs() throws IOException {
+    public void testRandomDocs() throws IOException {
+        Random random = new Random(getSeed());
+        // Run test on 2% of classes, which corresponds to ~ 140 classes
+        retrieveDocComments(() -> random.nextInt(100) < 2);
+    }
+
+    /**
+     * Retrieve documentation of enclosed elements for some or all JDK classes.
+     *
+     * @param shouldTest oracle function to decide whether a class should be tested
+     */
+    protected void retrieveDocComments(BooleanSupplier shouldTest) throws IOException {
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
         DiagnosticListener<? super JavaFileObject> noErrors = d -> {
             if (d.getKind() == Kind.ERROR) {
@@ -393,24 +422,41 @@ public class JavadocHelperTest {
             }
         };
 
+        List<Path> sources = new ArrayList<>();
         Path home = Paths.get(System.getProperty("java.home"));
         Path srcZip = home.resolve("lib").resolve("src.zip");
         if (Files.isReadable(srcZip)) {
             URI uri = URI.create("jar:" + srcZip.toUri());
             try (FileSystem zipFO = FileSystems.newFileSystem(uri, Collections.emptyMap())) {
                 Path root = zipFO.getRootDirectories().iterator().next();
-                List<Path> sources = List.of(root.resolve("java.base"));
 
+                //modular format:
+                try (DirectoryStream<Path> ds = Files.newDirectoryStream(root)) {
+                    for (Path p : ds) {
+                        if (Files.isDirectory(p)) {
+                            sources.add(p);
+                        }
+                    }
+                }
                 try (StandardJavaFileManager fm =
-                        compiler.getStandardFileManager(null, null, null)) {
+                             compiler.getStandardFileManager(null, null, null)) {
                     JavacTask task =
                             (JavacTask) compiler.getTask(null, fm, noErrors, null, null, null);
-                    TypeElement clazz = task.getElements().getTypeElement("java.lang.StringBuilder");
-                    try (JavadocHelper helper = JavadocHelper.create(task, sources)) {
-                        for (Element el : clazz.getEnclosedElements()) {
-                            // All StringBuilder members are currently documented, but exclude private to be safe
-                            if (!el.getModifiers().contains(Modifier.PRIVATE)) {
-                                assertNotNull(helper.getResolvedDocComment(el));
+                    task.getElements().getTypeElement("java.lang.Object");
+                    for (ModuleElement me : task.getElements().getAllModuleElements()) {
+                        List<ExportsDirective> exports =
+                                ElementFilter.exportsIn(me.getDirectives());
+                        for (ExportsDirective ed : exports) {
+                            try (JavadocHelper helper = JavadocHelper.create(task, sources)) {
+                                List<? extends Element> content =
+                                        ed.getPackage().getEnclosedElements();
+                                for (TypeElement clazz : ElementFilter.typesIn(content)) {
+                                    if (shouldTest.getAsBoolean()) {
+                                        for (Element el : clazz.getEnclosedElements()) {
+                                            helper.getResolvedDocComment(el);
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
