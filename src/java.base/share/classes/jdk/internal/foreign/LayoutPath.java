@@ -25,6 +25,8 @@
  */
 package jdk.internal.foreign;
 
+import jdk.internal.access.JavaLangInvokeAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.vm.annotation.ForceInline;
 
 import java.lang.foreign.AddressLayout;
@@ -205,7 +207,7 @@ public class LayoutPath {
                     String.format("Path does not select a value layout: %s", breadcrumbs()));
         }
 
-        VarHandle handle = valueLayout.varHandle();
+        VarHandle handle = Utils.makeSegmentViewVarHandle(valueLayout, enclosing != null);
         handle = MethodHandles.collectCoordinates(handle, 1, offsetHandle());
 
         // we only have to check the alignment of the root layout for the first dereference we do,

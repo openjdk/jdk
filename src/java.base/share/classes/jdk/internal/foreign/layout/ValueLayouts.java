@@ -38,8 +38,11 @@ import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 
 /**
  * A value layout. A value layout is used to model the memory layout associated with values of basic data types, such as <em>integral</em> types
@@ -157,9 +160,13 @@ public final class ValueLayouts {
 
         @ForceInline
         public final VarHandle varHandle() {
+            final class VarHandleCache {
+                private static final Map<ValueLayout, VarHandle> HANDLE_MAP = new ConcurrentHashMap<>();
+            }
             if (handle == null) {
                 // this store to stable field is safe, because return value of 'makeMemoryAccessVarHandle' has stable identity
-                handle = Utils.makeSegmentViewVarHandle(self());
+                handle = VarHandleCache.HANDLE_MAP
+                        .computeIfAbsent(withoutName(), l -> Utils.makeSegmentViewVarHandle(l, false));
             }
             return handle;
         }

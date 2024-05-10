@@ -312,7 +312,7 @@ final class VarHandles {
      * @return the created VarHandle.
      */
     static VarHandle memorySegmentViewHandle(Class<?> carrier, long alignmentMask,
-                                             ByteOrder byteOrder) {
+                                             ByteOrder byteOrder, boolean nested) {
         if (!carrier.isPrimitive() || carrier == void.class || carrier == boolean.class) {
             throw new IllegalArgumentException("Invalid carrier: " + carrier.getName());
         }
@@ -321,19 +321,19 @@ final class VarHandles {
         boolean exact = VAR_HANDLE_SEGMENT_FORCE_EXACT;
 
         if (carrier == byte.class) {
-            return maybeAdapt(new VarHandleSegmentAsBytes(be, size, alignmentMask, exact));
+            return maybeAdapt(new VarHandleSegmentAsBytes(be, size, alignmentMask, nested, exact));
         } else if (carrier == char.class) {
-            return maybeAdapt(new VarHandleSegmentAsChars(be, size, alignmentMask, exact));
+            return maybeAdapt(new VarHandleSegmentAsChars(be, size, alignmentMask, nested, exact));
         } else if (carrier == short.class) {
-            return maybeAdapt(new VarHandleSegmentAsShorts(be, size, alignmentMask, exact));
+            return maybeAdapt(new VarHandleSegmentAsShorts(be, size, alignmentMask, nested, exact));
         } else if (carrier == int.class) {
-            return maybeAdapt(new VarHandleSegmentAsInts(be, size, alignmentMask, exact));
+            return maybeAdapt(new VarHandleSegmentAsInts(be, size, alignmentMask, nested, exact));
         } else if (carrier == float.class) {
-            return maybeAdapt(new VarHandleSegmentAsFloats(be, size, alignmentMask, exact));
+            return maybeAdapt(new VarHandleSegmentAsFloats(be, size, alignmentMask, nested, exact));
         } else if (carrier == long.class) {
-            return maybeAdapt(new VarHandleSegmentAsLongs(be, size, alignmentMask, exact));
+            return maybeAdapt(new VarHandleSegmentAsLongs(be, size, alignmentMask, nested, exact));
         } else if (carrier == double.class) {
-            return maybeAdapt(new VarHandleSegmentAsDoubles(be, size, alignmentMask, exact));
+            return maybeAdapt(new VarHandleSegmentAsDoubles(be, size, alignmentMask, nested, exact));
         } else {
             throw new IllegalStateException("Cannot get here");
         }

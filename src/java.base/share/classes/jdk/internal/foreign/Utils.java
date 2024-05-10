@@ -37,8 +37,6 @@ import java.lang.invoke.MethodType;
 import java.lang.invoke.VarHandle;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
 import jdk.internal.access.SharedSecrets;
@@ -89,27 +87,7 @@ public final class Utils {
         return ms.asSlice(alignUp(offset, alignment) - offset);
     }
 
-    public static VarHandle makeSegmentViewVarHandle(ValueLayout layout) {
-        final class VarHandleCache {
-            private static final Map<ValueLayout, VarHandle> HANDLE_MAP = new ConcurrentHashMap<>();
-
-            static VarHandle put(ValueLayout layout, VarHandle handle) {
-                VarHandle prev = HANDLE_MAP.putIfAbsent(layout, handle);
-                return prev != null ? prev : handle;
-            }
-
-            static VarHandle get(ValueLayout layout) {
-                return HANDLE_MAP.get(layout);
-            }
-        }
-        layout = layout.withoutName(); // name doesn't matter
-        // keep the addressee layout as it's used below
-
-        VarHandle handle = VarHandleCache.get(layout);
-        if (handle != null) {
-            return handle;
-        }
-
+    public static VarHandle makeSegmentViewVarHandle(ValueLayout layout, boolean nested) {
         Class<?> baseCarrier = layout.carrier();
         if (layout.carrier() == MemorySegment.class) {
             baseCarrier = switch ((int) ValueLayout.ADDRESS.byteSize()) {
@@ -121,8 +99,8 @@ public final class Utils {
             baseCarrier = byte.class;
         }
 
-        handle = SharedSecrets.getJavaLangInvokeAccess().memorySegmentViewHandle(baseCarrier,
-                layout.byteAlignment() - 1, layout.order());
+        VarHandle handle = SharedSecrets.getJavaLangInvokeAccess().memorySegmentViewHandle(baseCarrier,
+                layout.byteAlignment() - 1, layout.order(), nested);
 
         if (layout.carrier() == boolean.class) {
             handle = MethodHandles.filterValue(handle, BOOL_TO_BYTE, BYTE_TO_BOOL);
@@ -133,7 +111,7 @@ public final class Utils {
                             pointeeByteSize(addressLayout), pointeeByteAlign(addressLayout)),
                             MethodType.methodType(MemorySegment.class, baseCarrier)));
         }
-        return VarHandleCache.put(layout, handle);
+        return handle;
     }
 
     public static boolean byteToBoolean(byte b) {

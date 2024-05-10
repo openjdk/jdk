@@ -357,10 +357,15 @@ public abstract sealed class AbstractMemorySegmentImpl
     }
 
     @ForceInline
-    public void checkAccess(long offset, long length, boolean readOnly) {
+    public void checkReadOnly(boolean readOnly) {
         if (!readOnly && this.readOnly) {
             throw new IllegalArgumentException("Attempt to write a read-only segment");
         }
+    }
+
+    @ForceInline
+    public void checkAccess(long offset, long length, boolean readOnly) {
+        checkReadOnly(readOnly);
         checkBounds(offset, length);
     }
 
