@@ -162,7 +162,7 @@ class GenerateJLIClassesHelper {
                     throw new RuntimeException(
                             "Invoker type parameter must start and end with Object: " + invokerType);
                 }
-                invokerMethodTypes[index] = mt.dropParameterTypes(0, 1);
+                invokerMethodTypes[index] = mt.dropParameterTypes(0, 2);
                 index++;
             }
 
@@ -227,8 +227,9 @@ class GenerateJLIClassesHelper {
         }
 
         public static boolean checkInvokerTypeParams(MethodType mt) {
-            return (mt.parameterCount() > 1 &&
-                    mt.parameterType(0) == Object.class);
+            return (mt.parameterCount() > 2 &&
+                    mt.parameterType(0) == Object.class &&
+                    mt.parameterType(1) == Object.class);
         }
 
         public static boolean checkLinkerTypeParams(MethodType mt) {
