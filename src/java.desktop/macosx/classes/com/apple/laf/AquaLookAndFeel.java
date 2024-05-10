@@ -395,6 +395,8 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
         final Color panelBackgroundColor = windowBackgroundColor;
         final Color tabBackgroundColor = windowBackgroundColor;
         final Color controlBackgroundColor = windowBackgroundColor;
+        final Color contentAreaColor = windowBackgroundColor;
+        final Color selectedTabColor = windowBackgroundColor;
 
         final LazyValue controlFont = t -> AquaFonts.getControlTextFont();
         final LazyValue controlSmallFont = t ->
@@ -860,7 +862,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             //"TabbedPane.shadow", table.get("controlShadow"),
             //"TabbedPane.darkShadow", table.get("controlDkShadow"),
             //"TabbedPane.focus", table.get("controlText"),
-            "TabbedPane.opaque", useOpaqueComponents,
+            "TabbedPane.opaque", false,
             "TabbedPane.textIconGap", Integer.valueOf(4),
             "TabbedPane.tabInsets", new InsetsUIResource(0, 10, 3, 10), // Label within tab (top, left, bottom, right)
             //"TabbedPane.rightTabInsets", new InsetsUIResource(0, 10, 3, 10), // Label within tab (top, left, bottom, right)
@@ -880,6 +882,10 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             "TabbedPane.selectedTabTitleShadowDisabledColor", selectedTabTitleShadowDisabledColor,
             "TabbedPane.selectedTabTitleShadowNormalColor", selectedTabTitleShadowNormalColor,
             "TabbedPane.nonSelectedTabTitleNormalColor", nonSelectedTabTitleNormalColor,
+            "TabbedPane.contentAreaColor", contentAreaColor,
+            "TabbedPane.contentOpaque", Boolean.TRUE,
+            "TabbedPane.tabsOpaque", Boolean.TRUE,
+            "TabbedPane.selected", selectedTabColor,
 
             // *** Table
             "Table.font", viewFont, // [3577901] Aqua HIG says "default font of text in lists and tables" should be 12 point (vm).

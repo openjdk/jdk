@@ -55,6 +55,9 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI {
 
     protected Boolean isDefaultFocusReceiver = null;
     protected boolean hasAvoidedFirstFocus = false;
+    private   Color selectedColor;
+    private boolean contentOpaque = true;
+    private boolean tabsOpaque = true;
 
     // Create PLAF
     public static ComponentUI createUI(final JComponent c) {
@@ -87,7 +90,9 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI {
         }
 
         contentDrawingInsets.set(0, 11, 13, 10);
-        tabPane.setOpaque(false);
+        contentOpaque = UIManager.getBoolean("TabbedPane.contentOpaque");
+        tabsOpaque = UIManager.getBoolean("TabbedPane.tabsOpaque");
+        selectedColor = UIManager.getColor("TabbedPane.selected");
     }
 
     protected void assureRectsCreated(final int tabCount) {
@@ -482,11 +487,16 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI {
         painter.state.set(getSegmentTrailingSeparator(nonRectIndex, selectedIndex, isLeftToRight));
         painter.state.set(getSegmentLeadingSeparator(nonRectIndex, selectedIndex, isLeftToRight));
         painter.state.set(tabPane.hasFocus() && isSelected ? Focused.YES : Focused.NO);
-        painter.paint(g, tabPane, tabRect.x, tabRect.y, tabRect.width, tabRect.height);
+
+        if (tabsOpaque || tabPane.isOpaque()) {
+            painter.paint(g, tabPane, tabRect.x, tabRect.y, tabRect.width, tabRect.height);
+        }
 
         if (isScrollTabIndex(nonRectIndex)) return;
 
-        final Color color = tabPane.getBackgroundAt(nonRectIndex);
+        final Color color = (!isSelected || selectedColor == null) ?
+                tabPane.getBackgroundAt(nonRectIndex) : selectedColor;
+
         if (color == null || (color instanceof UIResource)) return;
 
         if (!isLeftToRight && (tabPlacement == TOP || tabPlacement == BOTTOM)) {
@@ -495,7 +505,9 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI {
             first = tempSwap;
         }
 
-        fillTabWithBackground(g, tabRect, tabPlacement, first, last, color);
+        if (tabsOpaque || tabPane.isOpaque()) {
+            fillTabWithBackground(g, tabRect, tabPlacement, first, last, color);
+        }
     }
 
     protected Direction getDirection() {
@@ -679,8 +691,16 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI {
                 break;
         }
 
-        if (tabPane.isOpaque()) {
-            g.setColor(tabPane.getBackground());
+        if ((tabPane.isOpaque() || contentOpaque) && tabPane.getTabCount() > 0) {
+            // Fill region behind content area
+            Color color = UIManager.getColor("TabbedPane.contentAreaColor");
+            if (color != null) {
+                g.setColor(color);
+            } else if (selectedColor == null || selectedIndex == -1) {
+                g.setColor(tabPane.getBackground());
+            } else {
+                g.setColor(selectedColor);
+            }
             g.fillRect(0, 0, width, height);
         }
 

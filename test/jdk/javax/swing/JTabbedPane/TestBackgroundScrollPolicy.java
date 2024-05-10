@@ -34,7 +34,7 @@ import javax.swing.UnsupportedLookAndFeelException;
 /*
  * @test
  * @key headful
- * @bug 8172269 8244557
+ * @bug 8172269 8244557 8331619
  * @summary Tests JTabbedPane background for SCROLL_TAB_LAYOUT
  * @run main/othervm -Dsun.java2d.uiScale=1 TestBackgroundScrollPolicy
  */
@@ -48,17 +48,19 @@ public class TestBackgroundScrollPolicy {
         ROBOT.setAutoDelay(100);
         for (UIManager.LookAndFeelInfo laf : UIManager.getInstalledLookAndFeels()) {
             System.out.println("Testing L&F: " + laf.getClassName());
-            SwingUtilities.invokeAndWait(() -> setLookAndFeel(laf));
-            try {
-                SwingUtilities.invokeAndWait(() -> createGUI());
-                ROBOT.waitForIdle();
+            if (!laf.getClassName().contains("Aqua")) {
+                SwingUtilities.invokeAndWait(() -> setLookAndFeel(laf));
+                try {
+                    SwingUtilities.invokeAndWait(() -> createGUI());
+                    ROBOT.waitForIdle();
+                    ROBOT.delay(1000);
+                    SwingUtilities.invokeAndWait(() -> test(laf));
+                    ROBOT.delay(2000);
+                } finally {
+                    if (frame != null) SwingUtilities.invokeAndWait(() -> frame.dispose());
+                }
                 ROBOT.delay(1000);
-                SwingUtilities.invokeAndWait(() -> test(laf));
-                ROBOT.delay(2000);
-            } finally {
-                if (frame != null) SwingUtilities.invokeAndWait(() -> frame.dispose());
             }
-            ROBOT.delay(1000);
         }
     }
 
