@@ -572,7 +572,7 @@ public sealed interface MemoryLayout
      * {@code c_1}, {@code c_2}, ... {@code c_m} are other <em>static</em> offset
      * constants (such as field offsets) which are derived from the layout path.
      * <p>
-     * For any given dynamic argument {@code x_i}, it must be that {@code 0 < x_i < size_i},
+     * For any given dynamic argument {@code x_i}, it must be that {@code 0 <= x_i < size_i},
      * where {@code size_i} is the size of the open path element associated with {@code x_i}.
      * Otherwise, the returned method handle throws {@link IndexOutOfBoundsException}.
      *
@@ -633,7 +633,7 @@ public sealed interface MemoryLayout
      *     accessed memory segment.</li>
      *     <li>If the provided layout path has an open path element whose size is {@code S},
      *     its corresponding trailing {@code long} coordinate value {@code I} must be
-     *     {@code 0 < I < S}, or an {@link IndexOutOfBoundsException} is thrown.</li>
+     *     {@code 0 <= I < S}, or an {@link IndexOutOfBoundsException} is thrown.</li>
      *     <li>The accessed memory segment must be
      *     {@link MemorySegment#isAccessibleBy(Thread) accessible} from the thread
      *     performing the access operation, or a {@link WrongThreadException} is thrown.</li>
@@ -761,7 +761,7 @@ public sealed interface MemoryLayout
      *     accessed memory segment.</li>
      *     <li>If the provided layout path has an open path element whose size is {@code S},
      *     its corresponding trailing {@code long} coordinate value {@code I} must be
-     *     {@code 0 < I < S}, or an {@link IndexOutOfBoundsException} is thrown.</li>
+     *     {@code 0 <= I < S}, or an {@link IndexOutOfBoundsException} is thrown.</li>
      *     <li>The accessed memory segment must be
      *     {@link MemorySegment#isAccessibleBy(Thread) accessible} from the thread
      *     performing the access operation, or a {@link WrongThreadException} is thrown.</li>
