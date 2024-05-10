@@ -1762,7 +1762,7 @@ public final class Unsafe {
     }
     // set to true by first usage of memory-access method
     private static @Stable boolean memoryAccessWarned;
-    
+
     private static boolean isMemoryAccessWarned() {
         return theInternalUnsafe.getBooleanVolatile(MEMORY_ACCESS_WARNED_BASE, MEMORY_ACCESS_WARNED_OFFSET);
     }
