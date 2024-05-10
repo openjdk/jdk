@@ -136,7 +136,7 @@ public final class KDF {
      *
      * @return the name of the provider
      */
-    public String providerName() {
+    public String getProviderName() {
         chooseFirstProvider();
         return provider.getName();
     }
