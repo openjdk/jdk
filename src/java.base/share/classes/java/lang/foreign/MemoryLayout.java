@@ -830,7 +830,7 @@ public sealed interface MemoryLayout
      *     selected layout and {@code S} is the size of the accessed memory segment.</li>
      *     <li>If the provided layout path has an open path element whose size is {@code S},
      *     its corresponding trailing {@code long} coordinate value {@code I} must be
-     *     {@code 0 < I < S}, or an {@link IndexOutOfBoundsException} is thrown.</li>
+     *     {@code 0 <= I < S}, or an {@link IndexOutOfBoundsException} is thrown.</li>
      * </ul>
      *
      * @apiNote The returned method handle can be used to obtain a memory segment slice,
