@@ -67,8 +67,10 @@ ArchiveHeapWriter::BufferOffsetToSourceObjectTable*
   ArchiveHeapWriter::_buffer_offset_to_source_obj_table = nullptr;
 
 
-typedef ResourceHashtable<address, size_t,
-      127, // prime number
+typedef ResourceHashtable<
+      size_t,    // offset of a filler from ArchiveHeapWriter::buffer_bottom()
+      size_t,    // size of this filler (in bytes)
+      127,       // prime number
       AnyObj::C_HEAP,
       mtClassShared> FillersTable;
 static FillersTable* _fillers;
@@ -361,12 +363,12 @@ void ArchiveHeapWriter::maybe_fill_gc_region_gap(size_t required_byte_size) {
                         array_length, fill_bytes, _buffer_used);
     HeapWord* filler = init_filler_array_at_buffer_top(array_length, fill_bytes);
     _buffer_used = filler_end;
-    _fillers->put((address)filler, fill_bytes);
+    _fillers->put(buffered_address_to_offset((address)filler), fill_bytes);
   }
 }
 
 size_t ArchiveHeapWriter::get_filler_size_at(address buffered_addr) {
-  size_t* p = _fillers->get(buffered_addr);
+  size_t* p = _fillers->get(buffered_address_to_offset(buffered_addr));
   if (p != nullptr) {
     assert(*p > 0, "filler must be larger than zero bytes");
     return *p;
