@@ -2622,9 +2622,9 @@ public class Cipher {
      *
      * @since 23
      */
-    public final SecretKey export(byte[] context, String algorithm, int length) {
+    public final SecretKey exportKey(byte[] context, String algorithm, int length) {
         chooseFirstProvider();
-        return spi.engineExport(context, algorithm, length);
+        return spi.engineExportKey(context, algorithm, length);
     }
 
     /**

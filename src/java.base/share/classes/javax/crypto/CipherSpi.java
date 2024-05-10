@@ -988,7 +988,7 @@ public abstract class CipherSpi {
      *
      * @since 23
      */
-    protected SecretKey engineExport(byte[] context, String algorithm, int length) {
+    protected SecretKey engineExportKey(byte[] context, String algorithm, int length) {
         throw new UnsupportedOperationException(
                 "The underlying Cipher implementation "
                         +  "does not support this method");
