@@ -186,7 +186,7 @@ public final class MethodTypeDescImpl implements MethodTypeDesc {
         }
         // Validate after copying to avoid TOCTOU
         for (int i = pos; i < destPos; i++) {
-            validateArgument(argTypes[i]);
+            validateArgument(newArgs[i]);
         }
 
         return ofValidated(returnType, newArgs);
