@@ -53,7 +53,7 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
         Builder() {}
 
         /**
-         * Creates a {@code Builder} for an {@code Extract}
+         * Creates a {@code Builder} for an {@code Extract}.
          *
          * @return a {@code Builder} to mutate
          */
@@ -85,9 +85,9 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
          * {@code ExtractExpand}
          *
          * @param info
-         *     the info
+         *     the optional context and application specific information
          * @param length
-         *     the length
+         *     the length of output keying material
          *
          * @return an {@code ExtractExpand}
          */
@@ -104,7 +104,7 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
         }
 
         /**
-         * {@code addIKM} may be called when the ikm value is to be assembled
+         * {@code addIKM} may be called when the initial key material value is to be assembled
          * piece-meal or if part of the IKM is to be supplied by a hardware
          * crypto device. This method appends to the existing list of values or
          * creates a new list if there are none yet.
@@ -113,7 +113,7 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
          * but the actual value of the IKM is not yet available.
          *
          * @param ikm
-         *     the ikm value (null values will not be added)
+         *     the initial key material value (null values will not be added)
          *
          * @return a new {@code Extract} object
          */
@@ -125,7 +125,7 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
         }
 
         /**
-         * {@code addIKM} may be called when the ikm value is to be assembled
+         * {@code addIKM} may be called when the initial key material value is to be assembled
          * piece-meal or if part of the IKM is to be supplied by a hardware
          * crypto device. This method appends to the existing list of values or
          * creates a new list if there are none yet.
@@ -134,7 +134,7 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
          * but the actual value of the IKM is not yet available.
          *
          * @param ikm
-         *     the ikm value (null or empty values will not be added)
+         *     the initial key material value (null or empty values will not be added)
          *
          * @return a new {@code Extract} object
          */
@@ -209,11 +209,11 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
      * object
      *
      * @param prk
-     *     the PRK (may be null)
+     *     the pseudorandom key (may be null)
      * @param info
-     *     the info (may be null)
+     *     the optional context and application specific information (may be null)
      * @param length
-     *     the length
+     *     the length of output keying material
      *
      * @return a new {@code Expand} object
      */
@@ -232,9 +232,9 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
      * @param ext
      *     a pre-generated {@code Extract}
      * @param info
-     *     the info (may be {@code null})
+     *     the optional context and application specific information (may be {@code null})
      * @param length
-     *     the length
+     *     the length of output keying material
      *
      * @return a new {@code ExtractExpand} object
      */
@@ -262,16 +262,16 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
         }
 
         /**
-         * Gets the unmodifiable {@code List} of IKM values
+         * Returns the unmodifiable {@code List} of initial key material values.
          *
-         * @return the unmodifiable {@code List} of IKM values
+         * @return the unmodifiable {@code List} of initial key material values
          */
         public List<SecretKey> ikms() {
             return Collections.unmodifiableList(ikms);
         }
 
         /**
-         * Gets the unmodifiable {@code List} of salt values
+         * Returns the unmodifiable {@code List} of salt values.
          *
          * @return the unmodifiable {@code List} of salt values
          */
@@ -296,11 +296,11 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
          * Constructor that may be used to initialize an {@code Expand} object
          *
          * @param prk
-         *     the PRK; may be {@code null}
+         *     the pseudorandom key; may be {@code null}
          * @param info
-         *     the info
+         *     the optional context and application specific information
          * @param length
-         *     the length
+         *     the length of output keying material
          */
         private Expand(SecretKey prk, byte[] info, int length) {
             // a null prk could be indicative of ExtractExpand
@@ -313,27 +313,27 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
         }
 
         /**
-         * gets the PRK
+         * Returns the pseudorandom key.
          *
-         * @return the PRK value
+         * @return the pseudorandom key
          */
         public SecretKey prk() {
             return prk;
         }
 
         /**
-         * gets the info
+         * Returns the optional context and application specific information.
          *
-         * @return the info value
+         * @return the optional context and application specific information
          */
         public byte[] info() {
             return (info == null)? null : info.clone();
         }
 
         /**
-         * gets the length
+         * Returns the length of output keying material.
          *
-         * @return the length value
+         * @return the length of output keying material
          */
         public int length() {
             return length;
@@ -359,9 +359,9 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
          * @param ext
          *     a pre-generated {@code Extract}
          * @param info
-         *     the info (may be {@code null})
+         *     the optional context and application specific information (may be {@code null})
          * @param length
-         *     the length
+         *     the length of output keying material
          */
         private ExtractExpand(Extract ext, byte[] info, int length) {
             if (ext == null) {
@@ -377,16 +377,16 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
         }
 
         /**
-         * Gets the {@code List} of IKM values
+         * Returns the {@code List} of initial key material values.
          *
-         * @return the IKM values
+         * @return the initial key material values
          */
         public List<SecretKey> ikms() {
             return ext.ikms();
         }
 
         /**
-         * Gets the {@code List} of salt values
+         * Returns the {@code List} of salt values.
          *
          * @return the salt values
          */
@@ -395,18 +395,18 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
         }
 
         /**
-         * Gets the info
+         * Returns the optional context and application specific information.
          *
-         * @return the info value
+         * @return the optional context and application specific information
          */
         public byte[] info() {
             return exp.info();
         }
 
         /**
-         * Gets the length
+         * Returns the length of output keying material.
          *
-         * @return the length value
+         * @return the length of output keying material
          */
         public int length() {
             return exp.length();
