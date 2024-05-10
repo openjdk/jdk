@@ -2971,7 +2971,11 @@ StoreNode* MergePrimitiveArrayStores::run() {
   }
 
   // Only merge stores on arrays, and the stores must have the same size as the elements.
-  const TypeAryPtr* aryptr_t = _store->adr_type()->isa_aryptr();
+  const TypePtr* ptr_t = _store->adr_type();
+  if (ptr_t == nullptr) {
+    return nullptr;
+  }
+  const TypeAryPtr* aryptr_t = ptr_t->isa_aryptr();
   if (aryptr_t == nullptr) {
     return nullptr;
   }
@@ -3016,6 +3020,7 @@ bool MergePrimitiveArrayStores::is_compatible_store(const StoreNode* other_store
 
   if (other_store == nullptr ||
       _store->Opcode() != other_store->Opcode() ||
+      other_store->adr_type() == nullptr ||
       other_store->adr_type()->isa_aryptr() == nullptr) {
     return false;
   }
@@ -3108,8 +3113,8 @@ bool MergePrimitiveArrayStores::is_con_RShift(const Node* n, Node const*& base_o
       n->in(2)->is_ConI()) {
     base_out = n->in(1);
     shift_out = n->in(2)->get_int();
-    assert(shift_out >= 0, "must be positive");
-    return true;
+    // The shift must be positive:
+    return shift_out >= 0;
   }
   return false;
 }
