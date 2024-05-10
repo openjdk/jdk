@@ -38,7 +38,7 @@ import java.util.List;
  *
  * @since 23
  */
-public sealed interface HKDFParameterSpec extends KDFParameterSpec {
+public interface HKDFParameterSpec extends KDFParameterSpec {
 
     /**
      * This builder helps with the mutation required by the {@code Extract}
