@@ -14,6 +14,7 @@ import static java.lang.foreign.Linker.Option.critical;
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 import static org.openjdk.bench.java.lang.foreign.CLayouts.*;
 
+@SuppressWarnings("removal")
 public class GetArrayUnsafeXorOpImpl implements XorOp {
 
     static final Unsafe UNSAFE = Utils.unsafe;

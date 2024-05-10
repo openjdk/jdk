@@ -45,6 +45,7 @@ import java.util.concurrent.TimeUnit;
 @State(org.openjdk.jmh.annotations.Scope.Thread)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @Fork(value = 3, jvmArgsAppend = {"--enable-native-access=ALL-UNNAMED"})
+@SuppressWarnings("removal")
 public class MemorySegmentZeroUnsafe {
 
     static final Unsafe UNSAFE = Utils.unsafe;

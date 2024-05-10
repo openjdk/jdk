@@ -1194,6 +1194,12 @@ or directories.
 .TP
 \f[V]--source\f[R] \f[I]version\f[R]
 Sets the version of the source in source-file mode.
+.TP
+\f[V]--sun-misc-unsafe-memory-acces=\f[R] \f[I]value\f[R]
+Allow or deny usage of unsupported API \f[V]sun.misc.Unsafe\f[R].
+\f[I]value\f[R] is one of \f[V]allow\f[R], \f[V]warn\f[R],
+\f[V]debug\f[R], or \f[V]deny\f[R].
+The default value when the option is not specified is \f[V]allow\f[R].
 .SH EXTRA OPTIONS FOR MACOS
 .PP
 The following extra options are macOS specific.

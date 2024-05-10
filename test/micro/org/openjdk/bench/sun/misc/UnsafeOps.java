@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,55 +20,70 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package org.openjdk.bench.java.lang.foreign;
+package org.openjdk.bench.sun.misc;
 
-import java.lang.foreign.Arena;
-import java.lang.foreign.MemorySegment;
-
-import org.openjdk.jmh.annotations.Benchmark;
-import org.openjdk.jmh.annotations.BenchmarkMode;
-import org.openjdk.jmh.annotations.Fork;
-import org.openjdk.jmh.annotations.Measurement;
-import org.openjdk.jmh.annotations.Mode;
-import org.openjdk.jmh.annotations.OutputTimeUnit;
-import org.openjdk.jmh.annotations.Setup;
-import org.openjdk.jmh.annotations.State;
-import org.openjdk.jmh.annotations.Warmup;
-import sun.misc.Unsafe;
-
+import java.lang.reflect.Field;
 import java.util.concurrent.TimeUnit;
-
-import static java.lang.foreign.ValueLayout.*;
+import sun.misc.Unsafe;
+import org.openjdk.jmh.annotations.*;
 
 @BenchmarkMode(Mode.AverageTime)
 @Warmup(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @State(org.openjdk.jmh.annotations.Scope.Thread)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
-@Fork(value = 3, jvmArgsAppend = {"--enable-native-access=ALL-UNNAMED"})
 @SuppressWarnings("removal")
-public class MemorySegmentCopyUnsafe {
+public class UnsafeOps {
+    static final Unsafe U;
+    static {
+        try {
+            Field f = Unsafe.class.getDeclaredField("theUnsafe");
+            f.setAccessible(true);
+            U = (Unsafe) f.get(null);
+        } catch (ReflectiveOperationException ex) {
+            throw new IllegalStateException();
+        }
+    }
 
-    static final Unsafe UNSAFE = Utils.unsafe;
+    private static class TestClass {
+        long value;
+    }
 
-    long src;
-    long dst;
+    private Object object;
+    private long valueOffset;
+    private long address;
 
     @Setup
-    public void setup() throws Throwable {
-        src = Arena.global().allocate(JAVA_INT).address();
-        dst = Arena.global().allocate(JAVA_INT).address();
+    public void setup() throws Exception {
+        object = new TestClass();
+        Field f = TestClass.class.getDeclaredField("value");
+        valueOffset = U.objectFieldOffset(f);
+
+        address = U.allocateMemory(1000);
+    }
+
+    @TearDown
+    public void finish() {
+        U.freeMemory(address);
     }
 
     @Benchmark
-    public void panama() {
-        MemorySegment srcSeg = MemorySegment.ofAddress(src).reinterpret(JAVA_INT.byteSize());
-        MemorySegment dstSeg = MemorySegment.ofAddress(dst).reinterpret(JAVA_INT.byteSize());
-        dstSeg.copyFrom(srcSeg);
+    public void putLongOnHeap() {
+        U.putLong(object, 0, 99);
     }
 
     @Benchmark
-    public void unsafe() {
-        UNSAFE.copyMemory(src, dst, JAVA_INT.byteSize());
+    public long getLongOnHeap() {
+        return U.getLong(object, 0);
+    }
+
+    @Benchmark
+    public void putLongOffHeap() {
+        U.putLong(null, address, 99);
+    }
+
+    @Benchmark
+    public long getLongOffHeap() {
+        return U.getLong(null, address);
     }
 }

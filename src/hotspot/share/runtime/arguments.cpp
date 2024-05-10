@@ -2281,6 +2281,9 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
       if (res != JNI_OK) {
         return res;
       }
+    } else if (match_option(option, "--sun-misc-unsafe-memory-access=", &tail)) {
+      PropertyList_unique_add(&_system_properties, "sun.misc.unsafe.memory.access", tail,
+                              AddProperty, WriteableProperty, InternalProperty);
     } else if (match_option(option, "--illegal-access=", &tail)) {
       char version[256];
       JDK_Version::jdk(17).to_string(version, sizeof(version));
