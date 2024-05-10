@@ -29,9 +29,11 @@
  * @modules jdk.internal.le
  * @library /test/lib
  * @run main RedirectedStdOut runRedirectAllTest
- * @run main/othervm RedirectedStdOut runRedirectOutOnly
+ * @run main/othervm --enable-native-access=ALL-UNNAMED RedirectedStdOut runRedirectOutOnly
  */
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 import java.lang.foreign.Arena;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.Linker;
@@ -58,7 +60,6 @@ public class RedirectedStdOut {
     //verify the case where neither stdin/out/err is attached to a terminal,
     //this test is weaker, but more reliable:
     void runRedirectAllTest() throws Exception {
-        if (true) return ;
         ProcessBuilder builder =
                 ProcessTools.createTestJavaProcessBuilder(ConsoleTest.class.getName());
         OutputAnalyzer output = ProcessTools.executeProcess(builder);
@@ -146,6 +147,10 @@ public class RedirectedStdOut {
         MethodHandle logintty = linker.downcallHandle(loginttyAddress.get(),
                                                       loginttyDescriptor);
         logintty.invoke(child.get(ValueLayout.JAVA_INT, 0));
+
+        //createTestJavaProcessBuilder logs to (current process') System.out, but
+        //that may not work since the redirect. Setting System.out to a scratch value:
+        System.setOut(new PrintStream(new ByteArrayOutputStream()));
 
         ProcessBuilder builder =
             ProcessTools.createTestJavaProcessBuilder(ConsoleTest.class.getName());
