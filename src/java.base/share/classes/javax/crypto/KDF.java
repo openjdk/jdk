@@ -46,14 +46,27 @@ import java.util.Objects;
  * <p>
  * {@code KDF} objects are instantiated through the {@code getInstance} family
  * of methods.  Key derivation algorithm names follow a naming convention of
- * <I>algorithm</I>/<I>PRF</I>.  The algorithm field is the KDF algorithm (e.g.
- * HKDF, TLS-PRF, PBKDF2, etc.), while the PRF specifier identifies the
+ * <I>Algorithm</I>with<I>PRF</I>.  The algorithm field is the KDF algorithm (e.g.
+ * HKDF, etc.), while the PRF specifier identifies the
  * underlying pseudorandom function (e.g. HmacSHA256).  For instance, a KDF
  * implementation of HKDF using HMAC-SHA256 will have an algorithm string of
- * "HKDF/HmacSHA256".  In some cases the PRF portion of the algorithm specifier
+ * "HKDFwithHmacSHA256".  In some cases the PRF portion of the algorithm specifier
  * may be omitted if the KDF algorithm has a fixed or default PRF.
  * <p>
- * TODO: finish this javadoc
+ *
+ * Example:
+ *  {@snippet lang = java:
+ *    KDF kdfHkdf = KDF.getInstance("HKDFWithHmacSHA256",
+ *                                       (AlgorithmParameterSpec) null);
+ *
+ *    KDFParameterSpec kdfParameterSpec =
+ *             HKDFParameterSpec.extract()
+ *                              .addIKM(ikm)
+ *                              .addSalt(salt).andExpand(info, 42);
+ *
+ *    kdfHkdf.deriveKey("AES", kdfParameterSpec);
+ *}
+ *
  *
  * @see SecretKey
  *
@@ -375,12 +388,16 @@ public final class KDF {
     }
 
     /**
-     * Derive a key, returned as a {@code Key}.
+     * Derive a key, returned as a {@code SecretKey}.
      * <p>
-     * TODO: additional description
+     * The {@code deriveKey} method may be called multiple times once a
+     * {@code KDF} object is initialized.
+     * <p>
+     * Delayed provider selection is also supported such that the provider
+     * performing the derive is not selected until the method is called.
      *
      * @param alg
-     *     the algorithm of the resultant {@code Key} object
+     *     the algorithm of the resultant {@code SecretKey} object
      * @param kdfParameterSpec
      *     derivation parameters
      *
@@ -395,12 +412,12 @@ public final class KDF {
      *     if the key derivation implementation cannot support additional calls
      *     to {@code deriveKey} or if all {@code KDFParameterSpec} objects
      *     provided at initialization have been processed
-     * @throws InvalidAlgorithmParameterException
-     *     TODO: fill this in
+     * @throws UnsupportedOperationException
+     *     if the derived key material is not extractable
+     *
      */
     public SecretKey deriveKey(String alg, KDFParameterSpec kdfParameterSpec)
-        throws InvalidParameterSpecException,
-               InvalidAlgorithmParameterException {
+        throws InvalidParameterSpecException {
         synchronized (lock) {
             if (spi != null) {
                 return spi.engineDeriveKey(alg, kdfParameterSpec);
@@ -445,7 +462,11 @@ public final class KDF {
     /**
      * Obtain raw data from a key derivation function.
      * <p>
-     * TODO: additional description
+     * The {@code deriveData} method may be called multiple times once a
+     * {@code KDF} object is initialized.
+     * <p>
+     * Delayed provider selection is also supported such that the provider
+     * performing the derive is not selected until the method is called.
      *
      * @param kdfParameterSpec
      *     derivation parameters

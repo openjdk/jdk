@@ -38,6 +38,8 @@ import java.security.spec.InvalidParameterSpecException;
  * cryptographic service provider who wishes to supply the implementation of a
  * particular key derivation algorithm.
  *
+ * @see KDF
+ * @see SecretKey
  * @since 23
  */
 public abstract class KDFSpi {
@@ -50,7 +52,9 @@ public abstract class KDFSpi {
     /**
      * The sole constructor.
      * <p>
-     * TODO: additional description
+     * An {@code AlgorithmParameterSpec} may be specified for PRF algorithms that
+     * may require this. Though no such KDF algorithms are currently defined,
+     * this parameter is held for future use.
      *
      * @param algParameterSpec
      *     the initialization parameters for the {@code KDF} algorithm (may be
@@ -69,7 +73,11 @@ public abstract class KDFSpi {
     /**
      * Derive a key, returned as a {@code SecretKey}.
      * <p>
-     * TODO: additional description
+     * The {@code deriveKey} method may be called multiple times once a
+     * {@code KDF} object is initialized.
+     * <p>
+     * Delayed provider selection is also supported such that the provider
+     * performing the derive is not selected until the method is called.
      *
      * @param alg
      *     the algorithm of the resultant key object
@@ -94,7 +102,11 @@ public abstract class KDFSpi {
     /**
      * Obtain raw data from a key derivation function.
      * <p>
-     * TODO: additional description
+     * The {@code deriveData} method may be called multiple times once a
+     * {@code KDF} object is initialized.
+     * <p>
+     * Delayed provider selection is also supported such that the provider
+     * performing the derive is not selected until the method is called.
      *
      * @param kdfParameterSpec
      *     derivation parameters
