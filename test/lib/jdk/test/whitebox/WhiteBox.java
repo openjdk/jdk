@@ -734,6 +734,7 @@ public class WhiteBox {
   public native boolean areSharedStringsMapped();
   public native boolean isSharedInternedString(String s);
   public native boolean isCDSIncluded();
+  public native boolean isJdkExploded();
   public native boolean isJFRIncluded();
   public native boolean isDTraceIncluded();
   public native boolean canWriteJavaHeapArchive();
