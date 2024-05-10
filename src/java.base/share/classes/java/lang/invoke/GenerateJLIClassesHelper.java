@@ -145,7 +145,7 @@ class GenerateJLIClassesHelper {
                 final int lastParam = mt.parameterCount() - 1;
                 if (!checkLinkerTypeParams(mt)) {
                     throw new RuntimeException(
-                            "Invoker type parameter must start and end with Object: " + linkerType);
+                            "Linker type parameter must start and end with Object: " + linkerType);
                 }
                 mt = mt.dropParameterTypes(lastParam, lastParam + 1);
                 linkerMethodTypes[index] = mt.dropParameterTypes(0, 1);
@@ -160,7 +160,7 @@ class GenerateJLIClassesHelper {
                 MethodType mt = asMethodType(invokerType);
                 if (!checkInvokerTypeParams(mt)) {
                     throw new RuntimeException(
-                            "Invoker type parameter must start and end with Object: " + invokerType);
+                            "Invoker type parameter must start with 2 Objects: " + invokerType);
                 }
                 invokerMethodTypes[index] = mt.dropParameterTypes(0, 2);
                 index++;
