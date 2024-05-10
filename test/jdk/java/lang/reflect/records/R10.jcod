@@ -1,3 +1,6 @@
+// this record is defined as:
+//     record R10(List<String> ls) { // there is no compact constructor and thus there is no mandated param
+//     }
 class R10 {
   0xCAFEBABE;
   0; // minor version

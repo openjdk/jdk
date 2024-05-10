@@ -283,9 +283,9 @@ public abstract sealed class Executable extends AccessibleObject
      * constructors of some inner classes may have an implicitly
      * declared parameter in addition to explicitly declared ones.
      * Also note that compact constructors of a record class may have
-     * implicitly ({@linkplain java.compiler/javax.lang.model.util.Elements.Origin#MANDATED mandated}) declared parameters.
-     * Finally note that as a <a href="{@docRoot}/java.base/java/lang/reflect/package-summary.html#LanguageJvmModel">modeling
-     * artifact</a>, the number of returned parameters can differ
+     * ({@linkplain java.compiler/javax.lang.model.util.Elements.Origin#MANDATED implicitly declared}) parameters.
+     * Finally note that as a {@link java.lang.reflect##LanguageJvmModel modeling artifact},
+     * the number of returned parameters can differ
      * depending on whether or not generic information is present. If
      * generic information is present, only parameters explicitly
      * present in the source will be returned. Note that for compact

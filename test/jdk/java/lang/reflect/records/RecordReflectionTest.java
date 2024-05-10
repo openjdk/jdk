@@ -62,7 +62,10 @@ public class RecordReflectionTest {
         R9 {} // compact constructor, will contain a mandated parameter
     }
 
-    // record R10 is defined in an accompaning jcod file
+    /* record R10 is defined in an accompaning jcod file, defined as:
+    record R10(List<String> ls) { // in this case there wasn't be any compact constructor and thus no mandated param
+    }
+    */
 
     record R11(int i, List<String> ls) {
         R11 {} // compact constructor, will contain mandated parameters
