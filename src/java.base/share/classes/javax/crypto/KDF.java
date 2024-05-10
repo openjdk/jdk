@@ -25,6 +25,7 @@
 
 package javax.crypto;
 
+import jdk.internal.javac.PreviewFeature;
 import sun.security.jca.GetInstance;
 import sun.security.jca.GetInstance.Instance;
 import sun.security.util.Debug;
@@ -72,7 +73,7 @@ import java.util.Objects;
  *
  * @since 23
  */
-
+@PreviewFeature(feature=PreviewFeature.Feature.KEY_DERIVATION)
 public final class KDF {
     private static final Debug debug = Debug.getInstance("jca",
                                                          "KDF");

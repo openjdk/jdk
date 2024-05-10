@@ -25,6 +25,8 @@
 
 package javax.crypto.spec;
 
+import jdk.internal.javac.PreviewFeature;
+
 import javax.crypto.SecretKey;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -38,6 +40,7 @@ import java.util.List;
  *
  * @since 23
  */
+@PreviewFeature(feature=PreviewFeature.Feature.KEY_DERIVATION)
 public interface HKDFParameterSpec extends KDFParameterSpec {
 
     /**

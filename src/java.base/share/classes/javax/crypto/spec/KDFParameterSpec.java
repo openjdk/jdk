@@ -25,6 +25,8 @@
 
 package javax.crypto.spec;
 
+import jdk.internal.javac.PreviewFeature;
+
 /**
  * A (transparent) specification of key derivation parameters.
  *
@@ -33,4 +35,5 @@ package javax.crypto.spec;
  *
  * @since 23
  */
+@PreviewFeature(feature=PreviewFeature.Feature.KEY_DERIVATION)
 public interface KDFParameterSpec {}

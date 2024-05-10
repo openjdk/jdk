@@ -25,6 +25,8 @@
 
 package javax.crypto;
 
+import jdk.internal.javac.PreviewFeature;
+
 import javax.crypto.spec.KDFParameterSpec;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.spec.AlgorithmParameterSpec;
@@ -42,6 +44,7 @@ import java.security.spec.InvalidParameterSpecException;
  * @see SecretKey
  * @since 23
  */
+@PreviewFeature(feature=PreviewFeature.Feature.KEY_DERIVATION)
 public abstract class KDFSpi {
 
     /**
