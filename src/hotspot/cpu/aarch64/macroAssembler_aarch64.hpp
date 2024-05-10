@@ -442,33 +442,8 @@ class MacroAssembler: public Assembler {
 #undef WRAP
 
 
-  inline void msub(Register Rd, Register Rn, Register Rm, Register Ra) {
-    if (VM_Version::supports_a53mac() && Ra != zr)
-      nop();
-    if (VM_Version::is_neoverse_family()) {
-      /* On Neoverse, MSUB uses the same ALU with other instructions (e.g. SDIV).
-       * The combination of MUL/SUB can utilize multiple ALUs,
-       * and can be somewhat faster than MSUB. */
-      mul(rscratch1, Rn, Rm);
-      sub(Rd, Ra, rscratch1);
-    } else {
-      Assembler::msub(Rd, Rn, Rm, Ra);
-    }
-  }
-
-  inline void msubw(Register Rd, Register Rn, Register Rm, Register Ra) {
-    if (VM_Version::supports_a53mac() && Ra != zr)
-      nop();
-    if (VM_Version::is_neoverse_family()) {
-      /* On Neoverse, MSUB uses the same ALU with other instructions (e.g. SDIV).
-       * The combination of MUL/SUB can utilize multiple ALUs,
-       * and can be somewhat faster than MSUB. */
-      mulw(rscratch1, Rn, Rm);
-      subw(Rd, Ra, rscratch1);
-    } else {
-      Assembler::msubw(Rd, Rn, Rm, Ra);
-    }
-  }
+  void msub(Register Rd, Register Rn, Register Rm, Register Ra);
+  void msubw(Register Rd, Register Rn, Register Rm, Register Ra);
 
   // macro assembly operations needed for aarch64
 
