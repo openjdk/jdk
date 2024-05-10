@@ -25,6 +25,7 @@
  * @test
  * @bug 8331008
  * @summary Tests for HKDF Expand and Extract Key Derivation Functions
+ * @enablePreview
  */
 
 import javax.crypto.KDF;
