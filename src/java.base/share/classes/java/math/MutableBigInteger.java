@@ -1092,9 +1092,9 @@ class MutableBigInteger {
 
         // Special case of one word dividend
         if (intLen == 1) {
-            long dividendValue = value[offset] & LONG_MASK;
-            int q = (int) (dividendValue / divisorLong);
-            int r = (int) (dividendValue - q * divisorLong);
+            int dividendValue = value[offset];
+            int q = Integer.divideUnsigned(dividendValue, divisor);
+            int r = Integer.remainderUnsigned(dividendValue, divisor);
             quotient.value[0] = q;
             quotient.intLen = (q == 0) ? 0 : 1;
             quotient.offset = 0;
