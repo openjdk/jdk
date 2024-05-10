@@ -35,8 +35,8 @@ import jdk.internal.javac.PreviewFeature;
  * is {@code null}; otherwise, the effect is as if a similarly-named method
  * had been called on that console.
  *
- * <p> Output from methods in this class uses the character set of the system
- * console as specified by {@link Console#charset}.
+ * <p> Input and output from methods in this class use the character set of
+ * the system console as specified by {@link Console#charset}.
  *
  * @since 23
  */
