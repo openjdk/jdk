@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,34 +22,11 @@
  *
  */
 
-#ifndef SHARE_NMT_ALLOCATIONSITE_HPP
-#define SHARE_NMT_ALLOCATIONSITE_HPP
+#include "precompiled.hpp"
 
 #include "nmt/memflags.hpp"
-#include "utilities/nativeCallStack.hpp"
+#include "utilities/debug.hpp"
 
-// Allocation site represents a code path that makes a memory
-// allocation
-class AllocationSite {
- private:
-  const NativeCallStack  _call_stack;
-  const MEMFLAGS         _flag;
- public:
-  AllocationSite(const NativeCallStack& stack, MEMFLAGS flag) : _call_stack(stack), _flag(flag) { }
+// Extra insurance that MEMFLAGS truly has the same size as uint8_t.
+STATIC_ASSERT(sizeof(MEMFLAGS) == sizeof(uint8_t));
 
-  bool equals(const NativeCallStack& stack) const {
-    return _call_stack.equals(stack);
-  }
-
-  bool equals(const AllocationSite& other) const {
-    return other.equals(_call_stack);
-  }
-
-  const NativeCallStack* call_stack() const {
-    return &_call_stack;
-  }
-
-  MEMFLAGS flag() const { return _flag; }
-};
-
-#endif // SHARE_NMT_ALLOCATIONSITE_HPP
