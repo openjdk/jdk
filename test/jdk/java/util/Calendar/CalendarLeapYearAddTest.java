@@ -113,7 +113,7 @@ public class CalendarLeapYearAddTest {
                 Arguments.of("testDayOfYearAddSubtractLeapYear", 29, FEBRUARY, 2024, 365, -365, DAY_OF_YEAR, 29, FEBRUARY, 2024),
                 Arguments.of("testDateAddSubtractLeapYear", 29, FEBRUARY, 2024, 365, -365, DATE, 29, FEBRUARY, 2024),
                 Arguments.of("testWeekOfYearAddSubtractLeapYear", 29, FEBRUARY, 2024, 52, -52, WEEK_OF_YEAR, 29, FEBRUARY, 2024),
-                Arguments.of("testDateOfMonthAddSubtractLeapYear", 29, FEBRUARY, 2024, 31, -31, DAY_OF_MONTH, 29, FEBRUARY, 2024),
+                Arguments.of("testDayOfMonthAddSubtractLeapYear", 29, FEBRUARY, 2024, 31, -31, DAY_OF_MONTH, 29, FEBRUARY, 2024),
                 Arguments.of("testDayOfWeekInMonthAddSubtractLeapYear", 29, FEBRUARY, 2024, 6, -6, DAY_OF_WEEK_IN_MONTH, 29, FEBRUARY, 2024),
                 Arguments.of("testDayOfWeekAddSubtractLeapYear", 29, FEBRUARY, 2024, 6, -6, DAY_OF_WEEK, 29, FEBRUARY, 2024)
         );
