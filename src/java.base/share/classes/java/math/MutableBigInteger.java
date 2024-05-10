@@ -1106,19 +1106,17 @@ class MutableBigInteger {
         quotient.offset = 0;
         quotient.intLen = intLen;
 
-        int rem = 0;
-        long remLong = 0;
+        long rem = 0;
         for (int xlen = intLen; xlen > 0; xlen--) {
-            long dividendEstimate = (remLong << 32) |
+            long dividendEstimate = (rem << 32) |
                     (value[offset + intLen - xlen] & LONG_MASK);
             int q = (int) Long.divideUnsigned(dividendEstimate, divisorLong);
-            rem = (int) Long.remainderUnsigned(dividendEstimate, divisorLong);
+            rem = Long.remainderUnsigned(dividendEstimate, divisorLong);
             quotient.value[intLen - xlen] = q;
-            remLong = rem & LONG_MASK;
         }
 
         quotient.normalize();
-        return rem;
+        return (int)rem;
     }
 
     /**
