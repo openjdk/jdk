@@ -31,6 +31,8 @@ default: all
 
 include $(SPEC)
 include MakeBase.gmk
+
+include CopyFiles.gmk
 include JavaCompilation.gmk
 include TextFileProcessing.gmk
 include ZipArchive.gmk
@@ -214,7 +216,7 @@ $(eval $(call SetupBuildDemo, SampleTree, \
 ))
 
 $(eval $(call SetupBuildDemo, TableExample, \
-    DISABLED_WARNINGS := rawtypes unchecked deprecation this-escape, \
+    DISABLED_WARNINGS := rawtypes unchecked deprecation this-escape dangling-doc-comments, \
     DEMO_SUBDIR := jfc, \
 ))
 

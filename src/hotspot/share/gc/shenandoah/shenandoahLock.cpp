@@ -54,7 +54,8 @@ template<typename BlockOp>
 void ShenandoahLock::contended_lock_internal(JavaThread* java_thread) {
   int ctr = 0;
   int yields = 0;
-  while (Atomic::cmpxchg(&_state, unlocked, locked) != unlocked) {
+  while (Atomic::load(&_state) == locked ||
+         Atomic::cmpxchg(&_state, unlocked, locked) != unlocked) {
     if ((++ctr & 0xFFF) == 0) {
       BlockOp block(java_thread);
       if (yields > 5) {

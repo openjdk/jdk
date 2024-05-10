@@ -819,7 +819,12 @@ public class IRNode {
 
     public static final String MAX = PREFIX + "MAX" + POSTFIX;
     static {
-        beforeMatchingNameRegex(MAX, "Max(I|L)");
+        beforeMatchingNameRegex(MAX, "Max(I|L|F|D)");
+    }
+
+    public static final String MAX_D = PREFIX + "MAX_D" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(MAX_D, "MaxD");
     }
 
     public static final String MAX_D_REDUCTION_REG = PREFIX + "MAX_D_REDUCTION_REG" + POSTFIX;
@@ -830,6 +835,11 @@ public class IRNode {
     public static final String MAX_D_REG = PREFIX + "MAX_D_REG" + POSTFIX;
     static {
         machOnlyNameRegex(MAX_D_REG, "maxD_reg");
+    }
+
+    public static final String MAX_F = PREFIX + "MAX_F" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(MAX_F, "MaxF");
     }
 
     public static final String MAX_F_REDUCTION_REG = PREFIX + "MAX_F_REDUCTION_REG" + POSTFIX;
@@ -877,14 +887,34 @@ public class IRNode {
         beforeMatchingNameRegex(MEMBAR, "MemBar");
     }
 
+    public static final String MEMBAR_ACQUIRE = PREFIX + "MEMBAR_ACQUIRE" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(MEMBAR_ACQUIRE, "MemBarAcquire");
+    }
+
+    public static final String MEMBAR_RELEASE = PREFIX + "MEMBAR_RELEASE" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(MEMBAR_RELEASE, "MemBarRelease");
+    }
+
     public static final String MEMBAR_STORESTORE = PREFIX + "MEMBAR_STORESTORE" + POSTFIX;
     static {
         beforeMatchingNameRegex(MEMBAR_STORESTORE, "MemBarStoreStore");
     }
 
+    public static final String MEMBAR_VOLATILE = PREFIX + "MEMBAR_VOLATILE" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(MEMBAR_VOLATILE, "MemBarVolatile");
+    }
+
     public static final String MIN = PREFIX + "MIN" + POSTFIX;
     static {
         beforeMatchingNameRegex(MIN, "Min(I|L)");
+    }
+
+    public static final String MIN_D = PREFIX + "MIN_D" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(MIN_D, "MinD");
     }
 
     public static final String MIN_D_REDUCTION_REG = PREFIX + "MIN_D_REDUCTION_REG" + POSTFIX;
@@ -895,6 +925,11 @@ public class IRNode {
     public static final String MIN_D_REG = PREFIX + "MIN_D_REG" + POSTFIX;
     static {
         machOnlyNameRegex(MIN_D_REG, "minD_reg");
+    }
+
+    public static final String MIN_F = PREFIX + "MIN_F" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(MIN_F, "MinF");
     }
 
     public static final String MIN_F_REDUCTION_REG = PREFIX + "MIN_F_REDUCTION_REG" + POSTFIX;
@@ -2074,6 +2109,12 @@ public class IRNode {
     static {
         String regex = START + "zStoreP\\S*" + MID + "barrier\\(\\s*" + IS_REPLACED + "\\s*\\)" + END;
         machOnly(Z_STORE_P_WITH_BARRIER_FLAG, regex);
+    }
+
+    public static final String Z_COMPARE_AND_SWAP_P_WITH_BARRIER_FLAG = COMPOSITE_PREFIX + "Z_COMPARE_AND_SWAP_P_WITH_BARRIER_FLAG" + POSTFIX;
+    static {
+        String regex = START + "zCompareAndSwapP" + MID + "barrier\\(\\s*" + IS_REPLACED + "\\s*\\)" + END;
+        machOnly(Z_COMPARE_AND_SWAP_P_WITH_BARRIER_FLAG, regex);
     }
 
     public static final String Z_GET_AND_SET_P_WITH_BARRIER_FLAG = COMPOSITE_PREFIX + "Z_GET_AND_SET_P_WITH_BARRIER_FLAG" + POSTFIX;

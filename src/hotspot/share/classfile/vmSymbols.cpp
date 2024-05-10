@@ -205,9 +205,9 @@ void vmSymbols::metaspace_pointers_do(MetaspaceClosure *closure) {
 }
 
 void vmSymbols::serialize(SerializeClosure* soc) {
-  soc->do_region((u_char*)&Symbol::_vm_symbols[FIRST_SID],
+  soc->do_ptrs((void**)&Symbol::_vm_symbols[FIRST_SID],
                  (SID_LIMIT - FIRST_SID) * sizeof(Symbol::_vm_symbols[0]));
-  soc->do_region((u_char*)_type_signatures, sizeof(_type_signatures));
+  soc->do_ptrs((void**)_type_signatures, sizeof(_type_signatures));
 }
 
 #ifndef PRODUCT

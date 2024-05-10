@@ -117,8 +117,8 @@ static void print_entry(const loaded_module_t* lm, outputStream* os) {
             ", data: " INTPTR_FORMAT " - " INTPTR_FORMAT " "
             "%s",
       (lm->is_in_vm ? '*' : ' '),
-      lm->text, (uintptr_t)lm->text + lm->text_len,
-      lm->data, (uintptr_t)lm->data + lm->data_len,
+      p2i(lm->text), (uintptr_t)lm->text + lm->text_len,
+      p2i(lm->data), (uintptr_t)lm->data + lm->data_len,
       lm->path);
   if (lm->member) {
     os->print("(%s)", lm->member);

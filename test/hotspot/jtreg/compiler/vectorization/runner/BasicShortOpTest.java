@@ -250,6 +250,9 @@ public class BasicShortOpTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
         counts = {IRNode.REVERSE_BYTES_VS, ">0"})
+    @IR(applyIfPlatform = {"riscv64", "true"},
+        applyIfCPUFeature = {"zvbb", "true"},
+        counts = {IRNode.REVERSE_BYTES_VS, ">0"})
     public short[] reverseBytesWithShort() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {

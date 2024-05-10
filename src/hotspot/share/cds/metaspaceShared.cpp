@@ -511,11 +511,9 @@ void VM_PopulateDumpSharedSpace::doit() {
   builder.gather_source_objs();
   builder.reserve_buffer();
 
-  char* cloned_vtables = CppVtables::dumptime_init(&builder);
+  CppVtables::dumptime_init(&builder);
 
-  // Initialize random for updating the hash of symbols
-  os::init_random(0x12345678);
-
+  builder.sort_metadata_objs();
   builder.dump_rw_metadata();
   builder.dump_ro_metadata();
   builder.relocate_metaspaceobj_embedded_pointers();
@@ -544,7 +542,7 @@ void VM_PopulateDumpSharedSpace::doit() {
   FileMapInfo* mapinfo = new FileMapInfo(static_archive, true);
   mapinfo->populate_header(MetaspaceShared::core_region_alignment());
   mapinfo->set_serialized_data(serialized_data);
-  mapinfo->set_cloned_vtables(cloned_vtables);
+  mapinfo->set_cloned_vtables(CppVtables::vtables_serialized_base());
   mapinfo->open_for_write();
   builder.write_archive(mapinfo, &_heap_info);
 
@@ -665,10 +663,12 @@ void MetaspaceShared::preload_and_dump() {
     if (PENDING_EXCEPTION->is_a(vmClasses::OutOfMemoryError_klass())) {
       log_error(cds)("Out of memory. Please run with a larger Java heap, current MaxHeapSize = "
                      SIZE_FORMAT "M", MaxHeapSize/M);
+      CLEAR_PENDING_EXCEPTION;
       MetaspaceShared::unrecoverable_writing_error();
     } else {
       log_error(cds)("%s: %s", PENDING_EXCEPTION->klass()->external_name(),
                      java_lang_String::as_utf8_string(java_lang_Throwable::message(PENDING_EXCEPTION)));
+      CLEAR_PENDING_EXCEPTION;
       MetaspaceShared::unrecoverable_writing_error("VM exits due to exception, use -Xlog:cds,exceptions=trace for detail");
     }
   }

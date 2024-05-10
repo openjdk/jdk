@@ -41,11 +41,8 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBATTACH, \
     OPTIMIZATION := LOW, \
     CFLAGS := $(LIBATTACH_CFLAGS), \
     CFLAGS_windows := -Gy, \
-    JDK_LIBS := $(JDKLIB_LIBS), \
-    JDK_LIBS_windows := $(WIN_JAVA_LIB), \
+    JDK_LIBS := java.base:libjava, \
     LIBS_windows := advapi32.lib psapi.lib, \
 ))
-
-$(BUILD_LIBATTACH): $(call FindLib, java.base, java)
 
 TARGETS += $(BUILD_LIBATTACH)

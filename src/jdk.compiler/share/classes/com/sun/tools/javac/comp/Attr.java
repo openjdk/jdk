@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -979,7 +979,7 @@ public class Attr extends JCTree.Visitor {
         env.info.ctorPrologue = false;
         MethodSymbol prevMethod = chk.setMethod(m);
         try {
-            deferredLintHandler.flush(tree.pos());
+            deferredLintHandler.flush(tree.pos(), lint);
             chk.checkDeprecatedAnnotation(tree.pos(), m);
 
 
@@ -1280,7 +1280,7 @@ public class Attr extends JCTree.Visitor {
 
         try {
             v.getConstValue(); // ensure compile-time constant initializer is evaluated
-            deferredLintHandler.flush(tree.pos());
+            deferredLintHandler.flush(tree.pos(), lint);
             chk.checkDeprecatedAnnotation(tree.pos(), v);
 
             if (tree.init != null) {
@@ -4992,32 +4992,6 @@ public class Attr extends JCTree.Visitor {
         return (tag == CLASS) ? syms.stringType : syms.typeOfTag[tag.ordinal()];
     }
 
-    public void visitStringTemplate(JCStringTemplate tree) {
-        JCExpression processor = tree.processor;
-        Type processorType = attribTree(processor, env, new ResultInfo(KindSelector.VAL, Type.noType));
-        chk.checkProcessorType(processor, processorType, env);
-        Type processMethodType = getProcessMethodType(tree, processorType);
-        tree.processMethodType = processMethodType;
-        Type resultType = processMethodType.getReturnType();
-
-        Env<AttrContext> localEnv = env.dup(tree, env.info.dup());
-
-        for (JCExpression arg : tree.expressions) {
-            chk.checkNonVoid(arg.pos(), attribExpr(arg, localEnv));
-        }
-
-        tree.type = resultType;
-        result = resultType;
-        check(tree, resultType, KindSelector.VAL, resultInfo);
-    }
-
-    private Type getProcessMethodType(JCStringTemplate tree, Type processorType) {
-        MethodSymbol processSymbol = rs.resolveInternalMethod(tree.pos(),
-                env, types.skipTypeVars(processorType, false),
-                names.process, List.of(syms.stringTemplateType), List.nil());
-        return types.memberType(processorType, processSymbol);
-    }
-
     public void visitTypeIdent(JCPrimitiveTypeTree tree) {
         result = check(tree, syms.typeOfTag[tree.typetag.ordinal()], KindSelector.TYP, resultInfo);
     }
@@ -5323,7 +5297,7 @@ public class Attr extends JCTree.Visitor {
         JavaFileObject prev = log.useSource(env.toplevel.sourcefile);
 
         try {
-            deferredLintHandler.flush(env.tree.pos());
+            deferredLintHandler.flush(env.tree.pos(), lint);
             attrib.accept(env);
         } finally {
             log.useSource(prev);
@@ -5498,7 +5472,7 @@ public class Attr extends JCTree.Visitor {
                     }
                 }
 
-                deferredLintHandler.flush(env.tree);
+                deferredLintHandler.flush(env.tree, env.info.lint);
                 env.info.returnResult = null;
                 // java.lang.Enum may not be subclassed by a non-enum
                 if (st.tsym == syms.enumSym &&
@@ -5548,7 +5522,7 @@ public class Attr extends JCTree.Visitor {
         chk.checkDeprecatedAnnotation(tree, msym);
 
         try {
-            deferredLintHandler.flush(tree.pos());
+            deferredLintHandler.flush(tree.pos(), lint);
         } finally {
             chk.setLint(prevLint);
         }

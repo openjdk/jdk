@@ -42,10 +42,10 @@
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1RootClosures.hpp"
 #include "gc/g1/g1RemSet.hpp"
-#include "gc/g1/g1_globals.hpp"
 #include "gc/shared/bufferNode.hpp"
 #include "gc/shared/bufferNodeList.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
@@ -734,17 +734,17 @@ void G1RemSet::scan_heap_roots(G1ParScanThreadState* pss,
   p->record_or_add_thread_work_item(scan_phase, worker_id, cl.heap_roots_found(), G1GCPhaseTimes::ScanHRFoundRoots);
 }
 
-// Wrapper around a CodeBlobClosure to count the number of code blobs scanned.
-class G1ScanAndCountCodeBlobClosure : public CodeBlobClosure {
-  CodeBlobClosure* _cl;
+// Wrapper around a NMethodClosure to count the number of nmethods scanned.
+class G1ScanAndCountNMethodClosure : public NMethodClosure {
+  NMethodClosure* _cl;
   size_t _count;
 
 public:
-  G1ScanAndCountCodeBlobClosure(CodeBlobClosure* cl) : _cl(cl), _count(0) {
+  G1ScanAndCountNMethodClosure(NMethodClosure* cl) : _cl(cl), _count(0) {
   }
 
-  void do_code_blob(CodeBlob* cb) override {
-    _cl->do_code_blob(cb);
+  void do_nmethod(nmethod* nm) override {
+    _cl->do_nmethod(nm);
     _count++;
   }
 
@@ -820,7 +820,7 @@ public:
     {
       EventGCPhaseParallel event;
       G1EvacPhaseWithTrimTimeTracker timer(_pss, _code_root_scan_time, _code_trim_partially_time);
-      G1ScanAndCountCodeBlobClosure cl(_pss->closures()->weak_codeblobs());
+      G1ScanAndCountNMethodClosure cl(_pss->closures()->weak_nmethods());
 
       // Scan the code root list attached to the current region
       r->code_roots_do(&cl);
@@ -1564,7 +1564,7 @@ bool G1RemSet::clean_card_before_refine(CardValue** const card_ptr_addr) {
 
 void G1RemSet::refine_card_concurrently(CardValue* const card_ptr,
                                         const uint worker_id) {
-  assert(!_g1h->is_gc_active(), "Only call concurrently");
+  assert(!_g1h->is_stw_gc_active(), "Only call concurrently");
   check_card_ptr(card_ptr, _ct);
 
   // Construct the MemRegion representing the card.

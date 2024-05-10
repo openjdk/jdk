@@ -35,9 +35,6 @@
 #include "runtime/mutexLocker.hpp"
 #include "utilities/align.hpp"
 #include "utilities/macros.hpp"
-#if INCLUDE_SERIALGC
-#include "gc/serial/serialBlockOffsetTable.hpp"
-#endif
 
 // A space is an abstraction for the "storage units" backing
 // up the generation abstraction. It includes specific
@@ -45,11 +42,6 @@
 // for iterating over objects and free blocks, etc.
 
 // Forward decls.
-class ContiguousSpace;
-class Generation;
-class ContiguousSpace;
-class CardTableRS;
-class DirtyCardToOopClosure;
 class GenSpaceMangler;
 
 // A space in which the free area is contiguous.  It therefore supports
@@ -64,9 +56,6 @@ class ContiguousSpace: public CHeapObj<mtGC> {
 private:
   HeapWord* _bottom;
   HeapWord* _end;
-
-  ContiguousSpace* _next_compaction_space;
-
   HeapWord* _top;
   // A helper for mangling the unused area of the space in debug builds.
   GenSpaceMangler* _mangler;
@@ -84,8 +73,11 @@ public:
   // Accessors
   HeapWord* bottom() const         { return _bottom; }
   HeapWord* end() const            { return _end;    }
+  HeapWord* top() const            { return _top;    }
+
   void set_bottom(HeapWord* value) { _bottom = value; }
   void set_end(HeapWord* value)    { _end = value; }
+  void set_top(HeapWord* value)    { _top = value; }
 
   // Testers
   bool is_empty() const              { return used() == 0; }
@@ -123,22 +115,6 @@ public:
   // had allocation performed in it, but is now to be considered empty.
   void clear(bool mangle_space);
 
-  // Returns the next space (in the current generation) to be compacted in
-  // the global compaction order.  Also is used to select the next
-  // space into which to compact.
-
-  ContiguousSpace* next_compaction_space() const {
-    return _next_compaction_space;
-  }
-
-  void set_next_compaction_space(ContiguousSpace* csp) {
-    _next_compaction_space = csp;
-  }
-
-  // Accessors
-  HeapWord* top() const            { return _top;    }
-  void set_top(HeapWord* value)    { _top = value; }
-
   // Used to save the space's current top for later use during mangling.
   void set_top_for_allocations() PRODUCT_RETURN;
 
@@ -162,18 +138,12 @@ public:
 
   // Allocation (return null if full).  Assumes the caller has established
   // mutually exclusive access to the space.
-  virtual HeapWord* allocate(size_t word_size);
+  HeapWord* allocate(size_t word_size);
   // Allocation (return null if full).  Enforces mutual exclusion internally.
-  virtual HeapWord* par_allocate(size_t word_size);
+  HeapWord* par_allocate(size_t word_size);
 
   // Iteration
   void object_iterate(ObjectClosure* blk);
-
-  // If "p" is in the space, returns the address of the start of the
-  // "block" that contains "p".  We say "block" instead of "object" since
-  // some heaps may not pack objects densely; a chunk may either be an
-  // object or a non-object.  If "p" is not in the space, return null.
-  virtual HeapWord* block_start_const(const void* p) const;
 
   // Addresses for inlined allocation
   HeapWord** top_addr() { return &_top; }
@@ -181,30 +151,5 @@ public:
   // Debugging
   void verify() const;
 };
-
-#if INCLUDE_SERIALGC
-
-// Class TenuredSpace is used by TenuredGeneration; it supports an efficient
-// "block_start" operation via a SerialBlockOffsetTable.
-
-class TenuredSpace: public ContiguousSpace {
-  friend class VMStructs;
- protected:
-  SerialBlockOffsetTable* _offsets;
-
- public:
-  // Constructor
-  TenuredSpace(SerialBlockOffsetTable* offsets,
-               MemRegion mr);
-
-  HeapWord* block_start_const(const void* addr) const override;
-
-  // Add offset table update.
-  inline HeapWord* allocate(size_t word_size) override;
-  inline HeapWord* par_allocate(size_t word_size) override;
-
-  inline void update_for_block(HeapWord* start, HeapWord* end);
-};
-#endif //INCLUDE_SERIALGC
 
 #endif // SHARE_GC_SHARED_SPACE_HPP

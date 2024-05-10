@@ -28,6 +28,8 @@ default: all
 include $(SPEC)
 include MakeBase.gmk
 
+include CopyFiles.gmk
+
 ##########################################################################################
 
 ### TZDB tool needs files from java.time.zone package

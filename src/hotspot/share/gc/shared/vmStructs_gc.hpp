@@ -40,8 +40,6 @@
 #include "gc/parallel/vmStructs_parallelgc.hpp"
 #endif
 #if INCLUDE_SERIALGC
-#include "gc/serial/defNewGeneration.hpp"
-#include "gc/serial/generation.hpp"
 #include "gc/serial/vmStructs_serial.hpp"
 #endif
 #if INCLUDE_SHENANDOAHGC
@@ -94,7 +92,7 @@
   nonstatic_field(CardTableBarrierSet,         _card_table,                                   CardTable*)                            \
                                                                                                                                      \
   nonstatic_field(CollectedHeap,               _reserved,                                     MemRegion)                             \
-  nonstatic_field(CollectedHeap,               _is_gc_active,                                 bool)                                  \
+  nonstatic_field(CollectedHeap,               _is_stw_gc_active,                             bool)                                  \
   nonstatic_field(CollectedHeap,               _total_collections,                            unsigned int)                          \
                                                                                                                                      \
   nonstatic_field(ContiguousSpace,             _bottom,                                       HeapWord*)                             \
