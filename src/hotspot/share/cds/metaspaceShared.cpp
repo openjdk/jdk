@@ -513,9 +513,7 @@ void VM_PopulateDumpSharedSpace::doit() {
 
   char* cloned_vtables = CppVtables::dumptime_init(&builder);
 
-  // Initialize random for updating the hash of symbols
-  os::init_random(0x12345678);
-
+  builder.sort_metadata_objs();
   builder.dump_rw_metadata();
   builder.dump_ro_metadata();
   builder.relocate_metaspaceobj_embedded_pointers();

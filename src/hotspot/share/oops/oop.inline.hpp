@@ -238,6 +238,8 @@ inline void   oopDesc::short_field_put(int offset, jshort value)    { *field_add
 
 inline jint oopDesc::int_field(int offset) const                    { return *field_addr<jint>(offset);     }
 inline void oopDesc::int_field_put(int offset, jint value)          { *field_addr<jint>(offset) = value;    }
+inline jint oopDesc::int_field_relaxed(int offset) const            { return Atomic::load(field_addr<jint>(offset)); }
+inline void oopDesc::int_field_put_relaxed(int offset, jint value)  { Atomic::store(field_addr<jint>(offset), value); }
 
 inline jlong oopDesc::long_field(int offset) const                  { return *field_addr<jlong>(offset);    }
 inline void  oopDesc::long_field_put(int offset, jlong value)       { *field_addr<jlong>(offset) = value;   }
@@ -262,9 +264,7 @@ bool oopDesc::is_gc_marked() const {
 
 // Used by scavengers
 bool oopDesc::is_forwarded() const {
-  // The extra heap check is needed since the obj might be locked, in which case the
-  // mark would point to a stack location and have the sentinel bit cleared
-  return mark().is_marked();
+  return mark().is_forwarded();
 }
 
 // Used by scavengers
@@ -289,8 +289,7 @@ oop oopDesc::forward_to_atomic(oop p, markWord compare, atomic_memory_order orde
 // The forwardee is used when copying during scavenge and mark-sweep.
 // It does need to clear the low two locking- and GC-related bits.
 oop oopDesc::forwardee() const {
-  assert(is_forwarded(), "only decode when actually forwarded");
-  return cast_to_oop(mark().decode_pointer());
+  return mark().forwardee();
 }
 
 // The following method needs to be MT safe.
