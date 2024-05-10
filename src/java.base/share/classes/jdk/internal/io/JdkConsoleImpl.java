@@ -148,11 +148,13 @@ public final class JdkConsoleImpl implements JdkConsole {
                             false /* only register if shutdown is not in progress */,
                             new Runnable() {
                                 public void run() {
-                                    try {
-                                        if (restoreEcho) {
-                                            echo(true);
-                                        }
-                                    } catch (IOException x) { }
+                                    synchronized(readLock) {
+                                        try {
+                                            if (restoreEcho) {
+                                                echo(true);
+                                            }
+                                        } catch (IOException _) { }
+                                    }
                                 }
                             });
         } catch (IllegalStateException e) {
