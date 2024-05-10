@@ -190,8 +190,8 @@ public class AllocationMergesTests {
         Asserts.assertEQ(testRematerialize_MultiObj_Interp(cond1, cond2, x, y),     testRematerialize_MultiObj_C2(cond1, cond2, x, y));
         Asserts.assertEQ(testGlobalEscapeInThread_Intrep(cond1, l, x, y),           testGlobalEscapeInThread_C2(cond1, l, x, y));
         Asserts.assertEQ(testGlobalEscapeInThreadWithSync_Intrep(cond1, x, y),      testGlobalEscapeInThreadWithSync_C2(cond1, x, y));
-        Asserts.assertEQ(testFieldEscapeWithMerge_Intrep(cond1, x, y),              testFieldEscapeWithMerge_C2(cond1, x, y)); 
-        Asserts.assertEQ(testNestedPhi_FieldLoad_Interp(cond1, cond2, x, y),        testNestedPhi_FieldLoad_C2(cond1, cond2, x, y)); 
+        Asserts.assertEQ(testFieldEscapeWithMerge_Intrep(cond1, x, y),              testFieldEscapeWithMerge_C2(cond1, x, y));
+        Asserts.assertEQ(testNestedPhi_FieldLoad_Interp(cond1, cond2, x, y),        testNestedPhi_FieldLoad_C2(cond1, cond2, x, y));
         Asserts.assertEQ(testThreeLevelNestedPhi_Interp(cond1, cond2, x, y),        testThreeLevelNestedPhi_C2(cond1, cond2, x, y));
         Asserts.assertEQ(testNestedPhiProcessOrder_Interp(cond1, cond2, x, y),      testNestedPhiProcessOrder_C2(cond1, cond2, x, y));
         Asserts.assertEQ(testNestedPhi_TryCatch_Interp(cond1, cond2, x, y),         testNestedPhi_TryCatch_C2(cond1, cond2, x, y));
@@ -1343,7 +1343,8 @@ public class AllocationMergesTests {
 
     @DontCompile
     int testReReduce_Interp(boolean cond1, int x, int y) { return testReReduce(cond1, x, y); }
- // -------------------------------------------------------------------------
+
+    // -------------------------------------------------------------------------
 
     @ForceInline
     int testRematerialize_SingleObj(boolean cond1, int x, int y) throws Exception {
@@ -1378,7 +1379,7 @@ public class AllocationMergesTests {
         }
         try {
             p.y = n/0;
-        }catch (Exception e) {}
+        } catch (Exception e) {}
 
         return p.y;
     }
@@ -1395,16 +1396,16 @@ public class AllocationMergesTests {
     @ForceInline
     int testMerge_TryCatchFinally(boolean cond1, int n, int x, int y) {
 
-      Point p = new Point(x, y);
-      try{
-        if (cond1) {
-               p = new Point(x+1, y+1);
-              }
-        }catch (Exception e) {
-        p.y = n;
+        Point p = new Point(x, y);
+        try {
+            if (cond1) {
+                p = new Point(x+1, y+1);
+            }
+        } catch (Exception e) {
+            p.y = n;
         } finally {
-          dummy_defaults();
-          p = new Point(n, x+y);
+            dummy_defaults();
+            p = new Point(n, x+y);
         }
 
         return p.y;
@@ -1429,20 +1430,20 @@ public class AllocationMergesTests {
             global_escape = p1;
         }
 
-        if(x%2 == 1) {
-        p2 = new Point(x*2, y/4);
+        if (x%2 == 1) {
+            p2 = new Point(x*2, y/4);
         }
 
         try {
             String s = null;
             s.length();
-        }catch (Exception e) {}
+        } catch (Exception e) {}
 
-        if(cond2)
+        if (cond2)
             return p1.y;
-
         return p2.y;
     }
+
     @Test
     @IR(counts = { IRNode.ALLOC, ">=1", IRNode.SAFEPOINT_SCALAR_MERGE, ">=1", IRNode.SAFEPOINT_SCALAR_OBJECT, ">=2"}, phase= CompilePhase.ITER_GVN_AFTER_EA)
     int testRematerialize_MultiObj_C2(boolean cond1, boolean cond2, int x, int y) { return testRematerialize_MultiObj(cond1, cond2, x, y); }
@@ -1457,17 +1458,17 @@ public class AllocationMergesTests {
         Point p = new Point(x, y);
         Object syncObject = new Object();
         Runnable threadLoop = () -> {
-         if(cond)
-             global_escape = new Point( x+n, y+n);
+            if (cond)
+                global_escape = new Point( x+n, y+n);
         };
         Thread thLoop = new Thread(threadLoop);
         thLoop.start();
-        try{
-          thLoop.join();
+        try {
+            thLoop.join();
         } catch (InterruptedException e) {}
 
-        if(cond && n % 2 == 1)
-                p.x = global_escape.x;
+        if (cond && n % 2 == 1)
+            p.x = global_escape.x;
 
         return p.y;
     }
@@ -1485,10 +1486,10 @@ public class AllocationMergesTests {
     public int testGlobalEscapeInThreadWithSync(boolean cond, int x, int y) {
         Point p = new Point(x, y);
         for (int i = 0; i < 2; i++) {
-          if (cond)
-            p = new Point(x+i, y+i);
-          TestThread th = new TestThread(p);
-          th.start();
+            if (cond)
+                p = new Point(x+i, y+i);
+            TestThread th = new TestThread(p);
+            th.start();
         }
         return p.y;
     }
@@ -1507,7 +1508,7 @@ public class AllocationMergesTests {
         Point p1 = new Point(x, y);
         Point p2 = new Point(x+y, x*y);
         Line ln = new Line(p1, p2);
-        if(cond){
+        if (cond) {
             ln.p1 = new Point(x-y, x/y);
             global_escape = ln.p2;
         }
@@ -1517,24 +1518,23 @@ public class AllocationMergesTests {
     @DontCompile
     int testFieldEscapeWithMerge_Intrep(boolean cond1, int x, int y) { return testFieldEscapeWithMerge(cond1, x, y); }
 
-
     @Test
     @IR(counts = { IRNode.ALLOC, ">=3"}, phase= CompilePhase.ITER_GVN_AFTER_EA)
     int testFieldEscapeWithMerge_C2(boolean cond1, int x, int y) { return testFieldEscapeWithMerge(cond1, x, y); }
-    
+
     //--------------------------------------------------------------------------------------------------------------------------------------------
 
     @ForceInline
     int testNestedPhi_FieldLoad(boolean cond1, boolean cond2, int x, int y) {
         Point p1 = new Point(x, y);
         if (cond1) {
-         p1 = new Point(x+30, y+40);
+            p1 = new Point(x+30, y+40);
         }
-    Point p2 = p1;
-    if (cond2) {
-      p2 = new Point(x+50, y+60);
-    }
-    return  p2.x + p2.y;
+        Point p2 = p1;
+        if (cond2) {
+          p2 = new Point(x+50, y+60);
+        }
+        return  p2.x + p2.y;
     }
 
     @Test
@@ -1564,16 +1564,17 @@ public class AllocationMergesTests {
 
         Point p1 = new Point(x, y);
         if (cond1) {
-         p1 = new Point(x, y);
+            p1 = new Point(x, y);
         }
+
         Point p2 = p1;
         if (cond2) {
-         p2 = new Point(x, y);
+            p2 = new Point(x, y);
         }
 
         Point p3 = p2;
         if (cond1 && cond2) {
-         p3 = new Point(x, y);
+            p3 = new Point(x, y);
         }
         return  p3.x + p3.y;
     }
@@ -1594,10 +1595,10 @@ public class AllocationMergesTests {
         Point p1 = new Point(x, y);
         Point p2 = p1;
         if (cond1)
-           p1 = new Point(x, y);
+            p1 = new Point(x, y);
 
         if (cond2)
-          p2 = p1;
+            p2 = p1;
 
        return p2.x;
     }
@@ -1617,10 +1618,10 @@ public class AllocationMergesTests {
         Point p1 = new Point(x, y);
         Point p2 = p1;
         try {
-          if (cond1)
+            if (cond1)
             p1 = new Point(x, y);
-          if (cond2)
-           p2 = p1;
+            if (cond2)
+                p2 = p1;
         } catch (Exception e) {
             p2 = new Point (x, y);
         } 
@@ -1648,9 +1649,9 @@ public class AllocationMergesTests {
           p2 = new Point(x, y);
 
         try {
-          if (cond1 && cond2)
-               throw new Exception();
-        }catch (Exception e) {}
+            if (cond1 && cond2)
+                throw new Exception();
+        } catch (Exception e) {}
 
         return p2.getX();
     }
@@ -1669,10 +1670,10 @@ public class AllocationMergesTests {
     int testNestedPhiPolymorphic(boolean cond1, boolean cond2, int x, int l) {
         Shape obj1 = new Square(l);
         if (cond1)
-          obj1 = new Circle(l);
+            obj1 = new Circle(l);
         Shape obj2 = obj1;
         if (cond2)
-          obj2 = new Circle(x + l/5);
+            obj2 = new Circle(x + l/5);
         return obj2.l;
     }
 
@@ -1690,12 +1691,12 @@ public class AllocationMergesTests {
     int testNestedPhiWithTrap(boolean cond1, boolean cond2, int x, int y) {
         Point p1 = new Point(x, y);
         if (cond1)
-           p1 = new Point(x, y);
+            p1 = new Point(x, y);
 
         Point p2 = p1;
         dummy();
         if (cond2)
-          p2 = new Point(x, y);
+            p2 = new Point(x, y);
 
         return p2.x;
     }
@@ -1714,12 +1715,12 @@ public class AllocationMergesTests {
     public int testNestedPhiWithLamda(boolean cond1, boolean cond2, int x, int y) {
         Point1 p1 = new Point1(x, y);
         if (cond1)
-          p1 = new Point1(x, y);
+            p1 = new Point1(x, y);
 
         Point1 p2 = p1;
         PointSupplier ps = () -> (cond2? (new Point1(x, y)) : (new Point1(x+70, y+80)));
         if (cond2)
-          p2 = ps.getPoint();
+            p2 = ps.getPoint();
         return p2.x;
     }
 
@@ -1780,10 +1781,10 @@ public class AllocationMergesTests {
         }
 
         int getX() {
-          return x;
+            return x;
         }
     }
-   
+
    class Line {
        Point p1, p2;
        Line(Point p1, Point p2) {
@@ -1795,7 +1796,7 @@ public class AllocationMergesTests {
     interface PointSupplier {
         Point1 getPoint();
     }
-   
+
    class Point1 implements PointSupplier {
        int x, y;
        Point1(int x, int y) {
@@ -1914,11 +1915,11 @@ public class AllocationMergesTests {
     class TestThread extends Thread {
         private static Object syncObject = new Object();
         Point   p;
-    
+
         TestThread(Point p) {
             this.p = p;
         }
-        
+
         public void run() {
             try {
                 synchronized(syncObject) {

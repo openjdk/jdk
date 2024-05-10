@@ -51,7 +51,7 @@ ConnectionGraph::ConnectionGraph(Compile * C, PhaseIterGVN *igvn, int invocation
   // pushed to the ConnectionGraph. The code below bumps the initial capacity of
   // _nodes by 10% to account for these additional nodes. If capacity is exceeded
   // the array will be reallocated.
-  _nodes(C->comp_arena(), C->do_reduce_allocation_merges() ? C->unique()*1.30 : C->unique(), C->unique(), nullptr),
+  _nodes(C->comp_arena(), C->do_reduce_allocation_merges() ? C->unique()*1.10 : C->unique(), C->unique(), nullptr),
   _in_worklist(C->comp_arena()),
   _next_pidx(0),
   _collecting(true),
@@ -562,9 +562,9 @@ bool ConnectionGraph::can_reduce_check_users(Node* n, uint nesting) const {
         return false;
       } else {
         if (!can_reduce_check_users(use->as_Phi(), nesting+1)) {
-          NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Can NOT reduce nested Phi %d ", use->_idx);)          
+          NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Can NOT reduce nested Phi %d ", use->_idx);)
           return false;
-	      } else {
+        } else {
           NOT_PRODUCT(if (TraceReduceAllocationMerges)  tty->print_cr("Can reduce nested Phi %d ", use->_idx);)
        }
       }
@@ -1277,7 +1277,7 @@ void ConnectionGraph::reduce_phi(PhiNode* ophi, GrowableArray<Node *>  &alloc_wo
   }
   // make sure to process child phi nodes before parent phi nodes in nested phi scenario
   for (uint i=0; i<nested_phis.size(); i++) {
-    Node *nested_phi = nested_phis.at(i);	  
+    Node *nested_phi = nested_phis.at(i);
     reduce_phi(nested_phi->as_Phi(), alloc_worklist, memnode_worklist, reducible_merges);
   }
 

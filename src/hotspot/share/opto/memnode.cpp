@@ -1548,7 +1548,7 @@ static Node* get_region_to_split_through(Node *base, Node *mem) {
   bool base_is_phi = (base != nullptr) && base->is_Phi();
   if (!base && !base->is_Phi()) {
     return nullptr;
-  }  
+  }
   // Select Region to split through.
   Node* region = nullptr;
   if (!mem->is_Phi()) {
@@ -1607,10 +1607,10 @@ bool LoadNode::can_split_through_phi_base(PhaseGVN* phase, bool nested) {
   return true;
 }
 
-// Pretend that optimization has happend on load fields and return the optimizaed load node 
+// Pretend that optimization has happend on load fields and return the optimizaed load node
 // return nullptr if optimization is impossible
 Node *LoadNode::get_mem_node_for_nested_phi_load_after_opt(PhaseGVN* phase, Node *basephi, Node* base_parentphi) {
-  
+
   Node* mem        = in(Memory);
   Node *address    = in(Address);
   assert(basephi != nullptr && basephi->is_Phi(), "sanity");
@@ -1623,7 +1623,7 @@ Node *LoadNode::get_mem_node_for_nested_phi_load_after_opt(PhaseGVN* phase, Node
       return nullptr;
     }
   }
- 
+
   Compile* C = phase->C;
   for (uint i = 1; i < region->req(); i++) {
     Node* in = region->in(i);
@@ -3536,7 +3536,7 @@ Node *StoreNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       }
     }
   }
-  
+
 #ifdef VM_LITTLE_ENDIAN
   if (MergeStores && UseUnalignedAccesses) {
     if (phase->C->post_loop_opts_phase()) {
