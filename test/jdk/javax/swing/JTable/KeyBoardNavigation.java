@@ -177,18 +177,19 @@ public class KeyBoardNavigation {
                 Instructions to Test:
                 1. Refer the below keyboard navigation specs
                  (referenced from bug report 4112270).
-                2. Check all combinations of navigational keys in all four modes
-                  shift and control verifying each change to the selection against
-                  the spec. If it does, press "pass", otherwise press "fail".
+                2. Check all combinations of navigational keys mentioned below
+                 and verifying each key combinations against the spec defined.
+                 If it does, press "pass", otherwise press "fail".
 
                 """;
 
         INSTRUCTIONS += getOSSpecificInstructions();
         PassFailJFrame.builder()
                 .instructions(INSTRUCTIONS)
-                .rows(11)
+                .rows(30)
                 .columns(50)
                 .testUI(KeyBoardNavigation::initTest)
+                .testTimeOut(10000)
                 .build()
                 .awaitAndCheck();
     }
