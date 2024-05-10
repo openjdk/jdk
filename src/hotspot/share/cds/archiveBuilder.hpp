@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,7 +91,7 @@ const int SharedSpaceObjectAlignment = KlassAlignmentInBytes;
 //
 class ArchiveBuilder : public StackObj {
 protected:
-  DumpRegion* _current_dump_space;
+  DumpRegion* _current_dump_region;
   address _buffer_bottom;                      // for writing the contents of rw/ro regions
   address _last_verified_top;
   int _num_dump_regions_used;
@@ -114,7 +114,7 @@ protected:
 
   intx _buffer_to_requested_delta;
 
-  DumpRegion* current_dump_space() const {  return _current_dump_space;  }
+  DumpRegion* current_dump_region() const {  return _current_dump_region;  }
 
 public:
   enum FollowMode {
@@ -126,15 +126,18 @@ private:
     uintx _ptrmap_start;     // The bit-offset of the start of this object (inclusive)
     uintx _ptrmap_end;       // The bit-offset of the end   of this object (exclusive)
     bool _read_only;
+    bool _has_embedded_pointer;
     FollowMode _follow_mode;
     int _size_in_bytes;
+    int _id; // Each object has a unique serial ID, starting from zero. The ID is assigned
+             // when the object is added into _source_objs.
     MetaspaceObj::Type _msotype;
     address _source_addr;    // The source object to be copied.
     address _buffered_addr;  // The copy of this object insider the buffer.
   public:
     SourceObjInfo(MetaspaceClosure::Ref* ref, bool read_only, FollowMode follow_mode) :
-      _ptrmap_start(0), _ptrmap_end(0), _read_only(read_only), _follow_mode(follow_mode),
-      _size_in_bytes(ref->size() * BytesPerWord), _msotype(ref->msotype()),
+      _ptrmap_start(0), _ptrmap_end(0), _read_only(read_only), _has_embedded_pointer(false), _follow_mode(follow_mode),
+      _size_in_bytes(ref->size() * BytesPerWord), _id(0), _msotype(ref->msotype()),
       _source_addr(ref->obj()) {
       if (follow_mode == point_to_it) {
         _buffered_addr = ref->obj();
@@ -164,7 +167,11 @@ private:
     uintx ptrmap_start()  const    { return _ptrmap_start; } // inclusive
     uintx ptrmap_end()    const    { return _ptrmap_end;   } // exclusive
     bool read_only()      const    { return _read_only;    }
+    bool has_embedded_pointer() const { return _has_embedded_pointer; }
+    void set_has_embedded_pointer()   { _has_embedded_pointer = true; }
     int size_in_bytes()   const    { return _size_in_bytes; }
+    int id()              const    { return _id; }
+    void set_id(int i)             { _id = i; }
     address source_addr() const    { return _source_addr; }
     address buffered_addr() const  {
       if (_follow_mode != set_to_null) {
@@ -204,7 +211,14 @@ private:
 
   DumpRegion _rw_region;
   DumpRegion _ro_region;
-  CHeapBitMap _ptrmap;    // bitmap used by ArchivePtrMarker
+
+  // Combined bitmap to track pointers in both RW and RO regions. This is updated
+  // as objects are copied into RW and RO.
+  CHeapBitMap _ptrmap;
+
+  // _ptrmap is split into these two bitmaps which are written into the archive.
+  CHeapBitMap _rw_ptrmap;   // marks pointers in the RW region
+  CHeapBitMap _ro_ptrmap;   // marks pointers in the RO region
 
   SourceObjList _rw_src_objs;                 // objs to put in rw region
   SourceObjList _ro_src_objs;                 // objs to put in ro region
@@ -212,6 +226,7 @@ private:
   ResizeableResourceHashtable<address, address, AnyObj::C_HEAP, mtClassShared> _buffered_to_src_table;
   GrowableArray<Klass*>* _klasses;
   GrowableArray<Symbol*>* _symbols;
+  unsigned int _entropy_seed;
 
   // statistics
   DumpAllocStats _alloc_stats;
@@ -237,7 +252,6 @@ public:
   };
 
 private:
-  bool is_dumping_full_module_graph();
   FollowMode get_follow_mode(MetaspaceClosure::Ref *ref);
 
   void iterate_sorted_roots(MetaspaceClosure* it);
@@ -264,17 +278,17 @@ protected:
 
   size_t estimate_archive_size();
 
-  void start_dump_space(DumpRegion* next);
+  void start_dump_region(DumpRegion* next);
   void verify_estimate_size(size_t estimate, const char* which);
 
 public:
   address reserve_buffer();
 
-  address buffer_bottom()                    const { return _buffer_bottom;                       }
-  address buffer_top()                       const { return (address)current_dump_space()->top(); }
-  address requested_static_archive_bottom()  const { return  _requested_static_archive_bottom;    }
-  address mapped_static_archive_bottom()     const { return  _mapped_static_archive_bottom;       }
-  intx buffer_to_requested_delta()           const { return _buffer_to_requested_delta;           }
+  address buffer_bottom()                    const { return _buffer_bottom;                        }
+  address buffer_top()                       const { return (address)current_dump_region()->top(); }
+  address requested_static_archive_bottom()  const { return  _requested_static_archive_bottom;     }
+  address mapped_static_archive_bottom()     const { return  _mapped_static_archive_bottom;        }
+  intx buffer_to_requested_delta()           const { return _buffer_to_requested_delta;            }
 
   bool is_in_buffer_space(address p) const {
     return (buffer_bottom() <= p && p < buffer_top());
@@ -335,6 +349,7 @@ public:
   ArchiveBuilder();
   ~ArchiveBuilder();
 
+  int entropy();
   void gather_klasses_and_symbols();
   void gather_source_objs();
   bool gather_klass_and_symbol(MetaspaceClosure::Ref* ref, bool read_only);
@@ -376,6 +391,8 @@ public:
 
   char* ro_strdup(const char* s);
 
+  static int compare_src_objs(SourceObjInfo** a, SourceObjInfo** b);
+  void sort_metadata_objs();
   void dump_rw_metadata();
   void dump_ro_metadata();
   void relocate_metaspaceobj_embedded_pointers();

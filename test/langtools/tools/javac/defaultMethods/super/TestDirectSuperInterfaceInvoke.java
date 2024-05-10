@@ -25,21 +25,17 @@
  * @test
  * @bug 8027281
  * @summary As per JVMS 4.9.2, invokespecial can only refer to direct superinterfaces
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
+ * @enablePreview
+ * @modules java.base/jdk.internal.classfile.impl
  * @compile TestDirectSuperInterfaceInvoke.java
  * @run main TestDirectSuperInterfaceInvoke
  */
 
 import java.io.File;
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.CodeAttribute;
-import jdk.internal.classfile.constantpool.MemberRefEntry;
-import jdk.internal.classfile.instruction.InvokeInstruction;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.CodeAttribute;
+import java.lang.classfile.constantpool.MemberRefEntry;
+import java.lang.classfile.instruction.InvokeInstruction;
 
 interface BaseInterface {
     public default int testedMethod(){ return 1; }
@@ -88,7 +84,7 @@ public class TestDirectSuperInterfaceInvoke {
         String workDir = System.getProperty("test.classes");
         File file = new File(workDir, classFile);
         try {
-            final ClassModel cf = Classfile.of().parse(file.toPath());
+            final ClassModel cf = ClassFile.of().parse(file.toPath());
             for (MethodModel m : cf.methods()) {
                 CodeAttribute codeAttr = m.findAttribute(Attributes.CODE).orElseThrow();
                 for (CodeElement ce : codeAttr.elementList()) {

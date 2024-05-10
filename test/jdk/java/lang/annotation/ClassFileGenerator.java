@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,18 +22,39 @@
  */
 
 /*
- * Create class file using ASM, slightly modified the ASMifier output
+ * Create class file using Class-File API, slightly modified the ASMifier output
  */
-
-
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import jdk.internal.org.objectweb.asm.*;
+import java.io.Serializable;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.classfile.Annotation;
+import java.lang.classfile.AnnotationElement;
+import java.lang.classfile.AnnotationValue;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.attribute.AnnotationDefaultAttribute;
+import java.lang.classfile.attribute.ExceptionsAttribute;
+import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.MethodTypeDesc;
+import java.lang.reflect.AccessFlag;
 
+import static java.lang.classfile.ClassFile.ACC_ABSTRACT;
+import static java.lang.classfile.ClassFile.ACC_PUBLIC;
+import static java.lang.constant.ConstantDescs.CD_Exception;
+import static java.lang.constant.ConstantDescs.CD_Object;
+import static java.lang.constant.ConstantDescs.CD_int;
+import static java.lang.constant.ConstantDescs.MTD_void;
+import static java.lang.reflect.AccessFlag.ABSTRACT;
+import static java.lang.reflect.AccessFlag.INTERFACE;
+import static java.lang.reflect.AccessFlag.PUBLIC;
 
 public class ClassFileGenerator {
+    private static final ClassDesc CD_Annotation = java.lang.annotation.Annotation.class.describeConstable().orElseThrow();
+    private static final ClassDesc CD_Retention = Retention.class.describeConstable().orElseThrow();
 
     public static void main(String... args) throws Exception {
         classFileWriter("AnnotationWithVoidReturn.class", AnnotationWithVoidReturnDump.dump());
@@ -63,35 +84,19 @@ public class ClassFileGenerator {
 
     */
 
-    private static class AnnotationWithVoidReturnDump implements Opcodes {
-        public static byte[] dump() throws Exception {
-            ClassWriter cw = new ClassWriter(0);
-            MethodVisitor mv;
-            AnnotationVisitor av0;
-
-            cw.visit(52, ACC_PUBLIC + ACC_ANNOTATION + ACC_ABSTRACT + ACC_INTERFACE,
-                    "AnnotationWithVoidReturn", null,
-                    "java/lang/Object", new String[]{"java/lang/annotation/Annotation"});
-
-            {
-                av0 = cw.visitAnnotation("Ljava/lang/annotation/Retention;", true);
-                av0.visitEnum("value", "Ljava/lang/annotation/RetentionPolicy;",
-                        "RUNTIME");
-                av0.visitEnd();
-            }
-            {
-                mv = cw.visitMethod(ACC_PUBLIC + ACC_ABSTRACT, "m", "()V", null, null);
-                mv.visitEnd();
-            }
-            {
-                av0 = mv.visitAnnotationDefault();
-                av0.visit(null, new Integer(1));
-                av0.visitEnd();
-            }
-            cw.visitEnd();
-
-            return cw.toByteArray();
-
+    private static class AnnotationWithVoidReturnDump {
+        public static byte[] dump() {
+            return ClassFile.of().build(ClassDesc.of("AnnotationWithVoidReturn"), clb -> {
+                clb.withSuperclass(CD_Object);
+                clb.withInterfaceSymbols(CD_Annotation);
+                clb.withFlags(PUBLIC, AccessFlag.ANNOTATION, ABSTRACT, AccessFlag.INTERFACE);
+                clb.with(RuntimeVisibleAnnotationsAttribute.of(
+                        Annotation.of(CD_Retention, AnnotationElement.of("value",
+                                AnnotationValue.of(RetentionPolicy.RUNTIME)))
+                ));
+                clb.withMethod("m", MTD_void, ACC_PUBLIC | ACC_ABSTRACT,
+                        mb -> mb.with(AnnotationDefaultAttribute.of(AnnotationValue.ofInt(1))));
+            });
         }
     }
 
@@ -104,38 +109,19 @@ public class ClassFileGenerator {
 
     */
 
-    private static class AnnotationWithParameterDump implements Opcodes {
-        public static byte[] dump() throws Exception {
-
-            ClassWriter cw = new ClassWriter(0);
-            MethodVisitor mv;
-            AnnotationVisitor av0;
-
-            cw.visit(52, ACC_PUBLIC + ACC_ANNOTATION + ACC_ABSTRACT + ACC_INTERFACE,
-                    "AnnotationWithParameter", null,
-                    "java/lang/Object", new String[]{"java/lang/annotation/Annotation"});
-
-            {
-                av0 = cw.visitAnnotation("Ljava/lang/annotation/Retention;", true);
-                av0.visitEnum("value", "Ljava/lang/annotation/RetentionPolicy;",
-                        "RUNTIME");
-                av0.visitEnd();
-            }
-            {
-                mv = cw.visitMethod(ACC_PUBLIC + ACC_ABSTRACT,
-                        "badValue",
-                        "(I)I", // Bad method with a parameter
-                        null, null);
-                mv.visitEnd();
-            }
-            {
-                av0 = mv.visitAnnotationDefault();
-                av0.visit(null, new Integer(-1));
-                av0.visitEnd();
-            }
-            cw.visitEnd();
-
-            return cw.toByteArray();
+    private static class AnnotationWithParameterDump {
+        public static byte[] dump() {
+            return ClassFile.of().build(ClassDesc.of("AnnotationWithParameter"), clb -> {
+                clb.withSuperclass(CD_Object);
+                clb.withInterfaceSymbols(CD_Annotation);
+                clb.withFlags(PUBLIC, AccessFlag.ANNOTATION, ABSTRACT, AccessFlag.INTERFACE);
+                clb.with(RuntimeVisibleAnnotationsAttribute.of(
+                        Annotation.of(CD_Retention, AnnotationElement.of("value",
+                                AnnotationValue.of(RetentionPolicy.RUNTIME)))
+                ));
+                clb.withMethod("m", MethodTypeDesc.of(CD_int, CD_int), ACC_PUBLIC | ACC_ABSTRACT,
+                        mb -> mb.with(AnnotationDefaultAttribute.of(AnnotationValue.ofInt(-1))));
+            });
         }
     }
 
@@ -148,35 +134,19 @@ public class ClassFileGenerator {
 
     */
 
-    private static class AnnotationWithExtraInterfaceDump implements Opcodes {
-        public static byte[] dump() throws Exception {
-            ClassWriter cw = new ClassWriter(0);
-            MethodVisitor mv;
-            AnnotationVisitor av0;
-
-            cw.visit(52, ACC_PUBLIC + ACC_ANNOTATION + ACC_ABSTRACT + ACC_INTERFACE,
-                    "AnnotationWithExtraInterface", null,
-                    "java/lang/Object", new String[]{"java/lang/annotation/Annotation",
-                                                     "java/io/Serializable"});
-
-            {
-                av0 = cw.visitAnnotation("Ljava/lang/annotation/Retention;", true);
-                av0.visitEnum("value", "Ljava/lang/annotation/RetentionPolicy;",
-                        "RUNTIME");
-                av0.visitEnd();
-            }
-            {
-                mv = cw.visitMethod(ACC_PUBLIC + ACC_ABSTRACT, "m", "()I", null, null);
-                mv.visitEnd();
-            }
-            {
-                av0 = mv.visitAnnotationDefault();
-                av0.visit(null, new Integer(1));
-                av0.visitEnd();
-            }
-            cw.visitEnd();
-
-            return cw.toByteArray();
+    private static class AnnotationWithExtraInterfaceDump {
+        public static byte[] dump() {
+            return ClassFile.of().build(ClassDesc.of("AnnotationWithExtraInterface"), clb -> {
+                clb.withSuperclass(CD_Object);
+                clb.withInterfaceSymbols(CD_Annotation, Serializable.class.describeConstable().orElseThrow());
+                clb.withFlags(PUBLIC, AccessFlag.ANNOTATION, ABSTRACT, AccessFlag.INTERFACE);
+                clb.with(RuntimeVisibleAnnotationsAttribute.of(
+                        Annotation.of(CD_Retention, AnnotationElement.of("value",
+                                AnnotationValue.of(RetentionPolicy.RUNTIME)))
+                ));
+                clb.withMethod("m", MethodTypeDesc.of(CD_int), ACC_PUBLIC | ACC_ABSTRACT,
+                        mb -> mb.with(AnnotationDefaultAttribute.of(AnnotationValue.ofInt(1))));
+            });
         }
     }
 
@@ -189,35 +159,21 @@ public class ClassFileGenerator {
 
     */
 
-    private static class AnnotationWithExceptionDump implements Opcodes {
-        public static byte[] dump() throws Exception {
-            ClassWriter cw = new ClassWriter(0);
-            MethodVisitor mv;
-            AnnotationVisitor av0;
-
-            cw.visit(52, ACC_PUBLIC + ACC_ANNOTATION + ACC_ABSTRACT + ACC_INTERFACE,
-                    "AnnotationWithException", null,
-                    "java/lang/Object", new String[]{"java/lang/annotation/Annotation"});
-
-            {
-                av0 = cw.visitAnnotation("Ljava/lang/annotation/Retention;", true);
-                av0.visitEnum("value", "Ljava/lang/annotation/RetentionPolicy;",
-                        "RUNTIME");
-                av0.visitEnd();
-            }
-            {
-                mv = cw.visitMethod(ACC_PUBLIC + ACC_ABSTRACT, "m", "()I", null,
-                                    new String[] {"java/lang/Exception"});
-                mv.visitEnd();
-            }
-            {
-                av0 = mv.visitAnnotationDefault();
-                av0.visit(null, new Integer(1));
-                av0.visitEnd();
-            }
-            cw.visitEnd();
-
-            return cw.toByteArray();
+    private static class AnnotationWithExceptionDump {
+        public static byte[] dump() {
+            return ClassFile.of().build(ClassDesc.of("AnnotationWithException"), clb -> {
+                clb.withSuperclass(CD_Object);
+                clb.withInterfaceSymbols(CD_Annotation);
+                clb.withFlags(PUBLIC, AccessFlag.ANNOTATION, ABSTRACT, AccessFlag.INTERFACE);
+                clb.with(RuntimeVisibleAnnotationsAttribute.of(
+                        Annotation.of(CD_Retention, AnnotationElement.of("value",
+                                AnnotationValue.of(RetentionPolicy.RUNTIME)))
+                ));
+                clb.withMethod("m", MethodTypeDesc.of(CD_int), ACC_PUBLIC | ACC_ABSTRACT, mb -> {
+                    mb.with(AnnotationDefaultAttribute.of(AnnotationValue.ofInt(1)));
+                    mb.with(ExceptionsAttribute.ofSymbols(CD_Exception));
+                });
+            });
         }
     }
 
@@ -230,34 +186,19 @@ public class ClassFileGenerator {
 
     */
 
-    private static class AnnotationWithHashCodeDump implements Opcodes {
-        public static byte[] dump() throws Exception {
-            ClassWriter cw = new ClassWriter(0);
-            MethodVisitor mv;
-            AnnotationVisitor av0;
-
-            cw.visit(52, ACC_PUBLIC + ACC_ANNOTATION + ACC_ABSTRACT + ACC_INTERFACE,
-                    "AnnotationWithHashCode", null,
-                    "java/lang/Object", new String[]{"java/lang/annotation/Annotation"});
-
-            {
-                av0 = cw.visitAnnotation("Ljava/lang/annotation/Retention;", true);
-                av0.visitEnum("value", "Ljava/lang/annotation/RetentionPolicy;",
-                        "RUNTIME");
-                av0.visitEnd();
-            }
-            {
-                mv = cw.visitMethod(ACC_PUBLIC + ACC_ABSTRACT, "hashCode", "()I", null, null);
-                mv.visitEnd();
-            }
-            {
-                av0 = mv.visitAnnotationDefault();
-                av0.visit(null, new Integer(1));
-                av0.visitEnd();
-            }
-            cw.visitEnd();
-
-            return cw.toByteArray();
+    private static class AnnotationWithHashCodeDump {
+        public static byte[] dump() {
+            return ClassFile.of().build(ClassDesc.of("AnnotationWithHashCode"), clb -> {
+                clb.withSuperclass(CD_Object);
+                clb.withInterfaceSymbols(CD_Annotation);
+                clb.withFlags(PUBLIC, AccessFlag.ANNOTATION, ABSTRACT, AccessFlag.INTERFACE);
+                clb.with(RuntimeVisibleAnnotationsAttribute.of(
+                        Annotation.of(CD_Retention, AnnotationElement.of("value",
+                                AnnotationValue.of(RetentionPolicy.RUNTIME)))
+                ));
+                clb.withMethod("hashCode", MethodTypeDesc.of(CD_int), ACC_PUBLIC | ACC_ABSTRACT,
+                        mb -> mb.with(AnnotationDefaultAttribute.of(AnnotationValue.ofInt(1))));
+            });
         }
     }
 
@@ -271,47 +212,26 @@ public class ClassFileGenerator {
 
     */
 
-    private static class AnnotationWithDefaultMemberDump implements Opcodes {
+    private static class AnnotationWithDefaultMemberDump {
         public static byte[] dump() throws Exception {
-            ClassWriter cw = new ClassWriter(0);
-            MethodVisitor mv, dv;
-            AnnotationVisitor av0;
-
-            cw.visit(52, ACC_PUBLIC + ACC_ANNOTATION + ACC_ABSTRACT + ACC_INTERFACE,
-                    "AnnotationWithDefaultMember", null,
-                    "java/lang/Object", new String[]{"java/lang/annotation/Annotation"});
-
-            {
-                av0 = cw.visitAnnotation("Ljava/lang/annotation/Retention;", true);
-                av0.visitEnum("value", "Ljava/lang/annotation/RetentionPolicy;",
-                        "RUNTIME");
-                av0.visitEnd();
-            }
-            {
-                mv = cw.visitMethod(ACC_PUBLIC + ACC_ABSTRACT, "m", "()I", null, null);
-                mv.visitEnd();
-            }
-            {
-                av0 = mv.visitAnnotationDefault();
-                av0.visit(null, new Integer(1));
-                av0.visitEnd();
-            }
-            {
-                dv = cw.visitMethod(ACC_PUBLIC, "d", "()I", null, null);
-                dv.visitMaxs(1, 1);
-                dv.visitCode();
-                dv.visitInsn(Opcodes.ICONST_2);
-                dv.visitInsn(Opcodes.IRETURN);
-                dv.visitEnd();
-            }
-            {
-                av0 = dv.visitAnnotationDefault();
-                av0.visit(null, new Integer(2));
-                av0.visitEnd();
-            }
-            cw.visitEnd();
-
-            return cw.toByteArray();
+            return ClassFile.of().build(ClassDesc.of("AnnotationWithDefaultMember"), clb -> {
+                clb.withSuperclass(CD_Object);
+                clb.withInterfaceSymbols(CD_Annotation);
+                clb.withFlags(PUBLIC, AccessFlag.ANNOTATION, ABSTRACT, AccessFlag.INTERFACE);
+                clb.with(RuntimeVisibleAnnotationsAttribute.of(
+                        Annotation.of(CD_Retention, AnnotationElement.of("value",
+                                AnnotationValue.of(RetentionPolicy.RUNTIME)))
+                ));
+                clb.withMethod("m", MethodTypeDesc.of(CD_int), ACC_PUBLIC | ACC_ABSTRACT,
+                        mb -> mb.with(AnnotationDefaultAttribute.of(AnnotationValue.ofInt(1))));
+                clb.withMethod("d", MethodTypeDesc.of(CD_int), ACC_PUBLIC, mb -> {
+                    mb.with(AnnotationDefaultAttribute.of(AnnotationValue.ofInt(2)));
+                    mb.withCode(cob -> {
+                        cob.iconst_2();
+                        cob.ireturn();
+                    });
+                });
+            });
         }
     }
 
@@ -324,34 +244,19 @@ public class ClassFileGenerator {
 
     */
 
-    private static class AnnotationWithoutAnnotationAccessModifierDump implements Opcodes {
-        public static byte[] dump() throws Exception {
-            ClassWriter cw = new ClassWriter(0);
-            MethodVisitor mv;
-            AnnotationVisitor av0;
-
-            cw.visit(52, ACC_PUBLIC + /* ACC_ANNOTATION +*/ ACC_ABSTRACT + ACC_INTERFACE,
-                    "AnnotationWithoutAnnotationAccessModifier", null,
-                    "java/lang/Object", new String[]{"java/lang/annotation/Annotation"});
-
-            {
-                av0 = cw.visitAnnotation("Ljava/lang/annotation/Retention;", true);
-                av0.visitEnum("value", "Ljava/lang/annotation/RetentionPolicy;",
-                        "RUNTIME");
-                av0.visitEnd();
-            }
-            {
-                mv = cw.visitMethod(ACC_PUBLIC + ACC_ABSTRACT, "m", "()I", null, null);
-                mv.visitEnd();
-            }
-            {
-                av0 = mv.visitAnnotationDefault();
-                av0.visit(null, new Integer(1));
-                av0.visitEnd();
-            }
-            cw.visitEnd();
-
-            return cw.toByteArray();
+    private static class AnnotationWithoutAnnotationAccessModifierDump {
+        public static byte[] dump() {
+            return ClassFile.of().build(ClassDesc.of("AnnotationWithoutAnnotationAccessModifier"), clb -> {
+                clb.withSuperclass(CD_Object);
+                clb.withInterfaceSymbols(CD_Annotation);
+                clb.withFlags(PUBLIC, /*AccessFlag.ANNOTATION,*/ ABSTRACT, AccessFlag.INTERFACE);
+                clb.with(RuntimeVisibleAnnotationsAttribute.of(
+                        Annotation.of(CD_Retention, AnnotationElement.of("value",
+                                AnnotationValue.of(RetentionPolicy.RUNTIME)))
+                ));
+                clb.withMethod("m", MethodTypeDesc.of(CD_int), ACC_PUBLIC | ACC_ABSTRACT,
+                        mb -> mb.with(AnnotationDefaultAttribute.of(AnnotationValue.ofInt(1))));
+            });
         }
     }
 
@@ -365,24 +270,16 @@ public class ClassFileGenerator {
 
     */
 
-    private static class HolderXDump implements Opcodes {
-        public static byte[] dump() throws Exception {
-            ClassWriter cw = new ClassWriter(0);
-
-            cw.visit(52, ACC_PUBLIC + ACC_ABSTRACT + ACC_INTERFACE,
-                    "HolderX", null,
-                    "java/lang/Object", new String[0]);
-
-            {
-                AnnotationVisitor av0;
-                av0 = cw.visitAnnotation("LGoodAnnotation;", true);
-                av0.visitEnd();
-                av0 = cw.visitAnnotation("LAnnotationWithoutAnnotationAccessModifier;", true);
-                av0.visitEnd();
-            }
-            cw.visitEnd();
-
-            return cw.toByteArray();
+    private static class HolderXDump {
+        public static byte[] dump() {
+            return ClassFile.of().build(ClassDesc.of("HolderX"), clb -> {
+                clb.withSuperclass(CD_Object);
+                clb.withFlags(PUBLIC, ABSTRACT, INTERFACE);
+                clb.with(RuntimeVisibleAnnotationsAttribute.of(
+                        Annotation.of(ClassDesc.of("GoodAnnotation")),
+                        Annotation.of(ClassDesc.of("ClassFileGenerator$AnnotationWithoutAnnotationAccessModifier"))
+                ));
+            });
         }
     }
 }

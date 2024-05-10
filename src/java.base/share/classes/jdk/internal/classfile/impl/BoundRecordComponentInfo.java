@@ -26,10 +26,10 @@ package jdk.internal.classfile.impl;
 
 import java.util.List;
 
-import jdk.internal.classfile.Attribute;
-import jdk.internal.classfile.ClassReader;
-import jdk.internal.classfile.attribute.RecordComponentInfo;
-import jdk.internal.classfile.constantpool.Utf8Entry;
+import java.lang.classfile.Attribute;
+import java.lang.classfile.ClassReader;
+import java.lang.classfile.attribute.RecordComponentInfo;
+import java.lang.classfile.constantpool.Utf8Entry;
 
 public final class BoundRecordComponentInfo
         implements RecordComponentInfo {

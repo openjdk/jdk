@@ -26,17 +26,13 @@
  * @bug 8226585 8250768
  * @summary Verify behavior w.r.t. preview feature API errors and warnings
  * @library /tools/lib /tools/javac/lib
+ * @enablePreview
  * @modules
  *      java.base/jdk.internal.javac
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.file
  *      jdk.compiler/com.sun.tools.javac.main
  *      jdk.compiler/com.sun.tools.javac.util
- *      java.base/jdk.internal.classfile
- *      java.base/jdk.internal.classfile.attribute
- *      java.base/jdk.internal.classfile.constantpool
- *      java.base/jdk.internal.classfile.instruction
- *      java.base/jdk.internal.classfile.components
  *      java.base/jdk.internal.classfile.impl
  * @build toolbox.ToolBox toolbox.JavacTask
  * @build combo.ComboTestHelper
@@ -60,8 +56,8 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 import javax.tools.Diagnostic;
 
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.Classfile;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.ClassFile;
 import java.io.FileWriter;
 import java.io.UncheckedIOException;
 import java.io.Writer;
@@ -411,7 +407,7 @@ public class PreviewErrors extends ComboInstance<PreviewErrors> {
                             throw new IllegalStateException("Cannot find Test.class");
                         }
                         try (InputStream input = testClass.openInputStream()) {
-                            cf = Classfile.of().parse(input.readAllBytes());
+                            cf = ClassFile.of().parse(input.readAllBytes());
                         }
                     } catch (IOException ex) {
                         throw new IllegalStateException(ex);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
 // Mutexes used in the VM.
 
 extern Mutex*   Patching_lock;                   // a lock used to guard code patching of compiled code
-extern Mutex*   CompiledMethod_lock;             // a lock used to guard a compiled method and OSR queues
+extern Mutex*   NMethodState_lock;               // a lock used to guard a compiled method state
 extern Monitor* SystemDictionary_lock;           // a lock on the system dictionary
 extern Mutex*   InvokeMethodTypeTable_lock;
 extern Monitor* InvokeMethodIntrinsicTable_lock;
@@ -83,7 +83,6 @@ extern Monitor* Compilation_lock;                // a lock used to pause compila
 extern Mutex*   CompileTaskAlloc_lock;           // a lock held when CompileTasks are allocated
 extern Mutex*   CompileStatistics_lock;          // a lock held when updating compilation statistics
 extern Mutex*   DirectivesStack_lock;            // a lock held when mutating the dirstack and ref counting directives
-extern Mutex*   MultiArray_lock;                 // a lock used to guard allocation of multi-dim arrays
 extern Monitor* Terminator_lock;                 // a lock used to guard termination of the vm
 extern Monitor* InitCompleted_lock;              // a lock used to signal threads waiting on init completed
 extern Monitor* BeforeExit_lock;                 // a lock used to guard cleanups and shutdown hooks
@@ -97,7 +96,6 @@ extern Mutex*   FullGCALot_lock;                 // a lock to make FullGCALot MT
 extern Mutex*   RawMonitor_lock;
 extern Mutex*   PerfDataMemAlloc_lock;           // a lock on the allocator for PerfData memory for performance data
 extern Mutex*   PerfDataManager_lock;            // a long on access to PerfDataManager resources
-extern Mutex*   OopMapCacheAlloc_lock;           // protects allocation of oop_map caches
 
 extern Mutex*   FreeList_lock;                   // protects the free region list during safepoints
 extern Mutex*   OldSets_lock;                    // protects the old region sets
@@ -134,10 +132,6 @@ extern Mutex*   JfrStacktrace_lock;              // used to guard access to the 
 extern Monitor* JfrMsg_lock;                     // protects JFR messaging
 extern Mutex*   JfrBuffer_lock;                  // protects JFR buffer operations
 extern Monitor* JfrThreadSampler_lock;           // used to suspend/resume JFR thread sampler
-#endif
-
-#ifndef SUPPORTS_NATIVE_CX8
-extern Mutex*   UnsafeJlong_lock;                // provides Unsafe atomic updates to jlongs on platforms that don't support cx8
 #endif
 
 extern Mutex*   Metaspace_lock;                  // protects Metaspace virtualspace and chunk expansions
@@ -333,6 +327,23 @@ class MutexUnlocker: StackObj {
     } else {
       _mutex->lock();
     }
+  }
+};
+
+// Instance of a RecursiveLock that may be held through Java heap allocation, which may include calls to Java,
+// and JNI event notification for resource exhaustion for metaspace or heap.
+extern RecursiveMutex* MultiArray_lock;
+
+// RAII locker for a RecursiveMutex.  See comments in mutex.hpp for more information.
+class RecursiveLocker {
+  RecursiveMutex* _lock;
+  Thread*         _thread;
+ public:
+  RecursiveLocker(RecursiveMutex* lock, Thread* current) : _lock(lock), _thread(current) {
+    _lock->lock(_thread);
+  }
+  ~RecursiveLocker() {
+    _lock->unlock(_thread);
   }
 };
 

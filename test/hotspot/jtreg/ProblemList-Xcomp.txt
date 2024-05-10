@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -36,15 +36,19 @@ vmTestbase/vm/mlvm/mixed/stress/regression/b6969574/INDIFY_Test.java 8265295 lin
 
 serviceability/AsyncGetCallTrace/MyPackage/ASGCTBaseTest.java 8303168 linux-all
 
+serviceability/jvmti/vthread/SuspendWithInterruptLock/SuspendWithInterruptLock.java#default 8312064 generic-all
+
 serviceability/sa/ClhsdbInspect.java 8283578 windows-x64
 
 vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2manyDiff_a/TestDescription.java 8308367 windows-x64
 vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2manySame_a/TestDescription.java 8308367 windows-x64
 vmTestbase/vm/mlvm/indy/func/jvmti/redefineClassInTarget/TestDescription.java 8308367 windows-x64
 
-vmTestbase/nsk/jvmti/scenarios/capability/CM03/cm03t001/TestDescription.java 8299493 macosx-x64
+vmTestbase/nsk/jdi/StepRequest/addClassFilter_rt/filter_rt001/TestDescription.java 8043571 generic-all
+vmTestbase/nsk/jdi/StepRequest/addClassFilter_rt/filter_rt003/TestDescription.java 8043571 generic-all
+
+vmTestbase/nsk/jvmti/scenarios/capability/CM03/cm03t001/TestDescription.java 8299493 macosx-x64,windows-x64
+
+vmTestbase/nsk/stress/thread/thread006.java 8321476 linux-all
 
 gc/arguments/TestNewSizeFlags.java 8299116 macosx-aarch64
-compiler/interpreter/TestVerifyStackAfterDeopt.java 8316392 macosx-aarch64
-
-gc/cslocker/TestCSLocker.java 8310480 linux-x64

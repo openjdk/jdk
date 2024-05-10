@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,12 +65,12 @@ class UnixLaunchersAsServices extends ShellCustomAction {
     }
 
     @Override
-    final protected List<String> replacementStringIds() {
-        return List.of(COMMANDS_INSTALL, COMMANDS_UNINSTALL, SCRIPTS);
+    protected List<String> replacementStringIds() {
+        return REPLACEMENT_STRING_IDS;
     }
 
     @Override
-    final protected Map<String, String> createImpl() throws IOException {
+    protected Map<String, String> createImpl() throws IOException {
         Map<String, String> data = new HashMap<>();
 
         if (launchers.isEmpty()) {
@@ -87,11 +87,7 @@ class UnixLaunchersAsServices extends ShellCustomAction {
                     Collectors.joining(" ")));
         };
 
-        try {
-            data.put(SCRIPTS, stringifyTextFile("services_utils.sh"));
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
-        }
+        data.put(SCRIPTS, stringifyTextFile("services_utils.sh"));
 
         data.put(COMMANDS_INSTALL, strigifier.apply("register_services"));
         data.put(COMMANDS_UNINSTALL, strigifier.apply("unregister_services"));
@@ -108,7 +104,7 @@ class UnixLaunchersAsServices extends ShellCustomAction {
         return launchers.isEmpty();
     }
 
-    static abstract class UnixLauncherAsService extends LauncherAsService {
+    abstract static class UnixLauncherAsService extends LauncherAsService {
 
         UnixLauncherAsService(String name, Map<String, Object> mainParams,
                 OverridableResource resource) {

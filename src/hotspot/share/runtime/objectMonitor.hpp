@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,11 +121,7 @@ class ObjectWaiter : public StackObj {
 //     intptr_t. There's no reason to use a 64-bit type for this field
 //     in a 64-bit JVM.
 
-#ifndef OM_CACHE_LINE_SIZE
-// Use DEFAULT_CACHE_LINE_SIZE if not already specified for
-// the current build platform.
 #define OM_CACHE_LINE_SIZE DEFAULT_CACHE_LINE_SIZE
-#endif
 
 class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   friend class ObjectSynchronizer;
@@ -179,7 +175,6 @@ private:
   JavaThread* volatile _succ;       // Heir presumptive thread - used for futile wakeup throttling
   JavaThread* volatile _Responsible;
 
-  volatile int _Spinner;            // for exit->spinner handoff optimization
   volatile int _SpinDuration;
 
   int _contentions;                 // Number of active contentions in enter(). It is used by is_busy()
@@ -299,6 +294,7 @@ private:
   int       contentions() const;
   void      add_to_contentions(int value);
   intx      recursions() const                                         { return _recursions; }
+  void      set_recursions(size_t recursions);
 
   // JVM/TI GetObjectMonitorUsage() needs this:
   ObjectWaiter* first_waiter()                                         { return _WaitSet; }
@@ -333,6 +329,7 @@ private:
     void operator()(JavaThread* current);
   };
  public:
+  bool      enter_for(JavaThread* locking_thread);
   bool      enter(JavaThread* current);
   void      exit(JavaThread* current, bool not_suspended = true);
   void      wait(jlong millis, bool interruptible, TRAPS);
@@ -356,15 +353,19 @@ private:
   void      EnterI(JavaThread* current);
   void      ReenterI(JavaThread* current, ObjectWaiter* current_node);
   void      UnlinkAfterAcquire(JavaThread* current, ObjectWaiter* current_node);
-  int       TryLock(JavaThread* current);
-  int       NotRunnable(JavaThread* current, JavaThread* Owner);
-  int       TrySpin(JavaThread* current);
+
+
+  enum class TryLockResult { Interference = -1, HasOwner = 0, Success = 1 };
+
+  TryLockResult  TryLock(JavaThread* current);
+
+  bool      TrySpin(JavaThread* current);
+  bool      short_fixed_spin(JavaThread* current, int spin_count, bool adapt);
   void      ExitEpilog(JavaThread* current, ObjectWaiter* Wakee);
 
   // Deflation support
   bool      deflate_monitor();
   void      install_displaced_markword_in_object(const oop obj);
-  void      release_object() { _object.release(_oop_storage); }
 };
 
 #endif // SHARE_RUNTIME_OBJECTMONITOR_HPP

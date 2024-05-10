@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import jdk.internal.org.jline.reader.LineReader;
 import jdk.internal.org.jline.reader.LineReaderBuilder;
 import jdk.internal.org.jline.terminal.Terminal;
 import jdk.internal.org.jline.terminal.TerminalBuilder;
+import jdk.internal.org.jline.terminal.TerminalBuilder.SystemOutput;
 
 /**
  * JdkConsole/Provider implementations for jline
@@ -51,7 +52,9 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
     public JdkConsole console(boolean isTTY, Charset charset) {
         try {
             Terminal terminal = TerminalBuilder.builder().encoding(charset)
-                                               .exec(false).build();
+                                               .exec(false)
+                                               .systemOutput(SystemOutput.SysOut)
+                                               .build();
             return new JdkConsoleImpl(terminal);
         } catch (IllegalStateException ise) {
             //cannot create a non-dumb, non-exec terminal,
@@ -67,6 +70,9 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
      * public Console class.
      */
     private static class JdkConsoleImpl implements JdkConsole {
+        private final Terminal terminal;
+        private volatile LineReader jline;
+
         @Override
         public PrintWriter writer() {
             return terminal.writer();
@@ -110,6 +116,8 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
                 return jline.readLine(fmt.formatted(args), '\0').toCharArray();
             } catch (EndOfFileException eofe) {
                 return null;
+            } finally {
+                jline.zeroOut();
             }
         }
 
@@ -127,9 +135,6 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
         public Charset charset() {
             return terminal.encoding();
         }
-
-        private final Terminal terminal;
-        private volatile LineReader jline;
 
         public JdkConsoleImpl(Terminal terminal) {
             this.terminal = terminal;

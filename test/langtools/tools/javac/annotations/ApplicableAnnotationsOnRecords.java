@@ -26,16 +26,12 @@
  * @summary test for com.sun.tools.javac.comp.Check::validateAnnotation, com.sun.tools.javac.code.SymbolMetadata::removeDeclarationMetadata and ::removeFromCompoundList
  * @bug 8241312 8246774
  * @library /tools/lib
+ * @enablePreview
  * @modules jdk.compiler/com.sun.tools.javac.util
- *          java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
  *          java.base/jdk.internal.classfile.impl
  * @run main ApplicableAnnotationsOnRecords
  */
-import jdk.internal.classfile.*;
+import java.lang.classfile.*;
 import com.sun.tools.javac.util.Assert;
 import java.lang.annotation.*;
 import java.io.InputStream;
@@ -60,7 +56,7 @@ public record ApplicableAnnotationsOnRecords(@FieldAnnotation @MethodAnnotation 
 
     public static void main(String... args) throws Exception {
         try ( InputStream in = ApplicableAnnotationsOnRecords.class.getResourceAsStream("ApplicableAnnotationsOnRecords.class")) {
-            ClassModel cm = Classfile.of().parse(Objects.requireNonNull(in).readAllBytes());
+            ClassModel cm = ClassFile.of().parse(Objects.requireNonNull(in).readAllBytes());
             Assert.check(cm.methods().size() > 5);
             for (MethodModel mm : cm.methods()) {
                 String methodName = mm.methodName().stringValue();

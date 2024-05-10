@@ -32,6 +32,7 @@ import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.function.LongFunction;
 import java.util.stream.Stream;
 
@@ -160,7 +161,7 @@ public class TestLayouts {
                 ValueLayout.JAVA_LONG
         );
         assertEquals(struct.byteSize(), 1 + 1 + 2 + 4 + 8);
-        assertEquals(struct.byteAlignment(), ADDRESS.byteSize());
+        assertEquals(struct.byteAlignment(), 8);
     }
 
     @Test(dataProvider="basicLayouts")
@@ -191,7 +192,7 @@ public class TestLayouts {
                 ValueLayout.JAVA_LONG
         );
         assertEquals(struct.byteSize(), 8);
-        assertEquals(struct.byteAlignment(), ADDRESS.byteSize());
+        assertEquals(struct.byteAlignment(), 8);
     }
 
     @Test
@@ -214,6 +215,21 @@ public class TestLayouts {
                 () -> MemoryLayout.sequenceLayout(Long.MAX_VALUE/3, JAVA_LONG));
         assertThrows(IllegalArgumentException.class, // flip back to positive
                 () -> MemoryLayout.sequenceLayout(0, JAVA_LONG).withElementCount(Long.MAX_VALUE));
+    }
+
+    @Test
+    public void testSequenceLayoutWithZeroLength() {
+        SequenceLayout layout = MemoryLayout.sequenceLayout(0, JAVA_INT);
+        assertEquals(layout.toString().toLowerCase(Locale.ROOT), "[0:i4]");
+
+        SequenceLayout nested = MemoryLayout.sequenceLayout(0, layout);
+        assertEquals(nested.toString().toLowerCase(Locale.ROOT), "[0:[0:i4]]");
+
+        SequenceLayout layout2 = MemoryLayout.sequenceLayout(0, JAVA_INT);
+        assertEquals(layout, layout2);
+
+        SequenceLayout nested2 = MemoryLayout.sequenceLayout(0, layout2);
+        assertEquals(nested, nested2);
     }
 
     @Test
@@ -355,13 +371,13 @@ public class TestLayouts {
     }
 
     @Test(expectedExceptions=IllegalArgumentException.class,
-        expectedExceptionsMessageRegExp=".*Negative offset.*")
+        expectedExceptionsMessageRegExp=".*offset is negative.*")
     public void testScaleNegativeOffset() {
         JAVA_INT.scale(-1, 0);
     }
 
     @Test(expectedExceptions=IllegalArgumentException.class,
-        expectedExceptionsMessageRegExp=".*Negative index.*")
+        expectedExceptionsMessageRegExp=".*index is negative.*")
     public void testScaleNegativeIndex() {
         JAVA_INT.scale(0, -1);
     }
@@ -461,24 +477,24 @@ public class TestLayouts {
         List<Object[]> layoutsAndAlignments = new ArrayList<>();
         int i = 0;
         //add basic layouts
-        for (MemoryLayout l : basicLayoutsNoLongDouble) {
+        for (MemoryLayout l : basicLayouts) {
             layoutsAndAlignments.add(new Object[] { l, l.byteAlignment() });
         }
         //add basic layouts wrapped in a sequence with given size
-        for (MemoryLayout l : basicLayoutsNoLongDouble) {
+        for (MemoryLayout l : basicLayouts) {
             layoutsAndAlignments.add(new Object[] { MemoryLayout.sequenceLayout(4, l), l.byteAlignment() });
         }
         //add basic layouts wrapped in a struct
-        for (MemoryLayout l1 : basicLayoutsNoLongDouble) {
-            for (MemoryLayout l2 : basicLayoutsNoLongDouble) {
+        for (MemoryLayout l1 : basicLayouts) {
+            for (MemoryLayout l2 : basicLayouts) {
                 if (l1.byteSize() % l2.byteAlignment() != 0) continue; // second element is not aligned, skip
                 long align = Math.max(l1.byteAlignment(), l2.byteAlignment());
                 layoutsAndAlignments.add(new Object[]{MemoryLayout.structLayout(l1, l2), align});
             }
         }
         //add basic layouts wrapped in a union
-        for (MemoryLayout l1 : basicLayoutsNoLongDouble) {
-            for (MemoryLayout l2 : basicLayoutsNoLongDouble) {
+        for (MemoryLayout l1 : basicLayouts) {
+            for (MemoryLayout l2 : basicLayouts) {
                 long align = Math.max(l1.byteAlignment(), l2.byteAlignment());
                 layoutsAndAlignments.add(new Object[]{MemoryLayout.unionLayout(l1, l2), align});
             }
@@ -527,8 +543,4 @@ public class TestLayouts {
             ValueLayout.JAVA_LONG,
             ValueLayout.JAVA_DOUBLE,
     };
-
-    static MemoryLayout[] basicLayoutsNoLongDouble = Stream.of(basicLayouts)
-            .filter(l -> l.carrier() != long.class && l.carrier() != double.class)
-            .toArray(MemoryLayout[]::new);
 }

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -339,12 +339,8 @@ void XBarrierSetAssembler::generate_c2_load_barrier_stub(MacroAssembler* masm, X
     XSaveLiveRegisters save_live_registers(masm, stub);
     XSetupArguments setup_arguments(masm, stub);
 
-    Address target(stub->slow_path());
-    __ relocate(target.rspec(), [&] {
-      int32_t offset;
-      __ la_patchable(t0, target, offset);
-      __ jalr(x1, t0, offset);
-    });
+    __ mv(t0, stub->slow_path());
+    __ jalr(t0);
   }
 
   // Stub exit

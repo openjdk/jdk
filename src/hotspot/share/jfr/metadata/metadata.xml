@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <!--
- Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -608,6 +608,7 @@
     <Field type="boolean" name="isOsr" label="On Stack Replacement" />
     <Field type="ulong" contentType="bytes" name="codeSize" label="Compiled Code Size" />
     <Field type="ulong" contentType="bytes" name="inlinedBytes" label="Inlined Code Size" />
+    <Field type="ulong" contentType="bytes" name="arenaBytes" label="Arena Usage" />
   </Event>
 
   <Event name="CompilerPhase" category="Java Virtual Machine, Compiler" label="Compiler Phase"
@@ -682,17 +683,6 @@
     <Field type="int" name="initialThreadCount" label="Initial Threads" description="The number of threads running at the beginning of state check" />
     <Field type="int" name="runningThreadCount" label="Running Threads" description="The number of threads still running" />
     <Field type="int" name="iterations" label="Iterations" description="Number of state check iterations" />
-  </Event>
-
-  <Event name="SafepointCleanup" category="Java Virtual Machine, Runtime, Safepoint" label="Safepoint Cleanup" description="Safepointing begin running cleanup tasks"
-    thread="true">
-    <Field type="ulong" name="safepointId" label="Safepoint Identifier" relation="SafepointId" />
-  </Event>
-
-  <Event name="SafepointCleanupTask" category="Java Virtual Machine, Runtime, Safepoint" label="Safepoint Cleanup Task" description="Safepointing begin running cleanup tasks"
-    thread="true">
-    <Field type="ulong" name="safepointId" label="Safepoint Identifier" relation="SafepointId" />
-    <Field type="string" name="name" label="Task Name" description="The task name" />
   </Event>
 
   <Event name="SafepointEnd" category="Java Virtual Machine, Runtime, Safepoint" label="Safepoint End" description="Safepointing end" thread="true">
@@ -848,6 +838,19 @@
     <Field type="float" contentType="hertz" name="switchRate" label="Switch Rate" description="Number of context switches per second" />
   </Event>
 
+  <Event name="CompilerQueueUtilization" category="Java Virtual Machine, Compiler" label="Compiler Queue Utilization" period="everyChunk">
+    <Field type="CompilerType" name="compiler" label="Compiler" />
+    <Field type="long" contentType="hertz" name="addedRate" label="Requets Added Rate" description="Requests added per second"/>
+    <Field type="long" contentType="hertz" name="removedRate" label="Requests Removed Rate" description="Requests removed per second"/>
+    <Field type="long" name="queueSize" label="Queue Size"/>
+    <Field type="long" name="peakQueueSize" label="Peak Queue Size"/>
+    <Field type="long" name="addedCount" label="Requests Added"/>
+    <Field type="long" name="removedCount" label="Requests Removed"/>
+    <Field type="long" name="totalAddedCount" label="Total Requests Added"/>
+    <Field type="long" name="totalRemovedCount" label="Total Requests Removed"/>
+    <Field type="int" name="compilerThreadCount" label="Compiler Thread Count"/>
+  </Event>
+
   <Event name="NetworkUtilization" category="Operating System, Network" label="Network Utilization" period="everyChunk">
     <Field type="NetworkInterfaceName" name="networkInterface" label="Network Interface" description="Network Interface Name"/>
     <Field type="long" contentType="bits-per-second" name="readRate" label="Read Rate" description="Number of incoming bits per second"/>
@@ -914,6 +917,11 @@
     <Field type="ulong" contentType="bytes" name="usedSize" label="Used Size" description="Total amount of physical memory in use" />
   </Event>
 
+  <Event name="SwapSpace" category="Operating System, Memory" label="Swap Space" description="OS Swap Space" period="everyChunk">
+    <Field type="long" contentType="bytes" name="totalSize" label="Total Size" description="Total swap space available to the OS" />
+    <Field type="long" contentType="bytes" name="freeSize" label="Free Size" description="Free swap space" />
+  </Event>
+
   <Event name="ExecutionSample" category="Java Virtual Machine, Profiling" label="Method Profiling Sample" description="Snapshot of a threads state"
     period="everyChunk">
     <Field type="Thread" name="sampledThread" label="Thread" />
@@ -944,6 +952,8 @@
     <Field type="string" name="name" label="Name" />
     <Field type="boolean" name="success" label="Success" description="Success or failure of the load operation" />
     <Field type="string" name="errorMessage" label="Error Message" description="In case of a load error, error description" />
+    <Field type="boolean" name="fpEnvCorrectionAttempt" label="FPU Environment correction" description="In case of IEEE conformance issues we might reset the FP environment" />
+    <Field type="boolean" name="fpEnvCorrectionSuccess" label="FPU Environment correction result" description="Stores the result in the case of an FP environment correction" />
   </Event>
 
   <Event name="NativeLibraryUnload" category="Java Virtual Machine, Runtime" label="Native Library Unload" thread="true" stackTrace="true" startTime="true"
@@ -1118,7 +1128,7 @@
     <Field type="uint" name="gcId" label="GC Identifier" relation="GcId" />
   </Event>
 
-  <Event name="ZAllocationStall" category="Java Virtual Machine, GC, Detailed" label="ZGC Allocation Stall" description="Time spent waiting for memory to become available" thread="true">
+  <Event name="ZAllocationStall" category="Java Virtual Machine, GC, Detailed" label="ZGC Allocation Stall" description="Time spent waiting for memory to become available" thread="true" stackTrace="true">
     <Field type="ZPageTypeType" name="type" label="Type" />
     <Field type="ulong" contentType="bytes" name="size" label="Size" />
   </Event>
@@ -1237,6 +1247,13 @@
     <Field type="Ticks" name="initializationTime" label="Initialization Time" description="The time the JVM initialized the agent" />
     <Field type="Tickspan" name="initializationDuration" label="Initialization Duration" description="The duration of executing the JVMTI VMInit event callback. If no VMInit callback is specified, the duration is 0. For a dynamically loaded agent, it is the duration of executing the call to Agent_OnAttach." />
     <Field type="string" name="path" label="Path" description="The path of the library" />
+  </Event>
+
+  <Event name="DeprecatedInvocation" description= "A unique invocation of a method that is annotated with @Deprecated. Packages and modules that are deprecated are ignored. At most 10 000 invocation sites and only the first invocation from a class is guaranteed to be included."
+   category="Java Application, Statistics" label="Deprecated Method Invocation" thread="false" stackTrace="true" startTime="false" level="forRemoval,all">
+    <Field type="Method" name="method" label="Deprecated Method" />
+    <Field type="Ticks" name="invocationTime" label="Invocation Time" description="The time the deprecated method was invoked for the first time" />
+    <Field type="boolean" name="forRemoval" label="For Removal" />
   </Event>
 
   <Type name="DeoptimizationReason" label="Deoptimization Reason">

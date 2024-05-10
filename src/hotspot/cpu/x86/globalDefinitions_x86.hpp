@@ -38,29 +38,18 @@ const bool CCallingConventionRequiresIntsAsLongs = false;
 
 #define CPU_MULTI_COPY_ATOMIC
 
-// The expected size in bytes of a cache line, used to pad data structures.
-#if COMPILER1_AND_COMPILER2
-  #ifdef _LP64
-    // tiered, 64-bit, large machine
-    #define DEFAULT_CACHE_LINE_SIZE 128
-    #define OM_CACHE_LINE_SIZE 64
-  #else
-    // tiered, 32-bit, medium machine
-    #define DEFAULT_CACHE_LINE_SIZE 64
-  #endif
-#elif defined(COMPILER1)
-  // pure C1, 32-bit, small machine
-  // i486 was the last Intel chip with 16-byte cache line size
-  #define DEFAULT_CACHE_LINE_SIZE 32
-#elif defined(COMPILER2)
-  #ifdef _LP64
-    // pure C2, 64-bit, large machine
-    #define DEFAULT_CACHE_LINE_SIZE 128
-    #define OM_CACHE_LINE_SIZE 64
-  #else
-    // pure C2, 32-bit, medium machine
-    #define DEFAULT_CACHE_LINE_SIZE 64
-  #endif
+// The expected size in bytes of a cache line.
+#define DEFAULT_CACHE_LINE_SIZE 64
+
+// The default padding size for data structures to avoid false sharing.
+#ifdef _LP64
+// The common wisdom is that adjacent cache line prefetchers on some hardware
+// may pull two cache lines on access, so we have to pessimistically assume twice
+// the cache line size for padding. TODO: Check if this is still true for modern
+// hardware. If not, DEFAULT_CACHE_LINE_SIZE might as well suffice.
+#define DEFAULT_PADDING_SIZE (DEFAULT_CACHE_LINE_SIZE*2)
+#else
+#define DEFAULT_PADDING_SIZE DEFAULT_CACHE_LINE_SIZE
 #endif
 
 #if defined(COMPILER2)

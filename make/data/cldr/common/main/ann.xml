@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -16,9 +16,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</languages>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[a à â b {ch} d e è ê f g i ì î j k l m {m\u0300} n ǹ {n\u0304} o ò ô ọ {ọ\u0300} ộ p r s {sh} t u ù û v w y z]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[á ǎ c é ě h í ǐ ḿ ń ó ǒ {ọ\u0301} {ọ\u030C} q ṣ ú ǔ x]</exemplarCharacters>
-		<exemplarCharacters type="index">[a b {ch} d e f g i j k l m n {n\u0304} o ọ p r s t u v w y z]</exemplarCharacters>
+		<exemplarCharacters>[aàâ b {ch} d eèê f g iìî j k l m{m̀} nǹ{n̄} oòôọ{ọ̀}ộ p r s {sh} t uùû v w y z]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[áǎ c éě h íǐ ḿ ń óǒ{ọ́}{ọ̌} q ṣ úǔ x]</exemplarCharacters>
+		<exemplarCharacters type="index">[a b {ch} d e f g i j k l m n{n̄} oọ p r s t u v w y z]</exemplarCharacters>
 		<exemplarCharacters type="punctuation">[, ; ! ? .]</exemplarCharacters>
 	</characters>
 	<numbers>

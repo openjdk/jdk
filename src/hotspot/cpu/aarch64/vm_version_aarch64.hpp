@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -110,7 +110,15 @@ enum Ampere_CPU_Model {
     CPU_MODEL_ALTRA     = 0xd0c, /* CPU implementer is CPU_ARM, Neoverse N1 */
     CPU_MODEL_ALTRAMAX  = 0xd0c, /* CPU implementer is CPU_ARM, Neoverse N1 */
     CPU_MODEL_AMPERE_1  = 0xac3, /* CPU implementer is CPU_AMPERE */
-    CPU_MODEL_AMPERE_1A = 0xac4  /* CPU implementer is CPU_AMPERE */
+    CPU_MODEL_AMPERE_1A = 0xac4, /* CPU implementer is CPU_AMPERE */
+    CPU_MODEL_AMPERE_1B = 0xac5  /* AMPERE_1B core Implements ARMv8.7 with CSSC, MTE, SM3/SM4 extensions */
+};
+
+enum Neoverse_CPU_Model {
+    CPU_MODEL_NEOVERSE_N1 = 0xd0c,
+    CPU_MODEL_NEOVERSE_N2 = 0xd49,
+    CPU_MODEL_NEOVERSE_V1 = 0xd40,
+    CPU_MODEL_NEOVERSE_V2 = 0xd4f,
 };
 
 #define CPU_FEATURE_FLAGS(decl)               \
@@ -155,6 +163,23 @@ enum Ampere_CPU_Model {
     return _model == cpu_model || _model2 == cpu_model;
   }
 
+
+  static bool is_neoverse() {
+    switch(_model) {
+      case CPU_MODEL_NEOVERSE_N1:
+      case CPU_MODEL_NEOVERSE_N2:
+      case CPU_MODEL_NEOVERSE_V1:
+      case CPU_MODEL_NEOVERSE_V2:
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  static bool is_neoverse_v_series() {
+    return (model_is(CPU_MODEL_NEOVERSE_V1) || model_is(CPU_MODEL_NEOVERSE_V2));
+  }
+
   static bool is_zva_enabled() { return 0 <= _zva_length; }
   static int zva_length() {
     assert(is_zva_enabled(), "ZVA not available");
@@ -165,8 +190,12 @@ enum Ampere_CPU_Model {
   static int dcache_line_size() { return _dcache_line_size; }
   static int get_initial_sve_vector_length()  { return _initial_sve_vector_length; };
 
+  // Aarch64 supports fast class initialization checks
   static bool supports_fast_class_init_checks() { return true; }
   constexpr static bool supports_stack_watermark_barrier() { return true; }
+  constexpr static bool supports_recursive_lightweight_locking() { return true; }
+
+  constexpr static bool supports_secondary_supers_table() { return true; }
 
   static void get_compatible_board(char *buf, int buflen);
 

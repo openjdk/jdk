@@ -151,8 +151,8 @@ public abstract class CallArranger {
 
         boolean forVariadicFunction = options.isVariadicFunction();
 
-        BindingCalculator argCalc = forUpcall ? new BoxBindingCalculator(true) : new UnboxBindingCalculator(true, forVariadicFunction);
-        BindingCalculator retCalc = forUpcall ? new UnboxBindingCalculator(false, forVariadicFunction) : new BoxBindingCalculator(false);
+        BindingCalculator argCalc = forUpcall ? new BoxBindingCalculator(true) : new UnboxBindingCalculator(true, forVariadicFunction, options.allowsHeapAccess());
+        BindingCalculator retCalc = forUpcall ? new UnboxBindingCalculator(false, forVariadicFunction, false) : new BoxBindingCalculator(false);
 
         boolean returnInMemory = isInMemoryReturn(cDesc.returnLayout());
         if (returnInMemory) {
@@ -388,11 +388,13 @@ public abstract class CallArranger {
     class UnboxBindingCalculator extends BindingCalculator {
         protected final boolean forArguments;
         protected final boolean forVariadicFunction;
+        private final boolean useAddressPairs;
 
-        UnboxBindingCalculator(boolean forArguments, boolean forVariadicFunction) {
+        UnboxBindingCalculator(boolean forArguments, boolean forVariadicFunction, boolean useAddressPairs) {
             super(forArguments, forVariadicFunction);
             this.forArguments = forArguments;
             this.forVariadicFunction = forVariadicFunction;
+            this.useAddressPairs = useAddressPairs;
         }
 
         @Override
@@ -432,9 +434,17 @@ public abstract class CallArranger {
                     bindings.vmStore(storage, long.class);
                 }
                 case POINTER -> {
-                    bindings.unboxAddress();
                     VMStorage storage = storageCalculator.nextStorage(StorageType.INTEGER, (ValueLayout) layout);
-                    bindings.vmStore(storage, long.class);
+                    if (useAddressPairs) {
+                        bindings.dup()
+                                .segmentBase()
+                                .vmStore(storage, Object.class)
+                                .segmentOffsetAllowHeap()
+                                .vmStore(null, long.class);
+                    } else {
+                        bindings.unboxAddress();
+                        bindings.vmStore(storage, long.class);
+                    }
                 }
                 case INTEGER -> {
                     VMStorage storage = storageCalculator.nextStorage(StorageType.INTEGER, (ValueLayout) layout);

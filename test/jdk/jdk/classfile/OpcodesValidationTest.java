@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary Testing Classfile constant instruction opcodes.
+ * @summary Testing ClassFile constant instruction opcodes.
  * @run junit OpcodesValidationTest
  */
 import java.lang.constant.ClassDesc;
@@ -32,12 +32,12 @@ import static java.lang.constant.ConstantDescs.CD_void;
 import java.lang.constant.MethodTypeDesc;
 
 import java.lang.reflect.AccessFlag;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.Opcode;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.Opcode;
 import org.junit.jupiter.api.*;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 import static org.junit.jupiter.api.Assertions.*;
-import static jdk.internal.classfile.Opcode.*;
+import static java.lang.classfile.Opcode.*;
 import java.util.stream.Stream;
 
 public class OpcodesValidationTest {
@@ -103,11 +103,11 @@ public class OpcodesValidationTest {
     }
 
     private void testPositiveCase(Opcode opcode, Object constant) {
-        Classfile.of().build(ClassDesc.of("MyClass"),
+        ClassFile.of().build(ClassDesc.of("MyClass"),
                         cb -> cb.withFlags(AccessFlag.PUBLIC)
                                 .withMethod("<init>", MethodTypeDesc.of(CD_void), 0,
                                       mb -> mb.withCode(
-                                              codeb -> codeb.constantInstruction(opcode, (ConstantDesc) constant))));
+                                              codeb -> codeb.loadConstant(opcode, (ConstantDesc) constant))));
     }
 
 
@@ -120,10 +120,10 @@ public class OpcodesValidationTest {
     }
 
     private void testNegativeCase(Opcode opcode, Object constant) {
-        Classfile.of().build(ClassDesc.of("MyClass"),
+        ClassFile.of().build(ClassDesc.of("MyClass"),
                         cb -> cb.withFlags(AccessFlag.PUBLIC)
                                 .withMethod("<init>", MethodTypeDesc.of(CD_void), 0,
                         mb -> mb .withCode(
-                                codeb -> codeb.constantInstruction(opcode, (ConstantDesc)constant))));
+                                codeb -> codeb.loadConstant(opcode, (ConstantDesc)constant))));
     }
 }

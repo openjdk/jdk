@@ -63,7 +63,7 @@ static void preserve_callee_saved_registers(MacroAssembler* _masm, const ABIDesc
 
   int offset = reg_save_area_offset;
 
-  __ block_comment("{ preserve_callee_saved_regs ");
+  __ block_comment("preserve_callee_saved_regs {");
   for (int i = 0; i < Register::number_of_registers; i++) {
     Register reg = as_Register(i);
     // Z_SP saved/restored by prologue/epilogue
@@ -82,7 +82,7 @@ static void preserve_callee_saved_registers(MacroAssembler* _masm, const ABIDesc
     }
   }
 
-  __ block_comment("} preserve_callee_saved_regs ");
+  __ block_comment("} preserve_callee_saved_regs");
 }
 
 static void restore_callee_saved_registers(MacroAssembler* _masm, const ABIDescriptor& abi, int reg_save_area_offset) {
@@ -92,7 +92,7 @@ static void restore_callee_saved_registers(MacroAssembler* _masm, const ABIDescr
 
   int offset = reg_save_area_offset;
 
-  __ block_comment("{ restore_callee_saved_regs ");
+  __ block_comment("restore_callee_saved_regs {");
   for (int i = 0; i < Register::number_of_registers; i++) {
     Register reg = as_Register(i);
     // Z_SP saved/restored by prologue/epilogue
@@ -111,13 +111,12 @@ static void restore_callee_saved_registers(MacroAssembler* _masm, const ABIDescr
     }
   }
 
-  __ block_comment("} restore_callee_saved_regs ");
+  __ block_comment("} restore_callee_saved_regs");
 }
 
 static const int upcall_stub_code_base_size = 1024;
 static const int upcall_stub_size_per_arg = 16; // arg save & restore + move
 address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
-                                       BasicType* in_sig_bt, int total_in_args,
                                        BasicType* out_sig_bt, int total_out_args,
                                        BasicType ret_type,
                                        jobject jabi, jobject jconv,
@@ -125,28 +124,19 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   ResourceMark rm;
   const ABIDescriptor abi = ForeignGlobals::parse_abi_descriptor(jabi);
   const CallRegs call_regs = ForeignGlobals::parse_call_regs(jconv);
-  int code_size = upcall_stub_code_base_size + (total_in_args * upcall_stub_size_per_arg);
+  int code_size = upcall_stub_code_base_size + (total_out_args * upcall_stub_size_per_arg);
   CodeBuffer buffer("upcall_stub", code_size, /* locs_size = */ 0);
+  if (buffer.blob() == nullptr) {
+    return nullptr;
+  }
 
   Register call_target_address = Z_R1_scratch;
 
-  VMStorage shuffle_reg = abi._scratch1;
-  JavaCallingConvention out_conv;
-  NativeCallingConvention in_conv(call_regs._arg_regs);
-  ArgumentShuffle arg_shuffle(in_sig_bt, total_in_args, out_sig_bt, total_out_args, &in_conv, &out_conv, shuffle_reg);
+  GrowableArray<VMStorage> unfiltered_out_regs;
+  int out_arg_bytes = ForeignGlobals::java_calling_convention(out_sig_bt, total_out_args, unfiltered_out_regs);
 
   // The Java call uses the JIT ABI, but we also call C.
-  int out_arg_area = MAX2(frame::z_jit_out_preserve_size + arg_shuffle.out_arg_bytes(), (int)frame::z_abi_160_size);
-
-#ifndef PRODUCT
-  LogTarget(Trace, foreign, upcall) lt;
-  if (lt.is_enabled()) {
-    ResourceMark rm;
-    LogStream ls(lt);
-    arg_shuffle.print_on(&ls);
-  }
-#endif
-
+  int out_arg_area = MAX2(frame::z_jit_out_preserve_size + out_arg_bytes, (int)frame::z_abi_160_size);
 
   int reg_save_area_size = compute_reg_save_area_size(abi);
   RegSpiller arg_spiller(call_regs._arg_regs);
@@ -158,8 +148,22 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   int frame_data_offset     = reg_save_area_offset  + reg_save_area_size;
   int frame_bottom_offset   = frame_data_offset     + sizeof(UpcallStub::FrameData);
 
-  int frame_size = align_up(frame_bottom_offset, StackAlignmentInBytes);
   StubLocations locs;
+  VMStorage shuffle_reg = abi._scratch1;
+  GrowableArray<VMStorage> in_regs = ForeignGlobals::replace_place_holders(call_regs._arg_regs, locs);
+  GrowableArray<VMStorage> filtered_out_regs = ForeignGlobals::upcall_filter_receiver_reg(unfiltered_out_regs);
+  ArgumentShuffle arg_shuffle(in_regs, filtered_out_regs, shuffle_reg);
+
+#ifndef PRODUCT
+  LogTarget(Trace, foreign, upcall) lt;
+  if (lt.is_enabled()) {
+    ResourceMark rm;
+    LogStream ls(lt);
+    arg_shuffle.print_on(&ls);
+  }
+#endif
+
+  int frame_size = align_up(frame_bottom_offset, StackAlignmentInBytes);
 
   // The space we have allocated will look like:
   //
@@ -199,7 +203,7 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   // Java methods won't preserve them, so save them here:
   preserve_callee_saved_registers(_masm, abi, reg_save_area_offset);
 
-  __ block_comment("{ on_entry");
+  __ block_comment("on_entry {");
   __ load_const_optimized(call_target_address, CAST_FROM_FN_PTR(uint64_t, UpcallLinker::on_entry));
   __ z_aghik(Z_ARG1, Z_SP, frame_data_offset);
   __ load_const_optimized(Z_ARG2, (intptr_t)receiver);
@@ -208,13 +212,13 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   __ block_comment("} on_entry");
 
   arg_spiller.generate_fill(_masm, arg_save_area_offset);
-  __ block_comment("{ argument shuffle");
-  arg_shuffle.generate(_masm, shuffle_reg, abi._shadow_space_bytes, frame::z_jit_out_preserve_size, locs);
-  __ block_comment("} argument shuffle");
+  __ block_comment("argument_shuffle {");
+  arg_shuffle.generate(_masm, shuffle_reg, abi._shadow_space_bytes, frame::z_jit_out_preserve_size);
+  __ block_comment("} argument_shuffle");
 
-  __ block_comment("{ receiver ");
+  __ block_comment("receiver {");
   __ get_vm_result(Z_ARG1);
-  __ block_comment("} receiver ");
+  __ block_comment("} receiver");
 
   __ load_const_optimized(Z_method, (intptr_t)entry);
   __ z_stg(Z_method, Address(Z_thread, in_bytes(JavaThread::callee_target_offset())));
@@ -250,7 +254,7 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
 
   result_spiller.generate_spill(_masm, res_save_area_offset);
 
-  __ block_comment("{ on_exit");
+  __ block_comment("on_exit {");
   __ load_const_optimized(call_target_address, CAST_FROM_FN_PTR(uint64_t, UpcallLinker::on_exit));
   __ z_aghik(Z_ARG1, Z_SP, frame_data_offset);
   __ call(call_target_address);
@@ -282,6 +286,10 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
                          &buffer,
                          receiver,
                          in_ByteSize(frame_data_offset));
+  if (blob == nullptr) {
+    return nullptr;
+  }
+
 #ifndef PRODUCT
   if (lt.is_enabled()) {
     ResourceMark rm;

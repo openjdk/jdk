@@ -25,18 +25,14 @@
  * @test
  * @summary Wrong classfile attribution in inner class of lambda expression.
  * @bug 8010015
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
+ * @enablePreview
+ * @modules java.base/jdk.internal.classfile.impl
  */
 
 import java.lang.annotation.*;
 import static java.lang.annotation.RetentionPolicy.*;
 import static java.lang.annotation.ElementType.*;
-import jdk.internal.classfile.*;
+import java.lang.classfile.*;
 
 /*
  * A type-annotations on a field in an inner class not in a lambda expression

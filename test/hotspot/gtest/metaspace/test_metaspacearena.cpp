@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -96,12 +96,12 @@ public:
   // in non-void returning tests.
 
   void delete_arena_with_tests() {
-    if (_arena != NULL) {
+    if (_arena != nullptr) {
       size_t used_words_before = _used_words_counter.get();
       size_t committed_words_before = limiter().committed_words();
       DEBUG_ONLY(_arena->verify());
       delete _arena;
-      _arena = NULL;
+      _arena = nullptr;
       size_t used_words_after = _used_words_counter.get();
       size_t committed_words_after = limiter().committed_words();
       ASSERT_0(used_words_after);
@@ -111,14 +111,14 @@ public:
 
   void usage_numbers_with_test(size_t* p_used, size_t* p_committed, size_t* p_capacity) const {
     _arena->usage_numbers(p_used, p_committed, p_capacity);
-    if (p_used != NULL) {
-      if (p_committed != NULL) {
+    if (p_used != nullptr) {
+      if (p_committed != nullptr) {
         ASSERT_GE(*p_committed, *p_used);
       }
       // Since we own the used words counter, it should reflect our usage number 1:1
       ASSERT_EQ(_used_words_counter.get(), *p_used);
     }
-    if (p_committed != NULL && p_capacity != NULL) {
+    if (p_committed != nullptr && p_capacity != nullptr) {
       ASSERT_GE(*p_capacity, *p_committed);
     }
   }
@@ -131,13 +131,13 @@ public:
 
   // Allocate; caller expects success but is not interested in return value
   void allocate_from_arena_with_tests_expect_success(size_t word_size) {
-    MetaWord* dummy = NULL;
+    MetaWord* dummy = nullptr;
     allocate_from_arena_with_tests_expect_success(&dummy, word_size);
   }
 
   // Allocate; caller expects failure
   void allocate_from_arena_with_tests_expect_failure(size_t word_size) {
-    MetaWord* dummy = NULL;
+    MetaWord* dummy = nullptr;
     allocate_from_arena_with_tests(&dummy, word_size);
     ASSERT_NULL(dummy);
   }
@@ -158,7 +158,7 @@ public:
     size_t used2 = 0, committed2 = 0, capacity2 = 0;
     usage_numbers_with_test(&used2, &committed2, &capacity2);
 
-    if (p == NULL) {
+    if (p == nullptr) {
       // Allocation failed.
       ASSERT_LT(possible_expansion, word_size);
       ASSERT_EQ(used, used2);
@@ -181,7 +181,7 @@ public:
 
   // Allocate; it may or may not work; but caller does not care for the result value
   void allocate_from_arena_with_tests(size_t word_size) {
-    MetaWord* dummy = NULL;
+    MetaWord* dummy = nullptr;
     allocate_from_arena_with_tests(&dummy, word_size);
   }
 
@@ -406,25 +406,25 @@ TEST_VM(metaspace, MetaspaceArena_deallocate) {
     MetaspaceGtestContext context;
     MetaspaceArenaTestHelper helper(context, Metaspace::StandardMetaspaceType, false);
 
-    MetaWord* p1 = NULL;
+    MetaWord* p1 = nullptr;
     helper.allocate_from_arena_with_tests_expect_success(&p1, s);
 
     size_t used1 = 0, capacity1 = 0;
-    helper.usage_numbers_with_test(&used1, NULL, &capacity1);
+    helper.usage_numbers_with_test(&used1, nullptr, &capacity1);
     ASSERT_EQ(used1, s);
 
     helper.deallocate_with_tests(p1, s);
 
     size_t used2 = 0, capacity2 = 0;
-    helper.usage_numbers_with_test(&used2, NULL, &capacity2);
+    helper.usage_numbers_with_test(&used2, nullptr, &capacity2);
     ASSERT_EQ(used1, used2);
     ASSERT_EQ(capacity2, capacity2);
 
-    MetaWord* p2 = NULL;
+    MetaWord* p2 = nullptr;
     helper.allocate_from_arena_with_tests_expect_success(&p2, s);
 
     size_t used3 = 0, capacity3 = 0;
-    helper.usage_numbers_with_test(&used3, NULL, &capacity3);
+    helper.usage_numbers_with_test(&used3, nullptr, &capacity3);
     ASSERT_EQ(used3, used2);
     ASSERT_EQ(capacity3, capacity2);
 
@@ -471,8 +471,8 @@ static void test_recover_from_commit_limit_hit() {
 
   // Now, allocating from helper3, creep up on the limit
   size_t allocated_from_3 = 0;
-  MetaWord* p = NULL;
-  while ( (helper3.allocate_from_arena_with_tests(&p, 1), p != NULL) &&
+  MetaWord* p = nullptr;
+  while ( (helper3.allocate_from_arena_with_tests(&p, 1), p != nullptr) &&
          ++allocated_from_3 < Settings::commit_granule_words() * 2);
 
   EXPECT_LE(allocated_from_3, Settings::commit_granule_words() * 2);
@@ -732,7 +732,7 @@ static void test_repeatedly_allocate_and_deallocate(bool is_topmost) {
   // Test various sizes, including (important) the max. possible block size = 1 root chunk
   for (size_t blocksize = Metaspace::max_allocation_word_size(); blocksize >= 1; blocksize /= 2) {
     size_t used1 = 0, used2 = 0, committed1 = 0, committed2 = 0;
-    MetaWord* p = NULL, *p2 = NULL;
+    MetaWord* p = nullptr, *p2 = nullptr;
 
     MetaspaceGtestContext context;
     MetaspaceArenaTestHelper helper(context, Metaspace::StandardMetaspaceType, false);
@@ -745,7 +745,7 @@ static void test_repeatedly_allocate_and_deallocate(bool is_topmost) {
     }
 
     // Measure
-    helper.usage_numbers_with_test(&used1, &committed1, NULL);
+    helper.usage_numbers_with_test(&used1, &committed1, nullptr);
 
     // Dealloc, alloc several times with the same size.
     for (int i = 0; i < 5; i ++) {
@@ -756,7 +756,7 @@ static void test_repeatedly_allocate_and_deallocate(bool is_topmost) {
     }
 
     // Measure again
-    helper.usage_numbers_with_test(&used2, &committed2, NULL);
+    helper.usage_numbers_with_test(&used2, &committed2, nullptr);
     EXPECT_EQ(used2, used1);
     EXPECT_EQ(committed1, committed2);
   }

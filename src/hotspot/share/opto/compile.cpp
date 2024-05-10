@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,9 +29,12 @@
 #include "classfile/javaClasses.hpp"
 #include "code/exceptionHandlerTable.hpp"
 #include "code/nmethod.hpp"
+#include "compiler/compilationFailureInfo.hpp"
 #include "compiler/compilationMemoryStatistic.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compileLog.hpp"
+#include "compiler/compilerOracle.hpp"
+#include "compiler/compiler_globals.hpp"
 #include "compiler/disassembler.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/shared/barrierSet.hpp"
@@ -54,6 +57,7 @@
 #include "opto/divnode.hpp"
 #include "opto/escape.hpp"
 #include "opto/idealGraphPrinter.hpp"
+#include "opto/locknode.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/machnode.hpp"
 #include "opto/macro.hpp"
@@ -286,6 +290,7 @@ void Compile::gvn_replace_by(Node* n, Node* nn) {
       initial_gvn()->hash_find_insert(use);
     }
     record_for_igvn(use);
+    PhaseIterGVN::add_users_of_use_to_worklist(nn, use, *_igvn_worklist);
     i -= uses_found;    // we deleted 1 or more copies of this edge
   }
 }
@@ -589,10 +594,12 @@ void Compile::print_ideal_ir(const char* phase_name) {
                compile_id(),
                is_osr_compilation() ? " compile_kind='osr'" : "",
                phase_name);
-    xtty->print("%s", ss.as_string()); // print to tty would use xml escape encoding
+  }
+
+  tty->print("%s", ss.as_string());
+
+  if (xtty != nullptr) {
     xtty->tail("ideal");
-  } else {
-    tty->print("%s", ss.as_string());
   }
 }
 #endif
@@ -617,6 +624,7 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
                   _stub_entry_point(nullptr),
                   _max_node_limit(MaxNodeLimit),
                   _post_loop_opts_phase(false),
+                  _allow_macro_nodes(true),
                   _inlining_progress(false),
                   _inlining_incrementally(false),
                   _do_cleanup(false),
@@ -633,7 +641,7 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
                   _env(ci_env),
                   _directive(directive),
                   _log(ci_env->log()),
-                  _failure_reason(nullptr),
+                  _first_failure_details(nullptr),
                   _intrinsics        (comp_arena(), 0, 0, nullptr),
                   _macro_nodes       (comp_arena(), 8, 0, nullptr),
                   _parse_predicates  (comp_arena(), 8, 0, nullptr),
@@ -737,7 +745,7 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
     TracePhase tp("parse", &timers[_t_parser]);
 
     // Put top into the hash table ASAP.
-    initial_gvn()->transform_no_reclaim(top());
+    initial_gvn()->transform(top());
 
     // Set up tf(), start(), and find a CallGenerator.
     CallGenerator* cg = nullptr;
@@ -812,8 +820,6 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
 
     if (failing())  return;
 
-    print_method(PHASE_BEFORE_REMOVEUSELESS, 3);
-
     // Remove clutter produced by parsing.
     if (!failing()) {
       ResourceMark rm;
@@ -838,18 +844,9 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
   if (failing())  return;
   NOT_PRODUCT( verify_graph_edges(); )
 
-  // If any phase is randomized for stress testing, seed random number
-  // generation and log the seed for repeatability.
-  if (StressLCM || StressGCM || StressIGVN || StressCCP) {
-    if (FLAG_IS_DEFAULT(StressSeed) || (FLAG_IS_ERGO(StressSeed) && directive->RepeatCompilationOption)) {
-      _stress_seed = static_cast<uint>(Ticks::now().nanoseconds());
-      FLAG_SET_ERGO(StressSeed, _stress_seed);
-    } else {
-      _stress_seed = StressSeed;
-    }
-    if (_log != nullptr) {
-      _log->elem("stress_test seed='%u'", _stress_seed);
-    }
+  if (StressLCM || StressGCM || StressIGVN || StressCCP ||
+      StressIncrementalInlining || StressMacroExpansion) {
+    initialize_stress_seed(directive);
   }
 
   // Now optimize
@@ -909,6 +906,7 @@ Compile::Compile( ciEnv* ci_env,
     _stub_entry_point(nullptr),
     _max_node_limit(MaxNodeLimit),
     _post_loop_opts_phase(false),
+    _allow_macro_nodes(true),
     _inlining_progress(false),
     _inlining_incrementally(false),
     _has_reserved_stack_access(false),
@@ -924,7 +922,8 @@ Compile::Compile( ciEnv* ci_env,
     _env(ci_env),
     _directive(directive),
     _log(ci_env->log()),
-    _failure_reason(nullptr),
+    _first_failure_details(nullptr),
+    _for_post_loop_igvn(comp_arena(), 8, 0, nullptr),
     _congraph(nullptr),
     NOT_PRODUCT(_igv_printer(nullptr) COMMA)
     _unique(0),
@@ -974,10 +973,15 @@ Compile::Compile( ciEnv* ci_env,
   _igvn_worklist = new (comp_arena()) Unique_Node_List(comp_arena());
   _types = new (comp_arena()) Type_Array(comp_arena());
   _node_hash = new (comp_arena()) NodeHash(comp_arena(), 255);
+
+  if (StressLCM || StressGCM) {
+    initialize_stress_seed(directive);
+  }
+
   {
     PhaseGVN gvn;
     set_initial_gvn(&gvn);    // not significant, but GraphKit guys use it pervasively
-    gvn.transform_no_reclaim(top());
+    gvn.transform(top());
 
     GraphKit kit;
     kit.gen_stub(stub_function, stub_name, is_fancy_jump, pass_tls, return_pc);
@@ -987,6 +991,11 @@ Compile::Compile( ciEnv* ci_env,
 
   Code_Gen();
 }
+
+Compile::~Compile() {
+  delete _print_inlining_stream;
+  delete _first_failure_details;
+};
 
 //------------------------------Init-------------------------------------------
 // Prepare for a single compilation
@@ -1040,6 +1049,10 @@ void Compile::Init(bool aliasing) {
   Copy::zero_to_bytes(_trap_hist, sizeof(_trap_hist));
   set_decompile_count(0);
 
+#ifndef PRODUCT
+  Copy::zero_to_bytes(_igv_phase_iter, sizeof(_igv_phase_iter));
+#endif
+
   set_do_freq_based_layout(_directive->BlockLayoutByFrequencyOption);
   _loop_opts_cnt = LoopOptsCount;
   set_do_inlining(Inline);
@@ -1051,7 +1064,7 @@ void Compile::Init(bool aliasing) {
   set_has_monitors(false);
 
   if (AllowVectorizeOnDemand) {
-    if (has_method() && (_directive->VectorizeOption || _directive->VectorizeDebugOption)) {
+    if (has_method() && _directive->VectorizeOption) {
       set_do_vector_loop(true);
       NOT_PRODUCT(if (do_vector_loop() && Verbose) {tty->print("Compile::Init: do vectorized loops (SIMD like) for method %s\n",  method()->name()->as_quoted_ascii());})
     } else if (has_method() && method()->name() != 0 &&
@@ -1068,10 +1081,10 @@ void Compile::Init(bool aliasing) {
 #if INCLUDE_RTM_OPT
   if (UseRTMLocking && has_method() && (method()->method_data_or_null() != nullptr)) {
     int rtm_state = method()->method_data()->rtm_state();
-    if (method_has_option(CompileCommand::NoRTMLockEliding) || ((rtm_state & NoRTM) != 0)) {
+    if (method_has_option(CompileCommandEnum::NoRTMLockEliding) || ((rtm_state & NoRTM) != 0)) {
       // Don't generate RTM lock eliding code.
       set_rtm_state(NoRTM);
-    } else if (method_has_option(CompileCommand::UseRTMLockEliding) || ((rtm_state & UseRTM) != 0) || !UseRTMDeopt) {
+    } else if (method_has_option(CompileCommandEnum::UseRTMLockEliding) || ((rtm_state & UseRTM) != 0) || !UseRTMDeopt) {
       // Generate RTM lock eliding code without abort ratio calculation code.
       set_rtm_state(UseRTM);
     } else if (UseRTMDeopt) {
@@ -2001,7 +2014,6 @@ void Compile::inline_boxing_calls(PhaseIterGVN& igvn) {
   if (_boxing_late_inlines.length() > 0) {
     assert(has_boxed_value(), "inconsistent");
 
-    PhaseGVN* gvn = initial_gvn();
     set_inlining_incrementally(true);
 
     igvn_worklist()->ensure_empty(); // should be done with igvn
@@ -2264,7 +2276,7 @@ void Compile::Optimize() {
 
     if (failing())  return;
 
-    if (AlwaysIncrementalInline) {
+    if (AlwaysIncrementalInline || StressIncrementalInlining) {
       inline_incrementally(igvn);
     }
 
@@ -2397,6 +2409,7 @@ void Compile::Optimize() {
   if (failing())  return;
 
   // Conditional Constant Propagation;
+  print_method(PHASE_BEFORE_CCP1, 2);
   PhaseCCP ccp( &igvn );
   assert( true, "Break here to ccp.dump_nodes_and_types(_root,999,1)");
   {
@@ -2437,12 +2450,13 @@ void Compile::Optimize() {
 
   {
     TracePhase tp("macroExpand", &timers[_t_macroExpand]);
+    print_method(PHASE_BEFORE_MACRO_EXPANSION, 3);
     PhaseMacroExpand  mex(igvn);
     if (mex.expand_macro_nodes()) {
       assert(failing(), "must bail out w/ explicit message");
       return;
     }
-    print_method(PHASE_MACRO_EXPANSION, 2);
+    print_method(PHASE_AFTER_MACRO_EXPANSION, 2);
   }
 
   {
@@ -2972,6 +2986,8 @@ void Compile::Code_Gen() {
     if (failing()) {
       return;
     }
+
+    print_method(PHASE_REGISTER_ALLOCATION, 2);
   }
 
   // Prior to register allocation we kept empty basic blocks in case the
@@ -2989,6 +3005,7 @@ void Compile::Code_Gen() {
     cfg.fixup_flow();
     cfg.remove_unreachable_blocks();
     cfg.verify_dominator_tree();
+    print_method(PHASE_BLOCK_ORDERING, 3);
   }
 
   // Apply peephole optimizations
@@ -2996,12 +3013,14 @@ void Compile::Code_Gen() {
     TracePhase tp("peephole", &timers[_t_peephole]);
     PhasePeephole peep( _regalloc, cfg);
     peep.do_transform();
+    print_method(PHASE_PEEPHOLE, 3);
   }
 
   // Do late expand if CPU requires this.
   if (Matcher::require_postalloc_expand) {
     TracePhase tp("postalloc_expand", &timers[_t_postalloc_expand]);
     cfg.postalloc_expand(_regalloc);
+    print_method(PHASE_POSTALLOC_EXPAND, 3);
   }
 
   // Convert Nodes to instruction bits in a buffer
@@ -3130,8 +3149,8 @@ void Compile::final_graph_reshaping_impl(Node *n, Final_Reshape_Counts& frc, Uni
     int alias_idx = get_alias_index(n->as_Mem()->adr_type());
     assert( n->in(0) != nullptr || alias_idx != Compile::AliasIdxRaw ||
             // oop will be recorded in oop map if load crosses safepoint
-            n->is_Load() && (n->as_Load()->bottom_type()->isa_oopptr() ||
-                             LoadNode::is_immutable_value(n->in(MemNode::Address))),
+            (n->is_Load() && (n->as_Load()->bottom_type()->isa_oopptr() ||
+                              LoadNode::is_immutable_value(n->in(MemNode::Address)))),
             "raw memory operations should have control edge");
   }
   if (n->is_MemBar()) {
@@ -3688,6 +3707,31 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
 
   case Op_LoadVector:
   case Op_StoreVector:
+#ifdef ASSERT
+    // Add VerifyVectorAlignment node between adr and load / store.
+    if (VerifyAlignVector && Matcher::has_match_rule(Op_VerifyVectorAlignment)) {
+      bool must_verify_alignment = n->is_LoadVector() ? n->as_LoadVector()->must_verify_alignment() :
+                                                        n->as_StoreVector()->must_verify_alignment();
+      if (must_verify_alignment) {
+        jlong vector_width = n->is_LoadVector() ? n->as_LoadVector()->memory_size() :
+                                                  n->as_StoreVector()->memory_size();
+        // The memory access should be aligned to the vector width in bytes.
+        // However, the underlying array is possibly less well aligned, but at least
+        // to ObjectAlignmentInBytes. Hence, even if multiple arrays are accessed in
+        // a loop we can expect at least the following alignment:
+        jlong guaranteed_alignment = MIN2(vector_width, (jlong)ObjectAlignmentInBytes);
+        assert(2 <= guaranteed_alignment && guaranteed_alignment <= 64, "alignment must be in range");
+        assert(is_power_of_2(guaranteed_alignment), "alignment must be power of 2");
+        // Create mask from alignment. e.g. 0b1000 -> 0b0111
+        jlong mask = guaranteed_alignment - 1;
+        Node* mask_con = ConLNode::make(mask);
+        VerifyVectorAlignmentNode* va = new VerifyVectorAlignmentNode(n->in(MemNode::Address), mask_con);
+        n->set_req(MemNode::Address, va);
+      }
+    }
+#endif
+    break;
+
   case Op_LoadVectorGather:
   case Op_StoreVectorScatter:
   case Op_LoadVectorGatherMasked:
@@ -4345,9 +4389,12 @@ void Compile::record_failure(const char* reason) {
   if (log() != nullptr) {
     log()->elem("failure reason='%s' phase='compile'", reason);
   }
-  if (_failure_reason == nullptr) {
+  if (_failure_reason.get() == nullptr) {
     // Record the first failure reason.
-    _failure_reason = reason;
+    _failure_reason.set(reason);
+    if (CaptureBailoutInformation) {
+      _first_failure_details = new CompilationFailureInfo(reason);
+    }
   }
 
   if (!C->failure_reason_is(C2Compiler::retry_no_subsuming_loads())) {
@@ -4461,12 +4508,11 @@ Node* Compile::conv_I2X_index(PhaseGVN* phase, Node* idx, const TypeInt* sizetyp
 Node* Compile::constrained_convI2L(PhaseGVN* phase, Node* value, const TypeInt* itype, Node* ctrl, bool carry_dependency) {
   if (ctrl != nullptr) {
     // Express control dependency by a CastII node with a narrow type.
-    value = new CastIINode(value, itype, carry_dependency ? ConstraintCastNode::StrongDependency : ConstraintCastNode::RegularDependency, true /* range check dependency */);
     // Make the CastII node dependent on the control input to prevent the narrowed ConvI2L
     // node from floating above the range check during loop optimizations. Otherwise, the
     // ConvI2L node may be eliminated independently of the range check, causing the data path
     // to become TOP while the control path is still there (although it's unreachable).
-    value->set_req(0, ctrl);
+    value = new CastIINode(ctrl, value, itype, carry_dependency ? ConstraintCastNode::StrongDependency : ConstraintCastNode::RegularDependency, true /* range check dependency */);
     value = phase->transform(value);
   }
   const TypeLong* ltype = TypeLong::make(itype->_lo, itype->_hi, itype->_widen);
@@ -4819,10 +4865,26 @@ void Compile::add_coarsened_locks(GrowableArray<AbstractLockNode*>& locks) {
   if (length > 0) {
     // Have to keep this list until locks elimination during Macro nodes elimination.
     Lock_List* locks_list = new (comp_arena()) Lock_List(comp_arena(), length);
+    AbstractLockNode* alock = locks.at(0);
+    BoxLockNode* box = alock->box_node()->as_BoxLock();
     for (int i = 0; i < length; i++) {
       AbstractLockNode* lock = locks.at(i);
       assert(lock->is_coarsened(), "expecting only coarsened AbstractLock nodes, but got '%s'[%d] node", lock->Name(), lock->_idx);
       locks_list->push(lock);
+      BoxLockNode* this_box = lock->box_node()->as_BoxLock();
+      if (this_box != box) {
+        // Locking regions (BoxLock) could be Unbalanced here:
+        //  - its coarsened locks were eliminated in earlier
+        //    macro nodes elimination followed by loop unroll
+        //  - it is OSR locking region (no Lock node)
+        // Preserve Unbalanced status in such cases.
+        if (!this_box->is_unbalanced()) {
+          this_box->set_coarsened();
+        }
+        if (!box->is_unbalanced()) {
+          box->set_coarsened();
+        }
+      }
     }
     _coarsened_locks.append(locks_list);
   }
@@ -4900,6 +4962,38 @@ bool Compile::coarsened_locks_consistent() {
   return true;
 }
 
+// Mark locking regions (identified by BoxLockNode) as unbalanced if
+// locks coarsening optimization removed Lock/Unlock nodes from them.
+// Such regions become unbalanced because coarsening only removes part
+// of Lock/Unlock nodes in region. As result we can't execute other
+// locks elimination optimizations which assume all code paths have
+// corresponding pair of Lock/Unlock nodes - they are balanced.
+void Compile::mark_unbalanced_boxes() const {
+  int count = coarsened_count();
+  for (int i = 0; i < count; i++) {
+    Node_List* locks_list = _coarsened_locks.at(i);
+    uint size = locks_list->size();
+    if (size > 0) {
+      AbstractLockNode* alock = locks_list->at(0)->as_AbstractLock();
+      BoxLockNode* box = alock->box_node()->as_BoxLock();
+      if (alock->is_coarsened()) {
+        // coarsened_locks_consistent(), which is called before this method, verifies
+        // that the rest of Lock/Unlock nodes on locks_list are also coarsened.
+        assert(!box->is_eliminated(), "regions with coarsened locks should not be marked as eliminated");
+        for (uint j = 1; j < size; j++) {
+          assert(locks_list->at(j)->as_AbstractLock()->is_coarsened(), "only coarsened locks are expected here");
+          BoxLockNode* this_box = locks_list->at(j)->as_AbstractLock()->box_node()->as_BoxLock();
+          if (box != this_box) {
+            assert(!this_box->is_eliminated(), "regions with coarsened locks should not be marked as eliminated");
+            box->set_unbalanced();
+            this_box->set_unbalanced();
+          }
+        }
+      }
+    }
+  }
+}
+
 /**
  * Remove the speculative part of types and clean up the graph
  */
@@ -4919,16 +5013,7 @@ void Compile::remove_speculative_types(PhaseIterGVN &igvn) {
         const Type* t_no_spec = t->remove_speculative();
         if (t_no_spec != t) {
           bool in_hash = igvn.hash_delete(n);
-#ifdef ASSERT
-          if (!in_hash) {
-            tty->print_cr("current graph:");
-            n->dump_bfs(MaxNodeLimit, nullptr, "S$");
-            tty->cr();
-            tty->print_cr("erroneous node:");
-            n->dump();
-            assert(false, "node should be in igvn hash table");
-          }
-#endif
+          assert(in_hash || n->hash() == Node::NO_HASH, "node should be in igvn hash table");
           tn->set_type(t_no_spec);
           igvn.hash_insert(n);
           igvn._worklist.push(n); // give it a chance to go away
@@ -4977,6 +5062,18 @@ void Compile::remove_speculative_types(PhaseIterGVN &igvn) {
 }
 
 // Auxiliary methods to support randomized stressing/fuzzing.
+
+void Compile::initialize_stress_seed(const DirectiveSet* directive) {
+  if (FLAG_IS_DEFAULT(StressSeed) || (FLAG_IS_ERGO(StressSeed) && directive->RepeatCompilationOption)) {
+    _stress_seed = static_cast<uint>(Ticks::now().nanoseconds());
+    FLAG_SET_ERGO(StressSeed, _stress_seed);
+  } else {
+    _stress_seed = StressSeed;
+  }
+  if (_log != nullptr) {
+    _log->elem("stress_test seed='%u'", _stress_seed);
+  }
+}
 
 int Compile::random() {
   _stress_seed = os::next_random(_stress_seed);
@@ -5075,6 +5172,16 @@ void CloneMap::dump(node_idx_t key, outputStream* st) const {
   }
 }
 
+void Compile::shuffle_macro_nodes() {
+  if (_macro_nodes.length() < 2) {
+    return;
+  }
+  for (uint i = _macro_nodes.length() - 1; i >= 1; i--) {
+    uint j = C->random() % (i + 1);
+    swap(_macro_nodes.at(i), _macro_nodes.at(j));
+  }
+}
+
 // Move Allocate nodes to the start of the list
 void Compile::sort_macro_nodes() {
   int count = macro_count();
@@ -5094,7 +5201,7 @@ void Compile::sort_macro_nodes() {
 
 void Compile::print_method(CompilerPhaseType cpt, int level, Node* n) {
   if (failing()) { return; }
-  EventCompilerPhase event;
+  EventCompilerPhase event(UNTIMED);
   if (event.should_commit()) {
     CompilerEvent::PhaseEvent::post(event, C->_latest_stage_start_counter, cpt, C->_compile_id, level);
   }
@@ -5102,6 +5209,10 @@ void Compile::print_method(CompilerPhaseType cpt, int level, Node* n) {
   ResourceMark rm;
   stringStream ss;
   ss.print_raw(CompilerPhaseTypeHelper::to_description(cpt));
+  int iter = ++_igv_phase_iter[cpt];
+  if (iter > 1) {
+    ss.print(" %d", iter);
+  }
   if (n != nullptr) {
     ss.print(": %d %s ", n->_idx, NodeClassNames[n->Opcode()]);
   }
@@ -5129,7 +5240,7 @@ void Compile::begin_method() {
 
 // Only used from CompileWrapper
 void Compile::end_method() {
-  EventCompilerPhase event;
+  EventCompilerPhase event(UNTIMED);
   if (event.should_commit()) {
     CompilerEvent::PhaseEvent::post(event, C->_latest_stage_start_counter, PHASE_END, C->_compile_id, 1);
   }
@@ -5143,7 +5254,7 @@ void Compile::end_method() {
 
 bool Compile::should_print_phase(CompilerPhaseType cpt) {
 #ifndef PRODUCT
-  if ((_directive->ideal_phase_mask() & CompilerPhaseTypeHelper::to_bitmask(cpt)) != 0) {
+  if (_directive->should_print_phase(cpt)) {
     return true;
   }
 #endif

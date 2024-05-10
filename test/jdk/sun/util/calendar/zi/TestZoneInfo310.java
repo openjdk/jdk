@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8007572 8008161 8157792 8212970 8224560
+ * @bug 8007572 8008161 8157792 8212970 8224560 8324065
  * @summary Test whether the TimeZone generated from JSR310 tzdb is the same
  * as the one from the tz data from javazic
  * @modules java.base/sun.util.calendar:+open
@@ -171,9 +171,9 @@ public class TestZoneInfo310 {
             ZoneInfoOld zi = toZoneInfoOld(TimeZone.getTimeZone(zid));
             ZoneInfoOld ziOLD = (ZoneInfoOld)ZoneInfoOld.getTimeZone(zid);
             /*
-             * Temporary ignoring the failing TimeZones which are having zone
-             * rules defined till year 2037 and/or above and have negative DST
-             * save time in IANA tzdata. This bug is tracked via JDK-8223388.
+             * Ignoring the failing TimeZones which have negative DST
+             * save time in IANA tzdata, as javazic/ZoneInfoOld cannot
+             * handle the negative DST.
              *
              * These are the zones/rules that employ negative DST in vanguard
              * format (as of 2019a), Palestine added in 2022d:
@@ -183,11 +183,6 @@ public class TestZoneInfo310 {
              *  - Rule "Namibia"
              *  - Rule "Palestine"
              *  - Zone "Europe/Prague"
-             *
-             * Tehran/Iran rule has rules beyond 2037, in which javazic assumes
-             * to be the last year. Thus javazic's rule is based on year 2037
-             * (Mar 20th/Sep 20th are the cutover dates), while the real rule
-             * has year 2087 where Mar 21st/Sep 21st are the cutover dates.
              */
             if (zid.equals("Africa/Casablanca") || // uses "Morocco" rule
                 zid.equals("Africa/El_Aaiun") || // uses "Morocco" rule
@@ -196,10 +191,8 @@ public class TestZoneInfo310 {
                 zid.equals("Europe/Bratislava") || // link to "Europe/Prague"
                 zid.equals("Europe/Dublin") || // uses "Eire" rule
                 zid.equals("Europe/Prague") ||
-                zid.equals("Asia/Tehran") || // last rule mismatch
                 zid.equals("Asia/Gaza") || // uses "Palestine" rule
-                zid.equals("Asia/Hebron") || // uses "Palestine" rule
-                zid.equals("Iran")) { // last rule mismatch
+                zid.equals("Asia/Hebron")) { // uses "Palestine" rule
                     continue;
             }
             if (! zi.equalsTo(ziOLD)) {

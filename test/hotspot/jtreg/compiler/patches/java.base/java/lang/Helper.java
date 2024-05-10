@@ -45,10 +45,20 @@ public class Helper {
     }
 
     @jdk.internal.vm.annotation.ForceInline
+    public static int compress(byte[] src, int srcOff, byte[] dst, int dstOff, int len) {
+        return StringUTF16.compress(src, srcOff, dst, dstOff, len);
+    }
+
+    @jdk.internal.vm.annotation.ForceInline
     public static byte[] compressChar(char[] src, int srcOff, int dstSize, int dstOff, int len) {
         byte[] dst = new byte[dstSize];
         StringUTF16.compress(src, srcOff, dst, dstOff, len);
         return dst;
+    }
+
+    @jdk.internal.vm.annotation.ForceInline
+    public static int compress(char[] src, int srcOff, byte[] dst, int dstOff, int len) {
+        return StringUTF16.compress(src, srcOff, dst, dstOff, len);
     }
 
     @jdk.internal.vm.annotation.ForceInline

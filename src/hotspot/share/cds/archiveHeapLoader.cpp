@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "cds/archiveHeapLoader.inline.hpp"
+#include "cds/cdsConfig.hpp"
 #include "cds/heapShared.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/classLoaderDataShared.hpp"
@@ -87,7 +88,7 @@ void ArchiveHeapLoader::fixup_region() {
     fill_failed_loaded_heap();
   }
   if (is_in_use()) {
-    if (!MetaspaceShared::use_full_module_graph()) {
+    if (!CDSConfig::is_using_full_module_graph()) {
       // Need to remove all the archived java.lang.Module objects from HeapShared::roots().
       ClassLoaderDataShared::clear_archived_oops();
     }
@@ -163,18 +164,19 @@ void ArchiveHeapLoader::patch_compressed_embedded_pointers(BitMapView bm,
 
   // Optimization: if dumptime shift is the same as runtime shift, we can perform a
   // quick conversion from "dumptime narrowOop" -> "runtime narrowOop".
+  narrowOop* patching_start = (narrowOop*)region.start() + FileMapInfo::current_info()->heap_oopmap_start_pos();
   if (_narrow_oop_shift == CompressedOops::shift()) {
     uint32_t quick_delta = (uint32_t)rt_encoded_bottom - (uint32_t)dt_encoded_bottom;
     log_info(cds)("CDS heap data relocation quick delta = 0x%x", quick_delta);
     if (quick_delta == 0) {
       log_info(cds)("CDS heap data relocation unnecessary, quick_delta = 0");
     } else {
-      PatchCompressedEmbeddedPointersQuick patcher((narrowOop*)region.start(), quick_delta);
+      PatchCompressedEmbeddedPointersQuick patcher(patching_start, quick_delta);
       bm.iterate(&patcher);
     }
   } else {
     log_info(cds)("CDS heap data quick relocation not possible");
-    PatchCompressedEmbeddedPointers patcher((narrowOop*)region.start());
+    PatchCompressedEmbeddedPointers patcher(patching_start);
     bm.iterate(&patcher);
   }
 }
@@ -185,17 +187,10 @@ void ArchiveHeapLoader::patch_embedded_pointers(FileMapInfo* info,
                                                 MemRegion region, address oopmap,
                                                 size_t oopmap_size_in_bits) {
   BitMapView bm((BitMap::bm_word_t*)oopmap, oopmap_size_in_bits);
-
-#ifndef PRODUCT
-  ResourceMark rm;
-  ResourceBitMap checkBm = HeapShared::calculate_oopmap(region);
-  assert(bm.is_same(checkBm), "sanity");
-#endif
-
   if (UseCompressedOops) {
     patch_compressed_embedded_pointers(bm, info, region);
   } else {
-    PatchUncompressedEmbeddedPointers patcher((oop*)region.start());
+    PatchUncompressedEmbeddedPointers patcher((oop*)region.start() + FileMapInfo::current_info()->heap_oopmap_start_pos());
     bm.iterate(&patcher);
   }
 }
@@ -315,7 +310,7 @@ bool ArchiveHeapLoader::load_heap_region_impl(FileMapInfo* mapinfo, LoadedArchiv
   uintptr_t oopmap = bitmap_base + r->oopmap_offset();
   BitMapView bm((BitMap::bm_word_t*)oopmap, r->oopmap_size_in_bits());
 
-  PatchLoadedRegionPointers patcher((narrowOop*)load_address, loaded_region);
+  PatchLoadedRegionPointers patcher((narrowOop*)load_address + FileMapInfo::current_info()->heap_oopmap_start_pos(), loaded_region);
   bm.iterate(&patcher);
   return true;
 }
@@ -447,8 +442,8 @@ void ArchiveHeapLoader::patch_native_pointers() {
   FileMapRegion* r = FileMapInfo::current_info()->region_at(MetaspaceShared::hp);
   if (r->mapped_base() != nullptr && r->has_ptrmap()) {
     log_info(cds, heap)("Patching native pointers in heap region");
-    BitMapView bm = r->ptrmap_view();
-    PatchNativePointers patcher((Metadata**)r->mapped_base());
+    BitMapView bm = FileMapInfo::current_info()->ptrmap_view(MetaspaceShared::hp);
+    PatchNativePointers patcher((Metadata**)r->mapped_base() + FileMapInfo::current_info()->heap_ptrmap_start_pos());
     bm.iterate(&patcher);
   }
 }

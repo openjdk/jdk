@@ -29,7 +29,7 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Objects;
 
-import jdk.jfr.Event;
+import jdk.internal.event.Event;
 import jdk.jfr.internal.LogLevel;
 import jdk.jfr.internal.LogTag;
 import jdk.jfr.internal.Logger;

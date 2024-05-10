@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -210,7 +210,7 @@ public final class ZoneInfoFile {
 
     private static String versionId;
     private static final Map<String, ZoneInfo> zones = new ConcurrentHashMap<>();
-    private static Map<String, String> aliases = new HashMap<>();
+    private static final Map<String, String> aliases = new HashMap<>();
 
     private static byte[][] ruleArray;
     private static String[] regions;
@@ -219,7 +219,7 @@ public final class ZoneInfoFile {
     // Flag for supporting JDK backward compatible IDs, such as "EST".
     private static final boolean USE_OLDMAPPING;
 
-    private static String[][] oldMappings = new String[][] {
+    private static final String[][] oldMappings = new String[][] {
         { "ACT", "Australia/Darwin" },
         { "AET", "Australia/Sydney" },
         { "AGT", "America/Argentina/Buenos_Aires" },
@@ -406,16 +406,16 @@ public final class ZoneInfoFile {
     // ZoneInfo starts with UTC1900
     private static final long UTC1900 = -2208988800L;
 
-    // ZoneInfo ends with   UTC2037
-    // LocalDateTime.of(2038, 1, 1, 0, 0, 0).toEpochSecond(ZoneOffset.UTC) - 1;
-    private static final long UTC2037 = 2145916799L;
+    // ZoneInfo ends with   UTC2100
+    // LocalDateTime.of(2101, 1, 1, 0, 0, 0).toEpochSecond(ZoneOffset.UTC) - 1;
+    private static final long UTC2100 = 4133980799L;
 
-    // ZoneInfo has an ending entry for 2037, this need to be offset by
+    // ZoneInfo has an ending entry for 2100, this need to be offset by
     // a "rawOffset"
-    // LocalDateTime.of(2037, 1, 1, 0, 0, 0).toEpochSecond(ZoneOffset.UTC));
-    private static final long LDT2037 = 2114380800L;
+    // LocalDateTime.of(2100, 1, 1, 0, 0, 0).toEpochSecond(ZoneOffset.UTC);
+    private static final long LDT2100 = 4102444800L;
 
-    //Current time. Used to determine future GMToffset transitions
+    //Current time. Used to determine future GMT offset transitions
     private static final long CURRT = System.currentTimeMillis()/1000;
 
     /**
@@ -482,7 +482,7 @@ public final class ZoneInfoFile {
 
             for (; i < savingsInstantTransitions.length; i++) {
                 long trans = savingsInstantTransitions[i];
-                if (trans > UTC2037) {
+                if (trans > UTC2100) {
                     // no trans beyond LASTYEAR
                     lastyear = LASTYEAR;
                     break;
@@ -629,11 +629,11 @@ public final class ZoneInfoFile {
                 }
             } else if (nTrans > 0) {  // only do this if there is something in table already
                 if (lastyear < LASTYEAR) {
-                    // ZoneInfo has an ending entry for 2037
+                    // ZoneInfo has an ending entry for 2100
                     //long trans = OffsetDateTime.of(LASTYEAR, 1, 1, 0, 0, 0, 0,
                     //                               ZoneOffset.ofTotalSeconds(rawOffset/1000))
                     //                           .toEpochSecond();
-                    long trans = LDT2037 - rawOffset/1000;
+                    long trans = LDT2100 - rawOffset/1000;
 
                     int offsetIndex = indexOf(offsets, 0, nOffsets, rawOffset/1000);
                     if (offsetIndex == nOffsets)
@@ -814,7 +814,9 @@ public final class ZoneInfoFile {
     private static final long DST_MASK = 0xf0L;
     private static final int  DST_NSHIFT = 4;
     private static final int  TRANSITION_NSHIFT = 12;
-    private static final int  LASTYEAR = 2037;
+    // The `last` year that transitions are accounted for. If there are
+    // rules that go beyond this LASTYEAR, the value needs to be expanded.
+    private static final int  LASTYEAR = 2100;
 
     // from: 0 for offset lookup, 1 for dstsvings lookup
     private static int indexOf(int[] offsets, int from, int nOffsets, int offset) {
@@ -929,7 +931,7 @@ public final class ZoneInfoFile {
         }
 
         static final boolean isLeapYear(int year) {
-            return ((year & 3) == 0) && ((year % 100) != 0 || (year % 400) == 0);
+            return CalendarUtils.isGregorianLeapYear(year);
         }
 
         static final int lengthOfMonth(int year, int month) {

@@ -56,6 +56,7 @@ void* JfrIntrinsicSupport::write_checkpoint(JavaThread* jt) {
   assert(JfrThreadLocal::is_vthread(jt), "invariant");
   const u2 vthread_thread_local_epoch = JfrThreadLocal::vthread_epoch(jt);
   const u2 current_epoch = ThreadIdAccess::current_epoch();
+  MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, jt));
   if (vthread_thread_local_epoch == current_epoch) {
     // After the epoch test in the intrinsic, the thread sampler interleaved
     // and suspended the thread. As part of taking a sample, it updated

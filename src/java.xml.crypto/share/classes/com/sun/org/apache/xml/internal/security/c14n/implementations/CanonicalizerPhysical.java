@@ -68,6 +68,7 @@ public class CanonicalizerPhysical extends CanonicalizerBase {
      * @param writer OutputStream to write the canonicalization result
      * @throws CanonicalizationException always
      */
+    @Override
     public void engineCanonicalizeXPathNodeSet(Set<Node> xpathNodeSet, String inclusiveNamespaces, OutputStream writer)
         throws CanonicalizationException {
 
@@ -83,6 +84,7 @@ public class CanonicalizerPhysical extends CanonicalizerBase {
      * @param writer OutputStream to write the canonicalization result
      * @throws CanonicalizationException
      */
+    @Override
     public void engineCanonicalizeSubTree(Node rootNode, String inclusiveNamespaces, OutputStream writer)
         throws CanonicalizationException {
 
@@ -98,6 +100,7 @@ public class CanonicalizerPhysical extends CanonicalizerBase {
      * @param writer OutputStream to write the canonicalization result
      * @throws CanonicalizationException
      */
+    @Override
     public void engineCanonicalizeSubTree(
             Node rootNode, String inclusiveNamespaces, boolean propagateDefaultNamespace, OutputStream writer)
             throws CanonicalizationException {
@@ -165,6 +168,7 @@ public class CanonicalizerPhysical extends CanonicalizerBase {
     }
 
     /** {@inheritDoc} */
+    @Override
     public final String engineGetURI() {
         return Canonicalizer.ALGO_ID_C14N_PHYSICAL;
     }

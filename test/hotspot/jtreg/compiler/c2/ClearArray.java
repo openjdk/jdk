@@ -31,6 +31,8 @@
  *   -XX:InitArrayShortSize=32768 -XX:-IdealizeClearArrayNode compiler.c2.ClearArray
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+IgnoreUnrecognizedVMOptions -XX:-TieredCompilation -Xbatch
  *   -XX:InitArrayShortSize=32768 -XX:-IdealizeClearArrayNode -XX:UseAVX=3 compiler.c2.ClearArray
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+IgnoreUnrecognizedVMOptions -XX:-TieredCompilation -Xbatch
+ *   -XX:InitArrayShortSize=32768 -XX:MaxVectorSize=8 -XX:-IdealizeClearArrayNode -XX:UseAVX=3 compiler.c2.ClearArray
  */
 
 package compiler.c2;

@@ -25,8 +25,8 @@
 
 package com.sun.tools.javap;
 
-import jdk.internal.classfile.constantpool.*;
-import static jdk.internal.classfile.Classfile.*;
+import java.lang.classfile.constantpool.*;
+import static java.lang.classfile.ClassFile.*;
 
 /*
  *  Write a constant pool entry.

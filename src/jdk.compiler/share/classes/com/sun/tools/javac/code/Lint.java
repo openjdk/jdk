@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,6 +130,7 @@ public class Lint
                 values.add(LintCategory.PREVIEW);
             }
             values.add(LintCategory.SYNCHRONIZATION);
+            values.add(LintCategory.INCUBATING);
         }
 
         // Look for specific overrides
@@ -180,6 +181,12 @@ public class Lint
         CLASSFILE("classfile"),
 
         /**
+         * Warn about"dangling" documentation comments,
+         * not attached to any declaration.
+         */
+        DANGLING_DOC_COMMENTS("dangling-doc-comments"),
+
+        /**
          * Warn about use of deprecated items.
          */
         DEPRECATION("deprecation"),
@@ -214,6 +221,11 @@ public class Lint
          * Warn about finally clauses that do not terminate normally.
          */
         FINALLY("finally"),
+
+        /**
+         * Warn about use of incubating modules.
+         */
+        INCUBATING("incubating"),
 
         /**
           * Warn about compiler possible lossy conversions.
@@ -343,12 +355,7 @@ public class Lint
         RESTRICTED("restricted");
 
         LintCategory(String option) {
-            this(option, false);
-        }
-
-        LintCategory(String option, boolean hidden) {
             this.option = option;
-            this.hidden = hidden;
             map.put(option, this);
         }
 
@@ -357,7 +364,6 @@ public class Lint
         }
 
         public final String option;
-        public final boolean hidden;
     }
 
     /**

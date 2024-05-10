@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 6476665 7033534 6830714 8052162 8196572
+ * @bug 6476665 7033534 6830714 8052162 8196572 8326661
  * @summary Verifies color conversion of Component Color Model based images
  * @run main ColConvCCMTest
  */
@@ -59,8 +59,8 @@ public class ColConvCCMTest extends ColConvTest {
         2.5,        // sRGB
         (isOpenProfile() ? 45.0 : 10.1), // LINEAR_RGB
         10.5,       // GRAY
-        (isOpenProfile() ? 215.0 : 45.5), // PYCC
-        (isOpenProfile() ? 56.0 : 47.5) // CIEXYZ
+        (isOpenProfile() ? 215.0 : 64.5), // PYCC
+        (isOpenProfile() ? 56.0 : 55.5) // CIEXYZ
     };
 
     final static String [] gldImgNames = {

@@ -62,14 +62,17 @@ class JfrCheckpointManager : public JfrCHeapObj {
   JfrCheckpointMspace* _global_mspace;
   JfrThreadLocalCheckpointMspace* _thread_local_mspace;
   JfrThreadLocalCheckpointMspace* _virtual_thread_local_mspace;
-  JfrChunkWriter& _chunkwriter;
+  JfrChunkWriter* _chunkwriter;
 
-  JfrCheckpointManager(JfrChunkWriter& cw);
+  JfrCheckpointManager();
   ~JfrCheckpointManager();
   static JfrCheckpointManager& instance();
-  static JfrCheckpointManager* create(JfrChunkWriter& cw);
-  bool initialize();
+  static JfrCheckpointManager* create();
+  bool initialize_early();
+  bool initialize(JfrChunkWriter* cw);
   static void destroy();
+
+  JfrChunkWriter& chunkwriter();
 
   static BufferPtr get_virtual_thread_local(Thread* thread);
   static void set_virtual_thread_local(Thread* thread, BufferPtr buffer);

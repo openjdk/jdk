@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary Testing Classfile short to long jumps extension.
+ * @summary Testing ClassFile short to long jumps extension.
  * @run junit ShortJumpsFixTest
  */
 import java.lang.constant.ClassDesc;
@@ -31,15 +31,15 @@ import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
 import java.util.LinkedList;
 import java.util.List;
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.ClassTransform;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.Instruction;
-import jdk.internal.classfile.MethodTransform;
-import jdk.internal.classfile.Opcode;
-import static jdk.internal.classfile.Opcode.*;
-import jdk.internal.classfile.instruction.ConstantInstruction;
-import jdk.internal.classfile.instruction.NopInstruction;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.ClassTransform;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.Instruction;
+import java.lang.classfile.MethodTransform;
+import java.lang.classfile.Opcode;
+import static java.lang.classfile.Opcode.*;
+import java.lang.classfile.instruction.ConstantInstruction;
+import java.lang.classfile.instruction.NopInstruction;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import static org.junit.jupiter.api.Assertions.*;
@@ -98,11 +98,11 @@ class ShortJumpsFixTest {
         };
     }
 
-    static final Classfile
-            CC_Fixed_Jumps = Classfile.of(Classfile.ShortJumpsOption.FIX_SHORT_JUMPS),
-            CC_Not_Fixed_Jumps = Classfile.of(Classfile.ShortJumpsOption.FAIL_ON_SHORT_JUMPS),
-            CC_No_Stack_No_Patch = Classfile.of(Classfile.StackMapsOption.DROP_STACK_MAPS,
-                                                        Classfile.DeadCodeOption.KEEP_DEAD_CODE);
+    static final ClassFile
+            CC_Fixed_Jumps = ClassFile.of(ClassFile.ShortJumpsOption.FIX_SHORT_JUMPS),
+            CC_Not_Fixed_Jumps = ClassFile.of(ClassFile.ShortJumpsOption.FAIL_ON_SHORT_JUMPS),
+            CC_No_Stack_No_Patch = ClassFile.of(ClassFile.StackMapsOption.DROP_STACK_MAPS,
+                                                        ClassFile.DeadCodeOption.KEEP_DEAD_CODE);
 
     @ParameterizedTest
     @MethodSource("provideFwd")
@@ -204,22 +204,22 @@ class ShortJumpsFixTest {
                             ClassTransform.ACCEPT_ALL.andThen(overflow()))); //involve BufferedCodeBuilder here
     }
 
-    private static ClassModel generateFwd(Classfile cc, Sample sample, boolean overflow) {
+    private static ClassModel generateFwd(ClassFile cc, Sample sample, boolean overflow) {
         return cc.parse(cc.build(ClassDesc.of("WhateverClass"),
                         cb -> cb.withMethod("whateverMethod", MethodTypeDesc.of(ConstantDescs.CD_void), 0,
                                 mb -> mb.withCode(cob -> {
                                     for (int i = 0; i < sample.expected.length - 4; i++) //cherry-pick XCONST_ instructions from expected output
                                         cob.with(ConstantInstruction.ofIntrinsic(sample.expected[i]));
                                     var target = cob.newLabel();
-                                    cob.branchInstruction(sample.jumpCode, target);
+                                    cob.branch(sample.jumpCode, target);
                                     for (int i = overflow ? 40000 : 1; i > 0; i--)
-                                        cob.nopInstruction();
+                                        cob.nop();
                                     cob.labelBinding(target);
                                     cob.return_();
                                 }))));
     }
 
-    private static ClassModel generateBack(Classfile cc, Sample sample, boolean overflow) {
+    private static ClassModel generateBack(ClassFile cc, Sample sample, boolean overflow) {
         return cc.parse(cc.build(ClassDesc.of("WhateverClass"),
                         cb -> cb.withMethod("whateverMethod", MethodTypeDesc.of(ConstantDescs.CD_void), 0,
                                 mb -> mb.withCode(cob -> {
@@ -228,12 +228,12 @@ class ShortJumpsFixTest {
                                     cob.goto_w(fwd);
                                     cob.labelBinding(target);
                                     for (int i = overflow ? 40000 : 1; i > 0; i--)
-                                        cob.nopInstruction();
+                                        cob.nop();
                                     cob.return_();
                                     cob.labelBinding(fwd);
                                     for (int i = 3; i < sample.expected.length - 3; i++) //cherry-pick XCONST_ instructions from expected output
                                         cob.with(ConstantInstruction.ofIntrinsic(sample.expected[i]));
-                                    cob.branchInstruction(sample.jumpCode, target);
+                                    cob.branch(sample.jumpCode, target);
                                     cob.return_();
                                 }))));
     }
@@ -244,13 +244,13 @@ class ShortJumpsFixTest {
                                 (cob, coe) -> {
                                     if (coe instanceof NopInstruction)
                                         for (int i = 0; i < 40000; i++) //cause label overflow during transform
-                                            cob.nopInstruction();
+                                            cob.nop();
                                     cob.with(coe);
                                 }));
     }
 
     private static void assertFixed(Sample sample, byte[] classFile) {
-        assertFixed(sample, Classfile.of().parse(classFile));
+        assertFixed(sample, ClassFile.of().parse(classFile));
     }
 
     private static void assertFixed(Sample sample, ClassModel clm) {

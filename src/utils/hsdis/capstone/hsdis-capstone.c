@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * The Universal Permissive License (UPL), Version 1.0
@@ -52,6 +52,12 @@
 #include <inttypes.h>
 #include <string.h>
 
+/* Undefine macro to avoid generating invalid C code.
+   Capstone refactored cs_detail for AArch64 architecture
+   from `cs_arm64 arm64` to `cs_aarch64 aarch64`
+   and that causes invalid macro expansion.
+*/
+#undef aarch64
 #include <capstone.h>
 
 #include "hsdis.h"
@@ -114,9 +120,7 @@ static Options parse_options(const char* options, printf_callback_t printf_callb
   return ops;
 }
 
-#ifdef _WIN32
-__declspec(dllexport)
-#endif
+JNIEXPORT
 void* decode_instructions_virtual(uintptr_t start_va, uintptr_t end_va,
                                   unsigned char* buffer, uintptr_t length,
                                   event_callback_t event_callback,

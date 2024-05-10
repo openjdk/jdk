@@ -149,7 +149,7 @@ public class TestVMProcess {
         ProcessBuilder process = ProcessTools.createLimitedTestJavaProcessBuilder(cmds);
         try {
             // Calls 'main' of TestVM to run all specified tests with commands 'cmds'.
-            // Use executeProcess instead of executeTestJvm as we have already added the JTreg VM and
+            // Use executeProcess instead of executeTestJava as we have already added the JTreg VM and
             // Java options in prepareTestVMFlags().
             oa = ProcessTools.executeProcess(process);
         } catch (Exception e) {

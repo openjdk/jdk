@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -214,7 +214,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="IL">Isirayelɛ</territory>
 			<territory type="IM" draft="unconfirmed">Esanga ya Man</territory>
 			<territory type="IN">Índɛ</territory>
-			<territory type="IO">Mabelé ya Angɛlɛtɛ́lɛ na mbú ya Indiya</territory>
+			<territory type="IO" draft="provisional">Mabelé ya Angɛlɛtɛ́lɛ na mbú ya Indiya</territory>
 			<territory type="IQ">Iraki</territory>
 			<territory type="IR">Irâ</territory>
 			<territory type="IS">Isilandɛ</territory>
@@ -373,18 +373,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[a á â ǎ b c d e é ê ě ɛ {ɛ\u0301} {ɛ\u0302} {ɛ\u030C} f g {gb} h i í î ǐ k l m {mb} {mp} n {nd} {ng} {nk} {ns} {nt} {ny} {nz} o ó ô ǒ ɔ {ɔ\u0301} {ɔ\u0302} {ɔ\u030C} p r s t u ú v w y z]</exemplarCharacters>
+		<exemplarCharacters>[aáâǎ b c d eéêě ɛ{ɛ́}{ɛ̂}{ɛ̌} f g {gb} h iíîǐ k l m {mb} {mp} n {nd} {ng} {nk} {ns} {nt} {ny} {nz} oóôǒɔ{ɔ́}{ɔ̂}{ɔ̌} p r s t uú v w y z]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[j q x]</exemplarCharacters>
-		<exemplarCharacters type="index">[A B C D E Ɛ F G {Gb} H I K L M {Mb} {Mp} N {Nd} {Ng} {Nk} {Ns} {Nt} {Ny} {Nz} O Ɔ P R S T U V W Y Z]</exemplarCharacters>
-		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<moreInformation draft="unconfirmed">?</moreInformation>
+		<exemplarCharacters type="index">[A B C D E Ɛ F G {Gb} H I K L M {Mb} {Mp} N {Nd} {Ng} {Nk} {Ns} {Nt} {Ny} {Nz} OƆ P R S T U V W Y Z]</exemplarCharacters>
 	</characters>
-	<delimiters>
-		<quotationStart>“</quotationStart>
-		<quotationEnd>”</quotationEnd>
-		<alternateQuotationStart>‘</alternateQuotationStart>
-		<alternateQuotationEnd>’</alternateQuotationEnd>
-	</delimiters>
 	<dates>
 		<calendars>
 			<calendar type="generic">
@@ -392,19 +384,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>EEEE d MMMM y G</pattern>
-							<datetimeSkeleton>GyMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>d MMMM y G</pattern>
-							<datetimeSkeleton>GyMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>d MMM y G</pattern>
-							<datetimeSkeleton>GyMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
@@ -416,16 +405,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</dateFormats>
 				<dateTimeFormats>
 					<availableFormats>
-						<dateFormatItem id="d">d</dateFormatItem>
 						<dateFormatItem id="Ed">E d</dateFormatItem>
 						<dateFormatItem id="hm">h:mm a</dateFormatItem>
-						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
 						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
-						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
-						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">d/M</dateFormatItem>
 						<dateFormatItem id="MEd">E d/M</dateFormatItem>
-						<dateFormatItem id="MMM">LLL</dateFormatItem>
 						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E d MMM</dateFormatItem>
 						<dateFormatItem id="ms">m:ss</dateFormatItem>
@@ -545,10 +529,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<dayPeriod type="am">ntɔ́ngɔ́</dayPeriod>
 							<dayPeriod type="pm">mpókwa</dayPeriod>
 						</dayPeriodWidth>
-						<dayPeriodWidth type="wide">
-							<dayPeriod type="am">ntɔ́ngɔ́</dayPeriod>
-							<dayPeriod type="pm">mpókwa</dayPeriod>
-						</dayPeriodWidth>
 					</dayPeriodContext>
 				</dayPeriods>
 				<eras>
@@ -567,19 +547,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>EEEE d MMMM y</pattern>
-							<datetimeSkeleton>yMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>d MMMM y</pattern>
-							<datetimeSkeleton>yMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>d MMM y</pattern>
-							<datetimeSkeleton>yMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
@@ -593,44 +570,34 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<timeFormatLength type="full">
 						<timeFormat>
 							<pattern>HH:mm:ss zzzz</pattern>
-							<datetimeSkeleton>HHmmsszzzz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="long">
 						<timeFormat>
 							<pattern>HH:mm:ss z</pattern>
-							<datetimeSkeleton>HHmmssz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="medium">
 						<timeFormat>
 							<pattern>HH:mm:ss</pattern>
-							<datetimeSkeleton>HHmmss</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="short">
 						<timeFormat>
 							<pattern>HH:mm</pattern>
-							<datetimeSkeleton>HHmm</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 				</timeFormats>
 				<dateTimeFormats>
 					<availableFormats>
-						<dateFormatItem id="d">d</dateFormatItem>
 						<dateFormatItem id="Ed">E d</dateFormatItem>
 						<dateFormatItem id="hm">h:mm a</dateFormatItem>
-						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
 						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
-						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
-						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">d/M</dateFormatItem>
 						<dateFormatItem id="MEd">E d/M</dateFormatItem>
-						<dateFormatItem id="MMM">LLL</dateFormatItem>
 						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E d MMM</dateFormatItem>
 						<dateFormatItem id="ms">m:ss</dateFormatItem>
-						<dateFormatItem id="y">y</dateFormatItem>
 						<dateFormatItem id="yM">M/y</dateFormatItem>
 						<dateFormatItem id="yMd">d/M/y</dateFormatItem>
 						<dateFormatItem id="yMEd">E d/M/y</dateFormatItem>
@@ -683,7 +650,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</fields>
 		<timeZoneNames>
 			<regionFormat>Ngonga ya {0}</regionFormat>
-			<fallbackFormat>{1} ({0})</fallbackFormat>
 			<metazone type="Africa_Central">
 				<long>
 					<standard draft="unconfirmed">Ntángo ya Lubumbashi</standard>
@@ -715,24 +681,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<symbols numberSystem="latn">
 			<decimal>,</decimal>
 			<group>.</group>
-			<percentSign draft="unconfirmed">%</percentSign>
-			<plusSign draft="unconfirmed">+</plusSign>
-			<minusSign draft="unconfirmed">-</minusSign>
-			<perMille draft="unconfirmed">‰</perMille>
-			<infinity draft="unconfirmed">∞</infinity>
 		</symbols>
-		<decimalFormats numberSystem="latn">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern>#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-		</decimalFormats>
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>#,##0.00 ¤</pattern>
-					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
@@ -770,39 +723,24 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="ALL">
 				<displayName draft="unconfirmed">Lek</displayName>
-				<displayName count="one" draft="unconfirmed">Lek</displayName>
-				<displayName count="other" draft="unconfirmed">Lek</displayName>
 			</currency>
 			<currency type="AOA">
 				<displayName>Kwanza ya Angóla</displayName>
-				<symbol alt="narrow" draft="unconfirmed">Kz</symbol>
 			</currency>
 			<currency type="ARS">
 				<displayName draft="unconfirmed">Peso y’Argentina</displayName>
-				<displayName count="one" draft="unconfirmed">Peso y’Argentina</displayName>
-				<displayName count="other" draft="unconfirmed">Peso y’Argentina</displayName>
 			</currency>
 			<currency type="AUD">
 				<displayName>Dolarɛ ya Ositali</displayName>
-				<symbol draft="unconfirmed">A$</symbol>
-				<symbol alt="narrow" draft="unconfirmed">$</symbol>
 			</currency>
 			<currency type="AWG">
 				<displayName draft="unconfirmed">Guldeni y’ Aruba</displayName>
-				<displayName count="one" draft="unconfirmed">Guldeni y’ Aruba</displayName>
-				<displayName count="other" draft="unconfirmed">Guldeni y’ Aruba</displayName>
 			</currency>
 			<currency type="BAM">
 				<displayName draft="unconfirmed">Mark ya kobóngwama</displayName>
-				<displayName count="one" draft="unconfirmed">Mark ya kobóngwama</displayName>
-				<displayName count="other" draft="unconfirmed">Mark ya kobóngwama</displayName>
-				<symbol draft="unconfirmed">BAM</symbol>
-				<symbol alt="narrow" draft="unconfirmed">KM</symbol>
 			</currency>
 			<currency type="BBD">
 				<displayName draft="unconfirmed">Dolále ya Barbados</displayName>
-				<displayName count="one" draft="unconfirmed">Dolále ya Barbados</displayName>
-				<displayName count="other" draft="unconfirmed">Dolále ya Barbados</displayName>
 			</currency>
 			<currency type="BGN">
 				<displayName draft="unconfirmed">Lev ya Bulgaria</displayName>
@@ -817,36 +755,24 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="BOB">
 				<displayName draft="unconfirmed">Boliviano</displayName>
-				<displayName count="one" draft="unconfirmed">Boliviano</displayName>
-				<displayName count="other" draft="unconfirmed">Boliviano</displayName>
 			</currency>
 			<currency type="BRL">
 				<displayName draft="unconfirmed">Real ya Brazil</displayName>
 			</currency>
 			<currency type="BSD">
 				<displayName draft="unconfirmed">Dolále ya Bahamas</displayName>
-				<displayName count="one" draft="unconfirmed">Dolále ya Bahamas</displayName>
-				<displayName count="other" draft="unconfirmed">Dolále ya Bahamas</displayName>
 			</currency>
 			<currency type="BWP">
 				<displayName>Pula ya Botswana</displayName>
 			</currency>
 			<currency type="BYN">
 				<displayName draft="unconfirmed">Rubelé ya Bielorusí</displayName>
-				<displayName count="one" draft="unconfirmed">Rubelé ya Bielorusí</displayName>
-				<displayName count="other" draft="unconfirmed">Rubelé ya Bielorusí</displayName>
 			</currency>
 			<currency type="BYR">
 				<displayName draft="unconfirmed">Rubelé ya Bielorusí (2000–2016)</displayName>
-				<displayName count="one" draft="unconfirmed">Rubelé ya Bielorusí (2000–2016)</displayName>
-				<displayName count="other" draft="unconfirmed">Rubelé ya Bielorusí (2000–2016)</displayName>
 			</currency>
 			<currency type="BZD">
 				<displayName draft="unconfirmed">Dolále ya Belíze</displayName>
-				<displayName count="one" draft="unconfirmed">Dolále ya Belíze</displayName>
-				<displayName count="other" draft="unconfirmed">Dolále ya Belíze</displayName>
-				<symbol draft="unconfirmed">BZD</symbol>
-				<symbol alt="narrow" draft="unconfirmed">$</symbol>
 			</currency>
 			<currency type="CAD">
 				<displayName>Dolarɛ ya Kanadá</displayName>
@@ -861,51 +787,33 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="CLP">
 				<displayName draft="unconfirmed">Peso ya Shili</displayName>
-				<displayName count="one" draft="unconfirmed">Peso ya Shili</displayName>
-				<displayName count="other" draft="unconfirmed">Peso ya Shili</displayName>
 			</currency>
 			<currency type="CNY">
 				<displayName>Yuanɛ Renminbi ya Sinɛ</displayName>
 			</currency>
 			<currency type="COP">
 				<displayName draft="unconfirmed">Peso ya Kolombi</displayName>
-				<displayName count="one" draft="unconfirmed">Peso ya Kolombi</displayName>
-				<displayName count="other" draft="unconfirmed">Peso ya Kolombi</displayName>
 			</currency>
 			<currency type="CRC">
 				<displayName draft="unconfirmed">Colon ya Kosta Rika</displayName>
-				<displayName count="one" draft="unconfirmed">Colon ya Kosta Rika</displayName>
-				<displayName count="other" draft="unconfirmed">Colon ya Kosta Rika</displayName>
 			</currency>
 			<currency type="CUP">
 				<displayName draft="unconfirmed">Peso ya Kuba</displayName>
-				<displayName count="one" draft="unconfirmed">Peso ya Kuba</displayName>
-				<displayName count="other" draft="unconfirmed">Peso ya Kuba</displayName>
 			</currency>
 			<currency type="CVE">
 				<displayName>Esikudo ya Kapevɛrɛ</displayName>
 			</currency>
 			<currency type="CZK">
 				<displayName draft="unconfirmed">Motolé Sheki</displayName>
-				<displayName count="one" draft="unconfirmed">Motolé Sheki</displayName>
-				<displayName count="other" draft="unconfirmed">Motolé Sheki</displayName>
-				<symbol draft="unconfirmed">CZK</symbol>
-				<symbol alt="narrow" draft="unconfirmed">Kč</symbol>
 			</currency>
 			<currency type="DJF">
 				<displayName>Falánga ya Dzibuti</displayName>
 			</currency>
 			<currency type="DKK">
 				<displayName draft="unconfirmed">Motolé ya Danemark</displayName>
-				<displayName count="one" draft="unconfirmed">Motolé ya Danemark</displayName>
-				<displayName count="other" draft="unconfirmed">Motolé ya Danemark</displayName>
-				<symbol draft="unconfirmed">DKK</symbol>
-				<symbol alt="narrow" draft="unconfirmed">kr</symbol>
 			</currency>
 			<currency type="DOP">
 				<displayName draft="unconfirmed">Peso Dominikani</displayName>
-				<displayName count="one" draft="unconfirmed">Peso Dominikani</displayName>
-				<displayName count="other" draft="unconfirmed">Peso Dominikani</displayName>
 			</currency>
 			<currency type="DZD">
 				<displayName>Dinarɛ ya Alizeri</displayName>
@@ -921,89 +829,54 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="EUR">
 				<displayName>Ɛlɔ́</displayName>
-				<symbol draft="unconfirmed">€</symbol>
 			</currency>
 			<currency type="FJD">
 				<displayName draft="unconfirmed">Dolále ya Fiji</displayName>
-				<displayName count="one" draft="unconfirmed">Dolále ya Fiji</displayName>
-				<displayName count="other" draft="unconfirmed">Dolále ya Fiji</displayName>
-				<symbol draft="unconfirmed">FJD</symbol>
-				<symbol alt="narrow" draft="unconfirmed">$</symbol>
 			</currency>
 			<currency type="GBP">
 				<displayName>Paunɛ ya Angɛlɛtɛ́lɛ</displayName>
-				<symbol draft="unconfirmed">£</symbol>
-				<symbol alt="narrow" draft="unconfirmed">£</symbol>
 			</currency>
 			<currency type="GHC">
 				<displayName>Sedi ya Gana</displayName>
 			</currency>
 			<currency type="GHS">
 				<displayName draft="unconfirmed">Cedi</displayName>
-				<displayName count="one" draft="unconfirmed">Cedi</displayName>
-				<displayName count="other" draft="unconfirmed">Cedi</displayName>
 			</currency>
 			<currency type="GIP">
 				<displayName draft="unconfirmed">Bojito ya Gibraltar</displayName>
-				<displayName count="one" draft="unconfirmed">Bojito ya Gibraltar</displayName>
-				<displayName count="other" draft="unconfirmed">Bojito ya Gibraltar</displayName>
-				<symbol draft="unconfirmed">GIP</symbol>
-				<symbol alt="narrow" draft="unconfirmed">£</symbol>
 			</currency>
 			<currency type="GMD">
 				<displayName>Dalasi ya Gambi</displayName>
 			</currency>
 			<currency type="GNF">
 				<displayName draft="unconfirmed">Falánga ya Gine</displayName>
-				<displayName count="one" draft="unconfirmed">Falánga ya Gine</displayName>
-				<displayName count="other" draft="unconfirmed">Falánga ya Gine</displayName>
 			</currency>
 			<currency type="GNS">
 				<displayName>Falánga ya Ginɛ</displayName>
 			</currency>
 			<currency type="GTQ">
 				<displayName draft="unconfirmed">Quetzal</displayName>
-				<displayName count="one" draft="unconfirmed">Quetzal</displayName>
-				<displayName count="other" draft="unconfirmed">Quetzal</displayName>
 			</currency>
 			<currency type="HNL">
 				<displayName draft="unconfirmed">Lempira</displayName>
-				<displayName count="one" draft="unconfirmed">Lempira</displayName>
-				<displayName count="other" draft="unconfirmed">Lempira</displayName>
 			</currency>
 			<currency type="HRK">
 				<displayName draft="unconfirmed">Kuna ya Kroasia</displayName>
-				<displayName count="one" draft="unconfirmed">Kuna ya Kroasia</displayName>
-				<displayName count="other" draft="unconfirmed">Kuna ya Kroasia</displayName>
-				<symbol draft="unconfirmed">HRK</symbol>
-				<symbol alt="narrow" draft="unconfirmed">kn</symbol>
 			</currency>
 			<currency type="HTG">
 				<displayName draft="unconfirmed">Gurde</displayName>
-				<displayName count="one" draft="unconfirmed">Gurde</displayName>
-				<displayName count="other" draft="unconfirmed">Gurde</displayName>
 			</currency>
 			<currency type="HUF">
 				<displayName draft="unconfirmed">Folinte</displayName>
-				<displayName count="one" draft="unconfirmed">Folinte</displayName>
-				<displayName count="other" draft="unconfirmed">Folinte</displayName>
-				<symbol draft="unconfirmed">HUF</symbol>
-				<symbol alt="narrow" draft="unconfirmed">Ft</symbol>
 			</currency>
 			<currency type="INR">
 				<displayName>Rupi ya Índɛ</displayName>
 			</currency>
 			<currency type="ISK">
 				<displayName draft="unconfirmed">Motolé ya Islandi</displayName>
-				<displayName count="one" draft="unconfirmed">Motolé ya Islandi</displayName>
-				<displayName count="other" draft="unconfirmed">Motolé ya Islandi</displayName>
-				<symbol draft="unconfirmed">ISK</symbol>
-				<symbol alt="narrow" draft="unconfirmed">kr</symbol>
 			</currency>
 			<currency type="JMD">
 				<displayName draft="unconfirmed">Dolále ya Jamaïke</displayName>
-				<displayName count="one" draft="unconfirmed">Dolále ya Jamaïke</displayName>
-				<displayName count="other" draft="unconfirmed">Dolále ya Jamaïke</displayName>
 			</currency>
 			<currency type="JPY">
 				<displayName>Yeni ya Zapɔ</displayName>
@@ -1016,8 +889,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="KYD">
 				<displayName draft="unconfirmed">Dolále ya Bisanga bya Kayman</displayName>
-				<displayName count="one" draft="unconfirmed">Dolále ya Bisanga bya Kayman</displayName>
-				<displayName count="other" draft="unconfirmed">Dolále ya Bisanga bya Kayman</displayName>
 			</currency>
 			<currency type="LRD">
 				<displayName>Dolarɛ ya Liberya</displayName>
@@ -1027,13 +898,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="LTL">
 				<displayName draft="unconfirmed">Litas ya Litwani</displayName>
-				<displayName count="one" draft="unconfirmed">Litas ya Litwani</displayName>
-				<displayName count="other" draft="unconfirmed">Litas ya Litwani</displayName>
 			</currency>
 			<currency type="LVL">
 				<displayName draft="unconfirmed">Lats ya Letoni</displayName>
-				<displayName count="one" draft="unconfirmed">Lats ya Letoni</displayName>
-				<displayName count="other" draft="unconfirmed">Lats ya Letoni</displayName>
 			</currency>
 			<currency type="LYD">
 				<displayName>Dinarɛ ya Libí</displayName>
@@ -1046,9 +913,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="MKD">
 				<displayName draft="unconfirmed">Denalé</displayName>
-				<displayName count="one" draft="unconfirmed">Denalé</displayName>
-				<displayName count="other" draft="unconfirmed">Denalé</displayName>
-				<symbol draft="unconfirmed">MKD</symbol>
 			</currency>
 			<currency type="MRO">
 				<displayName>Ugwiya ya Moritani (1973–2017)</displayName>
@@ -1064,8 +928,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="MXN">
 				<displayName draft="unconfirmed">Peso ya Mexiko</displayName>
-				<displayName count="one" draft="unconfirmed">Peso ya Mexiko</displayName>
-				<displayName count="other" draft="unconfirmed">Peso ya Mexiko</displayName>
 			</currency>
 			<currency type="MZM">
 				<displayName>Metikali ya Mozambiki</displayName>
@@ -1081,75 +943,42 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="NOK">
 				<displayName draft="unconfirmed">Motolé ya Norvej</displayName>
-				<displayName count="one" draft="unconfirmed">Motolé ya Norvej</displayName>
-				<displayName count="other" draft="unconfirmed">Motolé ya Norvej</displayName>
-				<symbol draft="unconfirmed">NOK</symbol>
-				<symbol alt="narrow" draft="unconfirmed">kr</symbol>
 			</currency>
 			<currency type="NZD">
 				<displayName draft="unconfirmed">Dolále ya Zeland ya Sika</displayName>
-				<displayName count="one" draft="unconfirmed">Dolále ya Zeland ya Sika</displayName>
-				<displayName count="other" draft="unconfirmed">Dolále ya Zeland ya Sika</displayName>
-				<symbol draft="unconfirmed">NZ$</symbol>
-				<symbol alt="narrow" draft="unconfirmed">$</symbol>
 			</currency>
 			<currency type="PAB">
 				<displayName draft="unconfirmed">Balboa</displayName>
-				<displayName count="one" draft="unconfirmed">Balboa</displayName>
-				<displayName count="other" draft="unconfirmed">Balboa</displayName>
 			</currency>
 			<currency type="PEN">
 				<displayName draft="unconfirmed">Sol Sika</displayName>
-				<displayName count="one" draft="unconfirmed">Sol Sika</displayName>
-				<displayName count="other" draft="unconfirmed">Sol Sika</displayName>
 			</currency>
 			<currency type="PGK">
 				<displayName draft="unconfirmed">Kina</displayName>
-				<displayName count="one" draft="unconfirmed">Kina</displayName>
-				<displayName count="other" draft="unconfirmed">Kina</displayName>
-				<symbol draft="unconfirmed">PGK</symbol>
 			</currency>
 			<currency type="PLN">
 				<displayName draft="unconfirmed">Sloty</displayName>
-				<displayName count="one" draft="unconfirmed">Sloty</displayName>
-				<displayName count="other" draft="unconfirmed">Sloty</displayName>
-				<symbol draft="unconfirmed">PLN</symbol>
-				<symbol alt="narrow" draft="unconfirmed">zł</symbol>
 			</currency>
 			<currency type="PYG">
 				<displayName draft="unconfirmed">Guarani</displayName>
-				<displayName count="one" draft="unconfirmed">Guarani</displayName>
-				<displayName count="other" draft="unconfirmed">Guarani</displayName>
 			</currency>
 			<currency type="RON">
 				<displayName draft="unconfirmed">Leu Sika</displayName>
-				<displayName count="one" draft="unconfirmed">Leu Sika</displayName>
-				<displayName count="other" draft="unconfirmed">Leu Sika</displayName>
 			</currency>
 			<currency type="RSD">
 				<displayName draft="unconfirmed">Dinalé ya Serbia</displayName>
-				<displayName count="one" draft="unconfirmed">Dinalé ya Serbia</displayName>
-				<displayName count="other" draft="unconfirmed">Dinalé ya Serbia</displayName>
-				<symbol draft="unconfirmed">RSD</symbol>
 			</currency>
 			<currency type="RUB">
 				<displayName draft="unconfirmed">Rubelé ya Rusí</displayName>
-				<displayName count="one" draft="unconfirmed">Rubelé ya Rusí</displayName>
-				<displayName count="other" draft="unconfirmed">Rubelé ya Rusí</displayName>
-				<symbol draft="unconfirmed">RUB</symbol>
-				<symbol alt="narrow" draft="unconfirmed">₽</symbol>
 			</currency>
 			<currency type="RWF">
 				<displayName>Falánga ya Rwanda</displayName>
-				<symbol alt="narrow" draft="unconfirmed">RF</symbol>
 			</currency>
 			<currency type="SAR">
 				<displayName>Riyalɛ ya Alabi Sawuditɛ</displayName>
 			</currency>
 			<currency type="SBD">
 				<displayName draft="unconfirmed">Dolále ya Bisanga Solomoni</displayName>
-				<symbol draft="unconfirmed">SBD</symbol>
-				<symbol alt="narrow" draft="unconfirmed">$</symbol>
 			</currency>
 			<currency type="SCR">
 				<displayName>Rupi ya Sɛshɛlɛ</displayName>
@@ -1162,16 +991,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="SEK">
 				<displayName draft="unconfirmed">Motolé ya Swédi</displayName>
-				<displayName count="one" draft="unconfirmed">Motolé ya Swédi</displayName>
-				<displayName count="other" draft="unconfirmed">Motolé ya Swédi</displayName>
-				<symbol draft="unconfirmed">SEK</symbol>
-				<symbol alt="narrow" draft="unconfirmed">kr</symbol>
 			</currency>
 			<currency type="SHP">
 				<displayName>Paunɛ ya Sántu elena</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>Leonɛ</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>Leonɛ (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>Shilingɛ ya Somali</displayName>
@@ -1193,22 +1021,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="TOP">
 				<displayName draft="unconfirmed">Pa’Anga</displayName>
-				<symbol alt="narrow" draft="unconfirmed">T$</symbol>
 			</currency>
 			<currency type="TTD">
 				<displayName draft="unconfirmed">Dolále ya Trinidad mpé Tobago</displayName>
-				<displayName count="one" draft="unconfirmed">Dolále ya Trinidad mpé Tobago</displayName>
-				<displayName count="other" draft="unconfirmed">Dolále ya Trinidad mpé Tobago</displayName>
 			</currency>
 			<currency type="TZS">
 				<displayName>Shilingɛ ya Tanzani</displayName>
 			</currency>
 			<currency type="UAH">
 				<displayName draft="unconfirmed">Griwná</displayName>
-				<displayName count="one" draft="unconfirmed">Griwná</displayName>
-				<displayName count="other" draft="unconfirmed">Griwná</displayName>
-				<symbol draft="unconfirmed">UAH</symbol>
-				<symbol alt="narrow" draft="unconfirmed">₴</symbol>
 			</currency>
 			<currency type="UGX">
 				<displayName>Shilingɛ ya Uganda</displayName>
@@ -1224,12 +1045,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="XAF">
 				<displayName>Falánga CFA BEAC</displayName>
-				<symbol draft="unconfirmed">FCFA</symbol>
 			</currency>
 			<currency type="XCD">
 				<displayName draft="unconfirmed">Dolále ya Kalibí Monyɛlɛ</displayName>
-				<displayName count="one" draft="unconfirmed">Dolále ya Kalibí Monyɛlɛ</displayName>
-				<displayName count="other" draft="unconfirmed">Dolále ya Kalibí Monyɛlɛ</displayName>
 			</currency>
 			<currency type="XOF">
 				<displayName>Falánga CFA BCEAO</displayName>
@@ -1260,33 +1078,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" draft="unconfirmed">{0} sekúlo</unitPattern>
 			</unit>
 			<unit type="duration-year">
-				<displayName draft="unconfirmed">mibú</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0} mobú</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0} mibú</unitPattern>
 			</unit>
 			<unit type="duration-month">
-				<displayName draft="unconfirmed">sánzá</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0} sánzá</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0} sánzá</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0}/sán</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
-				<displayName draft="unconfirmed">mpɔ́sɔ</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0} mpɔ́sɔ</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0} mpɔ́sɔ</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0}/mps</perUnitPattern>
-			</unit>
-			<unit type="duration-day">
-				<displayName draft="unconfirmed">mikɔlɔ</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} mokɔlɔ</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} mikɔlɔ</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0}/d</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
-				<displayName draft="unconfirmed">ngonga</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0} ngonga</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0} ngonga</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0}/h</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
 				<displayName draft="unconfirmed">minúti</displayName>
@@ -1340,93 +1145,27 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName draft="unconfirmed">mikɔlɔ</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0} mokɔlɔ</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0} mikɔlɔ</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0}/d</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
 				<displayName draft="unconfirmed">ngonga</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} h</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} h</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0}/h</perUnitPattern>
-			</unit>
-			<unit type="duration-minute">
-				<displayName draft="unconfirmed">min</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} min</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} min</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0}/min</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
 				<displayName draft="unconfirmed">s</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} s</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} s</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0}/s</perUnitPattern>
-			</unit>
-			<unit type="duration-millisecond">
-				<displayName draft="unconfirmed">ms</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} ms</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} ms</unitPattern>
-			</unit>
-			<unit type="duration-microsecond">
-				<displayName draft="unconfirmed">μs</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} μs</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} μs</unitPattern>
-			</unit>
-			<unit type="duration-nanosecond">
-				<displayName draft="unconfirmed">ns</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} ns</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} ns</unitPattern>
 			</unit>
 		</unitLength>
 		<unitLength type="narrow">
-			<unit type="duration-month">
-				<displayName draft="unconfirmed">sánzá</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} sán</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} sán</unitPattern>
-			</unit>
 			<unit type="duration-week">
 				<displayName draft="unconfirmed">mps</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} mps</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} mps</unitPattern>
 			</unit>
 			<unit type="duration-day">
 				<displayName draft="unconfirmed">mokɔlɔ</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0} d</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0} d</unitPattern>
 			</unit>
-			<unit type="duration-hour">
-				<displayName draft="unconfirmed">ngonga</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} h</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} h</unitPattern>
-			</unit>
-			<unit type="duration-minute">
-				<displayName draft="unconfirmed">min</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} min</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} min</unitPattern>
-			</unit>
-			<unit type="duration-second">
-				<displayName draft="unconfirmed">s</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} s</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} s</unitPattern>
-			</unit>
-			<unit type="duration-millisecond">
-				<displayName draft="unconfirmed">ms</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} ms</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} ms</unitPattern>
-			</unit>
 		</unitLength>
-		<durationUnit type="hm">
-			<durationUnitPattern draft="unconfirmed">h:mm</durationUnitPattern>
-		</durationUnit>
-		<durationUnit type="hms">
-			<durationUnitPattern draft="unconfirmed">h:mm:ss</durationUnitPattern>
-		</durationUnit>
-		<durationUnit type="ms">
-			<durationUnitPattern draft="unconfirmed">m:ss</durationUnitPattern>
-		</durationUnit>
 	</units>
 	<listPatterns>
 		<listPattern>
-			<listPatternPart type="start" draft="unconfirmed">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle" draft="unconfirmed">{0}, {1}</listPatternPart>
 			<listPatternPart type="end" draft="unconfirmed">{0} mpé {1}</listPatternPart>
 			<listPatternPart type="2" draft="unconfirmed">{0} mpé {1}</listPatternPart>
 		</listPattern>

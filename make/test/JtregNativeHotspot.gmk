@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,8 @@ default: all
 
 include $(SPEC)
 include MakeBase.gmk
+
+include CopyFiles.gmk
 include TestFilesCompilation.gmk
 
 $(eval $(call IncludeCustomExtension, test/JtregNativeHotspot.gmk))
@@ -139,9 +141,6 @@ BUILD_HOTSPOT_JTREG_LIBRARIES_CFLAGS_libNoFramePointer := $(NO_FRAMEPOINTER_CFLA
 BUILD_HOTSPOT_JTREG_LIBRARIES_OPTIMIZATION_libNoFramePointer := HIGH
 
 JVMTI_COMMON_INCLUDES=-I$(TOPDIR)/test/lib/jdk/test/lib/jvmti
-
-BUILD_HOTSPOT_JTREG_LIBRARIES_CFLAGS := -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -D__STDC_CONSTANT_MACROS $(JVMTI_COMMON_INCLUDES)
-BUILD_HOTSPOT_JTREG_EXECUTABLES_CFLAGS := -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -D__STDC_CONSTANT_MACROS $(JVMTI_COMMON_INCLUDES)
 
 BUILD_HOTSPOT_JTREG_LIBRARIES_CFLAGS_libProcessUtils := $(VM_SHARE_INCLUDES)
 
@@ -845,9 +844,11 @@ ifeq ($(call isTargetOs, linux), true)
   BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libstepBreakPopReturn := -lpthread
   BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libIndyRedefineClass := -lpthread
   BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libredefineClasses := -lpthread
-  BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exeinvoke := -ljvm -lpthread
-  BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exestack-gap := -ljvm -lpthread
-  BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exestack-tls := -ljvm
+  BUILD_HOTSPOT_JTREG_EXECUTABLES_JDK_LIBS_exeinvoke := java.base:libjvm
+  BUILD_HOTSPOT_JTREG_EXECUTABLES_JDK_LIBS_exestack-gap := java.base:libjvm
+  BUILD_HOTSPOT_JTREG_EXECUTABLES_JDK_LIBS_exestack-tls := java.base:libjvm
+  BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exeinvoke := -lpthread
+  BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exestack-gap := -lpthread
   BUILD_TEST_exeinvoke_exeinvoke.c_OPTIMIZATION := NONE
   BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exeFPRegs := -ldl
   BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libAsyncGetCallTraceTest := -ldl
@@ -857,16 +858,20 @@ else
       exeinvoke.c exestack-gap.c exestack-tls.c libAsyncGetCallTraceTest.cpp
 endif
 
-BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exesigtest := -ljvm
+ifeq ($(call And, $(call isTargetOs, linux) $(call isTargetCpu, aarch64)), false)
+  BUILD_HOTSPOT_JTREG_EXCLUDE += libTestSVEWithJNI.c
+endif
+
+
+BUILD_HOTSPOT_JTREG_EXECUTABLES_JDK_LIBS_exesigtest := java.base:libjvm
+BUILD_HOTSPOT_JTREG_LIBRARIES_JDK_LIBS_libatExit := java.base:libjvm
+BUILD_HOTSPOT_JTREG_EXECUTABLES_JDK_LIBS_exedaemonDestroy := java.base:libjvm
 
 ifeq ($(call isTargetOs, windows), true)
   BUILD_HOTSPOT_JTREG_EXECUTABLES_CFLAGS_exeFPRegs := -MT
-  BUILD_HOTSPOT_JTREG_EXCLUDE += exesigtest.c libterminatedThread.c libTestJNI.c libCompleteExit.c libTestPsig.c exeGetCreatedJavaVMs.c
-  BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libatExit := jvm.lib
-  BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libnativeStack := jvm.lib
-  BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exedaemonDestroy := jvm.lib
+  BUILD_HOTSPOT_JTREG_EXCLUDE += exesigtest.c libterminatedThread.c libTestJNI.c libCompleteExit.c libMonitorWithDeadObjectTest.c libTestPsig.c exeGetCreatedJavaVMs.c
+  BUILD_HOTSPOT_JTREG_LIBRARIES_JDK_LIBS_libnativeStack := java.base:libjvm
 else
-  BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exedaemonDestroy := -ljvm
   BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libbootclssearch_agent += -lpthread
   BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libsystemclssearch_agent += -lpthread
   BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libgetsysprop001 += -lpthread
@@ -1501,10 +1506,11 @@ else
   BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libgetphase001 += -lpthread
   BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libgetphase002 += -lpthread
   BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libterminatedThread += -lpthread
-  BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libatExit += -ljvm
   BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libCompleteExit += -lpthread
+  BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libMonitorWithDeadObjectTest += -lpthread
   BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libnativeStack += -lpthread
-  BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exeGetCreatedJavaVMs := -ljvm -lpthread
+  BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exeGetCreatedJavaVMs := -lpthread
+  BUILD_HOTSPOT_JTREG_EXECUTABLES_JDK_LIBS_exeGetCreatedJavaVMs := java.base:libjvm
 
   BUILD_HOTSPOT_JTREG_EXCLUDE += libNativeException.c
 endif
@@ -1520,6 +1526,10 @@ ifeq ($(LSAN_ENABLED), true)
   # default LSan options.
   BUILD_HOTSPOT_JTREG_EXTRA_FILES += $(TOPDIR)/make/data/lsan/lsan_default_options.c
 endif
+
+# These apply to all tests
+BUILD_HOTSPOT_JTREG_LIBRARIES_CFLAGS := -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -D__STDC_CONSTANT_MACROS $(JVMTI_COMMON_INCLUDES)
+BUILD_HOTSPOT_JTREG_EXECUTABLES_CFLAGS := -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -D__STDC_CONSTANT_MACROS $(JVMTI_COMMON_INCLUDES)
 
 # This evaluation is expensive and should only be done if this target was
 # explicitly called.

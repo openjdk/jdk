@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@
 #include "oops/methodData.hpp"
 #include "oops/resolvedFieldEntry.hpp"
 #include "oops/resolvedIndyEntry.hpp"
+#include "oops/resolvedMethodEntry.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/basicLock.hpp"
@@ -323,29 +324,11 @@ void InterpreterMacroAssembler::get_cache_index_at_bcp(Register index, int bcp_o
   } else if (index_size == sizeof(u4)) {
 
     load_sized_value(index, param, 4, false);
-
-    // Check if the secondary index definition is still ~x, otherwise
-    // we have to change the following assembler code to calculate the
-    // plain index.
-    assert(ConstantPool::decode_invokedynamic_index(~123) == 123, "else change next line");
-    not_(index);  // Convert to plain index.
   } else if (index_size == sizeof(u1)) {
     z_llgc(index, param);
   } else {
     ShouldNotReachHere();
   }
-  BLOCK_COMMENT("}");
-}
-
-
-void InterpreterMacroAssembler::get_cache_and_index_at_bcp(Register cache, Register cpe_offset,
-                                                           int bcp_offset, size_t index_size) {
-  BLOCK_COMMENT("get_cache_and_index_at_bcp {");
-  assert_different_registers(cache, cpe_offset);
-  get_cache_index_at_bcp(cpe_offset, bcp_offset, index_size);
-  z_lg(cache, Address(Z_fp, _z_ijava_state_neg(cpoolCache)));
-  // Convert from field index to ConstantPoolCache offset in bytes.
-  z_sllg(cpe_offset, cpe_offset, exact_log2(in_words(ConstantPoolCacheEntry::size()) * BytesPerWord));
   BLOCK_COMMENT("}");
 }
 
@@ -389,26 +372,24 @@ void InterpreterMacroAssembler::load_field_entry(Register cache, Register index,
   z_la(cache, Array<ResolvedFieldEntry>::base_offset_in_bytes(), index, cache);
 }
 
-// Kills Z_R0_scratch.
-void InterpreterMacroAssembler::get_cache_and_index_and_bytecode_at_bcp(Register cache,
-                                                                        Register cpe_offset,
-                                                                        Register bytecode,
-                                                                        int byte_no,
-                                                                        int bcp_offset,
-                                                                        size_t index_size) {
-  BLOCK_COMMENT("get_cache_and_index_and_bytecode_at_bcp {");
-  get_cache_and_index_at_bcp(cache, cpe_offset, bcp_offset, index_size);
+void InterpreterMacroAssembler::load_method_entry(Register cache, Register index, int bcp_offset) {
+  // Get field index out of bytecode pointer.
+  get_cache_index_at_bcp(index, bcp_offset, sizeof(u2));
 
-  // We want to load (from CP cache) the bytecode that corresponds to the passed-in byte_no.
-  // It is located at (cache + cpe_offset + base_offset + indices_offset + (8-1) (last byte in DW) - (byte_no+1).
-  // Instead of loading, shifting and masking a DW, we just load that one byte of interest with z_llgc (unsigned).
-  const int base_ix_off = in_bytes(ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::indices_offset());
-  const int off_in_DW   = (8-1) - (1+byte_no);
-  assert(ConstantPoolCacheEntry::bytecode_1_mask == ConstantPoolCacheEntry::bytecode_2_mask, "common mask");
-  assert(ConstantPoolCacheEntry::bytecode_1_mask == 0xff, "");
-  load_sized_value(bytecode, Address(cache, cpe_offset, base_ix_off+off_in_DW), 1, false /*signed*/);
+  // Get the address of the ResolvedMethodEntry array.
+  get_constant_pool_cache(cache);
+  z_lg(cache, Address(cache, in_bytes(ConstantPoolCache::method_entries_offset())));
 
-  BLOCK_COMMENT("}");
+  // Scale the index to form a byte offset into the ResolvedMethodEntry array
+  size_t entry_size = sizeof(ResolvedMethodEntry);
+  if (is_power_of_2(entry_size)) {
+    z_sllg(index, index, exact_log2(entry_size));
+  } else {
+    z_mghi(index, entry_size);
+  }
+
+  // Calculate the final field address.
+  z_la(cache, Array<ResolvedMethodEntry>::base_offset_in_bytes(), index, cache);
 }
 
 // Load object from cpool->resolved_references(index).
@@ -448,29 +429,6 @@ void InterpreterMacroAssembler::load_resolved_klass_at_offset(Register cpool, Re
   z_lg(iklass, Address(iklass, offset, Array<Klass*>::base_offset_in_bytes()));
 }
 
-void InterpreterMacroAssembler::get_cache_entry_pointer_at_bcp(Register cache,
-                                                               Register tmp,
-                                                               int bcp_offset,
-                                                               size_t index_size) {
-  BLOCK_COMMENT("get_cache_entry_pointer_at_bcp {");
-    get_cache_and_index_at_bcp(cache, tmp, bcp_offset, index_size);
-    add2reg_with_index(cache, in_bytes(ConstantPoolCache::base_offset()), tmp, cache);
-  BLOCK_COMMENT("}");
-}
-
-void InterpreterMacroAssembler::load_resolved_method_at_index(int byte_no,
-                                                              Register cache,
-                                                              Register cpe_offset,
-                                                              Register method) {
-  const int method_offset = in_bytes(
-    ConstantPoolCache::base_offset() +
-      ((byte_no == TemplateTable::f2_byte)
-       ? ConstantPoolCacheEntry::f2_offset()
-       : ConstantPoolCacheEntry::f1_offset()));
-
-  z_lg(method, Address(cache, cpe_offset, method_offset)); // get f1 Method*
-}
-
 // Generate a subtype check: branch to ok_is_subtype if sub_klass is
 // a subtype of super_klass. Blows registers Rsuper_klass, Rsub_klass, tmp1, tmp2.
 void InterpreterMacroAssembler::gen_subtype_check(Register Rsub_klass,
@@ -483,9 +441,6 @@ void InterpreterMacroAssembler::gen_subtype_check(Register Rsub_klass,
 
   // Do the check.
   check_klass_subtype(Rsub_klass, Rsuper_klass, Rtmp1, Rtmp2, ok_is_subtype);
-
-  // Profile the failure of the check.
-  profile_typecheck_failed(Rtmp1, Rtmp2);
 }
 
 // Pop topmost element from stack. It just disappears.
@@ -1461,7 +1416,7 @@ void InterpreterMacroAssembler::profile_virtual_call(Register receiver,
     }
 
     // Record the receiver type.
-    record_klass_in_profile(receiver, mdp, reg2, true);
+    record_klass_in_profile(receiver, mdp, reg2);
     bind(skip_receiver_profile);
 
     // The method data pointer needs to be updated to reflect the new target.
@@ -1484,11 +1439,9 @@ void InterpreterMacroAssembler::profile_virtual_call(Register receiver,
 void InterpreterMacroAssembler::record_klass_in_profile_helper(
                                         Register receiver, Register mdp,
                                         Register reg2, int start_row,
-                                        Label& done, bool is_virtual_call) {
+                                        Label& done) {
   if (TypeProfileWidth == 0) {
-    if (is_virtual_call) {
-      increment_mdp_data_at(mdp, in_bytes(CounterData::count_offset()));
-    }
+    increment_mdp_data_at(mdp, in_bytes(CounterData::count_offset()));
     return;
   }
 
@@ -1523,23 +1476,19 @@ void InterpreterMacroAssembler::record_klass_in_profile_helper(
       z_ltgr(reg2, reg2);
       if (start_row == last_row) {
         // The only thing left to do is handle the null case.
-        if (is_virtual_call) {
-          z_brz(found_null);
-          // Receiver did not match any saved receiver and there is no empty row for it.
-          // Increment total counter to indicate polymorphic case.
-          increment_mdp_data_at(mdp, in_bytes(CounterData::count_offset()));
-          z_bru(done);
-          bind(found_null);
-        } else {
-          z_brnz(done);
-        }
+        z_brz(found_null);
+        // Receiver did not match any saved receiver and there is no empty row for it.
+        // Increment total counter to indicate polymorphic case.
+        increment_mdp_data_at(mdp, in_bytes(CounterData::count_offset()));
+        z_bru(done);
+        bind(found_null);
         break;
       }
       // Since null is rare, make it be the branch-taken case.
       z_brz(found_null);
 
       // Put all the "Case 3" tests here.
-      record_klass_in_profile_helper(receiver, mdp, reg2, start_row + 1, done, is_virtual_call);
+      record_klass_in_profile_helper(receiver, mdp, reg2, start_row + 1, done);
 
       // Found a null. Keep searching for a matching receiver,
       // but remember that this is an empty (unused) slot.
@@ -1586,12 +1535,11 @@ void InterpreterMacroAssembler::record_klass_in_profile_helper(
 //   done:
 
 void InterpreterMacroAssembler::record_klass_in_profile(Register receiver,
-                                                        Register mdp, Register reg2,
-                                                        bool is_virtual_call) {
+                                                        Register mdp, Register reg2) {
   assert(ProfileInterpreter, "must be profiling");
   Label done;
 
-  record_klass_in_profile_helper(receiver, mdp, reg2, 0, done, is_virtual_call);
+  record_klass_in_profile_helper(receiver, mdp, reg2, 0, done);
 
   bind (done);
 }
@@ -1651,24 +1599,6 @@ void InterpreterMacroAssembler::profile_null_seen(Register mdp) {
   }
 }
 
-void InterpreterMacroAssembler::profile_typecheck_failed(Register mdp, Register tmp) {
-  if (ProfileInterpreter && TypeProfileCasts) {
-    Label profile_continue;
-
-    // If no method data exists, go to profile_continue.
-    test_method_data_pointer(mdp, profile_continue);
-
-    int count_offset = in_bytes(CounterData::count_offset());
-    // Back up the address, since we have already bumped the mdp.
-    count_offset -= in_bytes(VirtualCallData::virtual_call_data_size());
-
-    // *Decrement* the counter. We expect to see zero or small negatives.
-    increment_mdp_data_at(mdp, count_offset, tmp, true);
-
-    bind (profile_continue);
-  }
-}
-
 void InterpreterMacroAssembler::profile_typecheck(Register mdp, Register klass, Register reg2) {
   if (ProfileInterpreter) {
     Label profile_continue;
@@ -1682,7 +1612,7 @@ void InterpreterMacroAssembler::profile_typecheck(Register mdp, Register klass, 
       mdp_delta = in_bytes(VirtualCallData::virtual_call_data_size());
 
       // Record the object type.
-      record_klass_in_profile(klass, mdp, reg2, false);
+      record_klass_in_profile(klass, mdp, reg2);
     }
     update_mdp_by_constant(mdp, mdp_delta);
 

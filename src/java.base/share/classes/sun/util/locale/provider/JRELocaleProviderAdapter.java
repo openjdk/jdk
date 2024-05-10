@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -470,7 +470,7 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
                     if (ldmi.getType() == LocaleProviderAdapter.Type.JRE) {
                         String t = ldmi.availableLanguageTags(category);
                         if (t != null) {
-                            if (tags.length() > 0) {
+                            if (!tags.isEmpty()) {
                                 tags.append(' ');
                             }
                             tags.append(t);

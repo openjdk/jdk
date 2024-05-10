@@ -49,6 +49,7 @@ import jtreg.SkippedException;
 
 /*
  * @test
+ * @requires vm.flagless
  * @library /test/lib
  * @build jdk.test.lib.process.ProcessTools jdk.test.lib.hexdump.HexPrinter
  * @run testng ReaderWriterTest

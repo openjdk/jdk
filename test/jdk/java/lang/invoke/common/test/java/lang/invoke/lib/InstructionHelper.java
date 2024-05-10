@@ -23,121 +23,102 @@
 
 package test.java.lang.invoke.lib;
 
-import jdk.experimental.bytecode.BasicClassBuilder;
-import jdk.experimental.bytecode.BasicTypeHelper;
-import jdk.experimental.bytecode.Flag;
-import jdk.experimental.bytecode.PoolHelper;
-import jdk.experimental.bytecode.TypedCodeBuilder;
+import java.lang.classfile.ClassBuilder;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.TypeKind;
 
-import java.io.FileOutputStream;
+import java.lang.constant.*;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
-import java.util.function.Function;
 
 import static java.lang.invoke.MethodType.fromMethodDescriptorString;
-import static java.lang.invoke.MethodType.methodType;
 
 public class InstructionHelper {
 
-    static final BasicTypeHelper BTH = new BasicTypeHelper();
-
     static final AtomicInteger COUNT = new AtomicInteger();
 
-    static BasicClassBuilder classBuilder(MethodHandles.Lookup l) {
-        String className = l.lookupClass().getCanonicalName().replace('.', '/') + "$Code_" + COUNT.getAndIncrement();
-        return new BasicClassBuilder(className, 55, 0)
-                .withSuperclass("java/lang/Object")
-                .withMethod("<init>", "()V", M ->
-                        M.withFlags(Flag.ACC_PUBLIC)
-                                .withCode(TypedCodeBuilder::new, C ->
-                                        C.aload_0().invokespecial("java/lang/Object", "<init>", "()V", false).return_()
-                                ));
+    private static void commonBuild(ClassBuilder classBuilder) {
+        classBuilder
+                .withVersion(55, 0)
+                .withSuperclass(ConstantDescs.CD_Object)
+                .withMethod(ConstantDescs.INIT_NAME, ConstantDescs.MTD_void, ClassFile.ACC_PUBLIC,
+                        methodBuilder -> methodBuilder
+                                .withCode(codeBuilder -> codeBuilder
+                                        .aload(0)
+                                        .invokespecial(ConstantDescs.CD_Object, ConstantDescs.INIT_NAME,
+                                                ConstantDescs.MTD_void, false)
+                                        .return_()));
     }
 
-    public static MethodHandle invokedynamic(MethodHandles.Lookup l,
-                                      String name, MethodType type,
-                                      String bsmMethodName, MethodType bsmType,
-                                      Consumer<PoolHelper.StaticArgListBuilder<String, String, byte[]>> staticArgs) throws Exception {
-        byte[] byteArray = classBuilder(l)
-                .withMethod("m", type.toMethodDescriptorString(), M ->
-                        M.withFlags(Flag.ACC_PUBLIC, Flag.ACC_STATIC)
-                                .withCode(TypedCodeBuilder::new,
-                                          C -> {
-                                              for (int i = 0; i < type.parameterCount(); i++) {
-                                                  C.load(BTH.tag(cref(type.parameterType(i))), i);
-                                              }
-                                              C.invokedynamic(name, type.toMethodDescriptorString(),
-                                                              csym(l.lookupClass()), bsmMethodName, bsmType.toMethodDescriptorString(),
-                                                              staticArgs);
-                                              C.return_(BTH.tag(cref(type.returnType())));
-                                          }
-                                ))
-                .build();
+    public static MethodHandle invokedynamic(MethodHandles.Lookup l, String name, MethodType type, String bsmMethodName,
+                                             MethodType bsmType, ConstantDesc... boostrapArgs) throws Exception {
+        ClassDesc genClassDesc = classDesc(l.lookupClass(), "$Code_" + COUNT.getAndIncrement());
+        byte[] byteArray = ClassFile.of().build(genClassDesc, classBuilder -> {
+            commonBuild(classBuilder);
+            classBuilder
+                    .withMethod("m", MethodTypeDesc.ofDescriptor(type.toMethodDescriptorString()),
+                            ClassFile.ACC_PUBLIC + ClassFile.ACC_STATIC, methodBuilder -> methodBuilder
+                                    .withCode(codeBuilder -> {
+                                        for (int i = 0; i < type.parameterCount(); i++) {
+                                            codeBuilder.loadLocal(TypeKind.from(type.parameterType(i)), i);
+                                        }
+                                        codeBuilder.invokedynamic(DynamicCallSiteDesc.of(
+                                                MethodHandleDesc.ofMethod(
+                                                        DirectMethodHandleDesc.Kind.STATIC,
+                                                        classDesc(l.lookupClass()),
+                                                        bsmMethodName,
+                                                        MethodTypeDesc.ofDescriptor(
+                                                                bsmType.toMethodDescriptorString())),
+                                                name,
+                                                MethodTypeDesc.ofDescriptor(type.toMethodDescriptorString()),
+                                                boostrapArgs));
+                                        codeBuilder.return_(TypeKind.from(type.returnType()));
+                                    }));
+        });
         Class<?> gc = l.defineClass(byteArray);
         return l.findStatic(gc, "m", type);
     }
 
-    public static MethodHandle ldcMethodHandle(MethodHandles.Lookup l,
-                                        int refKind, Class<?> owner, String name, MethodType type) throws Exception {
-        return ldc(l, MethodHandle.class,
-                   P -> P.putHandle(refKind, csym(owner), name, type.toMethodDescriptorString()));
+    public static MethodHandle ldcDynamicConstant(MethodHandles.Lookup l, String name, Class<?> type, String bsmMethodName,
+                                                  MethodType bsmType, ConstantDesc... bootstrapArgs) throws Exception {
+        return ldcDynamicConstant(l, name, type, l.lookupClass(), bsmMethodName, bsmType, bootstrapArgs);
     }
 
-    public static MethodHandle ldcDynamicConstant(MethodHandles.Lookup l,
-                                                  String name, Class<?> type,
-                                                  String bsmMethodName, MethodType bsmType,
-                                                  Consumer<PoolHelper.StaticArgListBuilder<String, String, byte[]>> staticArgs) throws Exception {
-        return ldcDynamicConstant(l, name, type, l.lookupClass(), bsmMethodName, bsmType, staticArgs);
+    public static MethodHandle ldcDynamicConstant(MethodHandles.Lookup l, String name, Class<?> type, Class<?> bsmClass,
+                                                  String bsmMethodName, MethodType bsmType, ConstantDesc... bootstrapArgs) throws Exception {
+        return ldcDynamicConstant(l, name, type.descriptorString(), bsmClass.descriptorString(), bsmMethodName,
+                bsmType.descriptorString(), bootstrapArgs);
     }
 
-    public static MethodHandle ldcDynamicConstant(MethodHandles.Lookup l,
-                                                  String name, Class<?> type,
-                                                  Class<?> bsmClass, String bsmMethodName, MethodType bsmType,
-                                                  Consumer<PoolHelper.StaticArgListBuilder<String, String, byte[]>> staticArgs) throws Exception {
-        return ldcDynamicConstant(l, name, cref(type), csym(bsmClass), bsmMethodName, bsmType.toMethodDescriptorString(), staticArgs);
+    public static MethodHandle ldcDynamicConstant(MethodHandles.Lookup l, String name, String type, String bsmMethodName,
+                                                  String bsmType, ConstantDesc... bootstrapArgs) throws Exception {
+        return ldcDynamicConstant(l, name, type, l.lookupClass().descriptorString(), bsmMethodName, bsmType, bootstrapArgs);
     }
 
-    public static MethodHandle ldcDynamicConstant(MethodHandles.Lookup l,
-                                                  String name, String type,
-                                                  String bsmMethodName, String bsmType,
-                                                  Consumer<PoolHelper.StaticArgListBuilder<String, String, byte[]>> staticArgs) throws Exception {
-        return ldcDynamicConstant(l, name, type, csym(l.lookupClass()), bsmMethodName, bsmType, staticArgs);
-    }
-
-    public static MethodHandle ldcDynamicConstant(MethodHandles.Lookup l,
-                                                  String name, String type,
-                                                  String bsmClass, String bsmMethodName, String bsmType,
-                                                  Consumer<PoolHelper.StaticArgListBuilder<String, String, byte[]>> staticArgs) throws Exception {
-        return ldc(l, type,
-                   P -> P.putDynamicConstant(name, type,
-                                             bsmClass, bsmMethodName, bsmType,
-                                             staticArgs));
-    }
-
-    public static MethodHandle ldc(MethodHandles.Lookup l,
-                            Class<?> type,
-                            Function<PoolHelper<String, String, byte[]>, Integer> poolFunc) throws Exception {
-        return ldc(l, cref(type), poolFunc);
-    }
-
-    public static MethodHandle ldc(MethodHandles.Lookup l,
-                                   String type,
-                                   Function<PoolHelper<String, String, byte[]>, Integer> poolFunc) throws Exception {
+    public static MethodHandle ldcDynamicConstant(MethodHandles.Lookup l, String name, String type, String bsmClass,
+                                                  String bsmMethodName, String bsmType, ConstantDesc... bootstrapArgs)
+            throws IllegalAccessException, NoSuchMethodException {
         String methodType = "()" + type;
-        byte[] byteArray = classBuilder(l)
-                .withMethod("m", "()" + type, M ->
-                        M.withFlags(Flag.ACC_PUBLIC, Flag.ACC_STATIC)
-                                .withCode(TypedCodeBuilder::new,
-                                          C -> {
-                                              C.ldc(null, (P, v) -> poolFunc.apply(P));
-                                              C.return_(BTH.tag(type));
-                                          }
-                                ))
-                .build();
-        Class<?> gc = l.defineClass(byteArray);
+        ClassDesc genClassDesc = classDesc(l.lookupClass(), "$Code_" + COUNT.getAndIncrement());
+        byte[] bytes = ClassFile.of().build(genClassDesc, classBuilder -> {
+            commonBuild(classBuilder);
+            classBuilder.withMethod("m", MethodTypeDesc.of(ClassDesc.ofDescriptor(type)),
+                    ClassFile.ACC_PUBLIC + ClassFile.ACC_STATIC, methodBuilder -> methodBuilder
+                            .withCode(codeBuilder -> codeBuilder
+                                    .ldc(DynamicConstantDesc.ofNamed(
+                                            MethodHandleDesc.ofMethod(
+                                                    DirectMethodHandleDesc.Kind.STATIC,
+                                                    ClassDesc.ofDescriptor(bsmClass),
+                                                    bsmMethodName,
+                                                    MethodTypeDesc.ofDescriptor(bsmType)),
+                                            name,
+                                            ClassDesc.ofDescriptor(type),
+                                            bootstrapArgs))
+                                    .return_(TypeKind.fromDescriptor(type))));
+        });
+        Class<?> gc = l.defineClass(bytes);
         return l.findStatic(gc, "m", fromMethodDescriptorString(methodType, l.lookupClass().getClassLoader()));
     }
 
@@ -145,7 +126,13 @@ public class InstructionHelper {
         return c.getCanonicalName().replace('.', '/');
     }
 
-    public static String cref(Class<?> c) {
-        return methodType(c).toMethodDescriptorString().substring(2);
+    public static ClassDesc classDesc(Class<?> c) {
+        return ClassDesc.ofDescriptor(c.descriptorString());
+    }
+
+    public static ClassDesc classDesc(Class<?> c, String suffix) {
+        StringBuilder sb = new StringBuilder(c.descriptorString());
+        String classDescStr = sb.insert(sb.length() - 1, suffix).toString();
+        return ClassDesc.ofDescriptor(classDescStr);
     }
 }

@@ -73,9 +73,15 @@ StubQueue::StubQueue(StubInterface* stub_interface, int buffer_size,
     vm_exit_out_of_memory(size, OOM_MALLOC_ERROR, "CodeCache: no room for %s", name);
   }
   _stub_interface  = stub_interface;
-  _buffer_size     = blob->content_size();
-  _buffer_limit    = blob->content_size();
-  _stub_buffer     = blob->content_begin();
+
+  // The code blob alignment can be smaller than the requested stub alignment.
+  // Make sure we put the stubs at their requested alignment by aligning the buffer base and limits.
+  address aligned_start = align_up(blob->content_begin(), stub_alignment());
+  address aligned_end = align_down(blob->content_end(), stub_alignment());
+  int aligned_size = aligned_end - aligned_start;
+  _buffer_size     = aligned_size;
+  _buffer_limit    = aligned_size;
+  _stub_buffer     = aligned_start;
   _queue_begin     = 0;
   _queue_end       = 0;
   _number_of_stubs = 0;
@@ -94,8 +100,11 @@ void StubQueue::deallocate_unused_tail() {
   CodeBlob* blob = CodeCache::find_blob((void*)_stub_buffer);
   CodeCache::free_unused_tail(blob, used_space());
   // Update the limits to the new, trimmed CodeBlob size
-  _buffer_size = blob->content_size();
-  _buffer_limit = blob->content_size();
+  address aligned_start = align_up(blob->content_begin(), stub_alignment());
+  address aligned_end = align_down(blob->content_end(), stub_alignment());
+  int aligned_size = aligned_end - aligned_start;
+  _buffer_size = aligned_size;
+  _buffer_limit = aligned_size;
 }
 
 Stub* StubQueue::stub_containing(address pc) const {
@@ -218,8 +227,6 @@ void StubQueue::verify() {
   guarantee(0 <= _queue_begin  && _queue_begin  <  _buffer_limit, "_queue_begin out of bounds");
   guarantee(0 <= _queue_end    && _queue_end    <= _buffer_limit, "_queue_end   out of bounds");
   // verify alignment
-  guarantee(_buffer_size  % stub_alignment() == 0, "_buffer_size  not aligned");
-  guarantee(_buffer_limit % stub_alignment() == 0, "_buffer_limit not aligned");
   guarantee(_queue_begin  % stub_alignment() == 0, "_queue_begin  not aligned");
   guarantee(_queue_end    % stub_alignment() == 0, "_queue_end    not aligned");
   // verify buffer limit/size relationship

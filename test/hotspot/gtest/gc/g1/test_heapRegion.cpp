@@ -25,7 +25,7 @@
 #include "gc/g1/g1BlockOffsetTable.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
-#include "gc/g1/heapRegion.inline.hpp"
+#include "gc/g1/g1HeapRegion.inline.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/vmOperations.hpp"
@@ -122,7 +122,7 @@ void VM_HeapRegionApplyToMarkedObjectsTest::doit() {
   region->set_top(old_top);
 }
 
-TEST_VM(HeapRegion, apply_to_marked_object) {
+TEST_OTHER_VM(HeapRegion, apply_to_marked_object) {
   if (!UseG1GC) {
     return;
   }

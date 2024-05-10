@@ -421,6 +421,9 @@ public:
     init_req(0,control);
     init_req(1,b);
   }
+
+  static IfNode* make_with_same_profile(IfNode* if_node_profile, Node* ctrl, BoolNode* bol);
+
   virtual int Opcode() const;
   virtual bool pinned() const { return true; }
   virtual const Type *bottom_type() const { return TypeTuple::IFBOTH; }
@@ -430,7 +433,8 @@ public:
   virtual const RegMask &out_RegMask() const;
   Node* fold_compares(PhaseIterGVN* phase);
   static Node* up_one_dom(Node* curr, bool linear_only = false);
-  Node* dominated_by(Node* prev_dom, PhaseIterGVN* igvn);
+  bool is_zero_trip_guard() const;
+  Node* dominated_by(Node* prev_dom, PhaseIterGVN* igvn, bool pin_array_access_nodes);
 
   // Takes the type of val and filters it through the test represented
   // by if_proj and returns a more refined type if one is produced.
@@ -489,6 +493,11 @@ class ParsePredicateNode : public IfNode {
     _useless = false;
   }
 
+  // Return the uncommon trap If projection of this Parse Predicate.
+  ParsePredicateUncommonProj* uncommon_proj() const {
+    return proj_out(0)->as_IfFalse();
+  }
+
   Node* uncommon_trap() const;
 
   Node* Ideal(PhaseGVN* phase, bool can_reshape) {
@@ -503,6 +512,8 @@ class IfProjNode : public CProjNode {
 public:
   IfProjNode(IfNode *ifnode, uint idx) : CProjNode(ifnode,idx) {}
   virtual Node* Identity(PhaseGVN* phase);
+
+  void pin_array_access_nodes(PhaseIterGVN* igvn);
 
 protected:
   // Type of If input when this branch is always taken
@@ -681,7 +692,7 @@ public:
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual int required_outcnt() const { return 2; }
-  virtual void emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const { }
+  virtual void emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const { }
   virtual uint size(PhaseRegAlloc *ra_) const { return 0; }
 #ifndef PRODUCT
   virtual void format( PhaseRegAlloc *, outputStream *st ) const;

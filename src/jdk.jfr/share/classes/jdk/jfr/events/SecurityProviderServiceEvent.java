@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,9 +36,9 @@ import jdk.jfr.internal.RemoveFields;
 @Label("Security Provider Instance Request")
 @Name("jdk.SecurityProviderService")
 @Description("Details of Provider.getInstance(String type, String algorithm) calls")
-@MirrorEvent(className = "jdk.internal.event.SecurityProviderServiceEvent")
 @RemoveFields("duration")
-public final class SecurityProviderServiceEvent extends AbstractJDKEvent {
+@StackFilter({"java.security.Provider::getService"})
+public final class SecurityProviderServiceEvent extends MirrorEvent {
     @Label("Type of Service")
     public String type;
 

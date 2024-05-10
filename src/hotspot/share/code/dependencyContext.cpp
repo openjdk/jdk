@@ -111,8 +111,7 @@ void DependencyContext::add_dependent_nmethod(nmethod* nm) {
 }
 
 void DependencyContext::release(nmethodBucket* b) {
-  bool expunge = Atomic::load(&_cleaning_epoch) == 0;
-  if (expunge) {
+  if (delete_on_release()) {
     assert_locked_or_safepoint(CodeCache_lock);
     delete b;
     if (UsePerfData) {
@@ -178,9 +177,41 @@ nmethodBucket* DependencyContext::release_and_get_next_not_unloading(nmethodBuck
 //
 // Invalidate all dependencies in the context
 void DependencyContext::remove_all_dependents() {
-  nmethodBucket* b = dependencies_not_unloading();
+  // Assume that the dependency is not deleted immediately but moved into the
+  // purge list when calling this.
+  assert(!delete_on_release(), "should not delete on release");
+
+  nmethodBucket* first = Atomic::load_acquire(_dependency_context_addr);
+  if (first == nullptr) {
+    return;
+  }
+
+  nmethodBucket* cur = first;
+  nmethodBucket* last = cur;
+  jlong count = 0;
+  for (; cur != nullptr; cur = cur->next()) {
+    assert(cur->get_nmethod()->is_unloading(), "must be");
+    last = cur;
+    count++;
+  }
+
+  // Add the whole list to the purge list at once.
+  nmethodBucket* old_purge_list_head = Atomic::load(&_purge_list);
+  for (;;) {
+    last->set_purge_list_next(old_purge_list_head);
+    nmethodBucket* next_purge_list_head = Atomic::cmpxchg(&_purge_list, old_purge_list_head, first);
+    if (old_purge_list_head == next_purge_list_head) {
+      break;
+    }
+    old_purge_list_head = next_purge_list_head;
+  }
+
+  if (UsePerfData) {
+    _perf_total_buckets_stale_count->inc(count);
+    _perf_total_buckets_stale_acc_count->inc(count);
+  }
+
   set_dependencies(nullptr);
-  assert(b == nullptr, "All dependents should be unloading");
 }
 
 void DependencyContext::remove_and_mark_for_deoptimization_all_dependents(DeoptimizationScope* deopt_scope) {
@@ -232,6 +263,10 @@ bool DependencyContext::claim_cleanup() {
     return false;
   }
   return Atomic::cmpxchg(_last_cleanup_addr, last_cleanup, cleaning_epoch) == last_cleanup;
+}
+
+bool DependencyContext::delete_on_release() {
+  return Atomic::load(&_cleaning_epoch) == 0;
 }
 
 // Retrieve the first nmethodBucket that has a dependent that does not correspond to

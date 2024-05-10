@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,14 +30,16 @@ import jdk.jfr.Description;
 import jdk.jfr.Label;
 import jdk.jfr.Name;
 import jdk.jfr.StackTrace;
+import jdk.jfr.internal.MirrorEvent;
+import jdk.jfr.internal.RemoveFields;
 import jdk.jfr.internal.Type;
 
 @Name(Type.EVENT_NAME_PREFIX + "ExceptionStatistics")
 @Label("Exception Statistics")
 @Category({ "Java Application", "Statistics" })
 @Description("Number of objects derived from java.lang.Throwable that have been created")
-@StackTrace(false)
-public final class ExceptionStatisticsEvent extends AbstractPeriodicEvent {
+@RemoveFields({"duration", "eventThread", "stackTrace"})
+public final class ExceptionStatisticsEvent extends MirrorEvent {
 
     @Label("Exceptions Created")
     public long throwables;

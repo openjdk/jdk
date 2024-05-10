@@ -102,64 +102,64 @@ public class TestGCLogMessages {
     }
 
     private LogMessageWithLevel allLogMessages[] = new LogMessageWithLevel[] {
-        new LogMessageWithLevel("Pre Evacuate Collection Set", Level.INFO),
-        new LogMessageWithLevel("Evacuate Collection Set", Level.INFO),
-        new LogMessageWithLevel("Post Evacuate Collection Set", Level.INFO),
-        new LogMessageWithLevel("Other", Level.INFO),
+        new LogMessageWithLevel("Pre Evacuate Collection Set:", Level.INFO),
+        new LogMessageWithLevel("Evacuate Collection Set:", Level.INFO),
+        new LogMessageWithLevel("Post Evacuate Collection Set:", Level.INFO),
+        new LogMessageWithLevel("Other:", Level.INFO),
 
         // Pre Evacuate Collection Set
-        new LogMessageWithLevel("JT Retire TLABs And Flush Logs", Level.DEBUG),
-        new LogMessageWithLevel("Non-JT Flush Logs", Level.DEBUG),
-        new LogMessageWithLevel("Choose Collection Set", Level.DEBUG),
-        new LogMessageWithLevel("Region Register", Level.DEBUG),
-        new LogMessageWithLevel("Prepare Heap Roots", Level.DEBUG),
+        new LogMessageWithLevel("JT Retire TLABs And Flush Logs \\(ms\\):", Level.DEBUG),
+        new LogMessageWithLevel("Non-JT Flush Logs \\(ms\\):", Level.DEBUG),
+        new LogMessageWithLevel("Choose Collection Set:", Level.DEBUG),
+        new LogMessageWithLevel("Region Register:", Level.DEBUG),
+        new LogMessageWithLevel("Prepare Heap Roots:", Level.DEBUG),
         // Merge Heap Roots
-        new LogMessageWithLevel("Merge Heap Roots", Level.INFO),
-        new LogMessageWithLevel("Prepare Merge Heap Roots", Level.DEBUG),
-        new LogMessageWithLevel("Eager Reclaim", Level.DEBUG),
-        new LogMessageWithLevel("Remembered Sets", Level.DEBUG),
-        new LogMessageWithLevel("Merged Inline", Level.DEBUG),
-        new LogMessageWithLevel("Merged ArrayOfCards", Level.DEBUG),
-        new LogMessageWithLevel("Merged Howl", Level.DEBUG),
-        new LogMessageWithLevel("Merged Full", Level.DEBUG),
-        new LogMessageWithLevel("Merged Howl Inline", Level.DEBUG),
-        new LogMessageWithLevel("Merged Howl ArrayOfCards", Level.DEBUG),
-        new LogMessageWithLevel("Merged Howl BitMap", Level.DEBUG),
-        new LogMessageWithLevel("Merged Howl Full", Level.DEBUG),
-        new LogMessageWithLevel("Log Buffers", Level.DEBUG),
-        new LogMessageWithLevel("Dirty Cards", Level.DEBUG),
-        new LogMessageWithLevel("Merged Cards", Level.DEBUG),
-        new LogMessageWithLevel("Skipped Cards", Level.DEBUG),
+        new LogMessageWithLevel("Merge Heap Roots:", Level.INFO),
+        new LogMessageWithLevel("Prepare Merge Heap Roots:", Level.DEBUG),
+        new LogMessageWithLevel("Eager Reclaim \\(ms\\):", Level.DEBUG),
+        new LogMessageWithLevel("Remembered Sets \\(ms\\):", Level.DEBUG),
+        new LogMessageWithLevel("Merged Inline:", Level.DEBUG),
+        new LogMessageWithLevel("Merged ArrayOfCards:", Level.DEBUG),
+        new LogMessageWithLevel("Merged Howl:", Level.DEBUG),
+        new LogMessageWithLevel("Merged Full:", Level.DEBUG),
+        new LogMessageWithLevel("Merged Howl Inline:", Level.DEBUG),
+        new LogMessageWithLevel("Merged Howl ArrayOfCards:", Level.DEBUG),
+        new LogMessageWithLevel("Merged Howl BitMap:", Level.DEBUG),
+        new LogMessageWithLevel("Merged Howl Full:", Level.DEBUG),
+        new LogMessageWithLevel("Log Buffers \\(ms\\):", Level.DEBUG),
+        new LogMessageWithLevel("Dirty Cards:", Level.DEBUG),
+        new LogMessageWithLevel("Merged Cards:", Level.DEBUG),
+        new LogMessageWithLevel("Skipped Cards:", Level.DEBUG),
         // Evacuate Collection Set
-        new LogMessageWithLevel("Ext Root Scanning", Level.DEBUG),
-        new LogMessageWithLevel("Thread Roots", Level.TRACE),
-        new LogMessageWithLevel("CLDG Roots", Level.TRACE),
-        new LogMessageWithLevel("CM RefProcessor Roots", Level.TRACE),
+        new LogMessageWithLevel("Ext Root Scanning \\(ms\\):", Level.DEBUG),
+        new LogMessageWithLevel("Thread Roots \\(ms\\):", Level.TRACE),
+        new LogMessageWithLevel("CLDG Roots \\(ms\\):", Level.TRACE),
+        new LogMessageWithLevel("CM RefProcessor Roots \\(ms\\):", Level.TRACE),
         new LogMessageWithLevel("JNI Global Roots", Level.TRACE),
         new LogMessageWithLevel("VM Global Roots", Level.TRACE),
         // Scan Heap Roots
-        new LogMessageWithLevel("Scan Heap Roots", Level.DEBUG),
-        new LogMessageWithLevel("Scanned Cards", Level.DEBUG),
-        new LogMessageWithLevel("Scanned Blocks", Level.DEBUG),
-        new LogMessageWithLevel("Claimed Chunks", Level.DEBUG),
-        new LogMessageWithLevel("Found Roots", Level.DEBUG),
+        new LogMessageWithLevel("Scan Heap Roots \\(ms\\):", Level.DEBUG),
+        new LogMessageWithLevel("Scanned Cards:", Level.DEBUG),
+        new LogMessageWithLevel("Scanned Blocks:", Level.DEBUG),
+        new LogMessageWithLevel("Claimed Chunks:", Level.DEBUG),
+        new LogMessageWithLevel("Found Roots:", Level.DEBUG),
         // Code Roots Scan
-        new LogMessageWithLevel("Code Root Scan", Level.DEBUG),
+        new LogMessageWithLevel("Code Root Scan \\(ms\\):", Level.DEBUG),
         // Object Copy
-        new LogMessageWithLevel("Object Copy", Level.DEBUG),
-        new LogMessageWithLevel("Copied Bytes", Level.DEBUG),
-        new LogMessageWithLevel("LAB Waste", Level.DEBUG),
-        new LogMessageWithLevel("LAB Undo Waste", Level.DEBUG),
+        new LogMessageWithLevel("Object Copy \\(ms\\):", Level.DEBUG),
+        new LogMessageWithLevel("Copied Bytes:", Level.DEBUG),
+        new LogMessageWithLevel("LAB Waste:", Level.DEBUG),
+        new LogMessageWithLevel("LAB Undo Waste:", Level.DEBUG),
         // Termination
-        new LogMessageWithLevel("Termination", Level.DEBUG),
-        new LogMessageWithLevel("Termination Attempts", Level.DEBUG),
+        new LogMessageWithLevel("Termination \\(ms\\):", Level.DEBUG),
+        new LogMessageWithLevel("Termination Attempts:", Level.DEBUG),
         // Post Evacuate Collection Set
         // NMethod List Cleanup
-        new LogMessageWithLevel("NMethod List Cleanup", Level.DEBUG),
+        new LogMessageWithLevel("NMethod List Cleanup:", Level.DEBUG),
         // Reference Processing
-        new LogMessageWithLevel("Reference Processing", Level.DEBUG),
+        new LogMessageWithLevel("Reference Processing:", Level.DEBUG),
         // VM internal reference processing
-        new LogMessageWithLevel("Weak Processing", Level.DEBUG),
+        new LogMessageWithLevel("Weak Processing:", Level.DEBUG),
         new LogMessageWithLevel("VM Weak", Level.DEBUG),
         new LogMessageWithLevel("ObjectSynchronizer Weak", Level.DEBUG),
         new LogMessageWithLevel("JVMTI Tag Weak OopStorage", Level.DEBUG),
@@ -169,31 +169,31 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("JNI Weak", Level.DEBUG),
 
         // Post Evacuate Cleanup 1
-        new LogMessageWithLevel("Post Evacuate Cleanup 1", Level.DEBUG),
-        new LogMessageWithLevel("Merge Per-Thread State", Level.DEBUG),
-        new LogMessageWithLevel("LAB Waste", Level.DEBUG),
-        new LogMessageWithLevel("LAB Undo Waste", Level.DEBUG),
-        new LogMessageWithLevel("Evac Fail Extra Cards", Level.DEBUG),
-        new LogMessageWithLevel("Clear Logged Cards", Level.DEBUG),
-        new LogMessageWithLevel("Recalculate Used Memory", Level.DEBUG),
+        new LogMessageWithLevel("Post Evacuate Cleanup 1:", Level.DEBUG),
+        new LogMessageWithLevel("Merge Per-Thread State \\(ms\\):", Level.DEBUG),
+        new LogMessageWithLevel("LAB Waste:", Level.DEBUG),
+        new LogMessageWithLevel("LAB Undo Waste:", Level.DEBUG),
+        new LogMessageWithLevel("Evac Fail Extra Cards:", Level.DEBUG),
+        new LogMessageWithLevel("Clear Logged Cards \\(ms\\):", Level.DEBUG),
+        new LogMessageWithLevel("Recalculate Used Memory \\(ms\\):", Level.DEBUG),
 
         // Post Evacuate Cleanup 2
-        new LogMessageWithLevel("Post Evacuate Cleanup 2", Level.DEBUG),
+        new LogMessageWithLevel("Post Evacuate Cleanup 2:", Level.DEBUG),
         new LogMessageWithLevelC2OrJVMCIOnly("Update Derived Pointers", Level.DEBUG),
-        new LogMessageWithLevel("Redirty Logged Cards", Level.DEBUG),
-        new LogMessageWithLevel("Redirtied Cards", Level.DEBUG),
-        new LogMessageWithLevel("Resize TLABs", Level.DEBUG),
-        new LogMessageWithLevel("Free Collection Set", Level.DEBUG),
-        new LogMessageWithLevel("Serial Free Collection Set", Level.TRACE),
-        new LogMessageWithLevel("Young Free Collection Set", Level.TRACE),
-        new LogMessageWithLevel("Non-Young Free Collection Set", Level.TRACE),
+        new LogMessageWithLevel("Redirty Logged Cards \\(ms\\):", Level.DEBUG),
+        new LogMessageWithLevel("Redirtied Cards:", Level.DEBUG),
+        new LogMessageWithLevel("Resize TLABs \\(ms\\):", Level.DEBUG),
+        new LogMessageWithLevel("Free Collection Set \\(ms\\):", Level.DEBUG),
+        new LogMessageWithLevel("Serial Free Collection Set:", Level.TRACE),
+        new LogMessageWithLevel("Young Free Collection Set \\(ms\\):", Level.TRACE),
+        new LogMessageWithLevel("Non-Young Free Collection Set \\(ms\\):", Level.TRACE),
 
         // Misc Top-level
-        new LogMessageWithLevel("Rebuild Free List", Level.DEBUG),
-        new LogMessageWithLevel("Serial Rebuild Free List", Level.TRACE),
-        new LogMessageWithLevel("Parallel Rebuild Free List", Level.TRACE),
-        new LogMessageWithLevel("Prepare For Mutator", Level.DEBUG),
-        new LogMessageWithLevel("Expand Heap After Collection", Level.DEBUG),
+        new LogMessageWithLevel("Rebuild Free List:", Level.DEBUG),
+        new LogMessageWithLevel("Serial Rebuild Free List:", Level.TRACE),
+        new LogMessageWithLevel("Parallel Rebuild Free List \\(ms\\):", Level.TRACE),
+        new LogMessageWithLevel("Prepare For Mutator:", Level.DEBUG),
+        new LogMessageWithLevel("Expand Heap After Collection:", Level.DEBUG),
     };
 
     void checkMessagesAtLevel(OutputAnalyzer output, LogMessageWithLevel messages[], Level level) throws Exception {
@@ -218,28 +218,25 @@ public class TestGCLogMessages {
 
     private void testNormalLogs() throws Exception {
 
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+UseG1GC",
-                                                                             "-Xmx10M",
-                                                                             GCTest.class.getName());
+        OutputAnalyzer output = ProcessTools.executeLimitedTestJava("-XX:+UseG1GC",
+                                                                    "-Xmx10M",
+                                                                    GCTest.class.getName());
 
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
         checkMessagesAtLevel(output, allLogMessages, Level.OFF);
         output.shouldHaveExitValue(0);
 
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+UseG1GC",
-                                                              "-Xmx10M",
-                                                              "-Xlog:gc+phases=debug",
-                                                              GCTest.class.getName());
+        output = ProcessTools.executeLimitedTestJava("-XX:+UseG1GC",
+                                                     "-Xmx10M",
+                                                     "-Xlog:gc+phases=debug",
+                                                     GCTest.class.getName());
 
-        output = new OutputAnalyzer(pb.start());
         checkMessagesAtLevel(output, allLogMessages, Level.DEBUG);
 
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+UseG1GC",
-                                                              "-Xmx10M",
-                                                              "-Xlog:gc+phases=trace",
-                                                              GCTest.class.getName());
+        output = ProcessTools.executeLimitedTestJava("-XX:+UseG1GC",
+                                                     "-Xmx10M",
+                                                     "-Xlog:gc+phases=trace",
+                                                     GCTest.class.getName());
 
-        output = new OutputAnalyzer(pb.start());
         checkMessagesAtLevel(output, allLogMessages, Level.TRACE);
         output.shouldHaveExitValue(0);
     }
@@ -253,47 +250,45 @@ public class TestGCLogMessages {
     };
 
     private void testConcurrentRefinementLogs() throws Exception {
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+UseG1GC",
-                                                                             "-Xmx10M",
-                                                                             "-Xlog:gc+refine+stats=debug",
-                                                                             GCTest.class.getName());
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        OutputAnalyzer output = ProcessTools.executeLimitedTestJava("-XX:+UseG1GC",
+                                                                    "-Xmx10M",
+                                                                    "-Xlog:gc+refine+stats=debug",
+                                                                    GCTest.class.getName());
         checkMessagesAtLevel(output, concRefineMessages, Level.DEBUG);
     }
 
     LogMessageWithLevel exhFailureMessages[] = new LogMessageWithLevel[] {
-        new LogMessageWithLevel("Recalculate Used Memory", Level.DEBUG),
-        new LogMessageWithLevel("Restore Preserved Marks", Level.DEBUG),
-        new LogMessageWithLevel("Restore Retained Regions", Level.DEBUG),
-        new LogMessageWithLevel("Process Evacuation Failed Regions", Level.DEBUG),
-        new LogMessageWithLevel("Evacuation Failed Regions", Level.DEBUG),
-        new LogMessageWithLevel("New Retained Regions", Level.DEBUG),
+        new LogMessageWithLevel("Recalculate Used Memory \\(ms\\):", Level.DEBUG),
+        new LogMessageWithLevel("Restore Preserved Marks \\(ms\\):", Level.DEBUG),
+        new LogMessageWithLevel("Restore Evacuation Failed Regions \\(ms\\):", Level.DEBUG),
+        new LogMessageWithLevel("Process Evacuation Failed Regions \\(ms\\):", Level.DEBUG),
+        new LogMessageWithLevel("Evacuation Failed Regions:", Level.DEBUG),
+        new LogMessageWithLevel("Pinned Regions:", Level.DEBUG),
+        new LogMessageWithLevel("Allocation Failed Regions:", Level.DEBUG),
     };
 
     private void testWithEvacuationFailureLogs() throws Exception {
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+UseG1GC",
-                                                                             "-Xmx32M",
-                                                                             "-Xmn16M",
-                                                                             "-XX:+G1EvacuationFailureALot",
-                                                                             "-XX:G1EvacuationFailureALotCount=100",
-                                                                             "-XX:G1EvacuationFailureALotInterval=1",
-                                                                             "-XX:+UnlockDiagnosticVMOptions",
-                                                                             "-Xlog:gc+phases=debug",
-                                                                             GCTestWithEvacuationFailure.class.getName());
+        OutputAnalyzer output = ProcessTools.executeLimitedTestJava("-XX:+UseG1GC",
+                                                                    "-Xmx32M",
+                                                                    "-Xmn16M",
+                                                                    "-XX:+G1GCAllocationFailureALot",
+                                                                    "-XX:G1GCAllocationFailureALotCount=100",
+                                                                    "-XX:G1GCAllocationFailureALotInterval=1",
+                                                                    "-XX:+UnlockDiagnosticVMOptions",
+                                                                    "-Xlog:gc+phases=debug",
+                                                                    GCTestWithAllocationFailure.class.getName());
 
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
         checkMessagesAtLevel(output, exhFailureMessages, Level.DEBUG);
         output.shouldHaveExitValue(0);
 
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+UseG1GC",
-                                                              "-Xmx32M",
-                                                              "-Xmn16M",
-                                                              "-Xms32M",
-                                                              "-XX:+UnlockDiagnosticVMOptions",
-                                                              "-Xlog:gc+phases=trace",
-                                                              GCTestWithEvacuationFailure.class.getName());
+        output = ProcessTools.executeLimitedTestJava("-XX:+UseG1GC",
+                                                     "-Xmx32M",
+                                                     "-Xmn16M",
+                                                     "-Xms32M",
+                                                     "-XX:+UnlockDiagnosticVMOptions",
+                                                     "-Xlog:gc+phases=trace",
+                                                     GCTestWithAllocationFailure.class.getName());
 
-        output = new OutputAnalyzer(pb.start());
         checkMessagesAtLevel(output, exhFailureMessages, Level.TRACE);
         output.shouldHaveExitValue(0);
     }
@@ -304,29 +299,27 @@ public class TestGCLogMessages {
     };
 
     private void testWithConcurrentStart() throws Exception {
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+UseG1GC",
-                                                                             "-Xmx10M",
-                                                                             "-Xbootclasspath/a:.",
-                                                                             "-Xlog:gc*=debug",
-                                                                             "-XX:+UnlockDiagnosticVMOptions",
-                                                                             "-XX:+WhiteBoxAPI",
-                                                                             GCTestWithConcurrentStart.class.getName());
+        OutputAnalyzer output = ProcessTools.executeLimitedTestJava("-XX:+UseG1GC",
+                                                                    "-Xmx10M",
+                                                                    "-Xbootclasspath/a:.",
+                                                                    "-Xlog:gc*=debug",
+                                                                    "-XX:+UnlockDiagnosticVMOptions",
+                                                                    "-XX:+WhiteBoxAPI",
+                                                                    GCTestWithConcurrentStart.class.getName());
 
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
         checkMessagesAtLevel(output, concurrentStartMessages, Level.TRACE);
         output.shouldHaveExitValue(0);
     }
 
     private void testExpandHeap() throws Exception {
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+UseG1GC",
-                                                                             "-Xmx10M",
-                                                                             "-Xbootclasspath/a:.",
-                                                                             "-Xlog:gc+ergo+heap=debug",
-                                                                             "-XX:+UnlockDiagnosticVMOptions",
-                                                                             "-XX:+WhiteBoxAPI",
-                                                                             GCTest.class.getName());
+        OutputAnalyzer output = ProcessTools.executeLimitedTestJava("-XX:+UseG1GC",
+                                                                    "-Xmx10M",
+                                                                    "-Xbootclasspath/a:.",
+                                                                    "-Xlog:gc+ergo+heap=debug",
+                                                                    "-XX:+UnlockDiagnosticVMOptions",
+                                                                    "-XX:+WhiteBoxAPI",
+                                                                    GCTest.class.getName());
 
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("Expand the heap. requested expansion amount: ");
         output.shouldContain("B expansion amount: ");
         output.shouldHaveExitValue(0);
@@ -345,17 +338,17 @@ public class TestGCLogMessages {
         }
     }
 
-    static class GCTestWithEvacuationFailure {
+    static class GCTestWithAllocationFailure {
         private static byte[] garbage;
         private static byte[] largeObject;
-        private static Object[] holder = new Object[200]; // Must be larger than G1EvacuationFailureALotCount
+        private static Object[] holder = new Object[200]; // Must be larger than G1GCAllocationFailureALotCount
 
         public static void main(String [] args) {
             largeObject = new byte[16*1024*1024];
             System.out.println("Creating garbage");
             // Create 16 MB of garbage. This should result in at least one GC,
             // (Heap size is 32M, we use 17MB for the large object above)
-            // which is larger than G1EvacuationFailureALotInterval.
+            // which is larger than G1GCAllocationFailureALotInterval.
             for (int i = 0; i < 16 * 1024; i++) {
                 holder[i % holder.length] = new byte[1024];
             }

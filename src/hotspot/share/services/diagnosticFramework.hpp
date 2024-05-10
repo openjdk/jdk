@@ -140,13 +140,12 @@ public:
   : _name(name), _description(description), _impact(impact), _permission(permission),
     _num_arguments(num_arguments), _is_enabled(enabled) {}
   const char* name() const          { return _name; }
+  bool name_equals(const char* cmd_name) const;
   const char* description() const   { return _description; }
   const char* impact() const        { return _impact; }
   const JavaPermission& permission() const { return _permission; }
   int num_arguments() const         { return _num_arguments; }
   bool is_enabled() const           { return _is_enabled; }
-
-  static bool by_name(void* name, DCmdInfo* info);
 };
 
 // A DCmdArgumentInfo instance provides a description of a diagnostic command

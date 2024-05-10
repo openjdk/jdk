@@ -221,6 +221,7 @@ public:
   inline bool ignore_non_patchable_relocations() { return true; }
 
   void align(int modulus);
+  void align(int modulus, int target);
 
   // Support for VM calls
   //
@@ -1077,6 +1078,9 @@ public:
   void safepoint_poll(Register tmp1, Label& slow_path);
   void get_polling_page(Register dest);
   void read_polling_page(Register dest, relocInfo::relocType rtype);
+
+  static int ic_check_size();
+  int ic_check(int end_alignment);
 };
 
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -340,7 +340,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
      * it should not be used outside this class.
      */
     protected Type typeNoMetadata() {
-        return metadata.isEmpty() ? this : baseType();
+        return metadata.isEmpty() ? this : stripMetadata();
     }
 
     /**
@@ -426,25 +426,42 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
         return accept(stripMetadata, null);
     }
     //where
+        /**
+         * Note: this visitor only needs to handle cases where
+         * 'contained' types can be annotated. These cases are
+         * described in JVMS 4.7.20.2 and are : classes (for type
+         * parameters and enclosing types), wildcards, and arrays.
+         */
         private static final TypeMapping<Void> stripMetadata = new StructuralTypeMapping<Void>() {
             @Override
             public Type visitClassType(ClassType t, Void aVoid) {
-                return super.visitClassType((ClassType)t.typeNoMetadata(), aVoid);
+                return super.visitClassType((ClassType) dropMetadata(t), aVoid);
             }
 
             @Override
             public Type visitArrayType(ArrayType t, Void aVoid) {
-                return super.visitArrayType((ArrayType)t.typeNoMetadata(), aVoid);
-            }
-
-            @Override
-            public Type visitTypeVar(TypeVar t, Void aVoid) {
-                return super.visitTypeVar((TypeVar)t.typeNoMetadata(), aVoid);
+                return super.visitArrayType((ArrayType) dropMetadata(t), aVoid);
             }
 
             @Override
             public Type visitWildcardType(WildcardType wt, Void aVoid) {
-                return super.visitWildcardType((WildcardType)wt.typeNoMetadata(), aVoid);
+                return super.visitWildcardType((WildcardType) dropMetadata(wt), aVoid);
+            }
+
+            @Override
+            public Type visitType(Type t, Void aVoid) {
+                return dropMetadata(t);
+            }
+
+            private static Type dropMetadata(Type t) {
+                if (t.getMetadata().isEmpty()) {
+                    return t;
+                }
+                Type baseType = t.baseType();
+                if (baseType.getMetadata().isEmpty()) {
+                    return baseType;
+                }
+                return baseType.cloneWithMetadata(List.nil());
             }
         };
 
@@ -463,20 +480,6 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
     @Override @DefinedBy(Api.LANGUAGE_MODEL)
     public List<Attribute.TypeCompound> getAnnotationMirrors() {
         return getMetadata(TypeMetadata.Annotations.class, Annotations::annotations, List.nil());
-    }
-
-
-    @Override @DefinedBy(Api.LANGUAGE_MODEL)
-    public <A extends Annotation> A getAnnotation(Class<A> annotationType) {
-        return null;
-    }
-
-
-    @Override @DefinedBy(Api.LANGUAGE_MODEL)
-    public <A extends Annotation> A[] getAnnotationsByType(Class<A> annotationType) {
-        @SuppressWarnings("unchecked")
-        A[] tmp = (A[]) java.lang.reflect.Array.newInstance(annotationType, 0);
-        return tmp;
     }
 
     /** Return the base types of a list of types.
@@ -597,7 +600,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
     public Type              getUpperBound()     { return null; }
     public Type              getLowerBound()     { return null; }
 
-    /** Navigation methods, these will work for classes, type variables,
+    /* Navigation methods, these will work for classes, type variables,
      *  foralls, but will return null for arrays and methods.
      */
 
@@ -1117,6 +1120,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
                         s += String.valueOf(sym.hashCode());
                     return s;
                 } else if (longform) {
+                    sym.apiComplete();
                     return sym.getQualifiedName().toString();
                 } else {
                     return sym.name.toString();

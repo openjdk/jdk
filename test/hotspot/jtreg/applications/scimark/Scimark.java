@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key external-dep
  * @library /test/lib
  * @run driver Scimark
  */

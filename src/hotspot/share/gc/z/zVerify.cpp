@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "memory/allocation.hpp"
 #include "precompiled.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "gc/shared/gc_globals.hpp"
@@ -37,21 +36,73 @@
 #include "gc/z/zStoreBarrierBuffer.inline.hpp"
 #include "gc/z/zStat.hpp"
 #include "gc/z/zVerify.hpp"
+#include "memory/allocation.hpp"
 #include "memory/iterator.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/handles.hpp"
-#include "runtime/javaThread.hpp"
+#include "runtime/javaThread.inline.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/stackWatermark.inline.hpp"
 #include "runtime/stackWatermarkSet.inline.hpp"
+#include "runtime/thread.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/preserveException.hpp"
 #include "utilities/resourceHash.hpp"
+
+#ifdef ASSERT
+
+// Used to verify that safepoints operations can't be scheduled concurrently
+// with callers to this function. Typically used to verify that object oops
+// and headers are safe to access.
+void z_verify_safepoints_are_blocked() {
+  Thread* current = Thread::current();
+
+  if (current->is_ConcurrentGC_thread()) {
+    assert(current->is_suspendible_thread(), // Thread prevents safepoints
+        "Safepoints are not blocked by current thread");
+
+  } else if (current->is_Worker_thread()) {
+    assert(// Check if ...
+        // the thread prevents safepoints
+        current->is_suspendible_thread() ||
+        // the coordinator thread is the safepointing VMThread
+        current->is_indirectly_safepoint_thread() ||
+        // the coordinator thread prevents safepoints
+        current->is_indirectly_suspendible_thread() ||
+        // the RelocateQueue prevents safepoints
+        //
+        // RelocateQueue acts as a pseudo STS leaver/joiner and blocks
+        // safepoints. There's currently no infrastructure  to check if the
+        // current thread is active or not, so check the global states instead.
+        ZGeneration::young()->is_relocate_queue_active() ||
+        ZGeneration::old()->is_relocate_queue_active(),
+        "Safepoints are not blocked by current thread");
+
+  } else if (current->is_Java_thread()) {
+    JavaThreadState state = JavaThread::cast(current)->thread_state();
+    assert(state == _thread_in_Java || state == _thread_in_vm || state == _thread_new,
+        "Safepoints are not blocked by current thread from state: %d", state);
+
+  } else if (current->is_JfrSampler_thread()) {
+    // The JFR sampler thread blocks out safepoints with this lock.
+    assert_lock_strong(Threads_lock);
+
+  } else if (current->is_VM_thread()) {
+    // The VM Thread doesn't schedule new safepoints while executing
+    // other safepoint or handshake operations.
+
+  } else {
+    fatal("Unexpected thread type");
+  }
+}
+
+#endif
 
 #define BAD_OOP_ARG(o, p)   "Bad oop " PTR_FORMAT " found at " PTR_FORMAT, untype(o), p2i(p)
 
@@ -186,16 +237,6 @@ public:
 
   virtual void do_oop(narrowOop*) {
     ShouldNotReachHere();
-  }
-};
-
-class ZVerifyCodeBlobClosure : public CodeBlobToOopClosure {
-public:
-  ZVerifyCodeBlobClosure(OopClosure* cl)
-    : CodeBlobToOopClosure(cl, false /* fix_relocations */) {}
-
-  virtual void do_code_blob(CodeBlob* cb) {
-    CodeBlobToOopClosure::do_code_blob(cb);
   }
 };
 
@@ -442,9 +483,6 @@ void ZVerify::after_mark() {
     roots_strong(true /* verify_after_old_mark */);
   }
   if (ZVerifyObjects) {
-    // Workaround OopMapCacheAlloc_lock reordering with the StackWatermark_lock
-    DisableIsGCActiveMark mark;
-
     objects(false /* verify_weaks */);
     guarantee(zverify_broken_object == zaddress::null, "Verification failed");
   }

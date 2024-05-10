@@ -25,6 +25,7 @@
 /*
  * @test
  * @bug JDK-8311033
+ * @key printer
  * @summary [macos] PrinterJob does not take into account Sides attribute
  * @run main/manual SidesAttributeTest
  */

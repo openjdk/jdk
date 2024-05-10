@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import jdk.jfr.Category;
 import jdk.jfr.Description;
 import jdk.jfr.Label;
 import jdk.jfr.Name;
+import jdk.jfr.internal.MirrorEvent;
 import jdk.jfr.internal.RemoveFields;
 import jdk.jfr.internal.Type;
 
@@ -37,18 +38,11 @@ import jdk.jfr.internal.Type;
 @Category("Java Application")
 @Description("An object derived from java.lang.Exception has been created")
 @RemoveFields("duration")
-public final class ExceptionThrownEvent extends AbstractJDKEvent {
-
-    // The order of these fields must be the same as the parameters in
-    // commit(..., String, Class)
+public final class ExceptionThrownEvent extends MirrorEvent {
 
     @Label("Message")
     public String message;
 
     @Label("Class")
     public Class<?> thrownClass;
-
-    public static void commit(long start, String message, Class<? extends Throwable> thrownClass) {
-        // Generated
-    }
 }

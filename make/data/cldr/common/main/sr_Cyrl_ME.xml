@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -24,7 +24,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="moh" draft="contributed">мохок</language>
 			<language type="nqo" draft="contributed">н’ко</language>
 			<language type="shi" draft="contributed">јужни шилха</language>
-			<language type="tzm" draft="contributed">централноатласки тамашек</language>
 			<language type="xh" draft="contributed">исикоса</language>
 			<language type="zgh" draft="contributed">стандардни марокански тамашек</language>
 			<language type="zu" draft="contributed">исизулу</language>
@@ -73,36 +72,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="12">дец</month>
 						</monthWidth>
 					</monthContext>
-					<monthContext type="stand-alone">
-						<monthWidth type="abbreviated">
-							<month type="1">јан</month>
-							<month type="2">феб</month>
-							<month type="3" draft="contributed">март</month>
-							<month type="4">апр</month>
-							<month type="5" draft="contributed">мај</month>
-							<month type="6" draft="contributed">јун</month>
-							<month type="7" draft="contributed">јул</month>
-							<month type="8">авг</month>
-							<month type="9">септ</month>
-							<month type="10">окт</month>
-							<month type="11">нов</month>
-							<month type="12">дец</month>
-						</monthWidth>
-					</monthContext>
 				</months>
 				<days>
 					<dayContext type="format">
-						<dayWidth type="wide">
-							<day type="sun" draft="contributed">недјеља</day>
-							<day type="mon" draft="contributed">понедељак</day>
-							<day type="tue" draft="contributed">уторак</day>
-							<day type="wed" draft="contributed">сриједа</day>
-							<day type="thu" draft="contributed">четвртак</day>
-							<day type="fri" draft="contributed">петак</day>
-							<day type="sat" draft="contributed">субота</day>
-						</dayWidth>
-					</dayContext>
-					<dayContext type="stand-alone">
 						<dayWidth type="wide">
 							<day type="sun" draft="contributed">недјеља</day>
 							<day type="mon" draft="contributed">понедељак</day>
@@ -140,10 +112,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dayPeriodWidth>
 					</dayPeriodContext>
 					<dayPeriodContext type="stand-alone">
-						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="am" draft="contributed">прије подне</dayPeriod>
-							<dayPeriod type="pm" draft="contributed">по подне</dayPeriod>
-						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
 							<dayPeriod type="am" draft="contributed">a</dayPeriod>
 							<dayPeriod type="pm" draft="contributed">p</dayPeriod>

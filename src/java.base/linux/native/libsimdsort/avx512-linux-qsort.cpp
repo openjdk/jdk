@@ -21,11 +21,14 @@
  * questions.
  *
  */
+#include "simdsort-support.hpp"
+#ifdef __SIMDSORT_SUPPORTED_LINUX
 
 #pragma GCC target("avx512dq", "avx512f")
 #include "avx512-32bit-qsort.hpp"
 #include "avx512-64bit-qsort.hpp"
 #include "classfile_constants.h"
+
 
 #define DLL_PUBLIC __attribute__((visibility("default")))
 #define INSERTION_SORT_THRESHOLD_32BIT 16
@@ -36,35 +39,41 @@ extern "C" {
     DLL_PUBLIC void avx512_sort(void *array, int elem_type, int32_t from_index, int32_t to_index) {
         switch(elem_type) {
             case JVM_T_INT:
-                avx512_fast_sort<int32_t>((int32_t*)array, from_index, to_index, INSERTION_SORT_THRESHOLD_32BIT);
+                avx512_fast_sort((int32_t*)array, from_index, to_index, INSERTION_SORT_THRESHOLD_32BIT);
                 break;
             case JVM_T_LONG:
-                avx512_fast_sort<int64_t>((int64_t*)array, from_index, to_index, INSERTION_SORT_THRESHOLD_64BIT);
+                avx512_fast_sort((int64_t*)array, from_index, to_index, INSERTION_SORT_THRESHOLD_64BIT);
                 break;
             case JVM_T_FLOAT:
-                avx512_fast_sort<float>((float*)array, from_index, to_index, INSERTION_SORT_THRESHOLD_32BIT);
+                avx512_fast_sort((float*)array, from_index, to_index, INSERTION_SORT_THRESHOLD_32BIT);
                 break;
             case JVM_T_DOUBLE:
-                avx512_fast_sort<double>((double*)array, from_index, to_index, INSERTION_SORT_THRESHOLD_64BIT);
+                avx512_fast_sort((double*)array, from_index, to_index, INSERTION_SORT_THRESHOLD_64BIT);
                 break;
+            default:
+                assert(false, "Unexpected type");
         }
     }
 
     DLL_PUBLIC void avx512_partition(void *array, int elem_type, int32_t from_index, int32_t to_index, int32_t *pivot_indices, int32_t index_pivot1, int32_t index_pivot2) {
         switch(elem_type) {
             case JVM_T_INT:
-                avx512_fast_partition<int32_t>((int32_t*)array, from_index, to_index, pivot_indices, index_pivot1, index_pivot2);
+                avx512_fast_partition((int32_t*)array, from_index, to_index, pivot_indices, index_pivot1, index_pivot2);
                 break;
             case JVM_T_LONG:
-                avx512_fast_partition<int64_t>((int64_t*)array, from_index, to_index, pivot_indices, index_pivot1, index_pivot2);
+                avx512_fast_partition((int64_t*)array, from_index, to_index, pivot_indices, index_pivot1, index_pivot2);
                 break;
             case JVM_T_FLOAT:
-                avx512_fast_partition<float>((float*)array, from_index, to_index, pivot_indices, index_pivot1, index_pivot2);
+                avx512_fast_partition((float*)array, from_index, to_index, pivot_indices, index_pivot1, index_pivot2);
                 break;
             case JVM_T_DOUBLE:
-                avx512_fast_partition<double>((double*)array, from_index, to_index, pivot_indices, index_pivot1, index_pivot2);
+                avx512_fast_partition((double*)array, from_index, to_index, pivot_indices, index_pivot1, index_pivot2);
                 break;
+            default:
+                assert(false, "Unexpected type");
         }
     }
 
 }
+
+#endif

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,6 @@
 class CommittedVirtualMemoryTest {
 public:
   static void test() {
-#ifndef _AIX
-    // See JDK-8202772: temporarily disabled.
     Thread* thr = Thread::current();
     address stack_end = thr->stack_end();
     size_t  stack_size = thr->stack_size();
@@ -46,7 +44,7 @@ public:
     VirtualMemoryTracker::snapshot_thread_stacks();
 
     ReservedMemoryRegion* rmr = VirtualMemoryTracker::_reserved_regions->find(ReservedMemoryRegion(stack_end, stack_size));
-    ASSERT_TRUE(rmr != NULL);
+    ASSERT_TRUE(rmr != nullptr);
 
     ASSERT_EQ(rmr->base(), stack_end);
     ASSERT_EQ(rmr->size(), stack_size);
@@ -60,7 +58,7 @@ public:
     address stack_top = stack_end + stack_size;
     bool found_stack_top = false;
 
-    for (const CommittedMemoryRegion* region = iter.next(); region != NULL; region = iter.next()) {
+    for (const CommittedMemoryRegion* region = iter.next(); region != nullptr; region = iter.next()) {
       if (region->base() + region->size() == stack_top) {
         ASSERT_TRUE(region->size() <= stack_size);
         found_stack_top = true;
@@ -77,7 +75,6 @@ public:
     ASSERT_TRUE(i >= 1);
     ASSERT_TRUE(found_stack_top);
     ASSERT_TRUE(found_i_addr);
-#endif // !_AIX
   }
 
   static void check_covered_pages(address addr, size_t size, address base, size_t touch_pages, int* page_num) {
@@ -98,7 +95,7 @@ public:
     char* base = os::reserve_memory(size, !ExecMem, mtThreadStack);
     bool result = os::commit_memory(base, size, !ExecMem);
     size_t index;
-    ASSERT_NE(base, (char*)NULL);
+    ASSERT_NE(base, (char*)nullptr);
     for (index = 0; index < touch_pages; index ++) {
       char* touch_addr = base + page_sz * page_num[index];
       *touch_addr = 'a';
@@ -112,14 +109,14 @@ public:
     VirtualMemoryTracker::snapshot_thread_stacks();
 
     ReservedMemoryRegion* rmr = VirtualMemoryTracker::_reserved_regions->find(ReservedMemoryRegion((address)base, size));
-    ASSERT_TRUE(rmr != NULL);
+    ASSERT_TRUE(rmr != nullptr);
 
     bool precise_tracking_supported = false;
     CommittedRegionIterator iter = rmr->iterate_committed_regions();
-    for (const CommittedMemoryRegion* region = iter.next(); region != NULL; region = iter.next()) {
+    for (const CommittedMemoryRegion* region = iter.next(); region != nullptr; region = iter.next()) {
       if (region->size() == size) {
         // platforms that do not support precise tracking.
-        ASSERT_TRUE(iter.next() == NULL);
+        ASSERT_TRUE(iter.next() == nullptr);
         break;
       } else {
         precise_tracking_supported = true;
@@ -139,7 +136,7 @@ public:
     VirtualMemoryTracker::remove_released_region((address)base, size);
 
     rmr = VirtualMemoryTracker::_reserved_regions->find(ReservedMemoryRegion((address)base, size));
-    ASSERT_TRUE(rmr == NULL);
+    ASSERT_TRUE(rmr == nullptr);
   }
 
   static void test_committed_region() {
@@ -164,7 +161,7 @@ public:
     const size_t num_pages = 4;
     const size_t size = num_pages * page_sz;
     char* base = os::reserve_memory(size, !ExecMem, mtTest);
-    ASSERT_NE(base, (char*)NULL);
+    ASSERT_NE(base, (char*)nullptr);
     result = os::commit_memory(base, size, !ExecMem);
 
     ASSERT_TRUE(result);

@@ -25,7 +25,7 @@
  * @test
  * @bug 8295159
  * @summary DSO created with -ffast-math breaks Java floating-point arithmetic
- * @run main/othervm/native compiler.floatingpoint.TestSubnormalDouble
+ * @run main/othervm/native -Xlog:os=info compiler.floatingpoint.TestSubnormalDouble
  */
 
 package compiler.floatingpoint;

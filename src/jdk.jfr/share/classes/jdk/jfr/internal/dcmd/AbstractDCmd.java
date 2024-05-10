@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ abstract class AbstractDCmd {
     private String source;
 
     // Called by native
-    public abstract String[] printHelp();
+    public abstract String[] getHelp();
 
     // Called by native. The number of arguments for each command is
     // reported to the DCmdFramework as a hardcoded number in native.
@@ -65,13 +65,15 @@ abstract class AbstractDCmd {
     // Remember to keep the two sides in synch.
     public abstract Argument[] getArgumentInfos();
 
-    // Called by native
     protected abstract void execute(ArgumentParser parser) throws DCmdException;
 
 
     // Called by native
     public final String[] execute(String source, String arg, char delimiter) throws DCmdException {
         this.source = source;
+        if (isInteractive()) {
+            JVM.exclude(Thread.currentThread());
+        }
         try {
             boolean log = Logger.shouldLog(LogTag.JFR_DCMD, LogLevel.DEBUG);
             if (log) {
@@ -92,7 +94,17 @@ abstract class AbstractDCmd {
             DCmdException e = new DCmdException(iae.getMessage());
             e.addSuppressed(iae);
             throw e;
+       } finally {
+           if (isInteractive()) {
+               JVM.include(Thread.currentThread());
+           }
        }
+    }
+
+    // Diagnostic commands that are meant to be used interactively
+    // should turn off events to avoid noise in the output.
+    protected boolean isInteractive() {
+        return false;
     }
 
     protected final Output getOutput() {
@@ -221,7 +233,7 @@ abstract class AbstractDCmd {
     }
 
     protected final void printHelpText() {
-        for (String line : printHelp()) {
+        for (String line : getHelp()) {
             println(line);
         }
     }

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -176,7 +176,3 @@ ULIMIT := ulimit
 ifeq ($(OPENJDK_BUILD_OS), windows)
   PATHTOOL := cygpath
 endif
-
-################################################################################
-# Simple macros from spec.gmk.in
-SHARED_LIBRARY=$(LIBRARY_PREFIX)$1$(SHARED_LIBRARY_SUFFIX)

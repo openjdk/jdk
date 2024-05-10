@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -149,7 +149,7 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
       case vmIntrinsics::_dsqrt_strict:      return java_lang_math_sqrt_strict;
       case vmIntrinsics::_Reference_get:     return java_lang_ref_reference_get;
       case vmIntrinsics::_Object_init:
-        if (RegisterFinalizersAtInit && m->code_size() == 1) {
+        if (m->code_size() == 1) {
           // We need to execute the special return bytecode to check for
           // finalizer registration so create a normal frame.
           return zerolocals;
@@ -261,7 +261,7 @@ bool AbstractInterpreter::is_not_reached(const methodHandle& method, int bci) {
     switch (code) {
       case Bytecodes::_invokedynamic: {
         assert(invoke_bc.has_index_u4(code), "sanity");
-        int method_index = cpool->decode_invokedynamic_index(invoke_bc.get_index_u4(code));
+        int method_index = invoke_bc.get_index_u4(code);
         return cpool->resolved_indy_entry_at(method_index)->is_resolved();
       }
       case Bytecodes::_invokevirtual:   // fall-through
@@ -272,7 +272,7 @@ bool AbstractInterpreter::is_not_reached(const methodHandle& method, int bci) {
           return false; // might have been reached
         }
         assert(!invoke_bc.has_index_u4(code), "sanity");
-        int method_index = invoke_bc.get_index_u2_cpcache(code);
+        int method_index = invoke_bc.get_index_u2(code);
         constantPoolHandle cp(Thread::current(), cpool);
         Method* resolved_method = ConstantPool::method_at_if_loaded(cp, method_index);
         return (resolved_method == nullptr);
@@ -380,7 +380,7 @@ address AbstractInterpreter::deopt_continue_after_entry(Method* method, address 
       // (NOT needed for the old calling convention)
       if (!is_top_frame) {
         int index = Bytes::get_native_u2(bcp+1);
-        method->constants()->cache()->entry_at(index)->set_parameter_size(callee_parameters);
+        method->constants()->cache()->resolved_method_entry_at(index)->set_num_parameters(callee_parameters);
       }
       break;
     }
@@ -394,8 +394,7 @@ address AbstractInterpreter::deopt_continue_after_entry(Method* method, address 
       // (NOT needed for the old calling convention)
       if (!is_top_frame) {
         int index = Bytes::get_native_u4(bcp+1);
-        int indy_index = method->constants()->decode_invokedynamic_index(index);
-        method->constants()->resolved_indy_entry_at(indy_index)->set_num_parameters(callee_parameters);
+        method->constants()->resolved_indy_entry_at(index)->set_num_parameters(callee_parameters);
       }
       break;
     }
