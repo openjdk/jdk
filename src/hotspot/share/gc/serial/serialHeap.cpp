@@ -439,7 +439,7 @@ bool SerialHeap::is_young_gc_safe() const {
   return _old_gen->promotion_attempt_is_safe(_young_gen->used());
 }
 
-bool SerialHeap::do_young_gc(bool clear_soft_refs) {
+bool SerialHeap::do_young_collection_no_gc_locker(bool clear_soft_refs) {
   if (!is_young_gc_safe()) {
     return false;
   }
@@ -645,7 +645,7 @@ void SerialHeap::collect_at_safepoint_no_gc_locker(bool full) {
   bool clear_soft_refs = must_clear_all_soft_refs();
 
   if (!full) {
-    bool success = do_young_gc(clear_soft_refs);
+    bool success = do_young_collection_no_gc_locker(clear_soft_refs);
     if (success) {
       return;
     }

@@ -96,7 +96,7 @@ private:
   // condition that caused that incremental collection to fail.
   bool _incremental_collection_failed;
 
-  bool do_young_gc(bool clear_soft_refs);
+  bool do_young_collection_no_gc_locker(bool clear_soft_refs);
 
   // Reserve aligned space for the heap as needed by the contained generations.
   ReservedHeapSpace allocate(size_t alignment);
