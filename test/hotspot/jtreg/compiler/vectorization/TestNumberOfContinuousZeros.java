@@ -63,7 +63,7 @@ public class TestNumberOfContinuousZeros {
     }
 
     @Test
-    @IR(counts = {IRNode.COUNTTRAILINGZEROS_VL, "> 0"})
+    @IR(counts = {IRNode.COUNT_TRAILING_ZEROS_VL, "> 0"})
     public void vectorizeNumberOfTrailingZerosLong() {
         for (int i = 0; i < LEN; ++i) {
             outputLong[i] = Long.numberOfTrailingZeros(inputLong[i]);
@@ -71,7 +71,7 @@ public class TestNumberOfContinuousZeros {
     }
 
     @Test
-    @IR(counts = {IRNode.COUNTLEADINGZEROS_VL, "> 0"})
+    @IR(counts = {IRNode.COUNT_LEADING_ZEROS_VL, "> 0"})
     public void vectorizeNumberOfLeadingZerosLong() {
         for (int i = 0; i < LEN; ++i) {
             outputLong[i] = Long.numberOfLeadingZeros(inputLong[i]);
@@ -92,7 +92,7 @@ public class TestNumberOfContinuousZeros {
 
 
     @Test
-    @IR(counts = {IRNode.COUNTTRAILINGZEROS_VI, "> 0"})
+    @IR(counts = {IRNode.COUNT_TRAILING_ZEROS_VI, "> 0"})
     public void vectorizeNumberOfTrailingZerosInt() {
         for (int i = 0; i < LEN; ++i) {
             outputInt[i] = Integer.numberOfTrailingZeros(inputInt[i]);
@@ -100,7 +100,7 @@ public class TestNumberOfContinuousZeros {
     }
 
     @Test
-    @IR(counts = {IRNode.COUNTLEADINGZEROS_VI, "> 0"})
+    @IR(counts = {IRNode.COUNT_LEADING_ZEROS_VI, "> 0"})
     public void vectorizeNumberOfLeadingZerosInt() {
         for (int i = 0; i < LEN; ++i) {
             outputInt[i] = Integer.numberOfLeadingZeros(inputInt[i]);
