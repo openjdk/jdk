@@ -572,9 +572,9 @@ public sealed interface MemoryLayout
      * {@code c_1}, {@code c_2}, ... {@code c_m} are other <em>static</em> offset
      * constants (such as field offsets) which are derived from the layout path.
      * <p>
-     * The returned method handle throws {@link IndexOutOfBoundsException} if the provided layout path has an open
-     * path element whose size is {@code S}, and its corresponding trailing {@code long} parameter
-     * has a value {@code I} such that {@code I >= S} or {@code I < 0}.
+     * For any given dynamic argument {@code x_i}, it must be that {@code 0 < x_i < size_i},
+     * where {@code size_i} is the size of the open path element associated with {@code x_i}.
+     * Otherwise, the returned method handle throws {@link IndexOutOfBoundsException}.
      *
      * @apiNote The returned method handle can be used to compute a layout offset,
      *          similarly to {@link #byteOffset(PathElement...)}, but more flexibly, as
