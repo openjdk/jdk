@@ -157,16 +157,14 @@ public final class KDF {
      */
     public static KDF getInstance(String algorithm)
         throws NoSuchAlgorithmException {
-        KDF instance;
         try {
-            instance = getInstance(algorithm, (AlgorithmParameterSpec) null);
+            return getInstance(algorithm, (AlgorithmParameterSpec) null);
         } catch (InvalidParameterSpecException e) {
             throw new NoSuchAlgorithmException(
                 "Received an InvalidParameterSpecException. Does this "
                 + "algorithm require an "
                 + "AlgorithmParameterSpec?");
         }
-        return instance;
     }
 
     /**
@@ -191,9 +189,8 @@ public final class KDF {
      */
     public static KDF getInstance(String algorithm, String provider)
         throws NoSuchAlgorithmException, NoSuchProviderException {
-        KDF instance;
         try {
-            instance = getInstance(algorithm, null,
+            return getInstance(algorithm, null,
                                    provider);
         } catch (InvalidParameterSpecException e) {
             throw new NoSuchAlgorithmException(
@@ -201,7 +198,6 @@ public final class KDF {
                 + "algorithm require an "
                 + "AlgorithmParameterSpec?");
         }
-        return instance;
     }
 
     /**
@@ -223,9 +219,8 @@ public final class KDF {
      */
     public static KDF getInstance(String algorithm, Provider provider)
         throws NoSuchAlgorithmException {
-        KDF instance;
         try {
-            instance = getInstance(algorithm, null,
+            return getInstance(algorithm, null,
                                    provider);
         } catch (InvalidParameterSpecException e) {
             throw new NoSuchAlgorithmException(
@@ -233,7 +228,6 @@ public final class KDF {
                 + "algorithm require an "
                 + "AlgorithmParameterSpec?");
         }
-        return instance;
     }
 
     /**
@@ -412,7 +406,7 @@ public final class KDF {
                     continue;
                 }
                 try {
-                    KDFSpi spi = (KDFSpi)s.newInstance(algorithmParameterSpec);
+                    KDFSpi spi = (KDFSpi) s.newInstance(algorithmParameterSpec);
                     provider = s.getProvider();
                     this.spi = spi;
                     firstService = null;
@@ -425,11 +419,11 @@ public final class KDF {
                 }
             }
             // no working provider found, fail
-            if(lastException instanceof InvalidParameterSpecException) {
+            if (lastException instanceof InvalidParameterSpecException) {
                 throw (InvalidParameterSpecException) lastException;
             }
             if (lastException instanceof RuntimeException) {
-                throw (RuntimeException)lastException;
+                throw (RuntimeException) lastException;
             }
         }
         // should never reach here
@@ -477,7 +471,7 @@ public final class KDF {
                     continue;
                 }
                 try {
-                    KDFSpi spi = (KDFSpi)s.newInstance(algorithmParameterSpec);
+                    KDFSpi spi = (KDFSpi) s.newInstance(algorithmParameterSpec);
                     provider = s.getProvider();
                     this.spi = spi;
                     firstService = null;
@@ -490,11 +484,11 @@ public final class KDF {
                 }
             }
             // no working provider found, fail
-            if(lastException instanceof InvalidParameterSpecException) {
+            if (lastException instanceof InvalidParameterSpecException) {
                 throw (InvalidParameterSpecException) lastException;
             }
             if (lastException instanceof RuntimeException) {
-                throw (RuntimeException)lastException;
+                throw (RuntimeException) lastException;
             }
         }
         // should never reach here
