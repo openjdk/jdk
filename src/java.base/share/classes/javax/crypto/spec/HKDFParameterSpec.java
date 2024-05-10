@@ -143,7 +143,7 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
          */
         public Builder addIKM(byte[] ikm) {
             if (ikm != null && ikm.length != 0) {
-                return addIKM(new SecretKeySpec(ikm, "RAW"));
+                return addIKM(new SecretKeySpec(ikm, "Generic"));
             } else {
                 return this;
             }
@@ -186,7 +186,7 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
          */
         public Builder addSalt(byte[] salt) {
             if (salt != null && salt.length != 0) {
-                return addSalt(new SecretKeySpec(salt, "RAW"));
+                return addSalt(new SecretKeySpec(salt, "Generic"));
             } else {
                 return this;
             }
