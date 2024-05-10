@@ -3920,29 +3920,31 @@ bool PhaseIdealLoop::is_deleteable_safept(Node* sfpt) {
 // This optimization looks for patterns similar to:
 //
 //    int a = init2;
-//    for (int i = init; i < limit; i += stride) {
-//      a += stride2;
+//    for (int phi = init; phi < limit; phi += stride_con) {
+//      a += stride_con2;
 //    }
 //
 // and transforms it to:
 //
 //    int a = init2
-//    for (int i = init; i < limit; i += stride) {
-//      a = init2 + (i - init) * (stride2 / stride)
+//    for (int phi = init; phi < limit; phi += stride_con) {
+//      a = init2 + (phi - init) * (stride_con2 / stride_con)
 //    }
 //
-// so that the loop can be eliminated. Notice that the above is equivalently
-// expressed as
+// so that the loop can be eliminated given that `stride_con2 / stride_con` is
+// exact (i.e., no remainder). Checks are in place to only perform this
+// optimization if such a division is exact. The example will be transformed
+// into its semantic equivalence:
 //
-//     (phi * stride_con2 / stride_con) + (init2 - (init * stride_con2 / stride_con))
+//     int a = (phi * stride_con2 / stride_con) + (init2 - (init * stride_con2 / stride_con))
 //
-// which corresponds to the structure of transformed subgraph below.
+// which corresponds to the structure of transformed subgraph.
 //
 // However, if there is a mismatch between types of the loop and the parallel
 // induction variable (e.g., a long-typed IV in an int-typed loop), type conversions
 // are required:
 //
-//     ((long) phi * stride_con2 / stride_con) + (init2 - ((long) init * stride_con2 / stride_con))
+//     long a = ((long) phi * stride_con2 / stride_con) + (init2 - ((long) init * stride_con2 / stride_con))
 //
 void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
   assert(loop->_head->is_CountedLoop(), "");
