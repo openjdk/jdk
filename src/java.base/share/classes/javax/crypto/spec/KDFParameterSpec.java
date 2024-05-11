@@ -35,5 +35,5 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @since 23
  */
-@PreviewFeature(feature=PreviewFeature.Feature.KEY_DERIVATION)
+//@PreviewFeature(feature=PreviewFeature.Feature.KEY_DERIVATION)
 public interface KDFParameterSpec {}
