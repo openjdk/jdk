@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,6 +116,8 @@ public class RMIConnectorServer extends JMXConnectorServer {
     * {@linkplain RMIServer} implementation.
     * If the attribute is not set then any class is deemed acceptable.
     * @see ObjectInputFilter
+     *
+     * @since 10
     */
     public static final String CREDENTIALS_FILTER_PATTERN =
         "jmx.remote.rmi.server.credentials.filter.pattern";
@@ -152,6 +154,8 @@ public class RMIConnectorServer extends JMXConnectorServer {
      * an allow-list that is too narrow or a reject-list that is too wide may
      * prevent legitimate clients from interoperating with the
      * {@code JMXConnectorServer}.
+     *
+     * @since 10
      */
     public static final String SERIAL_FILTER_PATTERN =
        "jmx.remote.rmi.server.serial.filter.pattern";
