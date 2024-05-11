@@ -33,7 +33,7 @@ import javax.print.attribute.EnumSyntax;
 import javax.print.attribute.standard.Media;
 import javax.print.attribute.standard.OutputBin;
 
-public class CustomOutputBin extends OutputBin {
+public final class CustomOutputBin extends OutputBin {
     private static ArrayList<String> customStringTable = new ArrayList<>();
     private static ArrayList<CustomOutputBin> customEnumTable = new ArrayList<>();
     private String choiceName;

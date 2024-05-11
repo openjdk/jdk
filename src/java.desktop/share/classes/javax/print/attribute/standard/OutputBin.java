@@ -34,13 +34,13 @@ import javax.print.attribute.EnumSyntax;
 import javax.print.attribute.PrintJobAttribute;
 import javax.print.attribute.PrintRequestAttribute;
 
+import sun.print.CustomOutputBin;
+
 /**
  * Class {@code OutputBin} is a printing attribute class, an enumeration, that
  * specifies the output bin for the job.
  * <p>
  * Class {@code OutputBin} declares keywords for standard output bin kind values.
- * Implementation- or site-defined names for an output bin kind attribute may also be
- * created by defining a subclass of class {@code OutputBin}.
  * <p>
  * <b>IPP Compatibility:</b> This attribute is not an IPP 1.1 attribute; it is
  * an attribute in the "output-bin" attribute extension
@@ -50,7 +50,7 @@ import javax.print.attribute.PrintRequestAttribute;
  * The {@code toString()} method returns the IPP string representation of the
  * attribute value.
  */
-public class OutputBin extends EnumSyntax implements PrintRequestAttribute, PrintJobAttribute {
+public sealed class OutputBin extends EnumSyntax implements PrintRequestAttribute, PrintJobAttribute permits CustomOutputBin {
 
     @Serial
     private static final long serialVersionUID = -3718893309873137109L;
