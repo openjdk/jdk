@@ -150,6 +150,8 @@ public class BasicSliderUI extends SliderUI{
 
     /**
      * Constructs a {@code BasicSliderUI}.
+     *
+     * @since 16
      */
     public BasicSliderUI() {}
 
