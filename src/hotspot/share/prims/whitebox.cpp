@@ -29,6 +29,7 @@
 #include "cds/filemap.hpp"
 #include "cds/heapShared.hpp"
 #include "cds/metaspaceShared.hpp"
+#include "classfile/classLoader.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/classLoaderStats.hpp"
 #include "classfile/classPrinter.hpp"
@@ -2115,7 +2116,10 @@ WB_END
 
 WB_ENTRY(jboolean, WB_IsCDSIncluded(JNIEnv* env))
 #if INCLUDE_CDS
-  return true;
+  // An exploded build inhibits use of CDS. Therefore, for the
+  // purpose of testing, the JVM can be treated as not having CDS
+  // built in at all.
+  return ClassLoader::has_jrt_entry();
 #else
   return false;
 #endif // INCLUDE_CDS
