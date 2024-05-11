@@ -83,7 +83,7 @@ public @interface PreviewFeature {
         STREAM_GATHERERS,
         @JEP(number=476, title="Module Import Declarations", status="Preview")
         MODULE_IMPORTS,
-        @JEP(number=478, title="Key Derivation", status="Preview")
+        //@JEP(number=478, title="Key Derivation", status="Preview")
         //KEY_DERIVATION,
         LANGUAGE_MODEL,
         /**
