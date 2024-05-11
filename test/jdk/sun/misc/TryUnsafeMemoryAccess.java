@@ -27,7 +27,7 @@ import java.nio.ByteBuffer;
 import sun.misc.Unsafe;
 
 /**
- * Launched by MemoryAccessWarnings with a '+' delimited list of static methods to invoke.
+ * Launched by UnsafeMemoryAccessWarnings with a '+' delimited list of methods to invoke.
  */
 @SuppressWarnings("removal")
 public class TryUnsafeMemoryAccess {
