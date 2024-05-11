@@ -99,9 +99,7 @@
 #include <math.h>
 
 // All sizes are in HeapWords.
-// todo: smaller region size for debugging only
 const size_t ParallelCompactData::Log2RegionSize  = 16; // 64K words
-// const size_t ParallelCompactData::Log2RegionSize  = 10; // 64K words
 const size_t ParallelCompactData::RegionSize      = (size_t)1 << Log2RegionSize;
 static_assert(ParallelCompactData::RegionSize >= BitsPerWord, "region-start bit word-aligned");
 const size_t ParallelCompactData::RegionSizeBytes =
