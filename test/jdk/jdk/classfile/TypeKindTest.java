@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,33 +19,30 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_GC_G1_G1YOUNGGCALLOCATIONFAILUREINJECTOR_INLINE_HPP
-#define SHARE_GC_G1_G1YOUNGGCALLOCATIONFAILUREINJECTOR_INLINE_HPP
+/*
+ * @test
+ * @summary Testing TypeKind.
+ * @bug 8331744
+ * @run junit TypeKindTest
+ */
+import org.junit.jupiter.api.Test;
 
-#include "gc/g1/g1YoungGCAllocationFailureInjector.hpp"
+import java.lang.classfile.TypeKind;
 
-#include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/shared/gc_globals.hpp"
+import static org.junit.Assert.assertThrows;
 
-#if ALLOCATION_FAILURE_INJECTOR
+class TypeKindTest {
+    @Test
+    void testContracts() {
+        assertThrows(NullPointerException.class, () -> TypeKind.from(null));
 
-inline bool G1YoungGCAllocationFailureInjector::allocation_should_fail(size_t& counter, uint region_idx) {
-  if (!_inject_allocation_failure_for_current_gc) {
-    return false;
-  }
-  if (!_allocation_failure_regions.at(region_idx)) {
-    return false;
-  }
-  if (++counter < G1GCAllocationFailureALotCount) {
-    return false;
-  }
-  counter = 0;
-  return true;
+        assertThrows(NullPointerException.class, () -> TypeKind.fromDescriptor(null));
+        assertThrows(IllegalArgumentException.class, () -> TypeKind.fromDescriptor(""));
+        assertThrows(IllegalArgumentException.class, () -> TypeKind.fromDescriptor("int"));
+
+        assertThrows(IllegalArgumentException.class, () -> TypeKind.fromNewarrayCode(-1));
+        assertThrows(IllegalArgumentException.class, () -> TypeKind.fromNewarrayCode(21));
+    }
 }
-
-#endif  // #if ALLOCATION_FAILURE_INJECTOR
-
-#endif /* SHARE_GC_G1_G1YOUNGGCALLOCATIONFAILUREINJECTOR_INLINE_HPP */

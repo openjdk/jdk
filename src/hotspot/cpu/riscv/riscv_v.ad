@@ -73,6 +73,8 @@ source %{
           return false;
         }
         break;
+      case Op_CountTrailingZerosV:
+      case Op_CountLeadingZerosV:
       case Op_ReverseBytesV:
       case Op_PopCountVL:
       case Op_PopCountVI:
@@ -3759,14 +3761,14 @@ instruct vsignum_reg(vReg dst, vReg zero, vReg one, vRegMask_V0 v0) %{
 
 // -------------------------------- Reverse Bytes Vector Operations ------------------------
 
-instruct vreverse_bytes_masked(vReg dst, vReg src, vRegMask_V0 v0) %{
-  match(Set dst (ReverseBytesV src v0));
-  format %{ "vreverse_bytes_masked $dst, $src, v0" %}
+instruct vreverse_bytes_masked(vReg dst_src, vRegMask_V0 v0) %{
+  match(Set dst_src (ReverseBytesV dst_src v0));
+  format %{ "vreverse_bytes_masked $dst_src, $dst_src, v0" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     uint vlen = Matcher::vector_length(this);
     __ vsetvli_helper(bt, vlen);
-    __ vrev8_v(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg), Assembler::v0_t);
+    __ vrev8_v(as_VectorRegister($dst_src$$reg), as_VectorRegister($dst_src$$reg), Assembler::v0_t);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -3817,16 +3819,16 @@ instruct vconvF2HF(vReg dst, vReg src, vReg vtmp, vRegMask_V0 v0, iRegINoSp tmp)
 
 // ------------------------------ Popcount vector ------------------------------
 
-instruct vpopcount_masked(vReg dst, vReg src, vRegMask_V0 v0) %{
-  match(Set dst (PopCountVI src v0));
-  match(Set dst (PopCountVL src v0));
+instruct vpopcount_masked(vReg dst_src, vRegMask_V0 v0) %{
+  match(Set dst_src (PopCountVI dst_src v0));
+  match(Set dst_src (PopCountVL dst_src v0));
   ins_cost(VEC_COST);
-  format %{ "vcpop_v $dst, $src, $v0\t# vcpop_v with mask" %}
+  format %{ "vcpop_v $dst_src, $dst_src, $v0\t# vcpop_v with mask" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     uint vlen = Matcher::vector_length(this);
     __ vsetvli_helper(bt, vlen);
-    __ vcpop_v(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg), Assembler::v0_t);
+    __ vcpop_v(as_VectorRegister($dst_src$$reg), as_VectorRegister($dst_src$$reg), Assembler::v0_t);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -3841,6 +3843,62 @@ instruct vpopcount(vReg dst, vReg src) %{
     uint vlen = Matcher::vector_length(this);
     __ vsetvli_helper(bt, vlen);
     __ vcpop_v(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// ------------------------------ CountLeadingZerosV --------------------------
+
+instruct vcountLeadingZeros_masked(vReg dst_src, vRegMask_V0 v0) %{
+  match(Set dst_src (CountLeadingZerosV dst_src v0));
+  ins_cost(VEC_COST);
+  format %{ "vcount_leading_zeros_masked $dst_src, $dst_src, v0" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    uint vlen = Matcher::vector_length(this);
+    __ vsetvli_helper(bt, vlen);
+    __ vclz_v(as_VectorRegister($dst_src$$reg), as_VectorRegister($dst_src$$reg), Assembler::v0_t);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vcountLeadingZeros(vReg dst, vReg src) %{
+  match(Set dst (CountLeadingZerosV src));
+  ins_cost(VEC_COST);
+  format %{ "vcount_leading_zeros $dst, $src" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    uint vlen = Matcher::vector_length(this);
+    __ vsetvli_helper(bt, vlen);
+    __ vclz_v(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// ------------------------------ CountTrailingZerosV --------------------------
+
+instruct vcountTrailingZeros_masked(vReg dst_src, vRegMask_V0 v0) %{
+  match(Set dst_src (CountTrailingZerosV dst_src v0));
+  ins_cost(VEC_COST);
+  format %{ "vcount_trailing_zeros_masked $dst_src, $dst_src, v0" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    uint vlen = Matcher::vector_length(this);
+    __ vsetvli_helper(bt, vlen);
+    __ vctz_v(as_VectorRegister($dst_src$$reg), as_VectorRegister($dst_src$$reg), Assembler::v0_t);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vcountTrailingZeros(vReg dst, vReg src) %{
+  match(Set dst (CountTrailingZerosV src));
+  ins_cost(VEC_COST);
+  format %{ "vcount_trailing_zeros $dst, $src" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    uint vlen = Matcher::vector_length(this);
+    __ vsetvli_helper(bt, vlen);
+    __ vctz_v(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg));
   %}
   ins_pipe(pipe_slow);
 %}
