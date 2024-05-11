@@ -246,15 +246,18 @@ private:
   template <class CardOrRangeVisitor>
   void iterate_cardset(ContainerPtr const container, uint index, CardOrRangeVisitor& found, G1CardSetConfiguration* config);
 
+  ContainerPtr at(EntryCountType index);
+
+  ContainerPtr const* buckets() const;
+
 public:
   G1CardSetHowl(EntryCountType card_in_region, G1CardSetConfiguration* config);
 
-  ContainerPtr* get_container_addr(EntryCountType index) {
-    return &_buckets[index];
-  }
+  ContainerPtr const* container_addr(EntryCountType index) const;
+
+  ContainerPtr* container_addr(EntryCountType index);
 
   bool contains(uint card_idx, G1CardSetConfiguration* config);
-
   // Iterates over all ContainerPtrs in this Howl card set, applying a CardOrRangeVisitor
   // on it.
   template <class CardOrRangeVisitor>
