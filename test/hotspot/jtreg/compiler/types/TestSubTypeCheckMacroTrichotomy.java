@@ -32,7 +32,7 @@
  * @run main/othervm -XX:-BackgroundCompilation TestSubTypeCheckMacroTrichotomy
  * @run main/othervm -XX:-BackgroundCompilation
  *     -XX:+IgnoreUnrecognizedVMOptions -XX:+StressReflectiveCode
- *     -XX:+UnlockDiagnosticVMOptions -XX:+ExpandSubTypeCheckAtParseTime
+ *     -XX:+UnlockDiagnosticVMOptions
  *     -XX:-TieredCompilation -XX:CompileThreshold=100 TestSubTypeCheckMacroTrichotomy
  *
  */

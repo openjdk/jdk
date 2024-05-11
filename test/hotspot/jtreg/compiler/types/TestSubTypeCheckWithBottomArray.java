@@ -50,12 +50,12 @@
  *          either against an interface or an unrelated non-sub-class.
  *
  * @run main/othervm -Xcomp -XX:CompileCommand=compileonly,compiler.types.TestSubTypeCheckWithBottomArray::test*
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+ExpandSubTypeCheckAtParseTime
+ *                   -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+StressReflectiveCode
  *                   -XX:CompileCommand=inline,compiler.types.TestSubTypeCheckWithBottomArray::check*
  *                   compiler.types.TestSubTypeCheckWithBottomArray
  * @run main/othervm -Xbatch -XX:CompileCommand=compileonly,compiler.types.TestSubTypeCheckWithBottomArray::test*
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+ExpandSubTypeCheckAtParseTime
+ *                   -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+StressReflectiveCode
  *                   -XX:CompileCommand=inline,compiler.types.TestSubTypeCheckWithBottomArray::check*
  *                   compiler.types.TestSubTypeCheckWithBottomArray
