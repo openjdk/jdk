@@ -33,6 +33,8 @@
  * The classes in this package were initially specified by Netscape, and are the
  * de facto standard mechanism for calling JavaScript from the Java runtime.
  * </p>
+ *
+ * @since 1.5
  */
 
 package netscape.javascript;
