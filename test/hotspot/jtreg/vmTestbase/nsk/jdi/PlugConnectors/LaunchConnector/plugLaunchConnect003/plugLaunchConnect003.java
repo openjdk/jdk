@@ -133,7 +133,6 @@ public class plugLaunchConnect003 {
 
         argsHandler = new ArgumentHandler(argv);
         logHandler = new Log(out, argsHandler);
-        logHandler.enableErrorsSummary(false);
 
         logAlways("==> nsk/jdi/PlugConnectors/LaunchConnector/plugLaunchConnect003 test...");
         logOnVerbose

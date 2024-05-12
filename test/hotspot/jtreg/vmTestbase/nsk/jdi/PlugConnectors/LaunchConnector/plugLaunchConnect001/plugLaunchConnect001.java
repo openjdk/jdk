@@ -149,7 +149,6 @@ public class plugLaunchConnect001 {
 
         argsHandler = new ArgumentHandler(argv);
         logHandler = new Log(out, argsHandler);
-        logHandler.enableErrorsSummary(false);
 
         String expectedPlugLaunchConnectorName = "PlugLaunchConnector001_Name";
         String expectedPlugLaunchConnectorDescription = "PlugLaunchConnector001_Description";

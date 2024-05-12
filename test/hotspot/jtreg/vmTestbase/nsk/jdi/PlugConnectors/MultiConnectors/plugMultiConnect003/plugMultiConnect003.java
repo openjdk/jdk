@@ -214,7 +214,6 @@ public class plugMultiConnect003 {
 
         argsHandler = new ArgumentHandler(argv);
         logHandler = new Log(out, argsHandler);
-        logHandler.enableErrorsSummary(false);
 
         logAlways("==> nsk/jdi/PlugConnectors/MultiConnectors/plugMultiConnect003 test...");
         logOnVerbose

@@ -165,7 +165,6 @@ public class plugAttachConnect002 {
 
         argsHandler = new ArgumentHandler(argv);
         logHandler = new Log(out, argsHandler);
-        logHandler.enableErrorsSummary(false);
 
         String checkedPlugAttachConnectorName = "PlugAttachConnector002_Name";
         String checkedPlugAttachConnectorDescription = "PlugAttachConnector002_Description";

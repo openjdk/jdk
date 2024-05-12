@@ -133,7 +133,6 @@ public class plugAttachConnect003 {
 
         argsHandler = new ArgumentHandler(argv);
         logHandler = new Log(out, argsHandler);
-        logHandler.enableErrorsSummary(false);
 
         logAlways("==> nsk/jdi/PlugConnectors/AttachConnector/plugAttachConnect003 test...");
         logOnVerbose

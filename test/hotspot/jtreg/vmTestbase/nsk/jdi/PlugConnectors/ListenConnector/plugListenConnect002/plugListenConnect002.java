@@ -165,7 +165,6 @@ public class plugListenConnect002 {
 
         argsHandler = new ArgumentHandler(argv);
         logHandler = new Log(out, argsHandler);
-        logHandler.enableErrorsSummary(false);
 
         String checkedPlugListenConnectorName = "PlugListenConnector002_Name";
         String checkedPlugListenConnectorDescription = "PlugListenConnector002_Description";

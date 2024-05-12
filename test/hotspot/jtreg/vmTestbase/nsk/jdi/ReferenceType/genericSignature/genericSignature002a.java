@@ -86,7 +86,6 @@ public class genericSignature002a {
 
         argsHandler = new ArgumentHandler(argv);
         logHandler = new Log(System.err, argsHandler);
-        logHandler.enableErrorsSummary(false);
         IOPipe pipe = argsHandler.createDebugeeIOPipe();
 
         logOnVerbose(infoLogPrefixHead + "Debugee started!");

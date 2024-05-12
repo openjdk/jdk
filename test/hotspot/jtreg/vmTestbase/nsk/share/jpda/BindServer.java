@@ -147,8 +147,6 @@ public class BindServer implements Finalizable {
         }
 
         log = new Log(out, argHandler);
-        log.enableErrorsSummary(false);
-        log.enableVerboseOnError(false);
         logger = new Log.Logger(log, "");
 
         registerCleanup();

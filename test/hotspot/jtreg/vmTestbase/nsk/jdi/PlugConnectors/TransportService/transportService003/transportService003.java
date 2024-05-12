@@ -136,7 +136,6 @@ public class transportService003 {
 
         argsHandler = new ArgumentHandler(argv);
         logHandler = new Log(out, argsHandler);
-        logHandler.enableErrorsSummary(false);
 
         logAlways("==> nsk/jdi/PlugConnectors/TransportService/transportService003 test...");
         logOnVerbose

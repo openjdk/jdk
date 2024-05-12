@@ -149,7 +149,6 @@ public class plugListenConnect001 {
 
         argsHandler = new ArgumentHandler(argv);
         logHandler = new Log(out, argsHandler);
-        logHandler.enableErrorsSummary(false);
 
         String expectedPlugListenConnectorName = "PlugListenConnector001_Name";
         String expectedPlugListenConnectorDescription = "PlugListenConnector001_Description";

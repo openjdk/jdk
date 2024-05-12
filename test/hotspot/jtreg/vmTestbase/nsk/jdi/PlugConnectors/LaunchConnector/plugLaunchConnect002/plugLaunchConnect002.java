@@ -165,7 +165,6 @@ public class plugLaunchConnect002 {
 
         argsHandler = new ArgumentHandler(argv);
         logHandler = new Log(out, argsHandler);
-        logHandler.enableErrorsSummary(false);
 
         String checkedPlugLaunchConnectorName = "PlugLaunchConnector002_Name";
         String checkedPlugLaunchConnectorDescription = "PlugLaunchConnector002_Description";

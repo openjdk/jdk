@@ -235,7 +235,6 @@ public class MlvmTestExecutor {
      * @see #runMlvmTest(Class<?> testClass, Object[] constructorArgs)
      */
     public static void launch(Class<?> testClass, Object[] constructorArgs) {
-        Env.getLog().enableVerboseOnError(true);
 
         long startTime = System.currentTimeMillis();
         boolean passed;
