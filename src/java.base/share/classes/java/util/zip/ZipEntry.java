@@ -138,6 +138,23 @@ public class ZipEntry implements ZipConstants, Cloneable {
     }
 
     /**
+     * Returns the extraAttributes of the entry.
+     * @return the extraAttributes of the entry.
+     */
+    public int getExtraAttributes() {
+        return extraAttributes;
+    }
+
+    /**
+     * Set the extraAttributes of the entry.
+     *
+     * @param  extraAttributes.the extraAttributes of the entry.
+     */
+    public void setExtraAttributes(int extraAttributes) {
+        this.extraAttributes = extraAttributes;
+    }
+
+    /**
      * Returns the name of the entry.
      * @return the name of the entry
      */
