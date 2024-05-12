@@ -519,7 +519,7 @@ void SerialHeap::do_collection(bool full,
       prepared_for_verification = true;
     }
 
-    gc_prologue(complete);
+    gc_prologue();
     increment_total_collections(complete);
 
     collect_generation(_young_gen,
@@ -569,7 +569,7 @@ void SerialHeap::do_collection(bool full,
     }
 
     if (!do_young_collection) {
-      gc_prologue(complete);
+      gc_prologue();
       increment_total_collections(complete);
     }
 
@@ -1019,7 +1019,7 @@ void SerialHeap::print_heap_change(const PreGenGCValues& pre_gc_values) const {
   MetaspaceUtils::print_metaspace_change(pre_gc_values.metaspace_sizes());
 }
 
-void SerialHeap::gc_prologue(bool full) {
+void SerialHeap::gc_prologue() {
   // Fill TLAB's and such
   ensure_parsability(true);   // retire TLABs
 
