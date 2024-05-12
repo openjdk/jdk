@@ -2711,7 +2711,7 @@ Node* Phase::gen_subtype_check(Node* subklass, Node* superklass, Node** ctrl, No
     // of fa[1]=x will fold up, without testing the nullness of x.
     //
     // Do not skip the static sub type check with StressReflectiveCode during
-    // parsing (i.e. with ExpandSubTypeCheckAtParseTime) because the
+    // parsing because the
     // associated CheckCastNodePP could already be folded when the type
     // system can prove it's an impossible type. Therefore, we should also
     // do the static sub type check here to ensure control is folded as well.
@@ -2720,7 +2720,7 @@ Node* Phase::gen_subtype_check(Node* subklass, Node* superklass, Node** ctrl, No
     // being expanded here because we always perform the static sub type
     // check in SubTypeCheckNode::sub() regardless of whether
     // StressReflectiveCode is set or not.
-    switch (C->static_subtype_check(superk, subk, !ExpandSubTypeCheckAtParseTime)) {
+    switch (C->static_subtype_check(superk, subk, true)) {
     case Compile::SSC_always_false:
       {
         Node* always_fail = *ctrl;
@@ -2901,8 +2901,7 @@ Node* Phase::gen_subtype_check(Node* subklass, Node* superklass, Node** ctrl, No
 }
 
 Node* GraphKit::gen_subtype_check(Node* obj_or_subklass, Node* superklass) {
-  bool expand_subtype_check = C->post_loop_opts_phase() ||   // macro node expansion is over
-                              ExpandSubTypeCheckAtParseTime; // forced expansion
+  bool expand_subtype_check = C->post_loop_opts_phase();   // macro node expansion is over
   if (expand_subtype_check) {
     MergeMemNode* mem = merged_memory();
     Node* ctrl = control();
