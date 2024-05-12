@@ -108,6 +108,22 @@ public class Log {
             NAME_TO_LEVEL_MAP.put("debug", TRACE_DEBUG);
             NAME_TO_LEVEL_MAP.put("default", DEFAULT);
         }
+
+        public static int nameToLevel(String value) throws IllegalArgumentException {
+            Integer level = NAME_TO_LEVEL_MAP.get(value.toLowerCase());
+           if ( level == null )
+                throw new IllegalArgumentException("Wrong trace level: " + value);
+
+            return level;
+        }
+
+        public static String getLevelsString() {
+            StringBuffer result = new StringBuffer();
+            for ( String s : NAME_TO_LEVEL_MAP.keySet() ) {
+                result.append(s).append(", ");
+            }
+            return result.substring(0, result.length() - 3);
+        }
     }
 
     /**
