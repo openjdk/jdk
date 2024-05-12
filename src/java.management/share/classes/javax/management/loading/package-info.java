@@ -23,4 +23,7 @@
  * questions.
  */
 
+/**
+ * @since 1.5
+ */
 package javax.management.loading;

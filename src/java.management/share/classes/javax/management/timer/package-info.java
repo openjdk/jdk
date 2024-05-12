@@ -23,4 +23,7 @@
  * questions.
  */
 
-    package javax.management.timer;
+/**
+ * @since 1.5
+ */
+package javax.management.timer;
