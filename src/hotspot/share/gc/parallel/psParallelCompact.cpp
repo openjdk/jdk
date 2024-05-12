@@ -1270,7 +1270,6 @@ bool PSParallelCompact::invoke(bool maximum_heap_compaction) {
          "should be in vm thread");
 
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
-  assert(!heap->is_stw_gc_active(), "not reentrant");
 
   IsSTWGCActiveMark mark;
 
