@@ -142,7 +142,7 @@ public class ZipEntry implements ZipConstants, Cloneable {
      * @return the extraAttributes of the entry.
      */
     public int getExtraAttributes() {
-        return this.extraAttributes;
+	    return this.extraAttributes;
     }
 
     /**
@@ -152,7 +152,7 @@ public class ZipEntry implements ZipConstants, Cloneable {
      *
      */
     public void setExtraAttributes(int extraAttributes) {
-        this.extraAttributes = extraAttributes;
+	    this.extraAttributes = extraAttributes;
     }
 
     /**
