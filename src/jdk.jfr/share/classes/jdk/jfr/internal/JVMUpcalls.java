@@ -27,6 +27,7 @@ package jdk.jfr.internal;
 import java.lang.reflect.Modifier;
 
 import jdk.jfr.internal.event.EventConfiguration;
+import jdk.jfr.internal.instrument.JDKEvents;
 import jdk.jfr.internal.util.Bytecode;
 /**
  * All upcalls from the JVM should go through this class.
@@ -77,7 +78,7 @@ final class JVMUpcalls {
                 Bytecode.log(clazz.getName(), bytes);
                 return bytes;
             }
-            return oldBytes;
+            return JDKEvents.retransformCallback(clazz, oldBytes);
         } catch (Throwable t) {
             Logger.log(LogTag.JFR_SYSTEM, LogLevel.WARN, "Unexpected error when adding instrumentation to event class " + clazz.getName());
         }
