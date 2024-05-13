@@ -46,12 +46,12 @@ import java.util.Objects;
  * This class provides the functionality of a key derivation algorithm for JCE.
  * <p>
  * {@code KDF} objects are instantiated through the {@code getInstance} family
- * of methods.  The algorithm field is the KDF algorithm
- * (e.g. HKDF, etc.), while the PRF specifier identifies the underlying
- * pseudorandom function (e.g. HmacSHA256).  For instance, a KDF implementation
- * of HKDF using HMAC-SHA256 will have an algorithm string of
- * "HKDFWithHmacSHA256".  In some cases the PRF portion of the algorithm
- * specifier may be omitted if the KDF algorithm has a fixed or default PRF.
+ * of methods.  The algorithm field is the KDF algorithm (e.g. HKDF, etc.),
+ * while the PRF specifier identifies the underlying pseudorandom function (e.g.
+ * HmacSHA256).  For instance, a KDF implementation of HKDF using HMAC-SHA256
+ * will have an algorithm string of "HKDFWithHmacSHA256".  In some cases the PRF
+ * portion of the algorithm specifier may be omitted if the KDF algorithm has a
+ * fixed or default PRF.
  * <p>
  * Example:
  * {@snippet lang = java:
@@ -69,7 +69,7 @@ import java.util.Objects;
  * @see SecretKey
  * @since 23
  */
-@PreviewFeature(feature=PreviewFeature.Feature.KEY_DERIVATION)
+@PreviewFeature(feature = PreviewFeature.Feature.KEY_DERIVATION)
 public final class KDF {
     private static final Debug debug = Debug.getInstance("jca",
                                                          "KDF");
@@ -403,10 +403,17 @@ public final class KDF {
      *     if the information contained within the {@code KDFParameterSpec} is
      *     invalid or incorrect for the type of key to be derived, or specifies
      *     a type of output that is not a key (e.g. raw data)
+     * @throws NullPointerException
+     *     if {@code alg} is null
      */
     public SecretKey deriveKey(String alg, KDFParameterSpec kdfParameterSpec)
         throws InvalidParameterSpecException {
         synchronized (lock) {
+            if (alg == null || alg.isEmpty()) {
+                throw new NullPointerException(
+                    "the algorithm for the SecretKey return value may not be "
+                    + "null or empty");
+            }
             if (spi != null) {
                 return spi.engineDeriveKey(alg, kdfParameterSpec);
             }
