@@ -2453,7 +2453,11 @@ public abstract class ClassLoader {
         return addr;
     }
 
-    // @@@: Avoid duplication!
+    /*
+     * This is also called by SymbolLookup::library lookup. In that case, we need
+     * to avoid a restricted check, as that check has already been performed when
+     * obtaining the lookup.
+     */
     static long findNativeInternal(ClassLoader loader, String entryName) {
         if (loader == null) {
             return BootLoader.getNativeLibraries().find(entryName);
