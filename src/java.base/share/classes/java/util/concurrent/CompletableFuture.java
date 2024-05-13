@@ -389,7 +389,7 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
             if ((x = ((AltResult)r).ex) == null)
                 return null;
             if (x instanceof CancellationException)
-                throw (CancellationException)x;
+                throw new CancellationException((CancellationException)x);
             if ((x instanceof CompletionException) &&
                 (cause = x.getCause()) != null)
                 x = cause;
@@ -407,7 +407,7 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
             if ((x = ((AltResult)r).ex) == null)
                 return null;
             if (x instanceof CancellationException)
-                throw (CancellationException)x;
+                throw new CancellationException((CancellationException)x);
             if (x instanceof CompletionException)
                 throw (CompletionException)x;
             throw new CompletionException(x);
