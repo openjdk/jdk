@@ -118,7 +118,7 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
          *
          * @throws NullPointerException if the {@code ikm} is null
          *
-         * @return a new {@code Extract} object
+         * @return this builder
          */
         public Builder addIKM(SecretKey ikm) {
             if (ikm != null) {
@@ -143,7 +143,7 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
          *
          * @throws NullPointerException if the {@code ikm} is null or empty
          *
-         * @return a new {@code Extract} object
+         * @return this builder
          */
         public Builder addIKM(byte[] ikm) {
             if (ikm != null && ikm.length != 0) {
@@ -167,7 +167,7 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
          *
          * @throws NullPointerException if the {@code salt} is null
          *
-         * @return a new {@code Extract} object
+         * @return this builder
          */
         public Builder addSalt(SecretKey salt) {
             if (salt != null) {
@@ -192,7 +192,7 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
          *
          * @throws NullPointerException if the {@code salt} is null or empty
          *
-         * @return a new {@code Extract} object
+         * @return this builder
          */
         public Builder addSalt(byte[] salt) {
             if (salt != null && salt.length != 0) {
