@@ -157,7 +157,7 @@ public final class JdkConsoleImpl implements JdkConsole {
                                     }
                                 }
                             });
-        } catch (IllegalStateException e) {
+        } catch (IllegalStateException _) {
             // shutdown is already in progress and readPassword is first used
             // by a shutdown hook
         }
