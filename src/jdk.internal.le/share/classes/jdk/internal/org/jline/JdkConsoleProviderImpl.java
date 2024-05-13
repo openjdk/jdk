@@ -122,7 +122,7 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
         public String readLine(String fmt, Object ... args) {
             try {
                 initJLineIfNeeded();
-                return jline.readLine(fmt.formatted(args));
+                return jline.readLine(fmt.formatted(args).replace("%", "%%"));
             } catch (EndOfFileException eofe) {
                 return null;
             }
@@ -137,7 +137,8 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
         public char[] readPassword(String fmt, Object ... args) {
             try {
                 initJLineIfNeeded();
-                return jline.readLine(fmt.formatted(args), '\0').toCharArray();
+                return jline.readLine(fmt.formatted(args).replace("%", "%%"), '\0')
+                            .toCharArray();
             } catch (EndOfFileException eofe) {
                 return null;
             } finally {
