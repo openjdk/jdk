@@ -271,7 +271,7 @@ class RebuildingTransformation {
                 case ConstantInstruction i -> {
                     if (i.constantValue() == null)
                         if (pathSwitch.nextBoolean()) cob.aconst_null();
-                        else cob.constantInstruction(null);
+                        else cob.loadConstant(null);
                     else switch (i.constantValue()) {
                         case Integer iVal -> {
                             if (iVal == 1 && pathSwitch.nextBoolean()) cob.iconst_1();
@@ -282,25 +282,25 @@ class RebuildingTransformation {
                             else if (iVal == -1 && pathSwitch.nextBoolean()) cob.iconst_m1();
                             else if (iVal >= -128 && iVal <= 127 && pathSwitch.nextBoolean()) cob.bipush(iVal);
                             else if (iVal >= -32768 && iVal <= 32767 && pathSwitch.nextBoolean()) cob.sipush(iVal);
-                            else cob.constantInstruction(iVal);
+                            else cob.loadConstant(iVal);
                         }
                         case Long lVal -> {
                             if (lVal == 0 && pathSwitch.nextBoolean()) cob.lconst_0();
                             else if (lVal == 1 && pathSwitch.nextBoolean()) cob.lconst_1();
-                            else cob.constantInstruction(lVal);
+                            else cob.loadConstant(lVal);
                         }
                         case Float fVal -> {
                             if (fVal == 0.0 && pathSwitch.nextBoolean()) cob.fconst_0();
                             else if (fVal == 1.0 && pathSwitch.nextBoolean()) cob.fconst_1();
                             else if (fVal == 2.0 && pathSwitch.nextBoolean()) cob.fconst_2();
-                            else cob.constantInstruction(fVal);
+                            else cob.loadConstant(fVal);
                         }
                         case Double dVal -> {
                             if (dVal == 0.0d && pathSwitch.nextBoolean()) cob.dconst_0();
                             else if (dVal == 1.0d && pathSwitch.nextBoolean()) cob.dconst_1();
-                            else cob.constantInstruction(dVal);
+                            else cob.loadConstant(dVal);
                         }
-                        default -> cob.constantInstruction(i.constantValue());
+                        default -> cob.loadConstant(i.constantValue());
                     }
                 }
                 case ConvertInstruction i -> {
@@ -549,13 +549,13 @@ class RebuildingTransformation {
                     if (pathSwitch.nextBoolean()) {
                         switch (i.opcode()) {
                             case CHECKCAST -> cob.checkcast(i.type().asSymbol());
-                            case INSTANCEOF -> cob.instanceof_(i.type().asSymbol());
+                            case INSTANCEOF -> cob.instanceOf(i.type().asSymbol());
                             default -> throw new AssertionError("Should not reach here");
                         }
                     } else {
                         switch (i.opcode()) {
                             case CHECKCAST -> cob.checkcast(i.type());
-                            case INSTANCEOF -> cob.instanceof_(i.type());
+                            case INSTANCEOF -> cob.instanceOf(i.type());
                             default -> throw new AssertionError("Should not reach here");
                         }
                     }

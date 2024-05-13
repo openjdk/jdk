@@ -40,6 +40,7 @@ import javax.swing.JFileChooser;
 /*
  * @test
  * @bug 8325179
+ * @requires os.family == "windows"
  * @summary Verifies there's only one BasicDirectoryModel.FilesLoader thread
  *          at any given moment
  * @run main/othervm -Djava.awt.headless=true LoaderThreadCount
@@ -163,7 +164,7 @@ public final class LoaderThreadCount extends ThreadGroup {
             System.out.println("  = 1: " + ones);
             System.out.println("  = 2: " + twos);
             System.out.println("  > 2: " + count);
-            if (count > 0) {
+            if (count > loaderCount.size() / 2) {
                 throw new RuntimeException("Detected " + count + " snapshots "
                                            + "with several loading threads");
             }

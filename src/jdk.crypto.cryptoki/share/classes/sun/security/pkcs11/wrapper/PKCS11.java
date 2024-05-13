@@ -793,6 +793,24 @@ public class PKCS11 {
     public native void C_EncryptInit(long hSession, CK_MECHANISM pMechanism,
             long hKey) throws PKCS11Exception;
 
+    /**
+     * C_GCMEncryptInitWithRetry initializes a GCM encryption operation and retry
+     * with alternative param structure for max compatibility.
+     * (Encryption and decryption)
+     *
+     * @param hSession the session's handle
+     *         (PKCS#11 param: CK_SESSION_HANDLE hSession)
+     * @param pMechanism the encryption mechanism
+     *         (PKCS#11 param: CK_MECHANISM_PTR pMechanism)
+     * @param hKey the handle of the encryption key
+     *         (PKCS#11 param: CK_OBJECT_HANDLE hKey)
+     * @param useNormativeVerFirst whether to use normative version of GCM parameter first
+     * @exception PKCS11Exception If function returns other value than CKR_OK.
+     * @preconditions
+     * @postconditions
+     */
+    public native void C_GCMEncryptInitWithRetry(long hSession, CK_MECHANISM pMechanism,
+            long hKey, boolean useNormativeVerFirst) throws PKCS11Exception;
 
     /**
      * C_Encrypt encrypts single-part data.
@@ -887,6 +905,24 @@ public class PKCS11 {
     public native void C_DecryptInit(long hSession, CK_MECHANISM pMechanism,
             long hKey) throws PKCS11Exception;
 
+    /**
+     * C_GCMDecryptInitWithRetry initializes a GCM decryption operation
+     * with alternative param structure for max compatibility.
+     * (Encryption and decryption)
+     *
+     * @param hSession the session's handle
+     *         (PKCS#11 param: CK_SESSION_HANDLE hSession)
+     * @param pMechanism the decryption mechanism
+     *         (PKCS#11 param: CK_MECHANISM_PTR pMechanism)
+     * @param hKey the handle of the decryption key
+     *         (PKCS#11 param: CK_OBJECT_HANDLE hKey)
+     * @param useNormativeVerFirst whether to use normative version of GCM parameter first
+     * @exception PKCS11Exception If function returns other value than CKR_OK.
+     * @preconditions
+     * @postconditions
+     */
+    public native void C_GCMDecryptInitWithRetry(long hSession, CK_MECHANISM pMechanism,
+            long hKey, boolean useNormativeVerFirst) throws PKCS11Exception;
 
     /**
      * C_Decrypt decrypts encrypted data in a single part.
