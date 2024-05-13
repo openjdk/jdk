@@ -30,6 +30,7 @@
 
 import jdk.internal.lang.StableValue;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -105,6 +106,18 @@ final class BasicStableListTest {
                 .toList()
                 .toString();
         assertEquals(expected, actual);
+    }
+
+    @Test
+    void computeIfUnsetError() {
+        int index = 3;
+        list = StableValue.ofList(index * 2);
+        assertThrows(UnsupportedOperationException.class, () ->
+            StableValue.computeIfUnset(list, index, _ -> {  throw new UnsupportedOperationException(); }
+        ));
+        assertFalse(list.get(index).isSet());
+        assertTrue(list.get(index).isError());
+        assertEquals("StableValue.error(" + UnsupportedOperationException.class.getName() + ")", list.get(index).toString());
     }
 
     @ParameterizedTest

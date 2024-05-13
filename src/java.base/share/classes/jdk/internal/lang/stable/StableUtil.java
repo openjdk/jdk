@@ -85,11 +85,12 @@ final class StableUtil {
      * {@return a String representation of the provided {@code stable}}
      * @param stable to extract a string representation from
      */
-    static String toString(StableValue<?> stable) {
+    static String toString(StableValue<?> stable,
+                           Function<Object, String> errorMessageMapper) {
         return "StableValue" +
                 (stable.isSet()
                         ? "[" + stable.orThrow() + "]"
-                        : stable.isError() ? ".error" : ".unset");
+                        : stable.isError() ? ".error(" + errorMessageMapper.apply(stable) + ")" : ".unset");
     }
 
     /**
@@ -124,6 +125,10 @@ final class StableUtil {
 
     static InternalError shouldNotReachHere() {
         return new InternalError("Should not reach here");
+    }
+
+    static boolean isMutexNotNeeded(Object mutex) {
+        return mutex == TOMBSTONE || mutex instanceof Throwable;
     }
 
 }

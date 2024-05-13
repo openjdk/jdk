@@ -135,6 +135,8 @@ final class BasicStableTest {
                 () -> stable.computeIfUnset(failingSupplier));
         assertFalse(stable.isSet());
         assertTrue(stable.isError());
+        assertEquals("StableValue.error(" + UnsupportedOperationException.class.getName() + ")", stable.toString());
+
         assertThrows(NoSuchElementException.class,() ->
                 stable.computeIfUnset(() -> FIRST));
         assertFalse(stable.isSet());

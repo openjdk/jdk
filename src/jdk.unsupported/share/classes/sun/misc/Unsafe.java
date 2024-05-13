@@ -731,6 +731,7 @@ public final class Unsafe {
         return theInternalUnsafe.staticFieldBase(f);
     }
 
+    // Todo: When StableValue is a public final feature: update the packages
     private static final Set<String> TRUSTED_CLASSES = Set.of(
             "jdk.internal.lang.StableValue",
             "jdk.internal.lang.StableArray",
@@ -738,12 +739,10 @@ public final class Unsafe {
             "jdk.internal.lang.StableArray3");
 
     private static void assertNotTrusted(Field f) {
-        // Todo: When StableValue is a public final feature: if (java.lang.Lazy.class.isAssignableFrom(f.getType()))
         String typeName = f.getType().getName();
         if (TRUSTED_CLASSES.contains(typeName)) {
             throw new UnsupportedOperationException("can't get field offset for a field of type " + typeName + ": " + f);
         }
-
     }
 
     /**

@@ -71,7 +71,7 @@ public record StableValueElement<V>(
             return orThrow();
         }
         final var m = aux.acquireMutex(index);
-        if (m == TOMBSTONE) {
+        if (isMutexNotNeeded(m)) {
             return orThrow();
         }
         synchronized (m) {
@@ -92,7 +92,7 @@ public record StableValueElement<V>(
             return false;
         }
         final var m = aux.acquireMutex(index);
-        if (m == TOMBSTONE) {
+        if (isMutexNotNeeded(m)) {
             return false;
         }
         synchronized (m) {
@@ -104,9 +104,18 @@ public record StableValueElement<V>(
         }
     }
 
+    private static final Function<Object, String> ERROR_MESSAGE_EXTRACTOR = new Function<Object, String>() {
+        @Override
+        public String apply(Object stableValue) {
+            StableValueElement<?> sve = (StableValueElement<?>) stableValue;
+            return ((Class<?>) sve.aux.acquireMutex(sve.index))
+                    .getName();
+        }
+    };
+
     @Override
     public String toString() {
-        return StableUtil.toString(this);
+        return StableUtil.toString(this, ERROR_MESSAGE_EXTRACTOR);
     }
 
     @ForceInline
@@ -156,7 +165,7 @@ public record StableValueElement<V>(
 
     private <K> V computeIfUnsetVolatile0(Object provider, K key) {
         final var m = aux.acquireMutex(index);
-        if (m == TOMBSTONE) {
+        if (isMutexNotNeeded(m)) {
             return orThrow();
         }
         synchronized (m) {
@@ -182,7 +191,7 @@ public record StableValueElement<V>(
                     return newValue;
                 } catch (Throwable t) {
                     aux.putState(index, ERROR);
-                    aux.putMutexTombstone(index);
+                    aux.putMutex(index, t.getClass());
                     throw t;
                 }
             } finally {
@@ -204,7 +213,7 @@ public record StableValueElement<V>(
         }
         // Crucially, indicate a value is set _after_ it has actually been set.
         aux.putState(index, value == null ? NULL : NON_NULL);
-        aux.putMutexTombstone(index); // We do not need a mutex anymore
+        aux.putMutex(index, TOMBSTONE); // We do not need a mutex anymore
     }
 
 }

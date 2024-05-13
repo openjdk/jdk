@@ -31,6 +31,7 @@ import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
 import java.util.concurrent.ThreadFactory;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static jdk.internal.lang.stable.StableUtil.*;
@@ -50,6 +51,7 @@ public final class StableValueImpl<V> implements StableValue<V> {
      * An internal mutex used rather than synchronizing on `this`. Lazily created.
      * If `null`    , we have not entered a mutex section yet
      * If TOMBSTONE , we do not need synchronization anymore (isSet() && isError() = true)
+     * if instanceof Throwable , records a previous error and, we do not need synchronization anymore
      * otherwise    , a distinct synchronization object
      */
     private Object mutex;
@@ -143,7 +145,7 @@ public final class StableValueImpl<V> implements StableValue<V> {
            return orThrow();
         }
         final var m = acquireMutex();
-        if (m == TOMBSTONE) {
+        if (isMutexNotNeeded(m)) {
             return orThrow();
         }
         synchronized (m) {
@@ -162,7 +164,7 @@ public final class StableValueImpl<V> implements StableValue<V> {
             return false;
         }
         final var m = acquireMutex();
-        if (m == TOMBSTONE) {
+        if (isMutexNotNeeded(m)) {
             return false;
         }
         synchronized (m) {
@@ -208,7 +210,7 @@ public final class StableValueImpl<V> implements StableValue<V> {
 
     private V computeIfUnsetVolatile0(Supplier<? extends V> supplier) {
         final var m = acquireMutex();
-        if (m == TOMBSTONE) {
+        if (isMutexNotNeeded(m)) {
             return orThrow();
         }
         synchronized (m) {
@@ -228,7 +230,7 @@ public final class StableValueImpl<V> implements StableValue<V> {
                     return newValue;
                 } catch (Throwable t) {
                     putState(ERROR);
-                    putMutexTombstone();
+                    putMutex(t.getClass());
                     throw t;
                 }
             } finally {
@@ -237,9 +239,18 @@ public final class StableValueImpl<V> implements StableValue<V> {
         }
     }
 
+    private static final Function<Object, String> ERROR_MESSAGE_EXTRACTOR = new Function<Object, String>() {
+        @Override
+        public String apply(Object stableValue) {
+            StableValueImpl<?> svi = (StableValueImpl<?>) stableValue;
+            return ((Class<?>) svi.acquireMutex())
+                    .getName();
+        }
+    };
+
     @Override
     public String toString() {
-        return StableUtil.toString(this);
+        return StableUtil.toString(this, ERROR_MESSAGE_EXTRACTOR);
     }
 
     @SuppressWarnings("unchecked")
@@ -253,7 +264,7 @@ public final class StableValueImpl<V> implements StableValue<V> {
         }
         // Crucially, indicate a value is set _after_ it has actually been set.
         putState(value == null ? NULL : NON_NULL);
-        putMutexTombstone(); // We do not need a mutex anymore
+        putMutex(TOMBSTONE); // We do not need a mutex anymore
     }
 
     private void putValue(V value) {
@@ -287,8 +298,8 @@ public final class StableValueImpl<V> implements StableValue<V> {
         return witness == null ? created : witness;
     }
 
-    private void putMutexTombstone() {
-        UNSAFE.putReferenceVolatile(this, MUTEX_OFFSET, TOMBSTONE);
+    private void putMutex(Object value) {
+        UNSAFE.putReferenceVolatile(this, MUTEX_OFFSET, value);
     }
 
     // Factories

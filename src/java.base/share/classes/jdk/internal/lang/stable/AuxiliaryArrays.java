@@ -3,7 +3,6 @@ package jdk.internal.lang.stable;
 import jdk.internal.vm.annotation.Stable;
 
 import static jdk.internal.lang.stable.StableUtil.*;
-import static jdk.internal.lang.stable.StableUtil.TOMBSTONE;
 
 public record AuxiliaryArrays(@Stable int[] states,
                               Object[] mutexes,
@@ -50,8 +49,8 @@ public record AuxiliaryArrays(@Stable int[] states,
         return witness == null ? created : witness;
     }
 
-    void putMutexTombstone(int index) {
-        UNSAFE.putReferenceVolatile(mutexes, objectOffset(index), TOMBSTONE);
+    void putMutex(int index, Object value) {
+        UNSAFE.putReferenceVolatile(mutexes, objectOffset(index), value);
     }
 
 }
