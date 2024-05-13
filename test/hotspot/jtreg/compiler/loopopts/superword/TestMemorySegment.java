@@ -181,10 +181,10 @@ class TestMemorySegmentImpl {
     }
 
     // List of tests
-    Map<String,TestFunction> tests = new HashMap<String,TestFunction>();
+    Map<String, TestFunction> tests = new HashMap<>();
 
     // List of gold, the results from the first run before compilation
-    Map<String,Object[]> golds = new HashMap<String,Object[]>();
+    Map<String, Object[]> golds = new HashMap<>();
 
     public TestMemorySegmentImpl () {
         // Generate two MemorySegments as inputs
@@ -344,14 +344,14 @@ class TestMemorySegmentImpl {
     }
 
     static MemorySegment newMemorySegmentOfMixedBuffer() {
-        switch(RANDOM.nextInt(2)) {
+        switch (RANDOM.nextInt(2)) {
             case 0  -> { return newMemorySegmentOfByteBuffer(); }
             default -> { return newMemorySegmentOfByteBufferDirect(); }
         }
     }
 
     static MemorySegment newMemorySegmentOfMixed() {
-        switch(RANDOM.nextInt(3)) {
+        switch (RANDOM.nextInt(3)) {
             case 0  -> { return newMemorySegmentOfMixedArray(); }
             case 1  -> { return newMemorySegmentOfMixedBuffer(); }
             default -> { return newMemorySegmentOfNative(); }
