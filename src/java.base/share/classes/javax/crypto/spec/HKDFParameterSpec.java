@@ -116,13 +116,17 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
          * but the actual value of the IKM is not yet available.
          *
          * @param ikm
-         *     the initial key material value (null values will not be added)
+         *     the initial key material value
+         *
+         * @throws NullPointerException if the {@code ikm} is null
          *
          * @return a new {@code Extract} object
          */
         public Builder addIKM(SecretKey ikm) {
             if (ikm != null) {
                 ikms.add(ikm);
+            } else {
+                throw new NullPointerException("ikm must not be null");
             }
             return this;
         }
@@ -137,7 +141,9 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
          * but the actual value of the IKM is not yet available.
          *
          * @param ikm
-         *     the initial key material value (null or empty values will not be added)
+         *     the initial key material value
+         *
+         * @throws NullPointerException if the {@code ikm} is null or empty
          *
          * @return a new {@code Extract} object
          */
@@ -145,7 +151,7 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
             if (ikm != null && ikm.length != 0) {
                 return addIKM(new SecretKeySpec(ikm, "Generic"));
             } else {
-                return this;
+                throw new NullPointerException("ikm must not be null or empty");
             }
         }
 
@@ -159,13 +165,17 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
          * but the actual value of the salt is not yet available.
          *
          * @param salt
-         *     the salt value (null values will not be added)
+         *     the salt value
+         *
+         * @throws NullPointerException if the {@code salt} is null
          *
          * @return a new {@code Extract} object
          */
         public Builder addSalt(SecretKey salt) {
             if (salt != null) {
                 salts.add(salt);
+            } else {
+                throw new NullPointerException("salt must not be null");
             }
             return this;
         }
@@ -180,7 +190,9 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
          * but the actual value of the salt is not yet available.
          *
          * @param salt
-         *     the salt value (null or empty values will not be added)
+         *     the salt value
+         *
+         * @throws NullPointerException if the {@code salt} is null or empty
          *
          * @return a new {@code Extract} object
          */
@@ -188,7 +200,7 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
             if (salt != null && salt.length != 0) {
                 return addSalt(new SecretKeySpec(salt, "Generic"));
             } else {
-                return this;
+                throw new NullPointerException("salt must not be null or empty");
             }
         }
     }
