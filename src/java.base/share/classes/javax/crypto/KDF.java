@@ -385,8 +385,8 @@ public final class KDF {
     /**
      * Derive a key, returned as a {@code SecretKey}.
      * <p>
-     * The {@code deriveKey} method may be called multiple times once a
-     * {@code KDF} object is initialized.
+     * The {@code deriveKey} method may be called multiple times on a particular
+     * {@code KDF} instance.
      * <p>
      * Delayed provider selection is also supported such that the provider
      * performing the derive is not selected until the method is called.
@@ -459,8 +459,8 @@ public final class KDF {
     /**
      * Obtain raw data from a key derivation function.
      * <p>
-     * The {@code deriveData} method may be called multiple times once a
-     * {@code KDF} object is initialized.
+     * The {@code deriveData} method may be called multiple times on a particular
+     * {@code KDF} instance.
      * <p>
      * Delayed provider selection is also supported such that the provider
      * performing the derive is not selected until the method is called.
