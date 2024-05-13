@@ -307,15 +307,23 @@ public final class Module implements AnnotatedElement {
     void ensureNativeAccess(Class<?> owner, String methodName, Class<?> currentClass) {
         // The target module whose enableNativeAccess flag is ensured
         Module target = moduleForNativeAccess();
-        if (!EnableNativeAccess.isNativeAccessEnabled(target)) {
-            if (ModuleBootstrap.hasEnableNativeAccessFlag()) {
+        ModuleBootstrap.IllegalNativeAccess illegalNativeAccess = ModuleBootstrap.illegalNativeAccess();
+        if (illegalNativeAccess != ModuleBootstrap.IllegalNativeAccess.ALLOW &&
+                !EnableNativeAccess.isNativeAccessEnabled(target)) {
+            if (illegalNativeAccess == ModuleBootstrap.IllegalNativeAccess.DENY) {
                 throw new IllegalCallerException("Illegal native access from: " + this);
-            }
-            if (EnableNativeAccess.trySetEnableNativeAccess(target)) {
+            } else if (EnableNativeAccess.trySetEnableNativeAccess(target)) {
                 // warn and set flag, so that only one warning is reported per module
                 String cls = owner.getName();
                 String mtd = cls + "::" + methodName;
                 String mod = isNamed() ? "module " + getName() : "an unnamed module";
+                if (currentClass != null) {
+                    // try to extract location of the current class (e.g. jar or folder)
+                    URL url = System.codeSource(currentClass);
+                    if (url != null) {
+                        mod += " (" + url + ")";
+                    }
+                }
                 String modflag = isNamed() ? getName() : "ALL-UNNAMED";
                 String caller = currentClass != null ? currentClass.getName() : "code";
                 System.err.printf("""

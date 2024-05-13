@@ -48,7 +48,7 @@ import static jdk.jpackage.internal.StandardBundlerParam.VENDOR;
 import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
 import static jdk.jpackage.internal.WindowsAppImageBuilder.ICON_ICO;
 
-
+@SuppressWarnings("restricted")
 final class ExecutableRebrander {
     private static final ResourceBundle I18N = ResourceBundle.getBundle(
             "jdk.jpackage.internal.resources.WinResources");

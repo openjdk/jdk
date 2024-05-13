@@ -47,7 +47,7 @@ void call(void* arg) {
 
 extern "C" {
     JNIEXPORT void JNICALL
-    Java_org_openjdk_foreigntest_PanamaMainJNI_nativeLinker0(JNIEnv *env, jclass cls, jobject linker, jobject desc, jobjectArray opts) {
+    Java_org_openjdk_jni_def_PanamaJNIDef_nativeLinker0(JNIEnv *env, jclass cls, jobject linker, jobject desc, jobjectArray opts) {
         Context context;
         env->GetJavaVM(&context.jvm);
         context.linker = env->NewGlobalRef(linker);

@@ -30,7 +30,7 @@ import java.security.PrivilegedAction;
 import jdk.net.ExtendedSocketOptions.PlatformSocketOptions;
 
 
-@SuppressWarnings("removal")
+@SuppressWarnings({"removal", "restricted"})
 class WindowsSocketOptions extends PlatformSocketOptions {
 
     public WindowsSocketOptions() {

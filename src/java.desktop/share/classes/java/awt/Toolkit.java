@@ -1375,7 +1375,7 @@ public abstract class Toolkit {
      * directly.  -hung
      */
     private static boolean loaded = false;
-    @SuppressWarnings("removal")
+    @SuppressWarnings({"removal", "restricted"})
     static void loadLibraries() {
         if (!loaded) {
             java.security.AccessController.doPrivileged(

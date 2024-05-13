@@ -45,7 +45,7 @@ public class SCDynamicStoreConfig {
     private static native List<String> getKerberosConfig();
 
     static {
-        @SuppressWarnings("removal")
+        @SuppressWarnings({"removal", "restricted"})
         boolean isMac = java.security.AccessController.doPrivileged(
             new java.security.PrivilegedAction<Boolean>() {
                 public Boolean run() {

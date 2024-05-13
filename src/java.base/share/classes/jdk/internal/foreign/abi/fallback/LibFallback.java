@@ -36,7 +36,7 @@ final class LibFallback {
 
     static final boolean SUPPORTED = tryLoadLibrary();
 
-    @SuppressWarnings("removal")
+    @SuppressWarnings({"removal", "restricted"})
     private static boolean tryLoadLibrary() {
         return java.security.AccessController.doPrivileged(
                 new java.security.PrivilegedAction<>() {

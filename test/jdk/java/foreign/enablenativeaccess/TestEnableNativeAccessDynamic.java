@@ -73,6 +73,7 @@ public class TestEnableNativeAccessDynamic extends TestEnableNativeAccessBase {
             Result expectedResult, boolean panamaModuleInBootLayer) throws Exception
     {
         List<String> list = new ArrayList<>();
+        list.add("--illegal-native-access=deny");
         if (panamaModuleInBootLayer) {
             list.addAll(List.of("-p", MODULE_PATH));
             list.add("--add-modules=panama_module");

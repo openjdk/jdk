@@ -2445,7 +2445,16 @@ public abstract class ClassLoader {
     /*
      * Invoked in the VM class linking code.
      */
-    static long findNative(ClassLoader loader, String entryName) {
+    static long findNative(ClassLoader loader, Class<?> clazz, String entryName, String javaName) {
+        long addr = findNativeInternal(loader, entryName);
+        if (addr != 0 && loader != null) {
+            Reflection.ensureNativeAccess(clazz, clazz, javaName);
+        }
+        return addr;
+    }
+
+    // @@@: Avoid duplication!
+    static long findNativeInternal(ClassLoader loader, String entryName) {
         if (loader == null) {
             return BootLoader.getNativeLibraries().find(entryName);
         } else {

@@ -61,7 +61,7 @@ class PlatformPCSC {
         // empty
     }
 
-    @SuppressWarnings("removal")
+    @SuppressWarnings({"removal", "restricted"})
     static final Throwable initException
             = AccessController.doPrivileged(new PrivilegedAction<Throwable>() {
         public Throwable run() {

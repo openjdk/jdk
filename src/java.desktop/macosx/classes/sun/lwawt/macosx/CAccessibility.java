@@ -77,7 +77,7 @@ class CAccessibility implements PropertyChangeListener {
         loadAWTLibrary();
     }
 
-    @SuppressWarnings("removal")
+    @SuppressWarnings({"removal", "restricted"})
     private static void loadAWTLibrary() {
             // Need to load the native library for this code.
         java.security.AccessController.doPrivileged(

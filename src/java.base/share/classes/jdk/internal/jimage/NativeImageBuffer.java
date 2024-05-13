@@ -38,6 +38,7 @@ class NativeImageBuffer {
     static {
         java.security.AccessController.doPrivileged(
                 new java.security.PrivilegedAction<Void>() {
+                    @SuppressWarnings("restricted")
                     public Void run() {
                         System.loadLibrary("jimage");
                         return null;

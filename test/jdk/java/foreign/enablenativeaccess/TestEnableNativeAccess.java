@@ -28,6 +28,10 @@
  * @library /test/lib
  * @build TestEnableNativeAccess
  *        panama_module/*
+ *        panama_jni_load_module/*
+ *        panama_jni_def_module/*
+ *        panama_jni_use_module/*
+ *
  *        org.openjdk.foreigntest.unnamed.PanamaMainUnnamedModule
  * @run testng/othervm/timeout=180 TestEnableNativeAccess
  * @summary Basic test for java --enable-native-access
@@ -62,20 +66,25 @@ public class TestEnableNativeAccess extends TestEnableNativeAccessBase {
                 { "panama_enable_native_access", PANAMA_MAIN, successNoWarning(), new String[]{"--enable-native-access=panama_module"} },
                 { "panama_enable_native_access_reflection", PANAMA_REFLECTION, successNoWarning(), new String[]{"--enable-native-access=panama_module"} },
                 { "panama_enable_native_access_invoke", PANAMA_INVOKE, successNoWarning(), new String[]{"--enable-native-access=panama_module"} },
-                { "panama_enable_native_access_jni", PANAMA_JNI, successNoWarning(), new String[]{"--enable-native-access=ALL-UNNAMED"} },
 
                 { "panama_comma_separated_enable", PANAMA_MAIN, successNoWarning(), new String[]{"--enable-native-access=java.base,panama_module"} },
                 { "panama_comma_separated_enable_reflection", PANAMA_REFLECTION, successNoWarning(), new String[]{"--enable-native-access=java.base,panama_module"} },
                 { "panama_comma_separated_enable_invoke", PANAMA_INVOKE, successNoWarning(), new String[]{"--enable-native-access=java.base,panama_module"} },
-                { "panama_comma_separated_enable_jni", PANAMA_JNI, successNoWarning(), new String[]{"--enable-native-access=java.base,ALL-UNNAMED"} },
+                { "panama_comma_separated_enable_jni", PANAMA_JNI, successNoWarning(), new String[]{"--enable-native-access=panama_jni_load_module,panama_jni_def_module,ALL-UNNAMED"} },
 
                 { "panama_enable_native_access_warn", PANAMA_MAIN, successWithWarning("panama"), new String[]{} },
                 { "panama_enable_native_access_warn_reflection", PANAMA_REFLECTION, successWithWarning("panama"), new String[]{} },
                 { "panama_enable_native_access_warn_invoke", PANAMA_INVOKE, successWithWarning("panama"), new String[]{} },
-                { "panama_enable_native_access_warn_jni", PANAMA_JNI, successWithWarning("ALL-UNNAMED"), new String[]{} },
+                { "panama_enable_native_access_warn_jni", PANAMA_JNI, successWithWarnings("panama_jni_load_module", "panama_jni_def_module", "ALL-UNNAMED"), new String[]{} },
+
+                { "panama_enable_native_access_allow", PANAMA_MAIN, successNoWarning(), new String[]{"--illegal-native-access=allow"} },
+                { "panama_enable_native_access_allow_reflection", PANAMA_REFLECTION, successNoWarning(), new String[]{"--illegal-native-access=allow"} },
+                { "panama_enable_native_access_allow_invoke", PANAMA_INVOKE, successNoWarning(), new String[]{"--illegal-native-access=allow"} },
+                { "panama_enable_native_access_allow_jni", PANAMA_JNI, successNoWarning(), new String[]{"--illegal-native-access=allow"} },
 
                 { "panama_no_unnamed_module_native_access", UNNAMED, successWithWarning("ALL-UNNAMED"), new String[]{} },
                 { "panama_all_unnamed_module_native_access", UNNAMED, successNoWarning(), new String[]{"--enable-native-access=ALL-UNNAMED"} },
+                { "panama_allow_unnamed_module_native_access", UNNAMED, successNoWarning(), new String[]{"--illegal-native-access=allow"} },
         };
     }
 
@@ -131,12 +140,15 @@ public class TestEnableNativeAccess extends TestEnableNativeAccessBase {
      * Specifies bad value to --enable-native-access.
      */
     public void testBadValue() throws Exception {
-        run("panama_enable_native_access_warn_unknown_module", PANAMA_MAIN,
+        run("panama_deny_bad_unknown_module", PANAMA_MAIN,
                 failWithWarning("WARNING: Unknown module: BAD specified to --enable-native-access"),
-                "--enable-native-access=BAD");
-        run("panama_no_all_module_path_blanket_native_access", PANAMA_MAIN,
+                "--illegal-native-access=deny", "--enable-native-access=BAD");
+        run("panama_deny_bad_all_module_path_module", PANAMA_MAIN,
                 failWithWarning("WARNING: Unknown module: ALL-MODULE-PATH specified to --enable-native-access"),
-                "--enable-native-access=ALL-MODULE-PATH" );
+                "--illegal-native-access=deny", "--enable-native-access=ALL-MODULE-PATH" );
+        run("panama_deny_no_module", PANAMA_MAIN,
+                failWithError("module panama_module"),
+                "--illegal-native-access=deny");
     }
 
     private int count(Iterable<String> lines, CharSequence cs) {

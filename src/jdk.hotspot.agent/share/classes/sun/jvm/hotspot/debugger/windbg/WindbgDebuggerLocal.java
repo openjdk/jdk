@@ -54,6 +54,7 @@ import sun.jvm.hotspot.runtime.*;
     RuntimeException if they are called before the debugger is
     configured with the Java primitive type sizes. </P> */
 
+@SuppressWarnings("restricted")
 public class WindbgDebuggerLocal extends DebuggerBase implements WindbgDebugger {
   private PageCache cache;
   private boolean   attached;
