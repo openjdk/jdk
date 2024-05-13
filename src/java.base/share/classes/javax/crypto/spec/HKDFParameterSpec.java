@@ -95,12 +95,12 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
         public ExtractExpand andExpand(byte[] info, int length) {
             if (extract == null) {
                 throw new IllegalStateException(
-                    "`thenExpand` can only be called on a `Builder` when "
+                    "`andExpand` can only be called on a `Builder` when "
                     + "`ofTypeExtract` has "
                     + "been called");
             }
             return extractExpand(
-                new Extract(List.copyOf(ikms), List.copyOf(salts)), info,
+                extractOnly(), info,
                 length);
         }
 
