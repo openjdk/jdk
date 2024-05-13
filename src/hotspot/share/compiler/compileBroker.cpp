@@ -38,6 +38,7 @@
 #include "compiler/compilerEvent.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "compiler/directivesParser.hpp"
+#include "gc/shared/memAllocator.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "jvm.h"
 #include "jfr/jfrEvents.hpp"
@@ -1396,6 +1397,7 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
   assert(!HAS_PENDING_EXCEPTION, "No exception should be present");
   // some prerequisites that are compiler specific
   if (comp->is_c2() || comp->is_jvmci()) {
+    InternalOOMEMark iom(THREAD);
     method->constants()->resolve_string_constants(CHECK_AND_CLEAR_NONASYNC_NULL);
     // Resolve all classes seen in the signature of the method
     // we are compiling.
@@ -2126,7 +2128,8 @@ static void post_compilation_event(EventCompilation& event, CompileTask* task) {
                                         task->is_success(),
                                         task->osr_bci() != CompileBroker::standard_entry_bci,
                                         task->nm_total_size(),
-                                        task->num_inlined_bytecodes());
+                                        task->num_inlined_bytecodes(),
+                                        task->arena_bytes());
 }
 
 int DirectivesStack::_depth = 0;

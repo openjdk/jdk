@@ -763,13 +763,6 @@ public:
   template<typename T, ENABLE_IF(std::is_integral<T>::value)>
   inline void mv(Register Rd, T o)                    { li(Rd, (int64_t)o); }
 
-  void mv(Register Rd, Address dest) {
-    assert(dest.getMode() == Address::literal, "Address mode should be Address::literal");
-    relocate(dest.rspec(), [&] {
-      movptr(Rd, dest.target());
-    });
-  }
-
   void mv(Register Rd, RegisterOrConstant src) {
     if (src.is_register()) {
       mv(Rd, src.as_register());

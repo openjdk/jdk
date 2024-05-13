@@ -79,10 +79,7 @@ void MutableNUMASpace::mangle_unused_area() {
   // This method should do nothing.
   // It can be called on a numa space during a full compaction.
 }
-void MutableNUMASpace::mangle_unused_area_complete() {
-  // This method should do nothing.
-  // It can be called on a numa space during a full compaction.
-}
+
 void MutableNUMASpace::mangle_region(MemRegion mr) {
   // This method should do nothing because numa spaces are not mangled.
 }

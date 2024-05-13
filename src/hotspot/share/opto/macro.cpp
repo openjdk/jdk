@@ -573,6 +573,9 @@ bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode
     if (res_type == nullptr) {
       NOT_PRODUCT(fail_eliminate = "Neither instance or array allocation";)
       can_eliminate = false;
+    } else if (!res_type->klass_is_exact()) {
+      NOT_PRODUCT(fail_eliminate = "Not an exact type.";)
+      can_eliminate = false;
     } else if (res_type->isa_aryptr()) {
       int length = alloc->in(AllocateNode::ALength)->find_int_con(-1);
       if (length < 0) {
@@ -2448,6 +2451,8 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
 //------------------------------expand_macro_nodes----------------------
 //  Returns true if a failure occurred.
 bool PhaseMacroExpand::expand_macro_nodes() {
+  // Do not allow new macro nodes once we started to expand
+  C->reset_allow_macro_nodes();
   if (StressMacroExpansion) {
     C->shuffle_macro_nodes();
   }

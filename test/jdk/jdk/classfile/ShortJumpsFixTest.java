@@ -211,9 +211,9 @@ class ShortJumpsFixTest {
                                     for (int i = 0; i < sample.expected.length - 4; i++) //cherry-pick XCONST_ instructions from expected output
                                         cob.with(ConstantInstruction.ofIntrinsic(sample.expected[i]));
                                     var target = cob.newLabel();
-                                    cob.branchInstruction(sample.jumpCode, target);
+                                    cob.branch(sample.jumpCode, target);
                                     for (int i = overflow ? 40000 : 1; i > 0; i--)
-                                        cob.nopInstruction();
+                                        cob.nop();
                                     cob.labelBinding(target);
                                     cob.return_();
                                 }))));
@@ -228,12 +228,12 @@ class ShortJumpsFixTest {
                                     cob.goto_w(fwd);
                                     cob.labelBinding(target);
                                     for (int i = overflow ? 40000 : 1; i > 0; i--)
-                                        cob.nopInstruction();
+                                        cob.nop();
                                     cob.return_();
                                     cob.labelBinding(fwd);
                                     for (int i = 3; i < sample.expected.length - 3; i++) //cherry-pick XCONST_ instructions from expected output
                                         cob.with(ConstantInstruction.ofIntrinsic(sample.expected[i]));
-                                    cob.branchInstruction(sample.jumpCode, target);
+                                    cob.branch(sample.jumpCode, target);
                                     cob.return_();
                                 }))));
     }
@@ -244,7 +244,7 @@ class ShortJumpsFixTest {
                                 (cob, coe) -> {
                                     if (coe instanceof NopInstruction)
                                         for (int i = 0; i < 40000; i++) //cause label overflow during transform
-                                            cob.nopInstruction();
+                                            cob.nop();
                                     cob.with(coe);
                                 }));
     }
