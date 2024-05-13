@@ -81,8 +81,8 @@
  * <blockquote>{@code import java.util.random.*;}</blockquote>
  *
  * Then one can choose a specific implementation by giving the name of a generator
- * algorithm to the static method {@link RandomGenerator#of}, in which case the
- * no-arguments constructor for that implementation is used:
+ * algorithm to the static method {@link RandomGenerator#of}, in which case no
+ * seed is specified by the caller:
  *
  * <blockquote>{@code RandomGenerator g = RandomGenerator.of("L64X128MixRandom");}</blockquote>
  *

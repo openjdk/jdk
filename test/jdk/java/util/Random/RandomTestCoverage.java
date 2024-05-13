@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -171,8 +171,25 @@ public class RandomTestCoverage {
         boolean isSplittable = factory.isSplittable();
 
         coverRandomGenerator(factory.create());
-        coverRandomGenerator(factory.create(12345L));
-        coverRandomGenerator(factory.create(new byte[] {1, 2, 3, 4, 5, 6, 7, 8}));
+        RandomGenerator rng;
+
+        rng = null;
+        try {
+            rng = factory.create(12345L);
+        } catch (UnsupportedOperationException ignore) {
+        }
+        if (rng != null) {
+            coverRandomGenerator(rng);
+        }
+
+        rng = null;
+        try {
+            rng = factory.create(new byte[] {1, 2, 3, 4, 5, 6, 7, 8});
+        } catch (UnsupportedOperationException ignore) {
+        }
+        if (rng != null) {
+            coverRandomGenerator(rng);
+        }
     }
 
     static void coverDefaults() {
