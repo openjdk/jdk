@@ -48,7 +48,7 @@ import java.util.Objects;
  * methods. KDF algorithm names follow a naming convention of
  * <em>Algorithm</em>With<em>PRF</em>. For instance, a KDF implementation of
  * HKDF using HMAC-SHA256 has an algorithm name of "HKDFWithHmacSHA256".
- * In some cases the PRF portion of the algorithm specifier may be omitted if
+ * In some cases the PRF portion of the algorithm field may be omitted if
  * the KDF algorithm has a fixed or default PRF.
  * <p>
  * Example:
