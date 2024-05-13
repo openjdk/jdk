@@ -95,7 +95,7 @@ private:
       return static_cast<MEMFLAGS>(type_flag[1]);
     }
 
-    RegionData metadata() const {
+    RegionData regiondata() const {
       return RegionData{sidx, flag()};
     }
 
@@ -112,7 +112,7 @@ private:
 
     bool is_noop() {
       return (in.type() == StateType::Released && out.type() == StateType::Released) ||
-             (in.type() == out.type() && RegionData::equals(in.metadata(), out.metadata()));
+             (in.type() == out.type() && RegionData::equals(in.regiondata(), out.regiondata()));
     }
   };
 
