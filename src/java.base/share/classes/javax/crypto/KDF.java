@@ -70,7 +70,7 @@ import java.util.Objects;
  * @see SecretKey
  * @since 23
  */
-//@PreviewFeature(feature=PreviewFeature.Feature.KEY_DERIVATION)
+@PreviewFeature(feature=PreviewFeature.Feature.KEY_DERIVATION)
 public final class KDF {
     private static final Debug debug = Debug.getInstance("jca",
                                                          "KDF");

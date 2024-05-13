@@ -44,7 +44,7 @@ import java.security.spec.InvalidParameterSpecException;
  * @see SecretKey
  * @since 23
  */
-//@PreviewFeature(feature=PreviewFeature.Feature.KEY_DERIVATION)
+@PreviewFeature(feature=PreviewFeature.Feature.KEY_DERIVATION)
 public abstract class KDFSpi {
 
     /**
