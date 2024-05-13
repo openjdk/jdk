@@ -100,7 +100,7 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
                     + "`ofTypeExtract` has "
                     + "been called");
             }
-            return extractExpand(
+            return new ExtractExpand(
                 extractOnly(), info,
                 length);
         }
@@ -253,36 +253,6 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
             throw new NullPointerException("info must not be null");
         }
         return new Expand(prk, info, length);
-    }
-
-    /**
-     * Static helper-method that may be used to initialize an
-     * {@code ExtractExpand} object
-     * <p>
-     * Note: one or more of the methods {@code addIKM} or {@code addSalt} should
-     * be called on the {@code Extract} parameter, before calling this method,
-     * since {@code ExtractExpand} is immutable
-     *
-     * @param ext
-     *     a pre-generated {@code Extract}
-     * @param info
-     *     the optional context and application specific information
-     * @param length
-     *     the length of the output key material (must be > 0)
-     *
-     * @return a new {@code ExtractExpand} object
-     *
-     * @throws NullPointerException
-     *     if {@code ext} or {@code info} is {@code null}
-     */
-    static ExtractExpand extractExpand(Extract ext, byte[] info, int length) {
-        if (ext == null) {
-            throw new NullPointerException("ext must not be null");
-        }
-        if (info == null) {
-            throw new NullPointerException("info must not be null");
-        }
-        return new ExtractExpand(ext, info, length);
     }
 
     /**
