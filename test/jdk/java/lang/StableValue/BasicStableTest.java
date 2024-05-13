@@ -37,7 +37,10 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.lang.reflect.Field;
 import java.lang.reflect.InaccessibleObjectException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -213,6 +216,44 @@ final class BasicStableTest {
         assertThrows(UnsupportedOperationException.class, () ->
                 varHandle.compareAndSet(holder, original, StableValue.of())
         );
+
+    }
+
+    @Test
+    void nodes() {
+        Node<Integer> c = Node.last(1)
+                .prepend(2)
+                .prepend(3);
+
+        List<Integer> actual = new ArrayList<>();
+        for (;;) {
+            actual.add(c.value());
+            if (c.next().isEmpty()) {
+                break;
+            }
+            c = c.next().orElseThrow();
+        }
+        assertEquals(List.of(3, 2, 1), actual);
+    }
+
+    record Node<T>(StableValue<Node<T>> previous,
+                   Optional<Node<T>> next,
+                   T value) {
+
+        public Node<T> prepend(T newValue) {
+            Node<T> newNode = new Node<>(StableValue.of(), Optional.of(this), newValue);
+            this.previous.trySet(newNode);
+            return newNode;
+        }
+
+        @Override
+        public String toString() {
+            return value.toString();
+        }
+
+        static <T> Node<T> last(T value) {
+            return new Node<>(StableValue.of(), Optional.empty(), value);
+        }
 
     }
 
