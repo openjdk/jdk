@@ -35,10 +35,12 @@ public:
     }
   };
 
+#ifdef ASSERT
   template<typename K, typename V, typename CMP, typename ALLOC>
   void verify_it(Treap<K, V, CMP, ALLOC>& t) {
     t.verify_self();
   }
+#endif // ASSERT
 
 public:
   void inserting_duplicates_results_in_one_value() {
@@ -137,6 +139,39 @@ TEST_VM_F(TreapTest, InsertingDuplicatesResultsInOneValue) {
 
 TEST_VM_F(TreapTest, TreapOughtNotLeak) {
   this->treap_ought_not_leak();
+}
+
+TEST_VM_F(TreapTest, TestVisitInRange) {
+  TreapCHeap<int, int, Cmp> treap;
+  using Node = TreapCHeap<int, int, Cmp>::TreapNode;
+
+  treap.visit_range_in_order(0, 100, [&](Node* x) {
+    EXPECT_TRUE(false) << "Empty treap has no nodes to visit";
+  });
+
+  // Single-element set
+  treap.upsert(1, 0);
+  int count = 0;
+  treap.visit_range_in_order(0, 100, [&](Node* x) {
+    count++;
+  });
+  EXPECT_EQ(1, count);
+
+  // Add an element outside of the range that should not be visited on the right side and
+  // one on the left side.
+  treap.upsert(101, 0);
+  treap.upsert(-1, 0);
+  count = 0;
+  treap.visit_range_in_order(0, 100, [&](Node* x) {
+    count++;
+  });
+  EXPECT_EQ(1, count);
+
+  // Visiting empty range [0, 0) == {}
+  treap.upsert(0, 0); // This node should not be visited.
+  treap.visit_range_in_order(0, 0, [&](Node* x) {
+    EXPECT_TRUE(false) << "Empty visiting range should not visit any node";
+  });
 }
 
 #ifdef ASSERT
