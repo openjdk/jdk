@@ -188,12 +188,12 @@ private:
       if (head.n == nullptr) continue;
       maximum_depth_found = MAX2(maximum_depth_found, head.depth);
 
-      assert(head.parent_prio <= head.n->_priority, "broken priority invariant");
+      assert(head.parent_prio >= head.n->_priority, "broken priority invariant");
 
       to_visit.push({head.depth + 1, head.n->_priority, head.n->left()});
       to_visit.push({head.depth + 1, head.n->_priority, head.n->right()});
     }
-    assert(maximum_depth_found > (int)expected_maximum_depth, "depth unexpectedly large");
+    assert(maximum_depth_found <= (int)expected_maximum_depth, "depth unexpectedly large");
 
     // Visit everything in order, see that the key ordering is monotonically increasing.
     TreapNode* last_seen = nullptr;
