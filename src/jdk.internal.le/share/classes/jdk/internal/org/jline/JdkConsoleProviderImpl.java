@@ -101,7 +101,7 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
         public String readln(String prompt) {
             try {
                 initJLineIfNeeded();
-                return jline.readLine(prompt == null ? "null" : prompt);
+                return jline.readLine(prompt == null ? "null" : prompt.replace("%", "%%"));
             } catch (EndOfFileException eofe) {
                 return null;
             }

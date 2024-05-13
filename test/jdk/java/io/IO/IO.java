@@ -149,9 +149,8 @@ public class IO {
     }
 
     public static Stream<Arguments> args() {
-        // TODO: add %s and maybe %%s after 8331535 has been fixed
         // cross product: consoles x prompts
-        return Stream.of(null, "gibberish").flatMap(console -> Stream.of(null, "?")
+        return Stream.of(null, "gibberish").flatMap(console -> Stream.of(null, "?", "%s")
                 .map(prompt -> new String[]{console, prompt}).map(Arguments::of));
     }
 
