@@ -82,6 +82,7 @@ private:
   public:
     IntervalState() : type_flag{0,0}, sidx() {}
     IntervalState(const StateType type, const RegionData data) {
+      assert(!(type == StateType::Released) || data.flag == mtNone, "Released type must have flag mtNone");
       type_flag[0] = static_cast<uint8_t>(type);
       type_flag[1] = static_cast<uint8_t>(data.flag);
       sidx = data.stack_idx;
