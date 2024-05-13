@@ -44,7 +44,7 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- * KeyDerivation implementation for the HKDF function.
+ * KDF implementation for the HKDF function.
  * <p>
  * This class implements the HKDF-Extract and HKDF-Expand functions from RFC 5869.  This
  * implementation provides the complete Extract-then-Expand HKDF function as well as Extract-only
@@ -78,7 +78,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
      * @throws InvalidAlgorithmParameterException
      *     if the initialization parameters are inappropriate for this {@code KDFSpi}
      */
-    protected HkdfKeyDerivation(AlgorithmParameterSpec algParameterSpec)
+    HkdfKeyDerivation(AlgorithmParameterSpec algParameterSpec)
         throws InvalidAlgorithmParameterException {
         super(algParameterSpec);
     }
