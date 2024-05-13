@@ -151,10 +151,11 @@ public final class MouseEventAfterStartDragTest implements AWTEventListener {
 
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.mouseMove(srcPoint.x, srcPoint.y);
+        robot.delay(250);
         System.out.println("srcPoint = " + srcPoint);
         for (; !srcPoint.equals(dstPoint);
-             srcPoint.translate(sign(dstPoint.x - srcPoint.x),
-                     sign(dstPoint.y - srcPoint.y))) {
+                srcPoint.translate(sign(dstPoint.x - srcPoint.x),
+                sign(dstPoint.y - srcPoint.y))) {
             robot.mouseMove(srcPoint.x, srcPoint.y);
             System.out.println("srcPoint = " + srcPoint);
         }
