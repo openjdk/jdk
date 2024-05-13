@@ -146,13 +146,16 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
          * @return this builder
          *
          * @throws NullPointerException
-         *     if the {@code ikm} is null or empty
+         *     if the {@code ikm} is null
          */
         public Builder addIKM(byte[] ikm) {
-            if (ikm != null && ikm.length != 0) {
+            if(ikm == null) {
+                throw new NullPointerException("ikm must not be null or empty");
+            }
+            if (ikm.length != 0) {
                 return addIKM(new SecretKeySpec(ikm, "Generic"));
             } else {
-                throw new NullPointerException("ikm must not be null or empty");
+                return this;
             }
         }
 
@@ -197,14 +200,17 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
          * @return this builder
          *
          * @throws NullPointerException
-         *     if the {@code salt} is null or empty
+         *     if the {@code salt} is null
          */
         public Builder addSalt(byte[] salt) {
-            if (salt != null && salt.length != 0) {
-                return addSalt(new SecretKeySpec(salt, "Generic"));
-            } else {
+            if(salt == null) {
                 throw new NullPointerException(
                     "salt must not be null or empty");
+            }
+            if (salt.length != 0) {
+                return addSalt(new SecretKeySpec(salt, "Generic"));
+            } else {
+                return this;
             }
         }
     }

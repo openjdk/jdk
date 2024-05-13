@@ -110,7 +110,7 @@ public class TestHKDF {
                          "cc30c58179ec3e87c14c01d5c1f3434f1d87"));
         add(new TestData("RFC 5689 Test Case 3", "HKDFWithHmacSHA256",
                          "0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b",
-                         null, null, 42,
+                         new String(new byte[0]), new String(new byte[0]), 42,
                          "19ef24a32c717b167f33a91d6f648bdf96596776afdb6377ac434c1c293ccb04",
                          "8da4e775a563c18f715f802a063c5a31b8a11f5c5ee1879ec3454e5f3c738d2d"
                          +
