@@ -38,7 +38,7 @@ import java.util.function.Supplier;
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
 @State(Scope.Benchmark) // Share the same state instance (for contention)
 @Warmup(iterations = 5, time = 1)
-@Measurement(iterations = 5, time = 1)
+@Measurement(iterations = 5, time = 2)
 @Fork(value = 2, jvmArgsAppend = {"--add-exports=java.base/jdk.internal.lang=ALL-UNNAMED", "--enable-preview",
 /*"-XX:CompileCommand=dontinline,jdk.internal.lang.stable.StableValueImpl::orThrow",
 "-XX:CompileCommand=dontinline,org.openjdk.bench.java.lang.stable.StableBenchmark$Dcl::get",
@@ -63,6 +63,7 @@ public class StableBenchmark {
     private final Supplier<Integer> dcl = new Dcl<>(() -> VALUE);
     private final Supplier<Integer> dcl2 = new Dcl<>(() -> VALUE2);
     private final List<StableValue<Integer>> list = StableValue.ofList(2);
+    private final List<StableValue<Integer>> listStored = List.of(StableValue.of(), StableValue.of());
     private final AtomicReference<Integer> atomic = new AtomicReference<>(VALUE);
     private final AtomicReference<Integer> atomic2 = new AtomicReference<>(VALUE2);
     private final Supplier<Integer> supplier = () -> VALUE;
@@ -73,7 +74,9 @@ public class StableBenchmark {
         list.getFirst().trySet(VALUE);
         list.get(1).trySet(VALUE2);
         stableHoldingList.trySet(List.of(VALUE));
-        stableHoldingList.trySet(List.of(VALUE2));
+        stableHoldingList2.trySet(List.of(VALUE2));
+        listStored.getFirst().trySet(VALUE);
+        listStored.get(1).trySet(VALUE2);
     }
 
     @Benchmark
@@ -117,6 +120,15 @@ public class StableBenchmark {
         int sum = 0;
         for (int i = 0; i < ITERATIONS; i++) {
             sum += list.get(0).orThrow() + list.get(1).orThrow();
+        }
+        return sum;
+    }
+
+    @Benchmark
+    public int stableListStored() {
+        int sum = 0;
+        for (int i = 0; i < ITERATIONS; i++) {
+            sum += listStored.get(0).orThrow() + listStored.get(1).orThrow();
         }
         return sum;
     }

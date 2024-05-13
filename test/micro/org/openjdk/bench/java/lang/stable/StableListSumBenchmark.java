@@ -35,13 +35,13 @@ import java.util.stream.Stream;
 /**
  * Benchmark measuring stable list performance
  */
-@BenchmarkMode(Mode.AverageTime)
-@OutputTimeUnit(TimeUnit.NANOSECONDS)
-@State(Scope.Thread)
+@BenchmarkMode(Mode.Throughput)
+@OutputTimeUnit(TimeUnit.MICROSECONDS)
+@State(Scope.Benchmark) // Share the same state instance (for contention)
 @Warmup(iterations = 5, time = 1)
 @Measurement(iterations = 5, time = 2)
 @Fork(value = 2, jvmArgsAppend = {"--add-exports=java.base/jdk.internal.lang=ALL-UNNAMED", "--enable-preview"})
-@OperationsPerInvocation(1000)
+@Threads(Threads.MAX)   // Benchmark under contention
 public class StableListSumBenchmark {
 
     private static final int SIZE = 1_000;
