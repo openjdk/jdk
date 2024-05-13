@@ -33,7 +33,7 @@ import java.lang.foreign.*;
 
 /*
  * @test id=byte-array
- * @bug 8310190
+ * @bug 8329273
  * @summary Test vectorization of loops over MemorySegment
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestMemorySegment ByteArray
@@ -41,7 +41,7 @@ import java.lang.foreign.*;
 
 /*
  * @test id=char-array
- * @bug 8310190
+ * @bug 8329273
  * @summary Test vectorization of loops over MemorySegment
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestMemorySegment CharArray
@@ -49,7 +49,7 @@ import java.lang.foreign.*;
 
 /*
  * @test id=short-array
- * @bug 8310190
+ * @bug 8329273
  * @summary Test vectorization of loops over MemorySegment
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestMemorySegment ShortArray
@@ -57,7 +57,7 @@ import java.lang.foreign.*;
 
 /*
  * @test id=int-array
- * @bug 8310190
+ * @bug 8329273
  * @summary Test vectorization of loops over MemorySegment
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestMemorySegment IntArray
@@ -65,7 +65,7 @@ import java.lang.foreign.*;
 
 /*
  * @test id=long-array
- * @bug 8310190
+ * @bug 8329273
  * @summary Test vectorization of loops over MemorySegment
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestMemorySegment LongArray
@@ -73,7 +73,7 @@ import java.lang.foreign.*;
 
 /*
  * @test id=float-array
- * @bug 8310190
+ * @bug 8329273
  * @summary Test vectorization of loops over MemorySegment
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestMemorySegment FloatArray
@@ -81,7 +81,7 @@ import java.lang.foreign.*;
 
 /*
  * @test id=double-array
- * @bug 8310190
+ * @bug 8329273
  * @summary Test vectorization of loops over MemorySegment
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestMemorySegment DoubleArray
@@ -89,7 +89,7 @@ import java.lang.foreign.*;
 
 /*
  * @test id=byte-buffer
- * @bug 8310190
+ * @bug 8329273
  * @summary Test vectorization of loops over MemorySegment
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestMemorySegment ByteBuffer
@@ -97,7 +97,7 @@ import java.lang.foreign.*;
 
 /*
  * @test id=byte-buffer-direct
- * @bug 8310190
+ * @bug 8329273
  * @summary Test vectorization of loops over MemorySegment
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestMemorySegment ByteBufferDirect
@@ -105,7 +105,7 @@ import java.lang.foreign.*;
 
 /*
  * @test id=native
- * @bug 8310190
+ * @bug 8329273
  * @summary Test vectorization of loops over MemorySegment
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestMemorySegment Native
@@ -114,7 +114,7 @@ import java.lang.foreign.*;
 // FAILS: mixed providers currently do not vectorize. Maybe there is some inlining issue.
 // /*
 //  * @test id=mixed-array
-//  * @bug 8310190
+//  * @bug 8329273
 //  * @summary Test vectorization of loops over MemorySegment
 //  * @library /test/lib /
 //  * @run driver compiler.loopopts.superword.TestMemorySegment MixedArray
@@ -122,7 +122,7 @@ import java.lang.foreign.*;
 //
 // /*
 //  * @test id=MixedBuffer
-//  * @bug 8310190
+//  * @bug 8329273
 //  * @summary Test vectorization of loops over MemorySegment
 //  * @library /test/lib /
 //  * @run driver compiler.loopopts.superword.TestMemorySegment MixedBuffer
@@ -130,7 +130,7 @@ import java.lang.foreign.*;
 //
 // /*
 //  * @test id=mixed
-//  * @bug 8310190
+//  * @bug 8329273
 //  * @summary Test vectorization of loops over MemorySegment
 //  * @library /test/lib /
 //  * @run driver compiler.loopopts.superword.TestMemorySegment Mixed
@@ -163,19 +163,19 @@ class TestMemorySegmentImpl {
     static {
         String providerName = System.getProperty("memorySegmentProviderNameForTestVM");
         provider = switch (providerName) {
-            case "ByteArray"        -> ( () -> { return newMemorySegmentOfByteArray(); } );
-            case "CharArray"        -> ( () -> { return newMemorySegmentOfCharArray(); } );
-            case "ShortArray"       -> ( () -> { return newMemorySegmentOfShortArray(); } );
-            case "IntArray"         -> ( () -> { return newMemorySegmentOfIntArray(); } );
-            case "LongArray"        -> ( () -> { return newMemorySegmentOfLongArray(); } );
-            case "FloatArray"       -> ( () -> { return newMemorySegmentOfFloatArray(); } );
-            case "DoubleArray"      -> ( () -> { return newMemorySegmentOfDoubleArray(); } );
-            case "ByteBuffer"       -> ( () -> { return newMemorySegmentOfByteBuffer(); } );
-            case "ByteBufferDirect" -> ( () -> { return newMemorySegmentOfByteBufferDirect(); } );
-            case "Native"           -> ( () -> { return newMemorySegmentOfNative(); } );
-            case "MixedArray"       -> ( () -> { return newMemorySegmentOfMixedArray(); } );
-            case "MixedBuffer"      -> ( () -> { return newMemorySegmentOfMixedBuffer(); } );
-            case "Mixed"            -> ( () -> { return newMemorySegmentOfMixed(); } );
+            case "ByteArray"        -> TestMemorySegmentImpl::newMemorySegmentOfByteArray;
+            case "CharArray"        -> TestMemorySegmentImpl::newMemorySegmentOfCharArray;
+            case "ShortArray"       -> TestMemorySegmentImpl::newMemorySegmentOfShortArray;
+            case "IntArray"         -> TestMemorySegmentImpl::newMemorySegmentOfIntArray;
+            case "LongArray"        -> TestMemorySegmentImpl::newMemorySegmentOfLongArray;
+            case "FloatArray"       -> TestMemorySegmentImpl::newMemorySegmentOfFloatArray;
+            case "DoubleArray"      -> TestMemorySegmentImpl::newMemorySegmentOfDoubleArray;
+            case "ByteBuffer"       -> TestMemorySegmentImpl::newMemorySegmentOfByteBuffer;
+            case "ByteBufferDirect" -> TestMemorySegmentImpl::newMemorySegmentOfByteBufferDirect;
+            case "Native"           -> TestMemorySegmentImpl::newMemorySegmentOfNative;
+            case "MixedArray"       -> TestMemorySegmentImpl::newMemorySegmentOfMixedArray;
+            case "MixedBuffer"      -> TestMemorySegmentImpl::newMemorySegmentOfMixedBuffer;
+            case "Mixed"            -> TestMemorySegmentImpl::newMemorySegmentOfMixed;
             default -> throw new RuntimeException("Test argument not recognized: " + providerName);
         };
     }
@@ -194,81 +194,31 @@ class TestMemorySegmentImpl {
         fillRandom(b);
 
         // Add all tests to list
-        tests.put("testMemorySegmentBadExitCheck", () -> {
-            return testMemorySegmentBadExitCheck(copy(a));
-        });
-        tests.put("testIntLoop_iv_byte", () -> {
-            return testIntLoop_iv_byte(copy(a));
-        });
-        tests.put("testIntLoop_longIndex_intInvar_sameAdr_byte", () -> {
-            return testIntLoop_longIndex_intInvar_sameAdr_byte(copy(a), 0);
-        });
-        tests.put("testIntLoop_longIndex_longInvar_sameAdr_byte", () -> {
-            return testIntLoop_longIndex_longInvar_sameAdr_byte(copy(a), 0);
-        });
-        tests.put("testIntLoop_longIndex_intInvar_byte", () -> {
-            return testIntLoop_longIndex_intInvar_byte(copy(a), 0);
-        });
-        tests.put("testIntLoop_longIndex_longInvar_byte", () -> {
-            return testIntLoop_longIndex_longInvar_byte(copy(a), 0);
-        });
-        tests.put("testIntLoop_intIndex_intInvar_byte", () -> {
-            return testIntLoop_intIndex_intInvar_byte(copy(a), 0);
-        });
-        tests.put("testIntLoop_iv_int", () -> {
-            return testIntLoop_iv_int(copy(a));
-        });
-        tests.put("testIntLoop_longIndex_intInvar_sameAdr_int", () -> {
-            return testIntLoop_longIndex_intInvar_sameAdr_int(copy(a), 0);
-        });
-        tests.put("testIntLoop_longIndex_longInvar_sameAdr_int", () -> {
-            return testIntLoop_longIndex_longInvar_sameAdr_int(copy(a), 0);
-        });
-        tests.put("testIntLoop_longIndex_intInvar_int", () -> {
-            return testIntLoop_longIndex_intInvar_int(copy(a), 0);
-        });
-        tests.put("testIntLoop_longIndex_longInvar_int", () -> {
-            return testIntLoop_longIndex_longInvar_int(copy(a), 0);
-        });
-        tests.put("testIntLoop_intIndex_intInvar_int", () -> {
-            return testIntLoop_intIndex_intInvar_int(copy(a), 0);
-        });
-        tests.put("testLongLoop_iv_byte", () -> {
-            return testLongLoop_iv_byte(copy(a));
-        });
-        tests.put("testLongLoop_longIndex_intInvar_sameAdr_byte", () -> {
-            return testLongLoop_longIndex_intInvar_sameAdr_byte(copy(a), 0);
-        });
-        tests.put("testLongLoop_longIndex_longInvar_sameAdr_byte", () -> {
-            return testLongLoop_longIndex_longInvar_sameAdr_byte(copy(a), 0);
-        });
-        tests.put("testLongLoop_longIndex_intInvar_byte", () -> {
-            return testLongLoop_longIndex_intInvar_byte(copy(a), 0);
-        });
-        tests.put("testLongLoop_longIndex_longInvar_byte", () -> {
-            return testLongLoop_longIndex_longInvar_byte(copy(a), 0);
-        });
-        tests.put("testLongLoop_intIndex_intInvar_byte", () -> {
-            return testLongLoop_intIndex_intInvar_byte(copy(a), 0);
-        });
-        tests.put("testLongLoop_iv_int", () -> {
-            return testLongLoop_iv_int(copy(a));
-        });
-        tests.put("testLongLoop_longIndex_intInvar_sameAdr_int", () -> {
-            return testLongLoop_longIndex_intInvar_sameAdr_int(copy(a), 0);
-        });
-        tests.put("testLongLoop_longIndex_longInvar_sameAdr_int", () -> {
-            return testLongLoop_longIndex_longInvar_sameAdr_int(copy(a), 0);
-        });
-        tests.put("testLongLoop_longIndex_intInvar_int", () -> {
-            return testLongLoop_longIndex_intInvar_int(copy(a), 0);
-        });
-        tests.put("testLongLoop_longIndex_longInvar_int", () -> {
-            return testLongLoop_longIndex_longInvar_int(copy(a), 0);
-        });
-        tests.put("testLongLoop_intIndex_intInvar_int", () -> {
-            return testLongLoop_intIndex_intInvar_int(copy(a), 0);
-        });
+        tests.put("testMemorySegmentBadExitCheck",                 () -> testMemorySegmentBadExitCheck(copy(a)));
+        tests.put("testIntLoop_iv_byte",                           () -> testIntLoop_iv_byte(copy(a)));
+        tests.put("testIntLoop_longIndex_intInvar_sameAdr_byte",   () -> testIntLoop_longIndex_intInvar_sameAdr_byte(copy(a), 0));
+        tests.put("testIntLoop_longIndex_longInvar_sameAdr_byte",  () -> testIntLoop_longIndex_longInvar_sameAdr_byte(copy(a), 0));
+        tests.put("testIntLoop_longIndex_intInvar_byte",           () -> testIntLoop_longIndex_intInvar_byte(copy(a), 0));
+        tests.put("testIntLoop_longIndex_longInvar_byte",          () -> testIntLoop_longIndex_longInvar_byte(copy(a), 0));
+        tests.put("testIntLoop_intIndex_intInvar_byte",            () -> testIntLoop_intIndex_intInvar_byte(copy(a), 0));
+        tests.put("testIntLoop_iv_int",                            () -> testIntLoop_iv_int(copy(a)));
+        tests.put("testIntLoop_longIndex_intInvar_sameAdr_int",    () -> testIntLoop_longIndex_intInvar_sameAdr_int(copy(a), 0));
+        tests.put("testIntLoop_longIndex_longInvar_sameAdr_int",   () -> testIntLoop_longIndex_longInvar_sameAdr_int(copy(a), 0));
+        tests.put("testIntLoop_longIndex_intInvar_int",            () -> testIntLoop_longIndex_intInvar_int(copy(a), 0));
+        tests.put("testIntLoop_longIndex_longInvar_int",           () -> testIntLoop_longIndex_longInvar_int(copy(a), 0));
+        tests.put("testIntLoop_intIndex_intInvar_int",             () -> testIntLoop_intIndex_intInvar_int(copy(a), 0));
+        tests.put("testLongLoop_iv_byte",                          () -> testLongLoop_iv_byte(copy(a)));
+        tests.put("testLongLoop_longIndex_intInvar_sameAdr_byte",  () -> testLongLoop_longIndex_intInvar_sameAdr_byte(copy(a), 0));
+        tests.put("testLongLoop_longIndex_longInvar_sameAdr_byte", () -> testLongLoop_longIndex_longInvar_sameAdr_byte(copy(a), 0));
+        tests.put("testLongLoop_longIndex_intInvar_byte",          () -> testLongLoop_longIndex_intInvar_byte(copy(a), 0));
+        tests.put("testLongLoop_longIndex_longInvar_byte",         () -> testLongLoop_longIndex_longInvar_byte(copy(a), 0));
+        tests.put("testLongLoop_intIndex_intInvar_byte",           () -> testLongLoop_intIndex_intInvar_byte(copy(a), 0));
+        tests.put("testLongLoop_iv_int",                           () -> testLongLoop_iv_int(copy(a)));
+        tests.put("testLongLoop_longIndex_intInvar_sameAdr_int",   () -> testLongLoop_longIndex_intInvar_sameAdr_int(copy(a), 0));
+        tests.put("testLongLoop_longIndex_longInvar_sameAdr_int",  () -> testLongLoop_longIndex_longInvar_sameAdr_int(copy(a), 0));
+        tests.put("testLongLoop_longIndex_intInvar_int",           () -> testLongLoop_longIndex_intInvar_int(copy(a), 0));
+        tests.put("testLongLoop_longIndex_longInvar_int",          () -> testLongLoop_longIndex_longInvar_int(copy(a), 0));
+        tests.put("testLongLoop_intIndex_intInvar_int",            () -> testLongLoop_intIndex_intInvar_int(copy(a), 0));
 
         // Compute gold value for all test methods before compilation
         for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {
