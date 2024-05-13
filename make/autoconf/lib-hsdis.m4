@@ -42,14 +42,18 @@ AC_DEFUN([LIB_SETUP_HSDIS_CAPSTONE],
       HSDIS_LDFLAGS="-L${CAPSTONE}/lib"
       HSDIS_LIBS="-lcapstone"
     else
-      HSDIS_LDFLAGS="-nodefaultlib:libcmt.lib"
+      if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
+        HSDIS_LDFLAGS="-nodefaultlib:libcmt.lib"
+      fi
       HSDIS_LIBS="${CAPSTONE}/capstone.lib"
     fi
   else
     if test "x$OPENJDK_TARGET_OS" = xwindows; then
-      # There is no way to auto-detect capstone on Windows
-      AC_MSG_NOTICE([You must specify capstone location using --with-capstone=<path>])
-      AC_MSG_ERROR([Cannot continue])
+      if test "x$OPENJDK_TARGET_OS_ENV" != xwindows.msys2; then
+        # There is no way to auto-detect capstone on Windows
+        AC_MSG_NOTICE([You must specify capstone location using --with-capstone=<path>])
+        AC_MSG_ERROR([Cannot continue])
+      fi
     fi
 
     PKG_CHECK_MODULES(CAPSTONE, capstone, [CAPSTONE_FOUND=yes], [CAPSTONE_FOUND=no])
@@ -266,11 +270,21 @@ AC_DEFUN([LIB_SETUP_HSDIS_BINUTILS],
       # libiberty is not required on Ubuntu
       AC_CHECK_LIB(iberty, xmalloc, [ HSDIS_LIBS="$HSDIS_LIBS -liberty" ])
       AC_CHECK_LIB(sframe, frame, [ HSDIS_LIBS="$HSDIS_LIBS -lsframe" ], )
-      HSDIS_CFLAGS="-DLIBARCH_$OPENJDK_TARGET_CPU_LEGACY_LIB"
-    elif test "x$OPENJDK_TARGET_OS" = xwindows; then
-      HSDIS_LIBS="-lbfd -lopcodes -l:libz.a -liberty -lsframe -l:libintl.a -l:libiconv.a -l:libzstd.a"
-      HSDIS_CFLAGS="-DLIBARCH_$OPENJDK_TARGET_CPU_LEGACY_LIB"
+    elif test "x$OPENJDK_TARGET_OS_ENV" = xwindows.msys2; then
+      if test "x$TOOLCHAIN_TYPE" = xgcc; then
+        AC_CHECK_LIB(bfd, bfd_openr, [ HSDIS_LIBS="-lbfd" ], [ binutils_system_error="libbfd not found" ], [ -l:libz.a -liberty -lsframe -l:libintl.a -l:libiconv.a -l:libzstd.a ])
+        AC_CHECK_LIB(opcodes, disassembler, [ HSDIS_LIBS="$HSDIS_LIBS -lopcodes" ], [ binutils_system_error="libopcodes not found" ], [ -lbfd -l:libz.a -liberty -lsframe -l:libintl.a -l:libiconv.a -l:libzstd.a ])
+        AC_CHECK_LIB(z, deflate, [ HSDIS_LIBS="$HSDIS_LIBS -l:libz.a" ], [ binutils_system_error="libz not found" ])
+        AC_CHECK_LIB(iberty, xmalloc, [ HSDIS_LIBS="$HSDIS_LIBS -liberty" ])
+        AC_CHECK_LIB(sframe, frame, [ HSDIS_LIBS="$HSDIS_LIBS -lsframe" ])
+        AC_CHECK_LIB(intl, libintl_fprintf, [ HSDIS_LIBS="$HSDIS_LIBS -l:libintl.a" ])
+        AC_CHECK_LIB(iconv, libiconv, [ HSDIS_LIBS="$HSDIS_LIBS -l:libiconv.a" ])
+        AC_CHECK_LIB(zstd, ZSTD_decompress, [ HSDIS_LIBS="$HSDIS_LIBS -l:libzstd.a" ])
+      elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
+        AC_MSG_ERROR([gcc is currently the only supported hsdis compiler with MSYS2])
+      fi
     fi
+    HSDIS_CFLAGS="-DLIBARCH_$OPENJDK_TARGET_CPU_LEGACY_LIB"
   elif test "x$BINUTILS_INSTALL_DIR" != x; then
     disasm_header="\"$BINUTILS_INSTALL_DIR/include/dis-asm.h\""
     if test -e $BINUTILS_INSTALL_DIR/lib/libbfd.a && \
@@ -293,7 +307,18 @@ AC_DEFUN([LIB_SETUP_HSDIS_BINUTILS],
       if test -e $BINUTILS_INSTALL_DIR/lib/libsframe.a; then
         HSDIS_LIBS="$HSDIS_LIBS $BINUTILS_INSTALL_DIR/lib/libsframe.a"
       fi
-      AC_CHECK_LIB(z, deflate, [ HSDIS_LIBS="$HSDIS_LIBS -lz" ], AC_MSG_ERROR([libz not found]))
+      if test "x$OPENJDK_TARGET_OS_ENV" = xwindows.msys2; then
+        if test "x$TOOLCHAIN_TYPE" = xgcc; then
+          AC_CHECK_LIB(z, deflate, [ HSDIS_LIBS="$HSDIS_LIBS -l:libz.a" ], AC_MSG_ERROR([libz not found]))
+          AC_CHECK_LIB(intl, libintl_fprintf, [ HSDIS_LIBS="$HSDIS_LIBS -l:libintl.a" ], AC_MSG_ERROR([libintl not found]))
+          AC_CHECK_LIB(iconv, libiconv, [ HSDIS_LIBS="$HSDIS_LIBS -l:libiconv.a" ], AC_MSG_ERROR([libiconv not found]))
+          AC_CHECK_LIB(zstd, ZSTD_decompress, [ HSDIS_LIBS="$HSDIS_LIBS -l:libzstd.a" ], AC_MSG_ERROR([libzstd not found]))
+        else
+          AC_MSG_ERROR([gcc is currently the only supported hsdis compiler with MSYS2])
+        fi
+      else
+        AC_CHECK_LIB(z, deflate, [ HSDIS_LIBS="$HSDIS_LIBS -lz" ], AC_MSG_ERROR([libz not found]))
+      fi
     else
       AC_MSG_ERROR(["$BINUTILS_INSTALL_DIR/lib[64] must contain libbfd.a, libopcodes.a and libiberty.a"])
     fi
@@ -313,9 +338,9 @@ AC_DEFUN([LIB_SETUP_HSDIS_BINUTILS],
   AC_MSG_CHECKING([for binutils to use with hsdis])
   case "x$BINUTILS_INSTALL_DIR" in
     xsystem)
-      if test "x$OPENJDK_TARGET_OS" != xlinux && test "x$OPENJDK_TARGET_OS" != xwindows; then
+      if test "x$OPENJDK_TARGET_OS" != xlinux && test "x$OPENJDK_TARGET_OS_ENV" != xwindows.msys2; then
         AC_MSG_RESULT([invalid])
-        AC_MSG_ERROR([binutils on system is supported for Linux and Windows only])
+        AC_MSG_ERROR([binutils on system is supported for Linux and Windows with MSYS2 only])
       elif test "x$binutils_system_error" = x; then
         AC_MSG_RESULT([system])
         if test "x$OPENJDK_TARGET_OS" = xlinux; then
