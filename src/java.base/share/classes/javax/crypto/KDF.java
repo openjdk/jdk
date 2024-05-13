@@ -43,15 +43,13 @@ import java.util.Iterator;
 import java.util.Objects;
 
 /**
- * This class provides the functionality of a key derivation algorithm for JCE.
- * <p>
- * {@code KDF} objects are instantiated through the {@code getInstance} family
- * of methods.  The algorithm field is the KDF algorithm (e.g. HKDF, etc.),
- * while the PRF specifier identifies the underlying pseudorandom function (e.g.
- * HmacSHA256).  For instance, a KDF implementation of HKDF using HMAC-SHA256
- * will have an algorithm string of "HKDFWithHmacSHA256".  In some cases the PRF
- * portion of the algorithm specifier may be omitted if the KDF algorithm has a
- * fixed or default PRF.
+ * This class provides the functionality of a Key Derivation Function (KDF).
+ * {@code KDF} objects are instantiated with the {@code getInstance} family of
+ * methods. KDF algorithm names follow a naming convention of
+ * <em>Algorithm</em>With<em>PRF</em>. For instance, a KDF implementation of
+ * HKDF using HMAC-SHA256 will have an algorithm string of "HKDFWithHmacSHA256".
+ * In some cases the PRF portion of the algorithm specifier may be omitted if
+ * the KDF algorithm has a fixed or default PRF.
  * <p>
  * Example:
  * {@snippet lang = java:
@@ -459,8 +457,8 @@ public final class KDF {
     /**
      * Obtain raw data from a key derivation function.
      * <p>
-     * The {@code deriveData} method may be called multiple times on a particular
-     * {@code KDF} instance.
+     * The {@code deriveData} method may be called multiple times on a
+     * particular {@code KDF} instance.
      * <p>
      * Delayed provider selection is also supported such that the provider
      * performing the derive is not selected until the method is called.
