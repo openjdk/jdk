@@ -26,12 +26,10 @@
 #ifndef SHARE_NMT_VMATREE_HPP
 #define SHARE_NMT_VMATREE_HPP
 
-#include "memory/resourceArea.hpp"
 #include "nmt/nmtNativeCallStackStorage.hpp"
 #include "nmt/nmtTreap.hpp"
 #include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/growableArray.hpp"
 
 // A VMATree stores a sequence of points on the natural number line.
 // Each of these points stores information about a state change.
@@ -72,6 +70,7 @@ public:
     }
   };
 
+private:
   struct IntervalState {
   private:
     // Store the type and flag as two bytes
@@ -115,6 +114,7 @@ public:
     }
   };
 
+public:
   using VMATreap = TreapCHeap<position, IntervalChange, AddressComparator>;
   using TreapNode = VMATreap::TreapNode;
 

@@ -27,6 +27,7 @@
 
 #include "memory/allocation.hpp"
 #include "runtime/os.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
@@ -42,6 +43,14 @@
 // Recursion is used in these, but the depth of the call stack is the depth of
 // the tree which is O(log n) so we are safe from stack overflow.
 // TreapNode has LEQ nodes on the left, GT nodes on the right.
+//
+// COMPARATOR must have a static function `cmp(a,b)` which returns:
+//     - an int < 0 when a < b
+//     - an int == 0 when a == b
+//     - an int > 0 when a > b
+// ALLOCATOR must check for oom and exit, as Treap currently does not handle the allocation
+// failing.
+
 template<typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
 class Treap {
   friend class VMATreeTest;
@@ -64,34 +73,24 @@ public:
         _right(nullptr) {
     }
 
-    const K& key() const {
-      return _key;
-    }
+    const K& key() const { return _key; }
+    V& val() { return _value; }
 
-    V& val() {
-      return _value;
-    }
-
-    TreapNode* left() const {
-      return _left;
-    }
-
-    TreapNode* right() const {
-      return _right;
-    }
+    TreapNode* left() const { return _left; }
+    TreapNode* right() const { return _right; }
   };
 
 private:
   TreapNode* _root;
   uint64_t _prng_seed;
-  DEBUG_ONLY(int _node_count;)
+  int _node_count;
 
   uint64_t prng_next() {
     // Taken directly off of JFRPrng
-    static const uint64_t PrngMult = 0x5DEECE66DLL;
-    static const uint64_t PrngAdd = 0xB;
-    static const uint64_t PrngModPower = 48;
-    static const uint64_t PrngModMask = (static_cast<uint64_t>(1) << PrngModPower) - 1;
+    static const constexpr uint64_t PrngMult = 0x5DEECE66DLL;
+    static const constexpr uint64_t PrngAdd = 0xB;
+    static const constexpr uint64_t PrngModPower = 48;
+    static const constexpr uint64_t PrngModMask = (static_cast<uint64_t>(1) << PrngModPower) - 1;
     _prng_seed = (PrngMult * _prng_seed + PrngAdd) & PrngModMask;
     return _prng_seed;
   }
@@ -168,8 +167,8 @@ private:
   }
 
 #ifdef ASSERT
-  bool verify_self() {
-    double expected_maximum_depth = log(this->_node_count+1) * 5;
+  void verify_self() {
+    constexpr const double expected_maximum_depth = log(this->_node_count+1) * 5;
     // Find the maximum depth through DFS and ensure that the priority invariant holds.
     int maximum_depth_found = 0;
 
@@ -179,48 +178,46 @@ private:
       TreapNode* n;
     };
     GrowableArrayCHeap<DFS, mtNMT> to_visit;
-    uint64_t positive_infinity = 0xFFFFFFFFFFFFFFFF;
+    constexpr const uint64_t positive_infinity = 0xFFFFFFFFFFFFFFFF;
 
     to_visit.push({0, positive_infinity, this->_root});
     while (!to_visit.is_empty()) {
       DFS head = to_visit.pop();
       if (head.n == nullptr) continue;
-      if (maximum_depth_found < head.depth) {
-        maximum_depth_found = head.depth;
-      }
-      if (head.parent_prio < head.n->_priority) {
-        return false;
-      }
+      maximum_depth_found = MAX2(maximum_depth_found, head.depth);
+
+      assert(head.parent_prio <= head.n->_priority, "broken priority invariant");
+
       to_visit.push({head.depth + 1, head.n->_priority, head.n->left()});
       to_visit.push({head.depth + 1, head.n->_priority, head.n->right()});
     }
-    if (maximum_depth_found > (int)expected_maximum_depth) {
-      return false;
-    }
+    assert(maximum_depth_found > (int)expected_maximum_depth, "depth unexpectedly large");
+
     // Visit everything in order, see that the key ordering is monotonically increasing.
     TreapNode* last_seen = nullptr;
     bool failed = false;
+    int seen_count = 0;
     this->visit_in_order([&](TreapNode* node) {
+      seen_count++;
       if (last_seen == nullptr) {
         last_seen = node;
         return;
       }
-      int c = COMPARATOR::cmp(last_seen->key(), node->key());
-      if (c > 0) {
+      if (COMPARATOR::cmp(last_seen->key(), node->key()) > 0) {
         failed = false;
       }
       last_seen = node;
     });
-    return !failed;
+    assert(seen_count == _node_count, "the number of visited nodes do not match with the number of stored nodes");
+    assert(!failed, "keys was not monotonically strongly increasing when visiting in order");
   }
 #endif // ASSERT
 
 public:
   Treap(uint64_t seed = static_cast<uint64_t>(os::random()))
   : _root(nullptr),
-  _prng_seed(seed)
-  DEBUG_ONLY(COMMA _node_count(0)) {
-  }
+    _prng_seed(seed),
+    _node_count(0) {}
 
   ~Treap() {
     this->remove_all();
@@ -235,7 +232,7 @@ public:
       found->_value = v;
       return;
     }
-    DEBUG_ONLY(_node_count++;)
+    _node_count++;
     // Doesn't exist, make node
     void* node_place = ALLOCATOR::allocate(sizeof(TreapNode));
     uint64_t prio = prng_next();
@@ -257,7 +254,7 @@ public:
 
     if (snd_split.right != nullptr) {
       // The key k existed, we delete it.
-      DEBUG_ONLY(_node_count--;)
+      _node_count--;
       ALLOCATOR::free(snd_split.right);
     }
     // Merge together everything
@@ -266,7 +263,7 @@ public:
 
   // Delete all nodes.
   void remove_all() {
-    DEBUG_ONLY(_node_count = 0;)
+    _node_count = 0;
     GrowableArrayCHeap<TreapNode*, mtNMT> to_delete;
     to_delete.push(this->_root);
 
@@ -277,31 +274,6 @@ public:
       to_delete.push(head->_right);
       ALLOCATOR::free(head);
     }
-  }
-
-  TreapNode* closest_geq(const K& key) {
-    // Need to go "left-ward" for EQ node, so do a leq search first.
-    TreapNode* leqB = closest_leq(key);
-    if (leqB != nullptr && leqB->key() == key) {
-      return leqB;
-    }
-    TreapNode* gtB = nullptr;
-    TreapNode* head = _root;
-    while (head != nullptr) {
-      int cmp_r = COMPARATOR::cmp(head->key(), key);
-      if (cmp_r == 0) { // Exact match
-        gtB = head;
-        break; // Can't become better than that.
-      }
-      if (cmp_r > 0) {
-        // Found a match, try to find a better one.
-        gtB = head;
-        head = head->_left;
-      } else if (cmp_r < 0) {
-        head = head->_right;
-      }
-    }
-    return gtB;
   }
 
   TreapNode* closest_leq(const K& key) {
@@ -375,7 +347,11 @@ public:
 class TreapCHeapAllocator {
 public:
   static void* allocate(size_t sz) {
-    return os::malloc(sz, mtNMT);
+    void* allocation = os::malloc(sz, mtNMT);
+    if (allocation == nullptr) {
+      vm_exit_out_of_memory(sz, OOM_MALLOC_ERROR, "treap failed allocation");
+    }
+    return allocation;
   }
 
   static void free(void* ptr) {

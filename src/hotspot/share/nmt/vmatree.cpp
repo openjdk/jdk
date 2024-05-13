@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -13,7 +14,7 @@
  * accompanied this code).
  *
  * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
+ * 2 along with this work; if not, writ constexpre to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
@@ -153,8 +154,8 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
 
   if (to_be_deleted_inbetween_a_b.length() == 0 && LEQ_A_found) {
     // We must have smashed a hole in an existing region (or replaced it entirely).
-    // LEQ_A - A - B - (some node >= B)
-    auto& rescom = diff.flag[NMTUtil::flag_to_index(LEQ_A.out().flag())];
+    // LEQ_A < A < B <= C
+    SingleDiff& rescom = diff.flag[NMTUtil::flag_to_index(LEQ_A.out().flag())];
     if (LEQ_A.out().type() == StateType::Reserved) {
       rescom.reserve -= B - A;
     } else if (LEQ_A.out().type() == StateType::Committed) {
@@ -170,7 +171,7 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
     _tree.remove(delete_me.address);
 
     // Perform summary accounting
-    auto& rescom = diff.flag[NMTUtil::flag_to_index(delete_me.in().flag())];
+    SingleDiff& rescom = diff.flag[NMTUtil::flag_to_index(delete_me.in().flag())];
     if (delete_me.in().type() == StateType::Reserved) {
       rescom.reserve -= delete_me.address - prev.address;
     } else if (delete_me.in().type() == StateType::Committed) {
@@ -185,17 +186,17 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
     // A - prev - B - (some node >= B)
     // It might be that prev.address == B == (some node >= B), this is fine.
     if (prev.out().type() == StateType::Reserved) {
-      auto& rescom = diff.flag[NMTUtil::flag_to_index(prev.out().flag())];
+      SingleDiff& rescom = diff.flag[NMTUtil::flag_to_index(prev.out().flag())];
       rescom.reserve -= B - prev.address;
     } else if (prev.out().type() == StateType::Committed) {
-      auto& rescom = diff.flag[NMTUtil::flag_to_index(prev.out().flag())];
+      SingleDiff& rescom = diff.flag[NMTUtil::flag_to_index(prev.out().flag())];
       rescom.commit -= B - prev.address;
       rescom.reserve -= B - prev.address;
     }
   }
 
   // Finally, we can register the new region [A, B)'s summary data.
-  auto& rescom = diff.flag[NMTUtil::flag_to_index(metadata.flag)];
+  SingleDiff& rescom = diff.flag[NMTUtil::flag_to_index(metadata.flag)];
   if (state == StateType::Reserved) {
     rescom.reserve += B - A;
   } else if (state == StateType::Committed) {
