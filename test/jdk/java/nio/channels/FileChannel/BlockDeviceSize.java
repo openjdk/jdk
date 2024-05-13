@@ -30,7 +30,6 @@
 
 import java.io.RandomAccessFile;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.channels.FileChannel;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.NoSuchFileException;
@@ -44,7 +43,7 @@ public class BlockDeviceSize {
 
     public static void main(String[] args) throws Throwable {
         for (String blkFname: BLK_FNAMES) {
-            Path blkPath = Paths.get(blkFname);
+            Path blkPath = Path.of(blkFname);
             try (FileChannel ch = FileChannel.open(blkPath, READ);
                  RandomAccessFile file = new RandomAccessFile(blkFname, "r")) {
 
