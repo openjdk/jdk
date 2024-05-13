@@ -54,6 +54,7 @@
 template<typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
 class Treap {
   friend class VMATreeTest;
+  friend class TreapTest;
 public:
   class TreapNode {
     friend Treap;
@@ -81,6 +82,7 @@ public:
   };
 
 private:
+  ALLOCATOR _allocator;
   TreapNode* _root;
   uint64_t _prng_seed;
   int _node_count;
@@ -215,7 +217,8 @@ private:
 
 public:
   Treap(uint64_t seed = static_cast<uint64_t>(os::random()))
-  : _root(nullptr),
+  : _allocator(),
+    _root(nullptr),
     _prng_seed(seed),
     _node_count(0) {}
 
@@ -234,7 +237,7 @@ public:
     }
     _node_count++;
     // Doesn't exist, make node
-    void* node_place = ALLOCATOR::allocate(sizeof(TreapNode));
+    void* node_place = _allocator.allocate(sizeof(TreapNode));
     uint64_t prio = prng_next();
     TreapNode* node = new (node_place) TreapNode(k, v, prio);
 
@@ -255,7 +258,7 @@ public:
     if (second_split.right != nullptr) {
       // The key k existed, we delete it.
       _node_count--;
-      ALLOCATOR::free(second_split.right);
+      _allocator.free(second_split.right);
     }
     // Merge together everything
     _root = merge(second_split.left, first_split.right);
@@ -346,7 +349,7 @@ public:
 
 class TreapCHeapAllocator {
 public:
-  static void* allocate(size_t sz) {
+  void* allocate(size_t sz) {
     void* allocation = os::malloc(sz, mtNMT);
     if (allocation == nullptr) {
       vm_exit_out_of_memory(sz, OOM_MALLOC_ERROR, "treap failed allocation");
@@ -354,7 +357,7 @@ public:
     return allocation;
   }
 
-  static void free(void* ptr) {
+  void free(void* ptr) {
     os::free(ptr);
   }
 };
