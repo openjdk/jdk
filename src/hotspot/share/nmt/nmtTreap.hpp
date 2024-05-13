@@ -170,7 +170,7 @@ private:
 
 #ifdef ASSERT
   void verify_self() {
-    constexpr const double expected_maximum_depth = log(this->_node_count+1) * 5;
+    const double expected_maximum_depth = log(this->_node_count+1) * 5;
     // Find the maximum depth through DFS and ensure that the priority invariant holds.
     int maximum_depth_found = 0;
 
@@ -227,7 +227,7 @@ public:
   }
 
   void upsert(const K& k, const V& v) {
-    assert(verify_self(), "invariant");
+    verify_self();
 
     TreapNode* found = find(_root, k);
     if (found != nullptr) {
@@ -248,7 +248,7 @@ public:
   }
 
   void remove(const K& k) {
-    assert(verify_self(), "invariant");
+    verify_self();
 
     // (LEQ_k, GT_k)
     node_pair first_split = split(this->_root, k, LEQ);
@@ -275,7 +275,7 @@ public:
       if (head == nullptr) continue;
       to_delete.push(head->_left);
       to_delete.push(head->_right);
-      ALLOCATOR::free(head);
+      _allocator.free(head);
     }
   }
 

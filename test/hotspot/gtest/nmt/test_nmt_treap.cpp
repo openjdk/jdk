@@ -69,10 +69,15 @@ public:
       struct Check {
         void* ptr;
         bool released;
+
         Check(void* ptr)
           : ptr(ptr),
             released(false) {
         }
+
+        Check()
+          : ptr(nullptr),
+            released(false) {}
 
         void release() {
           released = true;

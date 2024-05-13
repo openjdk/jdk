@@ -43,8 +43,8 @@ void MemoryFileTracker::allocate_memory(MemoryFile* device, size_t offset,
                                         size_t size, const NativeCallStack& stack,
                                         MEMFLAGS flag) {
   NativeCallStackStorage::StackIndex sidx = _stack_storage.push(stack);
-  VMATree::Metadata metadata(sidx, flag);
-  VMATree::SummaryDiff diff = device->_tree.reserve_mapping(offset, size, metadata);
+  VMATree::RegionData regiondata(sidx, flag);
+  VMATree::SummaryDiff diff = device->_tree.reserve_mapping(offset, size, regiondata);
   for (int i = 0; i < mt_number_of_types; i++) {
     VirtualMemory* summary = device->_summary.by_type(NMTUtil::index_to_flag(i));
     summary->reserve_memory(diff.flag[i].reserve);
@@ -69,18 +69,16 @@ void MemoryFileTracker::print_report_on(const MemoryFile* device, outputStream* 
       prev = current;
       return;
     }
-    const VMATree::IntervalChange& pval = prev->val();
-    const VMATree::IntervalChange& cval = current->val();
-    assert(pval.out.type() == cval.in.type(), "must be");
-    if (pval.out.type() == VMATree::StateType::Reserved) {
+    assert(prev->val().out.type() == current->val().in.type(), "must be");
+    if (prev->val().out.type() == VMATree::StateType::Reserved) {
       const auto& start_addr = prev->key();
       const auto& end_addr = current->key();
       stream->print_cr("[" PTR_FORMAT " - " PTR_FORMAT "] allocated " SIZE_FORMAT "%s" " for %s",
                        start_addr, end_addr,
                        NMTUtil::amount_in_scale(end_addr - start_addr, scale),
                        NMTUtil::scale_name(scale),
-                       NMTUtil::flag_to_name(pval.out.flag()));
-      _stack_storage.get(pval.out.stack()).print_on(stream, 4);
+                       NMTUtil::flag_to_name(prev->val().out.flag()));
+      _stack_storage.get(prev->val().out.stack()).print_on(stream, 4);
       stream->cr();
     }
     prev = current;
