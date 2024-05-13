@@ -64,10 +64,10 @@ TEST_VM_F(VMATreeTest, LowLevel) {
   NativeCallStackStorage::StackIndex si2 = ncs.push(stack2);
 
   // Adjacent reservations should result in exactly 2 nodes
-  auto adjacent_2_nodes = [&](VMATree::Metadata& md) {
+  auto adjacent_2_nodes = [&](VMATree::RegionData& rd) {
     Tree tree;
     for (int i = 0; i < 100; i++) {
-      tree.reserve_mapping(i * 100, 100, md);
+      tree.reserve_mapping(i * 100, 100, rd);
     }
     int found_nodes = 0;
     treap(tree).visit_range_in_order(0, 999999, [&](Node* x) {
@@ -77,7 +77,7 @@ TEST_VM_F(VMATreeTest, LowLevel) {
 
     // Reserving the exact same space again should result in still having only 2 nodes
     for (int i = 0; i < 100; i++) {
-      tree.reserve_mapping(i * 100, 100, md);
+      tree.reserve_mapping(i * 100, 100, rd);
     }
     found_nodes = 0;
     treap(tree).visit_range_in_order(0, 999999, [&](Node* x) {
@@ -88,7 +88,7 @@ TEST_VM_F(VMATreeTest, LowLevel) {
     // Do it backwards instead.
     Tree tree2;
     for (int i = 99; i >= 0; i--) {
-      tree2.reserve_mapping(i * 100, 100, md);
+      tree2.reserve_mapping(i * 100, 100, rd);
     }
     found_nodes = 0;
     treap(tree2).visit_range_in_order(0, 999999, [&](Node* x) {
@@ -98,10 +98,10 @@ TEST_VM_F(VMATreeTest, LowLevel) {
   };
 
   { // Overlapping reservations should also only result in 2 nodes.
-    VMATree::Metadata md{si1, mtTest};
+    VMATree::RegionData rd{si1, mtTest};
     Tree tree2;
     for (int i = 99; i >= 0; i--) {
-      tree2.reserve_mapping(i * 100, 101, md);
+      tree2.reserve_mapping(i * 100, 101, rd);
     }
     int found_nodes = 0;
     treap(tree2).visit_range_in_order(0, 999999, [&](Node* x) {
@@ -111,16 +111,16 @@ TEST_VM_F(VMATreeTest, LowLevel) {
   }
 
   // After removing all ranges we should be left with an entirely empty tree
-  auto remove_all_leaves_empty_tree = [&](VMATree::Metadata& md) {
+  auto remove_all_leaves_empty_tree = [&](VMATree::RegionData& rd) {
     Tree tree;
-    tree.reserve_mapping(0, 100*100, md);
+    tree.reserve_mapping(0, 100*100, rd);
     for (int i = 0; i < 100; i++) {
       tree.release_mapping(i*100, 100);
     }
     EXPECT_EQ(nullptr, treap_root(tree)) << "Releasing all memory should result in an empty tree";
 
     // Other way around
-    tree.reserve_mapping(0, 100*100, md);
+    tree.reserve_mapping(0, 100*100, rd);
     for (int i = 99; i >= 0; i--) {
       tree.release_mapping(i*100, 100);
     }
@@ -128,10 +128,10 @@ TEST_VM_F(VMATreeTest, LowLevel) {
   };
 
   // Committing in middle of reservation ends with a sequence of 4 nodes
-  auto commit_middle = [&](VMATree::Metadata& md) {
+  auto commit_middle = [&](VMATree::RegionData& rd) {
     Tree tree;
-    tree.reserve_mapping(0, 100, md);
-    tree.commit_mapping(50, 25, md);
+    tree.reserve_mapping(0, 100, rd);
+    tree.commit_mapping(50, 25, rd);
 
     size_t found[16];
     size_t wanted[4] = {0, 50, 75, 100};
@@ -156,11 +156,11 @@ TEST_VM_F(VMATreeTest, LowLevel) {
   };
 
   // Committing in a whole reserved range results in 2 nodes
-  auto commit_whole = [&](VMATree::Metadata& md) {
+  auto commit_whole = [&](VMATree::RegionData& rd) {
     Tree tree;
-    tree.reserve_mapping(0, 100*100, md);
+    tree.reserve_mapping(0, 100*100, rd);
     for (int i = 0; i < 100; i++) {
-      tree.commit_mapping(i*100, 100, md);
+      tree.commit_mapping(i*100, 100, rd);
     }
     int found_nodes = 0;
     treap(tree).visit_range_in_order(0, 999999, [&](Node* x) {
@@ -172,24 +172,24 @@ TEST_VM_F(VMATreeTest, LowLevel) {
     EXPECT_EQ(2, found_nodes);
   };
 
-  VMATree::Metadata nothing;
+  VMATree::RegionData nothing;
   adjacent_2_nodes(nothing);
   remove_all_leaves_empty_tree(nothing);
   commit_middle(nothing);
   commit_whole(nothing);
 
-  VMATree::Metadata md{si1, mtTest };
-  adjacent_2_nodes(md);
-  remove_all_leaves_empty_tree(md);
-  commit_middle(md);
-  commit_whole(md);
+  VMATree::RegionData rd{si1, mtTest };
+  adjacent_2_nodes(rd);
+  remove_all_leaves_empty_tree(rd);
+  commit_middle(rd);
+  commit_whole(rd);
 
   { // Identical operation but different metadata should not merge
     Tree tree;
-    VMATree::Metadata md{si1, mtTest };
-    VMATree::Metadata md2{si2, mtNMT };
-    tree.reserve_mapping(0, 100, md);
-    tree.reserve_mapping(100, 100, md2);
+    VMATree::RegionData rd{si1, mtTest };
+    VMATree::RegionData rd2{si2, mtNMT };
+    tree.reserve_mapping(0, 100, rd);
+    tree.reserve_mapping(100, 100, rd2);
     int found_nodes = 0;
     treap(tree).visit_range_in_order(0, 99999, [&](Node* x) {
       found_nodes++;
@@ -199,10 +199,10 @@ TEST_VM_F(VMATreeTest, LowLevel) {
 
   { // Reserving after commit should overwrite commit
     Tree tree;
-    VMATree::Metadata md{si1, mtTest };
-    VMATree::Metadata md2{si2, mtNMT };
-    tree.commit_mapping(50, 50, md2);
-    tree.reserve_mapping(0, 100, md);
+    VMATree::RegionData rd{si1, mtTest };
+    VMATree::RegionData rd2{si2, mtNMT };
+    tree.commit_mapping(50, 50, rd2);
+    tree.reserve_mapping(0, 100, rd);
     int found_nodes = 0;
     treap(tree).visit_range_in_order(0, 99999, [&](Node* x) {
       EXPECT_TRUE(x->key() == 0 || x->key() == 100);
@@ -216,12 +216,12 @@ TEST_VM_F(VMATreeTest, LowLevel) {
 
   { // Split a reserved region into two different reserved regions
     Tree tree;
-    VMATree::Metadata md{si1, mtTest };
-    VMATree::Metadata md2{si2, mtNMT };
-    VMATree::Metadata md3{si1, mtNone };
-    tree.reserve_mapping(0, 100, md);
-    tree.reserve_mapping(0, 50, md2);
-    tree.reserve_mapping(50, 50, md3);
+    VMATree::RegionData rd{si1, mtTest };
+    VMATree::RegionData rd2{si2, mtNMT };
+    VMATree::RegionData rd3{si1, mtNone };
+    tree.reserve_mapping(0, 100, rd);
+    tree.reserve_mapping(0, 50, rd2);
+    tree.reserve_mapping(50, 50, rd3);
     int found_nodes = 0;
     treap(tree).visit_range_in_order(0, 99999, [&](Node* x) {
       found_nodes++;
@@ -229,19 +229,19 @@ TEST_VM_F(VMATreeTest, LowLevel) {
     EXPECT_EQ(3, found_nodes);
   }
   { // One big reserve + release leaves an empty tree
-    Tree::Metadata md{si1, mtNMT};
+    Tree::RegionData rd{si1, mtNMT};
     Tree tree;
-    tree.reserve_mapping(0, 500000, md);
+    tree.reserve_mapping(0, 500000, rd);
     tree.release_mapping(0, 500000);
     EXPECT_EQ(nullptr, treap_root(tree));
   }
   { // A committed region inside of/replacing a reserved region
     // should replace the reserved region's metadata.
-    Tree::Metadata md{si1, mtNMT};
-    VMATree::Metadata md2{si2, mtTest};
+    Tree::RegionData rd{si1, mtNMT};
+    VMATree::RegionData rd2{si2, mtTest};
     Tree tree;
-    tree.reserve_mapping(0, 100, md);
-    tree.commit_mapping(0, 100, md2);
+    tree.reserve_mapping(0, 100, rd);
+    tree.commit_mapping(0, 100, rd2);
     treap(tree).visit_range_in_order(0, 99999, [&](Node* x) {
       if (x->key() == 0) {
         EXPECT_EQ(mtTest, x->val().out.metadata().flag);
@@ -254,10 +254,10 @@ TEST_VM_F(VMATreeTest, LowLevel) {
 
   { // Attempting to reserve or commit an empty region should not change the tree.
     Tree tree;
-    Tree::Metadata md{si1, mtNMT};
-    tree.reserve_mapping(0, 0, md);
+    Tree::RegionData rd{si1, mtNMT};
+    tree.reserve_mapping(0, 0, rd);
     EXPECT_EQ(nullptr, treap_root(tree));
-    tree.commit_mapping(0, 0, md);
+    tree.commit_mapping(0, 0, rd);
     EXPECT_EQ(nullptr, treap_root(tree));
   }
 }
@@ -268,22 +268,22 @@ TEST_VM_F(VMATreeTest, SummaryAccounting) {
   using Node = Tree::TreapNode;
   using NCS = NativeCallStackStorage;
   { // Fully enclosed re-reserving works correctly.
-    Tree::Metadata md(NCS::StackIndex(), mtTest);
-    Tree::Metadata md2(NCS::StackIndex(), mtNMT);
+    Tree::RegionData rd(NCS::StackIndex(), mtTest);
+    Tree::RegionData rd2(NCS::StackIndex(), mtNMT);
     Tree tree;
-    auto all_diff = tree.reserve_mapping(0, 100, md);
+    auto all_diff = tree.reserve_mapping(0, 100, rd);
     auto diff = all_diff.flag[NMTUtil::flag_to_index(mtTest)];
     EXPECT_EQ(100, diff.reserve);
-    all_diff = tree.reserve_mapping(50, 25, md2);
+    all_diff = tree.reserve_mapping(50, 25, rd2);
     diff = all_diff.flag[NMTUtil::flag_to_index(mtTest)];
     auto diff2 = all_diff.flag[NMTUtil::flag_to_index(mtNMT)];
     EXPECT_EQ(-25, diff.reserve);
     EXPECT_EQ(25, diff2.reserve);
   }
   { // Fully release reserved mapping
-    Tree::Metadata md(NCS::StackIndex(), mtTest);
+    Tree::RegionData rd(NCS::StackIndex(), mtTest);
     Tree tree;
-    auto all_diff = tree.reserve_mapping(0, 100, md);
+    auto all_diff = tree.reserve_mapping(0, 100, rd);
     auto diff = all_diff.flag[NMTUtil::flag_to_index(mtTest)];
     EXPECT_EQ(100, diff.reserve);
     all_diff = tree.release_mapping(0, 100);
@@ -291,34 +291,34 @@ TEST_VM_F(VMATreeTest, SummaryAccounting) {
     EXPECT_EQ(-100, diff.reserve);
   }
   { // Convert some of a released mapping to a committed one
-    Tree::Metadata md(NCS::StackIndex(), mtTest);
+    Tree::RegionData rd(NCS::StackIndex(), mtTest);
     Tree tree;
-    auto all_diff = tree.reserve_mapping(0, 100, md);
+    auto all_diff = tree.reserve_mapping(0, 100, rd);
     auto diff = all_diff.flag[NMTUtil::flag_to_index(mtTest)];
     EXPECT_EQ(diff.reserve, 100);
-    all_diff = tree.commit_mapping(0, 100, md);
+    all_diff = tree.commit_mapping(0, 100, rd);
     diff = all_diff.flag[NMTUtil::flag_to_index(mtTest)];
     EXPECT_EQ(0, diff.reserve);
     EXPECT_EQ(100, diff.commit);
   }
   { // Adjacent reserved mappings with same flag
-    Tree::Metadata md(NCS::StackIndex(), mtTest);
+    Tree::RegionData rd(NCS::StackIndex(), mtTest);
     Tree tree;
-    auto all_diff = tree.reserve_mapping(0, 100, md);
+    auto all_diff = tree.reserve_mapping(0, 100, rd);
     auto diff = all_diff.flag[NMTUtil::flag_to_index(mtTest)];
     EXPECT_EQ(diff.reserve, 100);
-    all_diff = tree.reserve_mapping(100, 100, md);
+    all_diff = tree.reserve_mapping(100, 100, rd);
     diff = all_diff.flag[NMTUtil::flag_to_index(mtTest)];
     EXPECT_EQ(100, diff.reserve);
   }
   { // Adjacent reserved mappings with different flags
-  Tree::Metadata md(NCS::StackIndex(), mtTest);
-    Tree::Metadata md2(NCS::StackIndex(), mtNMT);
+  Tree::RegionData rd(NCS::StackIndex(), mtTest);
+    Tree::RegionData rd2(NCS::StackIndex(), mtNMT);
     Tree tree;
-    auto all_diff = tree.reserve_mapping(0, 100, md);
+    auto all_diff = tree.reserve_mapping(0, 100, rd);
     auto diff = all_diff.flag[NMTUtil::flag_to_index(mtTest)];
     EXPECT_EQ(diff.reserve, 100);
-    all_diff = tree.reserve_mapping(100, 100, md2);
+    all_diff = tree.reserve_mapping(100, 100, rd2);
     diff = all_diff.flag[NMTUtil::flag_to_index(mtTest)];
     EXPECT_EQ(0, diff.reserve);
     diff = all_diff.flag[NMTUtil::flag_to_index(mtNMT)];
@@ -328,10 +328,10 @@ TEST_VM_F(VMATreeTest, SummaryAccounting) {
   { // A commit with two previous commits inside of it should only register
     // the new memory in the commit diff.
     Tree tree;
-    Tree::Metadata md(NCS::StackIndex(), mtTest);
-    tree.commit_mapping(128, 128, md);
-    tree.commit_mapping(512, 128, md);
-    auto diff = tree.commit_mapping(0, 1024, md);
+    Tree::RegionData rd(NCS::StackIndex(), mtTest);
+    tree.commit_mapping(128, 128, rd);
+    tree.commit_mapping(512, 128, rd);
+    auto diff = tree.commit_mapping(0, 1024, rd);
     EXPECT_EQ(768, diff.flag[NMTUtil::flag_to_index(mtTest)].commit);
     EXPECT_EQ(768, diff.flag[NMTUtil::flag_to_index(mtTest)].reserve);
   }

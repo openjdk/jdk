@@ -28,7 +28,7 @@
 #include "utilities/growableArray.hpp"
 
 VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType state,
-                                               Metadata& metadata) {
+                                               RegionData& metadata) {
   if (A == B) {
     // A 0-sized mapping isn't worth recording.
     return SummaryDiff();
@@ -49,12 +49,12 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
   };
 
   IntervalChange stA{
-      IntervalState{StateType::Released, Metadata{}},
+      IntervalState{StateType::Released, RegionData{}},
       IntervalState{              state,   metadata}
   };
   IntervalChange stB{
       IntervalState{              state,   metadata},
-      IntervalState{StateType::Released, Metadata{}}
+      IntervalState{StateType::Released, RegionData{}}
   };
 
   // First handle A.

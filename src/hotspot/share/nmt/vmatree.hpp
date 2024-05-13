@@ -55,16 +55,16 @@ public:
   enum class StateType : uint8_t { Reserved, Committed, Released };
 
   // Each point has some stack and a flag associated with it.
-  struct Metadata {
+  struct RegionData {
     const NativeCallStackStorage::StackIndex stack_idx;
     const MEMFLAGS flag;
 
-    Metadata() : stack_idx(), flag(mtNone) {}
+    RegionData() : stack_idx(), flag(mtNone) {}
 
-    Metadata(NativeCallStackStorage::StackIndex stack_idx, MEMFLAGS flag)
+    RegionData(NativeCallStackStorage::StackIndex stack_idx, MEMFLAGS flag)
     : stack_idx(stack_idx), flag(flag) {}
 
-    static bool equals(const Metadata& a, const Metadata& b) {
+    static bool equals(const RegionData& a, const RegionData& b) {
       return a.flag == b.flag &&
              NativeCallStackStorage::StackIndex::equals(a.stack_idx, b.stack_idx);
     }
@@ -79,7 +79,7 @@ private:
 
   public:
     IntervalState() : type_flag{0,0}, sidx() {}
-    IntervalState(StateType type, Metadata data) {
+    IntervalState(StateType type, RegionData data) {
       type_flag[0] = static_cast<uint8_t>(type);
       type_flag[1] = static_cast<uint8_t>(data.flag);
       sidx = data.stack_idx;
@@ -93,8 +93,8 @@ private:
       return static_cast<MEMFLAGS>(type_flag[1]);
     }
 
-    Metadata metadata() const {
-      return Metadata{sidx, flag()};
+    RegionData metadata() const {
+      return RegionData{sidx, flag()};
     }
 
     const NativeCallStackStorage::StackIndex stack() const {
@@ -110,7 +110,7 @@ private:
 
     bool is_noop() {
       return (in.type() == StateType::Released && out.type() == StateType::Released) ||
-             (in.type() == out.type() && Metadata::equals(in.metadata(), out.metadata()));
+             (in.type() == out.type() && RegionData::equals(in.metadata(), out.metadata()));
     }
   };
 
@@ -137,18 +137,18 @@ public:
     }
   };
 
-  SummaryDiff register_mapping(position A, position B, StateType state, Metadata& metadata);
+  SummaryDiff register_mapping(position A, position B, StateType state, RegionData& metadata);
 
-  SummaryDiff reserve_mapping(position from, position sz, Metadata& metadata) {
+  SummaryDiff reserve_mapping(position from, position sz, RegionData& metadata) {
     return register_mapping(from, from + sz, StateType::Reserved, metadata);
   }
 
-  SummaryDiff commit_mapping(position from, position sz, Metadata& metadata) {
+  SummaryDiff commit_mapping(position from, position sz, RegionData& metadata) {
     return register_mapping(from, from + sz, StateType::Committed, metadata);
   }
 
   SummaryDiff release_mapping(position from, position sz) {
-    Metadata empty;
+    RegionData empty;
     return register_mapping(from, from + sz, StateType::Released, empty);
   }
 
