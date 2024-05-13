@@ -92,7 +92,6 @@ class CollectedHeap : public CHeapObj<mtGC> {
   friend class JVMCIVMStructs;
   friend class IsSTWGCActiveMark; // Block structured external access to _is_stw_gc_active
   friend class MemAllocator;
-  friend class ParallelObjectIterator;
 
  private:
   GCHeapLog* _gc_heap_log;
@@ -400,12 +399,10 @@ protected:
   // Iterate over all objects, calling "cl.do_object" on each.
   virtual void object_iterate(ObjectClosure* cl) = 0;
 
- protected:
   virtual ParallelObjectIteratorImpl* parallel_object_iterator(uint thread_num) {
     return nullptr;
   }
 
- public:
   // Keep alive an object that was loaded with AS_NO_KEEPALIVE.
   virtual void keep_alive(oop obj) {}
 
