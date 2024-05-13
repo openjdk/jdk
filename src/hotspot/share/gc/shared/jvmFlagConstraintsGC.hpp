@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,8 +49,8 @@
  f(size_t, MarkStackSizeConstraintFunc)                        \
  f(uint,   MinMetaspaceFreeRatioConstraintFunc)                \
  f(uint,   MaxMetaspaceFreeRatioConstraintFunc)                \
- f(uintx,  InitialTenuringThresholdConstraintFunc)             \
- f(uintx,  MaxTenuringThresholdConstraintFunc)                 \
+ f(uint,   InitialTenuringThresholdConstraintFunc)             \
+ f(uint,   MaxTenuringThresholdConstraintFunc)                 \
                                                                \
  f(uintx,  MaxGCPauseMillisConstraintFunc)                     \
  f(uintx,  GCPauseIntervalMillisConstraintFunc)                \

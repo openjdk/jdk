@@ -28,6 +28,7 @@
 #include "classfile/vmClasses.hpp"
 #include "compiler/compileBroker.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/memAllocator.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
 #include "jvmci/jniAccessMark.inline.hpp"
 #include "jvmci/jvmciCompilerToVM.hpp"
@@ -92,39 +93,25 @@ static void deopt_caller() {
 }
 
 // Manages a scope for a JVMCI runtime call that attempts a heap allocation.
-// If there is a pending nonasync exception upon closing the scope and the runtime
+// If there is a pending OutOfMemoryError upon closing the scope and the runtime
 // call is of the variety where allocation failure returns null without an
 // exception, the following action is taken:
-//   1. The pending nonasync exception is cleared
+//   1. The pending OutOfMemoryError is cleared
 //   2. null is written to JavaThread::_vm_result
-//   3. Checks that an OutOfMemoryError is Universe::out_of_memory_error_retry().
-class RetryableAllocationMark: public StackObj {
+class RetryableAllocationMark {
  private:
-  JavaThread* _thread;
+   InternalOOMEMark _iom;
  public:
-  RetryableAllocationMark(JavaThread* thread, bool activate) {
-    if (activate) {
-      assert(!thread->in_retryable_allocation(), "retryable allocation scope is non-reentrant");
-      _thread = thread;
-      _thread->set_in_retryable_allocation(true);
-    } else {
-      _thread = nullptr;
-    }
-  }
+  RetryableAllocationMark(JavaThread* thread, bool activate) : _iom(activate ? thread : nullptr) {}
   ~RetryableAllocationMark() {
-    if (_thread != nullptr) {
-      _thread->set_in_retryable_allocation(false);
-      JavaThread* THREAD = _thread; // For exception macros.
+    JavaThread* THREAD = _iom.thread(); // For exception macros.
+    if (THREAD != nullptr) {
       if (HAS_PENDING_EXCEPTION) {
         oop ex = PENDING_EXCEPTION;
-        // Do not clear probable async exceptions.
-        CLEAR_PENDING_NONASYNC_EXCEPTION;
-        oop retry_oome = Universe::out_of_memory_error_retry();
-        if (ex->is_a(retry_oome->klass()) && retry_oome != ex) {
-          ResourceMark rm;
-          fatal("Unexpected exception in scope of retryable allocation: " INTPTR_FORMAT " of type %s", p2i(ex), ex->klass()->external_name());
+        THREAD->set_vm_result(nullptr);
+        if (ex->is_a(vmClasses::OutOfMemoryError_klass())) {
+          CLEAR_PENDING_EXCEPTION;
         }
-        _thread->set_vm_result(nullptr);
       }
     }
   }
@@ -787,6 +774,7 @@ void JVMCINMethodData::initialize(int nmethod_mirror_index,
 {
   _failed_speculations = failed_speculations;
   _nmethod_mirror_index = nmethod_mirror_index;
+  guarantee(nmethod_entry_patch_offset != -1, "missing entry barrier");
   _nmethod_entry_patch_offset = nmethod_entry_patch_offset;
   if (nmethod_mirror_name != nullptr) {
     _has_name = true;
@@ -878,7 +866,7 @@ static OopStorage* object_handles() {
 }
 
 jlong JVMCIRuntime::make_oop_handle(const Handle& obj) {
-  assert(!Universe::heap()->is_gc_active(), "can't extend the root set during GC");
+  assert(!Universe::heap()->is_stw_gc_active(), "can't extend the root set during GC pause");
   assert(oopDesc::is_oop(obj()), "not an oop");
 
   oop* ptr = OopHandle(object_handles(), obj()).ptr_raw();

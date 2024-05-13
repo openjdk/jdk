@@ -644,7 +644,7 @@ void SaveLiveRegisters::initialize(BarrierStubC2* stub) {
   int xmm_spill_size = 0;
 
   // Record registers that needs to be saved/restored
-  RegMaskIterator rmi(live);
+  RegMaskIterator rmi(stub->preserve_set());
   while (rmi.has_next()) {
     const OptoReg::Name opto_reg = rmi.next();
     const VMReg vm_reg = OptoReg::as_VMReg(opto_reg);
