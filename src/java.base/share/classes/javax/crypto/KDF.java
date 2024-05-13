@@ -46,12 +46,11 @@ import java.util.Objects;
  * This class provides the functionality of a key derivation algorithm for JCE.
  * <p>
  * {@code KDF} objects are instantiated through the {@code getInstance} family
- * of methods.  Key derivation algorithm names follow a naming convention of
- * <I>Algorithm</I>with<I>PRF</I>.  The algorithm field is the KDF algorithm
+ * of methods.  The algorithm field is the KDF algorithm
  * (e.g. HKDF, etc.), while the PRF specifier identifies the underlying
  * pseudorandom function (e.g. HmacSHA256).  For instance, a KDF implementation
  * of HKDF using HMAC-SHA256 will have an algorithm string of
- * "HKDFwithHmacSHA256".  In some cases the PRF portion of the algorithm
+ * "HKDFWithHmacSHA256".  In some cases the PRF portion of the algorithm
  * specifier may be omitted if the KDF algorithm has a fixed or default PRF.
  * <p>
  * Example:

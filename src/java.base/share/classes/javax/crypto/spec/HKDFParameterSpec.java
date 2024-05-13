@@ -89,7 +89,7 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
          * @param info
          *     the optional context and application specific information
          * @param length
-         *     the length of output keying material
+         *     the length of the output key material
          *
          * @return an {@code ExtractExpand}
          */
@@ -232,7 +232,7 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
      * @param info
      *     the optional context and application specific information
      * @param length
-     *     the length of output keying material (must be > 0)
+     *     the length of the output key material (must be > 0)
      *
      * @return a new {@code Expand} object
      *
@@ -262,7 +262,7 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
      * @param info
      *     the optional context and application specific information
      * @param length
-     *     the length of output keying material (must be > 0)
+     *     the length of the output key material (must be > 0)
      *
      * @return a new {@code ExtractExpand} object
      *
@@ -300,7 +300,7 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
         }
 
         /**
-         * Returns the unmodifiable {@code List} of initial key material
+         * Returns an unmodifiable {@code List} of initial key material
          * values.
          *
          * @return the unmodifiable {@code List} of initial key material values
@@ -310,7 +310,7 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
         }
 
         /**
-         * Returns the unmodifiable {@code List} of salt values.
+         * Returns an unmodifiable {@code List} of salt values.
          *
          * @return the unmodifiable {@code List} of salt values
          */
@@ -340,7 +340,7 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
          * @param info
          *     the optional context and application specific information
          * @param length
-         *     the length of output keying material (must be > 0)
+         *     the length of the output key material (must be > 0)
          */
         private Expand(SecretKey prk, byte[] info, int length) {
             // a null prk could be indicative of ExtractExpand
@@ -372,9 +372,9 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
         }
 
         /**
-         * Returns the length of output keying material.
+         * Returns the length of the output key material.
          *
-         * @return the length of output keying material
+         * @return the length of the output key material
          */
         public int length() {
             return length;
@@ -404,7 +404,7 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
          *     the optional context and application specific information (may be
          *     {@code null})
          * @param length
-         *     the length of output keying material
+         *     the length of the output key material
          */
         private ExtractExpand(Extract ext, byte[] info, int length) {
             // null-checked previously
@@ -416,7 +416,8 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
         }
 
         /**
-         * Returns the {@code List} of initial key material values.
+         * Returns an unmodifiable {@code List} of initial key material
+         * values.
          *
          * @return the initial key material values
          */
@@ -425,7 +426,7 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
         }
 
         /**
-         * Returns the {@code List} of salt values.
+         * Returns an unmodifiable {@code List} of salt values.
          *
          * @return the salt values
          */
@@ -444,9 +445,9 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
         }
 
         /**
-         * Returns the length of output keying material.
+         * Returns the length of the output key material.
          *
-         * @return the length of output keying material
+         * @return the length of the output key material
          */
         public int length() {
             return exp.length();
