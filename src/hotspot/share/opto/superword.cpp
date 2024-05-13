@@ -2830,14 +2830,12 @@ bool SuperWord::is_velt_basic_type_compatible_use_def(Node* use, int idx) const 
 
   // Nodes like Long.bitCount: expect long input, and int output.
   if (requires_long_to_int_conversion(use->Opcode())) {
-    // TODO tests with other conversions / reinterpretations around
     return type2aelembytes(def_bt) == 8 &&
            type2aelembytes(use_bt) == 4;
   }
 
   // MulAddS2I: expect short input, and int output.
   if (VectorNode::is_muladds2i(use)) {
-    // TODO test reinterpret output
     return type2aelembytes(def_bt) == 2 &&
            type2aelembytes(use_bt) == 4;
   }
