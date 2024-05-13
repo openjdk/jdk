@@ -53,8 +53,7 @@ import java.util.Objects;
  * <p>
  * Example:
  * {@snippet lang = java:
- *    KDF kdfHkdf = KDF.getInstance("HKDFWithHmacSHA256",
- *                                       (AlgorithmParameterSpec) null);
+ *    KDF kdfHkdf = KDF.getInstance("HKDFWithHmacSHA256");
  *
  *    KDFParameterSpec kdfParameterSpec =
  *             HKDFParameterSpec.extract()
