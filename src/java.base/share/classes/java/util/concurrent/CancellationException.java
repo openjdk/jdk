@@ -63,10 +63,13 @@ public class CancellationException extends IllegalStateException {
 
     /**
      * Only intended for in-package usage.
-     * Uses an empty String as message, and the passed-in cause as its cause.
-     * @param cause the underlying CancellationException
+     * Constructs a {@code CancellationException} with the specified detail
+     * message and CancellationException cause.
+     *
+     * @param message the detail message
+     * @param cause the underlying cancellation exception
      */
-    CancellationException(CancellationException cause) {
-        super("", cause);
+    CancellationException(String message, CancellationException cause) {
+        super(message, cause);
     }
 }
