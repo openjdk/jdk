@@ -969,26 +969,6 @@ HeapWord* ShenandoahHeap::allocate_from_gclab_slow(Thread* thread, size_t size) 
   return gclab->allocate(size);
 }
 
-void ShenandoahHeap::cancel_old_gc() {
-  shenandoah_assert_safepoint();
-  assert(old_generation() != nullptr, "Should only have mixed collections in generation mode.");
-  if (old_generation()->is_idle()) {
-#ifdef ASSERT
-    old_generation()->validate_waiting_for_bootstrap();
-#endif
-  } else {
-    log_info(gc)("Terminating old gc cycle.");
-    // Stop marking
-    old_generation()->cancel_marking();
-    // Stop tracking old regions
-    old_generation()->abandon_collection_candidates();
-    // Remove old generation access to young generation mark queues
-    young_generation()->set_old_gen_task_queues(nullptr);
-    // Transition to IDLE now.
-    old_generation()->transition_to(ShenandoahOldGeneration::WAITING_FOR_BOOTSTRAP);
-  }
-}
-
 // Called from stubs in JIT code or interpreter
 HeapWord* ShenandoahHeap::allocate_new_tlab(size_t min_size,
                                             size_t requested_size,
@@ -2035,10 +2015,6 @@ bool ShenandoahHeap::is_prepare_for_old_mark_in_progress() const {
   return old_generation()->is_preparing_for_mark();
 }
 
-void ShenandoahHeap::set_aging_cycle(bool in_progress) {
-  _is_aging_cycle.set_cond(in_progress);
-}
-
 void ShenandoahHeap::manage_satb_barrier(bool active) {
   if (is_concurrent_mark_in_progress()) {
     // Ignore request to deactivate barrier while concurrent mark is in progress.
@@ -2439,7 +2415,7 @@ public:
         // There have been allocations in this region since the start of the cycle.
         // Any objects new to this region must not assimilate elevated age.
         r->reset_age();
-      } else if (ShenandoahHeap::heap()->is_aging_cycle()) {
+      } else if (ShenandoahGenerationalHeap::heap()->is_aging_cycle()) {
         r->increment_age();
       }
     }
@@ -2716,10 +2692,6 @@ bool ShenandoahHeap::requires_barriers(stackChunkOop obj) const {
   }
 
   return false;
-}
-
-void ShenandoahHeap::transfer_old_pointers_from_satb() {
-  _old_generation->transfer_pointers_from_satb();
 }
 
 ShenandoahGeneration* ShenandoahHeap::generation_for(ShenandoahAffiliation affiliation) const {

@@ -41,6 +41,15 @@ public:
 
   // ---------- Evacuations and Promotions
   //
+  ShenandoahSharedFlag  _is_aging_cycle;
+  void set_aging_cycle(bool cond) {
+    _is_aging_cycle.set_cond(cond);
+  }
+
+  inline bool is_aging_cycle() const {
+    return _is_aging_cycle.is_set();
+  }
+
   oop evacuate_object(oop p, Thread* thread) override;
   oop try_evacuate_object(oop p, Thread* thread, ShenandoahHeapRegion* from_region, ShenandoahAffiliation target_gen);
 
@@ -94,6 +103,7 @@ public:
   // Transfers surplus old regions to young, or takes regions from young to satisfy old region deficit
   TransferResult balance_generations();
 
+  // Makes old regions parsable
   void coalesce_and_fill_old_regions(bool concurrent);
 
 private:

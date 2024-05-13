@@ -162,7 +162,7 @@ void ShenandoahDegenGC::op_degenerated() {
           // transferred to the old generation mark queues and the young pointers are NOT part
           // of this snapshot, so they must be dropped here. It is safe to drop them here because
           // we will rescan the roots on this safepoint.
-          heap->transfer_old_pointers_from_satb();
+          heap->old_generation()->transfer_pointers_from_satb();
         }
       }
 
@@ -284,7 +284,7 @@ void ShenandoahDegenGC::op_degenerated() {
         // This is still necessary for degenerated cycles because the degeneration point may occur
         // after final mark of the young generation. See ShenandoahConcurrentGC::op_final_updaterefs for
         // a more detailed explanation.
-        heap->transfer_old_pointers_from_satb();
+        heap->old_generation()->transfer_pointers_from_satb();
       }
 
       op_cleanup_complete();

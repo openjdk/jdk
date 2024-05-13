@@ -338,6 +338,25 @@ void ShenandoahOldGeneration::cancel_marking() {
   ShenandoahGeneration::cancel_marking();
 }
 
+void ShenandoahOldGeneration::cancel_gc() {
+  shenandoah_assert_safepoint();
+  if (is_idle()) {
+#ifdef ASSERT
+    validate_waiting_for_bootstrap();
+#endif
+  } else {
+    log_info(gc)("Terminating old gc cycle.");
+    // Stop marking
+    cancel_marking();
+    // Stop tracking old regions
+    abandon_collection_candidates();
+    // Remove old generation access to young generation mark queues
+    ShenandoahHeap::heap()->young_generation()->set_old_gen_task_queues(nullptr);
+    // Transition to IDLE now.
+    transition_to(ShenandoahOldGeneration::WAITING_FOR_BOOTSTRAP);
+  }
+}
+
 void ShenandoahOldGeneration::prepare_gc() {
   // Now that we have made the old generation parsable, it is safe to reset the mark bitmap.
   assert(state() != FILLING, "Cannot reset old without making it parsable");

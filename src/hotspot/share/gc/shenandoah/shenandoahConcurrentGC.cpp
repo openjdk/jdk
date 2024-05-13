@@ -639,13 +639,13 @@ void ShenandoahConcurrentGC::op_init_mark() {
     }
 
     if (_generation->is_global()) {
-      heap->cancel_old_gc();
+      heap->old_generation()->cancel_gc();
     } else if (heap->is_concurrent_old_mark_in_progress()) {
       // Purge the SATB buffers, transferring any valid, old pointers to the
       // old generation mark queue. Any pointers in a young region will be
       // abandoned.
       ShenandoahGCPhase phase(ShenandoahPhaseTimings::init_transfer_satb);
-      heap->transfer_old_pointers_from_satb();
+      heap->old_generation()->transfer_pointers_from_satb();
     }
   }
 
@@ -1214,6 +1214,13 @@ void ShenandoahConcurrentGC::op_final_updaterefs() {
     heap->verifier()->verify_roots_in_to_space();
   }
 
+  // If we are running in generational mode and this is an aging cycle, this will also age active
+  // regions that haven't been used for allocation.
+  heap->update_heap_region_states(true /*concurrent*/);
+
+  heap->set_update_refs_in_progress(false);
+  heap->set_has_forwarded_objects(false);
+
   if (heap->mode()->is_generational() && heap->is_concurrent_old_mark_in_progress()) {
     // When the SATB barrier is left on to support concurrent old gen mark, it may pick up writes to
     // objects in the collection set. After those objects are evacuated, the pointers in the
@@ -1229,17 +1236,12 @@ void ShenandoahConcurrentGC::op_final_updaterefs() {
     // We are not concerned about skipping this step in abbreviated cycles because regions
     // with no live objects cannot have been written to and so cannot have entries in the SATB
     // buffers.
-    heap->transfer_old_pointers_from_satb();
+    heap->old_generation()->transfer_pointers_from_satb();
+
+    // Aging_cycle is only relevant during evacuation cycle for individual objects and during final mark for
+    // entire regions.  Both of these relevant operations occur before final update refs.
+    ShenandoahGenerationalHeap::heap()->set_aging_cycle(false);
   }
-
-  heap->update_heap_region_states(true /*concurrent*/);
-
-  heap->set_update_refs_in_progress(false);
-  heap->set_has_forwarded_objects(false);
-
-  // Aging_cycle is only relevant during evacuation cycle for individual objects and during final mark for
-  // entire regions.  Both of these relevant operations occur before final update refs.
-  heap->set_aging_cycle(false);
 
   if (ShenandoahVerify) {
     heap->verifier()->verify_after_updaterefs();
@@ -1263,7 +1265,7 @@ void ShenandoahConcurrentGC::op_final_roots() {
     // the last GC safepoint before concurrent marking of old resumes. We must be sure
     // that old mark threads don't see any pointers to garbage in the SATB buffers.
     if (heap->is_concurrent_old_mark_in_progress()) {
-      heap->transfer_old_pointers_from_satb();
+      heap->old_generation()->transfer_pointers_from_satb();
     }
 
     ShenandoahMarkingContext *ctx = heap->complete_marking_context();
@@ -1274,7 +1276,7 @@ void ShenandoahConcurrentGC::op_final_roots() {
         HeapWord* top = r->top();
         if (top > tams) {
           r->reset_age();
-        } else if (heap->is_aging_cycle()) {
+        } else if (ShenandoahGenerationalHeap::heap()->is_aging_cycle()) {
           r->increment_age();
         }
       }

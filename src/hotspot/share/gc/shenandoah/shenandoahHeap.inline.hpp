@@ -507,10 +507,6 @@ inline bool ShenandoahHeap::is_concurrent_weak_root_in_progress() const {
   return _gc_state.is_set(WEAK_ROOTS);
 }
 
-inline bool ShenandoahHeap::is_aging_cycle() const {
-  return _is_aging_cycle.is_set();
-}
-
 template<class T>
 inline void ShenandoahHeap::marked_object_iterate(ShenandoahHeapRegion* region, T* cl) {
   marked_object_iterate(region, cl, region->top());

@@ -87,9 +87,9 @@ public:
 
 class ShenandoahPrepareForGenerationalCompactionObjectClosure : public ObjectClosure {
 private:
-  PreservedMarks*          const _preserved_marks;
-  ShenandoahHeap*          const _heap;
-  uint                           _tenuring_threshold;
+  PreservedMarks*             const _preserved_marks;
+  ShenandoahGenerationalHeap* const _heap;
+  uint                              _tenuring_threshold;
 
   // _empty_regions is a thread-local list of heap regions that have been completely emptied by this worker thread's
   // compaction efforts.  The worker thread that drives these efforts adds compacted regions to this list if the

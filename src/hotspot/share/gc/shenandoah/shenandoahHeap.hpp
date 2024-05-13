@@ -375,8 +375,6 @@ public:
   void set_concurrent_strong_root_in_progress(bool cond);
   void set_concurrent_weak_root_in_progress(bool cond);
 
-  void set_aging_cycle(bool cond);
-
   inline bool is_stable() const;
   inline bool is_idle() const;
 
@@ -394,7 +392,6 @@ public:
   inline bool is_concurrent_strong_root_in_progress() const;
   inline bool is_concurrent_weak_root_in_progress() const;
   bool is_prepare_for_old_mark_in_progress() const;
-  inline bool is_aging_cycle() const;
 
   // Return the age census object for young gen (in generational mode)
   inline ShenandoahAgeCensus* age_census() const;
@@ -532,7 +529,6 @@ public:
 // ---------- Class Unloading
 //
 private:
-  ShenandoahSharedFlag  _is_aging_cycle;
   ShenandoahSharedFlag _unload_classes;
   ShenandoahUnload     _unloader;
 
@@ -735,7 +731,6 @@ public:
   inline RememberedScanner* card_scan() { return _card_scan; }
   void clear_cards_for(ShenandoahHeapRegion* region);
   void mark_card_as_dirty(void* location);
-  void cancel_old_gc();
 
 // ---------- Helper functions
 //
@@ -766,8 +761,6 @@ public:
   // necessarily be determined because of concurrent locking by the
   // mutator
   static inline uint get_object_age(oop obj);
-
-  void transfer_old_pointers_from_satb();
 
   void log_heap_status(const char *msg) const;
 

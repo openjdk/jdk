@@ -193,6 +193,9 @@ public:
   void record_success_concurrent(bool abbreviated) override;
   void cancel_marking() override;
 
+  // Cancels old gc and transitions to the idle state
+  void cancel_gc();
+
   // We leave the SATB barrier on for the entirety of the old generation
   // marking phase. In some cases, this can cause a write to a perfectly
   // reachable oop to enqueue a pointer that later becomes garbage (because
