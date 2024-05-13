@@ -393,12 +393,8 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
          *     the length of output keying material
          */
         private ExtractExpand(Extract ext, byte[] info, int length) {
-            if (ext == null) {
-                throw new IllegalArgumentException(
-                    "ext (the Extract parameter) must not be null");
-            } else {
-                this.ext = ext;
-            }
+            // null-checked previously
+            this.ext = ext;
             if (!(length > 0)) {
                 throw new IllegalArgumentException("length must be > 0");
             }
