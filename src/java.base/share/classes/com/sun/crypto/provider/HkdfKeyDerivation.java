@@ -143,7 +143,8 @@ abstract class HkdfKeyDerivation extends KDFSpi {
             }
         }
 
-        return null;
+        throw new InvalidParameterSpecException(
+            "an HKDF could not be initialized with the given KDFParameterSpec");
     }
 
     /**
@@ -205,7 +206,8 @@ abstract class HkdfKeyDerivation extends KDFSpi {
             }
         }
 
-        return null;
+        throw new InvalidParameterSpecException(
+            "an HKDF could not be initialized with the given KDFParameterSpec");
     }
 
     protected int setupHMAC(String hmacAlgName) throws NoSuchAlgorithmException {
