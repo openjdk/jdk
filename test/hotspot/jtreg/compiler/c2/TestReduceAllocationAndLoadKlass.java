@@ -24,7 +24,8 @@
 /*
  * @test
  * @bug 8330795
- * @summary Check that Reduce Allocation Merges can load Klass when CompressedClassPointers is disabled.
+ * @summary Check that Reduce Allocation Merges doesn't crash when CompressedClassPointers
+ *          is disabled and there is an access to Klass "field" through the phi.
  * @requires vm.bits == 64 & vm.flagless & vm.compiler2.enabled & vm.opt.final.EliminateAllocations
  * @run main/othervm -XX:CompileCommand=dontinline,*TestReduceAllocationAndLoadKlass*::test
  *                   -XX:CompileCommand=compileonly,*TestReduceAllocationAndLoadKlass*::test
