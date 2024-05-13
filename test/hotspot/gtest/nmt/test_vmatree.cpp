@@ -180,11 +180,11 @@ TEST_VM_F(VMATreeTest, LowLevel) {
     EXPECT_EQ(2, found_nodes);
   };
 
-  VMATree::RegionData nothing;
-  adjacent_2_nodes(nothing);
-  remove_all_leaves_empty_tree(nothing);
-  commit_middle(nothing);
-  commit_whole(nothing);
+
+  adjacent_2_nodes(VMATree::empty_regiondata);
+  remove_all_leaves_empty_tree(VMATree::empty_regiondata);
+  commit_middle(VMATree::empty_regiondata);
+  commit_whole(VMATree::empty_regiondata);
 
   VMATree::RegionData rd{si1, mtTest };
   adjacent_2_nodes(rd);

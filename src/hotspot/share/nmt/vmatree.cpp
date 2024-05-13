@@ -27,6 +27,8 @@
 #include "nmt/vmatree.hpp"
 #include "utilities/growableArray.hpp"
 
+VMATree::RegionData VMATree::empty_regiondata{NativeCallStackStorage::StackIndex{}, mtNone};
+
 VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType state,
                                                RegionData& metadata) {
   if (A == B) {
@@ -49,12 +51,12 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
   };
 
   IntervalChange stA{
-      IntervalState{StateType::Released, RegionData{}},
+      IntervalState{StateType::Released, empty_regiondata},
       IntervalState{              state,   metadata}
   };
   IntervalChange stB{
       IntervalState{              state,   metadata},
-      IntervalState{StateType::Released, RegionData{}}
+      IntervalState{StateType::Released, empty_regiondata}
   };
 
   // First handle A.

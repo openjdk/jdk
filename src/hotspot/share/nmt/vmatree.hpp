@@ -70,6 +70,8 @@ public:
     }
   };
 
+  static RegionData empty_regiondata;
+
 private:
   struct IntervalState {
   private:
@@ -148,8 +150,7 @@ public:
   }
 
   SummaryDiff release_mapping(position from, position sz) {
-    RegionData empty;
-    return register_mapping(from, from + sz, StateType::Released, empty);
+    return register_mapping(from, from + sz, StateType::Released, VMATree::empty_regiondata);
   }
 
 public:
