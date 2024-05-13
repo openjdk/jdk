@@ -82,7 +82,7 @@ public final class KDF {
     // The provider implementation (delegate)
     private KDFSpi spi;
 
-    // The name of the MAC algorithm.
+    // The name of the KDF algorithm.
     private final String algorithm;
 
     // Additional KDF configuration parameters
@@ -169,9 +169,8 @@ public final class KDF {
             return getInstance(algorithm, (AlgorithmParameterSpec) null);
         } catch (InvalidAlgorithmParameterException e) {
             throw new NoSuchAlgorithmException(
-                "Received an InvalidParameterSpecException. Does this "
-                + "algorithm require an "
-                + "AlgorithmParameterSpec?");
+                "Received an InvalidAlgorithmParameterException. Does this "
+                + "algorithm require an AlgorithmParameterSpec?", e);
         }
     }
 
@@ -202,9 +201,8 @@ public final class KDF {
                                provider);
         } catch (InvalidAlgorithmParameterException e) {
             throw new NoSuchAlgorithmException(
-                "Received an InvalidParameterSpecException. Does this "
-                + "algorithm require an "
-                + "AlgorithmParameterSpec?");
+                "Received an InvalidAlgorithmParameterException. Does this "
+                + "algorithm require an AlgorithmParameterSpec?", e);
         }
     }
 
@@ -232,9 +230,8 @@ public final class KDF {
                                provider);
         } catch (InvalidAlgorithmParameterException e) {
             throw new NoSuchAlgorithmException(
-                "Received an InvalidParameterSpecException. Does this "
-                + "algorithm require an "
-                + "AlgorithmParameterSpec?");
+                "Received an InvalidAlgorithmParameterException. Does this "
+                + "algorithm require an AlgorithmParameterSpec?", e);
         }
     }
 
