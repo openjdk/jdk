@@ -125,7 +125,7 @@ public final class JdkConsoleImpl implements JdkConsole {
                             if (reader instanceof LineReader lr) {
                                 lr.zeroOut();
                             }
-                        } catch (IOException x) {
+                        } catch (IOException _) {
                             // ignore
                         }
                         throw ioe;
