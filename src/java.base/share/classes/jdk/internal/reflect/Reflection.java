@@ -112,14 +112,15 @@ public class Reflection {
 
     @ForceInline
     public static void ensureNativeAccess(Class<?> currentClass, Class<?> owner, String methodName) {
-        if (VM.isModuleSystemInited()) {
-            // if there is no caller class, act as if the call came from unnamed module of system class loader
-            Module module = currentClass != null ?
-                    currentClass.getModule() :
-                    ClassLoader.getSystemClassLoader().getUnnamedModule();
-            class Holder {
-                static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
-            }
+        // if there is no caller class, act as if the call came from unnamed module of system class loader
+        Module module = currentClass != null ?
+                currentClass.getModule() :
+                ClassLoader.getSystemClassLoader().getUnnamedModule();
+        class Holder {
+            static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
+        }
+        if (module != null) {
+            // not in init phase
             Holder.JLA.ensureNativeAccess(module, owner, methodName, currentClass);
         }
     }
