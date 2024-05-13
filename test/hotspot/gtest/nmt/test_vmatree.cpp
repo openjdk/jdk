@@ -52,6 +52,13 @@ public:
                                       size_t{0x2997},
                                       size_t{0x2add});
   NativeCallStack stack2 = make_stack(0x123, 0x456,0x789, 0xAAAA);
+
+  VMATree::StateType in_type_of(VMATree::TreapNode* x) {
+    return x->val().in.type();
+  }
+  VMATree::StateType out_type_of(VMATree::TreapNode* x) {
+    return x->val().out.type();
+  }
 };
 
 // Low-level tests inspecting the state of the tree.
@@ -165,9 +172,10 @@ TEST_VM_F(VMATreeTest, LowLevel) {
     int found_nodes = 0;
     treap(tree).visit_range_in_order(0, 999999, [&](Node* x) {
       found_nodes++;
-      VMATree::IntervalChange& v = x->val();
-      EXPECT_TRUE((v.in.type() == VMATree::StateType::Released && v.out.type() == VMATree::StateType::Committed) ||
-                  (v.in.type() == VMATree::StateType::Committed && v.out.type() == VMATree::StateType::Released));
+      VMATree::StateType in = in_type_of(x);
+      VMATree::StateType out = out_type_of(x);
+      EXPECT_TRUE((in == VMATree::StateType::Released && out == VMATree::StateType::Committed) ||
+                  (in == VMATree::StateType::Committed && out == VMATree::StateType::Released));
     });
     EXPECT_EQ(2, found_nodes);
   };
