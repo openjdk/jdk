@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,10 +102,6 @@ JvmtiGetLoadedClasses::getLoadedClasses(JvmtiEnv *env, jint* classCountPtr, jcla
 
   LoadedClassesClosure closure(env, false);
   {
-    // To get a consistent list of classes we need MultiArray_lock to ensure
-    // array classes aren't created.
-    MutexLocker ma(MultiArray_lock);
-
     // Iterate through all classes in ClassLoaderDataGraph
     // and collect them using the LoadedClassesClosure
     MutexLocker mcld(ClassLoaderDataGraph_lock);
@@ -122,8 +118,9 @@ JvmtiGetLoadedClasses::getClassLoaderClasses(JvmtiEnv *env, jobject initiatingLo
   LoadedClassesClosure closure(env, true);
   {
     // To get a consistent list of classes we need MultiArray_lock to ensure
-    // array classes aren't created during this walk.
-    MutexLocker ma(MultiArray_lock);
+    // array classes aren't created by another thread during this walk. This walks through the
+    // InstanceKlass::_array_klasses links.
+    RecursiveLocker ma(MultiArray_lock, Thread::current());
     MutexLocker sd(SystemDictionary_lock);
     oop loader = JNIHandles::resolve(initiatingLoader);
     // All classes loaded from this loader as initiating loader are

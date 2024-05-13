@@ -332,6 +332,14 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         final HashSet<Integer> allNodes = new HashSet<>(getGroup().getAllNodes());
         allNodes.removeAll(nodes);
         setHiddenNodes(allNodes);
+
+
+    }
+
+    public Set<Integer> getVisibleNodes() {
+        final Set<Integer> visibleNodes = new HashSet<>(getGraph().getNodesAsSet());
+        visibleNodes.removeAll(hiddenNodes);
+        return visibleNodes;
     }
 
     public void setHiddenNodes(Set<Integer> nodes) {

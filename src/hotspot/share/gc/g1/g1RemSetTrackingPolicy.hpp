@@ -43,10 +43,10 @@ public:
   void update_at_allocate(HeapRegion* r);
   // Update remembered set tracking state for humongous regions before we are going to
   // rebuild remembered sets. Called at safepoint in the remark pause.
-  bool update_humongous_before_rebuild(HeapRegion* r, bool is_live);
-  // Update remembered set tracking state before we are going to rebuild remembered
-  // sets. Called at safepoint in the remark pause.
-  bool update_before_rebuild(HeapRegion* r, size_t live_bytes_below_tams);
+  bool update_humongous_before_rebuild(HeapRegion* r);
+  // Update remembered set tracking state for old regions before we are going
+  // to rebuild remembered sets. Called at safepoint in the remark pause.
+  bool update_old_before_rebuild(HeapRegion* r);
   // Update remembered set tracking state after rebuild is complete, i.e. the cleanup
   // pause. Called at safepoint.
   void update_after_rebuild(HeapRegion* r);

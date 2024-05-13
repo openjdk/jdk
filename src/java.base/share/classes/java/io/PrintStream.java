@@ -1442,7 +1442,8 @@ public class PrintStream extends FilterOutputStream
      * Appends the specified character sequence to this output stream.
      *
      * <p> An invocation of this method of the form {@code out.append(csq)}
-     * behaves in exactly the same way as the invocation
+     * when {@code csq} is not {@code null}, behaves in exactly the same way
+     * as the invocation
      *
      * {@snippet lang=java :
      *     out.print(csq.toString())
@@ -1450,7 +1451,7 @@ public class PrintStream extends FilterOutputStream
      *
      * <p> Depending on the specification of {@code toString} for the
      * character sequence {@code csq}, the entire sequence may not be
-     * appended.  For instance, invoking then {@code toString} method of a
+     * appended.  For instance, invoking the {@code toString} method of a
      * character buffer will return a subsequence whose content depends upon
      * the buffer's position and limit.
      *

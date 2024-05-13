@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,53 +21,56 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 4252164 8041917
- * @summary Tests rounded LineBorder for components
- * @author Sergey Malenkov
- * @run applet/manual=yesno Test4252164.html
- */
-
 import java.awt.Color;
-import java.awt.event.MouseWheelEvent;
-import java.awt.event.MouseWheelListener;
-import javax.swing.JApplet;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.border.LineBorder;
 
-public class Test4252164 extends JApplet implements MouseWheelListener {
-    private int thickness;
-    private JLabel rounded;
-    private JLabel straight;
+/*
+ * @test
+ * @bug 4252164 8041917
+ * @summary Tests rounded LineBorder for components
+ * @library /java/awt/regtesthelpers
+ * @build PassFailJFrame
+ * @run main/manual Test4252164
+ */
 
-    public void mouseWheelMoved(MouseWheelEvent event) {
-        update(event.getWheelRotation());
+public class Test4252164 {
+    private static int thickness;
+    private static JLabel rounded;
+    private static JLabel straight;
+
+    public static void main(String[] args) throws Exception {
+        String testInstructions = """
+                Please, ensure that rounded border is filled completely.
+                It should not contain white points inside.
+                Use Mouse Wheel to change thickness of the border.
+                                """;
+
+        PassFailJFrame.builder()
+                .title("Test Instructions")
+                .instructions(testInstructions)
+                .rows(4)
+                .columns(35)
+                .splitUI(Test4252164::createUI)
+                .build()
+                .awaitAndCheck();
     }
 
-    public void init() {
-        add(createUI());
-        addMouseWheelListener(this);
-    }
-
-    private JPanel createUI() {
-        this.rounded = new JLabel("ROUNDED"); // NON-NLS: the label for rounded border
-        this.straight = new JLabel("STRAIGHT"); // NON-NLS: the label for straight border
-
+    private static JPanel createUI() {
+        rounded = new JLabel("ROUNDED"); // NON-NLS: the label for rounded border
+        straight = new JLabel("STRAIGHT"); // NON-NLS: the label for straight border
         JPanel panel = new JPanel();
-        panel.add(this.rounded);
-        panel.add(this.straight);
-
+        panel.add(rounded);
+        panel.add(straight);
         update(10);
-
+        panel.addMouseWheelListener(e -> update(e.getWheelRotation()));
         return panel;
     }
 
-    private void update(int thickness) {
-        this.thickness += thickness;
-
-        this.rounded.setBorder(new LineBorder(Color.RED, this.thickness, true));
-        this.straight.setBorder(new LineBorder(Color.RED, this.thickness, false));
+    private static void update(int thicknessValue) {
+        thickness += thicknessValue;
+        rounded.setBorder(new LineBorder(Color.RED, thickness, true));
+        straight.setBorder(new LineBorder(Color.RED, thickness, false));
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,10 +41,19 @@ public class Local {
         this.type = type;
     }
 
+    /**
+     * Returns the first BCI at which this local has a value (inclusive).
+     */
     public int getStartBCI() {
         return startBci;
     }
 
+
+    /**
+     * Returns the last BCI at which this local has a value (inclusive).
+     * If the value returned is less than {@link #getStartBCI}, this object denotes a local
+     * variable that is never live.
+     */
     public int getEndBCI() {
         return endBci;
     }

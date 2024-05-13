@@ -32,8 +32,6 @@ import javax.lang.model.element.Element;
 import com.sun.source.doctree.DeprecatedTree;
 
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
@@ -83,10 +81,19 @@ public class DeprecatedListWriter extends SummaryListWriter<DeprecatedAPIListBui
         if (releases.size() > 1) {
             Content tabs = HtmlTree.DIV(HtmlStyle.checkboxes, contents.getContent(
                     "doclet.Deprecated_API_Checkbox_Label"));
-            for (int i = 0; i < releases.size(); i++) {
-                // Table column ids are 1-based
-                tabs.add(Text.of(" ")).add(getReleaseCheckbox(releases.get(i), i + 1));
+            // Table column ids are 1-based
+            int index = 1;
+            for (String release : releases) {
+                // Empty string represents other/uncategorized releases. Since we can't make any assumptions
+                // about release names this is arguably the safest way to avoid naming collisions.
+                Content label = !release.isEmpty()
+                        ? Text.of(release)
+                        : contents.getContent("doclet.Deprecated_API_Checkbox_Other_Releases");
+                String id = release.isEmpty() ? ID_OTHER : String.valueOf(index++);
+                tabs.add(Text.of(" ")).add(getCheckbox(label, id, "release-"));
             }
+            tabs.add(Text.of(" ")).add(getCheckbox(
+                    contents.getContent("doclet.Deprecated_API_Checkbox_All_Releases"), ID_ALL, "release-"));
             target.add(tabs);
         }
     }
@@ -95,23 +102,6 @@ public class DeprecatedListWriter extends SummaryListWriter<DeprecatedAPIListBui
     protected void addExtraSection(Content content) {
         addSummaryAPI(builder.getForRemoval(), HtmlIds.FOR_REMOVAL,
                 TERMINALLY_DEPRECATED_KEY, "doclet.Element", content);
-    }
-
-    private Content getReleaseCheckbox(String name, int index) {
-        // Empty string represents other/uncategorized releases. Since we can't make any assumptions
-        // about release names this is arguably the safest way to avoid naming collisions.
-        boolean isOtherReleases = name.isEmpty();
-        Content releaseLabel = isOtherReleases
-                ? contents.getContent("doclet.Deprecated_API_Checkbox_Other_Releases")
-                : Text.of(name);
-        HtmlId htmlId = HtmlId.of("release-" + index);
-        String releaseId = isOtherReleases ? "" : Integer.toString(index);
-        return HtmlTree.LABEL(htmlId.name(),
-                        HtmlTree.INPUT(HtmlAttr.InputType.CHECKBOX, htmlId)
-                                .put(HtmlAttr.CHECKED, "")
-                                .put(HtmlAttr.ONCLICK,
-                                        "toggleGlobal(this, '" + releaseId + "', 3)"))
-                .add(HtmlTree.SPAN(releaseLabel));
     }
 
     @Override
@@ -139,7 +129,6 @@ public class DeprecatedListWriter extends SummaryListWriter<DeprecatedAPIListBui
         }
         if (releases.size() > 1) {
             table.setDefaultTab(getTableCaption(headingKey))
-                    .setAlwaysShowDefaultTab(true)
                     .setRenderTabs(false);
             for (String release : releases) {
                 Content tab = TERMINALLY_DEPRECATED_KEY.equals(headingKey)

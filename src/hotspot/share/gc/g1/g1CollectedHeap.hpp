@@ -40,7 +40,6 @@
 #include "gc/g1/g1HeapRegionSet.hpp"
 #include "gc/g1/g1HeapTransition.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
-#include "gc/g1/g1HRPrinter.hpp"
 #include "gc/g1/g1MonitoringSupport.hpp"
 #include "gc/g1/g1MonotonicArenaFreeMemoryTask.hpp"
 #include "gc/g1/g1MonotonicArenaFreePool.hpp"
@@ -265,8 +264,6 @@ public:
   void update_parallel_gc_threads_cpu_time();
 private:
 
-  G1HRPrinter _hr_printer;
-
   // Return true if an explicit GC should start a concurrent cycle instead
   // of doing a STW full GC. A concurrent cycle should be started if:
   // (a) cause == _g1_humongous_allocation,
@@ -468,7 +465,7 @@ private:
   // These methods are the "callbacks" from the G1AllocRegion class.
 
   // For mutator alloc regions.
-  HeapRegion* new_mutator_alloc_region(size_t word_size, bool force, uint node_index);
+  HeapRegion* new_mutator_alloc_region(size_t word_size, uint node_index);
   void retire_mutator_alloc_region(HeapRegion* alloc_region,
                                    size_t allocated_bytes);
 
@@ -669,8 +666,6 @@ public:
     return _old_marking_cycles_completed;
   }
 
-  G1HRPrinter* hr_printer() { return &_hr_printer; }
-
   // Allocates a new heap region instance.
   HeapRegion* new_heap_region(uint hrs_index, MemRegion mr);
 
@@ -717,9 +712,9 @@ public:
   // in the CDS archive.
   HeapWord* alloc_archive_region(size_t word_size, HeapWord* preferred_addr);
 
-  // Populate the G1BlockOffsetTablePart for archived regions with the given
+  // Populate the G1BlockOffsetTable for archived regions with the given
   // memory range.
-  void populate_archive_regions_bot_part(MemRegion range);
+  void populate_archive_regions_bot(MemRegion range);
 
   // For the specified range, uncommit the containing G1 regions
   // which had been allocated by alloc_archive_regions. This should be called
@@ -754,7 +749,7 @@ private:
   // false if unable to do the collection due to the GC locker being
   // active, true otherwise.
   // precondition: at safepoint on VM thread
-  // precondition: !is_gc_active()
+  // precondition: !is_stw_gc_active()
   bool do_collection_pause_at_safepoint();
 
   // Helper for do_collection_pause_at_safepoint, containing the guts

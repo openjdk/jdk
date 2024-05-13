@@ -792,13 +792,14 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
   }
 #endif
 
-  jlong stride_con = head->stride_con();
-  assert(stride_con != 0, "missed some peephole opt");
+  jlong stride_con_long = head->stride_con();
+  assert(stride_con_long != 0, "missed some peephole opt");
   // We can't iterate for more than max int at a time.
-  if (stride_con != (jint)stride_con) {
+  if (stride_con_long != (jint)stride_con_long || stride_con_long == min_jint) {
     assert(bt == T_LONG, "only for long loops");
     return false;
   }
+  jint stride_con = checked_cast<jint>(stride_con_long);
   // The number of iterations for the integer count loop: guarantee no
   // overflow: max_jint - stride_con max. -1 so there's no need for a
   // loop limit check if the exit test is <= or >=.
@@ -940,11 +941,19 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
   // inner_iters_max may not fit in a signed integer (iterating from
   // Long.MIN_VALUE to Long.MAX_VALUE for instance). Use an unsigned
   // min.
-  Node* inner_iters_actual = MaxNode::unsigned_min(inner_iters_max, inner_iters_limit, TypeInteger::make(0, iters_limit, Type::WidenMin, bt), _igvn);
+  const TypeInteger* inner_iters_actual_range = TypeInteger::make(0, iters_limit, Type::WidenMin, bt);
+  Node* inner_iters_actual = MaxNode::unsigned_min(inner_iters_max, inner_iters_limit, inner_iters_actual_range, _igvn);
 
   Node* inner_iters_actual_int;
   if (bt == T_LONG) {
     inner_iters_actual_int = new ConvL2INode(inner_iters_actual);
+    _igvn.register_new_node_with_optimizer(inner_iters_actual_int);
+    // When the inner loop is transformed to a counted loop, a loop limit check is not expected to be needed because
+    // the loop limit is less or equal to max_jint - stride - 1 (if stride is positive but a similar argument exists for
+    // a negative stride). We add a CastII here to guarantee that, when the counted loop is created in a subsequent loop
+    // opts pass, an accurate range of values for the limits is found.
+    const TypeInt* inner_iters_actual_int_range = TypeInt::make(0, iters_limit, Type::WidenMin);
+    inner_iters_actual_int = new CastIINode(outer_head, inner_iters_actual_int, inner_iters_actual_int_range, ConstraintCastNode::UnconditionalDependency);
     _igvn.register_new_node_with_optimizer(inner_iters_actual_int);
   } else {
     inner_iters_actual_int = inner_iters_actual;
@@ -958,7 +967,7 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
   }
 
   // Clone the iv data nodes as an integer iv
-  Node* int_stride = _igvn.intcon(checked_cast<int>(stride_con));
+  Node* int_stride = _igvn.intcon(stride_con);
   set_ctrl(int_stride, C->root());
   Node* inner_phi = new PhiNode(x->in(0), TypeInt::INT);
   Node* inner_incr = new AddINode(inner_phi, int_stride);
@@ -1053,7 +1062,7 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
     register_new_node(outer_phi, outer_head);
   }
 
-  transform_long_range_checks(checked_cast<int>(stride_con), range_checks, outer_phi, inner_iters_actual_int,
+  transform_long_range_checks(stride_con, range_checks, outer_phi, inner_iters_actual_int,
                               inner_phi, iv_add, inner_head);
   // Peel one iteration of the loop and use the safepoint at the end
   // of the peeled iteration to insert Parse Predicates. If no well
@@ -1090,7 +1099,7 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
   return true;
 }
 
-int PhaseIdealLoop::extract_long_range_checks(const IdealLoopTree* loop, jlong stride_con, int iters_limit, PhiNode* phi,
+int PhaseIdealLoop::extract_long_range_checks(const IdealLoopTree* loop, jint stride_con, int iters_limit, PhiNode* phi,
                                               Node_List& range_checks) {
   const jlong min_iters = 2;
   jlong reduced_iters_limit = iters_limit;
@@ -1106,7 +1115,9 @@ int PhaseIdealLoop::extract_long_range_checks(const IdealLoopTree* loop, jlong s
         jlong scale = 0;
         if (loop->is_range_check_if(if_proj, this, T_LONG, phi, range, offset, scale) &&
             loop->is_invariant(range) && loop->is_invariant(offset) &&
-            original_iters_limit / ABS(scale * stride_con) >= min_iters) {
+            scale != min_jlong &&
+            original_iters_limit / ABS(scale) >= min_iters * ABS(stride_con)) {
+          assert(scale == (jint)scale, "scale should be an int");
           reduced_iters_limit = MIN2(reduced_iters_limit, original_iters_limit/ABS(scale));
           range_checks.push(c);
         }
@@ -2341,7 +2352,8 @@ Node* PhaseIdealLoop::exact_limit( IdealLoopTree *loop ) {
   CountedLoopNode *cl = loop->_head->as_CountedLoop();
   assert(cl->is_valid_counted_loop(T_INT), "");
 
-  if (ABS(cl->stride_con()) == 1 ||
+  if (cl->stride_con() == 1 ||
+      cl->stride_con() == -1 ||
       cl->limit()->Opcode() == Op_LoopLimit) {
     // Old code has exact limit (it could be incorrect in case of int overflow).
     // Loop limit is exact with stride == 1. And loop may already have exact limit.
@@ -2951,14 +2963,22 @@ void OuterStripMinedLoopNode::adjust_strip_mined_loop(PhaseIterGVN* igvn) {
   CountedLoopEndNode* inner_cle = inner_cl->loopexit();
 
   int stride = inner_cl->stride_con();
-  jlong scaled_iters_long = ((jlong)LoopStripMiningIter) * ABS(stride);
+  // For a min int stride, LoopStripMiningIter * stride overflows the int range for all values of LoopStripMiningIter
+  // except 0 or 1. Those values are handled early on in this method and causes the method to return. So for a min int
+  // stride, the method is guaranteed to return at the next check below.
+  jlong scaled_iters_long = ((jlong)LoopStripMiningIter) * ABS((jlong)stride);
   int scaled_iters = (int)scaled_iters_long;
-  int short_scaled_iters = LoopStripMiningIterShortLoop* ABS(stride);
+  if ((jlong)scaled_iters != scaled_iters_long) {
+    // Remove outer loop and safepoint (too few iterations)
+    remove_outer_loop_and_safepoint(igvn);
+    return;
+  }
+  jlong short_scaled_iters = LoopStripMiningIterShortLoop * ABS(stride);
   const TypeInt* inner_iv_t = igvn->type(inner_iv_phi)->is_int();
   jlong iter_estimate = (jlong)inner_iv_t->_hi - (jlong)inner_iv_t->_lo;
   assert(iter_estimate > 0, "broken");
-  if ((jlong)scaled_iters != scaled_iters_long || iter_estimate <= short_scaled_iters) {
-    // Remove outer loop and safepoint (too few iterations)
+  if (iter_estimate <= short_scaled_iters) {
+    // Remove outer loop and safepoint: loop executes less than LoopStripMiningIterShortLoop
     remove_outer_loop_and_safepoint(igvn);
     return;
   }
@@ -4300,7 +4320,7 @@ void PhaseIdealLoop::mark_loop_associated_parse_predicates_useful() {
 }
 
 void PhaseIdealLoop::mark_useful_parse_predicates_for_loop(IdealLoopTree* loop) {
-  Node* entry = loop->_head->in(LoopNode::EntryControl);
+  Node* entry = loop->_head->as_Loop()->skip_strip_mined()->in(LoopNode::EntryControl);
   const Predicates predicates(entry);
   ParsePredicateIterator iterator(predicates);
   while (iterator.has_next()) {
@@ -4339,7 +4359,7 @@ void PhaseIdealLoop::collect_useful_template_assertion_predicates(Unique_Node_Li
 
 void PhaseIdealLoop::collect_useful_template_assertion_predicates_for_loop(IdealLoopTree* loop,
                                                                            Unique_Node_List &useful_predicates) {
-  Node* entry = loop->_head->in(LoopNode::EntryControl);
+  Node* entry = loop->_head->as_Loop()->skip_strip_mined()->in(LoopNode::EntryControl);
   const Predicates predicates(entry);
   if (UseProfiledLoopPredicate) {
     const PredicateBlock* profiled_loop_predicate_block = predicates.profiled_loop_predicate_block();

@@ -167,10 +167,6 @@ void MutableSpace::mangle_unused_area() {
   mangler()->mangle_unused_area();
 }
 
-void MutableSpace::mangle_unused_area_complete() {
-  mangler()->mangle_unused_area_complete();
-}
-
 void MutableSpace::mangle_region(MemRegion mr) {
   SpaceMangler::mangle_region(mr);
 }
@@ -268,10 +264,8 @@ void MutableSpace::print_on(outputStream* st) const {
 void MutableSpace::verify() {
   HeapWord* p = bottom();
   HeapWord* t = top();
-  HeapWord* prev_p = nullptr;
   while (p < t) {
     oopDesc::verify(cast_to_oop(p));
-    prev_p = p;
     p += cast_to_oop(p)->size();
   }
   guarantee(p == top(), "end of last object must match end of space");
