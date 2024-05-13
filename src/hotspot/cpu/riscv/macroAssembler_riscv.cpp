@@ -855,8 +855,8 @@ void MacroAssembler::jump_link(const address dest, Register temp) {
   } else {
     assert(temp != noreg && temp != x0, "expecting a register");
     int32_t offset = 0;
-    movptr(temp, dest, offset);
-    Assembler::jalr(x1, temp, offset);
+    la(temp, dest, offset);
+    jalr(temp, offset);
   }
 }
 
@@ -871,7 +871,7 @@ void MacroAssembler::jump_link(const Address &adr, Register temp) {
     case Address::base_plus_offset: {
       int32_t offset = ((int32_t)adr.offset() << 20) >> 20;
       la(temp, Address(adr.base(), adr.offset() - offset));
-      Assembler::jalr(x1, temp, offset);
+      jalr(temp, offset);
       break;
     }
     default:
@@ -935,7 +935,7 @@ void MacroAssembler::call(const address dest, Register temp) {
   assert(temp != noreg, "expecting a register");
   int32_t offset = 0;
   la(temp, dest, offset);
-  Assembler::jalr(x1, temp, offset);
+  jalr(temp, offset);
 }
 
 void MacroAssembler::jalr(Register Rs, int32_t offset) {
@@ -951,8 +951,8 @@ void MacroAssembler::rt_call(address dest, Register tmp) {
   } else {
     relocate(target.rspec(), [&] {
       int32_t offset;
-      movptr(tmp, target.target(), offset);
-      Assembler::jalr(x1, tmp, offset);
+      la(tmp, target.target(), offset);
+      jalr(tmp, offset);
     });
   }
 }
