@@ -11,9 +11,7 @@ public record StableArray2DImpl<V>(
         @Stable int dim0,
         @Stable int dim1,
         @Stable V[] elements,
-        @Stable int[] states,
-        Object[] mutexes,
-        boolean[] supplyings
+        AuxiliaryArrays aux
 ) implements StableArray2D<V> {
 
     private StableArray2DImpl(int dim0, int dim1) {
@@ -23,7 +21,7 @@ public record StableArray2DImpl<V>(
     // Todo: Remove when "statements before super" is a final feature
     @SuppressWarnings("unchecked")
     private StableArray2DImpl(int dim0, int dim1, int length) {
-        this(dim0, dim1, (V[]) new Object[length], new int[length], new Object[length], new boolean[length]);
+        this(dim0, dim1, (V[]) new Object[length], AuxiliaryArrays.create(length));
     }
 
     @Override
@@ -31,7 +29,7 @@ public record StableArray2DImpl<V>(
         Objects.checkIndex(i0, dim0);
         Objects.checkIndex(i1, dim1);
         final int index = i0 * dim0 + i1;
-        return new StableValueElement<>(elements, states, mutexes, supplyings, index);
+        return new StableValueElement<>(elements, aux, index);
     }
 
     @Override

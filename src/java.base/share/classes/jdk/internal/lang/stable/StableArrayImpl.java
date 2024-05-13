@@ -8,20 +8,18 @@ import java.util.Objects;
 
 public record StableArrayImpl<V>(
         @Stable V[] elements,
-        @Stable int[] states,
-        Object[] mutexes,
-        boolean[] supplyings
+        AuxiliaryArrays aux
 ) implements StableArray<V> {
 
     @SuppressWarnings("unchecked")
     private StableArrayImpl(int length) {
-        this((V[]) new Object[length], new int[length], new Object[length], new boolean[length]);
+        this((V[]) new Object[length], AuxiliaryArrays.create(length));
     }
 
     @Override
     public StableValue<V> get(int firstIndex) {
         Objects.checkIndex(firstIndex, elements.length);
-        return new StableValueElement<>(elements, states, mutexes, supplyings, firstIndex);
+        return new StableValueElement<>(elements, aux, firstIndex);
     }
 
     @Override

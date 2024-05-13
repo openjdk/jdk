@@ -253,11 +253,17 @@ static bool trust_final_non_static_fields(ciInstanceKlass* holder) {
   return TrustFinalNonStaticFields;
 }
 
-// Todo: Change to 'java/lang/StableValue' once StableValue becomes a public API
+// Todo: Change to 'java/lang/StableValue' etc. once StableValue becomes a public API
 const char* stable_value_klass_name = "jdk/internal/lang/StableValue";
+const char* stable_array_klass_name = "jdk/internal/lang/StableArray";
+const char* stable_array2d_klass_name = "jdk/internal/lang/StableArray2D";
+const char* stable_array3d_klass_name = "jdk/internal/lang/StableArray3D";
 
 static bool trust_final_non_static_fields_of_type(Symbol* signature) {
-  if (signature->equals(stable_value_klass_name) == 0) {
+  if (signature->equals(stable_value_klass_name) == 0 ||
+      signature->equals(stable_array_klass_name) == 0 ||
+      signature->equals(stable_array2d_klass_name) == 0 ||
+      signature->equals(stable_array3d_klass_name) == 0) {
     return true;
   }
   return false;

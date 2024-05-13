@@ -42,6 +42,7 @@ import java.util.function.UnaryOperator;
 import jdk.internal.access.JavaUtilCollectionAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.lang.StableValue;
+import jdk.internal.lang.stable.AuxiliaryArrays;
 import jdk.internal.lang.stable.StableValueElement;
 import jdk.internal.misc.CDS;
 import jdk.internal.util.ImmutableBitSetPredicate;
@@ -1453,24 +1454,20 @@ class ImmutableCollections {
         @Stable
         private final V[] elements;
         @Stable
-        private final int[] states;
-        private final Object[] mutexes;
-        private final boolean[] supplyings;
+        private final AuxiliaryArrays aux;
 
         @SuppressWarnings("unchecked")
         private StableList(int size) {
             assert size > 0;
             this.elements = (V[]) new Object[size];
             this.size = size;
-            this.states = new int[size];
-            this.mutexes = new Object[size];
-            this.supplyings = new boolean[size];
+            this.aux = AuxiliaryArrays.create(size);
         }
 
         @Override
         public StableValue<V> get(int index) {
             Objects.checkIndex(index, size);
-            return new StableValueElement<>(elements, states, mutexes, supplyings, index);
+            return new StableValueElement<>(elements, aux, index);
         }
 
         @Override
@@ -1503,7 +1500,7 @@ class ImmutableCollections {
         }
 
         V computeIfUnset(int index, IntFunction<? extends V> mapper) {
-            StableValueElement<V> element = new StableValueElement<>(elements, states, mutexes, supplyings, index);
+            StableValueElement<V> element = new StableValueElement<>(elements, aux, index);
             return element.computeIfUnset(index, mapper);
         }
 
@@ -1530,9 +1527,7 @@ class ImmutableCollections {
         @Stable
         private final V[] values;
         @Stable
-        private final int[] states;
-        private final Object[] mutexes;
-        private final boolean[] supplyings;
+        private final AuxiliaryArrays aux;
 
         // keys array not trusted
         @SuppressWarnings("unchecked")
@@ -1559,9 +1554,7 @@ class ImmutableCollections {
             }
             this.keys = keys;
             this.values = (V[]) new Object[len];
-            this.states = new int[len];
-            this.mutexes = new Object[len];
-            this.supplyings = new boolean[len];
+            this.aux = AuxiliaryArrays.create(len);
         }
 
         // returns index at which the probe key is present; or if absent,
@@ -1588,7 +1581,7 @@ class ImmutableCollections {
         }
 
         private StableValue<V> value(int keyIndex) {
-            return new StableValueElement<>(values, states, mutexes, supplyings, keyIndex);
+            return new StableValueElement<>(values, aux, keyIndex);
         }
 
         @Override
@@ -1711,16 +1704,13 @@ class ImmutableCollections {
         @Stable
         private final V[] elements;
         @Stable
-        private final int[] states;
-        @Stable
         private final Class<K> enumType;
         @Stable
         private final int min;
         @Stable
         private final IntPredicate isPresent;
-
-        private final Object[] mutexes;
-        private final boolean[] supplyings;
+        @Stable
+        private final AuxiliaryArrays aux;
 
         @SuppressWarnings("unchecked")
         private StableEnumMap(Object[] keys) {
@@ -1750,10 +1740,8 @@ class ImmutableCollections {
 
             this.elements = (V[]) new Object[elementCount];
             this.size = keys.length;
-            this.states = new int[elementCount];
-            this.mutexes = new Object[elementCount];
-            this.supplyings = new boolean[elementCount];
             this.enumType = (Class<K>) keys[0].getClass();
+            this.aux = AuxiliaryArrays.create(elementCount);
         }
 
         @Override
@@ -1783,7 +1771,7 @@ class ImmutableCollections {
         }
 
         private StableValue<V> value(int index) {
-            return new StableValueElement<>(elements, states, mutexes, supplyings, index);
+            return new StableValueElement<>(elements, aux, index);
         }
 
         private K key(int arrayIndex) {

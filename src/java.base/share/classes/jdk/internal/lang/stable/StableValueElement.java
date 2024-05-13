@@ -14,9 +14,7 @@ import static jdk.internal.lang.stable.StableUtil.*;
 // Records are ~10% faster than @ValueBased in JDK 23
 public record StableValueElement<V>(
         @Stable V[] elements,
-        @Stable int[] states,
-        @Stable Object[] mutexes,
-        boolean[] supplyings, // Todo: make this array more dense
+        AuxiliaryArrays aux,
         int index
 ) implements StableValue<V> {
 
@@ -24,14 +22,14 @@ public record StableValueElement<V>(
     @Override
     public boolean isSet() {
         int s;
-        return (s = states[index]) == NON_NULL || s == NULL ||
-                (s = stateVolatile()) == NON_NULL || s == NULL;
+        return (s = aux.states()[index]) == NON_NULL || s == NULL ||
+                (s = aux.stateVolatile(index)) == NON_NULL || s == NULL;
     }
 
     @ForceInline
     @Override
     public boolean isError() {
-        return states[index] == ERROR || stateVolatile() == ERROR;
+        return aux.states()[index] == ERROR || aux.stateVolatile(index) == ERROR;
     }
 
     @ForceInline
@@ -45,7 +43,7 @@ public record StableValueElement<V>(
             // plain semantics, we know a value is set.
             return e;
         }
-        if (states[index] == NULL) {
+        if (aux.states()[index] == NULL) {
             // If we happen to see a status value of NULL under
             // plain semantics, we know a value is set to `null`.
             return null;
@@ -58,7 +56,7 @@ public record StableValueElement<V>(
     private V orThrowVolatile() {
         // This is intentionally an old switch statement as it generates
         // more compact byte code.
-        switch (stateVolatile()) {
+        switch (aux.stateVolatile(index)) {
             case UNSET:    { throw StableUtil.notSet(); }
             case NON_NULL: { return elementVolatile(); }
             case NULL:     { return null; }
@@ -72,7 +70,7 @@ public record StableValueElement<V>(
         if (isSet() || isError()) {
             return orThrow();
         }
-        final var m = acquireMutex();
+        final var m = aux.acquireMutex(index);
         if (m == TOMBSTONE) {
             return orThrow();
         }
@@ -83,7 +81,7 @@ public record StableValueElement<V>(
             if (isError()) {
                 throw StableUtil.error(this);
             }
-            setValue(value);
+            setElement(value);
             return value;
         }
     }
@@ -93,7 +91,7 @@ public record StableValueElement<V>(
         if (isSet() || isError()) {
             return false;
         }
-        final var m = acquireMutex();
+        final var m = aux.acquireMutex(index);
         if (m == TOMBSTONE) {
             return false;
         }
@@ -101,7 +99,7 @@ public record StableValueElement<V>(
             if (isSet() || isError()) {
                 return false;
             }
-            setValue(value);
+            setElement(value);
             return true;
         }
     }
@@ -136,7 +134,7 @@ public record StableValueElement<V>(
             // plain semantics, we know a value is set.
             return e;
         }
-        if (states[index] == NULL) {
+        if (aux.states()[index] == NULL) {
             return null;
         }
         // Now, fall back to volatile semantics.
@@ -147,7 +145,7 @@ public record StableValueElement<V>(
     private <K> V computeIfUnsetVolatile(Object provider, K key) {
         // This is intentionally an old switch statement as it generates
         // more compact byte code.
-        switch (stateVolatile()) {
+        switch (aux.stateVolatile(index)) {
             case UNSET:    { return computeIfUnsetVolatile0(provider, key); }
             case NON_NULL: { return elementVolatile(); }
             case NULL:     { return null; }
@@ -157,21 +155,21 @@ public record StableValueElement<V>(
     }
 
     private <K> V computeIfUnsetVolatile0(Object provider, K key) {
-        final var m = acquireMutex();
+        final var m = aux.acquireMutex(index);
         if (m == TOMBSTONE) {
             return orThrow();
         }
         synchronized (m) {
-            if (states[index] != UNSET) {
+            if (aux.states()[index] != UNSET) {
                 return orThrow();
             }
 
             // A value is not set
-            if (supplying()) {
+            if (aux.supplying(index)) {
                 throw stackOverflow(provider, key);
             }
             try {
-                supplying(true);
+                aux.supplying(index,true);
                 try {
                     @SuppressWarnings("unchecked")
                     V newValue = switch (provider) {
@@ -180,15 +178,15 @@ public record StableValueElement<V>(
                         case Function<?, ?> func -> ((Function<K, V>) func).apply(key);
                         default                  -> throw shouldNotReachHere();
                     };
-                    setValue(newValue);
+                    setElement(newValue);
                     return newValue;
                 } catch (Throwable t) {
-                    putState(ERROR);
-                    putMutexTombstone();
+                    aux.putState(index, ERROR);
+                    aux.putMutexTombstone(index);
                     throw t;
                 }
             } finally {
-                supplying(false);
+                aux.supplying(index, false);
             }
         }
     }
@@ -198,56 +196,15 @@ public record StableValueElement<V>(
         return (V) UNSAFE.getReferenceVolatile(elements, objectOffset(index));
     }
 
-    private void setValue(V value) {
+    private void setElement(V value) {
         if (value != null) {
-            putValue(value);
+            // Make sure no reordering of store operations
+            freeze();
+            UNSAFE.putReferenceVolatile(elements, objectOffset(index), value);
         }
         // Crucially, indicate a value is set _after_ it has actually been set.
-        putState(value == null ? NULL : NON_NULL);
-        putMutexTombstone(); // We do not need a mutex anymore
-    }
-
-    private void putValue(V created) {
-        // Make sure no reordering of store operations
-        freeze();
-        UNSAFE.putReferenceVolatile(elements, objectOffset(index), created);
-    }
-
-    private byte stateVolatile() {
-        return UNSAFE.getByteVolatile(states, StableUtil.intOffset(index));
-    }
-
-    private boolean supplying() {
-        return supplyings[index];
-    }
-
-    private void supplying(boolean supplying) {
-        supplyings[index] = supplying;
-    }
-
-    private void putState(int newValue) {
-        // This prevents `this.element[index]` to be seen
-        // before `this.status[index]` is seen
-        freeze();
-        UNSAFE.putIntVolatile(states, StableUtil.intOffset(index), newValue);
-    }
-
-    private Object acquireMutex() {
-        Object mutex = UNSAFE.getReferenceVolatile(mutexes, StableUtil.objectOffset(index));
-        if (mutex == null) {
-            mutex = caeMutex();
-        }
-        return mutex;
-    }
-
-    private Object caeMutex() {
-        final var created = new Object();
-        final var witness = UNSAFE.compareAndExchangeReference(mutexes, objectOffset(index), null, created);
-        return witness == null ? created : witness;
-    }
-
-    private void putMutexTombstone() {
-        UNSAFE.putReferenceVolatile(mutexes, objectOffset(index), TOMBSTONE);
+        aux.putState(index, value == null ? NULL : NON_NULL);
+        aux.putMutexTombstone(index); // We do not need a mutex anymore
     }
 
 }

@@ -11,9 +11,7 @@ public record StableArray3DImpl<V>(
         @Stable int dim1,
         @Stable int dim2,
         @Stable V[] elements,
-        @Stable int[] states,
-        Object[] mutexes,
-        boolean[] supplyings
+        AuxiliaryArrays aux
 ) implements StableArray3D<V> {
 
     private StableArray3DImpl(int dim0, int dim1, int dim2) {
@@ -23,7 +21,7 @@ public record StableArray3DImpl<V>(
     // Todo: Remove when "statements before super" is a final feature
     @SuppressWarnings("unchecked")
     private StableArray3DImpl(int dim0, int dim1, int dim2, int length) {
-        this(dim0, dim1, dim2, (V[]) new Object[length], new int[length], new Object[length], new boolean[length]);
+        this(dim0, dim1, dim2, (V[]) new Object[length], AuxiliaryArrays.create(length));
     }
 
     @Override
@@ -32,7 +30,7 @@ public record StableArray3DImpl<V>(
         Objects.checkIndex(i1, dim1);
         Objects.checkIndex(i2, dim2);
         final int index = i0 * dim1 * dim2 + i1 * dim2 + i2;
-        return new StableValueElement<>(elements, states, mutexes, supplyings, index);
+        return new StableValueElement<>(elements, aux, index);
     }
 
     @Override

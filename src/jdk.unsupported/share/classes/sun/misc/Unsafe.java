@@ -655,10 +655,7 @@ public final class Unsafe {
         if (declaringClass.isRecord()) {
             throw new UnsupportedOperationException("can't get field offset on a record class: " + f);
         }
-        // Todo: When StableValue is a public final feature: if (java.lang.Lazy.class.isAssignableFrom(f.getType()))
-        if (f.getType().getName().equals("jdk.internal.lang.StableValue")) {
-            throw new UnsupportedOperationException("can't get field offset for a field of type jdk.internal.lang.StableValue: " + f);
-        }
+        assertNotTrusted(f);
         return theInternalUnsafe.objectFieldOffset(f);
     }
 
@@ -698,6 +695,7 @@ public final class Unsafe {
         if (declaringClass.isRecord()) {
             throw new UnsupportedOperationException("can't get field offset on a record class: " + f);
         }
+        assertNotTrusted(f);
         return theInternalUnsafe.staticFieldOffset(f);
     }
 
@@ -729,7 +727,23 @@ public final class Unsafe {
         if (declaringClass.isRecord()) {
             throw new UnsupportedOperationException("can't get base address on a record class: " + f);
         }
+        assertNotTrusted(f);
         return theInternalUnsafe.staticFieldBase(f);
+    }
+
+    private static final Set<String> TRUSTED_CLASSES = Set.of(
+            "jdk.internal.lang.StableValue",
+            "jdk.internal.lang.StableArray",
+            "jdk.internal.lang.StableArray2",
+            "jdk.internal.lang.StableArray3");
+
+    private static void assertNotTrusted(Field f) {
+        // Todo: When StableValue is a public final feature: if (java.lang.Lazy.class.isAssignableFrom(f.getType()))
+        String typeName = f.getType().getName();
+        if (TRUSTED_CLASSES.contains(typeName)) {
+            throw new UnsupportedOperationException("can't get field offset for a field of type " + typeName + ": " + f);
+        }
+
     }
 
     /**
