@@ -67,6 +67,12 @@ public:
   }
 
   virtual void SetUp() {
+    // Only run test on supported Windows versions
+    if (!ZSyscall::is_supported()) {
+      GTEST_SKIP() << "Requires Windows version 1803 or later";
+      return;
+    }
+
     ZSyscall::initialize();
     ZGlobalsPointers::initialize();
 
@@ -78,8 +84,7 @@ public:
 
     // Reserve address space for the test
     if (!reserve_for_test()) {
-      // Failed to reserve address space
-      GTEST_SKIP();
+      GTEST_SKIP() << "Failed to reserve address space";
       return;
     }
 
@@ -87,6 +92,11 @@ public:
   }
 
   virtual void TearDown() {
+    if (!ZSyscall::is_supported()) {
+      // Test skipped, nothing to cleanup
+      return;
+    }
+
     if (_initialized) {
       _vmm->pd_unreserve(ZOffset::address_unsafe(zoffset(0)), 0);
     }

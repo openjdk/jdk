@@ -418,7 +418,7 @@ void TenuredGeneration::update_counters() {
 }
 
 bool TenuredGeneration::promotion_attempt_is_safe(size_t max_promotion_in_bytes) const {
-  size_t available = max_contiguous_available();
+  size_t available = contiguous_available();
   size_t av_promo  = (size_t)_avg_promoted->padded_average();
   bool   res = (available >= av_promo) || (available >= max_promotion_in_bytes);
 
@@ -480,7 +480,7 @@ HeapWord*
 TenuredGeneration::expand_and_allocate(size_t word_size, bool is_tlab) {
   assert(!is_tlab, "TenuredGeneration does not support TLAB allocation");
   expand(word_size*HeapWordSize, _min_heap_delta_bytes);
-  return _the_space->allocate(word_size);
+  return allocate(word_size, is_tlab);
 }
 
 size_t TenuredGeneration::contiguous_available() const {

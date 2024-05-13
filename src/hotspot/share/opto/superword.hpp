@@ -400,8 +400,10 @@ class SuperWord : public ResourceObj {
   PairSet _pairset;
   PackSet _packset;
 
-  // Memory reference for which we align the main-loop, by adjusting the pre-loop limit.
+  // Memory reference, and the alignment width (aw) for which we align the main-loop,
+  // by adjusting the pre-loop limit.
   MemNode const* _mem_ref_for_main_loop_alignment;
+  int _aw_for_main_loop_alignment;
 
  public:
   SuperWord(const VLoopAnalyzer &vloop_analyzer);
@@ -634,6 +636,7 @@ private:
   static LoadNode::ControlDependency control_dependency(Node_List* p);
 
   // Ensure that the main loop vectors are aligned by adjusting the pre loop limit.
+  void determine_mem_ref_and_aw_for_main_loop_alignment();
   void adjust_pre_loop_limit_to_align_main_loop_vectors();
 };
 

@@ -35,9 +35,6 @@
 #include "runtime/mutexLocker.hpp"
 #include "utilities/align.hpp"
 #include "utilities/macros.hpp"
-#if INCLUDE_SERIALGC
-#include "gc/serial/serialBlockOffsetTable.hpp"
-#endif
 
 // A space is an abstraction for the "storage units" backing
 // up the generation abstraction. It includes specific
@@ -45,11 +42,6 @@
 // for iterating over objects and free blocks, etc.
 
 // Forward decls.
-class ContiguousSpace;
-class Generation;
-class ContiguousSpace;
-class CardTableRS;
-class DirtyCardToOopClosure;
 class GenSpaceMangler;
 
 // A space in which the free area is contiguous.  It therefore supports
@@ -81,8 +73,11 @@ public:
   // Accessors
   HeapWord* bottom() const         { return _bottom; }
   HeapWord* end() const            { return _end;    }
+  HeapWord* top() const            { return _top;    }
+
   void set_bottom(HeapWord* value) { _bottom = value; }
   void set_end(HeapWord* value)    { _end = value; }
+  void set_top(HeapWord* value)    { _top = value; }
 
   // Testers
   bool is_empty() const              { return used() == 0; }
@@ -120,10 +115,6 @@ public:
   // had allocation performed in it, but is now to be considered empty.
   void clear(bool mangle_space);
 
-  // Accessors
-  HeapWord* top() const            { return _top;    }
-  void set_top(HeapWord* value)    { _top = value; }
-
   // Used to save the space's current top for later use during mangling.
   void set_top_for_allocations() PRODUCT_RETURN;
 
@@ -147,9 +138,9 @@ public:
 
   // Allocation (return null if full).  Assumes the caller has established
   // mutually exclusive access to the space.
-  virtual HeapWord* allocate(size_t word_size);
+  HeapWord* allocate(size_t word_size);
   // Allocation (return null if full).  Enforces mutual exclusion internally.
-  virtual HeapWord* par_allocate(size_t word_size);
+  HeapWord* par_allocate(size_t word_size);
 
   // Iteration
   void object_iterate(ObjectClosure* blk);

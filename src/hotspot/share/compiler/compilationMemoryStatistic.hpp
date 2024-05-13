@@ -50,6 +50,7 @@ class ArenaStatCounter : public CHeapObj<mtCompiler> {
   // MemLimit handling
   size_t _limit;
   bool _hit_limit;
+  bool _limit_in_process;
 
   // Peak composition:
   // Size of node arena when total peaked (c2 only)
@@ -86,6 +87,9 @@ public:
 
   size_t limit() const              { return _limit; }
   bool   hit_limit() const          { return _hit_limit; }
+  bool   limit_in_process() const     { return _limit_in_process; }
+  void   set_limit_in_process(bool v) { _limit_in_process = v; }
+
 };
 
 class CompilationMemoryStatistic : public AllStatic {
