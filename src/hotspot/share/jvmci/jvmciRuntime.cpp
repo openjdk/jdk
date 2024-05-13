@@ -128,6 +128,7 @@ JRT_BLOCK_ENTRY(void, JVMCIRuntime::new_instance_or_null(JavaThread* current, Kl
     if (!h->is_initialized()) {
       // Cannot re-execute class initialization without side effects
       // so return without attempting the initialization
+      current->set_vm_result(nullptr);
       return;
     }
     // allocate instance and return via TLS
@@ -201,6 +202,7 @@ JRT_ENTRY(void, JVMCIRuntime::dynamic_new_instance_or_null(JavaThread* current, 
   if (!klass->is_initialized()) {
     // Cannot re-execute class initialization without side effects
     // so return without attempting the initialization
+    current->set_vm_result(nullptr);
     return;
   }
 

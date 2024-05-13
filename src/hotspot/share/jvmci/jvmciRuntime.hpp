@@ -506,9 +506,9 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
 
   // The following routines are called from compiled JVMCI code
 
-  // When allocation fails, these stubs return null and have no pending exception. Compiled code
-  // can use these stubs if a failed allocation will be retried (e.g., by deoptimizing and
-  // re-executing in the interpreter).
+  // When allocation fails, these stubs return null and have no pending OutOfMemoryError exception. 
+  // Compiled code can use these stubs if a failed allocation will be retried (e.g., by deoptimizing 
+  // and re-executing in the interpreter).
   static void new_instance_or_null(JavaThread* thread, Klass* klass);
   static void new_array_or_null(JavaThread* thread, Klass* klass, jint length);
   static void new_multi_array_or_null(JavaThread* thread, Klass* klass, int rank, jint* dims);
