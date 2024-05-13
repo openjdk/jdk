@@ -52,8 +52,8 @@ public class BlockDeviceSize {
                     throw new RuntimeException("size differs when retrieved" +
                             " in different ways: " + size1 + " != " + size2);
                 }
-                if (size1 == 0) {
-                    throw new RuntimeException("size() for a block device size returns zero");
+                if (size1 <= 0) {
+                    throw new RuntimeException("size() for a block device size returns zero or a negative value");
                 }
                 System.out.println("OK");
 
