@@ -40,7 +40,9 @@ static const char* partition_name(ShenandoahFreeSetPartitionId t) {
     case ShenandoahFreeSetPartitionId::NotFree: return "NotFree";
     case ShenandoahFreeSetPartitionId::Mutator: return "Mutator";
     case ShenandoahFreeSetPartitionId::Collector: return "Collector";
-    default: return "Unrecognized";
+    default:
+      ShouldNotReachHere();
+      return "Unrecognized";
   }
 }
 
@@ -57,11 +59,7 @@ void ShenandoahRegionPartitions::dump_bitmap_all() const {
                _leftmosts_empty[int(ShenandoahFreeSetPartitionId::Collector)],
                _rightmosts_empty[int(ShenandoahFreeSetPartitionId::Collector)]);
 
-#ifdef _LP64
   log_info(gc)("%6s: %18s %18s %18s", "index", "Mutator Bits", "Collector Bits", "NotFree Bits");
-#else
-  log_info(gc)("%6s: %10s %10s %10s", "index", "Mutator Bits", "Collector Bits", "NotFree Bits");
-#endif
   dump_bitmap_range(0, _max-1);
 }
 
@@ -97,9 +95,6 @@ ShenandoahRegionPartitions::ShenandoahRegionPartitions(size_t max_regions, Shena
   make_all_regions_unavailable();
 }
 
-ShenandoahRegionPartitions::~ShenandoahRegionPartitions() {
-}
-
 inline bool ShenandoahFreeSet::can_allocate_from(ShenandoahHeapRegion *r) const {
   return r->is_empty() || (r->is_trash() && !_heap->is_concurrent_weak_root_in_progress());
 }
@@ -133,7 +128,9 @@ inline idx_t ShenandoahRegionPartitions::leftmost(ShenandoahFreeSetPartitionId w
   if (idx >= _max) {
     return _max;
   } else {
-    // _membership[which_partition].is_set(idx) may not be true if we are shrinking the interval
+    // Cannot assert that membership[which_partition.is_set(idx) because this helper method may be used
+    // to query the original value of leftmost when leftmost must be adjusted because the interval representing
+    // which_partition is shrinking after the region that used to be leftmost is retired.
     return idx;
   }
 }
@@ -141,7 +138,9 @@ inline idx_t ShenandoahRegionPartitions::leftmost(ShenandoahFreeSetPartitionId w
 inline idx_t ShenandoahRegionPartitions::rightmost(ShenandoahFreeSetPartitionId which_partition) const {
   assert (which_partition < NumPartitions, "selected free partition must be valid");
   idx_t idx = _rightmosts[int(which_partition)];
-  // _membership[which_partition].is_set(idx) may not be true if we are shrinking the interval
+  // Cannot assert that membership[which_partition.is_set(idx) because this helper method may be used
+  // to query the original value of leftmost when leftmost must be adjusted because the interval representing
+  // which_partition is shrinking after the region that used to be leftmost is retired.
   return idx;
 }
 
@@ -330,8 +329,7 @@ void ShenandoahRegionPartitions::move_from_partition_to_partition(idx_t idx, She
 }
 
 const char* ShenandoahRegionPartitions::partition_membership_name(idx_t idx) const {
-  ShenandoahFreeSetPartitionId result = membership(idx);
-  return partition_name(result);
+  return partition_name(membership(idx));
 }
 
 inline ShenandoahFreeSetPartitionId ShenandoahRegionPartitions::membership(idx_t idx) const {

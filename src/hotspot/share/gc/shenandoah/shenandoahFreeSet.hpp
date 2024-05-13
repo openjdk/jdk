@@ -94,7 +94,7 @@ private:
 
 public:
   ShenandoahRegionPartitions(size_t max_regions, ShenandoahFreeSet* free_set);
-  ~ShenandoahRegionPartitions();
+  ~ShenandoahRegionPartitions() {}
 
   // Remove all regions from all partitions and reset all bounds
   void make_all_regions_unavailable();
