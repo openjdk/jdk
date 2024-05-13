@@ -277,23 +277,23 @@ public:
   }
 
   TreapNode* closest_leq(const K& key) {
-    TreapNode* leqA_n = nullptr;
-    TreapNode* head = _root;
-    while (head != nullptr) {
-      int cmp_r = COMPARATOR::cmp(head->key(), key);
+    TreapNode* candidate = nullptr;
+    TreapNode* pos = _root;
+    while (pos != nullptr) {
+      int cmp_r = COMPARATOR::cmp(pos->key(), key);
       if (cmp_r == 0) { // Exact match
-        leqA_n = head;
+        candidate = pos;
         break; // Can't become better than that.
       }
       if (cmp_r < 0) {
         // Found a match, try to find a better one.
-        leqA_n = head;
-        head = head->_right;
+        candidate = pos;
+        pos = pos->_right;
       } else if (cmp_r > 0) {
-        head = head->_left;
+        pos = pos->_left;
       }
     }
-    return leqA_n;
+    return candidate;
   }
 
   // Visit all TreapNodes in ascending key order.
