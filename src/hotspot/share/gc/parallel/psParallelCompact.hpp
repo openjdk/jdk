@@ -660,24 +660,23 @@ inline void ParMarkBitMapClosure::decrement_words_remaining(size_t words) {
 // does parts of the collection using parallel threads.  The collection includes
 // the tenured generation and the young generation.
 //
-// There are four phases of the collection.
+// A collection consists of the following phases.
 //
 //      - marking phase
-//      - summary phase
+//      - summary phase (single-threaded)
+//      - forward (to new address) phase
+//      - adjust pointers phase
 //      - compacting phase
 //      - clean up phase
 //
 // Roughly speaking these phases correspond, respectively, to
+//
 //      - mark all the live objects
+//      - calculating destination-region for each region for better parallellism in following phases
 //      - calculate the destination of each object at the end of the collection
+//      - adjust pointers to reflect new destination of objects
 //      - move the objects to their destination
 //      - update some references and reinitialize some variables
-//
-// These three phases are invoked in PSParallelCompact::invoke_no_policy().  The
-// marking phase is implemented in PSParallelCompact::marking_phase() and does a
-// complete marking of the heap.  The summary phase is implemented in
-// PSParallelCompact::summary_phase().  The move and update phase is implemented
-// in PSParallelCompact::compact().
 //
 // A space that is being collected is divided into regions and with each region
 // is associated an object of type ParallelCompactData.  Each region is of a
@@ -714,17 +713,12 @@ inline void ParMarkBitMapClosure::decrement_words_remaining(size_t words) {
 // dense prefix do need to have their object references updated.  See method
 // summarize_dense_prefix().
 //
-// The summary phase is done using 1 GC thread.
+// The forward (to new address) phase calculates the new address of each
+// objects and records old-addr-to-new-addr asssociation.
 //
-// The compaction phase moves objects to their new location and updates all
-// references in the object.
+// The adjust pointers phase remap all pointers to reflect the new address of each object.
 //
-// A current exception is that objects that cross a region boundary are moved
-// but do not have their references updated.  References are not updated because
-// it cannot easily be determined if the klass pointer KKK for the object AAA
-// has been updated.  KKK likely resides in a region to the left of the region
-// containing AAA.  These AAA's have their references updated at the end in a
-// clean up phase.  See the method PSParallelCompact::update_deferred_object().
+// The compaction phase moves objects to their new location.
 //
 // Compaction is done on a region basis.  A region that is ready to be filled is
 // put on a ready list and GC threads take region off the list and fill them.  A
