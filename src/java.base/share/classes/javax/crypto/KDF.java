@@ -154,7 +154,7 @@ public final class KDF {
     }
 
     /**
-     * Returns a {@code KDF} object that implements the specified algorithm..
+     * Returns a {@code KDF} object that implements the specified algorithm.
      *
      * @param algorithm
      *     the key derivation algorithm to use

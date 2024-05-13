@@ -39,13 +39,14 @@ import java.util.List;
  *
  * @since 23
  */
-@PreviewFeature(feature=PreviewFeature.Feature.KEY_DERIVATION)
+@PreviewFeature(feature = PreviewFeature.Feature.KEY_DERIVATION)
 public interface HKDFParameterSpec extends KDFParameterSpec {
 
     /**
      * This builder helps with the mutation required by the {@code Extract}
      * scenario.
      */
+    @PreviewFeature(feature = PreviewFeature.Feature.KEY_DERIVATION)
     final class Builder {
 
         Extract extract = null;
@@ -105,10 +106,10 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
         }
 
         /**
-         * {@code addIKM} may be called when the initial key material value is to be assembled
-         * piece-meal or if part of the IKM is to be supplied by a hardware
-         * crypto device. This method appends to the existing list of values or
-         * creates a new list if there are none yet.
+         * {@code addIKM} may be called when the initial key material value is
+         * to be assembled piece-meal or if part of the IKM is to be supplied by
+         * a hardware crypto device. This method appends to the existing list of
+         * values or creates a new list if there are none yet.
          * <p>
          * This supports the use-case where a label can be applied to the IKM
          * but the actual value of the IKM is not yet available.
@@ -116,9 +117,10 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
          * @param ikm
          *     the initial key material value
          *
-         * @throws NullPointerException if the {@code ikm} is null
-         *
          * @return this builder
+         *
+         * @throws NullPointerException
+         *     if the {@code ikm} is null
          */
         public Builder addIKM(SecretKey ikm) {
             if (ikm != null) {
@@ -130,10 +132,10 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
         }
 
         /**
-         * {@code addIKM} may be called when the initial key material value is to be assembled
-         * piece-meal or if part of the IKM is to be supplied by a hardware
-         * crypto device. This method appends to the existing list of values or
-         * creates a new list if there are none yet.
+         * {@code addIKM} may be called when the initial key material value is
+         * to be assembled piece-meal or if part of the IKM is to be supplied by
+         * a hardware crypto device. This method appends to the existing list of
+         * values or creates a new list if there are none yet.
          * <p>
          * This supports the use-case where a label can be applied to the IKM
          * but the actual value of the IKM is not yet available.
@@ -141,9 +143,10 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
          * @param ikm
          *     the initial key material value
          *
-         * @throws NullPointerException if the {@code ikm} is null or empty
-         *
          * @return this builder
+         *
+         * @throws NullPointerException
+         *     if the {@code ikm} is null or empty
          */
         public Builder addIKM(byte[] ikm) {
             if (ikm != null && ikm.length != 0) {
@@ -165,9 +168,10 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
          * @param salt
          *     the salt value
          *
-         * @throws NullPointerException if the {@code salt} is null
-         *
          * @return this builder
+         *
+         * @throws NullPointerException
+         *     if the {@code salt} is null
          */
         public Builder addSalt(SecretKey salt) {
             if (salt != null) {
@@ -190,15 +194,17 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
          * @param salt
          *     the salt value
          *
-         * @throws NullPointerException if the {@code salt} is null or empty
-         *
          * @return this builder
+         *
+         * @throws NullPointerException
+         *     if the {@code salt} is null or empty
          */
         public Builder addSalt(byte[] salt) {
             if (salt != null && salt.length != 0) {
                 return addSalt(new SecretKeySpec(salt, "Generic"));
             } else {
-                throw new NullPointerException("salt must not be null or empty");
+                throw new NullPointerException(
+                    "salt must not be null or empty");
             }
         }
     }
@@ -228,16 +234,17 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
      * @param length
      *     the length of output keying material (must be > 0)
      *
-     * @throws NullPointerException if {@code prk} or {@code info} is {@code null}
-     *
      * @return a new {@code Expand} object
+     *
+     * @throws NullPointerException
+     *     if {@code prk} or {@code info} is {@code null}
      */
     static Expand expand(SecretKey prk, byte[] info, int length) {
-        if(prk == null) {
-           throw new NullPointerException("prk must not be null");
+        if (prk == null) {
+            throw new NullPointerException("prk must not be null");
         }
-        if(info == null) {
-           throw new NullPointerException("info must not be null");
+        if (info == null) {
+            throw new NullPointerException("info must not be null");
         }
         return new Expand(prk, info, length);
     }
@@ -257,15 +264,16 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
      * @param length
      *     the length of output keying material (must be > 0)
      *
-     * @throws NullPointerException if {@code ext} or {@code info} is {@code null}
-     *
      * @return a new {@code ExtractExpand} object
+     *
+     * @throws NullPointerException
+     *     if {@code ext} or {@code info} is {@code null}
      */
     static ExtractExpand extractExpand(Extract ext, byte[] info, int length) {
-        if(ext == null) {
+        if (ext == null) {
             throw new NullPointerException("ext must not be null");
         }
-        if(info == null) {
+        if (info == null) {
             throw new NullPointerException("info must not be null");
         }
         return new ExtractExpand(ext, info, length);
@@ -275,6 +283,7 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
      * Defines the input parameters of an Extract operation as defined in <a
      * href="http://tools.ietf.org/html/rfc5869">RFC 5869</a>.
      */
+    @PreviewFeature(feature = PreviewFeature.Feature.KEY_DERIVATION)
     final class Extract implements HKDFParameterSpec {
 
         // HKDF-Extract(salt, IKM) -> PRK
@@ -291,7 +300,8 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
         }
 
         /**
-         * Returns the unmodifiable {@code List} of initial key material values.
+         * Returns the unmodifiable {@code List} of initial key material
+         * values.
          *
          * @return the unmodifiable {@code List} of initial key material values
          */
@@ -314,6 +324,7 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
      * Defines the input parameters of an Expand operation as defined in <a
      * href="http://tools.ietf.org/html/rfc5869">RFC 5869</a>.
      */
+    @PreviewFeature(feature = PreviewFeature.Feature.KEY_DERIVATION)
     final class Expand implements HKDFParameterSpec {
 
         // HKDF-Expand(PRK, info, L) -> OKM
@@ -353,10 +364,11 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
         /**
          * Returns the optional context and application specific information.
          *
-         * @return the optional context and application specific information
+         * @return a copy of the optional context and application specific
+         *     information
          */
         public byte[] info() {
-            return (info == null)? null : info.clone();
+            return (info == null) ? null : info.clone();
         }
 
         /**
@@ -374,6 +386,7 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
      * Defines the input parameters of an ExtractExpand operation as defined in
      * <a href="http://tools.ietf.org/html/rfc5869">RFC 5869</a>.
      */
+    @PreviewFeature(feature = PreviewFeature.Feature.KEY_DERIVATION)
     final class ExtractExpand implements HKDFParameterSpec {
         private final Extract ext;
         private final Expand exp;
@@ -388,7 +401,8 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
          * @param ext
          *     a pre-generated {@code Extract}
          * @param info
-         *     the optional context and application specific information (may be {@code null})
+         *     the optional context and application specific information (may be
+         *     {@code null})
          * @param length
          *     the length of output keying material
          */
@@ -422,7 +436,8 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
         /**
          * Returns the optional context and application specific information.
          *
-         * @return the optional context and application specific information
+         * @return a copy of the optional context and application specific
+         *     information
          */
         public byte[] info() {
             return exp.info();
