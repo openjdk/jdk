@@ -120,11 +120,12 @@ void MutableSpace::initialize(MemRegion mr,
     }
 
     if (AlwaysPreTouch) {
+      size_t pretouch_page_size = UseLargePages ? page_size : os::vm_page_size();
       PretouchTask::pretouch("ParallelGC PreTouch head", (char*)head.start(), (char*)head.end(),
-                             page_size, pretouch_workers);
+                             pretouch_page_size, pretouch_workers);
 
       PretouchTask::pretouch("ParallelGC PreTouch tail", (char*)tail.start(), (char*)tail.end(),
-                             page_size, pretouch_workers);
+                             pretouch_page_size, pretouch_workers);
     }
 
     // Remember where we stopped so that we can continue later.
@@ -164,10 +165,6 @@ void MutableSpace::check_mangled_unused_area_complete() {
 // mangled.
 void MutableSpace::mangle_unused_area() {
   mangler()->mangle_unused_area();
-}
-
-void MutableSpace::mangle_unused_area_complete() {
-  mangler()->mangle_unused_area_complete();
 }
 
 void MutableSpace::mangle_region(MemRegion mr) {
@@ -267,10 +264,8 @@ void MutableSpace::print_on(outputStream* st) const {
 void MutableSpace::verify() {
   HeapWord* p = bottom();
   HeapWord* t = top();
-  HeapWord* prev_p = nullptr;
   while (p < t) {
     oopDesc::verify(cast_to_oop(p));
-    prev_p = p;
     p += cast_to_oop(p)->size();
   }
   guarantee(p == top(), "end of last object must match end of space");

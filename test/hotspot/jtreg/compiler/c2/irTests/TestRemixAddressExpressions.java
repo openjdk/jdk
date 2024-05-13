@@ -40,7 +40,7 @@ public class TestRemixAddressExpressions {
 
     @Test
     @IR(counts = { IRNode.ADD_I, "1", IRNode.LSHIFT_I, "2" })
-    @Arguments({Argument.RANDOM_EACH, Argument.RANDOM_EACH})
+    @Arguments(values = {Argument.RANDOM_EACH, Argument.RANDOM_EACH})
     public static float invPlusVarLshiftInt(int inv, int scale) {
         float res = 0;
         for (int i = 1; i < 100; i *= 11) {
@@ -51,7 +51,7 @@ public class TestRemixAddressExpressions {
 
     @Test
     @IR(counts = { IRNode.ADD_L, "1", IRNode.LSHIFT_L, "2" })
-    @Arguments({Argument.RANDOM_EACH, Argument.RANDOM_EACH})
+    @Arguments(values = {Argument.RANDOM_EACH, Argument.RANDOM_EACH})
     public static float invPlusVarLshiftLong(long inv, int scale) {
         float res = 0;
         for (long i = 1; i < 100; i *= 11) {
@@ -62,7 +62,7 @@ public class TestRemixAddressExpressions {
 
     @Test
     @IR(counts = { IRNode.ADD_I, "1", IRNode.SUB_I, "1", IRNode.LSHIFT_I, "2" })
-    @Arguments({Argument.RANDOM_EACH, Argument.RANDOM_EACH})
+    @Arguments(values = {Argument.RANDOM_EACH, Argument.RANDOM_EACH})
     public static float invMinusVarLshiftInt(int inv, int scale) {
         float res = 0;
         for (int i = 1; i < 100; i *= 11) {
@@ -73,7 +73,7 @@ public class TestRemixAddressExpressions {
 
     @Test
     @IR(counts = { IRNode.ADD_L, "1", IRNode.SUB_L, "1", IRNode.LSHIFT_L, "2" })
-    @Arguments({Argument.RANDOM_EACH, Argument.RANDOM_EACH})
+    @Arguments(values = {Argument.RANDOM_EACH, Argument.RANDOM_EACH})
     public static float invMinusVarLshiftLong(long inv, int scale) {
         float res = 0;
         for (long i = 1; i < 100; i *= 11) {
@@ -84,7 +84,7 @@ public class TestRemixAddressExpressions {
 
     @Test
     @IR(counts = { IRNode.ADD_I, "1", IRNode.SUB_I, "1", IRNode.LSHIFT_I, "2" })
-    @Arguments({Argument.RANDOM_EACH, Argument.RANDOM_EACH})
+    @Arguments(values = {Argument.RANDOM_EACH, Argument.RANDOM_EACH})
     public static float varMinusInvLshiftInt(int inv, int scale) {
         float res = 0;
         for (int i = 1; i < 100; i *= 11) {
@@ -95,7 +95,7 @@ public class TestRemixAddressExpressions {
 
     @Test
     @IR(counts = { IRNode.ADD_L, "1", IRNode.SUB_L, "1", IRNode.LSHIFT_L, "2" })
-    @Arguments({Argument.RANDOM_EACH, Argument.RANDOM_EACH})
+    @Arguments(values = {Argument.RANDOM_EACH, Argument.RANDOM_EACH})
     public static float varMinusInvLshiftLong(long inv, int scale) {
         float res = 0;
         for (long i = 1; i < 100; i *= 11) {

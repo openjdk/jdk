@@ -26,8 +26,6 @@
 package java.lang;
 
 import jdk.internal.misc.Unsafe;
-import jdk.internal.javac.PreviewFeature;
-import jdk.internal.util.FormatConcatItem;
 import jdk.internal.vm.annotation.ForceInline;
 
 import java.lang.invoke.MethodHandle;
@@ -124,20 +122,6 @@ final class StringConcatHelper {
         if (value.coder() == String.UTF16) {
             lengthCoder |= UTF16;
         }
-        return checkOverflow(lengthCoder);
-    }
-
-    /**
-     * Mix value length and coder into current length and coder.
-     * @param lengthCoder String length with coder packed into higher bits
-     *                    the upper word.
-     * @param value       value to mix in
-     * @return            new length and coder
-     * @since 21
-     */
-    @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
-    static long mix(long lengthCoder, FormatConcatItem value) {
-        lengthCoder = value.mix(lengthCoder);
         return checkOverflow(lengthCoder);
     }
 
@@ -345,48 +329,6 @@ final class StringConcatHelper {
     }
 
     /**
-     * Prepends the stringly representation of FormatConcatItem value into buffer,
-     * given the coder and final index. Index is measured in chars, not in bytes!
-     *
-     * @param indexCoder final char index in the buffer, along with coder packed
-     *                   into higher bits.
-     * @param buf        buffer to append to
-     * @param value      String value to encode
-     * @return           updated index (coder value retained)
-     * @since 21
-     */
-    @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
-    static long prepend(long indexCoder, byte[] buf, FormatConcatItem value) {
-        try {
-            return value.prepend(indexCoder, buf);
-        } catch (Error ex) {
-            throw ex;
-        } catch (Throwable ex) {
-            throw new AssertionError("FormatConcatItem prepend error", ex);
-        }
-    }
-
-    /**
-     * Prepends constant and the stringly representation of value into buffer,
-     * given the coder and final index. Index is measured in chars, not in bytes!
-     *
-     * @param indexCoder final char index in the buffer, along with coder packed
-     *                   into higher bits.
-     * @param buf        buffer to append to
-     * @param value      boolean value to encode
-     * @param prefix     a constant to prepend before value
-     * @return           updated index (coder value retained)
-     * @since 21
-     */
-    @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
-    static long prepend(long indexCoder, byte[] buf,
-                        FormatConcatItem value, String prefix) {
-        indexCoder = prepend(indexCoder, buf, value);
-        indexCoder = prepend(indexCoder, buf, prefix);
-        return indexCoder;
-    }
-
-    /**
      * Instantiates the String with given buffer and coder
      * @param buf           buffer to use
      * @param indexCoder    remaining index (should be zero) and coder
@@ -515,71 +457,6 @@ final class StringConcatHelper {
      */
     static long initialCoder() {
         return String.COMPACT_STRINGS ? LATIN1 : UTF16;
-    }
-
-    /*
-     * Initialize after phase1.
-     */
-    private static class LateInit {
-        static final MethodHandle GETCHAR_LATIN1_MH;
-
-        static final MethodHandle GETCHAR_UTF16_MH;
-
-        static final MethodHandle PUTCHAR_LATIN1_MH;
-
-        static final MethodHandle PUTCHAR_UTF16_MH;
-
-        static {
-            MethodType getCharMT =
-                MethodType.methodType(char.class,
-                        byte[].class, int.class);
-            MethodType putCharMT =
-                MethodType.methodType(void.class,
-                        byte[].class, int.class, int.class);
-            GETCHAR_LATIN1_MH = lookupStatic("getCharLatin1", getCharMT);
-            GETCHAR_UTF16_MH = lookupStatic("getCharUTF16", getCharMT);
-            PUTCHAR_LATIN1_MH = lookupStatic("putCharLatin1", putCharMT);
-            PUTCHAR_UTF16_MH = lookupStatic("putCharUTF16", putCharMT);
-        }
-
-    }
-
-    @ForceInline
-    @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
-    static char getCharLatin1(byte[] buffer, int index) {
-        return (char)buffer[index];
-    }
-
-    @ForceInline
-    @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
-    static char getCharUTF16(byte[] buffer, int index) {
-        return StringUTF16.getChar(buffer, index);
-    }
-
-    @ForceInline
-    @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
-    static void putCharLatin1(byte[] buffer, int index, int ch) {
-        buffer[index] = (byte)ch;
-    }
-
-    @ForceInline
-    @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
-    static void putCharUTF16(byte[] buffer, int index, int ch) {
-        StringUTF16.putChar(buffer, index, ch);
-    }
-
-    @ForceInline
-    @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
-    static MethodHandle selectGetChar(long indexCoder) {
-        return indexCoder < UTF16 ? LateInit.GETCHAR_LATIN1_MH :
-                                    LateInit.GETCHAR_UTF16_MH;
-    }
-
-    @ForceInline
-    @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
-    static MethodHandle selectPutChar(long indexCoder) {
-        return indexCoder < UTF16 ? LateInit.PUTCHAR_LATIN1_MH :
-                                    LateInit.PUTCHAR_UTF16_MH;
     }
 
     static MethodHandle lookupStatic(String name, MethodType methodType) {

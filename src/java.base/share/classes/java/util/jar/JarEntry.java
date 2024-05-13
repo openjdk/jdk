@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,7 @@ public class JarEntry extends ZipEntry {
      * specified {@code ZipEntry} object.
      * @param ze the {@code ZipEntry} object to create the
      *           {@code JarEntry} from
+     * @throws    NullPointerException if {@code ze} is null
      */
     public JarEntry(ZipEntry ze) {
         super(ze);
@@ -68,6 +69,7 @@ public class JarEntry extends ZipEntry {
      * specified {@code JarEntry} object.
      *
      * @param je the {@code JarEntry} to copy
+     * @throws    NullPointerException if {@code je} is null
      */
     public JarEntry(JarEntry je) {
         this((ZipEntry)je);

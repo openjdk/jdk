@@ -67,7 +67,9 @@ void Jfr::on_create_vm_3() {
 }
 
 void Jfr::on_unloading_classes() {
-  JfrCheckpointManager::on_unloading_classes();
+  if (JfrRecorder::is_created() || JfrRecorder::is_started_on_commandline()) {
+    JfrCheckpointManager::on_unloading_classes();
+  }
 }
 
 bool Jfr::is_excluded(Thread* t) {

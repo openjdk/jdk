@@ -164,6 +164,13 @@ public class TestMemoryAccessInstance {
         }
     }
 
+    @Test(dataProvider = "segmentAccessors")
+    public <X, L extends ValueLayout> void negativeOffset(String testName, Accessor<X, L> accessor) {
+        MemorySegment segment = MemorySegment.ofArray(new byte[100]);
+        assertThrows(IndexOutOfBoundsException.class, () -> accessor.get(segment, -ValueLayout.JAVA_LONG.byteSize()));
+        assertThrows(IndexOutOfBoundsException.class, () -> accessor.set(segment, -ValueLayout.JAVA_LONG.byteSize(), accessor.value));
+    }
+
     static final ByteOrder NE = ByteOrder.nativeOrder();
 
     @DataProvider(name = "segmentAccessors")

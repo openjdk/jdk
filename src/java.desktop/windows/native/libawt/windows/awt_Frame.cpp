@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1264,7 +1264,7 @@ LRESULT AwtFrame::WinThreadExecProc(ExecuteArgs * args)
         }
 
         default:
-            AwtWindow::WinThreadExecProc(args);
+            DASSERT(FALSE);
             break;
     }
 
@@ -1340,15 +1340,27 @@ void AwtFrame::_SetState(void *param)
 {
     JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
 
-    SetStateStruct *sss = (SetStateStruct *)param;
+    SetStateStruct *sss = static_cast<SetStateStruct *>(param);
     jobject self = sss->frame;
     jint state = sss->state;
 
     AwtFrame *f = NULL;
 
-    PDATA pData;
-    JNI_CHECK_PEER_GOTO(self, ret);
-    f = (AwtFrame *)pData;
+    if (self == NULL) {
+        env->ExceptionClear();
+        JNU_ThrowNullPointerException(env, "self");
+        delete sss;
+        return;
+    } else {
+        f = (AwtFrame *)JNI_GET_PDATA(self);
+        if (f == NULL) {
+            THROW_NULL_PDATA_IF_NOT_DESTROYED(self);
+            env->DeleteGlobalRef(self);
+            delete sss;
+            return;
+        }
+    }
+
     HWND hwnd = f->GetHWnd();
     if (::IsWindow(hwnd))
     {
@@ -1405,7 +1417,7 @@ void AwtFrame::_SetState(void *param)
             f->setZoomed(zoom);
         }
     }
-ret:
+
     env->DeleteGlobalRef(self);
 
     delete sss;
@@ -1569,21 +1581,59 @@ void AwtFrame::_NotifyModalBlocked(void *param)
 {
     JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
 
-    NotifyModalBlockedStruct *nmbs = (NotifyModalBlockedStruct *)param;
+    NotifyModalBlockedStruct *nmbs = static_cast<NotifyModalBlockedStruct *>(param);
     jobject self = nmbs->frame;
     jobject peer = nmbs->peer;
     jobject blockerPeer = nmbs->blockerPeer;
     jboolean blocked = nmbs->blocked;
 
-    PDATA pData;
+    AwtFrame *f = NULL;
 
-    JNI_CHECK_PEER_GOTO(peer, ret);
-    AwtFrame *f = (AwtFrame *)pData;
+    if (peer == NULL) {
+        env->ExceptionClear();
+        JNU_ThrowNullPointerException(env, "peer");
+        env->DeleteGlobalRef(self);
+        env->DeleteGlobalRef(blockerPeer);
+
+        delete nmbs;
+        return;
+    } else {
+        f = (AwtFrame *)JNI_GET_PDATA(peer);
+        if (f == NULL) {
+            THROW_NULL_PDATA_IF_NOT_DESTROYED(peer);
+            env->DeleteGlobalRef(self);
+            env->DeleteGlobalRef(peer);
+            env->DeleteGlobalRef(blockerPeer);
+
+            delete nmbs;
+            return;
+        }
+    }
 
     // dialog here may be NULL, for example, if the blocker is a native dialog
     // however, we need to install/unistall modal hooks anyway
-    JNI_CHECK_PEER_GOTO(blockerPeer, ret);
-    AwtDialog *d = (AwtDialog *)pData;
+    AwtDialog *d = NULL;
+
+    if (blockerPeer == NULL) {
+        env->ExceptionClear();
+        JNU_ThrowNullPointerException(env, "blockerPeer");
+        env->DeleteGlobalRef(self);
+        env->DeleteGlobalRef(peer);
+
+        delete nmbs;
+        return;
+    } else {
+        d = (AwtDialog *)JNI_GET_PDATA(blockerPeer);
+        if (d == NULL) {
+            THROW_NULL_PDATA_IF_NOT_DESTROYED(blockerPeer);
+            env->DeleteGlobalRef(self);
+            env->DeleteGlobalRef(peer);
+            env->DeleteGlobalRef(blockerPeer);
+
+            delete nmbs;
+            return;
+        }
+    }
 
     if ((f != NULL) && ::IsWindow(f->GetHWnd()))
     {
@@ -1634,7 +1684,7 @@ void AwtFrame::_NotifyModalBlocked(void *param)
             }
         }
     }
-ret:
+
     env->DeleteGlobalRef(self);
     env->DeleteGlobalRef(peer);
     env->DeleteGlobalRef(blockerPeer);

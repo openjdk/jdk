@@ -560,7 +560,7 @@ bool VirtualMemoryTracker::remove_released_region(address addr, size_t size) {
 // Given an existing memory mapping registered with NMT, split the mapping in
 //  two. The newly created two mappings will be registered under the call
 //  stack and the memory flags of the original section.
-bool VirtualMemoryTracker::split_reserved_region(address addr, size_t size, size_t split) {
+bool VirtualMemoryTracker::split_reserved_region(address addr, size_t size, size_t split, MEMFLAGS flag, MEMFLAGS split_flag) {
 
   ReservedMemoryRegion  rgn(addr, size);
   ReservedMemoryRegion* reserved_rgn = _reserved_regions->find(rgn);
@@ -576,8 +576,8 @@ bool VirtualMemoryTracker::split_reserved_region(address addr, size_t size, size
   log_debug(nmt)("Split region \'%s\' (" INTPTR_FORMAT ", " SIZE_FORMAT ")  with size " SIZE_FORMAT,
                 name, p2i(rgn.base()), rgn.size(), split);
   // Now, create two new regions.
-  add_reserved_region(addr, split, original_stack, original_flags);
-  add_reserved_region(addr + split, size - split, original_stack, original_flags);
+  add_reserved_region(addr, split, original_stack, flag);
+  add_reserved_region(addr + split, size - split, original_stack, split_flag);
 
   return true;
 }

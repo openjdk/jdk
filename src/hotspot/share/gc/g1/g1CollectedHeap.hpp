@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,17 +36,16 @@
 #include "gc/g1/g1EvacStats.hpp"
 #include "gc/g1/g1GCPauseType.hpp"
 #include "gc/g1/g1HeapRegionAttr.hpp"
+#include "gc/g1/g1HeapRegionManager.hpp"
+#include "gc/g1/g1HeapRegionSet.hpp"
 #include "gc/g1/g1HeapTransition.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
-#include "gc/g1/g1HRPrinter.hpp"
 #include "gc/g1/g1MonitoringSupport.hpp"
 #include "gc/g1/g1MonotonicArenaFreeMemoryTask.hpp"
 #include "gc/g1/g1MonotonicArenaFreePool.hpp"
 #include "gc/g1/g1NUMA.hpp"
 #include "gc/g1/g1SurvivorRegions.hpp"
 #include "gc/g1/g1YoungGCAllocationFailureInjector.hpp"
-#include "gc/g1/heapRegionManager.hpp"
-#include "gc/g1/heapRegionSet.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
@@ -178,8 +177,6 @@ private:
 
   Ticks _collection_pause_end;
 
-  SoftRefPolicy      _soft_ref_policy;
-
   static size_t _humongous_object_threshold_in_words;
 
   // These sets keep track of old and humongous regions respectively.
@@ -266,8 +263,6 @@ public:
 
   void update_parallel_gc_threads_cpu_time();
 private:
-
-  G1HRPrinter _hr_printer;
 
   // Return true if an explicit GC should start a concurrent cycle instead
   // of doing a STW full GC. A concurrent cycle should be started if:
@@ -470,7 +465,7 @@ private:
   // These methods are the "callbacks" from the G1AllocRegion class.
 
   // For mutator alloc regions.
-  HeapRegion* new_mutator_alloc_region(size_t word_size, bool force, uint node_index);
+  HeapRegion* new_mutator_alloc_region(size_t word_size, uint node_index);
   void retire_mutator_alloc_region(HeapRegion* alloc_region,
                                    size_t allocated_bytes);
 
@@ -671,8 +666,6 @@ public:
     return _old_marking_cycles_completed;
   }
 
-  G1HRPrinter* hr_printer() { return &_hr_printer; }
-
   // Allocates a new heap region instance.
   HeapRegion* new_heap_region(uint hrs_index, MemRegion mr);
 
@@ -719,9 +712,9 @@ public:
   // in the CDS archive.
   HeapWord* alloc_archive_region(size_t word_size, HeapWord* preferred_addr);
 
-  // Populate the G1BlockOffsetTablePart for archived regions with the given
+  // Populate the G1BlockOffsetTable for archived regions with the given
   // memory range.
-  void populate_archive_regions_bot_part(MemRegion range);
+  void populate_archive_regions_bot(MemRegion range);
 
   // For the specified range, uncommit the containing G1 regions
   // which had been allocated by alloc_archive_regions. This should be called
@@ -756,7 +749,7 @@ private:
   // false if unable to do the collection due to the GC locker being
   // active, true otherwise.
   // precondition: at safepoint on VM thread
-  // precondition: !is_gc_active()
+  // precondition: !is_stw_gc_active()
   bool do_collection_pause_at_safepoint();
 
   // Helper for do_collection_pause_at_safepoint, containing the guts
@@ -774,6 +767,10 @@ public:
   void prepare_for_mutator_after_young_collection();
 
   void retire_tlabs();
+
+  // Update all region's pin counts from the per-thread caches and resets them.
+  // Must be called before any decision based on pin counts.
+  void flush_region_pin_cache();
 
   void expand_heap_after_young_collection();
   // Update object copying statistics.
@@ -922,8 +919,6 @@ public:
   G1CollectionSet* collection_set() { return &_collection_set; }
 
   inline bool is_collection_set_candidate(const HeapRegion* r) const;
-
-  SoftRefPolicy* soft_ref_policy() override;
 
   void initialize_serviceability() override;
   MemoryUsage memory_usage() override;

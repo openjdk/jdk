@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,8 @@
 
 #include "precompiled.hpp"
 #include "code/codeCache.hpp"
-#include "code/compiledMethod.hpp"
 #include "code/nativeInst.hpp"
+#include "code/nmethod.hpp"
 #include "jvm.h"
 #include "logging/log.hpp"
 #include "os_posix.hpp"
@@ -340,7 +340,7 @@ static const struct {
 ////////////////////////////////////////////////////////////////////////////////
 // sun.misc.Signal and BREAK_SIGNAL support
 
-void jdk_misc_signal_init() {
+static void jdk_misc_signal_init() {
   // Initialize signal structures
   ::memset((void*)pending_signals, 0, sizeof(pending_signals));
 
@@ -380,7 +380,7 @@ int os::signal_wait() {
 ////////////////////////////////////////////////////////////////////////////////
 // signal chaining support
 
-struct sigaction* get_chained_signal_action(int sig) {
+static struct sigaction* get_chained_signal_action(int sig) {
   struct sigaction *actp = nullptr;
 
   if (libjsig_is_loaded) {
@@ -503,13 +503,6 @@ void PosixSignals::unblock_error_signals() {
   ::pthread_sigmask(SIG_UNBLOCK, &set, nullptr);
 }
 
-class ErrnoPreserver: public StackObj {
-  const int _saved;
-public:
-  ErrnoPreserver() : _saved(errno) {}
-  ~ErrnoPreserver() { errno = _saved; }
-};
-
 ////////////////////////////////////////////////////////////////////////////////
 // JVM_handle_(linux|aix|bsd)_signal()
 
@@ -620,17 +613,16 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
   if (!signal_was_handled && pc != nullptr && os::is_readable_pointer(pc)) {
     if (NativeDeoptInstruction::is_deopt_at(pc)) {
       CodeBlob* cb = CodeCache::find_blob(pc);
-      if (cb != nullptr && cb->is_compiled()) {
-        MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, t);) // can call PcDescCache::add_pc_desc
-        CompiledMethod* cm = cb->as_compiled_method();
-        assert(cm->insts_contains_inclusive(pc), "");
-        address deopt = cm->is_method_handle_return(pc) ?
-          cm->deopt_mh_handler_begin() :
-          cm->deopt_handler_begin();
+      if (cb != nullptr && cb->is_nmethod()) {
+        nmethod* nm = cb->as_nmethod();
+        assert(nm->insts_contains_inclusive(pc), "");
+        address deopt = nm->is_method_handle_return(pc) ?
+          nm->deopt_mh_handler_begin() :
+          nm->deopt_handler_begin();
         assert(deopt != nullptr, "");
 
         frame fr = os::fetch_frame_from_context(uc);
-        cm->set_original_pc(&fr, pc);
+        nm->set_original_pc(&fr, pc);
 
         os::Posix::ucontext_set_pc(uc, deopt);
         signal_was_handled = true;
@@ -1245,7 +1237,7 @@ int os::get_signal_number(const char* signal_name) {
   return -1;
 }
 
-void set_signal_handler(int sig) {
+static void set_signal_handler(int sig) {
   // Check for overwrite.
   struct sigaction oldAct;
   sigaction(sig, (struct sigaction*)nullptr, &oldAct);
@@ -1292,7 +1284,7 @@ void set_signal_handler(int sig) {
 
 // install signal handlers for signals that HotSpot needs to
 // handle in order to support Java-level exception handling.
-void install_signal_handlers() {
+static void install_signal_handlers() {
   // signal-chaining
   typedef void (*signal_setting_t)();
   signal_setting_t begin_signal_setting = nullptr;
@@ -1723,7 +1715,7 @@ static void SR_handler(int sig, siginfo_t* siginfo, void* context) {
   errno = old_errno;
 }
 
-int SR_initialize() {
+static int SR_initialize() {
   struct sigaction act;
   char *s;
   // Get signal number to use for suspend/resume

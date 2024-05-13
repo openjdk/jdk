@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -248,12 +248,6 @@ bool ReferenceToThreadRootClosure::do_thread_stack_detailed(JavaThread* jt) {
   ReferenceLocateClosure rcl(_callback, OldObjectRoot::_threads, OldObjectRoot::_stack_variable, jt);
 
   if (jt->has_last_Java_frame()) {
-    // Traverse the monitor chunks
-    MonitorChunk* chunk = jt->monitor_chunks();
-    for (; chunk != nullptr; chunk = chunk->next()) {
-      chunk->oops_do(&rcl);
-    }
-
     if (rcl.complete()) {
       return true;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,7 @@ class Flag;
 class RewriteRule;
 class ConstructRule;
 class FormatRule;
+class FormClosure;
 class Peephole;
 class EncClass;
 class Interface;
@@ -114,6 +115,8 @@ public:
   const Form  *operator [](const char *name) const;  // Do a lookup
 
   void dump();
+  // iterate child forms recursively
+  void forms_do(FormClosure *f);
 };
 
 // ***** Master Class for ADL Parser Forms *****
@@ -162,6 +165,9 @@ public:
   virtual void dump()      { output(stderr); }    // Debug printer
   // Write info to output files
   virtual void output(FILE *fp)    { fprintf(fp,"Form Output"); }
+
+  // iterate child forms recursively
+  virtual void forms_do (FormClosure* f) { return; }
 
 public:
   // ADLC types, match the last character on ideal operands and instructions
@@ -254,6 +260,16 @@ public:
   };
 
 };
+
+class FormClosure {
+public:
+    FormClosure() = default;
+    virtual ~FormClosure() = default;
+
+    virtual void do_form(Form* form);
+    virtual void do_form_by_name(const char* name);
+};
+
 
 //------------------------------FormList---------------------------------------
 class FormList {

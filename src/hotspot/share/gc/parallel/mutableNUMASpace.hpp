@@ -173,7 +173,7 @@ public:
 
   virtual void clear(bool mangle_space);
   virtual void mangle_unused_area() PRODUCT_RETURN;
-  virtual void mangle_unused_area_complete() PRODUCT_RETURN;
+
   virtual void mangle_region(MemRegion mr) PRODUCT_RETURN;
   virtual void check_mangled_unused_area(HeapWord* limit) PRODUCT_RETURN;
   virtual void check_mangled_unused_area_complete() PRODUCT_RETURN;
@@ -183,8 +183,6 @@ public:
   virtual void ensure_parsability();
   virtual size_t used_in_words() const;
   virtual size_t free_in_words() const;
-
-  using MutableSpace::capacity_in_words;
 
   virtual size_t tlab_capacity(Thread* thr) const;
   virtual size_t tlab_used(Thread* thr) const;

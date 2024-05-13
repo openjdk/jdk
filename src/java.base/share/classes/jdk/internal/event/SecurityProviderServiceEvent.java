@@ -30,7 +30,7 @@ package jdk.internal.event;
  */
 
 public final class SecurityProviderServiceEvent extends Event {
-    private final static SecurityProviderServiceEvent EVENT = new SecurityProviderServiceEvent();
+    private static final SecurityProviderServiceEvent EVENT = new SecurityProviderServiceEvent();
 
     /**
      * Returns {@code true} if event is enabled, {@code false} otherwise.

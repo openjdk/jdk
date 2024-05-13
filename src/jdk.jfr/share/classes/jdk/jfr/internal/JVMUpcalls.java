@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,9 +110,6 @@ final class JVMUpcalls {
             eventName = ei.getEventName();
             if (!JVMSupport.shouldInstrument(bootClassLoader,  ei.getEventName())) {
                 Logger.log(LogTag.JFR_SYSTEM, LogLevel.INFO, "Skipping instrumentation for " + eventName + " since container support is missing");
-                return oldBytes;
-            }
-            if (ei.isMirrorEvent()) {
                 return oldBytes;
             }
 

@@ -603,7 +603,6 @@ public class JSR166TestCase extends TestCase {
             ScheduledExecutorSubclassTest.suite(),
             SemaphoreTest.suite(),
             SynchronousQueueTest.suite(),
-            SystemTest.suite(),
             ThreadLocalTest.suite(),
             ThreadPoolExecutorTest.suite(),
             ThreadPoolExecutorSubclassTest.suite(),

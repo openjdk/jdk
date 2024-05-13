@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2023, Red Hat, Inc. and/or its affiliates.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@
 ArenaStatCounter::ArenaStatCounter() :
   _current(0), _start(0), _peak(0),
   _na(0), _ra(0),
-  _limit(0), _hit_limit(false),
+  _limit(0), _hit_limit(false), _limit_in_process(false),
   _na_at_peak(0), _ra_at_peak(0), _live_nodes_at_peak(0)
 {}
 
@@ -167,12 +167,9 @@ public:
     ss.put(')');
     return buf;
   }
-
-  bool equals(const FullMethodName& b) const {
+  bool operator== (const FullMethodName& b) const {
     return _k == b._k && _m == b._m && _s == b._s;
   }
-
-  bool operator== (const FullMethodName& other) const { return equals(other); }
 };
 
 // Note: not mtCompiler since we don't want to change what we measure
@@ -184,10 +181,16 @@ class MemStatEntry : public CHeapObj<mtInternal> {
   int _num_recomp;
   // Compiling thread. Only for diagnostic purposes. Thread may not be alive anymore.
   const Thread* _thread;
+  // active limit for this compilation, if any
+  size_t _limit;
 
+  // peak usage, bytes, over all arenas
   size_t _total;
+  // usage in node arena when total peaked
   size_t _na_at_peak;
+  // usage in resource area when total peaked
   size_t _ra_at_peak;
+  // number of nodes (c2 only) when total peaked
   unsigned _live_nodes_at_peak;
   const char* _result;
 
@@ -195,7 +198,7 @@ public:
 
   MemStatEntry(FullMethodName method)
     : _method(method), _comptype(compiler_c1),
-      _time(0), _num_recomp(0), _thread(nullptr),
+      _time(0), _num_recomp(0), _thread(nullptr), _limit(0),
       _total(0), _na_at_peak(0), _ra_at_peak(0), _live_nodes_at_peak(0),
       _result(nullptr) {
   }
@@ -203,6 +206,7 @@ public:
   void set_comptype(CompilerType comptype) { _comptype = comptype; }
   void set_current_time() { _time = os::elapsedTime(); }
   void set_current_thread() { _thread = Thread::current(); }
+  void set_limit(size_t limit) { _limit = limit; }
   void inc_recompilation() { _num_recomp++; }
 
   void set_total(size_t n) { _total = n; }
@@ -221,6 +225,7 @@ public:
     st->print_cr("  RA     : ...how much in resource areas");
     st->print_cr("  result : Result: 'ok' finished successfully, 'oom' hit memory limit, 'err' compilation failed");
     st->print_cr("  #nodes : ...how many nodes (c2 only)");
+    st->print_cr("  limit  : memory limit, if set");
     st->print_cr("  time   : time of last compilation (sec)");
     st->print_cr("  type   : compiler type");
     st->print_cr("  #rc    : how often recompiled");
@@ -228,7 +233,7 @@ public:
   }
 
   static void print_header(outputStream* st) {
-    st->print_cr("total     NA        RA        result  #nodes  time    type  #rc thread              method");
+    st->print_cr("total     NA        RA        result  #nodes  limit   time    type  #rc thread              method");
   }
 
   void print_on(outputStream* st, bool human_readable) const {
@@ -263,7 +268,19 @@ public:
     col += 8; st->fill_to(col);
 
     // Number of Nodes when memory peaked
-    st->print("%u ", _live_nodes_at_peak);
+    if (_live_nodes_at_peak > 0) {
+      st->print("%u ", _live_nodes_at_peak);
+    } else {
+      st->print("-");
+    }
+    col += 8; st->fill_to(col);
+
+    // Limit
+    if (_limit > 0) {
+      st->print(PROPERFMT " ", PROPERFMTARGS(_limit));
+    } else {
+      st->print("-");
+    }
     col += 8; st->fill_to(col);
 
     // TimeStamp
@@ -292,28 +309,47 @@ public:
     const size_t x2 = _total;
     return x1 < x2 ? -1 : x1 == x2 ? 0 : 1;
   }
+};
 
-  bool equals(const FullMethodName& b) const {
-    return _method.equals(b);
+// The MemStatTable contains records of memory usage of all compilations. It is printed,
+// as memory summary, either with jcmd Compiler.memory, or - if the "print" suboption has
+// been given with the MemStat compile command - as summary printout at VM exit.
+// For any given compiled method, we only keep the memory statistics of the most recent
+// compilation, but on a per-compiler basis. If one needs statistics of prior compilations,
+// one needs to look into the log produced by the "print" suboption.
+
+class MemStatTableKey {
+  const FullMethodName _fmn;
+  const CompilerType _comptype;
+public:
+  MemStatTableKey(FullMethodName fmn, CompilerType comptype) :
+    _fmn(fmn), _comptype(comptype) {}
+  MemStatTableKey(const MemStatTableKey& o) :
+    _fmn(o._fmn), _comptype(o._comptype) {}
+  bool operator== (const MemStatTableKey& other) const {
+    return _fmn == other._fmn && _comptype == other._comptype;
+  }
+  static unsigned compute_hash(const MemStatTableKey& n) {
+    return FullMethodName::compute_hash(n._fmn) + (unsigned)n._comptype;
   }
 };
 
 class MemStatTable :
-    public ResourceHashtable<FullMethodName, MemStatEntry*, 7919, AnyObj::C_HEAP,
-                             mtInternal, FullMethodName::compute_hash>
+    public ResourceHashtable<MemStatTableKey, MemStatEntry*, 7919, AnyObj::C_HEAP,
+                             mtInternal, MemStatTableKey::compute_hash>
 {
 public:
 
   void add(const FullMethodName& fmn, CompilerType comptype,
            size_t total, size_t na_at_peak, size_t ra_at_peak,
-           unsigned live_nodes_at_peak, const char* result) {
+           unsigned live_nodes_at_peak, size_t limit, const char* result) {
     assert_lock_strong(NMTCompilationCostHistory_lock);
-
-    MemStatEntry** pe = get(fmn);
+    MemStatTableKey key(fmn, comptype);
+    MemStatEntry** pe = get(key);
     MemStatEntry* e = nullptr;
     if (pe == nullptr) {
       e = new MemStatEntry(fmn);
-      put(fmn, e);
+      put(key, e);
     } else {
       // Update existing entry
       e = *pe;
@@ -327,6 +363,7 @@ public:
     e->set_na_at_peak(na_at_peak);
     e->set_ra_at_peak(ra_at_peak);
     e->set_live_nodes_at_peak(live_nodes_at_peak);
+    e->set_limit(limit);
     e->set_result(result);
   }
 
@@ -338,7 +375,7 @@ public:
     const int num_all = number_of_entries();
     MemStatEntry** flat = NEW_C_HEAP_ARRAY(MemStatEntry*, num_all, mtInternal);
     int i = 0;
-    auto do_f = [&] (const FullMethodName& ignored, MemStatEntry* e) {
+    auto do_f = [&] (const MemStatTableKey& ignored, MemStatEntry* e) {
       if (e->total() >= min_size) {
         flat[i] = e;
         assert(i < num_all, "Sanity");
@@ -378,23 +415,19 @@ void CompilationMemoryStatistic::on_end_compilation() {
   ResourceMark rm;
   CompilerThread* const th = Thread::current()->as_Compiler_thread();
   ArenaStatCounter* const arena_stat = th->arena_stat();
-  const CompilerType ct = th->task()->compiler()->type();
+  CompileTask* const task = th->task();
+  const CompilerType ct = task->compiler()->type();
 
   const Method* const m = th->task()->method();
   FullMethodName fmn(m);
   fmn.make_permanent();
 
   const DirectiveSet* directive = th->task()->directive();
-  assert(directive->should_collect_memstat(), "Only call if memstat is enabled");
+  assert(directive->should_collect_memstat(), "Should only be called if memstat is enabled for this method");
   const bool print = directive->should_print_memstat();
 
-  if (print) {
-    char buf[1024];
-    fmn.as_C_string(buf, sizeof(buf));
-    tty->print("%s Arena usage %s: ", compilertype2name(ct), buf);
-    arena_stat->print_on(tty);
-    tty->cr();
-  }
+  // Store memory used in task, for later processing by JFR
+  task->set_arena_bytes(arena_stat->peak_since_start());
 
   // Store result
   // For this to work, we must call on_end_compilation() at a point where
@@ -405,7 +438,7 @@ void CompilationMemoryStatistic::on_end_compilation() {
   if (env) {
     const char* const failure_reason = env->failure_reason();
     if (failure_reason != nullptr) {
-      result = (failure_reason == failure_reason_memlimit()) ? "oom" : "err";
+      result = (strcmp(failure_reason, failure_reason_memlimit()) == 0) ? "oom" : "err";
     }
   }
 
@@ -418,7 +451,15 @@ void CompilationMemoryStatistic::on_end_compilation() {
                     arena_stat->na_at_peak(),
                     arena_stat->ra_at_peak(),
                     arena_stat->live_nodes_at_peak(),
+                    arena_stat->limit(),
                     result);
+  }
+  if (print) {
+    char buf[1024];
+    fmn.as_C_string(buf, sizeof(buf));
+    tty->print("%s Arena usage %s: ", compilertype2name(ct), buf);
+    arena_stat->print_on(tty);
+    tty->cr();
   }
 
   arena_stat->end(); // reset things
@@ -464,20 +505,25 @@ void CompilationMemoryStatistic::on_arena_change(ssize_t diff, const Arena* aren
   CompilerThread* const th = Thread::current()->as_Compiler_thread();
 
   ArenaStatCounter* const arena_stat = th->arena_stat();
+  if (arena_stat->limit_in_process()) {
+    return; // avoid recursion on limit hit
+  }
+
   bool hit_limit_before = arena_stat->hit_limit();
 
   if (arena_stat->account(diff, (int)arena->get_tag())) { // new peak?
 
     // Limit handling
     if (arena_stat->hit_limit()) {
-
       char name[1024] = "";
       bool print = false;
       bool crash = false;
       CompilerType ct = compiler_none;
 
+      arena_stat->set_limit_in_process(true); // prevent recursive limit hits
+
       // get some more info
-      const CompileTask* task = th->task();
+      const CompileTask* const task = th->task();
       if (task != nullptr) {
         ct = task->compiler()->type();
         const DirectiveSet* directive = task->directive();
@@ -497,8 +543,8 @@ void CompilationMemoryStatistic::on_arena_change(ssize_t diff, const Arena* aren
         if (ct != compiler_none && name[0] != '\0') {
           ss.print("%s %s: ", compilertype2name(ct), name);
         }
-        ss.print("Hit MemLimit %s (limit: %zu now: %zu)",
-                 (hit_limit_before ? "again" : ""),
+        ss.print("Hit MemLimit %s(limit: %zu now: %zu)",
+                 (hit_limit_before ? "again " : ""),
                  arena_stat->limit(), arena_stat->peak_since_start());
       }
 
@@ -514,6 +560,8 @@ void CompilationMemoryStatistic::on_arena_change(ssize_t diff, const Arena* aren
       } else {
         inform_compilation_about_oom(ct);
       }
+
+      arena_stat->set_limit_in_process(false);
     }
   }
 }
@@ -523,6 +571,10 @@ static inline ssize_t diff_entries_by_size(const MemStatEntry* e1, const MemStat
 }
 
 void CompilationMemoryStatistic::print_all_by_size(outputStream* st, bool human_readable, size_t min_size) {
+
+  MutexLocker ml(NMTCompilationCostHistory_lock, Mutex::_no_safepoint_check_flag);
+
+  st->cr();
   st->print_cr("Compilation memory statistics");
 
   if (!enabled()) {
@@ -543,29 +595,27 @@ void CompilationMemoryStatistic::print_all_by_size(outputStream* st, bool human_
   MemStatEntry::print_header(st);
 
   MemStatEntry** filtered = nullptr;
-  {
-    MutexLocker ml(NMTCompilationCostHistory_lock, Mutex::_no_safepoint_check_flag);
 
-    if (_the_table != nullptr) {
-      // We sort with quicksort
-      int num = 0;
-      filtered = _the_table->calc_flat_array(num, min_size);
-      if (min_size > 0) {
-        st->print_cr("(%d/%d)", num, _the_table->number_of_entries());
-      }
-      if (num > 0) {
-        QuickSort::sort(filtered, num, diff_entries_by_size, false);
-        // Now print. Has to happen under lock protection too, since entries may be changed.
-        for (int i = 0; i < num; i ++) {
-          filtered[i]->print_on(st, human_readable);
-        }
-      } else {
-        st->print_cr("No entries.");
+  if (_the_table != nullptr) {
+    // We sort with quicksort
+    int num = 0;
+    filtered = _the_table->calc_flat_array(num, min_size);
+    if (min_size > 0) {
+      st->print_cr("(%d/%d)", num, _the_table->number_of_entries());
+    }
+    if (num > 0) {
+      QuickSort::sort(filtered, num, diff_entries_by_size, false);
+      // Now print. Has to happen under lock protection too, since entries may be changed.
+      for (int i = 0; i < num; i ++) {
+        filtered[i]->print_on(st, human_readable);
       }
     } else {
-      st->print_cr("Not initialized.");
+      st->print_cr("No entries.");
     }
-  } // locked
+  } else {
+    st->print_cr("Not initialized.");
+  }
+  st->cr();
 
   FREE_C_HEAP_ARRAY(Entry, filtered);
 }

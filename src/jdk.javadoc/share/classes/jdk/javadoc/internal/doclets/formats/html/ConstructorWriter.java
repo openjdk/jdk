@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,6 +102,8 @@ public class ConstructorWriter extends AbstractExecutableMemberWriter {
 
             Content constructorDetailsHeader = getConstructorDetailsHeader(target);
             Content memberList = getMemberList();
+            writer.tableOfContents.addLink(HtmlIds.CONSTRUCTOR_DETAIL, contents.constructorDetailsLabel);
+            writer.tableOfContents.pushNestedList();
 
             for (Element constructor : constructors) {
                 currentConstructor = (ExecutableElement)constructor;
@@ -114,9 +116,13 @@ public class ConstructorWriter extends AbstractExecutableMemberWriter {
                 buildTagInfo(div);
                 constructorContent.add(div);
                 memberList.add(getMemberListItem(constructorContent));
+                writer.tableOfContents.addLink(htmlIds.forMember(currentConstructor).getFirst(),
+                        Text.of(utils.getSimpleName(constructor)
+                                + utils.makeSignature(currentConstructor, typeElement, false, true)));
             }
             Content constructorDetails = getConstructorDetails(constructorDetailsHeader, memberList);
             target.add(constructorDetails);
+            writer.tableOfContents.popNestedList();
         }
     }
 
@@ -183,13 +189,14 @@ public class ConstructorWriter extends AbstractExecutableMemberWriter {
         Content content = new ContentBuilder();
         var heading = HtmlTree.HEADING(Headings.TypeDeclaration.MEMBER_HEADING,
                 Text.of(name(constructor)));
-        HtmlId erasureAnchor = htmlIds.forErasure(constructor);
-        if (erasureAnchor != null) {
-            heading.setId(erasureAnchor);
+
+        var anchors = htmlIds.forMember(constructor);
+        if (anchors.size() > 1) {
+            heading.setId(anchors.getLast());
         }
         content.add(heading);
         return HtmlTree.SECTION(HtmlStyle.detail, content)
-                .setId(htmlIds.forMember(constructor));
+                .setId(anchors.getFirst());
     }
 
     protected Content getSignature(ExecutableElement constructor) {

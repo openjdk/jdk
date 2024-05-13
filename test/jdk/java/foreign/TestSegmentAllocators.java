@@ -44,6 +44,8 @@ import java.nio.LongBuffer;
 import java.nio.ShortBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -188,6 +190,81 @@ public class TestSegmentAllocators {
             allocator.allocateFrom(ValueLayout.ADDRESS, heapSegment);
         }
     }
+
+    // Invariant checking tests for the SegmentAllocator method:
+    // MemorySegment allocateFrom(ValueLayout elementLayout,
+    //                            MemorySegment source,
+    //                            ValueLayout sourceElementLayout,
+    //                            long sourceOffset,
+    //                            long elementCount) {
+    @Test
+    public void testAllocatorAllocateFromArguments() {
+        try (Arena arena = Arena.ofConfined()) {
+            var sourceElements = 2;
+            var source = arena.allocate(ValueLayout.JAVA_LONG, sourceElements);
+            var elementLayout = ValueLayout.JAVA_INT;
+            var sourceElementLayout = ValueLayout.JAVA_INT;
+
+            // IllegalArgumentException if {@code elementLayout.byteSize() != sourceElementLayout.byteSize()}
+            assertThrows(IllegalArgumentException.class, () ->
+                    arena.allocateFrom(elementLayout, source, ValueLayout.JAVA_BYTE, 0, 1)
+            );
+
+            // IllegalArgumentException if source segment/offset
+            // are <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a>
+            // in the source element layout
+            assertThrows(IllegalArgumentException.class, () ->
+                    arena.allocateFrom(elementLayout, source.asSlice(1), sourceElementLayout, 0, 1)
+            );
+            assertThrows(IllegalArgumentException.class, () ->
+                    arena.allocateFrom(elementLayout, source, sourceElementLayout, 1, 1)
+            );
+
+            // IllegalArgumentException if {@code elementLayout.byteAlignment() > elementLayout.byteSize()}
+            assertThrows(IllegalArgumentException.class, () ->
+                    arena.allocateFrom(elementLayout.withByteAlignment(elementLayout.byteAlignment() * 2), source, sourceElementLayout, 1, 1)
+            );
+
+            // IllegalStateException if the {@linkplain MemorySegment#scope() scope} associated
+            // with {@code source} is not {@linkplain MemorySegment.Scope#isAlive() alive}
+            // This is tested in TestScopedOperations
+
+            // WrongThreadException if this method is called from a thread {@code T},
+            // such that {@code source.isAccessibleBy(T) == false}
+            CompletableFuture<Arena> future = CompletableFuture.supplyAsync(Arena::ofConfined);
+            try {
+                Arena otherThreadArena = future.get();
+                assertThrows(WrongThreadException.class, () ->
+                        otherThreadArena.allocateFrom(elementLayout, source, sourceElementLayout, 0, 1)
+                );
+            } catch (ExecutionException | InterruptedException e) {
+                fail("Unable to create arena", e);
+            }
+
+            // IllegalArgumentException if {@code elementCount * sourceElementLayout.byteSize()} overflows
+            assertThrows(IllegalArgumentException.class, () ->
+                    arena.allocateFrom(elementLayout, source, sourceElementLayout, 0, Long.MAX_VALUE)
+            );
+
+            // IndexOutOfBoundsException if {@code sourceOffset > source.byteSize() - (elementCount * sourceElementLayout.byteSize())}
+            assertThrows(IndexOutOfBoundsException.class, () ->
+                    arena.allocateFrom(elementLayout, source, sourceElementLayout, source.byteSize() - (1 * sourceElementLayout.byteAlignment()) + elementLayout.byteSize(), 1)
+            );
+
+            // IndexOutOfBoundsException if {@code sourceOffset < 0}
+            assertThrows(IndexOutOfBoundsException.class, () ->
+                    arena.allocateFrom(elementLayout, source, sourceElementLayout, -elementLayout.byteSize(), 1)
+            );
+
+            // IllegalArgumentException if {@code elementCount < 0}
+            assertThrows(IllegalArgumentException.class, () ->
+                    arena.allocateFrom(elementLayout, source, sourceElementLayout, 0, -1)
+            );
+
+
+        }
+    }
+
 
     @Test
     public void testArrayAllocateDelegation() {

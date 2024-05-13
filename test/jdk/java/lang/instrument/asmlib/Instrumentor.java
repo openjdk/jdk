@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,171 +23,133 @@
 
 package asmlib;
 
-import java.io.PrintStream;
+import java.lang.classfile.AccessFlags;
+import java.lang.classfile.ClassBuilder;
+import java.lang.classfile.ClassElement;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.ClassTransform;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.CodeElement;
+import java.lang.classfile.CodeModel;
+import java.lang.classfile.CodeTransform;
+import java.lang.classfile.MethodBuilder;
+import java.lang.classfile.MethodElement;
+import java.lang.classfile.MethodModel;
+import java.lang.classfile.MethodTransform;
+import java.lang.classfile.Opcode;
+import java.lang.classfile.TypeKind;
+import java.lang.constant.MethodTypeDesc;
+import java.lang.reflect.AccessFlag;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
-import jdk.internal.org.objectweb.asm.ClassReader;
-import jdk.internal.org.objectweb.asm.ClassVisitor;
-import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.internal.org.objectweb.asm.MethodVisitor;
-import jdk.internal.org.objectweb.asm.Opcodes;
-
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
-import jdk.internal.org.objectweb.asm.Type;
+
+import static java.lang.classfile.ClassFile.ACC_NATIVE;
 
 public class Instrumentor {
-    public static class InstrHelper {
-        private final MethodVisitor mv;
-        private final String name;
-
-        InstrHelper(MethodVisitor mv, String name) {
-            this.mv = mv;
-            this.name = name;
-        }
-
-        public String getName() {
-            return this.name;
-        }
-
-        public void invokeStatic(String owner, String name, String desc, boolean itf) {
-            mv.visitMethodInsn(Opcodes.INVOKESTATIC, owner, name, desc, itf);
-        }
-
-        public void invokeSpecial(String owner, String name, String desc) {
-            mv.visitMethodInsn(Opcodes.INVOKESPECIAL, owner, name, desc, false);
-        }
-
-        public void invokeVirtual(String owner, String name, String desc) {
-            mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, owner, name, desc, false);
-        }
-
-        public void push(int val) {
-            if (val >= -1 && val <= 5) {
-                mv.visitInsn(Opcodes.ICONST_0 + val);
-            } else if (val >= Byte.MIN_VALUE && val <= Byte.MAX_VALUE) {
-                mv.visitIntInsn(Opcodes.BIPUSH, val);
-            } else if (val >= Short.MIN_VALUE && val <= Short.MAX_VALUE) {
-                mv.visitIntInsn(Opcodes.SIPUSH, val);
-            } else {
-                mv.visitLdcInsn(val);
-            }
-        }
-
-        public void push(Object val) {
-            mv.visitLdcInsn(val);
-        }
-
-        public void println(String s) {
-            mv.visitFieldInsn(Opcodes.GETSTATIC, Type.getInternalName(System.class), "out", Type.getDescriptor(PrintStream.class));
-            mv.visitLdcInsn(s);
-            mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, Type.getInternalName(PrintStream.class), "println", Type.getMethodDescriptor(Type.VOID_TYPE, Type.getType(String.class)), false);
-        }
-    }
 
     public static Instrumentor instrFor(byte[] classData) {
         return new Instrumentor(classData);
     }
 
-
-    private final ClassReader cr;
-    private final ClassWriter output;
-    private ClassVisitor instrumentingVisitor = null;
-    private final AtomicInteger matches = new AtomicInteger(0);
+    private final ClassModel model;
+    private ClassTransform transform = ClassTransform.ACCEPT_ALL;
+    private final AtomicBoolean dirty = new AtomicBoolean(false);
 
     private Instrumentor(byte[] classData) {
-        cr = new ClassReader(classData);
-        output = new ClassWriter(ClassWriter.COMPUTE_MAXS);
-        instrumentingVisitor = output;
+        model = ClassFile.of().parse(classData);
     }
 
-    public synchronized Instrumentor addMethodEntryInjection(String methodName, Consumer<InstrHelper> injector) {
-        instrumentingVisitor = new ClassVisitor(Opcodes.ASM7, instrumentingVisitor) {
-            @Override
-            public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
-                MethodVisitor mv = super.visitMethod(access, name, desc, signature, exceptions);
-
-                if (name.equals(methodName)) {
-                    matches.getAndIncrement();
-
-                    mv = new MethodVisitor(Opcodes.ASM7, mv) {
-                        @Override
-                        public void visitCode() {
-                            injector.accept(new InstrHelper(mv, name));
-                        }
-                    };
-                }
-                return mv;
+    public synchronized Instrumentor addMethodEntryInjection(String methodName, Consumer<CodeBuilder> injector) {
+        transform = transform.andThen(ClassTransform.transformingMethodBodies(mm -> {
+            if (mm.methodName().equalsString(methodName)) {
+                dirty.set(true);
+                return true;
             }
-        };
+            return false;
+        }, new CodeTransform() {
+            @Override
+            public void atStart(CodeBuilder builder) {
+                injector.accept(builder);
+            }
+
+            @Override
+            public void accept(CodeBuilder builder, CodeElement element) {
+                builder.accept(element);
+            }
+        }));
         return this;
     }
 
-    public synchronized Instrumentor addNativeMethodTrackingInjection(String prefix, Consumer<InstrHelper> injector) {
-        instrumentingVisitor = new ClassVisitor(Opcodes.ASM9, instrumentingVisitor) {
-            private final Set<Consumer<ClassVisitor>> wmGenerators = new HashSet<>();
-            private String className;
+    public synchronized Instrumentor addNativeMethodTrackingInjection(String prefix, BiConsumer<String, CodeBuilder> injector) {
+        transform = transform.andThen(ClassTransform.ofStateful(() -> new ClassTransform() {
+            private final Set<Consumer<ClassBuilder>> wmGenerators = new HashSet<>();
 
             @Override
-            public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
-                this.className = name;
-                super.visit(version, access, name, signature, superName, interfaces);
-            }
+            public void accept(ClassBuilder builder, ClassElement element) {
+                if (element instanceof MethodModel mm && mm.flags().has(AccessFlag.NATIVE)) {
+                    dirty.set(true);
 
-
-            @Override
-            public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
-                if ((access & Opcodes.ACC_NATIVE) != 0) {
-                    matches.getAndIncrement();
-
+                    String name = mm.methodName().stringValue();
                     String newName = prefix + name;
-                    wmGenerators.add((v)->{
-                        MethodVisitor mv = v.visitMethod(access & ~Opcodes.ACC_NATIVE, name, desc, signature, exceptions);
-                        mv.visitCode();
-                        injector.accept(new InstrHelper(mv, name));
-                        Type[] argTypes = Type.getArgumentTypes(desc);
-                        Type retType = Type.getReturnType(desc);
-
-                        boolean isStatic = (access & Opcodes.ACC_STATIC) != 0;
-                        if (!isStatic) {
-                            mv.visitIntInsn(Opcodes.ALOAD, 0); // load "this"
-                        }
-
-                        // load the method parameters
-                        if (argTypes.length > 0) {
-                            int ptr = isStatic ? 0 : 1;
-                            for(Type argType : argTypes) {
-                                mv.visitIntInsn(argType.getOpcode(Opcodes.ILOAD), ptr);
-                                ptr += argType.getSize();
+                    MethodTypeDesc mt = mm.methodTypeSymbol();
+                    wmGenerators.add(clb -> clb.transformMethod(mm, new MethodTransform() {
+                        @Override
+                        public void accept(MethodBuilder mb, MethodElement me) {
+                            if (me instanceof AccessFlags flags) {
+                                mb.withFlags(flags.flagsMask() & ~ACC_NATIVE);
+                            } else if (!(me instanceof CodeModel)) {
+                                mb.with(me);
                             }
                         }
 
-                        mv.visitMethodInsn(isStatic ? Opcodes.INVOKESTATIC : Opcodes.INVOKESPECIAL, className, newName, desc, false);
-                        mv.visitInsn(retType.getOpcode(Opcodes.IRETURN));
+                        @Override
+                        public void atEnd(MethodBuilder mb) {
+                            Consumer<CodeBuilder> injection = cb -> injector.accept(name, cb);
+                            mb.withCode(injection.andThen(cb -> {
+                                int ptr;
+                                boolean isStatic = mm.flags().has(AccessFlag.STATIC);
+                                if (!isStatic) {
+                                    cb.aload(0); // load "this"
+                                    ptr = 1;
+                                } else {
+                                    ptr = 0;
+                                }
 
-                        mv.visitMaxs(1, 1); // dummy call; let ClassWriter to deal with this
-                        mv.visitEnd();
-                    });
-                    return super.visitMethod(access, newName, desc, signature, exceptions);
+                                // load method parameters
+                                for (int i = 0; i < mt.parameterCount(); i++) {
+                                    TypeKind kind = TypeKind.from(mt.parameterType(i));
+                                    cb.loadLocal(kind, ptr);
+                                    ptr += kind.slotSize();
+                                }
+
+                                cb.invoke(isStatic ? Opcode.INVOKESTATIC : Opcode.INVOKESPECIAL,
+                                        model.thisClass().asSymbol(), newName, mt, false);
+                                cb.return_(TypeKind.from(mt.returnType()));
+                            }));
+                        }
+                    }));
+
+                    builder.withMethod(newName, mt, mm.flags().flagsMask(), mm::forEachElement);
+                } else {
+                    builder.accept(element);
                 }
-                return super.visitMethod(access, name, desc, signature, exceptions);
             }
 
             @Override
-            public void visitEnd() {
-                wmGenerators.stream().forEach((e) -> {
-                    e.accept(cv);
-                });
-                super.visitEnd();
+            public void atEnd(ClassBuilder builder) {
+                wmGenerators.forEach(e -> e.accept(builder));
             }
-        };
-
+        }));
         return this;
     }
 
     public synchronized byte[] apply() {
-        cr.accept(instrumentingVisitor, ClassReader.SKIP_DEBUG + ClassReader.EXPAND_FRAMES);
+        var bytes = ClassFile.of().transform(model, transform);
 
-        return matches.get() == 0 ? null : output.toByteArray();
+        return dirty.get() ? bytes : null;
     }
 }

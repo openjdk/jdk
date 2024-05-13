@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,13 +93,7 @@ JVMFlag::Error YoungPLABSizeConstraintFunc(size_t value, bool verbose) {
 }
 
 JVMFlag::Error OldPLABSizeConstraintFunc(size_t value, bool verbose) {
-  JVMFlag::Error status = JVMFlag::SUCCESS;
-
-  {
-    status = MinMaxPLABSizeBounds("OldPLABSize", value, verbose);
-  }
-
-  return status;
+  return MinMaxPLABSizeBounds("OldPLABSize", value, verbose);
 }
 
 JVMFlag::Error MinHeapFreeRatioConstraintFunc(uintx value, bool verbose) {
@@ -180,7 +174,7 @@ JVMFlag::Error MaxMetaspaceFreeRatioConstraintFunc(uint value, bool verbose) {
   }
 }
 
-JVMFlag::Error InitialTenuringThresholdConstraintFunc(uintx value, bool verbose) {
+JVMFlag::Error InitialTenuringThresholdConstraintFunc(uint value, bool verbose) {
 #if INCLUDE_PARALLELGC
   JVMFlag::Error status = InitialTenuringThresholdConstraintFuncParallel(value, verbose);
   if (status != JVMFlag::SUCCESS) {
@@ -191,7 +185,7 @@ JVMFlag::Error InitialTenuringThresholdConstraintFunc(uintx value, bool verbose)
   return JVMFlag::SUCCESS;
 }
 
-JVMFlag::Error MaxTenuringThresholdConstraintFunc(uintx value, bool verbose) {
+JVMFlag::Error MaxTenuringThresholdConstraintFunc(uint value, bool verbose) {
 #if INCLUDE_PARALLELGC
   JVMFlag::Error status = MaxTenuringThresholdConstraintFuncParallel(value, verbose);
   if (status != JVMFlag::SUCCESS) {
