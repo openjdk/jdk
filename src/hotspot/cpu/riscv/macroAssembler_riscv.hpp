@@ -715,6 +715,8 @@ private:
     return x < (twoG - twoK) && x >= (-twoG - twoK);
   }
 
+  // Ensure that the auipc can reach the destination at x from anywhere within
+  // the code cache so that if it is relocated we know it will still reach.
   bool is_32bit_offset_from_codecache(int64_t x) {
     int64_t low  = (int64_t)CodeCache::low_bound();
     int64_t high = (int64_t)CodeCache::high_bound();
@@ -765,7 +767,6 @@ public:
   typedef void (MacroAssembler::* compare_and_branch_insn)(Register Rs1, Register Rs2, const address dest);
   typedef void (MacroAssembler::* compare_and_branch_label_insn)(Register Rs1, Register Rs2, Label &L, bool is_far);
   typedef void (MacroAssembler::* jal_jalr_insn)(Register Rt, address dest);
-  typedef void (MacroAssembler::* load_insn_by_temp)(Register Rt, address dest, Register temp);
 
   void wrap_label(Register r, Label &L, jal_jalr_insn insn);
   void wrap_label(Register r1, Register r2, Label &L,

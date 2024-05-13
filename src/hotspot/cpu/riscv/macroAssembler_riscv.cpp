@@ -650,7 +650,7 @@ void MacroAssembler::call_VM_leaf_base(address entry_point,
   int32_t offset = 0;
   push_reg(RegSet::of(t0, xmethod), sp);   // push << t0 & xmethod >> to sp
   mv(t0, entry_point, offset);
-  Assembler::jalr(x1, t0, offset);
+  jalr(t0, offset);
   if (retaddr != nullptr) {
     bind(*retaddr);
   }
