@@ -417,7 +417,6 @@ class PerfLongVariant : public PerfLong {
     inline void inc() { (*(jlong*)_valuep)++; }
     inline void inc(jlong val) { (*(jlong*)_valuep) += val; }
     inline void dec(jlong val) { inc(-val); }
-    inline void reset() { (*(jlong*)_valuep) = 0; }
 };
 
 /*
@@ -831,8 +830,8 @@ class PerfTraceTime : public StackObj {
     PerfLongCounter* _timerp;
 
   public:
-    inline PerfTraceTime(PerfLongCounter* timerp, bool is_on = true) : _timerp(timerp) {
-      if (!is_on || !UsePerfData) return;
+    inline PerfTraceTime(PerfLongCounter* timerp) : _timerp(timerp) {
+      if (!UsePerfData || timerp == nullptr) return;
       _t.start();
     }
 
@@ -870,8 +869,8 @@ class PerfTraceTimedEvent : public PerfTraceTime {
     PerfLongCounter* _eventp;
 
   public:
-    inline PerfTraceTimedEvent(PerfLongCounter* timerp, PerfLongCounter* eventp, bool is_on = true): PerfTraceTime(timerp, is_on), _eventp(eventp) {
-      if (!is_on || !UsePerfData) return;
+    inline PerfTraceTimedEvent(PerfLongCounter* timerp, PerfLongCounter* eventp): PerfTraceTime(timerp), _eventp(eventp) {
+      if (!UsePerfData || timerp == nullptr) return;
       _eventp->inc();
     }
 

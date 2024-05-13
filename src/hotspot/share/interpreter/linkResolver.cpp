@@ -1732,8 +1732,7 @@ bool LinkResolver::resolve_previously_linked_invokehandle(CallInfo& result, cons
 void LinkResolver::resolve_invokehandle(CallInfo& result, const constantPoolHandle& pool, int index, TRAPS) {
 
   PerfTraceTimedEvent timer(ClassLoader::perf_resolve_invokehandle_time(),
-                            ClassLoader::perf_resolve_invokehandle_count(),
-                            ProfileClassLinkage);
+                            ClassLoader::perf_resolve_invokehandle_count());
 
   LinkInfo link_info(pool, index, Bytecodes::_invokehandle, CHECK);
   if (log_is_enabled(Info, methodhandles)) {
@@ -1787,8 +1786,7 @@ void LinkResolver::resolve_handle_call(CallInfo& result,
 
 void LinkResolver::resolve_invokedynamic(CallInfo& result, const constantPoolHandle& pool, int indy_index, TRAPS) {
   PerfTraceTimedEvent timer(ClassLoader::perf_resolve_invokedynamic_time(),
-                            ClassLoader::perf_resolve_invokedynamic_count(),
-                            ProfileClassLinkage);
+                            ClassLoader::perf_resolve_invokedynamic_count());
 
   int pool_index = pool->resolved_indy_entry_at(indy_index)->constant_pool_index();
 

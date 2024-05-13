@@ -242,7 +242,7 @@ static void print_bytecode_count() {
 
 #else
 
-void print_method_invocation_histogram() {}
+static void print_method_invocation_histogram() {}
 static void print_bytecode_count() {}
 
 #endif // PRODUCT
