@@ -74,7 +74,8 @@ public class FileChannelImpl
     // Used to make native read and write calls
     private static final FileDispatcher nd = new FileDispatcherImpl();
 
-    // Flag that determines if file reads/writes should be traced by JFR
+    // Flag set by jdk.internal.event.JFRTracing to determines if
+    // file reads and writes should be traced by JFR.
     private static boolean jfrTracing;
 
     // File descriptor
@@ -415,8 +416,7 @@ public class FileChannelImpl
         return implWrite(srcs, offset, length);
     }
 
-    private long implWrite(ByteBuffer[] srcs, int offset, int length) throws IOException
-    {
+    private long implWrite(ByteBuffer[] srcs, int offset, int length) throws IOException {
         Objects.checkFromIndexSize(offset, length, srcs.length);
         ensureOpen();
         if (!writable)

@@ -69,8 +69,11 @@ public class FileOutputStream extends OutputStream
     private static final JavaIOFileDescriptorAccess FD_ACCESS =
         SharedSecrets.getJavaIOFileDescriptorAccess();
 
-    // Flag that determines if file writes should be traced by JFR
-    static boolean jfrTracing;
+    /**
+     * Flag set by jdk.internal.event.JFRTracing to determines if
+     * file writes should be traced by JFR.
+     */
+    private static boolean jfrTracing;
 
     /**
      * The system dependent file descriptor.

@@ -60,8 +60,11 @@ public class FileInputStream extends InputStream
 {
     private static final int DEFAULT_BUFFER_SIZE = 8192;
 
-    // Flag that determines if file reads should be traced by JFR
-    static boolean jfrTracing;
+    /**
+     * Flag set by jdk.internal.event.JFRTracing to determines if
+     * file reads should be traced by JFR.
+     */
+    private static boolean jfrTracing;
 
     /* File Descriptor - handle to the open file */
     private final FileDescriptor fd;

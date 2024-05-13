@@ -70,7 +70,10 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
     private static final int O_DSYNC =  8;
     private static final int O_TEMPORARY =  16;
 
-    // Flag that determines if file reads/writes should be traced by JFR
+    /**
+     * Flag set by jdk.internal.event.JFRTracing to determines if
+     * file reads and writes should be traced by JFR.
+     */
     private static boolean jfrTracing;
 
     private final FileDescriptor fd;
