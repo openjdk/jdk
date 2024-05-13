@@ -475,9 +475,6 @@ class Thread: public ThreadShadow {
   }
 
  public:
-  // Used by fast lock support
-  virtual bool is_lock_owned(address adr) const;
-
   // Check if address is within the given range of this thread's
   // stack:  stack_base() > adr >= limit
   bool is_in_stack_range_incl(address adr, address limit) const {

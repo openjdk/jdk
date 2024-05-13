@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -287,10 +287,11 @@ public final class SecuritySupport {
 
     public static List<SafePath> getPredefinedJFCFiles() {
         List<SafePath> list = new ArrayList<>();
-        try (var ds = doPrivilegedIOWithReturn(() -> Files.newDirectoryStream(JFC_DIRECTORY.toPath(), "*.jfc"))) {
+        try (var ds = doPrivilegedIOWithReturn(() -> Files.newDirectoryStream(JFC_DIRECTORY.toPath()))) {
             for (Path path : ds) {
                 SafePath s = new SafePath(path);
-                if (!SecuritySupport.isDirectory(s)) {
+                String text = s.toString();
+                if (text.endsWith(".jfc") && !SecuritySupport.isDirectory(s)) {
                     list.add(s);
                 }
             }
