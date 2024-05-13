@@ -2454,7 +2454,7 @@ public abstract class ClassLoader {
     }
 
     /*
-     * This is also called by SymbolLookup::libraryLookup. In that case, we need
+     * This is also called by SymbolLookup::loaderLookup. In that case, we need
      * to avoid a restricted check, as that check has already been performed when
      * obtaining the lookup.
      */
