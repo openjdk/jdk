@@ -26,9 +26,11 @@
  * @bug 8331575
  * @summary C2: crash when ConvL2I is split thru phi at LongCountedLoop
  * @run main/othervm -XX:-BackgroundCompilation -XX:-TieredCompilation -XX:-UseOnStackReplacement
- *                   -XX:+StressGCM -XX:StressSeed=92643864 TestLongCountedLoopConvL2I
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM -XX:StressSeed=92643864 TestLongCountedLoopConvL2I
  * @run main/othervm -XX:-BackgroundCompilation -XX:-TieredCompilation -XX:-UseOnStackReplacement
- *                   -XX:+StressGCM TestLongCountedLoopConvL2I
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM TestLongCountedLoopConvL2I
+ * @run main/othervm -XX:-BackgroundCompilation -XX:-TieredCompilation
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM TestLongCountedLoopConvL2I
  */
 
 public class TestLongCountedLoopConvL2I {
