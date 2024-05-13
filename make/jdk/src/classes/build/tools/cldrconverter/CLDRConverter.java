@@ -87,6 +87,7 @@ public class CLDRConverter {
     static final String ZONE_NAME_PREFIX = "timezone.displayname.";
     static final String METAZONE_ID_PREFIX = "metazone.id.";
     static final String PARENT_LOCALE_PREFIX = "parentLocale.";
+    static final String LIKELY_SCRIPT_PREFIX = "likelyScript.";
     static final String META_EMPTY_ZONE_NAME = "EMPTY_ZONE";
     static final String[] EMPTY_ZONE = {"", "", "", "", "", ""};
     static final String META_ETCUTC_ZONE_NAME = "ETC_UTC";
@@ -114,8 +115,12 @@ public class CLDRConverter {
 
     // "parentLocales" map
     private static final Map<String, SortedSet<String>> parentLocalesMap = new HashMap<>();
+    static boolean nonlikelyScript;
     private static final ResourceBundle.Control defCon =
         ResourceBundle.Control.getControl(ResourceBundle.Control.FORMAT_DEFAULT);
+
+    // "likelyScript" map
+    private static final Map<String, SortedSet<String>> likelyScriptMap = new HashMap<>();
 
     private static Set<String> AVAILABLE_TZIDS;
     static int copyrightYear;
@@ -175,7 +180,7 @@ public class CLDRConverter {
     private static boolean verbose;
 
     private CLDRConverter() {
-       // no instantiation
+        // no instantiation
     }
 
     @SuppressWarnings("AssignmentToForLoopParameter")
@@ -475,8 +480,8 @@ public class CLDRConverter {
         parseLDMLFile(new File(SPPL_SOURCE_FILE), handlerSuppl);
         Map<String, Object> parentData = handlerSuppl.getData("root");
         parentData.keySet().stream()
-                .filter(key -> key.startsWith(PARENT_LOCALE_PREFIX))
-                .forEach(key -> {
+            .filter(key -> key.startsWith(PARENT_LOCALE_PREFIX))
+            .forEach(key -> {
                 parentLocalesMap.put(key, new TreeSet<String>(
                     Arrays.asList(((String)parentData.get(key)).split(" "))));
             });
@@ -492,6 +497,16 @@ public class CLDRConverter {
         // Parse likelySubtags
         handlerLikelySubtags = new LikelySubtagsParseHandler();
         parseLDMLFile(new File(LIKELYSUBTAGS_SOURCE_FILE), handlerLikelySubtags);
+        handlerLikelySubtags.getData().forEach((from, to) -> {
+            if (!from.contains("-")) { // look for language-only tag
+                var script = to.split("-")[1];
+                var key = LIKELY_SCRIPT_PREFIX + script;
+                var prev = likelyScriptMap.putIfAbsent(key, new TreeSet<String>(Set.of(from)));
+                if (prev != null) {
+                    prev.add(from);
+                }
+            }
+        });
 
         // Parse supplementalMetadata
         // Currently interested in deprecated time zone ids and language aliases.
@@ -561,6 +576,7 @@ public class CLDRConverter {
         // for now.
         if (isBaseModule) {
             metaInfo.putAll(parentLocalesMap);
+            metaInfo.putAll(likelyScriptMap);
         }
 
         for (Bundle bundle : bundles) {
@@ -1135,7 +1151,7 @@ public class CLDRConverter {
         // check irregular parents
         for (int i = 0; i < candidates.size(); i++) {
             Locale l = candidates.get(i);
-            Locale p = childToParentLocaleMap.get(l);
+            Locale p = getParentLocale(l);
             if (!l.equals(Locale.ROOT) &&
                 Objects.nonNull(p) &&
                 !candidates.get(i+1).equals(p)) {
@@ -1150,6 +1166,27 @@ public class CLDRConverter {
         }
 
         return candidates;
+    }
+
+    private static Locale getParentLocale(Locale child) {
+        Locale parent = childToParentLocaleMap.get(child);
+
+        // check non-likely script for root
+        if (nonlikelyScript && parent == null && child.getCountry().isEmpty()) {
+            var lang = " " + child.getLanguage() + " ";
+            var script = child.getScript();
+
+            if (!script.isEmpty()) {
+                parent = likelyScriptMap.entrySet().stream()
+                    .filter(e -> e.getValue().contains(lang))
+                    .findAny()
+                    .map(Map.Entry::getKey)
+                    .map(likely -> likely.equals(script) ? null : Locale.ROOT)
+                    .orElse(null);
+            }
+        }
+
+        return parent;
     }
 
     private static void generateZoneName() throws Exception {
