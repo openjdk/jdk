@@ -70,7 +70,7 @@ public:
     }
   };
 
-  static RegionData empty_regiondata;
+  static const RegionData empty_regiondata;
 
 private:
   struct IntervalState {
@@ -81,7 +81,7 @@ private:
 
   public:
     IntervalState() : type_flag{0,0}, sidx() {}
-    IntervalState(StateType type, RegionData data) {
+    IntervalState(const StateType type, const RegionData data) {
       type_flag[0] = static_cast<uint8_t>(type);
       type_flag[1] = static_cast<uint8_t>(data.flag);
       sidx = data.stack_idx;
@@ -139,13 +139,13 @@ public:
     }
   };
 
-  SummaryDiff register_mapping(position A, position B, StateType state, RegionData& metadata);
+  SummaryDiff register_mapping(position A, position B, StateType state, const RegionData& metadata);
 
-  SummaryDiff reserve_mapping(position from, position sz, RegionData& metadata) {
+  SummaryDiff reserve_mapping(position from, position sz, const RegionData& metadata) {
     return register_mapping(from, from + sz, StateType::Reserved, metadata);
   }
 
-  SummaryDiff commit_mapping(position from, position sz, RegionData& metadata) {
+  SummaryDiff commit_mapping(position from, position sz, const RegionData& metadata) {
     return register_mapping(from, from + sz, StateType::Committed, metadata);
   }
 

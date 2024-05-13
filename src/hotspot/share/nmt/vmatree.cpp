@@ -27,10 +27,10 @@
 #include "nmt/vmatree.hpp"
 #include "utilities/growableArray.hpp"
 
-VMATree::RegionData VMATree::empty_regiondata{NativeCallStackStorage::StackIndex{}, mtNone};
+const VMATree::RegionData VMATree::empty_regiondata{NativeCallStackStorage::StackIndex{}, mtNone};
 
 VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType state,
-                                               RegionData& metadata) {
+                                               const RegionData& metadata) {
   if (A == B) {
     // A 0-sized mapping isn't worth recording.
     return SummaryDiff();

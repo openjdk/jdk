@@ -71,7 +71,7 @@ TEST_VM_F(VMATreeTest, LowLevel) {
   NativeCallStackStorage::StackIndex si2 = ncs.push(stack2);
 
   // Adjacent reservations should result in exactly 2 nodes
-  auto adjacent_2_nodes = [&](VMATree::RegionData& rd) {
+  auto adjacent_2_nodes = [&](const VMATree::RegionData& rd) {
     Tree tree;
     for (int i = 0; i < 100; i++) {
       tree.reserve_mapping(i * 100, 100, rd);
@@ -118,7 +118,7 @@ TEST_VM_F(VMATreeTest, LowLevel) {
   }
 
   // After removing all ranges we should be left with an entirely empty tree
-  auto remove_all_leaves_empty_tree = [&](VMATree::RegionData& rd) {
+  auto remove_all_leaves_empty_tree = [&](const VMATree::RegionData& rd) {
     Tree tree;
     tree.reserve_mapping(0, 100*100, rd);
     for (int i = 0; i < 100; i++) {
@@ -135,7 +135,7 @@ TEST_VM_F(VMATreeTest, LowLevel) {
   };
 
   // Committing in middle of reservation ends with a sequence of 4 nodes
-  auto commit_middle = [&](VMATree::RegionData& rd) {
+  auto commit_middle = [&](const VMATree::RegionData& rd) {
     Tree tree;
     tree.reserve_mapping(0, 100, rd);
     tree.commit_mapping(50, 25, rd);
@@ -163,7 +163,7 @@ TEST_VM_F(VMATreeTest, LowLevel) {
   };
 
   // Committing in a whole reserved range results in 2 nodes
-  auto commit_whole = [&](VMATree::RegionData& rd) {
+  auto commit_whole = [&](const VMATree::RegionData& rd) {
     Tree tree;
     tree.reserve_mapping(0, 100*100, rd);
     for (int i = 0; i < 100; i++) {
