@@ -169,6 +169,7 @@ class ImmutableCollections {
                 public <K, V> Map<K, StableValue<V>> stableMap(Set<? extends K> keys) {
                     K[] arr = (K[]) keys.stream()
                             .map(Objects::requireNonNull)
+                            .distinct()
                             .toArray();
                     return keys instanceof EnumSet
                             ? StableEnumMap.create(arr)
@@ -180,9 +181,7 @@ class ImmutableCollections {
                 public <K, V> V computeIfUnset(Map<K, StableValue<V>> map,
                                                K key,
                                                Function<? super K, ? extends V> mapper) {
-                    if (map instanceof HasComputeIfUnset) {
-                        @SuppressWarnings("unchecked")
-                        HasComputeIfUnset<K, V> uc = ((HasComputeIfUnset<K, V>) map);
+                    if (map instanceof ComputeIfUnsetMap<K, V> uc) {
                         return uc.computeIfUnset(key, mapper);
                     } else {
                         StableValue<V> stable = map.get(key);
@@ -1516,13 +1515,13 @@ class ImmutableCollections {
 
     // Internal interface used to indicate the presence of
     // the computeIfUnset method that is unique to StableMap and StableEnumMap
-    interface HasComputeIfUnset<K, V> {
+    interface ComputeIfUnsetMap<K, V> extends Map<K, StableValue<V>> {
         V computeIfUnset(K key, Function<? super K, ? extends V> mapper);
     }
 
     static final class StableMap<K, V>
             extends AbstractImmutableMap<K, StableValue<V>>
-            implements Map<K, StableValue<V>>, HasComputeIfUnset<K, V> {
+            implements Map<K, StableValue<V>>, ComputeIfUnsetMap<K, V> {
 
         @Stable
         private final int size;
@@ -1695,7 +1694,7 @@ class ImmutableCollections {
 
     static final class StableEnumMap<K extends Enum<K>, V>
             extends AbstractImmutableMap<K, StableValue<V>>
-            implements Map<K, StableValue<V>>, HasComputeIfUnset<K, V> {
+            implements Map<K, StableValue<V>>, ComputeIfUnsetMap<K, V> {
 
         @Stable
         private int size;

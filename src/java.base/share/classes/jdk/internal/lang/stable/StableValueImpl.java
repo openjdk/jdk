@@ -112,7 +112,7 @@ public final class StableValueImpl<V> implements StableValue<V> {
 /*        // This is intentionally an old switch statement as it generates
         // more compact byte code.
         switch (state) {
-            case UNSET:    { throw StableUtil.notSet();}
+            case UNSET:    { throw StableUtil.notSet(); }
             case NULL:     { return null; }
             case NON_NULL: { return value; }
             case ERROR:    { throw StableUtil.error(this); }

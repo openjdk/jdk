@@ -229,7 +229,7 @@ public sealed interface StableValue<V>
 
     /**
      * {@return an unmodifiable, shallowly immutable, thread-safe, value-stable,
-     * {@linkplain Map } where the {@linkplain java.util.Map#keySet() keys}
+     * {@linkplain Map} where the {@linkplain java.util.Map#keySet() keys}
      * contains precisely the distinct provided set of {@code keys} and where the
      * stable values are, in turn, lazily computed upon being accessed
      * (e.g. via {@linkplain Map#get(Object) get(key)})}

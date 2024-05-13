@@ -59,7 +59,7 @@ public record StableValueElement<V>(
         // This is intentionally an old switch statement as it generates
         // more compact byte code.
         switch (stateVolatile()) {
-            case UNSET:    { throw StableUtil.notSet();}
+            case UNSET:    { throw StableUtil.notSet(); }
             case NON_NULL: { return elementVolatile(); }
             case NULL:     { return null; }
             case ERROR:    { throw StableUtil.error(this); }
@@ -148,7 +148,7 @@ public record StableValueElement<V>(
         // This is intentionally an old switch statement as it generates
         // more compact byte code.
         switch (stateVolatile()) {
-            case UNSET:    { return computeIfUnsetVolatile0(provider, key);}
+            case UNSET:    { return computeIfUnsetVolatile0(provider, key); }
             case NON_NULL: { return elementVolatile(); }
             case NULL:     { return null; }
             case ERROR:    { throw StableUtil.error(this); }
