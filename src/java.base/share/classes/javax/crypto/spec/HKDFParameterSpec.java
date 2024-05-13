@@ -29,7 +29,6 @@ import jdk.internal.javac.PreviewFeature;
 
 import javax.crypto.SecretKey;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -77,8 +76,7 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
                     + "at least one salt "
                     + "value, or values for both before calling `extractOnly`");
             } else {
-                this.extract = new Extract(List.copyOf(ikms),
-                                           List.copyOf(salts));
+                this.extract = new Extract(ikms, salts);
                 return this.extract;
             }
         }
@@ -224,15 +222,23 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
      * object
      *
      * @param prk
-     *     the pseudorandom key (may be null)
+     *     the pseudorandom key
      * @param info
-     *     the optional context and application specific information (may be null)
+     *     the optional context and application specific information
      * @param length
-     *     the length of output keying material
+     *     the length of output keying material (must be > 0)
+     *
+     * @throws NullPointerException if {@code prk} or {@code info} is {@code null}
      *
      * @return a new {@code Expand} object
      */
     static Expand expand(SecretKey prk, byte[] info, int length) {
+        if(prk == null) {
+           throw new NullPointerException("prk must not be null");
+        }
+        if(info == null) {
+           throw new NullPointerException("info must not be null");
+        }
         return new Expand(prk, info, length);
     }
 
@@ -247,13 +253,21 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
      * @param ext
      *     a pre-generated {@code Extract}
      * @param info
-     *     the optional context and application specific information (may be {@code null})
+     *     the optional context and application specific information
      * @param length
-     *     the length of output keying material
+     *     the length of output keying material (must be > 0)
+     *
+     * @throws NullPointerException if {@code ext} or {@code info} is {@code null}
      *
      * @return a new {@code ExtractExpand} object
      */
     static ExtractExpand extractExpand(Extract ext, byte[] info, int length) {
+        if(ext == null) {
+            throw new NullPointerException("ext must not be null");
+        }
+        if(info == null) {
+            throw new NullPointerException("info must not be null");
+        }
         return new ExtractExpand(ext, info, length);
     }
 
@@ -272,8 +286,8 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
         }
 
         private Extract(List<SecretKey> ikms, List<SecretKey> salts) {
-            this.ikms = ikms;
-            this.salts = salts;
+            this.ikms = List.copyOf(ikms);
+            this.salts = List.copyOf(salts);
         }
 
         /**
@@ -282,7 +296,7 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
          * @return the unmodifiable {@code List} of initial key material values
          */
         public List<SecretKey> ikms() {
-            return Collections.unmodifiableList(ikms);
+            return ikms;
         }
 
         /**
@@ -291,7 +305,7 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
          * @return the unmodifiable {@code List} of salt values
          */
         public List<SecretKey> salts() {
-            return Collections.unmodifiableList(salts);
+            return salts;
         }
 
     }
@@ -315,14 +329,14 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
          * @param info
          *     the optional context and application specific information
          * @param length
-         *     the length of output keying material
+         *     the length of output keying material (must be > 0)
          */
         private Expand(SecretKey prk, byte[] info, int length) {
             // a null prk could be indicative of ExtractExpand
             this.prk = prk;
             this.info = (info == null) ? null : info.clone();
-            if (length < 1) {
-                throw new IllegalArgumentException("length must be >= 1");
+            if (!(length > 0)) {
+                throw new IllegalArgumentException("length must be > 0");
             }
             this.length = length;
         }
@@ -385,10 +399,10 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
             } else {
                 this.ext = ext;
             }
-            if (length < 1) {
-                throw new IllegalArgumentException("length must be >= 1");
+            if (!(length > 0)) {
+                throw new IllegalArgumentException("length must be > 0");
             }
-            this.exp = expand(null, info, length);
+            this.exp = new Expand(null, info, length);
         }
 
         /**
