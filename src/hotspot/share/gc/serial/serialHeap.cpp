@@ -30,7 +30,6 @@
 #include "code/codeCache.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/serial/cardTableRS.hpp"
-#include "gc/serial/defNewGeneration.inline.hpp"
 #include "gc/serial/serialFullGC.hpp"
 #include "gc/serial/serialHeap.inline.hpp"
 #include "gc/serial/serialMemoryPools.hpp"
@@ -485,7 +484,7 @@ void SerialHeap::do_collection(bool full,
   assert(my_thread->is_VM_thread(), "only VM thread");
   assert(Heap_lock->is_locked(),
          "the requesting thread should have the Heap_lock");
-  guarantee(!is_gc_active(), "collection is not reentrant");
+  guarantee(!is_stw_gc_active(), "collection is not reentrant");
 
   if (GCLocker::check_active_before_gc()) {
     return; // GC is disabled (e.g. JNI GetXXXCritical operation)
@@ -496,10 +495,10 @@ void SerialHeap::do_collection(bool full,
 
   ClearedAllSoftRefs casr(do_clear_all_soft_refs, soft_ref_policy());
 
-  IsGCActiveMark active_gc_mark;
+  IsSTWGCActiveMark active_gc_mark;
 
   bool complete = full && (max_generation == OldGen);
-  bool old_collects_young = complete && !ScavengeBeforeFullGC;
+  bool old_collects_young = complete;
   bool do_young_collection = !old_collects_young && _young_gen->should_collect(full, size, is_tlab);
 
   const PreGenGCValues pre_gc_values = get_pre_gc_values();
@@ -757,17 +756,33 @@ void SerialHeap::process_roots(ScanningOption so,
   }
 }
 
-bool SerialHeap::no_allocs_since_save_marks() {
-  return _young_gen->no_allocs_since_save_marks() &&
-         _old_gen->no_allocs_since_save_marks();
+template <typename OopClosureType>
+static void oop_iterate_from(OopClosureType* blk, ContiguousSpace* space, HeapWord** from) {
+  assert(*from != nullptr, "precondition");
+  HeapWord* t;
+  HeapWord* p = *from;
+
+  const intx interval = PrefetchScanIntervalInBytes;
+  do {
+    t = space->top();
+    while (p < t) {
+      Prefetch::write(p, interval);
+      p += cast_to_oop(p)->oop_iterate_size(blk);
+    }
+  } while (t < space->top());
+
+  *from = space->top();
 }
 
 void SerialHeap::scan_evacuated_objs(YoungGenScanClosure* young_cl,
                                      OldGenScanClosure* old_cl) {
+  ContiguousSpace* to_space = young_gen()->to();
   do {
-    young_gen()->oop_since_save_marks_iterate(young_cl);
-    old_gen()->oop_since_save_marks_iterate(old_cl);
-  } while (!no_allocs_since_save_marks());
+    oop_iterate_from(young_cl, to_space, &_young_gen_saved_top);
+    oop_iterate_from(old_cl, old_gen()->space(), &_old_gen_saved_top);
+    // Recheck to-space only, because postcondition of oop_iterate_from is no
+    // unscanned objs
+  } while (_young_gen_saved_top != to_space->top());
   guarantee(young_gen()->promo_failure_scan_is_complete(), "Failed to finish scan");
 }
 
@@ -934,8 +949,8 @@ bool SerialHeap::is_maximal_no_gc() const {
 }
 
 void SerialHeap::save_marks() {
-  _young_gen->save_marks();
-  _old_gen->save_marks();
+  _young_gen_saved_top = _young_gen->to()->top();
+  _old_gen_saved_top = _old_gen->space()->top();
 }
 
 void SerialHeap::verify(VerifyOption option /* ignored */) {

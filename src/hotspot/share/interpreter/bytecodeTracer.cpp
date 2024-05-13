@@ -555,8 +555,7 @@ void BytecodePrinter::print_attributes(int bci, outputStream* st) {
         int indy_index;
         int cp_index;
         if (is_linked()) {
-          int i = get_native_index_u4();
-          indy_index = ConstantPool::decode_invokedynamic_index(i);
+          indy_index = get_native_index_u4();
           cp_index = constants()->resolved_indy_entry_at(indy_index)->constant_pool_index();
         } else {
           indy_index = -1;

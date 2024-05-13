@@ -261,4 +261,8 @@ public class PrimitivePatternsSwitchErrors {
             case char c -> c; // Error - not exhaustive and not allowed
         };
     }
+
+    public static <T extends Integer> boolean wideningReferenceConversionUnboxingAndNarrowingPrimitive(T i) {
+        return i instanceof byte b;  // not allowed as a conversion
+    }
 }

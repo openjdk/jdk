@@ -57,6 +57,7 @@ public sealed interface ClassSignature
      * {@return a class signature}
      * @param superclassSignature the superclass
      * @param superinterfaceSignatures the interfaces
+     * @since 23
      */
     public static ClassSignature of(Signature.ClassTypeSig superclassSignature,
                                     Signature.ClassTypeSig... superinterfaceSignatures) {
@@ -68,6 +69,7 @@ public sealed interface ClassSignature
      * @param typeParameters the type parameters
      * @param superclassSignature the superclass
      * @param superinterfaceSignatures the interfaces
+     * @since 23
      */
     public static ClassSignature of(List<Signature.TypeParam> typeParameters,
                                     Signature.ClassTypeSig superclassSignature,
