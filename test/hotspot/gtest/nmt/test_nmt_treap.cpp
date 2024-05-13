@@ -101,6 +101,7 @@ public:
       void free(void* ptr) {
         for (int i = 0; i < allocations.length(); i++) {
           Check& c = allocations.at(i);
+          EXPECT_NE(nullptr, c.ptr);
           if (c.ptr == ptr) {
             c.release();
           }

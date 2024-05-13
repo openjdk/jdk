@@ -157,14 +157,16 @@ private:
       return nullptr;
     }
 
-    if (COMPARATOR::cmp(node->_key, k) == 0) { // EQ
+    int key_cmp_k = COMPARATOR::cmp(node->key(), k);
+
+    if (key_cmp_k == 0) { // key EQ k
       return node;
     }
 
-    if (COMPARATOR::cmp(node->_key, k) <= 0) { // LEQ
-      return find(node->_left, k DEBUG_ONLY(COMMA recur_count + 1));
-    } else {
-      return find(node->_right, k DEBUG_ONLY(COMMA recur_count + 1));
+    if (key_cmp_k < 0) { // key LT k
+      return find(node->right(), k DEBUG_ONLY(COMMA recur_count + 1));
+    } else { // key GT k
+      return find(node->left(), k DEBUG_ONLY(COMMA recur_count + 1));
     }
   }
 
