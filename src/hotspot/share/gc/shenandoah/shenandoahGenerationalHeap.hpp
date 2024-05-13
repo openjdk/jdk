@@ -50,6 +50,9 @@ public:
   void retire_plab(PLAB* plab);
   void retire_plab(PLAB* plab, Thread* thread);
 
+  // ---------- Update References
+  //
+  void update_heap_references(bool concurrent) override;
 private:
   HeapWord* allocate_from_plab(Thread* thread, size_t size, bool is_promotion);
   HeapWord* allocate_from_plab_slow(Thread* thread, size_t size, bool is_promotion);

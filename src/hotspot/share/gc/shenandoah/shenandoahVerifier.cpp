@@ -1342,7 +1342,6 @@ void ShenandoahVerifier::verify_rem_set_before_mark() {
   shenandoah_assert_safepoint();
   assert(_heap->mode()->is_generational(), "Only verify remembered set for generational operational modes");
 
-  ShenandoahRegionIterator iterator;
   RememberedScanner* scanner = _heap->card_scan();
   ShenandoahVerifyRemSetClosure check_interesting_pointers(true);
   ShenandoahMarkingContext* ctx;
@@ -1356,13 +1355,8 @@ void ShenandoahVerifier::verify_rem_set_before_mark() {
     ctx = nullptr;
   }
 
-  while (iterator.has_next()) {
-    ShenandoahHeapRegion* r = iterator.next();
-    if (r == nullptr) {
-      // TODO: Can this really happen?
-      break;
-    }
-
+  for (size_t i = 0, n = _heap->num_regions(); i < n; ++i) {
+    ShenandoahHeapRegion* r = _heap->get_region(i);
     HeapWord* tams = (ctx != nullptr) ? ctx->top_at_mark_start(r) : nullptr;
 
     // TODO: Is this replaceable with call to help_verify_region_rem_set?
@@ -1417,14 +1411,8 @@ void ShenandoahVerifier::verify_rem_set_after_full_gc() {
   shenandoah_assert_safepoint();
   assert(_heap->mode()->is_generational(), "Only verify remembered set for generational operational modes");
 
-  ShenandoahRegionIterator iterator;
-
-  while (iterator.has_next()) {
-    ShenandoahHeapRegion* r = iterator.next();
-    if (r == nullptr) {
-      // TODO: Can this really happen?
-      break;
-    }
+  for (size_t i = 0, n = _heap->num_regions(); i < n; ++i) {
+    ShenandoahHeapRegion* r = _heap->get_region(i);
     if (r->is_old() && !r->is_cset()) {
       help_verify_region_rem_set(r, nullptr, r->bottom(), r->top(), r->top(), "Remembered set violation at end of Full GC");
     }
@@ -1439,7 +1427,6 @@ void ShenandoahVerifier::verify_rem_set_before_update_ref() {
   shenandoah_assert_safepoint();
   assert(_heap->mode()->is_generational(), "Only verify remembered set for generational operational modes");
 
-  ShenandoahRegionIterator iterator;
   ShenandoahMarkingContext* ctx;
 
   if (_heap->old_generation()->is_mark_complete() || _heap->active_generation()->is_global()) {
@@ -1448,12 +1435,8 @@ void ShenandoahVerifier::verify_rem_set_before_update_ref() {
     ctx = nullptr;
   }
 
-  while (iterator.has_next()) {
-    ShenandoahHeapRegion* r = iterator.next();
-    if (r == nullptr) {
-      // TODO: Can this really happen?
-      break;
-    }
+  for (size_t i = 0, n = _heap->num_regions(); i < n; ++i) {
+    ShenandoahHeapRegion* r = _heap->get_region(i);
     if (r->is_old() && !r->is_cset()) {
       help_verify_region_rem_set(r, ctx, r->bottom(), r->top(), r->get_update_watermark(),
                                  "Remembered set violation at init-update-references");

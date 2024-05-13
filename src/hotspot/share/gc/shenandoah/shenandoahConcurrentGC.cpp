@@ -1200,7 +1200,6 @@ void ShenandoahConcurrentGC::op_update_thread_roots() {
 void ShenandoahConcurrentGC::op_final_updaterefs() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "must be at safepoint");
-  assert(!heap->_update_refs_iterator.has_next(), "Should have finished update references");
 
   heap->finish_concurrent_roots();
 

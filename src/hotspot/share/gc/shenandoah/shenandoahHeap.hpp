@@ -268,7 +268,6 @@ private:
   size_t    _num_regions;
   ShenandoahHeapRegion** _regions;
   uint8_t* _affiliations;       // Holds array of enum ShenandoahAffiliation, including FREE status in non-generational mode
-  ShenandoahRegionIterator _update_refs_iterator;
 
 public:
 
@@ -451,7 +450,7 @@ private:
   void do_class_unloading();
   // Reference updating
   void prepare_update_heap_references(bool concurrent);
-  void update_heap_references(bool concurrent);
+  virtual void update_heap_references(bool concurrent);
   // Final update region states
   void update_heap_region_states(bool concurrent);
 
