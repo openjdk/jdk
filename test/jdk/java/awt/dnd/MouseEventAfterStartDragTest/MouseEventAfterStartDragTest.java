@@ -50,6 +50,7 @@ import javax.swing.SwingUtilities;
  * @key headful
  * @run main MouseEventAfterStartDragTest
  */
+
 public final class MouseEventAfterStartDragTest implements AWTEventListener {
     final Frame frame = new Frame();
     volatile Point srcPoint;
