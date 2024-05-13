@@ -47,16 +47,15 @@ import java.util.Objects;
  * <p>
  * {@code KDF} objects are instantiated through the {@code getInstance} family
  * of methods.  Key derivation algorithm names follow a naming convention of
- * <I>Algorithm</I>with<I>PRF</I>.  The algorithm field is the KDF algorithm (e.g.
- * HKDF, etc.), while the PRF specifier identifies the
- * underlying pseudorandom function (e.g. HmacSHA256).  For instance, a KDF
- * implementation of HKDF using HMAC-SHA256 will have an algorithm string of
- * "HKDFwithHmacSHA256".  In some cases the PRF portion of the algorithm specifier
- * may be omitted if the KDF algorithm has a fixed or default PRF.
+ * <I>Algorithm</I>with<I>PRF</I>.  The algorithm field is the KDF algorithm
+ * (e.g. HKDF, etc.), while the PRF specifier identifies the underlying
+ * pseudorandom function (e.g. HmacSHA256).  For instance, a KDF implementation
+ * of HKDF using HMAC-SHA256 will have an algorithm string of
+ * "HKDFwithHmacSHA256".  In some cases the PRF portion of the algorithm
+ * specifier may be omitted if the KDF algorithm has a fixed or default PRF.
  * <p>
- *
  * Example:
- *  {@snippet lang = java:
+ * {@snippet lang = java:
  *    KDF kdfHkdf = KDF.getInstance("HKDFWithHmacSHA256",
  *                                       (AlgorithmParameterSpec) null);
  *
@@ -68,9 +67,7 @@ import java.util.Objects;
  *    kdfHkdf.deriveKey("AES", kdfParameterSpec);
  *}
  *
- *
  * @see SecretKey
- *
  * @since 23
  */
 //@PreviewFeature(feature=PreviewFeature.Feature.KEY_DERIVATION)
@@ -140,9 +137,6 @@ public final class KDF {
     /**
      * Returns the algorithm name of this {@code KDF} object.
      *
-     * <p>This is the same name that was specified in one of the
-     * {@code getInstance} calls that created this {@code KDF} object.
-     *
      * @return the algorithm name of this {@code KDF} object
      */
     public String getAlgorithm() {
@@ -160,7 +154,7 @@ public final class KDF {
     }
 
     /**
-     * Creates an instance of the {@code KDF} object.
+     * Returns a {@code KDF} object that implements the specified algorithm..
      *
      * @param algorithm
      *     the key derivation algorithm to use
@@ -168,10 +162,10 @@ public final class KDF {
      * @return a {@code KDF} object
      *
      * @throws NoSuchAlgorithmException
-     *     if no {@code Provider} supports a {@code KDFSpi} implementation for
-     *     the specified algorithm
+     *     if no {@code Provider} supports a {@code KDF} implementation for the
+     *     specified algorithm
      * @throws NullPointerException
-     *     if the algorithm is {@code null}
+     *     if {@code algorithm} is {@code null}
      */
     public static KDF getInstance(String algorithm)
         throws NoSuchAlgorithmException {
@@ -186,8 +180,8 @@ public final class KDF {
     }
 
     /**
-     * Creates an instance of the {@code KDF} object with a specific
-     * {@code Provider}.
+     * Returns a {@code KDF} object that implements the specified algorithm from
+     * the specified security provider.
      *
      * @param algorithm
      *     the key derivation algorithm to use
@@ -219,8 +213,8 @@ public final class KDF {
     }
 
     /**
-     * Creates an instance of the {@code KDF} object using a supplied
-     * {@code Provider} instance.
+     * Returns a {code KDF} object that implements the specified algorithm from
+     * the specified security provider.
      *
      * @param algorithm
      *     the key derivation algorithm to use
@@ -249,13 +243,14 @@ public final class KDF {
     }
 
     /**
-     * Creates an instance of the {@code KDF} object.
+     * Returns a {@code KDF} object that implements the specified algorithm and
+     * is initialized with the specified parameters.
      *
      * @param algorithm
      *     the key derivation algorithm to use
      * @param algParameterSpec
      *     the {@code AlgorithmParameterSpec} used to configure this KDF's
-     *     algorithm or {@code null} if no additional parameters were provided.
+     *     algorithm or {@code null} if no additional parameters are provided
      *
      * @return a {@code KDF} object
      *
@@ -292,7 +287,7 @@ public final class KDF {
      *     the key derivation algorithm to use
      * @param algParameterSpec
      *     the {@code AlgorithmParameterSpec} used to configure this KDF's
-     *     algorithm or {@code null} if no additional parameters were provided.
+     *     algorithm or {@code null} if no additional parameters are provided
      * @param provider
      *     the provider to use for this key derivation
      *
@@ -341,7 +336,7 @@ public final class KDF {
      *     the key derivation algorithm to use
      * @param algParameterSpec
      *     the {@code AlgorithmParameterSpec} used to configure this KDF's
-     *     algorithm or {@code null} if no additional parameters were provided.
+     *     algorithm or {@code null} if no additional parameters are provided
      * @param provider
      *     the provider
      *
@@ -409,7 +404,6 @@ public final class KDF {
      *     if the information contained within the {@code KDFParameterSpec} is
      *     invalid or incorrect for the type of key to be derived, or specifies
      *     a type of output that is not a key (e.g. raw data)
-     *
      */
     public SecretKey deriveKey(String alg, KDFParameterSpec kdfParameterSpec)
         throws InvalidParameterSpecException {
@@ -431,7 +425,8 @@ public final class KDF {
                 }
                 try {
                     KDFSpi spi = (KDFSpi) s.newInstance(algorithmParameterSpec);
-                    SecretKey result = spi.engineDeriveKey(alg, kdfParameterSpec);
+                    SecretKey result = spi.engineDeriveKey(alg,
+                                                           kdfParameterSpec);
                     provider = s.getProvider();
                     this.spi = spi;
                     firstService = null;
@@ -468,8 +463,8 @@ public final class KDF {
      *     derivation parameters
      *
      * @return a byte array whose length matches the length field in the
-     *     processed {@code KDFParameterSpec} and containing the next
-     *     bytes of output from the key derivation function
+     *     processed {@code KDFParameterSpec} and containing the next bytes of
+     *     output from the key derivation function
      *
      * @throws InvalidParameterSpecException
      *     if the information contained within the {@code KDFParameterSpec} is
