@@ -148,13 +148,11 @@ public final class JdkConsoleImpl implements JdkConsole {
                             false /* only register if shutdown is not in progress */,
                             new Runnable() {
                                 public void run() {
-                                    synchronized(readLock) {
-                                        try {
-                                            if (restoreEcho) {
-                                                echo(true);
-                                            }
-                                        } catch (IOException _) { }
-                                    }
+                                    try {
+                                        if (restoreEcho) {
+                                            echo(true);
+                                        }
+                                    } catch (IOException _) { }
                                 }
                             });
         } catch (IllegalStateException _) {
@@ -187,7 +185,7 @@ public final class JdkConsoleImpl implements JdkConsole {
     private final PrintWriter pw;
     private final Formatter formatter;
     private char[] rcb;
-    private boolean restoreEcho;
+    private volatile boolean restoreEcho;
     private boolean shutdownHookInstalled;
 
     private char[] readline(boolean zeroOut) throws IOException {
