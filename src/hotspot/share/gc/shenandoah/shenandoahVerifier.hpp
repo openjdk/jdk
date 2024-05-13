@@ -226,9 +226,10 @@ public:
 
   // Roots should only contain to-space oops
   void verify_roots_in_to_space();
-
   void verify_roots_no_forwarded();
 
+  // Check that generation usages are accurate before rebuilding free set
+  void verify_before_rebuilding_free_set();
 private:
    void help_verify_region_rem_set(ShenandoahHeapRegion* r, ShenandoahMarkingContext* ctx,
                                     HeapWord* from, HeapWord* top, HeapWord* update_watermark, const char* message);

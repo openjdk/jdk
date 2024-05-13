@@ -194,9 +194,6 @@ public:
   void prepare_for_verify() override;
   void verify(VerifyOption vo) override;
 
-  bool verify_generation_usage(bool verify_old, size_t old_regions, size_t old_bytes, size_t old_waste,
-                               bool verify_young, size_t young_regions, size_t young_bytes, size_t young_waste);
-
 // WhiteBox testing support.
   bool supports_concurrent_gc_breakpoints() const override {
     return true;

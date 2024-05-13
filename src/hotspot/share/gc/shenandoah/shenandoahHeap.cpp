@@ -2668,11 +2668,11 @@ void ShenandoahHeap::rebuild_free_set(bool concurrent) {
          old_region_count, first_old_region, last_old_region);
 
   if (mode()->is_generational()) {
-    assert(verify_generation_usage(true, old_generation()->used_regions(),
-                                   old_generation()->used(), old_generation()->get_humongous_waste(),
-                                   true, young_generation()->used_regions(),
-                                   young_generation()->used(), young_generation()->get_humongous_waste()),
-           "Generation accounts are inaccurate");
+#ifdef ASSERT
+    if (ShenandoahVerify) {
+      verifier()->verify_before_rebuilding_free_set();
+    }
+#endif
 
     // The computation of bytes_of_allocation_runway_before_gc_trigger is quite conservative so consider all of this
     // available for transfer to old. Note that transfer of humongous regions does not impact available.
@@ -2886,57 +2886,6 @@ bool ShenandoahHeap::requires_barriers(stackChunkOop obj) const {
 
 void ShenandoahHeap::transfer_old_pointers_from_satb() {
   _old_generation->transfer_pointers_from_satb();
-}
-
-bool ShenandoahHeap::verify_generation_usage(bool verify_old, size_t old_regions, size_t old_bytes, size_t old_waste,
-                                             bool verify_young, size_t young_regions, size_t young_bytes, size_t young_waste) {
-  size_t tally_old_regions = 0;
-  size_t tally_old_bytes = 0;
-  size_t tally_old_waste = 0;
-  size_t tally_young_regions = 0;
-  size_t tally_young_bytes = 0;
-  size_t tally_young_waste = 0;
-
-  shenandoah_assert_heaplocked_or_safepoint();
-  for (size_t i = 0; i < num_regions(); i++) {
-    ShenandoahHeapRegion* r = get_region(i);
-    if (r->is_old()) {
-      tally_old_regions++;
-      tally_old_bytes += r->used();
-      if (r->is_humongous()) {
-        ShenandoahHeapRegion* start = r->humongous_start_region();
-        HeapWord* obj_addr = start->bottom();
-        oop obj = cast_to_oop(obj_addr);
-        size_t word_size = obj->size();
-        HeapWord* end_addr = obj_addr + word_size;
-        if (end_addr <= r->end()) {
-          tally_old_waste += (r->end() - end_addr) * HeapWordSize;
-        }
-      }
-    } else if (r->is_young()) {
-      tally_young_regions++;
-      tally_young_bytes += r->used();
-      if (r->is_humongous()) {
-        ShenandoahHeapRegion* start = r->humongous_start_region();
-        HeapWord* obj_addr = start->bottom();
-        oop obj = cast_to_oop(obj_addr);
-        size_t word_size = obj->size();
-        HeapWord* end_addr = obj_addr + word_size;
-        if (end_addr <= r->end()) {
-          tally_young_waste += (r->end() - end_addr) * HeapWordSize;
-        }
-      }
-    }
-  }
-  if (verify_young &&
-      ((young_regions != tally_young_regions) || (young_bytes != tally_young_bytes) || (young_waste != tally_young_waste))) {
-    return false;
-  } else if (verify_old &&
-             ((old_regions != tally_old_regions) || (old_bytes != tally_old_bytes) || (old_waste != tally_old_waste))) {
-    return false;
-  } else {
-    return true;
-  }
 }
 
 ShenandoahGeneration* ShenandoahHeap::generation_for(ShenandoahAffiliation affiliation) const {
