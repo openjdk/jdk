@@ -103,7 +103,7 @@ final class StableUtil {
         // Issue a store fence, which is sufficient
         // to provide protection against store/store reordering.
         // See VarHandle::releaseFence
-        UNSAFE.storeFence();
+        UNSAFE.storeStoreFence();
     }
 
     /**

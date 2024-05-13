@@ -1664,7 +1664,7 @@ class ImmutableCollections {
 
         @Override
         public Set<Map.Entry<K, StableValue<V>>> entrySet() {
-            return new AbstractSet<>() {
+            return new AbstractImmutableSet<>() {
                 @Override
                 public int size() {
                     return StableMap.this.size;
@@ -1673,6 +1673,16 @@ class ImmutableCollections {
                 @Override
                 public Iterator<Map.Entry<K, StableValue<V>>> iterator() {
                     return new StableMapIterator();
+                }
+
+                @Override
+                public int hashCode() {
+                    return System.identityHashCode(this);
+                }
+
+                @Override
+                public boolean equals(Object o) {
+                    return o == this;
                 }
             };
         }
