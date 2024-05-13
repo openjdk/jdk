@@ -248,24 +248,24 @@ public:
     assert(verify_self(), "invariant");
 
     // (LEQ_k, GT_k)
-    node_pair fst_split = split(this->_root, k, LEQ);
+    node_pair first_split = split(this->_root, k, LEQ);
     // (LT_k, GEQ_k) == (LT_k, EQ_k) since it's from LEQ_k and keys are unique.
-    node_pair snd_split = split(fst_split.left, k, LT);
+    node_pair second_split = split(first_split.left, k, LT);
 
-    if (snd_split.right != nullptr) {
+    if (second_split.right != nullptr) {
       // The key k existed, we delete it.
       _node_count--;
-      ALLOCATOR::free(snd_split.right);
+      ALLOCATOR::free(second_split.right);
     }
     // Merge together everything
-    this->_root = merge(snd_split.left, fst_split.right);
+    _root = merge(second_split.left, first_split.right);
   }
 
   // Delete all nodes.
   void remove_all() {
     _node_count = 0;
     GrowableArrayCHeap<TreapNode*, mtNMT> to_delete;
-    to_delete.push(this->_root);
+    to_delete.push(_root);
 
     while (!to_delete.is_empty()) {
       TreapNode* head = to_delete.pop();
