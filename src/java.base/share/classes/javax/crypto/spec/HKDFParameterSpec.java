@@ -216,8 +216,7 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
     }
 
     /**
-     * Static helper-method that may be used to initialize a {@code Builder}
-     * with an empty {@code Extract}
+     * Returns a builder for building {@code Extract} and {@code ExtractExpand} objects.
      * <p>
      * Note: one or more of the methods {@code addIKM} or {@code addSalt} should
      * be called next, before calling build methods, such as
@@ -225,7 +224,7 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
      *
      * @return a {@code Builder} to mutate
      */
-    static Builder extract() {
+    static Builder builder() {
         return new Builder().createExtract();
     }
 

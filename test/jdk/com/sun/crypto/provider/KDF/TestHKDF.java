@@ -166,7 +166,7 @@ public class TestHKDF {
         // *** HKDF-Extract-only testing
         // Create KDFParameterSpec for the Extract-only operation
         KDFParameterSpec kdfParameterSpecExtract =
-            HKDFParameterSpec.extract().addIKM(ikmKey)
+            HKDFParameterSpec.builder().addIKM(ikmKey)
                              .addSalt(testData.salt)
                              .extractOnly();
         actualPRK = kdfExtract.deriveKey("RAW", kdfParameterSpecExtract);
@@ -198,7 +198,7 @@ public class TestHKDF {
 
         // Use the KDF to make us a key
         KDFParameterSpec kdfParameterSpecExtractExpand =
-            HKDFParameterSpec.extract().addIKM(ikmKey)
+            HKDFParameterSpec.builder().addIKM(ikmKey)
                              .addSalt(testData.salt)
                              .andExpand(testData.info,
                                         testData.outLen);
