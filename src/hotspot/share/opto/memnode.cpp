@@ -3306,7 +3306,7 @@ Node* MergePrimitiveArrayStores::make_merged_input_value(const Node_List& merge_
     merged_input_value = first->in(MemNode::ValueIn);
     bool is_true = is_con_RShift(_store->in(MemNode::ValueIn), base_last, shift_last);
 #else // VM_LITTLE_ENDIAN
-    // `_store` points to the lowest useing store in the Memory chain. On big endian it stores the
+    // `_store` points to the lowest using store in the Memory chain. On big endian it stores the
     //  unshifted `base`. `_store` and `first` need to be exchanged in the diagram above
     merged_input_value = _store->in(MemNode::ValueIn);
     bool is_true = is_con_RShift(first->in(MemNode::ValueIn), base_last, shift_last);
