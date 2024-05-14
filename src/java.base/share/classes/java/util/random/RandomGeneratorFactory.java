@@ -207,8 +207,8 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
 
         private RandomGenerator create() {
             return switch (name) {
-                case "SecureRandom" -> new SecureRandom();
-                case "Random" -> new Random();
+                case "Random" ->                new Random();
+                case "SecureRandom" ->          new SecureRandom();
                 case "SplittableRandom" ->      new SplittableRandom();
                 case "L32X64MixRandom" ->       new L32X64MixRandom();
                 case "L64X128MixRandom" ->      new L64X128MixRandom();
@@ -230,7 +230,7 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
                         + name + " does not support a long seed");
             }
             return switch (name) {
-                case "Random" -> new Random(seed);
+                case "Random" ->                new Random(seed);
                 case "SplittableRandom" ->      new SplittableRandom(seed);
                 case "L32X64MixRandom" ->       new L32X64MixRandom(seed);
                 case "L64X128MixRandom" ->      new L64X128MixRandom(seed);
@@ -281,6 +281,20 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
 
         private boolean isDeprecated() {
             return (flags & DEPRECATED) != 0;
+        }
+
+        private BigInteger period() {
+            /*
+             * 0                if i = j = k = 0
+             * (2^i - j) 2^k    otherwise
+             */
+            return i == 0 && j == 0 && k == 0
+                    ? BigInteger.ZERO
+                    : BigInteger.ONE.shiftLeft(i).subtract(BigInteger.valueOf(j)).shiftLeft(k);
+        }
+
+        private int stateBits() {
+            return i == 0 && k == 0 ? Integer.MAX_VALUE : i + k;
         }
     }
 
@@ -472,10 +486,7 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
      *         to maintain state of seed.
      */
     public int stateBits() {
-        int i = properties.i();
-        int k = properties.k();
-
-        return i == 0 && k == 0 ? Integer.MAX_VALUE : i + k;
+        return properties.stateBits();
     }
 
     /**
@@ -495,13 +506,7 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
      * @return BigInteger period.
      */
     public BigInteger period() {
-        int i = properties.i();
-        int j = properties.j();
-        int k = properties.k();
-
-        return i == 0 && j == 0 && k == 0
-                ? BigInteger.ZERO
-                : BigInteger.ONE.shiftLeft(i).subtract(BigInteger.valueOf(j)).shiftLeft(k);
+        return properties.period();
     }
 
     /**
