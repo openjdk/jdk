@@ -32,7 +32,6 @@ import jdk.internal.constant.PrimitiveClassDescImpl;
 import jdk.internal.constant.ReferenceClassDescImpl;
 import sun.invoke.util.Wrapper;
 
-import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
 import static jdk.internal.constant.ConstantUtils.MAX_ARRAY_TYPE_DESC_DIMENSIONS;
 import static jdk.internal.constant.ConstantUtils.arrayDepth;
@@ -83,7 +82,7 @@ public sealed interface ClassDesc
      * @see ClassDesc#ofInternalName(String)
      */
     static ClassDesc of(String name) {
-        validateBinaryClassName(requireNonNull(name));
+        validateBinaryClassName(name);
         return ClassDesc.ofDescriptor("L" + binaryToInternal(name) + ";");
     }
 
@@ -109,7 +108,7 @@ public sealed interface ClassDesc
      * @since 20
      */
     static ClassDesc ofInternalName(String name) {
-        validateInternalClassName(requireNonNull(name));
+        validateInternalClassName(name);
         return ClassDesc.ofDescriptor("L" + name + ";");
     }
 
@@ -132,7 +131,7 @@ public sealed interface ClassDesc
         if (packageName.isEmpty()) {
             return of(className);
         }
-        validateMemberName(requireNonNull(className), false);
+        validateMemberName(className, false);
         return ofDescriptor("L" + binaryToInternal(packageName) +
                 "/" + className + ";");
     }
@@ -268,7 +267,7 @@ public sealed interface ClassDesc
         if (!isClassOrInterface())
             throw new IllegalStateException("Outer class is not a class or interface type");
         validateMemberName(firstNestedName, false);
-        requireNonNull(moreNestedNames);
+        // implicit null-check
         for (String addNestedNames : moreNestedNames) {
             validateMemberName(addNestedNames, false);
         }

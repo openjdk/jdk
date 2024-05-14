@@ -54,6 +54,7 @@ public final class ConstantUtils {
      * @param name the class name
      * @return the class name passed if valid
      * @throws IllegalArgumentException if the class name is invalid
+     * @throws NullPointerException if class name is {@code null}
      */
     public static String validateBinaryClassName(String name) {
         for (int i = 0; i < name.length(); i++) {
@@ -71,6 +72,7 @@ public final class ConstantUtils {
      * @param name the class name
      * @return the class name passed if valid
      * @throws IllegalArgumentException if the class name is invalid
+     * @throws NullPointerException if class name is {@code null}
      */
     public static String validateInternalClassName(String name) {
         for (int i = 0; i < name.length(); i++) {
@@ -147,6 +149,7 @@ public final class ConstantUtils {
      * @param name the name of the member
      * @return the name passed if valid
      * @throws IllegalArgumentException if the member name is invalid
+     * @throws NullPointerException if the member name is {@code null}
      */
     public static String validateMemberName(String name, boolean method) {
         int len = name.length();
