@@ -68,6 +68,10 @@ abstract class HkdfKeyDerivation extends KDFSpi {
                       AlgorithmParameterSpec algParameterSpec)
         throws InvalidAlgorithmParameterException {
         super(algParameterSpec);
+        if (algParameterSpec != null) {
+            throw new InvalidAlgorithmParameterException(
+                "RFC 5869 has no parameters for its KDF algorithms");
+        }
         this.hmacAlgName = hmacAlgName;
         this.hmacLen = hmacLen;
     }
@@ -221,9 +225,8 @@ abstract class HkdfKeyDerivation extends KDFSpi {
                                      length);
             } catch (InvalidKeyException ike) {
                 throw new InvalidParameterSpecException(
-                    "an HKDF ExtractThenExpand could not be initialized with the "
-                    + "given key or salt "
-                    + "material");
+                    "an HKDF ExtractThenExpand could not be initialized with "
+                    + "the given key or salt material");
             } catch (NoSuchAlgorithmException nsae) {
                 // This is bubbling up from the getInstance of the Mac/Hmac.
                 // Since we're defining these values internally, it should be
@@ -260,7 +263,8 @@ abstract class HkdfKeyDerivation extends KDFSpi {
         } else if (keys.isEmpty()) {
             return null;
         } else {
-            throw new InvalidKeyException("List of keys could not be consolidated");
+            throw new InvalidKeyException(
+                "List of keys could not be consolidated");
         }
     }
 
@@ -288,7 +292,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
         Mac hmacObj = Mac.getInstance(hmacAlgName);
         hmacObj.init(new SecretKeySpec(salt, "HKDF-Salt"));
 
-        if(inputKey == null) {
+        if (inputKey == null) {
             return hmacObj.doFinal(new byte[hmacLen]);
         } else {
             return hmacObj.doFinal(inputKey.getEncoded());
