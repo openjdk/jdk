@@ -114,7 +114,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
         throws InvalidParameterSpecException {
         List<SecretKey> ikms;
         List<SecretKey> salts;
-        SecretKey initialKeyMaterial;
+        SecretKey inputKeyMaterial;
         SecretKey salt;
         SecretKey pseudoRandomKey;
         byte[] info;
@@ -132,7 +132,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
             // SecretKey Objects,
             // unless we were passed something bogus or an unexportable P11 key
             try {
-                initialKeyMaterial = consolidateKeyMaterial(ikms);
+                inputKeyMaterial = consolidateKeyMaterial(ikms);
                 salt = consolidateKeyMaterial(salts);
             } catch (InvalidKeyException ike) {
                 throw new InvalidParameterSpecException(
@@ -141,7 +141,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
             }
             // perform extract
             try {
-                return hkdfExtract(initialKeyMaterial,
+                return hkdfExtract(inputKeyMaterial,
                                    (salt == null) ? null : salt.getEncoded());
             } catch (InvalidKeyException ike) {
                 throw new InvalidParameterSpecException(
@@ -197,7 +197,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
             // SecretKey Objects,
             // unless we were passed something bogus or an unexportable P11 key
             try {
-                initialKeyMaterial = consolidateKeyMaterial(ikms);
+                inputKeyMaterial = consolidateKeyMaterial(ikms);
                 salt = consolidateKeyMaterial(salts);
             } catch (InvalidKeyException ike) {
                 throw new InvalidParameterSpecException(
@@ -221,7 +221,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
             }
             // perform extract and then expand
             try {
-                byte[] extractResult = hkdfExtract(initialKeyMaterial,
+                byte[] extractResult = hkdfExtract(inputKeyMaterial,
                                                    (salt
                                                     == null) ? null :
                                                        salt.getEncoded());

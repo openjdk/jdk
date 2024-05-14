@@ -90,7 +90,7 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
         }
 
         /**
-         * {@code addIKM} may be called when the initial key material value is
+         * {@code addIKM} may be called when the input key material value is
          * to be assembled piece-meal or if part of the IKM is to be supplied by
          * a hardware crypto device. This method appends to the existing list of
          * values or creates a new list if there are none yet.
@@ -99,7 +99,7 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
          * but the actual value of the IKM is not yet available.
          *
          * @param ikm
-         *     the initial key material value
+         *     the input key material value
          *
          * @return this builder
          *
@@ -116,7 +116,7 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
         }
 
         /**
-         * {@code addIKM} may be called when the initial key material value is
+         * {@code addIKM} may be called when the input key material value is
          * to be assembled piece-meal or if part of the IKM is to be supplied by
          * a hardware crypto device. This method appends to the existing list of
          * values or creates a new list if there are none yet.
@@ -125,7 +125,7 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
          * but the actual value of the IKM is not yet available.
          *
          * @param ikm
-         *     the initial key material value
+         *     the input key material value
          *
          * @return this builder
          *
@@ -259,10 +259,10 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
         }
 
         /**
-         * Returns an unmodifiable {@code List} of initial key material
+         * Returns an unmodifiable {@code List} of input key material
          * values.
          *
-         * @return the unmodifiable {@code List} of initial key material values
+         * @return the unmodifiable {@code List} of input key material values
          */
         public List<SecretKey> ikms() {
             return ikms;
@@ -375,10 +375,10 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
         }
 
         /**
-         * Returns an unmodifiable {@code List} of initial key material
+         * Returns an unmodifiable {@code List} of input key material
          * values.
          *
-         * @return the initial key material values
+         * @return the input key material values
          */
         public List<SecretKey> ikms() {
             return ext.ikms();
