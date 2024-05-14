@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "memory/resourceArea.hpp"
 #include "nmt/nmtTreap.hpp"
 #include "runtime/os.hpp"
 #include "unittest.hpp"
@@ -191,6 +192,7 @@ TEST_VM_F(TreapTest, TestVisitInRange) {
   for (int i = 0; i < 11; i++) {
     treap.upsert(i, 0);
   }
+
   ResourceMark rm;
   GrowableArray<int> seen;
   treap.visit_range_in_order(0, 10, [&](Node* x) {
