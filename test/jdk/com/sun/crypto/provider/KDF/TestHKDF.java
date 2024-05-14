@@ -166,7 +166,7 @@ public class TestHKDF {
         // *** HKDF-Extract-only testing
         // Create KDFParameterSpec for the Extract-only operation
         KDFParameterSpec kdfParameterSpecExtract =
-            HKDFParameterSpec.builder().addIKM(ikmKey)
+            HKDFParameterSpec.buildExtract().addIKM(ikmKey)
                              .addSalt(testData.salt)
                              .extractOnly();
         actualPRK = kdfExtract.deriveKey("RAW", kdfParameterSpecExtract);
@@ -181,7 +181,7 @@ public class TestHKDF {
         // *** HKDF Expand-Only testing
         // For these tests, we'll use the actualPRK as the input key
         // Create KDFParameterSpec for key output and raw byte output
-        KDFParameterSpec kdfParameterSpecExpand = HKDFParameterSpec.expand(
+        KDFParameterSpec kdfParameterSpecExpand = HKDFParameterSpec.expandOnly(
             actualPRK, testData.info,
             testData.outLen);
         actualOKM = kdfExpand.deriveKey("RAW", kdfParameterSpecExpand);
@@ -198,10 +198,10 @@ public class TestHKDF {
 
         // Use the KDF to make us a key
         KDFParameterSpec kdfParameterSpecExtractExpand =
-            HKDFParameterSpec.builder().addIKM(ikmKey)
+            HKDFParameterSpec.buildExtract().addIKM(ikmKey)
                              .addSalt(testData.salt)
-                             .andExpand(testData.info,
-                                        testData.outLen);
+                             .thenExpand(testData.info,
+                                         testData.outLen);
         actualOKM = kdfHkdf.deriveKey("RAW", kdfParameterSpecExtractExpand);
 
         // Re-run the KDF to give us raw output data

@@ -74,17 +74,17 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
 
         /**
          * Akin to a {@code Builder.build()} method for an
-         * {@code ExtractExpand}
+         * {@code ExtractThenExpand}
          *
          * @param info
          *     the optional context and application specific information
          * @param length
          *     the length of the output key material
          *
-         * @return an {@code ExtractExpand}
+         * @return an {@code ExtractThenExpand}
          */
-        public ExtractExpand andExpand(byte[] info, int length) {
-            return new ExtractExpand(
+        public ExtractThenExpand thenExpand(byte[] info, int length) {
+            return new ExtractThenExpand(
                 extractOnly(), info,
                 length);
         }
@@ -200,7 +200,7 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
     }
 
     /**
-     * Returns a builder for building {@code Extract} and {@code ExtractExpand} objects.
+     * Returns a builder for building {@code Extract}-Only and {@code ExtractThenExpand} objects.
      * <p>
      * Note: one or more of the methods {@code addIKM} or {@code addSalt} should
      * be called next, before calling build methods, such as
@@ -208,12 +208,12 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
      *
      * @return a {@code Builder} to mutate
      */
-    static Builder builder() {
+    static Builder buildExtract() {
         return new Builder().createBuilder();
     }
 
     /**
-     * Static helper-method that may be used to initialize an {@code Expand}
+     * Defines the input parameters of an {@code Expand}-Only
      * object
      *
      * @param prk
@@ -228,7 +228,7 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
      * @throws NullPointerException
      *     if {@code prk} or {@code info} is {@code null}
      */
-    static Expand expand(SecretKey prk, byte[] info, int length) {
+    static Expand expandOnly(SecretKey prk, byte[] info, int length) {
         if (prk == null) {
             throw new NullPointerException("prk must not be null");
         }
@@ -239,7 +239,7 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
     }
 
     /**
-     * Defines the input parameters of an Extract operation as defined in <a
+     * Defines the input parameters of an Extract-Only operation as defined in <a
      * href="http://tools.ietf.org/html/rfc5869">RFC 5869</a>.
      */
     @PreviewFeature(feature = PreviewFeature.Feature.KEY_DERIVATION)
@@ -302,7 +302,7 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
          *     the length of the output key material (must be > 0)
          */
         private Expand(SecretKey prk, byte[] info, int length) {
-            // a null prk could be indicative of ExtractExpand
+            // a null prk could be indicative of ExtractThenExpand
             this.prk = prk;
             this.info = (info == null) ? null : info.clone();
             if (!(length > 0)) {
@@ -342,16 +342,16 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
     }
 
     /**
-     * Defines the input parameters of an ExtractExpand operation as defined in
+     * Defines the input parameters of an ExtractThenExpand operation as defined in
      * <a href="http://tools.ietf.org/html/rfc5869">RFC 5869</a>.
      */
     @PreviewFeature(feature = PreviewFeature.Feature.KEY_DERIVATION)
-    final class ExtractExpand implements HKDFParameterSpec {
+    final class ExtractThenExpand implements HKDFParameterSpec {
         private final Extract ext;
         private final Expand exp;
 
         /**
-         * Constructor that may be used to initialize an {@code ExtractExpand}
+         * Constructor that may be used to initialize an {@code ExtractThenExpand}
          * object
          * <p>
          * Note: {@code addIKMValue} and {@code addSaltValue} may be called
@@ -365,7 +365,7 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
          * @param length
          *     the length of the output key material
          */
-        private ExtractExpand(Extract ext, byte[] info, int length) {
+        private ExtractThenExpand(Extract ext, byte[] info, int length) {
             // null-checked previously
             this.ext = ext;
             if (!(length > 0)) {

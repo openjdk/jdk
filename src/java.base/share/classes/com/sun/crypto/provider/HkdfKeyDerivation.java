@@ -35,7 +35,6 @@ import javax.crypto.spec.SecretKeySpec;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.security.ProviderException;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidParameterSpecException;
 import java.util.ArrayList;
@@ -188,11 +187,11 @@ abstract class HkdfKeyDerivation extends KDFSpi {
                 // Since we're defining these values internally, it should be
                 // safe to "eat" this NSAE.
             }
-        } else if (kdfParameterSpec instanceof HKDFParameterSpec.ExtractExpand) {
-            HKDFParameterSpec.ExtractExpand anExtractExpand =
-                (HKDFParameterSpec.ExtractExpand) kdfParameterSpec;
-            ikms = anExtractExpand.ikms();
-            salts = anExtractExpand.salts();
+        } else if (kdfParameterSpec instanceof HKDFParameterSpec.ExtractThenExpand) {
+            HKDFParameterSpec.ExtractThenExpand anExtractThenExpand =
+                (HKDFParameterSpec.ExtractThenExpand) kdfParameterSpec;
+            ikms = anExtractThenExpand.ikms();
+            salts = anExtractThenExpand.salts();
             // we should be able to combine these Lists of keys into single
             // SecretKey Objects,
             // unless we were passed something bogus or an unexportable P11 key
@@ -205,11 +204,11 @@ abstract class HkdfKeyDerivation extends KDFSpi {
                     + " single keys");
             }
             // set this value in the "if"
-            if ((info = anExtractExpand.info()) == null) {
+            if ((info = anExtractThenExpand.info()) == null) {
                 info = new byte[0];
             }
             // set this value in the "if"
-            if ((length = anExtractExpand.length()) <= 0) {
+            if ((length = anExtractThenExpand.length()) <= 0) {
                 throw new InvalidParameterSpecException(
                     "length cannot be <= 0");
             }
@@ -230,7 +229,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
                                      length);
             } catch (InvalidKeyException ike) {
                 throw new InvalidParameterSpecException(
-                    "an HKDF ExtractExpand could not be initialized with the "
+                    "an HKDF ExtractThenExpand could not be initialized with the "
                     + "given key or salt "
                     + "material");
             } catch (NoSuchAlgorithmException nsae) {
