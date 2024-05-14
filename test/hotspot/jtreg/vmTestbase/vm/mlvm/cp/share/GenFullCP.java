@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -237,8 +237,7 @@ public abstract class GenFullCP extends ClassfileGenerator {
     @Override
     public Klass[] generateBytecodes() {
 
-        // COMPUTE_FRAMES were disabled due to JDK-8079697
-        ClassWriterExt cw = new ClassWriterExt(/*ClassWriter.COMPUTE_FRAMES |*/ ClassWriter.COMPUTE_MAXS);
+        ClassWriterExt cw = new ClassWriterExt(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
 
         String[] interfaces = new String[1];
         interfaces[0] = getDummyInterfaceClassName();
