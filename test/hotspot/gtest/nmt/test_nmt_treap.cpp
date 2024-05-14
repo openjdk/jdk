@@ -123,6 +123,7 @@ public:
       for (int i = 0; i < 10; i++) {
         EXPECT_TRUE(treap._allocator.allocations.at(i).released);
       }
+      EXPECT_EQ(nullptr, treap._root);
     }
 
     {
@@ -135,6 +136,7 @@ public:
       for (int i = 0; i < 10; i++) {
         EXPECT_TRUE(treap._allocator.allocations.at(i).released);
       }
+      EXPECT_EQ(nullptr, treap._root);
     }
   }
 };

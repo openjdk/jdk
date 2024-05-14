@@ -275,6 +275,7 @@ public:
       to_delete.push(head->_right);
       _allocator.free(head);
     }
+    _root = nullptr;
   }
 
   TreapNode* closest_leq(const K& key) {
