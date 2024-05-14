@@ -23,10 +23,11 @@
 
 package compiler.debug;
 
-import jdk.test.lib.Platform;
+import java.util.Random;
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.Utils;
 
 /*
  * @test
@@ -50,13 +51,11 @@ public class TestStressBailout {
     }
 
     public static void main(String[] args) throws Exception {
-        // Likely bail out on -version, for some low probability values.
-        for (int i = 2; i < 10; i += 1) {
-            runTest(i);
-        }
-        // Higher values
-        for (int i = 1; i < 1_000_000; i*=10) {
-            runTest(i);
-        }
+        Random r = Utils.getRandomInstance();
+        int i = r.nextInt();
+        // Likely bail out on -version, for some low probability value.
+        runTest(r.nextInt(1, 10));
+        // Higher value
+        runTest(r.nextInt(10, 1_000_000));
     }
 }
