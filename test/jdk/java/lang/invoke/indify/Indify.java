@@ -927,7 +927,7 @@ public class Indify {
                             case "lookupClass":
                                 if(args.equals(Arrays.asList("lookup"))) {
                                     // fold lookup().lookupClass() to the enclosing class
-                                    args.clear(); args.add(bytecode.thisClass);
+                                    args.clear(); args.add(bytecode.classModel.thisClass());
                                     continue;
                                 }
                                 break;
