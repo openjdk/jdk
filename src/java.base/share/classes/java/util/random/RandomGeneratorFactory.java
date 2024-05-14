@@ -38,7 +38,6 @@ import jdk.internal.random.Xoshiro256PlusPlus;
 
 import java.math.BigInteger;
 import java.security.SecureRandom;
-import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.Objects;
 import java.util.Map;
 import java.util.Random;
@@ -195,11 +194,11 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
             );
         }
 
-        private static SimpleImmutableEntry<String, RandomGeneratorProperties>
+        private static Map.Entry<String, RandomGeneratorProperties>
         entry(Class<? extends RandomGenerator> rgClass, String name, String group,
                 int i, int j, int k, int equidistribution,
                 int flags) {
-            return new SimpleImmutableEntry<>(name,
+            return Map.entry(name,
                     new RandomGeneratorProperties(rgClass, name, group,
                             i, j, k, equidistribution,
                             flags | (rgClass.isAnnotationPresent(Deprecated.class) ? DEPRECATED : 0)));
@@ -624,7 +623,7 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
      * <a href="package-summary.html#algorithms">algorithm</a> chosen,
      * and providing a starting long seed.
      * If a long seed is not supported by the algorithm,
-     * an UnsupportedOperationException is thrown.
+     * an {@link UnsupportedOperationException} is thrown.
      *
      * @param seed long random seed value.
      *
@@ -643,7 +642,7 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
      * <a href="package-summary.html#algorithms">algorithm</a> chosen,
      * and providing a starting byte[] seed.
      * If a byte[] seed is not supported by the algorithm,
-     * an UnsupportedOperationException is thrown.
+     * an {@link UnsupportedOperationException} is thrown.
      *
      * @param seed byte array random seed value.
      *
