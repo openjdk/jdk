@@ -6,6 +6,8 @@ import jdk.internal.vm.annotation.Stable;
 
 import java.util.Objects;
 
+import static jdk.internal.lang.stable.StableUtil.newGenericArray;
+
 public record StableArray3DImpl<V>(
         @Stable int dim0,
         @Stable int dim1,
@@ -19,9 +21,8 @@ public record StableArray3DImpl<V>(
     }
 
     // Todo: Remove when "statements before super" is a final feature
-    @SuppressWarnings("unchecked")
     private StableArray3DImpl(int dim0, int dim1, int dim2, int length) {
-        this(dim0, dim1, dim2, (V[]) new Object[length], AuxiliaryArrays.create(length));
+        this(dim0, dim1, dim2, newGenericArray(length), AuxiliaryArrays.create(length));
     }
 
     @Override

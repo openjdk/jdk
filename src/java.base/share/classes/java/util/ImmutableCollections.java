@@ -268,7 +268,7 @@ class ImmutableCollections {
     static <E> List<E> listFromArray(E... input) {
         // copy and check manually to avoid TOCTOU
         @SuppressWarnings("unchecked")
-        E[] tmp = (E[])new Object[input.length]; // implicit nullcheck of input
+        E[] tmp = newGenericArray(input.length); // implicit nullcheck of input
         for (int i = 0; i < input.length; i++) {
             tmp[i] = Objects.requireNonNull(input[i]);
         }
@@ -996,11 +996,10 @@ class ImmutableCollections {
         final int size;
 
         @SafeVarargs
-        @SuppressWarnings("unchecked")
         SetN(E... input) {
             size = input.length; // implicit nullcheck of input
 
-            elements = (E[])new Object[EXPAND_FACTOR * input.length];
+            elements = newGenericArray(EXPAND_FACTOR * input.length);
             for (int i = 0; i < input.length; i++) {
                 E e = input[i];
                 int idx = probe(e); // implicit nullcheck of e
@@ -1459,7 +1458,7 @@ class ImmutableCollections {
         @SuppressWarnings("unchecked")
         private StableList(int size) {
             assert size > 0;
-            this.elements = (V[]) new Object[size];
+            this.elements = newGenericArray(size);
             this.size = size;
             this.aux = AuxiliaryArrays.create(size);
         }
@@ -1539,7 +1538,7 @@ class ImmutableCollections {
             int len = EXPAND_FACTOR * inKeys.length;
             len = (len + 1) & ~1; // ensure table is even length
 
-            K[] keys = (K[])new Object[len];
+            K[] keys = newGenericArray(len);
 
             for (Object key : inKeys) {
                 @SuppressWarnings("unchecked")
@@ -1553,7 +1552,7 @@ class ImmutableCollections {
                 }
             }
             this.keys = keys;
-            this.values = (V[]) new Object[len];
+            this.values = newGenericArray(len);
             this.aux = AuxiliaryArrays.create(len);
         }
 
@@ -1738,7 +1737,7 @@ class ImmutableCollections {
             }
             this.isPresent = ImmutableBitSetPredicate.of(bs);
 
-            this.elements = (V[]) new Object[elementCount];
+            this.elements = newGenericArray(elementCount);
             this.size = keys.length;
             this.enumType = (Class<K>) keys[0].getClass();
             this.aux = AuxiliaryArrays.create(elementCount);
@@ -1881,6 +1880,11 @@ class ImmutableCollections {
 
     private static IllegalArgumentException duplicate(String type, Object element) {
         return new IllegalArgumentException("duplicate " + type + ": " + element);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <V> V[] newGenericArray(int length) {
+        return (V[]) new Object[length];
     }
 
 }

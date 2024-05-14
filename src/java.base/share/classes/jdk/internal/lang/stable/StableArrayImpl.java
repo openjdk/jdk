@@ -6,14 +6,15 @@ import jdk.internal.vm.annotation.Stable;
 
 import java.util.Objects;
 
+import static jdk.internal.lang.stable.StableUtil.newGenericArray;
+
 public record StableArrayImpl<V>(
         @Stable V[] elements,
         AuxiliaryArrays aux
 ) implements StableArray<V> {
 
-    @SuppressWarnings("unchecked")
     private StableArrayImpl(int length) {
-        this((V[]) new Object[length], AuxiliaryArrays.create(length));
+        this(newGenericArray(length), AuxiliaryArrays.create(length));
     }
 
     @Override

@@ -131,4 +131,9 @@ final class StableUtil {
         return mutex == TOMBSTONE || mutex instanceof Throwable;
     }
 
+    @SuppressWarnings("unchecked")
+    static <V> V[] newGenericArray(int length) {
+        return (V[]) new Object[length];
+    }
+
 }
