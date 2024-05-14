@@ -224,7 +224,7 @@ TEST_VM_F(TreapTest, TestVisitInRange) {
     });
     EXPECT_EQ(10, seen.length());
     for (int i = 0; i < 10; i++) {
-      EXPECT_EQ(10-i, seen.at(i));
+      EXPECT_EQ(10-i-1, seen.at(i));
     }
   }
 }
