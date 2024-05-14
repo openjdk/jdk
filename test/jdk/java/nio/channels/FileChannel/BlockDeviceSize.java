@@ -25,6 +25,7 @@
  * @bug 8054029 8313368
  * @requires (os.family == "linux")
  * @summary FileChannel.size() should be equal to RandomAccessFile.size() and > 0 for block devs on Linux
+ * @library /test/lib
  */
 
 import java.io.RandomAccessFile;
@@ -36,6 +37,7 @@ import java.util.List;
 
 import static java.nio.file.StandardOpenOption.*;
 
+import jtreg.SkippedException;
 
 public class BlockDeviceSize {
     private static final List<String> BLK_FNAMES = List.of("/dev/sda1", "/dev/nvme0n1", "/dev/xvda1") ;
@@ -61,7 +63,7 @@ public class BlockDeviceSize {
                 System.err.println("File " + blkFname + " not found." +
                         " Skipping test");
             } catch (AccessDeniedException ade) {
-                throw new RuntimeException("Access to " + blkFname + " is denied."
+                throw new SkippedException("Access to " + blkFname + " is denied."
                         + " Run test as root.", ade);
             }
 
