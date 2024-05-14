@@ -5042,6 +5042,61 @@ class StubGenerator: public StubCodeGenerator {
     return (address) start;
   }
 
+  static const uint64_t right_16_bits = right_n_bits(16);
+
+  void generate_updateBytesAdler32_unroll_big(Register buff, Register s1, Register s2, Register count,
+    VectorRegister vtable, VectorRegister vzero, VectorRegister *vbytes, VectorRegister *vs1acc, VectorRegister *vs2acc, 
+    Register temp0, Register temp1, Register temp2, VectorRegister vtemp1, VectorRegister vtemp2, int LMUL) {
+
+    assert(LMUL <= 4, "Not enough vector registers");
+    // Below is partial loop unrolling for updateBytesAdler32:
+    // Here, the LMUL*16 bytes are processed, the results are in
+    // v8, v9, v10, ..., v21, v22, v23:
+    // We use b1, b2, ..., b16 to denote the 16 bytes loaded in each iteration.
+    // In non-vectorized code, we update s1 and s2 as:
+    //   s1 <- s1 + b1
+    //   s2 <- s2 + s1
+    //   s1 <- s1 + b2
+    //   s2 <- s2 + b1
+    //   ...
+    //   s1 <- s1 + b16
+    //   s2 <- s2 + s1
+    // Putting above assignments together, we have:
+    //   s1_new = s1 + b1 + b2 + ... + b64
+    //   s2_new = s2 + (s1 + b1) + (s1 + b1 + b2) + ... + (s1 + b1 + b2 + ... + b64) =
+    //          = s2 + s1 * 64 + (b1 * 64 + b2 * 63 + ... + b64 * 1) =
+    //          = s2 + s1 * 64 + (b1, b2, ... b64) dot (64, 63, ... 1)
+
+    // Load data
+    __ vsetvli(temp0, count, Assembler::e8, Assembler::m4);
+    __ vle8_v(vbytes[0], buff);
+    __ addi(buff, buff, LMUL*16);
+    __ vwredsumu_vs(vs1acc[0], vbytes[0], vzero);
+    __ vwmulu_vv(vs2acc[0], vtable, vbytes[0]);
+
+    __ vsetvli(temp0, count, Assembler::e16, Assembler::m4);
+
+    // 0xFF * 0x10 = 0xFF0, 0xFF0 * 8 = 7F80, 7F80 * 4 = 1FE00 max, so:
+    // 1. Need to do vector-widening reduction sum
+    // 2. It is safe to perform sign-extension during vmv.x.s
+    __ vwredsumu_vs(vtemp1, vs2acc[0], vzero);
+    __ vwredsumu_vs(vtemp2, vs2acc[2], vzero);
+
+    // s2 = s2 + s1 * 64
+    __ slli(temp1, s1, 6);
+    __ add(s2, s2, temp1);
+
+    __ vmv_x_s(temp0, vs1acc[0]);
+    __ add(s1, s1, temp0);
+
+    __ vsetvli(temp0, count, Assembler::e32, Assembler::m1);
+    __ vmv_x_s(temp1, vtemp1);
+    __ add(s2, s2, temp1);
+
+    __ vmv_x_s(temp1, vtemp2);
+    __ add(s2, s2, temp1);
+  }
+
   void generate_updateBytesAdler32_unroll(Register buff, Register s1, Register s2, Register count,
     VectorRegister vtable, VectorRegister vzero, VectorRegister *vbytes, VectorRegister *vs1acc, VectorRegister *vs2acc, 
     Register temp0, Register temp1, Register temp2, VectorRegister vtemp1, VectorRegister vtemp2, int LMUL) {
@@ -5138,10 +5193,7 @@ class StubGenerator: public StubCodeGenerator {
     Register temp1 = c_rarg5;
     Register temp2 = c_rarg6;
 
-    VectorRegister vtable = v1;
-    VectorRegister vtemp1 = v2;
-    VectorRegister vtemp2 = v3;
-    VectorRegister vzero = v4;
+    VectorRegister vzero = v4; // group: v5, v6, v7
     VectorRegister vbytes[] = {
       v8, v9, v10, v11
     };
@@ -5151,6 +5203,9 @@ class StubGenerator: public StubCodeGenerator {
     VectorRegister vs2acc[] = {
       v16, v18, v20, v22
     };
+    VectorRegister vtable = v24; // group: v25, v26, v27
+    VectorRegister vtemp1 = v28; // group: v29, v30, v31
+    VectorRegister vtemp2 = v29;
 
     // Max number of bytes we can process before having to take the mod
     // 0x15B0 is 5552 in decimal, the largest n such that 255n(n+1)/2 + (n+1)(BASE-1) <= 2^32-1
@@ -5161,14 +5216,14 @@ class StubGenerator: public StubCodeGenerator {
     const int LMUL = 4;
 
     __ enter(); // required for proper stackwalking of RuntimeStub frame
-    __ vsetivli(temp0, 16, Assembler::e8, Assembler::m1);
+    __ mv(temp1, 64);
+    __ vsetvli(temp0, temp1, Assembler::e8, Assembler::m4);
 
     // Generating accumulation coefficients for further calculations
     __ vid_v(vtemp1);
-    __ mv(temp0, 16);
-    __ vmv_v_x(vtable, temp0);
+    __ vmv_v_x(vtable, temp1);
     __ vsub_vv(vtable, vtable, vtemp1);
-    // vtable now contains { 0x10, 0xf, 0xe, ..., 0x3, 0x2, 0x1 }
+    // vtable group now contains { 0x40, 0x3f, 0x3e, ..., 0x3, 0x2, 0x1 }
 
     __ vmv_v_i(vzero, 0);
 
@@ -5179,7 +5234,6 @@ class StubGenerator: public StubCodeGenerator {
     // s1 is initialized to the lower 16 bits of adler
     // s2 is initialized to the upper 16 bits of adler
     if (!UseZbb) {
-      const uint64_t right_16_bits = right_n_bits(16);
       __ mv(temp0, right_16_bits);
       __ andr(s2, s2, temp0);
       __ andr(s1, adler, temp0); // s1 = (adler & 0xffff)
@@ -5216,7 +5270,7 @@ class StubGenerator: public StubCodeGenerator {
     __ sub(count, count, 32);
 
   __ bind(L_nmax_loop);
-    generate_updateBytesAdler32_unroll(buff, s1, s2, count, vtable, vzero,
+    generate_updateBytesAdler32_unroll_big(buff, s1, s2, count, vtable, vzero,
       vbytes, vs1acc, vs2acc, temp0, temp1, temp2, vtemp1, vtemp2, LMUL);
     __ sub(count, count, 16*LMUL);
     __ bgtz(count, L_nmax_loop);
@@ -5224,7 +5278,7 @@ class StubGenerator: public StubCodeGenerator {
     const int remainder = ((NMAX / 16) % LMUL);
     __ mv(count, 16*remainder);
     // Do the calculations for remaining 16*remainder bytes
-    generate_updateBytesAdler32_unroll(buff, s1, s2, count, vtable, vzero,
+    generate_updateBytesAdler32_unroll(buff, s1, s2, count, v27, vzero,
       vbytes, vs1acc, vs2acc, temp0, temp1, temp2, vtemp1, vtemp2, remainder);
 
     // s1 = s1 % BASE
@@ -5241,7 +5295,7 @@ class StubGenerator: public StubCodeGenerator {
     __ bltz(len, L_by1);
 
   __ bind(L_by16_loop);
-    generate_updateBytesAdler32_unroll(buff, s1, s2, len, vtable, vzero,
+    generate_updateBytesAdler32_unroll(buff, s1, s2, len, v27, vzero,
       vbytes, vs1acc, vs2acc, temp0, temp1, temp2, vtemp1, vtemp2, 1);
     __ sub(len, len, 16);
     __ bgtz(len, L_by16_loop);
