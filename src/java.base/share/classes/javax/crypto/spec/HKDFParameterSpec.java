@@ -76,7 +76,9 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
          * Builds an {@code ExtractThenExpand}.
          *
          * @param info
-         *     the optional context and application specific information
+         *     the optional context and application specific information (may be
+         *     {@code null}; the byte[] is copied to prevent subsequent
+         *     modification
          * @param length
          *     the length of the output key material
          *
@@ -212,13 +214,15 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
     }
 
     /**
-     * Defines the input parameters of an {@code Expand}-Only
-     * object
+     * Defines the input parameters of an {@code Expand}-Only object
      *
      * @param prk
-     *     the pseudorandom key
+     *     the pseudorandom key; must not be {@code null} in the Expand-Only
+     *     case
      * @param info
-     *     the optional context and application specific information
+     *     the optional context and application specific information (may be
+     *     {@code null}); the byte[] is copied to prevent subsequent
+     *     modification
      * @param length
      *     the length of the output key material (must be > 0)
      *
@@ -230,9 +234,6 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
     static Expand expandOnly(SecretKey prk, byte[] info, int length) {
         if (prk == null) {
             throw new NullPointerException("prk must not be null");
-        }
-        if (info == null) {
-            throw new NullPointerException("info must not be null");
         }
         return new Expand(prk, info, length);
     }
@@ -296,11 +297,14 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
          * @param prk
          *     the pseudorandom key; may be {@code null}
          * @param info
-         *     the optional context and application specific information
+         *     the optional context and application specific information (may be
+         *     {@code null}); the byte[] is copied to prevent subsequent
+         *     modification
          * @param length
          *     the length of the output key material (must be > 0)
          *
-         * @throws IllegalArgumentException if length not > 0
+         * @throws IllegalArgumentException
+         *     if length not > 0
          */
         private Expand(SecretKey prk, byte[] info, int length) {
             // a null prk could be indicative of ExtractThenExpand
@@ -352,8 +356,8 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
         private final Expand exp;
 
         /**
-         * Constructor that may be used to initialize an {@code ExtractThenExpand}
-         * object
+         * Constructor that may be used to initialize an
+         * {@code ExtractThenExpand} object
          * <p>
          * Note: {@code addIKMValue} and {@code addSaltValue} may be called
          * afterward to supply additional values, if desired
@@ -362,11 +366,13 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
          *     a pre-generated {@code Extract}
          * @param info
          *     the optional context and application specific information (may be
-         *     {@code null})
+         *     {@code null}); the byte[] is copied to prevent subsequent
+         *     modification
          * @param length
          *     the length of the output key material
          *
-         * @throws IllegalArgumentException if length is not > 0
+         * @throws IllegalArgumentException
+         *     if length is not > 0
          */
         private ExtractThenExpand(Extract ext, byte[] info, int length) {
             // null-checked previously
