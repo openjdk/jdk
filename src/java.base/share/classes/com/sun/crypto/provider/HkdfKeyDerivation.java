@@ -293,7 +293,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
         hmacObj.init(new SecretKeySpec(salt, "HKDF-Salt"));
 
         if (inputKey == null) {
-            return hmacObj.doFinal(new byte[hmacLen]);
+            return hmacObj.doFinal();
         } else {
             return hmacObj.doFinal(inputKey.getEncoded());
         }
