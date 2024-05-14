@@ -648,13 +648,6 @@ public final class Unsafe {
         if (f == null) {
             throw new NullPointerException();
         }
-        Class<?> declaringClass = f.getDeclaringClass();
-        if (declaringClass.isHidden()) {
-            throw new UnsupportedOperationException("can't get field offset on a hidden class: " + f);
-        }
-        if (declaringClass.isRecord()) {
-            throw new UnsupportedOperationException("can't get field offset on a record class: " + f);
-        }
         assertNotTrusted(f);
         return theInternalUnsafe.objectFieldOffset(f);
     }
@@ -688,13 +681,6 @@ public final class Unsafe {
         if (f == null) {
             throw new NullPointerException();
         }
-        Class<?> declaringClass = f.getDeclaringClass();
-        if (declaringClass.isHidden()) {
-            throw new UnsupportedOperationException("can't get field offset on a hidden class: " + f);
-        }
-        if (declaringClass.isRecord()) {
-            throw new UnsupportedOperationException("can't get field offset on a record class: " + f);
-        }
         assertNotTrusted(f);
         return theInternalUnsafe.staticFieldOffset(f);
     }
@@ -720,6 +706,11 @@ public final class Unsafe {
         if (f == null) {
             throw new NullPointerException();
         }
+        assertNotTrusted(f);
+        return theInternalUnsafe.staticFieldBase(f);
+    }
+
+    private static void assertNotTrusted(Field f) {
         Class<?> declaringClass = f.getDeclaringClass();
         if (declaringClass.isHidden()) {
             throw new UnsupportedOperationException("can't get base address on a hidden class: " + f);
@@ -727,21 +718,14 @@ public final class Unsafe {
         if (declaringClass.isRecord()) {
             throw new UnsupportedOperationException("can't get base address on a record class: " + f);
         }
-        assertNotTrusted(f);
-        return theInternalUnsafe.staticFieldBase(f);
-    }
-
-    // Todo: When StableValue is a public final feature: update the packages
-    private static final Set<String> TRUSTED_CLASSES = Set.of(
-            "jdk.internal.lang.StableValue",
-            "jdk.internal.lang.StableArray",
-            "jdk.internal.lang.StableArray2",
-            "jdk.internal.lang.StableArray3");
-
-    private static void assertNotTrusted(Field f) {
-        String typeName = f.getType().getName();
-        if (TRUSTED_CLASSES.contains(typeName)) {
-            throw new UnsupportedOperationException("can't get field offset for a field of type " + typeName + ": " + f);
+        Class<?> fieldType = f.getType();
+        Class<?>[] interfaces = fieldType.getInterfaces();
+        if (interfaces != null) {
+            for (Class<?> inter : interfaces) {
+                if (inter.getName().equals("jdk.internal.lang.stable.TrustedFieldType")) {
+                    throw new UnsupportedOperationException("can't get field offset for a field of type " + fieldType.getName() + ": " + f);
+                }
+            }
         }
     }
 
