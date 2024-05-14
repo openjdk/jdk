@@ -44,14 +44,14 @@ import java.security.spec.InvalidParameterSpecException;
  * @see SecretKey
  * @since 23
  */
-@PreviewFeature(feature=PreviewFeature.Feature.KEY_DERIVATION)
+@PreviewFeature(feature = PreviewFeature.Feature.KEY_DERIVATION)
 public abstract class KDFSpi {
 
     /**
      * The sole constructor.
      * <p>
-     * An {@code AlgorithmParameterSpec} may be specified for KDF algorithms that
-     * may require this.
+     * An {@code AlgorithmParameterSpec} may be specified for KDF algorithms
+     * that may require this.
      *
      * @param algParameterSpec
      *     the initialization parameters for the {@code KDF} algorithm (may be
@@ -75,9 +75,9 @@ public abstract class KDFSpi {
      * performing the derive is not selected until the method is called.
      *
      * @param alg
-     *     the algorithm of the resultant key object
+     *     the algorithm of the resultant key object (may not be {@code null})
      * @param kdfParameterSpec
-     *     derivation parameters
+     *     derivation parameters (may not be {@code null})
      *
      * @return a {@code SecretKey} object corresponding to a key built from the
      *     KDF output and according to the derivation parameters.
@@ -86,6 +86,8 @@ public abstract class KDFSpi {
      *     if the information contained within the {@code KDFParameterSpec} is
      *     invalid or incorrect for the type of key to be derived, or specifies
      *     a type of output that is not a key (e.g. raw data)
+     * @throws NullPointerException
+     *     if {@code alg} or {@code kdfParameterSpec} is null
      */
     protected abstract SecretKey engineDeriveKey(String alg,
                                                  KDFParameterSpec kdfParameterSpec)
@@ -101,7 +103,7 @@ public abstract class KDFSpi {
      * performing the derive is not selected until the method is called.
      *
      * @param kdfParameterSpec
-     *     derivation parameters
+     *     derivation parameters (may not be {@code null})
      *
      * @return a byte array whose length matches the length field in the
      *     processed {@code KDFParameterSpec} and containing the next bytes of
@@ -112,6 +114,8 @@ public abstract class KDFSpi {
      *     invalid or incorrect for the type of key to be derived
      * @throws UnsupportedOperationException
      *     if the derived key material is not extractable
+     * @throws NullPointerException
+     *     if {@code kdfParameterSpec} is null
      */
     protected abstract byte[] engineDeriveData(
         KDFParameterSpec kdfParameterSpec)

@@ -188,8 +188,8 @@ public final class KDF {
      *
      * @throws NoSuchAlgorithmException
      *     if a provider is specified and it does not support the specified KDF
-     *     algorithm, or if provider is {@code null} and there is no provider that
-     *     supports a KDF implementation of the specified algorithm
+     *     algorithm, or if provider is {@code null} and there is no provider
+     *     that supports a KDF implementation of the specified algorithm
      * @throws NoSuchProviderException
      *     if the specified provider is not registered in the security provider
      *     list
@@ -222,8 +222,8 @@ public final class KDF {
      *
      * @throws NoSuchAlgorithmException
      *     if a provider is specified and it does not support the specified KDF
-     *     algorithm, or if provider is {@code null} and there is no provider that
-     *     supports a KDF implementation of the specified algorithm
+     *     algorithm, or if provider is {@code null} and there is no provider
+     *     that supports a KDF implementation of the specified algorithm
      * @throws NullPointerException
      *     if the algorithm is {@code null}
      */
@@ -293,8 +293,8 @@ public final class KDF {
      *
      * @throws NoSuchAlgorithmException
      *     if a provider is specified and it does not support the specified KDF
-     *     algorithm, or if provider is {@code null} and there is no provider that
-     *     supports a KDF implementation of the specified algorithm
+     *     algorithm, or if provider is {@code null} and there is no provider
+     *     that supports a KDF implementation of the specified algorithm
      * @throws NoSuchProviderException
      *     if the specified provider is not registered in the security provider
      *     list
@@ -344,8 +344,8 @@ public final class KDF {
      *
      * @throws NoSuchAlgorithmException
      *     if a provider is specified and it does not support the specified KDF
-     *     algorithm, or if provider is {@code null} and there is no provider that
-     *     supports a KDF implementation of the specified algorithm
+     *     algorithm, or if provider is {@code null} and there is no provider
+     *     that supports a KDF implementation of the specified algorithm
      * @throws InvalidAlgorithmParameterException
      *     if the {@code AlgorithmParameterSpec} is an invalid value
      * @throws NullPointerException
@@ -394,9 +394,10 @@ public final class KDF {
      * performing the derive is not selected until the method is called.
      *
      * @param alg
-     *     the algorithm of the resultant {@code SecretKey} object
+     *     the algorithm of the resultant {@code SecretKey} object (may not be
+     *     {@code null})
      * @param kdfParameterSpec
-     *     derivation parameters
+     *     derivation parameters (may not be {@code null}
      *
      * @return a {@code SecretKey} object corresponding to a key built from the
      *     KDF output and according to the derivation parameters
@@ -405,7 +406,7 @@ public final class KDF {
      *     if the information contained within the {@code KDFParameterSpec} is
      *     invalid or incorrect for the type of key to be derived
      * @throws NullPointerException
-     *     if {@code alg} is null
+     *     if {@code alg} or {@code kdfParameterSpec} is null
      */
     public SecretKey deriveKey(String alg, KDFParameterSpec kdfParameterSpec)
         throws InvalidParameterSpecException {
@@ -415,6 +416,7 @@ public final class KDF {
                     "the algorithm for the SecretKey return value may not be "
                     + "null or empty");
             }
+            Objects.requireNonNull(kdfParameterSpec);
             if (spi != null) {
                 return spi.engineDeriveKey(alg, kdfParameterSpec);
             }
@@ -467,7 +469,7 @@ public final class KDF {
      * performing the derive is not selected until the method is called.
      *
      * @param kdfParameterSpec
-     *     derivation parameters
+     *     derivation parameters (may not be null)
      *
      * @return a byte array whose length matches the specified length in the
      *     processed {@code KDFParameterSpec} and containing the output from the
@@ -478,10 +480,13 @@ public final class KDF {
      *     invalid or incorrect for the type of key to be derived
      * @throws UnsupportedOperationException
      *     if the derived key material is not extractable
+     * @throws NullPointerException
+     *     if {@code kdfParameterSpec} is null
      */
     public byte[] deriveData(KDFParameterSpec kdfParameterSpec)
         throws InvalidParameterSpecException {
         synchronized (lock) {
+            Objects.requireNonNull(kdfParameterSpec);
             if (spi != null) {
                 return spi.engineDeriveData(kdfParameterSpec);
             }
