@@ -1389,16 +1389,15 @@ public class Indify {
             cindex = ((ClassEntry) con).index();
 
             if(!((con = args.get(argi++)) instanceof StringEntry)) return null;
-            nindex = ((StringEntry) con).index();
+            nindex = (((StringEntry) con).utf8()).index();
 
-            if(((con = args.get(argi++)) instanceof NameAndTypeEntry) || (con instanceof ClassEntry)){
-                tindex = ((PoolEntry) con).index();
+            if(((con = args.get(argi++)) instanceof MethodTypeEntry) || (con instanceof ClassEntry)){
+                tindex = (((MethodTypeEntry) con).descriptor()).index();
             } else return null;
 
             ntindex = bytecode.poolBuilder.nameAndTypeEntry(
-                    (
-                            (StringEntry) bytecode.pool.entryByIndex(nindex)).stringValue(),
-                            ClassDesc.ofInternalName(((Utf8Entry) bytecode.pool.entryByIndex(tindex)).stringValue())
+                            (Utf8Entry) bytecode.pool.entryByIndex(nindex),
+                            (Utf8Entry) bytecode.pool.entryByIndex(tindex)
                     )
                     .index();
 
@@ -1415,8 +1414,12 @@ public class Indify {
                         (NameAndTypeEntry) bytecode.pool.entryByIndex(ntindex));
                 return bytecode.poolBuilder.methodHandleEntry(refKind, ref);
             }
-
-            return null;
+            else{
+                ref = bytecode.poolBuilder.methodRefEntry(
+                    (ClassEntry) bytecode.pool.entryByIndex(cindex),
+                    (NameAndTypeEntry) bytecode.pool.entryByIndex(ntindex));
+            }
+            return bytecode.poolBuilder.methodHandleEntry(refKind, ref);
         }
         private Constant parseMemberLookup(byte refKind, List<Object> args) {
             // E.g.: lookup().findStatic(Foo.class, "name", MethodType)
