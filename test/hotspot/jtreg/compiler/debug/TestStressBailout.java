@@ -38,7 +38,7 @@ import jdk.test.lib.process.ProcessTools;
 
 public class TestStressBailout {
 
-    static void runTest(int interval) throws Exception { 
+    static void runTest(int interval) throws Exception {
         String[] procArgs = {"-Xcomp", "-XX:-TieredCompilation",
                              "-XX:+UnlockDiagnosticVMOptions", "-XX:+StressBailout",
                              "-XX:StressBailoutInterval=" + interval, "-version"};
@@ -55,11 +55,11 @@ public class TestStressBailout {
         for (int i = 2; i < 10; i += 1) {
             runTest(i);
         }
-        // Higher values 
+        // Higher values
         for (int i = 1; i < 1_000_000; i*=10) {
             runTest(i);
         }
-        // Guaranteed bail out, check output 
+        // Guaranteed bail out, check output
         runTest(1);
     }
 }
