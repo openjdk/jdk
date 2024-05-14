@@ -391,7 +391,8 @@ public final class KDF {
      * {@code KDF} instance.
      * <p>
      * Delayed provider selection is also supported such that the provider
-     * performing the derive is not selected until the method is called.
+     * performing the derive is not selected until the method is called. Once a
+     * provider is selected, it cannot be changed.
      *
      * @param alg
      *     the algorithm of the resultant {@code SecretKey} object (may not be
@@ -466,7 +467,8 @@ public final class KDF {
      * particular {@code KDF} instance.
      * <p>
      * Delayed provider selection is also supported such that the provider
-     * performing the derive is not selected until the method is called.
+     * performing the derive is not selected until the method is called. Once a
+     * provider is selected, it cannot be changed.
      *
      * @param kdfParameterSpec
      *     derivation parameters (may not be null)
