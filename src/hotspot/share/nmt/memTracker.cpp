@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024 Red Hat, Inc. All rights reserved.
  * Copyright (c) 2020, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -67,8 +68,7 @@ void MemTracker::initialize() {
 
   if (level > NMT_off) {
     if (!MallocTracker::initialize(level) ||
-        !VirtualMemoryTracker::initialize(level) ||
-        !ThreadStackTracker::initialize(level)) {
+        !VirtualMemoryTracker::initialize(level)) {
       assert(false, "NMT initialization failed");
       level = NMT_off;
       log_warning(nmt)("NMT initialization failed. NMT disabled.");
