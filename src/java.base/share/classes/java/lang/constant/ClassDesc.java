@@ -180,13 +180,18 @@ public sealed interface ClassDesc
      * @jvms 4.4.1 The CONSTANT_Class_info Structure
      */
     default ClassDesc arrayType() {
-        int depth = arrayDepth(descriptorString());
+        String desc = descriptorString();
+        int depth = arrayDepth(desc);
         if (depth >= MAX_ARRAY_TYPE_DESC_DIMENSIONS) {
             throw new IllegalStateException(
                     "Cannot create an array type descriptor with more than " +
                     MAX_ARRAY_TYPE_DESC_DIMENSIONS + " dimensions");
         }
-        return arrayType(1);
+        if (desc.length() == 1 && desc.charAt(0) == 'V') {
+            throw new IllegalArgumentException("not a valid reference type descriptor: [V");
+        }
+        String newDesc = new StringBuilder(desc.length() + 1).append('[').append(desc).toString();
+        return ReferenceClassDescImpl.ofValidated(newDesc);
     }
 
     /**
@@ -201,26 +206,29 @@ public sealed interface ClassDesc
      * @jvms 4.4.1 The CONSTANT_Class_info Structure
      */
     default ClassDesc arrayType(int rank) {
-        int netRank;
-        if (rank <= 0) {
+        if (rank <= 1) {
+            if (rank == 1) {
+                return arrayType();
+            }
             throw new IllegalArgumentException("rank " + rank + " is not a positive value");
         }
         String desc = descriptorString();
-        try {
-            int currentDepth = arrayDepth(desc);
-            netRank = Math.addExact(currentDepth, rank);
-            if (netRank > MAX_ARRAY_TYPE_DESC_DIMENSIONS) {
-                throw new IllegalArgumentException("rank: " + netRank +
-                                                   " exceeds maximum supported dimension of " +
-                                                   MAX_ARRAY_TYPE_DESC_DIMENSIONS);
-            }
-        } catch (ArithmeticException ae) {
-            throw new IllegalArgumentException("Integer overflow in rank computation");
+        long currentDepth = arrayDepth(desc);
+        long netRank = currentDepth + rank;
+        if (netRank > MAX_ARRAY_TYPE_DESC_DIMENSIONS) {
+            throw new IllegalArgumentException("rank: " + netRank +
+                    " exceeds maximum supported dimension of " +
+                    MAX_ARRAY_TYPE_DESC_DIMENSIONS);
         }
+        var sb = new StringBuilder(desc.length() + rank);
+        for (int i = 0; i < rank; i++) {
+            sb.append('[');
+        }
+        String newDesc = sb.append(desc).toString();
         if (desc.length() == 1 && desc.charAt(0) == 'V') {
-            throw new IllegalArgumentException(String.format("not a valid reference type descriptor: %sV", "[".repeat(rank)));
+            throw new IllegalArgumentException("not a valid reference type descriptor: " + newDesc);
         }
-        return ReferenceClassDescImpl.ofValidated("[".repeat(rank) + descriptorString());
+        return ReferenceClassDescImpl.ofValidated(newDesc);
     }
 
     /**
@@ -332,9 +340,9 @@ public sealed interface ClassDesc
     default String packageName() {
         if (!isClassOrInterface())
             return "";
-        String className = internalToBinary(dropFirstAndLastChar(descriptorString()));
-        int index = className.lastIndexOf('.');
-        return (index == -1) ? "" : className.substring(0, index);
+        String desc = descriptorString();
+        int index = desc.lastIndexOf('/');
+        return (index == -1) ? "" : internalToBinary(desc.substring(1, index - 1));
     }
 
     /**
@@ -352,8 +360,8 @@ public sealed interface ClassDesc
         if (isPrimitive())
             return Wrapper.forBasicType(descriptorString().charAt(0)).primitiveSimpleName();
         else if (isClassOrInterface()) {
-            return descriptorString().substring(Math.max(1, descriptorString().lastIndexOf('/') + 1),
-                                                descriptorString().length() - 1);
+            String desc = descriptorString();
+            return desc.substring(Math.max(1, desc.lastIndexOf('/') + 1), desc.length() - 1);
         }
         else if (isArray()) {
             int depth = arrayDepth(descriptorString());
