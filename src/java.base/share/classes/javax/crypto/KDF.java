@@ -56,9 +56,9 @@ import java.util.Objects;
  *    KDF kdfHkdf = KDF.getInstance("HKDFWithHmacSHA256");
  *
  *    KDFParameterSpec kdfParameterSpec =
- *             HKDFParameterSpec.extract()
+ *             HKDFParameterSpec.buildExtract()
  *                              .addIKM(ikm)
- *                              .addSalt(salt).andExpand(info, 42);
+ *                              .addSalt(salt).thenExpand(info, 42);
  *
  *    kdfHkdf.deriveKey("AES", kdfParameterSpec);
  *}

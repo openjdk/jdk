@@ -36,6 +36,43 @@ import java.util.List;
  * operations of the HMAC-based Key Derivation Function (HKDF). The HKDF
  * function is defined in <a href="http://tools.ietf.org/html/rfc5869">RFC
  * 5869</a>.
+ * <p>
+ * In the Extract-Only and Extract-then-Expand cases, the {@code addIKM} and
+ * {@code addSalt} methods may be called repeatedly (and chained). This provides
+ * for use-cases where a {@code SecretKey} may reside on an HSM and not be
+ * exportable. The caller may wish to provide a label (or other components) of
+ * the IKM without having access to the portion stored on the HSM. The same
+ * feature is available for salts.
+ * <p>
+ * The above feature is particularly useful for "labeled" HKDF Extract used in
+ * TLS 1.3 and HPKE, where the IKM consists of concatenated components, which
+ * may include both byte arrays and (possibly non-extractable) secret keys.
+ * <p>
+ * Examples:
+ * {@snippet lang = java:
+ *
+ * KDFParameterSpec kdfParameterSpec =
+ *             HKDFParameterSpec.buildExtract()
+ *                              .addIKM(ikmPart1)
+ *                              .addIKM(ikmPart2)
+ *                              .addSalt(salt).extractOnly();
+ *
+ *
+ *}
+ * {@snippet lang = java:
+ *
+ * KDFParameterSpec kdfParameterSpec = HKDFParameterSpec.expandOnly(prk,
+ * info, 32);
+ *
+ *}
+ * {@snippet lang = java:
+ *
+ * KDFParameterSpec kdfParameterSpec =
+ *             HKDFParameterSpec.buildExtract()
+ *                              .addIKM(ikm)
+ *                              .addSalt(salt).thenExpand(info, 42);
+ *
+ *}
  *
  * @since 23
  */
@@ -94,13 +131,18 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
         }
 
         /**
+         * Adds input key material to the builder.
+         * <p>
          * {@code addIKM} may be called when the input key material value is
          * to be assembled piece-meal or if part of the IKM is to be supplied by
          * a hardware crypto device. This method appends to the existing list of
-         * values or creates a new list if there are none yet.
+         * values or creates a new list if there is none yet.
          * <p>
          * This supports the use-case where a label can be applied to the IKM
          * but the actual value of the IKM is not yet available.
+         * <p>
+         * An implementation should concatenate the input key materials into
+         * a single value once all components are available.
          *
          * @param ikm
          *     the input key material value
@@ -120,13 +162,18 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
         }
 
         /**
+         * Adds input key material to the builder.
+         * <p>
          * {@code addIKM} may be called when the input key material value is
          * to be assembled piece-meal or if part of the IKM is to be supplied by
          * a hardware crypto device. This method appends to the existing list of
-         * values or creates a new list if there are none yet.
+         * values or creates a new list if there is none yet.
          * <p>
          * This supports the use-case where a label can be applied to the IKM
          * but the actual value of the IKM is not yet available.
+         * <p>
+         * An implementation should concatenate the input key materials into
+         * a single value once all components are available.
          *
          * @param ikm
          *     the input key material value
@@ -148,13 +195,18 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
         }
 
         /**
+         * Adds a salt to the builder.
+         * <p>
          * {@code addSalt} may be called when the salt value is to be assembled
          * piece-meal or if part of the salt is to be supplied by a hardware
          * crypto device. This method appends to the existing list of values or
-         * creates a new list if there are none yet.
+         * creates a new list if there is none yet.
          * <p>
          * This supports the use-case where a label can be applied to the salt
          * but the actual value of the salt is not yet available.
+         * <p>
+         * An implementation should concatenate the salt into
+         * a single value once all components are available.
          *
          * @param salt
          *     the salt value
@@ -174,13 +226,17 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
         }
 
         /**
+         * Adds a salt to the builder.
+         * <p>
          * {@code addSalt} may be called when the salt value is to be assembled
          * piece-meal or if part of the salt is to be supplied by a hardware
          * crypto device. This method appends to the existing list of values or
-         * creates a new list if there are none yet.
+         * creates a new list if there is none yet.
          * <p>
          * This supports the use-case where a label can be applied to the salt
          * but the actual value of the salt is not yet available.
+         * An implementation should concatenate the salt into
+         * a single value once all components are available.
          *
          * @param salt
          *     the salt value
