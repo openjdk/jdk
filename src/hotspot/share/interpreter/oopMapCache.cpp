@@ -499,9 +499,6 @@ void OopMapCache::flush_obsolete_entries() {
 void OopMapCache::lookup(const methodHandle& method,
                          int bci,
                          InterpreterOopMap* entry_for) {
-  // Need a critical section to avoid race against concurrent reclamation.
-  GlobalCounter::CriticalSection cs(Thread::current());
-
   int probe = hash_value_for(method, bci);
 
   if (log_is_enabled(Debug, interpreter, oopmap)) {
@@ -512,14 +509,18 @@ void OopMapCache::lookup(const methodHandle& method,
            method()->name_and_sig_as_C_string(), probe);
   }
 
-  // Search hashtable for match
-  for (int i = 0; i < _probe_depth; i++) {
-    OopMapCacheEntry* entry = entry_at(probe + i);
-    if (entry != nullptr && !entry->is_empty() && entry->match(method, bci)) {
-      entry_for->resource_copy(entry);
-      assert(!entry_for->is_empty(), "A non-empty oop map should be returned");
-      log_debug(interpreter, oopmap)("- found at hash %d", probe + i);
-      return;
+  // Search hashtable for match.
+  // Need a critical section to avoid race against concurrent reclamation.
+  {
+    GlobalCounter::CriticalSection cs(Thread::current());
+    for (int i = 0; i < _probe_depth; i++) {
+      OopMapCacheEntry *entry = entry_at(probe + i);
+      if (entry != nullptr && !entry->is_empty() && entry->match(method, bci)) {
+        entry_for->resource_copy(entry);
+        assert(!entry_for->is_empty(), "A non-empty oop map should be returned");
+        log_debug(interpreter, oopmap)("- found at hash %d", probe + i);
+        return;
+      }
     }
   }
 
