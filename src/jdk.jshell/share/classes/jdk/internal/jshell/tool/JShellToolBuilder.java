@@ -33,6 +33,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
+import jdk.internal.org.jline.terminal.Size;
 import jdk.jshell.tool.JavaShellToolBuilder;
 
 /**
@@ -53,6 +54,7 @@ public class JShellToolBuilder implements JavaShellToolBuilder {
     private Locale locale = Locale.getDefault();
     private boolean interactiveTerminal;
     private boolean capturePrompt = false;
+    private Size windowSize = null;
 
     /**
      * Set the input channels.
@@ -215,6 +217,16 @@ public class JShellToolBuilder implements JavaShellToolBuilder {
         return this;
     }
 
+    @Override
+    public JavaShellToolBuilder windowSize(int columns, int rows) {
+        if (columns <= 0)
+            throw new IllegalArgumentException("columns = " + columns);
+        if (rows <= 0)
+            throw new IllegalArgumentException("-columns = " + -columns);
+        this.windowSize = new Size(columns, rows);
+        return this;
+    }
+
     /**
      * Create a tool instance for testing. Not in JavaShellToolBuilder.
      *
@@ -228,7 +240,7 @@ public class JShellToolBuilder implements JavaShellToolBuilder {
             vars = System.getenv();
         }
         JShellTool sh = new JShellTool(cmdIn, cmdOut, cmdErr, console, userIn,
-                userOut, userErr, prefs, vars, locale, interactiveTerminal);
+                userOut, userErr, prefs, vars, locale, interactiveTerminal, windowSize);
         sh.testPrompt = capturePrompt;
         return sh;
     }

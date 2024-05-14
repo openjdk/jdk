@@ -210,6 +210,24 @@ public interface JavaShellToolBuilder {
     }
 
     /**
+     * Provide a hint of the display window's dimensions when using an interactive terminal.
+     *
+     * <p>
+     * When the input stream for this Java Shell is {@code System.in}, this setting is ignored.
+     *
+     * @implSpec Implementations may choose to ignore this method. The default implementation
+     * of this method returns {@code this}.
+     *
+     * @param columns number of displayed columns
+     * @param rows number of displayed rows
+     * @return the {@code JavaShellToolBuilder} instance
+     * @since 23
+     */
+    default JavaShellToolBuilder windowSize(int columns, int rows) {
+        return this;
+    }
+
+    /**
      * Run an instance of the Java shell tool as configured by the other methods
      * in this interface.  This call is not destructive, more than one call of
      * this method may be made from a configured builder. The  exit code from
