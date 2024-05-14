@@ -56,7 +56,6 @@ COMPILER2_PRESENT(                                      \
   f(intx,  InteriorEntryAlignmentConstraintFunc)        \
   f(intx,  NodeLimitFudgeFactorConstraintFunc)          \
   f(uintx, LoopStripMiningIterConstraintFunc)           \
-  f(bool,  StressBailoutConstraintFunc)                 \
 )
 
 COMPILER_CONSTRAINTS(DECLARE_CONSTRAINT)

@@ -69,7 +69,6 @@
                                                                             \
   product(bool, StressBailout, false, DIAGNOSTIC,                           \
          "Perform bailouts randomly at C2 failing() checks")                \
-          constraint(StressBailoutConstraintFunc, AfterErgo)                \
                                                                             \
   product(uint, StressBailoutInterval, 100000, DIAGNOSTIC,                  \
           "Stress bailout every n:th time on average")                      \
