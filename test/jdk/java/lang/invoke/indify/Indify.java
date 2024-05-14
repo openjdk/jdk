@@ -745,7 +745,7 @@ public class Indify {
             int branchCount = 0;
             Object arg;
             List<Object> args;
-            List<Object> bsmArgs = null;  // args to invokeGeneric
+            List<Object> bsmArgs = null;  // args for invokeGeneric
         decode:
             for(java.lang.classfile.Instruction instruction : instructions){
                 System.err.println("JVM Stack: " + jvm.stack + ", Current instruction: " + instruction);
@@ -780,7 +780,7 @@ public class Indify {
                         switch (type) {
                             case "java/lang/StringBuilder":
                                 jvm.push("StringBuilder");
-                                continue decode;  // go to next instruction
+                                continue decode;
                         }
                         break decode;
                     case GETSTATIC:
@@ -891,7 +891,6 @@ public class Indify {
                                             }
                                             buf.append(tchar);
                                         } else {
-                                            // should not happen, but...
                                             buf.append('L').append(argClass.getName().replace('.','/')).append(';');
                                         }
                                     } else if (typeArg instanceof PoolEntry) {
@@ -926,7 +925,6 @@ public class Indify {
                                 continue;
                             case "lookupClass":
                                 if(args.equals(Arrays.asList("lookup"))) {
-                                    // fold lookup().lookupClass() to the enclosing class
                                     args.clear(); args.add(bytecode.classModel.thisClass());
                                     continue;
                                 }
@@ -947,13 +945,12 @@ public class Indify {
                                 remove_EmptyJVMSlots(args);
                                 if(args.size() == 1 ) {
                                     arg = args.remove(0);
-                                    if (arg instanceof Number) { //TODO: needs to be tested
+                                    if (arg instanceof Number) { //TODO: check with this later
                                         args.add(arg); continue;
                                     }
                                 }
                                 break decode;
                             case "StringBuilder.append":
-                                // allow calls like ("value = "+x)
                                 remove_EmptyJVMSlots(args);
                                 args.subList(1, args.size()).clear();
                                 continue;
@@ -968,7 +965,6 @@ public class Indify {
                             args.clear(); args.add(con);
                             continue;
                         } else if (methType.endsWith(")V")) {
-                            // allow calls like println("reached the pattern method")
                             args.clear();
                             continue;
                         }
@@ -1000,7 +996,6 @@ public class Indify {
                         if (bc >= ICONST_M1 && bc <= DCONST_1)
                         { jvm.push(INSTRUCTION_CONSTANTS[bc - ICONST_M1]); break; }
                         if (patternMark == 'I') {
-                            // these support caching paths in INDY_x methods
                             if (bc == ALOAD || bc >= ALOAD_0 && bc <= ALOAD_3)
                             { jvm.push(UNKNOWN_CON); break; }
                             if (bc == ASTORE || bc >= ASTORE_0 && bc <= ASTORE_3)
@@ -1019,15 +1014,15 @@ public class Indify {
                                     arg = jvm.top();
                                     if ("invokeWithArguments".equals(arg) ||
                                             "invokeGeneric".equals(arg))
-                                        break;  // assume it is a helpful cast
+                                        break;
                                     break decode;
                                 default:
                                     break decode;  // bail out
                             }
-                            continue decode; // go to next instruction
+                            continue decode;
                         }
                         break decode;  // bail out
-                } //end switch
+                }
             }
             System.err.println(method+": bailout on "+instructions.getLast()+" jvm stack: "+jvm.stack);
             return null;
