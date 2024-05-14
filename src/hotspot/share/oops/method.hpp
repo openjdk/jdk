@@ -446,8 +446,10 @@ public:
   address signature_handler() const              { return *(signature_handler_addr()); }
   void set_signature_handler(address handler);
 
-  // Interpreter oopmap support
+  // Interpreter oopmap support.
+  // If handle is already available, call with it for better performance.
   void mask_for(int bci, InterpreterOopMap* mask);
+  void mask_for(const methodHandle& this_mh, int bci, InterpreterOopMap* mask);
 
   // operations on invocation counter
   void print_invocation_count(outputStream* st);

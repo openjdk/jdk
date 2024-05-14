@@ -310,9 +310,13 @@ int Method::fast_exception_handler_bci_for(const methodHandle& mh, Klass* ex_kla
 
 void Method::mask_for(int bci, InterpreterOopMap* mask) {
   methodHandle h_this(Thread::current(), this);
-  method_holder()->mask_for(h_this, bci, mask);
+  mask_for(h_this, bci, mask);
 }
 
+void Method::mask_for(const methodHandle& this_mh, int bci, InterpreterOopMap* mask) {
+  assert(this_mh() == this, "Sanity");
+  method_holder()->mask_for(this_mh, bci, mask);
+}
 
 int Method::bci_from(address bcp) const {
   if (is_native() && bcp == 0) {
