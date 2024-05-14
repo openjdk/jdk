@@ -22,31 +22,78 @@
  */
 
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
+import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
 public class Util {
 
-    public static final class CountingSupplier<T> implements Supplier<T> {
-
-        private final AtomicInteger cnt = new AtomicInteger();
-        private final Supplier<T> delegate;
+    public static final class CountingSupplier<T>
+            extends AbstractCounting<Supplier<T>>
+            implements Supplier<T> {
 
         public CountingSupplier(Supplier<T> delegate) {
-            this.delegate = delegate;
+            super(delegate);
         }
 
         @Override
         public T get() {
-            cnt.incrementAndGet();
+            incrementCounter();
             return delegate.get();
         }
 
-        public int cnt() {
+    }
+
+    public static final class CountingIntFunction<T>
+            extends AbstractCounting<IntFunction<T>>
+            implements IntFunction<T> {
+
+        public CountingIntFunction(IntFunction<T> delegate) {
+            super(delegate);
+        }
+
+        @Override
+        public T apply(int value) {
+            incrementCounter();
+            return delegate.apply(value);
+        }
+
+    }
+
+    public static final class CountingFunction<T, R>
+            extends AbstractCounting<Function<T, R>>
+            implements Function<T, R> {
+
+        public CountingFunction(Function<T, R> delegate) {
+            super(delegate);
+        }
+
+        @Override
+        public R apply(T t) {
+            incrementCounter();
+            return delegate.apply(t);
+        }
+    }
+
+    abstract static class AbstractCounting<D> {
+
+        private final AtomicInteger cnt = new AtomicInteger();
+        protected final D delegate;
+
+        protected AbstractCounting(D delegate) {
+            this.delegate = delegate;
+        }
+
+        protected final void incrementCounter() {
+            cnt.incrementAndGet();
+        }
+
+        public final int cnt() {
             return cnt.get();
         }
 
         @Override
-        public String toString() {
+        public final String toString() {
             return cnt.toString();
         }
     }

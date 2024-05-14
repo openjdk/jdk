@@ -24,31 +24,37 @@
 /* @test
  * @summary Basic tests for memoized Supplier
  * @modules java.base/jdk.internal.lang
- * @compile --enable-preview -source ${jdk.version} MemoizedSupplierTest.java
+ * @compile --enable-preview -source ${jdk.version} MemoizedFunctionTest.java
  * @compile Util.java
- * @run junit/othervm --enable-preview MemoizedSupplierTest
+ * @run junit/othervm --enable-preview MemoizedFunctionTest
  */
 
 import jdk.internal.lang.StableValue;
 import org.junit.jupiter.api.Test;
 
-import java.util.function.Supplier;
+import java.util.NoSuchElementException;
+import java.util.Set;
+import java.util.function.Function;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class MemoizedSupplierTest {
+public class MemoizedFunctionTest {
 
     private static final int FIRST = 42;
 
     @Test
     void memoized() {
-        Util.CountingSupplier<Integer> counting = new Util.CountingSupplier<>(() -> FIRST);
-        Supplier<Integer> memoized = StableValue.ofSupplier(counting);
-        assertEquals(FIRST, memoized.get());
+        Util.CountingFunction<Integer, Integer> counting = new Util.CountingFunction<>(Function.identity());
+        Function<Integer, Integer> memoized = StableValue.ofFunction(Set.of(0, 1, FIRST), counting);
+        assertEquals(FIRST, memoized.apply(FIRST));
         assertEquals(1, counting.cnt());
         // Make sure the original supplier is not invoked more than once
-        assertEquals(FIRST, memoized.get());
+        assertEquals(FIRST, memoized.apply(FIRST));
         assertEquals(1, counting.cnt());
+
+        assertThrows(NoSuchElementException.class, () -> memoized.apply(-1));
+        assertThrows(NoSuchElementException.class, () -> memoized.apply(FIRST + 1));
     }
 
 }

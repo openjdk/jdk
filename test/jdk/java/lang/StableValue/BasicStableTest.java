@@ -41,6 +41,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -219,6 +220,21 @@ final class BasicStableTest {
                 varHandle.compareAndSet(holder, original, StableValue.of())
         );
 
+    }
+
+    @Test
+    void background() {
+        StableValue<Integer> stable = StableValue.ofBackground(Thread.ofVirtual().factory(), () -> 42);
+
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(2);
+        while(!stable.isSet()) {
+            Thread.onSpinWait();
+            if (System.nanoTime() > deadline) {
+                fail("No value was set within the stipulated time: " + stable);
+            }
+        }
+
+        assertEquals(42, stable.orThrow());
     }
 
     @Test

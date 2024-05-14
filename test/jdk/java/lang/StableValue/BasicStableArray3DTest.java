@@ -29,7 +29,6 @@
  * @run junit/othervm --enable-preview BasicStableArray3DTest
  */
 
-import jdk.internal.lang.StableArray2D;
 import jdk.internal.lang.StableArray3D;
 import jdk.internal.lang.StableValue;
 import org.junit.jupiter.api.Test;

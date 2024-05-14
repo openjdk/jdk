@@ -380,6 +380,9 @@ public sealed interface StableValue<V>
      * If the {@code original} IntFunction invokes the returned IntFunction recursively
      * for a specific input value, a StackOverflowError will be thrown when the returned
      * IntFunction's {@linkplain IntFunction#apply(int)} ()} method is invoked.
+     * <p>
+     * The returned IntFunction will throw {@linkplain IndexOutOfBoundsException} if
+     * {@linkplain IntFunction#apply(int)} is invoked with a value {@code < 0 || > size}.
      *
      * @param size     the number of elements in the backing list
      * @param original the original IntFunction to convert to a memoized IntFunction
@@ -403,6 +406,10 @@ public sealed interface StableValue<V>
      * If the {@code original} Function invokes the returned Function recursively
      * for a specific input value, a StackOverflowError will be thrown when the returned
      * Function's {@linkplain Function#apply(Object)}} method is invoked.
+     * <p>
+     * The returned Function will throw {@linkplain NoSuchElementException} if
+     * {@linkplain Function#apply(Object)} is invoked with a value that is not in the
+     * given {@code input} Set.
      *
      * @param original the original Function to convert to a memoized Function
      * @param inputs   the potential input values to the Function

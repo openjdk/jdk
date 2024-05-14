@@ -24,31 +24,35 @@
 /* @test
  * @summary Basic tests for memoized Supplier
  * @modules java.base/jdk.internal.lang
- * @compile --enable-preview -source ${jdk.version} MemoizedSupplierTest.java
+ * @compile --enable-preview -source ${jdk.version} MemoizedIntFunctionTest.java
  * @compile Util.java
- * @run junit/othervm --enable-preview MemoizedSupplierTest
+ * @run junit/othervm --enable-preview MemoizedIntFunctionTest
  */
 
 import jdk.internal.lang.StableValue;
 import org.junit.jupiter.api.Test;
 
-import java.util.function.Supplier;
+import java.util.function.IntFunction;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class MemoizedSupplierTest {
+public class MemoizedIntFunctionTest {
 
     private static final int FIRST = 42;
 
     @Test
     void memoized() {
-        Util.CountingSupplier<Integer> counting = new Util.CountingSupplier<>(() -> FIRST);
-        Supplier<Integer> memoized = StableValue.ofSupplier(counting);
-        assertEquals(FIRST, memoized.get());
+        Util.CountingIntFunction<Integer> counting = new Util.CountingIntFunction<>(i -> i);
+        IntFunction<Integer> memoized = StableValue.ofIntFunction(FIRST + 1, counting);
+        assertEquals(FIRST, memoized.apply(FIRST));
         assertEquals(1, counting.cnt());
         // Make sure the original supplier is not invoked more than once
-        assertEquals(FIRST, memoized.get());
+        assertEquals(FIRST, memoized.apply(FIRST));
         assertEquals(1, counting.cnt());
+
+        assertThrows(IndexOutOfBoundsException.class, () -> memoized.apply(-1));
+        assertThrows(IndexOutOfBoundsException.class, () -> memoized.apply(FIRST + 1));
     }
 
 }
