@@ -1,6 +1,7 @@
 package jdk.internal.lang;
 
 import jdk.internal.lang.stable.StableArrayImpl;
+import jdk.internal.lang.stable.TrustedFieldType;
 
 /**
  * An atomic, thread-safe, stable array holder for which components can be set at most once.
@@ -14,6 +15,7 @@ import jdk.internal.lang.stable.StableArrayImpl;
  * @since 23
  */
 public sealed interface StableArray<V>
+        extends TrustedFieldType
         permits StableArrayImpl {
 
     /**

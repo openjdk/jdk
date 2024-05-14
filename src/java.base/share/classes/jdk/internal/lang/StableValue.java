@@ -28,6 +28,7 @@ package jdk.internal.lang;
 import jdk.internal.lang.stable.StableAccess;
 import jdk.internal.lang.stable.StableValueElement;
 import jdk.internal.lang.stable.StableValueImpl;
+import jdk.internal.lang.stable.TrustedFieldType;
 
 import java.io.Serializable;
 import java.util.Collection;
@@ -69,6 +70,7 @@ import java.util.function.Supplier;
  * @since 23
  */
 public sealed interface StableValue<V>
+        extends TrustedFieldType
         permits StableValueElement, StableValueImpl {
 
     /**

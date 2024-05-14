@@ -27,6 +27,7 @@ package java.lang.reflect;
 
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.lang.StableValue;
+import jdk.internal.lang.stable.TrustedFieldType;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.FieldAccessor;
 import jdk.internal.reflect.Reflection;
@@ -176,10 +177,10 @@ class Field extends AccessibleObject implements Member {
     public void setAccessible(boolean flag) {
         AccessibleObject.checkPermission();
         // Always check if the field is a final StableValue
-        if (StableValue.class.isAssignableFrom(type) && Modifier.isFinal(modifiers)) {
+        if (TrustedFieldType.class.isAssignableFrom(type) && Modifier.isFinal(modifiers)) {
             throw newInaccessibleObjectException(
                     "Unable to make field " + this + " accessible: " +
-                            "jdk.internal.lang.StableValue fields are trusted");
+                            "Fields declared to implement " + TrustedFieldType.class.getName() + " are trusted");
         }
         if (flag) {
             checkCanSetAccessible(Reflection.getCallerClass());

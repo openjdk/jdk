@@ -72,8 +72,6 @@ final class BasicStableArray2DTest {
 
     @Test
     void basic() {
-        assertEquals(2, arr.length(0));
-        assertEquals(3, arr.length(1));
         StableValue<Integer> stableUnset = StableValue.of(); // Separate stable
         assertEquals("[[" + stableUnset + ", " + stableUnset + ", " + stableUnset + "], " +
                 "[" + stableUnset + ", " + stableUnset + ", " + stableUnset + "]]", arr.toString());

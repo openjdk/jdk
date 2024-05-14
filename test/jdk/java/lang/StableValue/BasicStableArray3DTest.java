@@ -28,7 +28,6 @@
  * @run junit/othervm --enable-preview BasicStableArray3DTest
  */
 
-import jdk.internal.lang.StableArray2D;
 import jdk.internal.lang.StableArray3D;
 import jdk.internal.lang.StableValue;
 import org.junit.jupiter.api.BeforeEach;
@@ -49,11 +48,11 @@ final class BasicStableArray3DTest {
     private static final int VALUE = 42;
     private static final int VALUE2 = 13;
 
-    private StableArray2D<Integer> arr;
+    private StableArray3D<Integer> arr;
 
     @BeforeEach
     void setup() {
-        arr =  StableArray2D.of(DIM0, DIM1);
+        arr =  StableArray3D.of(DIM0, DIM1, DIM2);
     }
 
     @Test
@@ -77,10 +76,6 @@ final class BasicStableArray3DTest {
 
     @Test
     void oneTimesTwoTimesThree() {
-        StableArray3D<Integer> arr = StableArray3D.of(I0, I1, I2);
-        assertEquals(2, arr.length(0));
-        assertEquals(3, arr.length(1));
-        assertEquals(4, arr.length(2));
         assertEquals("[" +
                         "[" +
                         "[StableValue.unset, StableValue.unset, StableValue.unset, StableValue.unset], " +

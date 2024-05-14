@@ -2,6 +2,7 @@ package jdk.internal.lang;
 
 import jdk.internal.lang.stable.StableArray2DImpl;
 import jdk.internal.lang.stable.StableArray3DImpl;
+import jdk.internal.lang.stable.TrustedFieldType;
 
 /**
  * An atomic, thread-safe, stable array holder for which components can be set at most once.
@@ -14,6 +15,7 @@ import jdk.internal.lang.stable.StableArray3DImpl;
  * @since 23
  */
 public sealed interface StableArray3D<V>
+        extends TrustedFieldType
         permits StableArray3DImpl {
 
     /**
