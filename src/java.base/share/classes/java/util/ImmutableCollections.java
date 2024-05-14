@@ -168,15 +168,16 @@ class ImmutableCollections {
                 @SuppressWarnings("unchecked")
                 @Override
                 public <K, V> Map<K, StableValue<V>> stableMap(Set<? extends K> keys) {
-                    K[] arr = (K[]) keys.stream()
-                            .map(Objects::requireNonNull)
-                            .distinct()
-                            .toArray();
-                    return keys instanceof EnumSet
-                            ? StableEnumMap.create(arr)
-                            : StableMap.create(arr);
+                    if (keys instanceof EnumSet<?> enumSet) {
+                        return StableEnumMap.create((Set<K>) enumSet);
+                    } else {
+                        K[] arr = (K[]) keys.stream()
+                                .map(Objects::requireNonNull)
+                                .distinct()
+                                .toArray();
+                        return StableMap.create(arr);
+                    }
                 }
-
 
                 @Override
                 public <K, V> V computeIfUnset(Map<K, StableValue<V>> map,
@@ -1713,16 +1714,15 @@ class ImmutableCollections {
         private final AuxiliaryArrays aux;
 
         @SuppressWarnings("unchecked")
-        private StableEnumMap(Object[] keys) {
-            assert keys.length > 0;
+        private StableEnumMap(EnumSet<K> keys) {
+            assert !keys.isEmpty();
 
             // Establish the min and max value.
             // All indexing will then be translated by
             // subtracting the min ordinal from a key's ordinal
             int min = Integer.MAX_VALUE;
             int max = Integer.MIN_VALUE;
-            for (Object o:keys) {
-                K key = (K)o;
+            for (K key : keys) {
                 int ordinal = key.ordinal();
                 min = Math.min(min, ordinal);
                 max = Math.max(max, ordinal);
@@ -1732,15 +1732,14 @@ class ImmutableCollections {
 
             // Construct a translated bitset
             BitSet bs = new BitSet(elementCount);
-            for (Object o:keys) {
-                K key = (K)o;
+            for (K key : keys) {
                 bs.set(arrayIndex(key));
             }
             this.isPresent = ImmutableBitSetPredicate.of(bs);
 
             this.elements = newGenericArray(elementCount);
-            this.size = keys.length;
-            this.enumType = (Class<K>) keys[0].getClass();
+            this.size = keys.size();
+            this.enumType = (Class<K>) keys.iterator().next().getClass();
             this.aux = AuxiliaryArrays.create(elementCount);
         }
 
@@ -1869,8 +1868,8 @@ class ImmutableCollections {
         }
 
         @SuppressWarnings("unchecked")
-        static <K, KI extends Enum<KI>, V> Map<K, StableValue<V>> create(Object[] keys) {
-            Map<KI, StableValue<V>> map = new StableEnumMap<>(keys);
+        static <K, KI extends Enum<KI>, V> Map<K, StableValue<V>> create(Set<K> keys) {
+            Map<KI, StableValue<V>> map = new StableEnumMap<>((EnumSet<KI>) keys);
             return (Map<K, StableValue<V>>) map;
         }
 
