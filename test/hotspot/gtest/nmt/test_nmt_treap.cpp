@@ -157,57 +157,76 @@ TEST_VM_F(TreapTest, TreapOughtNotLeak) {
 }
 
 TEST_VM_F(TreapTest, TestVisitInRange) {
-  TreapCHeap<int, int, Cmp> treap;
-  using Node = TreapCHeap<int, int, Cmp>::TreapNode;
+  { // Tests with 'default' ordering (ascending)
+    TreapCHeap<int, int, Cmp> treap;
+    using Node = TreapCHeap<int, int, Cmp>::TreapNode;
 
-  treap.visit_range_in_order(0, 100, [&](Node* x) {
-    EXPECT_TRUE(false) << "Empty treap has no nodes to visit";
-  });
+    treap.visit_range_in_order(0, 100, [&](Node* x) {
+      EXPECT_TRUE(false) << "Empty treap has no nodes to visit";
+    });
 
-  // Single-element set
-  treap.upsert(1, 0);
-  int count = 0;
-  treap.visit_range_in_order(0, 100, [&](Node* x) {
-    count++;
-  });
-  EXPECT_EQ(1, count);
+    // Single-element set
+    treap.upsert(1, 0);
+    int count = 0;
+    treap.visit_range_in_order(0, 100, [&](Node* x) {
+      count++;
+    });
+    EXPECT_EQ(1, count);
 
-  // Add an element outside of the range that should not be visited on the right side and
-  // one on the left side.
-  treap.upsert(101, 0);
-  treap.upsert(-1, 0);
-  count = 0;
-  treap.visit_range_in_order(0, 100, [&](Node* x) {
-    count++;
-  });
-  EXPECT_EQ(1, count);
+    // Add an element outside of the range that should not be visited on the right side and
+    // one on the left side.
+    treap.upsert(101, 0);
+    treap.upsert(-1, 0);
+    count = 0;
+    treap.visit_range_in_order(0, 100, [&](Node* x) {
+      count++;
+    });
+    EXPECT_EQ(1, count);
 
-  // Visiting empty range [0, 0) == {}
-  treap.upsert(0, 0); // This node should not be visited.
-  treap.visit_range_in_order(0, 0, [&](Node* x) {
-    EXPECT_TRUE(false) << "Empty visiting range should not visit any node";
-  });
+    // Visiting empty range [0, 0) == {}
+    treap.upsert(0, 0); // This node should not be visited.
+    treap.visit_range_in_order(0, 0, [&](Node* x) {
+      EXPECT_TRUE(false) << "Empty visiting range should not visit any node";
+    });
 
-  treap.remove_all();
-  for (int i = 0; i < 11; i++) {
-    treap.upsert(i, 0);
+    treap.remove_all();
+    for (int i = 0; i < 11; i++) {
+      treap.upsert(i, 0);
+    }
+
+    ResourceMark rm;
+    GrowableArray<int> seen;
+    treap.visit_range_in_order(0, 10, [&](Node* x) {
+      seen.push(x->key());
+    });
+    EXPECT_EQ(10, seen.length());
+    for (int i = 0; i < 10; i++) {
+      EXPECT_EQ(i, seen.at(i));
+    }
+    GrowableArray<int> seen2;
+    treap.visit_range_in_order(10, 12, [&](Node* x) {
+      seen2.push(x->key());
+    });
+    EXPECT_EQ(1, seen.length());
+    EXPECT_EQ(10, seen.at(0));
   }
+  { // Test with descending ordering
+    TreapCHeap<int, int, CmpInverse> treap;
+    using Node = TreapCHeap<int, int, CmpInverse>::TreapNode;
 
-  ResourceMark rm;
-  GrowableArray<int> seen;
-  treap.visit_range_in_order(0, 10, [&](Node* x) {
-    seen.push(x->key());
-  });
-  EXPECT_EQ(10, seen.length());
-  for (int i = 0; i < 10; i++) {
-    EXPECT_EQ(i, seen.at(i));
+    for (int i = 0; i < 10; i++) {
+      treap.upsert(i, 0);
+    }
+    ResourceMark rm;
+    GrowableArray<int> seen;
+    treap.visit_range_in_order(0, 10, [&](Node* x) {
+      seen.push(x->key());
+    });
+    EXPECT_EQ(10, seen.length());
+    for (int i = 0; i < 10; i++) {
+      EXPECT_EQ(9-i, seen.at(i));
+    }
   }
-  GrowableArray<int> seen2;
-  treap.visit_range_in_order(10, 12, [&](Node* x) {
-    seen2.push(x->key());
-  });
-  EXPECT_EQ(1, seen.length());
-  EXPECT_EQ(10, seen.at(0));
 }
 
 #ifdef ASSERT
