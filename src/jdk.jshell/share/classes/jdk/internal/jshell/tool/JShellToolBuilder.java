@@ -222,7 +222,7 @@ public class JShellToolBuilder implements JavaShellToolBuilder {
         if (columns <= 0)
             throw new IllegalArgumentException("columns = " + columns);
         if (rows <= 0)
-            throw new IllegalArgumentException("-columns = " + -columns);
+            throw new IllegalArgumentException("rows = " + rows);
         this.windowSize = new Size(columns, rows);
         return this;
     }
