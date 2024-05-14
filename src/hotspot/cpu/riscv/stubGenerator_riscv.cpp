@@ -5042,56 +5042,50 @@ class StubGenerator: public StubCodeGenerator {
     return (address) start;
   }
 
-  void generate_updateBytesAdler32_accum(Register buff, VectorRegister vzero, VectorRegister vbytes,
-    VectorRegister vs1acc, VectorRegister vs2acc, VectorRegister vtable) {
-    // Below is a vectorized implementation of updating s1 and s2 for 16 bytes.
-    // We use b1, b2, ..., b16 to denote the 16 bytes loaded in each iteration.
-    // In non-vectorized code, we update s1 and s2 as:
-    //   s1 <- s1 + b1
-    //   s2 <- s2 + s1
-    //   s1 <- s1 + b2
-    //   s2 <- s2 + b1
-    //   ...
-    //   s1 <- s1 + b16
-    //   s2 <- s2 + s1
-    // Putting above assignments together, we have:
-    //   s1_new = s1 + b1 + b2 + ... + b16
-    //   s2_new = s2 + (s1 + b1) + (s1 + b1 + b2) + ... + (s1 + b1 + b2 + ... + b16)
-    //          = s2 + s1 * 16 + (b1 * 16 + b2 * 15 + ... + b16 * 1)
-    //          = s2 + s1 * 16 + (b1, b2, ... b16) dot (16, 15, ... 1)
-    //
-    // To add more acceleration, it is possible to postpone final summation
-    // until all unrolled calculations are done.
+  void generate_updateBytesAdler32_unroll(Register buff, Register s1, Register s2, Register count,
+    VectorRegister vtable, VectorRegister vzero, VectorRegister *vbytes, VectorRegister *vs1acc, VectorRegister *vs2acc, 
+    Register temp0, Register temp1, Register temp2, VectorRegister vtemp1, VectorRegister vtemp2, int LMUL) {
 
-    // Load data
-    __ vle8_v(vbytes, buff);
-    __ addi(buff, buff, 16);
-
-    // vs1acc = b1 + b2 + b3 + ... + b16
-    __ vwredsumu_vs(vs1acc, vbytes, vzero);
-
-    // vs2acc = { (b1 * 16), (b2 * 15), (b3 * 14), ..., (b8 * 9) }
-    // vs2acc->successor() = { (b9 * 8), (b10 * 7), (b11 * 6), ..., (b16 * 1) }
-    __ vwmulu_vv(vs2acc, vtable, vbytes); // vs2acc->successor() now contains the second part of multiplication
-    // The only thing that remains is to sum up the remembered result
-  }
-
-  void generate_updateBytesAdler32_unroll(Register buff, Register s1, Register s2, int unroll_factor,
-    VectorRegister vtable, VectorRegister vbytes, VectorRegister vzero, VectorRegister *unroll_regs,
-    Register temp0, Register temp1, Register temp2, VectorRegister vtemp1, VectorRegister vtemp2) {
-
-    assert(unroll_factor <= 8, "Not enough vector registers in unroll_regs");
+    assert(LMUL <= 4, "Not enough vector registers");
     // Below is partial loop unrolling for updateBytesAdler32:
-    // First, the unroll*16 bytes are processed, the results are in
-    // v4, v5, v6, ..., v25, v26, v27
+    // First, the LMUL*16 bytes are processed, the results are in
+    // v8, v9, v10, ..., v21, v22, v23
     // Second, the final summation for unrolled part of the loop should be performed
 
+    // Load data for unrolling steps all at once
+    __ vsetvli(temp0, count, Assembler::e8, Assembler::m4);
+    __ vle8_v(vbytes[0], buff);
+    __ addi(buff, buff, LMUL*16);
+
     __ vsetivli(temp0, 16, Assembler::e8, Assembler::m1);
-    for (int i = 0; i < unroll_factor; i++)
-      generate_updateBytesAdler32_accum(buff, vzero, vbytes, unroll_regs[i], unroll_regs[i + 8], vtable);
+    for (int i = 0; i < LMUL; i++) {
+      // We use b1, b2, ..., b16 to denote the 16 bytes loaded in each iteration.
+      // In non-vectorized code, we update s1 and s2 as:
+      //   s1 <- s1 + b1
+      //   s2 <- s2 + s1
+      //   s1 <- s1 + b2
+      //   s2 <- s2 + b1
+      //   ...
+      //   s1 <- s1 + b16
+      //   s2 <- s2 + s1
+      // Putting above assignments together, we have:
+      //   s1_new = s1 + b1 + b2 + ... + b16
+      //   s2_new = s2 + (s1 + b1) + (s1 + b1 + b2) + ... + (s1 + b1 + b2 + ... + b16)
+      //          = s2 + s1 * 16 + (b1 * 16 + b2 * 15 + ... + b16 * 1)
+      //          = s2 + s1 * 16 + (b1, b2, ... b16) dot (16, 15, ... 1)
+      //
+      // vs1acc[i] = { (b1 + b2 + b3 + ... + b16), 0, 0, ..., 0 }
+      __ vwredsumu_vs(vs1acc[i], vbytes[i], vzero);
+
+      // vs2acc[i] = { (b1 * 16), (b2 * 15), (b3 * 14), ..., (b8 * 9) }
+      // vs2acc[i]->successor() = { (b9 * 8), (b10 * 7), (b11 * 6), ..., (b16 * 1) }
+      __ vwmulu_vv(vs2acc[i], vtable, vbytes[i]);
+    }
+    // The only thing that remains is to sum up the remembered result
+
     // Summing up
     __ vsetivli(temp0, 8, Assembler::e16, Assembler::m1);
-    for (int i = 0; i < unroll_factor; i++) {
+    for (int i = 0; i < LMUL; i++) {
       // s2 = s2 + s1 * 16
       __ slli(temp1, s1, 4);
       __ add(s2, s2, temp1);
@@ -5099,10 +5093,10 @@ class StubGenerator: public StubCodeGenerator {
       // 0xFF * 0x10 = 0xFF0, 0xFF0 * 8 = 7F80, so:
       // 1. No need to do vector-widening reduction sum
       // 2. It is safe to perform sign-extension during vmv.x.s
-      __ vredsum_vs(vtemp1, unroll_regs[i + 8], vzero);
-      __ vredsum_vs(vtemp2, unroll_regs[i + 8]->successor(), vzero);
+      __ vredsum_vs(vtemp1, vs2acc[i], vzero);
+      __ vredsum_vs(vtemp2, vs2acc[i]->successor(), vzero);
 
-      __ vmv_x_s(temp0, unroll_regs[i]);
+      __ vmv_x_s(temp0, vs1acc[i]);
       __ vmv_x_s(temp1, vtemp1);
       __ vmv_x_s(temp2, vtemp2);
       __ add(s1, s1, temp0);
@@ -5143,25 +5137,28 @@ class StubGenerator: public StubCodeGenerator {
     Register temp0 = c_rarg4;
     Register temp1 = c_rarg5;
     Register temp2 = c_rarg6;
-    Register buf_end = c_rarg7;
 
-    VectorRegister vbytes = v1;
-    VectorRegister vtable = v2;
-    VectorRegister vzero = v3;
-    VectorRegister unroll_regs[] = {
-      v4, v5, v6, v7, v8, v9, v10, v11,
-      v12, v14, v16, v18, v20, v22, v24, v26
+    VectorRegister vtable = v1;
+    VectorRegister vtemp1 = v2;
+    VectorRegister vtemp2 = v3;
+    VectorRegister vzero = v4;
+    VectorRegister vbytes[] = {
+      v8, v9, v10, v11
     };
-    VectorRegister vtemp1 = v28;
-    VectorRegister vtemp2 = v29;
+    VectorRegister vs1acc[] = {
+      v12, v13, v14, v15
+    };
+    VectorRegister vs2acc[] = {
+      v16, v18, v20, v22
+    };
 
     // Max number of bytes we can process before having to take the mod
     // 0x15B0 is 5552 in decimal, the largest n such that 255n(n+1)/2 + (n+1)(BASE-1) <= 2^32-1
     const uint64_t BASE = 0xfff1;
     const uint64_t NMAX = 0x15B0;
 
-    // Unroll factor for L_nmax loop
-    const int unroll = 8;
+    // LMUL factor for L_nmax loop
+    const int LMUL = 4;
 
     __ enter(); // required for proper stackwalking of RuntimeStub frame
     __ vsetivli(temp0, 16, Assembler::e8, Assembler::m1);
@@ -5216,22 +5213,19 @@ class StubGenerator: public StubCodeGenerator {
     __ sub(len, len, nmax);
     __ sub(count, nmax, 16);
     __ bltz(len, L_by16);
-
-  __ bind(L_nmax_loop_entry);
-    // buf_end will be used as endpoint for loop below
-    __ add(buf_end, buff, count); // buf_end will be used as endpoint for loop below
-    __ sub(buf_end, buf_end, 32); // After partial unrolling 3 additional iterations are required,
-                                  // and bytes for one of them are already subtracted
+    __ sub(count, count, 32);
 
   __ bind(L_nmax_loop);
-    generate_updateBytesAdler32_unroll(buff, s1, s2, unroll, vtable, vbytes,
-      vzero, unroll_regs, temp0, temp1, temp2, vtemp1, vtemp2);
-    __ blt(buff, buf_end, L_nmax_loop);
+    generate_updateBytesAdler32_unroll(buff, s1, s2, count, vtable, vzero,
+      vbytes, vs1acc, vs2acc, temp0, temp1, temp2, vtemp1, vtemp2, LMUL);
+    __ sub(count, count, 16*LMUL);
+    __ bgtz(count, L_nmax_loop);
 
-    const int remainder = ((NMAX / 16) % unroll);
+    const int remainder = ((NMAX / 16) % LMUL);
+    __ mv(count, 16*remainder);
     // Do the calculations for remaining 16*remainder bytes
-    generate_updateBytesAdler32_unroll(buff, s1, s2, remainder, vtable, vbytes,
-      vzero, unroll_regs, temp0, temp1, temp2, vtemp1, vtemp2);
+    generate_updateBytesAdler32_unroll(buff, s1, s2, count, vtable, vzero,
+      vbytes, vs1acc, vs2acc, temp0, temp1, temp2, vtemp1, vtemp2, remainder);
 
     // s1 = s1 % BASE
     __ remuw(s1, s1, base);
@@ -5240,18 +5234,17 @@ class StubGenerator: public StubCodeGenerator {
 
     __ sub(len, len, nmax);
     __ sub(count, nmax, 16);
-    __ bgez(len, L_nmax_loop_entry);
+    __ bgez(len, L_nmax_loop);
 
   __ bind(L_by16);
     __ add(len, len, count);
     __ bltz(len, L_by1);
 
   __ bind(L_by16_loop);
-    generate_updateBytesAdler32_unroll(buff, s1, s2, 1, vtable, vbytes,
-      vzero, unroll_regs, temp0, temp1, temp2, vtemp1, vtemp2);
-
+    generate_updateBytesAdler32_unroll(buff, s1, s2, len, vtable, vzero,
+      vbytes, vs1acc, vs2acc, temp0, temp1, temp2, vtemp1, vtemp2, 1);
     __ sub(len, len, 16);
-    __ bgez(len, L_by16_loop);
+    __ bgtz(len, L_by16_loop);
 
   __ bind(L_by1);
     __ add(len, len, 15);
