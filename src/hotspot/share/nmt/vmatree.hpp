@@ -112,8 +112,8 @@ private:
     IntervalState out;
 
     bool is_noop() {
-      return (in.type() == StateType::Released && out.type() == StateType::Released) ||
-             (in.type() == out.type() && RegionData::equals(in.regiondata(), out.regiondata()));
+      return in.type() == out.type() &&
+             RegionData::equals(in.regiondata(), out.regiondata());
     }
   };
 
