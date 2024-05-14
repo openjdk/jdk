@@ -24,7 +24,6 @@
  */
 
 #include "precompiled.hpp"
-
 #include "nmt/memflags.hpp"
 #include "nmt/nmtCommon.hpp"
 #include "runtime/java.hpp"

@@ -26,8 +26,8 @@
 #ifndef SHARE_NMT_MALLOCTRACKER_HPP
 #define SHARE_NMT_MALLOCTRACKER_HPP
 
-#include "nmt/memflags.hpp"
 #include "nmt/mallocHeader.hpp"
+#include "nmt/memflags.hpp"
 #include "nmt/nmtCommon.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/threadCritical.hpp"
