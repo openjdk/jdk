@@ -146,9 +146,32 @@ public class TestEnableNativeAccess extends TestEnableNativeAccessBase {
         run("panama_deny_bad_all_module_path_module", PANAMA_MAIN,
                 failWithWarning("WARNING: Unknown module: ALL-MODULE-PATH specified to --enable-native-access"),
                 "--illegal-native-access=deny", "--enable-native-access=ALL-MODULE-PATH" );
-        run("panama_deny_no_module", PANAMA_MAIN,
+        run("panama_deny_no_module_main", PANAMA_MAIN,
                 failWithError("module panama_module"),
                 "--illegal-native-access=deny");
+        run("panama_deny_no_module_invoke", PANAMA_INVOKE,
+                failWithError("module panama_module"),
+                "--illegal-native-access=deny");
+        run("panama_deny_no_module_reflection", PANAMA_REFLECTION,
+                failWithError("module panama_module"),
+                "--illegal-native-access=deny");
+        run("panama_deny_no_module_jni", PANAMA_JNI,
+                failWithError("module panama_jni_load_module"),
+                "--illegal-native-access=deny");
+    }
+
+    public void testDetailedWarningMessage() throws Exception {
+        run("panama_enable_native_access_warn_jni", PANAMA_JNI,
+                success()
+                        // call to System::loadLibrary from panama_jni_load_module
+                        .expect("WARNING: A restricted method in java.lang.System has been called")
+                        .expect("WARNING: java.lang.System::loadLibrary has been called by org.openjdk.jni.PanamaMainJNI in module panama_jni_load_module")
+                        // JNI native method binding in panama_jni_def_module
+                        .expect("WARNING: A native method in org.openjdk.jni.def.PanamaJNIDef has been bound")
+                        .expect("WARNING: org.openjdk.jni.def.PanamaJNIDef::nativeLinker0 has been called by org.openjdk.jni.def.PanamaJNIDef in module panama_jni_def_module")
+                        // upcall to Linker::downcallHandle from JNI code
+                        .expect("WARNING: A restricted method in java.lang.foreign.Linker has been called")
+                        .expect("WARNING: java.lang.foreign.Linker::downcallHandle has been called by code in an unnamed module"));
     }
 
     private int count(Iterable<String> lines, CharSequence cs) {

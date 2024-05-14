@@ -56,7 +56,7 @@ public class TestEnableNativeAccessDynamic extends TestEnableNativeAccessBase {
 
     @DataProvider(name = "failureCases")
     public Object[][] failureCases() {
-        String errMsg = "Illegal native access from: module panama_module";
+        String errMsg = "Illegal native access from module panama_module";
         return new Object[][] {
                 { "panama_enable_native_access_fail", PANAMA_MAIN, failWithError(errMsg) },
                 { "panama_enable_native_access_fail_reflection", PANAMA_REFLECTION, failWithError(errMsg) },

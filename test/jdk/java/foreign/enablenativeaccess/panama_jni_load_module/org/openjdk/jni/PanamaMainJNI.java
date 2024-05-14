@@ -27,11 +27,8 @@ import org.openjdk.jni.use.PanamaJNIUse;
 
 public class PanamaMainJNI {
 
-    static {
-        System.loadLibrary("LinkerInvokerModule");
-    }
-
     public static void main(String[] args) {
+        System.loadLibrary("LinkerInvokerModule");
         PanamaJNIUse.run();
     }
 }
