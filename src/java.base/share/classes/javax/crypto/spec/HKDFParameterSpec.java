@@ -329,7 +329,7 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
          * Returns the optional context and application specific information.
          *
          * @return a copy of the optional context and application specific
-         *     information
+         *     information, or {@code null} if not specified
          */
         public byte[] info() {
             return (info == null) ? null : info.clone();
@@ -406,7 +406,7 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
          * Returns the optional context and application specific information.
          *
          * @return a copy of the optional context and application specific
-         *     information
+         *     information, or {@code null} if not specified
          */
         public byte[] info() {
             return exp.info();
