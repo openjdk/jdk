@@ -27,12 +27,12 @@ import java.util.Arrays;
 
 /**
  * @test
- * @bug 8331746
+ * @bug 8321489
  * @summary tests that the cmm id is not ignored
  */
 public final class CustomCMMID {
 
-    private static final byte[] JAVA_ID = new byte[]{
+    private static final byte[] JAVA_ID = {
             (byte) 'j', (byte) 'a', (byte) 'v', (byte) 'a',
     };
 
