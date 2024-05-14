@@ -276,8 +276,10 @@ abstract class HkdfKeyDerivation extends KDFSpi {
                 }
                 return new SecretKeySpec(bb, "RAW");
             }
-        } else {
+        } else if (keys.isEmpty()) {
             return null;
+        } else {
+            throw new InvalidKeyException("List of keys could not be consolidated");
         }
     }
 
@@ -305,7 +307,11 @@ abstract class HkdfKeyDerivation extends KDFSpi {
         Mac hmacObj = Mac.getInstance(hmacAlgName);
         hmacObj.init(new SecretKeySpec(salt, "HKDF-Salt"));
 
-        return hmacObj.doFinal(inputKey.getEncoded());
+        if(inputKey == null) {
+            return hmacObj.doFinal(new byte[hmacLen]);
+        } else {
+            return hmacObj.doFinal(inputKey.getEncoded());
+        }
     }
 
     /**
