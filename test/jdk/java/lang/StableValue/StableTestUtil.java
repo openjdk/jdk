@@ -26,7 +26,7 @@ import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
-public class Util {
+public class StableTestUtil {
 
     public static final class CountingSupplier<T>
             extends AbstractCounting<Supplier<T>>

@@ -25,7 +25,7 @@
  * @summary Basic tests for memoized Supplier
  * @modules java.base/jdk.internal.lang
  * @compile --enable-preview -source ${jdk.version} MemoizedFunctionTest.java
- * @compile Util.java
+ * @compile StableTestUtil.java
  * @run junit/othervm --enable-preview MemoizedFunctionTest
  */
 
@@ -39,13 +39,13 @@ import java.util.function.Function;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class MemoizedFunctionTest {
+final class MemoizedFunctionTest {
 
     private static final int FIRST = 42;
 
     @Test
     void memoized() {
-        Util.CountingFunction<Integer, Integer> counting = new Util.CountingFunction<>(Function.identity());
+        StableTestUtil.CountingFunction<Integer, Integer> counting = new StableTestUtil.CountingFunction<>(Function.identity());
         Function<Integer, Integer> memoized = StableValue.ofFunction(Set.of(0, 1, FIRST), counting);
         assertEquals(FIRST, memoized.apply(FIRST));
         assertEquals(1, counting.cnt());

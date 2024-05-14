@@ -25,7 +25,6 @@
  * @summary Basic tests for StableArray implementations
  * @modules java.base/jdk.internal.lang
  * @compile --enable-preview -source ${jdk.version} BasicStableArrayTest.java
- * @compile Util.java
  * @run junit/othervm --enable-preview BasicStableArrayTest
  */
 

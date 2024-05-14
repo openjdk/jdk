@@ -25,7 +25,7 @@
  * @summary Basic tests for StableValue implementations
  * @modules java.base/jdk.internal.lang
  * @compile --enable-preview -source ${jdk.version} BasicStableTest.java
- * @compile Util.java
+ * @compile StableTestUtil.java
  * @run junit/othervm --enable-preview BasicStableTest
  */
 
@@ -119,7 +119,7 @@ final class BasicStableTest {
 
     @Test
     void computeIfUnsetNull() {
-        Util.CountingSupplier<Integer> c = new Util.CountingSupplier<>(() -> null);
+        StableTestUtil.CountingSupplier<Integer> c = new StableTestUtil.CountingSupplier<>(() -> null);
         stable.computeIfUnset(c);
         assertNull(stable.orThrow());
         assertEquals(1, c.cnt());

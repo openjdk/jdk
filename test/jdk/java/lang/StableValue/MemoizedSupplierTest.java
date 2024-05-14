@@ -25,7 +25,7 @@
  * @summary Basic tests for memoized Supplier
  * @modules java.base/jdk.internal.lang
  * @compile --enable-preview -source ${jdk.version} MemoizedSupplierTest.java
- * @compile Util.java
+ * @compile StableTestUtil.java
  * @run junit/othervm --enable-preview MemoizedSupplierTest
  */
 
@@ -36,13 +36,13 @@ import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class MemoizedSupplierTest {
+final class MemoizedSupplierTest {
 
     private static final int FIRST = 42;
 
     @Test
     void memoized() {
-        Util.CountingSupplier<Integer> counting = new Util.CountingSupplier<>(() -> FIRST);
+        StableTestUtil.CountingSupplier<Integer> counting = new StableTestUtil.CountingSupplier<>(() -> FIRST);
         Supplier<Integer> memoized = StableValue.ofSupplier(counting);
         assertEquals(FIRST, memoized.get());
         assertEquals(1, counting.cnt());
