@@ -163,11 +163,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
             if ((info = anExpand.info()) == null) {
                 info = new byte[0];
             }
-            // set this value in the "if"
-            if ((length = anExpand.length()) <= 0) {
-                throw new InvalidParameterSpecException(
-                    "length cannot be <= 0");
-            }
+            length = anExpand.length();
             if (length > (hmacLen * 255)) {
                 throw new InvalidParameterSpecException("Requested length " +
                                                         "exceeds maximum "
@@ -207,11 +203,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
             if ((info = anExtractThenExpand.info()) == null) {
                 info = new byte[0];
             }
-            // set this value in the "if"
-            if ((length = anExtractThenExpand.length()) <= 0) {
-                throw new InvalidParameterSpecException(
-                    "length cannot be <= 0");
-            }
+            length = anExtractThenExpand.length();
             if (length > (hmacLen * 255)) {
                 throw new InvalidParameterSpecException("Requested length " +
                                                         "exceeds maximum "
