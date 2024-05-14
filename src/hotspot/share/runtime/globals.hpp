@@ -556,7 +556,7 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, HeapDumpOnOutOfMemoryError, false, MANAGEABLE,              \
           "Dump heap to file when java.lang.OutOfMemoryError is thrown "    \
           "from JVM "                                                       \
-          "(also see HeapDumpPath, HeapDumpGzipLevel)")                    \
+          "(also see HeapDumpPath, HeapDumpGzipLevel)")                     \
                                                                             \
   product(ccstr, HeapDumpPath, nullptr, MANAGEABLE,                         \
           "When HeapDumpOnOutOfMemoryError, HeapDumpBeforeFullGC "          \
