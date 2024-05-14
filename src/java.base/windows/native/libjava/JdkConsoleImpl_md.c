@@ -32,17 +32,28 @@
 #include <Wincon.h>
 
 JNIEXPORT jboolean JNICALL
-Java_jdk_internal_io_JdkConsoleImpl_echo(JNIEnv *env, jclass cls, jboolean on)
+Java_jdk_internal_io_JdkConsoleImpl_getEcho(JNIEnv *env, jclass cls)
 {
     DWORD fdwMode;
-    jboolean old;
     HANDLE hStdIn = GetStdHandle(STD_INPUT_HANDLE);
 
     if (! GetConsoleMode(hStdIn, &fdwMode)) {
         JNU_ThrowIOExceptionWithLastError(env, "GetConsoleMode failed");
-        return !on;
+        return JNI_FALSE;
     }
-    old = (fdwMode & ENABLE_ECHO_INPUT) != 0;
+    return (fdwMode & ENABLE_ECHO_INPUT) != 0;
+}
+
+JNIEXPORT void JNICALL
+Java_jdk_internal_io_JdkConsoleImpl_setEcho(JNIEnv *env, jclass cls, jboolean on)
+{
+    DWORD fdwMode;
+    HANDLE hStdIn = GetStdHandle(STD_INPUT_HANDLE);
+
+    if (! GetConsoleMode(hStdIn, &fdwMode)) {
+        JNU_ThrowIOExceptionWithLastError(env, "GetConsoleMode failed");
+        return;
+    }
     if (on) {
         fdwMode |= ENABLE_ECHO_INPUT;
     } else {
@@ -51,5 +62,4 @@ Java_jdk_internal_io_JdkConsoleImpl_echo(JNIEnv *env, jclass cls, jboolean on)
     if (! SetConsoleMode(hStdIn, fdwMode)) {
         JNU_ThrowIOExceptionWithLastError(env, "SetConsoleMode failed");
     }
-    return old;
 }

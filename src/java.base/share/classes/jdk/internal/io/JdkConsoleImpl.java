@@ -98,7 +98,7 @@ public final class JdkConsoleImpl implements JdkConsole {
             synchronized(readLock) {
                 installShutdownHook();
                 try {
-                    restoreEcho = echo(false);
+                    setEcho(false);
                 } catch (IOException x) {
                     throw new IOError(x);
                 }
@@ -111,8 +111,9 @@ public final class JdkConsoleImpl implements JdkConsole {
                     ioe = new IOError(x);
                 } finally {
                     try {
-                        if (restoreEcho)
-                            restoreEcho = echo(true);
+                        if (restoreEcho) {
+                            setEcho(true);
+                        }
                     } catch (IOException x) {
                         if (ioe == null)
                             ioe = new IOError(x);
@@ -150,7 +151,7 @@ public final class JdkConsoleImpl implements JdkConsole {
                                 public void run() {
                                     try {
                                         if (restoreEcho) {
-                                            echo(true);
+                                            setEcho(true);
                                         }
                                     } catch (IOException _) { }
                                 }
@@ -185,7 +186,7 @@ public final class JdkConsoleImpl implements JdkConsole {
     private final PrintWriter pw;
     private final Formatter formatter;
     private char[] rcb;
-    private volatile boolean restoreEcho;
+    private final boolean restoreEcho;
     private boolean shutdownHookInstalled;
 
     private char[] readline(boolean zeroOut) throws IOException {
@@ -220,14 +221,17 @@ public final class JdkConsoleImpl implements JdkConsole {
         return rcb;
     }
 
-    /*
-     * Sets the console echo status to {@code on} and returns the previous
-     * console on/off status.
+    /**
+     * {@return true if the console echo status is on}
+     */
+    private static native boolean getEcho() throws IOException;
+
+    /**
+     * Sets the console echo status to {@code on}
      * @param on    the echo status to set to. {@code true} for echo on and
      *              {@code false} for echo off
-     * @return true if the previous console echo status is on
      */
-    private static native boolean echo(boolean on) throws IOException;
+    private static native void setEcho(boolean on) throws IOException;
 
     class LineReader extends Reader {
         private final Reader in;
@@ -364,5 +368,10 @@ public final class JdkConsoleImpl implements JdkConsole {
                 readLock,
                 charset));
         rcb = new char[1024];
+        var echo = false;
+        try {
+            echo = getEcho();
+        } catch (IOException _) {}
+        restoreEcho = echo;
     }
 }

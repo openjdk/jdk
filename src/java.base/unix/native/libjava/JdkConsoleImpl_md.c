@@ -33,18 +33,29 @@
 #include <termios.h>
 
 JNIEXPORT jboolean JNICALL
-Java_jdk_internal_io_JdkConsoleImpl_echo(JNIEnv *env,
+Java_jdk_internal_io_JdkConsoleImpl_getEcho(JNIEnv *env,
+                          jclass cls)
+{
+    struct termios tio;
+    int tty = fileno(stdin);
+    if (tcgetattr(tty, &tio) == -1) {
+        JNU_ThrowIOExceptionWithLastError(env, "tcgetattr failed");
+        return JNI_FALSE;
+    }
+    return (tio.c_lflag & ECHO) != 0;
+}
+
+JNIEXPORT void JNICALL
+Java_jdk_internal_io_JdkConsoleImpl_setEcho(JNIEnv *env,
                           jclass cls,
                           jboolean on)
 {
     struct termios tio;
-    jboolean old;
     int tty = fileno(stdin);
     if (tcgetattr(tty, &tio) == -1) {
         JNU_ThrowIOExceptionWithLastError(env, "tcgetattr failed");
-        return !on;
+        return;
     }
-    old = (tio.c_lflag & ECHO) != 0;
     if (on) {
         tio.c_lflag |= ECHO;
     } else {
@@ -53,5 +64,4 @@ Java_jdk_internal_io_JdkConsoleImpl_echo(JNIEnv *env,
     if (tcsetattr(tty, TCSANOW, &tio) == -1) {
         JNU_ThrowIOExceptionWithLastError(env, "tcsetattr failed");
     }
-    return old;
 }
