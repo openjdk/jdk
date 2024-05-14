@@ -219,12 +219,12 @@ TEST_VM_F(TreapTest, TestVisitInRange) {
     }
     ResourceMark rm;
     GrowableArray<int> seen;
-    treap.visit_range_in_order(10, 0, [&](Node* x) {
+    treap.visit_range_in_order(9, -1, [&](Node* x) {
       seen.push(x->key());
     });
     EXPECT_EQ(10, seen.length());
     for (int i = 0; i < 10; i++) {
-      EXPECT_EQ(9-i, seen.at(i));
+      EXPECT_EQ(10-i, seen.at(i));
     }
   }
 }
