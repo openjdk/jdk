@@ -169,7 +169,7 @@ static int _prepare_log_file(const char* pattern, const char* default_pattern) {
     fd = VMError::prepare_log_file(pattern, default_pattern, true, name_buffer, sizeof(name_buffer));
     if (fd == -1) {
       int e = errno;
-      tty->print("Can't open memory [%s]. Error: ", pattern);
+      tty->print("Can't open memory [%s]. Error: ", pattern?pattern:"null");
       tty->print_raw_cr(os::strerror(e));
       tty->print_cr("NMT memory recorder report will be written to console.");
       // See notes in VMError::report_and_die about hard coding tty to 1
@@ -426,7 +426,7 @@ void NMT_MemoryLogRecorder::replay(const char* path, const int pid) {
     address *pointers = (address*)::mmap(NULL, size_pointers, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_NORESERVE|MAP_ANONYMOUS, -1, 0);
     assert(pointers != MAP_FAILED);
 
-    // open benchmark file for writing the results
+    // open benchmark file for writing the final results
     char *benchmark_file_path = NEW_C_HEAP_ARRAY(char, JVM_MAXPATHLEN, mtNMT);
     if (!_create_file_path_with_pid(path, BENCHMARK_LOG_FILE, benchmark_file_path, pid)) {
       tty->print("Can't construct benchmark_file_path [%s].", benchmark_file_path);
@@ -499,22 +499,25 @@ void NMT_MemoryLogRecorder::replay(const char* path, const int pid) {
             }
           }
         }
-        void* outer_ptr = pointers[i];
-        if ((outer_ptr != nullptr) && (MemTracker::enabled())) {
-          outer_ptr = MallocHeader::resolve_checked(outer_ptr);
-        }
+
+        if (IS_MALOC(e) || IS_REALLOC(e)) {
+          void* outer_ptr = pointers[i];
+          if ((outer_ptr != nullptr) && (MemTracker::enabled())) {
+            outer_ptr = MallocHeader::resolve_checked(outer_ptr);
+          }
 #if defined(LINUX)
-  ALLOW_C_FUNCTION(::malloc_usable_size, actual = ::malloc_usable_size(outer_ptr);)
+          ALLOW_C_FUNCTION(::malloc_usable_size, actual = ::malloc_usable_size(outer_ptr);)
 #elif defined(WINDOWS)
-  ALLOW_C_FUNCTION(::_msize, actual = ::_msize(outer_ptr);)
+          ALLOW_C_FUNCTION(::_msize, actual = ::_msize(outer_ptr);)
 #elif defined(__APPLE__)
-  ALLOW_C_FUNCTION(::malloc_size, actual = ::malloc_size(outer_ptr);)
+          ALLOW_C_FUNCTION(::malloc_size, actual = ::malloc_size(outer_ptr);)
 #endif
+        }
       }
       jlong duration = (start > 0) ? (end - start) : 0;
       max_time = MAX(max_time, duration);
       total += duration;
-      
+
       _write_and_check(benchmark_fd, &duration, sizeof(duration));
       _write_and_check(benchmark_fd, &requested, sizeof(requested));
       _write_and_check(benchmark_fd, &actual, sizeof(actual));
@@ -542,10 +545,9 @@ void NMT_MemoryLogRecorder::replay(const char* path, const int pid) {
 #elif defined(WINDOWS)
     // ???
 #endif
-    
+
     os::exit(0);
   }
-  os::exit(-1);
 }
 
 void NMT_MemoryLogRecorder::initialize(intx limit) {

@@ -251,3 +251,13 @@ void NMTPreInit::print_state(outputStream* st) {
   st->print_cr("pre-init mallocs: %u, pre-init reallocs: %u, pre-init frees: %u",
                _num_mallocs_pre, _num_reallocs_pre, _num_frees_pre);
 }
+
+#ifdef ASSERT
+void NMTPreInit::print_map() {
+  if (_table != nullptr) {
+    _table->print_map();
+  }
+  assert(_num_reallocs_pre <= _num_mallocs_pre &&
+         _num_frees_pre <= _num_mallocs_pre, "stats are off");
+}
+#endif // ASSERT
