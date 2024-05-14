@@ -35,6 +35,12 @@ public:
     }
   };
 
+  struct CmpInverse {
+    static int cmp(int a, int b) {
+      return b - a;
+    }
+  };
+
 #ifdef ASSERT
   template<typename K, typename V, typename CMP, typename ALLOC>
   void verify_it(Treap<K, V, CMP, ALLOC>& t) {
@@ -180,6 +186,25 @@ TEST_VM_F(TreapTest, TestVisitInRange) {
   treap.visit_range_in_order(0, 0, [&](Node* x) {
     EXPECT_TRUE(false) << "Empty visiting range should not visit any node";
   });
+
+  treap.remove_all();
+  for (int i = 0; i < 11; i++) {
+    treap.upsert(i, 0);
+  }
+  GrowableArray<int> seen;
+  treap.visit_range_in_order(0, 10, [&](Node* x) {
+    seen.push(x->key());
+  });
+  EXPECT_EQ(10, seen.length());
+  for (int i = 0; i < 10; i++) {
+    EXPECT_EQ(i, seen.at(i));
+  }
+  GrowableArray<int> seen2;
+  treap.visit_range_in_order(10, 12, [&](Node* x) {
+    seen2.push(x->key());
+  });
+  EXPECT_EQ(1, seen.length());
+  EXPECT_EQ(10, seen.at(0));
 }
 
 #ifdef ASSERT
