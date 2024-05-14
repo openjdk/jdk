@@ -207,8 +207,8 @@ TEST_VM_F(TreapTest, TestVisitInRange) {
     treap.visit_range_in_order(10, 12, [&](Node* x) {
       seen2.push(x->key());
     });
-    EXPECT_EQ(1, seen.length());
-    EXPECT_EQ(10, seen.at(0));
+    EXPECT_EQ(1, seen2.length());
+    EXPECT_EQ(10, seen2.at(0));
   }
   { // Test with descending ordering
     TreapCHeap<int, int, CmpInverse> treap;
@@ -219,7 +219,7 @@ TEST_VM_F(TreapTest, TestVisitInRange) {
     }
     ResourceMark rm;
     GrowableArray<int> seen;
-    treap.visit_range_in_order(0, 10, [&](Node* x) {
+    treap.visit_range_in_order(10, 0, [&](Node* x) {
       seen.push(x->key());
     });
     EXPECT_EQ(10, seen.length());

@@ -317,6 +317,7 @@ public:
   // Visit all TreapNodes in ascending order whose keys are in range [from, to).
   template<typename F>
   void visit_range_in_order(const K& from, const K& to, F f) {
+    assert(COMPARATOR::cmp(from, to) <= 0, "from must be less or equal to to");
     GrowableArrayCHeap<TreapNode*, mtNMT> to_visit;
     TreapNode* head = _root;
     while (!to_visit.is_empty() || head != nullptr) {
