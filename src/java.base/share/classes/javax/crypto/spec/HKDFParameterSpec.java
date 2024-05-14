@@ -64,7 +64,7 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
         }
 
         /**
-         * Akin to a {@code Builder.build()} method for an {@code Extract}
+         * Builds an {@code Extract}.
          *
          * @return an immutable {@code Extract}
          */
@@ -73,8 +73,7 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
         }
 
         /**
-         * Akin to a {@code Builder.build()} method for an
-         * {@code ExtractThenExpand}
+         * Builds an {@code ExtractThenExpand}.
          *
          * @param info
          *     the optional context and application specific information
