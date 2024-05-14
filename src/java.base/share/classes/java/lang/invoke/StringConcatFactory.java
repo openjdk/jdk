@@ -1091,15 +1091,13 @@ public final class StringConcatFactory {
             String className = getClassName(lookup.lookupClass());
 
             byte[] classBytes = ClassFile.of().build(ClassDesc.of(className),
-                    new Consumer<ClassBuilder>() {
-                        @Override
-                        public void accept(ClassBuilder clb) {
-                            clb.withFlags(AccessFlag.FINAL, AccessFlag.SUPER, AccessFlag.SYNTHETIC)
-                                .withMethodBody(METHOD_NAME,
-                                        MethodTypeDesc.ofDescriptor(args.toMethodDescriptorString()),
-                                        ClassFile.ACC_FINAL | ClassFile.ACC_PRIVATE | ClassFile.ACC_STATIC,
-                                        generateMethod(constants, args));
-                    }});
+                    (ClassBuilder clb) -> {
+                        clb.withFlags(AccessFlag.FINAL, AccessFlag.SUPER, AccessFlag.SYNTHETIC)
+                            .withMethodBody(METHOD_NAME,
+                                    MethodTypeDesc.ofDescriptor(args.toMethodDescriptorString()),
+                                    ClassFile.ACC_FINAL | ClassFile.ACC_PRIVATE | ClassFile.ACC_STATIC,
+                                    generateMethod(constants, args));
+                    });
             try {
                 Lookup hiddenLookup = lookup.makeHiddenClassDefiner(className, classBytes, SET_OF_STRONG, DUMPER)
                                             .defineClassAsLookup(true);
@@ -1111,46 +1109,43 @@ public final class StringConcatFactory {
         }
 
         private static Consumer<CodeBuilder> generateMethod(String[] constants, MethodType args) {
-            return new Consumer<CodeBuilder>() {
-                @Override
-                public void accept(CodeBuilder cb) {
-                    cb.new_(STRING_BUILDER);
-                    cb.dup();
+            return (CodeBuilder cb) -> {
+                cb.new_(STRING_BUILDER);
+                cb.dup();
 
-                    int len = 0;
-                    for (String constant : constants) {
-                        if (constant != null) {
-                            len += constant.length();
-                        }
+                int len = 0;
+                for (String constant : constants) {
+                    if (constant != null) {
+                        len += constant.length();
                     }
-                    len += args.parameterCount() * ARGUMENT_SIZE_FACTOR;
-                    cb.loadConstant(len);
-                    cb.invokespecial(STRING_BUILDER, "<init>", INT_CONSTRUCTOR_TYPE);
+                }
+                len += args.parameterCount() * ARGUMENT_SIZE_FACTOR;
+                cb.loadConstant(len);
+                cb.invokespecial(STRING_BUILDER, "<init>", INT_CONSTRUCTOR_TYPE);
 
-                    // At this point, we have a blank StringBuilder on stack, fill it in with .append calls.
-                    {
-                        int off = 0;
-                        for (int c = 0; c < args.parameterCount(); c++) {
-                            if (constants[c] != null) {
-                                cb.ldc(constants[c]);
-                                cb.invokevirtual(STRING_BUILDER, "append", APPEND_STRING_TYPE);
-                            }
-                            Class<?> cl = args.parameterType(c);
-                            TypeKind kind = TypeKind.from(cl);
-                            cb.loadLocal(kind, off);
-                            off += kind.slotSize();
-                            MethodTypeDesc desc = getSBAppendDesc(cl);
-                            cb.invokevirtual(STRING_BUILDER, "append", desc);
-                        }
-                        if (constants[constants.length - 1] != null) {
-                            cb.ldc(constants[constants.length - 1]);
+                // At this point, we have a blank StringBuilder on stack, fill it in with .append calls.
+                {
+                    int off = 0;
+                    for (int c = 0; c < args.parameterCount(); c++) {
+                        if (constants[c] != null) {
+                            cb.ldc(constants[c]);
                             cb.invokevirtual(STRING_BUILDER, "append", APPEND_STRING_TYPE);
                         }
+                        Class<?> cl = args.parameterType(c);
+                        TypeKind kind = TypeKind.from(cl);
+                        cb.loadLocal(kind, off);
+                        off += kind.slotSize();
+                        MethodTypeDesc desc = getSBAppendDesc(cl);
+                        cb.invokevirtual(STRING_BUILDER, "append", desc);
                     }
-
-                    cb.invokevirtual(STRING_BUILDER, "toString", TO_STRING_TYPE);
-                    cb.areturn();
+                    if (constants[constants.length - 1] != null) {
+                        cb.ldc(constants[constants.length - 1]);
+                        cb.invokevirtual(STRING_BUILDER, "append", APPEND_STRING_TYPE);
+                    }
                 }
+
+                cb.invokevirtual(STRING_BUILDER, "toString", TO_STRING_TYPE);
+                cb.areturn();
             };
         }
 
