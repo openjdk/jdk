@@ -85,7 +85,7 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
          * @return an {@code ExtractThenExpand}
          *
          * @throws IllegalArgumentException
-         *     if {@code length} is not > 0
+         *     if {@code length} is not &gt; 0
          */
         public ExtractThenExpand thenExpand(byte[] info, int length) {
             return new ExtractThenExpand(
@@ -227,7 +227,7 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
      *     {@code null}); the byte[] is copied to prevent subsequent
      *     modification
      * @param length
-     *     the length of the output key material (must be > 0 and < 255 * HMAC
+     *     the length of the output key material (must be &gt; 0 and &lt; 255 * HMAC
      *     length)
      *
      * @return a new {@code Expand} object
