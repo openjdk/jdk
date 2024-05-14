@@ -48,11 +48,6 @@ import java.security.spec.InvalidParameterSpecException;
 public abstract class KDFSpi {
 
     /**
-     * provides access to the KDF alg params for implementers of the Spi
-     */
-    protected final AlgorithmParameterSpec algorithmParameterSpec;
-
-    /**
      * The sole constructor.
      * <p>
      * An {@code AlgorithmParameterSpec} may be specified for KDF algorithms that
@@ -68,9 +63,7 @@ public abstract class KDFSpi {
      *     {@code KDFSpi}
      */
     protected KDFSpi(AlgorithmParameterSpec algParameterSpec)
-        throws InvalidAlgorithmParameterException {
-        this.algorithmParameterSpec = algParameterSpec;
-    }
+        throws InvalidAlgorithmParameterException {}
 
 
     /**
