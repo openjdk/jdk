@@ -355,7 +355,8 @@ public interface ObjectReference extends Value {
      * operation is supported.
      *
      * @return a List of {@link ThreadReference} objects. The list
-     * has zero length if no threads are waiting for the monitor.
+     * has zero length if no threads are waiting for the monitor,
+     * or only virtual threads are waiting for the monitor.
      * @throws java.lang.UnsupportedOperationException if the
      * target VM does not support this operation.
      * @throws IncompatibleThreadStateException if any

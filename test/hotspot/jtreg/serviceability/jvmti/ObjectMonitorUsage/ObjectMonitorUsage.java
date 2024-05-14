@@ -136,6 +136,9 @@ public class ObjectMonitorUsage {
         Thread[] wThreads = startWaitingThreads(isVirtual);
         final int expWaitingCount = isVirtual ? 0 : NUMBER_OF_WAITING_THREADS;
 
+        // The numbers below describe the testing scenario, not the expected results.
+        // The expected numbers are different for virtual threads because
+        // they are not supported by JVMTI GetObjectMonitorUsage.
         // entry count: 0
         // count of threads waiting to enter:       0
         // count of threads waiting to re-enter:    0
@@ -170,6 +173,9 @@ public class ObjectMonitorUsage {
             // Correct the expected values for the virtual thread case.
             int expEnteringCount = isVirtual ? 0 : NUMBER_OF_ENTERING_THREADS;
 
+            // The numbers below describe the testing scenario, not the expected results.
+            // The expected numbers are different for virtual threads because
+            // they are not supported by JVMTI GetObjectMonitorUsage.
             // entry count: 1
             // count of threads waiting to enter: 0
             // count of threads waiting to re-enter: 0
@@ -178,6 +184,9 @@ public class ObjectMonitorUsage {
 
             eThreads = startEnteringThreads(isVirtual);
 
+            // The numbers below describe the testing scenario, not the expected results.
+            // The expected numbers are different for virtual threads because
+            // they are not supported by JVMTI GetObjectMonitorUsage.
             // entry count: 1
             // count of threads waiting to enter:       NUMBER_OF_ENTERING_THREADS
             // count of threads waiting to re-enter:    0
@@ -214,6 +223,9 @@ public class ObjectMonitorUsage {
 
             eThreads = startEnteringThreads(isVirtual);
 
+            // The numbers below describe the testing scenario, not the expected results.
+            // The expected numbers are different for virtual threads because
+            // they are not supported by JVMTI GetObjectMonitorUsage.
             // entry count: 1
             // count of threads waiting to enter:       NUMBER_OF_ENTERING_THREADS
             // count of threads waiting to re-enter:    0
@@ -255,7 +267,11 @@ public class ObjectMonitorUsage {
             // Correct the expected values for the virtual thread case.
             int expEnteringCount = isVirtual ? 0 : NUMBER_OF_ENTERING_THREADS;
             int expWaitingCount  = isVirtual ? 0 : NUMBER_OF_WAITING_THREADS;
-             // entry count: 1
+
+            // The numbers below describe the testing scenario, not the expected results.
+            // The expected numbers are different for virtual threads because
+            // they are not supported by JVMTI GetObjectMonitorUsage.
+            // entry count: 1
             // count of threads waiting to enter:       0
             // count of threads waiting to re-enter:    0
             // count of threads waiting to be notified: NUMBER_OF_WAITING_THREADS
@@ -265,6 +281,9 @@ public class ObjectMonitorUsage {
 
             eThreads = startEnteringThreads(isVirtual);
 
+            // The numbers below describe the testing scenario, not the expected results.
+            // The expected numbers are different for virtual threads because
+            // they are not supported by JVMTI GetObjectMonitorUsage.
             // entry count: 1
             // count of threads waiting to enter:       NUMBER_OF_ENTERING_THREADS
             // count of threads waiting to re-enter:    0
@@ -279,6 +298,9 @@ public class ObjectMonitorUsage {
                 lockCheck.notify(); // notify waiting threads one by one
                 // now the notified WaitingTask has to be blocked on the lockCheck re-enter
 
+                // The numbers below describe the testing scenario, not the expected results.
+                // The expected numbers are different for virtual threads because
+                // they are not supported by JVMTI GetObjectMonitorUsage.
                 // entry count: 1
                 // count of threads waiting to enter:       NUMBER_OF_ENTERING_THREADS
                 // count of threads waiting to re-enter:    i + 1
