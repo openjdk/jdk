@@ -201,17 +201,19 @@ public record ParserVerifier(ClassModel classModel) {
     }
 
     private void verifyAttribute(AttributedElement ae, Attribute<?> a, List<VerifyError> errors) {
-        int payLoad = ((BoundAttribute)a).payloadLen();
-        if (payLoad != switch (a) {
-            case AnnotationDefaultAttribute aa -> valueSize(aa.defaultValue());
+        int size = -1;
+        switch (a) {
+            case AnnotationDefaultAttribute aa ->
+                size = valueSize(aa.defaultValue());
             case BootstrapMethodsAttribute bma -> {
-                int l = 2;
+                size = 2;
                 for (var bm : bma.bootstrapMethods()) {
-                    l += 4 + 2 * bm.arguments().size();
+                    size += 4 + 2 * bm.arguments().size();
                 }
-                yield l;
             }
-            case CharacterRangeTableAttribute cra -> 2 + 14 * cra.characterRangeTable().size();
+            case CharacterRangeTableAttribute cra -> {
+                size = 2 + 14 * cra.characterRangeTable().size();
+            }
             case CodeAttribute ca -> {
                 MethodModel mm = (MethodModel)ae;
                 if (mm.flags().has(AccessFlag.NATIVE) || mm.flags().has(AccessFlag.ABSTRACT)) {
@@ -220,13 +222,15 @@ public record ParserVerifier(ClassModel classModel) {
                 if (ca.maxLocals() < Util.maxLocals(mm.flags().flagsMask(), mm.methodTypeSymbol())) {
                     errors.add(new VerifyError("Arguments can't fit into locals in %s".formatted(toString(ae))));
                 }
-                int l = 12 + ca.codeLength() + 8 * ca.exceptionHandlers().size();
+                size = 12 + ca.codeLength() + 8 * ca.exceptionHandlers().size();
                 for (var caa : ca.attributes()) {
-                    l += 6 + ((BoundAttribute)caa).payloadLen();
+                    size += 6 + ((BoundAttribute)caa).payloadLen();
                 }
-                yield l;
             }
-            case CompilationIDAttribute cida -> 2;
+            case CompilationIDAttribute cida -> {
+                cida.compilationId();
+                size = 2;
+            }
             case ConstantValueAttribute cva -> {
                 ClassDesc type = ((FieldModel)ae).fieldTypeSymbol();
                 ConstantValueEntry cve = cva.constant();
@@ -240,90 +244,104 @@ public record ParserVerifier(ClassModel classModel) {
                 }) {
                     errors.add(new VerifyError("Bad constant value type in %s".formatted(toString(ae))));
                 }
-                yield 2;
+                size = 2;
             }
-            case DeprecatedAttribute da -> 0;
-            case EnclosingMethodAttribute ema -> 4;
-            case ExceptionsAttribute ea -> 2 + 2 * ea.exceptions().size();
+            case DeprecatedAttribute da ->
+                size = 0;
+            case EnclosingMethodAttribute ema -> {
+                ema.enclosingClass();
+                ema.enclosingMethod();
+                size = 4;
+            }
+            case ExceptionsAttribute ea ->
+                size = 2 + 2 * ea.exceptions().size();
             case InnerClassesAttribute ica -> {
                 for (var ici : ica.classes()) {
                     if (ici.outerClass().isPresent() && ici.outerClass().get().equals(ici.innerClass())) {
                         errors.add(new VerifyError("Class is both outer and inner class in %s".formatted(toString(ae))));
                     }
                 }
-                yield 2 + 8 * ica.classes().size();
+                size = 2 + 8 * ica.classes().size();
             }
-            case LineNumberTableAttribute lta -> 2 + 4 * lta.lineNumbers().size();
-            case LocalVariableTableAttribute lvta -> 2 + 10 * lvta.localVariables().size();
-            case LocalVariableTypeTableAttribute lvta -> 2 + 10 * lvta.localVariableTypes().size();
-            case MethodParametersAttribute mpa -> 1 + 4 * mpa.parameters().size();
-            case NestHostAttribute nha -> 2;
+            case LineNumberTableAttribute lta ->
+                size = 2 + 4 * lta.lineNumbers().size();
+            case LocalVariableTableAttribute lvta ->
+                size = 2 + 10 * lvta.localVariables().size();
+            case LocalVariableTypeTableAttribute lvta ->
+                size = 2 + 10 * lvta.localVariableTypes().size();
+            case MethodParametersAttribute mpa ->
+                size = 1 + 4 * mpa.parameters().size();
+            case NestHostAttribute nha -> {
+                nha.nestHost();
+                size = 2;
+            }
             case NestMembersAttribute nma -> {
                 if (ae.findAttribute(Attributes.NEST_HOST).isPresent()) {
                     errors.add(new VerifyError("Conflicting NestHost and NestMembers attributes in %s".formatted(toString(ae))));
                 }
-                yield 2 + 2 * nma.nestMembers().size();
+                size = 2 + 2 * nma.nestMembers().size();
             }
             case PermittedSubclassesAttribute psa -> {
                 if (classModel.flags().has(AccessFlag.FINAL)) {
                     errors.add(new VerifyError("PermittedSubclasses attribute in final %s".formatted(toString(ae))));
                 }
-                yield 2 + 2 * psa.permittedSubclasses().size();
+                size = 2 + 2 * psa.permittedSubclasses().size();
             }
             case RecordAttribute ra -> {
-                int l = 2;
+                size = 2;
                 for (var rc : ra.components()) {
-                    l += 6;
+                    size += 6;
                     for (var rca : rc.attributes()) {
-                        l += 6 + ((BoundAttribute)rca).payloadLen();
+                        size += 6 + ((BoundAttribute)rca).payloadLen();
                     }
                 }
-                yield l;
             }
-            case RuntimeVisibleAnnotationsAttribute aa -> {
-                int l = 2;
-                for (var an : aa.annotations()) {
-                    l += annotationSize(an);
-                }
-                yield l;
-            }
-            case RuntimeInvisibleAnnotationsAttribute aa -> {
-                int l = 2;
-                for (var an : aa.annotations()) {
-                    l += annotationSize(an);
-                }
-                yield l;
-            }
+            case RuntimeVisibleAnnotationsAttribute aa ->
+                size = annotationsSize(aa.annotations());
+            case RuntimeInvisibleAnnotationsAttribute aa ->
+                size = annotationsSize(aa.annotations());
             case RuntimeVisibleParameterAnnotationsAttribute aa -> {
-                int l = 1;
+                size = 1;
                 for (var ans : aa.parameterAnnotations()) {
-                    l += 2;
-                    for (var an : ans) {
-                        l += annotationSize(an);
-                    }
+                    size += annotationsSize(ans);
                 }
-                yield l;
             }
             case RuntimeInvisibleParameterAnnotationsAttribute aa -> {
-                int l = 1;
+                size = 1;
                 for (var ans : aa.parameterAnnotations()) {
-                    l += 2;
-                    for (var an : ans) {
-                        l += annotationSize(an);
-                    }
+                    size += annotationsSize(ans);
                 }
-                yield l;
             }
-            case SignatureAttribute sa -> 2;
-            case SourceDebugExtensionAttribute sda -> sda.contents().length;
-            case SourceFileAttribute sfa -> 2;
-            case SourceIDAttribute sida -> 2;
-            case SyntheticAttribute sa -> 0;
-            default -> payLoad;
-        }) {
+            case SignatureAttribute sa -> {
+                sa.signature();
+                size = 2;
+            }
+            case SourceDebugExtensionAttribute sda -> {
+                size = sda.contents().length;
+            }
+            case SourceFileAttribute sfa -> {
+                sfa.sourceFile();
+                size = 2;
+            }
+            case SourceIDAttribute sida -> {
+                sida.sourceId();
+                size = 2;
+            }
+            case SyntheticAttribute sa ->
+                size = 0;
+            default -> {}
+        }
+        if (size >= 0 && size != ((BoundAttribute)a).payloadLen()) {
             errors.add(new VerifyError("Wrong %s attribute length in %s".formatted(a.attributeName(), toString(ae))));
         }
+    }
 
+    private static int annotationsSize(List<Annotation> ans) {
+        int l = 2;
+        for (var an : ans) {
+            l += annotationSize(an);
+        }
+        return l;
     }
 
     private static int annotationSize(Annotation an) {
