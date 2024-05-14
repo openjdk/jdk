@@ -128,11 +128,6 @@ abstract class HkdfKeyDerivation extends KDFSpi {
                 (HKDFParameterSpec.Extract) kdfParameterSpec;
             ikms = anExtract.ikms();
             salts = anExtract.salts();
-            if (isNullOrEmpty(ikms) && isNullOrEmpty(salts)) {
-                throw new InvalidParameterSpecException(
-                    "IKM and salt cannot both be null or empty for "
-                    + "HKDFParameterSpec.Extract");
-            }
             // we should be able to combine these Lists of keys into single
             // SecretKey Objects,
             // unless we were passed something bogus or an unexportable P11 key
@@ -198,11 +193,6 @@ abstract class HkdfKeyDerivation extends KDFSpi {
                 (HKDFParameterSpec.ExtractExpand) kdfParameterSpec;
             ikms = anExtractExpand.ikms();
             salts = anExtractExpand.salts();
-            if (isNullOrEmpty(ikms) && isNullOrEmpty(salts)) {
-                throw new InvalidParameterSpecException(
-                    "IKM and salt cannot both be null for HKDFParameterSpec"
-                    + ".ExtractExpand");
-            }
             // we should be able to combine these Lists of keys into single
             // SecretKey Objects,
             // unless we were passed something bogus or an unexportable P11 key

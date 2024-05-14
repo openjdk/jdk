@@ -61,8 +61,8 @@ public class Functions {
             throw new Exception();
         }
 
-//        test(HKDFParameterSpec.extract().extractOnly());
-//        test(HKDFParameterSpec.extract().andExpand(new byte[0], 32));
+        test(HKDFParameterSpec.builder().extractOnly());
+        test(HKDFParameterSpec.builder().andExpand(new byte[0], 32));
         test(HKDFParameterSpec.builder().addIKM(ikm).addSalt(new byte[0]).extractOnly());
     }
 

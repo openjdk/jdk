@@ -49,7 +49,6 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
     @PreviewFeature(feature = PreviewFeature.Feature.KEY_DERIVATION)
     final class Builder {
 
-        Extract extract = null;
         List<SecretKey> ikms = new ArrayList<>();
         List<SecretKey> salts = new ArrayList<>();
 
@@ -60,8 +59,7 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
          *
          * @return a {@code Builder} to mutate
          */
-        private Builder createExtract() {
-            extract = new Extract();
+        private Builder createBuilder() {
             return this;
         }
 
@@ -71,15 +69,7 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
          * @return an immutable {@code Extract}
          */
         public Extract extractOnly() {
-            if (this.ikms.isEmpty() && this.salts.isEmpty()) {
-                throw new IllegalStateException(
-                    "this `Builder` must have either at least one IKM value, "
-                    + "at least one salt "
-                    + "value, or values for both before calling `extractOnly`");
-            } else {
-                this.extract = new Extract(ikms, salts);
-                return this.extract;
-            }
+            return new Extract(ikms, salts);
         }
 
         /**
@@ -94,12 +84,6 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
          * @return an {@code ExtractExpand}
          */
         public ExtractExpand andExpand(byte[] info, int length) {
-            if (extract == null) {
-                throw new IllegalStateException(
-                    "`andExpand` can only be called on a `Builder` when "
-                    + "`ofTypeExtract` has "
-                    + "been called");
-            }
             return new ExtractExpand(
                 extractOnly(), info,
                 length);
@@ -225,7 +209,7 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
      * @return a {@code Builder} to mutate
      */
     static Builder builder() {
-        return new Builder().createExtract();
+        return new Builder().createBuilder();
     }
 
     /**
