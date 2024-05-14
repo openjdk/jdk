@@ -51,8 +51,7 @@ public abstract class KDFSpi {
      * The sole constructor.
      * <p>
      * An {@code AlgorithmParameterSpec} may be specified for KDF algorithms that
-     * may require this. Though no such KDF algorithms are currently defined,
-     * this parameter is held for future use.
+     * may require this. 
      *
      * @param algParameterSpec
      *     the initialization parameters for the {@code KDF} algorithm (may be
