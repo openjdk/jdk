@@ -181,7 +181,8 @@ public final class KDF {
      * @param algorithm
      *     the key derivation algorithm to use
      * @param provider
-     *     the provider to use for this key derivation
+     *     the provider to use for this key derivation; if null, this method is
+     *     equivalent to {@code getInstance(String)}
      *
      * @return a {@code KDF} object
      *
@@ -213,7 +214,8 @@ public final class KDF {
      * @param algorithm
      *     the key derivation algorithm to use
      * @param provider
-     *     the provider
+     *     the provider to use for this key derivation; if null, this method is
+     *     equivalent to {@code getInstance(String)}
      *
      * @return a {@code KDF} object
      *
@@ -282,7 +284,8 @@ public final class KDF {
      *     the {@code AlgorithmParameterSpec} used to configure this KDF's
      *     algorithm or {@code null} if no additional parameters are provided
      * @param provider
-     *     the provider to use for this key derivation
+     *     the provider to use for this key derivation; if null, this method is
+     *     equivalent to {@code getInstance(String, AlgorithmParameterSpec)}
      *
      * @return a {@code KDF} object
      *
@@ -331,7 +334,8 @@ public final class KDF {
      *     the {@code AlgorithmParameterSpec} used to configure this KDF's
      *     algorithm or {@code null} if no additional parameters are provided
      * @param provider
-     *     the provider
+     *     the provider to use for this key derivation; if null, this method is
+     *     equivalent to {@code getInstance(String, AlgorithmParameterSpec)}
      *
      * @return a {@code KDF} object
      *
