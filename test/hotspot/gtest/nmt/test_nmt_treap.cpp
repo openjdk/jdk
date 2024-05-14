@@ -42,6 +42,14 @@ public:
     }
   };
 
+  struct FCmp {
+    static int cmp(float a, float b) {
+      if (a < b) return -1;
+      if (a == b) return 0;
+      return 1;
+    }
+  };
+
 #ifdef ASSERT
   template<typename K, typename V, typename CMP, typename ALLOC>
   void verify_it(Treap<K, V, CMP, ALLOC>& t) {
@@ -146,6 +154,25 @@ public:
       EXPECT_EQ(nullptr, treap._root);
     }
   }
+
+  void test_find() {
+    struct Empty {};
+    TreapCHeap<float, Empty, FCmp> treap;
+    using Node = TreapCHeap<float, Empty, FCmp>::TreapNode;
+
+    Node* n = nullptr;
+    auto test = [&](float f) {
+      EXPECT_EQ(nullptr, treap.find(treap._root, f));
+      treap.upsert(f, Empty{});
+      Node* n = treap.find(treap._root, f);
+      EXPECT_NE(nullptr, n);
+      EXPECT_EQ(f, n->key());
+    };
+
+    test(1.0f);
+    test(5.0f);
+    test(0.0f);
+  }
 };
 
 TEST_VM_F(TreapTest, InsertingDuplicatesResultsInOneValue) {
@@ -227,6 +254,10 @@ TEST_VM_F(TreapTest, TestVisitInRange) {
       EXPECT_EQ(10-i-1, seen.at(i));
     }
   }
+}
+
+TEST_VM_F(TreapTest, TestFind) {
+  test_find();
 }
 
 #ifdef ASSERT
