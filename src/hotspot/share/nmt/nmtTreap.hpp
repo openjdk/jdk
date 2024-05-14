@@ -229,8 +229,6 @@ public:
   }
 
   void upsert(const K& k, const V& v) {
-    verify_self();
-
     TreapNode* found = find(_root, k);
     if (found != nullptr) {
       // Already exists, update value.
@@ -250,8 +248,6 @@ public:
   }
 
   void remove(const K& k) {
-    verify_self();
-
     // (LEQ_k, GT_k)
     node_pair first_split = split(this->_root, k, LEQ);
     // (LT_k, GEQ_k) == (LT_k, EQ_k) since it's from LEQ_k and keys are unique.
