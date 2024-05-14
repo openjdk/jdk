@@ -1,10 +1,8 @@
 package jdk.internal.lang.stable;
 
-import jdk.internal.ValueBased;
 import jdk.internal.access.JavaUtilCollectionAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.lang.StableValue;
-import jdk.internal.vm.annotation.Stable;
 
 import java.util.List;
 import java.util.Map;
@@ -15,7 +13,7 @@ import java.util.function.Supplier;
 
 public final class StableAccess {
 
-    public StableAccess() {}
+    private StableAccess() {}
 
     private static final JavaUtilCollectionAccess ACCESS =
             SharedSecrets.getJavaUtilCollectionAccess();
@@ -64,17 +62,8 @@ public final class StableAccess {
         return new MemoizedFunction<>(stableMap, original);
     }
 
-    @ValueBased
-    private static final class MemoizedSupplier<T> implements Supplier<T> {
-
-        @Stable private final StableValue<T> stable;
-        @Stable private final Supplier<? extends T> original;
-
-        private MemoizedSupplier(StableValue<T> stable,
-                                 Supplier<? extends T> original) {
-            this.stable = stable;
-            this.original = original;
-        }
+    private record MemoizedSupplier<T>(StableValue<T> stable,
+                                       Supplier<? extends T> original) implements Supplier<T> {
 
         @Override
         public T get() {
@@ -82,52 +71,38 @@ public final class StableAccess {
         }
 
         @Override
-        public String toString() {
-            return "MemoizedSupplier[" +
-                    "stable=" + stable + ", " +
-                    "original=" + original + ']';
+        public boolean equals(Object obj) {
+            return this == obj;
         }
 
-
+        @Override
+        public int hashCode() {
+            return System.identityHashCode(this);
+        }
     }
 
-    @ValueBased
-    private static final class MemoizedIntFunction<R> implements IntFunction<R> {
+    private record MemoizedIntFunction<R>(List<StableValue<R>> stableList,
+                                          IntFunction<? extends R> original) implements IntFunction<R> {
 
-        @Stable private final List<StableValue<R>> stableList;
-        @Stable private final IntFunction<? extends R> original;
-
-        private MemoizedIntFunction(List<StableValue<R>> stableList,
-                                   IntFunction<? extends R> original) {
-            this.stableList = stableList;
-            this.original = original;
+        @Override
+        public R apply(int value) {
+            return StableValue.computeIfUnset(stableList, value, original);
         }
 
         @Override
-            public R apply(int value) {
-                return StableValue.computeIfUnset(stableList, value, original);
-            }
+        public boolean equals(Object obj) {
+            return this == obj;
+        }
 
         @Override
-        public String toString() {
-            return "MemoizedIntFunction[" +
-                    "stableList=" + stableList + ", " +
-                    "original=" + original + ']';
+        public int hashCode() {
+            return System.identityHashCode(this);
         }
 
     }
 
-    @ValueBased
-    private static final class MemoizedFunction<T, R> implements Function<T, R> {
-
-        @Stable private final Map<T, StableValue<R>> stableMap;
-        @Stable private final Function<? super T, ? extends R> original;
-
-        private MemoizedFunction(Map<T, StableValue<R>> stableMap,
-                                 Function<? super T, ? extends R> original) {
-            this.stableMap = stableMap;
-            this.original = original;
-        }
+    private record MemoizedFunction<T, R>(Map<T, StableValue<R>> stableMap,
+                                          Function<? super T, ? extends R> original) implements Function<T, R> {
 
         @Override
         public R apply(T t) {
@@ -135,10 +110,13 @@ public final class StableAccess {
         }
 
         @Override
-        public String toString() {
-            return "MemoizedFunction[" +
-                    "stableMap=" + stableMap + ", " +
-                    "original=" + original + ']';
+        public boolean equals(Object obj) {
+            return this == obj;
+        }
+
+        @Override
+        public int hashCode() {
+            return System.identityHashCode(this);
         }
 
     }
