@@ -737,18 +737,18 @@ void MetaspaceShared::preload_classes(TRAPS) {
   }
 
   log_info(cds)("Loading classes to share ...");
-  int class_count = ClassListParser::parse_classlist(classlist_path,
-                                                     ClassListParser::_parse_all, CHECK);
+  ClassListParser::parse_classlist(classlist_path,
+                                   ClassListParser::_parse_all, CHECK);
   if (ExtraSharedClassListFile) {
-    class_count += ClassListParser::parse_classlist(ExtraSharedClassListFile,
-                                                    ClassListParser::_parse_all, CHECK);
+    ClassListParser::parse_classlist(ExtraSharedClassListFile,
+                                     ClassListParser::_parse_all, CHECK);
   }
   if (classlist_path != default_classlist) {
     struct stat statbuf;
     if (os::stat(default_classlist, &statbuf) == 0) {
       // File exists, let's use it.
-      class_count += ClassListParser::parse_classlist(default_classlist,
-                                                      ClassListParser::_parse_lambda_forms_invokers_only, CHECK);
+      ClassListParser::parse_classlist(default_classlist,
+                                       ClassListParser::_parse_lambda_forms_invokers_only, CHECK);
     }
   }
 
@@ -758,7 +758,6 @@ void MetaspaceShared::preload_classes(TRAPS) {
   CDSProtectionDomain::create_jar_manifest(dummy, strlen(dummy), CHECK);
 
   log_info(cds)("Loading classes to share: done.");
-  log_info(cds)("Shared spaces: preloaded %d classes", class_count);
 }
 
 void MetaspaceShared::preload_and_dump_impl(TRAPS) {
