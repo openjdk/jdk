@@ -25,18 +25,31 @@
 
 package java.util.random;
 
-import java.lang.reflect.Constructor;
+import jdk.internal.random.L128X1024MixRandom;
+import jdk.internal.random.L128X128MixRandom;
+import jdk.internal.random.L128X256MixRandom;
+import jdk.internal.random.L32X64MixRandom;
+import jdk.internal.random.L64X1024MixRandom;
+import jdk.internal.random.L64X128MixRandom;
+import jdk.internal.random.L64X128StarStarRandom;
+import jdk.internal.random.L64X256MixRandom;
+import jdk.internal.random.Xoroshiro128PlusPlus;
+import jdk.internal.random.Xoshiro256PlusPlus;
+
 import java.math.BigInteger;
+import java.security.SecureRandom;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.Objects;
 import java.util.Map;
+import java.util.Random;
+import java.util.SplittableRandom;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.random.RandomGenerator.ArbitrarilyJumpableGenerator;
 import java.util.random.RandomGenerator.JumpableGenerator;
 import java.util.random.RandomGenerator.LeapableGenerator;
 import java.util.random.RandomGenerator.SplittableGenerator;
 import java.util.random.RandomGenerator.StreamableGenerator;
 import java.util.stream.Stream;
-import jdk.internal.util.random.RandomSupport.RandomGeneratorProperties;
 
 /**
  * This is a factory class for generating multiple random number generators
@@ -101,110 +114,208 @@ import jdk.internal.util.random.RandomSupport.RandomGeneratorProperties;
  *
  */
 public final class RandomGeneratorFactory<T extends RandomGenerator> {
-    /**
-     * Class of random number algorithm.
-     */
-    private final Class<? extends RandomGenerator> rgClass;
 
-    /**
-     * RandomGeneratorProperties annotation.
-     */
-    private volatile RandomGeneratorProperties properties;
+    private static final String DEFAULT_ALGORITHM = "L32X64MixRandom";
 
-    /**
-     * Default random generator constructor.
-     */
-    private volatile Constructor<T> ctor;
+    private record RandomGeneratorProperties(
+            Class<? extends RandomGenerator> rgClass,
+            String name,
+            String group,
+            int i,
+            int j,
+            int k,
+            int equidistribution,
+            int flags) {
 
-    /**
-     * Random generator constructor with long seed.
-     */
-    private Constructor<T> ctorLong;
+        private static final int INSTANTIABLE       = 1 << 0;
+        private static final int LONG_SEED          = 1 << 1;
+        private static final int BYTE_ARRAY_SEED    = 1 << 2;
+        private static final int STOCHASTIC         = 1 << 3;
+        private static final int HARDWARE           = 1 << 4;
+        private static final int DEPRECATED         = 1 << 5;
 
-    /**
-     * Random generator constructor with byte[] seed.
-     */
-    private Constructor<T> ctorBytes;
+        private static final int ALL_CONSTRUCTORS = INSTANTIABLE | LONG_SEED | BYTE_ARRAY_SEED;
 
-
-    private static class FactoryMapHolder {
-        static final Map<String, Class<? extends RandomGenerator>> FACTORY_MAP = createFactoryMap();
+        private static final Map<String, RandomGeneratorProperties> FACTORY_MAP = createFactoryMap();
 
         /**
-         * Returns the factory map, lazily constructing map on first use.
+         * Returns the factory map, lazily constructing it on first use.
+         * <p>
+         * Although {@link ThreadLocalRandom} can only be accessed via
+         * {@link ThreadLocalRandom#current()}, a map entry is added nevertheless
+         * to record its properties that are otherwise not documented
+         * anywhere else.
          *
-         * @return Map of RandomGenerator classes.
+         * @return Map of RandomGeneratorProperties.
          */
-        private static Map<String, Class<? extends RandomGenerator>> createFactoryMap() {
+        private static Map<String, RandomGeneratorProperties> createFactoryMap() {
             return Map.ofEntries(
-                    entry(java.security.SecureRandom.class),
-                    entry(java.util.Random.class),
-                    entry(java.util.SplittableRandom.class),
-                    entry(jdk.internal.random.L32X64MixRandom.class),
-                    entry(jdk.internal.random.L64X128MixRandom.class),
-                    entry(jdk.internal.random.L64X128StarStarRandom.class),
-                    entry(jdk.internal.random.L64X256MixRandom.class),
-                    entry(jdk.internal.random.L64X1024MixRandom.class),
-                    entry(jdk.internal.random.L128X128MixRandom.class),
-                    entry(jdk.internal.random.L128X256MixRandom.class),
-                    entry(jdk.internal.random.L128X1024MixRandom.class),
-                    entry(jdk.internal.random.Xoroshiro128PlusPlus.class),
-                    entry(jdk.internal.random.Xoshiro256PlusPlus.class)
+                    entry(SecureRandom.class, "SecureRandom", "Legacy",
+                            0, 0, 0, Integer.MAX_VALUE,
+                            INSTANTIABLE | BYTE_ARRAY_SEED | STOCHASTIC),
+                    entry(Random.class, "Random", "Legacy",
+                            48, 0, 0, 0,
+                            INSTANTIABLE | LONG_SEED),
+                    entry(SplittableRandom.class, "SplittableRandom", "Legacy",
+                            64, 0, 0, 1,
+                            INSTANTIABLE | LONG_SEED),
+                    entry(L32X64MixRandom.class, "L32X64MixRandom", "LXM",
+                            64, 1, 32, 1,
+                            ALL_CONSTRUCTORS),
+                    entry(L64X128MixRandom.class, "L64X128MixRandom", "LXM",
+                            128, 1, 64, 2,
+                            ALL_CONSTRUCTORS),
+                    entry(L64X128StarStarRandom.class, "L64X128StarStarRandom", "LXM",
+                            128, 1, 64, 2,
+                            ALL_CONSTRUCTORS),
+                    entry(L64X256MixRandom.class, "L64X256MixRandom", "LXM",
+                            256, 1, 64, 4,
+                            ALL_CONSTRUCTORS),
+                    entry(L64X1024MixRandom.class, "L64X1024MixRandom", "LXM",
+                            1024, 1, 64, 16,
+                            ALL_CONSTRUCTORS),
+                    entry(L128X128MixRandom.class, "L128X128MixRandom", "LXM",
+                            128, 1, 128, 1,
+                            ALL_CONSTRUCTORS),
+                    entry(L128X256MixRandom.class, "L128X256MixRandom", "LXM",
+                            256, 1, 128, 1,
+                            ALL_CONSTRUCTORS),
+                    entry(L128X1024MixRandom.class, "L128X1024MixRandom", "LXM",
+                            1024, 1, 128, 1,
+                            ALL_CONSTRUCTORS),
+                    entry(Xoroshiro128PlusPlus.class, "Xoroshiro128PlusPlus", "Xoroshiro",
+                            128, 1, 0, 1,
+                            ALL_CONSTRUCTORS),
+                    entry(Xoshiro256PlusPlus.class, "Xoshiro256PlusPlus", "Xoshiro",
+                            256, 1, 0, 3,
+                            ALL_CONSTRUCTORS),
+                    entry(ThreadLocalRandom.class, "ThreadLocalRandom", "Legacy",
+                            64, 0, 0, 1,
+                            0)
             );
         }
 
-        private static SimpleImmutableEntry<String, Class<? extends RandomGenerator>>
-        entry(Class<? extends RandomGenerator> rgClass) {
-            return new SimpleImmutableEntry<>(rgClass.getSimpleName(), rgClass);
+        private static SimpleImmutableEntry<String, RandomGeneratorProperties>
+        entry(Class<? extends RandomGenerator> rgClass, String name, String group,
+                int i, int j, int k, int equidistribution,
+                int flags) {
+            return new SimpleImmutableEntry<>(name,
+                    new RandomGeneratorProperties(rgClass, name, group,
+                            i, j, k, equidistribution,
+                            flags | (rgClass.isAnnotationPresent(Deprecated.class) ? DEPRECATED : 0)));
+        }
+
+        private RandomGenerator create() {
+            return switch (name) {
+                case "SecureRandom" -> new SecureRandom();
+                case "Random" -> new Random();
+                case "SplittableRandom" ->      new SplittableRandom();
+                case "L32X64MixRandom" ->       new L32X64MixRandom();
+                case "L64X128MixRandom" ->      new L64X128MixRandom();
+                case "L64X128StarStarRandom" -> new L64X128StarStarRandom();
+                case "L64X256MixRandom" ->      new L64X256MixRandom();
+                case "L64X1024MixRandom" ->     new L64X1024MixRandom();
+                case "L128X128MixRandom" ->     new L128X128MixRandom();
+                case "L128X256MixRandom" ->     new L128X256MixRandom();
+                case "L128X1024MixRandom" ->    new L128X1024MixRandom();
+                case "Xoroshiro128PlusPlus" ->  new Xoroshiro128PlusPlus();
+                case "Xoshiro256PlusPlus" ->    new Xoshiro256PlusPlus();
+                default -> throw new InternalError("should not happen");
+            };
+        }
+
+        private RandomGenerator create(long seed) {
+            if (isInstantiable() && (flags & LONG_SEED) == 0) {
+                throw new UnsupportedOperationException("Random algorithm "
+                        + name + " does not support a long seed");
+            }
+            return switch (name) {
+                case "Random" -> new Random(seed);
+                case "SplittableRandom" ->      new SplittableRandom(seed);
+                case "L32X64MixRandom" ->       new L32X64MixRandom(seed);
+                case "L64X128MixRandom" ->      new L64X128MixRandom(seed);
+                case "L64X128StarStarRandom" -> new L64X128StarStarRandom(seed);
+                case "L64X256MixRandom" ->      new L64X256MixRandom(seed);
+                case "L64X1024MixRandom" ->     new L64X1024MixRandom(seed);
+                case "L128X128MixRandom" ->     new L128X128MixRandom(seed);
+                case "L128X256MixRandom" ->     new L128X256MixRandom(seed);
+                case "L128X1024MixRandom" ->    new L128X1024MixRandom(seed);
+                case "Xoroshiro128PlusPlus" ->  new Xoroshiro128PlusPlus(seed);
+                case "Xoshiro256PlusPlus" ->    new Xoshiro256PlusPlus(seed);
+                default -> throw new InternalError("should not happen");
+            };
+        }
+
+        private RandomGenerator create(byte[] seed) {
+            if (isInstantiable() && (flags & BYTE_ARRAY_SEED) == 0) {
+                throw new UnsupportedOperationException("Random algorithm "
+                        + name + " does not support a byte[] seed");
+            }
+            return switch (name) {
+                case "SecureRandom" ->          new SecureRandom(seed);
+                case "L32X64MixRandom" ->       new L32X64MixRandom(seed);
+                case "L64X128MixRandom" ->      new L64X128MixRandom(seed);
+                case "L64X128StarStarRandom" -> new L64X128StarStarRandom(seed);
+                case "L64X256MixRandom" ->      new L64X256MixRandom(seed);
+                case "L64X1024MixRandom" ->     new L64X1024MixRandom(seed);
+                case "L128X128MixRandom" ->     new L128X128MixRandom(seed);
+                case "L128X256MixRandom" ->     new L128X256MixRandom(seed);
+                case "L128X1024MixRandom" ->    new L128X1024MixRandom(seed);
+                case "Xoroshiro128PlusPlus" ->  new Xoroshiro128PlusPlus(seed);
+                case "Xoshiro256PlusPlus" ->    new Xoshiro256PlusPlus(seed);
+                default -> throw new InternalError("should not happen");
+            };
+        }
+
+        private boolean isStochastic() {
+            return (flags & STOCHASTIC) != 0;
+        }
+
+        private boolean isHardware() {
+            return (flags & HARDWARE) != 0;
+        }
+
+        private boolean isInstantiable() {
+            return (flags & INSTANTIABLE) != 0;
+        }
+
+        private boolean isDeprecated() {
+            return (flags & DEPRECATED) != 0;
         }
     }
+
+    /**
+     * Random generator properties.
+     */
+    private final RandomGeneratorProperties properties;
 
     /**
      * Private constructor.
      *
-     * @param rgClass  Random generator class.
+     * @param properties Random generator properties.
      */
-    private RandomGeneratorFactory(Class<? extends RandomGenerator> rgClass) {
-        this.rgClass = rgClass;
+    private RandomGeneratorFactory(RandomGeneratorProperties properties) {
+        this.properties = properties;
     }
 
     /**
-     * Returns the factory map, lazily constructing map on first call.
+     * Returns the factory map, lazily constructing the map on first call.
      *
      * @return Map of random generator classes.
      */
-    private static Map<String, Class<? extends RandomGenerator>> getFactoryMap() {
-        return FactoryMapHolder.FACTORY_MAP;
+    private static Map<String, RandomGeneratorProperties> getFactoryMap() {
+        return RandomGeneratorProperties.FACTORY_MAP;
     }
 
     /**
-     * Return the annotation for the specified random generator.
-     *
-     * @return RandomGeneratorProperties annotation for the specified random generator.
-     */
-     private RandomGeneratorProperties getProperties() {
-        if (properties == null) {  // volatile load
-            synchronized (rgClass) {
-                if (properties == null) {  // double-checking idiom
-                    RandomGeneratorProperties props = rgClass.getDeclaredAnnotation(RandomGeneratorProperties.class);
-                    Objects.requireNonNull(props, rgClass + " missing annotation");
-                    properties = props;  // volatile store
-                }
-            }
-        }
-
-        return properties;
-    }
-
-    /**
-     * Return true if rgClass is a subclass of the category.
+     * Return true if the random generator class is a subclass of the category.
      *
      * @param category Interface category, sub-interface of {@link RandomGenerator}.
      *
-     * @return true if the random generator is a subclass of the category.
+     * @return true if the random generator class is a subclass of the category.
      */
     private boolean isSubclass(Class<? extends RandomGenerator> category) {
-        return isSubclass(category, rgClass);
+        return isSubclass(category, properties.rgClass());
     }
 
     /**
@@ -221,32 +332,31 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
     }
 
     /**
-     * Returns the random generator class matching name and category.
+     * Returns a RandomGeneratorProperties instance matching name and category.
      *
-     * @param name      Name of RandomGenerator
-     * @param category  Interface category, sub-interface of {@link RandomGenerator}.
-     *
-     * @return A random generator class matching name and category.
-     *
+     * @param name     Name of RandomGenerator
+     * @param category Interface category, sub-interface of {@link RandomGenerator}.
+     * @return A RandomGeneratorProperties instance matching name and category.
      * @throws IllegalArgumentException if the resulting type is not a subclass of category.
      */
-    private static Class<? extends RandomGenerator> findClass(String name,
+    private static RandomGeneratorProperties findClass(String name,
             Class<? extends RandomGenerator> category) throws IllegalArgumentException {
-        Map<String, Class<? extends RandomGenerator>> fm = getFactoryMap();
-        Class<? extends RandomGenerator> rgClass = fm.get(name);
-        if (rgClass == null) {
+        RandomGeneratorProperties properties = name != null
+                ? getFactoryMap().get(name)
+                : null;
+        if (properties == null || !properties.isInstantiable()) {
             throw new IllegalArgumentException("No implementation of the random number generator algorithm \"" +
                     name +
                     "\" is available");
         }
-        if (!isSubclass(category, rgClass)) {
+        if (!isSubclass(category, properties.rgClass())) {
             throw new IllegalArgumentException("The random number generator algorithm \"" +
                     name +
                     "\" is not implemented with the interface \"" +
                     category.getSimpleName() +
                     "\"");
         }
-        return rgClass;
+        return properties;
     }
 
     /**
@@ -263,14 +373,9 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
      */
     static <T extends RandomGenerator> T of(String name, Class<T> category)
             throws IllegalArgumentException {
-        Class<? extends RandomGenerator> rgClass = findClass(name, category);
-        try {
-            @SuppressWarnings("unchecked")
-            T instance = (T) rgClass.getConstructor().newInstance();
-            return instance;
-        } catch (Exception e) {
-            throw new InternalError(e);
-        }
+        @SuppressWarnings("unchecked")
+        T instance = (T) findClass(name, category).create();
+        return instance;
     }
 
     /**
@@ -287,52 +392,7 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
      */
     static <T extends RandomGenerator> RandomGeneratorFactory<T> factoryOf(String name, Class<T> category)
             throws IllegalArgumentException {
-        Class<? extends RandomGenerator> rgClass = findClass(name, category);
-        return new RandomGeneratorFactory<>(rgClass);
-    }
-
-    /**
-     * Ensure all the required constructors are fetched.
-     */
-    private void ensureConstructors() {
-        if (ctor == null) {  // volatile load
-            synchronized (rgClass) {
-                if (ctor == null) {  // double-checking idiom
-                    Constructor<?>[] ctors = rgClass.getConstructors();
-
-                    Constructor<T> tmpCtor = null;
-                    Constructor<T> tmpCtorLong = null;
-                    Constructor<T> tmpCtorBytes = null;
-
-                    for (Constructor<?> ctorGeneric : ctors) {
-                        @SuppressWarnings("unchecked")
-                        Constructor<T> ctorSpecific = (Constructor<T>) ctorGeneric;
-                        final Class<?>[] parameterTypes = ctorSpecific.getParameterTypes();
-
-                        if (parameterTypes.length == 0) {
-                            tmpCtor = ctorSpecific;
-                        } else if (parameterTypes.length == 1) {
-                            Class<?> argType = parameterTypes[0];
-
-                            if (argType == long.class) {
-                                tmpCtorLong = ctorSpecific;
-                            } else if (argType == byte[].class) {
-                                tmpCtorBytes = ctorSpecific;
-                            }
-                        }
-                    }
-
-                    if (tmpCtor == null) {
-                        throw new IllegalStateException("Random algorithm " + name() + " is missing a default constructor");
-                    }
-
-                    // Store specialized constructors first, guarded by ctor
-                    ctorBytes = tmpCtorBytes;
-                    ctorLong = tmpCtorLong;
-                    ctor = tmpCtor;  // volatile store comes last
-                }
-            }
-        }
+        return new RandomGeneratorFactory<>(findClass(name, category));
     }
 
     /**
@@ -367,23 +427,21 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
      * @return a {@link RandomGeneratorFactory}
      */
     public static RandomGeneratorFactory<RandomGenerator> getDefault() {
-        return factoryOf("L32X64MixRandom", RandomGenerator.class);
+        return factoryOf(DEFAULT_ALGORITHM, RandomGenerator.class);
     }
 
     /**
      * Returns a non-empty stream of available {@link RandomGeneratorFactory RandomGeneratorFactory(s)}.
-     * <p>
+     *
      * RandomGenerators that are marked as deprecated are not included in the result.
      *
      * @return a non-empty stream of all available {@link RandomGeneratorFactory RandomGeneratorFactory(s)}.
      */
     public static Stream<RandomGeneratorFactory<RandomGenerator>> all() {
-        Map<String, Class<? extends RandomGenerator>> fm = getFactoryMap();
-        return fm.values()
-                 .stream()
-                 .filter(c -> !c.isAnnotationPresent(Deprecated.class) &&
-                              c.isAnnotationPresent(RandomGeneratorProperties.class))
-                 .map(RandomGeneratorFactory::new);
+        return getFactoryMap().values()
+                .stream()
+                .filter(p -> p.isInstantiable() && !p.isDeprecated())
+                .map(RandomGeneratorFactory::new);
     }
 
     /**
@@ -393,7 +451,7 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
      * @return Name of the <a href="package-summary.html#algorithms">algorithm</a>.
      */
     public String name() {
-        return rgClass.getSimpleName();
+        return properties.name();
     }
 
     /**
@@ -403,7 +461,7 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
      * @return Group name of the <a href="package-summary.html#algorithms">algorithm</a>.
      */
     public String group() {
-        return getProperties().group();
+        return properties.group();
     }
 
     /**
@@ -414,7 +472,6 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
      *         to maintain state of seed.
      */
     public int stateBits() {
-        RandomGeneratorProperties properties = getProperties();
         int i = properties.i();
         int k = properties.k();
 
@@ -427,7 +484,7 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
      * @return the equidistribution of the <a href="package-summary.html#algorithms">algorithm</a>.
      */
     public int equidistribution() {
-        return getProperties().equidistribution();
+        return properties.equidistribution();
     }
 
     /**
@@ -438,16 +495,13 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
      * @return BigInteger period.
      */
     public BigInteger period() {
-        RandomGeneratorProperties properties = getProperties();
         int i = properties.i();
         int j = properties.j();
         int k = properties.k();
 
-        if (i == 0 && j == 0 && k == 0) {
-            return BigInteger.ZERO;
-        } else {
-            return BigInteger.ONE.shiftLeft(i).subtract(BigInteger.valueOf(j)).shiftLeft(k);
-        }
+        return i == 0 && j == 0 && k == 0
+                ? BigInteger.ZERO
+                : BigInteger.ONE.shiftLeft(i).subtract(BigInteger.valueOf(j)).shiftLeft(k);
     }
 
     /**
@@ -458,7 +512,7 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
      * @return true if random generator is statistical.
      */
     public boolean isStatistical() {
-        return !getProperties().isStochastic();
+        return !properties.isStochastic();
     }
 
     /**
@@ -468,7 +522,7 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
      * @return true if random generator is stochastic.
      */
     public boolean isStochastic() {
-        return getProperties().isStochastic();
+        return properties.isStochastic();
     }
 
     /**
@@ -478,7 +532,7 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
      * @return true if random generator is generated by hardware.
      */
     public boolean isHardware() {
-        return getProperties().isHardware();
+        return properties.isHardware();
     }
 
     /**
@@ -545,7 +599,7 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
      *         marked for deprecation
      */
      public boolean isDeprecated() {
-        return rgClass.isAnnotationPresent(Deprecated.class);
+        return properties.isDeprecated();
      }
 
     /**
@@ -555,14 +609,9 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
      * @return new in instance of {@link RandomGenerator}.
      */
     public T create() {
-        try {
-            ensureConstructors();
-            return ctor.newInstance();
-        } catch (Exception ex) {
-            // Should never happen.
-            throw new InternalError("Random algorithm " + name()
-                    + " is missing a default constructor", ex);
-        }
+        @SuppressWarnings("unchecked")
+        T instance = (T) properties.create();
+        return instance;
     }
 
     /**
@@ -579,13 +628,9 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
      * @throws UnsupportedOperationException if a long seed in not supported.
      */
     public T create(long seed) {
-        try {
-            ensureConstructors();
-            return ctorLong.newInstance(seed);
-        } catch (Exception ex) {
-            throw new UnsupportedOperationException("Random algorithm "
-                    + name() + " does not support a long seed");
-        }
+        @SuppressWarnings("unchecked")
+        T instance = (T) properties.create(seed);
+        return instance;
     }
 
     /**
@@ -604,13 +649,9 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
      */
     public T create(byte[] seed) {
         Objects.requireNonNull(seed, "seed must not be null");
-        try {
-            ensureConstructors();
-            return ctorBytes.newInstance(seed);
-        } catch (Exception ex) {
-            throw new UnsupportedOperationException("Random algorithm "
-                    + name() + " does not support a byte[] seed");
-        }
+        @SuppressWarnings("unchecked")
+        T instance = (T) properties.create(seed);
+        return instance;
     }
 
 }
