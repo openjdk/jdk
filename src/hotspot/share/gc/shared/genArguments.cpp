@@ -301,8 +301,6 @@ void GenArguments::initialize_size_info() {
     // generation to fit as well.
     // If the user has explicitly set an OldSize that is inconsistent
     // with other command line flags, issue a warning.
-    // The generation minimums and the overall heap minimum should
-    // be within one generation alignment.
     if (initial_old_size > MaxOldSize) {
       log_warning(gc, ergo)("Inconsistency between maximum heap size and maximum "
                             "generation sizes: using maximum heap = " SIZE_FORMAT
