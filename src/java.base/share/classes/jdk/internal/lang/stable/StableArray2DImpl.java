@@ -1,6 +1,5 @@
 package jdk.internal.lang.stable;
 
-import jdk.internal.lang.StableArray;
 import jdk.internal.lang.StableArray2D;
 import jdk.internal.lang.StableValue;
 import jdk.internal.vm.annotation.Stable;
@@ -29,7 +28,7 @@ public record StableArray2DImpl<V>(
         Objects.checkIndex(i0, dim0);
         Objects.checkIndex(i1, dim1);
         final int index = i0 * dim0 + i1;
-        return new StableValueElement<>(elements, aux, index);
+        return new StableValueElement<>(elements, index, aux);
     }
 
     @Override
@@ -62,12 +61,12 @@ public record StableArray2DImpl<V>(
         final int dim1 = length(1);
         for (int i = 0; i < dim0; i++) {
             if (i != 0) {
-                sb.append(',');
+                sb.append(',').append(' ');
             }
             sb.append('[');
             for (int j = 0; j < dim1; j++) {
                 if (j != 0) {
-                    sb.append(',');
+                    sb.append(',').append(' ');
                 }
                 final StableValue<V> stable = get(i, j);
                 if (stable.isSet()) {

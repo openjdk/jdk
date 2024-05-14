@@ -69,8 +69,7 @@ import java.util.function.Supplier;
  * @since 23
  */
 public sealed interface StableValue<V>
-        permits StableValueImpl,
-        StableValueElement {
+        permits StableValueElement, StableValueImpl {
 
     /**
      * {@return the set value (nullable) if set, otherwise throws

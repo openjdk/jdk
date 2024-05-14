@@ -1467,7 +1467,7 @@ class ImmutableCollections {
         @Override
         public StableValue<V> get(int index) {
             Objects.checkIndex(index, size);
-            return new StableValueElement<>(elements, aux, index);
+            return new StableValueElement<>(elements, index, aux);
         }
 
         @Override
@@ -1500,7 +1500,7 @@ class ImmutableCollections {
         }
 
         V computeIfUnset(int index, IntFunction<? extends V> mapper) {
-            StableValueElement<V> element = new StableValueElement<>(elements, aux, index);
+            StableValueElement<V> element = new StableValueElement<>(elements, index, aux);
             return element.computeIfUnset(index, mapper);
         }
 
@@ -1581,7 +1581,7 @@ class ImmutableCollections {
         }
 
         private StableValue<V> value(int keyIndex) {
-            return new StableValueElement<>(values, aux, keyIndex);
+            return new StableValueElement<>(values, keyIndex, aux);
         }
 
         @Override
@@ -1771,7 +1771,7 @@ class ImmutableCollections {
         }
 
         private StableValue<V> value(int index) {
-            return new StableValueElement<>(elements, aux, index);
+            return new StableValueElement<>(elements, index, aux);
         }
 
         private K key(int arrayIndex) {

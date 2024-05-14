@@ -19,7 +19,7 @@ public record StableArrayImpl<V>(
     @Override
     public StableValue<V> get(int firstIndex) {
         Objects.checkIndex(firstIndex, elements.length);
-        return new StableValueElement<>(elements, aux, firstIndex);
+        return new StableValueElement<>(elements, firstIndex, aux);
     }
 
     @Override
@@ -46,7 +46,7 @@ public record StableArrayImpl<V>(
         sb.append('[');
         for (int i = 0; i < length(); i++) {
             if (i != 0) {
-                sb.append(',');
+                sb.append(',').append(' ');
             }
             final StableValue<V> stable = get(i);
             if (stable.isSet()) {

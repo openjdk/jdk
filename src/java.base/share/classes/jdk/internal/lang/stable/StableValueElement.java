@@ -14,8 +14,8 @@ import static jdk.internal.lang.stable.StableUtil.*;
 // Records are ~10% faster than @ValueBased in JDK 23
 public record StableValueElement<V>(
         @Stable V[] elements,
-        AuxiliaryArrays aux,
-        int index
+        @Stable int index,
+        @Stable AuxiliaryArrays aux
 ) implements StableValue<V> {
 
     @ForceInline
@@ -36,6 +36,9 @@ public record StableValueElement<V>(
     @Override
     public V orThrow() {
         // Todo: consider UNSAFE.getReference(elements, ...) as we have checked the index
+        // @SuppressWarnings("unchecked")
+        // final V e = (V) UNSAFE.getReference(elements, objectOffset(index));
+
         // Optimistically try plain semantics first
         final V e = elements[index];
         if (e != null) {

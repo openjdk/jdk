@@ -30,7 +30,7 @@ public record StableArray3DImpl<V>(
         Objects.checkIndex(i1, dim1);
         Objects.checkIndex(i2, dim2);
         final int index = i0 * dim1 * dim2 + i1 * dim2 + i2;
-        return new StableValueElement<>(elements, aux, index);
+        return new StableValueElement<>(elements, index, aux);
     }
 
     @Override
@@ -65,17 +65,17 @@ public record StableArray3DImpl<V>(
         final int dim2 = length(2);
         for (int i0 = 0; i0 < dim0; i0++) {
             if (i0 != 0) {
-                sb.append(',');
+                sb.append(',').append(' ');
             }
             sb.append('[');
             for (int i1 = 0; i1 < dim1; i1++) {
                 if (i1 != 0) {
-                    sb.append(',');
+                    sb.append(',').append(' ');
                 }
                 sb.append('[');
                 for (int i2 = 0; i2 < dim2; i2++) {
                     if (i2 != 0) {
-                        sb.append(',');
+                        sb.append(',').append(' ');
                     }
                     final StableValue<V> stable = get(i0, i1, i2);
                     if (stable.isSet()) {

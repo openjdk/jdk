@@ -8,10 +8,6 @@ public record AuxiliaryArrays(@Stable int[] states,
                               Object[] mutexes,
                               boolean[] supplyings) { // Todo: make this array more dense
 
-    public int state(int index) {
-        return states[index];
-    }
-
     public static AuxiliaryArrays create(int size) {
         return new AuxiliaryArrays(new int[size], new Object[size], new boolean[size]);
     }
