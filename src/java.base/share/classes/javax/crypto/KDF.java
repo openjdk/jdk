@@ -187,8 +187,9 @@ public final class KDF {
      * @return a {@code KDF} object
      *
      * @throws NoSuchAlgorithmException
-     *     if no {@code Provider} supports a {@code KDFSpi} implementation for
-     *     the specified algorithm
+     *     if a provider is specified and it does not support the specified KDF
+     *     algorithm, or if provider is {@code null} and there is no provider that
+     *     supports a KDF implementation of the specified algorithm
      * @throws NoSuchProviderException
      *     if the specified provider is not registered in the security provider
      *     list
@@ -220,8 +221,9 @@ public final class KDF {
      * @return a {@code KDF} object
      *
      * @throws NoSuchAlgorithmException
-     *     if no {@code Provider} supports a {@code KDFSpi} implementation for
-     *     the specified algorithm
+     *     if a provider is specified and it does not support the specified KDF
+     *     algorithm, or if provider is {@code null} and there is no provider that
+     *     supports a KDF implementation of the specified algorithm
      * @throws NullPointerException
      *     if the algorithm is {@code null}
      */
@@ -290,8 +292,9 @@ public final class KDF {
      * @return a {@code KDF} object
      *
      * @throws NoSuchAlgorithmException
-     *     if no {@code Provider} supports a {@code KDFSpi} implementation for
-     *     the specified algorithm.
+     *     if a provider is specified and it does not support the specified KDF
+     *     algorithm, or if provider is {@code null} and there is no provider that
+     *     supports a KDF implementation of the specified algorithm
      * @throws NoSuchProviderException
      *     if the specified provider is not registered in the security provider
      *     list
@@ -340,8 +343,9 @@ public final class KDF {
      * @return a {@code KDF} object
      *
      * @throws NoSuchAlgorithmException
-     *     if no {@code Provider} supports a {@code KDFSpi} implementation for
-     *     the specified algorithm
+     *     if a provider is specified and it does not support the specified KDF
+     *     algorithm, or if provider is {@code null} and there is no provider that
+     *     supports a KDF implementation of the specified algorithm
      * @throws InvalidAlgorithmParameterException
      *     if the {@code AlgorithmParameterSpec} is an invalid value
      * @throws NullPointerException
