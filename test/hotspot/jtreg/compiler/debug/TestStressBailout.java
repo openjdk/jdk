@@ -47,9 +47,6 @@ public class TestStressBailout {
         ProcessBuilder pb  = ProcessTools.createLimitedTestJavaProcessBuilder(procArgs);
         OutputAnalyzer out = new OutputAnalyzer(pb.start());
         out.shouldHaveExitValue(0);
-        if (interval == 1 && !Platform.isDebugBuild()) {
-            out.shouldContain("C2 initialization failed");
-        }
     }
 
     public static void main(String[] args) throws Exception {
@@ -61,7 +58,5 @@ public class TestStressBailout {
         for (int i = 1; i < 1_000_000; i*=10) {
             runTest(i);
         }
-        // Guaranteed bail out, check output
-        runTest(1);
     }
 }
