@@ -1455,7 +1455,6 @@ class ImmutableCollections {
         @Stable
         private final AuxiliaryArrays aux;
 
-        @SuppressWarnings("unchecked")
         private StableList(int size) {
             assert size > 0;
             this.elements = newGenericArray(size);
@@ -1669,13 +1668,15 @@ class ImmutableCollections {
 
                 @Override
                 public int hashCode() {
-                    return System.identityHashCode(this);
+                    int h = 0;
+                    for (Entry<K, StableValue<V>> e : this) {
+                        if (e != null) {
+                            h += e.hashCode();
+                        }
+                    }
+                    return h;
                 }
 
-                @Override
-                public boolean equals(Object o) {
-                    return o == this;
-                }
             };
         }
 
@@ -1846,12 +1847,13 @@ class ImmutableCollections {
 
                 @Override
                 public int hashCode() {
-                    return System.identityHashCode(this);
-                }
-
-                @Override
-                public boolean equals(Object o) {
-                    return o == this;
+                    int h = 0;
+                    for (Entry<K, StableValue<V>> e : this) {
+                        if (e != null) {
+                            h += e.hashCode();
+                        }
+                    }
+                    return h;
                 }
 
             };
