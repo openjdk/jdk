@@ -83,6 +83,9 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
          *     the length of the output key material
          *
          * @return an {@code ExtractThenExpand}
+         *
+         * @throws IllegalArgumentException
+         *     if {@code length} is not > 0
          */
         public ExtractThenExpand thenExpand(byte[] info, int length) {
             return new ExtractThenExpand(
@@ -224,12 +227,15 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
      *     {@code null}); the byte[] is copied to prevent subsequent
      *     modification
      * @param length
-     *     the length of the output key material (must be > 0)
+     *     the length of the output key material (must be > 0 and < 255 * HMAC
+     *     length)
      *
      * @return a new {@code Expand} object
      *
      * @throws NullPointerException
-     *     if {@code prk} or {@code info} is {@code null}
+     *     if {@code prk} is {@code null}
+     * @throws IllegalArgumentException
+     *     if {@code length} is not > 0
      */
     static Expand expandOnly(SecretKey prk, byte[] info, int length) {
         if (prk == null) {
@@ -301,10 +307,11 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
          *     {@code null}); the byte[] is copied to prevent subsequent
          *     modification
          * @param length
-         *     the length of the output key material (must be > 0)
+         *     the length of the output key material (must be > 0 and < 255 *
+         *     HMAC length)
          *
          * @throws IllegalArgumentException
-         *     if length not > 0
+         *     if {@code length} not > 0
          */
         private Expand(SecretKey prk, byte[] info, int length) {
             // a null prk could be indicative of ExtractThenExpand
@@ -369,10 +376,11 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
          *     {@code null}); the byte[] is copied to prevent subsequent
          *     modification
          * @param length
-         *     the length of the output key material
+         *     the length of the output key material (must be > 0 and < 255 *
+         *     HMAC length)
          *
          * @throws IllegalArgumentException
-         *     if length is not > 0
+         *     if {@code length} is not > 0
          */
         private ExtractThenExpand(Extract ext, byte[] info, int length) {
             // null-checked previously
