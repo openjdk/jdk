@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -402,6 +402,7 @@ public class DatagramSocketAdaptor
 
     @Override
     @Deprecated
+    @SuppressWarnings("removal")
     public void setTTL(byte ttl) throws IOException {
         setTimeToLive(Byte.toUnsignedInt(ttl));
     }
@@ -418,6 +419,7 @@ public class DatagramSocketAdaptor
 
     @Override
     @Deprecated
+    @SuppressWarnings("removal")
     public byte getTTL() throws IOException {
         return (byte) getTimeToLive();
     }
@@ -593,6 +595,7 @@ public class DatagramSocketAdaptor
 
     @Override
     @Deprecated
+    @SuppressWarnings("removal")
     public void send(DatagramPacket p, byte ttl) throws IOException {
         sendLock.lock();
         try {

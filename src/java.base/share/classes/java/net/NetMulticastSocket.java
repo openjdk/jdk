@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -652,6 +652,7 @@ final class NetMulticastSocket extends MulticastSocket {
 
     @Deprecated
     @Override
+    @SuppressWarnings("removal")
     public void setTTL(byte ttl) throws IOException {
         if (isClosed())
             throw new SocketException("Socket is closed");
@@ -670,6 +671,7 @@ final class NetMulticastSocket extends MulticastSocket {
 
     @Deprecated
     @Override
+    @SuppressWarnings("removal")
     public byte getTTL() throws IOException {
         if (isClosed())
             throw new SocketException("Socket is closed");
