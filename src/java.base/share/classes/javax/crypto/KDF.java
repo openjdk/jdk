@@ -398,7 +398,7 @@ public final class KDF {
      *     the algorithm of the resultant {@code SecretKey} object (may not be
      *     {@code null})
      * @param kdfParameterSpec
-     *     derivation parameters (may not be {@code null}
+     *     derivation parameters
      *
      * @return a {@code SecretKey} object corresponding to a key built from the
      *     KDF output and according to the derivation parameters
@@ -471,7 +471,7 @@ public final class KDF {
      * provider is selected, it cannot be changed.
      *
      * @param kdfParameterSpec
-     *     derivation parameters (may not be null)
+     *     derivation parameters
      *
      * @return a byte array whose length matches the specified length in the
      *     processed {@code KDFParameterSpec} and containing the output from the

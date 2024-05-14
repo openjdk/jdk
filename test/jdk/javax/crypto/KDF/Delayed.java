@@ -22,7 +22,6 @@
  */
 
 /*
- * @test
  * @bug 8331008
  * @library /test/lib /test/jdk/security/unsignedjce
  * @build java.base/javax.crypto.ProviderVerifier
