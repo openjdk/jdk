@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 8332245
- * @summary fusion of heap stable test causes GetAndSet node to be removed
+ * @summary C2: missing record_for_ign() call in GraphKit::must_be_not_null()
  *
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
