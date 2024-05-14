@@ -238,7 +238,7 @@ public abstract class GenFullCP extends ClassfileGenerator {
     public Klass[] generateBytecodes() {
 
         // COMPUTE_FRAMES were disabled due to JDK-8079697
-        ClassWriterExt cw = new ClassWriterExt(/*ClassWriter.COMPUTE_FRAMES |*/ ClassWriter.COMPUTE_MAXS);
+        ClassWriterExt cw = new ClassWriterExt(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
 
         String[] interfaces = new String[1];
         interfaces[0] = getDummyInterfaceClassName();
