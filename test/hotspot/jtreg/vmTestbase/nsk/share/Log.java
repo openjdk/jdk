@@ -56,9 +56,6 @@ import nsk.share.test.LazyFormatString;
  * Error messages appeares in log stream in all modes. Additional log massages,
  * printed with <code>display()</code> method will be filtered out, if log mode
  * is not verbose. In verbose log made messages of both types are printed.
- * Additionally, in verbose mode a summary of all occured errors will be printed
- * at the program exit, by automatically invoking method
- * <code>printErrorsSummary()</code>.
  * <p>
  * To provide printing messages from different sources into one log
  * with distinct prefixes use internal <code>Log.Logger</code> class.
