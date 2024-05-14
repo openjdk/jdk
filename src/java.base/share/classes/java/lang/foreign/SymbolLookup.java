@@ -292,7 +292,7 @@ public interface SymbolLookup {
     @Restricted
     static SymbolLookup libraryLookup(String name, Arena arena) {
         Reflection.ensureNativeAccess(Reflection.getCallerClass(),
-                SymbolLookup.class, "libraryLookup");
+                SymbolLookup.class, "libraryLookup", false);
         if (Utils.containsNullChars(name)) {
             throw new IllegalArgumentException("Cannot open library: " + name);
         }
@@ -326,7 +326,7 @@ public interface SymbolLookup {
     @Restricted
     static SymbolLookup libraryLookup(Path path, Arena arena) {
         Reflection.ensureNativeAccess(Reflection.getCallerClass(),
-                SymbolLookup.class, "libraryLookup");
+                SymbolLookup.class, "libraryLookup", false);
         if (path.getFileSystem() != FileSystems.getDefault()) {
             throw new IllegalArgumentException("Path not in default file system: " + path);
         }

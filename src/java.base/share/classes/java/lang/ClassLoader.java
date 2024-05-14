@@ -2448,7 +2448,7 @@ public abstract class ClassLoader {
     static long findNative(ClassLoader loader, Class<?> clazz, String entryName, String javaName) {
         long addr = findNativeInternal(loader, entryName);
         if (addr != 0 && loader != null) {
-            Reflection.ensureNativeAccess(clazz, clazz, javaName);
+            Reflection.ensureNativeAccess(clazz, clazz, javaName, true);
         }
         return addr;
     }

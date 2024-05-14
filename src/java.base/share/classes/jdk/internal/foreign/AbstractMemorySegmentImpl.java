@@ -152,7 +152,7 @@ public abstract sealed class AbstractMemorySegmentImpl
     }
 
     public MemorySegment reinterpretInternal(Class<?> callerClass, long newSize, Scope scope, Consumer<MemorySegment> cleanup) {
-        Reflection.ensureNativeAccess(callerClass, MemorySegment.class, "reinterpret");
+        Reflection.ensureNativeAccess(callerClass, MemorySegment.class, "reinterpret", false);
         Utils.checkNonNegativeArgument(newSize, "newSize");
         if (!isNative()) throw new UnsupportedOperationException("Not a native segment");
         Runnable action = cleanup != null ?

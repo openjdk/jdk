@@ -306,7 +306,7 @@ public final class Module implements AnnotatedElement {
     }
 
     // This is invoked from Reflection.ensureNativeAccess
-    void ensureNativeAccess(Class<?> owner, String methodName, Class<?> currentClass) {
+    void ensureNativeAccess(Class<?> owner, String methodName, Class<?> currentClass, boolean jni) {
         // The target module whose enableNativeAccess flag is ensured
         Module target = moduleForNativeAccess();
         ModuleBootstrap.IllegalNativeAccess illegalNativeAccess = ModuleBootstrap.illegalNativeAccess();
@@ -328,12 +328,21 @@ public final class Module implements AnnotatedElement {
                 }
                 String modflag = isNamed() ? getName() : "ALL-UNNAMED";
                 String caller = currentClass != null ? currentClass.getName() : "code";
-                System.err.printf("""
-                        WARNING: A restricted method in %s has been called
-                        WARNING: %s has been called by %s in %s
-                        WARNING: Use --enable-native-access=%s to avoid a warning for callers in this module
-                        WARNING: Restricted methods will be blocked in a future release unless native access is enabled
-                        %n""", cls, mtd, caller, mod, modflag);
+                if (jni) {
+                    System.err.printf("""
+                            WARNING: A native method in %s has been bound
+                            WARNING: %s has been called by %s in %s
+                            WARNING: Use --enable-native-access=%s to avoid a warning for callers in this module
+                            WARNING: Restricted methods will be blocked in a future release unless native access is enabled
+                            %n""", cls, mtd, caller, mod, modflag);
+                } else {
+                    System.err.printf("""
+                            WARNING: A restricted method in %s has been called
+                            WARNING: %s has been called by %s in %s
+                            WARNING: Use --enable-native-access=%s to avoid a warning for callers in this module
+                            WARNING: Restricted methods will be blocked in a future release unless native access is enabled
+                            %n""", cls, mtd, caller, mod, modflag);
+                }
             }
         }
     }

@@ -2030,7 +2030,7 @@ public final class System {
     @Restricted
     public static void load(String filename) {
         Class<?> caller = Reflection.getCallerClass();
-        Reflection.ensureNativeAccess(caller, System.class, "load");
+        Reflection.ensureNativeAccess(caller, System.class, "load", false);
         Runtime.getRuntime().load0(caller, filename);
     }
 
@@ -2073,7 +2073,7 @@ public final class System {
     @Restricted
     public static void loadLibrary(String libname) {
         Class<?> caller = Reflection.getCallerClass();
-        Reflection.ensureNativeAccess(caller, System.class, "loadLibrary");
+        Reflection.ensureNativeAccess(caller, System.class, "loadLibrary", false);
         Runtime.getRuntime().loadLibrary0(caller, libname);
     }
 
@@ -2550,8 +2550,8 @@ public final class System {
             public void addEnableNativeAccessToAllUnnamed() {
                 Module.implAddEnableNativeAccessToAllUnnamed();
             }
-            public void ensureNativeAccess(Module m, Class<?> owner, String methodName, Class<?> currentClass) {
-                m.ensureNativeAccess(owner, methodName, currentClass);
+            public void ensureNativeAccess(Module m, Class<?> owner, String methodName, Class<?> currentClass, boolean jni) {
+                m.ensureNativeAccess(owner, methodName, currentClass, jni);
             }
             public ServicesCatalog getServicesCatalog(ModuleLayer layer) {
                 return layer.getServicesCatalog();

@@ -272,7 +272,6 @@ address NativeLookup::lookup_style(const methodHandle& method, char* pure_name, 
   }
 
   // Otherwise call static method findNative in ClassLoader
-
   Klass*   klass = vmClasses::ClassLoader_klass();
   Handle jni_class(THREAD, method->method_holder()->java_mirror());
   Handle jni_name_arg = java_lang_String::create_from_str(jni_name, CHECK_NULL);
@@ -416,7 +415,6 @@ address NativeLookup::lookup_base(const methodHandle& method, TRAPS) {
   entry = lookup_entry_prefixed(method, CHECK_NULL);
   if (entry != nullptr) return entry;
 
-
   if (THREAD->has_pending_exception()) {
     oop exception = THREAD->pending_exception();
     if (exception->is_a(vmClasses::IllegalCallerException_klass())) {
@@ -424,6 +422,7 @@ address NativeLookup::lookup_base(const methodHandle& method, TRAPS) {
       return nullptr;
     }
   }
+
   // Native function not found, throw UnsatisfiedLinkError
   stringStream ss;
   ss.print("'");

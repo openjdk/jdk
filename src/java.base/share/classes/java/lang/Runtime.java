@@ -840,7 +840,7 @@ public class Runtime {
     @Restricted
     public void load(String filename) {
         Class<?> caller = Reflection.getCallerClass();
-        Reflection.ensureNativeAccess(caller, Runtime.class, "load");
+        Reflection.ensureNativeAccess(caller, Runtime.class, "load", false);
         load0(caller, filename);
     }
 
@@ -910,7 +910,7 @@ public class Runtime {
     @Restricted
     public void loadLibrary(String libname) {
         Class<?> caller = Reflection.getCallerClass();
-        Reflection.ensureNativeAccess(caller, Runtime.class, "loadLibrary");
+        Reflection.ensureNativeAccess(caller, Runtime.class, "loadLibrary", false);
         loadLibrary0(caller, libname);
     }
 
