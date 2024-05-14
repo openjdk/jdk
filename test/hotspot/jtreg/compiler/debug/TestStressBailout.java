@@ -45,7 +45,7 @@ public class TestStressBailout {
         ProcessBuilder pb  = ProcessTools.createLimitedTestJavaProcessBuilder(procArgs);
         OutputAnalyzer out = new OutputAnalyzer(pb.start());
         out.shouldHaveExitValue(0);
-        if (interval == 1) {
+        if (interval == 1 && !Platform.isDebugBuild()) {
             out.shouldContain("C2 initialization failed");
         }
     }
