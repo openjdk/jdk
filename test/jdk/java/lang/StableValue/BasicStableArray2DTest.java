@@ -30,6 +30,7 @@
 
 import jdk.internal.lang.StableArray2D;
 import jdk.internal.lang.StableValue;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.function.Supplier;
@@ -38,38 +39,59 @@ import static org.junit.jupiter.api.Assertions.*;
 
 final class BasicStableArray2DTest {
 
-    @Test
-    void empty() {
-        StableArray2D<Integer> arr = StableArray2D.of(0, 0);
-        assertEquals("[]", arr.toString());
-        assertThrows(IndexOutOfBoundsException.class, () -> arr.get(0, 0));
-        assertEquals(0, arr.length(0));
-        assertEquals(0, arr.length(1));
+    private static final int DIM0 = 2;
+    private static final int DIM1 = 3;
+    private static final int I0 = 1;
+    private static final int I1 = 2;
+    private static final int VALUE = 42;
+    private static final int VALUE2 = 13;
+
+    private StableArray2D<Integer> arr;
+
+    @BeforeEach
+    void setup() {
+        arr =  StableArray2D.of(DIM0, DIM1);
     }
 
     @Test
-    void twoTimesThree() {
-        StableArray2D<Integer> arr = StableArray2D.of(2, 3);
+    void empty() {
+        StableArray2D<Integer> empty = StableArray2D.of(0, 0);
+        assertEquals("[]", empty.toString());
+        assertThrows(IndexOutOfBoundsException.class, () -> empty.get(0, 0));
+        assertEquals(0, empty.length(0));
+        assertEquals(0, empty.length(1));
+    }
+
+    @Test
+    void length() {
+        assertEquals(DIM0, arr.length(0));
+        assertEquals(DIM1, arr.length(1));
+        assertThrows(IllegalArgumentException.class, () -> arr.length(-1));
+        assertThrows(IllegalArgumentException.class, () -> arr.length(2));
+    }
+
+    @Test
+    void basic() {
         assertEquals(2, arr.length(0));
         assertEquals(3, arr.length(1));
         StableValue<Integer> stableUnset = StableValue.of(); // Separate stable
         assertEquals("[[" + stableUnset + ", " + stableUnset + ", " + stableUnset + "], " +
                 "[" + stableUnset + ", " + stableUnset + ", " + stableUnset + "]]", arr.toString());
-        assertTrue(arr.get(1, 2).trySet(42));
+        assertTrue(arr.get(I0, I1).trySet(VALUE));
         StableValue<Integer> stable = StableValue.of(); // Separate stable
-        stable.trySet(42);
+        stable.trySet(VALUE);
         assertEquals("[[" + stableUnset + ", " + stableUnset + ", " + stableUnset + "], " +
                 "[" + stableUnset + ", " + stableUnset + ", " + stable + "]]", arr.toString());
-        assertTrue(arr.get(1, 2).isSet());
-        assertFalse(arr.get(1, 2).isError());
+        assertTrue(arr.get(I0, I1).isSet());
+        assertFalse(arr.get(I0, I1).isError());
 
-        assertEquals(42, arr.get(1, 2).orThrow());
+        assertEquals(VALUE, arr.get(I0, I1).orThrow());
 
-        assertFalse(arr.get(1, 2).trySet(13));
+        assertFalse(arr.get(I0, I1).trySet(VALUE2));
 
         // No change
-        assertEquals(42, arr.get(1, 2).computeIfUnset(() -> 13));
-        assertEquals(42, arr.get(1, 2).orThrow());
+        assertEquals(VALUE, arr.get(I0, I1).computeIfUnset(() -> VALUE2));
+        assertEquals(VALUE, arr.get(I0, I1).orThrow());
     }
 
     @Test
@@ -78,11 +100,10 @@ final class BasicStableArray2DTest {
             throw new UnsupportedOperationException();
         };
 
-        StableArray2D<Integer> arr = StableArray2D.of(2, 3);
         assertThrows(UnsupportedOperationException.class, () ->
-                arr.get(1, 2).computeIfUnset(throwingSupplier));
-        assertTrue(arr.get(1, 2).isError());
-        assertFalse(arr.get(1, 2).isSet());
+                arr.get(I0, I1).computeIfUnset(throwingSupplier));
+        assertTrue(arr.get(I0, I1).isError());
+        assertFalse(arr.get(I0, I1).isSet());
 
         StableValue<Integer> stable = StableValue.of();
         try {

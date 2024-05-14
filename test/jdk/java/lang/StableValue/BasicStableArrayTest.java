@@ -30,6 +30,7 @@
 
 import jdk.internal.lang.StableArray;
 import jdk.internal.lang.StableValue;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.function.Supplier;
@@ -38,31 +39,48 @@ import static org.junit.jupiter.api.Assertions.*;
 
 final class BasicStableArrayTest {
 
-    @Test
-    void empty() {
-        StableArray<Integer> arr = StableArray.of(0);
-        assertEquals("[]", arr.toString());
-        assertThrows(IndexOutOfBoundsException.class, () -> arr.get(0));
+    private static final int DIM0 = 2;
+    private static final int I0 = 1;
+    private static final int VALUE = 42;
+    private static final int VALUE2 = 13;
+
+    private StableArray<Integer> arr;
+
+    @BeforeEach
+    void setup() {
+         arr =  StableArray.of(DIM0);
     }
 
     @Test
-    void one() {
-        StableArray<Integer> arr = StableArray.of(1);
+    void empty() {
+        StableArray<Integer> empty = StableArray.of(0);
+        assertEquals("[]", empty.toString());
+        assertThrows(IndexOutOfBoundsException.class, () -> empty.get(0));
+        assertEquals(0, empty.length());
+    }
+
+    @Test
+    void length() {
+        assertEquals(DIM0, arr.length());
+    }
+
+    @Test
+    void basic() {
+        assertEquals("[StableValue.unset, StableValue.unset]", arr.toString());
+        assertTrue(arr.get(I0).trySet(VALUE));
         StableValue<Integer> stable = StableValue.of(); // Separate stable
-        assertEquals("[" + stable + "]", arr.toString());
-        assertTrue(arr.get(0).trySet(42));
-        stable.trySet(42);
-        assertEquals("[" + stable + "]", arr.toString());
-        assertTrue(arr.get(0).isSet());
-        assertFalse(arr.get(0).isError());
+        stable.trySet(VALUE);
+        assertEquals("[StableValue.unset, " + stable + "]", arr.toString());
+        assertTrue(arr.get(I0).isSet());
+        assertFalse(arr.get(I0).isError());
 
-        assertEquals(42, arr.get(0).orThrow());
+        assertEquals(VALUE, arr.get(I0).orThrow());
 
-        assertFalse(arr.get(0).trySet(13));
+        assertFalse(arr.get(I0).trySet(VALUE2));
 
         // No change
-        assertEquals(42, arr.get(0).computeIfUnset(() -> 13));
-        assertEquals(42, arr.get(0).orThrow());
+        assertEquals(VALUE, arr.get(I0).computeIfUnset(() -> VALUE2));
+        assertEquals(VALUE, arr.get(I0).orThrow());
     }
 
     @Test
@@ -71,11 +89,10 @@ final class BasicStableArrayTest {
             throw new UnsupportedOperationException();
         };
 
-        StableArray<Integer> arr = StableArray.of(1);
         assertThrows(UnsupportedOperationException.class, () ->
-                arr.get(0).computeIfUnset(throwingSupplier));
-        assertTrue(arr.get(0).isError());
-        assertFalse(arr.get(0).isSet());
+                arr.get(I0).computeIfUnset(throwingSupplier));
+        assertTrue(arr.get(I0).isError());
+        assertFalse(arr.get(I0).isSet());
 
         StableValue<Integer> stable = StableValue.of();
         try {
@@ -83,7 +100,7 @@ final class BasicStableArrayTest {
         } catch (UnsupportedOperationException _) {
             // Happy path
         }
-        assertEquals("[" + stable + "]", arr.toString());
+        assertEquals("[StableValue.unset, " + stable + "]", arr.toString());
     }
 
 }
