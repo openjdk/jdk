@@ -46,28 +46,14 @@ import java.util.List;
 /**
  * KDF implementation for the HKDF function.
  * <p>
- * This class implements the HKDF-Extract and HKDF-Expand functions from RFC 5869.  This
- * implementation provides the complete Extract-then-Expand HKDF function as well as Extract-only
- * and Expand-only variants.
+ * This class implements the HKDF-Extract and HKDF-Expand functions from RFC
+ * 5869.  This implementation provides the complete Extract-then-Expand HKDF
+ * function as well as Extract-only and Expand-only variants.
  */
 abstract class HkdfKeyDerivation extends KDFSpi {
 
-    protected Mac hmacObj;
-    protected int hmacLen;
-    protected String hmacAlgName;
-    protected List<SecretKey> ikms;
-    protected List<SecretKey> salts;
-    protected SecretKey initialKeyMaterial;
-    protected SecretKey salt;
-    protected SecretKey pseudoRandomKey;
-    protected byte[] info;
-    protected int length;
-
-    protected enum HKDF_TYPE {
-        EXTRACT, EXPAND, EXTRACTEXPAND
-    }
-
-    protected HKDF_TYPE hkdfType;
+    protected final int hmacLen;
+    protected final String hmacAlgName;
 
     /**
      * The sole constructor.
@@ -76,11 +62,15 @@ abstract class HkdfKeyDerivation extends KDFSpi {
      *     the initialization parameters (may be {@code null})
      *
      * @throws InvalidAlgorithmParameterException
-     *     if the initialization parameters are inappropriate for this {@code KDFSpi}
+     *     if the initialization parameters are inappropriate for this
+     *     {@code KDFSpi}
      */
-    HkdfKeyDerivation(AlgorithmParameterSpec algParameterSpec)
+    HkdfKeyDerivation(String hmacAlgName, int hmacLen,
+                      AlgorithmParameterSpec algParameterSpec)
         throws InvalidAlgorithmParameterException {
         super(algParameterSpec);
+        this.hmacAlgName = hmacAlgName;
+        this.hmacLen = hmacLen;
     }
 
     /**
@@ -94,57 +84,18 @@ abstract class HkdfKeyDerivation extends KDFSpi {
      *     a type of output that is not a key (e.g. raw data)
      */
     @Override
-    protected SecretKey engineDeriveKey(String alg, KDFParameterSpec kdfParameterSpec)
+    protected SecretKey engineDeriveKey(String alg,
+                                        KDFParameterSpec kdfParameterSpec)
         throws InvalidParameterSpecException {
 
-        try {
-            // set up the HMAC instance
-            hmacLen = setupHMAC(hmacAlgName);
-        } catch (NoSuchAlgorithmException nsae) {
-            throw new ProviderException(nsae);
+        if (alg == null || alg.isEmpty()) {
+            throw new InvalidParameterSpecException(
+                "the algorithm for the resultant SecretKey may not be null or"
+                + " empty");
         }
 
-        // inspect KDFParameterSpec object
-        inspectKDFParameterSpec(kdfParameterSpec);
+        return new SecretKeySpec(engineDeriveData(kdfParameterSpec), alg);
 
-        if (hkdfType == HKDF_TYPE.EXTRACT) {
-            // perform extract
-            try {
-                byte[] extractResult = hkdfExtract(initialKeyMaterial,
-                                                   (salt == null) ? null : salt.getEncoded());
-                return new SecretKeySpec(extractResult, alg);
-            } catch (InvalidKeyException ike) {
-                throw new InvalidParameterSpecException(
-                    "an HKDF Extract could not be initialized with the given key or salt material");
-            }
-
-        } else if (hkdfType == HKDF_TYPE.EXPAND) {
-            // perform expand
-            try {
-                byte[] expandResult = hkdfExpand(this.pseudoRandomKey, this.info, this.length);
-                return new SecretKeySpec(expandResult, 0, this.length, alg);
-            } catch (InvalidKeyException ike) {
-                throw new InvalidParameterSpecException(
-                    "an HKDF Expand could not be initialized with the given key material");
-            }
-
-        } else if (hkdfType == HKDF_TYPE.EXTRACTEXPAND) {
-            // perform extract and then expand
-            try {
-                byte[] extractResult = hkdfExtract(initialKeyMaterial,
-                                                   (salt == null) ? null : salt.getEncoded());
-                this.pseudoRandomKey = new SecretKeySpec(extractResult, alg);
-                byte[] expandResult = hkdfExpand(this.pseudoRandomKey, this.info, this.length);
-                return new SecretKeySpec(expandResult, 0, this.length, alg);
-            } catch (InvalidKeyException ike) {
-                throw new InvalidParameterSpecException(
-                    "an HKDF ExtractExpand could not be initialized with the given key or salt "
-                    + "material");
-            }
-        }
-
-        throw new InvalidParameterSpecException(
-            "an HKDF could not be initialized with the given KDFParameterSpec");
     }
 
     /**
@@ -161,84 +112,54 @@ abstract class HkdfKeyDerivation extends KDFSpi {
     @Override
     protected byte[] engineDeriveData(KDFParameterSpec kdfParameterSpec)
         throws InvalidParameterSpecException {
-
-        try {
-            // set up the HMAC instance
-            hmacLen = setupHMAC(hmacAlgName);
-        } catch (NoSuchAlgorithmException nsae) {
-            throw new ProviderException(nsae);
-        }
-
-        // inspect KDFParameterSpec object
-        inspectKDFParameterSpec(kdfParameterSpec);
-
-        if (hkdfType == HKDF_TYPE.EXTRACT) {
-            // perform extract
-            try {
-                return hkdfExtract(initialKeyMaterial, (salt == null) ? null : salt.getEncoded());
-            } catch (InvalidKeyException ike) {
-                throw new InvalidParameterSpecException(
-                    "an HKDF Extract could not be initialized with the given key or salt material");
-            }
-
-        } else if (hkdfType == HKDF_TYPE.EXPAND) {
-            // perform expand
-            try {
-                return Arrays.copyOf(hkdfExpand(this.pseudoRandomKey, this.info, this.length),
-                                     this.length);
-            } catch (InvalidKeyException ike) {
-                throw new InvalidParameterSpecException(
-                    "an HKDF Expand could not be initialized with the given key material");
-            }
-
-        } else if (hkdfType == HKDF_TYPE.EXTRACTEXPAND) {
-            // perform extract and then expand
-            try {
-                byte[] extractResult = hkdfExtract(initialKeyMaterial,
-                                                   (salt == null) ? null : salt.getEncoded());
-                this.pseudoRandomKey = new SecretKeySpec(extractResult, "RAW");
-                return Arrays.copyOf(hkdfExpand(this.pseudoRandomKey, this.info, this.length),
-                                     this.length);
-            } catch (InvalidKeyException ike) {
-                throw new InvalidParameterSpecException(
-                    "an HKDF ExtractExpand could not be initialized with the given key or salt "
-                    + "material");
-            }
-        }
-
-        throw new InvalidParameterSpecException(
-            "an HKDF could not be initialized with the given KDFParameterSpec");
-    }
-
-    protected int setupHMAC(String hmacAlgName) throws NoSuchAlgorithmException {
-        hmacObj = Mac.getInstance(hmacAlgName);
-        return hmacObj.getMacLength();
-    }
-
-    protected void inspectKDFParameterSpec(KDFParameterSpec kdfParameterSpec)
-        throws InvalidParameterSpecException {
-        // A switch would be nicer, but we may need to backport this before JDK 17
-        // Also, JEP 305 came out in JDK 14, so we can't declare a variable in instanceof either
+        List<SecretKey> ikms;
+        List<SecretKey> salts;
+        SecretKey initialKeyMaterial;
+        SecretKey salt;
+        SecretKey pseudoRandomKey;
+        byte[] info;
+        int length;
+        // A switch would be nicer, but we may need to backport this before
+        // JDK 17
+        // Also, JEP 305 came out in JDK 14, so we can't declare a variable
+        // in instanceof either
         if (kdfParameterSpec instanceof HKDFParameterSpec.Extract) {
-            HKDFParameterSpec.Extract anExtract = (HKDFParameterSpec.Extract) kdfParameterSpec;
-            this.ikms = anExtract.ikms();
-            this.salts = anExtract.salts();
+            HKDFParameterSpec.Extract anExtract =
+                (HKDFParameterSpec.Extract) kdfParameterSpec;
+            ikms = anExtract.ikms();
+            salts = anExtract.salts();
             if (isNullOrEmpty(ikms) && isNullOrEmpty(salts)) {
                 throw new InvalidParameterSpecException(
-                    "IKM and salt cannot both be null or empty for HKDFParameterSpec.Extract");
+                    "IKM and salt cannot both be null or empty for "
+                    + "HKDFParameterSpec.Extract");
             }
-            // we should be able to combine these Lists of keys into single SecretKey Objects,
+            // we should be able to combine these Lists of keys into single
+            // SecretKey Objects,
             // unless we were passed something bogus or an unexportable P11 key
             try {
-                this.initialKeyMaterial = consolidateKeyMaterial(ikms);
-                this.salt = consolidateKeyMaterial(salts);
+                initialKeyMaterial = consolidateKeyMaterial(ikms);
+                salt = consolidateKeyMaterial(salts);
             } catch (InvalidKeyException ike) {
                 throw new InvalidParameterSpecException(
-                    "Issue encountered when combining ikm or salt values into single keys");
+                    "Issue encountered when combining ikm or salt values into"
+                    + " single keys");
             }
-            hkdfType = HKDF_TYPE.EXTRACT;
+            // perform extract
+            try {
+                return hkdfExtract(initialKeyMaterial,
+                                   (salt == null) ? null : salt.getEncoded());
+            } catch (InvalidKeyException ike) {
+                throw new InvalidParameterSpecException(
+                    "an HKDF Extract could not be initialized with the given "
+                    + "key or salt material");
+            } catch (NoSuchAlgorithmException nsae) {
+                // This is bubbling up from the getInstance of the Mac/Hmac.
+                // Since we're defining these values internally, it should be
+                // safe to "eat" this NSAE.
+            }
         } else if (kdfParameterSpec instanceof HKDFParameterSpec.Expand) {
-            HKDFParameterSpec.Expand anExpand = (HKDFParameterSpec.Expand) kdfParameterSpec;
+            HKDFParameterSpec.Expand anExpand =
+                (HKDFParameterSpec.Expand) kdfParameterSpec;
             // set this value in the "if"
             if ((pseudoRandomKey = anExpand.prk()) == null) {
                 throw new InvalidParameterSpecException(
@@ -250,13 +171,28 @@ abstract class HkdfKeyDerivation extends KDFSpi {
             }
             // set this value in the "if"
             if ((length = anExpand.length()) <= 0) {
-                throw new InvalidParameterSpecException("length cannot be <= 0");
+                throw new InvalidParameterSpecException(
+                    "length cannot be <= 0");
             }
             if (length > (hmacLen * 255)) {
                 throw new InvalidParameterSpecException("Requested length " +
-                                                        "exceeds maximum allowed key stream length");
+                                                        "exceeds maximum "
+                                                        + "allowed key stream"
+                                                        + " length");
             }
-            hkdfType = HKDF_TYPE.EXPAND;
+            // perform expand
+            try {
+                return Arrays.copyOf(hkdfExpand(pseudoRandomKey, info, length),
+                                     length);
+            } catch (InvalidKeyException ike) {
+                throw new InvalidParameterSpecException(
+                    "an HKDF Expand could not be initialized with the given "
+                    + "key material");
+            } catch (NoSuchAlgorithmException nsae) {
+                // This is bubbling up from the getInstance of the Mac/Hmac.
+                // Since we're defining these values internally, it should be
+                // safe to "eat" this NSAE.
+            }
         } else if (kdfParameterSpec instanceof HKDFParameterSpec.ExtractExpand) {
             HKDFParameterSpec.ExtractExpand anExtractExpand =
                 (HKDFParameterSpec.ExtractExpand) kdfParameterSpec;
@@ -264,16 +200,19 @@ abstract class HkdfKeyDerivation extends KDFSpi {
             salts = anExtractExpand.salts();
             if (isNullOrEmpty(ikms) && isNullOrEmpty(salts)) {
                 throw new InvalidParameterSpecException(
-                    "IKM and salt cannot both be null for HKDFParameterSpec.ExtractExpand");
+                    "IKM and salt cannot both be null for HKDFParameterSpec"
+                    + ".ExtractExpand");
             }
-            // we should be able to combine these Lists of keys into single SecretKey Objects,
+            // we should be able to combine these Lists of keys into single
+            // SecretKey Objects,
             // unless we were passed something bogus or an unexportable P11 key
             try {
-                this.initialKeyMaterial = consolidateKeyMaterial(ikms);
-                this.salt = consolidateKeyMaterial(salts);
+                initialKeyMaterial = consolidateKeyMaterial(ikms);
+                salt = consolidateKeyMaterial(salts);
             } catch (InvalidKeyException ike) {
                 throw new InvalidParameterSpecException(
-                    "Issue encountered when combining ikm or salt values into single keys");
+                    "Issue encountered when combining ikm or salt values into"
+                    + " single keys");
             }
             // set this value in the "if"
             if ((info = anExtractExpand.info()) == null) {
@@ -281,24 +220,45 @@ abstract class HkdfKeyDerivation extends KDFSpi {
             }
             // set this value in the "if"
             if ((length = anExtractExpand.length()) <= 0) {
-                throw new InvalidParameterSpecException("length cannot be <= 0");
+                throw new InvalidParameterSpecException(
+                    "length cannot be <= 0");
             }
             if (length > (hmacLen * 255)) {
                 throw new InvalidParameterSpecException("Requested length " +
-                                                        "exceeds maximum allowed key stream length");
+                                                        "exceeds maximum "
+                                                        + "allowed key stream"
+                                                        + " length");
             }
-            hkdfType = HKDF_TYPE.EXTRACTEXPAND;
-        } else {
-            throw new InvalidParameterSpecException(
-                "The KDFParameterSpec object was not of a recognized type");
+            // perform extract and then expand
+            try {
+                byte[] extractResult = hkdfExtract(initialKeyMaterial,
+                                                   (salt
+                                                    == null) ? null :
+                                                       salt.getEncoded());
+                pseudoRandomKey = new SecretKeySpec(extractResult, "RAW");
+                return Arrays.copyOf(hkdfExpand(pseudoRandomKey, info, length),
+                                     length);
+            } catch (InvalidKeyException ike) {
+                throw new InvalidParameterSpecException(
+                    "an HKDF ExtractExpand could not be initialized with the "
+                    + "given key or salt "
+                    + "material");
+            } catch (NoSuchAlgorithmException nsae) {
+                // This is bubbling up from the getInstance of the Mac/Hmac.
+                // Since we're defining these values internally, it should be
+                // safe to "eat" this NSAE.
+            }
         }
+        throw new InvalidParameterSpecException(
+            "an HKDF could not be initialized with the given KDFParameterSpec");
     }
 
     private static boolean isNullOrEmpty(Collection<?> c) {
         return c == null || c.isEmpty();
     }
 
-    private SecretKey consolidateKeyMaterial(List<SecretKey> keys) throws InvalidKeyException {
+    private SecretKey consolidateKeyMaterial(List<SecretKey> keys)
+        throws InvalidKeyException {
         if (keys != null && !keys.isEmpty()) {
             ArrayList<SecretKey> localKeys = new ArrayList<>(keys);
             if (localKeys.size() == 1) {
@@ -310,7 +270,8 @@ abstract class HkdfKeyDerivation extends KDFSpi {
                     byte[] workItemBytes = CipherCore.getKeyBytes(workItem);
 
                     bb = Arrays.copyOf(bb, bb.length + workItemBytes.length);
-                    System.arraycopy(workItemBytes, 0, bb, bb.length - workItemBytes.length,
+                    System.arraycopy(workItemBytes, 0, bb,
+                                     bb.length - workItemBytes.length,
                                      workItemBytes.length);
                 }
                 return new SecretKeySpec(bb, "RAW");
@@ -326,46 +287,53 @@ abstract class HkdfKeyDerivation extends KDFSpi {
      * @param inputKey
      *     the input keying material used for the HKDF-Extract operation.
      * @param salt
-     *     the salt value used for HKDF-Extract.  If no salt is to be used a {@code null} value
-     *     should be provided.
+     *     the salt value used for HKDF-Extract.  If no salt is to be used a
+     *     {@code null} value should be provided.
      *
      * @return a byte array containing the pseudorandom key (PRK)
      *
      * @throws InvalidKeyException
-     *     if an invalid salt was provided through the {@code HkdfParameterSpec}
+     *     if an invalid salt was provided through the
+     *     {@code HkdfParameterSpec}
      */
-    protected byte[] hkdfExtract(SecretKey inputKey, byte[] salt) throws InvalidKeyException {
+    protected byte[] hkdfExtract(SecretKey inputKey, byte[] salt)
+        throws InvalidKeyException, NoSuchAlgorithmException {
 
         if (salt == null) {
             salt = new byte[hmacLen];
         }
+        Mac hmacObj = Mac.getInstance(hmacAlgName);
         hmacObj.init(new SecretKeySpec(salt, "HKDF-Salt"));
 
         return hmacObj.doFinal(inputKey.getEncoded());
     }
 
     /**
-     * Perform the HMAC-Expand operation.  At the end of the operation, the keyStream instance
-     * variable will contain the complete KDF output based on the input values and desired length.
+     * Perform the HMAC-Expand operation.  At the end of the operation, the
+     * keyStream instance variable will contain the complete KDF output based on
+     * the input values and desired length.
      *
      * @param prk
      *     the pseudorandom key used for HKDF-Expand
      * @param info
-     *     optional context and application specific information or {@code null} if no info data is
-     *     provided.
+     *     optional context and application specific information or {@code null}
+     *     if no info data is provided.
      * @param outLen
      *     the length in bytes of the required output
      *
-     * @return a byte array containing the complete KDF output.  This will be at least as long as
-     * the requested length in the {@code outLen} parameter, but will be rounded up to the nearest
-     * multiple of the HMAC output length.
+     * @return a byte array containing the complete KDF output.  This will be at
+     *     least as long as the requested length in the {@code outLen}
+     *     parameter, but will be rounded up to the nearest multiple of the HMAC
+     *     output length.
      *
      * @throws InvalidKeyException
-     *     if an invalid key was provided through the {@code HkdfParameterSpec} or derived during
-     *     the generation of the PRK.
+     *     if an invalid key was provided through the {@code HkdfParameterSpec}
+     *     or derived during the generation of the PRK.
      */
-    protected byte[] hkdfExpand(SecretKey prk, byte[] info, int outLen) throws InvalidKeyException {
+    protected byte[] hkdfExpand(SecretKey prk, byte[] info, int outLen)
+        throws InvalidKeyException, NoSuchAlgorithmException {
         byte[] kdfOutput;
+        Mac hmacObj = Mac.getInstance(hmacAlgName);
 
         // Calculate the number of rounds of HMAC that are needed to
         // meet the requested data.  Then set up the buffers we will need.
@@ -386,7 +354,8 @@ abstract class HkdfKeyDerivation extends KDFSpi {
                 // iteration since tLength starts at zero.  After the first
                 // iteration, tLength is changed to the HMAC length for the
                 // rest of the loop.
-                hmacObj.update(kdfOutput, Math.max(0, offset - hmacLen), tLength);
+                hmacObj.update(kdfOutput, Math.max(0, offset - hmacLen),
+                               tLength);
                 hmacObj.update(info);                       // Add info
                 hmacObj.update((byte) (i + 1));              // Add round number
                 hmacObj.doFinal(kdfOutput, offset);
@@ -406,25 +375,25 @@ abstract class HkdfKeyDerivation extends KDFSpi {
 
     public static final class HkdfSHA256 extends HkdfKeyDerivation {
         public HkdfSHA256(AlgorithmParameterSpec algParameterSpec)
-            throws InvalidAlgorithmParameterException {
-            super(algParameterSpec);
-            hmacAlgName = "HmacSHA256";
+            throws InvalidAlgorithmParameterException,
+                   NoSuchAlgorithmException {
+            super("HmacSHA256", 32, algParameterSpec);
         }
     }
 
     public static final class HkdfSHA384 extends HkdfKeyDerivation {
         public HkdfSHA384(AlgorithmParameterSpec algParameterSpec)
-            throws InvalidAlgorithmParameterException {
-            super(algParameterSpec);
-            hmacAlgName = "HmacSHA384";
+            throws InvalidAlgorithmParameterException,
+                   NoSuchAlgorithmException {
+            super("HmacSHA384", 48, algParameterSpec);
         }
     }
 
     public static final class HkdfSHA512 extends HkdfKeyDerivation {
         public HkdfSHA512(AlgorithmParameterSpec algParameterSpec)
-            throws InvalidAlgorithmParameterException {
-            super(algParameterSpec);
-            hmacAlgName = "HmacSHA512";
+            throws InvalidAlgorithmParameterException,
+                   NoSuchAlgorithmException {
+            super("HmacSHA512", 64, algParameterSpec);
         }
     }
 
