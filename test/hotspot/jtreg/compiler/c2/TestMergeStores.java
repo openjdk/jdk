@@ -1653,20 +1653,23 @@ public class TestMergeStores {
         applyIf = {"UseUnalignedAccesses", "true"},
         applyIfPlatform = {"big-endian", "true"})
     static Object[] test800a(byte[] a, int offset, long v) {
+        // Merge attempts begin at the lowest store in the Memory chain.
+        // Candidates are found following the chain. The list is trimmed to a
+        // power of 2 length by removing higher stores.
         if (IS_BIG_ENDIAN) {
-            a[offset + 0] = (byte)(v >> 40);
-            a[offset + 1] = (byte)(v >> 32);
-            a[offset + 2] = (byte)(v >> 24);  // The lowest stores in the Memory chain can be merged.
-            a[offset + 3] = (byte)(v >> 16);  // This is possible because the input for the merged store
-            a[offset + 4] = (byte)(v >> 8);   // does not require a right shift.
+            a[offset + 0] = (byte)(v >> 40); // Removed from candidate list
+            a[offset + 1] = (byte)(v >> 32); // Removed from candidate list
+            a[offset + 2] = (byte)(v >> 24); // The 4 following stores are on the candidate list
+            a[offset + 3] = (byte)(v >> 16); // and they are successfully merged.
+            a[offset + 4] = (byte)(v >> 8);
             a[offset + 5] = (byte)(v >> 0);
         } else {
-            a[offset + 0] = (byte)(v >> 0);
-            a[offset + 1] = (byte)(v >> 8);
-            a[offset + 2] = (byte)(v >> 16); // The merge is tried with the lowest store in the Memory chain.
-            a[offset + 3] = (byte)(v >> 24); // It fails because the 2 highest stores are ignored aiming for a 4 byte store
-            a[offset + 4] = (byte)(v >> 32); // but this would then require a right shift by 16 to get the input
-            a[offset + 5] = (byte)(v >> 40); // for the merge store.
+            a[offset + 0] = (byte)(v >> 0);  // Removed from candidate list
+            a[offset + 1] = (byte)(v >> 8);  // Removed from candidate list
+            a[offset + 2] = (byte)(v >> 16); // The 4 following stores are on the candidate list.
+            a[offset + 3] = (byte)(v >> 24); // They cannot be merged though because this would require shifting
+            a[offset + 4] = (byte)(v >> 32); // The input.
+            a[offset + 5] = (byte)(v >> 40);
         }
         return new Object[]{ a };
     }
