@@ -299,6 +299,8 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
          *     the optional context and application specific information
          * @param length
          *     the length of the output key material (must be > 0)
+         *
+         * @throws IllegalArgumentException if length not > 0
          */
         private Expand(SecretKey prk, byte[] info, int length) {
             // a null prk could be indicative of ExtractThenExpand
@@ -363,13 +365,15 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
          *     {@code null})
          * @param length
          *     the length of the output key material
+         *
+         * @throws IllegalArgumentException if length is not > 0
          */
         private ExtractThenExpand(Extract ext, byte[] info, int length) {
             // null-checked previously
             this.ext = ext;
-            if (!(length > 0)) {
-                throw new IllegalArgumentException("length must be > 0");
-            }
+            // - null prk is ok here (it's a signal)
+            // - {@code Expand} constructor can deal with a null info
+            // - length is checked in {@code Expand} constructor
             this.exp = new Expand(null, info, length);
         }
 
