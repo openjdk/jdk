@@ -22,6 +22,7 @@
  */
 
 /*
+ * @test
  * @bug 8331008
  * @library /test/lib /test/jdk/security/unsignedjce
  * @build java.base/javax.crypto.ProviderVerifier
@@ -55,11 +56,11 @@ public class Delayed {
         Asserts.assertEquals(kdf.getProviderName(), "P1");
 
         kdf = KDF.getInstance("X");
-        kdf.deriveData(new KDFParameterSpec() {});
+        kdf.deriveData(new MyKDFParameterSpec() {});
         Asserts.assertEquals(kdf.getProviderName(), "P2");
 
         kdf = KDF.getInstance("X");
-        kdf.deriveData(null);
+        kdf.deriveData(new KDFParameterSpec() {});
         Asserts.assertEquals(kdf.getProviderName(), "P3");
     }
     public static class Provider1 extends Provider {
@@ -68,6 +69,7 @@ public class Delayed {
             put("KDF.X", KDF1.class.getName());
         }
     }
+    // KDF1 requires a params at getInstance()
     public static class KDF1 extends KDF0 {
         public KDF1(AlgorithmParameterSpec e) throws InvalidAlgorithmParameterException {
             super(Objects.requireNonNull(e));
@@ -79,14 +81,18 @@ public class Delayed {
             put("KDF.X", KDF2.class.getName());
         }
     }
+    // KDF2 requires input to be a specific type
     public static class KDF2 extends KDF0 {
         public KDF2(AlgorithmParameterSpec e) throws InvalidAlgorithmParameterException {
             super(null);
         }
         @Override
         protected byte[] engineDeriveData(KDFParameterSpec kdfParameterSpec) throws InvalidParameterSpecException {
-            Objects.requireNonNull(kdfParameterSpec);
-            return null;
+            if (kdfParameterSpec instanceof MyKDFParameterSpec) {
+                return null;
+            } else {
+                throw new InvalidParameterSpecException();
+            }
         }
     }
     public static class Provider3 extends Provider {
@@ -95,6 +101,7 @@ public class Delayed {
             put("KDF.X", KDF3.class.getName());
         }
     }
+    // KDF3 doesn't care about anything
     public static class KDF3 extends KDF0 {
         public KDF3(AlgorithmParameterSpec e) throws InvalidAlgorithmParameterException {
             super(null);
@@ -112,4 +119,6 @@ public class Delayed {
             return new byte[0];
         }
     }
+
+    static class MyKDFParameterSpec implements KDFParameterSpec {}
 }
