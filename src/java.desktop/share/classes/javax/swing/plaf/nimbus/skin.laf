@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <!--
- Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -82,6 +82,9 @@
       </uiColor>
       <uiColor name="nimbusDisabledText">
          <matte red="142" green="143" blue="145" alpha="255" hueOffset="0.0" saturationOffset="0.0" brightnessOffset="0.0" alphaOffset="0"/>
+      </uiColor>
+      <uiColor name="nimbusTabbedPaneContentArea">
+         <matte red="238" green="238" blue="238" alpha="255" hueOffset="0.0" saturationOffset="0.0" brightnessOffset="0.0" alphaOffset="0"/>
       </uiColor>
       <uiColor name="nimbusLightBackground">
          <matte red="255" green="255" blue="255" alpha="255" hueOffset="0.0" saturationOffset="0.0" brightnessOffset="0.0" alphaOffset="0"/>
@@ -21646,6 +21649,11 @@
                <uiProperty name="tabOverlap" type="INT" value="-1"/>
                <uiProperty name="extendTabsToBase" type="BOOLEAN" value="true"/>
                <uiProperty name="useBasicArrows" type="BOOLEAN" value="true"/>
+               <uiProperty name="contentOpaque" type="BOOLEAN" value="true"/>
+               <uiProperty name="tabsOpaque" type="BOOLEAN" value="true"/>
+               <uiProperty name="contentAreaColor" type="COLOR">
+                  <matte red="238" green="238" blue="238" alpha="255" uiDefaultParentName="nimbusTabbedPaneContentArea" hueOffset="0.0" saturationOffset="0.0" brightnessOffset="0.0" alphaOffset="0"/>
+               </uiProperty>
                <uiProperty name="shadow" type="COLOR">
                   <matte red="142" green="143" blue="145" alpha="255" uiDefaultParentName="nimbusDisabledText" hueOffset="0.0" saturationOffset="0.0" brightnessOffset="0.0" alphaOffset="0"/>
                </uiProperty>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/monitorChunk.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/synchronizer.hpp"
 #include "runtime/vframe.hpp"
 #include "runtime/vframeArray.hpp"
 #include "runtime/vframe_hp.hpp"
@@ -48,11 +49,10 @@
 
 int vframeArrayElement:: bci(void) const { return (_bci == SynchronizationEntryBCI ? 0 : _bci); }
 
-void vframeArrayElement::free_monitors(JavaThread* jt) {
+void vframeArrayElement::free_monitors() {
   if (_monitors != nullptr) {
      MonitorChunk* chunk = _monitors;
      _monitors = nullptr;
-     jt->remove_monitor_chunk(chunk);
      delete chunk;
   }
 }
@@ -72,7 +72,7 @@ void vframeArrayElement::fill_in(compiledVFrame* vf, bool realloc_failures) {
   int index;
 
   {
-    Thread* current_thread = Thread::current();
+    JavaThread* current_thread = JavaThread::current();
     ResourceMark rm(current_thread);
     HandleMark hm(current_thread);
 
@@ -85,7 +85,6 @@ void vframeArrayElement::fill_in(compiledVFrame* vf, bool realloc_failures) {
 
       // Allocate monitor chunk
       _monitors = new MonitorChunk(list->length());
-      vf->thread()->add_monitor_chunk(_monitors);
 
       // Migrate the BasicLocks from the stack to the monitor chunk
       for (index = 0; index < list->length(); index++) {
@@ -95,9 +94,16 @@ void vframeArrayElement::fill_in(compiledVFrame* vf, bool realloc_failures) {
         if (monitor->owner_is_scalar_replaced()) {
           dest->set_obj(nullptr);
         } else {
-          assert(monitor->owner() == nullptr || !monitor->owner()->is_unlocked(), "object must be null or locked");
+          assert(monitor->owner() != nullptr, "monitor owner must not be null");
+          assert(!monitor->owner()->is_unlocked(), "monitor must be locked");
           dest->set_obj(monitor->owner());
+          assert(ObjectSynchronizer::current_thread_holds_lock(current_thread, Handle(current_thread, dest->obj())),
+                 "should be held, before move_to");
+
           monitor->lock()->move_to(monitor->owner(), dest->lock());
+
+          assert(ObjectSynchronizer::current_thread_holds_lock(current_thread, Handle(current_thread, dest->obj())),
+                 "should be held, after move_to");
         }
       }
     }
@@ -308,7 +314,11 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
     top = iframe()->previous_monitor_in_interpreter_frame(top);
     BasicObjectLock* src = _monitors->at(index);
     top->set_obj(src->obj());
+    assert(src->obj() != nullptr || ObjectSynchronizer::current_thread_holds_lock(thread, Handle(thread, src->obj())),
+           "should be held, before move_to");
     src->lock()->move_to(src->obj(), top->lock());
+    assert(src->obj() != nullptr || ObjectSynchronizer::current_thread_holds_lock(thread, Handle(thread, src->obj())),
+           "should be held, after move_to");
   }
   if (ProfileInterpreter) {
     iframe()->interpreter_frame_set_mdp(0); // clear out the mdp.
@@ -649,9 +659,8 @@ void vframeArray::unpack_to_stack(frame &unpack_frame, int exec_mode, int caller
 }
 
 void vframeArray::deallocate_monitor_chunks() {
-  JavaThread* jt = JavaThread::current();
   for (int index = 0; index < frames(); index++ ) {
-     element(index)->free_monitors(jt);
+     element(index)->free_monitors();
   }
 }
 

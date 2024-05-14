@@ -94,7 +94,7 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
         public String readLine(Locale locale, String format, Object ... args) {
             try {
                 initJLineIfNeeded();
-                return jline.readLine(String.format(locale, format, args));
+                return jline.readLine(String.format(locale, format, args).replace("%", "%%"));
             } catch (EndOfFileException eofe) {
                 return null;
             }
@@ -109,7 +109,8 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
         public char[] readPassword(Locale locale, String format, Object ... args) {
             try {
                 initJLineIfNeeded();
-                return jline.readLine(String.format(locale, format, args), '\0').toCharArray();
+                return jline.readLine(String.format(locale, format, args).replace("%", "%%"), '\0')
+                            .toCharArray();
             } catch (EndOfFileException eofe) {
                 return null;
             } finally {

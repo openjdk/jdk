@@ -33,9 +33,6 @@ com/sun/jdi/cds/CDSBreakpointTest.java 8307778 generic-all
 com/sun/jdi/cds/CDSDeleteAllBkptsTest.java 8307778 generic-all
 com/sun/jdi/cds/CDSFieldWatchpoints.java 8307778 generic-all
 
-sun/tools/jcmd/JcmdOutputEncodingTest.java 8308033 generic-all
-sun/tools/jstack/BasicJStackTest.java 8308033 generic-all
-
 javax/management/remote/mandatory/connection/BrokenConnectionTest.java 8308035 windows-x64
 
 javax/management/remote/mandatory/loading/MissingClassTest.java 8145413 windows-x64
