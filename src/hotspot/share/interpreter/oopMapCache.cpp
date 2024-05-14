@@ -557,9 +557,10 @@ void OopMapCache::lookup(const methodHandle& method,
   // where the first entry in the collision array is replaced with the new one.
   OopMapCacheEntry* old = entry_at(probe + 0);
   if (put_at(probe + 0, tmp, old)) {
-    // Cannot remove this entry on the spot: it can still be used by readers.
-    // Instead of synchronizing on GlobalCounter here and incurring heavy
-    // thread walk, we do this clean up out of band.
+    // Cannot deallocate old entry on the spot: it can still be used by readers
+    // that got a reference to it before we were able to replace it in the map.
+    // Instead of synchronizing on GlobalCounter here and incurring heavy thread
+    // walk, we do this clean up out of band.
     enqueue_for_cleanup(old);
   } else {
     OopMapCacheEntry::deallocate(tmp);
