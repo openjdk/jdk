@@ -201,19 +201,13 @@ public record ParserVerifier(ClassModel classModel) {
     }
 
     private void verifyAttribute(AttributedElement ae, Attribute<?> a, List<VerifyError> errors) {
-        int size = -1;
-        switch (a) {
+        int size = switch (a) {
             case AnnotationDefaultAttribute aa ->
-                size = valueSize(aa.defaultValue());
-            case BootstrapMethodsAttribute bma -> {
-                size = 2;
-                for (var bm : bma.bootstrapMethods()) {
-                    size += 4 + 2 * bm.arguments().size();
-                }
-            }
-            case CharacterRangeTableAttribute cra -> {
-                size = 2 + 14 * cra.characterRangeTable().size();
-            }
+                valueSize(aa.defaultValue());
+            case BootstrapMethodsAttribute bma ->
+                2 + bma.bootstrapMethods().stream().mapToInt(bm -> 4 + 2 * bm.arguments().size()).sum();
+            case CharacterRangeTableAttribute cra ->
+                2 + 14 * cra.characterRangeTable().size();
             case CodeAttribute ca -> {
                 MethodModel mm = (MethodModel)ae;
                 if (mm.flags().has(AccessFlag.NATIVE) || mm.flags().has(AccessFlag.ABSTRACT)) {
@@ -222,14 +216,11 @@ public record ParserVerifier(ClassModel classModel) {
                 if (ca.maxLocals() < Util.maxLocals(mm.flags().flagsMask(), mm.methodTypeSymbol())) {
                     errors.add(new VerifyError("Arguments can't fit into locals in %s".formatted(toString(ae))));
                 }
-                size = 12 + ca.codeLength() + 8 * ca.exceptionHandlers().size();
-                for (var caa : ca.attributes()) {
-                    size += 6 + ((BoundAttribute)caa).payloadLen();
-                }
+                yield 10 + ca.codeLength() + 8 * ca.exceptionHandlers().size() + attributesSize(ca.attributes());
             }
             case CompilationIDAttribute cida -> {
                 cida.compilationId();
-                size = 2;
+                yield 2;
             }
             case ConstantValueAttribute cva -> {
                 ClassDesc type = ((FieldModel)ae).fieldTypeSymbol();
@@ -244,96 +235,105 @@ public record ParserVerifier(ClassModel classModel) {
                 }) {
                     errors.add(new VerifyError("Bad constant value type in %s".formatted(toString(ae))));
                 }
-                size = 2;
+                yield 2;
             }
-            case DeprecatedAttribute da ->
-                size = 0;
+            case DeprecatedAttribute _ ->
+                0;
             case EnclosingMethodAttribute ema -> {
                 ema.enclosingClass();
                 ema.enclosingMethod();
-                size = 4;
+                yield 4;
             }
             case ExceptionsAttribute ea ->
-                size = 2 + 2 * ea.exceptions().size();
+                2 + 2 * ea.exceptions().size();
             case InnerClassesAttribute ica -> {
                 for (var ici : ica.classes()) {
                     if (ici.outerClass().isPresent() && ici.outerClass().get().equals(ici.innerClass())) {
                         errors.add(new VerifyError("Class is both outer and inner class in %s".formatted(toString(ae))));
                     }
                 }
-                size = 2 + 8 * ica.classes().size();
+                yield 2 + 8 * ica.classes().size();
             }
             case LineNumberTableAttribute lta ->
-                size = 2 + 4 * lta.lineNumbers().size();
+                2 + 4 * lta.lineNumbers().size();
             case LocalVariableTableAttribute lvta ->
-                size = 2 + 10 * lvta.localVariables().size();
+                2 + 10 * lvta.localVariables().size();
             case LocalVariableTypeTableAttribute lvta ->
-                size = 2 + 10 * lvta.localVariableTypes().size();
+                2 + 10 * lvta.localVariableTypes().size();
             case MethodParametersAttribute mpa ->
-                size = 1 + 4 * mpa.parameters().size();
+                1 + 4 * mpa.parameters().size();
             case NestHostAttribute nha -> {
                 nha.nestHost();
-                size = 2;
+                yield 2;
             }
             case NestMembersAttribute nma -> {
                 if (ae.findAttribute(Attributes.NEST_HOST).isPresent()) {
                     errors.add(new VerifyError("Conflicting NestHost and NestMembers attributes in %s".formatted(toString(ae))));
                 }
-                size = 2 + 2 * nma.nestMembers().size();
+                yield 2 + 2 * nma.nestMembers().size();
             }
             case PermittedSubclassesAttribute psa -> {
                 if (classModel.flags().has(AccessFlag.FINAL)) {
                     errors.add(new VerifyError("PermittedSubclasses attribute in final %s".formatted(toString(ae))));
                 }
-                size = 2 + 2 * psa.permittedSubclasses().size();
+                yield 2 + 2 * psa.permittedSubclasses().size();
             }
-            case RecordAttribute ra -> {
-                size = 2;
-                for (var rc : ra.components()) {
-                    size += 6;
-                    for (var rca : rc.attributes()) {
-                        size += 6 + ((BoundAttribute)rca).payloadLen();
-                    }
-                }
-            }
+            case RecordAttribute ra ->
+                componentsSize(ra.components());
             case RuntimeVisibleAnnotationsAttribute aa ->
-                size = annotationsSize(aa.annotations());
+                annotationsSize(aa.annotations());
             case RuntimeInvisibleAnnotationsAttribute aa ->
-                size = annotationsSize(aa.annotations());
-            case RuntimeVisibleParameterAnnotationsAttribute aa -> {
-                size = 1;
-                for (var ans : aa.parameterAnnotations()) {
-                    size += annotationsSize(ans);
-                }
-            }
-            case RuntimeInvisibleParameterAnnotationsAttribute aa -> {
-                size = 1;
-                for (var ans : aa.parameterAnnotations()) {
-                    size += annotationsSize(ans);
-                }
-            }
+                annotationsSize(aa.annotations());
+            case RuntimeVisibleParameterAnnotationsAttribute aa ->
+                parameterAnnotationsSize(aa.parameterAnnotations());
+            case RuntimeInvisibleParameterAnnotationsAttribute aa ->
+                parameterAnnotationsSize(aa.parameterAnnotations());
             case SignatureAttribute sa -> {
                 sa.signature();
-                size = 2;
+                yield 2;
             }
-            case SourceDebugExtensionAttribute sda -> {
-                size = sda.contents().length;
-            }
+            case SourceDebugExtensionAttribute sda ->
+                sda.contents().length;
             case SourceFileAttribute sfa -> {
                 sfa.sourceFile();
-                size = 2;
+                yield 2;
             }
             case SourceIDAttribute sida -> {
                 sida.sourceId();
-                size = 2;
+                yield 2;
             }
-            case SyntheticAttribute sa ->
-                size = 0;
-            default -> {}
-        }
+            case SyntheticAttribute _ ->
+                0;
+            default ->
+                -1;
+        };
         if (size >= 0 && size != ((BoundAttribute)a).payloadLen()) {
             errors.add(new VerifyError("Wrong %s attribute length in %s".formatted(a.attributeName(), toString(ae))));
         }
+    }
+
+    private static int componentsSize(List<RecordComponentInfo> comps) {
+        int l = 2;
+        for (var rc : comps) {
+            l += 4 + attributesSize(rc.attributes());
+        }
+        return l;
+    }
+
+    private static int attributesSize(List<Attribute<?>> attrs) {
+        int l = 2;
+        for (var a : attrs) {
+            l += 6 + ((BoundAttribute)a).payloadLen();
+        }
+        return l;
+    }
+
+    private static int parameterAnnotationsSize(List<List<Annotation>> pans) {
+        int l = 1;
+        for (var ans : pans) {
+            l += annotationsSize(ans);
+        }
+        return l;
     }
 
     private static int annotationsSize(List<Annotation> ans) {
