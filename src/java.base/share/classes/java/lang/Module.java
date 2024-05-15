@@ -331,10 +331,10 @@ public final class Module implements AnnotatedElement {
                 if (jni) {
                     System.err.printf("""
                             WARNING: A native method in %s has been bound
-                            WARNING: %s has been called by %s in %s
-                            WARNING: Use --enable-native-access=%s to avoid a warning for callers in this module
+                            WARNING: %s is declared in %s
+                            WARNING: Use --enable-native-access=%s to avoid a warning for native methods declared in this module
                             WARNING: Restricted methods will be blocked in a future release unless native access is enabled
-                            %n""", cls, mtd, caller, mod, modflag);
+                            %n""", cls, mtd, mod, modflag);
                 } else {
                     System.err.printf("""
                             WARNING: A restricted method in %s has been called

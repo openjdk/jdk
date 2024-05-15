@@ -168,7 +168,7 @@ public class TestEnableNativeAccess extends TestEnableNativeAccessBase {
                         .expect("WARNING: java.lang.System::loadLibrary has been called by org.openjdk.jni.PanamaMainJNI in module panama_jni_load_module")
                         // JNI native method binding in panama_jni_def_module
                         .expect("WARNING: A native method in org.openjdk.jni.def.PanamaJNIDef has been bound")
-                        .expect("WARNING: org.openjdk.jni.def.PanamaJNIDef::nativeLinker0 has been called by org.openjdk.jni.def.PanamaJNIDef in module panama_jni_def_module")
+                        .expect("WARNING: org.openjdk.jni.def.PanamaJNIDef::nativeLinker0 is declared in module panama_jni_def_module")
                         // upcall to Linker::downcallHandle from JNI code
                         .expect("WARNING: A restricted method in java.lang.foreign.Linker has been called")
                         .expect("WARNING: java.lang.foreign.Linker::downcallHandle has been called by code in an unnamed module"));
