@@ -5204,9 +5204,6 @@ class StubGenerator: public StubCodeGenerator {
     const uint64_t BASE = 0xfff1;
     const uint64_t NMAX = 0x15B0;
 
-    // LMUL factor for L_nmax loop
-    const int LMUL = 4;
-
     __ enter(); // required for proper stackwalking of RuntimeStub frame
     __ mv(temp1, 64);
     __ vsetvli(temp0, temp1, Assembler::e8, Assembler::m4);
@@ -5268,14 +5265,14 @@ class StubGenerator: public StubCodeGenerator {
   __ bind(L_nmax_loop);
     adler32_process_bytes_by64(buff, s1, s2, count, vtable_64, vzero,
       vbytes, vs1acc, vs2acc, temp0, temp1, temp2, vtemp1, vtemp2);
-    __ sub(count, count, 16*LMUL);
+    __ sub(count, count, 64);
     __ bgtz(count, L_nmax_loop);
 
     // There are three iterations left to do
     const int remainder = 3;
     __ mv(count, 16*remainder);
-    adler32_process_bytes_by16(buff, s1, s2, count, vtable_16,
-      vzero, vbytes, vs1acc, vs2acc, temp0, temp1, temp2, vtemp1, vtemp2, remainder);
+    adler32_process_bytes_by16(buff, s1, s2, count, vtable_16, vzero,
+      vbytes, vs1acc, vs2acc, temp0, temp1, temp2, vtemp1, vtemp2, remainder);
 
     // s1 = s1 % BASE
     __ remuw(s1, s1, base);
