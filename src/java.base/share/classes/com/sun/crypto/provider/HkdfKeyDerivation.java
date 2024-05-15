@@ -138,18 +138,18 @@ abstract class HkdfKeyDerivation extends KDFSpi {
                 inputKeyMaterial = consolidateKeyMaterial(ikms);
                 salt = consolidateKeyMaterial(salts);
             } catch (InvalidKeyException ike) {
-                throw new InvalidParameterSpecException(
+                throw (InvalidParameterSpecException) new InvalidParameterSpecException(
                     "Issue encountered when combining ikm or salt values into"
-                    + " single keys");
+                    + " single keys").initCause(ike);
             }
             // perform extract
             try {
                 return hkdfExtract(inputKeyMaterial,
                                    (salt == null) ? null : salt.getEncoded());
             } catch (InvalidKeyException ike) {
-                throw new InvalidParameterSpecException(
+                throw (InvalidParameterSpecException) new InvalidParameterSpecException(
                     "an HKDF Extract could not be initialized with the given "
-                    + "key or salt material");
+                    + "key or salt material").initCause(ike);
             } catch (NoSuchAlgorithmException nsae) {
                 // This is bubbling up from the getInstance of the Mac/Hmac.
                 // Since we're defining these values internally, it should be
@@ -169,19 +169,18 @@ abstract class HkdfKeyDerivation extends KDFSpi {
             }
             length = anExpand.length();
             if (length > (hmacLen * 255)) {
-                throw new InvalidParameterSpecException("Requested length " +
-                                                        "exceeds maximum "
-                                                        + "allowed key stream"
-                                                        + " length");
+                throw new InvalidParameterSpecException(
+                    "Requested length exceeds maximum allowed key stream "
+                    + "length");
             }
             // perform expand
             try {
                 return Arrays.copyOf(hkdfExpand(pseudoRandomKey, info, length),
                                      length);
             } catch (InvalidKeyException ike) {
-                throw new InvalidParameterSpecException(
+                throw (InvalidParameterSpecException) new InvalidParameterSpecException(
                     "an HKDF Expand could not be initialized with the given "
-                    + "key material");
+                    + "key material").initCause(ike);
             } catch (NoSuchAlgorithmException nsae) {
                 // This is bubbling up from the getInstance of the Mac/Hmac.
                 // Since we're defining these values internally, it should be
@@ -199,9 +198,9 @@ abstract class HkdfKeyDerivation extends KDFSpi {
                 inputKeyMaterial = consolidateKeyMaterial(ikms);
                 salt = consolidateKeyMaterial(salts);
             } catch (InvalidKeyException ike) {
-                throw new InvalidParameterSpecException(
+                throw (InvalidParameterSpecException) new InvalidParameterSpecException(
                     "Issue encountered when combining ikm or salt values into"
-                    + " single keys");
+                    + " single keys").initCause(ike);
             }
             // set this value in the "if"
             if ((info = anExtractThenExpand.info()) == null) {
@@ -209,24 +208,21 @@ abstract class HkdfKeyDerivation extends KDFSpi {
             }
             length = anExtractThenExpand.length();
             if (length > (hmacLen * 255)) {
-                throw new InvalidParameterSpecException("Requested length " +
-                                                        "exceeds maximum "
-                                                        + "allowed key stream"
-                                                        + " length");
+                throw new InvalidParameterSpecException(
+                    "Requested length exceeds maximum allowed key stream " 
+                    + "length");
             }
             // perform extract and then expand
             try {
-                byte[] extractResult = hkdfExtract(inputKeyMaterial,
-                                                   (salt
-                                                    == null) ? null :
-                                                       salt.getEncoded());
+                byte[] extractResult = hkdfExtract(inputKeyMaterial, (salt
+                                                                      == null) ? null : salt.getEncoded());
                 pseudoRandomKey = new SecretKeySpec(extractResult, "RAW");
                 return Arrays.copyOf(hkdfExpand(pseudoRandomKey, info, length),
                                      length);
             } catch (InvalidKeyException ike) {
-                throw new InvalidParameterSpecException(
+                throw (InvalidParameterSpecException) new InvalidParameterSpecException(
                     "an HKDF ExtractThenExpand could not be initialized with "
-                    + "the given key or salt material");
+                    + "the given key or salt material").initCause(ike);
             } catch (NoSuchAlgorithmException nsae) {
                 // This is bubbling up from the getInstance of the Mac/Hmac.
                 // Since we're defining these values internally, it should be
