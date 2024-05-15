@@ -150,6 +150,6 @@
  *
  * @serial exclude
  *
- * @since 1.1
+ * @since 1.2
  */
 package javax.swing;
