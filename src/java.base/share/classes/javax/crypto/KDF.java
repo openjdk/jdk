@@ -74,7 +74,7 @@ import java.util.Objects;
  *    KDF kdfHkdf = KDF.getInstance("HKDFWithHmacSHA256");
  *
  *    KDFParameterSpec kdfParameterSpec =
- *             HKDFParameterSpec.buildExtract()
+ *             HKDFParameterSpec.ofExtract()
  *                              .addIKM(ikm)
  *                              .addSalt(salt).thenExpand(info, 42);
  *
