@@ -3300,23 +3300,24 @@ Node* MergePrimitiveArrayStores::make_merged_input_value(const Node_List& merge_
     //             |                                  |
     //           _store                             first
     //
-    Node const* base_last;
-    jint shift_last;
 #ifdef VM_LITTLE_ENDIAN
-    merged_input_value = first->in(MemNode::ValueIn);
-    bool is_true = is_con_RShift(_store->in(MemNode::ValueIn), base_last, shift_last);
+    Node* hi = _store->in(MemNode::ValueIn);
+    Node* lo = first->in(MemNode::ValueIn);
 #else // VM_LITTLE_ENDIAN
-    // `_store` points to the lowest using store in the Memory chain. On big endian it stores the
-    //  unshifted `base`. `_store` and `first` need to be exchanged in the diagram above
-    merged_input_value = _store->in(MemNode::ValueIn);
-    bool is_true = is_con_RShift(first->in(MemNode::ValueIn), base_last, shift_last);
+    // `_store` and `first` are swapped in the diagram above
+    Node* hi = first->in(MemNode::ValueIn);
+    Node* lo = _store->in(MemNode::ValueIn);
 #endif // VM_LITTLE_ENDIAN
+    Node const* hi_base;
+    jint hi_shift;
+    merged_input_value = lo;
+    bool is_true = is_con_RShift(hi, hi_base, hi_shift);
     assert(is_true, "must detect con RShift");
-    if (merged_input_value != base_last && merged_input_value->Opcode() == Op_ConvL2I) {
+    if (merged_input_value != hi_base && merged_input_value->Opcode() == Op_ConvL2I) {
       // look through
       merged_input_value = merged_input_value->in(1);
     }
-    if (merged_input_value != base_last) {
+    if (merged_input_value != hi_base) {
       // merged_input_value is not the base
       return nullptr;
     }
