@@ -1518,7 +1518,6 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
     // this object has a lightweight monitor
   }
 
-  jint skipped = 0;
   if (mon != nullptr) {
     // Robustness: the actual waiting list can be smaller.
     // The nWait count we got from the mon->waiters() may include the re-entering
@@ -1531,14 +1530,13 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
       JavaThread *w = mon->thread_of_waiter(waiter);
       oop thread_oop = get_vthread_or_thread_oop(w);
       bool is_virtual = java_lang_VirtualThread::is_instance(thread_oop);
-      if (is_virtual) {
-        skipped++;
+      if (!java_lang_VirtualThread::is_instance(thread_oop)) {
+        nWait++;
       }
-      nWait++;
     }
   }
   ret.waiter_count = nWant;
-  ret.notify_waiter_count = nWait - skipped;
+  ret.notify_waiter_count = nWait;
 
   // Allocate memory for heavyweight and lightweight monitor.
   jvmtiError err;
