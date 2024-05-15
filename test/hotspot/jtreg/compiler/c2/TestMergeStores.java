@@ -116,6 +116,14 @@ public class TestMergeStores {
         testGroups.get("test2").put("test2d", (_,_) -> { return test2d(aB.clone(), offset1, vL1); });
         testGroups.get("test2").put("test2e", (_,_) -> { return test2e(aB.clone(), offset1, vL1); });
 
+        testGroups.put("test2BE", new HashMap<String,TestFunction>());
+        testGroups.get("test2BE").put("test2RBE", (_,_) -> { return test2RBE(aB.clone(), offset1, vL1); });
+        testGroups.get("test2BE").put("test2aBE", (_,_) -> { return test2aBE(aB.clone(), offset1, vL1); });
+        testGroups.get("test2BE").put("test2bBE", (_,_) -> { return test2bBE(aB.clone(), offset1, vL1); });
+        testGroups.get("test2BE").put("test2cBE", (_,_) -> { return test2cBE(aB.clone(), offset1, vL1); });
+        testGroups.get("test2BE").put("test2dBE", (_,_) -> { return test2dBE(aB.clone(), offset1, vL1); });
+        testGroups.get("test2BE").put("test2eBE", (_,_) -> { return test2eBE(aB.clone(), offset1, vL1); });
+
         testGroups.put("test3", new HashMap<String,TestFunction>());
         testGroups.get("test3").put("test3R", (_,_) -> { return test3R(aB.clone(), offset1, vL1); });
         testGroups.get("test3").put("test3a", (_,_) -> { return test3a(aB.clone(), offset1, vL1); });
@@ -214,6 +222,11 @@ public class TestMergeStores {
                  "test2c",
                  "test2d",
                  "test2e",
+                 "test2aBE",
+                 "test2bBE",
+                 "test2cBE",
+                 "test2dBE",
+                 "test2eBE",
                  "test3a",
                  "test4a",
                  "test5a",
@@ -616,51 +629,35 @@ public class TestMergeStores {
 
     @DontCompile
     static Object[] test2R(byte[] a, int offset, long v) {
-        if (IS_BIG_ENDIAN) {
-            a[offset + 0] = (byte)(v >> 56);
-            a[offset + 1] = (byte)(v >> 48);
-            a[offset + 2] = (byte)(v >> 40);
-            a[offset + 3] = (byte)(v >> 32);
-            a[offset + 4] = (byte)(v >> 24);
-            a[offset + 5] = (byte)(v >> 16);
-            a[offset + 6] = (byte)(v >> 8);
-            a[offset + 7] = (byte)(v >> 0);
-        } else {
-            a[offset + 0] = (byte)(v >> 0);
-            a[offset + 1] = (byte)(v >> 8);
-            a[offset + 2] = (byte)(v >> 16);
-            a[offset + 3] = (byte)(v >> 24);
-            a[offset + 4] = (byte)(v >> 32);
-            a[offset + 5] = (byte)(v >> 40);
-            a[offset + 6] = (byte)(v >> 48);
-            a[offset + 7] = (byte)(v >> 56);
-        }
+        a[offset + 0] = (byte)(v >> 0);
+        a[offset + 1] = (byte)(v >> 8);
+        a[offset + 2] = (byte)(v >> 16);
+        a[offset + 3] = (byte)(v >> 24);
+        a[offset + 4] = (byte)(v >> 32);
+        a[offset + 5] = (byte)(v >> 40);
+        a[offset + 6] = (byte)(v >> 48);
+        a[offset + 7] = (byte)(v >> 56);
         return new Object[]{ a };
     }
 
     @Test
     @IR(counts = {IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"},
-        applyIf = {"UseUnalignedAccesses", "true"})
+        applyIf = {"UseUnalignedAccesses", "true"},
+        applyIfPlatform = {"little-endian", "true"})
+    @IR(counts = {IRNode.STORE_B_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "8",
+                  IRNode.STORE_C_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+                  IRNode.STORE_I_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+                  IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0"},
+        applyIfPlatform = {"big-endian", "true"})
     static Object[] test2a(byte[] a, int offset, long v) {
-        if (IS_BIG_ENDIAN) {
-            a[offset + 0] = (byte)(v >> 56);
-            a[offset + 1] = (byte)(v >> 48);
-            a[offset + 2] = (byte)(v >> 40);
-            a[offset + 3] = (byte)(v >> 32);
-            a[offset + 4] = (byte)(v >> 24);
-            a[offset + 5] = (byte)(v >> 16);
-            a[offset + 6] = (byte)(v >> 8);
-            a[offset + 7] = (byte)(v >> 0);
-        } else {
-            a[offset + 0] = (byte)(v >> 0);
-            a[offset + 1] = (byte)(v >> 8);
-            a[offset + 2] = (byte)(v >> 16);
-            a[offset + 3] = (byte)(v >> 24);
-            a[offset + 4] = (byte)(v >> 32);
-            a[offset + 5] = (byte)(v >> 40);
-            a[offset + 6] = (byte)(v >> 48);
-            a[offset + 7] = (byte)(v >> 56);
-        }
+        a[offset + 0] = (byte)(v >> 0);
+        a[offset + 1] = (byte)(v >> 8);
+        a[offset + 2] = (byte)(v >> 16);
+        a[offset + 3] = (byte)(v >> 24);
+        a[offset + 4] = (byte)(v >> 32);
+        a[offset + 5] = (byte)(v >> 40);
+        a[offset + 6] = (byte)(v >> 48);
+        a[offset + 7] = (byte)(v >> 56);
         return new Object[]{ a };
     }
 
@@ -670,49 +667,115 @@ public class TestMergeStores {
     static Object[] test2b(byte[] a, int offset, long v) {
         // Add custom null check, to ensure the unsafe access always recognizes its type as an array store
         if (a == null) {return null;}
-        UNSAFE.putLongUnaligned(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + offset, v);
+        UNSAFE.putLongUnaligned(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + offset, v, false /* bigEndian */);
         return new Object[]{ a };
     }
 
     @Test
     @IR(counts = {IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"},
-        applyIf = {"UseUnalignedAccesses", "true"})
+        applyIf = {"UseUnalignedAccesses", "true"},
+        applyIfPlatform = {"little-endian", "true"})
+    @IR(counts = {IRNode.STORE_B_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "8",
+                  IRNode.STORE_C_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+                  IRNode.STORE_I_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+                  IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0"},
+        applyIfPlatform = {"big-endian", "true"})
     static Object[] test2c(byte[] a, int offset, long v) {
-        if (IS_BIG_ENDIAN) {
-            storeLongBE(a, offset, v);
-        } else {
-            storeLongLE(a, offset, v);
-        }
+        storeLongLE(a, offset, v);
         return new Object[]{ a };
     }
 
     @Test
     // No optimization, casting long -> int -> byte does not work
     static Object[] test2d(byte[] a, int offset, long v) {
-        if (IS_BIG_ENDIAN) {
-            storeIntBE(a, offset + 0, (int)(v >> 32));
-            storeIntBE(a, offset + 4, (int)(v >> 0));
-        } else {
-            storeIntLE(a, offset + 0, (int)(v >> 0));
-            storeIntLE(a, offset + 4, (int)(v >> 32));
-        }
+        storeIntLE(a, offset + 0, (int)(v >> 0));
+        storeIntLE(a, offset + 4, (int)(v >> 32));
         return new Object[]{ a };
     }
 
     @Test
     // No optimization, casting long -> short -> byte does not work
     static Object[] test2e(byte[] a, int offset, long v) {
-        if (IS_BIG_ENDIAN) {
-            storeShortBE(a, offset + 0, (short)(v >> 48));
-            storeShortBE(a, offset + 2, (short)(v >> 32));
-            storeShortBE(a, offset + 4, (short)(v >> 16));
-            storeShortBE(a, offset + 6, (short)(v >> 0));
-        } else {
-            storeShortLE(a, offset + 0, (short)(v >> 0));
-            storeShortLE(a, offset + 2, (short)(v >> 16));
-            storeShortLE(a, offset + 4, (short)(v >> 32));
-            storeShortLE(a, offset + 6, (short)(v >> 48));
-        }
+        storeShortLE(a, offset + 0, (short)(v >> 0));
+        storeShortLE(a, offset + 2, (short)(v >> 16));
+        storeShortLE(a, offset + 4, (short)(v >> 32));
+        storeShortLE(a, offset + 6, (short)(v >> 48));
+        return new Object[]{ a };
+    }
+
+    @DontCompile
+    static Object[] test2RBE(byte[] a, int offset, long v) {
+        a[offset + 0] = (byte)(v >> 56);
+        a[offset + 1] = (byte)(v >> 48);
+        a[offset + 2] = (byte)(v >> 40);
+        a[offset + 3] = (byte)(v >> 32);
+        a[offset + 4] = (byte)(v >> 24);
+        a[offset + 5] = (byte)(v >> 16);
+        a[offset + 6] = (byte)(v >> 8);
+        a[offset + 7] = (byte)(v >> 0);
+        return new Object[]{ a };
+    }
+
+    @Test
+    @IR(counts = {IRNode.STORE_B_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "8",
+                  IRNode.STORE_C_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+                  IRNode.STORE_I_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+                  IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0"},
+        applyIfPlatform = {"little-endian", "true"})
+    @IR(counts = {IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"},
+        applyIf = {"UseUnalignedAccesses", "true"},
+        applyIfPlatform = {"big-endian", "true"})
+    static Object[] test2aBE(byte[] a, int offset, long v) {
+        a[offset + 0] = (byte)(v >> 56);
+        a[offset + 1] = (byte)(v >> 48);
+        a[offset + 2] = (byte)(v >> 40);
+        a[offset + 3] = (byte)(v >> 32);
+        a[offset + 4] = (byte)(v >> 24);
+        a[offset + 5] = (byte)(v >> 16);
+        a[offset + 6] = (byte)(v >> 8);
+        a[offset + 7] = (byte)(v >> 0);
+        return new Object[]{ a };
+    }
+
+    @Test
+    @IR(counts = {IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"},
+        applyIf = {"UseUnalignedAccesses", "true"})
+    static Object[] test2bBE(byte[] a, int offset, long v) {
+        // Add custom null check, to ensure the unsafe access always recognizes its type as an array store
+        if (a == null) {return null;}
+        UNSAFE.putLongUnaligned(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + offset, v, true /* bigEndian */);
+        return new Object[]{ a };
+    }
+
+    @Test
+    @IR(counts = {IRNode.STORE_B_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "8",
+                  IRNode.STORE_C_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+                  IRNode.STORE_I_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+                  IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0"},
+        applyIfPlatform = {"little-endian", "true"})
+    @IR(counts = {IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"},
+        applyIf = {"UseUnalignedAccesses", "true"},
+        applyIfPlatform = {"big-endian", "true"})
+    static Object[] test2cBE(byte[] a, int offset, long v) {
+        storeLongBE(a, offset, v);
+        return new Object[]{ a };
+    }
+
+    @Test
+    // No optimization, casting long -> int -> byte does not work
+    static Object[] test2dBE(byte[] a, int offset, long v) {
+        storeIntBE(a, offset + 0, (int)(v >> 32));
+        storeIntBE(a, offset + 4, (int)(v >> 0));
+        return new Object[]{ a };
+    }
+
+    @Test
+    // No optimization, casting long -> short -> byte does not work
+    static Object[] test2eBE(byte[] a, int offset, long v) {
+        storeShortBE(a, offset + 0, (short)(v >> 48));
+        storeShortBE(a, offset + 2, (short)(v >> 32));
+        storeShortBE(a, offset + 4, (short)(v >> 16));
+        storeShortBE(a, offset + 6, (short)(v >> 0));
         return new Object[]{ a };
     }
 
