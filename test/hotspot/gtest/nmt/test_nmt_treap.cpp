@@ -275,6 +275,7 @@ TEST_VM_F(TreapTest, TestClosestLeq) {
     n = treap.closest_leq(0);
     EXPECT_EQ(0, n->val());
 
+    treap.upsert(6, 0);
     n = treap.closest_leq(6);
     EXPECT_EQ(6, n->val());
 
