@@ -86,8 +86,7 @@ import java.util.Objects;
  */
 @PreviewFeature(feature = PreviewFeature.Feature.KEY_DERIVATION)
 public final class KDF {
-    private static final Debug debug = Debug.getInstance("jca",
-                                                         "KDF");
+    private static final Debug debug = Debug.getInstance("jca", "KDF");
 
     private static final Debug pdebug = Debug.getInstance("provider",
                                                           "Provider");
@@ -217,8 +216,7 @@ public final class KDF {
     public static KDF getInstance(String algorithm, String provider)
         throws NoSuchAlgorithmException, NoSuchProviderException {
         try {
-            return getInstance(algorithm, null,
-                               provider);
+            return getInstance(algorithm, null, provider);
         } catch (InvalidAlgorithmParameterException e) {
             throw new NoSuchAlgorithmException(
                 "Received an InvalidAlgorithmParameterException. Does this "
@@ -248,8 +246,7 @@ public final class KDF {
     public static KDF getInstance(String algorithm, Provider provider)
         throws NoSuchAlgorithmException {
         try {
-            return getInstance(algorithm, null,
-                               provider);
+            return getInstance(algorithm, null, provider);
         } catch (InvalidAlgorithmParameterException e) {
             throw new NoSuchAlgorithmException(
                 "Received an InvalidAlgorithmParameterException. Does this "
@@ -290,8 +287,8 @@ public final class KDF {
             }
             return new KDF(s, t, algorithm, algParameterSpec);
         }
-        throw new NoSuchAlgorithmException
-                  ("Algorithm " + algorithm + " not available");
+        throw new NoSuchAlgorithmException(
+            "Algorithm " + algorithm + " not available");
     }
 
     /**
@@ -393,8 +390,7 @@ public final class KDF {
     }
 
     private static KDF handleException(NoSuchAlgorithmException e)
-        throws NoSuchAlgorithmException,
-               InvalidAlgorithmParameterException {
+        throws NoSuchAlgorithmException, InvalidAlgorithmParameterException {
         Throwable cause = e.getCause();
         if (cause instanceof InvalidAlgorithmParameterException) {
             throw (InvalidAlgorithmParameterException) cause;
@@ -405,8 +401,8 @@ public final class KDF {
     /**
      * Derives a key, returned as a {@code SecretKey}.
      * <p>
-     * The {@code deriveKey} method may be called multiple times on a particular
-     * {@code KDF} instance.
+     * The {@code deriveKey} method may be called multiple times at the same
+     * time on a particular {@code KDF} instance.
      * <p>
      * Delayed provider selection is also supported such that the provider
      * performing the derive is not selected until the method is called. Once a
@@ -474,15 +470,16 @@ public final class KDF {
                 throw (RuntimeException) lastException;
             }
         }
-        // should never reach here
-        return null;
+        throw new InvalidParameterSpecException(
+            "No installed provider supports the deriveKey method with "
+            + "these parameters");
     }
 
     /**
      * Obtains raw data from a key derivation function.
      * <p>
-     * The {@code deriveData} method may be called multiple times on a
-     * particular {@code KDF} instance.
+     * The {@code deriveData} method may be called multiple times at the same
+     * time on a particular {@code KDF} instance.
      * <p>
      * Delayed provider selection is also supported such that the provider
      * performing the derive is not selected until the method is called. Once a
@@ -491,9 +488,8 @@ public final class KDF {
      * @param kdfParameterSpec
      *     derivation parameters
      *
-     * @return a byte array whose length matches the specified length in the
-     *     processed {@code KDFParameterSpec} and containing the output from the
-     *     key derivation function
+     * @return a byte array containing a key built from the KDF output and
+     *     according to the derivation parameters
      *
      * @throws InvalidParameterSpecException
      *     if the information contained within the {@code KDFParameterSpec} is
@@ -544,8 +540,9 @@ public final class KDF {
                 throw (RuntimeException) lastException;
             }
         }
-        // should never reach here
-        return null;
+        throw new InvalidParameterSpecException(
+            "No installed provider supports the deriveData method with"
+            + " these parameters");
     }
 
     // max number of debug warnings to print from chooseFirstProvider()
