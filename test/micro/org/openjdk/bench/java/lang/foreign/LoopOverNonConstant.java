@@ -161,24 +161,6 @@ public class LoopOverNonConstant extends JavaLayouts {
     }
 
     @Benchmark
-    public int segment_loop_nested() {
-        int sum = 0;
-        for (int i = 0; i < ELEM_SIZE; i++) {
-            sum += (int) VH_SEQ_INT.get(segment, (long) i);
-        }
-        return sum;
-    }
-
-    @Benchmark
-    public int segment_loop_nested_unaligned() {
-        int sum = 0;
-        for (int i = 0; i < ELEM_SIZE; i++) {
-            sum += (int) VH_SEQ_INT_UNALIGNED.get(segment, (long) i);
-        }
-        return sum;
-    }
-
-    @Benchmark
     public int segment_loop_instance() {
         int sum = 0;
         for (int i = 0; i < ELEM_SIZE; i++) {
