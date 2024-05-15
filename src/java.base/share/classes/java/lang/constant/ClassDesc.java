@@ -187,10 +187,10 @@ public sealed interface ClassDesc
                     "Cannot create an array type descriptor with more than " +
                     MAX_ARRAY_TYPE_DESC_DIMENSIONS + " dimensions");
         }
-        if (desc.length() == 1 && desc.charAt(0) == 'V') {
-            throw new IllegalArgumentException("not a valid reference type descriptor: [V");
-        }
         String newDesc = new StringBuilder(desc.length() + 1).append('[').append(desc).toString();
+        if (desc.length() == 1 && desc.charAt(0) == 'V') {
+            throw new IllegalArgumentException("not a valid reference type descriptor: " + newDesc);
+        }
         return ReferenceClassDescImpl.ofValidated(newDesc);
     }
 
@@ -220,11 +220,7 @@ public sealed interface ClassDesc
                     " exceeds maximum supported dimension of " +
                     MAX_ARRAY_TYPE_DESC_DIMENSIONS);
         }
-        var sb = new StringBuilder(desc.length() + rank);
-        for (int i = 0; i < rank; i++) {
-            sb.append('[');
-        }
-        String newDesc = sb.append(desc).toString();
+        String newDesc = new StringBuilder(desc.length() + rank).repeat('[', rank).append(desc).toString();
         if (desc.length() == 1 && desc.charAt(0) == 'V') {
             throw new IllegalArgumentException("not a valid reference type descriptor: " + newDesc);
         }
