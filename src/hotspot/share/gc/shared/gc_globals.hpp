@@ -118,7 +118,7 @@
   product(bool, UseZGC, false,                                              \
           "Use the Z garbage collector")                                    \
                                                                             \
-  product(bool, ZGenerational, false,                                       \
+  product(bool, ZGenerational, true,                                        \
           "Use the generational version of ZGC")                            \
                                                                             \
   product(bool, UseShenandoahGC, false,                                     \

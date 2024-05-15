@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,32 +19,32 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_UTILITY_ATTRIBUTENORETURN_HPP
-#define SHARE_UTILITY_ATTRIBUTENORETURN_HPP
+package gc.x;
 
-// Provide a (temporary) macro for the [[noreturn]] attribute.
-//
-// Unfortunately, some older (though still in use) compilers have bugs when
-// using [[noreturn]].  For them we use an empty definition for the attribute.
-//
-// Note: This can't be placed in globalDefinitions_xxx.hpp because the
-// attribute is used in debug.hpp, which can't include globalDefinitions.hpp.
+/*
+ * @test TestDeprecated
+ * @requires vm.gc.ZSinglegen
+ * @summary Test ZGenerational Deprecated
+ * @library /test/lib
+ * @run driver gc.x.TestDeprecated
+ */
 
-// clang 12 (and possibly prior) crashes during build if we use [[noreturn]]
-// for assertion failure reporting functions.  The problem seems to be fixed
-// in clang 13.
-#ifdef __clang__
-#if __clang_major__ < 13
-#define ATTRIBUTE_NORETURN
-#endif
-#endif
+import java.util.LinkedList;
+import jdk.test.lib.process.ProcessTools;
 
-// All other platforms can use [[noreturn]].
-#ifndef ATTRIBUTE_NORETURN
-#define ATTRIBUTE_NORETURN [[noreturn]]
-#endif
-
-#endif // SHARE_UTILITY_ATTRIBUTENORETURN_HPP
+public class TestDeprecated {
+    static class Test {
+        public static void main(String[] args) throws Exception {}
+    }
+    public static void main(String[] args) throws Exception {
+        ProcessTools.executeLimitedTestJava("-XX:+UseZGC",
+                                            "-XX:-ZGenerational",
+                                            "-Xlog:gc+init",
+                                            Test.class.getName())
+                    .shouldContain("Option ZGenerational was deprecated")
+                    .shouldContain("Using deprecated non-generational mode")
+                    .shouldHaveExitValue(0);
+    }
+}
