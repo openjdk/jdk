@@ -125,7 +125,7 @@ LibjavaExists(const char *path)
 
 /*
  * Retrieves the path to the JRE home by locating libjava.so in
- * one of the LIBPATH and then truncating the path to it.
+ * LIBPATH and then truncating the path to it.
  */
 jboolean
 GetApplicationHomeFromLibpath(char *buf, jint bufsize)
