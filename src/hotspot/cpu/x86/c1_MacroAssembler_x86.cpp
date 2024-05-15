@@ -278,7 +278,7 @@ void C1_MacroAssembler::initialize_object(Register obj, Register klass, Register
   verify_oop(obj);
 }
 
-void C1_MacroAssembler::allocate_array(Register obj, Register len, Register t1, Register t2, int base_offset_in_bytes, Address::ScaleFactor f, Register klass, Label& slow_case) {
+void C1_MacroAssembler::allocate_array(Register obj, Register len, Register t1, Register t2, int base_offset_in_bytes, Address::ScaleFactor f, Register klass, Label& slow_case, bool zero_array) {
   assert(obj == rax, "obj must be in rax, for cmpxchg");
   assert_different_registers(obj, len, t1, t2, klass);
 
@@ -300,11 +300,13 @@ void C1_MacroAssembler::allocate_array(Register obj, Register len, Register t1, 
   initialize_header(obj, klass, len, t1, t2);
 
   // clear rest of allocated space
-  const Register len_zero = len;
-  // Align-up to word boundary, because we clear the 4 bytes potentially
-  // following the length field in initialize_header().
-  int base_offset = align_up(base_offset_in_bytes, BytesPerWord);
-  initialize_body(obj, arr_size, base_offset, len_zero);
+  if (zero_array) {
+    const Register len_zero = len;
+    // Align-up to word boundary, because we clear the 4 bytes potentially
+    // following the length field in initialize_header().
+    int base_offset = align_up(base_offset_in_bytes, BytesPerWord);
+    initialize_body(obj, arr_size, base_offset, len_zero);
+  }
 
   if (CURRENT_ENV->dtrace_alloc_probes()) {
     assert(obj == rax, "must be");
