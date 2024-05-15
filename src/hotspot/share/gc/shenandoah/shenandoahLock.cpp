@@ -58,16 +58,16 @@ static float random_delay_nanos(float max_nanos) {
 // Enforce exponentially longer decays for successive collisions on lock access.
 // Requested delay is random value between (0, max_delay)
 
-#define BaselineDelayNanos  32768     // Start with max_delay equal to ~33 microseconds * decay_factor
+#define BaselineDelayNanos  16384     // Start with max_delay equal to ~16 microseconds * decay_factor
 #define MinimumDelayNanos    4096     // Delay no less than   ~4 microseconds
-#define MaximumDelayNanos  262144     // Delay no more than ~262 microseconds
+#define MaximumDelayNanos  262144     // Delay no more than  ~262 microseconds
 
 // Multiply the decay_factor by the BaselineDelayNanos, subject to limits imposed by MinimumDelayNanos and MaximumumDelayNanos.
 // With InitialDecayFactor = 1.0625, decay_factor progresses through:
 //   1.0625, 1.1289, 1.1995, 1.2744, 1.3541, 1.4387, 1.5286, 1.6242, 1.7257, 1.8335, 1.9481, 2.0699, 2.1993, 2.3367, 2.4828, ...
 
 #define InitialDecayFactor 1.0625
-#define YieldRetries            0
+#define YieldRetries            2
 
 template<typename BlockOp>
 void ShenandoahLock::contended_lock_internal(JavaThread* java_thread) {
