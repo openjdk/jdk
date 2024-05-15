@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import jdk.test.lib.process.ProcessTools;
 
 /*
  * @test
- * @bug 8214230
+ * @bug 8214230 8327181
  * @key intermittent
  * @summary Test that jlinks generates reproducible modules files
  * @library /test/lib
