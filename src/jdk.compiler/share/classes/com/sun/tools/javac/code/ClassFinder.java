@@ -256,18 +256,23 @@ public class ClassFinder {
             long newFlags = 0;
             try {
                 ModuleSymbol owningModule = packge.modle;
-                if (owningModule == syms.noModule && jrtIndex != null && jrtIndex.isInJRT(c.classfile)) {
-                    JRTIndex.CtSym ctSym = jrtIndex.getCtSym(packge.flatName());
-                    Profile minProfile = Profile.DEFAULT;
-                    if (ctSym.proprietary)
-                        newFlags |= PROPRIETARY;
-                    if (ctSym.minProfile != null)
-                        minProfile = Profile.lookup(ctSym.minProfile);
-                    if (profile != Profile.DEFAULT && minProfile.value > profile.value) {
-                        newFlags |= NOT_IN_PROFILE;
+                if (owningModule == syms.noModule) {
+                    if (jrtIndex != null && jrtIndex.isInJRT(c.classfile)) {
+                        JRTIndex.CtSym ctSym = jrtIndex.getCtSym(packge.flatName());
+                        Profile minProfile = Profile.DEFAULT;
+                        if (ctSym.proprietary)
+                            newFlags |= PROPRIETARY;
+                        if (ctSym.minProfile != null)
+                            minProfile = Profile.lookup(ctSym.minProfile);
+                        if (profile != Profile.DEFAULT && minProfile.value > profile.value) {
+                            newFlags |= NOT_IN_PROFILE;
+                        }
                     }
                 } else if (owningModule.name == names.jdk_unsupported) {
                     newFlags |= PROPRIETARY;
+                } else {
+                    // don't accumulate user modules in supplementaryFlags
+                    return 0;
                 }
             } catch (IOException ignore) {
             }
