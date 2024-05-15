@@ -77,7 +77,6 @@ public:
 class PhaseOutput : public Phase {
 private:
   // Instruction bits passed off to the VM
-  int                    _method_size;           // Size of nmethod code segment in bytes
   CodeBuffer             _code_buffer;           // Where the code is assembled
   int                    _first_block_size;      // Size of unvalidated entry point code / OSR poison code
   ExceptionHandlerTable  _handler_table;         // Table of native-code exception handlers
@@ -166,7 +165,6 @@ public:
   void install();
 
   // Instruction bits passed off to the VM
-  int               code_size()                 { return _method_size; }
   CodeBuffer*       code_buffer()               { return &_code_buffer; }
   int               first_block_size()          { return _first_block_size; }
   void              set_frame_complete(int off) { if (!in_scratch_emit_size()) { _code_offsets.set_value(CodeOffsets::Frame_Complete, off); } }

@@ -147,12 +147,17 @@ void MemTracker::report(bool summary_only, outputStream* output, size_t scale) {
 void MemTracker::tuning_statistics(outputStream* out) {
   // NMT statistics
   out->print_cr("Native Memory Tracking Statistics:");
-  out->print_cr("State: %s", NMTUtil::tracking_level_to_string(_tracking_level));
-  out->print_cr("Malloc allocation site table size: %d", MallocSiteTable::hash_buckets());
-  out->print_cr("             Tracking stack depth: %d", NMT_TrackingStackDepth);
-  out->cr();
-  MallocSiteTable::print_tuning_statistics(out);
-  out->cr();
+  out->print_cr("State: %s",
+                NMTUtil::tracking_level_to_string(_tracking_level));
+  if (_tracking_level == NMT_detail) {
+    out->print_cr("Malloc allocation site table size: %d",
+                  MallocSiteTable::hash_buckets());
+    out->print_cr("             Tracking stack depth: %d",
+                  NMT_TrackingStackDepth);
+    out->cr();
+    MallocSiteTable::print_tuning_statistics(out);
+    out->cr();
+  }
   out->print_cr("Preinit state:");
   NMTPreInit::print_state(out);
   MallocLimitHandler::print_on(out);
