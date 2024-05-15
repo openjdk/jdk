@@ -226,7 +226,7 @@ public class MulticastSocket extends DatagramSocket {
      *             <b>int</b> instead of <b>byte</b> as the type for ttl.
      * @see #getTTL()
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "1.2")
     public void setTTL(byte ttl) throws IOException {
         delegate().setTTL(ttl);
     }
@@ -271,7 +271,7 @@ public class MulticastSocket extends DatagramSocket {
      * which returns an <b>int</b> instead of a <b>byte</b>.
      * @see #setTTL(byte)
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "1.2")
     public byte getTTL() throws IOException {
         return delegate().getTTL();
     }
@@ -561,7 +561,7 @@ public class MulticastSocket extends DatagramSocket {
      * @see SecurityManager#checkMulticast(java.net.InetAddress, byte)
      * @see SecurityManager#checkConnect
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "1.4")
     public void send(DatagramPacket p, byte ttl)
         throws IOException {
         delegate().send(p, ttl);
