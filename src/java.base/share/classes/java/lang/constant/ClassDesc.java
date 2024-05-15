@@ -207,9 +207,6 @@ public sealed interface ClassDesc
      */
     default ClassDesc arrayType(int rank) {
         if (rank <= 1) {
-            if (rank == 1) {
-                return arrayType();
-            }
             throw new IllegalArgumentException("rank " + rank + " is not a positive value");
         }
         String desc = descriptorString();
