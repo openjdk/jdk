@@ -394,6 +394,7 @@ public class Indify {
             if (!findPatternMethods())  return false;
             if (!find_patternMethods()) return false;  //TODO: this is temporary and will be merged with old method once fully implemented
             assert constants.size() == new_constants.size(); //TODO: to be removed after getting rid of old implementation
+            assert indySignatures.size() == new_indySignatures.size();
             Pool pool = cf.pool;
             //for (Constant c : cp)  System.out.println("  # "+c);
             for (Method m : cf.methods) {
