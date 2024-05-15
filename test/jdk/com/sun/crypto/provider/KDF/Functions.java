@@ -44,11 +44,11 @@ public class Functions {
         var expectedPrk = HexFormat.of().parseHex("077709362c2e32df0ddc3f0dc47bba6390b6c73bb50f9c3122ec844ad7c2b3e5");
         var expectedOkm = HexFormat.of().parseHex("3cb25f25faacd57a90434f64d0362f2a2d2d0a90cf1a5a4c5db02d56ecc4c5bf34007208d5b887185865");
 
-        var extractOnly = HKDFParameterSpec.buildExtract().addIKM(ikm).addSalt(salt).extractOnly();
+        var extractOnly = HKDFParameterSpec.ofExtract().addIKM(ikm).addSalt(salt).extractOnly();
         var prk = kdf.deriveKey("PRK", extractOnly);
         var expandOnly = HKDFParameterSpec.expandOnly(prk, info, len);
         var okm1 = kdf.deriveKey("OKM", expandOnly);
-        var extractAndExpand = HKDFParameterSpec.buildExtract().addIKM(ikm).addSalt(salt).thenExpand(info, len);
+        var extractAndExpand = HKDFParameterSpec.ofExtract().addIKM(ikm).addSalt(salt).thenExpand(info, len);
         var okm2 = kdf.deriveKey("OKM", extractAndExpand);
 
         if (!Arrays.equals(prk.getEncoded(), expectedPrk)) {
@@ -61,9 +61,9 @@ public class Functions {
             throw new Exception();
         }
 
-        test(HKDFParameterSpec.buildExtract().extractOnly());
-        test(HKDFParameterSpec.buildExtract().thenExpand(new byte[0], 32));
-        test(HKDFParameterSpec.buildExtract().addIKM(ikm).addSalt(new byte[0]).extractOnly());
+        test(HKDFParameterSpec.ofExtract().extractOnly());
+        test(HKDFParameterSpec.ofExtract().thenExpand(new byte[0], 32));
+        test(HKDFParameterSpec.ofExtract().addIKM(ikm).addSalt(new byte[0]).extractOnly());
     }
 
     static void test(HKDFParameterSpec p) throws Exception {

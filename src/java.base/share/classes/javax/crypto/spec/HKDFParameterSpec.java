@@ -52,7 +52,7 @@ import java.util.List;
  * {@snippet lang = java:
  *
  * KDFParameterSpec kdfParameterSpec =
- *             HKDFParameterSpec.buildExtract()
+ *             HKDFParameterSpec.ofExtract()
  *                              .addIKM(ikmPart1)
  *                              .addIKM(ikmPart2)
  *                              .addSalt(salt).extractOnly();
@@ -68,7 +68,7 @@ import java.util.List;
  * {@snippet lang = java:
  *
  * KDFParameterSpec kdfParameterSpec =
- *             HKDFParameterSpec.buildExtract()
+ *             HKDFParameterSpec.ofExtract()
  *                              .addIKM(ikm)
  *                              .addSalt(salt).thenExpand(info, 42);
  *
@@ -80,8 +80,15 @@ import java.util.List;
 public interface HKDFParameterSpec extends KDFParameterSpec {
 
     /**
-     * This builder helps with the mutation required by the {@code Extract}
-     * scenario.
+     * This {@code Builder} builds {@code Extract} and {@code ExtractThenExpand}
+     * objects.
+     * <p>
+     * The {@code Builder} is initialized via the {@code ofExtract} method of
+     * {@code HKDFParameterSpec}. As stated in the class description,
+     * {@code addIKM} and/or {@code addSalt} may be called as needed. Finally,
+     * the object is "built" by calling either {@code extractOnly} or
+     * {@code thenExpand} for {@code Extract} and {@code ExtractThenExpand}
+     * use-cases respectively.
      */
     @PreviewFeature(feature = PreviewFeature.Feature.KEY_DERIVATION)
     final class Builder {
@@ -268,7 +275,7 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
      *
      * @return a {@code Builder} to mutate
      */
-    static Builder buildExtract() {
+    static Builder ofExtract() {
         return new Builder().createBuilder();
     }
 
