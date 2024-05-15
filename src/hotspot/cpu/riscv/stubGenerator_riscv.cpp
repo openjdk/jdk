@@ -5265,6 +5265,8 @@ class StubGenerator: public StubCodeGenerator {
     __ sub(len, len, nmax);
     __ sub(count, nmax, 16);
     __ bltz(len, L_by16);
+
+  __ bind(L_nmax_loop_entry);
     __ sub(count, count, 32);
 
   __ bind(L_nmax_loop);
@@ -5286,7 +5288,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ sub(len, len, nmax);
     __ sub(count, nmax, 16);
-    __ bgez(len, L_nmax_loop);
+    __ bgez(len, L_nmax_loop_entry);
 
   __ bind(L_by16);
     __ add(len, len, count);
