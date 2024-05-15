@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2016, the original author or authors.
+ * Copyright (c) 2002-2016, the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -20,6 +20,7 @@ public class UndoTree<T> {
     private final Node parent;
     private Node current;
 
+    @SuppressWarnings("this-escape")
     public UndoTree(Consumer<T> s) {
         state = s;
         parent = new Node(null);
@@ -71,5 +72,4 @@ public class UndoTree<T> {
             state = s;
         }
     }
-
 }

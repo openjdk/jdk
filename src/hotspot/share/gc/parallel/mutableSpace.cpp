@@ -167,10 +167,6 @@ void MutableSpace::mangle_unused_area() {
   mangler()->mangle_unused_area();
 }
 
-void MutableSpace::mangle_unused_area_complete() {
-  mangler()->mangle_unused_area_complete();
-}
-
 void MutableSpace::mangle_region(MemRegion mr) {
   SpaceMangler::mangle_region(mr);
 }
