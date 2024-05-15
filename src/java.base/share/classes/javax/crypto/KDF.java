@@ -346,8 +346,8 @@ public final class KDF {
     }
 
     /**
-     * Creates an instance of the {@code KDF} object using a supplied
-     * {@code Provider} instance.
+     * Returns a {@code KDF} object that implements the specified algorithm from
+     * the specified provider and is initialized with the specified parameters.
      *
      * @param algorithm
      *     the key derivation algorithm to use
