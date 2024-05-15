@@ -37,7 +37,7 @@ import java.util.function.Function;
  * @bug 8328528
  * @summary test the long typed parallel iv replacing transformation for int counted loop
  * @library /test/lib /
- * @run main compiler.c2.irTests.TestCountedLoopIV
+ * @run main compiler.loopopts.parallel_iv.TestParallelIvInIntCountedLoop
  */
 public class TestParallelIvInIntCountedLoop {
     public static void main(String[] args) {
@@ -116,7 +116,7 @@ public class TestParallelIvInIntCountedLoop {
     private static int testIntCountedLoopWithIntIVWithStrideTwo(int stop) {
         int a = 0;
         for (int i = 0; i < stop; i += 2) {
-            a += 2; // this stride2 constant must be multiple of the first stride (i += ...) for optimization
+            a += 2; // this stride2 constant must be a multiple of the first stride (i += ...) for optimization
         }
 
         return a;
@@ -200,7 +200,7 @@ public class TestParallelIvInIntCountedLoop {
     private static long testIntCountedLoopWithLongIVWithStrideTwo(int stop) {
         long a = 0;
         for (int i = 0; i < stop; i += 2) {
-            a += 1;
+            a += 2;
         }
 
         return a;
@@ -235,7 +235,7 @@ public class TestParallelIvInIntCountedLoop {
             test(TestParallelIvInIntCountedLoop::testIntCountedLoopWithIntIVMax, i, i * Integer.MAX_VALUE);
             test(TestParallelIvInIntCountedLoop::testIntCountedLoopWithIntIVMaxMinusOne, i, i * (Integer.MAX_VALUE - 1));
             test(TestParallelIvInIntCountedLoop::testIntCountedLoopWithIntIVMaxPlusOne, i, i * (Integer.MAX_VALUE + 1));
-            test(TestParallelIvInIntCountedLoop::testIntCountedLoopWithIntIVWithStrideTwo, i, i);
+            test(TestParallelIvInIntCountedLoop::testIntCountedLoopWithIntIVWithStrideTwo, i, Math.ceilDiv(i, 2) * 2);
             test(TestParallelIvInIntCountedLoop::testIntCountedLoopWithIntIVWithStrideMinusOne, i, i);
 
             test(TestParallelIvInIntCountedLoop::testIntCountedLoopWithLongIV, i, (long) i);
@@ -243,7 +243,7 @@ public class TestParallelIvInIntCountedLoop {
             test(TestParallelIvInIntCountedLoop::testIntCountedLoopWithLongIVMax, i, (long) i * Long.MAX_VALUE);
             test(TestParallelIvInIntCountedLoop::testIntCountedLoopWithLongIVMaxMinusOne, i, (long) i * (Long.MAX_VALUE - 1));
             test(TestParallelIvInIntCountedLoop::testIntCountedLoopWithLongIVMaxPlusOne, i, (long) i * (Long.MAX_VALUE + 1));
-            test(TestParallelIvInIntCountedLoop::testIntCountedLoopWithLongIVWithStrideTwo, i, (long) i);
+            test(TestParallelIvInIntCountedLoop::testIntCountedLoopWithLongIVWithStrideTwo, i, Math.ceilDiv(i, (long) 2) * 2);
             test(TestParallelIvInIntCountedLoop::testIntCountedLoopWithLongIVWithStrideMinusOne, i, (long) i);
         }
     }
