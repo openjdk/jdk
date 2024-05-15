@@ -26,11 +26,6 @@
 #include "java.h"
 
 #define JAVA_DLL "libjava.so"
-#ifdef AIX
-#define LD_LIBRARY_PATH "LIBPATH"
-#else
-#define LD_LIBRARY_PATH "LD_LIBRARY_PATH"
-#endif
 
 /*
  * Find the last occurrence of a string
@@ -130,12 +125,12 @@ LibjavaExists(const char *path)
 
 /*
  * Retrieves the path to the JRE home by locating libjava.so in
- * one of the LD_LIBRARY_PATH and then truncating the path to it.
+ * one of the LIBPATH and then truncating the path to it.
  */
 jboolean
 GetApplicationHomeFromLibpath(char *buf, jint bufsize)
 {
-    char *env = getenv(LD_LIBRARY_PATH);
+    char *env = getenv("LIBPATH");
     char *tmp;
     char *save_ptr = NULL;
     char *envpath = JLI_StringDup(env);
