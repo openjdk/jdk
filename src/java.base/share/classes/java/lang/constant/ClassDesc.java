@@ -206,7 +206,7 @@ public sealed interface ClassDesc
      * @jvms 4.4.1 The CONSTANT_Class_info Structure
      */
     default ClassDesc arrayType(int rank) {
-        if (rank <= 1) {
+        if (rank <= 0) {
             throw new IllegalArgumentException("rank " + rank + " is not a positive value");
         }
         String desc = descriptorString();
