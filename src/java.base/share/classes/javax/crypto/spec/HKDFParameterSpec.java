@@ -321,8 +321,8 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
         }
 
         /**
-         * Returns an unmodifiable {@code List} of input key material
-         * values.
+         * Returns an unmodifiable {@code List} of input key material values in
+         * the order they were added.
          *
          * @return the unmodifiable {@code List} of input key material values
          */
@@ -331,7 +331,8 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
         }
 
         /**
-         * Returns an unmodifiable {@code List} of salt values.
+         * Returns an unmodifiable {@code List} of salt values in the order they
+         * were added.
          *
          * @return the unmodifiable {@code List} of salt values
          */
@@ -448,8 +449,8 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
         }
 
         /**
-         * Returns an unmodifiable {@code List} of input key material
-         * values.
+         * Returns an unmodifiable {@code List} of input key material values in
+         * the order they were added.
          *
          * @return the input key material values
          */
@@ -458,7 +459,8 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
         }
 
         /**
-         * Returns an unmodifiable {@code List} of salt values.
+         * Returns an unmodifiable {@code List} of salt values in the order they
+         * were added.
          *
          * @return the salt values
          */
