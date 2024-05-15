@@ -367,7 +367,7 @@ public interface ObjectReference extends Value {
         throws IncompatibleThreadStateException;
 
     /**
-     * Returns an {@link ThreadReference} for the platform thread, if any,
+     * Returns a {@link ThreadReference} for the platform thread, if any,
      * which currently owns this object's monitor.
      * See {@link ThreadReference#ownedMonitors} for a definition
      * of ownership.

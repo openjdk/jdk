@@ -2874,7 +2874,7 @@ JDWP "Java(tm) Debug Wire Protocol"
                         "if not explicitly requested."
 
                      (int requestID
-                             "Request that generated event (or 0 if this "
+                             "Request that generated event, or 0 if this "
                              "event is automatically generated.")
                         (threadObject thread "Initial thread")
                     )
