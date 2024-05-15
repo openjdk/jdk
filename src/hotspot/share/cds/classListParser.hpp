@@ -132,7 +132,7 @@ private:
 public:
   static void parse_classlist(const char* classlist_path, ParseMode parse_mode, TRAPS) {
     ClassListParser parser(classlist_path, parse_mode);
-    parser.parse(THREAD); // returns the number of classes loaded.
+    parser.parse(THREAD);
   }
 
   static bool is_parsing_thread();

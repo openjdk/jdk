@@ -108,7 +108,7 @@ void ClassListParser::parse(TRAPS) {
     clean_up_input_line();
 
     // Each line in the classlist can be one of three forms:
-    if (*_line == '#') {
+    if (_line[0] == '#') {
       // A comment; ignore it
     } else if (_line[0] == '@') {
       // @xxx - a tag like @lambda-proxy, to be parsed by parse_at_tags()
