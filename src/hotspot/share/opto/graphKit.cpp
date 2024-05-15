@@ -1468,6 +1468,9 @@ Node* GraphKit::must_be_not_null(Node* value, bool do_replace_in_map) {
   Node* opaq = _gvn.transform(new Opaque4Node(C, tst, intcon(1)));
   IfNode *iff = new IfNode(control(), opaq, PROB_MAX, COUNT_UNKNOWN);
   _gvn.set_type(iff, iff->Value(&_gvn));
+  if (!tst->is_Con()) {
+    record_for_igvn(iff);
+  }
   Node *if_f = _gvn.transform(new IfFalseNode(iff));
   Node *frame = _gvn.transform(new ParmNode(C->start(), TypeFunc::FramePtr));
   Node* halt = _gvn.transform(new HaltNode(if_f, frame, "unexpected null in intrinsic"));
