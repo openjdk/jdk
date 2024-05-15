@@ -996,9 +996,6 @@ HeapWord* ShenandoahHeap::allocate_new_gclab(size_t min_size,
   return res;
 }
 
-
-// is_promotion is true iff this allocation is known for sure to hold the result of young-gen evacuation
-// to old-gen.  plab allocates are not known as such, since they may hold old-gen evacuations.
 HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
   intptr_t pacer_epoch = 0;
   bool in_new_region = false;
@@ -1045,7 +1042,6 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
       log_debug(gc, alloc)("Thread: %s, Result: " PTR_FORMAT ", Request: %s, Size: " SIZE_FORMAT ", Original: " SIZE_FORMAT ", Latest: " SIZE_FORMAT,
                            Thread::current()->name(), p2i(result), req.type_string(), req.size(), original_count, get_gc_no_progress_count());
     }
-
   } else {
     assert(req.is_gc_alloc(), "Can only accept GC allocs here");
     result = allocate_memory_under_lock(req, in_new_region);
@@ -1498,7 +1494,8 @@ void ShenandoahHeap::gclabs_retire(bool resize) {
 
 // Returns size in bytes
 size_t ShenandoahHeap::unsafe_max_tlab_alloc(Thread *thread) const {
-  // Return the max allowed size, and let the allocation path figure out the safe size for current allocation.
+  // Return the max allowed size, and let the allocation path
+  // figure out the safe size for current allocation.
   return ShenandoahHeapRegion::max_tlab_size_bytes();
 }
 
@@ -2085,18 +2082,18 @@ uint ShenandoahHeap::max_workers() {
 void ShenandoahHeap::stop() {
   // The shutdown sequence should be able to terminate when GC is running.
 
-  // Step 1. Notify policy to disable event recording and prevent visiting gc threads during shutdown
+  // Step 0. Notify policy to disable event recording.
   _shenandoah_policy->record_shutdown();
 
-  // Step 2. Notify control thread that we are in shutdown.
+  // Step 1. Notify control thread that we are in shutdown.
   // Note that we cannot do that with stop(), because stop() is blocking and waits for the actual shutdown.
   // Doing stop() here would wait for the normal GC cycle to complete, never falling through to cancel below.
   control_thread()->prepare_for_graceful_shutdown();
 
-  // Step 3. Notify GC workers that we are cancelling GC.
+  // Step 2. Notify GC workers that we are cancelling GC.
   cancel_gc(GCCause::_shenandoah_stop_vm);
 
-  // Step 4. Wait until GC worker exits normally.
+  // Step 3. Wait until GC worker exits normally.
   control_thread()->stop();
 }
 
@@ -2665,7 +2662,6 @@ void ShenandoahHeap::flush_liveness_cache(uint worker_id) {
   assert(worker_id < _max_workers, "sanity");
   assert(_liveness_cache != nullptr, "sanity");
   ShenandoahLiveData* ld = _liveness_cache[worker_id];
-
   for (uint i = 0; i < num_regions(); i++) {
     ShenandoahLiveData live = ld[i];
     if (live > 0) {
