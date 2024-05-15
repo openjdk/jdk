@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,32 +19,31 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_UTILITY_ATTRIBUTENORETURN_HPP
-#define SHARE_UTILITY_ATTRIBUTENORETURN_HPP
+/*
+ * @test
+ * @bug 8189778
+ * @summary Test JavadocHelper
+ * @library /tools/lib
+ * @modules jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.main
+ *          jdk.compiler/jdk.internal.shellsupport.doc
+ * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask
+ * @run testng/timeout=900/othervm -Xmx1024m FullJavadocHelperTest
+ */
 
-// Provide a (temporary) macro for the [[noreturn]] attribute.
-//
-// Unfortunately, some older (though still in use) compilers have bugs when
-// using [[noreturn]].  For them we use an empty definition for the attribute.
-//
-// Note: This can't be placed in globalDefinitions_xxx.hpp because the
-// attribute is used in debug.hpp, which can't include globalDefinitions.hpp.
+import java.io.IOException;
 
-// clang 12 (and possibly prior) crashes during build if we use [[noreturn]]
-// for assertion failure reporting functions.  The problem seems to be fixed
-// in clang 13.
-#ifdef __clang__
-#if __clang_major__ < 13
-#define ATTRIBUTE_NORETURN
-#endif
-#endif
+import org.testng.annotations.Test;
 
-// All other platforms can use [[noreturn]].
-#ifndef ATTRIBUTE_NORETURN
-#define ATTRIBUTE_NORETURN [[noreturn]]
-#endif
+@Test
+public class FullJavadocHelperTest {
 
-#endif // SHARE_UTILITY_ATTRIBUTENORETURN_HPP
+    /*
+     * Long-running test to retrieve doc comments for enclosed elements of all JDK classes.
+     */
+    public void testAllDocs() throws IOException {
+        new JavadocHelperTest().retrieveDocComments(Boolean.TRUE::booleanValue);
+    }
+}
