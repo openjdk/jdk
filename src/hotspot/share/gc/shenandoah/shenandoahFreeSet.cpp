@@ -46,7 +46,8 @@ static const char* partition_name(ShenandoahFreeSetPartitionId t) {
   }
 }
 
-void ShenandoahRegionPartitions::dump_bitmap_all() const {
+#ifndef PRODUCT
+void ShenandoahRegionPartitions::dump_bitmap() const {
   log_info(gc)("Mutator range [" SSIZE_FORMAT ", " SSIZE_FORMAT "], Collector range [" SSIZE_FORMAT ", " SSIZE_FORMAT "]",
                _leftmosts[int(ShenandoahFreeSetPartitionId::Mutator)],
                _rightmosts[int(ShenandoahFreeSetPartitionId::Mutator)],
@@ -63,11 +64,11 @@ void ShenandoahRegionPartitions::dump_bitmap_all() const {
   dump_bitmap_range(0, _max-1);
 }
 
-void ShenandoahRegionPartitions::dump_bitmap_range(idx_t start_idx, idx_t end_idx) const {
-  assert((start_idx >= 0) && (start_idx < (idx_t) _max), "precondition");
-  assert((end_idx >= 0) && (end_idx < (idx_t) _max), "precondition");
-  idx_t aligned_start = _membership[int(ShenandoahFreeSetPartitionId::Mutator)].aligned_index(start_idx);
-  idx_t aligned_end = _membership[int(ShenandoahFreeSetPartitionId::Mutator)].aligned_index(end_idx);
+void ShenandoahRegionPartitions::dump_bitmap_range(idx_t start_region_idx, idx_t end_region_idx) const {
+  assert((start_region_idx >= 0) && (start_region_idx < (idx_t) _max), "precondition");
+  assert((end_region_idx >= 0) && (end_region_idx < (idx_t) _max), "precondition");
+  idx_t aligned_start = _membership[int(ShenandoahFreeSetPartitionId::Mutator)].aligned_index(start_region_idx);
+  idx_t aligned_end = _membership[int(ShenandoahFreeSetPartitionId::Mutator)].aligned_index(end_region_idx);
   idx_t alignment = _membership[int(ShenandoahFreeSetPartitionId::Mutator)].alignment();
   while (aligned_start <= aligned_end) {
     dump_bitmap_row(aligned_start);
@@ -75,9 +76,9 @@ void ShenandoahRegionPartitions::dump_bitmap_range(idx_t start_idx, idx_t end_id
   }
 }
 
-void ShenandoahRegionPartitions::dump_bitmap_row(idx_t idx) const {
-  assert((idx >= 0) && (idx < (idx_t) _max), "precondition");
-  idx_t aligned_idx = _membership[int(ShenandoahFreeSetPartitionId::Mutator)].aligned_index(idx);
+void ShenandoahRegionPartitions::dump_bitmap_row(idx_t region_idx) const {
+  assert((region_idx >= 0) && (region_idx < (idx_t) _max), "precondition");
+  idx_t aligned_idx = _membership[int(ShenandoahFreeSetPartitionId::Mutator)].aligned_index(region_idx);
   uintx mutator_bits = _membership[int(ShenandoahFreeSetPartitionId::Mutator)].bits_at(aligned_idx);
   uintx collector_bits = _membership[int(ShenandoahFreeSetPartitionId::Collector)].bits_at(aligned_idx);
   uintx free_bits = mutator_bits | collector_bits;
@@ -85,6 +86,7 @@ void ShenandoahRegionPartitions::dump_bitmap_row(idx_t idx) const {
   log_info(gc)(SSIZE_FORMAT_W(6) ": " SIZE_FORMAT_X_0 " 0x" SIZE_FORMAT_X_0 " 0x" SIZE_FORMAT_X_0,
                aligned_idx, mutator_bits, collector_bits, notfree_bits);
 }
+#endif
 
 ShenandoahRegionPartitions::ShenandoahRegionPartitions(size_t max_regions, ShenandoahFreeSet* free_set) :
     _max(max_regions),

@@ -88,10 +88,11 @@ private:
                                                                 ssize_t low_idx, ssize_t high_idx);
   inline void expand_interval_if_boundary_modified(ShenandoahFreeSetPartitionId partition, ssize_t idx, size_t capacity);
 
-  void dump_bitmap_row(ssize_t idx) const;
-  void dump_bitmap_range(ssize_t start_idx, ssize_t end_idx) const;
-  void dump_bitmap_all() const;
-
+#ifndef PRODUCT
+  void dump_bitmap_row(ssize_t region_idx) const;
+  void dump_bitmap_range(ssize_t start_region_idx, ssize_t end_region_idx) const;
+  void dump_bitmap() const;
+#endif
 public:
   ShenandoahRegionPartitions(size_t max_regions, ShenandoahFreeSet* free_set);
   ~ShenandoahRegionPartitions() {}
