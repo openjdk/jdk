@@ -66,8 +66,8 @@ public class TestLineCommentOption extends JavadocTester {
     // Markdown content in line comments.
     @Test
     public void testNoOption(Path base) throws Exception {
-        // for now, use a dummy option
-        // in the future, this could be a test for -Xlint:dangling-comment
+        // use a dummy option
+        // note that we cannot use -Xlint:dangling-doc-comments in javadoc
         test(base, "-XDdummy", "Line comment");
         // in the future, check for diagnostic output about a dangling comment
     }
