@@ -740,11 +740,6 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
   PhaseGVN gvn;
   set_initial_gvn(&gvn);
 
-  if (StressLCM || StressGCM || StressIGVN || StressCCP ||
-      StressIncrementalInlining || StressMacroExpansion || StressBailout) {
-    initialize_stress_seed(directive);
-  }
-
   print_inlining_init();
   { // Scope for timing the parser
     TracePhase tp("parse", &timers[_t_parser]);
@@ -848,6 +843,11 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
 
   if (failing())  return;
   NOT_PRODUCT( verify_graph_edges(); )
+
+  if (StressLCM || StressGCM || StressIGVN || StressCCP ||
+      StressIncrementalInlining || StressMacroExpansion) {
+    initialize_stress_seed(directive);
+  }
 
   // Now optimize
   Optimize();
