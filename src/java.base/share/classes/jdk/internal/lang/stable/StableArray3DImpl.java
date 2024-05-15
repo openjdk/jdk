@@ -2,36 +2,33 @@ package jdk.internal.lang.stable;
 
 import jdk.internal.lang.StableArray3D;
 import jdk.internal.lang.StableValue;
+import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
 import java.util.Objects;
-
-import static jdk.internal.lang.stable.StableUtil.newGenericArray;
 
 public record StableArray3DImpl<V>(
         @Stable int dim0,
         @Stable int dim1,
         @Stable int dim2,
-        @Stable V[] elements,
-        AuxiliaryArrays aux
+        @Stable StableValueImpl<V>[] elements
 ) implements StableArray3D<V> {
 
     private StableArray3DImpl(int dim0, int dim1, int dim2) {
-        this(dim0, dim1, dim2, Math.multiplyExact(Math.multiplyExact(dim0, dim1), dim2));
+        this(dim0, dim1, dim2, StableUtil.newStableValueArray(Math.multiplyExact(Math.multiplyExact(dim0, dim1), dim2)));
     }
 
-    // Todo: Remove when "statements before super" is a final feature
-    private StableArray3DImpl(int dim0, int dim1, int dim2, int length) {
-        this(dim0, dim1, dim2, newGenericArray(length), AuxiliaryArrays.create(length));
-    }
-
+    @ForceInline
     @Override
     public StableValue<V> get(int i0, int i1, int i2) {
         Objects.checkIndex(i0, dim0);
         Objects.checkIndex(i1, dim1);
         Objects.checkIndex(i2, dim2);
         final int index = i0 * dim1 * dim2 + i1 * dim2 + i2;
-        return new StableValueElement<>(elements, index, aux);
+        StableValueImpl<V> stable = elements[index];
+        return stable == null
+                ? StableUtil.getOrSetVolatile(elements, index)
+                : stable;
     }
 
     @Override

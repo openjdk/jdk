@@ -34,6 +34,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
 import static jdk.internal.lang.stable.StableUtil.*;
@@ -241,6 +242,82 @@ public final class StableValueImpl<V> implements StableValue<V> {
         }
     }
 
+    @ForceInline
+    public V computeIfUnset(int index, IntFunction<? extends V> mapper) {
+        return computeIfUnsetShared(mapper, index);
+    }
+
+    @ForceInline
+    public <K> V computeIfUnset(K key, Function<? super K, ? extends V> mapper) {
+        return computeIfUnsetShared(mapper, key);
+    }
+
+    @ForceInline
+    private <K> V computeIfUnsetShared(Object provider, K key) {
+        // Optimistically try plain semantics first
+        final V v = value;
+        if (v != null) {
+            // If we happen to see a non-null value under
+            // plain semantics, we know a value is set.
+            return v;
+        }
+        if (state == NULL) {
+            return null;
+        }
+        // Now, fall back to volatile semantics.
+        return computeIfUnsetVolatile(provider, key);
+    }
+
+    @DontInline
+    private <K> V computeIfUnsetVolatile(Object provider, K key) {
+        // This is intentionally an old switch statement as it generates
+        // more compact byte code.
+        switch (stateVolatile()) {
+            case UNSET:    { return computeIfUnsetVolatile0(provider, key); }
+            case NON_NULL: { return valueVolatile(); }
+            case NULL:     { return null; }
+            case ERROR:    { throw StableUtil.error(this); }
+        }
+        throw shouldNotReachHere();
+    }
+
+    private <K> V computeIfUnsetVolatile0(Object provider, K key) {
+        final var m = acquireMutex();
+        if (isMutexNotNeeded(m)) {
+            return orThrow();
+        }
+        synchronized (m) {
+            if (state != UNSET) {
+                return orThrow();
+            }
+
+            // A value is not set
+            if (supplying) {
+                throw stackOverflow(provider, key);
+            }
+            try {
+                supplying = true;
+                try {
+                    @SuppressWarnings("unchecked")
+                    V newValue = switch (provider) {
+                        case Supplier<?> sup     -> (V) sup.get();
+                        case IntFunction<?> iFun -> (V) iFun.apply((int) key);
+                        case Function<?, ?> func -> ((Function<K, V>) func).apply(key);
+                        default                  -> throw shouldNotReachHere();
+                    };
+                    setValue(newValue);
+                    return newValue;
+                } catch (Throwable t) {
+                    putState(ERROR);
+                    putMutex(t.getClass());
+                    throw t;
+                }
+            } finally {
+                supplying = false;
+            }
+        }
+    }
+
     private static final Function<Object, String> ERROR_MESSAGE_EXTRACTOR = new Function<Object, String>() {
         @Override
         public String apply(Object stableValue) {
@@ -306,7 +383,7 @@ public final class StableValueImpl<V> implements StableValue<V> {
 
     // Factories
 
-    public static <V> StableValue<V> of() {
+    public static <V> StableValueImpl<V> of() {
         return new StableValueImpl<>();
     }
 

@@ -42,10 +42,11 @@ import java.util.function.UnaryOperator;
 import jdk.internal.access.JavaUtilCollectionAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.lang.StableValue;
-import jdk.internal.lang.stable.AuxiliaryArrays;
-import jdk.internal.lang.stable.StableValueElement;
+import jdk.internal.lang.stable.StableUtil;
+import jdk.internal.lang.stable.StableValueImpl;
 import jdk.internal.misc.CDS;
 import jdk.internal.util.ImmutableBitSetPredicate;
+import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
 /**
@@ -1452,21 +1453,22 @@ class ImmutableCollections {
         @Stable
         private int size;
         @Stable
-        private final V[] elements;
-        @Stable
-        private final AuxiliaryArrays aux;
+        private final StableValueImpl<V>[] elements;
 
         private StableList(int size) {
             assert size > 0;
-            this.elements = newGenericArray(size);
             this.size = size;
-            this.aux = AuxiliaryArrays.create(size);
+            this.elements = StableUtil.newStableValueArray(size);
         }
 
+        @ForceInline
         @Override
-        public StableValue<V> get(int index) {
+        public StableValueImpl<V> get(int index) {
             Objects.checkIndex(index, size);
-            return new StableValueElement<>(elements, index, aux);
+            StableValueImpl<V> stable = elements[index];
+            return stable == null
+                    ? StableUtil.getOrSetVolatile(elements, index)
+                    : stable;
         }
 
         @Override
@@ -1499,8 +1501,8 @@ class ImmutableCollections {
         }
 
         V computeIfUnset(int index, IntFunction<? extends V> mapper) {
-            StableValueElement<V> element = new StableValueElement<>(elements, index, aux);
-            return element.computeIfUnset(index, mapper);
+            StableValueImpl<V> stable = get(index);
+            return stable.computeIfUnset(index, mapper);
         }
 
         static <V> List<StableValue<V>> create(int size) {
@@ -1524,12 +1526,8 @@ class ImmutableCollections {
         @Stable
         private final K[] keys;
         @Stable
-        private final V[] values;
-        @Stable
-        private final AuxiliaryArrays aux;
+        private final StableValueImpl<V>[] elements;
 
-        // keys array not trusted
-        @SuppressWarnings("unchecked")
         StableMap(Object[] inKeys) {
             assert inKeys.length > 0;
             this.size = inKeys.length;
@@ -1552,8 +1550,7 @@ class ImmutableCollections {
                 }
             }
             this.keys = keys;
-            this.values = newGenericArray(len);
-            this.aux = AuxiliaryArrays.create(len);
+            this.elements = StableUtil.newStableValueArray(len);
         }
 
         // returns index at which the probe key is present; or if absent,
@@ -1579,8 +1576,12 @@ class ImmutableCollections {
             }
         }
 
+        @ForceInline
         private StableValue<V> value(int keyIndex) {
-            return new StableValueElement<>(values, keyIndex, aux);
+            StableValueImpl<V> stable = elements[keyIndex];
+            return stable == null
+                    ? StableUtil.getOrSetVolatile(elements, keyIndex)
+                    : stable;
         }
 
         @Override
@@ -1599,6 +1600,7 @@ class ImmutableCollections {
             return false;
         }
 
+        @ForceInline
         @Override
         public StableValue<V> get(Object key) {
             int i = probe(key);
@@ -1683,7 +1685,7 @@ class ImmutableCollections {
 
         @Override
         public V computeIfUnset(K key, Function<? super K, ? extends V> mapper) {
-           StableValueElement<V> element = (StableValueElement<V>) get(key);
+           StableValueImpl<V> element = (StableValueImpl<V>) get(key);
            if (element == null) {
                throw noKey(key);
            }
@@ -1701,9 +1703,7 @@ class ImmutableCollections {
             implements Map<K, StableValue<V>>, ComputeIfUnsetMap<K, V> {
 
         @Stable
-        private int size;
-        @Stable
-        private final V[] elements;
+        private final int size;
         @Stable
         private final Class<K> enumType;
         @Stable
@@ -1711,9 +1711,8 @@ class ImmutableCollections {
         @Stable
         private final IntPredicate isPresent;
         @Stable
-        private final AuxiliaryArrays aux;
+        private final StableValueImpl<V>[] elements;
 
-        @SuppressWarnings("unchecked")
         private StableEnumMap(EnumSet<K> keys) {
             assert !keys.isEmpty();
 
@@ -1737,10 +1736,11 @@ class ImmutableCollections {
             }
             this.isPresent = ImmutableBitSetPredicate.of(bs);
 
-            this.elements = newGenericArray(elementCount);
+            this.elements = StableUtil.newStableValueArray(elementCount);
             this.size = keys.size();
-            this.enumType = (Class<K>) keys.iterator().next().getClass();
-            this.aux = AuxiliaryArrays.create(elementCount);
+            @SuppressWarnings("unchecked")
+            Class<K> enumType0 = (Class<K>)keys.iterator().next().getClass();
+            this.enumType = enumType0;
         }
 
         @Override
@@ -1748,7 +1748,7 @@ class ImmutableCollections {
             Objects.requireNonNull(o);
             int arrayIndex;
             return enumType.isInstance(o) &&
-                    (arrayIndex = arrayIndex(o)) >= 0 && arrayIndex < size &&
+                    (arrayIndex = arrayIndex(o)) >= 0 && arrayIndex < size() &&
                     isPresent.test(arrayIndex);
         }
 
@@ -1762,15 +1762,20 @@ class ImmutableCollections {
             return false;
         }
 
+        @ForceInline
         @Override
-        public StableValue<V> get(Object key) {
+        public StableValueImpl<V> get(Object key) {
             return containsKey(key)
                     ? value(arrayIndex(key))
                     : null;
         }
 
-        private StableValue<V> value(int index) {
-            return new StableValueElement<>(elements, index, aux);
+        @ForceInline
+        private StableValueImpl<V> value(int index) {
+            StableValueImpl<V> stable = elements[index];
+            return stable == null
+                    ? StableUtil.getOrSetVolatile(elements, index)
+                    : stable;
         }
 
         private K key(int arrayIndex) {
@@ -1795,7 +1800,7 @@ class ImmutableCollections {
                 remaining = size;
                 // pick an even starting index in the [0, keys.length)
                 // range randomly based on SALT32L
-                idx = (int) ((SALT32L * (elements.length)) >>> 32);
+                idx = (int) ((SALT32L * size) >>> 32);
             }
 
             @Override
@@ -1806,12 +1811,12 @@ class ImmutableCollections {
             private int nextIndex() {
                 int idx = this.idx;
                 if (REVERSE) {
-                    if ((++idx) >= elements.length) {
+                    if ((++idx) >= size) {
                         idx = 0;
                     }
                 } else {
                     if ((--idx) < 0) {
-                        idx = elements.length - 1;
+                        idx = size - 1;
                     }
                 }
                 return this.idx = idx;
@@ -1860,7 +1865,7 @@ class ImmutableCollections {
 
         @Override
         public V computeIfUnset(K key, Function<? super K, ? extends V> mapper) {
-            StableValueElement<V> element = (StableValueElement<V>) get(key);
+            StableValueImpl<V> element = get(key);
             if (element == null) {
                 throw noKey(key);
             }

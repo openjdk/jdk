@@ -2,34 +2,31 @@ package jdk.internal.lang.stable;
 
 import jdk.internal.lang.StableArray2D;
 import jdk.internal.lang.StableValue;
+import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
 import java.util.Objects;
 
-import static jdk.internal.lang.stable.StableUtil.newGenericArray;
-
 public record StableArray2DImpl<V>(
         @Stable int dim0,
         @Stable int dim1,
-        @Stable V[] elements,
-        AuxiliaryArrays aux
+        @Stable StableValueImpl<V>[] elements
 ) implements StableArray2D<V> {
 
     private StableArray2DImpl(int dim0, int dim1) {
-        this(dim0, dim1, Math.multiplyExact(dim0, dim1));
+        this(dim0, dim1, StableUtil.newStableValueArray(Math.multiplyExact(dim0, dim1)));
     }
 
-    // Todo: Remove when "statements before super" is a final feature
-    private StableArray2DImpl(int dim0, int dim1, int length) {
-        this(dim0, dim1, newGenericArray(length), AuxiliaryArrays.create(length));
-    }
-
+    @ForceInline
     @Override
     public StableValue<V> get(int i0, int i1) {
         Objects.checkIndex(i0, dim0);
         Objects.checkIndex(i1, dim1);
         final int index = i0 * dim0 + i1;
-        return new StableValueElement<>(elements, index, aux);
+        StableValueImpl<V> stable = elements[index];
+        return stable == null
+                ? StableUtil.getOrSetVolatile(elements, index)
+                : stable;
     }
 
     @Override

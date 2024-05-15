@@ -27,6 +27,7 @@ package jdk.internal.lang.stable;
 
 import jdk.internal.lang.StableValue;
 import jdk.internal.misc.Unsafe;
+import jdk.internal.vm.annotation.DontInline;
 
 import java.util.NoSuchElementException;
 import java.util.function.Function;
@@ -38,7 +39,7 @@ import static jdk.internal.misc.Unsafe.*;
 /**
  * Package private utility class for stable values & collections.
  */
-final class StableUtil {
+public final class StableUtil {
 
     private StableUtil() {}
 
@@ -132,8 +133,25 @@ final class StableUtil {
     }
 
     @SuppressWarnings("unchecked")
-    static <V> V[] newGenericArray(int length) {
-        return (V[]) new Object[length];
+    public static <V> StableValueImpl<V>[] newStableValueArray(int length) {
+        return (StableValueImpl<V>[]) new StableValueImpl<?>[length];
+    }
+
+    @SuppressWarnings("unchecked")
+    @DontInline
+    public static <V> StableValueImpl<V> getOrSetVolatile(StableValue<V>[] elements, int index) {
+        final class Holder {
+            private static final Unsafe UNSAFE = Unsafe.getUnsafe();
+        }
+        long offset = Unsafe.ARRAY_OBJECT_BASE_OFFSET + Unsafe.ARRAY_OBJECT_INDEX_SCALE * (long) index;
+        StableValueImpl<V> stable = (StableValueImpl<V>)Holder.UNSAFE.getReferenceVolatile(elements, offset);
+        if (stable == null) {
+            stable = StableValueImpl.of();
+            StableValueImpl<V> witness = (StableValueImpl<V>)
+                    Holder.UNSAFE.compareAndExchangeReference(elements, offset, null, stable);
+            return witness == null ? stable: witness;
+        }
+        return stable;
     }
 
 }

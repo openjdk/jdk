@@ -26,7 +26,6 @@
 package jdk.internal.lang;
 
 import jdk.internal.lang.stable.StableAccess;
-import jdk.internal.lang.stable.StableValueElement;
 import jdk.internal.lang.stable.StableValueImpl;
 import jdk.internal.lang.stable.TrustedFieldType;
 
@@ -39,7 +38,6 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ThreadFactory;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
@@ -72,7 +70,7 @@ import java.util.function.Supplier;
  */
 public sealed interface StableValue<V>
         extends TrustedFieldType
-        permits StableValueElement, StableValueImpl {
+        permits StableValueImpl {
 
     /**
      * {@return the set value (nullable) if set, otherwise throws

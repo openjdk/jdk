@@ -2,25 +2,27 @@ package jdk.internal.lang.stable;
 
 import jdk.internal.lang.StableArray;
 import jdk.internal.lang.StableValue;
+import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
 import java.util.Objects;
 
-import static jdk.internal.lang.stable.StableUtil.newGenericArray;
-
 public record StableArrayImpl<V>(
-        @Stable V[] elements,
-        AuxiliaryArrays aux
+        @Stable StableValueImpl<V>[] elements
 ) implements StableArray<V> {
 
     private StableArrayImpl(int length) {
-        this(newGenericArray(length), AuxiliaryArrays.create(length));
+        this(StableUtil.newStableValueArray(length));
     }
 
+    @ForceInline
     @Override
     public StableValue<V> get(int firstIndex) {
         Objects.checkIndex(firstIndex, elements.length);
-        return new StableValueElement<>(elements, firstIndex, aux);
+        StableValueImpl<V> stable = elements[firstIndex];
+        return stable == null
+                ? StableUtil.getOrSetVolatile(elements, firstIndex)
+                : stable;
     }
 
     @Override
