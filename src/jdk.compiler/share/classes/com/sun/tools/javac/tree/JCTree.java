@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,6 +104,10 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         /** Import clauses, of type Import.
          */
         IMPORT,
+
+        /** Module import clauses.
+         */
+        MODULEIMPORT,
 
         /** Class definitions, of type ClassDef.
          */
@@ -268,10 +272,6 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         /** Literals, of type Literal.
          */
         LITERAL,
-
-        /** String template expression.
-         */
-        STRING_TEMPLATE,
 
         /** Basic type identifiers, of type TypeIdent.
          */
@@ -589,11 +589,11 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         }
 
         @DefinedBy(Api.COMPILER_TREE)
-        public List<JCImport> getImports() {
-            ListBuffer<JCImport> imports = new ListBuffer<>();
+        public List<JCImportBase> getImports() {
+            ListBuffer<JCImportBase> imports = new ListBuffer<>();
             for (JCTree tree : defs) {
-                if (tree.hasTag(IMPORT))
-                    imports.append((JCImport)tree);
+                if (tree instanceof JCImportBase imp)
+                    imports.append(imp);
                 else if (!tree.hasTag(PACKAGEDEF) && !tree.hasTag(SKIP))
                     break;
             }
@@ -612,7 +612,9 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
             List<JCTree> typeDefs;
             for (typeDefs = defs; !typeDefs.isEmpty(); typeDefs = typeDefs.tail) {
                 if (!typeDefs.head.hasTag(MODULEDEF)
-                        && !typeDefs.head.hasTag(PACKAGEDEF) && !typeDefs.head.hasTag(IMPORT)) {
+                        && !typeDefs.head.hasTag(PACKAGEDEF)
+                        && !typeDefs.head.hasTag(IMPORT)
+                        && !typeDefs.head.hasTag(MODULEIMPORT)) {
                     break;
                 }
             }
@@ -665,10 +667,22 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         }
     }
 
+    public static abstract class JCImportBase extends JCTree implements ImportTree {
+
+        @DefinedBy(Api.COMPILER_TREE)
+        public Kind getKind() { return Kind.IMPORT; }
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public <R,D> R accept(TreeVisitor<R,D> v, D d) {
+            return v.visitImport(this, d);
+        }
+
+        public abstract JCTree getQualifiedIdentifier();
+    }
+
     /**
      * An import clause.
      */
-    public static class JCImport extends JCTree implements ImportTree {
+    public static class JCImport extends JCImportBase {
         public boolean staticImport;
         /** The imported class(es). */
         public JCFieldAccess qualid;
@@ -683,7 +697,34 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         @DefinedBy(Api.COMPILER_TREE)
         public boolean isStatic() { return staticImport; }
         @DefinedBy(Api.COMPILER_TREE)
+        public boolean isModule() { return false; }
+        @DefinedBy(Api.COMPILER_TREE)
         public JCFieldAccess getQualifiedIdentifier() { return qualid; }
+
+        @Override
+        public Tag getTag() {
+            return IMPORT;
+        }
+    }
+
+    /**
+     * A module import clause.
+     */
+    public static class JCModuleImport extends JCImportBase {
+        /** The module name. */
+        public JCExpression module;
+        protected JCModuleImport(JCExpression module) {
+            this.module = module;
+        }
+        @Override
+        public void accept(Visitor v) { v.visitModuleImport(this); }
+
+        @DefinedBy(Api.COMPILER_TREE)
+        public boolean isStatic() { return false; }
+        @DefinedBy(Api.COMPILER_TREE)
+        public boolean isModule() { return true; }
+        @DefinedBy(Api.COMPILER_TREE)
+        public JCExpression getQualifiedIdentifier() { return module; }
 
         @DefinedBy(Api.COMPILER_TREE)
         public Kind getKind() { return Kind.IMPORT; }
@@ -694,7 +735,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
 
         @Override
         public Tag getTag() {
-            return IMPORT;
+            return MODULEIMPORT;
         }
     }
 
@@ -2482,59 +2523,6 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
     }
 
     /**
-     * String template expression.
-     */
-    public static class JCStringTemplate extends JCExpression implements StringTemplateTree {
-        public JCExpression processor;
-        public List<String> fragments;
-        public List<JCExpression> expressions;
-        public Type processMethodType;
-
-        protected JCStringTemplate(JCExpression processor,
-                                   List<String> fragments,
-                                   List<JCExpression> expressions) {
-            this.processor = processor;
-            this.fragments = fragments;
-            this.expressions = expressions;
-        }
-
-        @Override
-        public ExpressionTree getProcessor() {
-            return processor;
-        }
-
-        @Override
-        public List<String> getFragments() {
-            return fragments;
-        }
-
-        @Override
-        public List<? extends ExpressionTree> getExpressions() {
-            return expressions;
-        }
-
-        @Override @DefinedBy(Api.COMPILER_TREE)
-        public Kind getKind() {
-            return Kind.TEMPLATE;
-        }
-
-        @Override @DefinedBy(Api.COMPILER_TREE)
-        public Tag getTag() {
-            return STRING_TEMPLATE;
-        }
-
-        @Override @DefinedBy(Api.COMPILER_TREE)
-        public void accept(Visitor v) {
-            v.visitStringTemplate(this);
-        }
-
-        @Override @DefinedBy(Api.COMPILER_TREE)
-        public <R, D> R accept(TreeVisitor<R, D> v, D d) {
-            return v.visitStringTemplate(this, d);
-        }
-    }
-
-    /**
      * An array selection
      */
     public static class JCArrayAccess extends JCExpression implements ArrayAccessTree {
@@ -3513,9 +3501,6 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         JCFieldAccess Select(JCExpression selected, Name selector);
         JCIdent Ident(Name idname);
         JCLiteral Literal(TypeTag tag, Object value);
-        JCStringTemplate StringTemplate(JCExpression processor,
-                                        List<String> fragments,
-                                        List<JCExpression> expressions);
         JCPrimitiveTypeTree TypeIdent(TypeTag typetag);
         JCArrayTypeTree TypeArray(JCExpression elemtype);
         JCTypeApply TypeApply(JCExpression clazz, List<JCExpression> arguments);
@@ -3540,6 +3525,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public void visitTopLevel(JCCompilationUnit that)    { visitTree(that); }
         public void visitPackageDef(JCPackageDecl that)      { visitTree(that); }
         public void visitImport(JCImport that)               { visitTree(that); }
+        public void visitModuleImport(JCModuleImport that)   { visitTree(that); }
         public void visitClassDef(JCClassDecl that)          { visitTree(that); }
         public void visitMethodDef(JCMethodDecl that)        { visitTree(that); }
         public void visitVarDef(JCVariableDecl that)         { visitTree(that); }
@@ -3587,7 +3573,6 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public void visitReference(JCMemberReference that)   { visitTree(that); }
         public void visitIdent(JCIdent that)                 { visitTree(that); }
         public void visitLiteral(JCLiteral that)             { visitTree(that); }
-        public void visitStringTemplate(JCStringTemplate that) { visitTree(that); }
         public void visitTypeIdent(JCPrimitiveTypeTree that) { visitTree(that); }
         public void visitTypeArray(JCArrayTypeTree that)     { visitTree(that); }
         public void visitTypeApply(JCTypeApply that)         { visitTree(that); }

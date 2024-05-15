@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -486,8 +486,8 @@ class NativeMovConstReg: public NativeInstruction {
   // Patch narrow oop constant in code stream.
   void set_narrow_oop(intptr_t data);
   void set_narrow_klass(intptr_t data);
-  void set_pcrel_addr(intptr_t addr, CompiledMethod *nm = nullptr);
-  void set_pcrel_data(intptr_t data, CompiledMethod *nm = nullptr);
+  void set_pcrel_addr(intptr_t addr, nmethod *nm = nullptr);
+  void set_pcrel_data(intptr_t data, nmethod *nm = nullptr);
 
   void verify();
 

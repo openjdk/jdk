@@ -553,6 +553,7 @@ private:
   void add_node(MemNode* n, GrowableArray<int>& memory_pred_edges);
   int depth(const Node* n) const { return _depths.at(_body.bb_idx(n)); }
   void set_depth(const Node* n, int d) { _depths.at_put(_body.bb_idx(n), d); }
+  int find_max_pred_depth(const Node* n) const;
   void compute_depth();
   NOT_PRODUCT( void print() const; )
 

@@ -38,6 +38,7 @@
 #include "compiler/compilerEvent.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "compiler/directivesParser.hpp"
+#include "gc/shared/memAllocator.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "jvm.h"
 #include "jfr/jfrEvents.hpp"
@@ -1376,11 +1377,10 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
 
   if (osr_bci == InvocationEntryBci) {
     // standard compilation
-    CompiledMethod* method_code = method->code();
-    if (method_code != nullptr && method_code->is_nmethod()
-                      && (compile_reason != CompileTask::Reason_DirectivesChanged)) {
+    nmethod* method_code = method->code();
+    if (method_code != nullptr && (compile_reason != CompileTask::Reason_DirectivesChanged)) {
       if (compilation_is_complete(method, osr_bci, comp_level)) {
-        return (nmethod*) method_code;
+        return method_code;
       }
     }
     if (method->is_not_compilable(comp_level)) {
@@ -1397,6 +1397,7 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
   assert(!HAS_PENDING_EXCEPTION, "No exception should be present");
   // some prerequisites that are compiler specific
   if (comp->is_c2() || comp->is_jvmci()) {
+    InternalOOMEMark iom(THREAD);
     method->constants()->resolve_string_constants(CHECK_AND_CLEAR_NONASYNC_NULL);
     // Resolve all classes seen in the signature of the method
     // we are compiling.
@@ -1481,12 +1482,7 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
   // return requested nmethod
   // We accept a higher level osr method
   if (osr_bci == InvocationEntryBci) {
-    CompiledMethod* code = method->code();
-    if (code == nullptr) {
-      return (nmethod*) code;
-    } else {
-      return code->as_nmethod_or_null();
-    }
+    return method->code();
   }
   return method->lookup_osr_nmethod_for(osr_bci, comp_level, false);
 }
@@ -1511,7 +1507,7 @@ bool CompileBroker::compilation_is_complete(const methodHandle& method,
     if (method->is_not_compilable(comp_level)) {
       return true;
     } else {
-      CompiledMethod* result = method->code();
+      nmethod* result = method->code();
       if (result == nullptr) return false;
       return comp_level == result->comp_level();
     }
@@ -1555,7 +1551,7 @@ bool CompileBroker::compilation_is_prohibited(const methodHandle& method, int os
 
   // The method may be explicitly excluded by the user.
   double scale;
-  if (excluded || (CompilerOracle::has_option_value(method, CompileCommand::CompileThresholdScaling, scale) && scale == 0)) {
+  if (excluded || (CompilerOracle::has_option_value(method, CompileCommandEnum::CompileThresholdScaling, scale) && scale == 0)) {
     bool quietly = CompilerOracle::be_quiet();
     if (PrintCompilation && !quietly) {
       // This does not happen quietly...
@@ -1799,7 +1795,7 @@ bool CompileBroker::init_compiler_runtime() {
 void CompileBroker::free_buffer_blob_if_allocated(CompilerThread* thread) {
   BufferBlob* blob = thread->get_buffer_blob();
   if (blob != nullptr) {
-    blob->purge(true /* free_code_cache_data */, true /* unregister_nmethod */);
+    blob->purge();
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     CodeCache::free(blob);
   }
@@ -2132,7 +2128,8 @@ static void post_compilation_event(EventCompilation& event, CompileTask* task) {
                                         task->is_success(),
                                         task->osr_bci() != CompileBroker::standard_entry_bci,
                                         task->nm_total_size(),
-                                        task->num_inlined_bytecodes());
+                                        task->num_inlined_bytecodes(),
+                                        task->arena_bytes());
 }
 
 int DirectivesStack::_depth = 0;

@@ -110,7 +110,7 @@ public class Flags {
     public static final int ACC_VARARGS  = 0x0080;
     public static final int ACC_MODULE   = 0x8000;
 
-    /*****************************************
+    /* ***************************************
      * Internal compiler flags (no bits in the lower 16).
      *****************************************/
 
@@ -278,7 +278,7 @@ public class Flags {
      */
     public static final long THROWS = 1L<<47;
 
-    /**
+    /*
      * Currently available: Bit 48.
      */
 
