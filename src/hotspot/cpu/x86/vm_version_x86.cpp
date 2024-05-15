@@ -1002,6 +1002,13 @@ void VM_Version::get_processor_features() {
     }
   }
 
+  if (UseAPX && (UseAVX < 3)) {
+    if (!FLAG_IS_DEFAULT(UseAPX)) {
+        warning("UseAPX is only available when UseAVX > 2");
+    }
+    FLAG_SET_DEFAULT(UseAPX, false);
+  }
+
   if (FLAG_IS_DEFAULT(IntelJccErratumMitigation)) {
     _has_intel_jcc_erratum = compute_has_intel_jcc_erratum();
   } else {
