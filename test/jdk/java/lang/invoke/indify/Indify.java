@@ -790,7 +790,7 @@ public class Indify {
                         if (mark == 'J') {
                             int classIndex = ((FieldInstruction) instruction).field().owner().index();
                             int nameIndex = ((FieldInstruction) instruction).field().name().index();
-                            String name = ((Utf8Entry) bytecode.pool.entryByIndex(nameIndex)).stringValue();
+                            String name = ((Utf8Entry) bytecode.classModel.constantPool().entryByIndex(nameIndex)).stringValue();
                             if ("TYPE".equals(name)) {
                                 String wrapperName = ((ClassEntry) pool.entryByIndex(classIndex)).name().stringValue().replace('/', '.');
                                 //Primitive type descriptor
@@ -823,7 +823,7 @@ public class Indify {
                         boolean hasRecv = (bc != INVOKESTATIC);
                         int methi = ((InvokeInstruction) instruction).method().index();
                         char mark = poolMarks[methi];
-                        MemberRefEntry ref = (MemberRefEntry) bytecode.pool.entryByIndex(methi);
+                        MemberRefEntry ref = (MemberRefEntry) bytecode.classModel.constantPool().entryByIndex(methi);
                         String methClass = ref.owner().name().stringValue();
                         String methType = ref.nameAndType().type().stringValue();
                         String methName = ref.nameAndType().name().stringValue();
@@ -1570,13 +1570,13 @@ public class Indify {
         }
         //New implementation using the CP API and will be merged once  fully tested
         List<Object[]> bootstrap_MethodSpecifiers(boolean createIfNotFound){
-            int count = bytecode.pool.bootstrapMethodCount();
+            int count = bytecode.classModel.constantPool().bootstrapMethodCount();
             List<Object[]> specs = new ArrayList<>();
 
             for (int i = 0; i < count; i++) {
-                int bsmRef = bytecode.pool.bootstrapMethodEntry(i).bsmIndex();
+                int bsmRef = bytecode.classModel.constantPool().bootstrapMethodEntry(i).bsmIndex();
                 List<LoadableConstantEntry> bsmArgs = new ArrayList<>();
-                for (LoadableConstantEntry lce : bytecode.pool.bootstrapMethodEntry(i).arguments()){
+                for (LoadableConstantEntry lce : bytecode.classModel.constantPool().bootstrapMethodEntry(i).arguments()){
                     bsmArgs.add(lce);
 
                 }
@@ -1752,13 +1752,7 @@ public class Indify {
             }
         }
         public ClassModel classModel;
-        public int magicNumber, classFileVersion, accessFlags;
-        public ClassEntry thisClass, superClass;
-        public final List<MethodModel>  methods = new ArrayList<>();
-        public final List<FieldModel>   fields = new ArrayList<>();
-        public final List<Attribute<?>> attributes = new ArrayList<>();
-        public final List<ClassEntry>   interfaces = new ArrayList<>();
-        public ConstantPool pool;
+
         public ConstantPoolBuilder poolBuilder; // will be used to construct the new Constant pool
 
         public void parseFrom(byte[] bytes) throws IOException {
@@ -1780,12 +1774,7 @@ public class Indify {
             }
 
             classModel = of().parse(bytes);
-            pool = classModel.constantPool();
             poolBuilder = ConstantPoolBuilder.of(classModel);
-
-            magicNumber = MAGIC_NUMBER;
-            classFileVersion = classModel.majorVersion();
-            accessFlags = classModel.flags().flagsMask();
         }
     }
 
