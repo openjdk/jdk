@@ -187,7 +187,7 @@ public sealed interface ClassDesc
                     "Cannot create an array type descriptor with more than " +
                     MAX_ARRAY_TYPE_DESC_DIMENSIONS + " dimensions");
         }
-        String newDesc = new StringBuilder(desc.length() + 1).append('[').append(desc).toString();
+        String newDesc = "[".concat(desc);
         if (desc.length() == 1 && desc.charAt(0) == 'V') {
             throw new IllegalArgumentException("not a valid reference type descriptor: " + newDesc);
         }
