@@ -35,6 +35,7 @@ import javax.crypto.spec.SecretKeySpec;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.security.ProviderException;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidParameterSpecException;
 import java.util.ArrayList;
@@ -154,8 +155,10 @@ abstract class HkdfKeyDerivation extends KDFSpi {
                     + "key or salt material").initCause(ike);
             } catch (NoSuchAlgorithmException nsae) {
                 // This is bubbling up from the getInstance of the Mac/Hmac.
-                // Since we're defining these values internally, it should be
-                // safe to "eat" this NSAE.
+                // Since we're defining these values internally, it is unlikely.
+                throw new ProviderException(
+                    "could not instantiate a Mac with the provided algorithm",
+                    nsae);
             }
         } else if (kdfParameterSpec instanceof HKDFParameterSpec.Expand) {
             HKDFParameterSpec.Expand anExpand =
@@ -185,8 +188,10 @@ abstract class HkdfKeyDerivation extends KDFSpi {
                     + "key material").initCause(ike);
             } catch (NoSuchAlgorithmException nsae) {
                 // This is bubbling up from the getInstance of the Mac/Hmac.
-                // Since we're defining these values internally, it should be
-                // safe to "eat" this NSAE.
+                // Since we're defining these values internally, it is unlikely.
+                throw new ProviderException(
+                    "could not instantiate a Mac with the provided algorithm",
+                    nsae);
             }
         } else if (kdfParameterSpec instanceof HKDFParameterSpec.ExtractThenExpand) {
             HKDFParameterSpec.ExtractThenExpand anExtractThenExpand =
@@ -227,8 +232,10 @@ abstract class HkdfKeyDerivation extends KDFSpi {
                     + "the given key or salt material").initCause(ike);
             } catch (NoSuchAlgorithmException nsae) {
                 // This is bubbling up from the getInstance of the Mac/Hmac.
-                // Since we're defining these values internally, it should be
-                // safe to "eat" this NSAE.
+                // Since we're defining these values internally, it is unlikely.
+                throw new ProviderException(
+                    "could not instantiate a Mac with the provided algorithm",
+                    nsae);
             }
         }
         throw new InvalidParameterSpecException(
