@@ -85,6 +85,8 @@ abstract class HkdfKeyDerivation extends KDFSpi {
      *     if the information contained within the {@code KDFParameterSpec} is
      *     invalid or incorrect for the type of key to be derived, or specifies
      *     a type of output that is not a key (e.g. raw data)
+     * @throws IllegalArgumentException
+     *     if {@code alg} is {@code null} or empty
      */
     @Override
     protected SecretKey engineDeriveKey(String alg,
@@ -92,7 +94,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
         throws InvalidParameterSpecException {
 
         if (alg == null || alg.isEmpty()) {
-            throw new InvalidParameterSpecException(
+            throw new IllegalArgumentException(
                 "the algorithm for the resultant SecretKey may not be null or"
                 + " empty");
         }
