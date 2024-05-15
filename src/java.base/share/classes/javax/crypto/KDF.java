@@ -51,7 +51,18 @@ import java.util.Objects;
  * cases the PRF portion of the algorithm field may be omitted if the KDF
  * algorithm has a fixed or default PRF.
  * <p>
- * Example:
+ * If a provider is not specified in the {@code getInstance} method when
+ * instantiating a {@code KDF} object, the provider is selected the first time
+ * the {@code deriveKey} or {@code deriveData} method is called and a provider
+ * is chosen that supports the parameters passed to the {@code deriveKey} or
+ * {@code deriveData} method, for example the initial key material. However, if
+ * {@code getProviderName} is called before calling the {@code deriveKey} or
+ * {@code deriveData} methods, the first provider supporting the KDF algorithm
+ * is chosen which may not be the desired one; therefore it is recommended not
+ * to call {@code getProviderName} until after a key derivation operation. Once
+ * a provider is selected, it cannot be changed.
+ * <p>
+ * API Usage Example:
  * {@snippet lang = java:
  *    KDF kdfHkdf = KDF.getInstance("HKDFWithHmacSHA256");
  *
