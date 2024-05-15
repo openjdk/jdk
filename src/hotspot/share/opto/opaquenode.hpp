@@ -121,20 +121,20 @@ class Opaque3Node : public Node {
 // GraphKit::must_be_not_null().
 class Opaque4Node : public Node {
   public:
-  Opaque4Node(Compile* C, Node *tst, Node* final_tst) : Node(nullptr, tst, final_tst) {
+  Opaque4Node(Compile* C, Node* tst, Node* final_tst) : Node(nullptr, tst, final_tst) {
     init_class_id(Class_Opaque4);
     init_flags(Flag_is_macro);
     C->add_macro_node(this);
   }
 
   virtual int Opcode() const;
-  virtual const Type *bottom_type() const { return TypeInt::BOOL; }
   virtual const Type* Value(PhaseGVN* phase) const;
+  virtual const Type* bottom_type() const { return TypeInt::BOOL; }
 };
 
 // This node is used for Initialized Assertion Predicate BoolNodes. Initialized Assertion Predicates must always evaluate
-// to true. Therefore, we get rid of them in product builds as they are useless. In debug builds we keep them as
-// additional verification code (i.e. removing this node and use the BoolNode input instead).
+// to true. Therefore, we get rid of them in product builds during macro expansion as they are useless. In debug builds
+// we keep them as additional verification code (i.e. removing this node and use the BoolNode input instead).
 class OpaqueInitializedAssertionPredicateNode : public Node {
  public:
   OpaqueInitializedAssertionPredicateNode(BoolNode* bol, Compile* C) : Node(nullptr, bol) {
@@ -144,7 +144,6 @@ class OpaqueInitializedAssertionPredicateNode : public Node {
   }
 
   virtual int Opcode() const;
-  virtual Node* Identity(PhaseGVN* phase);
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual const Type* bottom_type() const { return TypeInt::BOOL; }
 };
