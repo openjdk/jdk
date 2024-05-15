@@ -168,9 +168,9 @@ public sealed interface StableValue<V>
     }
 
     /**
-     * {@return a fresh stable value with an unset value where the returned stable's
-     * value is computed in a separate background thread (created via the provided
-     * {@code threadFactory}) using the provided {@code supplier}}
+     * {@return a fresh stable value with an unset value where its value is computed in
+     * a separate background thread (created via the provided {@code threadFactory})
+     * using the provided {@code supplier}}
      * <p>
      * If the supplier throws an (unchecked) exception, the exception is forwarded to
      * the thread's {@linkplain Thread#getUncaughtExceptionHandler()} (if any) and no
