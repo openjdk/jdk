@@ -868,7 +868,7 @@ public final class ModuleBootstrap {
         } else if (value.equals("warn")) {
             return IllegalNativeAccess.WARN;
         } else {
-            fail("Value specified to --illegal-access not recognized:"
+            fail("Value specified to --illegal-native-access not recognized:"
                     + " '" + value + "'");
             return null;
         }
