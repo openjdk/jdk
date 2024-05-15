@@ -40,6 +40,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 
+import javax.lang.model.SourceVersion;
+
 /**
  * Describes a launch-able Java compilation unit.
  *
@@ -117,6 +119,7 @@ public record ProgramDescriptor(
             var names = new TreeSet<String>();
             stream.filter(ProgramDescriptor::containsAtLeastOneRegularFile)
                   .map(sourceRootPath::relativize)
+                  .filter(ProgramDescriptor::composedOfValidPackageNameElements)
                   .map(Path::toString)
                   .filter(string -> !string.isEmpty())
                   .map(string -> string.replace(File.separatorChar, '.'))
@@ -125,6 +128,17 @@ public record ProgramDescriptor(
         } catch (IOException exception) {
             throw new UncheckedIOException(exception);
         }
+    }
+
+    private static boolean composedOfValidPackageNameElements(Path path) {
+        if (path.getNameCount() == 0) return false;
+        for (var element : path) {
+            var name = element.toString();
+            if (!SourceVersion.isIdentifier(name)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static boolean containsAtLeastOneRegularFile(Path directory) {
