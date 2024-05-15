@@ -40,10 +40,10 @@ import java.security.spec.InvalidParameterSpecException;
  * cryptographic service provider who wishes to supply the implementation of a
  * particular key derivation algorithm.
  * <p>
- * The {@code deriveKey} and {@code deriveData} methods of {@code KDFSpi}
- * implementations must be thread-safe. That is, multiple threads may
- * concurrently invoke these methods on a single {@code KDFSpi} implementations
- * with no ill effects.
+ * A KDFSpi implementation must be immutable. The {@code deriveKey} and
+ * {@code deriveData} methods of {@code KDFSpi} implementations must be
+ * thread-safe. That is, multiple threads may concurrently invoke these methods
+ * on a single {@code KDFSpi} implementations with no ill effects.
  * <p>
  *
  * @see KDF
