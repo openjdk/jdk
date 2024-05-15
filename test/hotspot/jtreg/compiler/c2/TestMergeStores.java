@@ -1667,8 +1667,8 @@ public class TestMergeStores {
             a[offset + 0] = (byte)(v >> 0);  // Removed from candidate list
             a[offset + 1] = (byte)(v >> 8);  // Removed from candidate list
             a[offset + 2] = (byte)(v >> 16); // The 4 following stores are on the candidate list.
-            a[offset + 3] = (byte)(v >> 24); // They cannot be merged though because this would require shifting
-            a[offset + 4] = (byte)(v >> 32); // The input.
+            a[offset + 3] = (byte)(v >> 24); // The current logic does not merge them
+            a[offset + 4] = (byte)(v >> 32); // since it would require shifting the input.
             a[offset + 5] = (byte)(v >> 40);
         }
         return new Object[]{ a };
