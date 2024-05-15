@@ -15,6 +15,40 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<unitIdComponent type="and" values="and"/>
 		<unitIdComponent type="per" values="per"/>
     </unitIdComponents>
+    <unitPrefixes>
+		<unitPrefix type='quecto' symbol='q' power10='-30'/>
+		<unitPrefix type='ronto' symbol='r' power10='-27'/>
+		<unitPrefix type='yocto' symbol='y' power10='-24'/>
+		<unitPrefix type='zepto' symbol='z' power10='-21'/>
+		<unitPrefix type='atto' symbol='a' power10='-18'/>
+		<unitPrefix type='femto' symbol='f' power10='-15'/>
+		<unitPrefix type='pico' symbol='p' power10='-12'/>
+		<unitPrefix type='nano' symbol='n' power10='-9'/>
+		<unitPrefix type='micro' symbol='μ' power10='-6'/>
+		<unitPrefix type='milli' symbol='m' power10='-3'/>
+		<unitPrefix type='centi' symbol='c' power10='-2'/>
+		<unitPrefix type='deci' symbol='d' power10='-1'/>
+		<unitPrefix type='deka' symbol='da' power10='1'/>
+		<unitPrefix type='hecto' symbol='h' power10='2'/>
+		<unitPrefix type='kilo' symbol='k' power10='3'/>
+		<unitPrefix type='mega' symbol='M' power10='6'/>
+		<unitPrefix type='giga' symbol='G' power10='9'/>
+		<unitPrefix type='tera' symbol='T' power10='12'/>
+		<unitPrefix type='peta' symbol='P' power10='15'/>
+		<unitPrefix type='exa' symbol='E' power10='18'/>
+		<unitPrefix type='zetta' symbol='Z' power10='21'/>
+		<unitPrefix type='yotta' symbol='Y' power10='24'/>
+		<unitPrefix type='ronna' symbol='R' power10='27'/>
+		<unitPrefix type='quetta' symbol='Q' power10='30'/>
+		<unitPrefix type='kibi' symbol='Ki' power2='10'/>
+		<unitPrefix type='mebi' symbol='Mi' power2='20'/>
+		<unitPrefix type='gibi' symbol='Gi' power2='30'/>
+		<unitPrefix type='tebi' symbol='Ti' power2='40'/>
+		<unitPrefix type='pebi' symbol='Pi' power2='50'/>
+		<unitPrefix type='exbi' symbol='Ei' power2='60'/>
+		<unitPrefix type='zebi' symbol='Zi' power2='70'/>
+		<unitPrefix type='yobi' symbol='Yi' power2='80'/>
+	</unitPrefixes>
     <unitConstants>
         <unitConstant constant="lb_to_kg" value="0.45359237"/>
         <unitConstant constant="ft_to_m" value="0.3048"/>
@@ -308,6 +342,8 @@ For terms of use, see http://www.unicode.org/copyright.html
        
         <!-- speed -->
         <convertUnit source='knot' baseUnit='meter-per-second' factor='1852/3600' systems="ussystem uksystem si_acceptable"/>
+        <convertUnit source='beaufort' baseUnit='meter-per-second' special='beaufort' systems="metric_adjacent"/>
+
         
         <!-- magnetic-induction -->
         <convertUnit source='tesla' baseUnit='kilogram-per-square-second-ampere' systems='si metric prefixable'/>

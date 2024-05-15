@@ -438,7 +438,7 @@ public:
   virtual void doit() {
     // Setup GC id and active marker
     GCIdMark gc_id_mark(_gc_id);
-    IsGCActiveMark gc_active_mark;
+    IsSTWGCActiveMark gc_active_mark;
 
     // Verify before operation
     ZVerify::before_zoperation();
@@ -1323,7 +1323,7 @@ void ZGenerationOld::process_non_strong_references() {
 
   ClassUnloadingContext ctx(_workers.active_workers(),
                             true /* unregister_nmethods_during_purge */,
-                            true /* lock_codeblob_free_separately */);
+                            true /* lock_nmethod_free_separately */);
 
   // Unlink stale metadata and nmethods
   _unload.unlink();

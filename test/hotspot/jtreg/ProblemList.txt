@@ -111,7 +111,6 @@ runtime/StackGuardPages/TestStackGuardPagesNative.java 8303612 linux-all
 runtime/ErrorHandling/TestDwarf.java#checkDecoder 8305489 linux-all
 runtime/ErrorHandling/MachCodeFramesInErrorFile.java 8313315 linux-ppc64le
 runtime/cds/appcds/customLoader/HelloCustom_JFR.java 8241075 linux-all,windows-x64
-runtime/os/TestTransparentHugePageUsage.java 8324776 linux-all
 runtime/Thread/TestAlwaysPreTouchStacks.java 8324781 linux-all
 
 applications/jcstress/accessAtomic.java 8325984 generic-all
@@ -123,6 +122,7 @@ applications/jcstress/copy.java 8229852 linux-all
 
 containers/docker/TestJcmd.java 8278102 linux-all
 containers/docker/TestMemoryAwareness.java 8303470 linux-all
+containers/docker/TestJFREvents.java 8327723 linux-x64
 
 #############################################################################
 
@@ -132,8 +132,9 @@ serviceability/sa/sadebugd/DebugdConnectTest.java 8239062,8270326 macosx-x64,mac
 serviceability/sa/TestRevPtrsForInvokeDynamic.java 8241235 generic-all
 
 serviceability/jvmti/ModuleAwareAgents/ThreadStart/MAAThreadStart.java 8225354 windows-all
+serviceability/jvmti/vthread/GetThreadStateMountedTest/GetThreadStateMountedTest.java 8318090,8318729 generic-all
 serviceability/jvmti/vthread/GetSetLocalTest/GetSetLocalTest.java 8286836 generic-all
-serviceability/dcmd/gc/RunFinalizationTest.java 8227120 linux-all,windows-x64,aix-ppc64
+serviceability/dcmd/gc/RunFinalizationTest.java 8227120 generic-all
 
 serviceability/sa/ClhsdbCDSCore.java 8267433 macosx-x64
 serviceability/sa/ClhsdbFindPC.java#xcomp-core 8267433 macosx-x64

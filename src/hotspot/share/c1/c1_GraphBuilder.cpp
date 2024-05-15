@@ -1556,8 +1556,7 @@ void GraphBuilder::call_register_finalizer() {
 
 
 void GraphBuilder::method_return(Value x, bool ignore_return) {
-  if (RegisterFinalizersAtInit &&
-      method()->intrinsic_id() == vmIntrinsics::_Object_init) {
+  if (method()->intrinsic_id() == vmIntrinsics::_Object_init) {
     call_register_finalizer();
   }
 
@@ -2028,7 +2027,7 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
       receiver = state()->stack_at(index);
       ciType* type = receiver->exact_type();
       if (type != nullptr && type->is_loaded()) {
-        assert(!type->is_instance_klass() || !type->as_instance_klass()->is_interface(), "");
+        assert(!type->is_instance_klass() || !type->as_instance_klass()->is_interface(), "Must not be an interface");
         // Detects non-interface instances, primitive arrays, and some object arrays.
         // Array receivers can only call Object methods, so we should be able to allow
         // all object arrays here too, even those with unloaded types.

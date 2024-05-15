@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "gc/parallel/parMarkBitMap.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/collectorCounters.hpp"
+#include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/taskTerminator.hpp"
 #include "oops/oop.hpp"
 #include "runtime/atomic.hpp"
@@ -406,6 +407,10 @@ public:
   HeapWord* summarize_split_space(size_t src_region, SplitInfo& split_info,
                                   HeapWord* destination, HeapWord* target_end,
                                   HeapWord** target_next);
+
+  size_t live_words_in_space(const MutableSpace* space,
+                             HeapWord** full_region_prefix_end = nullptr);
+
   bool summarize(SplitInfo& split_info,
                  HeapWord* source_beg, HeapWord* source_end,
                  HeapWord** source_next,
@@ -922,15 +927,6 @@ class PSParallelCompact : AllStatic {
   static SpanSubjectToDiscoveryClosure  _span_based_discoverer;
   static ReferenceProcessor*  _ref_processor;
 
-  // Values computed at initialization and used by dead_wood_limiter().
-  static double _dwl_mean;
-  static double _dwl_std_dev;
-  static double _dwl_first_term;
-  static double _dwl_adjustment;
-#ifdef  ASSERT
-  static bool   _dwl_initialized;
-#endif  // #ifdef ASSERT
-
  public:
   static ParallelOldTracer* gc_tracer() { return &_gc_tracer; }
 
@@ -944,56 +940,22 @@ class PSParallelCompact : AllStatic {
   static void pre_compact();
   static void post_compact();
 
+  static bool reassess_maximum_compaction(bool maximum_compaction,
+                                          size_t total_live_words,
+                                          MutableSpace* const old_space,
+                                          HeapWord* full_region_prefix_end);
+
   // Mark live objects
   static void marking_phase(ParallelOldTracer *gc_tracer);
 
-  // Methods used to compute the dense prefix.
-
-  // Compute the value of the normal distribution at x = density.  The mean and
-  // standard deviation are values saved by initialize_dead_wood_limiter().
-  static inline double normal_distribution(double density);
-
-  // Initialize the static vars used by dead_wood_limiter().
-  static void initialize_dead_wood_limiter();
-
-  // Return the percentage of space that can be treated as "dead wood" (i.e.,
-  // not reclaimed).
-  static double dead_wood_limiter(double density, size_t min_percent);
-
-  // Find the first (left-most) region in the range [beg, end) that has at least
-  // dead_words of dead space to the left.  The argument beg must be the first
-  // region in the space that is not completely live.
-  static RegionData* dead_wood_limit_region(const RegionData* beg,
-                                            const RegionData* end,
-                                            size_t dead_words);
-
-  // Return a pointer to the first region in the range [beg, end) that is not
-  // completely full.
-  static RegionData* first_dead_space_region(const RegionData* beg,
-                                             const RegionData* end);
-
-  // Return a value indicating the benefit or 'yield' if the compacted region
-  // were to start (or equivalently if the dense prefix were to end) at the
-  // candidate region.  Higher values are better.
-  //
-  // The value is based on the amount of space reclaimed vs. the costs of (a)
-  // updating references in the dense prefix plus (b) copying objects and
-  // updating references in the compacted region.
-  static inline double reclaimed_ratio(const RegionData* const candidate,
-                                       HeapWord* const bottom,
-                                       HeapWord* const top,
-                                       HeapWord* const new_top);
-
-  // Compute the dense prefix for the designated space.
-  static HeapWord* compute_dense_prefix(const SpaceId id,
-                                        bool maximum_compaction);
+  // Identify the dense-fix in the old-space to avoid moving much memory with little reclaimed.
+  static HeapWord* compute_dense_prefix_for_old_space(MutableSpace* old_space,
+                                                      HeapWord* full_region_prefix_end);
 
   // Create a filler obj (if needed) right before the dense-prefix-boundary to
   // make the heap parsable.
   static void fill_dense_prefix_end(SpaceId id);
 
-  static void summarize_spaces_quick();
-  static void summarize_space(SpaceId id, bool maximum_compaction);
   static void summary_phase(bool maximum_compaction);
 
   // Adjust addresses in roots.  Does not adjust addresses in heap.

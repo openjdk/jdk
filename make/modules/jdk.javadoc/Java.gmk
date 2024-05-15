@@ -27,4 +27,4 @@
 # -Werror and all lint warnings enabled. In particular,
 # DISABLED_WARNINGS_java should not be augmented.
 
-COPY += .xml .css .svg .js .js.template .png .txt
+COPY += .xml .css .svg .js .js.template .png .txt .woff .woff2

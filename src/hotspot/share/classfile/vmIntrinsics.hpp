@@ -620,6 +620,9 @@ class methodHandle;
   do_intrinsic(_copyMemory,               jdk_internal_misc_Unsafe,     copyMemory_name, copyMemory_signature,         F_RN)     \
    do_name(     copyMemory_name,                                        "copyMemory0")                                           \
    do_signature(copyMemory_signature,                                   "(Ljava/lang/Object;JLjava/lang/Object;JJ)V")            \
+  do_intrinsic(_setMemory,                jdk_internal_misc_Unsafe,     setMemory_name,  setMemory_signature,          F_RN)     \
+   do_name(     setMemory_name,                                         "setMemory0")                                            \
+   do_signature(setMemory_signature,                                    "(Ljava/lang/Object;JJB)V")                              \
   do_intrinsic(_loadFence,                jdk_internal_misc_Unsafe,     loadFence_name, loadFence_signature,           F_R)      \
    do_name(     loadFence_name,                                         "loadFence")                                             \
    do_alias(    loadFence_signature,                                    void_method_signature)                                   \
