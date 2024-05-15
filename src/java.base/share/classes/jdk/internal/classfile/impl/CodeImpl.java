@@ -238,8 +238,8 @@ public final class CodeImpl
                 for (; p < pEnd; p += 4) {
                     int startPc = classReader.readU2(p);
                     if (startPc > codeLength) {
-                        throw new IllegalArgumentException(String.format("Line number out of range; start_pc=%d, codeLength=%d",
-                                                             startPc, codeLength));
+                        throw new IllegalArgumentException(String.format(
+                                "Line number start_pc out of range; start_pc=%d, codeLength=%d", startPc, codeLength));
                     }
                     int lineNumber = classReader.readU2(p + 2);
                     lineNumbers[startPc] = lineNumber;
