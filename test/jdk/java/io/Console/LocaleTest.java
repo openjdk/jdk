@@ -64,12 +64,7 @@ public class LocaleTest {
             if (oa.getExitValue() == -1) {
                 System.out.println("System.console() returns null. Ignoring the test.");
             } else {
-                var output = oa.asLines()
-                        // Workaround for JLine's weird behavior where it appends space+backspace
-                        // characters to the prompt in certain conditions.
-                        .stream()
-                        .map(line -> line.replaceFirst(" \b$", ""))
-                        .toList();
+                var output = oa.asLines();
                 var resultText =
                     """
                     Actual output: %s
