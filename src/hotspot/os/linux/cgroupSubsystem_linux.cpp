@@ -556,6 +556,70 @@ jlong CgroupSubsystem::memory_limit_in_bytes() {
   return mem_limit;
 }
 
+bool CgroupController::read_string_from_file(const char* filename, char** result) {
+  char res[1024];
+  bool ok = read_from_file<char*>(filename, "%1023s", res);
+  if (!ok) {
+    return false;
+  }
+  *result = os::strdup(res);
+  return true;
+}
+
+bool CgroupController::read_number_from_file(const char* filename, julong* result) {
+  return read_from_file<julong*>(filename, JULONG_FORMAT, result);
+}
+
+PRAGMA_DIAG_PUSH
+PRAGMA_FORMAT_NONLITERAL_IGNORED
+template <typename T>
+bool CgroupController::read_from_file(const char* filename, const char* scan_fmt, T result) {
+  if (result == nullptr) {
+    log_debug(os, container)("read_from_file: return pointer is null");
+    return false;
+  }
+  char* s_path = subsystem_path();
+  if (s_path == nullptr) {
+    log_debug(os, container)("read_from_file: subsystem path is null");
+    return false;
+  }
+
+  stringStream file_path;
+  file_path.print_raw(s_path);
+  file_path.print_raw(filename);
+
+  if (file_path.size() > MAXPATHLEN) {
+    log_debug(os, container)("File path too long %s, %s", file_path.base(), filename);
+    return false;
+  }
+  const char* absolute_path = file_path.freeze();
+  log_trace(os, container)("Path to %s is %s", filename, absolute_path);
+
+  FILE* fp = os::fopen(absolute_path, "r");
+  if (fp == nullptr) {
+    log_debug(os, container)("Open of file %s failed, %s", absolute_path, os::strerror(errno));
+    return false;
+  }
+
+  const int buf_len = MAXPATHLEN+1;
+  char buf[buf_len];
+  char* line = fgets(buf, buf_len, fp);
+  fclose(fp);
+  if (line == nullptr) {
+    log_debug(os, container)("Empty file %s", absolute_path);
+    return false;
+  }
+
+  int matched = sscanf(line, scan_fmt, result);
+  if (matched == 1) {
+    return true;
+  } else {
+    log_debug(os, container)("Type %s not found in file %s", scan_fmt, absolute_path);
+  }
+  return false;
+}
+PRAGMA_DIAG_POP
+
 jlong CgroupSubsystem::limit_from_str(char* limit_str) {
   if (limit_str == nullptr) {
     return OSCONTAINER_ERROR;
