@@ -44,7 +44,6 @@ import java.security.spec.InvalidParameterSpecException;
  * {@code deriveData} methods of {@code KDFSpi} implementations must be
  * thread-safe. That is, multiple threads may concurrently invoke these methods
  * on a single {@code KDFSpi} implementations with no ill effects.
- * <p>
  *
  * @see KDF
  * @see SecretKey
