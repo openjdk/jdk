@@ -90,13 +90,7 @@ public final class Utils {
     }
 
     public static VarHandle makeSegmentViewVarHandle(ValueLayout layout, boolean nested) {
-        final class VarHandleCache {
-            private static final Map<ValueLayout, VarHandle> HANDLE_MAP_TOPLEVEL = new ConcurrentHashMap<>();
-            private static final Map<ValueLayout, VarHandle> HANDLE_MAP_NESTED = new ConcurrentHashMap<>();
-        }
-        return nested ?
-                VarHandleCache.HANDLE_MAP_NESTED.computeIfAbsent(layout.withoutName(), Utils::makeNestedSegmentViewVarHandle) :
-                VarHandleCache.HANDLE_MAP_TOPLEVEL.computeIfAbsent(layout.withoutName(), Utils::makeToplevelSegmentViewVarHandle);
+        return makeNestedSegmentViewVarHandle(layout);
     }
 
     private static VarHandle makeToplevelSegmentViewVarHandle(ValueLayout layout) {

@@ -34,12 +34,15 @@ import jdk.internal.vm.annotation.Stable;
 
 import java.lang.foreign.AddressLayout;
 import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemoryLayout.PathElement;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * A value layout. A value layout is used to model the memory layout associated with values of basic data types, such as <em>integral</em> types
@@ -157,9 +160,12 @@ public final class ValueLayouts {
 
         @ForceInline
         public final VarHandle varHandle() {
+            final class VarHandleCache {
+                private static final Map<ValueLayout, VarHandle> HANDLE_MAP = new ConcurrentHashMap<>();
+            }
             if (handle == null) {
                 // this store to stable field is safe, because return value of 'makeMemoryAccessVarHandle' has stable identity
-                handle = Utils.makeSegmentViewVarHandle(self(), false);
+                handle = VarHandleCache.HANDLE_MAP.computeIfAbsent(self().withoutName(), _ -> varHandleInternal());
             }
             return handle;
         }

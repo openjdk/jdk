@@ -207,13 +207,13 @@ public class LayoutPath {
                     String.format("Path does not select a value layout: %s", breadcrumbs()));
         }
 
-        VarHandle handle = Utils.makeSegmentViewVarHandle(valueLayout, enclosing != null);
+        VarHandle handle = Utils.makeSegmentViewVarHandle(valueLayout, true);
         handle = MethodHandles.collectCoordinates(handle, 1, offsetHandle());
 
         // we only have to check the alignment of the root layout for the first dereference we do,
         // as each dereference checks the alignment of the target address when constructing its segment
         // (see Utils::longToAddress)
-        if (derefAdapters.length == 0 && enclosing != null) {
+        if (derefAdapters.length == 0) {
             // insert align check for the root layout on the initial MS + offset
             List<Class<?>> coordinateTypes = handle.coordinateTypes();
             MethodHandle alignCheck = MethodHandles.insertArguments(MH_CHECK_ENCL_LAYOUT, 2, rootLayout());
@@ -287,12 +287,12 @@ public class LayoutPath {
     }
 
     private static void checkEnclosingLayout(MemorySegment segment, long offset, MemoryLayout enclosing) {
+        ((AbstractMemorySegmentImpl)segment).checkAccess(offset, enclosing.byteSize(), true);
         if (!((AbstractMemorySegmentImpl) segment).isAlignedForElement(offset, enclosing)) {
             throw new IllegalArgumentException(String.format(
                     "Target offset %d is incompatible with alignment constraint %d (of %s) for segment %s"
                     , offset, enclosing.byteAlignment(), enclosing, segment));
         }
-        ((AbstractMemorySegmentImpl)segment).checkAccess(offset, enclosing.byteSize(), true);
     }
 
     public MemoryLayout layout() {

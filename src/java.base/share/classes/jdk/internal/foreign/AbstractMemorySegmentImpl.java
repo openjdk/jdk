@@ -828,6 +828,7 @@ public abstract sealed class AbstractMemorySegmentImpl
     @ForceInline
     @Override
     public void set(AddressLayout layout, long offset, MemorySegment value) {
+        Objects.requireNonNull(value);
         layout.varHandle().set((MemorySegment)this, offset, value);
     }
 
@@ -953,6 +954,7 @@ public abstract sealed class AbstractMemorySegmentImpl
     @ForceInline
     @Override
     public void setAtIndex(AddressLayout layout, long index, MemorySegment value) {
+        Objects.requireNonNull(value);
         Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
         layout.varHandle().set((MemorySegment)this, index * layout.byteSize(), value);
     }
