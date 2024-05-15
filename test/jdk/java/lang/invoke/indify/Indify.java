@@ -392,7 +392,8 @@ public class Indify {
         boolean transform() {
             if (!initializeMarks())  return false;
             if (!findPatternMethods())  return false;
-            //find_patternMethods();  //TODO: this is temporary and will be merged with old method once fully implemented
+            if (!find_patternMethods()) return false;  //TODO: this is temporary and will be merged with old method once fully implemented
+            assert constants.size() == new_constants.size(); //TODO: to be removed after getting rid of old implementation
             Pool pool = cf.pool;
             //for (Constant c : cp)  System.out.println("  # "+c);
             for (Method m : cf.methods) {
@@ -520,7 +521,7 @@ public class Indify {
             return found;
         }
         //New implementation using the CP API
-         void find_patternMethods() {
+         boolean find_patternMethods() {
             boolean found = false;
             for(char mark : "THI".toCharArray()) {
                 for(MethodModel m : bytecode.classModel.methods()){
@@ -534,6 +535,7 @@ public class Indify {
                     }
                 }
             }
+            return found;
         }
 
         void reportPatternMethods(boolean quietly, boolean allowMatchFailure) {
@@ -1355,17 +1357,18 @@ public class Indify {
         }
         //New implementation using the CP API and will be merged once  fully tested
         private PoolEntry make_MethodTypeCon(Object x){
-            int utfIndex;
+            PoolEntry utf8Entry;
 
             if (x instanceof String) {
-                utfIndex = bytecode.poolBuilder.utf8Entry((String) x).index();
+                utf8Entry = bytecode.poolBuilder.utf8Entry((String) x);
             } else if (x instanceof PoolEntry && ((PoolEntry) x).tag() == TAG_STRING) {
-                utfIndex = ((StringEntry) x).index();
+                utf8Entry = ((StringEntry) x);
             } else {
                 return null;
             }
 
-            return bytecode.poolBuilder.methodTypeEntry((Utf8Entry) bytecode.pool.entryByIndex(utfIndex));
+            assert utf8Entry instanceof Utf8Entry;
+            return bytecode.poolBuilder.methodTypeEntry((Utf8Entry) utf8Entry);
         }
         //New implementation using the CP API and will be merged once  fully tested
         private PoolEntry parse_MemberLookup(byte refKind, List<Object> args){
@@ -1374,42 +1377,35 @@ public class Indify {
             int argi = 0;
             if(!"lookup".equals(args.get(argi++))) return null;
 
-            int cindex, nindex, tindex;
             NameAndTypeEntry nt;
+            Utf8Entry name, type;
+            ClassEntry cl;
             Object con;
 
             if(!((con = args.get(argi++)) instanceof ClassEntry)) return null;
-            cindex = ((ClassEntry) con).index();
+            cl = (ClassEntry) con;
 
             if(!((con = args.get(argi++)) instanceof StringEntry)) return null;
-            nindex = (((StringEntry) con).utf8()).index();
+            name = ((StringEntry) con).utf8();
 
             if(((con = args.get(argi++)) instanceof MethodTypeEntry) || (con instanceof ClassEntry)){
-                tindex = (((MethodTypeEntry) con).descriptor()).index();
+                assert con instanceof MethodTypeEntry;
+                type = ((MethodTypeEntry) con).descriptor();
             } else return null;
 
-            nt = bytecode.poolBuilder.nameAndTypeEntry(
-                            (Utf8Entry) bytecode.pool.entryByIndex(nindex),
-                            (Utf8Entry) bytecode.pool.entryByIndex(tindex)
-                    );
+            nt = bytecode.poolBuilder.nameAndTypeEntry(name,type);
 
             MemberRefEntry ref;
             if(refKind <= (byte) STATIC_SETTER.refKind){
-                 ref = bytecode.poolBuilder.fieldRefEntry(
-                        (ClassEntry) bytecode.pool.entryByIndex(cindex),
-                         nt);
+                 ref = bytecode.poolBuilder.fieldRefEntry(cl, nt);
                 return bytecode.poolBuilder.methodHandleEntry(refKind, ref);
             }
             else if(refKind == (byte) INTERFACE_VIRTUAL.refKind){
-                ref = bytecode.poolBuilder.interfaceMethodRefEntry(
-                        (ClassEntry) bytecode.pool.entryByIndex(cindex),
-                        nt);
+                ref = bytecode.poolBuilder.interfaceMethodRefEntry(cl, nt);
                 return bytecode.poolBuilder.methodHandleEntry(refKind, ref);
             }
             else{
-                ref = bytecode.poolBuilder.methodRefEntry(
-                    (ClassEntry) bytecode.pool.entryByIndex(cindex),
-                    nt);
+                ref = bytecode.poolBuilder.methodRefEntry(cl, nt);
             }
             return bytecode.poolBuilder.methodHandleEntry(refKind, ref);
         }
@@ -1444,22 +1440,23 @@ public class Indify {
             remove_EmptyJVMSlots(args);
             if(args.size() < 4) return null;
             int argi = 0;
-            int nindex, tindex, ntindex, bsmindex;
+            int nindex, tindex;
             Object con;
+            Utf8Entry name, type;
+            NameAndTypeEntry nt;
+            MethodHandleEntry bsm;
 
             if (!((con = args.get(argi++)) instanceof MethodHandleEntry)) return null;
-            bsmindex = ((MethodHandleEntry) con).index();
+            bsm = ((MethodHandleEntry) con);
 
             if (!"lookup".equals(args.get(argi++)))  return null;
-            if (!((con = args.get(argi++)) instanceof Utf8Entry)) return null;
-            nindex = ((Utf8Entry) con).index();
+            if (!((con = args.get(argi++)) instanceof StringEntry)) return null;
+            name = ((StringEntry) con).utf8();
 
             if (!((con = args.get(argi++)) instanceof MethodTypeEntry)) return null;
-            tindex = ((MethodTypeEntry) con).descriptor().index();
+            type = ((MethodTypeEntry) con).descriptor();
 
-            ntindex = bytecode.poolBuilder.nameAndTypeEntry(
-                    (Utf8Entry) bytecode.pool.entryByIndex(nindex),
-                    (Utf8Entry) bytecode.pool.entryByIndex(tindex)).index();
+            nt = bytecode.poolBuilder.nameAndTypeEntry(name, type);
 
             List<Object> extraArgs = new ArrayList<Object>();
             if (argi < args.size()) {
@@ -1474,37 +1471,38 @@ public class Indify {
                     extraArgs.add(lastArg);
                 }
             }
-            List<Integer> extraArgIndexes = new ArrayList<>();
+            List<LoadableConstantEntry> extraArgConstants = new ArrayList<>();
             for (Object x : extraArgs) {
                 if (x instanceof Number) {
-                    if (x instanceof Integer) { bytecode.poolBuilder.intEntry((Integer) x); }
-                    if (x instanceof Float)   { bytecode.poolBuilder.floatEntry((Float) x); }
-                    if (x instanceof Long)    { bytecode.poolBuilder.longEntry((Long) x); }
-                    if (x instanceof Double)  { bytecode.poolBuilder.doubleEntry((Double) x); }
+                    if (x instanceof Integer) { x = bytecode.poolBuilder.intEntry((Integer) x); }
+                    if (x instanceof Float)   { x = bytecode.poolBuilder.floatEntry((Float) x); }
+                    if (x instanceof Long)    { x = bytecode.poolBuilder.longEntry((Long) x); }
+                    if (x instanceof Double)  { x = bytecode.poolBuilder.doubleEntry((Double) x); }
                 }
                 if (!(x instanceof PoolEntry)) {
                     System.err.println("warning: unrecognized BSM argument "+x);
                     return null;
                 }
-                extraArgIndexes.add(((PoolEntry) x).index());
+                extraArgConstants.add(((LoadableConstantEntry) x));
             }
 
             List<Object[]> specs = bootstrap_MethodSpecifiers(true);
-            int specindex = -1;
-            Object[] spec = new Object[]{ bsmindex, extraArgIndexes };
+            int specIndex = -1;
+            Object[] spec = new Object[]{ bsm.index(), extraArgConstants };
             for (Object[] spec1 : specs) {
                 if (Arrays.equals(spec1, spec)) {
-                    specindex = specs.indexOf(spec1);
+                    specIndex = specs.indexOf(spec1);
                     if (verbose)  System.err.println("reusing BSM specifier: "+spec1[0]+spec1[1]);
                     break;
                 }
             }
-            if (specindex == -1) {
-                specindex = (short) specs.size();
+            if (specIndex == -1) {
                 specs.add(spec);
                 if (verbose)  System.err.println("adding BSM specifier: "+spec[0]+spec[1]);
             }
-            return bytecode.poolBuilder.invokeDynamicEntry(bytecode.pool.bootstrapMethodEntry(specindex - 1), ((NameAndTypeEntry) bytecode.pool.entryByIndex(ntindex)));
+
+            BootstrapMethodEntry bsmEntry = bytecode.poolBuilder.bsmEntry(bsm, extraArgConstants);
+            return bytecode.poolBuilder.invokeDynamicEntry(bsmEntry, nt);
         }
         private Constant makeInvokeDynamicCon(List<Object> args) {
             // E.g.: MH_bsm.invokeGeneric(lookup(), "name", MethodType, "extraArg")
@@ -1576,9 +1574,9 @@ public class Indify {
 
             for (int i = 0; i < count; i++) {
                 int bsmRef = bytecode.pool.bootstrapMethodEntry(i).bsmIndex();
-                List<Integer> bsmArgs = new ArrayList<>();
+                List<LoadableConstantEntry> bsmArgs = new ArrayList<>();
                 for (LoadableConstantEntry lce : bytecode.pool.bootstrapMethodEntry(i).arguments()){
-                    bsmArgs.add(lce.index());
+                    bsmArgs.add(lce);
 
                 }
                 specs.add(new Object[]{ bsmRef, bsmArgs});
