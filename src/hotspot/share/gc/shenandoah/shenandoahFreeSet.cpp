@@ -198,24 +198,24 @@ inline void ShenandoahRegionPartitions::shrink_interval_if_range_modifies_either
     } else {
       _leftmosts[int(partition)] = find_index_of_next_available_region(partition, high_idx + 1);
     }
-    if (leftmost_empty(partition) < leftmost(partition)) {
+    if (_leftmosts_empty[int(partition)] < _leftmosts[int(partition)]) {
       // This gets us closer to where we need to be; we'll scan further when leftmosts_empty is requested.
       _leftmosts_empty[int(partition)] = leftmost(partition);
     }
   }
-  if (high_idx == rightmost(partition)) {
+  if (high_idx == _rightmosts[int(partition)]) {
     assert (!_membership[int(partition)].is_set(high_idx), "Do not shrink interval if region not removed");
     if (low_idx == 0) {
       _rightmosts[int(partition)] = -1;
     } else {
       _rightmosts[int(partition)] = find_index_of_previous_available_region(partition, low_idx - 1);
     }
-    if (rightmost_empty(partition) > rightmost(partition)) {
+    if (_rightmosts_empty[int(partition)] > _rightmosts[int(partition)]) {
       // This gets us closer to where we need to be; we'll scan further when rightmosts_empty is requested.
-      _rightmosts_empty[int(partition)] = rightmost(partition);
+      _rightmosts_empty[int(partition)] = _rightmosts[int(partition)];
     }
   }
-  if (leftmost(partition) > rightmost(partition)) {
+  if (_leftmosts[int(partition)] > _rightmosts[int(partition)]) {
     _leftmosts[int(partition)] = _max;
     _rightmosts[int(partition)] = -1;
     _leftmosts_empty[int(partition)] = _max;
@@ -229,17 +229,17 @@ inline void ShenandoahRegionPartitions::shrink_interval_if_boundary_modified(She
 
 inline void ShenandoahRegionPartitions::expand_interval_if_boundary_modified(ShenandoahFreeSetPartitionId partition,
                                                                              idx_t idx, size_t region_available) {
-  if (leftmost(partition) > idx) {
+  if (_leftmosts[int(partition)] > idx) {
     _leftmosts[int(partition)] = idx;
   }
-  if (rightmost(partition) < idx) {
+  if (_rightmosts[int(partition)] < idx) {
     _rightmosts[int(partition)] = idx;
   }
   if (region_available == _region_size_bytes) {
-    if (leftmost_empty(partition) > idx) {
+    if (_leftmosts_empty[int(partition)] > idx) {
       _leftmosts_empty[int(partition)] = idx;
     }
-    if (rightmost_empty(partition) < idx) {
+    if (_rightmosts_empty[int(partition)] < idx) {
       _rightmosts_empty[int(partition)] = idx;
     }
   }
