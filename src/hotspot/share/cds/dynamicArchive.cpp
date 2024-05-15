@@ -137,7 +137,7 @@ public:
       // Note that these tables still point to the *original* objects, so
       // they would need to call DynamicArchive::original_to_target() to
       // get the correct addresses.
-      assert(current_dump_space() == ro_region(), "Must be RO space");
+      assert(current_dump_region() == ro_region(), "Must be RO space");
       SymbolTable::write_to_archive(symbols());
 
       ArchiveBuilder::OtherROAllocMark mark;

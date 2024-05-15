@@ -35,6 +35,7 @@
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/memAllocator.hpp"
 #include "interpreter/bytecode.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/interpreter.hpp"
@@ -535,7 +536,7 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
 #if COMPILER2_OR_JVMCI
   if ((jvmci_enabled COMPILER2_PRESENT( || ((DoEscapeAnalysis || EliminateNestedLocks) && EliminateLocks) ))
       && !EscapeBarrier::objs_are_deoptimized(current, deoptee.id())) {
-    bool unused;
+    bool unused = false;
     restore_eliminated_locks(current, chunk, realloc_failures, deoptee, exec_mode, unused);
   }
 #endif // COMPILER2_OR_JVMCI
@@ -1237,6 +1238,7 @@ bool Deoptimization::realloc_objects(JavaThread* thread, frame* fr, RegisterMap*
 
       InstanceKlass* ik = InstanceKlass::cast(k);
       if (obj == nullptr && !cache_init_error) {
+        InternalOOMEMark iom(THREAD);
 #if COMPILER2_OR_JVMCI
         if (EnableVectorSupport && VectorSupport::is_vector(ik)) {
           obj = VectorSupport::allocate_vector(ik, fr, reg_map, sv, THREAD);
@@ -1251,9 +1253,11 @@ bool Deoptimization::realloc_objects(JavaThread* thread, frame* fr, RegisterMap*
       TypeArrayKlass* ak = TypeArrayKlass::cast(k);
       assert(sv->field_size() % type2size[ak->element_type()] == 0, "non-integral array length");
       int len = sv->field_size() / type2size[ak->element_type()];
+      InternalOOMEMark iom(THREAD);
       obj = ak->allocate(len, THREAD);
     } else if (k->is_objArray_klass()) {
       ObjArrayKlass* ak = ObjArrayKlass::cast(k);
+      InternalOOMEMark iom(THREAD);
       obj = ak->allocate(sv->field_size(), THREAD);
     }
 
@@ -1732,7 +1736,7 @@ void Deoptimization::pop_frames_failed_reallocs(JavaThread* thread, vframeArray*
           ObjectSynchronizer::exit(src->obj(), src->lock(), thread);
         }
       }
-      array->element(i)->free_monitors(thread);
+      array->element(i)->free_monitors();
 #ifdef ASSERT
       array->element(i)->set_removed_monitors();
 #endif
