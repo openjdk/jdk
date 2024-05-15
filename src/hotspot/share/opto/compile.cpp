@@ -3910,9 +3910,7 @@ void Compile::remove_range_check_cast(CastIINode* cast) {
       Node* m = wq.at(next);
       for (DUIterator_Fast imax, i = m->fast_outs(imax); i < imax; i++) {
         Node* use = m->fast_out(i);
-        if (use->is_Mem() || use->Opcode() == Op_DivI || use->Opcode() == Op_DivL ||
-            use->Opcode() == Op_ModI || use->Opcode() == Op_ModL || use->Opcode() == Op_UDivI ||
-            use->Opcode() == Op_UDivL || use->Opcode() == Op_UModI || use->Opcode() == Op_UModL) {
+        if (use->is_Mem() || use->is_div_or_mod(T_INT) || use->is_div_or_mod(T_LONG)) {
           use->ensure_control_or_add_prec(cast->in(0));
         } else if (!use->is_CFG() && !use->is_Phi()) {
           wq.push(use);

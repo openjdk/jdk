@@ -2910,6 +2910,9 @@ bool Node::is_dead_loop_safe() const {
   return false;
 }
 
+bool Node::is_div_or_mod(BasicType bt) const { return Opcode() == Op_Div(bt) || Opcode() == Op_Mod(bt) ||
+                                                      Opcode() == Op_UDiv(bt) || Opcode() == Op_UMod(bt); }
+
 //=============================================================================
 //------------------------------yank-------------------------------------------
 // Find and remove

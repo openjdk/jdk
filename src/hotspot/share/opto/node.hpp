@@ -1255,6 +1255,8 @@ public:
   // Whether this is a memory phi node
   bool is_memory_phi() const { return is_Phi() && bottom_type() == Type::MEMORY; }
 
+  bool is_div_or_mod(BasicType bt) const;
+
 //----------------- Printing, etc
 #ifndef PRODUCT
  public:
@@ -2024,6 +2026,10 @@ Op_IL(URShift)
 Op_IL(LShift)
 Op_IL(Xor)
 Op_IL(Cmp)
+Op_IL(Div)
+Op_IL(Mod)
+Op_IL(UDiv)
+Op_IL(UMod)
 
 inline int Op_ConIL(BasicType bt) {
   assert(bt == T_INT || bt == T_LONG, "only for int or longs");
