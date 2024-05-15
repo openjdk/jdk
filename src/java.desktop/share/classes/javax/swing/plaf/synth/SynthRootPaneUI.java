@@ -76,6 +76,10 @@ public class SynthRootPaneUI extends BasicRootPaneUI implements SynthUI {
 
         style.uninstallDefaults(context);
         style = null;
+        if (UIManager.getBoolean("RootPane.altPress")) {
+            KeyboardFocusManager.getCurrentKeyboardFocusManager().
+                    removeKeyEventPostProcessor(altProcessor);
+        }
     }
 
     /**
@@ -103,6 +107,11 @@ public class SynthRootPaneUI extends BasicRootPaneUI implements SynthUI {
                 uninstallKeyboardActions((JRootPane)c);
                 installKeyboardActions((JRootPane)c);
             }
+        }
+
+        if (UIManager.getBoolean("RootPane.altPress")) {
+            KeyboardFocusManager.getCurrentKeyboardFocusManager().
+                    addKeyEventPostProcessor(altProcessor);
         }
     }
 

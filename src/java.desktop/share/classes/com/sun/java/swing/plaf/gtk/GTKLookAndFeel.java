@@ -863,6 +863,7 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
                           "ctrl ENTER", "press",
                  "ctrl released ENTER", "release"
             },
+            "RootPane.altPress", true,
 
 
             "ScrollBar.squareButtons", Boolean.FALSE,

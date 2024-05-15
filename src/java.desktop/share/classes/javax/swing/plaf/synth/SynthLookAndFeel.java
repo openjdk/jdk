@@ -665,10 +665,6 @@ public class SynthLookAndFeel extends BasicLookAndFeel {
         setStyleFactory(factory);
         KeyboardFocusManager.getCurrentKeyboardFocusManager().
             addPropertyChangeListener(_handler);
-        if (UIManager.getLookAndFeel().getName().contains("GTK")) {
-            KeyboardFocusManager.getCurrentKeyboardFocusManager().
-                    addKeyEventPostProcessor(SynthRootPaneUI.altProcessor);
-        }
     }
 
     /**
@@ -678,10 +674,6 @@ public class SynthLookAndFeel extends BasicLookAndFeel {
     public void uninitialize() {
         KeyboardFocusManager.getCurrentKeyboardFocusManager().
             removePropertyChangeListener(_handler);
-        if (UIManager.getLookAndFeel().getName().contains("GTK")) {
-            KeyboardFocusManager.getCurrentKeyboardFocusManager().
-                    removeKeyEventPostProcessor(SynthRootPaneUI.altProcessor);
-        }
         // We should uninstall the StyleFactory here, but unfortunately
         // there are a handful of things that retain references to the
         // LookAndFeel and expect things to work
