@@ -39,6 +39,7 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ThreadFactory;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
@@ -171,12 +172,26 @@ public sealed interface StableValue<V>
      * value is computed in a separate background thread (created via the provided
      * {@code threadFactory}) using the provided {@code supplier}}
      * <p>
-     * If the supplier throws an (unchecked) exception, the exception is ignored, and no
+     * If the supplier throws an (unchecked) exception, the exception is forwarded to
+     * the thread's {@linkplain Thread#getUncaughtExceptionHandler()} (if any) and no
      * value is set.
+     * <p>
+     * Here is how a custom exception listener can be attached to the background thread:
      *
-     * @param <V>           the value type to set
-     * @param threadFactory to use when creating the background thread
-     * @param supplier      to be used for computing a value
+     * {@snippet lang=java :
+     * AtomicReference<Throwable> holder = new AtomicReference<>();
+     *
+     * ThreadFactory factory =
+     *         Thread.ofVirtual()
+     *                 .uncaughtExceptionHandler((t, e) -> holder.set(e))
+     *                 .factory();
+     *
+     * StableValue<V> stable = StableValue.ofBackground(factory, computeV());
+     * }
+     *
+     * @param <V>               the value type to set
+     * @param threadFactory     to use when creating the background thread
+     * @param supplier          to be used for computing a value
      * @see StableValue#of
      */
     static <V> StableValue<V> ofBackground(ThreadFactory threadFactory,

@@ -41,7 +41,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -226,7 +229,7 @@ final class BasicStableTest {
     void background() {
         StableValue<Integer> stable = StableValue.ofBackground(Thread.ofVirtual().factory(), () -> 42);
 
-        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(2);
+        long deadline = deadlineS(2);
         while(!stable.isSet()) {
             Thread.onSpinWait();
             if (System.nanoTime() > deadline) {
@@ -235,6 +238,30 @@ final class BasicStableTest {
         }
 
         assertEquals(42, stable.orThrow());
+    }
+
+    @Test
+    void backgroundException() {
+        String message = "The background thread threw an exception";
+
+        AtomicReference<Throwable> holder = new AtomicReference<>();
+        ThreadFactory factory =
+                Thread.ofVirtual()
+                        .uncaughtExceptionHandler((t, e) -> holder.set(e))
+                        .factory();
+
+        StableValue<Integer> stable = StableValue.ofBackground(
+                factory,
+                () -> { throw new UnsupportedOperationException(message); }
+        );
+
+        long deadline = deadlineS(2);
+        while (holder.get() == null) {
+            Thread.onSpinWait();
+            if (System.nanoTime() > deadline) {
+                fail("No exception was received within the stipulated time: " + stable);
+            }
+        }
     }
 
     @Test
@@ -273,6 +300,10 @@ final class BasicStableTest {
             return new Node<>(StableValue.of(), Optional.empty(), value);
         }
 
+    }
+
+    private static long deadlineS(int seconds) {
+        return System.nanoTime() + TimeUnit.SECONDS.toNanos(seconds);
     }
 
 }

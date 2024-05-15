@@ -31,6 +31,8 @@ import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -311,14 +313,28 @@ public final class StableValueImpl<V> implements StableValue<V> {
     public static <V> StableValue<V> ofBackground(ThreadFactory threadFactory,
                                                   Supplier<? extends V> supplier) {
         final StableValue<V> stable = StableValue.of();
-        Thread bgThread = threadFactory.newThread(new Runnable() {
+
+        final class BgRunnable implements Runnable {
+
+            volatile Thread thread;
+
             @Override
             public void run() {
                 try {
                     stable.computeIfUnset(supplier);
-                } catch (Throwable _) {}
+                } catch (Throwable throwable) {
+                    final Thread.UncaughtExceptionHandler uncaughtExceptionHandler =
+                            thread.getUncaughtExceptionHandler();
+                    if (uncaughtExceptionHandler != null) {
+                        uncaughtExceptionHandler.uncaughtException(thread, throwable);
+                    }
+                }
             }
-        });
+        }
+
+        final BgRunnable runnable = new BgRunnable();
+        Thread bgThread = threadFactory.newThread(runnable);
+        runnable.thread = bgThread;
         bgThread.start();
         return stable;
     }
