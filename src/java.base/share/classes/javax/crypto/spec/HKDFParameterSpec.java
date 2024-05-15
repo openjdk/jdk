@@ -121,7 +121,7 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
          *
          * @param info
          *     the optional context and application specific information (may be
-         *     {@code null}; the byte[] is copied to prevent subsequent
+         *     {@code null}); the byte[] is copied to prevent subsequent
          *     modification
          * @param length
          *     the length of the output key material
