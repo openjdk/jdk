@@ -114,4 +114,37 @@ public:
   virtual oop initialize(HeapWord* mem) const;
 };
 
+// Manages a scope where a failed heap allocation results in
+// suppression of JVMTI "resource exhausted" events and
+// throwing a shared, backtrace-less OOME instance.
+// Used for OOMEs that will not be propagated to user code.
+class InternalOOMEMark: public StackObj {
+ private:
+  bool _outer;
+  JavaThread* _thread;
+
+ public:
+  explicit InternalOOMEMark(JavaThread* thread) {
+    if (thread != nullptr) {
+      _outer = thread->is_in_internal_oome_mark();
+      thread->set_is_in_internal_oome_mark(true);
+      _thread = thread;
+    } else {
+      _outer = false;
+      _thread = nullptr;
+    }
+  }
+
+  ~InternalOOMEMark() {
+    if (_thread != nullptr) {
+      // Check that only InternalOOMEMark sets
+      // JavaThread::_is_in_internal_oome_mark
+      assert(_thread->is_in_internal_oome_mark(), "must be");
+      _thread->set_is_in_internal_oome_mark(_outer);
+    }
+  }
+
+  JavaThread* thread() const  { return _thread; }
+};
+
 #endif // SHARE_GC_SHARED_MEMALLOCATOR_HPP

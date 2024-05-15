@@ -25,7 +25,7 @@
 #ifndef SHARE_PRIMS_JVMTIAGENTLIST_HPP
 #define SHARE_PRIMS_JVMTIAGENTLIST_HPP
 
-#include "memory/allocation.hpp"
+#include "nmt/memflags.hpp"
 #include "prims/jvmtiAgent.hpp"
 #include "utilities/growableArray.hpp"
 
