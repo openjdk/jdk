@@ -190,6 +190,11 @@ public interface SocketOptions {
 
     /**
      * See {@link StandardSocketOptions#SO_LINGER} for description of this socket option.
+     * <p>
+     * The type of the value returned for this option, by {@link #getOption(int)} or accepted by
+     * {@link #setOption(int, Object)}, can either be a {@linkplain Boolean#FALSE Boolean.FALSE}
+     * or an integer value. {@code Boolean.FALSE} represents that this option is disabled whereas
+     * an integer value represents the linger timeout.
      *
      * @see Socket#setSoLinger
      * @see Socket#getSoLinger
