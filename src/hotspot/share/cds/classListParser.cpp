@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,30 +50,24 @@
 #include "runtime/javaCalls.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/utf8.hpp"
 
 volatile Thread* ClassListParser::_parsing_thread = nullptr;
 ClassListParser* ClassListParser::_instance = nullptr;
 
-ClassListParser::ClassListParser(const char* file, ParseMode parse_mode) : _id2klass_table(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE) {
+ClassListParser::ClassListParser(const char* file, ParseMode parse_mode) :
+    _classlist_file(file),
+    _id2klass_table(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE),
+    _file_input(do_open(file), /* need_close=*/true),
+    _input_stream(&_file_input) {
   log_info(cds)("Parsing %s%s", file,
                 (parse_mode == _parse_lambda_forms_invokers_only) ? " (lambda form invokers only)" : "");
-  _classlist_file = file;
-  _file = nullptr;
-  // Use os::open() because neither fopen() nor os::fopen()
-  // can handle long path name on Windows.
-  int fd = os::open(file, O_RDONLY, S_IREAD);
-  if (fd != -1) {
-    // Obtain a File* from the file descriptor so that fgets()
-    // can be used in parse_one_line()
-    _file = os::fdopen(fd, "r");
-  }
-  if (_file == nullptr) {
+  if (!_file_input.is_open()) {
     char errmsg[JVM_MAXPATHLEN];
     os::lasterror(errmsg, JVM_MAXPATHLEN);
     vm_exit_during_initialization("Loading classlist failed", errmsg);
   }
-  _line_no = 0;
-  _token = _line;
+  _token = _line = nullptr;
   _interfaces = new (mtClass) GrowableArray<int>(10, mtClass);
   _indy_items = new (mtClass) GrowableArray<const char*>(9, mtClass);
   _parse_mode = parse_mode;
@@ -84,14 +78,24 @@ ClassListParser::ClassListParser(const char* file, ParseMode parse_mode) : _id2k
   Atomic::store(&_parsing_thread, Thread::current());
 }
 
+FILE* ClassListParser::do_open(const char* file) {
+  // Use os::open() because neither fopen() nor os::fopen()
+  // can handle long path name on Windows. (See JDK-8216184)
+  int fd = os::open(file, O_RDONLY, S_IREAD);
+  FILE* fp = nullptr;
+  if (fd != -1) {
+    // Obtain a FILE* from the file descriptor so that _input_stream
+    // can be used in ClassListParser::parse()
+    fp = os::fdopen(fd, "r");
+  }
+  return fp;
+}
+
 bool ClassListParser::is_parsing_thread() {
   return Atomic::load(&_parsing_thread) == Thread::current();
 }
 
 ClassListParser::~ClassListParser() {
-  if (_file != nullptr) {
-    fclose(_file);
-  }
   Atomic::store(&_parsing_thread, (Thread*)nullptr);
   delete _indy_items;
   delete _interfaces;
@@ -101,7 +105,15 @@ ClassListParser::~ClassListParser() {
 int ClassListParser::parse(TRAPS) {
   int class_count = 0;
 
-  while (parse_one_line()) {
+  for (; !_input_stream.done(); _input_stream.next()) {
+    _line = _input_stream.current_line();
+    if (*_line == '#') { // comment
+      continue;
+    }
+    if (!parse_one_line()) {
+      break;
+    }
+
     if (lambda_form_line()) {
       // The current line is "@lambda-form-invoker ...". It has been recorded in LambdaFormInvokers,
       // and will be processed later.
@@ -112,6 +124,7 @@ int ClassListParser::parse(TRAPS) {
       continue;
     }
 
+    check_class_name(_class_name);
     TempNewSymbol class_name_symbol = SymbolTable::new_symbol(_class_name);
     if (_indy_items->length() > 0) {
       // The current line is "@lambda-proxy class_name". Load the proxy class.
@@ -165,43 +178,26 @@ int ClassListParser::parse(TRAPS) {
 }
 
 bool ClassListParser::parse_one_line() {
-  for (;;) {
-    if (fgets(_line, sizeof(_line), _file) == nullptr) {
-      return false;
-    }
-    ++ _line_no;
-    _line_len = (int)strlen(_line);
-    if (_line_len > _max_allowed_line_len) {
-      error("input line too long (must be no longer than %d chars)", _max_allowed_line_len);
-    }
-    if (*_line == '#') { // comment
-      continue;
-    }
-
-    {
-      int len = (int)strlen(_line);
-      int i;
-      // Replace \t\r\n\f with ' '
-      for (i=0; i<len; i++) {
-        if (_line[i] == '\t' || _line[i] == '\r' || _line[i] == '\n' || _line[i] == '\f') {
-          _line[i] = ' ';
-        }
+  {
+    int len = (int)strlen(_line);
+    int i;
+    // Replace \t\r\n\f with ' '
+    for (i=0; i<len; i++) {
+      if (_line[i] == '\t' || _line[i] == '\r' || _line[i] == '\n' || _line[i] == '\f') {
+        _line[i] = ' ';
       }
-
-      // Remove trailing newline/space
-      while (len > 0) {
-        if (_line[len-1] == ' ') {
-          _line[len-1] = '\0';
-          len --;
-        } else {
-          break;
-        }
-      }
-      _line_len = len;
     }
 
-    // valid line
-    break;
+    // Remove trailing newline/space
+    while (len > 0) {
+      if (_line[len-1] == ' ') {
+        _line[len-1] = '\0';
+        len --;
+      } else {
+        break;
+      }
+    }
+    _line_len = len;
   }
 
   _class_name = _line;
@@ -286,7 +282,7 @@ int ClassListParser::split_at_tag_from_line() {
   _token = _line;
   char* ptr;
   if ((ptr = strchr(_line, ' ')) == nullptr) {
-    error("Too few items following the @ tag \"%s\" line #%d", _line, _line_no);
+    error("Too few items following the @ tag \"%s\" line #%zu", _line, lineno());
     return 0;
   }
   *ptr++ = '\0';
@@ -304,7 +300,7 @@ bool ClassListParser::parse_at_tags() {
   if (strcmp(_token, LAMBDA_PROXY_TAG) == 0) {
     split_tokens_by_whitespace(offset);
     if (_indy_items->length() < 2) {
-      error("Line with @ tag has too few items \"%s\" line #%d", _token, _line_no);
+      error("Line with @ tag has too few items \"%s\" line #%zu", _token, lineno());
       return false;
     }
     // set the class name
@@ -315,7 +311,7 @@ bool ClassListParser::parse_at_tags() {
     _lambda_form_line = true;
     return true;
   } else {
-    error("Invalid @ tag at the beginning of line \"%s\" line #%d", _token, _line_no);
+    error("Invalid @ tag at the beginning of line \"%s\" line #%zu", _token, lineno());
     return false;
   }
 }
@@ -423,8 +419,8 @@ void ClassListParser::error(const char* msg, ...) {
   }
 
   jio_fprintf(defaultStream::error_stream(),
-              "An error has occurred while processing class list file %s %d:%d.\n",
-              _classlist_file, _line_no, (error_index + 1));
+              "An error has occurred while processing class list file %s %zu:%d.\n",
+              _classlist_file, lineno(), (error_index + 1));
   jio_vfprintf(defaultStream::error_stream(), msg, ap);
 
   if (_line_len <= 0) {
@@ -448,6 +444,25 @@ void ClassListParser::error(const char* msg, ...) {
 
   vm_exit_during_initialization("class list format error.", nullptr);
   va_end(ap);
+}
+
+void ClassListParser::check_class_name(const char* class_name) {
+  const char* err = nullptr;
+  size_t len = strlen(class_name);
+  if (len > (size_t)Symbol::max_length()) {
+    err = "class name too long";
+  } else {
+    assert(Symbol::max_length() < INT_MAX && len < INT_MAX, "must be");
+    if (!UTF8::is_legal_utf8((const unsigned char*)class_name, (int)len, /*version_leq_47*/false)) {
+      err = "class name is not valid UTF8";
+    }
+  }
+  if (err != nullptr) {
+    jio_fprintf(defaultStream::error_stream(),
+              "An error has occurred while processing class list file %s:%zu %s\n",
+              _classlist_file, lineno(), err);
+    vm_exit_during_initialization("class list format error.", nullptr);
+  }
 }
 
 // This function is used for loading classes for customized class loaders
