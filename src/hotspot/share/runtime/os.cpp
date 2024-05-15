@@ -1821,7 +1821,7 @@ bool os::create_stack_guard_pages(char* addr, size_t bytes) {
 }
 
 char* os::reserve_memory(size_t bytes, bool executable, MEMFLAGS flags) {
-  char* result = pd_reserve_memory(bytes, executable, flags);
+  char* result = pd_reserve_memory(bytes, executable);
   if (result != nullptr) {
     MemTracker::record_virtual_memory_reserve(result, bytes, CALLER_PC, flags);
     log_debug(os, map)("Reserved " RANGEFMT, RANGEFMTARGS(result, bytes));
@@ -1832,7 +1832,7 @@ char* os::reserve_memory(size_t bytes, bool executable, MEMFLAGS flags) {
 }
 
 char* os::attempt_reserve_memory_at(char* addr, size_t bytes, bool executable, MEMFLAGS flag) {
-  char* result = SimulateFullAddressSpace ? nullptr : pd_attempt_reserve_memory_at(addr, bytes, executable, flag);
+  char* result = SimulateFullAddressSpace ? nullptr : pd_attempt_reserve_memory_at(addr, bytes, executable);
   if (result != nullptr) {
     MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC, flag);
     log_debug(os, map)("Reserved " RANGEFMT, RANGEFMTARGS(result, bytes));
@@ -1879,7 +1879,7 @@ static void hemi_split(T* arr, unsigned num) {
 
 // Given an address range [min, max), attempts to reserve memory within this area, with the given alignment.
 // If randomize is true, the location will be randomized.
-char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, size_t alignment, bool randomize, MEMFLAGS flag) {
+char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, size_t alignment, bool randomize) {
 
   // Please keep the following constants in sync with the companion gtests:
 
@@ -2017,7 +2017,7 @@ char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, siz
     const unsigned candidate_offset = points[i];
     char* const candidate = lo_att + candidate_offset * alignment_adjusted;
     assert(candidate <= hi_att, "Invalid offset %u (" ARGSFMT ")", candidate_offset, ARGSFMTARGS);
-    result = SimulateFullAddressSpace ? nullptr : os::pd_attempt_reserve_memory_at(candidate, bytes, !ExecMem, flag);
+    result = SimulateFullAddressSpace ? nullptr : os::pd_attempt_reserve_memory_at(candidate, bytes, false);
     if (!result) {
       log_trace(os, map)("Failed to attach at " PTR_FORMAT, p2i(candidate));
     }
@@ -2034,7 +2034,7 @@ char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, siz
     assert(is_aligned(result, alignment), "alignment invalid (" ERRFMT ")", ERRFMTARGS);
     log_trace(os, map)(ERRFMT, ERRFMTARGS);
     log_debug(os, map)("successfully attached at " PTR_FORMAT, p2i(result));
-    MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC, flag);
+    MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC);
   } else {
     log_debug(os, map)("failed to attach anywhere in [" PTR_FORMAT "-" PTR_FORMAT ")", p2i(min), p2i(max));
   }
@@ -2050,11 +2050,11 @@ static void assert_nonempty_range(const char* addr, size_t bytes) {
          p2i(addr), p2i(addr) + bytes);
 }
 
-bool os::commit_memory(char* addr, size_t bytes, bool executable, MEMFLAGS flag) {
+bool os::commit_memory(char* addr, size_t bytes, bool executable) {
   assert_nonempty_range(addr, bytes);
   bool res = pd_commit_memory(addr, bytes, executable);
   if (res) {
-    MemTracker::record_virtual_memory_commit((address)addr, bytes, CALLER_PC, flag);
+    MemTracker::record_virtual_memory_commit((address)addr, bytes, CALLER_PC);
     log_debug(os, map)("Committed " RANGEFMT, RANGEFMTARGS(addr, bytes));
   } else {
     log_info(os, map)("Failed to commit " RANGEFMT, RANGEFMTARGS(addr, bytes));
@@ -2063,11 +2063,11 @@ bool os::commit_memory(char* addr, size_t bytes, bool executable, MEMFLAGS flag)
 }
 
 bool os::commit_memory(char* addr, size_t size, size_t alignment_hint,
-                              bool executable, MEMFLAGS flag) {
+                              bool executable) {
   assert_nonempty_range(addr, size);
   bool res = os::pd_commit_memory(addr, size, alignment_hint, executable);
   if (res) {
-    MemTracker::record_virtual_memory_commit((address)addr, size, CALLER_PC, flag);
+    MemTracker::record_virtual_memory_commit((address)addr, size, CALLER_PC);
     log_debug(os, map)("Committed " RANGEFMT, RANGEFMTARGS(addr, size));
   } else {
     log_info(os, map)("Failed to commit " RANGEFMT, RANGEFMTARGS(addr, size));
@@ -2076,27 +2076,27 @@ bool os::commit_memory(char* addr, size_t size, size_t alignment_hint,
 }
 
 void os::commit_memory_or_exit(char* addr, size_t bytes, bool executable,
-                               MEMFLAGS flag, const char* mesg) {
+                               const char* mesg) {
   assert_nonempty_range(addr, bytes);
   pd_commit_memory_or_exit(addr, bytes, executable, mesg);
-  MemTracker::record_virtual_memory_commit((address)addr, bytes, CALLER_PC, flag);
+  MemTracker::record_virtual_memory_commit((address)addr, bytes, CALLER_PC);
 }
 
 void os::commit_memory_or_exit(char* addr, size_t size, size_t alignment_hint,
-                               bool executable, MEMFLAGS flag, const char* mesg) {
+                               bool executable, const char* mesg) {
   assert_nonempty_range(addr, size);
   os::pd_commit_memory_or_exit(addr, size, alignment_hint, executable, mesg);
-  MemTracker::record_virtual_memory_commit((address)addr, size, CALLER_PC, flag);
+  MemTracker::record_virtual_memory_commit((address)addr, size, CALLER_PC);
 }
 
-bool os::uncommit_memory(char* addr, size_t bytes, bool executable, MEMFLAGS flag) {
+bool os::uncommit_memory(char* addr, size_t bytes, bool executable) {
   assert_nonempty_range(addr, bytes);
   bool res;
   if (MemTracker::enabled()) {
     ThreadCritical tc;
     res = pd_uncommit_memory(addr, bytes, executable);
     if (res) {
-      MemTracker::record_virtual_memory_uncommit((address)addr, bytes, flag);
+      MemTracker::record_virtual_memory_uncommit((address)addr, bytes);
     }
   } else {
     res = pd_uncommit_memory(addr, bytes, executable);
@@ -2180,7 +2180,7 @@ char* os::map_memory_to_file(size_t bytes, int file_desc, MEMFLAGS flag) {
 }
 
 char* os::attempt_map_memory_to_file_at(char* addr, size_t bytes, int file_desc, MEMFLAGS flag) {
-  char* result = pd_attempt_map_memory_to_file_at(addr, bytes, file_desc, flag);
+  char* result = pd_attempt_map_memory_to_file_at(addr, bytes, file_desc);
   if (result != nullptr) {
     MemTracker::record_virtual_memory_reserve_and_commit((address)result, bytes, CALLER_PC, flag);
   }
@@ -2188,8 +2188,8 @@ char* os::attempt_map_memory_to_file_at(char* addr, size_t bytes, int file_desc,
 }
 
 char* os::map_memory(int fd, const char* file_name, size_t file_offset,
-                     char *addr, size_t bytes, bool read_only,
-                     bool allow_exec, MEMFLAGS flags) {
+                           char *addr, size_t bytes, bool read_only,
+                           bool allow_exec, MEMFLAGS flags) {
   char* result = pd_map_memory(fd, file_name, file_offset, addr, bytes, read_only, allow_exec);
   if (result != nullptr) {
     MemTracker::record_virtual_memory_reserve_and_commit((address)result, bytes, CALLER_PC, flags);
@@ -2211,8 +2211,8 @@ bool os::unmap_memory(char *addr, size_t bytes) {
   return result;
 }
 
-void os::free_memory(char *addr, size_t bytes, size_t alignment_hint, MEMFLAGS flag) {
-  pd_free_memory(addr, bytes, alignment_hint, flag);
+void os::free_memory(char *addr, size_t bytes, size_t alignment_hint) {
+  pd_free_memory(addr, bytes, alignment_hint);
 }
 
 void os::realign_memory(char *addr, size_t bytes, size_t alignment_hint) {
@@ -2220,14 +2220,14 @@ void os::realign_memory(char *addr, size_t bytes, size_t alignment_hint) {
 }
 
 char* os::reserve_memory_special(size_t size, size_t alignment, size_t page_size,
-                                 char* addr, bool executable, MEMFLAGS flag) {
+                                 char* addr, bool executable) {
 
   assert(is_aligned(addr, alignment), "Unaligned request address");
 
-  char* result = pd_reserve_memory_special(size, alignment, page_size, addr, executable, flag);
+  char* result = pd_reserve_memory_special(size, alignment, page_size, addr, executable);
   if (result != nullptr) {
     // The memory is committed
-    MemTracker::record_virtual_memory_reserve_and_commit((address)result, size, CALLER_PC, flag);
+    MemTracker::record_virtual_memory_reserve_and_commit((address)result, size, CALLER_PC);
     log_debug(os, map)("Reserved and committed " RANGEFMT, RANGEFMTARGS(result, size));
   } else {
     log_info(os, map)("Reserve and commit failed (%zu bytes)", size);
