@@ -245,7 +245,9 @@ abstract class HkdfKeyDerivation extends KDFSpi {
             ArrayList<SecretKey> localKeys = new ArrayList<>(keys);
             if (localKeys.size() == 1) {
                 // return this element
-                return localKeys.get(0);
+                SecretKey checkIt = localKeys.get(0);
+                byte[] workItemBytes = CipherCore.getKeyBytes(checkIt);
+                return new SecretKeySpec(workItemBytes, "Generic");
             } else {
                 byte[] bb = new byte[0];
                 for (SecretKey workItem : localKeys) {
@@ -256,7 +258,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
                                      bb.length - workItemBytes.length,
                                      workItemBytes.length);
                 }
-                return new SecretKeySpec(bb, "RAW");
+                return new SecretKeySpec(bb, "Generic");
             }
         } else if (keys.isEmpty()) {
             return null;
