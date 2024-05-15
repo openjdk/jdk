@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -268,8 +268,6 @@ module java.base {
         jdk.jfr;
     exports jdk.internal.util.xml.impl to
         jdk.jfr;
-    exports jdk.internal.util.random to
-        jdk.random;
     exports jdk.internal.util to
         java.desktop,
         java.prefs,
@@ -396,7 +394,6 @@ module java.base {
     uses java.time.chrono.AbstractChronology;
     uses java.time.chrono.Chronology;
     uses java.time.zone.ZoneRulesProvider;
-    uses java.util.random.RandomGenerator;
     uses java.util.spi.CalendarDataProvider;
     uses java.util.spi.CalendarNameProvider;
     uses java.util.spi.CurrencyNameProvider;
@@ -425,6 +422,16 @@ module java.base {
     provides java.util.random.RandomGenerator with
         java.security.SecureRandom,
         java.util.Random,
-        java.util.SplittableRandom;
+        java.util.SplittableRandom,
+        jdk.internal.random.L32X64MixRandom,
+        jdk.internal.random.L64X128MixRandom,
+        jdk.internal.random.L64X128StarStarRandom,
+        jdk.internal.random.L64X256MixRandom,
+        jdk.internal.random.L64X1024MixRandom,
+        jdk.internal.random.L128X128MixRandom,
+        jdk.internal.random.L128X256MixRandom,
+        jdk.internal.random.L128X1024MixRandom,
+        jdk.internal.random.Xoroshiro128PlusPlus,
+        jdk.internal.random.Xoshiro256PlusPlus;
 
 }

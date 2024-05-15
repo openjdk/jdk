@@ -94,17 +94,17 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
     void set(uint idx, HeapRegion* hr) {
       assert(idx < _max_size, "Index %u out of bounds %u", idx, _max_size);
       assert(_data[idx]._r == nullptr, "Value must not have been set.");
-      _data[idx] = CandidateInfo(hr, hr->calc_gc_efficiency());
+      _data[idx] = CandidateInfo(hr, 0.0);
     }
 
-    void sort_by_efficiency() {
+    void sort_by_reclaimable_bytes() {
       if (_cur_claim_idx == 0) {
         return;
       }
       for (uint i = _cur_claim_idx; i < _max_size; i++) {
         assert(_data[i]._r == nullptr, "must be");
       }
-      qsort(_data, _cur_claim_idx, sizeof(_data[0]), (_sort_Fn)G1CollectionCandidateList::compare);
+      qsort(_data, _cur_claim_idx, sizeof(_data[0]), (_sort_Fn)G1CollectionCandidateList::compare_reclaimble_bytes);
       for (uint i = _cur_claim_idx; i < _max_size; i++) {
         assert(_data[i]._r == nullptr, "must be");
       }
@@ -152,8 +152,7 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
       }
 
       // Can not add a region without a remembered set to the candidates.
-      assert(!r->rem_set()->is_updating(), "must be");
-      if (!r->rem_set()->is_complete()) {
+      if (!r->rem_set()->is_tracked()) {
         return false;
       }
 
@@ -249,7 +248,7 @@ public:
   }
 
   void sort_and_prune_into(G1CollectionSetCandidates* candidates) {
-    _result.sort_by_efficiency();
+    _result.sort_by_reclaimable_bytes();
     prune(_result.array());
     candidates->set_candidates_from_marking(_result.array(),
                                             _num_regions_added);
