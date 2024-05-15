@@ -101,7 +101,7 @@ public:
   void make_all_regions_unavailable();
 
   // Set the partition id for a particular region without adjusting interval bounds or usage/capacity tallies
-  inline void raw_set_membership(size_t idx, ShenandoahFreeSetPartitionId p) {
+  inline void raw_assign_membership(size_t idx, ShenandoahFreeSetPartitionId p) {
     _membership[int(p)].set_bit(idx);
   }
 

@@ -971,7 +971,7 @@ void ShenandoahFreeSet::find_regions_with_alloc_capacity(size_t &cset_regions) {
       // Do not add regions that would almost surely fail allocation
       size_t ac = alloc_capacity(region);
       if (ac > PLAB::min_size() * HeapWordSize) {
-        _partitions.raw_set_membership(idx, ShenandoahFreeSetPartitionId::Mutator);
+        _partitions.raw_assign_membership(idx, ShenandoahFreeSetPartitionId::Mutator);
 
         if (idx < mutator_leftmost) {
           mutator_leftmost = idx;
