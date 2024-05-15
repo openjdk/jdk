@@ -42,7 +42,7 @@ import java.awt.Component;
  */
 
 @SuppressWarnings("removal")
-@Deprecated(since = "23", forRemoval = true) 
+@Deprecated(since = "23", forRemoval = true)
 public interface BeanContextChildComponentProxy {
 
     /**
