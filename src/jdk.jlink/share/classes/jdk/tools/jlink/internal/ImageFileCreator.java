@@ -210,12 +210,12 @@ public final class ImageFileCreator {
         ResourcePool resultResources;
         try {
             resultResources = pluginSupport.visitResources(allContent);
-            // Keep track of resources for runtime image based linking
-            resultResources = addNonClassResourcesTrackFiles(resultResources, writer);
-            // Generate the diff between the input resources, coming from jmods
-            // in 'allContent' to the plugin- or otherwise-generated-content in
-            // 'resultResources'
             if (generateRuntimeImage) {
+                // Keep track of resources for runtime image based linking
+                resultResources = addNonClassResourcesTrackFiles(resultResources, writer);
+                // Generate the diff between the input resources, coming from jmods
+                // in 'allContent' to the plugin- or otherwise-generated-content in
+                // 'resultResources'
                 resultResources = addRessourceDiffFiles(allContent.resourcePool(), resultResources, writer);
             }
         } catch (PluginException pe) {
