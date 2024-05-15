@@ -5266,6 +5266,7 @@ class StubGenerator: public StubCodeGenerator {
     __ sub(count, nmax, 16);
     __ bltz(len, L_by16);
 
+  // Align L_nmax loop by 64
   __ bind(L_nmax_loop_entry);
     __ sub(count, count, 32);
 
@@ -5275,7 +5276,7 @@ class StubGenerator: public StubCodeGenerator {
     __ sub(count, count, 16*LMUL);
     __ bgtz(count, L_nmax_loop);
 
-    // There are three iterations left to do in this loop
+    // There are three iterations left to do
     const int remainder = 3;
     __ mv(count, 16*remainder);
     generate_updateBytesAdler32_unroll_by16(buff, s1, s2, count, vtable_16,
