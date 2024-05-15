@@ -42,12 +42,13 @@ private:
     size_t actual;
     jlong flags;
   };
-
+  static void log(MEMFLAGS flags, size_t requested, address ptr, address old, const NativeCallStack *stack);
 public:
   static void initialize(intx count);
   static void finish(void);
-  static void log(MEMFLAGS flags = mtNone, size_t requested = 0, address ptr = nullptr,
-                  address old = nullptr, const NativeCallStack *stack = nullptr);
+  static void log_free(MEMFLAGS flags, void *ptr);
+  static void log_malloc(MEMFLAGS flags, size_t requested, void* ptr, const NativeCallStack *stack);
+  static void log_realloc(MEMFLAGS flags, size_t requested, void* ptr, void* old, const NativeCallStack *stack);
   static void replay(const char* path, const int pid);
   static void rememberThreadName(const char* name);
   static void printActualSizesFor(const char* list);
