@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -237,6 +237,10 @@ public final class CodeImpl
                 int pEnd = p + (nLn * 4);
                 for (; p < pEnd; p += 4) {
                     int startPc = classReader.readU2(p);
+                    if (startPc > codeLength) {
+                        throw new IllegalArgumentException(String.format(
+                                "Line number start_pc out of range; start_pc=%d, codeLength=%d", startPc, codeLength));
+                    }
                     int lineNumber = classReader.readU2(p + 2);
                     lineNumbers[startPc] = lineNumber;
                 }
