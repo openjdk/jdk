@@ -373,24 +373,21 @@ abstract class HkdfKeyDerivation extends KDFSpi {
 
     public static final class HkdfSHA256 extends HkdfKeyDerivation {
         public HkdfSHA256(AlgorithmParameterSpec algParameterSpec)
-            throws InvalidAlgorithmParameterException,
-                   NoSuchAlgorithmException {
+            throws InvalidAlgorithmParameterException {
             super("HmacSHA256", 32, algParameterSpec);
         }
     }
 
     public static final class HkdfSHA384 extends HkdfKeyDerivation {
         public HkdfSHA384(AlgorithmParameterSpec algParameterSpec)
-            throws InvalidAlgorithmParameterException,
-                   NoSuchAlgorithmException {
+            throws InvalidAlgorithmParameterException {
             super("HmacSHA384", 48, algParameterSpec);
         }
     }
 
     public static final class HkdfSHA512 extends HkdfKeyDerivation {
         public HkdfSHA512(AlgorithmParameterSpec algParameterSpec)
-            throws InvalidAlgorithmParameterException,
-                   NoSuchAlgorithmException {
+            throws InvalidAlgorithmParameterException {
             super("HmacSHA512", 64, algParameterSpec);
         }
     }
