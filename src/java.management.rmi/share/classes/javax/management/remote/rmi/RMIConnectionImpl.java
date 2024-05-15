@@ -971,8 +971,14 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         if (names == null || filters == null) {
             throw new IllegalArgumentException("Got null arguments.");
         }
+        // Accept an array of delegationSubjects from e.g. earlier JDKs,
+        // but throw if it contains any non-null values.
         if (delegationSubjects != null) {
-            throw new UnsupportedOperationException("Subject Delegation has been removed.");
+            for (Subject s: delegationSubjects) {
+                if (s != null) {
+                    throw new UnsupportedOperationException("Subject Delegation has been removed.");
+                }
+            }
         }
         Subject[] sbjs = new Subject[names.length];
         if (names.length != filters.length || filters.length != sbjs.length) {
