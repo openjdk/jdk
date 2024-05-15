@@ -26,8 +26,6 @@ package indify;
 import java.lang.classfile.*;
 import java.lang.classfile.constantpool.*;
 import java.lang.classfile.instruction.*;
-import java.lang.constant.ClassDesc;
-import java.lang.reflect.Array;
 import java.nio.file.Files;
 import java.util.*;
 import java.io.*;
@@ -534,8 +532,7 @@ public class Indify {
                         new_constants.put(m, entry);
                         found = true;
                     }
-                 }
-
+                }
             }
         }
 
@@ -1377,7 +1374,8 @@ public class Indify {
             int argi = 0;
             if(!"lookup".equals(args.get(argi++))) return null;
 
-            int cindex, ntindex, nindex, tindex;
+            int cindex, nindex, tindex;
+            NameAndTypeEntry nt;
             Object con;
 
             if(!((con = args.get(argi++)) instanceof ClassEntry)) return null;
@@ -1390,29 +1388,28 @@ public class Indify {
                 tindex = (((MethodTypeEntry) con).descriptor()).index();
             } else return null;
 
-            ntindex = bytecode.poolBuilder.nameAndTypeEntry(
+            nt = bytecode.poolBuilder.nameAndTypeEntry(
                             (Utf8Entry) bytecode.pool.entryByIndex(nindex),
                             (Utf8Entry) bytecode.pool.entryByIndex(tindex)
-                    )
-                    .index();
+                    );
 
             MemberRefEntry ref;
             if(refKind <= (byte) STATIC_SETTER.refKind){
                  ref = bytecode.poolBuilder.fieldRefEntry(
                         (ClassEntry) bytecode.pool.entryByIndex(cindex),
-                        (NameAndTypeEntry) bytecode.pool.entryByIndex(ntindex));
+                         nt);
                 return bytecode.poolBuilder.methodHandleEntry(refKind, ref);
             }
             else if(refKind == (byte) INTERFACE_VIRTUAL.refKind){
                 ref = bytecode.poolBuilder.interfaceMethodRefEntry(
                         (ClassEntry) bytecode.pool.entryByIndex(cindex),
-                        (NameAndTypeEntry) bytecode.pool.entryByIndex(ntindex));
+                        nt);
                 return bytecode.poolBuilder.methodHandleEntry(refKind, ref);
             }
             else{
                 ref = bytecode.poolBuilder.methodRefEntry(
                     (ClassEntry) bytecode.pool.entryByIndex(cindex),
-                    (NameAndTypeEntry) bytecode.pool.entryByIndex(ntindex));
+                    nt);
             }
             return bytecode.poolBuilder.methodHandleEntry(refKind, ref);
         }
