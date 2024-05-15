@@ -5291,12 +5291,13 @@ class StubGenerator: public StubCodeGenerator {
   __ bind(L_by16);
     __ add(len, len, count);
     __ bltz(len, L_by1);
+    __ mv(count, 16);
 
   __ bind(L_by16_loop);
-    generate_updateBytesAdler32_unroll_by16(buff, s1, s2, len, vtable_16, vzero,
+    generate_updateBytesAdler32_unroll_by16(buff, s1, s2, count, vtable_16, vzero,
       vbytes, vs1acc, vs2acc, temp0, temp1, temp2, vtemp1, vtemp2, 1);
     __ sub(len, len, 16);
-    __ bgtz(len, L_by16_loop);
+    __ bgez(len, L_by16_loop);
 
   __ bind(L_by1);
     __ add(len, len, 15);
