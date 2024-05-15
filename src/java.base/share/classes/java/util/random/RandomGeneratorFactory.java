@@ -194,8 +194,8 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
             );
         }
 
-        private static Map.Entry<String, RandomGeneratorProperties>
-        entry(Class<? extends RandomGenerator> rgClass, String name, String group,
+        private static Map.Entry<String, RandomGeneratorProperties> entry(
+                Class<? extends RandomGenerator> rgClass, String name, String group,
                 int i, int j, int k, int equidistribution,
                 int flags) {
             return Map.entry(name,
@@ -610,7 +610,7 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
      * Create an instance of {@link RandomGenerator} based on the
      * <a href="package-summary.html#algorithms">algorithm</a> chosen.
      *
-     * @return new in instance of {@link RandomGenerator}.
+     * @return new instance of {@link RandomGenerator}.
      */
     public T create() {
         @SuppressWarnings("unchecked")
@@ -621,15 +621,17 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
     /**
      * Create an instance of {@link RandomGenerator} based on the
      * <a href="package-summary.html#algorithms">algorithm</a> chosen,
-     * and providing a starting long seed.
-     * If a long seed is not supported by the algorithm,
-     * an {@link UnsupportedOperationException} is thrown.
+     * and the provided {@code seed}.
+     * If the {@link RandomGenerator} doesn't support instantiation through
+     * a {@code seed} of type {@code long} then this method throws
+     * an {@link UnsupportedOperationException}.
      *
      * @param seed long random seed value.
      *
-     * @return new in instance of {@link RandomGenerator}.
+     * @return new instance of {@link RandomGenerator}.
      *
-     * @throws UnsupportedOperationException if a long seed in not supported.
+     * @throws UnsupportedOperationException
+     *      if a {@code seed} of type {@code long} in not supported.
      */
     public T create(long seed) {
         @SuppressWarnings("unchecked")
@@ -640,15 +642,18 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
     /**
      * Create an instance of {@link RandomGenerator} based on the
      * <a href="package-summary.html#algorithms">algorithm</a> chosen,
-     * and providing a starting byte[] seed.
-     * If a byte[] seed is not supported by the algorithm,
-     * an {@link UnsupportedOperationException} is thrown.
+     * and the provided {@code seed}.
+     * If the {@link RandomGenerator} doesn't support instantiation through
+     * a {@code seed} of type {@code byte[]} then this method throws
+     * an {@link UnsupportedOperationException}.
      *
      * @param seed byte array random seed value.
      *
-     * @return new in instance of {@link RandomGenerator}.
+     * @return new instance of {@link RandomGenerator}.
      *
-     * @throws UnsupportedOperationException if a byte[] seed in not supported.
+     * @throws UnsupportedOperationException
+     *      if a {@code seed} of type {@code byte[]} in not supported.
+     *
      * @throws NullPointerException if seed is null.
      */
     public T create(byte[] seed) {

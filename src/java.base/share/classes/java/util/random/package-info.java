@@ -81,8 +81,8 @@
  * <blockquote>{@code import java.util.random.*;}</blockquote>
  *
  * Then one can choose a specific implementation by giving the name of a generator
- * algorithm to the static method {@link RandomGenerator#of}, in which case no
- * seed is specified by the caller:
+ * algorithm to the static method {@link RandomGenerator#of}, in which case
+ * a {@link RandomGenerator} is constructed without any seed value:
  *
  * <blockquote>{@code RandomGenerator g = RandomGenerator.of("L64X128MixRandom");}</blockquote>
  *
@@ -125,8 +125,8 @@
  *
  * <h2>Choosing a Random Number Generator Algorithm</h2>
  *
- * <p> There are three groups of random number generator algorithm provided
- * in Java: the Legacy group, the LXM group, and the Xoroshiro/Xoshiro group.
+ * <p> Random number generator algorithms are organized in groups,
+ * as described <a href="package-summary.html#algorithms">below</a>.
  *
  * <p> The legacy group includes random number generators that existed
  * before JDK 17: Random, ThreadLocalRandom, SplittableRandom, and
