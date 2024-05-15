@@ -48,15 +48,11 @@ abstract sealed class VarHandleSegmentViewBase extends VarHandle permits
     /** alignment constraint (in bytes, expressed as a bit mask) **/
     final long alignmentMask;
 
-    /** is this var handle accessing a value layout nested inside another layout? **/
-    final boolean nested;
-
-    VarHandleSegmentViewBase(VarForm form, boolean be, long length, long alignmentMask, boolean nested, boolean exact) {
+    VarHandleSegmentViewBase(VarForm form, boolean be, long length, long alignmentMask, boolean exact) {
         super(form, exact);
         this.be = be;
         this.length = length;
         this.alignmentMask = alignmentMask;
-        this.nested = nested;
     }
 
     static IllegalArgumentException newIllegalArgumentExceptionForMisalignedAccess(long address) {

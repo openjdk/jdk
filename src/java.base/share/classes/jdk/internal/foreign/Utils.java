@@ -89,19 +89,7 @@ public final class Utils {
         return ms.asSlice(alignUp(offset, alignment) - offset);
     }
 
-    public static VarHandle makeSegmentViewVarHandle(ValueLayout layout, boolean nested) {
-        return makeNestedSegmentViewVarHandle(layout);
-    }
-
-    private static VarHandle makeToplevelSegmentViewVarHandle(ValueLayout layout) {
-        return makeSegmentViewVarHandleInternal(layout, false);
-    }
-
-    private static VarHandle makeNestedSegmentViewVarHandle(ValueLayout layout) {
-        return makeSegmentViewVarHandleInternal(layout, true);
-    }
-
-    private static VarHandle makeSegmentViewVarHandleInternal(ValueLayout layout, boolean nested) {
+    public static VarHandle makeSegmentViewVarHandle(ValueLayout layout) {
         Class<?> baseCarrier = layout.carrier();
         if (layout.carrier() == MemorySegment.class) {
             baseCarrier = switch ((int) ValueLayout.ADDRESS.byteSize()) {
@@ -114,7 +102,7 @@ public final class Utils {
         }
 
         VarHandle handle = SharedSecrets.getJavaLangInvokeAccess().memorySegmentViewHandle(baseCarrier,
-                layout.byteAlignment() - 1, layout.order(), nested);
+                layout.byteAlignment() - 1, layout.order());
 
         if (layout.carrier() == boolean.class) {
             handle = MethodHandles.filterValue(handle, BOOL_TO_BYTE, BYTE_TO_BOOL);

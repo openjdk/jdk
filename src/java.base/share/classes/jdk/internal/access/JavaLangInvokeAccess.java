@@ -75,7 +75,7 @@ public interface JavaLangInvokeAccess {
      * Used by {@code jdk.internal.foreign.LayoutPath} and
      * {@code java.lang.invoke.MethodHandles}.
      */
-    VarHandle memorySegmentViewHandle(Class<?> carrier, long alignmentMask, ByteOrder order, boolean nested);
+    VarHandle memorySegmentViewHandle(Class<?> carrier, long alignmentMask, ByteOrder order);
 
     /**
      * Var handle carrier combinator.
