@@ -227,9 +227,8 @@ class ScopedValueAPI {
             ScopedValue<String> name = ScopedValue.newInstance();
             ScopedValue<Integer> age = ScopedValue.newInstance();
 
-            // runWhere
-            var carrier = ScopedValue.where(name, "duke").where(age, 100);
-            ScopedValue.runWhere(carrier, () -> {
+            // Carrier.run
+            ScopedValue.where(name, "duke").where(age, 100).run(() -> {
                 assertTrue(name.isBound());
                 assertTrue(age.isBound());
                 assertEquals("duke", name.get());
@@ -238,8 +237,8 @@ class ScopedValueAPI {
             assertFalse(name.isBound());
             assertFalse(age.isBound());
 
-            // callWhere
-            ScopedValue.callWhere(carrier, () -> {
+            // Carrier.call
+            ScopedValue.where(name, "duke").where(age, 100).call(() -> {
                 assertTrue(name.isBound());
                 assertTrue(age.isBound());
                 assertEquals("duke", name.get());
@@ -422,6 +421,8 @@ class ScopedValueAPI {
         var carrier = ScopedValue.where(name, "duke");
         assertThrows(NullPointerException.class, () -> carrier.where(null, "duke"));
         assertThrows(NullPointerException.class, () -> carrier.get((ScopedValue<?>)null));
+        assertThrows(NullPointerException.class, () -> carrier.run(null));
+        assertThrows(NullPointerException.class, () -> carrier.call(null));
     }
 
     @FunctionalInterface
