@@ -510,7 +510,7 @@ instruct vand_immL(vReg dst_src, immL5 con) %{
 
 // vector-scalar and (unpredicated)
 
-instruct vand_regI(vReg dst_src, iRegI src) %{
+instruct vand_regI(vReg dst_src, iRegIorL2I src) %{
   predicate(Matcher::vector_element_basic_type(n) == T_INT ||
             Matcher::vector_element_basic_type(n) == T_BYTE ||
             Matcher::vector_element_basic_type(n) == T_SHORT);
@@ -572,7 +572,7 @@ instruct vand_immL_masked(vReg dst_src, immL5 con, vRegMask_V0 v0) %{
 
 // vector-scalar and (predicated)
 
-instruct vand_regI_masked(vReg dst_src, iRegI src, vRegMask_V0 v0) %{
+instruct vand_regI_masked(vReg dst_src, iRegIorL2I src, vRegMask_V0 v0) %{
   predicate(Matcher::vector_element_basic_type(n) == T_INT ||
             Matcher::vector_element_basic_type(n) == T_BYTE ||
             Matcher::vector_element_basic_type(n) == T_SHORT);
@@ -666,7 +666,7 @@ instruct vor_immL(vReg dst_src, immL5 con) %{
 
 // vector-scalar or (unpredicated)
 
-instruct vor_regI(vReg dst_src, iRegI src) %{
+instruct vor_regI(vReg dst_src, iRegIorL2I src) %{
   predicate(Matcher::vector_element_basic_type(n) == T_INT ||
             Matcher::vector_element_basic_type(n) == T_BYTE ||
             Matcher::vector_element_basic_type(n) == T_SHORT);
@@ -728,7 +728,7 @@ instruct vor_immL_masked(vReg dst_src, immL5 con, vRegMask_V0 v0) %{
 
 // vector-scalar or (predicated)
 
-instruct vor_regI_masked(vReg dst_src, iRegI src, vRegMask_V0 v0) %{
+instruct vor_regI_masked(vReg dst_src, iRegIorL2I src, vRegMask_V0 v0) %{
   predicate(Matcher::vector_element_basic_type(n) == T_INT ||
             Matcher::vector_element_basic_type(n) == T_BYTE ||
             Matcher::vector_element_basic_type(n) == T_SHORT);
@@ -822,7 +822,7 @@ instruct vxor_immL(vReg dst_src, immL5 con) %{
 
 // vector-scalar xor (unpredicated)
 
-instruct vxor_regI(vReg dst_src, iRegI src) %{
+instruct vxor_regI(vReg dst_src, iRegIorL2I src) %{
   predicate(Matcher::vector_element_basic_type(n) == T_INT ||
             Matcher::vector_element_basic_type(n) == T_BYTE ||
             Matcher::vector_element_basic_type(n) == T_SHORT);
@@ -884,7 +884,7 @@ instruct vxor_immL_masked(vReg dst_src, immL5 con, vRegMask_V0 v0) %{
 
 // vector-scalar xor (predicated)
 
-instruct vxor_regI_masked(vReg dst_src, iRegI src, vRegMask_V0 v0) %{
+instruct vxor_regI_masked(vReg dst_src, iRegIorL2I src, vRegMask_V0 v0) %{
   predicate(Matcher::vector_element_basic_type(n) == T_INT ||
             Matcher::vector_element_basic_type(n) == T_BYTE ||
             Matcher::vector_element_basic_type(n) == T_SHORT);
