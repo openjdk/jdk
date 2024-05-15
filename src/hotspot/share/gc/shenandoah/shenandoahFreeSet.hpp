@@ -106,10 +106,11 @@ public:
   }
 
   // Set the Mutator intervals, usage, and capacity according to arguments.  Reset the Collector intervals, used, capacity
-  // to represent empty Collector free set.
-  void establish_intervals(ssize_t mutator_leftmost, ssize_t mutator_rightmost,
-                           ssize_t mutator_leftmost_empty, ssize_t mutator_rightmost_empty,
-                           size_t mutator_region_count, size_t mutator_used);
+  // to represent empty Collector free set.  We use this at the end of rebuild_free_set() to avoid the overhead of making
+  // many redundant incremental adjustments to the mutator intervals as the free set is being rebuilt.
+  void establish_mutator_intervals(ssize_t mutator_leftmost, ssize_t mutator_rightmost,
+                                   ssize_t mutator_leftmost_empty, ssize_t mutator_rightmost_empty,
+                                   size_t mutator_region_count, size_t mutator_used);
 
   // Retire region idx from within partition, , leaving its capacity and used as part of the original free partition's totals.
   // Requires that region idx is in in the Mutator or Collector partitions.  Hereafter, identifies this region as NotFree.
