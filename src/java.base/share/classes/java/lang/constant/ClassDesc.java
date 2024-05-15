@@ -338,7 +338,7 @@ public sealed interface ClassDesc
             return "";
         String desc = descriptorString();
         int index = desc.lastIndexOf('/');
-        return (index == -1) ? "" : internalToBinary(desc.substring(1, index - 1));
+        return (index == -1) ? "" : internalToBinary(desc.substring(1, index));
     }
 
     /**
