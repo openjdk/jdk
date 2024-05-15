@@ -72,26 +72,27 @@ public abstract class KDFSpi {
 
 
     /**
-     * Derive a key, returned as a {@code SecretKey}.
+     * Derives a key, returned as a {@code SecretKey}.
      * <p>
-     * The {@code deriveKey} method may be called multiple times once a
-     * {@code KDF} object is initialized.
+     * The {@code deriveKey} method may be called multiple times on a particular
+     * {@code KDF} instance.
      * <p>
      * Delayed provider selection is also supported such that the provider
-     * performing the derive is not selected until the method is called.
+     * performing the derive is not selected until the method is called. Once a
+     * provider is selected, it cannot be changed.
      *
      * @param alg
-     *     the algorithm of the resultant key object (may not be {@code null})
+     *     the algorithm of the resultant {@code SecretKey} object (may not be
+     *     {@code null})
      * @param kdfParameterSpec
-     *     derivation parameters (may not be {@code null})
+     *     derivation parameters
      *
      * @return a {@code SecretKey} object corresponding to a key built from the
-     *     KDF output and according to the derivation parameters.
+     *     KDF output and according to the derivation parameters
      *
      * @throws InvalidParameterSpecException
      *     if the information contained within the {@code KDFParameterSpec} is
-     *     invalid or incorrect for the type of key to be derived, or specifies
-     *     a type of output that is not a key (e.g. raw data)
+     *     invalid or incorrect for the type of key to be derived
      * @throws NullPointerException
      *     if {@code alg} or {@code kdfParameterSpec} is null
      */
@@ -100,20 +101,21 @@ public abstract class KDFSpi {
         throws InvalidParameterSpecException;
 
     /**
-     * Obtain raw data from a key derivation function.
+     * Obtains raw data from a key derivation function.
      * <p>
-     * The {@code deriveData} method may be called multiple times once a
-     * {@code KDF} object is initialized.
+     * The {@code deriveData} method may be called multiple times on a
+     * particular {@code KDF} instance.
      * <p>
      * Delayed provider selection is also supported such that the provider
-     * performing the derive is not selected until the method is called.
+     * performing the derive is not selected until the method is called. Once a
+     * provider is selected, it cannot be changed.
      *
      * @param kdfParameterSpec
-     *     derivation parameters (may not be {@code null})
+     *     derivation parameters
      *
-     * @return a byte array whose length matches the length field in the
-     *     processed {@code KDFParameterSpec} and containing the next bytes of
-     *     output from the key derivation function.
+     * @return a byte array whose length matches the specified length in the
+     *     processed {@code KDFParameterSpec} and containing the output from the
+     *     key derivation function
      *
      * @throws InvalidParameterSpecException
      *     if the information contained within the {@code KDFParameterSpec} is

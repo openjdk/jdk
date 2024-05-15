@@ -209,7 +209,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
             length = anExtractThenExpand.length();
             if (length > (hmacLen * 255)) {
                 throw new InvalidParameterSpecException(
-                    "Requested length exceeds maximum allowed key stream " 
+                    "Requested length exceeds maximum allowed key stream "
                     + "length");
             }
             // perform extract and then expand
