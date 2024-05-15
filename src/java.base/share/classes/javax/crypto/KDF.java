@@ -43,7 +43,10 @@ import java.util.Iterator;
 import java.util.Objects;
 
 /**
- * This class provides the functionality of a Key Derivation Function (KDF).
+ * This class provides the functionality of a Key Derivation Function (KDF),
+ * which is a cryptographic algorithm for deriving additional keys from a secret
+ * key and other data.
+ * <p>
  * {@code KDF} objects are instantiated with the {@code getInstance} family of
  * methods. KDF algorithm names follow a naming convention of
  * <em>Algorithm</em>With<em>PRF</em>. For instance, a KDF implementation of
@@ -61,6 +64,10 @@ import java.util.Objects;
  * is chosen which may not be the desired one; therefore it is recommended not
  * to call {@code getProviderName} until after a key derivation operation. Once
  * a provider is selected, it cannot be changed.
+ * <p>
+ * The {@code deriveKey} and {@code deriveData} methods of {@code KDF} objects
+ * must be thread-safe. That is, multiple threads may concurrently invoke these
+ * methods on a single {@code KDF} object with no ill effects.
  * <p>
  * API Usage Example:
  * {@snippet lang = java:
