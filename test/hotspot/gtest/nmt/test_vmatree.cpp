@@ -279,20 +279,20 @@ TEST_VM_F(VMATreeTest, SummaryAccounting) {
     Tree::RegionData rd(NCS::StackIndex(), mtTest);
     Tree::RegionData rd2(NCS::StackIndex(), mtNMT);
     Tree tree;
-    auto all_diff = tree.reserve_mapping(0, 100, rd);
-    auto diff = all_diff.flag[NMTUtil::flag_to_index(mtTest)];
+    VMATree::SummaryDiff all_diff = tree.reserve_mapping(0, 100, rd);
+    VMATree::SingleDiff diff = all_diff.flag[NMTUtil::flag_to_index(mtTest)];
     EXPECT_EQ(100, diff.reserve);
     all_diff = tree.reserve_mapping(50, 25, rd2);
     diff = all_diff.flag[NMTUtil::flag_to_index(mtTest)];
-    auto diff2 = all_diff.flag[NMTUtil::flag_to_index(mtNMT)];
+    VMATree::SingleDiff diff2 = all_diff.flag[NMTUtil::flag_to_index(mtNMT)];
     EXPECT_EQ(-25, diff.reserve);
     EXPECT_EQ(25, diff2.reserve);
   }
   { // Fully release reserved mapping
     Tree::RegionData rd(NCS::StackIndex(), mtTest);
     Tree tree;
-    auto all_diff = tree.reserve_mapping(0, 100, rd);
-    auto diff = all_diff.flag[NMTUtil::flag_to_index(mtTest)];
+    VMATree::SummaryDiff all_diff = tree.reserve_mapping(0, 100, rd);
+    VMATree::SingleDiff diff = all_diff.flag[NMTUtil::flag_to_index(mtTest)];
     EXPECT_EQ(100, diff.reserve);
     all_diff = tree.release_mapping(0, 100);
     diff = all_diff.flag[NMTUtil::flag_to_index(mtTest)];
@@ -301,8 +301,8 @@ TEST_VM_F(VMATreeTest, SummaryAccounting) {
   { // Convert some of a released mapping to a committed one
     Tree::RegionData rd(NCS::StackIndex(), mtTest);
     Tree tree;
-    auto all_diff = tree.reserve_mapping(0, 100, rd);
-    auto diff = all_diff.flag[NMTUtil::flag_to_index(mtTest)];
+    VMATree::SummaryDiff all_diff = tree.reserve_mapping(0, 100, rd);
+    VMATree::SingleDiff diff = all_diff.flag[NMTUtil::flag_to_index(mtTest)];
     EXPECT_EQ(diff.reserve, 100);
     all_diff = tree.commit_mapping(0, 100, rd);
     diff = all_diff.flag[NMTUtil::flag_to_index(mtTest)];
@@ -312,8 +312,8 @@ TEST_VM_F(VMATreeTest, SummaryAccounting) {
   { // Adjacent reserved mappings with same flag
     Tree::RegionData rd(NCS::StackIndex(), mtTest);
     Tree tree;
-    auto all_diff = tree.reserve_mapping(0, 100, rd);
-    auto diff = all_diff.flag[NMTUtil::flag_to_index(mtTest)];
+    VMATree::SummaryDiff all_diff = tree.reserve_mapping(0, 100, rd);
+    VMATree::SingleDiff diff = all_diff.flag[NMTUtil::flag_to_index(mtTest)];
     EXPECT_EQ(diff.reserve, 100);
     all_diff = tree.reserve_mapping(100, 100, rd);
     diff = all_diff.flag[NMTUtil::flag_to_index(mtTest)];
@@ -323,8 +323,8 @@ TEST_VM_F(VMATreeTest, SummaryAccounting) {
   Tree::RegionData rd(NCS::StackIndex(), mtTest);
     Tree::RegionData rd2(NCS::StackIndex(), mtNMT);
     Tree tree;
-    auto all_diff = tree.reserve_mapping(0, 100, rd);
-    auto diff = all_diff.flag[NMTUtil::flag_to_index(mtTest)];
+    VMATree::SummaryDiff all_diff = tree.reserve_mapping(0, 100, rd);
+    VMATree::SingleDiff diff = all_diff.flag[NMTUtil::flag_to_index(mtTest)];
     EXPECT_EQ(diff.reserve, 100);
     all_diff = tree.reserve_mapping(100, 100, rd2);
     diff = all_diff.flag[NMTUtil::flag_to_index(mtTest)];
@@ -339,7 +339,7 @@ TEST_VM_F(VMATreeTest, SummaryAccounting) {
     Tree::RegionData rd(NCS::StackIndex(), mtTest);
     tree.commit_mapping(128, 128, rd);
     tree.commit_mapping(512, 128, rd);
-    auto diff = tree.commit_mapping(0, 1024, rd);
+    VMATree::SummaryDiff diff = tree.commit_mapping(0, 1024, rd);
     EXPECT_EQ(768, diff.flag[NMTUtil::flag_to_index(mtTest)].commit);
     EXPECT_EQ(768, diff.flag[NMTUtil::flag_to_index(mtTest)].reserve);
   }
