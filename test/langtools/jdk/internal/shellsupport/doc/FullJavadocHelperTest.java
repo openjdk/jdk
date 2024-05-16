@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,12 +21,29 @@
  * questions.
  */
 
-/**
- * This package comprises the interfaces and classes used to
- * develop new {@link com.sun.jdi.connect.spi.TransportService}
- * implementations.
- *
- * @since 1.5
+/*
+ * @test
+ * @bug 8189778
+ * @summary Test JavadocHelper
+ * @library /tools/lib
+ * @modules jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.main
+ *          jdk.compiler/jdk.internal.shellsupport.doc
+ * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask
+ * @run testng/timeout=900/othervm -Xmx1024m FullJavadocHelperTest
  */
 
-package com.sun.jdi.connect.spi;
+import java.io.IOException;
+
+import org.testng.annotations.Test;
+
+@Test
+public class FullJavadocHelperTest {
+
+    /*
+     * Long-running test to retrieve doc comments for enclosed elements of all JDK classes.
+     */
+    public void testAllDocs() throws IOException {
+        new JavadocHelperTest().retrieveDocComments(Boolean.TRUE::booleanValue);
+    }
+}
