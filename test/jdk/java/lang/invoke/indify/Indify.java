@@ -542,29 +542,29 @@ public class Indify {
         }
 
         ClassModel transformFromCPbuilder(ClassModel oldClassModel, ConstantPoolBuilder cpBuilder){
-            byte[] new_bytes = java.lang.classfile.ClassFile.of().transform(oldClassModel, ClassTransform.endHandler(ClassBuilder -> {
+            byte[] new_bytes = java.lang.classfile.ClassFile.of().transform(oldClassModel, ClassTransform.endHandler(clb -> {
                 for (PoolEntry entry: cpBuilder){
                     System.err.println("Entry: "+entry);
-                    if (entry instanceof Utf8Entry utf8Entry) ClassBuilder.constantPool().utf8Entry(utf8Entry.stringValue());
-                    if (entry instanceof NameAndTypeEntry nameAndTypeEntry) ClassBuilder.constantPool().nameAndTypeEntry(nameAndTypeEntry.name(), nameAndTypeEntry.type());
-                    if (entry instanceof MethodTypeEntry methodTypeEntry) ClassBuilder.constantPool().methodTypeEntry(methodTypeEntry.descriptor());
-                    if (entry instanceof MethodHandleEntry methodHandleEntry) ClassBuilder.constantPool().methodHandleEntry(methodHandleEntry.kind(), methodHandleEntry.reference());
-                    if (entry instanceof MethodRefEntry methodRefEntry) ClassBuilder.constantPool().methodRefEntry(methodRefEntry.owner(), methodRefEntry.nameAndType());
-                    if (entry instanceof FieldRefEntry fieldRefEntry) ClassBuilder.constantPool().fieldRefEntry(fieldRefEntry.owner(), fieldRefEntry.nameAndType());
-                    if (entry instanceof ClassEntry classEntry) ClassBuilder.constantPool().classEntry(classEntry.name());
-                    if (entry instanceof StringEntry stringEntry) ClassBuilder.constantPool().stringEntry(stringEntry.utf8());
-                    if (entry instanceof IntegerEntry integerEntry) ClassBuilder.constantPool().intEntry(integerEntry.intValue());
-                    if (entry instanceof FloatEntry floatEntry) ClassBuilder.constantPool().floatEntry(floatEntry.floatValue());
-                    if (entry instanceof LongEntry longEntry) ClassBuilder.constantPool().longEntry(longEntry.longValue());
-                    if (entry instanceof DoubleEntry doubleEntry) ClassBuilder.constantPool().doubleEntry(doubleEntry.doubleValue());
-                    if (entry instanceof InterfaceMethodRefEntry interfaceMethodRefEntry) ClassBuilder.constantPool().interfaceMethodRefEntry(interfaceMethodRefEntry.owner(), interfaceMethodRefEntry.nameAndType());
-                    if (entry instanceof InvokeDynamicEntry invokeDynamicEntry) ClassBuilder.constantPool().invokeDynamicEntry(invokeDynamicEntry.bootstrap(), invokeDynamicEntry.nameAndType());
-                    if (entry instanceof ModuleEntry moduleEntry) ClassBuilder.constantPool().moduleEntry(moduleEntry.name());
-                    if (entry instanceof PackageEntry packageEntry) ClassBuilder.constantPool().packageEntry(packageEntry.name());
+                    if (entry instanceof Utf8Entry utf8Entry) clb.constantPool().utf8Entry(utf8Entry.stringValue());
+                    if (entry instanceof NameAndTypeEntry nameAndTypeEntry) clb.constantPool().nameAndTypeEntry(nameAndTypeEntry.name(), nameAndTypeEntry.type());
+                    if (entry instanceof MethodTypeEntry methodTypeEntry) clb.constantPool().methodTypeEntry(methodTypeEntry.descriptor());
+                    if (entry instanceof MethodHandleEntry methodHandleEntry) clb.constantPool().methodHandleEntry(methodHandleEntry.kind(), methodHandleEntry.reference());
+                    if (entry instanceof MethodRefEntry methodRefEntry) clb.constantPool().methodRefEntry(methodRefEntry.owner(), methodRefEntry.nameAndType());
+                    if (entry instanceof FieldRefEntry fieldRefEntry) clb.constantPool().fieldRefEntry(fieldRefEntry.owner(), fieldRefEntry.nameAndType());
+                    if (entry instanceof ClassEntry classEntry) clb.constantPool().classEntry(classEntry.name());
+                    if (entry instanceof StringEntry stringEntry) clb.constantPool().stringEntry(stringEntry.utf8());
+                    if (entry instanceof IntegerEntry integerEntry) clb.constantPool().intEntry(integerEntry.intValue());
+                    if (entry instanceof FloatEntry floatEntry) clb.constantPool().floatEntry(floatEntry.floatValue());
+                    if (entry instanceof LongEntry longEntry) clb.constantPool().longEntry(longEntry.longValue());
+                    if (entry instanceof DoubleEntry doubleEntry) clb.constantPool().doubleEntry(doubleEntry.doubleValue());
+                    if (entry instanceof InterfaceMethodRefEntry interfaceMethodRefEntry) clb.constantPool().interfaceMethodRefEntry(interfaceMethodRefEntry.owner(), interfaceMethodRefEntry.nameAndType());
+                    if (entry instanceof InvokeDynamicEntry invokeDynamicEntry) clb.constantPool().invokeDynamicEntry(invokeDynamicEntry.bootstrap(), invokeDynamicEntry.nameAndType());
+                    if (entry instanceof ModuleEntry moduleEntry) clb.constantPool().moduleEntry(moduleEntry.name());
+                    if (entry instanceof PackageEntry packageEntry) clb.constantPool().packageEntry(packageEntry.name());
                 }
                 for (int i = 0; i < cpBuilder.bootstrapMethodCount(); i++) {
                     System.err.println("Bootstrap Method Entry: "+cpBuilder.bootstrapMethodEntry(i).bootstrapMethod() + " Arguments: "+cpBuilder.bootstrapMethodEntry(i).arguments());
-                    ClassBuilder.constantPool().bsmEntry(cpBuilder.bootstrapMethodEntry(i).bootstrapMethod(), cpBuilder.bootstrapMethodEntry(i).arguments());
+                    clb.constantPool().bsmEntry(cpBuilder.bootstrapMethodEntry(i).bootstrapMethod(), cpBuilder.bootstrapMethodEntry(i).arguments());
                 }
             }));
 
