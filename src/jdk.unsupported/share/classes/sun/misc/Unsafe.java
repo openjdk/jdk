@@ -1865,8 +1865,8 @@ public final class Unsafe {
                     case "debug" -> MemoryAccessOption.DEBUG;
                     case "deny"  -> MemoryAccessOption.DENY;
                     default -> {
-                        // emit warning
-                        log("--sun-misc-unsafe-memory-access ignored, value '" + value +
+                        // should not happen
+                        log("sun.misc.unsafe.memory.access ignored, value '" + value +
                                 "' is not a recognized value");
                         yield defaultValue();
                     }

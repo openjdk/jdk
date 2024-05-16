@@ -48,6 +48,7 @@ class UnsafeMemoryAccessWarnings {
     @Test
     void testDefault() throws Exception {
         test("allocateMemory+freeMemory+objectFieldOffset+putLong+getLong+invokeCleaner")
+            .shouldHaveExitValue(0)
             .shouldNotContain("WARNING: A terminally deprecated method in sun.misc.Unsafe has been called")
             .shouldNotContain("WARNING: sun.misc.Unsafe::allocateMemory")
             .shouldNotContain("WARNING: sun.misc.Unsafe::freeMemory")
@@ -64,6 +65,7 @@ class UnsafeMemoryAccessWarnings {
     void testAllow() throws Exception {
         test("allocateMemory+freeMemory+objectFieldOffset+putLong+getLong+invokeCleaner",
                 "--sun-misc-unsafe-memory-access=allow")
+            .shouldHaveExitValue(0)
             .shouldNotContain("WARNING: A terminally deprecated method in sun.misc.Unsafe has been called")
             .shouldNotContain("WARNING: sun.misc.Unsafe::allocateMemory")
             .shouldNotContain("WARNING: sun.misc.Unsafe::freeMemory")
@@ -83,7 +85,7 @@ class UnsafeMemoryAccessWarnings {
             "invokeCleaner"
     })
     void testWarn(String input) throws Exception {
-        var output = test(input, "--sun-misc-unsafe-memory-access=warn");
+        var output = test(input, "--sun-misc-unsafe-memory-access=warn").shouldHaveExitValue(0);
 
         // should be warning printed for the first memory access method
         String[] methodNames = input.split("\\+");
@@ -108,6 +110,7 @@ class UnsafeMemoryAccessWarnings {
     void testDebug() throws Exception {
         test("allocateMemory+freeMemory+objectFieldOffset+putLong+getLong+invokeCleaner",
                 "--sun-misc-unsafe-memory-access=debug")
+            .shouldHaveExitValue(0)
             .shouldContain("WARNING: sun.misc.Unsafe::allocateMemory called")
             .shouldContain("WARNING: sun.misc.Unsafe::freeMemory called")
             .shouldContain("WARNING: sun.misc.Unsafe::objectFieldOffset called")
@@ -122,6 +125,7 @@ class UnsafeMemoryAccessWarnings {
     @Test
     void testDeny() throws Exception {
         test("allocateMemory+objectFieldOffset+invokeCleaner", "--sun-misc-unsafe-memory-access=deny")
+            .shouldHaveExitValue(0)
             .shouldContain("java.lang.UnsupportedOperationException: allocateMemory")
             .shouldContain("java.lang.UnsupportedOperationException: objectFieldOffset")
             .shouldContain("java.lang.UnsupportedOperationException: invokeCleaner");
@@ -133,11 +137,13 @@ class UnsafeMemoryAccessWarnings {
     @Test
     void testInvokeReflectively() throws Exception {
         test("reflectivelyAllocateMemory+reflectivelyFreeMemory", "--sun-misc-unsafe-memory-access=allow")
+            .shouldHaveExitValue(0)
             .shouldNotContain("WARNING: A terminally deprecated method in sun.misc.Unsafe has been called")
             .shouldNotContain("WARNING: sun.misc.Unsafe::allocateMemory")
             .shouldNotContain("WARNING: sun.misc.Unsafe::freeMemory");
 
         test("reflectivelyAllocateMemory+reflectivelyFreeMemory", "--sun-misc-unsafe-memory-access=warn")
+            .shouldHaveExitValue(0)
             .shouldContain("WARNING: A terminally deprecated method in sun.misc.Unsafe has been called")
             .shouldContain("WARNING: sun.misc.Unsafe::allocateMemory has been called by")
             .shouldContain("WARNING: Please consider reporting this to the maintainers of")
@@ -145,10 +151,12 @@ class UnsafeMemoryAccessWarnings {
             .shouldNotContain("WARNING: sun.misc.Unsafe::freeMemory");
 
         test("reflectivelyAllocateMemory+reflectivelyFreeMemory", "--sun-misc-unsafe-memory-access=debug")
+            .shouldHaveExitValue(0)
             .shouldContain("WARNING: sun.misc.Unsafe::allocateMemory called")
             .shouldContain("WARNING: sun.misc.Unsafe::freeMemory called");
 
         test("reflectivelyAllocateMemory", "--sun-misc-unsafe-memory-access=deny")
+            .shouldHaveExitValue(0)
             .shouldContain("java.lang.UnsupportedOperationException: allocateMemory");
     }
 
@@ -160,6 +168,7 @@ class UnsafeMemoryAccessWarnings {
         test("allocateMemory+objectFieldOffset+invokeCleaner",
                 "--sun-misc-unsafe-memory-access=allow",
                 "--sun-misc-unsafe-memory-access=deny")
+            .shouldHaveExitValue(0)
             .shouldContain("java.lang.UnsupportedOperationException: allocateMemory")
             .shouldContain("java.lang.UnsupportedOperationException: objectFieldOffset")
             .shouldContain("java.lang.UnsupportedOperationException: invokeCleaner");
@@ -172,16 +181,18 @@ class UnsafeMemoryAccessWarnings {
     @ValueSource(strings = { "", "bad" })
     void testInvalidValues(String value) throws Exception {
         test("allocateMemory", "--sun-misc-unsafe-memory-access=" + value)
-            .shouldContain("--sun-misc-unsafe-memory-access ignored");
+            .shouldNotHaveExitValue(0)
+            .shouldContain("Value specified to --sun-misc-unsafe-memory-access not recognized: '" + value);
     }
 
     /**
      * Test System.setProperty("sun.misc.unsafe.memory.access", "allow")
-     * The saved value from startup should be used, not the system property set a run-time.
+     * The saved value from startup should be used, not the system property set at run-time.
      */
     @Test
     void testSetPropertyToAllow() throws Exception {
         test("setSystemPropertyToAllow+objectFieldOffset", "--sun-misc-unsafe-memory-access=deny")
+            .shouldHaveExitValue(0)
             .shouldContain("java.lang.UnsupportedOperationException: objectFieldOffset");
     }
 
@@ -196,7 +207,6 @@ class UnsafeMemoryAccessWarnings {
                 .executeTestJava(opts)
                 .outputTo(System.err)
                 .errorTo(System.err);
-        assertEquals(0, outputAnalyzer.getExitValue());
         return outputAnalyzer;
     }
 }

@@ -52,7 +52,6 @@ import static java.lang.foreign.ValueLayout.*;
 @State(org.openjdk.jmh.annotations.Scope.Thread)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @Fork(3)
-@SuppressWarnings("removal")
 public class LoopOverNonConstant extends JavaLayouts {
 
     static final Unsafe unsafe = Utils.unsafe;
