@@ -135,7 +135,7 @@ abstract public class CDSAppTester {
                                                    "-cp", classpath(runMode));
         cmdLine = StringArrayUtils.concat(cmdLine, appCommandLine(runMode));
 
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(cmdLine);
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(cmdLine);
         Process process = pb.start();
         OutputAnalyzer output = CDSTestUtils.executeAndLog(process, "classlist");
         listOutputFile(classListFile);
@@ -153,7 +153,7 @@ abstract public class CDSAppTester {
                                                    "-XX:SharedArchiveFile=" + staticArchiveFile,
                                                    "-XX:SharedClassListFile=" + classListFile,
                                                    "-cp", classpath(runMode));
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(cmdLine);
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(cmdLine);
         Process process = pb.start();
         OutputAnalyzer output = CDSTestUtils.executeAndLog(process, "static");
         listOutputFile(staticArchiveFile);
@@ -174,7 +174,7 @@ abstract public class CDSAppTester {
         }
         cmdLine = StringArrayUtils.concat(cmdLine, appCommandLine(runMode));
 
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(cmdLine);
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(cmdLine);
         Process process = pb.start();
         OutputAnalyzer output = CDSTestUtils.executeAndLog(process, "dynamic");
         listOutputFile(dynamicArchiveFile);
@@ -195,7 +195,7 @@ abstract public class CDSAppTester {
 
         cmdLine = StringArrayUtils.concat(cmdLine, appCommandLine(runMode));
 
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(cmdLine);
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(cmdLine);
         Process process = pb.start();
         OutputAnalyzer output = CDSTestUtils.executeAndLog(process, "production");
         listOutputFile(name() + ".production.log");
