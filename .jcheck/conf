@@ -1,7 +1,7 @@
 [general]
 project=shenandoah
 jbs=JDK
-version=23
+version=repo-shenandoah
 
 [checks]
 error=author,committer,reviewers,merge,issues,executable,symlink,message,hg-tag,whitespace,problemlists
