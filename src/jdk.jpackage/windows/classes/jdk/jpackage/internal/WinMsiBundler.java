@@ -67,7 +67,6 @@ import static jdk.jpackage.internal.StandardBundlerParam.RESOURCE_DIR;
 import static jdk.jpackage.internal.StandardBundlerParam.TEMP_ROOT;
 import static jdk.jpackage.internal.StandardBundlerParam.VENDOR;
 import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
-import jdk.jpackage.internal.WixTool.WixToolsetBase;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
@@ -310,16 +309,14 @@ public class WinMsiBundler  extends AbstractBundler {
                 throw new ConfigException(ex);
             }
 
-            for (var tool : wixToolset.getTools()) {
+            for (var tool : wixToolset.getType().getTools()) {
                 Log.verbose(MessageFormat.format(I18N.getString(
                         "message.tool-version"), wixToolset.getToolPath(tool).
-                                getFileName(),
-                        wixToolset.getToolVersion(tool)));
+                                getFileName(), wixToolset.getVersion()));
             }
 
             wixFragments.forEach(wixFragment -> wixFragment.setWixVersion(
-                    wixToolset.getToolVersion(wixToolset.getTools().iterator().
-                            next())));
+                    wixToolset.getType()));
 
             wixFragments.get(0).logWixFeatures();
 
@@ -752,7 +749,7 @@ public class WinMsiBundler  extends AbstractBundler {
     }
 
     private Path installerIcon;
-    private WixToolsetBase wixToolset;
+    private WixToolset wixToolset;
     private AppImageBundler appImageBundler;
     private final List<WixFragmentBuilder> wixFragments;
 }

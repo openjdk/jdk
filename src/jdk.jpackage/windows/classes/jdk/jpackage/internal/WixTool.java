@@ -31,7 +31,6 @@ import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.text.MessageFormat;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -42,8 +41,8 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import jdk.jpackage.internal.WixToolset.WixToolsetType;
 
 /**
  * WiX tool.
@@ -51,14 +50,14 @@ import java.util.stream.Stream;
 public enum WixTool {
     Candle3("candle", DottedVersion.lazy("3.0")),
     Light3("light", DottedVersion.lazy("3.0")),
-    Wix("wix", DottedVersion.lazy("4.0.4"));
+    Wix4("wix", DottedVersion.lazy("4.0.4"));
 
     WixTool(String commandName, DottedVersion minimalVersion) {
         this.toolFileName = IOUtils.addSuffix(Path.of(commandName), ".exe");
         this.minimalVersion = minimalVersion;
     }
 
-    private static final class ToolInfo {
+    static final class ToolInfo {
 
         ToolInfo(Path path, String version) {
             this.path = path;
@@ -69,72 +68,8 @@ public enum WixTool {
         final DottedVersion version;
     }
 
-    static abstract class WixToolsetBase {
 
-        WixToolsetBase(Map<WixTool, ToolInfo> tools) {
-            this.tools = tools;
-        }
-
-        Set<WixTool> getTools() {
-            return tools.keySet();
-        }
-
-        Path getToolPath(WixTool tool) {
-            return tools.get(tool).path;
-        }
-
-        DottedVersion getToolVersion(WixTool tool) {
-            return tools.get(tool).version;
-        }
-
-        static <T extends WixToolsetBase> T create(Set<WixTool> required,
-                Map<WixTool, ToolInfo> allTools,
-                Function<Map<WixTool, ToolInfo>, T> ctor) {
-            var filteredTools = allTools.entrySet().stream().filter(e -> {
-                return required.contains(e.getKey()) && e.getValue() != null;
-            }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-
-            if (filteredTools.keySet().equals(required)) {
-                return ctor.apply(filteredTools);
-            } else {
-                return null;
-            }
-        }
-
-        private final Map<WixTool, ToolInfo> tools;
-    }
-
-    static final class EmptyWixToolset extends WixToolsetBase {
-
-        private EmptyWixToolset() {
-            super(Map.of());
-        }
-    }
-
-    static final class Wix3Toolset extends WixToolsetBase {
-
-        static Wix3Toolset create(Map<WixTool, ToolInfo> tools) {
-            return WixToolsetBase.
-                    create(getWix3Tools(), tools, Wix3Toolset::new);
-        }
-
-        private Wix3Toolset(Map<WixTool, ToolInfo> tools) {
-            super(tools);
-        }
-    }
-
-    static final class WixToolset extends WixToolsetBase {
-
-        static WixToolset create(Map<WixTool, ToolInfo> tools) {
-            return WixToolsetBase.create(Set.of(Wix), tools, WixToolset::new);
-        }
-
-        private WixToolset(Map<WixTool, ToolInfo> tools) {
-            super(tools);
-        }
-    }
-
-    static WixToolsetBase createToolset() throws ConfigException {
+    static WixToolset createToolset() throws ConfigException {
         Map<WixTool, ToolInfo> tools = new HashMap<>();
 
         var wixInstallDirsSupplier = new Supplier<List<Path>>() {
@@ -155,11 +90,11 @@ public enum WixTool {
             }
         }
 
-        Stream<Function<Map<WixTool, ToolInfo>, WixToolsetBase>> toolsetCtors = Stream.
-                of(WixToolset::create, Wix3Toolset::create);
-        return toolsetCtors.map(toolsetCtor -> {
-            return toolsetCtor.apply(tools);
-        }).filter(Objects::nonNull).findFirst().orElseGet(EmptyWixToolset::new);
+        return Stream.of(WixToolsetType.values()).map(toolsetType -> {
+            return WixToolset.create(toolsetType.getTools(), tools);
+        }).takeWhile(Objects::nonNull).findFirst().orElseGet(() -> {
+            return WixToolset.create(Set.of(), Map.of());
+        });
     }
 
     private ToolInfo find(Supplier<List<Path>> findWixInstallDirs) throws ConfigException {

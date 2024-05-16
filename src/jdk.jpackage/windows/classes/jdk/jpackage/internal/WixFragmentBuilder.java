@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,13 +43,14 @@ import jdk.jpackage.internal.OverridableResource.Source;
 import static jdk.jpackage.internal.OverridableResource.createResource;
 import static jdk.jpackage.internal.StandardBundlerParam.CONFIG_ROOT;
 import jdk.internal.util.Architecture;
+import jdk.jpackage.internal.WixToolset.WixToolsetType;
 
 /**
  * Creates WiX fragment.
  */
 abstract class WixFragmentBuilder {
 
-    void setWixVersion(DottedVersion v) {
+    void setWixVersion(WixToolsetType v) {
         wixVersion = v;
     }
 
@@ -66,7 +67,7 @@ abstract class WixFragmentBuilder {
     }
 
     void logWixFeatures() {
-        if (wixVersion.compareTo("3.6") >= 0) {
+        if (wixVersion != WixToolsetType.Wix3) {
             Log.verbose(MessageFormat.format(I18N.getString(
                     "message.use-wix36-features"), wixVersion));
         }
@@ -98,8 +99,30 @@ abstract class WixFragmentBuilder {
         }
     }
 
-    DottedVersion getWixVersion() {
+    WixToolsetType getWixVersion() {
         return wixVersion;
+    }
+
+    static enum WixNamespace {
+        Default,
+        Util;
+    }
+
+    Map<WixNamespace, String> getWixNamespaces() {
+        switch (wixVersion) {
+            case Wix4 -> {
+                return Map.of(WixNamespace.Default,
+                        "http://wixtoolset.org/schemas/v4/wxs",
+                        WixNamespace.Util,
+                        "http://wixtoolset.org/schemas/v4/wxs/util");
+            }
+            default -> {
+                return Map.of(WixNamespace.Default,
+                        "http://schemas.microsoft.com/wix/2006/wi",
+                        WixNamespace.Util,
+                        "http://schemas.microsoft.com/wix/UtilExtension");
+            }
+        }
     }
 
     static boolean is64Bit() {
@@ -130,13 +153,18 @@ abstract class WixFragmentBuilder {
         additionalResources.add(new ResourceWithName(resource, saveAsName));
     }
 
-    static void createWixSource(Path file, XmlConsumer xmlConsumer)
-            throws IOException {
+    private void createWixSource(Path file, XmlConsumer xmlConsumer) throws IOException {
         IOUtils.createXml(file, xml -> {
             xml.writeStartElement("Wix");
-            xml.writeDefaultNamespace("http://schemas.microsoft.com/wix/2006/wi");
-            xml.writeNamespace("util",
-                    "http://schemas.microsoft.com/wix/UtilExtension");
+            for (var ns : getWixNamespaces().entrySet()) {
+                switch (ns.getKey()) {
+                    case Default ->
+                        xml.writeDefaultNamespace(ns.getValue());
+                    default ->
+                        xml.writeNamespace(ns.getKey().name().toLowerCase(), ns.
+                                getValue());
+                }
+            }
 
             xmlConsumer.accept((XMLStreamWriter) Proxy.newProxyInstance(
                     XMLStreamWriter.class.getClassLoader(), new Class<?>[]{
@@ -208,7 +236,7 @@ abstract class WixFragmentBuilder {
         private final XMLStreamWriter target;
     }
 
-    private DottedVersion wixVersion;
+    private WixToolsetType wixVersion;
     private WixVariables wixVariables;
     private List<ResourceWithName> additionalResources;
     private OverridableResource fragmentResource;
