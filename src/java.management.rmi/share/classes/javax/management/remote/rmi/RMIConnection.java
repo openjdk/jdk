@@ -957,7 +957,7 @@ public interface RMIConnection extends Closeable, Remote {
      * <code>NotificationFilters</code>.  Elements of this array can
      * be null.
      * @param delegationSubjects should be {@code null}, but a non-null
-     * array is accepted for compatibilty reasons, which must not contain
+     * array is accepted for compatibility reasons, which must not contain
      * any entries.
      *
      * @return an array of <code>listenerIDs</code> identifying the
