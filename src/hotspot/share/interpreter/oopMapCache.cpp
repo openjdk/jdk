@@ -576,7 +576,12 @@ void OopMapCache::enqueue_for_cleanup(OopMapCacheEntry* entry) {
     OopMapCacheEntry* head = Atomic::load(&_old_entries);
     entry->_next = head;
     if (Atomic::cmpxchg(&_old_entries, head, entry) == head) {
-      // Success.
+      // Enqueued successfully.
+      if (head == nullptr) {
+        // The queue was empty before, notify service thread there is now work to do.
+        MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
+        Service_lock->notify_all();
+      }
       break;
     }
   }
