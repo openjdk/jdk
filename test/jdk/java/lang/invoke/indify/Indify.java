@@ -392,9 +392,10 @@ public class Indify {
         boolean transform() {
             if (!initializeMarks())  return false;
             if (!findPatternMethods())  return false;
-            if (!find_patternMethods()) return false;  //TODO: this is temporary and will be merged with old method once fully implemented
+            if (!find_patternMethods()) return false;//TODO: this is temporary and will be merged with old method once fully implemented
             assert constants.size() == new_constants.size(); //TODO: to be removed after getting rid of old implementation
             assert indySignatures.size() == new_indySignatures.size();
+            bytecode.classModel = transformFromCPbuilder(bytecode.classModel, bytecode.poolBuilder);
             Pool pool = cf.pool;
             //for (Constant c : cp)  System.out.println("  # "+c);
             for (Method m : cf.methods) {
@@ -537,6 +538,36 @@ public class Indify {
                 }
             }
             return found;
+        }
+
+        ClassModel transformFromCPbuilder(ClassModel oldClassModel, ConstantPoolBuilder constantPoolBuilder){
+            byte[] new_bytes = java.lang.classfile.ClassFile.of().transform(oldClassModel, ClassTransform.endHandler(ClassBuilder -> {
+                for (PoolEntry entry: constantPoolBuilder){
+                    System.err.println("Entry: "+entry);
+                    if(entry instanceof Utf8Entry) ClassBuilder.constantPool().utf8Entry(((Utf8Entry) entry).stringValue());
+                    if(entry instanceof NameAndTypeEntry) ClassBuilder.constantPool().nameAndTypeEntry(((NameAndTypeEntry) entry).name(), ((NameAndTypeEntry) entry).type());
+                    if(entry instanceof MethodTypeEntry) ClassBuilder.constantPool().methodTypeEntry(((MethodTypeEntry) entry).descriptor());
+                    if (entry instanceof MethodHandleEntry) ClassBuilder.constantPool().methodHandleEntry(((MethodHandleEntry) entry).kind(), ((MethodHandleEntry) entry).reference());
+                    if (entry instanceof MethodRefEntry) ClassBuilder.constantPool().methodRefEntry(((MethodRefEntry) entry).owner(), ((MethodRefEntry) entry).nameAndType());
+                    if (entry instanceof FieldRefEntry) ClassBuilder.constantPool().fieldRefEntry(((FieldRefEntry) entry).owner(), ((FieldRefEntry) entry).nameAndType());
+                    if (entry instanceof ClassEntry) ClassBuilder.constantPool().classEntry(((ClassEntry) entry).name());
+                    if (entry instanceof StringEntry) ClassBuilder.constantPool().stringEntry(((StringEntry) entry).utf8());
+                    if (entry instanceof IntegerEntry) ClassBuilder.constantPool().intEntry(((IntegerEntry) entry).intValue());
+                    if (entry instanceof FloatEntry) ClassBuilder.constantPool().floatEntry(((FloatEntry) entry).floatValue());
+                    if (entry instanceof LongEntry) ClassBuilder.constantPool().longEntry(((LongEntry) entry).longValue());
+                    if (entry instanceof DoubleEntry) ClassBuilder.constantPool().doubleEntry(((DoubleEntry) entry).doubleValue());
+                    if (entry instanceof InterfaceMethodRefEntry) ClassBuilder.constantPool().interfaceMethodRefEntry(((InterfaceMethodRefEntry) entry).owner(), ((InterfaceMethodRefEntry) entry).nameAndType());
+                    if (entry instanceof InvokeDynamicEntry) ClassBuilder.constantPool().invokeDynamicEntry(((InvokeDynamicEntry) entry).bootstrap(), ((InvokeDynamicEntry) entry).nameAndType());
+                    if (entry instanceof ModuleEntry) ClassBuilder.constantPool().moduleEntry(((ModuleEntry) entry).name());
+                    if (entry instanceof PackageEntry) ClassBuilder.constantPool().packageEntry(((PackageEntry) entry).name());
+                }
+                for (int i = 0; i < constantPoolBuilder.bootstrapMethodCount(); i++) {
+                    System.err.println("Bootstrap Method Entry: "+constantPoolBuilder.bootstrapMethodEntry(i).bootstrapMethod() + " Arguments: "+constantPoolBuilder.bootstrapMethodEntry(i).arguments());
+                    ClassBuilder.constantPool().bsmEntry(constantPoolBuilder.bootstrapMethodEntry(i).bootstrapMethod(), constantPoolBuilder.bootstrapMethodEntry(i).arguments());
+                }
+            }));
+
+            return java.lang.classfile.ClassFile.of().parse(new_bytes);
         }
 
         void reportPatternMethods(boolean quietly, boolean allowMatchFailure) {
@@ -1752,7 +1783,6 @@ public class Indify {
             }
         }
         public ClassModel classModel;
-
         public ConstantPoolBuilder poolBuilder; // will be used to construct the new Constant pool
 
         public void parseFrom(byte[] bytes) throws IOException {
