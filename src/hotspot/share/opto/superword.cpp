@@ -2020,7 +2020,7 @@ class PacksetGraph {
 private:
   // pid: packset graph node id.
   GrowableArray<int> _pid;                 // bb_idx(n) -> pid
-  GrowableArray<Node*> _pid_to_node;       // one node per pid, find rest via _packset.pack
+  GrowableArray<Node*> _pid_to_node;       // one node per pid, find rest via _packset.get_pack
   GrowableArray<GrowableArray<int>> _out;  // out-edges
   GrowableArray<int> _incnt;               // number of (implicit) in-edges
   int _max_pid = 0;
@@ -3834,16 +3834,77 @@ bool SuperWord::vtransform() const {
   // Create VTransformScalarNode for all non-packed nodes:
   for (int i = 0; i < body().length(); i++) {
     Node* n = body().at(i);
-    if (bb_idx_to_vtnode.at(i) == nullptr) {
-      new (graph.arena()) VTransformScalarNode(graph, n);
-    }
+    if (bb_idx_to_vtnode.at(i) != nullptr) { continue; }
+    VTransformScalarNode* vtn = new (graph.arena()) VTransformScalarNode(graph, n);
+    bb_idx_to_vtnode.at_put(bb_idx(n), vtn);
   }
+
+  // Only add dependency once per vtnode.
+  VectorSet dependency_set;
 
   // Map edges for packed nodes:
   for (int i = 0; i < _packset.length(); i++) {
     Node_List* pack = _packset.at(i);
     Node* p0 = pack->at(0);
-    VTransformNode* vtn = bb_idx_to_vtnode.at(bb_idx(p0));
+    VTransformVectorNode* vtn = bb_idx_to_vtnode.at(bb_idx(p0))->isa_Vector();
+    dependency_set.clear();
+
+    auto set_req = [&](int j, Node* n) {
+      VTransformNode* req = bb_idx_to_vtnode.at(bb_idx(n));
+      vtn->set_req(j, req);
+      dependency_set.set(req->_idx);
+    };
+
+    if (p0->is_Load()) {
+      set_req(MemNode::Address, p0->in(MemNode::Address));
+    } else if (p0->is_Store()) {
+      set_req(MemNode::Address, p0->in(MemNode::Address));
+      set_req(MemNode::ValueIn, p0->in(MemNode::ValueIn));
+    } else {
+      DEBUG_ONLY(vtn->print();)
+      assert(false, "failed to handle pack");
+    }
+
+    for (uint k = 0; k < pack->size(); k++) {
+      Node* n = pack->at(k);
+      for (VLoopDependencyGraph::PredsIterator preds(dependency_graph(), n); !preds.done(); preds.next()) {
+        Node* pred = preds.current();
+        if (!in_bb(pred)) { continue; }
+        if (p0->is_Mem() && !pred->is_Mem()) { continue; } // TODO ok?
+        // TODO reductions
+        VTransformNode* dependency = bb_idx_to_vtnode.at(bb_idx(pred));
+        if (dependency_set.test_set(dependency->_idx)) { continue; }
+        vtn->add_dependency(dependency);
+      }
+    }
+  }
+
+  // Map edges for non-packed nodes, i.e. scalar vtnodes:
+  for (int i = 0; i < body().length(); i++) {
+    Node* n = body().at(i);
+    VTransformScalarNode* vtn = bb_idx_to_vtnode.at(i)->isa_Scalar();
+    if (vtn == nullptr) { continue; }
+
+    dependency_set.clear();
+
+    auto set_req = [&](int j, Node* n) {
+      VTransformNode* req = bb_idx_to_vtnode.at(bb_idx(n));
+      vtn->set_req(j, req);
+      dependency_set.set(req->_idx);
+    };
+
+    if (n->is_Load()) {
+      set_req(MemNode::Address, n->in(MemNode::Address));
+    } else if (n->is_Store()) {
+      set_req(MemNode::Address, n->in(MemNode::Address));
+      set_req(MemNode::ValueIn, n->in(MemNode::ValueIn));
+    } else {
+      for (uint j = 0; j < n->req(); j++) {
+        Node* def = n->in(j);
+        if (def == nullptr || !in_bb(def)) { continue; }
+        set_req(j, def);
+      }
+    }
   }
 
   graph.print_vtnodes();

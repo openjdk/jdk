@@ -1319,6 +1319,8 @@ private:
 
 typedef int VTransformNodeIDX;
 class VTransformNode;
+class VTransformScalarNode;
+class VTransformVectorNode;
 
 class VTransformGraph {
 private:
@@ -1364,6 +1366,18 @@ public:
     graph.add_vtnode(this);
   }
 
+  void set_req(int i, VTransformNode* n) {
+    assert(0 <= i && i < _req, "must be a req");
+    _in.at_put(i, n);
+  }
+
+  void add_dependency(VTransformNode* n) {
+    _in.push(n);
+  }
+
+  virtual VTransformScalarNode* isa_Scalar() { return nullptr; }
+  virtual VTransformVectorNode* isa_Vector() { return nullptr; }
+
   DEBUG_ONLY(virtual const char* name() const = 0;)
   DEBUG_ONLY(void print() const;)
   DEBUG_ONLY(virtual void print_spec() const {};)
@@ -1378,6 +1392,8 @@ public:
   VTransformScalarNode(VTransformGraph& graph, Node* n) :
     VTransformNode(graph, n->req()),
     _node(n) {}
+
+  virtual VTransformScalarNode* isa_Scalar() override { return this; }
 
   DEBUG_ONLY(virtual const char* name() const { return "Scalar"; };)
   DEBUG_ONLY(virtual void print_spec() const override;)
@@ -1397,6 +1413,8 @@ public:
       _nodes.at_put(k, pack->at(k));
     }
   }
+
+  virtual VTransformVectorNode* isa_Vector() override { return this; }
 
   DEBUG_ONLY(virtual void print_spec() const override;)
 };
