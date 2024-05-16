@@ -2103,17 +2103,27 @@ public:
     if (CONCURRENT) {
       ShenandoahConcurrentWorkerSession worker_session(worker_id);
       ShenandoahSuspendibleThreadSetJoiner stsj;
-      do_work<ShenandoahConcUpdateRefsClosure>();
+      do_work<ShenandoahConcUpdateRefsClosure>(worker_id);
     } else {
       ShenandoahParallelWorkerSession worker_session(worker_id);
-      do_work<ShenandoahSTWUpdateRefsClosure>();
+      do_work<ShenandoahSTWUpdateRefsClosure>(worker_id);
     }
   }
 
 private:
   template<class T>
-  void do_work() {
+  void do_work(uint worker_id) {
     T cl;
+    if (CONCURRENT && (worker_id == 0)) {
+      // We ask the first worker to replenish the Mutator free set by moving regions previously reserved to hold the
+      // results of evacuation.  These reserves are no longer necessary because evacuation has completed.
+      size_t cset_regions = _heap->collection_set()->count();
+      // We cannot transfer any more regions than will be reclaimed when the existing collection set is recycled because
+      // we need the reclaimed collection set regions to replenish the collector reserves
+      _heap->free_set()->move_regions_from_collector_to_mutator(cset_regions);
+    }
+    // If !CONCURRENT, there's no value in expanding Mutator free set
+
     ShenandoahHeapRegion* r = _regions->next();
     ShenandoahMarkingContext* const ctx = _heap->complete_marking_context();
     while (r != nullptr) {
