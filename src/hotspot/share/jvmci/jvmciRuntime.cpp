@@ -102,7 +102,7 @@ class RetryableAllocationMark {
  private:
    InternalOOMEMark _iom;
  public:
-  RetryableAllocationMark(JavaThread* thread, bool activate) : _iom(activate ? thread : nullptr) {}
+  RetryableAllocationMark(JavaThread* thread) : _iom(thread) {}
   ~RetryableAllocationMark() {
     JavaThread* THREAD = _iom.thread(); // For exception macros.
     if (THREAD != nullptr) {
@@ -117,34 +117,29 @@ class RetryableAllocationMark {
   }
 };
 
-JRT_BLOCK_ENTRY(void, JVMCIRuntime::new_instance_common(JavaThread* current, Klass* klass, bool null_on_fail))
+JRT_BLOCK_ENTRY(void, JVMCIRuntime::new_instance_or_null(JavaThread* current, Klass* klass))
   JRT_BLOCK;
   assert(klass->is_klass(), "not a class");
   Handle holder(current, klass->klass_holder()); // keep the klass alive
   InstanceKlass* h = InstanceKlass::cast(klass);
   {
-    RetryableAllocationMark ram(current, null_on_fail);
+    RetryableAllocationMark ram(current);
     h->check_valid_for_instantiation(true, CHECK);
-    oop obj;
-    if (null_on_fail) {
-      if (!h->is_initialized()) {
-        // Cannot re-execute class initialization without side effects
-        // so return without attempting the initialization
-        return;
-      }
-    } else {
-      // make sure klass is initialized
-      h->initialize(CHECK);
+    if (!h->is_initialized()) {
+      // Cannot re-execute class initialization without side effects
+      // so return without attempting the initialization
+      current->set_vm_result(nullptr);
+      return;
     }
     // allocate instance and return via TLS
-    obj = h->allocate_instance(CHECK);
+    oop obj = h->allocate_instance(CHECK);
     current->set_vm_result(obj);
   }
   JRT_BLOCK_END;
   SharedRuntime::on_slowpath_allocation_exit(current);
 JRT_END
 
-JRT_BLOCK_ENTRY(void, JVMCIRuntime::new_array_common(JavaThread* current, Klass* array_klass, jint length, bool null_on_fail))
+JRT_BLOCK_ENTRY(void, JVMCIRuntime::new_array_or_null(JavaThread* current, Klass* array_klass, jint length))
   JRT_BLOCK;
   // Note: no handle for klass needed since they are not used
   //       anymore after new_objArray() and no GC can happen before.
@@ -153,27 +148,21 @@ JRT_BLOCK_ENTRY(void, JVMCIRuntime::new_array_common(JavaThread* current, Klass*
   oop obj;
   if (array_klass->is_typeArray_klass()) {
     BasicType elt_type = TypeArrayKlass::cast(array_klass)->element_type();
-    RetryableAllocationMark ram(current, null_on_fail);
+    RetryableAllocationMark ram(current);
     obj = oopFactory::new_typeArray(elt_type, length, CHECK);
   } else {
     Handle holder(current, array_klass->klass_holder()); // keep the klass alive
     Klass* elem_klass = ObjArrayKlass::cast(array_klass)->element_klass();
-    RetryableAllocationMark ram(current, null_on_fail);
+    RetryableAllocationMark ram(current);
     obj = oopFactory::new_objArray(elem_klass, length, CHECK);
   }
   // This is pretty rare but this runtime patch is stressful to deoptimization
   // if we deoptimize here so force a deopt to stress the path.
   if (DeoptimizeALot) {
     static int deopts = 0;
-    // Alternate between deoptimizing and raising an error (which will also cause a deopt)
     if (deopts++ % 2 == 0) {
-      if (null_on_fail) {
-        // Drop the allocation
-        obj = nullptr;
-      } else {
-        ResourceMark rm(current);
-        THROW(vmSymbols::java_lang_OutOfMemoryError());
-      }
+      // Drop the allocation
+      obj = nullptr;
     } else {
       deopt_caller();
     }
@@ -183,42 +172,38 @@ JRT_BLOCK_ENTRY(void, JVMCIRuntime::new_array_common(JavaThread* current, Klass*
   SharedRuntime::on_slowpath_allocation_exit(current);
 JRT_END
 
-JRT_ENTRY(void, JVMCIRuntime::new_multi_array_common(JavaThread* current, Klass* klass, int rank, jint* dims, bool null_on_fail))
+JRT_ENTRY(void, JVMCIRuntime::new_multi_array_or_null(JavaThread* current, Klass* klass, int rank, jint* dims))
   assert(klass->is_klass(), "not a class");
   assert(rank >= 1, "rank must be nonzero");
   Handle holder(current, klass->klass_holder()); // keep the klass alive
-  RetryableAllocationMark ram(current, null_on_fail);
+  RetryableAllocationMark ram(current);
   oop obj = ArrayKlass::cast(klass)->multi_allocate(rank, dims, CHECK);
   current->set_vm_result(obj);
 JRT_END
 
-JRT_ENTRY(void, JVMCIRuntime::dynamic_new_array_common(JavaThread* current, oopDesc* element_mirror, jint length, bool null_on_fail))
-  RetryableAllocationMark ram(current, null_on_fail);
+JRT_ENTRY(void, JVMCIRuntime::dynamic_new_array_or_null(JavaThread* current, oopDesc* element_mirror, jint length))
+  RetryableAllocationMark ram(current);
   oop obj = Reflection::reflect_new_array(element_mirror, length, CHECK);
   current->set_vm_result(obj);
 JRT_END
 
-JRT_ENTRY(void, JVMCIRuntime::dynamic_new_instance_common(JavaThread* current, oopDesc* type_mirror, bool null_on_fail))
+JRT_ENTRY(void, JVMCIRuntime::dynamic_new_instance_or_null(JavaThread* current, oopDesc* type_mirror))
   InstanceKlass* klass = InstanceKlass::cast(java_lang_Class::as_Klass(type_mirror));
 
   if (klass == nullptr) {
     ResourceMark rm(current);
     THROW(vmSymbols::java_lang_InstantiationException());
   }
-  RetryableAllocationMark ram(current, null_on_fail);
+  RetryableAllocationMark ram(current);
 
   // Create new instance (the receiver)
   klass->check_valid_for_instantiation(false, CHECK);
 
-  if (null_on_fail) {
-    if (!klass->is_initialized()) {
-      // Cannot re-execute class initialization without side effects
-      // so return without attempting the initialization
-      return;
-    }
-  } else {
-    // Make sure klass gets initialized
-    klass->initialize(CHECK);
+  if (!klass->is_initialized()) {
+    // Cannot re-execute class initialization without side effects
+    // so return without attempting the initialization
+    current->set_vm_result(nullptr);
+    return;
   }
 
   oop obj = klass->allocate_instance(CHECK);
