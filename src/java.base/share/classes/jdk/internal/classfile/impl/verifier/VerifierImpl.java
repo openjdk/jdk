@@ -285,7 +285,6 @@ public final class VerifierImpl {
         } catch (VerifyError err) {
             errorsCollector.add(err);
         } catch (Error | Exception e) {
-            e.printStackTrace();
             errorsCollector.add(new VerifyError(e.toString()));
         }
     }
