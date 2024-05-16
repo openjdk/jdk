@@ -1004,7 +1004,8 @@ jvmtiEnv *jvmti;
     In some cases, <jvmti/> functions allocate memory that your program must
     explicitly deallocate. This is indicated in the individual <jvmti/>
     function descriptions.  Empty lists, arrays, sequences, etc are
-    returned as <code>nullptr</code>.
+    returned as <code>nullptr</code> which is C programming language
+    <code>null</code> pointer.
     <p/>
     In the event that the <jvmti/> function encounters
     an error (any return value other than <code>JVMTI_ERROR_NONE</code>) the values
