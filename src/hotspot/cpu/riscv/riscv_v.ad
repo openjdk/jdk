@@ -1799,7 +1799,7 @@ instruct replicateD(vReg dst, fRegD src) %{
 // check https://docs.oracle.com/en/java/javase/21/docs/api/jdk.incubator.vector/jdk/incubator/vector/VectorOperators.html#ASHR
 // and https://github.com/riscv/riscv-v-spec/blob/master/v-spec.adoc#116-vector-single-width-shift-instructions for details.
 //
-// Although the difference between these 2 behaviours, the same shift instruct's of byte and short are
+// Despite the difference between these 2 behaviours, the same shift instruct's of byte and short are
 // still shared between vectorization and Vector API. The way it works is hidden inside the implementation
 // of vectorization and Vector API:
 //  1. when doing optimization vectorization masks the shift value with "(BitsPerInt - 1)" or "(BitsPerLong - 1)"
