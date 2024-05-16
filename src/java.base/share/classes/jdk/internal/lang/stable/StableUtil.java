@@ -88,18 +88,6 @@ public final class StableUtil {
     }
 
     /**
-     * {@return a String representation of the provided {@code stable}}
-     * @param stable to extract a string representation from
-     */
-    static String toString(StableValue<?> stable,
-                           Function<Object, String> errorMessageMapper) {
-        return "StableValue" +
-                (stable.isSet()
-                        ? "[" + stable.orThrow() + "]"
-                        : stable.isError() ? ".error(" + errorMessageMapper.apply(stable) + ")" : ".unset");
-    }
-
-    /**
      * Performs a "freeze" operation, required to ensure safe publication under plain
      * memory read semantics.
      * <p>
@@ -136,6 +124,9 @@ public final class StableUtil {
         StableValueImpl<V> stable = (StableValueImpl<V>)Holder.UNSAFE.getReferenceVolatile(elements, offset);
         if (stable == null) {
             stable = StableValueImpl.of();
+            // Make sure all fields are visible under plain semantics
+            // This is not strictly needed as no field is currently set in the StableValueImpl constructor
+            Holder.UNSAFE.storeStoreFence();
             StableValueImpl<V> witness = (StableValueImpl<V>)
                     Holder.UNSAFE.compareAndExchangeReference(elements, offset, null, stable);
             return witness == null ? stable : witness;

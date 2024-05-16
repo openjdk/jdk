@@ -37,19 +37,18 @@ import java.util.function.Supplier;
 
 import static jdk.internal.lang.stable.StableUtil.*;
 
+/**
+ * The one and only implementation of a StableValue.
+ *
+ * @param <V> value type
+ */
 public final class StableValueImpl<V> implements StableValue<V> {
 
-    private static final long MUTEX_OFFSET =
-            UNSAFE.objectFieldOffset(StableValueImpl.class, "mutex");
-
-    private static final long VALUE_OFFSET =
-            UNSAFE.objectFieldOffset(StableValueImpl.class, "value");
-
-    private static final long STATE_OFFSET =
-            UNSAFE.objectFieldOffset(StableValueImpl.class, "state");
-
-    private static final long COMPUTE_INVOKED_OFFSET =
-            UNSAFE.objectFieldOffset(StableValueImpl.class, "computeInvoked");
+    // Offsets for Unsafe operations
+    private static final long MUTEX_OFFSET = fieldOffset("mutex");
+    private static final long VALUE_OFFSET = fieldOffset("value");
+    private static final long STATE_OFFSET = fieldOffset("state");
+    private static final long COMPUTE_INVOKED_OFFSET = fieldOffset("computeInvoked");
 
     // The fields below are read and written using a combination of plain memory access
     // and Unsafe volatile memory access.
@@ -258,18 +257,15 @@ public final class StableValueImpl<V> implements StableValue<V> {
         }
     }
 
-    private static final Function<Object, String> ERROR_MESSAGE_EXTRACTOR = new Function<Object, String>() {
-        @Override
-        public String apply(Object stableValue) {
-            StableValueImpl<?> svi = (StableValueImpl<?>) stableValue;
-            return ((Class<?>) svi.acquireMutex())
-                    .getName();
-        }
-    };
-
     @Override
     public String toString() {
-        return StableUtil.toString(this, ERROR_MESSAGE_EXTRACTOR);
+        return "StableValue" + switch (stateVolatile()) {
+            case UNSET        -> ".unset";
+            case SET_NON_NULL -> "[" + orThrow() + "]";
+            case SET_NULL     -> "[null]";
+            case ERROR        -> ".error(" + ((Class<?>) acquireMutex()).getName() + ")";
+            default           -> throw shouldNotReachHere();
+        };
     }
 
     @SuppressWarnings("unchecked")
@@ -319,6 +315,10 @@ public final class StableValueImpl<V> implements StableValue<V> {
 
     private void putMutex(Object value) {
         UNSAFE.putReferenceVolatile(this, MUTEX_OFFSET, value);
+    }
+
+    private static long fieldOffset(String name) {
+        return UNSAFE.objectFieldOffset(StableValueImpl.class, name);
     }
 
     // Factories
