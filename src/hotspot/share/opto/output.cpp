@@ -3465,10 +3465,13 @@ void PhaseOutput::install_stub(const char* stub_name) {
                                                       // _code_offsets.value(CodeOffsets::Frame_Complete),
                                                       frame_size_in_words(),
                                                       oop_map_set(),
+                                                      false,
                                                       false);
-      assert(rs != nullptr && rs->is_runtime_stub(), "sanity check");
-
-      C->set_stub_entry_point(rs->entry_point());
+      if (rs == nullptr) {
+        C->record_failure("CodeCache is full");
+      } else {
+        C->set_stub_entry_point(rs->entry_point());
+      }
     }
   }
 }

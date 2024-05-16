@@ -121,7 +121,7 @@ class Runtime1: public AllStatic {
   // stub generation
  public:
   static CodeBlob*  generate_blob(BufferBlob* buffer_blob, int stub_id, const char* name, bool expect_oop_map, StubAssemblerCodeGenClosure *cl);
-  static void       generate_blob_for(BufferBlob* blob, StubID id);
+  static bool       generate_blob_for(BufferBlob* blob, StubID id);
   static OopMapSet* generate_code_for(StubID id, StubAssembler* sasm);
  private:
   static OopMapSet* generate_exception_throw(StubAssembler* sasm, address target, bool has_argument);
@@ -166,7 +166,7 @@ class Runtime1: public AllStatic {
 
  public:
   // initialization
-  static void initialize(BufferBlob* blob);
+  static bool initialize(BufferBlob* blob);
   static void initialize_pd();
 
   // stubs

@@ -232,12 +232,12 @@ CodeBlob* Runtime1::generate_blob(BufferBlob* buffer_blob, int stub_id, const ch
                                                  CodeOffsets::frame_never_safe,
                                                  frame_size,
                                                  oop_maps,
-                                                 must_gc_arguments);
-  assert(blob != nullptr, "blob must exist");
+                                                 must_gc_arguments,
+                                                 false);
   return blob;
 }
 
-void Runtime1::generate_blob_for(BufferBlob* buffer_blob, StubID id) {
+bool Runtime1::generate_blob_for(BufferBlob* buffer_blob, StubID id) {
   assert(0 <= id && id < number_of_ids, "illegal stub id");
   bool expect_oop_map = true;
 #ifdef ASSERT
@@ -259,13 +259,16 @@ void Runtime1::generate_blob_for(BufferBlob* buffer_blob, StubID id) {
   CodeBlob* blob = generate_blob(buffer_blob, id, name_for(id), expect_oop_map, &cl);
   // install blob
   _blobs[id] = blob;
+  return blob != nullptr;
 }
 
-void Runtime1::initialize(BufferBlob* blob) {
+bool Runtime1::initialize(BufferBlob* blob) {
   // platform-dependent initialization
   initialize_pd();
   // generate stubs
-  for (int id = 0; id < number_of_ids; id++) generate_blob_for(blob, (StubID)id);
+  for (int id = 0; id < number_of_ids; id++) {
+    if (!generate_blob_for(blob, (StubID) id)) return false;
+  }
   // printing
 #ifndef PRODUCT
   if (PrintSimpleStubs) {
@@ -280,6 +283,7 @@ void Runtime1::initialize(BufferBlob* blob) {
 #endif
   BarrierSetC1* bs = BarrierSet::barrier_set()->barrier_set_c1();
   bs->generate_c1_runtime_stubs(blob);
+  return true;
 }
 
 CodeBlob* Runtime1::blob_for(StubID id) {
