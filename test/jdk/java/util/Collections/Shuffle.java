@@ -28,16 +28,12 @@
  * @key     randomness
  */
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.random.RandomGenerator;
 
 public class Shuffle {
-    static final int N = 100;
+    static final int capacity = 100;
 
     public static void main(String[] args) {
         test(new ArrayList<>());
@@ -45,14 +41,13 @@ public class Shuffle {
     }
 
     static void test(List<Integer> list) {
-        for (int i = 0; i < N; i++) {
-            list.add(i);
-        }
-        Collections.shuffle(list);
-        if (list.size() != N) {
-            throw new RuntimeException(list.getClass() + ": size " + list.size() + " != " + N);
-        }
-        for (int i = 0; i < N; i++) {
+        for (int i = 0; i < capacity; ++i) list.add(i);
+
+        if (list.size() != capacity) {
+            throw new RuntimeException(list.getClass() + ": size " + list.size() + " != " + capacity);
+        } else Collections.shuffle(list);
+
+        for (int i = 0; i < capacity; ++i) {
             if (!list.contains(i)) {
                 throw new RuntimeException(list.getClass() + ": does not contain " + i);
             }
