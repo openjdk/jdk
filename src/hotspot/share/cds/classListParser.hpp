@@ -104,7 +104,6 @@ private:
   GrowableArray<int>* _interfaces;
   bool                _interfaces_specified;
   const char*         _source;
-  bool                _lambda_form_line;
   ParseMode           _parse_mode;
 
   bool parse_int_option(const char* option_name, int* value);
@@ -120,7 +119,9 @@ private:
 
   void resolve_indy(JavaThread* current, Symbol* class_name_symbol);
   void resolve_indy_impl(Symbol* class_name_symbol, TRAPS);
-  bool parse_one_line();
+  void clean_up_input_line();
+  void read_class_name_and_attributes();
+  void parse_class_name_and_attributes(TRAPS);
   Klass* load_current_class(Symbol* class_name_symbol, TRAPS);
 
   size_t lineno() { return _input_stream.lineno(); }
@@ -129,9 +130,9 @@ private:
   ~ClassListParser();
 
 public:
-  static int parse_classlist(const char* classlist_path, ParseMode parse_mode, TRAPS) {
+  static void parse_classlist(const char* classlist_path, ParseMode parse_mode, TRAPS) {
     ClassListParser parser(classlist_path, parse_mode);
-    return parser.parse(THREAD); // returns the number of classes loaded.
+    parser.parse(THREAD);
   }
 
   static bool is_parsing_thread();
@@ -141,10 +142,10 @@ public:
     return _instance;
   }
 
-  int parse(TRAPS);
-  void split_tokens_by_whitespace(int offset);
+  void parse(TRAPS);
+  void split_tokens_by_whitespace(int offset, GrowableArray<const char*>* items);
   int split_at_tag_from_line();
-  bool parse_at_tags();
+  void parse_at_tags(TRAPS);
   char* _token;
   void error(const char* msg, ...);
   void parse_int(int* value);
@@ -154,6 +155,9 @@ public:
   void skip_whitespaces();
   void skip_non_whitespaces();
 
+  bool parse_lambda_forms_invokers_only() {
+    return _parse_mode == _parse_lambda_forms_invokers_only;
+  }
   bool is_id_specified() {
     return _id != _unspecified;
   }
@@ -183,8 +187,6 @@ public:
   }
 
   bool is_loading_from_source();
-
-  bool lambda_form_line() { return _lambda_form_line; }
 
   // Look up the super or interface of the current class being loaded
   // (in this->load_current_class()).

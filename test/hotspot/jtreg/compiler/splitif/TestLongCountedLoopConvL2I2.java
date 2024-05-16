@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,32 +19,41 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_UTILITY_ATTRIBUTENORETURN_HPP
-#define SHARE_UTILITY_ATTRIBUTENORETURN_HPP
+/*
+ * @test
+ * @bug 8331575
+ * @summary C2: crash when ConvL2I is split thru phi at LongCountedLoop
+ * @run main/othervm -Xcomp -XX:CompileOnly=TestLongCountedLoopConvL2I2.* TestLongCountedLoopConvL2I2
+ */
 
-// Provide a (temporary) macro for the [[noreturn]] attribute.
-//
-// Unfortunately, some older (though still in use) compilers have bugs when
-// using [[noreturn]].  For them we use an empty definition for the attribute.
-//
-// Note: This can't be placed in globalDefinitions_xxx.hpp because the
-// attribute is used in debug.hpp, which can't include globalDefinitions.hpp.
+public class TestLongCountedLoopConvL2I2 {
+    static int x = 34;
 
-// clang 12 (and possibly prior) crashes during build if we use [[noreturn]]
-// for assertion failure reporting functions.  The problem seems to be fixed
-// in clang 13.
-#ifdef __clang__
-#if __clang_major__ < 13
-#define ATTRIBUTE_NORETURN
-#endif
-#endif
+    public static void main(String[] strArr) {
+        for (int i = 0; i < 2; i++) {
+            test();
+        }
+    }
 
-// All other platforms can use [[noreturn]].
-#ifndef ATTRIBUTE_NORETURN
-#define ATTRIBUTE_NORETURN [[noreturn]]
-#endif
+    static int test() {
+        int a = 5, b = 6;
+        long lArr[] = new long[2];
 
-#endif // SHARE_UTILITY_ATTRIBUTENORETURN_HPP
+        for (long i = 159; i > 1; i -= 3) {
+            a += 3;
+            for (int j = 1; j < 4; j++) {
+                if (a == 9) {
+                    if (x == 73) {
+                        try {
+                            b = 10 / (int) i;
+                        } catch (ArithmeticException a_e) {
+                        }
+                    }
+                }
+            }
+        }
+        return b;
+    }
+}
