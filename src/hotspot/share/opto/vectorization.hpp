@@ -1315,4 +1315,102 @@ private:
 #endif
 };
 
+// TODO desc for VTransform
+
+typedef int VTransformNodeIDX;
+class VTransformNode;
+
+class VTransformGraph {
+private:
+  const VLoopAnalyzer& _vloop_analyzer;
+
+  // Everything in the graph is allocated from this arena, including all vtnodes.
+  Arena _arena;
+
+  VTransformNodeIDX _next_idx;             // TODO debug only?
+  GrowableArray<VTransformNode*> _vtnodes; // TODO debug only?
+
+public:
+  VTransformGraph(const VLoopAnalyzer& vloop_analyzer) :
+    _vloop_analyzer(vloop_analyzer),
+    _arena(mtCompiler),
+    _next_idx(0),
+    _vtnodes(&_arena, vloop_analyzer.vloop().estimated_body_length(), 0, nullptr) {}
+
+  Arena* arena() { return &_arena; }
+  VTransformNodeIDX new_idx() { return _next_idx++; }
+  void add_vtnode(VTransformNode* vtnode);
+
+  DEBUG_ONLY(void print_vtnodes() const;)
+};
+
+class VTransformNode : public ArenaObj {
+public:
+  VTransformNodeIDX _idx;
+
+private:
+  GrowableArray<VTransformNode*> _in;
+  GrowableArray<VTransformNode*> _out;
+
+public:
+  VTransformNode(VTransformGraph& graph) :
+    _idx(graph.new_idx()),
+    _in(graph.arena(),  4, 0, nullptr),
+    _out(graph.arena(), 4, 0, nullptr)
+  {
+    graph.add_vtnode(this);
+  }
+
+  DEBUG_ONLY(virtual const char* name() const = 0;)
+  DEBUG_ONLY(void print() const;)
+  DEBUG_ONLY(virtual void print_spec() const {};)
+};
+
+class VTransformScalarNode : public VTransformNode {
+private:
+  Node* _node;
+
+public:
+  VTransformScalarNode(VTransformGraph& graph, Node* n) :
+    VTransformNode(graph),
+    _node(n) {}
+
+  DEBUG_ONLY(virtual const char* name() const { return "Scalar"; };)
+  DEBUG_ONLY(virtual void print_spec() const override;)
+};
+
+class VTransformVectorNode : public VTransformNode {
+private:
+  GrowableArray<Node*> _nodes; // TODO make not growable?
+
+public:
+  VTransformVectorNode(VTransformGraph& graph, int number_of_nodes) :
+    VTransformNode(graph),
+    _nodes(graph.arena(), number_of_nodes, number_of_nodes, nullptr) {}
+
+  void set_nodes(const Node_List* pack) {
+    for (uint k = 0; k < pack->size(); k++) {
+      _nodes.at_put(k, pack->at(k));
+    }
+  }
+
+  DEBUG_ONLY(virtual void print_spec() const override;)
+};
+
+class VTransformLoadVectorNode : public VTransformVectorNode {
+public:
+  VTransformLoadVectorNode(VTransformGraph& graph, int number_of_nodes) :
+    VTransformVectorNode(graph, number_of_nodes) {}
+
+  DEBUG_ONLY(virtual const char* name() const { return "LoadVector"; };)
+};
+
+class VTransformStoreVectorNode : public VTransformVectorNode {
+public:
+  VTransformStoreVectorNode(VTransformGraph& graph, int number_of_nodes) :
+    VTransformVectorNode(graph, number_of_nodes) {}
+
+  DEBUG_ONLY(virtual const char* name() const { return "StoreVector"; };)
+};
+
 #endif // SHARE_OPTO_VECTORIZATION_HPP

@@ -486,6 +486,9 @@ bool SuperWord::SLP_extract() {
 
   DEBUG_ONLY(verify_packs();)
 
+  // TODO
+  vtransform();
+
   schedule();
 
   return output();
@@ -3783,10 +3786,10 @@ void PackSet::print_pack(Node_List* pack) {
 
 #ifndef PRODUCT
 void VLoopBody::print() const {
-  tty->print_cr("\nBlock");
+  tty->print_cr("\nVLoopBody::print");
   for (int i = 0; i < body().length(); i++) {
     Node* n = body().at(i);
-    tty->print("%d ", i);
+    tty->print("%4d ", i);
     if (n != nullptr) {
       n->dump();
     }
@@ -3806,4 +3809,53 @@ bool SuperWord::same_origin_idx(Node* a, Node* b) const {
 }
 bool SuperWord::same_generation(Node* a, Node* b) const {
   return a != nullptr && b != nullptr && _clone_map.same_gen(a->_idx, b->_idx);
+}
+
+bool SuperWord::vtransform() const {
+  if (_packset.is_empty()) { return false; }
+
+  ResourceMark rm;
+  // Map: C2-IR-Nodes (bb_idx) -> VTransformNode* (nullptr if none exists).
+  int body_length = _vloop.estimated_body_length();
+  GrowableArray<VTransformNode*> bb_idx_to_vtnode(body_length, body_length, nullptr);
+
+  VTransformGraph graph(_vloop_analyzer);
+
+  // Create VTransformVectorNode for all packed nodes:
+  for (int i = 0; i < _packset.length(); i++) {
+    Node_List* pack = _packset.at(i);
+    VTransformVectorNode* vtn = make_vtnode_for_pack(graph, pack);
+    for (uint k = 0; k < pack->size(); k++) {
+      Node* n = pack->at(k);
+      bb_idx_to_vtnode.at_put(bb_idx(n), vtn);
+    }
+  }
+
+  // Create VTransformScalarNode for all non-packed nodes:
+  for (int i = 0; i < body().length(); i++) {
+    Node* n = body().at(i);
+    if (bb_idx_to_vtnode.at(i) == nullptr) {
+      new (graph.arena()) VTransformScalarNode(graph, n);
+    }
+  }
+
+  graph.print_vtnodes();
+  return false; // TODO
+}
+
+// Create a vtnode for each pack. No in/out edges set yet.
+VTransformVectorNode* SuperWord::make_vtnode_for_pack(VTransformGraph& graph, const Node_List* pack) const {
+  uint pack_size = pack->size();
+  Node* p0 = pack->at(0);
+  VTransformVectorNode* vtn = nullptr;
+  if (p0->is_Load()) {
+    vtn = new (graph.arena()) VTransformLoadVectorNode(graph, pack_size);
+  } else if (p0->is_Store()) {
+    vtn = new (graph.arena()) VTransformStoreVectorNode(graph, pack_size);
+  } else {
+    DEBUG_ONLY(p0->dump();)
+    assert(false, "failed to handle pack");
+  }
+  vtn->set_nodes(pack);
+  return vtn;
 }

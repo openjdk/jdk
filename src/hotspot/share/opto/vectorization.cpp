@@ -1743,3 +1743,41 @@ void AlignmentSolver::trace_constrained_solution(const int C_const,
   }
 }
 #endif
+
+void VTransformGraph::add_vtnode(VTransformNode* vtnode) {
+  assert(vtnode->_idx == _vtnodes.length(), "position must match idx");
+  _vtnodes.push(vtnode);
+}
+
+#ifdef ASSERT
+void VTransformGraph::print_vtnodes() const {
+  tty->print_cr("\nVTransformGraph::print_vtnodes:");
+  for (int i = 0; i < _vtnodes.length(); i++) {
+    _vtnodes.at(i)->print();
+  }
+}
+
+void VTransformNode::print() const {
+  tty->print("%3d %s ", _idx, name());
+  // TODO print inputs and outputs
+  tty->print("(TODO) [TODO] ");
+  print_spec();
+  tty->cr();
+}
+
+void VTransformScalarNode::print_spec() const {
+  tty->print("node[%d %s]", _node->_idx, _node->Name());
+}
+
+void VTransformVectorNode::print_spec() const {
+  tty->print("%d-pack[", _nodes.length());
+  for (int i = 0; i < _nodes.length(); i++) {
+    Node* n = _nodes.at(i);
+    if (i > 0) {
+      tty->print(", ");
+    }
+    tty->print("%d %s", n->_idx, n->Name());
+  }
+  tty->print("]");
+}
+#endif

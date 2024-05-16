@@ -632,6 +632,7 @@ private:
 
   DEBUG_ONLY(void verify_packs() const;)
 
+  // TODO start remove
   // Adjust the memory graph for the packed operations
   void schedule();
   // Helper function for schedule, that reorders all memops, slice by slice, according to the schedule
@@ -641,6 +642,7 @@ private:
   bool output();
   // Create a vector operand for the nodes in pack p for operand: in(opd_idx)
   Node* vector_opd(Node_List* p, int opd_idx);
+  // TODO end remove
 
   // Can code be generated for the pack, restricted to size nodes?
   bool implemented(const Node_List* pack, const uint size) const;
@@ -650,6 +652,7 @@ private:
   // For pack p, are all operands and all uses (with in the block) vector?
   bool profitable(const Node_List* p) const;
 
+  // TODO move or remove
   // Verify that all uses of packs are also packs, i.e. we do not need extract operations.
   DEBUG_ONLY(void verify_no_extract();)
 
@@ -668,12 +671,19 @@ private:
   // Find the longest type in def-use chain for packed nodes, and then compute the max vector size.
   int max_vector_size_in_def_use_chain(Node* n);
 
+  // TODO probably move
   static LoadNode::ControlDependency control_dependency(Node_List* p);
+
   // Alignment within a vector memory reference
   int memory_alignment(MemNode* s, int iv_adjust);
+
+  // TODO probably move
   // Ensure that the main loop vectors are aligned by adjusting the pre loop limit.
   void determine_mem_ref_and_aw_for_main_loop_alignment();
   void adjust_pre_loop_limit_to_align_main_loop_vectors();
+
+  bool vtransform() const;
+  VTransformVectorNode* make_vtnode_for_pack(VTransformGraph& graph, const Node_List* pack) const;
 };
 
 #endif // SHARE_OPTO_SUPERWORD_HPP
