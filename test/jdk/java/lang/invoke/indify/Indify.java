@@ -395,7 +395,8 @@ public class Indify {
             if (!find_patternMethods()) return false;//TODO: this is temporary and will be merged with old method once fully implemented
             assert constants.size() == new_constants.size(); //TODO: to be removed after getting rid of old implementation
             assert indySignatures.size() == new_indySignatures.size();
-            bytecode.classModel = transformFromCPbuilder(bytecode.classModel, bytecode.poolBuilder);
+            ClassModel cm = transformFromCPbuilder(bytecode.classModel, bytecode.poolBuilder);
+
             Pool pool = cf.pool;
             //for (Constant c : cp)  System.out.println("  # "+c);
             for (Method m : cf.methods) {
@@ -544,22 +545,22 @@ public class Indify {
             byte[] new_bytes = java.lang.classfile.ClassFile.of().transform(oldClassModel, ClassTransform.endHandler(ClassBuilder -> {
                 for (PoolEntry entry: constantPoolBuilder){
                     System.err.println("Entry: "+entry);
-                    if(entry instanceof Utf8Entry) ClassBuilder.constantPool().utf8Entry(((Utf8Entry) entry).stringValue());
-                    if(entry instanceof NameAndTypeEntry) ClassBuilder.constantPool().nameAndTypeEntry(((NameAndTypeEntry) entry).name(), ((NameAndTypeEntry) entry).type());
-                    if(entry instanceof MethodTypeEntry) ClassBuilder.constantPool().methodTypeEntry(((MethodTypeEntry) entry).descriptor());
-                    if (entry instanceof MethodHandleEntry) ClassBuilder.constantPool().methodHandleEntry(((MethodHandleEntry) entry).kind(), ((MethodHandleEntry) entry).reference());
-                    if (entry instanceof MethodRefEntry) ClassBuilder.constantPool().methodRefEntry(((MethodRefEntry) entry).owner(), ((MethodRefEntry) entry).nameAndType());
-                    if (entry instanceof FieldRefEntry) ClassBuilder.constantPool().fieldRefEntry(((FieldRefEntry) entry).owner(), ((FieldRefEntry) entry).nameAndType());
-                    if (entry instanceof ClassEntry) ClassBuilder.constantPool().classEntry(((ClassEntry) entry).name());
-                    if (entry instanceof StringEntry) ClassBuilder.constantPool().stringEntry(((StringEntry) entry).utf8());
-                    if (entry instanceof IntegerEntry) ClassBuilder.constantPool().intEntry(((IntegerEntry) entry).intValue());
-                    if (entry instanceof FloatEntry) ClassBuilder.constantPool().floatEntry(((FloatEntry) entry).floatValue());
-                    if (entry instanceof LongEntry) ClassBuilder.constantPool().longEntry(((LongEntry) entry).longValue());
-                    if (entry instanceof DoubleEntry) ClassBuilder.constantPool().doubleEntry(((DoubleEntry) entry).doubleValue());
-                    if (entry instanceof InterfaceMethodRefEntry) ClassBuilder.constantPool().interfaceMethodRefEntry(((InterfaceMethodRefEntry) entry).owner(), ((InterfaceMethodRefEntry) entry).nameAndType());
-                    if (entry instanceof InvokeDynamicEntry) ClassBuilder.constantPool().invokeDynamicEntry(((InvokeDynamicEntry) entry).bootstrap(), ((InvokeDynamicEntry) entry).nameAndType());
-                    if (entry instanceof ModuleEntry) ClassBuilder.constantPool().moduleEntry(((ModuleEntry) entry).name());
-                    if (entry instanceof PackageEntry) ClassBuilder.constantPool().packageEntry(((PackageEntry) entry).name());
+                    if (entry instanceof Utf8Entry utf8Entry) ClassBuilder.constantPool().utf8Entry(utf8Entry.stringValue());
+                    if (entry instanceof NameAndTypeEntry nameAndTypeEntry) ClassBuilder.constantPool().nameAndTypeEntry(nameAndTypeEntry.name(), nameAndTypeEntry.type());
+                    if (entry instanceof MethodTypeEntry methodTypeEntry) ClassBuilder.constantPool().methodTypeEntry(methodTypeEntry.descriptor());
+                    if (entry instanceof MethodHandleEntry methodHandleEntry) ClassBuilder.constantPool().methodHandleEntry(methodHandleEntry.kind(), methodHandleEntry.reference());
+                    if (entry instanceof MethodRefEntry methodRefEntry) ClassBuilder.constantPool().methodRefEntry(methodRefEntry.owner(), methodRefEntry.nameAndType());
+                    if (entry instanceof FieldRefEntry fieldRefEntry) ClassBuilder.constantPool().fieldRefEntry(fieldRefEntry.owner(), fieldRefEntry.nameAndType());
+                    if (entry instanceof ClassEntry classEntry) ClassBuilder.constantPool().classEntry(classEntry.name());
+                    if (entry instanceof StringEntry stringEntry) ClassBuilder.constantPool().stringEntry(stringEntry.utf8());
+                    if (entry instanceof IntegerEntry integerEntry) ClassBuilder.constantPool().intEntry(integerEntry.intValue());
+                    if (entry instanceof FloatEntry floatEntry) ClassBuilder.constantPool().floatEntry(floatEntry.floatValue());
+                    if (entry instanceof LongEntry longEntry) ClassBuilder.constantPool().longEntry(longEntry.longValue());
+                    if (entry instanceof DoubleEntry doubleEntry) ClassBuilder.constantPool().doubleEntry(doubleEntry.doubleValue());
+                    if (entry instanceof InterfaceMethodRefEntry interfaceMethodRefEntry) ClassBuilder.constantPool().interfaceMethodRefEntry(interfaceMethodRefEntry.owner(), interfaceMethodRefEntry.nameAndType());
+                    if (entry instanceof InvokeDynamicEntry invokeDynamicEntry) ClassBuilder.constantPool().invokeDynamicEntry(invokeDynamicEntry.bootstrap(), invokeDynamicEntry.nameAndType());
+                    if (entry instanceof ModuleEntry moduleEntry) ClassBuilder.constantPool().moduleEntry(moduleEntry.name());
+                    if (entry instanceof PackageEntry packageEntry) ClassBuilder.constantPool().packageEntry(packageEntry.name());
                 }
                 for (int i = 0; i < constantPoolBuilder.bootstrapMethodCount(); i++) {
                     System.err.println("Bootstrap Method Entry: "+constantPoolBuilder.bootstrapMethodEntry(i).bootstrapMethod() + " Arguments: "+constantPoolBuilder.bootstrapMethodEntry(i).arguments());
