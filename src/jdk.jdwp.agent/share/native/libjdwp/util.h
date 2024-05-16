@@ -358,14 +358,12 @@ jvmtiError getSourceDebugExtension(jclass clazz, char **extensionPtr);
  * rank first). The list is in order from lowest rank to highest rank.
  */
 typedef enum {
+    // These first few are leaf monitors so their order doesn't matter. They just
+    // need to be ranked lower than the non-leaf monitors.
     sendLock_Rank = 0, // transport lock
     cmdQueueLock_Rank, // debug loop lock
     blockCommandLoopLock_Rank, // event helper lock
     initMonitor_Rank, // debug init lock
-    LAST_LEAF_DEBUG_RAW_MONITOR = initMonitor_Rank,
-
-    // Only non-leaf locks below this point. No other locks should be entered
-    // while any of the above leaf locks are held.
 
     // Must rank higher than initMonitor
     listenerLock_Rank, // transport lock
