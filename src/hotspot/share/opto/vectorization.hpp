@@ -1346,16 +1346,19 @@ public:
 
 class VTransformNode : public ArenaObj {
 public:
-  VTransformNodeIDX _idx;
+  const VTransformNodeIDX _idx;
 
 private:
+  // _in is split into required inputs (_req), and additional dependencies.
+  const int _req;
   GrowableArray<VTransformNode*> _in;
   GrowableArray<VTransformNode*> _out;
 
 public:
-  VTransformNode(VTransformGraph& graph) :
+  VTransformNode(VTransformGraph& graph, const int req) :
     _idx(graph.new_idx()),
-    _in(graph.arena(),  4, 0, nullptr),
+    _req(req),
+    _in(graph.arena(),  req, req, nullptr),
     _out(graph.arena(), 4, 0, nullptr)
   {
     graph.add_vtnode(this);
@@ -1364,6 +1367,7 @@ public:
   DEBUG_ONLY(virtual const char* name() const = 0;)
   DEBUG_ONLY(void print() const;)
   DEBUG_ONLY(virtual void print_spec() const {};)
+  DEBUG_ONLY(static void print_node_idx(const VTransformNode* vtn);)
 };
 
 class VTransformScalarNode : public VTransformNode {
@@ -1372,7 +1376,7 @@ private:
 
 public:
   VTransformScalarNode(VTransformGraph& graph, Node* n) :
-    VTransformNode(graph),
+    VTransformNode(graph, n->req()),
     _node(n) {}
 
   DEBUG_ONLY(virtual const char* name() const { return "Scalar"; };)
@@ -1384,8 +1388,8 @@ private:
   GrowableArray<Node*> _nodes; // TODO make not growable?
 
 public:
-  VTransformVectorNode(VTransformGraph& graph, int number_of_nodes) :
-    VTransformNode(graph),
+  VTransformVectorNode(VTransformGraph& graph, const int req, const int number_of_nodes) :
+    VTransformNode(graph, req),
     _nodes(graph.arena(), number_of_nodes, number_of_nodes, nullptr) {}
 
   void set_nodes(const Node_List* pack) {
@@ -1399,16 +1403,18 @@ public:
 
 class VTransformLoadVectorNode : public VTransformVectorNode {
 public:
+  // req = 3 -> [ctrl, mem, adr]
   VTransformLoadVectorNode(VTransformGraph& graph, int number_of_nodes) :
-    VTransformVectorNode(graph, number_of_nodes) {}
+    VTransformVectorNode(graph, 3, number_of_nodes) {}
 
   DEBUG_ONLY(virtual const char* name() const { return "LoadVector"; };)
 };
 
 class VTransformStoreVectorNode : public VTransformVectorNode {
 public:
+  // req = 4 -> [ctrl, mem, adr, val]
   VTransformStoreVectorNode(VTransformGraph& graph, int number_of_nodes) :
-    VTransformVectorNode(graph, number_of_nodes) {}
+    VTransformVectorNode(graph, 4, number_of_nodes) {}
 
   DEBUG_ONLY(virtual const char* name() const { return "StoreVector"; };)
 };

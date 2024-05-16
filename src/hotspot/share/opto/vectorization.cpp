@@ -1758,11 +1758,31 @@ void VTransformGraph::print_vtnodes() const {
 }
 
 void VTransformNode::print() const {
-  tty->print("%3d %s ", _idx, name());
-  // TODO print inputs and outputs
-  tty->print("(TODO) [TODO] ");
+  tty->print("%3d %s (", _idx, name());
+  for (int i = 0; i < _req; i++) {
+    print_node_idx(_in.at(i));
+  }
+  if (_in.length() > _req) {
+    tty->print(" |");
+    for (int i = _req; i < _in.length(); i++) {
+      print_node_idx(_in.at(i));
+    }
+  }
+  tty->print(") [");
+  for (int i = 0; i < _out.length(); i++) {
+    print_node_idx(_out.at(i));
+  }
+  tty->print("] ");
   print_spec();
   tty->cr();
+}
+
+void VTransformNode::print_node_idx(const VTransformNode* vtn) {
+  if (vtn == nullptr) {
+    tty->print(" _");
+  } else {
+    tty->print(" %d", vtn->_idx);
+  }
 }
 
 void VTransformScalarNode::print_spec() const {

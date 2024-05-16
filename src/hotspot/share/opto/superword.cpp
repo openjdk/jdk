@@ -3839,6 +3839,13 @@ bool SuperWord::vtransform() const {
     }
   }
 
+  // Map edges for packed nodes:
+  for (int i = 0; i < _packset.length(); i++) {
+    Node_List* pack = _packset.at(i);
+    Node* p0 = pack->at(0);
+    VTransformNode* vtn = bb_idx_to_vtnode.at(bb_idx(p0));
+  }
+
   graph.print_vtnodes();
   return false; // TODO
 }
