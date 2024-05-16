@@ -31,8 +31,6 @@ import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
@@ -75,10 +73,11 @@ public final class StableValueImpl<V> implements StableValue<V> {
     private int state;
 
     /**
-     * Indicates if a supplier is currently being invoked. Used to
-     * detect circular supplier invocations.
+     * Indicates a computation operation has been invoked. Used to
+     * detect circular computation invocations.
      */
-    @Stable private boolean supplying;
+    @Stable
+    private boolean computeInvoked;
 
     private StableValueImpl() {}
 
@@ -222,22 +221,18 @@ public final class StableValueImpl<V> implements StableValue<V> {
                 return orThrow();
             }
             // A value is not set
-            if (supplying) {
+            if (computeInvoked) {
                 throw stackOverflow(supplier, null);
             }
+            computeInvoked = true;
             try {
-                supplying = true;
-                try {
-                    V newValue = supplier.get();
-                    setValue(newValue);
-                    return newValue;
-                } catch (Throwable t) {
-                    putState(ERROR);
-                    putMutex(t.getClass());
-                    throw t;
-                }
-            } finally {
-                supplying = false;
+                V newValue = supplier.get();
+                setValue(newValue);
+                return newValue;
+            } catch (Throwable t) {
+                putState(ERROR);
+                putMutex(t.getClass());
+                throw t;
             }
         }
     }
@@ -292,28 +287,24 @@ public final class StableValueImpl<V> implements StableValue<V> {
             }
 
             // A value is not set
-            if (supplying) {
+            if (computeInvoked) {
                 throw stackOverflow(provider, key);
             }
+            computeInvoked = true;
             try {
-                supplying = true;
-                try {
-                    @SuppressWarnings("unchecked")
-                    V newValue = switch (provider) {
-                        case Supplier<?> sup     -> (V) sup.get();
-                        case IntFunction<?> iFun -> (V) iFun.apply((int) key);
-                        case Function<?, ?> func -> ((Function<K, V>) func).apply(key);
-                        default                  -> throw shouldNotReachHere();
-                    };
-                    setValue(newValue);
-                    return newValue;
-                } catch (Throwable t) {
-                    putState(ERROR);
-                    putMutex(t.getClass());
-                    throw t;
-                }
-            } finally {
-                supplying = false;
+                @SuppressWarnings("unchecked")
+                V newValue = switch (provider) {
+                    case Supplier<?> sup     -> (V) sup.get();
+                    case IntFunction<?> iFun -> (V) iFun.apply((int) key);
+                    case Function<?, ?> func -> ((Function<K, V>) func).apply(key);
+                    default                  -> throw shouldNotReachHere();
+                };
+                setValue(newValue);
+                return newValue;
+            } catch (Throwable t) {
+                putState(ERROR);
+                putMutex(t.getClass());
+                throw t;
             }
         }
     }
