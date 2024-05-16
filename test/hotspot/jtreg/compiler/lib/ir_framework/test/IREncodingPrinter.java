@@ -290,6 +290,7 @@ public class IREncodingPrinter {
         for (int i = 0; i < andRules.length; i++) {
             String platform = andRules[i].trim();
             i++;
+            TestFormat.check(i < andRules.length, "Missing value for platform " + platform + failAt());
             String value = andRules[i].trim();
             returnValue &= checkPlatform(platform, value);
         }
@@ -301,6 +302,7 @@ public class IREncodingPrinter {
         for (int i = 0; i < orRules.length; i++) {
             String platform = orRules[i].trim();
             i++;
+            TestFormat.check(i < orRules.length, "Missing value for platform " + platform + failAt());
             String value = orRules[i].trim();
             returnValue |= checkPlatform(platform, value);
         }
@@ -366,6 +368,7 @@ public class IREncodingPrinter {
         for (int i = 0; i < andRules.length; i++) {
             String feature = andRules[i].trim();
             i++;
+            TestFormat.check(i < andRules.length, "Missing value for cpu feature " + feature + failAt());
             String value = andRules[i].trim();
             returnValue &= checkCPUFeature(feature, value);
         }
@@ -377,6 +380,7 @@ public class IREncodingPrinter {
         for (int i = 0; i < orRules.length; i++) {
             String feature = orRules[i].trim();
             i++;
+            TestFormat.check(i < orRules.length, "Missing value for cpu feature " + feature + failAt());
             String value = orRules[i].trim();
             returnValue |= checkCPUFeature(feature, value);
         }
