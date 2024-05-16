@@ -52,7 +52,6 @@ public class TestStressBailout {
 
     public static void main(String[] args) throws Exception {
         Random r = Utils.getRandomInstance();
-        int i = r.nextInt();
         // Likely bail out on -version, for some low probability value.
         runTest(r.nextInt(1, 10));
         // Higher value
