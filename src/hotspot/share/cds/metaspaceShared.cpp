@@ -225,6 +225,14 @@ static bool shared_base_too_high(char* specified_base, char* aligned_base, size_
 static char* compute_shared_base(size_t cds_max) {
   char* specified_base = (char*)SharedBaseAddress;
   char* aligned_base = align_up(specified_base, MetaspaceShared::core_region_alignment());
+  if (UseCompressedClassPointers) {
+    aligned_base = align_up(specified_base, Metaspace::reserve_alignment());
+  }
+
+  if (aligned_base != specified_base) {
+    log_info(cds)("SharedBaseAddress (" INTPTR_FORMAT ") aligned up to " INTPTR_FORMAT,
+                   p2i(specified_base), p2i(aligned_base));
+  }
 
   const char* err = nullptr;
   if (shared_base_too_high(specified_base, aligned_base, cds_max)) {
@@ -1259,15 +1267,15 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
   size_t archive_end_offset  = (dynamic_mapinfo == nullptr) ? static_mapinfo->mapping_end_offset() : dynamic_mapinfo->mapping_end_offset();
   size_t archive_space_size = align_up(archive_end_offset, archive_space_alignment);
 
-  // If a base address is given, it must have valid alignment and be suitable as encoding base.
-  if (base_address != nullptr) {
-    assert(is_aligned(base_address, archive_space_alignment),
-           "Archive base address invalid: " PTR_FORMAT ".", p2i(base_address));
-  }
-
   if (!Metaspace::using_class_space()) {
     // Get the simple case out of the way first:
     // no compressed class space, simple allocation.
+
+    // When running without class space, requested archive base should be aligned to cds core alignment.
+    assert(is_aligned(base_address, archive_space_alignment),
+             "Archive base address unaligned: " PTR_FORMAT ", needs alignment: %zu.",
+             p2i(base_address), archive_space_alignment);
+
     archive_space_rs = ReservedSpace(archive_space_size, archive_space_alignment,
                                      os::vm_page_size(), (char*)base_address);
     if (archive_space_rs.is_reserved()) {
@@ -1288,12 +1296,12 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
 
   const size_t class_space_alignment = Metaspace::reserve_alignment();
 
-  // To simplify matters, lets assume that metaspace alignment will always be
-  //  equal or a multiple of archive alignment.
-  assert(is_power_of_2(class_space_alignment) &&
-                       is_power_of_2(archive_space_alignment) &&
-                       class_space_alignment >= archive_space_alignment,
-                       "Sanity");
+  // When running with class space, requested archive base must satisfy both cds core alignment
+  // and class space alignment.
+  const size_t base_address_alignment = MAX2(class_space_alignment, archive_space_alignment);
+  assert(is_aligned(base_address, base_address_alignment),
+           "Archive base address unaligned: " PTR_FORMAT ", needs alignment: %zu.",
+           p2i(base_address), base_address_alignment);
 
   const size_t class_space_size = CompressedClassSpaceSize;
   assert(CompressedClassSpaceSize > 0 &&
@@ -1301,12 +1309,11 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
          "CompressedClassSpaceSize malformed: "
          SIZE_FORMAT, CompressedClassSpaceSize);
 
-  const size_t ccs_begin_offset = align_up(base_address + archive_space_size,
-                                           class_space_alignment) - base_address;
+  const size_t ccs_begin_offset = align_up(archive_space_size, class_space_alignment);
   const size_t gap_size = ccs_begin_offset - archive_space_size;
 
   const size_t total_range_size =
-      align_up(archive_space_size + gap_size + class_space_size, core_region_alignment());
+      archive_space_size + gap_size + class_space_size;
 
   assert(total_range_size > ccs_begin_offset, "must be");
   if (use_windows_memory_mapping() && use_archive_base_addr) {
@@ -1331,7 +1338,7 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
     MemTracker::record_virtual_memory_type(class_space_rs.base(), mtClass);
   } else {
     if (use_archive_base_addr && base_address != nullptr) {
-      total_space_rs = ReservedSpace(total_range_size, archive_space_alignment,
+      total_space_rs = ReservedSpace(total_range_size, base_address_alignment,
                                      os::vm_page_size(), (char*) base_address);
     } else {
       // We did not manage to reserve at the preferred address, or were instructed to relocate. In that
@@ -1349,7 +1356,7 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
     // Paranoid checks:
     assert(base_address == nullptr || (address)total_space_rs.base() == base_address,
            "Sanity (" PTR_FORMAT " vs " PTR_FORMAT ")", p2i(base_address), p2i(total_space_rs.base()));
-    assert(is_aligned(total_space_rs.base(), archive_space_alignment), "Sanity");
+    assert(is_aligned(total_space_rs.base(), base_address_alignment), "Sanity");
     assert(total_space_rs.size() == total_range_size, "Sanity");
 
     // Now split up the space into ccs and cds archive. For simplicity, just leave
