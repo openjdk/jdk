@@ -278,6 +278,32 @@ void BufferBlob::free(BufferBlob *blob) {
 
 
 //----------------------------------------------------------------------------------------------------
+
+CompilerScratchBlob::CompilerScratchBlob(const char* name, uint buffer_size) :
+  BufferBlob(name, CodeBlobKind::Buffer, buffer_size) {
+  CodeCache::commit(this); //?
+}
+
+CompilerScratchBlob* CompilerScratchBlob::create(const char* name, uint size) {
+  ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
+
+  CompilerScratchBlob* blob = nullptr;
+  assert(name != nullptr, "must provide a name");
+  {
+    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    blob = new (size) CompilerScratchBlob(name, size);
+  }
+  // Track memory usage statistic after releasing CodeCache_lock
+  MemoryService::track_code_cache_memory_usage();
+
+  return blob;
+}
+
+void* CompilerScratchBlob::operator new(size_t s, unsigned size) throw() {
+  return CodeCache::allocate(size, CodeBlobType::NonExecutable);
+}
+
+//----------------------------------------------------------------------------------------------------
 // Implementation of AdapterBlob
 
 AdapterBlob::AdapterBlob(int size, CodeBuffer* cb) :

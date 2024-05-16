@@ -327,10 +327,15 @@ void CodeCache::initialize_heaps() {
     add_heap(profiled_space, "CodeHeap 'profiled nmethods'", CodeBlobType::MethodProfiled);
   }
 
-  ReservedSpace non_method_space = rs.partition(offset, non_nmethod.size);
-  offset += non_nmethod.size;
+  ReservedSpace non_method_space = rs.partition(offset, non_nmethod.size/2);
+  offset += non_nmethod.size/2;
   // Non-nmethods (stubs, adapters, ...)
   add_heap(non_method_space, "CodeHeap 'non-nmethods'", CodeBlobType::NonNMethod);
+
+  ReservedSpace non_executable_space = rs.partition(offset, non_nmethod.size/2);
+  offset += non_nmethod.size/2;
+  // Non-executables (compilers scratch buffer area)
+  add_heap(non_executable_space, "CodeHeap 'non-executable'", CodeBlobType::NonExecutable);
 
   if (non_profiled.enabled) {
     ReservedSpace non_profiled_space  = rs.partition(offset, non_profiled.size);
@@ -522,6 +527,7 @@ CodeBlob* CodeCache::allocate(uint size, CodeBlobType code_blob_type, bool handl
         CodeBlobType type = code_blob_type;
         switch (type) {
         case CodeBlobType::NonNMethod:
+        case CodeBlobType::NonExecutable:
           type = CodeBlobType::MethodNonProfiled;
           break;
         case CodeBlobType::MethodNonProfiled:
