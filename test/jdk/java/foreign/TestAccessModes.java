@@ -137,15 +137,15 @@ public class TestAccessModes {
 
     static MemoryLayout[] layouts() {
         MemoryLayout[] valueLayouts = {
-//                ValueLayout.JAVA_BOOLEAN,
-//                ValueLayout.JAVA_CHAR,
-//                ValueLayout.JAVA_BYTE,
-//                ValueLayout.JAVA_SHORT,
-//                ValueLayout.JAVA_INT,
-//                ValueLayout.JAVA_FLOAT,
+                ValueLayout.JAVA_BOOLEAN,
+                ValueLayout.JAVA_CHAR,
+                ValueLayout.JAVA_BYTE,
+                ValueLayout.JAVA_SHORT,
+                ValueLayout.JAVA_INT,
+                ValueLayout.JAVA_FLOAT,
                 ValueLayout.JAVA_LONG,
-//                ValueLayout.JAVA_DOUBLE,
-//                ValueLayout.ADDRESS
+                ValueLayout.JAVA_DOUBLE,
+                ValueLayout.ADDRESS
         };
         List<MemoryLayout> layouts = new ArrayList<>();
         for (MemoryLayout layout : valueLayouts) {
@@ -159,14 +159,14 @@ public class TestAccessModes {
 
     static MemorySegment[] segments() {
         return new MemorySegment[]{
-//                Arena.ofAuto().allocate(8),
+                Arena.ofAuto().allocate(8),
                 MemorySegment.ofArray(new byte[8]),
-//                MemorySegment.ofArray(new char[4]),
-//                MemorySegment.ofArray(new short[4]),
-//                MemorySegment.ofArray(new int[2]),
-//                MemorySegment.ofArray(new float[2]),
-//                MemorySegment.ofArray(new long[1]),
-//                MemorySegment.ofArray(new double[1])
+                MemorySegment.ofArray(new char[4]),
+                MemorySegment.ofArray(new short[4]),
+                MemorySegment.ofArray(new int[2]),
+                MemorySegment.ofArray(new float[2]),
+                MemorySegment.ofArray(new long[1]),
+                MemorySegment.ofArray(new double[1])
         };
     }
 
