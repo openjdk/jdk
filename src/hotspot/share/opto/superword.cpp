@@ -3842,6 +3842,25 @@ bool SuperWord::vtransform() const {
   // Only add dependency once per vtnode.
   VectorSet dependency_set;
 
+  auto set_req = [&](VTransformNode* vtn, int j, Node* n) {
+    VTransformNode* req = bb_idx_to_vtnode.at(bb_idx(n));
+    vtn->set_req(j, req);
+    dependency_set.set(req->_idx);
+  };
+
+  // For a n that is in vtn, add all of n's dependencies to vtn.
+  auto add_dependencies = [&](VTransformNode* vtn, Node* n) {
+    for (VLoopDependencyGraph::PredsIterator preds(dependency_graph(), n); !preds.done(); preds.next()) {
+      Node* pred = preds.current();
+      if (!in_bb(pred)) { continue; }
+      if (n->is_Mem() && !pred->is_Mem()) { continue; } // TODO ok?
+      // TODO reductions
+      VTransformNode* dependency = bb_idx_to_vtnode.at(bb_idx(pred));
+      if (dependency_set.test_set(dependency->_idx)) { continue; }
+      vtn->add_dependency(dependency);
+    }
+  };
+
   // Map edges for packed nodes:
   for (int i = 0; i < _packset.length(); i++) {
     Node_List* pack = _packset.at(i);
@@ -3849,17 +3868,11 @@ bool SuperWord::vtransform() const {
     VTransformVectorNode* vtn = bb_idx_to_vtnode.at(bb_idx(p0))->isa_Vector();
     dependency_set.clear();
 
-    auto set_req = [&](int j, Node* n) {
-      VTransformNode* req = bb_idx_to_vtnode.at(bb_idx(n));
-      vtn->set_req(j, req);
-      dependency_set.set(req->_idx);
-    };
-
     if (p0->is_Load()) {
-      set_req(MemNode::Address, p0->in(MemNode::Address));
+      set_req(vtn, MemNode::Address, p0->in(MemNode::Address));
     } else if (p0->is_Store()) {
-      set_req(MemNode::Address, p0->in(MemNode::Address));
-      set_req(MemNode::ValueIn, p0->in(MemNode::ValueIn));
+      set_req(vtn, MemNode::Address, p0->in(MemNode::Address));
+      set_req(vtn, MemNode::ValueIn, p0->in(MemNode::ValueIn));
     } else {
       DEBUG_ONLY(vtn->print();)
       assert(false, "failed to handle pack");
@@ -3867,15 +3880,7 @@ bool SuperWord::vtransform() const {
 
     for (uint k = 0; k < pack->size(); k++) {
       Node* n = pack->at(k);
-      for (VLoopDependencyGraph::PredsIterator preds(dependency_graph(), n); !preds.done(); preds.next()) {
-        Node* pred = preds.current();
-        if (!in_bb(pred)) { continue; }
-        if (p0->is_Mem() && !pred->is_Mem()) { continue; } // TODO ok?
-        // TODO reductions
-        VTransformNode* dependency = bb_idx_to_vtnode.at(bb_idx(pred));
-        if (dependency_set.test_set(dependency->_idx)) { continue; }
-        vtn->add_dependency(dependency);
-      }
+      add_dependencies(vtn, n);
     }
   }
 
@@ -3887,24 +3892,20 @@ bool SuperWord::vtransform() const {
 
     dependency_set.clear();
 
-    auto set_req = [&](int j, Node* n) {
-      VTransformNode* req = bb_idx_to_vtnode.at(bb_idx(n));
-      vtn->set_req(j, req);
-      dependency_set.set(req->_idx);
-    };
-
     if (n->is_Load()) {
-      set_req(MemNode::Address, n->in(MemNode::Address));
+      set_req(vtn, MemNode::Address, n->in(MemNode::Address));
     } else if (n->is_Store()) {
-      set_req(MemNode::Address, n->in(MemNode::Address));
-      set_req(MemNode::ValueIn, n->in(MemNode::ValueIn));
+      set_req(vtn, MemNode::Address, n->in(MemNode::Address));
+      set_req(vtn, MemNode::ValueIn, n->in(MemNode::ValueIn));
     } else {
       for (uint j = 0; j < n->req(); j++) {
         Node* def = n->in(j);
         if (def == nullptr || !in_bb(def)) { continue; }
-        set_req(j, def);
+        set_req(vtn, j, def);
       }
     }
+
+    add_dependencies(vtn, n);
   }
 
   graph.print_vtnodes();
