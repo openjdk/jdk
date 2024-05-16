@@ -1968,7 +1968,11 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
   int shift = shift_amount(basic_type);
 
   if (!(flags & LIR_OpArrayCopy::type_check)) {
-    __ b(cont);
+    if (stub != nullptr) {
+      __ b(cont);
+      __ bind(slow);
+      __ b(*stub->entry());
+    }
   } else {
     // We don't know the array types are compatible.
     if (basic_type != T_OBJECT) {
@@ -2089,9 +2093,9 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
         __ add(dst_pos, tmp, dst_pos);
       }
     }
+    __ bind(slow);
+    __ b(*stub->entry());
   }
-  __ bind(slow);
-  __ b(*stub->entry());
   __ bind(cont);
 
 #ifdef ASSERT

@@ -348,22 +348,22 @@ void C1_MacroAssembler::allocate_array(
   initialize_header(obj, klass, len, t2, t3);
 
   if (zero_array) {
-      // Initialize body.
-      const Register base  = t2;
-      const Register index = t3;
-      addi(base, obj, base_offset_in_bytes);               // compute address of first element
-      addi(index, arr_size, -(base_offset_in_bytes));      // compute index = number of bytes to clear
+    // Initialize body.
+    const Register base  = t2;
+    const Register index = t3;
+    addi(base, obj, base_offset_in_bytes);               // compute address of first element
+    addi(index, arr_size, -(base_offset_in_bytes));      // compute index = number of bytes to clear
 
-      // Zero first 4 bytes, if start offset is not word aligned.
-      if (!is_aligned(base_offset_in_bytes, BytesPerWord)) {
-          assert(is_aligned(base_offset_in_bytes, BytesPerInt), "must be 4-byte aligned");
-          li(t1, 0);
-          stw(t1, 0, base);
-          addi(base, base, BytesPerInt);
-          // Note: initialize_body will align index down, no need to correct it here.
-      }
+    // Zero first 4 bytes, if start offset is not word aligned.
+    if (!is_aligned(base_offset_in_bytes, BytesPerWord)) {
+      assert(is_aligned(base_offset_in_bytes, BytesPerInt), "must be 4-byte aligned");
+      li(t1, 0);
+      stw(t1, 0, base);
+      addi(base, base, BytesPerInt);
+      // Note: initialize_body will align index down, no need to correct it here.
+    }
 
-      initialize_body(base, index);
+    initialize_body(base, index);
   }
 
   if (CURRENT_ENV->dtrace_alloc_probes()) {
