@@ -250,6 +250,7 @@ public final class StableValueImpl<V> implements StableValue<V> {
                 return newValue;
             } catch (Throwable t) {
                 putState(ERROR);
+                // For security reasons, we only store the exception type.
                 putMutex(t.getClass());
                 throw t;
             }
