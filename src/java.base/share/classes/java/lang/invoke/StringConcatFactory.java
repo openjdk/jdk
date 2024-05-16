@@ -1091,13 +1091,11 @@ public final class StringConcatFactory {
             String className = getClassName(lookup.lookupClass());
 
             byte[] classBytes = ClassFile.of().build(ClassDesc.of(className),
-                    (ClassBuilder clb) -> {
-                        clb.withFlags(AccessFlag.FINAL, AccessFlag.SUPER, AccessFlag.SYNTHETIC)
-                            .withMethodBody(METHOD_NAME,
-                                    MethodTypeDesc.ofDescriptor(args.toMethodDescriptorString()),
-                                    ClassFile.ACC_FINAL | ClassFile.ACC_PRIVATE | ClassFile.ACC_STATIC,
-                                    generateMethod(constants, args));
-                    });
+                    clb -> clb.withFlags(AccessFlag.FINAL, AccessFlag.SUPER, AccessFlag.SYNTHETIC)
+                        .withMethodBody(METHOD_NAME,
+                                MethodTypeDesc.ofDescriptor(args.toMethodDescriptorString()),
+                                ClassFile.ACC_FINAL | ClassFile.ACC_PRIVATE | ClassFile.ACC_STATIC,
+                                generateMethod(constants, args)));
             try {
                 Lookup hiddenLookup = lookup.makeHiddenClassDefiner(className, classBytes, SET_OF_STRONG, DUMPER)
                                             .defineClassAsLookup(true);
@@ -1109,7 +1107,7 @@ public final class StringConcatFactory {
         }
 
         private static Consumer<CodeBuilder> generateMethod(String[] constants, MethodType args) {
-            return (CodeBuilder cb) -> {
+            return cb -> {
                 cb.new_(STRING_BUILDER);
                 cb.dup();
 
