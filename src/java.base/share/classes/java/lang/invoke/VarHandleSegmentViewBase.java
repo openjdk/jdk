@@ -42,21 +42,13 @@ abstract sealed class VarHandleSegmentViewBase extends VarHandle permits
     /** endianness **/
     final boolean be;
 
-    /** access size (in bytes, computed from var handle carrier type) **/
-    final long length;
-
     /** alignment constraint (in bytes, expressed as a bit mask) **/
     final long alignmentMask;
 
-    VarHandleSegmentViewBase(VarForm form, boolean be, long length, long alignmentMask, boolean exact) {
+    VarHandleSegmentViewBase(VarForm form, boolean be, long alignmentMask, boolean exact) {
         super(form, exact);
         this.be = be;
-        this.length = length;
         this.alignmentMask = alignmentMask;
-    }
-
-    static IllegalArgumentException newIllegalArgumentExceptionForMisalignedAccess(long address) {
-        return new IllegalArgumentException("Misaligned access at address: " + Utils.toHexString(address));
     }
 
     static UnsupportedOperationException newUnsupportedAccessModeForAlignment(long alignment) {
