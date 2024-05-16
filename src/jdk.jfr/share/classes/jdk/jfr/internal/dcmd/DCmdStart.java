@@ -305,8 +305,8 @@ final class DCmdStart extends AbstractDCmd {
         String[] eventNames = new String[4];
         eventNames[0] = "FileRead";
         eventNames[1] = "FileWrite";
-        eventNames[4] = "JavaErrorThrow";
-        eventNames[5] = "JavaExceptionThrow";
+        eventNames[2] = "JavaErrorThrow";
+        eventNames[3] = "JavaExceptionThrow";
         for (String eventName : eventNames) {
             if ("true".equals(settings.get(Type.EVENT_NAME_PREFIX + eventName + "#enabled"))) {
                 return true;
