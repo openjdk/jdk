@@ -55,6 +55,7 @@ public class StableStaticBenchmark {
     private static final int VALUE = 42;
 
     private static final StableValue<Integer> STABLE = init(StableValue.of());
+    private static final StableValue<Integer> STABLE_NULL = StableValue.of();
     private static final Supplier<Integer> DCL = new Dcl<>(() -> VALUE);
     private static final List<StableValue<Integer>> LIST = StableValue.ofList(1);
     private static final AtomicReference<Integer> ATOMIC = new AtomicReference<>(VALUE);
@@ -63,8 +64,8 @@ public class StableStaticBenchmark {
     private static final StableRecordHolder STABLE_RECORD_HOLDER = new StableRecordHolder();
 
     static {
-        var result = LIST.getFirst().trySet(VALUE);
-        assert result;
+        LIST.getFirst().trySet(VALUE);
+        STABLE_NULL.trySet(null);
     }
 
     @Benchmark
@@ -85,6 +86,11 @@ public class StableStaticBenchmark {
     @Benchmark
     public int stable() {
         return (int)STABLE.orThrow();
+    }
+
+    @Benchmark
+    public int stableNull() {
+        return STABLE_NULL.orThrow() == null ? 0 : 1;
     }
 
     @Benchmark

@@ -58,6 +58,8 @@ public class StableBenchmark {
 
     private final StableValue<Integer> stable = init(StableValue.of(), VALUE);
     private final StableValue<Integer> stable2 = init(StableValue.of(), VALUE2);
+    private final StableValue<Integer> stableNull = StableValue.of();
+    private final StableValue<Integer> stableNull2 = StableValue.of();
     private final StableValue<List<Integer>> stableHoldingList = StableValue.of();
     private final StableValue<List<Integer>> stableHoldingList2 = StableValue.of();
     private final Supplier<Integer> dcl = new Dcl<>(() -> VALUE);
@@ -71,6 +73,8 @@ public class StableBenchmark {
 
     @Setup
     public void setup() {
+        stableNull.trySet(null);
+        stableNull2.trySet(VALUE2);
         list.getFirst().trySet(VALUE);
         list.get(1).trySet(VALUE2);
         stableHoldingList.trySet(List.of(VALUE));
@@ -102,6 +106,15 @@ public class StableBenchmark {
         int sum = 0;
         for (int i = 0; i < ITERATIONS; i++) {
             sum += stable.orThrow() + stable2.orThrow();
+        }
+        return sum;
+    }
+
+    @Benchmark
+    public int stableNull() {
+        int sum = 0;
+        for (int i = 0; i < ITERATIONS; i++) {
+            sum += (stableNull.orThrow() == null ? 0 : 1) + (stableNull2.orThrow() == null ? 0 : 1);
         }
         return sum;
     }

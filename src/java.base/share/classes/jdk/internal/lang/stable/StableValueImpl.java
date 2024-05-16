@@ -397,15 +397,9 @@ public final class StableValueImpl<V> implements StableValue<V> {
 
             @Override
             public void run() {
-                try {
-                    stable.computeIfUnset(supplier);
-                } catch (Throwable throwable) {
-                    final Thread.UncaughtExceptionHandler uncaughtExceptionHandler =
-                            thread.getUncaughtExceptionHandler();
-                    if (uncaughtExceptionHandler != null) {
-                        uncaughtExceptionHandler.uncaughtException(thread, throwable);
-                    }
-                }
+                stable.computeIfUnset(supplier);
+                // Exceptions are implicitly captured by the tread's
+                // uncaught exception handler.
             }
         }
 
