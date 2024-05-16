@@ -114,7 +114,7 @@ public class StableBenchmark {
     public int stableNull() {
         int sum = 0;
         for (int i = 0; i < ITERATIONS; i++) {
-            sum += (stableNull.orThrow() == null ? 0 : 1) + (stableNull2.orThrow() == null ? 0 : 1);
+            sum += (stableNull.orThrow() == null ? VALUE : VALUE2) + (stableNull2.orThrow() == null ? VALUE : VALUE2);
         }
         return sum;
     }

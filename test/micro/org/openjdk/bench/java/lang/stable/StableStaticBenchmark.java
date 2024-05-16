@@ -90,7 +90,7 @@ public class StableStaticBenchmark {
 
     @Benchmark
     public int stableNull() {
-        return STABLE_NULL.orThrow() == null ? 0 : 1;
+        return STABLE_NULL.orThrow() == null ? VALUE : 13;
     }
 
     @Benchmark
