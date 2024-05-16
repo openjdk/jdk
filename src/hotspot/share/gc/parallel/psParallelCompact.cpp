@@ -1287,8 +1287,6 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
 
     forward_to_new_addr();
 
-    // adjust_pointers() updates Universe::_intArrayKlass which is
-    // needed by the compaction for filling holes in the dense prefix.
     adjust_pointers();
 
     compact();
