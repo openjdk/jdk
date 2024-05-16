@@ -144,8 +144,6 @@ public sealed interface StableValue<V>
      * will only be invoked once even if invoked from several threads and if the
      * {@code supplier} throws an exception, the stable value will be in an error state.
      *
-     * // Todo: Should we wrap supplier exceptions into a specific exception type?
-     *
      * @param  supplier to be used for computing a value
      * @return the current (pre-existing or computed) value
      * @throws NoSuchElementException if {@linkplain #isError()} is {@code true}
@@ -384,7 +382,7 @@ public sealed interface StableValue<V>
     static <T> Supplier<T> memoizedSupplier(Supplier<? extends T> original) {
         Objects.requireNonNull(original);
         StableValue<T> stable = StableValue.of();
-        return StableAccess.ofSupplier(stable, original);
+        return StableAccess.memoizedSupplier(stable, original);
     }
 
     /**
@@ -410,7 +408,7 @@ public sealed interface StableValue<V>
         }
         Objects.requireNonNull(original);
         List<StableValue<R>> stableList = StableValue.ofList(size);
-        return StableAccess.ofIntFunction(stableList, original);
+        return StableAccess.memoizedIntFunction(stableList, original);
     }
 
     /**
@@ -436,7 +434,7 @@ public sealed interface StableValue<V>
         Objects.requireNonNull(inputs);
         Objects.requireNonNull(original);
         Map<T, StableValue<R>> stableMap = StableValue.ofMap(inputs);
-        return StableAccess.ofFunction(stableMap, original);
+        return StableAccess.memoizedFunction(stableMap, original);
     }
 
 }

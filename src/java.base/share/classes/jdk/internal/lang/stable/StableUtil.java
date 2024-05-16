@@ -34,8 +34,6 @@ import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
-import static jdk.internal.misc.Unsafe.*;
-
 /**
  * Package private utility class for stable values & collections.
  */
@@ -43,17 +41,23 @@ public final class StableUtil {
 
     private StableUtil() {}
 
+    // State values
+
     // Indicates a value is not set
     static final byte UNSET = 0;
     // Indicates a value is set to a `null` value
-    static final byte NULL = 1;
+    static final byte SET_NULL = 1;
     // Indicates a value is set to a non-null value
-    static final byte NON_NULL = 2; // The middle value
+    static final byte SET_NON_NULL = 2; // The middle value
     // Indicates there was an error when computing a value
     static final byte ERROR = 3;
     // Added to create an odd number of switch alternatives
     static final byte DUMMY = 4;
 
+    // Computation values
+
+    // Indicates a computation operation has NOT been invoked.
+    static final byte NOT_INVOKED = 0;
     // Indicates a computation operation has been invoked.
     static final byte INVOKED = 1;
 

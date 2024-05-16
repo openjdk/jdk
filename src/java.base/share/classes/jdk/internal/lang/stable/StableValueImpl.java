@@ -56,14 +56,17 @@ public final class StableValueImpl<V> implements StableValue<V> {
 
     /**
      * An internal mutex used rather than synchronizing on `this`. Lazily created.
+     *
      * If `null`    , we have not entered a mutex section yet
-     * If TOMBSTONE , we do not need synchronization anymore (isSet() && isError() = true)
-     * if instanceof Throwable , records a previous error and, we do not need synchronization anymore
+     * If TOMBSTONE , we do not need synchronization anymore (isSet() == true)
+     * if instanceof Throwable , records a previous throwable class and, we do not need synchronization anymore
      * otherwise    , a distinct synchronization object
      */
     private Object mutex;
 
     /**
+     * The set value for this stable value
+     *
      * If non-null, holds a set value
      * If `null`  , may be unset or hold a set `null` value
      */
@@ -71,9 +74,12 @@ public final class StableValueImpl<V> implements StableValue<V> {
     private V value;
 
     /**
-     * If StableUtil.NOT_SET  , a value is not set
-     * If StableUtil.NON_NULL , a non-null value is set
-     * If StableUtil.NULL     , a `null` value is set
+     * Records the state of this stable value.
+     *
+     * If StableUtil.NOT_SET      , a value is not set
+     * If StableUtil.SET_NON_NULL , a non-null value is set
+     * If StableUtil.SET_NULL     , a `null` value is set
+     * If StableUtil.ERROR        , a throwable was thrown during computation
      */
     @Stable
     private byte state;
@@ -81,8 +87,9 @@ public final class StableValueImpl<V> implements StableValue<V> {
     /**
      * Indicates a computation operation has been invoked. Used to
      * detect circular computation invocations.
-     * 0                  , not invoked
-     * StableUtil.INVOKED , invoked
+     *
+     * StableUtil.NOT_INVOKED (0) , not invoked
+     * StableUtil.INVOKED     (1) , invoked
      */
     @Stable
     private byte computeInvoked;
@@ -93,8 +100,8 @@ public final class StableValueImpl<V> implements StableValue<V> {
     @Override
     public boolean isSet() {
         int s;
-        return (s = state) == NON_NULL || s == NULL ||
-                (s = stateVolatile()) == NON_NULL || s == NULL;
+        return (s = state) == SET_NON_NULL || s == SET_NULL ||
+                (s = stateVolatile()) == SET_NON_NULL || s == SET_NULL;
     }
 
     @ForceInline
@@ -113,25 +120,13 @@ public final class StableValueImpl<V> implements StableValue<V> {
             // plain semantics, we know a value is set.
             return v;
         }
-        if (state == NULL) {
+        if (state == SET_NULL) {
             // If we happen to see a state value of NULL under
             // plain semantics, we know a value is set to `null`.
             return null;
         }
         // Now, fall back to volatile semantics.
         return orThrowVolatile();
-
-/*        // This is intentionally an old switch statement as it generates
-        // more compact byte code.
-        switch (state) {
-            case UNSET:    { throw StableUtil.notSet(); }
-            case NULL:     { return null; }
-            case NON_NULL: { return value; }
-            case ERROR:    { throw StableUtil.error(this); }
-            case DUMMY:    { throw shouldNotReachHere(); }
-        }
-        throw shouldNotReachHere();*/
-
     }
 
     @DontInline // Slow-path taken at most once per thread if set
@@ -139,11 +134,11 @@ public final class StableValueImpl<V> implements StableValue<V> {
         // This is intentionally an old switch statement as it generates
         // more compact byte code.
         switch (stateVolatile()) {
-            case UNSET:    { throw StableUtil.notSet(); }
-            case NULL:     { return null; }
-            case NON_NULL: { return valueVolatile(); }
-            case ERROR:    { throw StableUtil.error(this); }
-            case DUMMY:    { throw shouldNotReachHere(); }
+            case UNSET:        { throw notSet(); }
+            case SET_NULL:     { return null; }
+            case SET_NON_NULL: { return valueVolatile(); }
+            case ERROR:        { throw error(this); }
+            case DUMMY:        { throw shouldNotReachHere(); }
         }
         throw shouldNotReachHere();
     }
@@ -211,7 +206,7 @@ public final class StableValueImpl<V> implements StableValue<V> {
             // plain semantics, we know a value is set.
             return v;
         }
-        if (state == NULL) {
+        if (state == SET_NULL) {
             return null;
         }
         // Now, fall back to volatile semantics.
@@ -223,10 +218,10 @@ public final class StableValueImpl<V> implements StableValue<V> {
         // This is intentionally an old switch statement as it generates
         // more compact byte code.
         switch (stateVolatile()) {
-            case UNSET:    { return computeIfUnsetVolatile0(provider, key); }
-            case NON_NULL: { return valueVolatile(); }
-            case NULL:     { return null; }
-            case ERROR:    { throw StableUtil.error(this); }
+            case UNSET:        { return computeIfUnsetVolatile0(provider, key); }
+            case SET_NON_NULL: { return valueVolatile(); }
+            case SET_NULL:     { return null; }
+            case ERROR:        { throw error(this); }
         }
         throw shouldNotReachHere();
     }
@@ -241,7 +236,7 @@ public final class StableValueImpl<V> implements StableValue<V> {
                 return orThrow();
             }
 
-            if (!UNSAFE.compareAndSetByte(this, COMPUTE_INVOKED_OFFSET, (byte) 0, INVOKED)) {
+            if (!UNSAFE.compareAndSetByte(this, COMPUTE_INVOKED_OFFSET, NOT_INVOKED, INVOKED)) {
                 throw stackOverflow(provider, key);
             }
 
@@ -288,7 +283,7 @@ public final class StableValueImpl<V> implements StableValue<V> {
             putValue(value);
         }
         // Crucially, indicate a value is set _after_ it has actually been set.
-        putState(value == null ? NULL : NON_NULL);
+        putState(value == null ? SET_NULL : SET_NON_NULL);
         putMutex(TOMBSTONE); // We do not need a mutex anymore
     }
 
@@ -335,13 +330,11 @@ public final class StableValueImpl<V> implements StableValue<V> {
 
     public static <V> StableValue<V> ofBackground(ThreadFactory threadFactory,
                                                   Supplier<? extends V> supplier) {
-        final StableValue<V> stable = StableValue.of();
 
+        final StableValue<V> stable = StableValue.of();
         final class BgRunnable implements Runnable {
 
-            volatile Thread thread;
-
-            @Override
+           @Override
             public void run() {
                 stable.computeIfUnset(supplier);
                 // Exceptions are implicitly captured by the tread's
@@ -349,9 +342,7 @@ public final class StableValueImpl<V> implements StableValue<V> {
             }
         }
 
-        final BgRunnable runnable = new BgRunnable();
-        Thread bgThread = threadFactory.newThread(runnable);
-        runnable.thread = bgThread;
+        Thread bgThread = threadFactory.newThread(new BgRunnable());
         bgThread.start();
         return stable;
     }
