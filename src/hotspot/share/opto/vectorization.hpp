@@ -1358,6 +1358,7 @@ public:
     return _vloop_analyzer.vloop().vtrace().is_trace(TraceAutoVectorizationTag::VTRANSFORM);
   }
   void print_vtnodes() const;
+  void print_mem_schedule() const;
 #endif
 };
 
@@ -1419,6 +1420,8 @@ public:
     VTransformNode(graph, n->req()),
     _node(n) {}
 
+  Node* node() const { return _node; }
+
   virtual VTransformScalarNode* isa_Scalar() override { return this; }
 
   NOT_PRODUCT(virtual const char* name() const { return "Scalar"; };)
@@ -1439,6 +1442,8 @@ public:
       _nodes.at_put(k, pack->at(k));
     }
   }
+
+  const GrowableArray<Node*> nodes() const { return _nodes; }
 
   virtual VTransformVectorNode* isa_Vector() override { return this; }
 

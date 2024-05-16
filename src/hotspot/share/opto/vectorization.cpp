@@ -1794,6 +1794,16 @@ bool VTransformGraph::schedule() {
         // There were no additional uses, post visit node now
         stack.pop();
         post_visited.set(vtn->_idx);
+        VTransformScalarNode* scalar = vtn->isa_Scalar();
+        if (scalar != nullptr && scalar->node()->is_Mem()) {
+          _mem_schedule.push(scalar->node()->as_Mem());
+        }
+        VTransformVectorNode* vector = vtn->isa_Vector();
+        if (vector != nullptr && vector->nodes().at(0)->is_Mem()) {
+          for (int j = 0; j < vector->nodes().length(); j++) {
+            _mem_schedule.push(vector->nodes().at(j)->as_Mem());
+          }
+        }
         // TODO: add to schedule
         tty->print_cr(" -> schedule");
         vtn->print();
@@ -1805,7 +1815,13 @@ bool VTransformGraph::schedule() {
     }
   }
 
-  return false; // TODO
+#ifndef PRODUCT
+  if (is_trace()) {
+    print_mem_schedule();
+  }
+#endif
+
+  return true;
 }
 
 void VTransformGraph::apply() {
@@ -1817,6 +1833,14 @@ void VTransformGraph::print_vtnodes() const {
   tty->print_cr("\nVTransformGraph::print_vtnodes:");
   for (int i = 0; i < _vtnodes.length(); i++) {
     _vtnodes.at(i)->print();
+  }
+}
+
+void VTransformGraph::print_mem_schedule() const {
+  tty->print_cr("\nVTransformGraph::print_mem_schedule:");
+  for (int i = 0; i < _mem_schedule.length(); i++) {
+    tty->print(" %3d ", i);
+    _mem_schedule.at(i)->dump();
   }
 }
 

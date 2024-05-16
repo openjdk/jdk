@@ -3932,7 +3932,7 @@ void SuperWord::vtransform_build(VTransformGraph& graph) const {
   }
 
 #ifndef PRODUCT
-  if (graph.is_trace() || is_trace_superword_verbose()) {
+  if (graph.is_trace()) {
     graph.print_vtnodes();
   }
 #endif
