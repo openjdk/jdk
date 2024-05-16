@@ -1097,7 +1097,7 @@ void Arguments::print_jvm_args_on(outputStream* st) {
       const char* const s = _jvm_args_array[i];
       bool ws = false;
       for (const char* p = s; *p && !ws; p++) {
-        ws = isspace(*p);
+        ws = isspace((unsigned)*p);
       }
       if (ws) {
         st->print("\"%s\" ", s);
