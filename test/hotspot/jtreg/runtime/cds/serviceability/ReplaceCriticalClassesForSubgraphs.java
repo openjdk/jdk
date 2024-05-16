@@ -28,14 +28,19 @@
  * @library /test/lib
  * @requires vm.cds.write.archived.java.heap
  * @requires !vm.jvmci.enabled
- * @requires vm.gc == null
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar whitebox.jar jdk.test.whitebox.WhiteBox
  * @run main/othervm/native ReplaceCriticalClassesForSubgraphs
  */
 
+import jtreg.SkippedException;
+
 public class ReplaceCriticalClassesForSubgraphs extends ReplaceCriticalClasses {
     public static void main(String args[]) throws Throwable {
+        if (System.getProperty("test.cds.runtime.options") != null) {
+            throw new SkippedException(
+                "options specified via the test.cds.runtime.options property may not be compatible with this test");
+        }
         ReplaceCriticalClassesForSubgraphs rcc = new ReplaceCriticalClassesForSubgraphs();
         rcc.process(args);
     }
