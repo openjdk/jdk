@@ -181,60 +181,7 @@ public final class StableValueImpl<V> implements StableValue<V> {
     @ForceInline
     @Override
     public V computeIfUnset(Supplier<? extends V> supplier) {
-        // Optimistically try plain semantics first
-        final V v = value;
-        if (v != null) {
-            // If we happen to see a non-null value under
-            // plain semantics, we know a value is set.
-            return v;
-        }
-        if (state == NULL) {
-            // If we happen to see a state value of NULL under
-            // plain semantics, we know a value is set to `null`.
-            return null;
-        }
-        // Now, fall back to volatile semantics.
-        return computeIfUnsetVolatile(supplier);
-    }
-
-    @DontInline // Slow-path taken at most once per thread if set
-    private V computeIfUnsetVolatile(Supplier<? extends V> supplier) {
-        // This is intentionally an old switch statement as it generates
-        // more compact byte code.
-        switch (stateVolatile()) {
-            case UNSET:    { return computeIfUnsetVolatile0(supplier); }
-            case NON_NULL: { return valueVolatile(); }
-            case NULL:     { return null; }
-            case ERROR:    { throw StableUtil.error(this); }
-        }
-        throw shouldNotReachHere();
-    }
-
-    private V computeIfUnsetVolatile0(Supplier<? extends V> supplier) {
-        final var m = acquireMutex();
-        if (isMutexNotNeeded(m)) {
-            return orThrow();
-        }
-        synchronized (m) {
-            // A value is already set
-            if (state != UNSET) {
-                return orThrow();
-            }
-            // A value is not set
-            if (computeInvoked) {
-                throw stackOverflow(supplier, null);
-            }
-            computeInvoked = true;
-            try {
-                V newValue = supplier.get();
-                setValue(newValue);
-                return newValue;
-            } catch (Throwable t) {
-                putState(ERROR);
-                putMutex(t.getClass());
-                throw t;
-            }
-        }
+        return computeIfUnsetShared(supplier, null);
     }
 
     @ForceInline
