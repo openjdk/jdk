@@ -425,7 +425,7 @@
  * </ul>
  *
  * <h2 id="IN_CF">JAXP Configuration Files</h2>
- * The JDK provides three <a href="#Conf_CF">JAXP Configuration Files</a>:
+ * The JDK provides two <a href="#Conf_CF">JAXP Configuration Files</a>:
  *
  * <ul>
  * <li id="IN_CF_DEFAULT"><a href="#Conf_CF_Default">{@code jaxp.properties}</a>:
@@ -445,13 +445,6 @@
  * identify issues such as a processor unknowingly makes outbound network
  * connections to fetch DTD, or processes XML that relies on extension functions.
  * </li>
- *
- * <li id="IN_CF_COMPAT">{@code jaxp-compat.properties}: a configuration specifying
- * the property values that are the same as the properties' default values. It can
- * be used to regain compatibility from a more strict configuration in a future release.
- * The difference from the default {@code jaxp.properties} is that it contains
- * additional properties that were not included in {@code jaxp.properties},
- * setting them to their default values.</li>
  * </ul>
  *
  *

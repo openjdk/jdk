@@ -23,7 +23,7 @@
 package common.config;
 
 import common.util.TestBase;
-import static common.util.TestBase.CONFIG_COMPAT;
+import static common.util.TestBase.CONFIG_DEFAULT;
 import static common.util.TestBase.CONFIG_STRICT;
 import java.util.stream.IntStream;
 import javax.xml.transform.TransformerFactory;
@@ -32,10 +32,10 @@ import javax.xml.transform.TransformerFactory;
  * @test @bug 8330542
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
  * @modules java.xml/jdk.xml.internal
- * @run driver common.config.ConfigFileTest 0 // verifies jaxp-strict.properties
- * @run driver common.config.ConfigFileTest 1 // verifies jaxp-compat.properties
- * @summary verifies the JAXP configuration files jaxp-strict.properties and
- * jaxp-compat.properties.
+ * @run driver common.config.ConfigFileTest 0 // verifies jaxp.properties
+ * @run driver common.config.ConfigFileTest 1 // verifies jaxp-strict.properties
+ * @summary verifies the JAXP configuration files jaxp.properties and
+ * jaxp-strict.properties.
  */
 public class ConfigFileTest {
     // system property for custom configuration file
@@ -68,8 +68,8 @@ public class ConfigFileTest {
     String[] strictValues ={"false", "false", "strict", "allow", "2500", "100000",
         "100000", "15000", "100000", "10000", "5000", "0", "1000", "10", "100", "10000"};
 
-    // values from jaxp-compat.properties
-    String[] compatValues ={"true", "false", "continue", "allow", "64000", "10000000",
+    // values from jaxp.properties, as of JDK 23
+    String[] defaultValues ={"true", "false", "continue", "allow", "64000", "10000000",
         "0", "1000000", "3000000", "10000", "5000", "0", "1000", "10", "100", "10000"};
 
     public static void main(String args[]) throws Exception {
@@ -78,9 +78,9 @@ public class ConfigFileTest {
 
     public void run(String index) throws Exception {
         if (index.equals("0")) {
-            verifyConfig(CONFIG_STRICT, strictValues);
+            verifyConfig(CONFIG_DEFAULT, defaultValues);
         } else {
-            verifyConfig(CONFIG_COMPAT, compatValues);
+            verifyConfig(CONFIG_STRICT, strictValues);
         }
     }
 

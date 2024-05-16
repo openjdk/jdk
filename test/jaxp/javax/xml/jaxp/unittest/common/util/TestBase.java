@@ -123,6 +123,7 @@ public class TestBase {
     public static final String CONFIG_CATALOG_STRICT = "catalog2.properties";
 
     // JAXP Configuration Files to be added to $JAVA_HOME/conf/
+    public static final String CONFIG_DEFAULT = "jaxp.properties";
     public static final String CONFIG_STRICT = "jaxp-strict.properties";
     public static final String CONFIG_COMPAT = "jaxp-compat.properties";
 
