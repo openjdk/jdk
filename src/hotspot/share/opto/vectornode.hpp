@@ -240,6 +240,16 @@ class ReductionNode : public Node {
   virtual bool requires_strict_order() const {
     return false;
   }
+
+  #ifndef PRODUCT
+  void dump_spec(outputStream *st) const {
+    if (requires_strict_order()) {
+      st->print("requires_strict_order");
+    } else {
+      st->print("no_strict_order");
+    }
+  }
+  #endif
 };
 
 //------------------------------AddReductionVINode--------------------------------------
