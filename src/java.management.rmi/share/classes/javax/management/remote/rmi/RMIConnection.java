@@ -966,8 +966,7 @@ public interface RMIConnection extends Closeable, Remote {
      *
      * @throws IllegalArgumentException if <code>names</code> or
      * <code>filters</code> is null, or if <code>names</code> contains
-     * a null element, or if the three arrays do not all have the same
-     * size.
+     * a null element, or if these two arrays do not have the same size.
      * @throws ClassCastException if one of the elements of
      * <code>filters</code> unmarshalls as a non-null object that is
      * not a <code>NotificationFilter</code>.
