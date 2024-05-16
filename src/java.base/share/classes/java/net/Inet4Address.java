@@ -99,7 +99,8 @@ import java.util.Objects;
  * parsing algorithm, allowing octal and hexadecimal address segments.
  * Please refer to <a href="https://www.ietf.org/rfc/rfc6943.html#section-3.1.1">
  * <i>RFC&nbsp;6943: Issues in Identifier Comparison for Security
- * Purposes</i></a>.
+ * Purposes</i></a>. Aside from {@code Inet4Address.ofPosixLiteral(String)}, all methods only
+ * support strict decimal parsing.
  * <p> For methods that return a textual representation as output
  * value, the first form, i.e. a dotted-quad string in strict decimal notation, is used.
  *
