@@ -9,9 +9,10 @@ import java.util.concurrent.locks.ReentrantLock;
 final class QueueCacheEntry<K,V> extends SoftReference<V>
     implements CacheEntry<K,V> {
 
+    final boolean DEBUG = true;
     private K key;
     private long expirationTime;
-    Queue<CacheEntry<K,V>> queue = new ConcurrentLinkedQueue<>();
+    final Queue<CacheEntry<K,V>> queue = new ConcurrentLinkedQueue<>();
     ReentrantLock lock;
 
     QueueCacheEntry(K key, V value, long expirationTime,
@@ -38,21 +39,20 @@ final class QueueCacheEntry<K,V> extends SoftReference<V>
 
     public V getValue(long lifetime) {
         long time = (lifetime == 0) ? 0 : System.currentTimeMillis();
+
         do {
             var entry = queue.poll();
-            if (entry != null && entry.isValid(time)) {
+            if (entry == null) {
+                return null;
+            }
+            if (!entry.isValid(time)) {
+                entry.invalidate();
+            } else {
                 return entry.getValue();
             }
         } while (!queue.isEmpty());
 
         return null;
-    }
-
-    public CacheEntry<K,V> getEntry() {
-        //lock.lock();
-        var entry = queue.poll();
-        //lock.unlock();
-        return entry;
     }
 
     public long getExpirationTime() {
@@ -63,12 +63,12 @@ final class QueueCacheEntry<K,V> extends SoftReference<V>
         expirationTime = time;
     }
 
-    //public boolean putValue(CacheEntry<K,V> entry) {
     public boolean putValue(CacheEntry<K,V> entry) {
-       // lock.lock();
-        queue.add(entry);
-       // lock.unlock();
-        return true;
+        if (DEBUG) {
+            System.out.println("Added to queue (size=" + queue.size() +
+                "): " + entry.getKey().toString() + ",  " + entry);
+        }
+        return queue.add(entry);
     }
 
     public boolean isValid(long currentTime) {
@@ -90,7 +90,7 @@ final class QueueCacheEntry<K,V> extends SoftReference<V>
     }
 
     public void clear() {
-        queue.stream().forEach(e -> e.invalidate());
+        queue.forEach(e -> e.invalidate());
         queue.clear();
     }
 

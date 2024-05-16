@@ -89,6 +89,10 @@ public abstract class Cache<K,V> {
      */
     public abstract void put(K key, V value);
 
+    public void put(K key, V value, boolean flag) {
+        put(key, value);
+    }
+
     /**
      * Get a value from the cache.
      */

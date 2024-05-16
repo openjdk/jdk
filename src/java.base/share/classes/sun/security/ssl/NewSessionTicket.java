@@ -25,11 +25,12 @@
 package sun.security.ssl;
 
 import java.io.IOException;
-import java.math.BigInteger;
+import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
 import java.text.MessageFormat;
+import java.util.Arrays;
 import java.util.Locale;
 import javax.crypto.SecretKey;
 import javax.net.ssl.SSLHandshakeException;
@@ -398,10 +399,9 @@ final class NewSessionTicket {
                 return null;
             }
 
-            final int NUMOFNSTM = 3;
             // Output the handshake message.
-            for (int i = 0; i < NUMOFNSTM; i++) {
-
+            for (int i = 0; i < SSLConfiguration.serverNewSessionTicketCount;
+                 i++) {
                 SessionId newId = new SessionId(true,
                     hc.sslContext.getSecureRandom());
 
@@ -410,10 +410,20 @@ final class NewSessionTicket {
                 if (nstm != null) {
                     // should never be null
                     nstm.write(hc.handshakeOutput);
+                    try {
+                        hc.handshakeOutput.flush();
+                    } catch (SocketException e) {
+                        // Multiple flushes can cause problems with
+                        // connections that immediately close like test
+                        // SSLSocketBruteForceClose.java; however, the flush()
+                        // outside the loop can cause handshakeOutput overflow
+                        // when the message gets too large ( > 16k).  Breaking
+                        // here allows the code to follow the normal exit path.
+                        break;
+                    }
                 }
             }
 
-            hc.handshakeOutput.flush();
 
             // See note on TransportContext.needHandshakeFinishedStatus.
             //
@@ -589,9 +599,7 @@ final class NewSessionTicket {
                     SSLLogger.fine(
                             "Discarding NewSessionTicket with lifetime " +
                             nstm.ticketLifetime, nstm);
-                }
-//  Why are we removing the session from the cache because of one bad NST?
-//                sessionCache.remove(hc.handshakeSession.getSessionId());
+                };
                 return;
             }
 
@@ -610,7 +618,7 @@ final class NewSessionTicket {
             if (resumptionMasterSecret == null) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
-                            "Session has no resumption master secret. " +
+                        "Session has no resumption master secret. " +
                             "Ignoring ticket.");
                 }
                 return;
@@ -632,7 +640,11 @@ final class NewSessionTicket {
             sessionCopy.setPreSharedKey(psk);
             sessionCopy.setTicketAgeAdd(nstm.getTicketAgeAdd());
             sessionCopy.setPskIdentity(nstm.ticket);
-            sessionCache.put(sessionCopy);
+            sessionCache.put(sessionCopy, sessionCopy.isPSK());
+
+            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                SSLLogger.fine("MultiNST PSK (Server): " + Utilities.toHexString(Arrays.copyOf(nstm.ticket, 16)));
+            }
 
             // clean the post handshake context
             hc.conContext.finishPostHandshake();

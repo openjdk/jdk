@@ -282,6 +282,18 @@ final class SSLSessionContextImpl implements SSLSessionContext {
     // Here we time the session from the time it cached instead of the
     // time it created, which is a little longer than the expected. So
     // please do check isTimedout() while getting entry from the cache.
+    void put(SSLSessionImpl s, boolean flag) {
+        sessionCache.put(s.getSessionId(), s);
+
+        // If no hostname/port info is available, don't add this one.
+        if ((s.getPeerHost() != null) && (s.getPeerPort() != -1)) {
+            sessionHostPortCache.put(
+                getKey(s.getPeerHost(), s.getPeerPort()), s, flag);
+        }
+
+        s.setContext(this);
+    }
+
     void put(SSLSessionImpl s) {
         sessionCache.put(s.getSessionId(), s);
 

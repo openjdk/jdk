@@ -786,13 +786,7 @@ final public class SSLSessionImpl extends ExtendedSSLSession {
     }
 
     public boolean isPSK() {
-        sessionLock.lock();
-        try {
-            if (pskIdentity == null || pskIdentity.length == 0) return false;
-        } finally {
-            sessionLock.unlock();
-        }
-        return true;
+        return (pskIdentity != null && pskIdentity.length > 0);
     }
 
     void setPeerCertificates(X509Certificate[] peer) {

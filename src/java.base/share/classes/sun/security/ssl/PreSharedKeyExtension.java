@@ -704,6 +704,8 @@ final class PreSharedKeyExtension {
             if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
                     "Found resumable session. Preparing PSK message.");
+                SSLLogger.fine(
+                    "MultiNST PSK (Client): " + Utilities.toHexString(Arrays.copyOf(chc.pskIdentity, 16)));
             }
 
             List<PskIdentity> identities = new ArrayList<>();

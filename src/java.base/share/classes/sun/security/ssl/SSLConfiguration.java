@@ -121,6 +121,9 @@ final class SSLConfiguration implements Cloneable {
     static final boolean enableDtlsResumeCookie = Utilities.getBooleanProperty(
             "jdk.tls.enableDtlsResumeCookie", true);
 
+    // Number of NewSessionTickets (NST) that will be sent by the server.
+    static final int serverNewSessionTicketCount;
+
     // Is the extended_master_secret extension supported?
     static {
         boolean supportExtendedMasterSecret = Utilities.getBooleanProperty(
@@ -182,7 +185,7 @@ final class SSLConfiguration implements Cloneable {
          *  - Otherwise it is set to a default value of 10.
          */
         Integer inboundServerLen = GetIntegerAction.privilegedGetProperty(
-                "jdk.tls.client.maxInboundCertificateChainLength");
+            "jdk.tls.client.maxInboundCertificateChainLength");
 
         // Default for jdk.tls.client.maxInboundCertificateChainLength is 10
         if (inboundServerLen == null || inboundServerLen < 0) {
@@ -190,6 +193,15 @@ final class SSLConfiguration implements Cloneable {
                     maxCertificateChainLength : 10;
         } else {
             maxInboundServerCertChainLen = inboundServerLen;
+        }
+
+        Integer nstServerCount = GetIntegerAction.privilegedGetProperty(
+            "jdk.tls.server.newSessionTicketCount");
+        if (nstServerCount == null || nstServerCount < 1 ||
+            nstServerCount > 10) {
+            serverNewSessionTicketCount = 3;
+        } else {
+            serverNewSessionTicketCount = nstServerCount;
         }
     }
 
