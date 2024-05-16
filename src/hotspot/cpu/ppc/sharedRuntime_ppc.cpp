@@ -2241,7 +2241,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     __ bind(L_skip_barrier);
   }
 
-  __ save_LR_CR(r_temp_1);
+  __ save_LR(r_temp_1);
   __ generate_stack_overflow_check(frame_size_in_bytes); // Check before creating frame.
   __ mr(r_callers_sp, R1_SP);                            // Remember frame pointer.
   __ push_frame(frame_size_in_bytes, r_temp_1);          // Push the c2n adapter's frame.
@@ -2694,7 +2694,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   // --------------------------------------------------------------------------
 
   __ pop_frame();
-  __ restore_LR_CR(R11);
+  __ restore_LR(R11);
   __ blr();
 
 
@@ -2706,7 +2706,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   __ bind(handle_pending_exception);
 
   __ pop_frame();
-  __ restore_LR_CR(R11);
+  __ restore_LR(R11);
   __ b64_patchable((address)StubRoutines::forward_exception_entry(),
                        relocInfo::runtime_call_type);
 
@@ -3064,7 +3064,7 @@ void SharedRuntime::generate_deopt_blob() {
 
   // Pop the unpack frame.
   __ pop_frame();
-  __ restore_LR_CR(R0);
+  __ restore_LR(R0);
 
   // stack: (top interpreter frame, ..., optional interpreter frame,
   // optional c2i, caller of deoptee, ...).
@@ -3111,7 +3111,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   // vframe array and return the `UnrollBlock' information.
 
   // Save LR to compiled frame.
-  __ save_LR_CR(R11_scratch1);
+  __ save_LR(R11_scratch1);
 
   // Push an "uncommon_trap" frame.
   __ push_frame_reg_args(0, R11_scratch1);
@@ -3201,7 +3201,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   // Pop the `unpack frame'.
   __ pop_frame();
   // Restore LR from top interpreter frame.
-  __ restore_LR_CR(R11_scratch1);
+  __ restore_LR(R11_scratch1);
 
   // stack: (top interpreter frame, ..., optional interpreter frame,
   // optional c2i, caller of deoptee, ...).

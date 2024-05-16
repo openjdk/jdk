@@ -895,18 +895,26 @@ void MacroAssembler::restore_volatile_gprs(Register src, int offset, bool includ
   }
 }
 
+void MacroAssembler::save_LR(Register tmp) {
+  mflr(tmp);
+  std(tmp, _abi0(lr), R1_SP);
+}
+
+void MacroAssembler::restore_LR(Register tmp) {
+  assert(tmp != R1_SP, "must be distinct");
+  ld(tmp, _abi0(lr), R1_SP);
+  mtlr(tmp);
+}
+
 void MacroAssembler::save_LR_CR(Register tmp) {
   mfcr(tmp);
   std(tmp, _abi0(cr), R1_SP);
-  mflr(tmp);
-  std(tmp, _abi0(lr), R1_SP);
+  save_LR(tmp);
   // Tmp must contain lr on exit! (see return_addr and prolog in ppc64.ad)
 }
 
 void MacroAssembler::restore_LR_CR(Register tmp) {
-  assert(tmp != R1_SP, "must be distinct");
-  ld(tmp, _abi0(lr), R1_SP);
-  mtlr(tmp);
+  restore_LR(tmp);
   ld(tmp, _abi0(cr), R1_SP);
   mtcr(tmp);
 }

@@ -298,7 +298,9 @@ class MacroAssembler: public Assembler {
                              bool include_fp_regs = true, bool include_R3_RET_reg = true);
   void restore_volatile_gprs(Register src_base, int offset,
                              bool include_fp_regs = true, bool include_R3_RET_reg = true);
-  void save_LR_CR(   Register tmp);     // tmp contains LR on return.
+  void save_LR(Register tmp);
+  void restore_LR(Register tmp);
+  void save_LR_CR(Register tmp);     // tmp contains LR on return.
   void restore_LR_CR(Register tmp);
 
   // Get current PC using bl-next-instruction trick.
