@@ -541,9 +541,9 @@ public class Indify {
             return found;
         }
 
-        ClassModel transformFromCPbuilder(ClassModel oldClassModel, ConstantPoolBuilder constantPoolBuilder){
+        ClassModel transformFromCPbuilder(ClassModel oldClassModel, ConstantPoolBuilder cpBuilder){
             byte[] new_bytes = java.lang.classfile.ClassFile.of().transform(oldClassModel, ClassTransform.endHandler(ClassBuilder -> {
-                for (PoolEntry entry: constantPoolBuilder){
+                for (PoolEntry entry: cpBuilder){
                     System.err.println("Entry: "+entry);
                     if (entry instanceof Utf8Entry utf8Entry) ClassBuilder.constantPool().utf8Entry(utf8Entry.stringValue());
                     if (entry instanceof NameAndTypeEntry nameAndTypeEntry) ClassBuilder.constantPool().nameAndTypeEntry(nameAndTypeEntry.name(), nameAndTypeEntry.type());
@@ -562,9 +562,9 @@ public class Indify {
                     if (entry instanceof ModuleEntry moduleEntry) ClassBuilder.constantPool().moduleEntry(moduleEntry.name());
                     if (entry instanceof PackageEntry packageEntry) ClassBuilder.constantPool().packageEntry(packageEntry.name());
                 }
-                for (int i = 0; i < constantPoolBuilder.bootstrapMethodCount(); i++) {
-                    System.err.println("Bootstrap Method Entry: "+constantPoolBuilder.bootstrapMethodEntry(i).bootstrapMethod() + " Arguments: "+constantPoolBuilder.bootstrapMethodEntry(i).arguments());
-                    ClassBuilder.constantPool().bsmEntry(constantPoolBuilder.bootstrapMethodEntry(i).bootstrapMethod(), constantPoolBuilder.bootstrapMethodEntry(i).arguments());
+                for (int i = 0; i < cpBuilder.bootstrapMethodCount(); i++) {
+                    System.err.println("Bootstrap Method Entry: "+cpBuilder.bootstrapMethodEntry(i).bootstrapMethod() + " Arguments: "+cpBuilder.bootstrapMethodEntry(i).arguments());
+                    ClassBuilder.constantPool().bsmEntry(cpBuilder.bootstrapMethodEntry(i).bootstrapMethod(), cpBuilder.bootstrapMethodEntry(i).arguments());
                 }
             }));
 
