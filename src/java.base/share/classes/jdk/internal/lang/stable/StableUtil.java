@@ -45,14 +45,12 @@ public final class StableUtil {
 
     // Indicates a value is not set
     static final byte UNSET = 0;
-    // Indicates a value is set to a `null` value
-    static final byte SET_NULL = 1;
     // Indicates a value is set to a non-null value
-    static final byte SET_NON_NULL = 2; // The middle value
+    static final byte SET_NON_NULL = 1; // The middle value
+    // Indicates a value is set to a `null` value
+    static final byte SET_NULL = 2;
     // Indicates there was an error when computing a value
     static final byte ERROR = 3;
-    // Added to create an odd number of switch alternatives
-    static final byte DUMMY = 4;
 
     // Computation values
 

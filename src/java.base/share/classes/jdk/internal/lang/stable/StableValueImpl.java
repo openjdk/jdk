@@ -66,7 +66,7 @@ public final class StableValueImpl<V> implements StableValue<V> {
 
     /**
      * The set value for this stable value
-     *
+     * <p>
      * If non-null, holds a set value
      * If `null`  , may be unset or hold a set `null` value
      */
@@ -75,11 +75,11 @@ public final class StableValueImpl<V> implements StableValue<V> {
 
     /**
      * Records the state of this stable value.
-     *
-     * If StableUtil.NOT_SET      , a value is not set
-     * If StableUtil.SET_NON_NULL , a non-null value is set
-     * If StableUtil.SET_NULL     , a `null` value is set
-     * If StableUtil.ERROR        , a throwable was thrown during computation
+     * <p>
+     * If StableUtil.NOT_SET      (0) , a value is not set
+     * If StableUtil.SET_NON_NULL (1) , a non-null value is set
+     * If StableUtil.SET_NULL     (2) , a `null` value is set
+     * If StableUtil.ERROR        (3) , a throwable was thrown during computation
      */
     @Stable
     private byte state;
@@ -87,7 +87,7 @@ public final class StableValueImpl<V> implements StableValue<V> {
     /**
      * Indicates a computation operation has been invoked. Used to
      * detect circular computation invocations.
-     *
+     * <p>
      * StableUtil.NOT_INVOKED (0) , not invoked
      * StableUtil.INVOKED     (1) , invoked
      */
@@ -135,10 +135,9 @@ public final class StableValueImpl<V> implements StableValue<V> {
         // more compact byte code.
         switch (stateVolatile()) {
             case UNSET:        { throw notSet(); }
-            case SET_NULL:     { return null; }
             case SET_NON_NULL: { return valueVolatile(); }
+            case SET_NULL:     { return null; }
             case ERROR:        { throw error(this); }
-            case DUMMY:        { throw shouldNotReachHere(); }
         }
         throw shouldNotReachHere();
     }
