@@ -182,30 +182,6 @@ class GTKStyle extends SynthStyle implements GTKConstants {
             }
         }
 
-        if (id == Region.LABEL && type == ColorType.FOREGROUND
-                && (state & SynthConstants.ENABLED) != 0) {
-            return getLAFDefinedColor(context, state, type, "Label.foreground");
-        }
-
-        if (id == Region.CHECK_BOX && type == ColorType.FOREGROUND
-                && (state & SynthConstants.DISABLED) != 0) {
-            return getLAFDefinedColor(context, state, type, "CheckBox.disabledText");
-        }
-
-        if (id == Region.RADIO_BUTTON && type == ColorType.FOREGROUND
-                && (state & SynthConstants.DISABLED) != 0) {
-            return getLAFDefinedColor(context, state, type, "RadioButton.disabledText");
-        }
-
-        return getStyleSpecificColor(context, state, type);
-    }
-
-    private Color getLAFDefinedColor(SynthContext context, int state,
-                                     ColorType type, String propertyName) {
-        Color c = (Color) get(context, propertyName);
-        if (c != null) {
-            return c;
-        }
         return getStyleSpecificColor(context, state, type);
     }
 

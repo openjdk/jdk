@@ -50,7 +50,7 @@ public class bug4248210 {
     public static void main(String[] args) throws Exception {
         for (UIManager.LookAndFeelInfo laf :
                 UIManager.getInstalledLookAndFeels()) {
-            if (!laf.getName().contains("Motif")) {
+            if (!(laf.getName().contains("Motif") || laf.getName().contains("GTK"))) {
                 System.out.println("Testing LAF: " + laf.getName());
                 SwingUtilities.invokeAndWait(() -> test(laf));
             }
@@ -108,10 +108,9 @@ public class bug4248210 {
     }
 
     private static boolean chkImgForegroundColor(BufferedImage img) {
-        Color red = new Color(255, 0, 0);
         for (int x = 0; x < img.getWidth(); ++x) {
             for (int y = 0; y < img.getHeight(); ++y) {
-                if (img.getRGB(x, y) == red.getRGB()) {
+                if (img.getRGB(x, y) == labelColor.getRGB()) {
                     return true;
                 }
             }
