@@ -1665,7 +1665,7 @@ void Assembler::andl(Register dst, Register src) {
 
 void Assembler::andnl(Register dst, Register src1, Register src2) {
   assert(VM_Version::supports_bmi1(), "bit manipulation instructions not supported");
-  assert(!needs_eevex(dst, src1, src2) || (UseAPX && UseAVX > 2), "extended gpr use requires UseAPX and UseAVX > 2");
+  assert(!needs_eevex(dst, src1, src2) || UseAPX, "extended gpr use requires UseAPX and UseAVX > 2");
   InstructionAttr attributes(AVX_128bit, /* rex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   int encode = vex_prefix_and_encode(dst->encoding(), src1->encoding(), src2->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_38, &attributes, true);
   emit_int16((unsigned char)0xF2, (0xC0 | encode));
@@ -1673,7 +1673,7 @@ void Assembler::andnl(Register dst, Register src1, Register src2) {
 
 void Assembler::andnl(Register dst, Register src1, Address src2) {
   assert(VM_Version::supports_bmi1(), "bit manipulation instructions not supported");
-  assert((!needs_eevex(dst, src1) && !needs_eevex(src2.base(), src2.index())) || (UseAPX && UseAVX > 2), "extended gpr use requires UseAPX and UseAVX > 2");
+  assert((!needs_eevex(dst, src1) && !needs_eevex(src2.base(), src2.index())) || UseAPX, "extended gpr use requires UseAPX and UseAVX > 2");
   InstructionMark im(this);
   InstructionAttr attributes(AVX_128bit, /* rex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   attributes.set_address_attributes(/* tuple_type */ EVEX_NOSCALE, /* input_size_in_bits */ EVEX_32bit);
@@ -1699,7 +1699,7 @@ void Assembler::bswapl(Register reg) { // bswap
 
 void Assembler::blsil(Register dst, Register src) {
   assert(VM_Version::supports_bmi1(), "bit manipulation instructions not supported");
-  assert(!needs_eevex(dst, src) || (UseAPX && UseAVX > 2), "extended gpr use requires UseAPX and UseAVX > 2");
+  assert(!needs_eevex(dst, src) || UseAPX, "extended gpr use requires UseAPX and UseAVX > 2");
   InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   int encode = vex_prefix_and_encode(rbx->encoding(), dst->encoding(), src->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_38, &attributes, true);
   emit_int16((unsigned char)0xF3, (0xC0 | encode));
@@ -1707,7 +1707,7 @@ void Assembler::blsil(Register dst, Register src) {
 
 void Assembler::blsil(Register dst, Address src) {
   assert(VM_Version::supports_bmi1(), "bit manipulation instructions not supported");
-  assert(!needs_eevex(dst, src.base(), src.index()) || (UseAPX && UseAVX > 2), "extended gpr use requires UseAPX and UseAVX > 2");
+  assert(!needs_eevex(dst, src.base(), src.index()) || UseAPX, "extended gpr use requires UseAPX and UseAVX > 2");
   InstructionMark im(this);
   InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   attributes.set_address_attributes(/* tuple_type */ EVEX_NOSCALE, /* input_size_in_bits */ EVEX_32bit);
@@ -1718,7 +1718,7 @@ void Assembler::blsil(Register dst, Address src) {
 
 void Assembler::blsmskl(Register dst, Register src) {
   assert(VM_Version::supports_bmi1(), "bit manipulation instructions not supported");
-  assert(!needs_eevex(dst, src) || (UseAPX && UseAVX > 2), "extended gpr use requires UseAPX and UseAVX > 2");
+  assert(!needs_eevex(dst, src) || UseAPX, "extended gpr use requires UseAPX and UseAVX > 2");
   InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   int encode = vex_prefix_and_encode(rdx->encoding(), dst->encoding(), src->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_38, &attributes, true);
   emit_int16((unsigned char)0xF3,
@@ -1727,7 +1727,7 @@ void Assembler::blsmskl(Register dst, Register src) {
 
 void Assembler::blsmskl(Register dst, Address src) {
   assert(VM_Version::supports_bmi1(), "bit manipulation instructions not supported");
-  assert(!needs_eevex(dst, src.base(), src.index()) || (UseAPX && UseAVX > 2), "extended gpr use requires UseAPX and UseAVX > 2");
+  assert(!needs_eevex(dst, src.base(), src.index()) || UseAPX, "extended gpr use requires UseAPX and UseAVX > 2");
   InstructionMark im(this);
   InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   attributes.set_address_attributes(/* tuple_type */ EVEX_NOSCALE, /* input_size_in_bits */ EVEX_32bit);
@@ -1738,7 +1738,7 @@ void Assembler::blsmskl(Register dst, Address src) {
 
 void Assembler::blsrl(Register dst, Register src) {
   assert(VM_Version::supports_bmi1(), "bit manipulation instructions not supported");
-  assert(!needs_eevex(dst, src) || (UseAPX && UseAVX > 2), "extended gpr use requires UseAPX and UseAVX > 2");
+  assert(!needs_eevex(dst, src) || UseAPX, "extended gpr use requires UseAPX and UseAVX > 2");
   InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   int encode = vex_prefix_and_encode(rcx->encoding(), dst->encoding(), src->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_38, &attributes, true);
   emit_int16((unsigned char)0xF3, (0xC0 | encode));
@@ -1746,7 +1746,7 @@ void Assembler::blsrl(Register dst, Register src) {
 
 void Assembler::blsrl(Register dst, Address src) {
   assert(VM_Version::supports_bmi1(), "bit manipulation instructions not supported");
-  assert(!needs_eevex(dst, src.base(), src.index()) || (UseAPX && UseAVX > 2), "extended gpr use requires UseAPX and UseAVX > 2");
+  assert(!needs_eevex(dst, src.base(), src.index()) || UseAPX, "extended gpr use requires UseAPX and UseAVX > 2");
   InstructionMark im(this);
   InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   attributes.set_address_attributes(/* tuple_type */ EVEX_NOSCALE, /* input_size_in_bits */ EVEX_32bit);
@@ -1985,7 +1985,7 @@ void Assembler::cpuid() {
 void Assembler::crc32(Register crc, Register v, int8_t sizeInBytes) {
   assert(VM_Version::supports_sse4_2(), "");
   if (needs_eevex(crc, v)) {
-    assert(UseAPX && UseAVX > 2, "extended gpr use requires UseAPX and UseAVX > 2");
+    assert(UseAPX, "extended gpr use requires UseAPX and UseAVX > 2");
     InstructionAttr attributes(AVX_128bit, /* rex_w */ sizeInBytes == 8, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
     int encode = vex_prefix_and_encode(crc->encoding(), 0, v->encoding(), sizeInBytes == 2 ? VEX_SIMD_66 : VEX_SIMD_NONE, VEX_OPCODE_0F_3C, &attributes, true);
     emit_int16(sizeInBytes == 1 ? (unsigned char)0xF0 : (unsigned char)0xF1, (0xC0 | encode));
@@ -2033,7 +2033,7 @@ void Assembler::crc32(Register crc, Address adr, int8_t sizeInBytes) {
   assert(VM_Version::supports_sse4_2(), "");
   InstructionMark im(this);
   if (needs_eevex(crc, adr.base(), adr.index())) {
-    assert(UseAPX && UseAVX > 2, "extended gpr use requires UseAPX and UseAVX > 2");
+    assert(UseAPX, "extended gpr use requires UseAPX and UseAVX > 2");
     InstructionAttr attributes(AVX_128bit, /* vex_w */ sizeInBytes == 8, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
     attributes.set_address_attributes(/* tuple_type */ EVEX_NOSCALE, /* input_size_in_bits */ EVEX_64bit);
     vex_prefix(adr, 0, crc->encoding(), sizeInBytes == 2 ? VEX_SIMD_66 : VEX_SIMD_NONE, VEX_OPCODE_0F_3C, &attributes);
@@ -12438,7 +12438,7 @@ void Assembler::evpblendmq (XMMRegister dst, KRegister mask, XMMRegister nds, XM
 
 void Assembler::bzhiq(Register dst, Register src1, Register src2) {
   assert(VM_Version::supports_bmi2(), "bit manipulation instructions not supported");
-  assert(!needs_eevex(dst, src1, src2) || (UseAPX && UseAVX > 2), "extended gpr use requires UseAPX and UseAVX > 2");
+  assert(!needs_eevex(dst, src1, src2) || UseAPX, "extended gpr use requires UseAPX and UseAVX > 2");
   InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   int encode = vex_prefix_and_encode(dst->encoding(), src2->encoding(), src1->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_38, &attributes, true);
   emit_int16((unsigned char)0xF5, (0xC0 | encode));
@@ -12453,7 +12453,7 @@ void Assembler::bzhil(Register dst, Register src1, Register src2) {
 
 void Assembler::pextl(Register dst, Register src1, Register src2) {
   assert(VM_Version::supports_bmi2(), "bit manipulation instructions not supported");
-  assert(!needs_eevex(dst, src1, src2) || (UseAPX && UseAVX > 2), "extended gpr use requires UseAPX and UseAVX > 2");
+  assert(!needs_eevex(dst, src1, src2) || UseAPX, "extended gpr use requires UseAPX and UseAVX > 2");
   InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   int encode = vex_prefix_and_encode(dst->encoding(), src1->encoding(), src2->encoding(), VEX_SIMD_F3, VEX_OPCODE_0F_38, &attributes, true);
   emit_int16((unsigned char)0xF5, (0xC0 | encode));
@@ -12461,7 +12461,7 @@ void Assembler::pextl(Register dst, Register src1, Register src2) {
 
 void Assembler::pdepl(Register dst, Register src1, Register src2) {
   assert(VM_Version::supports_bmi2(), "bit manipulation instructions not supported");
-  assert(!needs_eevex(dst, src1, src2) || (UseAPX && UseAVX > 2), "extended gpr use requires UseAPX and UseAVX > 2");
+  assert(!needs_eevex(dst, src1, src2) || UseAPX, "extended gpr use requires UseAPX and UseAVX > 2");
   InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   int encode = vex_prefix_and_encode(dst->encoding(), src1->encoding(), src2->encoding(), VEX_SIMD_F2, VEX_OPCODE_0F_38, &attributes, true);
   emit_int16((unsigned char)0xF5, (0xC0 | encode));
@@ -12469,7 +12469,7 @@ void Assembler::pdepl(Register dst, Register src1, Register src2) {
 
 void Assembler::pextq(Register dst, Register src1, Register src2) {
   assert(VM_Version::supports_bmi2(), "bit manipulation instructions not supported");
-  assert(!needs_eevex(dst, src1, src2) || (UseAPX && UseAVX > 2), "extended gpr use requires UseAPX and UseAVX > 2");
+  assert(!needs_eevex(dst, src1, src2) || UseAPX, "extended gpr use requires UseAPX and UseAVX > 2");
   InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   int encode = vex_prefix_and_encode(dst->encoding(), src1->encoding(), src2->encoding(), VEX_SIMD_F3, VEX_OPCODE_0F_38, &attributes, true);
   emit_int16((unsigned char)0xF5, (0xC0 | encode));
@@ -12477,7 +12477,7 @@ void Assembler::pextq(Register dst, Register src1, Register src2) {
 
 void Assembler::pdepq(Register dst, Register src1, Register src2) {
   assert(VM_Version::supports_bmi2(), "bit manipulation instructions not supported");
-  assert(!needs_eevex(dst, src1, src2) || (UseAPX && UseAVX > 2), "extended gpr use requires UseAPX and UseAVX > 2");
+  assert(!needs_eevex(dst, src1, src2) || UseAPX, "extended gpr use requires UseAPX and UseAVX > 2");
   InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   int encode = vex_prefix_and_encode(dst->encoding(), src1->encoding(), src2->encoding(), VEX_SIMD_F2, VEX_OPCODE_0F_38, &attributes, true);
   emit_int16((unsigned char)0xF5, (0xC0 | encode));
@@ -12485,7 +12485,7 @@ void Assembler::pdepq(Register dst, Register src1, Register src2) {
 
 void Assembler::pextl(Register dst, Register src1, Address src2) {
   assert(VM_Version::supports_bmi2(), "bit manipulation instructions not supported");
-  assert((!needs_eevex(dst, src1) && !needs_eevex(src2.base(), src2.index())) || (UseAPX && UseAVX > 2), "extended gpr use requires UseAPX and UseAVX > 2");
+  assert((!needs_eevex(dst, src1) && !needs_eevex(src2.base(), src2.index())) || UseAPX, "extended gpr use requires UseAPX and UseAVX > 2");
   InstructionMark im(this);
   InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   attributes.set_address_attributes(/* tuple_type */ EVEX_NOSCALE, /* input_size_in_bits */ EVEX_32bit);
@@ -12496,7 +12496,7 @@ void Assembler::pextl(Register dst, Register src1, Address src2) {
 
 void Assembler::pdepl(Register dst, Register src1, Address src2) {
   assert(VM_Version::supports_bmi2(), "bit manipulation instructions not supported");
-  assert((!needs_eevex(dst, src1) && !needs_eevex(src2.base(), src2.index())) || (UseAPX && UseAVX > 2), "extended gpr use requires UseAPX and UseAVX > 2");
+  assert((!needs_eevex(dst, src1) && !needs_eevex(src2.base(), src2.index())) || UseAPX, "extended gpr use requires UseAPX and UseAVX > 2");
   InstructionMark im(this);
   InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   attributes.set_address_attributes(/* tuple_type */ EVEX_NOSCALE, /* input_size_in_bits */ EVEX_32bit);
@@ -12507,7 +12507,7 @@ void Assembler::pdepl(Register dst, Register src1, Address src2) {
 
 void Assembler::pextq(Register dst, Register src1, Address src2) {
   assert(VM_Version::supports_bmi2(), "bit manipulation instructions not supported");
-  assert((!needs_eevex(dst, src1) && !needs_eevex(src2.base(), src2.index())) || (UseAPX && UseAVX > 2), "extended gpr use requires UseAPX and UseAVX > 2");
+  assert((!needs_eevex(dst, src1) && !needs_eevex(src2.base(), src2.index())) || UseAPX, "extended gpr use requires UseAPX and UseAVX > 2");
   InstructionMark im(this);
   InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   attributes.set_address_attributes(/* tuple_type */ EVEX_NOSCALE, /* input_size_in_bits */ EVEX_64bit);
@@ -12518,7 +12518,7 @@ void Assembler::pextq(Register dst, Register src1, Address src2) {
 
 void Assembler::pdepq(Register dst, Register src1, Address src2) {
   assert(VM_Version::supports_bmi2(), "bit manipulation instructions not supported");
-  assert((!needs_eevex(dst, src1) && !needs_eevex(src2.base(), src2.index())) || (UseAPX && UseAVX > 2), "extended gpr use requires UseAPX and UseAVX > 2");
+  assert((!needs_eevex(dst, src1) && !needs_eevex(src2.base(), src2.index())) || UseAPX, "extended gpr use requires UseAPX and UseAVX > 2");
   InstructionMark im(this);
   InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   attributes.set_address_attributes(/* tuple_type */ EVEX_NOSCALE, /* input_size_in_bits */ EVEX_64bit);
@@ -12529,7 +12529,7 @@ void Assembler::pdepq(Register dst, Register src1, Address src2) {
 
 void Assembler::sarxl(Register dst, Register src1, Register src2) {
   assert(VM_Version::supports_bmi2(), "");
-  assert(!needs_eevex(dst, src1, src2) || (UseAPX && UseAVX > 2), "extended gpr use requires UseAPX and UseAVX > 2");
+  assert(!needs_eevex(dst, src1, src2) || UseAPX, "extended gpr use requires UseAPX and UseAVX > 2");
   InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
   int encode = vex_prefix_and_encode(dst->encoding(), src2->encoding(), src1->encoding(), VEX_SIMD_F3, VEX_OPCODE_0F_38, &attributes, true);
   emit_int16((unsigned char)0xF7, (0xC0 | encode));
@@ -12537,7 +12537,7 @@ void Assembler::sarxl(Register dst, Register src1, Register src2) {
 
 void Assembler::sarxl(Register dst, Address src1, Register src2) {
   assert(VM_Version::supports_bmi2(), "");
-  assert((!needs_eevex(dst, src1.base(), src1.index()) && !needs_eevex(src2)) || (UseAPX && UseAVX > 2), "extended gpr use requires UseAPX and UseAVX > 2");
+  assert((!needs_eevex(dst, src1.base(), src1.index()) && !needs_eevex(src2)) || UseAPX, "extended gpr use requires UseAPX and UseAVX > 2");
   InstructionMark im(this);
   InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
   attributes.set_address_attributes(/* tuple_type */ EVEX_NOSCALE, /* input_size_in_bits */ EVEX_32bit);
@@ -12548,7 +12548,7 @@ void Assembler::sarxl(Register dst, Address src1, Register src2) {
 
 void Assembler::sarxq(Register dst, Register src1, Register src2) {
   assert(VM_Version::supports_bmi2(), "");
-  assert(!needs_eevex(dst, src1, src2) || (UseAPX && UseAVX > 2), "extended gpr use requires UseAPX and UseAVX > 2");
+  assert(!needs_eevex(dst, src1, src2) || UseAPX, "extended gpr use requires UseAPX and UseAVX > 2");
   InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
   int encode = vex_prefix_and_encode(dst->encoding(), src2->encoding(), src1->encoding(), VEX_SIMD_F3, VEX_OPCODE_0F_38, &attributes, true);
   emit_int16((unsigned char)0xF7, (0xC0 | encode));
@@ -12556,7 +12556,7 @@ void Assembler::sarxq(Register dst, Register src1, Register src2) {
 
 void Assembler::sarxq(Register dst, Address src1, Register src2) {
   assert(VM_Version::supports_bmi2(), "");
-  assert((!needs_eevex(dst, src1.base(), src1.index()) && !needs_eevex(src2)) || (UseAPX && UseAVX > 2), "extended gpr use requires UseAPX and UseAVX > 2");
+  assert((!needs_eevex(dst, src1.base(), src1.index()) && !needs_eevex(src2)) || UseAPX, "extended gpr use requires UseAPX and UseAVX > 2");
   InstructionMark im(this);
   InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
   attributes.set_address_attributes(/* tuple_type */ EVEX_NOSCALE, /* input_size_in_bits */ EVEX_64bit);
@@ -12567,7 +12567,7 @@ void Assembler::sarxq(Register dst, Address src1, Register src2) {
 
 void Assembler::shlxl(Register dst, Register src1, Register src2) {
   assert(VM_Version::supports_bmi2(), "");
-  assert(!needs_eevex(dst, src1, src2) || (UseAPX && UseAVX > 2), "extended gpr use requires UseAPX and UseAVX > 2");
+  assert(!needs_eevex(dst, src1, src2) || UseAPX, "extended gpr use requires UseAPX and UseAVX > 2");
   InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
   int encode = vex_prefix_and_encode(dst->encoding(), src2->encoding(), src1->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes, true);
   emit_int16((unsigned char)0xF7, (0xC0 | encode));
@@ -12575,7 +12575,7 @@ void Assembler::shlxl(Register dst, Register src1, Register src2) {
 
 void Assembler::shlxl(Register dst, Address src1, Register src2) {
   assert(VM_Version::supports_bmi2(), "");
-  assert((!needs_eevex(dst, src1.base(), src1.index()) && !needs_eevex(src2)) || (UseAPX && UseAVX > 2), "extended gpr use requires UseAPX and UseAVX > 2");
+  assert((!needs_eevex(dst, src1.base(), src1.index()) && !needs_eevex(src2)) || UseAPX, "extended gpr use requires UseAPX and UseAVX > 2");
   InstructionMark im(this);
   InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
   attributes.set_address_attributes(/* tuple_type */ EVEX_NOSCALE, /* input_size_in_bits */ EVEX_32bit);
@@ -12586,7 +12586,7 @@ void Assembler::shlxl(Register dst, Address src1, Register src2) {
 
 void Assembler::shlxq(Register dst, Register src1, Register src2) {
   assert(VM_Version::supports_bmi2(), "");
-  assert(!needs_eevex(dst, src1, src2) || (UseAPX && UseAVX > 2), "extended gpr use requires UseAPX and UseAVX > 2");
+  assert(!needs_eevex(dst, src1, src2) || UseAPX, "extended gpr use requires UseAPX and UseAVX > 2");
   InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
   int encode = vex_prefix_and_encode(dst->encoding(), src2->encoding(), src1->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes, true);
   emit_int16((unsigned char)0xF7, (0xC0 | encode));
@@ -12594,7 +12594,7 @@ void Assembler::shlxq(Register dst, Register src1, Register src2) {
 
 void Assembler::shlxq(Register dst, Address src1, Register src2) {
   assert(VM_Version::supports_bmi2(), "");
-  assert((!needs_eevex(dst, src1.base(), src1.index()) && !needs_eevex(src2)) || (UseAPX && UseAVX > 2), "extended gpr use requires UseAPX and UseAVX > 2");
+  assert((!needs_eevex(dst, src1.base(), src1.index()) && !needs_eevex(src2)) || UseAPX, "extended gpr use requires UseAPX and UseAVX > 2");
   InstructionMark im(this);
   InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
   attributes.set_address_attributes(/* tuple_type */ EVEX_NOSCALE, /* input_size_in_bits */ EVEX_64bit);
@@ -12605,7 +12605,7 @@ void Assembler::shlxq(Register dst, Address src1, Register src2) {
 
 void Assembler::shrxl(Register dst, Register src1, Register src2) {
   assert(VM_Version::supports_bmi2(), "");
-  assert(!needs_eevex(dst, src1, src2) || (UseAPX && UseAVX > 2), "extended gpr use requires UseAPX and UseAVX > 2");
+  assert(!needs_eevex(dst, src1, src2) || UseAPX, "extended gpr use requires UseAPX and UseAVX > 2");
   InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
   int encode = vex_prefix_and_encode(dst->encoding(), src2->encoding(), src1->encoding(), VEX_SIMD_F2, VEX_OPCODE_0F_38, &attributes, true);
   emit_int16((unsigned char)0xF7, (0xC0 | encode));
@@ -12613,7 +12613,7 @@ void Assembler::shrxl(Register dst, Register src1, Register src2) {
 
 void Assembler::shrxl(Register dst, Address src1, Register src2) {
   assert(VM_Version::supports_bmi2(), "");
-  assert((!needs_eevex(dst, src1.base(), src1.index()) && !needs_eevex(src2)) || (UseAPX && UseAVX > 2), "extended gpr use requires UseAPX and UseAVX > 2");
+  assert((!needs_eevex(dst, src1.base(), src1.index()) && !needs_eevex(src2)) || UseAPX, "extended gpr use requires UseAPX and UseAVX > 2");
   InstructionMark im(this);
   InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
   attributes.set_address_attributes(/* tuple_type */ EVEX_NOSCALE, /* input_size_in_bits */ EVEX_32bit);
@@ -12624,7 +12624,7 @@ void Assembler::shrxl(Register dst, Address src1, Register src2) {
 
 void Assembler::shrxq(Register dst, Register src1, Register src2) {
   assert(VM_Version::supports_bmi2(), "");
-  assert(!needs_eevex(dst, src1, src2) || (UseAPX && UseAVX > 2), "extended gpr use requires UseAPX and UseAVX > 2");
+  assert(!needs_eevex(dst, src1, src2) || UseAPX, "extended gpr use requires UseAPX and UseAVX > 2");
   InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
   int encode = vex_prefix_and_encode(dst->encoding(), src2->encoding(), src1->encoding(), VEX_SIMD_F2, VEX_OPCODE_0F_38, &attributes, true);
   emit_int16((unsigned char)0xF7, (0xC0 | encode));
@@ -12632,7 +12632,7 @@ void Assembler::shrxq(Register dst, Register src1, Register src2) {
 
 void Assembler::shrxq(Register dst, Address src1, Register src2) {
   assert(VM_Version::supports_bmi2(), "");
-  assert((!needs_eevex(dst, src1.base(), src1.index()) && !needs_eevex(src2)) || (UseAPX && UseAVX > 2), "extended gpr use requires UseAPX and UseAVX > 2");
+  assert((!needs_eevex(dst, src1.base(), src1.index()) && !needs_eevex(src2)) || UseAPX, "extended gpr use requires UseAPX and UseAVX > 2");
   InstructionMark im(this);
   InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
   attributes.set_address_attributes(/* tuple_type */ EVEX_NOSCALE, /* input_size_in_bits */ EVEX_64bit);
@@ -13439,7 +13439,7 @@ void Assembler::addq(Register dst, Register src) {
 void Assembler::adcxq(Register dst, Register src) {
   //assert(VM_Version::supports_adx(), "adx instructions not supported");
   if (needs_rex2(dst, src)) {
-    assert(UseAPX && UseAVX > 2, "extended gpr use requires UseAPX and UseAVX > 2");
+    assert(UseAPX, "extended gpr use requires UseAPX and UseAVX > 2");
     InstructionAttr attributes(AVX_128bit, /* rex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
     int encode = vex_prefix_and_encode(dst->encoding(), 0, src->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_3C, &attributes, true);
     emit_int16((unsigned char)0x66, (0xC0 | encode));
@@ -13456,7 +13456,7 @@ void Assembler::adcxq(Register dst, Register src) {
 void Assembler::adoxq(Register dst, Register src) {
   //assert(VM_Version::supports_adx(), "adx instructions not supported");
   if (needs_rex2(dst, src)) {
-    assert(UseAPX && UseAVX > 2, "extended gpr use requires UseAPX and UseAVX > 2");
+    assert(UseAPX, "extended gpr use requires UseAPX and UseAVX > 2");
     InstructionAttr attributes(AVX_128bit, /* rex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
     int encode = vex_prefix_and_encode(dst->encoding(), 0, src->encoding(), VEX_SIMD_F3, VEX_OPCODE_0F_3C, &attributes, true);
     emit_int16((unsigned char)0x66, (0xC0 | encode));
@@ -13499,7 +13499,7 @@ void Assembler::andq(Address dst, Register src) {
 
 void Assembler::andnq(Register dst, Register src1, Register src2) {
   assert(VM_Version::supports_bmi1(), "bit manipulation instructions not supported");
-  assert(!needs_eevex(dst, src1, src2) || (UseAPX && UseAVX > 2), "extended gpr use requires UseAPX and UseAVX > 2");
+  assert(!needs_eevex(dst, src1, src2) || UseAPX, "extended gpr use requires UseAPX and UseAVX > 2");
   InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   int encode = vex_prefix_and_encode(dst->encoding(), src1->encoding(), src2->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_38, &attributes, true);
   emit_int16((unsigned char)0xF2, (0xC0 | encode));
@@ -13507,7 +13507,7 @@ void Assembler::andnq(Register dst, Register src1, Register src2) {
 
 void Assembler::andnq(Register dst, Register src1, Address src2) {
   assert(VM_Version::supports_bmi1(), "bit manipulation instructions not supported");
-  assert((!needs_eevex(dst, src1) && !needs_eevex(src2.base(), src2.index())) || (UseAPX && UseAVX > 2), "extended gpr use requires UseAPX and UseAVX > 2");
+  assert((!needs_eevex(dst, src1) && !needs_eevex(src2.base(), src2.index())) || UseAPX, "extended gpr use requires UseAPX and UseAVX > 2");
   InstructionMark im(this);
   InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   attributes.set_address_attributes(/* tuple_type */ EVEX_NOSCALE, /* input_size_in_bits */ EVEX_64bit);
@@ -13533,7 +13533,7 @@ void Assembler::bswapq(Register reg) {
 
 void Assembler::blsiq(Register dst, Register src) {
   assert(VM_Version::supports_bmi1(), "bit manipulation instructions not supported");
-  assert(!needs_eevex(dst, src) || (UseAPX && UseAVX > 2), "extended gpr use requires UseAPX and UseAVX > 2");
+  assert(!needs_eevex(dst, src) || UseAPX, "extended gpr use requires UseAPX and UseAVX > 2");
   InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   int encode = vex_prefix_and_encode(rbx->encoding(), dst->encoding(), src->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_38, &attributes, true);
   emit_int16((unsigned char)0xF3, (0xC0 | encode));
@@ -13541,7 +13541,7 @@ void Assembler::blsiq(Register dst, Register src) {
 
 void Assembler::blsiq(Register dst, Address src) {
   assert(VM_Version::supports_bmi1(), "bit manipulation instructions not supported");
-  assert(!needs_eevex(dst, src.base(), src.index()) || (UseAPX && UseAVX > 2), "extended gpr use requires UseAPX and UseAVX > 2");
+  assert(!needs_eevex(dst, src.base(), src.index()) || UseAPX, "extended gpr use requires UseAPX and UseAVX > 2");
   InstructionMark im(this);
   InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   attributes.set_address_attributes(/* tuple_type */ EVEX_NOSCALE, /* input_size_in_bits */ EVEX_64bit);
@@ -13552,7 +13552,7 @@ void Assembler::blsiq(Register dst, Address src) {
 
 void Assembler::blsmskq(Register dst, Register src) {
   assert(VM_Version::supports_bmi1(), "bit manipulation instructions not supported");
-  assert(!needs_eevex(dst, src) || (UseAPX && UseAVX > 2), "extended gpr use requires UseAPX and UseAVX > 2");
+  assert(!needs_eevex(dst, src) || UseAPX, "extended gpr use requires UseAPX and UseAVX > 2");
   InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   int encode = vex_prefix_and_encode(rdx->encoding(),  dst->encoding(), src->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_38, &attributes, true);
   emit_int16((unsigned char)0xF3, (0xC0 | encode));
@@ -13560,7 +13560,7 @@ void Assembler::blsmskq(Register dst, Register src) {
 
 void Assembler::blsmskq(Register dst, Address src) {
   assert(VM_Version::supports_bmi1(), "bit manipulation instructions not supported");
-  assert(!needs_eevex(dst, src.base(), src.index()) || (UseAPX && UseAVX > 2), "extended gpr use requires UseAPX and UseAVX > 2");
+  assert(!needs_eevex(dst, src.base(), src.index()) || UseAPX, "extended gpr use requires UseAPX and UseAVX > 2");
   InstructionMark im(this);
   InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   attributes.set_address_attributes(/* tuple_type */ EVEX_NOSCALE, /* input_size_in_bits */ EVEX_64bit);
@@ -13571,7 +13571,7 @@ void Assembler::blsmskq(Register dst, Address src) {
 
 void Assembler::blsrq(Register dst, Register src) {
   assert(VM_Version::supports_bmi1(), "bit manipulation instructions not supported");
-  assert(!needs_eevex(dst, src) || (UseAPX && UseAVX > 2), "extended gpr use requires UseAPX and UseAVX > 2");
+  assert(!needs_eevex(dst, src) || UseAPX, "extended gpr use requires UseAPX and UseAVX > 2");
   InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   int encode = vex_prefix_and_encode(rcx->encoding(), dst->encoding(), src->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_38, &attributes, true);
   emit_int16((unsigned char)0xF3, (0xC0 | encode));
@@ -13579,7 +13579,7 @@ void Assembler::blsrq(Register dst, Register src) {
 
 void Assembler::blsrq(Register dst, Address src) {
   assert(VM_Version::supports_bmi1(), "bit manipulation instructions not supported");
-  assert(!needs_eevex(dst, src.base(), src.index()) || (UseAPX && UseAVX > 2), "extended gpr use requires UseAPX and UseAVX > 2");
+  assert(!needs_eevex(dst, src.base(), src.index()) || UseAPX, "extended gpr use requires UseAPX and UseAVX > 2");
   InstructionMark im(this);
   InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   attributes.set_address_attributes(/* tuple_type */ EVEX_NOSCALE, /* input_size_in_bits */ EVEX_64bit);
@@ -14066,7 +14066,7 @@ void Assembler::mulq(Register src) {
 
 void Assembler::mulxq(Register dst1, Register dst2, Register src) {
   assert(VM_Version::supports_bmi2(), "bit manipulation instructions not supported");
-  assert(!needs_eevex(dst1, dst2, src) || (UseAPX && UseAVX > 2), "extended gpr use requires UseAPX and UseAVX > 2");
+  assert(!needs_eevex(dst1, dst2, src) || UseAPX, "extended gpr use requires UseAPX and UseAVX > 2");
   InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   int encode = vex_prefix_and_encode(dst1->encoding(), dst2->encoding(), src->encoding(), VEX_SIMD_F2, VEX_OPCODE_0F_38, &attributes, true);
   emit_int16((unsigned char)0xF6, (0xC0 | encode));
@@ -14340,7 +14340,7 @@ void Assembler::rcrq(Register dst, int imm8) {
 
 void Assembler::rorxl(Register dst, Register src, int imm8) {
   assert(VM_Version::supports_bmi2(), "bit manipulation instructions not supported");
-  assert(!needs_eevex(dst, src) || (UseAPX && UseAVX > 2), "extended gpr use requires UseAPX and UseAVX > 2");
+  assert(!needs_eevex(dst, src) || UseAPX, "extended gpr use requires UseAPX and UseAVX > 2");
   InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   int encode = vex_prefix_and_encode(dst->encoding(), 0, src->encoding(), VEX_SIMD_F2, VEX_OPCODE_0F_3A, &attributes, true);
   emit_int24((unsigned char)0xF0, (0xC0 | encode), imm8);
@@ -14348,7 +14348,7 @@ void Assembler::rorxl(Register dst, Register src, int imm8) {
 
 void Assembler::rorxl(Register dst, Address src, int imm8) {
   assert(VM_Version::supports_bmi2(), "bit manipulation instructions not supported");
-  assert(!needs_eevex(dst, src.base(), src.index()) || (UseAPX && UseAVX > 2), "extended gpr use requires UseAPX and UseAVX > 2");
+  assert(!needs_eevex(dst, src.base(), src.index()) || UseAPX, "extended gpr use requires UseAPX and UseAVX > 2");
   InstructionMark im(this);
   InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   attributes.set_address_attributes(/* tuple_type */ EVEX_NOSCALE, /* input_size_in_bits */ EVEX_32bit);
@@ -14360,7 +14360,7 @@ void Assembler::rorxl(Register dst, Address src, int imm8) {
 
 void Assembler::rorxq(Register dst, Register src, int imm8) {
   assert(VM_Version::supports_bmi2(), "bit manipulation instructions not supported");
-  assert(!needs_eevex(dst, src) || (UseAPX && UseAVX > 2), "extended gpr use requires UseAPX and UseAVX > 2");
+  assert(!needs_eevex(dst, src) || UseAPX, "extended gpr use requires UseAPX and UseAVX > 2");
   InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   int encode = vex_prefix_and_encode(dst->encoding(), 0,  src->encoding(), VEX_SIMD_F2, VEX_OPCODE_0F_3A, &attributes, true);
   emit_int24((unsigned char)0xF0, (0xC0 | encode), imm8);
@@ -14368,7 +14368,7 @@ void Assembler::rorxq(Register dst, Register src, int imm8) {
 
 void Assembler::rorxq(Register dst, Address src, int imm8) {
   assert(VM_Version::supports_bmi2(), "bit manipulation instructions not supported");
-  assert(!needs_eevex(dst, src.base(), src.index()) || (UseAPX && UseAVX > 2), "extended gpr use requires UseAPX and UseAVX > 2");
+  assert(!needs_eevex(dst, src.base(), src.index()) || UseAPX, "extended gpr use requires UseAPX and UseAVX > 2");
   InstructionMark im(this);
   InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   attributes.set_address_attributes(/* tuple_type */ EVEX_NOSCALE, /* input_size_in_bits */ EVEX_64bit);
