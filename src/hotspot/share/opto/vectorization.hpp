@@ -1343,7 +1343,12 @@ public:
   VTransformNodeIDX new_idx() { return _next_idx++; }
   void add_vtnode(VTransformNode* vtnode);
 
-  DEBUG_ONLY(void print_vtnodes() const;)
+#ifndef PRODUCT
+  bool is_trace() const {
+    return _vloop_analyzer.vloop().vtrace().is_trace(TraceAutoVectorizationTag::VTRANSFORM);
+  }
+  void print_vtnodes() const;
+#endif
 };
 
 class VTransformNode : public ArenaObj {
@@ -1378,10 +1383,10 @@ public:
   virtual VTransformScalarNode* isa_Scalar() { return nullptr; }
   virtual VTransformVectorNode* isa_Vector() { return nullptr; }
 
-  DEBUG_ONLY(virtual const char* name() const = 0;)
-  DEBUG_ONLY(void print() const;)
-  DEBUG_ONLY(virtual void print_spec() const {};)
-  DEBUG_ONLY(static void print_node_idx(const VTransformNode* vtn);)
+  NOT_PRODUCT(virtual const char* name() const = 0;)
+  NOT_PRODUCT(void print() const;)
+  NOT_PRODUCT(virtual void print_spec() const {};)
+  NOT_PRODUCT(static void print_node_idx(const VTransformNode* vtn);)
 };
 
 class VTransformScalarNode : public VTransformNode {
@@ -1395,8 +1400,8 @@ public:
 
   virtual VTransformScalarNode* isa_Scalar() override { return this; }
 
-  DEBUG_ONLY(virtual const char* name() const { return "Scalar"; };)
-  DEBUG_ONLY(virtual void print_spec() const override;)
+  NOT_PRODUCT(virtual const char* name() const { return "Scalar"; };)
+  NOT_PRODUCT(virtual void print_spec() const override;)
 };
 
 class VTransformVectorNode : public VTransformNode {
@@ -1416,7 +1421,7 @@ public:
 
   virtual VTransformVectorNode* isa_Vector() override { return this; }
 
-  DEBUG_ONLY(virtual void print_spec() const override;)
+  NOT_PRODUCT(virtual void print_spec() const override;)
 };
 
 class VTransformLoadVectorNode : public VTransformVectorNode {
@@ -1425,7 +1430,7 @@ public:
   VTransformLoadVectorNode(VTransformGraph& graph, int number_of_nodes) :
     VTransformVectorNode(graph, 3, number_of_nodes) {}
 
-  DEBUG_ONLY(virtual const char* name() const { return "LoadVector"; };)
+  NOT_PRODUCT(virtual const char* name() const { return "LoadVector"; };)
 };
 
 class VTransformStoreVectorNode : public VTransformVectorNode {
@@ -1434,7 +1439,7 @@ public:
   VTransformStoreVectorNode(VTransformGraph& graph, int number_of_nodes) :
     VTransformVectorNode(graph, 4, number_of_nodes) {}
 
-  DEBUG_ONLY(virtual const char* name() const { return "StoreVector"; };)
+  NOT_PRODUCT(virtual const char* name() const { return "StoreVector"; };)
 };
 
 #endif // SHARE_OPTO_VECTORIZATION_HPP

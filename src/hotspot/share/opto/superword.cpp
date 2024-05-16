@@ -3814,12 +3814,19 @@ bool SuperWord::same_generation(Node* a, Node* b) const {
 bool SuperWord::vtransform() const {
   if (_packset.is_empty()) { return false; }
 
+  VTransformGraph graph(_vloop_analyzer);
+
+  vtransform_build(graph);
+
+  return false; // TODO
+}
+
+void SuperWord::vtransform_build(VTransformGraph& graph) const {
   ResourceMark rm;
+
   // Map: C2-IR-Nodes (bb_idx) -> VTransformNode* (nullptr if none exists).
   int body_length = _vloop.estimated_body_length();
   GrowableArray<VTransformNode*> bb_idx_to_vtnode(body_length, body_length, nullptr);
-
-  VTransformGraph graph(_vloop_analyzer);
 
   // Create VTransformVectorNode for all packed nodes:
   for (int i = 0; i < _packset.length(); i++) {
@@ -3908,8 +3915,11 @@ bool SuperWord::vtransform() const {
     add_dependencies(vtn, n);
   }
 
-  graph.print_vtnodes();
-  return false; // TODO
+#ifndef PRODUCT
+  if (graph.is_trace() || is_trace_superword_verbose()) {
+    graph.print_vtnodes();
+  }
+#endif
 }
 
 // Create a vtnode for each pack. No in/out edges set yet.

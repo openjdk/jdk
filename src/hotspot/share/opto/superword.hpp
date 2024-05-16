@@ -683,6 +683,7 @@ private:
   void adjust_pre_loop_limit_to_align_main_loop_vectors();
 
   bool vtransform() const;
+  void vtransform_build(VTransformGraph& graph) const;
   VTransformVectorNode* make_vtnode_for_pack(VTransformGraph& graph, const Node_List* pack) const;
 };
 

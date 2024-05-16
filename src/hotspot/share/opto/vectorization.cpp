@@ -1749,7 +1749,7 @@ void VTransformGraph::add_vtnode(VTransformNode* vtnode) {
   _vtnodes.push(vtnode);
 }
 
-#ifdef ASSERT
+#ifndef PRODUCT
 void VTransformGraph::print_vtnodes() const {
   tty->print_cr("\nVTransformGraph::print_vtnodes:");
   for (int i = 0; i < _vtnodes.length(); i++) {
