@@ -331,18 +331,14 @@ public final class StableValueImpl<V> implements StableValue<V> {
                                                   Supplier<? extends V> supplier) {
 
         final StableValue<V> stable = StableValue.of();
-        final class BgRunnable implements Runnable {
-
-           @Override
+        threadFactory.newThread(new Runnable() {
+            @Override
             public void run() {
                 stable.computeIfUnset(supplier);
                 // Exceptions are implicitly captured by the tread's
                 // uncaught exception handler.
             }
-        }
-
-        Thread bgThread = threadFactory.newThread(new BgRunnable());
-        bgThread.start();
+        }).start();
         return stable;
     }
 
