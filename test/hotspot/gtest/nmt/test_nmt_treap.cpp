@@ -183,7 +183,7 @@ TEST_VM_F(TreapTest, TreapOughtNotLeak) {
   this->treap_ought_not_leak();
 }
 
-TEST_VM_F(TreapTest, TestVisitInRange) {
+TEST_VM_F(TreapTest, TestVisitors) {
   { // Tests with 'default' ordering (ascending)
     TreapCHeap<int, int, Cmp> treap;
     using Node = TreapCHeap<int, int, Cmp>::TreapNode;
@@ -200,12 +200,24 @@ TEST_VM_F(TreapTest, TestVisitInRange) {
     });
     EXPECT_EQ(1, count);
 
+    count = 0;
+    treap.visit_in_order([&](Node* x) {
+      count++;
+    });
+    EXPECT_EQ(1, count);
+
     // Add an element outside of the range that should not be visited on the right side and
     // one on the left side.
     treap.upsert(101, 0);
     treap.upsert(-1, 0);
     count = 0;
     treap.visit_range_in_order(0, 100, [&](Node* x) {
+      count++;
+    });
+    EXPECT_EQ(1, count);
+
+    count = 0;
+    treap.visit_in_order([&](Node* x) {
       count++;
     });
     EXPECT_EQ(1, count);
@@ -230,12 +242,21 @@ TEST_VM_F(TreapTest, TestVisitInRange) {
     for (int i = 0; i < 10; i++) {
       EXPECT_EQ(i, seen.at(i));
     }
-    GrowableArray<int> seen2;
-    treap.visit_range_in_order(10, 12, [&](Node* x) {
-      seen2.push(x->key());
+    seen.clear();
+    treap.visit_in_order([&](Node* x) {
+      seen.push(x->key());
     });
-    EXPECT_EQ(1, seen2.length());
-    EXPECT_EQ(10, seen2.at(0));
+    EXPECT_EQ(10, seen.length());
+    for (int i = 0; i < 10; i++) {
+      EXPECT_EQ(i, seen.at(i));
+    }
+
+    seen.clear();
+    treap.visit_range_in_order(10, 12, [&](Node* x) {
+      seen.push(x->key());
+    });
+    EXPECT_EQ(1, seen.length());
+    EXPECT_EQ(10, seen.at(0));
   }
   { // Test with descending ordering
     TreapCHeap<int, int, CmpInverse> treap;
@@ -252,6 +273,15 @@ TEST_VM_F(TreapTest, TestVisitInRange) {
     EXPECT_EQ(10, seen.length());
     for (int i = 0; i < 10; i++) {
       EXPECT_EQ(10-i-1, seen.at(i));
+    }
+    seen.clear();
+
+    treap.visit_in_order([&](Node* x) {
+      seen.push(x->key());
+    });
+    EXPECT_EQ(10, seen.length());
+    for (int i = 0; i < 10; i++) {
+      EXPECT_EQ(10 - i - 1, seen.at(i));
     }
   }
 }
