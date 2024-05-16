@@ -4791,7 +4791,7 @@ public class Types {
                     return t;
                 }
             } else {
-                return t;
+                return rewriteTypeVars ? makeExtendsWildcard(syms.objectType, t) : t;
             }
         }
 
