@@ -273,7 +273,7 @@ public class MarkdownTransformer implements JavacTrees.DocCommentTreeTransformer
         //
         // The following {@code transform} methods invoke {@code transform} on
         // any children that may contain Markdown. If the transformations on
-        // the children are all identify transformations (that is the result
+        // the children are all identity transformations (that is the result
         // of the transformations are the same as the originals) then the
         // result of the overall transform is the original object. But if
         // any transformation on the children is not an identity transformation
