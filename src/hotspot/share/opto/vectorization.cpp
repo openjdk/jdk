@@ -1749,6 +1749,16 @@ void VTransformGraph::add_vtnode(VTransformNode* vtnode) {
   _vtnodes.push(vtnode);
 }
 
+// Compute a linearization of the graph. We do this with a reverse-post-order of a DFS.
+// We return "true" IFF we find no cycle, i.e. if the linearization succeeds.
+bool VTransformGraph::schedule() {
+  return false; // TODO
+}
+
+void VTransformGraph::apply() {
+  // TODO
+}
+
 #ifndef PRODUCT
 void VTransformGraph::print_vtnodes() const {
   tty->print_cr("\nVTransformGraph::print_vtnodes:");

@@ -1332,6 +1332,10 @@ private:
   VTransformNodeIDX _next_idx;             // TODO debug only?
   GrowableArray<VTransformNode*> _vtnodes; // TODO debug only?
 
+  // TODO need both?
+  GrowableArray<VTransformNode*> _schedule;
+  GrowableArray<MemNode*> _mem_schedule;
+
 public:
   VTransformGraph(const VLoopAnalyzer& vloop_analyzer) :
     _vloop_analyzer(vloop_analyzer),
@@ -1342,6 +1346,9 @@ public:
   Arena* arena() { return &_arena; }
   VTransformNodeIDX new_idx() { return _next_idx++; }
   void add_vtnode(VTransformNode* vtnode);
+
+  bool schedule();
+  void apply();
 
 #ifndef PRODUCT
   bool is_trace() const {

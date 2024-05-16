@@ -3818,7 +3818,12 @@ bool SuperWord::vtransform() const {
 
   vtransform_build(graph);
 
-  return false; // TODO
+  if (!graph.schedule()) {
+    return false;
+  }
+
+  graph.apply();
+  return true;
 }
 
 void SuperWord::vtransform_build(VTransformGraph& graph) const {
