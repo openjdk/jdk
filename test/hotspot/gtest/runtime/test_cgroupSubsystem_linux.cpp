@@ -284,6 +284,43 @@ TEST(cgroupTest, cg_file_multi_line_ctrl_null) {
   EXPECT_EQ(err, OSCONTAINER_ERROR) << "Null return pointer should be an error";
 }
 
+TEST(cgroupTest, cg_read_number_tests) {
+  const char* test_file = temp_file("cgroups");
+  const char* b = basename(test_file);
+  EXPECT_TRUE(b != nullptr) << "basename was null";
+  stringStream path;
+  path.print_raw(os::file_separator());
+  path.print_raw(b);
+  const char* base_with_slash = path.as_string(true);
+  fill_file(test_file, "8888");
+
+  TestController* controller = new TestController((char*)os::get_temp_directory());
+  julong foo = 0xBAD;
+  bool ok = controller->read_number_from_file(base_with_slash, &foo);
+  EXPECT_TRUE(ok) << "Number parsing should have been successful";
+  EXPECT_EQ((julong)8888, foo) << "Expected julongs to be equal (and not: " << 0xBAD << " == 0xBAD)";
+  delete_file(test_file);
+}
+
+TEST(cgroupTest, cg_read_string_tests) {
+  const char* test_file = temp_file("cgroups");
+  const char* b = basename(test_file);
+  EXPECT_TRUE(b != nullptr) << "basename was null";
+  stringStream path;
+  path.print_raw(os::file_separator());
+  path.print_raw(b);
+  const char* base_with_slash = path.as_string(true);
+  fill_file(test_file, "foo-bar");
+
+  TestController* controller = new TestController((char*)os::get_temp_directory());
+  char* result = nullptr;
+  bool ok = controller->read_string_from_file(base_with_slash, &result);
+  EXPECT_TRUE(ok) << "String parsing should have been successful";
+  EXPECT_TRUE(result != nullptr) << "Expected non-null result";
+  EXPECT_STREQ("foo-bar", result) << "Expected strings to be equal";
+  delete_file(test_file);
+}
+
 TEST(cgroupTest, cg_file_multi_line_ctrl_beyond_max_path) {
   char larger_than_max[MAXPATHLEN + 1];
   for (int i = 0; i < (MAXPATHLEN); i++) {
