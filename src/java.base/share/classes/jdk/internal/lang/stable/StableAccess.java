@@ -47,18 +47,18 @@ public final class StableAccess {
         return ACCESS.computeIfUnset(map, key, mapper);
     }
 
-    public static <T> Supplier<T> ofSupplier(StableValue<T> stable,
-                                             Supplier<? extends T> original) {
+    public static <T> Supplier<T> memoizedSupplier(StableValue<T> stable,
+                                                   Supplier<? extends T> original) {
         return new MemoizedSupplier<>(stable, original);
     }
 
-    public static <R> IntFunction<R> ofIntFunction(List<StableValue<R>> stableList,
-                                                   IntFunction<? extends R> original) {
+    public static <R> IntFunction<R> memoizedIntFunction(List<StableValue<R>> stableList,
+                                                         IntFunction<? extends R> original) {
         return new MemoizedIntFunction<>(stableList, original);
     }
 
-    public static <T, R> Function<T, R> ofFunction(Map<T, StableValue<R>> stableMap,
-                                                   Function<? super T, ? extends R> original) {
+    public static <T, R> Function<T, R> memoizedFunction(Map<T, StableValue<R>> stableMap,
+                                                         Function<? super T, ? extends R> original) {
         return new MemoizedFunction<>(stableMap, original);
     }
 
