@@ -48,6 +48,12 @@ public final class StableValueImpl<V> implements StableValue<V> {
     private static final long STATE_OFFSET =
             UNSAFE.objectFieldOffset(StableValueImpl.class, "state");
 
+    private static final long COMPUTE_INVOKED_OFFSET =
+            UNSAFE.objectFieldOffset(StableValueImpl.class, "computeInvoked");
+
+    // The fields below are read and written using a combination of plain memory access
+    // and Unsafe volatile memory access.
+
     /**
      * An internal mutex used rather than synchronizing on `this`. Lazily created.
      * If `null`    , we have not entered a mutex section yet
@@ -70,14 +76,16 @@ public final class StableValueImpl<V> implements StableValue<V> {
      * If StableUtil.NULL     , a `null` value is set
      */
     @Stable
-    private int state;
+    private byte state;
 
     /**
      * Indicates a computation operation has been invoked. Used to
      * detect circular computation invocations.
+     * 0                  , not invoked
+     * StableUtil.INVOKED , invoked
      */
     @Stable
-    private boolean computeInvoked;
+    private byte computeInvoked;
 
     private StableValueImpl() {}
 
@@ -233,11 +241,10 @@ public final class StableValueImpl<V> implements StableValue<V> {
                 return orThrow();
             }
 
-            // A value is not set
-            if (computeInvoked) {
+            if (!UNSAFE.compareAndSetByte(this, COMPUTE_INVOKED_OFFSET, (byte) 0, INVOKED)) {
                 throw stackOverflow(provider, key);
             }
-            computeInvoked = true;
+
             try {
                 @SuppressWarnings("unchecked")
                 V newValue = switch (provider) {
@@ -293,13 +300,13 @@ public final class StableValueImpl<V> implements StableValue<V> {
     }
 
     private int stateVolatile() {
-        return UNSAFE.getIntVolatile(this, STATE_OFFSET);
+        return UNSAFE.getByteVolatile(this, STATE_OFFSET);
     }
 
-    private void putState(int newValue) {
+    private void putState(byte newValue) {
         // This prevents `this.value` to be seen before `this.state` is seen
         freeze();
-        UNSAFE.putIntVolatile(this, STATE_OFFSET, newValue);
+        UNSAFE.putByteVolatile(this, STATE_OFFSET, newValue);
     }
 
     private Object acquireMutex() {

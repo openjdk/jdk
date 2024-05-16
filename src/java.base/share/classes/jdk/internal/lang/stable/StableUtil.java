@@ -44,19 +44,22 @@ public final class StableUtil {
     private StableUtil() {}
 
     // Indicates a value is not set
-    static final int UNSET = 0;
+    static final byte UNSET = 0;
     // Indicates a value is set to a `null` value
-    static final int NULL = 1;
+    static final byte NULL = 1;
     // Indicates a value is set to a non-null value
-    static final int NON_NULL = 2; // The middle value
+    static final byte NON_NULL = 2; // The middle value
     // Indicates there was an error when computing a value
-    static final int ERROR = 3;
+    static final byte ERROR = 3;
     // Added to create an odd number of switch alternatives
-    static final int DUMMY = 4;
+    static final byte DUMMY = 4;
+
+    // Indicates a computation operation has been invoked.
+    static final byte INVOKED = 1;
 
     static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
-    // Used to mark that a mutex will not be used anymore
+    // Sentinel value used to mark that a mutex will not be used anymore
     static final Object TOMBSTONE = new Object();
 
     static IllegalStateException alreadySet(StableValue<?> stable) {
@@ -108,22 +111,6 @@ public final class StableUtil {
         UNSAFE.storeStoreFence();
     }
 
-    /**
-     * {@return the address offset for an Object element in an Object array}
-     * @param index for the object
-     */
-    static long objectOffset(int index) {
-        return ARRAY_OBJECT_BASE_OFFSET + (long) index * ARRAY_OBJECT_INDEX_SCALE;
-    }
-
-    /**
-     * {@return the address offset for an int element in an `int` array}
-     * @param index for the object
-     */
-    static long intOffset(int index) {
-        return ARRAY_INT_BASE_OFFSET + (long) index * ARRAY_INT_INDEX_SCALE;
-    }
-
     static InternalError shouldNotReachHere() {
         return new InternalError("Should not reach here");
     }
@@ -149,7 +136,7 @@ public final class StableUtil {
             stable = StableValueImpl.of();
             StableValueImpl<V> witness = (StableValueImpl<V>)
                     Holder.UNSAFE.compareAndExchangeReference(elements, offset, null, stable);
-            return witness == null ? stable: witness;
+            return witness == null ? stable : witness;
         }
         return stable;
     }
