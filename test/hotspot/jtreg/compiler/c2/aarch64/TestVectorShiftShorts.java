@@ -27,7 +27,8 @@
  * @bug 8255287
  * @summary aarch64: fix SVE patterns for vector shift count
  *
- * @requires os.arch == "aarch64" & vm.compiler2.enabled
+ * @requires vm.compiler2.enabled
+ * @requires os.arch == "aarch64" | os.arch == "riscv64"
  * @run main/othervm -XX:UseSVE=2 -Xbatch -XX:-TieredCompilation
  *      -XX:CompileCommand=compileonly,compiler.c2.aarch64.TestVectorShiftShorts::test_*
  *      compiler.c2.aarch64.TestVectorShiftShorts
