@@ -1331,9 +1331,9 @@ private:
 
   VTransformNodeIDX _next_idx;             // TODO debug only?
   GrowableArray<VTransformNode*> _vtnodes; // TODO debug only?
+  VTransformNode* _cl_vtnode; // vtnode of the _vloop.cl(), the "root" of the graph.
 
   // TODO need both?
-  GrowableArray<VTransformNode*> _schedule;
   GrowableArray<MemNode*> _mem_schedule;
 
 public:
@@ -1341,11 +1341,14 @@ public:
     _vloop_analyzer(vloop_analyzer),
     _arena(mtCompiler),
     _next_idx(0),
-    _vtnodes(&_arena, vloop_analyzer.vloop().estimated_body_length(), 0, nullptr) {}
+    _vtnodes(&_arena, vloop_analyzer.vloop().estimated_body_length(), 0, nullptr),
+    _cl_vtnode(nullptr),
+    _mem_schedule(&_arena, 8, 0, nullptr) {}
 
   Arena* arena() { return &_arena; }
   VTransformNodeIDX new_idx() { return _next_idx++; }
   void add_vtnode(VTransformNode* vtnode);
+  void set_cl_vtnode(VTransformNode* cl_vtnode) { _cl_vtnode = cl_vtnode; }
 
   bool schedule();
   void apply();
@@ -1380,12 +1383,23 @@ public:
 
   void set_req(int i, VTransformNode* n) {
     assert(0 <= i && i < _req, "must be a req");
+    assert(_in.at(i) == nullptr && n != nullptr, "only set once");
     _in.at_put(i, n);
+    n->add_out(this);
   }
 
   void add_dependency(VTransformNode* n) {
+    assert(n != nullptr, "no need to add nullptr");
     _in.push(n);
+    n->add_out(this);
   }
+
+  void add_out(VTransformNode* n) {
+    _out.push(n);
+  }
+
+  int outs() const { return _out.length(); }
+  VTransformNode* out(int i) const { return _out.at(i); }
 
   virtual VTransformScalarNode* isa_Scalar() { return nullptr; }
   virtual VTransformVectorNode* isa_Vector() { return nullptr; }

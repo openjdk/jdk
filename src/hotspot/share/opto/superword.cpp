@@ -3851,6 +3851,9 @@ void SuperWord::vtransform_build(VTransformGraph& graph) const {
     bb_idx_to_vtnode.at_put(bb_idx(n), vtn);
   }
 
+  // This is the "root" of the graph.
+  graph.set_cl_vtnode(bb_idx_to_vtnode.at(bb_idx(cl())));
+
   // Only add dependency once per vtnode.
   VectorSet dependency_set;
 
@@ -3909,6 +3912,14 @@ void SuperWord::vtransform_build(VTransformGraph& graph) const {
     } else if (n->is_Store()) {
       set_req(vtn, MemNode::Address, n->in(MemNode::Address));
       set_req(vtn, MemNode::ValueIn, n->in(MemNode::ValueIn));
+    } else if (n->is_CountedLoop()) {
+      // Is "root", has no dependency.
+      continue;
+    } else if (n->is_Phi()) {
+      // CountedLoop Phi's: ignore backedge (and entry value).
+      assert(n->in(0) == cl(), "only Phi's from the CountedLoop allowed");
+      set_req(vtn, 0, n->in(0));
+      continue;
     } else {
       for (uint j = 0; j < n->req(); j++) {
         Node* def = n->in(j);

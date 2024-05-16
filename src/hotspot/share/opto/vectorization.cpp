@@ -1752,6 +1752,59 @@ void VTransformGraph::add_vtnode(VTransformNode* vtnode) {
 // Compute a linearization of the graph. We do this with a reverse-post-order of a DFS.
 // We return "true" IFF we find no cycle, i.e. if the linearization succeeds.
 bool VTransformGraph::schedule() {
+  assert(_mem_schedule.is_empty(), "not yet scheduled");
+
+  ResourceMark rm;
+  GrowableArray<VTransformNode*> stack;
+  VectorSet pre_visited;
+  VectorSet post_visited;
+
+  // Start with the "root": the vtnode of the CountedLoopNode.
+  pre_visited.set(_cl_vtnode->_idx); // TODO necessary?
+  stack.push(_cl_vtnode);
+
+  while (!stack.is_empty()) {
+    VTransformNode* vtn = stack.top();
+    if (!pre_visited.test_set(vtn->_idx)) {
+      // Forward arc in graph (pre-visit).
+    } else if (!post_visited.test(vtn->_idx)) {
+      // Forward arc in graph. Check if any outputs still need to be visited:
+      //   Yes -> we are mid-visit.
+      //   No  -> post-visit.
+      const int old_length = stack.length();
+
+      for (int i = 0; i < vtn->outs(); i++) {
+        VTransformNode* use = vtn->out(i);
+        if (post_visited.test(use->_idx)) { continue; }
+        if (pre_visited.test(use->_idx)) {
+          // TODO circle
+          tty->print_cr("circle");
+          for (int j = 0; j < stack.length(); j++) {
+            stack.at(j)->print();
+          }
+          use->print();
+          assert(false, "circle");
+          return false;
+        }
+        // TODO phi and cl?
+        stack.push(use);
+      }
+
+      if (stack.length() == old_length) {
+        // There were no additional uses, post visit node now
+        stack.pop();
+        post_visited.set(vtn->_idx);
+        // TODO: add to schedule
+        tty->print_cr(" -> schedule");
+        vtn->print();
+      }
+
+    } else {
+      // This node has already been post-visited, ignore.
+      stack.pop();
+    }
+  }
+
   return false; // TODO
 }
 
