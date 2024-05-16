@@ -302,14 +302,11 @@ final class DCmdStart extends AbstractDCmd {
     }
 
     private boolean hasJDKEvents(Map<String, String> settings) {
-        String[] eventNames = new String[7];
+        String[] eventNames = new String[4];
         eventNames[0] = "FileRead";
         eventNames[1] = "FileWrite";
-        eventNames[2] = "SocketRead";
-        eventNames[3] = "SocketWrite";
         eventNames[4] = "JavaErrorThrow";
         eventNames[5] = "JavaExceptionThrow";
-        eventNames[6] = "FileForce";
         for (String eventName : eventNames) {
             if ("true".equals(settings.get(Type.EVENT_NAME_PREFIX + eventName + "#enabled"))) {
                 return true;
