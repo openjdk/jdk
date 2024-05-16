@@ -74,9 +74,12 @@ class CgroupController: public CHeapObj<mtInternal> {
     virtual char *subsystem_path() = 0;
     bool read_number_from_file(const char* filename, julong* result);
     bool read_string_from_file(const char* filename, char** result);
+    bool read_numerical_key_value(const char* filename, const char* key, julong* result);
   private:
     template <typename T>
        bool read_from_file(const char* filename, const char* scan_fmt, T result);
+    template <typename T>
+       bool read_key_from_file(const char* filename, const char* key, const char* scan_fmt, T result);
 };
 
 PRAGMA_DIAG_PUSH

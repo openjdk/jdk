@@ -570,6 +570,10 @@ bool CgroupController::read_number_from_file(const char* filename, julong* resul
   return read_from_file<julong*>(filename, JULONG_FORMAT, result);
 }
 
+bool CgroupController::read_numerical_key_value(const char* filename, const char* key, julong* result) {
+  return read_key_from_file<julong*>(filename, key, JULONG_FORMAT, result);
+}
+
 PRAGMA_DIAG_PUSH
 PRAGMA_FORMAT_NONLITERAL_IGNORED
 template <typename T>
@@ -619,6 +623,73 @@ bool CgroupController::read_from_file(const char* filename, const char* scan_fmt
   return false;
 }
 PRAGMA_DIAG_POP
+
+PRAGMA_DIAG_PUSH
+PRAGMA_FORMAT_NONLITERAL_IGNORED
+template <typename T>
+bool CgroupController::read_key_from_file(const char* filename, const char* key, const char* scan_fmt, T result) {
+  char* s_path = subsystem_path();
+  if (s_path == nullptr) {
+    log_debug(os, container)("read_key_from_file: subsystem path is null");
+    return false;
+  }
+  if (key == nullptr || result == nullptr) {
+    log_debug(os, container)("read_key_from_file: key or return pointer is null");
+    return false;
+  }
+
+  stringStream file_path;
+  file_path.print_raw(s_path);
+  file_path.print_raw(filename);
+
+  if (file_path.size() > MAXPATHLEN) {
+    log_debug(os, container)("File path too long %s, %s", file_path.base(), filename);
+    return false;
+  }
+  const char* absolute_path = file_path.freeze();
+  log_trace(os, container)("Path to %s is %s", filename, absolute_path);
+  FILE* fp = os::fopen(absolute_path, "r");
+  if (fp == nullptr) {
+    log_debug(os, container)("Open of file %s failed, %s", absolute_path, os::strerror(errno));
+    return false;
+  }
+
+  const int buf_len = MAXPATHLEN+1;
+  char buf[buf_len];
+  char* line = fgets(buf, buf_len, fp);
+  if (line == nullptr) {
+    log_debug(os, container)("Empty file %s", absolute_path);
+    fclose(fp);
+    return false;
+  }
+
+  bool found_match = false;
+  // File consists of multiple lines in a "key value"
+  // fashion, we have to find the key.
+  const int key_len = (int)strlen(key);
+  for (; line != nullptr; line = fgets(buf, buf_len, fp)) {
+    char* key_substr = strstr(line, key);
+    char after_key = line[key_len];
+    if (key_substr == line
+          && isspace(after_key) != 0
+          && after_key != '\n') {
+      // Skip key, skip space
+      const char* value_substr = line + key_len + 1;
+      int matched = sscanf(value_substr, scan_fmt, result);
+      found_match = matched == 1;
+      if (found_match) {
+        break;
+      }
+    }
+  }
+  fclose(fp);
+  if (found_match) {
+    return true;
+  }
+  log_debug(os, container)("Type %s (key == %s) not found in file %s", scan_fmt,
+                           key, absolute_path);
+  return false;
+}
 
 jlong CgroupSubsystem::limit_from_str(char* limit_str) {
   if (limit_str == nullptr) {
