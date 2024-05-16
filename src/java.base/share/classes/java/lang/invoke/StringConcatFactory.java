@@ -1090,24 +1090,7 @@ public final class StringConcatFactory {
         private static MethodHandle generate(Lookup lookup, MethodType args, String[] constants) throws Exception {
             String className = getClassName(lookup.lookupClass());
 
-            byte[] classBytes = ClassFile.of().build(ClassDesc.of(className),
-                    clb -> clb.withFlags(AccessFlag.FINAL, AccessFlag.SUPER, AccessFlag.SYNTHETIC)
-                        .withMethodBody(METHOD_NAME,
-                                MethodTypeDesc.ofDescriptor(args.toMethodDescriptorString()),
-                                ClassFile.ACC_FINAL | ClassFile.ACC_PRIVATE | ClassFile.ACC_STATIC,
-                                generateMethod(constants, args)));
-            try {
-                Lookup hiddenLookup = lookup.makeHiddenClassDefiner(className, classBytes, SET_OF_STRONG, DUMPER)
-                                            .defineClassAsLookup(true);
-                Class<?> innerClass = hiddenLookup.lookupClass();
-                return hiddenLookup.findStatic(innerClass, METHOD_NAME, args);
-            } catch (Exception e) {
-                throw new StringConcatException("Exception while spinning the class", e);
-            }
-        }
-
-        private static Consumer<CodeBuilder> generateMethod(String[] constants, MethodType args) {
-            return cb -> {
+            Consumer<CodeBuilder> generateMethod = cb -> {
                 cb.new_(STRING_BUILDER);
                 cb.dup();
 
@@ -1145,6 +1128,21 @@ public final class StringConcatFactory {
                 cb.invokevirtual(STRING_BUILDER, "toString", TO_STRING_TYPE);
                 cb.areturn();
             };
+
+            byte[] classBytes = ClassFile.of().build(ClassDesc.of(className),
+                    clb -> clb.withFlags(AccessFlag.FINAL, AccessFlag.SUPER, AccessFlag.SYNTHETIC)
+                        .withMethodBody(METHOD_NAME,
+                                MethodTypeDesc.ofDescriptor(args.toMethodDescriptorString()),
+                                ClassFile.ACC_FINAL | ClassFile.ACC_PRIVATE | ClassFile.ACC_STATIC,
+                                generateMethod));
+            try {
+                Lookup hiddenLookup = lookup.makeHiddenClassDefiner(className, classBytes, SET_OF_STRONG, DUMPER)
+                                            .defineClassAsLookup(true);
+                Class<?> innerClass = hiddenLookup.lookupClass();
+                return hiddenLookup.findStatic(innerClass, METHOD_NAME, args);
+            } catch (Exception e) {
+                throw new StringConcatException("Exception while spinning the class", e);
+            }
         }
 
         /**
