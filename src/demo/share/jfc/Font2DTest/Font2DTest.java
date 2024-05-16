@@ -158,7 +158,6 @@ public final class Font2DTest extends JPanel
         sizeField.addActionListener( this );
         styleMenu = new ChoiceV2( this );
         textMenu = new ChoiceV2( ); // listener added later
-        //textMenu.setMinimumSize(new Dimension(160, 28));
         transformMenu = new ChoiceV2( this );
         transformMenuG2 = new ChoiceV2( this );
         methodsMenu = new ChoiceV2( this );
@@ -986,15 +985,12 @@ public final class Font2DTest extends JPanel
          switch (fsType) {
              case FAMILY_AND_STYLE     :
                   setUseFamilyAndStyle();
-                  //fontMenu.setSelectedItem(fontName);
                   break;
              case FONT_NAME            :
                   setUseFontName();
-                  //fontNameMenu.setSelectedItem(fontName);
                   break;
              case FAMILY_AND_SUBFAMILY :
                   setUseFamilyAndSubFamily();
-                  //fontMenu.setSelectedItem(fontName);
                   break;
          }
     }
