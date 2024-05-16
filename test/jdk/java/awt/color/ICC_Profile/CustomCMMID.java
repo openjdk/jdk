@@ -50,14 +50,15 @@ public final class CustomCMMID {
 
     private static ICC_Profile createProfile(int type) {
         byte[] data = ICC_Profile.getInstance(type).getData();
-        System.arraycopy(JAVA_ID, 0, data, ICC_Profile.icHdrCmmId, 4);
+        System.arraycopy(JAVA_ID, 0, data, ICC_Profile.icHdrCmmId,
+                         JAVA_ID.length);
         return ICC_Profile.getInstance(data);
     }
 
     private static void validate(ICC_Profile p) {
         byte[] header = p.getData(ICC_Profile.icSigHead);
-        byte[] id = new byte[4];
-        System.arraycopy(header, ICC_Profile.icHdrCmmId, id, 0, 4);
+        byte[] id = new byte[JAVA_ID.length];
+        System.arraycopy(header, ICC_Profile.icHdrCmmId, id, 0, JAVA_ID.length);
 
         if (!java.util.Arrays.equals(id, JAVA_ID)) {
             System.err.println("Expected: " + Arrays.toString(JAVA_ID));
