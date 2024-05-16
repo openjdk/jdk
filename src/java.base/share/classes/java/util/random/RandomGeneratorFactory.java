@@ -126,6 +126,7 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
             int equidistribution,
             int flags) {
 
+        /* single bit masks composable with operator | */
         private static final int INSTANTIABLE       = 1 << 0;
         private static final int LONG_SEED          = 1 << 1;
         private static final int BYTE_ARRAY_SEED    = 1 << 2;
@@ -139,11 +140,11 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
 
         /**
          * Returns the factory map, lazily constructing it on first use.
-         * <p>
-         * Although {@link ThreadLocalRandom} can only be accessed via
+         * <p> Although {@link ThreadLocalRandom} can only be accessed via
          * {@link ThreadLocalRandom#current()}, a map entry is added nevertheless
          * to record its properties that are otherwise not documented
          * anywhere else.
+         * <p> Currently, no algorithm is deprecated.
          *
          * @return Map of RandomGeneratorProperties.
          */
@@ -151,13 +152,13 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
             return Map.ofEntries(
                     entry(SecureRandom.class, "SecureRandom", "Legacy",
                             0, 0, 0, Integer.MAX_VALUE,
-                            INSTANTIABLE | BYTE_ARRAY_SEED | STOCHASTIC),
+                            INSTANTIABLE | BYTE_ARRAY_SEED | STOCHASTIC | deprecationBit(SecureRandom.class)),
                     entry(Random.class, "Random", "Legacy",
                             48, 0, 0, 0,
-                            INSTANTIABLE | LONG_SEED),
+                            INSTANTIABLE | LONG_SEED | deprecationBit(Random.class)),
                     entry(SplittableRandom.class, "SplittableRandom", "Legacy",
                             64, 0, 0, 1,
-                            INSTANTIABLE | LONG_SEED),
+                            INSTANTIABLE | LONG_SEED | deprecationBit(SplittableRandom.class)),
                     entry(L32X64MixRandom.class, "L32X64MixRandom", "LXM",
                             64, 1, 32, 1,
                             ALL_CONSTRUCTORS),
@@ -190,7 +191,7 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
                             ALL_CONSTRUCTORS),
                     entry(ThreadLocalRandom.class, "ThreadLocalRandom", "Legacy",
                             64, 0, 0, 1,
-                            0)
+                            deprecationBit(ThreadLocalRandom.class))
             );
         }
 
@@ -201,7 +202,11 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
             return Map.entry(name,
                     new RandomGeneratorProperties(rgClass, name, group,
                             i, j, k, equidistribution,
-                            flags | (rgClass.isAnnotationPresent(Deprecated.class) ? DEPRECATED : 0)));
+                            flags));
+        }
+
+        private static int deprecationBit(Class<? extends RandomGenerator> rgClass) {
+            return rgClass.isAnnotationPresent(Deprecated.class) ? DEPRECATED : 0;
         }
 
         private RandomGenerator create() {
