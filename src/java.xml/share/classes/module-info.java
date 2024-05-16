@@ -406,7 +406,6 @@
  *      <ul>
  *      <li><a href="#IN_CF_DEFAULT">{@code jaxp.properties}</a></li>
  *      <li><a href="#IN_CF_STRICT">{@code jaxp-strict.properties}</a></li>
- *      <li><a href="#IN_CF_COMPAT">{@code jaxp-compat.properties}</a></li>
  *      </ul>
  * </li>
 
