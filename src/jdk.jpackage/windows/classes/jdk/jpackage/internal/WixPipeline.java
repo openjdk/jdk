@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,19 +22,19 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 package jdk.jpackage.internal;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
+import jdk.jpackage.internal.WixTool.Wix3Toolset;
+import jdk.jpackage.internal.WixTool.WixToolsetBase;
 
 /**
  * WiX pipeline. Compiles and links WiX sources.
@@ -45,7 +45,7 @@ public class WixPipeline {
         lightOptions = new ArrayList<>();
     }
 
-    WixPipeline setToolset(Map<WixTool, Path> v) {
+    WixPipeline setToolset(WixToolsetBase v) {
         toolset = v;
         return this;
     }
@@ -79,13 +79,25 @@ public class WixPipeline {
     }
 
     void buildMsi(Path msi) throws IOException {
+        if (toolset instanceof Wix3Toolset) {
+            buildMsiWix3(msi);
+        } else {
+            buildMsiWix4(msi);
+        }
+    }
+
+    private void buildMsiWix4(Path msi) throws IOException {
+
+    }
+
+    private void buildMsiWix3(Path msi) throws IOException {
         List<Path> wixObjs = new ArrayList<>();
         for (var source : sources) {
-            wixObjs.add(compile(source));
+            wixObjs.add(compileWix3(source));
         }
 
         List<String> lightCmdline = new ArrayList<>(List.of(
-                toolset.get(WixTool.Light).toString(),
+                toolset.getToolPath(WixTool.Light3).toString(),
                 "-nologo",
                 "-spdb",
                 "-ext", "WixUtilExtension",
@@ -99,7 +111,7 @@ public class WixPipeline {
         execute(lightCmdline);
     }
 
-    private Path compile(WixSource wixSource) throws IOException {
+    private Path compileWix3(WixSource wixSource) throws IOException {
         UnaryOperator<Path> adjustPath = path -> {
             return workDir != null ? path.toAbsolutePath() : path;
         };
@@ -108,7 +120,7 @@ public class WixPipeline {
                 IOUtils.getFileName(wixSource.source), ".wixobj"));
 
         List<String> cmdline = new ArrayList<>(List.of(
-                toolset.get(WixTool.Candle).toString(),
+                toolset.getToolPath(WixTool.Candle3).toString(),
                 "-nologo",
                 adjustPath.apply(wixSource.source).toString(),
                 "-ext", "WixUtilExtension",
@@ -116,14 +128,22 @@ public class WixPipeline {
                 "-out", wixObj.toAbsolutePath().toString()
         ));
 
-        Map<String, String> appliedVaribales = new HashMap<>();
-        Stream.of(wixVariables, wixSource.variables)
-                .filter(Objects::nonNull)
-                .forEachOrdered(appliedVaribales::putAll);
-
-        appliedVaribales.entrySet().stream().map(wixVar -> String.format("-d%s=%s",
-                wixVar.getKey(), wixVar.getValue())).forEachOrdered(
-                cmdline::add);
+        Stream.of(wixVariables, wixSource.variables).filter(Objects::nonNull).
+                reduce((a, b) -> {
+                    a.putAll(b);
+                    return a;
+                }).ifPresent(wixVars -> {
+            wixVars.entrySet().stream().map(wixVar -> {
+                return String.format("-d%s=%s", wixVar.getKey(), wixVar.
+                        getValue());
+            }).reduce(cmdline, (ctnr, wixVar) -> {
+                ctnr.add(wixVar);
+                return ctnr;
+            }, (x, y) -> {
+                x.addAll(y);
+                return x;
+            });
+        });
 
         execute(cmdline);
 
@@ -140,7 +160,7 @@ public class WixPipeline {
         Map<String, String> variables;
     }
 
-    private Map<WixTool, Path> toolset;
+    private WixToolsetBase toolset;
     private Map<String, String> wixVariables;
     private List<String> lightOptions;
     private Path wixObjDir;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,6 +67,7 @@ import static jdk.jpackage.internal.StandardBundlerParam.RESOURCE_DIR;
 import static jdk.jpackage.internal.StandardBundlerParam.TEMP_ROOT;
 import static jdk.jpackage.internal.StandardBundlerParam.VENDOR;
 import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
+import jdk.jpackage.internal.WixTool.WixToolsetBase;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
@@ -253,7 +254,7 @@ public class WinMsiBundler  extends AbstractBundler {
     public boolean supported(boolean platformInstaller) {
         try {
             if (wixToolset == null) {
-                wixToolset = WixTool.toolset();
+                wixToolset = WixTool.createToolset();
             }
             return true;
         } catch (ConfigException ce) {
@@ -300,7 +301,7 @@ public class WinMsiBundler  extends AbstractBundler {
             appImageBundler.validate(params);
 
             if (wixToolset == null) {
-                wixToolset = WixTool.toolset();
+                wixToolset = WixTool.createToolset();
             }
 
             try {
@@ -309,14 +310,16 @@ public class WinMsiBundler  extends AbstractBundler {
                 throw new ConfigException(ex);
             }
 
-            for (var toolInfo: wixToolset.values()) {
+            for (var tool : wixToolset.getTools()) {
                 Log.verbose(MessageFormat.format(I18N.getString(
-                        "message.tool-version"), toolInfo.path.getFileName(),
-                        toolInfo.version));
+                        "message.tool-version"), wixToolset.getToolPath(tool).
+                                getFileName(),
+                        wixToolset.getToolVersion(tool)));
             }
 
             wixFragments.forEach(wixFragment -> wixFragment.setWixVersion(
-                    wixToolset.get(WixTool.Light).version));
+                    wixToolset.getToolVersion(wixToolset.getTools().iterator().
+                            next())));
 
             wixFragments.get(0).logWixFeatures();
 
@@ -542,13 +545,11 @@ public class WinMsiBundler  extends AbstractBundler {
                         .toString()));
 
         WixPipeline wixPipeline = new WixPipeline()
-        .setToolset(wixToolset.entrySet().stream().collect(
-                Collectors.toMap(
-                        entry -> entry.getKey(),
-                        entry -> entry.getValue().path)))
-        .setWixObjDir(TEMP_ROOT.fetchFrom(params).resolve("wixobj"))
-        .setWorkDir(WIN_APP_IMAGE.fetchFrom(params))
-        .addSource(CONFIG_ROOT.fetchFrom(params).resolve("main.wxs"), wixVars);
+                .setToolset(wixToolset)
+                .setWixObjDir(TEMP_ROOT.fetchFrom(params).resolve("wixobj"))
+                .setWorkDir(WIN_APP_IMAGE.fetchFrom(params))
+                .addSource(CONFIG_ROOT.fetchFrom(params).resolve("main.wxs"),
+                        wixVars);
 
         for (var wixFragment : wixFragments) {
             wixFragment.configureWixPipeline(wixPipeline);
@@ -751,7 +752,7 @@ public class WinMsiBundler  extends AbstractBundler {
     }
 
     private Path installerIcon;
-    private Map<WixTool, WixTool.ToolInfo> wixToolset;
+    private WixToolsetBase wixToolset;
     private AppImageBundler appImageBundler;
     private final List<WixFragmentBuilder> wixFragments;
 }
