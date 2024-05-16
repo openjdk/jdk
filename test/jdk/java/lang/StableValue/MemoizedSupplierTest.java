@@ -43,7 +43,7 @@ final class MemoizedSupplierTest {
     @Test
     void memoized() {
         StableTestUtil.CountingSupplier<Integer> counting = new StableTestUtil.CountingSupplier<>(() -> FIRST);
-        Supplier<Integer> memoized = StableValue.ofSupplier(counting);
+        Supplier<Integer> memoized = StableValue.memoizedSupplier(counting);
         assertEquals(FIRST, memoized.get());
         assertEquals(1, counting.cnt());
         // Make sure the original supplier is not invoked more than once

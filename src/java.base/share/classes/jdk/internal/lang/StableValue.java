@@ -381,7 +381,7 @@ public sealed interface StableValue<V>
      * @param original the original Suppler to convert to a memoized Supplier
      * @param <T>      the memoized type
      */
-    static <T> Supplier<T> ofSupplier(Supplier<? extends T> original) {
+    static <T> Supplier<T> memoizedSupplier(Supplier<? extends T> original) {
         Objects.requireNonNull(original);
         StableValue<T> stable = StableValue.of();
         return StableAccess.ofSupplier(stable, original);
@@ -403,8 +403,8 @@ public sealed interface StableValue<V>
      * @param original the original IntFunction to convert to a memoized IntFunction
      * @param <R>      the return type of the IntFunction
      */
-    static <R> IntFunction<R> ofIntFunction(int size,
-                                            IntFunction<? extends R> original) {
+    static <R> IntFunction<R> memoizedIntFunction(int size,
+                                                  IntFunction<? extends R> original) {
         if (size < 0) {
             throw new IllegalArgumentException();
         }
@@ -431,8 +431,8 @@ public sealed interface StableValue<V>
      * @param <T>      the type of input values
      * @param <R>      the return type of the function
      */
-    static <T, R> Function<T, R> ofFunction(Set<? extends T> inputs,
-                                            Function<? super T, ? extends R> original) {
+    static <T, R> Function<T, R> memoizedFunction(Set<? extends T> inputs,
+                                                  Function<? super T, ? extends R> original) {
         Objects.requireNonNull(inputs);
         Objects.requireNonNull(original);
         Map<T, StableValue<R>> stableMap = StableValue.ofMap(inputs);

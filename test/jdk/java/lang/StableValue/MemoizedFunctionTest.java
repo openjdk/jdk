@@ -46,7 +46,7 @@ final class MemoizedFunctionTest {
     @Test
     void memoized() {
         StableTestUtil.CountingFunction<Integer, Integer> counting = new StableTestUtil.CountingFunction<>(Function.identity());
-        Function<Integer, Integer> memoized = StableValue.ofFunction(Set.of(0, 1, FIRST), counting);
+        Function<Integer, Integer> memoized = StableValue.memoizedFunction(Set.of(0, 1, FIRST), counting);
         assertEquals(FIRST, memoized.apply(FIRST));
         assertEquals(1, counting.cnt());
         // Make sure the original supplier is not invoked more than once

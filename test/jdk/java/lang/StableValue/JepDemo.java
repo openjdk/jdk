@@ -133,7 +133,7 @@ final class JepDemo {
 
         // 1. Declare a memoized (cached) Supplier backed by a stable value
         private static final Supplier<Logger> LOGGER =
-                StableValue.ofSupplier( () -> Logger.getLogger("com.foo.Bar") );
+                StableValue.memoizedSupplier( () -> Logger.getLogger("com.foo.Bar") );
 
         static Logger logger() {
             // 2. Access the memoized suppler with as-declared-final performance
@@ -304,7 +304,7 @@ final class JepDemo {
 
         // 1. Declare a memoized IntFunction backed by the stable list
         private static final IntFunction<String> ERROR_FUNCTION =
-                StableValue.ofIntFunction(SIZE, ListDemo3::readFromFile);
+                StableValue.memoizedIntFunction(SIZE, ListDemo3::readFromFile);
 
         // 2. Define a function that is to be called the first
         //    time a particular message number is referenced
@@ -352,7 +352,7 @@ final class JepDemo {
         private final IntFunction<Integer> fibFunction;
 
         public Fibonacci1(int upperBound) {
-            fibFunction = StableValue.ofIntFunction(upperBound, this::fib);
+            fibFunction = StableValue.memoizedIntFunction(upperBound, this::fib);
         }
 
         @Override
@@ -398,7 +398,7 @@ final class JepDemo {
         public Fibonacci3(int upperBound) {
             this(StableValue.of());
             fibFunction.trySet(
-                    StableValue.ofIntFunction(upperBound, this::fib));
+                    StableValue.memoizedIntFunction(upperBound, this::fib));
         }
 
         @Override
@@ -497,7 +497,7 @@ final class JepDemo {
 
             // 1. Declare a memoized (cached) function backed by a lazily computed map
             private static final Function<String, Logger> MAPPER =
-                    StableValue.ofFunction(
+                    StableValue.memoizedFunction(
                             Set.of("com.foo.Bar", "com.foo.Baz"),
                             Logger::getLogger);
 
