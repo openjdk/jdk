@@ -1333,7 +1333,8 @@ private:
   GrowableArray<VTransformNode*> _vtnodes; // TODO debug only?
   VTransformNode* _cl_vtnode; // vtnode of the _vloop.cl(), the "root" of the graph.
 
-  // TODO need both?
+  // Schedule (or order) for the memops, where the vector memops are consecutive.
+  // We use this to reorder the memory graph before inserting vector operations.
   GrowableArray<MemNode*> _mem_schedule;
 
 public:
@@ -1351,7 +1352,11 @@ public:
   void set_cl_vtnode(VTransformNode* cl_vtnode) { _cl_vtnode = cl_vtnode; }
 
   bool schedule();
+  bool schedule_vtnodes(GrowableArray<VTransformNode*>& vtnode_schedule) const;
+  void schedule_mem_nodes(const GrowableArray<VTransformNode*>& vtnode_schedule);
+
   void apply();
+  void apply_mem_schedule();
 
 #ifndef PRODUCT
   bool is_trace() const {

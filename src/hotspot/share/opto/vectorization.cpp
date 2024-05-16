@@ -1749,11 +1749,32 @@ void VTransformGraph::add_vtnode(VTransformNode* vtnode) {
   _vtnodes.push(vtnode);
 }
 
-// Compute a linearization of the graph. We do this with a reverse-post-order of a DFS.
-// We return "true" IFF we find no cycle, i.e. if the linearization succeeds.
+// Try to schedule the graph. First, schedule the vtnodes, and from that, derive the
+// order for the memops.
 bool VTransformGraph::schedule() {
   assert(_mem_schedule.is_empty(), "not yet scheduled");
 
+  ResourceMark rm;
+  GrowableArray<VTransformNode*> vtnode_schedule(_vtnodes.length(), _vtnodes.length(), nullptr);
+
+  if (!schedule_vtnodes(vtnode_schedule)) {
+    return false; // found circles
+  }
+
+  schedule_mem_nodes(vtnode_schedule);
+
+#ifndef PRODUCT
+  if (is_trace()) {
+    print_mem_schedule();
+  }
+#endif
+
+  return true; // schedule successful
+}
+
+// Compute a linearization of the graph. We do this with a reverse-post-order of a DFS.
+// We return "true" IFF we find no cycle, i.e. if the linearization succeeds.
+bool VTransformGraph::schedule_vtnodes(GrowableArray<VTransformNode*>& vtnode_schedule) const {
   ResourceMark rm;
   GrowableArray<VTransformNode*> stack;
   VectorSet pre_visited;
@@ -1763,6 +1784,9 @@ bool VTransformGraph::schedule() {
   pre_visited.set(_cl_vtnode->_idx); // TODO necessary?
   stack.push(_cl_vtnode);
 
+  // We create a reverse-post-visit order. This gives us a linearization, if there are
+  // no cycles. Then, we simply reverse the order, and we have a schedule.
+  int rpo_idx = _vtnodes.length() - 1;
   while (!stack.is_empty()) {
     VTransformNode* vtn = stack.top();
     if (!pre_visited.test_set(vtn->_idx)) {
@@ -1794,19 +1818,7 @@ bool VTransformGraph::schedule() {
         // There were no additional uses, post visit node now
         stack.pop();
         post_visited.set(vtn->_idx);
-        VTransformScalarNode* scalar = vtn->isa_Scalar();
-        if (scalar != nullptr && scalar->node()->is_Mem()) {
-          _mem_schedule.push(scalar->node()->as_Mem());
-        }
-        VTransformVectorNode* vector = vtn->isa_Vector();
-        if (vector != nullptr && vector->nodes().at(0)->is_Mem()) {
-          for (int j = 0; j < vector->nodes().length(); j++) {
-            _mem_schedule.push(vector->nodes().at(j)->as_Mem());
-          }
-        }
-        // TODO: add to schedule
-        tty->print_cr(" -> schedule");
-        vtn->print();
+        vtnode_schedule.at_put(rpo_idx--, vtn);
       }
 
     } else {
@@ -1815,16 +1827,35 @@ bool VTransformGraph::schedule() {
     }
   }
 
-#ifndef PRODUCT
-  if (is_trace()) {
-    print_mem_schedule();
-  }
-#endif
+  assert(rpo_idx == -1, "used up all rpo_idx");
 
   return true;
 }
 
+// Use the vtnode_schedule to generate the _mem_schedule.
+// TODO consider doing this only once we need to apply it?
+void VTransformGraph::schedule_mem_nodes(const GrowableArray<VTransformNode*>& vtnode_schedule) {
+  for (int i = 0; i < vtnode_schedule.length(); i++) {
+    VTransformNode* vtn = vtnode_schedule.at(i);
+    VTransformScalarNode* scalar = vtn->isa_Scalar();
+    if (scalar != nullptr && scalar->node()->is_Mem()) {
+      _mem_schedule.push(scalar->node()->as_Mem());
+    }
+    VTransformVectorNode* vector = vtn->isa_Vector();
+    if (vector != nullptr && vector->nodes().at(0)->is_Mem()) {
+      for (int j = 0; j < vector->nodes().length(); j++) {
+        _mem_schedule.push(vector->nodes().at(j)->as_Mem());
+      }
+    }
+  }
+}
+
 void VTransformGraph::apply() {
+  apply_mem_schedule();
+  // TODO
+}
+
+void VTransformGraph::apply_mem_schedule() {
   // TODO
 }
 
