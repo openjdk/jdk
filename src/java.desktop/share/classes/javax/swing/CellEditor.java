@@ -87,7 +87,7 @@ public interface CellEditor {
      * Returns true if the editing cell should be selected, false otherwise.
      * Typically, the return value is true, because in most cases the editing
      * cell should be selected.  However, it is useful to return false to
-     * keep the selection from changing for some types of edits.
+     * keep the selection from changing for some types of edits,
      * eg. in a table that contains a column of check boxes, the user might
      * want to be able to change those checkboxes without altering the
      * selection.
