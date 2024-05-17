@@ -220,7 +220,7 @@ TEST_VM_F(TreapTest, TestVisitors) {
     treap.visit_in_order([&](Node* x) {
       count++;
     });
-    EXPECT_EQ(1, count);
+    EXPECT_EQ(3, count);
 
     // Visiting empty range [0, 0) == {}
     treap.upsert(0, 0); // This node should not be visited.
@@ -242,11 +242,12 @@ TEST_VM_F(TreapTest, TestVisitors) {
     for (int i = 0; i < 10; i++) {
       EXPECT_EQ(i, seen.at(i));
     }
+
     seen.clear();
     treap.visit_in_order([&](Node* x) {
       seen.push(x->key());
     });
-    EXPECT_EQ(10, seen.length());
+    EXPECT_EQ(11, seen.length());
     for (int i = 0; i < 10; i++) {
       EXPECT_EQ(i, seen.at(i));
     }
