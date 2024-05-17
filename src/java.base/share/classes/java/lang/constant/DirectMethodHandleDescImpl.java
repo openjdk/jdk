@@ -67,8 +67,8 @@ final class DirectMethodHandleDescImpl implements DirectMethodHandleDesc {
             name = "<init>";
 
         requireNonNull(kind);
-        validateClassOrInterface(requireNonNull(owner));
-        validateMemberName(requireNonNull(name), true);
+        validateClassOrInterface(owner);
+        validateMemberName(name, true);
         requireNonNull(type);
 
         switch (kind) {

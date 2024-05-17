@@ -139,9 +139,6 @@ class DefNewGeneration: public Generation {
   ContiguousSpace* _from_space;
   ContiguousSpace* _to_space;
 
-  // Saved mark word, for to-space
-  HeapWord* _saved_mark_word;
-
   STWGCTimer* _gc_timer;
 
   DefNewTracer* _gc_tracer;

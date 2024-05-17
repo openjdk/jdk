@@ -91,7 +91,7 @@ const int SharedSpaceObjectAlignment = KlassAlignmentInBytes;
 //
 class ArchiveBuilder : public StackObj {
 protected:
-  DumpRegion* _current_dump_space;
+  DumpRegion* _current_dump_region;
   address _buffer_bottom;                      // for writing the contents of rw/ro regions
   address _last_verified_top;
   int _num_dump_regions_used;
@@ -114,7 +114,7 @@ protected:
 
   intx _buffer_to_requested_delta;
 
-  DumpRegion* current_dump_space() const {  return _current_dump_space;  }
+  DumpRegion* current_dump_region() const {  return _current_dump_region;  }
 
 public:
   enum FollowMode {
@@ -278,17 +278,17 @@ protected:
 
   size_t estimate_archive_size();
 
-  void start_dump_space(DumpRegion* next);
+  void start_dump_region(DumpRegion* next);
   void verify_estimate_size(size_t estimate, const char* which);
 
 public:
   address reserve_buffer();
 
-  address buffer_bottom()                    const { return _buffer_bottom;                       }
-  address buffer_top()                       const { return (address)current_dump_space()->top(); }
-  address requested_static_archive_bottom()  const { return  _requested_static_archive_bottom;    }
-  address mapped_static_archive_bottom()     const { return  _mapped_static_archive_bottom;       }
-  intx buffer_to_requested_delta()           const { return _buffer_to_requested_delta;           }
+  address buffer_bottom()                    const { return _buffer_bottom;                        }
+  address buffer_top()                       const { return (address)current_dump_region()->top(); }
+  address requested_static_archive_bottom()  const { return  _requested_static_archive_bottom;     }
+  address mapped_static_archive_bottom()     const { return  _mapped_static_archive_bottom;        }
+  intx buffer_to_requested_delta()           const { return _buffer_to_requested_delta;            }
 
   bool is_in_buffer_space(address p) const {
     return (buffer_bottom() <= p && p < buffer_top());
