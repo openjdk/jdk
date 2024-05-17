@@ -1499,7 +1499,6 @@ public:
   VTransformReductionVectorNode(VTransformGraph& graph, int number_of_nodes) :
     VTransformVectorNode(graph, 3, number_of_nodes) {}
 
-  // TODO remove?
   virtual VTransformReductionVectorNode* isa_ReductionVector() { return this; }
 
   NOT_PRODUCT(virtual const char* name() const { return "ReductionVector"; };)

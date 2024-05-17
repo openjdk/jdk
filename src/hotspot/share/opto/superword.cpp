@@ -3535,7 +3535,15 @@ void SuperWord::vtransform_build(VTransformGraph& graph) const {
       set_req(vtn, MemNode::Address, p0->in(MemNode::Address));
       set_req(vtn, MemNode::ValueIn, p0->in(MemNode::ValueIn));
     } else if (vtn->isa_ElementWiseVector() != nullptr) {
-      set_req_all(vtn, p0);
+      if (VectorNode::is_muladds2i(p0)) {
+        // A special kind of binary element-wise vector op: the inputs are "ints" a and b,
+        // but reinterpreted as two "shorts" [a0, a1] and [b0, b1]:
+        //   v = MulAddS2I(a, b) = a0 * b0 + a1 + b2
+        set_req(vtn, 1, p0->in(1));
+        set_req(vtn, 2, p0->in(2));
+      } else {
+        set_req_all(vtn, p0);
+      }
     } else if (vtn->isa_ReductionVector() != nullptr) {
       set_req_all(vtn, p0);
     } else {
@@ -3593,7 +3601,11 @@ VTransformVectorNode* SuperWord::make_vtnode_for_pack(VTransformGraph& graph, co
   } else if (VectorNode::is_roundopD(p0)) {
     assert(false, "TODO");
   } else if (VectorNode::is_muladds2i(p0)) {
-    assert(false, "TODO");
+    // A special kind of binary element-wise vector op: the inputs are "ints" a and b,
+    // but reinterpreted as two "shorts" [a0, a1] and [b0, b1]:
+    //   v = MulAddS2I(a, b) = a0 * b0 + a1 + b2
+    assert(p0->req() == 5, "MulAddS2I should have 4 operands");
+    vtn = new (graph.arena()) VTransformElementWiseVectorNode(graph, 3, pack_size);
   } else if (opc == Op_SignumF || opc == Op_SignumD) {
     assert(false, "TODO");
   } else if (p0->is_Cmp() || p0->is_Bool()) {
