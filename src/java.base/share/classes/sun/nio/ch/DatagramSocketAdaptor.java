@@ -401,7 +401,7 @@ public class DatagramSocketAdaptor
     private InetAddress outgoingInetAddress;
 
     @Override
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "1.2")
     @SuppressWarnings("removal")
     public void setTTL(byte ttl) throws IOException {
         setTimeToLive(Byte.toUnsignedInt(ttl));
@@ -418,7 +418,7 @@ public class DatagramSocketAdaptor
     }
 
     @Override
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "1.2")
     @SuppressWarnings("removal")
     public byte getTTL() throws IOException {
         return (byte) getTimeToLive();
@@ -594,7 +594,7 @@ public class DatagramSocketAdaptor
     }
 
     @Override
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "1.4")
     @SuppressWarnings("removal")
     public void send(DatagramPacket p, byte ttl) throws IOException {
         sendLock.lock();
