@@ -31,51 +31,91 @@
 #include "memory/memRegion.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-void G1CMObjArrayProcessor::push_array_slice(HeapWord* what) {
-  _task->push(G1TaskQueueEntry::from_slice(what));
-}
-
-size_t G1CMObjArrayProcessor::process_array_slice(objArrayOop obj, HeapWord* start_from, size_t remaining) {
-  size_t words_to_scan = MIN2(remaining, (size_t)ObjArrayMarkingStride);
-
-  if (remaining > ObjArrayMarkingStride) {
-    push_array_slice(start_from + ObjArrayMarkingStride);
-  }
-
-  // Then process current area.
-  MemRegion mr(start_from, words_to_scan);
-  return _task->scan_objArray(obj, mr);
-}
-
 size_t G1CMObjArrayProcessor::process_obj(oop obj) {
   assert(should_be_sliced(obj), "Must be an array object %d and large " SIZE_FORMAT, obj->is_objArray(), obj->size());
 
-  return process_array_slice(objArrayOop(obj), cast_from_oop<HeapWord*>(obj), objArrayOop(obj)->size());
+  assert(obj->is_objArray(), "expect object array");
+  objArrayOop array = objArrayOop(obj);
+
+  _task->scan_objArray_start(array);
+
+  int len = array->length();
+
+  int bits = log2i_graceful(len);
+  // Compensate for non-power-of-two arrays, cover the array in excess:
+  if (len != (1 << bits)) bits++;
+
+  // Only allow full slices on the queue. This frees do_sliced_array() from checking from/to
+  // boundaries against array->length(), touching the array header on every slice.
+  //
+  // To do this, we cut the prefix in full-sized slices, and submit them on the queue.
+  // If the array is not divided in slice sizes, then there would be an irregular tail,
+  // which we will process separately.
+
+  int last_idx = 0;
+
+  int slice = 1;
+  int pow = bits;
+
+  // Handle overflow
+  if (pow >= 31) {
+    assert (pow == 31, "sanity");
+    pow--;
+    slice = 2;
+    last_idx = (1 << pow);
+    _task->push(G1TaskQueueEntry(array, 1, pow));
+  }
+
+  // Split out tasks, as suggested in G1TaskQueueEntry docs. Record the last
+  // successful right boundary to figure out the irregular tail.
+  while ((1 << pow) > (int)ObjArrayMarkingStride &&
+         (slice * 2 < G1TaskQueueEntry::slice_size())) {
+    pow--;
+    int left_slice = slice * 2 - 1;
+    int right_slice = slice * 2;
+    int left_slice_end = left_slice * (1 << pow);
+    if (left_slice_end < len) {
+      _task->push(G1TaskQueueEntry(array, left_slice, pow));
+      slice = right_slice;
+      last_idx = left_slice_end;
+    } else {
+      slice = left_slice;
+    }
+  }
+
+  // Process the irregular tail, if present
+  int from = last_idx;
+  if (from < len) {
+    return _task->scan_objArray(array, from, len);
+  }
+  return 0;
 }
 
-size_t G1CMObjArrayProcessor::process_slice(HeapWord* slice) {
+size_t G1CMObjArrayProcessor::process_slice(oop obj, int slice, int pow) {
 
-  // Find the start address of the objArrayOop.
-  // Shortcut the BOT access if the given address is from a humongous object. The BOT
-  // slide is fast enough for "smaller" objects in non-humongous regions, but is slower
-  // than directly using heap region table.
-  G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  HeapRegion* r = g1h->heap_region_containing(slice);
+  assert(obj->is_objArray(), "expect object array");
+  objArrayOop array = objArrayOop(obj);
 
-  HeapWord* const start_address = r->is_humongous() ?
-                                  r->humongous_start_region()->bottom() :
-                                  r->block_start(slice);
+  assert (ObjArrayMarkingStride > 0, "sanity");
 
-  assert(cast_to_oop(start_address)->is_objArray(), "Address " PTR_FORMAT " does not refer to an object array ", p2i(start_address));
-  assert(start_address < slice,
-         "Object start address " PTR_FORMAT " must be smaller than decoded address " PTR_FORMAT,
-         p2i(start_address),
-         p2i(slice));
+  // Split out tasks, as suggested in ShenandoahMarkTask docs. Avoid pushing tasks that
+  // are known to start beyond the array.
+  while ((1 << pow) > (int)ObjArrayMarkingStride && (slice*2 < G1TaskQueueEntry::slice_size())) {
+    pow--;
+    slice *= 2;
+    _task->push(G1TaskQueueEntry(array, slice - 1, pow));
+  }
 
-  objArrayOop objArray = objArrayOop(cast_to_oop(start_address));
+  int slice_size = 1 << pow;
 
-  size_t already_scanned = pointer_delta(slice, start_address);
-  size_t remaining = objArray->size() - already_scanned;
+  int from = (slice - 1) * slice_size;
+  int to = slice * slice_size;
 
-  return process_array_slice(objArray, slice, remaining);
+#ifdef ASSERT
+  int len = array->length();
+  assert (0 <= from && from < len, "from is sane: %d/%d", from, len);
+  assert (0 < to && to <= len, "to is sane: %d/%d", to, len);
+#endif
+
+  return _task->scan_objArray(array, from, to);
 }

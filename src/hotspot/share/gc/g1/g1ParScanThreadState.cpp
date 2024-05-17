@@ -169,19 +169,18 @@ void G1ParScanThreadState::verify_task(oop* task) const {
          "task=" PTR_FORMAT " p=" PTR_FORMAT, p2i(task), p2i(p));
 }
 
-void G1ParScanThreadState::verify_task(PartialArrayScanTask task) const {
-  // Must be in the collection set--it's already been copied.
-  oop p = task.to_source_array();
-  assert(_g1h->is_in_cset(p), "p=" PTR_FORMAT, p2i(p));
+void G1ParScanThreadState::verify_task(oop p) const {
+  // Must not be in the collection set--it's already been copied.
+  assert(!_g1h->is_in_cset(p), "p=" PTR_FORMAT, p2i(p));
 }
 
-void G1ParScanThreadState::verify_task(ScannerTask task) const {
+void G1ParScanThreadState::verify_task(G1TaskQueueEntry task) const {
   if (task.is_narrow_oop_ptr()) {
     verify_task(task.to_narrow_oop_ptr());
   } else if (task.is_oop_ptr()) {
     verify_task(task.to_oop_ptr());
-  } else if (task.is_partial_array_task()) {
-    verify_task(task.to_partial_array_task());
+  } else if (task.is_array_slice()) {
+    verify_task(task.to_oop());
   } else {
     ShouldNotReachHere();
   }
@@ -223,81 +222,130 @@ void G1ParScanThreadState::do_oop_evac(T* p) {
 }
 
 MAYBE_INLINE_EVACUATION
-void G1ParScanThreadState::do_partial_array(PartialArrayScanTask task) {
-  oop from_obj = task.to_source_array();
+void G1ParScanThreadState::do_partial_array(oop obj, int slice, int pow) {
+  assert(_g1h->is_in_reserved(obj), "must be in heap.");
+  assert(obj->is_objArray(), "must be obj array");
 
-  assert(_g1h->is_in_reserved(from_obj), "must be in heap.");
-  assert(from_obj->is_objArray(), "must be obj array");
-  assert(from_obj->is_forwarded(), "must be forwarded");
+  objArrayOop array = objArrayOop(obj);
 
-  oop to_obj = from_obj->forwardee();
-  assert(from_obj != to_obj, "should not be chunking self-forwarded objects");
-  assert(to_obj->is_objArray(), "must be obj array");
-  objArrayOop to_array = objArrayOop(to_obj);
+  assert(ObjArrayMarkingStride > 0, "sanity");
 
-  PartialArrayTaskStepper::Step step
-    = _partial_array_stepper.next(objArrayOop(from_obj),
-                                  to_array,
-                                  _partial_objarray_chunk_size);
-  for (uint i = 0; i < step._ncreate; ++i) {
-    push_on_queue(ScannerTask(PartialArrayScanTask(from_obj)));
+  // Split out tasks, as suggested in G1TaskQueueEntry docs. Avoid pushing tasks that
+  // are known to start beyond the array.
+  while ((1 << pow) > (int)ObjArrayMarkingStride && (slice * 2 < G1TaskQueueEntry::slice_size())) {
+    pow--;
+    slice *= 2;
+    push_on_queue(G1TaskQueueEntry(array, slice - 1, pow));
   }
 
-  G1HeapRegionAttr dest_attr = _g1h->region_attr(to_array);
-  G1SkipCardEnqueueSetter x(&_scanner, dest_attr.is_new_survivor());
+  int slice_size = 1 << pow;
+
+  int from = (slice - 1) * slice_size;
+  int to = slice * slice_size;
+
+#ifdef ASSERT
+  int len = array->length();
+  assert(0 <= from && from < len, "from is sane: %d/%d", from, len);
+  assert(0 < to && to <= len, "to is sane: %d/%d", to, len);
+#endif
+
   // Process claimed task.  The length of to_array is not correct, but
   // fortunately the iteration ignores the length field and just relies
   // on start/end.
-  to_array->oop_iterate_range(&_scanner,
-                              step._index,
-                              step._index + _partial_objarray_chunk_size);
+  G1HeapRegionAttr dest_attr = _g1h->region_attr(array);
+  G1SkipCardEnqueueSetter x(&_scanner, dest_attr.is_new_survivor());
+  array->oop_iterate_range(&_scanner, from, to);
 }
 
 MAYBE_INLINE_EVACUATION
 void G1ParScanThreadState::start_partial_objarray(G1HeapRegionAttr dest_attr,
-                                                  oop from_obj,
-                                                  oop to_obj) {
-  assert(from_obj->is_objArray(), "precondition");
-  assert(from_obj->is_forwarded(), "precondition");
-  assert(from_obj->forwardee() == to_obj, "precondition");
-  assert(from_obj != to_obj, "should not be scanning self-forwarded objects");
-  assert(to_obj->is_objArray(), "precondition");
+                                                  oop obj) {
+  assert(obj->is_objArray(), "precondition");
 
-  objArrayOop to_array = objArrayOop(to_obj);
+  objArrayOop array = objArrayOop(obj);
+  int len = array->length();
 
-  PartialArrayTaskStepper::Step step
-    = _partial_array_stepper.start(objArrayOop(from_obj),
-                                   to_array,
-                                   _partial_objarray_chunk_size);
-
-  // Push any needed partial scan tasks.  Pushed before processing the
-  // initial chunk to allow other workers to steal while we're processing.
-  for (uint i = 0; i < step._ncreate; ++i) {
-    push_on_queue(ScannerTask(PartialArrayScanTask(from_obj)));
+  // Mark objArray klass metadata
+  // TODO: According to old comment not needed, but may be cleaner?
+  if (Devirtualizer::do_metadata(&_scanner)) {
+    Devirtualizer::do_klass(&_scanner, array->klass());
   }
 
-  // Skip the card enqueue iff the object (to_array) is in survivor region.
-  // However, HeapRegion::is_survivor() is too expensive here.
-  // Instead, we use dest_attr.is_young() because the two values are always
-  // equal: successfully allocated young regions must be survivor regions.
-  assert(dest_attr.is_young() == _g1h->heap_region_containing(to_array)->is_survivor(), "must be");
-  G1SkipCardEnqueueSetter x(&_scanner, dest_attr.is_young());
-  // Process the initial chunk.  No need to process the type in the
-  // klass, as it will already be handled by processing the built-in
-  // module. The length of to_array is not correct, but fortunately
-  // the iteration ignores that length field and relies on start/end.
-  to_array->oop_iterate_range(&_scanner, 0, step._index);
+  if (len <= (int) ObjArrayMarkingStride*2) {
+    // A few slices only, process directly
+    // Skip the card enqueue iff the object (to_array) is in survivor region.
+    // However, HeapRegion::is_survivor() is too expensive here.
+    // Instead, we use dest_attr.is_young() because the two values are always
+    // equal: successfully allocated young regions must be survivor regions.
+    assert(dest_attr.is_young() == _g1h->heap_region_containing(array)->is_survivor(), "must be");
+    G1SkipCardEnqueueSetter x(&_scanner, dest_attr.is_young());
+    array->oop_iterate_range(&_scanner, 0, len);
+  } else {
+    int bits = log2i_graceful(len);
+    // Compensate for non-power-of-two arrays, cover the array in excess:
+    if (len != (1 << bits)) bits++;
+
+    // Only allow full slices on the queue. This frees do_sliced_array() from checking from/to
+    // boundaries against array->length(), touching the array header on every slice.
+    //
+    // To do this, we cut the prefix in full-sized slices, and submit them on the queue.
+    // If the array is not divided in slice sizes, then there would be an irregular tail,
+    // which we will process separately.
+
+    int last_idx = 0;
+
+    int slice = 1;
+    int pow = bits;
+
+    // Handle overflow
+    if (pow >= 31) {
+      assert (pow == 31, "sanity");
+      pow--;
+      slice = 2;
+      last_idx = (1 << pow);
+      push_on_queue(G1TaskQueueEntry(array, 1, pow));
+    }
+
+    // Split out tasks, as suggested in ShenandoahMarkTask docs. Record the last
+    // successful right boundary to figure out the irregular tail.
+    while ((1 << pow) > (int)ObjArrayMarkingStride &&
+           (slice * 2 < G1TaskQueueEntry::slice_size())) {
+      pow--;
+      int left_slice = slice * 2 - 1;
+      int right_slice = slice * 2;
+      int left_slice_end = left_slice * (1 << pow);
+      if (left_slice_end < len) {
+        push_on_queue(G1TaskQueueEntry(array, left_slice, pow));
+        slice = right_slice;
+        last_idx = left_slice_end;
+      } else {
+        slice = left_slice;
+      }
+    }
+
+    // Process the irregular tail, if present
+    int from = last_idx;
+    if (from < len) {
+      // Skip the card enqueue iff the object (to_array) is in survivor region.
+      // However, HeapRegion::is_survivor() is too expensive here.
+      // Instead, we use dest_attr.is_young() because the two values are always
+      // equal: successfully allocated young regions must be survivor regions.
+      assert(dest_attr.is_young() == _g1h->heap_region_containing(array)->is_survivor(), "must be");
+      G1SkipCardEnqueueSetter x(&_scanner, dest_attr.is_young());
+      array->oop_iterate_range(&_scanner, from, len);
+    }
+  }
 }
 
 MAYBE_INLINE_EVACUATION
-void G1ParScanThreadState::dispatch_task(ScannerTask task) {
+void G1ParScanThreadState::dispatch_task(G1TaskQueueEntry task) {
   verify_task(task);
   if (task.is_narrow_oop_ptr()) {
     do_oop_evac(task.to_narrow_oop_ptr());
   } else if (task.is_oop_ptr()) {
     do_oop_evac(task.to_oop_ptr());
   } else {
-    do_partial_array(task.to_partial_array_task());
+    do_partial_array(task.to_oop(), task.slice(), task.pow());
   }
 }
 
@@ -306,7 +354,7 @@ void G1ParScanThreadState::dispatch_task(ScannerTask task) {
 // inlining into steal_and_trim_queue.
 ATTRIBUTE_FLATTEN NOINLINE
 void G1ParScanThreadState::trim_queue_to_threshold(uint threshold) {
-  ScannerTask task;
+  G1TaskQueueEntry task;
   do {
     while (_task_queue->pop_overflow(task)) {
       if (!_task_queue->try_push_to_taskqueue(task)) {
@@ -321,7 +369,7 @@ void G1ParScanThreadState::trim_queue_to_threshold(uint threshold) {
 
 ATTRIBUTE_FLATTEN
 void G1ParScanThreadState::steal_and_trim_queue(G1ScannerTasksQueueSet* task_queues) {
-  ScannerTask stolen_task;
+  G1TaskQueueEntry stolen_task;
   while (task_queues->steal(_worker_id, stolen_task)) {
     dispatch_task(stolen_task);
     // Processing stolen task may have added tasks to our queue.
@@ -529,7 +577,7 @@ oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const regio
     // checking for each array category for each object.
     if (klass->is_array_klass()) {
       if (klass->is_objArray_klass()) {
-        start_partial_objarray(dest_attr, old, obj);
+        start_partial_objarray(dest_attr, obj);
       } else {
         // Nothing needs to be done for typeArrays.  Body doesn't contain
         // any oops to scan, and the type in the klass will already be handled

@@ -45,6 +45,7 @@
 #include "gc/g1/g1MonotonicArenaFreePool.hpp"
 #include "gc/g1/g1NUMA.hpp"
 #include "gc/g1/g1SurvivorRegions.hpp"
+#include "gc/g1/g1TaskQueueEntry.hpp"
 #include "gc/g1/g1YoungGCAllocationFailureInjector.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/collectedHeap.hpp"
@@ -86,7 +87,7 @@ class ReferenceProcessor;
 class STWGCTimer;
 class WorkerThreads;
 
-typedef OverflowTaskQueue<ScannerTask, mtGC>           G1ScannerTasksQueue;
+typedef OverflowTaskQueue<G1TaskQueueEntry, mtGC>  G1ScannerTasksQueue;
 typedef GenericTaskQueueSet<G1ScannerTasksQueue, mtGC> G1ScannerTasksQueueSet;
 
 typedef int RegionIdx_t;   // needs to hold [ 0..max_reserved_regions() )

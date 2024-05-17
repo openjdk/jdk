@@ -34,7 +34,7 @@
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
 
-inline void G1ParScanThreadState::push_on_queue(ScannerTask task) {
+inline void G1ParScanThreadState::push_on_queue(G1TaskQueueEntry task) {
   verify_task(task);
   _task_queue->push(task);
 }

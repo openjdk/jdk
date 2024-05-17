@@ -98,7 +98,7 @@ bool G1CMBitMapClosure::do_addr(HeapWord* const addr) {
   // We move that task's local finger along.
   _task->move_finger_to(addr);
 
-  _task->scan_task_entry(G1TaskQueueEntry::from_oop(cast_to_oop(addr)));
+  _task->scan_task_entry(G1TaskQueueEntry(cast_to_oop(addr)));
   // we only partially drain the local queue and global stack
   _task->drain_local_queue(true);
   _task->drain_global_stack(true);
@@ -1967,16 +1967,16 @@ public:
 
   void operator()(G1TaskQueueEntry task_entry) const {
     if (task_entry.is_array_slice()) {
-      guarantee(_g1h->is_in_reserved(task_entry.slice()), "Slice " PTR_FORMAT " must be in heap.", p2i(task_entry.slice()));
+      guarantee(_g1h->is_in_reserved(task_entry.to_oop()), "Slice " PTR_FORMAT " must be in heap.", p2i(task_entry.to_oop()));
       return;
     }
-    guarantee(oopDesc::is_oop(task_entry.obj()),
+    guarantee(oopDesc::is_oop(task_entry.to_oop()),
               "Non-oop " PTR_FORMAT ", phase: %s, info: %d",
-              p2i(task_entry.obj()), _phase, _info);
-    HeapRegion* r = _g1h->heap_region_containing(task_entry.obj());
+              p2i(task_entry.to_oop()), _phase, _info);
+    HeapRegion* r = _g1h->heap_region_containing(task_entry.to_oop());
     guarantee(!(r->in_collection_set() || r->has_index_in_opt_cset()),
               "obj " PTR_FORMAT " from %s (%d) in region %u in (optional) collection set",
-              p2i(task_entry.obj()), _phase, _info, r->hrm_index());
+              p2i(task_entry.to_oop()), _phase, _info, r->hrm_index());
   }
 };
 
@@ -2346,7 +2346,7 @@ bool G1CMTask::get_entries_from_global_stack() {
     if (task_entry.is_null()) {
       break;
     }
-    assert(task_entry.is_array_slice() || oopDesc::is_oop(task_entry.obj()), "Element " PTR_FORMAT " must be an array slice or oop", p2i(task_entry.obj()));
+    assert(task_entry.is_array_slice() || oopDesc::is_oop(task_entry.to_oop()), "Element " PTR_FORMAT " must be an array slice or oop", p2i(task_entry.to_oop()));
     bool success = _task_queue->push(task_entry);
     // We only call this when the local queue is empty or under a
     // given target limit. So, we do not expect this push to fail.

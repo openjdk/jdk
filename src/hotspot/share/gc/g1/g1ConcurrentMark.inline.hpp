@@ -110,10 +110,10 @@ inline void G1CMMarkStack::iterate(Fn fn) const {
 inline void G1CMTask::scan_task_entry(G1TaskQueueEntry task_entry) { process_grey_task_entry<true>(task_entry); }
 
 inline void G1CMTask::push(G1TaskQueueEntry task_entry) {
-  assert(task_entry.is_array_slice() || _g1h->is_in_reserved(task_entry.obj()), "invariant");
+  assert(task_entry.is_array_slice() || _g1h->is_in_reserved(task_entry.to_oop()), "invariant");
   assert(task_entry.is_array_slice() || !_g1h->is_on_master_free_list(
-              _g1h->heap_region_containing(task_entry.obj())), "invariant");
-  assert(task_entry.is_array_slice() || _mark_bitmap->is_marked(cast_from_oop<HeapWord*>(task_entry.obj())), "invariant");
+              _g1h->heap_region_containing(task_entry.to_oop())), "invariant");
+  assert(task_entry.is_array_slice() || _mark_bitmap->is_marked(cast_from_oop<HeapWord*>(task_entry.to_oop())), "invariant");
 
   if (!_task_queue->push(task_entry)) {
     // The local task queue looks full. We need to push some entries
@@ -160,15 +160,15 @@ inline bool G1CMTask::is_below_finger(oop obj, HeapWord* global_finger) const {
 
 template<bool scan>
 inline void G1CMTask::process_grey_task_entry(G1TaskQueueEntry task_entry) {
-  assert(scan || (task_entry.is_oop() && task_entry.obj()->is_typeArray()), "Skipping scan of grey non-typeArray");
-  assert(task_entry.is_array_slice() || _mark_bitmap->is_marked(cast_from_oop<HeapWord*>(task_entry.obj())),
+  assert(scan || (task_entry.is_oop() && task_entry.to_oop()->is_typeArray()), "Skipping scan of grey non-typeArray");
+  assert(task_entry.is_array_slice() || _mark_bitmap->is_marked(cast_from_oop<HeapWord*>(task_entry.to_oop())),
          "Any stolen object should be a slice or marked");
 
   if (scan) {
+    oop obj = task_entry.to_oop();
     if (task_entry.is_array_slice()) {
-      _words_scanned += _objArray_processor.process_slice(task_entry.slice());
+      _words_scanned += _objArray_processor.process_slice(obj, task_entry.slice(), task_entry.pow());
     } else {
-      oop obj = task_entry.obj();
       if (G1CMObjArrayProcessor::should_be_sliced(obj)) {
         _words_scanned += _objArray_processor.process_obj(obj);
       } else {
@@ -179,9 +179,15 @@ inline void G1CMTask::process_grey_task_entry(G1TaskQueueEntry task_entry) {
   check_limits();
 }
 
-inline size_t G1CMTask::scan_objArray(objArrayOop obj, MemRegion mr) {
-  obj->oop_iterate(_cm_oop_closure, mr);
-  return mr.word_size();
+inline void G1CMTask::scan_objArray_start(objArrayOop obj) {
+  if (Devirtualizer::do_metadata(_cm_oop_closure)) {
+    Devirtualizer::do_klass(_cm_oop_closure, obj->klass());
+  }
+}
+
+inline size_t G1CMTask::scan_objArray(objArrayOop obj, int start, int end) {
+  obj->oop_iterate_range(_cm_oop_closure, start, end);
+  return (end - start) * (UseCompressedOops ? 2 : 1);
 }
 
 inline void G1ConcurrentMark::update_top_at_mark_start(HeapRegion* r) {
@@ -264,7 +270,7 @@ inline bool G1CMTask::make_reference_grey(oop obj) {
   // be pushed on the stack. So, some duplicate work, but no
   // correctness problems.
   if (is_below_finger(obj, global_finger)) {
-    G1TaskQueueEntry entry = G1TaskQueueEntry::from_oop(obj);
+    G1TaskQueueEntry entry(obj);
     if (obj->is_typeArray()) {
       // Immediately process arrays of primitive types, rather
       // than pushing on the mark stack.  This keeps us from

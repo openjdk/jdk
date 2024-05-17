@@ -38,11 +38,6 @@ private:
   // Reference to the task for doing the actual work.
   G1CMTask* _task;
 
-  // Push the continuation at the given address onto the mark stack.
-  void push_array_slice(HeapWord* addr);
-
-  // Process (apply the closure) on the given continuation of the given objArray.
-  size_t process_array_slice(objArrayOop const obj, HeapWord* start_from, size_t remaining);
 public:
   static bool should_be_sliced(oop obj);
 
@@ -50,7 +45,7 @@ public:
   }
 
   // Process the given continuation. Returns the number of words scanned.
-  size_t process_slice(HeapWord* slice);
+  size_t process_slice(oop ary, int chunk, int pow);
   // Start processing the given objArrayOop by scanning the header and pushing its
   // continuation.
   size_t process_obj(oop obj);

@@ -30,6 +30,7 @@
 #include "gc/g1/g1HeapRegionSet.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
 #include "gc/g1/g1RegionMarkStatsCache.hpp"
+#include "gc/g1/g1TaskQueueEntry.hpp"
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/taskqueue.hpp"
@@ -50,41 +51,6 @@ class G1OldTracer;
 class G1RegionToSpaceMapper;
 class G1SurvivorRegions;
 class ThreadClosure;
-
-// This is a container class for either an oop or a continuation address for
-// mark stack entries. Both are pushed onto the mark stack.
-class G1TaskQueueEntry {
-private:
-  void* _holder;
-
-  static const uintptr_t ArraySliceBit = 1;
-
-  G1TaskQueueEntry(oop obj) : _holder(obj) {
-    assert(_holder != nullptr, "Not allowed to set null task queue element");
-  }
-  G1TaskQueueEntry(HeapWord* addr) : _holder((void*)((uintptr_t)addr | ArraySliceBit)) { }
-public:
-
-  G1TaskQueueEntry() : _holder(nullptr) { }
-  // Trivially copyable, for use in GenericTaskQueue.
-
-  static G1TaskQueueEntry from_slice(HeapWord* what) { return G1TaskQueueEntry(what); }
-  static G1TaskQueueEntry from_oop(oop obj) { return G1TaskQueueEntry(obj); }
-
-  oop obj() const {
-    assert(!is_array_slice(), "Trying to read array slice " PTR_FORMAT " as oop", p2i(_holder));
-    return cast_to_oop(_holder);
-  }
-
-  HeapWord* slice() const {
-    assert(is_array_slice(), "Trying to read oop " PTR_FORMAT " as array slice", p2i(_holder));
-    return (HeapWord*)((uintptr_t)_holder & ~ArraySliceBit);
-  }
-
-  bool is_oop() const { return !is_array_slice(); }
-  bool is_array_slice() const { return ((uintptr_t)_holder & ArraySliceBit) != 0; }
-  bool is_null() const { return _holder == nullptr; }
-};
 
 typedef GenericTaskQueue<G1TaskQueueEntry, mtGC> G1CMTaskQueue;
 typedef GenericTaskQueueSet<G1CMTaskQueue, mtGC> G1CMTaskQueueSet;
@@ -841,9 +807,11 @@ private:
 
   template<bool scan> void process_grey_task_entry(G1TaskQueueEntry task_entry);
 public:
+  // Apply the closure on the objArray metadata.
+  inline void scan_objArray_start(objArrayOop obj);
   // Apply the closure on the given area of the objArray. Return the number of words
   // scanned.
-  inline size_t scan_objArray(objArrayOop obj, MemRegion mr);
+  inline size_t scan_objArray(objArrayOop obj, int start, int end);
   // Resets the task; should be called right at the beginning of a marking phase.
   void reset(G1CMBitMap* mark_bitmap);
   // Clears all the fields that correspond to a claimed region.
