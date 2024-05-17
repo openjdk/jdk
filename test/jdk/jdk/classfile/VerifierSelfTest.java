@@ -45,6 +45,7 @@ import java.util.stream.Stream;
 import java.lang.classfile.*;
 import java.lang.classfile.attribute.*;
 import java.lang.classfile.components.ClassPrinter;
+import java.lang.constant.ModuleDesc;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -120,6 +121,12 @@ class VerifierSelfTest {
                 DeprecatedAttribute.of(),
                 EnclosingMethodAttribute.of(cd_test, Optional.empty(), Optional.empty()),
                 InnerClassesAttribute.of(InnerClassInfo.of(cd_test, Optional.of(cd_test), Optional.of("inner"), 0)),
+                ModuleAttribute.of(ModuleDesc.of("m"), mab -> {}),
+                ModuleHashesAttribute.of("alg", List.of()),
+                ModuleMainClassAttribute.of(cd_test),
+                ModulePackagesAttribute.of(),
+                ModuleResolutionAttribute.of(0),
+                ModuleTargetAttribute.of("t"),
                 NestHostAttribute.of(cd_test),
                 NestMembersAttribute.ofSymbols(cd_test),
                 PermittedSubclassesAttribute.ofSymbols(cd_test),
@@ -206,6 +213,18 @@ class VerifierSelfTest {
                 Multiple InnerClasses attributes in class ParserVerificationTestClass
                 Class is both outer and inner class in class ParserVerificationTestClass
                 Wrong InnerClasses attribute length in class ParserVerificationTestClass
+                Multiple Module attributes in class ParserVerificationTestClass
+                Wrong Module attribute length in class ParserVerificationTestClass
+                Multiple ModuleHashes attributes in class ParserVerificationTestClass
+                Wrong ModuleHashes attribute length in class ParserVerificationTestClass
+                Multiple ModuleMainClass attributes in class ParserVerificationTestClass
+                Wrong ModuleMainClass attribute length in class ParserVerificationTestClass
+                Multiple ModulePackages attributes in class ParserVerificationTestClass
+                Wrong ModulePackages attribute length in class ParserVerificationTestClass
+                Multiple ModuleResolution attributes in class ParserVerificationTestClass
+                Wrong ModuleResolution attribute length in class ParserVerificationTestClass
+                Multiple ModuleTarget attributes in class ParserVerificationTestClass
+                Wrong ModuleTarget attribute length in class ParserVerificationTestClass
                 Multiple NestHost attributes in class ParserVerificationTestClass
                 Wrong NestHost attribute length in class ParserVerificationTestClass
                 Conflicting NestHost and NestMembers attributes in class ParserVerificationTestClass

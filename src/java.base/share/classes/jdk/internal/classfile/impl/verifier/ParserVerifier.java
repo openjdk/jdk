@@ -37,11 +37,11 @@ import java.util.stream.Collectors;
 import java.lang.classfile.Attribute;
 import java.lang.classfile.AttributedElement;
 import java.lang.classfile.Attributes;
-import java.lang.classfile.ClassFile;
 import java.lang.classfile.ClassModel;
 import java.lang.classfile.ClassFileElement;
 import java.lang.classfile.CodeModel;
 import java.lang.classfile.CompoundElement;
+import java.lang.classfile.CustomAttribute;
 import java.lang.classfile.FieldModel;
 import java.lang.classfile.MethodModel;
 import java.lang.classfile.TypeKind;
@@ -49,6 +49,9 @@ import java.lang.classfile.attribute.*;
 import java.lang.classfile.constantpool.*;
 import java.lang.constant.ConstantDescs;
 import java.lang.reflect.AccessFlag;
+import java.util.Collection;
+import java.util.function.Function;
+import java.util.function.IntFunction;
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.Util;
 
@@ -262,6 +265,26 @@ public record ParserVerifier(ClassModel classModel) {
                 2 + 10 * lvta.localVariableTypes().size();
             case MethodParametersAttribute mpa ->
                 1 + 4 * mpa.parameters().size();
+            case ModuleAttribute ma ->
+                16 + subSize(ma.exports(), ModuleExportInfo::exportsTo, 6, 2)
+                   + subSize(ma.opens(), ModuleOpenInfo::opensTo, 6, 2)
+                   + subSize(ma.provides(), ModuleProvideInfo::providesWith, 4, 2)
+                   + 6 * ma.requires().size()
+                   + 2 * ma.uses().size();
+            case ModuleHashesAttribute mha ->
+                2 + moduleHashesSize(mha.hashes());
+            case ModuleMainClassAttribute mmca -> {
+                mmca.mainClass();
+                yield 2;
+            }
+            case ModulePackagesAttribute mpa ->
+                2 + 2 * mpa.packages().size();
+            case ModuleResolutionAttribute mra ->
+                2;
+            case ModuleTargetAttribute mta -> {
+                mta.targetPlatform();
+                yield 2;
+            }
             case NestHostAttribute nha -> {
                 nha.nestHost();
                 yield 2;
@@ -284,6 +307,10 @@ public record ParserVerifier(ClassModel classModel) {
                 annotationsSize(aa.annotations());
             case RuntimeInvisibleAnnotationsAttribute aa ->
                 annotationsSize(aa.annotations());
+            case RuntimeVisibleTypeAnnotationsAttribute aa ->
+                -1;
+            case RuntimeInvisibleTypeAnnotationsAttribute aa ->
+                -1;
             case RuntimeVisibleParameterAnnotationsAttribute aa ->
                 parameterAnnotationsSize(aa.parameterAnnotations());
             case RuntimeInvisibleParameterAnnotationsAttribute aa ->
@@ -302,14 +329,28 @@ public record ParserVerifier(ClassModel classModel) {
                 sida.sourceId();
                 yield 2;
             }
+            case StackMapTableAttribute smta ->
+                -1;
             case SyntheticAttribute _ ->
                 0;
-            default ->
+            case UnknownAttribute _ ->
                 -1;
+            case CustomAttribute<?> _ ->
+                -1;
+            default -> // should not happen if all known attributes are verified
+                throw new AssertionError(a);
         };
         if (size >= 0 && size != ((BoundAttribute)a).payloadLen()) {
             errors.add(new VerifyError("Wrong %s attribute length in %s".formatted(a.attributeName(), toString(ae))));
         }
+    }
+
+    private static <T, S extends Collection<?>> int subSize(Collection<T> entries, Function<T, S> subMH, int entrySize, int subSize) {
+        int l = 0;
+        for (T entry : entries) {
+            l += entrySize + subSize * subMH.apply(entry).size();
+        }
+        return l;
     }
 
     private static int componentsSize(List<RecordComponentInfo> comps) {
@@ -366,6 +407,15 @@ public record ParserVerifier(ClassModel classModel) {
             case AnnotationValue.OfConstant _, AnnotationValue.OfClass _ -> 2;
             case AnnotationValue.OfEnum _ -> 4;
         };
+    }
+
+    private static int moduleHashesSize(List<ModuleHashInfo> hashes) {
+        int l = 2;
+        for (var h : hashes) {
+            h.moduleName();
+            l += 4 + h.hash().length;
+        }
+        return l;
     }
 
     private String className() {
