@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,32 +19,30 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_UTILITY_ATTRIBUTENORETURN_HPP
-#define SHARE_UTILITY_ATTRIBUTENORETURN_HPP
+/*
+ * @test
+ * @summary Testing TypeKind.
+ * @bug 8331744
+ * @run junit TypeKindTest
+ */
+import org.junit.jupiter.api.Test;
 
-// Provide a (temporary) macro for the [[noreturn]] attribute.
-//
-// Unfortunately, some older (though still in use) compilers have bugs when
-// using [[noreturn]].  For them we use an empty definition for the attribute.
-//
-// Note: This can't be placed in globalDefinitions_xxx.hpp because the
-// attribute is used in debug.hpp, which can't include globalDefinitions.hpp.
+import java.lang.classfile.TypeKind;
 
-// clang 12 (and possibly prior) crashes during build if we use [[noreturn]]
-// for assertion failure reporting functions.  The problem seems to be fixed
-// in clang 13.
-#ifdef __clang__
-#if __clang_major__ < 13
-#define ATTRIBUTE_NORETURN
-#endif
-#endif
+import static org.junit.Assert.assertThrows;
 
-// All other platforms can use [[noreturn]].
-#ifndef ATTRIBUTE_NORETURN
-#define ATTRIBUTE_NORETURN [[noreturn]]
-#endif
+class TypeKindTest {
+    @Test
+    void testContracts() {
+        assertThrows(NullPointerException.class, () -> TypeKind.from(null));
 
-#endif // SHARE_UTILITY_ATTRIBUTENORETURN_HPP
+        assertThrows(NullPointerException.class, () -> TypeKind.fromDescriptor(null));
+        assertThrows(IllegalArgumentException.class, () -> TypeKind.fromDescriptor(""));
+        assertThrows(IllegalArgumentException.class, () -> TypeKind.fromDescriptor("int"));
+
+        assertThrows(IllegalArgumentException.class, () -> TypeKind.fromNewarrayCode(-1));
+        assertThrows(IllegalArgumentException.class, () -> TypeKind.fromNewarrayCode(21));
+    }
+}
