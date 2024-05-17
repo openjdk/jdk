@@ -560,6 +560,7 @@ public:
   // Add or remove precedence edges
   void add_prec( Node *n );
   void rm_prec( uint i );
+  bool has_prec_edges() const { return len() > req(); }
 
   // Note: prec(i) will not necessarily point to n if edge already exists.
   void set_prec( uint i, Node *n ) {
@@ -1143,7 +1144,6 @@ public:
 
   // Set control or add control as precedence edge
   void ensure_control_or_add_prec(Node* c);
-  void add_prec_from(Node* n);
 
   // Visit boundary uses of the node and apply a callback function for each.
   // Recursively traverse uses, stopping and applying the callback when

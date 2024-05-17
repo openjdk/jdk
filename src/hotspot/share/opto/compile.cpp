@@ -3620,15 +3620,13 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
 #endif
 
   case Op_ModI:
-    if (UseDivMod) {
+    if (UseDivMod && !n->has_prec_edges()) {
       // Check if a%b and a/b both exist
       Node* d = n->find_similar(Op_DivI);
-      if (d) {
+      if (d && !d->has_prec_edges()) {
         // Replace them with a fused divmod if supported
         if (Matcher::has_match_rule(Op_DivModI)) {
           DivModINode* divmod = DivModINode::make(n);
-          divmod->add_prec_from(n);
-          divmod->add_prec_from(d);
           d->subsume_by(divmod->div_proj(), this);
           n->subsume_by(divmod->mod_proj(), this);
         } else {
@@ -3642,15 +3640,13 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
     break;
 
   case Op_ModL:
-    if (UseDivMod) {
+    if (UseDivMod && !n->has_prec_edges()) {
       // Check if a%b and a/b both exist
       Node* d = n->find_similar(Op_DivL);
-      if (d) {
+      if (d && !d->has_prec_edges()) {
         // Replace them with a fused divmod if supported
         if (Matcher::has_match_rule(Op_DivModL)) {
           DivModLNode* divmod = DivModLNode::make(n);
-          divmod->add_prec_from(n);
-          divmod->add_prec_from(d);
           d->subsume_by(divmod->div_proj(), this);
           n->subsume_by(divmod->mod_proj(), this);
         } else {
@@ -3664,15 +3660,13 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
     break;
 
   case Op_UModI:
-    if (UseDivMod) {
+    if (UseDivMod && !n->has_prec_edges()) {
       // Check if a%b and a/b both exist
       Node* d = n->find_similar(Op_UDivI);
-      if (d) {
+      if (d && !d->has_prec_edges()) {
         // Replace them with a fused unsigned divmod if supported
         if (Matcher::has_match_rule(Op_UDivModI)) {
           UDivModINode* divmod = UDivModINode::make(n);
-          divmod->add_prec_from(n);
-          divmod->add_prec_from(d);
           d->subsume_by(divmod->div_proj(), this);
           n->subsume_by(divmod->mod_proj(), this);
         } else {
@@ -3686,15 +3680,13 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
     break;
 
   case Op_UModL:
-    if (UseDivMod) {
+    if (UseDivMod && !n->has_prec_edges()) {
       // Check if a%b and a/b both exist
       Node* d = n->find_similar(Op_UDivL);
-      if (d) {
+      if (d && !d->has_prec_edges()) {
         // Replace them with a fused unsigned divmod if supported
         if (Matcher::has_match_rule(Op_UDivModL)) {
           UDivModLNode* divmod = UDivModLNode::make(n);
-          divmod->add_prec_from(n);
-          divmod->add_prec_from(d);
           d->subsume_by(divmod->div_proj(), this);
           n->subsume_by(divmod->mod_proj(), this);
         } else {
