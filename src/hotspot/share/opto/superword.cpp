@@ -1648,7 +1648,7 @@ const AlignmentSolution* SuperWord::pack_alignment_solution(const Node_List* pac
 // that the packs impose. Remove packs that do not have a compatible solution.
 void SuperWord::filter_packs_for_alignment() {
   // We do not need to filter if no alignment is required.
-  if (!vectors_should_be_aligned()) {
+  if (!VLoop::vectors_should_be_aligned()) {
     return;
   }
 
@@ -2018,7 +2018,7 @@ bool SuperWord::output() {
 #endif
   // phase()->C->print_method(PHASE_SUPERWORD2_BEFORE_OUTPUT, 4, cl);
 
-  adjust_pre_loop_limit_to_align_main_loop_vectors();
+  //adjust_pre_loop_limit_to_align_main_loop_vectors();
 
   DEBUG_ONLY(verify_no_extract());
 
@@ -3026,24 +3026,26 @@ LoadNode::ControlDependency SuperWord::control_dependency(Node_List* p) {
 }
 
 // Find the memop pack with the maximum vector width, unless they were already
-// determined by SuperWord::filter_packs_for_alignment().
-void SuperWord::determine_mem_ref_and_aw_for_main_loop_alignment() {
+// determined (e.g. by SuperWord::filter_packs_for_alignment()).
+void VTransformGraph::determine_mem_ref_and_aw_for_main_loop_alignment() {
   if (_mem_ref_for_main_loop_alignment != nullptr) {
-    assert(vectors_should_be_aligned(), "mem_ref only set if filtered for alignment");
+    assert(VLoop::vectors_should_be_aligned(), "mem_ref only set if filtered for alignment");
     return;
   }
 
   MemNode const* mem_ref = nullptr;
   int max_aw = 0;
-  for (int i = 0; i < _packset.length(); i++) {
-    Node_List* pack = _packset.at(i);
-    MemNode* first = pack->at(0)->isa_Mem();
-    if (first == nullptr) { continue; }
 
-    int vw = first->memory_size() * pack->size();
+  for (int i = 0; i < _vtnodes.length(); i++) {
+    VTransformVectorNode* vtn = _vtnodes.at(i)->isa_Vector();
+    if (vtn == nullptr) { continue; }
+    MemNode* p0 = vtn->nodes().at(0)->isa_Mem();
+    if (p0 == nullptr) { continue; }
+
+    int vw = p0->memory_size() * vtn->nodes().length();
     if (vw > max_aw) {
       max_aw = vw;
-      mem_ref = first;
+      mem_ref = p0;
     }
   }
   assert(mem_ref != nullptr && max_aw > 0, "found mem_ref and aw");
@@ -3064,7 +3066,7 @@ void SuperWord::determine_mem_ref_and_aw_for_main_loop_alignment() {
 // the address of "_mem_ref_for_main_loop_alignment" to "_aw_for_main_loop_alignment", which is a
 // sufficiently large alignment width. We adjust the pre-loop iteration count by adjusting the
 // pre-loop limit.
-void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
+void VTransformGraph::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   determine_mem_ref_and_aw_for_main_loop_alignment();
   const MemNode* align_to_ref = _mem_ref_for_main_loop_alignment;
   const int aw                = _aw_for_main_loop_alignment;
@@ -3447,7 +3449,9 @@ bool SuperWord::same_generation(Node* a, Node* b) const {
 bool SuperWord::vtransform() const {
   if (_packset.is_empty()) { return false; }
 
-  VTransformGraph graph(_vloop_analyzer
+  VTransformGraph graph(_vloop_analyzer,
+                        _mem_ref_for_main_loop_alignment,
+                        _aw_for_main_loop_alignment
                         NOT_PRODUCT( COMMA is_trace_superword_rejections())
                         NOT_PRODUCT( COMMA is_trace_superword_info())
                         NOT_PRODUCT( COMMA is_trace_superword_verbose())

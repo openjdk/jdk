@@ -129,6 +129,11 @@ public:
   int estimated_body_length() const { return lpt()->_body.size(); };
   int estimated_node_count()  const { return (int)(1.10 * phase()->C->unique()); };
 
+  // Should we align vector memory references on this platform?
+  static bool vectors_should_be_aligned() {
+    return !Matcher::misaligned_vectors_ok() || AlignVector;
+  }
+
 #ifndef PRODUCT
   const VTrace& vtrace()      const { return _vtrace; }
 
@@ -1327,17 +1332,23 @@ class VTransformReductionVectorNode;
 class VTransformGraph {
 private:
   const VLoopAnalyzer& _vloop_analyzer;
+  const VLoop& _vloop;
 
   // Everything in the graph is allocated from this arena, including all vtnodes.
   Arena _arena;
 
   VTransformNodeIDX _next_idx;             // TODO debug only?
   GrowableArray<VTransformNode*> _vtnodes; // TODO debug only?
-  VTransformNode* _cl_vtnode; // vtnode of the _vloop.cl(), the "root" of the graph.
+  VTransformNode* _cl_vtnode; // vtnode of the vloop.cl(), the "root" of the graph.
 
   // Schedule (linearization) of the graph. We use this to reorder the memory graph
   // before inserting vector operations.
   GrowableArray<VTransformNode*> _schedule;
+
+  // Memory reference, and the alignment width (aw) for which we align the main-loop,
+  // by adjusting the pre-loop limit.
+  MemNode const* _mem_ref_for_main_loop_alignment;
+  int _aw_for_main_loop_alignment;
 
 #ifndef PRODUCT
   bool _is_trace_rejections;
@@ -1346,23 +1357,28 @@ private:
 #endif
 
 public:
-  VTransformGraph(const VLoopAnalyzer& vloop_analyzer
+  VTransformGraph(const VLoopAnalyzer& vloop_analyzer,
+                  MemNode const* mem_ref_for_main_loop_alignment,
+                  int aw_for_main_loop_alignment
                   NOT_PRODUCT( COMMA const bool is_trace_rejections)
                   NOT_PRODUCT( COMMA const bool is_trace_info)
                   NOT_PRODUCT( COMMA const bool is_trace_verbose)
                   ) :
     _vloop_analyzer(vloop_analyzer),
+    _vloop(vloop_analyzer.vloop())
     _arena(mtCompiler),
     _next_idx(0),
-    _vtnodes(&_arena, vloop_analyzer.vloop().estimated_body_length(), 0, nullptr),
+    _vtnodes(&_arena, _vloop.estimated_body_length(), 0, nullptr),
     _cl_vtnode(nullptr),
-    _schedule(&_arena, vloop_analyzer.vloop().estimated_body_length(), 0, nullptr)
+    _schedule(&_arena, _vloop.estimated_body_length(), 0, nullptr),
+    _mem_ref_for_main_loop_alignment(mem_ref_for_main_loop_alignment),
+    _aw_for_main_loop_alignment(aw_for_main_loop_alignment)
     NOT_PRODUCT( COMMA _is_trace_rejections(is_trace_rejections) )
     NOT_PRODUCT( COMMA _is_trace_info(is_trace_info) )
     NOT_PRODUCT( COMMA _is_trace_verbose(is_trace_verbose) )
   {
 #ifndef PRODUCT
-    bool is_trace =  _vloop_analyzer.vloop().vtrace().is_trace(TraceAutoVectorizationTag::VTRANSFORM);
+    bool is_trace =  _vloop.vtrace().is_trace(TraceAutoVectorizationTag::VTRANSFORM);
     _is_trace_verbose    |= is_trace;
     _is_trace_rejections |= is_trace || _is_trace_verbose;
     _is_trace_info       |= is_trace || _is_trace_verbose;
@@ -1375,12 +1391,17 @@ public:
   void set_cl_vtnode(VTransformNode* cl_vtnode) { _cl_vtnode = cl_vtnode; }
 
   bool schedule();
+  void apply();
 
+private:
   template<typename Callback>
   void for_each_memop_in_schedule(Callback callback) const;
 
-  void apply();
   void apply_memops_reordering_with_schedule();
+
+  // Ensure that the main loop vectors are aligned by adjusting the pre loop limit.
+  void determine_mem_ref_and_aw_for_main_loop_alignment();
+  void adjust_pre_loop_limit_to_align_main_loop_vectors();
 
 #ifndef PRODUCT
   void print_vtnodes() const;

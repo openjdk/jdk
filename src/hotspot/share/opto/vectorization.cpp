@@ -1868,9 +1868,8 @@ void VTransformGraph::for_each_memop_in_schedule(Callback callback) const {
 }
 
 void VTransformGraph::apply() {
-  const VLoop& vloop  = _vloop_analyzer.vloop();
-  Compile* C          = vloop.phase()->C;
-  CountedLoopNode* cl = vloop.cl();
+  Compile* C          = _vloop.phase()->C;
+  CountedLoopNode* cl = _vloop.cl();
 
   assert(cl->is_main_loop(), "auto vectorization only for main loops");
 
@@ -1898,9 +1897,8 @@ void VTransformGraph::apply_memops_reordering_with_schedule() {
   }
 #endif
 
-  const VLoop& vloop = _vloop_analyzer.vloop();
-  Compile* C         = vloop.phase()->C;
-  PhaseIterGVN& igvn = vloop.phase()->igvn();
+  Compile* C         = _vloop.phase()->C;
+  PhaseIterGVN& igvn = _vloop.phase()->igvn();
 
   ResourceMark rm;
   int max_slices = C->num_alias_types();
@@ -1935,7 +1933,7 @@ void VTransformGraph::apply_memops_reordering_with_schedule() {
       // If there are only loads in a slice, we never update the memory
       // state in the loop, hence there is no phi for the memory state.
       // We just keep the old memory state that was outside the loop.
-      assert(n->is_Load() && !vloop.in_bb(n->in(MemNode::Memory)),
+      assert(n->is_Load() && !_vloop.in_bb(n->in(MemNode::Memory)),
              "only loads can have memory state from outside loop");
     } else {
       igvn.replace_input_of(n, MemNode::Memory, current_state);
@@ -1966,7 +1964,7 @@ void VTransformGraph::apply_memops_reordering_with_schedule() {
     uses_after_loop.clear();
     for (DUIterator_Fast kmax, k = last_store->fast_outs(kmax); k < kmax; k++) {
       Node* use = last_store->fast_out(k);
-      if (!vloop.in_bb(use)) {
+      if (!_vloop.in_bb(use)) {
         uses_after_loop.push(use);
       }
     }
