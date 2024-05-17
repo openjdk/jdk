@@ -46,7 +46,68 @@ import jdk.vm.ci.meta.VMConstant;
 public class AArch64TestAssembler extends TestAssembler {
 
     private static final Register scratchRegister = AArch64.rscratch1;
+    private static final Register scratchRegister2 = AArch64.rscratch2;
     private static final Register doubleScratch = AArch64.v9;
+
+    /**
+     * Condition Flags for branches. See C1.2.4
+     */
+    public enum ConditionFlag {
+        // Integer | Floating-point meanings
+        /** Equal | Equal. */
+        EQ(0x0),
+
+        /** Not Equal | Not equal or unordered. */
+        NE(0x1),
+
+        /** Unsigned Higher or Same | Greater than, equal or unordered. */
+        HS(0x2),
+
+        /** Unsigned lower | less than. */
+        LO(0x3),
+
+        /** Minus (negative) | less than. */
+        MI(0x4),
+
+        /** Plus (positive or zero) | greater than, equal or unordered. */
+        PL(0x5),
+
+        /** Overflow set | unordered. */
+        VS(0x6),
+
+        /** Overflow clear | ordered. */
+        VC(0x7),
+
+        /** Unsigned higher | greater than or unordered. */
+        HI(0x8),
+
+        /** Unsigned lower or same | less than or equal. */
+        LS(0x9),
+
+        /** Signed greater than or equal | greater than or equal. */
+        GE(0xA),
+
+        /** Signed less than | less than or unordered. */
+        LT(0xB),
+
+        /** Signed greater than | greater than. */
+        GT(0xC),
+
+        /** Signed less than or equal | less than, equal or unordered. */
+        LE(0xD),
+
+        /** Always | always. */
+        AL(0xE),
+
+        /** Always | always (identical to AL, just to have valid 0b1111 encoding). */
+        NV(0xF);
+
+        public final int encoding;
+
+        ConditionFlag(int encoding) {
+            this.encoding = encoding;
+        }
+    }
 
     public AArch64TestAssembler(CodeCacheProvider codeCache, TestHotSpotVMConfig config) {
         super(codeCache, config,
@@ -215,6 +276,22 @@ public class AArch64TestAssembler extends TestAssembler {
                      | f(0, 4, 0));
     }
 
+    /**
+     * C6.2.25 Branch conditionally.
+     *
+     * @param condition may not be null.
+     * @param imm21 Signed 21-bit offset, has to be 4-byte aligned.
+     */
+    protected void emitBranch(ConditionFlag condition, int imm21) {
+        // B.cond
+        check(isSignedNbit(21, imm21) && (imm21 & 0b11) == 0,
+              "0x%x must be a 21-bit signed number and 4-byte aligned", imm21);
+        int imm19 = (imm21 & getNbitNumberInt(21)) >> 2;
+        code.emitInt(f(0b001010100, 31, 24)
+                     | f(imm19, 23, 4)
+                     | f(condition.encoding, 3, 0));
+    }
+
     private void emitFmov(Register Rd, AArch64Kind kind, Register Rn) {
         // FMOV (general)
         int ftype = 0, sf = 0;
@@ -261,7 +338,23 @@ public class AArch64TestAssembler extends TestAssembler {
         code.emitInt(0xa9bf7bfd);      // stp x29, x30, [sp, #-16]!
         code.emitInt(0x910003fd);      // mov x29, sp
 
+        emitNMethodEntryBarrier();
+
         setDeoptRescueSlot(newStackSlot(AArch64Kind.QWORD));
+    }
+
+    private void emitNMethodEntryBarrier() {
+        recordMark(config.MARKID_ENTRY_BARRIER_PATCH);
+        DataSectionReference ref = emitDataItem(0);
+        emitLoadPointer(scratchRegister, AArch64Kind.DWORD, ref);
+        if (config.nmethodEntryBarrierConcurrentPatch) {
+            code.emitInt(0xd50339bf); // dmb ishld
+        }
+        Register thread = AArch64.r28;
+        emitLoadPointer(scratchRegister2, AArch64Kind.DWORD, thread, config.threadDisarmedOffset);
+        code.emitInt(0x6b09011f);             // cmp w8, w9
+        emitBranch(ConditionFlag.EQ, 8);      // jump over slow path, runtime call
+        emitCall(config.nmethodEntryBarrier);
     }
 
     @Override
@@ -361,8 +454,11 @@ public class AArch64TestAssembler extends TestAssembler {
 
     @Override
     public Register emitLoadPointer(Register b, int offset) {
-        Register ret = newRegister();
-        emitLoadRegister(ret, AArch64Kind.QWORD, b, offset);
+        return emitLoadPointer(newRegister(), AArch64Kind.QWORD, b, offset);
+    }
+
+    public Register emitLoadPointer(Register ret, AArch64Kind kind, Register b, int offset) {
+        emitLoadRegister(ret, kind, b, offset);
         return ret;
     }
 
@@ -377,10 +473,13 @@ public class AArch64TestAssembler extends TestAssembler {
 
     @Override
     public Register emitLoadPointer(DataSectionReference ref) {
+        return emitLoadPointer(newRegister(), AArch64Kind.QWORD, ref);
+    }
+
+    public Register emitLoadPointer(Register ret, AArch64Kind kind, DataSectionReference ref) {
         recordDataPatchInCode(ref);
 
-        Register ret = newRegister();
-        emitLoadRegister(ret, AArch64Kind.QWORD, 0xdead);
+        emitLoadRegister(ret, kind, 0xdead);
         return ret;
     }
 

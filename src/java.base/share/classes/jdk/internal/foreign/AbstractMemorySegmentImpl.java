@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -681,10 +681,6 @@ public abstract sealed class AbstractMemorySegmentImpl
         long dstBytes = dstToOffset - dstFromOffset;
         srcImpl.checkAccess(srcFromOffset, srcBytes, true);
         dstImpl.checkAccess(dstFromOffset, dstBytes, true);
-        if (dstImpl == srcImpl) {
-            srcImpl.checkValidState();
-            return -1;
-        }
 
         long bytes = Math.min(srcBytes, dstBytes);
         long i = 0;

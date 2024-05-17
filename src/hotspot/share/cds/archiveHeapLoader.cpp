@@ -442,7 +442,7 @@ void ArchiveHeapLoader::patch_native_pointers() {
   FileMapRegion* r = FileMapInfo::current_info()->region_at(MetaspaceShared::hp);
   if (r->mapped_base() != nullptr && r->has_ptrmap()) {
     log_info(cds, heap)("Patching native pointers in heap region");
-    BitMapView bm = r->ptrmap_view();
+    BitMapView bm = FileMapInfo::current_info()->ptrmap_view(MetaspaceShared::hp);
     PatchNativePointers patcher((Metadata**)r->mapped_base() + FileMapInfo::current_info()->heap_ptrmap_start_pos());
     bm.iterate(&patcher);
   }

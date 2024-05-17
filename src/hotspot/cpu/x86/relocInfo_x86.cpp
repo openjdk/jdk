@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,9 +36,8 @@
 #include "utilities/checkedCast.hpp"
 
 
-void Relocation::pd_set_data_value(address x, intptr_t o, bool verify_only) {
+void Relocation::pd_set_data_value(address x, bool verify_only) {
 #ifdef AMD64
-  x += o;
   typedef Assembler::WhichOperand WhichOperand;
   WhichOperand which = (WhichOperand) format(); // that is, disp32 or imm, call32, narrow oop
   assert(which == Assembler::disp32_operand ||
@@ -80,9 +79,9 @@ void Relocation::pd_set_data_value(address x, intptr_t o, bool verify_only) {
   }
 #else
   if (verify_only) {
-    guarantee(*pd_address_in_code() == (x + o), "instructions must match");
+    guarantee(*pd_address_in_code() == x, "instructions must match");
   } else {
-    *pd_address_in_code() = x + o;
+    *pd_address_in_code() = x;
   }
 #endif // AMD64
 }

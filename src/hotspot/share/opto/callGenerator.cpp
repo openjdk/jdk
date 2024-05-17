@@ -554,6 +554,10 @@ bool LateInlineVirtualCallGenerator::do_late_inline_check(Compile* C, JVMState* 
                                         true /*allow_intrinsics*/);
 
   if (cg != nullptr) {
+    if (!allow_inline && (C->print_inlining() || C->print_intrinsics())) {
+      C->print_inlining(method(), jvms->depth()-1, call_node()->jvms()->bci(), InliningResult::FAILURE,
+                        "late call devirtualization");
+    }
     assert(!cg->is_late_inline() || cg->is_mh_late_inline() || AlwaysIncrementalInline || StressIncrementalInlining, "we're doing late inlining");
     _inline_cg = cg;
     return true;
@@ -1085,13 +1089,14 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
         const int receiver_skip = target->is_static() ? 0 : 1;
         // Cast receiver to its type.
         if (!target->is_static()) {
-          Node* arg = kit.argument(0);
-          const TypeOopPtr* arg_type = arg->bottom_type()->isa_oopptr();
-          const Type*       sig_type = TypeOopPtr::make_from_klass(signature->accessing_klass());
-          if (arg_type != nullptr && !arg_type->higher_equal(sig_type)) {
-            const Type* recv_type = arg_type->filter_speculative(sig_type); // keep speculative part
-            Node* cast_obj = gvn.transform(new CheckCastPPNode(kit.control(), arg, recv_type));
-            kit.set_argument(0, cast_obj);
+          Node* recv = kit.argument(0);
+          Node* casted_recv = kit.maybe_narrow_object_type(recv, signature->accessing_klass());
+          if (casted_recv->is_top()) {
+            print_inlining_failure(C, callee, jvms->depth() - 1, jvms->bci(),
+                                   "argument types mismatch");
+            return nullptr; // FIXME: effectively dead; issue a halt node instead
+          } else if (casted_recv != recv) {
+            kit.set_argument(0, casted_recv);
           }
         }
         // Cast reference arguments to its type.
@@ -1099,12 +1104,13 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
           ciType* t = signature->type_at(i);
           if (t->is_klass()) {
             Node* arg = kit.argument(receiver_skip + j);
-            const TypeOopPtr* arg_type = arg->bottom_type()->isa_oopptr();
-            const Type*       sig_type = TypeOopPtr::make_from_klass(t->as_klass());
-            if (arg_type != nullptr && !arg_type->higher_equal(sig_type)) {
-              const Type* narrowed_arg_type = arg_type->filter_speculative(sig_type); // keep speculative part
-              Node* cast_obj = gvn.transform(new CheckCastPPNode(kit.control(), arg, narrowed_arg_type));
-              kit.set_argument(receiver_skip + j, cast_obj);
+            Node* casted_arg = kit.maybe_narrow_object_type(arg, t->as_klass());
+            if (casted_arg->is_top()) {
+              print_inlining_failure(C, callee, jvms->depth() - 1, jvms->bci(),
+                                     "argument types mismatch");
+              return nullptr; // FIXME: effectively dead; issue a halt node instead
+            } else if (casted_arg != arg) {
+              kit.set_argument(receiver_skip + j, casted_arg);
             }
           }
           j += t->size();  // long and double take two slots
