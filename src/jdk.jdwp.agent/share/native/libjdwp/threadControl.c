@@ -1746,7 +1746,7 @@ threadControl_isDebugThread(jthread thread)
  * Synchronization is done via the popFrameProceedLock and popFrameEventLock. Both
  * the JDWP Command Reader thread and the PopFrame() target thread will grab
  * both of these locks. However, one curious trait of these two locks is that
- * the these two threads do not both grab them in the same order (and they need
+ * the two threads do not both grab them in the same order (and they need
  * to do it this way). This seems like it should lead to a deadlock, but doesn't
  * because of how each thread grabs these locks and waits or notifies on them.
  *
@@ -1778,7 +1778,7 @@ threadControl_isDebugThread(jthread thread)
  * waits on it (which releases the lock). Therefore there is never a race for
  * popFrameEventLock. Meanwhile when the target thread gets the SINGLE_STEP event,
  * it always enters popFrameProceedLock first (which is always available), then
- * popFrameProceedLock second. It will always succeed because the Reader thread
+ * popFrameEventLock second. It will always succeed because the Reader thread
  * only entered popFrameEventLock, but is waiting on it, so doesn't currently hold
  * either lock. The target thread then notifies on popFrameEventLock and releases
  * it (unblocking the Reader thread), and then waits on popFrameProceedLock. The
