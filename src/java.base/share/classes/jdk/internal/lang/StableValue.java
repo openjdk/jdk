@@ -200,8 +200,8 @@ public sealed interface StableValue<V>
     // Collection factories
 
     /**
-     * {@return an unmodifiable, shallowly immutable, thread-safe, stable,
-     * {@linkplain List} containing {@code size} {@linkplain StableValue } elements}
+     * {@return an unmodifiable, shallowly immutable, thread-safe, stable, lazily
+     * populated {@linkplain List} containing {@code size} {@linkplain StableValue } elements}
      * <p>
      * If non-empty, neither the returned list nor its elements are {@linkplain Serializable}.
      * <p>
@@ -212,12 +212,11 @@ public sealed interface StableValue<V>
      *         .limit(size)
      *         .toList();
      *}
-     * Except it requires less storage, does not return stable value instances with the
-     * same identity, and is likely to exhibit better performance.
+     * Except the elements are lazily created upon being first accessed.
      * <p>
      * This static factory methods return list instances (and with all their elements)
      * that are <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>,
-     * immutable and thread-safe. Programmers should not use list and element instances
+     * shallowly immutable and thread-safe. Programmers should not use list and element instances
      * for synchronization, or unpredictable behavior may occur. For example, in a
      * future release, synchronization may fail. Consequently,
      * query methods {@linkplain List#contains(Object)},
@@ -241,9 +240,9 @@ public sealed interface StableValue<V>
 
     /**
      * {@return an unmodifiable, shallowly immutable, thread-safe, value-stable,
-     * {@linkplain Map} where the {@linkplain java.util.Map#keySet() keys}
+     * value-lazy populated {@linkplain Map} where the {@linkplain java.util.Map#keySet() keys}
      * contains precisely the distinct provided set of {@code keys} and where the
-     * stable values are, in turn, lazily computed upon being accessed
+     * stable values are, in turn, lazily computed upon being first accessed
      * (e.g. via {@linkplain Map#get(Object) get(key)})}
      * <p>
      * If non-empty, neither the returned map nor its values are {@linkplain Serializable}.
@@ -256,14 +255,13 @@ public sealed interface StableValue<V>
      *         .map(Objects::requireNonNull)
      *         .collect(Collectors.toMap(Function.identity(), _ -> StableValue.of())));
      * }
-     * Except it requires less storage, does not return stable value instances with the
-     * same identity, and is likely to exhibit better performance.
+     * Except the map's values are lazily created upon being first accessed.
      * <p>
      * This static factory methods return map instances (and with all their values)
      * that are <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>,
-     * immutable and thread-safe. Programmers should not use map and value instances for
-     * synchronization, or unpredictable behavior may occur. For example, in a
-     * future release, synchronization may fail. Consequently,
+     * shallowly immutable and thread-safe. Programmers should not use map and value
+     * instances for synchronization, or unpredictable behavior may occur. For example,
+     * in a future release, synchronization may fail. Consequently,
      * the query methods {@linkplain Map#containsValue(Object)} and methods that relies
      * on this and similar method will always indicate no match.
      * <p>
