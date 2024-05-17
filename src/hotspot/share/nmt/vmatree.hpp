@@ -124,6 +124,20 @@ public:
 private:
   VMATreap _tree;
 
+  // AddressState saves the necessary information for performing online summary accounting.
+  struct AddressState {
+    position address;
+    IntervalChange state;
+
+    const IntervalState& out() const {
+      return state.out;
+    }
+
+    const IntervalState& in() const {
+      return state.in;
+    }
+  };
+
 public:
   VMATree() : _tree() {}
 

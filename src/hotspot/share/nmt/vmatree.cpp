@@ -36,20 +36,6 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
     return SummaryDiff();
   }
 
-  // AddressState saves the necessary information for performing online summary accounting.
-  struct AddressState {
-    position address;
-    IntervalChange state;
-
-    const IntervalState& out() const {
-      return state.out;
-    }
-
-    const IntervalState& in() const {
-      return state.in;
-    }
-  };
-
   IntervalChange stA{
       IntervalState{StateType::Released, empty_regiondata},
       IntervalState{              state,   metadata}
