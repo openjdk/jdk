@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,20 +22,24 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package java.lang.constant;
+package jdk.internal.constant;
 
+import java.lang.constant.ClassDesc;
 import java.lang.invoke.MethodHandles;
 
-import static java.lang.constant.ConstantUtils.*;
-import static java.util.Objects.requireNonNull;
+import static jdk.internal.constant.ConstantUtils.*;
 
 /**
  * A <a href="package-summary.html#nominal">nominal descriptor</a> for a class,
  * interface, or array type.  A {@linkplain ReferenceClassDescImpl} corresponds to a
  * {@code Constant_Class_info} entry in the constant pool of a classfile.
  */
-final class ReferenceClassDescImpl implements ClassDesc {
+public final class ReferenceClassDescImpl implements ClassDesc {
     private final String descriptor;
+
+    private ReferenceClassDescImpl(String descriptor) {
+        this.descriptor = descriptor;
+    }
 
     /**
      * Creates a {@linkplain ClassDesc} from a descriptor string for a class or
@@ -46,12 +50,23 @@ final class ReferenceClassDescImpl implements ClassDesc {
      * field descriptor string, or does not describe a class or interface type
      * @jvms 4.3.2 Field Descriptors
      */
-    ReferenceClassDescImpl(String descriptor) {
+    public static ReferenceClassDescImpl of(String descriptor) {
         int dLen = descriptor.length();
         int len = ConstantUtils.skipOverFieldSignature(descriptor, 0, dLen, false);
         if (len <= 1 || len != dLen)
             throw new IllegalArgumentException(String.format("not a valid reference type descriptor: %s", descriptor));
-        this.descriptor = descriptor;
+        return new ReferenceClassDescImpl(descriptor);
+    }
+
+    /**
+     * Creates a {@linkplain ClassDesc} from a pre-validated descriptor string
+     * for a class or interface type or an array type.
+     *
+     * @param descriptor a field descriptor string for a class or interface type
+     * @jvms 4.3.2 Field Descriptors
+     */
+    public static ReferenceClassDescImpl ofValidated(String descriptor) {
+        return new ReferenceClassDescImpl(descriptor);
     }
 
     @Override

@@ -78,6 +78,8 @@ compiler/floatingpoint/TestSubnormalDouble.java 8317810 generic-i586
 
 compiler/startup/StartupOutput.java 8326615 generic-x64
 
+compiler/rangechecks/TestArrayAccessAboveRCAfterRCCastIIEliminated.java 8332369 generic-all
+
 #############################################################################
 
 # :hotspot_gc

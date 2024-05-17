@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,10 @@
  * questions.
  */
 
-package com.sun.tools.classfile;
+package com.sun.tools.jdeps;
 
+
+import java.lang.classfile.ClassModel;
 
 /**
  * A directed relationship between two {@link Dependency.Location Location}s.
@@ -56,7 +58,7 @@ public interface Dependency {
          * @param classfile the class file to be examined
          * @return the dependencies located in the given class file.
          */
-        public Iterable<? extends Dependency> findDependencies(ClassFile classfile);
+        public Iterable<? extends Dependency> findDependencies(ClassModel classfile);
     }
 
 
