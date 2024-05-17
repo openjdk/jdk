@@ -958,7 +958,6 @@ JvmtiEventControllerPrivate::clear_to_frame_pop(JvmtiEnvThreadState *ets, JvmtiF
 void
 JvmtiEventControllerPrivate::change_field_watch(jvmtiEvent event_type, bool added) {
   int *count_addr;
-
   switch (event_type) {
   case JVMTI_EVENT_FIELD_MODIFICATION:
     count_addr = (int *)JvmtiExport::get_field_modification_count_addr();

@@ -278,11 +278,13 @@ const char *JvmtiTrace::safe_get_thread_name(Thread *thread) {
   if (!thread->is_Java_thread()) {
     return thread->name();
   }
-  JavaThread* java_thread = JavaThread::cast(thread);
-  if (java_thread->thread_state() == _thread_in_native ||
-      java_thread->thread_state() == _thread_blocked) {
-    return thread->Thread::name();
+  if (Thread::current()->is_Java_thread()) {
+    JavaThreadState current_state = JavaThread::cast(Thread::current())->thread_state();
+    if (current_state == _thread_in_native || current_state == _thread_blocked) {
+      return thread->Thread::name();
+    }
   }
+  JavaThread* java_thread = JavaThread::cast(thread);
   oop threadObj = java_thread->jvmti_vthread();
   if (threadObj == nullptr) {
     threadObj = java_thread->threadObj();
