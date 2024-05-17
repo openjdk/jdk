@@ -45,8 +45,6 @@ import jdk.test.lib.Platform;
 import jdk.test.lib.helpers.ClassFileInstaller;
 import jdk.test.lib.process.OutputAnalyzer;
 
-import jtreg.SkippedException;
-
 public class ArchiveHeapTestClass {
     static final String bootJar = ClassFileInstaller.getJarPath("boot.jar");
     static final String appJar = ClassFileInstaller.getJarPath("app.jar");
@@ -63,10 +61,6 @@ public class ArchiveHeapTestClass {
     static final String ARCHIVE_TEST_FIELD_NAME = "archivedObjects";
 
     public static void main(String[] args) throws Exception {
-        if (System.getProperty("test.cds.runtime.options") != null) {
-            throw new SkippedException(
-                "options specified via the test.cds.runtime.options property may not be compatible with this test");
-        }
         testDebugBuild();
     }
 

@@ -33,14 +33,8 @@
  * @run main/othervm/native ReplaceCriticalClassesForSubgraphs
  */
 
-import jtreg.SkippedException;
-
 public class ReplaceCriticalClassesForSubgraphs extends ReplaceCriticalClasses {
     public static void main(String args[]) throws Throwable {
-        if (System.getProperty("test.cds.runtime.options") != null) {
-            throw new SkippedException(
-                "options specified via the test.cds.runtime.options property may not be compatible with this test");
-        }
         ReplaceCriticalClassesForSubgraphs rcc = new ReplaceCriticalClassesForSubgraphs();
         rcc.process(args);
     }

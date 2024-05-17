@@ -333,6 +333,8 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("vm.gc.ZSinglegen", () -> "" + (vmGCZ && (!genZ || genZIsDefault)));
     }
 
+    final String GC_PREFIX  = "-XX:+Use";
+    final String GC_SUFFIX  = "GC";
     /**
      * "jtreg -vmoptions:-Dtest.cds.runtime.options=..." can be used to specify
      * the GC type to be used when running with a CDS archive. Set "vm.gc" accordingly,
@@ -348,8 +350,6 @@ public class VMProps implements Callable<Map<String, String>> {
             return;
         }
 
-        String GC_PREFIX  = "-XX:+Use";
-        String GC_SUFFIX  = "GC";
         String jtropts = System.getProperty("test.cds.runtime.options");
         if (jtropts != null) {
             for (String opt : jtropts.split(",")) {
@@ -462,7 +462,29 @@ public class VMProps implements Callable<Map<String, String>> {
      * @return true if this VM can write Java heap objects into the CDS archive
      */
     protected String vmCDSCanWriteArchivedJavaHeap() {
-        return "" + ("true".equals(vmCDS()) && WB.canWriteJavaHeapArchive());
+        return "" + ("true".equals(vmCDS()) && WB.canWriteJavaHeapArchive()
+                     && isCDSRuntimeOptionsCompatible());
+    }
+
+    /**
+     * @return true if the VM options specified via the "test.cds.runtime.options"
+     * property is compatible with writing Java heap objects into the CDS archive
+     */
+    protected boolean isCDSRuntimeOptionsCompatible() {
+        String jtropts = System.getProperty("test.cds.runtime.options");
+        if (jtropts == null)
+            return true;
+        String CCP_DISABLED = "-XX:-UseCompressedClassPointers";
+        for (String opt : jtropts.split(",")) {
+            if (opt.equals(CCP_DISABLED))
+                return false;
+            if (opt.startsWith(GC_PREFIX) && opt.endsWith(GC_SUFFIX)) {
+                String gc = opt.substring(GC_PREFIX.length(), opt.length() - GC_SUFFIX.length());
+                if (!gc.equals("G1"))
+                    return false;
+            }
+        }
+        return true;
     }
 
     /**
