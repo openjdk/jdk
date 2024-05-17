@@ -491,7 +491,7 @@ final public class SSLSessionImpl extends ExtendedSSLSession {
                 // Length of pre-shared key algorithm  (one byte)
                 i = buf.get();
                 b = new byte[i];
-                buf.get(b, 0 , i);
+                buf.get(b, 0, i);
                 String alg = new String(b);
                 // Get length of encoding
                 i = Short.toUnsignedInt(buf.getShort());
@@ -500,8 +500,13 @@ final public class SSLSessionImpl extends ExtendedSSLSession {
                 buf.get(b);
                 this.preSharedKey = new SecretKeySpec(b, alg);
                 // Get identity len
-                this.pskIdentity = new byte[buf.get()];
-                buf.get(pskIdentity);
+                i = buf.get();
+                if (i > 0) {
+                    this.pskIdentity = new byte[buf.get()];
+                    buf.get(pskIdentity);
+                } else {
+                    this.pskIdentity = null;
+                }
                 break;
             default:
                 throw new SSLException("Failed local certs of session.");
@@ -715,9 +720,14 @@ final public class SSLSessionImpl extends ExtendedSSLSession {
     }
 
     BigInteger incrTicketNonceCounter() {
-        BigInteger result = ticketNonceCounter;
-        ticketNonceCounter = ticketNonceCounter.add(BigInteger.ONE);
-        return result;
+        sessionLock.lock();
+        try {
+            BigInteger result = ticketNonceCounter;
+            ticketNonceCounter = ticketNonceCounter.add(BigInteger.ONE);
+            return result;
+        } finally {
+            sessionLock.unlock();
+        }
     }
 
     boolean isPSKable() {
@@ -777,12 +787,7 @@ final public class SSLSessionImpl extends ExtendedSSLSession {
     }
 
     byte[] getPskIdentity() {
-        sessionLock.lock();
-        try {
-            return pskIdentity;
-        } finally {
-            sessionLock.unlock();
-        }
+        return pskIdentity;
     }
 
     public boolean isPSK() {

@@ -27,6 +27,10 @@
  * @library /javax/net/ssl/templates
  * @bug 8242008
  * @run main/othervm MultiNSTClient -Djdk.tls.client.protocols=TLSv1.3 -Djdk.tls.server.enableSessionTicketExtension=true -Djdk.tls.client.enableSessionTicketExtension=true
+ * @run main/othervm MultiNSTClient -Djdk.tls.client.protocols=TLSv1.3 -Djdk.tls.server.enableSessionTicketExtension=false -Djdk.tls.client.enableSessionTicketExtension=true
+ * @run main/othervm MultiNSTClient -Djdk.tls.client.protocols=TLSv1.3 -Djdk.tls.server.enableSessionTicketExtension=true -Djdk.tls.client.enableSessionTicketExtension=false
+ * @run main/othervm MultiNSTClient -Djdk.tls.client.protocols=TLSv1.3 -Djdk.tls.server.enableSessionTicketExtension=false -Djdk.tls.client.enableSessionTicketExtension=false
+ * @run main/othervm MultiNSTClient -Djdk.tls.client.protocols=TLSv1.2 -Djdk.tls.server.enableSessionTicketExtension=true -Djdk.tls.client.enableSessionTicketExtension=true
  * @summary jkljkf fjkslfjfdsl
  */
 
@@ -46,13 +50,15 @@ public class MultiNSTClient {
     public static void main(String[] args) throws Exception {
 
         if (!args[0].equalsIgnoreCase("p")) {
+            String params = args[0] + " " + args[1] + " " + args[2];
             System.setProperty("test.java.opts",
                 "-Dtest.src=" + System.getProperty("test.src") +
                     " -Dtest.jdk=" + System.getProperty("test.jdk") +
                     " -Dtest.root=" + System.getProperty("test.root") +
-                    " -Djavax.net.debug=ssl,handshake "
-
+                    " -Djavax.net.debug=ssl,handshake " + params
                 );
+
+            boolean TLS13 = args[0].contains("1.3");
 
             System.out.println("test.java.opts: " +
                 System.getProperty("test.java.opts"));
@@ -62,28 +68,45 @@ public class MultiNSTClient {
 
             OutputAnalyzer output = ProcessTools.executeProcess(pb);
             System.out.println("I'm here");
-            List<String> list = output.stderrShouldContain("MultiNST PSK").asLines().stream().filter(s -> s.contains("MultiNST PSK")).toList();
-            List<String> serverPSK = list.stream().filter(s -> s.contains("MultiNST PSK (Server)")).toList();
-            List<String> clientPSK = list.stream().filter(s -> s.contains("MultiNST PSK (Client)")).toList();
-            //System.err.println("found server: " + serverPSK.size() + " " + serverPSK);
-            System.out.println("found list: " + list.size());
-            System.out.println("found server: " + serverPSK.size());
-            serverPSK.stream().forEach(s -> System.out.println("\t" + s));
-            //System.err.println("found client: " + clientPSK.size() + " " + clientPSK);
-            System.out.println("found client: " + clientPSK.size());
-            clientPSK.stream().forEach(s -> System.out.println("\t" + s));
-            for (int i = 0; i < 2; i++) {
-                String svr = serverPSK.getFirst();
-                String cli = clientPSK.getFirst();
-                if (svr.regionMatches(svr.length() - 16, cli, cli.length() - 16, 16)) {
-                    System.out.println("entry " + (i + 1) + " match.");
-                } else {
-                    System.out.println("entry " + (i + 1) + " server and client PSK didn't match:");
-                    System.out.println("  server: " + svr);
-                    System.out.println("  client: " + cli);
-                    throw new Exception("match failed");
+            boolean pass = true;
+            try {
+                List<String> list = output.stderrShouldContain("MultiNST PSK").asLines().stream().filter(s -> s.contains("MultiNST PSK")).toList();
+                List<String> serverPSK = list.stream().filter(s -> s.contains("MultiNST PSK (Server)")).toList();
+                List<String> clientPSK = list.stream().filter(s -> s.contains("MultiNST PSK (Client)")).toList();
+                //System.err.println("found server: " + serverPSK.size() + " " + serverPSK);
+                System.out.println("found list: " + list.size());
+                System.out.println("found server: " + serverPSK.size());
+                serverPSK.stream().forEach(s -> System.out.println("\t" + s));
+                //System.err.println("found client: " + clientPSK.size() + " " + clientPSK);
+                System.out.println("found client: " + clientPSK.size());
+                clientPSK.stream().forEach(s -> System.out.println("\t" + s));
+                for (int i = 0; i < 2; i++) {
+                    String svr = serverPSK.getFirst();
+                    String cli = clientPSK.getFirst();
+                    if (svr.regionMatches(svr.length() - 16, cli, cli.length() - 16, 16)) {
+                        System.out.println("entry " + (i + 1) + " match.");
+                    } else {
+                        System.out.println("entry " + (i + 1) + " server and client PSK didn't match:");
+                        System.out.println("  server: " + svr);
+                        System.out.println("  client: " + cli);
+                        pass = false;
+                    }
+                }
+            } catch (RuntimeException e) {
+                System.out.println("No MultiNST PSK found.");
+                pass = false;
+            }
+
+            if (TLS13) {
+                if (!pass) {
+                    throw new Exception("Test failed: " + params);
+                }
+            } else {
+                if (pass) {
+                    throw new Exception("Test failed: " + params);
                 }
             }
+            System.out.println("Test Passed");
             return;
         }
 

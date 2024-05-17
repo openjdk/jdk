@@ -365,8 +365,7 @@ final class NewSessionTicket {
                 if (!hc.handshakeSession.isPSKable()) {
                     if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                         SSLLogger.fine(
-                                "No session ticket produced: " +
-                                "No session ticket allowed in this session");
+                                "No session ticket produced: No PSK set");
                     }
 
                     return null;
@@ -643,7 +642,8 @@ final class NewSessionTicket {
             sessionCache.put(sessionCopy, sessionCopy.isPSK());
 
             if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                SSLLogger.fine("MultiNST PSK (Server): " + Utilities.toHexString(Arrays.copyOf(nstm.ticket, 16)));
+                SSLLogger.fine("MultiNST PSK (Server): " +
+                    Utilities.toHexString(Arrays.copyOf(nstm.ticket, 16)));
             }
 
             // clean the post handshake context
