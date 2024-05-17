@@ -191,10 +191,9 @@ public interface SocketOptions {
     /**
      * See {@link StandardSocketOptions#SO_LINGER} for description of this socket option.
      * <p>
-     * Either {@linkplain Boolean#FALSE Boolean.FALSE} or an integer value lesser than {@code 0}
-     * can be passed to {@link #setOption(int, Object)} to disable this option. An integer
-     * value {@code >= 0} passed to {@code setOption(int, Object)} will enable the option and
-     * the value will represent the linger timeout.
+     * Set the value to {@code Boolean.FALSE} or an integer less than {@code 0} with
+     * {@link #setOption(int, Object)} to disable this option. An integer greater than or equal to
+     * {@code 0} will enable the option and will represent the linger timeout.
      * <p>
      * If this option is enabled then {@link #getOption(int)} will return an integer value
      * representing the linger timeout, else the return value will be {@code Boolean.FALSE}.
