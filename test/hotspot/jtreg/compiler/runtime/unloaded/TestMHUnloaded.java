@@ -40,7 +40,7 @@
  * @run main/othervm -Xbootclasspath/a:.
  *                   -Xbatch -XX:-TieredCompilation -XX:CompileCommand=exclude,*::test
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+PrintCompilation -XX:+PrintInlining
- *                   -XX:+AlwaysIncrementalInline
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+AlwaysIncrementalInline
  *                      compiler.runtime.unloaded.TestMHUnloaded
  */
 
