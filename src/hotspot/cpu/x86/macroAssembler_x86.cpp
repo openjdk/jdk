@@ -1169,14 +1169,6 @@ void MacroAssembler::align(int modulus, int target) {
   }
 }
 
-// Alignment specifying the maximum number of allowed bytes to pad.
-// If padding > max, no padding is inserted.
-void MacroAssembler::p2align(int modulus, int maxbytes) {
-  if (modulus - (offset() % modulus) <= maxbytes) {
-    align(modulus, offset());
-  }
-}
-
 void MacroAssembler::push_f(XMMRegister r) {
   subptr(rsp, wordSize);
   movflt(Address(rsp, 0), r);

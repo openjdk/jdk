@@ -291,10 +291,9 @@ public:
                        XMMRegister vec1, XMMRegister vec2, KRegister mask1 = knoreg, KRegister mask2 = knoreg);
 
   // Compare char[] or byte[] arrays.
-  void arrays_equals(bool is_array_equ, Register ary1, Register ary2,
-                     Register limit, Register result, Register chr,
-                     XMMRegister vec1, XMMRegister vec2, bool is_char,
-                     KRegister mask = knoreg, bool expand_ary2 = false);
+  void arrays_equals(bool is_array_equ, Register ary1, Register ary2, Register limit,
+                     Register result, Register chr, XMMRegister vec1, XMMRegister vec2,
+                     bool is_char, KRegister mask = knoreg, bool expand_ary2 = false);
 
   void arrays_hashcode(Register str1, Register cnt1, Register result,
                        Register tmp1, Register tmp2, Register tmp3, XMMRegister vnext,

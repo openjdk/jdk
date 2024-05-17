@@ -215,7 +215,6 @@ class MacroAssembler: public Assembler {
   void align64();
   void align(int modulus);
   void align(int modulus, int target);
-  void p2align(int modulus, int maxbytes);
 
   void post_call_nop();
   // A 5 byte nop that is safe for patching (see patch_verified_entry)

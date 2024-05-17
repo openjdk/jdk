@@ -1283,6 +1283,8 @@ bool LibraryCallKit::inline_string_indexOfI(StrIntrinsicNode::ArgEnc ae) {
                                region, phi, ae);
   }
   if (result != nullptr) {
+    // The result is index relative to from_index if substring was found, -1 otherwise.
+    // Generate code which will fold into cmove.
     Node* cmp = _gvn.transform(new CmpINode(result, intcon(0)));
     Node* bol = _gvn.transform(new BoolNode(cmp, BoolTest::lt));
 
