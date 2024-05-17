@@ -1333,9 +1333,9 @@ private:
   GrowableArray<VTransformNode*> _vtnodes; // TODO debug only?
   VTransformNode* _cl_vtnode; // vtnode of the _vloop.cl(), the "root" of the graph.
 
-  // Schedule (or order) for the memops, where the vector memops are consecutive.
-  // We use this to reorder the memory graph before inserting vector operations.
-  GrowableArray<MemNode*> _mem_schedule;
+  // Schedule (linearization) of the graph. We use this to reorder the memory graph
+  // before inserting vector operations.
+  GrowableArray<VTransformNode*> _schedule;
 
 public:
   VTransformGraph(const VLoopAnalyzer& vloop_analyzer) :
@@ -1344,7 +1344,7 @@ public:
     _next_idx(0),
     _vtnodes(&_arena, vloop_analyzer.vloop().estimated_body_length(), 0, nullptr),
     _cl_vtnode(nullptr),
-    _mem_schedule(&_arena, 8, 0, nullptr) {}
+    _schedule(&_arena, vloop_analyzer.vloop().estimated_body_length(), 0, nullptr) {}
 
   Arena* arena() { return &_arena; }
   VTransformNodeIDX new_idx() { return _next_idx++; }
@@ -1352,18 +1352,16 @@ public:
   void set_cl_vtnode(VTransformNode* cl_vtnode) { _cl_vtnode = cl_vtnode; }
 
   bool schedule();
-  bool schedule_vtnodes(GrowableArray<VTransformNode*>& vtnode_schedule) const;
-  void schedule_mem_nodes(const GrowableArray<VTransformNode*>& vtnode_schedule);
 
   void apply();
-  void apply_mem_schedule();
+  void apply_schedule();
 
 #ifndef PRODUCT
   bool is_trace() const {
     return _vloop_analyzer.vloop().vtrace().is_trace(TraceAutoVectorizationTag::VTRANSFORM);
   }
   void print_vtnodes() const;
-  void print_mem_schedule() const;
+  void print_schedule() const;
 #endif
 };
 
