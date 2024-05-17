@@ -70,9 +70,9 @@ import java.util.Objects;
  * <p> When only one part is given, the value is stored directly in
  * the network address without any byte rearrangement.
  *
- * <p> For example, the following (decimal) forms are supported by methods
+ * <p> For example, the following (decimal) forms are supported by the methods
  * {@link Inet4Address#ofLiteral(String)} and {@link InetAddress#getByName(String)}
- * capable of parsing textual representations of IPv4 addresses:
+ * which are capable of parsing textual representations of IPv4 addresses:
  * {@snippet :
  *  // Dotted-decimal 'd.d.d.d' form with four part address literal
  *  InetAddress.getByName("007.008.009.010"); // ==> /7.8.9.10
@@ -93,7 +93,7 @@ import java.util.Objects;
  *  Inet4Address.ofLiteral("02130706689"); // ==> /127.0.1.1
  * }
  *
- * <p> The above forms adhere "strict" decimal-only syntax.
+ * <p> The above forms adhere to "strict" decimal-only syntax.
  * Additionally, the {@link Inet4Address#ofPosixLiteral(String)}
  * method implements a POSIX {@code inet_addr} compatible "loose"
  * parsing algorithm, allowing octal and hexadecimal address segments.
