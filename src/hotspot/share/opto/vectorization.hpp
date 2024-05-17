@@ -1322,6 +1322,7 @@ class VTransformNode;
 class VTransformScalarNode;
 class VTransformVectorNode;
 class VTransformElementWiseVectorNode;
+class VTransformReductionVectorNode;
 
 class VTransformGraph {
 private:
@@ -1431,6 +1432,7 @@ public:
   virtual VTransformScalarNode* isa_Scalar() { return nullptr; }
   virtual VTransformVectorNode* isa_Vector() { return nullptr; }
   virtual VTransformElementWiseVectorNode* isa_ElementWiseVector() { return nullptr; }
+  virtual VTransformReductionVectorNode* isa_ReductionVector() { return nullptr; }
 
   NOT_PRODUCT(virtual const char* name() const = 0;)
   NOT_PRODUCT(void print() const;)
@@ -1485,6 +1487,22 @@ public:
   virtual VTransformElementWiseVectorNode* isa_ElementWiseVector() { return this; }
 
   NOT_PRODUCT(virtual const char* name() const { return "ElementWiseVector"; };)
+};
+
+// Reduction of some initial scalar value and a vector, resulting in a new scalar.
+//   val = init;
+//   for (v in vector) { val = val OP v; }
+//   return val;
+class VTransformReductionVectorNode : public VTransformVectorNode {
+public:
+  // req = 3 -> [ctrl, init, vector]
+  VTransformReductionVectorNode(VTransformGraph& graph, int number_of_nodes) :
+    VTransformVectorNode(graph, 3, number_of_nodes) {}
+
+  // TODO remove?
+  virtual VTransformReductionVectorNode* isa_ReductionVector() { return this; }
+
+  NOT_PRODUCT(virtual const char* name() const { return "ReductionVector"; };)
 };
 
 class VTransformLoadVectorNode : public VTransformVectorNode {

@@ -3495,6 +3495,7 @@ void SuperWord::vtransform_build(VTransformGraph& graph) const {
   VectorSet dependency_set;
 
   auto set_req = [&](VTransformNode* vtn, int j, Node* def) {
+    if (!in_bb(def)) { return; }
     VTransformNode* req = bb_idx_to_vtnode.at(bb_idx(def));
     vtn->set_req(j, req);
     dependency_set.set(req->_idx);
@@ -3503,7 +3504,7 @@ void SuperWord::vtransform_build(VTransformGraph& graph) const {
   auto set_req_all = [&](VTransformNode* vtn, Node* use) {
     for (uint j = 0; j < use->req(); j++) {
       Node* def = use->in(j);
-      if (def == nullptr || !in_bb(def)) { continue; }
+      if (def == nullptr) { continue; }
       set_req(vtn, j, def);
     }
   };
@@ -3534,6 +3535,8 @@ void SuperWord::vtransform_build(VTransformGraph& graph) const {
       set_req(vtn, MemNode::Address, p0->in(MemNode::Address));
       set_req(vtn, MemNode::ValueIn, p0->in(MemNode::ValueIn));
     } else if (vtn->isa_ElementWiseVector() != nullptr) {
+      set_req_all(vtn, p0);
+    } else if (vtn->isa_ReductionVector() != nullptr) {
       set_req_all(vtn, p0);
     } else {
       DEBUG_ONLY( vtn->print(); )
@@ -3600,7 +3603,7 @@ VTransformVectorNode* SuperWord::make_vtnode_for_pack(VTransformGraph& graph, co
   } else if (p0->req() == 3) {
     if (is_marked_reduction(p0)) {
       // Reduction: (scalar, vector) -> scalar.
-      assert(false, "TODO reduction");
+      vtn = new (graph.arena()) VTransformReductionVectorNode(graph, pack_size);
     } else {
       // Binary element-wise vector operation.
       vtn = new (graph.arena()) VTransformElementWiseVectorNode(graph, 3, pack_size);
@@ -3616,11 +3619,13 @@ VTransformVectorNode* SuperWord::make_vtnode_for_pack(VTransformGraph& graph, co
              opc == Op_PopCountI || opc == Op_CountLeadingZerosI ||
              opc == Op_CountTrailingZerosI) {
     assert(p0->req() == 2, "only one input expected");
-    assert(false, "TODO");
+    vtn = new (graph.arena()) VTransformElementWiseVectorNode(graph, 2, pack_size);
   } else if (requires_long_to_int_conversion(opc)) {
-    assert(false, "TODO");
+    assert(p0->req() == 2, "only one input expected");
+    vtn = new (graph.arena()) VTransformElementWiseVectorNode(graph, 2, pack_size);
   } else if (VectorNode::is_convert_opcode(opc)) {
-    assert(false, "TODO");
+    assert(p0->req() == 2, "only one input expected");
+    vtn = new (graph.arena()) VTransformElementWiseVectorNode(graph, 2, pack_size);
   } else if (opc == Op_FmaD || opc == Op_FmaF) {
     assert(false, "TODO");
   } else {
