@@ -2480,7 +2480,11 @@ public class DecimalFormat extends NumberFormat {
             String exponentString = symbols.getExponentSeparator();
             boolean sawDecimal = false;
             boolean sawDigit = false;
-            int exponent = 0; // Set to the exponent value, if any
+            // Storing as long allows us to maintain accuracy of exponent
+            // when the exponent value as well as the decimalAt nears
+            // Integer.MAX/MIN value. However, the final expressed value is an int
+            long exponent = 0;
+            boolean[] expStat = new boolean[STATUS_LENGTH];
 
             // We have to track digitCount ourselves, because digits.count will
             // pin when the maximum allowable digits is reached.
@@ -2582,29 +2586,21 @@ public class DecimalFormat extends NumberFormat {
                         && text.regionMatches(position, exponentString, 0, exponentString.length())) {
                     // Process the exponent by recursively calling this method.
                     ParsePosition pos = new ParsePosition(position + exponentString.length());
-                    boolean[] stat = new boolean[STATUS_LENGTH];
                     DigitList exponentDigits = new DigitList();
 
-                    if (subparse(text, pos, "", symbols.getMinusSignText(), exponentDigits, true, stat)) {
+                    if (subparse(text, pos, "", symbols.getMinusSignText(), exponentDigits, true, expStat)) {
                         // We parse the exponent with isExponent == true, thus fitsIntoLong()
                         // only returns false here if the exponent DigitList value exceeds
                         // Long.MAX_VALUE. We do not need to worry about false being
                         // returned for faulty values as they are ignored by DigitList.
-                        if (exponentDigits.fitsIntoLong(stat[STATUS_POSITIVE], true)) {
-                            try {
-                                exponent = Math.toIntExact(exponentDigits.getLong());
-                                if (!stat[STATUS_POSITIVE]) {
-                                    exponent = -exponent;
-                                }
-                            } catch (ArithmeticException ex) {
-                                // For all overflow and underflow, determine
-                                // appropriate value based off positive status
-                                exponent = stat[STATUS_POSITIVE] ?
-                                        Integer.MAX_VALUE : Integer.MIN_VALUE;
+                        if (exponentDigits.fitsIntoLong(expStat[STATUS_POSITIVE], true)) {
+                            exponent = exponentDigits.getLong();
+                            if (!expStat[STATUS_POSITIVE]) {
+                                exponent = -exponent;
                             }
                         } else {
-                            exponent = stat[STATUS_POSITIVE] ?
-                                    Integer.MAX_VALUE : Integer.MIN_VALUE;
+                            exponent = expStat[STATUS_POSITIVE] ?
+                                    Long.MAX_VALUE : Long.MIN_VALUE;
                         }
                         position = pos.index; // Advance past the exponent
                     }
@@ -2642,11 +2638,12 @@ public class DecimalFormat extends NumberFormat {
 
             // Adjust for exponent, if any
             try {
-                digits.decimalAt = Math.addExact(digits.decimalAt, exponent);
+                exponent = Math.addExact(digits.decimalAt, exponent);
+                digits.decimalAt = Math.toIntExact(exponent);
             } catch (ArithmeticException ex) {
                 // Depending on overflow/underflow, adjust exponent value
-                digits.decimalAt = digits.decimalAt + exponent > 0
-                        ? Integer.MIN_VALUE : Integer.MAX_VALUE;
+                digits.decimalAt = expStat[STATUS_POSITIVE]
+                        ? Integer.MAX_VALUE : Integer.MIN_VALUE;
             }
 
             // If none of the text string was recognized.  For example, parse
