@@ -40,5 +40,5 @@ void VM_SerialCollectForAllocation::doit() {
 void VM_SerialGCCollect::doit() {
   SerialHeap* gch = SerialHeap::heap();
   GCCauseSetter gccs(gch, _gc_cause);
-  gch->collect_at_safepoint(_full);
+  gch->try_collect_at_safepoint(_full);
 }

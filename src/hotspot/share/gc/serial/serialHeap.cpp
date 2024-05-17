@@ -439,11 +439,11 @@ bool SerialHeap::is_young_gc_safe() const {
   return _old_gen->promotion_attempt_is_safe(_young_gen->used());
 }
 
-bool SerialHeap::do_young_collection_no_gc_locker(bool clear_soft_refs) {
+bool SerialHeap::do_young_collection(bool clear_soft_refs) {
   if (!is_young_gc_safe()) {
     return false;
   }
-  IsSTWGCActiveMark active_gc_mark;
+  IsSTWGCActiveMark gc_active_mark;
   SvcGCMarker sgcm(SvcGCMarker::MINOR);
   GCIdMark gc_id_mark;
   GCTraceCPUTime tcpu(_young_gen->gc_tracer());
@@ -526,7 +526,7 @@ HeapWord* SerialHeap::satisfy_failed_allocation(size_t size, bool is_tlab) {
 
   // If young-gen can handle this allocation, attempt young-gc firstly.
   bool should_run_young_gc = _young_gen->should_allocate(size, is_tlab);
-  collect_at_safepoint_no_gc_locker(!should_run_young_gc);
+  collect_at_safepoint(!should_run_young_gc);
 
   result = attempt_allocation(size, is_tlab, false /*first_only*/);
   if (result != nullptr) {
@@ -554,7 +554,7 @@ HeapWord* SerialHeap::satisfy_failed_allocation(size_t size, bool is_tlab) {
   if (result != nullptr) {
     return result;
   }
-
+  // The previous full-gc can shrink the heap, so re-expand it.
   result = expand_heap_and_allocate(size, is_tlab);
   if (result != nullptr) {
     return result;
@@ -632,20 +632,20 @@ void SerialHeap::scan_evacuated_objs(YoungGenScanClosure* young_cl,
   guarantee(young_gen()->promo_failure_scan_is_complete(), "Failed to finish scan");
 }
 
-void SerialHeap::collect_at_safepoint(bool full) {
+void SerialHeap::try_collect_at_safepoint(bool full) {
   assert(SafepointSynchronize::is_at_safepoint(), "precondition");
   if (GCLocker::check_active_before_gc()) {
     return;
   }
-  collect_at_safepoint_no_gc_locker(full);
+  collect_at_safepoint(full);
 }
 
-void SerialHeap::collect_at_safepoint_no_gc_locker(bool full) {
+void SerialHeap::collect_at_safepoint(bool full) {
   assert(!GCLocker::is_active(), "precondition");
   bool clear_soft_refs = must_clear_all_soft_refs();
 
   if (!full) {
-    bool success = do_young_collection_no_gc_locker(clear_soft_refs);
+    bool success = do_young_collection(clear_soft_refs);
     if (success) {
       return;
     }
@@ -904,7 +904,7 @@ bool SerialHeap::print_location(outputStream* st, void* addr) const {
 }
 
 void SerialHeap::print_tracing_info() const {
- // Nothing
+ // Does nothing
 }
 
 void SerialHeap::print_heap_change(const PreGenGCValues& pre_gc_values) const {

@@ -96,7 +96,7 @@ private:
   // condition that caused that incremental collection to fail.
   bool _incremental_collection_failed;
 
-  bool do_young_collection_no_gc_locker(bool clear_soft_refs);
+  bool do_young_collection(bool clear_soft_refs);
 
   // Reserve aligned space for the heap as needed by the contained generations.
   ReservedHeapSpace allocate(size_t alignment);
@@ -114,7 +114,7 @@ private:
   void do_full_collection(bool clear_all_soft_refs) override;
   void do_full_collection_no_gc_locker(bool clear_all_soft_refs);
 
-  void collect_at_safepoint_no_gc_locker(bool full);
+  void collect_at_safepoint(bool full);
 
   // Does the "cause" of GC indicate that
   // we absolutely __must__ clear soft refs?
@@ -149,7 +149,7 @@ public:
   HeapWord* satisfy_failed_allocation(size_t size, bool is_tlab);
 
   // Callback from VM_SerialGCCollect.
-  void collect_at_safepoint(bool full);
+  void try_collect_at_safepoint(bool full);
 
   // Perform a full collection of the heap; intended for use in implementing
   // "System.gc". This implies as full a collection as the CollectedHeap
