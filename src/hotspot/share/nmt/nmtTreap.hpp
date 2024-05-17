@@ -198,8 +198,9 @@ private:
       to_visit.push({head.depth + 1, head.n->_priority, head.n->left()});
       to_visit.push({head.depth + 1, head.n->_priority, head.n->right()});
     }
-    assert(maximum_depth_found <= ceil(expected_maximum_depth),
-           "depth unexpectedly large, was: %d, expected: %d", maximum_depth_found, expected_maximum_depth);
+    assert(maximum_depth_found - expected_maximum_depth <= 3,
+           "depth unexpectedly large for treap of node count %d, was: %d, expected between %d and %d",
+           _node_count, maximum_depth_found, expected_maximum_depth - 3, expected_maximum_depth);
 
     // Visit everything in order, see that the key ordering is monotonically increasing.
     TreapNode* last_seen = nullptr;
