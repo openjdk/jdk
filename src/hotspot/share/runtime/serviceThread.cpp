@@ -201,7 +201,7 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
     }
 
     if (oopmap_cache_work) {
-      OopMapCache::cleanup_old_entries();
+      OopMapCache::cleanup();
     }
   }
 }

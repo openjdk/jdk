@@ -183,8 +183,11 @@ class OopMapCache : public CHeapObj<mtClass> {
   // Check if we need to clean up old entries
   static bool has_cleanup_work();
 
+  // Request cleanup if work is needed
+  static void trigger_cleanup();
+
   // Clean up the old entries
-  static void cleanup_old_entries();
+  static void cleanup();
 };
 
 #endif // SHARE_INTERPRETER_OOPMAPCACHE_HPP

@@ -577,11 +577,6 @@ void OopMapCache::enqueue_for_cleanup(OopMapCacheEntry* entry) {
     entry->_next = head;
     if (Atomic::cmpxchg(&_old_entries, head, entry) == head) {
       // Enqueued successfully.
-      if (head == nullptr) {
-        // The queue was empty before, notify service thread there is now work to do.
-        MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
-        Service_lock->notify_all();
-      }
       break;
     }
   }
@@ -597,7 +592,14 @@ bool OopMapCache::has_cleanup_work() {
   return Atomic::load(&_old_entries) != nullptr;
 }
 
-void OopMapCache::cleanup_old_entries() {
+void OopMapCache::trigger_cleanup() {
+  if (has_cleanup_work()) {
+    MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
+    Service_lock->notify_all();
+  }
+}
+
+void OopMapCache::cleanup() {
   OopMapCacheEntry* entry = Atomic::xchg(&_old_entries, (OopMapCacheEntry*)nullptr);
   if (entry == nullptr) {
     // No work.
