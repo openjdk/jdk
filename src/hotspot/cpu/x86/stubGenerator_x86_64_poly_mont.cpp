@@ -167,7 +167,7 @@ void montgomeryMultiply(const Register aLimbs, const Register bLimbs, const Regi
   // M = load(*modulus_p256)
   __ evmovdquq(modulus, allLimbs, ExternalAddress(modulus_p256()), false, Assembler::AVX_512bit, rscratch);
 
-  // A = load(*aLimbs) // masked evmovdquq() can be slow. Instead load full 256bit, and compbine with 64bit
+  // A = load(*aLimbs);  masked evmovdquq() can be slow. Instead load full 256bit, and compbine with 64bit
   __ evmovdquq(A, Address(aLimbs, 8), Assembler::AVX_256bit);
   __ evpermq(A, allLimbs, shift1L, A, false, Assembler::AVX_512bit);
   __ movq(T, Address(aLimbs, 0));
