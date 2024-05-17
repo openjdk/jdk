@@ -1353,8 +1353,11 @@ public:
 
   bool schedule();
 
+  template<typename Callback>
+  void for_each_memop_in_schedule(Callback callback) const;
+
   void apply();
-  void apply_schedule();
+  void apply_memops_reordering_with_schedule();
 
 #ifndef PRODUCT
   bool is_trace() const {
@@ -1362,6 +1365,7 @@ public:
   }
   void print_vtnodes() const;
   void print_schedule() const;
+  void print_memops_schedule() const;
 #endif
 };
 
