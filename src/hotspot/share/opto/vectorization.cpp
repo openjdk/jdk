@@ -1770,7 +1770,6 @@ bool VTransformGraph::schedule() {
   VectorSet post_visited;
 
   // Start with the "root": the vtnode of the CountedLoopNode.
-  //pre_visited.set(_cl_vtnode->_idx); // TODO necessary?
   stack.push(_cl_vtnode);
 
   // We create a reverse-post-visit order. This gives us a linearization, if there are
@@ -1856,8 +1855,19 @@ void VTransformGraph::for_each_memop_in_schedule(Callback callback) const {
 }
 
 void VTransformGraph::apply() {
+  const VLoop& vloop  = _vloop_analyzer.vloop();
+  CountedLoopNode* cl = vloop.cl();
+  Compile* C          = vloop.phase()->C;
+
+  C->print_method(PHASE_AUTO_VECTORIZE1_BEFORE_APPLY, 4, cl);
+
   apply_memops_reordering_with_schedule();
+
+  C->print_method(PHASE_AUTO_VECTORIZE2_AFTER_REORDER, 4, cl);
+
   // TODO
+
+  C->print_method(PHASE_AUTO_VECTORIZE3_AFTER_APPLY, 4, cl);
 }
 
 // We prepare the memory graph for the replacement of scalar memops with vector memops.
@@ -1872,12 +1882,9 @@ void VTransformGraph::apply_memops_reordering_with_schedule() {
   }
 #endif
 
-  const VLoop& vloop  = _vloop_analyzer.vloop();
-  Compile* C          = vloop.phase()->C;
-  PhaseIterGVN& igvn  = vloop.phase()->igvn();
-  CountedLoopNode* cl = vloop.cl();
-  // TODO rename PHASE
-  C->print_method(PHASE_SUPERWORD1_BEFORE_SCHEDULE, 4, cl);
+  const VLoop& vloop = _vloop_analyzer.vloop();
+  Compile* C         = vloop.phase()->C;
+  PhaseIterGVN& igvn = vloop.phase()->igvn();
 
   ResourceMark rm;
   int max_slices = C->num_alias_types();
