@@ -1350,7 +1350,8 @@ CodeBuffer* PhaseOutput::init_buffer() {
     stub_req  += deopt_handler_req;
   }
   CodeBuffer* cb = code_buffer();
-  cb->initialize(total_req, _buf_sizes._reloc);
+  bool executable_blob = false;
+  cb->initialize(total_req, _buf_sizes._reloc, executable_blob);
 
   // Have we run out of code space?
   if ((cb->blob() == nullptr) || (!CompileBroker::should_compile_new_jobs())) {
