@@ -2358,7 +2358,13 @@ public class ObjectInputStream
          */
     }
 
-    /** Reads a record. */
+    /**
+     * Reads and returns a record.
+     * If an exception is marked for any of the fields, the dependency
+     * mechanism marks the record as having an exception.
+     * Null is returned from readRecord and later the exception is thrown at
+     * the exit of {@link #readObject(Class)}.
+     **/
     private Object readRecord(ObjectStreamClass desc) throws IOException {
         ObjectStreamClass.ClassDataSlot[] slots = desc.getClassDataLayout();
         if (slots.length != 1) {
