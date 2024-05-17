@@ -233,7 +233,8 @@ module jdk.compiler {
         jdk.javadoc;
     exports com.sun.tools.javac.api to
         jdk.javadoc,
-        jdk.jshell;
+        jdk.jshell,
+        jdk.internal.md;
     exports com.sun.tools.javac.resources to
         jdk.jshell;
     exports com.sun.tools.javac.code to
@@ -253,17 +254,20 @@ module jdk.compiler {
     exports com.sun.tools.javac.model to
         jdk.javadoc;
     exports com.sun.tools.javac.parser to
-        jdk.jshell;
+        jdk.jshell,
+        jdk.internal.md;
     exports com.sun.tools.javac.platform to
         jdk.jdeps,
         jdk.javadoc;
     exports com.sun.tools.javac.tree to
         jdk.javadoc,
-        jdk.jshell;
+        jdk.jshell,
+        jdk.internal.md;
     exports com.sun.tools.javac.util to
         jdk.jdeps,
         jdk.javadoc,
-        jdk.jshell;
+        jdk.jshell,
+        jdk.internal.md;
     exports jdk.internal.shellsupport.doc to
         jdk.jshell;
 
@@ -271,6 +275,7 @@ module jdk.compiler {
     uses com.sun.source.util.Plugin;
     uses com.sun.tools.doclint.DocLint;
     uses com.sun.tools.javac.platform.PlatformProvider;
+    uses com.sun.tools.javac.api.JavacTrees.DocCommentTreeTransformer;
 
     provides java.util.spi.ToolProvider with
         com.sun.tools.javac.main.JavacToolProvider;
