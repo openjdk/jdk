@@ -32,13 +32,13 @@
 #include "runtime/threadWXSetters.inline.hpp"
 
 bool XBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
-  
+
   if (!is_armed(nm)) {
     // Some other thread got here first and healed the oops
     // and disarmed the nmethod.
     return true;
   }
-  
+
   XLocker<XReentrantLock> locker(XNMethod::lock_for_nmethod(nm));
   log_trace(nmethod, barrier)("Entered critical zone for %p", nm);
 

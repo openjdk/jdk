@@ -36,13 +36,13 @@
 #include "runtime/threadWXSetters.inline.hpp"
 
 bool ShenandoahBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
-  
+
   if (!is_armed(nm)) {
     // Some other thread got here first and healed the oops
     // and disarmed the nmethod.
     return true;
   }
-  
+
   ShenandoahReentrantLock* lock = ShenandoahNMethod::lock_for_nmethod(nm);
   assert(lock != nullptr, "Must be");
   ShenandoahReentrantLocker locker(lock);
