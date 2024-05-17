@@ -1451,29 +1451,25 @@ class ImmutableCollections {
             implements List<StableValue<V>> {
 
         @Stable
-        private final int size;
-        @Stable
         private final StableValueImpl<V>[] elements;
 
         private StableList(int size) {
             assert size > 0;
-            this.size = size;
             this.elements = StableUtil.newStableValueArray(size);
         }
 
         @ForceInline
         @Override
         public StableValueImpl<V> get(int index) {
-            Objects.checkIndex(index, size);
             StableValueImpl<V> stable = elements[index];
-            return stable == null
-                    ? StableUtil.getOrSetVolatile(elements, index)
-                    : stable;
+            return stable != null
+                    ? stable
+                    : StableUtil.getOrSetVolatile(elements, index);
         }
 
         @Override
         public int size() {
-            return size;
+            return elements.length;
         }
 
         @Override
