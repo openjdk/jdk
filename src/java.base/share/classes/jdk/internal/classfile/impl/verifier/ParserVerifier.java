@@ -51,7 +51,7 @@ import java.lang.constant.ConstantDescs;
 import java.lang.reflect.AccessFlag;
 import java.util.Collection;
 import java.util.function.Function;
-import java.util.function.IntFunction;
+import java.util.function.ToIntFunction;
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.Util;
 
@@ -330,7 +330,7 @@ public record ParserVerifier(ClassModel classModel) {
                 yield 2;
             }
             case StackMapTableAttribute smta ->
-                -1;
+                2 + subSize(smta.entries(), frame -> stackMapFrameSize(frame));
             case SyntheticAttribute _ ->
                 0;
             case UnknownAttribute _ ->
@@ -346,9 +346,13 @@ public record ParserVerifier(ClassModel classModel) {
     }
 
     private static <T, S extends Collection<?>> int subSize(Collection<T> entries, Function<T, S> subMH, int entrySize, int subSize) {
+        return subSize(entries, (ToIntFunction<T>) t -> entrySize + subSize * subMH.apply(t).size());
+    }
+
+    private static <T> int subSize(Collection<T> entries, ToIntFunction<T> subMH) {
         int l = 0;
         for (T entry : entries) {
-            l += entrySize + subSize * subMH.apply(entry).size();
+            l += subMH.applyAsInt(entry);
         }
         return l;
     }
@@ -416,6 +420,46 @@ public record ParserVerifier(ClassModel classModel) {
             l += 4 + h.hash().length;
         }
         return l;
+    }
+
+    private int stackMapFrameSize(StackMapFrameInfo frame) {
+        int ft = frame.frameType();
+        if (ft < 64) return 1;
+        if (ft < 128) return 1 + verificationTypeSize(frame.stack().getFirst());
+        if (ft > 246) {
+            if (ft == 247) return 3 + verificationTypeSize(frame.stack().getFirst());
+            if (ft < 252) return 3;
+            if (ft < 255) {
+                var loc = frame.locals();
+                int l = 3;
+                for (int i = loc.size() + 251 - ft; i < loc.size(); i++) {
+                    l += verificationTypeSize(loc.get(i));
+                }
+                return l;
+            }
+            if (ft == 255) {
+                int l = 7;
+                for (var vt : frame.stack()) {
+                    l += verificationTypeSize(vt);
+                }
+                for (var vt : frame.locals()) {
+                    l += verificationTypeSize(vt);
+                }
+                return l;
+            }
+        }
+        throw new IllegalArgumentException("Invalid stack map frame type " + ft);
+    }
+
+    private static int verificationTypeSize(StackMapFrameInfo.VerificationTypeInfo vti) {
+        return switch (vti) {
+            case StackMapFrameInfo.SimpleVerificationTypeInfo _ -> 1;
+            case StackMapFrameInfo.ObjectVerificationTypeInfo ovti -> {
+                ovti.classSymbol();
+                yield 3;
+            }
+            case StackMapFrameInfo.UninitializedVerificationTypeInfo _ -> 3;
+        };
     }
 
     private String className() {

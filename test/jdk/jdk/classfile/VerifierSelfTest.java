@@ -169,7 +169,10 @@ class VerifierSelfTest {
                             SignatureAttribute.of(MethodSignature.of(MTD_void)),
                             SyntheticAttribute.of())
                             .withCode(cob ->
-                                cob.return_()
+                                cob.iconst_0()
+                                   .ifThen(CodeBuilder::nop)
+                                   .return_()
+                                   .with(new CloneAttribute(StackMapTableAttribute.of(List.of())))
                                    .with(new CloneAttribute(CharacterRangeTableAttribute.of(List.of())))
                                    .with(new CloneAttribute(LineNumberTableAttribute.of(List.of())))
                                    .with(new CloneAttribute(LocalVariableTableAttribute.of(List.of())))
@@ -284,6 +287,8 @@ class VerifierSelfTest {
                 Wrong Signature attribute length in method ParserVerificationTestClass::m()
                 Wrong Synthetic attribute length in method ParserVerificationTestClass::m()
                 Code attribute in native or abstract method ParserVerificationTestClass::m()
+                Wrong StackMapTable attribute length in Code attribute for method ParserVerificationTestClass::m()
+                Multiple StackMapTable attributes in Code attribute for method ParserVerificationTestClass::m()
                 Wrong CharacterRangeTable attribute length in Code attribute for method ParserVerificationTestClass::m()
                 Wrong LineNumberTable attribute length in Code attribute for method ParserVerificationTestClass::m()
                 Wrong LocalVariableTable attribute length in Code attribute for method ParserVerificationTestClass::m()
