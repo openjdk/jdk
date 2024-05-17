@@ -30,7 +30,8 @@
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.jshell/jdk.internal.shellsupport.doc
  * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask
- * @run testng/timeout=900/othervm -Xmx1024m JavadocHelperTest
+ * @run testng JavadocHelperTest
+ * @key randomness
  */
 
 import java.io.IOException;
@@ -46,6 +47,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Random;
+import java.util.function.BooleanSupplier;
 import java.util.function.Function;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
@@ -413,7 +416,35 @@ public class JavadocHelperTest {
 
     }
 
-    public void testAllDocs() throws IOException {
+    private static long getSeed() {
+        long seed;
+        try {
+            // Throws NumberFormatException if the property is undefined
+            seed = Long.parseLong(System.getProperty("seed"));
+        } catch (NumberFormatException e) {
+            seed = new Random().nextLong();
+        }
+        System.out.println("Random Seed: " + seed);
+        return seed;
+    }
+
+    /*
+     * Retrieves doc comments for a random subset of JDK classes.
+     * Set the system property `seed` to a random seed to reproduce
+     * a specific run of this test.
+     */
+    public void testRandomDocs() throws IOException {
+        Random random = new Random(getSeed());
+        // Run test on 2% of classes, which corresponds to ~ 140 classes
+        retrieveDocComments(() -> random.nextInt(100) < 2);
+    }
+
+    /**
+     * Retrieve documentation of enclosed elements for some or all JDK classes.
+     *
+     * @param shouldTest oracle function to decide whether a class should be tested
+     */
+    protected void retrieveDocComments(BooleanSupplier shouldTest) throws IOException {
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
         DiagnosticListener<? super JavaFileObject> noErrors = d -> {
             if (d.getKind() == Kind.ERROR) {
@@ -438,7 +469,7 @@ public class JavadocHelperTest {
                     }
                 }
                 try (StandardJavaFileManager fm =
-                        compiler.getStandardFileManager(null, null, null)) {
+                             compiler.getStandardFileManager(null, null, null)) {
                     JavacTask task =
                             (JavacTask) compiler.getTask(null, fm, noErrors, null, null, null);
                     task.getElements().getTypeElement("java.lang.Object");
@@ -450,8 +481,10 @@ public class JavadocHelperTest {
                                 List<? extends Element> content =
                                         ed.getPackage().getEnclosedElements();
                                 for (TypeElement clazz : ElementFilter.typesIn(content)) {
-                                    for (Element el : clazz.getEnclosedElements()) {
-                                        helper.getResolvedDocComment(el);
+                                    if (shouldTest.getAsBoolean()) {
+                                        for (Element el : clazz.getEnclosedElements()) {
+                                            helper.getResolvedDocComment(el);
+                                        }
                                     }
                                 }
                             }

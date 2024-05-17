@@ -483,9 +483,6 @@ void ZVerify::after_mark() {
     roots_strong(true /* verify_after_old_mark */);
   }
   if (ZVerifyObjects) {
-    // Workaround OopMapCacheAlloc_lock reordering with the StackWatermark_lock
-    DisableIsGCActiveMark mark;
-
     objects(false /* verify_weaks */);
     guarantee(zverify_broken_object == zaddress::null, "Verification failed");
   }

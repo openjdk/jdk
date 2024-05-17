@@ -1462,7 +1462,7 @@ public abstract class HtmlDocletWriter {
                 .build();
         private final HtmlRenderer renderer = HtmlRenderer.builder()
                 .nodeRendererFactory(headingRendererFactory)
-                .extensions(List.of(tablesExtn/*, headingIdsExtn*/))
+                .extensions(List.of(tablesExtn))
                 .build();
 
         MarkdownHandler(Element element) {
