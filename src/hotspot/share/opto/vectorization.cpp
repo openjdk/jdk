@@ -1805,10 +1805,10 @@ bool VTransformGraph::schedule() {
           if (_is_trace_verbose) {
             auto trace_circle_nodes = [&] (VTransformNode* n) {
               bool on_path = pre_visited.test(n->_idx) && !post_visited.test(n->_idx);
-              tty->print("  %s ", on_path ? "C" : "_");
+              tty->print("  %s ", on_path ? "P" : "_");
               n->print();
             };
-            tty->print_cr("VTransformGraph::schedule found a cycle (C), vectorization attempt fails.");
+            tty->print_cr("VTransformGraph::schedule found a cycle on path (P), vectorization attempt fails.");
             tty->print_cr(" VTransformNodes on the stack:");
             for (int j = 0; j < stack.length(); j++) {
               trace_circle_nodes(stack.at(j));
