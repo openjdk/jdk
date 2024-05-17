@@ -843,6 +843,319 @@ class BadIRAnnotations {
     public void mustSpecifyAtLeastOneConstraint3() {
     }
 
+
+    @FailCount(3)
+    @Test
+    @IR(failOn = IRNode.CALL,
+        applyIfCPUFeature = {"sve", "true"},
+        applyIfCPUFeatureAnd = {"avx", "true", "sve", "true"})
+    @IR(failOn = IRNode.CALL,
+        applyIfCPUFeatureAnd = {"sve", "true", "avx", "true"},
+        applyIfCPUFeatureOr = {"sve", "true", "avx", "true"})
+    @IR(failOn = IRNode.CALL,
+        applyIfCPUFeature = {"sve", "true"},
+        applyIfCPUFeatureAnd = {"sve", "true", "avx", "true"},
+        applyIfCPUFeatureOr = {"sve", "true", "avx", "true"})
+    public void onlyOneApplyIfCPUFeature() {}
+
+    @FailCount(3)
+    @Test
+    @IR(failOn = IRNode.CALL, applyIfCPUFeature = {"sve", "true", "avx", "true"})
+    @IR(failOn = IRNode.CALL, applyIfCPUFeature = {"sve", "true", "avx"})
+    public void applyIfCPUFeatureTooManyFlags() {}
+
+    @FailCount(4)
+    @Test
+    @IR(failOn = IRNode.CALL, applyIfCPUFeature = {"sve"})
+    @IR(failOn = IRNode.CALL, applyIfCPUFeature = {"Bla"})
+    public void applyIfCPUFeatureMissingValue() {}
+
+    @FailCount(2)
+    @Test
+    @IR(failOn = IRNode.CALL, applyIfCPUFeature = {"sveeee", "true"})
+    @IR(failOn = IRNode.CALL, applyIfCPUFeature = {"xyz", "foo"})
+    public void applyIfCPUFeatureUnknownFlag() {}
+
+    @FailCount(5)
+    @Test
+    @IR(failOn = IRNode.CALL, applyIfCPUFeature = {"sve", ""})
+    @IR(failOn = IRNode.CALL, applyIfCPUFeature = {"avx", ""})
+    @IR(failOn = IRNode.CALL, applyIfCPUFeature = {"", "true"})
+    @IR(failOn = IRNode.CALL, applyIfCPUFeature = {"", ""})
+    @IR(failOn = IRNode.CALL, applyIfCPUFeature = {" ", " "})
+    public void applyIfCPUFeatureEmptyValue() {}
+
+    @FailCount(10)
+    @Test
+    @IR(failOn = IRNode.CALL, applyIfCPUFeature = {"sve", "! 34"})
+    @IR(failOn = IRNode.CALL, applyIfCPUFeature = {"sve", "!== 34"})
+    @IR(failOn = IRNode.CALL, applyIfCPUFeature = {"sve", "<<= 34"})
+    @IR(failOn = IRNode.CALL, applyIfCPUFeature = {"sve", "=<34"})
+    @IR(failOn = IRNode.CALL, applyIfCPUFeature = {"sve", "<"})
+    @IR(failOn = IRNode.CALL, applyIfCPUFeature = {"sve", "!=0"})
+    @IR(failOn = IRNode.CALL, applyIfCPUFeature = {"sve", ">0"})
+    @IR(failOn = IRNode.CALL, applyIfCPUFeature = {"sve", "<0"})
+    @IR(failOn = IRNode.CALL, applyIfCPUFeature = {"sve", ">=0"})
+    @IR(failOn = IRNode.CALL, applyIfCPUFeature = {"sve", "<=0"})
+    public void applyIfCPUFeatureFaultyComparator() {}
+
+
+    @FailCount(2)
+    @Test
+    @IR(failOn = IRNode.CALL, applyIfCPUFeatureAnd = {"sve", "true"})
+    @IR(failOn = IRNode.CALL, applyIfCPUFeatureAnd = {"sve", "true", "avx"})
+    public void applyIfCPUFeatureAndNotEnoughFlags() {}
+
+    @FailCount(6)
+    @Test
+    @IR(failOn = IRNode.CALL, applyIfCPUFeatureAnd = {"sve"})
+    @IR(failOn = IRNode.CALL, applyIfCPUFeatureAnd = {"sve", "true", "avx"})
+    @IR(failOn = IRNode.CALL, applyIfCPUFeatureAnd = {"Bla"})
+    public void applyIfCPUFeatureAndMissingValue() {}
+
+    @FailCount(5)
+    @Test
+    @IR(failOn = IRNode.CALL, applyIfCPUFeatureAnd = {"svee", "true", "sve", "< 34"})
+    @IR(failOn = IRNode.CALL, applyIfCPUFeatureAnd = {"sve", "!= 50", "Bla", "bla", "Bla2", "bla2"})
+    public void applyIfCPUFeatureAndUnknownFlag() {}
+
+    @FailCount(11)
+    @Test
+    @IR(failOn = IRNode.CALL, applyIfCPUFeatureAnd = {"sve", ""})
+    @IR(failOn = IRNode.CALL, applyIfCPUFeatureAnd = {"sve", "", "avx", ""})
+    @IR(failOn = IRNode.CALL, applyIfCPUFeatureAnd = {"", "true"})
+    @IR(failOn = IRNode.CALL, applyIfCPUFeatureAnd = {"", "true", "", "true"})
+    @IR(failOn = IRNode.CALL, applyIfCPUFeatureAnd = {"", ""})
+    @IR(failOn = IRNode.CALL, applyIfCPUFeatureAnd = {"", "", "", ""})
+    @IR(failOn = IRNode.CALL, applyIfCPUFeatureAnd = {" ", " ", " ", " "})
+    public void applyIfCPUFeatureAndEmptyValue() {}
+
+    @FailCount(20)
+    @Test
+    @IR(failOn = IRNode.CALL, applyIfCPUFeatureAnd = {"sve", "! 34"})
+    @IR(failOn = IRNode.CALL, applyIfCPUFeatureAnd = {"sve", "! 34", "avx", "! 34"})
+    @IR(failOn = IRNode.CALL, applyIfCPUFeatureAnd = {"sve", "!== 34"})
+    @IR(failOn = IRNode.CALL, applyIfCPUFeatureAnd = {"sve", "!== 34", "avx", "=== 34"})
+    @IR(failOn = IRNode.CALL, applyIfCPUFeatureAnd = {"sve", "<<= 34"})
+    @IR(failOn = IRNode.CALL, applyIfCPUFeatureAnd = {"sve", "<<= 34", "avx", ">>= 34"})
+    @IR(failOn = IRNode.CALL, applyIfCPUFeatureAnd = {"sve", "=<34"})
+    @IR(failOn = IRNode.CALL, applyIfCPUFeatureAnd = {"sve", "=<34", "avx", "=<34"})
+    @IR(failOn = IRNode.CALL, applyIfCPUFeatureAnd = {"sve", "<"})
+    @IR(failOn = IRNode.CALL, applyIfCPUFeatureAnd = {"sve", "<", "avx", "!="})
+    @IR(failOn = IRNode.CALL, applyIfCPUFeatureAnd = {"sve", "!=0", "avx", "true"})
+    @IR(failOn = IRNode.CALL, applyIfCPUFeatureAnd = {"sve", ">0", "avx", "true"})
+    @IR(failOn = IRNode.CALL, applyIfCPUFeatureAnd = {"sve", "<0", "avx", "true"})
+    @IR(failOn = IRNode.CALL, applyIfCPUFeatureAnd = {"sve", ">=0", "avx", "true"})
+    @IR(failOn = IRNode.CALL, applyIfCPUFeatureAnd = {"sve", "<=0", "avx", "true"})
+    public void applyIfCPUFeatureAndFaultyComparator() {}
+
+
+    @FailCount(2)
+    @Test
+    @IR(failOn = IRNode.CALL, applyIfCPUFeatureOr = {"sve", "true"})
+    @IR(failOn = IRNode.CALL, applyIfCPUFeatureOr = {"sve", "true", "avx"})
+    public void applyIfCPUFeatureOrNotEnoughFlags() {}
+
+    @FailCount(6)
+    @Test
+    @IR(failOn = IRNode.CALL, applyIfCPUFeatureOr = {"sve"})
+    @IR(failOn = IRNode.CALL, applyIfCPUFeatureOr = {"sve", "true", "avx"})
+    @IR(failOn = IRNode.CALL, applyIfCPUFeatureOr = {"Bla"})
+    public void applyIfCPUFeatureOrMissingValue() {}
+
+    @FailCount(5)
+    @Test
+    @IR(failOn = IRNode.CALL, applyIfCPUFeatureOr = {"svee", "true", "sve", "< 34"})
+    @IR(failOn = IRNode.CALL, applyIfCPUFeatureOr = {"sve", "!= 50", "Bla", "bla", "Bla2", "bla2"})
+    public void applyIfCPUFeatureOrUnknownFlag() {}
+
+    @FailCount(11)
+    @Test
+    @IR(failOn = IRNode.CALL, applyIfCPUFeatureOr = {"sve", ""})
+    @IR(failOn = IRNode.CALL, applyIfCPUFeatureOr = {"sve", "", "avx", ""})
+    @IR(failOn = IRNode.CALL, applyIfCPUFeatureOr = {"", "true"})
+    @IR(failOn = IRNode.CALL, applyIfCPUFeatureOr = {"", "true", "", "true"})
+    @IR(failOn = IRNode.CALL, applyIfCPUFeatureOr = {"", ""})
+    @IR(failOn = IRNode.CALL, applyIfCPUFeatureOr = {"", "", "", ""})
+    @IR(failOn = IRNode.CALL, applyIfCPUFeatureOr = {" ", " ", " ", " "})
+    public void applyIfCPUFeatureOrEmptyValue() {}
+
+    @FailCount(20)
+    @Test
+    @IR(failOn = IRNode.CALL, applyIfCPUFeatureOr = {"sve", "! 34"})
+    @IR(failOn = IRNode.CALL, applyIfCPUFeatureOr = {"sve", "! 34", "avx", "! 34"})
+    @IR(failOn = IRNode.CALL, applyIfCPUFeatureOr = {"sve", "!== 34"})
+    @IR(failOn = IRNode.CALL, applyIfCPUFeatureOr = {"sve", "!== 34", "avx", "=== 34"})
+    @IR(failOn = IRNode.CALL, applyIfCPUFeatureOr = {"sve", "<<= 34"})
+    @IR(failOn = IRNode.CALL, applyIfCPUFeatureOr = {"sve", "<<= 34", "avx", ">>= 34"})
+    @IR(failOn = IRNode.CALL, applyIfCPUFeatureOr = {"sve", "=<34"})
+    @IR(failOn = IRNode.CALL, applyIfCPUFeatureOr = {"sve", "=<34", "avx", "=<34"})
+    @IR(failOn = IRNode.CALL, applyIfCPUFeatureOr = {"sve", "<"})
+    @IR(failOn = IRNode.CALL, applyIfCPUFeatureOr = {"sve", "<", "avx", "!="})
+    @IR(failOn = IRNode.CALL, applyIfCPUFeatureOr = {"sve", "!=0", "avx", "true"})
+    @IR(failOn = IRNode.CALL, applyIfCPUFeatureOr = {"sve", ">0", "avx", "true"})
+    @IR(failOn = IRNode.CALL, applyIfCPUFeatureOr = {"sve", "<0", "avx", "true"})
+    @IR(failOn = IRNode.CALL, applyIfCPUFeatureOr = {"sve", ">=0", "avx", "true"})
+    @IR(failOn = IRNode.CALL, applyIfCPUFeatureOr = {"sve", "<=0", "avx", "true"})
+    public void applyIfCPUFeatureOrFaultyComparator() {}
+
+
+    @FailCount(3)
+    @Test
+    @IR(failOn = IRNode.CALL,
+        applyIfPlatform = {"x64", "true"},
+        applyIfPlatformAnd = {"x64", "true", "aarch64", "true"})
+    @IR(failOn = IRNode.CALL,
+        applyIfPlatformAnd = {"aarch64", "true", "x64", "true"},
+        applyIfPlatformOr = {"aarch64", "true", "x64", "true"})
+    @IR(failOn = IRNode.CALL,
+        applyIfPlatform = {"aarch64", "true"},
+        applyIfPlatformAnd = {"aarch64", "true", "x64", "true"},
+        applyIfPlatformOr = {"aarch64", "true", "x64", "true"})
+    public void onlyOneApplyIfPlatform() {}
+
+    @FailCount(3)
+    @Test
+    @IR(failOn = IRNode.CALL, applyIfPlatform = {"x64", "true", "aarch64", "true"})
+    @IR(failOn = IRNode.CALL, applyIfPlatform = {"x64", "true", "aarch64"})
+    public void applyIfPlatformTooManyFlags() {}
+
+    @FailCount(4)
+    @Test
+    @IR(failOn = IRNode.CALL, applyIfPlatform = {"x64"})
+    @IR(failOn = IRNode.CALL, applyIfPlatform = {"Bla"})
+    public void applyIfPlatformMissingValue() {}
+
+    @FailCount(2)
+    @Test
+    @IR(failOn = IRNode.CALL, applyIfPlatform = {"x64eee", "true"})
+    @IR(failOn = IRNode.CALL, applyIfPlatform = {"xyz", "foo"})
+    public void applyIfPlatformUnknownFlag() {}
+
+    @FailCount(5)
+    @Test
+    @IR(failOn = IRNode.CALL, applyIfPlatform = {"x64", ""})
+    @IR(failOn = IRNode.CALL, applyIfPlatform = {"aarch64", ""})
+    @IR(failOn = IRNode.CALL, applyIfPlatform = {"", "true"})
+    @IR(failOn = IRNode.CALL, applyIfPlatform = {"", ""})
+    @IR(failOn = IRNode.CALL, applyIfPlatform = {" ", " "})
+    public void applyIfPlatformEmptyValue() {}
+
+    @FailCount(10)
+    @Test
+    @IR(failOn = IRNode.CALL, applyIfPlatform = {"x64", "! 34"})
+    @IR(failOn = IRNode.CALL, applyIfPlatform = {"x64", "!== 34"})
+    @IR(failOn = IRNode.CALL, applyIfPlatform = {"x64", "<<= 34"})
+    @IR(failOn = IRNode.CALL, applyIfPlatform = {"x64", "=<34"})
+    @IR(failOn = IRNode.CALL, applyIfPlatform = {"x64", "<"})
+    @IR(failOn = IRNode.CALL, applyIfPlatform = {"x64", "!=0"})
+    @IR(failOn = IRNode.CALL, applyIfPlatform = {"x64", ">0"})
+    @IR(failOn = IRNode.CALL, applyIfPlatform = {"x64", "<0"})
+    @IR(failOn = IRNode.CALL, applyIfPlatform = {"x64", ">=0"})
+    @IR(failOn = IRNode.CALL, applyIfPlatform = {"x64", "<=0"})
+    public void applyIfPlatformFaultyComparator() {}
+
+
+    @FailCount(2)
+    @Test
+    @IR(failOn = IRNode.CALL, applyIfPlatformAnd = {"x64", "true"})
+    @IR(failOn = IRNode.CALL, applyIfPlatformAnd = {"x64", "true", "aarch64"})
+    public void applyIfPlatformAndNotEnoughFlags() {}
+
+    @FailCount(6)
+    @Test
+    @IR(failOn = IRNode.CALL, applyIfPlatformAnd = {"x64"})
+    @IR(failOn = IRNode.CALL, applyIfPlatformAnd = {"x64", "true", "aarch64"})
+    @IR(failOn = IRNode.CALL, applyIfPlatformAnd = {"Bla"})
+    public void applyIfPlatformAndMissingValue() {}
+
+    @FailCount(5)
+    @Test
+    @IR(failOn = IRNode.CALL, applyIfPlatformAnd = {"x64e", "true", "x64", "< 34"})
+    @IR(failOn = IRNode.CALL, applyIfPlatformAnd = {"x64", "!= 50", "Bla", "bla", "Bla2", "bla2"})
+    public void applyIfPlatformAndUnknownFlag() {}
+
+    @FailCount(11)
+    @Test
+    @IR(failOn = IRNode.CALL, applyIfPlatformAnd = {"x64", ""})
+    @IR(failOn = IRNode.CALL, applyIfPlatformAnd = {"x64", "", "aarch64", ""})
+    @IR(failOn = IRNode.CALL, applyIfPlatformAnd = {"", "true"})
+    @IR(failOn = IRNode.CALL, applyIfPlatformAnd = {"", "true", "", "true"})
+    @IR(failOn = IRNode.CALL, applyIfPlatformAnd = {"", ""})
+    @IR(failOn = IRNode.CALL, applyIfPlatformAnd = {"", "", "", ""})
+    @IR(failOn = IRNode.CALL, applyIfPlatformAnd = {" ", " ", " ", " "})
+    public void applyIfPlatformAndEmptyValue() {}
+
+    @FailCount(20)
+    @Test
+    @IR(failOn = IRNode.CALL, applyIfPlatformAnd = {"x64", "! 34"})
+    @IR(failOn = IRNode.CALL, applyIfPlatformAnd = {"x64", "! 34", "x64", "! 34"})
+    @IR(failOn = IRNode.CALL, applyIfPlatformAnd = {"x64", "!== 34"})
+    @IR(failOn = IRNode.CALL, applyIfPlatformAnd = {"x64", "!== 34", "x64", "=== 34"})
+    @IR(failOn = IRNode.CALL, applyIfPlatformAnd = {"x64", "<<= 34"})
+    @IR(failOn = IRNode.CALL, applyIfPlatformAnd = {"x64", "<<= 34", "x64", ">>= 34"})
+    @IR(failOn = IRNode.CALL, applyIfPlatformAnd = {"x64", "=<34"})
+    @IR(failOn = IRNode.CALL, applyIfPlatformAnd = {"x64", "=<34", "x64", "=<34"})
+    @IR(failOn = IRNode.CALL, applyIfPlatformAnd = {"x64", "<"})
+    @IR(failOn = IRNode.CALL, applyIfPlatformAnd = {"x64", "<", "x64", "!="})
+    @IR(failOn = IRNode.CALL, applyIfPlatformAnd = {"x64", "!=0", "aarch64", "true"})
+    @IR(failOn = IRNode.CALL, applyIfPlatformAnd = {"x64", ">0", "aarch64", "true"})
+    @IR(failOn = IRNode.CALL, applyIfPlatformAnd = {"x64", "<0", "aarch64", "true"})
+    @IR(failOn = IRNode.CALL, applyIfPlatformAnd = {"x64", ">=0", "aarch64", "true"})
+    @IR(failOn = IRNode.CALL, applyIfPlatformAnd = {"x64", "<=0", "aarch64", "true"})
+    public void applyIfPlatformAndFaultyComparator() {}
+
+
+    @FailCount(2)
+    @Test
+    @IR(failOn = IRNode.CALL, applyIfPlatformOr = {"x64", "true"})
+    @IR(failOn = IRNode.CALL, applyIfPlatformOr = {"x64", "true", "aarch64"})
+    public void applyIfPlatformOrNotEnoughFlags() {}
+
+    @FailCount(6)
+    @Test
+    @IR(failOn = IRNode.CALL, applyIfPlatformOr = {"x64"})
+    @IR(failOn = IRNode.CALL, applyIfPlatformOr = {"x64", "true", "aarch64"})
+    @IR(failOn = IRNode.CALL, applyIfPlatformOr = {"Bla"})
+    public void applyIfPlatformOrMissingValue() {}
+
+    @FailCount(5)
+    @Test
+    @IR(failOn = IRNode.CALL, applyIfPlatformOr = {"x64e", "true", "x64", "< 34"})
+    @IR(failOn = IRNode.CALL, applyIfPlatformOr = {"x64", "!= 50", "Bla", "bla", "Bla2", "bla2"})
+    public void applyIfPlatformOrUnknownFlag() {}
+
+    @FailCount(11)
+    @Test
+    @IR(failOn = IRNode.CALL, applyIfPlatformOr = {"x64", ""})
+    @IR(failOn = IRNode.CALL, applyIfPlatformOr = {"x64", "", "aarch64", ""})
+    @IR(failOn = IRNode.CALL, applyIfPlatformOr = {"", "true"})
+    @IR(failOn = IRNode.CALL, applyIfPlatformOr = {"", "true", "", "true"})
+    @IR(failOn = IRNode.CALL, applyIfPlatformOr = {"", ""})
+    @IR(failOn = IRNode.CALL, applyIfPlatformOr = {"", "", "", ""})
+    @IR(failOn = IRNode.CALL, applyIfPlatformOr = {" ", " ", " ", " "})
+    public void applyIfPlatformOrEmptyValue() {}
+
+    @FailCount(20)
+    @Test
+    @IR(failOn = IRNode.CALL, applyIfPlatformOr = {"x64", "! 34"})
+    @IR(failOn = IRNode.CALL, applyIfPlatformOr = {"x64", "! 34", "x64", "! 34"})
+    @IR(failOn = IRNode.CALL, applyIfPlatformOr = {"x64", "!== 34"})
+    @IR(failOn = IRNode.CALL, applyIfPlatformOr = {"x64", "!== 34", "x64", "=== 34"})
+    @IR(failOn = IRNode.CALL, applyIfPlatformOr = {"x64", "<<= 34"})
+    @IR(failOn = IRNode.CALL, applyIfPlatformOr = {"x64", "<<= 34", "x64", ">>= 34"})
+    @IR(failOn = IRNode.CALL, applyIfPlatformOr = {"x64", "=<34"})
+    @IR(failOn = IRNode.CALL, applyIfPlatformOr = {"x64", "=<34", "x64", "=<34"})
+    @IR(failOn = IRNode.CALL, applyIfPlatformOr = {"x64", "<"})
+    @IR(failOn = IRNode.CALL, applyIfPlatformOr = {"x64", "<", "x64", "!="})
+    @IR(failOn = IRNode.CALL, applyIfPlatformOr = {"x64", "!=0", "aarch64", "true"})
+    @IR(failOn = IRNode.CALL, applyIfPlatformOr = {"x64", ">0", "aarch64", "true"})
+    @IR(failOn = IRNode.CALL, applyIfPlatformOr = {"x64", "<0", "aarch64", "true"})
+    @IR(failOn = IRNode.CALL, applyIfPlatformOr = {"x64", ">=0", "aarch64", "true"})
+    @IR(failOn = IRNode.CALL, applyIfPlatformOr = {"x64", "<=0", "aarch64", "true"})
+    public void applyIfPlatformOrFaultyComparator() {}
+
+
     @FailCount(3)
     @Test
     @IR(failOn = IRNode.CALL,
