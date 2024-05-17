@@ -218,13 +218,9 @@ void ShenandoahBarrierSetAssembler::satb_write_barrier_impl(MacroAssembler *masm
   const bool preserve_fp_registers = preservation_level >= MacroAssembler::PRESERVATION_FRAME_LR_GP_FP_REGS;
 
   // Check whether marking is active.
-  if (in_bytes(SATBMarkQueue::byte_width_of_active()) == 4) {
-    __ lwz(tmp1, in_bytes(ShenandoahThreadLocalData::satb_mark_queue_active_offset()), R16_thread);
-  } else {
-    guarantee(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1, "Assumption");
-    __ lbz(tmp1, in_bytes(ShenandoahThreadLocalData::satb_mark_queue_active_offset()), R16_thread);
-  }
-  __ cmpdi(CCR0, tmp1, 0);
+  __ lbz(tmp1, in_bytes(ShenandoahThreadLocalData::gc_state_offset()), R16_thread);
+
+  __ andi_(tmp1, tmp1, ShenandoahHeap::MARKING);
   __ beq(CCR0, skip_barrier);
 
   /* ==== Determine the reference's previous value ==== */
