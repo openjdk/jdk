@@ -3494,10 +3494,18 @@ void SuperWord::vtransform_build(VTransformGraph& graph) const {
   // Only add dependency once per vtnode.
   VectorSet dependency_set;
 
-  auto set_req = [&](VTransformNode* vtn, int j, Node* n) {
-    VTransformNode* req = bb_idx_to_vtnode.at(bb_idx(n));
+  auto set_req = [&](VTransformNode* vtn, int j, Node* def) {
+    VTransformNode* req = bb_idx_to_vtnode.at(bb_idx(def));
     vtn->set_req(j, req);
     dependency_set.set(req->_idx);
+  };
+
+  auto set_req_all = [&](VTransformNode* vtn, Node* use) {
+    for (uint j = 0; j < use->req(); j++) {
+      Node* def = use->in(j);
+      if (def == nullptr || !in_bb(def)) { continue; }
+      set_req(vtn, j, def);
+    }
   };
 
   // For a n that is in vtn, add all of n's dependencies to vtn.
@@ -3525,9 +3533,11 @@ void SuperWord::vtransform_build(VTransformGraph& graph) const {
     } else if (p0->is_Store()) {
       set_req(vtn, MemNode::Address, p0->in(MemNode::Address));
       set_req(vtn, MemNode::ValueIn, p0->in(MemNode::ValueIn));
+    } else if (vtn->isa_ElementWiseVector() != nullptr) {
+      set_req_all(vtn, p0);
     } else {
-      DEBUG_ONLY(vtn->print();)
-      assert(false, "failed to handle pack");
+      DEBUG_ONLY( vtn->print(); )
+      assert(false, "vtn type not handled for inputs");
     }
 
     for (uint k = 0; k < pack->size(); k++) {
@@ -3558,11 +3568,7 @@ void SuperWord::vtransform_build(VTransformGraph& graph) const {
       set_req(vtn, 0, n->in(0));
       continue;
     } else {
-      for (uint j = 0; j < n->req(); j++) {
-        Node* def = n->in(j);
-        if (def == nullptr || !in_bb(def)) { continue; }
-        set_req(vtn, j, def);
-      }
+      set_req_all(vtn, n);
     }
 
     add_dependencies(vtn, n);
@@ -3574,10 +3580,49 @@ VTransformVectorNode* SuperWord::make_vtnode_for_pack(VTransformGraph& graph, co
   uint pack_size = pack->size();
   Node* p0 = pack->at(0);
   VTransformVectorNode* vtn = nullptr;
+  int opc = p0->Opcode();
   if (p0->is_Load()) {
     vtn = new (graph.arena()) VTransformLoadVectorNode(graph, pack_size);
   } else if (p0->is_Store()) {
     vtn = new (graph.arena()) VTransformStoreVectorNode(graph, pack_size);
+  } else if (VectorNode::is_scalar_rotate(p0)) {
+    assert(false, "TODO");
+  } else if (VectorNode::is_roundopD(p0)) {
+    assert(false, "TODO");
+  } else if (VectorNode::is_muladds2i(p0)) {
+    assert(false, "TODO");
+  } else if (opc == Op_SignumF || opc == Op_SignumD) {
+    assert(false, "TODO");
+  } else if (p0->is_Cmp() || p0->is_Bool()) {
+    assert(false, "TODO");
+  } else if (p0->is_CMove()) {
+    assert(false, "TODO");
+  } else if (p0->req() == 3) {
+    if (is_marked_reduction(p0)) {
+      // Reduction: (scalar, vector) -> scalar.
+      assert(false, "TODO reduction");
+    } else {
+      // Binary element-wise vector operation.
+      vtn = new (graph.arena()) VTransformElementWiseVectorNode(graph, 3, pack_size);
+    }
+  } else if (opc == Op_SqrtF || opc == Op_SqrtD ||
+             opc == Op_AbsF || opc == Op_AbsD ||
+             opc == Op_AbsI || opc == Op_AbsL ||
+             opc == Op_NegF || opc == Op_NegD ||
+             opc == Op_RoundF || opc == Op_RoundD ||
+             opc == Op_ReverseBytesI || opc == Op_ReverseBytesL ||
+             opc == Op_ReverseBytesUS || opc == Op_ReverseBytesS ||
+             opc == Op_ReverseI || opc == Op_ReverseL ||
+             opc == Op_PopCountI || opc == Op_CountLeadingZerosI ||
+             opc == Op_CountTrailingZerosI) {
+    assert(p0->req() == 2, "only one input expected");
+    assert(false, "TODO");
+  } else if (requires_long_to_int_conversion(opc)) {
+    assert(false, "TODO");
+  } else if (VectorNode::is_convert_opcode(opc)) {
+    assert(false, "TODO");
+  } else if (opc == Op_FmaD || opc == Op_FmaF) {
+    assert(false, "TODO");
   } else {
     DEBUG_ONLY(p0->dump();)
     assert(false, "failed to handle pack");

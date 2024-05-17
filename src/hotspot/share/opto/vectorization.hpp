@@ -1321,6 +1321,7 @@ typedef int VTransformNodeIDX;
 class VTransformNode;
 class VTransformScalarNode;
 class VTransformVectorNode;
+class VTransformElementWiseVectorNode;
 
 class VTransformGraph {
 private:
@@ -1429,6 +1430,7 @@ public:
 
   virtual VTransformScalarNode* isa_Scalar() { return nullptr; }
   virtual VTransformVectorNode* isa_Vector() { return nullptr; }
+  virtual VTransformElementWiseVectorNode* isa_ElementWiseVector() { return nullptr; }
 
   NOT_PRODUCT(virtual const char* name() const = 0;)
   NOT_PRODUCT(void print() const;)
@@ -1473,6 +1475,16 @@ public:
   virtual VTransformVectorNode* isa_Vector() override { return this; }
 
   NOT_PRODUCT(virtual void print_spec() const override;)
+};
+
+class VTransformElementWiseVectorNode : public VTransformVectorNode {
+public:
+  VTransformElementWiseVectorNode(VTransformGraph& graph, int req, int number_of_nodes) :
+    VTransformVectorNode(graph, req, number_of_nodes) {}
+
+  virtual VTransformElementWiseVectorNode* isa_ElementWiseVector() { return this; }
+
+  NOT_PRODUCT(virtual const char* name() const { return "ElementWiseVector"; };)
 };
 
 class VTransformLoadVectorNode : public VTransformVectorNode {
