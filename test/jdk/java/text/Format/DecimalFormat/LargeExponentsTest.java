@@ -26,13 +26,16 @@
  * @bug 8331485
  * @summary Ensure correctness when parsing large (+/-) exponent values that
  *          exceed Integer.MAX_VALUE and Long.MAX_VALUE.
- * @run junit LargeExponentsTest
+ * @run junit/othervm --add-opens java.base/java.text=ALL-UNNAMED LargeExponentsTest
  */
 
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.text.ParsePosition;
@@ -58,6 +61,34 @@ public class LargeExponentsTest {
     public void overflowTest(String parseString, Double expectedValue) throws ParseException {
         checkParse(parseString, expectedValue);
         checkParseWithPP(parseString, expectedValue);
+    }
+
+    // A separate white-box test to avoid the memory consumption of testing cases
+    // when the String is near Integer.MAX_LENGTH
+    @ParameterizedTest
+    @MethodSource
+    public void largeDecimalAtExponentTest(int expected, int decimalAt, long expVal)
+            throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        DecimalFormat df = new DecimalFormat();
+        Method m = df.getClass().getDeclaredMethod(
+                "shiftDecimalAt", int.class, long.class);
+        m.setAccessible(true);
+        assertEquals(expected, m.invoke(df, decimalAt, expVal));
+    }
+
+    // Cases where we can test behavior when the String is near Integer.MAX_LENGTH
+    private static Stream<Arguments> largeDecimalAtExponentTest() {
+        return Stream.of(
+                // Equivalent to testing Arguments.of("0."+"0".repeat(Integer.MAX_VALUE-20)+"1"+"E2147483650", 1.0E22)
+                // This is an absurdly long decimal string with length close to Integer.MAX_VALUE
+                // where the decimal position correctly negates the exponent value, even if it exceeds Integer.MAX_VALUE
+                Arguments.of(23, -(Integer.MAX_VALUE-20), 3L+Integer.MAX_VALUE),
+                Arguments.of(-23, Integer.MAX_VALUE-20, -(3L+Integer.MAX_VALUE)),
+                Arguments.of(Integer.MIN_VALUE, -(Integer.MAX_VALUE-20), -(3L+Integer.MAX_VALUE)),
+                Arguments.of(Integer.MAX_VALUE, Integer.MAX_VALUE-20, 3L+Integer.MAX_VALUE),
+                Arguments.of(Integer.MAX_VALUE, -(Integer.MAX_VALUE-20), Long.MAX_VALUE),
+                Arguments.of(Integer.MIN_VALUE, Integer.MAX_VALUE-20, Long.MIN_VALUE)
+        );
     }
 
     // Checks the parse(String, ParsePosition) method
@@ -125,12 +156,13 @@ public class LargeExponentsTest {
                 Arguments.of("0.123E4294967296", Double.POSITIVE_INFINITY),
                 Arguments.of("0.123E-322", 9.9E-324),
                 Arguments.of("0.123E-323", 0.0),
+                Arguments.of("0.123E-2147483647", 0.0),
                 Arguments.of("0.123E-2147483648", 0.0),
                 Arguments.of("0.123E-2147483649", 0.0)
         );
     }
 
-    // Some odd edge case values to ensure parse correctness
+    // Some other edge case values to ensure parse correctness
     private static Stream<Arguments> edgeCases() {
         return Stream.of(
                 // Exponent itself does not cause underflow, but decimalAt adjustment
@@ -149,7 +181,13 @@ public class LargeExponentsTest {
                 // Long.MAX_VALUE with trailing zeroes
                 Arguments.of("1.23E9223372036854775807000", Double.POSITIVE_INFINITY),
                 // Long.MIN_VALUE
-                Arguments.of("1.23E-9223372036854775808", 0.0)
+                Arguments.of("1.23E-9223372036854775808", 0.0),
+                // Exponent value smaller than Long.MIN_VALUE
+                Arguments.of("1.23E-9223372036854775809", 0.0),
+                // Exponent value equal to Long.MAX_VALUE
+                Arguments.of("1.23E9223372036854775807", Double.POSITIVE_INFINITY),
+                // Exponent value larger than Long.MAX_VALUE
+                Arguments.of("1.23E9223372036854775808", Double.POSITIVE_INFINITY)
         );
     }
 }

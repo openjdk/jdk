@@ -2637,13 +2637,8 @@ public class DecimalFormat extends NumberFormat {
             }
 
             // Adjust for exponent, if any
-            try {
-                exponent = Math.addExact(digits.decimalAt, exponent);
-                digits.decimalAt = Math.toIntExact(exponent);
-            } catch (ArithmeticException ex) {
-                // Depending on overflow/underflow, adjust exponent value
-                digits.decimalAt = expStat[STATUS_POSITIVE]
-                        ? Integer.MAX_VALUE : Integer.MIN_VALUE;
+            if (exponent != 0) {
+                digits.decimalAt = shiftDecimalAt(digits.decimalAt, exponent);
             }
 
             // If none of the text string was recognized.  For example, parse
@@ -2655,6 +2650,29 @@ public class DecimalFormat extends NumberFormat {
             }
         }
         return position;
+    }
+
+    // Calculate the final decimal position based off the exponent value
+    // and the existing decimalAt position. If overflow/underflow, the value
+    // should be set as either Integer.MAX/MIN
+    private int shiftDecimalAt(int decimalAt, long exponent) {
+        try {
+            exponent = Math.addExact(decimalAt, exponent);
+        } catch (ArithmeticException ex) {
+            // If we under/overflow a Long do not bother with the decimalAt
+            // As it can only shift up to Integer.MAX/MIN which has no affect
+            if (exponent > 0 && decimalAt > 0) {
+                return Integer.MAX_VALUE;
+            } else {
+                return Integer.MIN_VALUE;
+            }
+        }
+        try {
+            decimalAt = Math.toIntExact(exponent);
+        } catch (ArithmeticException ex) {
+            decimalAt = exponent > 0 ? Integer.MAX_VALUE : Integer.MIN_VALUE;
+        }
+        return decimalAt;
     }
 
     // Checks to make sure grouping size is not violated. Used when strict.
