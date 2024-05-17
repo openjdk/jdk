@@ -260,6 +260,10 @@ void StatSampler::create_system_property_instrumentation(TRAPS) {
   add_property_constant(JAVA_PROPERTY, "java.library.path", CHECK);
   add_property_constant(JAVA_PROPERTY, "java.class.path", CHECK);
   add_property_constant(JAVA_PROPERTY, "java.home", CHECK);
+
+  add_property_constant(JAVA_PROPERTY, "jdk.module.path", CHECK);
+  add_property_constant(JAVA_PROPERTY, "jdk.module.upgrade.path", CHECK);
+  add_property_constant(JAVA_PROPERTY, "jdk.module.main", CHECK);
 }
 
 /*
