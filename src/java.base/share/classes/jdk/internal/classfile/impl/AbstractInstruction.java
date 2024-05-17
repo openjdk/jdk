@@ -557,7 +557,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public TypeKind typeKind() {
-            return TypeKind.fromNewArrayCode(code.classReader.readU1(pos + 1));
+            return TypeKind.fromNewarrayCode(code.classReader.readU1(pos + 1));
         }
 
         @Override
@@ -1149,7 +1149,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public void writeTo(DirectCodeBuilder writer) {
-            writer.writeNewPrimitiveArray(typeKind.newarraycode());
+            writer.writeNewPrimitiveArray(typeKind.newarrayCode());
         }
 
         @Override
