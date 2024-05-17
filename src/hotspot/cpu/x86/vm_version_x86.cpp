@@ -1002,6 +1002,7 @@ void VM_Version::get_processor_features() {
     }
   }
 
+  // APX support code currently requires UseAPX > 2. This may change in the future.
   if (UseAPX && (UseAVX < 3)) {
     if (!FLAG_IS_DEFAULT(UseAPX)) {
         warning("UseAPX is only available when UseAVX > 2");
