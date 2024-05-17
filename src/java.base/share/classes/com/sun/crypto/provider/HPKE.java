@@ -209,7 +209,7 @@ public class HPKE extends CipherSpi {
     }
 
     //@Override
-    protected SecretKey engineExport(byte[] context, String algorithm, int length) {
+    protected SecretKey engineExportKey(byte[] context, String algorithm, int length) {
         if (state == BEGIN) {
             throw new IllegalStateException("State: " + state);
         } else {
@@ -269,7 +269,6 @@ public class HPKE extends CipherSpi {
         HPKEParameterSpec params;
         Context context;
         AEAD aead;
-        PrivateKey sk;
 
         byte[] suite_id;
         HKDF hkdf;
@@ -344,11 +343,11 @@ public class HPKE extends CipherSpi {
                 }
                 checkMatch(pk, params.kem_id());
                 KEM.Encapsulator e;
-                if (p.kS() == null) {
+                if (p.authKey() == null) {
                     e = kem().newEncapsulator(pk, rand);
                 } else {
-                    if (p.kS() instanceof PrivateKey skS) {
-                        e = kem().newAuthEncapsulator(pk, skS, rand);
+                    if (p.authKey() instanceof PrivateKey) {
+                        throw new UnsupportedOperationException("auth mode not supported");
                     } else {
                         throw new InvalidAlgorithmParameterException("Cannot auth with public key");
                     }
@@ -363,11 +362,11 @@ public class HPKE extends CipherSpi {
                 checkMatch(sk, params.kem_id());
                 try {
                     KEM.Decapsulator d;
-                    if (p.kS() == null) {
+                    if (p.authKey() == null) {
                         d = kem().newDecapsulator(sk);
                     } else {
-                        if (p.kS() instanceof PublicKey pkS) {
-                            d = kem().newAuthDecapsulator(sk, pkS);
+                        if (p.authKey() instanceof PublicKey) {
+                            throw new UnsupportedOperationException("auth mode not supported");
                         } else {
                             throw new InvalidAlgorithmParameterException("Cannot auth with private key");
                         }
@@ -383,7 +382,7 @@ public class HPKE extends CipherSpi {
             }
 
             var usePSK = usePSK(params.psk(), params.psk_id());
-            int mode = params.kS() == null ? (usePSK ? 1 : 0) : (usePSK ? 3 : 2);
+            int mode = params.authKey() == null ? (usePSK ? 1 : 0) : (usePSK ? 3 : 2);
             context = KeySchedule(mode, shared_secret,
                     params.info(),
                     params.psk(),
@@ -454,8 +453,11 @@ public class HPKE extends CipherSpi {
                     default -> throw new InvalidAlgorithmParameterException();
                 };
                 int aead_id = 0x2;
-                params = new HPKEParameterSpec(kem_id, kdf_id, aead_id,
-                        p.info(), p.psk(), p.psk_id(), p.kS(), p.encapsulation());
+                params = HPKEParameterSpec.of(kem_id, kdf_id, aead_id)
+                        .info(p.info())
+                        .psk(p.psk(), p.psk_id())
+                        .authKey(p.authKey())
+                        .encapsulation(p.encapsulation());
             } else {
                 params = p;
             }

@@ -55,7 +55,7 @@ public class Compliance {
         Asserts.assertEQ(spec.kdf_id(), 0);
         Asserts.assertEQ(spec.kem_id(), 0);
         Asserts.assertEQ(spec.aead_id(), 0);
-        Asserts.assertEQ(spec.kS(), null);
+        Asserts.assertEQ(spec.authKey(), null);
         Asserts.assertEQ(spec.encapsulation(), null);
         Asserts.assertTrue(Arrays.equals(spec.info(), new byte[0]));
         Asserts.assertEQ(spec.psk(), null);
@@ -66,7 +66,7 @@ public class Compliance {
         Asserts.assertEQ(spec2.kdf_id(), 1);
         Asserts.assertEQ(spec2.kem_id(), 1);
         Asserts.assertEQ(spec2.aead_id(), 1);
-        Asserts.assertEQ(spec2.kS(), null);
+        Asserts.assertEQ(spec2.authKey(), null);
         Asserts.assertEQ(spec2.encapsulation(), null);
         Asserts.assertTrue(Arrays.equals(spec2.info(), new byte[0]));
         Asserts.assertEQ(spec2.psk(), null);
@@ -85,10 +85,10 @@ public class Compliance {
                 () -> HPKEParameterSpec.of(1, 1, 0),
                 InvalidAlgorithmParameterException.class);
 
-        Asserts.assertTrue(spec.auth(null).kS() == null);
-        Asserts.assertTrue(spec.auth(kp.getPrivate()).kS() != null);
-        Asserts.assertTrue(spec.auth(kp.getPublic()).kS() != null);
-        Asserts.assertTrue(spec.auth(kp.getPrivate()).auth(null).kS() == null);
+        Asserts.assertTrue(spec.authKey(null).authKey() == null);
+        Asserts.assertTrue(spec.authKey(kp.getPrivate()).authKey() != null);
+        Asserts.assertTrue(spec.authKey(kp.getPublic()).authKey() != null);
+        Asserts.assertTrue(spec.authKey(kp.getPrivate()).authKey(null).authKey() == null);
 
         // Info can be empty but not null
         Utils.runAndCheckException(
@@ -134,7 +134,6 @@ public class Compliance {
         Utils.runAndCheckException(() -> c1.doFinal(new byte[1]), IllegalStateException.class);
         Utils.runAndCheckException(() -> c1.doFinal(new byte[1], 0, 1), IllegalStateException.class);
         Utils.runAndCheckException(() -> c1.doFinal(new byte[1], 0, 1, new byte[1024], 0), IllegalStateException.class);
-        Utils.runAndCheckException(() -> c1.export(new byte[1], "AES", 32), IllegalStateException.class);
 
         // Simplest usages
         c1.init(Cipher.ENCRYPT_MODE, kp.getPublic());
@@ -187,24 +186,6 @@ public class Compliance {
                 () -> c2.init(Cipher.DECRYPT_MODE, kp.getPrivate(), HPKEParameterSpec.of(0x20, 1, 1)),
                 InvalidAlgorithmParameterException.class);
 
-        // export-only
-        c1.init(Cipher.ENCRYPT_MODE, kp.getPublic(), HPKEParameterSpec.of(0x20, 1, 65535));
-        Utils.runAndCheckException(() -> c1.getBlockSize(), IllegalStateException.class);
-        Utils.runAndCheckException(() -> c1.getOutputSize(100), IllegalStateException.class);
-        var c1x = c1.export(new byte[1], "AES", 32).getEncoded();
-        Utils.runAndCheckException(() -> c1.update(new byte[1]), UnsupportedOperationException.class);
-        Utils.runAndCheckException(() -> c1.doFinal(new byte[1]), UnsupportedOperationException.class);
-        Utils.runAndCheckException(() -> c1.doFinal(), UnsupportedOperationException.class);
-
-        c2.init(Cipher.DECRYPT_MODE, kp.getPrivate(), HPKEParameterSpec.of(0x20, 1, 65535).encapsulation(c1.getIV()));
-        Utils.runAndCheckException(() -> c2.getBlockSize(), IllegalStateException.class);
-        Utils.runAndCheckException(() -> c2.getOutputSize(100), IllegalStateException.class);
-        Utils.runAndCheckException(() -> c2.update(new byte[1]), UnsupportedOperationException.class);
-        Utils.runAndCheckException(() -> c2.doFinal(new byte[1]), UnsupportedOperationException.class);
-        Utils.runAndCheckException(() -> c2.doFinal(), UnsupportedOperationException.class);
-        var c2x = c2.export(new byte[1], "AES", 32).getEncoded();
-        Asserts.assertTrue(Arrays.equals(c1x, c2x));
-
         // No key encap msg for recipient
         Utils.runAndCheckException(
                 () -> c2.init(Cipher.DECRYPT_MODE, kp.getPrivate(), HPKEParameterSpec.of(0x20, 1, 65535)),
@@ -216,7 +197,6 @@ public class Compliance {
         c1.init(Cipher.ENCRYPT_MODE, kp.getPublic());
         c1.getBlockSize();
         c1.getOutputSize(100);
-        c1x = c1.export(new byte[1], "AES", 32).getEncoded();
         c1.updateAAD(aad);
         var ct = c1.doFinal(new byte[2]);
 
@@ -224,44 +204,45 @@ public class Compliance {
         c2.getBlockSize();
         c2.getOutputSize(100);
         c2.updateAAD(aad);
-        c2x = c2.export(new byte[1], "AES", 32).getEncoded();
-        Asserts.assertTrue(Arrays.equals(c1x, c2x));
         Asserts.assertTrue(Arrays.equals(c2.doFinal(ct), new byte[2]));
-        c2.export(new byte[1], "AES", 32); // export can be call right after doFinal
 
         c2.init(Cipher.DECRYPT_MODE, kp.getPrivate(), new IvParameterSpec(c1.getIV()));
         c2.updateAAD(aad);
         c2.update(ct);
-        c2x = c2.export(new byte[1], "AES", 32).getEncoded();
         Asserts.assertTrue(Arrays.equals(c2.doFinal(), new byte[2]));
-        Asserts.assertTrue(Arrays.equals(c1x, c2x));
 
-        // auth and info and psk
+        // info and psk
         var kp2 = KeyPairGenerator.getInstance("X25519").generateKeyPair();
         c1.init(Cipher.ENCRYPT_MODE, kp.getPublic(),
                 HPKEParameterSpec.of()
-                        .auth(kp2.getPrivate())
                         .info(info)
                         .psk(psk, psk_id));
         c2.init(Cipher.DECRYPT_MODE, kp.getPrivate(),
                 HPKEParameterSpec.of()
-                        .auth(kp2.getPublic())
                         .info(info)
                         .psk(psk, psk_id)
                         .encapsulation(c1.getIV()));
         ct = c1.doFinal(new byte[2]);
-        c1x = c1.export(new byte[1], "AES", 32).getEncoded();
-        c2x = c2.export(new byte[1], "AES", 32).getEncoded();
         Asserts.assertTrue(Arrays.equals(c2.doFinal(ct), new byte[2]));
-        Asserts.assertTrue(Arrays.equals(c1x, c2x));
 
+        // mod_auth, wrong key type
         Utils.runAndCheckException(
                 () -> c1.init(Cipher.ENCRYPT_MODE, kp.getPublic(),
-                        HPKEParameterSpec.of().auth(kp2.getPublic())),
+                        HPKEParameterSpec.of().authKey(kp2.getPublic())),
                 InvalidAlgorithmParameterException.class);
         Utils.runAndCheckException(
                 () -> c2.init(Cipher.DECRYPT_MODE, kp.getPrivate(),
-                        HPKEParameterSpec.of().auth(kp2.getPrivate())),
+                        HPKEParameterSpec.of().authKey(kp2.getPrivate())),
                 InvalidAlgorithmParameterException.class);
+
+        // mod_auth, not supported
+        Utils.runAndCheckException(
+                () -> c1.init(Cipher.ENCRYPT_MODE, kp.getPublic(),
+                        HPKEParameterSpec.of().authKey(kp2.getPrivate())),
+                UnsupportedOperationException.class);
+        Utils.runAndCheckException(
+                () -> c2.init(Cipher.DECRYPT_MODE, kp.getPrivate(),
+                        HPKEParameterSpec.of().authKey(kp2.getPublic())),
+                UnsupportedOperationException.class);
     }
 }
