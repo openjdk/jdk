@@ -30,7 +30,7 @@
 #include "memory/resourceArea.hpp"
 #include "prims/jvmtiTrace.hpp"
 #include "runtime/javaThread.hpp"
-#include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/javaThread.inline.hpp"
 
 //
 // class JvmtiTrace
@@ -278,8 +278,11 @@ const char *JvmtiTrace::safe_get_thread_name(Thread *thread) {
   if (!thread->is_Java_thread()) {
     return thread->name();
   }
-  ThreadInVMfromUnknown tiv;
   JavaThread* java_thread = JavaThread::cast(thread);
+  if (java_thread->thread_state() == _thread_in_native ||
+      java_thread->thread_state() == _thread_blocked) {
+    return thread->Thread::name();
+  }
   oop threadObj = java_thread->jvmti_vthread();
   if (threadObj == nullptr) {
     threadObj = java_thread->threadObj();
