@@ -1096,7 +1096,7 @@ void Arguments::print_jvm_args_on(outputStream* st) {
       // quote any argument containing whitespaces
       const char* const s = _jvm_args_array[i];
       bool ws = false;
-      for (const char* p = s; *p && !ws; p++) {
+      for (const char* p = s; *p != '\0' && !ws; p++) {
         ws = isspace((unsigned)*p);
       }
       if (ws) {
