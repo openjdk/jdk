@@ -28,14 +28,12 @@ include Modules.gmk
 
 ################################################################################
 #
-# Copy property files from share/conf to CONF_DST_DIR LIB_DST_DIR
+# Copy property files from share/conf to CONF_DST_DIR
 #
-JAXPPROPFILE_SRC_DIR := $(TOPDIR)/src/java.xml/share/conf
-JAXPPROPFILE_SRCS := $(wildcard $(JAXPPROPFILE_SRC_DIR)/jaxp*.properties*)
-JAXPPROPFILE_TARGET_FILES := $(subst $(JAXPPROPFILE_SRC_DIR),$(CONF_DST_DIR),$(JAXPPROPFILE_SRCS))
+$(eval $(call SetupCopyFiles, COPY_XML_MODULE_CONF, \
+    DEST := $(CONF_DST_DIR), \
+    FILES := $(wildcard $(TOPDIR)/src/java.xml/share/conf/jaxp*.properties*), \
+))
 
-$(CONF_DST_DIR)/%: $(JAXPPROPFILE_SRC_DIR)/%
-	$(call install-file)
-
-TARGETS += $(JAXPPROPFILE_TARGET_FILES)
+TARGETS += $(COPY_XML_MODULE_CONF)
 ################################################################################

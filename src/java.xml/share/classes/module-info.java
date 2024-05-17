@@ -440,9 +440,9 @@
  *     <li><a href="#EELimit">JAXP Limits</a> are set to smaller numbers </li>
  *     </ul>
  *
- * This file allows deployments to test the more secure/strict behavior,
- * identify issues such as a processor unknowingly makes outbound network
- * connections to fetch DTD, or processes XML that relies on extension functions.
+ * Deploying with this configuration prevents processors from unknowingly making
+ * outbound network connections to fetch DTDs, or process XML that makes use of
+ * extension functions.
  * </li>
  * </ul>
  *
