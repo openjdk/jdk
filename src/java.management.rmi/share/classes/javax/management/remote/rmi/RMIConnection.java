@@ -976,7 +976,7 @@ public interface RMIConnection extends Closeable, Remote {
      * client does not have permission to add a listener.
      * @throws IOException if a general communication exception occurred.
      * @throws UnsupportedOperationException if {@code delegationSubjects}
-     * contains any non-null values.
+     * is non-null and contains any non-null values.
      */
     public Integer[] addNotificationListeners(ObjectName[] names,
                     MarshalledObject[] filters,
