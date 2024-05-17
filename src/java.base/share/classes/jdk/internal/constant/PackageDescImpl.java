@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,15 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package java.lang.constant;
+package jdk.internal.constant;
+
+import java.lang.constant.PackageDesc;
 
 /*
  * Implementation of {@code PackageDesc}
  * @param internalName must have been validated
  */
-record PackageDescImpl(String internalName) implements PackageDesc {
+public record PackageDescImpl(String internalName) implements PackageDesc {
 
     @Override
     public String toString() {

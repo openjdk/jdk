@@ -24,6 +24,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/cdsConfig.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/javaThreadStatus.hpp"
 #include "gc/shared/barrierSet.hpp"
@@ -103,7 +104,10 @@ Thread::Thread() {
   _vm_error_callbacks = nullptr;
 
   // thread-specific hashCode stream generator state - Marsaglia shift-xor form
-  _hashStateX = os::random();
+  // If we are dumping, keep ihashes constant. Note that during dumping we only
+  // ever run one java thread, and no other thread should generate ihashes either,
+  // so using a constant seed should work fine.
+  _hashStateX = CDSConfig::is_dumping_static_archive() ? 0x12345678 : os::random();
   _hashStateY = 842502087;
   _hashStateZ = 0x8767;    // (int)(3579807591LL & 0xffff) ;
   _hashStateW = 273326509;

@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8328481
+ * @bug 8328481 8332236
  * @summary Check behavior of module imports.
  * @library /tools/lib
  * @modules java.logging
@@ -710,6 +710,28 @@ public class ImportModule extends TestRunner {
 
         Files.createDirectories(classes);
         List<String> kinds = new ArrayList<>();
+
+        new JavacTask(tb)
+            .options("--enable-preview", "--release", SOURCE_VERSION)
+            .outdir(classes)
+            .files(tb.findJavaFiles(src))
+            .run(Task.Expect.SUCCESS)
+            .writeAll();
+    }
+
+    @Test
+    public void testImplicitlyDeclaredClass(Path base) throws Exception {
+        Path current = base.resolve(".");
+        Path src = current.resolve("src");
+        Path classes = current.resolve("classes");
+        tb.writeFile(src.resolve("Test.java"),
+                     """
+                     import module java.base;
+                     void main() {
+                     }
+                     """);
+
+        Files.createDirectories(classes);
 
         new JavacTask(tb)
             .options("--enable-preview", "--release", SOURCE_VERSION)

@@ -542,11 +542,11 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   product(bool, HeapDumpBeforeFullGC, false, MANAGEABLE,                    \
           "Dump heap to file before any major stop-the-world GC "           \
-          "(also see FullGCHeapDumpLimit)")                                 \
+          "(also see FullGCHeapDumpLimit, HeapDumpPath, HeapDumpGzipLevel)")\
                                                                             \
   product(bool, HeapDumpAfterFullGC, false, MANAGEABLE,                     \
           "Dump heap to file after any major stop-the-world GC "            \
-          "(also see FullGCHeapDumpLimit)")                                 \
+          "(also see FullGCHeapDumpLimit, HeapDumpPath, HeapDumpGzipLevel)")\
                                                                             \
   product(uint, FullGCHeapDumpLimit, 0, MANAGEABLE,                         \
           "Limit the number of heap dumps triggered by "                    \
@@ -555,15 +555,18 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   product(bool, HeapDumpOnOutOfMemoryError, false, MANAGEABLE,              \
           "Dump heap to file when java.lang.OutOfMemoryError is thrown "    \
-          "from JVM")                                                       \
+          "from JVM "                                                       \
+          "(also see HeapDumpPath, HeapDumpGzipLevel)")                     \
                                                                             \
   product(ccstr, HeapDumpPath, nullptr, MANAGEABLE,                         \
-          "When HeapDumpOnOutOfMemoryError is on, the path (filename or "   \
+          "When HeapDumpOnOutOfMemoryError, HeapDumpBeforeFullGC "          \
+          "or HeapDumpAfterFullGC is on, the path (filename or "            \
           "directory) of the dump file (defaults to java_pid<pid>.hprof "   \
           "in the working directory)")                                      \
                                                                             \
   product(int, HeapDumpGzipLevel, 0, MANAGEABLE,                            \
-          "When HeapDumpOnOutOfMemoryError is on, the gzip compression "    \
+          "When HeapDumpOnOutOfMemoryError, HeapDumpBeforeFullGC "          \
+          "or HeapDumpAfterFullGC is on, the gzip compression "             \
           "level of the dump file. 0 (the default) disables gzip "          \
           "compression. Otherwise the level must be between 1 and 9.")      \
           range(0, 9)                                                       \

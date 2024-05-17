@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -22,16 +20,29 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package java.lang.constant;
 
 /*
- * Implementation of {@code ModuleDesc}
- * @param name must have been validated
+ * @test
+ * @summary Testing TypeKind.
+ * @bug 8331744
+ * @run junit TypeKindTest
  */
-record ModuleDescImpl(String name) implements ModuleDesc {
+import org.junit.jupiter.api.Test;
 
-    @Override
-    public String toString() {
-        return String.format("ModuleDesc[%s]", name());
+import java.lang.classfile.TypeKind;
+
+import static org.junit.Assert.assertThrows;
+
+class TypeKindTest {
+    @Test
+    void testContracts() {
+        assertThrows(NullPointerException.class, () -> TypeKind.from(null));
+
+        assertThrows(NullPointerException.class, () -> TypeKind.fromDescriptor(null));
+        assertThrows(IllegalArgumentException.class, () -> TypeKind.fromDescriptor(""));
+        assertThrows(IllegalArgumentException.class, () -> TypeKind.fromDescriptor("int"));
+
+        assertThrows(IllegalArgumentException.class, () -> TypeKind.fromNewarrayCode(-1));
+        assertThrows(IllegalArgumentException.class, () -> TypeKind.fromNewarrayCode(21));
     }
 }

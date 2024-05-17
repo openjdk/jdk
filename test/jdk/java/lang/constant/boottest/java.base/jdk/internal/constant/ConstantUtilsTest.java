@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,9 +21,8 @@
  * questions.
  */
 
-package java.lang.constant;
+package jdk.internal.constant;
 
-import java.lang.invoke.*;
 import java.lang.constant.*;
 import java.util.*;
 
@@ -35,6 +34,7 @@ import static org.testng.Assert.*;
  * @test
  * @bug 8303930
  * @compile ConstantUtilsTest.java
+ * @modules java.base/jdk.internal.constant
  * @run testng ConstantUtilsTest
  * @summary unit tests for methods of java.lang.constant.ConstantUtils that are not covered by other unit tests
  */

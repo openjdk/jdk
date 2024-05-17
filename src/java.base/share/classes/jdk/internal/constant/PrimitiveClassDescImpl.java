@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,11 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package java.lang.constant;
+package jdk.internal.constant;
 
+import java.lang.constant.ClassDesc;
+import java.lang.constant.ConstantDescs;
+import java.lang.constant.DynamicConstantDesc;
 import java.lang.invoke.MethodHandles;
 
 import sun.invoke.util.Wrapper;
@@ -34,7 +37,7 @@ import static java.util.Objects.requireNonNull;
  * A <a href="package-summary.html#nominal">nominal descriptor</a> for the class
  * constant corresponding to a primitive type (e.g., {@code int.class}).
  */
-final class PrimitiveClassDescImpl
+public final class PrimitiveClassDescImpl
         extends DynamicConstantDesc<Class<?>> implements ClassDesc {
 
     private final String descriptor;
@@ -49,7 +52,7 @@ final class PrimitiveClassDescImpl
      * describe a valid primitive type
      * @jvms 4.3 Descriptors
      */
-    PrimitiveClassDescImpl(String descriptor) {
+    public PrimitiveClassDescImpl(String descriptor) {
         super(ConstantDescs.BSM_PRIMITIVE_CLASS, requireNonNull(descriptor), ConstantDescs.CD_Class);
         if (descriptor.length() != 1
             || "VIJCSBFDZ".indexOf(descriptor.charAt(0)) < 0)
