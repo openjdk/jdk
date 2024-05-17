@@ -193,10 +193,10 @@ public interface SocketOptions {
      * <p>
      * Set the value to {@code Boolean.FALSE} or an integer less than {@code 0} with
      * {@link #setOption(int, Object)} to disable this option. An integer greater than or equal to
-     * {@code 0} will enable the option and will represent the linger timeout.
+     * {@code 0} will enable the option and will represent the linger interval.
      * <p>
      * If this option is enabled then {@link #getOption(int)} will return an integer value
-     * representing the linger timeout, else the return value will be {@code Boolean.FALSE}.
+     * representing the linger interval, else the return value will be {@code Boolean.FALSE}.
      *
      * @see Socket#setSoLinger
      * @see Socket#getSoLinger
