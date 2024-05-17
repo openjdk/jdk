@@ -432,7 +432,7 @@ class SerializeClosure;
   template(yieldInfo_name,                            "yieldInfo")                                \
   template(tail_name,                                 "tail")                                     \
   template(size_name,                                 "size")                                     \
-  template(argsize_name,                              "argsize")                                  \
+  template(bottom_name,                               "bottom")                                   \
   template(mode_name,                                 "mode")                                     \
   template(numFrames_name,                            "numFrames")                                \
   template(numOops_name,                              "numOops")                                  \
@@ -764,7 +764,7 @@ class SerializeClosure;
   template(decodeAndThrowThrowable_name,               "decodeAndThrowThrowable")                                 \
   template(encodeAnnotations_name,                     "encodeAnnotations")                                       \
   template(encodeAnnotations_signature,                "([BLjava/lang/Class;Ljdk/internal/reflect/ConstantPool;Z[Ljava/lang/Class;)[B")\
-  template(decodeAndThrowThrowable_signature,          "(IJZ)V")                                                  \
+  template(decodeAndThrowThrowable_signature,          "(IJZZ)V")                                                 \
   template(classRedefinedCount_name,                   "classRedefinedCount")                                     \
   template(classLoader_name,                           "classLoader")                                             \
   template(componentType_name,                         "componentType")                                           \

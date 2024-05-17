@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -44,8 +44,8 @@ class CodeHeapState : public CHeapObj<mtCode> {
 
   enum blobType {
     noType = 0,             // must be! due to initialization by memset to zero
-    // The nMethod_* values correspond to the CompiledMethod enum values.
-    // We can't use the CompiledMethod values 1:1 because we depend on noType == 0.
+    // The nMethod_* values correspond to the nmethod enum values.
+    // We can't use the nmethod values 1:1 because we depend on noType == 0.
     nMethod_inconstruction, // under construction. Very soon, the type will transition to "in_use".
                             // can't be observed while holding Compile_lock and CodeCache_lock simultaneously.
                             // left in here for completeness (and to document we spent a thought).

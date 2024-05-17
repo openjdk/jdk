@@ -165,16 +165,6 @@ void oopDesc::set_narrow_klass(narrowKlass nk) {
 }
 #endif
 
-void* oopDesc::load_klass_raw(oop obj) {
-  if (UseCompressedClassPointers) {
-    narrowKlass narrow_klass = obj->_metadata._compressed_klass;
-    if (narrow_klass == 0) return nullptr;
-    return (void*)CompressedKlassPointers::decode_raw(narrow_klass);
-  } else {
-    return obj->_metadata._klass;
-  }
-}
-
 void* oopDesc::load_oop_raw(oop obj, int offset) {
   uintptr_t addr = (uintptr_t)(void*)obj + (uint)offset;
   if (UseCompressedOops) {
@@ -236,6 +226,6 @@ bool oopDesc::size_might_change() {
   // the grey portion of an already copied array. This will cause the first
   // disjunct below to fail if the two comparands are computed across such
   // a concurrent change.
-  return Universe::heap()->is_gc_active() && is_objArray() && is_forwarded() && (UseParallelGC || UseG1GC);
+  return Universe::heap()->is_stw_gc_active() && is_objArray() && is_forwarded() && (UseParallelGC || UseG1GC);
 }
 #endif

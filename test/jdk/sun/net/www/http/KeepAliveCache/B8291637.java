@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,43 +24,45 @@
 /*
  * @test
  * @bug 8291637
- * @run main/othervm -Dhttp.keepAlive.time.server=20 -esa -ea B8291637 timeout
- * @run main/othervm -Dhttp.keepAlive.time.server=20 -esa -ea B8291637 max
+ * @library /test/lib
+ * @run main/othervm -Dhttp.keepAlive.time.server=20 -esa -ea B8291637
  */
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.*;
+import java.net.HttpURLConnection;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletableFuture;
+
+import jdk.test.lib.net.URIBuilder;
 
 public class B8291637 {
     static CompletableFuture<Boolean> passed = new CompletableFuture<>();
 
-    static class Server extends Thread {
-        final ServerSocket serverSocket;
-        final int port;
+    static class Server extends Thread implements AutoCloseable {
         final String param; // the parameter to test "max" or "timeout"
+        final ServerSocket serverSocket = new ServerSocket(0);
+        final int port;
         volatile Socket s;
 
         public Server(String param) throws IOException {
-            serverSocket = new ServerSocket(0);
+            this.param = param;
             port = serverSocket.getLocalPort();
             setDaemon(true);
-            this.param = param;
         }
 
         public int getPort() {
             return port;
         }
 
-        public void close() {
-            try {
-                serverSocket.close();
-                if (s != null)
-                    s.close();
-            } catch (IOException e) {}
+        public void close() throws IOException {
+            serverSocket.close();
+            if (s != null)
+                s.close();
         }
 
         static final byte[] requestEnd = new byte[] {'\r', '\n', '\r', '\n' };
@@ -125,28 +127,29 @@ public class B8291637 {
         }
     }
 
-    public static void main(String[] args) throws Exception {
-        Server server = new Server(args[0]);
-        int port = server.getPort();
-        server.start();
-        URL url = new URL("http://127.0.0.1:" + Integer.toString(port) + "/");
-        HttpURLConnection urlc = (HttpURLConnection) url.openConnection();
-        InputStream i = urlc.getInputStream();
-        int c,count=0;
-        byte[] buf = new byte[256];
-        while ((c=i.read(buf)) != -1) {
-            count+=c;
-        }
-        i.close();
-        System.out.println("Read " + count );
-        try {
+    public static void runTest(String param) throws Exception {
+        try (Server server = new Server(param)) {
+            server.start();
+            URL url = URIBuilder.newBuilder()
+                    .scheme("http")
+                    .loopback()
+                    .port(server.getPort())
+                    .path("/")
+                    .toURL();
+            HttpURLConnection urlc = (HttpURLConnection) url.openConnection();
+            try (InputStream i = urlc.getInputStream()) {
+                System.out.println("Read " + i.readAllBytes().length);
+            }
             if (!passed.get()) {
                 throw new RuntimeException("Test failed");
             } else {
                 System.out.println("Test passed");
             }
-        } finally {
-            server.close();
         }
+    }
+
+    public static void main(String[] args) throws Exception {
+        runTest("timeout");
+        runTest("max");
     }
 }

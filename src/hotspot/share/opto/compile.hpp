@@ -29,7 +29,6 @@
 #include "ci/compilerInterface.hpp"
 #include "code/debugInfoRec.hpp"
 #include "compiler/compiler_globals.hpp"
-#include "compiler/compilerOracle.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerEvent.hpp"
 #include "compiler/cHeapStringHolder.hpp"
@@ -46,6 +45,7 @@
 #include "runtime/timerTrace.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/ticks.hpp"
+#include "utilities/vmEnums.hpp"
 
 class AbstractLockNode;
 class AddPNode;
@@ -53,6 +53,7 @@ class Block;
 class Bundle;
 class CallGenerator;
 class CallStaticJavaNode;
+class CastIINode;
 class CloneMap;
 class CompilationFailureInfo;
 class ConnectionGraph;
@@ -318,6 +319,7 @@ class Compile : public Phase {
   uintx                 _max_node_limit;        // Max unique node count during a single compilation.
 
   bool                  _post_loop_opts_phase;  // Loop opts are finished.
+  bool                  _allow_macro_nodes;     // True if we allow creation of macro nodes.
 
   int                   _major_progress;        // Count of something big happening
   bool                  _inlining_progress;     // progress doing incremental inlining?
@@ -678,7 +680,7 @@ private:
   void          set_has_monitors(bool v)         { _has_monitors = v; }
 
   // check the CompilerOracle for special behaviours for this compile
-  bool          method_has_option(enum CompileCommand option) {
+  bool          method_has_option(CompileCommandEnum option) {
     return method() != nullptr && method()->has_option(option);
   }
 
@@ -786,6 +788,9 @@ private:
   bool       post_loop_opts_phase() { return _post_loop_opts_phase;  }
   void   set_post_loop_opts_phase() { _post_loop_opts_phase = true;  }
   void reset_post_loop_opts_phase() { _post_loop_opts_phase = false; }
+
+  bool       allow_macro_nodes() { return _allow_macro_nodes;  }
+  void reset_allow_macro_nodes() { _allow_macro_nodes = false;  }
 
   void record_for_post_loop_opts_igvn(Node* n);
   void remove_from_post_loop_opts_igvn(Node* n);
@@ -1274,6 +1279,9 @@ private:
   int random();
   bool randomized_select(int count);
 
+  // seed random number generation and log the seed for repeatability.
+  void initialize_stress_seed(const DirectiveSet* directive);
+
   // supporting clone_map
   CloneMap&     clone_map();
   void          set_clone_map(Dict* d);
@@ -1307,6 +1315,8 @@ private:
                             BasicType out_bt, BasicType in_bt);
 
   static Node* narrow_value(BasicType bt, Node* value, const Type* type, PhaseGVN* phase, bool transform_res);
+
+  void remove_range_check_cast(CastIINode* cast);
 };
 
 #endif // SHARE_OPTO_COMPILE_HPP

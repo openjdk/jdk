@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,8 +51,14 @@ public sealed interface NewPrimitiveArrayInstruction extends Instruction
      * {@return a new primitive array instruction}
      *
      * @param typeKind the component type of the array
+     * @throws IllegalArgumentException when the {@code typeKind} is not a legal
+     *                                  primitive array component type
      */
     static NewPrimitiveArrayInstruction of(TypeKind typeKind) {
+        // Implicit null-check:
+        if (typeKind.newarrayCode() < 0) {
+            throw new IllegalArgumentException("Illegal component type: " + typeKind.typeName());
+        }
         return new AbstractInstruction.UnboundNewPrimitiveArrayInstruction(typeKind);
     }
 }

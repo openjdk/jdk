@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package javax.swing.plaf.synth;
 
 import java.awt.Component;
+import java.awt.Color;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
@@ -121,6 +122,13 @@ public class SynthTabbedPaneUI extends BasicTabbedPaneUI
 
     private boolean selectedTabIsPressed = false;
 
+    // Background color for selected tab and content pane
+    private Color selectColor;
+    // Background color for unselected tabs
+    private Color unselectedBackground;
+    private boolean contentOpaque = true;
+    private boolean tabsOpaque = true;
+
     /**
      *
      * Constructs a {@code SynthTabbedPaneUI}.
@@ -146,6 +154,10 @@ public class SynthTabbedPaneUI extends BasicTabbedPaneUI
      */
     @Override
     protected void installDefaults() {
+        selectColor = UIManager.getColor("TabbedPane.selected");
+        contentOpaque = UIManager.getBoolean("TabbedPane.contentOpaque");
+        tabsOpaque = UIManager.getBoolean("TabbedPane.tabsOpaque");
+        unselectedBackground = UIManager.getColor("TabbedPane.unselectedBackground");
         updateStyle(tabPane);
     }
 
@@ -636,8 +648,17 @@ public class SynthTabbedPaneUI extends BasicTabbedPaneUI
                 }
             }
         }
-        tabContext.getPainter().paintTabbedPaneTabBackground(tabContext, g,
-                x, y, width, height, tabIndex, placement);
+
+        if (isSelected) {
+            g.setColor(selectColor);
+        } else {
+            g.setColor(getUnselectedBackgroundAt(tabIndex));
+        }
+
+        if (tabsOpaque || tabPane.isOpaque()) {
+            tabContext.getPainter().paintTabbedPaneTabBackground(tabContext, g,
+                    x, y, width, height, tabIndex, placement);
+        }
         tabContext.getPainter().paintTabbedPaneTabBorder(tabContext, g,
                 x, y, width, height, tabIndex, placement);
 
@@ -655,9 +676,15 @@ public class SynthTabbedPaneUI extends BasicTabbedPaneUI
             paintIcon(g, tabPlacement, tabIndex, icon, iconRect, isSelected);
             paintText(ss, g, tabPlacement, font, metrics,
                     tabIndex, clippedTitle, textRect, isSelected);
-
-
         }
+    }
+
+    private Color getUnselectedBackgroundAt(int index) {
+        Color color = tabPane.getBackgroundAt(index);
+        if (color instanceof UIResource && unselectedBackground != null) {
+            return unselectedBackground;
+        }
+        return color;
     }
 
     private void layoutLabel(SynthContext ss, int tabPlacement,
@@ -737,6 +764,21 @@ public class SynthTabbedPaneUI extends BasicTabbedPaneUI
               h -= (y - insets.top);
         }
         SynthLookAndFeel.updateSubregion(ss, g, new Rectangle(x, y, w, h));
+
+        if (tabPane.getTabCount() > 0 && (contentOpaque || tabPane.isOpaque())) {
+            // Fill region behind content area
+            Color color = UIManager.getColor("TabbedPane.contentAreaColor");
+            if (color != null) {
+                g.setColor(color);
+            } else if (selectColor == null || selectedIndex == -1) {
+                g.setColor(tabPane.getBackground());
+            } else {
+                g.setColor(selectColor);
+            }
+            // fill content area rect for both GTK and Nimbus LAF here
+            g.fillRect(x, y, w, h);
+        }
+
         ss.getPainter().paintTabbedPaneContentBackground(ss, g, x, y,
                                                            w, h);
         ss.getPainter().paintTabbedPaneContentBorder(ss, g, x, y, w, h);
