@@ -470,13 +470,31 @@ public class Indify {
                                 a2 = finalConm.methodName().stringValue();
                             }
                             if (e instanceof InvokeInstruction && (Objects.equals(a1, a2))){
-                                System.out.println("WE IN");
-                                b.invokeDynamicInstruction((InvokeDynamicEntry) con);
-                            } else b.with(e);
+                                System.err.println("removing instruction invokestatic" + ((InvokeInstruction) e).name());
+                                    b.andThen(b);
+                            }
+                            else b.with(e);
+
                         };
                         classTransform = ClassTransform.transformingMethodBodies(filter, codeTransform);
 
                         System.err.println("----------------------------------------------------------------Creating New ClassModel------------------------------------------------------------------");
+                        cm = java.lang.classfile.ClassFile.of().parse(
+                                java.lang.classfile.ClassFile.of(StackMapsOption.DROP_STACK_MAPS).transform(cm, classTransform)
+                        );
+                        for (Object o : cm);
+                        for (Object o : cm.constantPool());
+
+                        codeTransform = (b, e) ->{
+                            if(e instanceof InvokeInstruction && ((InvokeInstruction) e).method().equals(((InvokeInstruction) i2).method())){
+                                System.err.println("removing instruction invokevirtual" + ((InvokeInstruction) e).name());
+                                b.andThen(b);
+                                System.out.println("Adding invokedynamic instruction and nop");
+                                b.invokeDynamicInstruction((InvokeDynamicEntry) con).nop();
+                            } else b.with(e);
+                        };
+                        classTransform = ClassTransform.transformingMethodBodies(filter, codeTransform);
+
                         cm = java.lang.classfile.ClassFile.of().parse(
                                 java.lang.classfile.ClassFile.of(StackMapsOption.DROP_STACK_MAPS).transform(cm, classTransform)
                         );
@@ -509,7 +527,8 @@ public class Indify {
                         classTransform = ClassTransform.transformingMethodBodies(filter, codeTransform);
                         cm = java.lang.classfile.ClassFile.of().parse(
                                 java.lang.classfile.ClassFile.of(StackMapsOption.DROP_STACK_MAPS).transform(cm, classTransform));
-
+                        for (Object o : cm);
+                        for (Object o : cm.constantPool());
                         List<java.lang.classfile.Instruction> LdcIns = new ArrayList<>();
                         for(MethodModel mmm : cm.methods()){
                             if (Objects.equals(mmm.methodName().stringValue(), m.methodName().stringValue())){
@@ -519,11 +538,26 @@ public class Indify {
                         }
                         continue;
                     }
-
-
                 }
-
             }
+            ClassHierarchyResolver classHierarchyResolver = classDesc -> {
+                // Treat all classes as interfaces
+                return ClassHierarchyResolver.ClassHierarchyInfo.ofInterface();
+            };
+
+            try {
+                List<VerifyError> errors = of(ClassHierarchyResolverOption.of(classHierarchyResolver)).verify(cm);
+                if (!errors.isEmpty()) {
+                    for (VerifyError e : errors) {
+                        e.printStackTrace();
+                    }
+                    throw new IOException("Verification failed");
+                }
+            } catch (IOException e) {
+                System.err.println(e.getMessage());
+            }
+            System.out.println();
+
 
 
             Pool pool = cf.pool;
@@ -585,7 +619,6 @@ public class Indify {
         }
 
         java.lang.classfile.Instruction find_pop( List<java.lang.classfile.Instruction> instructionList, int currentIndex){
-            ConstantPool pool = bytecode.classModel.constantPool();
             JVMState jvm = new JVMState();
 
             ListIterator<java.lang.classfile.Instruction> newIter = instructionList.listIterator(currentIndex + 1);
@@ -598,7 +631,6 @@ public class Indify {
                 if (jvm.stackMotion(i.opcode().bytecode()))  continue decode;
                 if (pops.indexOf('Q') >= 0 && i instanceof InvokeInstruction in) {  //TODO: re-check with this later
                     MemberRefEntry ref = (MemberRefEntry) bytecode.classModel.constantPool().entryByIndex(in.method().index());
-                    String methName = ref.nameAndType().name().stringValue();
                     String methType = ref.nameAndType().type().stringValue();
                     String type = simplifyType(methType);
 
