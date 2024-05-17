@@ -44,6 +44,7 @@ import java.lang.classfile.CompoundElement;
 import java.lang.classfile.CustomAttribute;
 import java.lang.classfile.FieldModel;
 import java.lang.classfile.MethodModel;
+import java.lang.classfile.TypeAnnotation;
 import java.lang.classfile.TypeKind;
 import java.lang.classfile.attribute.*;
 import java.lang.classfile.constantpool.*;
@@ -308,9 +309,9 @@ public record ParserVerifier(ClassModel classModel) {
             case RuntimeInvisibleAnnotationsAttribute aa ->
                 annotationsSize(aa.annotations());
             case RuntimeVisibleTypeAnnotationsAttribute aa ->
-                -1;
+                typeAnnotationsSize(aa.annotations());
             case RuntimeInvisibleTypeAnnotationsAttribute aa ->
-                -1;
+                typeAnnotationsSize(aa.annotations());
             case RuntimeVisibleParameterAnnotationsAttribute aa ->
                 parameterAnnotationsSize(aa.parameterAnnotations());
             case RuntimeInvisibleParameterAnnotationsAttribute aa ->
@@ -385,6 +386,14 @@ public record ParserVerifier(ClassModel classModel) {
         int l = 2;
         for (var an : ans) {
             l += annotationSize(an);
+        }
+        return l;
+    }
+
+    private static int typeAnnotationsSize(List<TypeAnnotation> ans) {
+        int l = 2;
+        for (var an : ans) {
+            l += 2 + an.targetInfo().size() + 2 * an.targetPath().size() + annotationSize(an);
         }
         return l;
     }
