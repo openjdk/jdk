@@ -172,7 +172,10 @@ private:
 
 #ifdef ASSERT
   void verify_self() {
-    const double expected_maximum_depth = log(this->_node_count+1) * 5;
+    // A balanced binary search tree should have a depth on the order of log(N).
+    // We take the ceiling of log_2(N + 1) * 2.5 as our maximum bound.
+    // For comparison, a RB-tree has a proven max depth of log_2(N + 1) * 2.
+    const int expected_maximum_depth = ceil((log(this->_node_count+1) / log(2)) * 2.5);
     // Find the maximum depth through DFS and ensure that the priority invariant holds.
     int maximum_depth_found = 0;
 
@@ -195,7 +198,8 @@ private:
       to_visit.push({head.depth + 1, head.n->_priority, head.n->left()});
       to_visit.push({head.depth + 1, head.n->_priority, head.n->right()});
     }
-    assert(maximum_depth_found <= (int)expected_maximum_depth, "depth unexpectedly large");
+    assert(maximum_depth_found <= ceil(expected_maximum_depth),
+           "depth unexpectedly large, was: %d, expected: %d", maximum_depth_found, expected_maximum_depth);
 
     // Visit everything in order, see that the key ordering is monotonically increasing.
     TreapNode* last_seen = nullptr;

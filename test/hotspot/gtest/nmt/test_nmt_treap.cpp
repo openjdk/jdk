@@ -317,24 +317,34 @@ TEST_VM_F(TreapTest, TestClosestLeq) {
 #ifdef ASSERT
 
 TEST_VM_F(TreapTest, VerifyItThroughStressTest) {
-  TreapCHeap<int, int,Cmp> treap;
-  // Really hammer a Treap
-  int ten_thousand = 10000;
-  for (int i = 0; i < ten_thousand; i++) {
-    int r = os::random();
-    if (r >= 0) {
-      treap.upsert(i, i);
-    } else {
-      treap.remove(i);
+  { // Repeatedly verify a treap of moderate size
+    TreapCHeap<int, int, Cmp> treap;
+    constexpr const int ten_thousand = 10000;
+    for (int i = 0; i < ten_thousand; i++) {
+      int r = os::random();
+      if (r >= 0) {
+        treap.upsert(i, i);
+      } else {
+        treap.remove(i);
+      }
+      verify_it(treap);
     }
-    verify_it(treap);
+    for (int i = 0; i < ten_thousand; i++) {
+      int r = os::random();
+      if (r >= 0) {
+        treap.upsert(i, i);
+      } else {
+        treap.remove(i);
+      }
+      verify_it(treap);
+    }
   }
-  for (int i = 0; i < ten_thousand; i++) {
-    int r = os::random();
-    if (r >= 0) {
-      treap.upsert(i, i);
-    } else {
-      treap.remove(i);
+  { // Make a very large treap and verify at the end
+  struct Nothing {};
+    TreapCHeap<int, Nothing, Cmp> treap;
+    constexpr const int five_million = 5000000;
+    for (int i = 0; i < five_million; i++) {
+      treap.upsert(i, Nothing());
     }
     verify_it(treap);
   }
