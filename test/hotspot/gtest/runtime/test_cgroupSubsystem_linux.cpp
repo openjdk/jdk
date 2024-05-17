@@ -243,6 +243,14 @@ TEST(cgroupTest, read_number_tests) {
   EXPECT_TRUE(ok) << "Number parsing should have been successful";
   EXPECT_EQ((julong)8888, foo) << "Wrong value for 'foo' (NOTE: 0xBAD == " << 0xBAD << ")";
 
+  // Some interface files might have negative values, ensure we can read
+  // them and manually cast them as needed.
+  fill_file(test_file, "-1");
+  foo = 0xBAD;
+  ok = controller->read_number(base_with_slash, &foo);
+  EXPECT_TRUE(ok) << "Number parsing should have been successful";
+  EXPECT_EQ((jlong)-1, (jlong)foo) << "Wrong value for 'foo' (NOTE: 0xBAD == " << 0xBAD << ")";
+
   foo = 0xBAD;
   fill_file(test_file, nullptr);
   ok = controller->read_number(base_with_slash, &foo);

@@ -319,8 +319,17 @@ char * CgroupV1Subsystem::cpu_cpuset_memory_nodes() {
  */
 int CgroupV1Subsystem::cpu_quota() {
   julong quota;
-  CONTAINER_READ_NUMBER_CHECKED(_cpu->controller(), "/cpu.cfs_quota_us", "CPU Quota", quota);
-  return (int)quota;
+  bool is_ok = _cpu->controller()->
+                  read_number("/cpu.cfs_quota_us", &quota);
+  if (!is_ok) {
+    log_trace(os, container)("CPU Quota failed: %d", OSCONTAINER_ERROR);
+    return OSCONTAINER_ERROR;
+  }
+  // cast to int since the read value might be negative
+  // and we want to avoid logging -1 as a large unsigned value.
+  int quota_int = (int)quota;
+  log_trace(os, container)("CPU Quota is: %d", quota_int);
+  return quota_int;
 }
 
 int CgroupV1Subsystem::cpu_period() {
