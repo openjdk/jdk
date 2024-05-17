@@ -30,6 +30,7 @@ import java.nio.file.Files;
 import java.util.*;
 import java.io.*;
 import java.lang.reflect.Modifier;
+import java.util.function.Predicate;
 import java.util.regex.*;
 import java.util.stream.Collectors;
 
@@ -396,6 +397,134 @@ public class Indify {
             assert constants.size() == new_constants.size(); //TODO: to be removed after getting rid of old implementation
             assert indySignatures.size() == new_indySignatures.size();
             ClassModel cm = transformFromCPbuilder(bytecode.classModel, bytecode.poolBuilder);
+            for(Object o : cm) System.out.println();
+            for(Object o : cm.constantPool()) System.out.println();
+
+            CodeTransform codeTransform = null;
+            ClassTransform classTransform = null;
+
+            for(MethodModel m : bytecode.classModel.methods()){
+                if(new_constants.containsKey(m)) continue;
+
+                int blab = 0;
+                Predicate<MethodModel> filter = method -> Objects.equals(method.methodName().stringValue(), m.methodName().stringValue());
+
+
+                List<java.lang.classfile.Instruction> instructionList = getInstructions(m);
+                ListIterator<java.lang.classfile.Instruction> iterator =instructionList.listIterator();
+                while (iterator.hasNext()){
+                    java.lang.classfile.Instruction i = iterator.next();
+
+                    if(i.opcode().bytecode() != INVOKESTATIC) continue; // skip it's a method we will delete
+                    int methi = ((InvokeInstruction) i).method().index();
+                    if (poolMarks[methi] == 0) continue;    //this is a markedpatternMethod
+
+                    MemberRefEntry ref = (MemberRefEntry) bytecode.classModel.constantPool().entryByIndex(methi);
+                    String methName = ref.nameAndType().name().stringValue();
+                    String methType = ref.nameAndType().type().stringValue();
+
+                    MethodModel conm = null;
+                    for (MethodModel mm : bytecode.classModel.methods()) {
+                        if (mm.methodName().stringValue().equals(methName) && mm.methodType().stringValue().equals(methType)) {
+                            conm = mm;
+                        }
+                    }
+                    if(conm == null) continue;
+
+                    PoolEntry con = new_constants.get(conm);
+                    if(blab++ == 0 && !quiet){
+                        System.out.println();
+                        System.err.println("patching " +cm.thisClass().name() + "." + m.methodName());
+                    }
+
+                    if(con instanceof InvokeDynamicEntry){
+                        java.lang.classfile.Instruction i2 = find_pop(instructionList, iterator.previousIndex());
+                        int ref2i;
+                        MethodRefEntry methodEntry = null;
+
+                        if(i2 != null && i2.opcode().bytecode() == INVOKEVIRTUAL && poolMarks[ref2i = ((InvokeInstruction) i2).method().index()] == 'D'){
+                            methodEntry = (MethodRefEntry) cm.constantPool().entryByIndex(ref2i);
+                        }
+
+                        if(methodEntry == null || !"invokeExact".equals(methodEntry.nameAndType().name().stringValue())){
+                            System.err.println(m+": Failed to create invokedynamic at "+i.opcode().bytecode());
+                            continue;
+                        }
+
+                        String invType = methodEntry.type().stringValue();
+                        String bsmType = new_indySignatures.get(conm);
+                        if (!invType.equals(bsmType)) {
+                            System.err.println(m+": warning: "+conm+" call type and local invoke type differ: " + bsmType+", " + invType);
+                        }
+
+                        assert (i.sizeInBytes() == 3 || i2.sizeInBytes() == 3);
+                        if (!quiet) System.err.println("Transfmoring the Method: "+ m.methodName() +" instruction: " + i + " invokedynamic: " + con.index() );
+
+
+                        System.err.println("----------------------------------------------------------------Transforming Method Instructions------------------------------------------------------------------");
+                        MethodModel finalConm = conm;
+                        codeTransform = (b, e) ->{
+                            String a1 = null, a2 = null;
+                            if(e instanceof InvokeInstruction){
+                                a1 = ((InvokeInstruction) e).method().name().stringValue();
+                                a2 = finalConm.methodName().stringValue();
+                            }
+                            if (e instanceof InvokeInstruction && (Objects.equals(a1, a2))){
+                                System.out.println("WE IN");
+                                b.invokeDynamicInstruction((InvokeDynamicEntry) con);
+                            } else b.with(e);
+                        };
+                        classTransform = ClassTransform.transformingMethodBodies(filter, codeTransform);
+
+                        System.err.println("----------------------------------------------------------------Creating New ClassModel------------------------------------------------------------------");
+                        cm = java.lang.classfile.ClassFile.of().parse(
+                                java.lang.classfile.ClassFile.of(StackMapsOption.DROP_STACK_MAPS).transform(cm, classTransform)
+                        );
+                        for (Object o : cm);
+                        for (Object o : cm.constantPool());
+
+                        //We are leaving this here for checking if curr method instructions are changed
+                        List<java.lang.classfile.Instruction> newInst = new ArrayList<>();
+                        for(MethodModel mmm : cm.methods()){
+                            if (Objects.equals(mmm.methodName().stringValue(), m.methodName().stringValue())){
+                                newInst.addAll(getInstructions(mmm));
+                                break;
+                            }
+                        }
+                        System.out.println();
+                    } else {
+                        assert(i.sizeInBytes() == 3);
+                        MethodModel finalConm = conm;
+                        codeTransform = (b, e) ->{
+                            String a1, a2 = null;
+                            if(e instanceof InvokeInstruction){
+                                a1 = ((InvokeInstruction) e).method().name().stringValue();
+                                a2 = finalConm.methodName().stringValue();
+                            }
+                            if(e instanceof InvokeInstruction && Objects.equals(((InvokeInstruction) e).method().name().stringValue(), finalConm.methodName().stringValue())){
+                                b.ldc((LoadableConstantEntry) con);
+                                System.err.println("Transfmoring the Method: "+ m.methodName() +" instruction: invokestatic " + ((InvokeInstruction) e).type() + " to ldc: " + ((LoadableConstantEntry) con).constantValue() );
+                            } else b.with(e);
+                        };
+                        classTransform = ClassTransform.transformingMethodBodies(filter, codeTransform);
+                        cm = java.lang.classfile.ClassFile.of().parse(
+                                java.lang.classfile.ClassFile.of(StackMapsOption.DROP_STACK_MAPS).transform(cm, classTransform));
+
+                        List<java.lang.classfile.Instruction> LdcIns = new ArrayList<>();
+                        for(MethodModel mmm : cm.methods()){
+                            if (Objects.equals(mmm.methodName().stringValue(), m.methodName().stringValue())){
+                                LdcIns.addAll(getInstructions(mmm));
+                                break;
+                            }
+                        }
+                        continue;
+                    }
+
+
+                }
+
+            }
+
 
             Pool pool = cf.pool;
             //for (Constant c : cp)  System.out.println("  # "+c);
@@ -414,7 +543,6 @@ public class Indify {
                     if (con == null)  continue;
                     if (blab++ == 0 && !quiet)
                         System.err.println("patching "+cf.nameString()+"."+m);
-                    //if (blab == 1) { for (Instruction j = m.instructions(); j != null; j = j.next()) System.out.println("  |"+j); }
                     if (con.tag == TAG_INVOKEDYNAMIC) {
                         // need to patch the following instruction too,
                         // but there are usually intervening argument pushes too
@@ -451,10 +579,62 @@ public class Indify {
                         i.u2AtPut(1, con.index);
                     }
                 }
-                //if (blab >= 1) { for (Instruction j = m.instructions(); j != null; j = j.next()) System.out.println("    |"+j); }
             }
             cf.methods.removeAll(constants.keySet());
             return true;
+        }
+
+        java.lang.classfile.Instruction find_pop( List<java.lang.classfile.Instruction> instructionList, int currentIndex){
+            ConstantPool pool = bytecode.classModel.constantPool();
+            JVMState jvm = new JVMState();
+
+            ListIterator<java.lang.classfile.Instruction> newIter = instructionList.listIterator(currentIndex + 1);
+        decode:
+            while (newIter.hasNext()) {
+                java.lang.classfile.Instruction i = newIter.next();
+                String pops = INSTRUCTION_POPS[i.opcode().bytecode()];
+
+                if(pops == null) break;
+                if (jvm.stackMotion(i.opcode().bytecode()))  continue decode;
+                if (pops.indexOf('Q') >= 0 && i instanceof InvokeInstruction in) {  //TODO: re-check with this later
+                    MemberRefEntry ref = (MemberRefEntry) bytecode.classModel.constantPool().entryByIndex(in.method().index());
+                    String methName = ref.nameAndType().name().stringValue();
+                    String methType = ref.nameAndType().type().stringValue();
+                    String type = simplifyType(methType);
+
+                    switch (i.opcode().bytecode()){
+                        case GETSTATIC:
+                        case GETFIELD:
+                        case PUTSTATIC:
+                        case PUTFIELD:
+                            pops = pops.replace("Q", type);
+                            break;
+                        default:
+                            if (!type.startsWith("("))
+                                throw new InternalError(i.toString());
+                            pops = pops.replace("Q$Q", type.substring(1).replace(")","$"));
+                            break;
+                    }
+                    System.out.println("special type: "+type+" => "+pops);
+                }
+                int npops = pops.indexOf('$');
+                if (npops < 0)  throw new InternalError();
+                if (npops > jvm.sp())  return i;
+                List<Object> args = jvm.args(npops);
+                int k = 0;
+                for (Object x : args) {
+                    char have = (Character) x;
+                    char want = pops.charAt(k++);
+                    if (have == 'X' || want == 'X')  continue;
+                    if (have != want)  break decode;
+                }
+                if (pops.charAt(k++) != '$')  break decode;
+                args.clear();
+                while (k < pops.length())
+                    args.add(pops.charAt(k++));
+            }
+            System.err.println("*** bailout on jvm: "+jvm.stack);
+            return null;
         }
 
         // Scan forward from the instruction to find where the stack p
@@ -542,35 +722,80 @@ public class Indify {
         }
 
         ClassModel transformFromCPbuilder(ClassModel oldClassModel, ConstantPoolBuilder cpBuilder){
-            byte[] new_bytes = java.lang.classfile.ClassFile.of().transform(oldClassModel, ClassTransform.endHandler(clb -> {
-                for (PoolEntry entry: cpBuilder){
-                    System.err.println("Entry: "+entry);
-                    if (entry instanceof Utf8Entry utf8Entry) clb.constantPool().utf8Entry(utf8Entry.stringValue());
-                    if (entry instanceof NameAndTypeEntry nameAndTypeEntry) clb.constantPool().nameAndTypeEntry(nameAndTypeEntry.name(), nameAndTypeEntry.type());
-                    if (entry instanceof MethodTypeEntry methodTypeEntry) clb.constantPool().methodTypeEntry(methodTypeEntry.descriptor());
-                    if (entry instanceof MethodHandleEntry methodHandleEntry) clb.constantPool().methodHandleEntry(methodHandleEntry.kind(), methodHandleEntry.reference());
-                    if (entry instanceof MethodRefEntry methodRefEntry) clb.constantPool().methodRefEntry(methodRefEntry.owner(), methodRefEntry.nameAndType());
-                    if (entry instanceof FieldRefEntry fieldRefEntry) clb.constantPool().fieldRefEntry(fieldRefEntry.owner(), fieldRefEntry.nameAndType());
-                    if (entry instanceof ClassEntry classEntry) clb.constantPool().classEntry(classEntry.name());
-                    if (entry instanceof StringEntry stringEntry) clb.constantPool().stringEntry(stringEntry.utf8());
-                    if (entry instanceof IntegerEntry integerEntry) clb.constantPool().intEntry(integerEntry.intValue());
-                    if (entry instanceof FloatEntry floatEntry) clb.constantPool().floatEntry(floatEntry.floatValue());
-                    if (entry instanceof LongEntry longEntry) clb.constantPool().longEntry(longEntry.longValue());
-                    if (entry instanceof DoubleEntry doubleEntry) clb.constantPool().doubleEntry(doubleEntry.doubleValue());
-                    if (entry instanceof InterfaceMethodRefEntry interfaceMethodRefEntry) clb.constantPool().interfaceMethodRefEntry(interfaceMethodRefEntry.owner(), interfaceMethodRefEntry.nameAndType());
-                    if (entry instanceof InvokeDynamicEntry invokeDynamicEntry) clb.constantPool().invokeDynamicEntry(invokeDynamicEntry.bootstrap(), invokeDynamicEntry.nameAndType());
-                    if (entry instanceof ModuleEntry moduleEntry) clb.constantPool().moduleEntry(moduleEntry.name());
-                    if (entry instanceof PackageEntry packageEntry) clb.constantPool().packageEntry(packageEntry.name());
+            byte[] new_bytes = java.lang.classfile.ClassFile.of(StackMapsOption.DROP_STACK_MAPS).transform(oldClassModel, ClassTransform.endHandler(clb -> {
+                for (PoolEntry entry: cpBuilder) {
+                    if (entry instanceof Utf8Entry utf8Entry) {
+                        clb.constantPool().utf8Entry(utf8Entry.stringValue());
+                        continue;
+                    }
+                    if (entry instanceof NameAndTypeEntry nameAndTypeEntry) {
+                        clb.constantPool().nameAndTypeEntry(nameAndTypeEntry.name(), nameAndTypeEntry.type());
+                        continue;
+                    }
+                    if (entry instanceof MethodTypeEntry methodTypeEntry) {
+                        clb.constantPool().methodTypeEntry(methodTypeEntry.descriptor());
+                        continue;
+                    }
+                    if (entry instanceof MethodHandleEntry methodHandleEntry) {
+                        clb.constantPool().methodHandleEntry(methodHandleEntry.kind(), methodHandleEntry.reference());
+                        continue;
+                    }
+                    if (entry instanceof MethodRefEntry methodRefEntry) {
+                        clb.constantPool().methodRefEntry(methodRefEntry.owner(), methodRefEntry.nameAndType());
+                        continue;
+                    }
+                    if (entry instanceof FieldRefEntry fieldRefEntry) {
+                        clb.constantPool().fieldRefEntry(fieldRefEntry.owner(), fieldRefEntry.nameAndType());
+                        continue;
+                    }
+                    if (entry instanceof ClassEntry classEntry) {
+                        clb.constantPool().classEntry(classEntry.name());
+                        continue;
+                    }
+                    if (entry instanceof StringEntry stringEntry) {
+                        clb.constantPool().stringEntry(stringEntry.utf8());
+                        continue;
+                    }
+                    if (entry instanceof IntegerEntry integerEntry) {
+                        clb.constantPool().intEntry(integerEntry.intValue());
+                        continue;
+                    }
+                    if (entry instanceof FloatEntry floatEntry) {
+                        clb.constantPool().floatEntry(floatEntry.floatValue());
+                        continue;
+                    }
+                    if (entry instanceof LongEntry longEntry) {
+                        clb.constantPool().longEntry(longEntry.longValue());
+                        continue;
+                    }
+                    if (entry instanceof DoubleEntry doubleEntry) {
+                        clb.constantPool().doubleEntry(doubleEntry.doubleValue());
+                        continue;
+                    }
+                    if (entry instanceof InterfaceMethodRefEntry interfaceMethodRefEntry) {
+                        clb.constantPool().interfaceMethodRefEntry(interfaceMethodRefEntry.owner(), interfaceMethodRefEntry.nameAndType());
+                        continue;
+                    }
+                    if (entry instanceof InvokeDynamicEntry invokeDynamicEntry) {
+                        clb.constantPool().invokeDynamicEntry(invokeDynamicEntry.bootstrap(), invokeDynamicEntry.nameAndType());
+                        continue;
+                    }
+                    if (entry instanceof ModuleEntry moduleEntry) {
+                        clb.constantPool().moduleEntry(moduleEntry.name());
+                        continue;
+                    }
+                    if (entry instanceof PackageEntry packageEntry) {
+                        clb.constantPool().packageEntry(packageEntry.name());
+                    }
                 }
+
                 for (int i = 0; i < cpBuilder.bootstrapMethodCount(); i++) {
-                    System.err.println("Bootstrap Method Entry: "+cpBuilder.bootstrapMethodEntry(i).bootstrapMethod() + " Arguments: "+cpBuilder.bootstrapMethodEntry(i).arguments());
                     clb.constantPool().bsmEntry(cpBuilder.bootstrapMethodEntry(i).bootstrapMethod(), cpBuilder.bootstrapMethodEntry(i).arguments());
                 }
             }));
 
             return java.lang.classfile.ClassFile.of().parse(new_bytes);
         }
-
         void reportPatternMethods(boolean quietly, boolean allowMatchFailure) {
             if (!quietly && !constants.keySet().isEmpty())
                 System.err.println("pattern methods removed: "+constants.keySet());
