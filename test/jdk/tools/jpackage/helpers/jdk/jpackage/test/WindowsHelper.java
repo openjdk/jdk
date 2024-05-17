@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -139,6 +139,19 @@ public class WindowsHelper {
                     String.format("TARGETDIR=\"%s\"",
                             unpackDir.toAbsolutePath().normalize())))));
             runMsiexecWithRetries(Executor.of("cmd", "/c", unpackBat.toString()));
+            if (Files.isDirectory(unpackDir.resolve("PFiles64"))) {
+                // WiX3 uses "." as the value of "DefaultDir" field for "ProgramFiles64Folder" folder in msi's Directory table
+                // WiX4 uses "PFiles64" as the value of "DefaultDir" field for "ProgramFiles64Folder" folder in msi's Directory table
+                // msiexec creates "Program Files/./<App Installation Directory>" from WiX3 msi which translates to "Program Files/<App Installation Directory>"
+                // msiexec creates "Program Files/PFiles64/<App Installation Directory>" from WiX4 msi
+                // So for WiX4 msi we need to transform "Program Files/PFiles64/<App Installation Directory>" into "Program Files/<App Installation Directory>"
+                var installationSubDirectory = getInstallationSubDirectory(cmd);
+                ThrowingRunnable.toRunnable(() -> {
+                    Files.move(unpackDir.resolve("PFiles64").resolve(installationSubDirectory),
+                            unpackDir.resolve(installationSubDirectory));
+                    TKit.deleteDirectoryRecursive(unpackDir.resolve("PFiles64"));
+                }).run();
+            }
             return destinationDir;
         };
         return msi;

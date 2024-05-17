@@ -560,10 +560,17 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
         Function<Path, String> createDirectoryName = dir -> null;
 
         boolean sysDir = true;
-        int levels = 1;
+        int levels;
         var dirIt = path.iterator();
-        xml.writeStartElement("DirectoryRef");
-        xml.writeAttribute("Id", dirIt.next().toString());
+
+        if (getWixVersion() == WixToolsetType.Wix4 && SYSTEM_DIRS.contains(path.getName(0))) {
+            levels = 0;
+            dirIt.next();
+        } else {
+            levels = 1;
+            xml.writeStartElement("DirectoryRef");
+            xml.writeAttribute("Id", dirIt.next().toString());
+        }
 
         path = path.getName(0);
         while (dirIt.hasNext()) {
@@ -582,7 +589,14 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
             } else {
                 directoryId = Id.Folder.of(path);
             }
-            xml.writeStartElement("Directory");
+
+            final String elementName;
+            if (getWixVersion() == WixToolsetType.Wix4 && sysDir) {
+                elementName = "StandardDirectory";
+            } else {
+                elementName = "Directory";
+            }
+            xml.writeStartElement(elementName);
             xml.writeAttribute("Id", directoryId);
 
             String directoryName = createDirectoryName.apply(path);

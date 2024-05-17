@@ -67,6 +67,7 @@ import static jdk.jpackage.internal.StandardBundlerParam.RESOURCE_DIR;
 import static jdk.jpackage.internal.StandardBundlerParam.TEMP_ROOT;
 import static jdk.jpackage.internal.StandardBundlerParam.VENDOR;
 import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
+import jdk.jpackage.internal.WixToolset.WixToolsetType;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
@@ -512,21 +513,28 @@ public class WinMsiBundler  extends AbstractBundler {
             data.put("JpIsSystemWide", "yes");
         }
 
+        var wxlResources = new WixSourceConverter.ResourceGroup(wixToolset.getType(),
+                "wix3-to-wix4-conv.xsl");
+
         // Copy standard l10n files.
         for (String loc : Arrays.asList("de", "en", "ja", "zh_CN")) {
             String fname = "MsiInstallerStrings_" + loc + ".wxl";
-            createResource(fname, params)
-                    .setCategory(I18N.getString("resource.wxl-file"))
-                    .saveToFile(configDir.resolve(fname));
+            wxlResources.addResource(createResource(fname, params).setPublicName(fname).setCategory(
+                    I18N.getString("resource.wxl-file")), configDir.resolve(fname));
         }
 
-        createResource("main.wxs", params)
-                .setCategory(I18N.getString("resource.main-wix-file"))
-                .saveToFile(configDir.resolve("main.wxs"));
+        var wxsResources = new WixSourceConverter.ResourceGroup(wixToolset.getType(),
+                "wix3-to-wix4-conv.xsl");
 
-        createResource("overrides.wxi", params)
-                .setCategory(I18N.getString("resource.overrides-wix-file"))
-                .saveToFile(configDir.resolve("overrides.wxi"));
+        wxsResources.addResource(createResource("main.wxs", params).setPublicName("main.wxs").
+                setCategory(I18N.getString("resource.main-wix-file")), configDir.resolve("main.wxs"));
+
+        wxsResources.addResource(createResource("overrides.wxi", params).setPublicName(
+                "overrides.wxi").setCategory(I18N.getString("resource.overrides-wix-file")),
+                configDir.resolve("overrides.wxi"));
+
+        wxlResources.saveResources();
+        wxsResources.saveResources();
 
         return data;
     }
@@ -555,10 +563,12 @@ public class WinMsiBundler  extends AbstractBundler {
         Log.verbose(MessageFormat.format(I18N.getString(
                 "message.generating-msi"), msiOut.toAbsolutePath().toString()));
 
-        wixPipeline.addLightOptions("-sice:ICE27");
+        if (Set.of(WixToolsetType.Wix3, WixToolsetType.Wix36).contains(wixToolset.getType())) {
+            wixPipeline.addLightOptions("-sice:ICE27");
 
-        if (!MSI_SYSTEM_WIDE.fetchFrom(params)) {
-            wixPipeline.addLightOptions("-sice:ICE91");
+            if (!MSI_SYSTEM_WIDE.fetchFrom(params)) {
+                wixPipeline.addLightOptions("-sice:ICE91");
+            }
         }
 
         // Filter out custom l10n files that were already used to
@@ -596,8 +606,17 @@ public class WinMsiBundler  extends AbstractBundler {
         // Build ordered list of unique cultures.
         Set<String> uniqueCultures = new LinkedHashSet<>();
         uniqueCultures.addAll(cultures);
-        wixPipeline.addLightOptions(uniqueCultures.stream().collect(
-                Collectors.joining(";", "-cultures:", "")));
+        switch (wixToolset.getType()) {
+            case Wix3, Wix36 -> {
+                wixPipeline.addLightOptions(uniqueCultures.stream().collect(Collectors.joining(";",
+                        "-cultures:", "")));
+            }
+            case Wix4 -> {
+                uniqueCultures.forEach(culture -> {
+                    wixPipeline.addLightOptions("-culture", culture);
+                });
+            }
+        }
 
         wixPipeline.buildMsi(msiOut.toAbsolutePath());
 

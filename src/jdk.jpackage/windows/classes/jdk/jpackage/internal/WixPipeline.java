@@ -36,7 +36,6 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import static jdk.jpackage.internal.WixToolset.WixToolsetType.Wix4;
 
 /**
  * WiX pipeline. Compiles and links WiX sources.
@@ -84,10 +83,8 @@ public class WixPipeline {
         Objects.requireNonNull(workDir);
 
         switch (toolset.getType()) {
-            case Wix4 ->
-                buildMsiWix4(msi);
-            case Wix36, Wix3 ->
-                buildMsiWix3(msi);
+            case Wix4 -> buildMsiWix4(msi);
+            case Wix36, Wix3 -> buildMsiWix3(msi);
         }
     }
 
@@ -129,42 +126,6 @@ public class WixPipeline {
         });
     }
 
-    private static List<String> convLightOptionWix4(List<String> options) {
-        final var culturesPrefix = "-cultures:";
-        final var sicePrefix = "-sice:";
-
-        return options.stream().map(op -> {
-            if (op.startsWith(culturesPrefix)) {
-                op = op.substring(culturesPrefix.length());
-                return Stream.of(op.split("[:,]")).map(culture -> {
-                    return Stream.of("-culture", culture);
-                }).flatMap(Function.identity());
-            } else if (op.startsWith(sicePrefix)) {
-                // Don't know how to translate "-sice:" light option
-                return null;
-            }
-            return Stream.of(op);
-        }).filter(Objects::nonNull).flatMap(Function.identity()).toList();
-    }
-
-    private void convertWix3SourcesToWix4() throws IOException {
-        List<String> cmdline = new ArrayList<>(List.of(
-                toolset.getToolPath(WixTool.Wix4).toString(),
-                "convert",
-                "-nologo"
-        ));
-
-        cmdline.addAll(lightOptions.stream().filter(op -> {
-            return op.endsWith(".wxl");
-        }).toList());
-
-        cmdline.addAll(sources.stream().map(wixSource -> {
-            return wixSource.source.toAbsolutePath().toString();
-        }).toList());
-
-        Executor.of(new ProcessBuilder(cmdline)).execute();
-    }
-
     private void buildMsiWix4(Path msi) throws IOException {
         var mergedSrcWixVars = sources.stream().map(wixSource -> {
             return Optional.ofNullable(wixSource.variables).orElseGet(
@@ -182,7 +143,7 @@ public class WixPipeline {
                 "-arch", WixFragmentBuilder.is64Bit() ? "x64" : "x86"
         ));
 
-        cmdline.addAll(convLightOptionWix4(lightOptions));
+        cmdline.addAll(lightOptions);
 
         addWixVariblesToCommandLine(mergedSrcWixVars, cmdline);
 
