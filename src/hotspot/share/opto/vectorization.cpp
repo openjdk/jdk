@@ -1751,8 +1751,15 @@ void VTransformGraph::add_vtnode(VTransformNode* vtnode) {
 
 // Compute a linearization of the graph. We do this with a reverse-post-order of a DFS.
 // This only works if the graph is a directed acyclic graph (DAG). The C2 graph, and
-// the VLoopDependencyGraph are both DAGs, but after introduction of vectors, the graph
-// has additional constraints which can introduce cycles.
+// the VLoopDependencyGraph are both DAGs, but after introduction of vectors/packs, the
+// graph has additional constraints which can introduce cycles. Example:
+//
+//                                                       +--------+
+//  A -> X                                               |        v
+//                     Pack [A,B] and [X,Y]             [A,B]    [X,Y]
+//  Y -> B                                                 ^        |
+//                                                         +--------+
+//
 // We return "true" IFF we find no cycle, i.e. if the linearization succeeds.
 bool VTransformGraph::schedule() {
   assert(_schedule.is_empty(), "not yet scheduled");
@@ -1783,13 +1790,21 @@ bool VTransformGraph::schedule() {
         VTransformNode* use = vtn->out(i);
         if (post_visited.test(use->_idx)) { continue; }
         if (pre_visited.test(use->_idx)) {
-          // TODO circle
+          // TODO circle - trace for superword-rejections?
+          //               generally: think about printing strategy
+#ifndef PRODUCT
+//    if (is_trace_superword_rejections()) {
+//      tty->print_cr("SuperWord::schedule found cycle in PacksetGraph:");
+//      graph.print(true, false);
+//      tty->print_cr("removing all packs from packset.");
+//    }
           tty->print_cr("circle");
           for (int j = 0; j < stack.length(); j++) {
             stack.at(j)->print();
           }
           use->print();
           assert(false, "circle");
+#endif
           return false;
         }
         // TODO phi and cl?

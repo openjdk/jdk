@@ -633,11 +633,6 @@ private:
   DEBUG_ONLY(void verify_packs() const;)
 
   // TODO start remove
-  // Adjust the memory graph for the packed operations
-  void schedule();
-  // Helper function for schedule, that reorders all memops, slice by slice, according to the schedule
-  void schedule_reorder_memops(Node_List &memops_schedule);
-
   // Convert packs into vector node operations
   bool output();
   // Create a vector operand for the nodes in pack p for operand: in(opd_idx)
