@@ -22,6 +22,7 @@
  *
  */
 
+#include <runtime/interfaceSupport.inline.hpp>
 #include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
@@ -277,6 +278,7 @@ const char *JvmtiTrace::safe_get_thread_name(Thread *thread) {
   if (!thread->is_Java_thread()) {
     return thread->name();
   }
+  ThreadInVMfromUnknown tiv;
   JavaThread* java_thread = JavaThread::cast(thread);
   oop threadObj = java_thread->jvmti_vthread();
   if (threadObj == nullptr) {
