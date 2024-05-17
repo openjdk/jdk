@@ -844,19 +844,9 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
   if (failing())  return;
   NOT_PRODUCT( verify_graph_edges(); )
 
-  // If any phase is randomized for stress testing, seed random number
-  // generation and log the seed for repeatability.
   if (StressLCM || StressGCM || StressIGVN || StressCCP ||
       StressIncrementalInlining || StressMacroExpansion) {
-    if (FLAG_IS_DEFAULT(StressSeed) || (FLAG_IS_ERGO(StressSeed) && directive->RepeatCompilationOption)) {
-      _stress_seed = static_cast<uint>(Ticks::now().nanoseconds());
-      FLAG_SET_ERGO(StressSeed, _stress_seed);
-    } else {
-      _stress_seed = StressSeed;
-    }
-    if (_log != nullptr) {
-      _log->elem("stress_test seed='%u'", _stress_seed);
-    }
+    initialize_stress_seed(directive);
   }
 
   // Now optimize
@@ -983,6 +973,11 @@ Compile::Compile( ciEnv* ci_env,
   _igvn_worklist = new (comp_arena()) Unique_Node_List(comp_arena());
   _types = new (comp_arena()) Type_Array(comp_arena());
   _node_hash = new (comp_arena()) NodeHash(comp_arena(), 255);
+
+  if (StressLCM || StressGCM) {
+    initialize_stress_seed(directive);
+  }
+
   {
     PhaseGVN gvn;
     set_initial_gvn(&gvn);    // not significant, but GraphKit guys use it pervasively
@@ -3469,6 +3464,10 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
     }
     break;
   }
+  case Op_CastII: {
+    remove_range_check_cast(n->as_CastII());
+  }
+  break;
 #ifdef _LP64
   case Op_CmpP:
     // Do this transformation here to preserve CmpPNode::sub() and
@@ -3620,16 +3619,6 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
 
 #endif
 
-#ifdef ASSERT
-  case Op_CastII:
-    // Verify that all range check dependent CastII nodes were removed.
-    if (n->isa_CastII()->has_range_check()) {
-      n->dump(3);
-      assert(false, "Range check dependent CastII node was not removed");
-    }
-    break;
-#endif
-
   case Op_ModI:
     if (UseDivMod) {
       // Check if a%b and a/b both exist
@@ -3638,6 +3627,8 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
         // Replace them with a fused divmod if supported
         if (Matcher::has_match_rule(Op_DivModI)) {
           DivModINode* divmod = DivModINode::make(n);
+          divmod->add_prec_from(n);
+          divmod->add_prec_from(d);
           d->subsume_by(divmod->div_proj(), this);
           n->subsume_by(divmod->mod_proj(), this);
         } else {
@@ -3658,6 +3649,8 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
         // Replace them with a fused divmod if supported
         if (Matcher::has_match_rule(Op_DivModL)) {
           DivModLNode* divmod = DivModLNode::make(n);
+          divmod->add_prec_from(n);
+          divmod->add_prec_from(d);
           d->subsume_by(divmod->div_proj(), this);
           n->subsume_by(divmod->mod_proj(), this);
         } else {
@@ -3678,6 +3671,8 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
         // Replace them with a fused unsigned divmod if supported
         if (Matcher::has_match_rule(Op_UDivModI)) {
           UDivModINode* divmod = UDivModINode::make(n);
+          divmod->add_prec_from(n);
+          divmod->add_prec_from(d);
           d->subsume_by(divmod->div_proj(), this);
           n->subsume_by(divmod->mod_proj(), this);
         } else {
@@ -3698,6 +3693,8 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
         // Replace them with a fused unsigned divmod if supported
         if (Matcher::has_match_rule(Op_UDivModL)) {
           UDivModLNode* divmod = UDivModLNode::make(n);
+          divmod->add_prec_from(n);
+          divmod->add_prec_from(d);
           d->subsume_by(divmod->div_proj(), this);
           n->subsume_by(divmod->mod_proj(), this);
         } else {
@@ -3896,6 +3893,34 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
     assert(!n->is_Mem(), "");
     assert(nop != Op_ProfileBoolean, "should be eliminated during IGVN");
     break;
+  }
+}
+
+void Compile::remove_range_check_cast(CastIINode* cast) {
+  if (cast->has_range_check()) {
+    // Range check CastII nodes feed into an address computation subgraph. Remove them to let that subgraph float freely.
+    // For memory access or integer divisions nodes that depend on the cast, record the dependency on the cast's control
+    // as a precedence edge, so they can't float above the cast in case that cast's narrowed type helped eliminate a
+    // range check or a null divisor check.
+    assert(cast->in(0) != nullptr, "All RangeCheck CastII must have a control dependency");
+    ResourceMark rm;
+    Unique_Node_List wq;
+    wq.push(cast);
+    for (uint next = 0; next < wq.size(); ++next) {
+      Node* m = wq.at(next);
+      for (DUIterator_Fast imax, i = m->fast_outs(imax); i < imax; i++) {
+        Node* use = m->fast_out(i);
+        if (use->is_Mem() || use->is_div_or_mod(T_INT) || use->is_div_or_mod(T_LONG)) {
+          use->ensure_control_or_add_prec(cast->in(0));
+        } else if (!use->is_CFG() && !use->is_Phi()) {
+          wq.push(use);
+        }
+      }
+    }
+    cast->subsume_by(cast->in(1), this);
+    if (cast->outcnt() == 0) {
+      cast->disconnect_inputs(this);
+    }
   }
 }
 
@@ -5067,6 +5092,18 @@ void Compile::remove_speculative_types(PhaseIterGVN &igvn) {
 }
 
 // Auxiliary methods to support randomized stressing/fuzzing.
+
+void Compile::initialize_stress_seed(const DirectiveSet* directive) {
+  if (FLAG_IS_DEFAULT(StressSeed) || (FLAG_IS_ERGO(StressSeed) && directive->RepeatCompilationOption)) {
+    _stress_seed = static_cast<uint>(Ticks::now().nanoseconds());
+    FLAG_SET_ERGO(StressSeed, _stress_seed);
+  } else {
+    _stress_seed = StressSeed;
+  }
+  if (_log != nullptr) {
+    _log->elem("stress_test seed='%u'", _stress_seed);
+  }
+}
 
 int Compile::random() {
   _stress_seed = os::next_random(_stress_seed);

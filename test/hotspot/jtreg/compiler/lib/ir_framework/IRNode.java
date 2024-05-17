@@ -1159,14 +1159,24 @@ public class IRNode {
         vectorNode(POPCOUNT_VL, "PopCountVL", TYPE_LONG);
     }
 
-    public static final String COUNTTRAILINGZEROS_VL = VECTOR_PREFIX + "COUNTTRAILINGZEROS_VL" + POSTFIX;
+    public static final String COUNT_TRAILING_ZEROS_VL = VECTOR_PREFIX + "COUNT_TRAILING_ZEROS_VL" + POSTFIX;
     static {
-        vectorNode(COUNTTRAILINGZEROS_VL, "CountTrailingZerosV", TYPE_LONG);
+        vectorNode(COUNT_TRAILING_ZEROS_VL, "CountTrailingZerosV", TYPE_LONG);
     }
 
-    public static final String COUNTLEADINGZEROS_VL = VECTOR_PREFIX + "COUNTLEADINGZEROS_VL" + POSTFIX;
+    public static final String COUNT_TRAILING_ZEROS_VI = VECTOR_PREFIX + "COUNT_TRAILING_ZEROS_VI" + POSTFIX;
     static {
-        vectorNode(COUNTLEADINGZEROS_VL, "CountLeadingZerosV", TYPE_LONG);
+        vectorNode(COUNT_TRAILING_ZEROS_VI, "CountTrailingZerosV", TYPE_INT);
+    }
+
+    public static final String COUNT_LEADING_ZEROS_VL = VECTOR_PREFIX + "COUNT_LEADING_ZEROS_VL" + POSTFIX;
+    static {
+        vectorNode(COUNT_LEADING_ZEROS_VL, "CountLeadingZerosV", TYPE_LONG);
+    }
+
+    public static final String COUNT_LEADING_ZEROS_VI = VECTOR_PREFIX + "COUNT_LEADING_ZEROS_VI" + POSTFIX;
+    static {
+        vectorNode(COUNT_LEADING_ZEROS_VI, "CountLeadingZerosV", TYPE_INT);
     }
 
     public static final String POPULATE_INDEX = PREFIX + "POPULATE_INDEX" + POSTFIX;
