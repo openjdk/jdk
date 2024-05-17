@@ -30,50 +30,50 @@ import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
-import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
+import org.openjdk.jmh.infra.Blackhole;
 
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Performance of conversion from and to method type descriptor symbols with
- * descriptor strings and class descriptor symbols
+ * Test various operations on
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @Warmup(iterations = 3, time = 2)
-@Measurement(iterations = 6, time = 1)
-@Fork(1)
+@Measurement(iterations = 5, time = 1)
+@Fork(3)
 @State(Scope.Thread)
-public class ClassDescFactories {
-
-    @Param({
-            "Ljava/lang/Object;",
-            "V",
-            "I"
-    })
-    public String descString;
+public class ClassDescMethods {
 
     @Benchmark
-    public ClassDesc ofDescriptor() {
-        return ClassDesc.ofDescriptor(descString);
+    public String packageName() {
+        return ConstantDescs.CD_Object.packageName();
     }
 
-    @BenchmarkMode(Mode.AverageTime)
-    @OutputTimeUnit(TimeUnit.NANOSECONDS)
-    @Warmup(iterations = 3, time = 2)
-    @Measurement(iterations = 6, time = 1)
-    @Fork(1)
-    @State(Scope.Thread)
-    public static class ReferenceOnly {
-        public ClassDesc desc = ConstantDescs.CD_Object;
-        @Benchmark
-        public ClassDesc ofNested() {
-            return desc.nested("Foo");
-        }
+    @Benchmark
+    public String displayName() {
+        return ConstantDescs.CD_Object.displayName();
+    }
 
+    @Benchmark
+    public void arrayType(Blackhole bh) {
+        bh.consume(ConstantDescs.CD_Object.arrayType());
+        bh.consume(ConstantDescs.CD_boolean.arrayType());
+    }
+
+    @Benchmark
+    public void arrayType1(Blackhole bh) {
+        bh.consume(ConstantDescs.CD_Object.arrayType(1));
+        bh.consume(ConstantDescs.CD_boolean.arrayType(1));
+    }
+
+    @Benchmark
+    public void arrayType2(Blackhole bh) {
+        bh.consume(ConstantDescs.CD_Object.arrayType(2));
+        bh.consume(ConstantDescs.CD_boolean.arrayType(2));
     }
 }
