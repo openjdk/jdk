@@ -1337,14 +1337,35 @@ private:
   // before inserting vector operations.
   GrowableArray<VTransformNode*> _schedule;
 
+#ifndef PRODUCT
+  bool _is_trace_rejections;
+  bool _is_trace_info;
+  bool _is_trace_verbose;
+#endif
+
 public:
-  VTransformGraph(const VLoopAnalyzer& vloop_analyzer) :
+  VTransformGraph(const VLoopAnalyzer& vloop_analyzer
+                  NOT_PRODUCT( COMMA const bool is_trace_rejections)
+                  NOT_PRODUCT( COMMA const bool is_trace_info)
+                  NOT_PRODUCT( COMMA const bool is_trace_verbose)
+                  ) :
     _vloop_analyzer(vloop_analyzer),
     _arena(mtCompiler),
     _next_idx(0),
     _vtnodes(&_arena, vloop_analyzer.vloop().estimated_body_length(), 0, nullptr),
     _cl_vtnode(nullptr),
-    _schedule(&_arena, vloop_analyzer.vloop().estimated_body_length(), 0, nullptr) {}
+    _schedule(&_arena, vloop_analyzer.vloop().estimated_body_length(), 0, nullptr)
+    NOT_PRODUCT( COMMA _is_trace_rejections(is_trace_rejections) )
+    NOT_PRODUCT( COMMA _is_trace_info(is_trace_info) )
+    NOT_PRODUCT( COMMA _is_trace_verbose(is_trace_verbose) )
+  {
+#ifndef PRODUCT
+    bool is_trace =  _vloop_analyzer.vloop().vtrace().is_trace(TraceAutoVectorizationTag::VTRANSFORM);
+    _is_trace_verbose    |= is_trace;
+    _is_trace_rejections |= is_trace || _is_trace_verbose;
+    _is_trace_info       |= is_trace || _is_trace_verbose;
+#endif
+  }
 
   Arena* arena() { return &_arena; }
   VTransformNodeIDX new_idx() { return _next_idx++; }
@@ -1360,9 +1381,6 @@ public:
   void apply_memops_reordering_with_schedule();
 
 #ifndef PRODUCT
-  bool is_trace() const {
-    return _vloop_analyzer.vloop().vtrace().is_trace(TraceAutoVectorizationTag::VTRANSFORM);
-  }
   void print_vtnodes() const;
   void print_schedule() const;
   void print_memops_schedule() const;

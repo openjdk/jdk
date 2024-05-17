@@ -486,10 +486,7 @@ bool SuperWord::SLP_extract() {
 
   DEBUG_ONLY(verify_packs();)
 
-  // TODO
-  vtransform();
-
-  return output();
+  return vtransform();
 }
 
 //------------------------------find_adjacent_refs---------------------------
@@ -1997,6 +1994,7 @@ void PackSet::verify() const {
 }
 #endif
 
+// TODO remove
 //------------------------------output---------------------------
 // Convert packs into vector node operations
 // At this point, all correctness and profitability checks have passed.
@@ -3449,7 +3447,11 @@ bool SuperWord::same_generation(Node* a, Node* b) const {
 bool SuperWord::vtransform() const {
   if (_packset.is_empty()) { return false; }
 
-  VTransformGraph graph(_vloop_analyzer);
+  VTransformGraph graph(_vloop_analyzer
+                        NOT_PRODUCT( COMMA is_trace_superword_rejections())
+                        NOT_PRODUCT( COMMA is_trace_superword_info())
+                        NOT_PRODUCT( COMMA is_trace_superword_verbose())
+                        );
 
   vtransform_build(graph);
 
@@ -3565,12 +3567,6 @@ void SuperWord::vtransform_build(VTransformGraph& graph) const {
 
     add_dependencies(vtn, n);
   }
-
-#ifndef PRODUCT
-  if (graph.is_trace()) {
-    graph.print_vtnodes();
-  }
-#endif
 }
 
 // Create a vtnode for each pack. No in/out edges set yet.

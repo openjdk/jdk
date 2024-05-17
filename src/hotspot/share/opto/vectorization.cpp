@@ -1764,6 +1764,12 @@ void VTransformGraph::add_vtnode(VTransformNode* vtnode) {
 bool VTransformGraph::schedule() {
   assert(_schedule.is_empty(), "not yet scheduled");
 
+#ifndef PRODUCT
+  if (_is_trace_verbose) {
+    print_vtnodes();
+  }
+#endif
+
   ResourceMark rm;
   GrowableArray<VTransformNode*> stack;
   VectorSet pre_visited;
@@ -1789,20 +1795,27 @@ bool VTransformGraph::schedule() {
         VTransformNode* use = vtn->out(i);
         if (post_visited.test(use->_idx)) { continue; }
         if (pre_visited.test(use->_idx)) {
-          // TODO circle - trace for superword-rejections?
-          //               generally: think about printing strategy
+          // Circle detected!
+          // The nodes that are pre_visited but not yet post_visited form a path from
+          // the "root" to the current vtn. Now, we are looking at an edge (vtn, use),
+          // and discover that use is also pre_visited but not post_visited. Thus, use
+          // lies on that path from "root" to vtn, and the edge (vtn, use) closes a
+          // circle.
 #ifndef PRODUCT
-//    if (is_trace_superword_rejections()) {
-//      tty->print_cr("SuperWord::schedule found cycle in PacksetGraph:");
-//      graph.print(true, false);
-//      tty->print_cr("removing all packs from packset.");
-//    }
-          tty->print_cr("circle");
-          for (int j = 0; j < stack.length(); j++) {
-            stack.at(j)->print();
+          if (_is_trace_verbose) {
+            auto trace_circle_nodes = [&] (VTransformNode* n) {
+              bool on_path = pre_visited.test(n->_idx) && !post_visited.test(n->_idx);
+              tty->print("  %s ", on_path ? "C" : "_");
+              n->print();
+            };
+            tty->print_cr("VTransformGraph::schedule found a cycle (C), vectorization attempt fails.");
+            tty->print_cr(" VTransformNodes on the stack:");
+            for (int j = 0; j < stack.length(); j++) {
+              trace_circle_nodes(stack.at(j));
+            }
+            tty->print_cr(" VTransformNode where the circle was detected:");
+            trace_circle_nodes(use);
           }
-          use->print();
-          assert(false, "circle");
 #endif
           return false;
         }
@@ -1826,7 +1839,7 @@ bool VTransformGraph::schedule() {
   assert(rpo_idx == -1, "used up all rpo_idx");
 
 #ifndef PRODUCT
-  if (is_trace()) {
+  if (_is_trace_verbose) {
     print_schedule();
   }
 #endif
@@ -1856,8 +1869,10 @@ void VTransformGraph::for_each_memop_in_schedule(Callback callback) const {
 
 void VTransformGraph::apply() {
   const VLoop& vloop  = _vloop_analyzer.vloop();
-  CountedLoopNode* cl = vloop.cl();
   Compile* C          = vloop.phase()->C;
+  CountedLoopNode* cl = vloop.cl();
+
+  assert(cl->is_main_loop(), "auto vectorization only for main loops");
 
   C->print_method(PHASE_AUTO_VECTORIZE1_BEFORE_APPLY, 4, cl);
 
@@ -1865,7 +1880,8 @@ void VTransformGraph::apply() {
 
   C->print_method(PHASE_AUTO_VECTORIZE2_AFTER_REORDER, 4, cl);
 
-  // TODO
+  // TODO alignment
+  // TODO vectorize
 
   C->print_method(PHASE_AUTO_VECTORIZE3_AFTER_APPLY, 4, cl);
 }
@@ -1877,7 +1893,7 @@ void VTransformGraph::apply() {
 // each slice.
 void VTransformGraph::apply_memops_reordering_with_schedule() {
 #ifndef PRODUCT
-  if (is_trace()) {
+  if (_is_trace_info) {
     print_memops_schedule();
   }
 #endif
