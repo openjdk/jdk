@@ -476,7 +476,6 @@ class StubGenerator: public StubCodeGenerator {
                                const XMMRegister YTMP1, const Register rscratch);
 
   address generate_intpoly_montgomeryMult_P256();
-  void montgomeryMultiply(const Register aLimbs, const Register bLimbs, const Register rLimbs);
   address generate_intpoly_assign();
 
   // BASE64 stubs

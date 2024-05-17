@@ -49,16 +49,6 @@ static address p256_mask52() {
   return (address)P256_MASK52;
 }
 
-ATTRIBUTE_ALIGNED(64) uint64_t BROADCAST5[] = {
-  0x0000000000000004ULL, 0x0000000000000004ULL,
-  0x0000000000000004ULL, 0x0000000000000004ULL,
-  0x0000000000000004ULL, 0x0000000000000004ULL,
-  0x0000000000000004ULL, 0x0000000000000004ULL,
-};
-static address broadcast_5() {
-  return (address)BROADCAST5;
-}
-
 ATTRIBUTE_ALIGNED(64) uint64_t SHIFT1R[] = {
   0x0000000000000001ULL, 0x0000000000000002ULL,
   0x0000000000000003ULL, 0x0000000000000004ULL,
@@ -83,7 +73,8 @@ static address shift_1L() {
  * Unrolled Word-by-Word Montgomery Multiplication
  * r = a * b * 2^-260 (mod P)
  *
- * Reference: Shay Gueron and Vlad Krasnov "Fast Prime Field Elliptic Curve Cryptography with 256 Bit Primes"
+ * Reference [1]: Shay Gueron and Vlad Krasnov
+ *    "Fast Prime Field Elliptic Curve Cryptography with 256 Bit Primes"
  *    See Figure 5. "Algorithm 2: Word-by-Word Montgomery Multiplication for a Montgomery
  *    Friendly modulus p". Note: Step 6. Skipped; Instead use numAdds to reuse existing overflow
  *    logic.
@@ -142,9 +133,9 @@ static address shift_1L() {
  *   Acc1 = Acc1 + Acc2
  *   output to rLimbs
  */
-void StubGenerator::montgomeryMultiply(const Register aLimbs, const Register bLimbs, const Register rLimbs) {
-  Register t0 = r13;
-  Register rscratch = r13;
+void montgomeryMultiply(const Register aLimbs, const Register bLimbs, const Register rLimbs, const Register tmp, MacroAssembler* _masm) {
+  Register t0 = tmp;
+  Register rscratch = tmp;
 
   // Inputs
   XMMRegister A = xmm0;
@@ -154,36 +145,30 @@ void StubGenerator::montgomeryMultiply(const Register aLimbs, const Register bLi
   // Intermediates
   XMMRegister Acc1 = xmm10;
   XMMRegister Acc2 = xmm11;
-  XMMRegister N = xmm12;
-  XMMRegister select = xmm13;
-  XMMRegister carry = xmm14;
+  XMMRegister N    = xmm12;
+  XMMRegister carry = xmm13;
 
-  // Constants
+  // // Constants
   XMMRegister modulus = xmm20;
   XMMRegister shift1L = xmm21;
   XMMRegister shift1R = xmm22;
-  XMMRegister mask52 = xmm23;
-  XMMRegister broadcast5 = xmm24;
-  KRegister limb0 = k1;
-  KRegister limb5 = k2;
-  KRegister allLimbs = k3;
+  XMMRegister mask52  = xmm23;
+  KRegister limb0    = k1;
+  KRegister allLimbs = k2;
 
   __ mov64(t0, 0x1);
   __ kmovql(limb0, t0);
-  __ mov64(t0, 0x10);
-  __ kmovql(limb5, t0);
   __ mov64(t0, 0x1f);
   __ kmovql(allLimbs, t0);
   __ evmovdquq(shift1L, allLimbs, ExternalAddress(shift_1L()), false, Assembler::AVX_512bit, rscratch);
   __ evmovdquq(shift1R, allLimbs, ExternalAddress(shift_1R()), false, Assembler::AVX_512bit, rscratch);
-  __ evmovdquq(broadcast5, allLimbs, ExternalAddress(broadcast_5()), false, Assembler::AVX_512bit, rscratch);
   __ evmovdquq(mask52, allLimbs, ExternalAddress(p256_mask52()), false, Assembler::AVX_512bit, rscratch);
 
   // M = load(*modulus_p256)
   __ evmovdquq(modulus, allLimbs, ExternalAddress(modulus_p256()), false, Assembler::AVX_512bit, rscratch);
 
-  // A = load(*aLimbs)
-  __ evmovdquq(A, Address(aLimbs, 8), Assembler::AVX_256bit);                          // Acc1 = load(*a)
+  // A = load(*aLimbs) // masked evmovdquq() can be slow. Instead load full 256bit, and compbine with 64bit
+  __ evmovdquq(A, Address(aLimbs, 8), Assembler::AVX_256bit);
   __ evpermq(A, allLimbs, shift1L, A, false, Assembler::AVX_512bit);
   __ movq(T, Address(aLimbs, 0));
   __ evporq(A, A, T, Assembler::AVX_512bit);
@@ -257,52 +242,14 @@ address StubGenerator::generate_intpoly_montgomeryMult_P256() {
   address start = __ pc();
   __ enter();
 
-  // Save all 'SOE' registers
-  __ push(rbx);
-  #ifdef _WIN64
-  __ push(rsi);
-  __ push(rdi);
-  #endif
-  __ push(r12);
-  __ push(r13);
-  __ push(r14);
-  __ push(r15);
-
   // Register Map
-  const Register aLimbs  = rdi;
-  const Register bLimbs  = rsi;
-  const Register rLimbs  = rdx;
+  const Register aLimbs  = c_rarg0; // rdi | rcx
+  const Register bLimbs  = c_rarg1; // rsi | rdx
+  const Register rLimbs  = c_rarg2; // rdx | r8
+  const Register tmp     = r9;
 
-  // Normalize input
-  // pseudo-signature: void poly1305_processBlocks(byte[] input, int length, int[5] accumulator, int[5] R)
-  // a, b, r pointers point at first array element
-  // java headers bypassed in LibraryCallKit::inline_poly1305_processBlocks
-  #ifdef _WIN64
-  // c_rarg0 - rcx
-  // c_rarg1 - rdx
-  // c_rarg2 - r8
-  __ mov(aLimbs, c_rarg0);
-  __ mov(bLimbs, c_rarg1);
-  __ mov(rLimbs, c_rarg2);
-  #else
-  // Already in place
-  // c_rarg0 - rdi
-  // c_rarg1 - rsi
-  // c_rarg2 - rdx
-  #endif
-
-  montgomeryMultiply(aLimbs, bLimbs, rLimbs);
-
-  __ pop(r15);
-  __ pop(r14);
-  __ pop(r13);
-  __ pop(r12);
-  #ifdef _WIN64
-  __ pop(rdi);
-  __ pop(rsi);
-  #endif
-  __ pop(rbx);
-  __ mov64(rax, 0x1); // Return 1 (Step 6 skipped in montgomeryMultiply)
+  montgomeryMultiply(aLimbs, bLimbs, rLimbs, tmp, _masm);
+  __ mov64(rax, 0x1); // Return 1 (Fig. 5, Step 6 [1] skipped in montgomeryMultiply)
 
   __ leave();
   __ ret(0);

@@ -7553,15 +7553,11 @@ bool LibraryCallKit::inline_intpoly_montgomeryMult_P256() {
 }
 
 bool LibraryCallKit::inline_intpoly_assign() {
-  address stubAddr;
-  const char *stubName;
   assert(UseIntPolyIntrinsics, "need intpoly intrinsics support");
   assert(callee()->signature()->size() == 3, "intpoly_assign has %d parameters", callee()->signature()->size());
-  stubAddr = StubRoutines::intpoly_assign();
-  stubName = "intpoly_assign";
-
+  const char *stubName = "intpoly_assign";
+  address stubAddr = StubRoutines::intpoly_assign();
   if (!stubAddr) return false;
-  if (stopped())  return true;
 
   Node* set = argument(0);
   Node* a = argument(1);
