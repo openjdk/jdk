@@ -304,6 +304,13 @@
  *      <td style="text-align:right">1</td>
  *  </tr>
  *  <tr>
+ *      <th scope="row" style="text-align:left">SecureRandom</th>
+ *      <td style="text-align:left">Legacy</td>
+ *      <td style="text-align:left">BigInteger.ZERO</td>
+ *      <td style="text-align:right">Integer.MAX_VALUE</td>
+ *      <td style="text-align:right">Integer.MAX_VALUE</td>
+ *  </tr>
+ *  <tr>
  *      <th scope="row" style="text-align:left">ThreadLocalRandom <sup>*</sup></th>
  *      <td style="text-align:left">Legacy</td>
  *      <td style="text-align:left">BigInteger.ONE.shiftLeft(64)</td>
