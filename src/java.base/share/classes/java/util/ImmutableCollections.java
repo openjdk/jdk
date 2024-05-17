@@ -1451,7 +1451,7 @@ class ImmutableCollections {
             implements List<StableValue<V>> {
 
         @Stable
-        private int size;
+        private final int size;
         @Stable
         private final StableValueImpl<V>[] elements;
 
