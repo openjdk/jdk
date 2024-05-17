@@ -109,7 +109,7 @@ class MutableSpace: public CHeapObj<mtGC> {
 
   // Methods used in mangling.  See descriptions under SpaceMangler.
   virtual void mangle_unused_area() PRODUCT_RETURN;
-  virtual void mangle_unused_area_complete() PRODUCT_RETURN;
+
   virtual void check_mangled_unused_area(HeapWord* limit) PRODUCT_RETURN;
   virtual void check_mangled_unused_area_complete() PRODUCT_RETURN;
   virtual void set_top_for_allocations(HeapWord* v) PRODUCT_RETURN;

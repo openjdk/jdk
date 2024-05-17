@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,6 +75,7 @@ import com.sun.source.doctree.LinkTree;
 import com.sun.source.doctree.LiteralTree;
 import com.sun.source.doctree.ParamTree;
 import com.sun.source.doctree.ProvidesTree;
+import com.sun.source.doctree.RawTextTree;
 import com.sun.source.doctree.ReferenceTree;
 import com.sun.source.doctree.ReturnTree;
 import com.sun.source.doctree.SerialDataTree;
@@ -309,6 +310,12 @@ public class Checker extends DocTreePathScanner<Void, Void> {
 
     private void reportReference(String code, Object... args) {
         env.messages.report(REFERENCE, Kind.WARNING, env.currPath.getLeaf(), code, args);
+    }
+
+    @Override
+    public Void scan(DocTreePath path, Void unused) {
+        // interposition point for all scans
+        return super.scan(path, unused);
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)
@@ -1006,8 +1013,11 @@ public class Checker extends DocTreePathScanner<Void, Void> {
             env.messages.warning(REFERENCE, tree, "dc.exists.return");
         }
         if (tree.isInline()) {
-            DocCommentTree dct = getCurrentPath().getDocComment();
-            if (dct.getFirstSentence().isEmpty() || tree != dct.getFirstSentence().get(0)) {
+            var dct = getCurrentPath().getDocComment();
+            var first = dct.getFirstSentence().stream()
+                    .filter(t -> !isBlank(t))
+                    .findFirst();
+            if (first.isEmpty() || first.get() != tree) {
                 env.messages.warning(SYNTAX, tree, "dc.return.not.first");
             }
         }
@@ -1019,6 +1029,14 @@ public class Checker extends DocTreePathScanner<Void, Void> {
         foundReturn = true;
         warnIfEmpty(tree, tree.getDescription());
         return super.visitReturn(tree, ignore);
+    }
+
+    private static boolean isBlank(DocTree t) {
+        return switch (t.getKind()) {
+            case TEXT -> ((TextTree) t).getBody().isBlank();
+            case MARKDOWN -> ((RawTextTree) t).getContent().isBlank();
+            default -> false;
+        };
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)
