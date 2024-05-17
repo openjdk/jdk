@@ -60,7 +60,6 @@ class CgroupV2Subsystem: public CgroupSubsystem {
     char *mem_swp_limit_val();
     char *mem_swp_current_val();
     char *mem_soft_limit_val();
-    char *cpu_quota_val();
     char *pids_max_val();
 
   public:
