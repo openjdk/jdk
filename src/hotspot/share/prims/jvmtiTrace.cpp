@@ -22,7 +22,6 @@
  *
  */
 
-#include <runtime/interfaceSupport.inline.hpp>
 #include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
@@ -31,6 +30,7 @@
 #include "memory/resourceArea.hpp"
 #include "prims/jvmtiTrace.hpp"
 #include "runtime/javaThread.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 
 //
 // class JvmtiTrace
