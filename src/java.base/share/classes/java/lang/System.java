@@ -2019,7 +2019,7 @@ public final class System {
      *             linked with the VM, or the library cannot be mapped to
      *             a native library image by the host system.
      * @throws     NullPointerException if {@code filename} is {@code null}
-     * @throws     IllegalCallerException If the caller is in a module that
+     * @throws     IllegalCallerException if the caller is in a module that
      *             does not have native access enabled.
      *
      * @spec jni/index.html Java Native Interface Specification
@@ -2062,7 +2062,7 @@ public final class System {
      *             linked with the VM,  or the library cannot be mapped to a
      *             native library image by the host system.
      * @throws     NullPointerException if {@code libname} is {@code null}
-     * @throws     IllegalCallerException If the caller is in a module that
+     * @throws     IllegalCallerException if the caller is in a module that
      *             does not have native access enabled.
      *
      * @spec jni/index.html Java Native Interface Specification

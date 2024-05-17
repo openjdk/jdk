@@ -285,7 +285,7 @@ public interface SymbolLookup {
      * @throws WrongThreadException if {@code arena} is a confined arena, and this method
      *         is called from a thread {@code T}, other than the arena's owner thread
      * @throws IllegalArgumentException if {@code name} does not identify a valid library
-     * @throws IllegalCallerException If the caller is in a module that does not have
+     * @throws IllegalCallerException if the caller is in a module that does not have
      *         native access enabled
      */
     @CallerSensitive
@@ -319,7 +319,7 @@ public interface SymbolLookup {
      *         is called from a thread {@code T}, other than the arena's owner thread
      * @throws IllegalArgumentException if {@code path} does not point to a valid library
      *         in the default file system
-     * @throws IllegalCallerException If the caller is in a module that does not have
+     * @throws IllegalCallerException if the caller is in a module that does not have
      *         native access enabled
      */
     @CallerSensitive

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -829,7 +829,7 @@ public class Runtime {
      *             a native library image by the host system.
      * @throws     NullPointerException if {@code filename} is
      *             {@code null}
-     * @throws     IllegalCallerException If the caller is in a module that
+     * @throws     IllegalCallerException if the caller is in a module that
      *             does not have native access enabled.
      * @spec jni/index.html Java Native Interface Specification
      * @see        java.lang.Runtime#getRuntime()
@@ -900,7 +900,7 @@ public class Runtime {
      *             native library image by the host system.
      * @throws     NullPointerException if {@code libname} is
      *             {@code null}
-     * @throws     IllegalCallerException If the caller is in a module that
+     * @throws     IllegalCallerException if the caller is in a module that
      *             does not have native access enabled.
      * @spec jni/index.html Java Native Interface Specification
      * @see        java.lang.SecurityException

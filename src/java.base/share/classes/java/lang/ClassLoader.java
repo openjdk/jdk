@@ -2442,8 +2442,12 @@ public abstract class ClassLoader {
                 " in java.library.path: " + StaticProperty.javaLibraryPath());
     }
 
-    /*
+    /**
      * Invoked in the VM class linking code.
+     * @param loader the class loader used to look up the native library symbol
+     * @param clazz the class in which the native method is declared
+     * @param entryName the native method's mangled name (this is the name used for the native lookup)
+     * @param javaName the native method's declared name
      */
     static long findNative(ClassLoader loader, Class<?> clazz, String entryName, String javaName) {
         long addr = findNativeInternal(loader, entryName);

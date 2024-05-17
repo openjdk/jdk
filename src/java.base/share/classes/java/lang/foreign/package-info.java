@@ -167,7 +167,7 @@
  * where {@code M1}, {@code M2}, {@code ... Mn} are module names (for the unnamed module,
  * the special value {@code ALL-UNNAMED} can be used). Access to restricted methods
  * from modules not listed by that option is deemed <em>illegal</em>. Clients can
- * control how illegal access to restricted method is handled, using the command line
+ * control how access to restricted methods is handled, using the command line
  * option {@code --illegal-native-access}. If this option is not specified,
  * illegal access to restricted methods will result in runtime warnings.
  *
