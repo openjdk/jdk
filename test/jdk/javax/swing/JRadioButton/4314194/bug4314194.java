@@ -23,7 +23,7 @@
 /*
  * @test
  * @key headful
- * @bug 4314194 8075916 8298083
+ * @bug 4314194 8075916 8298083 8298153
  * @summary  Verifies disabled color for JCheckbox and JRadiobutton is honored in all L&F
  * @run main bug4314194
  */
