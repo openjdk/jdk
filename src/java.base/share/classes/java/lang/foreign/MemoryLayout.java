@@ -627,7 +627,7 @@ public sealed interface MemoryLayout
      *     (but not less) than the alignment constraint of the selected value layout.</li>
      *     <li>The access operation must fall inside the spatial bounds of the accessed
      *     memory segment, or an {@link IndexOutOfBoundsException} is thrown. This is the case
-     *     when {@code B + A <= S}, where {@code O} is the base offset (defined above),
+     *     when {@code B + A <= S}, where {@code B} is the base offset (defined above),
      *     {@code A} is the size of this layout and {@code S} is the size of the
      *     accessed memory segment. Note that the size of this layout might be <em>bigger</em>
      *     than the size of the accessed layout (e.g. when accessing a struct member).</li>
@@ -755,7 +755,7 @@ public sealed interface MemoryLayout
      *     (but not less) than the alignment constraint of the selected value layout.</li>
      *     <li>The access operation must fall inside the spatial bounds of the accessed
      *     memory segment, or an {@link IndexOutOfBoundsException} is thrown. This is the case
-     *     when {@code B + A <= S}, where {@code O} is the base offset (defined above),
+     *     when {@code B + A <= S}, where {@code B} is the base offset (defined above),
      *     {@code A} is the size of this layout and {@code S} is the size of the
      *     accessed memory segment. Note that the size of this layout might be <em>bigger</em>
      *     than the size of the accessed layout (e.g. when accessing a struct member).</li>
@@ -824,7 +824,7 @@ public sealed interface MemoryLayout
      *     (but not less) than the alignment constraint of the selected layout.</li>
      *     <li>The slicing operation must fall inside the spatial bounds of the accessed
      *     memory segment, or an {@link IndexOutOfBoundsException} is thrown. This is the case
-     *     when {@code B + A <= S}, where {@code O} is the base offset (defined above),
+     *     when {@code B + A <= S}, where {@code B} is the base offset (defined above),
      *     {@code A} is the size of this layout and {@code S} is the size of the
      *     accessed memory segment. Note that the size of this layout might be <em>bigger</em>
      *     than the size of the accessed layout (e.g. when accessing a struct member).</li>
