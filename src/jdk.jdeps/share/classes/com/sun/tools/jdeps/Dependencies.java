@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,31 +23,20 @@
  * questions.
  */
 
-package com.sun.tools.classfile;
+package com.sun.tools.jdeps;
 
-import java.util.Deque;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.lang.classfile.*;
+import java.lang.classfile.constantpool.*;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.MethodTypeDesc;
+import java.lang.reflect.AccessFlag;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
-import com.sun.tools.classfile.Dependency.Filter;
-import com.sun.tools.classfile.Dependency.Finder;
-import com.sun.tools.classfile.Dependency.Location;
-import com.sun.tools.classfile.Type.ArrayType;
-import com.sun.tools.classfile.Type.ClassSigType;
-import com.sun.tools.classfile.Type.ClassType;
-import com.sun.tools.classfile.Type.MethodType;
-import com.sun.tools.classfile.Type.SimpleType;
-import com.sun.tools.classfile.Type.TypeParamType;
-import com.sun.tools.classfile.Type.WildcardType;
-
-import static com.sun.tools.classfile.ConstantPool.*;
+import com.sun.tools.jdeps.Dependency.Filter;
+import com.sun.tools.jdeps.Dependency.Finder;
+import com.sun.tools.jdeps.Dependency.Location;
 
 /**
  * A framework for determining {@link Dependency dependencies} between class files.
@@ -107,7 +96,7 @@ public class Dependencies {
          * @throws Dependencies.ClassFileNotFoundException if the classfile cannot be
          *   found
          */
-        public ClassFile getClassFile(String className)
+        public ClassModel getClassFile(String className)
                 throws ClassFileNotFoundException;
     }
 
@@ -127,7 +116,7 @@ public class Dependencies {
      * @return the default finder
      */
     public static Finder getDefaultFinder() {
-        return new APIDependencyFinder(AccessFlags.ACC_PRIVATE);
+        return new APIDependencyFinder(ClassFile.ACC_PRIVATE);
     }
 
     /**
@@ -135,9 +124,9 @@ public class Dependencies {
      * These include the superclass, superinterfaces, and classes referenced in
      * the declarations of fields and methods.  The fields and methods that
      * are checked can be limited according to a specified access.
-     * The access parameter must be one of {@link AccessFlags#ACC_PUBLIC ACC_PUBLIC},
-     * {@link AccessFlags#ACC_PRIVATE ACC_PRIVATE},
-     * {@link AccessFlags#ACC_PROTECTED ACC_PROTECTED}, or 0 for
+     * The access parameter must be one of {@link ClassFile#ACC_PUBLIC ACC_PUBLIC},
+     * {@link ClassFile#ACC_PRIVATE ACC_PRIVATE},
+     * {@link ClassFile#ACC_PROTECTED ACC_PROTECTED}, or 0 for
      * package private access. Members with greater than or equal accessibility
      * to that specified will be searched for dependencies.
      * @param access the access of members to be checked
@@ -291,7 +280,7 @@ public class Dependencies {
             assert (!doneClasses.contains(className));
             doneClasses.add(className);
 
-            ClassFile cf = classFinder.getClassFile(className);
+            ClassModel cf = classFinder.getClassFile(className);
 
             // The following code just applies the filter to the dependencies
             // followed for the transitive closure.
@@ -466,28 +455,25 @@ public class Dependencies {
      * This class identifies class names directly or indirectly in the constant pool.
      */
     static class ClassDependencyFinder extends BasicDependencyFinder {
-        public Iterable<? extends Dependency> findDependencies(ClassFile classfile) {
+        public Iterable<? extends Dependency> findDependencies(ClassModel classfile) {
             Visitor v = new Visitor(classfile);
-            for (CPInfo cpInfo: classfile.constant_pool.entries()) {
+            for (var cpInfo: classfile.constantPool()) {
                 v.scan(cpInfo);
             }
             try {
-                v.addClass(classfile.super_class);
-                v.addClasses(classfile.interfaces);
-                v.scan(classfile.attributes);
+                classfile.superclass().ifPresent(v::addClass);
+                v.addClasses(classfile.interfaces());
+                v.scanAttributes(classfile);
 
-                for (Field f : classfile.fields) {
-                    v.scan(f.descriptor, f.attributes);
+                for (var f : classfile.fields()) {
+                    v.scan(f.fieldTypeSymbol());
+                    v.scanAttributes(f);
                 }
-                for (Method m : classfile.methods) {
-                    v.scan(m.descriptor, m.attributes);
-                    Exceptions_attribute e =
-                        (Exceptions_attribute)m.attributes.get(Attribute.Exceptions);
-                    if (e != null) {
-                        v.addClasses(e.exception_index_table);
-                    }
+                for (var m : classfile.methods()) {
+                    v.scan(m.methodTypeSymbol());
+                    v.scanAttributes(m);
                 }
-            } catch (ConstantPoolException e) {
+            } catch (IllegalArgumentException e) {
                 throw new ClassFileError(e);
             }
 
@@ -502,9 +488,9 @@ public class Dependencies {
     static class APIDependencyFinder extends BasicDependencyFinder {
         APIDependencyFinder(int access) {
             switch (access) {
-                case AccessFlags.ACC_PUBLIC:
-                case AccessFlags.ACC_PROTECTED:
-                case AccessFlags.ACC_PRIVATE:
+                case ClassFile.ACC_PUBLIC:
+                case ClassFile.ACC_PROTECTED:
+                case ClassFile.ACC_PRIVATE:
                 case 0:
                     showAccess = access;
                     break;
@@ -514,41 +500,40 @@ public class Dependencies {
             }
         }
 
-        public Iterable<? extends Dependency> findDependencies(ClassFile classfile) {
+        public Iterable<? extends Dependency> findDependencies(ClassModel classfile) {
             try {
                 Visitor v = new Visitor(classfile);
-                v.addClass(classfile.super_class);
-                v.addClasses(classfile.interfaces);
+                classfile.superclass().ifPresent(v::addClass);
+                v.addClasses(classfile.interfaces());
                 // inner classes?
-                for (Field f : classfile.fields) {
-                    if (checkAccess(f.access_flags))
-                        v.scan(f.descriptor, f.attributes);
+                for (var f : classfile.fields()) {
+                    if (checkAccess(f.flags())) {
+                        v.scan(f.fieldTypeSymbol());
+                        v.scanAttributes(f);
+                    }
                 }
-                for (Method m : classfile.methods) {
-                    if (checkAccess(m.access_flags)) {
-                        v.scan(m.descriptor, m.attributes);
-                        Exceptions_attribute e =
-                                (Exceptions_attribute) m.attributes.get(Attribute.Exceptions);
-                        if (e != null)
-                            v.addClasses(e.exception_index_table);
+                for (var m : classfile.methods()) {
+                    if (checkAccess(m.flags())) {
+                        v.scan(m.methodTypeSymbol());
+                        v.scanAttributes(m);
                     }
                 }
                 return v.deps;
-            } catch (ConstantPoolException e) {
+            } catch (IllegalArgumentException e) {
                 throw new ClassFileError(e);
             }
         }
 
         boolean checkAccess(AccessFlags flags) {
             // code copied from javap.Options.checkAccess
-            boolean isPublic = flags.is(AccessFlags.ACC_PUBLIC);
-            boolean isProtected = flags.is(AccessFlags.ACC_PROTECTED);
-            boolean isPrivate = flags.is(AccessFlags.ACC_PRIVATE);
+            boolean isPublic = flags.has(AccessFlag.PUBLIC);
+            boolean isProtected = flags.has(AccessFlag.PROTECTED);
+            boolean isPrivate = flags.has(AccessFlag.PRIVATE);
             boolean isPackage = !(isPublic || isProtected || isPrivate);
 
-            if ((showAccess == AccessFlags.ACC_PUBLIC) && (isProtected || isPrivate || isPackage))
+            if ((showAccess == ClassFile.ACC_PUBLIC) && (isProtected || isPrivate || isPackage))
                 return false;
-            else if ((showAccess == AccessFlags.ACC_PROTECTED) && (isPrivate || isPackage))
+            else if ((showAccess == ClassFile.ACC_PROTECTED) && (isPrivate || isPackage))
                 return false;
             else if ((showAccess == 0) && (isPrivate))
                 return false;
@@ -566,238 +551,158 @@ public class Dependencies {
             return locations.computeIfAbsent(className, SimpleLocation::new);
         }
 
-        class Visitor implements ConstantPool.Visitor<Void,Void>, Type.Visitor<Void, Void> {
-            private ConstantPool constant_pool;
-            private Location origin;
-            Set<Dependency> deps;
+        class Visitor {
+            private final Location origin;
+            final Set<Dependency> deps;
 
-            Visitor(ClassFile classFile) {
+            Visitor(ClassModel classFile) {
                 try {
-                    constant_pool = classFile.constant_pool;
-                    origin = getLocation(classFile.getName());
-                    deps = new HashSet<>();
-                } catch (ConstantPoolException e) {
+                    origin = getLocation(classFile.thisClass().asInternalName());
+                } catch (IllegalArgumentException e) {
                     throw new ClassFileError(e);
                 }
+                deps = new HashSet<>();
             }
 
-            void scan(Descriptor d, Attributes attrs) {
-                try {
-                    scan(new Signature(d.index).getType(constant_pool));
-                    scan(attrs);
-                } catch (ConstantPoolException e) {
-                    throw new ClassFileError(e);
-                }
+            private void addDependency(String internalName) {
+                deps.add(new SimpleDependency(origin, getLocation(internalName)));
             }
 
-            void scan(CPInfo cpInfo) {
-                cpInfo.accept(this, null);
+            private void addClass(ClassEntry ce) throws IllegalArgumentException {
+                assert ce.name().charAt(0) != '[';
+                addDependency(ce.asInternalName());
             }
 
-            void scan(Type t) {
-                t.accept(this, null);
-            }
-
-            void scan(Attributes attrs) {
-                try {
-                    Signature_attribute sa = (Signature_attribute)attrs.get(Attribute.Signature);
-                    if (sa != null)
-                        scan(sa.getParsedSignature().getType(constant_pool));
-
-                    scan((RuntimeVisibleAnnotations_attribute)
-                            attrs.get(Attribute.RuntimeVisibleAnnotations));
-                    scan((RuntimeVisibleParameterAnnotations_attribute)
-                            attrs.get(Attribute.RuntimeVisibleParameterAnnotations));
-                } catch (ConstantPoolException e) {
-                    throw new ClassFileError(e);
-                }
-            }
-
-            private void scan(RuntimeAnnotations_attribute attr) throws ConstantPoolException {
-                if (attr == null) {
-                    return;
-                }
-                for (int i = 0; i < attr.annotations.length; i++) {
-                    int index = attr.annotations[i].type_index;
-                    scan(new Signature(index).getType(constant_pool));
-                }
-            }
-
-            private void scan(RuntimeParameterAnnotations_attribute attr) throws ConstantPoolException {
-                if (attr == null) {
-                    return;
-                }
-                for (int param = 0; param < attr.parameter_annotations.length; param++) {
-                    for (int i = 0; i < attr.parameter_annotations[param].length; i++) {
-                        int index = attr.parameter_annotations[param][i].type_index;
-                        scan(new Signature(index).getType(constant_pool));
-                    }
-                }
-            }
-
-            void addClass(int index) throws ConstantPoolException {
-                if (index != 0) {
-                    String name = constant_pool.getClassInfo(index).getBaseName();
-                    if (name != null)
-                        addDependency(name);
-                }
-            }
-
-            void addClasses(int[] indices) throws ConstantPoolException {
-                for (int i: indices)
+            private void addClasses(Collection<? extends ClassEntry> ces) throws IllegalArgumentException {
+                for (var i: ces)
                     addClass(i);
             }
 
-            private void addDependency(String name) {
-                deps.add(new SimpleDependency(origin, getLocation(name)));
+            private void scan(ClassDesc cd) {
+                while (cd.isArray()) {
+                    cd = cd.componentType();
+                }
+                if (cd.isClassOrInterface()) {
+                    var desc = cd.descriptorString();
+                    addDependency(desc.substring(1, desc.length() - 1));
+                }
             }
 
-            // ConstantPool.Visitor methods
+            private void scan(MethodTypeDesc mtd) {
+                scan(mtd.returnType());
+                for (int i = 0; i < mtd.parameterCount(); i++) {
+                    scan(mtd.parameterType(i));
+                }
+            }
 
-            public Void visitClass(CONSTANT_Class_info info, Void p) {
+            void scanAttributes(AttributedElement attrs) {
                 try {
-                    if (info.getName().startsWith("["))
-                        new Signature(info.name_index).getType(constant_pool).accept(this, null);
-                    else
-                        addDependency(info.getBaseName());
-                    return null;
-                } catch (ConstantPoolException e) {
+                    var sa = attrs.findAttribute(Attributes.SIGNATURE).orElse(null);
+                    if (sa != null) {
+                        switch (attrs) {
+                            case ClassModel _ -> scan(sa.asClassSignature());
+                            case MethodModel _ -> scan(sa.asMethodSignature());
+                            default -> scan(sa.asTypeSignature());
+                        }
+                    }
+
+                    var rvaa = attrs.findAttribute(Attributes.RUNTIME_VISIBLE_ANNOTATIONS).orElse(null);
+                    if (rvaa != null) {
+                        for (var anno : rvaa.annotations()) {
+                            scan(anno.classSymbol());
+                        }
+                    }
+
+                    var rvpaa = attrs.findAttribute(Attributes.RUNTIME_VISIBLE_PARAMETER_ANNOTATIONS).orElse(null);
+                    if (rvpaa != null) {
+                        for (var parameter : rvpaa.parameterAnnotations()) {
+                            for (var anno : parameter) {
+                                scan(anno.classSymbol());
+                            }
+                        }
+                    }
+
+                    var exceptions = attrs.findAttribute(Attributes.EXCEPTIONS).orElse(null);
+                    if (exceptions != null) {
+                        for (var e : exceptions.exceptions()) {
+                            addClass(e);
+                        }
+                    }
+                } catch (IllegalArgumentException e) {
                     throw new ClassFileError(e);
                 }
             }
 
-            public Void visitDouble(CONSTANT_Double_info info, Void p) {
-                return null;
-            }
+            // ConstantPool scanning
 
-            public Void visitFieldref(CONSTANT_Fieldref_info info, Void p) {
-                return visitRef(info, p);
-            }
-
-            public Void visitFloat(CONSTANT_Float_info info, Void p) {
-                return null;
-            }
-
-            public Void visitInteger(CONSTANT_Integer_info info, Void p) {
-                return null;
-            }
-
-            public Void visitInterfaceMethodref(CONSTANT_InterfaceMethodref_info info, Void p) {
-                return visitRef(info, p);
-            }
-
-            public Void visitInvokeDynamic(CONSTANT_InvokeDynamic_info info, Void p) {
-                return null;
-            }
-
-            @Override
-            public Void visitDynamicConstant(CONSTANT_Dynamic_info info, Void aVoid) {
-                return null;
-            }
-
-            public Void visitLong(CONSTANT_Long_info info, Void p) {
-                return null;
-            }
-
-            public Void visitMethodHandle(CONSTANT_MethodHandle_info info, Void p) {
-                return null;
-            }
-
-            public Void visitMethodType(CONSTANT_MethodType_info info, Void p) {
-                return null;
-            }
-
-            public Void visitMethodref(CONSTANT_Methodref_info info, Void p) {
-                return visitRef(info, p);
-            }
-
-            public Void visitModule(CONSTANT_Module_info info, Void p) {
-                return null;
-            }
-
-            public Void visitNameAndType(CONSTANT_NameAndType_info info, Void p) {
+            void scan(PoolEntry cpInfo) {
                 try {
-                    new Signature(info.type_index).getType(constant_pool).accept(this, null);
-                    return null;
-                } catch (ConstantPoolException e) {
+                    switch (cpInfo) {
+                        case ClassEntry clazz -> scan(clazz.asSymbol());
+                        case FieldRefEntry field -> scan(field.owner().asSymbol());
+                        case MethodRefEntry method -> scan(method.owner().asSymbol());
+                        case InterfaceMethodRefEntry interfaceMethod -> scan(interfaceMethod.owner().asSymbol());
+                        case NameAndTypeEntry nat -> {
+                            var desc = nat.type();
+                            if (desc.charAt(0) == '(') {
+                                scan(MethodTypeDesc.ofDescriptor(desc.stringValue()));
+                            } else {
+                                scan(ClassDesc.ofDescriptor(desc.stringValue()));
+                            }
+                        }
+                        default -> {}
+                    }
+                } catch (IllegalArgumentException e) {
                     throw new ClassFileError(e);
                 }
             }
 
-            public Void visitPackage(CONSTANT_Package_info info, Void p) {
-                return null;
-            }
+            // Signature scanning
 
-            public Void visitString(CONSTANT_String_info info, Void p) {
-                return null;
-            }
-
-            public Void visitUtf8(CONSTANT_Utf8_info info, Void p) {
-                return null;
-            }
-
-            private Void visitRef(CPRefInfo info, Void p) {
-                try {
-                    visitClass(info.getClassInfo(), p);
-                    return null;
-                } catch (ConstantPoolException e) {
-                    throw new ClassFileError(e);
+            private void scan(MethodSignature sig) {
+                for (var param : sig.typeParameters()) {
+                    scan(param);
+                }
+                for (var param : sig.arguments()) {
+                    scan(param);
+                }
+                scan(sig.result());
+                for (var thrown : sig.throwableSignatures()) {
+                    scan(thrown);
                 }
             }
 
-            // Type.Visitor methods
-
-            private void findDependencies(Type t) {
-                if (t != null)
-                    t.accept(this, null);
-            }
-
-            private void findDependencies(List<? extends Type> ts) {
-                if (ts != null) {
-                    for (Type t: ts)
-                        t.accept(this, null);
+            private void scan(ClassSignature sig) {
+                for (var param : sig.typeParameters()) {
+                    scan(param);
+                }
+                scan(sig.superclassSignature());
+                for (var itf : sig.superinterfaceSignatures()) {
+                    scan(itf);
                 }
             }
 
-            public Void visitSimpleType(SimpleType type, Void p) {
-                return null;
+            private void scan(Signature.TypeParam param) {
+                param.classBound().ifPresent(this::scan);
+                for (var itf : param.interfaceBounds()) {
+                    scan(itf);
+                }
             }
 
-            public Void visitArrayType(ArrayType type, Void p) {
-                findDependencies(type.elemType);
-                return null;
-            }
-
-            public Void visitMethodType(MethodType type, Void p) {
-                findDependencies(type.paramTypes);
-                findDependencies(type.returnType);
-                findDependencies(type.throwsTypes);
-                findDependencies(type.typeParamTypes);
-                return null;
-            }
-
-            public Void visitClassSigType(ClassSigType type, Void p) {
-                findDependencies(type.superclassType);
-                findDependencies(type.superinterfaceTypes);
-                return null;
-            }
-
-            public Void visitClassType(ClassType type, Void p) {
-                findDependencies(type.outerType);
-                addDependency(type.getBinaryName());
-                findDependencies(type.typeArgs);
-                return null;
-            }
-
-            public Void visitTypeParamType(TypeParamType type, Void p) {
-                findDependencies(type.classBound);
-                findDependencies(type.interfaceBounds);
-                return null;
-            }
-
-            public Void visitWildcardType(WildcardType type, Void p) {
-                findDependencies(type.boundType);
-                return null;
+            private void scan(Signature sig) {
+                switch (sig) {
+                    case Signature.ClassTypeSig ct -> {
+                        ct.outerType().ifPresent(this::scan);
+                        scan(ct.classDesc());
+                        for (var arg : ct.typeArgs()) {
+                            if (arg instanceof Signature.TypeArg.Bounded bounded) {
+                                scan(bounded.boundType());
+                            }
+                        }
+                    }
+                    case Signature.ArrayTypeSig at -> scan(at.componentSignature());
+                    case Signature.BaseTypeSig _, Signature.TypeVarSig _ -> {}
+                }
             }
         }
     }
