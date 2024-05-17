@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,8 +26,8 @@
 #ifndef SHARE_NMT_MALLOCTRACKER_HPP
 #define SHARE_NMT_MALLOCTRACKER_HPP
 
-#include "memory/allocation.hpp"
 #include "nmt/mallocHeader.hpp"
+#include "nmt/memflags.hpp"
 #include "nmt/nmtCommon.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/threadCritical.hpp"

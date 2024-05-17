@@ -1869,15 +1869,10 @@ enum Nf {
 
   // Vector Bit-manipulation used in Cryptography (Zvkb) Extension
   INSN(vandn_vv,   0b1010111, 0b000, 0b000001);
-  INSN(vandn_vx,   0b1010111, 0b100, 0b000001);
   INSN(vclmul_vv,  0b1010111, 0b010, 0b001100);
-  INSN(vclmul_vx,  0b1010111, 0b110, 0b001100);
   INSN(vclmulh_vv, 0b1010111, 0b010, 0b001101);
-  INSN(vclmulh_vx, 0b1010111, 0b110, 0b001101);
   INSN(vror_vv,    0b1010111, 0b000, 0b010100);
-  INSN(vror_vx,    0b1010111, 0b100, 0b010100);
   INSN(vrol_vv,    0b1010111, 0b000, 0b010101);
-  INSN(vrol_vx,    0b1010111, 0b100, 0b010101);
 
 #undef INSN
 
@@ -1890,6 +1885,9 @@ enum Nf {
   INSN(vbrev_v,  0b1010111, 0b010, 0b01010, 0b010010); // reverse bits in every element
   INSN(vbrev8_v, 0b1010111, 0b010, 0b01000, 0b010010); // reverse bits in every byte of element
   INSN(vrev8_v,  0b1010111, 0b010, 0b01001, 0b010010); // reverse bytes in every elememt
+
+  INSN(vclz_v,  0b1010111, 0b010, 0b01100, 0b010010); // count leading zeros
+  INSN(vctz_v,  0b1010111, 0b010, 0b01101, 0b010010); // count trailing zeros
 
 #undef INSN
 
