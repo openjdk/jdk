@@ -845,10 +845,15 @@ class BadIRAnnotations {
 
     @FailCount(3)
     @Test
-    @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", "50"}, applyIfNot = {"UseTLAB", "true"})
-    @IR(failOn = IRNode.CALL, applyIfAnd = {"TLABRefillWasteFraction", "50", "UseTLAB", "true"},
+    @IR(failOn = IRNode.CALL,
+        applyIf = {"TLABRefillWasteFraction", "50"},
+        applyIfNot = {"UseTLAB", "true"})
+    @IR(failOn = IRNode.CALL,
+        applyIfAnd = {"TLABRefillWasteFraction", "50", "UseTLAB", "true"},
         applyIfOr = {"TLABRefillWasteFraction", "50", "UseTLAB", "true"})
-    @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", "50"}, applyIfNot = {"TLABRefillWasteFraction", "50"},
+    @IR(failOn = IRNode.CALL,
+        applyIf = {"TLABRefillWasteFraction", "50"},
+        applyIfNot = {"TLABRefillWasteFraction", "50"},
         applyIfAnd = {"TLABRefillWasteFraction", "50", "UseTLAB", "true"},
         applyIfOr = {"TLABRefillWasteFraction", "50", "UseTLAB", "true"})
     public void onlyOneApply() {}
