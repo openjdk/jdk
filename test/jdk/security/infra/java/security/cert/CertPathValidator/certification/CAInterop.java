@@ -525,6 +525,7 @@
 /*
  * @test id=globalsigne46
  * @bug 8316138
+ * @key intermittent
  * @summary Interoperability tests with GlobalSign Root E46
  * @library /test/lib
  * @build jtreg.SkippedException ValidatePathWithURL CAInterop
