@@ -421,8 +421,8 @@ void C1_MacroAssembler::save_live_registers_no_oop_map(bool save_fpu_registers) 
   __ block_comment("save_live_registers");
 
   // Push CPU state in multiple of 16 bytes
+#ifdef LP64
   __ subq(rsp, 16 * wordSize);
-
   __ movq(Address(rsp, 15 * wordSize), rax);
   __ movq(Address(rsp, 14 * wordSize), rcx);
   __ movq(Address(rsp, 13 * wordSize), rdx);
@@ -441,6 +441,9 @@ void C1_MacroAssembler::save_live_registers_no_oop_map(bool save_fpu_registers) 
   __ movq(Address(rsp, 2 * wordSize), r13);
   __ movq(Address(rsp, wordSize), r14);
   __ movq(Address(rsp, 0), r15);
+#else
+  __ pusha();
+#endif
 
   // assert(float_regs_as_doubles_off % 2 == 0, "misaligned offset");
   // assert(xmm_regs_as_doubles_off % 2 == 0, "misaligned offset");
@@ -580,6 +583,7 @@ void C1_MacroAssembler::restore_live_registers(bool restore_fpu_registers) {
   __ block_comment("restore_live_registers");
 
   restore_fpu(this, restore_fpu_registers);
+#ifdef _LP64
   __ movq(r15, Address(rsp, 0));
   __ movq(r14, Address(rsp, wordSize));
   __ movq(r13, Address(rsp, 2 * wordSize));
@@ -598,6 +602,9 @@ void C1_MacroAssembler::restore_live_registers(bool restore_fpu_registers) {
   __ movq(rcx, Address(rsp, 14 * wordSize));
   __ movq(rax, Address(rsp, 15 * wordSize));
   __ addq(rsp, 16 * wordSize);
+#else
+  __ popa();
+#endif
 
 }
 

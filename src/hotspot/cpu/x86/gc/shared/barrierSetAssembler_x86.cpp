@@ -632,13 +632,6 @@ void SaveLiveRegisters::initialize(BarrierStubC2* stub) {
     caller_saved.Insert(OptoReg::as_OptoReg(r31->as_VMReg()));
   }
 
-  if (stub->result() != noreg) {
-    caller_saved.Remove(OptoReg::as_OptoReg(stub->result()->as_VMReg()));
-  }
-
-  // Create mask of live registers
-  RegMask live = stub->live();
-
   int gp_spill_size = 0;
   int opmask_spill_size = 0;
   int xmm_spill_size = 0;
