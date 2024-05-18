@@ -221,8 +221,8 @@ public class SinceChecker {
             el = el.getEnclosingElement();
         }
 
-        return LEGACY_PREVIEW_METHODS.containsKey(currentVersion)
-                && LEGACY_PREVIEW_METHODS.get(currentVersion).contains(uniqueId);
+        return LEGACY_PREVIEW_METHODS.getOrDefault(currentVersion, Set.of())
+                .contains(uniqueId);
     }
 
     private void checkModule(String moduleName) throws Exception {
@@ -342,6 +342,28 @@ public class SinceChecker {
         }
     }
 
+    private boolean isNotCommonRecordMethod(TypeElement te, Element element , Types types) {
+        var isRecord = te.getKind() == ElementKind.RECORD;
+        if (!isRecord) {
+            return true;
+        }
+        String uniqueId = getElementName(te, element, types);
+        boolean isCommonMethod = uniqueId.endsWith("toString()") ||
+                uniqueId.endsWith(".hashCode()") ||
+                uniqueId.endsWith(".equals(java.lang.Object)");
+        if (isCommonMethod) {
+            return false;
+        }
+        for (var parameter : te.getEnclosedElements()) {
+            if (parameter.getKind() == ElementKind.RECORD_COMPONENT) {
+                if (uniqueId.endsWith(String.format("%s.%s()", te.getSimpleName(), parameter.getSimpleName().toString()))) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
     private void analyzeClassCheck(TypeElement te, String version, EffectiveSourceSinceHelper javadocHelper,
                                    Types types, Elements elementUtils) {
         String currentjdkVersion = String.valueOf(Runtime.version().feature());
@@ -349,11 +371,9 @@ public class SinceChecker {
             return;
         }
         checkElement(te.getEnclosingElement(), te, types, javadocHelper, version, elementUtils);
-        if( te.getKind() == ElementKind.RECORD){
-            return;
-        }
         te.getEnclosedElements().stream().filter(this::isDocumented)
                 .filter(this::isMember)
+                .filter(element -> isNotCommonRecordMethod(te, element, types))
                 .forEach(element -> checkElement(te, element, types, javadocHelper, version, elementUtils));
         te.getEnclosedElements().stream()
                 .filter(element -> element.getKind().isDeclaredType())
