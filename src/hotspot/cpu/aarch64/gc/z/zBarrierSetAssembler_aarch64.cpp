@@ -1141,7 +1141,6 @@ public:
 #define __ masm->
 
 void ZBarrierSetAssembler::generate_c2_load_barrier_stub(MacroAssembler* masm, ZLoadBarrierStubC2* stub) const {
-  Assembler::InlineSkippedInstructionsCounter skipped_counter(masm);
   BLOCK_COMMENT("ZLoadBarrierStubC2");
 
   // Stub entry
@@ -1160,7 +1159,6 @@ void ZBarrierSetAssembler::generate_c2_load_barrier_stub(MacroAssembler* masm, Z
 }
 
 void ZBarrierSetAssembler::generate_c2_store_barrier_stub(MacroAssembler* masm, ZStoreBarrierStubC2* stub) const {
-  Assembler::InlineSkippedInstructionsCounter skipped_counter(masm);
   BLOCK_COMMENT("ZStoreBarrierStubC2");
 
   // Stub entry

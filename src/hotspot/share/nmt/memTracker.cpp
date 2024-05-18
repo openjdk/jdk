@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -67,8 +67,7 @@ void MemTracker::initialize() {
 
   if (level > NMT_off) {
     if (!MallocTracker::initialize(level) ||
-        !VirtualMemoryTracker::initialize(level) ||
-        !ThreadStackTracker::initialize(level)) {
+        !VirtualMemoryTracker::initialize(level)) {
       assert(false, "NMT initialization failed");
       level = NMT_off;
       log_warning(nmt)("NMT initialization failed. NMT disabled.");
@@ -146,12 +145,17 @@ void MemTracker::report(bool summary_only, outputStream* output, size_t scale) {
 void MemTracker::tuning_statistics(outputStream* out) {
   // NMT statistics
   out->print_cr("Native Memory Tracking Statistics:");
-  out->print_cr("State: %s", NMTUtil::tracking_level_to_string(_tracking_level));
-  out->print_cr("Malloc allocation site table size: %d", MallocSiteTable::hash_buckets());
-  out->print_cr("             Tracking stack depth: %d", NMT_TrackingStackDepth);
-  out->cr();
-  MallocSiteTable::print_tuning_statistics(out);
-  out->cr();
+  out->print_cr("State: %s",
+                NMTUtil::tracking_level_to_string(_tracking_level));
+  if (_tracking_level == NMT_detail) {
+    out->print_cr("Malloc allocation site table size: %d",
+                  MallocSiteTable::hash_buckets());
+    out->print_cr("             Tracking stack depth: %d",
+                  NMT_TrackingStackDepth);
+    out->cr();
+    MallocSiteTable::print_tuning_statistics(out);
+    out->cr();
+  }
   out->print_cr("Preinit state:");
   NMTPreInit::print_state(out);
   MallocLimitHandler::print_on(out);

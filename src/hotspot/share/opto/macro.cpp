@@ -573,6 +573,9 @@ bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode
     if (res_type == nullptr) {
       NOT_PRODUCT(fail_eliminate = "Neither instance or array allocation";)
       can_eliminate = false;
+    } else if (!res_type->klass_is_exact()) {
+      NOT_PRODUCT(fail_eliminate = "Not an exact type.";)
+      can_eliminate = false;
     } else if (res_type->isa_aryptr()) {
       int length = alloc->in(AllocateNode::ALength)->find_int_con(-1);
       if (length < 0) {

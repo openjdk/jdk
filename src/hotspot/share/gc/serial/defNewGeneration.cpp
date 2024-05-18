@@ -226,6 +226,7 @@ DefNewGeneration::DefNewGeneration(ReservedSpace rs,
                                    size_t max_size,
                                    const char* policy)
   : Generation(rs, initial_size),
+    _promotion_failed(false),
     _preserved_marks_set(false /* in_c_heap */),
     _promo_failure_drain_in_progress(false),
     _should_allocate_from_space(false),
@@ -640,22 +641,9 @@ void DefNewGeneration::adjust_desired_tenuring_threshold() {
   age_table()->print_age_table();
 }
 
-void DefNewGeneration::collect(bool   full,
-                               bool   clear_all_soft_refs,
-                               size_t size,
-                               bool   is_tlab) {
-  assert(full || size > 0, "otherwise we don't want to collect");
-
+bool DefNewGeneration::collect(bool clear_all_soft_refs) {
   SerialHeap* heap = SerialHeap::heap();
 
-  // If the next generation is too full to accommodate promotion
-  // from this generation, pass on collection; let the next generation
-  // do it.
-  if (!collection_attempt_is_safe()) {
-    log_trace(gc)(":: Collection attempt not safe ::");
-    heap->set_incremental_collection_failed(); // Slight lie: we did not even attempt one
-    return;
-  }
   assert(to()->is_empty(), "Else not collection_attempt_is_safe");
   _gc_timer->register_gc_start();
   _gc_tracer->report_gc_start(heap->gc_cause(), _gc_timer->gc_start());
@@ -773,6 +761,8 @@ void DefNewGeneration::collect(bool   full,
   _gc_timer->register_gc_end();
 
   _gc_tracer->report_gc_end(_gc_timer->gc_end(), _gc_timer->time_partitions());
+
+  return !_promotion_failed;
 }
 
 void DefNewGeneration::init_assuming_no_promotion_failure() {

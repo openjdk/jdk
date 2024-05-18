@@ -31,6 +31,7 @@
 // globally used constants & types, class (forward)
 // declarations and a few frequently used utility functions.
 
+#include <alloca.h>
 #include <ctype.h>
 #include <inttypes.h>
 #include <string.h>

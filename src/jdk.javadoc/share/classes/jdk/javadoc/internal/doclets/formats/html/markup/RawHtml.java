@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@ package jdk.javadoc.internal.doclets.formats.html.markup;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import jdk.javadoc.internal.doclets.formats.html.Content;
 
@@ -53,6 +55,16 @@ public class RawHtml extends Content {
                 return charCount(rawHtmlContent);
             }
         };
+    }
+
+    /**
+     * Creates HTML for a fragment of Markdown output.
+     *
+     * @param markdownOutput the fragment
+     * @return the HTML
+     */
+    public static RawHtml markdown(CharSequence markdownOutput) {
+        return of(markdownOutput);
     }
 
     /**
@@ -127,6 +139,24 @@ public class RawHtml extends Content {
     @Override
     public boolean isEmpty() {
         return rawHtmlContent.isEmpty();
+    }
+
+    Pattern tag = Pattern.compile("<(?<tag>[A-Za-z0-9]+)(\\s|>)");
+    @Override
+    public boolean isPhrasingContent() {
+        Matcher m = tag.matcher(rawHtmlContent);
+        while (m.find()) {
+            try {
+                var tn = TagName.of(m.group("tag"));
+                if (!tn.phrasingContent) {
+                    return false;
+                }
+            } catch (IllegalArgumentException e) {
+                // unknown tag
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override
