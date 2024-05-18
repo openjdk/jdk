@@ -398,11 +398,9 @@ public class Indify {
             assert constants.size() == new_constants.size(); //TODO: to be removed after getting rid of old implementation
             assert indySignatures.size() == new_indySignatures.size();
             ClassModel cm = transformFromCPbuilder(bytecode.classModel, bytecode.poolBuilder);
-            for(Object o : cm) System.out.println();
-            for(Object o : cm.constantPool()) System.out.println();
 
-            CodeTransform codeTransform = null;
-            ClassTransform classTransform = null;
+            CodeTransform codeTransform;
+            ClassTransform classTransform;
 
             for(MethodModel m : bytecode.classModel.methods()){
                 if(new_constants.containsKey(m)) continue;
@@ -490,8 +488,6 @@ public class Indify {
                         cm = java.lang.classfile.ClassFile.of(StackMapsOption.DROP_STACK_MAPS).parse(
                                 java.lang.classfile.ClassFile.of(StackMapsOption.DROP_STACK_MAPS).transform(cm, classTransform)
                         );
-                        for (Object o : cm);
-                        for (Object o : cm.constantPool());
 
                         //We are leaving this here for checking if curr method instructions are changed
                         List<java.lang.classfile.Instruction> newInst = new ArrayList<>();
@@ -520,8 +516,7 @@ public class Indify {
                         classTransform = ClassTransform.transformingMethodBodies(filter, codeTransform);
                         cm = java.lang.classfile.ClassFile.of(StackMapsOption.DROP_STACK_MAPS).parse(
                                 java.lang.classfile.ClassFile.of(StackMapsOption.DROP_STACK_MAPS).transform(cm, classTransform));
-                        for (Object o : cm);
-                        for (Object o : cm.constantPool());
+
                         List<java.lang.classfile.Instruction> LdcIns = new ArrayList<>();
                         for(MethodModel mmm : cm.methods()){
                             if (Objects.equals(mmm.methodName().stringValue(), m.methodName().stringValue())){
@@ -529,10 +524,20 @@ public class Indify {
                                 break;
                             }
                         }
-                        continue;
                     }
                 }
             }
+            cm = java.lang.classfile.ClassFile.of(StackMapsOption.DROP_STACK_MAPS).parse(
+                    java.lang.classfile.ClassFile.of(StackMapsOption.DROP_STACK_MAPS).transform(cm, (b, e) ->
+                    {
+                        if (!(e instanceof MethodModel mm &&
+                                (mm.methodName().stringValue().startsWith("MH_") ||
+                                        mm.methodName().stringValue().startsWith("MT_") ||
+                                        mm.methodName().stringValue().startsWith("INDY_"))
+                        )) b.with(e);
+                    })
+            );
+
             ClassHierarchyResolver classHierarchyResolver = classDesc -> ClassHierarchyResolver.ClassHierarchyInfo.ofInterface();
 
             try {
