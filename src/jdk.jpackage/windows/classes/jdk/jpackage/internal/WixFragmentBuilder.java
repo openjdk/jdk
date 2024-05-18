@@ -30,9 +30,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.nio.file.Path;
 import java.text.MessageFormat;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Matcher;
@@ -40,9 +38,10 @@ import java.util.regex.Pattern;
 import javax.xml.stream.XMLStreamWriter;
 import jdk.jpackage.internal.IOUtils.XmlConsumer;
 import jdk.jpackage.internal.OverridableResource.Source;
-import static jdk.jpackage.internal.OverridableResource.createResource;
 import static jdk.jpackage.internal.StandardBundlerParam.CONFIG_ROOT;
 import jdk.internal.util.Architecture;
+import static jdk.jpackage.internal.OverridableResource.createResource;
+import jdk.jpackage.internal.WixSourceConverter.ResourceGroup;
 import jdk.jpackage.internal.WixToolset.WixToolsetType;
 
 /**
@@ -92,10 +91,7 @@ abstract class WixFragmentBuilder {
         }
 
         if (additionalResources != null) {
-            for (var resource : additionalResources) {
-                resource.resource.saveToFile(configRoot.resolve(
-                        resource.saveAsName));
-            }
+            additionalResources.saveResources();
         }
     }
 
@@ -148,9 +144,9 @@ abstract class WixFragmentBuilder {
 
     protected void addResource(OverridableResource resource, String saveAsName) {
         if (additionalResources == null) {
-            additionalResources = new ArrayList<>();
+            additionalResources = new ResourceGroup(getWixVersion());
         }
-        additionalResources.add(new ResourceWithName(resource, saveAsName));
+        additionalResources.addResource(resource, configRoot.resolve(saveAsName));
     }
 
     private void createWixSource(Path file, XmlConsumer xmlConsumer) throws IOException {
@@ -172,16 +168,6 @@ abstract class WixFragmentBuilder {
 
             xml.writeEndElement(); // <Wix>
         });
-    }
-
-    private static class ResourceWithName {
-
-        ResourceWithName(OverridableResource resource, String saveAsName) {
-            this.resource = resource;
-            this.saveAsName = saveAsName;
-        }
-        private final OverridableResource resource;
-        private final String saveAsName;
     }
 
     private static class WixPreprocessorEscaper implements InvocationHandler {
@@ -238,7 +224,7 @@ abstract class WixFragmentBuilder {
 
     private WixToolsetType wixVersion;
     private WixVariables wixVariables;
-    private List<ResourceWithName> additionalResources;
+    private ResourceGroup additionalResources;
     private OverridableResource fragmentResource;
     private String outputFileName;
     private Path configRoot;
