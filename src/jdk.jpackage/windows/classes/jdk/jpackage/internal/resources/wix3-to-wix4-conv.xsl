@@ -31,15 +31,8 @@
 -->
 <xsl:stylesheet version="1.0"
                 xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
-
                 xmlns:wix3loc="http://schemas.microsoft.com/wix/2006/localization"
-                xmlns:wix4loc="http://wixtoolset.org/schemas/v4/wxl"
-
                 xmlns:wix3="http://schemas.microsoft.com/wix/2006/wi"
-                xmlns:wix4="http://wixtoolset.org/schemas/v4/wxs"
-
-                xmlns:wix3util="http://schemas.microsoft.com/wix/UtilExtension"
-                xmlns:wix4util="http://wixtoolset.org/schemas/v4/wxs/util"
 >
   <!-- Wix4 complains about xml declaration in input files. Turn it off -->
   <xsl:output method="xml" omit-xml-declaration="yes" indent="yes"/>
@@ -160,9 +153,7 @@
   </xsl:template>
 
 
-  <xsl:template match="wix3:Custom/text()"/>
-
-  <xsl:template match="wix3:Custom">
+  <xsl:template match="wix3:Custom|wix3:Publish">
     <xsl:element name="{local-name()}" namespace="http://wixtoolset.org/schemas/v4/wxs">
       <xsl:apply-templates select="@*"/>
       <xsl:if test="text()">
@@ -174,10 +165,12 @@
     </xsl:element>
   </xsl:template>
 
+  <xsl:template match="wix3:Custom/text()|wix3:Publish/text()"/>
+
 
   <xsl:template match="wix3:Directory[@Id='TARGETDIR']"/>
 
-  
+
   <!--
     Identity transform
   -->

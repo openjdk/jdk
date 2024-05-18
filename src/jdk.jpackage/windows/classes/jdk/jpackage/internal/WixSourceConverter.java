@@ -32,8 +32,10 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
@@ -41,6 +43,8 @@ import javax.xml.transform.Source;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMResult;
+import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stax.StAXResult;
 import javax.xml.transform.stream.StreamSource;
 import jdk.jpackage.internal.WixToolset.WixToolsetType;
@@ -51,12 +55,12 @@ import jdk.jpackage.internal.resources.ResourceLocator;
  */
 final class WixSourceConverter {
 
-    WixSourceConverter(String xsltResourceName) throws IOException {
-        var xslt = new StreamSource(ResourceLocator.class.getResourceAsStream(xsltResourceName));
+    WixSourceConverter() {
+        var xslt = new StreamSource(ResourceLocator.class.getResourceAsStream("wix3-to-wix4-conv.xsl"));
 
-        TransformerFactory factory = TransformerFactory.newInstance();
+        var tf = TransformerFactory.newInstance();
         try {
-            this.transformer = factory.newTransformer(xslt);
+            this.transformer = tf.newTransformer(xslt);
         } catch (TransformerException ex) {
             // Should never happen
             throw new RuntimeException(ex);
@@ -75,15 +79,26 @@ final class WixSourceConverter {
         var buf = new ByteArrayOutputStream();
         resource.saveToStream(buf);
 
-        Source input = new StreamSource(new ByteArrayInputStream(buf.toByteArray()));
+        var dom = new DOMResult();
+        var nc = new NamespaceCollector();
+
+        try {
+            Source input = new StreamSource(new ByteArrayInputStream(buf.toByteArray()));
+            transformer.transform(input, dom);
+            TransformerFactory.newInstance().newTransformer().
+                    transform(new DOMSource(dom.getNode()), new StAXResult((XMLStreamWriter) Proxy.
+                            newProxyInstance(XMLStreamWriter.class.getClassLoader(),
+                                    new Class<?>[]{XMLStreamWriter.class}, nc)));
+        } catch (TransformerException ex) {
+            // Should never happen
+            throw new RuntimeException(ex);
+        }
 
         try (var outXml = Files.newOutputStream(resourceSaveAsFile)) {
-            XMLStreamWriter xmlWriter = (XMLStreamWriter) Proxy.newProxyInstance(
-                    XMLStreamWriter.class.getClassLoader(), new Class<?>[]{XMLStreamWriter.class},
-                    new NamespaceCleaner(outputFactory.createXMLStreamWriter(outXml)));
-
-            transformer.transform(input, new StAXResult(xmlWriter));
-
+            transformer.transform(new DOMSource(dom.getNode()), new StAXResult(
+                    (XMLStreamWriter) Proxy.newProxyInstance(XMLStreamWriter.class.getClassLoader(),
+                            new Class<?>[]{XMLStreamWriter.class}, new NamespaceCleaner(nc.
+                                    getPrefixToUri(), outputFactory.createXMLStreamWriter(outXml)))));
         } catch (TransformerException | XMLStreamException ex) {
             // Should never happen
             throw new RuntimeException(ex);
@@ -92,10 +107,10 @@ final class WixSourceConverter {
 
     final static class ResourceGroup {
 
-        ResourceGroup(WixToolsetType wixToolsetType, String xsltResourceName) throws IOException {
+        ResourceGroup(WixToolsetType wixToolsetType) {
             if (wixToolsetType == WixToolsetType.Wix4) {
                 // Need to convert internal WiX sources
-                conv = new WixSourceConverter(xsltResourceName);
+                conv = new WixSourceConverter();
             } else {
                 conv = null;
             }
@@ -160,56 +175,145 @@ final class WixSourceConverter {
     //
     private static class NamespaceCleaner implements InvocationHandler {
 
-        NamespaceCleaner(XMLStreamWriter target) {
+        NamespaceCleaner(Map<String, String> prefixToUri, XMLStreamWriter target) {
+            this.uriToPrefix = prefixToUri.entrySet().stream().collect(Collectors.toMap(
+                    Map.Entry::getValue, e -> {
+                        return new Prefix(e.getKey());
+                    }, (x, y) -> x));
+            this.prefixToUri = prefixToUri;
             this.target = target;
         }
 
         @Override
         public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
             switch (method.getName()) {
-                case "setPrefix" -> {
-                    if (defaultNamespace == null) {
-                        defaultNamespace = (String)args[1];
-                        target.setDefaultNamespace(defaultNamespace);
-                    }
-                }
                 case "writeNamespace" -> {
-                    if (!rootElementProcessed) {
-                        rootElementProcessed = true;
-                        target.writeDefaultNamespace(defaultNamespace);
+                    final String uri = (String) args[1];
+                    var prefixObj = uriToPrefix.get(uri);
+                    if (!prefixObj.written) {
+                        prefixObj.written = true;
+                        target.writeNamespace(prefixObj.name, uri);
                     }
+                    return null;
                 }
                 case "writeStartElement", "writeEmptyElement" -> {
                     final String name;
                     switch (args.length) {
-                        case 1 -> name = (String)args[0];
-                        case 2, 3 -> name = (String)args[1];
-                        default -> throw new IllegalArgumentException();
+                        case 1 ->
+                            name = (String) args[0];
+                        case 2, 3 ->
+                            name = (String) args[1];
+                        default ->
+                            throw new IllegalArgumentException();
                     }
 
+                    final String prefix;
                     final String localName;
                     final String[] tokens = name.split(":", 2);
                     if (tokens.length == 2) {
-                        // The name has a prefix
+                        prefix = tokens[0];
                         localName = tokens[1];
                     } else {
                         localName = name;
+                        switch (args.length) {
+                            case 3 ->
+                                prefix = (String) args[0];
+                            case 2 ->
+                                prefix = uriToPrefix.get((String) args[0]).name;
+                            default ->
+                                prefix = null;
+                        }
                     }
 
-                    if (method.getName().equals("writeStartElement")) {
-                        target.writeStartElement(localName);
-                    } else {
-                        target.writeEmptyElement(localName);
+                    if (prefix != null) {
+                        final String uri = prefixToUri.get(prefix);
+                        var prefixObj = uriToPrefix.get(uri);
+                        if (prefixObj.written) {
+                            var writeName = String.join(":", prefixObj.name, localName);
+                            if ("writeStartElement".equals(method.getName())) {
+                                target.writeStartElement(writeName);
+                            } else {
+                                target.writeEmptyElement(writeName);
+                            }
+                            return null;
+                        } else {
+                            prefixObj.written = (args.length > 1);
+                            args = Arrays.copyOf(args, args.length, Object[].class);
+                            if (localName.equals(name)) {
+                                // No prefix in the name
+                                if (args.length == 3) {
+                                    args[0] = prefixObj.name;
+                                }
+                            } else {
+                                var writeName = String.join(":", prefixObj.name, localName);
+                                switch (args.length) {
+                                    case 1 ->
+                                        args[0] = writeName;
+                                    case 2 -> {
+                                        args[0] = uri;
+                                        args[1] = writeName;
+                                    }
+                                    case 3 -> {
+                                        args[0] = prefixObj.name;
+                                        args[1] = writeName;
+                                        args[2] = uri;
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
-                default -> method.invoke(target, args);
+            }
+
+            method.invoke(target, args);
+            return null;
+        }
+
+        static class Prefix {
+
+            public Prefix(String name) {
+                this.name = name;
+            }
+
+            private final String name;
+            private boolean written;
+        }
+
+        private final Map<String, Prefix> uriToPrefix;
+        private final Map<String, String> prefixToUri;
+        private final XMLStreamWriter target;
+    }
+
+    private static class NamespaceCollector implements InvocationHandler {
+
+        @Override
+        public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+            switch (method.getName()) {
+                case "setPrefix", "writeNamespace" -> {
+                    prefixToUri.computeIfAbsent((String) args[0], k -> (String) args[1]);
+                }
+                case "writeStartElement", "writeEmptyElement" -> {
+                    switch (args.length) {
+                        case 3 ->
+                            prefixToUri.computeIfAbsent((String) args[0], k -> (String) args[2]);
+                        case 2 -> {
+                            final String name = (String) args[1];
+                            final String[] tokens = name.split(":", 2);
+                            if (tokens.length == 2) {
+                                prefixToUri.computeIfAbsent(tokens[0], k -> (String) args[1]);
+                            }
+                        }
+                    }
+                }
             }
             return null;
         }
 
-        private boolean rootElementProcessed;
-        private String defaultNamespace;
-        private final XMLStreamWriter target;
+        public Map<String, String> getPrefixToUri() {
+            return prefixToUri;
+        }
+
+        private final Map<String, String> prefixToUri = new HashMap<>();
     }
 
     private final Transformer transformer;
