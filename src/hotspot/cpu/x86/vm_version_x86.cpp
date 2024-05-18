@@ -113,7 +113,7 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
   address clear_apx_test_state() {
 #   define __ _masm->
     address start = __ pc();
-    __ mov64(r15, 0L);
+    //__ mov64(r15, 0L);
     // FIXME Uncomment following code after OS enablement of
     // EGPR state save/restoration.
     //__ mov64(r16, 0L);
