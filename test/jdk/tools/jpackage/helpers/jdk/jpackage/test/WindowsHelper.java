@@ -151,7 +151,11 @@ public class WindowsHelper {
             //
             for (var extraPathComponent : List.of("PFiles64", "LocalApp")) {
                 if (Files.isDirectory(unpackDir.resolve(extraPathComponent))) {
-                    var installationSubDirectory = getInstallationSubDirectory(cmd);
+                    Path installationSubDirectory = getInstallationSubDirectory(cmd);
+                    Path from = Path.of(extraPathComponent).resolve(installationSubDirectory);
+                    Path to = installationSubDirectory;
+                    TKit.trace(String.format("Convert [%s] into [%s] in [%s] directory", from, to,
+                            unpackDir));
                     ThrowingRunnable.toRunnable(() -> {
                         Files.move(unpackDir.resolve(extraPathComponent).resolve(
                                 installationSubDirectory), unpackDir.resolve(
