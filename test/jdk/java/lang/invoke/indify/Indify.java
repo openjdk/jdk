@@ -27,6 +27,7 @@ import java.lang.classfile.*;
 import java.lang.classfile.constantpool.*;
 import java.lang.classfile.instruction.*;
 import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 import java.io.*;
 import java.lang.reflect.Modifier;
@@ -390,7 +391,7 @@ public class Indify {
             this.bytecode = bytecode;
             poolMarks = new char[bytecode.classModel.constantPool().size()];
         }
-        boolean transform() {
+        boolean transform() throws IOException {
             if (!initializeMarks())  return false;
             if (!findPatternMethods())  return false;
             if (!find_patternMethods()) return false;//TODO: this is temporary and will be merged with old method once fully implemented
@@ -434,7 +435,7 @@ public class Indify {
                     PoolEntry con = new_constants.get(conm);
                     if(blab++ == 0 && !quiet){
                         System.out.println();
-                        System.err.println("patching " +cm.thisClass().name() + "." + m.methodName());
+                        System.err.println("$$$$$$$$$$$$$$$----------------------------------------------------------------Patching Method: " +  m.methodName() + "------------------------------------------------------------------");
                     }
 
                     if(con instanceof InvokeDynamicEntry){
@@ -458,10 +459,8 @@ public class Indify {
                         }
 
                         assert (i.sizeInBytes() == 3 || i2.sizeInBytes() == 3);
-                        if (!quiet) System.err.println("Transfmoring the Method: "+ m.methodName() +" instruction: " + i + " invokedynamic: " + con.index() );
-
-
-                        System.err.println("----------------------------------------------------------------Transforming Method Instructions------------------------------------------------------------------");
+                        System.err.println("----------------------------------------------------------------Transforming Method INDY Instructions & Creating New ClassModels------------------------------------------------------------------}}}");
+                        if (!quiet) System.err.println(":::Transfmoring the Method: "+ m.methodName() +" instruction: " + i + " invokedynamic: " + con.index() );
                         MethodModel finalConm = conm;
                         codeTransform = (b, e) ->{
                             String a1 = null, a2 = null;
@@ -470,15 +469,13 @@ public class Indify {
                                 a2 = finalConm.methodName().stringValue();
                             }
                             if (e instanceof InvokeInstruction && (Objects.equals(a1, a2))){
-                                System.err.println("removing instruction invokestatic" + ((InvokeInstruction) e).name());
+                                System.err.println(">> Removing instruction invokestatic for Method: " + ((InvokeInstruction) e).name());
                                     b.andThen(b);
                             }
                             else b.with(e);
 
                         };
                         classTransform = ClassTransform.transformingMethodBodies(filter, codeTransform);
-
-                        System.err.println("----------------------------------------------------------------Creating New ClassModel------------------------------------------------------------------");
                         cm = java.lang.classfile.ClassFile.of().parse(
                                 java.lang.classfile.ClassFile.of(StackMapsOption.DROP_STACK_MAPS).transform(cm, classTransform)
                         );
@@ -487,16 +484,16 @@ public class Indify {
 
                         codeTransform = (b, e) ->{
                             if(e instanceof InvokeInstruction && ((InvokeInstruction) e).method().equals(((InvokeInstruction) i2).method())){
-                                System.err.println("removing instruction invokevirtual" + ((InvokeInstruction) e).name());
+                                System.err.println(">> Removing instruction invokevirtual for Method: " + ((InvokeInstruction) e).name());
                                 b.andThen(b);
-                                System.out.println("Adding invokedynamic instruction and nop");
+                                System.out.println(">> Adding invokedynamic instruction and nop instead of invoke virtual: " + ((InvokeDynamicEntry) con).name());
                                 b.invokeDynamicInstruction((InvokeDynamicEntry) con).nop();
                             } else b.with(e);
                         };
                         classTransform = ClassTransform.transformingMethodBodies(filter, codeTransform);
 
                         cm = java.lang.classfile.ClassFile.of().parse(
-                                java.lang.classfile.ClassFile.of(StackMapsOption.DROP_STACK_MAPS).transform(cm, classTransform)
+                                java.lang.classfile.ClassFile.of(StackMapsOption.GENERATE_STACK_MAPS).transform(cm, classTransform)
                         );
                         for (Object o : cm);
                         for (Object o : cm.constantPool());
@@ -512,6 +509,7 @@ public class Indify {
                         System.out.println();
                     } else {
                         assert(i.sizeInBytes() == 3);
+                        System.err.println("----------------------------------------------------------------Transforming Method LDC Instructions & Creating New ClassModels------------------------------------------------------------------}}}");
                         MethodModel finalConm = conm;
                         codeTransform = (b, e) ->{
                             String a1, a2 = null;
@@ -521,12 +519,12 @@ public class Indify {
                             }
                             if(e instanceof InvokeInstruction && Objects.equals(((InvokeInstruction) e).method().name().stringValue(), finalConm.methodName().stringValue())){
                                 b.ldc((LoadableConstantEntry) con);
-                                System.err.println("Transfmoring the Method: "+ m.methodName() +" instruction: invokestatic " + ((InvokeInstruction) e).type() + " to ldc: " + ((LoadableConstantEntry) con).constantValue() );
+                                System.err.println(":::Transfmoring the Method: "+ m.methodName() +" instruction: invokestatic " + ((InvokeInstruction) e).type() + " to ldc: " + ((LoadableConstantEntry) con).index() );
                             } else b.with(e);
                         };
                         classTransform = ClassTransform.transformingMethodBodies(filter, codeTransform);
                         cm = java.lang.classfile.ClassFile.of().parse(
-                                java.lang.classfile.ClassFile.of(StackMapsOption.DROP_STACK_MAPS).transform(cm, classTransform));
+                                java.lang.classfile.ClassFile.of(StackMapsOption.GENERATE_STACK_MAPS).transform(cm, classTransform));
                         for (Object o : cm);
                         for (Object o : cm.constantPool());
                         List<java.lang.classfile.Instruction> LdcIns = new ArrayList<>();
@@ -540,22 +538,38 @@ public class Indify {
                     }
                 }
             }
-            ClassHierarchyResolver classHierarchyResolver = classDesc -> {
-                // Treat all classes as interfaces
-                return ClassHierarchyResolver.ClassHierarchyInfo.ofInterface();
-            };
+            ClassHierarchyResolver classHierarchyResolver = classDesc -> ClassHierarchyResolver.ClassHierarchyInfo.ofInterface();
 
             try {
-                List<VerifyError> errors = of(ClassHierarchyResolverOption.of(classHierarchyResolver)).verify(cm);
+                List<VerifyError> errors = java.lang.classfile.ClassFile.of(StackMapsOption.DROP_STACK_MAPS,ClassHierarchyResolverOption.of(classHierarchyResolver)).verify(cm);
                 if (!errors.isEmpty()) {
                     for (VerifyError e : errors) {
-                        e.printStackTrace();
+                        System.err.println(e.getMessage());
                     }
                     throw new IOException("Verification failed");
-                }
-            } catch (IOException e) {
+                } else System.out.println("Verification passed");} catch (IOException e) {
                 System.err.println(e.getMessage());
             }
+
+            System.out.println();
+            System.out.println("---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------");
+
+            for(MethodModel mx : cm.methods()){
+                System.out.println("Method Instructions: "+mx.methodName().stringValue());
+                for(java.lang.classfile.Instruction i : getInstructions(mx)){
+                    System.out.println(i.opcode() );
+                }
+                System.out.println();
+                System.out.println();
+            }
+
+            byte[] nnnnnn = java.lang.classfile.ClassFile.of().transform(cm, ClassTransform.ACCEPT_ALL);
+
+            Files.write(Paths.get("NewClass.class"), nnnnnn );
+
+
+
+
             System.out.println();
 
 
@@ -754,7 +768,7 @@ public class Indify {
         }
 
         ClassModel transformFromCPbuilder(ClassModel oldClassModel, ConstantPoolBuilder cpBuilder){
-            byte[] new_bytes = java.lang.classfile.ClassFile.of(StackMapsOption.DROP_STACK_MAPS).transform(oldClassModel, ClassTransform.endHandler(clb -> {
+            byte[] new_bytes = java.lang.classfile.ClassFile.of(StackMapsOption.GENERATE_STACK_MAPS).transform(oldClassModel, ClassTransform.endHandler(clb -> {
                 for (PoolEntry entry: cpBuilder) {
                     if (entry instanceof Utf8Entry utf8Entry) {
                         clb.constantPool().utf8Entry(utf8Entry.stringValue());
