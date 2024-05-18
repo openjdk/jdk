@@ -389,14 +389,21 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
                 "{%s}", role.guidOf(path)));
 
         if (role == Component.Shortcut) {
-            xml.writeStartElement("Condition");
             String property = shortcutFolders.stream().filter(shortcutFolder -> {
                 return path.startsWith(shortcutFolder.root);
             }).map(shortcutFolder -> {
                 return shortcutFolder.property;
             }).findFirst().get();
-            xml.writeCharacters(property);
-            xml.writeEndElement();
+            switch (getWixVersion()) {
+                case Wix4 -> {
+                    xml.writeAttribute("Condition", property);
+                }
+                case Wix3, Wix36 -> {
+                    xml.writeStartElement("Condition");
+                    xml.writeCharacters(property);
+                    xml.writeEndElement();
+                }
+            }
         }
 
         boolean isRegistryKeyPath = !systemWide || role.isRegistryKeyPath();
