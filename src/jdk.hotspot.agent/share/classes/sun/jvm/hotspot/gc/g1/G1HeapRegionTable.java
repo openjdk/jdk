@@ -90,7 +90,7 @@ public class G1HeapRegionTable extends VMObject {
         return shiftByField.getValue(addr);
     }
 
-    private class HeapRegionIterator implements Iterator<G1HeapRegion> {
+    private class G1HeapRegionIterator implements Iterator<G1HeapRegion> {
         private long index;
         private long length;
         private G1HeapRegion next;
@@ -118,7 +118,7 @@ public class G1HeapRegionTable extends VMObject {
         @Override
         public void remove()     { /* not supported */      }
 
-        HeapRegionIterator(long totalLength) {
+        G1HeapRegionIterator(long totalLength) {
             index = 0;
             length = totalLength;
             positionToNext();
@@ -126,7 +126,7 @@ public class G1HeapRegionTable extends VMObject {
     }
 
     public Iterator<G1HeapRegion> heapRegionIterator(long committedLength) {
-        return new HeapRegionIterator(committedLength);
+        return new G1HeapRegionIterator(committedLength);
     }
 
     public G1HeapRegionTable(Address addr) {

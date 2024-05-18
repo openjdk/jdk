@@ -200,7 +200,7 @@ void G1CollectionSetCandidates::clear() {
 void G1CollectionSetCandidates::sort_marking_by_efficiency() {
   G1CollectionCandidateListIterator iter = _marking_regions.begin();
   for (; iter != _marking_regions.end(); ++iter) {
-    HeapRegion* hr = (*iter)->_r;
+    G1HeapRegion* hr = (*iter)->_r;
     (*iter)->_gc_efficiency = hr->calc_gc_efficiency();
   }
   _marking_regions.sort_by_efficiency();
