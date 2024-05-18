@@ -39,118 +39,176 @@ import static java.lang.classfile.ClassFile.*;
 import static java.lang.constant.DirectMethodHandleDesc.Kind.*;
 
 /**
- * Transform one or more class files to incorporate JSR 292 features,
- * such as {@code invokedynamic}.
+ * Transform one or more class files to incorporate JSR 292 features, such as {@code invokedynamic}.
  * <p>
- * This is a standalone program in a single source file.
- * In this form, it may be useful for test harnesses, small experiments, and javadoc examples.
- * Copies of this file may show up in multiple locations for standalone usage.
- * The primary maintained location of this file is as follows:
+ * This standalone program, contained within a single source file, is useful for test harnesses, small experiments, and Javadoc examples.
+ * Copies of this file may be distributed to various locations for standalone usage. The primary maintained location of this file is:
  * <a href="http://kenai.com/projects/ninja/sources/indify-repo/content/src/indify/Indify.java">
  * http://kenai.com/projects/ninja/sources/indify-repo/content/src/indify/Indify.java</a>
+ * </p>
+ *
  * <p>
- * Static private methods named MH_x and MT_x (where x is arbitrary)
- * must be stereotyped generators of MethodHandle and MethodType
- * constants.  All calls to them are transformed to {@code CONSTANT_MethodHandle}
- * and {@code CONSTANT_MethodType} "ldc" instructions.
- * The stereotyped code must create method types by calls to {@code methodType} or
- * {@code fromMethodDescriptorString}.  The "lookup" argument must be created
- * by calls to {@code java.lang.invoke.MethodHandles#lookup MethodHandles.lookup}.
- * The class and string arguments must be constant.
- * The following methods of {@code java.lang.invoke.MethodHandle.Lookup Lookup} are
- * allowed for method handle creation: {@code findStatic}, {@code findVirtual},
- * {@code findConstructor}, {@code findSpecial},
- * {@code findGetter}, {@code findSetter},
- * {@code findStaticGetter}, or {@code findStaticSetter}.
- * The call to one of these methods must be followed immediately
- * by an {@code areturn} instruction.
- * The net result of the call to the MH_x or MT_x method must be
- * the creation of a constant method handle.  Thus, replacing calls
- * to MH_x or MT_x methods by {@code ldc} instructions should leave
- * the meaning of the program unchanged.
+ * Static private methods named MH_x and MT_x (where x is arbitrary) must generate MethodHandle and MethodType constants.
+ * All calls to these methods are transformed into {@code CONSTANT_MethodHandle} and {@code CONSTANT_MethodType} "ldc" instructions.
+ * The code must create method types using {@code methodType} or {@code fromMethodDescriptorString}. The "lookup" argument must be
+ * created using {@code java.lang.invoke.MethodHandles#lookup MethodHandles.lookup}. The class and string arguments must be constant.
+ * The following methods of {@code java.lang.invoke.MethodHandle.Lookup Lookup} are allowed for method handle creation:
+ * {@code findStatic}, {@code findVirtual}, {@code findConstructor}, {@code findSpecial}, {@code findGetter}, {@code findSetter},
+ * {@code findStaticGetter}, or {@code findStaticSetter}. The call to one of these methods must be followed immediately by an
+ * {@code areturn} instruction. Replacing calls to MH_x or MT_x methods with {@code ldc} instructions should not change the program's
+ * meaning.
+ * </p>
+ *
  * <p>
- * Static private methods named INDY_x must be stereotyped generators
- * of {@code invokedynamic} call sites.
- * All calls to them must be immediately followed by
- * {@code invokeExact} calls.
- * All such pairs of calls are transformed to {@code invokedynamic}
- * instructions.  Each INDY_x method must begin with a call to a
- * MH_x method, which is taken to be its bootstrap method.
- * The method must be immediately invoked (via {@code invokeGeneric}
- * on constant lookup, name, and type arguments.  An object array of
- * constants may also be appended to the {@code invokeGeneric call}.
- * This call must be cast to {@code CallSite}, and the result must be
- * immediately followed by a call to {@code dynamicInvoker}, with the
+ * Static private methods named INDY_x must generate {@code invokedynamic} call sites. All calls to them must be immediately followed
+ * by {@code invokeExact} calls. These pairs of calls are transformed into {@code invokedynamic} instructions. Each INDY_x method must
+ * start with a call to an MH_x method, which acts as its bootstrap method. This method must be immediately invoked (via {@code invokeGeneric})
+ * on constant lookup, name, and type arguments. An object array of constants may also be appended to the {@code invokeGeneric} call.
+ * This call must be cast to {@code CallSite}, and the result must be immediately followed by a call to {@code dynamicInvoker}, with the
  * resulting method handle returned.
+ * </p>
+ *
  * <p>
- * The net result of all of these actions is equivalent to the JVM's
- * execution of an {@code invokedynamic} instruction in the unlinked state.
- * Running this code once should produce the same results as running
- * the corresponding {@code invokedynamic} instruction.
- * In order to model the caching behavior, the code of an INDY_x
- * method is allowed to begin with getstatic, aaload, and if_acmpne
- * instructions which load a static method handle value and return it
- * if the value is non-null.
- * <p>
- * Example usage:
+ * These actions collectively simulate the JVM's execution of an {@code invokedynamic} instruction in the unlinked state. Running this
+ * code once should yield the same results as running the corresponding {@code invokedynamic} instruction. To model caching behavior,
+ * an INDY_x method's code can begin with getstatic, aaload, and if_acmpne instructions to load a static method handle value and return
+ * it if the value is non-null.
+ * </p>
+ *
+ * <h3>Example usage:</h3>
  * <blockquote><pre>
-$ JAVA_HOME=(some recent OpenJDK 7 build)
-$ ant
-$ $JAVA_HOME/bin/java -cp build/classes indify.Indify --overwrite --dest build/testout build/classes/indify/Example.class
-$ $JAVA_HOME/bin/java -cp build/classes indify.Example
-MT = (java.lang.Object)java.lang.Object
-MH = adder(int,int)java.lang.Integer
-adder(1,2) = 3
-calling indy:  42
-$ $JAVA_HOME/bin/java -cp build/testout indify.Example
-(same output as above)
+ * $ JAVA_HOME=(some recent OpenJDK 7 build)
+ * $ ant
+ * $ $JAVA_HOME/bin/java -cp build/classes indify.Indify --overwrite --dest build/testout build/classes/indify/Example.class
+ * $ $JAVA_HOME/bin/java -cp build/classes indify.Example
+ * MT = (java.lang.Object)java.lang.Object
+ * MH = adder(int,int)java.lang.Integer
+ * adder(1,2) = 3
+ * calling indy:  42
+ * $ $JAVA_HOME/bin/java -cp build/testout indify.Example
+ * (same output as above)
  * </pre></blockquote>
+ *
  * <p>
  * A version of this transformation built on top of <a href="http://asm.ow2.org/">http://asm.ow2.org/</a> would be welcome.
+ * </p>
+ *
  * @author John Rose
  */
+
 public class Indify {
     public static void main(String... av) throws IOException {
         new Indify().run(av);
     }
 
+    /**
+     * Destination file where output will be written.
+     */
     public File dest;
+
+    /**
+     * Array of classpath entries, with the default being the current directory.
+     */
     public String[] classpath = {"."};
+
+    /**
+     * Flag indicating whether to continue processing after encountering an error.
+     * Default is {@code false}.
+     */
     public boolean keepgoing = false;
+
+    /**
+     * Flag indicating whether to expand properties in input files.
+     * Default is {@code false}.
+     */
     public boolean expandProperties = false;
+
+    /**
+     * Flag indicating whether to overwrite existing files.
+     * Default is {@code false}.
+     */
     public boolean overwrite = false;
+
+    /**
+     * Flag indicating whether to suppress output messages.
+     * Default is {@code false}.
+     */
     public boolean quiet = false;
+
+    /**
+     * Flag indicating whether to enable verbose output.
+     * Default is {@code false}.
+     */
     public boolean verbose = false;
+
+    /**
+     * Flag indicating whether to process all items.
+     * Default is {@code false}.
+     */
     public boolean all = false;
+
+    /**
+     * Count of verify specifiers, with the default being -1 indicating no verification.
+     */
     public int verifySpecifierCount = -1;
 
+    protected ClassModel classModel;
+
+    ConstantPoolBuilder constantPoolBuilder;
+
+
+    /**
+     * Processes command-line arguments to transform class files by incorporating JSR 292 features.
+     * <p>
+     * This method accepts various options and a list of files to be processed. If the '--java' option
+     * is specified, it runs the application with the provided arguments. Otherwise, it processes
+     * each file using the {@code indify} method.
+     * </p>
+     *
+     * @param av the command-line arguments
+     * @throws IOException if an I/O error occurs during file processing
+     * @throws IllegalArgumentException if the arguments are invalid
+     */
     public void run(String... av) throws IOException {
         List<String> avl = new ArrayList<>(Arrays.asList(av));
         parseOptions(avl);
-        if (avl.isEmpty())
+
+        if (avl.isEmpty()) {
             throw new IllegalArgumentException("Usage: indify [--dest dir] [option...] file...");
+        }
+
         if ("--java".equals(avl.get(0))) {
             avl.remove(0);
             try {
                 runApplication(avl.toArray(new String[0]));
             } catch (Exception ex) {
-                if (ex instanceof RuntimeException)  throw (RuntimeException) ex;
+                if (ex instanceof RuntimeException) {
+                    throw (RuntimeException) ex;
+                }
                 throw new RuntimeException(ex);
             }
             return;
         }
+
         Exception err = null;
         for (String a : avl) {
             try {
                 indify(a);
             } catch (Exception ex) {
-                if (err == null)  err = ex;
-                System.err.println("failure on "+a);
-                if (!keepgoing)  break;
+                if (err == null) {
+                    err = ex;
+                }
+                System.err.println("Failure on " + a);
+                if (!keepgoing) {
+                    break;
+                }
             }
         }
+
         if (err != null) {
-            if (err instanceof IOException)  throw (IOException) err;
+            if (err instanceof IOException) {
+                throw (IOException) err;
+            }
             throw (RuntimeException) err;
         }
     }
@@ -178,7 +236,7 @@ public class Indify {
                 }
                 switch (a) {
                 case "--java":
-                    return;  // keep this argument
+                    return;
                 case "-d": case "--dest": case "-d=": case "--dest=":
                     dest = new File(a2 != null ? a2 : maybeExpandProperties(av.remove(1)));
                     break;
@@ -186,30 +244,29 @@ public class Indify {
                     classpath = maybeExpandProperties(av.remove(1)).split("["+File.pathSeparatorChar+"]");
                     break;
                 case "-k": case "--keepgoing": case "--keepgoing=":
-                    keepgoing = booleanOption(a2);  // print errors but keep going
+                    keepgoing = booleanOption(a2);
                     break;
                 case "--expand-properties": case "--expand-properties=":
-                    expandProperties = booleanOption(a2);  // expand property references in subsequent arguments
+                    expandProperties = booleanOption(a2);
                     break;
                 case "--verify-specifier-count": case "--verify-specifier-count=":
                     verifySpecifierCount = Integer.valueOf(a2);
                     break;
                 case "--overwrite": case "--overwrite=":
-                    overwrite = booleanOption(a2);  // overwrite output files
+                    overwrite = booleanOption(a2);
                     break;
                 case "--all": case "--all=":
-                    all = booleanOption(a2);  // copy all classes, even if no patterns
+                    all = booleanOption(a2);
                     break;
                 case "-q": case "--quiet": case "--quiet=":
-                    quiet = booleanOption(a2);  // less output
+                    quiet = booleanOption(a2);
                     break;
                 case "-v": case "--verbose": case "--verbose=":
-                    verbose = booleanOption(a2);  // more output
+                    verbose = booleanOption(a2);
                     break;
                 default:
                     throw new IllegalArgumentException("unrecognized flag: "+a);
                 }
-                continue;
             } else {
                 break;
             }
@@ -268,6 +325,7 @@ public class Indify {
 
     public void indifyFile(File f, File dest) throws IOException {
         if (verbose)  System.err.println("reading "+f);
+        parseClassFile(f);
         Bytecode bytecode = new Bytecode(f); //creating new bytecode instance to trigger the api to read the class file for debugging
         ClassFile cf = new ClassFile(f);
         Logic logic = new Logic(cf, bytecode);
@@ -1918,6 +1976,31 @@ public class Indify {
         catch(IOException e){
             throw new IOException("Error reading file: "+f);
         }
+    }
+
+    private void parseClassFile(File f) throws IOException{
+        byte[] bytes = openInputIntoBytes(f);
+
+        ClassHierarchyResolver classHierarchyResolver = classDesc -> {
+            // Treat all classes as interfaces
+            return ClassHierarchyResolver.ClassHierarchyInfo.ofInterface();
+        };
+
+        try {
+            List<VerifyError> errors = of(ClassHierarchyResolverOption.of(classHierarchyResolver)).verify(bytes);
+            if (!errors.isEmpty()) {
+                for (VerifyError e : errors) {
+                    System.err.println(e.getMessage());
+                }
+                throw new IOException("Verification failed");
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        classModel = of().parse(bytes);
+
+
     }
 
     private DataOutputStream openOutput(File f) throws IOException {
