@@ -470,22 +470,10 @@ public class Indify {
                                 a1 = ((InvokeInstruction) e).method().name().stringValue();
                                 a2 = finalConm.methodName().stringValue();
                             }
-                            if (e instanceof InvokeInstruction && (Objects.equals(a1, a2))){
+                            if (e instanceof InvokeInstruction && Objects.equals(a1, a2)) {
                                 System.err.println(">> Removing instruction invokestatic for Method: " + ((InvokeInstruction) e).name());
-                                    b.andThen(b);
-                            }
-                            else b.with(e);
-
-                        };
-                        classTransform = ClassTransform.transformingMethodBodies(filter, codeTransform);
-                        cm = java.lang.classfile.ClassFile.of(StackMapsOption.DROP_STACK_MAPS).parse(
-                                java.lang.classfile.ClassFile.of(StackMapsOption.DROP_STACK_MAPS).transform(cm, classTransform)
-                        );
-                        for (Object o : cm);
-                        for (Object o : cm.constantPool());
-
-                        codeTransform = (b, e) ->{
-                            if(stack.peek() && e instanceof InvokeInstruction && ((InvokeInstruction) e).method().equals(((InvokeInstruction) i2).method())){
+                                b.andThen(b);
+                            } else if (stack.peek() && e instanceof InvokeInstruction && ((InvokeInstruction) e).method().equals(((InvokeInstruction) i2).method())) {
                                 System.err.println(">> Removing instruction invokevirtual for Method: " + ((InvokeInstruction) e).name());
                                 b.andThen(b);
                                 System.out.println(">> Adding invokedynamic instruction and nop instead of invoke virtual: " + ((InvokeDynamicEntry) con).name());
@@ -493,7 +481,9 @@ public class Indify {
 
                                 stack.pop();
                                 stack.push(false);
-                            } else b.with(e);
+                            } else {
+                                b.with(e);
+                            }
                         };
                         classTransform = ClassTransform.transformingMethodBodies(filter, codeTransform);
 
