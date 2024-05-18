@@ -302,11 +302,12 @@ public class SinceChecker {
         if (Files.exists(moduleInfoFile)) {
             try {
                 String moduleInfoContent = Files.readString(moduleInfoFile);
-                version = extractSinceVersionFromText(moduleInfoContent).toString();
+                var extractedVersion = extractSinceVersionFromText(moduleInfoContent);
+                if (extractedVersion != null) {
+                    version = extractedVersion.toString();
+                }
             } catch (IOException e) {
                 error("module-info.java not found or couldn't be opened AND this module has no unqualified exports");
-            } catch (NullPointerException e) {
-                error("module-info.java does not contain an `@since`");
             }
         }
         return version;
@@ -324,11 +325,12 @@ public class SinceChecker {
         if (Files.exists(pkgInfo)) {
             try {
                 String packageContent = Files.readString(pkgInfo);
-                packageTopVersion = extractSinceVersionFromText(packageContent).toString();
+                var extractedVersion = extractSinceVersionFromText(packageContent);
+                if (extractedVersion != null) {
+                    packageTopVersion = extractedVersion.toString();
+                }
             } catch (IOException e) {
                 error(ed.getPackage().getQualifiedName() + ": package-info.java not found or couldn't be opened");
-            } catch (NullPointerException e) {
-                error(ed.getPackage().getQualifiedName() + ": package-info.java  does not contain an `@since`");
             }
         }
         return packageTopVersion;
