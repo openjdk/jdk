@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,9 +50,7 @@
  * <p> The principal supporting class is {@link RandomGeneratorFactory}. This
  * can be used to generate multiple random number generators for a specific
  * algorithm. {@link RandomGeneratorFactory} also provides methods for
- * selecting random number generator algorithms. RandomGeneratorFactory
- * registers implementations of {@link RandomGenerator} interface using the
- * service provider API.
+ * selecting random number generator algorithms.
  *
  * <p> An important subsidiary interface is
  * {@link RandomGenerator.StreamableGenerator}, which provides methods for
@@ -636,4 +634,3 @@
  * @since   17
  */
 package java.util.random;
-

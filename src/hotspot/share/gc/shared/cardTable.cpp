@@ -27,7 +27,7 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gcLogPrecious.hpp"
 #include "gc/shared/gc_globals.hpp"
-#include "gc/shared/space.inline.hpp"
+#include "gc/shared/space.hpp"
 #include "logging/log.hpp"
 #include "memory/virtualspace.hpp"
 #include "nmt/memTracker.hpp"
