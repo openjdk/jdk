@@ -69,7 +69,7 @@ public class ConfigFileTest {
         "100000", "15000", "100000", "10000", "5000", "0", "1000", "10", "100", "10000"};
 
     // values from jaxp.properties, as of JDK 23
-    String[] defaultValues ={"true", "false", "continue", "allow", "64000", "10000000",
+    String[] defaultValues ={"true", "false", "continue", "allow", "64000", "50000000",
         "0", "1000000", "3000000", "10000", "5000", "0", "1000", "10", "100", "10000"};
 
     public static void main(String args[]) throws Exception {
