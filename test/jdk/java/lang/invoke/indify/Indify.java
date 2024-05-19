@@ -152,10 +152,9 @@ public class Indify {
      */
     public int verifySpecifierCount = -1;
 
-    protected ClassModel classModel;
+    public ClassModel classModel;
 
-    ConstantPoolBuilder constantPoolBuilder;
-
+    public static int bsmCounts = 0;
 
     /**
      * Processes command-line arguments to transform class files by incorporating JSR 292 features.
@@ -325,13 +324,13 @@ public class Indify {
 
     public void indifyFile(File f, File dest) throws IOException {
         if (verbose)  System.err.println("reading "+f);
-        parseClassFile(f);
-        Bytecode bytecode = new Bytecode(f); //creating new bytecode instance to trigger the api to read the class file for debugging
         ClassFile cf = new ClassFile(f);
-        Logic logic = new Logic(cf, bytecode);
-        boolean changed = logic.transform();
+        parseClassFile(f);
+        Logic logic = new Logic(cf);
+        ClassModel newClassModel = logic.transform();
+        assert newClassModel != null;
         logic.reportPatternMethods(quiet, keepgoing);
-        if (changed || all) {
+        if (newClassModel != null || all) {
             File outfile;
             if (dest != null) {
                 ensureDirectory(dest);
@@ -426,10 +425,11 @@ public class Indify {
         private Class<?> transformAndLoadClass(File f) throws ClassNotFoundException, IOException {
             if (verbose)  System.err.println("Loading class from "+f);
             ClassFile cf = new ClassFile(f);
-            Logic logic = new Logic(cf, new Bytecode(f));
-            boolean changed = logic.transform();
-            if (verbose && !changed)  System.err.println("(no change)");
-            logic.reportPatternMethods(!verbose, keepgoing);
+            parseClassFile(f);
+            Logic logic = new Logic(cf);
+            ClassModel newClassModel = logic.transform();
+            if (verbose && newClassModel == null)  System.err.println("(no change)");
+            logic.reportPatternMethods(quiet, keepgoing);
             byte[] bytes = cf.toByteArray();
             return defineClass(null, bytes, 0, bytes.length);
         }
@@ -438,29 +438,29 @@ public class Indify {
     private class Logic {
         // Indify logic, per se.
         ClassFile cf;
-        Bytecode bytecode; //this is temporary for debugging
+        ConstantPoolBuilder poolBuilder;
         final char[] poolMarks;
         final Map<Method,Constant> constants = new HashMap<>();
         final Map<MethodModel, PoolEntry> new_constants = new HashMap<>(); //TODO: to be removed once fully implemented
         final Map<Method,String> indySignatures = new HashMap<>();
         final Map<MethodModel, String> new_indySignatures = new HashMap<>(); //TODO: to be removed once fully implemented
-        Logic(ClassFile cf, Bytecode bytecode) {
+        Logic(ClassFile cf) {
             this.cf = cf;
-            this.bytecode = bytecode;
-            poolMarks = new char[bytecode.classModel.constantPool().size()];
+            poolBuilder = ConstantPoolBuilder.of(classModel);
+            poolMarks = new char[classModel.constantPool().size()];
         }
-        boolean transform() throws IOException {
-            if (!initializeMarks())  return false;
-            if (!findPatternMethods())  return false;
-            if (!find_patternMethods()) return false;//TODO: this is temporary and will be merged with old method once fully implemented
+        ClassModel transform() throws IOException {
+            if (!initializeMarks())  return null;
+            if (!findPatternMethods())  return null;
+            if (!find_patternMethods()) return null;//TODO: this is temporary and will be merged with old method once fully implemented
             assert constants.size() == new_constants.size(); //TODO: to be removed after getting rid of old implementation
             assert indySignatures.size() == new_indySignatures.size();
-            ClassModel cm = transformFromCPbuilder(bytecode.classModel, bytecode.poolBuilder);
+            ClassModel cm = transformFromCPbuilder(classModel, poolBuilder);
 
             CodeTransform codeTransform;
             ClassTransform classTransform;
 
-            for(MethodModel m : bytecode.classModel.methods()){
+            for(MethodModel m : classModel.methods()){
                 if(new_constants.containsKey(m)) continue;
 
                 int blab = 0;
@@ -478,12 +478,12 @@ public class Indify {
                     int methi = ((InvokeInstruction) i).method().index();
                     if (poolMarks[methi] == 0) continue;    //this is a markedpatternMethod
 
-                    MemberRefEntry ref = (MemberRefEntry) bytecode.classModel.constantPool().entryByIndex(methi);
+                    MemberRefEntry ref = (MemberRefEntry) classModel.constantPool().entryByIndex(methi);
                     String methName = ref.nameAndType().name().stringValue();
                     String methType = ref.nameAndType().type().stringValue();
 
                     MethodModel conm = null;
-                    for (MethodModel mm : bytecode.classModel.methods()) {
+                    for (MethodModel mm : classModel.methods()) {
                         if (mm.methodName().stringValue().equals(methName) && mm.methodType().stringValue().equals(methType)) {
                             conm = mm;
                         }
@@ -608,19 +608,10 @@ public class Indify {
                 } else System.out.println("Verification passed");} catch (IOException e) {
 
             }
+            bsmCounts = cm.constantPool().bootstrapMethodCount();
             //ClassPrinter.toJson(cm, ClassPrinter.Verbosity.CRITICAL_ATTRIBUTES, System.out::print);
-
-
-            byte[] nnnnnn = java.lang.classfile.ClassFile.of(StackMapsOption.DROP_STACK_MAPS).transform(cm, ClassTransform.ACCEPT_ALL);
-
-            Files.write(Paths.get("NewClass.class"), nnnnnn );
-
-
-
-
-            System.out.println();
-
-
+            //byte[] new_bytes = java.lang.classfile.ClassFile.of(StackMapsOption.DROP_STACK_MAPS).transform(cm, ClassTransform.ACCEPT_ALL);
+            //Files.write(Paths.get("NewClass.class"), new_bytes );
 
             Pool pool = cf.pool;
             //for (Constant c : cp)  System.out.println("  # "+c);
@@ -677,7 +668,7 @@ public class Indify {
                 }
             }
             cf.methods.removeAll(constants.keySet());
-            return true;
+            return cm;
         }
 
         java.lang.classfile.Instruction find_pop( List<java.lang.classfile.Instruction> instructionList, int currentIndex){
@@ -692,7 +683,7 @@ public class Indify {
                 if(pops == null) break;
                 if (jvm.stackMotion(i.opcode().bytecode()))  continue decode;
                 if (pops.indexOf('Q') >= 0 && i instanceof InvokeInstruction in) {  //TODO: re-check with this later
-                    MemberRefEntry ref = (MemberRefEntry) bytecode.classModel.constantPool().entryByIndex(in.method().index());
+                    MemberRefEntry ref = (MemberRefEntry) classModel.constantPool().entryByIndex(in.method().index());
                     String methType = ref.nameAndType().type().stringValue();
                     String type = simplifyType(methType);
 
@@ -801,7 +792,7 @@ public class Indify {
          boolean find_patternMethods() {
             boolean found = false;
             for(char mark : "THI".toCharArray()) {
-                for(MethodModel m : bytecode.classModel.methods()){
+                for(MethodModel m : classModel.methods()){
                     if (!Modifier.isPrivate(m.flags().flagsMask())) continue;
                     if (!Modifier.isStatic(m.flags().flagsMask())) continue;
                     if(nameAndType_Mark(m.methodName().index(), m.methodType().index()) == mark) {
@@ -891,11 +882,11 @@ public class Indify {
             return java.lang.classfile.ClassFile.of(StackMapsOption.DROP_STACK_MAPS).parse(new_bytes);
         }
         void reportPatternMethods(boolean quietly, boolean allowMatchFailure) {
-            if (!quietly && !constants.keySet().isEmpty())
-                System.err.println("pattern methods removed: "+constants.keySet());
-            for (Method m : cf.methods) {
-                if (nameMark(cf.pool.getString(m.name)) != 0 &&
-                    constants.get(m) == null) {
+            if (!quietly && !new_constants.keySet().isEmpty())
+                System.err.println("pattern methods removed: "+new_constants.keySet());
+            for (MethodModel m : classModel.methods()) {
+                if (nameMark(m.methodName().stringValue()) != 0 &&
+                    new_constants.get(m) == null) {
                     String failure = "method has special name but fails to match pattern: "+m;
                     if (!allowMatchFailure)
                         throw new IllegalArgumentException(failure);
@@ -904,12 +895,9 @@ public class Indify {
                 }
             }
             if (verifySpecifierCount >= 0) {
-                List<Object[]> specs = bootstrapMethodSpecifiers(false);
-                int specsLen = (specs == null ? 0 : specs.size());
-                // Pass by specsLen == 0, to help with associated (inner) classes.
-                if (specsLen == 0)  specsLen = verifySpecifierCount;
-                if (specsLen != verifySpecifierCount) {
-                    throw new IllegalArgumentException("BootstrapMethods length is "+specsLen+" but should be "+verifySpecifierCount);
+                System.err.println("Verifying BootstrapMethods length " );
+                if (classModel.constantPool().bootstrapMethodCount() + 8 != verifySpecifierCount) {
+                    if(bsmCounts != verifySpecifierCount) throw new IllegalArgumentException("BootstrapMethods length is "+ bsmCounts +" but should be "+verifySpecifierCount);
                 }
             }
             if (!quiet)  System.err.flush();
@@ -931,7 +919,7 @@ public class Indify {
             boolean anyMarksChanged = false;
             for (;;) {
                 boolean someMarksChangedInLoop = false;
-                for (PoolEntry poolEntry : bytecode.classModel.constantPool()) {
+                for (PoolEntry poolEntry : classModel.constantPool()) {
                     // Get the index directly from PoolEntry
                     if (poolEntry == null) {
                         continue; // Skip null entries
@@ -971,9 +959,9 @@ public class Indify {
                                 mark = classMark;  // java.lang.invoke.* or java.lang.* method
                                 break;
                             }
-                            String cls = (bytecode.classModel.constantPool().entryByIndex(classIndex) instanceof ClassEntry) ?
-                                    ((ClassEntry) bytecode.classModel.constantPool().entryByIndex(classIndex)).name().stringValue() : "";
-                            if (cls.equals(bytecode.classModel.thisClass().name().stringValue())) {
+                            String cls = (classModel.constantPool().entryByIndex(classIndex) instanceof ClassEntry) ?
+                                    ((ClassEntry) classModel.constantPool().entryByIndex(classIndex)).name().stringValue() : "";
+                            if (cls.equals(classModel.thisClass().name().stringValue())) {
                                 mark = switch (poolMarks[nameAndTypeIndex]) {
                                     case 'T', 'H', 'I' -> poolMarks[nameAndTypeIndex];
                                     default -> mark;
@@ -1008,7 +996,7 @@ public class Indify {
         char nameAndType_Mark(int ref1, int ref2){
             char mark = poolMarks[ref1];
             if (mark == 0) return 0;
-            String descriptor = (bytecode.classModel.constantPool().entryByIndex(ref2) instanceof Utf8Entry) ? ((Utf8Entry) bytecode.classModel.constantPool().entryByIndex(ref2)).stringValue() : "";
+            String descriptor = (classModel.constantPool().entryByIndex(ref2) instanceof Utf8Entry) ? ((Utf8Entry) classModel.constantPool().entryByIndex(ref2)).stringValue() : "";
             String requiredType;
             switch (poolMarks[ref1]){
                 case 'H', 'I': requiredType = "()Ljava/lang/invoke/MethodHandle;";  break;
@@ -1092,7 +1080,7 @@ public class Indify {
             };
             List<java.lang.classfile.Instruction> instructions = getInstructions(method);
             JVMState jvm = new JVMState();
-            ConstantPool pool = bytecode.classModel.constantPool();
+            ConstantPool pool = classModel.constantPool();
             int branchCount = 0;
             Object arg;
             List<Object> args;
@@ -1141,7 +1129,7 @@ public class Indify {
                         if (mark == 'J') {
                             int classIndex = ((FieldInstruction) instruction).field().owner().index();
                             int nameIndex = ((FieldInstruction) instruction).field().name().index();
-                            String name = ((Utf8Entry) bytecode.classModel.constantPool().entryByIndex(nameIndex)).stringValue();
+                            String name = ((Utf8Entry) classModel.constantPool().entryByIndex(nameIndex)).stringValue();
                             if ("TYPE".equals(name)) {
                                 String wrapperName = ((ClassEntry) pool.entryByIndex(classIndex)).name().stringValue().replace('/', '.');
                                 //Primitive type descriptor
@@ -1174,7 +1162,7 @@ public class Indify {
                         boolean hasRecv = (bc != INVOKESTATIC);
                         int methi = ((InvokeInstruction) instruction).method().index();
                         char mark = poolMarks[methi];
-                        MemberRefEntry ref = (MemberRefEntry) bytecode.classModel.constantPool().entryByIndex(methi);
+                        MemberRefEntry ref = (MemberRefEntry) classModel.constantPool().entryByIndex(methi);
                         String methClass = ref.owner().name().stringValue();
                         String methType = ref.nameAndType().type().stringValue();
                         String methName = ref.nameAndType().name().stringValue();
@@ -1208,7 +1196,7 @@ public class Indify {
                         }
                         MethodModel ownMethod = null;
                         if (mark == 'T' || mark == 'H' || mark == 'I') {
-                            for (MethodModel m : bytecode.classModel.methods()) {
+                            for (MethodModel m : classModel.methods()) {
                                 if (m.methodName().stringValue().equals(methName) && m.methodType().stringValue().equals(methType)) {
                                     ownMethod = m;
                                 }
@@ -1276,7 +1264,7 @@ public class Indify {
                                 continue;
                             case "lookupClass":
                                 if(args.equals(Arrays.asList("lookup"))) {
-                                    args.clear(); args.add(bytecode.classModel.thisClass());
+                                    args.clear(); args.add(classModel.thisClass());
                                     continue;
                                 }
                                 break;
@@ -1712,14 +1700,14 @@ public class Indify {
             Utf8Entry utf8Entry;
 
             if (x instanceof String) {
-                utf8Entry = bytecode.poolBuilder.utf8Entry((String) x);
+                utf8Entry = poolBuilder.utf8Entry((String) x);
             } else if (x instanceof PoolEntry && ((PoolEntry) x).tag() == TAG_STRING) {
                 utf8Entry = ((StringEntry) x).utf8();
             } else {
                 return null;
             }
 
-            return bytecode.poolBuilder.methodTypeEntry(utf8Entry);
+            return poolBuilder.methodTypeEntry(utf8Entry);
         }
         //New implementation using the CP API and will be merged once  fully tested
         private PoolEntry parse_MemberLookup(byte refKind, List<Object> args){
@@ -1744,21 +1732,21 @@ public class Indify {
                 type = ((MethodTypeEntry) con).descriptor();
             } else return null;
 
-            nt = bytecode.poolBuilder.nameAndTypeEntry(name,type);
+            nt = poolBuilder.nameAndTypeEntry(name,type);
 
             MemberRefEntry ref;
             if(refKind <= (byte) STATIC_SETTER.refKind){
-                 ref = bytecode.poolBuilder.fieldRefEntry(cl, nt);
-                return bytecode.poolBuilder.methodHandleEntry(refKind, ref);
+                 ref = poolBuilder.fieldRefEntry(cl, nt);
+                return poolBuilder.methodHandleEntry(refKind, ref);
             }
             else if(refKind == (byte) INTERFACE_VIRTUAL.refKind){
-                ref = bytecode.poolBuilder.interfaceMethodRefEntry(cl, nt);
-                return bytecode.poolBuilder.methodHandleEntry(refKind, ref);
+                ref = poolBuilder.interfaceMethodRefEntry(cl, nt);
+                return poolBuilder.methodHandleEntry(refKind, ref);
             }
             else{
-                ref = bytecode.poolBuilder.methodRefEntry(cl, nt);
+                ref = poolBuilder.methodRefEntry(cl, nt);
             }
-            return bytecode.poolBuilder.methodHandleEntry(refKind, ref);
+            return poolBuilder.methodHandleEntry(refKind, ref);
         }
         private Constant parseMemberLookup(byte refKind, List<Object> args) {
             // E.g.: lookup().findStatic(Foo.class, "name", MethodType)
@@ -1791,7 +1779,6 @@ public class Indify {
             remove_EmptyJVMSlots(args);
             if(args.size() < 4) return null;
             int argi = 0;
-            int nindex, tindex;
             Object con;
             Utf8Entry name, type;
             NameAndTypeEntry nt;
@@ -1807,7 +1794,7 @@ public class Indify {
             if (!((con = args.get(argi++)) instanceof MethodTypeEntry)) return null;
             type = ((MethodTypeEntry) con).descriptor();
 
-            nt = bytecode.poolBuilder.nameAndTypeEntry(name, type);
+            nt = poolBuilder.nameAndTypeEntry(name, type);
 
             List<Object> extraArgs = new ArrayList<Object>();
             if (argi < args.size()) {
@@ -1825,10 +1812,10 @@ public class Indify {
             List<LoadableConstantEntry> extraArgConstants = new ArrayList<>();
             for (Object x : extraArgs) {
                 if (x instanceof Number) {
-                    if (x instanceof Integer) { x = bytecode.poolBuilder.intEntry((Integer) x); }
-                    if (x instanceof Float)   { x = bytecode.poolBuilder.floatEntry((Float) x); }
-                    if (x instanceof Long)    { x = bytecode.poolBuilder.longEntry((Long) x); }
-                    if (x instanceof Double)  { x = bytecode.poolBuilder.doubleEntry((Double) x); }
+                    if (x instanceof Integer) { x = poolBuilder.intEntry((Integer) x); }
+                    if (x instanceof Float)   { x = poolBuilder.floatEntry((Float) x); }
+                    if (x instanceof Long)    { x = poolBuilder.longEntry((Long) x); }
+                    if (x instanceof Double)  { x = poolBuilder.doubleEntry((Double) x); }
                 }
                 if (!(x instanceof PoolEntry)) {
                     System.err.println("warning: unrecognized BSM argument "+x);
@@ -1837,7 +1824,7 @@ public class Indify {
                 extraArgConstants.add(((LoadableConstantEntry) x));
             }
 
-            List<Object[]> specs = bootstrap_MethodSpecifiers(true);
+            List<Object[]> specs = bootstrap_MethodSpecifiers();
             int specIndex = -1;
             Object[] spec = new Object[]{ bsm.index(), extraArgConstants };
             for (Object[] spec1 : specs) {
@@ -1852,8 +1839,8 @@ public class Indify {
                 if (verbose)  System.err.println("adding BSM specifier: "+spec[0]+spec[1]);
             }
 
-            BootstrapMethodEntry bsmEntry = bytecode.poolBuilder.bsmEntry(bsm, extraArgConstants);
-            return bytecode.poolBuilder.invokeDynamicEntry(bsmEntry, nt);
+            BootstrapMethodEntry bsmEntry = poolBuilder.bsmEntry(bsm, extraArgConstants);
+            return poolBuilder.invokeDynamicEntry(bsmEntry, nt);
         }
         private Constant makeInvokeDynamicCon(List<Object> args) {
             // E.g.: MH_bsm.invokeGeneric(lookup(), "name", MethodType, "extraArg")
@@ -1919,14 +1906,14 @@ public class Indify {
                         new Short[]{ (short)specindex, ntindex });
         }
         //New implementation using the CP API and will be merged once  fully tested
-        List<Object[]> bootstrap_MethodSpecifiers(boolean createIfNotFound){
-            int count = bytecode.classModel.constantPool().bootstrapMethodCount();
+        List<Object[]> bootstrap_MethodSpecifiers(){
+            int count = classModel.constantPool().bootstrapMethodCount();
             List<Object[]> specs = new ArrayList<>();
 
             for (int i = 0; i < count; i++) {
-                int bsmRef = bytecode.classModel.constantPool().bootstrapMethodEntry(i).bsmIndex();
+                int bsmRef = classModel.constantPool().bootstrapMethodEntry(i).bsmIndex();
                 List<LoadableConstantEntry> bsmArgs = new ArrayList<>();
-                for (LoadableConstantEntry lce : bytecode.classModel.constantPool().bootstrapMethodEntry(i).arguments()){
+                for (LoadableConstantEntry lce : classModel.constantPool().bootstrapMethodEntry(i).arguments()){
                     bsmArgs.add(lce);
 
                 }
@@ -2115,41 +2102,6 @@ public class Indify {
     }
     private static void writeOutputs(DataOutputStream out, Object... data) throws IOException {
         for (Object x : data)  writeOutput(out, x);
-    }
-
-    public class Bytecode {
-        Bytecode(File f) throws IOException {
-            byte[] bytes = openInputIntoBytes(f);
-            try{
-                parseFrom(bytes);
-            } catch (Exception e){
-                throw new IOException("Error parsing file: "+f, e);
-            }
-        }
-        public ClassModel classModel;
-        public ConstantPoolBuilder poolBuilder; // will be used to construct the new Constant pool
-
-        public void parseFrom(byte[] bytes) throws IOException {
-            ClassHierarchyResolver classHierarchyResolver = classDesc -> {
-                // Treat all classes as interfaces
-                return ClassHierarchyResolver.ClassHierarchyInfo.ofInterface();
-            };
-
-            try {
-                List<VerifyError> errors = of(ClassHierarchyResolverOption.of(classHierarchyResolver)).verify(bytes);
-                if (!errors.isEmpty()) {
-                    for (VerifyError e : errors) {
-                        System.err.println(e.getMessage());
-                    }
-                    throw new IOException("Verification failed");
-                }
-            } catch (IOException e) {
-               e.printStackTrace();
-            }
-
-            classModel = of().parse(bytes);
-            poolBuilder = ConstantPoolBuilder.of(classModel);
-        }
     }
 
     public abstract static class Outer {
