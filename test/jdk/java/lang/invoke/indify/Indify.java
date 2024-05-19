@@ -438,39 +438,39 @@ public class Indify {
 
     private class Logic {
         ClassModel classModel;
-        ConstantPoolBuilder poolBuilder;
+        ConstantPoolBuilder poolBuilder;  //Builder for the new constant pool
         final char[] poolMarks;
-        final Map<MethodModel, PoolEntry> new_constants = new HashMap<>();
-        final Map<MethodModel, String> new_indySignatures = new HashMap<>();
+        final Map<MethodModel, PoolEntry> Constants = new HashMap<>();
+        final Map<MethodModel, String> IndySignatures = new HashMap<>();
         Logic(ClassModel classModel){
             this.classModel = classModel;
             poolBuilder = ConstantPoolBuilder.of(classModel);
             poolMarks = new char[classModel.constantPool().size()];
         }
+
         ClassModel transform() throws IOException {
             if (!initializeMarks())  return null;
-            if (!find_patternMethods()) return null;
-            ClassModel newClassModel = transformFromCPbuilder(classModel, poolBuilder);
+            if (!findPatternMethods()) return null;
+            ClassModel newClassModel = transformFromCPBuilder(classModel, poolBuilder);
             CodeTransform codeTransform;
             ClassTransform classTransform;
 
             for(MethodModel m : classModel.methods()){
-                if(new_constants.containsKey(m)) continue;
+                if(Constants.containsKey(m)) continue;  //skip if pattern method, it will be removed
 
-                int blab = 0;
                 Predicate<MethodModel> filter = method -> Objects.equals(method.methodName().stringValue(), m.methodName().stringValue());
-
 
                 List<Instruction> instructionList = getInstructions(m);
                 ListIterator<Instruction> iterator =instructionList.listIterator();
-                final Stack<Boolean> stack = new Stack<>();
+                final Stack<Boolean> shouldProceed = new Stack<>();
+
                 while (iterator.hasNext()){
-                    stack.push(true);
+                    shouldProceed.push(true);
                     Instruction i = iterator.next();
 
-                    if(i.opcode().bytecode() != INVOKESTATIC) continue; // skip it's a method we will delete
+                    if(i.opcode().bytecode() != INVOKESTATIC) continue;  //this is not an invokestatic instruction
                     int methi = ((InvokeInstruction) i).method().index();
-                    if (poolMarks[methi] == 0) continue;    //this is a markedpatternMethod
+                    if (poolMarks[methi] == 0) continue;    //Skip if marked as a pattern Method
 
                     MemberRefEntry ref = (MemberRefEntry) classModel.constantPool().entryByIndex(methi);
                     String methName = ref.nameAndType().name().stringValue();
@@ -484,14 +484,14 @@ public class Indify {
                     }
                     if(conm == null) continue;
 
-                    PoolEntry con = new_constants.get(conm);
-                    if(blab++ == 0 && !quiet){
+                    PoolEntry con = Constants.get(conm);
+                    if(quiet){
                         System.out.println();
                         System.err.println("$$$$$$$$$$$$$$$----------------------------------------------------------------Patching Method: " +  m.methodName() + "------------------------------------------------------------------");
                     }
 
                     if(con instanceof InvokeDynamicEntry){
-                        Instruction i2 = find_pop(instructionList, iterator.previousIndex());
+                        Instruction i2 = findPop(instructionList, iterator.previousIndex());
                         int ref2i;
                         MethodRefEntry methodEntry = null;
 
@@ -505,7 +505,7 @@ public class Indify {
                         }
 
                         String invType = methodEntry.type().stringValue();
-                        String bsmType = new_indySignatures.get(conm);
+                        String bsmType = IndySignatures.get(conm);
                         if (!invType.equals(bsmType)) {
                             System.err.println(m+": warning: "+conm+" call type and local invoke type differ: " + bsmType+", " + invType);
                         }
@@ -523,14 +523,14 @@ public class Indify {
                             if (e instanceof InvokeInstruction && Objects.equals(a1, a2)) {
                                 System.err.println(">> Removing instruction invokestatic for Method: " + ((InvokeInstruction) e).name());
                                 b.andThen(b);
-                            } else if (stack.peek() && e instanceof InvokeInstruction && ((InvokeInstruction) e).method().equals(((InvokeInstruction) i2).method())) {
+                            } else if (shouldProceed.peek() && e instanceof InvokeInstruction && ((InvokeInstruction) e).method().equals(((InvokeInstruction) i2).method())) {
                                 System.err.println(">> Removing instruction invokevirtual for Method: " + ((InvokeInstruction) e).name());
                                 b.andThen(b);
                                 System.out.println(">> Adding invokedynamic instruction and nop instead of invoke virtual: " + ((InvokeDynamicEntry) con).name());
                                 b.invokeDynamicInstruction((InvokeDynamicEntry) con).nop();
 
-                                stack.pop();
-                                stack.push(false);
+                                shouldProceed.pop();
+                                shouldProceed.push(false);
                             } else {
                                 b.with(e);
                             }
@@ -541,14 +541,6 @@ public class Indify {
                                ClassFile.of(StackMapsOption.GENERATE_STACK_MAPS).transform(newClassModel, classTransform)
                         );
 
-                        //We are leaving this here for checking if curr method instructions are changed
-                        List<Instruction> newInst = new ArrayList<>();
-                        for(MethodModel mmm : newClassModel.methods()){
-                            if (Objects.equals(mmm.methodName().stringValue(), m.methodName().stringValue())){
-                                newInst.addAll(getInstructions(mmm));
-                                break;
-                            }
-                        }
                         System.out.println();
                     } else {
                         assert(i.sizeInBytes() == 3);
@@ -568,15 +560,8 @@ public class Indify {
                         classTransform = ClassTransform.transformingMethodBodies(filter, codeTransform);
                         newClassModel = ClassFile.of(StackMapsOption.GENERATE_STACK_MAPS).parse(
                              ClassFile.of(StackMapsOption.GENERATE_STACK_MAPS).transform(newClassModel, classTransform));
-
-                        List<Instruction> LdcIns = new ArrayList<>();
-                        for(MethodModel mmm : newClassModel.methods()){
-                            if (Objects.equals(mmm.methodName().stringValue(), m.methodName().stringValue())){
-                                LdcIns.addAll(getInstructions(mmm));
-                                break;
-                            }
-                        }
                     }
+                    shouldProceed.pop();
                 }
             }
             newClassModel = removePatternMethodsAndVerify(newClassModel);
@@ -621,7 +606,7 @@ public class Indify {
             return newClassModel;
         }
 
-        Instruction find_pop( List<Instruction> instructionList, int currentIndex){
+        Instruction findPop( List<Instruction> instructionList, int currentIndex){
             JVMState jvm = new JVMState();
 
             ListIterator<Instruction> newIter = instructionList.listIterator(currentIndex + 1);
@@ -672,17 +657,16 @@ public class Indify {
             return null;
         }
 
-        //New implementation using the CP API
-         boolean find_patternMethods() {
+         boolean findPatternMethods() {
             boolean found = false;
             for(char mark : "THI".toCharArray()) {
                 for(MethodModel m : classModel.methods()){
                     if (!Modifier.isPrivate(m.flags().flagsMask())) continue;
                     if (!Modifier.isStatic(m.flags().flagsMask())) continue;
                     if(nameAndTypeMark(m.methodName().index(), m.methodType().index()) == mark) {
-                        PoolEntry entry = scan_Pattern(m, mark);
+                        PoolEntry entry = scanPattern(m, mark);
                         if (entry == null) continue;
-                        new_constants.put(m, entry);
+                        Constants.put(m, entry);
                         found = true;
                     }
                 }
@@ -690,7 +674,7 @@ public class Indify {
             return found;
         }
 
-        ClassModel transformFromCPbuilder(ClassModel oldClassModel, ConstantPoolBuilder cpBuilder){
+        ClassModel transformFromCPBuilder(ClassModel oldClassModel, ConstantPoolBuilder cpBuilder){
             byte[] new_bytes = ClassFile.of(StackMapsOption.GENERATE_STACK_MAPS).transform(oldClassModel, ClassTransform.endHandler(clb -> {
                 for (PoolEntry entry: cpBuilder) {
                     if (entry instanceof Utf8Entry utf8Entry) {
@@ -765,12 +749,13 @@ public class Indify {
 
             return ClassFile.of(StackMapsOption.GENERATE_STACK_MAPS).parse(new_bytes);
         }
+
         void reportPatternMethods(boolean quietly, boolean allowMatchFailure) {
-            if (!quietly && !new_constants.keySet().isEmpty())
-                System.err.println("pattern methods removed: "+new_constants.keySet());
+            if (!quietly && !Constants.keySet().isEmpty())
+                System.err.println("pattern methods removed: "+Constants.keySet());
             for (MethodModel m : classModel.methods()) {
                 if (nameMark(m.methodName().stringValue()) != 0 &&
-                    new_constants.get(m) == null) {
+                        Constants.get(m) == null) {
                     String failure = "method has special name but fails to match pattern: "+m;
                     if (!allowMatchFailure)
                         throw new IllegalArgumentException(failure);
@@ -863,6 +848,7 @@ public class Indify {
             }
             return anyMarksChanged;
         }
+
         char nameMark(String s) {
             if (s.startsWith("MT_"))                return 'T';
             else if (s.startsWith("MH_"))           return 'H';
@@ -871,6 +857,7 @@ public class Indify {
             else if (s.startsWith("java/lang/"))    return 'J';
             return 0;
         }
+
         char nameAndTypeMark(int ref1, int ref2){
             char mark = poolMarks[ref1];
             if (mark == 0) return 0;
@@ -919,8 +906,8 @@ public class Indify {
             }
         }
         private final String EMPTY_SLOT = "_";
-        //New implementation using the CP API
-        private void remove_EmptyJVMSlots(List<Object> args) {
+
+        private void removeEmptyJVMSlots(List<Object> args) {
             for (; ; ) {
                 int i = args.indexOf(EMPTY_SLOT);
                 if (i >= 0 && i + 1 < args.size()
@@ -937,8 +924,8 @@ public class Indify {
                     .map(Instruction.class::cast)  // Concise cast using Class reference
                     .collect(Collectors.toList());
         }
-        //New implementation using the CP API and will be merged once fully tested
-        private PoolEntry scan_Pattern(MethodModel method, char patternMark) {
+
+        private PoolEntry scanPattern(MethodModel method, char patternMark) {
             if(verbose) System.err.println("Scanning the method: " + method.methodName().stringValue() + "for the pattern mark: " + patternMark);
             int wantedTag = switch (patternMark) {
                 case 'T' -> TAG_METHODTYPE;
@@ -1057,7 +1044,7 @@ public class Indify {
                                 case "findSpecial":         refKind = (byte) SPECIAL.refKind;           break;
                                 case "findConstructor":     refKind = (byte) CONSTRUCTOR.refKind;       break;
                             }
-                            if (refKind >= 0 && (con = parse_MemberLookup(refKind, args)) != null) {
+                            if (refKind >= 0 && (con = parseMemberLookup(refKind, args)) != null) {
                                 args.clear(); args.add(con);
                                 continue;
                             }
@@ -1072,7 +1059,7 @@ public class Indify {
                         }
                         switch (intrinsic == null ? "" : intrinsic) {
                             case "fromMethodDescriptorString":
-                                con = make_MethodTypeCon(args.get(0));
+                                con = makeMethodTypeCon(args.get(0));
                                 args.clear(); args.add(con);
                                 continue;
                             case "methodType": {
@@ -1122,7 +1109,7 @@ public class Indify {
                                     }
                                 }
                                 buf.append(')').append(rtype);
-                                con = con = make_MethodTypeCon(buf.toString());
+                                con = con = makeMethodTypeCon(buf.toString());
                                 args.clear(); args.add(con);
                                 continue;
                             }
@@ -1149,7 +1136,7 @@ public class Indify {
                             case "Float.valueOf":
                             case "Long.valueOf":
                             case "Double.valueOf":
-                                remove_EmptyJVMSlots(args);
+                                removeEmptyJVMSlots(args);
                                 if(args.size() == 1 ) {
                                     arg = args.remove(0);
                                     if (arg instanceof Number) {
@@ -1158,7 +1145,7 @@ public class Indify {
                                 }
                                 break decode;
                             case "StringBuilder.append":
-                                remove_EmptyJVMSlots(args);
+                                removeEmptyJVMSlots(args);
                                 args.subList(1, args.size()).clear();
                                 continue;
                             case "StringBuilder.toString":
@@ -1167,7 +1154,7 @@ public class Indify {
                                 continue;
                         }
                         if(!hasRecv && ownMethod != null && patternMark != 0) {
-                            con = new_constants.get(ownMethod);
+                            con = Constants.get(ownMethod);
                             if (con == null)  break decode;
                             args.clear(); args.add(con);
                             continue;
@@ -1182,10 +1169,10 @@ public class Indify {
                         ++branchCount;
                         if(bsmArgs != null){
                             // parse bsmArgs as (MH, lookup, String, MT, [extra])
-                            PoolEntry indyCon = make_InvokeDynamicCon(bsmArgs);
+                            PoolEntry indyCon = makeInvokeDynamicCon(bsmArgs);
                             if (indyCon != null) {
                                 PoolEntry typeCon = (PoolEntry) bsmArgs.get(3);
-                                new_indySignatures.put(method, ((MethodTypeEntry) typeCon).descriptor().stringValue());
+                                IndySignatures.put(method, ((MethodTypeEntry) typeCon).descriptor().stringValue());
                                 return indyCon;
                             }
                             System.err.println(method+": inscrutable bsm arguments: "+bsmArgs);
@@ -1244,8 +1231,7 @@ public class Indify {
             }
         }
 
-        //New implementation using the CP API and will be merged once  fully tested
-        private PoolEntry make_MethodTypeCon(Object x){
+        private PoolEntry makeMethodTypeCon(Object x){
             Utf8Entry utf8Entry;
 
             if (x instanceof String) {
@@ -1258,8 +1244,8 @@ public class Indify {
 
             return poolBuilder.methodTypeEntry(utf8Entry);
         }
-        //New implementation using the CP API and will be merged once  fully tested
-        private PoolEntry parse_MemberLookup(byte refKind, List<Object> args){
+
+        private PoolEntry parseMemberLookup(byte refKind, List<Object> args){
             //E.g.: lookup().findStatic(Foo.class, "name", MethodType)
             if(args.size() != 4) return null;
             int argi = 0;
@@ -1297,10 +1283,10 @@ public class Indify {
             }
             return poolBuilder.methodHandleEntry(refKind, ref);
         }
-        //New implementation using the CP API and will be merged once  fully tested
-        private PoolEntry make_InvokeDynamicCon(List<Object> args) {
+
+        private PoolEntry makeInvokeDynamicCon(List<Object> args) {
             // E.g.: MH_bsm.invokeGeneric(lookup(), "name", MethodType, "extraArg")
-            remove_EmptyJVMSlots(args);
+            removeEmptyJVMSlots(args);
             if(args.size() < 4) return null;
             int argi = 0;
             Object con;
@@ -1327,7 +1313,7 @@ public class Indify {
                 if (lastArg instanceof List) {
                     @SuppressWarnings("unchecked")
                     List<Object> lastArgs = (List<Object>) lastArg;
-                    remove_EmptyJVMSlots(lastArgs);
+                    removeEmptyJVMSlots(lastArgs);
                     extraArgs.addAll(lastArgs);
                 } else {
                     extraArgs.add(lastArg);
@@ -1366,7 +1352,7 @@ public class Indify {
             BootstrapMethodEntry bsmEntry = poolBuilder.bsmEntry(bsm, extraArgConstants);
             return poolBuilder.invokeDynamicEntry(bsmEntry, nt);
         }
-        //New implementation using the CP API and will be merged once  fully tested
+
         List<Object[]> bootstrap_MethodSpecifiers(boolean createIfNotFound) {
             List<Object[]> specs = new ArrayList<>();
             int count = classModel.constantPool().bootstrapMethodCount();
@@ -1419,6 +1405,7 @@ public class Indify {
 
         return classModel = of().parse(bytes);
     }
+
     private static final Object[] INSTRUCTION_CONSTANTS = {
         -1, 0, 1, 2, 3, 4, 5, 0L, 1L, 0.0F, 1.0F, 2.0F, 0.0D, 1.0D
     };
