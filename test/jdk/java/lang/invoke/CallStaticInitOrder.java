@@ -51,39 +51,39 @@ public class CallStaticInitOrder {
     }
 
     static int Init1Tick;
-    private static class Init1 {
+    public static class Init1 {
         static { Init1Tick = tick("foo -> Init1.<clinit>"); }
-        static int foo() { return Init1Tick; }
+        public static int foo() { return Init1Tick; }
     }
 
     static int Init2Tick;
-    private static class Init2 {
+    public static class Init2 {
         static { Init2Tick = tick("bar -> Init2.<clinit>"); }
-        static int bar() { return Init2Tick; }
+        public static int bar() { return Init2Tick; }
     }
 
     static int Init3Tick;
-    private static class Init3 {
+    public static class Init3 {
         static { Init3Tick = tick("baz -> Init3.<clinit>"); }
-        static int baz() { return Init3Tick; }
+        public static int baz() { return Init3Tick; }
     }
 
     static int Init4Tick;
-    private static class Init4 {
+    public static class Init4 {
         static { Init4Tick = tick("bat -> Init4.<clinit>"); }
-        static int bat() { return Init4Tick; }
+        public static int bat() { return Init4Tick; }
     }
 
     static int Init5Tick;
-    private static class Init5 {
+    public static class Init5 {
         static { Init5Tick = tick("read bang -> Init5.<clinit>"); }
-        static int bang = Init5Tick;
+        public static int bang = Init5Tick;
     }
 
-    static int Init6Tick;
-    private static class Init6 {
+    public static int Init6Tick;
+    public static class Init6 {
         static { Init6Tick = tick("write pong -> Init6.<clinit>"); }
-        static int pong;
+        public static int pong;
     }
 
     private static final MutableCallSite CONSTANT_CS_baz;
@@ -125,7 +125,7 @@ public class CallStaticInitOrder {
 
     private static Throwable LAST_LOSER;
 
-    private static void assertEquals(int expected, int actual) {
+    public static void assertEquals(int expected, int actual) {
         if (expected != actual) {
             Throwable loser = new AssertionError("expected: " + expected + ", actual: " + actual);
             if (LAST_LOSER != null)
@@ -134,7 +134,7 @@ public class CallStaticInitOrder {
         }
     }
 
-    private static void testInit() throws Throwable {
+    public static void testInit() throws Throwable {
         System.out.println("runFoo = "+runFoo());
         System.out.println("runBar = "+runBar());
         try {
@@ -164,7 +164,7 @@ public class CallStaticInitOrder {
         return ((CallSite) MH_bsm().invoke(lookup(), "foo", methodType(int.class))).dynamicInvoker();
     }
 
-    private static int runBar() throws Throwable {
+    public static int runBar() throws Throwable {
         assertEquals(Init2Tick, 0);  // Init2 not initialized yet
         int t1 = tick("runBar");
         int t2 = (int) INDY_bar().invokeExact();
@@ -179,7 +179,7 @@ public class CallStaticInitOrder {
         return ((CallSite) MH_bsm().invoke(lookup(), "bar", methodType(int.class))).dynamicInvoker();
     }
 
-    private static int runBaz() throws Throwable {
+    public static int runBaz() throws Throwable {
         assertEquals(Init3Tick, 0);  // Init3 not initialized yet
         int t1 = tick("runBaz");
         int t2 = (int) INDY_baz().invokeExact();
@@ -194,7 +194,7 @@ public class CallStaticInitOrder {
         return ((CallSite) MH_bsm().invoke(lookup(), "baz", methodType(int.class))).dynamicInvoker();
     }
 
-    private static int runBat() throws Throwable {
+    public static int runBat() throws Throwable {
         assertEquals(Init4Tick, 0);  // Init4 not initialized yet
         int t1 = tick("runBat");
         int t2 = (int) INDY_bat().invokeExact();
@@ -209,7 +209,7 @@ public class CallStaticInitOrder {
         return ((CallSite) MH_bsm().invoke(lookup(), "bat", methodType(int.class))).dynamicInvoker();
     }
 
-    private static int runBang() throws Throwable {
+    public static int runBang() throws Throwable {
         assertEquals(Init5Tick, 0);  // Init5 not initialized yet
         int t1 = tick("runBang");
         int t2 = (int) INDY_bang().invokeExact();
@@ -224,7 +224,7 @@ public class CallStaticInitOrder {
         return ((CallSite) MH_bsm().invoke(lookup(), "bang", methodType(int.class))).dynamicInvoker();
     }
 
-    private static int runPong() throws Throwable {
+    public static int runPong() throws Throwable {
         assertEquals(Init6Tick, 0);  // Init6 not initialized yet
         int t1 = tick("runPong");
         int t2 = (int) INDY_pong().invokeExact();

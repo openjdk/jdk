@@ -170,11 +170,11 @@ public class MethodHandleConstants {
         throw new AssertionError("this code should be statically transformed away by Indify");
     }
 
-    static class TestPolicy extends Policy {
+    public static class TestPolicy extends Policy {
         static final Policy DEFAULT_POLICY = Policy.getPolicy();
 
         final PermissionCollection permissions = new Permissions();
-        TestPolicy() {
+        public TestPolicy() {
             permissions.add(new java.io.FilePermission("<<ALL FILES>>", "read"));
         }
         public PermissionCollection getPermissions(ProtectionDomain domain) {
