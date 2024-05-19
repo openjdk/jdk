@@ -80,7 +80,7 @@ public class CallStaticInitOrder {
         public static int bang = Init5Tick;
     }
 
-    public static int Init6Tick;
+    static int Init6Tick;
     public static class Init6 {
         static { Init6Tick = tick("write pong -> Init6.<clinit>"); }
         public static int pong;
