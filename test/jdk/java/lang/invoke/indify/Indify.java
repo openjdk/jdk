@@ -448,9 +448,10 @@ public class Indify {
             poolMarks = new char[classModel.constantPool().size()];
         }
 
-        ClassModel transform() throws IOException {
+        ClassModel transform(){
             if (!initializeMarks())  return null;
             if (!findPatternMethods()) return null;
+
             ClassModel newClassModel = transformFromCPBuilder(classModel, poolBuilder);
             CodeTransform codeTransform;
             ClassTransform classTransform;
@@ -565,14 +566,6 @@ public class Indify {
                 }
             }
             newClassModel = removePatternMethodsAndVerify(newClassModel);
-
-            /*
-            * this is only for testing purposes, to write the transformed class to a file
-            * It will be removed in the final stage
-            * */
-            byte[] bytes = ClassFile.of(StackMapsOption.GENERATE_STACK_MAPS).transform(newClassModel, ClassTransform.ACCEPT_ALL);
-            Files.write(Paths.get("TransformedTestClass.class"), bytes );
-
 
             return newClassModel;
         }
@@ -756,7 +749,7 @@ public class Indify {
             for (MethodModel m : classModel.methods()) {
                 if (nameMark(m.methodName().stringValue()) != 0 &&
                         Constants.get(m) == null) {
-                    String failure = "method has special name but fails to match pattern: "+m;
+                    String failure = "method has a special name but fails to match pattern: "+ m.methodName();
                     if (!allowMatchFailure)
                         throw new IllegalArgumentException(failure);
                     else if (!quietly)
@@ -920,8 +913,8 @@ public class Indify {
 
         private List<Instruction> getInstructions(MethodModel method) {
             return method.code().get().elementStream()
-                    .filter(Instruction.class::isInstance)  // More efficient isInstance check
-                    .map(Instruction.class::cast)  // Concise cast using Class reference
+                    .filter(Instruction.class::isInstance)
+                    .map(Instruction.class::cast)
                     .collect(Collectors.toList());
         }
 
@@ -942,7 +935,6 @@ public class Indify {
             List<Object> bsmArgs = null;  // args for invokeGeneric
         decode:
             for(Instruction instruction : instructions){
-                System.err.println("JVM Stack: " + jvm.stack + ", Current instruction: " + instruction);
 
                 int bc = instruction.opcode().bytecode();
                 switch (bc){
@@ -1014,15 +1006,15 @@ public class Indify {
                     case INVOKEVIRTUAL:
                     case INVOKESPECIAL:
                     {
-                        boolean hasRecv = (bc != INVOKESTATIC);
-                        int methi = ((InvokeInstruction) instruction).method().index();
-                        char mark = poolMarks[methi];
-                        MemberRefEntry ref = (MemberRefEntry) classModel.constantPool().entryByIndex(methi);
+                        boolean hasReceiver = (bc != INVOKESTATIC);
+                        int methodIndex = ((InvokeInstruction) instruction).method().index();
+                        char mark = poolMarks[methodIndex];
+                        MemberRefEntry ref = (MemberRefEntry) classModel.constantPool().entryByIndex(methodIndex);
                         String methClass = ref.owner().name().stringValue();
                         String methType = ref.nameAndType().type().stringValue();
                         String methName = ref.nameAndType().name().stringValue();
                         System.out.println("invoke " + methName + " : " + ref + " : " + methType);
-                        args = jvm.args(hasRecv, methType);
+                        args = jvm.args(hasReceiver, methType);
                         String intrinsic = null;
                         PoolEntry con;
                         if (mark == 'D' || mark == 'J') {
@@ -1153,7 +1145,7 @@ public class Indify {
                                 args.add(intrinsic);
                                 continue;
                         }
-                        if(!hasRecv && ownMethod != null && patternMark != 0) {
+                        if(!hasReceiver && ownMethod != null && patternMark != 0) {
                             con = Constants.get(ownMethod);
                             if (con == null)  break decode;
                             args.clear(); args.add(con);
@@ -1218,7 +1210,7 @@ public class Indify {
                         break decode;  // bail out
                 }
             }
-            System.err.println(method+": bailout on "+instructions.getLast()+" jvm stack: "+jvm.stack);
+            System.err.println(method+": bailout ==> jvm stack: "+jvm.stack);
             return null;
         }
         private final String UNKNOWN_CON = "<unknown>";
