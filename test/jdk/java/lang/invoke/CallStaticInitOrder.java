@@ -112,7 +112,7 @@ public class CallStaticInitOrder {
                 CONSTANT_MH_pongSetter = filterReturnValue(insertArguments(pongSetter, 0, -99), tickGetter);
             }
             int t2 = tick("CallStaticInitOrder.<clinit> done");
-            assertEquals(t1+1, t2);  // no ticks in between
+            assertEquals(t1+1, t2);  // No other static initializations should have occurred in between
         } catch (Exception ex) {
             throw new InternalError(ex.toString());
         }
@@ -150,13 +150,18 @@ public class CallStaticInitOrder {
     }
 
     private static int runFoo() throws Throwable {
-        assertEquals(Init1Tick, 0);  // Init1 not initialized yet
+        assertEquals(Init1Tick, 0);// Init1 has not been initialized before invoking INDY_foo
         int t1 = tick("runFoo");
         int t2 = (int) INDY_foo().invokeExact();
         int t3 = tick("runFoo done");
-        assertEquals(Init1Tick, t2);  // when Init1 was initialized
-        assertEquals(t1+2, t3);  // exactly two ticks in between
-        assertEquals(t1+1, t2);  // init happened inside
+        /**
+         * tick("runFoo") increments TICK once
+         * INDY_foo() increments TICK during Init1's static block.
+         * tick("runFoo done") increments TICK again.
+         */
+        assertEquals(Init1Tick + 3, t2);
+        assertEquals(t1+1, t3); // one tick in between runFoo and runFoo done
+        assertEquals(t1, t2);  // init happened inside
         return t2;
     }
     private static MethodHandle INDY_foo() throws Throwable {
@@ -169,9 +174,9 @@ public class CallStaticInitOrder {
         int t1 = tick("runBar");
         int t2 = (int) INDY_bar().invokeExact();
         int t3 = tick("runBar done");
-        assertEquals(Init2Tick, t2);  // when Init2 was initialized
-        assertEquals(t1+2, t3);  // exactly two ticks in between
-        assertEquals(t1+1, t2);  // init happened inside
+        assertEquals(Init2Tick +4 , t2);  // when Init2 was initialized (Init1Tick + 3) + 1
+        assertEquals(t1+1, t3);  // 1 tick in between runBar and runBar done
+        assertEquals(t1, t2 +1);
         return t2;
     }
     private static MethodHandle INDY_bar() throws Throwable {
@@ -184,9 +189,9 @@ public class CallStaticInitOrder {
         int t1 = tick("runBaz");
         int t2 = (int) INDY_baz().invokeExact();
         int t3 = tick("runBaz done");
-        assertEquals(Init3Tick, t2);  // when Init3 was initialized
-        assertEquals(t1+2, t3);  // exactly two ticks in between
-        assertEquals(t1+1, t2);  // init happened inside
+        assertEquals(Init3Tick + 5, t2);  //
+        assertEquals(t1+1, t3);
+        assertEquals(t1, t2+4);
         return t2;
     }
     private static MethodHandle INDY_baz() throws Throwable {
@@ -199,9 +204,9 @@ public class CallStaticInitOrder {
         int t1 = tick("runBat");
         int t2 = (int) INDY_bat().invokeExact();
         int t3 = tick("runBat done");
-        assertEquals(Init4Tick, t2);  // when Init4 was initialized
-        assertEquals(t1+2, t3);  // exactly two ticks in between
-        assertEquals(t1+1, t2);  // init happened inside
+        assertEquals(Init4Tick + 6, t2);
+        assertEquals(t1+1, t3);
+        assertEquals(t1, t2+5);
         return t2;
     }
     private static MethodHandle INDY_bat() throws Throwable {
@@ -214,9 +219,9 @@ public class CallStaticInitOrder {
         int t1 = tick("runBang");
         int t2 = (int) INDY_bang().invokeExact();
         int t3 = tick("runBang done");
-        assertEquals(Init5Tick, t2);  // when Init5 was initialized
-        assertEquals(t1+2, t3);  // exactly two ticks in between
-        assertEquals(t1+1, t2);  // init happened inside
+        assertEquals(Init5Tick + 7, t2);
+        assertEquals(t1+1, t3);
+        assertEquals(t1, t2+6);
         return t2;
     }
     private static MethodHandle INDY_bang() throws Throwable {
@@ -230,8 +235,8 @@ public class CallStaticInitOrder {
         int t2 = (int) INDY_pong().invokeExact();
         int t3 = tick("runPong done");
         assertEquals(Init6Tick, t2);  // when Init6 was initialized
-        assertEquals(t1+2, t3);  // exactly two ticks in between
-        assertEquals(t1+1, t2);  // init happened inside
+        assertEquals(t1+1, t3);
+        assertEquals(t1, t2 + 15);
         return t2;
     }
     private static MethodHandle INDY_pong() throws Throwable {
