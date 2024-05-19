@@ -35,10 +35,8 @@ final class WixToolset {
     static enum WixToolsetType {
         // Wix v4+
         Wix4(WixTool.Wix4),
-        
         // Wix v3.0-v3.6
         Wix3(WixTool.Candle3, WixTool.Light3),
-        
         // Wix v3.6+
         Wix36(WixTool.Candle3, WixTool.Light3);
 
@@ -58,10 +56,9 @@ final class WixToolset {
     }
 
     WixToolsetType getType() {
-        return Stream.of(WixToolsetType.values()).
-                filter(toolsetType -> {
-                    return toolsetType.getTools().equals(tools.keySet());
-                }).findAny().get();
+        return Stream.of(WixToolsetType.values()).filter(toolsetType -> {
+            return toolsetType.getTools().equals(tools.keySet());
+        }).findAny().get();
     }
 
     Path getToolPath(WixTool tool) {
@@ -72,10 +69,9 @@ final class WixToolset {
         return tools.values().iterator().next().version;
     }
 
-    static WixToolset create(Set<WixTool> requiredTools,
-            Map<WixTool, WixTool.ToolInfo> allTools) {
+    static WixToolset create(Set<WixTool> requiredTools, Map<WixTool, WixTool.ToolInfo> allTools) {
         var filteredTools = allTools.entrySet().stream().filter(e -> {
-            return requiredTools.contains(e.getKey()) && e.getValue() != null;
+            return requiredTools.contains(e.getKey());
         }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         if (filteredTools.keySet().equals(requiredTools)) {
             return new WixToolset(filteredTools);
