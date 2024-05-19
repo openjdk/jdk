@@ -157,9 +157,8 @@ public class WindowsHelper {
                     TKit.trace(String.format("Convert [%s] into [%s] in [%s] directory", from, to,
                             unpackDir));
                     ThrowingRunnable.toRunnable(() -> {
-                        Files.move(unpackDir.resolve(extraPathComponent).resolve(
-                                installationSubDirectory), unpackDir.resolve(
-                                        installationSubDirectory));
+                        Files.createDirectories(unpackDir.resolve(to).getParent());
+                        Files.move(unpackDir.resolve(from), unpackDir.resolve(to));
                         TKit.deleteDirectoryRecursive(unpackDir.resolve(extraPathComponent));
                     }).run();
                 }
