@@ -119,7 +119,6 @@ public class RMIConnectorServer extends JMXConnectorServer {
      *
      * @since 10
      */
-
     public static final String CREDENTIALS_FILTER_PATTERN =
         "jmx.remote.rmi.server.credentials.filter.pattern";
 
