@@ -349,7 +349,7 @@ public class Indify {
         return new File(pathDir, qualname);
     }
 
-    public void indifyJar(File f, Object dest){
+    public void indifyJar(File f, Object dest) {
         throw new UnsupportedOperationException("Not yet implemented");
     }
 
