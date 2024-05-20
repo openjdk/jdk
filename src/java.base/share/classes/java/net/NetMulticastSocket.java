@@ -650,7 +650,6 @@ final class NetMulticastSocket extends MulticastSocket {
      */
     private InetAddress infAddress = null;
 
-    @Deprecated(forRemoval = true, since="1.2")
     @Override
     @SuppressWarnings("removal")
     public void setTTL(byte ttl) throws IOException {
@@ -669,7 +668,6 @@ final class NetMulticastSocket extends MulticastSocket {
         getImpl().setTimeToLive(ttl);
     }
 
-    @Deprecated(forRemoval = true, since="1.2")
     @Override
     @SuppressWarnings("removal")
     public byte getTTL() throws IOException {
@@ -886,7 +884,6 @@ final class NetMulticastSocket extends MulticastSocket {
     }
 
     @SuppressWarnings("removal")
-    @Deprecated(forRemoval = true, since = "1.4")
     @Override
     public void send(DatagramPacket p, byte ttl)
             throws IOException {
