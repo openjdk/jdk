@@ -102,23 +102,23 @@ public class RMIConnectorServer extends JMXConnectorServer {
         "jmx.remote.rmi.server.socket.factory";
 
     /**
-    * Name of the attribute that specifies an
-    * {@link ObjectInputFilter} pattern string to filter classes acceptable
-    * for {@link RMIServer#newClient(java.lang.Object) RMIServer.newClient()}
-    * remote method call.
-    * <p>
-    * The filter pattern must be in same format as used in
-    * {@link java.io.ObjectInputFilter.Config#createFilter}
-    * <p>
-    * This list of classes allowed by filter should correspond to the
-    * transitive closure of the credentials class (or classes) used by the
-    * installed {@linkplain JMXAuthenticator} associated with the
-    * {@linkplain RMIServer} implementation.
-    * If the attribute is not set then any class is deemed acceptable.
-    * @see ObjectInputFilter
-    *
-    * @since 10
-    */
+     * Name of the attribute that specifies an
+     * {@link ObjectInputFilter} pattern string to filter classes acceptable
+     * for {@link RMIServer#newClient(java.lang.Object) RMIServer.newClient()}
+     * remote method call.
+     * <p>
+     * The filter pattern must be in same format as used in
+     * {@link java.io.ObjectInputFilter.Config#createFilter}
+     * <p>
+     * This list of classes allowed by filter should correspond to the
+     * transitive closure of the credentials class (or classes) used by the
+     * installed {@linkplain JMXAuthenticator} associated with the
+     * {@linkplain RMIServer} implementation.
+     * If the attribute is not set then any class is deemed acceptable.
+     * @see ObjectInputFilter
+     *
+     * @since 10
+     */
     public static final String CREDENTIALS_FILTER_PATTERN =
         "jmx.remote.rmi.server.credentials.filter.pattern";
 
