@@ -2107,7 +2107,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     // subtype which we can't check or src is the same array as dst
     // but not necessarily exactly of type default_type.
     Label known_ok, halt;
-    metadata2reg(op->expected_type()->constant_encoding(), tmp);
+    metadata2reg(default_type->constant_encoding(), tmp);
     if (UseCompressedClassPointers) {
       // Tmp holds the default type. It currently comes uncompressed after the
       // load of a constant, so encode it.
