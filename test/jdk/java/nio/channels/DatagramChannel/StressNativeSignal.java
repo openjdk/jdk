@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.io.*;
 import java.net.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
+import java.util.concurrent.CountDownLatch;
 
 public class StressNativeSignal {
     private UDPThread udpThread;
@@ -49,12 +50,7 @@ public class StressNativeSignal {
 
     public static void main(String[] args) throws Throwable {
         StressNativeSignal test = new StressNativeSignal();
-        try {
-            Thread.sleep(3000);
-        } catch (Exception z) {
-            z.printStackTrace(System.err);
-        }
-
+        test.waitForTestThreadsToStart();
         test.shutdown();
     }
 
@@ -74,20 +70,37 @@ public class StressNativeSignal {
         }
     }
 
+    public void waitForTestThreadsToStart() {
+
+        udpThread.waitTestThreadStart();
+        serverSocketThread.waitTestThreadStart();
+    }
+
     public class ServerSocketThread extends Thread {
         private volatile boolean shouldTerminate;
         private ServerSocket socket;
+        private volatile CountDownLatch threadStarted = new CountDownLatch(1);
 
         public void run() {
             try {
                 socket = new ServerSocket(1122);
+            } catch (Exception ignore) {
+                System.err.println("ServerSocketThread: caught exception " + ignore.getClass().getName());
+                System.err.println("continue ...");
+            }
+
+            try {
+                threadStarted.countDown();
                 Socket client = socket.accept();
                 BufferedReader reader = new BufferedReader(new InputStreamReader(client.getInputStream()));
-                shouldTerminate = false;
+                // the test never reaches here as the close will affect the blocking accept call
+                // and there are no clients to connect to this serversocket
                 while (!shouldTerminate) {
                     String msg = reader.readLine();
                 }
             } catch (Exception z) {
+                System.err.println("ServerSocketThread: caught exception " + z.getClass().getName());
+                z.printStackTrace();
                 if (!shouldTerminate) {
                     z.printStackTrace(System.err);
                 }
@@ -103,11 +116,21 @@ public class StressNativeSignal {
                 // ignore
             }
         }
+
+        public void waitTestThreadStart() {
+            try {
+                threadStarted.await();
+            } catch (InterruptedException intEx) {
+                System.err.println("ServerSocketThread.waitTestThreadStart:" +
+                                   " InterruptException caught ... continue");
+            }
+        }
     }
 
     public class UDPThread extends Thread {
         private DatagramChannel channel;
         private volatile boolean shouldTerminate;
+        private volatile CountDownLatch threadStarted = new CountDownLatch(1);
 
         @Override
         public void run() {
@@ -120,17 +143,18 @@ public class StressNativeSignal {
             }
 
             ByteBuffer buf = ByteBuffer.allocate(6553600);
-            shouldTerminate = false;
-            while (!shouldTerminate) {
+            threadStarted.countDown();
+            do {
                 try {
                     buf.rewind();
                     channel.receive(buf);
-                } catch (IOException z) {
+                } catch (IOException z) { 
+                    System.err.println("UDPThread: caught exception " + z.getClass().getName());
                     if (!shouldTerminate) {
                         z.printStackTrace(System.err);
                     }
                 }
-            }
+            } while (!shouldTerminate);
         }
 
         public void terminate() {
@@ -138,8 +162,18 @@ public class StressNativeSignal {
             try {
                 channel.close();
             } catch (Exception z) {
+                System.err.println("UDPThread: caught exception " + z.getClass().getName());
                 z.printStackTrace(System.err);
                 // ignore
+            }
+        }
+
+        public void waitTestThreadStart() {
+            try {
+                threadStarted.await();
+            } catch (InterruptedException intEx) {
+                System.err.println("UDPThread.waitTestThreadStart:" +
+                                   " InterruptException caught ... continue");
             }
         }
     }
