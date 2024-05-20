@@ -730,9 +730,22 @@ Node* ConnectionGraph::specialize_castpp(Node* castpp, Node* base, Node* current
 
 Node* ConnectionGraph::split_castpp_load_through_phi(Node* curr_addp, Node* curr_load, Node* region, GrowableArray<Node*>* bases_for_loads, GrowableArray<Node *>  &alloc_worklist) {
   const Type* load_type = _igvn->type(curr_load);
-  Node* nsr_value       = _igvn->zerocon(load_type->basic_type());
-  Node* data_phi        = _igvn->transform(PhiNode::make(region, nsr_value, load_type));
-  Node* memory          = curr_load->in(MemNode::Memory);
+  Node* nsr_value = _igvn->zerocon(load_type->basic_type());
+  Node* memory = curr_load->in(MemNode::Memory);
+
+  // The data_phi merging the loads needs to be nullable if
+  // we are loading pointers.
+  if (load_type->make_ptr() != nullptr) {
+    if (load_type->isa_narrowoop()) {
+      load_type = load_type->meet(TypeNarrowOop::NULL_PTR);
+    } else if (load_type->isa_ptr()) {
+      load_type = load_type->meet(TypePtr::NULL_PTR);
+    } else {
+      assert(false, "Unexpected load ptr type.");
+    }
+  }
+
+  Node* data_phi = PhiNode::make(region, nsr_value, load_type);
 
   for (int i = 1; i < bases_for_loads->length(); i++) {
     Node* base = bases_for_loads->at(i);
@@ -746,28 +759,28 @@ Node* ConnectionGraph::split_castpp_load_through_phi(Node* curr_addp, Node* curr
 
       Node* addr = _igvn->transform(new AddPNode(base, base, curr_addp->in(AddPNode::Offset)));
       Node* mem = (memory->is_Phi() && (memory->in(0) == region)) ? memory->in(i) : memory;
-      Node* load = _igvn->transform(curr_load->clone());
+      Node* load = curr_load->clone();
       load->set_req(0, nullptr);
       load->set_req(1, mem);
       load->set_req(2, addr);
 
       if (cmp_region != nullptr) { // see comment on previous if
-        Node* intermediate_phi = _igvn->transform(PhiNode::make(cmp_region, nsr_value, load_type));
-        intermediate_phi->set_req(1, load);
+        Node* intermediate_phi = PhiNode::make(cmp_region, nsr_value, load_type);
+        intermediate_phi->set_req(1, _igvn->transform(load));
         load = intermediate_phi;
       }
 
-      data_phi->set_req(i, load);
+      data_phi->set_req(i, _igvn->transform(load));
     } else {
       // Just use the default, which is already in phi
     }
   }
 
-  // Takes care of updating CG and split_unique_types worklists due to cloned
-  // AddP->Load.
+  // Takes care of updating CG and split_unique_types worklists due
+  // to cloned AddP->Load.
   updates_after_load_split(data_phi, curr_load, alloc_worklist);
 
-  return data_phi;
+  return _igvn->transform(data_phi);
 }
 
 // This method only reduces CastPP fields loads; SafePoints are handled
