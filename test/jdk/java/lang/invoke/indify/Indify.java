@@ -172,8 +172,8 @@ public class Indify {
             throw new IllegalArgumentException("Usage: indify [--dest dir] [option...] file...");
         }
 
-        if ("--java".equals(avl.get(0))) {
-            avl.remove(0);
+        if ("--java".equals(avl.getFirst())) {
+            avl.removeFirst();
             try {
                 runApplication(avl.toArray(new String[0]));
             } catch (Exception ex) {
@@ -213,7 +213,7 @@ public class Indify {
     /** Execute the given application under a class loader which indifies all application classes. */
     public void runApplication(String... av) throws Exception {
         List<String> avl = new ArrayList<>(Arrays.asList(av));
-        String mainClassName = avl.remove(0);
+        String mainClassName = avl.removeFirst();
         av = avl.toArray(new String[0]);
         Class<?> mainClass = Class.forName(mainClassName, true, makeClassLoader());
         Method main = mainClass.getMethod("main", String[].class);
@@ -223,7 +223,7 @@ public class Indify {
 
     public void parseOptions(List<String> av) throws IOException {
         for (; !av.isEmpty(); av.remove(0)) {
-            String a = av.get(0);
+            String a = av.getFirst();
             if (a.startsWith("-")) {
                 String a2 = null;
                 int eq = a.indexOf('=');
@@ -247,7 +247,8 @@ public class Indify {
                     expandProperties = booleanOption(a2);
                     break;
                 case "--verify-specifier-count": case "--verify-specifier-count=":
-                    verifySpecifierCount = Integer.valueOf(a2);
+                        assert a2 != null;
+                        verifySpecifierCount = Integer.parseInt(a2);
                     break;
                 case "--overwrite": case "--overwrite=":
                     overwrite = booleanOption(a2);
@@ -271,8 +272,7 @@ public class Indify {
         if (dest == null && !overwrite)
             throw new RuntimeException("no output specified; need --dest d or --overwrite");
         if (expandProperties) {
-            for (int i = 0; i < av.size(); i++)
-                av.set(i, maybeExpandProperties(av.get(i)));
+            av.replaceAll(this::maybeExpandProperties);
         }
     }
 
@@ -306,11 +306,11 @@ public class Indify {
         File f = new File(a);
         String fn = f.getName();
         if (fn.endsWith(".class") && f.isFile())
-            indifyFile(f, dest);
+            indifyFile(f);
         else if (fn.endsWith(".jar") && f.isFile())
-            indifyJar(f, dest);
+            indifyJar(); //Not yet implemented
         else if (f.isDirectory())
-            indifyTree(f, dest);
+            indifyTree(f);
         else if (!keepgoing)
             throw new RuntimeException("unrecognized file: "+a);
     }
@@ -320,7 +320,7 @@ public class Indify {
             System.err.println("Created new directory to: "+dir);
     }
 
-    public void indifyFile(File f, File dest) throws IOException {
+    public void indifyFile(File f) throws IOException {
         if (verbose)  System.err.println("reading "+f);
         ClassModel model = parseClassFile(f);
         Logic logic = new Logic(model);
@@ -349,24 +349,22 @@ public class Indify {
         return new File(pathDir, qualname);
     }
 
-    public void indifyJar(File f, Object dest) {
+    public void indifyJar() {
         throw new UnsupportedOperationException("Not yet implemented");
     }
 
-    public void indifyTree(File f, File dest) throws IOException {
+    public void indifyTree(File f) throws IOException {
         if (verbose)  System.err.println("reading directory: "+f);
-        for (File f2 : Objects.requireNonNull(f.listFiles(new FilenameFilter() {
-            public boolean accept(File dir, String name) {
-                if (name.endsWith(".class")) return true;
-                if (name.contains(".")) return false;
-                // return true if it might be a package name:
-                return Character.isJavaIdentifierStart(name.charAt(0));
-            }
+        for (File f2 : Objects.requireNonNull(f.listFiles((dir, name) -> {
+            if (name.endsWith(".class")) return true;
+            if (name.contains(".")) return false;
+            // return true if it might be a package name:
+            return Character.isJavaIdentifierStart(name.charAt(0));
         }))) {
             if (f2.getName().endsWith(".class"))
-                indifyFile(f2, dest);
+                indifyFile(f2);
             else if (f2.isDirectory())
-                indifyTree(f2, dest);
+                indifyTree(f2);
         }
     }
 
@@ -389,14 +387,11 @@ public class Indify {
                         if (resolve)  resolveClass(c);
                         return c;
                     }
-                } catch (ClassNotFoundException ex) {
-                    // fall through
-                } catch (IOException ex) {
+                } catch (ClassNotFoundException | IOException ex) {
                     // fall through
                 } catch (Exception ex) {
                     // pass error from reportPatternMethods, etc.
-                    if (ex instanceof RuntimeException)  throw (RuntimeException) ex;
-                    throw new RuntimeException(ex);
+                    throw (RuntimeException) ex;
                 }
             }
             return super.loadClass(name, resolve);
@@ -555,7 +550,7 @@ public class Indify {
                                 a2 = finalConm.methodName().stringValue();
                             }
                             if(e instanceof InvokeInstruction && Objects.equals(a1, a2)){
-                                System.err.println(":::Transfmoring the Method: "+ m.methodName() +" instruction: invokestatic " + ((InvokeInstruction) e).type() + " to ldc: " + ((LoadableConstantEntry) con).index() );
+                                System.err.println(":::Transfmoring the Method: "+ m.methodName() +" instruction: invokestatic " + ((InvokeInstruction) e).type() + " to ldc: " +  con.index() );
                                 b.constantInstruction(Opcode.LDC_W,  ((LoadableConstantEntry) con).constantValue());
                             } else b.with(e);
                         };
@@ -610,25 +605,20 @@ public class Indify {
                 String pops = INSTRUCTION_POPS[i.opcode().bytecode()];
 
                 if(pops == null) break;
-                if (jvm.stackMotion(i.opcode().bytecode()))  continue decode;
+                if (jvm.stackMotion(i.opcode().bytecode()))  continue;
                 if (pops.indexOf('Q') >= 0 && i instanceof InvokeInstruction in) {
                     MemberRefEntry ref = (MemberRefEntry) classModel.constantPool().entryByIndex(in.method().index());
                     String methType = ref.nameAndType().type().stringValue();
                     String type = simplifyType(methType);
 
-                    switch (i.opcode().bytecode()){
-                        case GETSTATIC:
-                        case GETFIELD:
-                        case PUTSTATIC:
-                        case PUTFIELD:
-                            pops = pops.replace("Q", type);
-                            break;
-                        default:
+                    pops = switch (i.opcode().bytecode()) {
+                        case GETSTATIC, GETFIELD, PUTSTATIC, PUTFIELD -> pops.replace("Q", type);
+                        default -> {
                             if (!type.startsWith("("))
                                 throw new InternalError(i.toString());
-                            pops = pops.replace("Q$Q", type.substring(1).replace(")","$"));
-                            break;
-                    }
+                            yield pops.replace("Q$Q", type.substring(1).replace(")", "$"));
+                        }
+                    };
                     System.out.println("special type: "+type+" => "+pops);
                 }
                 int npops = pops.indexOf('$');
@@ -642,7 +632,7 @@ public class Indify {
                     if (have == 'X' || want == 'X')  continue;
                     if (have != want)  break decode;
                 }
-                if (pops.charAt(k++) != '$')  break decode;
+                if (pops.charAt(k++) != '$')  break;
                 args.clear();
                 while (k < pops.length())
                     args.add(pops.charAt(k++));
@@ -867,8 +857,7 @@ public class Indify {
         }
 
         boolean matchType(String descr, String requiredType) {
-            if (descr.equals(requiredType))  return true;
-            return false;
+            return descr.equals(requiredType);
         }
 
         private class JVMState {
@@ -938,6 +927,7 @@ public class Indify {
             for(Instruction instruction : instructions){
 
                 int bc = instruction.opcode().bytecode();
+                String UNKNOWN_CON = "<unknown>";
                 switch (bc){
                     case LDC,LDC_W:           jvm.push(((ConstantInstruction.LoadConstantInstruction) instruction).constantEntry()); break;
                     case LDC2_W:              jvm.push2(((ConstantInstruction.LoadConstantInstruction) instruction).constantEntry()); break;
@@ -964,10 +954,9 @@ public class Indify {
                         break;
                     case NEW:
                         String type = ((NewObjectInstruction) instruction).className().name().stringValue();
-                        switch (type) {
-                            case "java/lang/StringBuilder":
-                                jvm.push("StringBuilder");
-                                continue decode;
+                        if (type.equals("java/lang/StringBuilder")) {
+                            jvm.push("StringBuilder");
+                            continue;
                         }
                         break decode;
                     case GETSTATIC:
@@ -1052,7 +1041,7 @@ public class Indify {
                         }
                         switch (intrinsic == null ? "" : intrinsic) {
                             case "fromMethodDescriptorString":
-                                con = makeMethodTypeCon(args.get(0));
+                                con = makeMethodTypeCon(args.getFirst());
                                 args.clear(); args.add(con);
                                 continue;
                             case "methodType": {
@@ -1060,28 +1049,25 @@ public class Indify {
                                 StringBuilder buf = new StringBuilder();
                                 String rtype = null;
                                 for(Object typeArg : args) {
-                                    if (typeArg instanceof Class) {
-                                        Class<?> argClass = (Class<?>) typeArg;
+                                    if (typeArg instanceof Class<?> argClass) {
                                         if (argClass.isPrimitive()) {
-                                            char tchar;
-                                            switch (argClass.getName()) {
-                                                case "void":    tchar = 'V'; break;
-                                                case "boolean": tchar = 'Z'; break;
-                                                case "byte":    tchar = 'B'; break;
-                                                case "char":    tchar = 'C'; break;
-                                                case "short":   tchar = 'S'; break;
-                                                case "int":     tchar = 'I'; break;
-                                                case "long":    tchar = 'J'; break;
-                                                case "float":   tchar = 'F'; break;
-                                                case "double":  tchar = 'D'; break;
-                                                default:  throw new InternalError(argClass.toString());
-                                            }
+                                            char tchar = switch (argClass.getName()) {
+                                                case "void" -> 'V';
+                                                case "boolean" -> 'Z';
+                                                case "byte" -> 'B';
+                                                case "char" -> 'C';
+                                                case "short" -> 'S';
+                                                case "int" -> 'I';
+                                                case "long" -> 'J';
+                                                case "float" -> 'F';
+                                                case "double" -> 'D';
+                                                default -> throw new InternalError(argClass.toString());
+                                            };
                                             buf.append(tchar);
                                         } else {
                                             buf.append('L').append(argClass.getName().replace('.','/')).append(';');
                                         }
-                                    } else if (typeArg instanceof PoolEntry) {
-                                        PoolEntry argCon = (PoolEntry) typeArg;
+                                    } else if (typeArg instanceof PoolEntry argCon) {
                                         if(argCon.tag() == TAG_CLASS) {
                                             String cn = ((ClassEntry) argCon).name().stringValue();
                                             if (cn.endsWith(";"))
@@ -1102,7 +1088,7 @@ public class Indify {
                                     }
                                 }
                                 buf.append(')').append(rtype);
-                                con = con = makeMethodTypeCon(buf.toString());
+                                con = makeMethodTypeCon(buf.toString());
                                 args.clear(); args.add(con);
                                 continue;
                             }
@@ -1111,7 +1097,7 @@ public class Indify {
                                 args.clear(); args.add(intrinsic);
                                 continue;
                             case "lookupClass":
-                                if(args.equals(Arrays.asList("lookup"))) {
+                                if(args.equals(List.of("lookup"))) {
                                     args.clear(); args.add(classModel.thisClass());
                                     continue;
                                 }
@@ -1131,7 +1117,7 @@ public class Indify {
                             case "Double.valueOf":
                                 removeEmptyJVMSlots(args);
                                 if(args.size() == 1 ) {
-                                    arg = args.remove(0);
+                                    arg = args.removeFirst();
                                     if (arg instanceof Number) {
                                         args.add(arg); continue;
                                     }
@@ -1146,7 +1132,7 @@ public class Indify {
                                 args.add(intrinsic);
                                 continue;
                         }
-                        if(!hasReceiver && ownMethod != null && patternMark != 0) {
+                        if(!hasReceiver && ownMethod != null) {
                             con = constants.get(ownMethod);
                             if (con == null)  break decode;
                             args.clear(); args.add(con);
@@ -1206,7 +1192,7 @@ public class Indify {
                                 default:
                                     break decode;  // bail out
                             }
-                            continue decode;
+                            continue;
                         }
                         break decode;  // bail out
                 }
@@ -1214,7 +1200,6 @@ public class Indify {
             System.err.println(method+": bailout ==> jvm stack: "+jvm.stack);
             return null;
         }
-        private final String UNKNOWN_CON = "<unknown>";
 
         private void flattenVarargs(List<Object> args) {
             int size = args.size();
@@ -1255,7 +1240,7 @@ public class Indify {
             if(!((con = args.get(argi++)) instanceof StringEntry)) return null;
             name = ((StringEntry) con).utf8();
 
-            if(((con = args.get(argi++)) instanceof MethodTypeEntry) || (con instanceof ClassEntry)){
+            if(((con = args.get(argi)) instanceof MethodTypeEntry) || (con instanceof ClassEntry)){
                 assert con instanceof MethodTypeEntry;
                 type = ((MethodTypeEntry) con).descriptor();
             } else return null;
@@ -1299,10 +1284,10 @@ public class Indify {
 
             nt = poolBuilder.nameAndTypeEntry(name, type);
 
-            List<Object> extraArgs = new ArrayList<Object>();
+            List<Object> extraArgs = new ArrayList<>();
             if (argi < args.size()) {
                 extraArgs.addAll(args.subList(argi, args.size() - 1));
-                Object lastArg = args.get(args.size() - 1);
+                Object lastArg = args.getLast();
                 if (lastArg instanceof List) {
                     @SuppressWarnings("unchecked")
                     List<Object> lastArgs = (List<Object>) lastArg;
@@ -1445,9 +1430,7 @@ public class Indify {
         "checkcast=bkc$L$L instanceof=bkc$L$I monitorenter$L "+
         "monitorexit$L wide=* multianewarray=bkcx ifnull=boo "+
         "ifnonnull=boo goto_w=boooo jsr_w=boooo ";
-    private static final String[] INSTRUCTION_NAMES;
     private static final String[] INSTRUCTION_POPS;
-    private static final int[] INSTRUCTION_INFO;
     static {
         String[] insns = INSTRUCTION_FORMATS.split(" ");
         assert(insns[LOOKUPSWITCH].startsWith("lookupswitch"));
@@ -1487,8 +1470,6 @@ public class Indify {
                 info[i] = (char)( fmt.length() + (wfmt.length() * 16) );
             }
         }
-        INSTRUCTION_INFO = info;
-        INSTRUCTION_NAMES = names;
         INSTRUCTION_POPS = pops;
     }
 
