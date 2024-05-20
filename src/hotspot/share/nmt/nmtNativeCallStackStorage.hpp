@@ -26,6 +26,7 @@
 #define SHARE_NMT_NMTNATIVECALLSTACKSTORAGE_HPP
 
 #include "memory/allocation.hpp"
+#include "memory/arena.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/nativeCallStack.hpp"
 
@@ -60,7 +61,7 @@ public:
   };
 
 private:
-  struct Link : public CHeapObj<mtNMT> {
+  struct Link : public ArenaObj {
     Link* next;
     StackIndex stack;
     Link(Link* next, StackIndex v)
@@ -78,11 +79,13 @@ private:
       link = link->next;
     }
     int idx = _stacks.append(value);
-    Link* new_link = new Link(_buckets[bucket], StackIndex(idx));
+    Link* new_link = new (&_arena) Link(_buckets[bucket], StackIndex(idx));
     _buckets[bucket] = new_link;
     return new_link->stack;
   }
 
+  // For storage of the Links
+  Arena _arena;
   // Pick a prime number of buckets.
   // 4099 gives a 50% probability of collisions at 76 stacks (as per birthday problem).
   static const constexpr int _nr_buckets = 4099;
@@ -104,17 +107,13 @@ public:
   }
 
   NativeCallStackStorage(bool is_detailed_mode)
-  :  _buckets(nullptr), _stacks(), _is_detailed_mode(is_detailed_mode) {
+  : _arena(mtNMT), _buckets(nullptr), _stacks(), _is_detailed_mode(is_detailed_mode) {
     if (_is_detailed_mode) {
-      _buckets = NEW_C_HEAP_ARRAY(Link*, _nr_buckets, mtNMT);
+      _buckets = NEW_ARENA_ARRAY(&_arena, Link*, _nr_buckets);
       for (int i = 0; i < _nr_buckets; i++) {
         _buckets[i] = nullptr;
       }
     }
-  }
-
-  ~NativeCallStackStorage() {
-    FREE_C_HEAP_ARRAY(Link*, _buckets);
   }
 };
 
