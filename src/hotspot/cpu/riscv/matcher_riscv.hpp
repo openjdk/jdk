@@ -129,7 +129,7 @@
 
   // Does the CPU supports vector variable shift instructions?
   static constexpr bool supports_vector_variable_shifts(void) {
-    return false;
+    return UseRVV;
   }
 
   // Does target support predicated operation emulation.
