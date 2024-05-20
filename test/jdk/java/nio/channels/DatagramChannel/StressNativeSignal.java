@@ -148,7 +148,7 @@ public class StressNativeSignal {
                 try {
                     buf.rewind();
                     channel.receive(buf);
-                } catch (IOException z) { 
+                } catch (IOException z) {
                     System.err.println("UDPThread: caught exception " + z.getClass().getName());
                     if (!shouldTerminate) {
                         z.printStackTrace(System.err);
