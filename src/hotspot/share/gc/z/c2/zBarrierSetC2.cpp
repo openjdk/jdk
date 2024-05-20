@@ -407,23 +407,6 @@ bool ZBarrierSetC2::array_copy_requires_gc_barriers(bool tightly_coupled_alloc, 
   return type == T_OBJECT || type == T_ARRAY;
 }
 
-// This TypeFunc assumes a 64bit system
-static const TypeFunc* clone_type() {
-  // Create input type (domain)
-  const Type** const domain_fields = TypeTuple::fields(4);
-  domain_fields[TypeFunc::Parms + 0] = TypeInstPtr::NOTNULL;  // src
-  domain_fields[TypeFunc::Parms + 1] = TypeInstPtr::NOTNULL;  // dst
-  domain_fields[TypeFunc::Parms + 2] = TypeLong::LONG;        // size lower
-  domain_fields[TypeFunc::Parms + 3] = Type::HALF;            // size upper
-  const TypeTuple* const domain = TypeTuple::make(TypeFunc::Parms + 4, domain_fields);
-
-  // Create result type (range)
-  const Type** const range_fields = TypeTuple::fields(0);
-  const TypeTuple* const range = TypeTuple::make(TypeFunc::Parms + 0, range_fields);
-
-  return TypeFunc::make(domain, range);
-}
-
 #define XTOP LP64_ONLY(COMMA phase->top())
 
 void ZBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* ac) const {
@@ -479,31 +462,7 @@ void ZBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* a
     return;
   }
 
-  // Clone instance
-  Node* const ctrl       = ac->in(TypeFunc::Control);
-  Node* const mem        = ac->in(TypeFunc::Memory);
-  Node* const dst        = ac->in(ArrayCopyNode::Dest);
-  Node* const size       = ac->in(ArrayCopyNode::Length);
-
-  assert(size->bottom_type()->is_long(), "Should be long");
-
-  // The native clone we are calling here expects the instance size in words
-  // Add header/offset size to payload size to get instance size.
-  Node* const base_offset = phase->longcon(arraycopy_payload_base_offset(ac->is_clone_array()) >> LogBytesPerLong);
-  Node* const full_size = phase->transform_later(new AddLNode(size, base_offset));
-
-  Node* const call = phase->make_leaf_call(ctrl,
-                                           mem,
-                                           clone_type(),
-                                           ZBarrierSetRuntime::clone_addr(),
-                                           "ZBarrierSetRuntime::clone",
-                                           TypeRawPtr::BOTTOM,
-                                           src,
-                                           dst,
-                                           full_size,
-                                           phase->top());
-  phase->transform_later(call);
-  phase->igvn().replace_node(ac, call);
+  clone_instance_in_runtime(phase, ac, ZBarrierSetRuntime::clone_addr(), "ZBarrierSetRuntime::clone");
 }
 
 #undef XTOP
