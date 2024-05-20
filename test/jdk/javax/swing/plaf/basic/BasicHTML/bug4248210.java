@@ -37,7 +37,7 @@ import static java.awt.image.BufferedImage.TYPE_INT_RGB;
 
 /*
  * @test
- * @bug 4248210 8075917 4314194
+ * @bug 4248210
  * @key headful
  * @summary Tests that HTML in JLabel is painted using LAF-defined
             foreground color
