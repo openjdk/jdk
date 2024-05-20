@@ -210,7 +210,14 @@ public class Indify {
         }
     }
 
-    /** Execute the given application under a class loader which indifies all application classes. */
+    /**
+     *  Execute the given application under a class loader which indifies all application classes.
+     *
+     * @param av an array of strings where the first element is the fully qualified name
+     *           of the main class to be executed, and the remaining elements are arguments
+     *           to be passed to the main method of the specified class.
+     * @throws Exception if there is an error during class loading, method retrieval, or invocation.
+     */
     public void runApplication(String... av) throws Exception {
         List<String> avl = new ArrayList<>(Arrays.asList(av));
         String mainClassName = avl.removeFirst();
@@ -221,6 +228,16 @@ public class Indify {
         main.invoke(null, (Object) av);
     }
 
+    /**
+     * Parses a list of options and arguments, configuring the application's settings based on the provided options.
+     *
+     * @param av a list of strings representing the options and arguments to be parsed.
+     *           Options are expected to start with a hyphen ('-') or double hyphen ('--').
+     *           Arguments that do not start with a hyphen are considered as positional arguments and terminate the options parsing.
+     * @throws IOException if an I/O error occurs during the processing of options.
+     * @throws IllegalArgumentException if an unrecognized flag is encountered.
+     * @throws RuntimeException if no output destination is specified and the overwrite option is not enabled.
+     */
     public void parseOptions(List<String> av) throws IOException {
         for (; !av.isEmpty(); av.remove(0)) {
             String a = av.getFirst();
@@ -276,6 +293,15 @@ public class Indify {
         }
     }
 
+    /**
+     * Converts a string representation of a boolean option to its boolean value.
+     * If the input string is null, it returns true by default.
+     *
+     * @param s the string representation of the boolean option. Accepted values for true are "true", "yes", "on", and "1".
+     *          Accepted values for false are "false", "no", "off", and "0".
+     * @return the boolean value corresponding to the input string.
+     * @throws IllegalArgumentException if the input string is not recognized as a valid boolean option.
+     */
     private boolean booleanOption(String s) {
         if (s == null)  return true;
         return switch (s) {
