@@ -84,7 +84,7 @@ private:
   }
 
   // Pick a prime number of buckets.
-  // 4099 gives a 50% probability of collisions at 76 stacks (as per birthday problem).    os::
+  // 4099 gives a 50% probability of collisions at 76 stacks (as per birthday problem).
   static const constexpr int _nr_buckets = 4099;
   Link** _buckets;
   GrowableArrayCHeap<NativeCallStack, mtNMT> _stacks;
