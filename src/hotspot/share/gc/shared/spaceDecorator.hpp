@@ -39,7 +39,7 @@ class SpaceDecorator : AllStatic {
 };
 
 struct SpaceMangler : AllStatic {
-  static void mangle_region(MemRegion mr) PRODUCT_RETURN;
+  static void mangle_region(MemRegion mr) NOT_DEBUG_RETURN;
 };
 
 #endif // SHARE_GC_SHARED_SPACEDECORATOR_HPP

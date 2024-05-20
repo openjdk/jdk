@@ -26,14 +26,12 @@
 #include "gc/shared/spaceDecorator.hpp"
 #include "utilities/copy.hpp"
 
-#ifndef PRODUCT
+#ifdef ASSERT
 
 // Simply mangle the MemRegion mr.
 void SpaceMangler::mangle_region(MemRegion mr) {
   assert(ZapUnusedHeapArea, "Mangling should not be in use");
-#ifdef ASSERT
   Copy::fill_to_words(mr.start(), mr.word_size(), badHeapWord);
-#endif
 }
 
-#endif // not PRODUCT
+#endif // ASSERT

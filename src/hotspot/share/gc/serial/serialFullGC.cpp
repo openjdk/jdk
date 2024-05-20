@@ -365,8 +365,8 @@ public:
         cur_addr += relocate(cur_addr);
       }
 
-      HeapWord* new_top = get_compaction_top(i);
       // Reset top and unused memory
+      HeapWord* new_top = get_compaction_top(i);
       space->set_top(new_top);
       if (ZapUnusedHeapArea && new_top < top) {
         space->mangle_unused_area(MemRegion(new_top, top));
