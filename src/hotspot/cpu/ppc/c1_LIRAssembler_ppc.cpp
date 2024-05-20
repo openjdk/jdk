@@ -1827,18 +1827,17 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
 
   int flags = op->flags();
   ciArrayKlass* default_type = op->expected_type();
-  BasicType basic_type = default_type != nullptr ? default_type->element_type()->basic_type() : T_ILLEGAL;
+  BasicType basic_type = (default_type != nullptr) ? default_type->element_type()->basic_type() : T_ILLEGAL;
   if (basic_type == T_ARRAY) basic_type = T_OBJECT;
 
   // Set up the arraycopy stub information.
   ArrayCopyStub* stub = op->stub();
-  const int frame_resize = frame::native_abi_reg_args_size - sizeof(frame::java_abi); // C calls need larger frame.
 
   // Always do stub if no type information is available. It's ok if
   // the known type isn't loaded since the code sanity checks
   // in debug mode and the type isn't required when we know the exact type
   // also check that the type is an array type.
-  if (op->expected_type() == nullptr) {
+  if (default_type == nullptr) {
     assert(src->is_nonvolatile() && src_pos->is_nonvolatile() && dst->is_nonvolatile() && dst_pos->is_nonvolatile() &&
            length->is_nonvolatile(), "must preserve");
     address copyfunc_addr = StubRoutines::generic_arraycopy();
@@ -1873,7 +1872,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     return;
   }
 
-  assert(default_type != nullptr && default_type->is_array_klass(), "must be true at this point");
+  assert(default_type != nullptr && default_type->is_array_klass() && default_type->is_loaded(), "must be true at this point");
   Label cont, slow, copyfunc;
 
   bool simple_check_flag_set = flags & (LIR_OpArrayCopy::src_null_check |

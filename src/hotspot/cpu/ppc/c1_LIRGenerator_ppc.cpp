@@ -893,14 +893,7 @@ void LIRGenerator::do_NewInstance(NewInstance* x) {
     tty->print_cr("   ###class not loaded at new bci %d", x->printable_bci());
   }
 #endif
-  CodeEmitInfo* info = nullptr;
-  if (x->state_before() != nullptr && x->state_before()->force_reexecute()) {
-    info = state_for(x, x->state_before());
-    info->set_force_reexecute();
-  } else {
-    info = state_for(x, x->state());
-  }
-
+  CodeEmitInfo* info = state_for(x, x->state());
   LIR_Opr klass_reg = FrameMap::R4_metadata_opr; // Used by slow path (NewInstanceStub).
   LIR_Opr tmp1 = FrameMap::R5_oop_opr;
   LIR_Opr tmp2 = FrameMap::R6_oop_opr;
@@ -918,7 +911,13 @@ void LIRGenerator::do_NewInstance(NewInstance* x) {
 
 void LIRGenerator::do_NewTypeArray(NewTypeArray* x) {
   // Evaluate state_for early since it may emit code.
-  CodeEmitInfo* info = state_for(x, x->state());
+  CodeEmitInfo* info = nullptr;
+  if (x->state_before() != nullptr && x->state_before()->force_reexecute()) {
+    info = state_for(x, x->state_before());
+    info->set_force_reexecute();
+  } else {
+    info = state_for(x, x->state());
+  }
 
   LIRItem length(x->length(), this);
   length.load_item();
