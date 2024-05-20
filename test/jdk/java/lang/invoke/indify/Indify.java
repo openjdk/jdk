@@ -441,8 +441,8 @@ public class Indify {
         ClassModel classModel;
         ConstantPoolBuilder poolBuilder;  //Builder for the new constant pool
         final char[] poolMarks;
-        final Map<MethodModel, PoolEntry> Constants = new HashMap<>();
-        final Map<MethodModel, String> IndySignatures = new HashMap<>();
+        final Map<MethodModel, PoolEntry> constants = new HashMap<>();
+        final Map<MethodModel, String> indySignatures = new HashMap<>();
         Logic(ClassModel classModel){
             this.classModel = classModel;
             poolBuilder = ConstantPoolBuilder.of(classModel);
@@ -458,7 +458,7 @@ public class Indify {
             ClassTransform classTransform;
 
             for(MethodModel m : classModel.methods()){
-                if(Constants.containsKey(m)) continue;  //skip if pattern method, it will be removed
+                if(constants.containsKey(m)) continue;  //skip if pattern method, it will be removed
 
                 Predicate<MethodModel> filter = method -> Objects.equals(method.methodName().stringValue(), m.methodName().stringValue());
 
@@ -486,7 +486,7 @@ public class Indify {
                     }
                     if(conm == null) continue;
 
-                    PoolEntry con = Constants.get(conm);
+                    PoolEntry con = constants.get(conm);
                     if(quiet){
                         System.out.println();
                         System.err.println("$$$$$$$$$$$$$$$----------------------------------------------------------------Patching Method: " +  m.methodName() + "------------------------------------------------------------------");
@@ -507,7 +507,7 @@ public class Indify {
                         }
 
                         String invType = methodEntry.type().stringValue();
-                        String bsmType = IndySignatures.get(conm);
+                        String bsmType = indySignatures.get(conm);
                         if (!invType.equals(bsmType)) {
                             System.err.println(m+": warning: "+conm+" call type and local invoke type differ: " + bsmType+", " + invType);
                         }
@@ -660,7 +660,7 @@ public class Indify {
                     if(nameAndTypeMark(m.methodName().index(), m.methodType().index()) == mark) {
                         PoolEntry entry = scanPattern(m, mark);
                         if (entry == null) continue;
-                        Constants.put(m, entry);
+                        constants.put(m, entry);
                         found = true;
                     }
                 }
@@ -745,11 +745,11 @@ public class Indify {
         }
 
         void reportPatternMethods(boolean quietly, boolean allowMatchFailure) {
-            if (!quietly && !Constants.keySet().isEmpty())
-                System.err.println("pattern methods removed: "+Constants.keySet());
+            if (!quietly && !constants.keySet().isEmpty())
+                System.err.println("pattern methods removed: "+constants.keySet());
             for (MethodModel m : classModel.methods()) {
                 if (nameMark(m.methodName().stringValue()) != 0 &&
-                        Constants.get(m) == null) {
+                        constants.get(m) == null) {
                     String failure = "method has a special name but fails to match pattern: "+ m.methodName();
                     if (!allowMatchFailure)
                         throw new IllegalArgumentException(failure);
@@ -1147,7 +1147,7 @@ public class Indify {
                                 continue;
                         }
                         if(!hasReceiver && ownMethod != null && patternMark != 0) {
-                            con = Constants.get(ownMethod);
+                            con = constants.get(ownMethod);
                             if (con == null)  break decode;
                             args.clear(); args.add(con);
                             continue;
@@ -1165,7 +1165,7 @@ public class Indify {
                             PoolEntry indyCon = makeInvokeDynamicCon(bsmArgs);
                             if (indyCon != null) {
                                 PoolEntry typeCon = (PoolEntry) bsmArgs.get(3);
-                                IndySignatures.put(method, ((MethodTypeEntry) typeCon).descriptor().stringValue());
+                                indySignatures.put(method, ((MethodTypeEntry) typeCon).descriptor().stringValue());
                                 return indyCon;
                             }
                             System.err.println(method+": inscrutable bsm arguments: "+bsmArgs);
@@ -1357,11 +1357,7 @@ public class Indify {
 
             for (int i = 0; i < count; i++) {
                 int bsmRef = classModel.constantPool().bootstrapMethodEntry(i).bsmIndex();
-                List<LoadableConstantEntry> bsmArgs = new ArrayList<>();
-                for (LoadableConstantEntry lce : classModel.constantPool().bootstrapMethodEntry(i).arguments()){
-                    bsmArgs.add(lce);
-
-                }
+                List<LoadableConstantEntry> bsmArgs = new ArrayList<>(classModel.constantPool().bootstrapMethodEntry(i).arguments());
                 specs.add(new Object[]{ bsmRef, bsmArgs});
             }
             return specs;
