@@ -627,38 +627,35 @@ public class PrincipalName implements Cloneable {
      * @return true if two have identical values, otherwise, return false.
      */
     public boolean match(PrincipalName pname) {
-        boolean matched = true;
         //name type is just a hint, no two names can be the same ignoring name type.
         // if (this.nameType != pname.nameType) {
         //      matched = false;
         // }
-        if ((this.nameRealm != null) && (pname.nameRealm != null)) {
-            if (NAME_CASE_SENSITIVE_IN_MATCH) {
-                if (!(this.nameRealm.toString().equals(pname.nameRealm.toString()))) {
-                    matched = false;
-                }
-            } else {
-                if (!(this.nameRealm.toString().equalsIgnoreCase(pname.nameRealm.toString()))) {
-                    matched = false;
-                }
+        if (NAME_CASE_SENSITIVE_IN_MATCH) {
+            if (!(this.nameRealm.toString().equals(pname.nameRealm.toString()))) {
+                return false;
+            }
+        } else {
+            if (!(this.nameRealm.toString().equalsIgnoreCase(pname.nameRealm.toString()))) {
+                return false;
             }
         }
         if (this.nameStrings.length != pname.nameStrings.length) {
-            matched = false;
+            return false;
         } else {
             for (int i = 0; i < this.nameStrings.length; i++) {
                 if (NAME_CASE_SENSITIVE_IN_MATCH) {
                     if (!(this.nameStrings[i].equals(pname.nameStrings[i]))) {
-                        matched = false;
+                        return false;
                     }
                 } else {
                     if (!(this.nameStrings[i].equalsIgnoreCase(pname.nameStrings[i]))) {
-                        matched = false;
+                        return false;
                     }
                 }
             }
         }
-        return matched;
+        return true;
     }
 
     /**
