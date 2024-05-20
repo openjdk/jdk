@@ -26,6 +26,7 @@ package indify;
 import java.lang.classfile.*;
 import java.lang.classfile.constantpool.*;
 import java.lang.classfile.instruction.*;
+import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.util.*;
 import java.io.*;
@@ -217,8 +218,8 @@ public class Indify {
         String mainClassName = avl.remove(0);
         av = avl.toArray(new String[0]);
         Class<?> mainClass = Class.forName(mainClassName, true, makeClassLoader());
-        java.lang.reflect.Method main = mainClass.getMethod("main", String[].class);
-        try { main.setAccessible(true); } catch (SecurityException ex) { }
+        Method main = mainClass.getMethod("main", String[].class);
+        try { main.setAccessible(true); } catch (SecurityException ignored) { }
         main.invoke(null, (Object) av);
     }
 
@@ -279,11 +280,11 @@ public class Indify {
 
     private boolean booleanOption(String s) {
         if (s == null)  return true;
-        switch (s) {
-        case "true":  case "yes": case "on":  case "1": return true;
-        case "false": case "no":  case "off": case "0": return false;
-        }
-        throw new IllegalArgumentException("unrecognized boolean flag="+s);
+        return switch (s) {
+            case "true", "yes", "on", "1" -> true;
+            case "false", "no", "off", "0" -> false;
+            default -> throw new IllegalArgumentException("unrecognized boolean flag=" + s);
+        };
     }
 
     private String maybeExpandProperties(String s) {
@@ -341,7 +342,7 @@ public class Indify {
     }
 
     byte[] transformToBytes(ClassModel classModel) {
-        return ClassFile.of(StackMapsOption.GENERATE_STACK_MAPS).transform(classModel, ClassTransform.ACCEPT_ALL);
+        return of(StackMapsOption.GENERATE_STACK_MAPS).transform(classModel, ClassTransform.ACCEPT_ALL);
     }
 
     File classPathFile(File pathDir, String className) {
@@ -350,19 +351,20 @@ public class Indify {
         return new File(pathDir, qualname);
     }
 
-    public void indifyJar(File f, Object dest) throws IOException {
+    public void indifyJar(File f, Object dest){
         throw new UnsupportedOperationException("Not yet implemented");
     }
 
     public void indifyTree(File f, File dest) throws IOException {
         if (verbose)  System.err.println("reading directory: "+f);
-        for (File f2 : f.listFiles(new FilenameFilter() {
-                public boolean accept(File dir, String name) {
-                    if (name.endsWith(".class"))  return true;
-                    if (name.contains("."))  return false;
-                    // return true if it might be a package name:
-                    return Character.isJavaIdentifierStart(name.charAt(0));
-                }})) {
+        for (File f2 : Objects.requireNonNull(f.listFiles(new FilenameFilter() {
+            public boolean accept(File dir, String name) {
+                if (name.endsWith(".class")) return true;
+                if (name.contains(".")) return false;
+                // return true if it might be a package name:
+                return Character.isJavaIdentifierStart(name.charAt(0));
+            }
+        }))) {
             if (f2.getName().endsWith(".class"))
                 indifyFile(f2, dest);
             else if (f2.isDirectory())
@@ -539,8 +541,8 @@ public class Indify {
                         };
                         classTransform = ClassTransform.transformingMethodBodies(filter, codeTransform);
 
-                        newClassModel = ClassFile.of(StackMapsOption.GENERATE_STACK_MAPS).parse(
-                               ClassFile.of(StackMapsOption.GENERATE_STACK_MAPS).transform(newClassModel, classTransform)
+                        newClassModel = of(StackMapsOption.GENERATE_STACK_MAPS).parse(
+                               of(StackMapsOption.GENERATE_STACK_MAPS).transform(newClassModel, classTransform)
                         );
 
                         System.out.println();
@@ -549,19 +551,19 @@ public class Indify {
                         System.err.println("----------------------------------------------------------------Transforming Method LDC Instructions & Creating New ClassModels------------------------------------------------------------------}}}");
                         MethodModel finalConm = conm;
                         codeTransform = (b, e) ->{
-                            String a1, a2 = null;
+                            String a1 = null, a2 = null;
                             if(e instanceof InvokeInstruction){
                                 a1 = ((InvokeInstruction) e).method().name().stringValue();
                                 a2 = finalConm.methodName().stringValue();
                             }
-                            if(e instanceof InvokeInstruction && Objects.equals(((InvokeInstruction) e).method().name().stringValue(), finalConm.methodName().stringValue())){
+                            if(e instanceof InvokeInstruction && Objects.equals(a1, a2)){
                                 System.err.println(":::Transfmoring the Method: "+ m.methodName() +" instruction: invokestatic " + ((InvokeInstruction) e).type() + " to ldc: " + ((LoadableConstantEntry) con).index() );
                                 b.constantInstruction(Opcode.LDC_W,  ((LoadableConstantEntry) con).constantValue());
                             } else b.with(e);
                         };
                         classTransform = ClassTransform.transformingMethodBodies(filter, codeTransform);
-                        newClassModel = ClassFile.of(StackMapsOption.GENERATE_STACK_MAPS).parse(
-                             ClassFile.of(StackMapsOption.GENERATE_STACK_MAPS).transform(newClassModel, classTransform));
+                        newClassModel = of(StackMapsOption.GENERATE_STACK_MAPS).parse(
+                             of(StackMapsOption.GENERATE_STACK_MAPS).transform(newClassModel, classTransform));
                     }
                     shouldProceed.pop();
                 }
@@ -573,8 +575,8 @@ public class Indify {
 
         ClassModel removePatternMethodsAndVerify(ClassModel classModel){
 
-            ClassModel newClassModel =ClassFile.of(StackMapsOption.GENERATE_STACK_MAPS).parse(
-                    ClassFile.of(StackMapsOption.GENERATE_STACK_MAPS).transform(classModel, (b, e) ->
+            ClassModel newClassModel = of(StackMapsOption.GENERATE_STACK_MAPS).parse(
+                    of(StackMapsOption.GENERATE_STACK_MAPS).transform(classModel, (b, e) ->
                     {
                         if (!(e instanceof MethodModel mm &&
                                 (mm.methodName().stringValue().startsWith("MH_") ||
@@ -587,7 +589,7 @@ public class Indify {
             ClassHierarchyResolver classHierarchyResolver = classDesc -> ClassHierarchyResolver.ClassHierarchyInfo.ofInterface();
 
             try {
-                List<VerifyError> errors = ClassFile.of(StackMapsOption.GENERATE_STACK_MAPS,ClassHierarchyResolverOption.of(classHierarchyResolver)).verify(newClassModel);
+                List<VerifyError> errors = of(StackMapsOption.GENERATE_STACK_MAPS,ClassHierarchyResolverOption.of(classHierarchyResolver)).verify(newClassModel);
                 if (!errors.isEmpty()) {
                     for (VerifyError e : errors) {
                         System.err.println(e.getMessage());
@@ -669,7 +671,7 @@ public class Indify {
         }
 
         ClassModel transformFromCPBuilder(ClassModel oldClassModel, ConstantPoolBuilder cpBuilder){
-            byte[] new_bytes = ClassFile.of(StackMapsOption.GENERATE_STACK_MAPS).transform(oldClassModel, ClassTransform.endHandler(clb -> {
+            byte[] new_bytes = of(StackMapsOption.GENERATE_STACK_MAPS).transform(oldClassModel, ClassTransform.endHandler(clb -> {
                 for (PoolEntry entry: cpBuilder) {
                     if (entry instanceof Utf8Entry utf8Entry) {
                         clb.constantPool().utf8Entry(utf8Entry.stringValue());
@@ -741,7 +743,7 @@ public class Indify {
                 }
             }));
 
-            return ClassFile.of(StackMapsOption.GENERATE_STACK_MAPS).parse(new_bytes);
+            return of(StackMapsOption.GENERATE_STACK_MAPS).parse(new_bytes);
         }
 
         void reportPatternMethods(boolean quietly, boolean allowMatchFailure) {
@@ -1324,10 +1326,11 @@ public class Indify {
                     System.err.println("warning: unrecognized BSM argument "+x);
                     return null;
                 }
+                assert x instanceof LoadableConstantEntry;
                 extraArgConstants.add(((LoadableConstantEntry) x));
             }
 
-            List<Object[]> specs = bootstrap_MethodSpecifiers(true);
+            List<Object[]> specs = bootstrap_MethodSpecifiers();
             int specIndex = -1;
             Object[] spec = new Object[]{ bsm.index(), extraArgConstants };
             for (Object[] spec1 : specs) {
@@ -1346,10 +1349,10 @@ public class Indify {
             return poolBuilder.invokeDynamicEntry(bsmEntry, nt);
         }
 
-        List<Object[]> bootstrap_MethodSpecifiers(boolean createIfNotFound) {
+        List<Object[]> bootstrap_MethodSpecifiers() {
             List<Object[]> specs = new ArrayList<>();
             int count = classModel.constantPool().bootstrapMethodCount();
-            if (count == 0 && createIfNotFound ){
+            if (count == 0){
                 poolBuilder.utf8Entry("BootstrapMethods");
                 return specs;
             }
@@ -1393,7 +1396,7 @@ public class Indify {
                 throw new IOException("Verification failed");
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            System.err.println(e.getMessage());
         }
 
         return classModel = of().parse(bytes);
