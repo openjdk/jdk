@@ -88,7 +88,8 @@ private:
   Arena _arena;
   // Pick a prime number of buckets.
   // 4099 gives a 50% probability of collisions at 76 stacks (as per birthday problem).
-  static const constexpr int _nr_buckets = 4099;
+  static const constexpr int default_nr_buckets = 4099;
+  int _nr_buckets;
   Link** _buckets;
   GrowableArrayCHeap<NativeCallStack, mtNMT> _stacks;
   bool _is_detailed_mode;
@@ -106,8 +107,8 @@ public:
     return _stacks.at(si._stack_index);
   }
 
-  NativeCallStackStorage(bool is_detailed_mode)
-  : _arena(mtNMT), _buckets(nullptr), _stacks(), _is_detailed_mode(is_detailed_mode) {
+  NativeCallStackStorage(bool is_detailed_mode, int nr_buckets = default_nr_buckets)
+  : _arena(mtNMT), _nr_buckets(nr_buckets), _buckets(nullptr), _stacks(), _is_detailed_mode(is_detailed_mode) {
     if (_is_detailed_mode) {
       _buckets = NEW_ARENA_ARRAY(&_arena, Link*, _nr_buckets);
       for (int i = 0; i < _nr_buckets; i++) {
