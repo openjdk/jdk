@@ -5080,11 +5080,16 @@ static const uint64_t right_16_bits = right_n_bits(16);
 
     // Summing up calculated results for s2_new
     __ vsetvli(temp0, count, Assembler::e16, Assembler::m4);
-    // 0xFF * 0x10 = 0xFF0, 0xFF0 * 8 = 7F80, 7F80 * 4 = 1FE00 max, so:
+    // 0xFF   * 0x10 = 0xFF0   max per single vector element,
+    // 0xFF0  * 0x10 = 0xFF00  max per vector,
+    // 0xFF00 * 0x4  = 0x3FC00 max for the whole group, so:
     // 1. Need to do vector-widening reduction sum
     // 2. It is safe to perform sign-extension during vmv.x.s with 32-bits elements
     __ vwredsumu_vs(vtemp1, vs2acc[0], vzero);
-    __ vwredsumu_vs(vtemp2, vs2acc[2], vzero);
+    if (MaxVectorSize == 16)
+      // For small vector length, the rest of multiplied data
+      // is in successor of vs2acc[i], so summing it up, too
+      __ vwredsumu_vs(vtemp2, vs2acc[2], vzero);
 
     // Extracting results for:
     // s1_new
@@ -5094,8 +5099,10 @@ static const uint64_t right_16_bits = right_n_bits(16);
     __ vsetvli(temp0, count, Assembler::e32, Assembler::m1);
     __ vmv_x_s(temp1, vtemp1);
     __ add(s2, s2, temp1);
-    __ vmv_x_s(temp2, vtemp2);
-    __ add(s2, s2, temp2);
+    if (MaxVectorSize == 16) {
+      __ vmv_x_s(temp2, vtemp2);
+      __ add(s2, s2, temp2);
+    }
   }
 
   void adler32_process_bytes_by16(Register buff, Register s1, Register s2, Register right_16_bits,
@@ -5140,7 +5147,7 @@ static const uint64_t right_16_bits = right_n_bits(16);
       // No need to do vector-widening reduction sum
       __ vredsum_vs(vtemp1, vs2acc[i], vzero);
       if (MaxVectorSize == 16) {
-        // For small vector lengths, the rest of multiplied data
+        // For small vector length, the rest of multiplied data
         // is in successor of vs2acc[i], so summing it up, too
         __ vredsum_vs(vtemp2, vs2acc[i]->successor(), vzero);
       }
@@ -5194,6 +5201,7 @@ static const uint64_t right_16_bits = right_n_bits(16);
     Register temp1 = c_rarg5;
     Register temp2 = c_rarg6;
     Register right_16_bits = c_rarg7;
+    Register step = x28; // t3
 
     VectorRegister vzero = v4; // group: v5, v6, v7
     VectorRegister vbytes[] = {
@@ -5224,7 +5232,7 @@ static const uint64_t right_16_bits = right_n_bits(16);
     __ vmv_v_x(vtable_64, temp1);
     __ vsub_vv(vtable_64, vtable_64, vtemp1);
     // vtable_64 group now contains { 0x40, 0x3f, 0x3e, ..., 0x3, 0x2, 0x1 }
-
+    __ vmv_v_i(vzero, 0);
     if (MaxVectorSize > 16) {
       // Need to generate vtable_16 explicitly
       __ mv(temp1, 16);
@@ -5235,8 +5243,6 @@ static const uint64_t right_16_bits = right_n_bits(16);
       __ vmv_v_x(vtable_16, temp1);
       __ vsub_vv(vtable_16, vtable_16, vtemp1);
     }
-
-    __ vmv_v_i(vzero, 0);
 
     __ mv(base, BASE);
     __ mv(nmax, NMAX);
@@ -5278,13 +5284,14 @@ static const uint64_t right_16_bits = right_n_bits(16);
     __ sub(len, len, nmax);
     __ sub(count, nmax, 16);
     __ bltz(len, L_by16);
+    __ mv(step, 64);
 
   // Align L_nmax loop by 64
   __ bind(L_nmax_loop_entry);
     __ sub(count, count, 32);
 
   __ bind(L_nmax_loop);
-    adler32_process_bytes_by64(buff, s1, s2, count, vtable_64, vzero,
+    adler32_process_bytes_by64(buff, s1, s2, step, vtable_64, vzero,
       vbytes, vs1acc, vs2acc, temp0, temp1, temp2, vtemp1, vtemp2);
     __ sub(count, count, 64);
     __ bgtz(count, L_nmax_loop);
