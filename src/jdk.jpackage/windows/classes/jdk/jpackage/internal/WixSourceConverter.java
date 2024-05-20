@@ -32,10 +32,14 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.AbstractMap;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import javax.xml.XMLConstants;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
@@ -43,17 +47,24 @@ import javax.xml.transform.Source;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMResult;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stax.StAXResult;
 import javax.xml.transform.stream.StreamSource;
 import jdk.jpackage.internal.WixToolset.WixToolsetType;
 import jdk.jpackage.internal.resources.ResourceLocator;
+import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
 
 /**
- * Converts Wix v3 source file into Wix v4 format.
+ * Converts WiX v3 source file into WiX v4 format.
  */
 final class WixSourceConverter {
+
+    enum Status {
+        SavedAsIs,
+        SavedAsIsMalfromedXml,
+        Transformed,
+    }
 
     WixSourceConverter() {
         var xslt = new StreamSource(ResourceLocator.class.getResourceAsStream("wix3-to-wix4-conv.xsl"));
@@ -69,40 +80,75 @@ final class WixSourceConverter {
         this.outputFactory = XMLOutputFactory.newInstance();
     }
 
-    void appyTo(OverridableResource resource, Path resourceSaveAsFile) throws IOException {
-        if (resource.saveToStream(null) != OverridableResource.Source.DefaultResource) {
-            // Don't convert external resources
+    Status appyTo(OverridableResource resource, Path resourceSaveAsFile) throws IOException {
+        // Save the resource into DOM tree and read xml namespaces from it.
+        // If some namespaces are not recognized by this converter, save the resource as is.
+        // If all detected namespaces are recognized, run transformation of the DOM tree and save
+        // output into destination file.
+
+        var buf = saveResourceInMemory(resource);
+
+        Document inputXmlDom;
+        try {
+            inputXmlDom = IOUtils.initDocumentBuilder().parse(new ByteArrayInputStream(buf));
+        } catch (SAXException ex) {
+            // Malformed XML, don't run converter, save as is.
             resource.saveToFile(resourceSaveAsFile);
-            return;
+            return Status.SavedAsIsMalfromedXml;
         }
 
-        var buf = new ByteArrayOutputStream();
-        resource.saveToStream(buf);
-
-        var dom = new DOMResult();
-        var nc = new NamespaceCollector();
-
         try {
-            Source input = new StreamSource(new ByteArrayInputStream(buf.toByteArray()));
-            transformer.transform(input, dom);
+            var nc = new NamespaceCollector();
             TransformerFactory.newInstance().newTransformer().
-                    transform(new DOMSource(dom.getNode()), new StAXResult((XMLStreamWriter) Proxy.
+                    transform(new DOMSource(inputXmlDom), new StAXResult((XMLStreamWriter) Proxy.
                             newProxyInstance(XMLStreamWriter.class.getClassLoader(),
                                     new Class<?>[]{XMLStreamWriter.class}, nc)));
+            if (!nc.isOnlyKnownNamespacesUsed()) {
+                // Unsupported namespaces detected in input XML, don't run converter, save as is.
+                resource.saveToFile(resourceSaveAsFile);
+                return Status.SavedAsIs;
+            }
+        } catch (TransformerException ex) {
+            // Should never happen
+            throw new RuntimeException(ex);
+        }
+
+        Supplier<Source> inputXml = () -> {
+            // Should be "new DOMSource(inputXmlDom)", but no transfromation is applied in this case!
+            return new StreamSource(new ByteArrayInputStream(buf));
+        };
+
+        var nc = new NamespaceCollector();
+        try {
+            // Run transfomation to collect namespaces from the output XML.
+            transformer.transform(inputXml.get(), new StAXResult((XMLStreamWriter) Proxy.
+                    newProxyInstance(XMLStreamWriter.class.getClassLoader(),
+                            new Class<?>[]{XMLStreamWriter.class}, nc)));
         } catch (TransformerException ex) {
             // Should never happen
             throw new RuntimeException(ex);
         }
 
         try (var outXml = Files.newOutputStream(resourceSaveAsFile)) {
-            transformer.transform(new DOMSource(dom.getNode()), new StAXResult(
-                    (XMLStreamWriter) Proxy.newProxyInstance(XMLStreamWriter.class.getClassLoader(),
+            transformer.transform(inputXml.get(), new StAXResult((XMLStreamWriter) Proxy.
+                    newProxyInstance(XMLStreamWriter.class.getClassLoader(),
                             new Class<?>[]{XMLStreamWriter.class}, new NamespaceCleaner(nc.
                                     getPrefixToUri(), outputFactory.createXMLStreamWriter(outXml)))));
         } catch (TransformerException | XMLStreamException ex) {
             // Should never happen
             throw new RuntimeException(ex);
         }
+
+        return Status.Transformed;
+    }
+
+    @SuppressWarnings("try")
+    private static byte[] saveResourceInMemory(OverridableResource resource) throws IOException {
+        var buf = new ByteArrayOutputStream();
+        try (var nolog = resource.new NoLogging()) {
+            resource.saveToStream(buf);
+        }
+        return buf.toByteArray();
     }
 
     final static class ResourceGroup {
@@ -265,8 +311,7 @@ final class WixSourceConverter {
                 }
             }
 
-            method.invoke(target, args);
-            return null;
+            return method.invoke(target, args);
         }
 
         static class Prefix {
@@ -290,32 +335,73 @@ final class WixSourceConverter {
         public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
             switch (method.getName()) {
                 case "setPrefix", "writeNamespace" -> {
-                    prefixToUri.computeIfAbsent((String) args[0], k -> (String) args[1]);
+                    var prefix = (String) args[0];
+                    var namespace = prefixToUri.computeIfAbsent(prefix, k -> createValue(args[1]));
+                    if (XMLConstants.XMLNS_ATTRIBUTE.equals(prefix)) {
+                        namespace.setValue(true);
+                    }
                 }
                 case "writeStartElement", "writeEmptyElement" -> {
                     switch (args.length) {
                         case 3 ->
-                            prefixToUri.computeIfAbsent((String) args[0], k -> (String) args[2]);
-                        case 2 -> {
-                            final String name = (String) args[1];
-                            final String[] tokens = name.split(":", 2);
-                            if (tokens.length == 2) {
-                                prefixToUri.computeIfAbsent(tokens[0], k -> (String) args[1]);
-                            }
-                        }
+                            prefixToUri.computeIfAbsent((String) args[0], k -> createValue(
+                                    (String) args[2])).setValue(true);
+                        case 2 ->
+                            initFromElementName((String) args[1], (String) args[0]);
+                        case 1 ->
+                            initFromElementName((String) args[0], null);
                     }
                 }
             }
             return null;
         }
 
-        public Map<String, String> getPrefixToUri() {
-            return prefixToUri;
+        boolean isOnlyKnownNamespacesUsed() {
+            return prefixToUri.values().stream().filter(namespace -> {
+                return namespace.getValue();
+            }).allMatch(namespace -> {
+                if (!namespace.getValue()) {
+                    return true;
+                } else {
+                    return KNOWN_NAMESPACES.contains(namespace.getKey());
+                }
+            });
         }
 
-        private final Map<String, String> prefixToUri = new HashMap<>();
+        Map<String, String> getPrefixToUri() {
+            return prefixToUri.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey,
+                    e -> {
+                        return e.getValue().getKey();
+                    }));
+        }
+
+        private void initFromElementName(String name, String namespace) {
+            final String[] tokens = name.split(":", 2);
+            if (tokens.length == 2) {
+                if (namespace != null) {
+                    prefixToUri.computeIfAbsent(tokens[0], k -> createValue(namespace)).setValue(
+                            true);
+                } else {
+                    prefixToUri.computeIfPresent(tokens[0], (k, v) -> {
+                        v.setValue(true);
+                        return v;
+                    });
+                }
+            }
+        }
+
+        private Map.Entry<String, Boolean> createValue(Object prefix) {
+            return new AbstractMap.SimpleEntry<String, Boolean>((String) prefix, false);
+        }
+
+        private final Map<String, Map.Entry<String, Boolean>> prefixToUri = new HashMap<>();
     }
 
     private final Transformer transformer;
     private final XMLOutputFactory outputFactory;
+
+    // The list of WiX v3 namespaces this converter can handle
+    private final static Set<String> KNOWN_NAMESPACES = Set.of(
+            "http://schemas.microsoft.com/wix/2006/localization",
+            "http://schemas.microsoft.com/wix/2006/wi");
 }

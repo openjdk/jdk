@@ -513,24 +513,6 @@ public class WinMsiBundler  extends AbstractBundler {
             data.put("JpIsSystemWide", "yes");
         }
 
-        var resources = new WixSourceConverter.ResourceGroup(wixToolset.getType());
-
-        // Copy standard l10n files.
-        for (String loc : Arrays.asList("de", "en", "ja", "zh_CN")) {
-            String fname = "MsiInstallerStrings_" + loc + ".wxl";
-            resources.addResource(createResource(fname, params).setPublicName(fname).setCategory(
-                    I18N.getString("resource.wxl-file")), configDir.resolve(fname));
-        }
-
-        resources.addResource(createResource("main.wxs", params).setPublicName("main.wxs").
-                setCategory(I18N.getString("resource.main-wix-file")), configDir.resolve("main.wxs"));
-
-        resources.addResource(createResource("overrides.wxi", params).setPublicName(
-                "overrides.wxi").setCategory(I18N.getString("resource.overrides-wix-file")),
-                configDir.resolve("overrides.wxi"));
-
-        resources.saveResources();
-
         return data;
     }
 
@@ -566,10 +548,31 @@ public class WinMsiBundler  extends AbstractBundler {
             }
         }
 
+        final Path configDir = CONFIG_ROOT.fetchFrom(params);
+
+        var primaryWxlFiles = Stream.of("de", "en", "ja", "zh_CN").map(loc -> {
+            return configDir.resolve("MsiInstallerStrings_" + loc + ".wxl");
+        }).toList();
+
+        var wixResources = new WixSourceConverter.ResourceGroup(wixToolset.getType());
+
+        // Copy standard l10n files.
+        for (var path : primaryWxlFiles) {
+            var name = path.getFileName().toString();
+            wixResources.addResource(createResource(name, params).setPublicName(name).setCategory(
+                    I18N.getString("resource.wxl-file")), path);
+        }
+
+        wixResources.addResource(createResource("main.wxs", params).setPublicName("main.wxs").
+                setCategory(I18N.getString("resource.main-wix-file")), configDir.resolve("main.wxs"));
+
+        wixResources.addResource(createResource("overrides.wxi", params).setPublicName(
+                "overrides.wxi").setCategory(I18N.getString("resource.overrides-wix-file")),
+                configDir.resolve("overrides.wxi"));
+
         // Filter out custom l10n files that were already used to
         // override primary l10n files. Ignore case filename comparison,
         // both lists are expected to be short.
-        List<Path> primaryWxlFiles = getWxlFilesFromDir(params, CONFIG_ROOT);
         List<Path> customWxlFiles = getWxlFilesFromDir(params, RESOURCE_DIR).stream()
                 .filter(custom -> primaryWxlFiles.stream().noneMatch(primary ->
                         primary.getFileName().toString().equalsIgnoreCase(
@@ -579,6 +582,17 @@ public class WinMsiBundler  extends AbstractBundler {
                                 String.format("[%s]", I18N.getString("resource.wxl-file")),
                                 custom.getFileName().toString())))
                 .toList();
+
+        // Copy custom l10n files.
+        for (var path : customWxlFiles) {
+            var name = path.getFileName().toString();
+            wixResources.addResource(createResource(name, params).setPublicName(name).
+                    setSourceOrder(OverridableResource.Source.ResourceDir).setCategory(I18N.
+                    getString("resource.wxl-file")), path);
+        }
+
+        // Save all WiX resources into config dir.
+        wixResources.saveResources();
 
         // All l10n files are supplied to WiX with "-loc", but only
         // Cultures from custom files and a single primary Culture are
