@@ -91,7 +91,7 @@ public class ConstantShiftAndEqZeroTests {
     public boolean test31ShiftBitTest(int a) {
         return ((a >> 31) & 0b1) == 0;
     }
-    
+
     // Tests with Unsigned shifts
     @Test
     @IR(failOn = { IRNode.RSHIFT, IRNode.URSHIFT }, counts = { IRNode.AND_I, "1" })
