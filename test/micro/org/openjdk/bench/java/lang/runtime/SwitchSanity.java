@@ -74,4 +74,10 @@ public class SwitchSanity {
         }
         return sum;
     }
+
+    public static void main(String[] args) {
+        SwitchSanity s = new SwitchSanity();
+        s.setup();
+        System.out.println(s.switchSum());
+    }
 }

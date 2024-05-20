@@ -26,6 +26,7 @@
 package java.lang.runtime;
 
 import java.lang.Enum.EnumDesc;
+import java.lang.classfile.ClassBuilder;
 import java.lang.classfile.CodeBuilder;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDesc;
@@ -49,6 +50,7 @@ import java.lang.classfile.ClassFile;
 import java.lang.classfile.Label;
 import java.lang.classfile.instruction.SwitchCase;
 
+import jdk.internal.constant.MethodTypeDescImpl;
 import jdk.internal.constant.ReferenceClassDescImpl;
 import jdk.internal.misc.PreviewFeatures;
 import jdk.internal.vm.annotation.Stable;
@@ -77,10 +79,8 @@ public class SwitchBootstraps {
     private static final boolean previewEnabled = PreviewFeatures.isEnabled();
 
 
-    private static final MethodTypeDesc TYPES_SWITCH_DESCRIPTOR =
-            MethodTypeDesc.ofDescriptor("(Ljava/lang/Object;ILjava/util/function/BiPredicate;Ljava/util/List;)I");
-
     private static final ClassDesc CD_Objects = ReferenceClassDescImpl.ofValidated("Ljava/util/Objects;");
+    private static final ClassDesc CD_BiPredicate = ReferenceClassDescImpl.ofValidated("Ljava/util/function/BiPredicate;");
 
     private static class StaticHolders {
         private static final MethodHandle NULL_CHECK;
@@ -406,7 +406,7 @@ public class SwitchBootstraps {
             // Objects.checkIndex(RESTART_IDX, labelConstants + 1)
             cb.iload(RESTART_IDX);
             cb.loadConstant(labelConstants.length + 1);
-            cb.invokestatic(CD_Objects, "checkIndex", MethodTypeDesc.of(ConstantDescs.CD_int, ConstantDescs.CD_int, ConstantDescs.CD_int));
+            cb.invokestatic(CD_Objects, "checkIndex", MethodTypeDescImpl.ofTrusted(ConstantDescs.CD_int, ConstantDescs.CD_int, ConstantDescs.CD_int));
             cb.pop();
             cb.aload(SELECTOR_OBJ);
             Label nonNullLabel = cb.newLabel();
@@ -622,11 +622,15 @@ public class SwitchBootstraps {
         List<EnumDesc<?>> enumDescs = new ArrayList<>();
         List<Class<?>> extraClassLabels = new ArrayList<>();
 
-        byte[] classBytes = ClassFile.of().build(ClassDesc.of(typeSwitchClassName(caller.lookupClass())),
+        byte[] classBytes = ClassFile.of().build(ReferenceClassDescImpl.ofValidatedBinaryName(typeSwitchClassName(caller.lookupClass())),
                 clb -> {
                     clb.withFlags(AccessFlag.FINAL, AccessFlag.SUPER, AccessFlag.SYNTHETIC)
                        .withMethodBody("typeSwitch",
-                                       TYPES_SWITCH_DESCRIPTOR,
+                                       MethodTypeDescImpl.ofValidated(ConstantDescs.CD_int,
+                                            ClassDesc.ofDescriptor(selectorType.descriptorString()),
+                                            ConstantDescs.CD_int,
+                                            CD_BiPredicate,
+                                            ConstantDescs.CD_List),
                                        ClassFile.ACC_FINAL | ClassFile.ACC_PUBLIC | ClassFile.ACC_STATIC,
                                        generateTypeSwitchSkeleton(selectorType, labelConstants, enumDescs, extraClassLabels));
         });
@@ -638,16 +642,12 @@ public class SwitchBootstraps {
             MethodHandle typeSwitch = lookup.findStatic(lookup.lookupClass(),
                                                         "typeSwitch",
                                                         MethodType.methodType(int.class,
-                                                                              Object.class,
+                                                                              selectorType,
                                                                               int.class,
                                                                               BiPredicate.class,
                                                                               List.class));
-            typeSwitch = MethodHandles.insertArguments(typeSwitch, 2, new ResolvedEnumLabels(caller, enumDescs.toArray(EnumDesc[]::new)),
+            typeSwitch = MethodHandles.insertArguments(typeSwitch, 2, new ResolvedEnumLabels(caller, enumDescs.toArray(new EnumDesc<?>[0])),
                                                        List.copyOf(extraClassLabels));
-            typeSwitch = MethodHandles.explicitCastArguments(typeSwitch,
-                                                             MethodType.methodType(int.class,
-                                                                                   selectorType,
-                                                                                   int.class));
             return typeSwitch;
         } catch (Throwable t) {
             throw new IllegalArgumentException(t);
