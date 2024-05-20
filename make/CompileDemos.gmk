@@ -183,7 +183,7 @@ $(eval $(call SetupBuildDemo, SwingSet2, \
 ))
 
 $(eval $(call SetupBuildDemo, Font2DTest, \
-    DISABLED_WARNINGS := rawtypes deprecation unchecked serial cast this-escape, \
+    DISABLED_WARNINGS := rawtypes deprecation unchecked serial cast this-escape dangling-doc-comments, \
     DEMO_SUBDIR := jfc, \
 ))
 

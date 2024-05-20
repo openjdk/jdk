@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 import javax.lang.model.AnnotatedConstruct;
@@ -61,6 +62,7 @@ import com.sun.tools.javac.comp.Enter;
 import com.sun.tools.javac.comp.Env;
 import com.sun.tools.javac.main.JavaCompiler;
 import com.sun.tools.javac.processing.PrintingProcessor;
+import com.sun.tools.javac.tree.DocCommentTable;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.tree.TreeInfo;
@@ -74,7 +76,6 @@ import static com.sun.tools.javac.code.TypeTag.CLASS;
 import com.sun.tools.javac.comp.Attr;
 import com.sun.tools.javac.comp.Modules;
 import com.sun.tools.javac.comp.Resolve;
-import com.sun.tools.javac.comp.Resolve.RecoveryLoadClass;
 import com.sun.tools.javac.resources.CompilerProperties.Notes;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
 
@@ -433,6 +434,15 @@ public class JavacElements implements Elements {
 
     @DefinedBy(Api.LANGUAGE_MODEL)
     public String getDocComment(Element e) {
+        return getDocCommentItem(e, ((docCommentTable, tree) -> docCommentTable.getCommentText(tree)));
+    }
+
+    @DefinedBy(Api.LANGUAGE_MODEL)
+    public DocCommentKind getDocCommentKind(Element e) {
+        return getDocCommentItem(e, ((docCommentTable, tree) -> docCommentTable.getCommentKind(tree)));
+    }
+
+    private <R> R getDocCommentItem(Element e, BiFunction<DocCommentTable, JCTree, R> f) {
         // Our doc comment is contained in a map in our toplevel,
         // indexed by our tree.  Find our enter environment, which gives
         // us our toplevel.  It also gives us a tree that contains our
@@ -444,7 +454,7 @@ public class JavacElements implements Elements {
         JCCompilationUnit toplevel = treeTop.snd;
         if (toplevel.docComments == null)
             return null;
-        return toplevel.docComments.getCommentText(tree);
+        return f.apply(toplevel.docComments, tree);
     }
 
     @DefinedBy(Api.LANGUAGE_MODEL)
