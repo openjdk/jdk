@@ -152,8 +152,6 @@ public class Indify {
      */
     public int verifySpecifierCount = -1;
 
-    public ClassModel classModel;
-
     /**
      * Processes command-line arguments to transform class files by incorporating JSR 292 features.
      * <p>
@@ -1399,7 +1397,7 @@ public class Indify {
             System.err.println(e.getMessage());
         }
 
-        return classModel = of().parse(bytes);
+        return ClassFile.of().parse(bytes);
     }
 
     private static final Object[] INSTRUCTION_CONSTANTS = {
