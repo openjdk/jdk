@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "memory/resourceArea.hpp"
 #include "nmt/nmtNativeCallStackStorage.hpp"
 #include "runtime/os.hpp"
 #include "unittest.hpp"
