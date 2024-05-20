@@ -111,4 +111,32 @@ static jmethodID sjm_isTreeRootVisible = NULL;
     selectedRowCacheValid = NO;
 }
 
+- (void)postSelectionChanged
+{
+    AWT_ASSERT_APPKIT_THREAD;
+    [self invalidateSelectionCache];
+    [super postSelectionChanged];
+}
+
+- (void)postTreeNodeCollapsed
+{
+    AWT_ASSERT_APPKIT_THREAD;
+    [self invalidateCache];
+    [super postTreeNodeCollapsed];
+}
+
+- (void)postTreeNodeExpanded
+{
+    AWT_ASSERT_APPKIT_THREAD;
+    [self invalidateCache];
+    [super postTreeNodeExpanded];
+}
+
+- (void)postSelectedCellsChanged
+{
+    AWT_ASSERT_APPKIT_THREAD;
+    [self invalidateSelectionCache];
+    [super postSelectedCellsChanged];
+}
+
 @end

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -349,9 +349,6 @@ static jobject sAccessibilityClass = NULL;
 - (void)postSelectionChanged
 {
     AWT_ASSERT_APPKIT_THREAD;
-    if ([self respondsToSelector:NSSelectorFromString(@"invalidateSelectionCache")]) {
-        [self invalidateSelectionCache];
-    }
     NSAccessibilityPostNotification(self, NSAccessibilitySelectedChildrenChangedNotification);
 }
 
@@ -382,27 +379,18 @@ static jobject sAccessibilityClass = NULL;
 - (void)postTreeNodeExpanded
 {
     AWT_ASSERT_APPKIT_THREAD;
-    if ([self respondsToSelector:NSSelectorFromString(@"invalidateCache")]) {
-        [self invalidateCache];
-    }
     NSAccessibilityPostNotification([[self accessibilitySelectedRows] firstObject], NSAccessibilityRowExpandedNotification);
 }
 
 - (void)postTreeNodeCollapsed
 {
     AWT_ASSERT_APPKIT_THREAD;
-    if ([self respondsToSelector:NSSelectorFromString(@"invalidateCache")]) {
-        [self invalidateCache];
-    }
     NSAccessibilityPostNotification([[self accessibilitySelectedRows] firstObject], NSAccessibilityRowCollapsedNotification);
 }
 
 - (void)postSelectedCellsChanged
 {
     AWT_ASSERT_APPKIT_THREAD;
-    if ([self respondsToSelector:NSSelectorFromString(@"invalidateSelectionCache")]) {
-        [self invalidateSelectionCache];
-    }
     NSAccessibilityPostNotification(self, NSAccessibilitySelectedCellsChangedNotification);
 }
 
