@@ -135,11 +135,6 @@ public:
   virtual inline HeapWord* allocate(size_t word_size, bool is_tlab);
   virtual inline HeapWord* par_allocate(size_t word_size, bool is_tlab);
 
-  virtual void collect(bool full,
-                       bool clear_all_soft_refs,
-                       size_t size,
-                       bool is_tlab);
-
   HeapWord* expand_and_allocate(size_t size, bool is_tlab);
 
   void gc_prologue();
@@ -148,6 +143,15 @@ public:
   bool should_collect(bool   full,
                       size_t word_size,
                       bool   is_tlab);
+
+  bool should_allocate(size_t word_size, bool is_tlab) {
+    bool result = false;
+    size_t overflow_limit = (size_t)1 << (BitsPerSize_t - LogHeapWordSize);
+    if (!is_tlab || supports_tlab_allocation()) {
+      result = (word_size > 0) && (word_size < overflow_limit);
+    }
+    return result;
+  }
 
   // Performance Counter support
   void update_counters();
