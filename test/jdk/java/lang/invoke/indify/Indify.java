@@ -27,7 +27,6 @@ import java.lang.classfile.*;
 import java.lang.classfile.constantpool.*;
 import java.lang.classfile.instruction.*;
 import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.*;
 import java.io.*;
 import java.lang.reflect.Modifier;
