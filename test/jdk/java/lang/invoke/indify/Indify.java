@@ -198,7 +198,9 @@ public class Indify {
                 System.err.println("Failure on " + a);
                 if (!keepgoing) {
                     break;
-                }
+                } else if (ex != err) {
+                err.addSuppressed(ex);
+            }
             }
         }
 
