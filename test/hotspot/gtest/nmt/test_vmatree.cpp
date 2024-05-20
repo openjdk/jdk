@@ -38,20 +38,13 @@ public:
     return tree._tree;
   }
 
-  NativeCallStack make_stack(size_t a, size_t b, size_t c, size_t d) {
-    NativeCallStack stack;
-    stack._stack[0] = (address)a;
-    stack._stack[1] = (address)b;
-    stack._stack[2] = (address)c;
-    stack._stack[3] = (address)d;
+  NativeCallStack make_stack(size_t a) {
+    NativeCallStack stack((address*)&a, 1);
     return stack;
   }
 
-  NativeCallStack stack1 = make_stack(size_t{0x89ac},
-                                      size_t{0x1fdd},
-                                      size_t{0x2997},
-                                      size_t{0x2add});
-  NativeCallStack stack2 = make_stack(0x123, 0x456,0x789, 0xAAAA);
+  NativeCallStack stack1 = make_stack(0x89ac);
+  NativeCallStack stack2 = make_stack(0x123);
 
   VMATree::StateType in_type_of(VMATree::TreapNode* x) {
     return x->val().in.type();
