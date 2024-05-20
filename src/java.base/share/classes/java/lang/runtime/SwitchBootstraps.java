@@ -164,9 +164,10 @@ public class SwitchBootstraps {
             || (!invocationType.returnType().equals(int.class))
             || !invocationType.parameterType(1).equals(int.class))
             throw new IllegalArgumentException("Illegal invocation type " + invocationType);
-        requireNonNull(labels);
 
-        Stream.of(labels).forEach(l -> verifyLabel(l, selectorType));
+        for (Object l : labels) { // implicit null-check
+            verifyLabel(l, selectorType);
+        }
 
         MethodHandle target = generateTypeSwitch(lookup, selectorType, labels);
 
