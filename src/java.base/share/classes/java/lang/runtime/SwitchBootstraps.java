@@ -48,6 +48,8 @@ import jdk.internal.access.SharedSecrets;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.Label;
 import java.lang.classfile.instruction.SwitchCase;
+
+import jdk.internal.constant.ReferenceClassDescImpl;
 import jdk.internal.misc.PreviewFeatures;
 import jdk.internal.vm.annotation.Stable;
 
@@ -76,11 +78,12 @@ public class SwitchBootstraps {
 
     private static final MethodHandle NULL_CHECK;
     private static final MethodHandle IS_ZERO;
-    private static final MethodHandle CHECK_INDEX;
     private static final MethodHandle MAPPED_ENUM_LOOKUP;
 
     private static final MethodTypeDesc TYPES_SWITCH_DESCRIPTOR =
             MethodTypeDesc.ofDescriptor("(Ljava/lang/Object;ILjava/util/function/BiPredicate;Ljava/util/List;)I");
+
+    private static final ClassDesc CD_Objects = ReferenceClassDescImpl.ofValidated("Ljava/util/Objects;");
 
     static {
         try {
@@ -88,8 +91,6 @@ public class SwitchBootstraps {
                                            MethodType.methodType(boolean.class, Object.class));
             IS_ZERO = LOOKUP.findStatic(SwitchBootstraps.class, "isZero",
                                            MethodType.methodType(boolean.class, int.class));
-            CHECK_INDEX = LOOKUP.findStatic(Objects.class, "checkIndex",
-                                           MethodType.methodType(int.class, int.class, int.class));
             MAPPED_ENUM_LOOKUP = LOOKUP.findStatic(SwitchBootstraps.class, "mappedEnumLookup",
                                                    MethodType.methodType(int.class, Enum.class, MethodHandles.Lookup.class,
                                                                          Class.class, EnumDesc[].class, EnumMap.class));
@@ -168,8 +169,6 @@ public class SwitchBootstraps {
         Stream.of(labels).forEach(l -> verifyLabel(l, selectorType));
 
         MethodHandle target = generateTypeSwitch(lookup, selectorType, labels);
-
-        target = withIndexCheck(target, labels.length);
 
         return new ConstantCallSite(target);
     }
@@ -293,7 +292,6 @@ public class SwitchBootstraps {
         }
 
         target = target.asType(invocationType);
-        target = withIndexCheck(target, labels.length);
 
         return new ConstantCallSite(target);
     }
@@ -337,12 +335,6 @@ public class SwitchBootstraps {
             }
         }
         return enumMap.map[value.ordinal()];
-    }
-
-    private static MethodHandle withIndexCheck(MethodHandle target, int labelsCount) {
-        MethodHandle checkIndex = MethodHandles.insertArguments(CHECK_INDEX, 1, labelsCount + 1);
-
-        return MethodHandles.filterArguments(target, 1, checkIndex);
     }
 
     private static final class ResolvedEnumLabels implements BiPredicate<Integer, Object> {
@@ -407,6 +399,11 @@ public class SwitchBootstraps {
         int EXTRA_CLASS_LABELS  = 3;
 
         return cb -> {
+            // Objects.checkIndex(RESTART_IDX, labelConstants + 1)
+            cb.iload(RESTART_IDX);
+            cb.loadConstant(labelConstants.length + 1);
+            cb.invokestatic(CD_Objects, "checkIndex", MethodTypeDesc.of(ConstantDescs.CD_int, ConstantDescs.CD_int, ConstantDescs.CD_int));
+            cb.pop();
             cb.aload(SELECTOR_OBJ);
             Label nonNullLabel = cb.newLabel();
             cb.if_nonnull(nonNullLabel);
