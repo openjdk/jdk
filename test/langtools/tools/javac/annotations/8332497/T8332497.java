@@ -58,10 +58,11 @@ public class T8332497 extends TestRunner {
         new toolbox.JavacTask(tb)
                 .options(
                         "-processor", AP.class.getName(),
-                        "--enable-preview"
+                        "--enable-preview",
+                        "--source", System.getProperty("java.specification.version")
                 )
                 .outdir(base.toString())
-                .files(base.resolve("Main.java"), base.resolve("Ann.java"))
+                .files(base.resolve("Main.java"))
                 .run(Task.Expect.SUCCESS)
                 .writeAll()
                 .getOutputLines(Task.OutputKind.DIRECT);
