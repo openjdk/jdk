@@ -309,7 +309,7 @@ public class LoggingDeadlock2 {
             errAccumulator.join();
 
             out = outAccumulator.result();
-            err = errAccumulator.result();
+            err = errAccumulator.result().replaceAll(".* VM warning:.* deprecated.*\\R", "");
         } catch (Throwable t) {
             throwable = t;
         }
