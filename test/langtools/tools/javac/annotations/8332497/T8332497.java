@@ -52,11 +52,14 @@ public class T8332497 extends TestRunner {
             import javax.lang.model.element.TypeElement;
             import javax.lang.model.SourceVersion;
             @SupportedAnnotationTypes("*")
-            @SupportedSourceVersion(SourceVersion.RELEASE_23)
             public class AP extends AbstractProcessor {
                 @Override
                 public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
                     return false;
+                }
+                @Override
+                public SourceVersion getSupportedSourceVersion() {
+                    return SourceVersion.latestSupported();
                 }
             }
             """;
