@@ -73,25 +73,13 @@ public class SynchronousQueue20Test extends JSR166TestCase {
                 executor.submit(() -> {
                     var item = new Item();
                     survivors.put(item, null);
-                    while(true) {
-                        try {
-                            queue.put(item);
-                            break;
-                        } catch (InterruptedException ie) {
-                            // Retry
-                        }
-                    }
+                    queue.put(item);
+                    return null;
                 });
 
                 executor.submit(() -> {
-                    while(true) {
-                        try {
-                            queue.take();
-                            break;
-                        } catch (InterruptedException ie) {
-                            // Retry
-                        }
-                    }
+                    queue.take();
+                    return null;
                 });
             }
         } // Close waits until all tasks are done
