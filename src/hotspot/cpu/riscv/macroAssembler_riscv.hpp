@@ -746,12 +746,6 @@ public:
   void la(Register Rd, const address addr, int32_t &offset);
   void la(Register Rd, const Address &adr);
 
-  void li48(Register Rd, Register tmp, address addr, int32_t &offset);
-  void li48(Register Rd, Register tmp, address addr);
- private:
-  void li48_imp(Register Rd, Register tmp, uintptr_t addr, int32_t &offset);
- public:
-
   void li16u(Register Rd, uint16_t imm);
   void li32(Register Rd, int32_t imm);
   void li64(Register Rd, int64_t imm);
@@ -777,17 +771,16 @@ public:
     }
   }
 
-  void movptr(Register Rd, address addr, int32_t &offset);
-
-  void movptr(Register Rd, address addr) {
-    int offset = 0;
-    movptr(Rd, addr, offset);
-    addi(Rd, Rd, offset);
-  }
-
-  inline void movptr(Register Rd, uintptr_t imm64) {
-    movptr(Rd, (address)imm64);
-  }
+  // Generates a load of a 48-bit constant which can be
+  // patched to any 48-bit constant, i.e. address.
+  // If common case supply additional temp register
+  // to shorten the instruction sequence.
+  void movptr(Register Rd, address addr, Register tmp = noreg);
+  void movptr(Register Rd, address addr, int32_t &offset, Register tmp = noreg);
+ private:
+  void movptr_1(Register Rd, uintptr_t addr, int32_t &offset);
+  void movptr_2(Register Rd, uintptr_t addr, int32_t &offset, Register tmp);
+ public:
 
   // arith
   void add (Register Rd, Register Rn, int64_t increment, Register temp = t0);
