@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,8 @@ import java.io.Reader;
 import java.io.Writer;
 import java.nio.charset.Charset;
 import java.util.Arrays;
+import java.util.Locale;
+
 import jdk.internal.io.JdkConsole;
 import jdk.internal.io.JdkConsoleProvider;
 import jdk.jshell.JShellConsole;
@@ -193,8 +195,8 @@ public class ConsoleImpl {
          * {@inheritDoc}
          */
         @Override
-        public JdkConsole format(String fmt, Object... args) {
-            writer().format(fmt, args).flush();
+        public JdkConsole format(Locale locale, String format, Object... args) {
+            writer().format(locale, format, args).flush();
             return this;
         }
 
@@ -202,19 +204,11 @@ public class ConsoleImpl {
          * {@inheritDoc}
          */
         @Override
-        public JdkConsole printf(String format, Object... args) {
-            return format(format, args);
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public String readLine(String fmt, Object... args) {
+        public String readLine(Locale locale, String format, Object... args) {
             try {
                 return sendAndReceive(() -> {
                     remoteInput.write(Task.READ_LINE.ordinal());
-                    String prompt = fmt.formatted(args);
+                    String prompt = String.format(locale, format, args);
                     char[] chars = prompt.toCharArray();
                     sendChars(chars, 0, chars.length);
                     char[] line = readChars();
@@ -230,18 +224,18 @@ public class ConsoleImpl {
          */
         @Override
         public String readLine() {
-            return readLine("");
+            return readLine(Locale.getDefault(Locale.Category.FORMAT), "");
         }
 
         /**
          * {@inheritDoc}
          */
         @Override
-        public char[] readPassword(String fmt, Object... args) {
+        public char[] readPassword(Locale locale, String format, Object... args) {
             try {
                 return sendAndReceive(() -> {
                     remoteInput.write(Task.READ_PASSWORD.ordinal());
-                    String prompt = fmt.formatted(args);
+                    String prompt = String.format(locale, format, args);
                     char[] chars = prompt.toCharArray();
                     sendChars(chars, 0, chars.length);
                     return readChars();
@@ -256,7 +250,7 @@ public class ConsoleImpl {
          */
         @Override
         public char[] readPassword() {
-            return readPassword("");
+            return readPassword(Locale.getDefault(Locale.Category.FORMAT), "");
         }
 
         /**
