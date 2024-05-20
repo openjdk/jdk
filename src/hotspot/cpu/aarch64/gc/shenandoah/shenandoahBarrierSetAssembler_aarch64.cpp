@@ -112,10 +112,10 @@ void ShenandoahBarrierSetAssembler::satb_write_barrier_pre(MacroAssembler* masm,
   Address index(thread, in_bytes(ShenandoahThreadLocalData::satb_mark_queue_index_offset()));
   Address buffer(thread, in_bytes(ShenandoahThreadLocalData::satb_mark_queue_buffer_offset()));
 
-  // Is marking still active?
+  // Is marking active?
   Address gc_state(thread, in_bytes(ShenandoahThreadLocalData::gc_state_offset()));
-  __ ldrb(tmp, gc_state);
-  __ tbz(tmp, ShenandoahHeap::MARKING_BITPOS, done);
+  __ ldrb(tmp1, gc_state);
+  __ tbz(tmp1, ShenandoahHeap::MARKING_BITPOS, done);
 
   // Do we need to load the previous value?
   if (obj != noreg) {
