@@ -441,7 +441,7 @@
  *     </ul>
  *
  * Deploying with this configuration prevents processors from unknowingly making
- * outbound network connections to fetch DTDs, or process XML that makes use of
+ * outbound network connections to fetch DTDs, or processing XML that makes use of
  * extension functions.
  * </li>
  * </ul>
