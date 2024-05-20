@@ -36,6 +36,7 @@ import java.io.Writer;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Formatter;
+import java.util.Locale;
 import java.util.Objects;
 
 import jdk.internal.access.SharedSecrets;
@@ -90,23 +91,18 @@ public final class JdkConsoleImpl implements JdkConsole {
     }
 
     @Override
-    public JdkConsole format(String fmt, Object ... args) {
-        formatter.format(fmt, args).flush();
+    public JdkConsole format(Locale locale, String format, Object ... args) {
+        formatter.format(locale, format, args).flush();
         return this;
     }
 
     @Override
-    public JdkConsole printf(String format, Object ... args) {
-        return format(format, args);
-    }
-
-    @Override
-    public String readLine(String fmt, Object ... args) {
+    public String readLine(Locale locale, String format, Object ... args) {
         String line = null;
         synchronized (writeLock) {
             synchronized(readLock) {
-                if (!fmt.isEmpty())
-                    pw.format(fmt, args);
+                if (!format.isEmpty())
+                    pw.format(locale, format, args);
                 try {
                     char[] ca = readline(false);
                     if (ca != null)
@@ -121,11 +117,11 @@ public final class JdkConsoleImpl implements JdkConsole {
 
     @Override
     public String readLine() {
-        return readLine("");
+        return readLine(Locale.getDefault(Locale.Category.FORMAT), "");
     }
 
     @Override
-    public char[] readPassword(String fmt, Object ... args) {
+    public char[] readPassword(Locale locale, String format, Object ... args) {
         char[] passwd = null;
         synchronized (writeLock) {
             synchronized(readLock) {
@@ -137,8 +133,8 @@ public final class JdkConsoleImpl implements JdkConsole {
                 }
                 IOError ioe = null;
                 try {
-                    if (!fmt.isEmpty())
-                        pw.format(fmt, args);
+                    if (!format.isEmpty())
+                        pw.format(locale, format, args);
                     passwd = readline(true);
                 } catch (IOException x) {
                     ioe = new IOError(x);
@@ -197,7 +193,7 @@ public final class JdkConsoleImpl implements JdkConsole {
 
     @Override
     public char[] readPassword() {
-        return readPassword("");
+        return readPassword(Locale.getDefault(Locale.Category.FORMAT), "");
     }
 
     @Override

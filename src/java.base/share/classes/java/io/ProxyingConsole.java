@@ -26,6 +26,8 @@
 package java.io;
 
 import java.nio.charset.Charset;
+import java.util.Locale;
+
 import jdk.internal.io.JdkConsole;
 
 /**
@@ -119,9 +121,17 @@ final class ProxyingConsole extends Console {
      * {@inheritDoc}
      */
     @Override
-    public Console format(String fmt, Object ... args) {
+    public Console format(String format, Object ... args) {
+        return format(Locale.getDefault(Locale.Category.FORMAT), format, args);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Console format(Locale locale, String format, Object ... args) {
         synchronized (writeLock) {
-            delegate.format(fmt, args);
+            delegate.format(locale, format, args);
         }
         return this;
     }
@@ -131,8 +141,16 @@ final class ProxyingConsole extends Console {
      */
     @Override
     public Console printf(String format, Object ... args) {
+        return printf(Locale.getDefault(Locale.Category.FORMAT), format, args);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Console printf(Locale locale, String format, Object ... args) {
         synchronized (writeLock) {
-            delegate.printf(format, args);
+            delegate.format(locale, format, args);
         }
         return this;
     }
@@ -141,10 +159,18 @@ final class ProxyingConsole extends Console {
      * {@inheritDoc}
      */
     @Override
-    public String readLine(String fmt, Object ... args) {
+    public String readLine(String format, Object ... args) {
+        return readLine(Locale.getDefault(Locale.Category.FORMAT), format, args);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String readLine(Locale locale, String format, Object ... args) {
         synchronized (writeLock) {
             synchronized (readLock) {
-                return delegate.readLine(fmt, args);
+                return delegate.readLine(locale, format, args);
             }
         }
     }
@@ -163,10 +189,18 @@ final class ProxyingConsole extends Console {
      * {@inheritDoc}
      */
     @Override
-    public char[] readPassword(String fmt, Object ... args) {
+    public char[] readPassword(String format, Object ... args) {
+        return readPassword(Locale.getDefault(Locale.Category.FORMAT), format, args);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public char[] readPassword(Locale locale, String format, Object ... args) {
         synchronized (writeLock) {
             synchronized (readLock) {
-                return delegate.readPassword(fmt, args);
+                return delegate.readPassword(locale, format, args);
             }
         }
     }
