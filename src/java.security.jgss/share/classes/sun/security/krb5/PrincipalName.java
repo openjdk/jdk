@@ -627,10 +627,8 @@ public class PrincipalName implements Cloneable {
      * @return true if two have identical values, otherwise, return false.
      */
     public boolean match(PrincipalName pname) {
-        //name type is just a hint, no two names can be the same ignoring name type.
-        // if (this.nameType != pname.nameType) {
-        //      matched = false;
-        // }
+        // No need to check name type. It's just a hint, no two names can be
+        // the same ignoring name type.
         if (NAME_CASE_SENSITIVE_IN_MATCH) {
             if (!(this.nameRealm.toString().equals(pname.nameRealm.toString()))) {
                 return false;
