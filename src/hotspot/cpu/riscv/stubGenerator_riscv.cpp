@@ -5186,7 +5186,8 @@ static const uint64_t right_16_bits = right_n_bits(16);
     StubCodeMark mark(this, "StubRoutines", "updateBytesAdler32");
     address start = __ pc();
 
-    Label L_simple_by1_loop, L_nmax, L_nmax_loop, L_nmax_loop_entry, L_by16, L_by16_loop, L_by1_loop, L_do_mod, L_combine, L_by1;
+    Label L_simple_by1_loop, L_nmax, L_nmax_loop, L_nmax_loop_entry,
+      L_by16, L_by16_loop, L_by16_loop_unroll, L_by1_loop, L_do_mod, L_combine, L_by1;
 
     // Aliases
     Register adler  = c_rarg0;
@@ -5313,6 +5314,17 @@ static const uint64_t right_16_bits = right_n_bits(16);
   __ bind(L_by16);
     __ add(len, len, count);
     __ bltz(len, L_by1);
+    // Trying to unroll
+    __ mv(count, 64);
+    __ blt(len, count, L_by16_loop);
+
+  __ bind(L_by16_loop_unroll);
+    adler32_process_bytes_by64(buff, s1, s2, count, vtable_64, vzero,
+      vbytes, vs1acc, vs2acc, temp0, temp1, temp2, vtemp1, vtemp2);
+    __ sub(len, len, 64);
+    __ bge(len, count, L_by16_loop_unroll);
+    __ mv(count, 16);
+    __ blt(len, count, L_by1);
 
   __ bind(L_by16_loop);
     adler32_process_bytes_by16(buff, s1, s2, right_16_bits, vtable_16, vzero,
