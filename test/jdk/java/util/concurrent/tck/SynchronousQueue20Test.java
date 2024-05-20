@@ -38,7 +38,7 @@ import junit.framework.Test;
 import java.util.Collections;
 import java.util.Map;
 import java.util.WeakHashMap;
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 
@@ -62,53 +62,45 @@ public class SynchronousQueue20Test extends JSR166TestCase {
 
     private void assertDoesntLeak(SynchronousQueue<Object> queue) throws InterruptedException {
         final int NUMBER_OF_ITEMS = 250;
-        final int MAX_ROUNDS = 200;
         final int ROUND_WAIT_MILLIS = 50;
-
-        final CountDownLatch allProduced = new CountDownLatch(NUMBER_OF_ITEMS);
-        final CountDownLatch allConsumed = new CountDownLatch(NUMBER_OF_ITEMS);
 
         class Item {}
         final Map<Item, Void> survivors =
                 Collections.synchronizedMap(WeakHashMap.newWeakHashMap(NUMBER_OF_ITEMS));
 
-        for(int i = 0;i < NUMBER_OF_ITEMS;++i) {
-            Thread.ofVirtual().start(() -> {
-                var item = new Item();
-                survivors.put(item, null);
-                while(true) {
-                    try {
-                        queue.put(item);
-                        break;
-                    } catch (InterruptedException ie) {
-                        // Retry
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            for(int i = 0;i < NUMBER_OF_ITEMS;++i) {
+                executor.submit(() -> {
+                    var item = new Item();
+                    survivors.put(item, null);
+                    while(true) {
+                        try {
+                            queue.put(item);
+                            break;
+                        } catch (InterruptedException ie) {
+                            // Retry
+                        }
                     }
-                }
-                allProduced.countDown();
-            });
+                });
 
-            Thread.ofVirtual().start(() -> {
-                while(true) {
-                    try {
-                        queue.take();
-                        break;
-                    } catch (InterruptedException ie) {
-                        // Retry
+                executor.submit(() -> {
+                    while(true) {
+                        try {
+                            queue.take();
+                            break;
+                        } catch (InterruptedException ie) {
+                            // Retry
+                        }
                     }
-                }
-                allConsumed.countDown();
-            });
-        }
+                });
+            }
+        } // Close waits until all tasks are done
 
-        assertTrue(allProduced.await(10, TimeUnit.SECONDS));
-        assertTrue(allConsumed.await(10, TimeUnit.SECONDS));
-        var round = 0;
-        while(!survivors.isEmpty() && round++ < MAX_ROUNDS) {
+        while(!survivors.isEmpty()) {
             System.gc();
             Thread.sleep(ROUND_WAIT_MILLIS); // We don't expect interruptions
         }
 
-        assertTrue(survivors.isEmpty());
         assertTrue(queue.isEmpty()); // Make sure that the queue survives until the end
     }
 
