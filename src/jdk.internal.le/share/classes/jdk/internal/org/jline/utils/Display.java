@@ -76,7 +76,9 @@ public class Display {
 
     public void resize(int rows, int columns) {
         if (rows == 0 || columns == 0) {
-            columns = 1;
+            // OpenJDK patch. Original code assigned 1 to columns, which ended up
+            // appending " \b" to the prompt in certain cases.
+            columns = Integer.MAX_VALUE - 1;
             rows = 1;
         }
         if (this.rows != rows || this.columns != columns) {
