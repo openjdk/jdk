@@ -76,27 +76,30 @@ public class SwitchBootstraps {
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
     private static final boolean previewEnabled = PreviewFeatures.isEnabled();
 
-    private static final MethodHandle NULL_CHECK;
-    private static final MethodHandle IS_ZERO;
-    private static final MethodHandle MAPPED_ENUM_LOOKUP;
 
     private static final MethodTypeDesc TYPES_SWITCH_DESCRIPTOR =
             MethodTypeDesc.ofDescriptor("(Ljava/lang/Object;ILjava/util/function/BiPredicate;Ljava/util/List;)I");
 
     private static final ClassDesc CD_Objects = ReferenceClassDescImpl.ofValidated("Ljava/util/Objects;");
 
-    static {
-        try {
-            NULL_CHECK = LOOKUP.findStatic(Objects.class, "isNull",
-                                           MethodType.methodType(boolean.class, Object.class));
-            IS_ZERO = LOOKUP.findStatic(SwitchBootstraps.class, "isZero",
-                                           MethodType.methodType(boolean.class, int.class));
-            MAPPED_ENUM_LOOKUP = LOOKUP.findStatic(SwitchBootstraps.class, "mappedEnumLookup",
-                                                   MethodType.methodType(int.class, Enum.class, MethodHandles.Lookup.class,
-                                                                         Class.class, EnumDesc[].class, EnumMap.class));
-        }
-        catch (ReflectiveOperationException e) {
-            throw new ExceptionInInitializerError(e);
+    private static class StaticHolders {
+        private static final MethodHandle NULL_CHECK;
+        private static final MethodHandle IS_ZERO;
+        private static final MethodHandle MAPPED_ENUM_LOOKUP;
+
+        static {
+            try {
+                NULL_CHECK = LOOKUP.findStatic(Objects.class, "isNull",
+                                               MethodType.methodType(boolean.class, Object.class));
+                IS_ZERO = LOOKUP.findStatic(SwitchBootstraps.class, "isZero",
+                                               MethodType.methodType(boolean.class, int.class));
+                MAPPED_ENUM_LOOKUP = LOOKUP.findStatic(SwitchBootstraps.class, "mappedEnumLookup",
+                                                       MethodType.methodType(int.class, Enum.class, MethodHandles.Lookup.class,
+                                                                             Class.class, EnumDesc[].class, EnumMap.class));
+            }
+            catch (ReflectiveOperationException e) {
+                throw new ExceptionInInitializerError(e);
+            }
         }
     }
 
@@ -282,11 +285,11 @@ public class SwitchBootstraps {
             //else if (idx == 0) return mappingArray[selector.ordinal()]; //mapping array created lazily
             //else return "typeSwitch(labels)"
             MethodHandle body =
-                    MethodHandles.guardWithTest(MethodHandles.dropArguments(NULL_CHECK, 0, int.class),
+                    MethodHandles.guardWithTest(MethodHandles.dropArguments(StaticHolders.NULL_CHECK, 0, int.class),
                                                 MethodHandles.dropArguments(MethodHandles.constant(int.class, -1), 0, int.class, Object.class),
-                                                MethodHandles.guardWithTest(MethodHandles.dropArguments(IS_ZERO, 1, Object.class),
+                                                MethodHandles.guardWithTest(MethodHandles.dropArguments(StaticHolders.IS_ZERO, 1, Object.class),
                                                                             generateTypeSwitch(lookup, invocationType.parameterType(0), labels),
-                                                                            MethodHandles.insertArguments(MAPPED_ENUM_LOOKUP, 1, lookup, enumClass, labels, new EnumMap())));
+                                                                            MethodHandles.insertArguments(StaticHolders.MAPPED_ENUM_LOOKUP, 1, lookup, enumClass, labels, new EnumMap())));
             target = MethodHandles.permuteArguments(body, MethodType.methodType(int.class, Object.class, int.class), 1, 0);
         } else {
             target = generateTypeSwitch(lookup, invocationType.parameterType(0), labels);
