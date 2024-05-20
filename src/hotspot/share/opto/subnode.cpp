@@ -1623,6 +1623,23 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     return new BoolNode( ncmp, _test.negate() );
   }
 
+  // Change "bool eq/ne (cmp (and (urshift X 4) 1) 0)" into "bool ne/eq (cmp (and X 8) 0)".
+  // Note: rshift gets converted to urshift in and Ideal
+  if (cmp2_type == TypeInt::ZERO &&
+      (_test._test == BoolTest::eq || _test._test == BoolTest::ne) &&
+      cmp1_op == Op_AndI && cmp1->in(1)->Opcode() == Op_URShiftI) {
+    const TypeInt* shift_val_type = phase->type(cmp1->in(1)->in(2))->isa_int();
+    const TypeInt* mask_type = phase->type(cmp1->in(2))->isa_int();
+    if (shift_val_type && shift_val_type->is_con() && mask_type && mask_type->is_con()) {
+      jint shift = shift_val_type->get_con();
+      jint mask = mask_type->get_con();
+      Node* nmask = phase->intcon(java_shift_left(mask, shift));
+      Node* new_and = phase->transform(new AndINode(cmp1->in(1)->in(1), nmask));
+      Node* ncmp = phase->transform(new CmpINode(new_and, cmp2));
+      return new BoolNode(ncmp, _test._test);
+    }
+  }
+
   // Change ((x & m) u<= m) or ((m & x) u<= m) to always true
   // Same with ((x & m) u< m+1) and ((m & x) u< m+1)
   if (cop == Op_CmpU &&
