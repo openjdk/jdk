@@ -129,7 +129,7 @@
 
   // Does the CPU supports vector variable shift instructions?
   static constexpr bool supports_vector_variable_shifts(void) {
-    return false;
+    return true;
   }
 
   // Does target support predicated operation emulation.
@@ -139,12 +139,12 @@
 
   // Does the CPU supports vector variable rotate instructions?
   static constexpr bool supports_vector_variable_rotates(void) {
-    return false;
+    return true;
   }
 
   // Does the CPU supports vector constant rotate instructions?
   static constexpr bool supports_vector_constant_rotates(int shift) {
-    return false;
+    return true;
   }
 
   // Does the CPU supports vector unsigned comparison instructions?
