@@ -116,9 +116,9 @@ public class RMIConnectorServer extends JMXConnectorServer {
     * {@linkplain RMIServer} implementation.
     * If the attribute is not set then any class is deemed acceptable.
     * @see ObjectInputFilter
-     *
-     * @since 10
-     */
+    *
+    * @since 10
+    */
     public static final String CREDENTIALS_FILTER_PATTERN =
         "jmx.remote.rmi.server.credentials.filter.pattern";
 

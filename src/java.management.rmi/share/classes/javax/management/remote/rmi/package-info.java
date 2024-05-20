@@ -322,5 +322,5 @@
  *
  *    @since 1.5
  *
- **/
+ */
 package javax.management.remote.rmi;
