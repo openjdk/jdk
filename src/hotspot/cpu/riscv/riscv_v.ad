@@ -1793,7 +1793,7 @@ instruct replicateD(vReg dst, fRegD src) %{
 //  2. similarly, for long "with the mask value 0x3f (0b111111)"
 // check https://docs.oracle.com/javase/specs/jls/se21/html/jls-15.html#jls-15.19 for details.
 //
-// Shift behaviour in Vector APi is defined as:
+// Shift behaviour in Vector API is defined as:
 //   e.g. for ASHR, "a>>(n&(ESIZE*8-1))"
 //   this behaviour is the same as shift instrunction's in riscv vector extension.
 // check https://docs.oracle.com/en/java/javase/21/docs/api/jdk.incubator.vector/jdk/incubator/vector/VectorOperators.html#ASHR
