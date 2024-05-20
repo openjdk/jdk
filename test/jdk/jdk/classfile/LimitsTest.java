@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8320360 8330684 8331320 8331655
+ * @bug 8320360 8330684 8331320 8331655 8331940
  * @summary Testing ClassFile limits.
  * @run junit LimitsTest
  */
@@ -35,8 +35,12 @@ import java.lang.constant.MethodTypeDesc;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.Opcode;
 import java.lang.classfile.attribute.CodeAttribute;
+import java.lang.classfile.attribute.LineNumberInfo;
+import java.lang.classfile.attribute.LineNumberTableAttribute;
 import java.lang.classfile.constantpool.ConstantPoolException;
 import java.lang.classfile.constantpool.IntegerEntry;
+import java.util.List;
+import jdk.internal.classfile.impl.DirectCodeBuilder;
 import jdk.internal.classfile.impl.DirectMethodBuilder;
 import jdk.internal.classfile.impl.LabelContext;
 import jdk.internal.classfile.impl.UnboundAttribute;
@@ -160,5 +164,15 @@ class LimitsTest {
                                     b.writeU2(0);//exception handlers
                                     b.writeU2(0);//attributes
                                 }})))).methods().get(0).code().get().elementList());
+    }
+
+    @Test
+    void testLineNumberOutOfBounds() {
+        assertThrows(IllegalArgumentException.class, () ->
+                ClassFile.of().parse(ClassFile.of().build(ClassDesc.of("LineNumberClass"), cb -> cb.withMethodBody(
+                "lineNumberMethod", MethodTypeDesc.of(ConstantDescs.CD_void), 0, cob -> ((DirectCodeBuilder)cob
+                        .return_())
+                        .writeAttribute(LineNumberTableAttribute.of(List.of(LineNumberInfo.of(500, 0))))
+                ))).methods().get(0).code().get().elementList());
     }
 }

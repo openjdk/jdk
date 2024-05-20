@@ -27,6 +27,7 @@
 
 #include "memory/allStatic.hpp"
 #include "oops/oopsHierarchy.hpp"
+#include "utilities/istream.hpp"
 
 class methodHandle;
 
@@ -120,10 +121,17 @@ enum class MemStatAction {
 };
 
 class CompilerOracle : AllStatic {
+ public:
+  typedef bool parse_from_line_fn_t(char*);
+
  private:
   static bool _quiet;
   static void print_parse_error(char* error_msg, char* original_line);
   static void print_command(CompileCommandEnum option, const char* name, enum OptionType type);
+
+  // The core parser.
+  static bool parse_from_input(inputStream::Input* input,
+                               parse_from_line_fn_t* parse_from_line);
 
  public:
   // True if the command file has been specified or is implicit
@@ -177,7 +185,8 @@ class CompilerOracle : AllStatic {
   static bool option_matches_type(CompileCommandEnum option, T& value);
 
   // Reads from string instead of file
-  static bool parse_from_string(const char* option_string, bool (*parser)(char*));
+  static bool parse_from_string(const char* option_string,
+                                parse_from_line_fn_t* parser);
   static bool parse_from_line(char* line);
   static bool parse_from_line_quietly(char* line);
   static bool parse_compile_only(char* line);

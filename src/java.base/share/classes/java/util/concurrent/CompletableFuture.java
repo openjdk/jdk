@@ -380,7 +380,7 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
     /**
      * Reports result using Future.get conventions.
      */
-    private static Object reportGet(Object r)
+    private static Object reportGet(Object r, String details)
         throws InterruptedException, ExecutionException {
         if (r == null) // by convention below, null means interrupted
             throw new InterruptedException();
@@ -389,7 +389,7 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
             if ((x = ((AltResult)r).ex) == null)
                 return null;
             if (x instanceof CancellationException)
-                throw (CancellationException)x;
+                throw new CancellationException(details, (CancellationException)x);
             if ((x instanceof CompletionException) &&
                 (cause = x.getCause()) != null)
                 x = cause;
@@ -401,13 +401,13 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
     /**
      * Decodes outcome to return result or throw unchecked exception.
      */
-    private static Object reportJoin(Object r) {
+    private static Object reportJoin(Object r, String details) {
         if (r instanceof AltResult) {
             Throwable x;
             if ((x = ((AltResult)r).ex) == null)
                 return null;
             if (x instanceof CancellationException)
-                throw (CancellationException)x;
+                throw new CancellationException(details, (CancellationException)x);
             if (x instanceof CompletionException)
                 throw (CompletionException)x;
             throw new CompletionException(x);
@@ -2070,7 +2070,7 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
         Object r;
         if ((r = result) == null)
             r = waitingGet(true);
-        return (T) reportGet(r);
+        return (T) reportGet(r, "get");
     }
 
     /**
@@ -2093,7 +2093,7 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
         Object r;
         if ((r = result) == null)
             r = timedGet(nanos);
-        return (T) reportGet(r);
+        return (T) reportGet(r, "get");
     }
 
     /**
@@ -2115,7 +2115,7 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
         Object r;
         if ((r = result) == null)
             r = waitingGet(false);
-        return (T) reportJoin(r);
+        return (T) reportJoin(r, "join");
     }
 
     /**
@@ -2131,7 +2131,7 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
     @SuppressWarnings("unchecked")
     public T getNow(T valueIfAbsent) {
         Object r;
-        return ((r = result) == null) ? valueIfAbsent : (T) reportJoin(r);
+        return ((r = result) == null) ? valueIfAbsent : (T) reportJoin(r, "getNow");
     }
 
     @Override

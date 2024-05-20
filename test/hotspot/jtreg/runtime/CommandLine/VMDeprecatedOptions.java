@@ -57,6 +57,8 @@ public class VMDeprecatedOptions {
           Arrays.asList(new String[][] {
             // deprecated non-alias flags:
             {"AllowRedefinitionToAddDeleteMethods", "true"},
+            {"UseEmptySlotsInSupers", "true"},
+            {"ZGenerational", "false"},
 
             // deprecated alias flags (see also aliased_jvm_flags):
             {"CreateMinidumpOnCrash", "false"}
