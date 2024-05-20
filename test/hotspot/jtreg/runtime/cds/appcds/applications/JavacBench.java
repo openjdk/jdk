@@ -40,7 +40,6 @@
 
 import jdk.test.lib.cds.CDSAppTester;
 import jdk.test.lib.helpers.ClassFileInstaller;
-import jdk.test.lib.process.OutputAnalyzer;
 
 public class JavacBench {
     static String mainClass = JavacBenchApp.class.getName();

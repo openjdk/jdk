@@ -204,18 +204,18 @@ abstract public class CDSAppTester {
     }
 
     public void run(String args[]) throws Exception {
-        if (args.length == 1) {
+        String err = "Must have exactly one command line argument: STATIC or DYNAMIC";
+        if (args.length != 1) {
+            throw new RuntimeException(err);
+        } else {
             if (args[0].equals("STATIC")) {
                 runStaticWorkflow();
-                return;
-            }
-            if (args[0].equals("DYNAMIC")) {
+            } else if (args[0].equals("DYNAMIC")) {
                 runDynamicWorkflow();
-                return;
+            } else {
+                throw new RuntimeException(err);
             }
         }
-
-        throw new RuntimeException("Must have exactly one command line argument: STATIC or DYNAMIC");
     }
 
     private void runStaticWorkflow() throws Exception {

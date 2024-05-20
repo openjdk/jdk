@@ -218,9 +218,9 @@ public class JavacBenchApp {
                 validate(allClasses.get("Sanity"));
             }
         }
-        long elapsed = System.currentTimeMillis() - started;
         if (System.getProperty("JavacBenchApp.silent") == null) {
             // Set this property when running with "perf stat", etc
+            long elapsed = System.currentTimeMillis() - started;
             System.out.println("Generated source code for " + bench.sources.size() + " classes and compiled them in " + elapsed + " ms");
         }
     }
