@@ -23,9 +23,10 @@
 
 package vm.runtime.defmeth.shared.data.method;
 
-import jdk.internal.org.objectweb.asm.Opcodes;
 import vm.runtime.defmeth.shared.Printer;
 import vm.runtime.defmeth.shared.data.Visitor;
+
+import static java.lang.classfile.ClassFile.ACC_ABSTRACT;
 
 /**
  * Represents abstract method (method w/o code) in both concrete classes
@@ -34,7 +35,7 @@ import vm.runtime.defmeth.shared.data.Visitor;
 public class AbstractMethod extends Method {
 
     public AbstractMethod(int acc, String name, String desc, String sig) {
-        super(Opcodes.ACC_ABSTRACT | acc, name, desc, sig);
+        super(ACC_ABSTRACT | acc, name, desc, sig);
     }
 
     @Override

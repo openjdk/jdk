@@ -46,7 +46,7 @@ import vm.runtime.defmeth.shared.annotation.NotApplicableFor;
 import vm.runtime.defmeth.shared.builder.TestBuilder;
 import vm.runtime.defmeth.shared.data.*;
 
-import static jdk.internal.org.objectweb.asm.Opcodes.ACC_SYNCHRONIZED;
+import static java.lang.classfile.ClassFile.ACC_SYNCHRONIZED;
 import static vm.runtime.defmeth.shared.data.method.body.CallMethod.Invoke.*;
 import static vm.runtime.defmeth.shared.data.method.body.CallMethod.IndexbyteOp.*;
 import static vm.runtime.defmeth.shared.ExecutionMode.*;

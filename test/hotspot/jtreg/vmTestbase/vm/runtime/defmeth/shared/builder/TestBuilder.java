@@ -29,8 +29,6 @@ import java.util.*;
 
 import nsk.share.Pair;
 
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
-
 import nsk.share.TestFailure;
 import vm.runtime.defmeth.shared.ClassFileGenerator;
 import vm.runtime.defmeth.shared.Constants;
@@ -51,6 +49,8 @@ import vm.runtime.defmeth.shared.data.ConcreteClassLazyAdapter;
 import vm.runtime.defmeth.shared.data.Interface;
 import vm.runtime.defmeth.shared.data.InterfaceLazyAdapter;
 import vm.runtime.defmeth.shared.data.Tester;
+
+import static java.lang.classfile.ClassFile.ACC_PUBLIC;
 
 /**
  * Builder for test cases.

@@ -25,8 +25,9 @@ package vm.runtime.defmeth.shared.data.method;
 
 import vm.runtime.defmeth.shared.Printer;
 import vm.runtime.defmeth.shared.data.method.body.MethodBody;
-import jdk.internal.org.objectweb.asm.Opcodes;
 import vm.runtime.defmeth.shared.data.Visitor;
+
+import static java.lang.classfile.ClassFile.ACC_PUBLIC;
 
 /**
  * Represents non-abstract method in concrete class.
@@ -35,7 +36,7 @@ public class ConcreteMethod extends Method {
     MethodBody body;
 
     private ConcreteMethod(String name, String desc, MethodBody body) {
-        this(Opcodes.ACC_PUBLIC, name, desc, null, body);
+        this(ACC_PUBLIC, name, desc, null, body);
     }
 
     public ConcreteMethod(int acc, String name, String desc, String sig, MethodBody body) {

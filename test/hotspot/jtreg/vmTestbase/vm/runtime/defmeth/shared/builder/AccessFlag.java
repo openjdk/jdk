@@ -23,7 +23,7 @@
 
 package vm.runtime.defmeth.shared.builder;
 
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
+import static java.lang.classfile.ClassFile.*;
 
 /**
  * Access flags, related to element visibility (public, private, etc).
