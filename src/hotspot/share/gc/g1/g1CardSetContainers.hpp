@@ -238,8 +238,9 @@ public:
   using ContainerPtr = G1CardSet::ContainerPtr;
   EntryCountType volatile _num_entries;
 private:
-  ContainerPtr _buckets[2];
-  // Do not add class member variables beyond this point
+  // VLA implementation.
+  ContainerPtr _buckets[1];
+  // Do not add class member variables beyond this point.
 
   // Iterates over the given ContainerPtr with at index in this Howl card set,
   // applying a CardOrRangeVisitor on it.
