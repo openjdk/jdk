@@ -197,8 +197,8 @@ public class Indify {
                 if (!keepgoing) {
                     break;
                 } else if (ex != err) {
-                err.addSuppressed(ex);
-            }
+                    err.addSuppressed(ex);
+                }
             }
         }
 
