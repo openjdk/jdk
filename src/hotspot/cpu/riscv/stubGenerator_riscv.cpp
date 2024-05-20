@@ -5042,6 +5042,8 @@ class StubGenerator: public StubCodeGenerator {
     return (address) start;
   }
 
+static const uint64_t right_16_bits = right_n_bits(16);
+
   void adler32_process_bytes_by64(Register buff, Register s1, Register s2, Register count,
     VectorRegister vtable, VectorRegister vzero, VectorRegister *vbytes, VectorRegister *vs1acc, VectorRegister *vs2acc, 
     Register temp0, Register temp1, Register temp2, VectorRegister vtemp1, VectorRegister vtemp2) {
@@ -5096,7 +5098,7 @@ class StubGenerator: public StubCodeGenerator {
     __ add(s2, s2, temp2);
   }
 
-  void adler32_process_bytes_by16(Register buff, Register s1, Register s2, Register count,
+  void adler32_process_bytes_by16(Register buff, Register s1, Register s2, Register right_16_bits,
     VectorRegister vtable, VectorRegister vzero, VectorRegister *vbytes, VectorRegister *vs1acc, VectorRegister *vs2acc, 
     Register temp0, Register temp1, Register temp2, VectorRegister vtemp1, VectorRegister vtemp2, int LMUL) {
 
@@ -5106,13 +5108,11 @@ class StubGenerator: public StubCodeGenerator {
     // v8, v9, and up to v23, depending on the LMUL value.
     // Second, the final summation for unrolled part of the loop should be performed.
 
-    // Load data for unrolling steps all at once
-    __ vsetvli(temp0, count, Assembler::e8, Assembler::m4);
-    __ vle8_v(vbytes[0], buff);
-    __ addi(buff, buff, LMUL*16);
-
     __ vsetivli(temp0, 16, Assembler::e8, Assembler::m1);
     for (int i = 0; i < LMUL; i++) {
+      __ vle8_v(vbytes[i], buff);
+      __ addi(buff, buff, 16);
+
       // Same algorithm as for 64 bytes, but shrinked to 16 bytes per unroll step:
       //   s1_new = s1 + b1 + b2 + ... + b16
       //   s2_new = s2 + (s1 + b1) + (s1 + b1 + b2) + ... + (s1 + b1 + b2 + ... + b16)
@@ -5128,26 +5128,36 @@ class StubGenerator: public StubCodeGenerator {
     }
     // The only thing that remains is to sum up the remembered result
 
-    __ vsetivli(temp0, 8, Assembler::e16, Assembler::m1);
+    __ vsetivli(temp0, (MaxVectorSize == 16) ? 8 : 16, Assembler::e16, Assembler::m1);
     for (int i = 0; i < LMUL; i++) {
       // s2 = s2 + s1 * 16
       __ slli(temp1, s1, 4);
       __ add(s2, s2, temp1);
 
       // Summing up calculated results for s2_new
-      // 0xFF * 0x10 = 0xFF0, 0xFF0 * 8 = 7F80, so:
-      // 1. No need to do vector-widening reduction sum
-      // 2. It is safe to perform sign-extension during vmv.x.s with 16-bits elements
+      // 0xFF  * 0x10 = 0xFF0  max per single vector element,
+      // 0xFF0 + 0xFEF + ... + FE1 = 0xFE88 max sum for 16-byte step
+      // No need to do vector-widening reduction sum
       __ vredsum_vs(vtemp1, vs2acc[i], vzero);
-      __ vredsum_vs(vtemp2, vs2acc[i]->successor(), vzero);
+      if (MaxVectorSize == 16) {
+        // For small vector lengths, the rest of multiplied data
+        // is in successor of vs2acc[i], so summing it up, too
+        __ vredsum_vs(vtemp2, vs2acc[i]->successor(), vzero);
+      }
 
       // Extracting results
       __ vmv_x_s(temp0, vs1acc[i]);
       __ vmv_x_s(temp1, vtemp1);
-      __ vmv_x_s(temp2, vtemp2);
       __ add(s1, s1, temp0);
+      if (MaxVectorSize == 16) {
+        __ vmv_x_s(temp2, vtemp2);
+        __ add(s2, s2, temp2);
+      } else {
+        // For MaxVectorSize > 16 multiplied data is in single register, so it is
+        // not safe to perform sign-extension during vmv.x.s with 16-bits elements
+        __ andr(temp1, temp1, right_16_bits);
+      }
       __ add(s2, s2, temp1);
-      __ add(s2, s2, temp2);
     }
   }
 
@@ -5183,6 +5193,7 @@ class StubGenerator: public StubCodeGenerator {
     Register temp0 = c_rarg4;
     Register temp1 = c_rarg5;
     Register temp2 = c_rarg6;
+    Register right_16_bits = c_rarg7;
 
     VectorRegister vzero = v4; // group: v5, v6, v7
     VectorRegister vbytes[] = {
@@ -5195,7 +5206,7 @@ class StubGenerator: public StubCodeGenerator {
       v16, v18, v20, v22
     };
     VectorRegister vtable_64 = v24; // group: v25, v26, v27
-    VectorRegister vtable_16 = v27;
+    VectorRegister vtable_16 = (MaxVectorSize == 16) ? v27 : v30;
     VectorRegister vtemp1 = v28; // group: v29, v30, v31
     VectorRegister vtemp2 = v29;
 
@@ -5214,19 +5225,29 @@ class StubGenerator: public StubCodeGenerator {
     __ vsub_vv(vtable_64, vtable_64, vtemp1);
     // vtable_64 group now contains { 0x40, 0x3f, 0x3e, ..., 0x3, 0x2, 0x1 }
 
+    if (MaxVectorSize > 16) {
+      // Need to generate vtable_16 explicitly
+      __ mv(temp1, 16);
+      __ vsetvli(temp0, temp1, Assembler::e8, Assembler::m1);
+
+      // Generating accumulation coefficients for further calculations
+      __ vid_v(vtemp1);
+      __ vmv_v_x(vtable_16, temp1);
+      __ vsub_vv(vtable_16, vtable_16, vtemp1);
+    }
+
     __ vmv_v_i(vzero, 0);
 
     __ mv(base, BASE);
     __ mv(nmax, NMAX);
+    __ mv(right_16_bits, right_n_bits(16));
 
     __ srli(s2, adler, 16); // s2 = ((adler >> 16) & 0xffff)
     // s1 is initialized to the lower 16 bits of adler
     // s2 is initialized to the upper 16 bits of adler
     if (!UseZbb) {
-      const uint64_t right_16_bits = right_n_bits(16);
-      __ mv(temp0, right_16_bits);
-      __ andr(s2, s2, temp0);
-      __ andr(s1, adler, temp0); // s1 = (adler & 0xffff)
+      __ andr(s2, s2, right_16_bits);
+      __ andr(s1, adler, right_16_bits); // s1 = (adler & 0xffff)
     } else {
       __ zext_h(s2, s2);
       __ zext_h(s1, adler);
@@ -5270,8 +5291,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // There are three iterations left to do
     const int remainder = 3;
-    __ mv(count, 16*remainder);
-    adler32_process_bytes_by16(buff, s1, s2, count, vtable_16, vzero,
+    adler32_process_bytes_by16(buff, s1, s2, right_16_bits, vtable_16, vzero,
       vbytes, vs1acc, vs2acc, temp0, temp1, temp2, vtemp1, vtemp2, remainder);
 
     // s1 = s1 % BASE
@@ -5286,10 +5306,9 @@ class StubGenerator: public StubCodeGenerator {
   __ bind(L_by16);
     __ add(len, len, count);
     __ bltz(len, L_by1);
-    __ mv(count, 16);
 
   __ bind(L_by16_loop);
-    adler32_process_bytes_by16(buff, s1, s2, count, vtable_16, vzero,
+    adler32_process_bytes_by16(buff, s1, s2, right_16_bits, vtable_16, vzero,
       vbytes, vs1acc, vs2acc, temp0, temp1, temp2, vtemp1, vtemp2, 1);
     __ sub(len, len, 16);
     __ bgez(len, L_by16_loop);
