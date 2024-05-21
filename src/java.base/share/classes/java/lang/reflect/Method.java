@@ -315,7 +315,7 @@ public final class Method extends Executable {
      */
     @Override
     public Class<?>[] getParameterTypes() {
-        return parameterTypes.length == 0 ? parameterTypes: parameterTypes.clone();
+    	return reflectionFactory.copyClasses(parameterTypes);
     }
 
     /**
@@ -342,7 +342,7 @@ public final class Method extends Executable {
      */
     @Override
     public Class<?>[] getExceptionTypes() {
-        return exceptionTypes.length == 0 ? exceptionTypes : exceptionTypes.clone();
+    	return reflectionFactory.copyClasses(exceptionTypes);
     }
 
     /**
