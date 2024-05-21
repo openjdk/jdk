@@ -1780,6 +1780,14 @@ bool VTransformGraph::schedule() {
   // Start with the "root": the vtnode of the CountedLoopNode.
   stack.push(_cl_vtnode);
 
+  // Also push all input-nodes:
+  for (int i = 0; i < _vtnodes.length(); i++) {
+    VTransformInputScalarNode* vtn = _vtnodes.at(i)->isa_InputScalar();
+    if (vtn != nullptr) {
+      stack.push(vtn);
+    }
+  }
+
   // We create a reverse-post-visit order. This gives us a linearization, if there are
   // no cycles. Then, we simply reverse the order, and we have a schedule.
   int rpo_idx = _vtnodes.length() - 1;
@@ -2055,6 +2063,21 @@ VTransformApplyStatus VTransformScalarNode::apply(const VLoopAnalyzer& vloop_ana
   return VTransformApplyStatus::make_scalar(_node);
 }
 
+VTransformApplyStatus VTransformInputScalarNode::apply(const VLoopAnalyzer& vloop_analyzer, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
+  // This was just wrapped. Now we simply unwap without touching the inputs.
+  return VTransformApplyStatus::make_scalar(node());
+}
+
+VTransformApplyStatus VTransformReplicateNode::apply(const VLoopAnalyzer& vloop_analyzer, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
+
+  Node* val = find_transformed_input(1, vnode_idx_to_transformed_node);
+  xxx // TODO this cannot work for nodes outside loop!
+  // Idea: create the Replicate already with the type!
+  const Type* val_t = vloop_analyzer.types().velt_type(val);
+  VectorNode* vn = VectorNode::scalar2vector(val, _vlen, val_t);
+  return VTransformApplyStatus::make_vector(vn, _vlen, vn->length_in_bytes());
+}
+
 void VTransformVectorNode::register_new_vector_and_replace_scalar_nodes(const VLoopAnalyzer& vloop_analyzer, Node* vn) const {
 #ifdef ASSERT
   // Mark Load/Store Vector for alignment verification
@@ -2210,6 +2233,10 @@ void VTransformNode::print_node_idx(const VTransformNode* vtn) {
 
 void VTransformScalarNode::print_spec() const {
   tty->print("node[%d %s]", _node->_idx, _node->Name());
+}
+
+void VTransformReplicateNode::print_spec() const {
+  tty->print("vlen=%d", _vlen);
 }
 
 void VTransformVectorNode::print_spec() const {

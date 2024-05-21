@@ -726,6 +726,7 @@ private:
 
   VTransformVectorNode* make_vtnode_for_pack(const Node_List* pack) const;
   VTransformNode* find_input_for_vector(int j, Node_List* pack);
+  VTransformNode* find_scalar(Node* n);
   void set_req_for_scalar(VTransformNode* vtn, int j, Node* n);
   void set_req_for_vector(VTransformNode* vtn, int j, Node_List* pack);
   void set_req_all_for_scalar(VTransformNode* vtn, Node* n);

@@ -1325,6 +1325,7 @@ private:
 typedef int VTransformNodeIDX;
 class VTransformNode;
 class VTransformScalarNode;
+class VTransformInputScalarNode;
 class VTransformVectorNode;
 class VTransformElementWiseVectorNode;
 class VTransformReductionVectorNode;
@@ -1500,6 +1501,7 @@ public:
   VTransformNode* out(int i) const { return _out.at(i); }
 
   virtual VTransformScalarNode* isa_Scalar() { return nullptr; }
+  virtual VTransformInputScalarNode* isa_InputScalar() { return nullptr; }
   virtual VTransformVectorNode* isa_Vector() { return nullptr; }
   virtual VTransformElementWiseVectorNode* isa_ElementWiseVector() { return nullptr; }
   virtual VTransformReductionVectorNode* isa_ReductionVector() { return nullptr; }
@@ -1534,6 +1536,34 @@ public:
   NOT_PRODUCT(virtual const char* name() const { return "Scalar"; };)
   NOT_PRODUCT(virtual void print_spec() const override;)
 };
+
+class VTransformInputScalarNode : public VTransformScalarNode {
+public:
+  VTransformInputScalarNode(VTransformGraph& graph, Node* n) :
+    VTransformScalarNode(graph, n) {}
+
+  virtual VTransformInputScalarNode* isa_InputScalar() override { return this; }
+
+  virtual VTransformApplyStatus apply(const VLoopAnalyzer& vloop_analyzer,
+                                      const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
+
+  NOT_PRODUCT(virtual const char* name() const { return "InputScalar"; };)
+};
+
+class VTransformReplicateNode : public VTransformNode {
+private:
+  int _vlen;
+public:
+  VTransformReplicateNode(VTransformGraph& graph, int vlen) :
+    VTransformNode(graph, 2), _vlen(vlen) {}
+
+  virtual VTransformApplyStatus apply(const VLoopAnalyzer& vloop_analyzer,
+                                      const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
+
+  NOT_PRODUCT(virtual const char* name() const { return "Replicate"; };)
+  NOT_PRODUCT(virtual void print_spec() const override;)
+};
+
 
 class VTransformVectorNode : public VTransformNode {
 private:

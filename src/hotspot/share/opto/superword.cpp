@@ -3619,14 +3619,34 @@ VTransformNode* SuperWordVTransformBuilder::find_input_for_vector(int j, Node_Li
   Node* p0 = pack->at(0);
   Node* unique = _packset.isa_unique_input_or_null(pack, j);
   if (p0->in(j) == iv() && unique == nullptr) {
+    // PopulateIndex
     assert(false, "TODO populate_index");
     return nullptr;
+  }
+
+  if (unique != nullptr) {
+    // Replicate
+    VTransformNode* unique_vtn = find_scalar(unique);
+    VTransformNode* replicate = new (_graph.arena()) VTransformReplicateNode(_graph, pack->size());
+    replicate->set_req(1, unique_vtn);
+    return replicate;
   }
 
   tty->print_cr("input at j=%d", j);
   pack->dump();
   assert(false, "TODO more logic");
   return nullptr;
+}
+
+// TODO desc: find existing node in_bb, or create new one for outside.
+VTransformNode* SuperWordVTransformBuilder::find_scalar(Node* n) {
+  if (in_bb(n)) {
+    assert(false, "TODO find in_bb"); // do we have a test?
+    return nullptr;
+  } else {
+    // Node is outside the loop. Just wrap it.
+    return new (_graph.arena()) VTransformInputScalarNode(_graph, n);
+  }
 }
 
 void SuperWordVTransformBuilder::set_req_for_vector(VTransformNode* vtn, int j, Node_List* pack) {
