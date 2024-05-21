@@ -113,12 +113,13 @@ void do_trace_log(julong read_mem_limit, julong host_mem) {
 
 jlong CgroupV1MemoryController::read_memory_limit_in_bytes(julong phys_mem) {
   julong memlimit;
-  CONTAINER_READ_NUMBER_CHECKED(static_cast<CgroupV1Controller*>(this), "/memory.limit_in_bytes", "Memory Limit", memlimit);
+  CgroupV1Controller* v1_controller = static_cast<CgroupV1Controller*>(this);
+  CONTAINER_READ_NUMBER_CHECKED(v1_controller, "/memory.limit_in_bytes", "Memory Limit", memlimit);
   if (memlimit >= phys_mem) {
     log_trace(os, container)("Non-Hierarchical Memory Limit is: Unlimited");
     if (is_hierarchical()) {
       julong hier_memlimit;
-      bool is_ok = read_numerical_key_value("/memory.stat", "hierarchical_memory_limit", &hier_memlimit);
+      bool is_ok = v1_controller->read_numerical_key_value("/memory.stat", "hierarchical_memory_limit", &hier_memlimit);
       if (!is_ok) {
         return OSCONTAINER_ERROR;
       }
@@ -153,12 +154,13 @@ jlong CgroupV1MemoryController::read_memory_limit_in_bytes(julong phys_mem) {
 jlong CgroupV1MemoryController::read_mem_swap(julong host_total_memsw) {
   julong hier_memswlimit;
   julong memswlimit;
-  CONTAINER_READ_NUMBER_CHECKED(static_cast<CgroupV1Controller*>(this), "/memory.memsw.limit_in_bytes", "Memory and Swap Limit", memswlimit);
+  CgroupV1Controller* v1_controller = static_cast<CgroupV1Controller*>(this);
+  CONTAINER_READ_NUMBER_CHECKED(v1_controller, "/memory.memsw.limit_in_bytes", "Memory and Swap Limit", memswlimit);
   if (memswlimit >= host_total_memsw) {
     log_trace(os, container)("Non-Hierarchical Memory and Swap Limit is: Unlimited");
     if (is_hierarchical()) {
       const char* matchline = "hierarchical_memsw_limit";
-      bool is_ok = read_numerical_key_value("/memory.stat", matchline, &hier_memswlimit);
+      bool is_ok = v1_controller->read_numerical_key_value("/memory.stat", matchline, &hier_memswlimit);
       if (!is_ok) {
         return OSCONTAINER_ERROR;
       }
@@ -263,7 +265,7 @@ jlong CgroupV1MemoryController::memory_max_usage_in_bytes() {
 
 jlong CgroupV1MemoryController::rss_usage_in_bytes() {
   julong rss;
-  bool is_ok = read_numerical_key_value("/memory.stat", "rss", &rss);
+  bool is_ok = static_cast<CgroupV1Controller*>(this)->read_numerical_key_value("/memory.stat", "rss", &rss);
   if (!is_ok) {
     return OSCONTAINER_ERROR;
   }
@@ -273,7 +275,7 @@ jlong CgroupV1MemoryController::rss_usage_in_bytes() {
 
 jlong CgroupV1MemoryController::cache_usage_in_bytes() {
   julong cache;
-  bool is_ok = read_numerical_key_value("/memory.stat", "cache", &cache);
+  bool is_ok = static_cast<CgroupV1Controller*>(this)->read_numerical_key_value("/memory.stat", "cache", &cache);
   if (!is_ok) {
     return OSCONTAINER_ERROR;
   }
@@ -338,7 +340,7 @@ char * CgroupV1Subsystem::cpu_cpuset_memory_nodes() {
  */
 int CgroupV1CpuController::cpu_quota() {
   julong quota;
-  bool is_ok = read_number("/cpu.cfs_quota_us", &quota);
+  bool is_ok = static_cast<CgroupV1Controller*>(this)->read_number("/cpu.cfs_quota_us", &quota);
   if (!is_ok) {
     log_trace(os, container)("CPU Quota failed: %d", OSCONTAINER_ERROR);
     return OSCONTAINER_ERROR;

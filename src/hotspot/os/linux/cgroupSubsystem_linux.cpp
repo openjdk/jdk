@@ -674,25 +674,6 @@ bool CgroupController::read_from_file(const char* filename, const char* scan_fmt
 }
 PRAGMA_DIAG_POP
 
-jlong CgroupSubsystem::limit_from_str(char* limit_str) {
-  if (limit_str == nullptr) {
-    return OSCONTAINER_ERROR;
-  }
-  // Unlimited memory in cgroups is the literal string 'max' for
-  // some controllers, for example the pids controller.
-  if (strcmp("max", limit_str) == 0) {
-    os::free(limit_str);
-    return (jlong)-1;
-  }
-  julong limit;
-  if (sscanf(limit_str, JULONG_FORMAT, &limit) != 1) {
-    os::free(limit_str);
-    return OSCONTAINER_ERROR;
-  }
-  os::free(limit_str);
-  return (jlong)limit;
-}
-
 // CgroupSubsystem implementations
 
 jlong CgroupSubsystem::memory_and_swap_limit_in_bytes() {

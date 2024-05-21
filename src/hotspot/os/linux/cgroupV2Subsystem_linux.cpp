@@ -86,7 +86,7 @@ int CgroupV2CpuController::cpu_shares() {
  */
 int CgroupV2CpuController::cpu_quota() {
   jlong quota_val;
-  bool is_ok = read_numerical_tuple_value("/cpu.max", FIRST, &quota_val);
+  bool is_ok = static_cast<CgroupV2Controller*>(this)->read_numerical_tuple_value("/cpu.max", FIRST, &quota_val);
   if (!is_ok) {
     return OSCONTAINER_ERROR;
   }
@@ -97,19 +97,19 @@ int CgroupV2CpuController::cpu_quota() {
 
 char * CgroupV2Subsystem::cpu_cpuset_cpus() {
   char* cpus = nullptr;
-  CONTAINER_READ_STRING_CHECKED(_unified, "/cpuset.cpus", "cpuset.cpus", cpus);
+  CONTAINER_READ_STRING_CHECKED(static_cast<CgroupV2Controller*>(_unified), "/cpuset.cpus", "cpuset.cpus", cpus);
   return cpus;
 }
 
 char * CgroupV2Subsystem::cpu_cpuset_memory_nodes() {
   char* mems;
-  CONTAINER_READ_STRING_CHECKED(_unified, "/cpuset.mems", "cpuset.mems", mems);
+  CONTAINER_READ_STRING_CHECKED(static_cast<CgroupV2Controller*>(_unified), "/cpuset.mems", "cpuset.mems", mems);
   return mems;
 }
 
 int CgroupV2CpuController::cpu_period() {
   jlong period_val;
-  bool is_ok = _unified->read_numerical_tuple_value("/cpu.max", SECOND, &period_val);
+  bool is_ok = static_cast<CgroupV2Controller*>(this)->read_numerical_tuple_value("/cpu.max", SECOND, &period_val);
   if (!is_ok) {
     log_trace(os, container)("CPU Period failed: %d", OSCONTAINER_ERROR);
     return OSCONTAINER_ERROR;
@@ -154,7 +154,7 @@ jlong CgroupV2MemoryController::memory_max_usage_in_bytes() {
 
 jlong CgroupV2MemoryController::rss_usage_in_bytes() {
   julong rss;
-  bool is_ok = read_numerical_key_value("/memory.stat", "anon", &rss);
+  bool is_ok = static_cast<CgroupV2Controller*>(this)->read_numerical_key_value("/memory.stat", "anon", &rss);
   if (!is_ok) {
     return OSCONTAINER_ERROR;
   }
@@ -164,7 +164,7 @@ jlong CgroupV2MemoryController::rss_usage_in_bytes() {
 
 jlong CgroupV2MemoryController::cache_usage_in_bytes() {
   julong cache;
-  bool is_ok = read_numerical_key_value("/memory.stat", "file", &cache);
+  bool is_ok = static_cast<CgroupV2Controller*>(this)->read_numerical_key_value("/memory.stat", "file", &cache);
   if (!is_ok) {
     return OSCONTAINER_ERROR;
   }
@@ -286,9 +286,10 @@ char* CgroupV2Controller::construct_path(char* mount_path, char *cgroup_path) {
   return os::strdup(ss.base());
 }
 
-char* CgroupV2Subsystem::pids_max_val() {
+static
+char* pids_max_val(CgroupController* ctrl) {
   char* pidsmax;
-  CONTAINER_READ_STRING_CHECKED(static_cast<CgroupV2Controller*>(_unified), "/pids.max", "Maximum number of tasks", pidsmax);
+  CONTAINER_READ_STRING_CHECKED(ctrl, "/pids.max", "Maximum number of tasks", pidsmax);
   return pidsmax;
 }
 
@@ -302,7 +303,7 @@ char* CgroupV2Subsystem::pids_max_val() {
  *    OSCONTAINER_ERROR for not supported
  */
 jlong CgroupV2Subsystem::pids_max() {
-  char * pidsmax_str = pids_max_val();
+  char * pidsmax_str = pids_max_val(static_cast<CgroupV2Controller*>(_unified));
   return CgroupUtil::limit_from_str(pidsmax_str);
 }
 
