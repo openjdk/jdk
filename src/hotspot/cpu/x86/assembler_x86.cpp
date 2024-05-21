@@ -2662,6 +2662,9 @@ void Assembler::jmpb_0(Label& L, const char* file, int line) {
 }
 
 void Assembler::ldmxcsr( Address src) {
+  // This instruction should be SSE encoded with the REX2 prefix when an
+  // extended GPR is present. To be consistent when UseAPX is enabled, use
+  // this encoding even when an extended GPR is not used.
   if (UseAVX > 0 && !UseAPX ) {
     InstructionMark im(this);
     InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ true, /* no_mask_reg */ true, /* uses_vl */ false);
@@ -6394,6 +6397,9 @@ void Assembler::sqrtss(XMMRegister dst, Address src) {
 }
 
 void Assembler::stmxcsr(Address dst) {
+  // This instruction should be SSE encoded with the REX2 prefix when an
+  // extended GPR is present. To be consistent when UseAPX is enabled, use
+  // this encoding even when an extended GPR is not used.
   if (UseAVX > 0 && !UseAPX  ) {
     assert(VM_Version::supports_avx(), "");
     InstructionMark im(this);
