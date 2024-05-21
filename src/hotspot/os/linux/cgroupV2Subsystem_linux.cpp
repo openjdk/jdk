@@ -84,7 +84,7 @@ int CgroupV2Subsystem::cpu_shares() {
  *    OSCONTAINER_ERROR for not supported
  */
 int CgroupV2Subsystem::cpu_quota() {
-  jlong quota_val; 
+  jlong quota_val;
   bool is_ok = _unified->read_numerical_tuple_value("/cpu.max", FIRST, &quota_val);
   if (!is_ok) {
     return OSCONTAINER_ERROR;
