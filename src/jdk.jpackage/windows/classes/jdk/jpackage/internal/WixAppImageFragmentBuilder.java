@@ -154,6 +154,16 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
     }
 
     @Override
+    List<String> getLoggableWixFeatures() {
+        if (isWithWix36Features()) {
+            return List.of(MessageFormat.format(I18N.getString("message.use-wix36-features"),
+                    getWixVersion()));
+        } else {
+            return List.of();
+        }
+    }
+
+    @Override
     protected Collection<XmlConsumer> getFragmentWriters() {
         return List.of(
                 xml -> {
@@ -315,15 +325,15 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
             return cfg.isFile;
         }
 
-        static void startElement(WixToolsetType wixVersion, XMLStreamWriter xml, String componentId,
+        static void startElement(WixToolsetType wixType, XMLStreamWriter xml, String componentId,
                 String componentGuid) throws XMLStreamException, IOException {
             xml.writeStartElement("Component");
-            switch (wixVersion) {
-                case Wix3, Wix36 -> {
+            switch (wixType) {
+                case Wix3 -> {
                     xml.writeAttribute("Win64", is64Bit() ? "yes" : "no");
                     xml.writeAttribute("Guid", componentGuid);
                 }
-                default -> {
+                case Wix4 -> {
                     xml.writeAttribute("Bitness", is64Bit() ? "always64" : "always32");
                     if (!componentGuid.equals("*")) {
                         xml.writeAttribute("Guid", componentGuid);
@@ -384,7 +394,7 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
         startDirectoryElement(xml, "DirectoryRef", directoryRefPath);
 
         final String componentId = "c" + role.idOf(path);
-        Component.startElement(getWixVersion(), xml, componentId, String.format(
+        Component.startElement(getWixType(), xml, componentId, String.format(
                 "{%s}", role.guidOf(path)));
 
         if (role == Component.Shortcut) {
@@ -393,14 +403,14 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
             }).map(shortcutFolder -> {
                 return shortcutFolder.property;
             }).findFirst().get();
-            switch (getWixVersion()) {
-                case Wix4 -> {
-                    xml.writeAttribute("Condition", property);
-                }
-                case Wix3, Wix36 -> {
+            switch (getWixType()) {
+                case Wix3 -> {
                     xml.writeStartElement("Condition");
                     xml.writeCharacters(property);
                     xml.writeEndElement();
+                }
+                case Wix4 -> {
+                    xml.writeAttribute("Condition", property);
                 }
             }
         }
@@ -476,8 +486,8 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
                     if (componentId != null) {
                         Path folderPath = folder.getPath(this);
                         boolean defineFolder;
-                        switch (getWixVersion()) {
-                            case Wix3, Wix36 ->
+                        switch (getWixType()) {
+                            case Wix3 ->
                                 defineFolder = true;
                             default ->
                                 defineFolder = !SYSTEM_DIRS.contains(folderPath);
@@ -576,7 +586,7 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
         int levels;
         var dirIt = path.iterator();
 
-        if (getWixVersion() == WixToolsetType.Wix4 && TARGETDIR.equals(path.getName(0))) {
+        if (getWixType() != WixToolsetType.Wix3 && TARGETDIR.equals(path.getName(0))) {
             levels = 0;
             dirIt.next();
         } else {
@@ -610,8 +620,8 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
 
     private void startDirectoryElement(XMLStreamWriter xml, String wix3ElementName, Path path) throws XMLStreamException {
         final String elementName;
-        switch (getWixVersion()) {
-            case Wix3, Wix36 -> {
+        switch (getWixType()) {
+            case Wix3 -> {
                 elementName = wix3ElementName;
             }
             default -> {
@@ -830,7 +840,7 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
         xml.writeStartElement("RegistryKey");
         xml.writeAttribute("Root", regRoot);
         xml.writeAttribute("Key", registryKeyPath);
-        if (getWixVersion() == WixToolsetType.Wix3) {
+        if (!isWithWix36Features()) {
             xml.writeAttribute("Action", "createAndRemoveOnUninstall");
         }
         xml.writeStartElement("RegistryValue");
@@ -844,7 +854,7 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
 
     private String addDirectoryCleaner(XMLStreamWriter xml, Path path) throws
             XMLStreamException, IOException {
-        if (getWixVersion() == WixToolsetType.Wix3) {
+        if (!isWithWix36Features()) {
             return null;
         }
 
@@ -866,7 +876,7 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
 
         xml.writeStartElement("DirectoryRef");
         xml.writeAttribute("Id", INSTALLDIR.toString());
-        Component.startElement(getWixVersion(), xml, componentId, "*");
+        Component.startElement(getWixType(), xml, componentId, "*");
 
         addRegistryKeyPath(xml, INSTALLDIR, () -> propertyId, () -> {
             return toWixPath(path);
@@ -881,6 +891,10 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
         xml.writeEndElement(); // <DirectoryRef>
 
         return componentId;
+    }
+
+    private boolean isWithWix36Features() {
+        return DottedVersion.compareComponents(getWixVersion(), DottedVersion.greedy("3.6")) >= 0;
     }
 
     // Does the following conversions:

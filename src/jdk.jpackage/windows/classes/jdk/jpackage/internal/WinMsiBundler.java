@@ -316,10 +316,11 @@ public class WinMsiBundler  extends AbstractBundler {
                                 getFileName(), wixToolset.getVersion()));
             }
 
-            wixFragments.forEach(wixFragment -> wixFragment.setWixVersion(
+            wixFragments.forEach(wixFragment -> wixFragment.setWixVersion(wixToolset.getVersion(),
                     wixToolset.getType()));
 
-            wixFragments.get(0).logWixFeatures();
+            wixFragments.stream().map(WixFragmentBuilder::getLoggableWixFeatures).flatMap(
+                    List::stream).distinct().toList().forEach(Log::verbose);
 
             /********* validate bundle parameters *************/
 
@@ -540,11 +541,13 @@ public class WinMsiBundler  extends AbstractBundler {
         Log.verbose(MessageFormat.format(I18N.getString(
                 "message.generating-msi"), msiOut.toAbsolutePath().toString()));
 
-        if (Set.of(WixToolsetType.Wix3, WixToolsetType.Wix36).contains(wixToolset.getType())) {
-            wixPipeline.addLightOptions("-sice:ICE27");
+        switch (wixToolset.getType()) {
+            case Wix3 -> {
+                wixPipeline.addLightOptions("-sice:ICE27");
 
-            if (!MSI_SYSTEM_WIDE.fetchFrom(params)) {
-                wixPipeline.addLightOptions("-sice:ICE91");
+                if (!MSI_SYSTEM_WIDE.fetchFrom(params)) {
+                    wixPipeline.addLightOptions("-sice:ICE91");
+                }
             }
         }
 
@@ -616,14 +619,14 @@ public class WinMsiBundler  extends AbstractBundler {
         Set<String> uniqueCultures = new LinkedHashSet<>();
         uniqueCultures.addAll(cultures);
         switch (wixToolset.getType()) {
-            case Wix3, Wix36 -> {
-                wixPipeline.addLightOptions(uniqueCultures.stream().collect(Collectors.joining(";",
-                        "-cultures:", "")));
-            }
             case Wix4 -> {
                 uniqueCultures.forEach(culture -> {
                     wixPipeline.addLightOptions("-culture", culture);
                 });
+            }
+            case Wix3 -> {
+                wixPipeline.addLightOptions(uniqueCultures.stream().collect(Collectors.joining(";",
+                        "-cultures:", "")));
             }
         }
 

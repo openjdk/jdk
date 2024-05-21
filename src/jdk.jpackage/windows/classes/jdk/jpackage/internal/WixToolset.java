@@ -35,10 +35,8 @@ final class WixToolset {
     static enum WixToolsetType {
         // Wix v4+
         Wix4(WixTool.Wix4),
-        // Wix v3.0-v3.6
-        Wix3(WixTool.Candle3, WixTool.Light3),
-        // Wix v3.6+
-        Wix36(WixTool.Candle3, WixTool.Light3);
+        // Wix v3+
+        Wix3(WixTool.Candle3, WixTool.Light3);
 
         WixToolsetType(WixTool... tools) {
             this.tools = Set.of(tools);

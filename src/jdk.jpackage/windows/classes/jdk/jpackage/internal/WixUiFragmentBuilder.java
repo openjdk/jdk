@@ -102,9 +102,9 @@ final class WixUiFragmentBuilder extends WixFragmentBuilder {
 
         if (withShortcutPromptDlg || withInstallDirChooserDlg || withLicenseDlg) {
             final String extName;
-            switch (getWixVersion()) {
+            switch (getWixType()) {
                 case Wix4 -> extName = "WixToolset.UI.wixext";
-                case Wix3, Wix36 -> extName = "WixUIExtension";
+                case Wix3 -> extName = "WixUIExtension";
                 default -> throw new IllegalArgumentException();
             }
             wixPipeline.addLightOptions("-ext", extName);
@@ -157,7 +157,7 @@ final class WixUiFragmentBuilder extends WixFragmentBuilder {
 
         var ui = getUI();
         if (ui != null) {
-            ui.write(getWixVersion(), this, xml);
+            ui.write(getWixType(), this, xml);
         } else {
             xml.writeStartElement("UI");
             xml.writeAttribute("Id", "JpUI");
@@ -193,8 +193,8 @@ final class WixUiFragmentBuilder extends WixFragmentBuilder {
             this.dialogPairsSupplier = dialogPairsSupplier;
         }
 
-        void write(WixToolsetType wixVersion, WixUiFragmentBuilder outer, XMLStreamWriter xml) throws XMLStreamException, IOException {
-            switch (wixVersion) {
+        void write(WixToolsetType wixType, WixUiFragmentBuilder outer, XMLStreamWriter xml) throws XMLStreamException, IOException {
+            switch (wixType) {
                 case Wix4 -> {
                     // https://wixtoolset.org/docs/fourthree/faqs/#converting-custom-wixui-dialog-sets
                     xml.writeProcessingInstruction("foreach WIXUIARCH in X86;X64;A64");
@@ -206,22 +206,22 @@ final class WixUiFragmentBuilder extends WixFragmentBuilder {
             }
 
             xml.writeStartElement("UI");
-            switch (wixVersion) {
+            switch (wixType) {
                 case Wix4 -> {
                     xml.writeAttribute("Id", "JpUIInternal");
                 }
-                case Wix3, Wix36 -> {
+                case Wix3 -> {
                     xml.writeAttribute("Id", "JpUI");
                     xml.writeStartElement("UIRef");
                     xml.writeAttribute("Id", wixUIRef);
                     xml.writeEndElement(); // UIRef
                 }
             }
-            writeContents(wixVersion, outer, xml);
+            writeContents(wixType, outer, xml);
             xml.writeEndElement(); // UI
         }
 
-        private void writeContents(WixToolsetType wixVersion, WixUiFragmentBuilder outer,
+        private void writeContents(WixToolsetType wixType, WixUiFragmentBuilder outer,
                 XMLStreamWriter xml) throws XMLStreamException, IOException {
             if (dialogIdsSupplier != null) {
                 List<Dialog> dialogIds = dialogIdsSupplier.apply(outer);
@@ -240,7 +240,7 @@ final class WixUiFragmentBuilder extends WixFragmentBuilder {
                     DialogPair pair = new DialogPair(firstId, secondId);
                     for (var curPair : List.of(pair, pair.flip())) {
                         for (var publish : dialogPairs.get(curPair)) {
-                            writePublishDialogPair(wixVersion, xml, publish, curPair);
+                            writePublishDialogPair(wixType, xml, publish, curPair);
                         }
                     }
                     firstId = secondId;
@@ -482,7 +482,7 @@ final class WixUiFragmentBuilder extends WixFragmentBuilder {
         return new PublishBuilder(publish);
     }
 
-    private static void writePublishDialogPair(WixToolsetType wixVersion, XMLStreamWriter xml,
+    private static void writePublishDialogPair(WixToolsetType wixType, XMLStreamWriter xml,
             Publish publish, DialogPair dialogPair) throws IOException, XMLStreamException {
         xml.writeStartElement("Publish");
         xml.writeAttribute("Dialog", dialogPair.firstId);
@@ -492,9 +492,9 @@ final class WixUiFragmentBuilder extends WixFragmentBuilder {
         if (publish.order != 0) {
             xml.writeAttribute("Order", String.valueOf(publish.order));
         }
-        switch (wixVersion) {
+        switch (wixType) {
             case Wix4 -> xml.writeAttribute("Condition", publish.condition);
-            case Wix3, Wix36 -> xml.writeCharacters(publish.condition);
+            case Wix3 -> xml.writeCharacters(publish.condition);
         }
         xml.writeEndElement();
     }

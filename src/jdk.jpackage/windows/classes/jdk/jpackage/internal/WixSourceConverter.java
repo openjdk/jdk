@@ -154,11 +154,11 @@ final class WixSourceConverter {
     final static class ResourceGroup {
 
         ResourceGroup(WixToolsetType wixToolsetType) {
-            if (wixToolsetType == WixToolsetType.Wix4) {
-                // Need to convert internal WiX sources
-                conv = new WixSourceConverter();
-            } else {
-                conv = null;
+            switch (wixToolsetType) {
+                case Wix3 ->
+                    conv = null;
+                default ->
+                    conv = new WixSourceConverter();
             }
         }
 

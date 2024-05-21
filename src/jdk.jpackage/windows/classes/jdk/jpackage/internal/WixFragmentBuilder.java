@@ -29,9 +29,10 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.nio.file.Path;
-import java.text.MessageFormat;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -49,11 +50,14 @@ import jdk.jpackage.internal.WixToolset.WixToolsetType;
  */
 abstract class WixFragmentBuilder {
 
-    void setWixVersion(WixToolsetType v) {
-        wixVersion = v;
+    final void setWixVersion(DottedVersion version, WixToolsetType type) {
+        Objects.requireNonNull(version);
+        Objects.requireNonNull(type);
+        wixVersion = version;
+        wixType = type;
     }
 
-    void setOutputFileName(String v) {
+    final void setOutputFileName(String v) {
         outputFileName = v;
     }
 
@@ -65,11 +69,8 @@ abstract class WixFragmentBuilder {
                 Source.ResourceDir);
     }
 
-    void logWixFeatures() {
-        if (wixVersion != WixToolsetType.Wix3) {
-            Log.verbose(MessageFormat.format(I18N.getString(
-                    "message.use-wix36-features"), wixVersion));
-        }
+    List<String> getLoggableWixFeatures() {
+        return List.of();
     }
 
     void configureWixPipeline(WixPipeline wixPipeline) {
@@ -95,29 +96,35 @@ abstract class WixFragmentBuilder {
         }
     }
 
-    WixToolsetType getWixVersion() {
+    final WixToolsetType getWixType() {
+        return wixType;
+    }
+
+    final DottedVersion getWixVersion() {
         return wixVersion;
     }
 
-    static enum WixNamespace {
+    protected static enum WixNamespace {
         Default,
         Util;
     }
 
-    Map<WixNamespace, String> getWixNamespaces() {
-        switch (wixVersion) {
+    final protected Map<WixNamespace, String> getWixNamespaces() {
+        switch (wixType) {
             case Wix4 -> {
                 return Map.of(WixNamespace.Default,
                         "http://wixtoolset.org/schemas/v4/wxs",
                         WixNamespace.Util,
                         "http://wixtoolset.org/schemas/v4/wxs/util");
             }
-            default -> {
+            case Wix3 -> {
                 return Map.of(WixNamespace.Default,
                         "http://schemas.microsoft.com/wix/2006/wi",
                         WixNamespace.Util,
                         "http://schemas.microsoft.com/wix/UtilExtension");
             }
+            default ->
+                throw new IllegalArgumentException();
         }
     }
 
@@ -125,26 +132,26 @@ abstract class WixFragmentBuilder {
         return Architecture.is64bit();
     }
 
-    protected Path getConfigRoot() {
+    final protected Path getConfigRoot() {
         return configRoot;
     }
 
     protected abstract Collection<XmlConsumer> getFragmentWriters();
 
-    protected void defineWixVariable(String variableName) {
+    final protected void defineWixVariable(String variableName) {
         setWixVariable(variableName, "yes");
     }
 
-    protected void setWixVariable(String variableName, String variableValue) {
+    final protected void setWixVariable(String variableName, String variableValue) {
         if (wixVariables == null) {
             wixVariables = new WixVariables();
         }
         wixVariables.setWixVariable(variableName, variableValue);
     }
 
-    protected void addResource(OverridableResource resource, String saveAsName) {
+    final protected void addResource(OverridableResource resource, String saveAsName) {
         if (additionalResources == null) {
-            additionalResources = new ResourceGroup(getWixVersion());
+            additionalResources = new ResourceGroup(getWixType());
         }
         additionalResources.addResource(resource, configRoot.resolve(saveAsName));
     }
@@ -222,7 +229,8 @@ abstract class WixFragmentBuilder {
         private final XMLStreamWriter target;
     }
 
-    private WixToolsetType wixVersion;
+    private WixToolsetType wixType;
+    private DottedVersion wixVersion;
     private WixVariables wixVariables;
     private ResourceGroup additionalResources;
     private OverridableResource fragmentResource;

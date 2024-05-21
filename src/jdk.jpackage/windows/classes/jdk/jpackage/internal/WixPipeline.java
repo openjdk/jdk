@@ -83,8 +83,8 @@ public class WixPipeline {
         Objects.requireNonNull(workDir);
 
         switch (toolset.getType()) {
+            case Wix3 -> buildMsiWix3(msi);
             case Wix4 -> buildMsiWix4(msi);
-            case Wix36, Wix3 -> buildMsiWix3(msi);
         }
     }
 
@@ -100,20 +100,21 @@ public class WixPipeline {
 
             Stream<String> stream;
             switch (toolset.getType()) {
+                case Wix3 -> {
+                    stream = entryStream.map(wixVar -> {
+                        return String.format("-d%s=%s", wixVar.getKey(), wixVar.
+                                getValue());
+                    });
+                }
                 case Wix4 -> {
                     stream = entryStream.map(wixVar -> {
                         return Stream.of("-d", String.format("%s=%s", wixVar.
                                 getKey(), wixVar.getValue()));
                     }).flatMap(Function.identity());
                 }
-                case Wix3, Wix36 -> {
-                    stream = entryStream.map(wixVar -> {
-                        return String.format("-d%s=%s", wixVar.getKey(), wixVar.
-                                getValue());
-                    });
+                default -> {
+                    throw new IllegalArgumentException();
                 }
-                default ->
-                    throw new IllegalStateException();
             }
 
             stream.reduce(cmdline, (ctnr, wixVar) -> {
