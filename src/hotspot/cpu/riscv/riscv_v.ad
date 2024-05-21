@@ -2648,7 +2648,6 @@ instruct vrotateL_right_imm(vReg dst, vReg src, immI shift) %{
       __ vror_vx(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg), t0);
       return;
     }
-    con = (unsigned)$shift$$constant & 0x1f;
     __ vror_vi(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg), con);
   %}
   ins_pipe(pipe_slow);
@@ -2704,10 +2703,9 @@ instruct vrotateL_right_imm_masked(vReg dst_src, immI shift, vRegMask_V0 v0) %{
     __ vsetvli_helper(bt, Matcher::vector_length(this));
     if (con > (unsigned)0x1f) { // vector-immediate is 5 bits length.
       __ mv(t0, con);
-      __ vror_vx(as_VectorRegister($dst_src$$reg), as_VectorRegister($dst_src$$reg), t0);
+      __ vror_vx(as_VectorRegister($dst_src$$reg), as_VectorRegister($dst_src$$reg), t0, Assembler::v0_t);
       return;
     }
-    con = (unsigned)$shift$$constant & 0x1f;
     __ vror_vi(as_VectorRegister($dst_src$$reg), as_VectorRegister($dst_src$$reg), con, Assembler::v0_t);
   %}
   ins_pipe(pipe_slow);
@@ -2764,7 +2762,6 @@ instruct vrotateL_left_imm(vReg dst, vReg src, immI shift) %{
       __ vror_vx(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg), t0);
       return;
     }
-    con = (unsigned)$shift$$constant & 0x1f;
     __ vror_vi(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg), con);
   %}
   ins_pipe(pipe_slow);
@@ -2825,7 +2822,6 @@ instruct vrotateL_left_imm_masked(vReg dst_src, immI shift, vRegMask_V0 v0) %{
       __ vror_vx(as_VectorRegister($dst_src$$reg), as_VectorRegister($dst_src$$reg), t0, Assembler::v0_t);
       return;
     }
-    con = (unsigned)$shift$$constant & 0x1f;
     __ vror_vi(as_VectorRegister($dst_src$$reg), as_VectorRegister($dst_src$$reg), con, Assembler::v0_t);
   %}
   ins_pipe(pipe_slow);
