@@ -2598,6 +2598,26 @@ instruct vshiftcnt(vReg dst, iRegIorL2I cnt) %{
 %}
 
 // --------------------------------- Vector Rotation ----------------------------------
+//
+// Following rotate instruct's are shared by vectorization (in SLP, superword.cpp) and Vector API.
+//
+// Rotate behaviour in vectorization is defined by java API, which includes:
+//  1. Integer.rorateRight, Integer.rorateLeft.
+//     `rotation by any multiple of 32 is a no-op, so all but the last five bits of the rotation distance can be ignored`.
+//  2. Long.rorateRight, Long.rorateLeft.
+//     `rotation by any multiple of 64 is a no-op, so all but the last six bits of the rotation distance can be ignored`.
+//
+// Rotate behaviour in Vector API is defined as below, e.g.
+//  1. For Byte ROR, `a ROR b` is: (byte)(((((byte)a) & 0xFF) >>> (b & 7)) | ((((byte)a) & 0xFF) << (8 - (b & 7))))
+//  2. For Short ROR, `a ROR b` is: (short)(((((short)a) & 0xFFFF) >>> (b & 15)) | ((((short)a) & 0xFFFF) << (16 - (b & 15))))
+//  3. For Integer ROR, `a ROR b` is: Integer.rotateRight(a, ((int)b))
+//  4. For Long ROR, `a ROR b` is: Long.rotateRight(a, ((int)b))
+//
+// Basically, the behaviour between vectorization and Vector API is the same for Long and Integer, except that Vector API
+// also supports Byte and Short rotation. But we can still share the intrinsics between vectorization and Vector API.
+//
+// NOTE: for Long, the intrinsic's accept imm input as rotation value needs some special treatment, as the vector-immediate
+//       is only 5 bits, but the valid Long rotation value is 6 bits.
 
 // Rotate right
 
