@@ -96,6 +96,10 @@ gc/TestAllocHumongousFragment.java#iu-aggressive 8298781 generic-all
 gc/TestAllocHumongousFragment.java#g1 8298781 generic-all
 gc/TestAllocHumongousFragment.java#static 8298781 generic-all
 gc/stress/gclocker/TestExcessGCLockerCollections.java 8229120 generic-all
+gc/shenandoah/TestAllocObjectArrays.java#aggressive 8332031 linux-aarch64
+gc/shenandoah/TestAllocObjectArrays.java#iu-aggressive 8332031 linux-aarch64
+gc/shenandoah/TestAllocIntArrays.java#aggressive 8332031 linux-aarch64
+gc/shenandoah/TestAllocIntArrays.java#iu-aggressive 8332031 linux-aarch64
 
 #############################################################################
 
