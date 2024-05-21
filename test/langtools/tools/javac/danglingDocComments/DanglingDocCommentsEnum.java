@@ -5,6 +5,8 @@
  * @compile/ref=DanglingDocCommentsEnum.enabled.out -XDrawDiagnostics -Xlint:dangling-doc-comments DanglingDocCommentsEnum.java
  */
 
+// This is a test of duplicate and misplaced doc comments in an enum class, using traditional comments
+
 /** Bad/Extra Enum Comment. */
 /** Good Enum Comment. */
 @Deprecated

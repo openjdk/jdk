@@ -453,29 +453,6 @@ oop TenuredGeneration::promote(oop obj, size_t obj_size) {
   return new_obj;
 }
 
-void TenuredGeneration::collect(bool   full,
-                                bool   clear_all_soft_refs,
-                                size_t size,
-                                bool   is_tlab) {
-  SerialHeap* gch = SerialHeap::heap();
-
-  STWGCTimer* gc_timer = SerialFullGC::gc_timer();
-  gc_timer->register_gc_start();
-
-  SerialOldTracer* gc_tracer = SerialFullGC::gc_tracer();
-  gc_tracer->report_gc_start(gch->gc_cause(), gc_timer->gc_start());
-
-  gch->pre_full_gc_dump(gc_timer);
-
-  SerialFullGC::invoke_at_safepoint(clear_all_soft_refs);
-
-  gch->post_full_gc_dump(gc_timer);
-
-  gc_timer->register_gc_end();
-
-  gc_tracer->report_gc_end(gc_timer->gc_end(), gc_timer->time_partitions());
-}
-
 HeapWord*
 TenuredGeneration::expand_and_allocate(size_t word_size, bool is_tlab) {
   assert(!is_tlab, "TenuredGeneration does not support TLAB allocation");
