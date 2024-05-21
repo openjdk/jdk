@@ -1665,7 +1665,7 @@ void Assembler::andl(Register dst, Register src) {
 
 void Assembler::andnl(Register dst, Register src1, Register src2) {
   assert(VM_Version::supports_bmi1(), "bit manipulation instructions not supported");
-  assert(!needs_eevex(dst, src1, src2) || UseAPX, "extended gpr use requires UseAPX and UseAVX > 2");
+  assert(!needs_eevex(dst, src1, src2) || UseAPX, "extended gpr use requires UseAPX");
   InstructionAttr attributes(AVX_128bit, /* rex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   int encode = vex_prefix_and_encode(dst->encoding(), src1->encoding(), src2->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_38, &attributes, true);
   emit_int16((unsigned char)0xF2, (0xC0 | encode));
