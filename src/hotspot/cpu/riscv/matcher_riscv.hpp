@@ -128,7 +128,7 @@
   static const bool int_in_long = true;
 
   // Does the CPU supports vector variable shift instructions?
-  static constexpr bool supports_vector_variable_shifts(void) {
+  static bool supports_vector_variable_shifts(void) {
     return UseRVV;
   }
 
