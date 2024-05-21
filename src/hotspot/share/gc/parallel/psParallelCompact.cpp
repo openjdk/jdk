@@ -57,7 +57,6 @@
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/referenceProcessorPhaseTimes.hpp"
-#include "gc/shared/spaceDecorator.inline.hpp"
 #include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/weakProcessor.inline.hpp"
@@ -963,8 +962,16 @@ void PSParallelCompact::post_compact()
   for (unsigned int id = old_space_id; id < last_space_id; ++id) {
     // Clear the marking bitmap, summary data and split info.
     clear_data_covering_space(SpaceId(id));
-    // Update top().  Must be done after clearing the bitmap and summary data.
-    _space_info[id].publish_new_top();
+    {
+      MutableSpace* space = _space_info[id].space();
+      HeapWord* top = space->top();
+      HeapWord* new_top = _space_info[id].new_top();
+      if (ZapUnusedHeapArea && new_top < top) {
+        space->mangle_region(MemRegion(new_top, top));
+      }
+      // Update top().  Must be done after clearing the bitmap and summary data.
+      space->set_top(new_top);
+    }
   }
 
   ParCompactionManager::flush_all_string_dedup_requests();
@@ -1006,10 +1013,6 @@ void PSParallelCompact::post_compact()
 #if COMPILER2_OR_JVMCI
   DerivedPointerTable::update_pointers();
 #endif
-
-  if (ZapUnusedHeapArea) {
-    heap->gen_mangle_unused_area();
-  }
 
   // Signal that we have completed a visit to all live objects.
   Universe::heap()->record_whole_heap_examined_timestamp();
@@ -1307,11 +1310,6 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
   ClearedAllSoftRefs casr(maximum_heap_compaction,
                           heap->soft_ref_policy());
 
-  if (ZapUnusedHeapArea) {
-    // Save information needed to minimize mangling
-    heap->record_gen_tops_before_GC();
-  }
-
   // Make sure data structures are sane, make the heap parsable, and do other
   // miscellaneous bookkeeping.
   pre_compact();
@@ -1467,10 +1465,6 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
 
   if (VerifyAfterGC && heap->total_collections() >= VerifyGCStartAt) {
     Universe::verify("After GC");
-  }
-
-  if (ZapUnusedHeapArea) {
-    old_gen->object_space()->check_mangled_unused_area_complete();
   }
 
   heap->print_heap_after_gc();
