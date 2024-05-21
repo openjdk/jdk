@@ -196,14 +196,12 @@ void LIR_Op2::verify() const {
 
   if (two_operand_lir_form) {
 
-#ifdef ASSERT
     bool threeOperandForm = false;
 #ifdef S390
     // There are 3 operand shifts on S390 (see LIR_Assembler::shift_op()).
     threeOperandForm =
       code() == lir_shl ||
       ((code() == lir_shr || code() == lir_ushr) && (result_opr()->is_double_cpu() || in_opr1()->type() == T_OBJECT));
-#endif
 #endif
 
     switch (code()) {
