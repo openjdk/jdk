@@ -446,6 +446,8 @@
  * </li>
  * </ul>
  *
+ * The configuration settings in these properties files are subject to change
+ * from release to release.
  *
  * <h2 id="JDKCATALOG">JDK built-in Catalog</h2>
  * The JDK has a built-in catalog that hosts the following DTDs defined by the Java Platform:
