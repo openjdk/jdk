@@ -926,59 +926,83 @@ public final class Font2DTest extends JPanel
     static final String SUBFAMILY_LABEL_TEXT = "Subfamily:";
 
     void setUseFamilyAndStyle() {
-       if (fontSelectionType == FAMILY_AND_STYLE) {
-           return;
-       }
-       fontMenuLabel.setText(FAMILY_LABEL_TEXT);
-       fontMenuPanel.removeAll();
-       fontMenuPanel.add(fontMenu);
-       if (fontSelectionType == FAMILY_AND_SUBFAMILY) {
-           styleLabel.setText(STYLE_LABEL_TEXT);
-           stylePanel.removeAll();
-           stylePanel.add(styleMenu);
-       }
-       fontSelectionType = FAMILY_AND_STYLE;
-       if (!familyAndStyleRBMI.isSelected()) {
-          familyAndStyleRBMI.setSelected(true);
-       }
-       revalidate();
+        if (fontSelectionType == FAMILY_AND_STYLE) {
+            return;
+        }
+        fontMenuLabel.setText(FAMILY_LABEL_TEXT);
+        fontMenuPanel.removeAll();
+        fontMenuPanel.add(fontMenu);
+        if (fontSelectionType == FAMILY_AND_SUBFAMILY) {
+            styleLabel.setText(STYLE_LABEL_TEXT);
+            stylePanel.removeAll();
+            stylePanel.add(styleMenu);
+        }
+        fontSelectionType = FAMILY_AND_STYLE;
+        if (!familyAndStyleRBMI.isSelected()) {
+           familyAndStyleRBMI.setSelected(true);
+        }
+        styleMenu.setSelectedIndex(0);
+        currentFontName = (String)fontMenu.getSelectedItem();
+        fp.setFontParams(currentFontName,
+                         Float.parseFloat(sizeField.getText()),
+                         0, // want to reset style to PLAIN
+                         transformMenu.getSelectedIndex());
+        revalidate();
+        repaint();
     }
 
     void setUseFontName() {
-       if (fontSelectionType == FONT_NAME) {
-           return;
-       }
-       fontMenuLabel.setText(NAME_LABEL_TEXT);
-       fontMenuPanel.removeAll();
-       fontMenuPanel.add(fontNameMenu);
-       if (fontSelectionType == FAMILY_AND_SUBFAMILY) {
-           styleLabel.setText(STYLE_LABEL_TEXT);
-           stylePanel.removeAll();
-           stylePanel.add(styleMenu);
-       }
-       fontSelectionType = FONT_NAME;
-       if (!fontNameRBMI.isSelected()) {
-          fontNameRBMI.setSelected(true);
-       }
-       revalidate();
+        if (fontSelectionType == FONT_NAME) {
+            return;
+        }
+        fontMenuLabel.setText(NAME_LABEL_TEXT);
+        fontMenuPanel.removeAll();
+        fontMenuPanel.add(fontNameMenu);
+        if (fontSelectionType == FAMILY_AND_SUBFAMILY) {
+            styleLabel.setText(STYLE_LABEL_TEXT);
+            stylePanel.removeAll();
+            stylePanel.add(styleMenu);
+        }
+        fontSelectionType = FONT_NAME;
+        if (!fontNameRBMI.isSelected()) {
+           fontNameRBMI.setSelected(true);
+        }
+        styleMenu.setSelectedIndex(0);
+        currentFontName = (String)fontNameMenu.getSelectedItem();
+        fp.setFontParams(currentFontName,
+                         Float.parseFloat(sizeField.getText()),
+                         0, // want to reset style to PLAIN
+                         transformMenu.getSelectedIndex());
+        revalidate();
+        repaint();
     }
 
     void setUseFamilyAndSubFamily() {
-       if (fontSelectionType == FAMILY_AND_SUBFAMILY) {
-           return;
-       }
-       fontMenuLabel.setText(FAMILY_LABEL_TEXT);
-       fontMenuPanel.removeAll();
-       fontMenuPanel.add(fontMenu);
-       styleLabel.setText(SUBFAMILY_LABEL_TEXT);
-       stylePanel.removeAll();
-       updateSubFamilyMenu((String)fontMenu.getSelectedItem());
-       stylePanel.add(fontSubFamilyMenu);
-       fontSelectionType = FAMILY_AND_SUBFAMILY;
-       if (!familyAndSubFamilyRBMI.isSelected()) {
-          familyAndSubFamilyRBMI.setSelected(true);
-       }
-       revalidate();
+        if (fontSelectionType == FAMILY_AND_SUBFAMILY) {
+            return;
+        }
+        fontMenuLabel.setText(FAMILY_LABEL_TEXT);
+        fontMenuPanel.removeAll();
+        fontMenuPanel.add(fontMenu);
+        styleLabel.setText(SUBFAMILY_LABEL_TEXT);
+        stylePanel.removeAll();
+        styleMenu.setSelectedIndex(0);
+        String family = (String)fontMenu.getSelectedItem();
+        updateSubFamilyMenu(family);
+        stylePanel.add(fontSubFamilyMenu);
+        fontSelectionType = FAMILY_AND_SUBFAMILY;
+        if (!familyAndSubFamilyRBMI.isSelected()) {
+           familyAndSubFamilyRBMI.setSelected(true);
+        }
+        String subname = (String)fontSubFamilyMenu.getSelectedItem();
+        Font font = FontFamily.getFont(family, subname);
+        currentFontName = (font != null) ? font.getFontName(l) : family;
+        fp.setFontParams(currentFontName,
+                         Float.parseFloat(sizeField.getText()),
+                         0, // want to reset style to PLAIN
+                         transformMenu.getSelectedIndex());
+        revalidate();
+        repaint();
     }
 
     void setFontSelectionType(int fsType) {
@@ -1270,7 +1294,7 @@ public final class Font2DTest extends JPanel
               else if (familyChars[familyIndex] == ' ' || familyChars[familyIndex] == '-') {
                   familyIndex++;
               }
-              else if (fullChars[fullIndex] == ' '  || fullChars[fullIndex] == '-') {
+              else if (fullChars[fullIndex] == ' ' || fullChars[fullIndex] == '-') {
                   fullIndex++;
               } else {
                   break;
