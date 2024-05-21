@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -2013,9 +2013,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Australia/Melbourne">
 				<exemplarCity draft="unconfirmed">Malburn</exemplarCity>
 			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity draft="unconfirmed">Currie</exemplarCity>
-			</zone>
 			<zone type="Australia/Sydney">
 				<exemplarCity draft="unconfirmed">Sidni</exemplarCity>
 			</zone>
@@ -3101,11 +3098,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight draft="unconfirmed">Akud n Unebdu n Lord Howe</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard draft="unconfirmed">Akud n Markari</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic draft="unconfirmed">Akud n Magadan</generic>
@@ -3143,13 +3135,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<metazone type="Mawson">
 				<long>
 					<standard draft="unconfirmed">Akud n Mawsun</standard>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic draft="unconfirmed">Akud n ugafa amalu n Miksik</generic>
-					<standard draft="unconfirmed">Akud amezday n ugafa amalu n Miksik</standard>
-					<daylight draft="unconfirmed">Akud n unebdu n ugafa amalu n Miksik</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">

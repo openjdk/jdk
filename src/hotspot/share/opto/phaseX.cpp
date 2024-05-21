@@ -2273,7 +2273,15 @@ void PhasePeephole::print_statistics() {
 //------------------------------set_req_X--------------------------------------
 void Node::set_req_X( uint i, Node *n, PhaseIterGVN *igvn ) {
   assert( is_not_dead(n), "can not use dead node");
-  assert( igvn->hash_find(this) != this, "Need to remove from hash before changing edges" );
+#ifdef ASSERT
+  if (igvn->hash_find(this) == this) {
+    tty->print_cr("Need to remove from hash before changing edges");
+    this->dump(1);
+    tty->print_cr("Set at i = %d", i);
+    n->dump();
+    assert(false, "Need to remove from hash before changing edges");
+  }
+#endif
   Node *old = in(i);
   set_req(i, n);
 

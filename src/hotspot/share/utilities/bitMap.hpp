@@ -25,7 +25,7 @@
 #ifndef SHARE_UTILITIES_BITMAP_HPP
 #define SHARE_UTILITIES_BITMAP_HPP
 
-#include "memory/allocation.hpp"
+#include "nmt/memflags.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/globalDefinitions.hpp"
 

@@ -4843,7 +4843,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         0x40000000, 0x4cfa3cc1, 0x5c13d840, 0x6d91b519, 0x39aa400
     };
 
-    /**
+    /*
      * These routines provide access to the two's complement representation
      * of BigIntegers.
      */

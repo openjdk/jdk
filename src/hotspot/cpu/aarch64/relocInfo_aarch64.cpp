@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,14 +25,14 @@
 
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
-#include "code/compiledMethod.hpp"
+#include "code/nmethod.hpp"
 #include "code/relocInfo.hpp"
 #include "nativeInst_aarch64.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/safepoint.hpp"
 
 
-void Relocation::pd_set_data_value(address x, intptr_t o, bool verify_only) {
+void Relocation::pd_set_data_value(address x, bool verify_only) {
   if (verify_only)
     return;
 

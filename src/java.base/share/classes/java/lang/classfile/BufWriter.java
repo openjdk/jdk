@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
  */
 package java.lang.classfile;
 
-import java.nio.ByteBuffer;
 import java.util.List;
 
 import java.lang.classfile.constantpool.ConstantPool;
@@ -124,6 +123,7 @@ public sealed interface BufWriter
      * @param arr the byte array
      * @param start the offset within the byte array of the range
      * @param length the length of the range
+     * @throws IndexOutOfBoundsException if range is outside of the array bounds
      */
     void writeBytes(byte[] arr, int start, int length);
 
@@ -134,6 +134,7 @@ public sealed interface BufWriter
      * @param offset the offset at which to patch
      * @param size the size of the integer value being written, in bytes
      * @param value the integer value
+     * @throws IndexOutOfBoundsException if patched int is outside of bounds
      */
     void patchInt(int offset, int size, int value);
 
@@ -152,7 +153,7 @@ public sealed interface BufWriter
      * to the buffer
      *
      * @param entry the constant pool entry
-     * @throws NullPointerException if the entry is null
+     * @throws IllegalArgumentException if the entry has invalid index
      */
     void writeIndex(PoolEntry entry);
 
@@ -161,6 +162,7 @@ public sealed interface BufWriter
      * to the buffer, or zero if the entry is null
      *
      * @param entry the constant pool entry
+     * @throws IllegalArgumentException if the entry has invalid index
      */
     void writeIndexOrZero(PoolEntry entry);
 
@@ -180,6 +182,7 @@ public sealed interface BufWriter
      * entry in the list.
      *
      * @param list the list of entries
+     * @throws IllegalArgumentException if any entry has invalid index
      */
     void writeListIndices(List<? extends PoolEntry> list);
 
@@ -189,16 +192,12 @@ public sealed interface BufWriter
     int size();
 
     /**
-     * {@return a {@link java.nio.ByteBuffer ByteBuffer} view of the bytes in the buffer}
-     */
-    ByteBuffer asByteBuffer();
-
-    /**
      * Copy the contents of the buffer into a byte array.
      *
      * @param array the byte array
      * @param bufferOffset the offset into the array at which to write the
      *                     contents of the buffer
+     * @throws IndexOutOfBoundsException if copying outside of the array bounds
      */
     void copyTo(byte[] array, int bufferOffset);
 }

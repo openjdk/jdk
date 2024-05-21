@@ -266,6 +266,8 @@ private:
   static const TypeFunc* generic_arraycopy_Type();
   static const TypeFunc* slow_arraycopy_Type();   // the full routine
 
+  static const TypeFunc* make_setmemory_Type();
+
   static const TypeFunc* array_fill_Type();
 
   static const TypeFunc* array_sort_Type();

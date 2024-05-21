@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1185,7 +1185,7 @@ size_t G1Policy::desired_survivor_size(uint max_regions) const {
 }
 
 void G1Policy::print_age_table() {
-  _survivors_age_table.print_age_table(_tenuring_threshold);
+  _survivors_age_table.print_age_table();
 }
 
 // Calculates survivor space parameters.
@@ -1310,7 +1310,7 @@ void G1Policy::decide_on_concurrent_start_pause() {
 void G1Policy::record_concurrent_mark_cleanup_end(bool has_rebuilt_remembered_sets) {
   bool mixed_gc_pending = false;
   if (has_rebuilt_remembered_sets) {
-    G1CollectionSetChooser::build(_g1h->workers(), _g1h->num_regions(), candidates());
+    candidates()->sort_marking_by_efficiency();
     mixed_gc_pending = next_gc_should_be_mixed();
   }
 

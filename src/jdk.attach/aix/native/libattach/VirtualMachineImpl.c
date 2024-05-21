@@ -74,7 +74,6 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_connect
         addr.sun_family = AF_UNIX;
         /* strncpy is safe because addr.sun_path was zero-initialized before. */
         strncpy(addr.sun_path, p, sizeof(addr.sun_path) - 1);
-        /* We must call bind with the actual socketaddr length. This is obligatory for AS400. */
         if (connect(fd, (struct sockaddr*)&addr, SUN_LEN(&addr)) == -1) {
             err = errno;
         }
