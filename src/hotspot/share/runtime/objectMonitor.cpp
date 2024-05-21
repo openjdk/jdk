@@ -829,7 +829,6 @@ void ObjectMonitor::EnterI(JavaThread* current) {
   // to defer the state transitions until absolutely necessary,
   // and in doing so avoid some transitions ...
 
-  int nWakeups = 0;
   int recheckInterval = 1;
 
   for (;;) {
@@ -880,7 +879,6 @@ void ObjectMonitor::EnterI(JavaThread* current) {
     // This PerfData object can be used in parallel with a safepoint.
     // See the work around in PerfDataManager::destroy().
     OM_PERFDATA_OP(FutileWakeups, inc());
-    ++nWakeups;
 
     // Assuming this is not a spurious wakeup we'll normally find _succ == current.
     // We can defer clearing _succ until after the spin completes
