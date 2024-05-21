@@ -1012,9 +1012,6 @@ void ObjectMonitor::ReenterI(JavaThread* current, ObjectWaiter* currentNode) {
 
     // The lock is still contested.
     // Keep a tally of the # of futile wakeups.
-    // Note that the counter is not protected by a lock or updated by atomics.
-    // That is by design - we trade "lossy" counters which are exposed to
-    // races during updates for a lower probe effect.
     ++nWakeups;
 
     // Assuming this is not a spurious wakeup we'll normally
