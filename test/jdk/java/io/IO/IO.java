@@ -30,6 +30,7 @@ import java.util.stream.Stream;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jtreg.SkippedException;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -47,6 +48,23 @@ import static org.junit.jupiter.api.Assertions.*;
  * @run junit IO
  */
 public class IO {
+
+    private static Path expect;
+
+    @EnabledOnOs({OS.LINUX, OS.MAC})
+    @BeforeAll
+    public static void prepareTTY() throws Exception {
+        expect = Paths.get("/usr/bin/expect"); // os-specific path
+        if (!Files.exists(expect) || !Files.isExecutable(expect)) {
+            throw new SkippedException("'" + expect + "' not found");
+        }
+        // show terminal settings to aid debugging if any tests below fail
+        var outputAnalyzer = ProcessTools.executeProcess(expect.toString(), "-c", """
+                spawn -noecho stty -a
+                expect eof
+                """);
+        outputAnalyzer.reportDiagnosticSummary();
+    }
 
     @ParameterizedTest
     @ValueSource(strings = {"println", "print"})
@@ -89,7 +107,6 @@ public class IO {
     @EnabledOnOs({OS.LINUX, OS.MAC})
     @ValueSource(strings = {"println", "print"})
     public void outputTestInteractive(String mode) throws Exception {
-        var expect = findExpect();
         var testSrc = System.getProperty("test.src", ".");
         OutputAnalyzer output = ProcessTools.executeProcess(
                 expect.toString(),
@@ -113,13 +130,6 @@ public class IO {
                 out.substring(out.length() / 2));
     }
 
-    private Path findExpect() {
-        var expect = Paths.get("/usr/bin/expect"); // os-specific path
-        if (!Files.exists(expect) || !Files.isExecutable(expect)) {
-            throw new SkippedException("'" + expect + "' not found");
-        }
-        return expect;
-    }
 
     /*
      * This tests simulates terminal interaction (isatty), to check that the
@@ -133,7 +143,6 @@ public class IO {
     @MethodSource("args")
     @EnabledOnOs({OS.LINUX, OS.MAC})
     public void inputTestInteractive(String console, String prompt) throws Exception {
-        var expect = findExpect();
         var testSrc = System.getProperty("test.src", ".");
         var command = new ArrayList<String>();
         command.add(expect.toString());
