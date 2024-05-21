@@ -1398,7 +1398,7 @@ public:
   void apply();
 
 private:
-  // TODO make sure we use these all the time!
+  // VLoop accessors
   PhaseIdealLoop* phase()     const { return _vloop.phase(); }
   PhaseIterGVN& igvn()        const { return _vloop.phase()->igvn(); }
   IdealLoopTree* lpt()        const { return _vloop.lpt(); }

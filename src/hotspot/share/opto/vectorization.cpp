@@ -1868,21 +1868,18 @@ void VTransformGraph::for_each_memop_in_schedule(Callback callback) const {
 }
 
 void VTransformGraph::apply() {
-  Compile* C          = _vloop.phase()->C;
-  CountedLoopNode* cl = _vloop.cl();
+  assert(cl()->is_main_loop(), "auto vectorization only for main loops");
 
-  assert(cl->is_main_loop(), "auto vectorization only for main loops");
-
-  C->print_method(PHASE_AUTO_VECTORIZE1_BEFORE_APPLY, 4, cl);
+  phase()->C->print_method(PHASE_AUTO_VECTORIZE1_BEFORE_APPLY, 4, cl());
 
   apply_memops_reordering_with_schedule();
 
-  C->print_method(PHASE_AUTO_VECTORIZE2_AFTER_REORDER, 4, cl);
+  phase()->C->print_method(PHASE_AUTO_VECTORIZE2_AFTER_REORDER, 4, cl());
 
   // TODO alignment
   // TODO vectorize
 
-  C->print_method(PHASE_AUTO_VECTORIZE3_AFTER_APPLY, 4, cl);
+  phase()->C->print_method(PHASE_AUTO_VECTORIZE3_AFTER_APPLY, 4, cl());
 }
 
 // We prepare the memory graph for the replacement of scalar memops with vector memops.
@@ -1897,11 +1894,8 @@ void VTransformGraph::apply_memops_reordering_with_schedule() {
   }
 #endif
 
-  Compile* C         = _vloop.phase()->C;
-  PhaseIterGVN& igvn = _vloop.phase()->igvn();
-
   ResourceMark rm;
-  int max_slices = C->num_alias_types();
+  int max_slices = phase()->C->num_alias_types();
   // When iterating over the schedule, we keep track of the current memory state,
   // which is the Phi or a store in the loop.
   GrowableArray<Node*> current_state_in_slice(max_slices, max_slices, nullptr);
@@ -1915,7 +1909,7 @@ void VTransformGraph::apply_memops_reordering_with_schedule() {
   for (int i = 0; i < mem_slice_head.length(); i++) {
     Node* phi  = mem_slice_head.at(i);
     assert(phi->is_Phi(), "must be phi");
-    int alias_idx = C->get_alias_index(phi->adr_type());
+    int alias_idx = phase()->C->get_alias_index(phi->adr_type());
     current_state_in_slice.at_put(alias_idx, phi);
 
     // If we have a memory phi, we have a last store in the loop, find it over backedge.
@@ -1927,16 +1921,16 @@ void VTransformGraph::apply_memops_reordering_with_schedule() {
   //     of that slice. If it is a Store, we take it as the new state.
   for_each_memop_in_schedule([&] (MemNode* n) {
     assert(n->is_Load() || n->is_Store(), "only loads or stores");
-    int alias_idx = C->get_alias_index(n->adr_type());
+    int alias_idx = phase()->C->get_alias_index(n->adr_type());
     Node* current_state = current_state_in_slice.at(alias_idx);
     if (current_state == nullptr) {
       // If there are only loads in a slice, we never update the memory
       // state in the loop, hence there is no phi for the memory state.
       // We just keep the old memory state that was outside the loop.
-      assert(n->is_Load() && !_vloop.in_bb(n->in(MemNode::Memory)),
+      assert(n->is_Load() && !in_bb(n->in(MemNode::Memory)),
              "only loads can have memory state from outside loop");
     } else {
-      igvn.replace_input_of(n, MemNode::Memory, current_state);
+      igvn().replace_input_of(n, MemNode::Memory, current_state);
       if (n->is_Store()) {
         current_state_in_slice.at_put(alias_idx, n);
       }
@@ -1949,12 +1943,12 @@ void VTransformGraph::apply_memops_reordering_with_schedule() {
   GrowableArray<Node*> uses_after_loop;
   for (int i = 0; i < mem_slice_head.length(); i++) {
     Node* phi  = mem_slice_head.at(i);
-    int alias_idx = C->get_alias_index(phi->adr_type());
+    int alias_idx = phase()->C->get_alias_index(phi->adr_type());
     Node* current_state = current_state_in_slice.at(alias_idx);
     assert(current_state != nullptr, "slice is mapped");
     assert(current_state != phi, "did some work in between");
     assert(current_state->is_Store(), "sanity");
-    igvn.replace_input_of(phi, 2, current_state);
+    igvn().replace_input_of(phi, 2, current_state);
 
     // Replace uses of old last store with current_state (new last store)
     // Do it in two loops: first find all the uses, and change the graph
@@ -1964,7 +1958,7 @@ void VTransformGraph::apply_memops_reordering_with_schedule() {
     uses_after_loop.clear();
     for (DUIterator_Fast kmax, k = last_store->fast_outs(kmax); k < kmax; k++) {
       Node* use = last_store->fast_out(k);
-      if (!_vloop.in_bb(use)) {
+      if (!in_bb(use)) {
         uses_after_loop.push(use);
       }
     }
@@ -1973,7 +1967,7 @@ void VTransformGraph::apply_memops_reordering_with_schedule() {
       for (uint j = 0; j < use->req(); j++) {
         Node* def = use->in(j);
         if (def == last_store) {
-          igvn.replace_input_of(use, j, current_state);
+          igvn().replace_input_of(use, j, current_state);
         }
       }
     }
