@@ -94,7 +94,9 @@ public final class JdkConsoleImpl implements JdkConsole {
             synchronized(readLock) {
                 installShutdownHook();
                 try {
-                    setEcho(false);
+                    synchronized(restoreEchoLock) {
+                        restoreEcho = echo(false);
+                    }
                 } catch (IOException x) {
                     throw new IOError(x);
                 }
@@ -107,8 +109,10 @@ public final class JdkConsoleImpl implements JdkConsole {
                     ioe = new IOError(x);
                 } finally {
                     try {
-                        if (restoreEcho) {
-                            setEcho(true);
+                        synchronized(restoreEchoLock) {
+                            if (restoreEcho) {
+                                restoreEcho = echo(true);
+                            }
                         }
                     } catch (IOException x) {
                         if (ioe == null)
@@ -146,8 +150,10 @@ public final class JdkConsoleImpl implements JdkConsole {
                             new Runnable() {
                                 public void run() {
                                     try {
-                                        if (restoreEcho) {
-                                            setEcho(true);
+                                        synchronized(restoreEchoLock) {
+                                            if (restoreEcho) {
+                                                echo(true);
+                                            }
                                         }
                                     } catch (IOException _) { }
                                 }
@@ -177,12 +183,13 @@ public final class JdkConsoleImpl implements JdkConsole {
     private final Charset charset;
     private final Object readLock;
     private final Object writeLock;
+    private final Object restoreEchoLock;
     private final Reader reader;
     private final Writer out;
     private final PrintWriter pw;
     private final Formatter formatter;
     private char[] rcb;
-    private final boolean restoreEcho;
+    private boolean restoreEcho;
     private boolean shutdownHookInstalled;
 
     private char[] readline(boolean zeroOut) throws IOException {
@@ -217,17 +224,14 @@ public final class JdkConsoleImpl implements JdkConsole {
         return rcb;
     }
 
-    /**
-     * {@return true if the console echo status is on}
-     */
-    private static native boolean getEcho() throws IOException;
-
-    /**
-     * Sets the console echo status to {@code on}
+    /*
+     * Sets the console echo status to {@code on} and returns the previous
+     * console on/off status.
      * @param on    the echo status to set to. {@code true} for echo on and
      *              {@code false} for echo off
+     * @return true if the previous console echo status is on
      */
-    private static native void setEcho(boolean on) throws IOException;
+    private static native boolean echo(boolean on) throws IOException;
 
     class LineReader extends Reader {
         private final Reader in;
@@ -350,6 +354,7 @@ public final class JdkConsoleImpl implements JdkConsole {
         this.charset = charset;
         readLock = new Object();
         writeLock = new Object();
+        restoreEchoLock = new Object();
         out = StreamEncoder.forOutputStreamWriter(
                 new FileOutputStream(FileDescriptor.out),
                 writeLock,
@@ -364,10 +369,5 @@ public final class JdkConsoleImpl implements JdkConsole {
                 readLock,
                 charset));
         rcb = new char[1024];
-        var echo = false;
-        try {
-            echo = getEcho();
-        } catch (IOException _) {}
-        restoreEcho = echo;
     }
 }

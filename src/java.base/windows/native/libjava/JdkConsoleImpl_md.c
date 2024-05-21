@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,28 +32,17 @@
 #include <Wincon.h>
 
 JNIEXPORT jboolean JNICALL
-Java_jdk_internal_io_JdkConsoleImpl_getEcho(JNIEnv *env, jclass cls)
+Java_jdk_internal_io_JdkConsoleImpl_echo(JNIEnv *env, jclass cls, jboolean on)
 {
     DWORD fdwMode;
+    jboolean old;
     HANDLE hStdIn = GetStdHandle(STD_INPUT_HANDLE);
 
     if (! GetConsoleMode(hStdIn, &fdwMode)) {
         JNU_ThrowIOExceptionWithLastError(env, "GetConsoleMode failed");
-        return JNI_FALSE;
+        return !on;
     }
-    return (fdwMode & ENABLE_ECHO_INPUT) != 0;
-}
-
-JNIEXPORT void JNICALL
-Java_jdk_internal_io_JdkConsoleImpl_setEcho(JNIEnv *env, jclass cls, jboolean on)
-{
-    DWORD fdwMode;
-    HANDLE hStdIn = GetStdHandle(STD_INPUT_HANDLE);
-
-    if (! GetConsoleMode(hStdIn, &fdwMode)) {
-        JNU_ThrowIOExceptionWithLastError(env, "GetConsoleMode failed");
-        return;
-    }
+    old = (fdwMode & ENABLE_ECHO_INPUT) != 0;
     if (on) {
         fdwMode |= ENABLE_ECHO_INPUT;
     } else {
@@ -62,4 +51,5 @@ Java_jdk_internal_io_JdkConsoleImpl_setEcho(JNIEnv *env, jclass cls, jboolean on
     if (! SetConsoleMode(hStdIn, fdwMode)) {
         JNU_ThrowIOExceptionWithLastError(env, "SetConsoleMode failed");
     }
+    return old;
 }
