@@ -79,8 +79,18 @@ public class SwitchBootstraps {
     private static final boolean previewEnabled = PreviewFeatures.isEnabled();
 
 
+    private static final MethodType TYPES_SWITCH_TYPE = MethodType.methodType(int.class,
+            Object.class,
+            int.class,
+            BiPredicate.class,
+            List.class);
+
+    private static final MethodTypeDesc TYPES_SWITCH_DESCRIPTOR =
+            MethodTypeDesc.ofDescriptor("(Ljava/lang/Object;ILjava/util/function/BiPredicate;Ljava/util/List;)I");
+    private static final MethodTypeDesc CHECK_INDEX_DESCRIPTOR =
+            MethodTypeDesc.ofDescriptor("(II)I");
+
     private static final ClassDesc CD_Objects = ReferenceClassDescImpl.ofValidated("Ljava/util/Objects;");
-    private static final ClassDesc CD_BiPredicate = ReferenceClassDescImpl.ofValidated("Ljava/util/function/BiPredicate;");
 
     private static class StaticHolders {
         private static final MethodHandle NULL_CHECK;
@@ -406,7 +416,7 @@ public class SwitchBootstraps {
             // Objects.checkIndex(RESTART_IDX, labelConstants + 1)
             cb.iload(RESTART_IDX);
             cb.loadConstant(labelConstants.length + 1);
-            cb.invokestatic(CD_Objects, "checkIndex", MethodTypeDescImpl.ofTrusted(ConstantDescs.CD_int, ConstantDescs.CD_int, ConstantDescs.CD_int));
+            cb.invokestatic(CD_Objects, "checkIndex", CHECK_INDEX_DESCRIPTOR);
             cb.pop();
             cb.aload(SELECTOR_OBJ);
             Label nonNullLabel = cb.newLabel();
@@ -626,11 +636,7 @@ public class SwitchBootstraps {
                 clb -> {
                     clb.withFlags(AccessFlag.FINAL, AccessFlag.SUPER, AccessFlag.SYNTHETIC)
                        .withMethodBody("typeSwitch",
-                                       MethodTypeDescImpl.ofValidated(ConstantDescs.CD_int,
-                                            ClassDesc.ofDescriptor(selectorType.descriptorString()),
-                                            ConstantDescs.CD_int,
-                                            CD_BiPredicate,
-                                            ConstantDescs.CD_List),
+                                       TYPES_SWITCH_DESCRIPTOR,
                                        ClassFile.ACC_FINAL | ClassFile.ACC_PUBLIC | ClassFile.ACC_STATIC,
                                        generateTypeSwitchSkeleton(selectorType, labelConstants, enumDescs, extraClassLabels));
         });
@@ -641,13 +647,13 @@ public class SwitchBootstraps {
             lookup = caller.defineHiddenClass(classBytes, true, NESTMATE, STRONG);
             MethodHandle typeSwitch = lookup.findStatic(lookup.lookupClass(),
                                                         "typeSwitch",
-                                                        MethodType.methodType(int.class,
-                                                                              selectorType,
-                                                                              int.class,
-                                                                              BiPredicate.class,
-                                                                              List.class));
+                                                        TYPES_SWITCH_TYPE);
             typeSwitch = MethodHandles.insertArguments(typeSwitch, 2, new ResolvedEnumLabels(caller, enumDescs.toArray(new EnumDesc<?>[0])),
                                                        List.copyOf(extraClassLabels));
+            typeSwitch = MethodHandles.explicitCastArguments(typeSwitch,
+                                                             MethodType.methodType(int.class,
+                                                                                   selectorType,
+                                                                                   int.class));
             return typeSwitch;
         } catch (Throwable t) {
             throw new IllegalArgumentException(t);
