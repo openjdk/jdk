@@ -371,7 +371,8 @@ public class Main {
     }
 
     void printArgumentsToFile(String... params) {
-        Path out = Paths.get(String.format("javac.%s.args",
+        Path tmpDir = Paths.get(System.getProperty("java.io.tmpdir"));
+        Path out = tmpDir.resolve(String.format("javac.%s.args",
                 new SimpleDateFormat("yyyyMMdd_HHmmss").format(Calendar.getInstance().getTime())));
         String strOut = "";
         try {
