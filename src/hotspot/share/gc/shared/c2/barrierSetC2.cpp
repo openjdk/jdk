@@ -837,7 +837,7 @@ static const TypeFunc* clone_type() {
 
 void BarrierSetC2::clone_instance_in_runtime(PhaseMacroExpand* phase, ArrayCopyNode* ac,
                                              address clone_addr, const char* clone_name) const {
-  assert(ac->is_clone_inst(), "this function is only defined for cloning class instances");
+  assert(ac->is_clone_inst(), "this function is only defined for cloning instances");
   Node* const ctrl = ac->in(TypeFunc::Control);
   Node* const mem  = ac->in(TypeFunc::Memory);
   Node* const src  = ac->in(ArrayCopyNode::Src);
@@ -849,7 +849,7 @@ void BarrierSetC2::clone_instance_in_runtime(PhaseMacroExpand* phase, ArrayCopyN
 
   // The native clone we are calling here expects the instance size in words.
   // Add header/offset size to payload size to get instance size.
-  Node* const base_offset = phase->MakeConX(arraycopy_payload_base_offset(ac->is_clone_array()) >> LogBytesPerLong);
+  Node* const base_offset = phase->MakeConX(arraycopy_payload_base_offset(false /* is_array */) >> LogBytesPerLong);
   Node* const full_size = phase->transform_later(new AddXNode(size, base_offset));
   // HeapAccess<>::clone expects size in heap words.
   // For 64-bits platforms, this is a no-operation.
