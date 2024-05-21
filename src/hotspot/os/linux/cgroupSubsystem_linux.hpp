@@ -179,7 +179,6 @@ class CgroupSubsystem: public CHeapObj<mtInternal> {
   public:
     jlong memory_limit_in_bytes();
     int active_processor_count();
-    static jlong limit_from_str(char* limit_str);
 
     virtual jlong pids_max() = 0;
     virtual jlong pids_current() = 0;

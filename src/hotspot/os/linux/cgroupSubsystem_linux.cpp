@@ -611,7 +611,7 @@ bool CgroupController::read_numerical_tuple_value(const char* filename, TupleVal
     return false;
   }
   char* t = os::strdup(token);
-  jlong val = CgroupSubsystem::limit_from_str(t);
+  jlong val = CgroupUtil::limit_from_str(t);
   if (val == OSCONTAINER_ERROR) {
     return false;
   }
