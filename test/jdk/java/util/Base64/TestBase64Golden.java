@@ -51,12 +51,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class TestBase64Golden {
 
+    // To access the data files
     private static final String SRCDIR = System.getProperty("test.src", ".");
     private static final Charset DEF_CHARSET = StandardCharsets.US_ASCII;
     private static final String DEFAULT_CRLF = "\r\n";
     private static final List<Arguments> encoderTestData = new ArrayList<>();
     private static final List<Arguments> decoderTestData = new ArrayList<>();
 
+    // Helper enum for building the test data
     enum Base64Type {
         BASIC("baseEncode.txt", Base64.getEncoder(), Base64.getDecoder()),
         URLSAFE("urlEncode.txt", Base64.getUrlEncoder(), Base64.getUrlDecoder()),

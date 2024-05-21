@@ -61,7 +61,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class TestBase64 {
 
+    // Utilize random to get int values and generate bytes in the arrays
     private static final Random RND = RandomFactory.getRandom();
+    // We build some random values, so iterates multiple times to get more values
     private static final int ITERATIONS = 10;
     private static final int BYTES = 200;
     private static final Charset ASCII = StandardCharsets.US_ASCII;
