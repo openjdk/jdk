@@ -559,9 +559,6 @@ HeapWord* SerialHeap::satisfy_failed_allocation(size_t size, bool is_tlab) {
     return result;
   }
 
-  assert(!soft_ref_policy()->should_clear_all_soft_refs(),
-    "Flag should have been handled and cleared prior to this point");
-
   // What else?  We might try synchronous finalization later.  If the total
   // space available is large enough for the allocation, then a more
   // complete compaction phase than we've tried so far might be
