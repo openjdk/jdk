@@ -24,11 +24,13 @@
 
 #include "precompiled.hpp"
 #include "opto/addnode.hpp"
+#include "opto/c2compiler.hpp"
 #include "opto/connode.hpp"
 #include "opto/convertnode.hpp"
 #include "opto/matcher.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/rootnode.hpp"
+#include "opto/vectornode.hpp"
 #include "opto/vectorization.hpp"
 
 #ifndef PRODUCT
@@ -1868,6 +1870,14 @@ void VTransformGraph::for_each_memop_in_schedule(Callback callback) const {
 }
 
 void VTransformGraph::apply() {
+#ifndef PRODUCT
+  if (_is_trace_info) {
+    tty->print_cr("\nVLoopTransformGraph::apply:");
+    lpt()->dump_head();
+    lpt()->head()->dump();
+  }
+#endif
+
   assert(cl()->is_main_loop(), "auto vectorization only for main loops");
 
   phase()->C->print_method(PHASE_AUTO_VECTORIZE1_BEFORE_APPLY, 4, cl());
@@ -1876,8 +1886,9 @@ void VTransformGraph::apply() {
 
   phase()->C->print_method(PHASE_AUTO_VECTORIZE2_AFTER_REORDER, 4, cl());
 
-  // TODO alignment
-  // TODO vectorize
+  adjust_pre_loop_limit_to_align_main_loop_vectors();
+
+  apply_vectorization();
 
   phase()->C->print_method(PHASE_AUTO_VECTORIZE3_AFTER_APPLY, 4, cl());
 }
@@ -1887,7 +1898,7 @@ void VTransformGraph::apply() {
 // memops are consecutive in the memory graph.We reorder the memory graph for all slices
 // in parallel. We walk over the schedule once, and track the current memory state of
 // each slice.
-void VTransformGraph::apply_memops_reordering_with_schedule() {
+void VTransformGraph::apply_memops_reordering_with_schedule() const {
 #ifndef PRODUCT
   if (_is_trace_info) {
     print_memops_schedule();
@@ -1972,6 +1983,116 @@ void VTransformGraph::apply_memops_reordering_with_schedule() {
       }
     }
   }
+}
+
+// TODO desc
+void VTransformGraph::apply_vectorization() const {
+#ifndef PRODUCT
+  if (_is_trace_verbose) {
+    tty->print_cr("\nVTransformGraph::apply_vectorization:");
+  }
+#endif
+
+  ResourceMark rm;
+  int length = _vtnodes.length();
+  GrowableArray<Node*> vnode_idx_to_transformed_node(length, length, nullptr);
+
+  for (int i = 0; i < _schedule.length(); i++) {
+    VTransformNode* vtn = _schedule.at(i);
+    Node* n = vtn->apply(_vloop_analyzer, vnode_idx_to_transformed_node);
+#ifndef PRODUCT
+    if (_is_trace_verbose) {
+      tty->print("  apply: ");
+      vtn->print();
+      tty->print("    ->   ");
+      if (n == nullptr) {
+        tty->print_cr("nullptr");
+      } else {
+        n->dump();
+      }
+    }
+#endif
+
+    if (n == nullptr) {
+      assert(false, "got null node");
+      phase()->C->record_failure(C2Compiler::retry_no_superword());
+      return; // bailout
+    }
+
+    vnode_idx_to_transformed_node.at_put(vtn->_idx, n);
+  }
+}
+
+
+Node* VTransformScalarNode::apply(const VLoopAnalyzer& vloop_analyzer, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
+  // TODO hook up to its proper inputs!
+  return _node;
+}
+
+void VTransformVectorNode::register_new_vector_and_replace_scalar_nodes(const VLoopAnalyzer& vloop_analyzer, Node* vn) const {
+#ifdef ASSERT
+  // Mark Load/Store Vector for alignment verification
+  if (VerifyAlignVector) {
+    if (vn->Opcode() == Op_LoadVector) {
+      vn->as_LoadVector()->set_must_verify_alignment();
+    } else if (vn->Opcode() == Op_StoreVector) {
+      vn->as_StoreVector()->set_must_verify_alignment();
+    }
+  }
+#endif
+
+  PhaseIdealLoop* phase = vloop_analyzer.vloop().phase();
+
+  LoadNode* first = nodes().at(0)->as_Load();
+  phase->register_new_node_with_ctrl_of(vn, first);
+  for (int i = 0; i < _nodes.length(); i++) {
+    Node* n = _nodes.at(i);
+    phase->igvn().replace_node(n, vn);
+  }
+  phase->igvn()._worklist.push(vn);
+
+  VectorNode::trace_new_vector(vn, "AutoVectorization");
+}
+
+Node* VTransformElementWiseVectorNode::apply(const VLoopAnalyzer& vloop_analyzer, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
+  return nullptr;
+}
+
+Node* VTransformReductionVectorNode::apply(const VLoopAnalyzer& vloop_analyzer, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
+  return nullptr;
+}
+
+Node* VTransformLoadVectorNode::apply(const VLoopAnalyzer& vloop_analyzer, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
+  LoadNode* first = nodes().at(0)->as_Load();
+  uint  vlen = nodes().length();
+  Node* ctrl = first->in(MemNode::Control);
+  Node* mem  = first->in(MemNode::Memory);
+  Node* adr  = first->in(MemNode::Address);
+  int   opc  = first->Opcode();
+  const TypePtr* adr_type = first->adr_type();
+
+  // Set the memory dependency of the LoadVector as early as possible.
+  // Walk up the memory chain, and ignore any StoreVector that provably
+  // does not have any memory dependency.
+  while (mem->is_StoreVector()) {
+    VPointer p_store(mem->as_Mem(), vloop_analyzer.vloop());
+    if (p_store.overlap_possible_with_any_in(nodes())) {
+      break;
+    } else {
+      mem = mem->in(MemNode::Memory);
+    }
+  }
+
+  Node* vn = LoadVectorNode::make(opc, ctrl, mem, adr, adr_type, vlen,
+                                  vloop_analyzer.types().velt_basic_type(first),
+                                  control_dependency());
+
+  register_new_vector_and_replace_scalar_nodes(vloop_analyzer, vn);
+  return vn;
+}
+
+Node* VTransformStoreVectorNode::apply(const VLoopAnalyzer& vloop_analyzer, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
+  return nullptr;
 }
 
 #ifndef PRODUCT

@@ -26,7 +26,7 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "opto/addnode.hpp"
-#include "opto/c2compiler.hpp"
+#include "opto/c2compiler.hpp" // TODO remove?
 #include "opto/castnode.hpp"
 #include "opto/convertnode.hpp"
 #include "opto/matcher.hpp"
@@ -2038,23 +2038,23 @@ bool SuperWord::output() {
       Node* vn = nullptr;
       int   opc = n->Opcode();
       if (n->is_Load()) {
-        Node* ctl = n->in(MemNode::Control);
-        Node* mem = first->in(MemNode::Memory);
-        // Set the memory dependency of the LoadVector as early as possible.
-        // Walk up the memory chain, and ignore any StoreVector that provably
-        // does not have any memory dependency.
-        while (mem->is_StoreVector()) {
-          VPointer p_store(mem->as_Mem(), _vloop);
-          if (p_store.overlap_possible_with_any_in(p)) {
-            break;
-          } else {
-            mem = mem->in(MemNode::Memory);
-          }
-        }
-        Node* adr = first->in(MemNode::Address);
-        const TypePtr* atyp = n->adr_type();
-        vn = LoadVectorNode::make(opc, ctl, mem, adr, atyp, vlen, velt_basic_type(n), control_dependency(p));
-        vlen_in_bytes = vn->as_LoadVector()->memory_size();
+        // Node* ctl = n->in(MemNode::Control);
+        // Node* mem = first->in(MemNode::Memory);
+        // // Set the memory dependency of the LoadVector as early as possible.
+        // // Walk up the memory chain, and ignore any StoreVector that provably
+        // // does not have any memory dependency.
+        // while (mem->is_StoreVector()) {
+        //   VPointer p_store(mem->as_Mem(), _vloop);
+        //   if (p_store.overlap_possible_with_any_in(p)) {
+        //     break;
+        //   } else {
+        //     mem = mem->in(MemNode::Memory);
+        //   }
+        // }
+        // Node* adr = first->in(MemNode::Address);
+        // const TypePtr* atyp = n->adr_type();
+        // vn = LoadVectorNode::make(opc, ctl, mem, adr, atyp, vlen, velt_basic_type(n), control_dependency(p));
+        // vlen_in_bytes = vn->as_LoadVector()->memory_size();
       } else if (n->is_Store()) {
         // Promote value to be stored to vector
         Node* val = vector_opd(p, MemNode::ValueIn);
@@ -2279,29 +2279,29 @@ bool SuperWord::output() {
         return false; // bailout
       }
 
-      if (vn == nullptr) {
-        assert(false, "got null node instead of vector node");
-        C->record_failure(C2Compiler::retry_no_superword());
-        return false; // bailout
-      }
-
-#ifdef ASSERT
-      // Mark Load/Store Vector for alignment verification
-      if (VerifyAlignVector) {
-        if (vn->Opcode() == Op_LoadVector) {
-          vn->as_LoadVector()->set_must_verify_alignment();
-        } else if (vn->Opcode() == Op_StoreVector) {
-          vn->as_StoreVector()->set_must_verify_alignment();
-        }
-      }
-#endif
-
-      phase()->register_new_node_with_ctrl_of(vn, first);
-      for (uint j = 0; j < p->size(); j++) {
-        Node* pm = p->at(j);
-        igvn().replace_node(pm, vn);
-      }
-      igvn()._worklist.push(vn);
+//      if (vn == nullptr) {
+//        assert(false, "got null node instead of vector node");
+//        C->record_failure(C2Compiler::retry_no_superword());
+//        return false; // bailout
+//      }
+//
+//#ifdef ASSERT
+//      // Mark Load/Store Vector for alignment verification
+//      if (VerifyAlignVector) {
+//        if (vn->Opcode() == Op_LoadVector) {
+//          vn->as_LoadVector()->set_must_verify_alignment();
+//        } else if (vn->Opcode() == Op_StoreVector) {
+//          vn->as_StoreVector()->set_must_verify_alignment();
+//        }
+//      }
+//#endif
+//
+//      phase()->register_new_node_with_ctrl_of(vn, first);
+//      for (uint j = 0; j < p->size(); j++) {
+//        Node* pm = p->at(j);
+//        igvn().replace_node(pm, vn);
+//      }
+//      igvn()._worklist.push(vn);
 
       if (vlen > max_vlen) {
         max_vlen = vlen;
@@ -2309,7 +2309,7 @@ bool SuperWord::output() {
       if (vlen_in_bytes > max_vlen_in_bytes) {
         max_vlen_in_bytes = vlen_in_bytes;
       }
-      VectorNode::trace_new_vector(vn, "SuperWord");
+//      VectorNode::trace_new_vector(vn, "SuperWord");
     }
   }//for (int i = 0; i < body().length(); i++)
 
@@ -3006,10 +3006,10 @@ bool VLoopMemorySlices::same_memory_slice(MemNode* m1, MemNode* m2) const {
          _vloop.phase()->C->get_alias_index(m2->adr_type());
 }
 
-LoadNode::ControlDependency SuperWord::control_dependency(Node_List* p) {
+LoadNode::ControlDependency VTransformLoadVectorNode::control_dependency() const {
   LoadNode::ControlDependency dep = LoadNode::DependsOnlyOnTest;
-  for (uint i = 0; i < p->size(); i++) {
-    Node* n = p->at(i);
+  for (int i = 0; i < nodes().length(); i++) {
+    Node* n = nodes().at(i);
     assert(n->is_Load(), "only meaningful for loads");
     if (!n->depends_only_on_test()) {
       if (n->as_Load()->has_unknown_control_dependency() &&
@@ -3224,7 +3224,7 @@ void VTransformGraph::adjust_pre_loop_limit_to_align_main_loop_vectors() {
 
 #ifdef ASSERT
   if (_is_trace_align_vector) {
-    tty->print_cr("\nadjust_pre_loop_limit_to_align_main_loop_vectors:");
+    tty->print_cr("\nVLoopTransformGraph::adjust_pre_loop_limit_to_align_main_loop_vectors:");
     tty->print("  align_to_ref:");
     align_to_ref->dump();
     tty->print_cr("  aw:       %d", aw);

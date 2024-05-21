@@ -765,9 +765,9 @@ class VPointer : public ArenaObj {
     }
   }
 
-  bool overlap_possible_with_any_in(const Node_List* p) const {
-    for (uint k = 0; k < p->size(); k++) {
-      MemNode* mem = p->at(k)->as_Mem();
+  bool overlap_possible_with_any_in(const GrowableArray<Node*>& nodes) const {
+  for (int i = 0; i < nodes.length(); i++) {
+    MemNode* mem = nodes.at(i)->as_Mem();
       VPointer p_mem(mem, _vloop);
       // Only if we know that we have Less or Greater can we
       // be sure that there can never be an overlap between
@@ -1415,11 +1415,13 @@ private:
   template<typename Callback>
   void for_each_memop_in_schedule(Callback callback) const;
 
-  void apply_memops_reordering_with_schedule();
+  void apply_memops_reordering_with_schedule() const;
 
   // Ensure that the main loop vectors are aligned by adjusting the pre loop limit.
   void determine_mem_ref_and_aw_for_main_loop_alignment();
   void adjust_pre_loop_limit_to_align_main_loop_vectors();
+
+  void apply_vectorization() const;
 
 #ifndef PRODUCT
   void print_vtnodes() const;
@@ -1473,6 +1475,9 @@ public:
   virtual VTransformElementWiseVectorNode* isa_ElementWiseVector() { return nullptr; }
   virtual VTransformReductionVectorNode* isa_ReductionVector() { return nullptr; }
 
+  virtual Node* apply(const VLoopAnalyzer& vloop_analyzer,
+                      const GrowableArray<Node*>& vnode_idx_to_transformed_node) const = 0;
+
   NOT_PRODUCT(virtual const char* name() const = 0;)
   NOT_PRODUCT(void print() const;)
   NOT_PRODUCT(virtual void print_spec() const {};)
@@ -1491,6 +1496,9 @@ public:
   Node* node() const { return _node; }
 
   virtual VTransformScalarNode* isa_Scalar() override { return this; }
+
+  virtual Node* apply(const VLoopAnalyzer& vloop_analyzer,
+                      const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
 
   NOT_PRODUCT(virtual const char* name() const { return "Scalar"; };)
   NOT_PRODUCT(virtual void print_spec() const override;)
@@ -1515,6 +1523,8 @@ public:
 
   virtual VTransformVectorNode* isa_Vector() override { return this; }
 
+  void register_new_vector_and_replace_scalar_nodes(const VLoopAnalyzer& vloop_analyzer, Node* vn) const;
+
   NOT_PRODUCT(virtual void print_spec() const override;)
 };
 
@@ -1524,6 +1534,9 @@ public:
     VTransformVectorNode(graph, req, number_of_nodes) {}
 
   virtual VTransformElementWiseVectorNode* isa_ElementWiseVector() { return this; }
+
+  virtual Node* apply(const VLoopAnalyzer& vloop_analyzer,
+                      const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
 
   NOT_PRODUCT(virtual const char* name() const { return "ElementWiseVector"; };)
 };
@@ -1540,6 +1553,9 @@ public:
 
   virtual VTransformReductionVectorNode* isa_ReductionVector() { return this; }
 
+  virtual Node* apply(const VLoopAnalyzer& vloop_analyzer,
+                      const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
+
   NOT_PRODUCT(virtual const char* name() const { return "ReductionVector"; };)
 };
 
@@ -1549,6 +1565,10 @@ public:
   VTransformLoadVectorNode(VTransformGraph& graph, int number_of_nodes) :
     VTransformVectorNode(graph, 3, number_of_nodes) {}
 
+  virtual Node* apply(const VLoopAnalyzer& vloop_analyzer,
+                      const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
+  LoadNode::ControlDependency control_dependency() const;
+
   NOT_PRODUCT(virtual const char* name() const { return "LoadVector"; };)
 };
 
@@ -1557,6 +1577,9 @@ public:
   // req = 4 -> [ctrl, mem, adr, val]
   VTransformStoreVectorNode(VTransformGraph& graph, int number_of_nodes) :
     VTransformVectorNode(graph, 4, number_of_nodes) {}
+
+  virtual Node* apply(const VLoopAnalyzer& vloop_analyzer,
+                      const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
 
   NOT_PRODUCT(virtual const char* name() const { return "StoreVector"; };)
 };
