@@ -2062,7 +2062,7 @@ void VTransformVectorNode::register_new_vector_and_replace_scalar_nodes(const VL
 
   PhaseIdealLoop* phase = vloop_analyzer.vloop().phase();
 
-  LoadNode* first = nodes().at(0)->as_Load();
+  Node* first = nodes().at(0);
   phase->register_new_node_with_ctrl_of(vn, first);
   for (int i = 0; i < _nodes.length(); i++) {
     Node* n = _nodes.at(i);
@@ -2111,7 +2111,23 @@ VTransformApplyStatus VTransformLoadVectorNode::apply(const VLoopAnalyzer& vloop
 }
 
 VTransformApplyStatus VTransformStoreVectorNode::apply(const VLoopAnalyzer& vloop_analyzer, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
-  return VTransformApplyStatus::make_vector(nullptr, 0, 0);
+  StoreNode* first = nodes().at(0)->as_Store();
+  uint  vlen = nodes().length();
+  Node* ctrl = first->in(MemNode::Control);
+  Node* mem  = first->in(MemNode::Memory);
+  Node* adr  = first->in(MemNode::Address);
+  int   opc  = first->Opcode();
+  const TypePtr* adr_type = first->adr_type();
+
+  // TODO helper method?
+  VTransformNode* value_vtn = in(MemNode::ValueIn);
+  Node* value = vnode_idx_to_transformed_node.at(value_vtn->_idx);
+  assert(value != nullptr, "must find input vector");
+
+  StoreVectorNode* vn = StoreVectorNode::make(opc, ctrl, mem, adr, adr_type, value, vlen);
+
+  register_new_vector_and_replace_scalar_nodes(vloop_analyzer, vn);
+  return VTransformApplyStatus::make_vector(vn, vlen, vn->memory_size());
 }
 
 #ifndef PRODUCT

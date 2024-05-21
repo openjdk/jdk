@@ -2056,20 +2056,20 @@ bool SuperWord::output() {
         // vn = LoadVectorNode::make(opc, ctl, mem, adr, atyp, vlen, velt_basic_type(n), control_dependency(p));
         // vlen_in_bytes = vn->as_LoadVector()->memory_size();
       } else if (n->is_Store()) {
-        // Promote value to be stored to vector
-        Node* val = vector_opd(p, MemNode::ValueIn);
-        if (val == nullptr) {
-          assert(false, "input to vector store was not created");
-          C->record_failure(C2Compiler::retry_no_superword());
-          return false; // bailout
-        }
+        // // Promote value to be stored to vector
+        // Node* val = vector_opd(p, MemNode::ValueIn);
+        // if (val == nullptr) {
+        //   assert(false, "input to vector store was not created");
+        //   C->record_failure(C2Compiler::retry_no_superword());
+        //   return false; // bailout
+        // }
 
-        Node* ctl = n->in(MemNode::Control);
-        Node* mem = first->in(MemNode::Memory);
-        Node* adr = first->in(MemNode::Address);
-        const TypePtr* atyp = n->adr_type();
-        vn = StoreVectorNode::make(opc, ctl, mem, adr, atyp, val, vlen);
-        vlen_in_bytes = vn->as_StoreVector()->memory_size();
+        // Node* ctl = n->in(MemNode::Control);
+        // Node* mem = first->in(MemNode::Memory);
+        // Node* adr = first->in(MemNode::Address);
+        // const TypePtr* atyp = n->adr_type();
+        // vn = StoreVectorNode::make(opc, ctl, mem, adr, atyp, val, vlen);
+        // vlen_in_bytes = vn->as_StoreVector()->memory_size();
       } else if (VectorNode::is_scalar_rotate(n)) {
         Node* in1 = first->in(1);
         Node* in2 = first->in(2);

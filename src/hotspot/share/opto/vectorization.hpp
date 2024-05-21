@@ -1329,6 +1329,7 @@ class VTransformVectorNode;
 class VTransformElementWiseVectorNode;
 class VTransformReductionVectorNode;
 
+// TODO desc
 class VTransformApplyStatus {
 private:
   Node* const _node;
@@ -1352,6 +1353,7 @@ public:
   uint vector_width() const { return _vector_width; }
 };
 
+// TODO desc
 class VTransformGraph {
 private:
   const VLoopAnalyzer& _vloop_analyzer;
@@ -1453,6 +1455,7 @@ private:
 #endif
 };
 
+// TODO desc
 class VTransformNode : public ArenaObj {
 public:
   const VTransformNodeIDX _idx;
@@ -1492,6 +1495,7 @@ public:
 
   int outs() const { return _out.length(); }
   VTransformNode* out(int i) const { return _out.at(i); }
+  VTransformNode* in(int i) const { return _in.at(i); }
 
   virtual VTransformScalarNode* isa_Scalar() { return nullptr; }
   virtual VTransformVectorNode* isa_Vector() { return nullptr; }
