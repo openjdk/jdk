@@ -323,7 +323,7 @@ TEST_VM_F(TreapTest, VerifyItThroughStressTest) {
     constexpr const int ten_thousand = 10000;
     for (int i = 0; i < ten_thousand; i++) {
       int r = os::random();
-      if (r >= 0) {
+      if (r % 2 == 0) {
         treap.upsert(i, i);
       } else {
         treap.remove(i);
@@ -332,7 +332,7 @@ TEST_VM_F(TreapTest, VerifyItThroughStressTest) {
     }
     for (int i = 0; i < ten_thousand; i++) {
       int r = os::random();
-      if (r >= 0) {
+      if (r % 2 == 0) {
         treap.upsert(i, i);
       } else {
         treap.remove(i);
