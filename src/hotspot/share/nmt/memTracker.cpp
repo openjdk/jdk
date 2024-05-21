@@ -67,8 +67,7 @@ void MemTracker::initialize() {
 
   if (level > NMT_off) {
     if (!MallocTracker::initialize(level) ||
-        !VirtualMemoryTracker::initialize(level) ||
-        !ThreadStackTracker::initialize(level)) {
+        !VirtualMemoryTracker::initialize(level)) {
       assert(false, "NMT initialization failed");
       level = NMT_off;
       log_warning(nmt)("NMT initialization failed. NMT disabled.");
