@@ -47,17 +47,36 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
     // location is the same for all processes, otherwise the tools
     // will not be able to find all Hotspot processes.
     // Any changes to this needs to be synchronized with HotSpot.
-    private static final String tmpdir = "/tmp";
+    private static final Path TMPDIR = Path.of("/tmp");
 
-    private static final Optional<Path> MOUNT_NS;
+    private static final Path PROC     = Path.of("/proc");
+    private static final Path NS_MNT   = Path.of("ns/mnt");
+    private static final Path NS_PID   = Path.of("ns/pid");
+    private static final Path SELF     = PROC.resolve("self");
+    private static final Path TMP      = Path.of("tmp");
+    private static final Path STATUS   = Path.of("status");
+    private static final Path ROOT_TMP = Path.of("root/tmp");
+
+    private static final Optional<Path> SELF_MNT_NS;
+    private static final Optional<Path> SELF_PID_NS;
 
     static {
-        Path mountNs = null;
+        Path nsPath = null;
+
         try {
-            mountNs = Files.readSymbolicLink(Path.of("/proc/self/ns/mnt"));
-        } catch (IOException ioe) {
+            nsPath = Files.readSymbolicLink(SELF.resolve(NS_MNT));
+        } catch (IOException _) {
+            // do nothing
         } finally {
-            MOUNT_NS = Optional.ofNullable(mountNs);
+            SELF_MNT_NS = Optional.ofNullable(nsPath);
+        }
+
+        try {
+            nsPath = Files.readSymbolicLink(SELF.resolve(NS_PID));
+        } catch (IOException _) {
+            // do nothing
+        } finally {
+            SELF_PID_NS = Optional.ofNullable(nsPath);
         }
     }
 
@@ -66,8 +85,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
     /**
      * Attaches to the target VM
      */
-    VirtualMachineImpl(AttachProvider provider, String vmid)
-        throws AttachNotSupportedException, IOException
+    VirtualMachineImpl(AttachProvider provider, String vmid) throws AttachNotSupportedException, IOException
     {
         super(provider, vmid);
 
@@ -77,19 +95,17 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
             throw new AttachNotSupportedException("Invalid process identifier: " + vmid);
         }
 
-        Path targetProcessTmpDir = findTargetProcessTmpDirectory(pid);
-
         // Try to resolve to the "inner most" pid namespace
-        int ns_pid = getNamespacePid(pid);
+        final long ns_pid = getNamespacePid(pid);
 
         // Find the socket file. If not found then we attempt to start the
         // attach mechanism in the target VM by sending it a QUIT signal.
         // Then we attempt to find the socket file again.
-        File socket_file = findSocketFile(targetProcessTmpDir, ns_pid);
+        final File socket_file = findSocketFile(pid, ns_pid);
         socket_path = socket_file.getPath();
         if (!socket_file.exists()) {
             // Keep canonical version of File, to delete, in case target process ends and /proc link has gone:
-            File f = createAttachFile(pid, ns_pid, targetProcessTmpDir).getCanonicalFile();
+            File f = createAttachFile(pid, ns_pid).getCanonicalFile();
             try {
                 sendQuitTo(pid);
 
@@ -227,29 +243,29 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
     }
 
     // Return the socket file for the given process.
-    private File findSocketFile(Path targetProcessTmpDirectory, int ns_pid) {
-        return targetProcessTmpDirectory.resolve(".java_pid" + ns_pid).toFile();
+    private File findSocketFile(long pid, long ns_pid) throws AttachNotSupportedException, IOException {
+        return new File(findTargetProcessTmpDirectory(pid, ns_pid), ".java_pid" + ns_pid);
     }
 
     // On Linux a simple handshake is used to start the attach mechanism
     // if not already started. The client creates a .attach_pid<pid> file in the
     // target VM's working directory (or temp directory), and the SIGQUIT handler
     // checks for the file.
-    private File createAttachFile(int pid, int ns_pid, Path targetProcessTmpDirectory) throws IOException {
-        String fn = ".attach_pid" + ns_pid;
-        String path = "/proc/" + pid + "/cwd/" + fn;
-        File f = new File(path);
+    private File createAttachFile(long pid, long ns_pid) throws AttachNotSupportedException, IOException {
+        Path fn   = Path.of(".attach_pid" + ns_pid);
+        Path path = PROC.resolve(Path.of(Long.toString(pid), "cwd")).resolve(fn);
+        File f    = new File(path.toString());
         try {
             // Do not canonicalize the file path, or we will fail to attach to a VM in a container.
             f.createNewFile();
-        } catch (IOException x) {
-            f = targetProcessTmpDirectory.resolve(fn).toFile();
+        } catch (IOException _) {
+            f = new File(findTargetProcessTmpDirectory(pid, ns_pid), fn.toString());
             f.createNewFile();
         }
         return f;
     }
 
-    private Path findTargetProcessTmpDirectory(int pid) {
+    private String findTargetProcessTmpDirectory(long pid, long ns_pid) throws AttachNotSupportedException, IOException {
         // We need to handle at least 4 different cases:
         // 1. Caller and target processes share PID namespace and root filesystem (host to host or container to
         //    container with both /tmp mounted between containers).
@@ -257,38 +273,78 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
         //    privileges (host to host).
         // 3. Caller and target processes share PID namespace but NOT root filesystem (container to container).
         // 4. Caller and target processes share neither PID namespace nor root filesystem (host to container).
-        //
-        // Hence, we start out by comparing mount namespaces. If they match, we know for sure that reading from and
-        // writing to /tmp will work. If not, we check if we can access the target process' /tmp folder through
-        // /proc/<pid>/root/tmp. This works in all cases except case 2. Even though both the caller and target process
-        // are running as the same user, access to the /proc/<pid>/root symlink is governed by ptrace access mode
-        // PTRACE_MODE_READ_FSCREDS, and if the target process has elevated privileges set by setcap, access is denied
-        // (see JDK-8226919). If /proc/<pid>/root is not readable, as a last resort we fall back to trying /tmp.
 
-        Optional<Path> targetMountNs = Optional.empty();
+        Optional<ProcessHandle> target = ProcessHandle.of(pid);
+        Optional<ProcessHandle> ph = target;
+        long nsPid = ns_pid;
+        Optional<Path> prevPidNS = Optional.empty();
 
-        try {
-            targetMountNs = Optional.ofNullable(Files.readSymbolicLink(Path.of("/proc", Integer.toString(pid), "ns", "mnt")));
-        } catch (IOException _) {
-            // do nothing...
+        while (ph.isPresent()) {
+            final var curPid = ph.get().pid();
+
+            final var procPidPath = PROC.resolve(Long.toString(curPid));
+
+            Optional<Path> targetMountNS = Optional.empty();
+
+            try {
+                targetMountNS = Optional.ofNullable(Files.readSymbolicLink(procPidPath.resolve(NS_MNT))); // attempt to read the target's mnt ns id...
+            } catch (
+                    IOException _) { // if we fail to read the target's mnt ns id then we either don't have access or it no longer exists!
+                if (!Files.exists(procPidPath)) {
+                    throw new IOException(String.format("unable to attach, %s non-existent! process: %d terminated", procPidPath, pid));
+                }
+
+                // ok so if we get here we have failed to read the target's mnt ns, but the tgt process still exists ... we do not have privileges to read its procfs
+            }
+
+            final var sameMountNS = SELF_MNT_NS.isPresent() && SELF_MNT_NS.equals(targetMountNS); // will be false  if we did not read the target's mnt ns
+
+            if (sameMountNS) {
+                return TMPDIR.toString(); // we share TMPDIR in common!
+            } else {
+                final var procPidRootTmp = procPidPath.resolve(ROOT_TMP);
+
+                if (Files.isReadable(procPidRootTmp)) {
+                    return procPidRootTmp.toString(); // not in the same mnt ns but tmp is accessible via /proc...
+                }
+            }
+
+            // let's attempt to obtain the pid NS... best efforts to avoid crossing pid ns boundaries (as with a container)
+
+            Optional<Path> curPidNS = Optional.empty();
+
+            try {
+                curPidNS = Optional.ofNullable(Files.readSymbolicLink(procPidPath.resolve(NS_PID))); // attempt to read the target's mnt ns id...
+            } catch (IOException _) { // if we fail to read the target's pid ns id then we either don't have access or it no longer exists!
+                if (!Files.exists(procPidPath)) {
+                    throw new IOException(String.format("unable to attach, %s non-existent! process: %d terminated", procPidPath, pid));
+                }
+
+                // ok so if we get here we have failed to read the target's pid ns, but the tgt process still exists ... we do not have privileges to read its procfs
+            }
+
+            // recurse "up" the process hierarchy... if appropriate
+
+            final var havePidNSes = prevPidNS.isPresent() && curPidNS.isPresent();
+
+            final var ppid = ph.get().parent();
+
+            if (ppid.isPresent() && (havePidNSes && curPidNS.equals(prevPidNS)) || (!havePidNSes && nsPid > 1)) {
+                ph = ppid;
+
+                nsPid = getNamespacePid(ph.get().pid()); // get the ns pid of the parent...
+
+                prevPidNS = curPidNS;
+            } else {
+                ph = Optional.empty();
+            }
         }
 
-        final boolean sameMountNs = MOUNT_NS.isPresent() && targetMountNs.isPresent() && MOUNT_NS.equals(targetMountNs);
-
-        if (sameMountNs) {
-            // Cases 1 and 3
-            return Path.of(tmpdir);
+        if (target.orElseThrow(AttachNotSupportedException::new).isAlive()) {
+            return TMPDIR.toString(); // fallback...
+        } else {
+            throw new IOException(String.format("unable to attach, process: %d terminated", pid));
         }
-
-        Path procRootDirectory = Path.of("/proc", Integer.toString(pid), "root" );
-        if (Files.isReadable(procRootDirectory)) {
-            // Case 4
-            return Path.of(procRootDirectory.toString(), tmpdir);
-        }
-
-        // Case 2, and cases where no matching process is running or the attacher process is running as a non-privileged
-        // user and the target process is running as another user than the attacher.
-        return Path.of(tmpdir);
     }
 
     /*
@@ -308,10 +364,10 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
 
     // Return the inner most namespaced PID if there is one,
     // otherwise return the original PID.
-    private int getNamespacePid(int pid) throws AttachNotSupportedException {
+    private long getNamespacePid(long pid) throws AttachNotSupportedException, IOException {
         // Assuming a real procfs sits beneath, reading this doesn't block
         // nor will it consume a lot of memory.
-        String statusFile = "/proc/" + pid + "/status";
+        final var statusFile = PROC.resolve(Long.toString(pid)).resolve(STATUS).toString();
         File f = new File(statusFile);
         if (!f.exists()) {
             return pid; // Likely a bad pid, but this is properly handled later.
@@ -327,8 +383,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
                     // The last entry represents the PID the JVM "thinks" it is.
                     // Even in non-namespaced pids these entries should be
                     // valid. You could refer to it as the inner most pid.
-                    int ns_pid = Integer.parseInt(parts[parts.length - 1]);
-                    return ns_pid;
+                    return Long.parseLong(parts[parts.length - 1]);
                 }
             }
             // Old kernels may not have NSpid field (i.e. 3.10).
