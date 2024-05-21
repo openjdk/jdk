@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 
 Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
@@ -428,7 +428,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ng">ndonga</language>
 			<language type="nia">niha</language>
 			<language type="niu">niuéen</language>
-			<language type="njo">Ao</language>
+			<language type="njo">ao</language>
 			<language type="nl">néerlandais</language>
 			<language type="nl_BE">flamand</language>
 			<language type="nmg">ngoumba</language>
@@ -1365,7 +1365,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="phonebook">ordre de l’annuaire</type>
 			<type key="collation" type="phonetic">ordre de tri phonétique</type>
 			<type key="collation" type="pinyin">ordre pinyin</type>
-			<type key="collation" type="reformed">ordre réformé</type>
 			<type key="collation" type="search">recherche générique</type>
 			<type key="collation" type="searchjl" draft="contributed">rechercher par consonne initiale en hangeul</type>
 			<type key="collation" type="standard">ordre de tri standard</type>
@@ -3297,9 +3296,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<regionFormat>heure : {0}</regionFormat>
 			<regionFormat type="daylight">{0} (heure d’été)</regionFormat>
 			<regionFormat type="standard">{0} (heure standard)</regionFormat>
-			<zone type="America/Santa_Isabel">
-				<exemplarCity>Santa Isabel</exemplarCity>
-			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>temps universel coordonné</standard>
@@ -3349,9 +3345,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Australia/Adelaide">
 				<exemplarCity>Adélaïde</exemplarCity>
-			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>Currie</exemplarCity>
 			</zone>
 			<zone type="Asia/Baku">
 				<exemplarCity>Bakou</exemplarCity>
@@ -3697,14 +3690,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Port_of_Spain">
 				<exemplarCity>Port-d’Espagne</exemplarCity>
 			</zone>
-			<zone type="Europe/Uzhgorod">
-				<exemplarCity>Oujgorod</exemplarCity>
-			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>Kiev</exemplarCity>
-			</zone>
-			<zone type="Europe/Zaporozhye">
-				<exemplarCity>Zaporojie</exemplarCity>
 			</zone>
 			<zone type="Pacific/Honolulu">
 				<short>
@@ -4404,11 +4391,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight draft="unconfirmed">heure d’été de Macao</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>heure de l’île Macquarie</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>heure de Magadan</generic>
@@ -4447,18 +4429,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<long>
 					<standard>heure de Mawson</standard>
 				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic>heure du Nord-Ouest du Mexique</generic>
-					<standard>heure normale du Nord-Ouest du Mexique</standard>
-					<daylight>heure d’été du Nord-Ouest du Mexique</daylight>
-				</long>
-				<short>
-					<generic draft="unconfirmed">HNOMX</generic>
-					<standard draft="unconfirmed">HNNOMX</standard>
-					<daylight draft="unconfirmed">HENOMX</daylight>
-				</short>
 			</metazone>
 			<metazone type="Mexico_Pacific">
 				<long>
@@ -6378,6 +6348,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="other">dollars des Caraïbes orientales</displayName>
 				<symbol>XCD</symbol>
 			</currency>
+			<currency type="XCG">
+				<displayName>florin caribéen</displayName>
+				<displayName count="one">florin caribéen</displayName>
+				<displayName count="other">florins caribéens</displayName>
+			</currency>
 			<currency type="XDR">
 				<displayName>droit de tirage spécial</displayName>
 				<displayName count="one">droit de tirage spécial</displayName>
@@ -8027,7 +8002,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="energy-foodcalorie">
 				<unitPattern count="one">{0} kcal</unitPattern>
-				<unitPattern count="other">{0}  kcal</unitPattern>
+				<unitPattern count="other">{0} kcal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<unitPattern count="one">{0} kJ</unitPattern>

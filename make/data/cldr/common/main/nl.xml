@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 
 Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
@@ -1356,7 +1356,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="phonebook">Telefoonboeksorteervolgorde</type>
 			<type key="collation" type="phonetic">Fonetische sorteervolgorde</type>
 			<type key="collation" type="pinyin">Pinyinsorteervolgorde</type>
-			<type key="collation" type="reformed">Herziene sorteervolgorde</type>
 			<type key="collation" type="search">algemeen zoeken</type>
 			<type key="collation" type="searchjl" draft="contributed">Zoeken op eerste Hangul-medeklinker</type>
 			<type key="collation" type="standard">standaard sorteervolgorde</type>
@@ -3561,9 +3560,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<regionFormat>tijd in {0}</regionFormat>
 			<regionFormat type="daylight">zomertijd in {0}</regionFormat>
 			<regionFormat type="standard">standaardtijd in {0}</regionFormat>
-			<zone type="America/Santa_Isabel">
-				<exemplarCity>Santa Isabel</exemplarCity>
-			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>gecoördineerde wereldtijd</standard>
@@ -3589,9 +3585,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Europe/Vienna">
 				<exemplarCity>Wenen</exemplarCity>
-			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>Currie</exemplarCity>
 			</zone>
 			<zone type="Asia/Baku">
 				<exemplarCity>Bakoe</exemplarCity>
@@ -3844,14 +3837,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Europe/Istanbul">
 				<exemplarCity>Istanboel</exemplarCity>
 			</zone>
-			<zone type="Europe/Uzhgorod">
-				<exemplarCity>Oezjhorod</exemplarCity>
-			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>Kiev</exemplarCity>
-			</zone>
-			<zone type="Europe/Zaporozhye">
-				<exemplarCity>Zaporizja</exemplarCity>
 			</zone>
 			<zone type="Pacific/Honolulu">
 				<short>
@@ -3921,9 +3908,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Alaska">
 				<long>
-					<generic>Alaska Time</generic>
-					<standard>Alaska Standard Time</standard>
-					<daylight>Alaska Daylight Time</daylight>
+					<generic>Alaska-tijd</generic>
+					<standard>Alaska-standaardtijd</standard>
+					<daylight>Alaska-zomertijd</daylight>
 				</long>
 				<short>
 					<generic draft="contributed">AKT</generic>
@@ -3940,16 +3927,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Amazon">
 				<long>
-					<generic>Amazon Time</generic>
-					<standard>Amazon Standard Time</standard>
-					<daylight>Amazon Summer Time</daylight>
+					<generic>Amazone-tijd</generic>
+					<standard>Amazone-standaardtijd</standard>
+					<daylight>Amazone-zomertijd</daylight>
 				</long>
 			</metazone>
 			<metazone type="America_Central">
 				<long>
-					<generic>Central Time</generic>
-					<standard>Central Standard Time</standard>
-					<daylight>Central Daylight Time</daylight>
+					<generic>Central-tijd</generic>
+					<standard>Central-standaardtijd</standard>
+					<daylight>Central-zomertijd</daylight>
 				</long>
 				<short>
 					<generic draft="contributed">CT</generic>
@@ -3959,9 +3946,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="America_Eastern">
 				<long>
-					<generic>Eastern Time</generic>
-					<standard>Eastern Standard Time</standard>
-					<daylight>Eastern Daylight Time</daylight>
+					<generic>Eastern-tijd</generic>
+					<standard>Eastern-standaardtijd</standard>
+					<daylight>Eastern-zomertijd</daylight>
 				</long>
 				<short>
 					<generic draft="contributed">ET</generic>
@@ -3971,9 +3958,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="America_Mountain">
 				<long>
-					<generic>Mountain Time</generic>
-					<standard>Mountain Standard Time</standard>
-					<daylight>Mountain Daylight Time</daylight>
+					<generic>Mountain-tijd</generic>
+					<standard>Mountain-standaardtijd</standard>
+					<daylight>Mountain-zomertijd</daylight>
 				</long>
 				<short>
 					<generic draft="contributed">MT</generic>
@@ -3983,9 +3970,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="America_Pacific">
 				<long>
-					<generic>Pacific Time</generic>
-					<standard>Pacific Standard Time</standard>
-					<daylight>Pacific Daylight Time</daylight>
+					<generic>Pacific-tijd</generic>
+					<standard>Pacific-standaardtijd</standard>
+					<daylight>Pacific-zomertijd</daylight>
 				</long>
 				<short>
 					<generic draft="contributed">PT</generic>
@@ -4030,16 +4017,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Argentina">
 				<long>
-					<generic>Argentina Time</generic>
-					<standard>Argentina Standard Time</standard>
-					<daylight>Argentina Summer Time</daylight>
+					<generic>Argentijnse tijd</generic>
+					<standard>Argentijnse standaardtijd</standard>
+					<daylight>Argentijnse zomertijd</daylight>
 				</long>
 			</metazone>
 			<metazone type="Argentina_Western">
 				<long>
-					<generic>Western Argentina Time</generic>
-					<standard>Western Argentina Standard Time</standard>
-					<daylight>Western Argentina Summer Time</daylight>
+					<generic>West-Argentijnse tijd</generic>
+					<standard>West-Argentijnse standaardtijd</standard>
+					<daylight>West-Argentijnse zomertijd</daylight>
 				</long>
 			</metazone>
 			<metazone type="Armenia">
@@ -4051,9 +4038,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Atlantic">
 				<long>
-					<generic>Atlantic Time</generic>
-					<standard>Atlantic Standard Time</standard>
-					<daylight>Atlantic Daylight Time</daylight>
+					<generic>Atlantic-tijd</generic>
+					<standard>Atlantic-standaardtijd</standard>
+					<daylight>Atlantic-zomertijd</daylight>
 				</long>
 				<short>
 					<generic draft="contributed">AT</generic>
@@ -4117,14 +4104,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Bolivia">
 				<long>
-					<standard>Bolivia Time</standard>
+					<standard>Boliviaanse tijd</standard>
 				</long>
 			</metazone>
 			<metazone type="Brasilia">
 				<long>
-					<generic>Brasilia Time</generic>
-					<standard>Brasilia Standard Time</standard>
-					<daylight>Brasilia Summer Time</daylight>
+					<generic>Braziliaanse tijd</generic>
+					<standard>Braziliaanse standaardtijd</standard>
+					<daylight>Braziliaanse zomertijd</daylight>
 				</long>
 			</metazone>
 			<metazone type="Brunei">
@@ -4158,9 +4145,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Chile">
 				<long>
-					<generic>Chile Time</generic>
-					<standard>Chile Standard Time</standard>
-					<daylight>Chile Summer Time</daylight>
+					<generic>Chileense tijd</generic>
+					<standard>Chileense standaardtijd</standard>
+					<daylight>Chileense zomertijd</daylight>
 				</long>
 			</metazone>
 			<metazone type="China">
@@ -4189,9 +4176,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Colombia">
 				<long>
-					<generic>Colombia Time</generic>
-					<standard>Colombia Standard Time</standard>
-					<daylight>Colombia Summer Time</daylight>
+					<generic>Colombiaanse tijd</generic>
+					<standard>Colombiaanse standaardtijd</standard>
+					<daylight>Colombiaanse zomertijd</daylight>
 				</long>
 			</metazone>
 			<metazone type="Cook">
@@ -4203,9 +4190,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Cuba">
 				<long>
-					<generic>Cuba Time</generic>
-					<standard>Cuba Standard Time</standard>
-					<daylight>Cuba Daylight Time</daylight>
+					<generic>Cubaanse tijd</generic>
+					<standard>Cubaanse standaardtijd</standard>
+					<daylight>Cubaanse zomertijd</daylight>
 				</long>
 			</metazone>
 			<metazone type="Davis">
@@ -4225,14 +4212,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Easter">
 				<long>
-					<generic>Easter Island Time</generic>
-					<standard>Easter Island Standard Time</standard>
-					<daylight>Easter Island Summer Time</daylight>
+					<generic>Paaseilandse tijd</generic>
+					<standard>Paaseilandse standaardtijd</standard>
+					<daylight>Paaseilandse zomertijd</daylight>
 				</long>
 			</metazone>
 			<metazone type="Ecuador">
 				<long>
-					<standard>Ecuador Time</standard>
+					<standard>Ecuadoraanse tijd</standard>
 				</long>
 			</metazone>
 			<metazone type="Europe_Central">
@@ -4278,9 +4265,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Falkland">
 				<long>
-					<generic>Falkland Islands Time</generic>
-					<standard>Falkland Islands Standard Time</standard>
-					<daylight>Falkland Islands Summer Time</daylight>
+					<generic>Falklandeilandse tijd</generic>
+					<standard>Falklandeilandse standaardtijd</standard>
+					<daylight>Falklandeilandse zomertijd</daylight>
 				</long>
 			</metazone>
 			<metazone type="Fiji">
@@ -4292,7 +4279,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="French_Guiana">
 				<long>
-					<standard>French Guiana Time</standard>
+					<standard>Frans-Guyaanse tijd</standard>
 				</long>
 			</metazone>
 			<metazone type="French_Southern">
@@ -4302,7 +4289,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Galapagos">
 				<long>
-					<standard>Galapagos Time</standard>
+					<standard>Galapagoseilandse tijd</standard>
 				</long>
 			</metazone>
 			<metazone type="Gambier">
@@ -4332,16 +4319,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Greenland_Eastern">
 				<long>
-					<generic>East Greenland Time</generic>
-					<standard>East Greenland Standard Time</standard>
-					<daylight>East Greenland Summer Time</daylight>
+					<generic>Oost-Groenlandse tijd</generic>
+					<standard>Oost-Groenlandse standaardtijd</standard>
+					<daylight>Oost-Groenlandse zomertijd</daylight>
 				</long>
 			</metazone>
 			<metazone type="Greenland_Western">
 				<long>
-					<generic>West Greenland Time</generic>
-					<standard>West Greenland Standard Time</standard>
-					<daylight>West Greenland Summer Time</daylight>
+					<generic>West-Groenlandse tijd</generic>
+					<standard>West-Groenlandse standaardtijd</standard>
+					<daylight>West-Groenlandse zomertijd</daylight>
 				</long>
 			</metazone>
 			<metazone type="Guam">
@@ -4356,14 +4343,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Guyana">
 				<long>
-					<standard>Guyana Time</standard>
+					<standard>Guyaanse tijd</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
 				<long>
-					<generic>Hawaii-Aleutian Time</generic>
-					<standard>Hawaii-Aleutian Standard Time</standard>
-					<daylight>Hawaii-Aleutian Daylight Time</daylight>
+					<generic>Hawaii-Aleoetische tijd</generic>
+					<standard>Hawaii-Aleoetische standaardtijd</standard>
+					<daylight>Hawaii-Aleoetische zomertijd</daylight>
 				</long>
 				<short>
 					<generic draft="contributed">HAT</generic>
@@ -4508,11 +4495,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight draft="contributed">Macause zomertijd</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Macquarie-eilandse tijd</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>Magadan-tijd</generic>
@@ -4552,18 +4534,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Mawson-tijd</standard>
 				</long>
 			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic>Northwest Mexico Time</generic>
-					<standard>Northwest Mexico Standard Time</standard>
-					<daylight>Northwest Mexico Daylight Time</daylight>
-				</long>
-			</metazone>
 			<metazone type="Mexico_Pacific">
 				<long>
-					<generic>Mexican Pacific Time</generic>
-					<standard>Mexican Pacific Standard Time</standard>
-					<daylight>Mexican Pacific Daylight Time</daylight>
+					<generic>Mexicaanse Pacific-tijd</generic>
+					<standard>Mexicaanse Pacific-standaardtijd</standard>
+					<daylight>Mexicaanse Pacific-zomertijd</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mongolia">
@@ -4611,9 +4586,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Newfoundland">
 				<long>
-					<generic>Newfoundland Time</generic>
-					<standard>Newfoundland Standard Time</standard>
-					<daylight>Newfoundland Daylight Time</daylight>
+					<generic>Newfoundland-tijd</generic>
+					<standard>Newfoundland-standaardtijd</standard>
+					<daylight>Newfoundland-zomertijd</daylight>
 				</long>
 			</metazone>
 			<metazone type="Niue">
@@ -4630,9 +4605,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Noronha">
 				<long>
-					<generic>Fernando de Noronha Time</generic>
-					<standard>Fernando de Noronha Standard Time</standard>
-					<daylight>Fernando de Noronha Summer Time</daylight>
+					<generic>Fernando de Noronha-tijd</generic>
+					<standard>Fernando de Noronha-standaardtijd</standard>
+					<daylight>Fernando de Noronha-zomertijd</daylight>
 				</long>
 			</metazone>
 			<metazone type="North_Mariana">
@@ -4673,16 +4648,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Paraguay">
 				<long>
-					<generic>Paraguay Time</generic>
-					<standard>Paraguay Standard Time</standard>
-					<daylight>Paraguay Summer Time</daylight>
+					<generic>Paraguayaanse tijd</generic>
+					<standard>Paraguayaanse standaardtijd</standard>
+					<daylight>Paraguayaanse zomertijd</daylight>
 				</long>
 			</metazone>
 			<metazone type="Peru">
 				<long>
-					<generic>Peru Time</generic>
-					<standard>Peru Standard Time</standard>
-					<daylight>Peru Summer Time</daylight>
+					<generic>Peruaanse tijd</generic>
+					<standard>Peruaanse standaardtijd</standard>
+					<daylight>Peruaanse zomertijd</daylight>
 				</long>
 			</metazone>
 			<metazone type="Philippines">
@@ -4699,9 +4674,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Pierre_Miquelon">
 				<long>
-					<generic>St. Pierre &amp; Miquelon Time</generic>
-					<standard>St. Pierre &amp; Miquelon Standard Time</standard>
-					<daylight>St. Pierre &amp; Miquelon Daylight Time</daylight>
+					<generic>Saint Pierre en Miquelon-tijd</generic>
+					<standard>Saint Pierre en Miquelon-standaardtijd</standard>
+					<daylight>Saint Pierre en Miquelon-zomertijd</daylight>
 				</long>
 			</metazone>
 			<metazone type="Pitcairn">
@@ -4835,8 +4810,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Uruguay">
 				<long>
-					<generic>Uruguay Time</generic>
-					<standard>Uruguay Standard Time</standard>
+					<generic>Uruguayaanse tijd</generic>
+					<standard>Uruguayaanse standaardtijd</standard>
 					<daylight>Uruguayaanse zomertijd</daylight>
 				</long>
 			</metazone>
@@ -4904,7 +4879,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Yukon">
 				<long>
-					<standard>Yukon Time</standard>
+					<standard>Yukon-tijd</standard>
 				</long>
 			</metazone>
 		</timeZoneNames>
@@ -6057,6 +6032,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="XCD">
 				<displayName>Oost-Caribische dollar</displayName>
+			</currency>
+			<currency type="XCG">
+				<displayName>Caribische gulden</displayName>
+				<symbol alt="narrow">Cg</symbol>
 			</currency>
 			<currency type="XDR">
 				<displayName>Special Drawing Rights</displayName>

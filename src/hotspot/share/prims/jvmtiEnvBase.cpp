@@ -1633,19 +1633,16 @@ private:
   }
 
   // This function is called only if _enable == true.
-  // Iterates over all JavaThread's, counts VTMS transitions and restores
-  // jt->jvmti_thread_state() and jt->jvmti_vthread() for VTMS transition protocol.
-  int count_transitions_and_correct_jvmti_thread_states() {
-    int count = 0;
-
+  // Iterates over all JavaThread's, restores jt->jvmti_thread_state() and
+  // jt->jvmti_vthread() for VTMS transition protocol.
+  void correct_jvmti_thread_states() {
     for (JavaThread* jt : ThreadsListHandle()) {
       if (jt->is_in_VTMS_transition()) {
-        count++;
+        jt->set_VTMS_transition_mark(true);
         continue; // no need in JvmtiThreadState correction below if in transition
       }
       correct_jvmti_thread_state(jt);
     }
-    return count;
   }
 
 public:
@@ -1655,9 +1652,9 @@ public:
   }
 
   void doit() {
-    int count = _enable ? count_transitions_and_correct_jvmti_thread_states() : 0;
-
-    JvmtiVTMSTransitionDisabler::set_VTMS_transition_count(count);
+    if (_enable) {
+      correct_jvmti_thread_states();
+    }
     JvmtiVTMSTransitionDisabler::set_VTMS_notify_jvmti_events(_enable);
   }
 };
@@ -1997,8 +1994,11 @@ JvmtiHandshake::execute(JvmtiUnitedHandshakeClosure* hs_cl, jthread target) {
 void
 JvmtiHandshake::execute(JvmtiUnitedHandshakeClosure* hs_cl, ThreadsListHandle* tlh,
                         JavaThread* target_jt, Handle target_h) {
+  JavaThread* current = JavaThread::current();
   bool is_virtual = java_lang_VirtualThread::is_instance(target_h());
-  bool self = target_jt == JavaThread::current();
+  bool self = target_jt == current;
+
+  assert(!Continuations::enabled() || self || !is_virtual || current->is_VTMS_transition_disabler(), "sanity check");
 
   hs_cl->set_target_jt(target_jt);   // can be needed in the virtual thread case
   hs_cl->set_is_virtual(is_virtual); // can be needed in the virtual thread case
@@ -2073,7 +2073,9 @@ GetSingleStackTraceClosure::do_thread(Thread *target) {
 
 void
 GetSingleStackTraceClosure::do_vthread(Handle target_h) {
-  assert(_target_jt == nullptr || _target_jt->vthread() == target_h(), "sanity check");
+  // Use jvmti_vthread() instead of vthread() as target could have temporarily changed
+  // identity to carrier thread (see VirtualThread.switchToCarrierThread).
+  assert(_target_jt == nullptr || _target_jt->jvmti_vthread() == target_h(), "sanity check");
   doit();
 }
 

@@ -3207,10 +3207,8 @@ void MacroAssembler::compiler_fast_lock_object(Register oop, Register box, Regis
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(temp, oop);
-    z_l(temp, Address(temp, Klass::access_flags_offset()));
-    assert((JVM_ACC_IS_VALUE_BASED_CLASS & 0xFFFF) == 0, "or change following instruction");
-    z_nilh(temp, JVM_ACC_IS_VALUE_BASED_CLASS >> 16);
-    z_brne(done);
+    testbit(Address(temp, Klass::access_flags_offset()), exact_log2(JVM_ACC_IS_VALUE_BASED_CLASS));
+    z_btrue(done);
   }
 
   // Handle existing monitor.

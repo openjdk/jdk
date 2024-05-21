@@ -394,10 +394,6 @@ public:
   void unlink_method() NOT_CDS_RETURN;
   void remove_unshareable_flags() NOT_CDS_RETURN;
 
-  // the number of argument reg slots that the compiled method uses on the stack.
-  int num_stack_arg_slots(bool rounded = true) const {
-    return rounded ? align_up(constMethod()->num_stack_arg_slots(), 2) : constMethod()->num_stack_arg_slots(); }
-
   virtual void metaspace_pointers_do(MetaspaceClosure* iter);
   virtual MetaspaceObj::Type type() const { return MethodType; }
 
@@ -813,14 +809,6 @@ public:
       build_method_counters(current, this);
     }
     return _method_counters;
-  }
-
-  // Clear the flags related to compiler directives that were set by the compilerBroker,
-  // because the directives can be updated.
-  void clear_directive_flags() {
-    set_has_matching_directives(false);
-    clear_is_not_c1_compilable();
-    clear_is_not_c2_compilable();
   }
 
   void clear_is_not_c1_compilable()           { set_is_not_c1_compilable(false); }

@@ -24,7 +24,8 @@
 
 #include "precompiled.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
-#include "classfile/javaClasses.hpp"
+#include "classfile/classLoaderData.inline.hpp"
+#include "classfile/javaClasses.inline.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -34,11 +35,14 @@
 #include "compiler/oopMap.hpp"
 #include "gc/serial/cardTableRS.hpp"
 #include "gc/serial/defNewGeneration.hpp"
-#include "gc/serial/serialFullGC.inline.hpp"
+#include "gc/serial/serialFullGC.hpp"
 #include "gc/serial/serialGcRefProcProxyTask.hpp"
 #include "gc/serial/serialHeap.hpp"
+#include "gc/serial/serialStringDedup.hpp"
+#include "gc/serial/tenuredGeneration.inline.hpp"
 #include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
+#include "gc/shared/continuationGCSupport.inline.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
@@ -48,7 +52,7 @@
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessorPhaseTimes.hpp"
-#include "gc/shared/space.inline.hpp"
+#include "gc/shared/space.hpp"
 #include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/weakProcessor.hpp"
 #include "memory/iterator.inline.hpp"
@@ -56,19 +60,19 @@
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/instanceRefKlass.hpp"
+#include "oops/markWord.hpp"
 #include "oops/methodData.hpp"
 #include "oops/objArrayKlass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "runtime/prefetch.inline.hpp"
+#include "utilities/align.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/events.hpp"
 #include "utilities/stack.inline.hpp"
 #if INCLUDE_JVMCI
 #include "jvmci/jvmci.hpp"
 #endif
-
-uint                    SerialFullGC::_total_invocations = 0;
 
 Stack<oop, mtGC>              SerialFullGC::_marking_stack;
 Stack<ObjArrayTask, mtGC>     SerialFullGC::_objarray_stack;
@@ -107,7 +111,7 @@ public:
       // we don't start compacting before there is a significant gain to be made.
       // Occasionally, we want to ensure a full compaction, which is determined
       // by the MarkSweepAlwaysCompactCount parameter.
-      if ((SerialFullGC::total_invocations() % MarkSweepAlwaysCompactCount) != 0) {
+      if ((SerialHeap::heap()->total_full_collections() % MarkSweepAlwaysCompactCount) != 0) {
         _allowed_deadspace_words = (space->capacity() * ratio / 100) / HeapWordSize;
       } else {
         _active = false;
@@ -166,6 +170,9 @@ class Compacter {
 
   uint _index;
 
+  // Used for BOT update
+  TenuredGeneration* _old_gen;
+
   HeapWord* get_compaction_top(uint index) const {
     return _spaces[index]._compaction_top;
   }
@@ -191,7 +198,7 @@ class Compacter {
         _spaces[_index]._compaction_top += words;
         if (_index == 0) {
           // old-gen requires BOT update
-          static_cast<TenuredSpace*>(_spaces[0]._space)->update_for_block(result, result + words);
+          _old_gen->update_for_block(result, result + words);
         }
         return result;
       }
@@ -267,7 +274,7 @@ public:
     _spaces[1].init(heap->young_gen()->eden());
     _spaces[2].init(heap->young_gen()->from());
 
-    bool is_promotion_failed = (heap->young_gen()->from()->next_compaction_space() != nullptr);
+    bool is_promotion_failed = !heap->young_gen()->to()->is_empty();
     if (is_promotion_failed) {
       _spaces[3].init(heap->young_gen()->to());
       _num_spaces = 4;
@@ -275,6 +282,7 @@ public:
       _num_spaces = 3;
     }
     _index = 0;
+    _old_gen = heap->old_gen();
   }
 
   void phase2_calculate_new_addr() {
@@ -327,7 +335,7 @@ public:
       while (cur_addr < top) {
         prefetch_write_scan(cur_addr);
         if (cur_addr < first_dead || cast_to_oop(cur_addr)->is_gc_marked()) {
-          size_t size = SerialFullGC::adjust_pointers(cast_to_oop(cur_addr));
+          size_t size = cast_to_oop(cur_addr)->oop_iterate_size(&SerialFullGC::adjust_pointer_closure);
           cur_addr += size;
         } else {
           assert(*(HeapWord**)cur_addr > cur_addr, "forward progress");
@@ -609,6 +617,25 @@ void MarkAndPushClosure::do_oop_work(T* p)            { SerialFullGC::mark_and_p
 void MarkAndPushClosure::do_oop(      oop* p)         { do_oop_work(p); }
 void MarkAndPushClosure::do_oop(narrowOop* p)         { do_oop_work(p); }
 
+template <class T> void SerialFullGC::adjust_pointer(T* p) {
+  T heap_oop = RawAccess<>::oop_load(p);
+  if (!CompressedOops::is_null(heap_oop)) {
+    oop obj = CompressedOops::decode_not_null(heap_oop);
+    assert(Universe::heap()->is_in(obj), "should be in heap");
+
+    if (obj->is_forwarded()) {
+      oop new_obj = obj->forwardee();
+      assert(is_object_aligned(new_obj), "oop must be aligned");
+      RawAccess<IS_NOT_NULL>::oop_store(p, new_obj);
+    }
+  }
+}
+
+template <typename T>
+void AdjustPointerClosure::do_oop_work(T* p)           { SerialFullGC::adjust_pointer(p); }
+inline void AdjustPointerClosure::do_oop(oop* p)       { do_oop_work(p); }
+inline void AdjustPointerClosure::do_oop(narrowOop* p) { do_oop_work(p); }
+
 AdjustPointerClosure SerialFullGC::adjust_pointer_closure;
 
 void SerialFullGC::adjust_marks() {
@@ -665,9 +692,6 @@ void SerialFullGC::invoke_at_safepoint(bool clear_all_softrefs) {
 
   gch->trace_heap_before_gc(_gc_tracer);
 
-  // Increment the invocation count
-  _total_invocations++;
-
   // Capture used regions for old-gen to reestablish old-to-young invariant
   // after full-gc.
   gch->old_gen()->save_used_region();
@@ -718,10 +742,6 @@ void SerialFullGC::invoke_at_safepoint(bool clear_all_softrefs) {
   }
 
   restore_marks();
-
-  // Set saved marks for allocation profiler (and other things? -- dld)
-  // (Should this be in general part?)
-  gch->save_marks();
 
   deallocate_stacks();
 
