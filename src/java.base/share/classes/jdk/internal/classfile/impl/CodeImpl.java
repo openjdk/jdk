@@ -199,7 +199,7 @@ public final class CodeImpl
                 public void accept(int s, int e, int h, int c) {
                     ClassEntry catchTypeEntry = c == 0
                                                              ? null
-                                                             : (ClassEntry) constantPool().entryByIndex(c);
+                                                             : constantPool().entryByIndex(c, ClassEntry.class);
                     exceptionTable.add(new AbstractPseudoInstruction.ExceptionCatchImpl(getLabel(h), getLabel(s), getLabel(e), catchTypeEntry));
                 }
             });
@@ -337,7 +337,7 @@ public final class CodeImpl
             public void accept(int s, int e, int h, int c) {
                 ClassEntry catchType = c == 0
                                                     ? null
-                                                    : (ClassEntry) classReader.entryByIndex(c);
+                                                    : classReader.entryByIndex(c, ClassEntry.class);
                 consumer.accept(new AbstractPseudoInstruction.ExceptionCatchImpl(getLabel(h), getLabel(s), getLabel(e), catchType));
             }
         });

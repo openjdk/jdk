@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -166,11 +166,11 @@ public final class VerificationWrapper {
         }
 
         String classNameAt(int index) {
-            return ((ClassEntry)cp.entryByIndex(index)).asInternalName();
+            return cp.entryByIndex(index, ClassEntry.class).asInternalName();
         }
 
         String dynamicConstantSignatureAt(int index) {
-            return ((DynamicConstantPoolEntry)cp.entryByIndex(index)).type().stringValue();
+            return cp.entryByIndex(index, DynamicConstantPoolEntry.class).type().stringValue();
         }
 
         int tagAt(int index) {
@@ -192,7 +192,7 @@ public final class VerificationWrapper {
         }
 
         int refClassIndexAt(int index) {
-            return ((MemberRefEntry)cp.entryByIndex(index)).owner().index();
+            return cp.entryByIndex(index, MemberRefEntry.class).owner().index();
         }
     }
 }

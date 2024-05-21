@@ -25,9 +25,12 @@
 
 package jdk.internal.classfile.impl;
 
+import jdk.internal.vm.annotation.Stable;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -158,8 +161,7 @@ public final class ClassReaderImpl
     @Override
     public Optional<ClassEntry> superclassEntry() {
         if (superclass == null) {
-            int scIndex = readU2(thisClassPos + 2);
-            superclass = Optional.ofNullable(scIndex == 0 ? null : (ClassEntry) entryByIndex(scIndex));
+            superclass = Optional.ofNullable(readEntryOrNull(thisClassPos + 2, ClassEntry.class));
         }
         return superclass;
     }
@@ -339,10 +341,47 @@ public final class ClassReaderImpl
     // Constantpool
     @Override
     public PoolEntry entryByIndex(int index) {
-        return entryByIndex(index, 0, 0xff);
+        return entryByIndex(index, PoolEntry.class);
     }
 
-    private PoolEntry entryByIndex(int index, int lowerBoundTag, int upperBoundTag) {
+    private static final @Stable Class<?>[] TAG_TO_TYPE;
+    private static final int TAG_TABLE_SIZE = 32;
+
+    static {
+        @SuppressWarnings("unchecked")
+        var a = (Class<? extends PoolEntry>[]) new Class<?>[TAG_TABLE_SIZE];
+        // JVMS Table 4.4-B. Constant pool tags
+        a[1] = AbstractPoolEntry.Utf8EntryImpl.class;
+        a[3] = AbstractPoolEntry.IntegerEntryImpl.class;
+        a[4] = AbstractPoolEntry.FloatEntryImpl.class;
+        a[5] = AbstractPoolEntry.LongEntryImpl.class;
+        a[6] = AbstractPoolEntry.DoubleEntryImpl.class;
+        a[7] = AbstractPoolEntry.ClassEntryImpl.class;
+        a[8] = AbstractPoolEntry.StringEntryImpl.class;
+        a[9] = AbstractPoolEntry.FieldRefEntryImpl.class;
+        a[10] = AbstractPoolEntry.MethodRefEntryImpl.class;
+        a[11] = AbstractPoolEntry.InterfaceMethodRefEntryImpl.class;
+        a[12] = AbstractPoolEntry.NameAndTypeEntryImpl.class;
+        a[15] = AbstractPoolEntry.MethodHandleEntryImpl.class;
+        a[16] = AbstractPoolEntry.MethodTypeEntryImpl.class;
+        a[17] = AbstractPoolEntry.ConstantDynamicEntryImpl.class;
+        a[18] = AbstractPoolEntry.InvokeDynamicEntryImpl.class;
+        a[19] = AbstractPoolEntry.ModuleEntryImpl.class;
+        a[20] = AbstractPoolEntry.PackageEntryImpl.class;
+        TAG_TO_TYPE = a;
+    }
+
+    private static boolean checkTag(int tag, Class<?> cls) {
+        if (0 <= tag && tag < TAG_TABLE_SIZE) {
+            var type = TAG_TO_TYPE[tag];
+            return type != null && cls.isAssignableFrom(type);
+        }
+        return false;
+    }
+
+    @Override
+    public <T extends PoolEntry> T entryByIndex(int index, Class<T> cls) {
+        Objects.requireNonNull(cls);
         if (index <= 0 || index >= constantPoolCount) {
             throw new ConstantPoolException("Bad CP index: " + index);
         }
@@ -353,9 +392,9 @@ public final class ClassReaderImpl
                 throw new ConstantPoolException("Unusable CP index: " + index);
             }
             int tag = readU1(offset);
-            if (tag < lowerBoundTag || tag > upperBoundTag) {
+            if (!checkTag(tag, cls)) {
                 throw new ConstantPoolException(
-                        "Bad tag (" + tag + ") at index (" + index + ") position (" + offset + ")");
+                        "Bad tag (" + tag + ") at index (" + index + ") position (" + offset + "), expected " + cls.getSimpleName());
             }
             final int q = offset + 1;
             info = switch (tag) {
@@ -375,7 +414,7 @@ public final class ClassReaderImpl
                 case TAG_NAMEANDTYPE -> new AbstractPoolEntry.NameAndTypeEntryImpl(this, index, (AbstractPoolEntry.Utf8EntryImpl) readUtf8Entry(q),
                                                                                    (AbstractPoolEntry.Utf8EntryImpl) readUtf8Entry(q + 2));
                 case TAG_METHODHANDLE -> new AbstractPoolEntry.MethodHandleEntryImpl(this, index, readU1(q),
-                                                                                     readEntry(q + 1, AbstractPoolEntry.AbstractMemberRefEntry.class, TAG_FIELDREF, TAG_INTERFACEMETHODREF));
+                                                                                     readEntry(q + 1, AbstractPoolEntry.AbstractMemberRefEntry.class));
                 case TAG_METHODTYPE -> new AbstractPoolEntry.MethodTypeEntryImpl(this, index, (AbstractPoolEntry.Utf8EntryImpl) readUtf8Entry(q));
                 case TAG_CONSTANTDYNAMIC -> new AbstractPoolEntry.ConstantDynamicEntryImpl(this, index, readU2(q), (AbstractPoolEntry.NameAndTypeEntryImpl) readNameAndTypeEntry(q + 2));
                 case TAG_INVOKEDYNAMIC -> new AbstractPoolEntry.InvokeDynamicEntryImpl(this, index, readU2(q), (AbstractPoolEntry.NameAndTypeEntryImpl) readNameAndTypeEntry(q + 2));
@@ -386,15 +425,7 @@ public final class ClassReaderImpl
             };
             cp[index] = info;
         }
-        return info;
-    }
-
-    @Override
-    public AbstractPoolEntry.Utf8EntryImpl utf8EntryByIndex(int index) {
-        if (entryByIndex(index, TAG_UTF8, TAG_UTF8) instanceof AbstractPoolEntry.Utf8EntryImpl utf8) {
-            return utf8;
-        }
-        throw new ConstantPoolException("Not a UTF8 - index: " + index);
+        return checkType(info, index, cls);
     }
 
     @Override
@@ -420,17 +451,12 @@ public final class ClassReaderImpl
 
     @Override
     public <T extends PoolEntry> T readEntry(int pos, Class<T> cls) {
-        return readEntry(pos, cls, 0, 0xff);
+        return entryByIndex(readU2(pos), cls);
     }
 
-    private <T extends PoolEntry> T readEntry(int pos, Class<T> cls, int expectedTag) {
-        return readEntry(pos, cls, expectedTag, expectedTag);
-    }
-
-    private <T extends PoolEntry> T readEntry(int pos, Class<T> cls, int lowerBoundTag, int upperBoundTag) {
-        var e = entryByIndex(readU2(pos), lowerBoundTag, upperBoundTag);
+    static <T extends PoolEntry> T checkType(PoolEntry e, int index, Class<T> cls) {
         if (cls.isInstance(e)) return cls.cast(e);
-        throw new ConstantPoolException("Not a " + cls.getSimpleName() + " at index: " + readU2(pos));
+        throw new ConstantPoolException("Not a " + cls.getSimpleName() + " at index: " + index);
     }
 
     @Override
@@ -443,9 +469,18 @@ public final class ClassReaderImpl
     }
 
     @Override
+    public <T extends PoolEntry> T readEntryOrNull(int offset, Class<T> cls) {
+        int index = readU2(offset);
+        if (index == 0)
+            return null;
+
+        return entryByIndex(index, cls);
+    }
+
+    @Override
     public Utf8Entry readUtf8Entry(int pos) {
         int index = readU2(pos);
-        return utf8EntryByIndex(index);
+        return entryByIndex(index, Utf8Entry.class);
     }
 
     @Override
@@ -454,32 +489,32 @@ public final class ClassReaderImpl
         if (index == 0) {
             return null;
         }
-        return utf8EntryByIndex(index);
+        return entryByIndex(index, Utf8Entry.class);
     }
 
     @Override
     public ModuleEntry readModuleEntry(int pos) {
-        return readEntry(pos, ModuleEntry.class, TAG_MODULE);
+        return entryByIndex(readU2(pos), ModuleEntry.class);
     }
 
     @Override
     public PackageEntry readPackageEntry(int pos) {
-        return readEntry(pos, PackageEntry.class, TAG_PACKAGE);
+        return entryByIndex(readU2(pos), PackageEntry.class);
     }
 
     @Override
     public ClassEntry readClassEntry(int pos) {
-        return readEntry(pos, ClassEntry.class, TAG_CLASS);
+        return entryByIndex(readU2(pos), ClassEntry.class);
     }
 
     @Override
     public NameAndTypeEntry readNameAndTypeEntry(int pos) {
-        return readEntry(pos, NameAndTypeEntry.class, TAG_NAMEANDTYPE);
+        return entryByIndex(readU2(pos), NameAndTypeEntry.class);
     }
 
     @Override
     public MethodHandleEntry readMethodHandleEntry(int pos) {
-        return readEntry(pos, MethodHandleEntry.class, TAG_METHODHANDLE);
+        return entryByIndex(readU2(pos), MethodHandleEntry.class);
     }
 
     @Override
