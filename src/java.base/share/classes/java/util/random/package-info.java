@@ -126,7 +126,7 @@
  * <h2>Choosing a Random Number Generator Algorithm</h2>
  *
  * <p> Random number generator algorithms are organized in groups,
- * as described <a href="package-summary.html#algorithms">below</a>.
+ * as described {@linkplain java.util.random##algorithms below}.
  *
  * <p> The legacy group includes random number generators that existed
  * before JDK 17: Random, ThreadLocalRandom, SplittableRandom, and
