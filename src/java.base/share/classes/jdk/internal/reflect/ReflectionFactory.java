@@ -247,7 +247,7 @@ public class ReflectionFactory {
      * the original can safely be reused.
      */
     public Class<?>[] copyClasses(Class<?>[] classes) {
-    	return classes.length == 0 ? classes : classes.clone();
+        return classes.length == 0 ? classes : classes.clone();
     }
 
     /** Gets the byte[] that encodes TypeAnnotations on an executable.
