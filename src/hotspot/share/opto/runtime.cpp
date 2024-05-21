@@ -26,7 +26,6 @@
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
-#include "code/compiledMethod.inline.hpp"
 #include "code/compiledIC.hpp"
 #include "code/nmethod.hpp"
 #include "code/pcDesc.hpp"
@@ -84,7 +83,7 @@
 //  To force FullGCALot inside a runtime function, add the following two lines
 //
 //  Universe::release_fullgc_alot_dummy();
-//  MarkSweep::invoke(0, "Debugging");
+//  Universe::heap()->collect();
 //
 // At command line specify the parameters: -XX:+FullGCALot -XX:FullGCALotStart=100000000
 
@@ -1851,9 +1850,8 @@ static void trace_exception(outputStream* st, oop exception_oop, address excepti
   exception_oop->print_value_on(&tempst);
   tempst.print(" in ");
   CodeBlob* blob = CodeCache::find_blob(exception_pc);
-  if (blob->is_compiled()) {
-    CompiledMethod* cm = blob->as_compiled_method_or_null();
-    cm->method()->print_value_on(&tempst);
+  if (blob->is_nmethod()) {
+    blob->as_nmethod()->method()->print_value_on(&tempst);
   } else if (blob->is_runtime_stub()) {
     tempst.print("<runtime-stub>");
   } else {

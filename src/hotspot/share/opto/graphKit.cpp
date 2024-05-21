@@ -1563,8 +1563,10 @@ Node* GraphKit::make_load(Node* ctl, Node* adr, const Type* t, BasicType bt,
     // Improve graph before escape analysis and boxing elimination.
     record_for_igvn(ld);
     if (ld->is_DecodeN()) {
-      // Also record the actual load (LoadN) in case ld is DecodeN
-      assert(ld->in(1)->Opcode() == Op_LoadN, "Assumption invalid: input to DecodeN is not LoadN");
+      // Also record the actual load (LoadN) in case ld is DecodeN. In some
+      // rare corner cases, ld->in(1) can be something other than LoadN (e.g.,
+      // a Phi). Recording such cases is still perfectly sound, but may be
+      // unnecessary and result in some minor IGVN overhead.
       record_for_igvn(ld->in(1));
     }
   }
@@ -2707,7 +2709,18 @@ Node* Phase::gen_subtype_check(Node* subklass, Node* superklass, Node** ctrl, No
     //    Foo[] fa = blah(); Foo x = fa[0]; fa[1] = x;
     // Here, the type of 'fa' is often exact, so the store check
     // of fa[1]=x will fold up, without testing the nullness of x.
-    switch (C->static_subtype_check(superk, subk)) {
+    //
+    // Do not skip the static sub type check with StressReflectiveCode during
+    // parsing (i.e. with ExpandSubTypeCheckAtParseTime) because the
+    // associated CheckCastNodePP could already be folded when the type
+    // system can prove it's an impossible type. Therefore, we should also
+    // do the static sub type check here to ensure control is folded as well.
+    // Otherwise, the graph is left in a broken state.
+    // At macro expansion, we would have already folded the SubTypeCheckNode
+    // being expanded here because we always perform the static sub type
+    // check in SubTypeCheckNode::sub() regardless of whether
+    // StressReflectiveCode is set or not.
+    switch (C->static_subtype_check(superk, subk, !ExpandSubTypeCheckAtParseTime)) {
     case Compile::SSC_always_false:
       {
         Node* always_fail = *ctrl;

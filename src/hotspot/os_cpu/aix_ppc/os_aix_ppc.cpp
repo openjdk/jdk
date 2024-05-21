@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -236,7 +236,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
                ((NativeInstruction*)pc)->is_safepoint_poll() &&
                CodeCache::contains((void*) pc) &&
                ((cb = CodeCache::find_blob(pc)) != nullptr) &&
-               cb->is_compiled()) {
+               cb->is_nmethod()) {
         if (TraceTraps) {
           tty->print_cr("trap: safepoint_poll at " INTPTR_FORMAT " (%s)", p2i(pc),
                         USE_POLL_BIT_ONLY ? "SIGTRAP" : "SIGSEGV");
@@ -249,7 +249,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
                ((NativeInstruction*)pc)->is_safepoint_poll_return() &&
                CodeCache::contains((void*) pc) &&
                ((cb = CodeCache::find_blob(pc)) != nullptr) &&
-               cb->is_compiled()) {
+               cb->is_nmethod()) {
         if (TraceTraps) {
           tty->print_cr("trap: safepoint_poll at return at " INTPTR_FORMAT " (nmethod)", p2i(pc));
         }
@@ -339,7 +339,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
         // BugId 4454115: A read from a MappedByteBuffer can fault here if the
         // underlying file has been truncated. Do not crash the VM in such a case.
         CodeBlob* cb = CodeCache::find_blob(pc);
-        CompiledMethod* nm = cb ? cb->as_compiled_method_or_null() : nullptr;
+        nmethod* nm = cb ? cb->as_nmethod_or_null() : nullptr;
         bool is_unsafe_arraycopy = (thread->doing_unsafe_access() && UnsafeCopyMemory::contains_pc(pc));
         if ((nm != nullptr && nm->has_unsafe_access()) || is_unsafe_arraycopy) {
           address next_pc = pc + 4;

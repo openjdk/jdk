@@ -355,6 +355,7 @@ class java_lang_Thread : AllStatic {
   static int _jvmti_VTMS_transition_disable_count_offset;
   static int _jvmti_is_in_VTMS_transition_offset;
   static int _interrupted_offset;
+  static int _interruptLock_offset;
   static int _tid_offset;
   static int _continuation_offset;
   static int _park_blocker_offset;
@@ -374,6 +375,8 @@ class java_lang_Thread : AllStatic {
   static void release_set_thread(oop java_thread, JavaThread* thread);
   // FieldHolder
   static oop holder(oop java_thread);
+  // interruptLock
+  static oop interrupt_lock(oop java_thread);
   // Interrupted status
   static bool interrupted(oop java_thread);
   static void set_interrupted(oop java_thread, bool val);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "code/compiledMethod.hpp"
+#include "code/nmethod.hpp"
 #include "code/scopeDesc.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetStackChunk.hpp"
@@ -108,9 +108,9 @@ frame stackChunkOopDesc::sender(const frame& f, RegisterMap* map) {
   return Continuation::continuation_parent_frame(map);
 }
 
-static int num_java_frames(CompiledMethod* cm, address pc) {
+static int num_java_frames(nmethod* nm, address pc) {
   int count = 0;
-  for (ScopeDesc* scope = cm->scope_desc_at(pc); scope != nullptr; scope = scope->sender()) {
+  for (ScopeDesc* scope = nm->scope_desc_at(pc); scope != nullptr; scope = scope->sender()) {
     count++;
   }
   return count;
@@ -118,8 +118,8 @@ static int num_java_frames(CompiledMethod* cm, address pc) {
 
 static int num_java_frames(const StackChunkFrameStream<ChunkFrames::Mixed>& f) {
   assert(f.is_interpreted()
-         || (f.cb() != nullptr && f.cb()->is_compiled() && f.cb()->as_compiled_method()->is_java_method()), "");
-  return f.is_interpreted() ? 1 : num_java_frames(f.cb()->as_compiled_method(), f.orig_pc());
+         || (f.cb() != nullptr && f.cb()->is_nmethod() && f.cb()->as_nmethod()->is_java_method()), "");
+  return f.is_interpreted() ? 1 : num_java_frames(f.cb()->as_nmethod(), f.orig_pc());
 }
 
 int stackChunkOopDesc::num_java_frames() const {
@@ -560,11 +560,11 @@ bool stackChunkOopDesc::verify(size_t* out_size, int* out_oops, int* out_frames,
   iterate_stack(&closure);
 
   assert(!is_empty() || closure._cb == nullptr, "");
-  if (closure._cb != nullptr && closure._cb->is_compiled()) {
+  if (closure._cb != nullptr && closure._cb->is_nmethod()) {
     assert(argsize() ==
-      (closure._cb->as_compiled_method()->method()->num_stack_arg_slots()*VMRegImpl::stack_slot_size) >>LogBytesPerWord,
+      (closure._cb->as_nmethod()->method()->num_stack_arg_slots()*VMRegImpl::stack_slot_size) >>LogBytesPerWord,
       "chunk argsize: %d bottom frame argsize: %d", argsize(),
-      (closure._cb->as_compiled_method()->method()->num_stack_arg_slots()*VMRegImpl::stack_slot_size) >>LogBytesPerWord);
+      (closure._cb->as_nmethod()->method()->num_stack_arg_slots()*VMRegImpl::stack_slot_size) >>LogBytesPerWord);
   }
 
   assert(closure._num_interpreted_frames == 0 || has_mixed_frames(), "");

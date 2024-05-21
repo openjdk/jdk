@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,9 +58,6 @@ protected:
 
   // The covered regions should be in address order.
   MemRegion _covered[max_covered_regions];
-
-  // The last card is a guard card; never committed.
-  MemRegion _guard_region;
 
   inline size_t compute_byte_map_size(size_t num_bytes);
 

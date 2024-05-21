@@ -160,8 +160,10 @@ class Klass : public Metadata {
   ClassLoaderData* _class_loader_data;
 
   // Bitmap and hash code used by hashed secondary supers.
-  uint64_t _bitmap;
-  juint _hash;
+  uintx    _bitmap;
+  uint8_t  _hash_slot;
+
+  static uint8_t compute_hash_slot(Symbol* s);
 
   int _vtable_len;              // vtable length. This field may be read very often when we
                                 // have lots of itable dispatches (e.g., lambdas and streams).
@@ -236,21 +238,9 @@ protected:
 
   Array<Klass*>* secondary_supers() const { return _secondary_supers; }
   void set_secondary_supers(Array<Klass*>* k);
-  void set_secondary_supers(Array<Klass*>* k, uint64_t bitmap);
-  template<typename T>
-  inline static void hash_insert(T *sec, GrowableArray<T*>* secondaries,
-                                 uint64_t &bitmap, bool use_robin_hood);
-  template<typename T>
-  static uint64_t hash_secondary_supers(Array<T*>* secondaries, bool rewrite);
+  void set_secondary_supers(Array<Klass*>* k, uintx bitmap);
 
-  // Hash coding used by HashSecondarySupers.
-  static constexpr int SEC_HASH_ENTRIES = 64;
-  static constexpr int SEC_HASH_MASK = 64 - 1;
-
-  static constexpr size_t hash_size_in_bits() { return (sizeof _hash) * 8; }
-  static constexpr int secondary_shift() { return (int)hash_size_in_bits() - 6; }
-  juint hash() const { return _hash; }
-  int hash_slot() const { return hash() >> secondary_shift(); }
+  uint8_t hash_slot() const { return _hash_slot; }
 
   // Return the element of the _super chain of the given depth.
   // If there is no such element, return either null or this.
@@ -401,7 +391,26 @@ protected:
   void     set_subklass(Klass* s);
   void     set_next_sibling(Klass* s);
 
+ private:
+  static void  hash_insert(Klass* klass, GrowableArray<Klass*>* secondaries, uintx& bitmap);
+  static uintx hash_secondary_supers(Array<Klass*>* secondaries, bool rewrite);
+
  public:
+  // Secondary supers table support
+  static Array<Klass*>* pack_secondary_supers(ClassLoaderData* loader_data,
+                                              GrowableArray<Klass*>* primaries,
+                                              GrowableArray<Klass*>* secondaries,
+                                              uintx& bitmap,
+                                              TRAPS);
+
+  static uintx   compute_secondary_supers_bitmap(Array<Klass*>* secondary_supers);
+  static uint8_t compute_home_slot(Klass* k, uintx bitmap);
+
+  static constexpr int SECONDARY_SUPERS_TABLE_SIZE = sizeof(_bitmap) * 8;
+  static constexpr int SECONDARY_SUPERS_TABLE_MASK = SECONDARY_SUPERS_TABLE_SIZE - 1;
+
+  static constexpr uintx SECONDARY_SUPERS_BITMAP_EMPTY    = 0;
+  static constexpr uintx SECONDARY_SUPERS_BITMAP_FULL     = ~(uintx)0;
 
   // Compiler support
   static ByteSize super_offset()                 { return byte_offset_of(Klass, _super); }
@@ -418,7 +427,6 @@ protected:
   static ByteSize subklass_offset()              { return byte_offset_of(Klass, _subklass); }
   static ByteSize next_sibling_offset()          { return byte_offset_of(Klass, _next_sibling); }
 #endif
-  static ByteSize hash_offset()                  { return byte_offset_of(Klass, _hash); }
   static ByteSize bitmap_offset()                { return byte_offset_of(Klass, _bitmap); }
 
   // Unpacking layout_helper:
@@ -732,6 +740,8 @@ protected:
   virtual void oop_print_value_on(oop obj, outputStream* st);
   virtual void oop_print_on      (oop obj, outputStream* st);
 
+  void print_secondary_supers_on(outputStream* st) const;
+
   virtual const char* internal_name() const = 0;
 
   // Verification
@@ -746,6 +756,8 @@ protected:
 
   // for error reporting
   static bool is_valid(Klass* k);
+
+  static void on_secondary_supers_verification_failure(Klass* super, Klass* sub, bool linear_result, bool table_result, const char* msg);
 };
 
 #endif // SHARE_OOPS_KLASS_HPP

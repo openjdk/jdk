@@ -208,7 +208,7 @@ void ServiceThread::enqueue_deferred_event(JvmtiDeferredEvent* event) {
   Service_lock->notify_all();
  }
 
-void ServiceThread::oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf) {
+void ServiceThread::oops_do_no_frames(OopClosure* f, NMethodClosure* cf) {
   JavaThread::oops_do_no_frames(f, cf);
   // The ServiceThread "owns" the JVMTI Deferred events, scan them here
   // to keep them alive until they are processed.
@@ -220,7 +220,7 @@ void ServiceThread::oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf) {
   _jvmti_service_queue.oops_do(f, cf);
 }
 
-void ServiceThread::nmethods_do(CodeBlobClosure* cf) {
+void ServiceThread::nmethods_do(NMethodClosure* cf) {
   JavaThread::nmethods_do(cf);
   if (cf != nullptr) {
     if (_jvmti_event != nullptr) {

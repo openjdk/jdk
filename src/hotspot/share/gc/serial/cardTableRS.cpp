@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,9 +31,9 @@
 #include "memory/iterator.inline.hpp"
 #include "utilities/align.hpp"
 
-void CardTableRS::scan_old_to_young_refs(TenuredSpace* sp) {
+void CardTableRS::scan_old_to_young_refs(TenuredSpace* sp, HeapWord* saved_mark_word) {
   const MemRegion ur    = sp->used_region();
-  const MemRegion urasm = sp->used_region_at_save_marks();
+  const MemRegion urasm = MemRegion(sp->bottom(), saved_mark_word);
 
   assert(ur.contains(urasm),
          "Did you forget to call save_marks()? "

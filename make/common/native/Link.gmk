@@ -78,7 +78,7 @@ define CreateStaticLibrary
     endif
   endif
 
-  $1_VARDEPS := $$($1_AR) $$(ARFLAGS) $$($1_ARFLAGS) $$($1_LIBS) \
+  $1_VARDEPS := $$($1_AR) $$(ARFLAGS) $$($1_LIBS) \
       $$($1_EXTRA_LIBS)
   ifeq ($$($1_ENABLE_PARTIAL_LINKING), true)
     $1_VARDEPS += $$($1_LD) $$($1_SYSROOT_LDFLAGS)
@@ -116,7 +116,7 @@ define CreateStaticLibrary
         endif
 	$$(call ExecuteWithLog, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_link, \
 	  $(if $$($1_LINK_OBJS_RELATIVE), $$(CD) $$(OUTPUTDIR) ; ) \
-	    $$($1_AR) $$(ARFLAGS) $$($1_ARFLAGS) -r -cs $$($1_TARGET) \
+	    $$($1_AR) $$(ARFLAGS) -r -cs $$($1_TARGET) \
 	        $$($1_AR_OBJ_ARG) $$($1_RES))
         ifeq ($(STATIC_BUILD), true)
 	  $(RM) $$(@D)/$$(basename $$(@F)).symbols; \

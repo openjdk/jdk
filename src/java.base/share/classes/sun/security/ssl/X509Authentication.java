@@ -278,8 +278,8 @@ enum X509Authentication implements SSLAuthentication {
             SSLLogger.finest("X509KeyManager class: " +
                     km.getClass().getName());
         }
-        String serverAlias = null;
         for (String keyType : keyTypes) {
+            String serverAlias = null;
             if (shc.conContext.transport instanceof SSLSocketImpl socket) {
                 serverAlias = km.chooseServerAlias(keyType,
                         shc.peerSupportedAuthorities == null ? null :

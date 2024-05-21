@@ -42,7 +42,7 @@ void G1FullGCMarkTask::work(uint worker_id) {
   Ticks start = Ticks::now();
   ResourceMark rm;
   G1FullGCMarker* marker = collector()->marker(worker_id);
-  MarkingCodeBlobClosure code_closure(marker->mark_closure(), !CodeBlobToOopClosure::FixRelocations, true /* keepalive nmethods */);
+  MarkingNMethodClosure code_closure(marker->mark_closure(), !NMethodToOopClosure::FixRelocations, true /* keepalive nmethods */);
 
   if (ClassUnloading) {
     _root_processor.process_strong_roots(marker->mark_closure(),

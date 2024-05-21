@@ -1323,9 +1323,9 @@ void LIRGenerator::do_getModifiers(Intrinsic* x) {
   // from the primitive class itself. See spec for Class.getModifiers that provides
   // the typed array klasses with similar modifiers as their component types.
 
-  Klass* univ_klass_obj = Universe::byteArrayKlassObj();
-  assert(univ_klass_obj->modifier_flags() == (JVM_ACC_ABSTRACT | JVM_ACC_FINAL | JVM_ACC_PUBLIC), "Sanity");
-  LIR_Opr prim_klass = LIR_OprFact::metadataConst(univ_klass_obj);
+  Klass* univ_klass = Universe::byteArrayKlass();
+  assert(univ_klass->modifier_flags() == (JVM_ACC_ABSTRACT | JVM_ACC_FINAL | JVM_ACC_PUBLIC), "Sanity");
+  LIR_Opr prim_klass = LIR_OprFact::metadataConst(univ_klass);
 
   LIR_Opr recv_klass = new_register(T_METADATA);
   __ move(new LIR_Address(receiver.result(), java_lang_Class::klass_offset(), T_ADDRESS), recv_klass, info);

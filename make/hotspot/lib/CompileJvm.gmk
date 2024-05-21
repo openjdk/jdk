@@ -128,7 +128,7 @@ endif
 JVM_OPTIMIZATION ?= HIGHEST_JVM
 
 # Need to set JVM_STRIPFLAGS to the default value from SPEC since the STRIPFLAGS
-# parameter to SetupNativeCompilation allows an empty value to override the
+# parameter to SetupJdkLibrary allows an empty value to override the
 # default.
 JVM_STRIPFLAGS ?= $(STRIPFLAGS)
 
@@ -159,7 +159,8 @@ ifeq ($(call isTargetOs, linux), true)
 endif
 
 ################################################################################
-# Now set up the actual compilation of the main hotspot native library
+## Build libjvm
+################################################################################
 
 $(eval $(call SetupJdkLibrary, BUILD_LIBJVM, \
     NAME := jvm, \
@@ -169,6 +170,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJVM, \
     EXCLUDES := $(JVM_EXCLUDES), \
     EXCLUDE_FILES := $(JVM_EXCLUDE_FILES), \
     EXCLUDE_PATTERNS := $(JVM_EXCLUDE_PATTERNS), \
+    DEFAULT_CFLAGS := false, \
     CFLAGS := $(JVM_CFLAGS), \
     abstract_vm_version.cpp_CXXFLAGS := $(CFLAGS_VM_VERSION), \
     arguments.cpp_CXXFLAGS := $(CFLAGS_VM_VERSION), \
@@ -202,6 +204,8 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJVM, \
     DISABLED_WARNINGS_clang_aix_osThread_aix.cpp := tautological-undefined-compare, \
     DISABLED_WARNINGS_microsoft := $(DISABLED_WARNINGS_microsoft), \
     ASFLAGS := $(JVM_ASFLAGS), \
+    LD_SET_ORIGIN := false, \
+    DEFAULT_LDFLAGS := false, \
     LDFLAGS := $(JVM_LDFLAGS), \
     LIBS := $(JVM_LIBS), \
     OPTIMIZATION := $(JVM_OPTIMIZATION), \

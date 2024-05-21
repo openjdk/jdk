@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,28 +22,24 @@
  */
 
 import javax.security.auth.Subject;
-import java.security.AccessController;
 import java.security.Principal;
 import java.security.PrivilegedAction;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.security.PrivilegedExceptionAction;
 
 /*
  * @test
  * @bug 8267108
  * @summary confirm current subject specification
- * @run main/othervm CurrentSubject
+ * @run main/othervm -Djava.security.manager=allow CurrentSubject
+ * @run main/othervm -Djava.security.manager=disallow CurrentSubject
  */
 public class CurrentSubject {
 
-    static transient boolean failed = false;
-    static CountDownLatch cl = new CountDownLatch(1);
-    static AtomicInteger count = new AtomicInteger();
+    static boolean failed = false;
 
     public static void main(String[] args) throws Exception {
         // At the beginning, current subject is null
         test("", null);
-        cl.await();
         if (failed) {
             throw new Exception("Failed");
         }
@@ -57,12 +53,6 @@ public class CurrentSubject {
      */
     synchronized static void check(String label, Subject expected) {
         Subject cas = Subject.current();
-        Subject accs = Subject.getSubject(AccessController.getContext());
-        if (cas != accs) {
-            failed = true;
-            System.out.println(label + ": current " + s2s(cas)
-                    + " but getSubject is " + s2s(accs));
-        }
         Subject interested = cas;
         if (interested != expected) {
             failed = true;
@@ -89,31 +79,23 @@ public class CurrentSubject {
             // run with a new subject, inside current subject will be the new subject
             Subject.callAs(another, () -> test(name + 'c', another));
             Subject.doAs(another, (PrivilegedAction<Void>) () -> test(name + 'd', another));
+            Subject.doAsPrivileged(another, (PrivilegedAction<Void>) () -> test(name + 'e', another), null);
+            try {
+                Subject.doAs(another, (PrivilegedExceptionAction<Void>) () -> test(name + 'f', another));
+                Subject.doAsPrivileged(another, (PrivilegedExceptionAction<Void>) () -> test(name + 'g', another), null);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
             // run with null, inside current subject will be null
             Subject.callAs(null, () -> test(name + 'C', null));
             Subject.doAs(null, (PrivilegedAction<Void>) () -> test(name + 'D', null));
-            // new thread, inside current subject is unchanged
-            count.incrementAndGet();
-            new Thread(() -> {
-                try {
-                    test(name + 't', expected);
-                    try {
-                        Thread.sleep(500);
-                    } catch (Exception e) {
-                        throw new AssertionError(e);
-                    }
-                    // by this time, parent thread should have exited the
-                    // action and current subject reset, but here
-                    // current subject unchanged.
-                    test(name + 'T', expected);
-                } finally {
-                    var n = count.decrementAndGet();
-                    if (n == 0) {
-                        cl.countDown();
-                    }
-                    assert n >= 0;
-                }
-            }).start();
+            Subject.doAsPrivileged(null, (PrivilegedAction<Void>) () -> test(name + 'E', null), null);
+            try {
+                Subject.doAs(null, (PrivilegedExceptionAction<Void>) () -> test(name + 'F', null));
+                Subject.doAsPrivileged(null, (PrivilegedExceptionAction<Void>) () -> test(name + 'G', null), null);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
         }
         // Now it's reset to original
         check(" ".repeat(name.length()) + "<- " + name, expected);

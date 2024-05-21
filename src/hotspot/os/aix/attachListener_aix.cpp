@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -228,7 +228,6 @@ int AixAttachListener::init() {
   addr.sun_family = AF_UNIX;
   strcpy(addr.sun_path, initial_path);
   ::unlink(initial_path);
-  // We must call bind with the actual socketaddr length. This is obligatory for AS400.
   int res = ::bind(listener, (struct sockaddr*)&addr, SUN_LEN(&addr));
   if (res == -1) {
     ::close(listener);

@@ -6772,12 +6772,48 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-  // Used by HashSecondarySupers.
-  address generate_klass_subtype_fallback_stub() {
-    StubCodeMark mark(this, "StubRoutines", "klass_subtype_fallback");
+  address generate_lookup_secondary_supers_table_stub(u1 super_klass_index) {
+    StubCodeMark mark(this, "StubRoutines", "lookup_secondary_supers_table");
 
     address start = __ pc();
-    __ klass_subtype_fallback();
+    const Register
+      r_super_klass  = r0,
+      r_array_base   = r1,
+      r_array_length = r2,
+      r_array_index  = r3,
+      r_sub_klass    = r4,
+      r_bitmap       = rscratch2,
+      result         = r5;
+    const FloatRegister
+      vtemp          = v0;
+
+    Label L_success;
+    __ enter();
+    __ lookup_secondary_supers_table(r_sub_klass, r_super_klass,
+                                     r_array_base, r_array_length, r_array_index,
+                                     vtemp, result, super_klass_index,
+                                     /*stub_is_near*/true);
+    __ leave();
+    __ ret(lr);
+
+    return start;
+  }
+
+  // Slow path implementation for UseSecondarySupersTable.
+  address generate_lookup_secondary_supers_table_slow_path_stub() {
+    StubCodeMark mark(this, "StubRoutines", "lookup_secondary_supers_table_slow_path");
+
+    address start = __ pc();
+    const Register
+      r_super_klass  = r0,        // argument
+      r_array_base   = r1,        // argument
+      temp1          = r2,        // temp
+      r_array_index  = r3,        // argument
+      r_bitmap       = rscratch2, // argument
+      result         = r5;        // argument
+
+    __ lookup_secondary_supers_table_slow_path(r_super_klass, r_array_base, r_array_index, r_bitmap, temp1, result);
+    __ ret(lr);
 
     return start;
   }
@@ -8432,7 +8468,15 @@ class StubGenerator: public StubCodeGenerator {
 
 #endif // LINUX
 
-    StubRoutines::_klass_subtype_fallback_stub = generate_klass_subtype_fallback_stub();
+    if (UseSecondarySupersTable) {
+      StubRoutines::_lookup_secondary_supers_table_slow_path_stub = generate_lookup_secondary_supers_table_slow_path_stub();
+      if (! InlineSecondarySupersTest) {
+        for (int slot = 0; slot < Klass::SECONDARY_SUPERS_TABLE_SIZE; slot++) {
+          StubRoutines::_lookup_secondary_supers_table_stubs[slot]
+            = generate_lookup_secondary_supers_table_stub(slot);
+        }
+      }
+    }
 
     StubRoutines::_upcall_stub_exception_handler = generate_upcall_stub_exception_handler();
 

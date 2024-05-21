@@ -36,11 +36,11 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/javaCalls.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/os.hpp"
 #include "jvmci/jniAccessMark.inline.hpp"
 #include "jvmci/jvmciCompiler.hpp"
@@ -239,8 +239,10 @@ void JVMCIEnv::check_init(JVMCI_TRAPS) {
   if (_init_error == JNI_ENOMEM) {
     JVMCI_THROW_MSG(OutOfMemoryError, "JNI_ENOMEM creating or attaching to libjvmci");
   }
-  JVMCI_THROW_MSG(InternalError, err_msg("Error creating or attaching to libjvmci (err: %d, description: %s)",
-                  _init_error, _init_error_msg == nullptr ? "unknown" : _init_error_msg));
+  stringStream st;
+  st.print("Error creating or attaching to libjvmci (err: %d, description: %s)",
+           _init_error, _init_error_msg == nullptr ? "unknown" : _init_error_msg);
+  JVMCI_THROW_MSG(InternalError, st.freeze());
 }
 
 void JVMCIEnv::check_init(TRAPS) {
@@ -250,8 +252,10 @@ void JVMCIEnv::check_init(TRAPS) {
   if (_init_error == JNI_ENOMEM) {
     THROW_MSG(vmSymbols::java_lang_OutOfMemoryError(), "JNI_ENOMEM creating or attaching to libjvmci");
   }
-  THROW_MSG(vmSymbols::java_lang_OutOfMemoryError(), err_msg("Error creating or attaching to libjvmci (err: %d, description: %s)",
-            _init_error, _init_error_msg == nullptr ? "unknown" : _init_error_msg));
+  stringStream st;
+  st.print("Error creating or attaching to libjvmci (err: %d, description: %s)",
+           _init_error, _init_error_msg == nullptr ? "unknown" : _init_error_msg);
+  THROW_MSG(vmSymbols::java_lang_OutOfMemoryError(), st.freeze());
 }
 
 // Prints a pending exception (if any) and its stack trace to st.
@@ -411,6 +415,11 @@ class ExceptionTranslation: public StackObj {
   // Decodes the exception in `buffer` in `_to_env` and throws it.
   virtual void decode(JavaThread* THREAD, DecodeFormat format, jlong buffer) = 0;
 
+  static bool debug_translated_exception() {
+      const char* prop_value = Arguments::get_property("jdk.internal.vm.TranslatedException.debug");
+      return prop_value != nullptr && strcmp("true", prop_value) == 0;
+  }
+
  public:
   void doit(JavaThread* THREAD) {
     int buffer_size = 2048;
@@ -506,7 +515,7 @@ class HotSpotToSharedLibraryExceptionTranslation : public ExceptionTranslation {
     JNIAccessMark jni(_to_env, THREAD);
     jni()->CallStaticVoidMethod(JNIJVMCI::VMSupport::clazz(),
                                 JNIJVMCI::VMSupport::decodeAndThrowThrowable_method(),
-                                format, buffer, false);
+                                format, buffer, false, debug_translated_exception());
   }
  public:
   HotSpotToSharedLibraryExceptionTranslation(JVMCIEnv* hotspot_env, JVMCIEnv* jni_env, const Handle& throwable) :
@@ -539,6 +548,7 @@ class SharedLibraryToHotSpotExceptionTranslation : public ExceptionTranslation {
     jargs.push_int(format);
     jargs.push_long(buffer);
     jargs.push_int(true);
+    jargs.push_int(debug_translated_exception());
     JavaValue result(T_VOID);
     JavaCalls::call_static(&result,
                             vmSupport,
@@ -1420,7 +1430,7 @@ JVMCIPrimitiveArray JVMCIEnv::new_byteArray(int length, JVMCI_TRAPS) {
 JVMCIObjectArray JVMCIEnv::new_byte_array_array(int length, JVMCI_TRAPS) {
   JavaThread* THREAD = JavaThread::current(); // For exception macros.
   if (is_hotspot()) {
-    Klass* byteArrayArrayKlass = TypeArrayKlass::cast(Universe::byteArrayKlassObj  ())->array_klass(CHECK_(JVMCIObject()));
+    Klass* byteArrayArrayKlass = TypeArrayKlass::cast(Universe::byteArrayKlass())->array_klass(CHECK_(JVMCIObject()));
     objArrayOop result = ObjArrayKlass::cast(byteArrayArrayKlass) ->allocate(length, CHECK_(JVMCIObject()));
     return wrap(result);
   } else {

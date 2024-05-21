@@ -94,6 +94,9 @@ else
     BUILD_JDK_JTREG_EXECUTABLES_LIBS_exelauncher := -ldl
   endif
   BUILD_JDK_JTREG_EXECUTABLES_LIBS_exeJliLaunchTest := -ljli
+  ifeq ($(call isTargetOs, aix), true)
+    BUILD_JDK_JTREG_EXECUTABLES_LDFLAGS_exeJliLaunchTest := -L$(SUPPORT_OUTPUTDIR)/native/java.base
+  endif
   BUILD_JDK_JTREG_EXECUTABLES_LIBS_exeCallerAccessTest := -ljvm
   BUILD_JDK_JTREG_EXECUTABLES_LIBS_exeNullCallerTest := $(LIBCXX) -ljvm
 endif

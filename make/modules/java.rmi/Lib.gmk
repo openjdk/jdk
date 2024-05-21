@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -26,19 +26,16 @@
 include LibCommon.gmk
 
 ################################################################################
+## Build librmi
+################################################################################
 
 $(eval $(call SetupJdkLibrary, BUILD_LIBRMI, \
     NAME := rmi, \
     OPTIMIZATION := LOW, \
-    CFLAGS := $(CFLAGS_JDKLIB), \
-    LDFLAGS := $(LDFLAGS_JDKLIB) \
-        $(call SET_SHARED_LIBRARY_ORIGIN), \
-    LIBS_unix := -ljvm, \
-    LIBS_windows := jvm.lib, \
+    JDK_LIBS_unix := -ljvm, \
+    JDK_LIBS_windows := jvm.lib, \
 ))
 
 $(BUILD_LIBRMI): $(call FindLib, java.base, java)
 
 TARGETS += $(BUILD_LIBRMI)
-
-################################################################################

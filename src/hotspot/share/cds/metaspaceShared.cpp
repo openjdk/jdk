@@ -651,7 +651,7 @@ void MetaspaceShared::link_shared_classes(bool jcmd_request, TRAPS) {
 
 void MetaspaceShared::prepare_for_dumping() {
   assert(CDSConfig::is_dumping_archive(), "sanity");
-  CDSConfig::check_unsupported_dumping_properties();
+  CDSConfig::check_unsupported_dumping_module_options();
   ClassLoader::initialize_shared_path(JavaThread::current());
 }
 
@@ -1466,8 +1466,7 @@ void MetaspaceShared::initialize_shared_spaces() {
   // done after ReadClosure.
   static_mapinfo->patch_heap_embedded_pointers();
   ArchiveHeapLoader::finish_initialization();
-
-  CDS_JAVA_HEAP_ONLY(Universe::update_archived_basic_type_mirrors());
+  Universe::load_archived_object_instances();
 
   // Close the mapinfo file
   static_mapinfo->close();

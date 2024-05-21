@@ -485,8 +485,8 @@ ScopeValue* CodeInstaller::get_scope_value(HotSpotCompiledCodeStream* stream, u1
 void CodeInstaller::record_object_value(ObjectValue* sv, HotSpotCompiledCodeStream* stream, JVMCI_TRAPS) {
   oop javaMirror = JNIHandles::resolve(sv->klass()->as_ConstantOopWriteValue()->value());
   Klass* klass = java_lang_Class::as_Klass(javaMirror);
-  bool isLongArray = klass == Universe::longArrayKlassObj();
-  bool isByteArray = klass == Universe::byteArrayKlassObj();
+  bool isLongArray = klass == Universe::longArrayKlass();
+  bool isByteArray = klass == Universe::byteArrayKlass();
 
   u2 length = stream->read_u2("values:length");
   for (jint i = 0; i < length; i++) {

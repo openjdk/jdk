@@ -291,6 +291,7 @@ void JfrStorage::register_full(BufferPtr buffer, Thread* thread) {
       JavaThread* jt = JavaThread::cast(thread);
       if (jt->thread_state() == _thread_in_native) {
         // Transition java thread to vm so it can issue a notify.
+        MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, jt));
         ThreadInVMfromNative transition(jt);
         _post_box.post(MSG_FULLBUFFER);
         return;

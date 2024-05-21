@@ -3965,8 +3965,9 @@ public class JavacParser implements Parser {
             // comes after before deciding how best to handle them.
             ListBuffer<JCTree> semiList = new ListBuffer<>();
             while (firstTypeDecl && mods == null && token.kind == SEMI) {
-                semiList.append(toP(F.at(token.pos).Skip()));
+                int pos = token.pos;
                 nextToken();
+                semiList.append(toP(F.at(pos).Skip()));
                 if (token.kind == EOF)
                     break OUTER;
             }

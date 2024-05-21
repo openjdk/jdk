@@ -123,14 +123,14 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   _gc_par_phases[MergeLB]->create_thread_work_items("Dirty Cards:", MergeLBDirtyCards);
   _gc_par_phases[MergeLB]->create_thread_work_items("Skipped Cards:", MergeLBSkippedCards);
 
-  _gc_par_phases[CodeRoots]->create_thread_work_items("Scanned Nmethods", CodeRootsScannedNMethods);
+  _gc_par_phases[CodeRoots]->create_thread_work_items("Scanned Nmethods:", CodeRootsScannedNMethods);
 
-  _gc_par_phases[OptCodeRoots]->create_thread_work_items("Scanned Nmethods", CodeRootsScannedNMethods);
+  _gc_par_phases[OptCodeRoots]->create_thread_work_items("Scanned Nmethods:", CodeRootsScannedNMethods);
 
-  _gc_par_phases[MergePSS]->create_thread_work_items("Copied Bytes", MergePSSCopiedBytes);
-  _gc_par_phases[MergePSS]->create_thread_work_items("LAB Waste", MergePSSLABWasteBytes);
-  _gc_par_phases[MergePSS]->create_thread_work_items("LAB Undo Waste", MergePSSLABUndoWasteBytes);
-  _gc_par_phases[MergePSS]->create_thread_work_items("Evac Fail Extra Cards", MergePSSEvacFailExtra);
+  _gc_par_phases[MergePSS]->create_thread_work_items("Copied Bytes:", MergePSSCopiedBytes);
+  _gc_par_phases[MergePSS]->create_thread_work_items("LAB Waste:", MergePSSLABWasteBytes);
+  _gc_par_phases[MergePSS]->create_thread_work_items("LAB Undo Waste:", MergePSSLABUndoWasteBytes);
+  _gc_par_phases[MergePSS]->create_thread_work_items("Evac Fail Extra Cards:", MergePSSEvacFailExtra);
 
   _gc_par_phases[RestoreEvacuationFailedRegions]->create_thread_work_items("Evacuation Failed Regions:", RestoreEvacFailureRegionsEvacFailedNum);
   _gc_par_phases[RestoreEvacuationFailedRegions]->create_thread_work_items("Pinned Regions:", RestoreEvacFailureRegionsPinnedNum);
@@ -141,9 +141,9 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   _gc_par_phases[RemoveSelfForwards]->create_thread_work_items("Forward Objects:", RemoveSelfForwardObjectsNum);
   _gc_par_phases[RemoveSelfForwards]->create_thread_work_items("Forward Bytes:", RemoveSelfForwardObjectsBytes);
 
-  _gc_par_phases[EagerlyReclaimHumongousObjects]->create_thread_work_items("Humongous Total", EagerlyReclaimNumTotal);
-  _gc_par_phases[EagerlyReclaimHumongousObjects]->create_thread_work_items("Humongous Candidates", EagerlyReclaimNumCandidates);
-  _gc_par_phases[EagerlyReclaimHumongousObjects]->create_thread_work_items("Humongous Reclaimed", EagerlyReclaimNumReclaimed);
+  _gc_par_phases[EagerlyReclaimHumongousObjects]->create_thread_work_items("Humongous Total:", EagerlyReclaimNumTotal);
+  _gc_par_phases[EagerlyReclaimHumongousObjects]->create_thread_work_items("Humongous Candidates:", EagerlyReclaimNumCandidates);
+  _gc_par_phases[EagerlyReclaimHumongousObjects]->create_thread_work_items("Humongous Reclaimed:", EagerlyReclaimNumReclaimed);
 
   _gc_par_phases[SampleCollectionSetCandidates] = new WorkerDataArray<double>("SampleCandidates", "Sample CSet Candidates (ms):", max_gc_threads);
 

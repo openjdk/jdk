@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -209,12 +209,8 @@ public class StringTemplateTest {
 //        System.out.println(source);
         if (ToolProvider.getSystemJavaCompiler().getTask(null, fileManager, null,
                 List.of("--enable-preview", "-source", String.valueOf(Runtime.version().feature())), null,
-                List.of(new SimpleJavaFileObject(URI.create("StringTemplateTest$.java"), JavaFileObject.Kind.SOURCE) {
-            @Override
-            public CharSequence getCharContent(boolean ignoreEncodingErrors) {
-                return source;
-            }
-        })).call()) {
+                List.of(SimpleJavaFileObject.forSource(URI.create("StringTemplateTest$.java"), source))
+           ).call()) {
             return fileManager.getClassLoader(CLASS_OUTPUT).loadClass("StringTemplateTest$");
         } else {
             throw new AssertionError("compilation failed");

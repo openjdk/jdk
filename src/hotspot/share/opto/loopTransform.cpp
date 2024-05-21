@@ -1488,96 +1488,26 @@ void PhaseIdealLoop::count_opaque_loop_nodes(Node* n, uint& init, uint& stride) 
   }
 }
 
-// Create a new Bool node from the provided Template Assertion Predicate.
-// Unswitched loop: new_init and new_stride are both null. Clone OpaqueLoopInit and OpaqueLoopStride.
-// Otherwise: Replace found OpaqueLoop* nodes with new_init and new_stride, respectively.
-Node* PhaseIdealLoop::create_bool_from_template_assertion_predicate(Node* template_assertion_predicate, Node* new_init,
-                                                                    Node* new_stride, Node* control) {
-  Node_Stack to_clone(2);
-  Node* opaque4 = template_assertion_predicate->in(1);
-  assert(opaque4->Opcode() == Op_Opaque4, "must be Opaque4");
-  to_clone.push(opaque4, 1);
-  uint current = C->unique();
-  Node* result = nullptr;
-  bool is_unswitched_loop = new_init == nullptr && new_stride == nullptr;
-  assert(new_init != nullptr || is_unswitched_loop, "new_init must be set when new_stride is non-null");
-  // Look for the opaque node to replace with the new value
-  // and clone everything in between. We keep the Opaque4 node
-  // so the duplicated predicates are eliminated once loop
-  // opts are over: they are here only to keep the IR graph
-  // consistent.
-  do {
-    Node* n = to_clone.node();
-    uint i = to_clone.index();
-    Node* m = n->in(i);
-    if (is_part_of_template_assertion_predicate_bool(m)) {
-      to_clone.push(m, 1);
-      continue;
-    }
-    if (m->is_Opaque1()) {
-      if (n->_idx < current) {
-        n = n->clone();
-        register_new_node(n, control);
-      }
-      int op = m->Opcode();
-      if (op == Op_OpaqueLoopInit) {
-        if (is_unswitched_loop && m->_idx < current && new_init == nullptr) {
-          new_init = m->clone();
-          register_new_node(new_init, control);
-        }
-        n->set_req(i, new_init);
-      } else {
-        assert(op == Op_OpaqueLoopStride, "unexpected opaque node");
-        if (is_unswitched_loop && m->_idx < current && new_stride == nullptr) {
-          new_stride = m->clone();
-          register_new_node(new_stride, control);
-        }
-        if (new_stride != nullptr) {
-          n->set_req(i, new_stride);
-        }
-      }
-      to_clone.set_node(n);
-    }
-    while (true) {
-      Node* cur = to_clone.node();
-      uint j = to_clone.index();
-      if (j+1 < cur->req()) {
-        to_clone.set_index(j+1);
-        break;
-      }
-      to_clone.pop();
-      if (to_clone.size() == 0) {
-        result = cur;
-        break;
-      }
-      Node* next = to_clone.node();
-      j = to_clone.index();
-      if (next->in(j) != cur) {
-        assert(cur->_idx >= current || next->in(j)->Opcode() == Op_Opaque1, "new node or Opaque1 being replaced");
-        if (next->_idx < current) {
-          next = next->clone();
-          register_new_node(next, control);
-          to_clone.set_node(next);
-        }
-        next->set_req(j, cur);
-      }
-    }
-  } while (result == nullptr);
-  assert(result->_idx >= current, "new node expected");
-  assert(!is_unswitched_loop || new_init != nullptr, "new_init must always be found and cloned");
-  return result;
-}
-
 // Clone an Assertion Predicate for the main loop. new_init and new_stride are set as new inputs. Since the predicates
 // cannot fail at runtime, Halt nodes are inserted instead of uncommon traps.
 Node* PhaseIdealLoop::clone_assertion_predicate_and_initialize(Node* iff, Node* new_init, Node* new_stride, Node* predicate,
                                                                Node* uncommon_proj, Node* control, IdealLoopTree* outer_loop,
                                                                Node* input_proj) {
-  Node* result = create_bool_from_template_assertion_predicate(iff, new_init, new_stride, control);
+  TemplateAssertionPredicateExpression template_assertion_predicate_expression(iff->in(1)->as_Opaque4());
+  Opaque4Node* new_opaque4_node;
+  if (new_stride == nullptr) {
+    // Only set a new OpaqueLoopInitNode node and clone the existing OpaqueLoopStrideNode without modification.
+    // This is done when creating a new Template Assertion Predicate for the main loop which requires a new init node.
+    assert(new_init->is_OpaqueLoopInit(), "only for creating new Template Assertion Predicates");
+    new_opaque4_node = template_assertion_predicate_expression.clone_and_replace_init(new_init, control, this);
+  } else {
+    new_opaque4_node = template_assertion_predicate_expression.clone_and_replace_init_and_stride(new_init, new_stride,
+                                                                                                 control, this);
+  }
   Node* proj = predicate->clone();
   Node* other_proj = uncommon_proj->clone();
   Node* new_iff = iff->clone();
-  new_iff->set_req(1, result);
+  new_iff->set_req(1, new_opaque4_node);
   proj->set_req(0, new_iff);
   other_proj->set_req(0, new_iff);
   Node* frame = new ParmNode(C->start(), TypeFunc::FramePtr);

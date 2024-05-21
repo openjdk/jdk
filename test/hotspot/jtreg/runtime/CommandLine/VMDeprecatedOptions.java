@@ -62,6 +62,15 @@ public class VMDeprecatedOptions {
             {"CreateMinidumpOnCrash", "false"}
           }
         ));
+        if (Platform.isX86() || Platform.isX64()) {
+          deprecated.addAll(
+            Arrays.asList(new String[][] {
+              {"UseRTMLocking",         "false"},
+              {"UseRTMDeopt",           "false"},
+              {"RTMRetryCount",         "5"}
+            })
+          );
+        }
         if (wb.isJFRIncluded()) {
             deprecated.add(new String[] {"FlightRecorder", "false"});
         }

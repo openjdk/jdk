@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2015, 2024, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2015, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -446,10 +446,6 @@ void VM_Version::initialize() {
 
   if (FLAG_IS_DEFAULT(UsePopCountInstruction)) {
     FLAG_SET_DEFAULT(UsePopCountInstruction, true);
-  }
-
-  if (FLAG_IS_DEFAULT(HashSecondarySupers)) {
-    HashSecondarySupers = true;
   }
 
   if (!UsePopCountInstruction) {

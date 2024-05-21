@@ -174,20 +174,26 @@
  * for some statically enumerated options, as well as factories for more complex options,
  * including:
  * <ul>
- *   <li>{@link java.lang.classfile.ClassFile.StackMapsOption}
- * -- generate stackmaps (default is {@code STACK_MAPS_WHEN_REQUIRED})</li>
+ *   <li>{@link java.lang.classfile.ClassFile.AttributeMapperOption#of(java.util.function.Function)}
+ * -- specify format of custom attributes</li>
+ *   <li>{@link java.lang.classfile.ClassFile.AttributesProcessingOption}
+ * -- unrecognized or problematic original attributes (default is {@code PASS_ALL_ATTRIBUTES})</li>
+ *   <li>{@link java.lang.classfile.ClassFile.ClassHierarchyResolverOption#of(java.lang.classfile.ClassHierarchyResolver)}
+ * -- specify a custom class hierarchy resolver used by stack map generation</li>
+ *   <li>{@link java.lang.classfile.ClassFile.ConstantPoolSharingOption}}
+ * -- share constant pool when transforming (default is {@code SHARED_POOL})</li>
+ *   <li>{@link java.lang.classfile.ClassFile.DeadCodeOption}}
+ * -- patch out unreachable code (default is {@code PATCH_DEAD_CODE})</li>
+ *   <li>{@link java.lang.classfile.ClassFile.DeadLabelsOption}}
+ * -- filter unresolved labels (default is {@code FAIL_ON_DEAD_LABELS})</li>
  *   <li>{@link java.lang.classfile.ClassFile.DebugElementsOption}
  * -- processing of debug information, such as local variable metadata (default is {@code PASS_DEBUG}) </li>
  *   <li>{@link java.lang.classfile.ClassFile.LineNumbersOption}
  * -- processing of line numbers (default is {@code PASS_LINE_NUMBERS}) </li>
- *   <li>{@link java.lang.classfile.ClassFile.AttributesProcessingOption}
- * -- unrecognized or problematic original attributes (default is {@code PASS_ALL_ATTRIBUTES})</li>
- *   <li>{@link java.lang.classfile.ClassFile.ConstantPoolSharingOption}}
- * -- share constant pool when transforming (default is {@code SHARED_POOL})</li>
- *   <li>{@link java.lang.classfile.ClassFile.ClassHierarchyResolverOption#of(java.lang.classfile.ClassHierarchyResolver)}
- * -- specify a custom class hierarchy resolver used by stack map generation</li>
- *   <li>{@link java.lang.classfile.ClassFile.AttributeMapperOption#of(java.util.function.Function)}
- * -- specify format of custom attributes</li>
+ *   <li>{@link java.lang.classfile.ClassFile.ShortJumpsOption}
+ * -- automatically rewrite short jumps to long when necessary (default is {@code FIX_SHORT_JUMPS})</li>
+ *   <li>{@link java.lang.classfile.ClassFile.StackMapsOption}
+ * -- generate stackmaps (default is {@code STACK_MAPS_WHEN_REQUIRED})</li>
  * </ul>
  * <p>
  * Most options allow you to request that certain parts of the classfile be

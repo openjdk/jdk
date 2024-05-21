@@ -31,10 +31,8 @@ import java.util.concurrent.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.*;
 
-/* A test to demonstrate type pollution. Run it with and without
- * -XX:-HashSecondarySupers -XX:-UseSecondarySuperCache to see the
- * effect.
- *
+/*
+ * A test to demonstrate type pollution.
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
@@ -72,15 +70,16 @@ public class TypePollution {
     interface I18 {}
     interface I19 {}
     interface I20 {}
-    interface I21 {}
 
     static Class<?>[] classes;
 
     static {
-        classes = new Class<?>[] { I01.class, I02.class, I03.class, I04.class, I05.class, I06.class, I07.class, I08.class, I09.class, I10.class,
-                I11.class, I12.class, I13.class, I14.class, I15.class, I16.class, I17.class, I18.class, I19.class, I20.class };
-
+        classes = new Class<?>[] { I01.class, I02.class, I03.class, I04.class, I05.class,
+                                   I06.class, I07.class, I08.class, I09.class, I10.class,
+                                   I11.class, I12.class, I13.class, I14.class, I15.class,
+                                   I16.class, I17.class, I18.class, I19.class, I20.class };
     }
+
     private static final int NOOFOBJECTS = 100;
 
     public Object[] objectArray;
@@ -105,10 +104,35 @@ public class TypePollution {
 
     int probe = 99;
 
-    // Try this with and without -XX:-HashSecondarySupers
     @Benchmark
+    @Fork(jvmArgsAppend={"-XX:+UnlockDiagnosticVMOptions", "-XX:-UseSecondarySupersTable", "-XX:-UseSecondarySuperCache"})
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    public long parallelInstanceOfInterfaceSwitch() {
+    public long parallelInstanceOfInterfaceSwitchLinearNoSCC() {
+        return parallelInstanceOfInterfaceSwitch();
+    }
+
+    @Benchmark
+    @Fork(jvmArgsAppend={"-XX:+UnlockDiagnosticVMOptions", "-XX:-UseSecondarySupersTable", "-XX:+UseSecondarySuperCache"})
+    @OutputTimeUnit(TimeUnit.MILLISECONDS)
+    public long parallelInstanceOfInterfaceSwitchLinearSCC() {
+        return parallelInstanceOfInterfaceSwitch();
+    }
+
+    @Benchmark
+    @Fork(jvmArgsAppend={"-XX:+UnlockDiagnosticVMOptions", "-XX:+UseSecondarySupersTable", "-XX:-UseSecondarySuperCache"})
+    @OutputTimeUnit(TimeUnit.MILLISECONDS)
+    public long parallelInstanceOfInterfaceSwitchTableNoSCC() {
+        return parallelInstanceOfInterfaceSwitch();
+    }
+
+    @Benchmark
+    @Fork(jvmArgsAppend={"-XX:+UnlockDiagnosticVMOptions", "-XX:+UseSecondarySupersTable", "-XX:+UseSecondarySuperCache"})
+    @OutputTimeUnit(TimeUnit.MILLISECONDS)
+    public long parallelInstanceOfInterfaceSwitchTableSCC() {
+        return parallelInstanceOfInterfaceSwitch();
+    }
+
+    long parallelInstanceOfInterfaceSwitch() {
         Supplier<Long> s = () -> {
             long sum = 0;
             for (int i = 0; i < 10000; i++) {
@@ -124,9 +148,31 @@ public class TypePollution {
         }
     }
 
-    // Try this with and without -XX:-HashSecondarySupers
     @Benchmark
-    public int instanceOfInterfaceSwitch() {
+    @Fork(jvmArgsAppend={"-XX:+UnlockDiagnosticVMOptions", "-XX:-UseSecondarySupersTable", "-XX:-UseSecondarySuperCache"})
+    public int instanceOfInterfaceSwitchLinearNoSCC() {
+        return instanceOfInterfaceSwitch();
+    }
+
+    @Benchmark
+    @Fork(jvmArgsAppend={"-XX:+UnlockDiagnosticVMOptions", "-XX:-UseSecondarySupersTable", "-XX:+UseSecondarySuperCache"})
+    public int instanceOfInterfaceSwitchLinearSCC() {
+        return instanceOfInterfaceSwitch();
+    }
+
+    @Benchmark
+    @Fork(jvmArgsAppend={"-XX:+UnlockDiagnosticVMOptions", "-XX:+UseSecondarySupersTable", "-XX:-UseSecondarySuperCache"})
+    public int instanceOfInterfaceSwitchTableNoSCC() {
+        return instanceOfInterfaceSwitch();
+    }
+
+    @Benchmark
+    @Fork(jvmArgsAppend={"-XX:+UnlockDiagnosticVMOptions", "-XX:+UseSecondarySupersTable", "-XX:+UseSecondarySuperCache"})
+    public int instanceOfInterfaceSwitchTableSCC() {
+        return instanceOfInterfaceSwitch();
+    }
+
+    int instanceOfInterfaceSwitch() {
         int dummy = 0;
         for (int i = 0; i < 100; i++) {
             probe ^= probe << 13;   // xorshift

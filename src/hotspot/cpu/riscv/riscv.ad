@@ -3286,17 +3286,6 @@ operand iRegP_R15()
   interface(REG_INTER);
 %}
 
-operand iRegP_R16()
-%{
-  constraint(ALLOC_IN_RC(r16_reg));
-  match(RegP);
-  // match(iRegP);
-  match(iRegPNoSp);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
 // Pointer 64 bit Register R28 only
 operand iRegP_R28()
 %{
@@ -10336,35 +10325,33 @@ instruct string_equalsL(iRegP_R11 str1, iRegP_R13 str2, iRegI_R14 cnt,
 %}
 
 instruct array_equalsB(iRegP_R11 ary1, iRegP_R12 ary2, iRegI_R10 result,
-                       iRegP_R13 tmp1, iRegP_R14 tmp2, iRegP_R15 tmp3,
-                       iRegP_R16 tmp4, iRegP_R28 tmp5, rFlagsReg cr)
+                       iRegP_R13 tmp1, iRegP_R14 tmp2, iRegP_R15 tmp3)
 %{
   predicate(!UseRVV && ((AryEqNode*)n)->encoding() == StrIntrinsicNode::LL);
   match(Set result (AryEq ary1 ary2));
-  effect(USE_KILL ary1, USE_KILL ary2, TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, KILL tmp5, KILL cr);
+  effect(USE_KILL ary1, USE_KILL ary2, TEMP tmp1, TEMP tmp2, TEMP tmp3);
 
-  format %{ "Array Equals $ary1, ary2 -> $result\t#@array_equalsB // KILL $tmp5" %}
+  format %{ "Array Equals $ary1, $ary2 -> $result\t#@array_equalsB // KILL all" %}
   ins_encode %{
     __ arrays_equals($ary1$$Register, $ary2$$Register,
-                     $tmp1$$Register, $tmp2$$Register, $tmp3$$Register, $tmp4$$Register,
-                     $result$$Register, $tmp5$$Register, 1);
+                     $tmp1$$Register, $tmp2$$Register, $tmp3$$Register,
+                     $result$$Register, 1);
   %}
   ins_pipe(pipe_class_memory);
 %}
 
 instruct array_equalsC(iRegP_R11 ary1, iRegP_R12 ary2, iRegI_R10 result,
-                       iRegP_R13 tmp1, iRegP_R14 tmp2, iRegP_R15 tmp3,
-                       iRegP_R16 tmp4, iRegP_R28 tmp5, rFlagsReg cr)
+                       iRegP_R13 tmp1, iRegP_R14 tmp2, iRegP_R15 tmp3)
 %{
   predicate(!UseRVV && ((AryEqNode*)n)->encoding() == StrIntrinsicNode::UU);
   match(Set result (AryEq ary1 ary2));
-  effect(USE_KILL ary1, USE_KILL ary2, TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, KILL tmp5, KILL cr);
+  effect(USE_KILL ary1, USE_KILL ary2, TEMP tmp1, TEMP tmp2, TEMP tmp3);
 
-  format %{ "Array Equals $ary1, ary2 -> $result\t#@array_equalsC // KILL $tmp5" %}
+  format %{ "Array Equals $ary1, $ary2 -> $result\t#@array_equalsC // KILL all" %}
   ins_encode %{
     __ arrays_equals($ary1$$Register, $ary2$$Register,
-                     $tmp1$$Register, $tmp2$$Register, $tmp3$$Register, $tmp4$$Register,
-                     $result$$Register, $tmp5$$Register, 2);
+                     $tmp1$$Register, $tmp2$$Register, $tmp3$$Register,
+                     $result$$Register, 2);
   %}
   ins_pipe(pipe_class_memory);
 %}

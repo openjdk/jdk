@@ -4502,7 +4502,7 @@ void DataNodeGraph::clone_data_nodes(Node* new_ctrl) {
   }
 }
 
-// Clone the given node and set it up properly. Set `new_ctrl` as ctrl.
+// Clone the given node and set it up properly. Set 'new_ctrl' as ctrl.
 void DataNodeGraph::clone(Node* node, Node* new_ctrl) {
   Node* clone = node->clone();
   _phase->igvn().register_new_node_with_optimizer(clone);
@@ -4522,4 +4522,31 @@ void DataNodeGraph::rewire_clones_to_cloned_inputs() {
       }
     }
   });
+}
+
+// Clone all non-OpaqueLoop* nodes and apply the provided transformation strategy for OpaqueLoop* nodes.
+// Set 'new_ctrl' as ctrl for all cloned non-OpaqueLoop* nodes.
+void DataNodeGraph::clone_data_nodes_and_transform_opaque_loop_nodes(
+    const TransformStrategyForOpaqueLoopNodes& transform_strategy,
+    Node* new_ctrl) {
+  for (uint i = 0; i < _data_nodes.size(); i++) {
+    Node* data_node = _data_nodes[i];
+    if (data_node->is_Opaque1()) {
+      transform_opaque_node(transform_strategy, data_node);
+    } else {
+      clone(data_node, new_ctrl);
+    }
+  }
+}
+
+void DataNodeGraph::transform_opaque_node(const TransformStrategyForOpaqueLoopNodes& transform_strategy, Node* node) {
+  Node* transformed_node;
+  if (node->is_OpaqueLoopInit()) {
+    transformed_node = transform_strategy.transform_opaque_init(node->as_OpaqueLoopInit());
+  } else {
+    assert(node->is_OpaqueLoopStride(), "must be OpaqueLoopStrideNode");
+    transformed_node = transform_strategy.transform_opaque_stride(node->as_OpaqueLoopStride());
+  }
+  // Add an orig->new mapping to correctly update the inputs of the copied graph in rewire_clones_to_cloned_inputs().
+  _orig_to_new.put(node, transformed_node);
 }
