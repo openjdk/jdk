@@ -1774,12 +1774,7 @@ bool SuperWord::implemented(const Node_List* pack, const uint size) const {
     } else if (p0->is_Cmp()) {
       // Cmp -> Bool -> Cmove
       retValue = UseVectorCmov;
-    } else if (requires_long_to_int_conversion(opc)) {
-      // Java API for Long.bitCount/numberOfLeadingZeros/numberOfTrailingZeros
-      // returns int type, but Vector API for them returns long type. To unify
-      // the implementation in backend, superword splits the vector implementation
-      // for Java API into an execution node with long type plus another node
-      // converting long to int.
+    } else if (VectorNode::requires_long_to_int_conversion(opc)) {
       retValue = VectorNode::implemented(opc, size, T_LONG) &&
                  VectorCastNode::implemented(Op_ConvL2I, size, T_LONG, T_INT);
     } else {
@@ -1809,17 +1804,6 @@ uint SuperWord::max_implemented_size(const Node_List* pack) {
       }
     }
     return 0; // not implementable at all
-  }
-}
-
-bool SuperWord::requires_long_to_int_conversion(int opc) {
-  switch(opc) {
-    case Op_PopCountL:
-    case Op_CountLeadingZerosL:
-    case Op_CountTrailingZerosL:
-      return true;
-    default:
-      return false;
   }
 }
 
@@ -2247,12 +2231,7 @@ bool SuperWord::output() {
         Node* in = vector_opd(p, 1);
         vn = VectorNode::make(opc, in, nullptr, vlen, velt_basic_type(n));
         vlen_in_bytes = vn->as_Vector()->length_in_bytes();
-      } else if (requires_long_to_int_conversion(opc)) {
-        // Java API for Long.bitCount/numberOfLeadingZeros/numberOfTrailingZeros
-        // returns int type, but Vector API for them returns long type. To unify
-        // the implementation in backend, superword splits the vector implementation
-        // for Java API into an execution node with long type plus another node
-        // converting long to int.
+      } else if (VectorNode::requires_long_to_int_conversion(opc)) {
         assert(n->req() == 2, "only one input expected");
         Node* in = vector_opd(p, 1);
         Node* longval = VectorNode::make(opc, in, nullptr, vlen, T_LONG);
@@ -2794,7 +2773,7 @@ void SuperWord::initialize_node_info() {
 
 BasicType SuperWord::longer_type_for_conversion(Node* n) const {
   if (!(VectorNode::is_convert_opcode(n->Opcode()) ||
-        requires_long_to_int_conversion(n->Opcode())) ||
+        VectorNode::requires_long_to_int_conversion(n->Opcode())) ||
       !in_bb(n->in(1))) {
     return T_ILLEGAL;
   }
@@ -3458,7 +3437,9 @@ bool SuperWord::vtransform() const {
                         NOT_PRODUCT( COMMA is_trace_superword_verbose())
                         );
 
-  vtransform_build(graph);
+  ResourceMark rm;
+  SuperWordVTransformBuilder builder(_packset, graph);
+  builder.build_vtransform();
 
   if (!graph.schedule()) {
     return false;
@@ -3468,89 +3449,52 @@ bool SuperWord::vtransform() const {
   return true;
 }
 
-void SuperWord::vtransform_build(VTransformGraph& graph) const {
-  ResourceMark rm;
-
-  // Map: C2-IR-Nodes (bb_idx) -> VTransformNode* (nullptr if none exists).
-  int body_length = _vloop.estimated_body_length();
-  GrowableArray<VTransformNode*> bb_idx_to_vtnode(body_length, body_length, nullptr);
-
+void SuperWordVTransformBuilder::build_vtransform() {
   // Create VTransformVectorNode for all packed nodes:
   for (int i = 0; i < _packset.length(); i++) {
     Node_List* pack = _packset.at(i);
-    VTransformVectorNode* vtn = make_vtnode_for_pack(graph, pack);
+    VTransformVectorNode* vtn = make_vtnode_for_pack(pack);
     for (uint k = 0; k < pack->size(); k++) {
       Node* n = pack->at(k);
-      bb_idx_to_vtnode.at_put(bb_idx(n), vtn);
+      _bb_idx_to_vtnode.at_put(bb_idx(n), vtn);
     }
   }
 
   // Create VTransformScalarNode for all non-packed nodes:
   for (int i = 0; i < body().length(); i++) {
     Node* n = body().at(i);
-    if (bb_idx_to_vtnode.at(i) != nullptr) { continue; }
-    VTransformScalarNode* vtn = new (graph.arena()) VTransformScalarNode(graph, n);
-    bb_idx_to_vtnode.at_put(bb_idx(n), vtn);
+    if (_bb_idx_to_vtnode.at(i) != nullptr) { continue; }
+    VTransformScalarNode* vtn = new (_graph.arena()) VTransformScalarNode(_graph, n);
+    _bb_idx_to_vtnode.at_put(bb_idx(n), vtn);
   }
 
   // This is the "root" of the graph.
-  graph.set_cl_vtnode(bb_idx_to_vtnode.at(bb_idx(cl())));
-
-  // Only add dependency once per vtnode.
-  VectorSet dependency_set;
-
-  auto set_req = [&](VTransformNode* vtn, int j, Node* def) {
-    if (!in_bb(def)) { return; }
-    VTransformNode* req = bb_idx_to_vtnode.at(bb_idx(def));
-    vtn->set_req(j, req);
-    dependency_set.set(req->_idx);
-  };
-
-  auto set_req_all = [&](VTransformNode* vtn, Node* use) {
-    for (uint j = 0; j < use->req(); j++) {
-      Node* def = use->in(j);
-      if (def == nullptr) { continue; }
-      set_req(vtn, j, def);
-    }
-  };
-
-  // For a n that is in vtn, add all of n's dependencies to vtn.
-  auto add_dependencies = [&](VTransformNode* vtn, Node* n) {
-    for (VLoopDependencyGraph::PredsIterator preds(dependency_graph(), n); !preds.done(); preds.next()) {
-      Node* pred = preds.current();
-      if (!in_bb(pred)) { continue; }
-      if (n->is_Mem() && !pred->is_Mem()) { continue; } // TODO ok?
-      // TODO reductions
-      VTransformNode* dependency = bb_idx_to_vtnode.at(bb_idx(pred));
-      if (dependency_set.test_set(dependency->_idx)) { continue; }
-      vtn->add_dependency(dependency);
-    }
-  };
+  _graph.set_cl_vtnode(_bb_idx_to_vtnode.at(bb_idx(cl())));
 
   // Map edges for packed nodes:
   for (int i = 0; i < _packset.length(); i++) {
     Node_List* pack = _packset.at(i);
     Node* p0 = pack->at(0);
-    VTransformVectorNode* vtn = bb_idx_to_vtnode.at(bb_idx(p0))->isa_Vector();
-    dependency_set.clear();
+    VTransformVectorNode* vtn = _bb_idx_to_vtnode.at(bb_idx(p0))->isa_Vector();
+    _dependency_set.clear();
 
     if (p0->is_Load()) {
-      set_req(vtn, MemNode::Address, p0->in(MemNode::Address));
+      set_req_for_vector(vtn, MemNode::Address, pack);
     } else if (p0->is_Store()) {
-      set_req(vtn, MemNode::Address, p0->in(MemNode::Address));
-      set_req(vtn, MemNode::ValueIn, p0->in(MemNode::ValueIn));
+      set_req_for_vector(vtn, MemNode::Address, pack);
+      set_req_for_vector(vtn, MemNode::ValueIn, pack);
     } else if (vtn->isa_ElementWiseVector() != nullptr) {
       if (VectorNode::is_muladds2i(p0)) {
         // A special kind of binary element-wise vector op: the inputs are "ints" a and b,
         // but reinterpreted as two "shorts" [a0, a1] and [b0, b1]:
         //   v = MulAddS2I(a, b) = a0 * b0 + a1 + b2
-        set_req(vtn, 1, p0->in(1));
-        set_req(vtn, 2, p0->in(2));
+        set_req_for_vector(vtn, 1, pack);
+        set_req_for_vector(vtn, 2, pack);
       } else {
-        set_req_all(vtn, p0);
+        set_req_all_for_vector(vtn, pack);
       }
     } else if (vtn->isa_ReductionVector() != nullptr) {
-      set_req_all(vtn, p0);
+      set_req_all_for_vector(vtn, pack);
     } else {
       DEBUG_ONLY( vtn->print(); )
       assert(false, "vtn type not handled for inputs");
@@ -3565,26 +3509,26 @@ void SuperWord::vtransform_build(VTransformGraph& graph) const {
   // Map edges for non-packed nodes, i.e. scalar vtnodes:
   for (int i = 0; i < body().length(); i++) {
     Node* n = body().at(i);
-    VTransformScalarNode* vtn = bb_idx_to_vtnode.at(i)->isa_Scalar();
+    VTransformScalarNode* vtn = _bb_idx_to_vtnode.at(i)->isa_Scalar();
     if (vtn == nullptr) { continue; }
 
-    dependency_set.clear();
+    _dependency_set.clear();
 
     if (n->is_Load()) {
-      set_req(vtn, MemNode::Address, n->in(MemNode::Address));
+      set_req_for_scalar(vtn, MemNode::Address, n);
     } else if (n->is_Store()) {
-      set_req(vtn, MemNode::Address, n->in(MemNode::Address));
-      set_req(vtn, MemNode::ValueIn, n->in(MemNode::ValueIn));
+      set_req_for_scalar(vtn, MemNode::Address, n);
+      set_req_for_scalar(vtn, MemNode::ValueIn, n);
     } else if (n->is_CountedLoop()) {
       // Is "root", has no dependency.
       continue;
     } else if (n->is_Phi()) {
       // CountedLoop Phi's: ignore backedge (and entry value).
       assert(n->in(0) == cl(), "only Phi's from the CountedLoop allowed");
-      set_req(vtn, 0, n->in(0));
+      set_req_for_scalar(vtn, 0, n);
       continue;
     } else {
-      set_req_all(vtn, n);
+      set_req_all_for_scalar(vtn, n);
     }
 
     add_dependencies(vtn, n);
@@ -3592,15 +3536,15 @@ void SuperWord::vtransform_build(VTransformGraph& graph) const {
 }
 
 // Create a vtnode for each pack. No in/out edges set yet.
-VTransformVectorNode* SuperWord::make_vtnode_for_pack(VTransformGraph& graph, const Node_List* pack) const {
+VTransformVectorNode* SuperWordVTransformBuilder::make_vtnode_for_pack(const Node_List* pack) const {
   uint pack_size = pack->size();
   Node* p0 = pack->at(0);
   VTransformVectorNode* vtn = nullptr;
   int opc = p0->Opcode();
   if (p0->is_Load()) {
-    vtn = new (graph.arena()) VTransformLoadVectorNode(graph, pack_size);
+    vtn = new (_graph.arena()) VTransformLoadVectorNode(_graph, pack_size);
   } else if (p0->is_Store()) {
-    vtn = new (graph.arena()) VTransformStoreVectorNode(graph, pack_size);
+    vtn = new (_graph.arena()) VTransformStoreVectorNode(_graph, pack_size);
   } else if (VectorNode::is_scalar_rotate(p0)) {
     assert(false, "TODO");
   } else if (VectorNode::is_roundopD(p0)) {
@@ -3610,7 +3554,7 @@ VTransformVectorNode* SuperWord::make_vtnode_for_pack(VTransformGraph& graph, co
     // but reinterpreted as two "shorts" [a0, a1] and [b0, b1]:
     //   v = MulAddS2I(a, b) = a0 * b0 + a1 + b2
     assert(p0->req() == 5, "MulAddS2I should have 4 operands");
-    vtn = new (graph.arena()) VTransformElementWiseVectorNode(graph, 3, pack_size);
+    vtn = new (_graph.arena()) VTransformElementWiseVectorNode(_graph, 3, pack_size);
   } else if (opc == Op_SignumF || opc == Op_SignumD) {
     assert(false, "TODO");
   } else if (p0->is_Cmp() || p0->is_Bool()) {
@@ -3620,10 +3564,10 @@ VTransformVectorNode* SuperWord::make_vtnode_for_pack(VTransformGraph& graph, co
   } else if (p0->req() == 3) {
     if (is_marked_reduction(p0)) {
       // Reduction: (scalar, vector) -> scalar.
-      vtn = new (graph.arena()) VTransformReductionVectorNode(graph, pack_size);
+      vtn = new (_graph.arena()) VTransformReductionVectorNode(_graph, pack_size);
     } else {
       // Binary element-wise vector operation.
-      vtn = new (graph.arena()) VTransformElementWiseVectorNode(graph, 3, pack_size);
+      vtn = new (_graph.arena()) VTransformElementWiseVectorNode(_graph, 3, pack_size);
     }
   } else if (opc == Op_SqrtF || opc == Op_SqrtD ||
              opc == Op_AbsF || opc == Op_AbsD ||
@@ -3636,13 +3580,13 @@ VTransformVectorNode* SuperWord::make_vtnode_for_pack(VTransformGraph& graph, co
              opc == Op_PopCountI || opc == Op_CountLeadingZerosI ||
              opc == Op_CountTrailingZerosI) {
     assert(p0->req() == 2, "only one input expected");
-    vtn = new (graph.arena()) VTransformElementWiseVectorNode(graph, 2, pack_size);
-  } else if (requires_long_to_int_conversion(opc)) {
+    vtn = new (_graph.arena()) VTransformElementWiseVectorNode(_graph, 2, pack_size);
+  } else if (VectorNode::requires_long_to_int_conversion(opc)) {
     assert(p0->req() == 2, "only one input expected");
-    vtn = new (graph.arena()) VTransformElementWiseVectorNode(graph, 2, pack_size);
+    vtn = new (_graph.arena()) VTransformElementWiseVectorNode(_graph, 2, pack_size);
   } else if (VectorNode::is_convert_opcode(opc)) {
     assert(p0->req() == 2, "only one input expected");
-    vtn = new (graph.arena()) VTransformElementWiseVectorNode(graph, 2, pack_size);
+    vtn = new (_graph.arena()) VTransformElementWiseVectorNode(_graph, 2, pack_size);
   } else if (opc == Op_FmaD || opc == Op_FmaF) {
     assert(false, "TODO");
   } else {
@@ -3651,4 +3595,52 @@ VTransformVectorNode* SuperWord::make_vtnode_for_pack(VTransformGraph& graph, co
   }
   vtn->set_nodes(pack);
   return vtn;
+}
+
+void SuperWordVTransformBuilder::set_req_for_scalar(VTransformNode* vtn, int j, Node* n) {
+  Node* def = n->in(j);
+  // TODO what if not?
+  if (!in_bb(def)) { return; }
+  VTransformNode* req = _bb_idx_to_vtnode.at(bb_idx(def));
+  vtn->set_req(j, req);
+  _dependency_set.set(req->_idx);
+}
+
+void SuperWordVTransformBuilder::set_req_for_vector(VTransformNode* vtn, int j, Node_List* pack) {
+  Node* p0 = pack->at(0);
+  Node* def = p0->in(j);
+  // TODO what if not?
+  if (!in_bb(def)) { return; }
+  VTransformNode* req = _bb_idx_to_vtnode.at(bb_idx(def));
+  vtn->set_req(j, req);
+  _dependency_set.set(req->_idx);
+}
+
+void SuperWordVTransformBuilder::set_req_all_for_scalar(VTransformNode* vtn, Node* n) {
+  for (uint j = 0; j < n->req(); j++) {
+    Node* def = n->in(j);
+    if (def == nullptr) { continue; }
+    set_req_for_scalar(vtn, j, n);
+  }
+}
+
+void SuperWordVTransformBuilder::set_req_all_for_vector(VTransformNode* vtn, Node_List* pack) {
+  Node* p0 = pack->at(0);
+  for (uint j = 0; j < p0->req(); j++) {
+    Node* def = p0->in(j);
+    if (def == nullptr) { continue; }
+    set_req_for_vector(vtn, j, pack);
+  }
+}
+
+void SuperWordVTransformBuilder::add_dependencies(VTransformNode* vtn, Node* n) {
+  for (VLoopDependencyGraph::PredsIterator preds(dependency_graph(), n); !preds.done(); preds.next()) {
+    Node* pred = preds.current();
+    if (!in_bb(pred)) { continue; }
+    if (n->is_Mem() && !pred->is_Mem()) { continue; } // TODO ok?
+    // TODO reductions
+    VTransformNode* dependency = _bb_idx_to_vtnode.at(bb_idx(pred));
+    if (_dependency_set.test_set(dependency->_idx)) { continue; }
+    vtn->add_dependency(dependency);
+  }
 }

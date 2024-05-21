@@ -997,6 +997,22 @@ Node* VectorNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   return nullptr;
 }
 
+// Java API for Long.bitCount/numberOfLeadingZeros/numberOfTrailingZeros
+// returns int type, but Vector API for them returns long type. To unify
+// the implementation in backend, superword splits the vector implementation
+// for Java API into an execution node with long type plus another node
+// converting long to int.
+bool VectorNode::requires_long_to_int_conversion(int opc) {
+  switch(opc) {
+    case Op_PopCountL:
+    case Op_CountLeadingZerosL:
+    case Op_CountTrailingZerosL:
+      return true;
+    default:
+      return false;
+  }
+}
+
 // Return initial Pack node. Additional operands added with add_opd() calls.
 PackNode* PackNode::make(Node* s, uint vlen, BasicType bt) {
   const TypeVect* vt = TypeVect::make(bt, vlen);

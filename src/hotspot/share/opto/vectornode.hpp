@@ -132,6 +132,8 @@ class VectorNode : public TypeNode {
     return is_vector_shift_count(n->Opcode());
   }
 
+  static bool requires_long_to_int_conversion(int opc);
+
   static void trace_new_vector(Node* n, const char* context) {
 #ifdef ASSERT
     if (TraceNewVectors) {

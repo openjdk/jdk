@@ -2044,8 +2044,9 @@ void VTransformGraph::apply_vectorization() const {
 
 Node* VTransformNode::find_transformed_input(int i, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
   VTransformNode* vtn = in(i);
+  assert(vtn != nullptr, "must find input vtnode");
   Node* n = vnode_idx_to_transformed_node.at(vtn->_idx);
-  assert(n != nullptr, "must find input node");
+  assert(n != nullptr, "must find input IR node");
   return n;
 }
 

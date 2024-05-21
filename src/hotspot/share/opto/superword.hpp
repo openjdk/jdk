@@ -575,10 +575,10 @@ class SuperWord : public ResourceObj {
   int alignment(Node* n) const               { return _node_info.adr_at(bb_idx(n))->_alignment; }
   void set_alignment(Node* n, int a)         { int i = bb_idx(n); grow_node_info(i); _node_info.adr_at(i)->_alignment = a; }
 
-  // is pack good for converting into one vector node replacing bunches of Cmp, Bool, CMov nodes.
-  static bool requires_long_to_int_conversion(int opc);
+  // TODO remove?
   // For pack p, are all idx operands the same?
   bool same_inputs(const Node_List* p, int idx) const;
+
   // CloneMap utilities
   bool same_origin_idx(Node* a, Node* b) const;
   bool same_generation(Node* a, Node* b) const;
@@ -667,8 +667,65 @@ private:
   int memory_alignment(MemNode* s, int iv_adjust);
 
   bool vtransform() const;
-  void vtransform_build(VTransformGraph& graph) const;
-  VTransformVectorNode* make_vtnode_for_pack(VTransformGraph& graph, const Node_List* pack) const;
+};
+
+// TODO desc?
+class SuperWordVTransformBuilder : public StackObj {
+private:
+  const VLoopAnalyzer& _vloop_analyzer;
+  const VLoop& _vloop;
+  const PackSet& _packset;
+  VTransformGraph& _graph;
+
+  // TODO desc?
+  // Map: C2-IR-Nodes (bb_idx) -> VTransformNode* (nullptr if none exists).
+  GrowableArray<VTransformNode*> _bb_idx_to_vtnode;
+
+  // Only add every dependency once per vtnode.
+  VectorSet _dependency_set;
+
+public:
+  SuperWordVTransformBuilder(const PackSet& packset,
+                             VTransformGraph& graph) :
+      _vloop_analyzer(graph.vloop_analyzer()),
+      _vloop(_vloop_analyzer.vloop()),
+      _packset(packset),
+      _graph(graph),
+      _bb_idx_to_vtnode(_vloop.estimated_body_length(),
+                        _vloop.estimated_body_length(),
+                        nullptr)
+  {
+    assert(!_packset.is_empty(), "must have non-empty packset");
+  }
+
+  void build_vtransform();
+
+private:
+  CountedLoopNode* cl()     const { return _vloop.cl(); }
+  bool in_bb(const Node* n) const { return _vloop.in_bb(n); }
+
+  bool is_marked_reduction(const Node* n) const {
+    return _vloop_analyzer.reductions().is_marked_reduction(n);
+  }
+
+  const GrowableArray<Node*>& body() const {
+    return _vloop_analyzer.body().body();
+  }
+
+  int bb_idx(const Node* n) const     {
+    return _vloop_analyzer.body().bb_idx(n);
+  }
+
+  const VLoopDependencyGraph& dependency_graph() const {
+    return _vloop_analyzer.dependency_graph();
+  }
+
+  VTransformVectorNode* make_vtnode_for_pack(const Node_List* pack) const;
+  void set_req_for_scalar(VTransformNode* vtn, int j, Node* n);
+  void set_req_for_vector(VTransformNode* vtn, int j, Node_List* pack);
+  void set_req_all_for_scalar(VTransformNode* vtn, Node* n);
+  void set_req_all_for_vector(VTransformNode* vtn, Node_List* pack);
+  void add_dependencies(VTransformNode* vtn, Node* n);
 };
 
 #endif // SHARE_OPTO_SUPERWORD_HPP

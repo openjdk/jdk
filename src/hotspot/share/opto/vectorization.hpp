@@ -1336,8 +1336,8 @@ private:
   const uint _vector_size;  // number of elements
   const uint _vector_width; // total width in bytes
 
-  VTransformApplyStatus(Node* n, uint vector_size, uint vector_width)
-    : _node(n), _vector_size(vector_size), _vector_width(vector_width) {}
+  VTransformApplyStatus(Node* n, uint vector_size, uint vector_width) :
+    _node(n), _vector_size(vector_size), _vector_width(vector_width) {}
 
 public:
   static VTransformApplyStatus make_scalar(Node* n) {
@@ -1354,7 +1354,7 @@ public:
 };
 
 // TODO desc
-class VTransformGraph {
+class VTransformGraph : public StackObj {
 private:
   const VLoopAnalyzer& _vloop_analyzer;
   const VLoop& _vloop;
@@ -1414,6 +1414,7 @@ public:
 #endif
   }
 
+  const VLoopAnalyzer& vloop_analyzer() const { return _vloop_analyzer; }
   Arena* arena() { return &_arena; }
   VTransformNodeIDX new_idx() { return _next_idx++; }
   void add_vtnode(VTransformNode* vtnode);
