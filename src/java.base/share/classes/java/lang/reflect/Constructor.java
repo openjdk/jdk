@@ -266,7 +266,7 @@ public final class Constructor<T> extends Executable {
      */
     @Override
     public Class<?>[] getParameterTypes() {
-        return parameterTypes.clone();
+        return parameterTypes.length == 0 ? parameterTypes : parameterTypes.clone();
     }
 
     /**
@@ -292,7 +292,7 @@ public final class Constructor<T> extends Executable {
      */
     @Override
     public Class<?>[] getExceptionTypes() {
-        return exceptionTypes.clone();
+        return exceptionTypes.length == 0 ? exceptionTypes : exceptionTypes.clone();
     }
 
 
