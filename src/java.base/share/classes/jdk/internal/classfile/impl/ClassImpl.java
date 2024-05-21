@@ -24,14 +24,12 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import java.lang.classfile.ClassBuilder;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.reflect.AccessFlag;
 import java.lang.classfile.AccessFlags;
@@ -40,12 +38,9 @@ import java.lang.classfile.AttributeMapper;
 import java.lang.classfile.Attributes;
 import java.lang.classfile.ClassElement;
 import java.lang.classfile.ClassModel;
-import java.lang.classfile.ClassReader;
-import java.lang.classfile.ClassTransform;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.ClassFileVersion;
 import java.lang.classfile.constantpool.ConstantPool;
-import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.classfile.FieldModel;
 import java.lang.classfile.Interfaces;
 import java.lang.classfile.MethodModel;
@@ -56,7 +51,7 @@ public final class ClassImpl
         extends AbstractElement
         implements ClassModel {
 
-    final ClassReader reader;
+    final ClassReaderImpl reader;
     private final int attributesPos;
     private final List<MethodModel> methods;
     private final List<FieldModel> fields;
@@ -65,7 +60,6 @@ public final class ClassImpl
 
     public ClassImpl(byte[] cfbytes, ClassFileImpl context) {
         this.reader = new ClassReaderImpl(cfbytes, context);
-        ClassReaderImpl reader = (ClassReaderImpl) this.reader;
         int p = reader.interfacesPos;
         int icnt = reader.readU2(p);
         p += 2 + icnt * 2;

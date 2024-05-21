@@ -164,7 +164,6 @@ public final class ClassReaderImpl
         return superclass;
     }
 
-    @Override
     public int thisClassPos() {
         return thisClassPos;
     }
@@ -397,7 +396,6 @@ public final class ClassReaderImpl
         throw new ConstantPoolException("Not a UTF8 - index: " + index);
     }
 
-    @Override
     public int skipAttributeHolder(int offset) {
         int p = offset;
         int cnt = readU2(p);
