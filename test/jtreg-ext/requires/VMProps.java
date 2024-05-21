@@ -333,8 +333,8 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("vm.gc.ZSinglegen", () -> "" + (vmGCZ && (!genZ || genZIsDefault)));
     }
 
-    final String GC_PREFIX  = "-XX:+Use";
-    final String GC_SUFFIX  = "GC";
+    final String GC_PREFIX = "-XX:+Use";
+    final String GC_SUFFIX = "GC";
     /**
      * "jtreg -vmoptions:-Dtest.cds.runtime.options=..." can be used to specify
      * the GC type to be used when running with a CDS archive. Set "vm.gc" accordingly,
@@ -475,14 +475,13 @@ public class VMProps implements Callable<Map<String, String>> {
         if (jtropts == null)
             return true;
         String CCP_DISABLED = "-XX:-UseCompressedClassPointers";
+        String G1GC_ENABLED = "-XX:+UseG1GC";
         for (String opt : jtropts.split(",")) {
             if (opt.equals(CCP_DISABLED))
                 return false;
-            if (opt.startsWith(GC_PREFIX) && opt.endsWith(GC_SUFFIX)) {
-                String gc = opt.substring(GC_PREFIX.length(), opt.length() - GC_SUFFIX.length());
-                if (!gc.equals("G1"))
-                    return false;
-            }
+            if (opt.startsWith(GC_PREFIX) && opt.endsWith(GC_SUFFIX) &&
+                !opt.equals(G1GC_ENABLED))
+                return false;
         }
         return true;
     }
