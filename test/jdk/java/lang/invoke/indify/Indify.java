@@ -347,13 +347,15 @@ public class Indify {
     }
 
     public void indifyFile(File f) throws IOException {
-        if (verbose)  System.err.println("reading "+f);
+        if (verbose)  System.err.println("reading " + f);
         ClassModel model = parseClassFile(f);
+        if (model == null) throw new IOException("Failed to parse class file: " + f.getName());
         Logic logic = new Logic(model);
-        ClassModel newClassModel = logic.transform();
-        if(newClassModel == null) throw new IOException("No transformation has been done when transforming the class file: " + f.getName());
+        if(logic.classModel == null) throw new IOException("Failed to create logic for class file: " + f.getName());
+        Boolean isChanged = logic.transform();
+        System.err.println("Class file transformation: " + isChanged);
         logic.reportPatternMethods(quiet, keepgoing);
-        writeNewClassFile(newClassModel);
+        writeNewClassFile(logic.classModel);
     }
 
     void writeNewClassFile(ClassModel newClassModel) throws IOException {
@@ -448,10 +450,10 @@ public class Indify {
             if (verbose)  System.err.println("Loading class from "+f);
             ClassModel model = parseClassFile(f);
             Logic logic = new Logic(model);
-            ClassModel newClassModel = logic.transform();
-            if(newClassModel == null)  throw new IOException("No transformation has been done");
+            Boolean isChanged = logic.transform();
+            if(!isChanged)  throw new IOException("No transformation has been done");
             logic.reportPatternMethods(!verbose, keepgoing);
-            byte[] new_Bytes = transformToBytes(newClassModel);
+            byte[] new_Bytes = transformToBytes(logic.classModel);
             System.err.println("Transformed bytes: " + new_Bytes.length);
 
             return defineClass(null, new_Bytes, 0, new_Bytes.length);
@@ -470,9 +472,9 @@ public class Indify {
             poolMarks = new char[classModel.constantPool().size()];
         }
 
-        ClassModel transform(){
-            if (!initializeMarks())  return null;
-            if (!findPatternMethods()) return null;
+        Boolean transform(){
+            if (!initializeMarks())  return false;
+            if (!findPatternMethods()) return false;
 
             ClassModel newClassModel = transformFromCPBuilder(classModel, poolBuilder);
             CodeTransform codeTransform;
@@ -587,9 +589,9 @@ public class Indify {
                     shouldProceed.pop();
                 }
             }
-            newClassModel = removePatternMethodsAndVerify(newClassModel);
+            this.classModel = removePatternMethodsAndVerify(newClassModel);
 
-            return newClassModel;
+            return true;
         }
 
         ClassModel removePatternMethodsAndVerify(ClassModel classModel){
