@@ -26,7 +26,7 @@
  * @test
  * @bug JDK-8314070
  * @key printer
- * @requires (os.family == "mac")
+ * @requires (os.family == "linux" | os.family == "mac")
  * @summary javax.print: Support IPP output-bin attribute extension
  * @run main/manual OutputBinAttributePrintDialogTest COMMON
  * @run main/manual OutputBinAttributePrintDialogTest NATIVE
@@ -48,6 +48,7 @@ import java.awt.print.Printable;
 import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -70,21 +71,23 @@ public class OutputBinAttributePrintDialogTest {
 
         final DialogTypeSelection dialogTypeSelection = getDialogTypeSelection(args[0]);
 
-        OutputBin[] supportedOutputBins = getSupportedOutputBinttributes();
-        if (supportedOutputBins.length < 1) {
+        if (dialogTypeSelection == DialogTypeSelection.NATIVE) {
+            String os = System.getProperty("os.name").toLowerCase();
+            if (os.startsWith("linux")) {
+                // The Linux native dialog is the same as the native
+                return;
+            }
+        }
+
+        final OutputBin[] supportedOutputBins = getSupportedOutputBinttributes();
+        if (supportedOutputBins.length < 2) {
             return;
         }
 
-        // Test only the first and the last output bins to reduce number of tests
-        final Set<OutputBin> outputBins = new HashSet<>();
-        outputBins.add(supportedOutputBins[0]);
-        outputBins.add(supportedOutputBins[supportedOutputBins.length - 1]);
-
-
         SwingUtilities.invokeLater(() -> {
-            testTotalCount = outputBins.size();
-            for (OutputBin outputBin : outputBins) {
-                testPrint(dialogTypeSelection, outputBin, outputBins);
+            testTotalCount = supportedOutputBins.length;
+            for (OutputBin outputBin : supportedOutputBins) {
+                testPrint(dialogTypeSelection, outputBin, supportedOutputBins);
             }
             testFinished = true;
         });
@@ -196,13 +199,13 @@ public class OutputBinAttributePrintDialogTest {
         }
     }
 
-    private static void testPrint(DialogTypeSelection dialogTypeSelection, OutputBin outputBin, Set<OutputBin> supportedOutputBins) {
+    private static void testPrint(DialogTypeSelection dialogTypeSelection, OutputBin outputBin, OutputBin[] supportedOutputBins) {
 
         System.out.printf("Test dialog: %s%n", dialogTypeSelection);
 
         String[] instructions = {
                 "Up to " + testTotalCount + " tests will run and it will test all output bins:",
-                supportedOutputBins.toString(),
+                Arrays.toString(supportedOutputBins),
                 "supported by the printer.",
                 "",
                 "The test is " + (testCount + 1) + " from " + testTotalCount + ".",

@@ -214,27 +214,6 @@ public final class CPrinterJob extends RasterPrinterJob {
         }
     }
 
-    private String getOutputBinValue(Attribute attr) {
-        if (attr instanceof CustomOutputBin customOutputBin) {
-            return customOutputBin.getChoiceName();
-        } else if (attr instanceof OutputBin outputBin) {
-            String name = outputBin.toString().replace('-', ' ');
-            PrintService ps = getPrintService();
-            if (ps == null) {
-                return name;
-            }
-            OutputBin[] supportedBins = (OutputBin[]) ps.getSupportedAttributeValues(OutputBin.class, null, null);
-            for (OutputBin bin : supportedBins) {
-                CustomOutputBin customBin = (CustomOutputBin) bin;
-                if (customBin.getCustomName().equalsIgnoreCase(name)) {
-                    return customBin.getChoiceName();
-                }
-            }
-            return name;
-        }
-        return null;
-    }
-
     private void setPageRangeAttribute(int from, int to, boolean isRangeSet) {
         if (attributes != null) {
             // since native Print use zero-based page indices,

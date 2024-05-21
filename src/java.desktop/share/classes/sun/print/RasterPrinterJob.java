@@ -2625,4 +2625,25 @@ public abstract class RasterPrinterJob extends PrinterJob {
             parentWindowID = DialogOwnerAccessor.getID(onTop);
         }
     }
+
+    protected String getOutputBinValue(Attribute attr) {
+        if (attr instanceof CustomOutputBin customOutputBin) {
+            return customOutputBin.getChoiceName();
+        } else if (attr instanceof OutputBin outputBin) {
+            String name = outputBin.toString().replace('-', ' ');
+            PrintService ps = getPrintService();
+            if (ps == null) {
+                return name;
+            }
+            OutputBin[] supportedBins = (OutputBin[]) ps.getSupportedAttributeValues(OutputBin.class, null, null);
+            for (OutputBin bin : supportedBins) {
+                CustomOutputBin customBin = (CustomOutputBin) bin;
+                if (customBin.getCustomName().equalsIgnoreCase(name)) {
+                    return customBin.getChoiceName();
+                }
+            }
+            return name;
+        }
+        return null;
+    }
 }
