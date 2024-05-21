@@ -1493,9 +1493,10 @@ public:
     _out.push(n);
   }
 
+  int req() const { return _req; }
+  VTransformNode* in(int i) const { return _in.at(i); }
   int outs() const { return _out.length(); }
   VTransformNode* out(int i) const { return _out.at(i); }
-  VTransformNode* in(int i) const { return _in.at(i); }
 
   virtual VTransformScalarNode* isa_Scalar() { return nullptr; }
   virtual VTransformVectorNode* isa_Vector() { return nullptr; }
@@ -1504,6 +1505,8 @@ public:
 
   virtual VTransformApplyStatus apply(const VLoopAnalyzer& vloop_analyzer,
                                       const GrowableArray<Node*>& vnode_idx_to_transformed_node) const = 0;
+
+  Node* find_transformed_input(int i, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const;
 
   NOT_PRODUCT(virtual const char* name() const = 0;)
   NOT_PRODUCT(void print() const;)

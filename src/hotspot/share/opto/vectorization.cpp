@@ -2042,6 +2042,12 @@ void VTransformGraph::apply_vectorization() const {
   // TODO SuperWordLoopUnrollAnalysis
 }
 
+Node* VTransformNode::find_transformed_input(int i, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
+  VTransformNode* vtn = in(i);
+  Node* n = vnode_idx_to_transformed_node.at(vtn->_idx);
+  assert(n != nullptr, "must find input node");
+  return n;
+}
 
 VTransformApplyStatus VTransformScalarNode::apply(const VLoopAnalyzer& vloop_analyzer, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
   // TODO hook up to its proper inputs!
@@ -2074,6 +2080,27 @@ void VTransformVectorNode::register_new_vector_and_replace_scalar_nodes(const VL
 }
 
 VTransformApplyStatus VTransformElementWiseVectorNode::apply(const VLoopAnalyzer& vloop_analyzer, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
+  // TODO all cases?
+  Node* first = nodes().at(0);
+  uint  vlen = nodes().length();
+  int   opc  = first->Opcode();
+  BasicType bt = vloop_analyzer.types().velt_basic_type(first);
+
+  if (req() == 3) {
+    Node* in1 = find_transformed_input(1, vnode_idx_to_transformed_node);
+    Node* in2 = find_transformed_input(2, vnode_idx_to_transformed_node);
+    // TODO register spilling trick?
+
+    if (VectorNode::can_transform_shift_op(first, bt)) {
+      opc = Op_RShiftI;
+    }
+    VectorNode* vn = VectorNode::make(opc, in1, in2, vlen, bt);
+
+    register_new_vector_and_replace_scalar_nodes(vloop_analyzer, vn);
+    return VTransformApplyStatus::make_vector(vn, vlen, vn->length_in_bytes());
+  } else {
+    assert(false, "TODO");
+  }
   return VTransformApplyStatus::make_vector(nullptr, 0, 0);
 }
 
@@ -2089,6 +2116,7 @@ VTransformApplyStatus VTransformLoadVectorNode::apply(const VLoopAnalyzer& vloop
   Node* adr  = first->in(MemNode::Address);
   int   opc  = first->Opcode();
   const TypePtr* adr_type = first->adr_type();
+  BasicType bt = vloop_analyzer.types().velt_basic_type(first);
 
   // Set the memory dependency of the LoadVector as early as possible.
   // Walk up the memory chain, and ignore any StoreVector that provably
@@ -2102,8 +2130,7 @@ VTransformApplyStatus VTransformLoadVectorNode::apply(const VLoopAnalyzer& vloop
     }
   }
 
-  LoadVectorNode* vn = LoadVectorNode::make(opc, ctrl, mem, adr, adr_type, vlen,
-                                            vloop_analyzer.types().velt_basic_type(first),
+  LoadVectorNode* vn = LoadVectorNode::make(opc, ctrl, mem, adr, adr_type, vlen, bt,
                                             control_dependency());
 
   register_new_vector_and_replace_scalar_nodes(vloop_analyzer, vn);
@@ -2119,10 +2146,7 @@ VTransformApplyStatus VTransformStoreVectorNode::apply(const VLoopAnalyzer& vloo
   int   opc  = first->Opcode();
   const TypePtr* adr_type = first->adr_type();
 
-  // TODO helper method?
-  VTransformNode* value_vtn = in(MemNode::ValueIn);
-  Node* value = vnode_idx_to_transformed_node.at(value_vtn->_idx);
-  assert(value != nullptr, "must find input vector");
+  Node* value = find_transformed_input(MemNode::ValueIn, vnode_idx_to_transformed_node);
 
   StoreVectorNode* vn = StoreVectorNode::make(opc, ctrl, mem, adr, adr_type, value, vlen);
 

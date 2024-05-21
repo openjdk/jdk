@@ -663,9 +663,6 @@ private:
   // Find the longest type in def-use chain for packed nodes, and then compute the max vector size.
   int max_vector_size_in_def_use_chain(Node* n);
 
-  // TODO probably move
-  static LoadNode::ControlDependency control_dependency(Node_List* p);
-
   // Alignment within a vector memory reference
   int memory_alignment(MemNode* s, int iv_adjust);
 
