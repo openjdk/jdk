@@ -92,14 +92,11 @@ public class RestoreEchoTest {
             throw new RuntimeException("Test failed. jdk.console is not java.base");
         }
 
-        MethodHandle MH_getEcho = MethodHandles.privateLookupIn(JdkConsoleImpl.class, MethodHandles.lookup())
-                .findStatic(JdkConsoleImpl.class, "getEcho", MethodType.methodType(boolean.class));
-        MethodHandle MH_setEcho = MethodHandles.privateLookupIn(JdkConsoleImpl.class, MethodHandles.lookup())
-                .findStatic(JdkConsoleImpl.class, "setEcho", MethodType.methodType(void.class, boolean.class));
+        MethodHandle MH_echo = MethodHandles.privateLookupIn(JdkConsoleImpl.class, MethodHandles.lookup())
+                .findStatic(JdkConsoleImpl.class, "echo", MethodType.methodType(boolean.class, boolean.class));
 
         var initialEcho = Boolean.parseBoolean(args[0]);
-        var originalEcho = (boolean)MH_getEcho.invokeExact();
-        MH_setEcho.invokeExact(initialEcho);
+        var originalEcho = (boolean)MH_echo.invokeExact(initialEcho);
 
         Console con = System.console();
         if (con == null) {
@@ -114,8 +111,7 @@ public class RestoreEchoTest {
         input = String.valueOf(con.readPassword("password prompt: "));
         con.printf("password is %s\n", input);
 
-        var echoAfter = (boolean)MH_getEcho.invokeExact();
-        MH_setEcho.invokeExact(originalEcho);
+        var echoAfter = (boolean)MH_echo.invokeExact(originalEcho);
 
         var echoStates =
                 """
