@@ -225,7 +225,6 @@ class DefNewGeneration: public Generation {
   }
 
   HeapWord* allocate(size_t word_size, bool is_tlab);
-  HeapWord* allocate_from_space(size_t word_size);
 
   HeapWord* par_allocate(size_t word_size, bool is_tlab);
 
