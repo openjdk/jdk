@@ -1783,7 +1783,7 @@ instruct replicateD(vReg dst, fRegD src) %{
 
 // vector shift
 //
-// Following shift instruct's are shared by vectorization (in SLP, superword.cpp) and vector API.
+// Following shift instruct's are shared by vectorization (in SLP, superword.cpp) and Vector API.
 //
 // Shift behaviour in vectorization is defined by java language spec, which includes:
 //  1. "If the promoted type of the left-hand operand is int, then only the five lowest-order bits of
