@@ -52,9 +52,9 @@ public class TestVectorAddMulReduction {
     private static final int SIZE = 1024;
     private static final Random RD = Utils.getRandomInstance();
 
-    private static float [] fa;
+    private static float[] fa;
     private static float fres;
-    private static double [] da;
+    private static double[] da;
     private static double dres;
 
     static {
@@ -70,7 +70,7 @@ public class TestVectorAddMulReduction {
 
     // Test add reduction operation for floats
     @ForceInline
-    public static void testFloatAddKernel(VectorSpecies SPECIES, float [] f) {
+    public static void testFloatAddKernel(VectorSpecies SPECIES, float[] f) {
         for (int i = 0; i < SPECIES.loopBound(f.length); i += SPECIES.length()) {
             var av = FloatVector.fromArray(SPECIES, f, i);
             fres += av.reduceLanes(VectorOperators.ADD);
@@ -107,7 +107,7 @@ public class TestVectorAddMulReduction {
 
     // Test add reduction operation for doubles
     @ForceInline
-    public static void testDoubleAddKernel(VectorSpecies SPECIES, double [] d) {
+    public static void testDoubleAddKernel(VectorSpecies SPECIES, double[] d) {
         for (int i = 0; i < SPECIES.loopBound(d.length); i += SPECIES.length()) {
             var av = DoubleVector.fromArray(SPECIES, d, i);
             dres += av.reduceLanes(VectorOperators.ADD);
@@ -140,7 +140,7 @@ public class TestVectorAddMulReduction {
     // and scalar instructions are emitted for 64-bit/128-bit vectors. Thus MulReductionVF/VD nodes are generated
     // only for vector length of 8B/16B on vectorAPI.
     @ForceInline
-    public static void testFloatMulKernel(VectorSpecies SPECIES, float [] f) {
+    public static void testFloatMulKernel(VectorSpecies SPECIES, float[] f) {
         for (int i = 0; i < SPECIES.loopBound(f.length); i += SPECIES.length()) {
             var av = FloatVector.fromArray(SPECIES, f, i);
             fres += av.reduceLanes(VectorOperators.MUL);
@@ -163,7 +163,7 @@ public class TestVectorAddMulReduction {
 
     // Test mul reduction operation for doubles
     @ForceInline
-    public static void testDoubleMulKernel(VectorSpecies SPECIES, double [] d) {
+    public static void testDoubleMulKernel(VectorSpecies SPECIES, double[] d) {
         for (int i = 0; i < SPECIES.loopBound(d.length); i += SPECIES.length()) {
             var av = DoubleVector.fromArray(SPECIES, d, i);
             dres += av.reduceLanes(VectorOperators.MUL);

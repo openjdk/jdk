@@ -1317,7 +1317,7 @@ int ReductionNode::opcode(int opc, BasicType bt) {
 }
 
 // Return the appropriate reduction node.
-ReductionNode* ReductionNode::make(int opc, Node *ctrl, Node* n1, Node* n2, BasicType bt,
+ReductionNode* ReductionNode::make(int opc, Node* ctrl, Node* n1, Node* n2, BasicType bt,
                                    bool requires_strict_order) {
 
   int vopc = opcode(opc, bt);

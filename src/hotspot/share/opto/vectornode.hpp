@@ -241,22 +241,22 @@ class ReductionNode : public Node {
     return false;
   }
 
-  #ifndef PRODUCT
-  void dump_spec(outputStream *st) const {
+#ifndef PRODUCT
+  void dump_spec(outputStream* st) const {
     if (requires_strict_order()) {
       st->print("requires_strict_order");
     } else {
       st->print("no_strict_order");
     }
   }
-  #endif
+#endif
 };
 
 //------------------------------AddReductionVINode--------------------------------------
 // Vector add byte, short and int as a reduction
 class AddReductionVINode : public ReductionNode {
 public:
-  AddReductionVINode(Node * ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
+  AddReductionVINode(Node* ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
 };
 
@@ -264,7 +264,7 @@ public:
 // Vector add long as a reduction
 class AddReductionVLNode : public ReductionNode {
 public:
-  AddReductionVLNode(Node *ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
+  AddReductionVLNode(Node* ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
 };
 
@@ -279,7 +279,7 @@ private:
   const bool _requires_strict_order;
 public:
   //_requires_strict_order is set to true by default as mandated by auto-vectorization
-  AddReductionVFNode(Node *ctrl, Node* in1, Node* in2, bool requires_strict_order = true) :
+  AddReductionVFNode(Node* ctrl, Node* in1, Node* in2, bool requires_strict_order = true) :
     ReductionNode(ctrl, in1, in2), _requires_strict_order(requires_strict_order) {}
 
   virtual int Opcode() const;
@@ -306,7 +306,7 @@ private:
   const bool _requires_strict_order;
 public:
   //_requires_strict_order is set to true by default as mandated by auto-vectorization
-  AddReductionVDNode(Node *ctrl, Node* in1, Node* in2, bool requires_strict_order = true) :
+  AddReductionVDNode(Node* ctrl, Node* in1, Node* in2, bool requires_strict_order = true) :
     ReductionNode(ctrl, in1, in2), _requires_strict_order(requires_strict_order) {}
 
   virtual int Opcode() const;
@@ -456,7 +456,7 @@ public:
 // Vector multiply byte, short and int as a reduction
 class MulReductionVINode : public ReductionNode {
 public:
-  MulReductionVINode(Node *ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
+  MulReductionVINode(Node* ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
 };
 
@@ -464,7 +464,7 @@ public:
 // Vector multiply int as a reduction
 class MulReductionVLNode : public ReductionNode {
 public:
-  MulReductionVLNode(Node *ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
+  MulReductionVLNode(Node* ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
 };
 
@@ -478,7 +478,7 @@ class MulReductionVFNode : public ReductionNode {
   const bool _requires_strict_order;
 public:
   //_requires_strict_order is set to true by default as mandated by auto-vectorization
-  MulReductionVFNode(Node *ctrl, Node* in1, Node* in2, bool requires_strict_order = true) :
+  MulReductionVFNode(Node* ctrl, Node* in1, Node* in2, bool requires_strict_order = true) :
     ReductionNode(ctrl, in1, in2), _requires_strict_order(requires_strict_order) {}
 
   virtual int Opcode() const;
@@ -504,7 +504,7 @@ class MulReductionVDNode : public ReductionNode {
   const bool _requires_strict_order;
 public:
   //_requires_strict_order is set to true by default as mandated by auto-vectorization
-  MulReductionVDNode(Node *ctrl, Node* in1, Node* in2, bool requires_strict_order = true) :
+  MulReductionVDNode(Node* ctrl, Node* in1, Node* in2, bool requires_strict_order = true) :
     ReductionNode(ctrl, in1, in2), _requires_strict_order(requires_strict_order) {}
 
   virtual int Opcode() const;
@@ -845,7 +845,7 @@ class AndVNode : public VectorNode {
 // Vector and byte, short, int, long as a reduction
 class AndReductionVNode : public ReductionNode {
  public:
-  AndReductionVNode(Node *ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
+  AndReductionVNode(Node* ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
 };
 
@@ -862,7 +862,7 @@ class OrVNode : public VectorNode {
 // Vector xor byte, short, int, long as a reduction
 class OrReductionVNode : public ReductionNode {
  public:
-  OrReductionVNode(Node *ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
+  OrReductionVNode(Node* ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
 };
 
@@ -879,7 +879,7 @@ class XorVNode : public VectorNode {
 // Vector and int, long as a reduction
 class XorReductionVNode : public ReductionNode {
  public:
-  XorReductionVNode(Node *ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
+  XorReductionVNode(Node* ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
 };
 
@@ -887,7 +887,7 @@ class XorReductionVNode : public ReductionNode {
 // Vector min byte, short, int, long, float, double as a reduction
 class MinReductionVNode : public ReductionNode {
 public:
-  MinReductionVNode(Node *ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
+  MinReductionVNode(Node* ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
 };
 
@@ -895,7 +895,7 @@ public:
 // Vector min byte, short, int, long, float, double as a reduction
 class MaxReductionVNode : public ReductionNode {
 public:
-  MaxReductionVNode(Node *ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
+  MaxReductionVNode(Node* ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
 };
 

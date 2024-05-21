@@ -30,7 +30,6 @@ import compiler.lib.ir_framework.*;
  * @bug 8320725
  * @summary Ensure strictly ordered AddReductionVF/VD nodes are generated on SVE machines
  * while being disabled on Neon
- * @requires os.arch == "aarch64"
  * @library /test/lib /
  * @run driver compiler.c2.irTests.TestVectorFPReduction
  */
@@ -51,48 +50,48 @@ public class TestVectorFPReduction {
     }
 
     @Test
-    @IR(applyIf = {"UseSVE", "0"}, failOn = {IRNode.ADD_REDUCTION_VF})
-    @IR(applyIf = {"UseSVE", ">0"}, counts = {"requires_strict_order", ">=1", IRNode.ADD_REDUCTION_VF, ">=1"},
+    @IR(applyIfCPUFeatureAnd = {"asimd", "true", "sve", "false"}, failOn = {IRNode.ADD_REDUCTION_VF})
+    @IR(applyIfCPUFeature = {"sve", "true"}, counts = {"requires_strict_order", ">=1", IRNode.ADD_REDUCTION_VF, ">=1"},
         failOn = {"no_strict_order"}, phase = CompilePhase.PRINT_IDEAL)
     private static void testAddReductionVF() {
         float result = 1;
-        for(int i = 0; i < SIZE; i++) {
+        for (int i = 0; i < SIZE; i++) {
             result += (fa[i] + fb[i]);
         }
         fresult += result;
     }
 
     @Test
-    @IR(applyIf = {"UseSVE", "0"}, failOn = {IRNode.ADD_REDUCTION_VD})
-    @IR(applyIf = {"UseSVE", ">0"}, counts = {"requires_strict_order", ">=1", IRNode.ADD_REDUCTION_VD, ">=1"},
+    @IR(applyIfCPUFeatureAnd = {"asimd", "true", "sve", "false"}, failOn = {IRNode.ADD_REDUCTION_VD})
+    @IR(applyIfCPUFeature = {"sve", "true"}, counts = {"requires_strict_order", ">=1", IRNode.ADD_REDUCTION_VD, ">=1"},
         failOn = {"no_strict_order"}, phase = CompilePhase.PRINT_IDEAL)
     private static void testAddReductionVD() {
         double result = 1;
-        for(int i = 0; i < SIZE; i++) {
+        for (int i = 0; i < SIZE; i++) {
             result += (da[i] + db[i]);
         }
         dresult += result;
     }
 
     @Test
-    @IR(applyIf = {"UseSVE", "0"}, failOn = {IRNode.MUL_REDUCTION_VF})
-    @IR(applyIf = {"UseSVE", ">0"}, counts = {"requires_strict_order", ">=1", IRNode.MUL_REDUCTION_VF, ">=1"},
+    @IR(applyIfCPUFeatureAnd = {"asimd", "true", "sve", "false"}, failOn = {IRNode.MUL_REDUCTION_VF})
+    @IR(applyIfCPUFeature = {"sve", "true"}, counts = {"requires_strict_order", ">=1", IRNode.MUL_REDUCTION_VF, ">=1"},
         failOn = {"no_strict_order"}, phase = CompilePhase.PRINT_IDEAL)
     private static void testMulReductionVF() {
         float result = 1;
-        for(int i = 0; i < SIZE; i++) {
+        for (int i = 0; i < SIZE; i++) {
             result *= (fa[i] + fb[i]);
         }
         fresult += result;
     }
 
     @Test
-    @IR(applyIf = {"UseSVE", "0"}, failOn = {IRNode.MUL_REDUCTION_VD})
-    @IR(applyIf = {"UseSVE", ">0"}, counts = {"requires_strict_order", ">=1", IRNode.MUL_REDUCTION_VD, ">=1"},
+    @IR(applyIfCPUFeatureAnd = {"asimd", "true", "sve", "false"}, failOn = {IRNode.MUL_REDUCTION_VD})
+    @IR(applyIfCPUFeature = {"sve", "true"}, counts = {"requires_strict_order", ">=1", IRNode.MUL_REDUCTION_VD, ">=1"},
         failOn = {"no_strict_order"}, phase = CompilePhase.PRINT_IDEAL)
     private static void testMulReductionVD() {
         double result = 1;
-        for(int i = 0; i < SIZE; i++) {
+        for (int i = 0; i < SIZE; i++) {
             result *= (da[i] + db[i]);
         }
         dresult += result;
