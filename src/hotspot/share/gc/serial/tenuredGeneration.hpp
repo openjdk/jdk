@@ -156,8 +156,6 @@ public:
   // Performance Counter support
   void update_counters();
 
-  void record_spaces_top();
-
   // Statistics
 
   void update_gc_stats(Generation* current_generation, bool full);
