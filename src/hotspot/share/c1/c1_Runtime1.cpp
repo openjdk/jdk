@@ -267,7 +267,9 @@ bool Runtime1::initialize(BufferBlob* blob) {
   initialize_pd();
   // generate stubs
   for (int id = 0; id < number_of_ids; id++) {
-    if (!generate_blob_for(blob, (StubID) id)) return false;
+    if (!generate_blob_for(blob, (StubID) id)) {
+      return false;
+    }
   }
   // printing
 #ifndef PRODUCT
