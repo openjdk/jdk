@@ -778,8 +778,8 @@ public:
   void movptr(Register Rd, address addr, Register tmp = noreg);
   void movptr(Register Rd, address addr, int32_t &offset, Register tmp = noreg);
  private:
-  void movptr_1(Register Rd, uintptr_t addr, int32_t &offset);
-  void movptr_2(Register Rd, uintptr_t addr, int32_t &offset, Register tmp);
+  void movptr1(Register Rd, uintptr_t addr, int32_t &offset);
+  void movptr2(Register Rd, uintptr_t addr, int32_t &offset, Register tmp);
  public:
 
   // arith

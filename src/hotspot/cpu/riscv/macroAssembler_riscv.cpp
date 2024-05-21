@@ -1596,12 +1596,12 @@ address MacroAssembler::target_addr_for_insn(address insn_addr) {
     offset = get_offset_of_pc_relative(insn_addr);
   } else if (NativeInstruction::is_movptr1_at(insn_addr)) {          // movptr
     return get_target_of_movptr(insn_addr);
+  } else if (NativeInstruction::is_movptr2_at(insn_addr)) {          // movptr2
+    return get_target_of_movptr2(insn_addr);
   } else if (NativeInstruction::is_li64_at(insn_addr)) {             // li64
     return get_target_of_li64(insn_addr);
   } else if (NativeInstruction::is_li32_at(insn_addr)) {             // li32
     return get_target_of_li32(insn_addr);
-  } else if (NativeInstruction::is_movptr2_at(insn_addr)) {          // movptr2
-    return get_target_of_movptr2(insn_addr);
   } else {
     ShouldNotReachHere();
   }
@@ -1660,13 +1660,13 @@ void MacroAssembler::movptr(Register Rd, address addr, int32_t &offset, Register
   assert(uimm64 < (1ull << 48), "48-bit overflow in address constant");
 
   if (temp == noreg) {
-    movptr_1(Rd, uimm64, offset);
+    movptr1(Rd, uimm64, offset);
   } else {
-    movptr_2(Rd, uimm64, offset, temp);
+    movptr2(Rd, uimm64, offset, temp);
   }
 }
 
-void MacroAssembler::movptr_1(Register Rd, uint64_t imm64, int32_t &offset) {
+void MacroAssembler::movptr1(Register Rd, uint64_t imm64, int32_t &offset) {
   // Load upper 31 bits
   int64_t imm = imm64 >> 17;
   int64_t upper = imm, lower = imm;
@@ -1685,7 +1685,7 @@ void MacroAssembler::movptr_1(Register Rd, uint64_t imm64, int32_t &offset) {
   offset = imm64 & 0x3f;
 }
 
-void MacroAssembler::movptr_2(Register Rd, uint64_t addr, int32_t &offset, Register tmp) {
+void MacroAssembler::movptr2(Register Rd, uint64_t addr, int32_t &offset, Register tmp) {
   assert_different_registers(Rd, tmp, noreg);
 
   uint32_t upper18 = (addr >> 30ull);
