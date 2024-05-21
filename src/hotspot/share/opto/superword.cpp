@@ -3055,7 +3055,7 @@ void VTransformGraph::determine_mem_ref_and_aw_for_main_loop_alignment() {
 
 #define TRACE_ALIGN_VECTOR_NODE(node) { \
   DEBUG_ONLY(                           \
-    if (is_trace_align_vector()) {      \
+    if (_is_trace_align_vector) {       \
       tty->print("  " #node ": ");      \
       node->dump();                     \
     }                                   \
@@ -3223,7 +3223,7 @@ void VTransformGraph::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   Node* invar        = align_to_ref_p.invar();
 
 #ifdef ASSERT
-  if (is_trace_align_vector()) {
+  if (_is_trace_align_vector) {
     tty->print_cr("\nadjust_pre_loop_limit_to_align_main_loop_vectors:");
     tty->print("  align_to_ref:");
     align_to_ref->dump();
@@ -3250,7 +3250,7 @@ void VTransformGraph::adjust_pre_loop_limit_to_align_main_loop_vectors() {
       scale  == 0 || !is_power_of_2(abs(scale))  ||
       abs(scale) >= aw) {
 #ifdef ASSERT
-    if (is_trace_align_vector()) {
+    if (_is_trace_align_vector) {
       tty->print_cr(" Alignment cannot be affected by changing pre-loop limit because");
       tty->print_cr(" stride or scale are not power of 2, or abs(scale) >= aw.");
     }
@@ -3266,7 +3266,7 @@ void VTransformGraph::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   const int AW = aw / abs(scale);
 
 #ifdef ASSERT
-  if (is_trace_align_vector()) {
+  if (_is_trace_align_vector) {
     tty->print_cr("  AW = aw(%d) / abs(scale(%d)) = %d", aw, scale, AW);
   }
 #endif
@@ -3453,6 +3453,7 @@ bool SuperWord::vtransform() const {
                         _mem_ref_for_main_loop_alignment,
                         _aw_for_main_loop_alignment
                         NOT_PRODUCT( COMMA is_trace_superword_rejections())
+                        NOT_PRODUCT( COMMA is_trace_align_vector())
                         NOT_PRODUCT( COMMA is_trace_superword_info())
                         NOT_PRODUCT( COMMA is_trace_superword_verbose())
                         );

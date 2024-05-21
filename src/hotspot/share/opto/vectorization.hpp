@@ -1352,6 +1352,7 @@ private:
 
 #ifndef PRODUCT
   bool _is_trace_rejections;
+  bool _is_trace_align_vector;
   bool _is_trace_info;
   bool _is_trace_verbose;
 #endif
@@ -1361,11 +1362,12 @@ public:
                   MemNode const* mem_ref_for_main_loop_alignment,
                   int aw_for_main_loop_alignment
                   NOT_PRODUCT( COMMA const bool is_trace_rejections)
+                  NOT_PRODUCT( COMMA const bool is_trace_align_vector)
                   NOT_PRODUCT( COMMA const bool is_trace_info)
                   NOT_PRODUCT( COMMA const bool is_trace_verbose)
                   ) :
     _vloop_analyzer(vloop_analyzer),
-    _vloop(vloop_analyzer.vloop())
+    _vloop(vloop_analyzer.vloop()),
     _arena(mtCompiler),
     _next_idx(0),
     _vtnodes(&_arena, _vloop.estimated_body_length(), 0, nullptr),
@@ -1374,14 +1376,16 @@ public:
     _mem_ref_for_main_loop_alignment(mem_ref_for_main_loop_alignment),
     _aw_for_main_loop_alignment(aw_for_main_loop_alignment)
     NOT_PRODUCT( COMMA _is_trace_rejections(is_trace_rejections) )
+    NOT_PRODUCT( COMMA _is_trace_align_vector(is_trace_align_vector) )
     NOT_PRODUCT( COMMA _is_trace_info(is_trace_info) )
     NOT_PRODUCT( COMMA _is_trace_verbose(is_trace_verbose) )
   {
 #ifndef PRODUCT
     bool is_trace =  _vloop.vtrace().is_trace(TraceAutoVectorizationTag::VTRANSFORM);
-    _is_trace_verbose    |= is_trace;
-    _is_trace_rejections |= is_trace || _is_trace_verbose;
-    _is_trace_info       |= is_trace || _is_trace_verbose;
+    _is_trace_verbose      |= is_trace;
+    _is_trace_rejections   |= is_trace || _is_trace_verbose;
+    _is_trace_align_vector |= is_trace || _is_trace_verbose;
+    _is_trace_info         |= is_trace || _is_trace_verbose;
 #endif
   }
 
@@ -1394,6 +1398,20 @@ public:
   void apply();
 
 private:
+  // TODO make sure we use these all the time!
+  PhaseIdealLoop* phase()     const { return _vloop.phase(); }
+  PhaseIterGVN& igvn()        const { return _vloop.phase()->igvn(); }
+  IdealLoopTree* lpt()        const { return _vloop.lpt(); }
+  CountedLoopNode* cl()       const { return _vloop.cl(); }
+  PhiNode* iv()               const { return _vloop.iv(); }
+  int iv_stride()             const { return cl()->stride_con(); }
+  bool in_bb(const Node* n)   const { return _vloop.in_bb(n); }
+
+  // VLoopVPointer accessors
+  const VPointer& vpointer(const MemNode* mem) const {
+    return _vloop_analyzer.vpointers().vpointer(mem);
+  }
+
   template<typename Callback>
   void for_each_memop_in_schedule(Callback callback) const;
 
