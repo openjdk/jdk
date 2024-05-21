@@ -1329,6 +1329,29 @@ class VTransformVectorNode;
 class VTransformElementWiseVectorNode;
 class VTransformReductionVectorNode;
 
+class VTransformApplyStatus {
+private:
+  Node* const _node;
+  const uint _vector_size;  // number of elements
+  const uint _vector_width; // total width in bytes
+
+  VTransformApplyStatus(Node* n, uint vector_size, uint vector_width)
+    : _node(n), _vector_size(vector_size), _vector_width(vector_width) {}
+
+public:
+  static VTransformApplyStatus make_scalar(Node* n) {
+    return VTransformApplyStatus(n, 0, 0);
+  }
+  static VTransformApplyStatus make_vector(Node* n, uint vector_size, uint vector_width) {
+    assert(vector_size > 0 && vector_width > 0, "must have nonzero size");
+    return VTransformApplyStatus(n, vector_size, vector_width);
+  }
+
+  Node* node() const { return _node; }
+  uint vector_size() const { return _vector_size; }
+  uint vector_width() const { return _vector_width; }
+};
+
 class VTransformGraph {
 private:
   const VLoopAnalyzer& _vloop_analyzer;
@@ -1475,8 +1498,8 @@ public:
   virtual VTransformElementWiseVectorNode* isa_ElementWiseVector() { return nullptr; }
   virtual VTransformReductionVectorNode* isa_ReductionVector() { return nullptr; }
 
-  virtual Node* apply(const VLoopAnalyzer& vloop_analyzer,
-                      const GrowableArray<Node*>& vnode_idx_to_transformed_node) const = 0;
+  virtual VTransformApplyStatus apply(const VLoopAnalyzer& vloop_analyzer,
+                                      const GrowableArray<Node*>& vnode_idx_to_transformed_node) const = 0;
 
   NOT_PRODUCT(virtual const char* name() const = 0;)
   NOT_PRODUCT(void print() const;)
@@ -1497,8 +1520,8 @@ public:
 
   virtual VTransformScalarNode* isa_Scalar() override { return this; }
 
-  virtual Node* apply(const VLoopAnalyzer& vloop_analyzer,
-                      const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
+  virtual VTransformApplyStatus apply(const VLoopAnalyzer& vloop_analyzer,
+                                      const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
 
   NOT_PRODUCT(virtual const char* name() const { return "Scalar"; };)
   NOT_PRODUCT(virtual void print_spec() const override;)
@@ -1535,8 +1558,8 @@ public:
 
   virtual VTransformElementWiseVectorNode* isa_ElementWiseVector() { return this; }
 
-  virtual Node* apply(const VLoopAnalyzer& vloop_analyzer,
-                      const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
+  virtual VTransformApplyStatus apply(const VLoopAnalyzer& vloop_analyzer,
+                                      const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
 
   NOT_PRODUCT(virtual const char* name() const { return "ElementWiseVector"; };)
 };
@@ -1553,8 +1576,8 @@ public:
 
   virtual VTransformReductionVectorNode* isa_ReductionVector() { return this; }
 
-  virtual Node* apply(const VLoopAnalyzer& vloop_analyzer,
-                      const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
+  virtual VTransformApplyStatus apply(const VLoopAnalyzer& vloop_analyzer,
+                                      const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
 
   NOT_PRODUCT(virtual const char* name() const { return "ReductionVector"; };)
 };
@@ -1565,8 +1588,8 @@ public:
   VTransformLoadVectorNode(VTransformGraph& graph, int number_of_nodes) :
     VTransformVectorNode(graph, 3, number_of_nodes) {}
 
-  virtual Node* apply(const VLoopAnalyzer& vloop_analyzer,
-                      const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
+  virtual VTransformApplyStatus apply(const VLoopAnalyzer& vloop_analyzer,
+                                      const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
   LoadNode::ControlDependency control_dependency() const;
 
   NOT_PRODUCT(virtual const char* name() const { return "LoadVector"; };)
@@ -1578,8 +1601,8 @@ public:
   VTransformStoreVectorNode(VTransformGraph& graph, int number_of_nodes) :
     VTransformVectorNode(graph, 4, number_of_nodes) {}
 
-  virtual Node* apply(const VLoopAnalyzer& vloop_analyzer,
-                      const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
+  virtual VTransformApplyStatus apply(const VLoopAnalyzer& vloop_analyzer,
+                                      const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
 
   NOT_PRODUCT(virtual const char* name() const { return "StoreVector"; };)
 };

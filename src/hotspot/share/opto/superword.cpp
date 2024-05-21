@@ -2313,12 +2313,12 @@ bool SuperWord::output() {
     }
   }//for (int i = 0; i < body().length(); i++)
 
-  if (max_vlen_in_bytes > C->max_vector_size()) {
-    C->set_max_vector_size(max_vlen_in_bytes);
-  }
-  if (max_vlen_in_bytes > 0) {
-    cl->mark_loop_vectorized();
-  }
+//  if (max_vlen_in_bytes > C->max_vector_size()) {
+//    C->set_max_vector_size(max_vlen_in_bytes);
+//  }
+//  if (max_vlen_in_bytes > 0) {
+//    cl->mark_loop_vectorized();
+//  }
 
   if (SuperWordLoopUnrollAnalysis) {
     if (cl->has_passed_slp()) {
