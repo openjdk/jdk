@@ -362,6 +362,9 @@ public:
     }
   }
 
+  Node* isa_unique_input_or_null(const Node_List* pack, int j) const;
+  Node_List* isa_pack_input_or_null(const Node_List* pack, int j) const;
+
 private:
   SplitStatus split_pack(const char* split_name, Node_List* pack, SplitTask task);
 public:
@@ -703,6 +706,7 @@ public:
 private:
   CountedLoopNode* cl()     const { return _vloop.cl(); }
   bool in_bb(const Node* n) const { return _vloop.in_bb(n); }
+  PhiNode* iv()             const { return _vloop.iv(); }
 
   bool is_marked_reduction(const Node* n) const {
     return _vloop_analyzer.reductions().is_marked_reduction(n);
@@ -721,6 +725,7 @@ private:
   }
 
   VTransformVectorNode* make_vtnode_for_pack(const Node_List* pack) const;
+  VTransformNode* find_input_for_vector(int j, Node_List* pack);
   void set_req_for_scalar(VTransformNode* vtn, int j, Node* n);
   void set_req_for_vector(VTransformNode* vtn, int j, Node_List* pack);
   void set_req_all_for_scalar(VTransformNode* vtn, Node* n);

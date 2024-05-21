@@ -1807,6 +1807,8 @@ uint SuperWord::max_implemented_size(const Node_List* pack) {
   }
 }
 
+// TODO replace with _packset.isa_unique_input_or_null
+// TODO maybe as a separate RFE
 //------------------------------same_inputs--------------------------
 // For pack p, are all idx operands the same?
 bool SuperWord::same_inputs(const Node_List* p, int idx) const {
@@ -3479,9 +3481,9 @@ void SuperWordVTransformBuilder::build_vtransform() {
     _dependency_set.clear();
 
     if (p0->is_Load()) {
-      set_req_for_vector(vtn, MemNode::Address, pack);
+      set_req_for_scalar(vtn, MemNode::Address, p0);
     } else if (p0->is_Store()) {
-      set_req_for_vector(vtn, MemNode::Address, pack);
+      set_req_for_scalar(vtn, MemNode::Address, p0);
       set_req_for_vector(vtn, MemNode::ValueIn, pack);
     } else if (vtn->isa_ElementWiseVector() != nullptr) {
       if (VectorNode::is_muladds2i(p0)) {
@@ -3494,7 +3496,8 @@ void SuperWordVTransformBuilder::build_vtransform() {
         set_req_all_for_vector(vtn, pack);
       }
     } else if (vtn->isa_ReductionVector() != nullptr) {
-      set_req_all_for_vector(vtn, pack);
+      set_req_for_scalar(vtn, 1, p0);
+      set_req_for_vector(vtn, 2, pack);
     } else {
       DEBUG_ONLY( vtn->print(); )
       assert(false, "vtn type not handled for inputs");
@@ -3606,12 +3609,28 @@ void SuperWordVTransformBuilder::set_req_for_scalar(VTransformNode* vtn, int j, 
   _dependency_set.set(req->_idx);
 }
 
-void SuperWordVTransformBuilder::set_req_for_vector(VTransformNode* vtn, int j, Node_List* pack) {
+VTransformNode* SuperWordVTransformBuilder::find_input_for_vector(int j, Node_List* pack) {
+  Node_List* pack_in = _packset.isa_pack_input_or_null(pack, j);
+  if (pack_in != nullptr) {
+    // Input is a matching pack -> vtnode already exists.
+    return _bb_idx_to_vtnode.at(bb_idx(pack_in->at(0)));
+  }
+
   Node* p0 = pack->at(0);
-  Node* def = p0->in(j);
-  // TODO what if not?
-  if (!in_bb(def)) { return; }
-  VTransformNode* req = _bb_idx_to_vtnode.at(bb_idx(def));
+  Node* unique = _packset.isa_unique_input_or_null(pack, j);
+  if (p0->in(j) == iv() && unique == nullptr) {
+    assert(false, "TODO populate_index");
+    return nullptr;
+  }
+
+  tty->print_cr("input at j=%d", j);
+  pack->dump();
+  assert(false, "TODO more logic");
+  return nullptr;
+}
+
+void SuperWordVTransformBuilder::set_req_for_vector(VTransformNode* vtn, int j, Node_List* pack) {
+  VTransformNode* req = find_input_for_vector(j, pack);
   vtn->set_req(j, req);
   _dependency_set.set(req->_idx);
 }
@@ -3643,4 +3662,32 @@ void SuperWordVTransformBuilder::add_dependencies(VTransformNode* vtn, Node* n) 
     if (_dependency_set.test_set(dependency->_idx)) { continue; }
     vtn->add_dependency(dependency);
   }
+}
+
+Node* PackSet::isa_unique_input_or_null(const Node_List* pack, int j) const {
+  Node* p0 = pack->at(0);
+  Node* unique = p0->in(j);
+  for (uint i = 1; i < pack->size(); i++) {
+    if (pack->at(i)->in(j) != unique) {
+      return nullptr;
+    }
+  }
+  return unique;
+}
+
+Node_List* PackSet::isa_pack_input_or_null(const Node_List* pack, int j) const {
+  Node* p0 = pack->at(0);
+  Node* def0 = p0->in(j);
+
+  Node_List* pack_in = get_pack(def0);
+  if (pack_in == nullptr || pack->size() != pack_in->size()) {
+    return nullptr;
+  }
+
+  for (uint i = 1; i < pack->size(); i++) {
+    if (pack->at(i)->in(j) != pack_in->at(i)) {
+      return nullptr;
+    }
+  }
+  return pack_in;
 }
