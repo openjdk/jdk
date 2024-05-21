@@ -343,37 +343,6 @@ void TenuredGeneration::gc_prologue() {
   _used_at_prologue = used();
 }
 
-bool TenuredGeneration::should_collect(bool  full,
-                                       size_t size,
-                                       bool   is_tlab) {
-  // This should be one big conditional or (||), but I want to be able to tell
-  // why it returns what it returns (without re-evaluating the conditionals
-  // in case they aren't idempotent), so I'm doing it this way.
-  // DeMorgan says it's okay.
-  if (full) {
-    log_trace(gc)("TenuredGeneration::should_collect: because full");
-    return true;
-  }
-  if (should_allocate(size, is_tlab)) {
-    log_trace(gc)("TenuredGeneration::should_collect: because should_allocate(" SIZE_FORMAT ")", size);
-    return true;
-  }
-  // If we don't have very much free space.
-  // XXX: 10000 should be a percentage of the capacity!!!
-  if (free() < 10000) {
-    log_trace(gc)("TenuredGeneration::should_collect: because free(): " SIZE_FORMAT, free());
-    return true;
-  }
-  // If we had to expand to accommodate promotions from the young generation
-  if (_capacity_at_prologue < capacity()) {
-    log_trace(gc)("TenuredGeneration::should_collect: because_capacity_at_prologue: " SIZE_FORMAT " < capacity(): " SIZE_FORMAT,
-        _capacity_at_prologue, capacity());
-    return true;
-  }
-
-  return false;
-}
-
 void TenuredGeneration::compute_new_size() {
   assert_locked_or_safepoint(Heap_lock);
 
