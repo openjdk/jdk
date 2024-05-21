@@ -89,13 +89,10 @@ public class IO {
     @EnabledOnOs({OS.LINUX, OS.MAC})
     @ValueSource(strings = {"println", "print"})
     public void outputTestInteractive(String mode) throws Exception {
-        var expect = Paths.get("/usr/bin/expect"); // os-specific path
-        if (!Files.exists(expect) || !Files.isExecutable(expect)) {
-            throw new SkippedException("'" + expect + "' not found");
-        }
+        var expect = findExpect();
         var testSrc = System.getProperty("test.src", ".");
         OutputAnalyzer output = ProcessTools.executeProcess(
-                "expect",
+                expect.toString(),
                 Path.of(testSrc, "output.exp").toAbsolutePath().toString(),
                 System.getProperty("test.jdk") + "/bin/java",
                 "--enable-preview",
@@ -116,6 +113,14 @@ public class IO {
                 out.substring(out.length() / 2));
     }
 
+    private Path findExpect() {
+        var expect = Paths.get("/usr/bin/expect"); // os-specific path
+        if (!Files.exists(expect) || !Files.isExecutable(expect)) {
+            throw new SkippedException("'" + expect + "' not found");
+        }
+        return expect;
+    }
+
     /*
      * This tests simulates terminal interaction (isatty), to check that the
      * prompt is output.
@@ -128,13 +133,10 @@ public class IO {
     @MethodSource("args")
     @EnabledOnOs({OS.LINUX, OS.MAC})
     public void inputTestInteractive(String console, String prompt) throws Exception {
-        var expect = Paths.get("/usr/bin/expect"); // os-specific path
-        if (!Files.exists(expect) || !Files.isExecutable(expect)) {
-            throw new SkippedException("'" + expect + "' not found");
-        }
+        var expect = findExpect();
         var testSrc = System.getProperty("test.src", ".");
         var command = new ArrayList<String>();
-        command.add("expect");
+        command.add(expect.toString());
         command.add(Path.of(testSrc, "input.exp").toAbsolutePath().toString());
         command.add(System.getProperty("test.jdk") + "/bin/java");
         command.add("--enable-preview");
