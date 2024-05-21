@@ -351,7 +351,7 @@ public class Indify {
         ClassModel model = parseClassFile(f);
         Logic logic = new Logic(model);
         ClassModel newClassModel = logic.transform();
-        assert newClassModel != null;
+        if(newClassModel == null) throw new IOException("No transformation has been done when transforming the class file: " + f.getName());
         logic.reportPatternMethods(quiet, keepgoing);
         writeNewClassFile(newClassModel);
     }
