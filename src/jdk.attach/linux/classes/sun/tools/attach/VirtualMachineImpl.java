@@ -53,12 +53,10 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
     private static final Path NS_MNT   = Path.of("ns/mnt");
     private static final Path NS_PID   = Path.of("ns/pid");
     private static final Path SELF     = PROC.resolve("self");
-    private static final Path TMP      = Path.of("tmp");
     private static final Path STATUS   = Path.of("status");
     private static final Path ROOT_TMP = Path.of("root/tmp");
 
     private static final Optional<Path> SELF_MNT_NS;
-    private static final Optional<Path> SELF_PID_NS;
 
     static {
         Path nsPath = null;
@@ -69,14 +67,6 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
             // do nothing
         } finally {
             SELF_MNT_NS = Optional.ofNullable(nsPath);
-        }
-
-        try {
-            nsPath = Files.readSymbolicLink(SELF.resolve(NS_PID));
-        } catch (IOException _) {
-            // do nothing
-        } finally {
-            SELF_PID_NS = Optional.ofNullable(nsPath);
         }
     }
 
@@ -294,7 +284,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
                     throw new IOException(String.format("unable to attach, %s non-existent! process: %d terminated", procPidPath, pid));
                 }
 
-                // ok so if we get here we have failed to read the target's mnt ns, but the tgt process still exists ... we do not have privileges to read its procfs
+                // ok so if we get here we have failed to read the target's mnt ns, but the target process still exists ... we do not have privileges to read its procfs
             }
 
             final var sameMountNS = SELF_MNT_NS.isPresent() && SELF_MNT_NS.equals(targetMountNS); // will be false  if we did not read the target's mnt ns
@@ -320,7 +310,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
                     throw new IOException(String.format("unable to attach, %s non-existent! process: %d terminated", procPidPath, pid));
                 }
 
-                // ok so if we get here we have failed to read the target's pid ns, but the tgt process still exists ... we do not have privileges to read its procfs
+                // ok so if we get here we have failed to read the target's pid ns, but the target process still exists ... we do not have privileges to read its procfs
             }
 
             // recurse "up" the process hierarchy... if appropriate
