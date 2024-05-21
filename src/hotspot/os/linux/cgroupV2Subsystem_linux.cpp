@@ -36,15 +36,11 @@
  *    OSCONTAINER_ERROR for not supported
  */
 int CgroupV2CpuController::cpu_shares() {
-  int shares;
-  int err = cg_file_contents_ctrl(static_cast<CgroupV2Controller*>(this), "/cpu.weight", "%d", &shares);
-  if (err != 0) {
-    log_trace(os, container)("Raw value for CPU Shares is: %d", OSCONTAINER_ERROR);
-    return OSCONTAINER_ERROR;
-  }
-  log_trace(os, container)("Raw value for CPU Shares is: %d", shares);
+  julong shares;
+  CONTAINER_READ_NUMBER_CHECKED(static_cast<CgroupV2Controller*>(this), "/cpu.weight", "Raw value for CPU Shares", shares);
+  int shares_int = (int)shares;
   // Convert default value of 100 to no shares setup
-  if (shares == 100) {
+  if (shares_int == 100) {
     log_debug(os, container)("CPU Shares is: %d", -1);
     return -1;
   }
@@ -56,7 +52,7 @@ int CgroupV2CpuController::cpu_shares() {
   // Use the inverse of (x == OCI value, y == cgroupsv2 value):
   // ((262142 * y - 1)/9999) + 2 = x
   //
-  int x = 262142 * shares - 1;
+  int x = 262142 * shares_int - 1;
   double frac = x/9999.0;
   x = ((int)frac) + 2;
   log_trace(os, container)("Scaled CPU shares value is: %d", x);
@@ -78,17 +74,6 @@ int CgroupV2CpuController::cpu_shares() {
   return x;
 }
 
-static
-char* cpu_quota_val(CgroupV2Controller* ctrl) {
-  char quota[1024];
-  int err = cg_file_contents_ctrl(ctrl, "/cpu.max", "%1023s %*d", quota);
-  if (err != 0) {
-    return nullptr;
-  }
-  log_trace(os, container)("Raw value for CPU quota is: %s", quota);
-  return os::strdup(quota);
-}
-
 /* cpu_quota
  *
  * Return the number of microseconds per period
@@ -100,39 +85,36 @@ char* cpu_quota_val(CgroupV2Controller* ctrl) {
  *    OSCONTAINER_ERROR for not supported
  */
 int CgroupV2CpuController::cpu_quota() {
-  char * cpu_quota_str = cpu_quota_val(static_cast<CgroupV2Controller*>(this));
-  int limit = (int)CgroupUtil::limit_from_str(cpu_quota_str);
+  jlong quota_val;
+  bool is_ok = read_numerical_tuple_value("/cpu.max", FIRST, &quota_val);
+  if (!is_ok) {
+    return OSCONTAINER_ERROR;
+  }
+  int limit = (int)quota_val;
   log_trace(os, container)("CPU Quota is: %d", limit);
   return limit;
 }
 
 char * CgroupV2Subsystem::cpu_cpuset_cpus() {
-  char cpus[1024];
-  int err = cg_file_contents_ctrl(static_cast<CgroupV2Controller*>(_unified), "/cpuset.cpus", "%1023s", cpus);
-  if (err != 0) {
-    return nullptr;
-  }
-  log_trace(os, container)("cpuset.cpus is: %s", cpus);
-  return os::strdup(cpus);
+  char* cpus = nullptr;
+  CONTAINER_READ_STRING_CHECKED(_unified, "/cpuset.cpus", "cpuset.cpus", cpus);
+  return cpus;
 }
 
 char * CgroupV2Subsystem::cpu_cpuset_memory_nodes() {
-  char mems[1024];
-  int err = cg_file_contents_ctrl(static_cast<CgroupV2Controller*>(_unified), "/cpuset.mems", "%1023s", mems);
-  if (err != 0) {
-    return nullptr;
-  }
-  log_trace(os, container)("cpuset.mems is: %s", mems);
-  return os::strdup(mems);
+  char* mems;
+  CONTAINER_READ_STRING_CHECKED(_unified, "/cpuset.mems", "cpuset.mems", mems);
+  return mems;
 }
 
 int CgroupV2CpuController::cpu_period() {
-  int period;
-  int err = cg_file_contents_ctrl(static_cast<CgroupV2Controller*>(this), "/cpu.max", "%*s %d", &period);
-  if (err != 0) {
-    log_trace(os, container)("CPU Period is: %d", OSCONTAINER_ERROR);
+  jlong period_val;
+  bool is_ok = _unified->read_numerical_tuple_value("/cpu.max", SECOND, &period_val);
+  if (!is_ok) {
+    log_trace(os, container)("CPU Period failed: %d", OSCONTAINER_ERROR);
     return OSCONTAINER_ERROR;
   }
+  int period = (int)period_val;
   log_trace(os, container)("CPU Period is: %d", period);
   return period;
 }
@@ -147,25 +129,16 @@ int CgroupV2CpuController::cpu_period() {
  *    OSCONTAINER_ERROR for not supported
  */
 jlong CgroupV2MemoryController::memory_usage_in_bytes() {
-  jlong memusage;
-  int err = cg_file_contents_ctrl(static_cast<CgroupV2Controller*>(this), "/memory.current", JLONG_FORMAT, &memusage);
-  if (err != 0) {
-    log_trace(os, container)("Memory Usage is: %d", OSCONTAINER_ERROR);
-    return OSCONTAINER_ERROR;
-  }
-  log_trace(os, container)("Memory Usage is: " JLONG_FORMAT, memusage);
-  return memusage;
+  julong memusage;
+  CONTAINER_READ_NUMBER_CHECKED(static_cast<CgroupV2Controller*>(this), "/memory.current", "Memory Usage", memusage);
+  return (jlong)memusage;
 }
 
 static
 char* mem_soft_limit_val(CgroupController* ctrl) {
-  char mem_soft_limit_str[1024];
-  int err = cg_file_contents_ctrl(ctrl, "/memory.low", "%1023s", mem_soft_limit_str);
-  if (err != 0) {
-    return nullptr;
-  }
-  log_trace(os, container)("Memory Soft Limit is: %s", mem_soft_limit_str);
-  return os::strdup(mem_soft_limit_str);
+  char* mem_soft_limit_str = nullptr;
+  CONTAINER_READ_STRING_CHECKED(ctrl, "/memory.low", "Memory Soft Limit", mem_soft_limit_str);
+  return mem_soft_limit_str;
 }
 
 jlong CgroupV2MemoryController::memory_soft_limit_in_bytes(julong phys_mem) {
@@ -181,9 +154,8 @@ jlong CgroupV2MemoryController::memory_max_usage_in_bytes() {
 
 jlong CgroupV2MemoryController::rss_usage_in_bytes() {
   julong rss;
-  int err = cg_file_multi_line_ctrl(static_cast<CgroupV2Controller*>(this), "/memory.stat",
-                                    "anon", JULONG_FORMAT, &rss);
-  if (err != 0) {
+  bool is_ok = read_numerical_key_value("/memory.stat", "anon", &rss);
+  if (!is_ok) {
     return OSCONTAINER_ERROR;
   }
   log_trace(os, container)("RSS usage is: " JULONG_FORMAT, rss);
@@ -192,9 +164,8 @@ jlong CgroupV2MemoryController::rss_usage_in_bytes() {
 
 jlong CgroupV2MemoryController::cache_usage_in_bytes() {
   julong cache;
-  int err = cg_file_multi_line_ctrl(static_cast<CgroupV2Controller*>(this), "/memory.stat",
-                                    "file", JULONG_FORMAT, &cache);
-  if (err != 0) {
+  bool is_ok = read_numerical_key_value("/memory.stat", "file", &cache);
+  if (!is_ok) {
     return OSCONTAINER_ERROR;
   }
   log_trace(os, container)("Cache usage is: " JULONG_FORMAT, cache);
@@ -203,15 +174,9 @@ jlong CgroupV2MemoryController::cache_usage_in_bytes() {
 
 static
 char* mem_swp_limit_val(CgroupController* ctrl) {
-  char mem_swp_limit_str[1024];
-  int err = cg_file_contents_ctrl(ctrl, "/memory.swap.max", "%1023s", mem_swp_limit_str);
-  if (err != 0) {
-    return nullptr;
-  }
-  // FIXME: This log-line is misleading, since it reads the swap limit only, not memory *and*
-  // swap limit.
-  log_trace(os, container)("Memory and Swap Limit is: %s", mem_swp_limit_str);
-  return os::strdup(mem_swp_limit_str);
+  char* mem_swp_limit_str;
+  CONTAINER_READ_STRING_CHECKED(ctrl, "/memory.swap.max", "Swap Limit", mem_swp_limit_str);
+  return mem_swp_limit_str;
 }
 
 // Note that for cgroups v2 the actual limits set for swap and
@@ -240,13 +205,9 @@ jlong CgroupV2MemoryController::memory_and_swap_limit_in_bytes(julong phys_mem, 
 // memory.swap.current : total amount of swap currently used by the cgroup and its descendants
 static
 char* mem_swp_current_val(CgroupV2Controller* ctrl) {
-  char mem_swp_current_str[1024];
-  int err = cg_file_contents_ctrl(ctrl, "/memory.swap.current", "%1023s", mem_swp_current_str);
-  if (err != 0) {
-    return nullptr;
-  }
-  log_trace(os, container)("Swap currently used is: %s", mem_swp_current_str);
-  return os::strdup(mem_swp_current_str);
+  char* mem_swp_current_str;
+  CONTAINER_READ_STRING_CHECKED(ctrl, "/memory.swap.current", "Swap currently used", mem_swp_current_str);
+  return mem_swp_current_str;
 }
 
 
@@ -262,13 +223,9 @@ jlong CgroupV2MemoryController::memory_and_swap_usage_in_bytes(julong host_mem, 
 
 static
 char* mem_limit_val(CgroupV2Controller* ctrl) {
-  char mem_limit_str[1024];
-  int err = cg_file_contents_ctrl(ctrl, "/memory.max", "%1023s", mem_limit_str);
-  if (err != 0) {
-    return nullptr;
-  }
-  log_trace(os, container)("Raw value for memory limit is: %s", mem_limit_str);
-  return os::strdup(mem_limit_str);
+  char* mem_limit_str;
+  CONTAINER_READ_STRING_CHECKED(ctrl, "/memory.max", "Raw value for memory limit", mem_limit_str);
+  return mem_limit_str;
 }
 
 /* read_memory_limit_in_bytes
@@ -330,13 +287,9 @@ char* CgroupV2Controller::construct_path(char* mount_path, char *cgroup_path) {
 }
 
 char* CgroupV2Subsystem::pids_max_val() {
-  char pidsmax[1024];
-  int err = cg_file_contents_ctrl(static_cast<CgroupV2Controller*>(_unified), "/pids.max", "%1023s", pidsmax);
-  if (err != 0) {
-    return nullptr;
-  }
-  log_trace(os, container)("Maximum number of tasks is: %s", pidsmax);
-  return os::strdup(pidsmax);
+  char* pidsmax;
+  CONTAINER_READ_STRING_CHECKED(static_cast<CgroupV2Controller*>(_unified), "/pids.max", "Maximum number of tasks", pidsmax);
+  return pidsmax;
 }
 
 /* pids_max
@@ -362,12 +315,7 @@ jlong CgroupV2Subsystem::pids_max() {
  *    OSCONTAINER_ERROR for not supported
  */
 jlong CgroupV2Subsystem::pids_current() {
-  jlong pids_current;
-  int err = cg_file_contents_ctrl(static_cast<CgroupV2Controller*>(_unified), "/pids.current", JLONG_FORMAT, &pids_current);
-  if (err != 0) {
-    log_trace(os, container)("Current number of tasks is: %d", OSCONTAINER_ERROR);
-    return OSCONTAINER_ERROR;
-  }
-  log_trace(os, container)("Current number of tasks is: " JLONG_FORMAT, pids_current);
+  julong pids_current;
+  CONTAINER_READ_NUMBER_CHECKED(static_cast<CgroupV2Controller*>(_unified), "/pids.current", "Current number of tasks", pids_current);
   return pids_current;
 }

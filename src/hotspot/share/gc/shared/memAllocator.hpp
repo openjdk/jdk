@@ -52,9 +52,6 @@ private:
   // Allocate outside a TLAB. Could safepoint.
   HeapWord* mem_allocate_outside_tlab(Allocation& allocation) const;
 
-  // Fast-path TLAB allocation failed. Takes a slow-path and potentially safepoint.
-  HeapWord* mem_allocate_slow(Allocation& allocation) const;
-
 protected:
   MemAllocator(Klass* klass, size_t word_size, Thread* thread)
     : _thread(thread),
@@ -115,6 +112,33 @@ public:
     : MemAllocator(klass, word_size, thread) {}
 
   virtual oop initialize(HeapWord* mem) const;
+};
+
+// Manages a scope where a failed heap allocation results in
+// suppression of JVMTI "resource exhausted" events and
+// throwing a shared, backtrace-less OOME instance.
+// Used for OOMEs that will not be propagated to user code.
+class InternalOOMEMark: public StackObj {
+ private:
+  bool _outer;
+  JavaThread* _thread;
+
+ public:
+  explicit InternalOOMEMark(JavaThread* thread) {
+    assert(thread != nullptr, "nullptr is not supported");
+    _outer = thread->is_in_internal_oome_mark();
+    thread->set_is_in_internal_oome_mark(true);
+    _thread = thread;
+  }
+
+  ~InternalOOMEMark() {
+    // Check that only InternalOOMEMark sets
+    // JavaThread::_is_in_internal_oome_mark
+    assert(_thread->is_in_internal_oome_mark(), "must be");
+    _thread->set_is_in_internal_oome_mark(_outer);
+  }
+
+  JavaThread* thread() const  { return _thread; }
 };
 
 #endif // SHARE_GC_SHARED_MEMALLOCATOR_HPP

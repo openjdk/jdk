@@ -173,7 +173,7 @@ public:
 
   virtual void clear(bool mangle_space);
   virtual void mangle_unused_area() PRODUCT_RETURN;
-  virtual void mangle_unused_area_complete() PRODUCT_RETURN;
+
   virtual void mangle_region(MemRegion mr) PRODUCT_RETURN;
   virtual void check_mangled_unused_area(HeapWord* limit) PRODUCT_RETURN;
   virtual void check_mangled_unused_area_complete() PRODUCT_RETURN;

@@ -142,6 +142,10 @@ public:
     return mach->barrier_data() != ZBarrierElided;
   }
 
+  bool needs_livein_data() const {
+    return true;
+  }
+
   void inc_trampoline_stubs_count() {
     assert(_trampoline_stubs_count != INT_MAX, "Overflow");
     ++_trampoline_stubs_count;
@@ -200,6 +204,9 @@ ZLoadBarrierStubC2::ZLoadBarrierStubC2(const MachNode* node, Address ref_addr, R
     _ref(ref) {
   assert_different_registers(ref, ref_addr.base());
   assert_different_registers(ref, ref_addr.index());
+  // The runtime call updates the value of ref, so we should not spill and
+  // reload its outdated value.
+  dont_preserve(ref);
 }
 
 Address ZLoadBarrierStubC2::ref_addr() const {
@@ -208,10 +215,6 @@ Address ZLoadBarrierStubC2::ref_addr() const {
 
 Register ZLoadBarrierStubC2::ref() const {
   return _ref;
-}
-
-Register ZLoadBarrierStubC2::result() const {
-  return ref();
 }
 
 address ZLoadBarrierStubC2::slow_path() const {
@@ -270,10 +273,6 @@ bool ZStoreBarrierStubC2::is_native() const {
 
 bool ZStoreBarrierStubC2::is_atomic() const {
   return _is_atomic;
-}
-
-Register ZStoreBarrierStubC2::result() const {
-  return noreg;
 }
 
 void ZStoreBarrierStubC2::emit_code(MacroAssembler& masm) {

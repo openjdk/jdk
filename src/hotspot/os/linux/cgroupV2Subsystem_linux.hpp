@@ -82,8 +82,6 @@ class CgroupV2Subsystem: public CgroupSubsystem {
     CachingCgroupController<CgroupMemoryController*>* _memory = nullptr;
     CachingCgroupController<CgroupCpuController*>* _cpu = nullptr;
 
-    char *pids_max_val();
-
   public:
     CgroupV2Subsystem(CgroupV2MemoryController * memory,
                       CgroupV2CpuController* cpu) {

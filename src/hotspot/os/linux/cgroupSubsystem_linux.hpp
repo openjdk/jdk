@@ -69,158 +69,49 @@
 #define MEMORY_IDX     3
 #define PIDS_IDX       4
 
+#define CONTAINER_READ_NUMBER_CHECKED(controller, filename, log_string, retval)       \
+{                                                                                     \
+  bool is_ok;                                                                         \
+  is_ok = controller->read_number(filename, &retval);                                 \
+  if (!is_ok) {                                                                       \
+    log_trace(os, container)(log_string " failed: %d", OSCONTAINER_ERROR);            \
+    return OSCONTAINER_ERROR;                                                         \
+  }                                                                                   \
+  log_trace(os, container)(log_string " is: " JULONG_FORMAT, retval);                 \
+}
+
+#define CONTAINER_READ_STRING_CHECKED(controller, filename, log_string, retval)       \
+{                                                                                     \
+  bool is_ok;                                                                         \
+  is_ok = controller->read_string(filename, &retval);                                 \
+  if (!is_ok) {                                                                       \
+    log_trace(os, container)(log_string " failed: %d", OSCONTAINER_ERROR);            \
+    return nullptr;                                                                   \
+  }                                                                                   \
+  log_trace(os, container)(log_string " is: %s", retval);                             \
+}
+
+
+enum TupleValue { FIRST, SECOND };
+
 class CgroupController: public CHeapObj<mtInternal> {
   public:
     virtual char *subsystem_path() = 0;
-};
-
-PRAGMA_DIAG_PUSH
-PRAGMA_FORMAT_NONLITERAL_IGNORED
-template <typename T> int __cg_file_contents_impl(const char *absolute_path,
-                                                  const char *scan_fmt,
-                                                  T returnval) {
-  FILE* fp = os::fopen(absolute_path, "r");
-  if (fp == nullptr) {
-    log_debug(os, container)("Open of file %s failed, %s", absolute_path, os::strerror(errno));
-    return OSCONTAINER_ERROR;
-  }
-
-  const int buf_len = MAXPATHLEN+1;
-  char buf[buf_len];
-  char* line = fgets(buf, buf_len, fp);
-  if (line == nullptr) {
-    log_debug(os, container)("Empty file %s", absolute_path);
-    fclose(fp);
-    return OSCONTAINER_ERROR;
-  }
-  fclose(fp);
-
-  int matched = sscanf(line, scan_fmt, returnval);
-  if (matched == 1) {
-    return 0;
-  } else {
-    log_debug(os, container)("Type %s not found in file %s", scan_fmt, absolute_path);
-  }
-  return OSCONTAINER_ERROR;
-}
-PRAGMA_DIAG_POP
-
-PRAGMA_DIAG_PUSH
-PRAGMA_FORMAT_NONLITERAL_IGNORED
-template <typename T> int cg_file_contents_ctrl(CgroupController* c,
-                                                const char *filename,
-                                                const char *scan_fmt,
-                                                T returnval) {
-  if (c == nullptr) {
-    log_debug(os, container)("cg_file_contents_ctrl: CgroupController* is null");
-    return OSCONTAINER_ERROR;
-  }
-  if (c->subsystem_path() == nullptr) {
-    log_debug(os, container)("cg_file_contents_ctrl: subsystem path is null");
-    return OSCONTAINER_ERROR;
-  }
-  if (scan_fmt == nullptr || returnval == nullptr) {
-    log_debug(os, container)("cg_file_contents_ctrl: scan_fmt or return pointer is null");
-    return OSCONTAINER_ERROR;
-  }
-
-  stringStream file_path;
-  file_path.print_raw(c->subsystem_path());
-  file_path.print_raw(filename);
-
-  if (file_path.size() > MAXPATHLEN) {
-    log_debug(os, container)("File path too long %s, %s", file_path.base(), filename);
-    return OSCONTAINER_ERROR;
-  }
-  const char* absolute_path = file_path.freeze();
-  log_trace(os, container)("Path to %s is %s", filename, absolute_path);
-  return __cg_file_contents_impl<T>(absolute_path, scan_fmt, returnval);
-}
-PRAGMA_DIAG_POP
-
-PRAGMA_DIAG_PUSH
-PRAGMA_FORMAT_NONLITERAL_IGNORED
-template <typename T> int __cg_file_multi_line_impl(const char *absolute_path,
-                                                    const char *key,
-                                                    const char *scan_fmt,
-                                                    T returnval) {
-  FILE* fp = os::fopen(absolute_path, "r");
-  if (fp == nullptr) {
-    log_debug(os, container)("Open of file %s failed, %s", absolute_path, os::strerror(errno));
-    return OSCONTAINER_ERROR;
-  }
-
-  const int buf_len = MAXPATHLEN+1;
-  char buf[buf_len];
-  char* line = fgets(buf, buf_len, fp);
-  if (line == nullptr) {
-    log_debug(os, container)("Empty file %s", absolute_path);
-    fclose(fp);
-    return OSCONTAINER_ERROR;
-  }
-
-  bool found_match = false;
-  // File consists of multiple lines in a "key value"
-  // fashion, we have to find the key.
-  const int key_len = (int)strlen(key);
-  for (; line != nullptr; line = fgets(buf, buf_len, fp)) {
-    char* key_substr = strstr(line, key);
-    char after_key = line[key_len];
-    if (key_substr == line
-          && isspace(after_key) != 0
-          && after_key != '\n') {
-      // Skip key, skip space
-      const char* value_substr = line + key_len + 1;
-      int matched = sscanf(value_substr, scan_fmt, returnval);
-      found_match = matched == 1;
-      if (found_match) {
-        break;
+    bool read_number(const char* filename, julong* result);
+    bool read_string(const char* filename, char** result);
+    bool read_numerical_tuple_value(const char* filename, TupleValue val, jlong* result);
+    bool read_numerical_key_value(const char* filename, const char* key, julong* result);
+  private:
+    inline static const char* tuple_format(TupleValue val) {
+      switch(val) {
+        case FIRST:  return "%1023s %*s";
+        case SECOND: return "%*s %1023s";
       }
+      return nullptr;
     }
-  }
-  fclose(fp);
-  if (found_match) {
-    return 0;
-  }
-  log_debug(os, container)("Type %s (key == %s) not found in file %s", scan_fmt,
-                           key, absolute_path);
-  return OSCONTAINER_ERROR;
-}
-PRAGMA_DIAG_POP
-
-PRAGMA_DIAG_PUSH
-PRAGMA_FORMAT_NONLITERAL_IGNORED
-template <typename T> int cg_file_multi_line_ctrl(CgroupController* c,
-                                                  const char *filename,
-                                                  const char *key,
-                                                  const char *scan_fmt,
-                                                  T returnval) {
-  if (c == nullptr) {
-    log_debug(os, container)("cg_file_multi_line_ctrl: CgroupController* is null");
-    return OSCONTAINER_ERROR;
-  }
-  if (c->subsystem_path() == nullptr) {
-    log_debug(os, container)("cg_file_multi_line_ctrl: subsystem path is null");
-    return OSCONTAINER_ERROR;
-  }
-  if (key == nullptr || scan_fmt == nullptr || returnval == nullptr) {
-    log_debug(os, container)("cg_file_multi_line_ctrl: key, scan_fmt or return pointer is null");
-    return OSCONTAINER_ERROR;
-  }
-
-  stringStream file_path;
-  file_path.print_raw(c->subsystem_path());
-  file_path.print_raw(filename);
-
-  if (file_path.size() > MAXPATHLEN) {
-    log_debug(os, container)("File path too long %s, %s", file_path.base(), filename);
-    return OSCONTAINER_ERROR;
-  }
-  const char* absolute_path = file_path.freeze();
-  log_trace(os, container)("Path to %s is %s", filename, absolute_path);
-  return __cg_file_multi_line_impl<T>(absolute_path, key, scan_fmt, returnval);
-}
-PRAGMA_DIAG_POP
+    template <typename T>
+       bool read_from_file(const char* filename, const char* scan_fmt, T result);
+};
 
 class CachedMetric : public CHeapObj<mtInternal>{
   private:
@@ -288,6 +179,7 @@ class CgroupSubsystem: public CHeapObj<mtInternal> {
   public:
     jlong memory_limit_in_bytes();
     int active_processor_count();
+    static jlong limit_from_str(char* limit_str);
 
     virtual jlong pids_max() = 0;
     virtual jlong pids_current() = 0;
