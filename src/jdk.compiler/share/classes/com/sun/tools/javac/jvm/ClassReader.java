@@ -30,10 +30,12 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.CharBuffer;
 import java.nio.file.ClosedFileSystemException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
@@ -590,7 +592,24 @@ public class ClassReader {
                 ClassSymbol t = enterClass(readName(signatureBuffer,
                                                          startSbp,
                                                          sbp - startSbp));
-                outer = new ClassType(outer, sigToTypes('>'), t) {
+                List<Type> actuals = sigToTypes('>');
+                List<Type> formals = ((ClassType)t.type.tsym.type).typarams_field;
+                if (formals != null) {
+                    if (actuals.isEmpty())
+                        actuals = formals;
+                    else
+                        updateBounds(actuals, formals);
+                }
+                if (actuals.length() != (formals == null ? 0 : formals.length())) {
+                    final List<Type> actualsCp = actuals;
+                    addSymbolReadListener(t, () -> {
+                        List<Type> formalsCp = ((ClassType)t.type.tsym.type).typarams_field;
+                        if (formalsCp != null && !formalsCp.isEmpty()) {
+                            updateBounds(actualsCp, formalsCp);
+                        }
+                    });
+                }
+                outer = new ClassType(outer, actuals, t) {
                         boolean completed = false;
                         @Override @DefinedBy(Api.LANGUAGE_MODEL)
                         public Type getEnclosingType() {
@@ -663,6 +682,18 @@ public class ClassReader {
             default:
                 signatureBuffer[sbp++] = c;
                 continue;
+            }
+        }
+    }
+
+    private void updateBounds(List<Type> actuals, List<Type> formals) {
+        if (actuals.length() == formals.length()) {
+            List<Type> a = actuals;
+            List<Type> f = formals;
+            while (a.nonEmpty()) {
+                a.head = a.head.withTypeVar(f.head);
+                a = a.tail;
+                f = f.tail;
             }
         }
     }
@@ -2877,6 +2908,21 @@ public class ClassReader {
         return syms.enterClass(currentModule, name, owner);
     }
 
+    Map<ClassSymbol, java.util.List<SymbolReadListener>> symbolReadListeners = new LinkedHashMap<>();
+
+    interface SymbolReadListener {
+        void symbolRead();
+    }
+
+    private void addSymbolReadListener(ClassSymbol csym, SymbolReadListener listener) {
+        java.util.List<SymbolReadListener> listeners = symbolReadListeners.get(csym);
+        if (listeners == null) {
+            listeners = new ArrayList<>();
+        }
+        listeners.add(listener);
+        symbolReadListeners.put(csym, listeners);
+    }
+
     /** Read contents of a given class symbol `c'. Both external and internal
      *  versions of an inner class are read.
      */
@@ -2962,6 +3008,13 @@ public class ClassReader {
             }
         }
         typevars = typevars.leave();
+        java.util.List<SymbolReadListener> listeners = symbolReadListeners.get(c);
+        if (listeners != null) {
+            for (SymbolReadListener listener : listeners) {
+                listener.symbolRead();
+            }
+            symbolReadListeners.remove(c);
+        }
     }
 
     private MethodSymbol lookupMethod(TypeSymbol tsym, Name name, List<Type> argtypes) {
