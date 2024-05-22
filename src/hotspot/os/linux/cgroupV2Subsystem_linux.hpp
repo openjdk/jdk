@@ -56,11 +56,11 @@ class CgroupV2Subsystem: public CgroupSubsystem {
     CachingCgroupController* _memory = nullptr;
     CachingCgroupController* _cpu = nullptr;
 
-    char *mem_limit_val();
-    char *mem_swp_limit_val();
-    char *mem_swp_current_val();
-    char *mem_soft_limit_val();
-    char *pids_max_val();
+    char *mem_limit_val(char* buf);
+    char *mem_swp_limit_val(char* buf);
+    char *mem_swp_current_val(char* buf);
+    char *mem_soft_limit_val(char* buf);
+    char *pids_max_val(char* buf);
 
   public:
     CgroupV2Subsystem(CgroupController * unified) {

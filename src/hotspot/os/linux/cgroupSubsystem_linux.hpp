@@ -83,7 +83,7 @@
 #define CONTAINER_READ_STRING_CHECKED(controller, filename, log_string, retval)       \
 {                                                                                     \
   bool is_ok;                                                                         \
-  is_ok = controller->read_string(filename, &retval);                                 \
+  is_ok = controller->read_string(filename, retval);                                  \
   if (!is_ok) {                                                                       \
     log_trace(os, container)(log_string " failed: %d", OSCONTAINER_ERROR);            \
     return nullptr;                                                                   \
@@ -103,19 +103,9 @@ class CgroupController: public CHeapObj<mtInternal> {
   public:
     virtual char *subsystem_path() = 0;
     bool read_number(const char* filename, julong* result);
-    bool read_string(const char* filename, char** result);
+    bool read_string(const char* filename, char* buf);
     bool read_numerical_tuple_value(const char* filename, TupleValue val, jlong* result);
     bool read_numerical_key_value(const char* filename, const char* key, julong* result);
-  private:
-    inline static const char* tuple_format(TupleValue val) {
-      switch(val) {
-        case TupleValue::FIRST:  return "%1023s %*s";
-        case TupleValue::SECOND: return "%*s %1023s";
-      }
-      return nullptr;
-    }
-    template <typename T>
-       bool read_from_file(const char* filename, const char* scan_fmt, T result);
 };
 
 class CachedMetric : public CHeapObj<mtInternal>{

@@ -193,10 +193,11 @@ TEST(cgroupTest, read_string_beyond_max_path) {
   larger_than_max[MAXPATHLEN] = '\0';
   TestController* too_large_path_controller = new TestController(larger_than_max);
   const char* test_file_path = "/file-not-found";
-  char* foo = nullptr;
-  bool is_ok = too_large_path_controller->read_string(test_file_path, &foo);
+  char foo[1024];
+  foo[0] = '\0';
+  bool is_ok = too_large_path_controller->read_string(test_file_path, foo);
   EXPECT_FALSE(is_ok) << "Too long path should be an error";
-  EXPECT_TRUE(nullptr == foo) << "Expected untouched scan value";
+  EXPECT_STREQ("", foo) << "Expected untouched scan value";
 }
 
 TEST(cgroupTest, read_number_file_not_exist) {
@@ -271,35 +272,36 @@ TEST(cgroupTest, read_string_tests) {
   fill_file(test_file, "foo-bar");
 
   TestController* controller = new TestController((char*)os::get_temp_directory());
-  char* result = nullptr;
-  bool ok = controller->read_string(base_with_slash, &result);
+  char result[1024];
+  bool ok = controller->read_string(base_with_slash, result);
   EXPECT_TRUE(ok) << "String parsing should have been successful";
-  EXPECT_TRUE(result != nullptr) << "Expected non-null result";
   EXPECT_STREQ("foo-bar", result) << "Expected strings to be equal";
-  os::free(result);
 
-  result = nullptr;
+  result[0] = '\0';
   fill_file(test_file, "1234");
-  ok = controller->read_string(base_with_slash, &result);
+  ok = controller->read_string(base_with_slash, result);
   EXPECT_TRUE(ok) << "String parsing should have been successful";
-  EXPECT_TRUE(result != nullptr) << "Expected non-null result";
   EXPECT_STREQ("1234", result) << "Expected strings to be equal";
-  os::free(result);
 
-  // values with a space only read in the first token
-  result = nullptr;
+  // values with a space
+  result[0] = '\0';
   fill_file(test_file, "abc def");
-  ok = controller->read_string(base_with_slash, &result);
+  ok = controller->read_string(base_with_slash, result);
   EXPECT_TRUE(ok) << "String parsing should have been successful";
-  EXPECT_TRUE(result != nullptr) << "Expected non-null result";
-  EXPECT_STREQ("abc", result) << "Expected strings to be equal";
-  os::free(result);
+  EXPECT_STREQ("abc def", result) << "Expected strings to be equal";
 
-  result = nullptr;
+  // only the first line are being returned
+  result[0] = '\0';
+  fill_file(test_file, "test\nabc");
+  ok = controller->read_string(base_with_slash, result);
+  EXPECT_TRUE(ok) << "String parsing should have been successful";
+  EXPECT_STREQ("test", result) << "Expected strings to be equal";
+
+  result[0] = '\0';
   fill_file(test_file, nullptr);
-  ok = controller->read_string(base_with_slash, &result);
+  ok = controller->read_string(base_with_slash, result);
   EXPECT_FALSE(ok) << "Empty file should have failed";
-  EXPECT_TRUE(result == nullptr) << "Expected untouched result";
+  EXPECT_STREQ("", result) << "Expected untouched result";
   delete_file(test_file);
 }
 

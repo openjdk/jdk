@@ -556,18 +556,59 @@ jlong CgroupSubsystem::memory_limit_in_bytes() {
   return mem_limit;
 }
 
-bool CgroupController::read_string(const char* filename, char** result) {
-  char res[1024];
-  bool ok = read_from_file<char*>(filename, "%1023s", res);
-  if (!ok) {
+bool CgroupController::read_string(const char* filename, char* buf) {
+  assert(buf != nullptr, "invariant");
+  if (filename == nullptr) {
+    log_debug(os, container)("read_string: filename is null");
     return false;
   }
-  *result = os::strdup(res);
+  char* s_path = subsystem_path();
+  if (s_path == nullptr) {
+    log_debug(os, container)("read_string: subsystem path is null");
+    return false;
+  }
+
+  stringStream file_path;
+  file_path.print_raw(s_path);
+  file_path.print_raw(filename);
+
+  if (file_path.size() > MAXPATHLEN) {
+    log_debug(os, container)("File path too long %s, %s", file_path.base(), filename);
+    return false;
+  }
+  const char* absolute_path = file_path.freeze();
+  log_trace(os, container)("Path to %s is %s", filename, absolute_path);
+
+  FILE* fp = os::fopen(absolute_path, "r");
+  if (fp == nullptr) {
+    log_debug(os, container)("Open of file %s failed, %s", absolute_path, os::strerror(errno));
+    return false;
+  }
+
+  char* line = fgets(buf, 1024, fp);
+  fclose(fp);
+  if (line == nullptr) {
+    log_debug(os, container)("Empty file %s", absolute_path);
+    return false;
+  }
+  int len = strlen(line);
+  if (line[len - 1] == '\n') {
+    line[len - 1] = '\0'; // trim trailing new line
+  }
   return true;
 }
 
 bool CgroupController::read_number(const char* filename, julong* result) {
-  return read_from_file<julong*>(filename, JULONG_FORMAT, result);
+  char buf[1024];
+  bool is_ok = read_string(filename, buf);
+  if (!is_ok) {
+    return false;
+  }
+  int matched = sscanf(buf, JULONG_FORMAT, result);
+  if (matched == 1) {
+    return true;
+  }
+  return false;
 }
 
 bool CgroupController::read_numerical_key_value(const char* filename, const char* key, julong* result) {
@@ -639,74 +680,33 @@ bool CgroupController::read_numerical_key_value(const char* filename, const char
 }
 
 bool CgroupController::read_numerical_tuple_value(const char* filename, TupleValue tup, jlong* result) {
-  char token[1024];
-  bool is_ok = read_from_file<char*>(filename, tuple_format(tup), token);
+  char buf[1024];
+  bool is_ok = read_string(filename, buf);
   if (!is_ok) {
     return false;
   }
-  char* t = os::strdup(token);
-  jlong val = CgroupSubsystem::limit_from_str(t);
+  char token[1024];
+  int matched = -1;
+  switch(tup) {
+    case TupleValue::FIRST:  {
+      matched = sscanf(buf, "%1023s %*s", token);
+      break;
+    }
+    case TupleValue::SECOND: {
+      matched = sscanf(buf, "%*s %1023s", token);
+      break;
+    }
+  }
+  if (matched != 1) {
+    return false;
+  }
+  jlong val = CgroupSubsystem::limit_from_str(token);
   if (val == OSCONTAINER_ERROR) {
     return false;
   }
   *result = val;
   return true;
 }
-
-PRAGMA_DIAG_PUSH
-PRAGMA_FORMAT_NONLITERAL_IGNORED // Only string/number literal formats used. See read_*() functions.
-template <typename T>
-bool CgroupController::read_from_file(const char* filename, const char* scan_fmt, T result) {
-  assert(scan_fmt != nullptr, "invariant");
-  if (filename == nullptr) {
-    log_debug(os, container)("read_from_file: filename is null");
-    return false;
-  }
-  if (result == nullptr) {
-    log_debug(os, container)("read_from_file: return pointer is null");
-    return false;
-  }
-  char* s_path = subsystem_path();
-  if (s_path == nullptr) {
-    log_debug(os, container)("read_from_file: subsystem path is null");
-    return false;
-  }
-
-  stringStream file_path;
-  file_path.print_raw(s_path);
-  file_path.print_raw(filename);
-
-  if (file_path.size() > MAXPATHLEN) {
-    log_debug(os, container)("File path too long %s, %s", file_path.base(), filename);
-    return false;
-  }
-  const char* absolute_path = file_path.freeze();
-  log_trace(os, container)("Path to %s is %s", filename, absolute_path);
-
-  FILE* fp = os::fopen(absolute_path, "r");
-  if (fp == nullptr) {
-    log_debug(os, container)("Open of file %s failed, %s", absolute_path, os::strerror(errno));
-    return false;
-  }
-
-  const int buf_len = MAXPATHLEN+1;
-  char buf[buf_len];
-  char* line = fgets(buf, buf_len, fp);
-  fclose(fp);
-  if (line == nullptr) {
-    log_debug(os, container)("Empty file %s", absolute_path);
-    return false;
-  }
-
-  int matched = sscanf(line, scan_fmt, result);
-  if (matched == 1) {
-    return true;
-  } else {
-    log_debug(os, container)("Type %s not found in file %s", scan_fmt, absolute_path);
-  }
-  return false;
-}
-PRAGMA_DIAG_POP
 
 jlong CgroupSubsystem::limit_from_str(char* limit_str) {
   if (limit_str == nullptr) {
@@ -715,14 +715,11 @@ jlong CgroupSubsystem::limit_from_str(char* limit_str) {
   // Unlimited memory in cgroups is the literal string 'max' for
   // some controllers, for example the pids controller.
   if (strcmp("max", limit_str) == 0) {
-    os::free(limit_str);
     return (jlong)-1;
   }
   julong limit;
   if (sscanf(limit_str, JULONG_FORMAT, &limit) != 1) {
-    os::free(limit_str);
     return OSCONTAINER_ERROR;
   }
-  os::free(limit_str);
   return (jlong)limit;
 }
