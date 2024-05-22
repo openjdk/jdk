@@ -85,7 +85,7 @@ void CardTableBarrierSet::write_ref_array_work(MemRegion mr) {
 }
 
 void CardTableBarrierSet::invalidate(MemRegion mr) {
-  _card_table->invalidate(mr);
+  _card_table->dirty_MemRegion(mr);
 }
 
 void CardTableBarrierSet::print_on(outputStream* st) const {

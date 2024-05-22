@@ -768,9 +768,9 @@ class VM_WhiteBoxDeoptimizeFrames : public VM_WhiteBoxOperation {
           if (f->can_be_deoptimized() && !f->is_deoptimized_frame()) {
             Deoptimization::deoptimize(t, *f);
             if (_make_not_entrant) {
-                CompiledMethod* cm = CodeCache::find_compiled(f->pc());
-                assert(cm != nullptr, "sanity check");
-                cm->make_not_entrant();
+                nmethod* nm = CodeCache::find_nmethod(f->pc());
+                assert(nm != nullptr, "did not find nmethod");
+                nm->make_not_entrant();
             }
             ++_result;
           }
@@ -820,7 +820,7 @@ WB_ENTRY(jint, WB_DeoptimizeMethod(JNIEnv* env, jobject o, jobject method, jbool
     if (is_osr) {
       result += mh->method_holder()->mark_osr_nmethods(&deopt_scope, mh());
     } else {
-      MutexLocker ml(CompiledMethod_lock, Mutex::_no_safepoint_check_flag);
+      MutexLocker ml(NMethodState_lock, Mutex::_no_safepoint_check_flag);
       if (mh->code() != nullptr) {
         deopt_scope.mark(mh->code());
         ++result;
@@ -839,7 +839,7 @@ WB_ENTRY(jboolean, WB_IsMethodCompiled(JNIEnv* env, jobject o, jobject method, j
   CHECK_JNI_EXCEPTION_(env, JNI_FALSE);
   MutexLocker mu(Compile_lock);
   methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
-  CompiledMethod* code = is_osr ? mh->lookup_osr_nmethod_for(InvocationEntryBci, CompLevel_none, false) : mh->code();
+  nmethod* code = is_osr ? mh->lookup_osr_nmethod_for(InvocationEntryBci, CompLevel_none, false) : mh->code();
   if (code == nullptr) {
     return JNI_FALSE;
   }
@@ -938,7 +938,7 @@ WB_ENTRY(jint, WB_GetMethodCompilationLevel(JNIEnv* env, jobject o, jobject meth
   jmethodID jmid = reflected_method_to_jmid(thread, env, method);
   CHECK_JNI_EXCEPTION_(env, CompLevel_none);
   methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
-  CompiledMethod* code = is_osr ? mh->lookup_osr_nmethod_for(InvocationEntryBci, CompLevel_none, false) : mh->code();
+  nmethod* code = is_osr ? mh->lookup_osr_nmethod_for(InvocationEntryBci, CompLevel_none, false) : mh->code();
   return (code != nullptr ? code->comp_level() : CompLevel_none);
 WB_END
 
@@ -1023,7 +1023,7 @@ WB_ENTRY(jint, WB_GetMethodEntryBci(JNIEnv* env, jobject o, jobject method))
   jmethodID jmid = reflected_method_to_jmid(thread, env, method);
   CHECK_JNI_EXCEPTION_(env, InvocationEntryBci);
   methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
-  CompiledMethod* code = mh->lookup_osr_nmethod_for(InvocationEntryBci, CompLevel_none, false);
+  nmethod* code = mh->lookup_osr_nmethod_for(InvocationEntryBci, CompLevel_none, false);
   return (code != nullptr && code->is_osr_method() ? code->osr_entry_bci() : InvocationEntryBci);
 WB_END
 
@@ -1097,8 +1097,8 @@ bool WhiteBox::compile_method(Method* method, int comp_level, int bci, JavaThrea
   }
   // Check code again because compilation may be finished before Compile_lock is acquired.
   if (bci == InvocationEntryBci) {
-    CompiledMethod* code = mh->code();
-    if (code != nullptr && code->as_nmethod_or_null() != nullptr) {
+    nmethod* code = mh->code();
+    if (code != nullptr) {
       return true;
     }
   } else if (mh->lookup_osr_nmethod_for(bci, comp_level, false) != nullptr) {
@@ -1556,7 +1556,7 @@ WB_ENTRY(jobjectArray, WB_GetNMethod(JNIEnv* env, jobject o, jobject method, jbo
   jmethodID jmid = reflected_method_to_jmid(thread, env, method);
   CHECK_JNI_EXCEPTION_(env, nullptr);
   methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
-  CompiledMethod* code = is_osr ? mh->lookup_osr_nmethod_for(InvocationEntryBci, CompLevel_none, false) : mh->code();
+  nmethod* code = is_osr ? mh->lookup_osr_nmethod_for(InvocationEntryBci, CompLevel_none, false) : mh->code();
   jobjectArray result = nullptr;
   if (code == nullptr) {
     return result;
@@ -1608,7 +1608,7 @@ CodeBlob* WhiteBox::allocate_code_blob(int size, CodeBlobType blob_type) {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     blob = (BufferBlob*) CodeCache::allocate(full_size, blob_type);
     if (blob != nullptr) {
-      ::new (blob) BufferBlob("WB::DummyBlob", full_size);
+      ::new (blob) BufferBlob("WB::DummyBlob", CodeBlobKind::Buffer, full_size);
     }
   }
   // Track memory usage statistic after releasing CodeCache_lock

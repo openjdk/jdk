@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@
  *          /test/lib
  * @build nsk.jdi.MethodExitEvent.returnValue.returnValue001.returnValue001
  *        nsk.jdi.MethodExitEvent.returnValue.returnValue001.returnValue001a
- * @run main/othervm
+ * @run driver
  *      nsk.jdi.MethodExitEvent.returnValue.returnValue001.returnValue001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
@@ -88,7 +88,10 @@ import nsk.share.jpda.ForceEarlyReturnTestThread;
 public class returnValue001 extends TestDebuggerType2 {
 
     public static void main(String argv[]) {
-        System.exit(run(argv, System.out) + Consts.JCK_STATUS_BASE);
+        int result = run(argv,System.out);
+        if (result != 0) {
+            throw new RuntimeException("TEST FAILED with result " + result);
+        }
     }
 
     public static int run(String argv[], PrintStream out) {

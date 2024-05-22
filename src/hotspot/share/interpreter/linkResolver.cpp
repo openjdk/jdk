@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/resolvedIndyEntry.hpp"
 #include "oops/symbolHandle.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/frame.inline.hpp"
@@ -110,6 +111,27 @@ void CallInfo::set_handle(Klass* resolved_klass,
   assert(!resolved_method->has_vtable_index(), "");
   set_common(resolved_klass, resolved_method, resolved_method, CallInfo::direct_call, vtable_index, CHECK);
   _resolved_appendix = resolved_appendix;
+}
+
+// Redefinition safepoint may have updated the method. Make sure the new version of the method is returned.
+// Callers are responsible for not safepointing and storing this method somewhere safe where redefinition
+// can replace it if runs again.  Safe places are constant pool cache and code cache metadata.
+// The old method is safe in CallInfo since its a methodHandle (it won't get deleted), and accessed with these
+// accessors.
+Method* CallInfo::resolved_method() const {
+  if (JvmtiExport::can_hotswap_or_post_breakpoint() && _resolved_method->is_old()) {
+    return _resolved_method->get_new_method();
+  } else {
+    return _resolved_method();
+  }
+}
+
+Method* CallInfo::selected_method() const {
+  if (JvmtiExport::can_hotswap_or_post_breakpoint() && _selected_method->is_old()) {
+    return _selected_method->get_new_method();
+  } else {
+    return _selected_method();
+  }
 }
 
 void CallInfo::set_common(Klass* resolved_klass,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3408,8 +3408,7 @@ u4 ClassFileParser::parse_classfile_record_attribute(const ClassFileStream* cons
                                                              CHECK_0);
 
     RecordComponent* record_component =
-      RecordComponent::allocate(_loader_data, name_index, descriptor_index,
-                                attributes_count, generic_sig_index,
+      RecordComponent::allocate(_loader_data, name_index, descriptor_index, generic_sig_index,
                                 annotations, type_annotations, CHECK_0);
     record_components->at_put(x, record_component);
   }  // End of component processing loop

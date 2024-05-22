@@ -80,7 +80,6 @@ import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.javac.PreviewFeature;
 import jdk.internal.logger.LoggerFinderLoader;
 import jdk.internal.logger.LazyLoggers;
 import jdk.internal.logger.LocalizedLoggerWrapper;
@@ -2459,6 +2458,9 @@ public final class System {
             public Module addEnableNativeAccess(Module m) {
                 return m.implAddEnableNativeAccess();
             }
+            public boolean addEnableNativeAccess(ModuleLayer layer, String name) {
+                return layer.addEnableNativeAccess(name);
+            }
             public void addEnableNativeAccessToAllUnnamed() {
                 Module.implAddEnableNativeAccessToAllUnnamed();
             }
@@ -2486,6 +2488,9 @@ public final class System {
             }
             public char getUTF16Char(byte[] bytes, int index) {
                 return StringUTF16.getChar(bytes, index);
+            }
+            public void putCharUTF16(byte[] bytes, int index, int ch) {
+                StringUTF16.putChar(bytes, index, ch);
             }
             public byte[] getBytesNoRepl(String s, Charset cs) throws CharacterCodingException {
                 return String.getBytesNoRepl(s, cs);
@@ -2527,6 +2532,10 @@ public final class System {
                 return StringConcatHelper.lookupStatic(name, methodType);
             }
 
+            public long stringConcatHelperPrepend(long indexCoder, byte[] buf, String value) {
+                return StringConcatHelper.prepend(indexCoder, buf, value);
+            }
+
             public long stringConcatInitialCoder() {
                 return StringConcatHelper.initialCoder();
             }
@@ -2535,21 +2544,20 @@ public final class System {
                 return StringConcatHelper.mix(lengthCoder, constant);
             }
 
-            @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
-            public long stringConcatCoder(char value) {
-                return StringConcatHelper.coder(value);
+            public long stringConcatMix(long lengthCoder, char value) {
+                return StringConcatHelper.mix(lengthCoder, value);
             }
 
-            @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
-            public long stringBuilderConcatMix(long lengthCoder,
-                                               StringBuilder sb) {
-                return sb.mix(lengthCoder);
+            public int stringSize(long i) {
+                return Long.stringSize(i);
             }
 
-            @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
-            public long stringBuilderConcatPrepend(long lengthCoder, byte[] buf,
-                                                   StringBuilder sb) {
-                return sb.prepend(lengthCoder, buf);
+            public int getCharsLatin1(long i, int index, byte[] buf) {
+                return StringLatin1.getChars(i, index, buf);
+            }
+
+            public int getCharsUTF16(long i, int index, byte[] buf) {
+                return StringUTF16.getChars(i, index, buf);
             }
 
             public String join(String prefix, String suffix, String delimiter, String[] elements, int size) {
@@ -2686,6 +2694,11 @@ public final class System {
             @Override
             public boolean bytesCompatible(String string, Charset charset) {
                 return string.bytesCompatible(charset);
+            }
+
+            @Override
+            public boolean allowSecurityManager() {
+                return System.allowSecurityManager();
             }
         });
     }

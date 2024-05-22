@@ -162,18 +162,6 @@ struct my_statx
  */
 #define ENT_BUF_SIZE   1024
 
-#define RESTARTABLE(_cmd, _result) do { \
-  do { \
-    _result = _cmd; \
-  } while((_result == -1) && (errno == EINTR)); \
-} while(0)
-
-#define RESTARTABLE_RETURN_PTR(_cmd, _result) do { \
-  do { \
-    _result = _cmd; \
-  } while((_result == NULL) && (errno == EINTR)); \
-} while(0)
-
 static jfieldID attrs_st_mode;
 static jfieldID attrs_st_ino;
 static jfieldID attrs_st_dev;

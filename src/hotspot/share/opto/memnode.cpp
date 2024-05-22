@@ -227,7 +227,7 @@ Node *MemNode::optimize_memory_chain(Node *mchain, const TypePtr *t_adr, Node *l
         t->is_oopptr()->cast_to_exactness(true)
         ->is_oopptr()->cast_to_ptr_type(t_oop->ptr())
         ->is_oopptr()->cast_to_instance_id(t_oop->instance_id());
-      if (t_oop->is_aryptr()) {
+      if (t_oop->isa_aryptr()) {
         mem_t = mem_t->is_aryptr()
                      ->cast_to_stable(t_oop->is_aryptr()->is_stable())
                      ->cast_to_size(t_oop->is_aryptr()->size())
@@ -944,6 +944,7 @@ Node* LoadNode::make(PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, const TypeP
   case T_DOUBLE:  load = new LoadDNode (ctl, mem, adr, adr_type, rt,            mo, control_dependency, require_atomic_access); break;
   case T_ADDRESS: load = new LoadPNode (ctl, mem, adr, adr_type, rt->is_ptr(),  mo, control_dependency); break;
   case T_OBJECT:
+  case T_NARROWOOP:
 #ifdef _LP64
     if (adr->bottom_type()->is_ptr_to_narrowoop()) {
       load = new LoadNNode(ctl, mem, adr, adr_type, rt->make_narrowoop(), mo, control_dependency);
@@ -1548,14 +1549,19 @@ static bool stable_phi(PhiNode* phi, PhaseGVN *phase) {
 // Phi *base*. This method is essentially a copy of the validations performed
 // by 'split_through_phi'. The first use of this method was in EA code as part
 // of simplification of allocation merges.
+// Some differences from original method (split_through_phi):
+//  - If base->is_CastPP(): base = base->in(1)
 bool LoadNode::can_split_through_phi_base(PhaseGVN* phase) {
   Node* mem        = in(Memory);
   Node* address    = in(Address);
   intptr_t ignore  = 0;
   Node*    base    = AddPNode::Ideal_base_and_offset(address, phase, ignore);
-  bool base_is_phi = (base != nullptr) && base->is_Phi();
 
-  if (req() > 3 || !base_is_phi) {
+  if (base->is_CastPP()) {
+    base = base->in(1);
+  }
+
+  if (req() > 3 || base == nullptr || !base->is_Phi()) {
     return false;
   }
 
@@ -2446,6 +2452,12 @@ const Type* LoadNode::klass_value_common(PhaseGVN* phase) const {
       // (Folds up the 2nd indirection in aClassConstant.getSuperClass().)
       return sup ? TypeKlassPtr::make(sup, Type::trust_interfaces) : TypePtr::NULL_PTR;
     }
+  }
+
+  if (tkls != nullptr && !UseSecondarySupersCache
+      && tkls->offset() == in_bytes(Klass::secondary_super_cache_offset()))  {
+    // Treat Klass::_secondary_super_cache as a constant when the cache is disabled.
+    return TypePtr::NULL_PTR;
   }
 
   // Bailout case

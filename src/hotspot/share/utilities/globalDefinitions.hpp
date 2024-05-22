@@ -150,6 +150,11 @@ class oopDesc;
 #define INTX_FORMAT_W(width)     "%"   #width PRIdPTR
 #define UINTX_FORMAT             "%"          PRIuPTR
 #define UINTX_FORMAT_X           "0x%"        PRIxPTR
+#ifdef _LP64
+#define UINTX_FORMAT_X_0         "0x%016"     PRIxPTR
+#else
+#define UINTX_FORMAT_X_0         "0x%08"      PRIxPTR
+#endif
 #define UINTX_FORMAT_W(width)    "%"   #width PRIuPTR
 
 // Format jlong, if necessary
@@ -378,6 +383,9 @@ inline T byte_size_in_proper_unit(T s) {
 
 #define PROPERFMT             SIZE_FORMAT "%s"
 #define PROPERFMTARGS(s)      byte_size_in_proper_unit(s), proper_unit_for_byte_size(s)
+
+#define RANGEFMT              "[" PTR_FORMAT " - " PTR_FORMAT "), (" SIZE_FORMAT " bytes)"
+#define RANGEFMTARGS(p1, size) p2i(p1), p2i(p1 + size), size
 
 inline const char* exact_unit_for_byte_size(size_t s) {
 #ifdef _LP64
@@ -614,13 +622,6 @@ const bool support_IRIW_for_not_multiple_copy_atomic_cpu = PPC64_ONLY(true) NOT_
 #ifndef DEFAULT_PADDING_SIZE
 #error "Platform should define DEFAULT_PADDING_SIZE"
 #endif
-
-
-//----------------------------------------------------------------------------------------------------
-// Utility macros for compilers
-// used to silence compiler warnings
-
-#define Unused_Variable(var) var
 
 
 //----------------------------------------------------------------------------------------------------

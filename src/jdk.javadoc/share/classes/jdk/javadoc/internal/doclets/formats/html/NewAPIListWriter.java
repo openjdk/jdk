@@ -79,21 +79,17 @@ public class NewAPIListWriter extends SummaryListWriter<NewAPIBuilder> {
 
     @Override
     protected void addContentSelectors(Content content) {
-        List<String> releases = configuration.newAPIPageBuilder.releases;
+        List<String> releases = builder.releases;
         if (releases.size() > 1) {
             Content tabs = HtmlTree.DIV(HtmlStyle.checkboxes,
                     contents.getContent("doclet.New_API_Checkbox_Label"));
-            for (int i = 0; i < releases.size(); i++) {
-                int releaseIndex = i + 1;
-                String release = releases.get(i);
-                HtmlId htmlId = HtmlId.of("release-" + releaseIndex);
-                tabs.add(Text.of(" ")).add(HtmlTree.LABEL(htmlId.name(),
-                                HtmlTree.INPUT(HtmlAttr.InputType.CHECKBOX, htmlId)
-                                        .put(HtmlAttr.CHECKED, "")
-                                        .put(HtmlAttr.ONCLICK,
-                                                "toggleGlobal(this, '" + releaseIndex + "', 3)"))
-                        .add(HtmlTree.SPAN(Text.of(release))));
+            // Table column ids are 1-based
+            int index = 1;
+            for (String release : releases) {
+                tabs.add(Text.of(" ")).add(getCheckbox(Text.of(release), String.valueOf(index++), "release-"));
             }
+            Content label = contents.getContent("doclet.New_API_Checkbox_All_Releases");
+            tabs.add(Text.of(" ")).add(getCheckbox(label, ID_ALL, "release-"));
             content.add(tabs);
         }
     }
@@ -104,7 +100,6 @@ public class NewAPIListWriter extends SummaryListWriter<NewAPIBuilder> {
         List<String> releases = builder.releases;
         if (releases.size() > 1) {
             table.setDefaultTab(getTableCaption(headingKey))
-                    .setAlwaysShowDefaultTab(true)
                     .setRenderTabs(false);
             for (String release : releases) {
                 table.addTab(

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -566,6 +566,11 @@ class GrowableBitMap : public BitMap {
   GrowableBitMap() : GrowableBitMap(nullptr, 0) {}
   GrowableBitMap(bm_word_t* map, idx_t size_in_bits) : BitMap(map, size_in_bits) {}
 
+ private:
+  // Copy the region [start, end) of the bitmap
+  // Bits in the selected range are copied to a newly allocated map
+  bm_word_t* copy_of_range(idx_t start_bit, idx_t end_bit);
+
  public:
   // Set up and optionally clear the bitmap memory.
   //
@@ -585,6 +590,9 @@ class GrowableBitMap : public BitMap {
   // Old bits are transferred to the new memory
   // and the extended memory is optionally cleared.
   void resize(idx_t new_size_in_bits, bool clear = true);
+  // Reduce bitmap to the region [start, end)
+  // Previous map is deallocated and replaced with the newly allocated map from copy_of_range
+  void truncate(idx_t start_bit, idx_t end_bit);
 };
 
 // A concrete implementation of the "abstract" BitMap class.

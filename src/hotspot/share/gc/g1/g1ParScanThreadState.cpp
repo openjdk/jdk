@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -444,7 +444,7 @@ void G1ParScanThreadState::undo_allocation(G1HeapRegionAttr dest_attr,
 void G1ParScanThreadState::update_bot_after_copying(oop obj, size_t word_sz) {
   HeapWord* obj_start = cast_from_oop<HeapWord*>(obj);
   HeapRegion* region = _g1h->heap_region_containing(obj_start);
-  region->update_bot_for_obj(obj_start, word_sz);
+  region->update_bot_for_block(obj_start, obj_start + word_sz);
 }
 
 // Private inline function, for direct internal use and providing the

@@ -596,15 +596,15 @@ void Modules::serialize(SerializeClosure* soc) {
 
     if (disable) {
       log_info(cds)("Disabling optimized module handling");
-      MetaspaceShared::disable_optimized_module_handling();
+      CDSConfig::stop_using_optimized_module_handling();
     }
-    log_info(cds)("optimized module handling: %s", MetaspaceShared::use_optimized_module_handling() ? "enabled" : "disabled");
-    log_info(cds)("full module graph: %s", CDSConfig::is_loading_full_module_graph() ? "enabled" : "disabled");
+    log_info(cds)("optimized module handling: %s", CDSConfig::is_using_optimized_module_handling() ? "enabled" : "disabled");
+    log_info(cds)("full module graph: %s", CDSConfig::is_using_full_module_graph() ? "enabled" : "disabled");
   }
 }
 
 void Modules::define_archived_modules(Handle h_platform_loader, Handle h_system_loader, TRAPS) {
-  assert(CDSConfig::is_loading_full_module_graph(), "must be");
+  assert(CDSConfig::is_using_full_module_graph(), "must be");
 
   // We don't want the classes used by the archived full module graph to be redefined by JVMTI.
   // Luckily, such classes are loaded in the JVMTI "early" phase, and CDS is disabled if a JVMTI

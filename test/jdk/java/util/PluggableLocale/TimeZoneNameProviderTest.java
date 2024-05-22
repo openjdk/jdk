@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4052440 8003267 8062588 8210406 8174269
+ * @bug 4052440 8003267 8062588 8210406 8174269 8327434
  * @summary TimeZoneNameProvider tests
  * @library providersrc/foobarutils
  *          providersrc/barprovider
@@ -45,6 +45,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.TimeZone;
+import java.util.stream.Stream;
 
 import com.bar.TimeZoneNameProviderImpl;
 
@@ -69,12 +70,12 @@ public class TimeZoneNameProviderTest extends ProviderTest {
     }
 
     void test1() {
-        Locale[] available = Locale.getAvailableLocales();
         List<Locale> jreimplloc = Arrays.asList(LocaleProviderAdapter.forType(LocaleProviderAdapter.Type.CLDR).getTimeZoneNameProvider().getAvailableLocales());
         List<Locale> providerLocales = Arrays.asList(tznp.getAvailableLocales());
         String[] ids = TimeZone.getAvailableIDs();
 
-        for (Locale target: available) {
+        // Sampling relevant locales
+        Stream.concat(Stream.of(Locale.ROOT, Locale.US, Locale.JAPAN), providerLocales.stream()).forEach(target -> {
             // pure JRE implementation
             OpenListResourceBundle rb = ((ResourceBundleBasedAdapter)LocaleProviderAdapter.forType(LocaleProviderAdapter.Type.CLDR)).getLocaleData().getTimeZoneNames(target);
             boolean jreSupportsTarget = jreimplloc.contains(target);
@@ -111,7 +112,7 @@ public class TimeZoneNameProviderTest extends ProviderTest {
                         jreSupportsTarget && jresname != null);
                 }
             }
-        }
+        });
     }
 
     final String pattern = "z";

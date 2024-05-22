@@ -1011,7 +1011,7 @@ void Method::set_native_function(address function, bool post_event_flag) {
   // This function can be called more than once. We must make sure that we always
   // use the latest registered method -> check if a stub already has been generated.
   // If so, we have to make it not_entrant.
-  CompiledMethod* nm = code(); // Put it into local variable to guard against concurrent updates
+  nmethod* nm = code(); // Put it into local variable to guard against concurrent updates
   if (nm != nullptr) {
     nm->make_not_entrant();
   }
@@ -1159,8 +1159,8 @@ void Method::clear_code() {
   _code = nullptr;
 }
 
-void Method::unlink_code(CompiledMethod *compare) {
-  ConditionalMutexLocker ml(CompiledMethod_lock, !CompiledMethod_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
+void Method::unlink_code(nmethod *compare) {
+  ConditionalMutexLocker ml(NMethodState_lock, !NMethodState_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
   // We need to check if either the _code or _from_compiled_code_entry_point
   // refer to this nmethod because there is a race in setting these two fields
   // in Method* as seen in bugid 4947125.
@@ -1171,7 +1171,7 @@ void Method::unlink_code(CompiledMethod *compare) {
 }
 
 void Method::unlink_code() {
-  ConditionalMutexLocker ml(CompiledMethod_lock, !CompiledMethod_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
+  ConditionalMutexLocker ml(NMethodState_lock, !NMethodState_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
   clear_code();
 }
 
@@ -1303,13 +1303,13 @@ address Method::verified_code_entry() {
 // Not inline to avoid circular ref.
 bool Method::check_code() const {
   // cached in a register or local.  There's a race on the value of the field.
-  CompiledMethod *code = Atomic::load_acquire(&_code);
+  nmethod *code = Atomic::load_acquire(&_code);
   return code == nullptr || (code->method() == nullptr) || (code->method() == (Method*)this && !code->is_osr_method());
 }
 
 // Install compiled code.  Instantly it can execute.
-void Method::set_code(const methodHandle& mh, CompiledMethod *code) {
-  assert_lock_strong(CompiledMethod_lock);
+void Method::set_code(const methodHandle& mh, nmethod *code) {
+  assert_lock_strong(NMethodState_lock);
   assert( code, "use clear_code to remove code" );
   assert( mh->check_code(), "" );
 
@@ -2143,14 +2143,6 @@ class JNIMethodBlock : public CHeapObj<mtClass> {
     return false;  // not found
   }
 
-  // Doesn't really destroy it, just marks it as free so it can be reused.
-  void destroy_method(Method** m) {
-#ifdef ASSERT
-    assert(contains(m), "should be a methodID");
-#endif // ASSERT
-    *m = _free_method;
-  }
-
   // During class unloading the methods are cleared, which is different
   // than freed.
   void clear_all_methods() {
@@ -2203,6 +2195,9 @@ jmethodID Method::make_jmethod_id(ClassLoaderData* cld, Method* m) {
   // Also have to add the method to the list safely, which the lock
   // protects as well.
   assert(JmethodIdCreation_lock->owned_by_self(), "sanity check");
+
+  ResourceMark rm;
+  log_debug(jmethod)("Creating jmethodID for Method %s", m->external_name());
   if (cld->jmethod_ids() == nullptr) {
     cld->set_jmethod_ids(new JNIMethodBlock());
   }
@@ -2213,14 +2208,6 @@ jmethodID Method::make_jmethod_id(ClassLoaderData* cld, Method* m) {
 jmethodID Method::jmethod_id() {
   methodHandle mh(Thread::current(), this);
   return method_holder()->get_jmethod_id(mh);
-}
-
-// Mark a jmethodID as free.  This is called when there is a data race in
-// InstanceKlass while creating the jmethodID cache.
-void Method::destroy_jmethod_id(ClassLoaderData* cld, jmethodID m) {
-  Method** ptr = (Method**)m;
-  assert(cld->jmethod_ids() != nullptr, "should have method handles");
-  cld->jmethod_ids()->destroy_method(ptr);
 }
 
 void Method::change_method_associated_with_jmethod_id(jmethodID jmid, Method* new_method) {

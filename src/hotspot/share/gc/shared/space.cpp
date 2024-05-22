@@ -43,7 +43,6 @@
 ContiguousSpace::ContiguousSpace():
   _bottom(nullptr),
   _end(nullptr),
-  _next_compaction_space(nullptr),
   _top(nullptr) {
   _mangler = new GenSpaceMangler(this);
 }
@@ -64,12 +63,10 @@ void ContiguousSpace::initialize(MemRegion mr,
   if (clear_space) {
     clear(mangle_space);
   }
-  _next_compaction_space = nullptr;
 }
 
 void ContiguousSpace::clear(bool mangle_space) {
   set_top(bottom());
-  set_saved_mark();
   if (ZapUnusedHeapArea && mangle_space) {
     mangle_unused_area();
   }
@@ -126,25 +123,6 @@ void ContiguousSpace::object_iterate(ObjectClosure* blk) {
   }
 }
 
-// Very general, slow implementation.
-HeapWord* ContiguousSpace::block_start_const(const void* p) const {
-  assert(MemRegion(bottom(), end()).contains(p),
-         "p (" PTR_FORMAT ") not in space [" PTR_FORMAT ", " PTR_FORMAT ")",
-         p2i(p), p2i(bottom()), p2i(end()));
-  if (p >= top()) {
-    return top();
-  } else {
-    HeapWord* last = bottom();
-    HeapWord* cur = last;
-    while (cur <= p) {
-      last = cur;
-      cur += cast_to_oop(cur)->size();
-    }
-    assert(oopDesc::is_oop(cast_to_oop(last)), PTR_FORMAT " should be an object start", p2i(last));
-    return last;
-  }
-}
-
 // This version requires locking.
 inline HeapWord* ContiguousSpace::allocate_impl(size_t size) {
   assert(Heap_lock->owned_by_self() ||
@@ -192,30 +170,10 @@ HeapWord* ContiguousSpace::par_allocate(size_t size) {
 }
 
 #if INCLUDE_SERIALGC
-HeapWord* TenuredSpace::block_start_const(const void* addr) const {
-  HeapWord* cur_block = _offsets.block_start_reaching_into_card(addr);
-
-  while (true) {
-    HeapWord* next_block = cur_block + cast_to_oop(cur_block)->size();
-    if (next_block > addr) {
-      assert(cur_block <= addr, "postcondition");
-      return cur_block;
-    }
-    cur_block = next_block;
-    // Because the BOT is precise, we should never step into the next card
-    // (i.e. crossing the card boundary).
-    assert(!SerialBlockOffsetTable::is_crossing_card_boundary(cur_block, (HeapWord*)addr), "must be");
-  }
-}
-
-TenuredSpace::TenuredSpace(SerialBlockOffsetSharedArray* sharedOffsetArray,
+TenuredSpace::TenuredSpace(SerialBlockOffsetTable* offsets,
                            MemRegion mr) :
-  _offsets(sharedOffsetArray)
+  _offsets(offsets)
 {
   initialize(mr, SpaceDecorator::Clear, SpaceDecorator::Mangle);
-}
-
-size_t TenuredSpace::allowed_dead_ratio() const {
-  return MarkSweepDeadRatio;
 }
 #endif // INCLUDE_SERIALGC

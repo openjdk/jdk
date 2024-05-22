@@ -168,6 +168,9 @@ public abstract class JavadocTester {
     /** The output charset used in the most recent call of javadoc. */
     protected Charset charset = Charset.defaultCharset();
 
+    /** Default options used when running javadoc with the standard doclet. */
+    private final String[] defaultOptions = {"--no-fonts"};
+
     /** The exit code of the most recent call of javadoc. */
     private int exitCode;
 
@@ -249,6 +252,7 @@ public abstract class JavadocTester {
     private boolean automaticCheckLinks = true;
     private boolean automaticCheckUniqueOUT = true;
     private boolean automaticCheckNoStacktrace = true;
+    private boolean useDefaultOptions = true;
     private boolean useStandardStreams = false;
     private StandardJavaFileManager fileManager = null;
 
@@ -486,6 +490,7 @@ public abstract class JavadocTester {
         String docencodingArg = null;
         String encodingArg = null;
         boolean haveSourcePath = false;
+        boolean hasDocletOption = false;
         for (int i = 0; i < args.length - 2; i++) {
             switch (args[i]) {
                 case "-d" -> outputDir = Path.of(args[++i]);
@@ -493,6 +498,7 @@ public abstract class JavadocTester {
                 case "-docencoding" -> docencodingArg = args[++i];
                 case "-encoding" -> encodingArg = args[++i];
                 case "-sourcepath", "--source-path", "--module-source-path" -> haveSourcePath = true;
+                case "-doclet" -> hasDocletOption = true;
             }
         }
 
@@ -512,6 +518,13 @@ public abstract class JavadocTester {
             charset = Charset.forName(cs);
         } catch (UnsupportedCharsetException e) {
             charset = Charset.defaultCharset();
+        }
+
+        // Use default options when running with standard doclet unless explicitly disabled
+        if (!hasDocletOption && useDefaultOptions) {
+            var newArgs = Arrays.copyOf(defaultOptions, defaultOptions.length + args.length);
+            System.arraycopy(args, 0, newArgs, defaultOptions.length, args.length);
+            args = newArgs;
         }
 
         // explicitly set the source path if none specified
@@ -617,6 +630,13 @@ public abstract class JavadocTester {
      */
     public void setAutomaticCheckNoStacktrace(boolean b) {
         automaticCheckNoStacktrace = b;
+    }
+
+    /**
+     * Sets whether to use the default options when running javadoc with the standard doclet.
+     */
+    public void setUseDefaultOptions(boolean b) {
+        useDefaultOptions = b;
     }
 
     /**

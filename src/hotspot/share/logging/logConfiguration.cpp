@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -614,7 +614,7 @@ void LogConfiguration::print_command_line_help(outputStream* out) {
   out->print_cr("Available log outputs:");
   out->print_cr(" stdout/stderr");
   out->print_cr(" file=<filename>");
-  out->print_cr("  If the filename contains %%p and/or %%t, they will expand to the JVM's PID and startup timestamp, respectively.");
+  out->print_cr("  If the filename contains %%p, %%t and/or %%hn, they will expand to the JVM's PID, startup timestamp and host name, respectively.");
   out->cr();
 
   out->print_cr("Available log output options:");
