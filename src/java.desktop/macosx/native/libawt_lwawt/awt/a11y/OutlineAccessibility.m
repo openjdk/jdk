@@ -69,10 +69,10 @@ static jmethodID sjm_isTreeRootVisible = NULL;
 {
     if (![self isCacheValid]) {
         NSArray *t = [super accessibilityChildren];
-        if (t != NULL) {
+        if (t != nil) {
             rowCache = [[NSMutableArray arrayWithArray:t] retain];
         } else {
-            rowCache = NULL;
+            rowCache = nil;
         }
         rowCacheValid = YES;
     }
@@ -83,10 +83,10 @@ static jmethodID sjm_isTreeRootVisible = NULL;
 {
     if (!selectedRowCacheValid) {
         NSArray *t = [super accessibilitySelectedChildren];
-        if (t != NULL) {
+        if (t != nil) {
             selectedRowCache = [[NSMutableArray arrayWithArray:t] retain];
         } else {
-            selectedRowCache = NULL;
+            selectedRowCache = nil;
         }
         selectedRowCacheValid = YES;
     }
