@@ -377,8 +377,8 @@ inline NativeCall* nativeCall_before(address return_address) {
 class NativeMovConstReg: public NativeInstruction {
  public:
   enum RISCV_specific_constants {
-    movptr1_instruction_size            =    6 * NativeInstruction::instruction_size, // lui, addi, slli, addi, slli, addi.  See movptr().
-    movptr2_instruction_size            =    5 * NativeInstruction::instruction_size, // lui, lui, slli, add, addi.  See movptr2_imp().
+    movptr1_instruction_size            =    6 * NativeInstruction::instruction_size, // lui, addi, slli, addi, slli, addi.  See movptr1().
+    movptr2_instruction_size            =    5 * NativeInstruction::instruction_size, // lui, lui, slli, add, addi.  See movptr2().
     load_pc_relative_instruction_size   =    2 * NativeInstruction::instruction_size  // auipc, ld
   };
 
@@ -397,9 +397,6 @@ class NativeMovConstReg: public NativeInstruction {
         // Assume: lui, addi, slli, addi, slli
         return addr_at(movptr1_instruction_size - NativeInstruction::instruction_size);
       }
-    } else if (is_load_pc_relative_at(instruction_address())) {
-      // Assume: auipc, ld
-      return addr_at(load_pc_relative_instruction_size);
     } else if (is_movptr2_at(instruction_address())) {
       if (is_addi_at(addr_at(movptr2_instruction_size - NativeInstruction::instruction_size))) {
         // Assume: lui, addi, slli, addi, slli, addi
@@ -408,6 +405,9 @@ class NativeMovConstReg: public NativeInstruction {
         // Assume: lui, addi, slli, addi, slli
         return addr_at(movptr2_instruction_size - NativeInstruction::instruction_size);
       }
+    } else if (is_load_pc_relative_at(instruction_address())) {
+      // Assume: auipc, ld
+      return addr_at(load_pc_relative_instruction_size);
     }
     guarantee(false, "Unknown instruction in NativeMovConstReg");
     return nullptr;

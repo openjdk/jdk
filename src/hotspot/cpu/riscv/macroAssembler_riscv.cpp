@@ -1413,14 +1413,13 @@ static int patch_offset_in_pc_relative(address branch, int64_t offset) {
 }
 
 static int patch_addr_in_movptr1(address branch, address target) {
-  const int MOVPTR_INSTRUCTIONS_NUM = 6;                                        // lui + addi + slli + addi + slli + addi/jalr/load
   int32_t lower = ((intptr_t)target << 35) >> 35;
   int64_t upper = ((intptr_t)target - lower) >> 29;
   Assembler::patch(branch + 0,  31, 12, upper & 0xfffff);                       // Lui.             target[48:29] + target[28] ==> branch[31:12]
   Assembler::patch(branch + 4,  31, 20, (lower >> 17) & 0xfff);                 // Addi.            target[28:17] ==> branch[31:20]
   Assembler::patch(branch + 12, 31, 20, (lower >> 6) & 0x7ff);                  // Addi.            target[16: 6] ==> branch[31:20]
   Assembler::patch(branch + 20, 31, 20, lower & 0x3f);                          // Addi/Jalr/Load.  target[ 5: 0] ==> branch[31:20]
-  return MOVPTR_INSTRUCTIONS_NUM * NativeInstruction::instruction_size;
+  return NativeMovConstReg::movptr1_instruction_size;
 }
 
 static int patch_addr_in_movptr2(address instruction_address, address target) {
@@ -1440,7 +1439,7 @@ static int patch_addr_in_movptr2(address instruction_address, address target) {
 
   assert(MacroAssembler::target_addr_for_insn(instruction_address) == target, "Must be");
 
-  return 5 * NativeInstruction::instruction_size;                                                                 // lui + lui + slli + add + addi/jalr/load
+  return NativeMovConstReg::movptr2_instruction_size;
 }
 
 static int patch_imm_in_li64(address branch, address target) {
@@ -1514,7 +1513,7 @@ static long get_offset_of_pc_relative(address insn_addr) {
   return offset;
 }
 
-static address get_target_of_movptr(address insn_addr) {
+static address get_target_of_movptr1(address insn_addr) {
   assert_cond(insn_addr != nullptr);
   intptr_t target_address = (((int64_t)Assembler::sextract(Assembler::ld_instr(insn_addr), 31, 12)) & 0xfffff) << 29; // Lui.
   target_address += ((int64_t)Assembler::sextract(Assembler::ld_instr(insn_addr + 4), 31, 20)) << 17;                 // Addi.
@@ -1562,7 +1561,7 @@ int MacroAssembler::pd_patch_instruction_size(address instruction_address, addre
     return patch_offset_in_conditional_branch(instruction_address, offset);
   } else if (NativeInstruction::is_pc_relative_at(instruction_address)) {          // auipc, addi/jalr/load
     return patch_offset_in_pc_relative(instruction_address, offset);
-  } else if (NativeInstruction::is_movptr1_at(instruction_address)) {              // movptr
+  } else if (NativeInstruction::is_movptr1_at(instruction_address)) {              // movptr1
     return patch_addr_in_movptr1(instruction_address, target);
   } else if (NativeInstruction::is_movptr2_at(instruction_address)) {              // movptr2
     return patch_addr_in_movptr2(instruction_address, target);
@@ -1594,8 +1593,8 @@ address MacroAssembler::target_addr_for_insn(address insn_addr) {
     offset = get_offset_of_conditional_branch(insn_addr);
   } else if (NativeInstruction::is_pc_relative_at(insn_addr)) {      // auipc, addi/jalr/load
     offset = get_offset_of_pc_relative(insn_addr);
-  } else if (NativeInstruction::is_movptr1_at(insn_addr)) {          // movptr
-    return get_target_of_movptr(insn_addr);
+  } else if (NativeInstruction::is_movptr1_at(insn_addr)) {          // movptr1
+    return get_target_of_movptr1(insn_addr);
   } else if (NativeInstruction::is_movptr2_at(insn_addr)) {          // movptr2
     return get_target_of_movptr2(insn_addr);
   } else if (NativeInstruction::is_li64_at(insn_addr)) {             // li64

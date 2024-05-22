@@ -1287,7 +1287,7 @@ int CallDynamicJavaDirectNode::compute_padding(int current_offset) const
 {
   // skip the movptr2 in MacroAssembler::ic_call():
   // lui + addi + slli + addi + slli + addi
-  // Though movptr() has already 4-byte aligned with or without RVC,
+  // Though movptr2() has already 4-byte aligned with or without RVC,
   // We need to prevent from further changes by explicitly calculating the size.
   current_offset += NativeMovConstReg::movptr2_instruction_size;
   // to make sure the address of jal 4-byte aligned.
