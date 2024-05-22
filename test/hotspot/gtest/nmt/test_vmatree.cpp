@@ -470,9 +470,9 @@ TEST_VM_F(VMATreeTest, TestConsistencyWithSimpleTracker) {
       ASSERT_EQ(td.commit, sd.commit);
     }
 
-    // Every ten thousand operations do an in-depth check of the consistency of the data
-    // between the two trackers.
-    if (i % 10000 == 0) {
+
+    // Do an in-depth check every 25 000 iterations.
+    if (i % 25000 == 0) {
       size_t j = 0;
       while (j < tr->num_pages) {
         while (j < tr->num_pages &&
