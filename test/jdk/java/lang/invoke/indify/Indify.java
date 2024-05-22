@@ -739,45 +739,42 @@ public class Indify {
                         continue;
                     }
 
-                    switch (poolEntry.tag()) {
-                        case TAG_UTF8:
-                            mark = nameMark(((Utf8Entry) poolEntry).stringValue());
-                            break;
-                        case TAG_NAMEANDTYPE:
+                    mark = switch (poolEntry.tag()) {
+                        case TAG_UTF8 -> nameMark(((Utf8Entry) poolEntry).stringValue());
+                        case TAG_NAMEANDTYPE -> {
                             NameAndTypeEntry nameAndTypeEntry = (NameAndTypeEntry) poolEntry;
-                            mark = nameAndTypeMark(nameAndTypeEntry.name(), nameAndTypeEntry.type());
-                            break;
-                        case TAG_CLASS: {
+                            yield nameAndTypeMark(nameAndTypeEntry.name(), nameAndTypeEntry.type());
+                        }
+                        case TAG_CLASS -> {
                             int nameIndex = ((ClassEntry) poolEntry).name().index();
                             char nameMark = poolMarks[nameIndex];
                             if ("DJ".indexOf(nameMark) >= 0) {
-                                mark = nameMark;
+                                yield nameMark;
+                            } else {
+                                yield mark;
                             }
-                            break;
                         }
-                        case TAG_FIELDREF:
-                        case TAG_METHODREF: {
+                        case TAG_FIELDREF, TAG_METHODREF -> {
                             MemberRefEntry memberRefEntry = (MemberRefEntry) poolEntry;
                             int classIndex = memberRefEntry.owner().index();
                             int nameAndTypeIndex = memberRefEntry.nameAndType().index();
                             char classMark = poolMarks[classIndex];
                             if (classMark != 0) {
-                                mark = classMark;  // java.lang.invoke.* or java.lang.* method
-                                break;
+                                yield classMark;  // java.lang.invoke.* or java.lang.* method
+                            } else {
+                                String cls = memberRefEntry.owner().name().stringValue();
+                                if (cls.equals(classModel.thisClass().name().stringValue())) {
+                                    yield switch (poolMarks[nameAndTypeIndex]) {
+                                        case 'T', 'H', 'I' -> poolMarks[nameAndTypeIndex];
+                                        default -> mark;
+                                    };
+                                } else {
+                                    yield mark;
+                                }
                             }
-                            String cls = (classModel.constantPool().entryByIndex(classIndex) instanceof ClassEntry) ?
-                                    ((ClassEntry) classModel.constantPool().entryByIndex(classIndex)).name().stringValue() : "";
-                            if (cls.equals(classModel.thisClass().name().stringValue())) {
-                                mark = switch (poolMarks[nameAndTypeIndex]) {
-                                    case 'T', 'H', 'I' -> poolMarks[nameAndTypeIndex];
-                                    default -> mark;
-                                };
-                            }
-                            break;
                         }
-                        default:
-                            break;
-                    }
+                        default -> mark;
+                    };
 
                     if (mark != 0) {
                         poolMarks[cpIndex] = mark;
@@ -1169,54 +1166,46 @@ public class Indify {
         }
 
         private PoolEntry makeMethodTypeCon(Object x){
-            Utf8Entry utf8Entry;
-
-            if (x instanceof String) {
-                utf8Entry = poolBuilder.utf8Entry((String) x);
-            } else if (x instanceof PoolEntry && ((PoolEntry) x).tag() == TAG_STRING) {
-                utf8Entry = ((StringEntry) x).utf8();
+           if (x instanceof StringEntry stringEntry){
+                return poolBuilder.methodTypeEntry(stringEntry.utf8());
             } else {
-                return null;
-            }
+               return poolBuilder.methodTypeEntry(poolBuilder.utf8Entry((String) x));
 
-            return poolBuilder.methodTypeEntry(utf8Entry);
+            }
         }
 
         private PoolEntry parseMemberLookup(byte refKind, List<Object> args){
             //E.g.: lookup().findStatic(Foo.class, "name", MethodType)
             if(args.size() != 4) return null;
-            int argi = 0;
-            if(!"lookup".equals(args.get(argi++))) return null;
 
-            NameAndTypeEntry nt;
+            NameAndTypeEntry nameAndTypeEntry;
             Utf8Entry name, type;
-            ClassEntry cl;
-            Object con;
+            ClassEntry ownerClass;
 
-            if(!((con = args.get(argi++)) instanceof ClassEntry)) return null;
-            cl = (ClassEntry) con;
+            if(!"lookup".equals(args.getFirst())) return null;
 
-            if(!((con = args.get(argi++)) instanceof StringEntry)) return null;
-            name = ((StringEntry) con).utf8();
+            if(args.get(1) instanceof ClassEntry classEntry) ownerClass = classEntry;
+            else return null;
 
-            if(((con = args.get(argi)) instanceof MethodTypeEntry) || (con instanceof ClassEntry)){
-                assert con instanceof MethodTypeEntry;
-                type = ((MethodTypeEntry) con).descriptor();
-            } else return null;
+            if(args.get(2) instanceof StringEntry stringEntry) name = stringEntry.utf8();
+            else return null;
 
-            nt = poolBuilder.nameAndTypeEntry(name,type);
+            if(args.get(3) instanceof MethodTypeEntry methodTypeEntry) type = methodTypeEntry.descriptor();
+            else return null;
+
+            nameAndTypeEntry = poolBuilder.nameAndTypeEntry(name,type);
 
             MemberRefEntry ref;
             if(refKind <= (byte) STATIC_SETTER.refKind){
-                 ref = poolBuilder.fieldRefEntry(cl, nt);
+                 ref = poolBuilder.fieldRefEntry(ownerClass, nameAndTypeEntry);
                 return poolBuilder.methodHandleEntry(refKind, ref);
             }
             else if(refKind == (byte) INTERFACE_VIRTUAL.refKind){
-                ref = poolBuilder.interfaceMethodRefEntry(cl, nt);
+                ref = poolBuilder.interfaceMethodRefEntry(ownerClass, nameAndTypeEntry);
                 return poolBuilder.methodHandleEntry(refKind, ref);
             }
             else{
-                ref = poolBuilder.methodRefEntry(cl, nt);
+                ref = poolBuilder.methodRefEntry(ownerClass, nameAndTypeEntry);
             }
             return poolBuilder.methodHandleEntry(refKind, ref);
         }
@@ -1228,7 +1217,7 @@ public class Indify {
             int argi = 0;
             Object con;
             Utf8Entry name, type;
-            NameAndTypeEntry nt;
+            NameAndTypeEntry nameAndTypeEntry;
             MethodHandleEntry bsm;
 
             if (!((con = args.get(argi++)) instanceof MethodHandleEntry)) return null;
@@ -1241,7 +1230,7 @@ public class Indify {
             if (!((con = args.get(argi++)) instanceof MethodTypeEntry)) return null;
             type = ((MethodTypeEntry) con).descriptor();
 
-            nt = poolBuilder.nameAndTypeEntry(name, type);
+            nameAndTypeEntry = poolBuilder.nameAndTypeEntry(name, type);
 
             List<Object> extraArgs = new ArrayList<>();
             if (argi < args.size()) {
@@ -1272,39 +1261,8 @@ public class Indify {
                 extraArgConstants.add(((LoadableConstantEntry) x));
             }
 
-            List<Object[]> specs = bootstrap_MethodSpecifiers();
-            int specIndex = -1;
-            Object[] spec = new Object[]{ bsm.index(), extraArgConstants };
-            for (Object[] spec1 : specs) {
-                if (Arrays.equals(spec1, spec)) {
-                    specIndex = specs.indexOf(spec1);
-                    if (verbose)  System.err.println("reusing BSM specifier: "+spec1[0]+spec1[1]);
-                    break;
-                }
-            }
-            if (specIndex == -1) {
-                specs.add(spec);
-                if (verbose)  System.err.println("adding BSM specifier: "+spec[0]+spec[1]);
-            }
-
             BootstrapMethodEntry bsmEntry = poolBuilder.bsmEntry(bsm, extraArgConstants);
-            return poolBuilder.invokeDynamicEntry(bsmEntry, nt);
-        }
-
-        List<Object[]> bootstrap_MethodSpecifiers() {
-            List<Object[]> specs = new ArrayList<>();
-            int count = classModel.constantPool().bootstrapMethodCount();
-            if (count == 0){
-                poolBuilder.utf8Entry("BootstrapMethods");
-                return specs;
-            }
-
-            for (int i = 0; i < count; i++) {
-                int bsmRef = classModel.constantPool().bootstrapMethodEntry(i).bsmIndex();
-                List<LoadableConstantEntry> bsmArgs = new ArrayList<>(classModel.constantPool().bootstrapMethodEntry(i).arguments());
-                specs.add(new Object[]{ bsmRef, bsmArgs});
-            }
-            return specs;
+            return poolBuilder.invokeDynamicEntry(bsmEntry, nameAndTypeEntry);
         }
     }
 
@@ -1320,13 +1278,8 @@ public class Indify {
     private ClassModel parseClassFile(File f) throws IOException{
         byte[] bytes = openInputIntoBytes(f);
 
-        ClassHierarchyResolver classHierarchyResolver = classDesc -> {
-            // Treat all classes as interfaces
-            return ClassHierarchyResolver.ClassHierarchyInfo.ofInterface();
-        };
-
         try {
-            List<VerifyError> errors = of(ClassHierarchyResolverOption.of(classHierarchyResolver)).verify(bytes);
+            List<VerifyError> errors = of().verify(bytes);
             if (!errors.isEmpty()) {
                 for (VerifyError e : errors) {
                     System.err.println(e.getMessage());
