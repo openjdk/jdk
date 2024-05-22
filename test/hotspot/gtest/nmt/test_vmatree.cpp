@@ -370,7 +370,7 @@ struct SimpleVMATracker : public CHeapObj<mtTest> {
     const size_t page_count = size / 4096;
     const size_t start_idx = start / 4096;
     const size_t end_idx = start_idx + page_count;
-    assert(end_idx < (size_t)num_pages - 1, "");
+    assert(end_idx < (size_t)num_pages, "");
 
     Info new_info(tpe, stack, flag);
     for (size_t i = start_idx; i < end_idx; i++) {
