@@ -2071,10 +2071,8 @@ VTransformApplyStatus VTransformInputScalarNode::apply(const VLoopAnalyzer& vloo
 VTransformApplyStatus VTransformReplicateNode::apply(const VLoopAnalyzer& vloop_analyzer, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
 
   Node* val = find_transformed_input(1, vnode_idx_to_transformed_node);
-  xxx // TODO this cannot work for nodes outside loop!
-  // Idea: create the Replicate already with the type!
-  const Type* val_t = vloop_analyzer.types().velt_type(val);
-  VectorNode* vn = VectorNode::scalar2vector(val, _vlen, val_t);
+  VectorNode* vn = VectorNode::scalar2vector(val, _vlen, _element_type);
+  register_new_vector(vloop_analyzer, vn, val);
   return VTransformApplyStatus::make_vector(vn, _vlen, vn->length_in_bytes());
 }
 
@@ -2091,15 +2089,21 @@ void VTransformVectorNode::register_new_vector_and_replace_scalar_nodes(const VL
 #endif
 
   PhaseIdealLoop* phase = vloop_analyzer.vloop().phase();
-
   Node* first = nodes().at(0);
-  phase->register_new_node_with_ctrl_of(vn, first);
+
+  register_new_vector(vloop_analyzer, vn, first);
+
   for (int i = 0; i < _nodes.length(); i++) {
     Node* n = _nodes.at(i);
     phase->igvn().replace_node(n, vn);
   }
-  phase->igvn()._worklist.push(vn);
+}
 
+void VTransformNode::register_new_vector(const VLoopAnalyzer& vloop_analyzer, Node* vn, Node* old_node) const {
+  PhaseIdealLoop* phase = vloop_analyzer.vloop().phase();
+  // TODO is this really the way to go?
+  phase->register_new_node_with_ctrl_of(vn, old_node);
+  phase->igvn()._worklist.push(vn);
   VectorNode::trace_new_vector(vn, "AutoVectorization");
 }
 
@@ -2236,7 +2240,8 @@ void VTransformScalarNode::print_spec() const {
 }
 
 void VTransformReplicateNode::print_spec() const {
-  tty->print("vlen=%d", _vlen);
+  tty->print("vlen=%d element_type=", _vlen);
+  _element_type->dump();
 }
 
 void VTransformVectorNode::print_spec() const {

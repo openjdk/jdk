@@ -1511,6 +1511,8 @@ public:
 
   Node* find_transformed_input(int i, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const;
 
+  void register_new_vector(const VLoopAnalyzer& vloop_analyzer, Node* vn, Node* old_node) const;
+
   NOT_PRODUCT(virtual const char* name() const = 0;)
   NOT_PRODUCT(void print() const;)
   NOT_PRODUCT(virtual void print_spec() const {};)
@@ -1553,9 +1555,10 @@ public:
 class VTransformReplicateNode : public VTransformNode {
 private:
   int _vlen;
+  const Type* _element_type;
 public:
-  VTransformReplicateNode(VTransformGraph& graph, int vlen) :
-    VTransformNode(graph, 2), _vlen(vlen) {}
+  VTransformReplicateNode(VTransformGraph& graph, int vlen, const Type* element_type) :
+    VTransformNode(graph, 2), _vlen(vlen), _element_type(element_type) {}
 
   virtual VTransformApplyStatus apply(const VLoopAnalyzer& vloop_analyzer,
                                       const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;

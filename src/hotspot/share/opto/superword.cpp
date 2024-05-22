@@ -3626,8 +3626,13 @@ VTransformNode* SuperWordVTransformBuilder::find_input_for_vector(int j, Node_Li
 
   if (unique != nullptr) {
     // Replicate
+    // Convert scalar input to vector with the same number of elements as
+    // p0's vector. Use p0's type because size of operand's container in
+    // vector should match p0's size regardless operand's size.
+    // TODO maybe does not work for everything, e.g. some shift cases?
     VTransformNode* unique_vtn = find_scalar(unique);
-    VTransformNode* replicate = new (_graph.arena()) VTransformReplicateNode(_graph, pack->size());
+    const Type* element_type = _vloop_analyzer.types().velt_type(p0);
+    VTransformNode* replicate = new (_graph.arena()) VTransformReplicateNode(_graph, pack->size(), element_type);
     replicate->set_req(1, unique_vtn);
     return replicate;
   }
