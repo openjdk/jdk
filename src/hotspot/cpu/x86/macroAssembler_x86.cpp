@@ -1164,8 +1164,13 @@ void MacroAssembler::align(int modulus) {
 }
 
 void MacroAssembler::align(int modulus, int target) {
-  if (target % modulus != 0) {
-    nop(modulus - (target % modulus));
+  int mask = modulus - 1;
+  guarantee((modulus & mask) == 0, "Modulus must be a power of two");
+  int numNops = mask & (-target);
+  guarantee(numNops >= 0 && numNops < modulus, "Unexpected number of NOPs");
+  guarantee((target + numNops) % modulus == 0, "Incorrect number of NOPs");
+  if (numNops != 0) {
+    nop(numNops);
   }
 }
 
