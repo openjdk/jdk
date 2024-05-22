@@ -193,17 +193,10 @@ void MemSummaryReporter::report_summary_of_type(MEMFLAGS flag,
 
   // Count thread's native stack in "Thread" category
   if (flag == mtThread) {
-    if (ThreadStackTracker::track_as_vm()) {
-      const VirtualMemory* thread_stack_usage =
-        (const VirtualMemory*)_vm_snapshot->by_type(mtThreadStack);
-      reserved_amount  += thread_stack_usage->reserved();
-      committed_amount += thread_stack_usage->committed();
-    } else {
-      const MallocMemory* thread_stack_usage =
-        (const MallocMemory*)_malloc_snapshot->by_type(mtThreadStack);
-      reserved_amount += thread_stack_usage->malloc_size();
-      committed_amount += thread_stack_usage->malloc_size();
-    }
+    const VirtualMemory* thread_stack_usage =
+      (const VirtualMemory*)_vm_snapshot->by_type(mtThreadStack);
+    reserved_amount  += thread_stack_usage->reserved();
+    committed_amount += thread_stack_usage->committed();
   } else if (flag == mtNMT) {
     // Count malloc headers in "NMT" category
     reserved_amount  += _malloc_snapshot->malloc_overhead();
@@ -240,21 +233,12 @@ void MemSummaryReporter::report_summary_of_type(MEMFLAGS flag,
     out->print_cr("%27s (  instance classes #" SIZE_FORMAT ", array classes #" SIZE_FORMAT ")",
       " ", _instance_class_count, _array_class_count);
   } else if (flag == mtThread) {
-    if (ThreadStackTracker::track_as_vm()) {
-      const VirtualMemory* thread_stack_usage =
-       _vm_snapshot->by_type(mtThreadStack);
-      // report thread count
-      out->print_cr("%27s (threads #" SIZE_FORMAT ")", " ", ThreadStackTracker::thread_count());
-      out->print("%27s (stack: ", " ");
-      print_total(thread_stack_usage->reserved(), thread_stack_usage->committed(), thread_stack_usage->peak_size());
-    } else {
-      MallocMemory* thread_stack_memory = _malloc_snapshot->by_type(mtThreadStack);
-      const char* scale = current_scale();
-      // report thread count
-      out->print_cr("%27s (threads #" SIZE_FORMAT ")", " ", thread_stack_memory->malloc_count());
-      out->print("%27s (Stack: " SIZE_FORMAT "%s", " ",
-        amount_in_current_scale(thread_stack_memory->malloc_size()), scale);
-    }
+    const VirtualMemory* thread_stack_usage =
+     _vm_snapshot->by_type(mtThreadStack);
+    // report thread count
+    out->print_cr("%27s (threads #" SIZE_FORMAT ")", " ", ThreadStackTracker::thread_count());
+    out->print("%27s (stack: ", " ");
+    print_total(thread_stack_usage->reserved(), thread_stack_usage->committed(), thread_stack_usage->peak_size());
     out->print_cr(")");
   }
 
@@ -627,24 +611,15 @@ void MemSummaryDiffReporter::diff_summary_of_type(MEMFLAGS flag,
       out->print_cr(")");
 
       out->print("%27s (stack: ", " ");
-      if (ThreadStackTracker::track_as_vm()) {
-        // report thread stack
-        const VirtualMemory* current_thread_stack =
-          _current_baseline.virtual_memory(mtThreadStack);
-        const VirtualMemory* early_thread_stack =
-          _early_baseline.virtual_memory(mtThreadStack);
+      // report thread stack
+      const VirtualMemory* current_thread_stack =
+        _current_baseline.virtual_memory(mtThreadStack);
+      const VirtualMemory* early_thread_stack =
+        _early_baseline.virtual_memory(mtThreadStack);
 
-        print_virtual_memory_diff(current_thread_stack->reserved(), current_thread_stack->committed(),
-          early_thread_stack->reserved(), early_thread_stack->committed());
-      } else {
-        const MallocMemory* current_thread_stack =
-          _current_baseline.malloc_memory(mtThreadStack);
-        const MallocMemory* early_thread_stack =
-          _early_baseline.malloc_memory(mtThreadStack);
+      print_virtual_memory_diff(current_thread_stack->reserved(), current_thread_stack->committed(),
+        early_thread_stack->reserved(), early_thread_stack->committed());
 
-        print_malloc_diff(current_thread_stack->malloc_size(), current_thread_stack->malloc_count(),
-          early_thread_stack->malloc_size(), early_thread_stack->malloc_count(), flag);
-      }
       out->print_cr(")");
     }
 
