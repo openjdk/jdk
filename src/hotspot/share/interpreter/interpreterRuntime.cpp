@@ -223,14 +223,6 @@ JRT_ENTRY(void, InterpreterRuntime::_new(JavaThread* current, ConstantPool* pool
   // Make sure klass is initialized
   klass->initialize(CHECK);
 
-  // At this point the class may not be fully initialized
-  // because of recursive initialization. If it is fully
-  // initialized we rewrite it into its fast version
-  // (Note: no locking is needed here since this is an
-  // atomic byte write and can be done more than once).
-  //
-  // Note: If we have a breakpoint, then we don't rewrite
-  //       because the _breakpoint bytecode would be lost.
   oop obj = klass->allocate_instance(CHECK);
   current->set_vm_result(obj);
 JRT_END
