@@ -1389,7 +1389,7 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
 
           // // Get the first array index that can contain super_klass into r_array_index.
           if (bit != 0) {
-            __ shld(vtemp, vtemp, Klass::SEC_HASH_MASK - bit);
+            __ shld(vtemp, vtemp, Klass::SECONDARY_SUPERS_TABLE_MASK - bit);
             __ cnt(vtemp, __ T8B, vtemp);
             __ addv(vtemp, __ T8B, vtemp);
             __ fmovd(r_array_index, vtemp);
@@ -1413,7 +1413,7 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
           // Is there another entry to check? Consult the bitmap.
           {
             Label keep_going;
-            __ tbnz(r_bitmap, (bit+1) & Klass::SEC_HASH_MASK, keep_going);
+            __ tbnz(r_bitmap, (bit+1) & Klass::SECONDARY_SUPERS_TABLE_MASK, keep_going);
             __ b(*failure_target);
             __ bind(keep_going);
           }

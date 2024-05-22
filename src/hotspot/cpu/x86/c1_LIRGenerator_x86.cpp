@@ -1456,7 +1456,7 @@ void LIRGenerator::do_CheckCast(CheckCast* x) {
     tmp3 = new_register(objectType);
   }
   LIR_Opr tmp4 = LIR_OprFact::illegalOpr;
-  if (HashSecondarySupers) {
+  if (UseSecondarySupersTable) {
     tmp4 = new_register(addressType);
   }
   __ checkcast(reg, obj.result(), x->klass(),
@@ -1482,7 +1482,7 @@ void LIRGenerator::do_InstanceOf(InstanceOf* x) {
     tmp3 = new_register(objectType);
   }
   LIR_Opr tmp4 = LIR_OprFact::illegalOpr;
-  if (HashSecondarySupers) {
+  if (UseSecondarySupersTable) {
     tmp4 = new_register(addressType);
   }
   __ instanceof(reg, obj.result(), x->klass(),

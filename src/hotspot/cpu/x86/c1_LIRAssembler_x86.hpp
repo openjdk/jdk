@@ -67,4 +67,9 @@ public:
   void ffree(int i);
 #endif // !_LP64
 
+void lookup_secondary_supers_table(Klass *super_klass,
+                                   Register r_sub_klass, Register r_super_klass,
+                                   Register r_tmp1, Register r_tmp2,
+                                   Label* success, Label* failure);
+
 #endif // CPU_X86_C1_LIRASSEMBLER_X86_HPP
