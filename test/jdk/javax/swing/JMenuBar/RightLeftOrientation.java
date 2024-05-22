@@ -25,7 +25,7 @@
  * @bug 4211731 4214512
  * @summary
  *     This test checks if menu bars lay out correctly when their
- *     ComponentOrientation property is set to RIGHT_TO_LEFT.  This test is
+ *     ComponentOrientation property is set to RIGHT_TO_LEFT. This test is
  *     manual.  The tester is asked to compare left-to-right and
  *     right-to-left menu bars and judge whether they are mirror images of each
  *     other.
@@ -99,7 +99,6 @@ public class RightLeftOrientation {
         }
 
         frame.add(panel);
-
 
         ltrFrame = new JFrame("Left To Right");
         ltrFrame.setJMenuBar(createMenuBar(ComponentOrientation.LEFT_TO_RIGHT));

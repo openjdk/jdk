@@ -25,7 +25,7 @@
  * @bug 4214514
  * @summary
  *     This test checks if tool bars lay out correctly when their
- *     ComponentOrientation property is set to RIGHT_TO_LEFT.  This test is
+ *     ComponentOrientation property is set to RIGHT_TO_LEFT. This test is
  *     manual.  The tester is asked to compare left-to-right and
  *     right-to-left tool bars and judge whether they are mirror images of each
  *     other.
@@ -105,12 +105,11 @@ public class RightLeftOrientation {
 
         frame.add(panel);
 
-
         ltrFrame = new JFrame("Left To Right");
         Container contentPane = ltrFrame.getContentPane();
         contentPane.setLayout(new BorderLayout());
         panel = new JPanel();
-        panel.setBackground( Color.white );
+        panel.setBackground(Color.white);
         contentPane.add("Center",panel);
         contentPane.add("North",
                         createToolBar(ComponentOrientation.LEFT_TO_RIGHT));
@@ -122,7 +121,7 @@ public class RightLeftOrientation {
         contentPane = rtlFrame.getContentPane();
         contentPane.setLayout(new BorderLayout());
         panel = new JPanel();
-        panel.setBackground( Color.white );
+        panel.setBackground(Color.white);
         contentPane.add("Center",panel);
         contentPane.add("North",
                         createToolBar(ComponentOrientation.RIGHT_TO_LEFT));
