@@ -127,12 +127,14 @@ void CircularStringBuffer::enqueue_locked(const char* str, size_t size, LogFileS
       Thread* thread = Thread::current_or_null();
       if (thread != nullptr && thread->is_Java_thread()) {
         ThreadBlockInVM tbivm(JavaThread::cast(thread));
+        ConsumerLocker cl(this);
         while (not_enough_memory()) {
-          _producer_lock.wait(0);
+          _consumer_lock.wait(0);
         }
       } else {
+        ConsumerLocker cl(this);
         while (not_enough_memory()) {
-          _producer_lock.wait(0);
+          _consumer_lock.wait(0);
         }
       }
     } else {
@@ -155,19 +157,19 @@ void CircularStringBuffer::enqueue_locked(const char* str, size_t size, LogFileS
   circular_mapping.write_bytes(t, str, size);
   // Finally move the tail, making the message available for consumers.
   Atomic::store(&_tail, (t + required_memory) % circular_mapping.size);
-  // We're done, notify the reader.
+  // We're done, notify a potentially awaiting consumer.
   _consumer_lock.notify();
   return;
 }
 
 void CircularStringBuffer::enqueue(const char* msg, size_t size, LogFileStreamOutput* output,
                                    const LogDecorations decorations) {
-  ProducerLocker wl(this);
+  ProducerLocker pl(this);
   enqueue_locked(msg, size, output, decorations);
 }
 
 void CircularStringBuffer::enqueue(LogFileStreamOutput& output, LogMessageBuffer::Iterator msg_iterator) {
-  ProducerLocker wl(this);
+  ProducerLocker pl(this);
   for (; !msg_iterator.is_at_end(); msg_iterator++) {
     const char* str = msg_iterator.message();
     size_t len = strlen(str);
@@ -176,7 +178,7 @@ void CircularStringBuffer::enqueue(LogFileStreamOutput& output, LogMessageBuffer
 }
 
 CircularStringBuffer::DequeueResult CircularStringBuffer::dequeue(Message* out_msg, char* out, size_t out_size) {
-  ConsumerLocker rl(this);
+  ConsumerLocker cl(this);
 
   size_t h = _head;
   size_t t = _tail;
@@ -200,7 +202,7 @@ CircularStringBuffer::DequeueResult CircularStringBuffer::dequeue(Message* out_m
   // Done, move the head forward
   Atomic::store(&_head, (h + out_msg->size) % circular_mapping.size);
   // Notify a producer that more memory is available
-  _producer_lock.notify();
+  _consumer_lock.notify();
   // Release the lock
   return OK;
 }
@@ -223,7 +225,7 @@ bool CircularStringBuffer::maybe_has_message() {
 
 void CircularStringBuffer::await_message() {
   while (true) {
-    ConsumerLocker rl(this);
+    ConsumerLocker cl(this);
     while (_head == _tail) {
       _consumer_lock.wait(0 /* no timeout */);
     }

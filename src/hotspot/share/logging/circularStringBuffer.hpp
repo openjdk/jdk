@@ -118,6 +118,7 @@ private:
   PlatformMonitor& _stats_lock;
 
   // Can't use a Monitor here as we need a low-level API that can be used without Thread::current().
+  // The consumer lock's condition variable is used for communicating when messages are produced and consumed.
   PlatformMonitor _consumer_lock;
   PlatformMonitor _producer_lock;
   Semaphore _flush_sem;
