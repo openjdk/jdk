@@ -33,7 +33,7 @@ import java.util.Set;
  * @library /tools/javac/lib
  * @modules jdk.compiler
  * @enablePreview
- * build JavacTestingAbstractProcessor
+ * @build JavacTestingAbstractProcessor
  * @compile ModuleImportProcessingTest.java
  * @compile/process -processor ModuleImportProcessingTest ModuleImportProcessingTest.java
  */
