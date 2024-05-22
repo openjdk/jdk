@@ -794,8 +794,7 @@ void Metaspace::global_initialize() {
       assert(protzone_base == CompressedKlassPointers::base(), "Very first chunk should be located at class space"
              "start, hence at decoding base (" PTR_FORMAT ")", p2i(protzone_base));
       assert(chunk->word_size() == protzone_wordsize, "Chunk should be exactly one page sized");
-      WINDOWS_ONLY(chunk->ensure_committed(protzone_wordsize);) // Needed on Windows to protect memory
-      const bool prot = os::protect_memory((char*)protzone_base, protzone_size, os::MEM_PROT_NONE, true);
+      const bool prot = os::protect_memory((char*)protzone_base, protzone_size, os::MEM_PROT_NONE, false);
       assert(prot, "Failed to memprotect the first page of metaspace");
       log_info(metaspace)("Protected no-access zone (class space): " RANGEFMT, RANGEFMTARGS(protzone_base, protzone_size));
     }
