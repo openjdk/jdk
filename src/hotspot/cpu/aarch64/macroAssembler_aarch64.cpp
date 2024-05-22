@@ -3541,14 +3541,14 @@ void MacroAssembler::multiply_128_x_128_loop(Register y, Register z,
  * r2: y
  * r3: ylen
  * r4:  z
- * r10: tmp0
- * r11: tmp1
- * r12: tmp2
- * r13: tmp3
- * r14: tmp4
- * r15: tmp5
- * r16: tmp6
- * r17: tmp7
+ * r5: tmp0
+ * r10: tmp1
+ * r11: tmp2
+ * r12: tmp3
+ * r13: tmp4
+ * r14: tmp5
+ * r15: tmp6
+ * r16: tmp7
  *
  */
 void MacroAssembler::multiply_to_len(Register x, Register xlen, Register y, Register ylen,

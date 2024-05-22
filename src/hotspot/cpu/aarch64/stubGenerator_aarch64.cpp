@@ -4660,14 +4660,14 @@ class StubGenerator: public StubCodeGenerator {
     const Register ylen  = r3;
     const Register z     = r4;
 
-    const Register tmp0  = r10;
-    const Register tmp1  = r11;
-    const Register tmp2  = r12;
-    const Register tmp3  = r13;
-    const Register tmp4  = r14;
-    const Register tmp5  = r15;
-    const Register tmp6  = r16;
-    const Register tmp7  = r17;
+    const Register tmp0  = r5;
+    const Register tmp1  = r10;
+    const Register tmp2  = r11;
+    const Register tmp3  = r12;
+    const Register tmp4  = r13;
+    const Register tmp5  = r14;
+    const Register tmp6  = r15;
+    const Register tmp7  = r16;
 
     BLOCK_COMMENT("Entry:");
     __ enter(); // required for proper stackwalking of RuntimeStub frame
@@ -4692,14 +4692,14 @@ class StubGenerator: public StubCodeGenerator {
     const Register y     = r4; // == x
     const Register ylen  = r5; // == xlen
 
-    const Register tmp0  = r10;
-    const Register tmp1  = r11;
-    const Register tmp2  = r12;
-    const Register tmp3  = r13;
-    const Register tmp4  = r14;
-    const Register tmp5  = r15;
-    const Register tmp6  = r16;
-    const Register tmp7  = r17;
+    const Register tmp0  = r3;
+    const Register tmp1  = r10;
+    const Register tmp2  = r11;
+    const Register tmp3  = r12;
+    const Register tmp4  = r13;
+    const Register tmp5  = r14;
+    const Register tmp6  = r15;
+    const Register tmp7  = r16;
 
     RegSet spilled_regs = RegSet::of(y, ylen);
     BLOCK_COMMENT("Entry:");
