@@ -2150,11 +2150,44 @@ bool size_fits_all_mem_uses(AddPNode* addp, int shift) {
   return true;
 }
 
+// Binary src (Replicate scalar/immediate)
+static bool is_vector_scalar_bitwise_pattern(Node* n, Node* m) {
+  if (n == nullptr || m == nullptr) {
+    return false;
+  }
+
+  if (m->Opcode() != Op_Replicate) {
+    return false;
+  }
+
+  switch (n->Opcode()) {
+    case Op_AndV:
+    case Op_OrV:
+    case Op_XorV: {
+      return true;
+    }
+    default:
+      return false;
+  }
+}
+
+// (XorV src (Replicate m1))
+// (XorVMask src (MaskAll m1))
+static bool is_vector_bitwise_not_pattern(Node* n, Node* m) {
+  if (n != nullptr && m != nullptr) {
+    return (n->Opcode() == Op_XorV || n->Opcode() == Op_XorVMask) &&
+           VectorNode::is_all_ones_vector(m);
+  }
+  return false;
+}
+
 // Should the Matcher clone input 'm' of node 'n'?
 bool Matcher::pd_clone_node(Node* n, Node* m, Matcher::MStack& mstack) {
   assert_cond(m != nullptr);
-  if (is_vshift_con_pattern(n, m)) { // ShiftV src (ShiftCntV con)
-    mstack.push(m, Visit);           // m = ShiftCntV
+  if (is_vshift_con_pattern(n, m) || // ShiftV src (ShiftCntV con)
+      is_vector_bitwise_not_pattern(n, m) ||
+      is_vector_scalar_bitwise_pattern(n, m)) {
+    mstack.push(m, Visit);
     return true;
   }
   return false;

@@ -92,7 +92,7 @@
   nonstatic_field(CardTableBarrierSet,         _card_table,                                   CardTable*)                            \
                                                                                                                                      \
   nonstatic_field(CollectedHeap,               _reserved,                                     MemRegion)                             \
-  nonstatic_field(CollectedHeap,               _is_gc_active,                                 bool)                                  \
+  nonstatic_field(CollectedHeap,               _is_stw_gc_active,                             bool)                                  \
   nonstatic_field(CollectedHeap,               _total_collections,                            unsigned int)                          \
                                                                                                                                      \
   nonstatic_field(ContiguousSpace,             _bottom,                                       HeapWord*)                             \

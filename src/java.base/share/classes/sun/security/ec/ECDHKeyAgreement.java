@@ -31,6 +31,7 @@ import sun.security.util.CurveDB;
 import sun.security.util.ECUtil;
 import sun.security.util.NamedCurve;
 import sun.security.util.math.IntegerFieldModuloP;
+import sun.security.util.math.IntegerMontgomeryFieldModuloP;
 import sun.security.util.math.MutableIntegerModuloP;
 import sun.security.util.math.SmallValue;
 
@@ -265,6 +266,11 @@ public final class ECDHKeyAgreement extends KeyAgreementSpi {
         ECPublicKey pubKey) throws InvalidKeyException {
 
         IntegerFieldModuloP field = ops.getField();
+        if (field instanceof IntegerMontgomeryFieldModuloP) {
+            // No point of doing a single SmallValue operation in Montgomery domain
+            field = ((IntegerMontgomeryFieldModuloP)field).residueField();
+        }
+
         // convert s array into field element and multiply by the cofactor
         MutableIntegerModuloP scalar = field.getElement(priv.getS()).mutable();
         SmallValue cofactor =

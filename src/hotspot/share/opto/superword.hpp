@@ -411,10 +411,14 @@ class SuperWord : public ResourceObj {
 
   GrowableArray<SWNodeInfo> _node_info;  // Info needed per node
   CloneMap&            _clone_map;       // map of nodes created in cloning
-  MemNode const* _align_to_ref;          // Memory reference that pre-loop will align to
 
   PairSet _pairset;
   PackSet _packset;
+
+  // Memory reference, and the alignment width (aw) for which we align the main-loop,
+  // by adjusting the pre-loop limit.
+  MemNode const* _mem_ref_for_main_loop_alignment;
+  int _aw_for_main_loop_alignment;
 
  public:
   SuperWord(const VLoopAnalyzer &vloop_analyzer);
@@ -563,8 +567,6 @@ class SuperWord : public ResourceObj {
   Arena* arena()                   { return &_arena; }
 
   int get_vw_bytes_special(MemNode* s);
-  const MemNode* align_to_ref() const { return _align_to_ref; }
-  void set_align_to_ref(const MemNode* m) { _align_to_ref = m; }
 
   // Ensure node_info contains element "i"
   void grow_node_info(int i) { if (i >= _node_info.length()) _node_info.at_put_grow(i, SWNodeInfo::initial); }
@@ -670,6 +672,7 @@ private:
   // Alignment within a vector memory reference
   int memory_alignment(MemNode* s, int iv_adjust);
   // Ensure that the main loop vectors are aligned by adjusting the pre loop limit.
+  void determine_mem_ref_and_aw_for_main_loop_alignment();
   void adjust_pre_loop_limit_to_align_main_loop_vectors();
 };
 
