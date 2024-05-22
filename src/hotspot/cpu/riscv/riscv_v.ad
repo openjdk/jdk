@@ -3078,8 +3078,8 @@ instruct vshiftcnt(vReg dst, iRegIorL2I cnt) %{
 // Basically, the behaviour between vectorization and Vector API is the same for Long and Integer, except that Vector API
 // also supports Byte and Short rotation. But we can still share the intrinsics between vectorization and Vector API.
 //
-// NOTE: for Long, the intrinsic's accept imm input as rotation value needs some special treatment, as the vector-immediate
-//       is only 5 bits, but the valid Long rotation value is 6 bits.
+// NOTE: for Long, its valid rotation value is 6 bits, although basic vector instruction only support 5 bit vector-immediate,
+//       in Zvbb, vror.vi support 6 bits vector-immediate, so the imm implementation of Long and other types can be unified.
 
 // Rotate right
 
@@ -3097,7 +3097,8 @@ instruct vrotate_right(vReg dst, vReg src, vReg shift) %{
 instruct vrotate_right_imm(vReg dst, vReg src, immI shift) %{
   predicate(Matcher::vector_element_basic_type(n) == T_BYTE ||
             Matcher::vector_element_basic_type(n) == T_SHORT ||
-            Matcher::vector_element_basic_type(n) == T_INT);
+            Matcher::vector_element_basic_type(n) == T_INT ||
+            Matcher::vector_element_basic_type(n) == T_LONG);
   match(Set dst (RotateRightV src shift));
   format %{ "vrotate_right_imm $dst, $src, $shift\t" %}
   ins_encode %{
@@ -3108,28 +3109,6 @@ instruct vrotate_right_imm(vReg dst, vReg src, immI shift) %{
       return;
     }
     __ vsetvli_helper(bt, Matcher::vector_length(this));
-    __ vror_vi(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg), con);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct vrotateL_right_imm(vReg dst, vReg src, immI shift) %{
-  predicate(Matcher::vector_element_basic_type(n) == T_LONG);
-  match(Set dst (RotateRightV src shift));
-  format %{ "vrotateL_right_imm $dst, $src, $shift\t" %}
-  ins_encode %{
-    BasicType bt = Matcher::vector_element_basic_type(this);
-    uint32_t bits = type2aelembytes(bt) * 8;
-    uint32_t con = (unsigned)$shift$$constant & (bits - 1);
-    if (con == 0) {
-      return;
-    }
-    __ vsetvli_helper(bt, Matcher::vector_length(this));
-    if (con > (unsigned)0x1f) { // vector-immediate is 5 bits length.
-      __ mv(t0, con);
-      __ vror_vx(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg), t0);
-      return;
-    }
     __ vror_vi(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg), con);
   %}
   ins_pipe(pipe_slow);
@@ -3153,7 +3132,8 @@ instruct vrotate_right_masked(vReg dst_src, vReg shift, vRegMask_V0 v0) %{
 instruct vrotate_right_imm_masked(vReg dst_src, immI shift, vRegMask_V0 v0) %{
   predicate(Matcher::vector_element_basic_type(n) == T_BYTE ||
             Matcher::vector_element_basic_type(n) == T_SHORT ||
-            Matcher::vector_element_basic_type(n) == T_INT);
+            Matcher::vector_element_basic_type(n) == T_INT ||
+            Matcher::vector_element_basic_type(n) == T_LONG);
   match(Set dst_src (RotateRightV (Binary dst_src shift) v0));
   effect(TEMP_DEF dst_src);
   format %{ "vrotate_right_imm_masked $dst_src, $dst_src, $shift, v0.t\t" %}
@@ -3165,29 +3145,6 @@ instruct vrotate_right_imm_masked(vReg dst_src, immI shift, vRegMask_V0 v0) %{
       return;
     }
     __ vsetvli_helper(bt, Matcher::vector_length(this));
-    __ vror_vi(as_VectorRegister($dst_src$$reg), as_VectorRegister($dst_src$$reg), con, Assembler::v0_t);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct vrotateL_right_imm_masked(vReg dst_src, immI shift, vRegMask_V0 v0) %{
-  predicate(Matcher::vector_element_basic_type(n) == T_LONG);
-  match(Set dst_src (RotateRightV (Binary dst_src shift) v0));
-  effect(TEMP_DEF dst_src);
-  format %{ "vrotateL_right_imm_masked $dst_src, $dst_src, $shift, v0.t\t" %}
-  ins_encode %{
-    BasicType bt = Matcher::vector_element_basic_type(this);
-    uint32_t bits = type2aelembytes(bt) * 8;
-    uint32_t con = (unsigned)$shift$$constant & (bits - 1);
-    if (con == 0) {
-      return;
-    }
-    __ vsetvli_helper(bt, Matcher::vector_length(this));
-    if (con > (unsigned)0x1f) { // vector-immediate is 5 bits length.
-      __ mv(t0, con);
-      __ vror_vx(as_VectorRegister($dst_src$$reg), as_VectorRegister($dst_src$$reg), t0, Assembler::v0_t);
-      return;
-    }
     __ vror_vi(as_VectorRegister($dst_src$$reg), as_VectorRegister($dst_src$$reg), con, Assembler::v0_t);
   %}
   ins_pipe(pipe_slow);
@@ -3209,7 +3166,8 @@ instruct vrotate_left(vReg dst, vReg src, vReg shift) %{
 instruct vrotate_left_imm(vReg dst, vReg src, immI shift) %{
   predicate(Matcher::vector_element_basic_type(n) == T_BYTE ||
             Matcher::vector_element_basic_type(n) == T_SHORT ||
-            Matcher::vector_element_basic_type(n) == T_INT);
+            Matcher::vector_element_basic_type(n) == T_INT ||
+            Matcher::vector_element_basic_type(n) == T_LONG);
   match(Set dst (RotateLeftV src shift));
   format %{ "vrotate_left_imm $dst, $src, $shift\t" %}
   ins_encode %{
@@ -3221,29 +3179,6 @@ instruct vrotate_left_imm(vReg dst, vReg src, immI shift) %{
     }
     __ vsetvli_helper(bt, Matcher::vector_length(this));
     con = bits - con;
-    __ vror_vi(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg), con);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct vrotateL_left_imm(vReg dst, vReg src, immI shift) %{
-  predicate(Matcher::vector_element_basic_type(n) == T_LONG);
-  match(Set dst (RotateLeftV src shift));
-  format %{ "vrotateL_left_imm $dst, $src, $shift\t" %}
-  ins_encode %{
-    BasicType bt = Matcher::vector_element_basic_type(this);
-    uint32_t bits = type2aelembytes(bt) * 8;
-    uint32_t con = (unsigned)$shift$$constant & (bits - 1);
-    if (con == 0) {
-      return;
-    }
-    __ vsetvli_helper(bt, Matcher::vector_length(this));
-    con = bits - con;
-    if (con > (unsigned)0x1f) { // vector-immediate is 5 bits length.
-      __ mv(t0, con);
-      __ vror_vx(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg), t0);
-      return;
-    }
     __ vror_vi(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg), con);
   %}
   ins_pipe(pipe_slow);
@@ -3267,7 +3202,8 @@ instruct vrotate_left_masked(vReg dst_src, vReg shift, vRegMask_V0 v0) %{
 instruct vrotate_left_imm_masked(vReg dst_src, immI shift, vRegMask_V0 v0) %{
   predicate(Matcher::vector_element_basic_type(n) == T_BYTE ||
             Matcher::vector_element_basic_type(n) == T_SHORT ||
-            Matcher::vector_element_basic_type(n) == T_INT);
+            Matcher::vector_element_basic_type(n) == T_INT ||
+            Matcher::vector_element_basic_type(n) == T_LONG);
   match(Set dst_src (RotateLeftV (Binary dst_src shift) v0));
   effect(TEMP_DEF dst_src);
   format %{ "vrotate_left_imm_masked $dst_src, $dst_src, $shift, v0.t\t" %}
@@ -3280,30 +3216,6 @@ instruct vrotate_left_imm_masked(vReg dst_src, immI shift, vRegMask_V0 v0) %{
     }
     __ vsetvli_helper(bt, Matcher::vector_length(this));
     con = bits - con;
-    __ vror_vi(as_VectorRegister($dst_src$$reg), as_VectorRegister($dst_src$$reg), con, Assembler::v0_t);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct vrotateL_left_imm_masked(vReg dst_src, immI shift, vRegMask_V0 v0) %{
-  predicate(Matcher::vector_element_basic_type(n) == T_LONG);
-  match(Set dst_src (RotateLeftV (Binary dst_src shift) v0));
-  effect(TEMP_DEF dst_src);
-  format %{ "vrotateL_left_imm_masked $dst_src, $dst_src, $shift, v0.t\t" %}
-  ins_encode %{
-    BasicType bt = Matcher::vector_element_basic_type(this);
-    uint32_t bits = type2aelembytes(bt) * 8;
-    uint32_t con = (unsigned)$shift$$constant & (bits - 1);
-    if (con == 0) {
-      return;
-    }
-    __ vsetvli_helper(bt, Matcher::vector_length(this));
-    con = bits - con;
-    if (con > (unsigned)0x1f) { // vector-immediate is 5 bits length.
-      __ mv(t0, con);
-      __ vror_vx(as_VectorRegister($dst_src$$reg), as_VectorRegister($dst_src$$reg), t0, Assembler::v0_t);
-      return;
-    }
     __ vror_vi(as_VectorRegister($dst_src$$reg), as_VectorRegister($dst_src$$reg), con, Assembler::v0_t);
   %}
   ins_pipe(pipe_slow);

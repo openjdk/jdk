@@ -1884,21 +1884,34 @@ enum Nf {
   }
 
   // Vector Bit-manipulation used in Cryptography (Zvbb) Extension
-  INSN(vrol_vx,    0b1010111, 0b100, 0b010101);
   INSN(vror_vx,    0b1010111, 0b100, 0b010100);
 
 #undef INSN
 
+#define patch_VArith_imm6(op, Reg, funct3, Reg_or_Imm5, I5, Vs2, vm, funct6)   \
+    unsigned insn = 0;                                                         \
+    patch((address)&insn, 6, 0, op);                                           \
+    patch((address)&insn, 14, 12, funct3);                                     \
+    patch((address)&insn, 19, 15, Reg_or_Imm5);                                \
+    patch((address)&insn, 25, vm);                                             \
+    patch((address)&insn, 26, I5);                                             \
+    patch((address)&insn, 31, 27, funct6);                                     \
+    patch_reg((address)&insn, 7, Reg);                                         \
+    patch_reg((address)&insn, 20, Vs2);                                        \
+    emit(insn)
+
 #define INSN(NAME, op, funct3, funct6)                                                             \
   void NAME(VectorRegister Vd, VectorRegister Vs2, uint32_t imm, VectorMask vm = unmasked) {       \
-    guarantee(is_uimm5(imm), "uimm is invalid");                                                   \
-    patch_VArith(op, Vd, funct3, (uint32_t)(imm & 0x1f), Vs2, vm, funct6);                         \
+    guarantee(is_uimm6(imm), "uimm is invalid");                                                   \
+    patch_VArith_imm6(op, Vd, funct3, (uint32_t)(imm & 0x1f), (uint32_t)((imm >> 5) & 0x1), Vs2, vm, funct6);  \
   }
 
   // Vector Bit-manipulation used in Cryptography (Zvbb) Extension
-  INSN(vror_vi,    0b1010111, 0b011, 0b010100);
+  // NOTE: there is no corresponding vrol.vi supplied by the extension, but it can be emulated with vror.vi easily.
+  INSN(vror_vi,    0b1010111, 0b011, 0b01010);
 
 #undef INSN
+#undef patch_VArith_imm6
 
 #define INSN(NAME, op, funct3, Vs1, funct6)                                    \
   void NAME(VectorRegister Vd, VectorRegister Vs2, VectorMask vm = unmasked) { \
