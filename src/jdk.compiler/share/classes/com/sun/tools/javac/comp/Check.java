@@ -4428,7 +4428,7 @@ public class Check {
                 TypeSymbol tsym = imp.qualid.selected.type.tsym;
                 if (tsym.kind == PCK && tsym.members().isEmpty() &&
                     !(Feature.IMPORT_ON_DEMAND_OBSERVABLE_PACKAGES.allowedInSource(source) && tsym.exists())) {
-                    log.error(DiagnosticFlag.RESOLVE_ERROR, imp.pos, Errors.DoesntExist(tsym));
+                    log.error(DiagnosticFlag.RESOLVE_ERROR, imp.qualid.selected.pos(), Errors.DoesntExist(tsym));
                 }
             }
         }
