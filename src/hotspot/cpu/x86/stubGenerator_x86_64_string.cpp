@@ -70,10 +70,6 @@
 #define __ _masm->
 #define __C2 ((C2_MacroAssembler *) _masm)->
 
-// ASGASG
-// #define DO_EARLY_BAILOUT 1
-#undef DO_EARLY_BAILOUT
-
 // Register definitions for consistency
 // These registers can be counted on to always contain
 // the correct values (once set up)
@@ -1165,10 +1161,6 @@ static void compare_big_haystack_to_needle(bool sizeKnown, int size, Label &noMa
      vpcmpeq(cmp_0, XMM_BYTE_0, Address(haystack, 0), Assembler::AVX_256bit);
 
   __ vpmovmskb(eq_mask, cmp_0, Assembler::AVX_256bit);
-#ifdef DO_EARLY_BAILOUT
-  __ testl(eq_mask, eq_mask);
-  __ je(noMatch);
-#endif
 
   // If the needle is a single element (at compile time) no need to compare more
   if (size != sizeIncr) {
@@ -1178,11 +1170,6 @@ static void compare_big_haystack_to_needle(bool sizeKnown, int size, Label &noMa
     __ vpand(result, cmp_k, cmp_0, Assembler::AVX_256bit);
 
     if (size > sizeIncr * 2) {
-#ifdef DO_EARLY_BAILOUT
-      __ vpmovmskb(eq_mask, result, Assembler::AVX_256bit);
-      __ testl(eq_mask, eq_mask);
-      __ je(noMatch);
-#endif
       vpcmpeq(cmp_k, XMM_BYTE_1, Address(haystack, 1 * sizeIncr), Assembler::AVX_256bit);
       __ vpand(result, cmp_k, result, Assembler::AVX_256bit);
     }
@@ -1276,12 +1263,6 @@ static void compare_haystack_to_needle(bool sizeKnown, int size, Label &noMatch,
     __ vpand(result, cmp_k, cmp_0, Assembler::AVX_256bit);
 
     if (size > (sizeIncr * 2)) {
-#ifdef DO_EARLY_BAILOUT
-      __ vpmovmskb(eq_mask, result, Assembler::AVX_256bit);
-      __ andq(eq_mask, rTmp);
-      __ testl(eq_mask, eq_mask);
-      __ je(noMatch);
-#endif
       vpcmpeq(cmp_k, XMM_BYTE_1, Address(haystack, 1 * sizeIncr), Assembler::AVX_256bit);
       __ vpand(result, cmp_k, result, Assembler::AVX_256bit);
     }
