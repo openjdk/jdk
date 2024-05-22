@@ -149,8 +149,15 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
   }
 
-  if (FLAG_IS_DEFAULT(UseCRC32Intrinsics)) {
-    FLAG_SET_DEFAULT(UseCRC32Intrinsics, true);
+  if (UseZba) {
+    if (FLAG_IS_DEFAULT(UseCRC32Intrinsics)) {
+      FLAG_SET_DEFAULT(UseCRC32Intrinsics, true);
+    }
+  } else {
+    if (!FLAG_IS_DEFAULT(UseCRC32Intrinsics)) {
+      warning("CRC32 intrinsic requires Zba instructions (not available on this CPU)");
+    }
+    FLAG_SET_DEFAULT(UseCRC32Intrinsics, false);
   }
 
   if (UseCRC32CIntrinsics) {
