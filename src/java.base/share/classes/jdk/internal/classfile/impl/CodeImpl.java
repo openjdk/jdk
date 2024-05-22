@@ -221,6 +221,9 @@ public final class CodeImpl
     }
 
     private void inflateLabel(int bci) {
+        if (bci < 0 || bci > codeLength)
+            throw new IllegalArgumentException(String.format("Bytecode offset out of range; bci=%d, codeLength=%d",
+                                                             bci, codeLength));
         if (labels[bci] == null)
             labels[bci] = new LabelImpl(this, bci);
     }

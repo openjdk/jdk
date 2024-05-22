@@ -140,10 +140,6 @@ public:
   void gc_prologue();
   void gc_epilogue();
 
-  bool should_collect(bool   full,
-                      size_t word_size,
-                      bool   is_tlab);
-
   bool should_allocate(size_t word_size, bool is_tlab) {
     bool result = false;
     size_t overflow_limit = (size_t)1 << (BitsPerSize_t - LogHeapWordSize);
@@ -155,8 +151,6 @@ public:
 
   // Performance Counter support
   void update_counters();
-
-  void record_spaces_top();
 
   // Statistics
 
