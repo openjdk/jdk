@@ -2340,14 +2340,14 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
   // (see JDK-8286125), we need scalar replications of the iv value if
   // all inputs are the same iv, so we do a same inputs check here.
   if (opd == iv() && !have_same_inputs) {
-    BasicType p0_bt = velt_basic_type(p0);
-    BasicType iv_bt = is_subword_type(p0_bt) ? p0_bt : T_INT;
-    assert(VectorNode::is_populate_index_supported(iv_bt), "Should support");
-    const TypeVect* vt = TypeVect::make(iv_bt, vlen);
-    Node* vn = new PopulateIndexNode(iv(), igvn().intcon(1), vt);
-    VectorNode::trace_new_vector(vn, "SuperWord");
-    phase()->register_new_node_with_ctrl_of(vn, opd);
-    return vn;
+    // BasicType p0_bt = velt_basic_type(p0);
+    // BasicType iv_bt = is_subword_type(p0_bt) ? p0_bt : T_INT;
+    // assert(VectorNode::is_populate_index_supported(iv_bt), "Should support");
+    // const TypeVect* vt = TypeVect::make(iv_bt, vlen);
+    // Node* vn = new PopulateIndexNode(iv(), igvn().intcon(1), vt);
+    // VectorNode::trace_new_vector(vn, "SuperWord");
+    // phase()->register_new_node_with_ctrl_of(vn, opd);
+    // return vn;
   }
 
   if (have_same_inputs) {
@@ -3618,10 +3618,17 @@ VTransformNode* SuperWordVTransformBuilder::find_input_for_vector(int j, Node_Li
 
   Node* p0 = pack->at(0);
   Node* unique = _packset.isa_unique_input_or_null(pack, j);
+  // TODO special check instead? refactor elsewhere?
   if (p0->in(j) == iv() && unique == nullptr) {
-    // PopulateIndex
-    assert(false, "TODO populate_index");
-    return nullptr;
+    // PopulateIndex: [iv+0, iv+1, iv+2, ...]
+    VTransformNode* iv_vtn = find_scalar(iv());
+    BasicType p0_bt = _vloop_analyzer.types().velt_basic_type(p0);
+    BasicType element_bt = is_subword_type(p0_bt) ? p0_bt : T_INT;
+    assert(p0_bt == element_bt, "Do we have a counter example?"); // TODO
+    assert(VectorNode::is_populate_index_supported(element_bt), "Should support");
+    VTransformNode* populate_index = new (_graph.arena()) VTransformPopulateIndexNode(_graph, pack->size(), element_bt);
+    populate_index->set_req(1, iv_vtn);
+    return populate_index;
   }
 
   if (unique != nullptr) {
@@ -3646,8 +3653,9 @@ VTransformNode* SuperWordVTransformBuilder::find_input_for_vector(int j, Node_Li
 // TODO desc: find existing node in_bb, or create new one for outside.
 VTransformNode* SuperWordVTransformBuilder::find_scalar(Node* n) {
   if (in_bb(n)) {
-    assert(false, "TODO find in_bb"); // do we have a test?
-    return nullptr;
+    VTransformNode* vtn = _bb_idx_to_vtnode.at(bb_idx(n));
+    assert(vtn != nullptr, "must already have vtnode");
+    return vtn;
   } else {
     // Node is outside the loop. Just wrap it.
     return new (_graph.arena()) VTransformInputScalarNode(_graph, n);

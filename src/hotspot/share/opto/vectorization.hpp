@@ -1567,6 +1567,20 @@ public:
   NOT_PRODUCT(virtual void print_spec() const override;)
 };
 
+class VTransformPopulateIndexNode : public VTransformNode {
+private:
+  int _vlen;
+  const BasicType _element_bt;
+public:
+  VTransformPopulateIndexNode(VTransformGraph& graph, int vlen, const BasicType element_bt) :
+    VTransformNode(graph, 2), _vlen(vlen), _element_bt(element_bt) {}
+
+  virtual VTransformApplyStatus apply(const VLoopAnalyzer& vloop_analyzer,
+                                      const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
+
+  NOT_PRODUCT(virtual const char* name() const { return "PopulateIndex"; };)
+  NOT_PRODUCT(virtual void print_spec() const override;)
+};
 
 class VTransformVectorNode : public VTransformNode {
 private:

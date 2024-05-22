@@ -2076,6 +2076,19 @@ VTransformApplyStatus VTransformReplicateNode::apply(const VLoopAnalyzer& vloop_
   return VTransformApplyStatus::make_vector(vn, _vlen, vn->length_in_bytes());
 }
 
+VTransformApplyStatus VTransformPopulateIndexNode::apply(const VLoopAnalyzer& vloop_analyzer, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
+  PhaseIdealLoop* phase = vloop_analyzer.vloop().phase();
+
+  Node* val = find_transformed_input(1, vnode_idx_to_transformed_node);
+  assert(val->is_Phi(), "expected to be iv");
+  const TypeVect* vt = TypeVect::make(_element_bt, _vlen);
+
+  VectorNode* vn = new PopulateIndexNode(val, phase->igvn().intcon(1), vt);
+
+  register_new_vector(vloop_analyzer, vn, val);
+  return VTransformApplyStatus::make_vector(vn, _vlen, vn->length_in_bytes());
+}
+
 void VTransformVectorNode::register_new_vector_and_replace_scalar_nodes(const VLoopAnalyzer& vloop_analyzer, Node* vn) const {
 #ifdef ASSERT
   // Mark Load/Store Vector for alignment verification
@@ -2277,6 +2290,10 @@ void VTransformScalarNode::print_spec() const {
 void VTransformReplicateNode::print_spec() const {
   tty->print("vlen=%d element_type=", _vlen);
   _element_type->dump();
+}
+
+void VTransformPopulateIndexNode::print_spec() const {
+  tty->print("vlen=%d element_bt=%s", _vlen, type2name(_element_bt));
 }
 
 void VTransformVectorNode::print_spec() const {
