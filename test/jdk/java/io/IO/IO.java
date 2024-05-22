@@ -31,6 +31,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jtreg.SkippedException;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -49,21 +50,100 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 public class IO {
 
-    private static Path expect;
-
+    @Nested
     @EnabledOnOs({OS.LINUX, OS.MAC})
-    @BeforeAll
-    public static void prepareTTY() throws Exception {
-        expect = Paths.get("/usr/bin/expect"); // os-specific path
-        if (!Files.exists(expect) || !Files.isExecutable(expect)) {
-            throw new SkippedException("'" + expect + "' not found");
+    public class OSSpecificTests {
+
+        private static Path expect;
+
+        @BeforeAll
+        public static void prepareTTY() throws Exception {
+            expect = Paths.get("/usr/bin/expect"); // os-specific path
+            if (!Files.exists(expect) || !Files.isExecutable(expect)) {
+                throw new SkippedException("'" + expect + "' not found");
+            }
+            // show terminal settings to aid debugging if any tests below fail
+            var outputAnalyzer = ProcessTools.executeProcess(expect.toString(), "-c", """
+                    spawn -noecho stty -a
+                    expect eof
+                    """);
+            outputAnalyzer.reportDiagnosticSummary();
         }
-        // show terminal settings to aid debugging if any tests below fail
-        var outputAnalyzer = ProcessTools.executeProcess(expect.toString(), "-c", """
-                spawn -noecho stty -a
-                expect eof
-                """);
-        outputAnalyzer.reportDiagnosticSummary();
+
+        /*
+         * Unlike printTest, which tests a _default_ console that is normally
+         * jdk.internal.org.jline.JdkConsoleProviderImpl, this test tests
+         * jdk.internal.io.JdkConsoleImpl. Those console implementations operate
+         * in different conditions and, thus, are tested separately.
+         *
+         * To test jdk.internal.io.JdkConsoleImpl one needs to ensure that both
+         * conditions are met:
+         *
+         *   - a non-existent console provider is requested
+         *   - isatty is true
+         *
+         * To achieve isatty, the test currently uses the EXPECT(1) Unix command,
+         * which does not work for Windows. Later, a library like pty4j or JPty
+         * might be used instead of EXPECT, to cover both Unix and Windows.
+         */
+        @ParameterizedTest
+        @ValueSource(strings = {"println", "print"})
+        public void outputTestInteractive(String mode) throws Exception {
+            var testSrc = System.getProperty("test.src", ".");
+            OutputAnalyzer output = ProcessTools.executeProcess(
+                    expect.toString(),
+                    Path.of(testSrc, "output.exp").toAbsolutePath().toString(),
+                    System.getProperty("test.jdk") + "/bin/java",
+                    "--enable-preview",
+                    "-Djdk.console=gibberish",
+                    Path.of(testSrc, "Output.java").toAbsolutePath().toString(),
+                    mode);
+            assertEquals(0, output.getExitValue());
+            assertTrue(output.getStderr().isEmpty());
+            output.reportDiagnosticSummary();
+            String out = output.getStdout();
+            // The first half of the output is produced by Console, the second
+            // half is produced by IO: those halves must match.
+            // Executing Console and IO in the same VM (as opposed to
+            // consecutive VM runs, which are cleaner) to be able to compare string
+            // representation of objects.
+            assertFalse(out.isBlank());
+            assertEquals(out.substring(0, out.length() / 2),
+                    out.substring(out.length() / 2));
+        }
+
+        /*
+         * This tests simulates terminal interaction (isatty), to check that the
+         * prompt is output.
+         *
+         * To simulate a terminal, the test currently uses the EXPECT(1) Unix
+         * command, which does not work for Windows. Later, a library like pty4j
+         * or JPty might be used instead of EXPECT, to cover both Unix and Windows.
+         */
+        @ParameterizedTest
+        @MethodSource("args")
+        public void inputTestInteractive(String console, String prompt) throws Exception {
+            var testSrc = System.getProperty("test.src", ".");
+            var command = new ArrayList<String>();
+            command.add(expect.toString());
+            command.add(Path.of(testSrc, "input.exp").toAbsolutePath().toString());
+            command.add(System.getProperty("test.jdk") + "/bin/java");
+            command.add("--enable-preview");
+            if (console != null)
+                command.add("-Djdk.console=" + console);
+            command.add(Path.of(testSrc, "Input.java").toAbsolutePath().toString());
+            command.add(prompt == null ? "0" : "1");
+            command.add(String.valueOf(prompt));
+            OutputAnalyzer output = ProcessTools.executeProcess(command.toArray(new String[]{}));
+            output.reportDiagnosticSummary();
+            assertEquals(0, output.getExitValue());
+        }
+
+        public static Stream<Arguments> args() {
+            // cross product: consoles x prompts
+            return Stream.of(null, "gibberish").flatMap(console -> Stream.of(null, "?", "%s")
+                    .map(prompt -> new String[]{console, prompt}).map(Arguments::of));
+        }
     }
 
     @ParameterizedTest
@@ -87,83 +167,6 @@ public class IO {
                 out.substring(out.length() / 2));
     }
 
-    /*
-     * Unlike printTest, which tests a _default_ console that is normally
-     * jdk.internal.org.jline.JdkConsoleProviderImpl, this test tests
-     * jdk.internal.io.JdkConsoleImpl. Those console implementations operate
-     * in different conditions and, thus, are tested separately.
-     *
-     * To test jdk.internal.io.JdkConsoleImpl one needs to ensure that both
-     * conditions are met:
-     *
-     *   - a non-existent console provider is requested
-     *   - isatty is true
-     *
-     * To achieve isatty, the test currently uses the EXPECT(1) Unix command,
-     * which does not work for Windows. Later, a library like pty4j or JPty
-     * might be used instead of EXPECT, to cover both Unix and Windows.
-     */
-    @ParameterizedTest
-    @EnabledOnOs({OS.LINUX, OS.MAC})
-    @ValueSource(strings = {"println", "print"})
-    public void outputTestInteractive(String mode) throws Exception {
-        var testSrc = System.getProperty("test.src", ".");
-        OutputAnalyzer output = ProcessTools.executeProcess(
-                expect.toString(),
-                Path.of(testSrc, "output.exp").toAbsolutePath().toString(),
-                System.getProperty("test.jdk") + "/bin/java",
-                "--enable-preview",
-                "-Djdk.console=gibberish",
-                Path.of(testSrc, "Output.java").toAbsolutePath().toString(),
-                mode);
-        assertEquals(0, output.getExitValue());
-        assertTrue(output.getStderr().isEmpty());
-        output.reportDiagnosticSummary();
-        String out = output.getStdout();
-        // The first half of the output is produced by Console, the second
-        // half is produced by IO: those halves must match.
-        // Executing Console and IO in the same VM (as opposed to
-        // consecutive VM runs, which are cleaner) to be able to compare string
-        // representation of objects.
-        assertFalse(out.isBlank());
-        assertEquals(out.substring(0, out.length() / 2),
-                out.substring(out.length() / 2));
-    }
-
-
-    /*
-     * This tests simulates terminal interaction (isatty), to check that the
-     * prompt is output.
-     *
-     * To simulate a terminal, the test currently uses the EXPECT(1) Unix
-     * command, which does not work for Windows. Later, a library like pty4j
-     * or JPty might be used instead of EXPECT, to cover both Unix and Windows.
-     */
-    @ParameterizedTest
-    @MethodSource("args")
-    @EnabledOnOs({OS.LINUX, OS.MAC})
-    public void inputTestInteractive(String console, String prompt) throws Exception {
-        var testSrc = System.getProperty("test.src", ".");
-        var command = new ArrayList<String>();
-        command.add(expect.toString());
-        command.add(Path.of(testSrc, "input.exp").toAbsolutePath().toString());
-        command.add(System.getProperty("test.jdk") + "/bin/java");
-        command.add("--enable-preview");
-        if (console != null)
-            command.add("-Djdk.console=" + console);
-        command.add(Path.of(testSrc, "Input.java").toAbsolutePath().toString());
-        command.add(prompt == null ? "0" : "1");
-        command.add(String.valueOf(prompt));
-        OutputAnalyzer output = ProcessTools.executeProcess(command.toArray(new String[]{}));
-        output.reportDiagnosticSummary();
-        assertEquals(0, output.getExitValue());
-    }
-
-    public static Stream<Arguments> args() {
-        // cross product: consoles x prompts
-        return Stream.of(null, "gibberish").flatMap(console -> Stream.of(null, "?", "%s")
-                .map(prompt -> new String[]{console, prompt}).map(Arguments::of));
-    }
 
     @ParameterizedTest
     @ValueSource(strings = {"println", "print", "input"})
