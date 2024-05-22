@@ -26,6 +26,7 @@ package indify;
 import java.lang.classfile.*;
 import java.lang.classfile.constantpool.*;
 import java.lang.classfile.instruction.*;
+import java.lang.constant.ConstantDesc;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.util.*;
@@ -1218,10 +1219,10 @@ public class Indify {
             Object con;
             Utf8Entry name, type;
             NameAndTypeEntry nameAndTypeEntry;
-            MethodHandleEntry bsm;
+            MethodHandleEntry bootstrapMethod;
 
             if (!((con = args.get(argi++)) instanceof MethodHandleEntry)) return null;
-            bsm = ((MethodHandleEntry) con);
+            bootstrapMethod = ((MethodHandleEntry) con);
 
             if (!"lookup".equals(args.get(argi++)))  return null;
             if (!((con = args.get(argi++)) instanceof StringEntry)) return null;
@@ -1245,23 +1246,21 @@ public class Indify {
                     extraArgs.add(lastArg);
                 }
             }
-            List<LoadableConstantEntry> extraArgConstants = new ArrayList<>();
+            List<ConstantDesc> extraArgConstantDescs = new ArrayList<>();
             for (Object x : extraArgs) {
                 if (x instanceof Number) {
-                    if (x instanceof Integer) { x = poolBuilder.intEntry((Integer) x); }
-                    if (x instanceof Float)   { x = poolBuilder.floatEntry((Float) x); }
-                    if (x instanceof Long)    { x = poolBuilder.longEntry((Long) x); }
-                    if (x instanceof Double)  { x = poolBuilder.doubleEntry((Double) x); }
+                    extraArgConstantDescs.add(((ConstantDesc) x));
+                    continue;
                 }
                 if (!(x instanceof PoolEntry)) {
                     System.err.println("warning: unrecognized BSM argument "+x);
                     return null;
                 }
                 assert x instanceof LoadableConstantEntry;
-                extraArgConstants.add(((LoadableConstantEntry) x));
+                extraArgConstantDescs.add((((LoadableConstantEntry) x).constantValue()));
             }
 
-            BootstrapMethodEntry bsmEntry = poolBuilder.bsmEntry(bsm, extraArgConstants);
+            BootstrapMethodEntry bsmEntry = poolBuilder.bsmEntry(bootstrapMethod.asSymbol(), extraArgConstantDescs);
             return poolBuilder.invokeDynamicEntry(bsmEntry, nameAndTypeEntry);
         }
     }
