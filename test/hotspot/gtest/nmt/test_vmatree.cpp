@@ -347,6 +347,7 @@ TEST_VM_F(VMATreeTest, SummaryAccounting) {
 // Exceedingly simple tracker for page-granular allocations
 // Use it for testing consistency with VMATree.
 struct SimpleVMATracker : public CHeapObj<mtTest> {
+  const size_t page_size = 4096;
   enum Tpe { Reserved, Committed, Free };
   struct Info {
     Tpe tpe;
@@ -373,10 +374,10 @@ struct SimpleVMATracker : public CHeapObj<mtTest> {
   }
 
   VMATree::SummaryDiff do_it(Tpe tpe, size_t start, size_t size, NativeCallStack stack, MEMFLAGS flag) {
-    assert(size % 4096 == 0 && start % 4096 == 0, "page alignment");
+    assert(size % page_size == 0 && start % page_size == 0, "page alignment");
     VMATree::SummaryDiff diff;
-    const size_t page_count = size / 4096;
-    const size_t start_idx = start / 4096;
+    const size_t page_count = size / page_size;
+    const size_t start_idx = start / page_size;
     const size_t end_idx = start_idx + page_count;
     assert(end_idx < (size_t)num_pages, "");
 
@@ -386,17 +387,17 @@ struct SimpleVMATracker : public CHeapObj<mtTest> {
 
       // Register diff
       if (old_info.tpe == Reserved) {
-        diff.flag[(int)old_info.flag].reserve -= 4096;
+        diff.flag[(int)old_info.flag].reserve -= page_size;
       } else if (old_info.tpe == Committed) {
-        diff.flag[(int)old_info.flag].reserve -= 4096;
-        diff.flag[(int)old_info.flag].commit -= 4096;
+        diff.flag[(int)old_info.flag].reserve -= page_size;
+        diff.flag[(int)old_info.flag].commit -= page_size;
       }
 
       if (tpe == Reserved) {
-        diff.flag[(int)new_info.flag].reserve += 4096;
+        diff.flag[(int)new_info.flag].reserve += page_size;
       } else if(tpe == Committed) {
-        diff.flag[(int)new_info.flag].reserve += 4096;
-        diff.flag[(int)new_info.flag].commit += 4096;
+        diff.flag[(int)new_info.flag].reserve += page_size;
+        diff.flag[(int)new_info.flag].commit += page_size;
       }
       // Overwrite old one with new
       pages[i] = new_info;
@@ -420,8 +421,8 @@ struct SimpleVMATracker : public CHeapObj<mtTest> {
 TEST_VM_F(VMATreeTest, TestConsistencyWithSimpleTracker) {
   // In this test we use ASSERT macros from gtest instead of EXPECT
   // as any error will propagate and become larger as the test progresses.
-
   SimpleVMATracker* tr = new SimpleVMATracker();
+  const size_t page_size = tr->page_size;
   VMATree tree;
   NativeCallStackStorage ncss(true);
 
@@ -440,8 +441,8 @@ TEST_VM_F(VMATreeTest, TestConsistencyWithSimpleTracker) {
     if (num_pages == 0) {
       i--; continue;
     }
-    const size_t start = page_start * 4096;
-    const size_t size = num_pages * 4096;
+    const size_t start = page_start * page_size;
+    const size_t size = num_pages * page_size;
 
     const MEMFLAGS flag = (MEMFLAGS)(os::random() % mt_number_of_types);
     const NativeCallStack stack = stacks[os::random() % 4];
@@ -497,9 +498,9 @@ TEST_VM_F(VMATreeTest, TestConsistencyWithSimpleTracker) {
         SimpleVMATracker::Info endi = tr->pages[end];
 
         VMATree::VMATreap& treap = this->treap(tree);
-        VMATree::TreapNode* startn = find(treap, start * 4096);
+        VMATree::TreapNode* startn = find(treap, start * page_size);
         ASSERT_NE(nullptr, startn);
-        VMATree::TreapNode* endn = find(treap, (end * 4096) + 4096);
+        VMATree::TreapNode* endn = find(treap, (end * page_size) + page_size);
         ASSERT_NE(nullptr, endn);
 
         const NativeCallStack& start_stack = ncss.get(startn->val().out.stack());
