@@ -2114,7 +2114,17 @@ VTransformApplyStatus VTransformElementWiseVectorNode::apply(const VLoopAnalyzer
   int   opc  = first->Opcode();
   BasicType bt = vloop_analyzer.types().velt_basic_type(first);
 
-  if (req() == 3) {
+  if (VectorNode::is_scalar_rotate(first)) {
+    assert(false, "TODO scalar rotate");
+  } else if (VectorNode::is_roundopD(first)) {
+    assert(false, "TODO roundopD");
+  } else if (opc == Op_SignumF || opc == Op_SignumD) {
+    assert(false, "TODO Signum");
+  } else if (VectorNode::is_muladds2i(first)) {
+    assert(false, "TODO MulAddS2I");
+  } else if (first->is_CMove()) {
+    assert(false, "TODO CMove");
+  } else if (req() == 3) {
     Node* in1 = find_transformed_input(1, vnode_idx_to_transformed_node);
     Node* in2 = find_transformed_input(2, vnode_idx_to_transformed_node);
     // TODO register spilling trick?
@@ -2126,8 +2136,33 @@ VTransformApplyStatus VTransformElementWiseVectorNode::apply(const VLoopAnalyzer
 
     register_new_vector_and_replace_scalar_nodes(vloop_analyzer, vn);
     return VTransformApplyStatus::make_vector(vn, vlen, vn->length_in_bytes());
+  } else if (opc == Op_SqrtF || opc == Op_SqrtD ||
+             opc == Op_AbsF || opc == Op_AbsD ||
+             opc == Op_AbsI || opc == Op_AbsL ||
+             opc == Op_NegF || opc == Op_NegD ||
+             opc == Op_RoundF || opc == Op_RoundD ||
+             opc == Op_ReverseBytesI || opc == Op_ReverseBytesL ||
+             opc == Op_ReverseBytesUS || opc == Op_ReverseBytesS ||
+             opc == Op_ReverseI || opc == Op_ReverseL ||
+             opc == Op_PopCountI || opc == Op_CountLeadingZerosI ||
+             opc == Op_CountTrailingZerosI) {
+    assert(false, "TODO the croud");
+  } else if (VectorNode::requires_long_to_int_conversion(opc)) {
+    assert(false, "TODO requires_long_to_int_conversion");
+  } else if (VectorNode::is_convert_opcode(opc)) {
+    assert(first->req() == 2, "only one input expected");
+    Node* in = find_transformed_input(1, vnode_idx_to_transformed_node);
+    int vopc = VectorCastNode::opcode(opc, in->bottom_type()->is_vect()->element_basic_type());
+
+    VectorCastNode* vn = VectorCastNode::make(vopc, in, bt, vlen);
+
+    register_new_vector_and_replace_scalar_nodes(vloop_analyzer, vn);
+    return VTransformApplyStatus::make_vector(vn, vlen, vn->length_in_bytes());
+  } else if (opc == Op_FmaD || opc == Op_FmaF) {
+    assert(false, "TODO Fma");
   } else {
-    assert(false, "TODO");
+    DEBUG_ONLY(print();)
+    assert(false, "TODO element wise");
   }
   return VTransformApplyStatus::make_vector(nullptr, 0, 0);
 }

@@ -2241,12 +2241,12 @@ bool SuperWord::output() {
         vn = VectorCastNode::make(Op_VectorCastL2X, longval, T_INT, vlen);
         vlen_in_bytes = vn->as_Vector()->length_in_bytes();
       } else if (VectorNode::is_convert_opcode(opc)) {
-        assert(n->req() == 2, "only one input expected");
-        BasicType bt = velt_basic_type(n);
-        Node* in = vector_opd(p, 1);
-        int vopc = VectorCastNode::opcode(opc, in->bottom_type()->is_vect()->element_basic_type());
-        vn = VectorCastNode::make(vopc, in, bt, vlen);
-        vlen_in_bytes = vn->as_Vector()->length_in_bytes();
+        // assert(n->req() == 2, "only one input expected");
+        // BasicType bt = velt_basic_type(n);
+        // Node* in = vector_opd(p, 1);
+        // int vopc = VectorCastNode::opcode(opc, in->bottom_type()->is_vect()->element_basic_type());
+        // vn = VectorCastNode::make(vopc, in, bt, vlen);
+        // vlen_in_bytes = vn->as_Vector()->length_in_bytes();
       } else if (opc == Op_FmaD || opc == Op_FmaF) {
         // Promote operands to vector
         Node* in1 = vector_opd(p, 1);
