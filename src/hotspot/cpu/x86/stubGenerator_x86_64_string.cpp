@@ -25,7 +25,7 @@
 
 #include "precompiled.hpp"
 #ifdef COMPILER2
-#include "asm/assembler.hpp"
+#include "macroAssembler_x86.hpp"
 #include "opto/c2_MacroAssembler.hpp"
 #include "stubGenerator_x86_64.hpp"
 #include <functional>
@@ -154,9 +154,6 @@ static void big_case_loop_helper(bool sizeKnown, int size, Label &noMatch, Label
                                  Register needle, Register haystack, Register hsLength,
                                  Register rTmp1, Register rTmp2, Register rTmp3, Register rTmp4,
                                  StrIntrinsicNode::ArgEncoding ae, MacroAssembler *_masm);
-
-static void preload_needle_helper(int size, Register needle, Register needleVal,
-                                  StrIntrinsicNode::ArgEncoding ae, MacroAssembler *_masm);
 
 static void byte_compare_helper(int size, Label &L_noMatch, Label &L_matchFound, Register needle,
                                 Register needleVal, Register haystack, Register mask,
@@ -883,7 +880,7 @@ void StubGenerator::generate_string_indexof_stubs(address *fnptrs, StrIntrinsicN
       __ movq(nMinusK, rScratch);
 
       // Check for room for a 32-byte read for the last iteration
-      __ cmpq(rScratch, 0x20);
+      __ cmpq(nMinusK, 0x20);
       __ jl(L_compareFull);
 
       // Always need needle broadcast to ymm registers
@@ -1462,82 +1459,6 @@ static void big_case_loop_helper(bool sizeKnown, int size, Label &noMatch, Label
 ////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////
-// Helper for loading needle elements to a register for compares
-// Loads the proper number of bytes from the needle into needleVal
-// based on the total size of the needle.
-//
-// Parameters:
-// size - The size of the needle in bytes
-// needle - the address of the first byte of the needle
-// needleVal - The bytes of the needle are loaded into this regiater
-// ae - the argument encodings
-// _masm - Current MacroAssembler instance pointer
-//
-// Returns correctly-sized needle bytes in needleVal
-
-static void preload_needle_helper(int size, Register needle, Register needleVal,
-                                  StrIntrinsicNode::ArgEncoding ae, MacroAssembler *_masm) {
-  // Pre-load the value (correctly sized) of the needle for comparison purposes.
-
-  assert_different_registers(needle, needleVal);
-
-  bool isUL = (ae == StrIntrinsicNode::UL);
-  bool isUU = (ae == StrIntrinsicNode::UU);
-  bool isU = isUL || isUU;  // At least one is UTF-16
-
-  int bytesAlreadyCompared = 0;
-  int bytesLeftToCompare = 0;
-  int offsetOfFirstByteToCompare = 0;
-
-  // The algorithm pre-validates that the first 2 and last elements of the needle
-  // compare equal, so no need to re-compare those elements
-  bytesAlreadyCompared = isU ? 6 : 3;
-  offsetOfFirstByteToCompare = isU ? 4 : 2;
-
-  bytesLeftToCompare = size - bytesAlreadyCompared;
-  assert((bytesLeftToCompare <= 7), "Too many bytes left to compare");
-
-  if (bytesLeftToCompare <= 0) {
-    return;
-  }
-
-  // At this point, there is at least one byte of the needle that needs to be
-  // compared to the haystack.
-
-  // Coordinate the offsets here with the switch in byte_compare_helper
-  // For UTF-16 needles, needle size will always be even (4, 6, 8, and 10)
-  switch (bytesLeftToCompare) {
-  case 1:
-  case 2:
-    // Needle size of 4 and 5 bytes - safe to re-compare 2 additional bytes
-    __ movl(needleVal, Address(needle, (offsetOfFirstByteToCompare - 2)));
-    break;
-
-  case 3:
-  case 4:
-    // Needle size 6 and 7
-    __ movl(needleVal, Address(needle, offsetOfFirstByteToCompare));
-    break;
-
-  case 5:
-  case 6:
-    // Needle size 8 and 9 bytes - safe to re-compare 2 additional bytes
-    __ movq(needleVal, Address(needle, (offsetOfFirstByteToCompare - 2)));
-    break;
-
-  case 7:
-    // Needle size 10
-    __ movq(needleVal, Address(needle, offsetOfFirstByteToCompare));
-    break;
-
-  default:
-    break;
-  }
-}
-
-////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////
 // Helper for comparing small needles to the haystack after a potential match found.
 //
 // Parameters:
@@ -1545,7 +1466,7 @@ static void preload_needle_helper(int size, Register needle, Register needleVal,
 // L_noMatch - Label to jump to if needle does not match haystack at this location
 // L_matchFound - Label to jump to if needle matches haystack at this location
 // needle - the address of the first byte of the needle
-// needleVal - The bytes of the needle to compare (see preload_needle_helper)
+// needleVal - The bytes of the needle to compare
 // haystack - The address of the first byte of the haystack
 // mask - The comparison mask from comparing the first 2 and last elements of the needle
 // foundIndex - The index within the haystack of the match
@@ -1597,19 +1518,15 @@ static void byte_compare_helper(int size, Label &L_noMatch, Label &L_matchFound,
   // At this point, there is at least one byte of the needle that needs to be
   // compared to the haystack.
 
-  // Load in the correct sized needle value for comparison.  Used when checking
-  // bytes of the haystack after first/second/last have compared equal.
-  preload_needle_helper(size, needle, needleVal, ae, _masm);
-
   __ align(8);
   __ bind(L_loopTop);
   __ tzcntl(foundIndex, mask);  // Index of match within haystack
 
-  // Coordinate this with preload_needle_helper
   switch (bytesLeftToCompare) {
   case 1:
   case 2:
     // Comparison for needle size of 4 and 5 bytes
+    __ movl(needleVal, Address(needle, (offsetOfFirstByteToCompare - 2)));
     __ cmpl(Address(haystack, foundIndex, Address::times_1, offsetOfFirstByteToCompare - 2),
             needleVal);
     __ je(L_matchFound);
@@ -1618,6 +1535,7 @@ static void byte_compare_helper(int size, Label &L_noMatch, Label &L_matchFound,
   case 3:
   case 4:
     // Comparison for needle size of 6 and 7 bytes
+    __ movl(needleVal, Address(needle, offsetOfFirstByteToCompare));
     __ cmpl(Address(haystack, foundIndex, Address::times_1, offsetOfFirstByteToCompare), needleVal);
     __ je(L_matchFound);
     break;
@@ -1625,6 +1543,7 @@ static void byte_compare_helper(int size, Label &L_noMatch, Label &L_matchFound,
   case 5:
   case 6:
     // Comparison for needle size of 8 and 9 bytes
+    __ movq(needleVal, Address(needle, (offsetOfFirstByteToCompare - 2)));
     __ cmpq(Address(haystack, foundIndex, Address::times_1, offsetOfFirstByteToCompare - 2),
             needleVal);
     __ je(L_matchFound);
@@ -1632,9 +1551,11 @@ static void byte_compare_helper(int size, Label &L_noMatch, Label &L_matchFound,
 
   case 7:
     // Comparison for needle size of 10 bytes
+    __ movq(needleVal, Address(needle, offsetOfFirstByteToCompare));
     __ cmpq(Address(haystack, foundIndex, Address::times_1, offsetOfFirstByteToCompare), needleVal);
     __ je(L_matchFound);
     break;
+
   default:
     break;
   }
@@ -1664,8 +1585,8 @@ static void byte_compare_helper(int size, Label &L_noMatch, Label &L_matchFound,
 // needle_len - the length of the needle in elements
 // XMM0 - Temporary xmm register
 // XMM1 - Temporary xmm register
-// mask - Used to hold comparison mask - must be saved/restored
-// tmp - Temporary register - must be saved/restored
+// mask - Used to hold comparison mask
+// tmp - Temporary register
 // _masm - Current MacroAssembler instance pointer
 static void highly_optimized_short_cases(StrIntrinsicNode::ArgEncoding ae, Register haystack,
                                          Register haystack_len, Register needle,
@@ -1695,11 +1616,6 @@ static void highly_optimized_short_cases(StrIntrinsicNode::ArgEncoding ae, Regis
   // left over for page fault prevention
   assert((COPIED_HAYSTACK_STACK_OFFSET == 0), "Must be zero!");
   assert((COPIED_HAYSTACK_STACK_SIZE == 64), "Must be 64!");
-
-  // Since this code is generated before state is saved, we need to save/restore
-  // the used registers.
-  __ push(mask);
-  __ push(tmp);
 
   // Copy incoming haystack onto stack
   {
@@ -1782,8 +1698,6 @@ static void highly_optimized_short_cases(StrIntrinsicNode::ArgEncoding ae, Regis
 
   __ bind(L_out);
   __ addptr(rsp, COPIED_HAYSTACK_STACK_SIZE);
-  __ pop(tmp);
-  __ pop(mask);
   __ vzeroupper();
   __ leave();
   __ ret(0);
@@ -1863,7 +1777,7 @@ static void setup_jump_tables(StrIntrinsicNode::ArgEncoding ae, Label &L_error, 
     const Register eq_mask = rsi;
     const Register rTmp = rax;
 
-    for (int i = (isUU ? 3 : 6); i < NUMBER_OF_CASES; i++) {
+    for (int i = 6; i < NUMBER_OF_CASES; i++) {
       small_hs_jmp_table[i] = __ pc();
       if (isU && ((i + 1) & 1)) {
         continue;
