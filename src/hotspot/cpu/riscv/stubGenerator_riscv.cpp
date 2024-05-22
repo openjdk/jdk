@@ -5284,12 +5284,13 @@ static const int64_t right_3_bits = right_n_bits(3);
     const Register tmp3 = x28; // t3
     const Register tmp4 = x29; // t4
     const Register tmp5 = x30; // t5
+    const Register tmp6 = x31; // t6
 
     BLOCK_COMMENT("Entry:");
     __ enter(); // required for proper stackwalking of RuntimeStub frame
 
     __ kernel_crc32(crc, buf, len, table0, table1, table2,
-                    table3, tmp1, tmp2, tmp3, tmp4, tmp5);
+                    table3, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6);
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret();

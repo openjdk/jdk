@@ -1316,7 +1316,7 @@ void MacroAssembler::update_byte_crc32(Register crc, Register val, Register tabl
  *   crc = table3[v&0xff]^table2[(v>>8)&0xff]^table1[(v>>16)&0xff]^table0[v>>24]
  *
  */
-void MacroAssembler::update_word_crc32(Register crc, Register v, Register tmp1, Register tmp2,
+void MacroAssembler::update_word_crc32(Register crc, Register v, Register tmp1, Register tmp2, Register tmp3,
         Register table0, Register table1, Register table2, Register table3, bool upper) {
   assert_different_registers(crc, v, tmp1, tmp2, table0, table1, table2, table3);
 
@@ -1328,28 +1328,19 @@ void MacroAssembler::update_word_crc32(Register crc, Register v, Register tmp1, 
   shadd(tmp1, tmp1, table3, tmp2, 2);
   lwu(crc, Address(tmp1));
 
-  // In order to access table elements according to initial algorithm
-  // the following actions should be performed (with no Zba enabled):
-  //  tmp1 = v >> 8
-  //  tmp1 = tmp1 & right_8_bits
-  //  tmp1 = tmp1 << 2
-  //  tmp1 += table2
-  // Which is the same as:
-  //  tmp1 = v >> 6
-  //  tmp1 = tmp1 & (right_8_bits << 2)
-  //  tmp1 += table2
+  slli(tmp1, v, 16);
+  slli(tmp3, v, 8);
 
-  srli(tmp1, v, 6);
-  andi(tmp1, tmp1, (right_8_bits << 2));
-  add(tmp1, tmp1, table2);
+  srliw(tmp1, tmp1, 24);
+  srliw(tmp3, tmp3, 24);
+
+  shadd(tmp1, tmp1, table2, tmp1, 2);
   lwu(tmp2, Address(tmp1));
 
-  srli(tmp1, v, 14);
-  andi(tmp1, tmp1, (right_8_bits << 2));
-  add(tmp1, tmp1, table1);
+  shadd(tmp3, tmp3, table1, tmp3, 2);
   xorr(crc, crc, tmp2);
 
-  lwu(tmp2, Address(tmp1));
+  lwu(tmp2, Address(tmp3));
   if (upper) {
     tmp1 = v;
     srli(tmp1, v, 24);
@@ -1373,7 +1364,7 @@ void MacroAssembler::update_word_crc32(Register crc, Register v, Register tmp1, 
  */
 void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
         Register table0, Register table1, Register table2, Register table3,
-        Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5) {
+        Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5, Register tmp6) {
   assert_different_registers(crc, buf, table0, table1, table2, table3, tmp1, tmp2, tmp3, tmp4, tmp5);
   Label L_by16_loop, L_unroll_loop, L_unroll_loop_entry, L_by4, L_by4_loop, L_by1, L_by1_loop, L_exit;
 
@@ -1405,8 +1396,8 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
   bind(L_unroll_loop);
     for (int i = 0; i < unroll; i++) {
       ld(tmp1, Address(buf, i*wordSize));
-      update_word_crc32(crc, tmp1, tmp2, tmp4, table0, table1, table2, table3, false);
-      update_word_crc32(crc, tmp1, tmp2, tmp4, table0, table1, table2, table3, true);
+      update_word_crc32(crc, tmp1, tmp2, tmp4, tmp6, table0, table1, table2, table3, false);
+      update_word_crc32(crc, tmp1, tmp2, tmp4, tmp6, table0, table1, table2, table3, true);
     }
 
     addi(buf, buf, unroll_words);
@@ -1419,7 +1410,7 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
 
   bind(L_by4_loop);
     lwu(tmp1, Address(buf));
-    update_word_crc32(crc, tmp1, tmp2, tmp4, table0, table1, table2, table3, false);
+    update_word_crc32(crc, tmp1, tmp2, tmp4, tmp6, table0, table1, table2, table3, false);
     subw(len, len, 4);
     addi(buf, buf, 4);
     bge(len, zr, L_by4_loop);
