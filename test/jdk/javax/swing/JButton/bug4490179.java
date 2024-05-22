@@ -56,7 +56,7 @@ public class bug4490179 {
                 button.addActionListener(e -> {
                     if ((e.getModifiers() & InputEvent.BUTTON1_MASK)
                             != InputEvent.BUTTON1_MASK) {
-                        System.out.println("passed");
+                        System.out.println("Status: Failed");
                         passed = false;
                     }
                 });
