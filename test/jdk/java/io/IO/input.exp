@@ -22,6 +22,7 @@
 #
 
 set prompt [lindex $argv $argc-1]
+set stty_init "rows 24 cols 80"
 
 spawn {*}$argv
 expect {

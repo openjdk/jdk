@@ -57,17 +57,11 @@ public class IO {
         private static Path expect;
 
         @BeforeAll
-        public static void prepareTTY() throws Exception {
+        public static void prepareTTY() {
             expect = Paths.get("/usr/bin/expect"); // os-specific path
             if (!Files.exists(expect) || !Files.isExecutable(expect)) {
                 throw new SkippedException("'" + expect + "' not found");
             }
-            // show terminal settings to aid debugging if any tests below fail
-            var outputAnalyzer = ProcessTools.executeProcess(expect.toString(), "-c", """
-                    spawn -noecho stty -a
-                    expect eof
-                    """);
-            outputAnalyzer.reportDiagnosticSummary();
         }
 
         /*
