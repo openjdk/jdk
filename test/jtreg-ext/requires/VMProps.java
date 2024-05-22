@@ -67,6 +67,9 @@ public class VMProps implements Callable<Map<String, String>> {
     // value known to jtreg as an indicator of error state
     private static final String ERROR_STATE = "__ERROR__";
 
+    private static final String GC_PREFIX = "-XX:+Use";
+    private static final String GC_SUFFIX = "GC";
+
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
 
     private static class SafeMap {
@@ -333,8 +336,6 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("vm.gc.ZSinglegen", () -> "" + (vmGCZ && (!genZ || genZIsDefault)));
     }
 
-    final String GC_PREFIX = "-XX:+Use";
-    final String GC_SUFFIX = "GC";
     /**
      * "jtreg -vmoptions:-Dtest.cds.runtime.options=..." can be used to specify
      * the GC type to be used when running with a CDS archive. Set "vm.gc" accordingly,
@@ -477,11 +478,13 @@ public class VMProps implements Callable<Map<String, String>> {
         String CCP_DISABLED = "-XX:-UseCompressedClassPointers";
         String G1GC_ENABLED = "-XX:+UseG1GC";
         for (String opt : jtropts.split(",")) {
-            if (opt.equals(CCP_DISABLED))
+            if (opt.equals(CCP_DISABLED)) {
                 return false;
+            }
             if (opt.startsWith(GC_PREFIX) && opt.endsWith(GC_SUFFIX) &&
-                !opt.equals(G1GC_ENABLED))
+                !opt.equals(G1GC_ENABLED)) {
                 return false;
+            }
         }
         return true;
     }
