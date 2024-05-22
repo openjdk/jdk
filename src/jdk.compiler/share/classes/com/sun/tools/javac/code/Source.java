@@ -47,10 +47,10 @@ import static com.sun.tools.javac.main.Option.*;
  *  deletion without notice.</b>
  */
 public enum Source {
-    /** 1.0 had no inner classes, and so could not pass the JCK. */
+    /* 1.0 had no inner classes, and so could not pass the JCK. */
     // public static final Source JDK1_0 =              new Source("1.0");
 
-    /** 1.1 did not have strictfp, and so could not pass the JCK. */
+    /* 1.1 did not have strictfp, and so could not pass the JCK. */
     // public static final Source JDK1_1 =              new Source("1.1");
 
     /** 1.2 introduced strictfp. */
@@ -255,6 +255,7 @@ public enum Source {
         UNNAMED_VARIABLES(JDK22, Fragments.FeatureUnnamedVariables, DiagKind.PLURAL),
         PRIMITIVE_PATTERNS(JDK23, Fragments.FeaturePrimitivePatterns, DiagKind.PLURAL),
         SUPER_INIT(JDK22, Fragments.FeatureSuperInit, DiagKind.NORMAL),
+        MODULE_IMPORTS(JDK23, Fragments.FeatureModuleImports, DiagKind.PLURAL),
         ;
 
         enum DiagKind {

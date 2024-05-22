@@ -2878,6 +2878,15 @@ void Node::ensure_control_or_add_prec(Node* c) {
   }
 }
 
+void Node::add_prec_from(Node* n) {
+  for (uint i = n->req(); i < n->len(); i++) {
+    Node* prec = n->in(i);
+    if (prec != nullptr) {
+      add_prec(prec);
+    }
+  }
+}
+
 bool Node::is_dead_loop_safe() const {
   if (is_Phi()) {
     return true;
@@ -2900,6 +2909,9 @@ bool Node::is_dead_loop_safe() const {
   }
   return false;
 }
+
+bool Node::is_div_or_mod(BasicType bt) const { return Opcode() == Op_Div(bt) || Opcode() == Op_Mod(bt) ||
+                                                      Opcode() == Op_UDiv(bt) || Opcode() == Op_UMod(bt); }
 
 //=============================================================================
 //------------------------------yank-------------------------------------------
@@ -3011,7 +3023,7 @@ uint TypeNode::hash() const {
   return Node::hash() + _type->hash();
 }
 bool TypeNode::cmp(const Node& n) const {
-  return !Type::cmp(_type, ((TypeNode&)n)._type);
+  return Type::equals(_type, n.as_Type()->_type);
 }
 const Type* TypeNode::bottom_type() const { return _type; }
 const Type* TypeNode::Value(PhaseGVN* phase) const { return _type; }

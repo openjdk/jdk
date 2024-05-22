@@ -278,12 +278,6 @@ bool HeapShared::archive_object(oop obj) {
   } else {
     count_allocation(obj->size());
     ArchiveHeapWriter::add_source_obj(obj);
-
-    // The archived objects are discovered in a predictable order. Compute
-    // their identity_hash() as soon as we see them. This ensures that the
-    // the identity_hash in the object header will have a predictable value,
-    // making the archive reproducible.
-    obj->identity_hash();
     CachedOopInfo info = make_cached_oop_info(obj);
     archived_object_cache()->put_when_absent(obj, info);
     archived_object_cache()->maybe_grow();
@@ -1395,7 +1389,7 @@ void HeapShared::check_default_subgraph_classes() {
               name == vmSymbols::java_lang_String() ||
               name == vmSymbols::java_lang_ArithmeticException() ||
               name == vmSymbols::java_lang_NullPointerException() ||
-              name == vmSymbols::java_lang_VirtualMachineError() ||
+              name == vmSymbols::java_lang_InternalError() ||
               name == vmSymbols::object_array_signature() ||
               name == vmSymbols::byte_array_signature() ||
               name == vmSymbols::char_array_signature(),

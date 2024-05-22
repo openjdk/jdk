@@ -34,6 +34,9 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/macros.hpp"
+#ifdef COMPILER2
+#include "gc/shared/c2/barrierSetC2.hpp"
+#endif // COMPILER2
 
 #define __ masm->
 
@@ -259,3 +262,114 @@ void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler *masm, Register tmp1,
 void BarrierSetAssembler::check_oop(MacroAssembler *masm, Register oop, const char* msg) {
   __ verify_oop(oop, msg);
 }
+
+#ifdef COMPILER2
+
+OptoReg::Name BarrierSetAssembler::refine_register(const Node* node, OptoReg::Name opto_reg) const {
+  if (!OptoReg::is_reg(opto_reg)) {
+    return OptoReg::Bad;
+  }
+
+  VMReg vm_reg = OptoReg::as_VMReg(opto_reg);
+  if ((vm_reg->is_Register() || vm_reg ->is_FloatRegister()) && (opto_reg & 1) != 0) {
+    return OptoReg::Bad;
+  }
+
+  return opto_reg;
+}
+
+#undef __
+#define __ _masm->
+
+SaveLiveRegisters::SaveLiveRegisters(MacroAssembler *masm, BarrierStubC2 *stub)
+  : _masm(masm), _reg_mask(stub->preserve_set()) {
+
+  const int register_save_size = iterate_over_register_mask(ACTION_COUNT_ONLY) * BytesPerWord;
+  _frame_size = align_up(register_save_size, frame::alignment_in_bytes)
+                + frame::native_abi_reg_args_size;
+
+  __ save_LR_CR(R0);
+  __ push_frame(_frame_size, R0);
+
+  iterate_over_register_mask(ACTION_SAVE, _frame_size);
+}
+
+SaveLiveRegisters::~SaveLiveRegisters() {
+  iterate_over_register_mask(ACTION_RESTORE, _frame_size);
+
+  __ addi(R1_SP, R1_SP, _frame_size);
+  __ restore_LR_CR(R0);
+}
+
+int SaveLiveRegisters::iterate_over_register_mask(IterationAction action, int offset) {
+  int reg_save_index = 0;
+  RegMaskIterator live_regs_iterator(_reg_mask);
+
+  while(live_regs_iterator.has_next()) {
+    const OptoReg::Name opto_reg = live_regs_iterator.next();
+
+    // Filter out stack slots (spilled registers, i.e., stack-allocated registers).
+    if (!OptoReg::is_reg(opto_reg)) {
+      continue;
+    }
+
+    const VMReg vm_reg = OptoReg::as_VMReg(opto_reg);
+    if (vm_reg->is_Register()) {
+      Register std_reg = vm_reg->as_Register();
+
+      if (std_reg->encoding() >= R2->encoding() && std_reg->encoding() <= R12->encoding()) {
+        reg_save_index++;
+
+        if (action == ACTION_SAVE) {
+          _masm->std(std_reg, offset - reg_save_index * BytesPerWord, R1_SP);
+        } else if (action == ACTION_RESTORE) {
+          _masm->ld(std_reg, offset - reg_save_index * BytesPerWord, R1_SP);
+        } else {
+          assert(action == ACTION_COUNT_ONLY, "Sanity");
+        }
+      }
+    } else if (vm_reg->is_FloatRegister()) {
+      FloatRegister fp_reg = vm_reg->as_FloatRegister();
+      if (fp_reg->encoding() >= F0->encoding() && fp_reg->encoding() <= F13->encoding()) {
+        reg_save_index++;
+
+        if (action == ACTION_SAVE) {
+          _masm->stfd(fp_reg, offset - reg_save_index * BytesPerWord, R1_SP);
+        } else if (action == ACTION_RESTORE) {
+          _masm->lfd(fp_reg, offset - reg_save_index * BytesPerWord, R1_SP);
+        } else {
+          assert(action == ACTION_COUNT_ONLY, "Sanity");
+        }
+      }
+    } else if (vm_reg->is_ConditionRegister()) {
+      // NOP. Conditions registers are covered by save_LR_CR
+    } else if (vm_reg->is_VectorSRegister()) {
+      assert(SuperwordUseVSX, "or should not reach here");
+      VectorSRegister vs_reg = vm_reg->as_VectorSRegister();
+      if (vs_reg->encoding() >= VSR32->encoding() && vs_reg->encoding() <= VSR51->encoding()) {
+        reg_save_index += 2;
+
+        Register spill_addr = R0;
+        if (action == ACTION_SAVE) {
+          _masm->addi(spill_addr, R1_SP, offset - reg_save_index * BytesPerWord);
+          _masm->stxvd2x(vs_reg, spill_addr);
+        } else if (action == ACTION_RESTORE) {
+          _masm->addi(spill_addr, R1_SP, offset - reg_save_index * BytesPerWord);
+          _masm->lxvd2x(vs_reg, spill_addr);
+        } else {
+          assert(action == ACTION_COUNT_ONLY, "Sanity");
+        }
+      }
+    } else {
+      if (vm_reg->is_SpecialRegister()) {
+        fatal("Special registers are unsupported. Found register %s", vm_reg->name());
+      } else {
+        fatal("Register type is not known");
+      }
+    }
+  }
+
+  return reg_save_index;
+}
+
+#endif // COMPILER2

@@ -24,7 +24,6 @@
 
 #include "precompiled.hpp"
 #include "gc/serial/cardTableRS.hpp"
-#include "gc/serial/defNewGeneration.inline.hpp"
 #include "gc/serial/serialGcRefProcProxyTask.hpp"
 #include "gc/serial/serialHeap.inline.hpp"
 #include "gc/serial/serialStringDedup.inline.hpp"
@@ -43,7 +42,7 @@
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessorPhaseTimes.hpp"
-#include "gc/shared/space.inline.hpp"
+#include "gc/shared/space.hpp"
 #include "gc/shared/spaceDecorator.inline.hpp"
 #include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/weakProcessor.hpp"
@@ -227,6 +226,7 @@ DefNewGeneration::DefNewGeneration(ReservedSpace rs,
                                    size_t max_size,
                                    const char* policy)
   : Generation(rs, initial_size),
+    _promotion_failed(false),
     _preserved_marks_set(false /* in_c_heap */),
     _promo_failure_drain_in_progress(false),
     _should_allocate_from_space(false),
@@ -641,22 +641,9 @@ void DefNewGeneration::adjust_desired_tenuring_threshold() {
   age_table()->print_age_table();
 }
 
-void DefNewGeneration::collect(bool   full,
-                               bool   clear_all_soft_refs,
-                               size_t size,
-                               bool   is_tlab) {
-  assert(full || size > 0, "otherwise we don't want to collect");
-
+bool DefNewGeneration::collect(bool clear_all_soft_refs) {
   SerialHeap* heap = SerialHeap::heap();
 
-  // If the next generation is too full to accommodate promotion
-  // from this generation, pass on collection; let the next generation
-  // do it.
-  if (!collection_attempt_is_safe()) {
-    log_trace(gc)(":: Collection attempt not safe ::");
-    heap->set_incremental_collection_failed(); // Slight lie: we did not even attempt one
-    return;
-  }
   assert(to()->is_empty(), "Else not collection_attempt_is_safe");
   _gc_timer->register_gc_start();
   _gc_tracer->report_gc_start(heap->gc_cause(), _gc_timer->gc_start());
@@ -678,18 +665,12 @@ void DefNewGeneration::collect(bool   full,
   // The preserved marks should be empty at the start of the GC.
   _preserved_marks_set.init(1);
 
-  assert(heap->no_allocs_since_save_marks(),
-         "save marks have not been newly set.");
-
   YoungGenScanClosure young_gen_cl(this);
   OldGenScanClosure   old_gen_cl(this);
 
   FastEvacuateFollowersClosure evacuate_followers(heap,
                                                   &young_gen_cl,
                                                   &old_gen_cl);
-
-  assert(heap->no_allocs_since_save_marks(),
-         "save marks have not been newly set.");
 
   {
     StrongRootsScope srs(0);
@@ -700,13 +681,14 @@ void DefNewGeneration::collect(bool   full,
                                   NMethodToOopClosure::FixRelocations,
                                   false /* keepalive_nmethods */);
 
+    HeapWord* saved_top_in_old_gen = _old_gen->space()->top();
     heap->process_roots(SerialHeap::SO_ScavengeCodeCache,
                         &root_cl,
                         &cld_cl,
                         &cld_cl,
                         &code_cl);
 
-    _old_gen->scan_old_to_young_refs();
+    _old_gen->scan_old_to_young_refs(saved_top_in_old_gen);
   }
 
   // "evacuate followers".
@@ -723,15 +705,11 @@ void DefNewGeneration::collect(bool   full,
     _gc_tracer->report_tenuring_threshold(tenuring_threshold());
     pt.print_all_references();
   }
-  assert(heap->no_allocs_since_save_marks(), "save marks have not been newly set.");
 
   {
     AdjustWeakRootClosure cl{this};
     WeakProcessor::weak_oops_do(&is_alive, &cl);
   }
-
-  // Verify that the usage of keep_alive didn't copy any objects.
-  assert(heap->no_allocs_since_save_marks(), "save marks have not been newly set.");
 
   _string_dedup_requests.flush();
 
@@ -783,6 +761,8 @@ void DefNewGeneration::collect(bool   full,
   _gc_timer->register_gc_end();
 
   _gc_tracer->report_gc_end(_gc_timer->gc_end(), _gc_timer->time_partitions());
+
+  return !_promotion_failed;
 }
 
 void DefNewGeneration::init_assuming_no_promotion_failure() {
@@ -890,15 +870,6 @@ void DefNewGeneration::drain_promo_failure_scan_stack() {
      oop obj = _promo_failure_scan_stack.pop();
      obj->oop_iterate(&cl);
   }
-}
-
-void DefNewGeneration::save_marks() {
-  set_saved_mark_word();
-}
-
-
-bool DefNewGeneration::no_allocs_since_save_marks() {
-  return saved_mark_at_top();
 }
 
 void DefNewGeneration::contribute_scratch(void*& scratch, size_t& num_words) {

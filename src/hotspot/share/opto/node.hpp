@@ -1143,6 +1143,7 @@ public:
 
   // Set control or add control as precedence edge
   void ensure_control_or_add_prec(Node* c);
+  void add_prec_from(Node* n);
 
   // Visit boundary uses of the node and apply a callback function for each.
   // Recursively traverse uses, stopping and applying the callback when
@@ -1253,6 +1254,8 @@ public:
 
   // Whether this is a memory phi node
   bool is_memory_phi() const { return is_Phi() && bottom_type() == Type::MEMORY; }
+
+  bool is_div_or_mod(BasicType bt) const;
 
 //----------------- Printing, etc
 #ifndef PRODUCT
@@ -1569,8 +1572,8 @@ Node* Node::last_out(DUIterator_Last& i) const {
 class SimpleDUIterator : public StackObj {
  private:
   Node* node;
-  DUIterator_Fast i;
   DUIterator_Fast imax;
+  DUIterator_Fast i;
  public:
   SimpleDUIterator(Node* n): node(n), i(n->fast_outs(imax)) {}
   bool has_next() { return i < imax; }
@@ -1708,6 +1711,22 @@ public:
     if( !_in_worklist.test_set(b->_idx) )
       Node_List::push(b);
   }
+  void push_non_cfg_inputs_of(const Node* node) {
+    for (uint i = 1; i < node->req(); i++) {
+      Node* input = node->in(i);
+      if (input != nullptr && !input->is_CFG()) {
+        push(input);
+      }
+    }
+  }
+
+  void push_outputs_of(const Node* node) {
+    for (DUIterator_Fast imax, i = node->fast_outs(imax); i < imax; i++) {
+      Node* output = node->fast_out(i);
+      push(output);
+    }
+  }
+
   Node *pop() {
     if( _clock_index >= size() ) _clock_index = 0;
     Node *b = at(_clock_index);
@@ -2007,6 +2026,10 @@ Op_IL(URShift)
 Op_IL(LShift)
 Op_IL(Xor)
 Op_IL(Cmp)
+Op_IL(Div)
+Op_IL(Mod)
+Op_IL(UDiv)
+Op_IL(UMod)
 
 inline int Op_ConIL(BasicType bt) {
   assert(bt == T_INT || bt == T_LONG, "only for int or longs");

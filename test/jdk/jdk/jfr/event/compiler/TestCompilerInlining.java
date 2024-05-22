@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
 
 package jdk.jfr.event.compiler;
 
-import jdk.internal.org.objectweb.asm.*;
 import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.consumer.RecordedMethod;
@@ -35,13 +34,24 @@ import jdk.test.lib.jfr.Events;
 import jdk.test.whitebox.WhiteBox;
 
 import java.io.IOException;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.Instruction;
+import java.lang.classfile.instruction.InvokeInstruction;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.MethodTypeDesc;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
 import java.util.*;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
-/**
+import static java.lang.constant.ConstantDescs.CD_Object;
+import static java.lang.constant.ConstantDescs.CD_void;
+import static java.lang.constant.ConstantDescs.INIT_NAME;
+
+/*
  * @test CompilerInliningTest
  * @bug 8073607
  * @key jfr
@@ -50,8 +60,8 @@ import java.util.stream.IntStream;
  *
  * @requires vm.opt.Inline == true | vm.opt.Inline == null
  * @library /test/lib
- * @modules java.base/jdk.internal.org.objectweb.asm
- *          jdk.jfr
+ * @modules jdk.jfr
+ * @enablePreview
  *
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -64,7 +74,7 @@ public class TestCompilerInlining {
     private static final int LEVEL_SIMPLE = 1;
     private static final int LEVEL_FULL_OPTIMIZATION = 4;
     private static final Executable ENTRY_POINT = getConstructor(TestCase.class);
-    private static final String TEST_CASE_CLASS_NAME = TestCase.class.getName().replace('.', '/');
+    private static final ClassDesc CD_TestCase = TestCase.class.describeConstable().orElseThrow();
 
     public static void main(String[] args) throws Exception {
         InlineCalls inlineCalls = new InlineCalls(TestCase.class);
@@ -100,8 +110,8 @@ public class TestCompilerInlining {
             MethodDesc caller = methodToMethodDesc(callerObject);
             MethodDesc callee = ciMethodToMethodDesc(calleeObject);
             // only TestCase.* -> TestCase.* OR TestCase.* -> Object.<init> are tested/filtered
-            if (caller.className.equals(TEST_CASE_CLASS_NAME) && (callee.className.equals(TEST_CASE_CLASS_NAME)
-                    || (callee.className.equals("java/lang/Object") && callee.methodName.equals("<init>")))) {
+            if (caller.className.equals(CD_TestCase) && (callee.className.equals(CD_TestCase)
+                    || (callee.className.equals(CD_Object) && callee.methodName.equals(INIT_NAME)))) {
                 System.out.println(event);
                 boolean succeeded = (boolean) event.getValue("succeeded");
                 int bci = Events.assertField(event, "bci").atLeast(0).getValue();
@@ -132,17 +142,17 @@ public class TestCompilerInlining {
     }
 
     private static MethodDesc methodToMethodDesc(RecordedMethod method) {
-        String internalClassName = method.getType().getName().replace('.', '/');
+        ClassDesc classDesc = ClassDesc.of(method.getType().getName());
         String methodName = method.getValue("name");
-        String methodDescriptor = method.getValue("descriptor");
-        return new MethodDesc(internalClassName, methodName, methodDescriptor);
+        MethodTypeDesc methodDescriptor = MethodTypeDesc.ofDescriptor(method.getValue("descriptor"));
+        return new MethodDesc(classDesc, methodName, methodDescriptor);
     }
 
     private static MethodDesc ciMethodToMethodDesc(RecordedObject ciMethod) {
-        String internalClassName = ciMethod.getValue("type");
+        ClassDesc classDesc = ClassDesc.ofInternalName(ciMethod.getValue("type"));
         String methodName = ciMethod.getValue("name");
-        String methodDescriptor = ciMethod.getValue("descriptor");
-        return new MethodDesc(internalClassName, methodName, methodDescriptor);
+        MethodTypeDesc methodDescriptor = MethodTypeDesc.ofDescriptor(ciMethod.getValue("descriptor"));
+        return new MethodDesc(classDesc, methodName, methodDescriptor);
     }
 
     private static Method getMethod(Class<?> aClass, String name, Class<?>... params) {
@@ -246,35 +256,33 @@ class Call {
  * data structure for method description
  */
 class MethodDesc {
-    public final String className;
+    public final ClassDesc className;
     public final String methodName;
-    public final String descriptor;
+    public final MethodTypeDesc descriptor;
 
-    public MethodDesc(Class<?> aClass, String methodName, String descriptor) {
-        this(aClass.getName().replace('.', '/'), methodName, descriptor);
-    }
-
-    public MethodDesc(String className, String methodName, String descriptor) {
+    public MethodDesc(ClassDesc className, String methodName, MethodTypeDesc descriptor) {
         Objects.requireNonNull(className);
         Objects.requireNonNull(methodName);
         Objects.requireNonNull(descriptor);
-        this.className = className.replace('.', '/');
+        this.className = className;
         this.methodName = methodName;
         this.descriptor = descriptor;
     }
 
     public MethodDesc(Executable executable) {
-        Class<?> aClass = executable.getDeclaringClass();
-        className = Type.getInternalName(aClass).replace('.', '/');
+        className = executable.getDeclaringClass().describeConstable().orElseThrow();
+        ClassDesc retType;
 
-        if (executable instanceof Constructor<?>) {
-            methodName = "<init>";
-            descriptor = Type.getConstructorDescriptor((Constructor<?>) executable);
-        } else {
+        if (executable instanceof Method method) {
             methodName = executable.getName();
-            descriptor = Type.getMethodDescriptor((Method) executable);
+            retType = method.getReturnType().describeConstable().orElseThrow();
+        } else {
+            methodName = INIT_NAME;
+            retType = CD_void;
         }
 
+        descriptor = MethodTypeDesc.of(retType, Stream.of(executable.getParameterTypes())
+                .map(c -> c.describeConstable().orElseThrow()).toArray(ClassDesc[]::new));
     }
 
     @Override
@@ -361,43 +369,41 @@ class InlineCalls {
 
     private static Collection<Call> getCalls(Class<?> aClass) {
         List<Call> calls = new ArrayList<>();
-        ClassWriter cw;
-        ClassReader cr;
+        ClassModel clm;
         try {
-            cr = new ClassReader(aClass.getName());
+            var stream = ClassLoader.getSystemResourceAsStream(aClass.getName()
+                    .replace('.', '/') + ".class");
+            if (stream == null) {
+                throw new IOException("Cannot find class file for " + aClass.getName());
+            }
+            clm = ClassFile.of().parse(stream.readAllBytes());
         } catch (IOException e) {
             throw new Error("TESTBUG : unexpected IOE during class reading", e);
         }
-        cw = new ClassWriter(cr, 0);
-        ClassVisitor cv = new ClassVisitor(Opcodes.ASM7, cw) {
-            @Override
-            public MethodVisitor visitMethod(int access, String name, String desc, String descriptor, String[] exceptions) {
-                System.out.println("Method: " +name);
-                MethodVisitor mv = super.visitMethod(access, name, desc, descriptor, exceptions);
-                return new CallTracer(aClass, name, desc, mv, calls);
-            }
-        };
-        cr.accept(cv, 0);
 
+        clm.methods().forEach(mm -> {
+            System.out.println("Method: " + mm.methodName().stringValue());
+            mm.code().ifPresent(com -> {
+                MethodDesc caller = new MethodDesc(
+                        clm.thisClass().asSymbol(),
+                        mm.methodName().stringValue(),
+                        mm.methodTypeSymbol()
+                );
+                int offset = 0;
+                for (var ce : com.elements()) {
+                    if (ce instanceof Instruction ins) {
+                        if (ins instanceof InvokeInstruction inv) {
+                            calls.add(new Call(caller, new MethodDesc(
+                                    inv.owner().asSymbol(),
+                                    inv.name().stringValue(),
+                                    inv.typeSymbol()
+                            ), offset));
+                        }
+                        offset += ins.sizeInBytes();
+                    }
+                }
+            });
+        });
         return calls;
-    }
-
-    private static class CallTracer extends MethodVisitor {
-        private final MethodDesc caller;
-        private Collection<Call> calls;
-
-        public CallTracer(Class<?> aClass, String name, String desc, MethodVisitor mv, Collection<Call> calls) {
-            super(Opcodes.ASM7, mv);
-            caller = new MethodDesc(aClass.getName(), name, desc);
-            this.calls = calls;
-        }
-
-        @Override
-        public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
-            Label label = new Label();
-            visitLabel(label);
-            super.visitMethodInsn(opcode, owner, name, desc, itf);
-            calls.add(new Call(caller, new MethodDesc(owner, name, desc), label.getOffset()));
-        }
     }
 }
