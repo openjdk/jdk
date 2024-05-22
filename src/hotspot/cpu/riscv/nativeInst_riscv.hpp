@@ -114,7 +114,7 @@ class NativeInstruction {
   //     addi
   //     slli
   //     addi/jalr/load
-  static bool check_movptr_data_dependency(address instr) {
+  static bool check_movptr1_data_dependency(address instr) {
     address lui = instr;
     address addi1 = lui + instruction_size;
     address slli1 = addi1 + instruction_size;
@@ -415,12 +415,6 @@ class NativeMovConstReg: public NativeInstruction {
 
   intptr_t data() const;
   void set_data(intptr_t x);
-
-  void flush() {
-    if (!maybe_cpool_ref(instruction_address())) {
-      ICache::invalidate_range(instruction_address(), movptr1_instruction_size /* > movptr2_instruction_size */);
-    }
-  }
 
   void verify();
   void print();

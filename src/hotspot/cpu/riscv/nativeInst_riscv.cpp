@@ -93,7 +93,7 @@ bool NativeInstruction::is_movptr1_at(address instr) {
          (is_addi_at(instr + instruction_size * 5) ||
           is_jalr_at(instr + instruction_size * 5) ||
           is_load_at(instr + instruction_size * 5)) && // Addi/Jalr/Load
-         check_movptr_data_dependency(instr);
+         check_movptr1_data_dependency(instr);
 }
 
 bool NativeInstruction::is_movptr2_at(address instr) {
