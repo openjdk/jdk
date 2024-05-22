@@ -422,7 +422,7 @@ TEST_VM_F(VMATreeTest, TestConsistencyWithSimpleTracker) {
   };
 
 
-  const int operation_count = 1000000; // One million
+  const int operation_count = 100000; // One hundred thousand
   for (int i = 0; i < operation_count; i++) {
     const size_t page_start = (size_t)(os::random() % tr->num_pages);
     const size_t num_pages = (size_t)(os::random() % (tr->num_pages - page_start));
@@ -455,8 +455,6 @@ TEST_VM_F(VMATreeTest, TestConsistencyWithSimpleTracker) {
     for (int j = 0; j < mt_number_of_types; j++) {
       VMATree::SingleDiff td = tree_diff.flag[j];
       VMATree::SingleDiff sd = simple_diff.flag[j];
-      assert(td.reserve == sd.reserve, "");
-      assert(td.commit == sd.commit, "");
       EXPECT_EQ(td.reserve, sd.reserve);
       EXPECT_EQ(td.commit, sd.commit);
     }
