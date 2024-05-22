@@ -675,7 +675,7 @@ DOCS_REFERENCE_JAVADOC := @DOCS_REFERENCE_JAVADOC@
 SOURCE_REVISION_TRACKER := $(SUPPORT_OUTPUTDIR)/src-rev/source-revision-tracker
 
 # Interim langtools modules and arguments
-INTERIM_LANGTOOLS_BASE_MODULES := java.compiler jdk.compiler jdk.javadoc
+INTERIM_LANGTOOLS_BASE_MODULES := java.compiler jdk.compiler jdk.internal.md jdk.javadoc
 INTERIM_LANGTOOLS_MODULES := $(addsuffix .interim, $(INTERIM_LANGTOOLS_BASE_MODULES))
 INTERIM_LANGTOOLS_ADD_EXPORTS := \
     --add-exports java.base/sun.reflect.annotation=jdk.compiler.interim \
