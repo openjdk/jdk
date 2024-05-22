@@ -24,8 +24,6 @@
 import module java.base;
 import javax.annotation.processing.*;
 import javax.lang.model.element.TypeElement;
-import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.Set;
 
 /**
@@ -35,7 +33,7 @@ import java.util.Set;
  * @library /tools/javac/lib
  * @modules jdk.compiler
  * @build JavacTestingAbstractProcessor ModuleImportProcessingTest
- * @compile/process -processor ModuleImportProcessingTest ModuleImportProcessingTest.java
+ * @compile/process --enable-preview --release 23 -processor ModuleImportProcessingTest ModuleImportProcessingTest.java
  */
 public class ModuleImportProcessingTest extends JavacTestingAbstractProcessor {
     @Override
