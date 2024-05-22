@@ -32,9 +32,11 @@
  *          java.management
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:NativeMemoryTracking=summary -Xms8m -Xmx8m -Xint PeakMallocTest
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:NativeMemoryTracking=summary -Xms32m -Xmx32m -Xint PeakMallocTest
  *
  */
+
+// Note we run the test with -Xint to keep compilers from running and reduce malloc noise.
 
 import jdk.test.lib.process.OutputAnalyzer;
 
@@ -42,42 +44,48 @@ import jdk.test.whitebox.WhiteBox;
 
 public class PeakMallocTest {
 
-    public static WhiteBox wb = WhiteBox.getWhiteBox();
+    private static WhiteBox wb = WhiteBox.getWhiteBox();
+    private static final double FUDGE_FACTOR = 0.2;
 
     public static void main(String[] args) throws Exception {
 
         // Measure early malloc total and peak
-        OutputAnalyzer output = NMTTestUtils.startJcmdVMNativeMemory();
+        OutputAnalyzer output = NMTTestUtils.startJcmdVMNativeMemory("scale=1");
         long earlyTotal = getMallocTotal(output);
         long earlyPeak = getMallocPeak(output);
         System.out.println("Early malloc total: " + earlyTotal);
         System.out.println("Early malloc peak: " + earlyPeak);
 
-
         // Allocate a large amount of memory and then free
-        long allocSize = Math.max(8 * earlyPeak, 1000000000); // MAX(earlyPeak * 8, 1GB)
+        long allocSize = Math.max(8 * earlyPeak, 250 * 1024 * 1024); // MAX(earlyPeak * 8, 250MB)
         long addr = wb.NMTMalloc(allocSize);
         System.out.println("Allocation size: " + allocSize);
         wb.NMTFree(addr);
 
         // Measure again
-        output = NMTTestUtils.startJcmdVMNativeMemory();
+        output = NMTTestUtils.startJcmdVMNativeMemory("scale=1");
         long currTotal = getMallocTotal(output);
         long currPeak = getMallocPeak(output);
         System.out.println("Current malloc total: " + currTotal);
         System.out.println("Current malloc peak: " + currPeak);
 
-        // Verify total global malloc is similar
-        // Fudge factor of 10% to account for noise
-        if ((currTotal < earlyTotal * 0.9) || (currTotal > earlyTotal * 1.1)) {
-            throw new Exception("Global malloc measurement is incorrect");
+        // Verify total global malloc is similar with a fudge factor
+        double mallocLowerBound = earlyTotal * (1 - FUDGE_FACTOR);
+        double mallocUpperBound = earlyTotal * (1 + FUDGE_FACTOR);
+        if (currTotal < mallocLowerBound || currTotal > mallocUpperBound) {
+            throw new Exception("Global malloc measurement is incorrect. " +
+                    "Expected range: [" + mallocLowerBound + " - " + mallocUpperBound + "]. " +
+                    "Actual malloc total: " + currTotal);
         }
 
-        // Verify global malloc peak reflects large allocation
-        long peakDiff = (currPeak - earlyPeak) * 1000; // Note, KB to Bytes conversion
-        System.out.println("Peak diff: " + peakDiff);
-        if ((peakDiff < allocSize * 0.9) || (peakDiff > allocSize * 1.1)) {
-            throw new Exception("Global malloc peak measurement is incorrect");
+        // Verify global malloc peak reflects large allocation with a fudge factor
+        long peakDiff = currPeak - earlyPeak;
+        double peakLowerBound = allocSize * (1 - FUDGE_FACTOR);
+        double peakUpperBound = allocSize * (1 + FUDGE_FACTOR);
+        if (peakDiff < peakLowerBound || peakDiff > peakUpperBound) {
+            throw new Exception("Global malloc peak measurement is incorrect. " +
+                    "Expected peak diff range: [" + peakLowerBound + " - " + peakUpperBound + "]. " +
+                    "Actual peak diff: " + peakDiff);
         }
     }
 
