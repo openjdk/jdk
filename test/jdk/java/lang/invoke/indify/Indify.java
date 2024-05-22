@@ -558,11 +558,9 @@ public class Indify {
                             }
                             if (e instanceof InvokeInstruction && Objects.equals(a1, a2)) {
                                 System.err.println(">> Removing instruction invokestatic for Method: " + ((InvokeInstruction) e).name());
-                                b.andThen(b);
                             } else if (shouldProceed.peek() && e instanceof InvokeInstruction && ((InvokeInstruction) e).method().equals(((InvokeInstruction) i2).method())) {
                                 System.err.println(">> Removing instruction invokevirtual for Method: " + ((InvokeInstruction) e).name());
-                                b.andThen(b);
-                                System.out.println(">> Adding invokedynamic instruction and nop instead of invoke virtual: " + ((InvokeDynamicEntry) con).name());
+                                System.err.println(">> Adding invokedynamic instruction and nop instead of invoke virtual: " + ((InvokeDynamicEntry) con).name());
                                 b.invokeDynamicInstruction((InvokeDynamicEntry) con).nop();
 
                                 shouldProceed.pop();
