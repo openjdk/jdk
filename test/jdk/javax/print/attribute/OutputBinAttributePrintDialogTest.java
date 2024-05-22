@@ -86,13 +86,14 @@ public class OutputBinAttributePrintDialogTest {
         if (dialogTypeSelection == DialogTypeSelection.NATIVE) {
             String os = System.getProperty("os.name").toLowerCase();
             if (os.startsWith("linux")) {
-                // The Linux native dialog is the same as the native
+                System.out.println("Skip the native print dialog type test on Linux as it is the same as the common.");
                 return;
             }
         }
 
         final OutputBin[] supportedOutputBins = getSupportedOutputBinttributes();
         if (supportedOutputBins.length < 2) {
+            System.out.println("Skip the test as the number of supported output bins less than 2.");
             return;
         }
 
