@@ -25,6 +25,7 @@
 
 #include "precompiled.hpp"
 #ifdef COMPILER2
+#include "asm/assembler.hpp"
 #include "opto/c2_MacroAssembler.hpp"
 #include "stubGenerator_x86_64.hpp"
 #include <functional>
