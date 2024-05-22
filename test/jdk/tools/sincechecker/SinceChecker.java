@@ -524,8 +524,12 @@ public class SinceChecker {
                 "method: com.sun.source.tree.Tree com.sun.source.tree.CaseTree.getBody()",
                 "method: com.sun.source.tree.CaseTree.CaseKind com.sun.source.tree.CaseTree.getCaseKind()",
                 "class: com.sun.source.tree.CaseTree.CaseKind",
+                "field: com.sun.source.tree.CaseTree.CaseKind:STATEMENT",
+                "field: com.sun.source.tree.CaseTree.CaseKind:RULE",
                 "field: com.sun.source.tree.Tree.Kind:SWITCH_EXPRESSION",
                 "interface: com.sun.source.tree.SwitchExpressionTree",
+                "method: com.sun.source.tree.ExpressionTree com.sun.source.tree.SwitchExpressionTree.getExpression()",
+                "method: java.util.List com.sun.source.tree.SwitchExpressionTree.getCases()",
                 "method: java.lang.Object com.sun.source.tree.TreeVisitor.visitSwitchExpression(com.sun.source.tree.SwitchExpressionTree,java.lang.Object)",
                 "method: java.lang.Object com.sun.source.util.TreeScanner.visitSwitchExpression(com.sun.source.tree.SwitchExpressionTree,java.lang.Object)",
                 "method: java.lang.Object com.sun.source.util.SimpleTreeVisitor.visitSwitchExpression(com.sun.source.tree.SwitchExpressionTree,java.lang.Object)"
@@ -538,8 +542,12 @@ public class SinceChecker {
                 "method: com.sun.source.tree.Tree com.sun.source.tree.CaseTree.getBody()",
                 "method: com.sun.source.tree.CaseTree.CaseKind com.sun.source.tree.CaseTree.getCaseKind()",
                 "class: com.sun.source.tree.CaseTree.CaseKind",
+                "field: com.sun.source.tree.CaseTree.CaseKind:STATEMENT",
+                "field: com.sun.source.tree.CaseTree.CaseKind:RULE",
                 "field: com.sun.source.tree.Tree.Kind:SWITCH_EXPRESSION",
                 "interface: com.sun.source.tree.SwitchExpressionTree",
+                "method: com.sun.source.tree.ExpressionTree com.sun.source.tree.SwitchExpressionTree.getExpression()",
+                "method: java.util.List com.sun.source.tree.SwitchExpressionTree.getCases()",
                 "method: java.lang.Object com.sun.source.tree.TreeVisitor.visitSwitchExpression(com.sun.source.tree.SwitchExpressionTree,java.lang.Object)",
                 "method: java.lang.Object com.sun.source.util.TreeScanner.visitSwitchExpression(com.sun.source.tree.SwitchExpressionTree,java.lang.Object)",
                 "method: java.lang.Object com.sun.source.util.SimpleTreeVisitor.visitSwitchExpression(com.sun.source.tree.SwitchExpressionTree,java.lang.Object)",
@@ -549,6 +557,7 @@ public class SinceChecker {
                 "class: javax.swing.plaf.basic.motif.MotifLookAndFeel",
                 "field: com.sun.source.tree.Tree.Kind:YIELD",
                 "interface: com.sun.source.tree.YieldTree",
+                "method: com.sun.source.tree.ExpressionTree com.sun.source.tree.YieldTree.getValue()",
                 "method: java.lang.Object com.sun.source.tree.TreeVisitor.visitYield(com.sun.source.tree.YieldTree,java.lang.Object)",
                 "method: java.lang.Object com.sun.source.util.SimpleTreeVisitor.visitYield(com.sun.source.tree.YieldTree,java.lang.Object)",
                 "method: java.lang.Object com.sun.source.util.TreeScanner.visitYield(com.sun.source.tree.YieldTree,java.lang.Object)"
@@ -557,9 +566,6 @@ public class SinceChecker {
         LEGACY_PREVIEW_METHODS.put("14", Set.of(
                 "module: jdk.jpackage",
                 "class: javax.swing.plaf.basic.motif.MotifLookAndFeel",
-                "method: java.lang.Object com.sun.source.tree.TreeVisitor.visitYield(com.sun.source.tree.YieldTree,java.lang.Object)",
-                "method: java.lang.Object com.sun.source.util.SimpleTreeVisitor.visitYield(com.sun.source.tree.YieldTree,java.lang.Object)",
-                "method: java.lang.Object com.sun.source.util.TreeScanner.visitYield(com.sun.source.tree.YieldTree,java.lang.Object)",
                 "field: jdk.jshell.Snippet.SubKind:RECORD_SUBKIND",
                 "class: javax.lang.model.element.RecordComponentElement",
                 "method: javax.lang.model.type.TypeMirror javax.lang.model.element.RecordComponentElement.asType()",
@@ -587,7 +593,8 @@ public class SinceChecker {
                 "interface: com.sun.source.tree.PatternTree",
                 "field: com.sun.source.tree.Tree.Kind:BINDING_PATTERN",
                 "method: com.sun.source.tree.PatternTree com.sun.source.tree.InstanceOfTree.getPattern()",
-                "interface: com.sun.source.tree.BindingPatternTree"
+                "interface: com.sun.source.tree.BindingPatternTree",
+                "method: java.lang.Object com.sun.source.tree.TreeVisitor.visitBindingPattern(com.sun.source.tree.BindingPatternTree,java.lang.Object)"
         ));
 
         LEGACY_PREVIEW_METHODS.put("15", Set.of(
@@ -636,8 +643,7 @@ public class SinceChecker {
                 "method: javax.lang.model.element.TypeElement:getPermittedSubclasses:()",
                 "method: java.util.List com.sun.source.tree.ClassTree.getPermitsClause()",
                 "method: boolean java.lang.Class.isSealed()",
-                "method: java.lang.constant.ClassDesc[] java.lang.Class.permittedSubclasses()",
-                "method: java.lang.Object com.sun.source.tree.TreeVisitor.visitBindingPattern(com.sun.source.tree.BindingPatternTree,java.lang.Object)"
+                "method: java.lang.constant.ClassDesc[] java.lang.Class.permittedSubclasses()"
         ));
 
         // java.lang.foreign existed since JDK 19 and wasn't annotated - went out of preview in JDK 22
