@@ -32,11 +32,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Random;
 
-import jdk.test.lib.Utils;
-
 public class IndexOf {
 
-  static Random generator = Utils.getRandomInstance();
+  static Random generator = new Random();
   private static boolean failure = false;
   public static void main(String[] args) throws Exception {
     String testName = "IndexOf";
