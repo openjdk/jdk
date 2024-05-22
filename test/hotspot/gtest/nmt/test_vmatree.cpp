@@ -24,6 +24,8 @@
 
 #include "precompiled.hpp"
 #include "memory/allocation.hpp"
+#include "nmt/memflags.hpp"
+#include "nmt/nmtNativeCallStackStorage.hpp"
 #include "nmt/vmatree.hpp"
 #include "runtime/os.hpp"
 #include "unittest.hpp"
@@ -335,5 +337,126 @@ TEST_VM_F(VMATreeTest, SummaryAccounting) {
     VMATree::SummaryDiff diff = tree.commit_mapping(0, 1024, rd);
     EXPECT_EQ(768, diff.flag[NMTUtil::flag_to_index(mtTest)].commit);
     EXPECT_EQ(768, diff.flag[NMTUtil::flag_to_index(mtTest)].reserve);
+  }
+}
+
+// Exceedingly simple tracker for page-granular allocations
+// Use it for testing consistency with VMATree.
+struct SimpleVMATracker : public CHeapObj<mtTest> {
+  enum Tpe { Reserved, Committed, Free };
+  struct Info {
+    Tpe tpe;
+    MEMFLAGS flag;
+    NativeCallStack stack;
+    Info() : tpe(Free), flag(mtNone), stack() {}
+
+    Info(Tpe tpe, NativeCallStack stack, MEMFLAGS flag)
+    : tpe(tpe), flag(flag), stack(stack) {}
+  };
+  // Page (4KiB) granular array
+  const size_t num_pages = 1024*1024;
+  Info pages[1024 * 1024];
+
+  SimpleVMATracker()
+  : pages() {
+    for (size_t i = 0; i < num_pages; i++) {
+      pages[i] = Info();
+    }
+  }
+
+  VMATree::SummaryDiff do_it(Tpe tpe, size_t start, size_t size, NativeCallStack stack, MEMFLAGS flag) {
+    assert(size % 4096 == 0 && start % 4096 == 0, "page alignment");
+    VMATree::SummaryDiff diff;
+    const size_t page_count = size / 4096;
+    const size_t start_idx = start / 4096;
+    const size_t end_idx = start_idx + page_count - 1;
+    assert(end_idx < (size_t)num_pages - 1, "");
+
+    Info new_info(tpe, stack, flag);
+    for (size_t i = start_idx; i < end_idx; i++) {
+      Info& old_info = pages[i];
+
+      // Register diff
+      if (old_info.tpe == Reserved) {
+        diff.flag[(int)old_info.flag].reserve -= 4096;
+      } else if (old_info.tpe == Committed) {
+        diff.flag[(int)old_info.flag].reserve -= 4096;
+        diff.flag[(int)old_info.flag].commit -= 4096;
+      }
+
+      if (tpe == Reserved) {
+        diff.flag[(int)new_info.flag].reserve += 4096;
+      } else if(tpe == Committed) {
+        diff.flag[(int)new_info.flag].reserve += 4096;
+        diff.flag[(int)new_info.flag].commit += 4096;
+      }
+      // Overwrite old one with new
+      pages[i] = new_info;
+    }
+    return diff;
+  }
+
+  VMATree::SummaryDiff reserve(size_t start, size_t size, NativeCallStack stack, MEMFLAGS flag) {
+    return do_it(Reserved, start, size, stack, flag);
+  }
+
+  VMATree::SummaryDiff commit(size_t start, size_t size, NativeCallStack stack, MEMFLAGS flag) {
+    return do_it(Reserved, start, size, stack, flag);
+  }
+
+  VMATree::SummaryDiff release(size_t start, size_t size) {
+    return do_it(Reserved, start, size, NativeCallStack(), mtNone);
+  }
+};
+
+TEST_VM_F(VMATreeTest, TestConsistencyWithSimpleTracker) {
+  SimpleVMATracker* tr = new SimpleVMATracker();
+  VMATree tree;
+  NativeCallStackStorage ncss(true);
+
+  NativeCallStack stacks[4] = {
+    make_stack(0xA),
+    make_stack(0xB),
+    make_stack(0xC),
+    make_stack(0xD)
+  };
+
+
+  const int operation_count = 1000000; // One million
+  for (int i = 0; i < operation_count; i++) {
+    const int page_start = os::random() % tr->num_pages;
+    const int num_pages = os::random() % (tr->num_pages - page_start);
+    if (num_pages == 0) {
+      i--; continue;
+    }
+    const size_t start = page_start * 4096;
+    const size_t size = num_pages * 4096;
+
+    const MEMFLAGS flag = (MEMFLAGS)(os::random() % mt_number_of_types);
+    const NativeCallStack stack = stacks[os::random() % 4];
+    const NativeCallStackStorage::StackIndex si = ncss.push(stack);
+    VMATree::RegionData data(si, flag);
+
+    const SimpleVMATracker::Tpe tpe = (SimpleVMATracker::Tpe)(os::random() % 3);
+
+    VMATree::SummaryDiff tree_diff;
+    VMATree::SummaryDiff simple_diff;
+    if (tpe == SimpleVMATracker::Reserved) {
+      simple_diff = tr->reserve(start, size, stack, flag);
+      tree_diff = tree.reserve_mapping(start, size, data);
+    } else if (tpe == SimpleVMATracker::Committed) {
+      simple_diff = tr->commit(start, size, stack, flag);
+      tree_diff = tree.commit_mapping(start, size, data);
+    } else {
+      simple_diff = tr->release(start, size);
+      tree_diff = tree.release_mapping(start, size);
+    }
+
+    for (int j = 0; j < mt_number_of_types; j++) {
+      VMATree::SingleDiff td = tree_diff.flag[j];
+      VMATree::SingleDiff sd = simple_diff.flag[j];
+      EXPECT_EQ(td.reserve, sd.reserve);
+      EXPECT_EQ(td.commit, sd.commit);
+    }
   }
 }
