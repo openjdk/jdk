@@ -369,7 +369,7 @@ struct SimpleVMATracker : public CHeapObj<mtTest> {
     VMATree::SummaryDiff diff;
     const size_t page_count = size / 4096;
     const size_t start_idx = start / 4096;
-    const size_t end_idx = start_idx + page_count - 1;
+    const size_t end_idx = start_idx + page_count;
     assert(end_idx < (size_t)num_pages - 1, "");
 
     Info new_info(tpe, stack, flag);
