@@ -112,14 +112,14 @@ public class ExtensionsWithLDAP {
         kpg.initialize(2048);
 
         KeyPair caKeys = kpg.generateKeyPair();
-        caCertificate = CertificateBuilder.createCACertificateBuilder(
+        caCertificate = CertificateBuilder.newSelfSignedCA(
             "CN = Root", caKeys)
                 .build(null, caKeys.getPrivate(), "SHA512withRSA");
 
         KeyPair eeKeys = kpg.generateKeyPair();
         GeneralNames gns = new GeneralNames();
         gns.add(new GeneralName(new URIName("ldap://ldap.host.for.crldp/main.crl")));
-        eeCertificate = CertificateBuilder.createClientCertificateBuilder(
+        eeCertificate = CertificateBuilder.newEndEntity(
             "CN = EE", eeKeys.getPublic(), caKeys.getPublic())
             .addAIAExt(List.of("CAISSUER|ldap://ldap.host.for.aia/dc=Root?cACertificate"))
             .addExtension(new CRLDistributionPointsExtension(List.of(

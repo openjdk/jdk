@@ -206,12 +206,12 @@ public class SelfIssuedCert extends TMBase {
         kpg.initialize(2048);
 
         KeyPair caKeys = kpg.generateKeyPair();
-        trustedCertificate = CertificateBuilder.createCACertificateBuilder(
+        trustedCertificate = CertificateBuilder.newSelfSignedCA(
             "C = US, O = Example, CN = localhost", caKeys)
             .build(null, caKeys.getPrivate(), "SHA256withRSA");
 
         targetKeyPair = kpg.generateKeyPair();
-        targetCertificate = CertificateBuilder.createClientCertificateBuilder(
+        targetCertificate = CertificateBuilder.newEndEntity(
             "C = US, O = Example, CN = localhost",
             targetKeyPair.getPublic(), caKeys.getPublic())
             .build(trustedCertificate, caKeys.getPrivate(), "SHA256withRSA");

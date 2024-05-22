@@ -49,10 +49,6 @@ import javax.net.ssl.*;
 import java.security.cert.Certificate;
 import java.security.cert.CertPathValidatorException;
 import sun.security.testlibrary.CertificateBuilder;
-import sun.security.x509.DNSName;
-import sun.security.x509.GeneralName;
-import sun.security.x509.GeneralNames;
-import sun.security.x509.SubjectAlternativeNameExtension;
 
 
 public class PKIXExtendedTM extends TMBase {
@@ -290,25 +286,22 @@ public class PKIXExtendedTM extends TMBase {
         kpg.initialize(1024);
 
         KeyPair caKeys = kpg.generateKeyPair();
-        trustedCertificate = CertificateBuilder.createCACertificateBuilder(
+        trustedCertificate = CertificateBuilder.newSelfSignedCA(
             "C=US, ST=Some-State, L=Some-City, O=Some-Org", caKeys)
             .build(null, caKeys.getPrivate(), "MD5withRSA");
 
-        GeneralNames gns = new GeneralNames();
-        gns.add(new GeneralName(new DNSName("localhost")));
-
         serverKeyPair = kpg.generateKeyPair();
-        serverCertificate = CertificateBuilder.createClientCertificateBuilder(
+        serverCertificate = CertificateBuilder.newEndEntity(
             "C=US, ST=Some-State, L=Some-City, O=Some-Org, OU=SSL-Server, CN=localhost",
             serverKeyPair.getPublic(), caKeys.getPublic(),
-            new SubjectAlternativeNameExtension(true, gns))
+            CertificateBuilder.createDNSSubjectAltNameExt(true, "localhost"))
             .build(trustedCertificate, caKeys.getPrivate(), "MD5withRSA");
 
         clientKeyPair = kpg.generateKeyPair();
-        clientCertificate = CertificateBuilder.createClientCertificateBuilder(
+        clientCertificate = CertificateBuilder.newEndEntity(
             "C=US, ST=Some-State, L=Some-City, O=Some-Org, OU=SSL-Client, CN=localhost",
             clientKeyPair.getPublic(), caKeys.getPublic(),
-            new SubjectAlternativeNameExtension(true, gns))
+            CertificateBuilder.createDNSSubjectAltNameExt(true, "localhost"))
             .build(trustedCertificate, caKeys.getPrivate(), "MD5withRSA");
     }
 }

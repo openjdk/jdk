@@ -76,16 +76,14 @@ public class MD2InTrustAnchor {
         kpg.initialize(1024);
 
         KeyPair caKey = kpg.generateKeyPair();
-        caCertificate = CertificateBuilder.createCACertificateBuilder(
+        caCertificate = CertificateBuilder.newSelfSignedCA(
             "C=US, O=Java, OU=SunJSSE Test Serivce", caKey)
-            .addKeyUsageExt(new boolean[]{false, false, false, false, false, true, true, false, false})
             .build(null, caKey.getPrivate(), "MD2withRSA");
 
         targetKeys = kpg.generateKeyPair();
-        targetCert = CertificateBuilder.createClientCertificateBuilder(
+        targetCert = CertificateBuilder.newEndEntity(
             "C=US, O=Java, OU=SunJSSE Test Serivce, CN=localhost",
             targetKeys.getPublic(), caKey.getPublic())
-            .addKeyUsageExt(new boolean[]{true, true, true, false, true, false, false, false, false})
             .addExtendedKeyUsageExt(
                     List.of(KnownOIDs.serverAuth.value(), KnownOIDs.clientAuth.value(),
                             KnownOIDs.codeSigning.value()))

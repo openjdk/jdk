@@ -398,8 +398,8 @@ public class CertificateBuilder {
     }
 
     /**
-     * Creates a new certificate signed by the given CA. Certificates created
-     * by this method are valid for an hour and are given a random serial number.
+     * Creates a CertificateBuilder with default values for creating end-entity
+     * certificates. Certificates are valid for an hour and are given a random serial number.
      * Default key usage specifies:
      * <ul>
      *     <li>Digital Signature</li>
@@ -414,8 +414,8 @@ public class CertificateBuilder {
      * @param extensions Optional extensions to add to the certificate
      * @throws Exception
      */
-    public static CertificateBuilder createClientCertificateBuilder(String subjectName, PublicKey publicKey,
-              PublicKey caKey, Extension... extensions) throws Exception {
+    public static CertificateBuilder newEndEntity(String subjectName, PublicKey publicKey,
+                          PublicKey caKey, Extension... extensions) throws Exception {
         SecureRandom random = new SecureRandom();
         return new CertificateBuilder()
                 .setSubjectName(subjectName)
@@ -444,8 +444,8 @@ public class CertificateBuilder {
      * @param extensions Optional extensions to add to the certificate.
      * @throws Exception
      */
-    public static CertificateBuilder createCACertificateBuilder(String subject, KeyPair caKey,
-                                               Extension... extensions) throws Exception {
+    public static CertificateBuilder newSelfSignedCA(String subject, KeyPair caKey,
+                                     Extension... extensions) throws Exception {
         SecureRandom random = new SecureRandom();
         return new CertificateBuilder()
                 .setSubjectName(subject)

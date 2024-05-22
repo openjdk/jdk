@@ -51,8 +51,6 @@ import java.security.cert.*;
 import java.security.spec.*;
 import sun.security.testlibrary.CertificateBuilder;
 
-import java.util.Base64;
-
 public class BasicConstraints extends TMBase {
     private final X509Certificate trustedCertificate;
 
@@ -224,12 +222,12 @@ public class BasicConstraints extends TMBase {
         kpg.initialize(2048);
 
         KeyPair trustedKeyPair = kpg.generateKeyPair();
-        trustedCertificate = CertificateBuilder.createCACertificateBuilder(
+        trustedCertificate = CertificateBuilder.newSelfSignedCA(
             "C = US, O = Java, OU = SunJSSE Test Serivce", trustedKeyPair)
             .build(null, trustedKeyPair.getPrivate(), "SHA256withRSA");
 
         KeyPair caSignerKeyPair = kpg.generateKeyPair();
-        caSignerCertificate = CertificateBuilder.createClientCertificateBuilder(
+        caSignerCertificate = CertificateBuilder.newEndEntity(
             "C = US, O = Java, OU = SunJSSE Test Serivce, CN = casigner",
             caSignerKeyPair.getPublic(), trustedKeyPair.getPublic())
             .addKeyUsageExt(new boolean[]{false, false, false, false, false, true, true, false, false})
@@ -237,7 +235,7 @@ public class BasicConstraints extends TMBase {
             .build(trustedCertificate, trustedKeyPair.getPrivate(), "SHA256withRSA");
 
         KeyPair certIssuerKeyPair = kpg.generateKeyPair();
-        certIssuerCertificate = CertificateBuilder.createClientCertificateBuilder(
+        certIssuerCertificate = CertificateBuilder.newEndEntity(
             "C = US, O = Java, OU = SunJSSE Test Serivce, CN = certissuer",
             certIssuerKeyPair.getPublic(), caSignerKeyPair.getPublic())
             .addKeyUsageExt(new boolean[]{false, false, false, false, false, true, true, false, false})
@@ -245,17 +243,15 @@ public class BasicConstraints extends TMBase {
             .build(caSignerCertificate, caSignerKeyPair.getPrivate(), "SHA256withRSA");
 
         serverKeyPair = kpg.generateKeyPair();
-        serverCertificate = CertificateBuilder.createClientCertificateBuilder(
+        serverCertificate = CertificateBuilder.newEndEntity(
             "C = US, O = Java, OU = SunJSSE Test Serivce, CN = localhost",
             serverKeyPair.getPublic(), certIssuerKeyPair.getPublic())
-            .addKeyUsageExt(new boolean[]{true, true, true, false, true, false, false, false, false})
             .build(certIssuerCertificate, certIssuerKeyPair.getPrivate(), "SHA256withRSA");
 
         clientKeyPair = kpg.generateKeyPair();
-        clientCertificate = CertificateBuilder.createClientCertificateBuilder(
+        clientCertificate = CertificateBuilder.newEndEntity(
             "C = US, O = Java, OU = SunJSSE Test Serivce, CN = InterOp Tester",
             clientKeyPair.getPublic(), certIssuerKeyPair.getPublic())
-            .addKeyUsageExt(new boolean[]{true, true, true, false, true, false, false, false, false})
             .build(certIssuerCertificate, certIssuerKeyPair.getPrivate(),"SHA256withRSA");
     }
 }

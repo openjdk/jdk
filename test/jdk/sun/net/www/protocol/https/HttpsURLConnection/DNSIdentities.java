@@ -202,13 +202,13 @@ public class DNSIdentities extends IdentitiesBase {
         GeneralNames gns = new GeneralNames();
         gns.add(new GeneralName(new DNSName("localhost")));
 
-        serverCertificate = CertificateBuilder.createClientCertificateBuilder(
+        serverCertificate = CertificateBuilder.newEndEntity(
             "C = US, ST = Some-State, L = Some-City, O = Some-Org, OU = SSL-Server, CN = localhost",
             serverKeysRsa1024.getPublic(), caKeysRsa1024.getPublic(),
             new SubjectAlternativeNameExtension(true, gns))
             .build(caCertificate, caKeysRsa1024.getPrivate(), "MD5withRSA");
 
-        clientCertificate = CertificateBuilder.createClientCertificateBuilder(
+        clientCertificate = CertificateBuilder.newEndEntity(
             "C = US, ST = Some-State, L = Some-City, O = Some-Org, OU = SSL-Client, CN = localhost",
             clientKeysRsa1024.getPublic(), caKeysRsa1024.getPublic(),
             new SubjectAlternativeNameExtension(true, gns))

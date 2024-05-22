@@ -84,39 +84,35 @@ public class SSLSocketSNISensitive {
         kpg.initialize(1024);
 
         KeyPair caKey = kpg.generateKeyPair();
-        caCertificate = CertificateBuilder.createCACertificateBuilder(
+        caCertificate = CertificateBuilder.newSelfSignedCA(
                 "C=US, O=Java, OU=SunJSSE Test Serivce", caKey)
                 .build(null, caKey.getPrivate(), "MD5withRSA");
 
         KeyPair trustedKeysA = kpg.generateKeyPair();
-        X509Certificate trustedCertA = CertificateBuilder.createClientCertificateBuilder(
+        X509Certificate trustedCertA = CertificateBuilder.newEndEntity(
                 "C=US, O=Java, OU=SunJSSE Test Serivce, CN=www.example.com",
                 trustedKeysA.getPublic(), caKey.getPublic())
-                .addKeyUsageExt(new boolean[]{true, true, true, false, true, false, false, false, false})
                 .build(caCertificate, caKey.getPrivate(), "MD5withRSA");
 
         KeyPair trustedKeysB = kpg.generateKeyPair();
-        X509Certificate trustedCertB = CertificateBuilder.createClientCertificateBuilder(
+        X509Certificate trustedCertB = CertificateBuilder.newEndEntity(
                 "C=US, O=Java, OU=SunJSSE Test Serivce, CN=www.example.net",
                 trustedKeysB.getPublic(), caKey.getPublic())
-                .addKeyUsageExt(new boolean[]{true, true, true, false, true, false, false, false, false})
                 .build(caCertificate, caKey.getPrivate(), "MD5withRSA");
 
         KeyPair trustedKeysC = kpg.generateKeyPair();
-        X509Certificate trustedCertC = CertificateBuilder.createClientCertificateBuilder(
+        X509Certificate trustedCertC = CertificateBuilder.newEndEntity(
                 "C=US, O=Java, OU=SunJSSE Test Serivce, CN=www.invalid.com",
                 trustedKeysC.getPublic(), caKey.getPublic())
-                .addKeyUsageExt(new boolean[]{true, true, true, false, true, false, false, false, false})
                 .build(caCertificate, caKey.getPrivate(), "MD5withRSA");
 
         serverCerts = new X509Certificate[]{trustedCertA, trustedCertB, trustedCertC};
         serverKeys = new KeyPair[]{trustedKeysA, trustedKeysB, trustedKeysC};
 
         KeyPair trustedKeysD = kpg.generateKeyPair();
-        X509Certificate trustedCertD = CertificateBuilder.createClientCertificateBuilder(
+        X509Certificate trustedCertD = CertificateBuilder.newEndEntity(
                 "C=US, O=Java, OU=SunJSSE Test Serivce, CN=InterOp Tester",
                 trustedKeysD.getPublic(), caKey.getPublic())
-                .addKeyUsageExt(new boolean[]{true, true, true, false, true, false, false, false, false})
                 .build(caCertificate, caKey.getPrivate(), "MD5withRSA");
 
         clientCerts = new X509Certificate[]{trustedCertD};
