@@ -40,6 +40,10 @@ public:
     return tree._tree;
   }
 
+  VMATree::TreapNode* find(VMATree::VMATreap& treap, const VMATree::position key) {
+    return treap.find(treap._root, key);
+  }
+
   NativeCallStack make_stack(size_t a) {
     NativeCallStack stack((address*)&a, 1);
     return stack;
@@ -352,6 +356,10 @@ struct SimpleVMATracker : public CHeapObj<mtTest> {
 
     Info(Tpe tpe, NativeCallStack stack, MEMFLAGS flag)
     : tpe(tpe), flag(flag), stack(stack) {}
+
+    bool eq(Info other) {
+      return flag == other.flag && stack.equals(other.stack);
+    }
   };
   // Page (4KiB) granular array
   const size_t num_pages = 1024*1024;
@@ -410,6 +418,9 @@ struct SimpleVMATracker : public CHeapObj<mtTest> {
 };
 
 TEST_VM_F(VMATreeTest, TestConsistencyWithSimpleTracker) {
+  // In this test we use ASSERT macros from gtest instead of EXPECT
+  // as any error will propagate and become larger as the test progresses.
+
   SimpleVMATracker* tr = new SimpleVMATracker();
   VMATree tree;
   NativeCallStackStorage ncss(true);
@@ -455,8 +466,50 @@ TEST_VM_F(VMATreeTest, TestConsistencyWithSimpleTracker) {
     for (int j = 0; j < mt_number_of_types; j++) {
       VMATree::SingleDiff td = tree_diff.flag[j];
       VMATree::SingleDiff sd = simple_diff.flag[j];
-      EXPECT_EQ(td.reserve, sd.reserve);
-      EXPECT_EQ(td.commit, sd.commit);
+      ASSERT_EQ(td.reserve, sd.reserve);
+      ASSERT_EQ(td.commit, sd.commit);
+    }
+
+    // Every ten thousand operations do an in-depth check of the consistency of the data
+    // between the two trackers.
+    if (i % 10000 == 0) {
+      size_t j = 0;
+      while (j < tr->num_pages) {
+        while (j < tr->num_pages &&
+               tr->pages[j].tpe == SimpleVMATracker::Free) {
+          j++;
+        }
+
+        if (j == tr->num_pages) {
+          break;
+        }
+
+        size_t start = j;
+        SimpleVMATracker::Info starti = tr->pages[start];
+
+        while (j < tr->num_pages &&
+               tr->pages[j].eq(starti)) {
+          j++;
+        }
+
+        size_t end = j-1;
+        ASSERT_LE(end, tr->num_pages);
+        SimpleVMATracker::Info endi = tr->pages[end];
+
+        VMATree::VMATreap& treap = this->treap(tree);
+        VMATree::TreapNode* startn = find(treap, start * 4096);
+        ASSERT_NE(nullptr, startn);
+        VMATree::TreapNode* endn = find(treap, (end * 4096) + 4096);
+        ASSERT_NE(nullptr, endn);
+
+        const NativeCallStack& start_stack = ncss.get(startn->val().out.stack());
+        const NativeCallStack& end_stack = ncss.get(endn->val().in.stack());
+        ASSERT_TRUE(starti.stack.equals(start_stack));
+        ASSERT_TRUE(endi.stack.equals(end_stack));
+
+        ASSERT_EQ(starti.flag, startn->val().out.flag());
+        ASSERT_EQ(endi.flag, endn->val().in.flag());
+      }
     }
   }
 }
