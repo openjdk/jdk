@@ -1,4 +1,4 @@
-/*
+package tools.javac.processing;/*
  * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -29,11 +29,12 @@ import java.util.Set;
 /**
  * @test
  * @bug 8332497
- * @summary error: javac crashes when annotation processing runs on program with module imports
+ * @summary error: javac throws AssertionError when annotation processing runs on program with module imports
  * @library /tools/javac/lib
  * @modules jdk.compiler
+ * @enablePreview
  * @build JavacTestingAbstractProcessor ModuleImportProcessingTest
- * @compile/process --enable-preview --release 23 -processor ModuleImportProcessingTest ModuleImportProcessingTest.java
+ * @compile/process --enable-preview --source=${jdk.version} -processor ModuleImportProcessingTest ModuleImportProcessingTest.java
  */
 public class ModuleImportProcessingTest extends JavacTestingAbstractProcessor {
     @Override
