@@ -362,9 +362,7 @@ public class Indify {
     public void indifyFile(File f) throws IOException {
         if (verbose)  System.err.println("reading " + f);
         ClassModel model = parseClassFile(f);
-        if (model == null) throw new IOException("Failed to parse class file: " + f.getName());
         Logic logic = new Logic(model);
-        if(logic.classModel == null) throw new IOException("Failed to create logic for class file: " + f.getName());
         Boolean isChanged = logic.transform();
         System.err.println("Class file transformation: " + isChanged);
         logic.reportPatternMethods(quiet, keepgoing);
@@ -381,7 +379,7 @@ public class Indify {
     }
 
     byte[] transformToBytes(ClassModel classModel) {
-        return of(StackMapsOption.GENERATE_STACK_MAPS).transform(classModel, ClassTransform.ACCEPT_ALL);
+        return of().transform(classModel, ClassTransform.ACCEPT_ALL);
     }
 
     File classPathFile(File pathDir, String className) {
@@ -575,8 +573,8 @@ public class Indify {
                         };
                         classTransform = ClassTransform.transformingMethodBodies(filter, codeTransform);
 
-                        newClassModel = of(StackMapsOption.GENERATE_STACK_MAPS).parse(
-                               of(StackMapsOption.GENERATE_STACK_MAPS).transform(newClassModel, classTransform)
+                        newClassModel = of().parse(
+                               of().transform(newClassModel, classTransform)
                         );
 
                         System.out.println();
@@ -586,18 +584,18 @@ public class Indify {
                         MethodModel finalConm = conm;
                         codeTransform = (b, e) ->{
                             String a1 = null, a2 = null;
-                            if(e instanceof InvokeInstruction){
-                                a1 = ((InvokeInstruction) e).method().name().stringValue();
+                            if(e instanceof InvokeInstruction invokeInstruction){
+                                a1 = invokeInstruction.method().name().stringValue();
                                 a2 = finalConm.methodName().stringValue();
                             }
-                            if(e instanceof InvokeInstruction && Objects.equals(a1, a2)){
-                                System.err.println(":::Transfmoring the Method: "+ m.methodName() +" instruction: invokestatic " + ((InvokeInstruction) e).type() + " to ldc: " +  con.index() );
-                                b.constantInstruction(Opcode.LDC_W,  ((LoadableConstantEntry) con).constantValue());
+                            if(e instanceof InvokeInstruction invokeInstruction && Objects.equals(a1, a2)){
+                                System.err.println(":::Transfmoring the Method: "+ m.methodName() +" instruction: invokestatic " + invokeInstruction.type() + " to ldc: " +  con.index() );
+                                b.ldc((LoadableConstantEntry) con);
                             } else b.with(e);
                         };
                         classTransform = ClassTransform.transformingMethodBodies(filter, codeTransform);
-                        newClassModel = of(StackMapsOption.GENERATE_STACK_MAPS).parse(
-                             of(StackMapsOption.GENERATE_STACK_MAPS).transform(newClassModel, classTransform));
+                        newClassModel = of().parse(
+                             of().transform(newClassModel, classTransform));
                     }
                     shouldProceed.pop();
                 }
@@ -609,8 +607,8 @@ public class Indify {
 
         ClassModel removePatternMethodsAndVerify(ClassModel classModel){
 
-            ClassModel newClassModel = of(StackMapsOption.GENERATE_STACK_MAPS).parse(
-                    of(StackMapsOption.GENERATE_STACK_MAPS).transform(classModel, (b, e) ->
+            ClassModel newClassModel = of().parse(
+                    of().transform(classModel, (b, e) ->
                     {
                         if (!(e instanceof MethodModel mm &&
                                 (mm.methodName().stringValue().startsWith("MH_") ||
@@ -620,10 +618,9 @@ public class Indify {
                         else System.err.println("Removing pattern method: " + ((MethodModel) e).methodName());
                     })
             );
-            ClassHierarchyResolver classHierarchyResolver = classDesc -> ClassHierarchyResolver.ClassHierarchyInfo.ofInterface();
 
             try {
-                List<VerifyError> errors = of(StackMapsOption.GENERATE_STACK_MAPS,ClassHierarchyResolverOption.of(classHierarchyResolver)).verify(newClassModel);
+                List<VerifyError> errors = of().verify(newClassModel);
                 if (!errors.isEmpty()) {
                     for (VerifyError e : errors) {
                         System.err.println(e.getMessage());
@@ -682,13 +679,13 @@ public class Indify {
             return null;
         }
 
-         boolean findPatternMethods() {
+        boolean findPatternMethods() {
             boolean found = false;
             for(char mark : "THI".toCharArray()) {
                 for(MethodModel m : classModel.methods()){
                     if (!Modifier.isPrivate(m.flags().flagsMask())) continue;
                     if (!Modifier.isStatic(m.flags().flagsMask())) continue;
-                    if(nameAndTypeMark(m.methodName().index(), m.methodType().index()) == mark) {
+                    if(nameAndTypeMark(m.methodName(), m.methodType()) == mark) {
                         PoolEntry entry = scanPattern(m, mark);
                         if (entry == null) continue;
                         constants.put(m, entry);
@@ -700,7 +697,7 @@ public class Indify {
         }
 
         ClassModel transformFromCPBuilder(ClassModel oldClassModel, ConstantPoolBuilder cpBuilder){
-            byte[] new_bytes = of(StackMapsOption.GENERATE_STACK_MAPS).transform(oldClassModel, ClassTransform.endHandler(clb -> {
+            byte[] new_bytes = of().transform(oldClassModel, ClassTransform.endHandler(clb -> {
                 for (PoolEntry entry: cpBuilder) {
                     if (entry instanceof Utf8Entry utf8Entry) {
                         clb.constantPool().utf8Entry(utf8Entry.stringValue());
@@ -772,7 +769,7 @@ public class Indify {
                 }
             }));
 
-            return of(StackMapsOption.GENERATE_STACK_MAPS).parse(new_bytes);
+            return ClassFile.of().parse(new_bytes);
         }
 
         void reportPatternMethods(boolean quietly, boolean allowMatchFailure) {
@@ -825,9 +822,7 @@ public class Indify {
                             break;
                         case TAG_NAMEANDTYPE:
                             NameAndTypeEntry nameAndTypeEntry = (NameAndTypeEntry) poolEntry;
-                            int ref1 = nameAndTypeEntry.name().index();
-                            int ref2 = nameAndTypeEntry.type().index();
-                            mark = nameAndTypeMark(ref1, ref2);
+                            mark = nameAndTypeMark(nameAndTypeEntry.name(), nameAndTypeEntry.type());
                             break;
                         case TAG_CLASS: {
                             int nameIndex = ((ClassEntry) poolEntry).name().index();
@@ -883,12 +878,12 @@ public class Indify {
             return 0;
         }
 
-        char nameAndTypeMark(int ref1, int ref2){
-            char mark = poolMarks[ref1];
+        char nameAndTypeMark(Utf8Entry name, Utf8Entry type){
+            char mark = poolMarks[name.index()];
             if (mark == 0) return 0;
-            String descriptor = (classModel.constantPool().entryByIndex(ref2) instanceof Utf8Entry) ? ((Utf8Entry) classModel.constantPool().entryByIndex(ref2)).stringValue() : "";
+            String descriptor = type.stringValue();
             String requiredType;
-            switch (poolMarks[ref1]){
+            switch (mark){
                 case 'H', 'I': requiredType = "()Ljava/lang/invoke/MethodHandle;";  break;
                 case 'T': requiredType = "()Ljava/lang/invoke/MethodType;";    break;
                 default:  return 0;
