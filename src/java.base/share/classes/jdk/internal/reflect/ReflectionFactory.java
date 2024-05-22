@@ -243,13 +243,6 @@ public class ReflectionFactory {
         return langReflectAccess.copyConstructor(arg);
     }
 
-    /**Makes a copy of the passed Class[], unless length is 0 and
-     * the original can safely be reused.
-     */
-    public Class<?>[] copyClasses(Class<?>[] classes) {
-        return classes.length == 0 ? classes : classes.clone();
-    }
-
     /** Gets the byte[] that encodes TypeAnnotations on an executable.
      */
     public byte[] getExecutableTypeAnnotationBytes(Executable ex) {
