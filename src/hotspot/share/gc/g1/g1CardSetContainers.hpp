@@ -247,7 +247,7 @@ private:
   template <class CardOrRangeVisitor>
   void iterate_cardset(ContainerPtr const container, uint index, CardOrRangeVisitor& found, G1CardSetConfiguration* config);
 
-  ContainerPtr at(EntryCountType index);
+  ContainerPtr at(EntryCountType index) const;
 
   ContainerPtr const* buckets() const;
 

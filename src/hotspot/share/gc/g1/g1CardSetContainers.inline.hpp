@@ -266,7 +266,7 @@ inline G1CardSetHowl::ContainerPtr* G1CardSetHowl::container_addr(EntryCountType
   return const_cast<ContainerPtr*>(const_cast<const G1CardSetHowl*>(this)->container_addr(index));
 }
 
-inline G1CardSetHowl::ContainerPtr G1CardSetHowl::at(EntryCountType index) {
+inline G1CardSetHowl::ContainerPtr G1CardSetHowl::at(EntryCountType index) const {
   return *container_addr(index);
 }
 
