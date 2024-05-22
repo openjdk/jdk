@@ -401,11 +401,11 @@ struct SimpleVMATracker : public CHeapObj<mtTest> {
   }
 
   VMATree::SummaryDiff commit(size_t start, size_t size, NativeCallStack stack, MEMFLAGS flag) {
-    return do_it(Reserved, start, size, stack, flag);
+    return do_it(Committed, start, size, stack, flag);
   }
 
   VMATree::SummaryDiff release(size_t start, size_t size) {
-    return do_it(Reserved, start, size, NativeCallStack(), mtNone);
+    return do_it(Free, start, size, NativeCallStack(), mtNone);
   }
 };
 
