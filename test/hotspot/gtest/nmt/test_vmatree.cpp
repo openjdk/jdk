@@ -455,6 +455,8 @@ TEST_VM_F(VMATreeTest, TestConsistencyWithSimpleTracker) {
     for (int j = 0; j < mt_number_of_types; j++) {
       VMATree::SingleDiff td = tree_diff.flag[j];
       VMATree::SingleDiff sd = simple_diff.flag[j];
+      assert(td.reserve == sd.reserve, "");
+      assert(td.commit == sd.commit, "");
       EXPECT_EQ(td.reserve, sd.reserve);
       EXPECT_EQ(td.commit, sd.commit);
     }
