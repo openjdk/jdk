@@ -167,13 +167,32 @@ inline G1CardSetArray::G1CardSetArrayLocker::G1CardSetArrayLocker(EntryCountType
   }
 }
 
+inline G1CardSetArray::EntryDataType const* G1CardSetArray::base_addr() const {
+  const void* ptr = reinterpret_cast<const char*>(this) + header_size_in_bytes();
+  return reinterpret_cast<EntryDataType const*>(ptr);
+}
+
+
+inline G1CardSetArray::EntryDataType const* G1CardSetArray::entry_addr(EntryCountType index) const {
+  assert(index < _num_entries, "precondition");
+  return base_addr() + index;
+}
+
+inline G1CardSetArray::EntryDataType* G1CardSetArray::entry_addr(EntryCountType index) {
+  return const_cast<EntryDataType*>(const_cast<const G1CardSetArray*>(this)->entry_addr(index));
+}
+
+inline G1CardSetArray::EntryDataType G1CardSetArray::at(EntryCountType index) const {
+  return *entry_addr(index);
+}
+
 inline G1AddCardResult G1CardSetArray::add(uint card_idx) {
   assert(card_idx < (1u << (sizeof(_data[0]) * BitsPerByte)),
          "Card index %u does not fit allowed card value range.", card_idx);
   EntryCountType num_entries = Atomic::load_acquire(&_num_entries) & EntryMask;
   EntryCountType idx = 0;
   for (; idx < num_entries; idx++) {
-    if (_data[idx] == card_idx) {
+    if (at(idx) == card_idx) {
       return Found;
     }
   }
@@ -186,7 +205,7 @@ inline G1AddCardResult G1CardSetArray::add(uint card_idx) {
   num_entries = x.num_entries();
   // Look if the cards added while waiting for the lock are the same as our card.
   for (; idx < num_entries; idx++) {
-    if (_data[idx] == card_idx) {
+    if (at(idx) == card_idx) {
       return Found;
     }
   }
@@ -196,7 +215,7 @@ inline G1AddCardResult G1CardSetArray::add(uint card_idx) {
     return Overflow;
   }
 
-  _data[num_entries] = checked_cast<EntryDataType>(card_idx);
+  *entry_addr(num_entries) = checked_cast<EntryDataType>(card_idx);
 
   x.inc_num_entries();
 
@@ -207,7 +226,7 @@ inline bool G1CardSetArray::contains(uint card_idx) {
   EntryCountType num_entries = Atomic::load_acquire(&_num_entries) & EntryMask;
 
   for (EntryCountType idx = 0; idx < num_entries; idx++) {
-    if (_data[idx] == card_idx) {
+    if (at(idx) == card_idx) {
       return true;
     }
   }
@@ -218,7 +237,7 @@ template <class CardVisitor>
 void G1CardSetArray::iterate(CardVisitor& found) {
   EntryCountType num_entries = Atomic::load_acquire(&_num_entries) & EntryMask;
   for (EntryCountType idx = 0; idx < num_entries; idx++) {
-    found(_data[idx]);
+    found(at(idx));
   }
 }
 

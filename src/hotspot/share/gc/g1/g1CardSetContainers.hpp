@@ -184,6 +184,14 @@ private:
       Atomic::release_store(_num_entries_addr, _local_num_entries);
     }
   };
+
+  EntryDataType const* base_addr() const;
+
+  EntryDataType const* entry_addr(EntryCountType index) const;
+
+  EntryDataType* entry_addr(EntryCountType index);
+
+  EntryDataType at(EntryCountType index) const;
 public:
   G1CardSetArray(uint const card_in_region, EntryCountType num_cards);
 
