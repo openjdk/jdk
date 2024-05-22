@@ -413,8 +413,8 @@ void NativeGeneralJump::insert_unconditional(address code_pos, address entry) {
   Assembler::IncompressibleRegion ir(&a);  // Fixed length: see NativeGeneralJump::get_instruction_size()
 
   int32_t offset = 0;
-  a.movptr(t0, entry, offset, t1); // lui, addi, slli, addi, slli
-  a.jalr(x0, t0, offset); // jalr
+  a.movptr(t0, entry, offset, t1); // lui, lui, slli, add
+  a.jr(t0, offset); // jalr
 
   ICache::invalidate_range(code_pos, instruction_size);
 }
