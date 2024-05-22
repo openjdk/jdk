@@ -3519,14 +3519,14 @@ Node* StoreNode::Identity(PhaseGVN* phase) {
     } else {
       const StoreVectorNode* store_vector = as_StoreVector();
       const StoreVectorNode* mem_vector = mem->as_StoreVector();
-      const Node* store_offsets = store_vector->offsets();
-      const Node* mem_offsets = mem_vector->offsets();
+      const Node* store_indices = store_vector->indices();
+      const Node* mem_indices = mem_vector->indices();
       const Node* store_mask = store_vector->mask();
       const Node* mem_mask = mem_vector->mask();
-      // Ensure types, offsets, and masks match
+      // Ensure types, indices, and masks match
       if (store_vector->vect_type() == mem_vector->vect_type() &&
-          ((store_offsets == nullptr) == (mem_offsets == nullptr) &&
-           (store_offsets == nullptr || store_offsets->eqv_uncast(mem_offsets))) &&
+          ((store_indices == nullptr) == (mem_indices == nullptr) &&
+           (store_indices == nullptr || store_indices->eqv_uncast(mem_indices))) &&
           ((store_mask == nullptr) == (mem_mask == nullptr) &&
            (store_mask == nullptr || store_mask->eqv_uncast(mem_mask)))) {
         result = mem;

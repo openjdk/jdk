@@ -890,7 +890,6 @@ class LoadVectorNode : public LoadNode {
 // Load Vector from memory via index map
 class LoadVectorGatherNode : public LoadVectorNode {
  public:
-  enum { Offsets = 3 };
   LoadVectorGatherNode(Node* c, Node* mem, Node* adr, const TypePtr* at, const TypeVect* vt, Node* indices, Node* offset = nullptr)
     : LoadVectorNode(c, mem, adr, at, vt) {
     init_class_id(Class_LoadVectorGather);
@@ -948,7 +947,7 @@ class StoreVectorNode : public StoreNode {
   // Needed for proper cloning.
   virtual uint size_of() const { return sizeof(*this); }
   virtual Node* mask() const { return nullptr; }
-  virtual Node* offsets() const { return nullptr; }
+  virtual Node* indices() const { return nullptr; }
 
 #ifdef ASSERT
   // When AlignVector is enabled, SuperWord only creates aligned vector loads and stores.
@@ -964,7 +963,7 @@ class StoreVectorNode : public StoreNode {
 
  class StoreVectorScatterNode : public StoreVectorNode {
   public:
-   enum { Offsets = 4 };
+   enum { Indices = 4 };
    StoreVectorScatterNode(Node* c, Node* mem, Node* adr, const TypePtr* at, Node* val, Node* indices)
      : StoreVectorNode(c, mem, adr, at, val) {
      init_class_id(Class_StoreVectorScatter);
@@ -976,7 +975,7 @@ class StoreVectorNode : public StoreNode {
    virtual uint match_edge(uint idx) const { return idx == MemNode::Address ||
                                                     idx == MemNode::ValueIn ||
                                                     idx == MemNode::ValueIn + 1; }
-   virtual Node* offsets() const override { return in(Offsets); }
+   virtual Node* indices() const override { return in(Indices); }
 };
 
 //------------------------------StoreVectorMaskedNode--------------------------------
@@ -1004,7 +1003,6 @@ class StoreVectorMaskedNode : public StoreVectorNode {
 // Load Vector from memory under the influence of a predicate register(mask).
 class LoadVectorMaskedNode : public LoadVectorNode {
  public:
-  enum { Mask = 3 };
   LoadVectorMaskedNode(Node* c, Node* mem, Node* src, const TypePtr* at, const TypeVect* vt, Node* mask,
                        ControlDependency control_dependency = LoadNode::DependsOnlyOnTest)
    : LoadVectorNode(c, mem, src, at, vt, control_dependency) {
@@ -1029,9 +1027,6 @@ class LoadVectorMaskedNode : public LoadVectorNode {
 // Load Vector from memory via index map under the influence of a predicate register(mask).
 class LoadVectorGatherMaskedNode : public LoadVectorNode {
  public:
-  enum { Offsets = 3,
-         Mask
-  };
   LoadVectorGatherMaskedNode(Node* c, Node* mem, Node* adr, const TypePtr* at, const TypeVect* vt, Node* indices, Node* mask, Node* offset = nullptr)
     : LoadVectorNode(c, mem, adr, at, vt) {
     init_class_id(Class_LoadVectorGatherMasked);
@@ -1059,7 +1054,7 @@ class LoadVectorGatherMaskedNode : public LoadVectorNode {
 // Store Vector into memory via index map under the influence of a predicate register(mask).
 class StoreVectorScatterMaskedNode : public StoreVectorNode {
   public:
-   enum { Offsets = 4,
+   enum { Indices = 4,
           Mask
    };
    StoreVectorScatterMaskedNode(Node* c, Node* mem, Node* adr, const TypePtr* at, Node* val, Node* indices, Node* mask)
@@ -1077,7 +1072,7 @@ class StoreVectorScatterMaskedNode : public StoreVectorNode {
                                                     idx == MemNode::ValueIn + 1 ||
                                                     idx == MemNode::ValueIn + 2; }
    virtual Node* mask() const override { return in(Mask); }
-   virtual Node* offsets() const override { return in(Offsets); }
+   virtual Node* indices() const override { return in(Indices); }
 };
 
 // Verify that memory address (adr) is aligned. The mask specifies the
