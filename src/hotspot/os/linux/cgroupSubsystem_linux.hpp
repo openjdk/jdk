@@ -91,8 +91,13 @@
   log_trace(os, container)(log_string " is: %s", retval);                             \
 }
 
-
-enum TupleValue { FIRST, SECOND };
+/*
+ * Used to model the tuple-valued cgroup interface files like cpu.max, which
+ * contains two values: <quota> <period>. In this case the first tuple value
+ * is <quota> and the second tuple value is <period>. We use this to map the
+ * tuple value to a constant string format for sscanf reading.
+ */
+enum class TupleValue { FIRST, SECOND };
 
 class CgroupController: public CHeapObj<mtInternal> {
   public:
@@ -104,8 +109,8 @@ class CgroupController: public CHeapObj<mtInternal> {
   private:
     inline static const char* tuple_format(TupleValue val) {
       switch(val) {
-        case FIRST:  return "%1023s %*s";
-        case SECOND: return "%*s %1023s";
+        case TupleValue::FIRST:  return "%1023s %*s";
+        case TupleValue::SECOND: return "%*s %1023s";
       }
       return nullptr;
     }

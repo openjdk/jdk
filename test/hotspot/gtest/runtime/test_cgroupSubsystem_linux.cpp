@@ -315,25 +315,25 @@ TEST(cgroupTest, read_number_tuple_test) {
 
   TestController* controller = new TestController((char*)os::get_temp_directory());
   jlong result = -10;
-  bool ok = controller->read_numerical_tuple_value(base_with_slash, FIRST, &result);
+  bool ok = controller->read_numerical_tuple_value(base_with_slash, TupleValue::FIRST, &result);
   EXPECT_TRUE(ok) << "Should be OK to read value";
   EXPECT_EQ((jlong)-1, result) << "max should be unlimited (-1)";
 
   result = -10;
-  ok = controller->read_numerical_tuple_value(base_with_slash, SECOND, &result);
+  ok = controller->read_numerical_tuple_value(base_with_slash, TupleValue::SECOND, &result);
   EXPECT_TRUE(ok) << "Should be OK to read the value";
   EXPECT_EQ((jlong)10000, result) << "result value incorrect";
 
   // non-max strings
   fill_file(test_file, "abc 10000");
   result = -10;
-  ok = controller->read_numerical_tuple_value(base_with_slash, FIRST, &result);
+  ok = controller->read_numerical_tuple_value(base_with_slash, TupleValue::FIRST, &result);
   EXPECT_FALSE(ok) << "abc should not be parsable";
   EXPECT_EQ((jlong)-10, result) << "result value should be unchanged";
 
   fill_file(test_file, nullptr);
   result = -10;
-  ok = controller->read_numerical_tuple_value(base_with_slash, FIRST, &result);
+  ok = controller->read_numerical_tuple_value(base_with_slash, TupleValue::FIRST, &result);
   EXPECT_FALSE(ok) << "Empty file should be an error";
   EXPECT_EQ((jlong)-10, result) << "result value should be unchanged";
 }

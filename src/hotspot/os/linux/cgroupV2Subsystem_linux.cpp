@@ -85,7 +85,7 @@ int CgroupV2Subsystem::cpu_shares() {
  */
 int CgroupV2Subsystem::cpu_quota() {
   jlong quota_val;
-  bool is_ok = _unified->read_numerical_tuple_value("/cpu.max", FIRST, &quota_val);
+  bool is_ok = _unified->read_numerical_tuple_value("/cpu.max", TupleValue::FIRST, &quota_val);
   if (!is_ok) {
     return OSCONTAINER_ERROR;
   }
@@ -108,7 +108,7 @@ char * CgroupV2Subsystem::cpu_cpuset_memory_nodes() {
 
 int CgroupV2Subsystem::cpu_period() {
   jlong period_val;
-  bool is_ok = _unified->read_numerical_tuple_value("/cpu.max", SECOND, &period_val);
+  bool is_ok = _unified->read_numerical_tuple_value("/cpu.max", TupleValue::SECOND, &period_val);
   if (!is_ok) {
     log_trace(os, container)("CPU Period failed: %d", OSCONTAINER_ERROR);
     return OSCONTAINER_ERROR;
