@@ -172,7 +172,6 @@ inline G1CardSetArray::EntryDataType const* G1CardSetArray::base_addr() const {
   return reinterpret_cast<EntryDataType const*>(ptr);
 }
 
-
 inline G1CardSetArray::EntryDataType const* G1CardSetArray::entry_addr(EntryCountType index) const {
   assert(index < _num_entries, "precondition");
   return base_addr() + index;
