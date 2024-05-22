@@ -1358,7 +1358,7 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
         __ cmp(klass_RInfo, k_RInfo);
         __ br(Assembler::EQ, *success_target);
 
-        if (HashSecondarySupers) {
+        if (UseSecondarySupersTable) {
           __ block_comment("Hashed check_klass_subtype_slow_path {");
 
           // __ call_VM_leaf(CAST_FROM_FN_PTR(address, &poo), 0);
@@ -1372,7 +1372,7 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
           // We're going to need the bitmap in a vector reg and in a core reg,
           // so load both now.
           __ ldr(r_bitmap, Address(r_sub_klass, Klass::bitmap_offset()));
-          if (super_klass->hash() != 0) {
+          if (super_klass->hash_slot() != 0) {
             __ ldrd(vtemp, Address(r_sub_klass, Klass::bitmap_offset()));
           }
 

@@ -1276,7 +1276,7 @@ void LIRGenerator::do_CheckCast(CheckCast* x) {
   if (!x->klass()->is_loaded() || UseCompressedClassPointers) {
     tmp3 = new_register(objectType);
   }
-  if (HashSecondarySupers) {
+  if (UseSecondarySupersTable) {
     vtmp = new_register(doubleType);
   }
 
@@ -1302,7 +1302,7 @@ void LIRGenerator::do_InstanceOf(InstanceOf* x) {
   if (!x->klass()->is_loaded() || UseCompressedClassPointers) {
     tmp3 = new_register(objectType);
   }
-  if (HashSecondarySupers) {
+  if (UseSecondarySupersTable) {
     vtmp = new_register(doubleType);
   }
   __ instanceof(reg, obj.result(), x->klass(),
