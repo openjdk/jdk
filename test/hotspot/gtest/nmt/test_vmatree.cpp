@@ -424,8 +424,8 @@ TEST_VM_F(VMATreeTest, TestConsistencyWithSimpleTracker) {
 
   const int operation_count = 1000000; // One million
   for (int i = 0; i < operation_count; i++) {
-    const int page_start = os::random() % tr->num_pages;
-    const int num_pages = os::random() % (tr->num_pages - page_start);
+    const size_t page_start = (size_t)(os::random() % tr->num_pages);
+    const size_t num_pages = (size_t)(os::random() % (tr->num_pages - page_start));
     if (num_pages == 0) {
       i--; continue;
     }
