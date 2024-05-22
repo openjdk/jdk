@@ -110,8 +110,8 @@ public class JcstressRunner {
         extraFlags.add("-Djava.io.tmpdir=" + System.getProperty("user.dir"));
 
         for (String jvmArg : Utils.getTestJavaOpts()) {
-            if(jvmArg.startsWith("-D" + TIME_BUDGET_PROPERTY)) {
-                timeBudget =  jvmArg.split("=", 2)[1];
+            if (jvmArg.startsWith("-D" + TIME_BUDGET_PROPERTY)) {
+                timeBudget = jvmArg.split("=", 2)[1];
             } else {
                 extraFlags.add("--jvmArgs");
                 extraFlags.add(jvmArg);
