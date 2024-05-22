@@ -232,9 +232,6 @@ class DefNewGeneration: public Generation {
 
   void gc_epilogue(bool full);
 
-  // Save the tops for eden, from, and to
-  void record_spaces_top();
-
   // For Old collection (part of running Full GC), the DefNewGeneration can
   // contribute the free part of "to-space" as the scratch space.
   void contribute_scratch(void*& scratch, size_t& num_words);

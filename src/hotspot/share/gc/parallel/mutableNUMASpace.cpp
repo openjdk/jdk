@@ -83,18 +83,7 @@ void MutableNUMASpace::mangle_unused_area() {
 void MutableNUMASpace::mangle_region(MemRegion mr) {
   // This method should do nothing because numa spaces are not mangled.
 }
-void MutableNUMASpace::set_top_for_allocations(HeapWord* v) {
-  assert(false, "Do not mangle MutableNUMASpace's");
-}
-void MutableNUMASpace::set_top_for_allocations() {
-  // This method should do nothing.
-}
-void MutableNUMASpace::check_mangled_unused_area(HeapWord* limit) {
-  // This method should do nothing.
-}
-void MutableNUMASpace::check_mangled_unused_area_complete() {
-  // This method should do nothing.
-}
+
 #endif  // NOT_PRODUCT
 
 // There may be unallocated holes in the middle chunks
