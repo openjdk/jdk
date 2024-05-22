@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -552,6 +552,11 @@ public class ReflectionFactory {
         return config().useOldSerializableConstructor;
     }
 
+    public static boolean useLegacyProxyImpl() {
+        var config = config();
+        return config.useLegacyProxyImpl && !config.useOldSerializableConstructor;
+    }
+
     private static boolean disableSerialConstructorChecks() {
         return config().disableSerialConstructorChecks;
     }
@@ -569,6 +574,7 @@ public class ReflectionFactory {
 
     private static final Config DEFAULT_CONFIG = new Config(false, // useNativeAccessorOnly
                                                             false,  // useOldSerializeableConstructor
+                                                            false,  // useLegacyProxyImpl
                                                             false); // disableSerialConstructorChecks
 
     /**
@@ -584,6 +590,7 @@ public class ReflectionFactory {
      */
     private record Config(boolean useNativeAccessorOnly,
                           boolean useOldSerializableConstructor,
+                          boolean useLegacyProxyImpl,
                           boolean disableSerialConstructorChecks) {
     }
 
@@ -609,10 +616,14 @@ public class ReflectionFactory {
             "true".equals(props.getProperty("jdk.reflect.useNativeAccessorOnly"));
         boolean useOldSerializableConstructor =
             "true".equals(props.getProperty("jdk.reflect.useOldSerializableConstructor"));
+        boolean useLegacyProxyImpl =
+            "true".equals(props.getProperty("jdk.reflect.useLegacyProxyImpl"));
         boolean disableSerialConstructorChecks =
             "true".equals(props.getProperty("jdk.disableSerialConstructorChecks"));
 
-        return new Config(useNativeAccessorOnly, useOldSerializableConstructor, disableSerialConstructorChecks);
+        useLegacyProxyImpl &= !useOldSerializableConstructor;
+
+        return new Config(useNativeAccessorOnly, useOldSerializableConstructor, useLegacyProxyImpl, disableSerialConstructorChecks);
     }
 
     /**
