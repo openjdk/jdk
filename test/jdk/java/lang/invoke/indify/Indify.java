@@ -475,7 +475,7 @@ public class Indify {
         ClassModel classModel;
         ConstantPoolBuilder poolBuilder;  //Builder for the new constant pool
         final char[] poolMarks;
-        final Map<MethodModel, PoolEntry> constants = new HashMap<>();
+        final Map<String, PoolEntry> constants = new HashMap<>();
         final Map<MethodModel, String> indySignatures = new HashMap<>();
         Logic(ClassModel classModel){
             this.classModel = classModel;
@@ -487,12 +487,11 @@ public class Indify {
             if (!initializeMarks())  return false;
             if (!findPatternMethods()) return false;
 
-            ClassModel newClassModel = transformFromCPBuilder(classModel, poolBuilder);
             CodeTransform codeTransform;
             ClassTransform classTransform;
 
             for(MethodModel m : classModel.methods()){
-                if(constants.containsKey(m)) continue;  //skip if pattern method, it will be removed
+                if(constants.containsKey(m.methodName().stringValue())) continue;  //skip if pattern method, it will be removed
 
                 Predicate<MethodModel> filter = method -> Objects.equals(method.methodName().stringValue(), m.methodName().stringValue());
 
@@ -508,7 +507,7 @@ public class Indify {
                     int methi = ((InvokeInstruction) i).method().index();
                     if (poolMarks[methi] == 0) continue;    //Skip if marked as a pattern Method
 
-                    MemberRefEntry ref = (MemberRefEntry) classModel.constantPool().entryByIndex(methi);
+                    MemberRefEntry ref = (MemberRefEntry) poolBuilder.entryByIndex(methi);
                     String methName = ref.nameAndType().name().stringValue();
                     String methType = ref.nameAndType().type().stringValue();
 
@@ -520,7 +519,7 @@ public class Indify {
                     }
                     if(conm == null) continue;
 
-                    PoolEntry con = constants.get(conm);
+                    PoolEntry con = constants.get(conm.methodName().stringValue());
                     if(quiet){
                         System.out.println();
                         System.err.println("$$$$$$$$$$$$$$$----------------------------------------------------------------Patching Method: " +  m.methodName() + "------------------------------------------------------------------");
@@ -532,7 +531,7 @@ public class Indify {
                         MethodRefEntry methodEntry = null;
 
                         if(i2 != null && i2.opcode().bytecode() == INVOKEVIRTUAL && poolMarks[ref2i = ((InvokeInstruction) i2).method().index()] == 'D'){
-                            methodEntry = (MethodRefEntry) newClassModel.constantPool().entryByIndex(ref2i);
+                            methodEntry = (MethodRefEntry) poolBuilder.entryByIndex(ref2i);
                         }
 
                         if(methodEntry == null || !"invokeExact".equals(methodEntry.nameAndType().name().stringValue())){
@@ -573,8 +572,8 @@ public class Indify {
                         };
                         classTransform = ClassTransform.transformingMethodBodies(filter, codeTransform);
 
-                        newClassModel = of().parse(
-                               of().transform(newClassModel, classTransform)
+                        classModel = of().parse(
+                               of().transform(classModel, classTransform)
                         );
 
                         System.out.println();
@@ -594,13 +593,13 @@ public class Indify {
                             } else b.with(e);
                         };
                         classTransform = ClassTransform.transformingMethodBodies(filter, codeTransform);
-                        newClassModel = of().parse(
-                             of().transform(newClassModel, classTransform));
+                        classModel = of().parse(
+                             of().transform(classModel, classTransform));
                     }
                     shouldProceed.pop();
                 }
             }
-            this.classModel = removePatternMethodsAndVerify(newClassModel);
+            this.classModel = removePatternMethodsAndVerify(classModel);
 
             return true;
         }
@@ -645,7 +644,7 @@ public class Indify {
                 if(pops == null) break;
                 if (jvm.stackMotion(i.opcode().bytecode()))  continue;
                 if (pops.indexOf('Q') >= 0 && i instanceof InvokeInstruction in) {
-                    MemberRefEntry ref = (MemberRefEntry) classModel.constantPool().entryByIndex(in.method().index());
+                    MemberRefEntry ref = (MemberRefEntry) poolBuilder.entryByIndex(in.method().index());
                     String methType = ref.nameAndType().type().stringValue();
                     String type = simplifyType(methType);
 
@@ -688,7 +687,7 @@ public class Indify {
                     if(nameAndTypeMark(m.methodName(), m.methodType()) == mark) {
                         PoolEntry entry = scanPattern(m, mark);
                         if (entry == null) continue;
-                        constants.put(m, entry);
+                        constants.put(m.methodName().stringValue(), entry);
                         found = true;
                     }
                 }
@@ -696,88 +695,12 @@ public class Indify {
             return found;
         }
 
-        ClassModel transformFromCPBuilder(ClassModel oldClassModel, ConstantPoolBuilder cpBuilder){
-            byte[] new_bytes = of().transform(oldClassModel, ClassTransform.endHandler(clb -> {
-                for (PoolEntry entry: cpBuilder) {
-                    if (entry instanceof Utf8Entry utf8Entry) {
-                        clb.constantPool().utf8Entry(utf8Entry.stringValue());
-                        continue;
-                    }
-                    if (entry instanceof NameAndTypeEntry nameAndTypeEntry) {
-                        clb.constantPool().nameAndTypeEntry(nameAndTypeEntry.name(), nameAndTypeEntry.type());
-                        continue;
-                    }
-                    if (entry instanceof MethodTypeEntry methodTypeEntry) {
-                        clb.constantPool().methodTypeEntry(methodTypeEntry.descriptor());
-                        continue;
-                    }
-                    if (entry instanceof MethodHandleEntry methodHandleEntry) {
-                        clb.constantPool().methodHandleEntry(methodHandleEntry.kind(), methodHandleEntry.reference());
-                        continue;
-                    }
-                    if (entry instanceof MethodRefEntry methodRefEntry) {
-                        clb.constantPool().methodRefEntry(methodRefEntry.owner(), methodRefEntry.nameAndType());
-                        continue;
-                    }
-                    if (entry instanceof FieldRefEntry fieldRefEntry) {
-                        clb.constantPool().fieldRefEntry(fieldRefEntry.owner(), fieldRefEntry.nameAndType());
-                        continue;
-                    }
-                    if (entry instanceof ClassEntry classEntry) {
-                        clb.constantPool().classEntry(classEntry.name());
-                        continue;
-                    }
-                    if (entry instanceof StringEntry stringEntry) {
-                        clb.constantPool().stringEntry(stringEntry.utf8());
-                        continue;
-                    }
-                    if (entry instanceof IntegerEntry integerEntry) {
-                        clb.constantPool().intEntry(integerEntry.intValue());
-                        continue;
-                    }
-                    if (entry instanceof FloatEntry floatEntry) {
-                        clb.constantPool().floatEntry(floatEntry.floatValue());
-                        continue;
-                    }
-                    if (entry instanceof LongEntry longEntry) {
-                        clb.constantPool().longEntry(longEntry.longValue());
-                        continue;
-                    }
-                    if (entry instanceof DoubleEntry doubleEntry) {
-                        clb.constantPool().doubleEntry(doubleEntry.doubleValue());
-                        continue;
-                    }
-                    if (entry instanceof InterfaceMethodRefEntry interfaceMethodRefEntry) {
-                        clb.constantPool().interfaceMethodRefEntry(interfaceMethodRefEntry.owner(), interfaceMethodRefEntry.nameAndType());
-                        continue;
-                    }
-                    if (entry instanceof InvokeDynamicEntry invokeDynamicEntry) {
-                        clb.constantPool().invokeDynamicEntry(invokeDynamicEntry.bootstrap(), invokeDynamicEntry.nameAndType());
-                        continue;
-                    }
-                    if (entry instanceof ModuleEntry moduleEntry) {
-                        clb.constantPool().moduleEntry(moduleEntry.name());
-                        continue;
-                    }
-                    if (entry instanceof PackageEntry packageEntry) {
-                        clb.constantPool().packageEntry(packageEntry.name());
-                    }
-                }
-
-                for (int i = 0; i < cpBuilder.bootstrapMethodCount(); i++) {
-                    clb.constantPool().bsmEntry(cpBuilder.bootstrapMethodEntry(i).bootstrapMethod(), cpBuilder.bootstrapMethodEntry(i).arguments());
-                }
-            }));
-
-            return ClassFile.of().parse(new_bytes);
-        }
-
         void reportPatternMethods(boolean quietly, boolean allowMatchFailure) {
             if (!quietly && !constants.keySet().isEmpty())
                 System.err.println("pattern methods removed: "+constants.keySet());
             for (MethodModel m : classModel.methods()) {
                 if (nameMark(m.methodName().stringValue()) != 0 &&
-                        constants.get(m) == null) {
+                        constants.get(m.methodName().stringValue()) == null) {
                     String failure = "method has a special name but fails to match pattern: "+ m.methodName();
                     if (!allowMatchFailure)
                         throw new IllegalArgumentException(failure);
@@ -1169,7 +1092,7 @@ public class Indify {
                                 continue;
                         }
                         if(!hasReceiver && ownMethod != null) {
-                            con = constants.get(ownMethod);
+                            con = constants.get(ownMethod.methodName().stringValue());
                             if (con == null)  break decode;
                             args.clear(); args.add(con);
                             continue;
