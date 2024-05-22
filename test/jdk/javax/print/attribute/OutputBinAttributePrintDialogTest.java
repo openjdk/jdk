@@ -32,6 +32,11 @@
  * @run main/manual OutputBinAttributePrintDialogTest NATIVE
  */
 
+import javax.swing.JButton;
+import javax.swing.JDialog;
+import javax.swing.JPanel;
+import javax.swing.JTextArea;
+import javax.swing.SwingUtilities;
 import javax.print.PrintService;
 import javax.print.attribute.Attribute;
 import javax.print.attribute.HashPrintRequestAttributeSet;
@@ -39,8 +44,15 @@ import javax.print.attribute.PrintRequestAttributeSet;
 import javax.print.attribute.standard.DialogTypeSelection;
 import javax.print.attribute.standard.MediaSizeName;
 import javax.print.attribute.standard.OutputBin;
-import javax.swing.*;
-import java.awt.*;
+
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Dialog;
+import java.awt.FlowLayout;
+import java.awt.Frame;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Window;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.print.PageFormat;
