@@ -34,7 +34,7 @@ import java.util.Set;
  * @modules jdk.compiler
  * @enablePreview
  * @compile JavacTestingAbstractProcessor.java ModuleImportProcessingTest.java
- * @compile/process --enable-preview -source=${jdk.version} -processor ModuleImportProcessingTest ModuleImportProcessingTest.java
+ * @compile/process -processor ModuleImportProcessingTest ModuleImportProcessingTest.java
  */
 public class ModuleImportProcessingTest extends JavacTestingAbstractProcessor {
     @Override
