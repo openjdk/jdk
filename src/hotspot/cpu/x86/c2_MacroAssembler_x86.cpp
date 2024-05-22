@@ -4643,9 +4643,9 @@ void C2_MacroAssembler::arrays_equals(bool is_array_equ, Register ary1, Register
     } else {
       movdqu(vec2, Address(ary2, limit, Address::times_1));
     }
-    vpxor(vec1, vec2);
+    pxor(vec1, vec2);
 
-    vptest(vec1, vec1);
+    ptest(vec1, vec1);
     jcc(Assembler::notZero, FALSE_LABEL);
     addptr(limit, scaleIncr);
     jcc(Assembler::notZero, COMPARE_WIDE_VECTORS_16);

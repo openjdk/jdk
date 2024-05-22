@@ -239,7 +239,7 @@ public class StringIndexOfHuge {
 
   @Benchmark
   public int search16HugeLargeSubstring16() {
-    return dataStringHuge16.indexOf("B".repeat(30) + "X" + "A".repeat(30), 74);
+    return dataStringHuge16.indexOf("B".repeat(30) + "\\u01ef" + "A".repeat(30), 74);
   }
 
   @Benchmark

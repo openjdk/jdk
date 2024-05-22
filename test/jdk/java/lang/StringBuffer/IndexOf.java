@@ -32,9 +32,11 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Random;
 
+import jdk.test.lib.Utils;
+
 public class IndexOf {
 
-  static Random generator = new Random();
+  static Random generator = Utils.getRandomInstance();
   private static boolean failure = false;
   public static void main(String[] args) throws Exception {
     String testName = "IndexOf";
@@ -48,20 +50,14 @@ public class IndexOf {
     haystack[i] = (char) i;
   }
 
-  // haystack_16[0] = (char) (23 + 256);
-  // for (int i = 1; i < 128; i++) {
-  //   haystack_16[i] = (char) (i);
-  // }
-
   for (int i = 0; i < 128; i++) {
     haystack_16[i] = (char) (i + 256);
   }
 
 
-  // Charset hs_charset = StandardCharsets.ISO_8859_1;
   Charset hs_charset = StandardCharsets.UTF_16;
   Charset needleCharset = StandardCharsets.ISO_8859_1;
-  // Charset needleCharset = StandardCharsets.UTF_16;
+
   int l_offset = 0;
   int needleSize = 65;
   int haystackSize = 66;
@@ -78,9 +74,6 @@ public class IndexOf {
   // String shs = new String(Arrays.copyOfRange((hs_charset == StandardCharsets.UTF_16) ? haystack_16 : haystack, 0, haystackSize));
   String shs = (new String((hs_charset == StandardCharsets.UTF_16) ? haystack_16 : haystack)).substring(0, haystackSize);
 
-  shs = "$&),,18+-!'8)+";
-  endNeedle = "8)-";
-  l_offset = 9;
   endNeedle = "/'!(\"3//";
   shs = ");:(/!-+ %*/'!(\"3//;9";
   l_offset = 0;
@@ -148,12 +141,10 @@ public class IndexOf {
     for (int xx = 0; xx < offset; xx++) {
       hsndx += Character.charCount(haystack.codePointAt(hsndx));
     }
-    // System.out.println("(1) hsndx=" + hsndx);
     for (x = offset; x < haystack.length() - needle.length() + 1; x++) {
       if (haystack.codePointAt(hsndx) == needle.codePointAt(0)) {
         nndx = Character.charCount(needle.codePointAt(0));
         int hsndx_tmp = hsndx + Character.charCount(haystack.codePointAt(hsndx));;
-        // System.out.println("(2) hsndx_tmp=" + hsndx_tmp + " nndx=" + nndx);
         while (nndx < needle.length()) {
           if (haystack.codePointAt(hsndx_tmp) != needle.codePointAt(nndx)) {
             break;
