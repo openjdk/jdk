@@ -94,22 +94,21 @@ import static java.lang.constant.DirectMethodHandleDesc.Kind.*;
  * <p>
  * Example usage:
  * <blockquote><pre>
- $ JAVA_HOME=(some recent OpenJDK 7 build)
- $ ant
- $ $JAVA_HOME/bin/java -cp build/classes indify.Indify --overwrite --dest build/testout build/classes/indify/Example.class
- $ $JAVA_HOME/bin/java -cp build/classes indify.Example
- MT = (java.lang.Object)java.lang.Object
- MH = adder(int,int)java.lang.Integer
- adder(1,2) = 3
- calling indy:  42
- $ $JAVA_HOME/bin/java -cp build/testout indify.Example
- (same output as above)
+$ JAVA_HOME=(some recent OpenJDK 7 build)
+$ ant
+$ $JAVA_HOME/bin/java -cp build/classes indify.Indify --overwrite --dest build/testout build/classes/indify/Example.class
+$ $JAVA_HOME/bin/java -cp build/classes indify.Example
+MT = (java.lang.Object)java.lang.Object
+MH = adder(int,int)java.lang.Integer
+adder(1,2) = 3
+calling indy:  42
+$ $JAVA_HOME/bin/java -cp build/testout indify.Example
+(same output as above)
  * </pre></blockquote>
  * <p>
  * A version of this transformation built on top of <a href="http://asm.ow2.org/">http://asm.ow2.org/</a> would be welcome.
  * @author John Rose
  */
-
 public class Indify {
     public static void main(String... av) throws IOException {
         new Indify().run(av);
