@@ -735,6 +735,10 @@ private:
   void prefix(Register dst, Address adr, Prefix p);
   void prefix_rex2(Register dst, Address adr);
 
+  // The is_map1 bool indicates an x86 map1 instruction which, when
+  // legacy encoded, uses a 0x0F opcode prefix.  By specification, the
+  // opcode prefix is omitted when using rex2 encoding in support
+  // of APX extended GPRs.
   void prefix(Address adr, bool is_map1 = false);
   void prefix_rex2(Address adr, bool is_map1 = false);
   void prefix(Address adr, Register reg,  bool byteinst = false, bool is_map1 = false);
