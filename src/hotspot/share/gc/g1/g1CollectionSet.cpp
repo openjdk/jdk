@@ -383,7 +383,7 @@ void G1CollectionSet::finalize_old_part(double time_remaining_ms) {
   double non_young_end_time_sec = os::elapsedTime();
   phase_times()->record_non_young_cset_choice_time_ms((non_young_end_time_sec - non_young_start_time_sec) * 1000.0);
 
-  QuickSort::sort(_collection_set_regions, _collection_set_cur_length, compare_region_idx, true);
+  QuickSort::sort(_collection_set_regions, _collection_set_cur_length, compare_region_idx);
 }
 
 void G1CollectionSet::move_candidates_to_collection_set(G1CollectionCandidateRegionList* regions) {

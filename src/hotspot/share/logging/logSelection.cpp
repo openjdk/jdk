@@ -322,7 +322,7 @@ void LogSelection::suggest_similar_matching(outputStream* out) const {
 
   // Sort found suggestions to suggest the best one first
   SimilarityComparator sc(*this);
-  QuickSort::sort(suggestions, nsuggestions, sc, false);
+  QuickSort::sort(suggestions, nsuggestions, sc);
 
   out->print("Did you mean any of the following?");
   for (size_t i = 0; i < nsuggestions; i++) {
