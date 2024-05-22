@@ -57,7 +57,7 @@
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/referenceProcessorPhaseTimes.hpp"
-#include "gc/shared/spaceDecorator.inline.hpp"
+#include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/weakProcessor.inline.hpp"
 #include "gc/shared/workerPolicy.hpp"
@@ -962,8 +962,16 @@ void PSParallelCompact::post_compact()
   for (unsigned int id = old_space_id; id < last_space_id; ++id) {
     // Clear the marking bitmap, summary data and split info.
     clear_data_covering_space(SpaceId(id));
-    // Update top().  Must be done after clearing the bitmap and summary data.
-    _space_info[id].publish_new_top();
+    {
+      MutableSpace* space = _space_info[id].space();
+      HeapWord* top = space->top();
+      HeapWord* new_top = _space_info[id].new_top();
+      if (ZapUnusedHeapArea && new_top < top) {
+        space->mangle_region(MemRegion(new_top, top));
+      }
+      // Update top().  Must be done after clearing the bitmap and summary data.
+      space->set_top(new_top);
+    }
   }
 
   ParCompactionManager::flush_all_string_dedup_requests();
@@ -1005,10 +1013,6 @@ void PSParallelCompact::post_compact()
 #if COMPILER2_OR_JVMCI
   DerivedPointerTable::update_pointers();
 #endif
-
-  if (ZapUnusedHeapArea) {
-    heap->gen_mangle_unused_area();
-  }
 
   // Signal that we have completed a visit to all live objects.
   Universe::heap()->record_whole_heap_examined_timestamp();
@@ -1269,9 +1273,9 @@ bool PSParallelCompact::invoke(bool maximum_heap_compaction) {
          "should be in vm thread");
 
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
-  assert(!heap->is_gc_active(), "not reentrant");
+  assert(!heap->is_stw_gc_active(), "not reentrant");
 
-  IsGCActiveMark mark;
+  IsSTWGCActiveMark mark;
 
   const bool clear_all_soft_refs =
     heap->soft_ref_policy()->should_clear_all_soft_refs();
@@ -1305,11 +1309,6 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
   // SoftRefPolicy::_should_clear_all_soft_refs.
   ClearedAllSoftRefs casr(maximum_heap_compaction,
                           heap->soft_ref_policy());
-
-  if (ZapUnusedHeapArea) {
-    // Save information needed to minimize mangling
-    heap->record_gen_tops_before_GC();
-  }
 
   // Make sure data structures are sane, make the heap parsable, and do other
   // miscellaneous bookkeeping.
@@ -1468,10 +1467,6 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
     Universe::verify("After GC");
   }
 
-  if (ZapUnusedHeapArea) {
-    old_gen->object_space()->check_mangled_unused_area_complete();
-  }
-
   heap->print_heap_after_gc();
   heap->trace_heap_after_gc(&_gc_tracer);
 
@@ -1492,7 +1487,7 @@ private:
 public:
   PCAddThreadRootsMarkingTaskClosure(uint worker_id) : _worker_id(worker_id) { }
   void do_thread(Thread* thread) {
-    assert(ParallelScavengeHeap::heap()->is_gc_active(), "called outside gc");
+    assert(ParallelScavengeHeap::heap()->is_stw_gc_active(), "called outside gc");
 
     ResourceMark rm;
 
@@ -1509,7 +1504,7 @@ public:
 };
 
 void steal_marking_work(TaskTerminator& terminator, uint worker_id) {
-  assert(ParallelScavengeHeap::heap()->is_gc_active(), "called outside gc");
+  assert(ParallelScavengeHeap::heap()->is_stw_gc_active(), "called outside gc");
 
   ParCompactionManager* cm =
     ParCompactionManager::gc_thread_compaction_manager(worker_id);
@@ -1986,7 +1981,7 @@ void PSParallelCompact::write_block_fill_histogram()
 #endif // #ifdef ASSERT
 
 static void compaction_with_stealing_work(TaskTerminator* terminator, uint worker_id) {
-  assert(ParallelScavengeHeap::heap()->is_gc_active(), "called outside gc");
+  assert(ParallelScavengeHeap::heap()->is_stw_gc_active(), "called outside gc");
 
   ParCompactionManager* cm =
     ParCompactionManager::gc_thread_compaction_manager(worker_id);

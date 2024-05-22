@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,10 @@
 package com.sun.tools.javac.parser;
 
 import java.nio.*;
+import java.util.ArrayDeque;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Queue;
 
 import com.sun.tools.javac.util.Position.LineMap;
 import static com.sun.tools.javac.parser.Tokens.*;
@@ -57,6 +59,11 @@ public class Scanner implements Lexer {
     private final List<Token> savedTokens = new ArrayList<>();
 
     private final JavaTokenizer tokenizer;
+
+    /** Queue of recently seen documentation comments.
+     *  It is assumed the queue will typically be small.
+     */
+    private final Queue<Comment> docComments = new ArrayDeque<>();
 
     /**
      * Create a scanner from the input array.  This method might
@@ -115,6 +122,15 @@ public class Scanner implements Lexer {
             token = savedTokens.remove(0);
         } else {
             token = tokenizer.readToken();
+            if (token.comments != null) {
+                for (var c : token.comments) {
+                    switch (c.getStyle()) {
+                        case JAVADOC_BLOCK, JAVADOC_LINE -> {
+                            docComments.add(c);
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -127,6 +143,11 @@ public class Scanner implements Lexer {
 
     public LineMap getLineMap() {
         return tokenizer.getLineMap();
+    }
+
+    @Override
+    public Queue<Comment> getDocComments() {
+        return docComments;
     }
 
     public int errPos() {

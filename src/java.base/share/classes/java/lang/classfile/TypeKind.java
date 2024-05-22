@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ public enum TypeKind {
 
     private final String name;
     private final String descriptor;
-    private final int newarraycode;
+    private final int newarrayCode;
 
     /** {@return the human-readable name corresponding to this type} */
     public String typeName() { return name; }
@@ -66,9 +66,12 @@ public enum TypeKind {
     /** {@return the field descriptor character corresponding to this type} */
     public String descriptor() { return descriptor; }
 
-    /** {@return the code used by the {@code newarray} opcode corresponding to this type} */
-    public int newarraycode() {
-        return newarraycode;
+    /**
+     * {@return the code used by the {@code newarray} opcode corresponding to this type}
+     * @since 23
+     */
+    public int newarrayCode() {
+        return newarrayCode;
     }
 
     /**
@@ -94,19 +97,21 @@ public enum TypeKind {
         };
     }
 
-    TypeKind(String name, String descriptor, int newarraycode) {
+    TypeKind(String name, String descriptor, int newarrayCode) {
         this.name = name;
         this.descriptor = descriptor;
-        this.newarraycode = newarraycode;
+        this.newarrayCode = newarrayCode;
     }
 
     /**
      * {@return the type kind associated with the array type described by the
      * array code used as an operand to {@code newarray}}
-     * @param newarraycode the operand of the {@code newarray} instruction
+     * @param newarrayCode the operand of the {@code newarray} instruction
+     * @throws IllegalArgumentException if the code is invalid
+     * @since 23
      */
-    public static TypeKind fromNewArrayCode(int newarraycode) {
-        return switch (newarraycode) {
+    public static TypeKind fromNewarrayCode(int newarrayCode) {
+        return switch (newarrayCode) {
             case 4 -> TypeKind.BooleanType;
             case 5 -> TypeKind.CharType;
             case 6 -> TypeKind.FloatType;
@@ -115,15 +120,19 @@ public enum TypeKind {
             case 9 -> TypeKind.ShortType;
             case 10 -> TypeKind.IntType;
             case 11 -> TypeKind.LongType;
-            default -> throw new IllegalArgumentException("Bad new array code: " + newarraycode);
+            default -> throw new IllegalArgumentException("Bad newarray code: " + newarrayCode);
         };
     }
 
     /**
      * {@return the type kind associated with the specified field descriptor}
      * @param s the field descriptor
+     * @throws IllegalArgumentException only if the descriptor is not valid
      */
     public static TypeKind fromDescriptor(CharSequence s) {
+        if (s.isEmpty()) { // implicit null check
+            throw new IllegalArgumentException("Empty descriptor");
+        }
         return switch (s.charAt(0)) {
             case '[', 'L' -> TypeKind.ReferenceType;
             case 'B' -> TypeKind.ByteType;
@@ -144,6 +153,8 @@ public enum TypeKind {
      * @param descriptor the field descriptor
      */
     public static TypeKind from(TypeDescriptor.OfField<?> descriptor) {
-        return fromDescriptor(descriptor.descriptorString());
+        return descriptor.isPrimitive() // implicit null check
+                ? fromDescriptor(descriptor.descriptorString())
+                : TypeKind.ReferenceType;
     }
 }

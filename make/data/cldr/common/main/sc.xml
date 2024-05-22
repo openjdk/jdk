@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -1106,7 +1106,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="collation" type="gb2312han">ordinamentu de su tzinesu semplificadu - GB2312</type>
 			<type key="collation" type="phonebook">ordinamentu de s’elencu telefònicu</type>
 			<type key="collation" type="pinyin">ordinamentu pinyin</type>
-			<type key="collation" type="reformed">ordinamentu riformadu</type>
 			<type key="collation" type="search">chirca genèrica</type>
 			<type key="collation" type="searchjl">chirca pro consonante hangul initziale</type>
 			<type key="collation" type="standard">ordinamentu istandard</type>
@@ -2963,9 +2962,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Argentina/Tucuman">
 				<exemplarCity>Tucumán</exemplarCity>
 			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>Currie</exemplarCity>
-			</zone>
 			<zone type="Asia/Dhaka">
 				<exemplarCity>Daca</exemplarCity>
 			</zone>
@@ -3834,11 +3830,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Ora legale de Macao</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Ora de s’Ìsula Macquarie</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>Ora de Magadan</generic>
@@ -3876,13 +3867,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<metazone type="Mawson">
 				<long>
 					<standard>Ora de Mawson</standard>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic>Ora de su Mèssicu nord-otzidentale</generic>
-					<standard>Ora istandard de su Mèssicu nord-otzidentale</standard>
-					<daylight>Ora legale de su Mèssicu nord-otzidentale</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">
