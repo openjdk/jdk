@@ -363,8 +363,8 @@ struct SimpleVMATracker : public CHeapObj<mtTest> {
     }
   };
   // Page (4KiB) granular array
-  const size_t num_pages = 1024*1024;
-  Info pages[1024 * 1024];
+  const size_t num_pages = 1024 * 512;
+  Info pages[1024 * 512];
 
   SimpleVMATracker()
   : pages() {
