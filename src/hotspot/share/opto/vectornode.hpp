@@ -911,7 +911,7 @@ class LoadVectorGatherNode : public LoadVectorNode {
               idx == MemNode::ValueIn + 1);
   }
   virtual int store_Opcode() const {
-    // Ensure it is different from any store opcode
+    // Ensure it is different from any store opcode to avoid folding when indices are used
     return -1;
   }
 };
@@ -1018,7 +1018,7 @@ class LoadVectorMaskedNode : public LoadVectorNode {
   }
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
   virtual int store_Opcode() const {
-    // Ensure it is different from any store opcode
+    // Ensure it is different from any store opcode to avoid folding when a mask is used
     return -1;
   }
 };
@@ -1045,7 +1045,7 @@ class LoadVectorGatherMaskedNode : public LoadVectorNode {
                                                    (is_subword_type(vect_type()->is_vect()->element_basic_type()) &&
                                                    idx == MemNode::ValueIn + 2); }
   virtual int store_Opcode() const {
-    // Ensure it is different from any store opcode
+    // Ensure it is different from any store opcode to avoid folding when indices and mask are used
     return -1;
   }
 };
