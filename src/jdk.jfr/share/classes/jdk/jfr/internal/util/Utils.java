@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.lang.annotation.Annotation;
 import java.lang.annotation.Repeatable;
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -37,7 +38,6 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -51,6 +51,7 @@ import jdk.jfr.RecordingState;
 import jdk.jfr.internal.LogLevel;
 import jdk.jfr.internal.LogTag;
 import jdk.jfr.internal.Logger;
+import jdk.jfr.internal.MirrorEvent;
 import jdk.jfr.internal.SecuritySupport;
 import jdk.jfr.internal.Type;
 import jdk.jfr.internal.settings.PeriodSetting;
@@ -206,9 +207,8 @@ public final class Utils {
     }
 
     public static List<Field> getVisibleEventFields(Class<?> clazz) {
-        Utils.ensureValidEventSubclass(clazz);
         List<Field> fields = new ArrayList<>();
-        for (Class<?> c = clazz; c != jdk.internal.event.Event.class; c = c.getSuperclass()) {
+        for (Class<?> c = clazz; !Utils.isEventBaseClass(c); c = c.getSuperclass()) {
             for (Field field : c.getDeclaredFields()) {
                 // skip private field in base classes
                 if (c == clazz || !Modifier.isPrivate(field.getModifiers())) {
@@ -217,6 +217,16 @@ public final class Utils {
             }
         }
         return fields;
+    }
+
+    public static boolean isEventBaseClass(Class<?> clazz) {
+        if (jdk.internal.event.Event.class == clazz) {
+            return true;
+        }
+        if (jdk.jfr.internal.MirrorEvent.class == clazz) {
+            return true;
+        }
+        return false;
     }
 
     public static void ensureValidEventSubclass(Class<?> eventClass) {
@@ -233,67 +243,24 @@ public final class Utils {
     }
 
     public static Object makePrimitiveArray(String typeName, List<Object> values) {
-        int length = values.size();
-        switch (typeName) {
-        case "int":
-            int[] ints = new int[length];
-            for (int i = 0; i < length; i++) {
-                ints[i] = (int) values.get(i);
-            }
-            return ints;
-        case "long":
-            long[] longs = new long[length];
-            for (int i = 0; i < length; i++) {
-                longs[i] = (long) values.get(i);
-            }
-            return longs;
-
-        case "float":
-            float[] floats = new float[length];
-            for (int i = 0; i < length; i++) {
-                floats[i] = (float) values.get(i);
-            }
-            return floats;
-
-        case "double":
-            double[] doubles = new double[length];
-            for (int i = 0; i < length; i++) {
-                doubles[i] = (double) values.get(i);
-            }
-            return doubles;
-
-        case "short":
-            short[] shorts = new short[length];
-            for (int i = 0; i < length; i++) {
-                shorts[i] = (short) values.get(i);
-            }
-            return shorts;
-        case "char":
-            char[] chars = new char[length];
-            for (int i = 0; i < length; i++) {
-                chars[i] = (char) values.get(i);
-            }
-            return chars;
-        case "byte":
-            byte[] bytes = new byte[length];
-            for (int i = 0; i < length; i++) {
-                bytes[i] = (byte) values.get(i);
-            }
-            return bytes;
-        case "boolean":
-            boolean[] booleans = new boolean[length];
-            for (int i = 0; i < length; i++) {
-                booleans[i] = (boolean) values.get(i);
-            }
-            return booleans;
-        case "java.lang.String":
-            String[] strings = new String[length];
-            for (int i = 0; i < length; i++) {
-                strings[i] = (String) values.get(i);
-            }
-            return strings;
+        Class<?> componentType = makePrimitiveType(typeName);
+        if (componentType == null) {
+            return null;
         }
-        return null;
+        int length = values.size();
+        Object array =  Array.newInstance(componentType, length);
+        for (int index = 0; index < length; index++) {
+            Array.set(array, index, values.get(index));
+        }
+        return array;
+    }
+
+    private static Class<?> makePrimitiveType(String typeName) {
+        return switch(typeName) {
+            case "void" -> null;
+            case "java.lang.String" -> String.class;
+            default -> Class.forPrimitiveName(typeName);
+        };
     }
 
     public static boolean isSettingVisible(long typeId, boolean hasEventHook) {
@@ -338,7 +305,7 @@ public final class Utils {
         return eventName;
     }
 
-    public static void verifyMirror(Class<?> mirror, Class<?> real) {
+    public static void verifyMirror(Class<? extends MirrorEvent> mirror, Class<?> real) {
         Class<?> cMirror = Objects.requireNonNull(mirror);
         Class<?> cReal = Objects.requireNonNull(real);
 
@@ -353,7 +320,7 @@ public final class Utils {
         }
         while (cReal != null) {
             for (Field realField : cReal.getDeclaredFields()) {
-                if (isSupportedType(realField.getType())) {
+                if (isSupportedType(realField.getType()) && !realField.isSynthetic()) {
                     String fieldName = realField.getName();
                     Field mirrorField = mirrorFields.get(fieldName);
                     if (mirrorField == null) {

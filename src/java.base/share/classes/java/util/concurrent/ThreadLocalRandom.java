@@ -85,12 +85,6 @@ import jdk.internal.misc.VM;
  * @since 1.7
  * @author Doug Lea
  */
-
-@RandomGeneratorProperties(
-        name = "ThreadLocalRandom",
-        i = 64, j = 0, k = 0,
-        equidistribution = 1
-)
 public final class ThreadLocalRandom extends Random {
     /*
      * This class implements the java.util.Random API (and subclasses
