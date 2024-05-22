@@ -421,20 +421,20 @@ void VirtualMemoryTracker::set_reserved_region_type(address addr, MEMFLAGS flag)
   if (reserved_rgn != nullptr) {
     assert(reserved_rgn->contain_address(addr), "Containment");
     if (reserved_rgn->flag() != flag) {
-      assert(reserved_rgn->flag() == mtNone, "Overwrite memory type (should be mtNone, is: \"%s\")",
-             NMTUtil::flag_to_name(reserved_rgn->flag()));
+      assert(reserved_rgn->flag() == mtNone, "Overwrite memory type (should be mtNone, is: \"%s\") wants to change to \"%s\"",
+             NMTUtil::flag_to_name(reserved_rgn->flag()), NMTUtil::flag_to_name(flag));
       reserved_rgn->set_flag(flag);
     }
   }
 }
 
 bool VirtualMemoryTracker::add_committed_region(address addr, size_t size,
-  const NativeCallStack& stack) {
+  const NativeCallStack& stack, MEMFLAGS flag) {
   assert(addr != nullptr, "Invalid address");
   assert(size > 0, "Invalid size");
   assert(_reserved_regions != nullptr, "Sanity check");
 
-  ReservedMemoryRegion  rgn(addr, size);
+  ReservedMemoryRegion  rgn(addr, size, stack, flag);
   ReservedMemoryRegion* reserved_rgn = _reserved_regions->find(rgn);
 
   if (reserved_rgn == nullptr) {
@@ -449,7 +449,7 @@ bool VirtualMemoryTracker::add_committed_region(address addr, size_t size,
   return result;
 }
 
-bool VirtualMemoryTracker::remove_uncommitted_region(address addr, size_t size) {
+bool VirtualMemoryTracker::remove_uncommitted_region(address addr, size_t size, MEMFLAGS flag) {
   assert(addr != nullptr, "Invalid address");
   assert(size > 0, "Invalid size");
   assert(_reserved_regions != nullptr, "Sanity check");
@@ -485,7 +485,7 @@ bool VirtualMemoryTracker::remove_released_region(ReservedMemoryRegion* rgn) {
   return result;
 }
 
-bool VirtualMemoryTracker::remove_released_region(address addr, size_t size) {
+bool VirtualMemoryTracker::remove_released_region(address addr, size_t size, bool extra_memory) {
   assert(addr != nullptr, "Invalid address");
   assert(size > 0, "Invalid size");
   assert(_reserved_regions != nullptr, "Sanity check");
@@ -493,11 +493,17 @@ bool VirtualMemoryTracker::remove_released_region(address addr, size_t size) {
   ReservedMemoryRegion  rgn(addr, size);
   ReservedMemoryRegion* reserved_rgn = _reserved_regions->find(rgn);
 
-  if (reserved_rgn == nullptr) {
+  if (reserved_rgn == nullptr && extra_memory) {
     log_debug(nmt)("No reserved region found for (" INTPTR_FORMAT ", " SIZE_FORMAT ")!",
                   p2i(rgn.base()), rgn.size());
+    return true;
   }
   assert(reserved_rgn != nullptr, "No reserved region");
+  if (extra_memory) {
+    if (reserved_rgn->flag() != mtClassShared)
+      return true;
+    assert(reserved_rgn->end() == rgn.end() || reserved_rgn->base() == rgn.base(), "extra memory should be at either end of the region.");
+  }
   if (reserved_rgn->same_region(addr, size)) {
     return remove_released_region(reserved_rgn);
   }
@@ -512,7 +518,10 @@ bool VirtualMemoryTracker::remove_released_region(address addr, size_t size) {
       // This is an unmapped CDS region, which is part of the reserved shared
       // memory region.
       // See special handling in VirtualMemoryTracker::add_reserved_region also.
-      return true;
+
+      if (!extra_memory) {
+        return true;
+      }
     }
 
     if (size > reserved_rgn->size()) {

@@ -382,11 +382,18 @@ static char* chop_extra_memory(size_t size, size_t alignment, char* extra_base, 
   size_t end_offset = (extra_base + extra_size) - (aligned_base + size);
 
   if (begin_offset > 0) {
-      os::release_memory(extra_base, begin_offset);
+    if (os::release_memory(extra_base, begin_offset))
+    {
+      ThreadCritical tc;
+      MemTracker::record_virtual_memory_release((address)extra_base, begin_offset, true /*extra memory*/);
+    }
   }
 
   if (end_offset > 0) {
-      os::release_memory(extra_base + begin_offset + size, end_offset);
+    if (os::release_memory(extra_base + begin_offset + size, end_offset)) {
+      ThreadCritical tc;
+      MemTracker::record_virtual_memory_release((address)(extra_base + begin_offset + size), end_offset, true /*extra memory*/);
+    }
   }
 
   return aligned_base;
@@ -395,9 +402,9 @@ static char* chop_extra_memory(size_t size, size_t alignment, char* extra_base, 
 // Multiple threads can race in this code, and can remap over each other with MAP_FIXED,
 // so on posix, unmap the section at the start and at the end of the chunk that we mapped
 // rather than unmapping and remapping the whole chunk to get requested alignment.
-char* os::reserve_memory_aligned(size_t size, size_t alignment, bool exec) {
+char* os::reserve_memory_aligned(size_t size, size_t alignment, bool exec, MEMFLAGS flag) {
   size_t extra_size = calculate_aligned_extra_size(size, alignment);
-  char* extra_base = os::reserve_memory(extra_size, exec);
+  char* extra_base = os::reserve_memory(extra_size, exec, flag);
   if (extra_base == nullptr) {
     return nullptr;
   }
@@ -421,7 +428,7 @@ char* os::map_memory_to_file_aligned(size_t size, size_t alignment, int file_des
   if (replace_existing_mapping_with_file_mapping(aligned_base, size, file_desc) == nullptr) {
     vm_exit_during_initialization(err_msg("Error in mapping Java heap at the given filesystem directory"));
   }
-  MemTracker::record_virtual_memory_commit((address)aligned_base, size, CALLER_PC);
+  MemTracker::record_virtual_memory_commit((address)aligned_base, size, CALLER_PC, flag);
   return aligned_base;
 }
 

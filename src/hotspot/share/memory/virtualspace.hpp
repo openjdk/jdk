@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,27 +35,32 @@ class outputStream;
 class ReservedSpace {
   friend class VMStructs;
  protected:
-  char*  _base;
-  size_t _size;
-  size_t _noaccess_prefix;
-  size_t _alignment;
-  size_t _page_size;
-  bool   _special;
-  int    _fd_for_heap;
+  char*    _base;
+  size_t   _size;
+  size_t   _noaccess_prefix;
+  size_t   _alignment;
+  size_t   _page_size;
+  int      _fd_for_heap;
+  bool     _special;
+  bool     _executable;
+  MEMFLAGS _flag;
  private:
-  bool   _executable;
 
   // ReservedSpace
   ReservedSpace(char* base, size_t size, size_t alignment,
-                size_t page_size, bool special, bool executable);
+                size_t page_size, bool special, bool executable, MEMFLAGS flag);
  protected:
-  // Helpers to clear and set members during initialization. Two members
+  // Helpers to clear and set members during initialization. These members
   // require special treatment:
   //  * _fd_for_heap     - The fd is set once and should not be cleared
   //                       even if the reservation has to be retried.
   //  * _noaccess_prefix - Used for compressed heaps and updated after
   //                       the reservation is initialized. Always set to
   //                       0 during initialization.
+  //  * _flag            - Used for NMT memory type. Once set in ctor,
+  //                       it should not change after.
+  //  * _alignment       - Not to be changed after initialization
+  //  * _executable      - Not to be changed after initialization
   void clear_members();
   void initialize_members(char* base, size_t size, size_t alignment,
                           size_t page_size, bool special, bool executable);
@@ -66,28 +71,31 @@ class ReservedSpace {
   void reserve(size_t size, size_t alignment, size_t page_size,
                char* requested_address, bool executable);
  public:
+
+  MEMFLAGS nmt_flag() const { assert(is_reserved(), "Memory region is not reserved."); assert(_flag != mtNone, "Memory flag is not set."); return _flag; }
+
   // Constructor
   ReservedSpace();
   // Initialize the reserved space with the given size. Depending on the size
   // a suitable page size and alignment will be used.
-  explicit ReservedSpace(size_t size);
+  explicit ReservedSpace(size_t size, MEMFLAGS flag);
   // Initialize the reserved space with the given size. The preferred_page_size
   // is used as the minimum page size/alignment. This may waste some space if
   // the given size is not aligned to that value, as the reservation will be
   // aligned up to the final alignment in this case.
-  ReservedSpace(size_t size, size_t preferred_page_size);
-  ReservedSpace(size_t size, size_t alignment, size_t page_size,
+  ReservedSpace(size_t size, size_t preferred_page_size, MEMFLAGS flag);
+  ReservedSpace(size_t size, size_t alignment, size_t page_size, MEMFLAGS flag,
                 char* requested_address = nullptr);
 
   // Accessors
   char*  base()            const { return _base;      }
-  size_t size()            const { return _size;      }
-  char*  end()             const { return _base + _size; }
-  size_t alignment()       const { return _alignment; }
-  size_t page_size()       const { return _page_size; }
-  bool   special()         const { return _special;   }
-  bool   executable()      const { return _executable;   }
-  size_t noaccess_prefix() const { return _noaccess_prefix;   }
+  size_t size()            const { assert(is_reserved(), "Memory region is not reserved."); return _size;      }
+  char*  end()             const { assert(is_reserved(), "Memory region is not reserved."); return _base + _size; }
+  size_t alignment()       const { assert(is_reserved(), "Memory region is not reserved."); return _alignment; }
+  size_t page_size()       const { assert(is_reserved(), "Memory region is not reserved."); return _page_size; }
+  bool   special()         const { assert(is_reserved(), "Memory region is not reserved."); return _special;   }
+  bool   executable()      const { assert(is_reserved(), "Memory region is not reserved."); return _executable;   }
+  size_t noaccess_prefix() const { assert(is_reserved(), "Memory region is not reserved."); return _noaccess_prefix;   }
   bool is_reserved()       const { return _base != nullptr; }
   void release();
 
@@ -112,7 +120,7 @@ class ReservedSpace {
 
   // Put a ReservedSpace over an existing range
   static ReservedSpace space_for_range(char* base, size_t size, size_t alignment,
-                                       size_t page_size, bool special, bool executable);
+                                       size_t page_size, bool special, bool executable, MEMFLAGS flag);
 };
 
 ReservedSpace ReservedSpace::first_part(size_t partition_size)
@@ -178,6 +186,8 @@ class VirtualSpace {
 
   // Need to know if commit should be executable.
   bool   _executable;
+
+  MEMFLAGS _flag;
 
   // MPSS Support
   // Each virtualspace region has a lower, middle, and upper region.

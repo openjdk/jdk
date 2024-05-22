@@ -71,10 +71,10 @@ void ZNMT::process_fake_mapping(zoffset offset, size_t size, bool commit) {
 
     // commit / uncommit memory
     if (commit) {
-      MemTracker::record_virtual_memory_commit((void*)sub_range_addr, sub_range_size, CALLER_PC);
+      MemTracker::record_virtual_memory_commit((void*)sub_range_addr, sub_range_size, CALLER_PC, mtGC);
     } else {
       ThreadCritical tc;
-      MemTracker::record_virtual_memory_uncommit((address)sub_range_addr, sub_range_size);
+      MemTracker::record_virtual_memory_uncommit((address)sub_range_addr, sub_range_size, mtGC);
     }
 
     left_to_process -= sub_range_size;
