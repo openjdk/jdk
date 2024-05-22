@@ -351,23 +351,23 @@ public final class ClassReaderImpl
         @SuppressWarnings("unchecked")
         var a = (Class<? extends PoolEntry>[]) new Class<?>[TAG_TABLE_SIZE];
         // JVMS Table 4.4-B. Constant pool tags
-        a[1] = AbstractPoolEntry.Utf8EntryImpl.class;
-        a[3] = AbstractPoolEntry.IntegerEntryImpl.class;
-        a[4] = AbstractPoolEntry.FloatEntryImpl.class;
-        a[5] = AbstractPoolEntry.LongEntryImpl.class;
-        a[6] = AbstractPoolEntry.DoubleEntryImpl.class;
-        a[7] = AbstractPoolEntry.ClassEntryImpl.class;
-        a[8] = AbstractPoolEntry.StringEntryImpl.class;
-        a[9] = AbstractPoolEntry.FieldRefEntryImpl.class;
-        a[10] = AbstractPoolEntry.MethodRefEntryImpl.class;
-        a[11] = AbstractPoolEntry.InterfaceMethodRefEntryImpl.class;
-        a[12] = AbstractPoolEntry.NameAndTypeEntryImpl.class;
-        a[15] = AbstractPoolEntry.MethodHandleEntryImpl.class;
-        a[16] = AbstractPoolEntry.MethodTypeEntryImpl.class;
-        a[17] = AbstractPoolEntry.ConstantDynamicEntryImpl.class;
-        a[18] = AbstractPoolEntry.InvokeDynamicEntryImpl.class;
-        a[19] = AbstractPoolEntry.ModuleEntryImpl.class;
-        a[20] = AbstractPoolEntry.PackageEntryImpl.class;
+        a[TAG_UTF8] = AbstractPoolEntry.Utf8EntryImpl.class;
+        a[TAG_INTEGER] = AbstractPoolEntry.IntegerEntryImpl.class;
+        a[TAG_FLOAT] = AbstractPoolEntry.FloatEntryImpl.class;
+        a[TAG_LONG] = AbstractPoolEntry.LongEntryImpl.class;
+        a[TAG_DOUBLE] = AbstractPoolEntry.DoubleEntryImpl.class;
+        a[TAG_CLASS] = AbstractPoolEntry.ClassEntryImpl.class;
+        a[TAG_STRING] = AbstractPoolEntry.StringEntryImpl.class;
+        a[TAG_FIELDREF] = AbstractPoolEntry.FieldRefEntryImpl.class;
+        a[TAG_METHODREF] = AbstractPoolEntry.MethodRefEntryImpl.class;
+        a[TAG_INTERFACEMETHODREF] = AbstractPoolEntry.InterfaceMethodRefEntryImpl.class;
+        a[TAG_NAMEANDTYPE] = AbstractPoolEntry.NameAndTypeEntryImpl.class;
+        a[TAG_METHODHANDLE] = AbstractPoolEntry.MethodHandleEntryImpl.class;
+        a[TAG_METHODTYPE] = AbstractPoolEntry.MethodTypeEntryImpl.class;
+        a[TAG_CONSTANTDYNAMIC] = AbstractPoolEntry.ConstantDynamicEntryImpl.class;
+        a[TAG_INVOKEDYNAMIC] = AbstractPoolEntry.InvokeDynamicEntryImpl.class;
+        a[TAG_MODULE] = AbstractPoolEntry.ModuleEntryImpl.class;
+        a[TAG_PACKAGE] = AbstractPoolEntry.PackageEntryImpl.class;
         TAG_TO_TYPE = a;
     }
 
@@ -377,6 +377,11 @@ public final class ClassReaderImpl
             return type != null && cls.isAssignableFrom(type);
         }
         return false;
+    }
+
+    static <T extends PoolEntry> T checkType(PoolEntry e, int index, Class<T> cls) {
+        if (cls.isInstance(e)) return cls.cast(e);
+        throw new ConstantPoolException("Not a " + cls.getSimpleName() + " at index: " + index);
     }
 
     @Override
@@ -454,11 +459,6 @@ public final class ClassReaderImpl
         return entryByIndex(readU2(pos), cls);
     }
 
-    static <T extends PoolEntry> T checkType(PoolEntry e, int index, Class<T> cls) {
-        if (cls.isInstance(e)) return cls.cast(e);
-        throw new ConstantPoolException("Not a " + cls.getSimpleName() + " at index: " + index);
-    }
-
     @Override
     public PoolEntry readEntryOrNull(int pos) {
         int index = readU2(pos);
@@ -471,9 +471,9 @@ public final class ClassReaderImpl
     @Override
     public <T extends PoolEntry> T readEntryOrNull(int offset, Class<T> cls) {
         int index = readU2(offset);
-        if (index == 0)
+        if (index == 0) {
             return null;
-
+        }
         return entryByIndex(index, cls);
     }
 
@@ -494,27 +494,27 @@ public final class ClassReaderImpl
 
     @Override
     public ModuleEntry readModuleEntry(int pos) {
-        return entryByIndex(readU2(pos), ModuleEntry.class);
+        return readEntry(pos, ModuleEntry.class);
     }
 
     @Override
     public PackageEntry readPackageEntry(int pos) {
-        return entryByIndex(readU2(pos), PackageEntry.class);
+        return readEntry(pos, PackageEntry.class);
     }
 
     @Override
     public ClassEntry readClassEntry(int pos) {
-        return entryByIndex(readU2(pos), ClassEntry.class);
+        return readEntry(pos, ClassEntry.class);
     }
 
     @Override
     public NameAndTypeEntry readNameAndTypeEntry(int pos) {
-        return entryByIndex(readU2(pos), NameAndTypeEntry.class);
+        return readEntry(pos, NameAndTypeEntry.class);
     }
 
     @Override
     public MethodHandleEntry readMethodHandleEntry(int pos) {
-        return entryByIndex(readU2(pos), MethodHandleEntry.class);
+        return readEntry(pos, MethodHandleEntry.class);
     }
 
     @Override
