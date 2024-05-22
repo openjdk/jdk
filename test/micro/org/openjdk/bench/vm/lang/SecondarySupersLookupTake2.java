@@ -149,162 +149,161 @@ public class SecondarySupersLookupTake2 {
     public void warmup() {
         for (int i = 0; i < 20_000; i++) {
             Class<?> s = getSuper(i);
-            test(obj01, s, s.isInstance(obj01));
-            test(obj02, s, s.isInstance(obj02));
-            test(obj03, s, s.isInstance(obj03));
-            test(obj04, s, s.isInstance(obj04));
-            test(obj05, s, s.isInstance(obj05));
-            test(obj06, s, s.isInstance(obj06));
-            test(obj07, s, s.isInstance(obj07));
-            test(obj08, s, s.isInstance(obj08));
-            test(obj09, s, s.isInstance(obj09));
+            test(s.isInstance(obj01), s, s.isInstance(obj01));
+            test(s.isInstance(obj02), s, s.isInstance(obj02));
+            test(s.isInstance(obj03), s, s.isInstance(obj03));
+            test(s.isInstance(obj04), s, s.isInstance(obj04));
+            test(s.isInstance(obj05), s, s.isInstance(obj05));
+            test(s.isInstance(obj06), s, s.isInstance(obj06));
+            test(s.isInstance(obj07), s, s.isInstance(obj07));
+            test(s.isInstance(obj08), s, s.isInstance(obj08));
+            test(s.isInstance(obj09), s, s.isInstance(obj09));
         }
     }
 
     private static void test(boolean isInstance, Class<?> cls, boolean expected) {
         if (isInstance != expected) {
-            throw new InternalError(obj.getClass() + " " + cls + " " + expected);
+            throw new InternalError(cls + " " + cls + " " + expected);
         }
     }
     @Benchmark
     public void testPositive01() {
-        test(obj01, I01.class, true);
+        test(obj01 instanceof I01, I01.class, true);
     }
     @Benchmark public void testPositive02() {
-        test(obj02, I02.class, true);
+        test(obj02 instanceof I02, I02.class, true);
     }
     @Benchmark public void testPositive03() {
-        test(obj03, I03.class, true);
+        test(obj03 instanceof I03, I03.class, true);
     }
     @Benchmark public void testPositive04() {
-        test(obj04, I04.class, true);
+        test(obj04 instanceof I04, I04.class, true);
     }
     @Benchmark public void testPositive05() {
-        test(obj05, I05.class, true);
+        test(obj05 instanceof I05, I05.class, true);
     }
     @Benchmark public void testPositive06() {
-        test(obj06, I06.class, true);
+        test(obj06 instanceof I06, I06.class, true);
     }
     @Benchmark public void testPositive07() {
-        test(obj07, I07.class, true);
+        test(obj07 instanceof I07, I07.class, true);
     }
     @Benchmark public void testPositive08() {
-        test(obj08, I08.class, true);
+        test(obj08 instanceof I08, I08.class, true);
     }
     @Benchmark public void testPositive09() {
-        test(obj09, I09.class, true);
+        test(obj09 instanceof I09, I09.class, true);
     }
     @Benchmark public void testPositive10() {
-        test(obj10, I10.class, true);
+        test(obj10 instanceof I10, I10.class, true);
     }
     @Benchmark public void testPositive16() {
-        test(obj16, I16.class, true);
+        test(obj16 instanceof I16, I16.class, true);
     }
     @Benchmark public void testPositive20() {
-        test(obj20, I20.class, true);
+        test(obj20 instanceof I20, I20.class, true);
     }
     @Benchmark public void testPositive30() {
-        test(obj30, I30.class, true);
+        test(obj30 instanceof I30, I30.class, true);
     }
     @Benchmark public void testPositive32() {
-        test(obj32, I32.class, true);
+        test(obj32 instanceof I32, I32.class, true);
     }
     @Benchmark public void testPositive40() {
-        test(obj40, I40.class, true);
+        test(obj40 instanceof I40, I40.class, true);
     }
     @Benchmark public void testPositive50() {
-        test(obj50, I50.class, true);
+        test(obj50 instanceof I50, I50.class, true);
     }
     @Benchmark public void testPositive60() {
-        test(obj60, I60.class, true);
+        test(obj60 instanceof I60, I60.class, true);
     }
     @Benchmark public void testPositive63() {
-        test(obj63, I63.class, true);
+        test(obj63 instanceof I63, I63.class, true);
     }
     @Benchmark public void testPositive64() {
-        test(obj64, I64.class, true);
+        test(obj64 instanceof I64, I64.class, true);
     }
 
     @Benchmark public void testNegative00() {
-        test(obj00, J.class, false);
+        test(obj00 instanceof J, J.class, false);
     }
     @Benchmark public void testNegative01() {
-        test(obj01, J.class, false);
+        test(obj01 instanceof J, J.class, false);
     }
     @Benchmark public void testNegative02() {
-        test(obj02, J.class, false);
+        test(obj02 instanceof J, J.class, false);
     }
     @Benchmark public void testNegative03() {
-        test(obj03, J.class, false);
+        test(obj03 instanceof J, J.class, false);
     }
     @Benchmark public void testNegative04() {
-        test(obj04, J.class, false);
+        test(obj04 instanceof J, J.class, false);
     }
     @Benchmark public void testNegative05() {
-        test(obj05, J.class, false);
+        test(obj05 instanceof J, J.class, false);
     }
     @Benchmark public void testNegative06() {
-        test(obj06, J.class, false);
+        test(obj06 instanceof J, J.class, false);
     }
     @Benchmark public void testNegative07() {
-        test(obj07, J.class, false);
+        test(obj07 instanceof J, J.class, false);
     }
     @Benchmark public void testNegative08() {
-        test(obj08, J.class, false);
+        test(obj08 instanceof J, J.class, false);
     }
     @Benchmark public void testNegative09() {
-        test(obj09, J.class, false);
+        test(obj09 instanceof J, J.class, false);
     }
     @Benchmark public void testNegative10() {
-        test(obj10, J.class, false);
+        test(obj10 instanceof J, J.class, false);
     }
     @Benchmark public void testNegative16() {
-        test(obj16, J.class, false);
+        test(obj16 instanceof J, J.class, false);
     }
     @Benchmark public void testNegative20() {
-        test(obj20, J.class, false);
+        test(obj20 instanceof J, J.class, false);
     }
     @Benchmark public void testNegative30() {
-        test(obj30, J.class, false);
+        test(obj30 instanceof J, J.class, false);
     }
     @Benchmark public void testNegative32() {
-        test(obj32, J.class, false);
+        test(obj32 instanceof J, J.class, false);
     }
     @Benchmark public void testNegative40() {
-        test(obj40, J.class, false);
+        test(obj40 instanceof J, J.class, false);
     }
     @Benchmark public void testNegative50() {
-        test(obj50, J.class, false);
+        test(obj50 instanceof J, J.class, false);
     }
     @Benchmark public void testNegative55() {
-        test(obj55, J.class, false);
+        test(obj55 instanceof J, J.class, false);
     }
     @Benchmark public void testNegative56() {
-        test(obj56, J.class, false);
+        test(obj56 instanceof J, J.class, false);
     }
     @Benchmark public void testNegative57() {
-        test(obj57, J.class, false);
+        test(obj57 instanceof J, J.class, false);
     }
     @Benchmark public void testNegative58() {
-        test(obj58, J.class, false);
+        test(obj58 instanceof J, J.class, false);
     }
     @Benchmark public void testNegative59() {
-        test(obj59, J.class, false);
+        test(obj59 instanceof J, J.class, false);
     }
     @Benchmark public void testNegative60() {
-        test(obj60, J.class, false);
+        test(obj60 instanceof J, J.class, false);
     }
     @Benchmark public void testNegative61() {
-        test(obj61, J.class, false);
+        test(obj61 instanceof J, J.class, false);
     }
     @Benchmark public void testNegative62() {
-        test(obj62, J.class, false);
+        test(obj62 instanceof J, J.class, false);
     }
     @Benchmark public void testNegative63() {
-        test(obj63, J.class, false);
+        test(obj63 instanceof J, J.class, false);
     }
-
     @Benchmark public void testNegative64() {
-        test(obj64, J.class, false);
+        test(obj64 instanceof J, J.class, false);
     }
 }
