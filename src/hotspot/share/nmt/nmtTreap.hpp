@@ -223,7 +223,8 @@ private:
 #endif // ASSERT
 
 public:
-  Treap(uint64_t seed = static_cast<uint64_t>(os::random()))
+  Treap(uint64_t seed = static_cast<uint64_t>(os::random())
+                        | (static_cast<uint64_t>(os::random()) << 32))
   : _allocator(),
     _root(nullptr),
     _prng_seed(seed),
