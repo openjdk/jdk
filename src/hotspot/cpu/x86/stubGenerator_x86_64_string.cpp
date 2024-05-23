@@ -24,7 +24,7 @@
  */
 
 #include "precompiled.hpp"
-#ifdef COMPILER2
+// #ifdef COMPILER2
 #include "macroAssembler_x86.hpp"
 #include "opto/c2_MacroAssembler.hpp"
 #include "stubGenerator_x86_64.hpp"
@@ -1864,4 +1864,4 @@ static void setup_jump_tables(StrIntrinsicNode::ArgEncoding ae, Label &L_error, 
 #undef XMM_TMP4
 
 #undef __
-#endif
+// #endif
