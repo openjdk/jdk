@@ -67,8 +67,10 @@ ArchiveHeapWriter::BufferOffsetToSourceObjectTable*
   ArchiveHeapWriter::_buffer_offset_to_source_obj_table = nullptr;
 
 
-typedef ResourceHashtable<address, size_t,
-      127, // prime number
+typedef ResourceHashtable<
+      size_t,    // offset of a filler from ArchiveHeapWriter::buffer_bottom()
+      size_t,    // size of this filler (in bytes)
+      127,       // prime number
       AnyObj::C_HEAP,
       mtClassShared> FillersTable;
 static FillersTable* _fillers;
@@ -361,12 +363,12 @@ void ArchiveHeapWriter::maybe_fill_gc_region_gap(size_t required_byte_size) {
                         array_length, fill_bytes, _buffer_used);
     HeapWord* filler = init_filler_array_at_buffer_top(array_length, fill_bytes);
     _buffer_used = filler_end;
-    _fillers->put((address)filler, fill_bytes);
+    _fillers->put(buffered_address_to_offset((address)filler), fill_bytes);
   }
 }
 
 size_t ArchiveHeapWriter::get_filler_size_at(address buffered_addr) {
-  size_t* p = _fillers->get(buffered_addr);
+  size_t* p = _fillers->get(buffered_address_to_offset(buffered_addr));
   if (p != nullptr) {
     assert(*p > 0, "filler must be larger than zero bytes");
     return *p;
@@ -530,10 +532,8 @@ void ArchiveHeapWriter::update_header_for_requested_obj(oop requested_obj, oop s
   fake_oop->set_narrow_klass(nk);
 
   // We need to retain the identity_hash, because it may have been used by some hashtables
-  // in the shared heap. This also has the side effect of pre-initializing the
-  // identity_hash for all shared objects, so they are less likely to be written
-  // into during run time, increasing the potential of memory sharing.
-  if (src_obj != nullptr) {
+  // in the shared heap.
+  if (src_obj != nullptr && !src_obj->fast_no_hash_check()) {
     intptr_t src_hash = src_obj->identity_hash();
     fake_oop->set_mark(markWord::prototype().copy_set_hash(src_hash));
     assert(fake_oop->mark().is_unlocked(), "sanity");

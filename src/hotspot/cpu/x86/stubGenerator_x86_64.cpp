@@ -4255,6 +4255,11 @@ void StubGenerator::generate_compiler_stubs() {
     StubRoutines::_poly1305_processBlocks = generate_poly1305_processBlocks();
   }
 
+  if (UseIntPolyIntrinsics) {
+    StubRoutines::_intpoly_montgomeryMult_P256 = generate_intpoly_montgomeryMult_P256();
+    StubRoutines::_intpoly_assign = generate_intpoly_assign();
+  }
+
   if (UseMD5Intrinsics) {
     StubRoutines::_md5_implCompress = generate_md5_implCompress(false, "md5_implCompress");
     StubRoutines::_md5_implCompressMB = generate_md5_implCompress(true, "md5_implCompressMB");

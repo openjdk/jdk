@@ -69,9 +69,7 @@ public @interface PreviewFeature {
         FOREIGN,
         @JEP(number=459, title="String Templates", status="Second Preview")
         STRING_TEMPLATES,
-        @JEP(number=445, title="Unnamed Classes and Instance Main Methods", status="Deprecated")
-        UNNAMED_CLASSES,
-        @JEP(number=463, title="Implicitly Declared Classes and Instance Main Methods", status="Preview")
+        @JEP(number=477, title="Implicitly Declared Classes and Instance Main Methods", status="Third Preview")
         IMPLICIT_CLASSES,
         @JEP(number=464, title="Scoped Values", status="Second Preview")
         SCOPED_VALUES,
