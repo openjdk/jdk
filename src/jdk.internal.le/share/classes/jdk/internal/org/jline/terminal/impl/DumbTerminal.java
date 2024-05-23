@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2018, the original author or authors.
+ * Copyright (c) 2002-2018, the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -14,38 +14,58 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.charset.Charset;
+import java.util.function.Function;
 
 import jdk.internal.org.jline.terminal.Attributes;
 import jdk.internal.org.jline.terminal.Attributes.ControlChar;
 import jdk.internal.org.jline.terminal.Size;
+import jdk.internal.org.jline.terminal.spi.SystemStream;
+import jdk.internal.org.jline.terminal.spi.TerminalProvider;
 import jdk.internal.org.jline.utils.NonBlocking;
 import jdk.internal.org.jline.utils.NonBlockingInputStream;
 import jdk.internal.org.jline.utils.NonBlockingReader;
 
 public class DumbTerminal extends AbstractTerminal {
 
+    private final TerminalProvider provider;
+    private final SystemStream systemStream;
     private final NonBlockingInputStream input;
     private final OutputStream output;
     private final NonBlockingReader reader;
     private final PrintWriter writer;
     private final Attributes attributes;
     private final Size size;
+    private boolean skipNextLf;
 
-    public DumbTerminal(InputStream in, OutputStream out) throws IOException {
-        this(TYPE_DUMB, TYPE_DUMB, in, out, null);
+    public DumbTerminal(InputStream in, OutputStream out, Function<InputStream, InputStream> inputStreamWrapper) throws IOException {
+        this(TYPE_DUMB, TYPE_DUMB, in, out, null, inputStreamWrapper);
     }
 
-    public DumbTerminal(String name, String type, InputStream in, OutputStream out, Charset encoding) throws IOException {
-        this(name, type, in, out, encoding, SignalHandler.SIG_DFL);
+    public DumbTerminal(String name, String type, InputStream in, OutputStream out, Charset encoding, Function<InputStream, InputStream> inputStreamWrapper)
+            throws IOException {
+        this(null, null, name, type, in, out, encoding, SignalHandler.SIG_DFL, inputStreamWrapper);
     }
 
-    public DumbTerminal(String name, String type, InputStream in, OutputStream out, Charset encoding, SignalHandler signalHandler) throws IOException {
+    @SuppressWarnings("this-escape")
+    public DumbTerminal(
+            TerminalProvider provider,
+            SystemStream systemStream,
+            String name,
+            String type,
+            InputStream in,
+            OutputStream out,
+            Charset encoding,
+            SignalHandler signalHandler,
+            Function<InputStream, InputStream> inputStreamWrapper)
+            throws IOException {
         super(name, type, encoding, signalHandler);
-        NonBlockingInputStream nbis = NonBlocking.nonBlocking(getName(), in);
+        this.provider = provider;
+        this.systemStream = systemStream;
+        NonBlockingInputStream nbis = NonBlocking.nonBlocking(getName(), inputStreamWrapper.apply(in));
         this.input = new NonBlockingInputStream() {
             @Override
             public int read(long timeout, boolean isPeek) throws IOException {
-                for (;;) {
+                for (; ; ) {
                     int c = nbis.read(timeout, isPeek);
                     if (attributes.getLocalFlag(Attributes.LocalFlag.ISIG)) {
                         if (c == attributes.getControlChar(ControlChar.VINTR)) {
@@ -62,7 +82,19 @@ public class DumbTerminal extends AbstractTerminal {
                             continue;
                         }
                     }
-                    if (c == '\r') {
+                    if (attributes.getInputFlag(Attributes.InputFlag.INORMEOL)) {
+                        if (c == '\r') {
+                            skipNextLf = true;
+                            c = '\n';
+                        } else if (c == '\n') {
+                            if (skipNextLf) {
+                                skipNextLf = false;
+                                continue;
+                            }
+                        } else {
+                            skipNextLf = false;
+                        }
+                    } else if (c == '\r') {
                         if (attributes.getInputFlag(Attributes.InputFlag.IGNCR)) {
                             continue;
                         }
@@ -80,10 +112,10 @@ public class DumbTerminal extends AbstractTerminal {
         this.reader = NonBlocking.nonBlocking(getName(), input, encoding());
         this.writer = new PrintWriter(new OutputStreamWriter(output, encoding()));
         this.attributes = new Attributes();
-        this.attributes.setControlChar(ControlChar.VERASE,  (char) 127);
+        this.attributes.setControlChar(ControlChar.VERASE, (char) 127);
         this.attributes.setControlChar(ControlChar.VWERASE, (char) 23);
-        this.attributes.setControlChar(ControlChar.VKILL,   (char) 21);
-        this.attributes.setControlChar(ControlChar.VLNEXT,  (char) 22);
+        this.attributes.setControlChar(ControlChar.VKILL, (char) 21);
+        this.attributes.setControlChar(ControlChar.VLNEXT, (char) 22);
         this.size = new Size();
         parseInfoCmp();
     }
@@ -107,9 +139,7 @@ public class DumbTerminal extends AbstractTerminal {
     }
 
     public Attributes getAttributes() {
-        Attributes attr = new Attributes();
-        attr.copy(attributes);
-        return attr;
+        return new Attributes(attributes);
     }
 
     public void setAttributes(Attributes attr) {
@@ -126,4 +156,13 @@ public class DumbTerminal extends AbstractTerminal {
         size.copy(sz);
     }
 
+    @Override
+    public TerminalProvider getProvider() {
+        return provider;
+    }
+
+    @Override
+    public SystemStream getSystemStream() {
+        return systemStream;
+    }
 }

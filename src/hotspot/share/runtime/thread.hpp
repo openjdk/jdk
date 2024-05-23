@@ -475,9 +475,6 @@ class Thread: public ThreadShadow {
   }
 
  public:
-  // Used by fast lock support
-  virtual bool is_lock_owned(address adr) const;
-
   // Check if address is within the given range of this thread's
   // stack:  stack_base() > adr >= limit
   bool is_in_stack_range_incl(address adr, address limit) const {
@@ -595,8 +592,6 @@ protected:
   static ByteSize tlab_end_offset()              { return byte_offset_of(Thread, _tlab) + ThreadLocalAllocBuffer::end_offset(); }
   static ByteSize tlab_top_offset()              { return byte_offset_of(Thread, _tlab) + ThreadLocalAllocBuffer::top_offset(); }
   static ByteSize tlab_pf_top_offset()           { return byte_offset_of(Thread, _tlab) + ThreadLocalAllocBuffer::pf_top_offset(); }
-
-  static ByteSize allocated_bytes_offset()       { return byte_offset_of(Thread, _allocated_bytes); }
 
   JFR_ONLY(DEFINE_THREAD_LOCAL_OFFSET_JFR;)
 
