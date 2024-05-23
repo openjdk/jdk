@@ -229,6 +229,8 @@ public class DocTreeScanner<R,P> implements DocTreeVisitor<R,P> {
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
      * @return the result of scanning
+     *
+     * @since 10
      */
     @Override
     public R visitDocType(DocTypeTree node, P p) {
