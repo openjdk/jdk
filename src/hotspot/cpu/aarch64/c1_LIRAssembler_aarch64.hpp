@@ -84,4 +84,9 @@ public:
   void store_parameter(jint c,     int offset_from_esp_in_words);
   void store_parameter(jobject c,  int offset_from_esp_in_words);
 
+void lookup_secondary_supers_table(Klass *super_klass,
+                                   Register r_sub_klass, Register r_super_klass,
+                                   FloatRegister vtemp, Register rtemp, Register r_array_index,
+                                   Label* success, Label* failure);
+
 #endif // CPU_AARCH64_C1_LIRASSEMBLER_AARCH64_HPP
