@@ -81,7 +81,7 @@ public class StressNativeSignal {
             } catch (Exception z) {
                 z.printStackTrace(System.err);
             }
-        }        
+        }
     }
 
     public void waitForTestThreadsToStart() {
