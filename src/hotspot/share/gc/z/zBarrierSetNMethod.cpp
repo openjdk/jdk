@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,11 +37,10 @@
 #include "runtime/threadWXSetters.inline.hpp"
 
 bool ZBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
-
   if (!is_armed(nm)) {
-    log_develop_trace(gc, nmethod)("nmethod: " PTR_FORMAT " visited by entry (disarmed)", p2i(nm));
+    log_develop_trace(gc, nmethod)("nmethod: " PTR_FORMAT " visited by entry (disarmed before lock)", p2i(nm));
     // Some other thread got here first and healed the oops
-    // and disarmed the nmethod.
+    // and disarmed the nmethod. No need to continue.
     return true;
   }
 
@@ -52,8 +51,8 @@ bool ZBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
 
   if (!is_armed(nm)) {
     log_develop_trace(gc, nmethod)("nmethod: " PTR_FORMAT " visited by entry (disarmed)", p2i(nm));
-    // Some other thread got here first and healed the oops
-    // and disarmed the nmethod.
+    // Some other thread managed to complete while we were
+    // waiting for lock. No need to continue.
     return true;
   }
 

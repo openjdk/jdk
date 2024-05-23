@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,10 +32,9 @@
 #include "runtime/threadWXSetters.inline.hpp"
 
 bool XBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
-
   if (!is_armed(nm)) {
     // Some other thread got here first and healed the oops
-    // and disarmed the nmethod.
+    // and disarmed the nmethod. No need to continue.
     return true;
   }
 
@@ -43,8 +42,8 @@ bool XBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
   log_trace(nmethod, barrier)("Entered critical zone for %p", nm);
 
   if (!is_armed(nm)) {
-    // Some other thread got here first and healed the oops
-    // and disarmed the nmethod.
+    // Some other thread managed to complete while we were
+    // waiting for lock. No need to continue.
     return true;
   }
 
