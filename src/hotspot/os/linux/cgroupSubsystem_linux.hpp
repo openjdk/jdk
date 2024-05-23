@@ -113,20 +113,52 @@ enum class TupleValue { FIRST, SECOND };
 class CgroupController: public CHeapObj<mtInternal> {
   public:
     virtual char *subsystem_path() = 0;
-    // Read a numerical value as unsigned long
+
+    /* Read a numerical value as unsigned long
+     *
+     * returns: false if any error occurred. true otherwise and
+     * the parsed value is set in the provided julong pointer.
+     */
     bool read_number(const char* filename, julong* result);
-    // Convenience method to deal with numbers as well as the string 'max'
-    // in interface files. Otherwise same as read_number().
+
+    /* Convenience method to deal with numbers as well as the string 'max'
+     * in interface files. Otherwise same as read_number().
+     *
+     * returns: false if any error occurred. true otherwise and
+     * the parsed value (which might be negative) is being set in
+     * the provided jlong pointer.
+     */
     bool read_number_handle_max(const char* filename, jlong* result);
-    // Read a string from the interface file. The provided buffer must be
-    // at least 1K (1024) in size. This is something the caller needs to ensure.
+
+    /* Read a string of at most 1K - 1 characters from the interface file.
+     * The provided buffer must be at least 1K (1024) in size so as to account
+     * for the null terminating character. Callers must ensure that the buffer
+     * is appropriately in-scope and of sufficient size.
+     *
+     * returns: false if any error occured. true otherwise and the passed
+     * in buffer will contain the first 1023 characters of the string or
+     * up to the first new line character ('\n') whichever comes first.
+     */
     bool read_string(const char* filename, char* buf);
-    // Read a tuple value as a number. Tuple is: '<first> <second>'.
-    // Handles 'max' for unlimited.
+
+    /* Read a tuple value as a number. Tuple is: '<first> <second>'.
+     * Handles 'max' (for unlimited) for any tuple value. This is handy for
+     * parsing interface files like cpu.max which contain such tuples.
+     *
+     * returns: false if any error occurred. true otherwise and the parsed
+     * value of the appropriate tuple entry set in the provided jlong pointer.
+     */
     bool read_numerical_tuple_value(const char* filename, TupleValue val, jlong* result);
-    // Read a numerical value from a multi-line interface file. The matched line is
-    // determined by the provided 'key'. The associated value is returned as a number.
+
+    /* Read a numerical value from a multi-line interface file. The matched line is
+     * determined by the provided 'key'. The associated numerical value is being set
+     * via the passed in julong pointer. Example interface file 'memory.stat'
+     *
+     * returns: false if any error occurred. true otherwise and the parsed value is
+     * being set in the provided julong pointer.
+     */
     bool read_numerical_key_value(const char* filename, const char* key, julong* result);
+
   private:
     static jlong limit_from_str(char* limit_str);
 };
