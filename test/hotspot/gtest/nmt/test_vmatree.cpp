@@ -428,14 +428,21 @@ TEST_VM_F(VMATreeTest, TestConsistencyWithSimpleTracker) {
   const size_t page_size = tr->page_size;
   VMATree tree;
   NativeCallStackStorage ncss(true);
+  constexpr const int candidates_len = 4;
 
-  NativeCallStack stacks[4] = {
+  NativeCallStack candidate_stacks[candidates_len] = {
     make_stack(0xA),
     make_stack(0xB),
     make_stack(0xC),
     make_stack(0xD)
   };
 
+  const MEMFLAGS candidate_flags[candidates_len] = {
+    mtNMT,
+    mtTest,
+    mtGC,
+    mtCompiler
+  };
 
   const int operation_count = 100000; // One hundred thousand
   for (int i = 0; i < operation_count; i++) {
@@ -447,8 +454,9 @@ TEST_VM_F(VMATreeTest, TestConsistencyWithSimpleTracker) {
     const size_t start = page_start * page_size;
     const size_t size = num_pages * page_size;
 
-    const MEMFLAGS flag = (MEMFLAGS)(os::random() % mt_number_of_types);
-    const NativeCallStack stack = stacks[os::random() % 4];
+    const MEMFLAGS flag = candidate_flags[os::random() % candidates_len];
+    const NativeCallStack stack = candidate_stacks[os::random() % candidates_len];
+
     const NativeCallStackStorage::StackIndex si = ncss.push(stack);
     VMATree::RegionData data(si, flag);
 
