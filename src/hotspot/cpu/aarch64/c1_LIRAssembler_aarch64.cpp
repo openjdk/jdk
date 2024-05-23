@@ -1346,14 +1346,18 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
     __ load_klass(klass_RInfo, obj);
     if (k->is_loaded()) {
       // See if we get an immediate positive hit
-      __ ldr(rscratch1, Address(klass_RInfo, int64_t(k->super_check_offset())));
-      __ cmp(k_RInfo, rscratch1);
       if ((juint)in_bytes(Klass::secondary_super_cache_offset()) != k->super_check_offset()) {
+        __ ldr(rscratch1, Address(klass_RInfo, int64_t(k->super_check_offset())));
+        __ cmp(k_RInfo, rscratch1);
         __ br(Assembler::NE, *failure_target);
         // successful cast, fall through to profile or jump
       } else {
-        // See if we get an immediate positive hit
-        __ br(Assembler::EQ, *success_target);
+        if (UseSecondarySupersCache) {
+          // See if we get an immediate positive hit
+          __ ldr(rscratch1, Address(klass_RInfo, int64_t(k->super_check_offset())));
+          __ cmp(k_RInfo, rscratch1);
+          __ br(Assembler::EQ, *success_target);
+        }
         // check for self
         __ cmp(klass_RInfo, k_RInfo);
         __ br(Assembler::EQ, *success_target);
