@@ -22,16 +22,6 @@
  * questions.
  */
 
-/*
- * @test
- * @bug JDK-8314070
- * @key printer
- * @requires (os.family == "linux" | os.family == "mac")
- * @summary javax.print: Support IPP output-bin attribute extension
- * @run main/manual OutputBinAttributePrintDialogTest COMMON
- * @run main/manual OutputBinAttributePrintDialogTest NATIVE
- */
-
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JPanel;
@@ -64,6 +54,16 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+
+/*
+ * @test
+ * @bug JDK-8314070
+ * @key printer
+ * @requires (os.family == "linux" | os.family == "mac")
+ * @summary javax.print: Support IPP output-bin attribute extension
+ * @run main/manual OutputBinAttributePrintDialogTest COMMON
+ * @run main/manual OutputBinAttributePrintDialogTest NATIVE
+ */
 
 public class OutputBinAttributePrintDialogTest {
 
