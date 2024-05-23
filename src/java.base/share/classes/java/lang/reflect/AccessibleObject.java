@@ -791,12 +791,4 @@ public class AccessibleObject implements AnnotatedElement {
     AccessibleObject getRoot() {
         throw new InternalError();
     }
-
-    /**
-     * Makes a copy of the passed Class[], unless length is 0 and the original can
-     * safely be reused.
-     */
-    static Class<?>[] copyClasses(Class<?>[] classes) {
-        return classes.length == 0 ? classes : classes.clone();
-    }
 }

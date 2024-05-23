@@ -266,7 +266,7 @@ public final class Constructor<T> extends Executable {
      */
     @Override
     public Class<?>[] getParameterTypes() {
-        return AccessibleObject.copyClasses(parameterTypes);
+        return parameterTypes.length == 0 ? parameterTypes : parameterTypes.clone();
     }
 
     /**
@@ -292,9 +292,8 @@ public final class Constructor<T> extends Executable {
      */
     @Override
     public Class<?>[] getExceptionTypes() {
-        return AccessibleObject.copyClasses(exceptionTypes);
+        return exceptionTypes.length == 0 ? exceptionTypes : exceptionTypes.clone();
     }
-
 
     /**
      * {@inheritDoc}
