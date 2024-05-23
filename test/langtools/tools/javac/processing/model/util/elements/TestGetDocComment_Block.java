@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,24 +24,22 @@
 /*
  * @test
  * @bug 8307184
- * @summary Test basic operation of Elements.getDocComments
+ * @summary Test basic operation of Elements.getDocComment
  * @library /tools/lib /tools/javac/lib
- * @build   toolbox.ToolBox JavacTestingAbstractProcessor TestGetDocComments
- * @compile -processor TestGetDocComments -proc:only TestGetDocComments.java
+ * @build   toolbox.ToolBox JavacTestingAbstractProcessor TestGetDocComment_Block
+ * @compile -processor TestGetDocComment_Block -proc:only TestGetDocComment_Block.java
  */
 
-import java.io.Writer;
 import java.util.*;
-import java.util.function.*;
 import javax.annotation.processing.*;
 import javax.lang.model.element.*;
 import javax.lang.model.util.*;
 import toolbox.ToolBox;
 
 /**
- * Test basic workings of Elements.getDocComments
+ * Test basic operation of Elements.getDocComment for block comments
  */
-public class TestGetDocComments extends JavacTestingAbstractProcessor {
+public class TestGetDocComment_Block extends JavacTestingAbstractProcessor {
     public boolean process(Set<? extends TypeElement> annotations,
                            RoundEnvironment roundEnv) {
         if (!roundEnv.processingOver()) {

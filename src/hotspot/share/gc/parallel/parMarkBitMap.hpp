@@ -39,18 +39,14 @@ public:
   typedef BitMap::idx_t idx_t;
 
   // Values returned by the iterate() methods.
-  enum IterationStatus { incomplete, complete, full, would_overflow };
+  enum IterationStatus { incomplete, complete, full };
 
   inline ParMarkBitMap();
   bool initialize(MemRegion covered_region);
 
   // Atomically mark an object as live.
-  bool mark_obj(HeapWord* addr, size_t size);
-  inline bool mark_obj(oop obj, size_t size);
-
-  // Return whether the specified begin or end bit is set.
-  inline bool is_obj_beg(idx_t bit) const;
-  inline bool is_obj_end(idx_t bit) const;
+  inline bool mark_obj(HeapWord* addr);
+  inline bool mark_obj(oop obj);
 
   // Traditional interface for testing whether an object is marked or not (these
   // test only the begin bits).
@@ -67,61 +63,6 @@ public:
   // will take up words_to_bits(m) bits in the bitmap.
   inline static size_t bits_to_words(idx_t bits);
   inline static idx_t  words_to_bits(size_t words);
-
-  // Return the size in words of an object given a begin bit and an end bit, or
-  // the equivalent beg_addr and end_addr.
-  inline size_t obj_size(idx_t beg_bit, idx_t end_bit) const;
-  inline size_t obj_size(HeapWord* beg_addr, HeapWord* end_addr) const;
-
-  // Return the size in words of the object (a search is done for the end bit).
-  inline size_t obj_size(idx_t beg_bit)  const;
-  inline size_t obj_size(HeapWord* addr) const;
-
-  // Apply live_closure to each live object that lies completely within the
-  // range [live_range_beg, live_range_end).  This is used to iterate over the
-  // compacted region of the heap.  Return values:
-  //
-  // complete           The iteration is complete.  All objects in the range
-  //                    were processed and the closure is not full;
-  //                    closure->source() is set one past the end of the range.
-  //
-  // full               The closure is full; closure->source() is set to one
-  //                    past the end of the last object processed.
-  //
-  // would_overflow     The next object in the range would overflow the closure;
-  //                    closure->source() is set to the start of that object.
-  IterationStatus iterate(ParMarkBitMapClosure* live_closure,
-                          idx_t range_beg, idx_t range_end) const;
-  inline IterationStatus iterate(ParMarkBitMapClosure* live_closure,
-                                 HeapWord* range_beg,
-                                 HeapWord* range_end) const;
-
-  // Apply live closure as above and additionally apply dead_closure to all dead
-  // space in the range [range_beg, dead_range_end).  Note that dead_range_end
-  // must be >= range_end.  This is used to iterate over the dense prefix.
-  //
-  // This method assumes that if the first bit in the range (range_beg) is not
-  // marked, then dead space begins at that point and the dead_closure is
-  // applied.  Thus callers must ensure that range_beg is not in the middle of a
-  // live object.
-  IterationStatus iterate(ParMarkBitMapClosure* live_closure,
-                          ParMarkBitMapClosure* dead_closure,
-                          idx_t range_beg, idx_t range_end,
-                          idx_t dead_range_end) const;
-  inline IterationStatus iterate(ParMarkBitMapClosure* live_closure,
-                                 ParMarkBitMapClosure* dead_closure,
-                                 HeapWord* range_beg,
-                                 HeapWord* range_end,
-                                 HeapWord* dead_range_end) const;
-
-  // Return the number of live words in the range [beg_addr, end_obj) due to
-  // objects that start in the range.  If a live object extends onto the range,
-  // the caller must detect and account for any live words due to that object.
-  // If a live object extends beyond the end of the range, only the words within
-  // the range are included in the result. The end of the range must be a live object,
-  // which is the case when updating pointers.  This allows a branch to be removed
-  // from inside the loop.
-  size_t live_words_in_range(ParCompactionManager* cm, HeapWord* beg_addr, oop end_obj) const;
 
   inline HeapWord* region_start() const;
   inline HeapWord* region_end() const;
@@ -141,11 +82,12 @@ public:
   // respectively) in the range [beg, end).  If no object is found, return end.
   // end must be word-aligned.
   inline idx_t find_obj_beg(idx_t beg, idx_t end) const;
-  inline idx_t find_obj_end(idx_t beg, idx_t end) const;
 
   inline HeapWord* find_obj_beg(HeapWord* beg, HeapWord* end) const;
-  inline HeapWord* find_obj_end(HeapWord* beg, HeapWord* end) const;
 
+  // Return the address of the last obj-start in the range [beg, end).  If no
+  // object is found, return end.
+  inline HeapWord* find_obj_beg_reverse(HeapWord* beg, HeapWord* end) const;
   // Clear a range of bits or the entire bitmap (both begin and end bits are
   // cleared).
   inline void clear_range(idx_t beg, idx_t end);
@@ -158,7 +100,6 @@ public:
   void print_on_error(outputStream* st) const {
     st->print_cr("Marking Bits: (ParMarkBitMap*) " PTR_FORMAT, p2i(this));
     _beg_bits.print_on_error(st, " Begin Bits: ");
-    _end_bits.print_on_error(st, " End Bits:   ");
   }
 
 #ifdef  ASSERT
@@ -168,11 +109,6 @@ public:
 #endif  // #ifdef ASSERT
 
 private:
-  size_t live_words_in_range_helper(HeapWord* beg_addr, oop end_obj) const;
-
-  bool is_live_words_in_range_in_cache(ParCompactionManager* cm, HeapWord* beg_addr) const;
-  size_t live_words_in_range_use_cache(ParCompactionManager* cm, HeapWord* beg_addr, oop end_obj) const;
-  void update_live_words_in_range_cache(ParCompactionManager* cm, HeapWord* beg_addr, oop end_obj, size_t result) const;
 
   // Each bit in the bitmap represents one unit of 'object granularity.' Objects
   // are double-word aligned in 32-bit VMs, but not in 64-bit VMs, so the 32-bit
@@ -183,7 +119,6 @@ private:
   HeapWord*       _region_start;
   size_t          _region_size;
   BitMapView      _beg_bits;
-  BitMapView      _end_bits;
   PSVirtualSpace* _virtual_space;
   size_t          _reserved_byte_size;
 };

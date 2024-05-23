@@ -2209,9 +2209,6 @@ void MacroAssembler::tlab_allocate(
   std(new_top, in_bytes(JavaThread::tlab_top_offset()), R16_thread);
   //verify_tlab(); not implemented
 }
-void MacroAssembler::incr_allocated_bytes(RegisterOrConstant size_in_bytes, Register t1, Register t2) {
-  unimplemented("incr_allocated_bytes");
-}
 
 address MacroAssembler::emit_trampoline_stub(int destination_toc_offset,
                                              int insts_call_instruction_offset, Register Rtoc) {
