@@ -3689,9 +3689,15 @@ void SuperWordVTransformBuilder::add_dependencies(VTransformNode* vtn, Node* n) 
   for (VLoopDependencyGraph::PredsIterator preds(dependency_graph(), n); !preds.done(); preds.next()) {
     Node* pred = preds.current();
     if (!in_bb(pred)) { continue; }
-    if (n->is_Mem() && !pred->is_Mem()) { continue; } // TODO ok?
-    // TODO reductions
+
+    // Only add memory dependencies to memory nodes. All others are taken care of with the req.
+    if (n->is_Mem() && !pred->is_Mem()) { continue; }
+
     VTransformNode* dependency = _bb_idx_to_vtnode.at(bb_idx(pred));
+
+    // Reduction self-cycle?
+    if (vtn == dependency && is_marked_reduction(n)) { continue; }
+
     if (_dependency_set.test_set(dependency->_idx)) { continue; }
     vtn->add_dependency(dependency);
   }

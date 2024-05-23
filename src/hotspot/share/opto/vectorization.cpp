@@ -2181,7 +2181,18 @@ VTransformApplyStatus VTransformElementWiseVectorNode::apply(const VLoopAnalyzer
 }
 
 VTransformApplyStatus VTransformReductionVectorNode::apply(const VLoopAnalyzer& vloop_analyzer, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
-  return VTransformApplyStatus::make_vector(nullptr, 0, 0);
+  Node* first = nodes().at(0);
+  uint  vlen = nodes().length();
+  int   opc  = first->Opcode();
+  BasicType bt = first->bottom_type()->basic_type();
+
+  Node* init = find_transformed_input(1, vnode_idx_to_transformed_node);
+  Node* vec  = find_transformed_input(2, vnode_idx_to_transformed_node);
+
+  ReductionNode* vn = ReductionNode::make(opc, nullptr, init, vec, bt);
+
+  register_new_vector_and_replace_scalar_nodes(vloop_analyzer, vn);
+  return VTransformApplyStatus::make_vector(vn, vlen, vn->vect_type()->length_in_bytes());
 }
 
 VTransformApplyStatus VTransformLoadVectorNode::apply(const VLoopAnalyzer& vloop_analyzer, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
