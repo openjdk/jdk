@@ -199,7 +199,9 @@ bool ConnectionGraph::compute_escape() {
         // Collect all MemBarStoreStore nodes so that depending on the
         // escape status of the associated Allocate node some of them
         // may be eliminated.
-        storestore_worklist.append(n->as_MemBarStoreStore());
+        if (!UseStoreStoreForCtor || n->req() > MemBarNode::Precedent) {
+          storestore_worklist.append(n->as_MemBarStoreStore());
+        }
         break;
       case Op_MemBarRelease:
         if (n->req() > MemBarNode::Precedent) {
@@ -490,11 +492,11 @@ bool ConnectionGraph::can_reduce_phi_check_inputs(PhiNode* ophi) const {
 // I require the 'other' input to be a constant so that I can move the Cmp
 // around safely.
 bool ConnectionGraph::can_reduce_cmp(Node* n, Node* cmp) const {
+  assert(cmp->Opcode() == Op_CmpP || cmp->Opcode() == Op_CmpN, "not expected node: %s", cmp->Name());
   Node* left = cmp->in(1);
   Node* right = cmp->in(2);
 
-  return (cmp->Opcode() == Op_CmpP || cmp->Opcode() == Op_CmpN) &&
-         (left == n || right == n) &&
+  return (left == n || right == n) &&
          (left->is_Con() || right->is_Con()) &&
          cmp->outcnt() == 1;
 }
@@ -546,8 +548,8 @@ bool ConnectionGraph::can_reduce_check_users(Node* n, uint nesting) const {
         if (!use_use->is_Load() || !use_use->as_Load()->can_split_through_phi_base(_igvn)) {
           NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Can NOT reduce Phi %d on invocation %d. AddP user isn't a [splittable] Load(): %s", n->_idx, _invocation, use_use->Name());)
           return false;
-        } else if (nesting > 0 && load_type->isa_narrowklass()) {
-          NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Can NOT reduce Phi %d on invocation %d. Nested NarrowKlass Load: %s", n->_idx, _invocation, use_use->Name());)
+        } else if (load_type->isa_narrowklass() || load_type->isa_klassptr()) {
+          NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Can NOT reduce Phi %d on invocation %d. [Narrow] Klass Load: %s", n->_idx, _invocation, use_use->Name());)
           return false;
         }
       }
@@ -557,8 +559,12 @@ bool ConnectionGraph::can_reduce_check_users(Node* n, uint nesting) const {
     } else if (use->is_CastPP()) {
       const Type* cast_t = _igvn->type(use);
       if (cast_t == nullptr || cast_t->make_ptr()->isa_instptr() == nullptr) {
-        NOT_PRODUCT(use->dump();)
-        NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Can NOT reduce Phi %d on invocation %d. CastPP is not to an instance.", n->_idx, _invocation);)
+#ifndef PRODUCT
+        if (TraceReduceAllocationMerges) {
+          tty->print_cr("Can NOT reduce Phi %d on invocation %d. CastPP is not to an instance.", n->_idx, _invocation);
+          use->dump();
+        }
+#endif
         return false;
       }
 
@@ -568,11 +574,18 @@ bool ConnectionGraph::can_reduce_check_users(Node* n, uint nesting) const {
         // CmpP/N used by the If controlling the cast.
         if (use->in(0)->is_IfTrue() || use->in(0)->is_IfFalse()) {
           Node* iff = use->in(0)->in(0);
-          Node* iff_cmp = iff->in(1)->in(1); // if->bool->cmp
-          if (!can_reduce_cmp(n, iff_cmp)) {
-            NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Can NOT reduce Phi %d on invocation %d. CastPP %d doesn't have simple control.", n->_idx, _invocation, use->_idx);)
-            NOT_PRODUCT(n->dump(5);)
-            return false;
+          if (iff->Opcode() == Op_If && iff->in(1)->is_Bool() && iff->in(1)->in(1)->is_Cmp()) {
+            Node* iff_cmp = iff->in(1)->in(1);
+            int opc = iff_cmp->Opcode();
+            if ((opc == Op_CmpP || opc == Op_CmpN) && !can_reduce_cmp(n, iff_cmp)) {
+#ifndef PRODUCT
+              if (TraceReduceAllocationMerges) {
+                tty->print_cr("Can NOT reduce Phi %d on invocation %d. CastPP %d doesn't have simple control.", n->_idx, _invocation, use->_idx);
+                n->dump(5);
+              }
+#endif
+              return false;
+            }
           }
         }
       }
@@ -717,9 +730,22 @@ Node* ConnectionGraph::specialize_castpp(Node* castpp, Node* base, Node* current
 
 Node* ConnectionGraph::split_castpp_load_through_phi(Node* curr_addp, Node* curr_load, Node* region, GrowableArray<Node*>* bases_for_loads, GrowableArray<Node *>  &alloc_worklist) {
   const Type* load_type = _igvn->type(curr_load);
-  Node* nsr_value       = _igvn->zerocon(load_type->basic_type());
-  Node* data_phi        = _igvn->transform(PhiNode::make(region, nsr_value, load_type));
-  Node* memory          = curr_load->in(MemNode::Memory);
+  Node* nsr_value = _igvn->zerocon(load_type->basic_type());
+  Node* memory = curr_load->in(MemNode::Memory);
+
+  // The data_phi merging the loads needs to be nullable if
+  // we are loading pointers.
+  if (load_type->make_ptr() != nullptr) {
+    if (load_type->isa_narrowoop()) {
+      load_type = load_type->meet(TypeNarrowOop::NULL_PTR);
+    } else if (load_type->isa_ptr()) {
+      load_type = load_type->meet(TypePtr::NULL_PTR);
+    } else {
+      assert(false, "Unexpected load ptr type.");
+    }
+  }
+
+  Node* data_phi = PhiNode::make(region, nsr_value, load_type);
 
   for (int i = 1; i < bases_for_loads->length(); i++) {
     Node* base = bases_for_loads->at(i);
@@ -733,28 +759,28 @@ Node* ConnectionGraph::split_castpp_load_through_phi(Node* curr_addp, Node* curr
 
       Node* addr = _igvn->transform(new AddPNode(base, base, curr_addp->in(AddPNode::Offset)));
       Node* mem = (memory->is_Phi() && (memory->in(0) == region)) ? memory->in(i) : memory;
-      Node* load = _igvn->transform(curr_load->clone());
+      Node* load = curr_load->clone();
       load->set_req(0, nullptr);
       load->set_req(1, mem);
       load->set_req(2, addr);
 
       if (cmp_region != nullptr) { // see comment on previous if
-        Node* intermediate_phi = _igvn->transform(PhiNode::make(cmp_region, nsr_value, load_type));
-        intermediate_phi->set_req(1, load);
+        Node* intermediate_phi = PhiNode::make(cmp_region, nsr_value, load_type);
+        intermediate_phi->set_req(1, _igvn->transform(load));
         load = intermediate_phi;
       }
 
-      data_phi->set_req(i, load);
+      data_phi->set_req(i, _igvn->transform(load));
     } else {
       // Just use the default, which is already in phi
     }
   }
 
-  // Takes care of updating CG and split_unique_types worklists due to cloned
-  // AddP->Load.
+  // Takes care of updating CG and split_unique_types worklists due
+  // to cloned AddP->Load.
   updates_after_load_split(data_phi, curr_load, alloc_worklist);
 
-  return data_phi;
+  return _igvn->transform(data_phi);
 }
 
 // This method only reduces CastPP fields loads; SafePoints are handled
@@ -2147,6 +2173,8 @@ void ConnectionGraph::process_call_arguments(CallNode *call) {
                   strcmp(call->as_CallLeaf()->_name, "counterMode_AESCrypt") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "galoisCounterMode_AESCrypt") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "poly1305_processBlocks") == 0 ||
+                  strcmp(call->as_CallLeaf()->_name, "intpoly_montgomeryMult_P256") == 0 ||
+                  strcmp(call->as_CallLeaf()->_name, "intpoly_assign") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "ghash_processBlocks") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "chacha20Block") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "encodeBlock") == 0 ||
@@ -2171,7 +2199,8 @@ void ConnectionGraph::process_call_arguments(CallNode *call) {
                   strcmp(call->as_CallLeaf()->_name, "vectorizedMismatch") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "arraysort_stub") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "array_partition_stub") == 0 ||
-                  strcmp(call->as_CallLeaf()->_name, "get_class_id_intrinsic") == 0)
+                  strcmp(call->as_CallLeaf()->_name, "get_class_id_intrinsic") == 0 ||
+                  strcmp(call->as_CallLeaf()->_name, "unsafe_setmemory") == 0)
                  ))) {
             call->dump();
             fatal("EA unexpected CallLeaf %s", call->as_CallLeaf()->_name);

@@ -2611,7 +2611,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *     <li>Segments obtained from the {@linkplain Arena#global() global arena};</li>
      *     <li>Segments obtained from a raw address, using the
      *         {@link MemorySegment#ofAddress(long)} factory; and</li>
-     *     <li><a href="#wrapping-addresses">Zero-length memory segments.</a></li>
+     *     <li>{@link MemorySegment##wrapping-addresses Zero-length memory segments}.</li>
      * </ul>
      * <p>
      * Conversely, a bounded lifetime is modeled with a segment scope that can be

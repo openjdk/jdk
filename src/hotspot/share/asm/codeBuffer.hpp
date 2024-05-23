@@ -427,6 +427,9 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
   address      _total_start;    // first address of combined memory buffer
   csize_t      _total_size;     // size in bytes of combined memory buffer
 
+  // Size of code without stubs generated at the end of instructions section
+  csize_t      _main_code_size;
+
   OopRecorder* _oop_recorder;
 
   OopRecorder  _default_oop_recorder;  // override with initialize_oop_recorder
@@ -457,6 +460,7 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
     _oop_recorder    = nullptr;
     _overflow_arena  = nullptr;
     _last_insn       = nullptr;
+    _main_code_size  = 0;
     _finalize_stubs  = false;
     _shared_stub_to_interp_requests = nullptr;
     _shared_trampoline_requests = nullptr;
@@ -629,6 +633,9 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
 
   // number of bytes remaining in the insts section
   csize_t insts_remaining() const        { return _insts.remaining(); }
+
+  // size of code without stubs in instruction section
+  csize_t main_code_size() const         { return _main_code_size; }
 
   // is a given address in the insts section?  (2nd version is end-inclusive)
   bool insts_contains(address pc) const  { return _insts.contains(pc); }

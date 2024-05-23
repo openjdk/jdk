@@ -4057,8 +4057,8 @@ void StubGenerator::generate_initial_stubs() {
   create_control_words();
 
   // Initialize table for unsafe copy memeory check.
-  if (UnsafeCopyMemory::_table == nullptr) {
-    UnsafeCopyMemory::create_table(16 + 4); // 16 for copyMemory; 4 for setMemory
+  if (UnsafeMemoryAccess::_table == nullptr) {
+    UnsafeMemoryAccess::create_table(16 + 4); // 16 for copyMemory; 4 for setMemory
   }
 
   // entry points that exist in all platforms Note: This is code
@@ -4253,6 +4253,11 @@ void StubGenerator::generate_compiler_stubs() {
 
   if (UsePoly1305Intrinsics) {
     StubRoutines::_poly1305_processBlocks = generate_poly1305_processBlocks();
+  }
+
+  if (UseIntPolyIntrinsics) {
+    StubRoutines::_intpoly_montgomeryMult_P256 = generate_intpoly_montgomeryMult_P256();
+    StubRoutines::_intpoly_assign = generate_intpoly_assign();
   }
 
   if (UseMD5Intrinsics) {

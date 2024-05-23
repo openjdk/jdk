@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,6 @@ import java.util.TreeMap;
 import java.util.WeakHashMap;
 import java.util.stream.Collectors;
 
-import javax.lang.model.element.Element;
-
 import com.sun.source.doctree.DocTree;
 
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
@@ -44,7 +42,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
-import jdk.javadoc.internal.doclets.toolkit.DocletElement;
+import jdk.javadoc.internal.doclets.toolkit.DocFileElement;
 import jdk.javadoc.internal.doclets.toolkit.OverviewElement;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
@@ -60,7 +58,7 @@ public class SystemPropertiesWriter extends HtmlDocletWriter {
     /**
      * Cached contents of {@code <title>...</title>} tags of the HTML pages.
      */
-    final Map<Element, String> titles = new WeakHashMap<>();
+    final Map<DocFileElement, String> titles = new WeakHashMap<>();
 
     /**
      * Constructs SystemPropertiesWriter object.
@@ -133,29 +131,26 @@ public class SystemPropertiesWriter extends HtmlDocletWriter {
 
     private Content createLink(IndexItem i) {
         assert i.getDocTree().getKind() == DocTree.Kind.SYSTEM_PROPERTY : i;
-        Element element = i.getElement();
+        var element = i.getElement();
         if (element instanceof OverviewElement) {
             return links.createLink(pathToRoot.resolve(i.getUrl()),
                     resources.getText("doclet.Overview"));
-        } else if (element instanceof DocletElement e) {
-            // Implementations of DocletElement do not override equals and
-            // hashCode; putting instances of DocletElement in a map is not
-            // incorrect, but might well be inefficient
-            String t = titles.computeIfAbsent(element, utils::getHTMLTitle);
+        } else if (element instanceof DocFileElement e) {
+            var fo = e.getFileObject();
+            var t = titles.computeIfAbsent(e, this::getFileTitle);
             if (t.isBlank()) {
                 // The user should probably be notified (a warning?) that this
                 // file does not have a title
-                Path p = Path.of(e.getFileObject().toUri());
+                var p = Path.of(fo.toUri());
                 t = p.getFileName().toString();
             }
-            ContentBuilder b = new ContentBuilder();
-            b.add(HtmlTree.CODE(Text.of(i.getHolder() + ": ")));
-            // non-program elements should be displayed using a normal font
-            b.add(t);
+            var b = new ContentBuilder()
+                    .add(HtmlTree.CODE(Text.of(i.getHolder() + ": ")))
+                    .add(t);
             return links.createLink(pathToRoot.resolve(i.getUrl()), b);
         } else {
             // program elements should be displayed using a code font
-            Content link = links.createLink(pathToRoot.resolve(i.getUrl()), i.getHolder());
+            var link = links.createLink(pathToRoot.resolve(i.getUrl()), i.getHolder());
             return HtmlTree.CODE(link);
         }
     }

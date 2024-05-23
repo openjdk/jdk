@@ -608,6 +608,7 @@
     <Field type="boolean" name="isOsr" label="On Stack Replacement" />
     <Field type="ulong" contentType="bytes" name="codeSize" label="Compiled Code Size" />
     <Field type="ulong" contentType="bytes" name="inlinedBytes" label="Inlined Code Size" />
+    <Field type="ulong" contentType="bytes" name="arenaBytes" label="Arena Usage" />
   </Event>
 
   <Event name="CompilerPhase" category="Java Virtual Machine, Compiler" label="Compiler Phase"

@@ -73,10 +73,10 @@ public final class MetadataRepository {
         for (Type type : TypeLibrary.getTypes()) {
             if (type instanceof PlatformEventType pEventType) {
                 EventType eventType = PrivateAccess.getInstance().newEventType(pEventType);
-                pEventType.setHasCutoff(eventType.getAnnotation(Cutoff.class) != null);
-                pEventType.setHasThrottle(eventType.getAnnotation(Throttle.class) != null);
-                pEventType.setHasLevel(eventType.getAnnotation(Level.class) != null);
-                pEventType.setHasPeriod(eventType.getAnnotation(Period.class) != null);
+                pEventType.setHasCutoff(type.hasAnnotation(Cutoff.class));
+                pEventType.setHasThrottle(type.hasAnnotation(Throttle.class));
+                pEventType.setHasLevel(type.hasAnnotation(Level.class));
+                pEventType.setHasPeriod(type.hasAnnotation(Period.class));
                 // Must add hook before EventControl is created as it removes
                 // annotations, such as Period and Threshold.
                 if (pEventType.hasPeriod()) {
@@ -144,10 +144,6 @@ public final class MetadataRepository {
         }
         EventConfiguration configuration = getConfiguration(eventClass, true);
         if (configuration == null) {
-            if (eventClass.getAnnotation(MirrorEvent.class) != null) {
-                // Don't register mirror classes.
-                return null;
-            }
             PlatformEventType pe = findMirrorType(eventClass);
             configuration = makeConfiguration(eventClass, pe, dynamicAnnotations, dynamicFields);
         }
@@ -162,8 +158,7 @@ public final class MetadataRepository {
     }
 
     private PlatformEventType findMirrorType(Class<? extends jdk.internal.event.Event> eventClass) throws InternalError {
-        String fullName = eventClass.getModule().getName() + ":" + eventClass.getName();
-        Class<? extends Event> mirrorClass = MirrorEvents.find(fullName);
+        Class<? extends MirrorEvent> mirrorClass = MirrorEvents.find(eventClass);
         if (mirrorClass == null) {
             return null; // not a mirror
         }

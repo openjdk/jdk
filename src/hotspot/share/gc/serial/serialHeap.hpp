@@ -67,8 +67,6 @@ class SerialHeap : public CollectedHeap {
   friend class DefNewGeneration;
   friend class TenuredGeneration;
   friend class SerialFullGC;
-  friend class VM_GenCollectForAllocation;
-  friend class VM_GenCollectFull;
   friend class VM_GC_HeapInspection;
   friend class VM_HeapDumper;
   friend class HeapInspection;
@@ -85,8 +83,9 @@ public:
 private:
   DefNewGeneration* _young_gen;
   TenuredGeneration* _old_gen;
+  HeapWord* _young_gen_saved_top;
+  HeapWord* _old_gen_saved_top;
 
-private:
   // The singleton CardTable Remembered Set.
   CardTableRS* _rem_set;
 
@@ -97,16 +96,13 @@ private:
   // condition that caused that incremental collection to fail.
   bool _incremental_collection_failed;
 
-  // Collects the given generation.
-  void collect_generation(Generation* gen, bool full, size_t size, bool is_tlab,
-                          bool run_verification, bool clear_soft_refs);
+  bool do_young_collection(bool clear_soft_refs);
 
   // Reserve aligned space for the heap as needed by the contained generations.
   ReservedHeapSpace allocate(size_t alignment);
 
   PreGenGCValues get_pre_gc_values() const;
 
-private:
   GCMemoryManager* _young_manager;
   GCMemoryManager* _old_manager;
 
@@ -115,28 +111,16 @@ private:
                                bool   is_tlab,
                                bool   first_only);
 
-  // Helper function for two callbacks below.
-  // Considers collection of the first max_level+1 generations.
-  void do_collection(bool           full,
-                     bool           clear_all_soft_refs,
-                     size_t         size,
-                     bool           is_tlab,
-                     GenerationType max_generation);
-
-  // Callback from VM_GenCollectForAllocation operation.
-  // This function does everything necessary/possible to satisfy an
-  // allocation request that failed in the youngest generation that should
-  // have handled it (including collection, expansion, etc.)
-  HeapWord* satisfy_failed_allocation(size_t size, bool is_tlab);
-
-  // Callback from VM_GenCollectFull operation.
-  // Perform a full collection of the first max_level+1 generations.
   void do_full_collection(bool clear_all_soft_refs) override;
-  void do_full_collection(bool clear_all_soft_refs, GenerationType max_generation);
+  void do_full_collection_no_gc_locker(bool clear_all_soft_refs);
+
+  void collect_at_safepoint(bool full);
 
   // Does the "cause" of GC indicate that
   // we absolutely __must__ clear soft refs?
   bool must_clear_all_soft_refs();
+
+  bool is_young_gc_safe() const;
 
 public:
   // Returns JNI_OK on success
@@ -146,9 +130,6 @@ public:
   void post_initialize() override;
 
   bool is_young_gen(const Generation* gen) const { return gen == _young_gen; }
-  bool is_old_gen(const Generation* gen) const { return gen == _old_gen; }
-
-  MemRegion reserved_region() const { return _reserved; }
   bool is_in_reserved(const void* addr) const { return _reserved.contains(addr); }
 
   // Performance Counter support
@@ -160,6 +141,15 @@ public:
   size_t max_capacity() const override;
 
   HeapWord* mem_allocate(size_t size, bool*  gc_overhead_limit_was_exceeded) override;
+
+  // Callback from VM_SerialCollectForAllocation operation.
+  // This function does everything necessary/possible to satisfy an
+  // allocation request that failed in the youngest generation that should
+  // have handled it (including collection, expansion, etc.)
+  HeapWord* satisfy_failed_allocation(size_t size, bool is_tlab);
+
+  // Callback from VM_SerialGCCollect.
+  void try_collect_at_safepoint(bool full);
 
   // Perform a full collection of the heap; intended for use in implementing
   // "System.gc". This implies as full a collection as the CollectedHeap
@@ -235,15 +225,6 @@ public:
 
   void print_heap_change(const PreGenGCValues& pre_gc_values) const;
 
-  // The functions below are helper functions that a subclass of
-  // "CollectedHeap" can use in the implementation of its virtual
-  // functions.
-
-  class GenClosure : public StackObj {
-   public:
-    virtual void do_generation(Generation* gen) = 0;
-  };
-
   // Return "true" if all generations have reached the
   // maximal committed limit that they can reach, without a garbage
   // collection.
@@ -279,10 +260,6 @@ public:
   // in other generations, it should call this method.
   void save_marks();
 
-  // Returns "true" iff no allocations have occurred since the last
-  // call to "save_marks".
-  bool no_allocs_since_save_marks();
-
   // Returns true if an incremental collection is likely to fail.
   // We optionally consult the young gen, if asked to do so;
   // otherwise we base our answer on whether the previous incremental
@@ -316,13 +293,6 @@ private:
 
   HeapWord* mem_allocate_work(size_t size,
                               bool is_tlab);
-
-  // Save the tops of the spaces in all generations
-  void record_gen_tops_before_GC() PRODUCT_RETURN;
-
-  // Return true if we need to perform full collection.
-  bool should_do_full_collection(size_t size, bool full,
-                                 bool is_tlab, GenerationType max_gen) const;
 
 private:
   MemoryPool* _eden_pool;

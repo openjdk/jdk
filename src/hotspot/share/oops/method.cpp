@@ -310,16 +310,13 @@ int Method::fast_exception_handler_bci_for(const methodHandle& mh, Klass* ex_kla
 
 void Method::mask_for(int bci, InterpreterOopMap* mask) {
   methodHandle h_this(Thread::current(), this);
-  // Only GC uses the OopMapCache during thread stack root scanning
-  // any other uses generate an oopmap but do not save it in the cache.
-  if (Universe::heap()->is_gc_active()) {
-    method_holder()->mask_for(h_this, bci, mask);
-  } else {
-    OopMapCache::compute_one_oop_map(h_this, bci, mask);
-  }
-  return;
+  mask_for(h_this, bci, mask);
 }
 
+void Method::mask_for(const methodHandle& this_mh, int bci, InterpreterOopMap* mask) {
+  assert(this_mh() == this, "Sanity");
+  method_holder()->mask_for(this_mh, bci, mask);
+}
 
 int Method::bci_from(address bcp) const {
   if (is_native() && bcp == 0) {
@@ -1276,7 +1273,7 @@ address Method::make_adapters(const methodHandle& mh, TRAPS) {
       // Java exception object.
       vm_exit_during_initialization("Out of space in CodeCache for adapters");
     } else {
-      THROW_MSG_NULL(vmSymbols::java_lang_VirtualMachineError(), "Out of space in CodeCache for adapters");
+      THROW_MSG_NULL(vmSymbols::java_lang_OutOfMemoryError(), "Out of space in CodeCache for adapters");
     }
   }
 

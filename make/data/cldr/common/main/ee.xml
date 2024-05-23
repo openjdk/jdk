@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -736,7 +736,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="collation" type="gb2312han">chinagbe yeye ƒe ɖoɖomɔ nu</type>
 			<type key="collation" type="phonebook">fonegbalẽ me ɖoɖomɔ nu</type>
 			<type key="collation" type="pinyin">pinyin ɖoɖomɔ nu</type>
-			<type key="collation" type="reformed">nugbugbɔtoɖo ƒe ɖoɖomɔ nu</type>
 			<type key="collation" type="search">nudidi hena zazã gbadza</type>
 			<type key="collation" type="searchjl" draft="unconfirmed">nudidi le hangul ƒe ɖoɖo gbãtɔ nu</type>
 			<type key="collation" type="stroke">stroke ɖoɖomɔ nu</type>
@@ -1892,9 +1891,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Etc/Unknown">
 				<exemplarCity>Du manya</exemplarCity>
 			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>Currie</exemplarCity>
-			</zone>
 			<zone type="Europe/London">
 				<long>
 					<daylight>British dzomeŋɔli gaƒoƒo me</daylight>
@@ -2493,11 +2489,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight draft="unconfirmed">Makau ŋkekeme gaƒoƒome</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Macquarie Island gaƒoƒo me</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>Magadan gaƒoƒo me</generic>
@@ -2535,13 +2526,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<metazone type="Mawson">
 				<long>
 					<standard>Mawson gaƒoƒo me</standard>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic>Northwest Mexico gaƒoƒo me</generic>
-					<standard>Northwest Mexico nutome gaƒoƒo me</standard>
-					<daylight>Northwest Mexico kele gaƒoƒo me</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,15 +133,6 @@ public class BigDecimals {
         }
     }
 
-    /** Invokes the toString method of BigDecimal with various different values. */
-    @Benchmark
-    @OperationsPerInvocation(TEST_SIZE)
-    public void testToString(Blackhole bh) {
-        for (BigDecimal s : bigDecimals) {
-            bh.consume(s.toString());
-        }
-    }
-
     /**
      * Invokes the setScale method of BigDecimal with various different values.
      */
@@ -194,6 +185,39 @@ public class BigDecimals {
         bh.consume(tmp);
     }
 
+    /** Test divide with huge/small numbers */
+    @Benchmark
+    @OperationsPerInvocation(TEST_SIZE * TEST_SIZE)
+    public void testHugeSmallDivide(Blackhole bh) {
+        for (BigDecimal s : hugeArray) {
+            for (BigDecimal t : smallArray) {
+                bh.consume(s.divide(t, RoundingMode.DOWN));
+            }
+        }
+    }
+
+    /** Test divide with large/small numbers */
+    @Benchmark
+    @OperationsPerInvocation(TEST_SIZE * TEST_SIZE)
+    public void testLargeSmallDivide(Blackhole bh) {
+        for (BigDecimal s : largeArray) {
+            for (BigDecimal t : smallArray) {
+                bh.consume(s.divide(t, RoundingMode.DOWN));
+            }
+        }
+    }
+
+    /** Test divide with huge/large numbers */
+    @Benchmark
+    @OperationsPerInvocation(TEST_SIZE * TEST_SIZE)
+    public void testHugeLargeDivide(Blackhole bh) {
+        for (BigDecimal s : hugeArray) {
+            for (BigDecimal t : largeArray) {
+                bh.consume(s.divide(t, RoundingMode.DOWN));
+            }
+        }
+    }
+
     /** Invokes the compareTo method of BigDecimal with various different values. */
     @Benchmark
     @OperationsPerInvocation(TEST_SIZE - 1)
@@ -201,33 +225,6 @@ public class BigDecimals {
         BigDecimal c = bigDecimals[0];
         for (BigDecimal s : bigDecimals) {
             bh.consume(c.compareTo(s));
-        }
-    }
-
-    /** Test BigDecimal.toString() with huge numbers larger than MAX_LONG */
-    @Benchmark
-    @OperationsPerInvocation(TEST_SIZE)
-    public void testHugeToString(Blackhole bh) {
-        for (BigDecimal s : hugeArray) {
-            bh.consume(s.toString());
-        }
-    }
-
-    /** Test BigDecimal.toString() with large numbers less than MAX_LONG but larger than MAX_INT */
-    @Benchmark
-    @OperationsPerInvocation(TEST_SIZE)
-    public void testLargeToString(Blackhole bh) {
-        for (BigDecimal s : largeArray) {
-            bh.consume(s.toString());
-        }
-    }
-
-    /** Test BigDecimal.toString() with small numbers less than MAX_INT */
-    @Benchmark
-    @OperationsPerInvocation(TEST_SIZE)
-    public void testSmallToString(Blackhole bh) {
-        for (BigDecimal s : smallArray) {
-            bh.consume(s.toString());
         }
     }
 }

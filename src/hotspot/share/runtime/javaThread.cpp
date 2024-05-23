@@ -430,8 +430,6 @@ JavaThread::JavaThread() :
   _active_handles(nullptr),
   _free_handle_block(nullptr),
 
-  _monitor_chunks(nullptr),
-
   _suspend_flags(0),
 
   _thread_state(_thread_new),
@@ -450,16 +448,17 @@ JavaThread::JavaThread() :
   _is_in_VTMS_transition(false),
   _is_in_tmp_VTMS_transition(false),
   _is_disable_suspend(false),
+  _VTMS_transition_mark(false),
 #ifdef ASSERT
   _is_VTMS_transition_disabler(false),
 #endif
 #endif
   _jni_attach_state(_not_attaching_via_jni),
+  _is_in_internal_oome_mark(false),
 #if INCLUDE_JVMCI
   _pending_deoptimization(-1),
   _pending_monitorenter(false),
   _pending_transfer_to_interpreter(false),
-  _in_retryable_allocation(false),
   _pending_failed_speculation(0),
   _jvmci{nullptr},
   _libjvmci_runtime(nullptr),
@@ -1049,13 +1048,7 @@ JavaThread* JavaThread::active() {
 
 bool JavaThread::is_lock_owned(address adr) const {
   assert(LockingMode != LM_LIGHTWEIGHT, "should not be called with new lightweight locking");
-  if (Thread::is_lock_owned(adr)) return true;
-
-  for (MonitorChunk* chunk = monitor_chunks(); chunk != nullptr; chunk = chunk->next()) {
-    if (chunk->contains(adr)) return true;
-  }
-
-  return false;
+  return is_in_full_stack(adr);
 }
 
 oop JavaThread::exception_oop() const {
@@ -1064,22 +1057,6 @@ oop JavaThread::exception_oop() const {
 
 void JavaThread::set_exception_oop(oop o) {
   Atomic::store(&_exception_oop, o);
-}
-
-void JavaThread::add_monitor_chunk(MonitorChunk* chunk) {
-  chunk->set_next(monitor_chunks());
-  set_monitor_chunks(chunk);
-}
-
-void JavaThread::remove_monitor_chunk(MonitorChunk* chunk) {
-  guarantee(monitor_chunks() != nullptr, "must be non empty");
-  if (monitor_chunks() == chunk) {
-    set_monitor_chunks(chunk->next());
-  } else {
-    MonitorChunk* prev = monitor_chunks();
-    while (prev->next() != chunk) prev = prev->next();
-    prev->set_next(chunk->next());
-  }
 }
 
 void JavaThread::handle_special_runtime_exit_condition() {
@@ -1406,13 +1383,6 @@ void JavaThread::oops_do_no_frames(OopClosure* f, NMethodClosure* cf) {
   }
 
   DEBUG_ONLY(verify_frame_info();)
-
-  if (has_last_Java_frame()) {
-    // Traverse the monitor chunks
-    for (MonitorChunk* chunk = monitor_chunks(); chunk != nullptr; chunk = chunk->next()) {
-      chunk->oops_do(f);
-    }
-  }
 
   assert(vframe_array_head() == nullptr, "deopt in progress at a safepoint!");
   // If we have deferred set_locals there might be oops waiting to be
@@ -2260,8 +2230,8 @@ void JavaThread::pretouch_stack() {
     if (is_in_full_stack(here) && here > end) {
       size_t to_alloc = here - end;
       char* p2 = (char*) alloca(to_alloc);
-      log_trace(os, thread)("Pretouching thread stack from " PTR_FORMAT " to " PTR_FORMAT ".",
-                            p2i(p2), p2i(end));
+      log_trace(os, thread)("Pretouching thread stack for " UINTX_FORMAT ": " RANGEFMT ".",
+                            (uintx) osthread()->thread_id(), RANGEFMTARGS(p2, to_alloc));
       os::pretouch_memory(p2, p2 + to_alloc,
                           NOT_AIX(os::vm_page_size()) AIX_ONLY(4096));
     }
