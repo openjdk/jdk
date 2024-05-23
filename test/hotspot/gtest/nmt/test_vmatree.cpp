@@ -30,8 +30,13 @@
 #include "runtime/os.hpp"
 #include "unittest.hpp"
 
+using Tree = VMATree;
+using Node = Tree::TreapNode;
+using NCS = NativeCallStackStorage;
+
 class VMATreeTest : public testing::Test {
 public:
+  // Utilities
   VMATree::TreapNode* treap_root(VMATree& tree) {
     return tree._tree._root;
   }
@@ -59,19 +64,10 @@ public:
   VMATree::StateType out_type_of(VMATree::TreapNode* x) {
     return x->val().out.type();
   }
-};
 
-// Low-level tests inspecting the state of the tree.
-TEST_VM_F(VMATreeTest, LowLevel) {
-  using Tree = VMATree;
-  using Node = Tree::TreapNode;
-  using NCS = NativeCallStackStorage;
-  NativeCallStackStorage ncs(true);
-  NativeCallStackStorage::StackIndex si1 = ncs.push(stack1);
-  NativeCallStackStorage::StackIndex si2 = ncs.push(stack2);
-
+  // Tests
   // Adjacent reservations should result in exactly 2 nodes
-  auto adjacent_2_nodes = [&](const VMATree::RegionData& rd) {
+  void adjacent_2_nodes(const VMATree::RegionData& rd) {
     Tree tree;
     for (int i = 0; i < 100; i++) {
       tree.reserve_mapping(i * 100, 100, rd);
@@ -103,6 +99,13 @@ TEST_VM_F(VMATreeTest, LowLevel) {
     });
     EXPECT_EQ(2, found_nodes) << "Adjacent reservations should result in exactly 2 nodes";
   };
+};
+
+// Low-level tests inspecting the state of the tree.
+TEST_VM_F(VMATreeTest, LowLevel) {
+  NativeCallStackStorage ncs(true);
+  NativeCallStackStorage::StackIndex si1 = ncs.push(stack1);
+  NativeCallStackStorage::StackIndex si2 = ncs.push(stack2);
 
   { // Overlapping reservations should also only result in 2 nodes.
     VMATree::RegionData rd{si1, mtTest};
@@ -274,9 +277,6 @@ TEST_VM_F(VMATreeTest, LowLevel) {
 
 // Tests for summary accounting
 TEST_VM_F(VMATreeTest, SummaryAccounting) {
-  using Tree = VMATree;
-  using Node = Tree::TreapNode;
-  using NCS = NativeCallStackStorage;
   { // Fully enclosed re-reserving works correctly.
     Tree::RegionData rd(NCS::StackIndex(), mtTest);
     Tree::RegionData rd2(NCS::StackIndex(), mtNMT);
