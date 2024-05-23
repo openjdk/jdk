@@ -1777,13 +1777,11 @@ bool VTransformGraph::schedule() {
   VectorSet pre_visited;
   VectorSet post_visited;
 
-  // Start with the "root": the vtnode of the CountedLoopNode.
-  stack.push(_cl_vtnode);
-
-  // Also push all input-nodes:
+  // Push all "root" nodes, i.e. those that have no inputs (req or dependency):
+  assert(_cl_vtnode != nullptr && !_cl_vtnode->has_req_or_dep(), "cl is a 'root' node");
   for (int i = 0; i < _vtnodes.length(); i++) {
-    VTransformInputScalarNode* vtn = _vtnodes.at(i)->isa_InputScalar();
-    if (vtn != nullptr) {
+    VTransformNode* vtn = _vtnodes.at(i);
+    if (!vtn->has_req_or_dep()) {
       stack.push(vtn);
     }
   }
@@ -1846,13 +1844,13 @@ bool VTransformGraph::schedule() {
     }
   }
 
-  assert(rpo_idx == -1, "used up all rpo_idx");
-
 #ifndef PRODUCT
   if (_is_trace_verbose) {
     print_schedule();
   }
 #endif
+
+  assert(rpo_idx == -1, "used up all rpo_idx, rpo_idx=%d", rpo_idx);
 
   return true;
 }
@@ -2272,8 +2270,13 @@ void VTransformGraph::print_vtnodes() const {
 void VTransformGraph::print_schedule() const {
   tty->print_cr("\nVTransformGraph::print_schedule:");
   for (int i = 0; i < _schedule.length(); i++) {
-    tty->print("  ");
-    _schedule.at(i)->print();
+    tty->print(" %3d: ", i);
+    VTransformNode* vtn = _schedule.at(i);
+    if (vtn == nullptr) {
+      tty->print_cr("nullptr");
+    } else {
+      vtn->print();
+    }
   }
 }
 

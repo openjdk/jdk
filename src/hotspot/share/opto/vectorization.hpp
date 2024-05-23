@@ -1500,6 +1500,13 @@ public:
   int outs() const { return _out.length(); }
   VTransformNode* out(int i) const { return _out.at(i); }
 
+  bool has_req_or_dep() const {
+    for (int i = 0; i < _in.length(); i++) {
+      if (_in.at(i) != nullptr) { return true; }
+    }
+    return false;
+  }
+
   virtual VTransformScalarNode* isa_Scalar() { return nullptr; }
   virtual VTransformInputScalarNode* isa_InputScalar() { return nullptr; }
   virtual VTransformVectorNode* isa_Vector() { return nullptr; }
