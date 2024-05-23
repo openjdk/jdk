@@ -1482,14 +1482,19 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
   // first derive the object's owner and entry_count (if any)
   owning_thread = ObjectSynchronizer::get_lock_owner(tlh.list(), hobj);
   if (owning_thread != nullptr) {
-    Handle th(current_thread, get_vthread_or_thread_oop(owning_thread));
+    oop thread_oop = get_vthread_or_thread_oop(owning_thread);
+    bool is_virtual = java_lang_VirtualThread::is_instance(thread_oop);
+    if (is_virtual) {
+      thread_oop = nullptr;
+    }
+    Handle th(current_thread, thread_oop);
     ret.owner = (jthread)jni_reference(calling_thread, th);
 
     // The recursions field of a monitor does not reflect recursions
     // as lightweight locks before inflating the monitor are not included.
     // We have to count the number of recursive monitor entries the hard way.
     // We pass a handle to survive any GCs along the way.
-    ret.entry_count = count_locked_objects(owning_thread, hobj);
+    ret.entry_count = is_virtual ? 0 : count_locked_objects(owning_thread, hobj);
   }
   // implied else: entry_count == 0
 
@@ -1513,6 +1518,7 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
     // this object has a lightweight monitor
   }
 
+  jint skipped = 0;
   if (mon != nullptr) {
     // Robustness: the actual waiting list can be smaller.
     // The nWait count we got from the mon->waiters() may include the re-entering
@@ -1522,11 +1528,16 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
     for (ObjectWaiter* waiter = mon->first_waiter();
          waiter != nullptr && (nWait == 0 || waiter != mon->first_waiter());
          waiter = mon->next_waiter(waiter)) {
+      JavaThread *w = mon->thread_of_waiter(waiter);
+      oop thread_oop = get_vthread_or_thread_oop(w);
+      if (java_lang_VirtualThread::is_instance(thread_oop)) {
+        skipped++;
+      }
       nWait++;
     }
   }
   ret.waiter_count = nWant;
-  ret.notify_waiter_count = nWait;
+  ret.notify_waiter_count = nWait - skipped;
 
   // Allocate memory for heavyweight and lightweight monitor.
   jvmtiError err;
@@ -1561,13 +1572,20 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
     }
     if (ret.notify_waiter_count > 0) { // we have threads waiting to be notified in Object.wait()
       ObjectWaiter *waiter = mon->first_waiter();
+      jint skipped = 0;
       for (int i = 0; i < nWait; i++) {
         JavaThread *w = mon->thread_of_waiter(waiter);
+        oop thread_oop = get_vthread_or_thread_oop(w);
+        bool is_virtual = java_lang_VirtualThread::is_instance(thread_oop);
         assert(w != nullptr, "sanity check");
-        // If the thread was found on the ObjectWaiter list, then
-        // it has not been notified.
-        Handle th(current_thread, get_vthread_or_thread_oop(w));
-        ret.notify_waiters[i] = (jthread)jni_reference(calling_thread, th);
+        if (java_lang_VirtualThread::is_instance(thread_oop)) {
+          skipped++;
+        } else {
+          // If the thread was found on the ObjectWaiter list, then
+          // it has not been notified.
+          Handle th(current_thread, get_vthread_or_thread_oop(w));
+          ret.notify_waiters[i - skipped] = (jthread)jni_reference(calling_thread, th);
+        }
         waiter = mon->next_waiter(waiter);
       }
     }
