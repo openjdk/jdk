@@ -236,7 +236,7 @@ define SetupJavaCompilationBody
 
       # The javacmd tells the client how to run java to launch the server.
       $1_JAVAC_SERVER_JAVA_CMD := $$(call FixPath, $$(JAVA) $$($1_JAVA_FLAGS) \
-          $$($1_JAVAC_SERVER_ARGS))
+          $$($1_JAVAC_SERVER_ARGS) -J$$(JAVA_FLAGS_TMPDIR))
 
       $1_CONFIG_VARDEPS := $$($1_JAVAC_PORT_FILE) $$($1_JAVAC_SERVER_JAVA_CMD)
       $1_CONFIG_VARDEPS_FILE := $$(call DependOnVariable, $1_CONFIG_VARDEPS, \
@@ -260,6 +260,7 @@ define SetupJavaCompilationBody
        $1_JAVAC_CMD := $$(JAVA) $$($1_JAVA_FLAGS) $$($1_JAVAC)
       endif
     endif
+    $1_JAVAC_CMD += -J$$(JAVA_FLAGS_TMPDIR)
 
     ifeq ($$($1_TARGET_RELEASE), )
       # If unspecified, default to the new jdk we're building
