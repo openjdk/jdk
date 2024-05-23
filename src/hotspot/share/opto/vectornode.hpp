@@ -975,7 +975,7 @@ class StoreVectorNode : public StoreNode {
    virtual uint match_edge(uint idx) const { return idx == MemNode::Address ||
                                                     idx == MemNode::ValueIn ||
                                                     idx == MemNode::ValueIn + 1; }
-   virtual Node* indices() const override { return in(Indices); }
+   virtual Node* indices() const { return in(Indices); }
 };
 
 //------------------------------StoreVectorMaskedNode--------------------------------
@@ -996,7 +996,7 @@ class StoreVectorMaskedNode : public StoreVectorNode {
     return idx > 1;
   }
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
-  virtual Node* mask() const override { return in(Mask); }
+  virtual Node* mask() const { return in(Mask); }
 };
 
 //------------------------------LoadVectorMaskedNode--------------------------------
@@ -1071,8 +1071,8 @@ class StoreVectorScatterMaskedNode : public StoreVectorNode {
                                                     idx == MemNode::ValueIn ||
                                                     idx == MemNode::ValueIn + 1 ||
                                                     idx == MemNode::ValueIn + 2; }
-   virtual Node* mask() const override { return in(Mask); }
-   virtual Node* indices() const override { return in(Indices); }
+   virtual Node* mask() const { return in(Mask); }
+   virtual Node* indices() const { return in(Indices); }
 };
 
 // Verify that memory address (adr) is aligned. The mask specifies the
