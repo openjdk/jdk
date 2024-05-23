@@ -437,13 +437,10 @@ class MacroAssembler: public Assembler {
     Assembler::INSN(Rd, Rn, Rm, Ra);                                          \
   }
 
-  WRAP(madd) WRAP(maddw)
+  WRAP(madd) WRAP(msub) WRAP(maddw) WRAP(msubw)
   WRAP(smaddl) WRAP(smsubl) WRAP(umaddl) WRAP(umsubl)
 #undef WRAP
 
-
-  void msub(Register Rd, Register Rn, Register Rm, Register Ra);
-  void msubw(Register Rd, Register Rn, Register Rm, Register Ra);
 
   // macro assembly operations needed for aarch64
 
