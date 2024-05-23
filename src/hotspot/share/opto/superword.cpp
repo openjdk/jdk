@@ -3489,7 +3489,7 @@ void SuperWordVTransformBuilder::build_vtransform() {
       if (VectorNode::is_muladds2i(p0)) {
         // A special kind of binary element-wise vector op: the inputs are "ints" a and b,
         // but reinterpreted as two "shorts" [a0, a1] and [b0, b1]:
-        //   v = MulAddS2I(a, b) = a0 * b0 + a1 + b2
+        //   v = MulAddS2I(a, b) = a0 * b0 + a1 + b1
         set_req_for_vector(vtn, 1, pack);
         set_req_for_vector(vtn, 2, pack);
       } else {
@@ -3555,7 +3555,7 @@ VTransformVectorNode* SuperWordVTransformBuilder::make_vtnode_for_pack(const Nod
   } else if (VectorNode::is_muladds2i(p0)) {
     // A special kind of binary element-wise vector op: the inputs are "ints" a and b,
     // but reinterpreted as two "shorts" [a0, a1] and [b0, b1]:
-    //   v = MulAddS2I(a, b) = a0 * b0 + a1 + b2
+    //   v = MulAddS2I(a, b) = a0 * b0 + a1 + b1
     assert(p0->req() == 5, "MulAddS2I should have 4 operands");
     vtn = new (_graph.arena()) VTransformElementWiseVectorNode(_graph, 3, pack_size);
   } else if (opc == Op_SignumF || opc == Op_SignumD) {
@@ -3610,13 +3610,34 @@ void SuperWordVTransformBuilder::set_req_for_scalar(VTransformNode* vtn, int j, 
 }
 
 VTransformNode* SuperWordVTransformBuilder::find_input_for_vector(int j, Node_List* pack) {
+  Node* p0 = pack->at(0);
+
   Node_List* pack_in = _packset.isa_pack_input_or_null(pack, j);
   if (pack_in != nullptr) {
     // Input is a matching pack -> vtnode already exists.
     return _bb_idx_to_vtnode.at(bb_idx(pack_in->at(0)));
   }
 
-  Node* p0 = pack->at(0);
+  if (VectorNode::is_muladds2i(p0)) {
+    // Inputs:                 1    2    3    4
+    // Offsets:                0    0    1    1
+    //   v = MulAddS2I(a, b) = a0 * b0 + a1 + b1
+    //
+    // Inputs:                 1    2    3    4
+    // Offsets:                1    1    0    0
+    //   v = MulAddS2I(a, b) = a1 * b1 + a0 + b0
+    //
+    // All inputs are strided (stride = 2), either with offset 0 or 1.
+    Node_List* pack_in0 = _packset.isa_strided_pack_input_or_null(pack, j, 2, 0);
+    if (pack_in0 != nullptr) {
+      return _bb_idx_to_vtnode.at(bb_idx(pack_in0->at(0)));
+    }
+    Node_List* pack_in1 = _packset.isa_strided_pack_input_or_null(pack, j, 2, 1);
+    if (pack_in1 != nullptr) {
+      return _bb_idx_to_vtnode.at(bb_idx(pack_in1->at(0)));
+    }
+  }
+
   Node* unique = _packset.isa_unique_input_or_null(pack, j);
   // TODO special check instead? refactor elsewhere?
   if (p0->in(j) == iv() && unique == nullptr) {
@@ -3714,17 +3735,17 @@ Node* PackSet::isa_unique_input_or_null(const Node_List* pack, int j) const {
   return unique;
 }
 
-Node_List* PackSet::isa_pack_input_or_null(const Node_List* pack, int j) const {
+Node_List* PackSet::isa_strided_pack_input_or_null(const Node_List* pack, int j, int stride, int offset) const {
   Node* p0 = pack->at(0);
   Node* def0 = p0->in(j);
 
   Node_List* pack_in = get_pack(def0);
-  if (pack_in == nullptr || pack->size() != pack_in->size()) {
+  if (pack_in == nullptr || pack->size() * stride != pack_in->size()) {
     return nullptr;
   }
 
   for (uint i = 1; i < pack->size(); i++) {
-    if (pack->at(i)->in(j) != pack_in->at(i)) {
+    if (pack->at(i)->in(j) != pack_in->at(i * stride + offset)) {
       return nullptr;
     }
   }

@@ -2133,12 +2133,10 @@ VTransformApplyStatus VTransformElementWiseVectorNode::apply(const VLoopAnalyzer
     assert(false, "TODO roundopD");
   } else if (opc == Op_SignumF || opc == Op_SignumD) {
     assert(false, "TODO Signum");
-  } else if (VectorNode::is_muladds2i(first)) {
-    assert(false, "TODO MulAddS2I");
   } else if (first->is_CMove()) {
     assert(false, "TODO CMove");
   } else if (req() == 3) {
-    assert(first->req() == 3 && req() == 3, "only one input expected");
+    assert(req() == 3, "only one input expected");
     Node* in1 = find_transformed_input(1, vnode_idx_to_transformed_node);
     Node* in2 = find_transformed_input(2, vnode_idx_to_transformed_node);
     // TODO register spilling trick?
