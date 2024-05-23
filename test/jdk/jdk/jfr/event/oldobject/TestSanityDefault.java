@@ -37,7 +37,7 @@ import jdk.test.lib.jfr.Events;
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @summary Purpose of this test is to run leak profiler without command line tweaks or WhiteBox hacks until we succeed
- * @run main/othervm -mx64m jdk.jfr.event.oldobject.TestSanityDefault
+ * @run main/othervm -Xmx1G jdk.jfr.event.oldobject.TestSanityDefault
  */
 public class TestSanityDefault {
 
