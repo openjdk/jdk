@@ -462,7 +462,10 @@ void ZBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* a
     return;
   }
 
-  clone_instance_in_runtime(phase, ac, ZBarrierSetRuntime::clone_addr(), "ZBarrierSetRuntime::clone");
+  // Clone instance or array where 'src' is only known to be an object (ary_ptr
+  // is null). This can happen in bytecode generated dynamically to implement
+  // reflective array clones.
+  clone_in_runtime(phase, ac, ZBarrierSetRuntime::clone_addr(), "ZBarrierSetRuntime::clone");
 }
 
 #undef XTOP

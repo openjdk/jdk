@@ -835,9 +835,8 @@ static const TypeFunc* clone_type() {
 
 #define XTOP LP64_ONLY(COMMA phase->top())
 
-void BarrierSetC2::clone_instance_in_runtime(PhaseMacroExpand* phase, ArrayCopyNode* ac,
-                                             address clone_addr, const char* clone_name) const {
-  assert(ac->is_clone_inst(), "this function is only defined for cloning instances");
+void BarrierSetC2::clone_in_runtime(PhaseMacroExpand* phase, ArrayCopyNode* ac,
+                                    address clone_addr, const char* clone_name) const {
   Node* const ctrl = ac->in(TypeFunc::Control);
   Node* const mem  = ac->in(TypeFunc::Memory);
   Node* const src  = ac->in(ArrayCopyNode::Src);
@@ -847,15 +846,13 @@ void BarrierSetC2::clone_instance_in_runtime(PhaseMacroExpand* phase, ArrayCopyN
   assert(size->bottom_type()->base() == Type_X,
          "Should be of object size type (int for 32 bits, long for 64 bits)");
 
-  // The native clone we are calling here expects the instance size in words.
-  // Add header/offset size to payload size to get instance size.
-  Node* const base_offset = phase->MakeConX(arraycopy_payload_base_offset(false /* is_array */) >> LogBytesPerLong);
+  // The native clone we are calling here expects the object size in words.
+  // Add header/offset size to payload size to get object size.
+  Node* const base_offset = phase->MakeConX(arraycopy_payload_base_offset(ac->is_clone_array()) >> LogBytesPerLong);
   Node* const full_size = phase->transform_later(new AddXNode(size, base_offset));
   // HeapAccess<>::clone expects size in heap words.
   // For 64-bits platforms, this is a no-operation.
   // For 32-bits platforms, we need to multiply full_size by HeapWordsPerLong (2).
-  // There is no overflow risk at this point, since full_size is derived
-  // from a value expressing the size in bytes (see GraphKit::new_instance()).
   Node* const full_size_in_heap_words = phase->transform_later(new LShiftXNode(full_size, phase->intcon(LogHeapWordsPerLong)));
 
   Node* const call = phase->make_leaf_call(ctrl,
