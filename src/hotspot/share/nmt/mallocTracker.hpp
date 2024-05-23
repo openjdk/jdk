@@ -179,6 +179,16 @@ class MallocMemorySnapshot {
     return _all_mallocs.size() + malloc_overhead() + total_arena();
   }
 
+  // Total peak malloc
+  size_t total_peak() const {
+    return _all_mallocs.peak_size();
+  }
+
+  // Total peak count
+  size_t total_peak_count() const {
+    return _all_mallocs.peak_count();
+  }
+
   // Total malloc'd memory used by arenas
   size_t total_arena() const;
 
