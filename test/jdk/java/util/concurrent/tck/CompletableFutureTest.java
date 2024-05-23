@@ -199,27 +199,40 @@ public class CompletableFutureTest extends JSR166TestCase {
         checkCompletedExceptionally(f, false, t -> assertSame(t, ex));
     }
 
+    void checkCancellationException(CancellationException thrown, String message) {
+        assertTrue(message.equals(thrown.getMessage()));
+
+        assertTrue(thrown.getCause() instanceof CancellationException);
+        assertTrue(thrown.getCause().getCause() == null);
+    }
+
     void checkCancelled(CompletableFuture<?> f) {
         long startTime = System.nanoTime();
         try {
             f.get(LONG_DELAY_MS, MILLISECONDS);
             shouldThrow();
         } catch (CancellationException success) {
+            checkCancellationException(success, "get");
         } catch (Throwable fail) { threadUnexpectedException(fail); }
         assertTrue(millisElapsedSince(startTime) < LONG_DELAY_MS / 2);
 
         try {
             f.join();
             shouldThrow();
-        } catch (CancellationException success) {}
+        } catch (CancellationException success) {
+            checkCancellationException(success, "join");
+        }
         try {
             f.getNow(null);
             shouldThrow();
-        } catch (CancellationException success) {}
+        } catch (CancellationException success) {
+            checkCancellationException(success, "getNow");
+        }
         try {
             f.get();
             shouldThrow();
         } catch (CancellationException success) {
+            checkCancellationException(success, "get");
         } catch (Throwable fail) { threadUnexpectedException(fail); }
 
         assertTrue(exceptionalCompletion(f) instanceof CancellationException);
