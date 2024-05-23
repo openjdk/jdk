@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Intel Corporation. All rights reserved.
+ * Copyright (c) 2023, 2024 Intel Corporation. All rights reserved.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,11 +24,10 @@
  */
 
 #include "precompiled.hpp"
-#ifdef COMPILER2
 #include "macroAssembler_x86.hpp"
 #include "stubGenerator_x86_64.hpp"
 #include "opto/c2_MacroAssembler.hpp"
-// #include <functional>
+#include "opto/intrinsicnode.hpp"
 
 /******************************************************************************/
 //                     String handling intrinsics
@@ -174,6 +173,9 @@ static void vpcmpeq(XMMRegister dst, XMMRegister src, Address adr, int vector_le
   }
 }
 
+static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptrs,
+                                          StrIntrinsicNode::ArgEncoding ae, MacroAssembler *_masm);
+
 ////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////
 //                         Start of generator
@@ -184,16 +186,17 @@ void StubGenerator::generate_string_indexof(address *fnptrs) {
   assert((int) StrIntrinsicNode::LL < 4, "Enum out of range");
   assert((int) StrIntrinsicNode::UL < 4, "Enum out of range");
   assert((int) StrIntrinsicNode::UU < 4, "Enum out of range");
-  generate_string_indexof_stubs(fnptrs, StrIntrinsicNode::LL);
-  generate_string_indexof_stubs(fnptrs, StrIntrinsicNode::UU);
-  generate_string_indexof_stubs(fnptrs, StrIntrinsicNode::UL);
+  generate_string_indexof_stubs(this, fnptrs, StrIntrinsicNode::LL, _masm);
+  generate_string_indexof_stubs(this, fnptrs, StrIntrinsicNode::UU, _masm);
+  generate_string_indexof_stubs(this, fnptrs, StrIntrinsicNode::UL, _masm);
   assert(fnptrs[StrIntrinsicNode::LL] != nullptr, "LL not generated.");
   assert(fnptrs[StrIntrinsicNode::UL] != nullptr, "UL not generated.");
   assert(fnptrs[StrIntrinsicNode::UU] != nullptr, "UU not generated.");
 }
 
-void StubGenerator::generate_string_indexof_stubs(address *fnptrs, StrIntrinsicNode::ArgEncoding ae) {
-  StubCodeMark mark(this, "StubRoutines", "stringIndexOf");
+static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptrs,
+                                          StrIntrinsicNode::ArgEncoding ae, MacroAssembler *_masm) {
+  StubCodeMark mark(stubgen, "StubRoutines", "stringIndexOf");
   bool isLL = (ae == StrIntrinsicNode::LL);
   bool isUL = (ae == StrIntrinsicNode::UL);
   bool isUU = (ae == StrIntrinsicNode::UU);
@@ -984,7 +987,6 @@ void StubGenerator::generate_string_indexof_stubs(address *fnptrs, StrIntrinsicN
   return;
 }
 
-
 // Helper for broadcasting needle elements to ymm registers for compares
 // Expands into XMM_BYTE_0 and XMM_BYTE_K
 //
@@ -1141,19 +1143,6 @@ static void compare_big_haystack_to_needle(bool sizeKnown, int size, Label &noMa
   bool isUU = (ae == StrIntrinsicNode::UU);
   bool isU = (isUU || isUL);
 
-  // // Set up lambdas for performing correctly-sized comparisons
-  // std::function<void(XMMRegister dst, XMMRegister src, Address adr, int vector_len)> vpcmpeq;
-
-  // if (isU) {
-  //   vpcmpeq = [_masm](XMMRegister dst, XMMRegister src, Address adr, int vector_len) {
-  //     __ vpcmpeqw(dst, src, adr, vector_len);
-  //   };
-  // } else {
-  //   vpcmpeq = [_masm](XMMRegister dst, XMMRegister src, Address adr, int vector_len) {
-  //     __ vpcmpeqb(dst, src, adr, vector_len);
-  //   };
-  // }
-
   int sizeIncr = isU ? 2 : 1;
 
   Label L_OKtoCompareFull, L_done, L_specialCase_gt2;
@@ -1236,19 +1225,6 @@ static void compare_haystack_to_needle(bool sizeKnown, int size, Label &noMatch,
   bool isUL = (ae == StrIntrinsicNode::UL);
   bool isUU = (ae == StrIntrinsicNode::UU);
   bool isU = isUL || isUU;  // At least one is UTF-16
-
-  // // Set up lambdas for performing correctly-sized comparisons
-  // std::function<void(XMMRegister dst, XMMRegister src, Address adr, int vector_len)> vpcmpeq;
-
-  // if (isU) {
-  //   vpcmpeq = [_masm](XMMRegister dst, XMMRegister src, Address adr, int vector_len) {
-  //     __ vpcmpeqw(dst, src, adr, vector_len);
-  //   };
-  // } else {
-  //   vpcmpeq = [_masm](XMMRegister dst, XMMRegister src, Address adr, int vector_len) {
-  //     __ vpcmpeqb(dst, src, adr, vector_len);
-  //   };
-  // }
 
   int sizeIncr = isU ? 2 : 1;
 
@@ -1353,19 +1329,6 @@ static void big_case_loop_helper(bool sizeKnown, int size, Label &noMatch, Label
   bool isUL = (ae == StrIntrinsicNode::UL);
   bool isUU = (ae == StrIntrinsicNode::UU);
   bool isU = isUL || isUU;  // At least one is UTF-16
-
-  // // Set up lambdas for performing correctly-sized comparisons
-  // std::function<void(XMMRegister dst, XMMRegister src, Address adr, int vector_len)> vpcmpeq;
-
-  // if (isU) {
-  //   vpcmpeq = [_masm](XMMRegister dst, XMMRegister src, Address adr, int vector_len) {
-  //     __ vpcmpeqw(dst, src, adr, vector_len);
-  //   };
-  // } else {
-  //   vpcmpeq = [_masm](XMMRegister dst, XMMRegister src, Address adr, int vector_len) {
-  //     __ vpcmpeqb(dst, src, adr, vector_len);
-  //   };
-  // }
 
   // Assume failure
   __ movq(r11, -1);
@@ -1617,19 +1580,6 @@ static void highly_optimized_short_cases(StrIntrinsicNode::ArgEncoding ae, Regis
   bool isUL = (ae == StrIntrinsicNode::UL);
   bool isUU = (ae == StrIntrinsicNode::UU);
   bool isU = isUL || isUU;  // At least one is UTF-16
-
-  // // Set up lambdas for performing correctly-sized comparisons
-  // std::function<void(XMMRegister dst, XMMRegister src, Address adr, int vector_len)> vpcmpeq;
-
-  // if (isU) {
-  //   vpcmpeq = [_masm](XMMRegister dst, XMMRegister src, Address adr, int vector_len) {
-  //     __ vpcmpeqw(dst, src, adr, vector_len);
-  //   };
-  // } else {
-  //   vpcmpeq = [_masm](XMMRegister dst, XMMRegister src, Address adr, int vector_len) {
-  //     __ vpcmpeqb(dst, src, adr, vector_len);
-  //   };
-  // }
 
   // Only optimize when haystack can fit on stack with room
   // left over for page fault prevention
@@ -1902,4 +1852,3 @@ static void setup_jump_tables(StrIntrinsicNode::ArgEncoding ae, Label &L_error, 
 #undef XMM_TMP4
 
 #undef __
-#endif

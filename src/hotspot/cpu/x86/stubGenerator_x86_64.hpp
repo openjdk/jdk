@@ -28,9 +28,6 @@
 #include "code/codeBlob.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/stubCodeGenerator.hpp"
-#ifdef COMPILER2
-#include "opto/intrinsicnode.hpp"
-#endif
 
 // Stub Code definitions
 
@@ -579,7 +576,6 @@ class StubGenerator: public StubCodeGenerator {
   void generate_libm_stubs();
 
 #ifdef COMPILER2
-  void generate_string_indexof_stubs(address *fnptrs, StrIntrinsicNode::ArgEncoding ae);
   void generate_string_indexof(address *fnptrs);
 #endif
 
