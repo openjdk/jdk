@@ -566,7 +566,7 @@ public class Proxy implements java.io.Serializable {
                 try {
                     pc = JLA.defineClass(loader,
                             Proxy.class, // NestHost, unused
-                            proxyName, // internal name
+                            proxyName, // binary name
                             cd.bytecode(), // bytes
                             null, // protection domain
                             false, // initialize

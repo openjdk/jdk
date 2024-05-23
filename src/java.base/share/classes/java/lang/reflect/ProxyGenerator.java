@@ -138,7 +138,7 @@ final class ProxyGenerator {
         // proxy transformed from the template shares the template constant pool
         // each direct use of the template pool entry is significantly faster
         var cc = ClassFile.of();
-        var ei = new int[21];
+        var ei = new int[9];
         TEMPLATE = cc.parse(cc.build(CD_Proxy, clb -> {
             clb.withSuperclass(CD_Proxy);
             generateConstructor(clb);
@@ -157,8 +157,6 @@ final class ProxyGenerator {
             ei[i++] = cp.interfaceMethodRefEntry(CD_List, "get", MTD_Object_int).index();
 
             ei[i++] = cp.methodRefEntry(CD_UndeclaredThrowableException, INIT_NAME, MTD_void_Throwable).index();
-
-            ei[i++] = cp.utf8Entry(CD_Method).index();
 
             ei[i++] = cp.constantDynamicEntry(
                     cp.bsmEntry(BSM_CLASS_DATA, List.of()),
