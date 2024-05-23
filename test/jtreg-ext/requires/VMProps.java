@@ -473,8 +473,9 @@ public class VMProps implements Callable<Map<String, String>> {
      */
     protected boolean isCDSRuntimeOptionsCompatible() {
         String jtropts = System.getProperty("test.cds.runtime.options");
-        if (jtropts == null)
+        if (jtropts == null) {
             return true;
+        }
         String CCP_DISABLED = "-XX:-UseCompressedClassPointers";
         String G1GC_ENABLED = "-XX:+UseG1GC";
         for (String opt : jtropts.split(",")) {
