@@ -1150,11 +1150,11 @@ void MacroAssembler::addpd(XMMRegister dst, AddressLiteral src, Register rscratc
 // Stub code is generated once and never copied.
 // NMethods can't use this because they get copied and we can't force alignment > 32 bytes.
 void MacroAssembler::align64() {
-  align(64, (unsigned long long) pc());
+  align(64, (uint)(uintptr_t)pc());
 }
 
 void MacroAssembler::align32() {
-  align(32, (unsigned long long) pc());
+  align(32, (uint)(uintptr_t)pc());
 }
 
 void MacroAssembler::align(uint modulus) {
