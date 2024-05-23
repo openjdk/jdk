@@ -272,7 +272,7 @@ void MetaspaceShared::initialize_for_static_dump() {
   _symbol_rs = ReservedSpace(symbol_rs_size);
   if (!_symbol_rs.is_reserved()) {
     log_error(cds)("Unable to reserve memory for symbols: " SIZE_FORMAT " bytes.", symbol_rs_size);
-    MetaspaceShared::unrecoverable_writing_error();
+    MetaspaceShared::writing_error();
   }
   _symbol_region.init(&_symbol_rs, &_symbol_vs);
 }
@@ -655,21 +655,18 @@ void MetaspaceShared::prepare_for_dumping() {
 
 // Preload classes from a list, populate the shared spaces and dump to a
 // file.
-void MetaspaceShared::preload_and_dump() {
-  EXCEPTION_MARK;
+void MetaspaceShared::preload_and_dump(TRAPS) {
   ResourceMark rm(THREAD);
   preload_and_dump_impl(THREAD);
   if (HAS_PENDING_EXCEPTION) {
     if (PENDING_EXCEPTION->is_a(vmClasses::OutOfMemoryError_klass())) {
       log_error(cds)("Out of memory. Please run with a larger Java heap, current MaxHeapSize = "
                      SIZE_FORMAT "M", MaxHeapSize/M);
-      CLEAR_PENDING_EXCEPTION;
-      MetaspaceShared::unrecoverable_writing_error();
+      MetaspaceShared::writing_error();
     } else {
       log_error(cds)("%s: %s", PENDING_EXCEPTION->klass()->external_name(),
                      java_lang_String::as_utf8_string(java_lang_Throwable::message(PENDING_EXCEPTION)));
-      CLEAR_PENDING_EXCEPTION;
-      MetaspaceShared::unrecoverable_writing_error("VM exits due to exception, use -Xlog:cds,exceptions=trace for detail");
+      MetaspaceShared::writing_error("VM exits due to exception, use -Xlog:cds,exceptions=trace for detail");
     }
   }
 }
@@ -909,11 +906,17 @@ void MetaspaceShared::unrecoverable_loading_error(const char* message) {
 // This function is called when the JVM is unable to write the specified CDS archive due to an
 // unrecoverable error.
 void MetaspaceShared::unrecoverable_writing_error(const char* message) {
+  writing_error(message);
+  vm_direct_exit(1);
+}
+
+// This function is called when the JVM is unable to write the specified CDS archive due to a
+// an error. The error will be propagated
+void MetaspaceShared::writing_error(const char* message) {
   log_error(cds)("An error has occurred while writing the shared archive file.");
   if (message != nullptr) {
     log_error(cds)("%s", message);
   }
-  vm_direct_exit(1);
 }
 
 void MetaspaceShared::initialize_runtime_shared_and_meta_spaces() {

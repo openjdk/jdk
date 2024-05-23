@@ -825,7 +825,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 #endif
 
   if (CDSConfig::is_dumping_static_archive()) {
-    MetaspaceShared::preload_and_dump();
+    MetaspaceShared::preload_and_dump(CHECK_JNI_ERR);
   }
 
   return JNI_OK;

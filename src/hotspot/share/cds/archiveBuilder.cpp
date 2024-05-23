@@ -329,7 +329,7 @@ address ArchiveBuilder::reserve_buffer() {
   ReservedSpace rs(buffer_size, MetaspaceShared::core_region_alignment(), os::vm_page_size());
   if (!rs.is_reserved()) {
     log_error(cds)("Failed to reserve " SIZE_FORMAT " bytes of output buffer.", buffer_size);
-    MetaspaceShared::unrecoverable_writing_error();
+    MetaspaceShared::writing_error();
   }
 
   // buffer_bottom is the lowest address of the 2 core regions (rw, ro) when
@@ -379,7 +379,7 @@ address ArchiveBuilder::reserve_buffer() {
     log_error(cds)("my_archive_requested_top    = " INTPTR_FORMAT, p2i(my_archive_requested_top));
     log_error(cds)("SharedBaseAddress (" INTPTR_FORMAT ") is too high. "
                    "Please rerun java -Xshare:dump with a lower value", p2i(_requested_static_archive_bottom));
-    MetaspaceShared::unrecoverable_writing_error();
+    MetaspaceShared::writing_error();
   }
 
   if (CDSConfig::is_dumping_static_archive()) {
@@ -1392,7 +1392,7 @@ void ArchiveBuilder::report_out_of_space(const char* name, size_t needed_bytes) 
   _ro_region.print_out_of_space_msg(name, needed_bytes);
 
   log_error(cds)("Unable to allocate from '%s' region: Please reduce the number of shared classes.", name);
-  MetaspaceShared::unrecoverable_writing_error();
+  MetaspaceShared::writing_error();
 }
 
 
