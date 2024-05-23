@@ -2012,7 +2012,7 @@ void VTransformGraph::apply_vectorization() const {
   for (int i = 0; i < _schedule.length(); i++) {
     VTransformNode* vtn = _schedule.at(i);
     VTransformApplyStatus status = vtn->apply(_vloop_analyzer,
-		                              vnode_idx_to_transformed_node);
+                                              vnode_idx_to_transformed_node);
     Node* n           = status.node();
     uint vector_size  = status.vector_size();
     uint vector_width = status.vector_width();
