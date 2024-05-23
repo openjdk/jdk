@@ -26,8 +26,13 @@
  * @summary Attempt to provoke error 316 on OS X in NativeSignal.signal()
  */
 
-import java.io.*;
-import java.net.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.StandardSocketOptions;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
 import java.util.concurrent.CountDownLatch;
@@ -40,10 +45,16 @@ public class StressNativeSignal {
         try {
             serverSocketThread = new ServerSocketThread();
             serverSocketThread.start();
+        } catch (Exception z) {
+            System.err.println("failed to create and start a ServerSocketThread");
+            z.printStackTrace();
+        }
 
+        try {
             udpThread = new UDPThread();
             udpThread.start();
         } catch (Exception z) {
+            System.err.println("failed to create and start a UDPThread");
             z.printStackTrace();
         }
     }
@@ -55,39 +66,44 @@ public class StressNativeSignal {
     }
 
     public void shutdown() {
-        udpThread.terminate();
-        try {
-            udpThread.join();
-        } catch (Exception z) {
-            z.printStackTrace(System.err);
+        if ((udpThread != null) && udpThread.isAlive()) {
+            udpThread.terminate();
+            try {
+                udpThread.join();
+            } catch (Exception z) {
+                z.printStackTrace(System.err);
+            }
         }
-
-        serverSocketThread.terminate();
-        try {
-            serverSocketThread.join();
-        } catch (Exception z) {
-            z.printStackTrace(System.err);
-        }
+        if ((serverSocketThread != null) && (serverSocketThread.isAlive())) {
+            serverSocketThread.terminate();
+            try {
+                serverSocketThread.join();
+            } catch (Exception z) {
+                z.printStackTrace(System.err);
+            }
+        }        
     }
 
     public void waitForTestThreadsToStart() {
-
-        udpThread.waitTestThreadStart();
-        serverSocketThread.waitTestThreadStart();
+        if ((udpThread != null) && udpThread.isAlive()) {
+            udpThread.waitTestThreadStart();
+        }
+        if ((serverSocketThread != null) && (serverSocketThread.isAlive())) {
+            serverSocketThread.waitTestThreadStart();
+        }
     }
 
     public class ServerSocketThread extends Thread {
         private volatile boolean shouldTerminate;
         private ServerSocket socket;
-        private volatile CountDownLatch threadStarted = new CountDownLatch(1);
+        private final CountDownLatch threadStarted = new CountDownLatch(1);
+
+        public ServerSocketThread () throws Exception {
+
+            socket = new ServerSocket(1122);
+        }
 
         public void run() {
-            try {
-                socket = new ServerSocket(1122);
-            } catch (Exception ignore) {
-                System.err.println("ServerSocketThread: caught exception " + ignore.getClass().getName());
-                System.err.println("continue ...");
-            }
 
             try {
                 threadStarted.countDown();
@@ -130,17 +146,18 @@ public class StressNativeSignal {
     public class UDPThread extends Thread {
         private DatagramChannel channel;
         private volatile boolean shouldTerminate;
-        private volatile CountDownLatch threadStarted = new CountDownLatch(1);
+        private final CountDownLatch threadStarted = new CountDownLatch(1);
+
+
+        public UDPThread () throws Exception {
+
+            channel = DatagramChannel.open();
+            channel.setOption(StandardSocketOptions.SO_RCVBUF, 6553600);
+            channel.bind(new InetSocketAddress(19870));
+        }
 
         @Override
         public void run() {
-            try {
-                channel = DatagramChannel.open();
-                channel.setOption(StandardSocketOptions.SO_RCVBUF, 6553600);
-                channel.bind(new InetSocketAddress(19870));
-            } catch (IOException z) {
-                z.printStackTrace(System.err);
-            }
 
             ByteBuffer buf = ByteBuffer.allocate(6553600);
             threadStarted.countDown();
