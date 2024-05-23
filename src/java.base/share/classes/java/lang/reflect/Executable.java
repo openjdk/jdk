@@ -255,9 +255,12 @@ public abstract sealed class Executable extends AccessibleObject
      * represented by this object.  Returns an array of length
      * 0 if the underlying executable takes no parameters.
      * Note that the constructors of some inner classes
-     * may have an ({@linkplain java.compiler/javax.lang.model.util.Elements.Origin#MANDATED implicitly declared}) parameter in addition to
-     * explicitly declared ones.  Also note that compact constructors
-     * of a record class may have ({@linkplain java.compiler/javax.lang.model.util.Elements.Origin#MANDATED implicitly declared}) parameters.
+     * may have an {@linkplain java.compiler/javax.lang.model.util.Elements.Origin#MANDATED
+     * implicitly declared} parameter in addition to explicitly
+     * declared ones.
+     * Also note that compact constructors of a record class may have
+     * {@linkplain java.compiler/javax.lang.model.util.Elements.Origin#MANDATED
+     * implicitly declared} parameters.
      *
      * @return the parameter types for the executable this object
      * represents
@@ -283,26 +286,31 @@ public abstract sealed class Executable extends AccessibleObject
      * constructors of some inner classes may have an implicitly
      * declared parameter in addition to explicitly declared ones.
      * Compact constructors of a record class may also have
-     * ({@linkplain java.compiler/javax.lang.model.util.Elements.Origin#MANDATED implicitly declared}) parameters,
-     * but they are a special case and thus considered as if they had been explicitly
-     * declared in the source.
-     * Finally note that as a {@link java.lang.reflect##LanguageJvmModel modeling artifact},
-     * the number of returned parameters can differ
+     * {@linkplain java.compiler/javax.lang.model.util.Elements.Origin#MANDATED
+     * implicitly declared} parameters,
+     * but they are a special case and thus considered as if they had
+     * been explicitly declared in the source.
+     * Finally note that as a {@link java.lang.reflect##LanguageJvmModel
+     * modeling artifact}, the number of returned parameters can differ
      * depending on whether or not generic information is present. If
      * generic information is present, parameters explicitly
      * present in the source or parameters of compact constructors
      * of a record class will be returned.
      * Note that parameters of compact constructors of a record class are a special case,
      * as they are not explicitly present in the source, and its type will be returned
-     * regardless of the parameters being ({@linkplain java.compiler/javax.lang.model.util.Elements.Origin#MANDATED implicitly declared}) or not.
+     * regardless of the parameters being
+     * {@linkplain java.compiler/javax.lang.model.util.Elements.Origin#MANDATED
+     * implicitly declared} or not.
      * If generic information is not present, implicit and synthetic parameters may be
      * returned as well.
      *
      * <p>If a formal parameter type is a parameterized type,
      * the {@code Type} object returned for it must accurately reflect
      * the actual type arguments used in the source code. This assertion also
-     * applies to the parameters of compact constructors of a record class, independently
-     * of them being ({@linkplain java.compiler/javax.lang.model.util.Elements.Origin#MANDATED implicitly declared}) or not.
+     * applies to the parameters of compact constructors of a record class,
+     * independently of them being
+     * {@linkplain java.compiler/javax.lang.model.util.Elements.Origin#MANDATED
+     * implicitly declared} or not.
      *
      * <p>If a formal parameter type is a type variable or a parameterized
      * type, it is created. Otherwise, it is resolved.
@@ -772,9 +780,12 @@ public abstract sealed class Executable extends AccessibleObject
      * Returns an array of length 0 if the method/constructor declares no
      * parameters.
      * Note that the constructors of some inner classes
-     * may have an ({@linkplain java.compiler/javax.lang.model.util.Elements.Origin#MANDATED implicitly declared}) parameter in addition to
-     * explicitly declared ones.  Also note that compact constructors of a
-     * record class may have ({@linkplain java.compiler/javax.lang.model.util.Elements.Origin#MANDATED implicitly declared}) parameters.
+     * may have an
+     * {@linkplain java.compiler/javax.lang.model.util.Elements.Origin#MANDATED
+     * implicitly declared} parameter in addition to explicitly declared ones.
+     * Also note that compact constructors of a record class may have
+     * {@linkplain java.compiler/javax.lang.model.util.Elements.Origin#MANDATED
+     * implicitly declared} parameters.
      *
      * @return an array of objects representing the types of the
      * formal parameters of the method or constructor represented by this
