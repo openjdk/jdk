@@ -140,7 +140,7 @@ class G1BarrierSetC1 : public ModRefBarrierSetC1 {
   CodeBlob* pre_barrier_c1_runtime_code_blob() { return _pre_barrier_c1_runtime_code_blob; }
   CodeBlob* post_barrier_c1_runtime_code_blob() { return _post_barrier_c1_runtime_code_blob; }
 
-  virtual void generate_c1_runtime_stubs(BufferBlob* buffer_blob);
+  virtual bool generate_c1_runtime_stubs(BufferBlob* buffer_blob);
 };
 
 #endif // SHARE_GC_G1_C1_G1BARRIERSETC1_HPP

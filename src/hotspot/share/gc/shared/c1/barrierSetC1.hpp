@@ -135,7 +135,7 @@ public:
   virtual LIR_Opr atomic_xchg_at(LIRAccess& access, LIRItem& value);
   virtual LIR_Opr atomic_add_at(LIRAccess& access, LIRItem& value);
 
-  virtual void generate_c1_runtime_stubs(BufferBlob* buffer_blob) {}
+  virtual bool generate_c1_runtime_stubs(BufferBlob* buffer_blob) { return true; }
 };
 
 #endif // SHARE_GC_SHARED_C1_BARRIERSETC1_HPP
