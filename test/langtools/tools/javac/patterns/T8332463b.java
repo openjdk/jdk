@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,34 +21,20 @@
  * questions.
  */
 
-package com.sun.source.tree;
-
-import java.util.List;
-
-/**
- * A tree node for a {@code switch} expression.
- *
- * For example:
- * <pre>
- *   switch ( <em>expression</em> ) {
- *     <em>cases</em>
- *   }
- * </pre>
- *
- * @jls 15.29 Switch Expressions
- *
- * @since 14
+/*
+ * @test
+ * @bug 8332463
+ * @summary Byte conditional pattern case element dominates short constant case element
+ * @enablePreview
+ * @compile T8332463b.java
+ *  @compile --enable-preview --source ${jdk.version} T8332463b.java
  */
-public interface SwitchExpressionTree extends ExpressionTree {
-    /**
-     * Returns the expression for the {@code switch} expression.
-     * @return the expression
-     */
-    ExpressionTree getExpression();
-
-    /**
-     * Returns the cases for the {@code switch} expression.
-     * @return the cases
-     */
-    List<? extends CaseTree> getCases();
+public class T8332463b {
+    public int test1() {
+        Byte i = (byte) 42;
+        return switch (i) {
+            case Byte ib   -> 1;
+            case (short) 0 -> 2;
+        };
+    }
 }
