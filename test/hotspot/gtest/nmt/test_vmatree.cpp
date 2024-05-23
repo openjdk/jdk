@@ -55,6 +55,7 @@ public:
   VMATree::StateType in_type_of(VMATree::TreapNode* x) {
     return x->val().in.type();
   }
+
   VMATree::StateType out_type_of(VMATree::TreapNode* x) {
     return x->val().out.type();
   }
@@ -147,6 +148,7 @@ TEST_VM_F(VMATreeTest, LowLevel) {
       }
       return false;
     };
+
     int i = 0;
     treap(tree).visit_range_in_order(0, 300, [&](Node* x) {
       if (i < 16) {
@@ -154,6 +156,7 @@ TEST_VM_F(VMATreeTest, LowLevel) {
       }
       i++;
     });
+
     ASSERT_EQ(4, i) << "0 - 50 - 75 - 100 nodes expected";
     EXPECT_TRUE(exists(found[0]));
     EXPECT_TRUE(exists(found[1]));
@@ -363,8 +366,8 @@ struct SimpleVMATracker : public CHeapObj<mtTest> {
     }
   };
   // Page (4KiB) granular array
-  const size_t num_pages = 1024 * 512;
-  Info pages[1024 * 512];
+  constexpr static const size_t num_pages = 1024 * 512;
+  Info pages[num_pages];
 
   SimpleVMATracker()
   : pages() {
