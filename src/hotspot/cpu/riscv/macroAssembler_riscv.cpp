@@ -640,7 +640,7 @@ void MacroAssembler::emit_static_call_stub() {
 
   // Jump to the entry point of the c2i stub.
   int32_t offset = 0;
-  movptr(t0, 0, offset, t1); // lui + lui + ssli + add
+  movptr(t0, 0, offset, t1); // lui + lui + slli + add
   jr(t0, offset);
 }
 
@@ -3731,7 +3731,7 @@ int MacroAssembler::max_trampoline_stub_size() {
 }
 
 int MacroAssembler::static_call_stub_size() {
-  // (lui, addi, slli, addi, slli, addi) + (lui + lui + ssli + add) + jalr
+  // (lui, addi, slli, addi, slli, addi) + (lui + lui + slli + add) + jalr
   return 11 * NativeInstruction::instruction_size;
 }
 
