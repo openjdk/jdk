@@ -96,7 +96,7 @@ CodeBuffer::CodeBuffer(CodeBlob* blob) DEBUG_ONLY(: Scrubber(this, sizeof(*this)
   debug_only(verify_section_allocation();)
 }
 
-void CodeBuffer::initialize(csize_t code_size, csize_t locs_size) {
+void CodeBuffer::initialize(csize_t code_size, csize_t locs_size, bool alloc_in_codecache) {
   // Always allow for empty slop around each section.
   int slop = (int) CodeSection::end_slop();
 
@@ -104,7 +104,8 @@ void CodeBuffer::initialize(csize_t code_size, csize_t locs_size) {
   int total_size = code_size + _consts.alignment() + _insts.alignment() + _stubs.alignment() + SECT_LIMIT * slop;
 
   assert(blob() == nullptr, "only once");
-  set_blob(BufferBlob::create(_name, total_size));
+  set_blob(BufferBlob::create(_name, total_size, alloc_in_codecache));
+
   if (blob() == nullptr) {
     // The assembler constructor will throw a fatal on an empty CodeBuffer.
     return;  // caller must test this

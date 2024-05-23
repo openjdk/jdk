@@ -89,7 +89,7 @@ BufferBlob* Compiler::init_buffer_blob() {
   // setup CodeBuffer.  Preallocate a BufferBlob of size
   // NMethodSizeLimit plus some extra space for constants.
   BufferBlob* buffer_blob = BufferBlob::create("C1 temporary CodeBuffer", code_buffer_size(),
-    true); // must be: CompilerScratchBuffersCodeHeapAllocation);
+    CompilerScratchBuffersCodeHeapAllocation); // must be: CompilerScratchBuffersCodeHeapAllocation);
     // Note. C1 testing is not passed with malloc'ed buffers. There is a SEGV in generated code after a couple of compiled methods.
   if (buffer_blob != nullptr) {
     CompilerThread::current()->set_buffer_blob(buffer_blob);

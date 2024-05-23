@@ -564,7 +564,7 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
   // constructor 4 is equivalent to calling constructor 3 and then
   // calling this method.  It's been factored out for convenience of
   // construction.
-  void initialize(csize_t code_size, csize_t locs_size);
+  void initialize(csize_t code_size, csize_t locs_size, bool alloc_in_codecache = true);
 
   CodeSection* consts() { return &_consts; }
   CodeSection* insts() { return &_insts; }

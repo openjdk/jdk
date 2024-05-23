@@ -1348,7 +1348,7 @@ CodeBuffer* PhaseOutput::init_buffer() {
     total_req += deopt_handler_req;  // deopt MH handler
 
   CodeBuffer* cb = code_buffer();
-  cb->initialize(total_req, _buf_sizes._reloc);
+  cb->initialize(total_req, _buf_sizes._reloc, CompilerScratchBuffersCodeHeapAllocation);
 
   // Have we run out of code space?
   if ((cb->blob() == nullptr) || (!CompileBroker::should_compile_new_jobs())) {

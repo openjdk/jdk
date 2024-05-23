@@ -176,6 +176,13 @@ void Address::lea(MacroAssembler *as, Register r) const {
     uint64_t pc_page = (uint64_t)pc() >> 12;
     uint64_t adr_page = (uint64_t)adr >> 12;
     intptr_t offset = adr_page - pc_page;
+    {
+      intptr_t offset_max_mask = right_n_bits(20);
+      intptr_t offset_min_mask = ~right_n_bits(20);
+      // adrp limits: [+-4GB ][+-1M of 4KB pages][20 bits for page offset]
+      // Clean upper bits if CodeBuffer is more than 4 GB away from CodeCache. After relocation it would be OK.
+      offset = (offset > 0) ? (offset & offset_max_mask) : (offset | offset_min_mask);
+    }
     int offset_lo = offset & 3;
     offset >>= 2;
     starti;

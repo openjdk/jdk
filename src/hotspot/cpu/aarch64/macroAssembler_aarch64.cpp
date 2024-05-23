@@ -273,9 +273,15 @@ class Patcher : public RelocActions {
 public:
   Patcher(address insn_addr) : RelocActions(insn_addr) {}
 
+#define branch_offset_mask right_n_bits(log2i(ReservedCodeCacheSize))
+
+#define mask_cross_CodeHeap_branch(offset) \
+  (offset > 0) ? (offset & branch_offset_mask) : (-((-offset) & branch_offset_mask));
+
   virtual int unconditionalBranch(address insn_addr, address &target) {
-    intptr_t offset = (target - insn_addr) >> 2;
-    Instruction_aarch64::spatch(insn_addr, 25, 0, offset);
+    intptr_t offset = (target - insn_addr);
+offset = mask_cross_CodeHeap_branch(offset);
+    Instruction_aarch64::spatch(insn_addr, 25, 0, offset>>2);
     return 1;
   }
   virtual int conditionalBranch(address insn_addr, address &target) {
