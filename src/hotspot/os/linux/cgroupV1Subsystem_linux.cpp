@@ -295,16 +295,16 @@ void CgroupV1Subsystem::print_version_specific_info(outputStream* st) {
   OSContainer::print_container_helper(st, kmem_max_usage, "kernel_memory_limit_in_bytes");
 }
 
-char * CgroupV1Subsystem::cpu_cpuset_cpus() {
-  char* cpus = nullptr;
+char* CgroupV1Subsystem::cpu_cpuset_cpus() {
+  char cpus[1024];
   CONTAINER_READ_STRING_CHECKED(_cpuset, "/cpuset.cpus", "cpuset.cpus", cpus);
-  return cpus;
+  return os::strdup(cpus);
 }
 
-char * CgroupV1Subsystem::cpu_cpuset_memory_nodes() {
-  char* mems = nullptr;
+char* CgroupV1Subsystem::cpu_cpuset_memory_nodes() {
+  char mems[1024];
   CONTAINER_READ_STRING_CHECKED(_cpuset, "/cpuset.mems", "cpuset.mems", mems);
-  return mems;
+  return os::strdup(mems);
 }
 
 /* cpu_quota
