@@ -2234,12 +2234,12 @@ bool SuperWord::output() {
         //vn = VectorNode::make(opc, in, nullptr, vlen, velt_basic_type(n));
         //vlen_in_bytes = vn->as_Vector()->length_in_bytes();
       } else if (VectorNode::requires_long_to_int_conversion(opc)) {
-        assert(n->req() == 2, "only one input expected");
-        Node* in = vector_opd(p, 1);
-        Node* longval = VectorNode::make(opc, in, nullptr, vlen, T_LONG);
-        phase()->register_new_node_with_ctrl_of(longval, first);
-        vn = VectorCastNode::make(Op_VectorCastL2X, longval, T_INT, vlen);
-        vlen_in_bytes = vn->as_Vector()->length_in_bytes();
+        //assert(n->req() == 2, "only one input expected");
+        //Node* in = vector_opd(p, 1);
+        //Node* longval = VectorNode::make(opc, in, nullptr, vlen, T_LONG);
+        //phase()->register_new_node_with_ctrl_of(longval, first);
+        //vn = VectorCastNode::make(Op_VectorCastL2X, longval, T_INT, vlen);
+        //vlen_in_bytes = vn->as_Vector()->length_in_bytes();
       } else if (VectorNode::is_convert_opcode(opc)) {
         // assert(n->req() == 2, "only one input expected");
         // BasicType bt = velt_basic_type(n);

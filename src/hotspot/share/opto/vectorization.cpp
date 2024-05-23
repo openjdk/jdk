@@ -2146,9 +2146,10 @@ VTransformApplyStatus VTransformElementWiseVectorNode::apply(const VLoopAnalyzer
     if (VectorNode::can_transform_shift_op(first, bt)) {
       opc = Op_RShiftI;
     }
-    VectorNode* vn = VectorNode::make(opc, in1, in2, vlen, bt);
 
+    VectorNode* vn = VectorNode::make(opc, in1, in2, vlen, bt);
     register_new_vector_and_replace_scalar_nodes(vloop_analyzer, vn);
+
     return VTransformApplyStatus::make_vector(vn, vlen, vn->length_in_bytes());
   } else if (opc == Op_SqrtF || opc == Op_SqrtD ||
              opc == Op_AbsF || opc == Op_AbsD ||
@@ -2167,19 +2168,30 @@ VTransformApplyStatus VTransformElementWiseVectorNode::apply(const VLoopAnalyzer
     Node* in = find_transformed_input(1, vnode_idx_to_transformed_node);
 
     VectorNode* vn = VectorNode::make(opc, in, nullptr, vlen, bt);
-
     register_new_vector_and_replace_scalar_nodes(vloop_analyzer, vn);
+
     return VTransformApplyStatus::make_vector(vn, vlen, vn->length_in_bytes());
   } else if (VectorNode::requires_long_to_int_conversion(opc)) {
-    assert(false, "TODO requires_long_to_int_conversion");
+    assert(first->req() == 2 && req() == 2, "only one input expected");
+    Node* in = find_transformed_input(1, vnode_idx_to_transformed_node);
+
+    // Vector long -> long operation:
+    Node* longval = VectorNode::make(opc, in, nullptr, vlen, T_LONG);
+    register_new_vector(vloop_analyzer, longval, first);
+
+    // Cast long -> int, to mimic the scalar long -> int operation.
+    VectorCastNode* vn = VectorCastNode::make(Op_VectorCastL2X, longval, T_INT, vlen);
+    register_new_vector_and_replace_scalar_nodes(vloop_analyzer, vn);
+
+    return VTransformApplyStatus::make_vector(vn, vlen, vn->length_in_bytes());
   } else if (VectorNode::is_convert_opcode(opc)) {
     assert(first->req() == 2 && req() == 2, "only one input expected");
     Node* in = find_transformed_input(1, vnode_idx_to_transformed_node);
     int vopc = VectorCastNode::opcode(opc, in->bottom_type()->is_vect()->element_basic_type());
 
     VectorCastNode* vn = VectorCastNode::make(vopc, in, bt, vlen);
-
     register_new_vector_and_replace_scalar_nodes(vloop_analyzer, vn);
+
     return VTransformApplyStatus::make_vector(vn, vlen, vn->length_in_bytes());
   } else if (opc == Op_FmaD || opc == Op_FmaF) {
     assert(false, "TODO Fma");
