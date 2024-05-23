@@ -58,6 +58,7 @@ public class DebugPropertyValues extends SSLSocketTemplate {
 
     private static Stream<Arguments> patternMatches() {
         // "Plaintext before ENCRYPTION" comes from "ssl:record:plaintext" option
+        // "handshake, length =" comes from "ssl:record" option
         // "matching alias:" comes from ssl:keymanager option
         // "trigger seeding of SecureRandom" comes from ssl:sslctx option
         // "jdk.tls.keyLimits:" comes from the plain "ssl" option
@@ -82,12 +83,21 @@ public class DebugPropertyValues extends SSLSocketTemplate {
                                 "jdk.tls.keyLimits:",
                                 "trigger seeding of SecureRandom",
                                 "length =")),
-                // allow all ssl logs if ssl separated by comma
+                // "all ssl" mode only true if "ssl" is javax.net.debug value
+                // this test is equivalent to ssl:record mode
                 Arguments.of(List.of("-Djavax.net.debug=ssl,record"),
+                        List.of("handshake, length =",
+                                "WRITE:"),
                         List.of("trigger seeding of SecureRandom",
                                 "jdk.tls.keyLimits:",
-                                "WRITE:"),
-                        List.of("matching alias:",
+                                "matching alias:",
+                                "Plaintext before ENCRYPTION")),
+                // nothing should be printed, typo is invalid
+                Arguments.of(List.of("-Djavax.net.debug=ssl,typo"),
+                        null,
+                        List.of("trigger seeding of SecureRandom",
+                                "jdk.tls.keyLimits:",
+                                "matching alias:",
                                 "Plaintext before ENCRYPTION")),
                 Arguments.of(List.of("-Djavax.net.debug=ssl:record:plaintext"),
                         List.of("Plaintext before ENCRYPTION",

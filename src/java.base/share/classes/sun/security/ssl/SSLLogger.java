@@ -79,7 +79,9 @@ public final class SSLLogger {
             }
             isOn = true;
             // log almost everything for the "ssl" value.
-            sslOn = property.equals("ssl") || property.endsWith(",ssl") || property.contains("ssl,");
+            // anything else specified with "ssl" in the property value implies
+            // a subcomponent value is to be logged.
+            sslOn = property.equals("ssl");
         } else {
             property = null;
             logger = null;
