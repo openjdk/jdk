@@ -25,7 +25,7 @@
  * @test
  * @summary test String indexOf() intrinsic
  * @run main/othervm IndexOf
- * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:UseAVX=2 -XX:+UnlockDiagnosticVMOptions -XX:+EnableX86ECoreOpts IndexOf
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -Xcomp -XX:-TieredCompilation -XX:UseAVX=2 -XX:+UnlockDiagnosticVMOptions -XX:+EnableX86ECoreOpts IndexOf
  */
 
  public class IndexOf {
