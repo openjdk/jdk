@@ -61,7 +61,7 @@ ClassListParser::ClassListParser(const char* file, ParseMode parse_mode) :
     _file_input(do_open(file), /* need_close=*/true),
     _input_stream(&_file_input) {
   log_info(cds)("Parsing %s%s", file,
-                (parse_mode == _parse_lambda_forms_invokers_only) ? " (lambda form invokers only)" : "");
+                parse_lambda_forms_invokers_only() ? " (lambda form invokers only)" : "");
   if (!_file_input.is_open()) {
     char errmsg[JVM_MAXPATHLEN];
     os::lasterror(errmsg, JVM_MAXPATHLEN);
@@ -102,120 +102,108 @@ ClassListParser::~ClassListParser() {
   _instance = nullptr;
 }
 
-int ClassListParser::parse(TRAPS) {
-  int class_count = 0;
-
+void ClassListParser::parse(TRAPS) {
   for (; !_input_stream.done(); _input_stream.next()) {
     _line = _input_stream.current_line();
-    if (*_line == '#') { // comment
-      continue;
+    clean_up_input_line();
+
+    // Each line in the classlist can be one of three forms:
+    if (_line[0] == '#') {
+      // A comment; ignore it
+    } else if (_line[0] == '@') {
+      // @xxx - a tag like @lambda-proxy, to be parsed by parse_at_tags()
+      parse_at_tags(CHECK);
+    } else {
+      // A class name, followed by optional attributes. E.g.
+      //   java/lang/String
+      //   java/lang/Object id: 1
+      //   my/pkg/TestClass id: 5 super: 1 interfaces: 3 4 source: foo.jar
+      parse_class_name_and_attributes(CHECK);
     }
-    if (!parse_one_line()) {
-      break;
-    }
-
-    if (lambda_form_line()) {
-      // The current line is "@lambda-form-invoker ...". It has been recorded in LambdaFormInvokers,
-      // and will be processed later.
-      continue;
-    }
-
-    if (_parse_mode == _parse_lambda_forms_invokers_only) {
-      continue;
-    }
-
-    check_class_name(_class_name);
-    TempNewSymbol class_name_symbol = SymbolTable::new_symbol(_class_name);
-    if (_indy_items->length() > 0) {
-      // The current line is "@lambda-proxy class_name". Load the proxy class.
-      resolve_indy(THREAD, class_name_symbol);
-      class_count++;
-      continue;
-    }
-
-    Klass* klass = load_current_class(class_name_symbol, THREAD);
-    if (HAS_PENDING_EXCEPTION) {
-      if (PENDING_EXCEPTION->is_a(vmClasses::OutOfMemoryError_klass())) {
-        // If we have run out of memory, don't try to load the rest of the classes in
-        // the classlist. Throw an exception, which will terminate the dumping process.
-        return 0; // THROW
-      }
-
-      ResourceMark rm(THREAD);
-      char* ex_msg = (char*)"";
-      oop message = java_lang_Throwable::message(PENDING_EXCEPTION);
-      if (message != nullptr) {
-        ex_msg = java_lang_String::as_utf8_string(message);
-      }
-      log_warning(cds)("%s: %s", PENDING_EXCEPTION->klass()->external_name(), ex_msg);
-      // We might have an invalid class name or an bad class. Warn about it
-      // and keep going to the next line.
-      CLEAR_PENDING_EXCEPTION;
-      log_warning(cds)("Preload Warning: Cannot find %s", _class_name);
-      continue;
-    }
-
-    assert(klass != nullptr, "sanity");
-    if (log_is_enabled(Trace, cds)) {
-      ResourceMark rm(THREAD);
-      log_trace(cds)("Shared spaces preloaded: %s", klass->external_name());
-    }
-
-    if (klass->is_instance_klass()) {
-      InstanceKlass* ik = InstanceKlass::cast(klass);
-
-      // Link the class to cause the bytecodes to be rewritten and the
-      // cpcache to be created. The linking is done as soon as classes
-      // are loaded in order that the related data structures (klass and
-      // cpCache) are located together.
-      MetaspaceShared::try_link_class(THREAD, ik);
-    }
-
-    class_count++;
   }
-
-  return class_count;
 }
 
-bool ClassListParser::parse_one_line() {
-  {
-    int len = (int)strlen(_line);
-    int i;
-    // Replace \t\r\n\f with ' '
-    for (i=0; i<len; i++) {
-      if (_line[i] == '\t' || _line[i] == '\r' || _line[i] == '\n' || _line[i] == '\f') {
-        _line[i] = ' ';
-      }
-    }
+void ClassListParser::parse_class_name_and_attributes(TRAPS) {
+  read_class_name_and_attributes();
 
-    // Remove trailing newline/space
-    while (len > 0) {
-      if (_line[len-1] == ' ') {
-        _line[len-1] = '\0';
-        len --;
-      } else {
-        break;
-      }
-    }
-    _line_len = len;
+  if (parse_lambda_forms_invokers_only()) {
+    return;
   }
 
+  check_class_name(_class_name);
+  TempNewSymbol class_name_symbol = SymbolTable::new_symbol(_class_name);
+  Klass* klass = load_current_class(class_name_symbol, THREAD);
+  if (HAS_PENDING_EXCEPTION) {
+    if (PENDING_EXCEPTION->is_a(vmClasses::OutOfMemoryError_klass())) {
+      // If we have run out of memory, don't try to load the rest of the classes in
+      // the classlist. Throw an exception, which will terminate the dumping process.
+      return; // THROW
+    }
+
+    ResourceMark rm(THREAD);
+    char* ex_msg = (char*)"";
+    oop message = java_lang_Throwable::message(PENDING_EXCEPTION);
+    if (message != nullptr) {
+      ex_msg = java_lang_String::as_utf8_string(message);
+    }
+    log_warning(cds)("%s: %s", PENDING_EXCEPTION->klass()->external_name(), ex_msg);
+    // We might have an invalid class name or an bad class. Warn about it
+    // and keep going to the next line.
+    CLEAR_PENDING_EXCEPTION;
+    log_warning(cds)("Preload Warning: Cannot find %s", _class_name);
+    return;
+  }
+
+  assert(klass != nullptr, "sanity");
+  if (log_is_enabled(Trace, cds)) {
+    ResourceMark rm(THREAD);
+    log_trace(cds)("Shared spaces preloaded: %s", klass->external_name());
+  }
+
+  if (klass->is_instance_klass()) {
+    InstanceKlass* ik = InstanceKlass::cast(klass);
+
+    // Link the class to cause the bytecodes to be rewritten and the
+    // cpcache to be created. The linking is done as soon as classes
+    // are loaded in order that the related data structures (klass and
+    // cpCache) are located together.
+    MetaspaceShared::try_link_class(THREAD, ik);
+  }
+}
+
+void ClassListParser::clean_up_input_line() {
+  int len = (int)strlen(_line);
+  int i;
+  // Replace \t\r\n\f with ' '
+  for (i=0; i<len; i++) {
+    if (_line[i] == '\t' || _line[i] == '\r' || _line[i] == '\n' || _line[i] == '\f') {
+      _line[i] = ' ';
+    }
+  }
+
+  // Remove trailing newline/space
+  while (len > 0) {
+    if (_line[len-1] == ' ') {
+      _line[len-1] = '\0';
+      len --;
+    } else {
+      break;
+    }
+  }
+  _line_len = len;
+}
+
+void ClassListParser::read_class_name_and_attributes() {
   _class_name = _line;
   _id = _unspecified;
   _super = _unspecified;
   _interfaces->clear();
   _source = nullptr;
   _interfaces_specified = false;
-  _indy_items->clear();
-  _lambda_form_line = false;
-
-  if (_line[0] == '@') {
-    return parse_at_tags();
-  }
 
   if ((_token = strchr(_line, ' ')) == nullptr) {
-    // No optional arguments are specified.
-    return true;
+    // No optional attributes are specified.
+    return;
   }
 
   // Mark the end of the name, and go to the next input char
@@ -257,10 +245,9 @@ bool ClassListParser::parse_one_line() {
   //     # the class is loaded from classpath
   //     id may be specified
   //     super, interfaces, loader must not be specified
-  return true;
 }
 
-void ClassListParser::split_tokens_by_whitespace(int offset) {
+void ClassListParser::split_tokens_by_whitespace(int offset, GrowableArray<const char*>* items) {
   int start = offset;
   int end;
   bool done = false;
@@ -273,7 +260,7 @@ void ClassListParser::split_tokens_by_whitespace(int offset) {
     } else {
       _line[end] = '\0';
     }
-    _indy_items->append(_line + start);
+    items->append(_line + start);
     start = ++end;
   }
 }
@@ -290,29 +277,30 @@ int ClassListParser::split_at_tag_from_line() {
   return (int)(ptr - _line);
 }
 
-bool ClassListParser::parse_at_tags() {
+void ClassListParser::parse_at_tags(TRAPS) {
   assert(_line[0] == '@', "must be");
-  int offset;
-  if ((offset = split_at_tag_from_line()) == 0) {
-    return false;
-  }
+  int offset = split_at_tag_from_line();
+  assert(offset > 0, "would have exited VM");
 
   if (strcmp(_token, LAMBDA_PROXY_TAG) == 0) {
-    split_tokens_by_whitespace(offset);
+    _indy_items->clear();
+    split_tokens_by_whitespace(offset, _indy_items);
     if (_indy_items->length() < 2) {
       error("Line with @ tag has too few items \"%s\" line #%zu", _token, lineno());
-      return false;
     }
-    // set the class name
-    _class_name = _indy_items->at(0);
-    return true;
+    if (!parse_lambda_forms_invokers_only()) {
+      _class_name = _indy_items->at(0);
+      check_class_name(_class_name);
+      TempNewSymbol class_name_symbol = SymbolTable::new_symbol(_class_name);
+      if (_indy_items->length() > 0) {
+        // The current line is "@lambda-proxy class_name". Load the proxy class.
+        resolve_indy(THREAD, class_name_symbol);
+      }
+    }
   } else if (strcmp(_token, LAMBDA_FORM_TAG) == 0) {
     LambdaFormInvokers::append(os::strdup((const char*)(_line + offset), mtInternal));
-    _lambda_form_line = true;
-    return true;
   } else {
     error("Invalid @ tag at the beginning of line \"%s\" line #%zu", _token, lineno());
-    return false;
   }
 }
 
@@ -441,9 +429,9 @@ void ClassListParser::error(const char* msg, ...) {
     }
     jio_fprintf(defaultStream::error_stream(), "^\n");
   }
+  va_end(ap);
 
   vm_exit_during_initialization("class list format error.", nullptr);
-  va_end(ap);
 }
 
 void ClassListParser::check_class_name(const char* class_name) {

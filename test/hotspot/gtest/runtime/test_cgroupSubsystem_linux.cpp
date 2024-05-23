@@ -193,10 +193,11 @@ TEST(cgroupTest, read_string_beyond_max_path) {
   larger_than_max[MAXPATHLEN] = '\0';
   TestController* too_large_path_controller = new TestController(larger_than_max);
   const char* test_file_path = "/file-not-found";
-  char* foo = nullptr;
-  bool is_ok = too_large_path_controller->read_string(test_file_path, &foo);
+  char foo[1024];
+  foo[0] = '\0';
+  bool is_ok = too_large_path_controller->read_string(test_file_path, foo);
   EXPECT_FALSE(is_ok) << "Too long path should be an error";
-  EXPECT_TRUE(nullptr == foo) << "Expected untouched scan value";
+  EXPECT_STREQ("", foo) << "Expected untouched scan value";
 }
 
 TEST(cgroupTest, read_number_file_not_exist) {
@@ -257,6 +258,26 @@ TEST(cgroupTest, read_number_tests) {
   EXPECT_FALSE(ok) << "Empty file should have failed";
   EXPECT_EQ((julong)0xBAD, foo) << "foo was altered";
 
+  // Some interface files have numbers as well as the string
+  // 'max', which means unlimited.
+  jlong result = -10;
+  fill_file(test_file, "max\n");
+  ok = controller->read_number_handle_max(base_with_slash, &result);
+  EXPECT_TRUE(ok) << "Number parsing for 'max' string should have been successful";
+  EXPECT_EQ((jlong)-1, result) << "'max' means unlimited (-1)";
+
+  result = -10;
+  fill_file(test_file, "11114\n");
+  ok = controller->read_number_handle_max(base_with_slash, &result);
+  EXPECT_TRUE(ok) << "Number parsing for should have been successful";
+  EXPECT_EQ((jlong)11114, result) << "Incorrect result";
+
+  result = -10;
+  fill_file(test_file, "-51114\n");
+  ok = controller->read_number_handle_max(base_with_slash, &result);
+  EXPECT_TRUE(ok) << "Number parsing for should have been successful";
+  EXPECT_EQ((jlong)-51114, result) << "Incorrect result";
+
   delete_file(test_file);
 }
 
@@ -271,36 +292,53 @@ TEST(cgroupTest, read_string_tests) {
   fill_file(test_file, "foo-bar");
 
   TestController* controller = new TestController((char*)os::get_temp_directory());
-  char* result = nullptr;
-  bool ok = controller->read_string(base_with_slash, &result);
+  char result[1024];
+  bool ok = controller->read_string(base_with_slash, result);
   EXPECT_TRUE(ok) << "String parsing should have been successful";
-  EXPECT_TRUE(result != nullptr) << "Expected non-null result";
   EXPECT_STREQ("foo-bar", result) << "Expected strings to be equal";
-  os::free(result);
 
-  result = nullptr;
+  result[0] = '\0';
   fill_file(test_file, "1234");
-  ok = controller->read_string(base_with_slash, &result);
+  ok = controller->read_string(base_with_slash, result);
   EXPECT_TRUE(ok) << "String parsing should have been successful";
-  EXPECT_TRUE(result != nullptr) << "Expected non-null result";
   EXPECT_STREQ("1234", result) << "Expected strings to be equal";
-  os::free(result);
 
-  // values with a space only read in the first token
-  result = nullptr;
+  // values with a space
+  result[0] = '\0';
   fill_file(test_file, "abc def");
-  ok = controller->read_string(base_with_slash, &result);
+  ok = controller->read_string(base_with_slash, result);
   EXPECT_TRUE(ok) << "String parsing should have been successful";
-  EXPECT_TRUE(result != nullptr) << "Expected non-null result";
-  EXPECT_STREQ("abc", result) << "Expected strings to be equal";
-  os::free(result);
+  EXPECT_STREQ("abc def", result) << "Expected strings to be equal";
 
-  result = nullptr;
+  // only the first line are being returned
+  result[0] = '\0';
+  fill_file(test_file, "test\nabc");
+  ok = controller->read_string(base_with_slash, result);
+  EXPECT_TRUE(ok) << "String parsing should have been successful";
+  EXPECT_STREQ("test", result) << "Expected strings to be equal";
+
+  result[0] = '\0';
   fill_file(test_file, nullptr);
-  ok = controller->read_string(base_with_slash, &result);
+  ok = controller->read_string(base_with_slash, result);
   EXPECT_FALSE(ok) << "Empty file should have failed";
-  EXPECT_TRUE(result == nullptr) << "Expected untouched result";
+  EXPECT_STREQ("", result) << "Expected untouched result";
   delete_file(test_file);
+
+  // File contents larger than 1K
+  // We only read in the first 1K - 1 bytes
+  char too_large[2 * 1024];
+  for (int i = 0; i < (2 * 1024); i++) {
+    too_large[i] = 'A' + (i % 26);
+  }
+  result[0] = '\0';
+  fill_file(test_file, too_large);
+  ok = controller->read_string(base_with_slash, result);
+  EXPECT_TRUE(ok) << "String parsing should have been successful";
+  EXPECT_TRUE(1023 == strlen(result)) << "Expected only the first 1023 chars to be read in";
+  for (int i = 0; i < 1023; i++) {
+    EXPECT_EQ(too_large[i], result[i]) << "Expected item at idx " << i << " to match";
+  }
+  EXPECT_EQ(result[1023], '\0') << "The last character must be the null character";
 }
 
 TEST(cgroupTest, read_number_tuple_test) {
@@ -315,25 +353,25 @@ TEST(cgroupTest, read_number_tuple_test) {
 
   TestController* controller = new TestController((char*)os::get_temp_directory());
   jlong result = -10;
-  bool ok = controller->read_numerical_tuple_value(base_with_slash, FIRST, &result);
+  bool ok = controller->read_numerical_tuple_value(base_with_slash, TupleValue::FIRST, &result);
   EXPECT_TRUE(ok) << "Should be OK to read value";
   EXPECT_EQ((jlong)-1, result) << "max should be unlimited (-1)";
 
   result = -10;
-  ok = controller->read_numerical_tuple_value(base_with_slash, SECOND, &result);
+  ok = controller->read_numerical_tuple_value(base_with_slash, TupleValue::SECOND, &result);
   EXPECT_TRUE(ok) << "Should be OK to read the value";
   EXPECT_EQ((jlong)10000, result) << "result value incorrect";
 
   // non-max strings
   fill_file(test_file, "abc 10000");
   result = -10;
-  ok = controller->read_numerical_tuple_value(base_with_slash, FIRST, &result);
+  ok = controller->read_numerical_tuple_value(base_with_slash, TupleValue::FIRST, &result);
   EXPECT_FALSE(ok) << "abc should not be parsable";
   EXPECT_EQ((jlong)-10, result) << "result value should be unchanged";
 
   fill_file(test_file, nullptr);
   result = -10;
-  ok = controller->read_numerical_tuple_value(base_with_slash, FIRST, &result);
+  ok = controller->read_numerical_tuple_value(base_with_slash, TupleValue::FIRST, &result);
   EXPECT_FALSE(ok) << "Empty file should be an error";
   EXPECT_EQ((jlong)-10, result) << "result value should be unchanged";
 }

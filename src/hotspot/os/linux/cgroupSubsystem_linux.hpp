@@ -80,10 +80,21 @@
   log_trace(os, container)(log_string " is: " JULONG_FORMAT, retval);                 \
 }
 
+#define CONTAINER_READ_NUMBER_CHECKED_MAX(controller, filename, log_string, retval)   \
+{                                                                                     \
+  bool is_ok;                                                                         \
+  is_ok = controller->read_number_handle_max(filename, &retval);                      \
+  if (!is_ok) {                                                                       \
+    log_trace(os, container)(log_string " failed: %d", OSCONTAINER_ERROR);            \
+    return OSCONTAINER_ERROR;                                                         \
+  }                                                                                   \
+  log_trace(os, container)(log_string " is: " JLONG_FORMAT, retval);                  \
+}
+
 #define CONTAINER_READ_STRING_CHECKED(controller, filename, log_string, retval)       \
 {                                                                                     \
   bool is_ok;                                                                         \
-  is_ok = controller->read_string(filename, &retval);                                 \
+  is_ok = controller->read_string(filename, retval);                                  \
   if (!is_ok) {                                                                       \
     log_trace(os, container)(log_string " failed: %d", OSCONTAINER_ERROR);            \
     return nullptr;                                                                   \
@@ -91,26 +102,65 @@
   log_trace(os, container)(log_string " is: %s", retval);                             \
 }
 
-
-enum TupleValue { FIRST, SECOND };
+/*
+ * Used to model the tuple-valued cgroup interface files like cpu.max, which
+ * contains two values: <quota> <period>. In this case the first tuple value
+ * is <quota> and the second tuple value is <period>. We use this to map the
+ * tuple value to a constant string format for sscanf reading.
+ */
+enum class TupleValue { FIRST, SECOND };
 
 class CgroupController: public CHeapObj<mtInternal> {
   public:
     virtual char *subsystem_path() = 0;
+
+    /* Read a numerical value as unsigned long
+     *
+     * returns: false if any error occurred. true otherwise and
+     * the parsed value is set in the provided julong pointer.
+     */
     bool read_number(const char* filename, julong* result);
-    bool read_string(const char* filename, char** result);
+
+    /* Convenience method to deal with numbers as well as the string 'max'
+     * in interface files. Otherwise same as read_number().
+     *
+     * returns: false if any error occurred. true otherwise and
+     * the parsed value (which might be negative) is being set in
+     * the provided jlong pointer.
+     */
+    bool read_number_handle_max(const char* filename, jlong* result);
+
+    /* Read a string of at most 1K - 1 characters from the interface file.
+     * The provided buffer must be at least 1K (1024) in size so as to account
+     * for the null terminating character. Callers must ensure that the buffer
+     * is appropriately in-scope and of sufficient size.
+     *
+     * returns: false if any error occured. true otherwise and the passed
+     * in buffer will contain the first 1023 characters of the string or
+     * up to the first new line character ('\n') whichever comes first.
+     */
+    bool read_string(const char* filename, char* buf);
+
+    /* Read a tuple value as a number. Tuple is: '<first> <second>'.
+     * Handles 'max' (for unlimited) for any tuple value. This is handy for
+     * parsing interface files like cpu.max which contain such tuples.
+     *
+     * returns: false if any error occurred. true otherwise and the parsed
+     * value of the appropriate tuple entry set in the provided jlong pointer.
+     */
     bool read_numerical_tuple_value(const char* filename, TupleValue val, jlong* result);
+
+    /* Read a numerical value from a multi-line interface file. The matched line is
+     * determined by the provided 'key'. The associated numerical value is being set
+     * via the passed in julong pointer. Example interface file 'memory.stat'
+     *
+     * returns: false if any error occurred. true otherwise and the parsed value is
+     * being set in the provided julong pointer.
+     */
     bool read_numerical_key_value(const char* filename, const char* key, julong* result);
+
   private:
-    inline static const char* tuple_format(TupleValue val) {
-      switch(val) {
-        case FIRST:  return "%1023s %*s";
-        case SECOND: return "%*s %1023s";
-      }
-      return nullptr;
-    }
-    template <typename T>
-       bool read_from_file(const char* filename, const char* scan_fmt, T result);
+    static jlong limit_from_str(char* limit_str);
 };
 
 class CachedMetric : public CHeapObj<mtInternal>{

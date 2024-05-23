@@ -316,16 +316,16 @@ void CgroupV1Subsystem::print_version_specific_info(outputStream* st) {
   OSContainer::print_container_helper(st, kmem_max_usage, "kernel_memory_limit_in_bytes");
 }
 
-char * CgroupV1Subsystem::cpu_cpuset_cpus() {
-  char* cpus = nullptr;
+char* CgroupV1Subsystem::cpu_cpuset_cpus() {
+  char cpus[1024];
   CONTAINER_READ_STRING_CHECKED(_cpuset, "/cpuset.cpus", "cpuset.cpus", cpus);
-  return cpus;
+  return os::strdup(cpus);
 }
 
-char * CgroupV1Subsystem::cpu_cpuset_memory_nodes() {
-  char* mems = nullptr;
+char* CgroupV1Subsystem::cpu_cpuset_memory_nodes() {
+  char mems[1024];
   CONTAINER_READ_STRING_CHECKED(_cpuset, "/cpuset.mems", "cpuset.mems", mems);
-  return mems;
+  return os::strdup(mems);
 }
 
 /* cpu_quota
@@ -378,13 +378,6 @@ int CgroupV1CpuController::cpu_shares() {
   return shares_int;
 }
 
-
-char* CgroupV1Subsystem::pids_max_val() {
-  char* pidsmax = nullptr;
-  CONTAINER_READ_STRING_CHECKED(_pids, "/pids.max", "Maximum number of tasks", pidsmax);
-  return pidsmax;
-}
-
 /* pids_max
  *
  * Return the maximum number of tasks available to the process
@@ -396,8 +389,9 @@ char* CgroupV1Subsystem::pids_max_val() {
  */
 jlong CgroupV1Subsystem::pids_max() {
   if (_pids == nullptr) return OSCONTAINER_ERROR;
-  char * pidsmax_str = pids_max_val();
-  return CgroupUtil::limit_from_str(pidsmax_str);
+  jlong pids_max;
+  CONTAINER_READ_NUMBER_CHECKED_MAX(_pids, "/pids.max", "Maximum number of tasks", pids_max);
+  return pids_max;
 }
 
 /* pids_current

@@ -86,7 +86,7 @@ int CgroupV2CpuController::cpu_shares() {
  */
 int CgroupV2CpuController::cpu_quota() {
   jlong quota_val;
-  bool is_ok = static_cast<CgroupV2Controller*>(this)->read_numerical_tuple_value("/cpu.max", FIRST, &quota_val);
+  bool is_ok = static_cast<CgroupV2Controller*>(this)->read_numerical_tuple_value("/cpu.max", TupleValue::FIRST, &quota_val);
   if (!is_ok) {
     return OSCONTAINER_ERROR;
   }
@@ -95,21 +95,21 @@ int CgroupV2CpuController::cpu_quota() {
   return limit;
 }
 
-char * CgroupV2Subsystem::cpu_cpuset_cpus() {
-  char* cpus = nullptr;
+char* CgroupV2Subsystem::cpu_cpuset_cpus() {
+  char cpus[1024];
   CONTAINER_READ_STRING_CHECKED(static_cast<CgroupV2Controller*>(_unified), "/cpuset.cpus", "cpuset.cpus", cpus);
-  return cpus;
+  return os::strdup(cpus);
 }
 
-char * CgroupV2Subsystem::cpu_cpuset_memory_nodes() {
-  char* mems;
+char* CgroupV2Subsystem::cpu_cpuset_memory_nodes() {
+  char mems[1024];
   CONTAINER_READ_STRING_CHECKED(static_cast<CgroupV2Controller*>(_unified), "/cpuset.mems", "cpuset.mems", mems);
-  return mems;
+  return os::strdup(mems);
 }
 
 int CgroupV2CpuController::cpu_period() {
   jlong period_val;
-  bool is_ok = static_cast<CgroupV2Controller*>(this)->read_numerical_tuple_value("/cpu.max", SECOND, &period_val);
+  bool is_ok = static_cast<CgroupV2Controller*>(this)->read_numerical_tuple_value("/cpu.max", TupleValue::SECOND, &period_val);
   if (!is_ok) {
     log_trace(os, container)("CPU Period failed: %d", OSCONTAINER_ERROR);
     return OSCONTAINER_ERROR;
@@ -134,16 +134,10 @@ jlong CgroupV2MemoryController::memory_usage_in_bytes() {
   return (jlong)memusage;
 }
 
-static
-char* mem_soft_limit_val(CgroupController* ctrl) {
-  char* mem_soft_limit_str = nullptr;
-  CONTAINER_READ_STRING_CHECKED(ctrl, "/memory.low", "Memory Soft Limit", mem_soft_limit_str);
-  return mem_soft_limit_str;
-}
-
 jlong CgroupV2MemoryController::memory_soft_limit_in_bytes(julong phys_mem) {
-  char* mem_soft_limit_str = mem_soft_limit_val(static_cast<CgroupV2Controller*>(this));
-  return CgroupUtil::limit_from_str(mem_soft_limit_str);
+  jlong mem_soft_limit;
+  CONTAINER_READ_NUMBER_CHECKED_MAX(static_cast<CgroupV2Controller*>(this), "/memory.low", "Memory Soft Limit", mem_soft_limit);
+  return mem_soft_limit;
 }
 
 jlong CgroupV2MemoryController::memory_max_usage_in_bytes() {
@@ -172,27 +166,21 @@ jlong CgroupV2MemoryController::cache_usage_in_bytes() {
   return (jlong)cache;
 }
 
-static
-char* mem_swp_limit_val(CgroupController* ctrl) {
-  char* mem_swp_limit_str;
-  CONTAINER_READ_STRING_CHECKED(ctrl, "/memory.swap.max", "Swap Limit", mem_swp_limit_str);
-  return mem_swp_limit_str;
-}
-
 // Note that for cgroups v2 the actual limits set for swap and
 // memory live in two different files, memory.swap.max and memory.max
 // respectively. In order to properly report a cgroup v1 like
 // compound value we need to sum the two values. Setting a swap limit
 // without also setting a memory limit is not allowed.
 jlong CgroupV2MemoryController::memory_and_swap_limit_in_bytes(julong phys_mem, julong host_swap) {
-  char* mem_swp_limit_str = mem_swp_limit_val(static_cast<CgroupV2Controller*>(this));
-  if (mem_swp_limit_str == nullptr) {
+  jlong swap_limit;
+  bool is_ok = static_cast<CgroupV2Controller*>(this)->read_number_handle_max("/memory.swap.max", &swap_limit);
+  if (!is_ok) {
     // Some container tests rely on this trace logging to happen.
-    log_trace(os, container)("Memory and Swap Limit is: %d", OSCONTAINER_ERROR);
+    log_trace(os, container)("Swap Limit failed: %d", OSCONTAINER_ERROR);
     // swap disabled at kernel level, treat it as no swap
     return read_memory_limit_in_bytes(phys_mem);
   }
-  jlong swap_limit = CgroupUtil::limit_from_str(mem_swp_limit_str);
+  log_trace(os, container)("Swap Limit is: " JLONG_FORMAT, swap_limit);
   if (swap_limit >= 0) {
     jlong memory_limit = read_memory_limit_in_bytes(phys_mem);
     assert(memory_limit >= 0, "swap limit without memory limit?");
@@ -204,28 +192,26 @@ jlong CgroupV2MemoryController::memory_and_swap_limit_in_bytes(julong phys_mem, 
 
 // memory.swap.current : total amount of swap currently used by the cgroup and its descendants
 static
-char* mem_swp_current_val(CgroupV2Controller* ctrl) {
-  char* mem_swp_current_str;
-  CONTAINER_READ_STRING_CHECKED(ctrl, "/memory.swap.current", "Swap currently used", mem_swp_current_str);
-  return mem_swp_current_str;
+jlong mem_swp_current_val(CgroupV2Controller* ctrl) {
+  julong swap_current;
+  CONTAINER_READ_NUMBER_CHECKED(ctrl, "/memory.swap.current", "Swap currently used", swap_current);
+  return (jlong)swap_current;
 }
-
 
 jlong CgroupV2MemoryController::memory_and_swap_usage_in_bytes(julong host_mem, julong host_swap) {
   jlong memory_usage = memory_usage_in_bytes();
   if (memory_usage >= 0) {
-      char* mem_swp_current_str = mem_swp_current_val(static_cast<CgroupV2Controller*>(this));
-      jlong swap_current = CgroupUtil::limit_from_str(mem_swp_current_str);
+      jlong swap_current = mem_swp_current_val(static_cast<CgroupV2Controller*>(this));
       return memory_usage + (swap_current >= 0 ? swap_current : 0);
   }
   return memory_usage; // not supported or unlimited case
 }
 
 static
-char* mem_limit_val(CgroupV2Controller* ctrl) {
-  char* mem_limit_str;
-  CONTAINER_READ_STRING_CHECKED(ctrl, "/memory.max", "Raw value for memory limit", mem_limit_str);
-  return mem_limit_str;
+jlong mem_limit_val(CgroupV2Controller* ctrl) {
+  jlong memory_limit;
+  CONTAINER_READ_NUMBER_CHECKED_MAX(ctrl, "/memory.max", "Memory Limit", memory_limit);
+  return memory_limit;
 }
 
 /* read_memory_limit_in_bytes
@@ -237,8 +223,7 @@ char* mem_limit_val(CgroupV2Controller* ctrl) {
  *    -1 for unlimited, OSCONTAINER_ERROR for an error
  */
 jlong CgroupV2MemoryController::read_memory_limit_in_bytes(julong phys_mem) {
-  char * mem_limit_str = mem_limit_val(static_cast<CgroupV2Controller*>(this));
-  jlong limit = CgroupUtil::limit_from_str(mem_limit_str);
+  jlong limit = mem_limit_val(static_cast<CgroupV2Controller*>(this));
   if (log_is_enabled(Trace, os, container)) {
     if (limit == -1) {
       log_trace(os, container)("Memory Limit is: Unlimited");
@@ -265,13 +250,16 @@ jlong CgroupV2MemoryController::read_memory_limit_in_bytes(julong phys_mem) {
   return limit;
 }
 
+static
+jlong mem_swp_limit_val(CgroupV2Controller* ctrl) {
+  jlong swap_limit;
+  CONTAINER_READ_NUMBER_CHECKED_MAX(ctrl, "/memory.swap.max", "Swap Limit", swap_limit);
+  return swap_limit;
+}
 
 void CgroupV2Subsystem::print_version_specific_info(outputStream* st) {
-  char* mem_swp_current_str = mem_swp_current_val(static_cast<CgroupV2Controller*>(_unified));
-  jlong swap_current = CgroupUtil::limit_from_str(mem_swp_current_str);
-
-  char* mem_swp_limit_str = mem_swp_limit_val(static_cast<CgroupV2Controller*>(_unified));
-  jlong swap_limit = CgroupUtil::limit_from_str(mem_swp_limit_str);
+  jlong swap_current = mem_swp_current_val(static_cast<CgroupV2Controller*>(_unified));
+  jlong swap_limit = mem_swp_limit_val(static_cast<CgroupV2Controller*>(_unified));
 
   OSContainer::print_container_helper(st, swap_current, "memory_swap_current_in_bytes");
   OSContainer::print_container_helper(st, swap_limit, "memory_swap_max_limit_in_bytes");
@@ -286,13 +274,6 @@ char* CgroupV2Controller::construct_path(char* mount_path, char *cgroup_path) {
   return os::strdup(ss.base());
 }
 
-static
-char* pids_max_val(CgroupController* ctrl) {
-  char* pidsmax;
-  CONTAINER_READ_STRING_CHECKED(ctrl, "/pids.max", "Maximum number of tasks", pidsmax);
-  return pidsmax;
-}
-
 /* pids_max
  *
  * Return the maximum number of tasks available to the process
@@ -303,8 +284,9 @@ char* pids_max_val(CgroupController* ctrl) {
  *    OSCONTAINER_ERROR for not supported
  */
 jlong CgroupV2Subsystem::pids_max() {
-  char * pidsmax_str = pids_max_val(static_cast<CgroupV2Controller*>(_unified));
-  return CgroupUtil::limit_from_str(pidsmax_str);
+  jlong pids_max;
+  CONTAINER_READ_NUMBER_CHECKED_MAX(_unified, "/pids.max", "Maximum number of tasks", pids_max);
+  return pids_max;
 }
 
 /* pids_current
