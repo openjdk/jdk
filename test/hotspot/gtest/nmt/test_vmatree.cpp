@@ -98,47 +98,45 @@ public:
       found_nodes++;
     });
     EXPECT_EQ(2, found_nodes) << "Adjacent reservations should result in exactly 2 nodes";
-  };
-};
-
-// Low-level tests inspecting the state of the tree.
-TEST_VM_F(VMATreeTest, LowLevel) {
-  NativeCallStackStorage ncs(true);
-  NativeCallStackStorage::StackIndex si1 = ncs.push(stack1);
-  NativeCallStackStorage::StackIndex si2 = ncs.push(stack2);
-
-  { // Overlapping reservations should also only result in 2 nodes.
-    VMATree::RegionData rd{si1, mtTest};
-    Tree tree2;
-    for (int i = 99; i >= 0; i--) {
-      tree2.reserve_mapping(i * 100, 101, rd);
-    }
-    int found_nodes = 0;
-    treap(tree2).visit_range_in_order(0, 999999, [&](Node* x) {
-      found_nodes++;
-    });
-    EXPECT_EQ(2, found_nodes) << "Adjacent reservations should result in exactly 2 nodes";
   }
 
   // After removing all ranges we should be left with an entirely empty tree
-  auto remove_all_leaves_empty_tree = [&](const VMATree::RegionData& rd) {
+  void remove_all_leaves_empty_tree(const VMATree::RegionData& rd) {
     Tree tree;
-    tree.reserve_mapping(0, 100*100, rd);
+    tree.reserve_mapping(0, 100 * 100, rd);
     for (int i = 0; i < 100; i++) {
-      tree.release_mapping(i*100, 100);
+      tree.release_mapping(i * 100, 100);
     }
     EXPECT_EQ(nullptr, treap_root(tree)) << "Releasing all memory should result in an empty tree";
 
     // Other way around
-    tree.reserve_mapping(0, 100*100, rd);
+    tree.reserve_mapping(0, 100 * 100, rd);
     for (int i = 99; i >= 0; i--) {
-      tree.release_mapping(i*100, 100);
+      tree.release_mapping(i * 100, 100);
     }
     EXPECT_EQ(nullptr, treap_root(tree)) << "Releasing all memory should result in an empty tree";
-  };
+  }
+
+  // Committing in a whole reserved range results in 2 nodes
+  void commit_whole(const VMATree::RegionData& rd) {
+    Tree tree;
+    tree.reserve_mapping(0, 100 * 100, rd);
+    for (int i = 0; i < 100; i++) {
+      tree.commit_mapping(i * 100, 100, rd);
+    }
+    int found_nodes = 0;
+    treap(tree).visit_range_in_order(0, 999999, [&](Node* x) {
+      found_nodes++;
+      VMATree::StateType in = in_type_of(x);
+      VMATree::StateType out = out_type_of(x);
+      EXPECT_TRUE((in == VMATree::StateType::Released && out == VMATree::StateType::Committed) ||
+                  (in == VMATree::StateType::Committed && out == VMATree::StateType::Released));
+    });
+    EXPECT_EQ(2, found_nodes);
+  }
 
   // Committing in middle of reservation ends with a sequence of 4 nodes
-  auto commit_middle = [&](const VMATree::RegionData& rd) {
+  void commit_middle(const VMATree::RegionData& rd) {
     Tree tree;
     tree.reserve_mapping(0, 100, rd);
     tree.commit_mapping(50, 25, rd);
@@ -166,25 +164,26 @@ TEST_VM_F(VMATreeTest, LowLevel) {
     EXPECT_TRUE(exists(found[2]));
     EXPECT_TRUE(exists(found[3]));
   };
+};
 
-  // Committing in a whole reserved range results in 2 nodes
-  auto commit_whole = [&](const VMATree::RegionData& rd) {
-    Tree tree;
-    tree.reserve_mapping(0, 100*100, rd);
-    for (int i = 0; i < 100; i++) {
-      tree.commit_mapping(i*100, 100, rd);
+// Low-level tests inspecting the state of the tree.
+TEST_VM_F(VMATreeTest, LowLevel) {
+  NativeCallStackStorage ncs(true);
+  NativeCallStackStorage::StackIndex si1 = ncs.push(stack1);
+  NativeCallStackStorage::StackIndex si2 = ncs.push(stack2);
+
+  { // Overlapping reservations should also only result in 2 nodes.
+    VMATree::RegionData rd{si1, mtTest};
+    Tree tree2;
+    for (int i = 99; i >= 0; i--) {
+      tree2.reserve_mapping(i * 100, 101, rd);
     }
     int found_nodes = 0;
-    treap(tree).visit_range_in_order(0, 999999, [&](Node* x) {
+    treap(tree2).visit_range_in_order(0, 999999, [&](Node* x) {
       found_nodes++;
-      VMATree::StateType in = in_type_of(x);
-      VMATree::StateType out = out_type_of(x);
-      EXPECT_TRUE((in == VMATree::StateType::Released && out == VMATree::StateType::Committed) ||
-                  (in == VMATree::StateType::Committed && out == VMATree::StateType::Released));
     });
-    EXPECT_EQ(2, found_nodes);
-  };
-
+    EXPECT_EQ(2, found_nodes) << "Adjacent reservations should result in exactly 2 nodes";
+  }
 
   adjacent_2_nodes(VMATree::empty_regiondata);
   remove_all_leaves_empty_tree(VMATree::empty_regiondata);
