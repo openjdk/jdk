@@ -1007,10 +1007,8 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(tmp, object);
-    z_l(tmp, Address(tmp, Klass::access_flags_offset()));
-    assert((JVM_ACC_IS_VALUE_BASED_CLASS & 0xFFFF) == 0, "or change following instruction");
-    z_nilh(tmp, JVM_ACC_IS_VALUE_BASED_CLASS >> 16);
-    z_brne(slow_case);
+    testbit(Address(tmp, Klass::access_flags_offset()), exact_log2(JVM_ACC_IS_VALUE_BASED_CLASS));
+    z_btrue(slow_case);
   }
 
   if (LockingMode == LM_LIGHTWEIGHT) {

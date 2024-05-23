@@ -5708,9 +5708,6 @@ SkipIfEqual::~SkipIfEqual() {
 }
 
 // Implements lightweight-locking.
-// Branches to slow upon failure to lock the object.
-// Falls through upon success.
-//
 //  - obj: the object to be locked, contents preserved.
 //  - temp1, temp2: temporary registers, contents destroyed.
 //  Note: make sure Z_R1 is not manipulated here when C2 compiler is in play
@@ -5745,16 +5742,15 @@ void MacroAssembler::lightweight_lock(Register obj, Register temp1, Register tem
   z_tmll(mark, markWord::monitor_value);
   branch_optimized(bcondNotAllZero, slow);
 
-  // Try to lock. Transition lock-bits 0b01 => 0b00
-  z_oill(mark, markWord::unlocked_value);
-
-  z_lgr(top, mark);
-
-  // Clear lock-bits from hdr (locked state)
-  z_xilf(top, markWord::unlocked_value);
-
-  z_csg(mark, top, oopDesc::mark_offset_in_bytes(), obj);
-  branch_optimized(Assembler::bcondNotEqual, slow);
+  { // Try to lock. Transition lock bits 0b01 => 0b00
+    const Register locked_obj = top;
+    z_oill(mark, markWord::unlocked_value);
+    z_lgr(locked_obj, mark);
+    // Clear lock-bits from locked_obj (locked state)
+    z_xilf(locked_obj, markWord::unlocked_value);
+    z_csg(mark, locked_obj, oopDesc::mark_offset_in_bytes(), obj);
+    branch_optimized(Assembler::bcondNotEqual, slow);
+  }
 
   bind(push);
 
@@ -5762,15 +5758,9 @@ void MacroAssembler::lightweight_lock(Register obj, Register temp1, Register tem
   z_lgf(top, Address(Z_thread, JavaThread::lock_stack_top_offset()));
   z_stg(obj, Address(Z_thread, top));
   z_alsi(in_bytes(JavaThread::lock_stack_top_offset()), Z_thread, oopSize);
-
-  // as locking was successful, set CC to EQ
-  z_cr(top, top); // z_ahi instruction above can change the cc, so we need this
 }
 
 // Implements lightweight-unlocking.
-// Branches to slow upon failure.
-// Falls through upon success.
-//
 // - obj: the object to be unlocked
 // - temp1, temp2: temporary registers, will be destroyed
 // - Z_R1_scratch: will be killed in case of Interpreter & C1 Compiler
@@ -5780,8 +5770,8 @@ void MacroAssembler::lightweight_unlock(Register obj, Register temp1, Register t
   assert_different_registers(obj, temp1, temp2);
 
   Label unlocked, push_and_slow;
-  const Register mark     = temp1;
-  const Register top      = temp2;
+  const Register mark = temp1;
+  const Register top  = temp2;
 
 #ifdef ASSERT
   {
@@ -5834,8 +5824,7 @@ void MacroAssembler::lightweight_unlock(Register obj, Register temp1, Register t
   bind(not_unlocked);
 #endif // ASSERT
 
-  // Try to unlock. Transition lock bits 0b00 => 0b01
-  {
+  { // Try to unlock. Transition lock bits 0b00 => 0b01
     Register unlocked_obj = top;
     z_lgr(unlocked_obj, mark);
     z_oill(unlocked_obj, markWord::unlocked_value);
@@ -5853,7 +5842,7 @@ void MacroAssembler::lightweight_unlock(Register obj, Register temp1, Register t
   z_ltgr(obj, obj); // object shouldn't be null at this point
   branch_optimized(bcondAlways, slow);
 
-  bind(unlocked); // CC is already set to EQ, if we jumped here
+  bind(unlocked);
 }
 
 void MacroAssembler::compiler_fast_lock_lightweight_object(Register obj, Register tmp1, Register tmp2) {
@@ -5903,7 +5892,7 @@ void MacroAssembler::compiler_fast_lock_lightweight_object(Register obj, Registe
 
     // not inflated
 
-    // Try to lock. Transition lock bits 0b00 => 0b01
+    // Try to lock. Transition lock bits 0b01 => 0b00
     assert(oopDesc::mark_offset_in_bytes() == 0, "required to avoid a lea");
     const Register locked_obj = top;
     z_oill(mark, markWord::unlocked_value);
@@ -5983,10 +5972,8 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(Register obj, Regis
   // Finish fast unlock unsuccessfully. MUST branch to with flag == NE.
   NearLabel slow_path;
 
-  const Register mark     = tmp1;
-  const Register top      = tmp2;
-  const Register temp_top = tmp1;
-
+  const Register mark = tmp1;
+  const Register top  = tmp2;
 
   BLOCK_COMMENT("compiler_fast_lightweight_unlock {");
   { // Lightweight Unlock
@@ -6000,6 +5987,7 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(Register obj, Regis
 
     // Pop lock-stack.
 #ifdef ASSERT
+    const Register temp_top = tmp1; // let's not kill top here, we can use for recursive check
     z_agrk(temp_top, top, Z_thread);
     z_xc(0, oopSize-1, temp_top, 0, temp_top);  // wipe out lock-stack entry
 #endif
@@ -6009,11 +5997,8 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(Register obj, Regis
     // when the lock stack is empty because of the _bad_oop_sentinel field.
 
     // Check if recursive.
-    z_aghik(temp_top, top, -oopSize);
-    // we will encounter a loop while handling the inflated monitor case
-    // so, we need to make sure, when we reach there only top one object is removed.
-    // if we load top there then it could result into infinite loop, So preserving top is a Must here;
-    z_cg(obj, Address(Z_thread, temp_top));
+    z_aghi(top, -oopSize);
+    z_cg(obj, Address(Z_thread, top));
     z_bre(unlocked);
 
     // Not recursive
@@ -6032,8 +6017,7 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(Register obj, Regis
     bind(not_unlocked);
 #endif // ASSERT
 
-    // Try to unlock. Transition lock bits 0b00 => 0b01
-    {
+    { // Try to unlock. Transition lock bits 0b00 => 0b01
       Register unlocked_obj = top;
       z_lgr(unlocked_obj, mark);
       z_oill(unlocked_obj, markWord::unlocked_value);
@@ -6066,12 +6050,14 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(Register obj, Regis
     bind(inflated);
 
 #ifdef ASSERT
-    NearLabel check_done;
+    NearLabel check_done, loop;
+    z_lgf(top, Address(Z_thread, JavaThread::lock_stack_top_offset()));
+    bind(loop);
     z_aghi(top, -oopSize);
     compareU32_and_branch(top, in_bytes(JavaThread::lock_stack_base_offset()),
                           bcondLow, check_done);
     z_cg(obj, Address(Z_thread, top));
-    z_brne(inflated);
+    z_brne(loop);
     stop("Fast Unlock lock on stack");
     bind(check_done);
 #endif // ASSERT
