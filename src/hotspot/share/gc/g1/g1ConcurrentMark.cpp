@@ -1247,6 +1247,7 @@ class G1UpdateRegionLivenessAndSelectForRebuildTask : public WorkerTask {
         hr->set_containing_set(nullptr);
         hr->clear_cardtable();
         _g1h->concurrent_mark()->clear_statistics(hr);
+        G1HeapRegionPrinter::mark_reclaim(hr);
         _g1h->free_humongous_region(hr, _local_cleanup_list);
       };
 
@@ -1263,6 +1264,7 @@ class G1UpdateRegionLivenessAndSelectForRebuildTask : public WorkerTask {
       hr->set_containing_set(nullptr);
       hr->clear_cardtable();
       _g1h->concurrent_mark()->clear_statistics(hr);
+      G1HeapRegionPrinter::mark_reclaim(hr);
       _g1h->free_region(hr, _local_cleanup_list);
     }
 
@@ -1332,9 +1334,6 @@ public:
     // Update the old/humongous region sets
     _g1h->remove_from_old_gen_sets(on_region_cl._num_old_regions_removed,
                                    on_region_cl._num_humongous_regions_removed);
-
-    // Print the reclaimed regions list.
-    _g1h->hr_printer()->mark_reclaim(&local_cleanup_list);
 
     {
       MutexLocker x(G1RareEvent_lock, Mutex::_no_safepoint_check_flag);
