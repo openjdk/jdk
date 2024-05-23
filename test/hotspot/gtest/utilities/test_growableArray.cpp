@@ -667,6 +667,8 @@ TEST(GrowableArrayCHeap, find_from_end_if) {
 TEST(GrowableArrayCHeap, ReturningReferencesWorksAsExpected) {
   GrowableArrayCHeap<int, mtTest> arr(8, 8, -1); // Pre-fill with 8 -1s
   int& x = arr.at_grow(9, -1);
+  EXPECT_EQ(-1, arr.at(9));
+  EXPECT_EQ(-1, x);
   x = 2;
   EXPECT_EQ(2, arr.at(9));
   x = arr.top();
