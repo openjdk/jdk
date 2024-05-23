@@ -351,15 +351,15 @@ TEST_VM_F(VMATreeTest, SummaryAccounting) {
 // Use it for testing consistency with VMATree.
 struct SimpleVMATracker : public CHeapObj<mtTest> {
   const size_t page_size = 4096;
-  enum Tpe { Reserved, Committed, Free };
+  enum Type { Reserved, Committed, Free };
   struct Info {
-    Tpe tpe;
+    Type type;
     MEMFLAGS flag;
     NativeCallStack stack;
-    Info() : tpe(Free), flag(mtNone), stack() {}
+    Info() : type(Free), flag(mtNone), stack() {}
 
-    Info(Tpe tpe, NativeCallStack stack, MEMFLAGS flag)
-    : tpe(tpe), flag(flag), stack(stack) {}
+    Info(Type type, NativeCallStack stack, MEMFLAGS flag)
+    : type(type), flag(flag), stack(stack) {}
 
     bool eq(Info other) {
       return flag == other.flag && stack.equals(other.stack);
@@ -376,7 +376,7 @@ struct SimpleVMATracker : public CHeapObj<mtTest> {
     }
   }
 
-  VMATree::SummaryDiff do_it(Tpe tpe, size_t start, size_t size, NativeCallStack stack, MEMFLAGS flag) {
+  VMATree::SummaryDiff do_it(Type type, size_t start, size_t size, NativeCallStack stack, MEMFLAGS flag) {
     assert(size % page_size == 0 && start % page_size == 0, "page alignment");
     VMATree::SummaryDiff diff;
     const size_t page_count = size / page_size;
@@ -384,21 +384,21 @@ struct SimpleVMATracker : public CHeapObj<mtTest> {
     const size_t end_idx = start_idx + page_count;
     assert(end_idx < (size_t)num_pages, "");
 
-    Info new_info(tpe, stack, flag);
+    Info new_info(type, stack, flag);
     for (size_t i = start_idx; i < end_idx; i++) {
       Info& old_info = pages[i];
 
       // Register diff
-      if (old_info.tpe == Reserved) {
+      if (old_info.type == Reserved) {
         diff.flag[(int)old_info.flag].reserve -= page_size;
-      } else if (old_info.tpe == Committed) {
+      } else if (old_info.type == Committed) {
         diff.flag[(int)old_info.flag].reserve -= page_size;
         diff.flag[(int)old_info.flag].commit -= page_size;
       }
 
-      if (tpe == Reserved) {
+      if (type == Reserved) {
         diff.flag[(int)new_info.flag].reserve += page_size;
-      } else if(tpe == Committed) {
+      } else if(type == Committed) {
         diff.flag[(int)new_info.flag].reserve += page_size;
         diff.flag[(int)new_info.flag].commit += page_size;
       }
@@ -452,14 +452,14 @@ TEST_VM_F(VMATreeTest, TestConsistencyWithSimpleTracker) {
     const NativeCallStackStorage::StackIndex si = ncss.push(stack);
     VMATree::RegionData data(si, flag);
 
-    const SimpleVMATracker::Tpe tpe = (SimpleVMATracker::Tpe)(os::random() % 3);
+    const SimpleVMATracker::Type type = (SimpleVMATracker::Type)(os::random() % 3);
 
     VMATree::SummaryDiff tree_diff;
     VMATree::SummaryDiff simple_diff;
-    if (tpe == SimpleVMATracker::Reserved) {
+    if (type == SimpleVMATracker::Reserved) {
       simple_diff = tr->reserve(start, size, stack, flag);
       tree_diff = tree.reserve_mapping(start, size, data);
-    } else if (tpe == SimpleVMATracker::Committed) {
+    } else if (type == SimpleVMATracker::Committed) {
       simple_diff = tr->commit(start, size, stack, flag);
       tree_diff = tree.commit_mapping(start, size, data);
     } else {
@@ -480,7 +480,7 @@ TEST_VM_F(VMATreeTest, TestConsistencyWithSimpleTracker) {
       size_t j = 0;
       while (j < tr->num_pages) {
         while (j < tr->num_pages &&
-               tr->pages[j].tpe == SimpleVMATracker::Free) {
+               tr->pages[j].type == SimpleVMATracker::Free) {
           j++;
         }
 
