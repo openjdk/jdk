@@ -323,6 +323,22 @@ TEST(cgroupTest, read_string_tests) {
   EXPECT_FALSE(ok) << "Empty file should have failed";
   EXPECT_STREQ("", result) << "Expected untouched result";
   delete_file(test_file);
+
+  // File contents larger than 1K
+  // We only read in the first 1K - 1 bytes
+  char too_large[2 * 1024];
+  for (int i = 0; i < (2 * 1024); i++) {
+    too_large[i] = 'A' + (i % 26);
+  }
+  result[0] = '\0';
+  fill_file(test_file, too_large);
+  ok = controller->read_string(base_with_slash, result);
+  EXPECT_TRUE(ok) << "String parsing should have been successful";
+  EXPECT_TRUE(1023 == strlen(result)) << "Expected only the first 1023 chars to be read in";
+  for (int i = 0; i < 1023; i++) {
+    EXPECT_EQ(too_large[i], result[i]) << "Expected item at idx " << i << " to match";
+  }
+  EXPECT_EQ(result[1023], '\0') << "The last character must be the null character";
 }
 
 TEST(cgroupTest, read_number_tuple_test) {

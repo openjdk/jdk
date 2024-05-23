@@ -585,6 +585,7 @@ bool CgroupController::read_string(const char* filename, char* buf) {
     return false;
   }
 
+  // Read a single line into the provided buffer. At most 1023 characters.
   char* line = fgets(buf, 1024, fp);
   fclose(fp);
   if (line == nullptr) {
@@ -592,6 +593,7 @@ bool CgroupController::read_string(const char* filename, char* buf) {
     return false;
   }
   int len = strlen(line);
+  assert(len <= 1023, "At most 1023 bytes can be read");
   if (line[len - 1] == '\n') {
     line[len - 1] = '\0'; // trim trailing new line
   }
