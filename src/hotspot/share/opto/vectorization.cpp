@@ -2138,6 +2138,7 @@ VTransformApplyStatus VTransformElementWiseVectorNode::apply(const VLoopAnalyzer
   } else if (first->is_CMove()) {
     assert(false, "TODO CMove");
   } else if (req() == 3) {
+    assert(first->req() == 3 && req() == 3, "only one input expected");
     Node* in1 = find_transformed_input(1, vnode_idx_to_transformed_node);
     Node* in2 = find_transformed_input(2, vnode_idx_to_transformed_node);
     // TODO register spilling trick?
@@ -2159,11 +2160,20 @@ VTransformApplyStatus VTransformElementWiseVectorNode::apply(const VLoopAnalyzer
              opc == Op_ReverseI || opc == Op_ReverseL ||
              opc == Op_PopCountI || opc == Op_CountLeadingZerosI ||
              opc == Op_CountTrailingZerosI) {
-    assert(false, "TODO the croud");
+    // TODO I think we can simplify this somehow, the check above.
+    //      One idea: make a separate vtnode type for those that require different generation.
+    //      Only keep those that are straight-forward, and have a req=2 and req=3 case.
+    assert(first->req() == 2 && req() == 2, "only one input expected");
+    Node* in = find_transformed_input(1, vnode_idx_to_transformed_node);
+
+    VectorNode* vn = VectorNode::make(opc, in, nullptr, vlen, bt);
+
+    register_new_vector_and_replace_scalar_nodes(vloop_analyzer, vn);
+    return VTransformApplyStatus::make_vector(vn, vlen, vn->length_in_bytes());
   } else if (VectorNode::requires_long_to_int_conversion(opc)) {
     assert(false, "TODO requires_long_to_int_conversion");
   } else if (VectorNode::is_convert_opcode(opc)) {
-    assert(first->req() == 2, "only one input expected");
+    assert(first->req() == 2 && req() == 2, "only one input expected");
     Node* in = find_transformed_input(1, vnode_idx_to_transformed_node);
     int vopc = VectorCastNode::opcode(opc, in->bottom_type()->is_vect()->element_basic_type());
 

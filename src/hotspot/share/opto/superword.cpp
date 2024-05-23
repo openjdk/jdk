@@ -2229,10 +2229,10 @@ bool SuperWord::output() {
                  opc == Op_ReverseI || opc == Op_ReverseL ||
                  opc == Op_PopCountI || opc == Op_CountLeadingZerosI ||
                  opc == Op_CountTrailingZerosI) {
-        assert(n->req() == 2, "only one input expected");
-        Node* in = vector_opd(p, 1);
-        vn = VectorNode::make(opc, in, nullptr, vlen, velt_basic_type(n));
-        vlen_in_bytes = vn->as_Vector()->length_in_bytes();
+        //assert(n->req() == 2, "only one input expected");
+        //Node* in = vector_opd(p, 1);
+        //vn = VectorNode::make(opc, in, nullptr, vlen, velt_basic_type(n));
+        //vlen_in_bytes = vn->as_Vector()->length_in_bytes();
       } else if (VectorNode::requires_long_to_int_conversion(opc)) {
         assert(n->req() == 2, "only one input expected");
         Node* in = vector_opd(p, 1);
