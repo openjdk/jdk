@@ -397,7 +397,7 @@ char* stringStream::as_string(bool c_heap) const {
   char* copy = c_heap ?
     NEW_C_HEAP_ARRAY(char, _written + 1, mtInternal) : NEW_RESOURCE_ARRAY(char, _written + 1);
   ::memcpy(copy, _buffer, _written);
-  copy[_written] = 0;  // terminating null
+  copy[_written] = '\0';  // terminating null
   if (c_heap) {
     // Need to ensure our content is written to memory before we return
     // the pointer to it.
@@ -590,23 +590,10 @@ long fileStream::fileSize() {
   return size;
 }
 
-char* fileStream::readln(char *data, int count ) {
-  char * ret = nullptr;
-  if (_file != nullptr) {
-    ret = ::fgets(data, count, _file);
-    // Get rid of annoying \n char only if it is present.
-    size_t len = ::strlen(data);
-    if (len > 0 && data[len - 1] == '\n') {
-      data[len - 1] = '\0';
-    }
-  }
-  return ret;
-}
-
 fileStream::~fileStream() {
   if (_file != nullptr) {
-    if (_need_close) fclose(_file);
-    _file      = nullptr;
+    close();
+    _file = nullptr;
   }
 }
 

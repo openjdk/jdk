@@ -71,11 +71,6 @@ inline HeapWord* G1Allocator::attempt_allocation_locked(size_t word_size) {
   return result;
 }
 
-inline HeapWord* G1Allocator::attempt_allocation_force(size_t word_size) {
-  uint node_index = current_node_index();
-  return mutator_alloc_region(node_index)->attempt_allocation_force(word_size);
-}
-
 inline PLAB* G1PLABAllocator::alloc_buffer(G1HeapRegionAttr dest, uint node_index) const {
   assert(dest.is_valid(),
          "Allocation buffer index out of bounds: %s", dest.get_type_str());

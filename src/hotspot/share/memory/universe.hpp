@@ -229,8 +229,8 @@ class Universe: AllStatic {
 
   static oop          null_ptr_exception_instance();
   static oop          arithmetic_exception_instance();
-  static oop          virtual_machine_error_instance();
-  static oop          vm_exception()                  { return virtual_machine_error_instance(); }
+  static oop          internal_error_instance();
+  static oop          vm_exception()                  { return internal_error_instance(); }
 
   static Array<Klass*>* the_array_interfaces_array()  { return _the_array_interfaces_array; }
   static uintx        the_array_interfaces_bitmap()   { return _the_array_interfaces_bitmap; }
@@ -272,6 +272,7 @@ class Universe: AllStatic {
   // may or may not have a backtrace. If error has a backtrace then the stack trace is already
   // filled in.
   static oop out_of_memory_error_java_heap();
+  static oop out_of_memory_error_java_heap_without_backtrace();
   static oop out_of_memory_error_c_heap();
   static oop out_of_memory_error_metaspace();
   static oop out_of_memory_error_class_metaspace();
@@ -279,8 +280,6 @@ class Universe: AllStatic {
   static oop out_of_memory_error_gc_overhead_limit();
   static oop out_of_memory_error_realloc_objects();
 
-  // Throw default _out_of_memory_error_retry object as it will never propagate out of the VM
-  static oop out_of_memory_error_retry();
   static oop delayed_stack_overflow_error_message();
 
   // Saved StackOverflowError and OutOfMemoryError for use when
@@ -295,7 +294,7 @@ class Universe: AllStatic {
   // The particular choice of collected heap.
   static CollectedHeap* heap() { return _collectedHeap; }
 
-  DEBUG_ONLY(static bool is_gc_active();)
+  DEBUG_ONLY(static bool is_stw_gc_active();)
   DEBUG_ONLY(static bool is_in_heap(const void* p);)
   DEBUG_ONLY(static bool is_in_heap_or_null(const void* p) { return p == nullptr || is_in_heap(p); })
 

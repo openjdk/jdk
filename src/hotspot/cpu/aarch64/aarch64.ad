@@ -694,6 +694,11 @@ reg_class no_special_ptr_reg %{
   return _NO_SPECIAL_PTR_REG_mask;
 %}
 
+// Class for all non_special pointer registers (excluding rfp)
+reg_class no_special_no_rfp_ptr_reg %{
+  return _NO_SPECIAL_NO_RFP_PTR_REG_mask;
+%}
+
 // Class for all float registers
 reg_class float_reg(
     V0,
@@ -1125,6 +1130,7 @@ extern RegMask _PTR_REG_mask;
 extern RegMask _NO_SPECIAL_REG32_mask;
 extern RegMask _NO_SPECIAL_REG_mask;
 extern RegMask _NO_SPECIAL_PTR_REG_mask;
+extern RegMask _NO_SPECIAL_NO_RFP_PTR_REG_mask;
 
 class CallStubImpl {
 
@@ -1213,6 +1219,7 @@ source %{
   RegMask _NO_SPECIAL_REG32_mask;
   RegMask _NO_SPECIAL_REG_mask;
   RegMask _NO_SPECIAL_PTR_REG_mask;
+  RegMask _NO_SPECIAL_NO_RFP_PTR_REG_mask;
 
   void reg_mask_init() {
     // We derive below RegMask(s) from the ones which are auto-generated from
@@ -1249,6 +1256,9 @@ source %{
       _NO_SPECIAL_REG_mask.Remove(OptoReg::as_OptoReg(r29->as_VMReg()));
       _NO_SPECIAL_PTR_REG_mask.Remove(OptoReg::as_OptoReg(r29->as_VMReg()));
     }
+
+    _NO_SPECIAL_NO_RFP_PTR_REG_mask = _NO_SPECIAL_PTR_REG_mask;
+    _NO_SPECIAL_NO_RFP_PTR_REG_mask.Remove(OptoReg::as_OptoReg(r29->as_VMReg()));
   }
 
   // Optimizaton of volatile gets and puts
@@ -1899,10 +1909,6 @@ const Pipeline * MachEpilogNode::pipeline() const {
 }
 
 //=============================================================================
-
-// Figure out which register class each belongs in: rc_int, rc_float or
-// rc_stack.
-enum RC { rc_bad, rc_int, rc_float, rc_predicate, rc_stack };
 
 static enum RC rc_class(OptoReg::Name reg) {
 
@@ -4689,6 +4695,18 @@ operand iRegPNoSp()
   // match(iRegP_R4);
   // match(iRegP_R5);
   // match(thread_RegP);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+// This operand is not allowed to use rfp even if
+// rfp is not used to hold the frame pointer.
+operand iRegPNoSpNoRfp()
+%{
+  constraint(ALLOC_IN_RC(no_special_no_rfp_ptr_reg));
+  match(RegP);
+  match(iRegPNoSp);
   op_cost(0);
   format %{ %}
   interface(REG_INTER);
@@ -16091,7 +16109,9 @@ instruct CallLeafNoFPDirect(method meth)
 // Also known as an 'interprocedural jump'.
 // Target of jump will eventually return to caller.
 // TailJump below removes the return address.
-instruct TailCalljmpInd(iRegPNoSp jump_target, inline_cache_RegP method_ptr)
+// Don't use rfp for 'jump_target' because a MachEpilogNode has already been
+// emitted just above the TailCall which has reset rfp to the caller state.
+instruct TailCalljmpInd(iRegPNoSpNoRfp jump_target, inline_cache_RegP method_ptr)
 %{
   match(TailCall jump_target method_ptr);
 
@@ -16104,7 +16124,7 @@ instruct TailCalljmpInd(iRegPNoSp jump_target, inline_cache_RegP method_ptr)
   ins_pipe(pipe_class_call);
 %}
 
-instruct TailjmpInd(iRegPNoSp jump_target, iRegP_R0 ex_oop)
+instruct TailjmpInd(iRegPNoSpNoRfp jump_target, iRegP_R0 ex_oop)
 %{
   match(TailJump jump_target ex_oop);
 
@@ -16210,7 +16230,7 @@ instruct partialSubtypeCheckConstSuper(iRegP_R4 sub, iRegP_R0 super_reg, immP su
   effect(KILL cr, TEMP tempR1, TEMP tempR2, TEMP tempR3, TEMP vtemp);
 
   ins_cost(700);  // smaller than the next version
-  format %{ "partialSubtypeCheck $result, $sub, super" %}
+  format %{ "partialSubtypeCheck $result, $sub, $super_reg, $super_con" %}
 
   ins_encode %{
     bool success = false;

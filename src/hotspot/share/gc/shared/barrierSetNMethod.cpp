@@ -65,15 +65,9 @@ bool BarrierSetNMethod::supports_entry_barrier(nmethod* nm) {
     return false;
   }
 
-  if (nm->is_native_method() || nm->is_compiled_by_c2() || nm->is_compiled_by_c1()) {
+  if (nm->is_native_method() || nm->is_compiled_by_c2() || nm->is_compiled_by_c1() || nm->is_compiled_by_jvmci()) {
     return true;
   }
-
-#if INCLUDE_JVMCI
-  if (nm->is_compiled_by_jvmci() && nm->jvmci_nmethod_data()->has_entry_barrier()) {
-    return true;
-  }
-#endif
 
   return false;
 }

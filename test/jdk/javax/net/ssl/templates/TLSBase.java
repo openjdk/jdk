@@ -23,6 +23,7 @@
 
 import javax.net.ssl.*;
 import java.io.*;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.security.KeyStore;
 import java.security.cert.PKIXBuilderParameters;
@@ -334,7 +335,7 @@ abstract public class TLSBase {
                 sslContext = SSLContext.getInstance("TLS");
                 sslContext.init(TLSBase.getKeyManager(km), TLSBase.getTrustManager(tm), null);
                 sock = (SSLSocket)sslContext.getSocketFactory().createSocket();
-                sock.connect(new InetSocketAddress("localhost", serverPort));
+                sock.connect(new InetSocketAddress(InetAddress.getLoopbackAddress(), serverPort));
                 System.err.println("Client connected using port " +
                         sock.getLocalPort());
                 name = "client(" + sock.toString() + ")";

@@ -22,19 +22,16 @@
  */
 package jdk.vm.ci.hotspot;
 
-import static jdk.vm.ci.hotspot.CompilerToVM.compilerToVM;
-import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
-import static jdk.vm.ci.hotspot.HotSpotVMConfig.config;
-import static jdk.vm.ci.hotspot.UnsafeAccess.UNSAFE;
-
 import java.util.AbstractList;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.common.NativeImageReinitialize;
+import static jdk.vm.ci.hotspot.CompilerToVM.compilerToVM;
+import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
+import static jdk.vm.ci.hotspot.HotSpotVMConfig.config;
+import static jdk.vm.ci.hotspot.UnsafeAccess.UNSAFE;
 import jdk.vm.ci.meta.ConstantPool;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaField;
@@ -257,13 +254,6 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
             holder = compilerToVM().getResolvedJavaType(this, config().constantPoolHolderOffset);
         }
         return holder;
-    }
-
-    /**
-     * See {@code ConstantPool::is_invokedynamic_index}.
-     */
-    private static boolean isInvokedynamicIndex(int index) {
-        return index < 0;
     }
 
     /**
@@ -708,15 +698,7 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
         if (!Bytecodes.isInvoke(opcode)) {
             throw new IllegalArgumentException("expected an invoke bytecode for " + rawIndex + ", got " + opcode);
         }
-
-        if (opcode == Bytecodes.INVOKEDYNAMIC) {
-          if (!isInvokedynamicIndex(rawIndex)) {
-              throw new IllegalArgumentException("expected a raw index for INVOKEDYNAMIC but got " + rawIndex);
-          }
-          return compilerToVM().lookupAppendixInPool(this, rawIndex);
-        } else {
-          return compilerToVM().lookupAppendixInPool(this, rawIndex);
-        }
+        return compilerToVM().lookupAppendixInPool(this, rawIndex, opcode);
     }
 
     /**
@@ -735,26 +717,17 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
 
     @Override
     public JavaMethod lookupMethod(int rawIndex, int opcode, ResolvedJavaMethod caller) {
-        int which; // interpretation depends on opcode
-        if (opcode == Bytecodes.INVOKEDYNAMIC) {
-            if (!isInvokedynamicIndex(rawIndex)) {
-                throw new IllegalArgumentException("expected a raw index for INVOKEDYNAMIC but got " + rawIndex);
-            }
-            which = rawIndex;
-        } else {
-            which = rawIndex;
-        }
-        final HotSpotResolvedJavaMethod method = compilerToVM().lookupMethodInPool(this, which, (byte) opcode, (HotSpotResolvedJavaMethodImpl) caller);
+        final HotSpotResolvedJavaMethod method = compilerToVM().lookupMethodInPool(this, rawIndex, (byte) opcode, (HotSpotResolvedJavaMethodImpl) caller);
         if (method != null) {
             return method;
         } else {
             // Get the method's name and signature.
-            String name = compilerToVM().lookupNameInPool(this, which, opcode);
-            HotSpotSignature signature = new HotSpotSignature(runtime(), compilerToVM().lookupSignatureInPool(this, which, opcode));
+            String name = compilerToVM().lookupNameInPool(this, rawIndex, opcode);
+            HotSpotSignature signature = new HotSpotSignature(runtime(), compilerToVM().lookupSignatureInPool(this, rawIndex, opcode));
             if (opcode == Bytecodes.INVOKEDYNAMIC) {
                 return new UnresolvedJavaMethod(name, signature, runtime().getMethodHandleClass());
             } else {
-                final int klassIndex = getKlassRefIndexAt(which, opcode);
+                final int klassIndex = getKlassRefIndexAt(rawIndex, opcode);
                 final Object type = compilerToVM().lookupKlassInPool(this, klassIndex);
                 return new UnresolvedJavaMethod(name, signature, getJavaType(type));
             }
@@ -853,14 +826,10 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
      * @return constant pool index
      */
     private int indyIndexConstantPoolIndex(int rawIndex, int opcode) {
-        if (isInvokedynamicIndex(rawIndex)) {
-            if (opcode != Bytecodes.INVOKEDYNAMIC) {
-                throw new IllegalArgumentException("expected INVOKEDYNAMIC at " + rawIndex + ", got " + opcode);
-            }
-            return compilerToVM().decodeIndyIndexToCPIndex(this, rawIndex, false);
-        } else {
-          throw new IllegalArgumentException("expected a raw index for INVOKEDYNAMIC but got " + rawIndex);
+        if (opcode != Bytecodes.INVOKEDYNAMIC) {
+            throw new IllegalArgumentException("expected INVOKEDYNAMIC at " + rawIndex + ", got " + opcode);
         }
+        return compilerToVM().decodeIndyIndexToCPIndex(this, rawIndex, false);
     }
 
     @Override
@@ -884,10 +853,6 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
                 cpi = rawIndex;
                 break;
             case Bytecodes.INVOKEDYNAMIC: {
-                // invokedynamic indices are different from constant pool cache indices
-                if (!isInvokedynamicIndex(rawIndex)) {
-                    throw new IllegalArgumentException("must use invokedynamic index but got " + rawIndex);
-                }
                 cpi = compilerToVM().decodeIndyIndexToCPIndex(this, rawIndex, true);
                 break;
             }

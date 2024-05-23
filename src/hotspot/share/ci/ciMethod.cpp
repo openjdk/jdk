@@ -1126,13 +1126,14 @@ int ciMethod::code_size_for_inlining() {
 // not highly relevant to an inlined method.  So we use the more
 // specific accessor nmethod::insts_size.
 // Also some instructions inside the code are excluded from inline
-// heuristic (e.g. post call nop instructions; see InlineSkippedInstructionsCounter)
+// heuristic (e.g. post call nop instructions and GC barriers;
+// see InlineSkippedInstructionsCounter).
 int ciMethod::inline_instructions_size() {
   if (_inline_instructions_size == -1) {
     GUARDED_VM_ENTRY(
       nmethod* code = get_Method()->code();
       if (code != nullptr && (code->comp_level() == CompLevel_full_optimization)) {
-        int isize = code->insts_end() - code->verified_entry_point() - code->skipped_instructions_size();
+        int isize = code->inline_insts_size();
         _inline_instructions_size = isize > 0 ? isize : 0;
       } else {
         _inline_instructions_size = 0;

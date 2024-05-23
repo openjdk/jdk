@@ -27,11 +27,11 @@
 
 #include "gc/serial/cSpaceCounters.hpp"
 #include "gc/serial/generation.hpp"
+#include "gc/serial/serialBlockOffsetTable.hpp"
 #include "gc/shared/generationCounters.hpp"
 #include "gc/shared/space.hpp"
 #include "utilities/macros.hpp"
 
-class SerialBlockOffsetTable;
 class CardTableRS;
 class ContiguousSpace;
 
@@ -65,8 +65,7 @@ class TenuredGeneration: public Generation {
 
   void assert_correct_size_change_locking();
 
-  TenuredSpace*       _the_space;       // Actual space holding objects
-  HeapWord*           _saved_mark_word;
+  ContiguousSpace*    _the_space;       // Actual space holding objects
 
   GenerationCounters* _gen_counters;
   CSpaceCounters*     _space_counters;
@@ -88,10 +87,7 @@ class TenuredGeneration: public Generation {
 public:
   void compute_new_size();
 
-  TenuredSpace* space() const { return _the_space; }
-  HeapWord* saved_mark_word() const { return _saved_mark_word; }
-  void set_saved_mark_word() { _saved_mark_word = _the_space->top(); }
-  bool saved_mark_at_top() { return _saved_mark_word == space()->top(); }
+  ContiguousSpace* space() const { return _the_space; }
 
   // Grow generation with specified size (returns false if unable to grow)
   bool grow_by(size_t bytes);
@@ -114,7 +110,7 @@ public:
 
   HeapWord* block_start(const void* addr) const;
 
-  void scan_old_to_young_refs();
+  void scan_old_to_young_refs(HeapWord* saved_top_in_old_gen);
 
   bool is_in(const void* p) const;
 
@@ -134,35 +130,27 @@ public:
   void object_iterate(ObjectClosure* blk);
 
   void complete_loaded_archive_space(MemRegion archive_space);
+  inline void update_for_block(HeapWord* start, HeapWord* end);
 
   virtual inline HeapWord* allocate(size_t word_size, bool is_tlab);
   virtual inline HeapWord* par_allocate(size_t word_size, bool is_tlab);
-
-  template <typename OopClosureType>
-  void oop_since_save_marks_iterate(OopClosureType* cl);
-
-  void save_marks();
-
-  bool no_allocs_since_save_marks();
-
-  virtual void collect(bool full,
-                       bool clear_all_soft_refs,
-                       size_t size,
-                       bool is_tlab);
 
   HeapWord* expand_and_allocate(size_t size, bool is_tlab);
 
   void gc_prologue();
   void gc_epilogue();
 
-  bool should_collect(bool   full,
-                      size_t word_size,
-                      bool   is_tlab);
+  bool should_allocate(size_t word_size, bool is_tlab) {
+    bool result = false;
+    size_t overflow_limit = (size_t)1 << (BitsPerSize_t - LogHeapWordSize);
+    if (!is_tlab || supports_tlab_allocation()) {
+      result = (word_size > 0) && (word_size < overflow_limit);
+    }
+    return result;
+  }
 
   // Performance Counter support
   void update_counters();
-
-  void record_spaces_top();
 
   // Statistics
 
