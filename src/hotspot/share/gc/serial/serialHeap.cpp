@@ -453,7 +453,6 @@ bool SerialHeap::do_young_collection(bool clear_soft_refs) {
   print_heap_before_gc();
   const PreGenGCValues pre_gc_values = get_pre_gc_values();
 
-  record_gen_tops_before_GC();
   increment_total_collections(false);
   const bool should_verify = total_collections() >= VerifyGCStartAt;
   if (should_verify && VerifyBeforeGC) {
@@ -956,12 +955,3 @@ void SerialHeap::gc_epilogue(bool full) {
 
   MetaspaceCounters::update_performance_counters();
 };
-
-#ifndef PRODUCT
-void SerialHeap::record_gen_tops_before_GC() {
-  if (ZapUnusedHeapArea) {
-    _young_gen->record_spaces_top();
-    _old_gen->record_spaces_top();
-  }
-}
-#endif  // not PRODUCT
