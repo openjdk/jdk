@@ -1157,20 +1157,15 @@ void MacroAssembler::align32() {
   align(32, (unsigned long long) pc());
 }
 
-void MacroAssembler::align(int modulus) {
+void MacroAssembler::align(uint modulus) {
   // 8273459: Ensure alignment is possible with current segment alignment
   assert(modulus <= CodeEntryAlignment, "Alignment must be <= CodeEntryAlignment");
   align(modulus, offset());
 }
 
-void MacroAssembler::align(int modulus, int target) {
-  int mask = modulus - 1;
-  guarantee((modulus & mask) == 0, "Modulus must be a power of two");
-  int numNops = mask & (-target);
-  assert(numNops >= 0 && numNops < modulus, "Unexpected number of NOPs");
-  assert((target + numNops) % modulus == 0, "Incorrect number of NOPs");
-  if (numNops != 0) {
-    nop(numNops);
+void MacroAssembler::align(uint modulus, uint target) {
+  if (target % modulus != 0) {
+    nop(modulus - (target % modulus));
   }
 }
 
