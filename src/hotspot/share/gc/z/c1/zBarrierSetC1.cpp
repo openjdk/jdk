@@ -508,7 +508,7 @@ public:
 static address generate_c1_load_runtime_stub(BufferBlob* blob, DecoratorSet decorators, const char* name) {
   ZLoadBarrierRuntimeStubCodeGenClosure cl(decorators);
   CodeBlob* const code_blob = Runtime1::generate_blob(blob, -1 /* stub_id */, name, false /* expect_oop_map*/, &cl);
-  return code_blob->code_begin();
+  return code_blob != nullptr?code_blob->code_begin():nullptr;
 }
 
 class ZStoreBarrierRuntimeStubCodeGenClosure : public StubAssemblerCodeGenClosure {
@@ -528,10 +528,10 @@ public:
 static address generate_c1_store_runtime_stub(BufferBlob* blob, bool self_healing, const char* name) {
   ZStoreBarrierRuntimeStubCodeGenClosure cl(self_healing);
   CodeBlob* const code_blob = Runtime1::generate_blob(blob, -1 /* stub_id */, name, false /* expect_oop_map*/, &cl);
-  return code_blob->code_begin();
+  return code_blob != nullptr?code_blob->code_begin():nullptr;
 }
 
-void ZBarrierSetC1::generate_c1_runtime_stubs(BufferBlob* blob) {
+bool ZBarrierSetC1::generate_c1_runtime_stubs(BufferBlob* blob) {
   _load_barrier_on_oop_field_preloaded_runtime_stub =
     generate_c1_load_runtime_stub(blob, ON_STRONG_OOP_REF, "load_barrier_on_oop_field_preloaded_runtime_stub");
   _load_barrier_on_weak_oop_field_preloaded_runtime_stub =
@@ -541,4 +541,8 @@ void ZBarrierSetC1::generate_c1_runtime_stubs(BufferBlob* blob) {
     generate_c1_store_runtime_stub(blob, true /* self_healing */, "store_barrier_on_oop_field_with_healing");
   _store_barrier_on_oop_field_without_healing =
     generate_c1_store_runtime_stub(blob, false /* self_healing */, "store_barrier_on_oop_field_without_healing");
+  return _load_barrier_on_oop_field_preloaded_runtime_stub != nullptr &&
+         _load_barrier_on_weak_oop_field_preloaded_runtime_stub != nullptr &&
+         _store_barrier_on_oop_field_with_healing != nullptr &&
+         _store_barrier_on_oop_field_without_healing != nullptr;
 }

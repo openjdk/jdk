@@ -112,7 +112,7 @@ protected:
 public:
   ZBarrierSetC1();
 
-  virtual void generate_c1_runtime_stubs(BufferBlob* blob);
+  virtual bool generate_c1_runtime_stubs(BufferBlob* blob);
 };
 
 #endif // SHARE_GC_Z_C1_ZBARRIERSETC1_HPP

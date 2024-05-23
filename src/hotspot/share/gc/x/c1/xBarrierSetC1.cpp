@@ -226,12 +226,14 @@ public:
 static address generate_c1_runtime_stub(BufferBlob* blob, DecoratorSet decorators, const char* name) {
   XLoadBarrierRuntimeStubCodeGenClosure cl(decorators);
   CodeBlob* const code_blob = Runtime1::generate_blob(blob, -1 /* stub_id */, name, false /* expect_oop_map*/, &cl);
-  return code_blob->code_begin();
+  return code_blob != nullptr?code_blob->code_begin():nullptr;
 }
 
-void XBarrierSetC1::generate_c1_runtime_stubs(BufferBlob* blob) {
+bool XBarrierSetC1::generate_c1_runtime_stubs(BufferBlob* blob) {
   _load_barrier_on_oop_field_preloaded_runtime_stub =
     generate_c1_runtime_stub(blob, ON_STRONG_OOP_REF, "load_barrier_on_oop_field_preloaded_runtime_stub");
   _load_barrier_on_weak_oop_field_preloaded_runtime_stub =
     generate_c1_runtime_stub(blob, ON_WEAK_OOP_REF, "load_barrier_on_weak_oop_field_preloaded_runtime_stub");
+  return _load_barrier_on_oop_field_preloaded_runtime_stub != nullptr &&
+         _load_barrier_on_weak_oop_field_preloaded_runtime_stub != nullptr;
 }

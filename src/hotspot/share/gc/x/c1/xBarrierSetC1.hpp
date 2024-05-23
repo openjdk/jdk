@@ -72,7 +72,7 @@ protected:
 public:
   XBarrierSetC1();
 
-  virtual void generate_c1_runtime_stubs(BufferBlob* blob);
+  virtual bool generate_c1_runtime_stubs(BufferBlob* blob);
 };
 
 #endif // SHARE_GC_X_C1_XBARRIERSETC1_HPP
