@@ -377,7 +377,8 @@ struct SimpleVMATracker : public CHeapObj<mtTest> {
   }
 
   VMATree::SummaryDiff do_it(Type type, size_t start, size_t size, NativeCallStack stack, MEMFLAGS flag) {
-    assert(size % page_size == 0 && start % page_size == 0, "page alignment");
+    assert(is_aligned(size, page_size) && is_aligned(start, page_size), "page alignment");
+
     VMATree::SummaryDiff diff;
     const size_t page_count = size / page_size;
     const size_t start_idx = start / page_size;
