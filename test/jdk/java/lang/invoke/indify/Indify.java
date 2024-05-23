@@ -23,17 +23,21 @@
 
 package indify;
 
+import java.io.File;
+import java.io.IOException;
 import java.lang.classfile.*;
 import java.lang.classfile.constantpool.*;
-import java.lang.classfile.instruction.*;
+import java.lang.classfile.instruction.ConstantInstruction;
+import java.lang.classfile.instruction.FieldInstruction;
+import java.lang.classfile.instruction.InvokeInstruction;
+import java.lang.classfile.instruction.NewObjectInstruction;
 import java.lang.constant.ConstantDesc;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.nio.file.Files;
 import java.util.*;
-import java.io.*;
-import java.lang.reflect.Modifier;
 import java.util.function.Predicate;
-import java.util.regex.*;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static java.lang.classfile.ClassFile.*;
