@@ -172,8 +172,8 @@ public class Gen extends JCTree.Visitor {
     Chain switchExpressionFalseChain;
     List<LocalItem> stackBeforeSwitchExpression;
     LocalItem switchResult;
-    PatternMatchingCatchConfigration patternMatchingCatchConfiguration =
-            new PatternMatchingCatchConfigration(Set.of(), null, null, null);
+    PatternMatchingCatchConfiguration patternMatchingCatchConfiguration =
+            new PatternMatchingCatchConfiguration(Set.of(), null, null, null);
 
     /** Cache the symbol to reflect the qualifying type.
      *  key: corresponding type
@@ -1087,10 +1087,10 @@ public class Gen extends JCTree.Visitor {
     }
 
     private void visitBlockWithPatterns(JCBlock tree) {
-        PatternMatchingCatchConfigration prevConfiguration = patternMatchingCatchConfiguration;
+        PatternMatchingCatchConfiguration prevConfiguration = patternMatchingCatchConfiguration;
         try {
             patternMatchingCatchConfiguration =
-                    new PatternMatchingCatchConfigration(tree.patternMatchingCatch.calls2Handle(),
+                    new PatternMatchingCatchConfiguration(tree.patternMatchingCatch.calls2Handle(),
                                                          new ListBuffer<int[]>(),
                                                          tree.patternMatchingCatch.handler(),
                                                          code.state.dup());
@@ -2579,12 +2579,12 @@ public class Gen extends JCTree.Visitor {
         }
     }
 
-    record PatternMatchingCatchConfigration(Set<JCMethodInvocation> invocations,
+    record PatternMatchingCatchConfiguration(Set<JCMethodInvocation> invocations,
                                             ListBuffer<int[]> ranges,
                                             JCCatch handler,
                                             State startState) {
-        public PatternMatchingCatchConfigration restart(State newState) {
-            return new PatternMatchingCatchConfigration(invocations(),
+        public PatternMatchingCatchConfiguration restart(State newState) {
+            return new PatternMatchingCatchConfiguration(invocations(),
                                                         new ListBuffer<int[]>(),
                                                         handler(),
                                                         newState);
