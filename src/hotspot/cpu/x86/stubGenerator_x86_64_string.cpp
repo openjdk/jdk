@@ -265,7 +265,7 @@ void StubGenerator::generate_string_indexof_stubs(address *fnptrs, StrIntrinsicN
   // needle length == 0?
   __ cmpq(needle_len_p, 0);
   __ jg_b(L_nextCheck);
-  __ xorq(rax, rax);
+  __ xorl(rax, rax);
   __ leave();
   __ ret(0);
 
@@ -580,7 +580,7 @@ void StubGenerator::generate_string_indexof_stubs(address *fnptrs, StrIntrinsicN
 
     // big_case_loop_helper will fall through to this point if one or more potential matches are found
     // The mask will have a bitmask indicating the position of the potential matches within the haystack
-    __ align(8);
+    __ align(OptoLoopAlignment);
     __ bind(L_innerLoop);
     __ tzcntl(index, mask);
 
@@ -709,7 +709,7 @@ void StubGenerator::generate_string_indexof_stubs(address *fnptrs, StrIntrinsicN
     __ movq(saveNeedleAddress, firstNeedleCompare);  // Save address of 2nd element of needle
 
     // Find index of a potential match
-    __ align(8);
+    __ align(OptoLoopAlignment);
     __ bind(L_innerLoop);
     __ tzcntl(r11, mask);
 
@@ -909,7 +909,7 @@ void StubGenerator::generate_string_indexof_stubs(address *fnptrs, StrIntrinsicN
       // big_case_loop_helper will fall through to this point if one or more potential matches are
       // found The mask will have a bitmask indicating the position of the potential matches within
       // the haystack
-      __ align(8);
+      __ align(OptoLoopAlignment);
       __ bind(L_innerLoop);
       __ tzcntl(index, mask);
 
@@ -1420,7 +1420,7 @@ static void big_case_loop_helper(bool sizeKnown, int size, Label &noMatch, Label
   __ leaq(last, Address(haystack, nMinusK, Address::times_1, isU ? -30 : -31));
   __ jmpb(L_midLoop);
 
-  __ align(16);
+  __ align(OptoLoopAlignment);
   __ bind(loop_top);
   // An equal comparison indicates completion with no match
   __ cmpq(hsPtrRet, last);
@@ -1541,7 +1541,7 @@ static void byte_compare_helper(int size, Label &L_noMatch, Label &L_matchFound,
     break;
   }
 
-  __ align(8);
+  __ align(OptoLoopAlignment);
   __ bind(L_loopTop);
   __ tzcntl(foundIndex, mask);  // Index of match within haystack
 
