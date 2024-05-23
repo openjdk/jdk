@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,20 +45,21 @@ public class NewAPIBuilder extends SummaryAPIListBuilder {
     public final List<String> releases;
 
     public NewAPIBuilder(BaseConfiguration configuration, List<String> releases) {
-        super(configuration, element -> isNewAPI(element, configuration.utils, releases));
+        super(configuration);
         this.releases = releases;
         buildSummaryAPIInfo();
     }
 
-    private static boolean isNewAPI(Element e, Utils utils, List<String> releases) {
-        if (!utils.hasDocCommentTree(e)) {
+    @Override
+    protected boolean belongsToSummary(Element element) {
+        if (!utils.hasDocCommentTree(element)) {
             return false;
         }
-        List<? extends DocTree> since = utils.getBlockTags(e, SINCE);
+        List<? extends DocTree> since = utils.getBlockTags(element, SINCE);
         if (since.isEmpty()) {
             return false;
         }
-        CommentHelper ch = utils.getCommentHelper(e);
+        CommentHelper ch = utils.getCommentHelper(element);
         return since.stream().anyMatch(tree -> releases.contains(ch.getBody(tree).toString()));
     }
 }

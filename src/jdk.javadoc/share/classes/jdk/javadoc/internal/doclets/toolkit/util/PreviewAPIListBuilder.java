@@ -27,9 +27,7 @@ package jdk.javadoc.internal.doclets.toolkit.util;
 
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 
-import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
-import javax.lang.model.element.ExecutableElement;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -60,38 +58,41 @@ public class PreviewAPIListBuilder extends SummaryAPIListBuilder {
      * @param configuration the current configuration of the doclet
      */
     public PreviewAPIListBuilder(BaseConfiguration configuration) {
-        super(configuration, configuration.utils::isPreviewAPI);
+        super(configuration);
         buildSummaryAPIInfo();
     }
 
     @Override
-    protected void handleElement(Element e) {
-        String feature = Objects.requireNonNull(utils.getPreviewFeature(e),
-                "Preview feature not specified").toString();
-        JEP jep = jeps.computeIfAbsent(feature, (featureName) -> {
-            Map<? extends ExecutableElement, ? extends AnnotationValue> anno = configuration.workArounds.getJepInfo(featureName);
-            int number = 0;
-            String title = "";
-            String status = "Preview"; // Default value is not returned by the method we use above.
-            for (var entry : anno.entrySet()) {
-                if ("number".equals(entry.getKey().getSimpleName().toString())) {
-                    number = (int) entry.getValue().getValue();
-                } else if ("title".equals(entry.getKey().getSimpleName().toString())) {
-                    title = (String) entry.getValue().getValue();
-                } else if ("status".equals(entry.getKey().getSimpleName().toString())) {
-                    status = (String) entry.getValue().getValue();
-                } else {
-                    throw new IllegalArgumentException(entry.getKey().getSimpleName().toString());
-                }
-            }
-            return new JEP(number, title, status);
-        });
-        if (jep.number == 0) {
-            // Remove preview support features without a valid JEP
-            jeps.remove(feature);
-        } else {
-            elementJeps.put(e, jep);
+    protected boolean belongsToSummary(Element element) {
+        if (!utils.isPreviewAPI(element)) {
+            return false;
         }
+        String feature = Objects.requireNonNull(utils.getPreviewFeature(element),
+                "Preview feature not specified").toString();
+        JEP jep = jeps.computeIfAbsent(feature, featureName -> {
+            Map<String, Object> jepInfo = configuration.workArounds.getJepInfo(featureName);
+            if (!jepInfo.isEmpty()) {
+                int number = 0;
+                String title = "";
+                String status = "Preview"; // Default value is not returned by the method we used above.
+                for (var entry : jepInfo.entrySet()) {
+                    switch (entry.getKey()) {
+                        case "number" -> number = (int) entry.getValue();
+                        case "title" -> title = (String) entry.getValue();
+                        case "status" -> status = (String) entry.getValue();
+                        default -> throw new IllegalArgumentException(entry.getKey());
+                    }
+                }
+                return new JEP(number, title, status);
+            }
+            return null;
+        });
+        if (jep != null) {
+            elementJeps.put(element, jep);
+            return true;
+        }
+        // Preview features without JEP are not included.
+        return false;
     }
 
     /**
