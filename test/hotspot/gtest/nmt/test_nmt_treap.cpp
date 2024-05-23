@@ -81,27 +81,10 @@ public:
 
   void treap_ought_not_leak() {
     struct LeakCheckedAllocator {
-      struct Check {
-        void* ptr;
-        bool released;
-
-        Check(void* ptr)
-          : ptr(ptr),
-            released(false) {
-        }
-
-        Check()
-          : ptr(nullptr),
-            released(false) {}
-
-        void release() {
-          released = true;
-        }
-      };
-      GrowableArrayCHeap<Check, mtTest> allocations;
+      int allocations;
 
       LeakCheckedAllocator()
-        : allocations() {
+        : allocations(0) {
       }
 
       void* allocate(size_t sz) {
@@ -109,18 +92,12 @@ public:
         if (allocation == nullptr) {
           vm_exit_out_of_memory(sz, OOM_MALLOC_ERROR, "treap failed allocation");
         }
-        allocations.push(Check(allocation));
+        ++allocations;
         return allocation;
       }
 
       void free(void* ptr) {
-        for (int i = 0; i < allocations.length(); i++) {
-          Check& c = allocations.at(i);
-          EXPECT_NE(nullptr, c.ptr);
-          if (c.ptr == ptr) {
-            c.release();
-          }
-        }
+        --allocations;
         os::free(ptr);
       }
     };
@@ -128,29 +105,24 @@ public:
     constexpr const int up_to = 10;
     {
       Treap<int, int, Cmp, LeakCheckedAllocator> treap;
-      for (int i = 0; i < 10; i++) {
+      for (int i = 0; i < up_to; i++) {
         treap.upsert(i, i);
       }
-      for (int i = 0; i < 10; i++) {
+      EXPECT_EQ(up_to, treap._allocator.allocations);
+      for (int i = 0; i < up_to; i++) {
         treap.remove(i);
       }
-      EXPECT_EQ(10, treap._allocator.allocations.length());
-      for (int i = 0; i < 10; i++) {
-        EXPECT_TRUE(treap._allocator.allocations.at(i).released);
-      }
+      EXPECT_EQ(0, treap._allocator.allocations);
       EXPECT_EQ(nullptr, treap._root);
     }
 
     {
       Treap<int, int, Cmp, LeakCheckedAllocator> treap;
-      for (int i = 0; i < 10; i++) {
+      for (int i = 0; i < up_to; i++) {
         treap.upsert(i, i);
       }
       treap.remove_all();
-      EXPECT_EQ(10, treap._allocator.allocations.length());
-      for (int i = 0; i < 10; i++) {
-        EXPECT_TRUE(treap._allocator.allocations.at(i).released);
-      }
+      EXPECT_EQ(0, treap._allocator.allocations);
       EXPECT_EQ(nullptr, treap._root);
     }
   }
