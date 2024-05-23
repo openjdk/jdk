@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -261,7 +261,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
       else if (sig == SIGTRAP && TrapBasedICMissChecks &&
                nativeInstruction_at(pc)->is_sigtrap_ic_miss_check()) {
         if (TraceTraps) {
-          tty->print_cr("trap: ic_miss_check at " INTPTR_FORMAT " (SIGTRAP)", pc);
+          tty->print_cr("trap: ic_miss_check at " INTPTR_FORMAT " (SIGTRAP)", p2i(pc));
         }
         stub = SharedRuntime::get_ic_miss_stub();
         goto run_stub;
@@ -271,7 +271,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
       else if (sig == SIGTRAP && TrapBasedNullChecks &&
                nativeInstruction_at(pc)->is_sigtrap_null_check()) {
         if (TraceTraps) {
-          tty->print_cr("trap: null_check at " INTPTR_FORMAT " (SIGTRAP)", pc);
+          tty->print_cr("trap: null_check at " INTPTR_FORMAT " (SIGTRAP)", p2i(pc));
         }
         stub = SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::IMPLICIT_NULL);
         goto run_stub;
@@ -282,7 +282,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
                CodeCache::contains((void*) pc) &&
                MacroAssembler::uses_implicit_null_check(info->si_addr)) {
         if (TraceTraps) {
-          tty->print_cr("trap: null_check at " INTPTR_FORMAT " (SIGSEGV)", pc);
+          tty->print_cr("trap: null_check at " INTPTR_FORMAT " (SIGSEGV)", p2i(pc));
         }
         stub = SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::IMPLICIT_NULL);
       }
@@ -292,7 +292,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
       else if (sig == SIGTRAP && TrapBasedRangeChecks &&
                nativeInstruction_at(pc)->is_sigtrap_range_check()) {
         if (TraceTraps) {
-          tty->print_cr("trap: range_check at " INTPTR_FORMAT " (SIGTRAP)", pc);
+          tty->print_cr("trap: range_check at " INTPTR_FORMAT " (SIGTRAP)", p2i(pc));
         }
         stub = SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::IMPLICIT_NULL);
         goto run_stub;
@@ -435,12 +435,12 @@ void os::print_context(outputStream *st, const void *context) {
   const ucontext_t* uc = (const ucontext_t*)context;
 
   st->print_cr("Registers:");
-  st->print("pc =" INTPTR_FORMAT "  ", uc->uc_mcontext.jmp_context.iar);
-  st->print("lr =" INTPTR_FORMAT "  ", uc->uc_mcontext.jmp_context.lr);
-  st->print("ctr=" INTPTR_FORMAT "  ", uc->uc_mcontext.jmp_context.ctr);
+  st->print("pc =" INTPTR_FORMAT "  ", (unsigned long)uc->uc_mcontext.jmp_context.iar);
+  st->print("lr =" INTPTR_FORMAT "  ", (unsigned long)uc->uc_mcontext.jmp_context.lr);
+  st->print("ctr=" INTPTR_FORMAT "  ", (unsigned long)uc->uc_mcontext.jmp_context.ctr);
   st->cr();
   for (int i = 0; i < 32; i++) {
-    st->print("r%-2d=" INTPTR_FORMAT "  ", i, uc->uc_mcontext.jmp_context.gpr[i]);
+    st->print("r%-2d=" INTPTR_FORMAT "  ", i, (unsigned long)uc->uc_mcontext.jmp_context.gpr[i]);
     if (i % 3 == 2) st->cr();
   }
   st->cr();
@@ -464,7 +464,7 @@ void os::print_tos_pc(outputStream *st, const void *context) {
   st->cr();
 
   // Try to decode the instructions.
-  st->print_cr("Decoded instructions: (pc=" PTR_FORMAT ")", pc);
+  st->print_cr("Decoded instructions: (pc=" PTR_FORMAT ")", p2i(pc));
   st->print("<TODO: PPC port - print_context>");
   // TODO: PPC port Disassembler::decode(pc, 16, 16, st);
   st->cr();

@@ -1997,8 +1997,11 @@ JvmtiHandshake::execute(JvmtiUnitedHandshakeClosure* hs_cl, jthread target) {
 void
 JvmtiHandshake::execute(JvmtiUnitedHandshakeClosure* hs_cl, ThreadsListHandle* tlh,
                         JavaThread* target_jt, Handle target_h) {
+  JavaThread* current = JavaThread::current();
   bool is_virtual = java_lang_VirtualThread::is_instance(target_h());
-  bool self = target_jt == JavaThread::current();
+  bool self = target_jt == current;
+
+  assert(!Continuations::enabled() || self || !is_virtual || current->is_VTMS_transition_disabler(), "sanity check");
 
   hs_cl->set_target_jt(target_jt);   // can be needed in the virtual thread case
   hs_cl->set_is_virtual(is_virtual); // can be needed in the virtual thread case
@@ -2053,15 +2056,28 @@ VM_GetThreadListStackTraces::doit() {
 }
 
 void
-GetSingleStackTraceClosure::do_thread(Thread *target) {
-  JavaThread *jt = JavaThread::cast(target);
+GetSingleStackTraceClosure::doit() {
+  JavaThread *jt = _target_jt;
   oop thread_oop = JNIHandles::resolve_external_guard(_jthread);
 
-  if (!jt->is_exiting() && thread_oop != nullptr) {
+  if ((jt == nullptr || !jt->is_exiting()) && thread_oop != nullptr) {
     ResourceMark rm;
     _collector.fill_frames(_jthread, jt, thread_oop);
     _collector.allocate_and_fill_stacks(1);
+    set_result(_collector.result());
   }
+}
+
+void
+GetSingleStackTraceClosure::do_thread(Thread *target) {
+  assert(_target_jt == JavaThread::cast(target), "sanity check");
+  doit();
+}
+
+void
+GetSingleStackTraceClosure::do_vthread(Handle target_h) {
+  assert(_target_jt == nullptr || _target_jt->vthread() == target_h(), "sanity check");
+  doit();
 }
 
 void
@@ -2166,6 +2182,7 @@ JvmtiEnvBase::force_early_return(jthread thread, jvalue value, TosState tos) {
   if (err != JVMTI_ERROR_NONE) {
     return err;
   }
+  Handle thread_handle(current_thread, thread_obj);
   bool self = java_thread == current_thread;
 
   err = check_non_suspended_or_opaque_frame(java_thread, thread_obj, self);
@@ -2186,17 +2203,14 @@ JvmtiEnvBase::force_early_return(jthread thread, jvalue value, TosState tos) {
     return JVMTI_ERROR_OUT_OF_MEMORY;
   }
 
+  MutexLocker mu(JvmtiThreadState_lock);
   SetForceEarlyReturn op(state, value, tos);
-  if (self) {
-    op.doit(java_thread, self);
-  } else {
-    Handshake::execute(&op, java_thread);
-  }
+  JvmtiHandshake::execute(&op, &tlh, java_thread, thread_handle);
   return op.result();
 }
 
 void
-SetForceEarlyReturn::doit(Thread *target, bool self) {
+SetForceEarlyReturn::doit(Thread *target) {
   JavaThread* java_thread = JavaThread::cast(target);
   Thread* current_thread = Thread::current();
   HandleMark   hm(current_thread);
@@ -2331,7 +2345,7 @@ JvmtiModuleClosure::get_all_modules(JvmtiEnv* env, jint* module_count_ptr, jobje
 }
 
 void
-UpdateForPopTopFrameClosure::doit(Thread *target, bool self) {
+UpdateForPopTopFrameClosure::doit(Thread *target) {
   Thread* current_thread  = Thread::current();
   HandleMark hm(current_thread);
   JavaThread* java_thread = JavaThread::cast(target);

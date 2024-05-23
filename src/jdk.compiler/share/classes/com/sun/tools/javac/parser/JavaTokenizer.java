@@ -100,16 +100,6 @@ public class JavaTokenizer extends UnicodeReader {
     protected final StringBuilder sb;
 
     /**
-     * Tokens pending to be read from string template embedded expressions.
-     */
-    protected List<Token> pendingTokens;
-
-    /**
-     * String template fragment ranges; end-endPos pairs.
-     */
-    protected List<Integer> fragmentRanges;
-
-    /**
      * The token kind, set by nextToken().
      */
     protected TokenKind tk;
@@ -138,16 +128,6 @@ public class JavaTokenizer extends UnicodeReader {
      * true if contains escape sequences, set by nextToken().
      */
     protected boolean hasEscapeSequences;
-
-    /**
-     * true if contains templated string escape sequences, set by nextToken().
-     */
-    protected boolean isStringTemplate;
-
-    /**
-     * true if errors are pending from embedded expressions.
-     */
-    protected boolean hasStringTemplateErrors;
 
     /**
      * The set of lint options currently in effect. It is initialized
@@ -183,8 +163,6 @@ public class JavaTokenizer extends UnicodeReader {
         this.preview = fac.preview;
         this.lint = fac.lint;
         this.sb = new StringBuilder(256);
-        this.pendingTokens = List.nil();
-        this.fragmentRanges = List.nil();
     }
 
     /**
@@ -340,86 +318,6 @@ public class JavaTokenizer extends UnicodeReader {
     }
 
     /**
-     * Scan the content of a string template expression.
-     *
-     * @param pos     start of literal
-     * @param endPos  start of embedded expression
-     */
-    private void scanEmbeddedExpression(int pos, int endPos) {
-        // If first embedded expression.
-        if (!isStringTemplate) {
-            checkSourceLevel(pos, Feature.STRING_TEMPLATES);
-            fragmentRanges = fragmentRanges.append(pos);
-            isStringTemplate = true;
-        }
-        // Track end of previous fragment.
-        fragmentRanges = fragmentRanges.append(endPos);
-        // Keep backslash and add rest of placeholder.
-        sb.append("{}");
-
-        // Separate tokenizer for the embedded expression.
-        JavaTokenizer tokenizer = new JavaTokenizer(fac, buffer(), length());
-        tokenizer.reset(position());
-
-        // Track brace depth.
-        int braceCount = 0;
-
-        // Accumulate tokens.
-        List<Token> tokens = List.nil();
-
-        // Stash first left brace.
-        Token token = tokenizer.readToken();
-        tokens = tokens.append(token);
-
-        while (isAvailable()) {
-            // Read and stash next token.
-            token = tokenizer.readToken();
-            tokens = tokens.append(token);
-
-            // Intercept errors
-            if (token.kind == TokenKind.ERROR) {
-                // Track start of next fragment.
-                if (isTextBlock) {
-                    reset(length());
-                } else {
-                    skipToEOLN();
-                }
-                hasStringTemplateErrors = true;
-                return;
-            }
-
-            if (token.kind == TokenKind.RBRACE) {
-                // Potential closing brace.
-                if (braceCount == 0) {
-                    break;
-                }
-
-                braceCount--;
-            } else if (token.kind == TokenKind.LBRACE) {
-                // Nesting deeper.
-                braceCount++;
-            } else if (token.kind == TokenKind.STRINGFRAGMENT) {
-                tokens = tokens.appendList(tokenizer.pendingTokens);
-                tokenizer.pendingTokens = List.nil();
-            } else if (token.kind == TokenKind.EOF) {
-                break;
-            }
-        }
-
-        // If no closing brace will be picked up as an unterminated string.
-
-        // Set main tokenizer to continue at next position.
-        int position = tokenizer.position();
-        reset(position);
-
-        // Track start of next fragment.
-        fragmentRanges = fragmentRanges.append(position);
-
-        // Pend the expression tokens after the STRINGFRAGMENT.
-        pendingTokens = pendingTokens.appendList(tokens);
-    }
-
-    /**
      * Processes the current character and places in the literal buffer. If the current
      * character is a backslash then the next character is assumed to be a proper
      * escape character. Actual conversion of escape sequences takes place
@@ -480,17 +378,6 @@ public class JavaTokenizer extends UnicodeReader {
                     }
                     break;
 
-                case '{':
-                    if (isString) {
-                        scanEmbeddedExpression(pos, backslash);
-                        if (hasStringTemplateErrors) {
-                            return;
-                        }
-                    } else {
-                        lexError(position(), Errors.IllegalEscChar);
-                    }
-                    break;
-
                 default:
                     lexError(position(), Errors.IllegalEscChar);
                     break;
@@ -530,13 +417,7 @@ public class JavaTokenizer extends UnicodeReader {
 
             // While characters are available.
             while (isAvailable()) {
-                if (hasStringTemplateErrors) {
-                    break;
-                } else if (accept("\"\"\"")) {
-                    if (isStringTemplate && tk == TokenKind.STRINGLITERAL) {
-                        tk = TokenKind.STRINGFRAGMENT;
-                    }
-
+                if (accept("\"\"\"")) {
                     return;
                 }
 
@@ -560,12 +441,7 @@ public class JavaTokenizer extends UnicodeReader {
 
             // While characters are available.
             while (isAvailable()) {
-                if (hasStringTemplateErrors) {
-                    break;
-                } else if (accept('\"')) {
-                    if (isStringTemplate && tk == TokenKind.STRINGLITERAL) {
-                        tk = TokenKind.STRINGFRAGMENT;
-                    }
+                if (accept('\"')) {
                     return;
                 }
 
@@ -580,18 +456,11 @@ public class JavaTokenizer extends UnicodeReader {
             }
         }
 
-        // String ended without close delimiter sequence or has embedded expression errors.
-        if (isStringTemplate) {
-            lexError(pos, isTextBlock ? Errors.TextBlockTemplateIsNotWellFormed
-                                      : Errors.StringTemplateIsNotWellFormed);
-            fragmentRanges = List.nil();
-            pendingTokens = List.nil();
-        } else {
-            lexError(pos, isTextBlock ? Errors.UnclosedTextBlock
-                                      : Errors.UnclosedStrLit);
-        }
+        // String ended without close delimiter sequence.
+        lexError(pos, isTextBlock ? Errors.UnclosedTextBlock
+                                  : Errors.UnclosedStrLit);
 
-        if (!hasStringTemplateErrors && firstEOLN  != NOT_FOUND) {
+        if (firstEOLN  != NOT_FOUND) {
             // Reset recovery position to point after text block open delimiter sequence.
             reset(firstEOLN);
         }
@@ -906,20 +775,11 @@ public class JavaTokenizer extends UnicodeReader {
      * Read token (main entrypoint.)
      */
     public Token readToken() {
-        if (pendingTokens.nonEmpty()) {
-            Token token = pendingTokens.head;
-            pendingTokens = pendingTokens.tail;
-            return token;
-        }
-
         sb.setLength(0);
         name = null;
         radix = 0;
         isTextBlock = false;
         hasEscapeSequences = false;
-        isStringTemplate = false;
-        hasStringTemplateErrors = false;
-        fragmentRanges = List.nil();
 
         int pos;
         List<Comment> comments = null;
@@ -1134,7 +994,6 @@ public class JavaTokenizer extends UnicodeReader {
                 case '\"': // (Spec. 3.10)
                     scanString(pos);
                     break loop;
-
                 default:
                     if (isSpecial(get())) {
                         scanOperator();
@@ -1181,11 +1040,6 @@ public class JavaTokenizer extends UnicodeReader {
 
             int endPos = position();
 
-            // Track end of final fragment.
-            if (isStringTemplate) {
-                fragmentRanges = fragmentRanges.append(endPos);
-            }
-
             if (tk.tag == Token.Tag.DEFAULT) {
                 return new Token(tk, pos, endPos, comments);
             } else  if (tk.tag == Token.Tag.NAMED) {
@@ -1217,11 +1071,6 @@ public class JavaTokenizer extends UnicodeReader {
                     }
                 }
 
-                if (isStringTemplate) {
-                    // Break string into fragments and then return the first of the framents.
-                    return getFragments(string, comments);
-                }
-
                 // Translate escape sequences if present.
                 if (hasEscapeSequences) {
                     try {
@@ -1249,66 +1098,6 @@ public class JavaTokenizer extends UnicodeReader {
                                        + "|");
             }
         }
-    }
-
-    /**
-     * Convert the string into a list of pending tokens to precede embedded
-     * expressions.
-     *
-     * @param string    string to fragment
-     * @param comments  comments for first token
-     *
-     * @return first pending token.
-     */
-    private Token getFragments(String string, List<Comment> comments) {
-        List<Token> tokens = List.nil();
-        Iterator<Integer> rangeIter = fragmentRanges.iterator();
-        for (String fragment : fragment(string)) {
-            fragment = fragment.translateEscapes();
-            int fragmentPos = rangeIter.next();
-            int fragmentEndPos = rangeIter.next();
-            Token token = new StringToken(TokenKind.STRINGFRAGMENT,
-                    fragmentPos, fragmentEndPos, fragment, comments);
-            comments = null;
-            tokens = tokens.append(token);
-        }
-        pendingTokens = tokens.appendList(pendingTokens);
-        Token first = pendingTokens.head;
-        pendingTokens = pendingTokens.tail;
-        return first;
-    }
-
-    /**
-     * Break string template up into fragments. "\{}" indicates where
-     * embedded expressions occur.
-     *
-     * @param string string template
-     *
-     * @return list of fragment strings
-     */
-    List<String> fragment(String string) {
-        List<String> fragments = List.nil();
-        StringBuilder sb = new StringBuilder();
-        int length = string.length();
-        for (int i = 0; i < length; i++) {
-            char ch = string.charAt(i);
-            if (ch != '\\') {
-                sb.append(ch);
-            } else if (i + 2 < length && string.charAt(i + 1) == '{'
-                    && string.charAt(i + 2) == '}') {
-                fragments = fragments.append(sb.toString());
-                sb.setLength(0);
-                i += 2;
-            } else if (i + 1 < length){
-                sb.append('\\');
-                sb.append(string.charAt(i + 1));
-                i++;
-            } else {
-                // Error already reported.
-            }
-        }
-        fragments = fragments.append(sb.toString());
-        return fragments;
     }
 
     /**

@@ -32,7 +32,7 @@
 #include "gc/serial/cardTableRS.hpp"
 #include "gc/serial/defNewGeneration.inline.hpp"
 #include "gc/serial/serialFullGC.hpp"
-#include "gc/serial/serialHeap.hpp"
+#include "gc/serial/serialHeap.inline.hpp"
 #include "gc/serial/serialMemoryPools.hpp"
 #include "gc/serial/serialVMOperations.hpp"
 #include "gc/serial/tenuredGeneration.inline.hpp"
@@ -760,6 +760,15 @@ void SerialHeap::process_roots(ScanningOption so,
 bool SerialHeap::no_allocs_since_save_marks() {
   return _young_gen->no_allocs_since_save_marks() &&
          _old_gen->no_allocs_since_save_marks();
+}
+
+void SerialHeap::scan_evacuated_objs(YoungGenScanClosure* young_cl,
+                                     OldGenScanClosure* old_cl) {
+  do {
+    young_gen()->oop_since_save_marks_iterate(young_cl);
+    old_gen()->oop_since_save_marks_iterate(old_cl);
+  } while (!no_allocs_since_save_marks());
+  guarantee(young_gen()->promo_failure_scan_is_complete(), "Failed to finish scan");
 }
 
 // public collection interfaces

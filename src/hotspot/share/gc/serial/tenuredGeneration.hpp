@@ -112,7 +112,7 @@ public:
     return _virtual_space.uncommitted_size() == 0;
   }
 
-  HeapWord* block_start(const void* p) const;
+  HeapWord* block_start(const void* addr) const;
 
   void scan_old_to_young_refs();
 

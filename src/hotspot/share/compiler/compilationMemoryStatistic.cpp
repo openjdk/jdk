@@ -167,12 +167,9 @@ public:
     ss.put(')');
     return buf;
   }
-
-  bool equals(const FullMethodName& b) const {
+  bool operator== (const FullMethodName& b) const {
     return _k == b._k && _m == b._m && _s == b._s;
   }
-
-  bool operator== (const FullMethodName& other) const { return equals(other); }
 };
 
 // Note: not mtCompiler since we don't want to change what we measure
@@ -292,15 +289,34 @@ public:
     const size_t x2 = _total;
     return x1 < x2 ? -1 : x1 == x2 ? 0 : 1;
   }
+};
 
-  bool equals(const FullMethodName& b) const {
-    return _method.equals(b);
+// The MemStatTable contains records of memory usage of all compilations. It is printed,
+// as memory summary, either with jcmd Compiler.memory, or - if the "print" suboption has
+// been given with the MemStat compile command - as summary printout at VM exit.
+// For any given compiled method, we only keep the memory statistics of the most recent
+// compilation, but on a per-compiler basis. If one needs statistics of prior compilations,
+// one needs to look into the log produced by the "print" suboption.
+
+class MemStatTableKey {
+  const FullMethodName _fmn;
+  const CompilerType _comptype;
+public:
+  MemStatTableKey(FullMethodName fmn, CompilerType comptype) :
+    _fmn(fmn), _comptype(comptype) {}
+  MemStatTableKey(const MemStatTableKey& o) :
+    _fmn(o._fmn), _comptype(o._comptype) {}
+  bool operator== (const MemStatTableKey& other) const {
+    return _fmn == other._fmn && _comptype == other._comptype;
+  }
+  static unsigned compute_hash(const MemStatTableKey& n) {
+    return FullMethodName::compute_hash(n._fmn) + (unsigned)n._comptype;
   }
 };
 
 class MemStatTable :
-    public ResourceHashtable<FullMethodName, MemStatEntry*, 7919, AnyObj::C_HEAP,
-                             mtInternal, FullMethodName::compute_hash>
+    public ResourceHashtable<MemStatTableKey, MemStatEntry*, 7919, AnyObj::C_HEAP,
+                             mtInternal, MemStatTableKey::compute_hash>
 {
 public:
 
@@ -308,12 +324,12 @@ public:
            size_t total, size_t na_at_peak, size_t ra_at_peak,
            unsigned live_nodes_at_peak, const char* result) {
     assert_lock_strong(NMTCompilationCostHistory_lock);
-
-    MemStatEntry** pe = get(fmn);
+    MemStatTableKey key(fmn, comptype);
+    MemStatEntry** pe = get(key);
     MemStatEntry* e = nullptr;
     if (pe == nullptr) {
       e = new MemStatEntry(fmn);
-      put(fmn, e);
+      put(key, e);
     } else {
       // Update existing entry
       e = *pe;
@@ -338,7 +354,7 @@ public:
     const int num_all = number_of_entries();
     MemStatEntry** flat = NEW_C_HEAP_ARRAY(MemStatEntry*, num_all, mtInternal);
     int i = 0;
-    auto do_f = [&] (const FullMethodName& ignored, MemStatEntry* e) {
+    auto do_f = [&] (const MemStatTableKey& ignored, MemStatEntry* e) {
       if (e->total() >= min_size) {
         flat[i] = e;
         assert(i < num_all, "Sanity");

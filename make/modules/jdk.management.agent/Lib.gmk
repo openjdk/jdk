@@ -32,11 +32,8 @@ include LibCommon.gmk
 $(eval $(call SetupJdkLibrary, BUILD_LIBMANAGEMENT_AGENT, \
     NAME := management_agent, \
     OPTIMIZATION := LOW, \
-    JDK_LIBS := $(JDKLIB_LIBS), \
-    JDK_LIBS_windows := $(WIN_JAVA_LIB), \
+    JDK_LIBS := java.base:libjava, \
     LIBS_windows := advapi32.lib, \
 ))
-
-$(BUILD_LIBMANAGEMENT_AGENT): $(call FindLib, java.base, java)
 
 TARGETS += $(BUILD_LIBMANAGEMENT_AGENT)

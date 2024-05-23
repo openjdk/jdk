@@ -24,14 +24,3 @@
 #
 
 include JdkNativeCompilation.gmk
-
-################################################################################
-
-# Absolute paths to lib files on windows for use in LIBS. Should figure out a more
-# elegant solution to this.
-WIN_JAVA_LIB := $(SUPPORT_OUTPUTDIR)/native/java.base/libjava/java.lib
-
-# Put the libraries here.
-INSTALL_LIBRARIES_HERE := $(call FindLibDirForModule, $(MODULE))
-
-################################################################################

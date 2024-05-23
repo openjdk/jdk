@@ -1187,8 +1187,8 @@ class HandlerImpl {
 
  public:
 
-  static int emit_exception_handler(CodeBuffer &cbuf);
-  static int emit_deopt_handler(CodeBuffer& cbuf);
+  static int emit_exception_handler(C2_MacroAssembler *masm);
+  static int emit_deopt_handler(C2_MacroAssembler* masm);
 
   static uint size_exception_handler() {
     // NativeCall instruction size is the same as NativeJump.
@@ -1306,11 +1306,10 @@ int MachNode::compute_padding(int current_offset) const {
 
 // Emit exception handler code.
 // Stuff framesize into a register and call a VM stub routine.
-int HandlerImpl::emit_exception_handler(CodeBuffer& cbuf) {
+int HandlerImpl::emit_exception_handler(C2_MacroAssembler* masm) {
 
   // Note that the code buffer's insts_mark is always relative to insts.
   // That's why we must use the macroassembler to generate a handler.
-  C2_MacroAssembler _masm(&cbuf);
   address base = __ start_a_stub(size_exception_handler());
   if (base == nullptr) {
     ciEnv::current()->record_failure("CodeCache is full");
@@ -1324,11 +1323,10 @@ int HandlerImpl::emit_exception_handler(CodeBuffer& cbuf) {
 }
 
 // Emit deopt handler code.
-int HandlerImpl::emit_deopt_handler(CodeBuffer& cbuf) {
+int HandlerImpl::emit_deopt_handler(C2_MacroAssembler* masm) {
 
   // Note that the code buffer's insts_mark is always relative to insts.
   // That's why we must use the macroassembler to generate a handler.
-  C2_MacroAssembler _masm(&cbuf);
   address base = __ start_a_stub(size_deopt_handler());
   if (base == nullptr) {
     ciEnv::current()->record_failure("CodeCache is full");
@@ -2523,14 +2521,13 @@ static inline Assembler::ComparisonPredicateFP booltest_pred_to_comparison_pred_
 }
 
 // Helper methods for MachSpillCopyNode::implementation().
-static void vec_mov_helper(CodeBuffer *cbuf, int src_lo, int dst_lo,
+static void vec_mov_helper(C2_MacroAssembler *masm, int src_lo, int dst_lo,
                           int src_hi, int dst_hi, uint ireg, outputStream* st) {
   assert(ireg == Op_VecS || // 32bit vector
          ((src_lo & 1) == 0 && (src_lo + 1) == src_hi &&
           (dst_lo & 1) == 0 && (dst_lo + 1) == dst_hi),
          "no non-adjacent vector moves" );
-  if (cbuf) {
-    C2_MacroAssembler _masm(cbuf);
+  if (masm) {
     switch (ireg) {
     case Op_VecS: // copy whole register
     case Op_VecD:
@@ -2581,10 +2578,9 @@ static void vec_mov_helper(CodeBuffer *cbuf, int src_lo, int dst_lo,
   }
 }
 
-void vec_spill_helper(CodeBuffer *cbuf, bool is_load,
+void vec_spill_helper(C2_MacroAssembler *masm, bool is_load,
                      int stack_offset, int reg, uint ireg, outputStream* st) {
-  if (cbuf) {
-    C2_MacroAssembler _masm(cbuf);
+  if (masm) {
     if (is_load) {
       switch (ireg) {
       case Op_VecS:
@@ -2742,8 +2738,7 @@ static inline jlong high_bit_set(BasicType bt) {
   }
 #endif
 
-  void MachNopNode::emit(CodeBuffer &cbuf, PhaseRegAlloc*) const {
-    C2_MacroAssembler _masm(&cbuf);
+  void MachNopNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc*) const {
     __ nop(_count);
   }
 
@@ -2757,8 +2752,7 @@ static inline jlong high_bit_set(BasicType bt) {
   }
 #endif
 
-  void MachBreakpointNode::emit(CodeBuffer &cbuf, PhaseRegAlloc* ra_) const {
-    C2_MacroAssembler _masm(&cbuf);
+  void MachBreakpointNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc* ra_) const {
     __ int3();
   }
 
@@ -2771,7 +2765,6 @@ static inline jlong high_bit_set(BasicType bt) {
 encode %{
 
   enc_class call_epilog %{
-    C2_MacroAssembler _masm(&cbuf);
     if (VerifyStackAtCalls) {
       // Check that stack depth is unchanged: find majik cookie on stack
       int framesize = ra_->reg2offset_unchecked(OptoReg::add(ra_->_matcher._old_SP, -3*VMRegImpl::slots_per_word));

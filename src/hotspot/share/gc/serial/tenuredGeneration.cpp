@@ -264,12 +264,24 @@ void TenuredGeneration::compute_new_size_inner() {
   }
 }
 
-HeapWord* TenuredGeneration::block_start(const void* p) const {
-  return space()->block_start_const(p);
+HeapWord* TenuredGeneration::block_start(const void* addr) const {
+  HeapWord* cur_block = _bts->block_start_reaching_into_card(addr);
+
+  while (true) {
+    HeapWord* next_block = cur_block + cast_to_oop(cur_block)->size();
+    if (next_block > addr) {
+      assert(cur_block <= addr, "postcondition");
+      return cur_block;
+    }
+    cur_block = next_block;
+    // Because the BOT is precise, we should never step into the next card
+    // (i.e. crossing the card boundary).
+    assert(!SerialBlockOffsetTable::is_crossing_card_boundary(cur_block, (HeapWord*)addr), "must be");
+  }
 }
 
 void TenuredGeneration::scan_old_to_young_refs() {
-  _rs->scan_old_to_young_refs(space(), saved_mark_word());
+  _rs->scan_old_to_young_refs(this, saved_mark_word());
 }
 
 TenuredGeneration::TenuredGeneration(ReservedSpace rs,

@@ -756,7 +756,7 @@ void PhaseIdealLoop::pin_array_access_nodes_dependent_on(Node* ctrl) {
     }
     Node* pinned_clone = use->pin_array_access_node();
     if (pinned_clone != nullptr) {
-      register_new_node(pinned_clone, get_ctrl(use));
+      register_new_node_with_ctrl_of(pinned_clone, use);
       _igvn.replace_node(use, pinned_clone);
       --i;
     }
