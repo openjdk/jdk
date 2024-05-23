@@ -32,7 +32,6 @@ class CgroupUtil: AllStatic {
 
   public:
     static int processor_count(CgroupCpuController* cpu, int host_cpus);
-    static jlong limit_from_str(char* limit_str);
 };
 
 #endif // CGROUP_UTIL_LINUX_HPP

@@ -46,22 +46,3 @@ int CgroupUtil::processor_count(CgroupCpuController* cpu_ctrl, int host_cpus) {
   log_trace(os, container)("OSContainer::active_processor_count: %d", result);
   return result;
 }
-
-jlong CgroupUtil::limit_from_str(char* limit_str) {
-  if (limit_str == nullptr) {
-    return OSCONTAINER_ERROR;
-  }
-  // Unlimited memory in cgroups is the literal string 'max' for
-  // some controllers, for example the pids controller.
-  if (strcmp("max", limit_str) == 0) {
-    os::free(limit_str);
-    return (jlong)-1;
-  }
-  julong limit;
-  if (sscanf(limit_str, JULONG_FORMAT, &limit) != 1) {
-    os::free(limit_str);
-    return OSCONTAINER_ERROR;
-  }
-  os::free(limit_str);
-  return (jlong)limit;
-}
