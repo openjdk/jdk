@@ -477,7 +477,6 @@ public class Indify {
         ConstantPoolBuilder poolBuilder;  //Builder for the new constant pool
         final char[] poolMarks;
         final Map<String, PoolEntry> constants = new HashMap<>();
-        final Map<MethodModel, String> indySignatures = new HashMap<>();
         Logic(ClassModel classModel){
             this.classModel = classModel;
             poolBuilder = ConstantPoolBuilder.of(classModel);
@@ -496,75 +495,55 @@ public class Indify {
 
                 Predicate<MethodModel> filter = method -> Objects.equals(method.methodName().stringValue(), m.methodName().stringValue());
 
-                List<Instruction> instructionList = getInstructions(m);
-                ListIterator<Instruction> iterator =instructionList.listIterator();
-                final Stack<Boolean> shouldProceed = new Stack<>();
+                Iterator<Instruction> instructionIterator =getInstructions(m).iterator();
+                final Stack<Boolean> shouldProceedAfterIndyAdded = new Stack<>();
 
-                while (iterator.hasNext()){
-                    shouldProceed.push(true);
-                    Instruction i = iterator.next();
+                while (instructionIterator.hasNext()){
+                    shouldProceedAfterIndyAdded.push(true);
+                    Instruction i = instructionIterator.next();
 
                     if(i.opcode().bytecode() != INVOKESTATIC) continue;  //this is not an invokestatic instruction
-                    int methi = ((InvokeInstruction) i).method().index();
-                    if (poolMarks[methi] == 0) continue;    //Skip if marked as a pattern Method
+                    int methodIndex = ((InvokeInstruction) i).method().index();
+                    if (poolMarks[methodIndex] == 0) continue;    //Skip if not marked
 
-                    MemberRefEntry ref = (MemberRefEntry) poolBuilder.entryByIndex(methi);
+                    MemberRefEntry ref = (MemberRefEntry) poolBuilder.entryByIndex(methodIndex);
                     String methName = ref.nameAndType().name().stringValue();
                     String methType = ref.nameAndType().type().stringValue();
 
-                    MethodModel conm = null;
+                    MethodModel patternMethod = null;
                     for (MethodModel mm : classModel.methods()) {
                         if (mm.methodName().stringValue().equals(methName) && mm.methodType().stringValue().equals(methType)) {
-                            conm = mm;
+                            patternMethod = mm;
                         }
                     }
-                    if(conm == null) continue;
+                    if(patternMethod == null) continue;
 
-                    PoolEntry con = constants.get(conm.methodName().stringValue());
-                    if(quiet){
-                        System.out.println();
-                        System.err.println("$$$$$$$$$$$$$$$----------------------------------------------------------------Patching Method: " +  m.methodName() + "------------------------------------------------------------------");
-                    }
+                    PoolEntry newConstant = constants.get(patternMethod.methodName().stringValue());
 
-                    if(con instanceof InvokeDynamicEntry){
-                        Instruction i2 = findPop(instructionList, iterator.previousIndex());
-                        int ref2i;
-                        MethodRefEntry methodEntry = null;
+                    if(newConstant instanceof InvokeDynamicEntry){
+                        if (!quiet) System.err.println(":::Transforming the Method: "+ m.methodName() +" instruction: " + i + " invokedynamic: " + newConstant.index() );
+                        MethodModel finalPatternMethod = patternMethod;
 
-                        if(i2 != null && i2.opcode().bytecode() == INVOKEVIRTUAL && poolMarks[ref2i = ((InvokeInstruction) i2).method().index()] == 'D'){
-                            methodEntry = (MethodRefEntry) poolBuilder.entryByIndex(ref2i);
-                        }
-
-                        if(methodEntry == null || !"invokeExact".equals(methodEntry.nameAndType().name().stringValue())){
-                            System.err.println(m+": Failed to create invokedynamic at "+i.opcode().bytecode());
-                            continue;
-                        }
-
-                        String invType = methodEntry.type().stringValue();
-                        String bsmType = indySignatures.get(conm);
-                        if (!invType.equals(bsmType)) {
-                            System.err.println(m+": warning: "+conm+" call type and local invoke type differ: " + bsmType+", " + invType);
-                        }
-
-                        assert (i.sizeInBytes() == 3 || i2.sizeInBytes() == 3);
-                        System.err.println("----------------------------------------------------------------Transforming Method INDY Instructions & Creating New ClassModels------------------------------------------------------------------}}}");
-                        if (!quiet) System.err.println(":::Transfmoring the Method: "+ m.methodName() +" instruction: " + i + " invokedynamic: " + con.index() );
-                        MethodModel finalConm = conm;
                         codeTransform = (b, e) ->{
                             String a1 = null, a2 = null;
                             if(e instanceof InvokeInstruction){
                                 a1 = ((InvokeInstruction) e).method().name().stringValue();
-                                a2 = finalConm.methodName().stringValue();
+                                a2 = finalPatternMethod.methodName().stringValue();
                             }
-                            if (e instanceof InvokeInstruction && Objects.equals(a1, a2)) {
-                                System.err.println(">> Removing instruction invokestatic for Method: " + ((InvokeInstruction) e).name());
-                            } else if (shouldProceed.peek() && e instanceof InvokeInstruction && ((InvokeInstruction) e).method().equals(((InvokeInstruction) i2).method())) {
-                                System.err.println(">> Removing instruction invokevirtual for Method: " + ((InvokeInstruction) e).name());
-                                System.err.println(">> Adding invokedynamic instruction and nop instead of invoke virtual: " + ((InvokeDynamicEntry) con).name());
-                                b.invokeDynamicInstruction((InvokeDynamicEntry) con).nop();
+                            if (e instanceof InvokeInstruction invokeInstruction && Objects.equals(a1, a2)) {
+                                System.err.println(">> Removing instruction invokestatic for Method: " + invokeInstruction.name());
+                            }
+                            else if (
+                                    shouldProceedAfterIndyAdded.peek() &&
+                                    e instanceof InvokeInstruction invokeInstruction &&
+                                    invokeInstruction.method().name().stringValue().equals("invokeExact"))
+                            {
+                                System.err.println(">> Removing instruction invokevirtual for Method: " + invokeInstruction.method());
+                                System.err.println(">> Adding invokedynamic instruction and nop instead of invoke virtual: " + ((InvokeDynamicEntry) newConstant).name());
+                                b.invokeDynamicInstruction((InvokeDynamicEntry) newConstant).nop();
 
-                                shouldProceed.pop();
-                                shouldProceed.push(false);
+                                shouldProceedAfterIndyAdded.pop();
+                                shouldProceedAfterIndyAdded.push(false);
                             } else {
                                 b.with(e);
                             }
@@ -578,8 +557,7 @@ public class Indify {
                         System.out.println();
                     } else {
                         assert(i.sizeInBytes() == 3);
-                        System.err.println("----------------------------------------------------------------Transforming Method LDC Instructions & Creating New ClassModels------------------------------------------------------------------}}}");
-                        MethodModel finalConm = conm;
+                        MethodModel finalConm = patternMethod;
                         codeTransform = (b, e) ->{
                             String a1 = null, a2 = null;
                             if(e instanceof InvokeInstruction invokeInstruction){
@@ -587,15 +565,15 @@ public class Indify {
                                 a2 = finalConm.methodName().stringValue();
                             }
                             if(e instanceof InvokeInstruction invokeInstruction && Objects.equals(a1, a2)){
-                                System.err.println(":::Transfmoring the Method: "+ m.methodName() +" instruction: invokestatic " + invokeInstruction.type() + " to ldc: " +  con.index() );
-                                b.ldc((LoadableConstantEntry) con);
+                                System.err.println(":::Transfmoring the Method: "+ m.methodName() +" instruction: invokestatic " + invokeInstruction.type() + " to ldc: " +  newConstant.index() );
+                                b.ldc((LoadableConstantEntry) newConstant);
                             } else b.with(e);
                         };
                         classTransform = ClassTransform.transformingMethodBodies(filter, codeTransform);
                         classModel = of().parse(
                              of().transform(classModel, classTransform));
                     }
-                    shouldProceed.pop();
+                    shouldProceedAfterIndyAdded.clear();
                 }
             }
             this.classModel = removePatternMethodsAndVerify(classModel);
@@ -629,52 +607,6 @@ public class Indify {
             }
 
             return newClassModel;
-        }
-
-        Instruction findPop( List<Instruction> instructionList, int currentIndex){
-            JVMState jvm = new JVMState();
-
-            ListIterator<Instruction> newIter = instructionList.listIterator(currentIndex + 1);
-        decode:
-            while (newIter.hasNext()) {
-                Instruction i = newIter.next();
-                String pops = INSTRUCTION_POPS[i.opcode().bytecode()];
-
-                if(pops == null) break;
-                if (jvm.stackMotion(i.opcode().bytecode()))  continue;
-                if (pops.indexOf('Q') >= 0 && i instanceof InvokeInstruction in) {
-                    MemberRefEntry ref = (MemberRefEntry) poolBuilder.entryByIndex(in.method().index());
-                    String methType = ref.nameAndType().type().stringValue();
-                    String type = simplifyType(methType);
-
-                    pops = switch (i.opcode().bytecode()) {
-                        case GETSTATIC, GETFIELD, PUTSTATIC, PUTFIELD -> pops.replace("Q", type);
-                        default -> {
-                            if (!type.startsWith("("))
-                                throw new InternalError(i.toString());
-                            yield pops.replace("Q$Q", type.substring(1).replace(")", "$"));
-                        }
-                    };
-                    System.out.println("special type: "+type+" => "+pops);
-                }
-                int npops = pops.indexOf('$');
-                if (npops < 0)  throw new InternalError();
-                if (npops > jvm.sp())  return i;
-                List<Object> args = jvm.args(npops);
-                int k = 0;
-                for (Object x : args) {
-                    char have = (Character) x;
-                    char want = pops.charAt(k++);
-                    if (have == 'X' || want == 'X')  continue;
-                    if (have != want)  break decode;
-                }
-                if (pops.charAt(k++) != '$')  break;
-                args.clear();
-                while (k < pops.length())
-                    args.add(pops.charAt(k++));
-            }
-            System.err.println("*** bailout on jvm: "+jvm.stack);
-            return null;
         }
 
         boolean findPatternMethods() {
@@ -1105,8 +1037,6 @@ public class Indify {
                             // parse bsmArgs as (MH, lookup, String, MT, [extra])
                             PoolEntry indyCon = makeInvokeDynamicCon(bsmArgs);
                             if (indyCon != null) {
-                                PoolEntry typeCon = (PoolEntry) bsmArgs.get(3);
-                                indySignatures.put(method, ((MethodTypeEntry) typeCon).descriptor().stringValue());
                                 return indyCon;
                             }
                             System.err.println(method+": inscrutable bsm arguments: "+bsmArgs);
