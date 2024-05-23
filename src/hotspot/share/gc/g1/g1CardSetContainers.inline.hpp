@@ -145,7 +145,7 @@ inline G1CardSetArray::G1CardSetArray(uint card_in_region, EntryCountType num_ca
   _num_entries(1) {
   assert(_size > 0, "CardSetArray of size 0 not supported.");
   assert(_size < LockBitMask, "Only support CardSetArray of size %u or smaller.", LockBitMask - 1);
-  _data[0] = checked_cast<EntryDataType>(card_in_region);
+  *entry_addr(0) = checked_cast<EntryDataType>(card_in_region);
 }
 
 inline G1CardSetArray::G1CardSetArrayLocker::G1CardSetArrayLocker(EntryCountType volatile* num_entries_addr) :
@@ -186,7 +186,7 @@ inline G1CardSetArray::EntryDataType G1CardSetArray::at(EntryCountType index) co
 }
 
 inline G1AddCardResult G1CardSetArray::add(uint card_idx) {
-  assert(card_idx < (1u << (sizeof(_data[0]) * BitsPerByte)),
+  assert(card_idx < (1u << (sizeof(EntryDataType) * BitsPerByte)),
          "Card index %u does not fit allowed card value range.", card_idx);
   EntryCountType num_entries = Atomic::load_acquire(&_num_entries) & EntryMask;
   EntryCountType idx = 0;

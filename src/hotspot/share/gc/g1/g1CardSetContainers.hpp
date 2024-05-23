@@ -163,7 +163,8 @@ public:
 private:
   EntryCountType _size;
   EntryCountType volatile _num_entries;
-  EntryDataType _data[2];
+  // VLA implementation.
+  EntryDataType _data[1];
 
   static const EntryCountType LockBitMask = (EntryCountType)1 << (sizeof(EntryCountType) * BitsPerByte - 1);
   static const EntryCountType EntryMask = LockBitMask - 1;
