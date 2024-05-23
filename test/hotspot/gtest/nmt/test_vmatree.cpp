@@ -41,7 +41,15 @@ public:
   NCS::StackIndex si[si_len];
   NativeCallStack stacks[si_len];
 
+  VMATreeTest() : ncs(true) {
+    stacks[0] = make_stack(0xA);
+    stacks[1] = make_stack(0xB);
+    si[0] = ncs.push(stacks[0]);
+    si[1] = ncs.push(stacks[0]);
+  }
+
   // Utilities
+
   VMATree::TreapNode* treap_root(VMATree& tree) {
     return tree._tree._root;
   }
@@ -67,11 +75,19 @@ public:
     return x->val().out.type();
   }
 
-  VMATreeTest() : ncs(true) {
-    stacks[0] = make_stack(0xA);
-    stacks[1] = make_stack(0xB);
-    si[0] = ncs.push(stacks[0]);
-    si[1] = ncs.push(stacks[0]);
+  size_t count_nodes(Tree tree) {
+    int count = 0;
+    treap(tree).visit_range_in_order(0, 0xFFFFFFFFFFFFFFFF, [&](Node* x) {
+      ++count;
+    });
+    return count;
+  }
+
+  void expect_node_count(Tree tree, size_t count) {
+    EXPECT_EQ(count, count_nodes(tree));
+  }
+  void expect_null_root(Tree tree) {
+    EXPECT_EQ(nullptr, treap_root(tree));
   }
 
   // Tests
@@ -178,17 +194,12 @@ public:
 
 
 TEST_VM_F(VMATreeTest, OverlappingReservationsResultInTwoNodes) {
-  // Overlapping reservations should also only result in 2 nodes.
   VMATree::RegionData rd{si[0], mtTest};
-  Tree tree2;
+  Tree tree;
   for (int i = 99; i >= 0; i--) {
-    tree2.reserve_mapping(i * 100, 101, rd);
+    tree.reserve_mapping(i * 100, 101, rd);
   }
-  int found_nodes = 0;
-  treap(tree2).visit_range_in_order(0, 999999, [&](Node* x) {
-    found_nodes++;
-  });
-  EXPECT_EQ(2, found_nodes) << "Adjacent reservations should result in exactly 2 nodes";
+  expect_node_count(tree, 2);
 }
 
 // Low-level tests inspecting the state of the tree.
@@ -210,11 +221,9 @@ TEST_VM_F(VMATreeTest, LowLevel) {
     VMATree::RegionData rd2{si[1], mtNMT };
     tree.reserve_mapping(0, 100, rd);
     tree.reserve_mapping(100, 100, rd2);
+
+    expect_node_count(tree, 3);
     int found_nodes = 0;
-    treap(tree).visit_range_in_order(0, 99999, [&](Node* x) {
-      found_nodes++;
-    });
-    EXPECT_EQ(3, found_nodes);
   }
 
   { // Reserving after commit should overwrite commit
@@ -223,15 +232,14 @@ TEST_VM_F(VMATreeTest, LowLevel) {
     VMATree::RegionData rd2{si[1], mtNMT };
     tree.commit_mapping(50, 50, rd2);
     tree.reserve_mapping(0, 100, rd);
-    int found_nodes = 0;
     treap(tree).visit_range_in_order(0, 99999, [&](Node* x) {
       EXPECT_TRUE(x->key() == 0 || x->key() == 100);
       if (x->key() == 0) {
         EXPECT_EQ(x->val().out.regiondata().flag, mtTest);
       }
-      found_nodes++;
     });
-    EXPECT_EQ(2, found_nodes);
+
+    expect_node_count(tree, 2);
   }
 
   { // Split a reserved region into two different reserved regions
@@ -242,18 +250,16 @@ TEST_VM_F(VMATreeTest, LowLevel) {
     tree.reserve_mapping(0, 100, rd);
     tree.reserve_mapping(0, 50, rd2);
     tree.reserve_mapping(50, 50, rd3);
-    int found_nodes = 0;
-    treap(tree).visit_range_in_order(0, 99999, [&](Node* x) {
-      found_nodes++;
-    });
-    EXPECT_EQ(3, found_nodes);
+
+    expect_node_count(tree, 3);
   }
   { // One big reserve + release leaves an empty tree
     Tree::RegionData rd{si[0], mtNMT};
     Tree tree;
     tree.reserve_mapping(0, 500000, rd);
     tree.release_mapping(0, 500000);
-    EXPECT_EQ(nullptr, treap_root(tree));
+
+    expect_null_root(tree);
   }
   { // A committed region inside of/replacing a reserved region
     // should replace the reserved region's metadata.
