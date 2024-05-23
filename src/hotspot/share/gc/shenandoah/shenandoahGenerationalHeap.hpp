@@ -50,10 +50,6 @@ public:
     return _is_aging_cycle.is_set();
   }
 
-  // Ages regions that haven't been used for allocations in the current cycle.
-  // Resets ages for regions that have been used for allocations.
-  void update_region_ages();
-
   oop evacuate_object(oop p, Thread* thread) override;
   oop try_evacuate_object(oop p, Thread* thread, ShenandoahHeapRegion* from_region, ShenandoahAffiliation target_gen);
 
@@ -66,7 +62,6 @@ public:
   // ---------- Update References
   //
   void update_heap_references(bool concurrent) override;
-
 private:
   HeapWord* allocate_from_plab(Thread* thread, size_t size, bool is_promotion);
   HeapWord* allocate_from_plab_slow(Thread* thread, size_t size, bool is_promotion);
@@ -108,15 +103,11 @@ public:
   // Transfers surplus old regions to young, or takes regions from young to satisfy old region deficit
   TransferResult balance_generations();
 
-  // Balances generations, coalesces and fills old regions if necessary
-  void complete_degenerated_cycle();
-  void complete_concurrent_cycle();
+  // Makes old regions parsable
+  void coalesce_and_fill_old_regions(bool concurrent);
+
 private:
   void initialize_controller() override;
-  void entry_global_coalesce_and_fill();
-
-  // Makes old regions parsable. This will also rebuild card offsets, which is necessary if classes were unloaded
-  void coalesce_and_fill_old_regions(bool concurrent);
 
   ShenandoahRegulatorThread* _regulator_thread;
 
