@@ -399,10 +399,10 @@ class NativeMovConstReg: public NativeInstruction {
       }
     } else if (is_movptr2_at(instruction_address())) {
       if (is_addi_at(addr_at(movptr2_instruction_size - NativeInstruction::instruction_size))) {
-        // Assume: lui, addi, slli, addi, slli, addi
+        // Assume: lui, lui, slli, add, addi
         return addr_at(movptr2_instruction_size);
       } else {
-        // Assume: lui, addi, slli, addi, slli
+        // Assume: lui, lui, slli, add
         return addr_at(movptr2_instruction_size - NativeInstruction::instruction_size);
       }
     } else if (is_load_pc_relative_at(instruction_address())) {
