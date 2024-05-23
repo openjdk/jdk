@@ -1787,7 +1787,7 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
         __ jcc(Assembler::equal, *success_target);
 
 #ifdef _LP64
-        if (UseSecondarySupersTable) {
+        if (UseSecondarySupersTable && UsePopCountInstruction) {
           lookup_secondary_supers_table((Klass*)(k->constant_encoding()), klass_RInfo,
                                         k_RInfo, Rtmp1, rscratch1, success, failure);
         }
@@ -1834,7 +1834,6 @@ void LIR_Assembler::lookup_secondary_supers_table(Klass *super_klass, Register r
 
   assert_different_registers(r_sub_klass, r_super_klass, Rtmp1, r_array_index);
 
-  // __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, poo)));
   __ movq(r_array_index, Address(r_sub_klass, Klass::bitmap_offset()));
 
   // First check the bitmap to see if super_klass might be present. If
