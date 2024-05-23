@@ -1042,6 +1042,8 @@ public class Indify {
                             PoolEntry indyCon = makeInvokeDynamicCon(bsmArgs);
                             if (indyCon != null) {
                                 return indyCon;
+                            }else {
+                                System.err.println("Failed to create invokedynamic instruction for the method: " + method.methodName());
                             }
                             System.err.println(method+": inscrutable bsm arguments: "+bsmArgs);
                             break decode;
@@ -1055,8 +1057,9 @@ public class Indify {
                     }
                     default:
                         if(jvm.stackMotion(instruction.opcode().bytecode())) break;
-                        if (bc >= ICONST_M1 && bc <= DCONST_1)
-                        { jvm.push(INSTRUCTION_CONSTANTS[bc - ICONST_M1]); break; }
+                        if (bc >= ICONST_M1 && bc <= DCONST_1) {
+                            jvm.push(instruction.opcode().constantValue()); break;
+                        }
                         if (patternMark == 'I') {
                             if (bc == ALOAD || bc >= ALOAD_0 && bc <= ALOAD_3)
                             { jvm.push(UNKNOWN_CON); break; }
@@ -1222,98 +1225,6 @@ public class Indify {
         }
 
         return ClassFile.of().parse(bytes);
-    }
-
-    private static final Object[] INSTRUCTION_CONSTANTS = {
-        -1, 0, 1, 2, 3, 4, 5, 0L, 1L, 0.0F, 1.0F, 2.0F, 0.0D, 1.0D
-    };
-
-    private static final String INSTRUCTION_FORMATS =
-        "nop$ aconst_null$L iconst_m1$I iconst_0$I iconst_1$I "+
-        "iconst_2$I iconst_3$I iconst_4$I iconst_5$I lconst_0$J_ "+
-        "lconst_1$J_ fconst_0$F fconst_1$F fconst_2$F dconst_0$D_ "+
-        "dconst_1$D_ bipush=bx$I sipush=bxx$I ldc=bk$X ldc_w=bkk$X "+
-        "ldc2_w=bkk$X_ iload=bl/wbll$I lload=bl/wbll$J_ fload=bl/wbll$F "+
-        "dload=bl/wbll$D_ aload=bl/wbll$L iload_0$I iload_1$I "+
-        "iload_2$I iload_3$I lload_0$J_ lload_1$J_ lload_2$J_ "+
-        "lload_3$J_ fload_0$F fload_1$F fload_2$F fload_3$F dload_0$D_ "+
-        "dload_1$D_ dload_2$D_ dload_3$D_ aload_0$L aload_1$L "+
-        "aload_2$L aload_3$L iaload$LI$I laload$LI$J_ faload$LI$F "+
-        "daload$LI$D_ aaload$LI$L baload$LI$I caload$LI$I saload$LI$I "+
-        "istore=bl/wbll$I$ lstore=bl/wbll$J_$ fstore=bl/wbll$F$ "+
-        "dstore=bl/wbll$D_$ astore=bl/wbll$L$ istore_0$I$ istore_1$I$ "+
-        "istore_2$I$ istore_3$I$ lstore_0$J_$ lstore_1$J_$ "+
-        "lstore_2$J_$ lstore_3$J_$ fstore_0$F$ fstore_1$F$ fstore_2$F$ "+
-        "fstore_3$F$ dstore_0$D_$ dstore_1$D_$ dstore_2$D_$ "+
-        "dstore_3$D_$ astore_0$L$ astore_1$L$ astore_2$L$ astore_3$L$ "+
-        "iastore$LII$ lastore$LIJ_$ fastore$LIF$ dastore$LID_$ "+
-        "aastore$LIL$ bastore$LII$ castore$LII$ sastore$LII$ pop$X$ "+
-        "pop2$XX$ dup$X$XX dup_x1$XX$XXX dup_x2$XXX$XXXX dup2$XX$XXXX "+
-        "dup2_x1$XXX$XXXXX dup2_x2$XXXX$XXXXXX swap$XX$XX "+
-        "iadd$II$I ladd$J_J_$J_ fadd$FF$F dadd$D_D_$D_ isub$II$I "+
-        "lsub$J_J_$J_ fsub$FF$F dsub$D_D_$D_ imul$II$I lmul$J_J_$J_ "+
-        "fmul$FF$F dmul$D_D_$D_ idiv$II$I ldiv$J_J_$J_ fdiv$FF$F "+
-        "ddiv$D_D_$D_ irem$II$I lrem$J_J_$J_ frem$FF$F drem$D_D_$D_ "+
-        "ineg$I$I lneg$J_$J_ fneg$F$F dneg$D_$D_ ishl$II$I lshl$J_I$J_ "+
-        "ishr$II$I lshr$J_I$J_ iushr$II$I lushr$J_I$J_ iand$II$I "+
-        "land$J_J_$J_ ior$II$I lor$J_J_$J_ ixor$II$I lxor$J_J_$J_ "+
-        "iinc=blx/wbllxx$ i2l$I$J_ i2f$I$F i2d$I$D_ l2i$J_$I l2f$J_$F "+
-        "l2d$J_$D_ f2i$F$I f2l$F$J_ f2d$F$D_ d2i$D_$I d2l$D_$J_ "+
-        "d2f$D_$F i2b$I$I i2c$I$I i2s$I$I lcmp fcmpl fcmpg dcmpl dcmpg "+
-        "ifeq=boo ifne=boo iflt=boo ifge=boo ifgt=boo ifle=boo "+
-        "if_icmpeq=boo if_icmpne=boo if_icmplt=boo if_icmpge=boo "+
-        "if_icmpgt=boo if_icmple=boo if_acmpeq=boo if_acmpne=boo "+
-        "goto=boo jsr=boo ret=bl/wbll tableswitch=* lookupswitch=* "+
-        "ireturn lreturn freturn dreturn areturn return "+
-        "getstatic=bkf$Q putstatic=bkf$Q$ getfield=bkf$L$Q "+
-        "putfield=bkf$LQ$ invokevirtual=bkm$LQ$Q "+
-        "invokespecial=bkm$LQ$Q invokestatic=bkm$Q$Q "+
-        "invokeinterface=bkixx$LQ$Q invokedynamic=bkd__$Q$Q new=bkc$L "+
-        "newarray=bx$I$L anewarray=bkc$I$L arraylength$L$I athrow "+
-        "checkcast=bkc$L$L instanceof=bkc$L$I monitorenter$L "+
-        "monitorexit$L wide=* multianewarray=bkcx ifnull=boo "+
-        "ifnonnull=boo goto_w=boooo jsr_w=boooo ";
-    private static final String[] INSTRUCTION_POPS;
-    static {
-        String[] insns = INSTRUCTION_FORMATS.split(" ");
-        assert(insns[LOOKUPSWITCH].startsWith("lookupswitch"));
-        assert(insns[TABLESWITCH].startsWith("tableswitch"));
-        assert(insns[WIDE].startsWith("wide"));
-        assert(insns[INVOKEDYNAMIC].startsWith("invokedynamic"));
-        int[] info = new int[256];
-        String[] names = new String[256];
-        String[] pops = new String[256];
-        for (int i = 0; i < insns.length; i++) {
-            String insn = insns[i];
-            int dl = insn.indexOf('$');
-            if (dl > 0) {
-                String p = insn.substring(dl+1);
-                if (p.indexOf('$') < 0)  p = "$" + p;
-                pops[i] = p;
-                insn = insn.substring(0, dl);
-            }
-            int eq = insn.indexOf('=');
-            if (eq < 0) {
-                info[i] = 1;
-                names[i] = insn;
-                continue;
-            }
-            names[i] = insn.substring(0, eq);
-            String fmt = insn.substring(eq+1);
-            if (fmt.equals("*")) {
-                info[i] = 0;
-                continue;
-            }
-            int sl = fmt.indexOf('/');
-            if (sl < 0) {
-                info[i] = (char) fmt.length();
-            } else {
-                String wfmt = fmt.substring(sl+1);
-                fmt = fmt.substring(0, sl);
-                info[i] = (char)( fmt.length() + (wfmt.length() * 16) );
-            }
-        }
-        INSTRUCTION_POPS = pops;
     }
 
     static String simplifyType(String type) {
