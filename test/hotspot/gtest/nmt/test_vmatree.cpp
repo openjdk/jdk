@@ -36,6 +36,11 @@ using NCS = NativeCallStackStorage;
 
 class VMATreeTest : public testing::Test {
 public:
+  NCS ncs;
+  constexpr static const int si_len = 2;
+  NCS::StackIndex si[si_len];
+  NativeCallStack stacks[si_len];
+
   // Utilities
   VMATree::TreapNode* treap_root(VMATree& tree) {
     return tree._tree._root;
@@ -54,15 +59,19 @@ public:
     return stack;
   }
 
-  NativeCallStack stack1 = make_stack(0x89ac);
-  NativeCallStack stack2 = make_stack(0x123);
-
   VMATree::StateType in_type_of(VMATree::TreapNode* x) {
     return x->val().in.type();
   }
 
   VMATree::StateType out_type_of(VMATree::TreapNode* x) {
     return x->val().out.type();
+  }
+
+  VMATreeTest() : ncs(true) {
+    stacks[0] = make_stack(0xA);
+    stacks[1] = make_stack(0xB);
+    si[0] = ncs.push(stacks[0]);
+    si[1] = ncs.push(stacks[0]);
   }
 
   // Tests
@@ -166,31 +175,30 @@ public:
   };
 };
 
+
+
+TEST_VM_F(VMATreeTest, OverlappingReservationsResultInTwoNodes) {
+  // Overlapping reservations should also only result in 2 nodes.
+  VMATree::RegionData rd{si[0], mtTest};
+  Tree tree2;
+  for (int i = 99; i >= 0; i--) {
+    tree2.reserve_mapping(i * 100, 101, rd);
+  }
+  int found_nodes = 0;
+  treap(tree2).visit_range_in_order(0, 999999, [&](Node* x) {
+    found_nodes++;
+  });
+  EXPECT_EQ(2, found_nodes) << "Adjacent reservations should result in exactly 2 nodes";
+}
+
 // Low-level tests inspecting the state of the tree.
 TEST_VM_F(VMATreeTest, LowLevel) {
-  NativeCallStackStorage ncs(true);
-  NativeCallStackStorage::StackIndex si1 = ncs.push(stack1);
-  NativeCallStackStorage::StackIndex si2 = ncs.push(stack2);
-
-  { // Overlapping reservations should also only result in 2 nodes.
-    VMATree::RegionData rd{si1, mtTest};
-    Tree tree2;
-    for (int i = 99; i >= 0; i--) {
-      tree2.reserve_mapping(i * 100, 101, rd);
-    }
-    int found_nodes = 0;
-    treap(tree2).visit_range_in_order(0, 999999, [&](Node* x) {
-      found_nodes++;
-    });
-    EXPECT_EQ(2, found_nodes) << "Adjacent reservations should result in exactly 2 nodes";
-  }
-
   adjacent_2_nodes(VMATree::empty_regiondata);
   remove_all_leaves_empty_tree(VMATree::empty_regiondata);
   commit_middle(VMATree::empty_regiondata);
   commit_whole(VMATree::empty_regiondata);
 
-  VMATree::RegionData rd{si1, mtTest };
+  VMATree::RegionData rd{si[0], mtTest };
   adjacent_2_nodes(rd);
   remove_all_leaves_empty_tree(rd);
   commit_middle(rd);
@@ -198,8 +206,8 @@ TEST_VM_F(VMATreeTest, LowLevel) {
 
   { // Identical operation but different metadata should not merge
     Tree tree;
-    VMATree::RegionData rd{si1, mtTest };
-    VMATree::RegionData rd2{si2, mtNMT };
+    VMATree::RegionData rd{si[0], mtTest };
+    VMATree::RegionData rd2{si[1], mtNMT };
     tree.reserve_mapping(0, 100, rd);
     tree.reserve_mapping(100, 100, rd2);
     int found_nodes = 0;
@@ -211,8 +219,8 @@ TEST_VM_F(VMATreeTest, LowLevel) {
 
   { // Reserving after commit should overwrite commit
     Tree tree;
-    VMATree::RegionData rd{si1, mtTest };
-    VMATree::RegionData rd2{si2, mtNMT };
+    VMATree::RegionData rd{si[0], mtTest };
+    VMATree::RegionData rd2{si[1], mtNMT };
     tree.commit_mapping(50, 50, rd2);
     tree.reserve_mapping(0, 100, rd);
     int found_nodes = 0;
@@ -228,9 +236,9 @@ TEST_VM_F(VMATreeTest, LowLevel) {
 
   { // Split a reserved region into two different reserved regions
     Tree tree;
-    VMATree::RegionData rd{si1, mtTest };
-    VMATree::RegionData rd2{si2, mtNMT };
-    VMATree::RegionData rd3{si1, mtNone };
+    VMATree::RegionData rd{si[0], mtTest };
+    VMATree::RegionData rd2{si[1], mtNMT };
+    VMATree::RegionData rd3{si[0], mtNone };
     tree.reserve_mapping(0, 100, rd);
     tree.reserve_mapping(0, 50, rd2);
     tree.reserve_mapping(50, 50, rd3);
@@ -241,7 +249,7 @@ TEST_VM_F(VMATreeTest, LowLevel) {
     EXPECT_EQ(3, found_nodes);
   }
   { // One big reserve + release leaves an empty tree
-    Tree::RegionData rd{si1, mtNMT};
+    Tree::RegionData rd{si[0], mtNMT};
     Tree tree;
     tree.reserve_mapping(0, 500000, rd);
     tree.release_mapping(0, 500000);
@@ -249,8 +257,8 @@ TEST_VM_F(VMATreeTest, LowLevel) {
   }
   { // A committed region inside of/replacing a reserved region
     // should replace the reserved region's metadata.
-    Tree::RegionData rd{si1, mtNMT};
-    VMATree::RegionData rd2{si2, mtTest};
+    Tree::RegionData rd{si[0], mtNMT};
+    VMATree::RegionData rd2{si[1], mtTest};
     Tree tree;
     tree.reserve_mapping(0, 100, rd);
     tree.commit_mapping(0, 100, rd2);
@@ -266,7 +274,7 @@ TEST_VM_F(VMATreeTest, LowLevel) {
 
   { // Attempting to reserve or commit an empty region should not change the tree.
     Tree tree;
-    Tree::RegionData rd{si1, mtNMT};
+    Tree::RegionData rd{si[0], mtNMT};
     tree.reserve_mapping(0, 0, rd);
     EXPECT_EQ(nullptr, treap_root(tree));
     tree.commit_mapping(0, 0, rd);
