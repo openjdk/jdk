@@ -72,10 +72,8 @@ void C1_MacroAssembler::lock_object(Register Rmark, Register Roop, Register Rbox
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(tmp, Roop);
-    z_l(tmp, Address(tmp, Klass::access_flags_offset()));
-    assert((JVM_ACC_IS_VALUE_BASED_CLASS & 0xFFFF) == 0, "or change following instruction");
-    z_nilh(tmp, JVM_ACC_IS_VALUE_BASED_CLASS >> 16);
-    z_brne(slow_case);
+    testbit(Address(tmp, Klass::access_flags_offset()), exact_log2(JVM_ACC_IS_VALUE_BASED_CLASS));
+    branch_optimized(Assembler::bcondAllOne, slow_case);
   }
 
   assert(LockingMode != LM_MONITOR, "LM_MONITOR is already handled, by emit_lock()");
