@@ -258,6 +258,26 @@ TEST(cgroupTest, read_number_tests) {
   EXPECT_FALSE(ok) << "Empty file should have failed";
   EXPECT_EQ((julong)0xBAD, foo) << "foo was altered";
 
+  // Some interface files have numbers as well as the string
+  // 'max', which means unlimited.
+  jlong result = -10;
+  fill_file(test_file, "max\n");
+  ok = controller->read_number_handle_max(base_with_slash, &result);
+  EXPECT_TRUE(ok) << "Number parsing for 'max' string should have been successful";
+  EXPECT_EQ((jlong)-1, result) << "'max' means unlimited (-1)";
+
+  result = -10;
+  fill_file(test_file, "11114\n");
+  ok = controller->read_number_handle_max(base_with_slash, &result);
+  EXPECT_TRUE(ok) << "Number parsing for should have been successful";
+  EXPECT_EQ((jlong)11114, result) << "Incorrect result";
+
+  result = -10;
+  fill_file(test_file, "-51114\n");
+  ok = controller->read_number_handle_max(base_with_slash, &result);
+  EXPECT_TRUE(ok) << "Number parsing for should have been successful";
+  EXPECT_EQ((jlong)-51114, result) << "Incorrect result";
+
   delete_file(test_file);
 }
 

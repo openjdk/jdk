@@ -358,12 +358,6 @@ int CgroupV1Subsystem::cpu_shares() {
   return shares_int;
 }
 
-
-char* CgroupV1Subsystem::pids_max_val(char* buf) {
-  CONTAINER_READ_STRING_CHECKED(_pids, "/pids.max", "Maximum number of tasks", buf);
-  return buf;
-}
-
 /* pids_max
  *
  * Return the maximum number of tasks available to the process
@@ -375,9 +369,9 @@ char* CgroupV1Subsystem::pids_max_val(char* buf) {
  */
 jlong CgroupV1Subsystem::pids_max() {
   if (_pids == nullptr) return OSCONTAINER_ERROR;
-  char buf[1024];
-  char * pidsmax_str = pids_max_val(buf);
-  return limit_from_str(pidsmax_str);
+  jlong pids_max;
+  CONTAINER_READ_NUMBER_CHECKED_MAX(_pids, "/pids.max", "Maximum number of tasks", pids_max);
+  return pids_max;
 }
 
 /* pids_current

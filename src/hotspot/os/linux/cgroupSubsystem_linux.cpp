@@ -611,6 +611,20 @@ bool CgroupController::read_number(const char* filename, julong* result) {
   return false;
 }
 
+bool CgroupController::read_number_handle_max(const char* filename, jlong* result) {
+  char buf[1024];
+  bool is_ok = read_string(filename, buf);
+  if (!is_ok) {
+    return false;
+  }
+  jlong val = limit_from_str(buf);
+  if (val == OSCONTAINER_ERROR) {
+    return false;
+  }
+  *result = val;
+  return true;
+}
+
 bool CgroupController::read_numerical_key_value(const char* filename, const char* key, julong* result) {
   if (filename == nullptr) {
     log_debug(os, container)("read_numerical_key_value: filename is null");
@@ -700,7 +714,7 @@ bool CgroupController::read_numerical_tuple_value(const char* filename, TupleVal
   if (matched != 1) {
     return false;
   }
-  jlong val = CgroupSubsystem::limit_from_str(token);
+  jlong val = limit_from_str(token);
   if (val == OSCONTAINER_ERROR) {
     return false;
   }
@@ -708,7 +722,7 @@ bool CgroupController::read_numerical_tuple_value(const char* filename, TupleVal
   return true;
 }
 
-jlong CgroupSubsystem::limit_from_str(char* limit_str) {
+jlong CgroupController::limit_from_str(char* limit_str) {
   if (limit_str == nullptr) {
     return OSCONTAINER_ERROR;
   }

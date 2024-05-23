@@ -80,6 +80,17 @@
   log_trace(os, container)(log_string " is: " JULONG_FORMAT, retval);                 \
 }
 
+#define CONTAINER_READ_NUMBER_CHECKED_MAX(controller, filename, log_string, retval)   \
+{                                                                                     \
+  bool is_ok;                                                                         \
+  is_ok = controller->read_number_handle_max(filename, &retval);                      \
+  if (!is_ok) {                                                                       \
+    log_trace(os, container)(log_string " failed: %d", OSCONTAINER_ERROR);            \
+    return OSCONTAINER_ERROR;                                                         \
+  }                                                                                   \
+  log_trace(os, container)(log_string " is: " JLONG_FORMAT, retval);                  \
+}
+
 #define CONTAINER_READ_STRING_CHECKED(controller, filename, log_string, retval)       \
 {                                                                                     \
   bool is_ok;                                                                         \
@@ -102,10 +113,22 @@ enum class TupleValue { FIRST, SECOND };
 class CgroupController: public CHeapObj<mtInternal> {
   public:
     virtual char *subsystem_path() = 0;
+    // Read a numerical value as unsigned long
     bool read_number(const char* filename, julong* result);
+    // Convenience method to deal with numbers as well as the string 'max'
+    // in interface files. Otherwise same as read_number().
+    bool read_number_handle_max(const char* filename, jlong* result);
+    // Read a string from the interface file. The provided buffer must be
+    // at least 1K (1024) in size. This is something the caller needs to ensure.
     bool read_string(const char* filename, char* buf);
+    // Read a tuple value as a number. Tuple is: '<first> <second>'.
+    // Handles 'max' for unlimited.
     bool read_numerical_tuple_value(const char* filename, TupleValue val, jlong* result);
+    // Read a numerical value from a multi-line interface file. The matched line is
+    // determined by the provided 'key'. The associated value is returned as a number.
     bool read_numerical_key_value(const char* filename, const char* key, julong* result);
+  private:
+    static jlong limit_from_str(char* limit_str);
 };
 
 class CachedMetric : public CHeapObj<mtInternal>{
@@ -151,7 +174,6 @@ class CgroupSubsystem: public CHeapObj<mtInternal> {
   public:
     jlong memory_limit_in_bytes();
     int active_processor_count();
-    static jlong limit_from_str(char* limit_str);
 
     virtual int cpu_quota() = 0;
     virtual int cpu_period() = 0;
