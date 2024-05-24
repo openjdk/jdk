@@ -270,8 +270,10 @@ public final class ToolTipManager extends MouseAdapter implements MouseMotionLis
 
             GraphicsConfiguration gc = getDrawingGC(toFind);
             if (gc == null) {
-                toFind = mouseEvent.getLocationOnScreen();
-                gc = getDrawingGC(toFind);
+                if (mouseEvent != null) {
+                    toFind = mouseEvent.getLocationOnScreen();
+                    gc = getDrawingGC(toFind);
+                }
                 if (gc == null) {
                     gc = insideComponent.getGraphicsConfiguration();
                 }
