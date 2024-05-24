@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,16 @@
  * questions.
  */
 
-// key: compiler.misc.feature.implicit.classes
-// key: compiler.warn.preview.feature.use.plural
-// key: compiler.warn.is.preview
-// options: -source ${jdk.version} --enable-preview -Xlint:preview
+import static java.io.IO.*;
 
-public static void main(String... args) {
+public class Methods {
+
+    public static void main(String[] args) {
+        switch (args[0]) {
+            case "println" -> println("hello");
+            case "print" -> print("hello");
+            case "input" -> readln("hello");
+            default -> throw new IllegalArgumentException(args[0]);
+        }
+    }
 }
