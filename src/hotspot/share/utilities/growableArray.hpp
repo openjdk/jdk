@@ -287,10 +287,12 @@ public:
   }
 
   void sort(int f(E*, E*)) {
+    if (_data == nullptr) return;
     qsort(_data, length(), sizeof(E), (_sort_Fn)f);
   }
   // sort by fixed-stride sub arrays:
   void sort(int f(E*, E*), int stride) {
+    if (_data == nullptr) return;
     qsort(_data, length() / stride, sizeof(E) * stride, (_sort_Fn)f);
   }
 

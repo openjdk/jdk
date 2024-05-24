@@ -180,8 +180,10 @@ class LoadVectorNode;
 class LoadVectorMaskedNode;
 class StoreVectorMaskedNode;
 class LoadVectorGatherNode;
+class LoadVectorGatherMaskedNode;
 class StoreVectorNode;
 class StoreVectorScatterNode;
+class StoreVectorScatterMaskedNode;
 class VerifyVectorAlignmentNode;
 class VectorMaskCmpNode;
 class VectorUnboxNode;
@@ -996,8 +998,12 @@ public:
   DEFINE_CLASS_QUERY(CompressM)
   DEFINE_CLASS_QUERY(LoadVector)
   DEFINE_CLASS_QUERY(LoadVectorGather)
+  DEFINE_CLASS_QUERY(LoadVectorMasked)
+  DEFINE_CLASS_QUERY(LoadVectorGatherMasked)
   DEFINE_CLASS_QUERY(StoreVector)
   DEFINE_CLASS_QUERY(StoreVectorScatter)
+  DEFINE_CLASS_QUERY(StoreVectorMasked)
+  DEFINE_CLASS_QUERY(StoreVectorScatterMasked)
   DEFINE_CLASS_QUERY(ShiftV)
   DEFINE_CLASS_QUERY(Unlock)
 
@@ -1569,8 +1575,8 @@ Node* Node::last_out(DUIterator_Last& i) const {
 class SimpleDUIterator : public StackObj {
  private:
   Node* node;
-  DUIterator_Fast i;
   DUIterator_Fast imax;
+  DUIterator_Fast i;
  public:
   SimpleDUIterator(Node* n): node(n), i(n->fast_outs(imax)) {}
   bool has_next() { return i < imax; }

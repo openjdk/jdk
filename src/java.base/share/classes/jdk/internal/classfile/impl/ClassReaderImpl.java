@@ -290,7 +290,7 @@ public final class ClassReaderImpl
 
         if (bootstrapMethodsAttribute == null) {
             bootstrapMethodsAttribute
-                    = containedClass.findAttribute(Attributes.BOOTSTRAP_METHODS)
+                    = containedClass.findAttribute(Attributes.bootstrapMethods())
                                     .orElse(new UnboundAttribute.EmptyBootstrapAttribute());
         }
 
@@ -324,7 +324,7 @@ public final class ClassReaderImpl
 
     boolean writeBootstrapMethods(BufWriter buf) {
         Optional<BootstrapMethodsAttribute> a
-                = containedClass.findAttribute(Attributes.BOOTSTRAP_METHODS);
+                = containedClass.findAttribute(Attributes.bootstrapMethods());
         if (a.isEmpty())
             return false;
         a.get().writeTo(buf);
@@ -391,21 +391,10 @@ public final class ClassReaderImpl
 
     @Override
     public AbstractPoolEntry.Utf8EntryImpl utf8EntryByIndex(int index) {
-        if (index <= 0 || index >= constantPoolCount) {
-            throw new ConstantPoolException("Bad CP UTF8 index: " + index);
+        if (entryByIndex(index, TAG_UTF8, TAG_UTF8) instanceof AbstractPoolEntry.Utf8EntryImpl utf8) {
+            return utf8;
         }
-        PoolEntry info = cp[index];
-        if (info == null) {
-            int offset = cpOffset[index];
-            int tag = readU1(offset);
-            final int q = offset + 1;
-            if (tag != TAG_UTF8) throw new ConstantPoolException("Not a UTF8 - index: " + index);
-            AbstractPoolEntry.Utf8EntryImpl uinfo
-                    = new AbstractPoolEntry.Utf8EntryImpl(this, index, buffer, q + 2, readU2(q));
-            cp[index] = uinfo;
-            return uinfo;
-        }
-        return (AbstractPoolEntry.Utf8EntryImpl) info;
+        throw new ConstantPoolException("Not a UTF8 - index: " + index);
     }
 
     @Override

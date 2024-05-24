@@ -69,7 +69,7 @@ public class InnerClassesIndexTest extends TestResult {
         try {
             addTestCase("Source is InnerClassesIndexTest.java");
             ClassModel classFile = readClassFile(InnerClassesIndexTest.class);
-            InnerClassesAttribute attr = classFile.findAttribute(Attributes.INNER_CLASSES).orElse(null);
+            InnerClassesAttribute attr = classFile.findAttribute(Attributes.innerClasses()).orElse(null);
 
             Set<String> foundClasses = new HashSet<>();
             assert attr != null;

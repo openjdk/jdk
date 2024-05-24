@@ -2772,7 +2772,7 @@ Node* PhaseIdealLoop::add_range_check_elimination_assertion_predicate(IdealLoopT
                                                                       Node* offset, Node* limit, jint stride_con,
                                                                       Node* value) {
   bool overflow = false;
-  BoolNode* bol = rc_predicate(loop, ctrl, scale_con, offset, value, nullptr, stride_con,
+  BoolNode* bol = rc_predicate(ctrl, scale_con, offset, value, nullptr, stride_con,
                                limit, (stride_con > 0) != (scale_con > 0), overflow);
   Node* opaque_bol = new Opaque4Node(C, bol, _igvn.intcon(1));
   register_new_node(opaque_bol, ctrl);

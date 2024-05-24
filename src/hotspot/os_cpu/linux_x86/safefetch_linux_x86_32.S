@@ -36,7 +36,7 @@
     #  8(%esp) : default value
     #  4(%esp) : crash address
     #  0(%esp) : return pc
-    .type _SafeFetch32_impl,@function
+    .type SafeFetch32_impl,@function
 SafeFetch32_impl:
     movl 4(%esp),%ecx         # load address from stack
 _SafeFetch32_fault:

@@ -35,6 +35,7 @@
 #include "gc/g1/g1EvacInfo.hpp"
 #include "gc/g1/g1EvacStats.inline.hpp"
 #include "gc/g1/g1HeapRegion.inline.hpp"
+#include "gc/g1/g1HeapRegionPrinter.hpp"
 #include "gc/g1/g1HeapRegionRemSet.inline.hpp"
 #include "gc/g1/g1OopClosures.inline.hpp"
 #include "gc/g1/g1ParScanThreadState.hpp"
@@ -411,8 +412,8 @@ public:
       _freed_bytes += r->used();
       r->set_containing_set(nullptr);
       _humongous_regions_reclaimed++;
+      G1HeapRegionPrinter::eager_reclaim(r);
       _g1h->free_humongous_region(r, nullptr);
-      _g1h->hr_printer()->eager_reclaim(r);
     };
 
     _g1h->humongous_obj_regions_iterate(r, free_humongous_region);
@@ -758,9 +759,9 @@ class FreeCSetClosure : public HeapRegionClosure {
     assert(!r->is_empty(), "Region %u is an empty region in the collection set.", r->hrm_index());
     stats()->account_evacuated_region(r);
 
+    G1HeapRegionPrinter::evac_reclaim(r);
     // Free the region and its remembered set.
     _g1h->free_region(r, nullptr);
-    _g1h->hr_printer()->evac_reclaim(r);
   }
 
   void handle_failed_region(HeapRegion* r) {

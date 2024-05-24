@@ -26,7 +26,6 @@
 package java.lang.invoke;
 
 import sun.invoke.util.Wrapper;
-import sun.util.logging.PlatformLogger;
 
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.attribute.SourceFileAttribute;
@@ -74,6 +73,7 @@ class GenerateJLIClassesHelper {
 
         private final TreeSet<String> speciesTypes = new TreeSet<>();
         private final TreeSet<String> invokerTypes = new TreeSet<>();
+        private final TreeSet<String> linkerTypes = new TreeSet<>();
         private final TreeSet<String> callSiteTypes = new TreeSet<>();
         private final Map<String, Set<String>> dmhMethods = new TreeMap<>();
 
@@ -85,6 +85,12 @@ class GenerateJLIClassesHelper {
         HolderClassBuilder addInvokerType(String methodType) {
             validateMethodType(methodType);
             invokerTypes.add(methodType);
+            return this;
+        }
+
+        HolderClassBuilder addLinkerType(String methodType) {
+            validateMethodType(methodType);
+            linkerTypes.add(methodType);
             return this;
         }
 
@@ -131,19 +137,33 @@ class GenerateJLIClassesHelper {
                 }
             }
 
-            // The invoker type to ask for is retrieved by removing the first
+            // The linker type to ask for is retrieved by removing the first
             // and the last argument, which needs to be of Object.class
+            MethodType[] linkerMethodTypes = new MethodType[linkerTypes.size()];
+            index = 0;
+            for (String linkerType : linkerTypes) {
+                MethodType mt = asMethodType(linkerType);
+                final int lastParam = mt.parameterCount() - 1;
+                if (!checkLinkerTypeParams(mt)) {
+                    throw new RuntimeException(
+                            "Linker type parameter must start and end with Object: " + linkerType);
+                }
+                mt = mt.dropParameterTypes(lastParam, lastParam + 1);
+                linkerMethodTypes[index] = mt.dropParameterTypes(0, 1);
+                index++;
+            }
+
+            // The invoker type to ask for is retrieved by removing the first
+            // argument, which needs to be of Object.class
             MethodType[] invokerMethodTypes = new MethodType[invokerTypes.size()];
             index = 0;
             for (String invokerType : invokerTypes) {
                 MethodType mt = asMethodType(invokerType);
-                final int lastParam = mt.parameterCount() - 1;
                 if (!checkInvokerTypeParams(mt)) {
                     throw new RuntimeException(
-                            "Invoker type parameter must start and end with Object: " + invokerType);
+                            "Invoker type parameter must start with 2 Objects: " + invokerType);
                 }
-                mt = mt.dropParameterTypes(lastParam, lastParam + 1);
-                invokerMethodTypes[index] = mt.dropParameterTypes(0, 1);
+                invokerMethodTypes[index] = mt.dropParameterTypes(0, 2);
                 index++;
             }
 
@@ -172,7 +192,7 @@ class GenerateJLIClassesHelper {
                             DELEGATING_HOLDER, directMethodTypes));
             result.put(INVOKERS_HOLDER,
                        generateInvokersHolderClassBytes(INVOKERS_HOLDER,
-                            invokerMethodTypes, callSiteMethodTypes));
+                            linkerMethodTypes, invokerMethodTypes, callSiteMethodTypes));
             result.put(BASIC_FORMS_HOLDER,
                        generateBasicFormsClassBytes(BASIC_FORMS_HOLDER));
 
@@ -208,6 +228,12 @@ class GenerateJLIClassesHelper {
         }
 
         public static boolean checkInvokerTypeParams(MethodType mt) {
+            return (mt.parameterCount() >= 2 &&
+                    mt.parameterType(0) == Object.class &&
+                    mt.parameterType(1) == Object.class);
+        }
+
+        public static boolean checkLinkerTypeParams(MethodType mt) {
             final int lastParam = mt.parameterCount() - 1;
             return (mt.parameterCount() >= 2 &&
                     mt.parameterType(0) == Object.class &&
@@ -321,15 +347,11 @@ class GenerateJLIClassesHelper {
                                 if ("linkToTargetMethod".equals(parts[2]) ||
                                         "linkToCallSite".equals(parts[2])) {
                                     builder.addCallSiteType(methodType);
+                                } else if (parts[2].endsWith("nvoker")) {
+                                    // MH.exactInvoker exactInvoker MH.invoker invoker
+                                    builder.addInvokerType(methodType);
                                 } else {
-                                    MethodType mt = HolderClassBuilder.asMethodType(methodType);
-                                    // Work around JDK-8327499
-                                    if (HolderClassBuilder.checkInvokerTypeParams(mt)) {
-                                        builder.addInvokerType(methodType);
-                                    } else {
-                                        PlatformLogger.getLogger("java.lang.invoke")
-                                                .warning("Invalid LF_RESOLVE " + parts[1] + " " + parts[2] + " " + parts[3]);
-                                    }
+                                    builder.addLinkerType(methodType);
                                 }
                             } else if (parts[1].contains("DirectMethodHandle")) {
                                 String dmh = parts[2];
@@ -466,30 +488,48 @@ class GenerateJLIClassesHelper {
 
     /**
      * Returns a {@code byte[]} representation of a class implementing
-     * the invoker forms for the set of supplied {@code invokerMethodTypes}
-     * and {@code callSiteMethodTypes}.
+     * the invoker forms for the set of supplied {@code linkerMethodTypes}
+     * {@code invokerMethodTypes}, and {@code callSiteMethodTypes}.
      */
     static byte[] generateInvokersHolderClassBytes(String className,
-            MethodType[] invokerMethodTypes, MethodType[] callSiteMethodTypes) {
+            MethodType[] linkerMethodTypes, MethodType[] invokerMethodTypes,
+            MethodType[] callSiteMethodTypes) {
 
         HashSet<MethodType> dedupSet = new HashSet<>();
         ArrayList<LambdaForm> forms = new ArrayList<>();
         ArrayList<String> names = new ArrayList<>();
-        int[] types = {
-            MethodTypeForm.LF_EX_LINKER,
+
+        int[] invokerTypes = {
             MethodTypeForm.LF_EX_INVOKER,
-            MethodTypeForm.LF_GEN_LINKER,
-            MethodTypeForm.LF_GEN_INVOKER
+            MethodTypeForm.LF_GEN_INVOKER,
         };
 
-        for (int i = 0; i < invokerMethodTypes.length; i++) {
+        for (MethodType methodType : invokerMethodTypes) {
             // generate methods representing invokers of the specified type
-            if (dedupSet.add(invokerMethodTypes[i])) {
-                for (int type : types) {
-                    LambdaForm invokerForm = Invokers.invokeHandleForm(invokerMethodTypes[i],
+            if (dedupSet.add(methodType)) {
+                for (int type : invokerTypes) {
+                    LambdaForm invokerForm = Invokers.invokeHandleForm(methodType,
                             /*customized*/false, type);
                     forms.add(invokerForm);
                     names.add(invokerForm.kind.defaultLambdaName);
+                }
+            }
+        }
+
+        int[] linkerTypes = {
+                MethodTypeForm.LF_EX_LINKER,
+                MethodTypeForm.LF_GEN_LINKER,
+        };
+
+        dedupSet = new HashSet<>();
+        for (MethodType methodType : linkerMethodTypes) {
+            // generate methods representing linkers of the specified type
+            if (dedupSet.add(methodType)) {
+                for (int type : linkerTypes) {
+                    LambdaForm linkerForm = Invokers.invokeHandleForm(methodType,
+                            /*customized*/false, type);
+                    forms.add(linkerForm);
+                    names.add(linkerForm.kind.defaultLambdaName);
                 }
             }
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -221,13 +221,16 @@ public final class CodeImpl
     }
 
     private void inflateLabel(int bci) {
+        if (bci < 0 || bci > codeLength)
+            throw new IllegalArgumentException(String.format("Bytecode offset out of range; bci=%d, codeLength=%d",
+                                                             bci, codeLength));
         if (labels[bci] == null)
             labels[bci] = new LabelImpl(this, bci);
     }
 
     private void inflateLineNumbers() {
         for (Attribute<?> a : attributes()) {
-            if (a.attributeMapper() == Attributes.LINE_NUMBER_TABLE) {
+            if (a.attributeMapper() == Attributes.lineNumberTable()) {
                 BoundLineNumberTableAttribute attr = (BoundLineNumberTableAttribute) a;
                 if (lineNumbers == null)
                     lineNumbers = new int[codeLength + 1];
@@ -237,6 +240,10 @@ public final class CodeImpl
                 int pEnd = p + (nLn * 4);
                 for (; p < pEnd; p += 4) {
                     int startPc = classReader.readU2(p);
+                    if (startPc > codeLength) {
+                        throw new IllegalArgumentException(String.format(
+                                "Line number start_pc out of range; start_pc=%d, codeLength=%d", startPc, codeLength));
+                    }
                     int lineNumber = classReader.readU2(p + 2);
                     lineNumbers[startPc] = lineNumber;
                 }
@@ -245,7 +252,7 @@ public final class CodeImpl
     }
 
     private void inflateJumpTargets() {
-        Optional<StackMapTableAttribute> a = findAttribute(Attributes.STACK_MAP_TABLE);
+        Optional<StackMapTableAttribute> a = findAttribute(Attributes.stackMapTable());
         if (a.isEmpty()) {
             if (classReader.readU2(6) <= ClassFile.JAVA_6_VERSION) {
                 //fallback to jump targets inflation without StackMapTableAttribute
@@ -318,8 +325,8 @@ public final class CodeImpl
     }
 
     private void inflateTypeAnnotations() {
-        findAttribute(Attributes.RUNTIME_VISIBLE_TYPE_ANNOTATIONS).ifPresent(RuntimeVisibleTypeAnnotationsAttribute::annotations);
-        findAttribute(Attributes.RUNTIME_INVISIBLE_TYPE_ANNOTATIONS).ifPresent(RuntimeInvisibleTypeAnnotationsAttribute::annotations);
+        findAttribute(Attributes.runtimeVisibleTypeAnnotations()).ifPresent(RuntimeVisibleTypeAnnotationsAttribute::annotations);
+        findAttribute(Attributes.runtimeInvisibleTypeAnnotations()).ifPresent(RuntimeInvisibleTypeAnnotationsAttribute::annotations);
     }
 
     private void generateCatchTargets(Consumer<CodeElement> consumer) {
@@ -338,7 +345,7 @@ public final class CodeImpl
 
     private void generateDebugElements(Consumer<CodeElement> consumer) {
         for (Attribute<?> a : attributes()) {
-            if (a.attributeMapper() == Attributes.CHARACTER_RANGE_TABLE) {
+            if (a.attributeMapper() == Attributes.characterRangeTable()) {
                 var attr = (BoundCharacterRangeTableAttribute) a;
                 int cnt = classReader.readU2(attr.payloadStart);
                 int p = attr.payloadStart + 2;
@@ -350,7 +357,7 @@ public final class CodeImpl
                     consumer.accept(instruction);
                 }
             }
-            else if (a.attributeMapper() == Attributes.LOCAL_VARIABLE_TABLE) {
+            else if (a.attributeMapper() == Attributes.localVariableTable()) {
                 var attr = (BoundLocalVariableTableAttribute) a;
                 int cnt = classReader.readU2(attr.payloadStart);
                 int p = attr.payloadStart + 2;
@@ -362,7 +369,7 @@ public final class CodeImpl
                     consumer.accept(instruction);
                 }
             }
-            else if (a.attributeMapper() == Attributes.LOCAL_VARIABLE_TYPE_TABLE) {
+            else if (a.attributeMapper() == Attributes.localVariableTypeTable()) {
                 var attr = (BoundLocalVariableTypeTableAttribute) a;
                 int cnt = classReader.readU2(attr.payloadStart);
                 int p = attr.payloadStart + 2;
@@ -374,10 +381,10 @@ public final class CodeImpl
                     consumer.accept(instruction);
                 }
             }
-            else if (a.attributeMapper() == Attributes.RUNTIME_VISIBLE_TYPE_ANNOTATIONS) {
+            else if (a.attributeMapper() == Attributes.runtimeVisibleTypeAnnotations()) {
                 consumer.accept((BoundRuntimeVisibleTypeAnnotationsAttribute) a);
             }
-            else if (a.attributeMapper() == Attributes.RUNTIME_INVISIBLE_TYPE_ANNOTATIONS) {
+            else if (a.attributeMapper() == Attributes.runtimeInvisibleTypeAnnotations()) {
                 consumer.accept((BoundRuntimeInvisibleTypeAnnotationsAttribute) a);
             }
         }

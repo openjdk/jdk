@@ -573,6 +573,9 @@ bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode
     if (res_type == nullptr) {
       NOT_PRODUCT(fail_eliminate = "Neither instance or array allocation";)
       can_eliminate = false;
+    } else if (!res_type->klass_is_exact()) {
+      NOT_PRODUCT(fail_eliminate = "Not an exact type.";)
+      can_eliminate = false;
     } else if (res_type->isa_aryptr()) {
       int length = alloc->in(AllocateNode::ALength)->find_int_con(-1);
       if (length < 0) {
@@ -1309,8 +1312,7 @@ void PhaseMacroExpand::expand_allocate_common(
     slow_region = new RegionNode(3);
 
     // Now make the initial failure test.  Usually a too-big test but
-    // might be a TRUE for finalizers or a fancy class check for
-    // newInstance0.
+    // might be a TRUE for finalizers.
     IfNode *toobig_iff = new IfNode(ctrl, initial_slow_test, PROB_MIN, COUNT_UNKNOWN);
     transform_later(toobig_iff);
     // Plug the failing-too-big test into the slow-path region
