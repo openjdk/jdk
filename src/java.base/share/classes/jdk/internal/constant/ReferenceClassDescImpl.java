@@ -69,6 +69,17 @@ public final class ReferenceClassDescImpl implements ClassDesc {
         return new ReferenceClassDescImpl(descriptor);
     }
 
+    /**
+     * Creates a {@linkplain ClassDesc} from a pre-validated descriptor string
+     * for a class or interface type or an array type.
+     *
+     * @param descriptor a field descriptor string for a class or interface type
+     * @jvms 4.3.2 Field Descriptors
+     */
+    public static ClassDesc ofValidatedBinaryName(String typeSwitchClassName) {
+        return ofValidated("L" + binaryToInternal(typeSwitchClassName) + ";");
+    }
+
     @Override
     public String descriptorString() {
         return descriptor;
