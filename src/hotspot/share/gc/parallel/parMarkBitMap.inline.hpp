@@ -74,10 +74,6 @@ inline bool ParMarkBitMap::is_marked(oop obj) const {
   return is_marked(cast_from_oop<HeapWord*>(obj));
 }
 
-inline bool ParMarkBitMap::is_unmarked(idx_t bit) const {
-  return !is_marked(bit);
-}
-
 inline bool ParMarkBitMap::is_unmarked(HeapWord* addr) const {
   return !is_marked(addr);
 }
@@ -118,15 +114,12 @@ inline ParMarkBitMap::idx_t ParMarkBitMap::align_range_end(idx_t range_end) cons
   return align_up(range_end, BitsPerWord);
 }
 
-inline ParMarkBitMap::idx_t ParMarkBitMap::find_obj_beg(idx_t beg, idx_t end) const {
-  return _beg_bits.find_first_set_bit_aligned_right(beg, end);
-}
-
 inline HeapWord* ParMarkBitMap::find_obj_beg(HeapWord* beg, HeapWord* end) const {
   const idx_t beg_bit = addr_to_bit(beg);
   const idx_t end_bit = addr_to_bit(end);
   const idx_t search_end = align_range_end(end_bit);
-  const idx_t res_bit = MIN2(find_obj_beg(beg_bit, search_end), end_bit);
+  const idx_t res_bit = MIN2(_beg_bits.find_first_set_bit_aligned_right(beg_bit, search_end),
+                             end_bit);
   return bit_to_addr(res_bit);
 }
 

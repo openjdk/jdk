@@ -29,9 +29,7 @@
 #include "oops/oop.hpp"
 #include "utilities/bitMap.hpp"
 
-class ParMarkBitMapClosure;
 class PSVirtualSpace;
-class ParCompactionManager;
 
 class ParMarkBitMap: public CHeapObj<mtGC>
 {
@@ -54,34 +52,14 @@ public:
   inline bool is_marked(HeapWord* addr) const;
   inline bool is_marked(oop obj)        const;
 
-  inline bool is_unmarked(idx_t bit)      const;
   inline bool is_unmarked(HeapWord* addr) const;
   inline bool is_unmarked(oop obj)        const;
-
-  // Convert sizes from bits to HeapWords and back.  An object that is n bits
-  // long will be bits_to_words(n) words long.  An object that is m words long
-  // will take up words_to_bits(m) bits in the bitmap.
-  inline static size_t bits_to_words(idx_t bits);
-  inline static idx_t  words_to_bits(size_t words);
-
-  inline HeapWord* region_start() const;
-  inline HeapWord* region_end() const;
-  inline size_t    region_size() const;
-  inline size_t    size() const;
 
   size_t reserved_byte_size() const { return _reserved_byte_size; }
 
   // Convert a heap address to/from a bit index.
   inline idx_t     addr_to_bit(HeapWord* addr) const;
   inline HeapWord* bit_to_addr(idx_t bit) const;
-
-  // Return word-aligned up range_end, which must not be greater than size().
-  inline idx_t align_range_end(idx_t range_end) const;
-
-  // Return the bit index of the first marked object that begins (or ends,
-  // respectively) in the range [beg, end).  If no object is found, return end.
-  // end must be word-aligned.
-  inline idx_t find_obj_beg(idx_t beg, idx_t end) const;
 
   inline HeapWord* find_obj_beg(HeapWord* beg, HeapWord* end) const;
 
@@ -92,11 +70,6 @@ public:
   // cleared).
   inline void clear_range(idx_t beg, idx_t end);
 
-  // Return the number of bits required to represent the specified number of
-  // HeapWords, or the specified region.
-  static inline idx_t bits_required(size_t words);
-  static inline idx_t bits_required(MemRegion covered_region);
-
   void print_on_error(outputStream* st) const {
     st->print_cr("Marking Bits: (ParMarkBitMap*) " PTR_FORMAT, p2i(this));
     _beg_bits.print_on_error(st, " Begin Bits: ");
@@ -104,8 +77,6 @@ public:
 
 #ifdef  ASSERT
   void verify_clear() const;
-  inline void verify_bit(idx_t bit) const;
-  inline void verify_addr(HeapWord* addr) const;
 #endif  // #ifdef ASSERT
 
 private:
@@ -113,7 +84,6 @@ private:
   // Each bit in the bitmap represents one unit of 'object granularity.' Objects
   // are double-word aligned in 32-bit VMs, but not in 64-bit VMs, so the 32-bit
   // granularity is 2, 64-bit is 1.
-  static inline size_t obj_granularity() { return size_t(MinObjAlignment); }
   static inline int obj_granularity_shift() { return LogMinObjAlignment; }
 
   HeapWord*       _region_start;
@@ -121,6 +91,30 @@ private:
   BitMapView      _beg_bits;
   PSVirtualSpace* _virtual_space;
   size_t          _reserved_byte_size;
+
+  // Return the number of bits required to represent the specified number of
+  // HeapWords, or the specified region.
+  static inline idx_t bits_required(size_t words);
+  static inline idx_t bits_required(MemRegion covered_region);
+
+  // Convert sizes from bits to HeapWords and back.  An object that is n bits
+  // long will be bits_to_words(n) words long.  An object that is m words long
+  // will take up words_to_bits(m) bits in the bitmap.
+  inline static size_t bits_to_words(idx_t bits);
+  inline static idx_t  words_to_bits(size_t words);
+
+  // Return word-aligned up range_end, which must not be greater than size().
+  inline idx_t align_range_end(idx_t range_end) const;
+
+  inline HeapWord* region_start() const;
+  inline HeapWord* region_end() const;
+  inline size_t    region_size() const;
+  inline size_t    size() const;
+
+#ifdef  ASSERT
+  inline void verify_bit(idx_t bit) const;
+  inline void verify_addr(HeapWord* addr) const;
+#endif  // #ifdef ASSERT
 };
 
 #endif // SHARE_GC_PARALLEL_PARMARKBITMAP_HPP

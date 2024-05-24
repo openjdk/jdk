@@ -1002,6 +1002,14 @@ void VM_Version::get_processor_features() {
     }
   }
 
+  // APX support not enabled yet
+  if (UseAPX) {
+    if (!FLAG_IS_DEFAULT(UseAPX)) {
+        warning("APX is not supported on this CPU.");
+    }
+    FLAG_SET_DEFAULT(UseAPX, false);
+  }
+
   if (FLAG_IS_DEFAULT(IntelJccErratumMitigation)) {
     _has_intel_jcc_erratum = compute_has_intel_jcc_erratum();
   } else {
