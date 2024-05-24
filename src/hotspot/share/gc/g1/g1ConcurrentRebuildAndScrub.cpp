@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
 #include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
 #include "gc/g1/g1HeapRegion.inline.hpp"
 #include "gc/g1/g1HeapRegionManager.inline.hpp"
-#include "gc/g1/g1_globals.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/shared/workerThread.hpp"
 #include "logging/log.hpp"
@@ -229,7 +229,7 @@ class G1RebuildRSAndScrubTask : public WorkerTask {
       assert(should_rebuild_or_scrub(hr), "must be");
 
       log_trace(gc, marking)("Scrub and rebuild region: " HR_FORMAT " pb: " PTR_FORMAT " TARS: " PTR_FORMAT " TAMS: " PTR_FORMAT,
-                             HR_FORMAT_PARAMS(hr), p2i(pb), p2i(_cm->top_at_rebuild_start(hr)), p2i(hr->top_at_mark_start()));
+                             HR_FORMAT_PARAMS(hr), p2i(pb), p2i(_cm->top_at_rebuild_start(hr)), p2i(_cm->top_at_mark_start(hr)));
 
       if (scan_and_scrub_to_pb(hr, hr->bottom(), pb)) {
         log_trace(gc, marking)("Scan and scrub aborted for region: %u", hr->hrm_index());

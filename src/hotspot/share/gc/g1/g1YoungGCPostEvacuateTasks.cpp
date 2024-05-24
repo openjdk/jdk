@@ -35,6 +35,7 @@
 #include "gc/g1/g1EvacInfo.hpp"
 #include "gc/g1/g1EvacStats.inline.hpp"
 #include "gc/g1/g1HeapRegion.inline.hpp"
+#include "gc/g1/g1HeapRegionPrinter.hpp"
 #include "gc/g1/g1HeapRegionRemSet.inline.hpp"
 #include "gc/g1/g1OopClosures.inline.hpp"
 #include "gc/g1/g1ParScanThreadState.hpp"
@@ -411,8 +412,8 @@ public:
       _freed_bytes += r->used();
       r->set_containing_set(nullptr);
       _humongous_regions_reclaimed++;
+      G1HeapRegionPrinter::eager_reclaim(r);
       _g1h->free_humongous_region(r, nullptr);
-      _g1h->hr_printer()->cleanup(r);
     };
 
     _g1h->humongous_obj_regions_iterate(r, free_humongous_region);
@@ -545,12 +546,12 @@ class G1PostEvacuateCollectionSetCleanupTask2::ProcessEvacuationFailedRegionsTas
       G1CollectedHeap* g1h = G1CollectedHeap::heap();
       G1ConcurrentMark* cm = g1h->concurrent_mark();
 
-      uint region = r->hrm_index();
-      assert(r->top_at_mark_start() == r->bottom(), "TAMS must not have been set for region %u", region);
-      assert(cm->live_bytes(region) == 0, "Marking live bytes must not be set for region %u", region);
+      HeapWord* top_at_mark_start = cm->top_at_mark_start(r);
+      assert(top_at_mark_start == r->bottom(), "TAMS must not have been set for region %u", r->hrm_index());
+      assert(cm->live_bytes(r->hrm_index()) == 0, "Marking live bytes must not be set for region %u", r->hrm_index());
 
       // Concurrent mark does not mark through regions that we retain (they are root
-      // regions wrt to marking), so we must clear their mark data (tams, bitmap)
+      // regions wrt to marking), so we must clear their mark data (tams, bitmap, ...)
       // set eagerly or during evacuation failure.
       bool clear_mark_data = !g1h->collector_state()->in_concurrent_start_gc() ||
                              g1h->policy()->should_retain_evac_failed_region(r);
@@ -559,9 +560,9 @@ class G1PostEvacuateCollectionSetCleanupTask2::ProcessEvacuationFailedRegionsTas
         g1h->clear_bitmap_for_region(r);
       } else {
         // This evacuation failed region is going to be marked through. Update mark data.
-        r->set_top_at_mark_start(r->top());
+        cm->update_top_at_mark_start(r);
         cm->set_live_bytes(r->hrm_index(), r->live_bytes());
-        assert(cm->mark_bitmap()->get_next_marked_addr(r->bottom(), r->top_at_mark_start()) != r->top_at_mark_start(),
+        assert(cm->mark_bitmap()->get_next_marked_addr(r->bottom(), cm->top_at_mark_start(r)) != cm->top_at_mark_start(r),
                "Marks must be on bitmap for region %u", r->hrm_index());
       }
       return false;
@@ -758,9 +759,9 @@ class FreeCSetClosure : public HeapRegionClosure {
     assert(!r->is_empty(), "Region %u is an empty region in the collection set.", r->hrm_index());
     stats()->account_evacuated_region(r);
 
+    G1HeapRegionPrinter::evac_reclaim(r);
     // Free the region and its remembered set.
     _g1h->free_region(r, nullptr);
-    _g1h->hr_printer()->cleanup(r);
   }
 
   void handle_failed_region(HeapRegion* r) {

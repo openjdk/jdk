@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -710,7 +710,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="BS">𞤄𞤢𞤸𞤢𞤥𞤢𞥄𞤧</territory>
 			<territory type="BT">𞤄𞤵𞥅𞤼𞤢𞥄𞤲</territory>
 			<territory type="BV">𞤅𞤵𞤪𞤭𞥅𞤪𞤫 𞤄𞤵𞥅𞤾𞤫𞥅</territory>
-			<territory type="BW">‮𞤄𞤮𞤼𞤧𞤵𞤱𞤢𞥄𞤲𞤢</territory>
+			<territory type="BW">𞤄𞤮𞤼𞤧𞤵𞤱𞤢𞥄𞤲𞤢</territory>
 			<territory type="BY">𞤄𞤫𞤤𞤢𞤪𞤵𞥅𞤧</territory>
 			<territory type="BZ">𞤄𞤫𞤤𞤭𞥅𞥁</territory>
 			<territory type="CA">𞤑𞤢𞤲𞤢𞤣𞤢𞥄</territory>
@@ -3392,9 +3392,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Australia/Melbourne">
 				<exemplarCity>𞤃𞤫𞤤𞤦𞤵𞥅𞤪𞤲𞤵</exemplarCity>
 			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>𞤑𞤵𞥅𞤪𞤭𞥅</exemplarCity>
-			</zone>
 			<zone type="Australia/Hobart">
 				<exemplarCity>𞤖𞤵𞥅𞤦𞤢𞤪𞤼𞤵</exemplarCity>
 			</zone>
@@ -3548,9 +3545,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Creston">
 				<exemplarCity>𞤑𞤪𞤫𞤧𞤼𞤮𞤲</exemplarCity>
 			</zone>
-			<zone type="America/Yellowknife">
-				<exemplarCity>𞤒𞤫𞤤𞤮𞥅𞤲𞤢𞤴𞤬</exemplarCity>
-			</zone>
 			<zone type="America/Edmonton">
 				<exemplarCity>𞤉𞤣𞤥𞤮𞤲𞤼𞤮𞤲</exemplarCity>
 			</zone>
@@ -3569,29 +3563,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Resolute">
 				<exemplarCity>𞤈𞤭𞤧𞤮𞤤𞤵𞥅𞤼</exemplarCity>
 			</zone>
-			<zone type="America/Rainy_River">
-				<exemplarCity>𞤈𞤫𞤲𞤭𞥅-𞤈𞤭𞤾𞤮𞥅</exemplarCity>
-			</zone>
 			<zone type="America/Rankin_Inlet">
 				<exemplarCity>𞤈𞤢𞤲𞤳𞤭𞤲 𞤋𞤲𞤤𞤫𞤼</exemplarCity>
 			</zone>
 			<zone type="America/Coral_Harbour">
 				<exemplarCity>𞤀𞤼𞤭𞤳𞤮𞥅𞤳𞤢𞤲</exemplarCity>
 			</zone>
-			<zone type="America/Thunder_Bay">
-				<exemplarCity>𞤚𞤵𞤲𞤣𞤮𞥅 𞤄𞤫𞥅</exemplarCity>
-			</zone>
-			<zone type="America/Nipigon">
-				<exemplarCity>𞤐𞤭𞤨𞤭𞤺𞤮𞤲</exemplarCity>
-			</zone>
 			<zone type="America/Toronto">
 				<exemplarCity>𞤚𞤮𞤪𞤮𞤲𞤼𞤮𞥅</exemplarCity>
 			</zone>
 			<zone type="America/Iqaluit">
 				<exemplarCity>𞤋𞤳𞤢𞤤𞤵𞤱𞤭𞤼</exemplarCity>
-			</zone>
-			<zone type="America/Pangnirtung">
-				<exemplarCity>𞤆𞤢𞤲𞤺</exemplarCity>
 			</zone>
 			<zone type="America/Moncton">
 				<exemplarCity>𞤃𞤮𞤲𞤳𞤼𞤮𞥅𞤲</exemplarCity>
@@ -3789,7 +3771,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>𞤐𞤵𞥅𞤳</exemplarCity>
 			</zone>
 			<zone type="America/Scoresbysund">
-				<exemplarCity>‮𞤋𞤼𞥆𞤮𞤳𞤮𞤪𞤼𞤮𞥅𞤪𞤥𞤭𞥅𞤼</exemplarCity>
+				<exemplarCity>𞤋𞤼𞥆𞤮𞤳𞤮𞤪𞤼𞤮𞥅𞤪𞤥𞤭𞥅𞤼</exemplarCity>
 			</zone>
 			<zone type="America/Danmarkshavn">
 				<exemplarCity>𞤁𞤢𞥄𞤲𞤥𞤢𞤪𞤳𞥃𞤢𞥄𞤾𞤲</exemplarCity>
@@ -4403,17 +4385,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Africa/Dar_es_Salaam">
 				<exemplarCity>𞤁𞤢𞥄𞤪𞤫-𞤅𞤢𞤤𞤢𞥄𞤥𞤵</exemplarCity>
 			</zone>
-			<zone type="Europe/Uzhgorod">
-				<exemplarCity>𞤓𞥅𞤶𞤢𞤪𞤵𞥅𞤣𞤵</exemplarCity>
-			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>𞤑𞤭𞤴𞤫𞥅𞤾</exemplarCity>
 			</zone>
 			<zone type="Europe/Simferopol">
 				<exemplarCity>𞤅𞤭𞤥𞤬𞤫𞤪𞤨𞤮𞥅𞤤</exemplarCity>
-			</zone>
-			<zone type="Europe/Zaporozhye">
-				<exemplarCity>𞤟𞤢𞤨𞤮𞤪𞤵𞥅𞥁</exemplarCity>
 			</zone>
 			<zone type="Africa/Kampala">
 				<exemplarCity>𞤑𞤢𞤥𞤨𞤢𞤤𞤢</exemplarCity>
@@ -4436,9 +4412,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>𞤑𞤖𞤖</standard>
 					<daylight>𞤑𞤕𞤖</daylight>
 				</short>
-			</zone>
-			<zone type="Pacific/Johnston">
-				<exemplarCity>𞤔𞤮𞤲𞤧𞤼𞤮𞤲</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>𞤀𞤲𞤧𞤮𞤪𞤢𞥄𞤶𞤵</exemplarCity>
@@ -5127,11 +5100,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>𞤑𞤭𞤶𞤮𞥅𞤪𞤫 𞤕𞤫𞥅𞤯𞤵 𞤃𞤢𞤳𞤢𞤱𞤮𞥅</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>𞤑𞤭𞤶𞤮𞥅𞤪𞤫 𞤅𞤵𞤪𞤭𞥅𞤪𞤫 𞤃𞤢𞤳𞤢𞥄𞤪𞤭</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>𞤑𞤭𞤶𞤮𞥅𞤪𞤫 𞤃𞤢𞤺𞤢𞤣𞤢𞤲</generic>
@@ -5169,13 +5137,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<metazone type="Mawson">
 				<long>
 					<standard>𞤑𞤭𞤶𞤮𞥅𞤪𞤫 𞤃𞤢𞤱𞤧𞤮𞤲</standard>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic>𞤑𞤭𞤶𞤮𞥅𞤪𞤫 𞤐𞤢𞤲𞤮-𞤸𞤭𞥅𞤪𞤲𞤢𞥄𞤲𞤺𞤫 𞤃𞤫𞤳𞤧𞤭𞤳𞤮𞥅</generic>
-					<standard>𞤑𞤭𞤶𞤮𞥅𞤪𞤫 𞤖𞤢𞤱𞤪𞤵𞤲𞥋𞤣𞤫 𞤐𞤢𞤲𞤮-𞤸𞤭𞥅𞤪𞤲𞤢𞥄𞤲𞤺𞤫 𞤃𞤫𞤳𞤧𞤭𞤳𞤮𞥅</standard>
-					<daylight>𞤑𞤭𞤶𞤮𞥅𞤪𞤫 𞤕𞤫𞥅𞤯𞤵 𞤐𞤢𞤲𞤮-𞤸𞤭𞥅𞤪𞤲𞤢𞥄𞤲𞤺𞤫 𞤃𞤫𞤳𞤧𞤭𞤳𞤮𞥅</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">

@@ -75,6 +75,7 @@
 #include "utilities/defaultStream.hpp"
 #include "utilities/events.hpp"
 #include "utilities/fastrand.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 #ifndef _WINDOWS
@@ -1199,6 +1200,8 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
     return;
   }
 
+#if !INCLUDE_ASAN
+
   bool accessible = is_readable_pointer(addr);
 
   // Check if addr is a JNI handle.
@@ -1253,7 +1256,7 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
 #ifdef _LP64
   if (UseCompressedClassPointers && ((uintptr_t)addr &~ (uintptr_t)max_juint) == 0) {
     narrowKlass narrow_klass = (narrowKlass)(uintptr_t)addr;
-    Klass* k = CompressedKlassPointers::decode_raw(narrow_klass);
+    Klass* k = CompressedKlassPointers::decode_without_asserts(narrow_klass);
 
     if (Klass::is_valid(k)) {
       st->print_cr(UINT32_FORMAT " is a compressed pointer to class: " INTPTR_FORMAT, narrow_klass, p2i((HeapWord*)k));
@@ -1285,7 +1288,10 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
     return;
   }
 
+#endif // !INCLUDE_ASAN
+
   st->print_cr(INTPTR_FORMAT " is an unknown value", p2i(addr));
+
 }
 
 static bool is_pointer_bad(intptr_t* ptr) {
@@ -1705,6 +1711,13 @@ const char* os::errno_name(int e) {
   return errno_to_string(e, true);
 }
 
+// create binary file, rewriting existing file if required
+int os::create_binary_file(const char* path, bool rewrite_existing) {
+  int oflags = O_WRONLY | O_CREAT WINDOWS_ONLY(| O_BINARY);
+  oflags |= rewrite_existing ? O_TRUNC : O_EXCL;
+  return ::open(path, oflags, S_IREAD | S_IWRITE);
+}
+
 #define trace_page_size_params(size) byte_size_in_exact_unit(size), exact_unit_for_byte_size(size)
 
 void os::trace_page_sizes(const char* str,
@@ -1811,6 +1824,9 @@ char* os::reserve_memory(size_t bytes, bool executable, MEMFLAGS flags) {
   char* result = pd_reserve_memory(bytes, executable);
   if (result != nullptr) {
     MemTracker::record_virtual_memory_reserve(result, bytes, CALLER_PC, flags);
+    log_debug(os, map)("Reserved " RANGEFMT, RANGEFMTARGS(result, bytes));
+  } else {
+    log_info(os, map)("Reserve failed (%zu bytes)", bytes);
   }
   return result;
 }
@@ -1819,10 +1835,10 @@ char* os::attempt_reserve_memory_at(char* addr, size_t bytes, bool executable, M
   char* result = SimulateFullAddressSpace ? nullptr : pd_attempt_reserve_memory_at(addr, bytes, executable);
   if (result != nullptr) {
     MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC, flag);
-    log_debug(os)("Reserved memory at " INTPTR_FORMAT " for " SIZE_FORMAT " bytes.", p2i(addr), bytes);
+    log_debug(os, map)("Reserved " RANGEFMT, RANGEFMTARGS(result, bytes));
   } else {
-    log_debug(os)("Attempt to reserve memory at " INTPTR_FORMAT " for "
-                 SIZE_FORMAT " bytes failed, errno %d", p2i(addr), bytes, get_last_error());
+    log_info(os, map)("Attempt to reserve " RANGEFMT " failed",
+                      RANGEFMTARGS(addr, bytes));
   }
   return result;
 }
@@ -2039,6 +2055,9 @@ bool os::commit_memory(char* addr, size_t bytes, bool executable) {
   bool res = pd_commit_memory(addr, bytes, executable);
   if (res) {
     MemTracker::record_virtual_memory_commit((address)addr, bytes, CALLER_PC);
+    log_debug(os, map)("Committed " RANGEFMT, RANGEFMTARGS(addr, bytes));
+  } else {
+    log_info(os, map)("Failed to commit " RANGEFMT, RANGEFMTARGS(addr, bytes));
   }
   return res;
 }
@@ -2049,6 +2068,9 @@ bool os::commit_memory(char* addr, size_t size, size_t alignment_hint,
   bool res = os::pd_commit_memory(addr, size, alignment_hint, executable);
   if (res) {
     MemTracker::record_virtual_memory_commit((address)addr, size, CALLER_PC);
+    log_debug(os, map)("Committed " RANGEFMT, RANGEFMTARGS(addr, size));
+  } else {
+    log_info(os, map)("Failed to commit " RANGEFMT, RANGEFMTARGS(addr, size));
   }
   return res;
 }
@@ -2079,6 +2101,13 @@ bool os::uncommit_memory(char* addr, size_t bytes, bool executable) {
   } else {
     res = pd_uncommit_memory(addr, bytes, executable);
   }
+
+  if (res) {
+    log_debug(os, map)("Uncommitted " RANGEFMT, RANGEFMTARGS(addr, bytes));
+  } else {
+    log_info(os, map)("Failed to uncommit " RANGEFMT, RANGEFMTARGS(addr, bytes));
+  }
+
   return res;
 }
 
@@ -2095,7 +2124,9 @@ bool os::release_memory(char* addr, size_t bytes) {
     res = pd_release_memory(addr, bytes);
   }
   if (!res) {
-    log_info(os)("os::release_memory failed (" PTR_FORMAT ", " SIZE_FORMAT ")", p2i(addr), bytes);
+    log_info(os, map)("Failed to release " RANGEFMT, RANGEFMTARGS(addr, bytes));
+  } else {
+    log_debug(os, map)("Released " RANGEFMT, RANGEFMTARGS(addr, bytes));
   }
   return res;
 }
@@ -2197,6 +2228,9 @@ char* os::reserve_memory_special(size_t size, size_t alignment, size_t page_size
   if (result != nullptr) {
     // The memory is committed
     MemTracker::record_virtual_memory_reserve_and_commit((address)result, size, CALLER_PC);
+    log_debug(os, map)("Reserved and committed " RANGEFMT, RANGEFMTARGS(result, size));
+  } else {
+    log_info(os, map)("Reserve and commit failed (%zu bytes)", size);
   }
 
   return result;

@@ -102,7 +102,7 @@ class VectorNode : public TypeNode {
   static bool is_vshift_cnt(Node* n);
   static bool is_type_transition_short_to_int(Node* n);
   static bool is_type_transition_to_int(Node* n);
-  static bool is_muladds2i(Node* n);
+  static bool is_muladds2i(const Node* n);
   static bool is_roundopD(Node* n);
   static bool is_scalar_rotate(Node* n);
   static bool is_vector_rotate_supported(int opc, uint vlen, BasicType bt);
@@ -890,16 +890,30 @@ class LoadVectorNode : public LoadNode {
 // Load Vector from memory via index map
 class LoadVectorGatherNode : public LoadVectorNode {
  public:
-  LoadVectorGatherNode(Node* c, Node* mem, Node* adr, const TypePtr* at, const TypeVect* vt, Node* indices)
+  LoadVectorGatherNode(Node* c, Node* mem, Node* adr, const TypePtr* at, const TypeVect* vt, Node* indices, Node* offset = nullptr)
     : LoadVectorNode(c, mem, adr, at, vt) {
     init_class_id(Class_LoadVectorGather);
-    assert(indices->bottom_type()->is_vect(), "indices must be in vector");
     add_req(indices);
-    assert(req() == MemNode::ValueIn + 1, "match_edge expects that last input is in MemNode::ValueIn");
+    DEBUG_ONLY(bool is_subword = is_subword_type(vt->element_basic_type()));
+    assert(is_subword || indices->bottom_type()->is_vect(), "indices must be in vector");
+    assert(is_subword || !offset, "");
+    assert(req() == MemNode::ValueIn + 1, "match_edge expects that index input is in MemNode::ValueIn");
+    if (offset) {
+      add_req(offset);
+    }
   }
 
   virtual int Opcode() const;
-  virtual uint match_edge(uint idx) const { return idx == MemNode::Address || idx == MemNode::ValueIn; }
+  virtual uint match_edge(uint idx) const {
+     return idx == MemNode::Address ||
+            idx == MemNode::ValueIn ||
+            ((is_subword_type(vect_type()->element_basic_type())) &&
+              idx == MemNode::ValueIn + 1);
+  }
+  virtual int store_Opcode() const {
+    // Ensure it is different from any store opcode to avoid folding when indices are used
+    return -1;
+  }
 };
 
 //------------------------------StoreVectorNode--------------------------------
@@ -932,6 +946,8 @@ class StoreVectorNode : public StoreNode {
 
   // Needed for proper cloning.
   virtual uint size_of() const { return sizeof(*this); }
+  virtual Node* mask() const { return nullptr; }
+  virtual Node* indices() const { return nullptr; }
 
 #ifdef ASSERT
   // When AlignVector is enabled, SuperWord only creates aligned vector loads and stores.
@@ -947,6 +963,7 @@ class StoreVectorNode : public StoreNode {
 
  class StoreVectorScatterNode : public StoreVectorNode {
   public:
+   enum { Indices = 4 };
    StoreVectorScatterNode(Node* c, Node* mem, Node* adr, const TypePtr* at, Node* val, Node* indices)
      : StoreVectorNode(c, mem, adr, at, val) {
      init_class_id(Class_StoreVectorScatter);
@@ -958,12 +975,14 @@ class StoreVectorNode : public StoreNode {
    virtual uint match_edge(uint idx) const { return idx == MemNode::Address ||
                                                     idx == MemNode::ValueIn ||
                                                     idx == MemNode::ValueIn + 1; }
+   virtual Node* indices() const { return in(Indices); }
 };
 
 //------------------------------StoreVectorMaskedNode--------------------------------
 // Store Vector to memory under the influence of a predicate register(mask).
 class StoreVectorMaskedNode : public StoreVectorNode {
  public:
+  enum { Mask = 4 };
   StoreVectorMaskedNode(Node* c, Node* mem, Node* dst, Node* src, const TypePtr* at, Node* mask)
    : StoreVectorNode(c, mem, dst, at, src) {
     init_class_id(Class_StoreVectorMasked);
@@ -977,6 +996,7 @@ class StoreVectorMaskedNode : public StoreVectorNode {
     return idx > 1;
   }
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+  virtual Node* mask() const { return in(Mask); }
 };
 
 //------------------------------LoadVectorMaskedNode--------------------------------
@@ -997,32 +1017,46 @@ class LoadVectorMaskedNode : public LoadVectorNode {
     return idx > 1;
   }
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+  virtual int store_Opcode() const {
+    // Ensure it is different from any store opcode to avoid folding when a mask is used
+    return -1;
+  }
 };
 
 //-------------------------------LoadVectorGatherMaskedNode---------------------------------
 // Load Vector from memory via index map under the influence of a predicate register(mask).
 class LoadVectorGatherMaskedNode : public LoadVectorNode {
  public:
-  LoadVectorGatherMaskedNode(Node* c, Node* mem, Node* adr, const TypePtr* at, const TypeVect* vt, Node* indices, Node* mask)
+  LoadVectorGatherMaskedNode(Node* c, Node* mem, Node* adr, const TypePtr* at, const TypeVect* vt, Node* indices, Node* mask, Node* offset = nullptr)
     : LoadVectorNode(c, mem, adr, at, vt) {
     init_class_id(Class_LoadVectorGatherMasked);
-    assert(indices->bottom_type()->is_vect(), "indices must be in vector");
-    assert(mask->bottom_type()->isa_vectmask(), "sanity");
     add_req(indices);
     add_req(mask);
     assert(req() == MemNode::ValueIn + 2, "match_edge expects that last input is in MemNode::ValueIn+1");
+    if (is_subword_type(vt->element_basic_type())) {
+      add_req(offset);
+    }
   }
 
   virtual int Opcode() const;
   virtual uint match_edge(uint idx) const { return idx == MemNode::Address ||
                                                    idx == MemNode::ValueIn ||
-                                                   idx == MemNode::ValueIn + 1; }
+                                                   idx == MemNode::ValueIn + 1 ||
+                                                   (is_subword_type(vect_type()->is_vect()->element_basic_type()) &&
+                                                   idx == MemNode::ValueIn + 2); }
+  virtual int store_Opcode() const {
+    // Ensure it is different from any store opcode to avoid folding when indices and mask are used
+    return -1;
+  }
 };
 
 //------------------------------StoreVectorScatterMaskedNode--------------------------------
 // Store Vector into memory via index map under the influence of a predicate register(mask).
 class StoreVectorScatterMaskedNode : public StoreVectorNode {
   public:
+   enum { Indices = 4,
+          Mask
+   };
    StoreVectorScatterMaskedNode(Node* c, Node* mem, Node* adr, const TypePtr* at, Node* val, Node* indices, Node* mask)
      : StoreVectorNode(c, mem, adr, at, val) {
      init_class_id(Class_StoreVectorScatterMasked);
@@ -1037,6 +1071,8 @@ class StoreVectorScatterMaskedNode : public StoreVectorNode {
                                                     idx == MemNode::ValueIn ||
                                                     idx == MemNode::ValueIn + 1 ||
                                                     idx == MemNode::ValueIn + 2; }
+   virtual Node* mask() const { return in(Mask); }
+   virtual Node* indices() const { return in(Indices); }
 };
 
 // Verify that memory address (adr) is aligned. The mask specifies the
@@ -1547,7 +1583,7 @@ class VectorReinterpretNode : public VectorNode {
   const TypeVect* src_type() { return _src_vt; }
   virtual uint hash() const { return VectorNode::hash() + _src_vt->hash(); }
   virtual bool cmp( const Node &n ) const {
-    return VectorNode::cmp(n) && !Type::cmp(_src_vt,((VectorReinterpretNode&)n)._src_vt);
+    return VectorNode::cmp(n) && Type::equals(_src_vt, ((VectorReinterpretNode&) n)._src_vt);
   }
   virtual Node* Identity(PhaseGVN* phase);
 
@@ -1683,12 +1719,12 @@ class VectorInsertNode : public VectorNode {
   VectorInsertNode(Node* vsrc, Node* new_val, ConINode* pos, const TypeVect* vt) : VectorNode(vsrc, new_val, (Node*)pos, vt) {
    assert(pos->get_int() >= 0, "positive constants");
    assert(pos->get_int() < (int)vt->length(), "index must be less than vector length");
-   assert(Type::cmp(vt, vsrc->bottom_type()) == 0, "input and output must be same type");
+   assert(Type::equals(vt, vsrc->bottom_type()), "input and output must be same type");
   }
   virtual int Opcode() const;
   uint pos() const { return in(3)->get_int(); }
 
-  static Node* make(Node* vec, Node* new_val, int position);
+  static Node* make(Node* vec, Node* new_val, int position, PhaseGVN& gvn);
 };
 
 class VectorBoxNode : public Node {

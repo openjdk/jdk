@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -25,7 +23,7 @@
 
 /*
  * @test
- * @bug 8325567
+ * @bug 8325567 8325621
  * @requires (os.family == "linux") | (os.family == "aix") | (os.family == "mac")
  * @library /test/lib
  * @run driver JspawnhelperWarnings
@@ -47,11 +45,30 @@ public class JspawnhelperWarnings {
         OutputAnalyzer oa = new OutputAnalyzer(p);
         oa.shouldHaveExitValue(1);
         oa.shouldContain("This command is not for general use");
+        if (nArgs != 2) {
+            oa.shouldContain("Incorrect number of arguments");
+        } else {
+            oa.shouldContain("Incorrect Java version");
+        }
+    }
+
+    private static void testVersion() throws Exception {
+        String[] args = new String[3];
+        args[0] = Paths.get(System.getProperty("java.home"), "lib", "jspawnhelper").toString();
+        args[1] = "wrongVersion";
+        args[2] = "1:1:1";
+        Process p = ProcessTools.startProcess("jspawnhelper", new ProcessBuilder(args));
+        OutputAnalyzer oa = new OutputAnalyzer(p);
+        oa.shouldHaveExitValue(1);
+        oa.shouldContain("This command is not for general use");
+        oa.shouldContain("Incorrect Java version: wrongVersion");
     }
 
     public static void main(String[] args) throws Exception {
         for (int nArgs = 0; nArgs < 10; nArgs++) {
             tryWithNArgs(nArgs);
         }
+
+        testVersion();
     }
 }

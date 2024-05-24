@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
  *          java.management/com.sun.jmx.remote.security
  * @run clean NotificationAccessControllerTest
  * @run build NotificationAccessControllerTest
- * @run main NotificationAccessControllerTest
+ * @run main/othervm -Djava.security.manager=allow NotificationAccessControllerTest
  */
 
 import com.sun.jmx.remote.security.NotificationAccessController;

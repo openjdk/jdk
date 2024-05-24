@@ -119,7 +119,7 @@ void HeapRegionRemSet::bulk_remove_code_roots() {
   _code_roots.bulk_remove();
 }
 
-void HeapRegionRemSet::code_roots_do(CodeBlobClosure* blk) const {
+void HeapRegionRemSet::code_roots_do(NMethodClosure* blk) const {
   _code_roots.nmethods_do(blk);
 }
 

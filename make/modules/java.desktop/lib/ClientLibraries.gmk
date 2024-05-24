@@ -1,0 +1,453 @@
+#
+# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+################################################################################
+# This file will build all AWT/2D native libraries that does not have "awt" in
+# the name. Note that this does not imply anything about the logical ownership
+# of the code they compile.
+# This split is purely made to keep the size of the Makefiles reasonable.
+
+################################################################################
+## Build libmlib_image
+################################################################################
+
+ifeq ($(call isTargetCpuBits, 64), true)
+  LIBMLIB_IMAGE_CFLAGS := -DMLIB_OS64BIT
+endif
+
+$(eval $(call SetupJdkLibrary, BUILD_LIBMLIB_IMAGE, \
+    NAME := mlib_image, \
+    EXTRA_SRC := common/awt/medialib, \
+    EXTRA_HEADER_DIRS := java.base:libjava, \
+    EXCLUDE_FILES := mlib_c_ImageBlendTable.c, \
+    OPTIMIZATION := HIGHEST, \
+    CFLAGS := -D__USE_J2D_NAMES -D__MEDIALIB_OLD_NAMES -DMLIB_NO_LIBSUNMATH \
+        $(LIBMLIB_IMAGE_CFLAGS), \
+    DISABLED_WARNINGS_gcc := unused-function, \
+    LIBS_unix := $(LIBDL) $(LIBM), \
+))
+
+TARGETS += $(BUILD_LIBMLIB_IMAGE)
+
+################################################################################
+## Build liblcms
+################################################################################
+
+ifeq ($(USE_EXTERNAL_LCMS), true)
+  # If we're using an external library, we'll just need the wrapper part.
+  # By including it explicitly, all other files will be excluded.
+  LIBLCMS_INCLUDE_FILES := LCMS.c
+  # If we're using an external library, we can't include our own SRC path
+  # as includes, instead the system headers should be used.
+  LIBLCMS_HEADERS_FROM_SRC := false
+  # FIXME: Keep old behavior and reset LCMS_CFLAGS. This is likely a bug.
+  LCMS_CFLAGS :=
+endif
+
+ifeq ($(TOOLCHAIN_TYPE)+$(TOOLCHAIN_VERSION), clang+10.1)
+  # Work around an optimizer bug seen with Xcode 10.1, but fixed by 10.3
+  BUILD_LIBLCMS_cmsopt.c_CFLAGS := -O0
+endif
+
+# We use CMS_DONT_USE_FAST_FLOOR and CMS_NO_HALF_SUPPORT since the fast floor
+# code loses precision.
+$(eval $(call SetupJdkLibrary, BUILD_LIBLCMS, \
+    NAME := lcms, \
+    INCLUDE_FILES := $(LIBLCMS_INCLUDE_FILES), \
+    OPTIMIZATION := HIGHEST, \
+    CFLAGS := -DCMS_DONT_USE_FAST_FLOOR -DCMS_NO_HALF_SUPPORT $(LCMS_CFLAGS), \
+    CFLAGS_windows := -DCMS_IS_WINDOWS_, \
+    EXTRA_HEADER_DIRS := \
+        common/awt/debug \
+        libawt/java2d \
+        java.base:libjvm, \
+    HEADERS_FROM_SRC := $(LIBLCMS_HEADERS_FROM_SRC), \
+    DISABLED_WARNINGS_gcc := format-nonliteral type-limits \
+        stringop-truncation, \
+    DISABLED_WARNINGS_clang := format-nonliteral, \
+    JDK_LIBS := libawt java.base:libjava, \
+    LIBS_unix := $(LCMS_LIBS) $(LIBM), \
+))
+
+TARGETS += $(BUILD_LIBLCMS)
+
+################################################################################
+## Build libjavajpeg
+################################################################################
+
+ifeq ($(USE_EXTERNAL_LIBJPEG), true)
+  LIBJAVAJPEG_INCLUDE_FILES := \
+      imageioJPEG.c \
+      jpegdecoder.c
+  # If we're using an external library, we can't include our own SRC path
+  # as includes, instead the system headers should be used.
+  LIBJAVAJPEG_HEADERS_FROM_SRC := false
+endif
+
+# "DISABLED_WARNINGS_gcc := clobbered" rationale:
+# Suppress gcc warnings like "variable might be clobbered by 'longjmp'
+# or 'vfork'": this warning indicates that some variable is placed to
+# a register by optimized compiler and it's value might be lost on longjmp().
+# Recommended way to avoid such warning is to declare the variable as
+# volatile to prevent the optimization. However, this approach does not
+# work because we have to declare all variables as volatile in result.
+$(eval $(call SetupJdkLibrary, BUILD_LIBJAVAJPEG, \
+    NAME := javajpeg, \
+    INCLUDE_FILES := $(LIBJAVAJPEG_INCLUDE_FILES), \
+    OPTIMIZATION := HIGHEST, \
+    HEADERS_FROM_SRC := $(LIBJAVAJPEG_HEADERS_FROM_SRC), \
+    DISABLED_WARNINGS_gcc_imageioJPEG.c := clobbered array-bounds, \
+    DISABLED_WARNINGS_gcc_jcmaster.c := implicit-fallthrough, \
+    DISABLED_WARNINGS_gcc_jdphuff.c := shift-negative-value, \
+    JDK_LIBS := java.base:libjava, \
+    LIBS := $(LIBJPEG_LIBS), \
+))
+
+TARGETS += $(BUILD_LIBJAVAJPEG)
+
+################################################################################
+## Build libsplashscreen
+################################################################################
+
+ifeq ($(ENABLE_HEADLESS_ONLY), false)
+  LIBSPLASHSCREEN_EXTRA_SRC := \
+      common/awt/systemscale \
+      #
+
+  LIBSPLASHSCREEN_HEADER_DIRS := \
+      common/awt/utility \
+      libosxapp \
+      java.base:libjava \
+      java.base:libjvm \
+      #
+
+  ifeq ($(USE_EXTERNAL_LIBGIF), false)
+    LIBSPLASHSCREEN_HEADER_DIRS += libsplashscreen/giflib
+  else
+    LIBSPLASHSCREEN_EXCLUDES += giflib
+  endif
+
+  ifeq ($(USE_EXTERNAL_LIBJPEG), false)
+    LIBSPLASHSCREEN_EXTRA_SRC += libjavajpeg
+  endif
+
+  ifeq ($(USE_EXTERNAL_LIBPNG), false)
+    LIBSPLASHSCREEN_HEADER_DIRS += libsplashscreen/libpng
+  else
+    LIBSPLASHSCREEN_EXCLUDES += libpng
+  endif
+
+  ifeq ($(USE_EXTERNAL_LIBZ), false)
+    LIBSPLASHSCREEN_EXTRA_SRC += java.base:libzip/zlib
+  endif
+
+  LIBSPLASHSCREEN_CFLAGS += -DSPLASHSCREEN -DPNG_NO_MMX_CODE \
+      -DPNG_ARM_NEON_OPT=0 -DPNG_ARM_NEON_IMPLEMENTATION=0
+
+  ifeq ($(call isTargetOs, linux)+$(call isTargetCpuArch, ppc), true+true)
+    LIBSPLASHSCREEN_CFLAGS += -DPNG_POWERPC_VSX_OPT=0
+  endif
+
+  # The external libpng submitted in the jdk is a reduced version
+  # which does not contain .png_init_filter_functions_vsx.
+  # Therefore we need to disable PNG_POWERPC_VSX_OPT explicitly by setting
+  # it to 0. If this define is not set, it would be automatically set to 2,
+  # because
+  #   "#if defined(__PPC64__) && defined(__ALTIVEC__) && defined(__VSX__)"
+  # expands to true. This would results in the fact that
+  # .png_init_filter_functions_vsx is needed in libpng.
+  ifeq ($(call isTargetOs, aix), true)
+    LIBSPLASHSCREEN_CFLAGS += -DPNG_POWERPC_VSX_OPT=0
+  endif
+
+  ifeq ($(call isTargetOs, macosx), true)
+    # libsplashscreen on macosx does not use the unix code
+    LIBSPLASHSCREEN_EXCLUDE_SRC_PATTERNS := /unix/
+
+    BUILD_LIBSPLASHSCREEN_java_awt_SplashScreen.c_CFLAGS := -x objective-c -O0
+    BUILD_LIBSPLASHSCREEN_splashscreen_gfx_impl.c_CFLAGS := -x objective-c -O0
+    BUILD_LIBSPLASHSCREEN_splashscreen_gif.c_CFLAGS := -x objective-c -O0
+    BUILD_LIBSPLASHSCREEN_splashscreen_impl.c_CFLAGS := -x objective-c -O0
+    BUILD_LIBSPLASHSCREEN_splashscreen_jpeg.c_CFLAGS := -x objective-c -O0
+    BUILD_LIBSPLASHSCREEN_splashscreen_png.c_CFLAGS := -x objective-c -O0
+    BUILD_LIBSPLASHSCREEN_splashscreen_sys.m_CFLAGS := -O0
+  endif
+
+  ifeq ($(call isTargetOs, macosx), true)
+    LIBSPLASHSCREEN_CFLAGS += -DWITH_MACOSX
+  else ifeq ($(call isTargetOs, windows), true)
+    LIBSPLASHSCREEN_CFLAGS += -DWITH_WIN32
+  else
+    LIBSPLASHSCREEN_CFLAGS += -DWITH_X11 $(X_CFLAGS)
+  endif
+
+  $(eval $(call SetupJdkLibrary, BUILD_LIBSPLASHSCREEN, \
+      NAME := splashscreen, \
+      EXTRA_SRC := $(LIBSPLASHSCREEN_EXTRA_SRC), \
+      EXCLUDE_SRC_PATTERNS := $(LIBSPLASHSCREEN_EXCLUDE_SRC_PATTERNS), \
+      EXCLUDE_FILES := imageioJPEG.c jpegdecoder.c pngtest.c, \
+      EXCLUDES := $(LIBSPLASHSCREEN_EXCLUDES), \
+      OPTIMIZATION := LOW, \
+      CFLAGS := $(LIBSPLASHSCREEN_CFLAGS) \
+          $(GIFLIB_CFLAGS) $(LIBJPEG_CFLAGS) $(PNG_CFLAGS) $(LIBZ_CFLAGS), \
+      CXXFLAGS := $(LIBSPLASHSCREEN_CFLAGS) \
+          $(GIFLIB_CFLAGS) $(LIBJPEG_CFLAGS) $(PNG_CFLAGS) $(LIBZ_CFLAGS), \
+      EXTRA_HEADER_DIRS := $(LIBSPLASHSCREEN_HEADER_DIRS), \
+      DISABLED_WARNINGS_gcc_dgif_lib.c := sign-compare, \
+      DISABLED_WARNINGS_gcc_jcmaster.c := implicit-fallthrough, \
+      DISABLED_WARNINGS_gcc_jdphuff.c := shift-negative-value, \
+      DISABLED_WARNINGS_gcc_png.c := maybe-uninitialized, \
+      DISABLED_WARNINGS_gcc_pngerror.c := maybe-uninitialized, \
+      DISABLED_WARNINGS_gcc_splashscreen_gfx_impl.c := implicit-fallthrough \
+          maybe-uninitialized, \
+      DISABLED_WARNINGS_gcc_splashscreen_impl.c := implicit-fallthrough \
+          sign-compare unused-function, \
+      DISABLED_WARNINGS_gcc_splashscreen_sys.c := type-limits unused-result, \
+      DISABLED_WARNINGS_clang := deprecated-non-prototype, \
+      DISABLED_WARNINGS_clang_dgif_lib.c := sign-compare, \
+      DISABLED_WARNINGS_clang_gzwrite.c := format-nonliteral, \
+      DISABLED_WARNINGS_clang_splashscreen_impl.c := sign-compare, \
+      DISABLED_WARNINGS_clang_splashscreen_png.c := \
+          incompatible-pointer-types, \
+      DISABLED_WARNINGS_clang_splashscreen_sys.m := deprecated-declarations, \
+      DISABLED_WARNINGS_microsoft_dgif_lib.c := 4018 4267, \
+      DISABLED_WARNINGS_microsoft_splashscreen_impl.c := 4018 4267 4244, \
+      DISABLED_WARNINGS_microsoft_splashscreen_png.c := 4267, \
+      DISABLED_WARNINGS_microsoft_splashscreen_sys.c := 4267 4244, \
+      LDFLAGS_windows := -delayload:user32.dll, \
+      JDK_LIBS_windows := java.base:libjava, \
+      JDK_LIBS_macosx := libosxapp, \
+      LIBS := $(GIFLIB_LIBS) $(LIBJPEG_LIBS) $(LIBZ_LIBS) $(PNG_LIBS), \
+      LIBS_unix := $(LIBM) -lpthread, \
+      LIBS_linux := $(LIBDL) $(X_LIBS) -lX11 -lXext, \
+      LIBS_macosx := -liconv \
+          -framework ApplicationServices \
+          -framework Cocoa \
+          -framework Foundation \
+          -framework Metal \
+          -framework Security, \
+      LIBS_aix := $(LIBDL) -liconv $(X_LIBS) -lX11 -lXext, \
+      LIBS_windows := delayimp.lib gdi32.lib kernel32.lib user32.lib, \
+  ))
+
+  TARGETS += $(BUILD_LIBSPLASHSCREEN)
+endif
+
+################################################################################
+## Build libfreetype
+################################################################################
+
+ifeq ($(FREETYPE_TO_USE), bundled)
+  # freetype requires you to manually define DLL_EXPORT for windows (see ftconfig.h)
+  $(eval $(call SetupJdkLibrary, BUILD_LIBFREETYPE, \
+      NAME := freetype, \
+      OPTIMIZATION := HIGHEST, \
+      CFLAGS := -DFT2_BUILD_LIBRARY, \
+      CFLAGS_windows := -DDLL_EXPORT, \
+      EXTRA_HEADER_DIRS := libfreetype/include, \
+      DISABLED_WARNINGS_microsoft := 4267 4244 4996, \
+      DISABLED_WARNINGS_gcc := dangling-pointer stringop-overflow, \
+  ))
+
+  TARGETS += $(BUILD_LIBFREETYPE)
+endif
+
+################################################################################
+## Build libfontmanager
+################################################################################
+
+ifeq ($(USE_EXTERNAL_HARFBUZZ), true)
+   LIBFONTMANAGER_EXTRA_SRC =
+   LIBFONTMANAGER_LIBS += $(HARFBUZZ_LIBS)
+else
+   LIBFONTMANAGER_EXTRA_SRC = libharfbuzz
+
+   ifeq ($(call isTargetOs, windows), false)
+     HARFBUZZ_CFLAGS += -DGETPAGESIZE -DHAVE_MPROTECT -DHAVE_PTHREAD \
+        -DHAVE_SYSCONF -DHAVE_SYS_MMAN_H -DHAVE_UNISTD_H \
+        -DHB_NO_PRAGMA_GCC_DIAGNOSTIC
+   endif
+   ifeq ($(call isTargetOs, linux macosx), true)
+     HARFBUZZ_CFLAGS += -DHAVE_INTEL_ATOMIC_PRIMITIVES -DHB_NO_VISIBILITY
+   endif
+
+   # hb-ft.cc is not presently needed, and requires freetype 2.4.2 or later.
+   # hb-subset and hb-style APIs are not needed, excluded to cut on compilation
+   # time.
+   LIBFONTMANAGER_EXCLUDE_FILES += gsubgpos-context.cc hb-ft.cc hb-style.cc \
+      hb-subset-cff-common.cc hb-subset-cff1.cc hb-subset-cff2.cc \
+      hb-subset-input.cc hb-subset-instancer-solver.cc hb-subset-plan.cc \
+      hb-subset.cc
+
+   # list of disabled warnings and the compilers for which it was specifically
+   # added.
+   # array-bounds         -> GCC 12 on Alpine Linux
+   # parentheses          -> GCC 6
+   # range-loop-analysis  -> clang on Xcode12
+
+   HARFBUZZ_DISABLED_WARNINGS_gcc := missing-field-initializers \
+       strict-aliasing unused-result array-bounds parentheses
+   # noexcept-type required for GCC 7 builds. Not required for GCC 8+.
+   # expansion-to-defined required for GCC 9 builds. Not required for GCC 10+.
+   # maybe-uninitialized required for GCC 8 builds. Not required for GCC 9+.
+   # calloc-transposed-args required for GCC 14 builds. (fixed upstream in
+   #  Harfbuzz 032c931e1c0cfb20f18e5acb8ba005775242bd92)
+   HARFBUZZ_DISABLED_WARNINGS_CXX_gcc := class-memaccess noexcept-type \
+       expansion-to-defined dangling-reference maybe-uninitialized \
+       calloc-transposed-args
+   HARFBUZZ_DISABLED_WARNINGS_clang := missing-field-initializers \
+      range-loop-analysis
+   HARFBUZZ_DISABLED_WARNINGS_microsoft := 4267 4244
+
+   LIBFONTMANAGER_CFLAGS += $(HARFBUZZ_CFLAGS)
+endif
+
+LIBFONTMANAGER_EXTRA_HEADER_DIRS := \
+    common/awt \
+    common/awt/utility \
+    common/font \
+    libawt/java2d \
+    libawt/java2d/pipe \
+    libawt/java2d/loops \
+    #
+
+ifeq ($(FREETYPE_TO_USE), system)
+  LIBFONTMANAGER_CFLAGS += $(FREETYPE_CFLAGS)
+  LIBFONTMANAGER_LIBS += $(FREETYPE_LIBS)
+else
+  LIBFONTMANAGER_EXTRA_HEADER_DIRS += libfreetype/include
+  LIBFONTMANAGER_JDK_LIBS += libfreetype
+endif
+
+LIBFONTMANAGER_OPTIMIZATION := HIGHEST
+
+ifneq ($(filter $(TOOLCHAIN_TYPE), gcc clang), )
+  # gcc (and to an extent clang) is particularly bad at optimizing these files,
+  # causing a massive spike in compile time. We don't care about these
+  # particular files anyway, so lower optimization level.
+  BUILD_LIBFONTMANAGER_hb-subset.cc_OPTIMIZATION := SIZE
+  BUILD_LIBFONTMANAGER_hb-subset-plan.cc_OPTIMIZATION := SIZE
+endif
+
+ifeq ($(call isTargetOs, windows), true)
+  LIBFONTMANAGER_EXCLUDE_FILES += X11FontScaler.c X11TextRenderer.c
+  LIBFONTMANAGER_OPTIMIZATION := HIGHEST
+else ifeq ($(call isTargetOs, macosx), true)
+  LIBFONTMANAGER_EXCLUDE_FILES += X11FontScaler.c X11TextRenderer.c \
+      fontpath.c lcdglyph.c
+else
+  LIBFONTMANAGER_EXCLUDE_FILES += fontpath.c lcdglyph.c
+endif
+
+LIBFONTMANAGER_CFLAGS += $(X_CFLAGS) -DLE_STANDALONE -DHEADLESS
+
+# LDFLAGS clarification:
+#   Filter relevant linker flags disallowing unresolved symbols as we cannot
+#   build-time decide to which library to link against (libawt_headless or
+#   libawt_xawt). See JDK-8196516 for details.
+$(eval $(call SetupJdkLibrary, BUILD_LIBFONTMANAGER, \
+    NAME := fontmanager, \
+    LINK_TYPE := C++, \
+    EXCLUDE_FILES := $(LIBFONTMANAGER_EXCLUDE_FILES) \
+        AccelGlyphCache.c, \
+    CFLAGS := $(LIBFONTMANAGER_CFLAGS), \
+    CXXFLAGS := $(LIBFONTMANAGER_CFLAGS), \
+    OPTIMIZATION := $(LIBFONTMANAGER_OPTIMIZATION), \
+    CFLAGS_windows = -DCC_NOEX, \
+    EXTRA_HEADER_DIRS := $(LIBFONTMANAGER_EXTRA_HEADER_DIRS), \
+    EXTRA_SRC := $(LIBFONTMANAGER_EXTRA_SRC), \
+    DISABLED_WARNINGS_gcc := $(HARFBUZZ_DISABLED_WARNINGS_gcc), \
+    DISABLED_WARNINGS_CXX_gcc := $(HARFBUZZ_DISABLED_WARNINGS_CXX_gcc), \
+    DISABLED_WARNINGS_clang := $(HARFBUZZ_DISABLED_WARNINGS_clang), \
+    DISABLED_WARNINGS_microsoft := $(HARFBUZZ_DISABLED_WARNINGS_microsoft), \
+    LDFLAGS := $(LDFLAGS_CXX_JDK), \
+    LDFLAGS_FILTER_OUT :=-Wl$(COMMA)-z$(COMMA)defs, \
+    LDFLAGS_aix := -Wl$(COMMA)-berok, \
+    JDK_LIBS := libawt java.base:libjava $(LIBFONTMANAGER_JDK_LIBS), \
+    JDK_LIBS_macosx := libawt_lwawt, \
+    LIBS := $(LIBFONTMANAGER_LIBS), \
+    LIBS_unix := $(LIBM), \
+    LIBS_macosx := \
+        -framework CoreFoundation \
+        -framework CoreGraphics \
+        -framework CoreText, \
+    LIBS_windows := advapi32.lib gdi32.lib user32.lib, \
+))
+
+TARGETS += $(BUILD_LIBFONTMANAGER)
+
+ifeq ($(call isTargetOs, macosx), true)
+  ##############################################################################
+  ## Build libosxui
+  ##############################################################################
+
+  SHADERS_SRC := \
+      $(TOPDIR)/src/java.desktop/macosx/native/libawt_lwawt/java2d/metal/shaders.metal
+  SHADERS_SUPPORT_DIR := $(SUPPORT_OUTPUTDIR)/native/java.desktop/libosxui
+  SHADERS_AIR := $(SHADERS_SUPPORT_DIR)/shaders.air
+  SHADERS_LIB := $(call FindLibDirForModule, $(MODULE))/shaders.metallib
+
+  $(eval $(call SetupExecute, metal_shaders, \
+      INFO := Running metal on $(notdir $(SHADERS_SRC)) (for libosxui.dylib), \
+      DEPS := $(SHADERS_SRC), \
+      OUTPUT_FILE := $(SHADERS_AIR), \
+      SUPPORT_DIR := $(SHADERS_SUPPORT_DIR), \
+      COMMAND := $(METAL) -c -std=osx-metal2.0 \
+          -mmacosx-version-min=$(MACOSX_VERSION_MIN) \
+          -o $(SHADERS_AIR) $(SHADERS_SRC), \
+  ))
+
+  $(eval $(call SetupExecute, metallib_shaders, \
+      INFO := Running metallib on $(notdir $(SHADERS_AIR)) (for libosxui.dylib), \
+      DEPS := $(SHADERS_AIR), \
+      OUTPUT_FILE := $(SHADERS_LIB), \
+      SUPPORT_DIR := $(SHADERS_SUPPORT_DIR), \
+      COMMAND := $(METALLIB) -o $(SHADERS_LIB) $(SHADERS_AIR), \
+  ))
+
+  TARGETS += $(SHADERS_LIB)
+
+  $(eval $(call SetupJdkLibrary, BUILD_LIBOSXUI, \
+      NAME := osxui, \
+      OPTIMIZATION := LOW, \
+      EXTRA_HEADER_DIRS := \
+          libawt_lwawt/awt, \
+      DISABLED_WARNINGS_clang_AquaFileView.m := deprecated-declarations \
+          sign-compare, \
+      DISABLED_WARNINGS_clang_ScreenMenu.m := deprecated-declarations, \
+      APPEND_LDFLAGS := -Wl$(COMMA)-rpath$(COMMA)@loader_path, \
+      JDK_LIBS := java.base:libjava libosxapp, \
+      LIBS_macosx := \
+          -framework ApplicationServices \
+          -framework Carbon \
+          -framework Cocoa \
+          -framework JavaRuntimeSupport \
+          -framework Metal, \
+  ))
+
+  TARGETS += $(BUILD_LIBOSXUI)
+
+  $(BUILD_LIBOSXUI): $(SHADERS_LIB)
+endif

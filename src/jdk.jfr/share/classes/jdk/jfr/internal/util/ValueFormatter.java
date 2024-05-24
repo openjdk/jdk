@@ -343,6 +343,9 @@ public final class ValueFormatter {
     }
 
     public static String formatTimestamp(Instant instant) {
+        if (Instant.MIN.equals(instant)) {
+            return "N/A";
+        }
         return LocalTime.ofInstant(instant, ZoneId.systemDefault()).format(DATE_FORMAT);
     }
 }

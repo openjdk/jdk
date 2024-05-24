@@ -26,10 +26,13 @@
 #include "memory/allocation.hpp"
 #include "nmt/memTracker.hpp"
 #include "runtime/os.hpp"
+#include "sanitizers/address.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/ostream.hpp"
 #include "unittest.hpp"
 #include "testutils.hpp"
+
+#if !INCLUDE_ASAN
 
 // This prefix shows up on any c heap corruption NMT detects. If unsure which assert will
 // come, just use this one.
@@ -161,3 +164,5 @@ TEST_VM(NMT, test_realloc) {
     }
   }
 }
+
+#endif // !INCLUDE_ASAN

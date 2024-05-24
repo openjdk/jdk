@@ -626,7 +626,6 @@ class MacroAssembler: public Assembler {
     Register t1,                       // temp register
     Label&   slow_case                 // continuation point if fast allocation fails
   );
-  void incr_allocated_bytes(RegisterOrConstant size_in_bytes, Register t1, Register t2);
 
   enum { trampoline_stub_size = 6 * 4 };
   address emit_trampoline_stub(int destination_toc_offset, int insts_call_instruction_offset, Register Rtoc = noreg);

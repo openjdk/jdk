@@ -332,6 +332,7 @@ public:
                                    JVMCIObject compiled_code,
                                    objArrayHandle object_pool,
                                    CodeBlob*& cb,
+                                   JVMCINMethodHandle& nmethod_handle,
                                    JVMCIObject installed_code,
                                    FailedSpeculation** failed_speculations,
                                    char* speculations,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,7 @@
  */
 package com.sun.tools.jdeps;
 
-import com.sun.tools.classfile.Dependencies;
-import com.sun.tools.classfile.Dependency;
-import com.sun.tools.classfile.Dependency.Location;
+import com.sun.tools.jdeps.Dependency.Location;
 
 import java.util.HashSet;
 import java.util.Set;
