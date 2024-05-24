@@ -1,7 +1,7 @@
 package org.openjdk.bench.java.lang.foreign.xor;
 
 import org.openjdk.bench.java.lang.foreign.Utils;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.FunctionDescriptor;

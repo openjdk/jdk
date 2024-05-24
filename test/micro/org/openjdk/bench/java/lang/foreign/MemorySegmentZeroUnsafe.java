@@ -23,7 +23,7 @@
 
  package org.openjdk.bench.java.lang.foreign;
 
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Mode;

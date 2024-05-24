@@ -30,7 +30,7 @@ import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 import java.util.concurrent.TimeUnit;
 
 import static java.lang.foreign.ValueLayout.*;
