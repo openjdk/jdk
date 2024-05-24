@@ -2144,9 +2144,7 @@ VTransformApplyStatus VTransformElementWiseVectorNode::apply(const VLoopAnalyzer
   int   opc  = first->Opcode();
   BasicType bt = vloop_analyzer.types().velt_basic_type(first);
 
-  if (VectorNode::is_scalar_rotate(first)) {
-    assert(false, "TODO scalar rotate");
-  } else if (VectorNode::is_roundopD(first)) {
+  if (VectorNode::is_roundopD(first)) {
     assert(false, "TODO roundopD");
   } else if (opc == Op_SignumF || opc == Op_SignumD) {
     assert(false, "TODO Signum");

@@ -3492,6 +3492,14 @@ void SuperWordVTransformBuilder::build_vtransform() {
         //   v = MulAddS2I(a, b) = a0 * b0 + a1 + b1
         set_req_for_vector(vtn, 1, pack);
         set_req_for_vector(vtn, 2, pack);
+      } else if (VectorNode::is_scalar_rotate(p0)) {
+        set_req_for_vector(vtn, 1, pack);
+        Node* in2 = p0->in(2);
+        if (in2->is_Con() && Matcher::supports_vector_constant_rotates(in2->get_int())) {
+          set_req_for_scalar(vtn, 2, p0);
+        } else {
+          set_req_for_vector(vtn, 2, pack);
+	}
       } else {
         set_req_all_for_vector(vtn, pack);
       }
@@ -3549,7 +3557,8 @@ VTransformVectorNode* SuperWordVTransformBuilder::make_vtnode_for_pack(const Nod
   } else if (p0->is_Store()) {
     vtn = new (_graph.arena()) VTransformStoreVectorNode(_graph, pack_size);
   } else if (VectorNode::is_scalar_rotate(p0)) {
-    assert(false, "TODO");
+    assert(p0->req() == 3, "2 operands expected");
+    vtn = new (_graph.arena()) VTransformElementWiseVectorNode(_graph, 3, pack_size);
   } else if (VectorNode::is_roundopD(p0)) {
     assert(false, "TODO");
   } else if (VectorNode::is_muladds2i(p0)) {
@@ -3603,9 +3612,7 @@ VTransformVectorNode* SuperWordVTransformBuilder::make_vtnode_for_pack(const Nod
 
 void SuperWordVTransformBuilder::set_req_for_scalar(VTransformNode* vtn, int j, Node* n) {
   Node* def = n->in(j);
-  // TODO what if not?
-  if (!in_bb(def)) { return; }
-  VTransformNode* req = _bb_idx_to_vtnode.at(bb_idx(def));
+  VTransformNode* req = find_scalar(def);
   vtn->set_req(j, req);
   _dependency_set.set(req->_idx);
 }
