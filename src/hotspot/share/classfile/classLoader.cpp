@@ -1474,11 +1474,11 @@ jlong ClassLoader::classloader_time_ms() {
 }
 
 jlong ClassLoader::class_init_count() {
-  return (UsePerfData) ? _perf_classes_inited->get_value() : -1;
+  return UsePerfData ? _perf_classes_inited->get_value() : -1;
 }
 
 jlong ClassLoader::class_init_time_ms() {
-  return (UsePerfData) ?
+  return UsePerfData ?
     Management::ticks_to_ms(_perf_class_init_time->get_value()) : -1;
 }
 

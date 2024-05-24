@@ -831,14 +831,14 @@ class PerfTraceTime : public StackObj {
 
   public:
     inline PerfTraceTime(PerfLongCounter* timerp) : _timerp(timerp) {
-      if (!UsePerfData || timerp == nullptr) return;
+      if (!UsePerfData || timerp == nullptr) { return; }
       _t.start();
     }
 
-    const char* name() const { return _timerp->name(); }
+    const char* name() const { return (_timerp != nullptr) ? _timerp->name() : nullptr; }
 
     ~PerfTraceTime() {
-      if (!UsePerfData || !_t.is_active()) return;
+      if (!UsePerfData || !_t.is_active()) { return; }
       _t.stop();
       _timerp->inc(_t.ticks());
     }
@@ -870,7 +870,7 @@ class PerfTraceTimedEvent : public PerfTraceTime {
 
   public:
     inline PerfTraceTimedEvent(PerfLongCounter* timerp, PerfLongCounter* eventp): PerfTraceTime(timerp), _eventp(eventp) {
-      if (!UsePerfData || timerp == nullptr) return;
+      if (!UsePerfData || timerp == nullptr) { return; }
       _eventp->inc();
     }
 
