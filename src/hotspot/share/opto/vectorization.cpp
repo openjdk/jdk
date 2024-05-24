@@ -2178,7 +2178,8 @@ VTransformApplyStatus VTransformElementWiseVectorNode::apply(const VLoopAnalyzer
              opc == Op_CountTrailingZerosI) {
     // TODO I think we can simplify this somehow, the check above.
     //      One idea: make a separate vtnode type for those that require different generation.
-    //      Only keep those that are straight-forward, and have a req=2 and req=3 case.
+    //      Only keep those that are straight-forward, and have a
+    //      req=2 and req=3 and req=4 case.
     assert(first->req() == 2 && req() == 2, "only one input expected");
     Node* in = find_transformed_input(1, vnode_idx_to_transformed_node);
 
@@ -2210,7 +2211,15 @@ VTransformApplyStatus VTransformElementWiseVectorNode::apply(const VLoopAnalyzer
 
     return VTransformApplyStatus::make_vector(vn, vlen, vn->length_in_bytes());
   } else if (opc == Op_FmaD || opc == Op_FmaF) {
-    assert(false, "TODO Fma");
+    assert(first->req() == 4 && req() == 4, "expect 3 inputs");
+    Node* in1 = find_transformed_input(1, vnode_idx_to_transformed_node);
+    Node* in2 = find_transformed_input(2, vnode_idx_to_transformed_node);
+    Node* in3 = find_transformed_input(3, vnode_idx_to_transformed_node);
+
+    VectorNode* vn = VectorNode::make(opc, in1, in2, in3, vlen, bt);
+    register_new_vector_and_replace_scalar_nodes(vloop_analyzer, vn);
+
+    return VTransformApplyStatus::make_vector(vn, vlen, vn->length_in_bytes());
   } else {
     DEBUG_ONLY(print();)
     assert(false, "TODO element wise");

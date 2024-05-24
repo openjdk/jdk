@@ -2248,12 +2248,12 @@ bool SuperWord::output() {
         // vn = VectorCastNode::make(vopc, in, bt, vlen);
         // vlen_in_bytes = vn->as_Vector()->length_in_bytes();
       } else if (opc == Op_FmaD || opc == Op_FmaF) {
-        // Promote operands to vector
-        Node* in1 = vector_opd(p, 1);
-        Node* in2 = vector_opd(p, 2);
-        Node* in3 = vector_opd(p, 3);
-        vn = VectorNode::make(opc, in1, in2, in3, vlen, velt_basic_type(n));
-        vlen_in_bytes = vn->as_Vector()->length_in_bytes();
+        // // Promote operands to vector
+        // Node* in1 = vector_opd(p, 1);
+        // Node* in2 = vector_opd(p, 2);
+        // Node* in3 = vector_opd(p, 3);
+        // vn = VectorNode::make(opc, in1, in2, in3, vlen, velt_basic_type(n));
+        // vlen_in_bytes = vn->as_Vector()->length_in_bytes();
       } else {
         assert(false, "Unhandled scalar opcode (%s)", NodeClassNames[opc]);
         C->record_failure(C2Compiler::retry_no_superword());
@@ -3591,7 +3591,8 @@ VTransformVectorNode* SuperWordVTransformBuilder::make_vtnode_for_pack(const Nod
     assert(p0->req() == 2, "only one input expected");
     vtn = new (_graph.arena()) VTransformElementWiseVectorNode(_graph, 2, pack_size);
   } else if (opc == Op_FmaD || opc == Op_FmaF) {
-    assert(false, "TODO");
+    assert(p0->req() == 4, "three inputs expected");
+    vtn = new (_graph.arena()) VTransformElementWiseVectorNode(_graph, 4, pack_size);
   } else {
     DEBUG_ONLY(p0->dump();)
     assert(false, "failed to handle pack");
@@ -3713,7 +3714,8 @@ void SuperWordVTransformBuilder::set_req_all_for_scalar(VTransformNode* vtn, Nod
 
 void SuperWordVTransformBuilder::set_req_all_for_vector(VTransformNode* vtn, Node_List* pack) {
   Node* p0 = pack->at(0);
-  for (uint j = 0; j < p0->req(); j++) {
+  // Ignore ctrl, start at input 1.
+  for (uint j = 1; j < p0->req(); j++) {
     Node* def = p0->in(j);
     if (def == nullptr) { continue; }
     set_req_for_vector(vtn, j, pack);
