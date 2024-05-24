@@ -78,8 +78,7 @@ inline void PSParallelCompact::check_new_location(HeapWord* old_addr, HeapWord* 
 #endif // ASSERT
 
 inline bool PSParallelCompact::mark_obj(oop obj) {
-  const size_t obj_size = obj->size();
-  if (mark_bitmap()->mark_obj(obj, obj_size)) {
+  if (mark_bitmap()->mark_obj(obj)) {
     ContinuationGCSupport::transform_stack_chunk(obj);
     return true;
   } else {
@@ -88,34 +87,22 @@ inline bool PSParallelCompact::mark_obj(oop obj) {
 }
 
 template <class T>
-inline void PSParallelCompact::adjust_pointer(T* p, ParCompactionManager* cm) {
+inline void PSParallelCompact::adjust_pointer(T* p) {
   T heap_oop = RawAccess<>::oop_load(p);
   if (!CompressedOops::is_null(heap_oop)) {
     oop obj = CompressedOops::decode_not_null(heap_oop);
     assert(ParallelScavengeHeap::heap()->is_in(obj), "should be in heap");
 
-    oop new_obj = cast_to_oop(summary_data().calc_new_pointer(obj, cm));
-    assert(new_obj != nullptr, "non-null address for live objects");
-    // Is it actually relocated at all?
-    if (new_obj != obj) {
-      assert(ParallelScavengeHeap::heap()->is_in_reserved(new_obj),
-             "should be in object space");
-      RawAccess<IS_NOT_NULL>::oop_store(p, new_obj);
+    if (!obj->is_forwarded()) {
+      return;
     }
+    oop new_obj = obj->forwardee();
+    assert(new_obj != nullptr, "non-null address for live objects");
+    assert(new_obj != obj, "inv");
+    assert(ParallelScavengeHeap::heap()->is_in_reserved(new_obj),
+           "should be in object space");
+    RawAccess<IS_NOT_NULL>::oop_store(p, new_obj);
   }
 }
-
-class PCAdjustPointerClosure: public BasicOopIterateClosure {
-public:
-  PCAdjustPointerClosure(ParCompactionManager* cm) : _cm(cm) {
-  }
-  template <typename T> void do_oop_work(T* p) { PSParallelCompact::adjust_pointer(p, _cm); }
-  virtual void do_oop(oop* p)                { do_oop_work(p); }
-  virtual void do_oop(narrowOop* p)          { do_oop_work(p); }
-
-  virtual ReferenceIterationMode reference_iteration_mode() { return DO_FIELDS; }
-private:
-  ParCompactionManager* _cm;
-};
 
 #endif // SHARE_GC_PARALLEL_PSPARALLELCOMPACT_INLINE_HPP
