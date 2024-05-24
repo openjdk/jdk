@@ -164,7 +164,7 @@ public class CopyOnWriteArrayList<E>
      */
     public CopyOnWriteArrayList(E[] toCopyIn) {
         if (toCopyIn.length == 0)
-            setArray(toCopyIn);
+            setArray(EMPTY_ELEMENTDATA);
         else
             setArray(Arrays.copyOf(toCopyIn, toCopyIn.length, Object[].class));
     }
@@ -624,6 +624,11 @@ public class CopyOnWriteArrayList<E>
                 index = indexOfRange(o, current, index, len);
                 if (index < 0)
                     return false;
+            }
+            if (len == 1) {
+                // one element exists and that element should be removed
+                setArray(EMPTY_ELEMENTDATA);
+                return true;
             }
             Object[] newElements = new Object[len - 1];
             System.arraycopy(current, 0, newElements, 0, index);
