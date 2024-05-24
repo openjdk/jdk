@@ -1747,7 +1747,7 @@ public final class Unsafe {
         theInternalUnsafe.invokeCleaner(directBuffer);
     }
 
-    // Instructure for --sun-misc-unsafe-memory-access=<value> command line option.
+    // Infrastructure for --sun-misc-unsafe-memory-access=<value> command line option.
 
     private static final Object MEMORY_ACCESS_WARNED_BASE;
     private static final long MEMORY_ACCESS_WARNED_OFFSET;
