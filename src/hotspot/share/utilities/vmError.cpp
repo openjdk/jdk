@@ -2084,6 +2084,10 @@ typedef void (*voidfun_t)();
 
 // Crash with an authentic sigfpe
 volatile int sigfpe_int = 0;
+
+#if defined(__clang__) || defined(__GNUC__)
+__attribute__((no_sanitize("undefined")))
+#endif
 static void ALWAYSINLINE crash_with_sigfpe() {
 
   // generate a native synchronous SIGFPE where possible;
