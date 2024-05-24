@@ -98,11 +98,13 @@ class NativeSocketAddress {
         // IPv4 address field's layout path
         PathElement[] saddr_layout_path = switch (OperatingSystem.current()) {
             case WINDOWS -> new PathElement[]{
+                    // Native structure path: sin_addr.S_un.S_addr
                     groupElement("sin_addr"),
                     groupElement("S_un"),
                     groupElement("S_addr")
             };
             case LINUX, MACOS -> new PathElement[]{
+                    // Native structure path: sin_addr.s_addr
                     groupElement("sin_addr"),
                     groupElement("s_addr")};
             case AIX -> throw new RuntimeException("AIX not supported yet");
@@ -196,11 +198,8 @@ class NativeSocketAddress {
 
     @Override
     public boolean equals(Object other) {
-        if (other instanceof NativeSocketAddress otherNSA) {
-            return memory.mismatch(otherNSA.memory) < 0;
-        } else {
-            return false;
-        }
+        return (other instanceof NativeSocketAddress otherNSA) &&
+                memory.mismatch(otherNSA.memory) < 0;
     }
 
     @Override
@@ -308,16 +307,11 @@ class NativeSocketAddress {
             int scope_id;
             if (ia instanceof Inet4Address) {
                 // IPv4-mapped IPv6 address
-                byte[] ipv6bytes = new byte[16];
-                ipv6bytes[10] = (byte) 0xff;
-                ipv6bytes[11] = (byte) 0xff;
+                var sin6addrMs = sockaddr_in6.sin6_addr(memory);
+                sin6addrMs.asSlice(0, 10).fill((byte) 0);
                 byte[] ipv4address = ia.getAddress();
-                ipv6bytes[12] = ipv4address[0];
-                ipv6bytes[13] = ipv4address[1];
-                ipv6bytes[14] = ipv4address[2];
-                ipv6bytes[15] = ipv4address[3];
-                MemorySegment heapAddressBytes = MemorySegment.ofArray(ipv6bytes);
-                sockaddr_in6.sin6_addr(memory).copyFrom(heapAddressBytes);
+                sin6addrMs.asSlice(10, 2).fill((byte) 0xff);
+                MemorySegment.copy(ipv4address, 0, sin6addrMs, JAVA_BYTE, 12, 4);
                 scope_id = 0;
             } else {
                 // IPv6 address
@@ -338,6 +332,7 @@ class NativeSocketAddress {
     private static void putAddress(MemorySegment address, Inet6Address ia) {
         byte[] bytes = JNINA.addressBytes(ia); // network byte order
         var sin6addrMs = sockaddr_in6.sin6_addr(address);
-        sin6addrMs.copyFrom(MemorySegment.ofArray(bytes));
+        assert bytes.length == sin6addrMs.byteSize();
+        MemorySegment.copy(bytes, 0, sin6addrMs, JAVA_BYTE, 0, bytes.length);
     }
 }
