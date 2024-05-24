@@ -44,10 +44,10 @@ void MemoryFileTracker::allocate_memory(MemoryFile* file, size_t offset,
                                         MEMFLAGS flag) {
   NativeCallStackStorage::StackIndex sidx = _stack_storage.push(stack);
   VMATree::RegionData regiondata(sidx, flag);
-  VMATree::SummaryDiff diff = file->_tree.reserve_mapping(offset, size, regiondata);
+  VMATree::SummaryDiff diff = file->_tree.commit_mapping(offset, size, regiondata);
   for (int i = 0; i < mt_number_of_types; i++) {
     VirtualMemory* summary = file->_summary.by_type(NMTUtil::index_to_flag(i));
-    summary->reserve_memory(diff.flag[i].reserve);
+    summary->commit_memory(diff.flag[i].commit);
   }
 }
 
@@ -55,7 +55,7 @@ void MemoryFileTracker::free_memory(MemoryFile* file, size_t offset, size_t size
   VMATree::SummaryDiff diff = file->_tree.release_mapping(offset, size);
   for (int i = 0; i < mt_number_of_types; i++) {
     VirtualMemory* summary = file->_summary.by_type(NMTUtil::index_to_flag(i));
-    summary->reserve_memory(diff.flag[i].reserve);
+    summary->commit_memory(diff.flag[i].commit);
   }
 }
 
@@ -70,7 +70,7 @@ void MemoryFileTracker::print_report_on(const MemoryFile* file, outputStream* st
       return;
     }
     assert(prev->val().out.type() == current->val().in.type(), "must be");
-    if (prev->val().out.type() == VMATree::StateType::Reserved) {
+    if (prev->val().out.type() == VMATree::StateType::Committed) {
       const auto& start_addr = prev->key();
       const auto& end_addr = current->key();
       stream->print_cr("[" PTR_FORMAT " - " PTR_FORMAT "] allocated " SIZE_FORMAT "%s" " for %s",
@@ -156,10 +156,9 @@ void MemoryFileTracker::summary_snapshot(VirtualMemorySnapshot* snapshot) const 
   for (int d = 0; d < _files.length(); d++) {
     const MemoryFile* file = _files.at(d);
     for (int i = 0; i < mt_number_of_types; i++) {
-      auto snap = snapshot->by_type(NMTUtil::index_to_flag(i));
-      auto current = file->_summary.by_type(NMTUtil::index_to_flag(i));
-      // The MemoryFileTracker stores the memory as reserved but it's accounted as committed.
-      snap->commit_memory(current->reserved());
+      VirtualMemory* snap = snapshot->by_type(NMTUtil::index_to_flag(i));
+      const VirtualMemory* current = file->_summary.by_type(NMTUtil::index_to_flag(i));
+      snap->commit_memory(current->committed());
     }
   }
 }
