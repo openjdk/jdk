@@ -94,8 +94,8 @@ class LowJCovAttributeTest {
             }
         }
         for (MethodModel m : classLow.methods()) {
-            m.findAttribute(Attributes.CODE).ifPresent(code ->
-                ((CodeModel) code).findAttribute(Attributes.CHARACTER_RANGE_TABLE).ifPresent(attr -> {
+            m.findAttribute(Attributes.code()).ifPresent(code ->
+                ((CodeModel) code).findAttribute(Attributes.characterRangeTable()).ifPresent(attr -> {
                                 for (CharacterRangeInfo cr : attr.characterRangeTable()) {
                                     printf("  %d-%d -> %d/%d-%d/%d (%x)%n", cr.startPc(), cr.endPc(),
                                             cr.characterRangeStart() >> 10, cr.characterRangeStart() & 0x3FF,
@@ -156,7 +156,7 @@ class LowJCovAttributeTest {
 //        }
 //        writeAndCompareAttributes(classLow, cp);
 //        for (MethodLow m : classLow.methodsLow()) {
-//            m.findAttribute(Attributes.CODE).ifPresent(code ->
+//            m.findAttribute(Attributes.code()).ifPresent(code ->
 //                    writeAndCompareAttributes(code, cp));
 //        }
 //    }
