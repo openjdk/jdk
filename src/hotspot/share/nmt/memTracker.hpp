@@ -171,7 +171,7 @@ class MemTracker : AllStatic {
     assert_post_init();
     if (!enabled()) return nullptr;
     MemoryFileTracker::Instance::Locker lock;
-    return MemoryFileTracker::Instance::make_device(descriptive_name);
+    return MemoryFileTracker::Instance::make_file(descriptive_name);
   }
 
   static inline void remove_device(MemoryFileTracker::MemoryFile* device) {
@@ -179,7 +179,7 @@ class MemTracker : AllStatic {
     assert_post_init();
     if (!enabled()) return;
     MemoryFileTracker::Instance::Locker lock;
-    MemoryFileTracker::Instance::free_device(device);
+    MemoryFileTracker::Instance::free_file(device);
   }
 
   static inline void allocate_memory_in(MemoryFileTracker::MemoryFile* device, size_t offset, size_t size,

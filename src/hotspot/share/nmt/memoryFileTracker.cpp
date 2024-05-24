@@ -37,33 +37,33 @@ MemoryFileTracker* MemoryFileTracker::Instance::_tracker = nullptr;
 PlatformMutex* MemoryFileTracker::Instance::_mutex = nullptr;
 
 MemoryFileTracker::MemoryFileTracker(bool is_detailed_mode)
-  : _stack_storage(is_detailed_mode), _devices() {}
+  : _stack_storage(is_detailed_mode), _files() {}
 
-void MemoryFileTracker::allocate_memory(MemoryFile* device, size_t offset,
+void MemoryFileTracker::allocate_memory(MemoryFile* file, size_t offset,
                                         size_t size, const NativeCallStack& stack,
                                         MEMFLAGS flag) {
   NativeCallStackStorage::StackIndex sidx = _stack_storage.push(stack);
   VMATree::RegionData regiondata(sidx, flag);
-  VMATree::SummaryDiff diff = device->_tree.reserve_mapping(offset, size, regiondata);
+  VMATree::SummaryDiff diff = file->_tree.reserve_mapping(offset, size, regiondata);
   for (int i = 0; i < mt_number_of_types; i++) {
-    VirtualMemory* summary = device->_summary.by_type(NMTUtil::index_to_flag(i));
+    VirtualMemory* summary = file->_summary.by_type(NMTUtil::index_to_flag(i));
     summary->reserve_memory(diff.flag[i].reserve);
   }
 }
 
-void MemoryFileTracker::free_memory(MemoryFile* device, size_t offset, size_t size) {
-  VMATree::SummaryDiff diff = device->_tree.release_mapping(offset, size);
+void MemoryFileTracker::free_memory(MemoryFile* file, size_t offset, size_t size) {
+  VMATree::SummaryDiff diff = file->_tree.release_mapping(offset, size);
   for (int i = 0; i < mt_number_of_types; i++) {
-    VirtualMemory* summary = device->_summary.by_type(NMTUtil::index_to_flag(i));
+    VirtualMemory* summary = file->_summary.by_type(NMTUtil::index_to_flag(i));
     summary->reserve_memory(diff.flag[i].reserve);
   }
 }
 
-void MemoryFileTracker::print_report_on(const MemoryFile* device, outputStream* stream, size_t scale) {
-  stream->print_cr("Memory map of %s", device->_descriptive_name);
+void MemoryFileTracker::print_report_on(const MemoryFile* file, outputStream* stream, size_t scale) {
+  stream->print_cr("Memory map of %s", file->_descriptive_name);
   stream->cr();
   VMATree::TreapNode* prev = nullptr;
-  device->_tree.visit_in_order([&](VMATree::TreapNode* current) {
+  file->_tree.visit_in_order([&](VMATree::TreapNode* current) {
     if (prev == nullptr) {
       // Must be first node.
       prev = current;
@@ -85,23 +85,23 @@ void MemoryFileTracker::print_report_on(const MemoryFile* device, outputStream* 
   });
 }
 
-MemoryFileTracker::MemoryFile* MemoryFileTracker::make_device(const char* descriptive_name) {
-  MemoryFile* device_place = new MemoryFile{descriptive_name};
-  _devices.push(device_place);
-  return device_place;
+MemoryFileTracker::MemoryFile* MemoryFileTracker::make_file(const char* descriptive_name) {
+  MemoryFile* file_place = new MemoryFile{descriptive_name};
+  _files.push(file_place);
+  return file_place;
 }
 
-void MemoryFileTracker::free_device(MemoryFile* device) {
-  _devices.remove(device);
-  delete device;
+void MemoryFileTracker::free_file(MemoryFile* file) {
+  _files.remove(file);
+  delete file;
 }
 
-const GrowableArrayCHeap<MemoryFileTracker::MemoryFile*, mtNMT>& MemoryFileTracker::devices() {
-  return _devices;
+const GrowableArrayCHeap<MemoryFileTracker::MemoryFile*, mtNMT>& MemoryFileTracker::files() {
+  return _files;
 }
 
-const VirtualMemorySnapshot& MemoryFileTracker::summary_for(const MemoryFile* device) {
-  return device->_summary;
+const VirtualMemorySnapshot& MemoryFileTracker::summary_for(const MemoryFile* file) {
+  return file->_summary;
 }
 
 
@@ -114,50 +114,50 @@ bool MemoryFileTracker::Instance::initialize(NMT_TrackingLevel tracking_level) {
   return true;
 }
 
-void MemoryFileTracker::Instance::allocate_memory(MemoryFile* device, size_t offset,
+void MemoryFileTracker::Instance::allocate_memory(MemoryFile* file, size_t offset,
                                                   size_t size, const NativeCallStack& stack,
                                                   MEMFLAGS flag) {
-  _tracker->allocate_memory(device, offset, size, stack, flag);
+  _tracker->allocate_memory(file, offset, size, stack, flag);
 }
 
-void MemoryFileTracker::Instance::free_memory(MemoryFile* device, size_t offset, size_t size) {
-  _tracker->free_memory(device, offset, size);
+void MemoryFileTracker::Instance::free_memory(MemoryFile* file, size_t offset, size_t size) {
+  _tracker->free_memory(file, offset, size);
 }
 
 MemoryFileTracker::MemoryFile*
-MemoryFileTracker::Instance::make_device(const char* descriptive_name) {
-  return _tracker->make_device(descriptive_name);
+MemoryFileTracker::Instance::make_file(const char* descriptive_name) {
+  return _tracker->make_file(descriptive_name);
 }
 
-void MemoryFileTracker::Instance::print_report_on(const MemoryFile* device,
+void MemoryFileTracker::Instance::print_report_on(const MemoryFile* file,
                                                   outputStream* stream, size_t scale) {
-  assert(device != nullptr, "must be");
+  assert(file != nullptr, "must be");
   assert(stream != nullptr, "must be");
-  _tracker->print_report_on(device, stream, scale);
+  _tracker->print_report_on(file, stream, scale);
 }
 
 void MemoryFileTracker::Instance::print_all_reports_on(outputStream* stream, size_t scale) {
-  const GrowableArrayCHeap<MemoryFileTracker::MemoryFile*, mtNMT>& devices =
-      MemoryFileTracker::Instance::devices();
+  const GrowableArrayCHeap<MemoryFileTracker::MemoryFile*, mtNMT>& files =
+      MemoryFileTracker::Instance::files();
   stream->cr();
   stream->print_cr("Memory file details");
   stream->cr();
-  for (int i = 0; i < devices.length(); i++) {
-    MemoryFileTracker::MemoryFile* dev = devices.at(i);
-    MemoryFileTracker::Instance::print_report_on(dev, stream, scale);
+  for (int i = 0; i < files.length(); i++) {
+    MemoryFileTracker::MemoryFile* file = files.at(i);
+    MemoryFileTracker::Instance::print_report_on(file, stream, scale);
   }
 }
 
-const GrowableArrayCHeap<MemoryFileTracker::MemoryFile*, mtNMT>& MemoryFileTracker::Instance::devices() {
-  return _tracker->devices();
+const GrowableArrayCHeap<MemoryFileTracker::MemoryFile*, mtNMT>& MemoryFileTracker::Instance::files() {
+  return _tracker->files();
 };
 
 void MemoryFileTracker::summary_snapshot(VirtualMemorySnapshot* snapshot) const {
-  for (int d = 0; d < _devices.length(); d++) {
-    const MemoryFile* device = _devices.at(d);
+  for (int d = 0; d < _files.length(); d++) {
+    const MemoryFile* file = _files.at(d);
     for (int i = 0; i < mt_number_of_types; i++) {
       auto snap = snapshot->by_type(NMTUtil::index_to_flag(i));
-      auto current = device->_summary.by_type(NMTUtil::index_to_flag(i));
+      auto current = file->_summary.by_type(NMTUtil::index_to_flag(i));
       // The MemoryFileTracker stores the memory as reserved but it's accounted as committed.
       snap->commit_memory(current->reserved());
     }

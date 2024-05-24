@@ -36,9 +36,9 @@
 #include "utilities/nativeCallStack.hpp"
 #include "utilities/ostream.hpp"
 
-// The PhysicalDeviceTracker tracks memory of 'physical devices',
+// The MemoryFileTracker tracks memory of 'memory files',
 // storage with its own memory space separate from the process.
-// A typical example of such a device is a memory mapped file.
+// A typical example of such a file is a memory mapped file.
 class MemoryFileTracker {
   friend class MemoryFileTrackerTest;
 
@@ -59,27 +59,27 @@ public:
   };
 
 private:
-  // We need pointers to each allocated device.
-  GrowableArrayCHeap<MemoryFile*, mtNMT> _devices;
+  // We need pointers to each allocated file.
+  GrowableArrayCHeap<MemoryFile*, mtNMT> _files;
 
 public:
   MemoryFileTracker(bool is_detailed_mode);
 
-  void allocate_memory(MemoryFile* device, size_t offset, size_t size, const NativeCallStack& stack,
+  void allocate_memory(MemoryFile* file, size_t offset, size_t size, const NativeCallStack& stack,
                        MEMFLAGS flag);
-  void free_memory(MemoryFile* device, size_t offset, size_t size);
+  void free_memory(MemoryFile* file, size_t offset, size_t size);
 
-  MemoryFile* make_device(const char* descriptive_name);
-  void free_device(MemoryFile* device);
+  MemoryFile* make_file(const char* descriptive_name);
+  void free_file(MemoryFile* file);
 
-  const VirtualMemorySnapshot& summary_for(const MemoryFile* device);
+  const VirtualMemorySnapshot& summary_for(const MemoryFile* file);
 
   void summary_snapshot(VirtualMemorySnapshot* snapshot) const;
 
-  // Print detailed report of device
-  void print_report_on(const MemoryFile* device, outputStream* stream, size_t scale);
+  // Print detailed report of file
+  void print_report_on(const MemoryFile* file, outputStream* stream, size_t scale);
 
-  const GrowableArrayCHeap<MemoryFile*, mtNMT>& devices();
+  const GrowableArrayCHeap<MemoryFile*, mtNMT>& files();
 
   class Instance : public AllStatic {
     static MemoryFileTracker* _tracker;
@@ -94,8 +94,8 @@ public:
 
     static bool initialize(NMT_TrackingLevel tracking_level);
 
-    static MemoryFile* make_device(const char* descriptive_name);
-    static void free_device(MemoryFile* device);
+    static MemoryFile* make_file(const char* descriptive_name);
+    static void free_file(MemoryFile* device);
 
     static void allocate_memory(MemoryFile* device, size_t offset, size_t size,
                                 const NativeCallStack& stack, MEMFLAGS flag);
@@ -108,7 +108,7 @@ public:
     static void print_report_on(const MemoryFile* device, outputStream* stream, size_t scale);
     static void print_all_reports_on(outputStream* stream, size_t scale);
 
-    static const GrowableArrayCHeap<MemoryFile*, mtNMT>& devices();
+    static const GrowableArrayCHeap<MemoryFile*, mtNMT>& files();
   };
 };
 
