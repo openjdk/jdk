@@ -154,7 +154,7 @@ const GrowableArrayCHeap<MemoryFileTracker::MemoryFile*, mtNMT>& MemoryFileTrack
 
 void MemoryFileTracker::summary_snapshot(VirtualMemorySnapshot* snapshot) const {
   for (int d = 0; d < _devices.length(); d++) {
-    auto& device = _devices.at(d);
+    const MemoryFile* device = _devices.at(d);
     for (int i = 0; i < mt_number_of_types; i++) {
       auto snap = snapshot->by_type(NMTUtil::index_to_flag(i));
       auto current = device->_summary.by_type(NMTUtil::index_to_flag(i));
