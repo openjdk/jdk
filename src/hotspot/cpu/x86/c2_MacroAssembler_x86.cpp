@@ -4547,11 +4547,12 @@ void C2_MacroAssembler::arrays_equals(bool is_array_equ, Register ary1, Register
     if (expand_ary2) {
       andl(result, 0x0000000f);  //   tail count (in bytes)
       andl(limit, 0xfffffff0);   // vector count (in bytes)
+      jcc(Assembler::zero, COMPARE_TAIL);
     } else {
       andl(result, 0x0000001f);  //   tail count (in bytes)
       andl(limit, 0xffffffe0);   // vector count (in bytes)
+      jcc(Assembler::zero, COMPARE_TAIL_16);
     }
-    jcc(Assembler::zero, COMPARE_TAIL_16);
 
     lea(ary1, Address(ary1, limit, scaleFactor));
     lea(ary2, Address(ary2, limit, Address::times_1));
@@ -4715,7 +4716,7 @@ void C2_MacroAssembler::arrays_equals(bool is_array_equ, Register ary1, Register
     jcc(Assembler::notZero, COMPARE_VECTORS);
     jmp(TRUE_LABEL);
   } else {
-    movl(chr, Address(ary1, limit, scaleFactor));
+    movl(chr, Address(ary1, limit, Address::times_1));
     cmpl(chr, Address(ary2, limit, Address::times_1));
     jccb(Assembler::notEqual, FALSE_LABEL);
     addptr(limit, 4);
