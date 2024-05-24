@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,18 +24,27 @@
 /* @test
  * @bug 8032400
  * @summary JSR292: invokeSpecial: InternalError attempting to lookup a method
- * @modules java.base/jdk.internal.org.objectweb.asm
+ * @enablePreview
  * @compile -XDignore.symbol.file SpecialStatic.java
  * @run testng test.java.lang.invoke.lookup.SpecialStatic
  */
 package test.java.lang.invoke.lookup;
 
+import java.lang.classfile.ClassFile;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.MethodHandleDesc;
+import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import jdk.internal.org.objectweb.asm.*;
+import java.lang.reflect.AccessFlag;
+
 import org.testng.annotations.*;
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
+
+import static java.lang.classfile.ClassFile.ACC_PUBLIC;
+import static java.lang.classfile.ClassFile.ACC_STATIC;
+import static java.lang.constant.ConstantDescs.*;
+import static java.lang.constant.DirectMethodHandleDesc.Kind.SPECIAL;
 import static org.testng.Assert.*;
 
 /**
@@ -72,6 +81,12 @@ public class SpecialStatic {
 
     private static ClassLoader cl = new CustomClassLoader();
     private static Class t1, t3;
+    private static final MethodTypeDesc MTD_int = MethodTypeDesc.of(CD_int);
+    private static final MethodTypeDesc MTD_Lookup = MethodTypeDesc.of(CD_MethodHandles_Lookup);
+    private static final String METHOD_NAME = "m";
+    private static final ClassDesc CD_T1 = ClassDesc.of("T1");
+    private static final ClassDesc CD_T2 = ClassDesc.of("T2");
+    private static final ClassDesc CD_T3 = ClassDesc.of("T3");
     static {
         try {
             t1 = cl.loadClass("T1");
@@ -103,93 +118,60 @@ public class SpecialStatic {
     }
 
     public static byte[] dumpT1() {
-        ClassWriter cw = new ClassWriter(0);
-        MethodVisitor mv;
-
-        cw.visit(52, ACC_PUBLIC + ACC_SUPER, "T1", null, "java/lang/Object", null);
-
-        mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
-        mv.visitCode();
-        mv.visitVarInsn(ALOAD, 0);
-        mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
-        mv.visitInsn(RETURN);
-        mv.visitMaxs(1, 1);
-        mv.visitEnd();
-
-        mv = cw.visitMethod(ACC_PUBLIC, "m", "()I", null, null);
-        mv.visitCode();
-        mv.visitIntInsn(BIPUSH, 1);
-        mv.visitInsn(IRETURN);
-        mv.visitMaxs(1, 1);
-        mv.visitEnd();
-
-        cw.visitEnd();
-        return cw.toByteArray();
+        return ClassFile.of().build(CD_T1, clb -> {
+            clb.withSuperclass(CD_Object);
+            clb.withFlags(AccessFlag.PUBLIC, AccessFlag.SUPER);
+            clb.withMethodBody(INIT_NAME, MTD_void, ACC_PUBLIC, cob -> {
+                cob.aload(0);
+                cob.invokespecial(CD_Object, INIT_NAME, MTD_void);
+                cob.return_();
+            });
+            clb.withMethodBody(METHOD_NAME, MTD_int, ACC_PUBLIC, cob -> {
+                cob.bipush(1);
+                cob.ireturn();
+            });
+        });
     }
 
     public static byte[] dumpT2() {
-        ClassWriter cw = new ClassWriter(0);
-        MethodVisitor mv;
-
-        cw.visit(52, ACC_PUBLIC + ACC_SUPER, "T2", null, "T1", null);
-
-        mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
-        mv.visitCode();
-        mv.visitVarInsn(ALOAD, 0);
-        mv.visitMethodInsn(INVOKESPECIAL, "T1", "<init>", "()V", false);
-        mv.visitInsn(RETURN);
-        mv.visitMaxs(1, 1);
-        mv.visitEnd();
-
-        mv = cw.visitMethod(ACC_PUBLIC | ACC_STATIC, "m", "()I", null, null);
-        mv.visitCode();
-        mv.visitIntInsn(BIPUSH, 2);
-        mv.visitInsn(IRETURN);
-        mv.visitMaxs(1, 1);
-        mv.visitEnd();
-
-        cw.visitEnd();
-        return cw.toByteArray();
+        return ClassFile.of().build(CD_T2, clb -> {
+            clb.withSuperclass(CD_T1);
+            clb.withFlags(AccessFlag.PUBLIC, AccessFlag.SUPER);
+            clb.withMethodBody(INIT_NAME, MTD_void, ACC_PUBLIC, cob -> {
+                cob.aload(0);
+                cob.invokespecial(CD_T1, INIT_NAME, MTD_void);
+                cob.return_();
+            });
+            clb.withMethodBody(METHOD_NAME, MTD_int, ACC_PUBLIC | ACC_STATIC, cob -> {
+                cob.bipush(2);
+                cob.ireturn();
+            });
+        });
     }
 
     public static byte[] dumpT3() {
-        ClassWriter cw = new ClassWriter(0);
-        MethodVisitor mv;
-
-        cw.visit(52, ACC_PUBLIC + ACC_SUPER, "T3", null, "T2", null);
-
-        mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
-        mv.visitCode();
-        mv.visitVarInsn(ALOAD, 0);
-        mv.visitMethodInsn(INVOKESPECIAL, "T2", "<init>", "()V", false);
-        mv.visitInsn(RETURN);
-        mv.visitMaxs(1, 1);
-        mv.visitEnd();
-
-        mv = cw.visitMethod(ACC_PUBLIC, "m", "()I", null, null);
-        mv.visitCode();
-        mv.visitIntInsn(BIPUSH, 3);
-        mv.visitInsn(IRETURN);
-        mv.visitMaxs(1, 1);
-        mv.visitEnd();
-
-        // getMethodHandle
-        mv = cw.visitMethod(ACC_PUBLIC + ACC_STATIC, "getMethodHandle", "()Ljava/lang/invoke/MethodHandle;", null, null);
-        mv.visitCode();
-        mv.visitLdcInsn(new Handle(H_INVOKESPECIAL, "T1", "m", "()I"));
-        mv.visitInsn(ARETURN);
-        mv.visitMaxs(1, 0);
-        mv.visitEnd();
-
-        // getLookup
-        mv = cw.visitMethod(ACC_PUBLIC + ACC_STATIC, "getLookup", "()Ljava/lang/invoke/MethodHandles$Lookup;", null, null);
-        mv.visitCode();
-        mv.visitMethodInsn(INVOKESTATIC, "java/lang/invoke/MethodHandles", "lookup", "()Ljava/lang/invoke/MethodHandles$Lookup;", false);
-        mv.visitInsn(ARETURN);
-        mv.visitMaxs(1, 0);
-        mv.visitEnd();
-
-        cw.visitEnd();
-        return cw.toByteArray();
+        return ClassFile.of().build(CD_T3, clb -> {
+            clb.withSuperclass(CD_T2);
+            clb.withFlags(AccessFlag.PUBLIC, AccessFlag.SUPER);
+            clb.withMethodBody(INIT_NAME, MTD_void, ACC_PUBLIC, cob -> {
+                cob.aload(0);
+                cob.invokespecial(CD_T2, INIT_NAME, MTD_void);
+                cob.return_();
+            });
+            clb.withMethodBody(METHOD_NAME, MTD_int, ACC_PUBLIC, cob -> {
+                cob.bipush(3);
+                cob.ireturn();
+            });
+            clb.withMethodBody("getMethodHandle", MethodTypeDesc.of(CD_MethodHandle),
+                    ACC_PUBLIC | ACC_STATIC, cob -> {
+                cob.loadConstant(MethodHandleDesc.ofMethod(SPECIAL, CD_T1, METHOD_NAME, MTD_int));
+                cob.areturn();
+            });
+            clb.withMethodBody("getLookup", MTD_Lookup,
+                    ACC_PUBLIC | ACC_STATIC, cob -> {
+                cob.invokestatic(CD_MethodHandles, "lookup", MTD_Lookup);
+                cob.areturn();
+            });
+        });
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ static const char* SIG_START      = "LP/Q/HiddenClassSig";
 static const size_t SIG_START_LEN = strlen(SIG_START);
 static const int    ACC_INTERFACE = 0x0200; // Interface class modifiers bit
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jint class_load_count = 0;
 static jint class_prep_count = 0;
 static bool failed = false;
@@ -50,18 +50,18 @@ static bool failed = false;
 /* Return the jmethodID of j.l.Class.isHidden() method. */
 static jmethodID
 is_hidden_mid(JNIEnv* jni) {
-  char* csig = NULL;
+  char* csig = nullptr;
   jint count = 0;
-  jmethodID *methods = NULL;
+  jmethodID *methods = nullptr;
   jclass clazz  = jni->FindClass("java/lang/Class");
-  if (clazz == NULL) {
-    jni->FatalError("is_hidden_mid: Error: FindClass returned NULL for java/lang/Class\n");
-    return NULL;
+  if (clazz == nullptr) {
+    jni->FatalError("is_hidden_mid: Error: FindClass returned null for java/lang/Class\n");
+    return nullptr;
   }
 
   // find the jmethodID of j.l.Class.isHidden() method
   jmethodID mid = jni->GetMethodID(clazz, "isHidden", "()Z");
-  if (mid == NULL) {
+  if (mid == nullptr) {
     jni->FatalError("is_hidden_mid: Error in jni GetMethodID: Cannot find j.l.Class.isHidden method\n");
   }
   return mid;
@@ -70,9 +70,9 @@ is_hidden_mid(JNIEnv* jni) {
 /* Return true if the klass is hidden. */
 static bool
 is_hidden(JNIEnv* jni, jclass klass) {
-  static jmethodID is_hid_mid = NULL;
+  static jmethodID is_hid_mid = nullptr;
 
-  if (is_hid_mid == NULL) {
+  if (is_hid_mid == nullptr) {
     is_hid_mid = is_hidden_mid(jni);
   }
   // invoke j.l.Class.isHidden() method
@@ -88,8 +88,8 @@ is_hidden(JNIEnv* jni, jclass klass) {
 static void
 check_class_signature(jvmtiEnv* jvmti, JNIEnv* jni, jclass klass, bool is_hidden, const char* exp_sig) {
   jint class_modifiers = 0;
-  char* sig = NULL;
-  char* gsig = NULL;
+  char* sig = nullptr;
+  char* gsig = nullptr;
   jvmtiError err;
 
   // get class signature
@@ -103,8 +103,8 @@ check_class_signature(jvmtiEnv* jvmti, JNIEnv* jni, jclass klass, bool is_hidden
     LOG2("check_class_signature: FAIL: Hidden class signature %s does not match expected: %s\n", sig, exp_sig);
     failed = true;
   }
-  if (is_hidden && gsig == NULL) {
-    LOG0("check_class_signature: FAIL: unexpected NULL generic signature for hidden class\n");
+  if (is_hidden && gsig == nullptr) {
+    LOG0("check_class_signature: FAIL: unexpected null generic signature for hidden class\n");
     failed = true;
   }
 }
@@ -152,8 +152,8 @@ check_hidden_class_flags(jvmtiEnv* jvmti, JNIEnv* jni, jclass klass) {
 static void
 check_hidden_class_loader(jvmtiEnv* jvmti, JNIEnv* jni, jclass klass) {
   jint count = 0;
-  jobject loader = NULL;
-  jclass* loader_classes = NULL;
+  jobject loader = nullptr;
+  jclass* loader_classes = nullptr;
   jboolean found = false;
   jvmtiError err;
 
@@ -166,7 +166,7 @@ check_hidden_class_loader(jvmtiEnv* jvmti, JNIEnv* jni, jclass klass) {
   CHECK_JVMTI_ERROR(jni, err, "check_hidden_class_loader: Error in JVMTI GetClassLoaderClasses");
 
   for (int idx = 0; idx < count; idx++) {
-    char* sig = NULL;
+    char* sig = nullptr;
     jclass kls = loader_classes[idx];
 
     // GetClassLoaderClasses should not return any hidden classes
@@ -174,7 +174,7 @@ check_hidden_class_loader(jvmtiEnv* jvmti, JNIEnv* jni, jclass klass) {
       continue;
     }
     // get class signature
-    err = jvmti->GetClassSignature(kls, &sig, NULL);
+    err = jvmti->GetClassSignature(kls, &sig, nullptr);
     CHECK_JVMTI_ERROR(jni, err, "check_hidden_class_loader: Error in JVMTI GetClassSignature");
 
     LOG1("check_hidden_class_loader: FAIL: JVMTI GetClassLoaderClasses returned hidden class: %s\n", sig);
@@ -187,9 +187,9 @@ check_hidden_class_loader(jvmtiEnv* jvmti, JNIEnv* jni, jclass klass) {
 /* Test the hidden class implements expected interface. */
 static void
 check_hidden_class_impl_interf(jvmtiEnv* jvmti, JNIEnv* jni, jclass klass) {
-  char* sig = NULL;
+  char* sig = nullptr;
   jint count = 0;
-  jclass* interfaces = NULL;
+  jclass* interfaces = nullptr;
   jvmtiError err;
 
   // check that hidden class implements just one interface
@@ -201,7 +201,7 @@ check_hidden_class_impl_interf(jvmtiEnv* jvmti, JNIEnv* jni, jclass klass) {
     return;
   }
   // get interface signature
-  err = jvmti->GetClassSignature(interfaces[0], &sig, NULL);
+  err = jvmti->GetClassSignature(interfaces[0], &sig, nullptr);
   CHECK_JVMTI_ERROR(jni, err, "check_hidden_class_impl_interf: Error in JVMTI GetClassSignature for implemented interface");
 
   // check the interface signature is matching the expected
@@ -215,7 +215,7 @@ check_hidden_class_impl_interf(jvmtiEnv* jvmti, JNIEnv* jni, jclass klass) {
 /* Test hidden class. */
 static void
 check_hidden_class(jvmtiEnv* jvmti, JNIEnv* jni, jclass klass, const char* exp_sig) {
-  char* source_file_name = NULL;
+  char* source_file_name = nullptr;
 
   LOG1("\n### Native agent: check_hidden_class started: class: %s\n", exp_sig);
 
@@ -237,7 +237,7 @@ check_hidden_class(jvmtiEnv* jvmti, JNIEnv* jni, jclass klass, const char* exp_s
 /* Test hidden class array. */
 static void
 check_hidden_class_array(jvmtiEnv* jvmti, JNIEnv* jni, jclass klass_array, const char* exp_sig) {
-  char* source_file_name = NULL;
+  char* source_file_name = nullptr;
 
   LOG1("\n### Native agent: check_hidden_class_array started: array: %s\n", exp_sig);
 
@@ -250,8 +250,8 @@ check_hidden_class_array(jvmtiEnv* jvmti, JNIEnv* jni, jclass klass_array, const
 /* Process a CLASS_LOAD or aClassPrepare event. */
 static void process_class_event(jvmtiEnv* jvmti, JNIEnv* jni, jclass klass,
                                 jint* event_count_ptr, const char* event_name) {
-  char* sig = NULL;
-  char* gsig = NULL;
+  char* sig = nullptr;
+  char* gsig = nullptr;
   jvmtiError err;
 
   // get class signature
@@ -263,8 +263,8 @@ static void process_class_event(jvmtiEnv* jvmti, JNIEnv* jni, jclass klass,
       strncmp(sig, SIG_START, SIG_START_LEN) == 0 &&
       is_hidden(jni, klass)) {
     (*event_count_ptr)++;
-    if (gsig == NULL) {
-      LOG1("%s event: FAIL: GetClassSignature returned NULL generic signature for hidden class\n", event_name);
+    if (gsig == nullptr) {
+      LOG1("%s event: FAIL: GetClassSignature returned null generic signature for hidden class\n", event_name);
       failed = true;
     }
     LOG2("%s event: hidden class with sig: %s\n", event_name, sig);
@@ -293,11 +293,11 @@ VMInit(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread) {
   fflush(stdout);
 
   // enable ClassLoad event notification mode
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_LOAD, NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_LOAD, nullptr);
   CHECK_JVMTI_ERROR(jni, err, "VMInit event: Error in enabling ClassLoad events notification");
 
   // enable ClassPrepare event notification mode
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_PREPARE, NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_PREPARE, nullptr);
   CHECK_JVMTI_ERROR(jni, err, "VMInit event: Error in enabling ClassPrepare events notification");
 }
 
@@ -327,7 +327,7 @@ Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   }
 
   // enable VM_INIT event notification mode
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_INIT, NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_INIT, nullptr);
   if (err != JVMTI_ERROR_NONE) {
     LOG1("Agent_OnLoad: Error in JVMTI SetEventNotificationMode: %d\n", err);
     failed = true;
@@ -341,10 +341,10 @@ Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
 /* Native method: checkHiddenClass(). */
 JNIEXPORT void JNICALL
 Java_P_Q_HiddenClassSigTest_checkHiddenClass(JNIEnv *jni, jclass klass, jclass hidden_klass, jstring exp_sig_str) {
-  const char* exp_sig = jni->GetStringUTFChars(exp_sig_str, NULL);
+  const char* exp_sig = jni->GetStringUTFChars(exp_sig_str, nullptr);
 
-  if (exp_sig == NULL) {
-    jni->FatalError("check_hidden_class: Error: JNI GetStringChars returned NULL for jstring\n");
+  if (exp_sig == nullptr) {
+    jni->FatalError("check_hidden_class: Error: JNI GetStringChars returned null for jstring\n");
     return;
   }
   check_hidden_class(jvmti, jni, hidden_klass, exp_sig);
@@ -355,10 +355,10 @@ Java_P_Q_HiddenClassSigTest_checkHiddenClass(JNIEnv *jni, jclass klass, jclass h
 /* Native method: checkHiddenClassArray(). */
 JNIEXPORT void JNICALL
 Java_P_Q_HiddenClassSigTest_checkHiddenClassArray(JNIEnv *jni, jclass klass, jclass hidden_klass_array, jstring exp_sig_str) {
-  const char* exp_sig = jni->GetStringUTFChars(exp_sig_str, NULL);
+  const char* exp_sig = jni->GetStringUTFChars(exp_sig_str, nullptr);
 
-  if (exp_sig == NULL) {
-    jni->FatalError("check_hidden_class_array: Error: JNI GetStringChars returned NULL for jstring\n");
+  if (exp_sig == nullptr) {
+    jni->FatalError("check_hidden_class_array: Error: JNI GetStringChars returned null for jstring\n");
     return;
   }
   check_hidden_class_array(jvmti, jni, hidden_klass_array, exp_sig);

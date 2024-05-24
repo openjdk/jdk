@@ -245,7 +245,6 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
     if (!Matcher::match_rule_supported(Op_StrComp)) return false;
     break;
   case vmIntrinsics::_equalsL:
-  case vmIntrinsics::_equalsU:
     if (!Matcher::match_rule_supported(Op_StrEquals)) return false;
     break;
   case vmIntrinsics::_vectorizedHashCode:
@@ -257,6 +256,9 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
     break;
   case vmIntrinsics::_copyMemory:
     if (StubRoutines::unsafe_arraycopy() == nullptr) return false;
+    break;
+  case vmIntrinsics::_setMemory:
+    if (StubRoutines::unsafe_setmemory() == nullptr) return false;
     break;
   case vmIntrinsics::_electronicCodeBook_encryptAESCrypt:
     if (StubRoutines::electronicCodeBook_encryptAESCrypt() == nullptr) return false;
@@ -784,6 +786,8 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_base64_encodeBlock:
   case vmIntrinsics::_base64_decodeBlock:
   case vmIntrinsics::_poly1305_processBlocks:
+  case vmIntrinsics::_intpoly_montgomeryMult_P256:
+  case vmIntrinsics::_intpoly_assign:
   case vmIntrinsics::_updateCRC32:
   case vmIntrinsics::_updateBytesCRC32:
   case vmIntrinsics::_updateByteBufferCRC32:

@@ -421,6 +421,9 @@ public:
     init_req(0,control);
     init_req(1,b);
   }
+
+  static IfNode* make_with_same_profile(IfNode* if_node_profile, Node* ctrl, BoolNode* bol);
+
   virtual int Opcode() const;
   virtual bool pinned() const { return true; }
   virtual const Type *bottom_type() const { return TypeTuple::IFBOTH; }
@@ -488,6 +491,11 @@ class ParsePredicateNode : public IfNode {
 
   void mark_useful() {
     _useless = false;
+  }
+
+  // Return the uncommon trap If projection of this Parse Predicate.
+  ParsePredicateUncommonProj* uncommon_proj() const {
+    return proj_out(0)->as_IfFalse();
   }
 
   Node* uncommon_trap() const;
@@ -684,7 +692,7 @@ public:
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual int required_outcnt() const { return 2; }
-  virtual void emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const { }
+  virtual void emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const { }
   virtual uint size(PhaseRegAlloc *ra_) const { return 0; }
 #ifndef PRODUCT
   virtual void format( PhaseRegAlloc *, outputStream *st ) const;

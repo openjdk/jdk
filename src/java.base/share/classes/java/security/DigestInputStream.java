@@ -89,6 +89,7 @@ public class DigestInputStream extends FilterInputStream {
      *
      * @param digest the message digest to associate with this stream.
      */
+    @SuppressWarnings("this-escape")
     public DigestInputStream(InputStream stream, MessageDigest digest) {
         super(stream);
         setMessageDigest(digest);

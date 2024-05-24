@@ -27,7 +27,6 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "code/compiledIC.hpp"
-#include "memory/resourceArea.hpp"
 #include "nativeInst_riscv.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.hpp"
@@ -157,7 +156,6 @@ void NativeCall::set_destination_mt_safe(address dest, bool assert_lock) {
          CompiledICLocker::is_safe(addr_at(0)),
          "concurrent code patching");
 
-  ResourceMark rm;
   address addr_call = addr_at(0);
   assert(NativeCall::is_call_at(addr_call), "unexpected code at call site");
 
@@ -402,7 +400,7 @@ void NativeGeneralJump::insert_unconditional(address code_pos, address entry) {
 
   int32_t offset = 0;
   a.movptr(t0, entry, offset); // lui, addi, slli, addi, slli
-  a.jalr(x0, t0, offset); // jalr
+  a.jr(t0, offset); // jalr
 
   ICache::invalidate_range(code_pos, instruction_size);
 }
@@ -411,7 +409,6 @@ void NativeGeneralJump::insert_unconditional(address code_pos, address entry) {
 void NativeGeneralJump::replace_mt_safe(address instr_addr, address code_buffer) {
   ShouldNotCallThis();
 }
-
 
 address NativeCallTrampolineStub::destination(nmethod *nm) const {
   return ptr_at(data_offset);

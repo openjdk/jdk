@@ -258,7 +258,7 @@ public interface Arena extends SegmentAllocator, AutoCloseable {
     }
 
     /**
-     * {@return a new shared arena} Segments allocated with the global arena can be
+     * {@return a new shared arena} Segments allocated with the shared arena can be
      *          {@linkplain MemorySegment#isAccessibleBy(Thread) accessed} by any thread.
      * <p>
      * Memory segments {@linkplain #allocate(long, long) allocated} by the returned arena

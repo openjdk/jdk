@@ -454,6 +454,22 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
   return new ConINode(TypeInt::ZERO);
 }
 
+IfNode* IfNode::make_with_same_profile(IfNode* if_node_profile, Node* ctrl, BoolNode* bol) {
+  // Assert here that we only try to create a clone from an If node with the same profiling if that actually makes sense.
+  // Some If node subtypes should not be cloned in this way. In theory, we should not clone BaseCountedLoopEndNodes.
+  // But they can end up being used as normal If nodes when peeling a loop - they serve as zero-trip guard.
+  // Allow them as well.
+  assert(if_node_profile->Opcode() == Op_If || if_node_profile->is_RangeCheck()
+         || if_node_profile->is_BaseCountedLoopEnd(), "should not clone other nodes");
+  if (if_node_profile->is_RangeCheck()) {
+    // RangeCheck nodes could be further optimized.
+    return new RangeCheckNode(ctrl, bol, if_node_profile->_prob, if_node_profile->_fcnt);
+  } else {
+    // Not a RangeCheckNode? Fall back to IfNode.
+    return new IfNode(ctrl, bol, if_node_profile->_prob, if_node_profile->_fcnt);
+  }
+}
+
 // if this IfNode follows a range check pattern return the projection
 // for the failed path
 ProjNode* IfNode::range_check_trap_proj(int& flip_test, Node*& l, Node*& r) {
@@ -1015,7 +1031,7 @@ bool IfNode::fold_compares_helper(ProjNode* proj, ProjNode* success, ProjNode* f
       const TypeInt* type2 = filtered_int_type(igvn, n, fail);
       if (type2 != nullptr) {
         failtype = failtype->join(type2)->is_int();
-        if (failtype->_lo > failtype->_hi) {
+        if (failtype->empty()) {
           // previous if determines the result of this if so
           // replace Bool with constant
           igvn->replace_input_of(this, 1, igvn->intcon(success->_con));
@@ -1023,55 +1039,53 @@ bool IfNode::fold_compares_helper(ProjNode* proj, ProjNode* success, ProjNode* f
         }
       }
     }
-    lo = nullptr;
-    hi = nullptr;
+    return false;
   }
 
-  if (lo && hi) {
-    Node* hook = new Node(1);
-    hook->init_req(0, lo); // Add a use to lo to prevent him from dying
-    // Merge the two compares into a single unsigned compare by building (CmpU (n - lo) (hi - lo))
-    Node* adjusted_val = igvn->transform(new SubINode(n,  lo));
-    if (adjusted_lim == nullptr) {
-      adjusted_lim = igvn->transform(new SubINode(hi, lo));
-    }
-    hook->destruct(igvn);
-
-    int lo = igvn->type(adjusted_lim)->is_int()->_lo;
-    if (lo < 0) {
-      // If range check elimination applies to this comparison, it includes code to protect from overflows that may
-      // cause the main loop to be skipped entirely. Delay this transformation.
-      // Example:
-      // for (int i = 0; i < limit; i++) {
-      //   if (i < max_jint && i > min_jint) {...
-      // }
-      // Comparisons folded as:
-      // i - min_jint - 1 <u -2
-      // when RC applies, main loop limit becomes:
-      // min(limit, max(-2 + min_jint + 1, min_jint))
-      // = min(limit, min_jint)
-      // = min_jint
-      if (!igvn->C->post_loop_opts_phase()) {
-        if (adjusted_val->outcnt() == 0) {
-          igvn->remove_dead_node(adjusted_val);
-        }
-        if (adjusted_lim->outcnt() == 0) {
-          igvn->remove_dead_node(adjusted_lim);
-        }
-        igvn->C->record_for_post_loop_opts_igvn(this);
-        return false;
-      }
-    }
-
-    Node* newcmp = igvn->transform(new CmpUNode(adjusted_val, adjusted_lim));
-    Node* newbool = igvn->transform(new BoolNode(newcmp, cond));
-
-    igvn->replace_input_of(dom_iff, 1, igvn->intcon(proj->_con));
-    igvn->replace_input_of(this, 1, newbool);
-
-    return true;
+  assert(lo != nullptr && hi != nullptr, "sanity");
+  Node* hook = new Node(lo); // Add a use to lo to prevent him from dying
+  // Merge the two compares into a single unsigned compare by building (CmpU (n - lo) (hi - lo))
+  Node* adjusted_val = igvn->transform(new SubINode(n,  lo));
+  if (adjusted_lim == nullptr) {
+    adjusted_lim = igvn->transform(new SubINode(hi, lo));
   }
-  return false;
+  hook->destruct(igvn);
+
+  if (adjusted_val->is_top() || adjusted_lim->is_top()) {
+    return false;
+  }
+
+  if (igvn->type(adjusted_lim)->is_int()->_lo < 0 &&
+      !igvn->C->post_loop_opts_phase()) {
+    // If range check elimination applies to this comparison, it includes code to protect from overflows that may
+    // cause the main loop to be skipped entirely. Delay this transformation.
+    // Example:
+    // for (int i = 0; i < limit; i++) {
+    //   if (i < max_jint && i > min_jint) {...
+    // }
+    // Comparisons folded as:
+    // i - min_jint - 1 <u -2
+    // when RC applies, main loop limit becomes:
+    // min(limit, max(-2 + min_jint + 1, min_jint))
+    // = min(limit, min_jint)
+    // = min_jint
+    if (adjusted_val->outcnt() == 0) {
+      igvn->remove_dead_node(adjusted_val);
+    }
+    if (adjusted_lim->outcnt() == 0) {
+      igvn->remove_dead_node(adjusted_lim);
+    }
+    igvn->C->record_for_post_loop_opts_igvn(this);
+    return false;
+  }
+
+  Node* newcmp = igvn->transform(new CmpUNode(adjusted_val, adjusted_lim));
+  Node* newbool = igvn->transform(new BoolNode(newcmp, cond));
+
+  igvn->replace_input_of(dom_iff, 1, igvn->intcon(proj->_con));
+  igvn->replace_input_of(this, 1, newbool);
+
+  return true;
 }
 
 // Merge the branches that trap for this If and the dominating If into
@@ -1898,6 +1912,46 @@ Node* RangeCheckNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     // then we are guaranteed to fail, so just start interpreting there.
     // We 'expand' the top 3 range checks to include all post-dominating
     // checks.
+    //
+    // Example:
+    // a[i+x] // (1) 1 < x < 6
+    // a[i+3] // (2)
+    // a[i+4] // (3)
+    // a[i+6] // max = max of all constants
+    // a[i+2]
+    // a[i+1] // min = min of all constants
+    //
+    // If x < 3:
+    //   (1) a[i+x]: Leave unchanged
+    //   (2) a[i+3]: Replace with a[i+max] = a[i+6]: i+x < i+3 <= i+6  -> (2) is covered
+    //   (3) a[i+4]: Replace with a[i+min] = a[i+1]: i+1 < i+4 <= i+6  -> (3) and all following checks are covered
+    //   Remove all other a[i+c] checks
+    //
+    // If x >= 3:
+    //   (1) a[i+x]: Leave unchanged
+    //   (2) a[i+3]: Replace with a[i+min] = a[i+1]: i+1 < i+3 <= i+x  -> (2) is covered
+    //   (3) a[i+4]: Replace with a[i+max] = a[i+6]: i+1 < i+4 <= i+6  -> (3) and all following checks are covered
+    //   Remove all other a[i+c] checks
+    //
+    // We only need the top 2 range checks if x is the min or max of all constants.
+    //
+    // This, however, only works if the interval [i+min,i+max] is not larger than max_int (i.e. abs(max - min) < max_int):
+    // The theoretical max size of an array is max_int with:
+    // - Valid index space: [0,max_int-1]
+    // - Invalid index space: [max_int,-1] // max_int, min_int, min_int - 1 ..., -1
+    //
+    // The size of the consecutive valid index space is smaller than the size of the consecutive invalid index space.
+    // If we choose min and max in such a way that:
+    // - abs(max - min) < max_int
+    // - i+max and i+min are inside the valid index space
+    // then all indices [i+min,i+max] must be in the valid index space. Otherwise, the invalid index space must be
+    // smaller than the valid index space which is never the case for any array size.
+    //
+    // Choosing a smaller array size only makes the valid index space smaller and the invalid index space larger and
+    // the argument above still holds.
+    //
+    // Note that the same optimization with the same maximal accepted interval size can also be found in C1.
+    const jlong maximum_number_of_min_max_interval_indices = (jlong)max_jint;
 
     // The top 3 range checks seen
     const int NRC = 3;
@@ -1932,13 +1986,18 @@ Node* RangeCheckNode::Ideal(PhaseGVN *phase, bool can_reshape) {
             found_immediate_dominator = true;
             break;
           }
-          // Gather expanded bounds
-          off_lo = MIN2(off_lo,offset2);
-          off_hi = MAX2(off_hi,offset2);
-          // Record top NRC range checks
-          prev_checks[nb_checks%NRC].ctl = prev_dom->as_IfProj();
-          prev_checks[nb_checks%NRC].off = offset2;
-          nb_checks++;
+
+          // "x - y" -> must add one to the difference for number of elements in [x,y]
+          const jlong diff = (jlong)MIN2(offset2, off_lo) - (jlong)MAX2(offset2, off_hi);
+          if (ABS(diff) < maximum_number_of_min_max_interval_indices) {
+            // Gather expanded bounds
+            off_lo = MIN2(off_lo, offset2);
+            off_hi = MAX2(off_hi, offset2);
+            // Record top NRC range checks
+            prev_checks[nb_checks % NRC].ctl = prev_dom->as_IfProj();
+            prev_checks[nb_checks % NRC].off = offset2;
+            nb_checks++;
+          }
         }
       }
       prev_dom = dom;

@@ -141,7 +141,7 @@ public class ClassWriter extends BasicWriter {
             }
         }
 
-        cm.findAttribute(Attributes.SOURCE_FILE).ifPresent(sfa ->
+        cm.findAttribute(Attributes.sourceFile()).ifPresent(sfa ->
             println("Compiled from \"" + sfa.sourceFile().stringValue() + "\""));
 
         if (options.sysInfo || options.verbose) {
@@ -151,7 +151,7 @@ public class ClassWriter extends BasicWriter {
         writeModifiers(getClassModifiers(cm.flags().flagsMask()));
 
         if ((classModel.flags().flagsMask() & ACC_MODULE) != 0) {
-            var attr = classModel.findAttribute(Attributes.MODULE);
+            var attr = classModel.findAttribute(Attributes.module());
             if (attr.isPresent()) {
                 var modAttr = attr.get();
                 if ((modAttr.moduleFlagsMask() & ACC_OPEN) != 0) {
@@ -178,7 +178,7 @@ public class ClassWriter extends BasicWriter {
         }
 
         try {
-            var sigAttr = classModel.findAttribute(Attributes.SIGNATURE).orElse(null);
+            var sigAttr = classModel.findAttribute(Attributes.signature()).orElse(null);
             if (sigAttr == null) {
                 // use info from class file header
                 if ((classModel.flags().flagsMask() & ACC_INTERFACE) == 0
@@ -366,16 +366,20 @@ public class ClassWriter extends BasicWriter {
         }
 
         private void print(StringBuilder sb, Signature.TypeArg ta) {
-            switch (ta.wildcardIndicator()) {
-                case DEFAULT -> print(sb, ta.boundType().get());
-                case UNBOUNDED -> sb.append('?');
-                case EXTENDS -> {
-                    sb.append("? extends ");
-                    print(sb, ta.boundType().get());
-                }
-                case SUPER -> {
-                    sb.append("? super ");
-                    print(sb, ta.boundType().get());
+            switch (ta) {
+                case Signature.TypeArg.Unbounded _ -> sb.append('?');
+                case Signature.TypeArg.Bounded bta -> {
+                    switch (bta.wildcardIndicator()) {
+                        case NONE -> print(sb, bta.boundType());
+                        case EXTENDS -> {
+                            sb.append("? extends ");
+                            print(sb, bta.boundType());
+                        }
+                        case SUPER -> {
+                            sb.append("? super ");
+                            print(sb, bta.boundType());
+                        }
+                    }
                 }
             }
         }
@@ -395,13 +399,13 @@ public class ClassWriter extends BasicWriter {
         writeModifiers(flags.flags().stream().filter(fl -> fl.sourceModifier())
                 .map(fl -> Modifier.toString(fl.mask())).toList());
         print(() -> sigPrinter.print(
-                f.findAttribute(Attributes.SIGNATURE)
+                f.findAttribute(Attributes.signature())
                         .map(SignatureAttribute::asTypeSignature)
                         .orElseGet(() -> Signature.of(f.fieldTypeSymbol()))));
         print(" ");
         print(() -> f.fieldName().stringValue());
         if (options.showConstants) {
-            var a = f.findAttribute(Attributes.CONSTANT_VALUE);
+            var a = f.findAttribute(Attributes.constantValue());
             if (a.isPresent()) {
                 print(" = ");
                 var cv = a.get();
@@ -476,7 +480,7 @@ public class ClassWriter extends BasicWriter {
         writeModifiers(modifiers);
 
         try {
-            var sigAttr = m.findAttribute(Attributes.SIGNATURE);
+            var sigAttr = m.findAttribute(Attributes.signature());
             MethodSignature d;
             if (sigAttr.isEmpty()) {
                 d = MethodSignature.parseFrom(m.methodType().stringValue());
@@ -503,7 +507,7 @@ public class ClassWriter extends BasicWriter {
                     break;
             }
 
-            var e_attr = m.findAttribute(Attributes.EXCEPTIONS);
+            var e_attr = m.findAttribute(Attributes.exceptions());
             // if there are generic exceptions, there must be erased exceptions
             if (e_attr.isPresent()) {
                 var exceptions = e_attr.get();
@@ -555,9 +559,9 @@ public class ClassWriter extends BasicWriter {
             }
 
             if (options.showLineAndLocalVariableTables) {
-                code.findAttribute(Attributes.LINE_NUMBER_TABLE)
+                code.findAttribute(Attributes.lineNumberTable())
                         .ifPresent(a -> attrWriter.write(a, code));
-                code.findAttribute(Attributes.LOCAL_VARIABLE_TABLE)
+                code.findAttribute(Attributes.localVariableTable())
                         .ifPresent(a -> attrWriter.write(a, code));
             }
         }
@@ -585,7 +589,7 @@ public class ClassWriter extends BasicWriter {
     public static final int ACC_STATIC_PHASE = 0x0040;
 
     void writeDirectives() {
-        var attr = classModel.findAttribute(Attributes.MODULE);
+        var attr = classModel.findAttribute(Attributes.module());
         if (attr.isEmpty())
             return;
 

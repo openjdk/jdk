@@ -62,11 +62,11 @@ public:
   size_t committed_in_bytes();
 };
 
-class GenerationPool : public CollectedMemoryPool {
+class TenuredGenerationPool : public CollectedMemoryPool {
 private:
-  Generation* _gen;
+  TenuredGeneration* _gen;
 public:
-  GenerationPool(Generation* gen, const char* name, bool support_usage_threshold);
+  TenuredGenerationPool(TenuredGeneration* gen, const char* name, bool support_usage_threshold);
 
   MemoryUsage get_memory_usage();
   size_t used_in_bytes();

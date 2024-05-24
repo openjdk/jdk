@@ -76,7 +76,7 @@ public final class MethodTooLargeException extends IndexOutOfBoundsException {
     /**
       * Constructs a new {@link MethodTooLargeException}.
       *
-      * @param className the internal name of the owner class.
+      * @param className the internal name of the owner class (see {@link Type#getInternalName()}).
       * @param methodName the name of the method.
       * @param descriptor the descriptor of the method.
       * @param codeSize the size of the method's Code attribute, in bytes.
@@ -96,7 +96,7 @@ public final class MethodTooLargeException extends IndexOutOfBoundsException {
     /**
       * Returns the internal name of the owner class.
       *
-      * @return the internal name of the owner class.
+      * @return the internal name of the owner class (see {@link Type#getInternalName()}).
       */
     public String getClassName() {
         return className;
@@ -129,4 +129,3 @@ public final class MethodTooLargeException extends IndexOutOfBoundsException {
         return codeSize;
     }
 }
-

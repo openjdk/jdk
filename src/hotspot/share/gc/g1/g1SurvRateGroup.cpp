@@ -24,9 +24,9 @@
 
 #include "precompiled.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
 #include "gc/g1/g1Predictions.hpp"
 #include "gc/g1/g1SurvRateGroup.hpp"
-#include "gc/g1/heapRegion.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
 

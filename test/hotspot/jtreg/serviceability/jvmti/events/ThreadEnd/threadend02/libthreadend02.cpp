@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include <jvmti.h>
-#include "jvmti_common.h"
-#include "jvmti_thread.h"
+#include "jvmti_common.hpp"
+#include "jvmti_thread.hpp"
 
 
 extern "C" {
 
 /* scaffold objects */
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jlong timeout = 0;
 
 static int eventCount = 0;
@@ -52,7 +52,7 @@ enableEvent(jvmtiEventMode enable, jvmtiEvent event) {
     LOG("disabling %s\n", TranslateEvent(event));
   }
 
-  err = jvmti->SetEventNotificationMode(enable, event, NULL);
+  err = jvmti->SetEventNotificationMode(enable, event, nullptr);
   if (err != JVMTI_ERROR_NONE) {
     set_agent_fail_status();
     return JNI_FALSE;
@@ -129,7 +129,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   timeout = 60 * 1000;
 
   res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-  if (res != JNI_OK || jvmti == NULL) {
+  if (res != JNI_OK || jvmti == nullptr) {
     LOG("Wrong result of a valid call to GetEnv!\n");
     return JNI_ERR;
   }
@@ -150,7 +150,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     return JNI_ERR;
   }
 
-  set_agent_proc(agentProc, NULL);
+  set_agent_proc(agentProc, nullptr);
 
   return JNI_OK;
 }

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -123,6 +123,22 @@ AC_DEFUN_ONCE([BASIC_SETUP_BUILD_ENV],
       ]
   )
   AC_SUBST(BUILD_ENV)
+
+  if test "x$LOCALE" != x; then
+    # Check if we actually have C.UTF-8; if so, use it
+    if $LOCALE -a | $GREP -q -E "^C\.(utf8|UTF-8)$"; then
+      LOCALE_USED=C.UTF-8
+    else
+      AC_MSG_WARN([C.UTF-8 locale not found, using C locale])
+      LOCALE_USED=C
+    fi
+  else
+    AC_MSG_WARN([locale command not not found, using C locale])
+    LOCALE_USED=C
+  fi
+
+  export LC_ALL=$LOCALE_USED
+  AC_SUBST(LOCALE_USED)
 ])
 
 ###############################################################################

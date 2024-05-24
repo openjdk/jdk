@@ -597,7 +597,7 @@ ZErrno ZPhysicalMemoryBacking::fallocate(bool punch_hole, zoffset offset, size_t
 
 bool ZPhysicalMemoryBacking::commit_inner(zoffset offset, size_t length) const {
   log_trace(gc, heap)("Committing memory: " SIZE_FORMAT "M-" SIZE_FORMAT "M (" SIZE_FORMAT "M)",
-                      untype(offset) / M, untype(offset + length) / M, length / M);
+                      untype(offset) / M, untype(to_zoffset_end(offset, length)) / M, length / M);
 
 retry:
   const ZErrno err = fallocate(false /* punch_hole */, offset, length);
@@ -697,7 +697,7 @@ size_t ZPhysicalMemoryBacking::commit(zoffset offset, size_t length) const {
 
 size_t ZPhysicalMemoryBacking::uncommit(zoffset offset, size_t length) const {
   log_trace(gc, heap)("Uncommitting memory: " SIZE_FORMAT "M-" SIZE_FORMAT "M (" SIZE_FORMAT "M)",
-                      untype(offset) / M, untype(offset + length) / M, length / M);
+                      untype(offset) / M, untype(to_zoffset_end(offset, length)) / M, length / M);
 
   const ZErrno err = fallocate(true /* punch_hole */, offset, length);
   if (err) {

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ ifeq (,$(_MAKEBASE_GMK))
 endif
 
 
-include NativeCompilation.gmk
+include JdkNativeCompilation.gmk
 
 # Setup make rules for creating a set of native test files (libraries or
 # executables). This will locate native files matching a certain pattern,
@@ -61,19 +61,14 @@ define SetupTestFilesCompilationBody
   ifeq ($$($1_TYPE), LIBRARY)
     $1_PREFIX = lib
     $1_OUTPUT_SUBDIR := lib
-    $1_BASE_CFLAGS := $(CFLAGS_JDKLIB)
-    $1_BASE_CXXFLAGS := $(CXXFLAGS_JDKLIB)
-    $1_LDFLAGS := $(LDFLAGS_JDKLIB) $$(call SET_SHARED_LIBRARY_ORIGIN)
     $1_COMPILATION_TYPE := LIBRARY
     $1_LOG_TYPE := library
   else ifeq ($$($1_TYPE), PROGRAM)
     $1_PREFIX = exe
     $1_OUTPUT_SUBDIR := bin
-    $1_BASE_CFLAGS := $(CFLAGS_JDKEXE)
-    $1_BASE_CXXFLAGS := $(CXXFLAGS_JDKEXE)
-    $1_LDFLAGS := $(LDFLAGS_JDKEXE) $(LDFLAGS_TESTEXE)
     $1_COMPILATION_TYPE := EXECUTABLE
     $1_LOG_TYPE := executable
+    $1_LD_SET_ORIGIN := false
   else
     $$(error Unknown type: $$($1_TYPE))
   endif
@@ -96,24 +91,34 @@ define SetupTestFilesCompilationBody
     $1_COPY_DEBUG_SYMBOLS := true
   endif
 
+  # Always include common test functionality
+  TEST_CFLAGS := -I$(TOPDIR)/test/lib/native
+
   # Setup a compilation for each and every one of them
   $$(foreach file, $$($1_FILTERED_FILE_LIST),\
     $$(eval name := $$(strip $$(basename $$(notdir $$(file))))) \
     $$(eval unprefixed_name := $$(patsubst $$($1_PREFIX)%, %, $$(name))) \
-    $$(eval $$(call SetupNativeCompilation, BUILD_TEST_$$(name), \
+    $$(eval $$(call SetupJdkNativeCompilation, BUILD_TEST_$$(name), \
         NAME := $$(unprefixed_name), \
         TYPE := $$($1_COMPILATION_TYPE), \
+        LINK_TYPE := $(if $$(filter %.cpp, $$(file)), C++, C), \
+        EXTRA_HEADER_DIRS := \
+            java.base:libjava \
+            java.base:libjvm, \
         EXTRA_FILES := $$(file) $$($1_EXTRA_FILES), \
         OBJECT_DIR := $$($1_OUTPUT_DIR)/support/$$(name), \
         OUTPUT_DIR := $$($1_OUTPUT_DIR)/$$($1_OUTPUT_SUBDIR), \
-        CFLAGS := $$($1_BASE_CFLAGS) $$($1_CFLAGS) $$($1_CFLAGS_$$(name)), \
-        CXXFLAGS := $$($1_BASE_CXXFLAGS) $$($1_CFLAGS) $$($1_CFLAGS_$$(name)), \
-        LDFLAGS := $$($1_LDFLAGS) $$($1_LDFLAGS_$$(name)), \
+        CFLAGS := $$(TEST_CFLAGS) $$($1_CFLAGS) $$($1_CFLAGS_$$(name)), \
+        CXXFLAGS := $$(TEST_CFLAGS) $$($1_CFLAGS) $$($1_CFLAGS_$$(name)), \
+        LD_SET_ORIGIN := $$($1_LD_SET_ORIGIN), \
+        LDFLAGS := $$($1_LDFLAGS_$$(name)), \
         DISABLED_WARNINGS_gcc := format undef unused-function unused-value, \
         DISABLED_WARNINGS_clang := undef format-nonliteral \
             missing-field-initializers sometimes-uninitialized, \
+        DEFAULT_LIBCXX := false, \
+        JDK_LIBS := $$($1_JDK_LIBS_$$(name)), \
         LIBS := $$($1_LIBS_$$(name)), \
-        TOOLCHAIN := $(if $$(filter %.cpp, $$(file)), TOOLCHAIN_LINK_CXX, TOOLCHAIN_DEFAULT), \
+        DEFAULT_VERSIONINFO_RESOURCE := false, \
         OPTIMIZATION := $$(if $$($1_OPTIMIZATION_$$(name)),$$($1_OPTIMIZATION_$$(name)),LOW), \
         COPY_DEBUG_SYMBOLS := $$($1_COPY_DEBUG_SYMBOLS), \
         STRIP_SYMBOLS := $$(if $$($1_STRIP_SYMBOLS_$$(name)),$$($1_STRIP_SYMBOLS_$$(name)),false), \
@@ -126,7 +131,7 @@ define SetupTestFilesCompilationBody
 
   # Setup rule for printing a summary of all the tests being compiled. On Warn
   # log level, this replaces the individual build info logging done by
-  # SetupNativeCompilation.
+  # SetupJdkNativeCompilation.
   $$($1_BUILD_INFO): $$($1_BUILD_INFO_DEPS)
 	$$(call LogWarn, $$(strip Creating $$(words $$(filter-out %.vardeps, $$?)) \
 	    test $$($1_LOG_TYPE) file(s) for $1))

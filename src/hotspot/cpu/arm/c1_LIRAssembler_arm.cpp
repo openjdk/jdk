@@ -161,10 +161,7 @@ void LIR_Assembler::osr_entry() {
 
 
 int LIR_Assembler::check_icache() {
-  Register receiver = LIR_Assembler::receiverOpr()->as_register();
-  int offset = __ offset();
-  __ inline_cache_check(receiver, Ricklass);
-  return offset;
+  return __ ic_check(CodeEntryAlignment);
 }
 
 void LIR_Assembler::clinit_barrier(ciMethod* method) {
@@ -971,7 +968,7 @@ void LIR_Assembler::emit_alloc_array(LIR_OpAllocArray* op) {
                       op->tmp1()->as_register(),
                       op->tmp2()->as_register(),
                       op->tmp3()->as_register(),
-                      arrayOopDesc::header_size(op->type()),
+                      arrayOopDesc::base_offset_in_bytes(op->type()),
                       type2aelembytes(op->type()),
                       op->klass()->as_register(),
                       *op->stub()->entry());
@@ -1950,7 +1947,7 @@ void LIR_Assembler::emit_static_call_stub() {
   __ relocate(static_stub_Relocation::spec(call_pc));
   // If not a single instruction, NativeMovConstReg::next_instruction_address()
   // must jump over the whole following ldr_literal.
-  // (See CompiledStaticCall::set_to_interpreted())
+  // (See CompiledDirectCall::set_to_interpreted())
 #ifdef ASSERT
   address ldr_site = __ pc();
 #endif

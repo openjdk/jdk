@@ -24,7 +24,6 @@
  */
 package jdk.internal.jimage.decompressor;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.zip.Inflater;
 

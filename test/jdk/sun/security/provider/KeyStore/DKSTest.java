@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,7 +80,7 @@ public class DKSTest {
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {
             // Environment variable and system properties referred in domains.cfg used by this Test.
-            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(List.of(
+            ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(List.of(
                     "-Dtest.src=" + TEST_SRC , "-Duser.dir=" + USER_DIR, "DKSTest", "run"));
             pb.environment().putAll(System.getenv());
             pb.environment().put("KEYSTORE_PWD", "test12");

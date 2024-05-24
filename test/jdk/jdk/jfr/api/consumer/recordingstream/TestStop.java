@@ -24,9 +24,10 @@
 package jdk.jfr.api.consumer.recordingstream;
 
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.Collections;
 
 import jdk.jfr.Event;
 import jdk.jfr.consumer.RecordedEvent;
@@ -106,10 +107,10 @@ public class TestStop {
     }
 
     private static void testNestedStop() throws Exception {
-        AtomicLong outerCount = new AtomicLong();
-        AtomicLong innerCount = new AtomicLong();
+        List<String> outerStream = Collections.synchronizedList(new ArrayList<>());
+        List<String> innerStream = Collections.synchronizedList(new ArrayList<>());
         try (RecordingStream outer = new RecordingStream()) {
-            outer.onEvent(e -> outerCount.incrementAndGet());
+            outer.onEvent(e -> outerStream.add(eventToText(e)));
             outer.setMaxSize(100_000_000);
             outer.startAsync();
 
@@ -119,7 +120,7 @@ public class TestStop {
 
             try (RecordingStream inner = new RecordingStream()) {
                 inner.setMaxSize(100_000_000);
-                inner.onEvent(e -> innerCount.incrementAndGet());
+                inner.onEvent(e -> innerStream.add(eventToText(e)));
                 inner.startAsync();
 
                 MarkEvent b = new MarkEvent();
@@ -138,28 +139,47 @@ public class TestStop {
                 Path fileInner = Path.of("inner.jfr");
                 inner.dump(fileInner);
                 outer.dump(fileOuter);
-                System.out.println("RecordingStream outer:");
+                System.out.println("Outer dump:");
                 var dumpOuter = RecordingFile.readAllEvents(fileOuter);
-                System.out.println(dumpOuter);
-                System.out.println("RecordingStream inner:");
+                for (RecordedEvent e : dumpOuter) {
+                    System.out.println(eventToText(e));
+                }
+                System.out.println("Inner dump:");
                 var dumpInner = RecordingFile.readAllEvents(fileInner);
-                System.out.println(dumpInner);
-                System.out.println("Outer count: " + outerCount);
-                System.out.println("Inner count: " + innerCount);
+                for (RecordedEvent e : dumpInner) {
+                    System.out.println(eventToText(e));
+                }
+                System.out.println();
+                System.out.println("Outer stream:");
+                for (String s : outerStream) {
+                    System.out.println(s);
+                }
+                System.out.println("Inner stream:");
+                for (String s : innerStream) {
+                    System.out.println(s);
+                }
                 if (dumpOuter.size() != 3) {
                     throw new AssertionError("Expected outer dump to have 3 events");
                 }
-                if (outerCount.get() != 3) {
+                if (outerStream.size() != 3) {
                     throw new AssertionError("Expected outer stream to have 3 events");
                 }
                 if (dumpInner.size() != 1) {
                     throw new AssertionError("Expected inner dump to have 1 event");
                 }
-                if (innerCount.get() != 1) {
+                if (innerStream.size() != 1) {
                     throw new AssertionError("Expected inner stream to have 1 event");
                 }
             }
         }
+    }
+
+    private static String eventToText(RecordedEvent event) {
+        Instant timestamp = event.getEndTime();
+        long s = timestamp.getEpochSecond();
+        int n = timestamp.getNano();
+        String id = event.getString("id");
+        return id + ": n=" + n + " s=" + s + " t=" + timestamp;
     }
 
     static void testStopClosed() {

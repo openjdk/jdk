@@ -177,9 +177,9 @@ public class Snippets {
     @Target(ElementType.FIELD)
     @Retention(RetentionPolicy.RUNTIME)
     public @interface Temperature {
-        public final static String KELVIN = "KELVIN";
-        public final static String CELSIUS = "CELSIUS";
-        public final static String FAHRENEHIT = "FAHRENHEIT";
+        public static final String KELVIN = "KELVIN";
+        public static final String CELSIUS = "CELSIUS";
+        public static final String FAHRENEHIT = "FAHRENHEIT";
 
         String value() default CELSIUS;
     }
@@ -191,7 +191,7 @@ public class Snippets {
     @Category({ "Hardware", "CPU" })
     @Period("1 s")
     @StackTrace(false)
-    static public class CPUEvent extends Event {
+    public static class CPUEvent extends Event {
         @Label("ID")
         String id;
 
@@ -266,7 +266,7 @@ public class Snippets {
     @Category("Debugging")
     @StackTrace(false)
     @Enabled(false)
-    static public class StopWatchEvent extends Event {
+    public static class StopWatchEvent extends Event {
     }
 
     public void update() {

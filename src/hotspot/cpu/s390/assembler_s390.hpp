@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -107,7 +107,7 @@ class RelAddr {
 
   static bool is_in_range_of_RelAddr(address target, address pc, bool shortForm) {
     // Guard against illegal branch targets, e.g. -1. Occurrences in
-    // CompiledStaticCall and ad-file. Do not assert (it's a test
+    // CompiledDirectCall and ad-file. Do not assert (it's a test
     // function!). Just return false in case of illegal operands.
     if ((((uint64_t)target) & 0x0001L) != 0) return false;
     if ((((uint64_t)pc)     & 0x0001L) != 0) return false;
@@ -352,10 +352,6 @@ class AddressLiteral {
 
   relocInfo::relocType rtype()       const { return _rspec.type(); }
   const RelocationHolder&    rspec() const { return _rspec; }
-
-  RelocationHolder rspec(int offset) const {
-    return offset == 0 ? _rspec : _rspec.plus(offset);
-  }
 };
 
 // Convenience classes
