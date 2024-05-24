@@ -385,7 +385,7 @@ public final class BindServer {
      *
      * @see ServingThread
      */
-    private static class ListeningThread extends Thread implements AutoCloseable{
+    private static class ListeningThread extends Thread implements AutoCloseable {
         private volatile boolean shouldStop = false;
         private volatile boolean closed = false;
 
