@@ -692,13 +692,11 @@ final class P11Cipher extends CipherSpi {
             }
             if (inLen > 0) {
                 if (encrypt) {
-                    k += token.p11.C_EncryptUpdate(session.id(),
-                            0, in, inOfs, inLen,
-                            0, out, (outOfs + k), (outLen - k));
+                    k += token.p11.C_EncryptUpdate(session.id(), 0, in, inOfs,
+                            inLen, 0, out, (outOfs + k), (outLen - k));
                 } else {
-                    k += token.p11.C_DecryptUpdate(session.id(),
-                            0, in, inOfs, inLen,
-                            0, out, (outOfs + k), (outLen - k));
+                    k += token.p11.C_DecryptUpdate(session.id(), 0, in, inOfs,
+                            inLen, 0, out, (outOfs + k), (outLen - k));
                 }
             }
             // update 'padBuffer' if using our own padding impl.
@@ -832,13 +830,13 @@ final class P11Cipher extends CipherSpi {
                             }
                         }
                         if (encrypt) {
-                            k = token.p11.C_EncryptUpdate(session.id(),
-                                    0, padBuffer, 0, padBufferLen,
-                                    outAddr, outArray, outOfs, outLen);
+                            k = token.p11.C_EncryptUpdate(session.id(), 0,
+                                    padBuffer, 0, padBufferLen, outAddr, outArray,
+                                    outOfs, outLen);
                         } else {
-                            k = token.p11.C_DecryptUpdate(session.id(),
-                                    0, padBuffer, 0, padBufferLen,
-                                    outAddr, outArray, outOfs, outLen);
+                            k = token.p11.C_DecryptUpdate(session.id(), 0,
+                                    padBuffer, 0, padBufferLen, outAddr, outArray,
+                                    outOfs, outLen);
                         }
                         padBufferLen = 0;
                     }
@@ -861,13 +859,13 @@ final class P11Cipher extends CipherSpi {
                         inBuffer.position(inBuffer.position() + inLen);
                     }
                     if (encrypt) {
-                        k += token.p11.C_EncryptUpdate(session.id(),
-                                inAddr, inArray, inOfs, inLen,
-                                outAddr, outArray, (outOfs + k), (outLen - k));
+                        k += token.p11.C_EncryptUpdate(session.id(), inAddr,
+                                inArray, inOfs, inLen, outAddr, outArray,
+                                (outOfs + k), (outLen - k));
                     } else {
-                        k += token.p11.C_DecryptUpdate(session.id(),
-                                inAddr, inArray, inOfs, inLen,
-                                outAddr, outArray, (outOfs + k), (outLen - k));
+                        k += token.p11.C_DecryptUpdate(session.id(), inAddr,
+                                inArray, inOfs, inLen, outAddr, outArray,
+                                (outOfs + k), (outLen - k));
                     }
                 }
                 // update 'padBuffer' if using our own padding impl.
@@ -966,9 +964,9 @@ final class P11Cipher extends CipherSpi {
                 }
                 if (paddingObj != null) {
                     if (padBufferLen != 0) {
-                        k = token.p11.C_DecryptUpdate(session.id(),
-                                0, padBuffer, 0, padBufferLen,
-                                0, padBuffer, 0, padBuffer.length);
+                        k = token.p11.C_DecryptUpdate(session.id(), 0,
+                                padBuffer, 0, padBufferLen, 0, padBuffer, 0,
+                                padBuffer.length);
                     }
                     // Some implementations such as the NSS Software Token do not
                     // cancel the operation upon a C_DecryptUpdate failure (as
@@ -976,16 +974,16 @@ final class P11Cipher extends CipherSpi {
                     // only after this point. See JDK-8258833 for further
                     // information.
                     doCancel = false;
-                    k += token.p11.C_DecryptFinal(session.id(),
-                            0, padBuffer, k, padBuffer.length - k);
+                    k += token.p11.C_DecryptFinal(session.id(), 0, padBuffer, k,
+                            padBuffer.length - k);
 
                     int actualPadLen = paddingObj.unpad(padBuffer, k);
                     k -= actualPadLen;
                     System.arraycopy(padBuffer, 0, out, outOfs, k);
                 } else {
                     doCancel = false;
-                    k += token.p11.C_DecryptFinal(session.id(),
-                            0, out, outOfs, outLen);
+                    k += token.p11.C_DecryptFinal(session.id(), 0, out, outOfs,
+                            outLen);
                 }
             }
             return k;
