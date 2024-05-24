@@ -382,8 +382,7 @@ static char* chop_extra_memory(size_t size, size_t alignment, char* extra_base, 
   size_t end_offset = (extra_base + extra_size) - (aligned_base + size);
 
   if (begin_offset > 0) {
-    if (os::release_memory(extra_base, begin_offset))
-    {
+    if (os::release_memory(extra_base, begin_offset)) {
       ThreadCritical tc;
       MemTracker::record_virtual_memory_release((address)extra_base, begin_offset, true /*extra memory*/);
     }

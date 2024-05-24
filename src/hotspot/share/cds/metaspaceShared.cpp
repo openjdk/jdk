@@ -1089,7 +1089,7 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
       log_info(cds)("Reserved archive_space_rs [" INTPTR_FORMAT " - " INTPTR_FORMAT "] (" SIZE_FORMAT ") bytes",
                     p2i(archive_space_rs.base()), p2i(archive_space_rs.end()), archive_space_rs.size());
     }
-    if (class_space_rs.is_reserved()) {
+    if (Metaspace::using_class_space() && class_space_rs.is_reserved()) {
       log_info(cds)("Reserved class_space_rs   [" INTPTR_FORMAT " - " INTPTR_FORMAT "] (" SIZE_FORMAT ") bytes",
                     p2i(class_space_rs.base()), p2i(class_space_rs.end()), class_space_rs.size());
     }

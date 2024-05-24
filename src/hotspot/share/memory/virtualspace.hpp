@@ -59,8 +59,6 @@ class ReservedSpace {
   //                       0 during initialization.
   //  * _flag            - Used for NMT memory type. Once set in ctor,
   //                       it should not change after.
-  //  * _alignment       - Not to be changed after initialization
-  //  * _executable      - Not to be changed after initialization
   void clear_members();
   void initialize_members(char* base, size_t size, size_t alignment,
                           size_t page_size, bool special, bool executable);
@@ -71,8 +69,6 @@ class ReservedSpace {
   void reserve(size_t size, size_t alignment, size_t page_size,
                char* requested_address, bool executable);
  public:
-
-  MEMFLAGS nmt_flag() const { assert(is_reserved(), "Memory region is not reserved."); assert(_flag != mtNone, "Memory flag is not set."); return _flag; }
 
   // Constructor
   ReservedSpace();
@@ -89,13 +85,15 @@ class ReservedSpace {
 
   // Accessors
   char*  base()            const { return _base;      }
-  size_t size()            const { assert(is_reserved(), "Memory region is not reserved."); return _size;      }
-  char*  end()             const { assert(is_reserved(), "Memory region is not reserved."); return _base + _size; }
-  size_t alignment()       const { assert(is_reserved(), "Memory region is not reserved."); return _alignment; }
-  size_t page_size()       const { assert(is_reserved(), "Memory region is not reserved."); return _page_size; }
-  bool   special()         const { assert(is_reserved(), "Memory region is not reserved."); return _special;   }
-  bool   executable()      const { assert(is_reserved(), "Memory region is not reserved."); return _executable;   }
-  size_t noaccess_prefix() const { assert(is_reserved(), "Memory region is not reserved."); return _noaccess_prefix;   }
+  size_t size()            const { assert(is_reserved(), "Fields not intialized"); return _size;      }
+  char*  end()             const { assert(is_reserved(), "Fields not intialized"); return _base + _size; }
+  size_t alignment()       const { assert(is_reserved(), "Fields not intialized"); return _alignment; }
+  size_t page_size()       const { assert(is_reserved(), "Fields not intialized"); return _page_size; }
+  bool   special()         const { assert(is_reserved(), "Fields not intialized"); return _special;   }
+  bool   executable()      const { assert(is_reserved(), "Fields not intialized"); return _executable;   }
+  size_t noaccess_prefix() const { assert(is_reserved(), "Fields not intialized"); return _noaccess_prefix;   }
+  MEMFLAGS nmt_flag()      const { assert(is_reserved(), "Fields not intialized"); assert(_flag != mtNone, "Memory flag is not set."); return _flag; }
+
   bool is_reserved()       const { return _base != nullptr; }
   void release();
 
