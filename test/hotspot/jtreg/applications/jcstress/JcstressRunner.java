@@ -49,7 +49,7 @@ public class JcstressRunner {
     public static final String MAIN_CLASS = "org.openjdk.jcstress.Main";
 
     public static final String TIME_BUDGET_PROPERTY = "jcstress.time_budget";
-    public static String timeBudget = "5m";
+    public static String timeBudget = "6m";
 
     public static Path pathToArtifact() {
         Map<String, Path> artifacts;
