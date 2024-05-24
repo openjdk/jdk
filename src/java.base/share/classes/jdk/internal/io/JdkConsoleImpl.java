@@ -216,6 +216,7 @@ public final class JdkConsoleImpl implements JdkConsole {
     private final Charset charset;
     private final Object readLock;
     private final Object writeLock;
+    // Must not block while holding this. It is used in the shutdown hook.
     private final Object restoreEchoLock;
     private final Reader reader;
     private final Writer out;
