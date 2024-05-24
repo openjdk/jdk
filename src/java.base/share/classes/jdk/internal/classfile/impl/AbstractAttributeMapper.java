@@ -171,7 +171,7 @@ public sealed abstract class AbstractAttributeMapper<T extends Attribute<T>>
         public static final CompilationIDMapper INSTANCE = new CompilationIDMapper();
 
         private CompilationIDMapper() {
-            super(NAME_COMPILATION_ID, AttributeStability.CP_REFS, true);
+            super(NAME_COMPILATION_ID, AttributeStability.CP_REFS);
         }
 
         @Override
