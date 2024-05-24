@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,9 @@
 
 #include <string.h>
 #include "jvmti.h"
-#include "agent_common.h"
-#include "jni_tools.h"
-#include "jvmti_tools.h"
+#include "agent_common.hpp"
+#include "jni_tools.hpp"
+#include "jvmti_tools.hpp"
 
 extern "C" {
 
@@ -38,7 +38,7 @@ static jlong timeout = 0;
 static int checkProperties(jvmtiEnv* jvmti, const char phase[]) {
     int success = NSK_TRUE;
     jint count = 0;
-    char** properties = NULL;
+    char** properties = nullptr;
 
     NSK_DISPLAY0("Get system properties names\n");
     if (!NSK_JVMTI_VERIFY(
@@ -47,7 +47,7 @@ static int checkProperties(jvmtiEnv* jvmti, const char phase[]) {
     }
     NSK_DISPLAY1("  ... got properties: %d\n", (int)count);
 
-    if (!NSK_VERIFY(properties != NULL)) {
+    if (!NSK_VERIFY(properties != nullptr)) {
         return NSK_FALSE;
     }
 
@@ -56,10 +56,10 @@ static int checkProperties(jvmtiEnv* jvmti, const char phase[]) {
         int i;
 
         for (i = 0; i < count; i++) {
-            char* value = NULL;
+            char* value = nullptr;
 
             NSK_DISPLAY2("  property #%d: [%s]:\n", i, nsk_null_string(properties[i]));
-            if (!NSK_VERIFY(properties[i] != NULL)) {
+            if (!NSK_VERIFY(properties[i] != nullptr)) {
                 success = NSK_FALSE;
                 continue;
             }
@@ -71,8 +71,8 @@ static int checkProperties(jvmtiEnv* jvmti, const char phase[]) {
             }
             NSK_DISPLAY1("    value: \"%s\"\n", nsk_null_string(value));
 
-            if (value == NULL) {
-                NSK_COMPLAIN4("In %s phase GetSystemProperty() returned NULL for property #%d:\n"
+            if (value == nullptr) {
+                NSK_COMPLAIN4("In %s phase GetSystemProperty() returned null for property #%d:\n"
                               "#   property name: %s\n"
                               "#   got value:     0x%p\n",
                                 phase, i,
@@ -131,7 +131,7 @@ JNIEXPORT jint JNI_OnLoad_getsysprop001(JavaVM *jvm, char *options, void *reserv
 }
 #endif
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
-    jvmtiEnv* jvmti = NULL;
+    jvmtiEnv* jvmti = nullptr;
 
     if (!NSK_VERIFY(nsk_jvmti_parseOptions(options)))
         return JNI_ERR;
@@ -139,7 +139,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     timeout = nsk_jvmti_getWaitTime() * 60 * 1000;
 
     if (!NSK_VERIFY((jvmti =
-            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != nullptr))
         return JNI_ERR;
 
     NSK_DISPLAY0(">>> Check system properties in OnLoad phase\n");
@@ -147,7 +147,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         nsk_jvmti_setFailStatus();
     }
 
-    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, NULL)))
+    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, nullptr)))
         return JNI_ERR;
 
     return JNI_OK;

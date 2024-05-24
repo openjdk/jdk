@@ -71,6 +71,9 @@ public class NativeEntryPoint {
         return NEP_CACHE.get(key, k -> {
             long downcallStub = makeDowncallStub(methodType, abi, argMoves, returnMoves, needsReturnBuffer,
                                                  capturedStateMask, needsTransition);
+            if (downcallStub == 0) {
+                throw new OutOfMemoryError("Failed to allocate downcall stub");
+            }
             NativeEntryPoint nep = new NativeEntryPoint(methodType, downcallStub);
             CLEANER.register(nep, () -> freeDowncallStub(downcallStub));
             return nep;

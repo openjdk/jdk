@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,8 @@
 #include "ci/ciMethod.hpp"
 #include "compiler/compiler_globals.hpp"
 #include "compiler/methodMatcher.hpp"
-#include "compiler/compilerOracle.hpp"
+#include "opto/phasetype.hpp"
+#include "utilities/bitMap.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/tribool.hpp"
 
@@ -85,10 +86,10 @@ NOT_PRODUCT(cflags(PrintIdeal,          bool, PrintIdeal, PrintIdeal)) \
     cflags(Vectorize,               bool, false, Vectorize) \
     cflags(CloneMapDebug,           bool, false, CloneMapDebug) \
 NOT_PRODUCT(cflags(IGVPrintLevel,       intx, PrintIdealGraphLevel, IGVPrintLevel)) \
-    cflags(VectorizeDebug,          uintx, 0, VectorizeDebug) \
     cflags(IncrementalInlineForceCleanup, bool, IncrementalInlineForceCleanup, IncrementalInlineForceCleanup) \
     cflags(MaxNodeLimit,            intx, MaxNodeLimit, MaxNodeLimit)
 #define compilerdirectives_c2_string_flags(cflags) \
+NOT_PRODUCT(cflags(TraceAutoVectorization, ccstrlist, "", TraceAutoVectorization)) \
 NOT_PRODUCT(cflags(PrintIdealPhase,     ccstrlist, "", PrintIdealPhase))
 #else
   #define compilerdirectives_c2_other_flags(cflags)
@@ -128,7 +129,8 @@ private:
   InlineMatcher* _inlinematchers;
   CompilerDirectives* _directive;
   TriBoolArray<(size_t)vmIntrinsics::number_of_intrinsics(), int> _intrinsic_control_words;
-  uint64_t _ideal_phase_name_mask;
+  CHeapBitMap _ideal_phase_name_set;
+  CHeapBitMap _trace_auto_vectorization_tags;
 
 public:
   DirectiveSet(CompilerDirectives* directive);
@@ -197,8 +199,18 @@ void set_##name(void* value) {                                      \
   compilerdirectives_c1_string_flags(set_string_function_definition)
 #undef set_string_function_definition
 
-  void set_ideal_phase_mask(uint64_t mask) { _ideal_phase_name_mask = mask; };
-  uint64_t ideal_phase_mask() { return _ideal_phase_name_mask; };
+  void set_ideal_phase_name_set(const BitMap& set) {
+    _ideal_phase_name_set.set_from(set);
+  };
+  bool should_print_phase(const CompilerPhaseType cpt) const {
+    return _ideal_phase_name_set.at(cpt);
+  };
+  void set_trace_auto_vectorization_tags(const CHeapBitMap& tags) {
+    _trace_auto_vectorization_tags.set_from(tags);
+  };
+  const CHeapBitMap& trace_auto_vectorization_tags() {
+    return _trace_auto_vectorization_tags;
+  };
 
   void print_intx(outputStream* st, ccstr n, intx v, bool mod) { if (mod) { st->print("%s:" INTX_FORMAT " ", n, v); } }
   void print_uintx(outputStream* st, ccstr n, intx v, bool mod) { if (mod) { st->print("%s:" UINTX_FORMAT " ", n, v); } }

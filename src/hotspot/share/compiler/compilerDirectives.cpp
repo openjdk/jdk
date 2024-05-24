@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "opto/phasetype.hpp"
+#include "opto/traceAutoVectorizationTag.hpp"
 #include "runtime/globals_extension.hpp"
 
 CompilerDirectives::CompilerDirectives() : _next(nullptr), _match(nullptr), _ref_count(0) {
@@ -297,8 +298,12 @@ void DirectiveSet::init_control_intrinsic() {
   }
 }
 
-DirectiveSet::DirectiveSet(CompilerDirectives* d) :_inlinematchers(nullptr), _directive(d) {
-  _ideal_phase_name_mask = 0;
+DirectiveSet::DirectiveSet(CompilerDirectives* d) :
+  _inlinematchers(nullptr),
+  _directive(d),
+  _ideal_phase_name_set(PHASE_NUM_TYPES, mtCompiler),
+  _trace_auto_vectorization_tags(TRACE_AUTO_VECTORIZATION_TAG_NUM, mtCompiler)
+{
 #define init_defaults_definition(name, type, dvalue, compiler) this->name##Option = dvalue;
   compilerdirectives_common_flags(init_defaults_definition)
   compilerdirectives_c2_flags(init_defaults_definition)
@@ -421,24 +426,33 @@ DirectiveSet* DirectiveSet::compilecommand_compatibility_init(const methodHandle
     }
 
     // inline and dontinline (including exclude) are implemented in the directiveset accessors
-#define init_default_cc(name, type, dvalue, cc_flag) { type v; if (!_modified[name##Index] && CompileCommand::cc_flag != CompileCommand::Unknown && CompilerOracle::has_option_value(method, CompileCommand::cc_flag, v) && v != this->name##Option) { set.cloned()->name##Option = v; } }
+#define init_default_cc(name, type, dvalue, cc_flag) { type v; if (!_modified[name##Index] && CompileCommandEnum::cc_flag != CompileCommandEnum::Unknown && CompilerOracle::has_option_value(method, CompileCommandEnum::cc_flag, v) && v != this->name##Option) { set.cloned()->name##Option = v; } }
     compilerdirectives_common_flags(init_default_cc)
     compilerdirectives_c2_flags(init_default_cc)
     compilerdirectives_c1_flags(init_default_cc)
 #undef init_default_cc
 
-    // Parse PrintIdealPhaseName and create an efficient lookup mask
+    // Parse PrintIdealPhaseName and create a lookup set
 #ifndef PRODUCT
 #ifdef COMPILER2
-    if (!_modified[PrintIdealPhaseIndex]) {
+    if (!_modified[TraceAutoVectorizationIndex]) {
       // Parse ccstr and create mask
       ccstrlist option;
-      if (CompilerOracle::has_option_value(method, CompileCommand::PrintIdealPhase, option)) {
-        uint64_t mask = 0;
-        PhaseNameValidator validator(option, mask);
+      if (CompilerOracle::has_option_value(method, CompileCommandEnum::TraceAutoVectorization, option)) {
+        TraceAutoVectorizationTagValidator validator(option, false);
         if (validator.is_valid()) {
-          assert(mask != 0, "Must be set");
-          set.cloned()->_ideal_phase_name_mask = mask;
+          set.cloned()->set_trace_auto_vectorization_tags(validator.tags());
+        }
+      }
+    }
+    if (!_modified[PrintIdealPhaseIndex]) {
+      // Parse ccstr and create set
+      ccstrlist option;
+      if (CompilerOracle::has_option_value(method, CompileCommandEnum::PrintIdealPhase, option)) {
+        PhaseNameValidator validator(option);
+        if (validator.is_valid()) {
+          assert(!validator.phase_name_set().is_empty(), "Phase name set must be non-empty");
+          set.cloned()->set_ideal_phase_name_set(validator.phase_name_set());
         }
       }
     }
@@ -450,7 +464,7 @@ DirectiveSet* DirectiveSet::compilecommand_compatibility_init(const methodHandle
     bool need_reset = true; // if Control/DisableIntrinsic redefined, only need to reset control_words once
 
     if (!_modified[ControlIntrinsicIndex] &&
-        CompilerOracle::has_option_value(method, CompileCommand::ControlIntrinsic, option_value)) {
+        CompilerOracle::has_option_value(method, CompileCommandEnum::ControlIntrinsic, option_value)) {
       ControlIntrinsicIter iter(option_value);
 
       if (need_reset) {
@@ -470,7 +484,7 @@ DirectiveSet* DirectiveSet::compilecommand_compatibility_init(const methodHandle
 
 
     if (!_modified[DisableIntrinsicIndex] &&
-        CompilerOracle::has_option_value(method, CompileCommand::DisableIntrinsic, option_value)) {
+        CompilerOracle::has_option_value(method, CompileCommandEnum::DisableIntrinsic, option_value)) {
       ControlIntrinsicIter iter(option_value, true/*disable_all*/);
 
       if (need_reset) {
@@ -621,7 +635,7 @@ DirectiveSet* DirectiveSet::clone(DirectiveSet const* src) {
 #undef copy_string_members_definition
 
   set->_intrinsic_control_words = src->_intrinsic_control_words;
-  set->_ideal_phase_name_mask = src->_ideal_phase_name_mask;
+  set->set_ideal_phase_name_set(src->_ideal_phase_name_set);
   return set;
 }
 

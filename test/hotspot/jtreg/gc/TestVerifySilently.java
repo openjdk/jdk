@@ -57,8 +57,7 @@ public class TestVerifySilently {
                                              "-XX:+VerifyAfterGC",
                                              (verifySilently ? "-Xlog:gc":"-Xlog:gc+verify=debug"),
                                              TestVerifySilentlyRunSystemGC.class.getName()});
-    ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(vmOpts);
-    OutputAnalyzer output = new OutputAnalyzer(pb.start());
+    OutputAnalyzer output = ProcessTools.executeLimitedTestJava(vmOpts);
 
     System.out.println("Output:\n" + output.getOutput());
     return output;

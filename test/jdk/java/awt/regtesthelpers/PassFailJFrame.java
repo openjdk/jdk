@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 import java.awt.AWTException;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
@@ -47,12 +48,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.imageio.ImageIO;
+import javax.swing.Box;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
@@ -63,6 +66,7 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSplitPane;
 import javax.swing.JTextArea;
 import javax.swing.Timer;
 import javax.swing.text.JTextComponent;
@@ -95,10 +99,10 @@ import static javax.swing.SwingUtilities.isEventDispatchThread;
  *                       .awaitAndCheck();
  *     }
  *
- *     private static List<Window> createTestUI() {
+ *     private static Window createTestUI() {
  *         JFrame testUI = new JFrame("Test UI");
  *         testUI.setSize(250, 150);
- *         return List.of(testUI);
+ *         return testUI;
  *     }
  * }
  * }</pre>
@@ -109,6 +113,17 @@ import static javax.swing.SwingUtilities.isEventDispatchThread;
  * The framework will create instruction UI, it will call
  * the provided {@code createTestUI} on the Event Dispatch Thread (EDT),
  * and it will automatically position the test UI and make it visible.
+ * <p>
+ * The {@code Builder.testUI} methods accept interfaces which create one window
+ * or a list of windows if the test needs multiple windows,
+ * or directly a single window, an array of windows or a list of windows.
+ * <p>
+ * For simple test UI, use {@code Builder.splitUI}, or explicitly
+ * {@code Builder.splitUIRight} or {@code Builder.splitUIBottom} with
+ * a {@code PanelCreator}. The framework will call the provided
+ * {@code createUIPanel} to create the component with test UI and
+ * will place it as the right or bottom component in a split pane
+ * along with instruction UI.
  * <p>
  * Alternatively, use one of the {@code PassFailJFrame} constructors to
  * create an object, then create secondary test UI, register it
@@ -143,10 +158,11 @@ import static javax.swing.SwingUtilities.isEventDispatchThread;
  *     <li>the title of the instruction UI,</li>
  *     <li>the timeout of the test,</li>
  *     <li>the size of the instruction UI via rows and columns, and</li>
+ *     <li>to add a log area</li>,
  *     <li>to enable screenshots.</li>
  * </ul>
  */
-public class PassFailJFrame {
+public final class PassFailJFrame {
 
     private static final String TITLE = "Test Instruction Frame";
     private static final long TEST_TIMEOUT = 5;
@@ -162,11 +178,19 @@ public class PassFailJFrame {
      */
     private static final String EMPTY_REASON = "(no reason provided)";
 
+    /**
+     * List of windows or frames managed by the {@code PassFailJFrame}
+     * framework. These windows are automatically disposed of when the
+     * test is finished.
+     * <p>
+     * <b>Note:</b> access to this field has to be synchronized by
+     * {@code PassFailJFrame.class}.
+     */
     private static final List<Window> windowList = new ArrayList<>();
 
     private static final CountDownLatch latch = new CountDownLatch(1);
 
-    private static TimeoutHandler timeoutHandler;
+    private static TimeoutHandlerPanel timeoutHandlerPanel;
 
     /**
      * The description of why the test fails.
@@ -183,6 +207,8 @@ public class PassFailJFrame {
     private static JFrame frame;
 
     private static Robot robot;
+
+    private static JTextArea logArea;
 
     public enum Position {HORIZONTAL, VERTICAL, TOP_LEFT_CORNER}
 
@@ -272,38 +298,64 @@ public class PassFailJFrame {
                                    enableScreenCapture));
     }
 
-    private PassFailJFrame(Builder builder) throws InterruptedException,
-            InvocationTargetException {
-        this(builder.title, builder.instructions, builder.testTimeOut,
-             builder.rows, builder.columns, builder.screenCapture);
+    /**
+     * Configures {@code PassFailJFrame} using the builder.
+     * It creates test UI specified using {@code testUI} or {@code splitUI}
+     * methods on EDT.
+     * @param builder the builder with the parameters
+     * @throws InterruptedException if the current thread is interrupted while
+     *              waiting for EDT to complete a task
+     * @throws InvocationTargetException if an exception is thrown while
+     *              running a task on EDT
+     */
+    private PassFailJFrame(final Builder builder)
+            throws InterruptedException, InvocationTargetException {
+        invokeOnEDT(() -> createUI(builder));
 
-        if (builder.windowCreator != null) {
+        if (!builder.splitUI && builder.panelCreator != null) {
+            JComponent content = builder.panelCreator.createUIPanel();
+            String title = content.getName();
+            if (title == null) {
+                title = "Test UI";
+            }
+            JDialog dialog = new JDialog(frame, title, false);
+            dialog.addWindowListener(windowClosingHandler);
+            dialog.add(content, BorderLayout.CENTER);
+            dialog.pack();
+            addTestWindow(dialog);
+            positionTestWindow(dialog, builder.position);
+        }
+
+        if (builder.windowListCreator != null) {
             invokeOnEDT(() ->
-                    builder.testWindows = builder.windowCreator.createTestUI());
+                    builder.testWindows = builder.windowListCreator.createTestUI());
+            if (builder.testWindows == null) {
+                throw new IllegalStateException("Window list creator returned null list");
+            }
         }
 
         if (builder.testWindows != null) {
+            if (builder.testWindows.isEmpty()) {
+                throw new IllegalStateException("Window list is empty");
+            }
             addTestWindow(builder.testWindows);
             builder.testWindows
                    .forEach(w -> w.addWindowListener(windowClosingHandler));
 
             if (builder.positionWindows != null) {
                 positionInstructionFrame(builder.position);
-                invokeOnEDT(() -> {
-                    builder.positionWindows
-                           .positionTestWindows(unmodifiableList(builder.testWindows),
-                                                builder.instructionUIHandler);
-
-                    windowList.forEach(w -> w.setVisible(true));
-                });
+                invokeOnEDT(() ->
+                        builder.positionWindows
+                               .positionTestWindows(unmodifiableList(builder.testWindows),
+                                                    builder.instructionUIHandler));
             } else if (builder.testWindows.size() == 1) {
                 Window window = builder.testWindows.get(0);
                 positionTestWindow(window, builder.position);
-                window.setVisible(true);
             } else {
                 positionTestWindow(null, builder.position);
             }
         }
+        showAllWindows();
     }
 
     /**
@@ -327,33 +379,94 @@ public class PassFailJFrame {
         }
     }
 
+    /**
+     * Does the same as {@link #invokeOnEDT(Runnable)}, but does not throw
+     * any checked exceptions.
+     *
+     * @param doRun an operation to run on EDT
+     */
+    private static void invokeOnEDTUncheckedException(Runnable doRun) {
+        try {
+            invokeOnEDT(doRun);
+        } catch (InterruptedException | InvocationTargetException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private static void createUI(String title, String instructions,
                                  long testTimeOut, int rows, int columns,
                                  boolean enableScreenCapture) {
         frame = new JFrame(title);
         frame.setLayout(new BorderLayout());
 
-        JLabel testTimeoutLabel = new JLabel("", JLabel.CENTER);
-        timeoutHandler = new TimeoutHandler(testTimeoutLabel, testTimeOut);
-        frame.add(testTimeoutLabel, BorderLayout.NORTH);
+        frame.addWindowListener(windowClosingHandler);
+
+        frame.add(createInstructionUIPanel(instructions,
+                                           testTimeOut,
+                                           rows, columns,
+                                           enableScreenCapture,
+                                           false, 0),
+                  BorderLayout.CENTER);
+        frame.pack();
+        frame.setLocationRelativeTo(null);
+        addTestWindow(frame);
+    }
+
+    private static void createUI(Builder builder) {
+        frame = new JFrame(builder.title);
+        frame.setLayout(new BorderLayout());
+
+        frame.addWindowListener(windowClosingHandler);
+
+        JComponent instructionUI =
+                createInstructionUIPanel(builder.instructions,
+                                         builder.testTimeOut,
+                                         builder.rows, builder.columns,
+                                         builder.screenCapture,
+                                         builder.addLogArea,
+                                         builder.logAreaRows);
+        if (builder.splitUI) {
+            JSplitPane splitPane = new JSplitPane(
+                    builder.splitUIOrientation,
+                    instructionUI,
+                    builder.panelCreator.createUIPanel());
+            frame.add(splitPane, BorderLayout.CENTER);
+        } else {
+            frame.add(instructionUI, BorderLayout.CENTER);
+        }
+
+        frame.pack();
+        frame.setLocationRelativeTo(null);
+        addTestWindow(frame);
+    }
+
+    private static JComponent createInstructionUIPanel(String instructions,
+                                                       long testTimeOut,
+                                                       int rows, int columns,
+                                                       boolean enableScreenCapture,
+                                                       boolean addLogArea,
+                                                       int logAreaRows) {
+        JPanel main = new JPanel(new BorderLayout());
+        timeoutHandlerPanel = new TimeoutHandlerPanel(testTimeOut);
+        main.add(timeoutHandlerPanel, BorderLayout.NORTH);
 
         JTextComponent text = instructions.startsWith("<html>")
                               ? configureHTML(instructions, rows, columns)
                               : configurePlainText(instructions, rows, columns);
         text.setEditable(false);
 
-        frame.add(new JScrollPane(text), BorderLayout.CENTER);
+        main.add(new JScrollPane(text), BorderLayout.CENTER);
 
         JButton btnPass = new JButton("Pass");
         btnPass.addActionListener((e) -> {
             latch.countDown();
-            timeoutHandler.stop();
+            timeoutHandlerPanel.stop();
         });
 
         JButton btnFail = new JButton("Fail");
         btnFail.addActionListener((e) -> {
             requestFailureReason();
-            timeoutHandler.stop();
+            timeoutHandlerPanel.stop();
         });
 
         JPanel buttonsPanel = new JPanel();
@@ -364,12 +477,23 @@ public class PassFailJFrame {
             buttonsPanel.add(createCapturePanel());
         }
 
-        frame.addWindowListener(windowClosingHandler);
+        if (addLogArea) {
+            logArea = new JTextArea(logAreaRows, columns);
+            logArea.setEditable(false);
 
-        frame.add(buttonsPanel, BorderLayout.SOUTH);
-        frame.pack();
-        frame.setLocationRelativeTo(null);
-        windowList.add(frame);
+            Box buttonsLogPanel = Box.createVerticalBox();
+
+            buttonsLogPanel.add(buttonsPanel);
+            buttonsLogPanel.add(new JScrollPane(logArea));
+
+            main.add(buttonsLogPanel, BorderLayout.SOUTH);
+        } else {
+            main.add(buttonsPanel, BorderLayout.SOUTH);
+        }
+
+        main.setMinimumSize(main.getPreferredSize());
+
+        return main;
     }
 
     private static JTextComponent configurePlainText(String instructions,
@@ -400,16 +524,45 @@ public class PassFailJFrame {
 
 
     /**
-     * Creates one or more windows for test UI.
+     * Creates a test UI window.
      */
     @FunctionalInterface
     public interface WindowCreator {
         /**
+         * Creates a window for test UI.
+         * This method is called by the framework on the EDT.
+         * @return a test UI window
+         */
+        Window createTestUI();
+    }
+
+    /**
+     * Creates a list of test UI windows.
+     */
+    @FunctionalInterface
+    public interface WindowListCreator {
+        /**
          * Creates one or more windows for test UI.
          * This method is called by the framework on the EDT.
-         * @return a list of windows.
+         * @return a list of test UI windows
          */
         List<? extends Window> createTestUI();
+    }
+
+    /**
+     * Creates a component (panel) with test UI
+     * to be hosted in a split pane or a frame.
+     */
+    @FunctionalInterface
+    public interface PanelCreator {
+        /**
+         * Creates a component which hosts test UI. This component
+         * is placed into a split pane or into a frame to display the UI.
+         * <p>
+         * This method is called by the framework on the EDT.
+         * @return a component (panel) with test UI
+         */
+        JComponent createUIPanel();
     }
 
     /**
@@ -423,8 +576,13 @@ public class PassFailJFrame {
          * the instruction UI frame was positioned on the screen.
          * <p>
          * The list of the test windows contains the windows
-         * that were passed to the framework via
-         * {@link Builder#testUI(WindowCreator) testUI} method.
+         * that were passed to the framework via the
+         * {@link Builder#testUI(Window...) testUI(Window...)} method or
+         * that were created with {@code WindowCreator}
+         * or {@code WindowListCreator} which were passed via
+         * {@link Builder#testUI(WindowCreator) testUI(WindowCreator)} or
+         * {@link Builder#testUI(WindowListCreator) testUI(WindowListCreator)}
+         * correspondingly.
          *
          * @param testWindows the list of test windows
          * @param instructionUI information about the instruction frame
@@ -479,17 +637,35 @@ public class PassFailJFrame {
     }
 
 
-    private static final class TimeoutHandler implements ActionListener {
-        private final long endTime;
+    private static final class TimeoutHandlerPanel
+            extends JPanel
+            implements ActionListener {
+
+        private static final String PAUSE_BUTTON_LABEL = "Pause";
+        private static final String RESUME_BUTTON_LABEL = "Resume";
+
+        private long endTime;
+        private long pauseTimeLeft;
 
         private final Timer timer;
 
         private final JLabel label;
+        private final JButton button;
 
-        public TimeoutHandler(final JLabel label, final long testTimeOut) {
-            endTime = System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(testTimeOut);
+        public TimeoutHandlerPanel(final long testTimeOut) {
+            endTime = System.currentTimeMillis()
+                    + TimeUnit.MINUTES.toMillis(testTimeOut);
 
-            this.label = label;
+            label =  new JLabel("", JLabel.CENTER);
+            button = new JButton(PAUSE_BUTTON_LABEL);
+
+            button.setFocusPainted(false);
+            button.setFont(new Font(Font.DIALOG, Font.BOLD, 10));
+            button.addActionListener(e -> pauseToggle());
+
+            setLayout(new BorderLayout());
+            add(label, BorderLayout.CENTER);
+            add(button, BorderLayout.EAST);
 
             timer = new Timer(1000, this);
             timer.start();
@@ -516,8 +692,25 @@ public class PassFailJFrame {
             long hours = leftTime / 3_600_000;
             long minutes = (leftTime - hours * 3_600_000) / 60_000;
             long seconds = (leftTime - hours * 3_600_000 - minutes * 60_000) / 1_000;
-            label.setText(String.format("Test timeout: %02d:%02d:%02d",
+            label.setText(String.format(Locale.ENGLISH,
+                                        "Test timeout: %02d:%02d:%02d",
                                         hours, minutes, seconds));
+        }
+
+
+        private void pauseToggle() {
+            if (timer.isRunning()) {
+                pauseTimeLeft = endTime - System.currentTimeMillis();
+                timer.stop();
+                label.setEnabled(false);
+                button.setText(RESUME_BUTTON_LABEL);
+            } else {
+                endTime = System.currentTimeMillis() + pauseTimeLeft;
+                updateTime(pauseTimeLeft);
+                timer.start();
+                label.setEnabled(true);
+                button.setText(PAUSE_BUTTON_LABEL);
+            }
         }
 
         public void stop() {
@@ -608,10 +801,12 @@ public class PassFailJFrame {
                 break;
 
             case WINDOWS:
-                windowList.stream()
-                          .filter(Window::isShowing)
-                          .map(Window::getBounds)
-                          .forEach(PassFailJFrame::captureScreen);
+                synchronized (PassFailJFrame.class) {
+                    windowList.stream()
+                              .filter(Window::isShowing)
+                              .map(Window::getBounds)
+                              .forEach(PassFailJFrame::captureScreen);
+                }
                 break;
 
             default:
@@ -860,6 +1055,29 @@ public class PassFailJFrame {
     }
 
     /**
+     * Displays all the windows in {@code windowList}.
+     *
+     * @throws InterruptedException if the thread is interrupted while
+     *              waiting for the event dispatch thread to finish running
+     *              the {@link #showUI() showUI}
+     * @throws InvocationTargetException if an exception is thrown while
+     *              the event dispatch thread executes {@code showUI}
+     */
+    private static void showAllWindows()
+            throws InterruptedException, InvocationTargetException {
+        invokeOnEDT(PassFailJFrame::showUI);
+    }
+
+    /**
+     * Displays all the windows in {@code windowList}; it has to be called on
+     * the EDT &mdash; use {@link #showAllWindows() showAllWindows} to ensure it.
+     */
+    private static synchronized void showUI() {
+        windowList.forEach(w -> w.setVisible(true));
+    }
+
+
+    /**
      * Forcibly pass the test.
      * <p>The sample usage:
      * <pre><code>
@@ -891,6 +1109,36 @@ public class PassFailJFrame {
         latch.countDown();
     }
 
+    /**
+     * Adds a {@code message} to the log area, if enabled by
+     * {@link Builder#logArea()} or {@link Builder#logArea(int)}.
+     *
+     * @param message to log
+     */
+    public static void log(String message) {
+        System.out.println("PassFailJFrame: " + message);
+        invokeOnEDTUncheckedException(() -> logArea.append(message + "\n"));
+    }
+
+    /**
+     * Clears the log area, if enabled by
+     * {@link Builder#logArea()} or {@link Builder#logArea(int)}.
+     */
+    public static void logClear() {
+        System.out.println("\nPassFailJFrame: log cleared\n");
+        invokeOnEDTUncheckedException(() -> logArea.setText(""));
+    }
+
+    /**
+     * Replaces the log area content with provided {@code text}, if enabled by
+     * {@link Builder#logArea()} or {@link Builder#logArea(int)}.
+     * @param text new text for the log area
+     */
+    public static void logSet(String text) {
+        System.out.println("\nPassFailJFrame: log set to:\n" + text + "\n");
+        invokeOnEDTUncheckedException(() -> logArea.setText(text));
+    }
+
     public static final class Builder {
         private String title;
         private String instructions;
@@ -898,13 +1146,26 @@ public class PassFailJFrame {
         private int rows;
         private int columns;
         private boolean screenCapture;
+        private boolean addLogArea;
+        private int logAreaRows = 10;
 
         private List<? extends Window> testWindows;
-        private WindowCreator windowCreator;
+        private WindowListCreator windowListCreator;
+        private PanelCreator panelCreator;
+        private boolean splitUI;
+        private int splitUIOrientation;
         private PositionWindows positionWindows;
         private InstructionUI instructionUIHandler;
 
         private Position position;
+
+        /**
+         * A private constructor for the builder,
+         * it should not be created directly.
+         * Use {@code PassFailJFrame.builder()} method instead.
+         */
+        private Builder() {
+        }
 
         public Builder title(String title) {
             this.title = title;
@@ -936,43 +1197,238 @@ public class PassFailJFrame {
             return this;
         }
 
+        /**
+         * Adds a log area below the "Pass", "Fail" buttons.
+         * <p>
+         * The log area can be controlled by {@link #log(String)},
+         * {@link #logClear()} and {@link #logSet(String)}.
+         *
+         * @return this builder
+         */
+        public Builder logArea() {
+            this.addLogArea = true;
+            return this;
+        }
+
+        /**
+         * Adds a log area below the "Pass", "Fail" buttons.
+         * <p>
+         * The log area can be controlled by {@link #log(String)},
+         * {@link #logClear()} and {@link #logSet(String)}.
+         * <p>
+         * The number of columns is taken from the number of
+         * columns in the instructional JTextArea.
+         *
+         * @param rows of the log area
+         * @return this builder
+         */
+        public Builder logArea(int rows) {
+            this.addLogArea = true;
+            this.logAreaRows = rows;
+            return this;
+        }
+
+        /**
+         * Adds a {@code WindowCreator} which the framework will use
+         * to create the test UI window.
+         *
+         * @param windowCreator a {@code WindowCreator}
+         *              to create the test UI window
+         * @return this builder
+         * @throws IllegalArgumentException if {@code windowCreator} is {@code null}
+         * @throws IllegalStateException if a window creator
+         *              or a list of test windows is already set
+         */
+        public Builder testUI(WindowCreator windowCreator) {
+            if (windowCreator == null) {
+                throw new IllegalArgumentException("The window creator can't be null");
+            }
+
+            checkWindowsLists();
+
+            this.windowListCreator = () -> List.of(windowCreator.createTestUI());
+            return this;
+        }
+
+        /**
+         * Adds a {@code WindowListCreator} which the framework will use
+         * to create a list of test UI windows.
+         *
+         * @param windowListCreator a {@code WindowListCreator}
+         *              to create test UI windows
+         * @return this builder
+         * @throws IllegalArgumentException if {@code windowListCreator} is {@code null}
+         * @throws IllegalStateException if a window creator
+         *              or a list of test windows is already set
+         */
+        public Builder testUI(WindowListCreator windowListCreator) {
+            if (windowListCreator == null) {
+                throw new IllegalArgumentException("The window list creator can't be null");
+            }
+
+            checkWindowsLists();
+
+            this.windowListCreator = windowListCreator;
+            return this;
+        }
+
+        /**
+         * Adds an already created test UI window.
+         * The window is positioned and shown automatically.
+         *
+         * @param window a test UI window
+         * @return this builder
+         */
         public Builder testUI(Window window) {
             return testUI(List.of(window));
         }
 
+        /**
+         * Adds an array of already created test UI windows.
+         *
+         * @param windows an array of test UI windows
+         * @return this builder
+         */
         public Builder testUI(Window... windows) {
             return testUI(List.of(windows));
         }
 
-        public Builder testUI(List<Window> windows) {
+        /**
+         * Adds a list of already created test UI windows.
+         *
+         * @param windows a list of test UI windows
+         * @return this builder
+         * @throws IllegalArgumentException if {@code windows} is {@code null}
+         *              or the list contains {@code null}
+         * @throws IllegalStateException if a window creator
+         *              or a list of test windows is already set
+         */
+        public Builder testUI(List<? extends Window> windows) {
             if (windows == null) {
                 throw new IllegalArgumentException("The list of windows can't be null");
             }
             if (windows.stream()
                        .anyMatch(Objects::isNull)) {
-                throw new IllegalArgumentException("The windows list can't contain null");
+                throw new IllegalArgumentException("The list of windows can't contain null");
             }
 
-            if (windowCreator != null) {
-                throw new IllegalStateException("windowCreator is already set");
-            }
+            checkWindowsLists();
+
             this.testWindows = windows;
             return this;
         }
 
-        public Builder testUI(WindowCreator windowCreator) {
-            if (windowCreator == null) {
-                throw new IllegalArgumentException("The window creator can't be null");
+        /**
+         * Verifies the state of window list and window creator.
+         *
+         * @throws IllegalStateException if a windows list creator
+         *              or a list of test windows is already set
+         */
+        private void checkWindowsLists() {
+            if (windowListCreator != null) {
+                throw new IllegalStateException("Window list creator is already set");
             }
             if (testWindows != null) {
-                throw new IllegalStateException("testWindows are already set");
+                throw new IllegalStateException("The list of test windows is already set");
             }
-            this.windowCreator = windowCreator;
+        }
+
+        /**
+         * Adds a {@code PanelCreator} which the framework will use
+         * to create a component and place it into a dialog.
+         *
+         * @param panelCreator a {@code PanelCreator} to create a component
+         *                     with test UI
+         * @return this builder
+         * @throws IllegalStateException if split UI was enabled using
+         *              a {@code splitUI} method
+         */
+        public Builder testUI(PanelCreator panelCreator) {
+            if (splitUI) {
+                throw new IllegalStateException("Can't combine splitUI and "
+                                                + "testUI with panelCreator");
+            }
+            this.panelCreator = panelCreator;
             return this;
         }
 
-        public Builder positionTestUI(PositionWindows positionWindows) {
-            this.positionWindows = positionWindows;
+        /**
+         * Adds a {@code PanelCreator} which the framework will use
+         * to create a component with test UI and display it in a split pane.
+         * <p>
+         * By default, horizontal orientation is used,
+         * and test UI is displayed to the right of the instruction UI.
+         *
+         * @param panelCreator a {@code PanelCreator} to create a component
+         *                     with test UI
+         * @return this builder
+         *
+         * @throws IllegalStateException if a {@code PanelCreator} is
+         *              already set
+         * @throws IllegalArgumentException if {panelCreator} is {@code null}
+         */
+        public Builder splitUI(PanelCreator panelCreator) {
+            return splitUIRight(panelCreator);
+        }
+
+        /**
+         * Adds a {@code PanelCreator} which the framework will use
+         * to create a component with test UI and display it
+         * to the right of instruction UI.
+         *
+         * @param panelCreator a {@code PanelCreator} to create a component
+         *                     with test UI
+         * @return this builder
+         *
+         * @throws IllegalStateException if a {@code PanelCreator} is
+         *              already set
+         * @throws IllegalArgumentException if {panelCreator} is {@code null}
+         */
+        public Builder splitUIRight(PanelCreator panelCreator) {
+            return splitUI(panelCreator, JSplitPane.HORIZONTAL_SPLIT);
+        }
+
+        /**
+         * Adds a {@code PanelCreator} which the framework will use
+         * to create a component with test UI and display it
+         * in the bottom of instruction UI.
+         *
+         * @param panelCreator a {@code PanelCreator} to create a component
+         *                     with test UI
+         * @return this builder
+         *
+         * @throws IllegalStateException if a {@code PanelCreator} is
+         *              already set
+         * @throws IllegalArgumentException if {panelCreator} is {@code null}
+         */
+        public Builder splitUIBottom(PanelCreator panelCreator) {
+            return splitUI(panelCreator, JSplitPane.VERTICAL_SPLIT);
+        }
+
+        /**
+         * Enables split UI and stores the orientation of the split pane.
+         *
+         * @param panelCreator a {@code PanelCreator} to create a component
+         *                     with test UI
+         * @param splitUIOrientation orientation of the split pane
+         * @return this builder
+         *
+         * @throws IllegalStateException if a {@code PanelCreator} is
+         *              already set
+         * @throws IllegalArgumentException if {panelCreator} is {@code null}
+         */
+        private Builder splitUI(PanelCreator panelCreator,
+                                int splitUIOrientation) {
+            if (panelCreator == null) {
+                throw new IllegalArgumentException("A PanelCreator cannot be null");
+            }
+            if (this.panelCreator != null) {
+                throw new IllegalStateException("A PanelCreator is already set");
+            }
+
+            splitUI = true;
+            this.splitUIOrientation = splitUIOrientation;
+            this.panelCreator = panelCreator;
             return this;
         }
 
@@ -1010,15 +1466,16 @@ public class PassFailJFrame {
             }
 
             if (position == null
-                && (testWindows != null || windowCreator != null)) {
+                && (testWindows != null || windowListCreator != null
+                    || (!splitUI && panelCreator != null))) {
 
                 position = Position.HORIZONTAL;
             }
 
             if (positionWindows != null) {
-                if (testWindows == null && windowCreator == null) {
+                if (testWindows == null && windowListCreator == null) {
                     throw new IllegalStateException("To position windows, "
-                            + "provide an a list of windows to the builder");
+                            + "provide a list of windows to the builder");
                 }
                 instructionUIHandler = new InstructionUIHandler();
             }
@@ -1057,6 +1514,11 @@ public class PassFailJFrame {
         }
     }
 
+    /**
+     * Creates a builder for configuring {@code PassFailJFrame}.
+     *
+     * @return the builder for configuring {@code PassFailJFrame}
+     */
     public static Builder builder() {
         return new Builder();
     }

@@ -41,25 +41,16 @@ class MachNode;
 
 class MacroAssembler;
 
-class ZBarrierStubC2 : public ArenaObj {
+class ZBarrierStubC2 : public BarrierStubC2 {
 protected:
-  const MachNode* _node;
-  Label           _entry;
-  Label           _continuation;
-
 static void register_stub(ZBarrierStubC2* stub);
 static void inc_trampoline_stubs_count();
 static int trampoline_stubs_count();
 static int stubs_start_offset();
 
-public:
   ZBarrierStubC2(const MachNode* node);
 
-  RegMask& live() const;
-  Label* entry();
-  Label* continuation();
-
-  virtual Register result() const = 0;
+public:
   virtual void emit_code(MacroAssembler& masm) = 0;
 };
 
@@ -78,7 +69,6 @@ public:
   Register ref() const;
   address slow_path() const;
 
-  virtual Register result() const;
   virtual void emit_code(MacroAssembler& masm);
 };
 
@@ -102,13 +92,11 @@ public:
   bool is_native() const;
   bool is_atomic() const;
 
-  virtual Register result() const;
   virtual void emit_code(MacroAssembler& masm);
 };
 
 class ZBarrierSetC2 : public BarrierSetC2 {
 private:
-  void compute_liveness_at_stubs() const;
   void analyze_dominating_barriers_impl(Node_List& accesses, Node_List& access_dominators) const;
   void analyze_dominating_barriers() const;
 
@@ -128,6 +116,7 @@ protected:
                                         const Type* val_type) const;
 
 public:
+  virtual uint estimated_barrier_size(const Node* node) const;
   virtual void* create_barrier_state(Arena* comp_arena) const;
   virtual bool array_copy_requires_gc_barriers(bool tightly_coupled_alloc,
                                                BasicType type,

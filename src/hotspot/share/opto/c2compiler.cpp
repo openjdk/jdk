@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@
 #include "opto/output.hpp"
 #include "opto/runtime.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "runtime/globals_extension.hpp"
 #include "utilities/macros.hpp"
 
 
@@ -63,6 +64,13 @@ const char* C2Compiler::retry_no_superword() {
 void compiler_stubs_init(bool in_compiler_thread);
 
 bool C2Compiler::init_c2_runtime() {
+
+#ifdef ASSERT
+  if (!AlignVector && VerifyAlignVector) {
+    warning("VerifyAlignVector disabled because AlignVector is not enabled.");
+    FLAG_SET_CMDLINE(VerifyAlignVector, false);
+  }
+#endif
 
   // Check assumptions used while running ADLC
   Compile::adlc_verification();
@@ -237,7 +245,6 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
     if (!Matcher::match_rule_supported(Op_StrComp)) return false;
     break;
   case vmIntrinsics::_equalsL:
-  case vmIntrinsics::_equalsU:
     if (!Matcher::match_rule_supported(Op_StrEquals)) return false;
     break;
   case vmIntrinsics::_vectorizedHashCode:
@@ -249,6 +256,9 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
     break;
   case vmIntrinsics::_copyMemory:
     if (StubRoutines::unsafe_arraycopy() == nullptr) return false;
+    break;
+  case vmIntrinsics::_setMemory:
+    if (StubRoutines::unsafe_setmemory() == nullptr) return false;
     break;
   case vmIntrinsics::_electronicCodeBook_encryptAESCrypt:
     if (StubRoutines::electronicCodeBook_encryptAESCrypt() == nullptr) return false;
@@ -776,6 +786,8 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_base64_encodeBlock:
   case vmIntrinsics::_base64_decodeBlock:
   case vmIntrinsics::_poly1305_processBlocks:
+  case vmIntrinsics::_intpoly_montgomeryMult_P256:
+  case vmIntrinsics::_intpoly_assign:
   case vmIntrinsics::_updateCRC32:
   case vmIntrinsics::_updateBytesCRC32:
   case vmIntrinsics::_updateByteBufferCRC32:
@@ -822,6 +834,7 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_notifyJvmtiVThreadMount:
   case vmIntrinsics::_notifyJvmtiVThreadUnmount:
   case vmIntrinsics::_notifyJvmtiVThreadHideFrames:
+  case vmIntrinsics::_notifyJvmtiVThreadDisableSuspend:
 #endif
     break;
 

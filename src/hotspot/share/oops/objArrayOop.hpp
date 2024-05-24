@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,32 +51,6 @@ class objArrayOopDesc : public arrayOopDesc {
     return base_offset_in_bytes() + sizeof(T) * index;
   }
 
-private:
-  // Give size of objArrayOop in HeapWords minus the header
-  static int array_size(int length) {
-    const uint OopsPerHeapWord = HeapWordSize/heapOopSize;
-    assert(OopsPerHeapWord >= 1 && (HeapWordSize % heapOopSize == 0),
-           "Else the following (new) computation would be in error");
-    uint res = ((uint)length + OopsPerHeapWord - 1)/OopsPerHeapWord;
-#ifdef ASSERT
-    // The old code is left in for sanity-checking; it'll
-    // go away pretty soon. XXX
-    // Without UseCompressedOops, this is simply:
-    // oop->length() * HeapWordsPerOop;
-    // With narrowOops, HeapWordsPerOop is 1/2 or equal 0 as an integer.
-    // The oop elements are aligned up to wordSize
-    const uint HeapWordsPerOop = heapOopSize/HeapWordSize;
-    uint old_res;
-    if (HeapWordsPerOop > 0) {
-      old_res = length * HeapWordsPerOop;
-    } else {
-      old_res = align_up((uint)length, OopsPerHeapWord)/OopsPerHeapWord;
-    }
-    assert(res == old_res, "Inconsistency between old and new.");
-#endif  // ASSERT
-    return res;
-  }
-
  public:
   // Returns the offset of the first element.
   static int base_offset_in_bytes() {
@@ -94,16 +68,15 @@ private:
   oop replace_if_null(int index, oop exchange_value);
 
   // Sizing
-  static int header_size()    { return arrayOopDesc::header_size(T_OBJECT); }
   size_t object_size()        { return object_size(length()); }
 
   static size_t object_size(int length) {
     // This returns the object size in HeapWords.
-    uint asz = array_size(length);
-    uint osz = align_object_size(header_size() + asz);
-    assert(osz >= asz,   "no overflow");
-    assert((int)osz > 0, "no overflow");
-    return (size_t)osz;
+    size_t asz = (size_t)length * heapOopSize;
+    size_t size_words = heap_word_size(base_offset_in_bytes() + asz);
+    size_t osz = align_object_size(size_words);
+    assert(osz < max_jint, "no overflow");
+    return osz;
   }
 
   Klass* element_klass();

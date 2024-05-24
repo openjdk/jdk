@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 
 Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
@@ -13,11 +13,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<language type="ka"/>
 	</identity>
 	<localeDisplayNames>
-		<localeDisplayPattern>
-			<localePattern>{0} ({1})</localePattern>
-			<localeSeparator>{0}, {1}</localeSeparator>
-			<localeKeyTypePattern>{0}: {1}</localeKeyTypePattern>
-		</localeDisplayPattern>
 		<languages>
 			<language type="aa">აფარი</language>
 			<language type="ab">აფხაზური</language>
@@ -63,6 +58,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="bem">ბემბა</language>
 			<language type="bez">ბენა</language>
 			<language type="bg">ბულგარული</language>
+			<language type="bgc">ჰარიანვი</language>
 			<language type="bgn">დასავლეთ ბელუჯი</language>
 			<language type="bho">ბოჯპური</language>
 			<language type="bi">ბისლამა</language>
@@ -520,7 +516,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="war">ვარაი</language>
 			<language type="wbp">ვალპირი</language>
 			<language type="wo">ვოლოფური</language>
-			<language type="wuu" draft="contributed">ვუ</language>
+			<language type="wuu">ვუ</language>
 			<language type="xal">ყალმუხური</language>
 			<language type="xh">ქჰოსა</language>
 			<language type="xog">სოგა</language>
@@ -865,6 +861,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="IM">მენის კუნძული</territory>
 			<territory type="IN">ინდოეთი</territory>
 			<territory type="IO">ბრიტანეთის ტერიტორია ინდოეთის ოკეანეში</territory>
+			<territory type="IO" alt="chagos">ჩაგოსის არქიპელაგი</territory>
 			<territory type="IQ">ერაყი</territory>
 			<territory type="IR">ირანი</territory>
 			<territory type="IS">ისლანდია</territory>
@@ -1109,9 +1106,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="gregorian">გრიგორიანული კალენდარი</type>
 			<type key="calendar" type="hebrew">ებრაული კალენდარი</type>
 			<type key="calendar" type="indian">ინდოეთის ეროვნული კალენდარი</type>
-			<type key="calendar" type="islamic">ისლამური კალენდარი</type>
-			<type key="calendar" type="islamic-civil">ისლამური სამოქალაქო კალენდარი</type>
-			<type key="calendar" type="islamic-umalqura">ისლამური კალენდარი (უმ-ალ-ქურა)</type>
+			<type key="calendar" type="islamic">ჰიჯრის კალენდარი</type>
+			<type key="calendar" type="islamic-civil">ჰიჯრის სამოქალაქო კალენდარი (ტაბულარული)</type>
+			<type key="calendar" type="islamic-umalqura">ჰიჯრის კალენდარი (უმ-ალ-ქურა)</type>
 			<type key="calendar" type="iso8601">ISO-8601 კალენდარი</type>
 			<type key="calendar" type="japanese">იაპონური კალენდარი</type>
 			<type key="calendar" type="persian">სპარსული კალენდარი</type>
@@ -1212,14 +1209,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<exemplarCharacters type="auxiliary">[ⴀ ⴁ ⴂ ⴃ ⴄ ⴅ ⴆ ჱ ⴡ ⴇ ⴈ ⴉ ⴊ ⴋ ⴌ ჲ ⴢ ⴍ ⴎ ⴏ ⴐ ⴑ ⴒ ჳ ⴣ ⴓ ⴔ ⴕ ⴖ ⴗ ⴘ ⴙ ⴚ ⴛ ⴜ ⴝ ⴞ ჴ ⴤ ⴟ ⴠ ჵ ⴥ ჶ ჷ ჸ ჹ ჺ]</exemplarCharacters>
 		<exemplarCharacters type="index">[ა ბ გ დ ე ვ ზ თ ი კ ლ მ ნ ო პ ჟ რ ს ტ უ ფ ქ ღ ყ შ ჩ ც ძ წ ჭ ხ ჯ ჰ]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[  \- ‑ , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . … ჻ ' ‘ ‚ “ „ « » ( ) \[ \] \{ \} § @ * / \&amp; # † ‡ ′ ″ №]</exemplarCharacters>
-		<ellipsis type="final">{0}…</ellipsis>
-		<ellipsis type="initial">…{0}</ellipsis>
-		<ellipsis type="medial">{0}…{1}</ellipsis>
-		<ellipsis type="word-final">{0} …</ellipsis>
-		<ellipsis type="word-initial">… {0}</ellipsis>
-		<ellipsis type="word-medial">{0} … {1}</ellipsis>
-		<moreInformation>?</moreInformation>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … ჻ '‘‚ “„ « » ( ) \[ \] \{ \} § @ * / \&amp; # † ‡ ′ ″ №]</exemplarCharacters>
 	</characters>
 	<delimiters>
 		<quotationStart>„</quotationStart>
@@ -1240,19 +1230,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>d MMMM, y G</pattern>
-							<datetimeSkeleton>GyMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>d MMM, y G</pattern>
-							<datetimeSkeleton>GyMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>dd.MM.y GGGGG</pattern>
-							<datetimeSkeleton>GGGGGyMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -1261,15 +1248,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
-							<pattern draft="contributed">{1} {0}</pattern>
-						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
-							<pattern>{1}, {0}</pattern>
-						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -1277,50 +1258,24 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
-							<pattern>{1}, {0}</pattern>
-						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
-							<pattern>{1}, {0}</pattern>
-						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
-						<dateFormatItem id="Bh">h B</dateFormatItem>
-						<dateFormatItem id="Bhm">h:mm B</dateFormatItem>
-						<dateFormatItem id="Bhms">h:mm:ss B</dateFormatItem>
-						<dateFormatItem id="d">d</dateFormatItem>
-						<dateFormatItem id="E">ccc</dateFormatItem>
-						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
-						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">d E</dateFormatItem>
-						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
-						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
-						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
-						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
 						<dateFormatItem id="GyMd">d.M.y GGGGG</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM, y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM, y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d MMM, y G</dateFormatItem>
-						<dateFormatItem id="h">h a</dateFormatItem>
-						<dateFormatItem id="H">HH</dateFormatItem>
-						<dateFormatItem id="hm">h:mm a</dateFormatItem>
-						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
-						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
-						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
-						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">d.M</dateFormatItem>
 						<dateFormatItem id="MEd">E, d.M</dateFormatItem>
-						<dateFormatItem id="MMM">LLL</dateFormatItem>
 						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E, d MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
-						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">y G</dateFormatItem>
 						<dateFormatItem id="yyyy">y G</dateFormatItem>
 						<dateFormatItem id="yyyyM">M.y G</dateFormatItem>
@@ -1336,57 +1291,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<intervalFormats>
 						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="Bh">
-							<greatestDifference id="B">h B – h B</greatestDifference>
 							<greatestDifference id="h">h – h B</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Bhm">
-							<greatestDifference id="B">h:mm B – h:mm B</greatestDifference>
 							<greatestDifference id="h">h:mm – h:mm B</greatestDifference>
-							<greatestDifference id="m">h:mm–h:mm B</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="d">
-							<greatestDifference id="d">d–d</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Gy">
-							<greatestDifference id="G">G y – G y</greatestDifference>
-							<greatestDifference id="y">G y–y</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="GyM">
-							<greatestDifference id="G">GGGGG y-MM – GGGGG y-MM</greatestDifference>
-							<greatestDifference id="M">GGGGG y-MM – y-MM</greatestDifference>
-							<greatestDifference id="y">GGGGG y-MM – y-MM</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="h">
-							<greatestDifference id="a">h a – h a</greatestDifference>
-							<greatestDifference id="h">h–h a</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="H">
-							<greatestDifference id="H">HH–HH</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="hm">
-							<greatestDifference id="a">h:mm a – h:mm a</greatestDifference>
-							<greatestDifference id="h">h:mm–h:mm a</greatestDifference>
-							<greatestDifference id="m">h:mm–h:mm a</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Hm">
-							<greatestDifference id="H">HH:mm–HH:mm</greatestDifference>
-							<greatestDifference id="m">HH:mm–HH:mm</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="hmv">
-							<greatestDifference id="a">h:mm a – h:mm a v</greatestDifference>
-							<greatestDifference id="h">h:mm–h:mm a v</greatestDifference>
-							<greatestDifference id="m">h:mm–h:mm a v</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Hmv">
-							<greatestDifference id="H">HH:mm–HH:mm v</greatestDifference>
-							<greatestDifference id="m">HH:mm–HH:mm v</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="hv">
-							<greatestDifference id="a">h a – h a v</greatestDifference>
-							<greatestDifference id="h">h–h a v</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Hv">
-							<greatestDifference id="H">HH–HH v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
 							<greatestDifference id="M">M–M</greatestDifference>
@@ -1465,20 +1373,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<month type="11">ნოე</month>
 							<month type="12">დეკ</month>
 						</monthWidth>
-						<monthWidth type="narrow">
-							<month type="1">ი</month>
-							<month type="2">თ</month>
-							<month type="3">მ</month>
-							<month type="4">ა</month>
-							<month type="5">მ</month>
-							<month type="6">ი</month>
-							<month type="7">ი</month>
-							<month type="8">ა</month>
-							<month type="9">ს</month>
-							<month type="10">ო</month>
-							<month type="11">ნ</month>
-							<month type="12">დ</month>
-						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">იანვარი</month>
 							<month type="2">თებერვალი</month>
@@ -1495,20 +1389,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
-						<monthWidth type="abbreviated">
-							<month type="1">იან</month>
-							<month type="2">თებ</month>
-							<month type="3">მარ</month>
-							<month type="4">აპრ</month>
-							<month type="5">მაი</month>
-							<month type="6">ივნ</month>
-							<month type="7">ივლ</month>
-							<month type="8">აგვ</month>
-							<month type="9">სექ</month>
-							<month type="10">ოქტ</month>
-							<month type="11">ნოე</month>
-							<month type="12">დეკ</month>
-						</monthWidth>
 						<monthWidth type="narrow">
 							<month type="1">ი</month>
 							<month type="2">თ</month>
@@ -1523,20 +1403,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<month type="11">ნ</month>
 							<month type="12">დ</month>
 						</monthWidth>
-						<monthWidth type="wide">
-							<month type="1">იანვარი</month>
-							<month type="2">თებერვალი</month>
-							<month type="3">მარტი</month>
-							<month type="4">აპრილი</month>
-							<month type="5">მაისი</month>
-							<month type="6">ივნისი</month>
-							<month type="7">ივლისი</month>
-							<month type="8">აგვისტო</month>
-							<month type="9">სექტემბერი</month>
-							<month type="10">ოქტომბერი</month>
-							<month type="11">ნოემბერი</month>
-							<month type="12">დეკემბერი</month>
-						</monthWidth>
 					</monthContext>
 				</months>
 				<days>
@@ -1549,15 +1415,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<day type="thu">ხუთ</day>
 							<day type="fri">პარ</day>
 							<day type="sat">შაბ</day>
-						</dayWidth>
-						<dayWidth type="narrow">
-							<day type="sun">კ</day>
-							<day type="mon">ო</day>
-							<day type="tue">ს</day>
-							<day type="wed">ო</day>
-							<day type="thu">ხ</day>
-							<day type="fri">პ</day>
-							<day type="sat">შ</day>
 						</dayWidth>
 						<dayWidth type="short">
 							<day type="sun">კვ</day>
@@ -1579,15 +1436,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</dayWidth>
 					</dayContext>
 					<dayContext type="stand-alone">
-						<dayWidth type="abbreviated">
-							<day type="sun">კვი</day>
-							<day type="mon">ორშ</day>
-							<day type="tue">სამ</day>
-							<day type="wed">ოთხ</day>
-							<day type="thu">ხუთ</day>
-							<day type="fri">პარ</day>
-							<day type="sat">შაბ</day>
-						</dayWidth>
 						<dayWidth type="narrow">
 							<day type="sun">კ</day>
 							<day type="mon">ო</day>
@@ -1596,24 +1444,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<day type="thu">ხ</day>
 							<day type="fri">პ</day>
 							<day type="sat">შ</day>
-						</dayWidth>
-						<dayWidth type="short">
-							<day type="sun">კვ</day>
-							<day type="mon">ორ</day>
-							<day type="tue">სმ</day>
-							<day type="wed">ოთ</day>
-							<day type="thu">ხთ</day>
-							<day type="fri">პრ</day>
-							<day type="sat">შბ</day>
-						</dayWidth>
-						<dayWidth type="wide">
-							<day type="sun">კვირა</day>
-							<day type="mon">ორშაბათი</day>
-							<day type="tue">სამშაბათი</day>
-							<day type="wed">ოთხშაბათი</day>
-							<day type="thu">ხუთშაბათი</day>
-							<day type="fri">პარასკევი</day>
-							<day type="sat">შაბათი</day>
 						</dayWidth>
 					</dayContext>
 				</days>
@@ -1624,32 +1454,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<quarter type="2">II კვ.</quarter>
 							<quarter type="3">III კვ.</quarter>
 							<quarter type="4">IV კვ.</quarter>
-						</quarterWidth>
-						<quarterWidth type="narrow">
-							<quarter type="1">1</quarter>
-							<quarter type="2">2</quarter>
-							<quarter type="3">3</quarter>
-							<quarter type="4">4</quarter>
-						</quarterWidth>
-						<quarterWidth type="wide">
-							<quarter type="1">I კვარტალი</quarter>
-							<quarter type="2">II კვარტალი</quarter>
-							<quarter type="3">III კვარტალი</quarter>
-							<quarter type="4">IV კვარტალი</quarter>
-						</quarterWidth>
-					</quarterContext>
-					<quarterContext type="stand-alone">
-						<quarterWidth type="abbreviated">
-							<quarter type="1">I კვ.</quarter>
-							<quarter type="2">II კვ.</quarter>
-							<quarter type="3">III კვ.</quarter>
-							<quarter type="4">IV კვ.</quarter>
-						</quarterWidth>
-						<quarterWidth type="narrow">
-							<quarter type="1">1</quarter>
-							<quarter type="2">2</quarter>
-							<quarter type="3">3</quarter>
-							<quarter type="4">4</quarter>
 						</quarterWidth>
 						<quarterWidth type="wide">
 							<quarter type="1">I კვარტალი</quarter>
@@ -1663,29 +1467,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<dayPeriodContext type="format">
 						<dayPeriodWidth type="abbreviated">
 							<dayPeriod type="midnight">შუაღამეს</dayPeriod>
-							<dayPeriod type="am">AM</dayPeriod>
 							<dayPeriod type="noon">შუადღ.</dayPeriod>
-							<dayPeriod type="pm">PM</dayPeriod>
 							<dayPeriod type="morning1">დილ.</dayPeriod>
 							<dayPeriod type="afternoon1">ნაშუადღ.</dayPeriod>
 							<dayPeriod type="evening1">საღ.</dayPeriod>
 							<dayPeriod type="night1">ღამ.</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
-							<dayPeriod type="midnight">შუაღამეს</dayPeriod>
 							<dayPeriod type="am">a</dayPeriod>
-							<dayPeriod type="noon">შუადღ.</dayPeriod>
 							<dayPeriod type="pm">p</dayPeriod>
-							<dayPeriod type="morning1">დილ.</dayPeriod>
-							<dayPeriod type="afternoon1">ნაშუადღ.</dayPeriod>
-							<dayPeriod type="evening1">საღ.</dayPeriod>
-							<dayPeriod type="night1">ღამ.</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
 							<dayPeriod type="midnight">შუაღამეს</dayPeriod>
-							<dayPeriod type="am">AM</dayPeriod>
 							<dayPeriod type="noon">შუადღეს</dayPeriod>
-							<dayPeriod type="pm">PM</dayPeriod>
 							<dayPeriod type="morning1">დილით</dayPeriod>
 							<dayPeriod type="afternoon1">ნაშუადღევს</dayPeriod>
 							<dayPeriod type="evening1">საღამოს</dayPeriod>
@@ -1695,29 +1489,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<dayPeriodContext type="stand-alone">
 						<dayPeriodWidth type="abbreviated">
 							<dayPeriod type="midnight">შუაღამე</dayPeriod>
-							<dayPeriod type="am">AM</dayPeriod>
 							<dayPeriod type="noon">შუადღე</dayPeriod>
-							<dayPeriod type="pm">PM</dayPeriod>
-							<dayPeriod type="morning1">დილა</dayPeriod>
-							<dayPeriod type="afternoon1">ნაშუადღევი</dayPeriod>
-							<dayPeriod type="evening1">საღამო</dayPeriod>
-							<dayPeriod type="night1">ღამე</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="narrow">
-							<dayPeriod type="midnight">შუაღამე</dayPeriod>
-							<dayPeriod type="am">AM</dayPeriod>
-							<dayPeriod type="noon">შუადღე</dayPeriod>
-							<dayPeriod type="pm">PM</dayPeriod>
-							<dayPeriod type="morning1">დილა</dayPeriod>
-							<dayPeriod type="afternoon1">ნაშუადღევი</dayPeriod>
-							<dayPeriod type="evening1">საღამო</dayPeriod>
-							<dayPeriod type="night1">ღამე</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="wide">
-							<dayPeriod type="midnight">შუაღამე</dayPeriod>
-							<dayPeriod type="am">AM</dayPeriod>
-							<dayPeriod type="noon">შუადღე</dayPeriod>
-							<dayPeriod type="pm">PM</dayPeriod>
 							<dayPeriod type="morning1">დილა</dayPeriod>
 							<dayPeriod type="afternoon1">ნაშუადღევი</dayPeriod>
 							<dayPeriod type="evening1">საღამო</dayPeriod>
@@ -1749,13 +1521,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>d MMMM, y</pattern>
-							<datetimeSkeleton>yMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>d MMM. y</pattern>
-							<datetimeSkeleton>yMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
@@ -1769,25 +1539,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<timeFormatLength type="full">
 						<timeFormat>
 							<pattern>HH:mm:ss zzzz</pattern>
-							<datetimeSkeleton>HHmmsszzzz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="long">
 						<timeFormat>
 							<pattern>HH:mm:ss z</pattern>
-							<datetimeSkeleton>HHmmssz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="medium">
 						<timeFormat>
 							<pattern>HH:mm:ss</pattern>
-							<datetimeSkeleton>HHmmss</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="short">
 						<timeFormat>
 							<pattern>HH:mm</pattern>
-							<datetimeSkeleton>HHmm</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 				</timeFormats>
@@ -1796,15 +1562,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
-							<pattern>{1}, {0}</pattern>
-						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
-							<pattern>{1}, {0}</pattern>
-						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -1812,26 +1572,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
-							<pattern>{1}, {0}</pattern>
-						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
-							<pattern>{1}, {0}</pattern>
-						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
-						<dateFormatItem id="Bh">h B</dateFormatItem>
-						<dateFormatItem id="Bhm">h:mm B</dateFormatItem>
-						<dateFormatItem id="Bhms">h:mm:ss B</dateFormatItem>
-						<dateFormatItem id="d">d</dateFormatItem>
-						<dateFormatItem id="E">ccc</dateFormatItem>
-						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
-						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">d E</dateFormatItem>
 						<dateFormatItem id="Ehm">E, h:mm a</dateFormatItem>
 						<dateFormatItem id="EHm">E, HH:mm</dateFormatItem>
@@ -1842,27 +1589,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="GyMMM">MMM. y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM. y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d MMM. y G</dateFormatItem>
-						<dateFormatItem id="h">h a</dateFormatItem>
-						<dateFormatItem id="H">HH</dateFormatItem>
-						<dateFormatItem id="hm">h:mm a</dateFormatItem>
-						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
-						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
-						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
-						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
-						<dateFormatItem id="Hmsv">HH:mm:ss v</dateFormatItem>
-						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
-						<dateFormatItem id="Hmv">HH:mm v</dateFormatItem>
-						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">d.M</dateFormatItem>
 						<dateFormatItem id="MEd">E, d.M</dateFormatItem>
-						<dateFormatItem id="MMM">LLL</dateFormatItem>
 						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E, d MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="one">MMMMს კვირა W</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="other">MMMMს კვირა W</dateFormatItem>
-						<dateFormatItem id="ms">mm:ss</dateFormatItem>
-						<dateFormatItem id="y">y</dateFormatItem>
 						<dateFormatItem id="yM">M.y</dateFormatItem>
 						<dateFormatItem id="yMd">d.M.y</dateFormatItem>
 						<dateFormatItem id="yMEd">E, d.M.y</dateFormatItem>
@@ -1875,59 +1608,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yw" count="one">კვირა w, Y</dateFormatItem>
 						<dateFormatItem id="yw" count="other">კვირა w, Y</dateFormatItem>
 					</availableFormats>
-					<appendItems>
-						<appendItem request="Timezone">{0} {1}</appendItem>
-					</appendItems>
 					<intervalFormats>
 						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
-						<intervalFormatItem id="Bh">
-							<greatestDifference id="B">h B – h B</greatestDifference>
-							<greatestDifference id="h">h–h B</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Bhm">
-							<greatestDifference id="B">h:mm B – h:mm B</greatestDifference>
-							<greatestDifference id="h">h:mm–h:mm B</greatestDifference>
-							<greatestDifference id="m">h:mm–h:mm B</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="d">
-							<greatestDifference id="d">d–d</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Gy">
-							<greatestDifference id="G">G y – G y</greatestDifference>
-							<greatestDifference id="y">G y–y</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="h">
-							<greatestDifference id="a">h a – h a</greatestDifference>
-							<greatestDifference id="h">h–h a</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="H">
-							<greatestDifference id="H">HH–HH</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="hm">
-							<greatestDifference id="a">h:mm a – h:mm a</greatestDifference>
-							<greatestDifference id="h">h:mm–h:mm a</greatestDifference>
-							<greatestDifference id="m">h:mm–h:mm a</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Hm">
-							<greatestDifference id="H">HH:mm–HH:mm</greatestDifference>
-							<greatestDifference id="m">HH:mm–HH:mm</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="hmv">
-							<greatestDifference id="a">h:mm a – h:mm a v</greatestDifference>
-							<greatestDifference id="h">h:mm–h:mm a v</greatestDifference>
-							<greatestDifference id="m">h:mm–h:mm a v</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Hmv">
-							<greatestDifference id="H">HH:mm–HH:mm v</greatestDifference>
-							<greatestDifference id="m">HH:mm–HH:mm v</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="hv">
-							<greatestDifference id="a">h a – h a v</greatestDifference>
-							<greatestDifference id="h">h–h a v</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Hv">
-							<greatestDifference id="H">HH–HH v</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="M">
 							<greatestDifference id="M">M–M</greatestDifference>
 						</intervalFormatItem>
@@ -1949,9 +1631,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<intervalFormatItem id="MMMEd">
 							<greatestDifference id="d">E, d – E, d MMM</greatestDifference>
 							<greatestDifference id="M">E, d MMM – E, d MMM</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="y">
-							<greatestDifference id="y">y–y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
 							<greatestDifference id="M">MM.y – MM.y</greatestDifference>
@@ -1991,56 +1670,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<calendar type="hebrew">
 				<months>
 					<monthContext type="format">
-						<monthWidth type="abbreviated">
-							<month type="1" draft="unconfirmed">თიშრეი</month>
-							<month type="2" draft="unconfirmed">ხეშვანი</month>
-							<month type="3" draft="unconfirmed">ქისლევი</month>
-							<month type="4" draft="unconfirmed">ტევეთი</month>
-							<month type="5" draft="unconfirmed">შვატი</month>
-							<month type="6" draft="unconfirmed">ადარი I</month>
-							<month type="7" draft="unconfirmed">ადარი</month>
-							<month type="7" yeartype="leap" draft="unconfirmed">ადარი II</month>
-							<month type="8" draft="unconfirmed">ნისანი</month>
-							<month type="9" draft="unconfirmed">იარი</month>
-							<month type="10" draft="unconfirmed">სივანი</month>
-							<month type="11" draft="unconfirmed">თამუზი</month>
-							<month type="12" draft="unconfirmed">ავი</month>
-							<month type="13" draft="unconfirmed">ელული</month>
-						</monthWidth>
-						<monthWidth type="wide">
-							<month type="1" draft="unconfirmed">თიშრეი</month>
-							<month type="2" draft="unconfirmed">ხეშვანი</month>
-							<month type="3" draft="unconfirmed">ქისლევი</month>
-							<month type="4" draft="unconfirmed">ტევეთი</month>
-							<month type="5" draft="unconfirmed">შვატი</month>
-							<month type="6" draft="unconfirmed">ადარი I</month>
-							<month type="7" draft="unconfirmed">ადარი</month>
-							<month type="7" yeartype="leap" draft="unconfirmed">ადარი II</month>
-							<month type="8" draft="unconfirmed">ნისანი</month>
-							<month type="9" draft="unconfirmed">იარი</month>
-							<month type="10" draft="unconfirmed">სივანი</month>
-							<month type="11" draft="unconfirmed">თამუზი</month>
-							<month type="12" draft="unconfirmed">ავი</month>
-							<month type="13" draft="unconfirmed">ელული</month>
-						</monthWidth>
-					</monthContext>
-					<monthContext type="stand-alone">
-						<monthWidth type="abbreviated">
-							<month type="1" draft="unconfirmed">თიშრეი</month>
-							<month type="2" draft="unconfirmed">ხეშვანი</month>
-							<month type="3" draft="unconfirmed">ქისლევი</month>
-							<month type="4" draft="unconfirmed">ტევეთი</month>
-							<month type="5" draft="unconfirmed">შვატი</month>
-							<month type="6" draft="unconfirmed">ადარი I</month>
-							<month type="7" draft="unconfirmed">ადარი</month>
-							<month type="7" yeartype="leap" draft="unconfirmed">ადარი II</month>
-							<month type="8" draft="unconfirmed">ნისანი</month>
-							<month type="9" draft="unconfirmed">იარი</month>
-							<month type="10" draft="unconfirmed">სივანი</month>
-							<month type="11" draft="unconfirmed">თამუზი</month>
-							<month type="12" draft="unconfirmed">ავი</month>
-							<month type="13" draft="unconfirmed">ელული</month>
-						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1" draft="unconfirmed">თიშრეი</month>
 							<month type="2" draft="unconfirmed">ხეშვანი</month>
@@ -2059,11 +1688,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</monthWidth>
 					</monthContext>
 				</months>
-				<eras>
-					<eraAbbr>
-						<era type="0" draft="unconfirmed">AM</era>
-					</eraAbbr>
-				</eras>
 			</calendar>
 			<calendar type="islamic">
 				<months>
@@ -2082,64 +1706,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<month type="11" draft="unconfirmed">ზულ-კ.</month>
 							<month type="12" draft="unconfirmed">ზულ-ჰ.</month>
 						</monthWidth>
-						<monthWidth type="narrow">
-							<month type="1" draft="unconfirmed">1</month>
-							<month type="2" draft="unconfirmed">2</month>
-							<month type="3" draft="unconfirmed">3</month>
-							<month type="4" draft="unconfirmed">4</month>
-							<month type="5" draft="unconfirmed">5</month>
-							<month type="6" draft="unconfirmed">6</month>
-							<month type="7" draft="unconfirmed">7</month>
-							<month type="8" draft="unconfirmed">8</month>
-							<month type="9" draft="unconfirmed">9</month>
-							<month type="10" draft="unconfirmed">10</month>
-							<month type="11" draft="unconfirmed">11</month>
-							<month type="12" draft="unconfirmed">12</month>
-						</monthWidth>
-						<monthWidth type="wide">
-							<month type="1" draft="unconfirmed">მუჰარამი</month>
-							<month type="2" draft="unconfirmed">საფარი</month>
-							<month type="3" draft="unconfirmed">რაბი ულ-ავალი</month>
-							<month type="4" draft="unconfirmed">რაბი ულ-ახირი</month>
-							<month type="5" draft="unconfirmed">ჯუმადა ულ-ავალი</month>
-							<month type="6" draft="unconfirmed">ჯუმადა ულ-ახირი</month>
-							<month type="7" draft="unconfirmed">რაჯაბი</month>
-							<month type="8" draft="unconfirmed">შაბანი</month>
-							<month type="9" draft="unconfirmed">რამადანი</month>
-							<month type="10" draft="unconfirmed">შავალი</month>
-							<month type="11" draft="unconfirmed">ზულ-კაადა</month>
-							<month type="12" draft="unconfirmed">ზულ-ჰიჯა</month>
-						</monthWidth>
-					</monthContext>
-					<monthContext type="stand-alone">
-						<monthWidth type="abbreviated">
-							<month type="1" draft="unconfirmed">მუჰ.</month>
-							<month type="2" draft="unconfirmed">საფ.</month>
-							<month type="3" draft="unconfirmed">რაბ. I</month>
-							<month type="4" draft="unconfirmed">რაბ. II</month>
-							<month type="5" draft="unconfirmed">ჯუმ. I</month>
-							<month type="6" draft="unconfirmed">ჯუმ. II</month>
-							<month type="7" draft="unconfirmed">რაჯ.</month>
-							<month type="8" draft="unconfirmed">შაბ.</month>
-							<month type="9" draft="unconfirmed">რამ.</month>
-							<month type="10" draft="unconfirmed">შავ.</month>
-							<month type="11" draft="unconfirmed">ზულ-კ.</month>
-							<month type="12" draft="unconfirmed">ზულ-ჰ.</month>
-						</monthWidth>
-						<monthWidth type="narrow">
-							<month type="1" draft="unconfirmed">1</month>
-							<month type="2" draft="unconfirmed">2</month>
-							<month type="3" draft="unconfirmed">3</month>
-							<month type="4" draft="unconfirmed">4</month>
-							<month type="5" draft="unconfirmed">5</month>
-							<month type="6" draft="unconfirmed">6</month>
-							<month type="7" draft="unconfirmed">7</month>
-							<month type="8" draft="unconfirmed">8</month>
-							<month type="9" draft="unconfirmed">9</month>
-							<month type="10" draft="unconfirmed">10</month>
-							<month type="11" draft="unconfirmed">11</month>
-							<month type="12" draft="unconfirmed">12</month>
-						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1" draft="unconfirmed">მუჰარამი</month>
 							<month type="2" draft="unconfirmed">საფარი</month>
@@ -2156,87 +1722,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</monthWidth>
 					</monthContext>
 				</months>
-				<eras>
-					<eraAbbr>
-						<era type="0" draft="unconfirmed">AH</era>
-					</eraAbbr>
-				</eras>
 			</calendar>
 			<calendar type="persian">
 				<months>
 					<monthContext type="format">
-						<monthWidth type="abbreviated">
-							<month type="1" draft="unconfirmed">ფარვარდინი</month>
-							<month type="2" draft="unconfirmed">ორდიბეჰეშთი</month>
-							<month type="3" draft="unconfirmed">ხორდადი</month>
-							<month type="4" draft="unconfirmed">თირი</month>
-							<month type="5" draft="unconfirmed">მორდადი</month>
-							<month type="6" draft="unconfirmed">შაჰრივარი</month>
-							<month type="7" draft="unconfirmed">მეჰრი</month>
-							<month type="8" draft="unconfirmed">აბანი</month>
-							<month type="9" draft="unconfirmed">აზარი</month>
-							<month type="10" draft="unconfirmed">დეი</month>
-							<month type="11" draft="unconfirmed">ბაჰმანი</month>
-							<month type="12" draft="unconfirmed">ესფანდი</month>
-						</monthWidth>
-						<monthWidth type="narrow">
-							<month type="1" draft="unconfirmed">1</month>
-							<month type="2" draft="unconfirmed">2</month>
-							<month type="3" draft="unconfirmed">3</month>
-							<month type="4" draft="unconfirmed">4</month>
-							<month type="5" draft="unconfirmed">5</month>
-							<month type="6" draft="unconfirmed">6</month>
-							<month type="7" draft="unconfirmed">7</month>
-							<month type="8" draft="unconfirmed">8</month>
-							<month type="9" draft="unconfirmed">9</month>
-							<month type="10" draft="unconfirmed">10</month>
-							<month type="11" draft="unconfirmed">11</month>
-							<month type="12" draft="unconfirmed">12</month>
-						</monthWidth>
-						<monthWidth type="wide">
-							<month type="1" draft="unconfirmed">ფარვარდინი</month>
-							<month type="2" draft="unconfirmed">ორდიბეჰეშთი</month>
-							<month type="3" draft="unconfirmed">ხორდადი</month>
-							<month type="4" draft="unconfirmed">თირი</month>
-							<month type="5" draft="unconfirmed">მორდადი</month>
-							<month type="6" draft="unconfirmed">შაჰრივარი</month>
-							<month type="7" draft="unconfirmed">მეჰრი</month>
-							<month type="8" draft="unconfirmed">აბანი</month>
-							<month type="9" draft="unconfirmed">აზარი</month>
-							<month type="10" draft="unconfirmed">დეი</month>
-							<month type="11" draft="unconfirmed">ბაჰმანი</month>
-							<month type="12" draft="unconfirmed">ესფანდი</month>
-						</monthWidth>
-					</monthContext>
-					<monthContext type="stand-alone">
-						<monthWidth type="abbreviated">
-							<month type="1" draft="unconfirmed">ფარვარდინი</month>
-							<month type="2" draft="unconfirmed">ორდიბეჰეშთი</month>
-							<month type="3" draft="unconfirmed">ხორდადი</month>
-							<month type="4" draft="unconfirmed">თირი</month>
-							<month type="5" draft="unconfirmed">მორდადი</month>
-							<month type="6" draft="unconfirmed">შაჰრივარი</month>
-							<month type="7" draft="unconfirmed">მეჰრი</month>
-							<month type="8" draft="unconfirmed">აბანი</month>
-							<month type="9" draft="unconfirmed">აზარი</month>
-							<month type="10" draft="unconfirmed">დეი</month>
-							<month type="11" draft="unconfirmed">ბაჰმანი</month>
-							<month type="12" draft="unconfirmed">ესფანდი</month>
-						</monthWidth>
-						<monthWidth type="narrow">
-							<month type="1" draft="unconfirmed">1</month>
-							<month type="2" draft="unconfirmed">2</month>
-							<month type="3" draft="unconfirmed">3</month>
-							<month type="4" draft="unconfirmed">4</month>
-							<month type="5" draft="unconfirmed">5</month>
-							<month type="6" draft="unconfirmed">6</month>
-							<month type="7" draft="unconfirmed">7</month>
-							<month type="8" draft="unconfirmed">8</month>
-							<month type="9" draft="unconfirmed">9</month>
-							<month type="10" draft="unconfirmed">10</month>
-							<month type="11" draft="unconfirmed">11</month>
-							<month type="12" draft="unconfirmed">12</month>
-						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1" draft="unconfirmed">ფარვარდინი</month>
 							<month type="2" draft="unconfirmed">ორდიბეჰეშთი</month>
@@ -2253,21 +1742,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</monthWidth>
 					</monthContext>
 				</months>
-				<eras>
-					<eraAbbr>
-						<era type="0" draft="unconfirmed">AP</era>
-					</eraAbbr>
-				</eras>
 			</calendar>
 		</calendars>
 		<fields>
 			<field type="era">
-				<displayName>ეპოქა</displayName>
-			</field>
-			<field type="era-short">
-				<displayName>ეპოქა</displayName>
-			</field>
-			<field type="era-narrow">
 				<displayName>ეპოქა</displayName>
 			</field>
 			<field type="year">
@@ -2286,30 +1764,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="year-short">
 				<displayName>წ.</displayName>
-				<relative type="-1">გასულ წელს</relative>
-				<relative type="0">ამ წელს</relative>
-				<relative type="1">მომავალ წელს</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} წელში</relativeTimePattern>
 					<relativeTimePattern count="other">{0} წელში</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} წლის წინ</relativeTimePattern>
-					<relativeTimePattern count="other">{0} წლის წინ</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="year-narrow">
-				<displayName>წ.</displayName>
-				<relative type="-1">გასულ წელს</relative>
-				<relative type="0">ამ წელს</relative>
-				<relative type="1">მომავალ წელს</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} წელში</relativeTimePattern>
-					<relativeTimePattern count="other">{0} წელში</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} წლის წინ</relativeTimePattern>
-					<relativeTimePattern count="other">{0} წლის წინ</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="quarter">
@@ -2328,55 +1785,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="quarter-short">
 				<displayName>კვარტ.</displayName>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} კვარტალში</relativeTimePattern>
-					<relativeTimePattern count="other">{0} კვარტალში</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} კვარტ. წინ</relativeTimePattern>
-					<relativeTimePattern count="other">{0} კვარტ. წინ</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="quarter-narrow">
-				<displayName>კვარტ.</displayName>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} კვარტალში</relativeTimePattern>
-					<relativeTimePattern count="other">{0} კვარტალში</relativeTimePattern>
-				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} კვარტ. წინ</relativeTimePattern>
 					<relativeTimePattern count="other">{0} კვარტ. წინ</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="month">
-				<displayName>თვე</displayName>
-				<relative type="-1">გასულ თვეს</relative>
-				<relative type="0">ამ თვეში</relative>
-				<relative type="1">მომავალ თვეს</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} თვეში</relativeTimePattern>
-					<relativeTimePattern count="other">{0} თვეში</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} თვის წინ</relativeTimePattern>
-					<relativeTimePattern count="other">{0} თვის წინ</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="month-short">
-				<displayName>თვე</displayName>
-				<relative type="-1">გასულ თვეს</relative>
-				<relative type="0">ამ თვეში</relative>
-				<relative type="1">მომავალ თვეს</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} თვეში</relativeTimePattern>
-					<relativeTimePattern count="other">{0} თვეში</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} თვის წინ</relativeTimePattern>
-					<relativeTimePattern count="other">{0} თვის წინ</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="month-narrow">
 				<displayName>თვე</displayName>
 				<relative type="-1">გასულ თვეს</relative>
 				<relative type="0">ამ თვეში</relative>
@@ -2407,33 +1821,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="week-short">
 				<displayName>კვ.</displayName>
-				<relative type="-1">გასულ კვირაში</relative>
-				<relative type="0">ამ კვირაში</relative>
-				<relative type="1">მომავალ კვირაში</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} კვირაში</relativeTimePattern>
-					<relativeTimePattern count="other">{0} კვირაში</relativeTimePattern>
-				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} კვ. წინ</relativeTimePattern>
 					<relativeTimePattern count="other">{0} კვ. წინ</relativeTimePattern>
 				</relativeTime>
-				<relativePeriod>{0}-ის კვირაში</relativePeriod>
 			</field>
 			<field type="week-narrow">
-				<displayName>კვ.</displayName>
-				<relative type="-1">გასულ კვირაში</relative>
-				<relative type="0">ამ კვირაში</relative>
-				<relative type="1">მომავალ კვირაში</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} კვირაში</relativeTimePattern>
-					<relativeTimePattern count="other">{0} კვირაში</relativeTimePattern>
-				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} კვირის წინ</relativeTimePattern>
 					<relativeTimePattern count="other">{0} კვირის წინ</relativeTimePattern>
 				</relativeTime>
-				<relativePeriod>{0}-ის კვირაში</relativePeriod>
 			</field>
 			<field type="weekOfMonth">
 				<displayName>თვის კვირა</displayName>
@@ -2441,42 +1838,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<field type="weekOfMonth-short">
 				<displayName>თვ. კვირა</displayName>
 			</field>
-			<field type="weekOfMonth-narrow">
-				<displayName>თვ. კვირა</displayName>
-			</field>
 			<field type="day">
-				<displayName>დღე</displayName>
-				<relative type="-2">გუშინწინ</relative>
-				<relative type="-1">გუშინ</relative>
-				<relative type="0">დღეს</relative>
-				<relative type="1">ხვალ</relative>
-				<relative type="2">ზეგ</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} დღეში</relativeTimePattern>
-					<relativeTimePattern count="other">{0} დღეში</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} დღის წინ</relativeTimePattern>
-					<relativeTimePattern count="other">{0} დღის წინ</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="day-short">
-				<displayName>დღე</displayName>
-				<relative type="-2">გუშინწინ</relative>
-				<relative type="-1">გუშინ</relative>
-				<relative type="0">დღეს</relative>
-				<relative type="1">ხვალ</relative>
-				<relative type="2">ზეგ</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} დღეში</relativeTimePattern>
-					<relativeTimePattern count="other">{0} დღეში</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} დღის წინ</relativeTimePattern>
-					<relativeTimePattern count="other">{0} დღის წინ</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="day-narrow">
 				<displayName>დღე</displayName>
 				<relative type="-2">გუშინწინ</relative>
 				<relative type="-1">გუშინ</relative>
@@ -2498,25 +1860,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<field type="dayOfYear-short">
 				<displayName>წლ. დღე</displayName>
 			</field>
-			<field type="dayOfYear-narrow">
-				<displayName>წლ. დღე</displayName>
-			</field>
 			<field type="weekday">
 				<displayName>კვირის დღე</displayName>
 			</field>
 			<field type="weekday-short">
 				<displayName>კვ. დღე</displayName>
 			</field>
-			<field type="weekday-narrow">
-				<displayName>კვ. დღე</displayName>
-			</field>
 			<field type="weekdayOfMonth">
 				<displayName>კვირის დღე თვეში</displayName>
 			</field>
 			<field type="weekdayOfMonth-short">
-				<displayName>კვ. დღე თვეში</displayName>
-			</field>
-			<field type="weekdayOfMonth-narrow">
 				<displayName>კვ. დღე თვეში</displayName>
 			</field>
 			<field type="sun">
@@ -2533,26 +1886,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</relativeTime>
 			</field>
 			<field type="sun-short">
-				<relative type="-1">გასულ კვირას</relative>
-				<relative type="0">ამ კვირას</relative>
-				<relative type="1">მომავალ კვირას</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} კვირაში</relativeTimePattern>
-					<relativeTimePattern count="other">{0} კვირაში</relativeTimePattern>
-				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} კვირის წინ</relativeTimePattern>
 					<relativeTimePattern count="other">{0} კვირის წინ</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="sun-narrow">
-				<relative type="-1">გასულ კვირას</relative>
-				<relative type="0">ამ კვირას</relative>
-				<relative type="1">მომავალ კვირას</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} კვირაში</relativeTimePattern>
-					<relativeTimePattern count="other">{0} კვირაში</relativeTimePattern>
-				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} კვირის წინ</relativeTimePattern>
 					<relativeTimePattern count="other">{0} კვირი წინ</relativeTimePattern>
@@ -2575,27 +1914,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="-1">წინა ორშ.</relative>
 				<relative type="0">ამ ორშ.</relative>
 				<relative type="1">მომ. ორშ.</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} ორშაბათში</relativeTimePattern>
-					<relativeTimePattern count="other">{0} ორშაბათში</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} ორშაბათის წინ</relativeTimePattern>
-					<relativeTimePattern count="other">{0} ორშაბათის წინ</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="mon-narrow">
 				<relative type="-1">გას. ორ.</relative>
 				<relative type="0">ამ ორ.</relative>
 				<relative type="1">მომ. ორ.</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} ორშაბათში</relativeTimePattern>
-					<relativeTimePattern count="other">{0} ორშაბათში</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} ორშაბათის წინ</relativeTimePattern>
-					<relativeTimePattern count="other">{0} ორშაბათის წინ</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="tue">
 				<relative type="-1">გასულ სამშაბათს</relative>
@@ -2614,27 +1937,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="-1">წინა სამ.</relative>
 				<relative type="0">ამ სამ.</relative>
 				<relative type="1">მომ. სამ.</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} სამშაბათში</relativeTimePattern>
-					<relativeTimePattern count="other">{0} სამშაბათში</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} სამშაბათის წინ</relativeTimePattern>
-					<relativeTimePattern count="other">{0} სამშაბათის წინ</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="tue-narrow">
 				<relative type="-1">წინ სა.</relative>
 				<relative type="0">ამ სა.</relative>
 				<relative type="1">მომმ სა.</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} სამშაბათში</relativeTimePattern>
-					<relativeTimePattern count="other">{0} სამშაბათში</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} სამშაბათის წინ</relativeTimePattern>
-					<relativeTimePattern count="other">{0} სამშაბათის წინ</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="wed">
 				<relative type="-1">გასულ ოთხშაბათს</relative>
@@ -2653,27 +1960,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="-1">წინა ოთხ.</relative>
 				<relative type="0">ამ ოთხ.</relative>
 				<relative type="1">მომ. ოთხ.</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} ოთხშაბათში</relativeTimePattern>
-					<relativeTimePattern count="other">{0} ოთხშაბათში</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} ოთხშაბათის წინ</relativeTimePattern>
-					<relativeTimePattern count="other">{0} ოთხშაბათის წინ</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="wed-narrow">
 				<relative type="-1">წინა ოთ.</relative>
 				<relative type="0">ამ ოთ.</relative>
 				<relative type="1">მომ. ოთ.</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} ოთხშაბათში</relativeTimePattern>
-					<relativeTimePattern count="other">{0} ოთხშაბათში</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} ოთხშაბათის წინ</relativeTimePattern>
-					<relativeTimePattern count="other">{0} ოთხშაბათის წინ</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="thu">
 				<relative type="-1">გასულ ხუთშაბათს</relative>
@@ -2692,27 +1983,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="-1">წინა ხუთ.</relative>
 				<relative type="0">ამ ხუთ.</relative>
 				<relative type="1">მომ. ხუთ.</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} ხუთშაბათში</relativeTimePattern>
-					<relativeTimePattern count="other">{0} ხუთშაბათში</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} ხუთშაბათის წინ</relativeTimePattern>
-					<relativeTimePattern count="other">{0} ხუთშაბათის წინ</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="thu-narrow">
 				<relative type="-1">წინა ხთ.</relative>
 				<relative type="0">ამ ხთ.</relative>
 				<relative type="1">მომ. ხთ.</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} ხუთშაბათში</relativeTimePattern>
-					<relativeTimePattern count="other">{0} ხუთშაბათში</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} ხუთშაბათის წინ</relativeTimePattern>
-					<relativeTimePattern count="other">{0} ხუთშაბათის წინ</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="fri">
 				<relative type="-1">გასულ პარასკევს</relative>
@@ -2731,27 +2006,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="-1">წინა პარ.</relative>
 				<relative type="0">ამ პარ.</relative>
 				<relative type="1">მომ. პარ.</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} პარასკევში</relativeTimePattern>
-					<relativeTimePattern count="other">{0} პარასკევში</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} პარასკევის წინ</relativeTimePattern>
-					<relativeTimePattern count="other">{0} პარასკევის წინ</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="fri-narrow">
 				<relative type="-1">წინა პა.</relative>
 				<relative type="0">ამ პა.</relative>
 				<relative type="1">მომ. პა.</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} პარასკევში</relativeTimePattern>
-					<relativeTimePattern count="other">{0} პარასკევში</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} პარასკევის წინ</relativeTimePattern>
-					<relativeTimePattern count="other">{0} პარასკევის წინ</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="sat">
 				<relative type="-1">გასულ შაბათს</relative>
@@ -2770,36 +2029,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="-1">წინა შაბ.</relative>
 				<relative type="0">ამ შაბ.</relative>
 				<relative type="1">მომ. შაბ.</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} შაბათში</relativeTimePattern>
-					<relativeTimePattern count="other">{0} შაბათში</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} შაბათის წინ</relativeTimePattern>
-					<relativeTimePattern count="other">{0} შაბათის წინ</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="sat-narrow">
 				<relative type="-1">წინა შბ.</relative>
 				<relative type="0">ამ შა.</relative>
 				<relative type="1">მომ. შბ.</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} შაბათში</relativeTimePattern>
-					<relativeTimePattern count="other">{0} შაბათში</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} შაბათის წინ</relativeTimePattern>
-					<relativeTimePattern count="other">{0} შაბათის წინ</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="dayperiod-short">
 				<displayName>დღ. ნახევარი</displayName>
 			</field>
 			<field type="dayperiod">
 				<displayName>დღის ნახევარი</displayName>
-			</field>
-			<field type="dayperiod-narrow">
-				<displayName>დღ. ნახევარი</displayName>
 			</field>
 			<field type="hour">
 				<displayName>საათი</displayName>
@@ -2815,21 +2055,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="hour-short">
 				<displayName>სთ.</displayName>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} საათში</relativeTimePattern>
-					<relativeTimePattern count="other">{0} საათში</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} სთ წინ</relativeTimePattern>
-					<relativeTimePattern count="other">{0} სთ წინ</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="hour-narrow">
-				<displayName>სთ.</displayName>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} საათში</relativeTimePattern>
-					<relativeTimePattern count="other">{0} საათში</relativeTimePattern>
-				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} სთ წინ</relativeTimePattern>
 					<relativeTimePattern count="other">{0} სთ წინ</relativeTimePattern>
@@ -2849,21 +2074,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="minute-short">
 				<displayName>წთ.</displayName>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} წუთში</relativeTimePattern>
-					<relativeTimePattern count="other">{0} წუთში</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} წთ წინ</relativeTimePattern>
-					<relativeTimePattern count="other">{0} წთ წინ</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="minute-narrow">
-				<displayName>წთ.</displayName>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} წუთში</relativeTimePattern>
-					<relativeTimePattern count="other">{0} წუთში</relativeTimePattern>
-				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} წთ წინ</relativeTimePattern>
 					<relativeTimePattern count="other">{0} წთ წინ</relativeTimePattern>
@@ -2883,21 +2093,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="second-short">
 				<displayName>წმ.</displayName>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} წამში</relativeTimePattern>
-					<relativeTimePattern count="other">{0} წამში</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} წმ წინ</relativeTimePattern>
-					<relativeTimePattern count="other">{0} წმ წინ</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="second-narrow">
-				<displayName>წმ.</displayName>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} წამში</relativeTimePattern>
-					<relativeTimePattern count="other">{0} წამში</relativeTimePattern>
-				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} წმ წინ</relativeTimePattern>
 					<relativeTimePattern count="other">{0} წმ წინ</relativeTimePattern>
@@ -2909,21 +2104,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<field type="zone-short">
 				<displayName>დროის სარტყ.</displayName>
 			</field>
-			<field type="zone-narrow">
-				<displayName>დროის სარტყ.</displayName>
-			</field>
 		</fields>
 		<timeZoneNames>
-			<hourFormat>+HH:mm;-HH:mm</hourFormat>
-			<gmtFormat>GMT{0}</gmtFormat>
-			<gmtZeroFormat>GMT</gmtZeroFormat>
 			<regionFormat>დრო: {0}</regionFormat>
 			<regionFormat type="daylight">{0} ზაფხულის დრო</regionFormat>
 			<regionFormat type="standard">{0} სტანდარტული დრო</regionFormat>
-			<fallbackFormat>{1} ({0})</fallbackFormat>
-			<zone type="America/Santa_Isabel">
-				<exemplarCity>სანტა ისაბელი</exemplarCity>
-			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>მსოფლიო კოორდინირებული დრო</standard>
@@ -3045,9 +2230,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Australia/Melbourne">
 				<exemplarCity>მელბურნი</exemplarCity>
-			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>ქური</exemplarCity>
 			</zone>
 			<zone type="Australia/Hobart">
 				<exemplarCity>ჰობარტი</exemplarCity>
@@ -3202,9 +2384,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Creston">
 				<exemplarCity>კრესტონი</exemplarCity>
 			</zone>
-			<zone type="America/Yellowknife">
-				<exemplarCity>იელოუნაიფი</exemplarCity>
-			</zone>
 			<zone type="America/Edmonton">
 				<exemplarCity>ედმონტონი</exemplarCity>
 			</zone>
@@ -3223,29 +2402,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Resolute">
 				<exemplarCity>რეზოლუტე</exemplarCity>
 			</zone>
-			<zone type="America/Rainy_River">
-				<exemplarCity>რეინი რივერი</exemplarCity>
-			</zone>
 			<zone type="America/Rankin_Inlet">
 				<exemplarCity>რენკინ ინლეტი</exemplarCity>
 			</zone>
 			<zone type="America/Coral_Harbour">
 				<exemplarCity>ატიკოკანი</exemplarCity>
 			</zone>
-			<zone type="America/Thunder_Bay">
-				<exemplarCity>თანდერ ბეი</exemplarCity>
-			</zone>
-			<zone type="America/Nipigon">
-				<exemplarCity>ნიპიგონი</exemplarCity>
-			</zone>
 			<zone type="America/Toronto">
 				<exemplarCity>ტორონტო</exemplarCity>
 			</zone>
 			<zone type="America/Iqaluit">
 				<exemplarCity>იქალუიტი</exemplarCity>
-			</zone>
-			<zone type="America/Pangnirtung">
-				<exemplarCity>პანგნირტუნგი</exemplarCity>
 			</zone>
 			<zone type="America/Moncton">
 				<exemplarCity>მონქტონი</exemplarCity>
@@ -4060,17 +3227,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Africa/Dar_es_Salaam">
 				<exemplarCity>დარ-ეს-სალამი</exemplarCity>
 			</zone>
-			<zone type="Europe/Uzhgorod">
-				<exemplarCity>უჟგოროდი</exemplarCity>
-			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>კიევი</exemplarCity>
 			</zone>
 			<zone type="Europe/Simferopol">
 				<exemplarCity>სიმფეროპოლი</exemplarCity>
-			</zone>
-			<zone type="Europe/Zaporozhye">
-				<exemplarCity>ზაპოროჟიე</exemplarCity>
 			</zone>
 			<zone type="Africa/Kampala">
 				<exemplarCity>კამპალა</exemplarCity>
@@ -4089,9 +3250,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Pacific/Honolulu">
 				<exemplarCity>ჰონოლულუ</exemplarCity>
-			</zone>
-			<zone type="Pacific/Johnston">
-				<exemplarCity>ჯონსტონი</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>ენქორაჯი</exemplarCity>
@@ -4728,11 +3886,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>ლორდ-ჰაუს ზაფხულის დრო</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>მაქკუორის კუნძულის დრო</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>მაგადანის დრო</generic>
@@ -4770,13 +3923,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Mawson">
 				<long>
 					<standard>მოუსონის დრო</standard>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic>ჩრდილო-აღმოსავლეთ მექსიკის დრო</generic>
-					<standard>ჩრდილო-დასავლეთ მექსიკის დრო</standard>
-					<daylight>ჩრდილო-დასავლეთ მექსიკის ზაფხულის დრო</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">
@@ -5111,33 +4257,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</timeZoneNames>
 	</dates>
 	<numbers>
-		<defaultNumberingSystem>latn</defaultNumberingSystem>
 		<otherNumberingSystems>
-			<native>latn</native>
 			<traditional>geor</traditional>
 		</otherNumberingSystems>
 		<minimumGroupingDigits draft="contributed">2</minimumGroupingDigits>
 		<symbols numberSystem="latn">
 			<decimal>,</decimal>
 			<group> </group>
-			<list>;</list>
-			<percentSign>%</percentSign>
-			<plusSign>+</plusSign>
-			<minusSign>-</minusSign>
 			<approximatelySign>≈</approximatelySign>
-			<exponential>E</exponential>
-			<superscriptingExponent>×</superscriptingExponent>
-			<perMille>‰</perMille>
-			<infinity>∞</infinity>
 			<nan>არ არის რიცხვი</nan>
-			<timeSeparator>:</timeSeparator>
 		</symbols>
 		<decimalFormats numberSystem="latn">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern>#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
 			<decimalFormatLength type="long">
 				<decimalFormat>
 					<pattern type="1000" count="one">0 ათასი</pattern>
@@ -5195,29 +4325,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</decimalFormat>
 			</decimalFormatLength>
 		</decimalFormats>
-		<scientificFormats numberSystem="latn">
-			<scientificFormatLength>
-				<scientificFormat>
-					<pattern>#E0</pattern>
-				</scientificFormat>
-			</scientificFormatLength>
-		</scientificFormats>
-		<percentFormats numberSystem="latn">
-			<percentFormatLength>
-				<percentFormat>
-					<pattern>#,##0%</pattern>
-				</percentFormat>
-			</percentFormatLength>
-		</percentFormats>
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>#,##0.00 ¤</pattern>
-					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
-				</currencyFormat>
-				<currencyFormat type="accounting">
-					<pattern>#,##0.00 ¤</pattern>
-					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
@@ -5257,43 +4368,26 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="AED">
 				<displayName>არაბთა გაერთიანებული საამიროების დირჰამი</displayName>
-				<displayName count="one">არაბთა გაერთიანებული საამიროების დირჰამი</displayName>
-				<displayName count="other">არაბთა გაერთიანებული საამიროების დირჰამი</displayName>
-				<symbol>AED</symbol>
 			</currency>
 			<currency type="AFA">
 				<displayName draft="contributed">ავღანი (1927–2002)</displayName>
 			</currency>
 			<currency type="AFN">
 				<displayName>ავღანური ავღანი</displayName>
-				<displayName count="one">ავღანური ავღანი</displayName>
-				<displayName count="other">ავღანური ავღანი</displayName>
-				<symbol>AFN</symbol>
 			</currency>
 			<currency type="ALL">
 				<displayName>ალბანური ლეკი</displayName>
-				<displayName count="one">ალბანური ლეკი</displayName>
-				<displayName count="other">ალბანური ლეკი</displayName>
-				<symbol>ALL</symbol>
 			</currency>
 			<currency type="AMD">
 				<displayName>სომხური დრამი</displayName>
-				<displayName count="one">სომხური დრამი</displayName>
-				<displayName count="other">სომხური დრამი</displayName>
-				<symbol>AMD</symbol>
 			</currency>
 			<currency type="ANG">
 				<displayName>ნიდერლანდების ანტილების გულდენი</displayName>
 				<displayName count="one">ნიდრელანდების ანტილიის გულდენი</displayName>
 				<displayName count="other">ნიდრელანდების ანტილიის გულდენი</displayName>
-				<symbol>ANG</symbol>
 			</currency>
 			<currency type="AOA">
 				<displayName>ანგოლური კვანზა</displayName>
-				<displayName count="one">ანგოლური კვანზა</displayName>
-				<displayName count="other">ანგოლური კვანზა</displayName>
-				<symbol>AOA</symbol>
-				<symbol alt="narrow" draft="contributed">Kz</symbol>
 			</currency>
 			<currency type="AOK">
 				<displayName draft="contributed">ანგოლური კვანზა (1977–1990)</displayName>
@@ -5312,59 +4406,34 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="ARS">
 				<displayName>არგენტინული პესო</displayName>
-				<displayName count="one">არგენტინული პესო</displayName>
-				<displayName count="other">არგენტინული პესო</displayName>
-				<symbol>ARS</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="ATS">
 				<displayName draft="contributed">ავსტრიული შილინგი</displayName>
 			</currency>
 			<currency type="AUD">
 				<displayName>ავსტრალიური დოლარი</displayName>
-				<displayName count="one">ავსტრალიური დოლარი</displayName>
-				<displayName count="other">ავსტრალიური დოლარი</displayName>
 				<symbol>AUD</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="AWG">
 				<displayName>არუბანული გულდენი</displayName>
-				<displayName count="one">არუბანული გულდენი</displayName>
-				<displayName count="other">არუბანული გულდენი</displayName>
-				<symbol>AWG</symbol>
 			</currency>
 			<currency type="AZM">
 				<displayName draft="contributed">აზერბაიჯანული მანათი (1993–2006)</displayName>
 			</currency>
 			<currency type="AZN">
 				<displayName>აზერბაიჯანული მანათი</displayName>
-				<displayName count="one">აზერბაიჯანული მანათი</displayName>
-				<displayName count="other">აზერბაიჯანული მანათი</displayName>
-				<symbol>AZN</symbol>
 			</currency>
 			<currency type="BAD">
 				<displayName draft="contributed">ბოსნია-ჰერცოგოვინას დინარი</displayName>
 			</currency>
 			<currency type="BAM">
 				<displayName>ბოსნია და ჰერცოგოვინას კონვერტირებადი მარკა</displayName>
-				<displayName count="one">ბოსნია და ჰერცოგოვინას კონვერტირებადი მარკა</displayName>
-				<displayName count="other">ბოსნია და ჰერცოგოვინას კონვერტირებადი მარკა</displayName>
-				<symbol>BAM</symbol>
-				<symbol alt="narrow" draft="contributed">KM</symbol>
 			</currency>
 			<currency type="BBD">
 				<displayName>ბარბადოსული დოლარი</displayName>
-				<displayName count="one">ბარბადოსული დოლარი</displayName>
-				<displayName count="other">ბარბადოსული დოლარი</displayName>
-				<symbol>BBD</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="BDT">
 				<displayName>ბანგლადეშური ტაკა</displayName>
-				<displayName count="one">ბანგლადეშური ტაკა</displayName>
-				<displayName count="other">ბანგლადეშური ტაკა</displayName>
-				<symbol>BDT</symbol>
-				<symbol alt="narrow">৳</symbol>
 			</currency>
 			<currency type="BEC">
 				<displayName draft="contributed">ბელგიური ფრანკი (კოვერტირებადი)</displayName>
@@ -5380,42 +4449,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="BGN">
 				<displayName>ბულგარული ლევი</displayName>
-				<displayName count="one">ბულგარული ლევი</displayName>
-				<displayName count="other">ბულგარული ლევი</displayName>
-				<symbol>BGN</symbol>
 			</currency>
 			<currency type="BHD">
 				<displayName>ბაჰრეინული დინარი</displayName>
-				<displayName count="one">ბაჰრეინული დინარი</displayName>
-				<displayName count="other">ბაჰრეინული დინარი</displayName>
-				<symbol>BHD</symbol>
 			</currency>
 			<currency type="BIF">
 				<displayName>ბურუნდიული ფრანკი</displayName>
-				<displayName count="one">ბურუნდიული ფრანკი</displayName>
-				<displayName count="other">ბურუნდიული ფრანკი</displayName>
-				<symbol>BIF</symbol>
 			</currency>
 			<currency type="BMD">
 				<displayName>ბერმუდული დოლარი</displayName>
-				<displayName count="one">ბერმუდული დოლარი</displayName>
-				<displayName count="other">ბერმუდული დოლარი</displayName>
-				<symbol>BMD</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="BND">
 				<displayName>ბრუნეული დოლარი</displayName>
-				<displayName count="one">ბრუნეული დოლარი</displayName>
-				<displayName count="other">ბრუნეული დოლარი</displayName>
-				<symbol>BND</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="BOB">
 				<displayName>ბოლივიური ბოლივიანო</displayName>
-				<displayName count="one">ბოლივიური ბოლივიანო</displayName>
-				<displayName count="other">ბოლივიური ბოლივიანო</displayName>
-				<symbol>BOB</symbol>
-				<symbol alt="narrow" draft="contributed">Bs</symbol>
 			</currency>
 			<currency type="BOP">
 				<displayName draft="contributed">ბოლივიური პესო</displayName>
@@ -5431,10 +4479,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="BRL">
 				<displayName>ბრაზილიური რეალი</displayName>
-				<displayName count="one">ბრაზილიური რეალი</displayName>
-				<displayName count="other">ბრაზილიური რეალი</displayName>
-				<symbol>R$</symbol>
-				<symbol alt="narrow">R$</symbol>
 			</currency>
 			<currency type="BRN">
 				<displayName draft="contributed">ბრაზილიური კრუზადო ნოვო</displayName>
@@ -5444,99 +4488,54 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="BSD">
 				<displayName>ბაჰამური დოლარი</displayName>
-				<displayName count="one">ბაჰამური დოლარი</displayName>
-				<displayName count="other">ბაჰამური დოლარი</displayName>
-				<symbol>BSD</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="BTN">
 				<displayName>ბუტანური ნგულტრუმი</displayName>
-				<displayName count="one">ბუტანური ნგულტრუმი</displayName>
-				<displayName count="other">ბუტანური ნგულტრუმი</displayName>
-				<symbol>BTN</symbol>
 			</currency>
 			<currency type="BWP">
 				<displayName>ბოცვანური პულა</displayName>
-				<displayName count="one">ბოცვანური პულა</displayName>
-				<displayName count="other">ბოცვანური პულა</displayName>
-				<symbol>BWP</symbol>
-				<symbol alt="narrow" draft="contributed">P</symbol>
 			</currency>
 			<currency type="BYB">
 				<displayName draft="contributed">ახალი ბელარუსიული რუბლი (1994–1999)</displayName>
 			</currency>
 			<currency type="BYN">
 				<displayName>ბელორუსული რუბლი</displayName>
-				<displayName count="one">ბელორუსული რუბლი</displayName>
-				<displayName count="other">ბელორუსული რუბლი</displayName>
-				<symbol draft="contributed">BYN</symbol>
 				<symbol alt="narrow" draft="contributed">р.</symbol>
 			</currency>
 			<currency type="BYR">
 				<displayName>ბელორუსული რუბლი (2000–2016)</displayName>
-				<displayName count="one">ბელორუსული რუბლი (2000–2016)</displayName>
-				<displayName count="other">ბელორუსული რუბლი (2000–2016)</displayName>
-				<symbol>BYR</symbol>
 			</currency>
 			<currency type="BZD">
 				<displayName>ბელიზის დოლარი</displayName>
-				<displayName count="one">ბელიზის დოლარი</displayName>
-				<displayName count="other">ბელიზის დოლარი</displayName>
-				<symbol>BZD</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="CAD">
 				<displayName>კანადური დოლარი</displayName>
-				<displayName count="one">კანადური დოლარი</displayName>
-				<displayName count="other">კანადური დოლარი</displayName>
-				<symbol>CA$</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="CDF">
 				<displayName>კონგოს ფრანკი</displayName>
-				<displayName count="one">კონგოს ფრანკი</displayName>
-				<displayName count="other">კონგოს ფრანკი</displayName>
-				<symbol>CDF</symbol>
 			</currency>
 			<currency type="CHF">
 				<displayName>შვეიცარიული ფრანკი</displayName>
-				<displayName count="one">შვეიცარიული ფრანკი</displayName>
-				<displayName count="other">შვეიცარიული ფრანკი</displayName>
-				<symbol>CHF</symbol>
 			</currency>
 			<currency type="CLP">
 				<displayName>ჩილეს პესო</displayName>
-				<displayName count="one">ჩილეს პესო</displayName>
-				<displayName count="other">ჩილეს პესო</displayName>
-				<symbol>CLP</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="CNH">
 				<displayName>ჩინური იუანი (ოფშორი)</displayName>
-				<displayName count="one">ჩინური იუანი (ოფშორი)</displayName>
-				<displayName count="other">ჩინური იუანი (ოფშორი)</displayName>
-				<symbol draft="contributed">CNH</symbol>
 			</currency>
 			<currency type="CNY">
 				<displayName>ჩინური იუანი</displayName>
 				<displayName count="one">ჩინური უანი</displayName>
 				<displayName count="other">ჩინური უანი</displayName>
 				<symbol>CNY</symbol>
-				<symbol alt="narrow">¥</symbol>
 			</currency>
 			<currency type="COP">
 				<displayName>კოლუმბიური პესო</displayName>
-				<displayName count="one">კოლუმბიური პესო</displayName>
-				<displayName count="other">კოლუმბიური პესო</displayName>
-				<symbol>COP</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="CRC">
 				<displayName>კოსტა-რიკული კოლონი</displayName>
 				<displayName count="one">კოსტა-რიკული კოლონი</displayName>
 				<displayName count="other">კოსტა რიკული კოლონი</displayName>
-				<symbol>CRC</symbol>
-				<symbol alt="narrow">₡</symbol>
 			</currency>
 			<currency type="CSD">
 				<displayName draft="contributed">ძველი სერბიული დინარი</displayName>
@@ -5546,33 +4545,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="CUC">
 				<displayName>კუბური კონვერტირებადი პესო</displayName>
-				<displayName count="one">კუბური კონვერტირებადი პესო</displayName>
-				<displayName count="other">კუბური კონვერტირებადი პესო</displayName>
-				<symbol>CUC</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CUP">
 				<displayName>კუბური პესო</displayName>
-				<displayName count="one">კუბური პესო</displayName>
-				<displayName count="other">კუბური პესო</displayName>
-				<symbol>CUP</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="CVE">
 				<displayName>კაბო-ვერდეს ესკუდო</displayName>
-				<displayName count="one">კაბო-ვერდეს ესკუდო</displayName>
-				<displayName count="other">კაბო-ვერდეს ესკუდო</displayName>
-				<symbol>CVE</symbol>
 			</currency>
 			<currency type="CYP">
 				<displayName draft="contributed">კვიპროსის გირვანქა</displayName>
 			</currency>
 			<currency type="CZK">
 				<displayName>ჩეხური კრონა</displayName>
-				<displayName count="one">ჩეხური კრონა</displayName>
-				<displayName count="other">ჩეხური კრონა</displayName>
-				<symbol>CZK</symbol>
-				<symbol alt="narrow" draft="contributed">Kč</symbol>
 			</currency>
 			<currency type="DDM">
 				<displayName draft="contributed">აღმოსავლეთ გერმანული მარკა</displayName>
@@ -5582,346 +4566,180 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="DJF">
 				<displayName>ჯიბუტის ფრანკი</displayName>
-				<displayName count="one">ჯიბუტის ფრანკი</displayName>
-				<displayName count="other">ჯიბუტის ფრანკი</displayName>
-				<symbol>DJF</symbol>
 			</currency>
 			<currency type="DKK">
 				<displayName>დანიური კრონა</displayName>
-				<displayName count="one">დანიური კრონა</displayName>
-				<displayName count="other">დანიური კრონა</displayName>
-				<symbol>DKK</symbol>
-				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="DOP">
 				<displayName>დომინიკური პესო</displayName>
-				<displayName count="one">დომინიკური პესო</displayName>
-				<displayName count="other">დომინიკური პესო</displayName>
-				<symbol>DOP</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="DZD">
 				<displayName>ალჟირული დინარი</displayName>
-				<displayName count="one">ალჟირული დინარი</displayName>
-				<displayName count="other">ალჟირული დინარი</displayName>
-				<symbol>DZD</symbol>
 			</currency>
 			<currency type="EEK">
 				<displayName draft="contributed">ესტონური კრუნა</displayName>
 			</currency>
 			<currency type="EGP">
 				<displayName>ეგვიპტური გირვანქა</displayName>
-				<displayName count="one">ეგვიპტური გირვანქა</displayName>
-				<displayName count="other">ეგვიპტური გირვანქა</displayName>
-				<symbol>EGP</symbol>
-				<symbol alt="narrow" draft="contributed">E£</symbol>
 			</currency>
 			<currency type="ERN">
 				<displayName>ერიტრეის ნაკფა</displayName>
-				<displayName count="one">ერიტრეის ნაკფა</displayName>
-				<displayName count="other">ერიტრეის ნაკფა</displayName>
-				<symbol>ERN</symbol>
 			</currency>
 			<currency type="ESP">
 				<displayName draft="contributed">ესპანური პესეტა</displayName>
 			</currency>
 			<currency type="ETB">
 				<displayName>ეთიოპიური ბირი</displayName>
-				<displayName count="one">ეთიოპიური ბირი</displayName>
-				<displayName count="other">ეთიოპიური ბირი</displayName>
-				<symbol>ETB</symbol>
 			</currency>
 			<currency type="EUR">
 				<displayName>ევრო</displayName>
-				<displayName count="one">ევრო</displayName>
-				<displayName count="other">ევრო</displayName>
-				<symbol>€</symbol>
-				<symbol alt="narrow">€</symbol>
 			</currency>
 			<currency type="FIM">
 				<displayName draft="contributed">ფინური მარკა</displayName>
 			</currency>
 			<currency type="FJD">
 				<displayName>ფიჯის დოლარი</displayName>
-				<displayName count="one">ფიჯის დოლარი</displayName>
-				<displayName count="other">ფიჯის დოლარი</displayName>
-				<symbol>FJD</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="FKP">
 				<displayName>ფოლკლენდის კუნძულების ფუნტი</displayName>
-				<displayName count="one">ფოლკლენდის კუნძულების ფუნტი</displayName>
-				<displayName count="other">ფოლკლენდის კუნძულების ფუნტი</displayName>
-				<symbol>FKP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="FRF">
 				<displayName draft="contributed">ფრანგული ფრანკი</displayName>
 			</currency>
 			<currency type="GBP">
 				<displayName>ბრიტანული გირვანქა სტერლინგი</displayName>
-				<displayName count="one">ბრიტანული გირვანქა სტერლინგი</displayName>
-				<displayName count="other">ბრიტანული გირვანქა სტერლინგი</displayName>
-				<symbol>£</symbol>
-				<symbol alt="narrow">£</symbol>
 			</currency>
 			<currency type="GEK">
 				<displayName draft="contributed">ქართული კუპონი ლარით</displayName>
 			</currency>
 			<currency type="GEL">
 				<displayName>ქართული ლარი</displayName>
-				<displayName count="one">ქართული ლარი</displayName>
-				<displayName count="other">ქართული ლარი</displayName>
 				<symbol>₾</symbol>
-				<symbol alt="narrow">₾</symbol>
 			</currency>
 			<currency type="GHS">
 				<displayName>განური სედი</displayName>
-				<displayName count="one">განური სედი</displayName>
-				<displayName count="other">განური სედი</displayName>
-				<symbol>GHS</symbol>
 			</currency>
 			<currency type="GIP">
 				<displayName>გიბრალტარული ფუნტი</displayName>
-				<displayName count="one">გიბრალტარული ფუნტი</displayName>
-				<displayName count="other">გიბრალტარული ფუნტი</displayName>
-				<symbol>GIP</symbol>
-				<symbol alt="narrow">£</symbol>
 			</currency>
 			<currency type="GMD">
 				<displayName>გამბიური დალასი</displayName>
-				<displayName count="one">გამბიური დალასი</displayName>
-				<displayName count="other">გამბიური დალასი</displayName>
-				<symbol>GMD</symbol>
 			</currency>
 			<currency type="GNF">
 				<displayName>გვინეური ფრანკი</displayName>
-				<displayName count="one">გვინეური ფრანკი</displayName>
-				<displayName count="other">გვინეური ფრანკი</displayName>
-				<symbol>GNF</symbol>
-				<symbol alt="narrow" draft="contributed">FG</symbol>
 			</currency>
 			<currency type="GRD">
 				<displayName draft="contributed">ბერძნული დრაჰმა</displayName>
 			</currency>
 			<currency type="GTQ">
 				<displayName>გვატემალური კეტსალი</displayName>
-				<displayName count="one">გვატემალური კეტსალი</displayName>
-				<displayName count="other">გვატემალური კეტსალი</displayName>
-				<symbol>GTQ</symbol>
-				<symbol alt="narrow" draft="contributed">Q</symbol>
 			</currency>
 			<currency type="GWE">
 				<displayName draft="contributed">პორტუგალიური გინეა ესკუდო</displayName>
 			</currency>
 			<currency type="GYD">
 				<displayName>გაიანური დოლარი</displayName>
-				<displayName count="one">გაიანური დოლარი</displayName>
-				<displayName count="other">გაიანური დოლარი</displayName>
-				<symbol>GYD</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="HKD">
 				<displayName>ჰონკონგის დოლარი</displayName>
-				<displayName count="one">ჰონკონგის დოლარი</displayName>
-				<displayName count="other">ჰონკონგის დოლარი</displayName>
 				<symbol>HKD</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="HNL">
 				<displayName>ჰონდურასული ლემპირა</displayName>
-				<displayName count="one">ჰონდურასული ლემპირა</displayName>
-				<displayName count="other">ჰონდურასული ლემპირა</displayName>
-				<symbol>HNL</symbol>
-				<symbol alt="narrow" draft="contributed">L</symbol>
 			</currency>
 			<currency type="HRD">
 				<displayName draft="contributed">ხორვატიული დინარი</displayName>
 			</currency>
 			<currency type="HRK">
 				<displayName>ხორვატული კუნა</displayName>
-				<displayName count="one">ხორვატული კუნა</displayName>
-				<displayName count="other">ხორვატული კუნა</displayName>
-				<symbol>HRK</symbol>
-				<symbol alt="narrow" draft="contributed">kn</symbol>
 			</currency>
 			<currency type="HTG">
 				<displayName>ჰაიტური გურდი</displayName>
-				<displayName count="one">ჰაიტური გურდი</displayName>
-				<displayName count="other">ჰაიტური გურდი</displayName>
-				<symbol>HTG</symbol>
 			</currency>
 			<currency type="HUF">
 				<displayName>უნგრული ფორინტი</displayName>
-				<displayName count="one">უნგრული ფორინტი</displayName>
-				<displayName count="other">უნგრული ფორინტი</displayName>
-				<symbol>HUF</symbol>
-				<symbol alt="narrow" draft="contributed">Ft</symbol>
 			</currency>
 			<currency type="IDR">
 				<displayName>ინდონეზიური რუპია</displayName>
-				<displayName count="one">ინდონეზიური რუპია</displayName>
-				<displayName count="other">ინდონეზიური რუპია</displayName>
-				<symbol>IDR</symbol>
-				<symbol alt="narrow" draft="contributed">Rp</symbol>
 			</currency>
 			<currency type="IEP">
 				<displayName draft="contributed">ირლანდიური გირვანქა</displayName>
 			</currency>
 			<currency type="ILS">
 				<displayName>ისრაელის ახალი შეკელი</displayName>
-				<displayName count="one">ისრაელის ახალი შეკელი</displayName>
-				<displayName count="other">ისრაელის ახალი შეკელი</displayName>
 				<symbol>ILS</symbol>
-				<symbol alt="narrow">₪</symbol>
 			</currency>
 			<currency type="INR">
 				<displayName>ინდური რუპია</displayName>
-				<displayName count="one">ინდური რუპია</displayName>
-				<displayName count="other">ინდური რუპია</displayName>
 				<symbol>INR</symbol>
-				<symbol alt="narrow">₹</symbol>
 			</currency>
 			<currency type="IQD">
 				<displayName>ერაყული დინარი</displayName>
-				<displayName count="one">ერაყული დინარი</displayName>
-				<displayName count="other">ერაყული დინარი</displayName>
-				<symbol>IQD</symbol>
 			</currency>
 			<currency type="IRR">
 				<displayName>ირანული რიალი</displayName>
-				<displayName count="one">ირანული რიალი</displayName>
-				<displayName count="other">ირანული რიალი</displayName>
-				<symbol>IRR</symbol>
 			</currency>
 			<currency type="ISK">
 				<displayName>ისლანდიური კრონა</displayName>
-				<displayName count="one">ისლანდიური კრონა</displayName>
-				<displayName count="other">ისლანდიური კრონა</displayName>
-				<symbol>ISK</symbol>
-				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="ITL">
 				<displayName draft="contributed">იტალიური ლირა</displayName>
 			</currency>
 			<currency type="JMD">
 				<displayName>იამაიკური დოლარი</displayName>
-				<displayName count="one">იამაიკური დოლარი</displayName>
-				<displayName count="other">იამაიკური დოლარი</displayName>
-				<symbol>JMD</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="JOD">
 				<displayName>იორდანიული დოლარი</displayName>
-				<displayName count="one">იორდანიული დოლარი</displayName>
-				<displayName count="other">იორდანიული დოლარი</displayName>
-				<symbol>JOD</symbol>
 			</currency>
 			<currency type="JPY">
 				<displayName>იაპონური იენი</displayName>
-				<displayName count="one">იაპონური იენი</displayName>
-				<displayName count="other">იაპონური იენი</displayName>
 				<symbol>JPY</symbol>
-				<symbol alt="narrow">¥</symbol>
 			</currency>
 			<currency type="KES">
 				<displayName>კენიური შილინგი</displayName>
-				<displayName count="one">კენიური შილინგი</displayName>
-				<displayName count="other">კენიური შილინგი</displayName>
-				<symbol>KES</symbol>
 			</currency>
 			<currency type="KGS">
 				<displayName>ყირგიზული სომი</displayName>
-				<displayName count="one">ყირგიზული სომი</displayName>
-				<displayName count="other">ყირგიზული სომი</displayName>
-				<symbol>KGS</symbol>
 			</currency>
 			<currency type="KHR">
 				<displayName>კამბოჯური რიელი</displayName>
-				<displayName count="one">კამბოჯური რიელი</displayName>
-				<displayName count="other">კამბოჯური რიელი</displayName>
-				<symbol>KHR</symbol>
-				<symbol alt="narrow">៛</symbol>
 			</currency>
 			<currency type="KMF">
 				<displayName>კომორული ფრანკი</displayName>
-				<displayName count="one">კომორული ფრანკი</displayName>
-				<displayName count="other">კომორული ფრანკი</displayName>
-				<symbol>KMF</symbol>
-				<symbol alt="narrow" draft="contributed">CF</symbol>
 			</currency>
 			<currency type="KPW">
 				<displayName>ჩრდილოეთ კორეული ვონი</displayName>
-				<displayName count="one">ჩრდილოეთ კორეული ვონი</displayName>
-				<displayName count="other">ჩრდილოეთ კორეული ვონი</displayName>
-				<symbol>KPW</symbol>
-				<symbol alt="narrow" draft="contributed">₩</symbol>
 			</currency>
 			<currency type="KRW">
 				<displayName>სამხრეთ კორეული ვონი</displayName>
-				<displayName count="one">სამხრეთ კორეული ვონი</displayName>
-				<displayName count="other">სამხრეთ კორეული ვონი</displayName>
 				<symbol>KRW</symbol>
-				<symbol alt="narrow">₩</symbol>
 			</currency>
 			<currency type="KWD">
 				<displayName>ქუვეითური დინარი</displayName>
-				<displayName count="one">ქუვეითური დინარი</displayName>
-				<displayName count="other">ქუვეითური დინარი</displayName>
-				<symbol>KWD</symbol>
 			</currency>
 			<currency type="KYD">
 				<displayName>კაიმანის კუნძულების დოლარი</displayName>
-				<displayName count="one">კაიმანის კუნძულების დოლარი</displayName>
-				<displayName count="other">კაიმანის კუნძულების დოლარი</displayName>
-				<symbol>KYD</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="KZT">
 				<displayName>ყაზახური ტენგე</displayName>
-				<displayName count="one">ყაზახური ტენგე</displayName>
-				<displayName count="other">ყაზახური ტენგე</displayName>
-				<symbol>KZT</symbol>
-				<symbol alt="narrow">₸</symbol>
 			</currency>
 			<currency type="LAK">
 				<displayName>ლაოსური კიპი</displayName>
-				<displayName count="one">ლაოსური კიპი</displayName>
-				<displayName count="other">ლაოსური კიპი</displayName>
-				<symbol>LAK</symbol>
-				<symbol alt="narrow">₭</symbol>
 			</currency>
 			<currency type="LBP">
 				<displayName>ლიბანური ფუნტი</displayName>
-				<displayName count="one">ლიბანური ფუნტი</displayName>
-				<displayName count="other">ლიბანური ფუნტი</displayName>
-				<symbol>LBP</symbol>
-				<symbol alt="narrow" draft="contributed">L£</symbol>
 			</currency>
 			<currency type="LKR">
 				<displayName>შრი-ლანკური რუპია</displayName>
-				<displayName count="one">შრი-ლანკური რუპია</displayName>
-				<displayName count="other">შრი-ლანკური რუპია</displayName>
-				<symbol>LKR</symbol>
-				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="LRD">
 				<displayName>ლიბერიული დოლარი</displayName>
-				<displayName count="one">ლიბერიული დოლარი</displayName>
-				<displayName count="other">ლიბერიული დოლარი</displayName>
-				<symbol>LRD</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="LSL">
 				<displayName>ლესოთოს ლოტი</displayName>
-				<displayName count="one">ლესოთოს ლოტი</displayName>
-				<displayName count="other">ლესოთოს ლოტი</displayName>
 			</currency>
 			<currency type="LTL">
 				<displayName>ლიტვური ლიტა</displayName>
-				<displayName count="one">ლიტვური ლიტა</displayName>
-				<displayName count="other">ლიტვური ლიტა</displayName>
-				<symbol draft="contributed">LTL</symbol>
 			</currency>
 			<currency type="LTT">
 				<displayName draft="contributed">ლიტვური ტალონი</displayName>
@@ -5937,84 +4755,48 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="LVL">
 				<displayName>ლატვიური ლატი</displayName>
-				<displayName count="one">ლატვიური ლატი</displayName>
-				<displayName count="other">ლატვიური ლატი</displayName>
-				<symbol draft="contributed">LVL</symbol>
 			</currency>
 			<currency type="LVR">
 				<displayName draft="contributed">ლატვიური რუბლი</displayName>
 			</currency>
 			<currency type="LYD">
 				<displayName>ლიბიური დინარი</displayName>
-				<displayName count="one">ლიბიური დინარი</displayName>
-				<displayName count="other">ლიბიური დინარი</displayName>
-				<symbol>LYD</symbol>
 			</currency>
 			<currency type="MAD">
 				<displayName>მაროკოს დირჰამი</displayName>
-				<displayName count="one">მაროკოს დირჰამი</displayName>
-				<displayName count="other">მაროკოს დირჰამი</displayName>
-				<symbol>MAD</symbol>
 			</currency>
 			<currency type="MAF">
 				<displayName draft="contributed">მაროკოს ფრანკი</displayName>
 			</currency>
 			<currency type="MDL">
 				<displayName>მოლდოვური ლეუ</displayName>
-				<displayName count="one">მოლდოვური ლეუ</displayName>
-				<displayName count="other">მოლდოვური ლეუ</displayName>
-				<symbol>MDL</symbol>
 			</currency>
 			<currency type="MGA">
 				<displayName>მადაგასკარის არიარი</displayName>
-				<displayName count="one">მადაგასკარის არიარი</displayName>
-				<displayName count="other">მადაგასკარის არიარი</displayName>
-				<symbol>MGA</symbol>
-				<symbol alt="narrow" draft="contributed">Ar</symbol>
 			</currency>
 			<currency type="MGF">
 				<displayName draft="contributed">მადაგასკარის ფრანკი</displayName>
 			</currency>
 			<currency type="MKD">
 				<displayName>მაკედონიური დინარი</displayName>
-				<displayName count="one">მაკედონიური დინარი</displayName>
-				<displayName count="other">მაკედონიური დინარი</displayName>
-				<symbol>MKD</symbol>
 			</currency>
 			<currency type="MLF">
 				<displayName draft="contributed">მალის ფრანკი</displayName>
 			</currency>
 			<currency type="MMK">
 				<displayName>მიანმარის კიატი</displayName>
-				<displayName count="one">მიანმარის კიატი</displayName>
-				<displayName count="other">მიანმარის კიატი</displayName>
-				<symbol>MMK</symbol>
-				<symbol alt="narrow" draft="contributed">K</symbol>
 			</currency>
 			<currency type="MNT">
 				<displayName>მონღოლური ტუგრიკი</displayName>
-				<displayName count="one">მონღოლური ტუგრიკი</displayName>
-				<displayName count="other">მონღოლური ტუგრიკი</displayName>
-				<symbol>MNT</symbol>
-				<symbol alt="narrow">₮</symbol>
 			</currency>
 			<currency type="MOP">
 				<displayName>მაკაუს პატაკა</displayName>
-				<displayName count="one">მაკაუს პატაკა</displayName>
-				<displayName count="other">მაკაუს პატაკა</displayName>
-				<symbol>MOP</symbol>
 			</currency>
 			<currency type="MRO">
 				<displayName>მავრიტანული უგია (1973–2017)</displayName>
-				<displayName count="one">მავრიტანული უგია (1973–2017)</displayName>
-				<displayName count="other">მავრიტანული უგია (1973–2017)</displayName>
-				<symbol>MRO</symbol>
 			</currency>
 			<currency type="MRU">
 				<displayName>მავრიტანული უგია</displayName>
-				<displayName count="one">მავრიტანული უგია</displayName>
-				<displayName count="other">მავრიტანული უგია</displayName>
-				<symbol draft="contributed">MRU</symbol>
 			</currency>
 			<currency type="MTL">
 				<displayName draft="contributed">მალტის ლირა</displayName>
@@ -6024,152 +4806,83 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="MUR">
 				<displayName>მავრიტანული რუპია</displayName>
-				<displayName count="one">მავრიტანული რუპია</displayName>
-				<displayName count="other">მავრიტანული რუპია</displayName>
-				<symbol>MUR</symbol>
-				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="MVR">
 				<displayName>მალდივური რუფია</displayName>
-				<displayName count="one">მალდივური რუფია</displayName>
-				<displayName count="other">მალდივური რუფია</displayName>
-				<symbol>MVR</symbol>
 			</currency>
 			<currency type="MWK">
 				<displayName>მალავიური კვაჩა</displayName>
-				<displayName count="one">მალავიური კვაჩა</displayName>
-				<displayName count="other">მალავიური კვაჩა</displayName>
-				<symbol>MWK</symbol>
 			</currency>
 			<currency type="MXN">
 				<displayName>მექსიკური პესო</displayName>
-				<displayName count="one">მექსიკური პესო</displayName>
-				<displayName count="other">მექსიკური პესო</displayName>
-				<symbol>MX$</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="MXP">
 				<displayName draft="contributed">მექსიკური ვერცხლის პესო (1861–1992)</displayName>
 			</currency>
 			<currency type="MYR">
 				<displayName>მალაიზიური რინგიტი</displayName>
-				<displayName count="one">მალაიზიური რინგიტი</displayName>
-				<displayName count="other">მალაიზიური რინგიტი</displayName>
-				<symbol>MYR</symbol>
-				<symbol alt="narrow" draft="contributed">RM</symbol>
 			</currency>
 			<currency type="MZE">
 				<displayName>მოზამბიკური ესკუდო</displayName>
-				<displayName count="one">მოზამბიკური ესკუდო</displayName>
-				<displayName count="other">მოზამბიკური ესკუდო</displayName>
 			</currency>
 			<currency type="MZM">
 				<displayName draft="contributed">ძველი მოზამბიკური მეტიკალი</displayName>
 			</currency>
 			<currency type="MZN">
 				<displayName>მოზამბიკური მეტიკალი</displayName>
-				<displayName count="one">მოზამბიკური მეტიკალი</displayName>
-				<displayName count="other">მოზამბიკური მეტიკალი</displayName>
-				<symbol>MZN</symbol>
 			</currency>
 			<currency type="NAD">
 				<displayName>ნამიბიური დოლარი</displayName>
-				<displayName count="one">ნამიბიური დოლარი</displayName>
-				<displayName count="other">ნამიბიური დოლარი</displayName>
-				<symbol>NAD</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="NGN">
 				<displayName>ნიგერიული ნაირა</displayName>
-				<displayName count="one">ნიგერიული ნაირა</displayName>
-				<displayName count="other">ნიგერიული ნაირა</displayName>
-				<symbol>NGN</symbol>
-				<symbol alt="narrow">₦</symbol>
 			</currency>
 			<currency type="NIC">
 				<displayName draft="contributed">ნიკარაგუას კორდობა</displayName>
 			</currency>
 			<currency type="NIO">
 				<displayName>ნიკარაგუას ოქროს კორდობა</displayName>
-				<displayName count="one">ნიკარაგუას ოქროს კორდობა</displayName>
-				<displayName count="other">ნიკარაგუას ოქროს კორდობა</displayName>
-				<symbol>NIO</symbol>
-				<symbol alt="narrow" draft="contributed">C$</symbol>
 			</currency>
 			<currency type="NLG">
 				<displayName draft="contributed">ჰოლანდიური გულდენი</displayName>
 			</currency>
 			<currency type="NOK">
 				<displayName>ნორვეგიული კრონა</displayName>
-				<displayName count="one">ნორვეგიული კრონა</displayName>
-				<displayName count="other">ნორვეგიული კრონა</displayName>
-				<symbol>NOK</symbol>
-				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="NPR">
 				<displayName>ნეპალური რუპია</displayName>
-				<displayName count="one">ნეპალური რუპია</displayName>
-				<displayName count="other">ნეპალური რუპია</displayName>
-				<symbol>NPR</symbol>
-				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="NZD">
 				<displayName>ახალი ზელანდიის დოლარი</displayName>
-				<displayName count="one">ახალი ზელანდიის დოლარი</displayName>
-				<displayName count="other">ახალი ზელანდიის დოლარი</displayName>
 				<symbol>NZD</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="OMR">
 				<displayName>ომანის რიალი</displayName>
-				<displayName count="one">ომანის რიალი</displayName>
-				<displayName count="other">ომანის რიალი</displayName>
-				<symbol>OMR</symbol>
 			</currency>
 			<currency type="PAB">
 				<displayName>პანამური ბალბოა</displayName>
-				<displayName count="one">პანამური ბალბოა</displayName>
-				<displayName count="other">პანამური ბალბოა</displayName>
-				<symbol>PAB</symbol>
 			</currency>
 			<currency type="PEI">
 				<displayName draft="contributed">პერუს ინტი</displayName>
 			</currency>
 			<currency type="PEN">
 				<displayName>პერუს სოლი</displayName>
-				<displayName count="one">პერუს სოლი</displayName>
-				<displayName count="other">პერუს სოლი</displayName>
-				<symbol>PEN</symbol>
 			</currency>
 			<currency type="PES">
 				<displayName draft="contributed">პერუს სოლი (1863–1965)</displayName>
 			</currency>
 			<currency type="PGK">
 				<displayName>პაპუა-ახალი გვინეის კინა</displayName>
-				<displayName count="one">პაპუა-ახალი გვინეის კინა</displayName>
-				<displayName count="other">პაპუა-ახალი გვინეის კინა</displayName>
-				<symbol>PGK</symbol>
 			</currency>
 			<currency type="PHP">
 				<displayName>ფილიპინური პესო</displayName>
-				<displayName count="one">ფილიპინური პესო</displayName>
-				<displayName count="other">ფილიპინური პესო</displayName>
 				<symbol>PHP</symbol>
-				<symbol alt="narrow">₱</symbol>
 			</currency>
 			<currency type="PKR">
 				<displayName>პაკისტანური რუპია</displayName>
-				<displayName count="one">პაკისტანური რუპია</displayName>
-				<displayName count="other">პაკისტანური რუპია</displayName>
-				<symbol>PKR</symbol>
-				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="PLN">
 				<displayName>პოლონური ზლოტი</displayName>
-				<displayName count="one">პოლონური ზლოტი</displayName>
-				<displayName count="other">პოლონური ზლოტი</displayName>
-				<symbol>PLN</symbol>
-				<symbol alt="narrow" draft="contributed">zł</symbol>
 			</currency>
 			<currency type="PLZ">
 				<displayName draft="contributed">პოლონური ზლოტი (1950–1995)</displayName>
@@ -6179,16 +4892,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="PYG">
 				<displayName>პარაგვაული გუარანი</displayName>
-				<displayName count="one">პარაგვაული გუარანი</displayName>
-				<displayName count="other">პარაგვაული გუარანი</displayName>
-				<symbol>PYG</symbol>
-				<symbol alt="narrow">₲</symbol>
 			</currency>
 			<currency type="QAR">
 				<displayName>კატარის რიალი</displayName>
-				<displayName count="one">კატარის რიალი</displayName>
-				<displayName count="other">კატარის რიალი</displayName>
-				<symbol>QAR</symbol>
 			</currency>
 			<currency type="RHD">
 				<displayName draft="contributed">როდეზიული დოლარი</displayName>
@@ -6198,127 +4904,69 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="RON">
 				<displayName>რუმინული ლეუ</displayName>
-				<displayName count="one">რუმინული ლეუ</displayName>
-				<displayName count="other">რუმინული ლეუ</displayName>
-				<symbol>RON</symbol>
-				<symbol alt="narrow" draft="contributed">lei</symbol>
 			</currency>
 			<currency type="RSD">
 				<displayName>სერბული დინარი</displayName>
-				<displayName count="one">სერბული დინარი</displayName>
-				<displayName count="other">სერბული დინარი</displayName>
-				<symbol>RSD</symbol>
 			</currency>
 			<currency type="RUB">
 				<displayName>რუსული რუბლი</displayName>
-				<displayName count="one">რუსული რუბლი</displayName>
-				<displayName count="other">რუსული რუბლი</displayName>
-				<symbol>RUB</symbol>
-				<symbol alt="narrow" draft="contributed">₽</symbol>
 			</currency>
 			<currency type="RUR">
 				<displayName draft="contributed">რუსული რუბლი (1991–1998)</displayName>
 			</currency>
 			<currency type="RWF">
 				<displayName>რუანდული ფრანკი</displayName>
-				<displayName count="one">რუანდული ფრანკი</displayName>
-				<displayName count="other">რუანდული ფრანკი</displayName>
-				<symbol>RWF</symbol>
-				<symbol alt="narrow" draft="contributed">RF</symbol>
 			</currency>
 			<currency type="SAR">
 				<displayName>საუდის არაბეთის რიალი</displayName>
-				<displayName count="one">საუდის არაბეთის რიალი</displayName>
-				<displayName count="other">საუდის არაბეთის რიალი</displayName>
-				<symbol>SAR</symbol>
 			</currency>
 			<currency type="SBD">
 				<displayName>სოლომონის კუნძულების დოლარი</displayName>
-				<displayName count="one">სოლომონის კუნძულების დოლარი</displayName>
-				<displayName count="other">სოლომონის კუნძულების დოლარი</displayName>
-				<symbol>SBD</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="SCR">
 				<displayName>სეიშელური რუპია</displayName>
-				<displayName count="one">სეიშელური რუპია</displayName>
-				<displayName count="other">სეიშელური რუპია</displayName>
-				<symbol>SCR</symbol>
 			</currency>
 			<currency type="SDD">
 				<displayName draft="contributed">სუდანის დინარი</displayName>
 			</currency>
 			<currency type="SDG">
 				<displayName>სუდანური ფუნტი</displayName>
-				<displayName count="one">სუდანური ფუნტი</displayName>
-				<displayName count="other">სუდანური ფუნტი</displayName>
-				<symbol>SDG</symbol>
 			</currency>
 			<currency type="SDP">
 				<displayName draft="contributed">სუდანის გირვანქა</displayName>
 			</currency>
 			<currency type="SEK">
 				<displayName>შვედური კრონა</displayName>
-				<displayName count="one">შვედური კრონა</displayName>
-				<displayName count="other">შვედური კრონა</displayName>
-				<symbol>SEK</symbol>
-				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="SGD">
 				<displayName>სინგაპურის დოლარი</displayName>
-				<displayName count="one">სინგაპურის დოლარი</displayName>
-				<displayName count="other">სინგაპურის დოლარი</displayName>
-				<symbol>SGD</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="SHP">
 				<displayName>წმ. ელენეს კუნძულის ფუნტი</displayName>
-				<displayName count="one">წმ. ელენეს კუნძულის ფუნტი</displayName>
-				<displayName count="other">წმ. ელენეს კუნძულის ფუნტი</displayName>
-				<symbol>SHP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
+			</currency>
+			<currency type="SLE">
+				<displayName>სიერა-ლეონეს ლეონე</displayName>
 			</currency>
 			<currency type="SLL">
-				<displayName>სიერა-ლეონეს ლეონე</displayName>
-				<displayName count="one">სიერა-ლეონეს ლეონე</displayName>
-				<displayName count="other">სიერა-ლეონეს ლეონე</displayName>
-				<symbol>SLL</symbol>
+				<displayName>სიერა-ლეონეს ლეონე (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>სომალური შილინგი</displayName>
-				<displayName count="one">სომალური შილინგი</displayName>
-				<displayName count="other">სომალური შილინგი</displayName>
-				<symbol>SOS</symbol>
 			</currency>
 			<currency type="SRD">
 				<displayName>სურინამული დოლარი</displayName>
-				<displayName count="one">სურინამული დოლარი</displayName>
-				<displayName count="other">სურინამული დოლარი</displayName>
-				<symbol>SRD</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="SRG">
 				<displayName draft="contributed">სურინამის გულდენი</displayName>
 			</currency>
 			<currency type="SSP">
 				<displayName>სამხრეთ სუდანური ფუნტი</displayName>
-				<displayName count="one">სამხრეთ სუდანური ფუნტი</displayName>
-				<displayName count="other">სამხრეთ სუდანური ფუნტი</displayName>
-				<symbol>SSP</symbol>
-				<symbol alt="narrow">£</symbol>
 			</currency>
 			<currency type="STD">
 				<displayName>სან-ტომე და პრინსიპის დობრა (1977–2017)</displayName>
-				<displayName count="one">სან-ტომე და პრინსიპის დობრა (1977–2017)</displayName>
-				<displayName count="other">სან-ტომე და პრინსიპის დობრა (1977–2017)</displayName>
-				<symbol>STD</symbol>
 			</currency>
 			<currency type="STN">
 				<displayName>სან-ტომე და პრინსიპის დობრა</displayName>
-				<displayName count="one">სან-ტომე და პრინსიპის დობრა</displayName>
-				<displayName count="other">სან-ტომე და პრინსიპის დობრა</displayName>
-				<symbol draft="contributed">STN</symbol>
-				<symbol alt="narrow" draft="contributed">Db</symbol>
 			</currency>
 			<currency type="SUR">
 				<displayName draft="contributed">საბჭოთა რუბლი</displayName>
@@ -6327,90 +4975,51 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>სირიული ფუნტი</displayName>
 				<displayName count="one">სირიული გირვანქა</displayName>
 				<displayName count="other">სირიული გირვანქა</displayName>
-				<symbol>SYP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="SZL">
 				<displayName>სვაზილენდის ლილანგენი</displayName>
-				<displayName count="one">სვაზილენდის ლილანგენი</displayName>
-				<displayName count="other">სვაზილენდის ლილანგენი</displayName>
-				<symbol>SZL</symbol>
 			</currency>
 			<currency type="THB">
 				<displayName>ტაილანდური ბატი</displayName>
-				<displayName count="one">ტაილანდური ბატი</displayName>
-				<displayName count="other">ტაილანდური ბატი</displayName>
-				<symbol>THB</symbol>
-				<symbol alt="narrow">฿</symbol>
 			</currency>
 			<currency type="TJR">
 				<displayName draft="contributed">ტაჯიკური რუბლი</displayName>
 			</currency>
 			<currency type="TJS">
 				<displayName>ტაჯიკური სომონი</displayName>
-				<displayName count="one">ტაჯიკური სომონი</displayName>
-				<displayName count="other">ტაჯიკური სომონი</displayName>
-				<symbol>TJS</symbol>
 			</currency>
 			<currency type="TMM">
 				<displayName draft="contributed">თურქმენული მანათი</displayName>
 			</currency>
 			<currency type="TMT">
 				<displayName>თურქმენეთის მანათი</displayName>
-				<displayName count="one">თურქმენეთის მანათი</displayName>
-				<displayName count="other">თურქმენეთის მანათი</displayName>
-				<symbol>TMT</symbol>
 			</currency>
 			<currency type="TND">
 				<displayName>ტუნისური დინარი</displayName>
 				<displayName count="one">ტუნისის დინარი</displayName>
 				<displayName count="other">ტუნისის დინარი</displayName>
-				<symbol>TND</symbol>
 			</currency>
 			<currency type="TOP">
 				<displayName>ტონგანური პაანგა</displayName>
-				<displayName count="one">ტონგანური პაანგა</displayName>
-				<displayName count="other">ტონგანური პაანგა</displayName>
-				<symbol>TOP</symbol>
-				<symbol alt="narrow" draft="contributed">T$</symbol>
 			</currency>
 			<currency type="TRL">
 				<displayName draft="contributed">თურქული ლირა</displayName>
 			</currency>
 			<currency type="TRY">
 				<displayName>ახალი თურქული ლირა</displayName>
-				<displayName count="one">ახალი თურქული ლირა</displayName>
-				<displayName count="other">ახალი თურქული ლირა</displayName>
-				<symbol>TRY</symbol>
-				<symbol alt="narrow">₺</symbol>
-				<symbol alt="variant" draft="contributed">TL</symbol>
 			</currency>
 			<currency type="TTD">
 				<displayName>ტრინიდად და ტობაგოს დოლარი</displayName>
-				<displayName count="one">ტრინიდად და ტობაგოს დოლარი</displayName>
-				<displayName count="other">ტრინიდად და ტობაგოს დოლარი</displayName>
-				<symbol>TTD</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="TWD">
 				<displayName>ტაივანური ახალი დოლარი</displayName>
-				<displayName count="one">ტაივანური ახალი დოლარი</displayName>
-				<displayName count="other">ტაივანური ახალი დოლარი</displayName>
-				<symbol>NT$</symbol>
 				<symbol alt="narrow">NT$</symbol>
 			</currency>
 			<currency type="TZS">
 				<displayName>ტანზანიური შილინგი</displayName>
-				<displayName count="one">ტანზანიური შილინგი</displayName>
-				<displayName count="other">ტანზანიური შილინგი</displayName>
-				<symbol>TZS</symbol>
 			</currency>
 			<currency type="UAH">
 				<displayName>უკრაინული გრივნა</displayName>
-				<displayName count="one">უკრაინული გრივნა</displayName>
-				<displayName count="other">უკრაინული გრივნა</displayName>
-				<symbol>UAH</symbol>
-				<symbol alt="narrow">₴</symbol>
 			</currency>
 			<currency type="UAK">
 				<displayName draft="contributed">უკრაინული კარბოვანეცი</displayName>
@@ -6420,16 +5029,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="UGX">
 				<displayName>უგანდური შილინგი</displayName>
-				<displayName count="one">უგანდური შილინგი</displayName>
-				<displayName count="other">უგანდური შილინგი</displayName>
-				<symbol>UGX</symbol>
 			</currency>
 			<currency type="USD">
 				<displayName>აშშ დოლარი</displayName>
-				<displayName count="one">აშშ დოლარი</displayName>
-				<displayName count="other">აშშ დოლარი</displayName>
-				<symbol>US$</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="USN">
 				<displayName draft="contributed">აშშ დოლარი (შემდეგი დღე)</displayName>
@@ -6442,57 +5044,33 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="UYU">
 				<displayName>ურუგვაის პესო</displayName>
-				<displayName count="one">ურუგვაის პესო</displayName>
-				<displayName count="other">ურუგვაის პესო</displayName>
-				<symbol>UYU</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="UZS">
 				<displayName>უზბეკური სუმი</displayName>
-				<displayName count="one">უზბეკური სუმი</displayName>
-				<displayName count="other">უზბეკური სუმი</displayName>
-				<symbol>UZS</symbol>
 			</currency>
 			<currency type="VEB">
 				<displayName draft="contributed">ვენესუელის ბოლივარი (1871–2008)</displayName>
 			</currency>
 			<currency type="VEF">
 				<displayName>ვენესუელის ბოლივარი (2008–2018)</displayName>
-				<displayName count="one">ვენესუელის ბოლივარი (2008–2018)</displayName>
-				<displayName count="other">ვენესუელის ბოლივარი (2008–2018)</displayName>
-				<symbol>VEF</symbol>
-				<symbol alt="narrow" draft="contributed">Bs</symbol>
 			</currency>
 			<currency type="VES">
 				<displayName>ვენესუელის ბოლივარი</displayName>
-				<displayName count="one">ვენესუელის ბოლივარი</displayName>
-				<displayName count="other">ვენესუელის ბოლივარი</displayName>
-				<symbol>VES</symbol>
 			</currency>
 			<currency type="VND">
 				<displayName>ვიეტნამური დონგი</displayName>
-				<displayName count="one">ვიეტნამური დონგი</displayName>
-				<displayName count="other">ვიეტნამური დონგი</displayName>
 				<symbol>VND</symbol>
-				<symbol alt="narrow">₫</symbol>
 			</currency>
 			<currency type="VUV">
 				<displayName>ვანუატუს ვატუ</displayName>
 				<displayName count="one">ვანატუს ვატუ</displayName>
 				<displayName count="other">ვანატუს ვატუ</displayName>
-				<symbol>VUV</symbol>
 			</currency>
 			<currency type="WST">
 				<displayName>სამოური ტალა</displayName>
-				<displayName count="one">დასავლეთ სამოას ტალა</displayName>
-				<displayName count="other">სამოური ტალა</displayName>
-				<symbol>WST</symbol>
 			</currency>
 			<currency type="XAF">
 				<displayName>ცენტრალურ აფრიკული CFA ფრანკი</displayName>
-				<displayName count="one">ცენტრალურ აფრიკული CFA ფრანკი</displayName>
-				<displayName count="other">ცენტრალურ აფრიკული CFA ფრანკი</displayName>
-				<symbol>FCFA</symbol>
 			</currency>
 			<currency type="XAG">
 				<displayName draft="contributed">ვერცხლი</displayName>
@@ -6505,10 +5083,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="XCD">
 				<displayName>აღმოსავლეთ კარიბიული დოლარი</displayName>
-				<displayName count="one">აღმოსავლეთ კარიბიული დოლარი</displayName>
-				<displayName count="other">აღმოსავლეთ კარიბიული დოლარი</displayName>
-				<symbol>EC$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="XEU">
 				<displayName draft="contributed">ევროპული სავალუტო ერთეული</displayName>
@@ -6518,15 +5092,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="XOF">
 				<displayName>დასავლეთ აფრიკული CFA ფრანკი</displayName>
-				<displayName count="one">დასავლეთ აფრიკული CFA ფრანკი</displayName>
-				<displayName count="other">დასავლეთ აფრიკული CFA ფრანკი</displayName>
-				<symbol draft="contributed">F CFA</symbol>
 			</currency>
 			<currency type="XPF">
 				<displayName>CFP ფრანკი</displayName>
-				<displayName count="one">CFP ფრანკი</displayName>
-				<displayName count="other">CFP ფრანკი</displayName>
-				<symbol>CFPF</symbol>
 			</currency>
 			<currency type="XXX">
 				<displayName>უცნობი ვალუტა</displayName>
@@ -6538,9 +5106,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="YER">
 				<displayName>იემენის რეალი</displayName>
-				<displayName count="one">იემენის რეალი</displayName>
-				<displayName count="other">იემენის რეალი</displayName>
-				<symbol>YER</symbol>
 			</currency>
 			<currency type="YUD">
 				<displayName draft="contributed">იუგოსლავიური მყარი დინარი</displayName>
@@ -6553,23 +5118,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="ZAR">
 				<displayName>სამხრეთ აფრიკული რანდი</displayName>
-				<displayName count="one">სამხრეთ აფრიკული რანდი</displayName>
-				<displayName count="other">სამხრეთ აფრიკული რანდი</displayName>
-				<symbol>ZAR</symbol>
-				<symbol alt="narrow" draft="contributed">R</symbol>
 			</currency>
 			<currency type="ZMK">
 				<displayName>ზამბიური კვაჭა (1968–2012)</displayName>
-				<displayName count="one">ზამბიური კვაჭა (1968–2012)</displayName>
-				<displayName count="other">ზამბიური კვაჭა (1968–2012)</displayName>
-				<symbol draft="contributed">ZMK</symbol>
 			</currency>
 			<currency type="ZMW">
 				<displayName>ზამბიური კვაჭა</displayName>
-				<displayName count="one">ზამბიური კვაჭა</displayName>
-				<displayName count="other">ზამბიური კვაჭა</displayName>
-				<symbol>ZMW</symbol>
-				<symbol alt="narrow" draft="contributed">ZK</symbol>
 			</currency>
 			<currency type="ZRN">
 				<displayName draft="contributed">ზაირის ახალი ზაირი</displayName>
@@ -6584,7 +5138,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<miscPatterns numberSystem="latn">
 			<pattern type="approximately">≈{0}</pattern>
 			<pattern type="atLeast">{0}+</pattern>
-			<pattern type="atMost">≤{0}</pattern>
 			<pattern type="range">{0}-{1}</pattern>
 		</miscPatterns>
 		<minimalPairs>
@@ -6621,14 +5174,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<compoundUnit type="10p-18">
 				<unitPrefixPattern>ატო{0}</unitPrefixPattern>
 			</compoundUnit>
-			<compoundUnit type="10p-21">
-				<unitPrefixPattern>ზეპტო{0}</unitPrefixPattern>
+			<compoundUnit type="10p-27">
+				<unitPrefixPattern>რონტო{0}</unitPrefixPattern>
 			</compoundUnit>
-			<compoundUnit type="10p-24">
-				<unitPrefixPattern>იოქტო{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p1">
-				<unitPrefixPattern>დეკა{0}</unitPrefixPattern>
+			<compoundUnit type="10p-30">
+				<unitPrefixPattern>ქვექტო{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p2">
 				<unitPrefixPattern>ჰეკტო{0}</unitPrefixPattern>
@@ -6648,14 +5198,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<compoundUnit type="10p15">
 				<unitPrefixPattern>პეტა{0}</unitPrefixPattern>
 			</compoundUnit>
-			<compoundUnit type="10p18">
-				<unitPrefixPattern>ექსა{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p21">
-				<unitPrefixPattern>ზეტა{0}</unitPrefixPattern>
-			</compoundUnit>
 			<compoundUnit type="10p24">
 				<unitPrefixPattern>იოტა{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p27">
+				<unitPrefixPattern>რონა{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p30">
+				<unitPrefixPattern>ქვეტა{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="1024p1">
 				<unitPrefixPattern>კიბი{0}</unitPrefixPattern>
@@ -6681,9 +5231,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<compoundUnit type="1024p8">
 				<unitPrefixPattern>იობი{0}</unitPrefixPattern>
 			</compoundUnit>
-			<compoundUnit type="per">
-				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
-			</compoundUnit>
 			<compoundUnit type="power2">
 				<compoundUnitPattern1>კვადრატული {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="one">კვადრატული {0}</compoundUnitPattern1>
@@ -6694,9 +5241,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<compoundUnitPattern1 count="one">კუბური {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other">კუბური {0}</compoundUnitPattern1>
 			</compoundUnit>
-			<compoundUnit type="times">
-				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
-			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName>ინერციის ძალა</displayName>
 				<unitPattern count="one">{0} ინერციის ძალა</unitPattern>
@@ -6704,8 +5248,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="acceleration-meter-per-square-second">
 				<displayName>მეტრი კვადრატულ წამში</displayName>
-				<unitPattern count="one">{0} მ/წმ²</unitPattern>
-				<unitPattern count="other">{0} მ/წმ²</unitPattern>
 			</unit>
 			<unit type="angle-revolution">
 				<displayName>ბრუნვა</displayName>
@@ -6713,24 +5255,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ბრუნვა</unitPattern>
 			</unit>
 			<unit type="angle-radian">
-				<displayName>რადიანი</displayName>
 				<unitPattern count="one">{0} რადიანი</unitPattern>
 				<unitPattern count="other">{0} რადიანი</unitPattern>
 			</unit>
 			<unit type="angle-degree">
-				<displayName>გრადუსი</displayName>
 				<unitPattern count="one">{0} გრადუსი</unitPattern>
 				<unitPattern count="other">{0} გრადუსი</unitPattern>
-			</unit>
-			<unit type="angle-arc-minute">
-				<displayName>მინუტი</displayName>
-				<unitPattern count="one">{0} მინუტი</unitPattern>
-				<unitPattern count="other">{0} მინუტი</unitPattern>
-			</unit>
-			<unit type="angle-arc-second">
-				<displayName>სეკუნდი</displayName>
-				<unitPattern count="one">{0} სეკუნდი</unitPattern>
-				<unitPattern count="other">{0} სეკუნდი</unitPattern>
 			</unit>
 			<unit type="area-square-kilometer">
 				<displayName>კვადრატული კილომეტრი</displayName>
@@ -6761,11 +5291,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} კვადრატული მილი</unitPattern>
 				<perUnitPattern>{0} კვადრატულ მილში</perUnitPattern>
 			</unit>
-			<unit type="area-acre">
-				<displayName>აკრი</displayName>
-				<unitPattern count="one">{0} აკრი</unitPattern>
-				<unitPattern count="other">{0} აკრი</unitPattern>
-			</unit>
 			<unit type="area-square-yard">
 				<displayName>კვადრატული იარდი</displayName>
 				<unitPattern count="one">{0} კვადრატული იარდი</unitPattern>
@@ -6782,13 +5307,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} კვადრატული დუიმი</unitPattern>
 				<perUnitPattern>{0} კვადრატულ დუიმში</perUnitPattern>
 			</unit>
-			<unit type="area-dunam">
-				<displayName>დუნამი</displayName>
-				<unitPattern count="one">{0} დუნამი</unitPattern>
-				<unitPattern count="other">{0} დუნამი</unitPattern>
-			</unit>
 			<unit type="concentr-karat">
-				<displayName>კარატი</displayName>
 				<unitPattern count="one">{0} კარატი</unitPattern>
 				<unitPattern count="other">{0} კარატი</unitPattern>
 			</unit>
@@ -6803,7 +5322,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} მილიმოლი ლიტრზე</unitPattern>
 			</unit>
 			<unit type="concentr-item">
-				<displayName>ერთეული</displayName>
 				<unitPattern count="one">{0} ერთეული</unitPattern>
 				<unitPattern count="other">{0} ერთეული</unitPattern>
 			</unit>
@@ -6821,16 +5339,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>პრომილე</displayName>
 				<unitPattern count="one">{0} პრომილე</unitPattern>
 				<unitPattern count="other">{0} პრომილე</unitPattern>
-			</unit>
-			<unit type="concentr-permyriad">
-				<displayName>‱</displayName>
-				<unitPattern count="one">{0}‱</unitPattern>
-				<unitPattern count="other">{0}‱</unitPattern>
-			</unit>
-			<unit type="concentr-mole">
-				<displayName>mol</displayName>
-				<unitPattern count="one">{0} mol</unitPattern>
-				<unitPattern count="other">{0} mol</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>ლიტრი კილომეტრზე</displayName>
@@ -6853,7 +5361,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} იმპ. გალონი მილზე</unitPattern>
 			</unit>
 			<unit type="digital-petabyte">
-				<displayName>პბაიტი</displayName>
 				<unitPattern count="one">{0} პბაიტი</unitPattern>
 				<unitPattern count="other">{0} პეტაბაიტი</unitPattern>
 			</unit>
@@ -6888,7 +5395,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} მეგაბიტი</unitPattern>
 			</unit>
 			<unit type="digital-kilobyte">
-				<displayName>კილობაიტი</displayName>
 				<unitPattern count="one">{0} კილობაიტი</unitPattern>
 				<unitPattern count="other">{0} კილობაიტი</unitPattern>
 			</unit>
@@ -6897,25 +5403,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} კილობიტი</unitPattern>
 				<unitPattern count="other">{0} კილობიტი</unitPattern>
 			</unit>
-			<unit type="digital-byte">
-				<displayName>ბაიტი</displayName>
-				<unitPattern count="one">{0} ბაიტი</unitPattern>
-				<unitPattern count="other">{0} ბაიტი</unitPattern>
-			</unit>
-			<unit type="digital-bit">
-				<displayName>ბიტი</displayName>
-				<unitPattern count="one">{0} ბიტი</unitPattern>
-				<unitPattern count="other">{0} ბიტი</unitPattern>
-			</unit>
 			<unit type="duration-century">
 				<displayName>საუკუნე</displayName>
 				<unitPattern count="one">{0} საუკუნე</unitPattern>
 				<unitPattern count="other">{0} საუკუნე</unitPattern>
-			</unit>
-			<unit type="duration-decade">
-				<displayName>დეკადა</displayName>
-				<unitPattern count="one">{0} დეკადა</unitPattern>
-				<unitPattern count="other">{0} დეკადა</unitPattern>
 			</unit>
 			<unit type="duration-year">
 				<displayName>წელი</displayName>
@@ -6930,9 +5421,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<perUnitPattern>{0}/კვარტალში</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
-				<displayName>თვე</displayName>
-				<unitPattern count="one">{0} თვე</unitPattern>
-				<unitPattern count="other">{0} თვე</unitPattern>
 				<perUnitPattern>{0} თვეში</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
@@ -6942,9 +5430,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<perUnitPattern>{0} კვირაში</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
-				<displayName>დღე</displayName>
-				<unitPattern count="one">{0} დღე</unitPattern>
-				<unitPattern count="other">{0} დღე</unitPattern>
 				<perUnitPattern>{0} დღეში</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
@@ -6982,8 +5467,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="electric-ampere">
 				<displayName>ამპერი</displayName>
-				<unitPattern count="one">{0} ა</unitPattern>
-				<unitPattern count="other">{0} ა</unitPattern>
 			</unit>
 			<unit type="electric-milliampere">
 				<displayName>მილიამპერი</displayName>
@@ -6991,12 +5474,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} მილიამპერი</unitPattern>
 			</unit>
 			<unit type="electric-ohm">
-				<displayName>ომი</displayName>
 				<unitPattern count="one">{0} ომი</unitPattern>
 				<unitPattern count="other">{0} ომი</unitPattern>
 			</unit>
 			<unit type="electric-volt">
-				<displayName>ვოლტი</displayName>
 				<unitPattern count="one">{0} ვოლტი</unitPattern>
 				<unitPattern count="other">{0} ვოლტი</unitPattern>
 			</unit>
@@ -7021,7 +5502,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} კილოჯოული</unitPattern>
 			</unit>
 			<unit type="energy-joule">
-				<displayName>ჯოული</displayName>
 				<unitPattern count="one">{0} ჯოული</unitPattern>
 				<unitPattern count="other">{0} ჯოული</unitPattern>
 			</unit>
@@ -7039,26 +5519,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ბრიტანული სითბური ერთეული</displayName>
 				<unitPattern count="one">{0} ბრიტანული სითბური ერთეული</unitPattern>
 				<unitPattern count="other">{0} ბრიტანული სითბური ერთეული</unitPattern>
-			</unit>
-			<unit type="energy-therm-us">
-				<displayName>აშშ თერმი</displayName>
-				<unitPattern count="one">{0} აშშ თერმი</unitPattern>
-				<unitPattern count="other">{0} აშშ თერმი</unitPattern>
-			</unit>
-			<unit type="force-pound-force">
-				<displayName>lbf</displayName>
-				<unitPattern count="one">{0} lbf</unitPattern>
-				<unitPattern count="other">{0} lbf</unitPattern>
-			</unit>
-			<unit type="force-newton">
-				<displayName>N</displayName>
-				<unitPattern count="one">{0} N</unitPattern>
-				<unitPattern count="other">{0} N</unitPattern>
-			</unit>
-			<unit type="force-kilowatt-hour-per-100-kilometer">
-				<displayName>კვტსთ/100კმ</displayName>
-				<unitPattern count="one">{0} კვტსთ/100კმ</unitPattern>
-				<unitPattern count="other">{0} კვტსთ/100კმ</unitPattern>
 			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>გიგაჰერცი</displayName>
@@ -7082,8 +5542,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="graphics-em">
 				<displayName>ტიპოგრაფიული ემი</displayName>
-				<unitPattern count="one">{0} ემი</unitPattern>
-				<unitPattern count="other">{0} ემი</unitPattern>
 			</unit>
 			<unit type="graphics-pixel">
 				<displayName>პიქსელი</displayName>
@@ -7168,16 +5626,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} პიკომეტრი</unitPattern>
 				<unitPattern count="other">{0} პიკომეტრი</unitPattern>
 			</unit>
-			<unit type="length-mile">
-				<displayName>მილი</displayName>
-				<unitPattern count="one">{0} მილი</unitPattern>
-				<unitPattern count="other">{0} მილი</unitPattern>
-			</unit>
-			<unit type="length-yard">
-				<displayName>იარდი</displayName>
-				<unitPattern count="one">{0} იარდი</unitPattern>
-				<unitPattern count="other">{0} იარდი</unitPattern>
-			</unit>
 			<unit type="length-foot">
 				<displayName>ფუტი</displayName>
 				<unitPattern count="one">{0} ფუტი</unitPattern>
@@ -7185,9 +5633,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<perUnitPattern>{0} ფუტში</perUnitPattern>
 			</unit>
 			<unit type="length-inch">
-				<displayName>დუიმი</displayName>
-				<unitPattern count="one">{0} დუიმი</unitPattern>
-				<unitPattern count="other">{0} დუიმი</unitPattern>
 				<perUnitPattern>{0} დუიმში</perUnitPattern>
 			</unit>
 			<unit type="length-parsec">
@@ -7205,18 +5650,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ასტრონომიული ერთეული</unitPattern>
 				<unitPattern count="other">{0} ასტრონომიული ერთეული</unitPattern>
 			</unit>
-			<unit type="length-furlong">
-				<displayName>ფურლონგი</displayName>
-				<unitPattern count="one">{0} ფურლონგი</unitPattern>
-				<unitPattern count="other">{0} ფურლონგი</unitPattern>
-			</unit>
-			<unit type="length-fathom">
-				<displayName>ფატომი</displayName>
-				<unitPattern count="one">{0} ფატომი</unitPattern>
-				<unitPattern count="other">{0} ფატომი</unitPattern>
-			</unit>
 			<unit type="length-nautical-mile">
-				<displayName>საზღვაო მილი</displayName>
 				<unitPattern count="one">{0} საზღვაო მილი</unitPattern>
 				<unitPattern count="other">{0} საზღვაო მილი</unitPattern>
 			</unit>
@@ -7234,11 +5668,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>მზის რადიუსი</displayName>
 				<unitPattern count="one">{0} მზის რადიუსი</unitPattern>
 				<unitPattern count="other">{0} მზის რადიუსი</unitPattern>
-			</unit>
-			<unit type="light-lux">
-				<displayName>ლუქსი</displayName>
-				<unitPattern count="one">{0} ლუქსი</unitPattern>
-				<unitPattern count="other">{0} ლუქსი</unitPattern>
 			</unit>
 			<unit type="light-candela">
 				<displayName>კანდელა</displayName>
@@ -7261,13 +5690,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} მეტრული ტონა</unitPattern>
 			</unit>
 			<unit type="mass-kilogram">
-				<displayName>კილოგრამი</displayName>
 				<unitPattern count="one">{0} კილოგრამი</unitPattern>
 				<unitPattern count="other">{0} კილოგრამი</unitPattern>
 				<perUnitPattern>{0} კილოგრამში</perUnitPattern>
 			</unit>
 			<unit type="mass-gram">
-				<displayName>გრამი</displayName>
 				<unitPattern count="one">{0} გრამი</unitPattern>
 				<unitPattern count="other">{0} გრამი</unitPattern>
 				<perUnitPattern>{0} გრამში</perUnitPattern>
@@ -7283,39 +5710,28 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} მიკროგრამი</unitPattern>
 			</unit>
 			<unit type="mass-ton">
-				<displayName>ტონა</displayName>
 				<unitPattern count="one">{0} ტონა</unitPattern>
 				<unitPattern count="other">{0} ტ</unitPattern>
 			</unit>
-			<unit type="mass-stone">
-				<displayName>სტოუნი</displayName>
-				<unitPattern count="one">{0} სტოუნი</unitPattern>
-				<unitPattern count="other">{0} სტოუნი</unitPattern>
-			</unit>
 			<unit type="mass-pound">
-				<displayName>ფუნტი</displayName>
 				<unitPattern count="one">{0} ფუნტი</unitPattern>
 				<unitPattern count="other">{0} ფუნტი</unitPattern>
 				<perUnitPattern>{0} ფუნტში</perUnitPattern>
 			</unit>
 			<unit type="mass-ounce">
-				<displayName>უნცია</displayName>
 				<unitPattern count="one">{0} უნცია</unitPattern>
 				<unitPattern count="other">{0} უნცია</unitPattern>
 				<perUnitPattern>{0} უნციაში</perUnitPattern>
 			</unit>
 			<unit type="mass-ounce-troy">
-				<displayName>ტრუას უნცია</displayName>
 				<unitPattern count="one">{0} ტრუას უნცია</unitPattern>
 				<unitPattern count="other">{0} ტრუას უნცია</unitPattern>
 			</unit>
 			<unit type="mass-carat">
-				<displayName>კარატი</displayName>
 				<unitPattern count="one">{0} კარატი</unitPattern>
 				<unitPattern count="other">{0} კარატი</unitPattern>
 			</unit>
 			<unit type="mass-dalton">
-				<displayName>დალტონი</displayName>
 				<unitPattern count="one">{0} დალტონი</unitPattern>
 				<unitPattern count="other">{0} დალტონი</unitPattern>
 			</unit>
@@ -7328,11 +5744,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>მზის მასა</displayName>
 				<unitPattern count="one">{0} მზის მასა</unitPattern>
 				<unitPattern count="other">{0} მზის მასა</unitPattern>
-			</unit>
-			<unit type="mass-grain">
-				<displayName>გრანი</displayName>
-				<unitPattern count="one">{0} გრანი</unitPattern>
-				<unitPattern count="other">{0} გრანი</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
 				<displayName>გიგავატი</displayName>
@@ -7378,11 +5789,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ვერცხლისწყლის დუიმი</displayName>
 				<unitPattern count="one">{0} ვერცხლისწყლის დუიმი</unitPattern>
 				<unitPattern count="other">{0} ვერცხლისწყლის დუიმი</unitPattern>
-			</unit>
-			<unit type="pressure-bar">
-				<displayName>ბარი</displayName>
-				<unitPattern count="one">{0} ბარი</unitPattern>
-				<unitPattern count="other">{0} ბარი</unitPattern>
 			</unit>
 			<unit type="pressure-millibar">
 				<displayName>მილიბარი</displayName>
@@ -7434,10 +5840,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} კვანძი</unitPattern>
 				<unitPattern count="other">{0} კვანძი</unitPattern>
 			</unit>
-			<unit type="temperature-generic">
-				<displayName>°</displayName>
-				<unitPattern count="one">{0}°</unitPattern>
-				<unitPattern count="other">{0}°</unitPattern>
+			<unit type="speed-beaufort">
+				<displayName>ბოფორტი</displayName>
+				<unitPattern count="one">ბოფორტი {0}</unitPattern>
+				<unitPattern count="other">ბოფორტი {0}</unitPattern>
 			</unit>
 			<unit type="temperature-celsius">
 				<displayName>გრადუსი ცელსიუსით</displayName>
@@ -7454,18 +5860,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} კელვინი</unitPattern>
 				<unitPattern count="other">{0} კელვინის გრადუსი</unitPattern>
 			</unit>
-			<unit type="torque-pound-force-foot">
-				<displayName>ფუნტი-ფუტი</displayName>
-				<unitPattern count="one">{0} ფუნტი-ფუტი</unitPattern>
-				<unitPattern count="other">{0} ფუნტი-ფუტი</unitPattern>
-			</unit>
 			<unit type="torque-newton-meter">
 				<displayName>ნიუტონ-მეტრი</displayName>
 				<unitPattern count="one">{0} ნიუტონ-მეტრი</unitPattern>
 				<unitPattern count="other">{0} ნიუტონ-მეტრი</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
-				<displayName>კუბური კილომეტრი</displayName>
 				<unitPattern count="one">{0} კუბური კილომეტრი</unitPattern>
 				<unitPattern count="other">{0} კუბური კილომეტრი</unitPattern>
 			</unit>
@@ -7482,7 +5882,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<perUnitPattern>{0} კუბურ სანტიმეტრში</perUnitPattern>
 			</unit>
 			<unit type="volume-cubic-mile">
-				<displayName>კუბური მილი</displayName>
 				<unitPattern count="one">{0} კუბური მილი</unitPattern>
 				<unitPattern count="other">{0} კუბური მილი</unitPattern>
 			</unit>
@@ -7512,7 +5911,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ჰექტოლიტრი</unitPattern>
 			</unit>
 			<unit type="volume-liter">
-				<displayName>ლიტრი</displayName>
 				<unitPattern count="one">{0} ლიტრი</unitPattern>
 				<unitPattern count="other">{0} ლიტრი</unitPattern>
 				<perUnitPattern>{0} ლიტრში</perUnitPattern>
@@ -7547,37 +5945,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} აკრი-ფუტი</unitPattern>
 				<unitPattern count="other">{0} აკრი-ფუტი</unitPattern>
 			</unit>
-			<unit type="volume-bushel">
-				<displayName>ბუშელი</displayName>
-				<unitPattern count="one">{0} ბუშელი</unitPattern>
-				<unitPattern count="other">{0} ბუშელი</unitPattern>
-			</unit>
 			<unit type="volume-gallon">
-				<displayName>გალონი</displayName>
-				<unitPattern count="one">{0} გალონი</unitPattern>
-				<unitPattern count="other">{0} გალონი</unitPattern>
 				<perUnitPattern>{0} გალონში</perUnitPattern>
 			</unit>
 			<unit type="volume-gallon-imperial">
 				<displayName>იმპ. გალონი</displayName>
 				<unitPattern count="one">{0} იმპ. გალონი</unitPattern>
 				<unitPattern count="other">{0} იმპ. გალონი</unitPattern>
-				<perUnitPattern>{0}/იმპ. გალ.</perUnitPattern>
-			</unit>
-			<unit type="volume-quart">
-				<displayName>კვარტა</displayName>
-				<unitPattern count="one">{0} კვარტა</unitPattern>
-				<unitPattern count="other">{0} კვარტა</unitPattern>
-			</unit>
-			<unit type="volume-pint">
-				<displayName>პინტა</displayName>
-				<unitPattern count="one">{0} პინტა</unitPattern>
-				<unitPattern count="other">{0} პინტა</unitPattern>
-			</unit>
-			<unit type="volume-cup">
-				<displayName>ჭიქა</displayName>
-				<unitPattern count="one">{0} ჭიქა</unitPattern>
-				<unitPattern count="other">{0} ჭიქა</unitPattern>
 			</unit>
 			<unit type="volume-fluid-ounce">
 				<displayName>თხევადი უნცია</displayName>
@@ -7600,39 +5974,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ჩაის კოვზი</unitPattern>
 			</unit>
 			<unit type="volume-barrel">
-				<displayName>ბარელი</displayName>
 				<unitPattern count="one">{0} ბარელი</unitPattern>
 				<unitPattern count="other">{0} ბარელი</unitPattern>
 			</unit>
-			<unit type="volume-dessert-spoon">
-				<displayName>დესერტის კოვზი</displayName>
-				<unitPattern count="one">{0} დესერტის კოვზი</unitPattern>
-				<unitPattern count="other">{0} დესერტის კოვზი</unitPattern>
-			</unit>
 			<unit type="volume-dessert-spoon-imperial">
-				<displayName>ბრიტ. დესერტის კოვზი</displayName>
 				<unitPattern count="one">{0} ბრიტ. დესერტის კოვზი</unitPattern>
 				<unitPattern count="other">{0} ბრიტ. დესერტის კოვზი</unitPattern>
-			</unit>
-			<unit type="volume-drop">
-				<displayName>წვეთი</displayName>
-				<unitPattern count="one">{0} წვეთი</unitPattern>
-				<unitPattern count="other">{0} წვეთი</unitPattern>
 			</unit>
 			<unit type="volume-dram">
 				<displayName>ბრიტანული თხევადი დრაქმა</displayName>
 				<unitPattern count="one">{0} ბრიტანული თხევადი დრაქმა</unitPattern>
 				<unitPattern count="other">{0} ბრიტანული თხევადი დრაქმა</unitPattern>
-			</unit>
-			<unit type="volume-jigger">
-				<displayName>ჯიგერი</displayName>
-				<unitPattern count="one">{0} ჯიგერი</unitPattern>
-				<unitPattern count="other">{0} ჯიგერი</unitPattern>
-			</unit>
-			<unit type="volume-pinch">
-				<displayName>მწიკვი</displayName>
-				<unitPattern count="one">{0} მწიკვი</unitPattern>
-				<unitPattern count="other">{0} მწიკვი</unitPattern>
 			</unit>
 			<unit type="volume-quart-imperial">
 				<displayName>ბრიტანული კვარტი</displayName>
@@ -7678,6 +6030,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<compoundUnit type="10p-24">
 				<unitPrefixPattern>იოქტო{0}</unitPrefixPattern>
 			</compoundUnit>
+			<compoundUnit type="10p-27">
+				<unitPrefixPattern>რ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-30">
+				<unitPrefixPattern>ქ{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="10p1">
 				<unitPrefixPattern>დეკა{0}</unitPrefixPattern>
 			</compoundUnit>
@@ -7686,9 +6044,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</compoundUnit>
 			<compoundUnit type="10p3">
 				<unitPrefixPattern>კ{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p6">
-				<unitPrefixPattern>M{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p9">
 				<unitPrefixPattern>გ{0}</unitPrefixPattern>
@@ -7707,6 +6062,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</compoundUnit>
 			<compoundUnit type="10p24">
 				<unitPrefixPattern>ი{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p27">
+				<unitPrefixPattern>რა{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p30">
+				<unitPrefixPattern>ქა{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="1024p1">
 				<unitPrefixPattern>კი{0}</unitPrefixPattern>
@@ -7732,19 +6093,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<compoundUnit type="1024p8">
 				<unitPrefixPattern>იო{0}</unitPrefixPattern>
 			</compoundUnit>
-			<compoundUnit type="per">
-				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
-			</compoundUnit>
-			<compoundUnit type="power2">
-				<compoundUnitPattern1>{0}²</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one">{0}²</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other">{0}²</compoundUnitPattern1>
-			</compoundUnit>
-			<compoundUnit type="power3">
-				<compoundUnitPattern1>{0}³</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one">{0}³</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other">{0}³</compoundUnitPattern1>
-			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName>ინ. ძ.</displayName>
 				<unitPattern count="one">{0} ინ. ძ.</unitPattern>
@@ -7767,8 +6115,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="angle-degree">
 				<displayName>გრადუსი</displayName>
-				<unitPattern count="one">{0}°</unitPattern>
-				<unitPattern count="other">{0}°</unitPattern>
 			</unit>
 			<unit type="angle-arc-minute">
 				<displayName>მინუტი</displayName>
@@ -7857,26 +6203,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="concentr-permillion">
 				<displayName>ნაწილი/მილიონზე</displayName>
-				<unitPattern count="one">{0} ppm</unitPattern>
-				<unitPattern count="other">{0} ppm</unitPattern>
-			</unit>
-			<unit type="concentr-percent">
-				<displayName>%</displayName>
-				<unitPattern count="one">{0}%</unitPattern>
-				<unitPattern count="other">{0}%</unitPattern>
-			</unit>
-			<unit type="concentr-permille">
-				<displayName>‰</displayName>
-				<unitPattern count="one">{0}‰</unitPattern>
-				<unitPattern count="other">{0}‰</unitPattern>
-			</unit>
-			<unit type="concentr-permyriad">
-				<unitPattern count="one">{0}‱</unitPattern>
-				<unitPattern count="other">{0}‱</unitPattern>
-			</unit>
-			<unit type="concentr-mole">
-				<unitPattern count="one">{0} mol</unitPattern>
-				<unitPattern count="other">{0} mol</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>ლიტრი/კმ</displayName>
@@ -7913,20 +6239,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ტბიტი</unitPattern>
 				<unitPattern count="other">{0} ტბიტი</unitPattern>
 			</unit>
-			<unit type="digital-gigabyte">
-				<displayName>GB</displayName>
-				<unitPattern count="one">{0} GB</unitPattern>
-				<unitPattern count="other">{0} GB</unitPattern>
-			</unit>
 			<unit type="digital-gigabit">
 				<displayName>გბიტი</displayName>
 				<unitPattern count="one">{0} გბიტი</unitPattern>
 				<unitPattern count="other">{0} გბიტი</unitPattern>
-			</unit>
-			<unit type="digital-megabyte">
-				<displayName>MB</displayName>
-				<unitPattern count="one">{0} MB</unitPattern>
-				<unitPattern count="other">{0} MB</unitPattern>
 			</unit>
 			<unit type="digital-megabit">
 				<displayName>მბიტი</displayName>
@@ -8091,14 +6407,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} აშშ თერმი</unitPattern>
 				<unitPattern count="other">{0} აშშ თერმი</unitPattern>
 			</unit>
-			<unit type="force-pound-force">
-				<unitPattern count="one">{0} lbf</unitPattern>
-				<unitPattern count="other">{0} lbf</unitPattern>
-			</unit>
-			<unit type="force-newton">
-				<unitPattern count="one">{0} N</unitPattern>
-				<unitPattern count="other">{0} N</unitPattern>
-			</unit>
 			<unit type="force-kilowatt-hour-per-100-kilometer">
 				<displayName>კვტსთ/100კმ</displayName>
 				<unitPattern count="one">{0} კვტსთ/100კმ</unitPattern>
@@ -8160,9 +6468,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} წერტ/დუიმზე</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>წერტილი</displayName>
-				<unitPattern count="one">{0} წერტილი</unitPattern>
-				<unitPattern count="other">{0} წერტილი</unitPattern>
+				<displayName>წერტ.</displayName>
+				<unitPattern count="one">{0} წერტ.</unitPattern>
+				<unitPattern count="other">{0} წერტ.</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>⊕ რადიუსი</displayName>
@@ -8363,14 +6671,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} დალტ.</unitPattern>
 				<unitPattern count="other">{0} დალტ.</unitPattern>
 			</unit>
-			<unit type="mass-earth-mass">
-				<unitPattern count="one">{0} M⊕</unitPattern>
-				<unitPattern count="other">{0} M⊕</unitPattern>
-			</unit>
-			<unit type="mass-solar-mass">
-				<unitPattern count="one">{0} M☉</unitPattern>
-				<unitPattern count="other">{0} M☉</unitPattern>
-			</unit>
 			<unit type="mass-grain">
 				<displayName>გრანი</displayName>
 				<unitPattern count="one">{0} გრანი</unitPattern>
@@ -8475,26 +6775,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>კვძ.</displayName>
 				<unitPattern count="one">{0} კვძ.</unitPattern>
 				<unitPattern count="other">{0} კვძ.</unitPattern>
-			</unit>
-			<unit type="temperature-generic">
-				<displayName>°</displayName>
-				<unitPattern count="one">{0}°</unitPattern>
-				<unitPattern count="other">{0}°</unitPattern>
-			</unit>
-			<unit type="temperature-celsius">
-				<displayName>°C</displayName>
-				<unitPattern count="one">{0}°C</unitPattern>
-				<unitPattern count="other">{0}°C</unitPattern>
-			</unit>
-			<unit type="temperature-fahrenheit">
-				<displayName>°F</displayName>
-				<unitPattern count="one">{0}°F</unitPattern>
-				<unitPattern count="other">{0}°F</unitPattern>
-			</unit>
-			<unit type="temperature-kelvin">
-				<displayName>K</displayName>
-				<unitPattern count="one">{0} K</unitPattern>
-				<unitPattern count="other">{0} K</unitPattern>
 			</unit>
 			<unit type="torque-pound-force-foot">
 				<displayName>ფუნტი-ფუტი</displayName>
@@ -8690,114 +6970,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
-			<compoundUnit type="10p-1">
-				<unitPrefixPattern>დ{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p-2">
-				<unitPrefixPattern>ს{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p-3">
-				<unitPrefixPattern>მ{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p-6">
-				<unitPrefixPattern>მკ{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p-9">
-				<unitPrefixPattern>ნ{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p-12">
-				<unitPrefixPattern>პკ{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p-15">
-				<unitPrefixPattern>ფ{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p-18">
-				<unitPrefixPattern>ა{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p-21">
-				<unitPrefixPattern>ზეპტო{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p-24">
-				<unitPrefixPattern>იოქტო{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p1">
-				<unitPrefixPattern>დეკა{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p2">
-				<unitPrefixPattern>ჰ{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p3">
-				<unitPrefixPattern>კ{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p6">
-				<unitPrefixPattern>M{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p9">
-				<unitPrefixPattern>გ{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p12">
-				<unitPrefixPattern>ტ{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p15">
-				<unitPrefixPattern>პტ{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p18">
-				<unitPrefixPattern>ექსა{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p21">
-				<unitPrefixPattern>ზეტა{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p24">
-				<unitPrefixPattern>ი{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="1024p1">
-				<unitPrefixPattern>კი{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="1024p2">
-				<unitPrefixPattern>მე{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="1024p3">
-				<unitPrefixPattern>გი{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="1024p4">
-				<unitPrefixPattern>ტე{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="1024p5">
-				<unitPrefixPattern>პე{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="1024p6">
-				<unitPrefixPattern>ექს{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="1024p7">
-				<unitPrefixPattern>ზე{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="1024p8">
-				<unitPrefixPattern>იო{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="per">
-				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
-			</compoundUnit>
-			<compoundUnit type="power2">
-				<compoundUnitPattern1>{0}²</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one">{0}²</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other">{0}²</compoundUnitPattern1>
-			</compoundUnit>
-			<compoundUnit type="power3">
-				<compoundUnitPattern1>{0}³</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one">{0}³</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other">{0}³</compoundUnitPattern1>
-			</compoundUnit>
-			<compoundUnit type="times">
-				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
-			</compoundUnit>
-			<unit type="acceleration-g-force">
-				<unitPattern count="one">{0} ინ. ძ.</unitPattern>
-				<unitPattern count="other">{0} ინ. ძ.</unitPattern>
-			</unit>
-			<unit type="angle-degree">
-				<unitPattern count="one">{0}°</unitPattern>
-				<unitPattern count="other">{0}°</unitPattern>
-			</unit>
 			<unit type="angle-arc-minute">
 				<unitPattern count="one">{0} წთ</unitPattern>
 				<unitPattern count="other">{0} წთ</unitPattern>
@@ -8806,171 +6978,33 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} წმ</unitPattern>
 				<unitPattern count="other">{0} წმ</unitPattern>
 			</unit>
-			<unit type="area-square-kilometer">
-				<unitPattern count="one">{0} კმ²</unitPattern>
-				<unitPattern count="other">{0} კმ²</unitPattern>
-			</unit>
-			<unit type="area-hectare">
-				<unitPattern count="one">{0} ჰა</unitPattern>
-				<unitPattern count="other">{0} ჰა</unitPattern>
-			</unit>
-			<unit type="area-square-meter">
-				<unitPattern count="one">{0} მ²</unitPattern>
-				<unitPattern count="other">{0} მ²</unitPattern>
-			</unit>
-			<unit type="area-square-mile">
-				<unitPattern count="one">{0} მილი²</unitPattern>
-				<unitPattern count="other">{0} მილი²</unitPattern>
-			</unit>
-			<unit type="area-acre">
-				<unitPattern count="one">{0} აკრი</unitPattern>
-				<unitPattern count="other">{0} აკრი</unitPattern>
-			</unit>
-			<unit type="area-square-foot">
-				<unitPattern count="one">{0} ფტ²</unitPattern>
-				<unitPattern count="other">{0} ფტ²</unitPattern>
-			</unit>
-			<unit type="concentr-item">
-				<displayName>ერთეული</displayName>
-				<unitPattern count="one">{0} ერთე.</unitPattern>
-				<unitPattern count="other">{0} ერთე.</unitPattern>
-			</unit>
-			<unit type="concentr-percent">
-				<displayName>%</displayName>
-				<unitPattern count="one">{0}%</unitPattern>
-				<unitPattern count="other">{0}%</unitPattern>
-			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
-				<displayName>ლ/100კმ</displayName>
 				<unitPattern count="one">{0}ლ/100კმ</unitPattern>
 				<unitPattern count="other">{0}ლ/100კმ</unitPattern>
 			</unit>
-			<unit type="duration-century">
-				<displayName>ს.</displayName>
-				<unitPattern count="one">{0} ს.</unitPattern>
-				<unitPattern count="other">{0} ს.</unitPattern>
-			</unit>
-			<unit type="duration-decade">
-				<displayName draft="contributed">დეკადა</displayName>
-				<unitPattern count="one">{0} დეკადა</unitPattern>
-				<unitPattern count="other">{0} დეკადა</unitPattern>
-			</unit>
-			<unit type="duration-year">
-				<displayName>წ</displayName>
-				<unitPattern count="one">{0} წ</unitPattern>
-				<unitPattern count="other">{0} წ</unitPattern>
-				<perUnitPattern>{0}/წ</perUnitPattern>
-			</unit>
-			<unit type="duration-quarter">
-				<displayName>კვარტ</displayName>
-				<unitPattern count="one">{0} კვარტ</unitPattern>
-				<unitPattern count="other">{0} კვარტ</unitPattern>
-				<perUnitPattern>{0}/კვარტ</perUnitPattern>
-			</unit>
 			<unit type="duration-month">
-				<displayName>თვე</displayName>
-				<unitPattern count="one">{0} თვე</unitPattern>
-				<unitPattern count="other">{0} თვე</unitPattern>
 				<perUnitPattern>{0}/თ.</perUnitPattern>
-			</unit>
-			<unit type="duration-week">
-				<displayName>კვრ</displayName>
-				<unitPattern count="one">{0} კვრ</unitPattern>
-				<unitPattern count="other">{0} კვრ</unitPattern>
-				<perUnitPattern>{0}/კვრ</perUnitPattern>
-			</unit>
-			<unit type="duration-day">
-				<displayName>დღე</displayName>
-				<unitPattern count="one">{0} დღე</unitPattern>
-				<unitPattern count="other">{0} დღე</unitPattern>
-				<perUnitPattern>{0}/დღე</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
 				<displayName>საათი</displayName>
 				<unitPattern count="one">{0}სთ</unitPattern>
 				<unitPattern count="other">{0}სთ</unitPattern>
-				<perUnitPattern>{0}/სთ</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
-				<displayName>წთ</displayName>
 				<unitPattern count="one">{0}წთ</unitPattern>
 				<unitPattern count="other">{0}წთ</unitPattern>
-				<perUnitPattern>{0}/წთ</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
-				<displayName>წმ</displayName>
 				<unitPattern count="one">{0}წმ</unitPattern>
 				<unitPattern count="other">{0}წმ</unitPattern>
-				<perUnitPattern>{0}/წმ</perUnitPattern>
-			</unit>
-			<unit type="duration-millisecond">
-				<displayName>მწმ</displayName>
-				<unitPattern count="one">{0} მწმ</unitPattern>
-				<unitPattern count="other">{0} მწმ</unitPattern>
-			</unit>
-			<unit type="duration-microsecond">
-				<displayName>მკწმ</displayName>
-				<unitPattern count="one">{0} მკწმ</unitPattern>
-				<unitPattern count="other">{0} მკწმ</unitPattern>
-			</unit>
-			<unit type="duration-nanosecond">
-				<displayName>ნწმ</displayName>
-				<unitPattern count="one">{0} ნწმ</unitPattern>
-				<unitPattern count="other">{0} ნწმ</unitPattern>
-			</unit>
-			<unit type="force-kilowatt-hour-per-100-kilometer">
-				<displayName>კვტსთ/100კმ</displayName>
-				<unitPattern count="one">{0} კვტსთ/100კმ</unitPattern>
-				<unitPattern count="other">{0} კვტსთ/100კმ</unitPattern>
-			</unit>
-			<unit type="length-kilometer">
-				<displayName>კმ</displayName>
-				<unitPattern count="one">{0} კმ</unitPattern>
-				<unitPattern count="other">{0} კმ</unitPattern>
 			</unit>
 			<unit type="length-meter">
-				<displayName>მ</displayName>
 				<unitPattern count="one">{0}მ</unitPattern>
 				<unitPattern count="other">{0}მ</unitPattern>
-			</unit>
-			<unit type="length-centimeter">
-				<displayName>სმ</displayName>
-				<unitPattern count="one">{0} სმ</unitPattern>
-				<unitPattern count="other">{0} სმ</unitPattern>
-			</unit>
-			<unit type="length-millimeter">
-				<displayName>მმ</displayName>
-				<unitPattern count="one">{0} მმ</unitPattern>
-				<unitPattern count="other">{0} მმ</unitPattern>
-			</unit>
-			<unit type="length-picometer">
-				<unitPattern count="one">{0} პმ</unitPattern>
-				<unitPattern count="other">{0} პმ</unitPattern>
-			</unit>
-			<unit type="length-mile">
-				<unitPattern count="one">{0} მილი</unitPattern>
-				<unitPattern count="other">{0} მილი</unitPattern>
-			</unit>
-			<unit type="length-yard">
-				<unitPattern count="one">{0} იარდი</unitPattern>
-				<unitPattern count="other">{0} იარდი</unitPattern>
-			</unit>
-			<unit type="length-foot">
-				<unitPattern count="one">{0} ფტ</unitPattern>
-				<unitPattern count="other">{0} ფტ</unitPattern>
 			</unit>
 			<unit type="length-inch">
 				<unitPattern count="one">{0} დმ</unitPattern>
 				<unitPattern count="other">{0} დმ</unitPattern>
-			</unit>
-			<unit type="length-light-year">
-				<unitPattern count="one">{0} სწ</unitPattern>
-				<unitPattern count="other">{0} სწ</unitPattern>
-			</unit>
-			<unit type="light-lux">
-				<displayName>ლუქსი</displayName>
-				<unitPattern count="one">{0} ლუქსი</unitPattern>
-				<unitPattern count="other">{0} ლუქსი</unitPattern>
 			</unit>
 			<unit type="mass-kilogram">
 				<displayName>კგ</displayName>
@@ -8978,7 +7012,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}კგ</unitPattern>
 			</unit>
 			<unit type="mass-gram">
-				<displayName>გრამი</displayName>
 				<unitPattern count="one">{0}გ</unitPattern>
 				<unitPattern count="other">{0}გ</unitPattern>
 			</unit>
@@ -8987,7 +7020,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}მგ</unitPattern>
 			</unit>
 			<unit type="mass-microgram">
-				<displayName>მკგ</displayName>
 				<unitPattern count="one">{0}მკგ</unitPattern>
 				<unitPattern count="other">{0}მკგ</unitPattern>
 			</unit>
@@ -8995,143 +7027,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}ტ</unitPattern>
 				<unitPattern count="other">{0}ტ</unitPattern>
 			</unit>
-			<unit type="mass-pound">
-				<unitPattern count="one">{0} ფნტ</unitPattern>
-				<unitPattern count="other">{0} ფნტ</unitPattern>
-			</unit>
-			<unit type="mass-ounce">
-				<unitPattern count="one">{0} უნც</unitPattern>
-				<unitPattern count="other">{0} უნც</unitPattern>
-			</unit>
-			<unit type="power-kilowatt">
-				<unitPattern count="one">{0} კვტ</unitPattern>
-				<unitPattern count="other">{0} კვტ</unitPattern>
-			</unit>
-			<unit type="power-watt">
-				<unitPattern count="one">{0} ვტ</unitPattern>
-				<unitPattern count="other">{0} ვტ</unitPattern>
-			</unit>
 			<unit type="power-horsepower">
 				<unitPattern count="one">{0}ცხ.ძ.</unitPattern>
 				<unitPattern count="other">{0}ცხ.ძ.</unitPattern>
-			</unit>
-			<unit type="pressure-inch-ofhg">
-				<unitPattern count="one">{0} ვრც. დმ.</unitPattern>
-				<unitPattern count="other">{0} ვრც. დმ.</unitPattern>
 			</unit>
 			<unit type="pressure-millibar">
 				<unitPattern count="one">{0} მბრ</unitPattern>
 				<unitPattern count="other">{0} მბრ</unitPattern>
 			</unit>
-			<unit type="pressure-hectopascal">
-				<unitPattern count="one">{0} ჰპა</unitPattern>
-				<unitPattern count="other">{0} ჰპა</unitPattern>
-			</unit>
-			<unit type="speed-kilometer-per-hour">
-				<displayName>კმ/სთ</displayName>
-				<unitPattern count="one">{0} კმ/სთ</unitPattern>
-				<unitPattern count="other">{0} კმ/სთ</unitPattern>
-			</unit>
-			<unit type="speed-meter-per-second">
-				<unitPattern count="one">{0} მ/წმ</unitPattern>
-				<unitPattern count="other">{0} მ/წმ</unitPattern>
-			</unit>
-			<unit type="speed-mile-per-hour">
-				<unitPattern count="one">{0} მილი/სთ</unitPattern>
-				<unitPattern count="other">{0} მილი/სთ</unitPattern>
-			</unit>
-			<unit type="temperature-celsius">
-				<displayName>°C</displayName>
-				<unitPattern count="one">{0}°C</unitPattern>
-				<unitPattern count="other">{0}°C</unitPattern>
-			</unit>
-			<unit type="temperature-fahrenheit">
-				<unitPattern count="one">{0}°F</unitPattern>
-				<unitPattern count="other">{0}°F</unitPattern>
-			</unit>
-			<unit type="volume-cubic-kilometer">
-				<unitPattern count="one">{0} კმ³</unitPattern>
-				<unitPattern count="other">{0} კმ³</unitPattern>
-			</unit>
-			<unit type="volume-cubic-mile">
-				<unitPattern count="one">{0} მილი³</unitPattern>
-				<unitPattern count="other">{0} მილი³</unitPattern>
-			</unit>
 			<unit type="volume-liter">
-				<displayName>ლიტრი</displayName>
 				<unitPattern count="one">{0}ლ</unitPattern>
 				<unitPattern count="other">{0}ლ</unitPattern>
 			</unit>
-			<coordinateUnit>
-				<displayName>მიმართულება</displayName>
-				<coordinateUnitPattern type="east">{0}აღმ.</coordinateUnitPattern>
-				<coordinateUnitPattern type="north">{0}ჩრდ.</coordinateUnitPattern>
-				<coordinateUnitPattern type="south">{0} სამხრ.</coordinateUnitPattern>
-				<coordinateUnitPattern type="west">{0} დას.</coordinateUnitPattern>
-			</coordinateUnit>
 		</unitLength>
-		<durationUnit type="hm">
-			<durationUnitPattern>h:mm</durationUnitPattern>
-		</durationUnit>
-		<durationUnit type="hms">
-			<durationUnitPattern>h:mm:ss</durationUnitPattern>
-		</durationUnit>
-		<durationUnit type="ms">
-			<durationUnitPattern>m:ss</durationUnitPattern>
-		</durationUnit>
 	</units>
 	<listPatterns>
 		<listPattern>
-			<listPatternPart type="start">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle">{0}, {1}</listPatternPart>
 			<listPatternPart type="end">{0} და {1}</listPatternPart>
 			<listPatternPart type="2">{0} და {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="or">
-			<listPatternPart type="start">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle">{0}, {1}</listPatternPart>
 			<listPatternPart type="end">{0} ან {1}</listPatternPart>
 			<listPatternPart type="2">{0} ან {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="or-narrow">
-			<listPatternPart type="start">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle">{0}, {1}</listPatternPart>
-			<listPatternPart type="end">{0} ან {1}</listPatternPart>
-			<listPatternPart type="2">{0} ან {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="or-short">
-			<listPatternPart type="start">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle">{0}, {1}</listPatternPart>
-			<listPatternPart type="end">{0} ან {1}</listPatternPart>
-			<listPatternPart type="2">{0} ან {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="standard-narrow">
-			<listPatternPart type="start">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle">{0}, {1}</listPatternPart>
-			<listPatternPart type="end">{0} და {1}</listPatternPart>
-			<listPatternPart type="2">{0} და {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="standard-short">
-			<listPatternPart type="start">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle">{0}, {1}</listPatternPart>
-			<listPatternPart type="end">{0} და {1}</listPatternPart>
-			<listPatternPart type="2">{0} და {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="unit">
-			<listPatternPart type="start">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle">{0}, {1}</listPatternPart>
-			<listPatternPart type="end">{0}, {1}</listPatternPart>
-			<listPatternPart type="2">{0}, {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="unit-narrow">
-			<listPatternPart type="start">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle">{0}, {1}</listPatternPart>
-			<listPatternPart type="end">{0}, {1}</listPatternPart>
-			<listPatternPart type="2">{0}, {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="unit-short">
-			<listPatternPart type="start">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle">{0}, {1}</listPatternPart>
 			<listPatternPart type="end">{0}, {1}</listPatternPart>
 			<listPatternPart type="2">{0}, {1}</listPatternPart>
 		</listPattern>
@@ -9144,10 +7063,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	</posix>
 	<characterLabels>
 		<characterLabelPattern type="all">{0} — ყველა</characterLabelPattern>
-		<characterLabelPattern type="category-list">{0}: {1}</characterLabelPattern>
 		<characterLabelPattern type="compatibility">{0} — თავსებადობა</characterLabelPattern>
 		<characterLabelPattern type="enclosed">{0} — ჩართული</characterLabelPattern>
 		<characterLabelPattern type="extended">{0} — გაფართოებული</characterLabelPattern>
+		<characterLabelPattern type="facing-left">{0} მარცხნივ მიმართული</characterLabelPattern>
+		<characterLabelPattern type="facing-right">{0} მარჯვნივ მიმართული</characterLabelPattern>
 		<characterLabelPattern type="historic">{0} — ისტორიული</characterLabelPattern>
 		<characterLabelPattern type="miscellaneous">{0} — სხვადასხვა</characterLabelPattern>
 		<characterLabelPattern type="other">{0} — სხვა</characterLabelPattern>
@@ -9317,13 +7237,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<nameOrderLocales order="givenFirst">und ka</nameOrderLocales>
 		<nameOrderLocales order="surnameFirst">ko vi yue zh</nameOrderLocales>
 		<personName order="givenFirst" length="long" usage="referring" formality="informal">
-			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+			<namePattern>{given-informal} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="addressing" formality="formal">
-			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+			<namePattern>{title} {given}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="addressing" formality="informal">
-			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+			<namePattern>{given-informal}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="monogram" formality="formal">
 			<namePattern>{given-monogram}{given2-monogram}{surname-monogram}</namePattern>
@@ -9332,67 +7252,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<namePattern>{given-informal-monogram}{surname-monogram}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="referring" formality="formal">
-			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
-		</personName>
-		<personName order="givenFirst" length="medium" usage="referring" formality="informal">
-			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+			<namePattern>{given} {given2-initial} {surname} {generation}, {credentials}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="addressing" formality="formal">
-			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+			<namePattern>{title} {given}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="addressing" formality="informal">
-			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
-		</personName>
-		<personName order="givenFirst" length="medium" usage="monogram" formality="formal">
-			<namePattern>{given-monogram}{given2-monogram}{surname-monogram}</namePattern>
-		</personName>
-		<personName order="givenFirst" length="medium" usage="monogram" formality="informal">
-			<namePattern>{given-monogram}{given2-monogram}{surname-monogram}</namePattern>
-		</personName>
-		<personName order="givenFirst" length="short" usage="referring" formality="formal">
-			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
-		</personName>
-		<personName order="givenFirst" length="short" usage="referring" formality="informal">
-			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+			<namePattern>{given-informal}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="addressing" formality="formal">
-			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+			<namePattern>{title} {given}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="addressing" formality="informal">
-			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
-		</personName>
-		<personName order="givenFirst" length="short" usage="monogram" formality="formal">
-			<namePattern>{given-monogram}{given2-monogram}{surname-monogram}</namePattern>
-		</personName>
-		<personName order="givenFirst" length="short" usage="monogram" formality="informal">
-			<namePattern>{given-monogram}{given2-monogram}{surname-monogram}</namePattern>
-		</personName>
-		<personName order="surnameFirst" length="long" usage="referring" formality="informal">
-			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
-		</personName>
-		<personName order="surnameFirst" length="long" usage="addressing" formality="formal">
-			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
-		</personName>
-		<personName order="surnameFirst" length="long" usage="addressing" formality="informal">
-			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
-		</personName>
-		<personName order="surnameFirst" length="long" usage="monogram" formality="formal">
-			<namePattern>{surname-monogram}{given-monogram}{given2-monogram}</namePattern>
+			<namePattern>{given-informal}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="monogram" formality="informal">
 			<namePattern>{surname-monogram}{given-monogram}{given2-monogram}</namePattern>
-		</personName>
-		<personName order="surnameFirst" length="medium" usage="referring" formality="formal">
-			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
-		</personName>
-		<personName order="surnameFirst" length="medium" usage="referring" formality="informal">
-			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
-		</personName>
-		<personName order="surnameFirst" length="medium" usage="addressing" formality="formal">
-			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
-		</personName>
-		<personName order="surnameFirst" length="medium" usage="addressing" formality="informal">
-			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="monogram" formality="formal">
 			<namePattern>{surname-monogram}{given-monogram}{given2-monogram}</namePattern>
@@ -9400,38 +7275,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<personName order="surnameFirst" length="medium" usage="monogram" formality="informal">
 			<namePattern>{surname-monogram}{given-monogram}{given2-monogram}</namePattern>
 		</personName>
-		<personName order="surnameFirst" length="short" usage="referring" formality="formal">
-			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
-		</personName>
-		<personName order="surnameFirst" length="short" usage="referring" formality="informal">
-			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
-		</personName>
-		<personName order="surnameFirst" length="short" usage="addressing" formality="formal">
-			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
-		</personName>
-		<personName order="surnameFirst" length="short" usage="addressing" formality="informal">
-			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
-		</personName>
 		<personName order="surnameFirst" length="short" usage="monogram" formality="formal">
 			<namePattern>{surname-monogram}{given-monogram}{given2-monogram}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="monogram" formality="informal">
 			<namePattern>{surname-monogram}{given-monogram}{given2-monogram}</namePattern>
-		</personName>
-		<personName order="sorting" length="long" usage="referring" formality="informal">
-			<namePattern>{surname} {surname2}, {title} {given} {given2} {credentials}</namePattern>
-		</personName>
-		<personName order="sorting" length="medium" usage="referring" formality="formal">
-			<namePattern>{surname} {surname2}, {title} {given} {given2} {credentials}</namePattern>
-		</personName>
-		<personName order="sorting" length="medium" usage="referring" formality="informal">
-			<namePattern>{surname} {surname2}, {title} {given} {given2} {credentials}</namePattern>
-		</personName>
-		<personName order="sorting" length="short" usage="referring" formality="formal">
-			<namePattern>{surname} {surname2}, {title} {given} {given2} {credentials}</namePattern>
-		</personName>
-		<personName order="sorting" length="short" usage="referring" formality="informal">
-			<namePattern>{surname} {surname2}, {title} {given} {given2} {credentials}</namePattern>
 		</personName>
 		<sampleName item="nativeG">
 			<nameField type="given">ნინო</nameField>

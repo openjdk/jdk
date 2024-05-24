@@ -25,12 +25,8 @@
  * @test
  * @bug 8004727
  * @summary javac should generate method parameters correctly.
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
+ * @enablePreview
+ * @modules java.base/jdk.internal.classfile.impl
  *          jdk.compiler/com.sun.tools.javac.code
  *          jdk.compiler/com.sun.tools.javac.comp
  *          jdk.compiler/com.sun.tools.javac.file
@@ -39,8 +35,8 @@
  *          jdk.compiler/com.sun.tools.javac.util
  */
 // key: opt.arg.parameters
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.*;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
 import com.sun.tools.javac.code.Symtab;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.main.Main;
@@ -171,7 +167,7 @@ public class MethodParametersTest {
 
     void modifyBaz(boolean flip) throws Exception {
         final File Baz_class = new File(classesdir, Baz_name + ".class");
-        final ClassModel baz = Classfile.of().parse(Baz_class.toPath());
+        final ClassModel baz = ClassFile.of().parse(Baz_class.toPath());
 
         // Find MethodParameters and the Code attributes
         if (baz.methods().size() != 1)
@@ -179,8 +175,8 @@ public class MethodParametersTest {
         if (!baz.methods().get(0).methodName().equalsString("<init>"))
             throw new Exception("Classfile Baz badly formed: method has name " +
                                 baz.methods().get(0).methodName().stringValue());
-        MethodParametersAttribute mpattr = baz.methods().get(0).findAttribute(Attributes.METHOD_PARAMETERS).orElse(null);
-        CodeAttribute cattr = baz.methods().get(0).findAttribute(Attributes.CODE).orElse(null);;
+        MethodParametersAttribute mpattr = baz.methods().get(0).findAttribute(Attributes.methodParameters()).orElse(null);
+        CodeAttribute cattr = baz.methods().get(0).findAttribute(Attributes.code()).orElse(null);;
         if (null == mpattr)
             throw new Exception("Classfile Baz badly formed: no method parameters info");
         if (null == cattr)
@@ -188,7 +184,7 @@ public class MethodParametersTest {
 
         // Alter the MethodParameters attribute, changing the name of
         // the parameter from i to baz.
-        byte[] bazBytes = Classfile.of().transform(baz, ClassTransform.transformingMethods((methodBuilder, methodElement) -> {
+        byte[] bazBytes = ClassFile.of().transform(baz, ClassTransform.transformingMethods((methodBuilder, methodElement) -> {
             if (methodElement instanceof MethodParametersAttribute a) {
                 List<MethodParameterInfo> newParameterInfos = new ArrayList<>();
                 for (MethodParameterInfo info : a.parameters()) {
@@ -204,7 +200,7 @@ public class MethodParametersTest {
         // Flip the code and method attributes().  This is for checking
         // that order doesn't matter.
         if (flip) {
-            bazBytes = Classfile.of().transform(baz, ClassTransform.transformingMethods((methodBuilder, methodElement) -> {
+            bazBytes = ClassFile.of().transform(baz, ClassTransform.transformingMethods((methodBuilder, methodElement) -> {
                 if (methodElement instanceof MethodParametersAttribute) {
                     methodBuilder.with(cattr);
                 } else if (methodElement instanceof CodeAttribute){
@@ -220,7 +216,7 @@ public class MethodParametersTest {
     // Run a bunch of structural tests on foo to make sure it looks right.
     void checkFoo() throws Exception {
         final File Foo_class = new File(classesdir, Foo_name + ".class");
-        final ClassModel foo = Classfile.of().parse(Foo_class.toPath());
+        final ClassModel foo = ClassFile.of().parse(Foo_class.toPath());
         for (int i = 0; i < foo.methods().size(); i++) {
             System.err.println("Examine method Foo." + foo.methods().get(i).methodName());
             if (foo.methods().get(i).methodName().equalsString("foo2")) {
@@ -261,7 +257,7 @@ public class MethodParametersTest {
     // Run a bunch of structural tests on Bar to make sure it looks right.
     void checkBar() throws Exception {
         final File Bar_class = new File(classesdir, Bar_name + ".class");
-        final ClassModel bar = Classfile.of().parse(Bar_class.toPath());
+        final ClassModel bar = ClassFile.of().parse(Bar_class.toPath());
         for (int i = 0; i < bar.methods().size(); i++) {
             System.err.println("Examine method Bar." + bar.methods().get(i).methodName());
             if (bar.methods().get(i).methodName().equalsString("<init>")) {

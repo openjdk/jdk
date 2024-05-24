@@ -128,7 +128,12 @@
   static const bool int_in_long = true;
 
   // Does the CPU supports vector variable shift instructions?
-  static constexpr bool supports_vector_variable_shifts(void) {
+  static bool supports_vector_variable_shifts(void) {
+    return UseRVV;
+  }
+
+  // Does target support predicated operation emulation.
+  static bool supports_vector_predicate_op_emulation(int vopc, int vlen, BasicType bt) {
     return false;
   }
 
@@ -143,8 +148,8 @@
   }
 
   // Does the CPU supports vector unsigned comparison instructions?
-  static constexpr bool supports_vector_comparison_unsigned(int vlen, BasicType bt) {
-    return false;
+  static bool supports_vector_comparison_unsigned(int vlen, BasicType bt) {
+    return UseRVV;
   }
 
   // Some microarchitectures have mask registers used on vectors
@@ -190,6 +195,11 @@
         return 30;
       }
     }
+  }
+
+  // Is SIMD sort supported for this CPU?
+  static bool supports_simd_sort(BasicType bt) {
+    return false;
   }
 
 #endif // CPU_RISCV_MATCHER_RISCV_HPP

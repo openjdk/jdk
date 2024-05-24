@@ -25,20 +25,16 @@
  * @test
  * @bug 8144185
  * @summary javac produces incorrect RuntimeInvisibleTypeAnnotations length attribute
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
+ * @enablePreview
+ * @modules java.base/jdk.internal.classfile.impl
  */
 
 import static java.lang.annotation.ElementType.TYPE_USE;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.CodeAttribute;
-import jdk.internal.classfile.attribute.RuntimeVisibleTypeAnnotationsAttribute;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.CodeAttribute;
+import java.lang.classfile.attribute.RuntimeVisibleTypeAnnotationsAttribute;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 import java.util.Arrays;
@@ -62,9 +58,9 @@ public class TypeAnnotationPropagationTest extends ClassfileTestHelper {
         }
 
         assert f != null;
-        CodeAttribute cattr = f.findAttribute(Attributes.CODE).orElse(null);
+        CodeAttribute cattr = f.findAttribute(Attributes.code()).orElse(null);
         assert cattr != null;
-        RuntimeVisibleTypeAnnotationsAttribute attr = cattr.findAttribute(Attributes.RUNTIME_VISIBLE_TYPE_ANNOTATIONS).orElse(null);
+        RuntimeVisibleTypeAnnotationsAttribute attr = cattr.findAttribute(Attributes.runtimeVisibleTypeAnnotations()).orElse(null);
 
         assert attr != null;
         List<TypeAnnotation.LocalVarTargetInfo> annosPosition = ((TypeAnnotation.LocalVarTarget) attr.annotations().get(0).targetInfo()).table();

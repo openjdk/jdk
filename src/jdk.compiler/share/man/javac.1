@@ -1,4 +1,4 @@
-.\" Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
+.\" Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
 .\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 .\"
 .\" This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@
 . ftr VB CB
 . ftr VBI CBI
 .\}
-.TH "JAVAC" "1" "2024" "JDK 22-ea" "JDK Commands"
+.TH "JAVAC" "1" "2024" "JDK 23-ea" "JDK Commands"
 .hy
 .SH NAME
 .PP
@@ -563,6 +563,9 @@ module.
 Specifies the fallback target module for files created by annotation
 processors, if none is specified or inferred.
 .TP
+\f[V]--disable-line-doc-comments\f[R]
+Disables support for documentation comments with lines beginning ///.
+.TP
 \f[V]-Djava.endorsed.dirs=\f[R]\f[I]dirs\f[R]
 Overrides the location of the endorsed standards path.
 .RS
@@ -708,6 +711,9 @@ in a source file, and is used from other files.
 \f[V]classfile\f[R]: Warns about the issues related to classfile
 contents.
 .IP \[bu] 2
+\f[V]dangling-doc-comments\f[R]: Warns about extra or misplaced
+documentation comments near the beginning of a declaration.
+.IP \[bu] 2
 \f[V]deprecation\f[R]: Warns about the use of deprecated items.
 .IP \[bu] 2
 \f[V]dep-ann\f[R]: Warns about the items marked as deprecated in
@@ -724,6 +730,8 @@ a switch statement to the next.
 .IP \[bu] 2
 \f[V]finally\f[R]: Warns about \f[V]finally\f[R] clauses that do not
 terminate normally.
+.IP \[bu] 2
+\f[V]incubating\f[R]: Warns about the use of incubating modules.
 .IP \[bu] 2
 \f[V]lossy-conversions\f[R]: Warns about possible lossy conversions in
 compound assignment.

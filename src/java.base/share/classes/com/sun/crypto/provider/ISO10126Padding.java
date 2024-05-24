@@ -74,7 +74,6 @@ final class ISO10126Padding implements Padding {
         SunJCE.getRandom().nextBytes(padding);
         System.arraycopy(padding, 0, in, off, len - 1);
         in[idx - 1] = paddingOctet;
-        return;
     }
 
     /**

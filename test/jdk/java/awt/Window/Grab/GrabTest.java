@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,19 +22,34 @@
  */
 
 /*
-  @test
-  @key headful
-  @bug 7124430
-  @summary Tests that SunToolkit.grab API works
-  @author anton.tarasov@oracle.com: area=awt.toolkit
-  @library ../../regtesthelpers
-  @modules java.desktop/sun.awt
-  @build Util
-  @run main GrabTest
-*/
+ * @test
+ * @key headful
+ * @bug 7124430
+ * @summary Tests that SunToolkit.grab API works
+ * @library ../../regtesthelpers
+ * @modules java.desktop/sun.awt
+ * @build Util
+ * @run main GrabTest
+ */
 
-import java.awt.*;
-import java.awt.event.*;
+
+import java.awt.AWTEvent;
+import java.awt.Button;
+import java.awt.Color;
+import java.awt.FlowLayout;
+import java.awt.Point;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.InputEvent;
+import java.awt.event.MouseEvent;
+import java.awt.Frame;
+import java.awt.Robot;
+import java.awt.Toolkit;
+import java.awt.Window;
+import java.awt.event.AWTEventListener;
+import java.awt.event.MouseAdapter;
+
+import javax.swing.SwingUtilities;
 import test.java.awt.regtesthelpers.Util;
 
 public class GrabTest {
@@ -56,9 +71,13 @@ public class GrabTest {
 
     static volatile boolean passed = true;
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
 
-        Toolkit.getDefaultToolkit().addAWTEventListener(new AWTEventListener() {
+        robot = new Robot();
+        robot.setAutoDelay(100);
+
+        SwingUtilities.invokeAndWait(() -> {
+            Toolkit.getDefaultToolkit().addAWTEventListener(new AWTEventListener() {
                 public void eventDispatched(AWTEvent e) {
                     System.out.println(e);
                     if (e instanceof sun.awt.UngrabEvent) {
@@ -67,61 +86,56 @@ public class GrabTest {
                 }
             }, sun.awt.SunToolkit.GRAB_EVENT_MASK);
 
-        f = new Frame("Frame");
-        f.setBounds(0, 0, 300, 300);
-        f.addMouseListener(new MouseAdapter() {
+            f = new Frame("Frame");
+            f.setBounds(0, 0, 300, 300);
+            f.addMouseListener(new MouseAdapter() {
                 public void mousePressed(MouseEvent e) {
                     System.out.println(e);
                     framePressed = true;
                 }
             });
 
-        f1 = new Frame("OtherFrame");
-        f1.setBounds(700, 100, 300, 300);
+            f1 = new Frame("OtherFrame");
+            f1.setBounds(700, 100, 300, 300);
 
-        w = new Window(f);
-        w.setLayout(new FlowLayout());
-        b = new Button("Press");
-        b.addActionListener(new ActionListener() {
+            w = new Window(f);
+            w.setLayout(new FlowLayout());
+            b = new Button("Press");
+            b.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     System.out.println(e);
                     buttonPressed = true;
                 }
             });
-        w.add(b);
-        w.setBounds(400, 100, 300, 300);
-        w.setBackground(Color.blue);
-        w.addMouseListener(new MouseAdapter() {
+            w.add(b);
+            w.setBounds(400, 100, 300, 300);
+            w.setBackground(Color.blue);
+            w.addMouseListener(new MouseAdapter() {
                 public void mousePressed(MouseEvent e) {
                     System.out.println(e);
                     windowPressed = true;
                 }
             });
 
-        f.setVisible(true);
-        w.setVisible(true);
+            f.setVisible(true);
+            w.setVisible(true);
 
-        frame = new Frame();
-        window1 = new Window(frame);
-        window1.setSize(200, 200);
-        window1.setLocationRelativeTo(null);
-        window1.setBackground(Color.blue);
+            frame = new Frame();
+            window1 = new Window(frame);
+            window1.setSize(200, 200);
+            window1.setLocationRelativeTo(null);
+            window1.setBackground(Color.blue);
 
-        window2 = new Window(window1);
-        window2.setSize(100, 100);
-        window2.setLocationRelativeTo(null);
-        window2.setBackground(Color.green);
+            window2 = new Window(window1);
+            window2.setSize(100, 100);
+            window2.setLocationRelativeTo(null);
+            window2.setBackground(Color.green);
 
-        tk = (sun.awt.SunToolkit)Toolkit.getDefaultToolkit();
-
-        try {
-            robot = new Robot();
-        } catch (AWTException ex) {
-            throw new RuntimeException(ex);
-        }
+            tk = (sun.awt.SunToolkit)Toolkit.getDefaultToolkit();
+        });
 
         Util.waitForIdle(robot);
-
+        robot.delay(500);
         test();
     }
 
@@ -131,6 +145,7 @@ public class GrabTest {
         // 1. Check that button press doesn't cause ungrab
         Util.clickOnComp(b, robot);
         Util.waitForIdle(robot);
+
         checkAndThrow(buttonPressed, "Error: Button can not be pressed");
         if (ungrabbed) {
             passed = false;
@@ -151,6 +166,7 @@ public class GrabTest {
         // 3. Check that press on the frame causes ungrab, event must be dispatched
         Util.clickOnComp(f, robot);
         Util.waitForIdle(robot);
+
         checkAndThrow(framePressed, "Error: Frame can't be pressed");
         if (!ungrabbed) {
             passed = false;
@@ -173,28 +189,33 @@ public class GrabTest {
         // 5. Check that press on the other frame's title causes ungrab
         f1.setVisible(true);
         Util.waitForIdle(robot);
+        robot.delay(500);
+
         Util.clickOnTitle(f1, robot);
+        Util.waitForIdle(robot);
+
         if (!ungrabbed) {
             passed = false;
             System.err.println("Failure: [5] Press inside of other Frame's title didn't cause ungrab");
         }
         f.requestFocus(); // restore focus
         Util.waitForIdle(robot);
+
         if (!f.hasFocus()) {
             System.err.println("Error: Frame can't be focused");
         }
         ungrabbed = false;
         tk.grab(w);
 
-
         // 6. Check that press on the outside area causes ungrab
         Point loc = f.getLocationOnScreen();
         robot.mouseMove(loc.x + 100, loc.y + f.getSize().height + 10);
         Util.waitForIdle(robot);
-        robot.mousePress(InputEvent.BUTTON1_MASK);
-        robot.delay(50);
-        robot.mouseRelease(InputEvent.BUTTON1_MASK);
+
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
         Util.waitForIdle(robot);
+
         if (!ungrabbed) {
             passed = false;
             System.err.println("Failure: [6] Press on the outside area didn't cause ungrab");
@@ -218,6 +239,7 @@ public class GrabTest {
         window1.setVisible(true);
         window2.setVisible(true);
         Util.waitForIdle(robot);
+        robot.delay(500);
 
         tk.grab(window1);
 

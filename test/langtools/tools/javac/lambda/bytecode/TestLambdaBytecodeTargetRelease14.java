@@ -27,12 +27,8 @@
  * @summary Lambda back-end should generate invokespecial for method handles referring to
  *          private instance methods when compiling with --release 14
  * @library /tools/javac/lib
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
+ * @enablePreview
+ * @modules java.base/jdk.internal.classfile.impl
  *          jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.util
@@ -40,11 +36,11 @@
  * @run main TestLambdaBytecodeTargetRelease14
  */
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.*;
-import jdk.internal.classfile.constantpool.InvokeDynamicEntry;
-import jdk.internal.classfile.constantpool.MethodHandleEntry;
-import jdk.internal.classfile.instruction.InvokeDynamicInstruction;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
+import java.lang.classfile.constantpool.InvokeDynamicEntry;
+import java.lang.classfile.constantpool.MethodHandleEntry;
+import java.lang.classfile.instruction.InvokeDynamicInstruction;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -212,7 +208,7 @@ public class TestLambdaBytecodeTargetRelease14 extends ComboInstance<TestLambdaB
             return;
         }
         try (InputStream is = res.get().iterator().next().openInputStream()) {
-            ClassModel cm = Classfile.of().parse(is.readAllBytes());
+            ClassModel cm = ClassFile.of().parse(is.readAllBytes());
             MethodModel testMethod = null;
             for (MethodModel m : cm.methods()) {
                 if (m.methodName().equalsString("test")) {
@@ -224,7 +220,7 @@ public class TestLambdaBytecodeTargetRelease14 extends ComboInstance<TestLambdaB
                 fail("Test method not found");
                 return;
             }
-            CodeAttribute ea = testMethod.findAttribute(Attributes.CODE).orElse(null);
+            CodeAttribute ea = testMethod.findAttribute(Attributes.code()).orElse(null);
             if (ea == null) {
                 fail("Code attribute for test() method not found");
                 return;
@@ -249,7 +245,7 @@ public class TestLambdaBytecodeTargetRelease14 extends ComboInstance<TestLambdaB
                 return;
             }
 
-            BootstrapMethodsAttribute bsm_attr = cm.findAttribute(Attributes.BOOTSTRAP_METHODS).orElseThrow();
+            BootstrapMethodsAttribute bsm_attr = cm.findAttribute(Attributes.bootstrapMethods()).orElseThrow();
             if (bsm_attr.bootstrapMethodsSize() != 1) {
                 fail("Bad number of method specifiers " +
                         "in BootstrapMethods attribute");

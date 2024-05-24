@@ -1917,52 +1917,6 @@ public class JavacParserTest extends TestCase {
         }.scan(cut, null);
     }
 
-    @Test
-    void testStringTemplate1() throws IOException {
-        String code = """
-                      package test;
-                      public class Test {
-                           Test(int a) {
-                               String s = "prefix \\{a} suffix";
-                           }
-                      }
-                      """;
-
-        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, null,
-                null, null, Arrays.asList(new MyFileObject(code)));
-        CompilationUnitTree cut = ct.parse().iterator().next();
-        ClassTree clazz = (ClassTree) cut.getTypeDecls().get(0);
-        MethodTree constr = (MethodTree) clazz.getMembers().get(0);
-        VariableTree decl = (VariableTree) constr.getBody().getStatements().get(0);
-        SourcePositions sp = Trees.instance(ct).getSourcePositions();
-        int initStart = (int) sp.getStartPosition(cut, decl.getInitializer());
-        int initEnd   = (int) sp.getEndPosition(cut, decl.getInitializer());
-        assertEquals("correct templated String span expected", code.substring(initStart, initEnd), "\"prefix \\{a} suffix\"");
-    }
-
-    @Test
-    void testStringTemplate2() throws IOException {
-        String code = """
-                      package test;
-                      public class Test {
-                           Test(int a) {
-                               String s = STR."prefix \\{a} suffix";
-                           }
-                      }
-                      """;
-
-        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, null,
-                null, null, Arrays.asList(new MyFileObject(code)));
-        CompilationUnitTree cut = ct.parse().iterator().next();
-        ClassTree clazz = (ClassTree) cut.getTypeDecls().get(0);
-        MethodTree constr = (MethodTree) clazz.getMembers().get(0);
-        VariableTree decl = (VariableTree) constr.getBody().getStatements().get(0);
-        SourcePositions sp = Trees.instance(ct).getSourcePositions();
-        int initStart = (int) sp.getStartPosition(cut, decl.getInitializer());
-        int initEnd   = (int) sp.getEndPosition(cut, decl.getInitializer());
-        assertEquals("correct templated String span expected", code.substring(initStart, initEnd), "STR.\"prefix \\{a} suffix\"");
-    }
-
     @Test //JDK-8293897
     void testImplicitFinalInTryWithResources() throws IOException {
         String code = """
@@ -2042,63 +1996,6 @@ public class JavacParserTest extends TestCase {
                 return super.visitModifiers(node, p);
             }
         }.scan(cut, null);
-    }
-
-    @Test
-    void testIncompleteStringTemplate() throws IOException {
-        String template = "\"\\{o.toString()}\"";
-        String prefix = """
-                      package t;
-                      class Test {
-                          void test(Object o) {
-                              String s = STR.""";
-
-        Worker<Void> verifyParseable = task -> {
-            try {
-                task.parse().iterator().next();
-                return null;
-            } catch (IOException ex) {
-                throw new AssertionError(ex);
-            }
-        };
-        JavacTaskPool pool = new JavacTaskPool(1);
-        DiagnosticListener<JavaFileObject> dl = d -> {};
-        List<String> options = List.of("--enable-preview",
-                                       "-source", System.getProperty("java.specification.version"));
-        for (int i = 0; i < template.length(); i++) {
-            pool.getTask(null, fm, dl, options,
-                    null, Arrays.asList(new MyFileObject(prefix + template.substring(0, i))),
-                    verifyParseable
-            );
-        }
-        for (int i = 0; i < template.length() - 1; i++) {
-            pool.getTask(null, fm, dl, options,
-                    null, Arrays.asList(new MyFileObject(prefix + template.substring(0, i) + "\"")),
-                    verifyParseable);
-        }
-        String incomplete = prefix + "\"\\{o.";
-        pool.getTask(null, fm, dl, options,
-                null, Arrays.asList(new MyFileObject(incomplete)), task -> {
-            try {
-                CompilationUnitTree cut = task.parse().iterator().next();
-                String result = cut.toString().replaceAll("\\R", "\n");
-                System.out.println("RESULT\n" + result);
-                assertEquals("incorrect AST",
-                             result,
-                             """
-                             package t;
-                             \n\
-                             class Test {
-                                 \n\
-                                 void test(Object o) {
-                                     String s = STR.<error>;
-                                 }
-                             }""");
-                return null;
-            } catch (IOException ex) {
-                throw new AssertionError(ex);
-            }
-        });
     }
 
     @Test //JDK-8295401
@@ -2472,7 +2369,7 @@ public class JavacParserTest extends TestCase {
                      result,
                      """
                      \n\
-                     /*synthetic*/ final class Test {
+                     final class Test {
                          \n\
                          void main() {
                              (ERROR);

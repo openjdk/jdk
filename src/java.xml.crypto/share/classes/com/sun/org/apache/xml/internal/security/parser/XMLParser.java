@@ -31,6 +31,15 @@ import org.w3c.dom.Document;
  */
 public interface XMLParser {
 
+    /**
+     * Parses a document from the input stream.
+     * Caller is responsible for closing the stream.
+     *
+     * @param inputStream
+     * @param disallowDocTypeDeclarations
+     * @return {@link Document}
+     * @throws XMLParserException
+     */
     Document parse(InputStream inputStream, boolean disallowDocTypeDeclarations) throws XMLParserException;
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,13 +43,11 @@ NMTUsage::NMTUsage(NMTUsageOptions options) :
     _usage_options(options) { }
 
 void NMTUsage::walk_thread_stacks() {
-  // If backed by virtual memory, snapping the thread stacks involves walking
-  // them to to figure out how much memory is committed if they are backed by
-  // virtual memory. This needs ot happen before we take the snapshot of the
-  // virtual memory since it will update this information.
-  if (ThreadStackTracker::track_as_vm()) {
-    VirtualMemoryTracker::snapshot_thread_stacks();
-  }
+  // Snapping the thread stacks involves walking the areas to figure out how
+  // much memory had been committed if they are backed by virtual memory. This
+  // needs to happen before we take the snapshot of the virtual memory since it
+  // will update this information.
+  VirtualMemoryTracker::snapshot_thread_stacks();
 }
 
 void NMTUsage::update_malloc_usage() {

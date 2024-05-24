@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -33,34 +33,34 @@ source %{
 
 #include "c2_intelJccErratum_x86.hpp"
 
-static void x_load_barrier(MacroAssembler& _masm, const MachNode* node, Address ref_addr, Register ref, Register tmp, uint8_t barrier_data) {
+static void x_load_barrier(MacroAssembler* masm, const MachNode* node, Address ref_addr, Register ref, Register tmp, uint8_t barrier_data) {
   if (barrier_data == XLoadBarrierElided) {
     return;
   }
   XLoadBarrierStubC2* const stub = XLoadBarrierStubC2::create(node, ref_addr, ref, tmp, barrier_data);
   {
-    IntelJccErratumAlignment intel_alignment(_masm, 10 /* jcc_size */);
+    IntelJccErratumAlignment intel_alignment(masm, 10 /* jcc_size */);
     __ testptr(ref, Address(r15_thread, XThreadLocalData::address_bad_mask_offset()));
     __ jcc(Assembler::notZero, *stub->entry());
   }
   __ bind(*stub->continuation());
 }
 
-static void x_load_barrier_cmpxchg(MacroAssembler& _masm, const MachNode* node, Address ref_addr, Register ref, Register tmp, Label& good) {
+static void x_load_barrier_cmpxchg(MacroAssembler* masm, const MachNode* node, Address ref_addr, Register ref, Register tmp, Label& good) {
   XLoadBarrierStubC2* const stub = XLoadBarrierStubC2::create(node, ref_addr, ref, tmp, XLoadBarrierStrong);
   {
-    IntelJccErratumAlignment intel_alignment(_masm, 10 /* jcc_size */);
+    IntelJccErratumAlignment intel_alignment(masm, 10 /* jcc_size */);
     __ testptr(ref, Address(r15_thread, XThreadLocalData::address_bad_mask_offset()));
     __ jcc(Assembler::zero, good);
   }
   {
-    IntelJccErratumAlignment intel_alignment(_masm, 5 /* jcc_size */);
+    IntelJccErratumAlignment intel_alignment(masm, 5 /* jcc_size */);
     __ jmp(*stub->entry());
   }
   __ bind(*stub->continuation());
 }
 
-static void x_cmpxchg_common(MacroAssembler& _masm, const MachNode* node, Register mem_reg, Register newval, Register tmp) {
+static void x_cmpxchg_common(MacroAssembler* masm, const MachNode* node, Register mem_reg, Register newval, Register tmp) {
   // Compare value (oldval) is in rax
    const Address mem = Address(mem_reg, 0);
 
@@ -73,7 +73,7 @@ static void x_cmpxchg_common(MacroAssembler& _masm, const MachNode* node, Regist
 
   if (node->barrier_data() != XLoadBarrierElided) {
     Label good;
-    x_load_barrier_cmpxchg(_masm, node, mem, rax, tmp, good);
+    x_load_barrier_cmpxchg(masm, node, mem, rax, tmp, good);
     __ movptr(rax, tmp);
     __ lock();
     __ cmpxchgptr(newval, mem);
@@ -96,7 +96,7 @@ instruct xLoadP(rRegP dst, memory mem, rFlagsReg cr)
 
   ins_encode %{
     __ movptr($dst$$Register, $mem$$Address);
-    x_load_barrier(_masm, this, $mem$$Address, $dst$$Register, noreg /* tmp */, barrier_data());
+    x_load_barrier(masm, this, $mem$$Address, $dst$$Register, noreg /* tmp */, barrier_data());
   %}
 
   ins_pipe(ialu_reg_mem);
@@ -112,7 +112,7 @@ instruct xCompareAndExchangeP(indirect mem, rax_RegP oldval, rRegP newval, rRegP
 
   ins_encode %{
     precond($oldval$$Register == rax);
-    x_cmpxchg_common(_masm, this, $mem$$Register, $newval$$Register, $tmp$$Register);
+    x_cmpxchg_common(masm, this, $mem$$Register, $newval$$Register, $tmp$$Register);
   %}
 
   ins_pipe(pipe_cmpxchg);
@@ -131,7 +131,7 @@ instruct xCompareAndSwapP(rRegI res, indirect mem, rRegP newval, rRegP tmp, rFla
 
   ins_encode %{
     precond($oldval$$Register == rax);
-    x_cmpxchg_common(_masm, this, $mem$$Register, $newval$$Register, $tmp$$Register);
+    x_cmpxchg_common(masm, this, $mem$$Register, $newval$$Register, $tmp$$Register);
     if (barrier_data() != XLoadBarrierElided) {
       __ cmpptr($tmp$$Register, rax);
     }
@@ -151,7 +151,7 @@ instruct xXChgP(indirect mem, rRegP newval, rFlagsReg cr) %{
 
   ins_encode %{
     __ xchgptr($newval$$Register, Address($mem$$Register, 0));
-    x_load_barrier(_masm, this, Address(noreg, 0), $newval$$Register, noreg /* tmp */, barrier_data());
+    x_load_barrier(masm, this, Address(noreg, 0), $newval$$Register, noreg /* tmp */, barrier_data());
   %}
 
   ins_pipe(pipe_cmpxchg);

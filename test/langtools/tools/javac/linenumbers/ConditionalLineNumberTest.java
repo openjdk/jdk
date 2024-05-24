@@ -25,15 +25,11 @@
  * @test
  * @bug 8034091
  * @summary Add LineNumberTable attributes for conditional operator (?:) split across several lines.
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
+ * @enablePreview
  */
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.*;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -55,10 +51,10 @@ public class ConditionalLineNumberTest {
     }
 
     static List<LineNumberInfo> findEntries() throws IOException {
-        ClassModel self = Classfile.of().parse(ConditionalLineNumberTest.class.getResourceAsStream("ConditionalLineNumberTest.class").readAllBytes());
+        ClassModel self = ClassFile.of().parse(ConditionalLineNumberTest.class.getResourceAsStream("ConditionalLineNumberTest.class").readAllBytes());
         for (MethodModel m : self.methods()) {
             if (m.methodName().equalsString("method")) {
-                CodeAttribute code_attribute = m.findAttribute(Attributes.CODE).orElse(null);
+                CodeAttribute code_attribute = m.findAttribute(Attributes.code()).orElse(null);
                 assert code_attribute != null;
                 for (Attribute<?> at : code_attribute.attributes()) {
                     if (at instanceof LineNumberTableAttribute) {

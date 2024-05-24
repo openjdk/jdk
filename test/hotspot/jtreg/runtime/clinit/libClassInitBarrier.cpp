@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,38 +39,38 @@ static jfieldID test_A_f_id;
 extern "C" {
     JNIEXPORT jboolean JNICALL Java_ClassInitBarrier_init(JNIEnv* env, jclass cls) {
         jclass runnable = env->FindClass("java/lang/Runnable");
-        if (runnable == NULL)  return JNI_FALSE;
+        if (runnable == nullptr)  return JNI_FALSE;
 
         methodId = env->GetMethodID(runnable, "run", "()V");
-        if (methodId == NULL)  return JNI_FALSE;
+        if (methodId == nullptr)  return JNI_FALSE;
 
         return JNI_TRUE;
     }
 
     JNIEXPORT jboolean JNICALL Java_ClassInitBarrier_00024Test_00024A_init(JNIEnv* env, jclass cls, jclass arg1) {
         test_class_A = (jclass)env->NewGlobalRef(cls);
-        if (test_class_A == NULL)  return JNI_FALSE;
+        if (test_class_A == nullptr)  return JNI_FALSE;
 
         test_class_B = (jclass)env->NewGlobalRef(arg1);
-        if (test_class_B == NULL)  return JNI_FALSE;
+        if (test_class_B == nullptr)  return JNI_FALSE;
 
         test_staticM_id = env->GetStaticMethodID(test_class_A, "staticM", "(Ljava/lang/Runnable;)V");
-        if (test_staticM_id == NULL)  return JNI_FALSE;
+        if (test_staticM_id == nullptr)  return JNI_FALSE;
 
         test_staticS_id = env->GetStaticMethodID(test_class_A, "staticS", "(Ljava/lang/Runnable;)V");
-        if (test_staticS_id == NULL)  return JNI_FALSE;
+        if (test_staticS_id == nullptr)  return JNI_FALSE;
 
         test_staticN_id = env->GetStaticMethodID(test_class_A, "staticN", "(Ljava/lang/Runnable;)V");
-        if (test_staticN_id == NULL)  return JNI_FALSE;
+        if (test_staticN_id == nullptr)  return JNI_FALSE;
 
         test_A_m_id = env->GetMethodID(test_class_A, "m", "()V");
-        if (test_A_m_id == NULL)  return JNI_FALSE;
+        if (test_A_m_id == nullptr)  return JNI_FALSE;
 
         test_staticF_id = env->GetStaticFieldID(test_class_A, "staticF", "I");
-        if (test_staticF_id == NULL)  return JNI_FALSE;
+        if (test_staticF_id == nullptr)  return JNI_FALSE;
 
         test_A_f_id = env->GetFieldID(test_class_A, "f", "I");
-        if (test_A_f_id == NULL)  return JNI_FALSE;
+        if (test_A_f_id == nullptr)  return JNI_FALSE;
 
         return JNI_TRUE;
     }
@@ -105,11 +105,11 @@ extern "C" {
     JNIEXPORT jobject JNICALL Java_ClassInitBarrier_00024Test_testNewInstanceAJNI(JNIEnv* env, jclass cls, jobject action) {
         jobject obj = env->AllocObject(test_class_A); // A obj = new A();
         if (env->ExceptionOccurred()) {
-          return NULL;
-        } else if (obj == NULL) {
+          return nullptr;
+        } else if (obj == nullptr) {
           jclass errorClass = env->FindClass("java/lang/AssertionError");
           int ret = env->ThrowNew(errorClass, "JNI: AllocObject: allocation failed, but no exception thrown");
-          return NULL;
+          return nullptr;
         }
         env->CallVoidMethod(action, methodId);        // action.run();
         return obj;
@@ -118,11 +118,11 @@ extern "C" {
     JNIEXPORT jobject JNICALL Java_ClassInitBarrier_00024Test_testNewInstanceBJNI(JNIEnv* env, jclass cls, jobject action) {
         jobject obj = env->AllocObject(test_class_B); // B obj = new B();
         if (env->ExceptionOccurred()) {
-          return NULL;
-        } else if (obj == NULL) {
+          return nullptr;
+        } else if (obj == nullptr) {
           jclass errorClass = env->FindClass("java/lang/AssertionError");
           int ret = env->ThrowNew(errorClass, "JNI: AllocObject: allocation failed, but no exception thrown");
-          return NULL;
+          return nullptr;
         }
         env->CallVoidMethod(action, methodId);        // action.run();
         return obj;

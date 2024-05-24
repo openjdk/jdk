@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,20 +45,22 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamField;
 import java.io.Serializable;
+import java.text.DateFormat;
 import java.text.MessageFormat;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 import java.util.spi.LocaleNameProvider;
 import java.util.stream.Stream;
 
+import jdk.internal.util.ReferencedKeyMap;
+import jdk.internal.util.StaticProperty;
 import jdk.internal.vm.annotation.Stable;
 
-import sun.security.action.GetPropertyAction;
 import sun.util.locale.BaseLocale;
 import sun.util.locale.InternalLocaleBuilder;
 import sun.util.locale.LanguageTag;
 import sun.util.locale.LocaleExtensions;
 import sun.util.locale.LocaleMatcher;
-import sun.util.locale.LocaleObjectCache;
 import sun.util.locale.LocaleSyntaxException;
 import sun.util.locale.LocaleUtils;
 import sun.util.locale.ParseStatus;
@@ -256,6 +258,74 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * that you can use to obtain {@code Locale} objects for commonly used
  * locales. For example, {@code Locale.US} is the {@code Locale} object
  * for the United States.
+ *
+ * <h3><a id="default_locale">Default Locale</a></h3>
+ *
+ * <p>The default Locale is provided for any locale-sensitive methods if no
+ * {@code Locale} is explicitly specified as an argument, such as
+ * {@link DateFormat#getInstance()}. The default Locale is determined at startup
+ * of the Java runtime and established in the following three phases:
+ * <ol>
+ * <li>The locale-related system properties listed below are established from the
+ * host environment. Some system properties (except for {@code user.language}) may
+ * not have values from the host environment.
+ * <table class="striped">
+ * <caption style="display:none">Shows property keys and associated values</caption>
+ * <thead>
+ * <tr><th scope="col">Locale-related System Properties Key</th>
+ *     <th scope="col">Description</th></tr>
+ * </thead>
+ * <tbody>
+ * <tr><th scope="row">{@systemProperty user.language}</th>
+ *     <td>{@link ##def_language language} for the default Locale,
+ *     such as "en" (English)</td></tr>
+ * <tr><th scope="row">{@systemProperty user.script}</th>
+ *     <td>{@link ##def_script script} for the default Locale,
+ *     such as "Latn" (Latin)</td></tr>
+ * <tr><th scope="row">{@systemProperty user.country}</th>
+ *     <td>{@link ##def_region country} for the default Locale,
+ *     such as "US" (United States)</td></tr>
+ * <tr><th scope="row">{@systemProperty user.variant}</th>
+ *     <td>{@link ##def_variant variant} for the default Locale,
+ *     such as "POSIX"</td></tr>
+ * <tr><th scope="row">{@systemProperty user.extensions}</th>
+ *     <td>{@link ##def_extensions extensions} for the default Locale,
+ *     such as "u-ca-japanese" (Japanese Calendar)</td></tr>
+ * </tbody>
+ * </table>
+ * </li>
+ * <li>The values of these system properties can be overridden by values designated
+ * at startup time. If the overriding value of the {@code user.extensions} property
+ * is unparsable, it is ignored. The overriding values of other properties are not
+ * checked for syntax or validity and are used directly in the default Locale.
+ * (Typically, system property values can be provided using the {@code -D} command-line
+ * option of a launcher. For example, specifying {@code -Duser.extensions=foobarbaz}
+ * results in a default Locale with no extensions, while specifying
+ * {@code -Duser.language=foobarbaz} results in a default Locale whose language is
+ * "foobarbaz".)
+ * </li>
+ * <li>The default {@code Locale} instance is constructed from the values of these
+ * system properties.
+ * </li>
+ * </ol>
+ * <p>Altering the system property values with {@link System#setProperties(Properties)}/
+ * {@link System#setProperty(String, String)} has no effect on the default Locale.
+ * <p>Once the default Locale is established, applications can query the default
+ * Locale with {@link #getDefault()} and change it with {@link #setDefault(Locale)}.
+ * If the default Locale is changed with {@link #setDefault(Locale)}, the corresponding
+ * system properties are not altered. It is not recommended that applications read
+ * these system properties and parse or interpret them as their values may be out of date.
+ *
+ * <p>There are finer-grained default Locales specific for each {@link Locale.Category}.
+ * These category specific default Locales can be queried by {@link #getDefault(Category)},
+ * and set by {@link #setDefault(Category, Locale)}. Construction of these category
+ * specific default Locales are determined by the corresponding system properties,
+ * which consist of the base system properties as listed above, suffixed by either
+ * {@code ".display"} or {@code ".format"} depending on the category. For example,
+ * the value of the {@code user.language.display} system property will be used in the
+ * {@code language} part of the default Locale for the {@link Locale.Category#DISPLAY}
+ * category. In the absence of category specific system properties, the "category-less"
+ * system properties are used, such as {@code user.language} in the previous example.
  *
  * <h3><a id="LocaleMatching">Locale Matching</a></h3>
  *
@@ -911,38 +981,36 @@ public final class Locale implements Cloneable, Serializable {
         return getInstance(baseloc, extensions);
     }
 
+
     static Locale getInstance(BaseLocale baseloc, LocaleExtensions extensions) {
         if (extensions == null) {
             Locale locale = CONSTANT_LOCALES.get(baseloc);
             if (locale != null) {
                 return locale;
             }
-            return Cache.LOCALECACHE.get(baseloc);
+            return LOCALE_CACHE.computeIfAbsent(baseloc, LOCALE_CREATOR);
         } else {
             LocaleKey key = new LocaleKey(baseloc, extensions);
-            return Cache.LOCALECACHE.get(key);
+            return LOCALE_CACHE.computeIfAbsent(key, LOCALE_CREATOR);
         }
     }
 
-    private static class Cache extends LocaleObjectCache<Object, Locale> {
+    private static final ReferencedKeyMap<Object, Locale> LOCALE_CACHE
+            = ReferencedKeyMap.create(true, ReferencedKeyMap.concurrentHashMapSupplier());
 
-        private static final Cache LOCALECACHE = new Cache();
-
-        private Cache() {
-        }
-
+    private static final Function<Object, Locale> LOCALE_CREATOR = new Function<>() {
         @Override
-        protected Locale createObject(Object key) {
-            if (key instanceof BaseLocale) {
-                return new Locale((BaseLocale)key, null);
-            } else {
-                LocaleKey lk = (LocaleKey)key;
-                return new Locale(lk.base, lk.exts);
+        public Locale apply(Object key) {
+            if (key instanceof BaseLocale base) {
+                return new Locale(base, null);
             }
+            LocaleKey lk = (LocaleKey)key;
+            return new Locale(lk.base, lk.exts);
         }
-    }
+    };
 
     private static final class LocaleKey {
+
         private final BaseLocale base;
         private final LocaleExtensions exts;
         private final int hash;
@@ -983,14 +1051,14 @@ public final class Locale implements Cloneable, Serializable {
     }
 
     /**
-     * Gets the current value of the default locale for this instance
-     * of the Java Virtual Machine.
+     * Gets the current value of the {@link ##default_locale default locale} for
+     * this instance of the Java Virtual Machine.
      * <p>
      * The Java Virtual Machine sets the default locale during startup
      * based on the host environment. It is used by many locale-sensitive
      * methods if no locale is explicitly specified.
      * It can be changed using the
-     * {@link #setDefault(java.util.Locale) setDefault} method.
+     * {@link #setDefault(Locale)} method.
      *
      * @return the default locale for this instance of the Java Virtual Machine
      */
@@ -1000,13 +1068,13 @@ public final class Locale implements Cloneable, Serializable {
     }
 
     /**
-     * Gets the current value of the default locale for the specified Category
-     * for this instance of the Java Virtual Machine.
+     * Gets the current value of the {@link ##default_locale default locale} for
+     * the specified Category for this instance of the Java Virtual Machine.
      * <p>
      * The Java Virtual Machine sets the default locale during startup based
      * on the host environment. It is used by many locale-sensitive methods
      * if no locale is explicitly specified. It can be changed using the
-     * setDefault(Locale.Category, Locale) method.
+     * {@link #setDefault(Locale.Category, Locale)} method.
      *
      * @param category the specified category to get the default locale
      * @throws NullPointerException if category is null
@@ -1053,11 +1121,10 @@ public final class Locale implements Cloneable, Serializable {
 
     private static Locale initDefault() {
         String language, region, script, country, variant;
-        Properties props = GetPropertyAction.privilegedGetProperties();
-        language = props.getProperty("user.language", "en");
+        language = StaticProperty.USER_LANGUAGE;
         // for compatibility, check for old user.region property
-        region = props.getProperty("user.region");
-        if (region != null) {
+        region = StaticProperty.USER_REGION;
+        if (!region.isEmpty()) {
             // region can be of form country, country_variant, or _variant
             int i = region.indexOf('_');
             if (i >= 0) {
@@ -1069,30 +1136,24 @@ public final class Locale implements Cloneable, Serializable {
             }
             script = "";
         } else {
-            script = props.getProperty("user.script", "");
-            country = props.getProperty("user.country", "");
-            variant = props.getProperty("user.variant", "");
+            script = StaticProperty.USER_SCRIPT;
+            country = StaticProperty.USER_COUNTRY;
+            variant = StaticProperty.USER_VARIANT;
         }
 
         return getInstance(language, script, country, variant,
-                getDefaultExtensions(props.getProperty("user.extensions", ""))
+                getDefaultExtensions(StaticProperty.USER_EXTENSIONS)
                     .orElse(null));
     }
 
     private static Locale initDefault(Locale.Category category) {
-        Properties props = GetPropertyAction.privilegedGetProperties();
-
         Locale locale = Locale.defaultLocale;
         return getInstance(
-            props.getProperty(category.languageKey,
-                    locale.getLanguage()),
-            props.getProperty(category.scriptKey,
-                    locale.getScript()),
-            props.getProperty(category.countryKey,
-                    locale.getCountry()),
-            props.getProperty(category.variantKey,
-                    locale.getVariant()),
-            getDefaultExtensions(props.getProperty(category.extensionsKey, ""))
+            category == Category.DISPLAY ? StaticProperty.USER_LANGUAGE_DISPLAY : StaticProperty.USER_LANGUAGE_FORMAT,
+            category == Category.DISPLAY ? StaticProperty.USER_SCRIPT_DISPLAY : StaticProperty.USER_SCRIPT_FORMAT,
+            category == Category.DISPLAY ? StaticProperty.USER_COUNTRY_DISPLAY : StaticProperty.USER_COUNTRY_FORMAT,
+            category == Category.DISPLAY ? StaticProperty.USER_VARIANT_DISPLAY : StaticProperty.USER_VARIANT_FORMAT,
+            getDefaultExtensions(category == Category.DISPLAY ? StaticProperty.USER_EXTENSIONS_DISPLAY : StaticProperty.USER_EXTENSIONS_FORMAT)
                 .orElse(locale.getLocaleExtensions()));
     }
 
@@ -1114,8 +1175,9 @@ public final class Locale implements Cloneable, Serializable {
     }
 
     /**
-     * Sets the default locale for this instance of the Java Virtual Machine.
-     * This does not affect the host locale.
+     * Sets the {@link ##default_locale default locale} for
+     * this instance of the Java Virtual Machine. This does not affect the
+     * host locale.
      * <p>
      * If there is a security manager, its {@code checkPermission}
      * method is called with a {@code PropertyPermission("user.language", "write")}
@@ -1148,8 +1210,9 @@ public final class Locale implements Cloneable, Serializable {
     }
 
     /**
-     * Sets the default locale for the specified Category for this instance
-     * of the Java Virtual Machine. This does not affect the host locale.
+     * Sets the {@link ##default_locale default locale} for the specified
+     * Category for this instance of the Java Virtual Machine. This does
+     * not affect the host locale.
      * <p>
      * If there is a security manager, its checkPermission method is called
      * with a PropertyPermission("user.language", "write") permission before

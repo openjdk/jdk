@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,18 +32,16 @@
  * @clean jdk.internal.vm.test.AnnotationTestInput$Missing
  * @compile ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/alt/MemberDeleted.java
  *          ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/alt/MemberTypeChanged.java
+ * @enablePreview
  * @modules jdk.internal.vm.ci/jdk.vm.ci.meta
  *          jdk.internal.vm.ci/jdk.vm.ci.runtime
  *          jdk.internal.vm.ci/jdk.vm.ci.common
  *          jdk.internal.vm.ci/jdk.vm.ci.hotspot
- *          java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
  *          java.base/jdk.internal.reflect
  *          java.base/jdk.internal.misc
  *          java.base/jdk.internal.vm
  *          java.base/sun.reflect.annotation
- * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:-UseJVMCICompiler jdk.vm.ci.runtime.test.TestResolvedJavaMethod
+ * @run junit/othervm/timeout=240 -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:-UseJVMCICompiler jdk.vm.ci.runtime.test.TestResolvedJavaMethod
  */
 
 package jdk.vm.ci.runtime.test;
@@ -87,16 +85,18 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import jdk.internal.vm.test.AnnotationTestInput;
-import jdk.internal.classfile.Attributes;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.CodeElement;
-import jdk.internal.classfile.MethodModel;
-import jdk.internal.classfile.Instruction;
-import jdk.internal.classfile.attribute.CodeAttribute;
+import java.lang.classfile.Attributes;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.CodeElement;
+import java.lang.classfile.MethodModel;
+import java.lang.classfile.Instruction;
+import java.lang.classfile.attribute.CodeAttribute;
 
 import jdk.vm.ci.meta.ConstantPool;
 import jdk.vm.ci.meta.ExceptionHandler;
+import jdk.vm.ci.meta.Local;
+import jdk.vm.ci.meta.LocalVariableTable;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaMethod.Parameter;
 import jdk.vm.ci.meta.ResolvedJavaType;
@@ -601,11 +601,11 @@ public class TestResolvedJavaMethod extends MethodUniverse {
             final String[] parts = uri.toString().split("!");
             if (parts.length == 2) {
                 try (FileSystem fs = FileSystems.newFileSystem(URI.create(parts[0]), new HashMap<>())) {
-                    return Classfile.of().parse(fs.getPath(parts[1]));
+                    return ClassFile.of().parse(fs.getPath(parts[1]));
                 }
             }
         }
-        return Classfile.of().parse(Paths.get(uri));
+        return ClassFile.of().parse(Paths.get(uri));
     }
 
     public static void methodWithManyArgs(
@@ -678,7 +678,7 @@ public class TestResolvedJavaMethod extends MethodUniverse {
             Map<String, ResolvedJavaMethod> methodMap = buildMethodMap(type);
             ClassModel cf = readClassfile(c);
             for (MethodModel cm : cf.methods()) {
-                cm.findAttribute(Attributes.CODE).ifPresent(codeAttr -> {
+                cm.findAttribute(Attributes.code()).ifPresent(codeAttr -> {
                     String key = cm.methodName().stringValue() + ":" + cm.methodType().stringValue();
                     HotSpotResolvedJavaMethod m = (HotSpotResolvedJavaMethod) Objects.requireNonNull(methodMap.get(key));
                     boolean isMethodWithManyArgs = c == getClass() && m.getName().equals("methodWithManyArgs");
@@ -736,6 +736,24 @@ public class TestResolvedJavaMethod extends MethodUniverse {
         Assert.assertTrue(processedMethodWithManyArgs[0]);
     }
 
+    @Test
+    public void getLocalVariableTableTest() {
+        for (ResolvedJavaMethod m : methods.values()) {
+            LocalVariableTable table = m.getLocalVariableTable();
+            if (table == null) {
+                continue;
+            }
+            for (Local l : table.getLocals()) {
+                if (l.getStartBCI() < 0) {
+                    throw new AssertionError(m.format("%H.%n(%p)") + " local " + l.getName() + " starts at " + l.getStartBCI());
+                }
+                if (l.getEndBCI() >= m.getCodeSize()) {
+                    throw new AssertionError(m.format("%H.%n(%p)") + " (" + m.getCodeSize() + "bytes) local " + l.getName() + " ends at " + l.getEndBCI());
+                }
+            }
+        }
+    }
+
     private Method findTestMethod(Method apiMethod) {
         String testName = apiMethod.getName() + "Test";
         for (Method m : getClass().getDeclaredMethods()) {
@@ -758,7 +776,6 @@ public class TestResolvedJavaMethod extends MethodUniverse {
         "canBeInlined",
         "shouldBeInlined",
         "getLineNumberTable",
-        "getLocalVariableTable",
         "isInVirtualMethodTable",
         "toParameterTypes",
         "getParameterAnnotation",

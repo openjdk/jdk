@@ -26,13 +26,9 @@
  * @bug 8042251
  * @summary Test that inner classes have in its inner classes attribute enclosing classes and its immediate members.
  * @library /tools/lib /tools/javac/lib ../lib
+ * @enablePreview
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- *          java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
  *          java.base/jdk.internal.classfile.impl
  * @build toolbox.ToolBox InMemoryFileManager TestResult TestBase
  * @run main InnerClassesHierarchyTest
@@ -45,9 +41,9 @@ import java.lang.annotation.Annotation;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.*;
-import jdk.internal.classfile.constantpool.*;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
+import java.lang.classfile.constantpool.*;
 
 public class InnerClassesHierarchyTest extends TestResult {
 
@@ -102,7 +98,7 @@ public class InnerClassesHierarchyTest extends TestResult {
                     continue;
                 }
                 ClassModel cf = readClassFile(currentClassName);
-                InnerClassesAttribute attr = cf.findAttribute(Attributes.INNER_CLASSES).orElse(null);
+                InnerClassesAttribute attr = cf.findAttribute(Attributes.innerClasses()).orElse(null);
                 checkNotNull(attr, "Class should not contain "
                         + "inner classes attribute : " + currentClassName);
                 checkTrue(innerClasses.containsKey(currentClassName),

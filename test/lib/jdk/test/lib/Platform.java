@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.nio.file.Paths;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Platform {
@@ -348,6 +349,20 @@ public class Platform {
                       .matches();
     }
 
+    public static boolean isOracleLinux7() {
+        if (System.getProperty("os.name").toLowerCase().contains("linux") &&
+                System.getProperty("os.version").toLowerCase().contains("el")) {
+            Pattern p = Pattern.compile("el(\\d+)");
+            Matcher m = p.matcher(System.getProperty("os.version"));
+            if (m.find()) {
+                try {
+                    return Integer.parseInt(m.group(1)) <= 7;
+                } catch (NumberFormatException nfe) {}
+            }
+        }
+        return false;
+    }
+
     /**
      * Returns file extension of shared library, e.g. "so" on linux, "dll" on windows.
      * @return file extension
@@ -457,5 +472,14 @@ public class Platform {
      */
     public static boolean areCustomLoadersSupportedForCDS() {
         return (is64bit() && (isLinux() || isOSX() || isWindows()));
+    }
+
+    /**
+     * Checks if the current system is running on Wayland display server on Linux.
+     *
+     * @return {@code true} if the system is running on Wayland display server
+     */
+    public static boolean isOnWayland() {
+        return System.getenv("WAYLAND_DISPLAY") != null;
     }
 }

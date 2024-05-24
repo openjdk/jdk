@@ -57,13 +57,13 @@ static JfrSymbolTable& instance() {
 
 JfrSymbolTable* JfrSymbolTable::create() {
   assert(_instance == nullptr, "invariant");
-  assert_lock_strong(ClassLoaderDataGraph_lock);
+  assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
   _instance = new JfrSymbolTable();
   return _instance;
 }
 
 void JfrSymbolTable::destroy() {
-  assert_lock_strong(ClassLoaderDataGraph_lock);
+  assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
   if (_instance != nullptr) {
     delete _instance;
     _instance = nullptr;

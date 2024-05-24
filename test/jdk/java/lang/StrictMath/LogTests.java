@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,6 +68,10 @@ public class LogTests {
             {0x1.0000000744b3ap632,  0x1.b611ab2bd53cep8},
             {0x1.000000037d81fp766,  0x1.0979b1dbc4a42p9},
             {0x1.000000024028p991,   0x1.577455642bb92p9},
+            // Empirical worst-case points
+            {0x1.0ffea3878db6bp+0,   0x1.f07a0cca521fp-5},
+            {0x1.490af72a25a81p-1,  -0x1.c4bf7ae48f078p-2},
+            {0x1.69e7aa6da2df5p-1,  -0x1.634508c9adfp-2},
         };
 
         for (double[] testCase: testCases)

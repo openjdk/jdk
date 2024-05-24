@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 #ifndef SHARE_UTILITIES_GLOBALDEFINITIONS_HPP
 #define SHARE_UTILITIES_GLOBALDEFINITIONS_HPP
 
-#include "utilities/attributeNoreturn.hpp"
 #include "utilities/compilerWarnings.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
@@ -37,6 +36,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 #include <type_traits>
 
 class oopDesc;
@@ -150,6 +150,11 @@ class oopDesc;
 #define INTX_FORMAT_W(width)     "%"   #width PRIdPTR
 #define UINTX_FORMAT             "%"          PRIuPTR
 #define UINTX_FORMAT_X           "0x%"        PRIxPTR
+#ifdef _LP64
+#define UINTX_FORMAT_X_0         "0x%016"     PRIxPTR
+#else
+#define UINTX_FORMAT_X_0         "0x%08"      PRIxPTR
+#endif
 #define UINTX_FORMAT_W(width)    "%"   #width PRIuPTR
 
 // Format jlong, if necessary
@@ -379,6 +384,9 @@ inline T byte_size_in_proper_unit(T s) {
 #define PROPERFMT             SIZE_FORMAT "%s"
 #define PROPERFMTARGS(s)      byte_size_in_proper_unit(s), proper_unit_for_byte_size(s)
 
+#define RANGEFMT              "[" PTR_FORMAT " - " PTR_FORMAT "), (" SIZE_FORMAT " bytes)"
+#define RANGEFMTARGS(p1, size) p2i(p1), p2i(p1 + size), size
+
 inline const char* exact_unit_for_byte_size(size_t s) {
 #ifdef _LP64
   if (s >= G && (s % G) == 0) {
@@ -553,8 +561,6 @@ const int max_method_code_size = 64*K - 1;  // JVM spec, 2nd ed. section 4.8.1 (
 
 //----------------------------------------------------------------------------------------------------
 // old CDS options
-extern bool DumpSharedSpaces;
-extern bool DynamicDumpSharedSpaces;
 extern bool RequireSharedSpaces;
 extern "C" {
 // Make sure UseSharedSpaces is accessible to the serviceability agent.
@@ -583,12 +589,15 @@ extern uint64_t OopEncodingHeapMax;
 
 // Machine dependent stuff
 
+#include CPU_HEADER(globalDefinitions)
+
 // The maximum size of the code cache.  Can be overridden by targets.
+#ifndef CODE_CACHE_SIZE_LIMIT
 #define CODE_CACHE_SIZE_LIMIT (2*G)
+#endif
+
 // Allow targets to reduce the default size of the code cache.
 #define CODE_CACHE_DEFAULT_LIMIT CODE_CACHE_SIZE_LIMIT
-
-#include CPU_HEADER(globalDefinitions)
 
 // To assure the IRIW property on processors that are not multiple copy
 // atomic, sync instructions must be issued between volatile reads to
@@ -604,17 +613,15 @@ const bool support_IRIW_for_not_multiple_copy_atomic_cpu = false;
 const bool support_IRIW_for_not_multiple_copy_atomic_cpu = PPC64_ONLY(true) NOT_PPC64(false);
 #endif
 
-// The expected size in bytes of a cache line, used to pad data structures.
+// The expected size in bytes of a cache line.
 #ifndef DEFAULT_CACHE_LINE_SIZE
-  #define DEFAULT_CACHE_LINE_SIZE 64
+#error "Platform should define DEFAULT_CACHE_LINE_SIZE"
 #endif
 
-
-//----------------------------------------------------------------------------------------------------
-// Utility macros for compilers
-// used to silence compiler warnings
-
-#define Unused_Variable(var) var
+// The default padding size for data structures to avoid false sharing.
+#ifndef DEFAULT_PADDING_SIZE
+#error "Platform should define DEFAULT_PADDING_SIZE"
+#endif
 
 
 //----------------------------------------------------------------------------------------------------
@@ -1022,19 +1029,19 @@ enum LockingMode {
 //----------------------------------------------------------------------------------------------------
 // Special constants for debugging
 
-const jint     badInt           = -3;                       // generic "bad int" value
-const intptr_t badAddressVal    = -2;                       // generic "bad address" value
-const intptr_t badOopVal        = -1;                       // generic "bad oop" value
-const intptr_t badHeapOopVal    = (intptr_t) CONST64(0x2BAD4B0BBAADBABE); // value used to zap heap after GC
-const int      badStackSegVal   = 0xCA;                     // value used to zap stack segments
-const int      badHandleValue   = 0xBC;                     // value used to zap vm handle area
-const int      badResourceValue = 0xAB;                     // value used to zap resource area
-const int      freeBlockPad     = 0xBA;                     // value used to pad freed blocks.
-const int      uninitBlockPad   = 0xF1;                     // value used to zap newly malloc'd blocks.
-const juint    uninitMetaWordVal= 0xf7f7f7f7;               // value used to zap newly allocated metachunk
-const juint    badHeapWordVal   = 0xBAADBABE;               // value used to zap heap after GC
-const juint    badMetaWordVal   = 0xBAADFADE;               // value used to zap metadata heap after GC
-const int      badCodeHeapNewVal= 0xCC;                     // value used to zap Code heap at allocation
+const jint     badInt             = -3;                     // generic "bad int" value
+const intptr_t badAddressVal      = -2;                     // generic "bad address" value
+const intptr_t badOopVal          = -1;                     // generic "bad oop" value
+const intptr_t badHeapOopVal      = (intptr_t) CONST64(0x2BAD4B0BBAADBABE); // value used to zap heap after GC
+const int      badStackSegVal     = 0xCA;                   // value used to zap stack segments
+const int      badHandleValue     = 0xBC;                   // value used to zap vm handle area
+const int      badResourceValue   = 0xAB;                   // value used to zap resource area
+const int      freeBlockPad       = 0xBA;                   // value used to pad freed blocks.
+const int      uninitBlockPad     = 0xF1;                   // value used to zap newly malloc'd blocks.
+const juint    uninitMetaWordVal  = 0xf7f7f7f7;             // value used to zap newly allocated metachunk
+const jubyte   heapPaddingByteVal = 0xBD;                   // value used to zap object padding in the heap
+const juint    badHeapWordVal     = 0xBAADBABE;             // value used to zap heap after GC
+const int      badCodeHeapNewVal  = 0xCC;                   // value used to zap Code heap at allocation
 const int      badCodeHeapFreeVal = 0xDD;                   // value used to zap Code heap at deallocation
 const intptr_t badDispHeaderDeopt = 0xDE0BD000;             // value to fill unused displaced header during deoptimization
 const intptr_t badDispHeaderOSR   = 0xDEAD05A0;             // value to fill unused displaced header during OSR
@@ -1103,7 +1110,18 @@ template<class T> constexpr T MIN3(T a, T b, T c)      { return MIN2(MIN2(a, b),
 template<class T> constexpr T MAX4(T a, T b, T c, T d) { return MAX2(MAX3(a, b, c), d); }
 template<class T> constexpr T MIN4(T a, T b, T c, T d) { return MIN2(MIN3(a, b, c), d); }
 
-template<class T> inline T ABS(T x)                 { return (x > 0) ? x : -x; }
+#define ABS(x) asserted_abs(x, __FILE__, __LINE__)
+
+template<class T> inline T asserted_abs(T x, const char* file, int line) {
+  bool valid_arg = !(std::is_integral<T>::value && x == std::numeric_limits<T>::min());
+#ifdef ASSERT
+  if (!valid_arg) {
+    report_vm_error(file, line, "ABS: argument should not allow overflow");
+  }
+#endif
+  // Prevent exposure to UB by checking valid_arg here as well.
+  return (x < 0 && valid_arg) ? -x : x;
+}
 
 // Return the given value clamped to the range [min ... max]
 template<typename T>

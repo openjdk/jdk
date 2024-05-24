@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, 2023 SAP SE. All rights reserved.
 
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -27,11 +27,10 @@
 #ifndef SHARE_NMT_NMTCOMMON_HPP
 #define SHARE_NMT_NMTCOMMON_HPP
 
-#include "memory/allocation.hpp" // for MEMFLAGS only
+#include "memory/allStatic.hpp"
+#include "nmt/memflags.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
-
-#define CALC_OBJ_SIZE_IN_TYPE(obj, type) (align_up(sizeof(obj), sizeof(type))/sizeof(type))
 
 // Native memory tracking level
 //

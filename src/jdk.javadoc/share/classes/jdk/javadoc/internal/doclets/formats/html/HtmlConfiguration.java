@@ -25,8 +25,11 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.time.ZonedDateTime;
@@ -41,6 +44,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.PackageElement;
@@ -64,6 +68,7 @@ import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.util.DeprecatedAPIListBuilder;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
+import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.NewAPIBuilder;
@@ -199,6 +204,18 @@ public class HtmlConfiguration extends BaseConfiguration {
     private final Set<PackageElement> containingPackagesSeen;
 
     /**
+     * List of additional JavaScript files
+     */
+    private List<JavaScriptFile> additionalScripts;
+
+    /**
+     * Record for JavaScript file and module flag.
+     * @param path file path
+     * @param isModule module flag
+     */
+    public record JavaScriptFile(DocPath path, boolean isModule) {}
+
+    /**
      * Constructs the full configuration needed by the doclet, including
      * the format-specific part, defined in this class, and the format-independent
      * part, defined in the supertype.
@@ -316,6 +333,9 @@ public class HtmlConfiguration extends BaseConfiguration {
                 }
             }
         }
+        additionalScripts = options.additionalScripts().stream()
+                .map(this::detectJSModule)
+                .collect(Collectors.toList());
         if (options.createIndex()) {
             indexBuilder = new HtmlIndexBuilder(this);
         }
@@ -324,6 +344,26 @@ public class HtmlConfiguration extends BaseConfiguration {
         setTopFile();
         initDocLint(options.doclintOpts(), tagletManager.getAllTagletNames());
         return true;
+    }
+
+    private JavaScriptFile detectJSModule(String fileName) {
+        DocFile file = DocFile.createFileForInput(this, fileName);
+        boolean isModule = fileName.toLowerCase(Locale.ROOT).endsWith(".mjs");
+        if (!isModule) {
+            // Regex to detect JavaScript modules
+            Pattern modulePattern = Pattern.compile("""
+                    (?:^|[;}])\\s*(?:\
+                    import\\s*["']|\
+                    import[\\s{*][^()]*from\\s*["']|\
+                    export(?:\\s+(?:let|const|function|class|var|default|async)|\\s*[{*]))""");
+            try (InputStream in = file.openInputStream();
+                 BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {
+                isModule = reader.lines().anyMatch(s -> modulePattern.matcher(s).find());
+            } catch (DocFileIOException | IOException e) {
+                // Errors are handled when copying resources
+            }
+        }
+        return new JavaScriptFile(DocPath.create(file.getName()), isModule);
     }
 
     /**
@@ -342,9 +382,6 @@ public class HtmlConfiguration extends BaseConfiguration {
      * if only classes are provided on the command line.
      */
     protected void setTopFile() {
-        if (!checkForDeprecation()) {
-            return;
-        }
         if (options.createOverview()) {
             topFile = DocPaths.INDEX;
         } else {
@@ -366,15 +403,6 @@ public class HtmlConfiguration extends BaseConfiguration {
             }
         }
         return null;
-    }
-
-    protected boolean checkForDeprecation() {
-        for (TypeElement te : getIncludedTypeElements()) {
-            if (isGeneratedDoc(te)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     /**
@@ -433,11 +461,8 @@ public class HtmlConfiguration extends BaseConfiguration {
                 .collect(Collectors.toCollection(ArrayList::new));
     }
 
-    public List<DocPath> getAdditionalScripts() {
-        return options.additionalScripts().stream()
-                .map(sf -> DocFile.createFileForInput(this, sf))
-                .map(file -> DocPath.create(file.getName()))
-                .collect(Collectors.toCollection(ArrayList::new));
+    public List<JavaScriptFile> getAdditionalScripts() {
+        return additionalScripts;
     }
 
     @Override

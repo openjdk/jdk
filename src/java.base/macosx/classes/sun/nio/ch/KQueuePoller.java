@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,8 +56,11 @@ class KQueuePoller extends Poller {
     }
 
     @Override
-    void implDeregister(int fdVal) {
-        KQueue.register(kqfd, fdVal, filter, EV_DELETE);
+    void implDeregister(int fdVal, boolean polled) {
+        // event was deleted if already polled
+        if (!polled) {
+            KQueue.register(kqfd, fdVal, filter, EV_DELETE);
+        }
     }
 
     @Override

@@ -25,18 +25,14 @@
  * @test
  * @bug 8231827
  * @summary Ensure the LV table entries are generated for bindings
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
+ * @enablePreview
+ * @modules java.base/jdk.internal.classfile.impl
  * @compile -g LocalVariableTable.java
  * @run main LocalVariableTable
  */
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.*;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
 import java.io.*;
 import java.lang.annotation.*;
 import java.util.*;
@@ -83,7 +79,7 @@ public class LocalVariableTable {
             return;
         }
 
-        ClassModel cf = Classfile.of().parse(Objects.requireNonNull(getClass().getResource(c.getName() + ".class"))
+        ClassModel cf = ClassFile.of().parse(Objects.requireNonNull(getClass().getResource(c.getName() + ".class"))
                         .openStream().readAllBytes());
         MethodModel m = getMethodByName(cf, c.getSimpleName().contains("Lambda") ? "lambda$" : "test");
         if (m == null) {
@@ -91,13 +87,13 @@ public class LocalVariableTable {
             return;
         }
 
-        CodeAttribute code = m.findAttribute(Attributes.CODE).orElse(null);
+        CodeAttribute code = m.findAttribute(Attributes.code()).orElse(null);
         if (code == null) {
             error("Code attribute not found");
             return;
         }
 
-        LocalVariableTableAttribute lvt = code.findAttribute(Attributes.LOCAL_VARIABLE_TABLE).orElse(null);
+        LocalVariableTableAttribute lvt = code.findAttribute(Attributes.localVariableTable()).orElse(null);
         if (lvt == null) {
             error("LocalVariableTable attribute not found");
             return;

@@ -21,8 +21,8 @@
  * questions.
  */
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.*;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
 import jdk.internal.classfile.impl.BoundAttribute;
 
 import java.io.InputStream;
@@ -69,18 +69,18 @@ public class LineNumberTestBase extends TestBase {
                 for (JavaFileObject file : compile(testCase.extraCompilerOptions, testCase.src).getClasses().values()) {
                     ClassModel classFile;
                     try (InputStream input = file.openInputStream()) {
-                        classFile = Classfile.of().parse(input.readAllBytes());
+                        classFile = ClassFile.of().parse(input.readAllBytes());
                     }
                     for (MethodModel m : classFile.methods()) {
-                        CodeAttribute code_attribute = m.findAttribute(Attributes.CODE).orElse(null);
+                        CodeAttribute code_attribute = m.findAttribute(Attributes.code()).orElse(null);
 
                         assert code_attribute != null;
                         assertEquals(
-                                countAttributes(Attributes.LINE_NUMBER_TABLE, code_attribute),
+                                countAttributes(Attributes.lineNumberTable(), code_attribute),
                                 1,
                                 "Can be more than one LNT attribute, but javac should generate only one.");
 
-                        LineNumberTableAttribute tableAttribute = code_attribute.findAttribute(Attributes.LINE_NUMBER_TABLE).orElse(null);
+                        LineNumberTableAttribute tableAttribute = code_attribute.findAttribute(Attributes.lineNumberTable()).orElse(null);
                         assert tableAttribute != null;
                         checkAttribute(testCase, tableAttribute, code_attribute.codeLength());
                         Set<Integer> methodCoveredLines =

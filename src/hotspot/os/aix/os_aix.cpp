@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,19 +23,13 @@
  *
  */
 
-// According to the AIX OS doc #pragma alloca must be used
-// with C++ compiler before referencing the function alloca()
-#pragma alloca
-
 // no precompiled headers
 #include "classfile/vmSymbols.hpp"
-#include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "compiler/compileBroker.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jvm.h"
 #include "jvmtifiles/jvmti.h"
-#include "libo4.hpp"
 #include "libperfstat_aix.hpp"
 #include "libodm_aix.hpp"
 #include "loadlib_aix.hpp"
@@ -85,9 +79,7 @@
 #endif
 
 // put OS-includes here (sorted alphabetically)
-#ifdef AIX_XLC_GE_17
 #include <alloca.h>
-#endif
 #include <errno.h>
 #include <fcntl.h>
 #include <inttypes.h>
@@ -117,6 +109,10 @@
 #include <sys/utsname.h>
 #include <sys/vminfo.h>
 
+#ifndef _LARGE_FILES
+#error Hotspot on AIX must be compiled with -D_LARGE_FILES
+#endif
+
 // Missing prototypes for various system APIs.
 extern "C"
 int mread_real_time(timebasestruct_t *t, size_t size_of_timebasestruct_t);
@@ -137,7 +133,7 @@ extern "C" int getargs(procsinfo*, int, char*, int);
 #define ERROR_MP_VMGETINFO_FAILED                    102
 #define ERROR_MP_VMGETINFO_CLAIMS_NO_SUPPORT_FOR_64K 103
 
-// excerpts from systemcfg.h that might be missing on older os levels
+// excerpts from sys/systemcfg.h that might be missing on older os levels
 #ifndef PV_7
   #define PV_7 0x200000          /* Power PC 7 */
 #endif
@@ -156,7 +152,12 @@ extern "C" int getargs(procsinfo*, int, char*, int);
 #ifndef PV_9_Compat
   #define PV_9_Compat  0x408000  /* Power PC 9 */
 #endif
-
+#ifndef PV_10
+  #define PV_10 0x500000          /* Power PC 10 */
+#endif
+#ifndef PV_10_Compat
+  #define PV_10_Compat  0x508000  /* Power PC 10 */
+#endif
 
 static address resolve_function_descriptor_to_code_pointer(address p);
 
@@ -168,9 +169,6 @@ static void vmembk_print_on(outputStream* os);
 julong    os::Aix::_physical_memory = 0;
 
 pthread_t os::Aix::_main_thread = ((pthread_t)0);
-
-// -1 = uninitialized, 0 if AIX, 1 if OS/400 pase
-int       os::Aix::_on_pase = -1;
 
 // 0 = uninitialized, otherwise 32 bit number:
 //  0xVVRRTTSS
@@ -261,10 +259,6 @@ julong os::available_memory() {
 }
 
 julong os::Aix::available_memory() {
-  // Avoid expensive API call here, as returned value will always be null.
-  if (os::Aix::on_pase()) {
-    return 0x0LL;
-  }
   os::Aix::meminfo_t mi;
   if (os::Aix::get_meminfo(&mi)) {
     return mi.real_free;
@@ -273,42 +267,24 @@ julong os::Aix::available_memory() {
   }
 }
 
-julong os::physical_memory() {
-  return Aix::physical_memory();
+jlong os::total_swap_space() {
+  perfstat_memory_total_t memory_info;
+  if (libperfstat::perfstat_memory_total(nullptr, &memory_info, sizeof(perfstat_memory_total_t), 1) == -1) {
+    return -1;
+  }
+  return (jlong)(memory_info.pgsp_total * 4 * K);
 }
 
-// Helper function, emulates disclaim64 using multiple 32bit disclaims
-// because we cannot use disclaim64() on AS/400 and old AIX releases.
-static bool my_disclaim64(char* addr, size_t size) {
-
-  if (size == 0) {
-    return true;
+jlong os::free_swap_space() {
+  perfstat_memory_total_t memory_info;
+  if (libperfstat::perfstat_memory_total(nullptr, &memory_info, sizeof(perfstat_memory_total_t), 1) == -1) {
+    return -1;
   }
+  return (jlong)(memory_info.pgsp_free * 4 * K);
+}
 
-  // Maximum size 32bit disclaim() accepts. (Theoretically 4GB, but I just do not trust that.)
-  const unsigned int maxDisclaimSize = 0x40000000;
-
-  const unsigned int numFullDisclaimsNeeded = (size / maxDisclaimSize);
-  const unsigned int lastDisclaimSize = (size % maxDisclaimSize);
-
-  char* p = addr;
-
-  for (unsigned int i = 0; i < numFullDisclaimsNeeded; i ++) {
-    if (::disclaim(p, maxDisclaimSize, DISCLAIM_ZEROMEM) != 0) {
-      trcVerbose("Cannot disclaim %p - %p (errno %d)\n", p, p + maxDisclaimSize, errno);
-      return false;
-    }
-    p += maxDisclaimSize;
-  }
-
-  if (lastDisclaimSize > 0) {
-    if (::disclaim(p, lastDisclaimSize, DISCLAIM_ZEROMEM) != 0) {
-      trcVerbose("Cannot disclaim %p - %p (errno %d)\n", p, p + lastDisclaimSize, errno);
-      return false;
-    }
-  }
-
-  return true;
+julong os::physical_memory() {
+  return Aix::physical_memory();
 }
 
 // Cpu architecture string
@@ -320,27 +296,14 @@ static char cpu_arch[] = "ppc64";
 #error Add appropriate cpu_arch setting
 #endif
 
-// Wrap the function "vmgetinfo" which is not available on older OS releases.
-static int checked_vmgetinfo(void *out, int command, int arg) {
-  if (os::Aix::on_pase() && os::Aix::os_version_short() < 0x0601) {
-    guarantee(false, "cannot call vmgetinfo on AS/400 older than V6R1");
-  }
-  return ::vmgetinfo(out, command, arg);
-}
-
 // Given an address, returns the size of the page backing that address.
 size_t os::Aix::query_pagesize(void* addr) {
-
-  if (os::Aix::on_pase() && os::Aix::os_version_short() < 0x0601) {
-    // AS/400 older than V6R1: no vmgetinfo here, default to 4K
-    return 4*K;
-  }
-
   vm_page_info pi;
   pi.addr = (uint64_t)addr;
-  if (checked_vmgetinfo(&pi, VM_PAGE_INFO, sizeof(pi)) == 0) {
+  if (::vmgetinfo(&pi, VM_PAGE_INFO, sizeof(pi)) == 0) {
     return pi.pagesize;
   } else {
+    log_warning(pagesize)("vmgetinfo(VM_PAGE_INFO) failed (errno: %d)", errno);
     assert(false, "vmgetinfo failed to retrieve page size");
     return 4*K;
   }
@@ -429,29 +392,19 @@ static void query_multipage_support() {
     g_multipage_support.textpsize = os::Aix::query_pagesize(any_function);
   }
 
-  // Now probe for support of 64K pages and 16M pages.
-
-  // Before OS/400 V6R1, there is no support for pages other than 4K.
-  if (os::Aix::on_pase_V5R4_or_older()) {
-    trcVerbose("OS/400 < V6R1 - no large page support.");
-    g_multipage_support.error = ERROR_MP_OS_TOO_OLD;
-    goto query_multipage_support_end;
-  }
-
   // Now check which page sizes the OS claims it supports, and of those, which actually can be used.
   {
     const int MAX_PAGE_SIZES = 4;
     psize_t sizes[MAX_PAGE_SIZES];
-    const int num_psizes = checked_vmgetinfo(sizes, VMINFO_GETPSIZES, MAX_PAGE_SIZES);
+    const int num_psizes = ::vmgetinfo(sizes, VMINFO_GETPSIZES, MAX_PAGE_SIZES);
     if (num_psizes == -1) {
-      trcVerbose("vmgetinfo(VMINFO_GETPSIZES) failed (errno: %d)", errno);
-      trcVerbose("disabling multipage support.");
+      log_warning(pagesize)("vmgetinfo(VMINFO_GETPSIZES) failed (errno: %d), disabling multipage support.", errno);
       g_multipage_support.error = ERROR_MP_VMGETINFO_FAILED;
       goto query_multipage_support_end;
     }
     guarantee(num_psizes > 0, "vmgetinfo(.., VMINFO_GETPSIZES, ...) failed.");
     assert(num_psizes <= MAX_PAGE_SIZES, "Surprise! more than 4 page sizes?");
-    trcVerbose("vmgetinfo(.., VMINFO_GETPSIZES, ...) returns %d supported page sizes: ", num_psizes);
+    log_info(pagesize)("vmgetinfo(.., VMINFO_GETPSIZES, ...) returns %d supported page sizes: ", num_psizes);
     for (int i = 0; i < num_psizes; i ++) {
       trcVerbose(" %s ", describe_pagesize(sizes[i]));
     }
@@ -473,7 +426,7 @@ static void query_multipage_support() {
       if (::shmctl(shmid, SHM_PAGESIZE, &shm_buf) != 0) {
         const int en = errno;
         ::shmctl(shmid, IPC_RMID, nullptr); // As early as possible!
-        trcVerbose("shmctl(SHM_PAGESIZE) failed with errno=%d", errno);
+        log_warning(pagesize)("shmctl(SHM_PAGESIZE) failed with errno=%d", errno);
       } else {
         // Attach and double check pageisze.
         void* p = ::shmat(shmid, nullptr, 0);
@@ -481,7 +434,7 @@ static void query_multipage_support() {
         guarantee0(p != (void*) -1); // Should always work.
         const size_t real_pagesize = os::Aix::query_pagesize(p);
         if (real_pagesize != pagesize) {
-          trcVerbose("real page size (" SIZE_FORMAT_X ") differs.", real_pagesize);
+          log_warning(pagesize)("real page size (" SIZE_FORMAT_X ") differs.", real_pagesize);
         } else {
           can_use = true;
         }
@@ -598,83 +551,39 @@ void os::init_system_properties_values() {
 #undef EXTENSIONS_DIR
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// breakpoint support
-
-void os::breakpoint() {
-  BREAKPOINT;
-}
-
-extern "C" void breakpoint() {
-  // use debugger to set breakpoint here
-}
-
 // retrieve memory information.
 // Returns false if something went wrong;
 // content of pmi undefined in this case.
 bool os::Aix::get_meminfo(meminfo_t* pmi) {
 
   assert(pmi, "get_meminfo: invalid parameter");
-
   memset(pmi, 0, sizeof(meminfo_t));
 
-  if (os::Aix::on_pase()) {
-    // On PASE, use the libo4 porting library.
-
-    unsigned long long virt_total = 0;
-    unsigned long long real_total = 0;
-    unsigned long long real_free = 0;
-    unsigned long long pgsp_total = 0;
-    unsigned long long pgsp_free = 0;
-    if (libo4::get_memory_info(&virt_total, &real_total, &real_free, &pgsp_total, &pgsp_free)) {
-      pmi->virt_total = virt_total;
-      pmi->real_total = real_total;
-      pmi->real_free = real_free;
-      pmi->pgsp_total = pgsp_total;
-      pmi->pgsp_free = pgsp_free;
-      return true;
-    }
+  // dynamically loaded perfstat library is used to retrieve memory statistics
+  perfstat_memory_total_t psmt;
+  memset (&psmt, '\0', sizeof(psmt));
+  const int rc = libperfstat::perfstat_memory_total(nullptr, &psmt, sizeof(psmt), 1);
+  if (rc == -1) {
+    log_warning(os)("perfstat_memory_total() failed (errno=%d)", errno);
+    assert(0, "perfstat_memory_total() failed");
     return false;
-
-  } else {
-
-    // On AIX, I use the (dynamically loaded) perfstat library to retrieve memory statistics
-    // See:
-    // http://publib.boulder.ibm.com/infocenter/systems/index.jsp
-    //        ?topic=/com.ibm.aix.basetechref/doc/basetrf1/perfstat_memtot.htm
-    // http://publib.boulder.ibm.com/infocenter/systems/index.jsp
-    //        ?topic=/com.ibm.aix.files/doc/aixfiles/libperfstat.h.htm
-
-    perfstat_memory_total_t psmt;
-    memset (&psmt, '\0', sizeof(psmt));
-    const int rc = libperfstat::perfstat_memory_total(nullptr, &psmt, sizeof(psmt), 1);
-    if (rc == -1) {
-      trcVerbose("perfstat_memory_total() failed (errno=%d)", errno);
-      assert(0, "perfstat_memory_total() failed");
-      return false;
-    }
-
-    assert(rc == 1, "perfstat_memory_total() - weird return code");
-
-    // excerpt from
-    // http://publib.boulder.ibm.com/infocenter/systems/index.jsp
-    //        ?topic=/com.ibm.aix.files/doc/aixfiles/libperfstat.h.htm
-    // The fields of perfstat_memory_total_t:
-    // u_longlong_t virt_total         Total virtual memory (in 4 KB pages).
-    // u_longlong_t real_total         Total real memory (in 4 KB pages).
-    // u_longlong_t real_free          Free real memory (in 4 KB pages).
-    // u_longlong_t pgsp_total         Total paging space (in 4 KB pages).
-    // u_longlong_t pgsp_free          Free paging space (in 4 KB pages).
-
-    pmi->virt_total = psmt.virt_total * 4096;
-    pmi->real_total = psmt.real_total * 4096;
-    pmi->real_free = psmt.real_free * 4096;
-    pmi->pgsp_total = psmt.pgsp_total * 4096;
-    pmi->pgsp_free = psmt.pgsp_free * 4096;
-
-    return true;
-
   }
+
+  assert(rc == 1, "perfstat_memory_total() - weird return code");
+
+  // The fields of perfstat_memory_total_t:
+  // u_longlong_t virt_total         Total virtual memory (in 4 KB pages).
+  // u_longlong_t real_total         Total real memory (in 4 KB pages).
+  // u_longlong_t real_free          Free real memory (in 4 KB pages).
+  // u_longlong_t pgsp_total         Total paging space (in 4 KB pages).
+  // u_longlong_t pgsp_free          Free paging space (in 4 KB pages).
+  pmi->virt_total = psmt.virt_total * 4096;
+  pmi->real_total = psmt.real_total * 4096;
+  pmi->real_free = psmt.real_free * 4096;
+  pmi->pgsp_total = psmt.pgsp_total * 4096;
+  pmi->pgsp_free = psmt.pgsp_free * 4096;
+
+  return true;
 } // end os::Aix::get_meminfo
 
 //////////////////////////////////////////////////////////////////////////////
@@ -693,8 +602,8 @@ static void *thread_native_entry(Thread *thread) {
     address low_address = thread->stack_end();
     address high_address = thread->stack_base();
     lt.print("Thread is alive (tid: " UINTX_FORMAT ", kernel thread id: " UINTX_FORMAT
-             ", stack [" PTR_FORMAT " - " PTR_FORMAT " (" SIZE_FORMAT "k using %uk pages)).",
-             os::current_thread_id(), (uintx) kernel_thread_id, low_address, high_address,
+             ", stack [" PTR_FORMAT " - " PTR_FORMAT " (" SIZE_FORMAT "k using %luk pages)).",
+             os::current_thread_id(), (uintx) kernel_thread_id, p2i(low_address), p2i(high_address),
              (high_address - low_address) / K, os::Aix::query_pagesize(low_address) / K);
   }
 
@@ -774,10 +683,8 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   guarantee(pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED) == 0, "???");
 
   // Make sure we run in 1:1 kernel-user-thread mode.
-  if (os::Aix::on_aix()) {
-    guarantee(pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM) == 0, "???");
-    guarantee(pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED) == 0, "???");
-  }
+  guarantee(pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM) == 0, "???");
+  guarantee(pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED) == 0, "???");
 
   // Start in suspended state, and in os::thread_start, wake the thread up.
   guarantee(pthread_attr_setsuspendstate_np(&attr, PTHREAD_CREATE_SUSPENDED_NP) == 0, "???");
@@ -955,44 +862,15 @@ double os::elapsedVTime() {
 //
 // See: https://www.ibm.com/support/knowledgecenter/ssw_aix_61/com.ibm.aix.basetrf2/read_real_time.htm
 //
-// On PASE: mread_real_time will always return RTC_POWER_PC data, so no
-// conversion is necessary. However, mread_real_time will not return
-// monotonic results but merely matches read_real_time. So we need a tweak
-// to ensure monotonic results.
-//
-// For PASE no public documentation exists, just word by IBM
 jlong os::javaTimeNanos() {
   timebasestruct_t time;
   int rc = mread_real_time(&time, TIMEBASE_SZ);
-  if (os::Aix::on_pase()) {
-    assert(rc == RTC_POWER, "expected time format RTC_POWER from mread_real_time in PASE");
-    jlong now = jlong(time.tb_high) * NANOSECS_PER_SEC + jlong(time.tb_low);
-    jlong prev = max_real_time;
-    if (now <= prev) {
-      return prev;   // same or retrograde time;
-    }
-    jlong obsv = Atomic::cmpxchg(&max_real_time, prev, now);
-    assert(obsv >= prev, "invariant");   // Monotonicity
-    // If the CAS succeeded then we're done and return "now".
-    // If the CAS failed and the observed value "obsv" is >= now then
-    // we should return "obsv".  If the CAS failed and now > obsv > prv then
-    // some other thread raced this thread and installed a new value, in which case
-    // we could either (a) retry the entire operation, (b) retry trying to install now
-    // or (c) just return obsv.  We use (c).   No loop is required although in some cases
-    // we might discard a higher "now" value in deference to a slightly lower but freshly
-    // installed obsv value.   That's entirely benign -- it admits no new orderings compared
-    // to (a) or (b) -- and greatly reduces coherence traffic.
-    // We might also condition (c) on the magnitude of the delta between obsv and now.
-    // Avoiding excessive CAS operations to hot RW locations is critical.
-    // See https://blogs.oracle.com/dave/entry/cas_and_cache_trivia_invalidate
-    return (prev == obsv) ? now : obsv;
-  } else {
-    if (rc != RTC_POWER) {
-      rc = time_base_to_time(&time, TIMEBASE_SZ);
-      assert(rc != -1, "error calling time_base_to_time()");
-    }
-    return jlong(time.tb_high) * NANOSECS_PER_SEC + jlong(time.tb_low);
+
+  if (rc != RTC_POWER) {
+    rc = time_base_to_time(&time, TIMEBASE_SZ);
+    assert(rc != -1, "error calling time_base_to_time()");
   }
+  return jlong(time.tb_high) * NANOSECS_PER_SEC + jlong(time.tb_low);
 }
 
 void os::javaTimeNanos_info(jvmtiTimerInfo *info_ptr) {
@@ -1016,6 +894,10 @@ int os::current_process_id() {
 // This must be hard coded because it's the system's temporary
 // directory not the java application's temp directory, ala java.io.tmpdir.
 const char* os::get_temp_directory() { return "/tmp"; }
+
+void os::prepare_native_symbols() {
+  LoadedLibraries::reload();
+}
 
 // Check if addr is inside libjvm.so.
 bool os::address_is_in_vm(address addr) {
@@ -1104,17 +986,18 @@ bool os::dll_address_to_library_name(address addr, char* buf,
   return true;
 }
 
-void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
+static void* dll_load_library(const char *filename, char *ebuf, int ebuflen) {
 
   log_info(os)("attempting shared library load of %s", filename);
-
   if (ebuf && ebuflen > 0) {
     ebuf[0] = '\0';
     ebuf[ebuflen - 1] = '\0';
   }
 
   if (!filename || strlen(filename) == 0) {
-    ::strncpy(ebuf, "dll_load: empty filename specified", ebuflen - 1);
+    if (ebuf != nullptr && ebuflen > 0) {
+      ::strncpy(ebuf, "dll_load: empty filename specified", ebuflen - 1);
+    }
     return nullptr;
   }
 
@@ -1129,8 +1012,9 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   }
 
   void* result;
+  const char* error_report = nullptr;
   JFR_ONLY(NativeLibraryLoadEvent load_event(filename, &result);)
-  result = ::dlopen(filename, dflags);
+  result = Aix_dlopen(filename, dflags, &error_report);
   if (result != nullptr) {
     Events::log_dll_message(nullptr, "Loaded shared library %s", filename);
     // Reload dll cache. Don't do this in signal handling.
@@ -1139,7 +1023,6 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
     return result;
   } else {
     // error analysis when dlopen fails
-    const char* error_report = ::dlerror();
     if (error_report == nullptr) {
       error_report = "dlerror returned no error description";
     }
@@ -1152,6 +1035,26 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
     JFR_ONLY(load_event.set_error_msg(error_report);)
   }
   return nullptr;
+}
+// Load library named <filename>
+// If filename matches <name>.so, and loading fails, repeat with <name>.a.
+void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
+  void* result = nullptr;
+  char* const file_path = strdup(filename);
+  char* const pointer_to_dot = strrchr(file_path, '.');
+  const char old_extension[] = ".so";
+  const char new_extension[] = ".a";
+  STATIC_ASSERT(sizeof(old_extension) >= sizeof(new_extension));
+  // First try to load the existing file.
+  result = dll_load_library(filename, ebuf, ebuflen);
+  // If the load fails,we try to reload by changing the extension to .a for .so files only.
+  // Shared object in .so format dont have braces, hence they get removed for archives with members.
+  if (result == nullptr && pointer_to_dot != nullptr && strcmp(pointer_to_dot, old_extension) == 0) {
+    snprintf(pointer_to_dot, sizeof(old_extension), "%s", new_extension);
+    result = dll_load_library(file_path, ebuf, ebuflen);
+  }
+  FREE_C_HEAP_ARRAY(char, file_path);
+  return result;
 }
 
 void os::print_dll_info(outputStream *st) {
@@ -1258,22 +1161,10 @@ void os::print_memory_info(outputStream* st) {
 
   os::Aix::meminfo_t mi;
   if (os::Aix::get_meminfo(&mi)) {
-    if (os::Aix::on_aix()) {
-      st->print_cr("physical total : " SIZE_FORMAT, mi.real_total);
-      st->print_cr("physical free  : " SIZE_FORMAT, mi.real_free);
-      st->print_cr("swap total     : " SIZE_FORMAT, mi.pgsp_total);
-      st->print_cr("swap free      : " SIZE_FORMAT, mi.pgsp_free);
-    } else {
-      // PASE - Numbers are result of QWCRSSTS; they mean:
-      // real_total: Sum of all system pools
-      // real_free: always 0
-      // pgsp_total: we take the size of the system ASP
-      // pgsp_free: size of system ASP times percentage of system ASP unused
-      st->print_cr("physical total     : " SIZE_FORMAT, mi.real_total);
-      st->print_cr("system asp total   : " SIZE_FORMAT, mi.pgsp_total);
-      st->print_cr("%% system asp used : %.2f",
-        mi.pgsp_total ? (100.0f * (mi.pgsp_total - mi.pgsp_free) / mi.pgsp_total) : -1.0f);
-    }
+    st->print_cr("physical total : " SIZE_FORMAT, mi.real_total);
+    st->print_cr("physical free  : " SIZE_FORMAT, mi.real_free);
+    st->print_cr("swap total     : " SIZE_FORMAT, mi.pgsp_total);
+    st->print_cr("swap free      : " SIZE_FORMAT, mi.pgsp_free);
   }
   st->cr();
 
@@ -1296,6 +1187,9 @@ void os::print_memory_info(outputStream* st) {
 void os::get_summary_cpu_info(char* buf, size_t buflen) {
   // read _system_configuration.version
   switch (_system_configuration.version) {
+  case PV_10:
+    strncpy(buf, "Power PC 10", buflen);
+    break;
   case PV_9:
     strncpy(buf, "Power PC 9", buflen);
     break;
@@ -1334,6 +1228,9 @@ void os::get_summary_cpu_info(char* buf, size_t buflen) {
     break;
   case PV_9_Compat:
     strncpy(buf, "PV_9_Compat", buflen);
+    break;
+  case PV_10_Compat:
+    strncpy(buf, "PV_10_Compat", buflen);
     break;
   default:
     strncpy(buf, "unknown", buflen);
@@ -1453,8 +1350,8 @@ struct vmembk_t {
 
   void print_on(outputStream* os) const {
     os->print("[" PTR_FORMAT " - " PTR_FORMAT "] (" UINTX_FORMAT
-      " bytes, %d %s pages), %s",
-      addr, addr + size - 1, size, size / pagesize, describe_pagesize(pagesize),
+      " bytes, %ld %s pages), %s",
+      p2i(addr), p2i(addr) + size - 1, size, size / pagesize, describe_pagesize(pagesize),
       (type == VMEM_SHMATED ? "shmat" : "mmap")
     );
   }
@@ -1463,15 +1360,12 @@ struct vmembk_t {
   // also check that range is fully page aligned to the page size if the block.
   void assert_is_valid_subrange(char* p, size_t s) const {
     if (!contains_range(p, s)) {
-      trcVerbose("[" PTR_FORMAT " - " PTR_FORMAT "] is not a sub "
-              "range of [" PTR_FORMAT " - " PTR_FORMAT "].",
-              p2i(p), p2i(p + s), p2i(addr), p2i(addr + size));
-      guarantee0(false);
+      fatal(RANGEFMT " is not a sub range of " RANGEFMT, RANGEFMTARGS(p, s),
+            RANGEFMTARGS(addr, size));
     }
     if (!is_aligned_to(p, pagesize) || !is_aligned_to(p + s, pagesize)) {
-      trcVerbose("range [" PTR_FORMAT " - " PTR_FORMAT "] is not"
-              " aligned to pagesize (%lu)", p2i(p), p2i(p + s), (unsigned long) pagesize);
-      guarantee0(false);
+      fatal("range " RANGEFMT " is not aligned to pagesize (%lu)",
+            RANGEFMTARGS(p, s), (unsigned long)pagesize);
     }
   }
 };
@@ -1538,16 +1432,12 @@ static char* reserve_shmated_memory (size_t bytes, char* requested_addr) {
   // We must prevent anyone from attaching too close to the
   // BRK because that may cause malloc OOM.
   if (requested_addr != nullptr && is_close_to_brk((address)requested_addr)) {
-    trcVerbose("Wish address " PTR_FORMAT " is too close to the BRK segment.", p2i(requested_addr));
+    log_info(os, map)("Wish address " PTR_FORMAT
+                      " is too close to the BRK segment.",
+                      p2i(requested_addr));
     // Since we treat an attach to the wrong address as an error later anyway,
     // we return null here
     return nullptr;
-  }
-
-  // For old AS/400's (V5R4 and older) we should not even be here - System V shared memory is not
-  // really supported (max size 4GB), so reserve_mmapped_memory should have been used instead.
-  if (os::Aix::on_pase_V5R4_or_older()) {
-    ShouldNotReachHere();
   }
 
   // Align size of shm up to 64K to avoid errors if we later try to change the page size.
@@ -1556,7 +1446,9 @@ static char* reserve_shmated_memory (size_t bytes, char* requested_addr) {
   // Reserve the shared segment.
   int shmid = shmget(IPC_PRIVATE, size, IPC_CREAT | S_IRUSR | S_IWUSR);
   if (shmid == -1) {
-    trcVerbose("shmget(.., " UINTX_FORMAT ", ..) failed (errno: %d).", size, errno);
+    ErrnoPreserver ep;
+    log_trace(os, map)("shmget(.., " UINTX_FORMAT ", ..) failed (errno=%s).",
+                       size, os::strerror(ep.saved_errno()));
     return nullptr;
   }
 
@@ -1570,15 +1462,15 @@ static char* reserve_shmated_memory (size_t bytes, char* requested_addr) {
   memset(&shmbuf, 0, sizeof(shmbuf));
   shmbuf.shm_pagesize = 64*K;
   if (shmctl(shmid, SHM_PAGESIZE, &shmbuf) != 0) {
-    trcVerbose("Failed to set page size (need " UINTX_FORMAT " 64K pages) - shmctl failed with %d.",
-               size / (64*K), errno);
-    // I want to know if this ever happens.
-    assert(false, "failed to set page size for shmat");
+    assert(false,
+           "Failed to set page size (need " UINTX_FORMAT
+           " 64K pages) - shmctl failed. (errno=%s).",
+           size / (64 * K), os::strerror(os::get_last_error()));
   }
 
   // Now attach the shared segment.
   // Note that we deliberately *don't* pass SHM_RND. The contract of os::attempt_reserve_memory_at() -
-  // which invokes this function with a request address != NULL - is to map at the specified address
+  // which invokes this function with a request address != nullptr - is to map at the specified address
   // excactly, or to fail. If the caller passed us an address that is not usable (aka not a valid segment
   // boundary), shmat should not round down the address, or think up a completely new one.
   // (In places where this matters, e.g. when reserving the heap, we take care of passing segment-aligned
@@ -1588,13 +1480,19 @@ static char* reserve_shmated_memory (size_t bytes, char* requested_addr) {
 
   // (A) Right after shmat and before handing shmat errors delete the shm segment.
   if (::shmctl(shmid, IPC_RMID, nullptr) == -1) {
-    trcVerbose("shmctl(%u, IPC_RMID) failed (%d)\n", shmid, errno);
+    ErrnoPreserver ep;
+    log_trace(os, map)("shmctl(%u, IPC_RMID) failed (errno=%s)\n",
+                       shmid,
+                       os::strerror(ep.saved_errno()));
     assert(false, "failed to remove shared memory segment!");
   }
 
   // Handle shmat error. If we failed to attach, just return.
   if (addr == (char*)-1) {
-    trcVerbose("Failed to attach segment at " PTR_FORMAT " (%d).", p2i(requested_addr), errno_shmat);
+    ErrnoPreserver ep;
+    log_trace(os, map)("Failed to attach segment at " PTR_FORMAT " (errno=%s).",
+                       p2i(requested_addr),
+                       os::strerror(ep.saved_errno()));
     return nullptr;
   }
 
@@ -1602,17 +1500,24 @@ static char* reserve_shmated_memory (size_t bytes, char* requested_addr) {
   // work (see above), the system may have given us something other then 4K (LDR_CNTRL).
   const size_t real_pagesize = os::Aix::query_pagesize(addr);
   if (real_pagesize != (size_t)shmbuf.shm_pagesize) {
-    trcVerbose("pagesize is, surprisingly, " SIZE_FORMAT, real_pagesize);
+    log_trace(os, map)("pagesize is, surprisingly, " SIZE_FORMAT,
+                       real_pagesize);
   }
 
   if (addr) {
-    trcVerbose("shm-allocated " PTR_FORMAT " .. " PTR_FORMAT " (" UINTX_FORMAT " bytes, " UINTX_FORMAT " %s pages)",
-      p2i(addr), p2i(addr + size - 1), size, size/real_pagesize, describe_pagesize(real_pagesize));
+    log_trace(os, map)("shm-allocated succeeded: " RANGEFMT
+                       " (" UINTX_FORMAT " %s pages)",
+                       RANGEFMTARGS(addr, size),
+                       size / real_pagesize,
+                       describe_pagesize(real_pagesize));
   } else {
     if (requested_addr != nullptr) {
-      trcVerbose("failed to shm-allocate " UINTX_FORMAT " bytes at with address " PTR_FORMAT ".", size, p2i(requested_addr));
+      log_trace(os, map)("shm-allocate failed: " RANGEFMT,
+                         RANGEFMTARGS(requested_addr, size));
     } else {
-      trcVerbose("failed to shm-allocate " UINTX_FORMAT " bytes at any address.", size);
+      log_trace(os, map)("failed to shm-allocate " UINTX_FORMAT
+                         " bytes at any address.",
+                         size);
     }
   }
 
@@ -1632,9 +1537,13 @@ static bool release_shmated_memory(char* addr, size_t size) {
 
   // TODO: is there a way to verify shm size without doing bookkeeping?
   if (::shmdt(addr) != 0) {
-    trcVerbose("error (%d).", errno);
+    ErrnoPreserver ep;
+    log_trace(os, map)("shmdt failed: " RANGEFMT " errno=(%s)",
+                       RANGEFMTARGS(addr, size),
+                       os::strerror(ep.saved_errno()));
   } else {
-    trcVerbose("ok.");
+    log_trace(os, map)("shmdt succeded: " RANGEFMT,
+                       RANGEFMTARGS(addr, size));
     rc = true;
   }
   return rc;
@@ -1644,10 +1553,11 @@ static bool uncommit_shmated_memory(char* addr, size_t size) {
   trcVerbose("uncommit_shmated_memory [" PTR_FORMAT " - " PTR_FORMAT "].",
     p2i(addr), p2i(addr + size - 1));
 
-  const bool rc = my_disclaim64(addr, size);
+  const int rc = disclaim64(addr, size, DISCLAIM_ZEROMEM);
 
-  if (!rc) {
-    trcVerbose("my_disclaim64(" PTR_FORMAT ", " UINTX_FORMAT ") failed.\n", p2i(addr), size);
+  if (rc != 0) {
+    ErrnoPreserver ep;
+    log_warning(os)("disclaim64(" PTR_FORMAT ", " UINTX_FORMAT ") failed, %s\n", p2i(addr), size, os::strerror(ep.saved_errno()));
     return false;
   }
   return true;
@@ -1663,14 +1573,18 @@ static char* reserve_mmaped_memory(size_t bytes, char* requested_addr) {
     bytes, p2i(requested_addr));
 
   if (requested_addr && !is_aligned_to(requested_addr, os::vm_page_size()) != 0) {
-    trcVerbose("Wish address " PTR_FORMAT " not aligned to page boundary.", p2i(requested_addr));
+    log_trace(os, map)("Wish address " PTR_FORMAT
+                       " not aligned to page boundary.",
+                       p2i(requested_addr));
     return nullptr;
   }
 
   // We must prevent anyone from attaching too close to the
   // BRK because that may cause malloc OOM.
   if (requested_addr != nullptr && is_close_to_brk((address)requested_addr)) {
-    trcVerbose("Wish address " PTR_FORMAT " is too close to the BRK segment.", p2i(requested_addr));
+    log_trace(os, map)("Wish address " PTR_FORMAT
+                       " is too close to the BRK segment.",
+                       p2i(requested_addr));
     // Since we treat an attach to the wrong address as an error later anyway,
     // we return null here
     return nullptr;
@@ -1713,11 +1627,17 @@ static char* reserve_mmaped_memory(size_t bytes, char* requested_addr) {
       PROT_READ|PROT_WRITE|PROT_EXEC, flags, -1, 0);
 
   if (addr == MAP_FAILED) {
-    trcVerbose("mmap(" PTR_FORMAT ", " UINTX_FORMAT ", ..) failed (%d)", p2i(requested_addr), size, errno);
+    ErrnoPreserver ep;
+    log_trace(os, map)("mmap failed: " RANGEFMT " errno=(%s)",
+                       RANGEFMTARGS(requested_addr, size),
+                       os::strerror(ep.saved_errno()));
     return nullptr;
   } else if (requested_addr != nullptr && addr != requested_addr) {
-    trcVerbose("mmap(" PTR_FORMAT ", " UINTX_FORMAT ", ..) succeeded, but at a different address than requested (" PTR_FORMAT "), will unmap",
-               p2i(requested_addr), size, p2i(addr));
+    log_trace(os, map)("mmap succeeded: " RANGEFMT
+                       ", but at a different address than"
+                       "requested (" PTR_FORMAT "), will unmap",
+                       RANGEFMTARGS(requested_addr, size),
+                       p2i(addr));
     ::munmap(addr, extra_size);
     return nullptr;
   }
@@ -1756,10 +1676,14 @@ static bool release_mmaped_memory(char* addr, size_t size) {
   bool rc = false;
 
   if (::munmap(addr, size) != 0) {
-    trcVerbose("failed (%d)\n", errno);
+    ErrnoPreserver ep;
+    log_trace(os, map)("munmap failed: " RANGEFMT " errno=(%s)",
+                       RANGEFMTARGS(addr, size),
+                       os::strerror(ep.saved_errno()));
     rc = false;
   } else {
-    trcVerbose("ok.");
+    log_trace(os, map)("munmap succeeded: " RANGEFMT,
+                       RANGEFMTARGS(addr, size));
     rc = true;
   }
 
@@ -1777,10 +1701,14 @@ static bool uncommit_mmaped_memory(char* addr, size_t size) {
 
   // Uncommit mmap memory with msync MS_INVALIDATE.
   if (::msync(addr, size, MS_INVALIDATE) != 0) {
-    trcVerbose("failed (%d)\n", errno);
+    ErrnoPreserver ep;
+    log_trace(os, map)("msync failed: " RANGEFMT " errno=(%s)",
+                       RANGEFMTARGS(addr, size),
+                       os::strerror(ep.saved_errno()));
     rc = false;
   } else {
-    trcVerbose("ok.");
+    log_trace(os, map)("msync succeeded: " RANGEFMT,
+                       RANGEFMTARGS(addr, size));
     rc = true;
   }
 
@@ -1819,7 +1747,7 @@ bool os::pd_commit_memory(char* addr, size_t size, bool exec) {
   guarantee0(vmi);
   vmi->assert_is_valid_subrange(addr, size);
 
-  trcVerbose("commit_memory [" PTR_FORMAT " - " PTR_FORMAT "].", p2i(addr), p2i(addr + size - 1));
+  log_info(os)("commit_memory [" PTR_FORMAT " - " PTR_FORMAT "].", p2i(addr), p2i(addr + size - 1));
 
   if (UseExplicitCommit) {
     // AIX commits memory on touch. So, touch all pages to be committed.
@@ -1880,6 +1808,10 @@ void os::pd_realign_memory(char *addr, size_t bytes, size_t alignment_hint) {
 void os::pd_free_memory(char *addr, size_t bytes, size_t alignment_hint) {
 }
 
+size_t os::pd_pretouch_memory(void* first, void* last, size_t page_size) {
+  return page_size;
+}
+
 void os::numa_make_global(char *addr, size_t bytes) {
 }
 
@@ -1914,10 +1846,6 @@ bool os::numa_get_group_ids_for_range(const void** addresses, int* lgrp_ids, siz
   return false;
 }
 
-char *os::scan_pages(char *start, char* end, page_info* page_expected, page_info* page_found) {
-  return end;
-}
-
 // Reserves and attaches a shared memory segment.
 char* os::pd_reserve_memory(size_t bytes, bool exec) {
   // Always round to os::vm_page_size(), which may be larger than 4K.
@@ -1928,11 +1856,7 @@ char* os::pd_reserve_memory(size_t bytes, bool exec) {
   if (os::vm_page_size() == 4*K) {
     return reserve_mmaped_memory(bytes, nullptr /* requested_addr */);
   } else {
-    if (bytes >= Use64KPagesThreshold) {
-      return reserve_shmated_memory(bytes, nullptr /* requested_addr */);
-    } else {
-      return reserve_mmaped_memory(bytes, nullptr /* requested_addr */);
-    }
+    return reserve_shmated_memory(bytes, nullptr /* requested_addr */);
   }
 }
 
@@ -2006,12 +1930,12 @@ static bool checked_mprotect(char* addr, size_t size, int prot) {
   //
   // See http://publib.boulder.ibm.com/infocenter/pseries/v5r3/index.jsp?topic=/com.ibm.aix.basetechref/doc/basetrf1/mprotect.htm
 
-  Events::log(nullptr, "Protecting memory [" INTPTR_FORMAT "," INTPTR_FORMAT "] with protection modes %x", p2i(addr), p2i(addr+size), prot);
+  Events::log_memprotect(nullptr, "Protecting memory [" INTPTR_FORMAT "," INTPTR_FORMAT "] with protection modes %x", p2i(addr), p2i(addr+size), prot);
   bool rc = ::mprotect(addr, size, prot) == 0 ? true : false;
 
   if (!rc) {
     const char* const s_errno = os::errno_name(errno);
-    warning("mprotect(" PTR_FORMAT "-" PTR_FORMAT ", 0x%X) failed (%s).", addr, addr + size, prot, s_errno);
+    warning("mprotect(" PTR_FORMAT "-" PTR_FORMAT ", 0x%X) failed (%s).", p2i(addr), p2i(addr) + size, prot, s_errno);
     return false;
   }
 
@@ -2032,27 +1956,6 @@ static bool checked_mprotect(char* addr, size_t size, int prot) {
       rc = !read_protected;
     } else {
       rc = read_protected;
-    }
-
-    if (!rc) {
-      if (os::Aix::on_pase()) {
-        // There is an issue on older PASE systems where mprotect() will return success but the
-        // memory will not be protected.
-        // This has nothing to do with the problem of using mproect() on SPEC1170 incompatible
-        // machines; we only see it rarely, when using mprotect() to protect the guard page of
-        // a stack. It is an OS error.
-        //
-        // A valid strategy is just to try again. This usually works. :-/
-
-        ::usleep(1000);
-        Events::log(nullptr, "Protecting memory [" INTPTR_FORMAT "," INTPTR_FORMAT "] with protection modes %x", p2i(addr), p2i(addr+size), prot);
-        if (::mprotect(addr, size, prot) == 0) {
-          const bool read_protected_2 =
-            (SafeFetch32((int*)addr, 0x12345678) == 0x12345678 &&
-            SafeFetch32((int*)addr, 0x76543210) == 0x76543210) ? true : false;
-          rc = true;
-        }
-      }
     }
   }
 
@@ -2112,11 +2015,6 @@ bool os::can_commit_large_page_memory() {
   return false;
 }
 
-bool os::can_execute_large_page_memory() {
-  // Does not matter, we do not support huge pages.
-  return false;
-}
-
 char* os::pd_attempt_map_memory_to_file_at(char* requested_addr, size_t bytes, int file_desc) {
   assert(file_desc >= 0, "file_desc is not valid");
   char* result = nullptr;
@@ -2146,11 +2044,7 @@ char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, bool 
   if (os::vm_page_size() == 4*K) {
     return reserve_mmaped_memory(bytes, requested_addr);
   } else {
-    if (bytes >= Use64KPagesThreshold) {
-      return reserve_shmated_memory(bytes, requested_addr);
-    } else {
-      return reserve_mmaped_memory(bytes, requested_addr);
-    }
+    return reserve_shmated_memory(bytes, requested_addr);
   }
 
   return addr;
@@ -2163,15 +2057,6 @@ size_t os::vm_min_address() {
   // address here.
   assert(is_aligned(_vm_min_address_default, os::vm_allocation_granularity()), "Sanity");
   return _vm_min_address_default;
-}
-
-// Used to convert frequent JVM_Yield() to nops
-bool os::dont_yield() {
-  return DontYieldALot;
-}
-
-void os::naked_yield() {
-  sched_yield();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2188,7 +2073,6 @@ void os::naked_yield() {
 // (Actually, I doubt this even has an impact on AIX, as we do kernel
 // scheduling there; however, this still leaves iSeries.)
 //
-// We use the same values for AIX and PASE.
 int os::java_to_os_priority[CriticalPriority + 1] = {
   54,             // 0 Entry should never be used
 
@@ -2234,7 +2118,7 @@ OSReturn os::set_native_priority(Thread* thread, int newpri) {
   int ret = pthread_setschedparam(thr, policy, &param);
 
   if (ret != 0) {
-    trcVerbose("Could not change priority for thread %d to %d (error %d, %s)",
+    log_warning(os)("Could not change priority for thread %d to %d (error %d, %s)",
         (int)thr, newpri, ret, os::errno_name(ret));
   }
   return (ret == 0) ? OS_OK : OS_ERR;
@@ -2276,8 +2160,7 @@ void os::init(void) {
   g_brk_at_startup = (address) ::sbrk(0);
   assert(g_brk_at_startup != (address) -1, "sbrk failed");
 
-  // First off, we need to know whether we run on AIX or PASE, and
-  // the OS level we run on.
+  // First off, we need to know the OS level we run on.
   os::Aix::initialize_os_info();
 
   // Scan environment (SPEC1170 behaviour, etc).
@@ -2299,7 +2182,7 @@ void os::init(void) {
   //
   // So, we do the following:
   // LDR_CNTRL    can_use_64K_pages_dynamically       what we do                      remarks
-  // 4K           no                                  4K                              old systems (aix 5.2, as/400 v5r4) or new systems with AME activated
+  // 4K           no                                  4K                              old systems (aix 5.2) or new systems with AME activated
   // 4k           yes                                 64k (treat 4k stacks as 64k)    different loader than java and standard settings
   // 64k          no              --- AIX 5.2 ? ---
   // 64k          yes                                 64k                             new systems and standard java loader (we set datapsize=64k when linking)
@@ -2352,17 +2235,11 @@ void os::init(void) {
   // debug trace
   trcVerbose("os::vm_page_size %s", describe_pagesize(os::vm_page_size()));
 
-  // Next, we need to initialize libo4 and libperfstat libraries.
-  if (os::Aix::on_pase()) {
-    os::Aix::initialize_libo4();
-  } else {
-    os::Aix::initialize_libperfstat();
-  }
+  // Next, we need to initialize libperfstat
+  os::Aix::initialize_libperfstat();
 
   // Reset the perfstat information provided by ODM.
-  if (os::Aix::on_aix()) {
-    libperfstat::perfstat_reset();
-  }
+  libperfstat::perfstat_reset();
 
   // Now initialize basic system properties. Note that for some of the values we
   // need libperfstat etc.
@@ -2382,12 +2259,6 @@ jint os::init_2(void) {
   DEBUG_ONLY(os::set_mutex_init_done();)
 
   os::Posix::init_2();
-
-  if (os::Aix::on_pase()) {
-    trcVerbose("Running on PASE.");
-  } else {
-    trcVerbose("Running on AIX (not PASE).");
-  }
 
   trcVerbose("processor count: %d", os::_processor_count);
   trcVerbose("physical memory: %lu", Aix::_physical_memory);
@@ -2472,7 +2343,7 @@ void os::set_native_thread_name(const char *name) {
 
 bool os::find(address addr, outputStream* st) {
 
-  st->print(PTR_FORMAT ": ", addr);
+  st->print(PTR_FORMAT ": ", p2i(addr));
 
   loaded_module_t lm;
   if (LoadedLibraries::find_for_text_address(addr, &lm) ||
@@ -2509,10 +2380,10 @@ int os::open(const char *path, int oflag, int mode) {
   // IV90804: OPENING A FILE IN AFS WITH O_CLOEXEC FAILS WITH AN EINVAL ERROR APPLIES TO AIX 7100-04 17/04/14 PTF PECHANGE
   int oflag_with_o_cloexec = oflag | O_CLOEXEC;
 
-  int fd = ::open64(path, oflag_with_o_cloexec, mode);
+  int fd = ::open(path, oflag_with_o_cloexec, mode);
   if (fd == -1) {
     // we might fail in the open call when O_CLOEXEC is set, so try again without (see IV90804)
-    fd = ::open64(path, oflag, mode);
+    fd = ::open(path, oflag, mode);
     if (fd == -1) {
       return -1;
     }
@@ -2520,8 +2391,8 @@ int os::open(const char *path, int oflag, int mode) {
 
   // If the open succeeded, the file might still be a directory.
   {
-    struct stat64 buf64;
-    int ret = ::fstat64(fd, &buf64);
+    struct stat buf64;
+    int ret = ::fstat(fd, &buf64);
     int st_mode = buf64.st_mode;
 
     if (ret != -1) {
@@ -2571,71 +2442,14 @@ int os::open(const char *path, int oflag, int mode) {
   return fd;
 }
 
-// create binary file, rewriting existing file if required
-int os::create_binary_file(const char* path, bool rewrite_existing) {
-  int oflags = O_WRONLY | O_CREAT;
-  oflags |= rewrite_existing ? O_TRUNC : O_EXCL;
-  return ::open64(path, oflags, S_IREAD | S_IWRITE);
-}
-
 // return current position of file pointer
 jlong os::current_file_offset(int fd) {
-  return (jlong)::lseek64(fd, (off64_t)0, SEEK_CUR);
+  return (jlong)::lseek(fd, (off_t)0, SEEK_CUR);
 }
 
 // move file pointer to the specified offset
 jlong os::seek_to_file_offset(int fd, jlong offset) {
-  return (jlong)::lseek64(fd, (off64_t)offset, SEEK_SET);
-}
-
-// Map a block of memory.
-char* os::pd_map_memory(int fd, const char* file_name, size_t file_offset,
-                        char *addr, size_t bytes, bool read_only,
-                        bool allow_exec) {
-  int prot;
-  int flags = MAP_PRIVATE;
-
-  if (read_only) {
-    prot = PROT_READ;
-    flags = MAP_SHARED;
-  } else {
-    prot = PROT_READ | PROT_WRITE;
-    flags = MAP_PRIVATE;
-  }
-
-  if (allow_exec) {
-    prot |= PROT_EXEC;
-  }
-
-  if (addr != nullptr) {
-    flags |= MAP_FIXED;
-  }
-
-  // Allow anonymous mappings if 'fd' is -1.
-  if (fd == -1) {
-    flags |= MAP_ANONYMOUS;
-  }
-
-  char* mapped_address = (char*)::mmap(addr, (size_t)bytes, prot, flags,
-                                     fd, file_offset);
-  if (mapped_address == MAP_FAILED) {
-    return nullptr;
-  }
-  return mapped_address;
-}
-
-// Remap a block of memory.
-char* os::pd_remap_memory(int fd, const char* file_name, size_t file_offset,
-                          char *addr, size_t bytes, bool read_only,
-                          bool allow_exec) {
-  // same as map_memory() on this OS
-  return os::map_memory(fd, file_name, file_offset, addr, bytes, read_only,
-                        allow_exec);
-}
-
-// Unmap a block of memory.
-bool os::pd_unmap_memory(char* addr, size_t bytes) {
-  return munmap(addr, bytes) == 0;
+  return (jlong)::lseek(fd, (off_t)offset, SEEK_SET);
 }
 
 // current_thread_cpu_time(bool) and thread_cpu_time(Thread*, bool)
@@ -2761,33 +2575,16 @@ int os::loadavg(double values[], int nelem) {
   guarantee(nelem >= 0 && nelem <= 3, "argument error");
   guarantee(values, "argument error");
 
-  if (os::Aix::on_pase()) {
-
-    // AS/400 PASE: use libo4 porting library
-    double v[3] = { 0.0, 0.0, 0.0 };
-
-    if (libo4::get_load_avg(v, v + 1, v + 2)) {
-      for (int i = 0; i < nelem; i ++) {
-        values[i] = v[i];
-      }
-      return nelem;
-    } else {
-      return -1;
+  // AIX: use libperfstat
+  libperfstat::cpuinfo_t ci;
+  if (libperfstat::get_cpuinfo(&ci)) {
+    for (int i = 0; i < nelem; i++) {
+      values[i] = ci.loadavg[i];
     }
-
   } else {
-
-    // AIX: use libperfstat
-    libperfstat::cpuinfo_t ci;
-    if (libperfstat::get_cpuinfo(&ci)) {
-      for (int i = 0; i < nelem; i++) {
-        values[i] = ci.loadavg[i];
-      }
-    } else {
-      return -1;
-    }
-    return nelem;
+    return -1;
   }
+  return nelem;
 }
 
 bool os::is_primordial_thread(void) {
@@ -2798,20 +2595,19 @@ bool os::is_primordial_thread(void) {
   }
 }
 
-// OS recognitions (PASE/AIX, OS level) call this before calling any
-// one of Aix::on_pase(), Aix::os_version() static
+// OS recognitions (OS level) call this before calling Aix::os_version()
 void os::Aix::initialize_os_info() {
 
-  assert(_on_pase == -1 && _os_version == 0, "already called.");
+  assert(_os_version == 0, "already called.");
 
   struct utsname uts;
   memset(&uts, 0, sizeof(uts));
   strcpy(uts.sysname, "?");
   if (::uname(&uts) == -1) {
-    trcVerbose("uname failed (%d)", errno);
-    guarantee(0, "Could not determine whether we run on AIX or PASE");
+    log_warning(os)("uname failed (%d)", errno);
+    guarantee(0, "Could not determine uname information");
   } else {
-    trcVerbose("uname says: sysname \"%s\" version \"%s\" release \"%s\" "
+    log_info(os)("uname says: sysname \"%s\" version \"%s\" release \"%s\" "
                "node \"%s\" machine \"%s\"\n",
                uts.sysname, uts.version, uts.release, uts.nodename, uts.machine);
     const int major = atoi(uts.version);
@@ -2821,22 +2617,13 @@ void os::Aix::initialize_os_info() {
     _os_version = (major << 24) | (minor << 16);
     char ver_str[20] = {0};
     const char* name_str = "unknown OS";
-    if (strcmp(uts.sysname, "OS400") == 0) {
-      // We run on AS/400 PASE. We do not support versions older than V5R4M0.
-      _on_pase = 1;
-      if (os_version_short() < 0x0504) {
-        trcVerbose("OS/400 releases older than V5R4M0 not supported.");
-        assert(false, "OS/400 release too old.");
-      }
-      name_str = "OS/400 (pase)";
-      jio_snprintf(ver_str, sizeof(ver_str), "%u.%u", major, minor);
-    } else if (strcmp(uts.sysname, "AIX") == 0) {
+
+    if (strcmp(uts.sysname, "AIX") == 0) {
       // We run on AIX. We do not support versions older than AIX 7.1.
-      _on_pase = 0;
       // Determine detailed AIX version: Version, Release, Modification, Fix Level.
       odmWrapper::determine_os_kernel_version(&_os_version);
       if (os_version_short() < 0x0701) {
-        trcVerbose("AIX releases older than AIX 7.1 are not supported.");
+        log_warning(os)("AIX releases older than AIX 7.1 are not supported.");
         assert(false, "AIX release too old.");
       }
       name_str = "AIX";
@@ -2845,10 +2632,10 @@ void os::Aix::initialize_os_info() {
     } else {
       assert(false, "%s", name_str);
     }
-    trcVerbose("We run on %s %s", name_str, ver_str);
+    log_info(os)("We run on %s %s", name_str, ver_str);
   }
 
-  guarantee(_on_pase != -1 && _os_version, "Could not determine AIX/OS400 release");
+  guarantee(_os_version, "Could not determine AIX release");
 } // end: os::Aix::initialize_os_info()
 
 // Scan environment for important settings which might effect the VM.
@@ -2870,7 +2657,7 @@ void os::Aix::scan_environment() {
   trcVerbose("EXTSHM=%s.", p ? p : "<unset>");
   if (p && strcasecmp(p, "ON") == 0) {
     _extshm = 1;
-    trcVerbose("*** Unsupported mode! Please remove EXTSHM from your environment! ***");
+    log_warning(os)("*** Unsupported mode! Please remove EXTSHM from your environment! ***");
     if (!AllowExtshm) {
       // We allow under certain conditions the user to continue. However, we want this
       // to be a fatal error by default. On certain AIX systems, leaving EXTSHM=ON means
@@ -2894,7 +2681,7 @@ void os::Aix::scan_environment() {
   trcVerbose("XPG_SUS_ENV=%s.", p ? p : "<unset>");
   if (p && strcmp(p, "ON") == 0) {
     _xpg_sus_mode = 1;
-    trcVerbose("Unsupported setting: XPG_SUS_ENV=ON");
+    log_warning(os)("Unsupported setting: XPG_SUS_ENV=ON");
     // This is not supported. Worst of all, it changes behaviour of mmap MAP_FIXED to
     // clobber address ranges. If we ever want to support that, we have to do some
     // testing first.
@@ -2903,41 +2690,17 @@ void os::Aix::scan_environment() {
     _xpg_sus_mode = 0;
   }
 
-  if (os::Aix::on_pase()) {
-    p = ::getenv("QIBM_MULTI_THREADED");
-    trcVerbose("QIBM_MULTI_THREADED=%s.", p ? p : "<unset>");
-  }
-
   p = ::getenv("LDR_CNTRL");
   trcVerbose("LDR_CNTRL=%s.", p ? p : "<unset>");
-  if (os::Aix::on_pase() && os::Aix::os_version_short() == 0x0701) {
-    if (p && ::strstr(p, "TEXTPSIZE")) {
-      trcVerbose("*** WARNING - LDR_CNTRL contains TEXTPSIZE. "
-        "you may experience hangs or crashes on OS/400 V7R1.");
-    }
-  }
 
   p = ::getenv("AIXTHREAD_GUARDPAGES");
   trcVerbose("AIXTHREAD_GUARDPAGES=%s.", p ? p : "<unset>");
 
 } // end: os::Aix::scan_environment()
 
-// PASE: initialize the libo4 library (PASE porting library).
-void os::Aix::initialize_libo4() {
-  guarantee(os::Aix::on_pase(), "OS/400 only.");
-  if (!libo4::init()) {
-    trcVerbose("libo4 initialization failed.");
-    assert(false, "libo4 initialization failed");
-  } else {
-    trcVerbose("libo4 initialized.");
-  }
-}
-
-// AIX: initialize the libperfstat library.
 void os::Aix::initialize_libperfstat() {
-  assert(os::Aix::on_aix(), "AIX only");
   if (!libperfstat::init()) {
-    trcVerbose("libperfstat initialization failed.");
+    log_warning(os)("libperfstat initialization failed.");
     assert(false, "libperfstat initialization failed");
   } else {
     trcVerbose("libperfstat initialized.");
@@ -3030,32 +2793,3 @@ void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {}
 void os::jfr_report_memory_info() {}
 
 #endif // INCLUDE_JFR
-
-// Simulate the library search algorithm of dlopen() (in os::dll_load)
-int os::Aix::stat64x_via_LIBPATH(const char* path, struct stat64x* stat) {
-  if (path[0] == '/' ||
-      (path[0] == '.' && (path[1] == '/' ||
-                          (path[1] == '.' && path[2] == '/')))) {
-    return stat64x(path, stat);
-  }
-
-  const char* env = getenv("LIBPATH");
-  if (env == nullptr || *env == 0)
-    return -1;
-
-  int ret = -1;
-  size_t libpathlen = strlen(env);
-  char* libpath = NEW_C_HEAP_ARRAY(char, libpathlen + 1, mtServiceability);
-  char* combined = NEW_C_HEAP_ARRAY(char, libpathlen + strlen(path) + 1, mtServiceability);
-  char *saveptr, *token;
-  strcpy(libpath, env);
-  for (token = strtok_r(libpath, ":", &saveptr); token != nullptr; token = strtok_r(nullptr, ":", &saveptr)) {
-    sprintf(combined, "%s/%s", token, path);
-    if (0 == (ret = stat64x(combined, stat)))
-      break;
-  }
-
-  FREE_C_HEAP_ARRAY(char*, combined);
-  FREE_C_HEAP_ARRAY(char*, libpath);
-  return ret;
-}

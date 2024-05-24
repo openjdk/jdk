@@ -23,11 +23,23 @@
 # questions.
 #
 
+################################################################################
+# This file builds the Java components of testlib.
+# It also covers the test-image part, where the built files are copied to the
+# test image.
+################################################################################
+
 default: all
 
 include $(SPEC)
 include MakeBase.gmk
+
+include CopyFiles.gmk
 include JavaCompilation.gmk
+
+################################################################################
+# Targets for building the test lib jars
+################################################################################
 
 TARGETS :=
 
@@ -52,7 +64,7 @@ $(eval $(call SetupJavaCompilation, BUILD_TEST_LIB_JAR, \
     BIN := $(TEST_LIB_SUPPORT)/test-lib_classes, \
     HEADERS := $(TEST_LIB_SUPPORT)/test-lib_headers, \
     JAR := $(TEST_LIB_SUPPORT)/test-lib.jar, \
-    DISABLED_WARNINGS := try deprecation rawtypes unchecked serial cast removal preview, \
+    DISABLED_WARNINGS := try deprecation rawtypes unchecked serial cast removal preview dangling-doc-comments, \
     JAVAC_FLAGS := --add-exports java.base/sun.security.util=ALL-UNNAMED \
         --add-exports java.base/jdk.internal.classfile=ALL-UNNAMED \
         --add-exports java.base/jdk.internal.classfile.attribute=ALL-UNNAMED \
@@ -63,8 +75,21 @@ $(eval $(call SetupJavaCompilation, BUILD_TEST_LIB_JAR, \
 
 TARGETS += $(BUILD_TEST_LIB_JAR)
 
-##########################################################################################
+build-test-lib: $(TARGETS)
 
-all: $(TARGETS)
+################################################################################
+# Targets for building test-image.
+################################################################################
 
-.PHONY: default all
+# Copy the jars to the test image.
+$(eval $(call SetupCopyFiles, COPY_LIBTEST_JARS, \
+    DEST := $(TEST_IMAGE_DIR)/lib-test, \
+    FILES := $(BUILD_WB_JAR_JAR) $(BUILD_TEST_LIB_JAR_JAR), \
+))
+#
+
+test-image-lib: $(COPY_LIBTEST_JARS)
+
+all: build-test-lib
+
+.PHONY: default all build-test-lib test-image-lib

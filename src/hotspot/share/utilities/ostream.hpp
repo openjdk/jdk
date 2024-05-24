@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -242,11 +242,20 @@ class fileStream : public outputStream {
   ~fileStream();
   bool is_open() const { return _file != nullptr; }
   virtual void write(const char* c, size_t len);
-  size_t read(void *data, size_t size, size_t count) { return _file != nullptr ? ::fread(data, size, count, _file) : 0; }
-  char* readln(char *data, int count);
-  int eof() { return _file != nullptr ? feof(_file) : -1; }
+  // unlike other classes in this file, fileStream can perform input as well as output
+  size_t read(void* data, size_t size) {
+    if (_file == nullptr)  return 0;
+    return ::fread(data, 1, size, _file);
+  }
+  size_t read(void *data, size_t size, size_t count) {
+    return read(data, size * count);
+  }
+  void close() {
+    if (_file == nullptr || !_need_close)  return;
+    fclose(_file);
+    _need_close = false;
+  }
   long fileSize();
-  void rewind() { if (_file != nullptr) ::rewind(_file); }
   void flush();
 };
 
@@ -293,11 +302,9 @@ class bufferedStream : public outputStream {
   size_t buffer_pos;
   size_t buffer_max;
   size_t buffer_length;
-  bool   buffer_fixed;
   bool   truncated;
  public:
   bufferedStream(size_t initial_bufsize = 256, size_t bufmax = 1024*1024*10);
-  bufferedStream(char* fixed_buffer, size_t fixed_buffer_size, size_t bufmax = 1024*1024*10);
   ~bufferedStream();
   virtual void write(const char* c, size_t len);
   size_t      size() { return buffer_pos; }

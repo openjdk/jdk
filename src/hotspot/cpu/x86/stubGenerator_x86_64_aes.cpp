@@ -260,9 +260,6 @@ address StubGenerator::generate_galoisCounterMode_AESCrypt() {
 #endif
   __ movptr(subkeyHtbl, subkeyH_mem);
   __ movptr(counter, counter_mem);
-// Save rbp and rsp
-  __ push(rbp);
-  __ movq(rbp, rsp);
 // Align stack
   __ andq(rsp, -64);
   __ subptr(rsp, 96 * longSize); // Create space on the stack for htbl entries
@@ -272,12 +269,12 @@ address StubGenerator::generate_galoisCounterMode_AESCrypt() {
 
   __ vzeroupper();
 
-  __ movq(rsp, rbp);
-  __ pop(rbp);
-
   // Restore state before leaving routine
 #ifdef _WIN64
+  __ lea(rsp, Address(rbp, -6 * wordSize));
   __ pop(rsi);
+#else
+  __ lea(rsp, Address(rbp, -5 * wordSize));
 #endif
   __ pop(rbx);
   __ pop(r15);
@@ -2184,6 +2181,7 @@ void StubGenerator::aesctr_encrypt(Register src_addr, Register dest_addr, Regist
 
   const Register rounds = rax;
   const Register pos = r12;
+  const Register tail = r15;
 
   Label PRELOOP_START, EXIT_PRELOOP, REMAINDER, REMAINDER_16, LOOP, END, EXIT, END_LOOP,
   AES192, AES256, AES192_REMAINDER16, REMAINDER16_END_LOOP, AES256_REMAINDER16,
@@ -2618,29 +2616,36 @@ void StubGenerator::aesctr_encrypt(Register src_addr, Register dest_addr, Regist
   // Save encrypted counter value in xmm0 for next invocation, before XOR operation
   __ movdqu(Address(saved_encCounter_start, 0), xmm0);
   // XOR encryted block cipher in xmm0 with PT to produce CT
-  __ evpxorq(xmm0, xmm0, Address(src_addr, pos, Address::times_1, 0), Assembler::AVX_128bit);
   // extract up to 15 bytes of CT from xmm0 as specified by length register
   __ testptr(len_reg, 8);
   __ jcc(Assembler::zero, EXTRACT_TAIL_4BYTES);
-  __ pextrq(Address(dest_addr, pos), xmm0, 0);
+  __ pextrq(tail, xmm0, 0);
+  __ xorq(tail, Address(src_addr, pos, Address::times_1, 0));
+  __ movq(Address(dest_addr, pos), tail);
   __ psrldq(xmm0, 8);
   __ addl(pos, 8);
   __ bind(EXTRACT_TAIL_4BYTES);
   __ testptr(len_reg, 4);
   __ jcc(Assembler::zero, EXTRACT_TAIL_2BYTES);
-  __ pextrd(Address(dest_addr, pos), xmm0, 0);
+  __ pextrd(tail, xmm0, 0);
+  __ xorl(tail, Address(src_addr, pos, Address::times_1, 0));
+  __ movl(Address(dest_addr, pos), tail);
   __ psrldq(xmm0, 4);
   __ addq(pos, 4);
   __ bind(EXTRACT_TAIL_2BYTES);
   __ testptr(len_reg, 2);
   __ jcc(Assembler::zero, EXTRACT_TAIL_1BYTE);
-  __ pextrw(Address(dest_addr, pos), xmm0, 0);
+  __ pextrw(tail, xmm0, 0);
+  __ xorw(tail, Address(src_addr, pos, Address::times_1, 0));
+  __ movw(Address(dest_addr, pos), tail);
   __ psrldq(xmm0, 2);
   __ addl(pos, 2);
   __ bind(EXTRACT_TAIL_1BYTE);
   __ testptr(len_reg, 1);
   __ jcc(Assembler::zero, END);
-  __ pextrb(Address(dest_addr, pos), xmm0, 0);
+  __ pextrb(tail, xmm0, 0);
+  __ xorb(tail, Address(src_addr, pos, Address::times_1, 0));
+  __ movb(Address(dest_addr, pos), tail);
   __ addl(pos, 1);
 
   __ bind(END);

@@ -26,16 +26,12 @@
  * @bug 8072480 8203814
  * @summary Check the platform classpath contains the correct elements.
  * @library /tools/lib
+ * @enablePreview
  * @modules jdk.compiler/com.sun.tools.javac.code
  *          jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.platform
  *          jdk.compiler/com.sun.tools.javac.util
- *          java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
  *          java.base/jdk.internal.classfile.impl
  *          jdk.jdeps/com.sun.tools.javap
  * @build toolbox.ToolBox ElementStructureTest
@@ -98,7 +94,7 @@ import javax.tools.StandardLocation;
 import javax.tools.ToolProvider;
 
 import com.sun.source.util.JavacTask;
-import jdk.internal.classfile.Classfile;
+import java.lang.classfile.ClassFile;
 import com.sun.tools.javac.api.JavacTaskImpl;
 import com.sun.tools.javac.code.Symbol.CompletionFailure;
 import com.sun.tools.javac.platform.PlatformProvider;
@@ -289,7 +285,7 @@ public class ElementStructureTest {
                 }
                 JavaFileObject file = new ByteArrayJavaFileObject(data.toByteArray());
                 try (InputStream in = new ByteArrayInputStream(data.toByteArray())) {
-                    String name = Classfile.of().parse(in.readAllBytes()).thisClass().name().stringValue();
+                    String name = ClassFile.of().parse(in.readAllBytes()).thisClass().name().stringValue();
                     className2File.put(name, file);
                     file2ClassName.put(file, name);
                 } catch (IOException ex) {

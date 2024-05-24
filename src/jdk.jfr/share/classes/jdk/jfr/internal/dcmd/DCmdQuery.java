@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,6 +71,11 @@ public final class DCmdQuery extends AbstractDCmd {
         }
     }
 
+    @Override
+    protected final boolean isInteractive() {
+        return true;
+    }
+
     private String stripQuotes(String text) {
         if (text.startsWith("\"")) {
             text = text.substring(1);
@@ -82,7 +87,7 @@ public final class DCmdQuery extends AbstractDCmd {
     }
 
     @Override
-    public String[] printHelp() {
+    public String[] getHelp() {
         List<String> lines = new ArrayList<>();
         lines.addAll(getOptions().lines().toList());
         lines.add("");

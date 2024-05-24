@@ -23,28 +23,28 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/g1/g1CollectionSetCandidates.hpp"
+#include "gc/g1/g1CollectionSetCandidates.inline.hpp"
 #include "gc/g1/g1CollectionSetChooser.hpp"
-#include "gc/g1/heapRegion.inline.hpp"
+#include "gc/g1/g1HeapRegion.inline.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/growableArray.hpp"
 
 G1CollectionCandidateList::G1CollectionCandidateList() : _candidates(2, mtGC) { }
 
-void G1CollectionCandidateList::set(G1CollectionCandidateList::CandidateInfo* candidate_infos, uint num_infos) {
+void G1CollectionCandidateList::set(G1CollectionSetCandidateInfo* candidate_infos, uint num_infos) {
   assert(_candidates.is_empty(), "must be");
 
-  GrowableArrayFromArray<G1CollectionCandidateList::CandidateInfo> a(candidate_infos, (int)num_infos);
+  GrowableArrayFromArray<G1CollectionSetCandidateInfo> a(candidate_infos, (int)num_infos);
   _candidates.appendAll(&a);
 }
 
 void G1CollectionCandidateList::append_unsorted(HeapRegion* r) {
-  CandidateInfo c(r, r->calc_gc_efficiency());
+  G1CollectionSetCandidateInfo c(r, r->calc_gc_efficiency());
   _candidates.append(c);
 }
 
 void G1CollectionCandidateList::sort_by_efficiency() {
-  _candidates.sort(compare);
+  _candidates.sort(compare_gc_efficiency);
 }
 
 void G1CollectionCandidateList::remove(G1CollectionCandidateRegionList* other) {
@@ -58,7 +58,7 @@ void G1CollectionCandidateList::remove(G1CollectionCandidateRegionList* other) {
   // Create a list from scratch, copying over the elements from the candidate
   // list not in the other list. Finally deallocate and overwrite the old list.
   int new_length = _candidates.length() - other->length();
-  GrowableArray<CandidateInfo> new_list(new_length, mtGC);
+  GrowableArray<G1CollectionSetCandidateInfo> new_list(new_length, mtGC);
 
   uint other_idx = 0;
 
@@ -81,10 +81,10 @@ void G1CollectionCandidateList::clear() {
 
 #ifndef PRODUCT
 void G1CollectionCandidateList::verify() {
-  CandidateInfo* prev = nullptr;
+  G1CollectionSetCandidateInfo* prev = nullptr;
 
   for (uint i = 0; i < (uint)_candidates.length(); i++) {
-    CandidateInfo& ci = _candidates.at(i);
+    G1CollectionSetCandidateInfo& ci = _candidates.at(i);
     assert(prev == nullptr || prev->_gc_efficiency >= ci._gc_efficiency,
            "Stored gc efficiency must be descending from region %u to %u",
            prev->_r->hrm_index(), ci._r->hrm_index());
@@ -94,7 +94,22 @@ void G1CollectionCandidateList::verify() {
 }
 #endif
 
-int G1CollectionCandidateList::compare(CandidateInfo* ci1, CandidateInfo* ci2) {
+int G1CollectionCandidateList::compare_gc_efficiency(G1CollectionSetCandidateInfo* ci1, G1CollectionSetCandidateInfo* ci2) {
+  assert(ci1->_r != nullptr && ci2->_r != nullptr, "Should not be!");
+
+  double gc_eff1 = ci1->_gc_efficiency;
+  double gc_eff2 = ci2->_gc_efficiency;
+
+  if (gc_eff1 > gc_eff2) {
+    return -1;
+  } else if (gc_eff1 < gc_eff2) {
+    return 1;
+  } else {
+    return 0;
+  }
+}
+
+int G1CollectionCandidateList::compare_reclaimble_bytes(G1CollectionSetCandidateInfo* ci1, G1CollectionSetCandidateInfo* ci2) {
   // Make sure that null entries are moved to the end.
   if (ci1->_r == nullptr) {
     if (ci2->_r == nullptr) {
@@ -106,12 +121,12 @@ int G1CollectionCandidateList::compare(CandidateInfo* ci1, CandidateInfo* ci2) {
     return -1;
   }
 
-  double gc_eff1 = ci1->_gc_efficiency;
-  double gc_eff2 = ci2->_gc_efficiency;
+  size_t reclaimable1 = ci1->_r->reclaimable_bytes();
+  size_t reclaimable2 = ci2->_r->reclaimable_bytes();
 
-  if (gc_eff1 > gc_eff2) {
+  if (reclaimable1 > reclaimable2) {
     return -1;
-  } if (gc_eff1 < gc_eff2) {
+  } else if (reclaimable1 < reclaimable2) {
     return 1;
   } else {
     return 0;
@@ -182,7 +197,18 @@ void G1CollectionSetCandidates::clear() {
   _last_marking_candidates_length = 0;
 }
 
-void G1CollectionSetCandidates::set_candidates_from_marking(G1CollectionCandidateList::CandidateInfo* candidate_infos,
+void G1CollectionSetCandidates::sort_marking_by_efficiency() {
+  G1CollectionCandidateListIterator iter = _marking_regions.begin();
+  for (; iter != _marking_regions.end(); ++iter) {
+    HeapRegion* hr = (*iter)->_r;
+    (*iter)->_gc_efficiency = hr->calc_gc_efficiency();
+  }
+  _marking_regions.sort_by_efficiency();
+
+  _marking_regions.verify();
+}
+
+void G1CollectionSetCandidates::set_candidates_from_marking(G1CollectionSetCandidateInfo* candidate_infos,
                                                             uint num_infos) {
   assert(_marking_regions.length() == 0, "must be empty before adding new ones");
 

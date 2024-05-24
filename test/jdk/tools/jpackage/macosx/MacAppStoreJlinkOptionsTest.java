@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ import jdk.jpackage.test.Annotations.Test;
  * @build MacAppStoreJLinkOptionsTest
  * @modules jdk.jpackage/jdk.jpackage.internal
  * @requires (os.family == "mac")
- * @run main/othervm -Xmx512m jdk.jpackage.test.Main
+ * @run main/othervm/timeout=540 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=MacAppStoreJLinkOptionsTest
  */
 public class MacAppStoreJLinkOptionsTest {

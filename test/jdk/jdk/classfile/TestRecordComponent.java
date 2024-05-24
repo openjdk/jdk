@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary Testing Classfile RecordComponent.
+ * @summary Testing ClassFile RecordComponent.
  * @run junit TestRecordComponent
  */
 import java.lang.annotation.ElementType;
@@ -36,12 +36,12 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import helpers.ClassRecord;
-import jdk.internal.classfile.Attributes;
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.ClassTransform;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.attribute.RecordAttribute;
-import jdk.internal.classfile.attribute.RecordComponentInfo;
+import java.lang.classfile.Attributes;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.ClassTransform;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.attribute.RecordAttribute;
+import java.lang.classfile.attribute.RecordComponentInfo;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
@@ -53,7 +53,7 @@ class TestRecordComponent {
 
     @Test
     void testAdapt() throws Exception {
-        var cc = Classfile.of();
+        var cc = ClassFile.of();
         ClassModel cm = cc.parse(Files.readAllBytes(testClassPath));
         ClassTransform xform = (cb, ce) -> {
             if (ce instanceof RecordAttribute rm) {
@@ -71,7 +71,7 @@ class TestRecordComponent {
 
     @Test
     void testPassThrough() throws Exception {
-        var cc = Classfile.of();
+        var cc = ClassFile.of();
         ClassModel cm = cc.parse(Files.readAllBytes(testClassPath));
         ClassTransform xform = (cb, ce) -> cb.with(ce);
         ClassModel newModel = cc.parse(cc.transform(cm, xform));
@@ -80,7 +80,7 @@ class TestRecordComponent {
 
     @Test
     void testChagne() throws Exception {
-        var cc = Classfile.of();
+        var cc = ClassFile.of();
         ClassModel cm = cc.parse(Files.readAllBytes(testClassPath));
         ClassTransform xform = (cb, ce) -> {
             if (ce instanceof RecordAttribute ra) {
@@ -93,7 +93,7 @@ class TestRecordComponent {
                 cb.with(ce);
         };
         ClassModel newModel = cc.parse(cc.transform(cm, xform));
-        RecordAttribute ra = newModel.findAttribute(Attributes.RECORD).orElseThrow();
+        RecordAttribute ra = newModel.findAttribute(Attributes.record()).orElseThrow();
         assertEquals(ra.components().size(), 2, "Should have two components");
         assertEquals(ra.components().get(0).name().stringValue(), "fooXYZ");
         assertEquals(ra.components().get(1).name().stringValue(), "barXYZ");
@@ -104,13 +104,13 @@ class TestRecordComponent {
     @Test
     void testOptions() throws Exception {
         AtomicInteger count = new AtomicInteger(0);
-        ClassModel cm = Classfile.of().parse(Files.readAllBytes(testClassPath));
+        ClassModel cm = ClassFile.of().parse(Files.readAllBytes(testClassPath));
         cm.forEachElement((ce) -> {
             if (ce instanceof RecordAttribute rm) {
                 count.addAndGet(rm.components().size());
             }});
         assertEquals(count.get(), 2);
-        assertEquals(cm.findAttribute(Attributes.RECORD).orElseThrow().components().size(), 2);
+        assertEquals(cm.findAttribute(Attributes.record()).orElseThrow().components().size(), 2);
 
         count.set(0);
     }

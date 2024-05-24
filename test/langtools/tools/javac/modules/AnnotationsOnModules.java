@@ -26,13 +26,9 @@
  * @bug 8159602 8170549 8171255 8171322 8254023
  * @summary Test annotations on module declaration.
  * @library /tools/lib
+ * @enablePreview
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- *          java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
  *          java.base/jdk.internal.classfile.impl
  * @build toolbox.ToolBox toolbox.JavacTask ModuleTestBase
  * @run main AnnotationsOnModules
@@ -56,9 +52,9 @@ import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.TypeElement;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.attribute.*;
+import java.lang.classfile.*;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.attribute.*;
 import toolbox.JavacTask;
 import toolbox.Task;
 import toolbox.Task.OutputKind;
@@ -89,8 +85,8 @@ public class AnnotationsOnModules extends ModuleTestBase {
                 .run()
                 .writeAll();
 
-        ClassModel cf = Classfile.of().parse(modulePath.resolve("m1x").resolve("module-info.class"));
-        RuntimeVisibleAnnotationsAttribute annotations = cf.findAttribute(Attributes.RUNTIME_VISIBLE_ANNOTATIONS).orElse(null);
+        ClassModel cf = ClassFile.of().parse(modulePath.resolve("m1x").resolve("module-info.class"));
+        RuntimeVisibleAnnotationsAttribute annotations = cf.findAttribute(Attributes.runtimeVisibleAnnotations()).orElse(null);
 
         if (annotations == null || annotations.annotations().size() != 1) {
             throw new AssertionError("Annotations not correct!");
@@ -143,14 +139,14 @@ public class AnnotationsOnModules extends ModuleTestBase {
             throw new AssertionError("Output is not empty. Expected no output and no warnings.");
         }
 
-        ClassModel cf = Classfile.of().parse(modulePath.resolve("A").resolve("module-info.class"));
-        RuntimeVisibleAnnotationsAttribute annotations = cf.findAttribute(Attributes.RUNTIME_VISIBLE_ANNOTATIONS).orElse(null);
+        ClassModel cf = ClassFile.of().parse(modulePath.resolve("A").resolve("module-info.class"));
+        RuntimeVisibleAnnotationsAttribute annotations = cf.findAttribute(Attributes.runtimeVisibleAnnotations()).orElse(null);
 
         if (annotations != null && annotations.annotations().size() > 0) {
             throw new AssertionError("Found annotation attributes. Expected no annotations for javadoc @deprecated tag.");
         }
 
-        if (cf.findAttribute(Attributes.DEPRECATED).isPresent()) {
+        if (cf.findAttribute(Attributes.deprecated()).isPresent()) {
             throw new AssertionError("Found Deprecated attribute. Expected no Deprecated attribute for javadoc @deprecated tag.");
         }
     }
@@ -194,8 +190,8 @@ public class AnnotationsOnModules extends ModuleTestBase {
             throw new AssertionError("Expected output not found. Expected: " + expected);
         }
 
-        ClassModel cf = Classfile.of().parse(modulePath.resolve("A").resolve("module-info.class"));
-        RuntimeVisibleAnnotationsAttribute annotations = cf.findAttribute(Attributes.RUNTIME_VISIBLE_ANNOTATIONS).orElse(null);
+        ClassModel cf = ClassFile.of().parse(modulePath.resolve("A").resolve("module-info.class"));
+        RuntimeVisibleAnnotationsAttribute annotations = cf.findAttribute(Attributes.runtimeVisibleAnnotations()).orElse(null);
 
         if (annotations == null ) {
             throw new AssertionError("Annotations not found!");
@@ -317,8 +313,8 @@ public class AnnotationsOnModules extends ModuleTestBase {
                 .run()
                 .writeAll();
 
-        ClassModel cf = Classfile.of().parse(modulePath.resolve("m1x").resolve("module-info.class"));
-        RuntimeInvisibleAnnotationsAttribute annotations = cf.findAttribute(Attributes.RUNTIME_INVISIBLE_ANNOTATIONS).orElse(null);
+        ClassModel cf = ClassFile.of().parse(modulePath.resolve("m1x").resolve("module-info.class"));
+        RuntimeInvisibleAnnotationsAttribute annotations = cf.findAttribute(Attributes.runtimeInvisibleAnnotations()).orElse(null);
 
         if (annotations == null || annotations.annotations().size() != 1) {
             throw new AssertionError("Annotations not correct!");
@@ -359,8 +355,8 @@ public class AnnotationsOnModules extends ModuleTestBase {
                 .run()
                 .writeAll();
 
-        ClassModel cf = Classfile.of().parse(modulePath.resolve("B").resolve("module-info.class"));
-        RuntimeInvisibleAnnotationsAttribute annotations = cf.findAttribute(Attributes.RUNTIME_INVISIBLE_ANNOTATIONS).orElse(null);
+        ClassModel cf = ClassFile.of().parse(modulePath.resolve("B").resolve("module-info.class"));
+        RuntimeInvisibleAnnotationsAttribute annotations = cf.findAttribute(Attributes.runtimeInvisibleAnnotations()).orElse(null);
 
         if (annotations == null ) {
             throw new AssertionError("Annotations not found!");
@@ -434,8 +430,8 @@ public class AnnotationsOnModules extends ModuleTestBase {
                 .run()
                 .writeAll();
 
-        ClassModel cf = Classfile.of().parse(classes.resolve("m1x").resolve("module-info.class"));
-        RuntimeInvisibleAnnotationsAttribute invisibleAnnotations = cf.findAttribute(Attributes.RUNTIME_INVISIBLE_ANNOTATIONS).orElse(null);
+        ClassModel cf = ClassFile.of().parse(classes.resolve("m1x").resolve("module-info.class"));
+        RuntimeInvisibleAnnotationsAttribute invisibleAnnotations = cf.findAttribute(Attributes.runtimeInvisibleAnnotations()).orElse(null);
 
         if (invisibleAnnotations == null) {
             throw new AssertionError("Annotations not found!");

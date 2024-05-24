@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,57 +25,66 @@
  * @test
  * @bug 7166455
  * @summary javac doesn't set ACC_STRICT bit on <clinit> for strictfp class
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
- * @compile -source 16 -target 16 CheckACC_STRICTFlagOnclinitTest.java
- * @run main CheckACC_STRICTFlagOnclinitTest
+ * @library /tools/lib /test/lib
+ * @enablePreview
  */
 
+import jdk.test.lib.compiler.CompilerUtils;
+import toolbox.ToolBox;
+
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.MethodModel;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.io.File;
 import java.io.IOException;
-import jdk.internal.classfile.*;
 
-public strictfp class CheckACC_STRICTFlagOnclinitTest {
+public class CheckACC_STRICTFlagOnclinitTest {
     private static final String AssertionErrorMessage =
         "All methods should have the ACC_STRICT access flag " +
         "please check output";
     private static final String offendingMethodErrorMessage =
         "Method %s of class %s doesn't have the ACC_STRICT access flag";
 
-    static {
-        class Foo {
-            class Bar {
-                void m11() {}
+    private static final String SOURCE = """
+            public strictfp class Test {
+                static {
+                    class Foo {
+                        class Bar {
+                            void m11() {}
+                        }
+                        void m1() {}
+                    }
+                }
+                void m2() {
+                    class Any {
+                        void m21() {}
+                    }
+                }
             }
-            void m1() {}
-        }
-    }
-    void m2() {
-        class Any {
-            void m21() {}
-        }
-    }
+            """;
 
-    private List<String> errors = new ArrayList<>();
+    private final List<String> errors = new ArrayList<>();
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args)
+            throws IOException {
         new CheckACC_STRICTFlagOnclinitTest().run();
     }
 
-    private void run() throws IOException {
-        String testClasses = System.getProperty("test.classes");
-        check(testClasses,
-              "CheckACC_STRICTFlagOnclinitTest.class",
-              "CheckACC_STRICTFlagOnclinitTest$1Foo.class",
-              "CheckACC_STRICTFlagOnclinitTest$1Foo$Bar.class",
-              "CheckACC_STRICTFlagOnclinitTest$1Any.class");
-        if (errors.size() > 0) {
+    private void run()
+            throws IOException {
+        Path in = Path.of("in");
+        Path out = Path.of("out");
+        ToolBox toolBox = new ToolBox();
+        toolBox.writeJavaFiles(in, SOURCE);
+        CompilerUtils.compile(in, out, "--release", "16");
+        check(out,
+              "Test.class",
+              "Test$1Foo.class",
+              "Test$1Foo$Bar.class",
+              "Test$1Any.class");
+        if (!errors.isEmpty()) {
             for (String error: errors) {
                 System.err.println(error);
             }
@@ -83,12 +92,12 @@ public strictfp class CheckACC_STRICTFlagOnclinitTest {
         }
     }
 
-    void check(String dir, String... fileNames) throws IOException{
+    void check(Path dir, String... fileNames) throws IOException {
         for (String fileName : fileNames) {
-            ClassModel classFileToCheck = Classfile.of().parse(new File(dir, fileName).toPath());
+            ClassModel classFileToCheck = ClassFile.of().parse(dir.resolve(fileName));
 
             for (MethodModel method : classFileToCheck.methods()) {
-                if ((method.flags().flagsMask() & Classfile.ACC_STRICT) == 0) {
+                if ((method.flags().flagsMask() & ClassFile.ACC_STRICT) == 0) {
                     errors.add(String.format(offendingMethodErrorMessage,
                             method.methodName().stringValue(),
                             classFileToCheck.thisClass().asInternalName()));
@@ -96,5 +105,4 @@ public strictfp class CheckACC_STRICTFlagOnclinitTest {
             }
         }
     }
-
 }

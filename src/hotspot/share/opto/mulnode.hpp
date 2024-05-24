@@ -95,6 +95,7 @@ public:
   virtual int Opcode() const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual const Type *mul_ring( const Type *, const Type * ) const;
+  static bool does_overflow(const TypeInt* type_left, const TypeInt* type_right);
   const Type *mul_id() const { return TypeInt::ONE; }
   const Type *add_id() const { return TypeInt::ZERO; }
   int add_opcode() const { return Op_AddI; }

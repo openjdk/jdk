@@ -39,10 +39,10 @@ import javax.tools.JavaFileManager.Location;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardLocation;
 
-import jdk.internal.classfile.Attributes;
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.CodeModel;
-import jdk.internal.classfile.Instruction;
+import java.lang.classfile.Attributes;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.CodeModel;
+import java.lang.classfile.Instruction;
 
 
 /**
@@ -105,7 +105,7 @@ public class SourceWriter extends InstructionDetailWriter {
     private void setLineMap(CodeModel attr) {
         SortedMap<Integer, SortedSet<Integer>> map = new TreeMap<>();
         SortedSet<Integer> allLines = new TreeSet<>();
-        for (var t : attr.findAttributes(Attributes.LINE_NUMBER_TABLE)) {
+        for (var t : attr.findAttributes(Attributes.lineNumberTable())) {
             for (var e: t.lineNumbers()) {
                 int start_pc = e.startPc();
                 int line = e.lineNumber();
@@ -145,7 +145,7 @@ public class SourceWriter extends InstructionDetailWriter {
         // InnerClasses and EnclosingMethod attributes.
         try {
             String className = cf.thisClass().asInternalName();
-            var sf = cf.findAttribute(Attributes.SOURCE_FILE);
+            var sf = cf.findAttribute(Attributes.sourceFile());
             if (sf.isEmpty()) {
                 report(messages.getMessage("err.no.SourceFile.attribute"));
                 return null;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,12 +74,12 @@ import jdk.internal.module.ModuleReferenceImpl;
 import jdk.internal.module.ModuleResolution;
 import jdk.internal.module.ModuleTarget;
 
-import jdk.internal.classfile.attribute.ModulePackagesAttribute;
-import jdk.internal.classfile.ClassBuilder;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.TypeKind;
-import static jdk.internal.classfile.Classfile.*;
-import jdk.internal.classfile.CodeBuilder;
+import java.lang.classfile.attribute.ModulePackagesAttribute;
+import java.lang.classfile.ClassBuilder;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.TypeKind;
+import static java.lang.classfile.ClassFile.*;
+import java.lang.classfile.CodeBuilder;
 
 import jdk.tools.jlink.internal.ModuleSorter;
 import jdk.tools.jlink.plugin.PluginException;
@@ -442,7 +442,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
         boolean hasModulePackages() throws IOException {
             try (InputStream in = getInputStream()) {
                 // parse module-info.class
-                return Classfile.of().parse(in.readAllBytes()).elementStream()
+                return ClassFile.of().parse(in.readAllBytes()).elementStream()
                         .anyMatch(e -> e instanceof ModulePackagesAttribute mpa
                                     && !mpa.packages().isEmpty());
             }
@@ -607,7 +607,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
          * Generate SystemModules class
          */
         public byte[] genClassBytes(Configuration cf) {
-            return Classfile.of().build(classDesc,
+            return ClassFile.of().build(classDesc,
                     clb -> {
                         clb.withFlags(ACC_FINAL + ACC_SUPER)
                            .withInterfaceSymbols(List.of(CD_SYSTEM_MODULES))
@@ -668,7 +668,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                     "hasSplitPackages",
                     MTD_boolean,
                     ACC_PUBLIC,
-                    cob -> cob.constantInstruction(hasSplitPackages ? 1 : 0)
+                    cob -> cob.loadConstant(hasSplitPackages ? 1 : 0)
                               .ireturn());
         }
 
@@ -686,7 +686,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                     "hasIncubatorModules",
                     MTD_boolean,
                     ACC_PUBLIC,
-                    cob -> cob.constantInstruction(hasIncubatorModules ? 1 : 0)
+                    cob -> cob.loadConstant(hasIncubatorModules ? 1 : 0)
                               .ireturn());
         }
 
@@ -700,7 +700,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                         MTD_ModuleDescriptorArray,
                         ACC_PUBLIC,
                         cob -> {
-                            cob.constantInstruction(moduleInfos.size())
+                            cob.loadConstant(moduleInfos.size())
                                .anewarray(CD_MODULE_DESCRIPTOR)
                                .astore(MD_VAR);
 
@@ -764,13 +764,13 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                     MTD_ModuleDescriptorArray,
                     ACC_PUBLIC,
                     cob -> {
-                        cob.constantInstruction(moduleInfos.size())
+                        cob.loadConstant(moduleInfos.size())
                            .anewarray(CD_MODULE_DESCRIPTOR)
                            .dup()
                            .astore(MD_VAR);
                         cob.new_(arrayListClassDesc)
                            .dup()
-                           .constantInstruction(moduleInfos.size())
+                           .loadConstant(moduleInfos.size())
                            .invokespecial(arrayListClassDesc, INIT_NAME, MethodTypeDesc.of(CD_void, CD_int))
                            .astore(DEDUP_LIST_VAR);
                         cob.aload(0)
@@ -797,7 +797,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                             if (curDedupVar > dedupVarStart) {
                                 for (int i = dedupVarStart; i < curDedupVar; i++) {
                                     cob.aload(DEDUP_LIST_VAR)
-                                       .constantInstruction(i - dedupVarStart)
+                                       .loadConstant(i - dedupVarStart)
                                        .invokevirtual(arrayListClassDesc, "get", MethodTypeDesc.of(CD_Object, CD_int))
                                        .astore(i);
                                 }
@@ -845,7 +845,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                     MTD_ModuleTargetArray,
                     ACC_PUBLIC,
                     cob -> {
-                        cob.constantInstruction(moduleInfos.size())
+                        cob.loadConstant(moduleInfos.size())
                            .anewarray(CD_MODULE_TARGET)
                            .astore(MT_VAR);
 
@@ -868,12 +868,12 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                             ModuleInfo minfo = moduleInfos.get(index);
                             if (minfo.target() != null) {
                                 cob.aload(MT_VAR)
-                                   .constantInstruction(index);
+                                   .loadConstant(index);
 
                                 // new ModuleTarget(String)
                                 cob.new_(CD_MODULE_TARGET)
                                    .dup()
-                                   .constantInstruction(minfo.target().targetPlatform())
+                                   .loadConstant(minfo.target().targetPlatform())
                                    .invokespecial(CD_MODULE_TARGET,
                                                   INIT_NAME,
                                                   MTD_void_String);
@@ -896,7 +896,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                     MTD_ModuleHashesArray,
                     ACC_PUBLIC,
                     cob -> {
-                        cob.constantInstruction(moduleInfos.size())
+                        cob.loadConstant(moduleInfos.size())
                            .anewarray(CD_MODULE_HASHES)
                            .astore(MH_VAR);
 
@@ -923,7 +923,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                     MTD_ModuleResolutionArray,
                     ACC_PUBLIC,
                     cob -> {
-                        cob.constantInstruction(moduleInfos.size())
+                        cob.loadConstant(moduleInfos.size())
                            .anewarray(CD_MODULE_RESOLUTION)
                            .astore(0);
 
@@ -931,10 +931,10 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                             ModuleInfo minfo = moduleInfos.get(index);
                             if (minfo.moduleResolution() != null) {
                                 cob.aload(0)
-                                   .constantInstruction(index)
+                                   .loadConstant(index)
                                    .new_(CD_MODULE_RESOLUTION)
                                    .dup()
-                                   .constantInstruction(minfo.moduleResolution().value())
+                                   .loadConstant(minfo.moduleResolution().value())
                                    .invokespecial(CD_MODULE_RESOLUTION,
                                                   INIT_NAME,
                                                   MTD_void_int)
@@ -1000,7 +1000,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                         }
 
                         // new Map$Entry[size]
-                        cob.constantInstruction(map.size())
+                        cob.loadConstant(map.size())
                            .anewarray(CD_Map_Entry);
 
                         int index = 0;
@@ -1009,8 +1009,8 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                             Set<String> s = e.getValue();
 
                             cob.dup()
-                               .constantInstruction(index)
-                               .constantInstruction(name);
+                               .loadConstant(index)
+                               .loadConstant(name);
 
                             // if de-duplicated then load the local, otherwise generate code
                             Integer varIndex = locals.get(s);
@@ -1046,13 +1046,13 @@ public final class SystemModulesPlugin extends AbstractPlugin {
             // use Set.of(Object[]) when there are more than 2 elements
             // use Set.of(Object) or Set.of(Object, Object) when fewer
             if (size > 2) {
-                cob.constantInstruction(size)
+                cob.loadConstant(size)
                    .anewarray(CD_String);
                 int i = 0;
                 for (String element : sorted(set)) {
                     cob.dup()
-                       .constantInstruction(i)
-                       .constantInstruction(element)
+                       .loadConstant(i)
+                       .loadConstant(element)
                        .aastore();
                     i++;
                 }
@@ -1062,7 +1062,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                                  true);
             } else {
                 for (String element : sorted(set)) {
-                    cob.constantInstruction(element);
+                    cob.loadConstant(element);
                 }
                 var mtdArgs = new ClassDesc[size];
                 Arrays.fill(mtdArgs, CD_Object);
@@ -1166,7 +1166,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
             void newBuilder() {
                 cob.new_(CD_MODULE_BUILDER)
                    .dup()
-                   .constantInstruction(md.name())
+                   .loadConstant(md.name())
                    .invokespecial(CD_MODULE_BUILDER,
                                   INIT_NAME,
                                   MTD_void_String)
@@ -1188,7 +1188,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
              */
             void setModuleBit(String methodName, boolean value) {
                 cob.aload(BUILDER_VAR)
-                   .constantInstruction(value ? 1 : 0)
+                   .loadConstant(value ? 1 : 0)
                    .invokevirtual(CD_MODULE_BUILDER,
                                   methodName,
                                   MTD_BOOLEAN)
@@ -1200,9 +1200,9 @@ public final class SystemModulesPlugin extends AbstractPlugin {
              */
             void putModuleDescriptor() {
                 cob.aload(MD_VAR)
-                   .constantInstruction(index)
+                   .loadConstant(index)
                    .aload(BUILDER_VAR)
-                   .constantInstruction(md.hashCode())
+                   .loadConstant(md.hashCode())
                    .invokevirtual(CD_MODULE_BUILDER,
                                   "build",
                                   MTD_ModuleDescriptor_int)
@@ -1217,7 +1217,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
              */
             void requires(Set<Requires> requires) {
                 cob.aload(BUILDER_VAR)
-                   .constantInstruction(requires.size())
+                   .loadConstant(requires.size())
                    .anewarray(CD_REQUIRES);
                 int arrayIndex = 0;
                 for (Requires require : sorted(requires)) {
@@ -1227,7 +1227,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                     }
 
                     cob.dup()               // arrayref
-                       .constantInstruction(arrayIndex++);
+                       .loadConstant(arrayIndex++);
                     newRequires(require.modifiers(), require.name(), compiledVersion);
                     cob.aastore();
                 }
@@ -1246,9 +1246,9 @@ public final class SystemModulesPlugin extends AbstractPlugin {
             void newRequires(Set<Requires.Modifier> mods, String name, String compiledVersion) {
                 int varIndex = dedupSetBuilder.indexOfRequiresModifiers(cob, mods);
                 cob.aload(varIndex)
-                   .constantInstruction(name);
+                   .loadConstant(name);
                 if (compiledVersion != null) {
-                    cob.constantInstruction(compiledVersion)
+                    cob.loadConstant(compiledVersion)
                        .invokestatic(CD_MODULE_BUILDER,
                                      "newRequires",
                                      MTD_REQUIRES_SET_STRING_STRING);
@@ -1267,12 +1267,12 @@ public final class SystemModulesPlugin extends AbstractPlugin {
              */
             void exports(Set<Exports> exports) {
                 cob.aload(BUILDER_VAR)
-                   .constantInstruction(exports.size())
+                   .loadConstant(exports.size())
                    .anewarray(CD_EXPORTS);
                 int arrayIndex = 0;
                 for (Exports export : sorted(exports)) {
                     cob.dup()    // arrayref
-                       .constantInstruction(arrayIndex++);
+                       .loadConstant(arrayIndex++);
                     newExports(export.modifiers(), export.source(), export.targets());
                     cob.aastore();
                 }
@@ -1302,14 +1302,14 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                 if (!targets.isEmpty()) {
                     int stringSetIndex = dedupSetBuilder.indexOfStringSet(cob, targets);
                     cob.aload(modifiersSetIndex)
-                       .constantInstruction(pn)
+                       .loadConstant(pn)
                        .aload(stringSetIndex)
                        .invokestatic(CD_MODULE_BUILDER,
                                      "newExports",
                                      MTD_EXPORTS_MODIFIER_SET_STRING_SET);
                 } else {
                     cob.aload(modifiersSetIndex)
-                       .constantInstruction(pn)
+                       .loadConstant(pn)
                        .invokestatic(CD_MODULE_BUILDER,
                                      "newExports",
                                      MTD_EXPORTS_MODIFIER_SET_STRING);
@@ -1324,12 +1324,12 @@ public final class SystemModulesPlugin extends AbstractPlugin {
              */
             void opens(Set<Opens> opens) {
                 cob.aload(BUILDER_VAR)
-                   .constantInstruction(opens.size())
+                   .loadConstant(opens.size())
                    .anewarray(CD_OPENS);
                 int arrayIndex = 0;
                 for (Opens open : sorted(opens)) {
                     cob.dup()    // arrayref
-                       .constantInstruction(arrayIndex++);
+                       .loadConstant(arrayIndex++);
                     newOpens(open.modifiers(), open.source(), open.targets());
                     cob.aastore();
                 }
@@ -1359,14 +1359,14 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                 if (!targets.isEmpty()) {
                     int stringSetIndex = dedupSetBuilder.indexOfStringSet(cob, targets);
                     cob.aload(modifiersSetIndex)
-                       .constantInstruction(pn)
+                       .loadConstant(pn)
                        .aload(stringSetIndex)
                        .invokestatic(CD_MODULE_BUILDER,
                                      "newOpens",
                                      MTD_OPENS_MODIFIER_SET_STRING_SET);
                 } else {
                     cob.aload(modifiersSetIndex)
-                       .constantInstruction(pn)
+                       .loadConstant(pn)
                        .invokestatic(CD_MODULE_BUILDER,
                                      "newOpens",
                                      MTD_OPENS_MODIFIER_SET_STRING);
@@ -1394,12 +1394,12 @@ public final class SystemModulesPlugin extends AbstractPlugin {
             */
             void provides(Collection<Provides> provides) {
                 cob.aload(BUILDER_VAR)
-                   .constantInstruction(provides.size())
+                   .loadConstant(provides.size())
                    .anewarray(CD_PROVIDES);
                 int arrayIndex = 0;
                 for (Provides provide : sorted(provides)) {
                     cob.dup()    // arrayref
-                       .constantInstruction(arrayIndex++);
+                       .loadConstant(arrayIndex++);
                     newProvides(provide.service(), provide.providers());
                     cob.aastore();
                 }
@@ -1419,14 +1419,14 @@ public final class SystemModulesPlugin extends AbstractPlugin {
              * Builder.newProvides(service, providers);
              */
             void newProvides(String service, List<String> providers) {
-                cob.constantInstruction(service)
-                   .constantInstruction(providers.size())
+                cob.loadConstant(service)
+                   .loadConstant(providers.size())
                    .anewarray(CD_String);
                 int arrayIndex = 0;
                 for (String provider : providers) {
                     cob.dup()    // arrayref
-                       .constantInstruction(arrayIndex++)
-                       .constantInstruction(provider)
+                       .loadConstant(arrayIndex++)
+                       .loadConstant(provider)
                        .aastore();
                 }
                 cob.invokestatic(CD_List,
@@ -1456,7 +1456,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
              */
             void mainClass(String cn) {
                 cob.aload(BUILDER_VAR)
-                   .constantInstruction(cn)
+                   .loadConstant(cn)
                    .invokevirtual(CD_MODULE_BUILDER,
                                   "mainClass",
                                   MTD_STRING)
@@ -1468,7 +1468,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
              */
             void version(Version v) {
                 cob.aload(BUILDER_VAR)
-                   .constantInstruction(v.toString())
+                   .loadConstant(v.toString())
                    .invokevirtual(CD_MODULE_BUILDER,
                                   "version",
                                   MTD_STRING)
@@ -1477,7 +1477,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
 
             void invokeBuilderMethod(String methodName, String value) {
                 cob.aload(BUILDER_VAR)
-                   .constantInstruction(value)
+                   .loadConstant(value)
                    .invokevirtual(CD_MODULE_BUILDER,
                                   methodName,
                                   MTD_STRING)
@@ -1531,8 +1531,8 @@ public final class SystemModulesPlugin extends AbstractPlugin {
             void newModuleHashesBuilder() {
                 cob.new_(MODULE_HASHES_BUILDER)
                    .dup()
-                   .constantInstruction(recordedHashes.algorithm())
-                   .constantInstruction(((4 * recordedHashes.names().size()) / 3) + 1)
+                   .loadConstant(recordedHashes.algorithm())
+                   .loadConstant(((4 * recordedHashes.names().size()) / 3) + 1)
                    .invokespecial(MODULE_HASHES_BUILDER,
                                   INIT_NAME,
                                   MTD_void_String_int)
@@ -1547,7 +1547,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
              */
             void pushModuleHashes() {
                 cob.aload(MH_VAR)
-                   .constantInstruction(index)
+                   .loadConstant(index)
                    .aload(BUILDER_VAR)
                    .invokevirtual(MODULE_HASHES_BUILDER,
                                   "build",
@@ -1560,13 +1560,13 @@ public final class SystemModulesPlugin extends AbstractPlugin {
              */
             void hashForModule(String name, byte[] hash) {
                 cob.aload(BUILDER_VAR)
-                   .constantInstruction(name)
-                   .constantInstruction(hash.length)
+                   .loadConstant(name)
+                   .loadConstant(hash.length)
                    .newarray(TypeKind.ByteType);
                 for (int i = 0; i < hash.length; i++) {
                     cob.dup()              // arrayref
-                       .constantInstruction(i)
-                       .constantInstruction((int)hash[i])
+                       .loadConstant(i)
+                       .loadConstant((int)hash[i])
                        .bastore();
                 }
 
@@ -1729,7 +1729,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
              * to the element onto the stack.
              */
             void visitElement(T element, CodeBuilder cob) {
-                cob.constantInstruction((ConstantDesc)element);
+                cob.loadConstant((ConstantDesc)element);
             }
 
             /*
@@ -1772,12 +1772,12 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                                      true);
                 } else {
                     // call Set.of(E... elements)
-                    cob.constantInstruction(elements.size())
+                    cob.loadConstant(elements.size())
                        .anewarray(CD_String);
                     int arrayIndex = 0;
                     for (T t : sorted(elements)) {
                         cob.dup()    // arrayref
-                           .constantInstruction(arrayIndex);
+                           .loadConstant(arrayIndex);
                         visitElement(t, cob);  // value
                         cob.aastore();
                         arrayIndex++;
@@ -1827,7 +1827,10 @@ public final class SystemModulesPlugin extends AbstractPlugin {
 
         // write the class file to the pool as a resource
         String rn = "/java.base/" + SYSTEM_MODULES_MAP_CLASSNAME + ".class";
-        ResourcePoolEntry e = ResourcePoolEntry.create(rn, Classfile.of().build(
+        // sort the map of module name to the class name of the generated SystemModules class
+        List<Map.Entry<String, String>> systemModulesMap = map.entrySet()
+                .stream().sorted(Map.Entry.comparingByKey()).toList();
+        ResourcePoolEntry e = ResourcePoolEntry.create(rn, ClassFile.of().build(
                 CD_SYSTEM_MODULES_MAP,
                 clb -> clb.withFlags(ACC_FINAL + ACC_SUPER)
                           .withVersion(52, 0)
@@ -1873,14 +1876,14 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                                   MTD_StringArray,
                                   ACC_STATIC,
                                   cob -> {
-                                      cob.constantInstruction(map.size());
+                                      cob.loadConstant(map.size());
                                       cob.anewarray(CD_String);
 
                                       int index = 0;
-                                      for (String moduleName : sorted(map.keySet())) {
+                                      for (Map.Entry<String,String> entry : systemModulesMap) {
                                           cob.dup() // arrayref
-                                             .constantInstruction(index)
-                                             .constantInstruction(moduleName)
+                                             .loadConstant(index)
+                                             .loadConstant(entry.getKey())
                                              .aastore();
                                           index++;
                                       }
@@ -1894,14 +1897,14 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                                   MTD_StringArray,
                                   ACC_STATIC,
                                   cob -> {
-                                      cob.constantInstruction(map.size())
+                                      cob.loadConstant(map.size())
                                          .anewarray(CD_String);
 
                                       int index = 0;
-                                      for (String className : sorted(map.values())) {
+                                      for (Map.Entry<String,String> entry : systemModulesMap) {
                                           cob.dup() // arrayref
-                                             .constantInstruction(index)
-                                             .constantInstruction(className.replace('/', '.'))
+                                             .loadConstant(index)
+                                             .loadConstant(entry.getValue().replace('/', '.'))
                                              .aastore();
                                           index++;
                                       }

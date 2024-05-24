@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug      4682448 4947464 5029946 8025633 8026567 8035473 8139101 8175200
-             8186332 8186703 8182765 8187288 8261976 8303349
+             8186332 8186703 8182765 8187288 8261976 8303349 8319988
  * @summary  Verify that the public modifier does not show up in the
  *           documentation for public methods, as recommended by the JLS.
  *           If A implements I and B extends A, B should be in the list of
@@ -204,9 +204,9 @@ public class TestInterface extends JavadocTester {
         checkOutput("pkg2/Spliterator.OfDouble.html", true,
             // Ensure the correct type parameters are displayed correctly
             """
-                <h2 id="nested-classes-inherited-from-class-pkg2.Spliterator">Nested classes/int\
+                <h3 id="nested-classes-inherited-from-class-pkg2.Spliterator">Nested classes/int\
                 erfaces inherited from interface&nbsp;pkg2.<a href="Spliterator.html" title="int\
-                erface in pkg2">Spliterator</a></h2>
+                erface in pkg2">Spliterator</a></h3>
                 <code><a href="Spliterator.OfDouble.html" title="interface in pkg2">Spliterator.\
                 OfDouble</a>, <a href="Spliterator.OfInt.html" title="interface in pkg2">Spliter\
                 ator.OfInt</a>&lt;<a href="Spliterator.OfInt.html" title="type parameter in Spli\

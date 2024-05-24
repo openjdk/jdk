@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary Testing Classfile low JCov attributes.
+ * @summary Testing ClassFile low JCov attributes.
  * @compile -Xjcov LowJCovAttributeTest.java
  * @run junit LowJCovAttributeTest
  */
@@ -32,14 +32,14 @@ import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import jdk.internal.classfile.Attribute;
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.CodeModel;
-import jdk.internal.classfile.MethodModel;
-import jdk.internal.classfile.Attributes;
-import jdk.internal.classfile.attribute.*;
-import jdk.internal.classfile.constantpool.Utf8Entry;
+import java.lang.classfile.Attribute;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.CodeModel;
+import java.lang.classfile.MethodModel;
+import java.lang.classfile.Attributes;
+import java.lang.classfile.attribute.*;
+import java.lang.classfile.constantpool.Utf8Entry;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -59,7 +59,7 @@ class LowJCovAttributeTest {
 
     LowJCovAttributeTest() throws IOException {
         this.path = Paths.get(URI.create(LowJCovAttributeTest.class.getResource(TEST_FILE).toString()));
-        this.classLow = Classfile.of().parse(path);
+        this.classLow = ClassFile.of().parse(path);
     }
 
     @Test
@@ -94,8 +94,8 @@ class LowJCovAttributeTest {
             }
         }
         for (MethodModel m : classLow.methods()) {
-            m.findAttribute(Attributes.CODE).ifPresent(code ->
-                ((CodeModel) code).findAttribute(Attributes.CHARACTER_RANGE_TABLE).ifPresent(attr -> {
+            m.findAttribute(Attributes.code()).ifPresent(code ->
+                ((CodeModel) code).findAttribute(Attributes.characterRangeTable()).ifPresent(attr -> {
                                 for (CharacterRangeInfo cr : attr.characterRangeTable()) {
                                     printf("  %d-%d -> %d/%d-%d/%d (%x)%n", cr.startPc(), cr.endPc(),
                                             cr.characterRangeStart() >> 10, cr.characterRangeStart() & 0x3FF,
@@ -156,7 +156,7 @@ class LowJCovAttributeTest {
 //        }
 //        writeAndCompareAttributes(classLow, cp);
 //        for (MethodLow m : classLow.methodsLow()) {
-//            m.findAttribute(Attributes.CODE).ifPresent(code ->
+//            m.findAttribute(Attributes.code()).ifPresent(code ->
 //                    writeAndCompareAttributes(code, cp));
 //        }
 //    }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,8 @@
  *      8209452 8209506 8210432 8195793 8216577 8222089 8222133 8222137 8222136
  *      8223499 8225392 8232019 8234245 8233223 8225068 8225069 8243321 8243320
  *      8243559 8225072 8258630 8259312 8256421 8225081 8225082 8225083 8245654
- *      8305975 8304760 8307134 8295894 8314960 8317373 8317374
+ *      8305975 8304760 8307134 8295894 8314960 8317373 8317374 8318759 8319187
+ *      8321408 8316138
  * @summary Check root CA entries in cacerts file
  */
 import java.io.ByteArrayInputStream;
@@ -47,12 +48,12 @@ public class VerifyCACerts {
             + File.separator + "security" + File.separator + "cacerts";
 
     // The numbers of certs now.
-    private static final int COUNT = 99;
+    private static final int COUNT = 110;
 
     // SHA-256 of cacerts, can be generated with
     // shasum -a 256 cacerts | sed -e 's/../&:/g' | tr '[:lower:]' '[:upper:]' | cut -c1-95
     private static final String CHECKSUM
-            = "86:0A:D5:92:16:A1:11:20:4B:86:18:D5:7C:83:F3:F4:62:50:24:F9:D0:7F:58:59:34:C4:7F:81:0B:15:A7:CE";
+            = "BD:80:65:81:68:E5:6C:51:64:ED:B9:08:53:9F:BB:2F:D9:6C:5D:D4:06:D4:16:59:39:10:8E:F8:24:81:8B:78";
 
     // Hex formatter to upper case with ":" delimiter
     private static final HexFormat HEX = HexFormat.ofDelimiter(":").withUpperCase();
@@ -163,6 +164,14 @@ public class VerifyCACerts {
                     "18:F1:FC:7F:20:5D:F8:AD:DD:EB:7F:E0:07:DD:57:E3:AF:37:5A:9C:4D:8D:73:54:6B:F4:F1:FE:D1:E1:8D:35");
             put("quovadisrootca3g3 [jdk]",
                     "88:EF:81:DE:20:2E:B0:18:45:2E:43:F8:64:72:5C:EA:5F:BD:1F:C2:D9:D2:05:73:07:09:C5:D8:B8:69:0F:46");
+            put("digicertcseccrootg5 [jdk]",
+                    "26:C5:6A:D2:20:8D:1E:9B:15:2F:66:85:3B:F4:79:7C:BE:B7:55:2C:1F:3F:47:72:51:E8:CB:1A:E7:E7:97:BF");
+            put("digicertcsrsarootg5 [jdk]",
+                    "73:53:B6:D6:C2:D6:DA:42:47:77:3F:3F:07:D0:75:DE:CB:51:34:21:2B:EA:D0:92:8E:F1:F4:61:15:26:09:41");
+            put("digicerttlseccrootg5 [jdk]",
+                    "01:8E:13:F0:77:25:32:CF:80:9B:D1:B1:72:81:86:72:83:FC:48:C6:E1:3B:E9:C6:98:12:85:4A:49:0C:1B:05");
+            put("digicerttlsrsarootg5 [jdk]",
+                    "37:1A:00:DC:05:33:B3:72:1A:7E:EB:40:E8:41:9E:70:79:9D:2B:0A:0F:2C:1D:80:69:31:65:F7:CE:C4:AD:75");
             put("secomscrootca2 [jdk]",
                     "51:3B:2C:EC:B8:10:D4:CD:E5:DD:85:39:1A:DF:C6:C2:DD:60:D8:7B:B7:36:D2:B5:21:48:4A:A4:7A:0E:BE:F6");
             put("swisssigngoldg2ca [jdk]",
@@ -259,6 +268,20 @@ public class VerifyCACerts {
                     "D4:8D:3D:23:EE:DB:50:A4:59:E5:51:97:60:1C:27:77:4B:9D:7B:18:C9:4D:5A:05:95:11:A1:02:50:B9:31:68");
             put("teliarootcav2 [jdk]",
                     "24:2B:69:74:2F:CB:1E:5B:2A:BF:98:89:8B:94:57:21:87:54:4E:5B:4D:99:11:78:65:73:62:1F:6A:74:B8:2C");
+            put("emsignrootcag1 [jdk]",
+                    "40:F6:AF:03:46:A9:9A:A1:CD:1D:55:5A:4E:9C:CE:62:C7:F9:63:46:03:EE:40:66:15:83:3D:C8:C8:D0:03:67");
+            put("emsigneccrootcag3 [jdk]",
+                    "86:A1:EC:BA:08:9C:4A:8D:3B:BE:27:34:C6:12:BA:34:1D:81:3E:04:3C:F9:E8:A8:62:CD:5C:57:A3:6B:BE:6B");
+            put("emsignrootcag2 [jdk]",
+                    "1A:A0:C2:70:9E:83:1B:D6:E3:B5:12:9A:00:BA:41:F7:EE:EF:02:08:72:F1:E6:50:4B:F0:F6:C3:F2:4F:3A:F3");
+            put("certainlyrootr1 [jdk]",
+                    "77:B8:2C:D8:64:4C:43:05:F7:AC:C5:CB:15:6B:45:67:50:04:03:3D:51:C6:0C:62:02:A8:E0:C3:34:67:D3:A0");
+            put("certainlyroote1 [jdk]",
+                    "B4:58:5F:22:E4:AC:75:6A:4E:86:12:A1:36:1C:5D:9D:03:1A:93:FD:84:FE:BB:77:8F:A3:06:8B:0F:C4:2D:C2");
+            put("globalsignr46 [jdk]",
+                    "4F:A3:12:6D:8D:3A:11:D1:C4:85:5A:4F:80:7C:BA:D6:CF:91:9D:3A:5A:88:B0:3B:EA:2C:63:72:D9:3C:40:C9");
+            put("globalsigne46 [jdk]",
+                    "CB:B9:C4:4D:84:B8:04:3E:10:50:EA:31:A6:9F:51:49:55:D7:BF:D2:E2:C6:B4:93:01:01:9A:D6:1D:9F:50:58");
         }
     };
 

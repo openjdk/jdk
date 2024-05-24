@@ -26,21 +26,17 @@
  * @summary sourcefile attribute test for file compiled without debug information.
  * @bug 8040129
  * @library /tools/lib /tools/javac/lib ../lib
+ * @enablePreview
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- *          java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
  *          java.base/jdk.internal.classfile.impl
  * @build toolbox.ToolBox InMemoryFileManager TestBase SourceFileTestBase
  * @compile -g:none NoSourceFileAttribute.java
  * @run main NoSourceFileAttribute
  */
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.*;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
 
 import java.io.IOException;
 
@@ -52,7 +48,7 @@ public class NoSourceFileAttribute extends TestBase {
 
     public void test() throws IOException {
         assertNull(
-                Classfile.of().parse(getClassFile(NoSourceFileAttribute.class).toPath()).findAttribute(Attributes.SOURCE_FILE).orElse(null),
+                ClassFile.of().parse(getClassFile(NoSourceFileAttribute.class).toPath()).findAttribute(Attributes.sourceFile()).orElse(null),
                 "Classfile should have no SourceFile attribute when compiled without debug information.");
     }
 }

@@ -55,11 +55,13 @@ enum ScopedFenceType {
 
 class Atomic : AllStatic {
 public:
-  // Atomic operations on int64 types are not available on all 32-bit
-  // platforms. If atomic ops on int64 are defined here they must only
-  // be used from code that verifies they are available at runtime and
-  // can provide an alternative action if not - see supports_cx8() for
-  // a means to test availability.
+  // Atomic operations on int64 types are required to be available on
+  // all platforms. At a minimum a 64-bit cmpxchg must be available
+  // from which other atomic operations can be constructed if needed.
+  // The legacy `Abstract_VMVersion::supports_cx8()` function used to
+  // indicate if this support existed, allowing for alternative lock-
+  // based mechanism to be used. But today this function is required
+  // to return true and in the future will be removed entirely.
 
   // The memory operations that are mentioned with each of the atomic
   // function families come from src/share/vm/runtime/orderAccess.hpp,

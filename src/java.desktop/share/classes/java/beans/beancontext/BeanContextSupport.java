@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,6 +59,9 @@ import java.util.Map;
  * @author Laurence P. G. Cable
  * @since 1.2
  */
+
+@SuppressWarnings("removal")
+@Deprecated(since = "23", forRemoval = true)
 public class      BeanContextSupport extends BeanContextChildSupport
        implements BeanContext,
                   Serializable,
@@ -203,12 +206,11 @@ public class      BeanContextSupport extends BeanContextChildSupport
     }
 
     /**
-     * Reports whether or not this
-     * {@code BeanContext} is empty.
-     * A {@code BeanContext} is considered
-     * empty when it contains zero
-     * nested children.
-     * @return if there are not children
+     * Reports whether or not this {@code BeanContext} is empty. A
+     * {@code BeanContext} is considered empty when it contains zero nested
+     * children.
+     *
+     * @return {@code true} if there are no children, otherwise {@code false}
      */
     public boolean isEmpty() {
         synchronized(children) {
@@ -217,10 +219,11 @@ public class      BeanContextSupport extends BeanContextChildSupport
     }
 
     /**
-     * Determines whether or not the specified object
-     * is currently a child of this {@code BeanContext}.
-     * @param o the Object in question
-     * @return if this object is a child
+     * Determines whether or not the specified object is currently a child of
+     * this {@code BeanContext}.
+     *
+     * @param  o the Object in question
+     * @return {@code true} if this object is a child, otherwise {@code false}
      */
     public boolean contains(Object o) {
         synchronized(children) {
@@ -229,10 +232,11 @@ public class      BeanContextSupport extends BeanContextChildSupport
     }
 
     /**
-     * Determines whether or not the specified object
-     * is currently a child of this {@code BeanContext}.
-     * @param o the Object in question
-     * @return if this object is a child
+     * Determines whether or not the specified object is currently a child of
+     * this {@code BeanContext}.
+     *
+     * @param  o the Object in question
+     * @return {@code true} if this object is a child, otherwise {@code false}
      */
     public boolean containsKey(Object o) {
         synchronized(children) {
@@ -839,10 +843,10 @@ public class      BeanContextSupport extends BeanContextChildSupport
     }
 
     /**
-     * Is this {@code BeanContext} in the
-     * process of being serialized?
-     * @return if this {@code BeanContext} is
-     * currently being serialized
+     * Is this {@code BeanContext} in the process of being serialized?
+     *
+     * @return {@code true} if this {@code BeanContext} is currently being
+     *         serialized, otherwise {@code false}
      */
     public boolean isSerializing() { return serializing; }
 

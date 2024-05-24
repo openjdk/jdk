@@ -26,13 +26,9 @@
  * @bug 8171355
  * @summary Test behavior of javax.lang.model.util.Elements.getOrigin.
  * @library /tools/lib
+ * @enablePreview
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- *          java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
  *          java.base/jdk.internal.classfile.impl
  * @build toolbox.ToolBox toolbox.JavacTask toolbox.TestRunner
  * @build TestOrigin
@@ -61,8 +57,8 @@ import javax.lang.model.element.ModuleElement.OpensDirective;
 import javax.lang.model.element.ModuleElement.RequiresDirective;
 import javax.lang.model.util.Elements;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.*;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
 import toolbox.JavacTask;
 import toolbox.Task;
 import toolbox.TestRunner;
@@ -279,22 +275,22 @@ public class TestOrigin extends TestRunner {
             .writeAll();
 
         Path moduleInfo = classes.resolve("module-info.class");
-        ClassModel cf = Classfile.of().parse(moduleInfo);
-        ModuleAttribute module = cf.findAttribute(Attributes.MODULE).orElseThrow();
+        ClassModel cf = ClassFile.of().parse(moduleInfo);
+        ModuleAttribute module = cf.findAttribute(Attributes.module()).orElseThrow();
 
         List<ModuleRequireInfo> newRequires = new ArrayList<>(3);
-        newRequires.add(ModuleRequireInfo.of(module.requires().get(0).requires(), Classfile.ACC_MANDATED, module.requires().get(0).requiresVersion().orElse(null)));
-        newRequires.add(ModuleRequireInfo.of(module.requires().get(1).requires(), Classfile.ACC_SYNTHETIC, module.requires().get(1).requiresVersion().orElse(null)));
+        newRequires.add(ModuleRequireInfo.of(module.requires().get(0).requires(), ClassFile.ACC_MANDATED, module.requires().get(0).requiresVersion().orElse(null)));
+        newRequires.add(ModuleRequireInfo.of(module.requires().get(1).requires(), ClassFile.ACC_SYNTHETIC, module.requires().get(1).requiresVersion().orElse(null)));
         newRequires.add(module.requires().get(2));
 
         List<ModuleExportInfo> newExports = new ArrayList<>(3);
-        newExports.add(ModuleExportInfo.of(module.exports().get(0).exportedPackage(), Classfile.ACC_MANDATED, module.exports().get(0).exportsTo()));
-        newExports.add(ModuleExportInfo.of(module.exports().get(1).exportedPackage(), Classfile.ACC_SYNTHETIC, module.exports().get(1).exportsTo()));
+        newExports.add(ModuleExportInfo.of(module.exports().get(0).exportedPackage(), ClassFile.ACC_MANDATED, module.exports().get(0).exportsTo()));
+        newExports.add(ModuleExportInfo.of(module.exports().get(1).exportedPackage(), ClassFile.ACC_SYNTHETIC, module.exports().get(1).exportsTo()));
         newExports.add(module.exports().get(2));
 
         List<ModuleOpenInfo> newOpens = new ArrayList<>(3);
-        newOpens.add(ModuleOpenInfo.of(module.opens().get(0).openedPackage(), Classfile.ACC_MANDATED, module.opens().get(0).opensTo()));
-        newOpens.add(ModuleOpenInfo.of(module.opens().get(1).openedPackage(), Classfile.ACC_SYNTHETIC, module.opens().get(1).opensTo()));
+        newOpens.add(ModuleOpenInfo.of(module.opens().get(0).openedPackage(), ClassFile.ACC_MANDATED, module.opens().get(0).opensTo()));
+        newOpens.add(ModuleOpenInfo.of(module.opens().get(1).openedPackage(), ClassFile.ACC_SYNTHETIC, module.opens().get(1).opensTo()));
         newOpens.add(module.opens().get(2));
 
 
@@ -306,7 +302,7 @@ public class TestOrigin extends TestRunner {
                                                           newOpens,
                                                           module.uses(),
                                                           module.provides());
-        byte[] newClassFileBytes = Classfile.of().transform(cf, ClassTransform.dropping(ce -> ce instanceof ModuleAttribute)
+        byte[] newClassFileBytes = ClassFile.of().transform(cf, ClassTransform.dropping(ce -> ce instanceof ModuleAttribute)
                                                  .andThen(ClassTransform.endHandler(classBuilder -> classBuilder.with(newModule))));
         try (OutputStream out = Files.newOutputStream(moduleInfo)) {
             out.write(newClassFileBytes);

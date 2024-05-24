@@ -42,6 +42,7 @@ error_count=$(echo $errors | wc -w || true)
 
 if [[ "$failures" = "" && "$errors" = "" ]]; then
   # We know something went wrong, but not what
+  echo 'failure=true' >> $GITHUB_OUTPUT
   echo 'error-message=Unspecified test suite failure. Please see log for job for details.' >> $GITHUB_OUTPUT
   exit 0
 fi

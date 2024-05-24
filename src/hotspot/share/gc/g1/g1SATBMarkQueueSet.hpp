@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #ifndef SHARE_GC_G1_G1SATBMARKQUEUESET_HPP
 #define SHARE_GC_G1_G1SATBMARKQUEUESET_HPP
 
+#include "gc/shared/bufferNode.hpp"
 #include "gc/shared/satbMarkQueue.hpp"
 
 class Monitor;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -30,7 +30,6 @@
                             develop_pd,                                     \
                             product,                                        \
                             product_pd,                                     \
-                            notproduct,                                     \
                             range,                                          \
                             constraint)                                     \
                                                                             \
@@ -75,11 +74,6 @@
           " aggressive - run GC continuously, try to evacuate everything;"  \
           " compact - run GC more frequently and with deeper targets to "   \
           "free up more memory.")                                           \
-                                                                            \
-  product(uintx, ShenandoahUnloadClassesFrequency, 1, EXPERIMENTAL,         \
-          "Unload the classes every Nth cycle. Normally affects concurrent "\
-          "GC cycles, as degenerated and full GCs would try to unload "     \
-          "classes regardless. Set to zero to disable class unloading.")    \
                                                                             \
   product(uintx, ShenandoahGarbageThreshold, 25, EXPERIMENTAL,              \
           "How much garbage a region has to contain before it would be "    \
@@ -220,9 +214,6 @@
           " 3 = previous level, plus all reachable objects; "               \
           " 4 = previous level, plus all marked objects")                   \
                                                                             \
-  product(bool, ShenandoahElasticTLAB, true, DIAGNOSTIC,                    \
-          "Use Elastic TLABs with Shenandoah")                              \
-                                                                            \
   product(uintx, ShenandoahEvacReserve, 5, EXPERIMENTAL,                    \
           "How much of heap to reserve for evacuations. Larger values make "\
           "GC evacuate more live objects on every cycle, while leaving "    \
@@ -339,9 +330,6 @@
           "How many times to maximum attempt to flush SATB buffers at the " \
           "end of concurrent marking.")                                     \
                                                                             \
-  product(bool, ShenandoahSuspendibleWorkers, true, EXPERIMENTAL,           \
-          "Suspend concurrent GC worker threads at safepoints")             \
-                                                                            \
   product(bool, ShenandoahSATBBarrier, true, DIAGNOSTIC,                    \
           "Turn on/off SATB barriers in Shenandoah")                        \
                                                                             \
@@ -360,15 +348,9 @@
   product(bool, ShenandoahStackWatermarkBarrier, true, DIAGNOSTIC,          \
           "Turn on/off stack watermark barriers in Shenandoah")             \
                                                                             \
-  develop(bool, ShenandoahVerifyOptoBarriers, false,                        \
+  develop(bool, ShenandoahVerifyOptoBarriers, trueInDebug,                  \
           "Verify no missing barriers in C2.")                              \
                                                                             \
-  product(bool, ShenandoahLoopOptsAfterExpansion, true, DIAGNOSTIC,         \
-          "Attempt more loop opts after barrier expansion.")                \
-                                                                            \
-  product(bool, ShenandoahSelfFixing, true, DIAGNOSTIC,                     \
-          "Fix references with load reference barrier. Disabling this "     \
-          "might degrade performance.")
 
 // end of GC_SHENANDOAH_FLAGS
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -89,7 +89,7 @@ public:
 
   // Allocate a chunk but expect it to fail.
   void alloc_chunk_expect_failure(chunklevel_t preferred_level, chunklevel_t max_level, size_t min_committed_size) {
-    Metachunk* c = NULL;
+    Metachunk* c = nullptr;
     checked_alloc_chunk_0(&c, preferred_level, max_level, min_committed_size);
     ASSERT_NULL(c);
   }

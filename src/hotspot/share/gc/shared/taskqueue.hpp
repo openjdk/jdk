@@ -233,11 +233,11 @@ protected:
   }
 
 private:
-  DEFINE_PAD_MINUS_SIZE(0, DEFAULT_CACHE_LINE_SIZE, 0);
+  DEFINE_PAD_MINUS_SIZE(0, DEFAULT_PADDING_SIZE, 0);
 
   // Index of the first free element after the last one pushed (mod N).
   volatile uint _bottom;
-  DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, sizeof(uint));
+  DEFINE_PAD_MINUS_SIZE(1, DEFAULT_PADDING_SIZE, sizeof(uint));
 
   // top() is the index of the oldest pushed element (mod N), and tag()
   // is the associated epoch, to distinguish different modifications of
@@ -245,7 +245,7 @@ private:
   // (_bottom - top()) mod N == N-1; the latter indicates underflow
   // during concurrent pop_local/pop_global.
   volatile Age _age;
-  DEFINE_PAD_MINUS_SIZE(2, DEFAULT_CACHE_LINE_SIZE, sizeof(Age));
+  DEFINE_PAD_MINUS_SIZE(2, DEFAULT_PADDING_SIZE, sizeof(Age));
 
   NONCOPYABLE(TaskQueueSuper);
 
@@ -396,7 +396,7 @@ private:
   // Element array.
   E* _elems;
 
-  DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, sizeof(E*));
+  DEFINE_PAD_MINUS_SIZE(1, DEFAULT_PADDING_SIZE, sizeof(E*));
   // Queue owner local variables. Not to be accessed by other threads.
 
   static const uint InvalidQueueId = uint(-1);
@@ -404,7 +404,7 @@ private:
 
   int _seed; // Current random seed used for selecting a random queue during stealing.
 
-  DEFINE_PAD_MINUS_SIZE(2, DEFAULT_CACHE_LINE_SIZE, sizeof(uint) + sizeof(int));
+  DEFINE_PAD_MINUS_SIZE(2, DEFAULT_PADDING_SIZE, sizeof(uint) + sizeof(int));
 public:
   int next_random_queue_id();
 

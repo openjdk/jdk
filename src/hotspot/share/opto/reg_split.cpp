@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -289,7 +289,7 @@ int PhaseChaitin::split_USE(MachSpillCopyNode::SpillType spill_type, Node *def, 
 
 //------------------------------clone_node----------------------------
 // Clone node with anti dependence check.
-Node* clone_node(Node* def, Block *b, Compile* C) {
+static Node* clone_node(Node* def, Block *b, Compile* C) {
   if (def->needs_anti_dependence_check()) {
 #ifdef ASSERT
     if (PrintOpto && WizardMode) {

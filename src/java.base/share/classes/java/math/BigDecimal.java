@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3503,21 +3503,19 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                 return "0";
             }
             int trailingZeros = checkScaleNonZero((-(long)scale));
-            StringBuilder buf;
-            if(intCompact!=INFLATED) {
-                buf = new StringBuilder(20+trailingZeros);
-                buf.append(intCompact);
-            } else {
-                String str = intVal.toString();
-                buf = new StringBuilder(str.length()+trailingZeros);
-                buf.append(str);
+            String str = intCompact != INFLATED
+                ? Long.toString(intCompact)
+                : intVal.toString();
+            int len = str.length() + trailingZeros;
+            if (len < 0) {
+                throw new OutOfMemoryError("too large to fit in a String");
             }
-            for (int i = 0; i < trailingZeros; i++) {
-                buf.append('0');
-            }
+            StringBuilder buf = new StringBuilder(len);
+            buf.append(str);
+            buf.repeat('0', trailingZeros);
             return buf.toString();
         }
-        String str ;
+        String str;
         if(intCompact!=INFLATED) {
             str = Long.toString(Math.abs(intCompact));
         } else {
@@ -3527,11 +3525,11 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     }
 
     /* Returns a digit.digit string */
-    private String getValueString(int signum, String intString, int scale) {
+    private static String getValueString(int signum, String intString, int scale) {
         /* Insert decimal point */
         StringBuilder buf;
         int insertionPoint = intString.length() - scale;
-        if (insertionPoint == 0) {  /* Point goes right before intVal */
+        if (insertionPoint == 0) {  /* Point goes just before intVal */
             return (signum<0 ? "-0." : "0.") + intString;
         } else if (insertionPoint > 0) { /* Point goes inside intVal */
             buf = new StringBuilder(intString);
@@ -3539,11 +3537,13 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             if (signum < 0)
                 buf.insert(0, '-');
         } else { /* We must insert zeros between point and intVal */
-            buf = new StringBuilder(3-insertionPoint + intString.length());
-            buf.append(signum<0 ? "-0." : "0.");
-            for (int i=0; i<-insertionPoint; i++) {
-                buf.append('0');
+            int len = (signum < 0 ? 3 : 2) + scale;
+            if (len < 0) {
+                throw new OutOfMemoryError("too large to fit in a String");
             }
+            buf = new StringBuilder(len);
+            buf.append(signum<0 ? "-0." : "0.");
+            buf.repeat('0', -insertionPoint);  // insertionPoint != MIN_VALUE
             buf.append(intString);
         }
         return buf.toString();
@@ -5680,18 +5680,8 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
 
         tmp = (dividendHi << shift) | (dividendLo >>> 64 - shift);
         long u2 = tmp & LONG_MASK;
-        long q1, r_tmp;
-        if (v1 == 1) {
-            q1 = tmp;
-            r_tmp = 0;
-        } else if (tmp >= 0) {
-            q1 = tmp / v1;
-            r_tmp = tmp - q1 * v1;
-        } else {
-            long[] rq = divRemNegativeLong(tmp, v1);
-            q1 = rq[1];
-            r_tmp = rq[0];
-        }
+        long q1 = Long.divideUnsigned(tmp, v1);
+        long r_tmp = Long.remainderUnsigned(tmp, v1);
 
         while(q1 >= DIV_NUM_BASE || unsignedLongCompare(q1*v0, make64(r_tmp, u1))) {
             q1--;
@@ -5702,18 +5692,8 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
 
         tmp = mulsub(u2,u1,v1,v0,q1);
         u1 = tmp & LONG_MASK;
-        long q0;
-        if (v1 == 1) {
-            q0 = tmp;
-            r_tmp = 0;
-        } else if (tmp >= 0) {
-            q0 = tmp / v1;
-            r_tmp = tmp - q0 * v1;
-        } else {
-            long[] rq = divRemNegativeLong(tmp, v1);
-            q0 = rq[1];
-            r_tmp = rq[0];
-        }
+        long q0 = Long.divideUnsigned(tmp, v1);
+        r_tmp = Long.remainderUnsigned(tmp, v1);
 
         while(q0 >= DIV_NUM_BASE || unsignedLongCompare(q0*v0,make64(r_tmp,u0))) {
             q0--;
@@ -5791,37 +5771,6 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             }
             return new BigDecimal(unscaledVal, INFLATED, scale, n+1);
         }
-    }
-
-    /**
-     * Calculate the quotient and remainder of dividing a negative long by
-     * another long.
-     *
-     * @param n the numerator; must be negative
-     * @param d the denominator; must not be unity
-     * @return a two-element {@code long} array with the remainder and quotient in
-     *         the initial and final elements, respectively
-     */
-    private static long[] divRemNegativeLong(long n, long d) {
-        assert n < 0 : "Non-negative numerator " + n;
-        assert d != 1 : "Unity denominator";
-
-        // Approximate the quotient and remainder
-        long q = (n >>> 1) / (d >>> 1);
-        long r = n - q * d;
-
-        // Correct the approximation
-        while (r < 0) {
-            r += d;
-            q--;
-        }
-        while (r >= d) {
-            r -= d;
-            q++;
-        }
-
-        // n - q*d == r && 0 <= r < d, hence we're done.
-        return new long[] {r, q};
     }
 
     private static long make64(long hi, long lo) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,22 +44,12 @@ import sun.net.www.ParseUtil;
 /* URL jar file is a common JarFile subtype used for JarURLConnection */
 public class URLJarFile extends JarFile {
 
-    /*
-     * Interface to be able to call retrieve() in plugin if
-     * this variable is set.
-     */
-    private static URLJarFileCallBack callback = null;
-
     /* Controller of the Jar File's closing */
     private URLJarFileCloseController closeController = null;
 
     private Manifest superMan;
     private Attributes superAttr;
     private Map<String, Attributes> superEntries;
-
-    static JarFile getJarFile(URL url) throws IOException {
-        return getJarFile(url, null);
-    }
 
     static JarFile getJarFile(URL url, URLJarFileCloseController closeController) throws IOException {
         if (isFileURL(url)) {
@@ -70,23 +60,6 @@ public class URLJarFile extends JarFile {
         } else {
             return retrieve(url, closeController);
         }
-    }
-
-    /*
-     * Changed modifier from private to public in order to be able
-     * to instantiate URLJarFile from sun.plugin package.
-     */
-    public URLJarFile(File file) throws IOException {
-        this(file, null);
-    }
-
-    /*
-     * Changed modifier from private to public in order to be able
-     * to instantiate URLJarFile from sun.plugin package.
-     */
-    public URLJarFile(File file, URLJarFileCloseController closeController) throws IOException {
-        super(file, true, ZipFile.OPEN_READ | ZipFile.OPEN_DELETE);
-        this.closeController = closeController;
     }
 
     private URLJarFile(File file, URLJarFileCloseController closeController, Runtime.Version version)
@@ -188,62 +161,38 @@ public class URLJarFile extends JarFile {
      */
     @SuppressWarnings("removal")
     private static JarFile retrieve(final URL url, final URLJarFileCloseController closeController) throws IOException {
-        /*
-         * See if interface is set, then call retrieve function of the class
-         * that implements URLJarFileCallBack interface (sun.plugin - to
-         * handle the cache failure for JARJAR file.)
-         */
-        if (callback != null)
-        {
-            return callback.retrieve(url);
-        }
+        JarFile result = null;
+        Runtime.Version version = "runtime".equals(url.getRef())
+                ? JarFile.runtimeVersion()
+                : JarFile.baseVersion();
 
-        else
-        {
-
-            JarFile result = null;
-            Runtime.Version version = "runtime".equals(url.getRef())
-                    ? JarFile.runtimeVersion()
-                    : JarFile.baseVersion();
-
-            /* get the stream before asserting privileges */
-            try (final InputStream in = url.openConnection().getInputStream()) {
-                result = AccessController.doPrivileged(
-                    new PrivilegedExceptionAction<>() {
-                        public JarFile run() throws IOException {
-                            Path tmpFile = Files.createTempFile("jar_cache", null);
+        /* get the stream before asserting privileges */
+        try (final InputStream in = url.openConnection().getInputStream()) {
+            result = AccessController.doPrivileged(
+                new PrivilegedExceptionAction<>() {
+                    public JarFile run() throws IOException {
+                        Path tmpFile = Files.createTempFile("jar_cache", null);
+                        try {
+                            Files.copy(in, tmpFile, StandardCopyOption.REPLACE_EXISTING);
+                            JarFile jarFile = new URLJarFile(tmpFile.toFile(), closeController, version);
+                            tmpFile.toFile().deleteOnExit();
+                            return jarFile;
+                        } catch (Throwable thr) {
                             try {
-                                Files.copy(in, tmpFile, StandardCopyOption.REPLACE_EXISTING);
-                                JarFile jarFile = new URLJarFile(tmpFile.toFile(), closeController, version);
-                                tmpFile.toFile().deleteOnExit();
-                                return jarFile;
-                            } catch (Throwable thr) {
-                                try {
-                                    Files.delete(tmpFile);
-                                } catch (IOException ioe) {
-                                    thr.addSuppressed(ioe);
-                                }
-                                throw thr;
+                                Files.delete(tmpFile);
+                            } catch (IOException ioe) {
+                                thr.addSuppressed(ioe);
                             }
+                            throw thr;
                         }
-                    });
-            } catch (PrivilegedActionException pae) {
-                throw (IOException) pae.getException();
-            }
-
-            return result;
+                    }
+                });
+        } catch (PrivilegedActionException pae) {
+            throw (IOException) pae.getException();
         }
-    }
 
-    /*
-     * Set the call back interface to call retrieve function in sun.plugin
-     * package if plugin is running.
-     */
-    public static void setCallBack(URLJarFileCallBack cb)
-    {
-        callback = cb;
+        return result;
     }
-
 
     private class URLJarFileEntry extends JarEntry {
         private final JarEntry je;

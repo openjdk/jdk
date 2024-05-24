@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -11,75 +11,502 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<language type="frr"/>
 	</identity>
 	<localeDisplayNames>
-		<localeDisplayPattern>
-			<localePattern draft="unconfirmed">{0} ({1})</localePattern>
-			<localeSeparator draft="unconfirmed">{0}, {1}</localeSeparator>
-			<localeKeyTypePattern draft="unconfirmed">{0}: {1}</localeKeyTypePattern>
-		</localeDisplayPattern>
 		<languages>
+			<language type="ab" draft="unconfirmed">Abchaasisk</language>
+			<language type="ace" draft="unconfirmed">Achineesk</language>
+			<language type="ada" draft="unconfirmed">Adangme</language>
+			<language type="ady" draft="unconfirmed">Adygeesk</language>
+			<language type="af" draft="unconfirmed">Afrikaans</language>
+			<language type="agq" draft="unconfirmed">Aghem</language>
+			<language type="ain" draft="unconfirmed">Ainu</language>
+			<language type="ak" draft="unconfirmed">Akan</language>
+			<language type="ale" draft="unconfirmed">Aleutisk</language>
+			<language type="alt" draft="unconfirmed">Süüd Altai</language>
+			<language type="am" draft="unconfirmed">Amhaarisk</language>
+			<language type="an" draft="unconfirmed">Aragoneesk</language>
+			<language type="ann" draft="unconfirmed">Obolo</language>
+			<language type="anp" draft="unconfirmed">Angika</language>
 			<language type="ar" draft="unconfirmed">Araabisk</language>
 			<language type="ar_001" draft="unconfirmed">Modern Standard Araabisk</language>
+			<language type="arn" draft="unconfirmed">Mapuche</language>
+			<language type="arp" draft="unconfirmed">Arapaho</language>
+			<language type="ars" draft="unconfirmed">Najdi Araabisk</language>
+			<language type="as" draft="unconfirmed">Asameesk</language>
+			<language type="asa" draft="unconfirmed">Asu</language>
+			<language type="ast" draft="unconfirmed">Astuurisk</language>
+			<language type="atj" draft="unconfirmed">Atikamekw</language>
+			<language type="av" draft="unconfirmed">Awaarisk</language>
+			<language type="awa" draft="unconfirmed">Awadhi</language>
+			<language type="ay" draft="unconfirmed">Aymara</language>
+			<language type="az" draft="unconfirmed">Aserbaidschaansk</language>
+			<language type="az" alt="short" draft="unconfirmed">Aseeri</language>
+			<language type="ba" draft="unconfirmed">Baschkiirisk</language>
+			<language type="ban" draft="unconfirmed">Balineesk</language>
+			<language type="bas" draft="unconfirmed">Basaa</language>
+			<language type="be" draft="unconfirmed">Witjrüsk</language>
+			<language type="bem" draft="unconfirmed">Bemba</language>
+			<language type="bez" draft="unconfirmed">Bena</language>
+			<language type="bg" draft="unconfirmed">Bulgaarsk</language>
+			<language type="bgc" draft="unconfirmed">Haryanvi</language>
+			<language type="bho" draft="unconfirmed">Bhoipuurisk</language>
+			<language type="bi" draft="unconfirmed">Bislama</language>
+			<language type="bin" draft="unconfirmed">Bini</language>
+			<language type="bla" draft="unconfirmed">Siksiká</language>
+			<language type="bm" draft="unconfirmed">Bambara</language>
 			<language type="bn" draft="unconfirmed">Bengaals</language>
+			<language type="bo" draft="unconfirmed">Tibetaans</language>
+			<language type="br" draft="unconfirmed">Bretoonsk</language>
+			<language type="brx" draft="unconfirmed">Bodo</language>
+			<language type="bs" draft="unconfirmed">Bosnisk</language>
+			<language type="bug" draft="unconfirmed">Bugineesk</language>
+			<language type="byn" draft="unconfirmed">Blin</language>
+			<language type="ca" draft="unconfirmed">Katalaans</language>
+			<language type="cay" draft="unconfirmed">Cayuga</language>
+			<language type="ccp" draft="unconfirmed">Chakma</language>
+			<language type="ce" draft="unconfirmed">Tschetscheensk</language>
+			<language type="ceb" draft="unconfirmed">Cebuano</language>
+			<language type="cgg" draft="unconfirmed">Chiga</language>
+			<language type="ch" draft="unconfirmed">Chamorro</language>
+			<language type="chk" draft="unconfirmed">Chuukese</language>
+			<language type="chm" draft="unconfirmed">Mari</language>
+			<language type="cho" draft="unconfirmed">Choctaw</language>
+			<language type="chp" draft="unconfirmed">Chipewyan</language>
+			<language type="chr" draft="unconfirmed">Cherokee</language>
+			<language type="chy" draft="unconfirmed">Cheyenne</language>
+			<language type="ckb" draft="unconfirmed">Madel Kurdisk</language>
+			<language type="ckb" alt="menu" draft="unconfirmed">Kurdisk, Madel</language>
+			<language type="ckb" alt="variant" draft="unconfirmed">Kurdisk, Sorani</language>
+			<language type="clc" draft="unconfirmed">Chilcotin</language>
+			<language type="co" draft="unconfirmed">Korsisk</language>
+			<language type="crg" draft="unconfirmed">Michif</language>
+			<language type="crj" draft="unconfirmed">Süüdelk Uast Cree</language>
+			<language type="crk" draft="unconfirmed">Plains Cree</language>
+			<language type="crl" draft="unconfirmed">Nuurdelk Uast Cree</language>
+			<language type="crm" draft="unconfirmed">Moose Cree</language>
+			<language type="crr" draft="unconfirmed">Carolina Algonkin</language>
 			<language type="cs" draft="unconfirmed">Tschechisk</language>
+			<language type="csw" draft="unconfirmed">Swampy Cree</language>
+			<language type="cv" draft="unconfirmed">Tschuwaschisk</language>
+			<language type="cy" draft="unconfirmed">Waliisk</language>
 			<language type="da" draft="unconfirmed">Deensk</language>
+			<language type="dak" draft="unconfirmed">Dakota</language>
+			<language type="dar" draft="unconfirmed">Dargwa</language>
+			<language type="dav" draft="unconfirmed">Taita</language>
 			<language type="de" draft="unconfirmed">Tjiisk</language>
 			<language type="de_AT" draft="unconfirmed">Uastenriks Tjiisk</language>
 			<language type="de_CH" draft="unconfirmed">Sweitser Huuchtjiisk</language>
+			<language type="dgr" draft="unconfirmed">Dogrib</language>
+			<language type="dje" draft="unconfirmed">Zarma</language>
+			<language type="doi" draft="unconfirmed">Dogri</language>
+			<language type="dsb" draft="unconfirmed">Liachsorbisk</language>
+			<language type="dua" draft="unconfirmed">Duala</language>
+			<language type="dv" draft="unconfirmed">Divehi</language>
+			<language type="dyo" draft="unconfirmed">Jola-Fonyi</language>
+			<language type="dz" draft="unconfirmed">Dzongkha</language>
+			<language type="dzg" draft="unconfirmed">Dazaga</language>
+			<language type="ebu" draft="unconfirmed">Embu</language>
+			<language type="ee" draft="unconfirmed">Ewe</language>
+			<language type="efi" draft="unconfirmed">Efik</language>
+			<language type="eka" draft="unconfirmed">Ekajuk</language>
 			<language type="el" draft="unconfirmed">Greks</language>
 			<language type="en" draft="unconfirmed">Ingelsk</language>
 			<language type="en_AU" draft="unconfirmed">Austraalisk Ingelsk</language>
 			<language type="en_CA" draft="unconfirmed">Kanaadsk Ingelsk</language>
 			<language type="en_GB" draft="unconfirmed">Britisk Ingelsk</language>
 			<language type="en_US" draft="unconfirmed">Amerikoonsk Ingelsk</language>
+			<language type="eo" draft="unconfirmed">Esperanto</language>
 			<language type="es" draft="unconfirmed">Spaans</language>
 			<language type="es_419" draft="unconfirmed">Amerikoonsk Spaans</language>
-			<language type="es_ES" draft="unconfirmed">Europeesk Spaansk</language>
+			<language type="es_ES" draft="unconfirmed">Europeesk Spaans</language>
 			<language type="es_MX" draft="unconfirmed">Meksikoons Spaans</language>
 			<language type="et" draft="unconfirmed">Eestnisk</language>
+			<language type="eu" draft="unconfirmed">Baskisk</language>
+			<language type="ewo" draft="unconfirmed">Ewondo</language>
+			<language type="fa" draft="unconfirmed">Persisk</language>
+			<language type="fa_AF" draft="unconfirmed">Dari</language>
+			<language type="ff" draft="unconfirmed">Fula</language>
 			<language type="fi" draft="unconfirmed">Finsk</language>
+			<language type="fil" draft="unconfirmed">Filipiinsk</language>
+			<language type="fj" draft="unconfirmed">Fidschiaans</language>
+			<language type="fo" draft="unconfirmed">Färöisk</language>
+			<language type="fon" draft="unconfirmed">Fon</language>
 			<language type="fr" draft="unconfirmed">Fransöösk</language>
 			<language type="fr_CA" draft="unconfirmed">Kanaadsk Fransöösk</language>
 			<language type="fr_CH" draft="unconfirmed">Sweitser Fransöösk</language>
+			<language type="frc" draft="unconfirmed">Cajun Fransöösk</language>
 			<language type="frr">Nordfriisk</language>
+			<language type="fur" draft="unconfirmed">Friaulisk</language>
+			<language type="fy" draft="unconfirmed">Waastfresk</language>
+			<language type="ga" draft="unconfirmed">Iirsk</language>
+			<language type="gaa" draft="unconfirmed">Ga</language>
+			<language type="gd" draft="unconfirmed">Skots Geelisk</language>
+			<language type="gez" draft="unconfirmed">Geez</language>
+			<language type="gil" draft="unconfirmed">Gilberteesk</language>
+			<language type="gl" draft="unconfirmed">Galitsisk</language>
+			<language type="gn" draft="unconfirmed">Guarani</language>
+			<language type="gor" draft="unconfirmed">Gorontalo</language>
+			<language type="gsw" draft="unconfirmed">Sweitsertjiisk</language>
+			<language type="gu" draft="unconfirmed">Gujarati</language>
+			<language type="guz" draft="unconfirmed">Gusii</language>
+			<language type="gv" draft="unconfirmed">Manx</language>
+			<language type="gwi" draft="unconfirmed">Gwichʼin</language>
+			<language type="ha" draft="unconfirmed">Hausa</language>
+			<language type="hai" draft="unconfirmed">Haida</language>
+			<language type="haw" draft="unconfirmed">Hawaiiaans</language>
+			<language type="hax" draft="unconfirmed">Süüd Haida</language>
+			<language type="he" draft="unconfirmed">Hebreews</language>
 			<language type="hi" draft="unconfirmed">Hindi</language>
+			<language type="hil" draft="unconfirmed">Hiligaynon</language>
+			<language type="hmn" draft="unconfirmed">Hmong</language>
+			<language type="hr" draft="unconfirmed">Kroatisk</language>
+			<language type="hsb" draft="unconfirmed">Huuchsorbisk</language>
+			<language type="ht" draft="unconfirmed">Haitiaans Kreool</language>
 			<language type="hu" draft="unconfirmed">Ungaars</language>
+			<language type="hup" draft="unconfirmed">Hupa</language>
+			<language type="hur" draft="unconfirmed">Halkomelem</language>
+			<language type="hy" draft="unconfirmed">Armeensk</language>
+			<language type="hz" draft="unconfirmed">Herero</language>
+			<language type="ia" draft="unconfirmed">Interlingua</language>
+			<language type="iba" draft="unconfirmed">Iban</language>
+			<language type="ibb" draft="unconfirmed">Ibibio</language>
 			<language type="id" draft="unconfirmed">Indoneesk</language>
+			<language type="ig" draft="unconfirmed">Igbo</language>
+			<language type="ii" draft="unconfirmed">Sichuan Yi</language>
+			<language type="ikt" draft="unconfirmed">Waast Kanaadsk Inuktitut</language>
+			<language type="ilo" draft="unconfirmed">Iloko</language>
+			<language type="inh" draft="unconfirmed">Inguschisk</language>
+			<language type="io" draft="unconfirmed">Ido</language>
+			<language type="is" draft="unconfirmed">Isluns</language>
 			<language type="it" draft="unconfirmed">Itajeensk</language>
+			<language type="iu" draft="unconfirmed">Inuktitut</language>
 			<language type="ja" draft="unconfirmed">Japaans</language>
+			<language type="jbo" draft="unconfirmed">Lojban</language>
+			<language type="jgo" draft="unconfirmed">Ngomba</language>
+			<language type="jmc" draft="unconfirmed">Machame</language>
+			<language type="jv" draft="unconfirmed">Jawaneesk</language>
+			<language type="ka" draft="unconfirmed">Georgisk</language>
+			<language type="kab" draft="unconfirmed">Kabyle</language>
+			<language type="kac" draft="unconfirmed">Jingpo</language>
+			<language type="kaj" draft="unconfirmed">Kaje</language>
+			<language type="kam" draft="unconfirmed">Kamba</language>
+			<language type="kbd" draft="unconfirmed">Kabardisk</language>
+			<language type="kcg" draft="unconfirmed">Tyap</language>
+			<language type="kde" draft="unconfirmed">Makonde</language>
+			<language type="kea" draft="unconfirmed">Kabuverdianu</language>
+			<language type="kfo" draft="unconfirmed">Koro</language>
+			<language type="kgp" draft="unconfirmed">Kaingang</language>
+			<language type="kha" draft="unconfirmed">Khasi</language>
+			<language type="khq" draft="unconfirmed">Koyra Chiini</language>
+			<language type="ki" draft="unconfirmed">Kikuyu</language>
+			<language type="kj" draft="unconfirmed">Kuanyama</language>
+			<language type="kk" draft="unconfirmed">Kasachisk</language>
+			<language type="kkj" draft="unconfirmed">Kako</language>
+			<language type="kl" draft="unconfirmed">Kalaallisut</language>
+			<language type="kln" draft="unconfirmed">Kalenjin</language>
+			<language type="km" draft="unconfirmed">Khmer</language>
+			<language type="kmb" draft="unconfirmed">Kimbundu</language>
+			<language type="kn" draft="unconfirmed">Kannada</language>
 			<language type="ko" draft="unconfirmed">Koreaans</language>
+			<language type="kok" draft="unconfirmed">Konkani</language>
+			<language type="kpe" draft="unconfirmed">Kpelle</language>
+			<language type="kr" draft="unconfirmed">Kanuri</language>
+			<language type="krc" draft="unconfirmed">Karachay-Balkar</language>
+			<language type="krl" draft="unconfirmed">Kareelisk</language>
+			<language type="kru" draft="unconfirmed">Kurukh</language>
+			<language type="ks" draft="unconfirmed">Kaschmiirisk</language>
+			<language type="ksb" draft="unconfirmed">Shambala</language>
+			<language type="ksf" draft="unconfirmed">Bafia</language>
+			<language type="ksh" draft="unconfirmed">Kölsch</language>
+			<language type="ku" draft="unconfirmed">Kurdisk</language>
+			<language type="kum" draft="unconfirmed">Kumyk</language>
+			<language type="kv" draft="unconfirmed">Komi</language>
+			<language type="kw" draft="unconfirmed">Kornisk</language>
+			<language type="kwk" draft="unconfirmed">Kwakʼwala</language>
+			<language type="ky" draft="unconfirmed">Kirgiisk</language>
+			<language type="la" draft="unconfirmed">Latiinsk</language>
+			<language type="lad" draft="unconfirmed">Ladiinsk</language>
+			<language type="lag" draft="unconfirmed">Langi</language>
+			<language type="lb" draft="unconfirmed">Luksemborigs</language>
+			<language type="lez" draft="unconfirmed">Lesgisk</language>
+			<language type="lg" draft="unconfirmed">Ganda</language>
+			<language type="li" draft="unconfirmed">Limburgs</language>
+			<language type="lil" draft="unconfirmed">Lillooet</language>
+			<language type="lkt" draft="unconfirmed">Lakota</language>
+			<language type="ln" draft="unconfirmed">Lingala</language>
+			<language type="lo" draft="unconfirmed">Laotisk</language>
+			<language type="lou" draft="unconfirmed">Louisiana Kreool</language>
+			<language type="loz" draft="unconfirmed">Lozi</language>
+			<language type="lrc" draft="unconfirmed">Nuurd Luri</language>
+			<language type="lsm" draft="unconfirmed">Saamia</language>
+			<language type="lt" draft="unconfirmed">Litauisk</language>
+			<language type="lu" draft="unconfirmed">Luba-Katanga</language>
+			<language type="lua" draft="unconfirmed">Luba-Lulua</language>
+			<language type="lun" draft="unconfirmed">Lunda</language>
+			<language type="luo" draft="unconfirmed">Luo</language>
+			<language type="lus" draft="unconfirmed">Mizo</language>
+			<language type="luy" draft="unconfirmed">Luyia</language>
 			<language type="lv" draft="unconfirmed">Letisk</language>
+			<language type="mad" draft="unconfirmed">Madureesk</language>
+			<language type="mag" draft="unconfirmed">Magahi</language>
+			<language type="mai" draft="unconfirmed">Maithili</language>
+			<language type="mak" draft="unconfirmed">Makasar</language>
+			<language type="mas" draft="unconfirmed">Masai</language>
+			<language type="mdf" draft="unconfirmed">Moksha</language>
+			<language type="men" draft="unconfirmed">Mende</language>
+			<language type="mer" draft="unconfirmed">Meru</language>
+			<language type="mfe" draft="unconfirmed">Mauritiaans</language>
+			<language type="mg" draft="unconfirmed">Malagasy</language>
+			<language type="mgh" draft="unconfirmed">Makhuwa-Meetto</language>
+			<language type="mgo" draft="unconfirmed">Metaʼ</language>
+			<language type="mh" draft="unconfirmed">Marshaleesk</language>
+			<language type="mi" draft="unconfirmed">Maori</language>
+			<language type="mic" draft="unconfirmed">Mi'kmaw</language>
+			<language type="min" draft="unconfirmed">Minangkabau</language>
+			<language type="mk" draft="unconfirmed">Matsedoonsk</language>
+			<language type="ml" draft="unconfirmed">Malayalam</language>
+			<language type="mn" draft="unconfirmed">Mongoolsk</language>
+			<language type="mni" draft="unconfirmed">Manipuri</language>
+			<language type="moe" draft="unconfirmed">Innu-aimun</language>
+			<language type="moh" draft="unconfirmed">Mohawk</language>
+			<language type="mos" draft="unconfirmed">Mossi</language>
+			<language type="mr" draft="unconfirmed">Marathi</language>
+			<language type="ms" draft="unconfirmed">Malaiisk</language>
 			<language type="mt" draft="unconfirmed">Malteesk</language>
+			<language type="mua" draft="unconfirmed">Mundang</language>
+			<language type="mul" draft="unconfirmed">Flook spriaken</language>
+			<language type="mus" draft="unconfirmed">Muscogee</language>
+			<language type="mwl" draft="unconfirmed">Mirandees</language>
+			<language type="my" draft="unconfirmed">Burmeesk</language>
+			<language type="myv" draft="unconfirmed">Erzya</language>
+			<language type="mzn" draft="unconfirmed">Mazanderani</language>
+			<language type="na" draft="unconfirmed">Nauru</language>
+			<language type="nap" draft="unconfirmed">Neapolitaans</language>
+			<language type="naq" draft="unconfirmed">Nama</language>
+			<language type="nb" draft="unconfirmed">Noorsk Bokmål</language>
+			<language type="nd" draft="unconfirmed">Nuurd Ndebele</language>
+			<language type="nds" draft="unconfirmed">Plaattjiisk</language>
+			<language type="ne" draft="unconfirmed">Nepaleesk</language>
+			<language type="new" draft="unconfirmed">Newari</language>
+			<language type="ng" draft="unconfirmed">Ndonga</language>
+			<language type="nia" draft="unconfirmed">Nias</language>
+			<language type="niu" draft="unconfirmed">Niueaans</language>
 			<language type="nl" draft="unconfirmed">Holuns</language>
 			<language type="nl_BE" draft="unconfirmed">Flaams</language>
+			<language type="nmg" draft="unconfirmed">Kwasio</language>
+			<language type="nn" draft="unconfirmed">Noorsk Nynorsk</language>
+			<language type="nnh" draft="unconfirmed">Ngiemboon</language>
+			<language type="no" draft="unconfirmed">Noorsk</language>
+			<language type="nog" draft="unconfirmed">Nogai</language>
+			<language type="nqo" draft="unconfirmed">N’Ko</language>
+			<language type="nr" draft="unconfirmed">Süüd Ndebele</language>
+			<language type="nso" draft="unconfirmed">Nuurd Sotho</language>
+			<language type="nus" draft="unconfirmed">Nuer</language>
+			<language type="nv" draft="unconfirmed">Navajo</language>
+			<language type="ny" draft="unconfirmed">Nyanja</language>
+			<language type="nyn" draft="unconfirmed">Nyankole</language>
+			<language type="oc" draft="unconfirmed">Oksitaans</language>
+			<language type="ojb" draft="unconfirmed">Nuurdwaast Ojibwa</language>
+			<language type="ojc" draft="unconfirmed">Madel Ojibwa</language>
+			<language type="ojs" draft="unconfirmed">Oji-Cree</language>
+			<language type="ojw" draft="unconfirmed">Waast Ojibwa</language>
+			<language type="oka" draft="unconfirmed">Okanagan</language>
+			<language type="om" draft="unconfirmed">Oromo</language>
+			<language type="or" draft="unconfirmed">Odia</language>
+			<language type="os" draft="unconfirmed">Oseetisk</language>
+			<language type="pa" draft="unconfirmed">Panjabi</language>
+			<language type="pag" draft="unconfirmed">Pangasineesk</language>
+			<language type="pam" draft="unconfirmed">Pampanga</language>
+			<language type="pap" draft="unconfirmed">Papiamento</language>
+			<language type="pau" draft="unconfirmed">Palauisk</language>
+			<language type="pcm" draft="unconfirmed">Nigeriaans Pidgin</language>
+			<language type="pis" draft="unconfirmed">Salomoonen Pidgin</language>
 			<language type="pl" draft="unconfirmed">Poolsk</language>
+			<language type="pqm" draft="unconfirmed">Maliseet-Passamaquoddy</language>
+			<language type="ps" draft="unconfirmed">Paschtu</language>
 			<language type="pt" draft="unconfirmed">Portugiisk</language>
 			<language type="pt_BR" draft="unconfirmed">Brasiliaans Portugiisk</language>
 			<language type="pt_PT" draft="unconfirmed">Europeesk Portugiisk</language>
+			<language type="qu" draft="unconfirmed">Ketschua</language>
+			<language type="raj" draft="unconfirmed">Rajastaans</language>
+			<language type="rap" draft="unconfirmed">Rapanui</language>
+			<language type="rar" draft="unconfirmed">Rarotongaans</language>
+			<language type="rhg" draft="unconfirmed">Rohingya</language>
+			<language type="rm" draft="unconfirmed">Rätoromaans</language>
+			<language type="rn" draft="unconfirmed">Rundi</language>
+			<language type="ro" draft="unconfirmed">Rumeensk</language>
+			<language type="rof" draft="unconfirmed">Rombo</language>
 			<language type="ru" draft="unconfirmed">Rüsk</language>
+			<language type="rup" draft="unconfirmed">Arumeensk</language>
+			<language type="rw" draft="unconfirmed">Kinyarwanda</language>
+			<language type="rwk" draft="unconfirmed">Rwa</language>
+			<language type="sa" draft="unconfirmed">Sanskrit</language>
+			<language type="sad" draft="unconfirmed">Sandawe</language>
+			<language type="sah" draft="unconfirmed">Jakutisk</language>
+			<language type="saq" draft="unconfirmed">Samburu</language>
+			<language type="sat" draft="unconfirmed">Santali</language>
+			<language type="sba" draft="unconfirmed">Ngambay</language>
+			<language type="sbp" draft="unconfirmed">Sangu</language>
+			<language type="sc" draft="unconfirmed">Sardiinsk</language>
+			<language type="scn" draft="unconfirmed">Sitsiliaans</language>
+			<language type="sco" draft="unconfirmed">Skots</language>
+			<language type="sd" draft="unconfirmed">Sindhi</language>
+			<language type="se" draft="unconfirmed">Nuurd Saamisk</language>
+			<language type="seh" draft="unconfirmed">Sena</language>
+			<language type="ses" draft="unconfirmed">Koyraboro Senni</language>
+			<language type="sg" draft="unconfirmed">Sango</language>
+			<language type="shi" draft="unconfirmed">Tachelhit</language>
+			<language type="shn" draft="unconfirmed">Shan</language>
+			<language type="si" draft="unconfirmed">Sinhala</language>
 			<language type="sk" draft="unconfirmed">Slowaakisk</language>
 			<language type="sl" draft="unconfirmed">Sloweensk</language>
+			<language type="slh" draft="unconfirmed">Süüd Lushootseed</language>
+			<language type="sm" draft="unconfirmed">Samoaans</language>
+			<language type="smn" draft="unconfirmed">Inari Sami</language>
+			<language type="sms" draft="unconfirmed">Skoltsaamisk</language>
+			<language type="sn" draft="unconfirmed">Shona</language>
+			<language type="snk" draft="unconfirmed">Soninke</language>
+			<language type="so" draft="unconfirmed">Somaalisk</language>
+			<language type="sq" draft="unconfirmed">Albaansk</language>
+			<language type="sr" draft="unconfirmed">Serbisk</language>
+			<language type="srn" draft="unconfirmed">Sranan Tongo</language>
+			<language type="ss" draft="unconfirmed">Swati</language>
+			<language type="st" draft="unconfirmed">Süüd Sotho</language>
+			<language type="str" draft="unconfirmed">Straits Salish</language>
+			<language type="su" draft="unconfirmed">Sundaneesk</language>
+			<language type="suk" draft="unconfirmed">Sukuma</language>
 			<language type="sv" draft="unconfirmed">Sweedsk</language>
+			<language type="sw" draft="unconfirmed">Suaheli</language>
+			<language type="swb" draft="unconfirmed">Komoorisk</language>
+			<language type="syr" draft="unconfirmed">Syrisk</language>
+			<language type="ta" draft="unconfirmed">Tamiilisk</language>
+			<language type="tce" draft="unconfirmed">Süüd Tutchone</language>
+			<language type="te" draft="unconfirmed">Telugu</language>
+			<language type="tem" draft="unconfirmed">Timne</language>
+			<language type="teo" draft="unconfirmed">Teso</language>
+			<language type="tet" draft="unconfirmed">Tetum</language>
+			<language type="tg" draft="unconfirmed">Tadjikisk</language>
+			<language type="tgx" draft="unconfirmed">Tagish</language>
 			<language type="th" draft="unconfirmed">Thai</language>
+			<language type="tht" draft="unconfirmed">Tahltan</language>
+			<language type="ti" draft="unconfirmed">Tigrinya</language>
+			<language type="tig" draft="unconfirmed">Tigre</language>
+			<language type="tk" draft="unconfirmed">Turkmeensk</language>
+			<language type="tlh" draft="unconfirmed">Klingoonisk</language>
+			<language type="tli" draft="unconfirmed">Tlingit</language>
+			<language type="tn" draft="unconfirmed">Tsuana</language>
+			<language type="to" draft="unconfirmed">Tongaans</language>
+			<language type="tok" draft="unconfirmed">Toki Pona</language>
+			<language type="tpi" draft="unconfirmed">Tok Pisin</language>
 			<language type="tr" draft="unconfirmed">Türkisk</language>
+			<language type="trv" draft="unconfirmed">Taroko</language>
+			<language type="ts" draft="unconfirmed">Tsonga</language>
+			<language type="tt" draft="unconfirmed">Tataarisk</language>
+			<language type="ttm" draft="unconfirmed">Nuurd Tutchone</language>
+			<language type="tum" draft="unconfirmed">Tumbuka</language>
+			<language type="tvl" draft="unconfirmed">Tuwaaluu</language>
+			<language type="twq" draft="unconfirmed">Tasawaq</language>
+			<language type="ty" draft="unconfirmed">Tahitiaans</language>
+			<language type="tyv" draft="unconfirmed">Tuwiinisk</language>
+			<language type="tzm" draft="unconfirmed">Madel Atlas Tamazight</language>
+			<language type="udm" draft="unconfirmed">Udmurtisk</language>
+			<language type="ug" draft="unconfirmed">Uiguurisk</language>
+			<language type="uk" draft="unconfirmed">Ukrainisk</language>
+			<language type="umb" draft="unconfirmed">Umbundu</language>
 			<language type="und" draft="unconfirmed">Ünbekäänd spriik</language>
+			<language type="ur" draft="unconfirmed">Urdu</language>
+			<language type="uz" draft="unconfirmed">Usbeekisk</language>
+			<language type="vai" draft="unconfirmed">Vai</language>
+			<language type="ve" draft="unconfirmed">Venda</language>
+			<language type="vi" draft="unconfirmed">Wjetnameesk</language>
+			<language type="vun" draft="unconfirmed">Vunjo</language>
+			<language type="wa" draft="unconfirmed">Waloons</language>
+			<language type="wae" draft="unconfirmed">Walsertjiisk</language>
+			<language type="wal" draft="unconfirmed">Wolaytta</language>
+			<language type="war" draft="unconfirmed">Waray</language>
+			<language type="wo" draft="unconfirmed">Wolof</language>
+			<language type="wuu" draft="unconfirmed">Wu Schineesk</language>
+			<language type="xal" draft="unconfirmed">Kalmükisk</language>
+			<language type="xh" draft="unconfirmed">Xhosa</language>
+			<language type="xog" draft="unconfirmed">Soga</language>
+			<language type="yav" draft="unconfirmed">Yangben</language>
+			<language type="ybb" draft="unconfirmed">Yemba</language>
+			<language type="yi" draft="unconfirmed">Jidisk</language>
+			<language type="yo" draft="unconfirmed">Yoruba</language>
+			<language type="yrl" draft="unconfirmed">Nheengatu</language>
+			<language type="yue" draft="unconfirmed">Kantoneesk</language>
+			<language type="yue" alt="menu" draft="unconfirmed">Schineesk, Kantoneesk</language>
+			<language type="zgh" draft="unconfirmed">Maroko Standard Tamazight</language>
 			<language type="zh" draft="unconfirmed">Schineesk</language>
 			<language type="zh" alt="menu" draft="unconfirmed">Mandariin Schineesk</language>
 			<language type="zh_Hans" draft="unconfirmed">Kurt Schineesk</language>
 			<language type="zh_Hans" alt="long" draft="unconfirmed">Kurt Mandariin Schineesk</language>
 			<language type="zh_Hant" draft="unconfirmed">Lung Schineesk</language>
 			<language type="zh_Hant" alt="long" draft="unconfirmed">Lung Mandariin Schineesk</language>
+			<language type="zu" draft="unconfirmed">Zulu</language>
+			<language type="zun" draft="unconfirmed">Zuni</language>
+			<language type="zxx" draft="unconfirmed">Nian spriak</language>
+			<language type="zza" draft="unconfirmed">Zaza</language>
 		</languages>
 		<scripts>
+			<script type="Adlm" draft="unconfirmed">Adlam</script>
 			<script type="Arab" draft="unconfirmed">Araabisk</script>
+			<script type="Aran" draft="unconfirmed">Nastaliq</script>
+			<script type="Armn" draft="unconfirmed">Armeensk</script>
+			<script type="Beng" draft="unconfirmed">Bangla</script>
+			<script type="Bopo" draft="unconfirmed">Bopomofo</script>
+			<script type="Brai" draft="unconfirmed">Braille</script>
+			<script type="Cakm" draft="unconfirmed">Chakma</script>
+			<script type="Cans" draft="unconfirmed">Kanaadsk Silwenskraft</script>
+			<script type="Cher" draft="unconfirmed">Cherokee</script>
 			<script type="Cyrl" draft="unconfirmed">Kyrilisk</script>
+			<script type="Deva" draft="unconfirmed">Devanagari</script>
+			<script type="Ethi" draft="unconfirmed">Etioopisk</script>
+			<script type="Geor" draft="unconfirmed">Georgisk</script>
+			<script type="Grek" draft="unconfirmed">Greks</script>
+			<script type="Gujr" draft="unconfirmed">Gujarati</script>
+			<script type="Guru" draft="unconfirmed">Gurmukhi</script>
+			<script type="Hanb" draft="unconfirmed">Han Bopomofo</script>
+			<script type="Hang" draft="unconfirmed">Hangeul</script>
+			<script type="Hani" draft="unconfirmed">Han</script>
 			<script type="Hans" draft="unconfirmed">Kurt</script>
 			<script type="Hans" alt="stand-alone" draft="unconfirmed">Kurt Han</script>
 			<script type="Hant" draft="unconfirmed">Lung</script>
 			<script type="Hant" alt="stand-alone" draft="unconfirmed">Lung Han</script>
+			<script type="Hebr" draft="unconfirmed">Hebreews</script>
+			<script type="Hira" draft="unconfirmed">Hiragana</script>
+			<script type="Hrkt" draft="unconfirmed">Japaans Silwenskraft</script>
+			<script type="Jamo" draft="unconfirmed">Jamo</script>
 			<script type="Jpan" draft="unconfirmed">Japaans</script>
+			<script type="Kana" draft="unconfirmed">Katakana</script>
+			<script type="Khmr" draft="unconfirmed">Khmer</script>
+			<script type="Knda" draft="unconfirmed">Kannada</script>
 			<script type="Kore" draft="unconfirmed">Koreaans</script>
+			<script type="Laoo" draft="unconfirmed">Laotisk</script>
 			<script type="Latn" draft="unconfirmed">Latiinsk</script>
+			<script type="Mlym" draft="unconfirmed">Malayalam</script>
+			<script type="Mong" draft="unconfirmed">Mongools</script>
+			<script type="Mtei" draft="unconfirmed">Meitei Mayek</script>
+			<script type="Mymr" draft="unconfirmed">Burmeesk</script>
+			<script type="Nkoo" draft="unconfirmed">N’Ko</script>
+			<script type="Olck" draft="unconfirmed">Ol Chiki</script>
+			<script type="Orya" draft="unconfirmed">Oriya</script>
+			<script type="Rohg" draft="unconfirmed">Hanifi</script>
+			<script type="Sinh" draft="unconfirmed">Singhaleesk</script>
+			<script type="Sund" draft="unconfirmed">Sundaneesk</script>
+			<script type="Syrc" draft="unconfirmed">Syrisk</script>
+			<script type="Taml" draft="unconfirmed">Tamil</script>
+			<script type="Telu" draft="unconfirmed">Telugu</script>
+			<script type="Tfng" draft="unconfirmed">Tifinagh</script>
+			<script type="Thaa" draft="unconfirmed">Thaana</script>
+			<script type="Thai" draft="unconfirmed">Thai</script>
+			<script type="Tibt" draft="unconfirmed">Tibeetisk</script>
+			<script type="Vaii" draft="unconfirmed">Vai</script>
+			<script type="Yiii" draft="unconfirmed">Yi</script>
+			<script type="Zmth" draft="unconfirmed">Matemaatisk Notiaring</script>
+			<script type="Zsye" draft="unconfirmed">Emojis</script>
+			<script type="Zsym" draft="unconfirmed">Sümboolen</script>
 			<script type="Zxxx" draft="unconfirmed">Nian skraft</script>
+			<script type="Zyyy" draft="unconfirmed">Algemian</script>
 			<script type="Zzzz" draft="unconfirmed">Ünbekäänd skraft</script>
 		</scripts>
 		<territories>
@@ -118,7 +545,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="AD" draft="unconfirmed">Andora</territory>
 			<territory type="AE" draft="unconfirmed">Ferianigt Araabisk Emiraaten</territory>
 			<territory type="AF" draft="unconfirmed">Afghaanistaan</territory>
-			<territory type="AG" draft="unconfirmed">Antiigua an Barubuda</territory>
+			<territory type="AG" draft="unconfirmed">Antiigua an Barbuuda</territory>
 			<territory type="AI" draft="unconfirmed">Anguilla</territory>
 			<territory type="AL" draft="unconfirmed">Albaanien</territory>
 			<territory type="AM" draft="unconfirmed">Armeenien</territory>
@@ -137,7 +564,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="BE" draft="unconfirmed">Belgien</territory>
 			<territory type="BF" draft="unconfirmed">Burkiina Faaso</territory>
 			<territory type="BG" draft="unconfirmed">Bulgaarien</territory>
-			<territory type="BH" draft="unconfirmed">Bahrain</territory>
+			<territory type="BH" draft="unconfirmed">Bachrain</territory>
 			<territory type="BI" draft="unconfirmed">Burundi</territory>
 			<territory type="BJ" draft="unconfirmed">Beniin</territory>
 			<territory type="BL" draft="unconfirmed">St. Barthélemy</territory>
@@ -203,7 +630,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="GB" draft="unconfirmed">Ferianigt Köningrik</territory>
 			<territory type="GD" draft="unconfirmed">Grenaada</territory>
 			<territory type="GE" draft="unconfirmed">Georgien</territory>
-			<territory type="GF" draft="unconfirmed">Fransöösk Guiana</territory>
+			<territory type="GF" draft="unconfirmed">Fransöösk Guayaana</territory>
 			<territory type="GG" draft="unconfirmed">Guernsey</territory>
 			<territory type="GH" draft="unconfirmed">Ghaana</territory>
 			<territory type="GI" draft="unconfirmed">Gibraltaar</territory>
@@ -217,7 +644,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="GT" draft="unconfirmed">Guatemaala</territory>
 			<territory type="GU" draft="unconfirmed">Guam</territory>
 			<territory type="GW" draft="unconfirmed">Guinea-Bissau</territory>
-			<territory type="GY" draft="unconfirmed">Guyana</territory>
+			<territory type="GY" draft="unconfirmed">Guyaana</territory>
 			<territory type="HK" draft="unconfirmed">Prowins Hongkong</territory>
 			<territory type="HK" alt="short" draft="unconfirmed">Hongkong</territory>
 			<territory type="HM" draft="unconfirmed">Heard an McDonald Eilunen</territory>
@@ -232,6 +659,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="IM" draft="unconfirmed">Eilun Man</territory>
 			<territory type="IN" draft="unconfirmed">Indien</territory>
 			<territory type="IO" draft="unconfirmed">Britisk Teritoorium uun a Indisk Oosean</territory>
+			<territory type="IO" alt="chagos" draft="unconfirmed">Chagos Eilunen</territory>
 			<territory type="IQ" draft="unconfirmed">Iraak</territory>
 			<territory type="IR" draft="unconfirmed">Iraan</territory>
 			<territory type="IS" draft="unconfirmed">Islun</territory>
@@ -265,7 +693,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="MA" draft="unconfirmed">Maroko</territory>
 			<territory type="MC" draft="unconfirmed">Monako</territory>
 			<territory type="MD" draft="unconfirmed">Moldaawien</territory>
-			<territory type="ME" draft="unconfirmed">Montenegro</territory>
+			<territory type="ME" draft="unconfirmed">Monteneegro</territory>
 			<territory type="MF" draft="unconfirmed">St. Martin</territory>
 			<territory type="MG" draft="unconfirmed">Madagaskar</territory>
 			<territory type="MH" draft="unconfirmed">Marshall Eilunen</territory>
@@ -357,8 +785,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="TM" draft="unconfirmed">Turkmeenistaan</territory>
 			<territory type="TN" draft="unconfirmed">Tuneesien</territory>
 			<territory type="TO" draft="unconfirmed">Tonga</territory>
-			<territory type="TR" draft="unconfirmed">Türkei</territory>
-			<territory type="TR" alt="variant" draft="unconfirmed">Türkiye</territory>
+			<territory type="TR" draft="unconfirmed">Türkiye</territory>
+			<territory type="TR" alt="variant" draft="unconfirmed">Türkei</territory>
 			<territory type="TT" draft="unconfirmed">Trinidad an Tobago</territory>
 			<territory type="TV" draft="unconfirmed">Tuwaalu</territory>
 			<territory type="TW" draft="unconfirmed">Taiwan</territory>
@@ -377,7 +805,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="VG" draft="unconfirmed">Britisk Jongfoomen Eilunen</territory>
 			<territory type="VI" draft="unconfirmed">Amerikoonsk Jongfoomen Eilunen</territory>
 			<territory type="VN" draft="unconfirmed">Wjetnam</territory>
-			<territory type="VU" draft="unconfirmed">Vanuatu</territory>
+			<territory type="VU" draft="unconfirmed">Wanuaatuu</territory>
 			<territory type="WF" draft="unconfirmed">Wallis an Futuna</territory>
 			<territory type="WS" draft="unconfirmed">Samoa</territory>
 			<territory type="XA" draft="unconfirmed">Pseudo-Accents</territory>
@@ -390,11 +818,87 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="ZW" draft="unconfirmed">Simbabwe</territory>
 			<territory type="ZZ" draft="unconfirmed">Ünbekäänd Regiuun</territory>
 		</territories>
+		<keys>
+			<key type="calendar" draft="unconfirmed">Kalender</key>
+			<key type="cf" draft="unconfirmed">Münt Formaat</key>
+			<key type="collation" draft="unconfirmed">Sortiaring</key>
+			<key type="currency" draft="unconfirmed">Münt</key>
+			<key type="hc" draft="unconfirmed">Stünjen Formaat (12 of 24)</key>
+			<key type="lb" draft="unconfirmed">Rä Ambreeg Stiil</key>
+			<key type="ms" draft="unconfirmed">Miat Süsteem</key>
+			<key type="numbers" draft="unconfirmed">Taalen</key>
+		</keys>
 		<types>
+			<type key="calendar" type="buddhist" draft="unconfirmed">Buddhistisk Kalender</type>
+			<type key="calendar" type="chinese" draft="unconfirmed">Schineesk Kalender</type>
+			<type key="calendar" type="coptic" draft="unconfirmed">Koptisk Kalender</type>
+			<type key="calendar" type="dangi" draft="unconfirmed">Dangi Kalender</type>
+			<type key="calendar" type="ethiopic" draft="unconfirmed">Etioopisk Kalender</type>
+			<type key="calendar" type="ethiopic-amete-alem" draft="unconfirmed">Etioopisk Amete Alem Kalender</type>
 			<type key="calendar" type="gregorian" draft="unconfirmed">Gregoriaans Kalender</type>
-			<type key="calendar" type="iso8601" draft="unconfirmed">ISO-8601 Kalendar</type>
+			<type key="calendar" type="hebrew" draft="unconfirmed">Hebreewsk Kalender</type>
+			<type key="calendar" type="islamic" draft="unconfirmed">Islaamisk Kalender</type>
+			<type key="calendar" type="islamic-civil" draft="unconfirmed">Islaamisk Bürgerlik Kalender</type>
+			<type key="calendar" type="islamic-umalqura" draft="unconfirmed">Islaamisk Umalkura Kalender</type>
+			<type key="calendar" type="iso8601" draft="unconfirmed">ISO-8601 Kalender</type>
+			<type key="calendar" type="japanese" draft="unconfirmed">Japoonsk Kalender</type>
+			<type key="calendar" type="persian" draft="unconfirmed">Persisk Kalender</type>
+			<type key="calendar" type="roc" draft="unconfirmed">Minguo Kalender</type>
+			<type key="cf" type="account" draft="unconfirmed">Konto Münt Formaat</type>
+			<type key="cf" type="standard" draft="unconfirmed">Standard Münt Formaat</type>
+			<type key="collation" type="ducet" draft="unconfirmed">Unicode Sortiaring</type>
+			<type key="collation" type="search" draft="unconfirmed">Normool Schüken</type>
 			<type key="collation" type="standard" draft="unconfirmed">Standard Sortiaring</type>
+			<type key="hc" type="h11" draft="unconfirmed">12 Stünj Süsteem (0–11)</type>
+			<type key="hc" type="h12" draft="unconfirmed">12 Stünj Süsteem (1–12)</type>
+			<type key="hc" type="h23" draft="unconfirmed">24 Stünj Süsteem (0–23)</type>
+			<type key="hc" type="h24" draft="unconfirmed">24 Stünj Süsteem (1–24)</type>
+			<type key="lb" type="loose" draft="unconfirmed">Luas Rä Ambreeg Stiil</type>
+			<type key="lb" type="normal" draft="unconfirmed">Normool Rä Ambreeg Stiil</type>
+			<type key="lb" type="strict" draft="unconfirmed">String Rä Ambreeg Stiil</type>
+			<type key="ms" type="metric" draft="unconfirmed">Meetrisk Süsteem</type>
+			<type key="ms" type="uksystem" draft="unconfirmed">UK Süsteem</type>
+			<type key="ms" type="ussystem" draft="unconfirmed">US Süsteem</type>
+			<type key="numbers" type="arab" draft="unconfirmed">Araabisk Taalen</type>
+			<type key="numbers" type="arabext" draft="unconfirmed">Ütjwidjet Araabisk taalen</type>
+			<type key="numbers" type="armn" draft="unconfirmed">Armeensk Taalen</type>
+			<type key="numbers" type="armnlow" draft="unconfirmed">Armeensk Letj Taalen</type>
+			<type key="numbers" type="beng" draft="unconfirmed">Bangla Taalen</type>
+			<type key="numbers" type="cakm" draft="unconfirmed">Chakma Taalen</type>
+			<type key="numbers" type="deva" draft="unconfirmed">Devanagari Taalen</type>
+			<type key="numbers" type="ethi" draft="unconfirmed">Etioopisk Taalen</type>
+			<type key="numbers" type="fullwide" draft="unconfirmed">Ütjwidjet Taalen</type>
+			<type key="numbers" type="geor" draft="unconfirmed">Georgisk Taalen</type>
+			<type key="numbers" type="grek" draft="unconfirmed">Greks Taalen</type>
+			<type key="numbers" type="greklow" draft="unconfirmed">Greks Letj Taalen</type>
+			<type key="numbers" type="gujr" draft="unconfirmed">Gujarati Taalen</type>
+			<type key="numbers" type="guru" draft="unconfirmed">Gurmukhi Taalen</type>
+			<type key="numbers" type="hanidec" draft="unconfirmed">Schineesk Deesimaal Taalen</type>
+			<type key="numbers" type="hans" draft="unconfirmed">Ianfach Schineesk Taalen</type>
+			<type key="numbers" type="hansfin" draft="unconfirmed">Ianfach Schineesk Finans Taalen</type>
+			<type key="numbers" type="hant" draft="unconfirmed">Ual Schineesk Taalen</type>
+			<type key="numbers" type="hantfin" draft="unconfirmed">Ual Schineesk Finans Taalen</type>
+			<type key="numbers" type="hebr" draft="unconfirmed">Hebreewsk Taalen</type>
+			<type key="numbers" type="java" draft="unconfirmed">Jawaans Taalen</type>
+			<type key="numbers" type="jpan" draft="unconfirmed">Japoonsk Taalen</type>
+			<type key="numbers" type="jpanfin" draft="unconfirmed">Japoonsk Finans Taalen</type>
+			<type key="numbers" type="khmr" draft="unconfirmed">Khmer Taalen</type>
+			<type key="numbers" type="knda" draft="unconfirmed">Kannada Taalen</type>
+			<type key="numbers" type="laoo" draft="unconfirmed">Laotisk Taalen</type>
 			<type key="numbers" type="latn" draft="unconfirmed">Europeesk Taalen</type>
+			<type key="numbers" type="mlym" draft="unconfirmed">Malayalam Taalen</type>
+			<type key="numbers" type="mtei" draft="unconfirmed">Meetei Mayek Taalen</type>
+			<type key="numbers" type="mymr" draft="unconfirmed">Mjanmaar Taalen</type>
+			<type key="numbers" type="olck" draft="unconfirmed">Ol Chiki Taalen</type>
+			<type key="numbers" type="orya" draft="unconfirmed">Oriya Taalen</type>
+			<type key="numbers" type="roman" draft="unconfirmed">Röömsk Taalen</type>
+			<type key="numbers" type="romanlow" draft="unconfirmed">Röömsk Letj Taalen</type>
+			<type key="numbers" type="taml" draft="unconfirmed">Ual Tamil Taalen</type>
+			<type key="numbers" type="tamldec" draft="unconfirmed">Tamil Taalen</type>
+			<type key="numbers" type="telu" draft="unconfirmed">Telugu Taalen</type>
+			<type key="numbers" type="thai" draft="unconfirmed">Thai Taalen</type>
+			<type key="numbers" type="tibt" draft="unconfirmed">Tibetaans Taalen</type>
+			<type key="numbers" type="vaii" draft="unconfirmed">Vai Taalen</type>
 		</types>
 		<measurementSystemNames>
 			<measurementSystemName type="metric" draft="unconfirmed">Meetrisk</measurementSystemName>
@@ -408,19 +912,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[a å ä ā b c d đ e ē f g h i j k l m n o ö p r s t u ü w]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[á à ă â ã æ ç é è ĕ ê ë ğ í ì ĭ î ï İ ī ı ñ ó ò ŏ ô ø ō œ q ş ß ú ù ŭ û ū v x y ÿ z]</exemplarCharacters>
-		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ‚ &quot; “ „ « » ( ) \[ \] \{ \} § @ * / \&amp; #]</exemplarCharacters>
-		<ellipsis type="medial" draft="unconfirmed">{0}…{1}</ellipsis>
-		<moreInformation draft="unconfirmed">?</moreInformation>
+		<exemplarCharacters>[aåäā b c dđ eē f g h i j k l m n oö p r s t uü w]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[áàăâã æ ç éèĕêë ğ íìĭîïİī ı ñ óòŏôøō œ q ş ß úùŭûū v x yÿ z]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … '‘‚ &quot;“„ « » ( ) \[ \] \{ \} § @ * / \&amp; #]</exemplarCharacters>
 	</characters>
-	<delimiters>
-		<quotationStart draft="unconfirmed">“</quotationStart>
-		<quotationEnd draft="unconfirmed">”</quotationEnd>
-		<alternateQuotationStart draft="unconfirmed">‘</alternateQuotationStart>
-		<alternateQuotationEnd draft="unconfirmed">’</alternateQuotationEnd>
-	</delimiters>
 	<dates>
 		<calendars>
 			<calendar type="generic">
@@ -467,15 +962,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern draft="unconfirmed">{1}, {0}</pattern>
 						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
-							<pattern draft="unconfirmed">{1}, {0}</pattern>
-						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
-							<pattern draft="unconfirmed">{1}, {0}</pattern>
-						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
 							<pattern draft="unconfirmed">{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -503,20 +992,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="11" draft="unconfirmed">Nof</month>
 							<month type="12" draft="unconfirmed">Det</month>
 						</monthWidth>
-						<monthWidth type="narrow">
-							<month type="1" draft="unconfirmed">J</month>
-							<month type="2" draft="unconfirmed">F</month>
-							<month type="3" draft="unconfirmed">M</month>
-							<month type="4" draft="unconfirmed">A</month>
-							<month type="5" draft="unconfirmed">M</month>
-							<month type="6" draft="unconfirmed">J</month>
-							<month type="7" draft="unconfirmed">J</month>
-							<month type="8" draft="unconfirmed">A</month>
-							<month type="9" draft="unconfirmed">S</month>
-							<month type="10" draft="unconfirmed">O</month>
-							<month type="11" draft="unconfirmed">N</month>
-							<month type="12" draft="unconfirmed">D</month>
-						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1" draft="unconfirmed">Janewoore</month>
 							<month type="2" draft="unconfirmed">Febrewoore</month>
@@ -533,20 +1008,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
-						<monthWidth type="abbreviated">
-							<month type="1" draft="unconfirmed">Jan</month>
-							<month type="2" draft="unconfirmed">Feb</month>
-							<month type="3" draft="unconfirmed">Mar</month>
-							<month type="4" draft="unconfirmed">Apr</month>
-							<month type="5" draft="unconfirmed">Mei</month>
-							<month type="6" draft="unconfirmed">Jün</month>
-							<month type="7" draft="unconfirmed">Jül</month>
-							<month type="8" draft="unconfirmed">Aug</month>
-							<month type="9" draft="unconfirmed">Sep</month>
-							<month type="10" draft="unconfirmed">Okt</month>
-							<month type="11" draft="unconfirmed">Nof</month>
-							<month type="12" draft="unconfirmed">Det</month>
-						</monthWidth>
 						<monthWidth type="narrow">
 							<month type="1" draft="unconfirmed">J</month>
 							<month type="2" draft="unconfirmed">F</month>
@@ -561,20 +1022,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="11" draft="unconfirmed">N</month>
 							<month type="12" draft="unconfirmed">D</month>
 						</monthWidth>
-						<monthWidth type="wide">
-							<month type="1" draft="unconfirmed">Janewoore</month>
-							<month type="2" draft="unconfirmed">Febrewoore</month>
-							<month type="3" draft="unconfirmed">Maarts</month>
-							<month type="4" draft="unconfirmed">April</month>
-							<month type="5" draft="unconfirmed">Mei</month>
-							<month type="6" draft="unconfirmed">Jüüne</month>
-							<month type="7" draft="unconfirmed">Jüüle</month>
-							<month type="8" draft="unconfirmed">August</month>
-							<month type="9" draft="unconfirmed">September</month>
-							<month type="10" draft="unconfirmed">Oktuuber</month>
-							<month type="11" draft="unconfirmed">Nofember</month>
-							<month type="12" draft="unconfirmed">Detsember</month>
-						</monthWidth>
 					</monthContext>
 				</months>
 				<days>
@@ -587,53 +1034,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="thu" draft="unconfirmed">Tür</day>
 							<day type="fri" draft="unconfirmed">Fre</day>
 							<day type="sat" draft="unconfirmed">San</day>
-						</dayWidth>
-						<dayWidth type="narrow">
-							<day type="sun" draft="unconfirmed">S</day>
-							<day type="mon" draft="unconfirmed">M</day>
-							<day type="tue" draft="unconfirmed">T</day>
-							<day type="wed" draft="unconfirmed">W</day>
-							<day type="thu" draft="unconfirmed">T</day>
-							<day type="fri" draft="unconfirmed">F</day>
-							<day type="sat" draft="unconfirmed">S</day>
-						</dayWidth>
-						<dayWidth type="short">
-							<day type="sun" draft="unconfirmed">Sö</day>
-							<day type="mon" draft="unconfirmed">Mu</day>
-							<day type="tue" draft="unconfirmed">Te</day>
-							<day type="wed" draft="unconfirmed">We</day>
-							<day type="thu" draft="unconfirmed">Tü</day>
-							<day type="fri" draft="unconfirmed">Fr</day>
-							<day type="sat" draft="unconfirmed">Sa</day>
-						</dayWidth>
-						<dayWidth type="wide">
-							<day type="sun" draft="unconfirmed">Söndai</day>
-							<day type="mon" draft="unconfirmed">Mundai</day>
-							<day type="tue" draft="unconfirmed">Teisdai</day>
-							<day type="wed" draft="unconfirmed">Weedensdai</day>
-							<day type="thu" draft="unconfirmed">Tüürsdai</day>
-							<day type="fri" draft="unconfirmed">Freidai</day>
-							<day type="sat" draft="unconfirmed">Saninj</day>
-						</dayWidth>
-					</dayContext>
-					<dayContext type="stand-alone">
-						<dayWidth type="abbreviated">
-							<day type="sun" draft="unconfirmed">Sön</day>
-							<day type="mon" draft="unconfirmed">Mun</day>
-							<day type="tue" draft="unconfirmed">Tei</day>
-							<day type="wed" draft="unconfirmed">Wed</day>
-							<day type="thu" draft="unconfirmed">Tür</day>
-							<day type="fri" draft="unconfirmed">Fre</day>
-							<day type="sat" draft="unconfirmed">San</day>
-						</dayWidth>
-						<dayWidth type="narrow">
-							<day type="sun" draft="unconfirmed">S</day>
-							<day type="mon" draft="unconfirmed">M</day>
-							<day type="tue" draft="unconfirmed">T</day>
-							<day type="wed" draft="unconfirmed">W</day>
-							<day type="thu" draft="unconfirmed">T</day>
-							<day type="fri" draft="unconfirmed">F</day>
-							<day type="sat" draft="unconfirmed">S</day>
 						</dayWidth>
 						<dayWidth type="short">
 							<day type="sun" draft="unconfirmed">Sö</day>
@@ -657,18 +1057,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</days>
 				<quarters>
 					<quarterContext type="format">
-						<quarterWidth type="abbreviated">
-							<quarter type="1" draft="unconfirmed">iarst kwartaal</quarter>
-							<quarter type="2" draft="unconfirmed">naist kwartaal</quarter>
-							<quarter type="3" draft="unconfirmed">traad kwartaal</quarter>
-							<quarter type="4" draft="unconfirmed">fjuard kwartaal</quarter>
-						</quarterWidth>
-						<quarterWidth type="narrow">
-							<quarter type="1" draft="unconfirmed">I</quarter>
-							<quarter type="2" draft="unconfirmed">II</quarter>
-							<quarter type="3" draft="unconfirmed">III</quarter>
-							<quarter type="4" draft="unconfirmed">IV</quarter>
-						</quarterWidth>
 						<quarterWidth type="wide">
 							<quarter type="1" draft="unconfirmed">iarst kwartaal</quarter>
 							<quarter type="2" draft="unconfirmed">naist kwartaal</quarter>
@@ -677,23 +1065,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</quarterWidth>
 					</quarterContext>
 					<quarterContext type="stand-alone">
-						<quarterWidth type="abbreviated">
-							<quarter type="1" draft="unconfirmed">iarst kwartaal</quarter>
-							<quarter type="2" draft="unconfirmed">naist kwartaal</quarter>
-							<quarter type="3" draft="unconfirmed">traad kwartaal</quarter>
-							<quarter type="4" draft="unconfirmed">fjuard kwartaal</quarter>
-						</quarterWidth>
 						<quarterWidth type="narrow">
 							<quarter type="1" draft="unconfirmed">I</quarter>
 							<quarter type="2" draft="unconfirmed">II</quarter>
 							<quarter type="3" draft="unconfirmed">III</quarter>
 							<quarter type="4" draft="unconfirmed">IV</quarter>
-						</quarterWidth>
-						<quarterWidth type="wide">
-							<quarter type="1" draft="unconfirmed">iarst kwartaal</quarter>
-							<quarter type="2" draft="unconfirmed">naist kwartaal</quarter>
-							<quarter type="3" draft="unconfirmed">traad kwartaal</quarter>
-							<quarter type="4" draft="unconfirmed">fjuard kwartaal</quarter>
 						</quarterWidth>
 					</quarterContext>
 				</quarters>
@@ -708,15 +1084,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<dayPeriod type="pm" draft="unconfirmed">e</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
-							<dayPeriod type="am" draft="unconfirmed">de iarmade</dayPeriod>
-							<dayPeriod type="pm" draft="unconfirmed">de eftermade</dayPeriod>
+							<dayPeriod type="am" draft="unconfirmed">iarmade</dayPeriod>
+							<dayPeriod type="pm" draft="unconfirmed">eftermade</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 					<dayPeriodContext type="stand-alone">
-						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="am" draft="unconfirmed">i/m</dayPeriod>
-							<dayPeriod type="pm" draft="unconfirmed">e/m</dayPeriod>
-						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
 							<dayPeriod type="am" draft="unconfirmed">i</dayPeriod>
 							<dayPeriod type="pm" draft="unconfirmed">e</dayPeriod>
@@ -731,8 +1103,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<eraNames>
 						<era type="0" draft="unconfirmed">Föör Krast</era>
 						<era type="0" alt="variant" draft="unconfirmed">Föör üüs tidjreegning</era>
-						<era type="1" draft="unconfirmed">AD</era>
-						<era type="1" alt="variant" draft="unconfirmed">AD</era>
 					</eraNames>
 					<eraAbbr>
 						<era type="0" draft="unconfirmed">f.Kr.</era>
@@ -804,24 +1174,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern draft="unconfirmed">{1}, {0}</pattern>
 						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
-							<pattern draft="unconfirmed">{1}, {0}</pattern>
-						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
 							<pattern draft="unconfirmed">{1}, {0}</pattern>
 						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
-							<pattern draft="unconfirmed">{1}, {0}</pattern>
-						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
-						<dateFormatItem id="Bh" draft="unconfirmed">h B</dateFormatItem>
-						<dateFormatItem id="Bhm" draft="unconfirmed">h:mm B</dateFormatItem>
-						<dateFormatItem id="Bhms" draft="unconfirmed">h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="d" draft="unconfirmed">d.</dateFormatItem>
-						<dateFormatItem id="E" draft="unconfirmed">ccc</dateFormatItem>
 						<dateFormatItem id="EBhm" draft="unconfirmed">E, h:mm B</dateFormatItem>
 						<dateFormatItem id="EBhms" draft="unconfirmed">E, h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed" draft="unconfirmed">E, d.</dateFormatItem>
@@ -829,30 +1189,22 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="EHm" draft="unconfirmed">E, HH:mm</dateFormatItem>
 						<dateFormatItem id="Ehms" draft="unconfirmed">E, h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="EHms" draft="unconfirmed">E, HH:mm:ss</dateFormatItem>
-						<dateFormatItem id="Gy" draft="unconfirmed">G y</dateFormatItem>
 						<dateFormatItem id="GyMd" draft="unconfirmed">G dd/MM/y</dateFormatItem>
 						<dateFormatItem id="GyMMM" draft="unconfirmed">G MMM y</dateFormatItem>
 						<dateFormatItem id="GyMMMd" draft="unconfirmed">G d. MMM y</dateFormatItem>
 						<dateFormatItem id="GyMMMEd" draft="unconfirmed">G E, d. MMM y</dateFormatItem>
 						<dateFormatItem id="h" draft="unconfirmed">h a</dateFormatItem>
-						<dateFormatItem id="H" draft="unconfirmed">HH</dateFormatItem>
 						<dateFormatItem id="hm" draft="unconfirmed">h:mm a</dateFormatItem>
-						<dateFormatItem id="Hm" draft="unconfirmed">HH:mm</dateFormatItem>
 						<dateFormatItem id="hms" draft="unconfirmed">h:mm:ss a</dateFormatItem>
-						<dateFormatItem id="Hms" draft="unconfirmed">HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="hmsv" draft="unconfirmed">h:mm:ss a v</dateFormatItem>
-						<dateFormatItem id="Hmsv" draft="unconfirmed">HH:mm:ss v</dateFormatItem>
 						<dateFormatItem id="hmv" draft="unconfirmed">h:mm a v</dateFormatItem>
-						<dateFormatItem id="Hmv" draft="unconfirmed">HH:mm v</dateFormatItem>
 						<dateFormatItem id="M" draft="unconfirmed">LL</dateFormatItem>
 						<dateFormatItem id="Md" draft="unconfirmed">dd/MM</dateFormatItem>
 						<dateFormatItem id="MEd" draft="unconfirmed">E dd/MM</dateFormatItem>
-						<dateFormatItem id="MMM" draft="unconfirmed">LLL</dateFormatItem>
 						<dateFormatItem id="MMMd" draft="unconfirmed">d. MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd" draft="unconfirmed">E, d. MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd" draft="unconfirmed">d. MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="other" draft="unconfirmed">'weg' W 'faan' MMMM</dateFormatItem>
-						<dateFormatItem id="ms" draft="unconfirmed">mm:ss</dateFormatItem>
 						<dateFormatItem id="yM" draft="unconfirmed">MM/y</dateFormatItem>
 						<dateFormatItem id="yMd" draft="unconfirmed">dd/MM/y</dateFormatItem>
 						<dateFormatItem id="yMEd" draft="unconfirmed">E, dd/MM/y</dateFormatItem>
@@ -864,11 +1216,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yQQQQ" draft="unconfirmed">QQQ y</dateFormatItem>
 						<dateFormatItem id="yw" count="other" draft="unconfirmed">'weg' w 'faan' Y</dateFormatItem>
 					</availableFormats>
-					<appendItems>
-						<appendItem request="Timezone" draft="unconfirmed">{0} {1}</appendItem>
-					</appendItems>
 					<intervalFormats>
-						<intervalFormatFallback draft="unconfirmed">{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d" draft="unconfirmed">d. – d.</greatestDifference>
 						</intervalFormatItem>
@@ -1012,21 +1360,39 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="-1" draft="unconfirmed">letst juar</relative>
 				<relative type="0" draft="unconfirmed">das juar</relative>
 				<relative type="1" draft="unconfirmed">naist juar</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">efter {0} juar</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">föör {0} juar</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="year-short">
 				<displayName draft="unconfirmed">j.</displayName>
 				<relative type="-1" draft="unconfirmed">letst j.</relative>
 				<relative type="0" draft="unconfirmed">das j.</relative>
 				<relative type="1" draft="unconfirmed">naist j.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">uun {0} j.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">föör {0} j.</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="year-narrow">
 				<displayName draft="unconfirmed">j</displayName>
-				<relative type="-1" draft="unconfirmed">letst j</relative>
-				<relative type="0" draft="unconfirmed">das j</relative>
-				<relative type="1" draft="unconfirmed">naist j</relative>
 			</field>
 			<field type="quarter">
 				<displayName draft="unconfirmed">kwartjuar</displayName>
+				<relative type="-1" draft="unconfirmed">iarst kwartaal</relative>
+				<relative type="0" draft="unconfirmed">das kwartaal</relative>
+				<relative type="1" draft="unconfirmed">naist kwartaal</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">uun {0} kwartaalen</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">föör {0} kwartaalen</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="quarter-short">
 				<displayName draft="unconfirmed">kwrt.</displayName>
@@ -1039,6 +1405,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="-1" draft="unconfirmed">letst muun</relative>
 				<relative type="0" draft="unconfirmed">das muun</relative>
 				<relative type="1" draft="unconfirmed">naist muun</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">efter {0} muuner</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">föör {0} muuner</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="month-short">
 				<displayName draft="unconfirmed">m.</displayName>
@@ -1064,46 +1436,147 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="-1" draft="unconfirmed">letst w.</relative>
 				<relative type="0" draft="unconfirmed">das w.</relative>
 				<relative type="1" draft="unconfirmed">naist w.</relative>
-				<relativePeriod draft="unconfirmed">at weg faan {0}</relativePeriod>
 			</field>
 			<field type="week-narrow">
 				<displayName draft="unconfirmed">w</displayName>
-				<relative type="-1" draft="unconfirmed">letst w</relative>
-				<relative type="0" draft="unconfirmed">das w</relative>
-				<relative type="1" draft="unconfirmed">naist w</relative>
-				<relativePeriod draft="unconfirmed">at weg faan {0}</relativePeriod>
+			</field>
+			<field type="weekOfMonth">
+				<displayName draft="unconfirmed">weg faan muun</displayName>
+			</field>
+			<field type="weekOfMonth-short">
+				<displayName draft="unconfirmed">w. faan m.</displayName>
 			</field>
 			<field type="day">
 				<displayName draft="unconfirmed">dai</displayName>
 				<relative type="-1" draft="unconfirmed">jister</relative>
 				<relative type="0" draft="unconfirmed">daaling</relative>
 				<relative type="1" draft="unconfirmed">maaren</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">uun {0} daar</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">föör {0} daar</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="day-short">
 				<displayName draft="unconfirmed">d.</displayName>
-				<relative type="-1" draft="unconfirmed">jister</relative>
-				<relative type="0" draft="unconfirmed">daaling</relative>
-				<relative type="1" draft="unconfirmed">maaren</relative>
 			</field>
 			<field type="day-narrow">
 				<displayName draft="unconfirmed">d</displayName>
-				<relative type="-1" draft="unconfirmed">jister</relative>
-				<relative type="0" draft="unconfirmed">daaling</relative>
-				<relative type="1" draft="unconfirmed">maaren</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">uun {0}d</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">föör {0}d</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="dayOfYear">
+				<displayName draft="unconfirmed">dai faan juar</displayName>
+			</field>
+			<field type="dayOfYear-short">
+				<displayName draft="unconfirmed">dai faan j.</displayName>
 			</field>
 			<field type="weekday">
 				<displayName draft="unconfirmed">wegdai</displayName>
+			</field>
+			<field type="weekdayOfMonth-narrow">
+				<displayName draft="unconfirmed">wegd. faan m.</displayName>
 			</field>
 			<field type="sun">
 				<relative type="-1" draft="unconfirmed">letst Söndai</relative>
 				<relative type="0" draft="unconfirmed">das Söndai</relative>
 				<relative type="1" draft="unconfirmed">naist Söndai</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">efter {0} Söndaar</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">föör {0} Söndaar</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="mon">
+				<relative type="-1" draft="unconfirmed">letst Mundai</relative>
+				<relative type="0" draft="unconfirmed">das Mundai</relative>
+				<relative type="1" draft="unconfirmed">naist Mundai</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">efter {0} Mundaar</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">föör {0} Mundaar</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="tue">
+				<relative type="-1" draft="unconfirmed">letst Teisdai</relative>
+				<relative type="0" draft="unconfirmed">das Teisdai</relative>
+				<relative type="1" draft="unconfirmed">naist Teisdai</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">efter {0} Teisdaar</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">föör {0} Teisdaar</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="wed">
+				<relative type="-1" draft="unconfirmed">letst Weedensdai</relative>
+				<relative type="0" draft="unconfirmed">das Weedensdai</relative>
+				<relative type="1" draft="unconfirmed">naist Weedensdai</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">efter {0} Weedensdaar</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">föör {0} Weedensdaar</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="thu">
+				<relative type="-1" draft="unconfirmed">letst Tüürsdai</relative>
+				<relative type="0" draft="unconfirmed">das Tüürsdai</relative>
+				<relative type="1" draft="unconfirmed">naist Tüürsdai</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">efter {0} Tüürsdaar</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">föör {0} Tüürsdaar</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="fri">
+				<relative type="-1" draft="unconfirmed">letst Freidai</relative>
+				<relative type="0" draft="unconfirmed">das Freidai</relative>
+				<relative type="1" draft="unconfirmed">naist Freidai</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">efter {0} Freidaar</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">föör {0} Freidaar</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sat">
+				<relative type="-1" draft="unconfirmed">letst Saninj</relative>
+				<relative type="0" draft="unconfirmed">das Saninj</relative>
+				<relative type="1" draft="unconfirmed">naist Saninj</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">efter {0} Saninjer</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">föör {0} Saninjer</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="dayperiod-short">
+				<displayName draft="unconfirmed">iarm./efterm.</displayName>
 			</field>
 			<field type="dayperiod">
 				<displayName draft="unconfirmed">iarmade/eftermade</displayName>
 			</field>
+			<field type="dayperiod-narrow">
+				<displayName draft="unconfirmed">IM/EM</displayName>
+			</field>
 			<field type="hour">
 				<displayName draft="unconfirmed">stünj</displayName>
+				<relative type="0" draft="unconfirmed">das stünj</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">efter {0} stünj</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">föör {0} stünj</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="hour-short">
 				<displayName draft="unconfirmed">s.</displayName>
@@ -1113,6 +1586,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="minute">
 				<displayName draft="unconfirmed">minüüt</displayName>
+				<relative type="0" draft="unconfirmed">das minüüt</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">efter {0} minüüten</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">föör {0} minüüten</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="minute-short">
 				<displayName draft="unconfirmed">min.</displayName>
@@ -1122,6 +1602,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="second">
 				<displayName draft="unconfirmed">sekund</displayName>
+				<relative type="0" draft="unconfirmed">nü</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">efter {0} sekunden</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">föör {0} sekunden</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="second-short">
 				<displayName draft="unconfirmed">sek.</displayName>
@@ -1132,15 +1619,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="zone">
 				<displayName draft="unconfirmed">tidjsoon</displayName>
 			</field>
+			<field type="zone-short">
+				<displayName draft="unconfirmed">soon</displayName>
+			</field>
 		</fields>
 		<timeZoneNames>
-			<hourFormat draft="unconfirmed">+HH:mm;-HH:mm</hourFormat>
-			<gmtFormat draft="unconfirmed">GMT{0}</gmtFormat>
-			<gmtZeroFormat draft="unconfirmed">GMT</gmtZeroFormat>
 			<regionFormat draft="unconfirmed">{0} Tidj</regionFormat>
 			<regionFormat type="daylight" draft="unconfirmed">{0} Somertidj</regionFormat>
 			<regionFormat type="standard" draft="unconfirmed">{0} Standard Tidj</regionFormat>
-			<fallbackFormat draft="unconfirmed">{1} ({0})</fallbackFormat>
 			<zone type="Etc/UTC">
 				<long>
 					<standard draft="unconfirmed">Ufstemet Wäälttidj</standard>
@@ -1414,14 +1900,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Asia/Taipei">
 				<exemplarCity draft="unconfirmed">Taipee</exemplarCity>
 			</zone>
-			<zone type="Europe/Uzhgorod">
-				<exemplarCity draft="unconfirmed">Uschhorod</exemplarCity>
-			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity draft="unconfirmed">Kiew</exemplarCity>
-			</zone>
-			<zone type="Europe/Zaporozhye">
-				<exemplarCity draft="unconfirmed">Saporischja</exemplarCity>
 			</zone>
 			<zone type="America/North_Dakota/Beulah">
 				<exemplarCity draft="unconfirmed">Beulah, Nuurd Dakota</exemplarCity>
@@ -1947,11 +2427,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight draft="unconfirmed">Lord Howe Somertidj</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard draft="unconfirmed">Macquarie Eilun Tidj</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic draft="unconfirmed">Magadan Tidj</generic>
@@ -1989,13 +2464,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<metazone type="Mawson">
 				<long>
 					<standard draft="unconfirmed">Mawson Tidj</standard>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic draft="unconfirmed">Nuurdwaast Meksiko Tidj</generic>
-					<standard draft="unconfirmed">Nuurdwaast Meksiko Standard Tidj</standard>
-					<daylight draft="unconfirmed">Nuurdwaast Meksiko Somertidj</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">
@@ -2333,23 +2801,31 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<symbols numberSystem="latn">
 			<decimal draft="unconfirmed">,</decimal>
 			<group draft="unconfirmed">.</group>
-			<percentSign draft="unconfirmed">%</percentSign>
-			<plusSign draft="unconfirmed">+</plusSign>
-			<minusSign draft="unconfirmed">-</minusSign>
-			<approximatelySign draft="unconfirmed">~</approximatelySign>
-			<exponential draft="unconfirmed">E</exponential>
-			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
-			<perMille draft="unconfirmed">‰</perMille>
-			<infinity draft="unconfirmed">∞</infinity>
 			<nan draft="unconfirmed">nian taal</nan>
 		</symbols>
+		<decimalFormats numberSystem="latn">
+			<decimalFormatLength type="long">
+				<decimalFormat>
+					<pattern type="1000000" count="other" draft="unconfirmed">0M</pattern>
+					<pattern type="10000000" count="other" draft="unconfirmed">00 miljoon</pattern>
+					<pattern type="100000000" count="other" draft="unconfirmed">000 miljoon</pattern>
+					<pattern type="1000000000" count="other" draft="unconfirmed">0G</pattern>
+					<pattern type="10000000000" count="other" draft="unconfirmed">00G</pattern>
+					<pattern type="100000000000" count="other" draft="unconfirmed">000 miljaard</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
 		<currencyFormats numberSystem="latn">
-			<currencyFormatLength>
-				<currencyFormat type="accounting">
-					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
-					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+			<currencyFormatLength type="short">
+				<currencyFormat type="standard">
+					<pattern type="10000" count="other" draft="unconfirmed">¤00K</pattern>
+					<pattern type="100000" count="other" draft="unconfirmed">¤000K</pattern>
+					<pattern type="1000000" count="other" draft="unconfirmed">¤0M</pattern>
+					<pattern type="10000000" count="other" draft="unconfirmed">¤00M</pattern>
+					<pattern type="100000000" count="other" draft="unconfirmed">¤000M</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
 			<currency type="AED">
@@ -2362,7 +2838,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="ALL">
 				<displayName draft="unconfirmed">Albaansk Lek</displayName>
-				<displayName count="other" draft="unconfirmed">Albaansk Lek</displayName>
 			</currency>
 			<currency type="AMD">
 				<displayName draft="unconfirmed">Armeensk Dram</displayName>
@@ -2370,13 +2845,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="ANG">
 				<displayName draft="unconfirmed">Neederluns Antilen Gulden</displayName>
-				<displayName count="other" draft="unconfirmed">Neederluns Antilen Gulden</displayName>
 			</currency>
 			<currency type="AOA">
 				<displayName draft="unconfirmed">Angolaans Kwanza</displayName>
 				<displayName count="other" draft="unconfirmed">Angolaans Kwanzas</displayName>
-				<symbol draft="unconfirmed">AOA</symbol>
-				<symbol alt="narrow" draft="unconfirmed">Kz</symbol>
 			</currency>
 			<currency type="ARS">
 				<displayName draft="unconfirmed">Argentiinsk Peeso</displayName>
@@ -2388,7 +2860,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="AWG">
 				<displayName draft="unconfirmed">Aruuba Florin</displayName>
-				<displayName count="other" draft="unconfirmed">Aruuba Florin</displayName>
 			</currency>
 			<currency type="AZN">
 				<displayName draft="unconfirmed">Aserbaidschaans Manat</displayName>
@@ -2396,7 +2867,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="BAM">
 				<displayName draft="unconfirmed">Bosnisk-Hertsegowiinsk Waksel Mark</displayName>
-				<displayName count="other" draft="unconfirmed">Bosnisk-Hertsegowiinsk Waksel Mark</displayName>
 			</currency>
 			<currency type="BBD">
 				<displayName draft="unconfirmed">Barbaados Dooler</displayName>
@@ -2448,7 +2918,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="BYN">
 				<displayName draft="unconfirmed">Witjrüsk Ruubel</displayName>
-				<displayName count="other" draft="unconfirmed">Witjrüsk Ruubel</displayName>
 			</currency>
 			<currency type="BZD">
 				<displayName draft="unconfirmed">Belize Dooler</displayName>
@@ -2461,11 +2930,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="CDF">
 				<displayName draft="unconfirmed">Kongoleesk Franc</displayName>
 				<displayName count="other" draft="unconfirmed">Kongoleesk Francs</displayName>
-				<symbol draft="unconfirmed">CDF</symbol>
 			</currency>
 			<currency type="CHF">
 				<displayName draft="unconfirmed">Sweitser Franken</displayName>
-				<displayName count="other" draft="unconfirmed">Sweitser Franken</displayName>
 			</currency>
 			<currency type="CLP">
 				<displayName draft="unconfirmed">Chileens Peeso</displayName>
@@ -2473,11 +2940,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="CNH">
 				<displayName draft="unconfirmed">Schineesk Bütjluns Yuan</displayName>
-				<displayName count="other" draft="unconfirmed">Schineesk Bütjluns Yuan</displayName>
 			</currency>
 			<currency type="CNY">
 				<displayName draft="unconfirmed">Schineesk Yuan</displayName>
-				<displayName count="other" draft="unconfirmed">Schineesk Yuan</displayName>
 			</currency>
 			<currency type="COP">
 				<displayName draft="unconfirmed">Kolumbiaans Peeso</displayName>
@@ -2521,7 +2986,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="EGP">
 				<displayName draft="unconfirmed">Egyptisk Pünj</displayName>
-				<displayName count="other" draft="unconfirmed">Egyptisk Pünj</displayName>
 			</currency>
 			<currency type="ERN">
 				<displayName draft="unconfirmed">Eritreesk Nakfa</displayName>
@@ -2534,7 +2998,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="EUR">
 				<displayName draft="unconfirmed">Euro</displayName>
 				<displayName count="other" draft="unconfirmed">Euros</displayName>
-				<symbol>€</symbol>
 			</currency>
 			<currency type="FJD">
 				<displayName draft="unconfirmed">Fidschi Dooler</displayName>
@@ -2542,11 +3005,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="FKP">
 				<displayName draft="unconfirmed">Falklun Eilunen Pünj</displayName>
-				<displayName count="other" draft="unconfirmed">Falklun Eilunen Pünj</displayName>
 			</currency>
 			<currency type="GBP">
 				<displayName draft="unconfirmed">Britisk Pünj</displayName>
-				<displayName count="other" draft="unconfirmed">Britisk Pünj</displayName>
 			</currency>
 			<currency type="GEL">
 				<displayName draft="unconfirmed">Georgisk Lari</displayName>
@@ -2558,7 +3019,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="GIP">
 				<displayName draft="unconfirmed">Gibraltaar Pünj</displayName>
-				<displayName count="other" draft="unconfirmed">Gibraltaar Pünj</displayName>
 			</currency>
 			<currency type="GMD">
 				<displayName draft="unconfirmed">Gambisk Delasi</displayName>
@@ -2632,7 +3092,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="JPY">
 				<displayName draft="unconfirmed">Japoonsk Yen</displayName>
-				<displayName count="other" draft="unconfirmed">Japoonsk Yen</displayName>
 			</currency>
 			<currency type="KES">
 				<displayName draft="unconfirmed">Keniaans Skalang</displayName>
@@ -2652,11 +3111,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="KPW">
 				<displayName draft="unconfirmed">Nuurdkoreaans Won</displayName>
-				<displayName count="other" draft="unconfirmed">Nuurdkoreaans Won</displayName>
 			</currency>
 			<currency type="KRW">
 				<displayName draft="unconfirmed">Süüdkoreaans Won</displayName>
-				<displayName count="other" draft="unconfirmed">Süüdkoreaans Won</displayName>
 				<symbol draft="unconfirmed">KRW</symbol>
 			</currency>
 			<currency type="KWD">
@@ -2677,7 +3134,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="LBP">
 				<displayName draft="unconfirmed">Libaneesk Pünj</displayName>
-				<displayName count="other" draft="unconfirmed">Libaneesk Pünj</displayName>
 			</currency>
 			<currency type="LKR">
 				<displayName draft="unconfirmed">Sri Lankas Rupie</displayName>
@@ -2789,7 +3245,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="PGK">
 				<displayName draft="unconfirmed">Papua Neiguineesk Kina</displayName>
-				<displayName count="other" draft="unconfirmed">Papua Neiguineesk Kina</displayName>
 			</currency>
 			<currency type="PHP">
 				<displayName draft="unconfirmed">Filipiinsk Peeso</displayName>
@@ -2802,7 +3257,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="PLN">
 				<displayName draft="unconfirmed">Poolsk Sloty</displayName>
-				<displayName count="other" draft="unconfirmed">Poolsk Zlotys</displayName>
+				<displayName count="other" draft="unconfirmed">Poolsk Slotys</displayName>
 			</currency>
 			<currency type="PYG">
 				<displayName draft="unconfirmed">Paraguayaans Guarani</displayName>
@@ -2822,7 +3277,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="RUB">
 				<displayName draft="unconfirmed">Rüsk Ruubel</displayName>
-				<displayName count="other" draft="unconfirmed">Rüsk Ruubel</displayName>
 			</currency>
 			<currency type="RWF">
 				<displayName draft="unconfirmed">Ruanda Franc</displayName>
@@ -2842,7 +3296,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="SDG">
 				<displayName draft="unconfirmed">Sudaneesk Pünj</displayName>
-				<displayName count="other" draft="unconfirmed">Sudaneesk Pünj</displayName>
 			</currency>
 			<currency type="SEK">
 				<displayName draft="unconfirmed">Sweedsk Krüün</displayName>
@@ -2854,11 +3307,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="SHP">
 				<displayName draft="unconfirmed">St. Helena Pünj</displayName>
-				<displayName count="other" draft="unconfirmed">St. Helena Pünj</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName draft="unconfirmed">Sierra Leones Leone</displayName>
 				<displayName count="other" draft="unconfirmed">Sierra Leones Leones</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName draft="unconfirmed">Sierra Leones Leone (1964—2022)</displayName>
+				<displayName count="other" draft="unconfirmed">Sierra Leones Leones (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName draft="unconfirmed">Somaali Skalang</displayName>
@@ -2870,17 +3326,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="SSP">
 				<displayName draft="unconfirmed">Süüdsudaneesk Pünj</displayName>
-				<displayName count="other" draft="unconfirmed">Süüdsudaneesk Pünj</displayName>
 			</currency>
 			<currency type="STN">
 				<displayName draft="unconfirmed">São Tomé an Príncipe Dobra</displayName>
 				<displayName count="other" draft="unconfirmed">São Tomé an Príncipe Dobras</displayName>
-				<symbol draft="unconfirmed">STN</symbol>
-				<symbol alt="narrow" draft="unconfirmed">Db</symbol>
 			</currency>
 			<currency type="SYP">
 				<displayName draft="unconfirmed">Syrisk Pünj</displayName>
-				<displayName count="other" draft="unconfirmed">Syrisk Pünj</displayName>
 			</currency>
 			<currency type="SZL">
 				<displayName draft="unconfirmed">Eswatini Lilangeni</displayName>
@@ -2888,7 +3340,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="THB">
 				<displayName draft="unconfirmed">Thai Baht</displayName>
-				<displayName count="other" draft="unconfirmed">Thai Baht</displayName>
 			</currency>
 			<currency type="TJS">
 				<displayName draft="unconfirmed">Tadjikisk Somoni</displayName>
@@ -2896,7 +3347,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="TMT">
 				<displayName draft="unconfirmed">Turkmeensk Manat</displayName>
-				<displayName count="other" draft="unconfirmed">Turkmeensk Manat</displayName>
 			</currency>
 			<currency type="TND">
 				<displayName draft="unconfirmed">Tuneesisk Dinaar</displayName>
@@ -2904,11 +3354,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="TOP">
 				<displayName draft="unconfirmed">Tongaans Pa’anga</displayName>
-				<displayName count="other" draft="unconfirmed">Tongaans Pa’anga</displayName>
 			</currency>
 			<currency type="TRY">
 				<displayName draft="unconfirmed">Türkisk Lira</displayName>
-				<displayName count="other" draft="unconfirmed">Türkisk Lira</displayName>
 			</currency>
 			<currency type="TTD">
 				<displayName draft="unconfirmed">Trinidad an Tobago Dooler</displayName>
@@ -2948,7 +3396,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="VND">
 				<displayName draft="unconfirmed">Wjetnameesk Dong</displayName>
-				<displayName count="other" draft="unconfirmed">Wjetnameesk Dong</displayName>
 				<symbol draft="unconfirmed">VND</symbol>
 			</currency>
 			<currency type="VUV">
@@ -2957,12 +3404,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="WST">
 				<displayName draft="unconfirmed">Samoaans Tala</displayName>
-				<displayName count="other" draft="unconfirmed">Samoaans Tala</displayName>
 			</currency>
 			<currency type="XAF">
 				<displayName draft="unconfirmed">Sentraal Afrikoonsk Franc</displayName>
 				<displayName count="other" draft="unconfirmed">Sentraal Afrikoonsk Francs</displayName>
-				<symbol draft="unconfirmed">FCFA</symbol>
 			</currency>
 			<currency type="XCD">
 				<displayName draft="unconfirmed">Uast Kariibik Dooler</displayName>
@@ -2986,7 +3431,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="ZAR">
 				<displayName draft="unconfirmed">Süüdafrikoons Rand</displayName>
-				<displayName count="other" draft="unconfirmed">Süüdafrikoons Rand</displayName>
 			</currency>
 			<currency type="ZMW">
 				<displayName draft="unconfirmed">Sambisk Kwacha</displayName>
@@ -3000,12 +3444,196 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</numbers>
 	<units>
 		<unitLength type="long">
-			<compoundUnit type="per">
-				<compoundUnitPattern draft="unconfirmed">{0}/{1}</compoundUnitPattern>
-			</compoundUnit>
 			<compoundUnit type="times">
 				<compoundUnitPattern draft="unconfirmed">{0}⋅{1}</compoundUnitPattern>
 			</compoundUnit>
+			<unit type="area-square-kilometer">
+				<displayName draft="unconfirmed">kwadrootkilomeetern</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} kwadrootkilomeetern</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0} per kwadrootkilomeeter</perUnitPattern>
+			</unit>
+			<unit type="area-hectare">
+				<unitPattern count="other" draft="unconfirmed">{0} hektaar</unitPattern>
+			</unit>
+			<unit type="area-square-meter">
+				<displayName draft="unconfirmed">kwadrootmeetern</displayName>
+				<perUnitPattern draft="unconfirmed">{0} per kwadrootmeeter</perUnitPattern>
+			</unit>
+			<unit type="area-square-centimeter">
+				<displayName draft="unconfirmed">kwadrootsentimeetern</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} kwadrootsentimeetern</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0} per kwadrootsentimeeter</perUnitPattern>
+			</unit>
+			<unit type="area-square-mile">
+				<displayName draft="unconfirmed">kwadrootmiilen</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} kwadrootmiilen</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0} per kwadrootmiil</perUnitPattern>
+			</unit>
+			<unit type="area-acre">
+				<unitPattern count="other" draft="unconfirmed">{0} acres</unitPattern>
+			</unit>
+			<unit type="area-square-yard">
+				<displayName draft="unconfirmed">kwadrootyards</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} kwadrootyards</unitPattern>
+			</unit>
+			<unit type="area-square-foot">
+				<displayName draft="unconfirmed">kwadrootfut</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} kwadrootfut</unitPattern>
+			</unit>
+			<unit type="area-square-inch">
+				<displayName draft="unconfirmed">kwadroottol</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} kwadroottol</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0} per kwadroottol</perUnitPattern>
+			</unit>
+			<unit type="duration-century">
+				<displayName draft="unconfirmed">juarhunerten</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} juarhunerten</unitPattern>
+			</unit>
+			<unit type="duration-decade">
+				<displayName draft="unconfirmed">juartjiinten</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} juartjiinten</unitPattern>
+			</unit>
+			<unit type="duration-year">
+				<unitPattern count="other" draft="unconfirmed">{0} juaren</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0} per juar</perUnitPattern>
+			</unit>
+			<unit type="duration-quarter">
+				<displayName draft="unconfirmed">kwartaalen</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} kwartaalen</unitPattern>
+			</unit>
+			<unit type="duration-month">
+				<unitPattern count="other" draft="unconfirmed">{0} muuner</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0} per muun</perUnitPattern>
+			</unit>
+			<unit type="duration-week">
+				<unitPattern count="other" draft="unconfirmed">{0} wegen</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0} per weg</perUnitPattern>
+			</unit>
+			<unit type="duration-day">
+				<perUnitPattern draft="unconfirmed">{0} per dai</perUnitPattern>
+			</unit>
+			<unit type="duration-hour">
+				<unitPattern count="other" draft="unconfirmed">{0} stünjen</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0} per stünj</perUnitPattern>
+			</unit>
+			<unit type="duration-minute">
+				<displayName draft="unconfirmed">minüten</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} minüten</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0} per minüt</perUnitPattern>
+			</unit>
+			<unit type="duration-second">
+				<displayName draft="unconfirmed">sekunden</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} sekunden</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0} per sekund</perUnitPattern>
+			</unit>
+			<unit type="duration-millisecond">
+				<displayName draft="unconfirmed">millisekunden</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} millisekunden</unitPattern>
+			</unit>
+			<unit type="duration-microsecond">
+				<displayName draft="unconfirmed">mikrosekunden</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} mikrosekunden</unitPattern>
+			</unit>
+			<unit type="duration-nanosecond">
+				<displayName draft="unconfirmed">nanosekunden</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} nanosekunden</unitPattern>
+			</unit>
+			<unit type="graphics-em">
+				<displayName draft="unconfirmed">typograafisk ems</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} ems</unitPattern>
+			</unit>
+			<unit type="graphics-pixel">
+				<unitPattern count="other" draft="unconfirmed">{0} pixel</unitPattern>
+			</unit>
+			<unit type="graphics-megapixel">
+				<unitPattern count="other" draft="unconfirmed">{0} megapixel</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-centimeter">
+				<displayName draft="unconfirmed">pixel per sentimeeter</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} pixel per sentimeeter</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-inch">
+				<displayName draft="unconfirmed">pixel per tol</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} pixel per tol</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<unitPattern count="other" draft="unconfirmed">{0} eerd raadius</unitPattern>
+			</unit>
+			<unit type="length-kilometer">
+				<displayName draft="unconfirmed">kilomeetern</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} kilomeetern</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0} per kilomeeter</perUnitPattern>
+			</unit>
+			<unit type="length-meter">
+				<displayName draft="unconfirmed">meetern</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} meetern</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0} per meeter</perUnitPattern>
+			</unit>
+			<unit type="length-decimeter">
+				<displayName draft="unconfirmed">deesimeetern</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} deesimeetern</unitPattern>
+			</unit>
+			<unit type="length-centimeter">
+				<displayName draft="unconfirmed">sentimeetern</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} sentimeetern</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0} per sentimeeter</perUnitPattern>
+			</unit>
+			<unit type="length-millimeter">
+				<displayName draft="unconfirmed">millimeetern</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} millimeetern</unitPattern>
+			</unit>
+			<unit type="length-micrometer">
+				<displayName draft="unconfirmed">mikromeetern</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} mikromeetern</unitPattern>
+			</unit>
+			<unit type="length-nanometer">
+				<displayName draft="unconfirmed">nanomeetern</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} nanomeetern</unitPattern>
+			</unit>
+			<unit type="length-picometer">
+				<displayName draft="unconfirmed">picomeetern</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} picomeetern</unitPattern>
+			</unit>
+			<unit type="length-mile">
+				<unitPattern count="other" draft="unconfirmed">{0} miilen</unitPattern>
+			</unit>
+			<unit type="length-yard">
+				<unitPattern count="other" draft="unconfirmed">{0} yards</unitPattern>
+			</unit>
+			<unit type="length-foot">
+				<perUnitPattern draft="unconfirmed">{0} per fut</perUnitPattern>
+			</unit>
+			<unit type="length-inch">
+				<perUnitPattern draft="unconfirmed">{0} per tol</perUnitPattern>
+			</unit>
+			<unit type="length-parsec">
+				<unitPattern count="other" draft="unconfirmed">{0} parsecs</unitPattern>
+			</unit>
+			<unit type="length-light-year">
+				<displayName draft="unconfirmed">laachtjuaren</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} laachtjuaren</unitPattern>
+			</unit>
+			<unit type="length-astronomical-unit">
+				<displayName draft="unconfirmed">astronoomisk ianhaiden</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} astronoomisk ianhaiden</unitPattern>
+			</unit>
+			<unit type="length-furlong">
+				<unitPattern count="other" draft="unconfirmed">{0} foraglengden</unitPattern>
+			</unit>
+			<unit type="length-nautical-mile">
+				<displayName draft="unconfirmed">siamiilen</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} siamiilen</unitPattern>
+			</unit>
+			<unit type="length-mile-scandinavian">
+				<displayName draft="unconfirmed">skandinaawisk miilen</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} skandinaawisk miilen</unitPattern>
+			</unit>
+			<unit type="length-point">
+				<unitPattern count="other" draft="unconfirmed">{0} points</unitPattern>
+			</unit>
+			<unit type="length-solar-radius">
+				<unitPattern count="other" draft="unconfirmed">{0} san raadien</unitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName draft="unconfirmed">hemelswai</displayName>
 				<coordinateUnitPattern type="east" draft="unconfirmed">{0} uast</coordinateUnitPattern>
@@ -3018,6 +3646,122 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<compoundUnit type="times">
 				<compoundUnitPattern draft="unconfirmed">{0}{1}</compoundUnitPattern>
 			</compoundUnit>
+			<unit type="area-hectare">
+				<displayName draft="unconfirmed">hektaar</displayName>
+			</unit>
+			<unit type="area-acre">
+				<displayName draft="unconfirmed">acres</displayName>
+			</unit>
+			<unit type="area-square-inch">
+				<displayName draft="unconfirmed">tol²</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} tol²</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/tol²</perUnitPattern>
+			</unit>
+			<unit type="duration-century">
+				<displayName draft="unconfirmed">juarh</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} juarh</unitPattern>
+			</unit>
+			<unit type="duration-decade">
+				<displayName draft="unconfirmed">juartj</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} juartj</unitPattern>
+			</unit>
+			<unit type="duration-year">
+				<displayName draft="unconfirmed">juaren</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} jrn</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/j</perUnitPattern>
+			</unit>
+			<unit type="duration-quarter">
+				<displayName draft="unconfirmed">kwrt</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} kwrtn</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/kw</perUnitPattern>
+			</unit>
+			<unit type="duration-month">
+				<displayName draft="unconfirmed">muuner</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} mnr</unitPattern>
+			</unit>
+			<unit type="duration-week">
+				<displayName draft="unconfirmed">wegen</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} wgn</unitPattern>
+			</unit>
+			<unit type="duration-day">
+				<displayName draft="unconfirmed">daar</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} daar</unitPattern>
+			</unit>
+			<unit type="duration-hour">
+				<displayName draft="unconfirmed">stünjen</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} st</unitPattern>
+			</unit>
+			<unit type="duration-second">
+				<displayName draft="unconfirmed">sekn</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} sek</unitPattern>
+			</unit>
+			<unit type="duration-millisecond">
+				<displayName draft="unconfirmed">millisekn</displayName>
+			</unit>
+			<unit type="duration-microsecond">
+				<displayName draft="unconfirmed">μsekn</displayName>
+			</unit>
+			<unit type="duration-nanosecond">
+				<displayName draft="unconfirmed">nanosekn</displayName>
+			</unit>
+			<unit type="graphics-pixel">
+				<displayName draft="unconfirmed">pixel</displayName>
+			</unit>
+			<unit type="graphics-megapixel">
+				<displayName draft="unconfirmed">megapixel</displayName>
+			</unit>
+			<unit type="length-earth-radius">
+				<displayName draft="unconfirmed">eerd raadius</displayName>
+			</unit>
+			<unit type="length-meter">
+				<displayName draft="unconfirmed">m</displayName>
+			</unit>
+			<unit type="length-micrometer">
+				<displayName draft="unconfirmed">μmeetern</displayName>
+			</unit>
+			<unit type="length-mile">
+				<displayName draft="unconfirmed">miilen</displayName>
+			</unit>
+			<unit type="length-yard">
+				<displayName draft="unconfirmed">yards</displayName>
+			</unit>
+			<unit type="length-foot">
+				<displayName draft="unconfirmed">fut</displayName>
+			</unit>
+			<unit type="length-inch">
+				<displayName draft="unconfirmed">tol</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} tol</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/tol</perUnitPattern>
+			</unit>
+			<unit type="length-parsec">
+				<displayName draft="unconfirmed">parsecs</displayName>
+			</unit>
+			<unit type="length-light-year">
+				<displayName draft="unconfirmed">laachtjrn</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} lj</unitPattern>
+			</unit>
+			<unit type="length-astronomical-unit">
+				<displayName draft="unconfirmed">AI</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} AI</unitPattern>
+			</unit>
+			<unit type="length-furlong">
+				<displayName draft="unconfirmed">foraglengden</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} for</unitPattern>
+			</unit>
+			<unit type="length-fathom">
+				<displayName draft="unconfirmed">faaden</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} faaden</unitPattern>
+			</unit>
+			<unit type="length-nautical-mile">
+				<displayName draft="unconfirmed">sm</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} sm</unitPattern>
+			</unit>
+			<unit type="length-point">
+				<displayName draft="unconfirmed">points</displayName>
+			</unit>
+			<unit type="length-solar-radius">
+				<displayName draft="unconfirmed">san raadien</displayName>
+			</unit>
 			<coordinateUnit>
 				<displayName draft="unconfirmed">wai</displayName>
 				<coordinateUnitPattern type="east" draft="unconfirmed">{0} U</coordinateUnitPattern>
@@ -3027,82 +3771,22 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
-			<compoundUnit type="per">
-				<compoundUnitPattern draft="unconfirmed">{0}/{1}</compoundUnitPattern>
-			</compoundUnit>
-			<compoundUnit type="times">
-				<compoundUnitPattern draft="unconfirmed">{0}{1}</compoundUnitPattern>
-			</compoundUnit>
 			<coordinateUnit>
-				<displayName draft="unconfirmed">wai</displayName>
 				<coordinateUnitPattern type="east" draft="unconfirmed">{0}U</coordinateUnitPattern>
 				<coordinateUnitPattern type="north" draft="unconfirmed">{0}N</coordinateUnitPattern>
 				<coordinateUnitPattern type="south" draft="unconfirmed">{0}S</coordinateUnitPattern>
 				<coordinateUnitPattern type="west" draft="unconfirmed">{0}W</coordinateUnitPattern>
 			</coordinateUnit>
 		</unitLength>
-		<durationUnit type="hm">
-			<durationUnitPattern draft="unconfirmed">h:mm</durationUnitPattern>
-		</durationUnit>
-		<durationUnit type="hms">
-			<durationUnitPattern draft="unconfirmed">h:mm:ss</durationUnitPattern>
-		</durationUnit>
-		<durationUnit type="ms">
-			<durationUnitPattern draft="unconfirmed">m:ss</durationUnitPattern>
-		</durationUnit>
 	</units>
 	<listPatterns>
 		<listPattern>
-			<listPatternPart type="start" draft="unconfirmed">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle" draft="unconfirmed">{0}, {1}</listPatternPart>
 			<listPatternPart type="end" draft="unconfirmed">{0} an {1}</listPatternPart>
 			<listPatternPart type="2" draft="unconfirmed">{0} an {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="or">
 			<listPatternPart type="end" draft="unconfirmed">{0} of {1}</listPatternPart>
 			<listPatternPart type="2" draft="unconfirmed">{0} of {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="or-narrow">
-			<listPatternPart type="start" draft="unconfirmed">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle" draft="unconfirmed">{0}, {1}</listPatternPart>
-			<listPatternPart type="end" draft="unconfirmed">{0} of {1}</listPatternPart>
-			<listPatternPart type="2" draft="unconfirmed">{0} of {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="or-short">
-			<listPatternPart type="start" draft="unconfirmed">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle" draft="unconfirmed">{0}, {1}</listPatternPart>
-			<listPatternPart type="end" draft="unconfirmed">{0} of {1}</listPatternPart>
-			<listPatternPart type="2" draft="unconfirmed">{0} of {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="standard-narrow">
-			<listPatternPart type="start" draft="unconfirmed">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle" draft="unconfirmed">{0}, {1}</listPatternPart>
-			<listPatternPart type="end" draft="unconfirmed">{0} an {1}</listPatternPart>
-			<listPatternPart type="2" draft="unconfirmed">{0} an {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="standard-short">
-			<listPatternPart type="start" draft="unconfirmed">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle" draft="unconfirmed">{0}, {1}</listPatternPart>
-			<listPatternPart type="end" draft="unconfirmed">{0} an {1}</listPatternPart>
-			<listPatternPart type="2" draft="unconfirmed">{0} an {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="unit">
-			<listPatternPart type="start" draft="unconfirmed">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle" draft="unconfirmed">{0}, {1}</listPatternPart>
-			<listPatternPart type="end" draft="unconfirmed">{0} an {1}</listPatternPart>
-			<listPatternPart type="2" draft="unconfirmed">{0} an {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="unit-narrow">
-			<listPatternPart type="start" draft="unconfirmed">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle" draft="unconfirmed">{0}, {1}</listPatternPart>
-			<listPatternPart type="end" draft="unconfirmed">{0} an {1}</listPatternPart>
-			<listPatternPart type="2" draft="unconfirmed">{0} an {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="unit-short">
-			<listPatternPart type="start" draft="unconfirmed">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle" draft="unconfirmed">{0}, {1}</listPatternPart>
-			<listPatternPart type="end" draft="unconfirmed">{0} an {1}</listPatternPart>
-			<listPatternPart type="2" draft="unconfirmed">{0} an {1}</listPatternPart>
 		</listPattern>
 	</listPatterns>
 	<posix>

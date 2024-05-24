@@ -23,11 +23,11 @@
 
 /*
  * @test
- * @summary Testing Classfile annotation model.
+ * @summary Testing ClassFile annotation model.
  * @run junit AnnotationModelTest
  */
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.Attributes;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.Attributes;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -53,8 +53,8 @@ class AnnotationModelTest {
 
     @Test
     void readAnnos() {
-        var model = Classfile.of().parse(fileBytes);
-        var annotations = model.findAttribute(Attributes.RUNTIME_VISIBLE_ANNOTATIONS).get().annotations();
+        var model = ClassFile.of().parse(fileBytes);
+        var annotations = model.findAttribute(Attributes.runtimeVisibleAnnotations()).get().annotations();
 
         assertEquals(annotations.size(), 3);
     }

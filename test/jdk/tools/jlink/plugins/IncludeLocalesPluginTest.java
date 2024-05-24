@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,9 +28,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
 
-import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.plugin.PluginException;
-import jdk.tools.jlink.internal.PluginRepository;
 import jdk.tools.jlink.internal.TaskHelper;
 import jdk.tools.jlink.internal.plugins.PluginsResourceBundle;
 import tests.Helper;
@@ -42,17 +40,13 @@ import tests.Result;
  * @test
  * @bug 8152143 8152704 8155649 8165804 8185841 8176841 8190918
  *      8179071 8202537 8221432 8222098 8251317 8258794 8265315
- *      8296248
+ *      8296248 8306116 8174269
  * @summary IncludeLocalesPlugin tests
  * @author Naoto Sato
  * @requires (vm.compMode != "Xcomp" & os.maxMemory >= 2g)
  * @library ../../lib
+ * @enablePreview
  * @modules java.base/jdk.internal.jimage
- *          java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
  *          jdk.jlink/jdk.tools.jlink.internal
  *          jdk.jlink/jdk.tools.jlink.internal.plugins
  *          jdk.jlink/jdk.tools.jlink.plugin
@@ -90,10 +84,6 @@ public class IncludeLocalesPluginTest {
             "",
             "jdk.localedata",
             List.of(
-                "/jdk.localedata/sun/text/resources/ext/FormatData_en_GB.class",
-                "/jdk.localedata/sun/text/resources/ext/FormatData_ja.class",
-                "/jdk.localedata/sun/text/resources/ext/FormatData_th.class",
-                "/jdk.localedata/sun/text/resources/ext/FormatData_zh.class",
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_en_001.class",
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_ja.class",
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_th.class",
@@ -111,10 +101,6 @@ public class IncludeLocalesPluginTest {
             "--include-locales=*",
             "jdk.localedata",
             List.of(
-                "/jdk.localedata/sun/text/resources/ext/FormatData_en_GB.class",
-                "/jdk.localedata/sun/text/resources/ext/FormatData_ja.class",
-                "/jdk.localedata/sun/text/resources/ext/FormatData_th.class",
-                "/jdk.localedata/sun/text/resources/ext/FormatData_zh.class",
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_en_001.class",
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_ja.class",
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_th.class",
@@ -132,9 +118,6 @@ public class IncludeLocalesPluginTest {
             "--include-locales=en-001,es-419",
             "jdk.localedata",
             List.of(
-                "/jdk.localedata/sun/text/resources/ext/FormatData_en_AU.class",
-                "/jdk.localedata/sun/text/resources/ext/FormatData_es.class",
-                "/jdk.localedata/sun/text/resources/ext/FormatData_es_AR.class",
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_en_001.class",
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_en_150.class",
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_en_AT.class",
@@ -146,8 +129,6 @@ public class IncludeLocalesPluginTest {
                 "/jdk.localedata/sun/text/resources/ext/thai_dict",
                 "/jdk.localedata/sun/text/resources/ext/WordBreakIteratorData_th",
                 "/jdk.localedata/sun/text/resources/ext/BreakIteratorInfo_th.class",
-                "/jdk.localedata/sun/text/resources/ext/FormatData_ja.class",
-                "/jdk.localedata/sun/text/resources/ext/FormatData_th.class",
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_ja.class",
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_th.class"),
             List.of(
@@ -155,7 +136,7 @@ public class IncludeLocalesPluginTest {
                 "en_AT", "en_AU", "en_BB", "en_BE", "en_BM", "en_BS", "en_BW", "en_BZ",
                 "en_CC", "en_CH", "en_CK", "en_CM", "en_CX", "en_CY", "en_DE",
                 "en_DG", "en_DK", "en_DM", "en_ER", "en_FI", "en_FJ", "en_FK", "en_FM",
-                "en_GB", "en_GD", "en_GG", "en_GH", "en_GI", "en_GM", "en_GY", "en_HK",
+                "en_GB", "en_GD", "en_GG", "en_GH", "en_GI", "en_GM", "en_GY", "en_HK", "en_ID",
                 "en_IE", "en_IL", "en_IM", "en_IN", "en_IO", "en_JE", "en_JM", "en_KE",
                 "en_KI", "en_KN", "en_KY", "en_LC", "en_LR", "en_LS", "en_MG", "en_MO",
                 "en_MS", "en_MT", "en_MU", "en_MV", "en_MW", "en_MY", "en_NA", "en_NF", "en_NG",
@@ -179,8 +160,6 @@ public class IncludeLocalesPluginTest {
             "--include-locales=en,ja",
             "jdk.localedata",
             List.of(
-                "/jdk.localedata/sun/text/resources/ext/FormatData_en_GB.class",
-                "/jdk.localedata/sun/text/resources/ext/FormatData_ja.class",
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_en_001.class",
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_ja.class"),
             List.of(
@@ -188,8 +167,6 @@ public class IncludeLocalesPluginTest {
                 "/jdk.localedata/sun/text/resources/ext/thai_dict",
                 "/jdk.localedata/sun/text/resources/ext/WordBreakIteratorData_th",
                 "/jdk.localedata/sun/text/resources/ext/BreakIteratorInfo_th.class",
-                "/jdk.localedata/sun/text/resources/ext/FormatData_th.class",
-                "/jdk.localedata/sun/text/resources/ext/FormatData_zh.class",
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_th.class",
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_zh.class"),
             List.of(
@@ -198,7 +175,7 @@ public class IncludeLocalesPluginTest {
                 "en_CA", "en_CC", "en_CH", "en_CK", "en_CM", "en_CX", "en_CY", "en_DE",
                 "en_DG", "en_DK", "en_DM", "en_ER", "en_FI", "en_FJ", "en_FK", "en_FM",
                 "en_GB", "en_GD", "en_GG", "en_GH", "en_GI", "en_GM", "en_GU", "en_GY",
-                "en_HK", "en_IE", "en_IL", "en_IM", "en_IN", "en_IO", "en_JE", "en_JM",
+                "en_HK", "en_ID", "en_IE", "en_IL", "en_IM", "en_IN", "en_IO", "en_JE", "en_JM",
                 "en_KE", "en_KI", "en_KN", "en_KY", "en_LC", "en_LR", "en_LS", "en_MG",
                 "en_MH", "en_MO", "en_MP", "en_MS", "en_MT", "en_MU", "en_MV", "en_MW", "en_MY",
                 "en_NA", "en_NF", "en_NG", "en_NL", "en_NR", "en_NU", "en_NZ", "en_PG",
@@ -216,8 +193,6 @@ public class IncludeLocalesPluginTest {
             "--include-locales=*-AT",
             "jdk.localedata",
             List.of(
-                "/jdk.localedata/sun/text/resources/ext/FormatData_de.class",
-                "/jdk.localedata/sun/text/resources/ext/FormatData_de_AT.class",
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_de.class",
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_de_AT.class",
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_en_001.class",
@@ -228,9 +203,6 @@ public class IncludeLocalesPluginTest {
                 "/jdk.localedata/sun/text/resources/ext/thai_dict",
                 "/jdk.localedata/sun/text/resources/ext/WordBreakIteratorData_th",
                 "/jdk.localedata/sun/text/resources/ext/BreakIteratorInfo_th.class",
-                "/jdk.localedata/sun/text/resources/ext/FormatData_en_GB.class",
-                "/jdk.localedata/sun/text/resources/ext/FormatData_ja.class",
-                "/jdk.localedata/sun/text/resources/ext/FormatData_th.class",
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_ja.class",
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_th.class"),
             List.of(
@@ -244,8 +216,6 @@ public class IncludeLocalesPluginTest {
             "--include-locales=*-IN",
             "jdk.localedata",
             List.of(
-                "/jdk.localedata/sun/text/resources/ext/FormatData_en_IN.class",
-                "/jdk.localedata/sun/text/resources/ext/FormatData_hi_IN.class",
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_en_001.class",
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_en_IN.class"),
             List.of(
@@ -254,10 +224,6 @@ public class IncludeLocalesPluginTest {
                 "/jdk.localedata/sun/text/resources/ext/WordBreakIteratorData_th",
                 "/jdk.localedata/sun/text/resources/ext/BreakIteratorInfo_th.class",
                 "/jdk.localedata/sun/text/resources/ext/BreakIteratorResources_th.class",
-                "/jdk.localedata/sun/text/resources/ext/FormatData_en_GB.class",
-                "/jdk.localedata/sun/text/resources/ext/FormatData_ja.class",
-                "/jdk.localedata/sun/text/resources/ext/FormatData_th.class",
-                "/jdk.localedata/sun/text/resources/ext/FormatData_zh.class",
                 "/jdk.localedata/sun/util/resources/cldr/ext/CalendarData_as_IN.class",
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_ja.class",
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_th.class",
@@ -268,11 +234,13 @@ public class IncludeLocalesPluginTest {
                 "doi_IN_#Deva", "en", "en_001", "en_IN", "en_US", "en_US_#Latn", "en_US_POSIX", "gu", "gu_IN",
                 "gu_IN_#Gujr", "hi", "hi__#Latn", "hi_IN", "hi_IN_#Deva", "hi_IN_#Latn", "kn", "kn_IN", "kn_IN_#Knda",
                 "kok", "kok_IN", "kok_IN_#Deva", "ks", "ks__#Arab", "ks__#Deva", "ks_IN", "ks_IN_#Arab", "ks_IN_#Deva",
+                "kxv", "kxv_IN", "kxv_IN_#Deva", "kxv_IN_#Latn", "kxv_IN_#Orya", "kxv_IN_#Telu",
+                "kxv__#Deva", "kxv__#Latn", "kxv__#Orya", "kxv__#Telu",
                 "mai", "mai_IN", "mai_IN_#Deva", "mni", "mni__#Beng", "mni_IN", "mni_IN_#Beng", "ml", "ml_IN",
                 "ml_IN_#Mlym", "mr", "mr_IN", "mr_IN_#Deva", "ne", "ne_IN", "or", "or_IN", "or_IN_#Orya", "pa",
                 "pa__#Guru", "pa_IN", "pa_IN_#Guru", "raj", "raj_IN", "raj_IN_#Deva", "sa", "sa_IN", "sa_IN_#Deva",
                 "sat", "sat__#Olck", "sat_IN", "sat_IN_#Olck", "sd", "sd__#Deva", "sd_IN", "sd_IN_#Deva", "ta", "ta_IN",
-                "ta_IN_#Taml", "te", "te_IN", "te_IN_#Telu", "ur_IN", "ur"),
+                "ta_IN_#Taml", "te", "te_IN", "te_IN_#Telu", "ur_IN", "ur", "xnr", "xnr_IN", "xnr_IN_#Deva"),
             "",
         },
 
@@ -285,12 +253,8 @@ public class IncludeLocalesPluginTest {
                 "/jdk.localedata/sun/text/resources/ext/thai_dict",
                 "/jdk.localedata/sun/text/resources/ext/WordBreakIteratorData_th",
                 "/jdk.localedata/sun/text/resources/ext/BreakIteratorInfo_th.class",
-                "/jdk.localedata/sun/text/resources/ext/BreakIteratorResources_th.class",
-                "/jdk.localedata/sun/text/resources/ext/FormatData_th.class"),
+                "/jdk.localedata/sun/text/resources/ext/BreakIteratorResources_th.class"),
             List.of(
-                "/jdk.localedata/sun/text/resources/ext/FormatData_en_GB.class",
-                "/jdk.localedata/sun/text/resources/ext/FormatData_ja.class",
-                "/jdk.localedata/sun/text/resources/ext/FormatData_zh.class",
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_en_001.class",
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_ja.class",
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_zh.class"),
@@ -305,19 +269,12 @@ public class IncludeLocalesPluginTest {
             "--include-locales=zh-HK",
             "jdk.localedata",
             List.of(
-                "/jdk.localedata/sun/text/resources/ext/FormatData_zh.class",
-                "/jdk.localedata/sun/text/resources/ext/FormatData_zh_HK.class",
-                "/jdk.localedata/sun/text/resources/ext/FormatData_zh_TW.class",
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_zh.class"),
             List.of(
                 "/jdk.localedata/sun/text/resources/ext/LineBreakIteratorData_th",
                 "/jdk.localedata/sun/text/resources/ext/thai_dict",
                 "/jdk.localedata/sun/text/resources/ext/WordBreakIteratorData_th",
                 "/jdk.localedata/sun/text/resources/ext/BreakIteratorInfo_th.class",
-                "/jdk.localedata/sun/text/resources/ext/FormatData_en_GB.class",
-                "/jdk.localedata/sun/text/resources/ext/FormatData_ja.class",
-                "/jdk.localedata/sun/text/resources/ext/FormatData_th.class",
-                "/jdk.localedata/sun/text/resources/ext/FormatData_zh_CN.class",
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_en_001.class",
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_ja.class",
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_th.class"),
@@ -332,18 +289,12 @@ public class IncludeLocalesPluginTest {
             "--include-locales=zh-Hans",
             "jdk.localedata",
             List.of(
-                "/jdk.localedata/sun/text/resources/ext/FormatData_zh.class",
-                "/jdk.localedata/sun/text/resources/ext/FormatData_zh_CN.class",
-                "/jdk.localedata/sun/text/resources/ext/FormatData_zh_SG.class",
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_zh.class"),
             List.of(
                 "/jdk.localedata/sun/text/resources/ext/LineBreakIteratorData_th",
                 "/jdk.localedata/sun/text/resources/ext/thai_dict",
                 "/jdk.localedata/sun/text/resources/ext/WordBreakIteratorData_th",
                 "/jdk.localedata/sun/text/resources/ext/BreakIteratorInfo_th.class",
-                "/jdk.localedata/sun/text/resources/ext/FormatData_en_GB.class",
-                "/jdk.localedata/sun/text/resources/ext/FormatData_ja.class",
-                "/jdk.localedata/sun/text/resources/ext/FormatData_th.class",
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_en_001.class",
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_ja.class",
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_th.class"),
@@ -358,9 +309,6 @@ public class IncludeLocalesPluginTest {
             "--include-locales=nb,nn,no",
             "jdk.localedata",
             List.of(
-                "/jdk.localedata/sun/text/resources/ext/FormatData_no.class",
-                "/jdk.localedata/sun/text/resources/ext/FormatData_no_NO.class",
-                "/jdk.localedata/sun/text/resources/ext/FormatData_no_NO_NY.class",
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_nb.class",
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_nn.class",
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_no.class"),
@@ -369,9 +317,6 @@ public class IncludeLocalesPluginTest {
                 "/jdk.localedata/sun/text/resources/ext/thai_dict",
                 "/jdk.localedata/sun/text/resources/ext/WordBreakIteratorData_th",
                 "/jdk.localedata/sun/text/resources/ext/BreakIteratorInfo_th.class",
-                "/jdk.localedata/sun/text/resources/ext/FormatData_en_GB.class",
-                "/jdk.localedata/sun/text/resources/ext/FormatData_ja.class",
-                "/jdk.localedata/sun/text/resources/ext/FormatData_th.class",
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_en_001.class",
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_ja.class",
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_th.class"),
@@ -387,10 +332,6 @@ public class IncludeLocalesPluginTest {
             "--include-locales=he,id,yi",
             "jdk.localedata",
             List.of(
-                "/jdk.localedata/sun/text/resources/ext/FormatData_he.class",
-                "/jdk.localedata/sun/text/resources/ext/FormatData_he_IL.class",
-                "/jdk.localedata/sun/text/resources/ext/FormatData_id.class",
-                "/jdk.localedata/sun/text/resources/ext/FormatData_id_ID.class",
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_he.class",
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_id.class",
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_yi.class"),
@@ -399,15 +340,12 @@ public class IncludeLocalesPluginTest {
                 "/jdk.localedata/sun/text/resources/ext/thai_dict",
                 "/jdk.localedata/sun/text/resources/ext/WordBreakIteratorData_th",
                 "/jdk.localedata/sun/text/resources/ext/BreakIteratorInfo_th.class",
-                "/jdk.localedata/sun/text/resources/ext/FormatData_en_GB.class",
-                "/jdk.localedata/sun/text/resources/ext/FormatData_ja.class",
-                "/jdk.localedata/sun/text/resources/ext/FormatData_th.class",
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_en_001.class",
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_ja.class",
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_th.class"),
             List.of(
                 "(root)", "en", "en_US", "en_US_#Latn", "en_US_POSIX", "id", "id_ID",
-                "id_ID_#Latn", "he", "he_IL", "he_IL_#Hebr", "yi", "yi_001", "yi_001_#Hebr"),
+                "id_ID_#Latn", "he", "he_IL", "he_IL_#Hebr", "yi", "yi_UA", "yi_UA_#Hebr"),
             "",
         },
 
@@ -416,18 +354,15 @@ public class IncludeLocalesPluginTest {
             "--include-locales=en,ja-u-nu-thai",
             "jdk.localedata",
             List.of(
-                "/jdk.localedata/sun/text/resources/ext/FormatData_en_GB.class",
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_en_001.class"),
-            List.of(
-                "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_ja.class",
-                "/jdk.localedata/sun/text/resources/ext/FormatData_th.class"),
+            List.of(),
             List.of(
                 "(root)", "en", "en_001", "en_150", "en_AE", "en_AG", "en_AI", "en_AS", "en_AT",
                 "en_AU", "en_BB", "en_BE", "en_BI", "en_BM", "en_BS", "en_BW", "en_BZ",
                 "en_CA", "en_CC", "en_CH", "en_CK", "en_CM", "en_CX", "en_CY", "en_DE",
                 "en_DG", "en_DK", "en_DM", "en_ER", "en_FI", "en_FJ", "en_FK", "en_FM",
                 "en_GB", "en_GD", "en_GG", "en_GH", "en_GI", "en_GM", "en_GU", "en_GY",
-                "en_HK", "en_IE", "en_IL", "en_IM", "en_IN", "en_IO", "en_JE", "en_JM",
+                "en_HK", "en_ID", "en_IE", "en_IL", "en_IM", "en_IN", "en_IO", "en_JE", "en_JM",
                 "en_KE", "en_KI", "en_KN", "en_KY", "en_LC", "en_LR", "en_LS", "en_MG",
                 "en_MH", "en_MO", "en_MP", "en_MS", "en_MT", "en_MU", "en_MV", "en_MW", "en_MY",
                 "en_NA", "en_NF", "en_NG", "en_NL", "en_NR", "en_NU", "en_NZ", "en_PG",
@@ -479,8 +414,7 @@ public class IncludeLocalesPluginTest {
     public static void main(String[] args) throws Exception {
         helper = Helper.newHelper();
         if (helper == null) {
-            System.err.println("Test not run");
-            return;
+            throw new RuntimeException("Helper could not be initialized");
         }
         helper.generateDefaultModules();
 

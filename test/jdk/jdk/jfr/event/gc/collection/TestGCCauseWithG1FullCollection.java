@@ -40,7 +40,7 @@ public class TestGCCauseWithG1FullCollection {
         String testID = "G1FullCollection";
         String[] vmFlags = {"-XX:+UseG1GC"};
         String[] gcNames = {GCHelper.gcG1New, GCHelper.gcG1Old, GCHelper.gcG1Full};
-        String[] gcCauses = {"Metadata GC Threshold", "GCLocker Initiated GC", "G1 Evacuation Pause", "G1 Preventive Collection",
+        String[] gcCauses = {"Metadata GC Threshold", "G1 Evacuation Pause", "G1 Preventive Collection",
                              "G1 Compaction Pause", "System.gc()"};
         GCGarbageCollectionUtil.test(testID, vmFlags, gcNames, gcCauses);
     }

@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 6359283
+ * @key printer
  * @summary pagedialog needs to update based on change of printer.
  * @run main/manual PageFormatChange
  */

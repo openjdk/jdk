@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -397,7 +397,7 @@ char* stringStream::as_string(bool c_heap) const {
   char* copy = c_heap ?
     NEW_C_HEAP_ARRAY(char, _written + 1, mtInternal) : NEW_RESOURCE_ARRAY(char, _written + 1);
   ::memcpy(copy, _buffer, _written);
-  copy[_written] = 0;  // terminating null
+  copy[_written] = '\0';  // terminating null
   if (c_heap) {
     // Need to ensure our content is written to memory before we return
     // the pointer to it.
@@ -429,7 +429,7 @@ xmlStream*   xtty;
 #define EXTRACHARLEN   32
 #define CURRENTAPPX    ".current"
 // convert YYYY-MM-DD HH:MM:SS to YYYY-MM-DD_HH-MM-SS
-char* get_datetime_string(char *buf, size_t len) {
+static char* get_datetime_string(char *buf, size_t len) {
   os::local_time_string(buf, len);
   int i = (int)strlen(buf);
   while (--i >= 0) {
@@ -590,23 +590,10 @@ long fileStream::fileSize() {
   return size;
 }
 
-char* fileStream::readln(char *data, int count ) {
-  char * ret = nullptr;
-  if (_file != nullptr) {
-    ret = ::fgets(data, count, _file);
-    // Get rid of annoying \n char only if it is present.
-    size_t len = ::strlen(data);
-    if (len > 0 && data[len - 1] == '\n') {
-      data[len - 1] = '\0';
-    }
-  }
-  return ret;
-}
-
 fileStream::~fileStream() {
   if (_file != nullptr) {
-    if (_need_close) fclose(_file);
-    _file      = nullptr;
+    close();
+    _file = nullptr;
   }
 }
 
@@ -991,16 +978,6 @@ bufferedStream::bufferedStream(size_t initial_size, size_t bufmax) : outputStrea
   buffer_length = initial_size;
   buffer        = NEW_C_HEAP_ARRAY(char, buffer_length, mtInternal);
   buffer_pos    = 0;
-  buffer_fixed  = false;
-  buffer_max    = bufmax;
-  truncated     = false;
-}
-
-bufferedStream::bufferedStream(char* fixed_buffer, size_t fixed_buffer_size, size_t bufmax) : outputStream() {
-  buffer_length = fixed_buffer_size;
-  buffer        = fixed_buffer;
-  buffer_pos    = 0;
-  buffer_fixed  = true;
   buffer_max    = bufmax;
   truncated     = false;
 }
@@ -1017,38 +994,32 @@ void bufferedStream::write(const char* s, size_t len) {
 
   size_t end = buffer_pos + len;
   if (end >= buffer_length) {
-    if (buffer_fixed) {
-      // if buffer cannot resize, silently truncate
-      len = buffer_length - buffer_pos - 1;
-      truncated = true;
-    } else {
-      // For small overruns, double the buffer.  For larger ones,
-      // increase to the requested size.
-      if (end < buffer_length * 2) {
-        end = buffer_length * 2;
+    // For small overruns, double the buffer.  For larger ones,
+    // increase to the requested size.
+    if (end < buffer_length * 2) {
+      end = buffer_length * 2;
+    }
+    // Impose a cap beyond which the buffer cannot grow - a size which
+    // in all probability indicates a real error, e.g. faulty printing
+    // code looping, while not affecting cases of just-very-large-but-its-normal
+    // output.
+    const size_t reasonable_cap = MAX2(100 * M, buffer_max * 2);
+    if (end > reasonable_cap) {
+      // In debug VM, assert right away.
+      assert(false, "Exceeded max buffer size for this string.");
+      // Release VM: silently truncate. We do this since these kind of errors
+      // are both difficult to predict with testing (depending on logging content)
+      // and usually not serious enough to kill a production VM for it.
+      end = reasonable_cap;
+      size_t remaining = end - buffer_pos;
+      if (len >= remaining) {
+        len = remaining - 1;
+        truncated = true;
       }
-      // Impose a cap beyond which the buffer cannot grow - a size which
-      // in all probability indicates a real error, e.g. faulty printing
-      // code looping, while not affecting cases of just-very-large-but-its-normal
-      // output.
-      const size_t reasonable_cap = MAX2(100 * M, buffer_max * 2);
-      if (end > reasonable_cap) {
-        // In debug VM, assert right away.
-        assert(false, "Exceeded max buffer size for this string.");
-        // Release VM: silently truncate. We do this since these kind of errors
-        // are both difficult to predict with testing (depending on logging content)
-        // and usually not serious enough to kill a production VM for it.
-        end = reasonable_cap;
-        size_t remaining = end - buffer_pos;
-        if (len >= remaining) {
-          len = remaining - 1;
-          truncated = true;
-        }
-      }
-      if (buffer_length < end) {
-        buffer = REALLOC_C_HEAP_ARRAY(char, buffer, end, mtInternal);
-        buffer_length = end;
-      }
+    }
+    if (buffer_length < end) {
+      buffer = REALLOC_C_HEAP_ARRAY(char, buffer, end, mtInternal);
+      buffer_length = end;
     }
   }
   if (len > 0) {
@@ -1066,9 +1037,7 @@ char* bufferedStream::as_string() {
 }
 
 bufferedStream::~bufferedStream() {
-  if (!buffer_fixed) {
-    FREE_C_HEAP_ARRAY(char, buffer);
-  }
+  FREE_C_HEAP_ARRAY(char, buffer);
 }
 
 #ifndef PRODUCT

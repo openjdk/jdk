@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -27,15 +27,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<measurementSystemName type="UK">यूके</measurementSystemName>
 			<measurementSystemName type="US">यू एस</measurementSystemName>
 		</measurementSystemNames>
-		<codePatterns>
-			<codePattern type="territory">{0}</codePattern>
-		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters draft="contributed">[\u0901 \u0902 ः अ क ख ग घ ङ च छ ज झ ञ ट ठ ड ढ ण त थ द ध न प फ ब भ म य र ल व श ष स ह ा ि ी \u0941 \u0942 \u0943 \u0945 \u0947 \u0948 ो ौ \u094D]</exemplarCharacters>
+		<exemplarCharacters draft="contributed">[ँ ंः अ क ख ग घ ङ च छ ज झ ञ ट ठ ड ढ ण त थ द ध न प फ ब भ म य र ल व श ष स ह ा ि ी ु ू ृ ॅ े ै ो ौ ्]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[आ इ ई उ ऊ ऋ ए ऐ ओ औ]</exemplarCharacters>
 		<exemplarCharacters type="numbers" draft="contributed">[\- ‑ , . % ‰ + 0० 1१ 2२ 3३ 4४ 5५ 6६ 7७ 8८ 9९]</exemplarCharacters>
-		<exemplarCharacters type="punctuation" draft="contributed">[\- ‑ , \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] \{ \} § @ * / \\ \&amp; # ` |]</exemplarCharacters>
+		<exemplarCharacters type="punctuation" draft="contributed">[\- ‑ , \: ! ? . … '‘’ &quot;“” ( ) \[ \] \{ \} § @ * / \\ \&amp; # ` |]</exemplarCharacters>
 	</characters>
 	<dates>
 		<calendars>
@@ -144,11 +141,5 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</dates>
 	<numbers>
 		<defaultNumberingSystem>deva</defaultNumberingSystem>
-		<otherNumberingSystems>
-			<native draft="contributed">latn</native>
-		</otherNumberingSystems>
-		<symbols numberSystem="latn">
-			<decimal>.</decimal>
-		</symbols>
 	</numbers>
 </ldml>

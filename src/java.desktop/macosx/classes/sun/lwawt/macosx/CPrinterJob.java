@@ -823,6 +823,10 @@ public final class CPrinterJob extends RasterPrinterJob {
             public void run() {
                 synchronized (ret) {
                     try {
+                        Paper paper = pageFormat.getPaper();
+                        double width = Math.rint(paper.getWidth());
+                        double height = Math.rint(paper.getHeight());
+                        setGraphicsConfigInfo(((Graphics2D)graphics).getTransform(), width, height);
                         int pageResult = printable.print(
                             graphics, pageFormat, pageIndex);
                         if (pageResult != Printable.NO_SUCH_PAGE) {

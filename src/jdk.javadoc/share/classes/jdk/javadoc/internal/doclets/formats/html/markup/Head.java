@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.Locale;
 
 import jdk.javadoc.internal.doclets.formats.html.Content;
+import jdk.javadoc.internal.doclets.formats.html.HtmlConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 
@@ -60,7 +61,7 @@ public class Head extends Content {
     private Script mainBodyScript;
     private final List<Script> scripts;
     // Scripts added via --add-script option
-    private List<DocPath> additionalScripts = List.of();
+    private List<HtmlConfiguration.JavaScriptFile> additionalScripts = List.of();
     private final List<Content> extraContent;
     private boolean addDefaultScript = true;
     private DocPath canonicalLink;
@@ -176,7 +177,7 @@ public class Head extends Content {
      * @param scripts the list of additional script files
      * @return this object
      */
-    public Head setAdditionalScripts(List<DocPath> scripts) {
+    public Head setAdditionalScripts(List<HtmlConfiguration.JavaScriptFile> scripts) {
         this.additionalScripts = scripts;
         return this;
     }
@@ -319,6 +320,11 @@ public class Head extends Content {
     }
 
     private void addStylesheets(HtmlTree head) {
+        if (index) {
+            // Add JQuery-UI stylesheet first so its rules can be overridden.
+            addStylesheet(head, DocPaths.RESOURCE_FILES.resolve(DocPaths.JQUERY_UI_CSS));
+        }
+
         if (mainStylesheet == null) {
             mainStylesheet = DocPaths.STYLESHEET;
         }
@@ -332,10 +338,6 @@ public class Head extends Content {
             // Local stylesheets are contained in doc-files, so omit resource-files prefix
             addStylesheet(head, path);
         }
-
-        if (index) {
-            addStylesheet(head, DocPaths.RESOURCE_FILES.resolve(DocPaths.JQUERY_UI_CSS));
-        }
     }
 
     private void addStylesheet(HtmlTree head, DocPath stylesheet) {
@@ -345,21 +347,21 @@ public class Head extends Content {
 
     private void addScripts(HtmlTree head) {
         if (addDefaultScript) {
-            addScriptElement(head, DocPaths.SCRIPT_FILES.resolve(DocPaths.SCRIPT_JS));
+            addScriptElement(head, DocPaths.SCRIPT_JS);
         }
         if (index) {
             if (pathToRoot != null && mainBodyScript != null) {
                 String ptrPath = pathToRoot.isEmpty() ? "." : pathToRoot.getPath();
-                mainBodyScript.append("var pathtoroot = ")
+                mainBodyScript.append("const pathtoroot = ")
                         .appendStringLiteral(ptrPath + "/")
                         .append(";\n")
                         .append("loadScripts(document, 'script');");
             }
-            addScriptElement(head, DocPaths.SCRIPT_FILES.resolve(DocPaths.JQUERY_JS));
-            addScriptElement(head, DocPaths.SCRIPT_FILES.resolve(DocPaths.JQUERY_UI_JS));
+            addScriptElement(head, DocPaths.JQUERY_JS);
+            addScriptElement(head, DocPaths.JQUERY_UI_JS);
         }
-        for (DocPath path : additionalScripts) {
-            addScriptElement(head, DocPaths.SCRIPT_FILES.resolve(path));
+        for (HtmlConfiguration.JavaScriptFile javaScriptFile : additionalScripts) {
+            addScriptElement(head, javaScriptFile);
         }
         for (Script script : scripts) {
             head.add(script.asContent());
@@ -367,7 +369,13 @@ public class Head extends Content {
     }
 
     private void addScriptElement(HtmlTree head, DocPath filePath) {
-        DocPath scriptFile = pathToRoot.resolve(filePath);
+        DocPath scriptFile = pathToRoot.resolve(DocPaths.SCRIPT_FILES).resolve(filePath);
         head.add(HtmlTree.SCRIPT(scriptFile.getPath()));
+    }
+
+    private void addScriptElement(HtmlTree head, HtmlConfiguration.JavaScriptFile script) {
+        DocPath scriptFile = pathToRoot.resolve(DocPaths.SCRIPT_FILES).resolve(script.path());
+        HtmlTree scriptTag = HtmlTree.SCRIPT(scriptFile.getPath());
+        head.add(script.isModule() ? scriptTag.put(HtmlAttr.TYPE, "module") : scriptTag);
     }
 }

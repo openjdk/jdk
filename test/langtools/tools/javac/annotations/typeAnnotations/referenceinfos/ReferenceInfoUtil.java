@@ -21,8 +21,8 @@
  * questions.
  */
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.*;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
 import java.util.*;
 
 public class ReferenceInfoUtil {
@@ -37,8 +37,8 @@ public class ReferenceInfoUtil {
 
     /////////////////// Extract type annotations //////////////////
     private static void findAnnotations(ClassModel cm, List<TAD> annos) {
-        findAnnotations(cm, Attributes.RUNTIME_VISIBLE_TYPE_ANNOTATIONS, annos);
-        findAnnotations(cm, Attributes.RUNTIME_INVISIBLE_TYPE_ANNOTATIONS, annos);
+        findAnnotations(cm, Attributes.runtimeVisibleTypeAnnotations(), annos);
+        findAnnotations(cm, Attributes.runtimeInvisibleTypeAnnotations(), annos);
 
         for (FieldModel f : cm.fields()) {
             findAnnotations(f, annos);
@@ -49,8 +49,8 @@ public class ReferenceInfoUtil {
     }
 
     private static void findAnnotations(AttributedElement ae, List<TAD> annos) {
-        findAnnotations(ae, Attributes.RUNTIME_VISIBLE_TYPE_ANNOTATIONS, annos);
-        findAnnotations(ae, Attributes.RUNTIME_INVISIBLE_TYPE_ANNOTATIONS, annos);
+        findAnnotations(ae, Attributes.runtimeVisibleTypeAnnotations(), annos);
+        findAnnotations(ae, Attributes.runtimeInvisibleTypeAnnotations(), annos);
     }
 
     // test the result of Attributes.getIndex according to expectations
@@ -78,7 +78,7 @@ public class ReferenceInfoUtil {
             } else throw new AssertionError();
         }
         if (m instanceof MethodModel mm) {
-            CodeAttribute cAttr = mm.findAttribute(Attributes.CODE).orElse(null);
+            CodeAttribute cAttr = mm.findAttribute(Attributes.code()).orElse(null);
             if (cAttr != null) {
                 Attribute<T> attr2 = cAttr.findAttribute(attrName).orElse(null);;
                 if (attr2 != null) {

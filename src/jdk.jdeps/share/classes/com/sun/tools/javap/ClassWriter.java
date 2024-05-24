@@ -36,19 +36,19 @@ import java.lang.constant.ClassDesc;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
-import jdk.internal.classfile.AccessFlags;
-import jdk.internal.classfile.Attributes;
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.ClassSignature;
-import jdk.internal.classfile.Classfile;
-import static jdk.internal.classfile.Classfile.*;
-import jdk.internal.classfile.constantpool.*;
-import jdk.internal.classfile.FieldModel;
-import jdk.internal.classfile.MethodModel;
-import jdk.internal.classfile.MethodSignature;
-import jdk.internal.classfile.Signature;
-import jdk.internal.classfile.attribute.CodeAttribute;
-import jdk.internal.classfile.attribute.SignatureAttribute;
+import java.lang.classfile.AccessFlags;
+import java.lang.classfile.Attributes;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.ClassSignature;
+import java.lang.classfile.ClassFile;
+import static java.lang.classfile.ClassFile.*;
+import java.lang.classfile.constantpool.*;
+import java.lang.classfile.FieldModel;
+import java.lang.classfile.MethodModel;
+import java.lang.classfile.MethodSignature;
+import java.lang.classfile.Signature;
+import java.lang.classfile.attribute.CodeAttribute;
+import java.lang.classfile.attribute.SignatureAttribute;
 
 /*
  *  The main javap class to write the contents of a class file as text.
@@ -141,7 +141,7 @@ public class ClassWriter extends BasicWriter {
             }
         }
 
-        cm.findAttribute(Attributes.SOURCE_FILE).ifPresent(sfa ->
+        cm.findAttribute(Attributes.sourceFile()).ifPresent(sfa ->
             println("Compiled from \"" + sfa.sourceFile().stringValue() + "\""));
 
         if (options.sysInfo || options.verbose) {
@@ -151,7 +151,7 @@ public class ClassWriter extends BasicWriter {
         writeModifiers(getClassModifiers(cm.flags().flagsMask()));
 
         if ((classModel.flags().flagsMask() & ACC_MODULE) != 0) {
-            var attr = classModel.findAttribute(Attributes.MODULE);
+            var attr = classModel.findAttribute(Attributes.module());
             if (attr.isPresent()) {
                 var modAttr = attr.get();
                 if ((modAttr.moduleFlagsMask() & ACC_OPEN) != 0) {
@@ -178,7 +178,7 @@ public class ClassWriter extends BasicWriter {
         }
 
         try {
-            var sigAttr = classModel.findAttribute(Attributes.SIGNATURE).orElse(null);
+            var sigAttr = classModel.findAttribute(Attributes.signature()).orElse(null);
             if (sigAttr == null) {
                 // use info from class file header
                 if ((classModel.flags().flagsMask() & ACC_INTERFACE) == 0
@@ -366,16 +366,20 @@ public class ClassWriter extends BasicWriter {
         }
 
         private void print(StringBuilder sb, Signature.TypeArg ta) {
-            switch (ta.wildcardIndicator()) {
-                case DEFAULT -> print(sb, ta.boundType().get());
-                case UNBOUNDED -> sb.append('?');
-                case EXTENDS -> {
-                    sb.append("? extends ");
-                    print(sb, ta.boundType().get());
-                }
-                case SUPER -> {
-                    sb.append("? super ");
-                    print(sb, ta.boundType().get());
+            switch (ta) {
+                case Signature.TypeArg.Unbounded _ -> sb.append('?');
+                case Signature.TypeArg.Bounded bta -> {
+                    switch (bta.wildcardIndicator()) {
+                        case NONE -> print(sb, bta.boundType());
+                        case EXTENDS -> {
+                            sb.append("? extends ");
+                            print(sb, bta.boundType());
+                        }
+                        case SUPER -> {
+                            sb.append("? super ");
+                            print(sb, bta.boundType());
+                        }
+                    }
                 }
             }
         }
@@ -395,13 +399,13 @@ public class ClassWriter extends BasicWriter {
         writeModifiers(flags.flags().stream().filter(fl -> fl.sourceModifier())
                 .map(fl -> Modifier.toString(fl.mask())).toList());
         print(() -> sigPrinter.print(
-                f.findAttribute(Attributes.SIGNATURE)
+                f.findAttribute(Attributes.signature())
                         .map(SignatureAttribute::asTypeSignature)
                         .orElseGet(() -> Signature.of(f.fieldTypeSymbol()))));
         print(" ");
         print(() -> f.fieldName().stringValue());
         if (options.showConstants) {
-            var a = f.findAttribute(Attributes.CONSTANT_VALUE);
+            var a = f.findAttribute(Attributes.constantValue());
             if (a.isPresent()) {
                 print(" = ");
                 var cv = a.get();
@@ -476,7 +480,7 @@ public class ClassWriter extends BasicWriter {
         writeModifiers(modifiers);
 
         try {
-            var sigAttr = m.findAttribute(Attributes.SIGNATURE);
+            var sigAttr = m.findAttribute(Attributes.signature());
             MethodSignature d;
             if (sigAttr.isEmpty()) {
                 d = MethodSignature.parseFrom(m.methodType().stringValue());
@@ -503,7 +507,7 @@ public class ClassWriter extends BasicWriter {
                     break;
             }
 
-            var e_attr = m.findAttribute(Attributes.EXCEPTIONS);
+            var e_attr = m.findAttribute(Attributes.exceptions());
             // if there are generic exceptions, there must be erased exceptions
             if (e_attr.isPresent()) {
                 var exceptions = e_attr.get();
@@ -555,9 +559,9 @@ public class ClassWriter extends BasicWriter {
             }
 
             if (options.showLineAndLocalVariableTables) {
-                code.findAttribute(Attributes.LINE_NUMBER_TABLE)
+                code.findAttribute(Attributes.lineNumberTable())
                         .ifPresent(a -> attrWriter.write(a, code));
-                code.findAttribute(Attributes.LOCAL_VARIABLE_TABLE)
+                code.findAttribute(Attributes.localVariableTable())
                         .ifPresent(a -> attrWriter.write(a, code));
             }
         }
@@ -585,7 +589,7 @@ public class ClassWriter extends BasicWriter {
     public static final int ACC_STATIC_PHASE = 0x0040;
 
     void writeDirectives() {
-        var attr = classModel.findAttribute(Attributes.MODULE);
+        var attr = classModel.findAttribute(Attributes.module());
         if (attr.isEmpty())
             return;
 
@@ -714,7 +718,7 @@ public class ClassWriter extends BasicWriter {
      */
     String getConstantValue(ClassDesc d, ConstantValueEntry cpInfo) {
         switch (cpInfo.tag()) {
-            case Classfile.TAG_INTEGER: {
+            case ClassFile.TAG_INTEGER: {
                 var val = (Integer)cpInfo.constantValue();
                 switch (d.descriptorString()) {
                     case "C":
@@ -728,7 +732,7 @@ public class ClassWriter extends BasicWriter {
                         return String.valueOf(val);
                 }
             }
-            case Classfile.TAG_STRING:
+            case ClassFile.TAG_STRING:
                 return getConstantStringValue(cpInfo.constantValue().toString());
             default:
                 return constantWriter.stringValue(cpInfo);
@@ -816,25 +820,25 @@ public class ClassWriter extends BasicWriter {
     }
 
     public static enum AccessFlag {
-        ACC_PUBLIC      (Classfile.ACC_PUBLIC,       "public",       true,  true,  true,  true ),
-        ACC_PRIVATE     (Classfile.ACC_PRIVATE,      "private",      false, true,  true,  true ),
-        ACC_PROTECTED   (Classfile.ACC_PROTECTED,    "protected",    false, true,  true,  true ),
-        ACC_STATIC      (Classfile.ACC_STATIC,       "static",       false, true,  true,  true ),
-        ACC_FINAL       (Classfile.ACC_FINAL,        "final",        true,  true,  true,  true ),
-        ACC_SUPER       (Classfile.ACC_SUPER,        null,           true,  false, false, false),
-        ACC_SYNCHRONIZED(Classfile.ACC_SYNCHRONIZED, "synchronized", false, false, false, true ),
-        ACC_VOLATILE    (Classfile.ACC_VOLATILE,     "volatile",     false, false, true,  false),
-        ACC_BRIDGE      (Classfile.ACC_BRIDGE,       null,           false, false, false, true ),
-        ACC_TRANSIENT   (Classfile.ACC_TRANSIENT,    "transient",    false, false, true,  false),
-        ACC_VARARGS     (Classfile.ACC_VARARGS,      null,           false, false, false, true ),
-        ACC_NATIVE      (Classfile.ACC_NATIVE,       "native",       false, false, false, true ),
-        ACC_INTERFACE   (Classfile.ACC_INTERFACE,    null,           true,   true, false, false),
-        ACC_ABSTRACT    (Classfile.ACC_ABSTRACT,     "abstract",     true,   true, false, true ),
-        ACC_STRICT      (Classfile.ACC_STRICT,       "strictfp",     false, false, false, true ),
-        ACC_SYNTHETIC   (Classfile.ACC_SYNTHETIC,    null,           true,  true,  true,  true ),
-        ACC_ANNOTATION  (Classfile.ACC_ANNOTATION,   null,           true,   true, false, false),
-        ACC_ENUM        (Classfile.ACC_ENUM,         null,           true,   true, true,  false),
-        ACC_MODULE      (Classfile.ACC_MODULE,       null,           true,  false, false, false);
+        ACC_PUBLIC      (ClassFile.ACC_PUBLIC,       "public",       true,  true,  true,  true ),
+        ACC_PRIVATE     (ClassFile.ACC_PRIVATE,      "private",      false, true,  true,  true ),
+        ACC_PROTECTED   (ClassFile.ACC_PROTECTED,    "protected",    false, true,  true,  true ),
+        ACC_STATIC      (ClassFile.ACC_STATIC,       "static",       false, true,  true,  true ),
+        ACC_FINAL       (ClassFile.ACC_FINAL,        "final",        true,  true,  true,  true ),
+        ACC_SUPER       (ClassFile.ACC_SUPER,        null,           true,  false, false, false),
+        ACC_SYNCHRONIZED(ClassFile.ACC_SYNCHRONIZED, "synchronized", false, false, false, true ),
+        ACC_VOLATILE    (ClassFile.ACC_VOLATILE,     "volatile",     false, false, true,  false),
+        ACC_BRIDGE      (ClassFile.ACC_BRIDGE,       null,           false, false, false, true ),
+        ACC_TRANSIENT   (ClassFile.ACC_TRANSIENT,    "transient",    false, false, true,  false),
+        ACC_VARARGS     (ClassFile.ACC_VARARGS,      null,           false, false, false, true ),
+        ACC_NATIVE      (ClassFile.ACC_NATIVE,       "native",       false, false, false, true ),
+        ACC_INTERFACE   (ClassFile.ACC_INTERFACE,    null,           true,   true, false, false),
+        ACC_ABSTRACT    (ClassFile.ACC_ABSTRACT,     "abstract",     true,   true, false, true ),
+        ACC_STRICT      (ClassFile.ACC_STRICT,       "strictfp",     false, false, false, true ),
+        ACC_SYNTHETIC   (ClassFile.ACC_SYNTHETIC,    null,           true,  true,  true,  true ),
+        ACC_ANNOTATION  (ClassFile.ACC_ANNOTATION,   null,           true,   true, false, false),
+        ACC_ENUM        (ClassFile.ACC_ENUM,         null,           true,   true, true,  false),
+        ACC_MODULE      (ClassFile.ACC_MODULE,       null,           true,  false, false, false);
 
         public final int flag;
         public final String modifier;

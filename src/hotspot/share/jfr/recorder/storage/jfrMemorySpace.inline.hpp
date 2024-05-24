@@ -626,8 +626,8 @@ inline bool ReinitializeAllReleaseRetiredOp<Mspace, FromList>::process(typename 
   const bool retired = node->retired();
   node->reinitialize();
   assert(node->empty(), "invariant");
-  assert(!node->retired(), "invariant");
   if (retired) {
+    assert(!node->retired(), "invariant");
     _prev = _list.excise(_prev, node);
     node->release();
     mspace_release(node, _mspace);

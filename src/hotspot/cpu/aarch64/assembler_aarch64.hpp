@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2014, 2024, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -797,6 +797,8 @@ public:
 
   void adrp(Register Rd, const Address &dest, uint64_t &offset) = delete;
 
+  void prfm(const Address &adr, prfop pfop = PLDL1KEEP);
+
 #undef INSN
 
   void add_sub_immediate(Instruction_aarch64 &current_insn, Register Rd, Register Rn,
@@ -1088,8 +1090,8 @@ public:
 #undef INSN
 
   // we only provide mrs and msr for the special purpose system
-  // registers where op1 (instr[20:19]) == 11 and, (currently) only
-  // use it for FPSR n.b msr has L (instr[21]) == 0 mrs has L == 1
+  // registers where op1 (instr[20:19]) == 11
+  // n.b msr has L (instr[21]) == 0 mrs has L == 1
 
   void msr(int op1, int CRn, int CRm, int op2, Register rt) {
     starti;
@@ -1571,17 +1573,6 @@ public:
   INSN(ldrsh,  0b01, 0b10);
   INSN(ldrshw, 0b01, 0b11);
   INSN(ldrsw,  0b10, 0b10);
-
-#undef INSN
-
-#define INSN(NAME, size, op)                                    \
-  void NAME(const Address &adr, prfop pfop = PLDL1KEEP) {       \
-    ld_st2(as_Register(pfop), adr, size, op);                   \
-  }
-
-  INSN(prfm, 0b11, 0b10); // FIXME: PRFM should not be used with
-                          // writeback modes, but the assembler
-                          // doesn't enfore that.
 
 #undef INSN
 
@@ -2196,41 +2187,20 @@ public:
 
 #undef INSN
 
-  enum sign_kind { SIGNED, UNSIGNED };
-
 private:
-  void _xcvtf_scalar_integer(sign_kind sign, unsigned sz,
-                             FloatRegister Rd, FloatRegister Rn) {
-    starti;
-    f(0b01, 31, 30), f(sign == SIGNED ? 0 : 1, 29);
-    f(0b111100, 27, 23), f((sz >> 1) & 1, 22), f(0b100001110110, 21, 10);
-    rf(Rn, 5), rf(Rd, 0);
-  }
-
-public:
-#define INSN(NAME, sign, sz)                        \
-  void NAME(FloatRegister Rd, FloatRegister Rn) {   \
-    _xcvtf_scalar_integer(sign, sz, Rd, Rn);        \
-  }
-
-  INSN(scvtfs, SIGNED, 0);
-  INSN(scvtfd, SIGNED, 1);
-
-#undef INSN
-
-private:
-  void _xcvtf_vector_integer(sign_kind sign, SIMD_Arrangement T,
+  void _xcvtf_vector_integer(bool is_unsigned, SIMD_Arrangement T,
                              FloatRegister Rd, FloatRegister Rn) {
     assert(T == T2S || T == T4S || T == T2D, "invalid arrangement");
     starti;
-    f(0, 31), f(T & 1, 30), f(sign == SIGNED ? 0 : 1, 29);
+    f(0, 31), f(T & 1, 30), f(is_unsigned ? 1 : 0, 29);
     f(0b011100, 28, 23), f((T >> 1) & 1, 22), f(0b100001110110, 21, 10);
     rf(Rn, 5), rf(Rd, 0);
   }
 
 public:
+
   void scvtfv(SIMD_Arrangement T, FloatRegister Rd, FloatRegister Rn) {
-    _xcvtf_vector_integer(SIGNED, T, Rd, Rn);
+    _xcvtf_vector_integer(/* is_unsigned */ false, T, Rd, Rn);
   }
 
   // Floating-point compare
@@ -2625,6 +2595,7 @@ template<typename R, typename... Rx>
 
 #undef INSN
 
+  // Advanced SIMD across lanes
 #define INSN(NAME, opc, opc2, accepted) \
   void NAME(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn) {                   \
     guarantee(T != T1Q && T != T1D, "incorrect arrangement");                           \
@@ -2991,8 +2962,8 @@ template<typename R, typename... Rx>
 
 #undef INSN
 
-private:
-  void _xshll(sign_kind sign, FloatRegister Vd, SIMD_Arrangement Ta, FloatRegister Vn, SIMD_Arrangement Tb, int shift) {
+protected:
+  void _xshll(bool is_unsigned, FloatRegister Vd, SIMD_Arrangement Ta, FloatRegister Vn, SIMD_Arrangement Tb, int shift) {
     starti;
     /* The encodings for the immh:immb fields (bits 22:16) are
      *   0001 xxx       8H, 8B/16B shift = xxx
@@ -3002,7 +2973,7 @@ private:
      */
     assert((Tb >> 1) + 1 == (Ta >> 1), "Incompatible arrangement");
     assert((1 << ((Tb>>1)+3)) > shift, "Invalid shift value");
-    f(0, 31), f(Tb & 1, 30), f(sign == SIGNED ? 0 : 1, 29), f(0b011110, 28, 23);
+    f(0, 31), f(Tb & 1, 30), f(is_unsigned ? 1 : 0, 29), f(0b011110, 28, 23);
     f((1 << ((Tb>>1)+3))|shift, 22, 16);
     f(0b101001, 15, 10), rf(Vn, 5), rf(Vd, 0);
   }
@@ -3010,12 +2981,12 @@ private:
 public:
   void ushll(FloatRegister Vd, SIMD_Arrangement Ta, FloatRegister Vn,  SIMD_Arrangement Tb, int shift) {
     assert(Tb == T8B || Tb == T4H || Tb == T2S, "invalid arrangement");
-    _xshll(UNSIGNED, Vd, Ta, Vn, Tb, shift);
+    _xshll(/* is_unsigned */ true, Vd, Ta, Vn, Tb, shift);
   }
 
   void ushll2(FloatRegister Vd, SIMD_Arrangement Ta, FloatRegister Vn,  SIMD_Arrangement Tb, int shift) {
     assert(Tb == T16B || Tb == T8H || Tb == T4S, "invalid arrangement");
-    _xshll(UNSIGNED, Vd, Ta, Vn, Tb, shift);
+    _xshll(/* is_unsigned */ true, Vd, Ta, Vn, Tb, shift);
   }
 
   void uxtl(FloatRegister Vd, SIMD_Arrangement Ta, FloatRegister Vn,  SIMD_Arrangement Tb) {
@@ -3024,12 +2995,12 @@ public:
 
   void sshll(FloatRegister Vd, SIMD_Arrangement Ta, FloatRegister Vn,  SIMD_Arrangement Tb, int shift) {
     assert(Tb == T8B || Tb == T4H || Tb == T2S, "invalid arrangement");
-    _xshll(SIGNED, Vd, Ta, Vn, Tb, shift);
+    _xshll(/* is_unsigned */ false, Vd, Ta, Vn, Tb, shift);
   }
 
   void sshll2(FloatRegister Vd, SIMD_Arrangement Ta, FloatRegister Vn,  SIMD_Arrangement Tb, int shift) {
     assert(Tb == T16B || Tb == T8H || Tb == T4S, "invalid arrangement");
-    _xshll(SIGNED, Vd, Ta, Vn, Tb, shift);
+    _xshll(/* is_unsigned */ false, Vd, Ta, Vn, Tb, shift);
   }
 
   void sxtl(FloatRegister Vd, SIMD_Arrangement Ta, FloatRegister Vn,  SIMD_Arrangement Tb) {
@@ -3862,18 +3833,25 @@ public:
   }
 
 // SVE unpack vector elements
-#define INSN(NAME, op) \
-  void NAME(FloatRegister Zd, SIMD_RegVariant T, FloatRegister Zn) { \
-    starti;                                                          \
-    assert(T != B && T != Q, "invalid size");                        \
-    f(0b00000101, 31, 24), f(T, 23, 22), f(0b1100, 21, 18);          \
-    f(op, 17, 16), f(0b001110, 15, 10), rf(Zn, 5), rf(Zd, 0);        \
+protected:
+  void _sve_xunpk(bool is_unsigned, bool is_high, FloatRegister Zd, SIMD_RegVariant T, FloatRegister Zn) {
+    starti;
+    assert(T != B && T != Q, "invalid size");
+    f(0b00000101, 31, 24), f(T, 23, 22), f(0b1100, 21, 18);
+    f(is_unsigned ? 1 : 0, 17), f(is_high ? 1 : 0, 16),
+    f(0b001110, 15, 10), rf(Zn, 5), rf(Zd, 0);
   }
 
-  INSN(sve_uunpkhi, 0b11); // Signed unpack and extend half of vector - high half
-  INSN(sve_uunpklo, 0b10); // Signed unpack and extend half of vector - low half
-  INSN(sve_sunpkhi, 0b01); // Unsigned unpack and extend half of vector - high half
-  INSN(sve_sunpklo, 0b00); // Unsigned unpack and extend half of vector - low half
+public:
+#define INSN(NAME, is_unsigned, is_high)                                  \
+  void NAME(FloatRegister Zd, SIMD_RegVariant T, FloatRegister Zn) {      \
+    _sve_xunpk(is_unsigned, is_high, Zd, T, Zn);                          \
+  }
+
+  INSN(sve_uunpkhi, true,  true ); // Unsigned unpack and extend half of vector - high half
+  INSN(sve_uunpklo, true,  false); // Unsigned unpack and extend half of vector - low half
+  INSN(sve_sunpkhi, false, true ); // Signed unpack and extend half of vector - high half
+  INSN(sve_sunpklo, false, false); // Signed unpack and extend half of vector - low half
 #undef INSN
 
 // SVE unpack predicate elements

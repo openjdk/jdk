@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,6 +78,7 @@
 #include "runtime/vm_version.hpp"
 #include "sanitizers/leak.hpp"
 #include "utilities/dtrace.hpp"
+#include "utilities/events.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
@@ -100,7 +101,7 @@
 
 GrowableArray<Method*>* collected_profiled_methods;
 
-int compare_methods(Method** a, Method** b) {
+static int compare_methods(Method** a, Method** b) {
   // compiled_invocation_count() returns int64_t, forcing the entire expression
   // to be evaluated as int64_t. Overflow is not an issue.
   int64_t diff = (((*b)->invocation_count() + (*b)->compiled_invocation_count())
@@ -108,7 +109,7 @@ int compare_methods(Method** a, Method** b) {
   return (diff < 0) ? -1 : (diff > 0) ? 1 : 0;
 }
 
-void collect_profiled_methods(Method* m) {
+static void collect_profiled_methods(Method* m) {
   Thread* thread = Thread::current();
   methodHandle mh(thread, m);
   if ((m->method_data() != nullptr) &&
@@ -117,7 +118,7 @@ void collect_profiled_methods(Method* m) {
   }
 }
 
-void print_method_profiling_data() {
+static void print_method_profiling_data() {
   if ((ProfileInterpreter COMPILER1_PRESENT(|| C1UpdateMethodData)) &&
      (PrintMethodData || CompilerOracle::should_print_methods())) {
     ResourceMark rm;
@@ -130,17 +131,23 @@ void print_method_profiling_data() {
     if (count > 0) {
       for (int index = 0; index < count; index++) {
         Method* m = collected_profiled_methods->at(index);
-        ttyLocker ttyl;
-        tty->print_cr("------------------------------------------------------------------------");
-        m->print_invocation_count();
-        tty->print_cr("  mdo size: %d bytes", m->method_data()->size_in_bytes());
-        tty->cr();
+
+        // Instead of taking tty lock, we collect all lines into a string stream
+        // and then print them all at once.
+        ResourceMark rm2;
+        stringStream ss;
+
+        ss.print_cr("------------------------------------------------------------------------");
+        m->print_invocation_count(&ss);
+        ss.print_cr("  mdo size: %d bytes", m->method_data()->size_in_bytes());
+        ss.cr();
         // Dump data on parameters if any
         if (m->method_data() != nullptr && m->method_data()->parameters_type_data() != nullptr) {
-          tty->fill_to(2);
-          m->method_data()->parameters_type_data()->print_data_on(tty);
+          ss.fill_to(2);
+          m->method_data()->parameters_type_data()->print_data_on(&ss);
         }
-        m->print_codes();
+        m->print_codes_on(&ss);
+        tty->print("%s", ss.as_string()); // print all at once
         total_size += m->method_data()->size_in_bytes();
       }
       tty->print_cr("------------------------------------------------------------------------");
@@ -156,7 +163,7 @@ void print_method_profiling_data() {
 
 GrowableArray<Method*>* collected_invoked_methods;
 
-void collect_invoked_methods(Method* m) {
+static void collect_invoked_methods(Method* m) {
   if (m->invocation_count() + m->compiled_invocation_count() >= 1) {
     collected_invoked_methods->push(m);
   }
@@ -166,7 +173,7 @@ void collect_invoked_methods(Method* m) {
 // Invocation count accumulators should be unsigned long to shift the
 // overflow border. Longer-running workloads tend to create invocation
 // counts which already overflow 32-bit counters for individual methods.
-void print_method_invocation_histogram() {
+static void print_method_invocation_histogram() {
   ResourceMark rm;
   collected_invoked_methods = new GrowableArray<Method*>(1024);
   SystemDictionary::methods_do(collect_invoked_methods);
@@ -192,7 +199,7 @@ void print_method_invocation_histogram() {
     Method* m = collected_invoked_methods->at(index);
     uint64_t iic = (uint64_t)m->invocation_count();
     uint64_t cic = (uint64_t)m->compiled_invocation_count();
-    if ((iic + cic) >= (uint64_t)MethodHistogramCutoff) m->print_invocation_count();
+    if ((iic + cic) >= (uint64_t)MethodHistogramCutoff) m->print_invocation_count(tty);
     int_total  += iic;
     comp_total += cic;
     if (m->is_final())        final_total  += iic + cic;
@@ -220,7 +227,7 @@ void print_method_invocation_histogram() {
   SharedRuntime::print_call_statistics(comp_total);
 }
 
-void print_bytecode_count() {
+static void print_bytecode_count() {
   if (CountBytecodes || TraceBytecodes || StopInterpreterAt) {
     tty->print_cr("[BytecodeCounter::counter_value = %d]", BytecodeCounter::counter_value());
   }
@@ -228,8 +235,8 @@ void print_bytecode_count() {
 
 #else
 
-void print_method_invocation_histogram() {}
-void print_bytecode_count() {}
+static void print_method_invocation_histogram() {}
+static void print_bytecode_count() {}
 
 #endif // PRODUCT
 
@@ -310,10 +317,12 @@ void print_statistics() {
     CompileBroker::print_heapinfo(nullptr, "all", 4096); // details
   }
 
+#ifndef PRODUCT
   if (PrintCodeCache2) {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     CodeCache::print_internals();
   }
+#endif
 
   if (VerifyOops && Verbose) {
     tty->print_cr("+VerifyOops count: %d", StubRoutines::verify_oop_count());
@@ -357,6 +366,8 @@ void before_exit(JavaThread* thread, bool halt) {
   #define BEFORE_EXIT_RUNNING 1
   #define BEFORE_EXIT_DONE    2
   static jint volatile _before_exit_status = BEFORE_EXIT_NOT_RUN;
+
+  Events::log(thread, "Before exit entered");
 
   // Note: don't use a Mutex to guard the entire before_exit(), as
   // JVMTI post_thread_end_event and post_vm_death_event will run native code.
@@ -564,7 +575,7 @@ void vm_direct_exit(int code, const char* message) {
   vm_direct_exit(code);
 }
 
-void vm_perform_shutdown_actions() {
+static void vm_perform_shutdown_actions() {
   if (is_init_completed()) {
     Thread* thread = Thread::current_or_null();
     if (thread != nullptr && thread->is_Java_thread()) {
@@ -599,7 +610,7 @@ void vm_abort(bool dump_core) {
   ShouldNotReachHere();
 }
 
-void vm_notify_during_cds_dumping(const char* error, const char* message) {
+static void vm_notify_during_cds_dumping(const char* error, const char* message) {
   if (error != nullptr) {
     tty->print_cr("Error occurred during CDS dumping");
     tty->print("%s", error);
@@ -619,7 +630,7 @@ void vm_exit_during_cds_dumping(const char* error, const char* message) {
   vm_abort(false);
 }
 
-void vm_notify_during_shutdown(const char* error, const char* message) {
+static void vm_notify_during_shutdown(const char* error, const char* message) {
   if (error != nullptr) {
     tty->print_cr("Error occurred during initialization of VM");
     tty->print("%s", error);

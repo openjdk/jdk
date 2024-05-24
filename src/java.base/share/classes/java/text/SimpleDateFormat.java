@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1487,7 +1487,8 @@ public class SimpleDateFormat extends DateFormat {
 
             switch (tag) {
             case TAG_QUOTE_ASCII_CHAR:
-                if (start >= textLength || text.charAt(start) != (char)count) {
+                if (start >= textLength ||
+                        !charEquals(text.charAt(start), (char)count)) {
                     pos.index = oldStart;
                     pos.errorIndex = start;
                     return null;
@@ -1497,7 +1498,8 @@ public class SimpleDateFormat extends DateFormat {
 
             case TAG_QUOTE_CHARS:
                 while (count-- > 0) {
-                    if (start >= textLength || text.charAt(start) != compiledPattern[i++]) {
+                    if (start >= textLength ||
+                            !charEquals(text.charAt(start), compiledPattern[i++])) {
                         pos.index = oldStart;
                         pos.errorIndex = start;
                         return null;
@@ -1579,6 +1581,13 @@ public class SimpleDateFormat extends DateFormat {
 
         return parsedDate;
     }
+
+    private boolean charEquals(char ch1, char ch2) {
+        return ch1 == ch2 ||
+            isLenient() &&
+                Character.getType(ch1) == Character.SPACE_SEPARATOR &&
+                Character.getType(ch2) == Character.SPACE_SEPARATOR;
+     }
 
     /* If the next tag/pattern is a <Numeric_Field> then the parser
      * should consider the count of digits while parsing the contiguous digits
@@ -2420,6 +2429,17 @@ public class SimpleDateFormat extends DateFormat {
     {
         return pattern.hashCode();
         // just enough fields for a reasonable distribution
+    }
+
+    /**
+     * {@return a string identifying this {@code SimpleDateFormat}, for debugging}
+     */
+    @Override
+    public String toString() {
+        return
+            """
+            SimpleDateFormat [locale: %s, pattern: "%s"]
+            """.formatted(locale == null ? null : '"' + locale.getDisplayName() + '"', toPattern());
     }
 
     /**

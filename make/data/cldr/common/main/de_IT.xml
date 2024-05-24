@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -59,20 +59,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="10">Okt</month>
 							<month type="11">Nov</month>
 							<month type="12">Dez</month>
-						</monthWidth>
-						<monthWidth type="wide">
-							<month type="1">Jänner</month>
-							<month type="2">Februar</month>
-							<month type="3">März</month>
-							<month type="4">April</month>
-							<month type="5">Mai</month>
-							<month type="6">Juni</month>
-							<month type="7">Juli</month>
-							<month type="8">August</month>
-							<month type="9">September</month>
-							<month type="10">Oktober</month>
-							<month type="11">November</month>
-							<month type="12">Dezember</month>
 						</monthWidth>
 					</monthContext>
 				</months>

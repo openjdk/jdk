@@ -33,15 +33,11 @@
  *  results in 2). Elements with no annotations expect 0.
  *  Source template is read in from testanoninner.template
  *
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
+ * @enablePreview
+ * @modules java.base/jdk.internal.classfile.impl
  */
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.*;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
 import java.io.*;
 import java.util.*;
 import java.nio.file.Files;
@@ -67,10 +63,10 @@ public class TestAnonInnerClasses extends ClassfileTestHelper {
     File testSrc = new File(System.getProperty("test.src"));
 
     AttributeMapper<?> [] AnnoAttributes = new AttributeMapper<?>[]{
-            Attributes.RUNTIME_VISIBLE_TYPE_ANNOTATIONS,
-            Attributes.RUNTIME_INVISIBLE_TYPE_ANNOTATIONS,
-            Attributes.RUNTIME_VISIBLE_ANNOTATIONS,
-            Attributes.RUNTIME_INVISIBLE_ANNOTATIONS
+            Attributes.runtimeVisibleTypeAnnotations(),
+            Attributes.runtimeInvisibleTypeAnnotations(),
+            Attributes.runtimeVisibleAnnotations(),
+            Attributes.runtimeInvisibleAnnotations()
     };
 
     // template for source files
@@ -179,7 +175,7 @@ public class TestAnonInnerClasses extends ClassfileTestHelper {
                         ((MethodModel) m).methodName().stringValue() : ((FieldModel) m).fieldName().stringValue();
                 attr = m.findAttribute(AnnoType).orElse(null);
                 //fetch index annotations from code attribute.
-                CAttr = m.findAttribute(Attributes.CODE).orElse(null);
+                CAttr = m.findAttribute(Attributes.code()).orElse(null);
                 if (CAttr != null) {
                     cattr = CAttr.findAttribute(AnnoType).orElse(null);
                 }
@@ -321,7 +317,7 @@ public class TestAnonInnerClasses extends ClassfileTestHelper {
                    0,classFile.getAbsolutePath().indexOf(classFile.getPath()));
             for (String clazz : classes) {
                 try {
-                    cm = Classfile.of().parse(new File(testloc+clazz).toPath());
+                    cm = ClassFile.of().parse(new File(testloc+clazz).toPath());
                 }
                 catch (Exception e) { e.printStackTrace();  }
                 // Test for all methods and fields

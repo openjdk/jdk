@@ -26,21 +26,17 @@
  * @bug 8042947
  * @summary Checking AnnotationDefault attribute.
  * @library /tools/lib /tools/javac/lib ../lib
+ * @enablePreview
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- *          java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
  *          java.base/jdk.internal.classfile.impl
  * @build toolbox.ToolBox InMemoryFileManager TestResult TestBase
  * @build AnnotationDefaultTest AnnotationDefaultVerifier
  * @run main AnnotationDefaultTest
  */
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.*;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
 import java.io.File;
 import java.io.IOException;
 import java.lang.annotation.RetentionPolicy;
@@ -81,7 +77,7 @@ public class AnnotationDefaultTest extends TestResult {
                 String methodName = method.methodName().stringValue();
                 printf("Testing method : %s\n", methodName);
                 AnnotationDefaultAttribute attr =
-                        method.findAttribute(Attributes.ANNOTATION_DEFAULT).orElse(null);
+                        method.findAttribute(Attributes.annotationDefault()).orElse(null);
 
                 if (hasDefault && !checkNotNull(attr, "Attribute is not null")
                         || !hasDefault && checkNull(attr, "Attribute is null")) {

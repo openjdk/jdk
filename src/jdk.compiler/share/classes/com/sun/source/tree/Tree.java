@@ -25,8 +25,6 @@
 
 package com.sun.source.tree;
 
-import jdk.internal.javac.PreviewFeature;
-
 /**
  * Common interface for all nodes in an abstract syntax tree.
  *
@@ -176,12 +174,6 @@ public interface Tree {
         INSTANCE_OF(InstanceOfTree.class),
 
         /**
-         * Used for instances of {@link StringTemplateTree}.
-         */
-        @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES, reflective=true)
-        TEMPLATE(StringTemplateTree.class),
-
-        /**
          * Used for instances of {@link LabeledStatementTree}.
          */
         LABELED_STATEMENT(LabeledStatementTree.class),
@@ -292,7 +284,7 @@ public interface Tree {
         /**
          * Used for instances of {@link SwitchExpressionTree}.
          *
-         * @since 12
+         * @since 14
          */
         SWITCH_EXPRESSION(SwitchExpressionTree.class),
 
@@ -710,7 +702,7 @@ public interface Tree {
         /**
          * Used for instances of {@link YieldTree}.
          *
-         * @since 13
+         * @since 14
          */
         YIELD(YieldTree.class);
 

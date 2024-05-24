@@ -40,7 +40,7 @@ public class ReadConfInUTF16Env {
     public void testReadConfInUTF16Env() throws Exception {
         String[] testCommand = new String[] { "-Dfile.encoding=UTF-16",
                 TestSunPKCS11Provider.class.getName()};
-        ProcessTools.executeTestJvm(testCommand).shouldHaveExitValue(0);
+        ProcessTools.executeTestJava(testCommand).shouldHaveExitValue(0);
     }
 
     static class TestSunPKCS11Provider {

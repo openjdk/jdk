@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,8 @@ public final class OutputAnalyzer {
     private static final String jvmwarningmsg = ".* VM warning:.*";
 
     private static final String deprecatedmsg = ".* VM warning:.* deprecated.*";
+
+    private static final String FATAL_ERROR_PAT = "# A fatal error has been detected.*";
 
     private final OutputBuffer buffer;
     /**
@@ -104,6 +106,14 @@ public final class OutputAnalyzer {
     public OutputAnalyzer(String stdout, String stderr, int exitValue)
     {
         buffer = OutputBuffer.of(stdout, stderr, exitValue);
+    }
+
+    /**
+     * Delegate waitFor to the OutputBuffer. This ensures that
+     * the progress and timestamps are logged correctly.
+     */
+    public void waitFor() {
+        buffer.waitFor();
     }
 
     /**
@@ -621,6 +631,14 @@ public final class OutputAnalyzer {
         return asLines(getOutput());
     }
 
+    public List<String> stdoutAsLines() {
+        return asLines(getStdout());
+    }
+
+    public List<String> stderrAsLines() {
+        return asLines(getStderr());
+    }
+
     private List<String> asLines(String buffer) {
         return Arrays.asList(buffer.split("\\R"));
     }
@@ -647,13 +665,31 @@ public final class OutputAnalyzer {
 
     /**
      * Verify that the stderr contents of output buffer matches the pattern,
-     * after filtering out the Hotespot warning messages
+     * after filtering out the Hotspot warning messages
      *
      * @param pattern
      * @throws RuntimeException If the pattern was not found
      */
     public OutputAnalyzer stderrShouldMatchIgnoreVMWarnings(String pattern) {
         String stderr = getStderr().replaceAll(jvmwarningmsg + "\\R", "");
+        Matcher matcher = Pattern.compile(pattern, Pattern.MULTILINE).matcher(stderr);
+        if (!matcher.find()) {
+            reportDiagnosticSummary();
+            throw new RuntimeException("'" + pattern
+                  + "' missing from stderr");
+        }
+        return this;
+    }
+
+    /**
+     * Verify that the stderr contents of output buffer matches the pattern,
+     * after filtering out the Hotspot deprecation warning messages
+     *
+     * @param pattern
+     * @throws RuntimeException If the pattern was not found
+     */
+    public OutputAnalyzer stderrShouldMatchIgnoreDeprecatedWarnings(String pattern) {
+        String stderr = getStderr().replaceAll(deprecatedmsg + "\\R", "");
         Matcher matcher = Pattern.compile(pattern, Pattern.MULTILINE).matcher(stderr);
         if (!matcher.find()) {
             reportDiagnosticSummary();
@@ -784,6 +820,81 @@ public final class OutputAnalyzer {
             }
         }
         return -1;
+    }
+
+    private void searchLinesForMultiLinePattern(String[] haystack, String[] needles, boolean verbose) {
+
+        if (needles.length == 0) {
+            return;
+        }
+
+        int firstNeedlePos = 0;
+        for (int i = 0; i < haystack.length; i++) {
+            if (verbose) {
+                System.out.println("" + i + ":" + haystack[i]);
+            }
+            if (haystack[i].contains(needles[0])) {
+                if (verbose) {
+                    System.out.println("Matches pattern 0 (\"" + needles[0] + "\")");
+                }
+                firstNeedlePos = i;
+                break;
+            }
+        }
+
+        for (int i = 1; i < needles.length; i++) {
+            int haystackPos = firstNeedlePos + i;
+            if (haystackPos < haystack.length) {
+                if (verbose) {
+                    System.out.println("" + haystackPos + ":" + haystack[haystackPos]);
+                }
+                if (haystack[haystackPos].contains(needles[i])) {
+                    if (verbose) {
+                        System.out.println("Matches pattern " + i  + "(\"" + needles[i] + "\")");
+                    }
+                } else {
+                    String err = "First unmatched pattern: " + i + " (\"" + needles[i] + "\")";
+                    if (!verbose) { // don't print twice
+                        reportDiagnosticSummary();
+                    }
+                    throw new RuntimeException(err);
+                }
+            }
+        }
+    }
+
+    public void stdoutShouldContainMultiLinePattern(String[] needles, boolean verbose) {
+        String [] stdoutLines = stdoutAsLines().toArray(new String[0]);
+        searchLinesForMultiLinePattern(stdoutLines, needles, verbose);
+    }
+
+    public void stdoutShouldContainMultiLinePattern(String... needles) {
+        stdoutShouldContainMultiLinePattern(needles, true);
+    }
+
+    public void stderrShouldContainMultiLinePattern(String[] needles, boolean verbose) {
+        String [] stderrLines = stdoutAsLines().toArray(new String[0]);
+        searchLinesForMultiLinePattern(stderrLines, needles, verbose);
+    }
+
+    public void stderrShouldContainMultiLinePattern(String... needles) {
+        stderrShouldContainMultiLinePattern(needles, true);
+    }
+
+    public void shouldContainMultiLinePattern(String[] needles, boolean verbose) {
+        String [] lines = asLines().toArray(new String[0]);
+        searchLinesForMultiLinePattern(lines, needles, verbose);
+    }
+
+    public void shouldContainMultiLinePattern(String... needles) {
+        shouldContainMultiLinePattern(needles, true);
+    }
+
+    /**
+     * Assert that we did not crash with a hard VM error (generating an hs_err_pidXXX.log)
+     */
+    public void shouldNotHaveFatalError() {
+        shouldNotMatch(FATAL_ERROR_PAT);
     }
 
 }

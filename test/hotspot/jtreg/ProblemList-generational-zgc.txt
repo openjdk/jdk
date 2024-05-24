@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,7 @@ serviceability/sa/ClhsdbJdis.java                             8307393   generic-
 serviceability/sa/ClhsdbJhisto.java                           8307393   generic-all
 serviceability/sa/ClhsdbJstack.java#id0                       8307393   generic-all
 serviceability/sa/ClhsdbJstack.java#id1                       8307393   generic-all
+serviceability/sa/ClhsdbJstackWithConcurrentLock.java         8307393   generic-all
 serviceability/sa/ClhsdbJstackXcompStress.java                8307393   generic-all
 serviceability/sa/ClhsdbLauncher.java                         8307393   generic-all
 serviceability/sa/ClhsdbLongConstant.java                     8307393   generic-all
@@ -105,6 +106,7 @@ serviceability/sa/jmap-hprof/JMapHProfLargeHeapProc.java      8307393   generic-
 serviceability/sa/jmap-hprof/JMapHProfLargeHeapTest.java      8307393   generic-all
 serviceability/sa/sadebugd/ClhsdbAttachToDebugServer.java     8307393   generic-all
 serviceability/sa/sadebugd/ClhsdbTestConnectArgument.java     8307393   generic-all
+serviceability/sa/ClhsdbTestAllocationMerge.java              8307393   generic-all
 serviceability/sa/sadebugd/DebugdConnectTest.java             8307393   generic-all
 serviceability/sa/sadebugd/DebugdUtils.java                   8307393   generic-all
 serviceability/sa/sadebugd/DisableRegistryTest.java           8307393   generic-all
@@ -114,5 +116,4 @@ serviceability/sa/sadebugd/SADebugDTest.java                  8307393   generic-
 
 vmTestbase/gc/gctests/MemoryEaterMT/MemoryEaterMT.java        8289582   windows-x64
 
-vmTestbase/nsk/monitoring/MemoryPoolMBean/isCollectionUsageThresholdExceeded/isexceeded002/TestDescription.java 8298302 generic-all
 vmTestbase/nsk/sysdict/vm/stress/chain/chain007/chain007.java 8298991 linux-x64

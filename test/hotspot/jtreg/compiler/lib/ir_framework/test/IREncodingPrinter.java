@@ -98,10 +98,14 @@ public class IREncodingPrinter {
         "avx512dq",
         "avx512vl",
         "avx512f",
+        "avx512_vnni",
         // AArch64
         "sha3",
         "asimd",
-        "sve"
+        "sve",
+        // Riscv64
+        "v",
+        "zvbb"
     ));
 
     public IREncodingPrinter() {
@@ -155,22 +159,22 @@ public class IREncodingPrinter {
         checkIRAnnotations(irAnno);
         if (isIRNodeUnsupported(irAnno)) {
             return false;
-        } else if (irAnno.applyIfPlatform().length != 0 && !hasAllRequiredPlatform(irAnno.applyIfPlatform())) {
+        } else if (irAnno.applyIfPlatform().length != 0 && !hasAllRequiredPlatform(irAnno.applyIfPlatform(), "applyIfPlatform")) {
             printDisableReason(m, "Constraint not met (applyIfPlatform)", irAnno.applyIfPlatform(), ruleIndex, ruleMax);
             return false;
-        } else if (irAnno.applyIfPlatformAnd().length != 0 && !hasAllRequiredPlatform(irAnno.applyIfPlatformAnd())) {
+        } else if (irAnno.applyIfPlatformAnd().length != 0 && !hasAllRequiredPlatform(irAnno.applyIfPlatformAnd(), "applyIfPlatformAnd")) {
             printDisableReason(m, "Not all constraints are met (applyIfPlatformAnd)", irAnno.applyIfPlatformAnd(), ruleIndex, ruleMax);
             return false;
-        } else if (irAnno.applyIfPlatformOr().length != 0 && !hasAnyRequiredPlatform(irAnno.applyIfPlatformOr())) {
+        } else if (irAnno.applyIfPlatformOr().length != 0 && !hasAnyRequiredPlatform(irAnno.applyIfPlatformOr(), "applyIfPlatformOr")) {
             printDisableReason(m, "None of the constraints are met (applyIfPlatformOr)", irAnno.applyIfPlatformOr(), ruleIndex, ruleMax);
             return false;
-        } else if (irAnno.applyIfCPUFeature().length != 0 && !hasAllRequiredCPUFeature(irAnno.applyIfCPUFeature())) {
+        } else if (irAnno.applyIfCPUFeature().length != 0 && !hasAllRequiredCPUFeature(irAnno.applyIfCPUFeature(), "applyIfCPUFeature")) {
             printDisableReason(m, "Feature constraint not met (applyIfCPUFeature)", irAnno.applyIfCPUFeature(), ruleIndex, ruleMax);
             return false;
-        } else if (irAnno.applyIfCPUFeatureAnd().length != 0 && !hasAllRequiredCPUFeature(irAnno.applyIfCPUFeatureAnd())) {
+        } else if (irAnno.applyIfCPUFeatureAnd().length != 0 && !hasAllRequiredCPUFeature(irAnno.applyIfCPUFeatureAnd(), "applyIfCPUFeatureAnd")) {
             printDisableReason(m, "Not all feature constraints are met (applyIfCPUFeatureAnd)", irAnno.applyIfCPUFeatureAnd(), ruleIndex, ruleMax);
             return false;
-        } else if (irAnno.applyIfCPUFeatureOr().length != 0 && !hasAnyRequiredCPUFeature(irAnno.applyIfCPUFeatureOr())) {
+        } else if (irAnno.applyIfCPUFeatureOr().length != 0 && !hasAnyRequiredCPUFeature(irAnno.applyIfCPUFeatureOr(), "applyIfCPUFeatureOr")) {
             printDisableReason(m, "None of the feature constraints met (applyIfCPUFeatureOr)", irAnno.applyIfCPUFeatureOr(), ruleIndex, ruleMax);
             return false;
         } else if (irAnno.applyIf().length != 0 && !hasAllRequiredFlags(irAnno.applyIf(), "applyIf")) {
@@ -282,22 +286,24 @@ public class IREncodingPrinter {
         return returnValue;
     }
 
-    private boolean hasAllRequiredPlatform(String[] andRules) {
+    private boolean hasAllRequiredPlatform(String[] andRules, String ruleType) {
         boolean returnValue = true;
         for (int i = 0; i < andRules.length; i++) {
             String platform = andRules[i].trim();
             i++;
+            TestFormat.check(i < andRules.length, "Missing value for platform " + platform + " in " + ruleType + failAt());
             String value = andRules[i].trim();
             returnValue &= checkPlatform(platform, value);
         }
         return returnValue;
     }
 
-    private boolean hasAnyRequiredPlatform(String[] orRules) {
+    private boolean hasAnyRequiredPlatform(String[] orRules, String ruleType) {
         boolean returnValue = false;
         for (int i = 0; i < orRules.length; i++) {
             String platform = orRules[i].trim();
             i++;
+            TestFormat.check(i < orRules.length, "Missing value for platform " + platform + " in " + ruleType + failAt());
             String value = orRules[i].trim();
             returnValue |= checkPlatform(platform, value);
         }
@@ -358,22 +364,24 @@ public class IREncodingPrinter {
         return (trueValue && currentPlatform.contains(platform)) || (falseValue && !currentPlatform.contains(platform));
     }
 
-    private boolean hasAllRequiredCPUFeature(String[] andRules) {
+    private boolean hasAllRequiredCPUFeature(String[] andRules, String ruleType) {
         boolean returnValue = true;
         for (int i = 0; i < andRules.length; i++) {
             String feature = andRules[i].trim();
             i++;
+            TestFormat.check(i < andRules.length, "Missing value for cpu feature " + feature + " in " + ruleType + failAt());
             String value = andRules[i].trim();
             returnValue &= checkCPUFeature(feature, value);
         }
         return returnValue;
     }
 
-    private boolean hasAnyRequiredCPUFeature(String[] orRules) {
+    private boolean hasAnyRequiredCPUFeature(String[] orRules, String ruleType) {
         boolean returnValue = false;
         for (int i = 0; i < orRules.length; i++) {
             String feature = orRules[i].trim();
             i++;
+            TestFormat.check(i < orRules.length, "Missing value for cpu feature " + feature + " in " + ruleType + failAt());
             String value = orRules[i].trim();
             returnValue |= checkCPUFeature(feature, value);
         }

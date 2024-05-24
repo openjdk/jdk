@@ -82,7 +82,8 @@ class JvmtiVTMSTransitionDisabler {
   static volatile int _VTMS_transition_disable_for_one_count; // transitions for one virtual thread are disabled while it is positive
   static volatile int _VTMS_transition_disable_for_all_count; // transitions for all virtual threads are disabled while it is positive
   static volatile bool _SR_mode;                         // there is an active suspender or resumer
-  static volatile int _VTMS_transition_count;            // current number of VTMS transitions
+  static volatile int _sync_protocol_enabled_count;      // current number of JvmtiVTMSTransitionDisablers enabled sync protocol
+  static volatile bool _sync_protocol_enabled_permanently; // seen a suspender: JvmtiVTMSTransitionDisabler protocol is enabled permanently
 
   bool _is_SR;                                           // is suspender or resumer
   jthread _thread;                                       // virtual thread to disable transitions for, no-op if it is a platform thread
@@ -98,7 +99,12 @@ class JvmtiVTMSTransitionDisabler {
   static bool VTMS_notify_jvmti_events()             { return _VTMS_notify_jvmti_events; }
   static void set_VTMS_notify_jvmti_events(bool val) { _VTMS_notify_jvmti_events = val; }
 
-  static void set_VTMS_transition_count(bool val)    { _VTMS_transition_count = val; }
+  static void inc_sync_protocol_enabled_count()      { Atomic::inc(&_sync_protocol_enabled_count); }
+  static void dec_sync_protocol_enabled_count()      { Atomic::dec(&_sync_protocol_enabled_count); }
+  static int  sync_protocol_enabled_count()          { return Atomic::load(&_sync_protocol_enabled_count); }
+  static bool sync_protocol_enabled_permanently()    { return Atomic::load(&_sync_protocol_enabled_permanently); }
+
+  static bool sync_protocol_enabled()                { return sync_protocol_enabled_permanently() || sync_protocol_enabled_count() > 0; }
 
   // parameter is_SR: suspender or resumer
   JvmtiVTMSTransitionDisabler(bool is_SR = false);
@@ -231,6 +237,8 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
   inline JvmtiEnvThreadState* head_env_thread_state();
   inline void set_head_env_thread_state(JvmtiEnvThreadState* ets);
 
+  static bool _seen_interp_only_mode; // interp_only_mode was requested at least once
+
  public:
   ~JvmtiThreadState();
 
@@ -249,6 +257,11 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
   inline JvmtiEnvThreadState* env_thread_state(JvmtiEnvBase *env);
 
   static void periodic_clean_up();
+
+  // Return true if any thread has entered interp_only_mode at any point during the JVMs execution.
+  static bool seen_interp_only_mode() {
+    return _seen_interp_only_mode;
+  }
 
   void add_env(JvmtiEnvBase *env);
 
@@ -509,8 +522,8 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
   static ByteSize earlyret_oop_offset()   { return byte_offset_of(JvmtiThreadState, _earlyret_oop); }
   static ByteSize earlyret_value_offset() { return byte_offset_of(JvmtiThreadState, _earlyret_value); }
 
-  void oops_do(OopClosure* f, CodeBlobClosure* cf) NOT_JVMTI_RETURN; // GC support
-  void nmethods_do(CodeBlobClosure* cf) NOT_JVMTI_RETURN;
+  void oops_do(OopClosure* f, NMethodClosure* cf) NOT_JVMTI_RETURN; // GC support
+  void nmethods_do(NMethodClosure* cf) NOT_JVMTI_RETURN;
 
 public:
   void set_should_post_on_exceptions(bool val);

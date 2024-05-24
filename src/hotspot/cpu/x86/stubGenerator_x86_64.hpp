@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,6 +99,10 @@ class StubGenerator: public StubCodeGenerator {
 
   address generate_fp_mask(const char *stub_name, int64_t mask);
 
+  address generate_compress_perm_table(const char *stub_name, int32_t esize);
+
+  address generate_expand_perm_table(const char *stub_name, int32_t esize);
+
   address generate_vector_mask(const char *stub_name, int64_t mask);
 
   address generate_vector_byte_perm_mask(const char *stub_name);
@@ -187,10 +191,19 @@ class StubGenerator: public StubCodeGenerator {
                                     Register index, Register temp,
                                     bool use64byteVector, Label& L_entry, Label& L_exit);
 
+  void arraycopy_avx3_special_cases_256(XMMRegister xmm, KRegister mask, Register from,
+                                    Register to, Register count, int shift,
+                                    Register index, Register temp, Label& L_exit);
+
   void arraycopy_avx3_special_cases_conjoint(XMMRegister xmm, KRegister mask, Register from,
                                              Register to, Register start_index, Register end_index,
                                              Register count, int shift, Register temp,
                                              bool use64byteVector, Label& L_entry, Label& L_exit);
+
+  void arraycopy_avx3_large(Register to, Register from, Register temp1, Register temp2,
+                            Register temp3, Register temp4, Register count,
+                            XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3,
+                            XMMRegister xmm4, int shift);
 
   void copy32_avx(Register dst, Register src, Register index, XMMRegister xmm,
                   int shift = Address::times_1, int offset = 0);
@@ -198,6 +211,9 @@ class StubGenerator: public StubCodeGenerator {
   void copy64_avx(Register dst, Register src, Register index, XMMRegister xmm,
                   bool conjoint, int shift = Address::times_1, int offset = 0,
                   bool use64byteVector = false);
+
+  void copy256_avx3(Register dst, Register src, Register index, XMMRegister xmm1, XMMRegister xmm2,
+                                XMMRegister xmm3, XMMRegister xmm4, int shift, int offset = 0);
 
   void copy64_masked_avx(Register dst, Register src, XMMRegister xmm,
                          KRegister mask, Register length, Register index,
@@ -251,6 +267,14 @@ class StubGenerator: public StubCodeGenerator {
   address generate_unsafe_copy(const char *name,
                                address byte_copy_entry, address short_copy_entry,
                                address int_copy_entry, address long_copy_entry);
+
+  // Generate 'unsafe' set memory stub
+  // Though just as safe as the other stubs, it takes an unscaled
+  // size_t argument instead of an element count.
+  //
+  // Examines the alignment of the operands and dispatches
+  // to an int, short, or byte copy loop.
+  address generate_unsafe_setmemory(const char *name, address byte_copy_entry);
 
   // Perform range checks on the proposed arraycopy.
   // Kills temp, but nothing else.
@@ -437,6 +461,30 @@ class StubGenerator: public StubCodeGenerator {
   void poly1305_limbs_avx512(const XMMRegister D0, const XMMRegister D1,
                              const XMMRegister L0, const XMMRegister L1, const XMMRegister L2, bool padMSG,
                              const XMMRegister TMP, const Register rscratch);
+  //Poly305 AVX2 implementation
+  void poly1305_process_blocks_avx2(const Register input, const Register length,
+    const Register a0, const Register a1, const Register a2,
+    const Register r0, const Register r1, const Register c1);
+  void poly1305_msg_mul_reduce_vec4_avx2(const XMMRegister A0, const XMMRegister A1, const XMMRegister A2,
+                                   const Address R0, const Address R1, const Address R2,
+                                   const Address R1P, const Address R2P,
+                                   const XMMRegister P0L, const XMMRegister P0H,
+                                   const XMMRegister P1L, const XMMRegister P1H,
+                                   const XMMRegister P2L, const XMMRegister P2H,
+                                   const XMMRegister YTMP1, const XMMRegister YTMP2,
+                                   const XMMRegister YTMP3, const XMMRegister YTMP4,
+                                   const XMMRegister YTMP5, const XMMRegister YTMP6,
+                                   const Register input, const Register length, const Register rscratch);
+  void poly1305_mul_reduce_vec4_avx2(const XMMRegister A0, const XMMRegister A1, const XMMRegister A2,
+                               const XMMRegister R0, const XMMRegister R1, const XMMRegister R2,
+                               const XMMRegister R1P, const XMMRegister R2P,
+                               const XMMRegister P0L, const XMMRegister P0H,
+                               const XMMRegister P1L, const XMMRegister P1H,
+                               const XMMRegister P2L, const XMMRegister P2H,
+                               const XMMRegister YTMP1, const Register rscratch);
+
+  address generate_intpoly_montgomeryMult_P256();
+  address generate_intpoly_assign();
 
   // BASE64 stubs
 
@@ -567,6 +615,12 @@ class StubGenerator: public StubCodeGenerator {
 
   // shared exception handler for FFM upcall stubs
   address generate_upcall_stub_exception_handler();
+
+  // Specialized stub implementations for UseSecondarySupersTable.
+  address generate_lookup_secondary_supers_table_stub(u1 super_klass_index);
+
+  // Slow path implementation for UseSecondarySupersTable.
+  address generate_lookup_secondary_supers_table_slow_path_stub();
 
   void create_control_words();
 

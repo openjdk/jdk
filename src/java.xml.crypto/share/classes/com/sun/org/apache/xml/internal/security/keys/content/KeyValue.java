@@ -160,6 +160,7 @@ public class KeyValue extends SignatureElementProxy implements KeyInfoContent {
     }
 
     /** {@inheritDoc} */
+    @Override
     public String getBaseLocalName() {
         return Constants._TAG_KEYVALUE;
     }
