@@ -2057,20 +2057,20 @@ bool SuperWord::output() {
         // vn = StoreVectorNode::make(opc, ctl, mem, adr, atyp, val, vlen);
         // vlen_in_bytes = vn->as_StoreVector()->memory_size();
       } else if (VectorNode::is_scalar_rotate(n)) {
-        Node* in1 = first->in(1);
-        Node* in2 = first->in(2);
-        // If rotation count is non-constant or greater than 8bit value create a vector.
-        if (!in2->is_Con() || !Matcher::supports_vector_constant_rotates(in2->get_int())) {
-          in2 =  vector_opd(p, 2);
-        }
-        vn = VectorNode::make(opc, in1, in2, vlen, velt_basic_type(n));
-        vlen_in_bytes = vn->as_Vector()->length_in_bytes();
+        //Node* in1 = first->in(1);
+        //Node* in2 = first->in(2);
+        //// If rotation count is non-constant or greater than 8bit value create a vector.
+        //if (!in2->is_Con() || !Matcher::supports_vector_constant_rotates(in2->get_int())) {
+        //  in2 =  vector_opd(p, 2);
+        //}
+        //vn = VectorNode::make(opc, in1, in2, vlen, velt_basic_type(n));
+        //vlen_in_bytes = vn->as_Vector()->length_in_bytes();
       } else if (VectorNode::is_roundopD(n)) {
-        Node* in1 = vector_opd(p, 1);
-        Node* in2 = first->in(2);
-        assert(in2->is_Con(), "Constant rounding mode expected.");
-        vn = VectorNode::make(opc, in1, in2, vlen, velt_basic_type(n));
-        vlen_in_bytes = vn->as_Vector()->length_in_bytes();
+        //Node* in1 = vector_opd(p, 1);
+        //Node* in2 = first->in(2);
+        //assert(in2->is_Con(), "Constant rounding mode expected.");
+        //vn = VectorNode::make(opc, in1, in2, vlen, velt_basic_type(n));
+        //vlen_in_bytes = vn->as_Vector()->length_in_bytes();
       } else if (VectorNode::is_muladds2i(n)) {
         assert(n->req() == 5u, "MulAddS2I should have 4 operands.");
         Node* in1 = vector_opd(p, 1);
@@ -3500,6 +3500,9 @@ void SuperWordVTransformBuilder::build_vtransform() {
         } else {
           set_req_for_vector(vtn, 2, pack);
 	}
+      } else if (VectorNode::is_roundopD(p0)) {
+        set_req_for_vector(vtn, 1, pack);
+        set_req_for_scalar(vtn, 2, p0); // constant rounding mode
       } else {
         set_req_all_for_vector(vtn, pack);
       }
@@ -3560,7 +3563,8 @@ VTransformVectorNode* SuperWordVTransformBuilder::make_vtnode_for_pack(const Nod
     assert(p0->req() == 3, "2 operands expected");
     vtn = new (_graph.arena()) VTransformElementWiseVectorNode(_graph, 3, pack_size);
   } else if (VectorNode::is_roundopD(p0)) {
-    assert(false, "TODO");
+    assert(p0->req() == 3, "2 operands expected");
+    vtn = new (_graph.arena()) VTransformElementWiseVectorNode(_graph, 3, pack_size);
   } else if (VectorNode::is_muladds2i(p0)) {
     // A special kind of binary element-wise vector op: the inputs are "ints" a and b,
     // but reinterpreted as two "shorts" [a0, a1] and [b0, b1]:

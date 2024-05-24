@@ -2144,9 +2144,7 @@ VTransformApplyStatus VTransformElementWiseVectorNode::apply(const VLoopAnalyzer
   int   opc  = first->Opcode();
   BasicType bt = vloop_analyzer.types().velt_basic_type(first);
 
-  if (VectorNode::is_roundopD(first)) {
-    assert(false, "TODO roundopD");
-  } else if (opc == Op_SignumF || opc == Op_SignumD) {
+  if (opc == Op_SignumF || opc == Op_SignumD) {
     assert(false, "TODO Signum");
   } else if (first->is_CMove()) {
     assert(false, "TODO CMove");
@@ -2158,6 +2156,8 @@ VTransformApplyStatus VTransformElementWiseVectorNode::apply(const VLoopAnalyzer
 
     if (VectorNode::can_transform_shift_op(first, bt)) {
       opc = Op_RShiftI;
+    } else if (VectorNode::is_roundopD(first)) {
+      assert(in2->is_Con(), "Constant rounding mode expected.");
     }
 
     VectorNode* vn = VectorNode::make(opc, in1, in2, vlen, bt);
