@@ -400,7 +400,7 @@ void NativeGeneralJump::insert_unconditional(address code_pos, address entry) {
 
   int32_t offset = 0;
   a.movptr(t0, entry, offset); // lui, addi, slli, addi, slli
-  a.jalr(x0, t0, offset); // jalr
+  a.jr(t0, offset); // jalr
 
   ICache::invalidate_range(code_pos, instruction_size);
 }
@@ -409,7 +409,6 @@ void NativeGeneralJump::insert_unconditional(address code_pos, address entry) {
 void NativeGeneralJump::replace_mt_safe(address instr_addr, address code_buffer) {
   ShouldNotCallThis();
 }
-
 
 address NativeCallTrampolineStub::destination(nmethod *nm) const {
   return ptr_at(data_offset);

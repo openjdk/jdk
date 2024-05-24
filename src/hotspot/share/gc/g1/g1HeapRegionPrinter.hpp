@@ -39,10 +39,6 @@ class G1HeapRegionPrinter : public AllStatic {
                           action, hr->get_type_str(), p2i(hr->bottom()), p2i(hr->top()), p2i(hr->end()));
   }
 
-  static void mark_reclaim(HeapRegion* hr) {
-    print("MARK-RECLAIM", hr);
-  }
-
 public:
   // In some places we iterate over a list in order to generate output
   // for the list's elements. By exposing this we can avoid this
@@ -61,7 +57,7 @@ public:
 
   static void evac_failure(HeapRegion* hr)              { print("EVAC-FAILURE", hr); }
 
-  static void mark_reclaim(FreeRegionList* free_list);
+  static void mark_reclaim(HeapRegion* hr)              { print("MARK-RECLAIM", hr); }
 
   static void eager_reclaim(HeapRegion* hr)             { print("EAGER-RECLAIM", hr); }
 

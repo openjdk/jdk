@@ -45,6 +45,7 @@ import java.util.regex.Pattern;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.Name;
@@ -75,10 +76,24 @@ import com.sun.source.doctree.InheritDocTree;
 import com.sun.source.doctree.InlineTagTree;
 import com.sun.source.doctree.LinkTree;
 import com.sun.source.doctree.LiteralTree;
+import com.sun.source.doctree.RawTextTree;
 import com.sun.source.doctree.StartElementTree;
 import com.sun.source.doctree.TextTree;
 import com.sun.source.util.DocTreePath;
 import com.sun.source.util.SimpleDocTreeVisitor;
+
+import jdk.internal.org.commonmark.Extension;
+import jdk.internal.org.commonmark.ext.gfm.tables.TablesExtension;
+import jdk.internal.org.commonmark.node.AbstractVisitor;
+import jdk.internal.org.commonmark.node.Code;
+import jdk.internal.org.commonmark.node.Heading;
+import jdk.internal.org.commonmark.node.Node;
+import jdk.internal.org.commonmark.parser.Parser;
+import jdk.internal.org.commonmark.renderer.NodeRenderer;
+import jdk.internal.org.commonmark.renderer.html.HtmlNodeRendererContext;
+import jdk.internal.org.commonmark.renderer.html.HtmlNodeRendererFactory;
+import jdk.internal.org.commonmark.renderer.html.HtmlRenderer;
+import jdk.internal.org.commonmark.renderer.html.HtmlWriter;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
@@ -95,6 +110,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.formats.html.markup.TextBuilder;
 import jdk.javadoc.internal.doclets.formats.html.taglets.Taglet;
 import jdk.javadoc.internal.doclets.formats.html.taglets.TagletWriter;
+import jdk.javadoc.internal.doclets.toolkit.DocFileElement;
 import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
@@ -205,7 +221,7 @@ public abstract class HtmlDocletWriter {
      *
      * @param configuration the configuration for this doclet
      * @param path the file to be generated.
-     * @param generating whether to write a "Geneterating ..." message to the console
+     * @param generating whether to write a "Generating ..." message to the console
      */
     protected HtmlDocletWriter(HtmlConfiguration configuration, DocPath path, boolean generating) {
         this.configuration = configuration;
@@ -503,7 +519,10 @@ public abstract class HtmlDocletWriter {
     }
 
     /**
-     * Get the window title.
+     * Returns the window title.
+     *
+     * The window title is the composition of the given title and
+     * any value set by the window-title option.
      *
      * @param title the title string to construct the complete window title
      * @return the window title string
@@ -513,6 +532,105 @@ public abstract class HtmlDocletWriter {
             title += " (" + options.windowTitle() + ")";
         }
         return title;
+    }
+
+    /**
+     * {@return the title for a doc-file element}
+     *
+     * For an HTML file, the title is as given in the {@code <title>} element,
+     * as found in the preamble of the doc-comment tree.
+     *
+     * For a Markdown file, there is no direct representation of the page title,
+     * and so the content of the {@code <h1>} heading is used.
+     *
+     * @param element the doc-file element
+     */
+    public String getFileTitle(DocFileElement element) {
+        var fileName = element.getFileObject().getName();
+        if (fileName.endsWith(".html")) {
+            return getTextContent(utils.getPreamble(element), "title");
+        } else if (fileName.endsWith(".md")) {
+            var c = commentTagsToContent(element, utils.getBody(element), false);
+            return getHeadingText(c);
+        } else {
+            throw new IllegalArgumentException(fileName);
+        }
+    }
+
+    /**
+     * {@return the plain-text content of a named HTML element in a list of content}
+     *
+     * @param trees the list of content
+     * @param name the name og the HTML element
+     */
+    private String getTextContent(List<? extends DocTree> trees, String name) {
+        var sb = new StringBuilder();
+        var collectText = false;
+        loop:
+        for (DocTree dt : trees) {
+            switch (dt.getKind()) {
+                case START_ELEMENT -> {
+                    var nodeStart = (StartElementTree) dt;
+                    if (nodeStart.getName().toString().equalsIgnoreCase(name)) {
+                        collectText = true;
+                    }
+                }
+                case END_ELEMENT -> {
+                    var nodeEnd = (EndElementTree) dt;
+                    if (nodeEnd.getName().toString().equalsIgnoreCase(name)) {
+                        break loop;
+                    }
+                }
+                case TEXT -> {
+                    var nodeText = (TextTree) dt;
+                    if (collectText)
+                        sb.append(nodeText.getBody());
+                }
+                default -> {
+                }
+                // do nothing
+            }
+        }
+        return sb.toString().trim();
+    }
+
+    /**
+     * {@return the content of the {@code <h1>} heading in the given content,
+     * or an empty string if there is no such heading}
+     *
+     * The heading must be at the beginning of the content.
+     * It may be represented in either an HTML tree with tag name {@code h1}
+     * or in a raw HTML node.
+     *
+     * @param c the content
+     */
+    private String getHeadingText(Content c) {
+        var sb = new StringBuilder();
+        if (c instanceof ContentBuilder cb) {
+            var contents = cb.getContents();
+            if (!contents.isEmpty()) {
+                var first = contents.get(0);
+                if (first instanceof HtmlTree htmlTree && htmlTree.tagName.equals(TagName.H1)) {
+                    for (var c2 : htmlTree.getContents()) {
+                        if (c2 instanceof Text t) {
+                            sb.append(t.toString());
+                        } else if (c2 instanceof TextBuilder tb) {
+                            sb.append(tb.toString());
+                        }
+                    }
+                    return sb.toString();
+                } else if (first instanceof RawHtml rawHtml) {
+                    Pattern h1 = Pattern.compile("<h1[^>]*>(.*)</h1>");
+                    Matcher m = h1.matcher(rawHtml.toString());
+                    if (m.lookingAt()) {
+                        var heading = m.group(1);
+                        var headingText = heading.replaceAll("</?[^>]+>", "");
+                        return headingText;
+                    }
+                }
+            }
+        }
+        return "";
     }
 
     /**
@@ -1267,10 +1385,13 @@ public abstract class HtmlDocletWriter {
         commentRemoved = false;
         List<Name> openTags = new ArrayList<>();
 
-        for (ListIterator<? extends DocTree> iterator = trees.listIterator(); iterator.hasNext();) {
+        var useMarkdown = trees.stream().anyMatch(t -> t.getKind() == Kind.MARKDOWN);
+        var markdownHandler = useMarkdown ? new MarkdownHandler(element) : null;
+
+        for (ListIterator<? extends DocTree> iterator = trees.listIterator(); iterator.hasNext(); ) {
             boolean isFirstNode = !iterator.hasPrevious();
             DocTree tag = iterator.next();
-            boolean isLastNode  = !iterator.hasNext();
+            boolean isLastNode = !iterator.hasNext();
 
             if (context.isFirstSentence) {
                 // Ignore block tags
@@ -1293,18 +1414,237 @@ public abstract class HtmlDocletWriter {
             }
 
             var docTreeVisitor = new InlineVisitor(element, tag, isLastNode, context, ch, trees);
-
-            boolean allDone = docTreeVisitor.visit(tag, result);
+            boolean allDone = useMarkdown
+                    ? markdownHandler.handle(tag, docTreeVisitor)
+                    : docTreeVisitor.visit(tag, result);
             commentRemoved = false;
 
             if (allDone)
                 break;
         }
+
+        if (useMarkdown) {
+            markdownHandler.addContent(result);
+        }
+
         // Close any open inline tags
         while (!openTags.isEmpty()) {
             result.add(RawHtml.endElement(openTags.removeLast()));
         }
         return result;
+    }
+
+    private class MarkdownHandler {
+        /**
+         * Placeholder for non-HTML nodes that are phrasing content.
+         * The character (\uFFFC) is the Unicode Object Replacement Character, {@code U+FFFC}.
+         */
+        private static final char PLACEHOLDER_CHAR = '\uFFFC';
+        /**
+         * Placeholder for non-HTML nodes that are not phrasing content.
+         * The placeholder is an HTML block, according to CommonMark 4.6 rule 2,
+         * and so will not be wrapped into with {@code <p>...</p>} tags.
+         * @see <a href="https://spec.commonmark.org/0.30/#html-blocks">HTML blocks</a>
+         */
+        private static final String PLACEHOLDER_BLOCK = "<!--\uFFFC-->";
+        private static final Pattern PLACEHOLDERS = Pattern.compile(PLACEHOLDER_CHAR + "|" + PLACEHOLDER_BLOCK);
+
+        private final StringBuilder markdownInput = new StringBuilder() ;
+        private final ArrayList<Content> fffcObjects = new ArrayList<>();
+
+        private final Extension tablesExtn = TablesExtension.create();
+        private final HtmlNodeRendererFactory headingRendererFactory = HeadingNodeRenderer::new;
+
+        private final Element element;
+
+        private final Parser parser = Parser.builder()
+                .extensions(List.of(tablesExtn))
+                .build();
+        private final HtmlRenderer renderer = HtmlRenderer.builder()
+                .nodeRendererFactory(headingRendererFactory)
+                .extensions(List.of(tablesExtn))
+                .build();
+
+        MarkdownHandler(Element element) {
+            this.element = element;
+        }
+
+        boolean handle(DocTree tree, InlineVisitor visitor) {
+            boolean allDone;
+            if (tree instanceof RawTextTree t) {
+                if (t.getKind() != Kind.MARKDOWN) {
+                    throw new IllegalStateException(t.getKind().toString());
+                }
+                String code = t.getContent();
+                // handle the (unlikely) case of FFFC characters existing in the code
+                int start = 0;
+                int pos;
+                while ((pos = code.indexOf(PLACEHOLDER_CHAR, start)) != -1) {
+                    markdownInput.append(code.substring(start, pos));
+                    markdownInput.append(PLACEHOLDER_CHAR);
+                    fffcObjects.add(Text.of(String.valueOf(PLACEHOLDER_CHAR)));
+                    start = pos + 1;
+                }
+                markdownInput.append(code.substring(start));
+                allDone = false;
+            } else {
+                Content embeddedContent = new ContentBuilder();
+                allDone = visitor.visit(tree, embeddedContent);
+                fffcObjects.add(embeddedContent);
+                if (embeddedContent.isPhrasingContent()) {
+                    markdownInput.append(PLACEHOLDER_CHAR);
+                } else {
+                    if (!markdownInput.isEmpty() && markdownInput.charAt(markdownInput.length() - 1) != '\n') {
+                        markdownInput.append('\n');
+                    }
+                    markdownInput.append(PLACEHOLDER_BLOCK);
+                }
+            }
+            return allDone;
+        }
+
+        void addContent(Content result) {
+            Node document = parser.parse(markdownInput.toString());
+            String markdownOutput = unwrap(renderer.render(document));
+            Matcher m = PLACEHOLDERS.matcher(markdownOutput);
+            int start = 0;
+            int pos;
+            int fffcObjectIndex = 0;
+            while (m.find()) {
+                result.add(RawHtml.markdown(markdownOutput.substring(start, m.start())));
+                result.add(fffcObjects.get(fffcObjectIndex++));
+                start = m.end();
+            }
+            if (start < markdownOutput.length()) {
+                result.add(RawHtml.of(markdownOutput.substring(start)));
+            }
+        }
+
+        /*
+         * If a string contains a simple HTML paragraph, beginning with <p>
+         * and ending with </p> and optional whitespace, return the content
+         * of the paragraph between the tags.
+         * Otherwise, return the string unmodified.
+         */
+        private static String unwrap(String s) {
+            var prefix = "<p>";
+            if (s.startsWith(prefix)) {
+                var suffix = "</p>";
+                var suffixPos = s.indexOf(suffix);
+                if (suffixPos > 0) {
+                    var endSuffixPos = suffixPos + suffix.length();
+                    if (isBlank(s, endSuffixPos, s.length())) {
+                        return s.substring(prefix.length(), suffixPos);
+                    }
+                }
+            }
+            return s;
+        }
+
+        /**
+         * A renderer for Markdown {@code Heading} nodes, which represent
+         * both ATX headings (using {@code ####}) and Setext (using underlines).
+         * The mapping to HTML takes into account the context within the overall
+         * generated page, and automatically includes an id, to allow the heading
+         * to be referenced from elsewhere.
+         */
+        private class HeadingNodeRenderer extends AbstractVisitor implements NodeRenderer {
+            private final HtmlWriter htmlWriter;
+            private final HtmlNodeRendererContext context;
+
+            HeadingNodeRenderer(HtmlNodeRendererContext context) {
+                this.htmlWriter = context.getWriter();
+                this.context = context;
+            }
+
+            @Override
+            public Set<Class<? extends Node>> getNodeTypes() {
+                return Set.of(Heading.class);
+            }
+
+            @Override
+            public void render(Node node) {
+                node.accept(this);
+            }
+
+            @Override
+            public void visit(Heading heading) {
+                var htag = getTag(heading);
+                var id = getId(heading);
+
+                htmlWriter.line();
+                htmlWriter.tag(htag, Map.of("id", id.name()));
+                visitChildren(heading);
+                htmlWriter.tag('/' + htag);
+                htmlWriter.line();
+
+                if (includeHeadingInTableOfContents(htag)) {
+                    StringBuilder headingContent = new StringBuilder();
+                    new AbstractVisitor() {
+                        @Override
+                        public void visit(jdk.internal.org.commonmark.node.Code code) {
+                            headingContent.append(code.getLiteral());
+                            super.visit(code);
+                        }
+
+                        @Override
+                        public void visit(jdk.internal.org.commonmark.node.Text text) {
+                            headingContent.append(text.getLiteral());
+                            super.visit(text);
+                        }
+                    }.visit(heading);
+                    tableOfContents.addLink(id, Text.of(headingContent));
+                }
+            }
+
+            @Override
+            protected void visitChildren(Node parent) {
+                Node node = parent.getFirstChild();
+                while (node != null) {
+                    Node next = node.getNext();
+                    context.render(node);
+                    node = next;
+                }
+            }
+
+            private String getTag(Heading heading) {
+                // offset the heading level to allow for its position in the overall page
+                var eKind = element.getKind();
+                var offset = eKind.isField() || eKind.isExecutable() ? 3 // members
+                        : eKind != ElementKind.OTHER ? 1   // module, package, class, interface
+                        : 0; // doc file
+                return "h" + Math.min(heading.getLevel() + offset, 6);
+            }
+
+            private HtmlId getId(Heading heading) {
+                var list = new ArrayList<String>();
+                heading.accept(new AbstractVisitor() {
+                    @Override
+                    public void visit(jdk.internal.org.commonmark.node.Text text) {
+                        list.add(text.getLiteral());
+                    }
+
+                    @Override
+                    public void visit(Code code) {
+                        list.add(code.getLiteral());
+                    }
+                });
+                return htmlIds.forHeading(String.join(" ", list), headingIds);
+            }
+        }
+    }
+
+    /*
+     * Returns whether a substring of a string is blank.
+     * Avoid creating a substring or using regular expressions.
+     */
+    private static boolean isBlank(String s, int start, int end) {
+        for (int i = start; i < end; i++) {
+            if (!Character.isWhitespace(s.charAt(i))) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private class InlineVisitor extends SimpleDocTreeVisitor<Boolean, Content> {
@@ -1403,6 +1743,12 @@ public abstract class HtmlDocletWriter {
         @Override
         public Boolean visitComment(CommentTree node, Content content) {
             content.add(RawHtml.comment(node.getBody()));
+            return false;
+        }
+
+        @Override
+        public Boolean visitDocRoot(DocRootTree node, Content content) {
+            content.add(getInlineTagOutput(element, node, context));
             return false;
         }
 
@@ -1527,6 +1873,8 @@ public abstract class HtmlDocletWriter {
         for (DocTree docTree : trees.subList(trees.indexOf(node) + 1, trees.size())) {
             if (docTree instanceof TextTree text) {
                 sb.append(text.getBody());
+            } else if (docTree instanceof RawTextTree raw) {
+                sb.append(raw.getContent().replaceAll("[^A-Za-z0-9]+", " "));
             } else if (docTree instanceof LiteralTree literal) {
                 sb.append(literal.getBody().getBody());
             } else if (docTree instanceof IndexTree index) {
@@ -1568,10 +1916,16 @@ public abstract class HtmlDocletWriter {
                     new DocLink(path, id));
             configuration.indexBuilder.add(item);
         }
-        // Record second-level headings for use in table of contents
-        if (tableOfContents != null && node.getName().toString().equalsIgnoreCase("h2")) {
+        if (includeHeadingInTableOfContents(node.getName())) {
             tableOfContents.addLink(HtmlId.of(id), Text.of(headingContent));
         }
+    }
+
+    private boolean includeHeadingInTableOfContents(CharSequence tag) {
+        // Record second-level headings for use in table of contents
+        // TODO: maybe extend this to all headings up to a given level
+        return tableOfContents != null
+                && tag.toString().equalsIgnoreCase("h2");
     }
 
     /**
