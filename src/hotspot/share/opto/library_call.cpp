@@ -5920,9 +5920,6 @@ bool LibraryCallKit::inline_multiplyToLen() {
     return false;
   }
 
-  // Set the original stack and the reexecute bit for the interpreter to reexecute
-  // the bytecode that invokes BigInteger.multiplyToLen() if deoptimization happens
-  // on the return from z array allocation in runtime.
   Node* x_start = array_element_address(x, intcon(0), x_elem);
   Node* y_start = array_element_address(y, intcon(0), y_elem);
   // 'x_start' points to x array + scaled xlen

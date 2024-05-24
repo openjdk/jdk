@@ -1833,7 +1833,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         multiplyToLenCheck(y, ylen);
 
         if (z == null || z.length < (xlen + ylen))
-             z = new int[xlen + ylen];
+            z = new int[xlen + ylen];
 
         return implMultiplyToLen(x, xlen, y, ylen, z);
     }
