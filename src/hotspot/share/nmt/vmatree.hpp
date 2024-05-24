@@ -39,9 +39,10 @@
 class VMATree {
   friend class VMATreeTest;
   // A position in memory.
+public:
   using position = size_t;
 
-  class AddressComparator {
+  class PositionComparator {
   public:
     static int cmp(position a, position b) {
       if (a < b) return -1;
@@ -51,7 +52,6 @@ class VMATree {
     }
   };
 
-public:
   enum class StateType : uint8_t { Reserved, Committed, Released };
 
   // Each point has some stack and a flag associated with it.
@@ -118,7 +118,7 @@ private:
   };
 
 public:
-  using VMATreap = TreapCHeap<position, IntervalChange, AddressComparator>;
+  using VMATreap = TreapCHeap<position, IntervalChange, PositionComparator>;
   using TreapNode = VMATreap::TreapNode;
 
 private:

@@ -111,7 +111,7 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
   // Find all nodes between (A, B] and record their addresses and values. Also update B's
   // outgoing state.
   _tree.visit_range_in_order(A + 1, B + 1, [&](TreapNode* head) {
-    int cmp_B = AddressComparator::cmp(head->key(), B);
+    int cmp_B = PositionComparator::cmp(head->key(), B);
     stB.out = head->val().out;
     if (cmp_B < 0) {
       // Record all nodes preceding B.

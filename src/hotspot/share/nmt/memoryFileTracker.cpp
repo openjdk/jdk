@@ -71,8 +71,8 @@ void MemoryFileTracker::print_report_on(const MemoryFile* file, outputStream* st
     }
     assert(prev->val().out.type() == current->val().in.type(), "must be");
     if (prev->val().out.type() == VMATree::StateType::Committed) {
-      const auto& start_addr = prev->key();
-      const auto& end_addr = current->key();
+      const VMATree::position& start_addr = prev->key();
+      const VMATree::position& end_addr = current->key();
       stream->print_cr("[" PTR_FORMAT " - " PTR_FORMAT "] allocated " SIZE_FORMAT "%s" " for %s",
                        start_addr, end_addr,
                        NMTUtil::amount_in_scale(end_addr - start_addr, scale),
