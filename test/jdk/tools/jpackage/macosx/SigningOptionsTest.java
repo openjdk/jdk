@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,9 @@ public final class SigningOptionsTest {
     private final String expectedError;
     private final JPackageCommand cmd;
 
+    private static final String TEST_DUKE = TKit.TEST_SRC_ROOT.resolve(
+            "apps/dukeplug.png").toString();
+
     @Parameters
     public static Collection input() {
         return List.of(new Object[][]{
@@ -87,6 +90,11 @@ public final class SigningOptionsTest {
                                  "--mac-installer-sign-identity", "test-identity"},
                     new String[]{"--type"},
                     "Option [--mac-installer-sign-identity] is not valid with type"},
+            // --mac-installer-sign-identity and --type dmg
+            {"Hello",
+                    new String[]{"--app-content", TEST_DUKE},
+                    null,
+                    "\"codesign\" failure is additional content provided via \"--app-content\""},
         });
     }
 
