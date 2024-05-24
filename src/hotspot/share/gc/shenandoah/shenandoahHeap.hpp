@@ -239,7 +239,6 @@ private:
   bool      _heap_region_special;
   size_t    _num_regions;
   ShenandoahHeapRegion** _regions;
-  ShenandoahRegionIterator _update_refs_iterator;
 
 public:
 
