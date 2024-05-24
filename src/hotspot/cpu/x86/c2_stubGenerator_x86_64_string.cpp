@@ -90,10 +90,10 @@
 
 //  This macro handles clearing the bits of the mask register depending
 //  on whether we're comparing bytes or words.
-#define CLEAR_BIT(mask, tmp) \
+#define CLEAR_BIT(mask) \
   if (isU) {                 \
-    __ blsrl(tmp, mask);     \
-    __ blsrl(mask, tmp);     \
+    __ blsrl(mask, mask);     \
+    __ blsrl(mask, mask);     \
   } else {                   \
     __ blsrl(mask, mask);    \
   }
@@ -613,7 +613,7 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
     __ jne_b(L_found);
 
     // If more potential matches, continue at inner loop, otherwise go get another vector
-    CLEAR_BIT(mask, index);
+    CLEAR_BIT(mask);
     __ jne(L_innerLoop);
     __ jmp(L_loopTop);
 
@@ -729,7 +729,7 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
     __ movq(firstNeedleCompare, saveNeedleAddress);
 
     // Jump to inner loop if more matches to check, otherwise return not found
-    CLEAR_BIT(mask, rTmp3);
+    CLEAR_BIT(mask);
     __ jne(L_innerLoop);
     __ jmp(L_returnRBP);
 
@@ -942,7 +942,7 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
       __ jne_b(L_found);
 
     // If more potential matches, continue at inner loop, otherwise go get another vector
-      CLEAR_BIT(mask, index);
+      CLEAR_BIT(mask);
       __ jne(L_innerLoop);
       __ jmp(L_loopTop);
 
@@ -1118,15 +1118,13 @@ static void broadcast_additional_needles(bool sizeKnown, int size, Register need
 // hsLen - the sizeof the haystack in bytes
 // needleLen - size of the needle in bytes known at runtime
 // eq_mask - The bit mask returned that holds the result of the comparison
-// rTmp - a temporary register
-// rTmp2 - a temporary register
 // rxTmp1 - a temporary xmm register
 // rxTmp2 - a temporary xmm register
 // rxTmp3 - a temporary xmm register
 // ae - Argument encoding
 // _masm - Current MacroAssembler instance pointer
 //
-// If (n - k) < 32, need to handle reading past end of haystack
+// (n - k) will always be >= 32 on entry
 static void compare_big_haystack_to_needle(bool sizeKnown, int size, Label &noMatch,
                                            Register haystack, Register needleLen, Register eq_mask,
                                            XMMRegister rxTmp1, XMMRegister rxTmp2,
@@ -1198,12 +1196,12 @@ static void compare_big_haystack_to_needle(bool sizeKnown, int size, Label &noMa
 // size - the size of the needle.  Pass 0 if unknown at compile time
 // noMatch - label bound outside to jump to if there is no match
 // haystack - the address of the first byte of the haystack
-// isU - true if argument encoding is either UU or UL
 // eq_mask - The bit mask returned that holds the result of the comparison
-// needleLen - a temporary register.  Only used if isUL true
+// needleLen - Length of the needle in bytes.  Only used if isUL true
 // rTmp - temporary register
 // rxTmp1 - temporary xmm register
 // rxTmp2 - temporary xmm register
+// ae - Argument encoding
 // _masm - Current MacroAssembler instance pointer
 //
 // No need to worry about reading past end of haystack since haystack
@@ -1258,7 +1256,7 @@ static void compare_haystack_to_needle(bool sizeKnown, int size, Label &noMatch,
   }
 
   __ vpmovmskb(eq_mask, result, Assembler::AVX_256bit);
-  __ andq(eq_mask, rTmp);
+  __ andl(eq_mask, rTmp);
 
   __ testl(eq_mask, eq_mask);
   __ je(noMatch);
@@ -1393,7 +1391,7 @@ static void big_case_loop_helper(bool sizeKnown, int size, Label &noMatch, Label
   // If next compare will go beyond end of haystack adjust start of read
   // back to last valid read position
   __ cmpq(hsPtrRet, last);
-  __ jb_b(L_midLoop);
+  __ jbe_b(L_midLoop);
   __ movq(hsPtrRet, last);
 
   __ bind(L_midLoop);
@@ -1542,7 +1540,7 @@ static void byte_compare_helper(int size, Label &L_noMatch, Label &L_matchFound,
     break;
   }
 
-  CLEAR_BIT(mask, tmp);  // Loop as long as there are other bits set
+  CLEAR_BIT(mask);  // Loop as long as there are other bits set
   __ jne(L_loopTop);
   __ jmp(L_noMatch);
 }
@@ -1705,7 +1703,7 @@ static void setup_jump_tables(StrIntrinsicNode::ArgEncoding ae, Label &L_error, 
   {
     ////////////////////////////////////////////////////////////////////////////////////////
     //
-    // Small haystack (<32 bytes) switch
+    // Small haystack (<=32 bytes) switch
     //
     // Handle cases that were not handled in highly_optimized_short_cases, which will be
     // haystack size <= 32 bytes with 6 < needle size < NUMBER_OF_CASES bytes.
@@ -1751,8 +1749,6 @@ static void setup_jump_tables(StrIntrinsicNode::ArgEncoding ae, Label &L_error, 
       if (isU && ((i + 1) & 1)) {
         continue;
       } else {
-        Label L_loopTop;
-
         broadcast_additional_needles(true, i + 1, needle, noreg, rTmp, ae, _masm);
 
         compare_haystack_to_needle(true, i + 1, L_error, haystack, eq_mask, noreg, rTmp, XMM_TMP1,
@@ -1791,7 +1787,7 @@ static void setup_jump_tables(StrIntrinsicNode::ArgEncoding ae, Label &L_error, 
     //  XMM_BYTE_0 - first element of needle, broadcast
     //  XMM_BYTE_K - last element of needle, broadcast
     //
-    //  The haystack is >= 32 bytes
+    //  The haystack is > 32 bytes
 
     const Register haystack = rbx;
     const Register needle = r14;

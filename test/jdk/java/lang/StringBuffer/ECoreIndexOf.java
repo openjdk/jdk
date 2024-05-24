@@ -24,6 +24,9 @@
 /* @test
  * @bug 4162796 4162796
  * @summary Test indexOf and lastIndexOf
+ * @requires vm.cpu.features ~= ".*avx2.*"
+ * @requires vm.compiler2.enabled
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+EnableX86ECoreOpts -XX:UseAVX=2 -Xbatch -XX:-TieredCompilation -XX:CompileCommand=dontinline,ECoreIndexOf.indexOfKernel ECoreIndexOf
  * @key randomness
  */
 
@@ -182,44 +185,36 @@ public class ECoreIndexOf {
     return sb.toString();
   }
 
-  @CompilerControl(CompilerControl.Mode.DONT_INLINE)
   private static int indexOfKernel(String haystack, String needle) {
     return haystack.indexOf(needle);
   }
 
-  @CompilerControl(CompilerControl.Mode.DONT_INLINE)
   private static int indexOfKernel(String haystack, String needle, int offset) {
     return haystack.indexOf(needle, offset);
   }
 
-  @CompilerControl(CompilerControl.Mode.DONT_INLINE)
   private static int indexOfKernel(StringBuffer haystack, String needle) {
     return haystack.indexOf(needle);
   }
 
-  @CompilerControl(CompilerControl.Mode.DONT_INLINE)
   private static int indexOfKernel(StringBuffer haystack, char cneedle) {
     String needle = String.valueOf(cneedle);
     return haystack.indexOf(needle);
   }
 
-  @CompilerControl(CompilerControl.Mode.DONT_INLINE)
   private static int indexOfKernel(StringBuffer haystack, String needle, int offset) {
     return haystack.indexOf(needle, offset);
   }
 
-  @CompilerControl(CompilerControl.Mode.DONT_INLINE)
   private static int indexOfKernel(StringBuffer haystack, char cneedle, int offset) {
     String needle = String.valueOf(cneedle);
     return haystack.indexOf(needle, offset);
   }
 
-  @CompilerControl(CompilerControl.Mode.DONT_INLINE)
   private static int indexOfKernel(String haystack, char needle) {
     return haystack.indexOf(needle);
   }
 
-  @CompilerControl(CompilerControl.Mode.DONT_INLINE)
   private static int indexOfKernel(String haystack, char needle, int offset) {
     return haystack.indexOf(needle, offset);
   }

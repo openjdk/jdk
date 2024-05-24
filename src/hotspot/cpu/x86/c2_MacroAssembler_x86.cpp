@@ -4735,7 +4735,7 @@ void C2_MacroAssembler::arrays_equals(bool is_array_equ, Register ary1, Register
   if (is_array_equ && is_char) {
     bind(COMPARE_BYTE);
   } else {
-    lea(ary1, Address(ary1, expand_ary2 ? 4 : 2));
+    lea(ary1, Address(ary1, 2));
     lea(ary2, Address(ary2, 2));
 
     bind(COMPARE_BYTE);
