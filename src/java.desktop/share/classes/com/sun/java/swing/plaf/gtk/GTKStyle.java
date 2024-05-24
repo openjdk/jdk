@@ -747,12 +747,12 @@ class GTKStyle extends SynthStyle implements GTKConstants {
               region == Region.TOOL_TIP ||
               region == Region.TREE ||
               region == Region.VIEWPORT ||
-              region == Region.TEXT_PANE) {
+              region == Region.TEXT_PANE ||
+              region == Region.EDITOR_PANE) {
             return true;
         }
         if (!GTKLookAndFeel.is3()) {
-            if (region == Region.EDITOR_PANE ||
-                  region == Region.FORMATTED_TEXT_FIELD ||
+            if (region == Region.FORMATTED_TEXT_FIELD ||
                   region == Region.PASSWORD_FIELD ||
                   region == Region.SPINNER ||
                   region == Region.TEXT_FIELD) {
