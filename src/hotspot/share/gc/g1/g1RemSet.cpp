@@ -42,10 +42,10 @@
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1RootClosures.hpp"
 #include "gc/g1/g1RemSet.hpp"
-#include "gc/g1/g1_globals.hpp"
 #include "gc/shared/bufferNode.hpp"
 #include "gc/shared/bufferNodeList.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
@@ -1564,7 +1564,7 @@ bool G1RemSet::clean_card_before_refine(CardValue** const card_ptr_addr) {
 
 void G1RemSet::refine_card_concurrently(CardValue* const card_ptr,
                                         const uint worker_id) {
-  assert(!_g1h->is_gc_active(), "Only call concurrently");
+  assert(!_g1h->is_stw_gc_active(), "Only call concurrently");
   check_card_ptr(card_ptr, _ct);
 
   // Construct the MemRegion representing the card.

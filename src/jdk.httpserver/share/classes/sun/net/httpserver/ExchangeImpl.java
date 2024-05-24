@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -207,7 +207,7 @@ class ExchangeImpl {
         }
         this.rcode = rCode;
         String statusLine = "HTTP/1.1 "+rCode+Code.msg(rCode)+"\r\n";
-        OutputStream tmpout = new BufferedOutputStream (ros);
+        ByteArrayOutputStream tmpout = new ByteArrayOutputStream();
         PlaceholderOutputStream o = getPlaceholderResponseBody();
         tmpout.write (bytes(statusLine, 0), 0, statusLine.length());
         boolean noContentToSend = false; // assume there is content
@@ -278,11 +278,11 @@ class ExchangeImpl {
 
         write (rspHdrs, tmpout);
         this.rspContentLen = contentLen;
-        tmpout.flush() ;
-        tmpout = null;
+        tmpout.writeTo(ros);
         sentHeaders = true;
         logger.log(Level.TRACE, "Sent headers: noContentToSend=" + noContentToSend);
         if (noContentToSend) {
+            ros.flush();
             close();
         }
         server.logReply (rCode, req.requestLine(), null);

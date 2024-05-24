@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,8 +26,8 @@
 #ifndef SHARE_NMT_MALLOCTRACKER_HPP
 #define SHARE_NMT_MALLOCTRACKER_HPP
 
-#include "memory/allocation.hpp"
 #include "nmt/mallocHeader.hpp"
+#include "nmt/memflags.hpp"
 #include "nmt/nmtCommon.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/threadCritical.hpp"
@@ -177,6 +177,16 @@ class MallocMemorySnapshot {
   // Total malloc'd memory amount
   size_t total() const {
     return _all_mallocs.size() + malloc_overhead() + total_arena();
+  }
+
+  // Total peak malloc
+  size_t total_peak() const {
+    return _all_mallocs.peak_size();
+  }
+
+  // Total peak count
+  size_t total_peak_count() const {
+    return _all_mallocs.peak_count();
   }
 
   // Total malloc'd memory used by arenas

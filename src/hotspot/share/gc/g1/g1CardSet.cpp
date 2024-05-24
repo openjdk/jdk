@@ -533,7 +533,7 @@ G1AddCardResult G1CardSet::add_to_howl(ContainerPtr parent_container,
   ContainerPtr container;
 
   uint bucket = _config->howl_bucket_index(card_in_region);
-  ContainerPtr volatile* bucket_entry = howl->get_container_addr(bucket);
+  ContainerPtr volatile* bucket_entry = howl->container_addr(bucket);
 
   while (true) {
     if (Atomic::load(&howl->_num_entries) >= _config->cards_in_howl_threshold()) {
