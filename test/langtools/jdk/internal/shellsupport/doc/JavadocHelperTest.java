@@ -325,6 +325,101 @@ public class JavadocHelperTest {
                       "@return prefix value suffix");
     }
 
+    public void testMarkdown2() throws Exception {
+        doTestJavadoc("/// {@inheritDoc}\n" +
+                      "///\n" +
+                      "/// *Another* __paragraph__. [java.lang.Object]\n" +
+                      "///\n" +
+                      "/// @since snc\n",
+                      getSubTest,
+                      "javadoc1\n" +
+                      "\n" +
+                      "<p><em>Another</em> <strong>paragraph</strong>. {@link java.lang.Object}\n" +
+                      "\n" +
+                      "@param p1 param1\n" +
+                      "@param p2 param2\n" +
+                      "@param p3 param3\n" +
+                      "@throws java.lang.IllegalStateException exc1\n" +
+                      "@throws java.lang.IllegalArgumentException exc2\n" +
+                      "@throws java.lang.IllegalAccessException exc3\n" +
+                      "@return value\n" +
+                      "@since snc");
+    }
+
+    public void testMarkdown3() throws Exception {
+        doTestJavadoc("/// {@inheritDoc}\n" +
+                      "///\n" +
+                      "/// *Another* __paragraph__.\n",
+                      getSubTest,
+                      "javadoc1\n" +
+                      "\n" +
+                      "<p><em>Another</em> <strong>paragraph</strong>." + //the formatting could be improved
+                      "@param p1 param1\n" +
+                      "@param p2 param2\n" +
+                      "@param p3 param3\n" +
+                      "@throws java.lang.IllegalStateException exc1\n" +
+                      "@throws java.lang.IllegalArgumentException exc2\n" +
+                      "@throws java.lang.IllegalAccessException exc3\n" +
+                      "@return value\n");
+    }
+
+    public void testMarkdown4() throws Exception {
+        doTestJavadoc("/// {@inheritDoc}\n" +
+                      "///\n" +
+                      "/// *Another* __paragraph__. [test][java.lang.Object]\n" +
+                      "///\n" +
+                      "/// @since snc\n",
+                      getSubTest,
+                      "javadoc1\n" +
+                      "\n" +
+                      "<p><em>Another</em> <strong>paragraph</strong>. {@linkplain java.lang.Object test}\n" +
+                      "\n" +
+                      "@param p1 param1\n" +
+                      "@param p2 param2\n" +
+                      "@param p3 param3\n" +
+                      "@throws java.lang.IllegalStateException exc1\n" +
+                      "@throws java.lang.IllegalArgumentException exc2\n" +
+                      "@throws java.lang.IllegalAccessException exc3\n" +
+                      "@return value\n" +
+                      "@since snc");
+    }
+
+    public void testMarkdown5() throws Exception {
+        doTestJavadoc("///[define classes][java.lang.invoke.MethodHandles.Lookup#defineClass(byte\\[\\])]\n" +
+                      "///\n" +
+                      "/// @since snc\n",
+                      getSubTest,
+                      "{@linkplain java.lang.invoke.MethodHandles.Lookup#defineClass(byte[]) define classes}\n" +
+                      "\n" +
+                      "@param p1 param1\n" +
+                      "@param p2 param2\n" +
+                      "@param p3 param3\n" +
+                      "@throws java.lang.IllegalStateException exc1\n" +
+                      "@throws java.lang.IllegalArgumentException exc2\n" +
+                      "@throws java.lang.IllegalAccessException exc3\n" +
+                      "@return value\n" +
+                      " @since snc");
+    }
+
+    public void testMarkdown6() throws Exception {
+        doTestJavadoc("///Text1 [define classes][java.lang.invoke.MethodHandles.Lookup#defineClass(byte\\[\\])]\n" +
+                      "///text2\n" +
+                      "///\n" +
+                      "/// @since snc\n",
+                      getSubTest,
+                      "Text1 {@linkplain java.lang.invoke.MethodHandles.Lookup#defineClass(byte[]) define classes}\n" +
+                      "text2\n" +
+                      "\n" +
+                      "@param p1 param1\n" +
+                      "@param p2 param2\n" +
+                      "@param p3 param3\n" +
+                      "@throws java.lang.IllegalStateException exc1\n" +
+                      "@throws java.lang.IllegalArgumentException exc2\n" +
+                      "@throws java.lang.IllegalAccessException exc3\n" +
+                      "@return value\n" +
+                      " @since snc");
+    }
+
     private void doTestJavadoc(String origJavadoc, Function<JavacTask, Element> getElement, String expectedJavadoc) throws Exception {
         doTestJavadoc(origJavadoc,
                       "    /**\n" +
