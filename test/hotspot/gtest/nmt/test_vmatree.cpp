@@ -379,7 +379,7 @@ struct SimpleVMATracker : public CHeapObj<mtTest> {
     }
   };
   // Page (4KiB) granular array
-  constexpr static const size_t num_pages = 1024 * 512;
+  static constexpr const size_t num_pages = 1024 * 512;
   Info pages[num_pages];
 
   SimpleVMATracker()
@@ -434,6 +434,8 @@ struct SimpleVMATracker : public CHeapObj<mtTest> {
     return do_it(Free, start, size, NativeCallStack(), mtNone);
   }
 };
+
+constexpr const size_t SimpleVMATracker::num_pages;
 
 TEST_VM_F(VMATreeTest, TestConsistencyWithSimpleTracker) {
   // In this test we use ASSERT macros from gtest instead of EXPECT
