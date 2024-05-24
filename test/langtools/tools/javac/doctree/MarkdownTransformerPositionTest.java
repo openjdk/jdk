@@ -85,6 +85,7 @@ public class MarkdownTransformerPositionTest {
 
     private void linkWithEscapes() throws Exception {
         runConvertedLinksTest("""
+                /// Markdown comment.
                 /// [java.util.Arrays#asList(Object\\[\\])]
                 public class Test {
                 }

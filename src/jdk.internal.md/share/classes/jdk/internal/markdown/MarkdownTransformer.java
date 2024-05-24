@@ -864,8 +864,8 @@ public class MarkdownTransformer implements JavacTrees.DocCommentTreeTransformer
                     int[] result = new int[] {NOPOS, NOPOS};
 
                     while (m.find()) {
-                        result[0] = m.start();
-                        result[1] = m.end();
+                        result[0] = start + m.start();
+                        result[1] = start + m.end();
                     }
 
                     return result;
