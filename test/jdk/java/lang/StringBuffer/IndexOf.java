@@ -24,6 +24,8 @@
 /* @test
  * @bug 4162796 4162796
  * @summary Test indexOf and lastIndexOf
+ * @run main/othervm IndexOf
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -Xcomp -XX:-TieredCompilation -XX:UseAVX=2 -XX:+UnlockDiagnosticVMOptions -XX:+EnableX86ECoreOpts IndexOf
  * @key randomness
  */
 
@@ -39,55 +41,45 @@ public class IndexOf {
   public static void main(String[] args) throws Exception {
     String testName = "IndexOf";
 
-  // ///////////////////////////////////////////////////////////////////////////////////
-  // ///////////////////////////////////////////////////////////////////////////////////
-  char[] haystack = new char[128];
-  char[] haystack_16 = new char[128];
+    // ///////////////////////////////////////////////////////////////////////////////////
+    // ///////////////////////////////////////////////////////////////////////////////////
+    char[] haystack = new char[128];
+    char[] haystack_16 = new char[128];
 
-  for (int i = 0; i < 128; i++) {
-    haystack[i] = (char) i;
-  }
-
-  for (int i = 0; i < 128; i++) {
-    haystack_16[i] = (char) (i + 256);
-  }
-
-
-  Charset hs_charset = StandardCharsets.UTF_16;
-  Charset needleCharset = StandardCharsets.ISO_8859_1;
-
-  int l_offset = 0;
-  int needleSize = 65;
-  int haystackSize = 66;
-  int result = 0;
-
-  String needle = new String(Arrays.copyOfRange((needleCharset == StandardCharsets.UTF_16) ? haystack_16 : haystack, l_offset, l_offset + needleSize));
-  int hsSize = (haystackSize - l_offset) >= 0 ? haystackSize - l_offset : 0;
-  int midStart = hsSize / 2;
-  int endStart = (hsSize > needleSize) ? hsSize - needleSize : 0;
-  String midNeedle = new String(
-      Arrays.copyOfRange((needleCharset == StandardCharsets.UTF_16) ? haystack_16 : haystack, midStart + l_offset, midStart + needleSize + l_offset));
-  String endNeedle = new String(
-      Arrays.copyOfRange((needleCharset == StandardCharsets.UTF_16) ? haystack_16 : haystack, endStart + l_offset, endStart + needleSize + l_offset));
-  // String shs = new String(Arrays.copyOfRange((hs_charset == StandardCharsets.UTF_16) ? haystack_16 : haystack, 0, haystackSize));
-  String shs = (new String((hs_charset == StandardCharsets.UTF_16) ? haystack_16 : haystack)).substring(0, haystackSize);
-
-  endNeedle = "/'!(\"3//";
-  shs = ");:(/!-+ %*/'!(\"3//;9";
-  l_offset = 0;
-  StringBuffer bshs = new StringBuffer(shs);
-
-  // printStringBytes(shs.getBytes(hs_charset));
-  for (int i = 0; i < 200000; i++) {
-    if(shs.indexOf(endNeedle, l_offset) != -1) {
-      // System.out.println("result="+bshs.indexOf(endNeedle, l_offset));
+    for (int i = 0; i < 128; i++) {
+      haystack[i] = (char) i;
     }
-    result += bshs.indexOf(endNeedle, l_offset);
-    // System.out.print(result + " " + needle + " " + shs);
-  }
 
-  ///////////////////////////////////////////////////////////////////////////////////
-  ///////////////////////////////////////////////////////////////////////////////////
+    for (int i = 0; i < 128; i++) {
+      haystack_16[i] = (char) (i + 256);
+    }
+
+
+    Charset hs_charset = StandardCharsets.UTF_16;
+    Charset needleCharset = StandardCharsets.ISO_8859_1;
+
+    int l_offset = 0;
+    int needleSize = 65;
+    int haystackSize = 66;
+    int result = 0;
+
+    String needle = new String(Arrays.copyOfRange((needleCharset == StandardCharsets.UTF_16) ? haystack_16 : haystack, l_offset, l_offset + needleSize));
+    int hsSize = (haystackSize - l_offset) >= 0 ? haystackSize - l_offset : 0;
+    int midStart = hsSize / 2;
+    int endStart = (hsSize > needleSize) ? hsSize - needleSize : 0;
+    String midNeedle = new String(
+        Arrays.copyOfRange((needleCharset == StandardCharsets.UTF_16) ? haystack_16 : haystack, midStart + l_offset, midStart + needleSize + l_offset));
+    String endNeedle = new String(
+        Arrays.copyOfRange((needleCharset == StandardCharsets.UTF_16) ? haystack_16 : haystack, endStart + l_offset, endStart + needleSize + l_offset));
+    String shs = (new String((hs_charset == StandardCharsets.UTF_16) ? haystack_16 : haystack)).substring(0, haystackSize);
+
+    endNeedle = "/'!(\"3//";
+    shs = ");:(/!-+ %*/'!(\"3//;9";
+    l_offset = 0;
+    StringBuffer bshs = new StringBuffer(shs);
+
+///////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////
 
 
     for (int i = 0; i < 20000; i++) {

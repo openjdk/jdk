@@ -65,6 +65,13 @@ public class StringIndexOfHuge {
   private String searchNoMatch;
   private String searchNoMatch16;
 
+  private String Amdahl_1;
+  private String Amdahl_2;
+  private String Amdahl_3;
+  private String Amdahl_4;
+  private String Amdahl_5;
+  private String Amdahl_6;
+
   @Setup
   public void setup() {
     dataString = "ngdflsoscargfdgf";
@@ -88,6 +95,13 @@ public class StringIndexOfHuge {
 
     searchNoMatch = "XYXyxYxy".repeat(22);
     searchNoMatch16 = "\u01ab\u01ba\u01cb\u01bc\u01de\u01ed\u01fa\u01af".repeat(22);
+
+    Amdahl_1 = "B".repeat(30) + "X" + "A".repeat(30);
+    Amdahl_2 = "A".repeat(32) + "F" + "B".repeat(32);
+    Amdahl_3 = "A".repeat(32) + "B".repeat(32) + "XbB";
+    Amdahl_4 = "B".repeat(30) + "\u01ef" + "A".repeat(30);
+    Amdahl_5 = "A".repeat(32) + "\u01ef" + "B".repeat(32);
+    Amdahl_6 = "A".repeat(32) + "B".repeat(32) + "\u01fe\u01eeB";
   }
 
 
@@ -129,12 +143,12 @@ public class StringIndexOfHuge {
 
   @Benchmark
   public int searchHugeLargeSubstring() {
-      return dataStringHuge.indexOf("B".repeat(30) + "X" + "A".repeat(30), 74);
+      return dataStringHuge.indexOf(Amdahl_1, 74);
   }
 
   @Benchmark
   public int searchHugeLargeSubstringNoMatch() {
-      return dataStringHuge.indexOf("A".repeat(32) + "F" + "B".repeat(32), 64);
+      return dataStringHuge.indexOf(Amdahl_2, 64);
   }
 
   @Benchmark
@@ -144,7 +158,7 @@ public class StringIndexOfHuge {
 
   @Benchmark
   public int searchHugeWorstCase() {
-      return dataStringHuge.indexOf("A".repeat(32) + "B".repeat(32) + "XbB");
+      return dataStringHuge.indexOf(Amdahl_3);
   }
 
   @Benchmark
@@ -184,12 +198,12 @@ public class StringIndexOfHuge {
 
   @Benchmark
   public int search16HugeLargeSubstring() {
-    return dataStringHuge16.indexOf("B".repeat(30) + "X" + "A".repeat(30), 74);
+    return dataStringHuge16.indexOf(Amdahl_1, 74);
   }
 
   @Benchmark
   public int search16HugeLargeSubstringNoMatch() {
-    return dataStringHuge16.indexOf("A".repeat(32) + "F" + "B".repeat(32), 64);
+    return dataStringHuge16.indexOf(Amdahl_2, 64);
   }
 
   @Benchmark
@@ -199,7 +213,7 @@ public class StringIndexOfHuge {
 
   @Benchmark
   public int search16HugeWorstCase() {
-    return dataStringHuge16.indexOf("A".repeat(32) + "B".repeat(32) + "XbB");
+    return dataStringHuge16.indexOf(Amdahl_3);
   }
 
   @Benchmark
@@ -239,12 +253,12 @@ public class StringIndexOfHuge {
 
   @Benchmark
   public int search16HugeLargeSubstring16() {
-    return dataStringHuge16.indexOf("B".repeat(30) + "\\u01ef" + "A".repeat(30), 74);
+    return dataStringHuge16.indexOf(Amdahl_4, 74);
   }
 
   @Benchmark
   public int search16HugeLargeSubstringNoMatch16() {
-    return dataStringHuge16.indexOf("A".repeat(32) + "\u01ef" + "B".repeat(32), 64);
+    return dataStringHuge16.indexOf(Amdahl_5, 64);
   }
 
   @Benchmark
@@ -254,6 +268,6 @@ public class StringIndexOfHuge {
 
   @Benchmark
   public int search16HugeWorstCase16() {
-    return dataStringHuge16.indexOf("A".repeat(32) + "B".repeat(32) + "\u01fe\u01eeB");
+    return dataStringHuge16.indexOf(Amdahl_6);
   }
 }
