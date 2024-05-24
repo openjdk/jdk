@@ -116,6 +116,7 @@ define SetupInterimModule
           --patch-module java.base=$(BUILDTOOLS_OUTPUTDIR)/gensrc/java.base.interim \
           --add-exports java.base/jdk.internal.javac=java.compiler.interim \
           --add-exports java.base/jdk.internal.javac=jdk.compiler.interim \
+          --add-exports java.base/jdk.internal.module=jdk.compiler.interim \
           --add-exports jdk.internal.opt/jdk.internal.opt=jdk.compiler.interim \
           --add-exports jdk.internal.opt/jdk.internal.opt=jdk.javadoc.interim, \
   ))
