@@ -44,7 +44,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.lang.model.SourceVersion;
-import jdk.internal.module.Checks;
 
 /**
  * Describes a launch-able Java compilation unit.
@@ -159,7 +158,7 @@ public record ProgramDescriptor(
         }
 
         String pn = parent.toString().replace(separator, ".");
-        if (Checks.isPackageName(pn)) {
+        if (SourceVersion.isName(pn)) {
             return Optional.of(pn);
         } else {
             // not a valid package name
