@@ -396,7 +396,7 @@ struct SimpleVMATracker : public CHeapObj<mtTest> {
     const size_t page_count = size / page_size;
     const size_t start_idx = start / page_size;
     const size_t end_idx = start_idx + page_count;
-    assert(end_idx < (size_t)num_pages, "");
+    assert(end_idx < SimpleVMATracker::num_pages, "");
 
     Info new_info(type, stack, flag);
     for (size_t i = start_idx; i < end_idx; i++) {
@@ -459,8 +459,8 @@ TEST_VM_F(VMATreeTest, TestConsistencyWithSimpleTracker) {
 
   const int operation_count = 100000; // One hundred thousand
   for (int i = 0; i < operation_count; i++) {
-    const size_t page_start = (size_t)(os::random() % tr->num_pages);
-    const size_t num_pages = (size_t)(os::random() % (tr->num_pages - page_start));
+    const size_t page_start = (size_t)(os::random() % SimpleVMATracker::num_pages);
+    const size_t num_pages = (size_t)(os::random() % (SimpleVMATracker::num_pages - page_start));
     if (num_pages == 0) {
       i--; continue;
     }
@@ -499,26 +499,26 @@ TEST_VM_F(VMATreeTest, TestConsistencyWithSimpleTracker) {
     // Do an in-depth check every 25 000 iterations.
     if (i % 25000 == 0) {
       size_t j = 0;
-      while (j < tr->num_pages) {
-        while (j < tr->num_pages &&
+      while (j < SimpleVMATracker::num_pages) {
+        while (j < SimpleVMATracker::num_pages &&
                tr->pages[j].type == SimpleVMATracker::Free) {
           j++;
         }
 
-        if (j == tr->num_pages) {
+        if (j == SimpleVMATracker::num_pages) {
           break;
         }
 
         size_t start = j;
         SimpleVMATracker::Info starti = tr->pages[start];
 
-        while (j < tr->num_pages &&
+        while (j < SimpleVMATracker::num_pages &&
                tr->pages[j].eq(starti)) {
           j++;
         }
 
         size_t end = j-1;
-        ASSERT_LE(end, tr->num_pages);
+        ASSERT_LE(end, SimpleVMATracker::num_pages);
         SimpleVMATracker::Info endi = tr->pages[end];
 
         VMATree::VMATreap& treap = this->treap(tree);
