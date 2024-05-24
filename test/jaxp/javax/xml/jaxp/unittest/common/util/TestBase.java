@@ -125,7 +125,7 @@ public class TestBase {
     // JAXP Configuration Files to be added to $JAVA_HOME/conf/
     public static final String CONFIG_DEFAULT = "jaxp.properties";
     public static final String CONFIG_STRICT = "jaxp-strict.properties";
-    public static final String CONFIG_TEMPLATE_STRICT = "jaxp-strict.template";
+    public static final String CONFIG_TEMPLATE_STRICT = "jaxp-strict.properties.template";
 
     public static final String UNKNOWN_HOST = "invalid.site.com";
 

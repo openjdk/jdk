@@ -1,9 +1,9 @@
 ################################################################################
 #           JAXP Strict Configuration Template
 #
-# This file, jaxp-strict.template, provides a template for creating custom
-# configuration files. The settings in this file are more restrictive than those
-# in the default configuration, jaxp.properties. In particular:
+# This file, jaxp-strict.properties.template, provides a template for creating
+# custom configuration files. The settings in this file are more restrictive than
+# those in the default configuration, jaxp.properties. In particular:
 #   - JDKCatalog Resolve is on "strict" setting
 #   - Extension Functions are disabled
 #   - JAXP Limits are set to smaller numbers
@@ -11,7 +11,7 @@
 # To create a configuration file, copy the template to a new file with
 # the .properties extension, that is:
 #
-#     cp $JAVA_HOME/conf/jaxp-strict.template /path/to/jaxp-strict.properties
+#     cp $JAVA_HOME/conf/jaxp-strict.properties.template /path/to/jaxp-strict.properties
 #
 # The configuration file can then be set up using the system property
 # java.xml.config.file to override the default configuration jaxp.properties

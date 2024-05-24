@@ -28,12 +28,12 @@ include Modules.gmk
 
 ################################################################################
 #
-# Copy property file and template from share/conf to CONF_DST_DIR
+# Copy property and template files from share/conf to CONF_DST_DIR
 #
 $(eval $(call SetupCopyFiles, COPY_XML_MODULE_CONF, \
     DEST := $(CONF_DST_DIR), \
     SRC := $(TOPDIR)/src/java.xml/share/conf, \
-    FILES := jaxp.properties jaxp-strict.template, \
+    FILES := jaxp.properties jaxp-strict.properties.template, \
 ))
 
 TARGETS += $(COPY_XML_MODULE_CONF)

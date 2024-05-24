@@ -37,9 +37,9 @@ import javax.xml.transform.TransformerFactory;
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
  * @modules java.xml/jdk.xml.internal
  * @run driver common.config.ConfigFileTest 0 // verifies jaxp.properties
- * @run driver common.config.ConfigFileTest 1 // verifies jaxp-strict.template
+ * @run driver common.config.ConfigFileTest 1 // verifies jaxp-strict.properties.template
  * @summary verifies the default JAXP configuration file jaxp.properties and
- * strict template jaxp-strict.template.
+ * strict template jaxp-strict.properties.template.
  */
 public class ConfigFileTest {
     // system property for custom configuration file
@@ -70,7 +70,7 @@ public class ConfigFileTest {
     boolean[] propertyIsFeature ={true, true, false, false, false, false,
         false, false, false, false, false, false, false, false, false, false};
 
-    // values from jaxp-strict.template
+    // values from jaxp-strict.properties.template
     String[] strictValues ={"false", "false", "strict", "allow", "2500", "100000",
         "100000", "15000", "100000", "10000", "5000", "0", "1000", "10", "100", "10000"};
 
