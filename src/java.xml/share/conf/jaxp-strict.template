@@ -1,18 +1,23 @@
 ################################################################################
-#           JAXP Strict Configuration File
+#           JAXP Strict Configuration Template
 #
-# This property file, jaxp-strict.properties, represents a more secure configuration
-# for XML processing. It provides settings that are more restrictive than the
-# current default jaxp.properties. In particular:
+# This file, jaxp-strict.template, provides a template for creating custom
+# configuration files. The settings in this file are more restrictive than those
+# in the default configuration, jaxp.properties. In particular:
 #   - JDKCatalog Resolve is on "strict" setting
 #   - Extension Functions are disabled
 #   - JAXP Limits are set to smaller numbers
 #
-# This configuration file can be set up using the system property
+# To create a configuration file, copy the template to a new file with
+# the .properties extension, that is:
+#
+#     cp $JAVA_HOME/conf/jaxp-strict.template /path/to/jaxp-strict.properties
+#
+# The configuration file can then be set up using the system property
 # java.xml.config.file to override the default configuration jaxp.properties
 # and used to assess the impact of a stricter configuration, for example:
 #
-#     java -Djava.xml.config.file=$JAVA_HOME/conf/jaxp-strict.properties
+#     java -Djava.xml.config.file=/path/to/jaxp-strict.properties
 #
 # The system property java.xml.config.file is defined in the java.xml module
 # description.

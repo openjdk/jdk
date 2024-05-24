@@ -125,7 +125,7 @@ public class TestBase {
     // JAXP Configuration Files to be added to $JAVA_HOME/conf/
     public static final String CONFIG_DEFAULT = "jaxp.properties";
     public static final String CONFIG_STRICT = "jaxp-strict.properties";
-    public static final String CONFIG_COMPAT = "jaxp-compat.properties";
+    public static final String CONFIG_TEMPLATE_STRICT = "jaxp-strict.template";
 
     public static final String UNKNOWN_HOST = "invalid.site.com";
 
@@ -139,9 +139,6 @@ public class TestBase {
         // config file: CATALOG = strict
         CONFIG_FILE_CATALOG_STRICT(null, CONFIG_FILE, Type.FEATURE, getPath(CONFIG_FILE_PATH, CONFIG_CATALOG_STRICT)),
         CONFIG_FILE_DTD2(null, CONFIG_FILE, Type.FEATURE, getPath(CONFIG_FILE_PATH, JCF_DTD2)),
-        // JAXP Configuration Files to be added to $JAVA_HOME/conf/
-        CONFIG_FILE_STRICT(null, CONFIG_FILE, Type.FEATURE, getPath(CONFIG_FILE_PATH, CONFIG_STRICT)),
-        CONFIG_FILE_COMPAT(null, CONFIG_FILE, Type.FEATURE, getPath(CONFIG_FILE_PATH, CONFIG_COMPAT)),
 
         FSP(XMLConstants.FEATURE_SECURE_PROCESSING, null, Type.FEATURE, "true"),
         FSP_FALSE(XMLConstants.FEATURE_SECURE_PROCESSING, null, Type.FEATURE, "false"),

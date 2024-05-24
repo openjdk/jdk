@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -402,13 +402,6 @@
  * @implNote
  *
  * <ul>
- * <li><a href="#IN_CF">JAXP Configuration Files</a>
- *      <ul>
- *      <li><a href="#IN_CF_DEFAULT">{@code jaxp.properties}</a></li>
- *      <li><a href="#IN_CF_STRICT">{@code jaxp-strict.properties}</a></li>
- *      </ul>
- * </li>
-
  * <li><a href="#JDKCATALOG">JDK built-in Catalog</a>
  *      <ul>
  *      <li><a href="#JC_PROCESS">External Resource Resolution Process with the built-in Catalog</a></li>
@@ -422,32 +415,6 @@
  *      </ul>
  * </li>
  * </ul>
- *
- * <h2 id="IN_CF">JAXP Configuration Files</h2>
- * The JDK provides two <a href="#Conf_CF">JAXP Configuration Files</a>:
- *
- * <ul>
- * <li id="IN_CF_DEFAULT"><a href="#Conf_CF_Default">{@code jaxp.properties}</a>:
- * the default configuration that the JDK uses to set property values when XML
- * factories are initiated.</li>
- *
- * <li id="IN_CF_STRICT">{@code jaxp-strict.properties}: a configuration that
- * contains more restrictive settings than the default {@code jaxp.properties}.
- * In particular:
- *     <ul>
- *     <li><a href="#JDKCATALOG_RESOLVE">JDKCatalog Resolve</a> is on "strict" setting </li>
- *     <li><a href="#ExtFunc">Extension Functions</a> are disabled </li>
- *     <li><a href="#EELimit">JAXP Limits</a> are set to smaller numbers </li>
- *     </ul>
- *
- * Deploying with this configuration prevents processors from unknowingly making
- * outbound network connections to fetch DTDs, or processing XML that makes use of
- * extension functions.
- * </li>
- * </ul>
- *
- * The configuration settings in these properties files are subject to change
- * from release to release.
  *
  * <h2 id="JDKCATALOG">JDK built-in Catalog</h2>
  * The JDK has a built-in catalog that hosts the following DTDs defined by the Java Platform:

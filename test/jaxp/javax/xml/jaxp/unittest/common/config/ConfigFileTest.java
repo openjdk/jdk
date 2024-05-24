@@ -25,6 +25,10 @@ package common.config;
 import common.util.TestBase;
 import static common.util.TestBase.CONFIG_DEFAULT;
 import static common.util.TestBase.CONFIG_STRICT;
+import static common.util.TestBase.CONFIG_TEMPLATE_STRICT;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.stream.IntStream;
 import javax.xml.transform.TransformerFactory;
 
@@ -33,13 +37,15 @@ import javax.xml.transform.TransformerFactory;
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
  * @modules java.xml/jdk.xml.internal
  * @run driver common.config.ConfigFileTest 0 // verifies jaxp.properties
- * @run driver common.config.ConfigFileTest 1 // verifies jaxp-strict.properties
- * @summary verifies the JAXP configuration files jaxp.properties and
- * jaxp-strict.properties.
+ * @run driver common.config.ConfigFileTest 1 // verifies jaxp-strict.template
+ * @summary verifies the default JAXP configuration file jaxp.properties and
+ * strict template jaxp-strict.template.
  */
 public class ConfigFileTest {
     // system property for custom configuration file
     static final String SP_CONFIG = "java.xml.config.file";
+    // target directory
+    static String TEST_DIR = System.getProperty("test.classes");
 
     // properties in the configuration file
     String[] keys = {
@@ -64,7 +70,7 @@ public class ConfigFileTest {
     boolean[] propertyIsFeature ={true, true, false, false, false, false,
         false, false, false, false, false, false, false, false, false, false};
 
-    // values from jaxp-strict.properties
+    // values from jaxp-strict.template
     String[] strictValues ={"false", "false", "strict", "allow", "2500", "100000",
         "100000", "15000", "100000", "10000", "5000", "0", "1000", "10", "100", "10000"};
 
@@ -77,10 +83,13 @@ public class ConfigFileTest {
     }
 
     public void run(String index) throws Exception {
+        String conf = System.getProperty("java.home") + "/conf/";
         if (index.equals("0")) {
-            verifyConfig(CONFIG_DEFAULT, defaultValues);
+            verifyConfig(conf + CONFIG_DEFAULT, defaultValues);
         } else {
-            verifyConfig(CONFIG_STRICT, strictValues);
+            Path config = Paths.get(TEST_DIR, CONFIG_STRICT);
+            Files.copy(Paths.get(conf, CONFIG_TEMPLATE_STRICT), config);
+            verifyConfig(config.toString(), strictValues);
         }
     }
 
@@ -90,8 +99,7 @@ public class ConfigFileTest {
      * @param values expected values in the configuration file
      */
     private void verifyConfig(String filename, String[] values) {
-        String javaHome = System.getProperty("java.home");
-        System.setProperty(SP_CONFIG, javaHome + "/conf/" + filename);
+        System.setProperty(SP_CONFIG, filename);
 
         TransformerFactory tf = TransformerFactory.newInstance();
         IntStream.range(0, keys.length).forEach(i -> {
