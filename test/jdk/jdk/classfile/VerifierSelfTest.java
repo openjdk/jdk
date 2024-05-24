@@ -208,6 +208,7 @@ class VerifierSelfTest {
                 Illegal method name <> in class ParserVerificationTestClass
                 Interface cannot have a method named <init> in class ParserVerificationTestClass
                 Method <clinit> is not static in class ParserVerificationTestClass
+                Multiple CompilationID attributes in class ParserVerificationTestClass
                 Wrong CompilationID attribute length in class ParserVerificationTestClass
                 Wrong Deprecated attribute length in class ParserVerificationTestClass
                 Multiple EnclosingMethod attributes in class ParserVerificationTestClass

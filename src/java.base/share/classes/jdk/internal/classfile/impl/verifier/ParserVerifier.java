@@ -291,7 +291,7 @@ public record ParserVerifier(ClassModel classModel) {
                 yield 2;
             }
             case NestMembersAttribute nma -> {
-                if (ae.findAttribute(Attributes.NEST_HOST).isPresent()) {
+                if (ae.findAttribute(Attributes.nestHost()).isPresent()) {
                     errors.add(new VerifyError("Conflicting NestHost and NestMembers attributes in %s".formatted(toString(ae))));
                 }
                 yield 2 + 2 * nma.nestMembers().size();
