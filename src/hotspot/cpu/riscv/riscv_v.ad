@@ -3095,10 +3095,6 @@ instruct vrotate_right(vReg dst, vReg src, vReg shift) %{
 %}
 
 instruct vrotate_right_imm(vReg dst, vReg src, immI shift) %{
-  predicate(Matcher::vector_element_basic_type(n) == T_BYTE ||
-            Matcher::vector_element_basic_type(n) == T_SHORT ||
-            Matcher::vector_element_basic_type(n) == T_INT ||
-            Matcher::vector_element_basic_type(n) == T_LONG);
   match(Set dst (RotateRightV src shift));
   format %{ "vrotate_right_imm $dst, $src, $shift\t" %}
   ins_encode %{
@@ -3130,10 +3126,6 @@ instruct vrotate_right_masked(vReg dst_src, vReg shift, vRegMask_V0 v0) %{
 %}
 
 instruct vrotate_right_imm_masked(vReg dst_src, immI shift, vRegMask_V0 v0) %{
-  predicate(Matcher::vector_element_basic_type(n) == T_BYTE ||
-            Matcher::vector_element_basic_type(n) == T_SHORT ||
-            Matcher::vector_element_basic_type(n) == T_INT ||
-            Matcher::vector_element_basic_type(n) == T_LONG);
   match(Set dst_src (RotateRightV (Binary dst_src shift) v0));
   effect(TEMP_DEF dst_src);
   format %{ "vrotate_right_imm_masked $dst_src, $dst_src, $shift, v0.t\t" %}
@@ -3164,10 +3156,6 @@ instruct vrotate_left(vReg dst, vReg src, vReg shift) %{
 %}
 
 instruct vrotate_left_imm(vReg dst, vReg src, immI shift) %{
-  predicate(Matcher::vector_element_basic_type(n) == T_BYTE ||
-            Matcher::vector_element_basic_type(n) == T_SHORT ||
-            Matcher::vector_element_basic_type(n) == T_INT ||
-            Matcher::vector_element_basic_type(n) == T_LONG);
   match(Set dst (RotateLeftV src shift));
   format %{ "vrotate_left_imm $dst, $src, $shift\t" %}
   ins_encode %{
@@ -3200,10 +3188,6 @@ instruct vrotate_left_masked(vReg dst_src, vReg shift, vRegMask_V0 v0) %{
 %}
 
 instruct vrotate_left_imm_masked(vReg dst_src, immI shift, vRegMask_V0 v0) %{
-  predicate(Matcher::vector_element_basic_type(n) == T_BYTE ||
-            Matcher::vector_element_basic_type(n) == T_SHORT ||
-            Matcher::vector_element_basic_type(n) == T_INT ||
-            Matcher::vector_element_basic_type(n) == T_LONG);
   match(Set dst_src (RotateLeftV (Binary dst_src shift) v0));
   effect(TEMP_DEF dst_src);
   format %{ "vrotate_left_imm_masked $dst_src, $dst_src, $shift, v0.t\t" %}
