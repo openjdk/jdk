@@ -30,8 +30,8 @@ import jdk.test.lib.Utils;
 
 /*
  * @test
- * @bug 8324656
- * @summary TODO desc
+ * @bug 8332856
+ * @summary Test that Ideal transformations of converting eq/ne (cmp (and (urshift X const1) const2) 0) work as expected
  * @library /test/lib /
  * @run main compiler.c2.irTests.ConstantShiftAndEqZeroTests
  */
@@ -45,7 +45,7 @@ public class ConstantShiftAndEqZeroTests {
     @Test
     @IR(failOn = { IRNode.RSHIFT, IRNode.URSHIFT }, counts = { IRNode.AND_I, "1" })
     public boolean testBitTest(int a) {
-        return ((a >> 12) & 0b1) == 0; //TODO bugid
+        return ((a >> 12) & 0b1) == 0;
     }
 
     @Test
