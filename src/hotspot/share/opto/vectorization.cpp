@@ -2178,6 +2178,7 @@ VTransformApplyStatus VTransformElementWiseVectorNode::apply(const VLoopAnalyzer
     // Cast long -> int, to mimic the scalar long -> int operation.
     VectorCastNode* vn = VectorCastNode::make(Op_VectorCastL2X, longval, T_INT, vlen);
     register_new_vector_and_replace_scalar_nodes(vloop_analyzer, vn);
+    // TODO: just split this into 2 VTransform nodes?
 
     return VTransformApplyStatus::make_vector(vn, vlen, vn->length_in_bytes());
   } else if (VectorNode::is_convert_opcode(opc)) {

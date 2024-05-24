@@ -3644,8 +3644,10 @@ VTransformNode* SuperWordVTransformBuilder::find_input_for_vector(int j, Node_Li
     // PopulateIndex: [iv+0, iv+1, iv+2, ...]
     VTransformNode* iv_vtn = find_scalar(iv());
     BasicType p0_bt = _vloop_analyzer.types().velt_basic_type(p0);
+    // If we have subword type, take that directly. If p0 is some ConvI2L/F/D, then
+    // the p0_bt can also be L/F/D but we need to produce ints for the input of the
+    // ConvI2L/F/D.
     BasicType element_bt = is_subword_type(p0_bt) ? p0_bt : T_INT;
-    assert(p0_bt == element_bt, "Do we have a counter example?"); // TODO
     assert(VectorNode::is_populate_index_supported(element_bt), "Should support");
     VTransformNode* populate_index = new (_graph.arena()) VTransformPopulateIndexNode(_graph, pack->size(), element_bt);
     populate_index->set_req(1, iv_vtn);
