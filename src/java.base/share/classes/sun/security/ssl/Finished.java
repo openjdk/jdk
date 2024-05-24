@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,8 +52,6 @@ import sun.security.ssl.SSLCipher.SSLReadCipher;
 import sun.security.ssl.SSLCipher.SSLWriteCipher;
 import sun.security.ssl.SSLHandshake.HandshakeMessage;
 import sun.security.util.HexDumpEncoder;
-
-import static sun.security.ssl.TLSKeyLogger.Label.*;
 
 /**
  * Pack of the Finished handshake message.
@@ -722,7 +720,8 @@ final class Finished {
                 SecretKey writeSecret = kd.deriveKey(
                         "TlsClientAppTrafficSecret", null);
                 if (TLSKeyLogger.INSTANCE != null) {
-                    TLSKeyLogger.INSTANCE.log(CLIENT_TRAFFIC_SECRET,
+                    TLSKeyLogger.INSTANCE.log(
+                            TLSKeyLoggerLabel.CLIENT_TRAFFIC_SECRET,
                             chc.clientHelloRandom.randomBytes,
                             writeSecret);
                 }
@@ -829,7 +828,8 @@ final class Finished {
                 SecretKey writeSecret = secretKD.deriveKey(
                         "TlsServerAppTrafficSecret", null);
                 if (TLSKeyLogger.INSTANCE != null) {
-                    TLSKeyLogger.INSTANCE.log(SERVER_TRAFFIC_SECRET,
+                    TLSKeyLogger.INSTANCE.log(
+                            TLSKeyLoggerLabel.SERVER_TRAFFIC_SECRET,
                             shc.serverHelloRandom.randomBytes,
                             writeSecret);
                 }
@@ -992,7 +992,8 @@ final class Finished {
                 SecretKey readSecret = secretKD.deriveKey(
                         "TlsServerAppTrafficSecret", null);
                 if (TLSKeyLogger.INSTANCE != null) {
-                    TLSKeyLogger.INSTANCE.log(SERVER_TRAFFIC_SECRET,
+                    TLSKeyLogger.INSTANCE.log(
+                            TLSKeyLoggerLabel.SERVER_TRAFFIC_SECRET,
                             chc.serverHelloRandom.randomBytes,
                             readSecret);
                 }
@@ -1102,7 +1103,8 @@ final class Finished {
                 SecretKey readSecret = kd.deriveKey(
                         "TlsClientAppTrafficSecret", null);
                 if (TLSKeyLogger.INSTANCE != null) {
-                    TLSKeyLogger.INSTANCE.log(CLIENT_TRAFFIC_SECRET,
+                    TLSKeyLogger.INSTANCE.log(
+                            TLSKeyLoggerLabel.CLIENT_TRAFFIC_SECRET,
                             shc.clientHelloRandom.randomBytes,
                             readSecret);
                 }

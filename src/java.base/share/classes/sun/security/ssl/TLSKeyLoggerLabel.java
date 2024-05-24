@@ -25,30 +25,25 @@
 
 package sun.security.ssl;
 
-import javax.crypto.SecretKey;
-
 /**
- * A TLS key logger for SunJSSE.
+ * A TLS key logger labels which will be output in a SSLKEYLOGFILE format file.
  * <p>
  * This follows the SSLKEYLOGFILE format propsed in draft RFC:
  * <a href="https://datatracker.ietf.org/doc/draft-ietf-tls-keylogfile/"
  * <p>
- * This is a stub library API that could allow SunJSSE to output connection
- * keys if a real library is provided.
- * <p>
- * Note well, logging is primarily for development/testing only, and should
- * not be used in production without strong protections for the logged keys.
+ * Note well, this facility is for development/testing only, and should not be
+ * used in production.
  */
-final class TLSKeyLogger {
+enum TLSKeyLoggerLabel {
+    // TLSv1.2
+    CLIENT_RANDOM,
 
-    // Not a real TLSKeyLogger.
-    static final TLSKeyLogger INSTANCE = null;
-
-    void log(final TLSKeyLoggerLabel label, final byte[] clientHelloRandom,
-            final SecretKey secret) {
-    }
-
-    void log(final TLSKeyLoggerLabel label, final byte[] clientHelloRandom,
-            final SecretKey secret, final int keyUpdateCount) {
-    }
+    // TLSv1.3
+    CLIENT_EARLY_TRAFFIC_SECRET,
+    EARLY_EXPORTER_MASTER_SECRET,
+    CLIENT_HANDSHAKE_TRAFFIC_SECRET,
+    SERVER_HANDSHAKE_TRAFFIC_SECRET,
+    CLIENT_TRAFFIC_SECRET,
+    SERVER_TRAFFIC_SECRET,
+    EXPORTER_SECRET
 }

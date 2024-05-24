@@ -54,20 +54,6 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
  */
 final class TLSKeyLogger {
 
-    static enum Label {
-        // TLSv1.2
-        CLIENT_RANDOM,
-
-        // TLSv1.3
-        CLIENT_EARLY_TRAFFIC_SECRET,
-        EARLY_EXPORTER_MASTER_SECRET,
-        CLIENT_HANDSHAKE_TRAFFIC_SECRET,
-        SERVER_HANDSHAKE_TRAFFIC_SECRET,
-        CLIENT_TRAFFIC_SECRET,
-        SERVER_TRAFFIC_SECRET,
-        EXPORTER_SECRET;
-    }
-
     private static final Path keyLogFile;
     private static final HexFormat hexFormat = HexFormat.of();
 
@@ -96,12 +82,12 @@ final class TLSKeyLogger {
         }
     }
 
-    void log(final Label label, final byte[] clientHelloRandom,
+    void log(final TLSKeyLoggerLabel label, final byte[] clientHelloRandom,
             final SecretKey secret) {
         log(label, clientHelloRandom, secret, 0);
     }
 
-    void log(final Label label, final byte[] clientHelloRandom,
+    void log(final TLSKeyLoggerLabel label, final byte[] clientHelloRandom,
             final SecretKey secret, final int keyUpdateCount) {
         if (keyLogFile == null) {
             return;
@@ -114,8 +100,8 @@ final class TLSKeyLogger {
                     "Key update count should be >= 0");
         }
         if (keyUpdateCount > 0
-                && label != Label.CLIENT_TRAFFIC_SECRET
-                && label != Label.SERVER_TRAFFIC_SECRET) {
+                && label != TLSKeyLoggerLabel.CLIENT_TRAFFIC_SECRET
+                && label != TLSKeyLoggerLabel.SERVER_TRAFFIC_SECRET) {
             throw new IllegalArgumentException(
                     "Non-zero key update count cannot be used for " + label);
         }

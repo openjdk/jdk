@@ -44,8 +44,6 @@ import sun.security.ssl.SSLCipher.SSLWriteCipher;
 import sun.security.ssl.SSLHandshake.HandshakeMessage;
 import sun.security.ssl.SupportedVersionsExtension.SHSupportedVersionsSpec;
 
-import static sun.security.ssl.TLSKeyLogger.Label.*;
-
 /**
  * Pack of the ServerHello/HelloRetryRequest handshake message.
  */
@@ -619,7 +617,8 @@ final class ServerHello {
             SecretKey readSecret = kd.deriveKey(
                     "TlsClientHandshakeTrafficSecret", null);
             if (TLSKeyLogger.INSTANCE != null) {
-                TLSKeyLogger.INSTANCE.log(CLIENT_HANDSHAKE_TRAFFIC_SECRET,
+                TLSKeyLogger.INSTANCE.log(
+                        TLSKeyLoggerLabel.CLIENT_HANDSHAKE_TRAFFIC_SECRET,
                         shc.clientHelloRandom.randomBytes,
                         readSecret);
             }
@@ -658,7 +657,8 @@ final class ServerHello {
             SecretKey writeSecret = kd.deriveKey(
                     "TlsServerHandshakeTrafficSecret", null);
             if (TLSKeyLogger.INSTANCE != null) {
-                TLSKeyLogger.INSTANCE.log(SERVER_HANDSHAKE_TRAFFIC_SECRET,
+                TLSKeyLogger.INSTANCE.log(
+                        TLSKeyLoggerLabel.SERVER_HANDSHAKE_TRAFFIC_SECRET,
                         shc.serverHelloRandom.randomBytes,
                         writeSecret);
             }
@@ -1319,7 +1319,8 @@ final class ServerHello {
             SecretKey readSecret = secretKD.deriveKey(
                     "TlsServerHandshakeTrafficSecret", null);
             if (TLSKeyLogger.INSTANCE != null) {
-                TLSKeyLogger.INSTANCE.log(SERVER_HANDSHAKE_TRAFFIC_SECRET,
+                TLSKeyLogger.INSTANCE.log(
+                        TLSKeyLoggerLabel.SERVER_HANDSHAKE_TRAFFIC_SECRET,
                         chc.serverHelloRandom.randomBytes,
                         readSecret);
             }
@@ -1358,7 +1359,8 @@ final class ServerHello {
             SecretKey writeSecret = secretKD.deriveKey(
                     "TlsClientHandshakeTrafficSecret", null);
             if (TLSKeyLogger.INSTANCE != null) {
-                TLSKeyLogger.INSTANCE.log(CLIENT_HANDSHAKE_TRAFFIC_SECRET,
+                TLSKeyLogger.INSTANCE.log(
+                        TLSKeyLoggerLabel.CLIENT_HANDSHAKE_TRAFFIC_SECRET,
                         chc.clientHelloRandom.randomBytes,
                         writeSecret);
             }
