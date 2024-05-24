@@ -29,7 +29,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.random.RandomGenerator;
 import java.util.random.RandomGenerator.LeapableGenerator;
 import jdk.internal.util.random.RandomSupport;
-import jdk.internal.util.random.RandomSupport.RandomGeneratorProperties;
 
 /**
  * A "jumpable and leapable" pseudorandom number generator (PRNG) whose period
@@ -72,12 +71,6 @@ import jdk.internal.util.random.RandomSupport.RandomGeneratorProperties;
  * @since   17
  *
  */
-@RandomGeneratorProperties(
-        name = "Xoroshiro128PlusPlus",
-        group = "Xoroshiro",
-        i = 128, j = 1, k = 0,
-        equidistribution = 1
-)
 public final class Xoroshiro128PlusPlus implements LeapableGenerator {
 
     /*

@@ -380,7 +380,7 @@ public final class StackMapGenerator {
      * @return <code>StackMapTableAttribute</code> or null if stack map is empty
      */
     public Attribute<? extends StackMapTableAttribute> stackMapTableAttribute() {
-        return frames.isEmpty() ? null : new UnboundAttribute.AdHocAttribute<>(Attributes.STACK_MAP_TABLE) {
+        return frames.isEmpty() ? null : new UnboundAttribute.AdHocAttribute<>(Attributes.stackMapTable()) {
             @Override
             public void writeBody(BufWriter b) {
                 b.writeU2(frames.size());

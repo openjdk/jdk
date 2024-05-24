@@ -238,23 +238,27 @@ public:
   using ContainerPtr = G1CardSet::ContainerPtr;
   EntryCountType volatile _num_entries;
 private:
-  ContainerPtr _buckets[2];
-  // Do not add class member variables beyond this point
+  // VLA implementation.
+  ContainerPtr _buckets[1];
+  // Do not add class member variables beyond this point.
 
   // Iterates over the given ContainerPtr with at index in this Howl card set,
   // applying a CardOrRangeVisitor on it.
   template <class CardOrRangeVisitor>
   void iterate_cardset(ContainerPtr const container, uint index, CardOrRangeVisitor& found, G1CardSetConfiguration* config);
 
+  ContainerPtr at(EntryCountType index) const;
+
+  ContainerPtr const* buckets() const;
+
 public:
   G1CardSetHowl(EntryCountType card_in_region, G1CardSetConfiguration* config);
 
-  ContainerPtr* get_container_addr(EntryCountType index) {
-    return &_buckets[index];
-  }
+  ContainerPtr const* container_addr(EntryCountType index) const;
+
+  ContainerPtr* container_addr(EntryCountType index);
 
   bool contains(uint card_idx, G1CardSetConfiguration* config);
-
   // Iterates over all ContainerPtrs in this Howl card set, applying a CardOrRangeVisitor
   // on it.
   template <class CardOrRangeVisitor>
