@@ -24,12 +24,67 @@
  */
 package java.lang.classfile;
 
+import java.lang.classfile.AttributeMapper.AttributeStability;
 import java.lang.classfile.attribute.*;
 import jdk.internal.classfile.impl.AbstractAttributeMapper.*;
 import jdk.internal.javac.PreviewFeature;
 
 /**
  * Attribute mappers for standard classfile attributes.
+ * <p>
+ * Unless otherwise specified, mappers returned by each method
+ * do not permit multiple attribute instances in a given location.
+ * <p>
+ * The most stable {@link AttributeStability#STATELESS STATELESS} mappers are:
+ * <ul>
+ * <li>{@link #deprecated()}
+ * <li>{@link #moduleResolution()}
+ * <li>{@link #sourceDebugExtension()}
+ * <li>{@link #synthetic()}
+ * </ul>
+ *
+ * The mappers with {@link AttributeStability#CP_REFS CP_REFS} stability are:
+ * <ul>
+ * <li>{@link #annotationDefault()}
+ * <li>{@link #bootstrapMethods()}
+ * <li>{@link #code()}
+ * <li>{@link #compilationId()}
+ * <li>{@link #constantValue()}
+ * <li>{@link #enclosingMethod()}
+ * <li>{@link #exceptions()}
+ * <li>{@link #innerClasses()}
+ * <li>{@link #methodParameters()}
+ * <li>{@link #module()}
+ * <li>{@link #moduleHashes()}
+ * <li>{@link #moduleMainClass()}
+ * <li>{@link #modulePackages()}
+ * <li>{@link #moduleTarget()}
+ * <li>{@link #nestHost()}
+ * <li>{@link #nestMembers()}
+ * <li>{@link #permittedSubclasses()}
+ * <li>{@link #record()}
+ * <li>{@link #runtimeInvisibleAnnotations()}
+ * <li>{@link #runtimeInvisibleParameterAnnotations()}
+ * <li>{@link #runtimeVisibleAnnotations()}
+ * <li>{@link #runtimeVisibleParameterAnnotations()}
+ * <li>{@link #signature()}
+ * <li>{@link #sourceFile()}
+ * <li>{@link #sourceId()}
+ * </ul>
+ *
+ * The mappers with {@link AttributeStability#LABELS LABELS} stability are:
+ * <ul>
+ * <li>{@link #characterRangeTable()}
+ * <li>{@link #lineNumberTable()}
+ * <li>{@link #localVariableTable()}
+ * <li>{@link #localVariableTypeTable()}
+ * </ul>
+ *
+ * The {@link AttributeStability#UNSTABLE UNSTABLE} mappers are:
+ * <ul>
+ * <li>{@link #runtimeInvisibleTypeAnnotations()}
+ * <li>{@link #runtimeVisibleTypeAnnotations()}
+ * </ul>
  *
  * @see AttributeMapper
  *
@@ -167,6 +222,7 @@ public final class Attributes {
 
     /**
      * {@return Attribute mapper for the {@code CharacterRangeTable} attribute}
+     * The mapper permits multiple instances in a given location.
      * @since 23
      */
     public static AttributeMapper<CharacterRangeTableAttribute> characterRangeTable() {
@@ -199,6 +255,7 @@ public final class Attributes {
 
     /**
      * {@return Attribute mapper for the {@code Deprecated} attribute}
+     * The mapper permits multiple instances in a given location.
      * @since 23
      */
     public static AttributeMapper<DeprecatedAttribute> deprecated() {
@@ -231,6 +288,7 @@ public final class Attributes {
 
     /**
      * {@return Attribute mapper for the {@code LineNumberTable} attribute}
+     * The mapper permits multiple instances in a given location.
      * @since 23
      */
     public static AttributeMapper<LineNumberTableAttribute> lineNumberTable() {
@@ -239,6 +297,7 @@ public final class Attributes {
 
     /**
      * {@return Attribute mapper for the {@code LocalVariableTable} attribute}
+     * The mapper permits multiple instances in a given location.
      * @since 23
      */
     public static AttributeMapper<LocalVariableTableAttribute> localVariableTable() {
@@ -247,6 +306,7 @@ public final class Attributes {
 
     /**
      * {@return Attribute mapper for the {@code LocalVariableTypeTable} attribute}
+     * The mapper permits multiple instances in a given location.
      * @since 23
      */
     public static AttributeMapper<LocalVariableTypeTableAttribute> localVariableTypeTable() {
@@ -431,6 +491,7 @@ public final class Attributes {
 
     /**
      * {@return Attribute mapper for the {@code Synthetic} attribute}
+     * The mapper permits multiple instances in a given location.
      * @since 23
      */
     public static AttributeMapper<SyntheticAttribute> synthetic() {
