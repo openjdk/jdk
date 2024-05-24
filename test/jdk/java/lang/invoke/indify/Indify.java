@@ -944,24 +944,8 @@ public class Indify {
                                 String rtype = null;
                                 for(Object typeArg : args) {
                                     if (typeArg instanceof Class<?> argClass) {
-                                        if (argClass.isPrimitive()) {
-                                            char tchar = switch (argClass.getName()) {
-                                                case "void" -> 'V';
-                                                case "boolean" -> 'Z';
-                                                case "byte" -> 'B';
-                                                case "char" -> 'C';
-                                                case "short" -> 'S';
-                                                case "int" -> 'I';
-                                                case "long" -> 'J';
-                                                case "float" -> 'F';
-                                                case "double" -> 'D';
-                                                default -> throw new InternalError(argClass.toString());
-                                            };
-                                            buf.append(tchar);
-                                        } else {
-                                            buf.append('L').append(argClass.getName().replace('.','/')).append(';');
-                                        }
-                                    } else if (typeArg instanceof PoolEntry argCon) {
+                                        buf.append(argClass.descriptorString());
+                                    }else if (typeArg instanceof PoolEntry argCon) {
                                         if(argCon.tag() == TAG_CLASS) {
                                             String cn = ((ClassEntry) argCon).name().stringValue();
                                             if (cn.endsWith(";"))
