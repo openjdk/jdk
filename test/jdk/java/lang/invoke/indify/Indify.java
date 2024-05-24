@@ -506,12 +506,10 @@ public class Indify {
 
                 Predicate<MethodModel> filter = method -> Objects.equals(method.methodName().stringValue(), m.methodName().stringValue());
 
-                Iterator<Instruction> instructionIterator =getInstructions(m).iterator();
                 final Stack<Boolean> shouldProceedAfterIndyAdded = new Stack<>();
 
-                while (instructionIterator.hasNext()){
+                for (Instruction i : getInstructions(m)){
                     shouldProceedAfterIndyAdded.push(true);
-                    Instruction i = instructionIterator.next();
 
                     if(i.opcode().bytecode() != INVOKESTATIC) continue;  //this is not an invokestatic instruction
                     int methodIndex = ((InvokeInstruction) i).method().index();
@@ -564,8 +562,6 @@ public class Indify {
                         classModel = of().parse(
                                of().transform(classModel, classTransform)
                         );
-
-                        System.out.println();
                     } else {
                         assert(i.sizeInBytes() == 3);
                         MethodModel finalConm = patternMethod;
