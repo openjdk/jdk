@@ -150,7 +150,7 @@ public class CallStaticInitOrder {
     }
 
     private static int runFoo() throws Throwable {
-        assertEquals(Init1Tick, 0); // Init1 not initialized yet
+        assertEquals(Init1Tick, 0);  // Init1 not initialized yet
         int t1 = tick("runFoo");
         int t2 = (int) INDY_foo().invokeExact();
         int t3 = tick("runFoo done");
