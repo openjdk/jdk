@@ -84,7 +84,7 @@ public class DeprecatedPackageTest extends TestResult {
                         new String[]{"package-info.java", package_info},
                         new String[]{"notDeprecated.java", src})
                     .getClasses().get(CLASS_NAME));
-            DeprecatedAttribute attr = cm.findAttribute(Attributes.DEPRECATED).orElse(null);
+            DeprecatedAttribute attr = cm.findAttribute(Attributes.deprecated()).orElse(null);
             checkNull(attr, "Class can not have deprecated attribute : " + CLASS_NAME);
         } catch (Exception e) {
             addFailure(e);

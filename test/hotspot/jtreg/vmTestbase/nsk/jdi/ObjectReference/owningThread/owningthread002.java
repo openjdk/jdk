@@ -200,6 +200,15 @@ public class owningthread002 {
                              try {
                                  ThreadReference thread = lockRef.owningThread();
 
+                                 // The lockRef.owningThread() is expected to return null if tested threads are virtual.
+                                 if (eventThread.isVirtual()) {
+                                     if (thread == null) {
+                                        display("expected null is returned` by owningThread method on virtual thread: " + eventThread.name());
+                                     } else {
+                                        complain("owningThread returned ThreadReference of virtual thread instead of null: " + thread.name());
+                                     }
+                                     continue;
+                                 }
                                  if (thread.name().indexOf(owningthread002a.threadNamePrefix) < 0) {
                                      exitCode = Consts.TEST_FAILED;
                                      complain("owningThread returned ThreadReference with unexpected name: " + thread.name());

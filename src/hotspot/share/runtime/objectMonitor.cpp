@@ -829,7 +829,6 @@ void ObjectMonitor::EnterI(JavaThread* current) {
   // to defer the state transitions until absolutely necessary,
   // and in doing so avoid some transitions ...
 
-  int nWakeups = 0;
   int recheckInterval = 1;
 
   for (;;) {
@@ -872,15 +871,14 @@ void ObjectMonitor::EnterI(JavaThread* current) {
     }
 
     // The lock is still contested.
+
     // Keep a tally of the # of futile wakeups.
     // Note that the counter is not protected by a lock or updated by atomics.
     // That is by design - we trade "lossy" counters which are exposed to
     // races during updates for a lower probe effect.
-
     // This PerfData object can be used in parallel with a safepoint.
     // See the work around in PerfDataManager::destroy().
     OM_PERFDATA_OP(FutileWakeups, inc());
-    ++nWakeups;
 
     // Assuming this is not a spurious wakeup we'll normally find _succ == current.
     // We can defer clearing _succ until after the spin completes
@@ -981,7 +979,6 @@ void ObjectMonitor::ReenterI(JavaThread* current, ObjectWaiter* currentNode) {
 
   assert(current->thread_state() != _thread_blocked, "invariant");
 
-  int nWakeups = 0;
   for (;;) {
     ObjectWaiter::TStates v = currentNode->TState;
     guarantee(v == ObjectWaiter::TS_ENTER || v == ObjectWaiter::TS_CXQ, "invariant");
@@ -1018,11 +1015,6 @@ void ObjectMonitor::ReenterI(JavaThread* current, ObjectWaiter* currentNode) {
     }
 
     // The lock is still contested.
-    // Keep a tally of the # of futile wakeups.
-    // Note that the counter is not protected by a lock or updated by atomics.
-    // That is by design - we trade "lossy" counters which are exposed to
-    // races during updates for a lower probe effect.
-    ++nWakeups;
 
     // Assuming this is not a spurious wakeup we'll normally
     // find that _succ == current.
@@ -1032,6 +1024,10 @@ void ObjectMonitor::ReenterI(JavaThread* current, ObjectWaiter* currentNode) {
     // *must* retry  _owner before parking.
     OrderAccess::fence();
 
+    // Keep a tally of the # of futile wakeups.
+    // Note that the counter is not protected by a lock or updated by atomics.
+    // That is by design - we trade "lossy" counters which are exposed to
+    // races during updates for a lower probe effect.
     // This PerfData object can be used in parallel with a safepoint.
     // See the work around in PerfDataManager::destroy().
     OM_PERFDATA_OP(FutileWakeups, inc());

@@ -292,7 +292,7 @@ public final class ClassReaderImpl
 
         if (bootstrapMethodsAttribute == null) {
             bootstrapMethodsAttribute
-                    = containedClass.findAttribute(Attributes.BOOTSTRAP_METHODS)
+                    = containedClass.findAttribute(Attributes.bootstrapMethods())
                                     .orElse(new UnboundAttribute.EmptyBootstrapAttribute());
         }
 
@@ -326,7 +326,7 @@ public final class ClassReaderImpl
 
     boolean writeBootstrapMethods(BufWriter buf) {
         Optional<BootstrapMethodsAttribute> a
-                = containedClass.findAttribute(Attributes.BOOTSTRAP_METHODS);
+                = containedClass.findAttribute(Attributes.bootstrapMethods());
         if (a.isEmpty())
             return false;
         a.get().writeTo(buf);
