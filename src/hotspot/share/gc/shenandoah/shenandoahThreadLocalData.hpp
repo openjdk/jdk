@@ -158,10 +158,6 @@ public:
   }
 
   // Offsets
-  static ByteSize satb_mark_queue_active_offset() {
-    return satb_mark_queue_offset() + SATBMarkQueue::byte_offset_of_active();
-  }
-
   static ByteSize satb_mark_queue_index_offset() {
     return satb_mark_queue_offset() + SATBMarkQueue::byte_offset_of_index();
   }

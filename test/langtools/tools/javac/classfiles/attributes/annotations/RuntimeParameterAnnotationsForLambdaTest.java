@@ -104,10 +104,10 @@ public class RuntimeParameterAnnotationsForLambdaTest extends RuntimeParameterAn
     protected void testAttributes(
             TestCase.TestMethodInfo testMethod,
             MethodModel method) {
-        RuntimeInvisibleParameterAnnotationsAttribute invAttr = method.findAttribute(Attributes.RUNTIME_INVISIBLE_PARAMETER_ANNOTATIONS).orElse(null);
-        checkNull(invAttr, String.format("%s should be null", Attributes.RUNTIME_INVISIBLE_PARAMETER_ANNOTATIONS));
-        RuntimeVisibleParameterAnnotationsAttribute vAttr = method.findAttribute(Attributes.RUNTIME_VISIBLE_PARAMETER_ANNOTATIONS).orElse(null);
-        checkNull(vAttr, String.format("%s should be null", Attributes.RUNTIME_VISIBLE_PARAMETER_ANNOTATIONS));
+        RuntimeInvisibleParameterAnnotationsAttribute invAttr = method.findAttribute(Attributes.runtimeInvisibleParameterAnnotations()).orElse(null);
+        checkNull(invAttr, String.format("%s should be null", Attributes.runtimeInvisibleParameterAnnotations()));
+        RuntimeVisibleParameterAnnotationsAttribute vAttr = method.findAttribute(Attributes.runtimeVisibleParameterAnnotations()).orElse(null);
+        checkNull(vAttr, String.format("%s should be null", Attributes.runtimeVisibleParameterAnnotations()));
     }
 
     public String generateLambdaSource(TestCase.TestMethodInfo method) {
