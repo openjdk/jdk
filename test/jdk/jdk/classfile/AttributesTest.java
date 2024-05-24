@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,39 +23,33 @@
 
 /*
  * @test
- * @summary Testing ClassFile annotation model.
- * @run junit AnnotationModelTest
+ * @bug 8331291
+ * @summary Testing Attributes API.
+ * @run junit AttributesTest
  */
-import java.lang.classfile.ClassFile;
+import java.lang.classfile.AttributeMapper;
 import java.lang.classfile.Attributes;
+import java.lang.classfile.constantpool.Utf8Entry;
+import java.lang.reflect.Field;
 import org.junit.jupiter.api.Test;
-
-import java.io.IOException;
-import java.net.URI;
-import java.nio.file.FileSystem;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class AnnotationModelTest {
-    private static final FileSystem JRT = FileSystems.getFileSystem(URI.create("jrt:/"));
-    private static final String testClass = "modules/java.base/java/lang/annotation/Target.class";
-    static byte[] fileBytes;
+import jdk.internal.classfile.impl.BoundAttribute;
+import jdk.internal.classfile.impl.TemporaryConstantPool;
 
-    static {
-        try {
-            fileBytes = Files.readAllBytes(JRT.getPath(testClass));
-        } catch (IOException e) {
-            throw new ExceptionInInitializerError(e);
-        }
-    }
+class AttributesTest {
 
     @Test
-    void readAnnos() {
-        var model = ClassFile.of().parse(fileBytes);
-        var annotations = model.findAttribute(Attributes.runtimeVisibleAnnotations()).get().annotations();
-
-        assertEquals(annotations.size(), 3);
+    void testAttributesMapping() throws Exception {
+        var cp = TemporaryConstantPool.INSTANCE;
+        for (Field f : Attributes.class.getDeclaredFields()) {
+            if (f.getName().startsWith("NAME_") && f.getType() == String.class) {
+                Utf8Entry attrName = cp.utf8Entry((String)f.get(null));
+                AttributeMapper<?> mapper = BoundAttribute.standardAttribute(attrName);
+                assertNotNull(mapper, attrName.stringValue() + " 0x" + Integer.toHexString(attrName.hashCode()));
+                assertEquals(attrName.stringValue(), mapper.name());
+            }
+        }
     }
 }
