@@ -631,7 +631,7 @@ public final class BindServer {
 
         /**
          * Close thread by closing all connections and waiting
-         * for thread finished.
+         * for thread to finish.
          *
          * @see #closeConnection()
          */
