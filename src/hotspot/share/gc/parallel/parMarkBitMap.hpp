@@ -31,8 +31,7 @@
 
 class PSVirtualSpace;
 
-class ParMarkBitMap: public CHeapObj<mtGC>
-{
+class ParMarkBitMap: public CHeapObj<mtGC> {
 public:
   typedef BitMap::idx_t idx_t;
 
@@ -46,9 +45,6 @@ public:
   inline bool mark_obj(HeapWord* addr);
   inline bool mark_obj(oop obj);
 
-  // Traditional interface for testing whether an object is marked or not (these
-  // test only the begin bits).
-  inline bool is_marked(idx_t bit)      const;
   inline bool is_marked(HeapWord* addr) const;
   inline bool is_marked(oop obj)        const;
 
@@ -57,18 +53,13 @@ public:
 
   size_t reserved_byte_size() const { return _reserved_byte_size; }
 
-  // Convert a heap address to/from a bit index.
-  inline idx_t     addr_to_bit(HeapWord* addr) const;
-  inline HeapWord* bit_to_addr(idx_t bit) const;
-
   inline HeapWord* find_obj_beg(HeapWord* beg, HeapWord* end) const;
 
   // Return the address of the last obj-start in the range [beg, end).  If no
   // object is found, return end.
   inline HeapWord* find_obj_beg_reverse(HeapWord* beg, HeapWord* end) const;
-  // Clear a range of bits or the entire bitmap (both begin and end bits are
-  // cleared).
-  inline void clear_range(idx_t beg, idx_t end);
+  // Clear a range of bits corresponding to heap address range [beg, end).
+  inline void clear_range(HeapWord* beg, HeapWord* end);
 
   void print_on_error(outputStream* st) const {
     st->print_cr("Marking Bits: (ParMarkBitMap*) " PTR_FORMAT, p2i(this));
@@ -110,6 +101,10 @@ private:
   inline HeapWord* region_end() const;
   inline size_t    region_size() const;
   inline size_t    size() const;
+
+  // Convert a heap address to/from a bit index.
+  inline idx_t     addr_to_bit(HeapWord* addr) const;
+  inline HeapWord* bit_to_addr(idx_t bit) const;
 
 #ifdef  ASSERT
   inline void verify_bit(idx_t bit) const;
