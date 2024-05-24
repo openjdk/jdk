@@ -368,19 +368,26 @@ public class Indify {
         if (verbose)  System.err.println("reading " + f);
         ClassModel model = parseClassFile(f);
         Logic logic = new Logic(model);
-        Boolean isChanged = logic.transform();
-        System.err.println("Class file transformation: " + isChanged);
+        Boolean changed = logic.transform();
+        System.err.println("Class file transformation: " + changed);
         logic.reportPatternMethods(quiet, keepgoing);
-        writeNewClassFile(logic.classModel);
+        writeNewClassFile(logic.classModel, changed, f);
     }
 
-    void writeNewClassFile(ClassModel newClassModel) throws IOException {
+    void writeNewClassFile(ClassModel newClassModel, Boolean changed, File sourceFile) throws IOException {
         byte[] new_bytes = transformToBytes(newClassModel);
-        File destFile = classPathFile(dest, newClassModel.thisClass().name().stringValue());
-        ensureDirectory(destFile.getParentFile());
-        if (verbose)  System.err.println("writing "+destFile);
-        Files.write(destFile.toPath(), new_bytes);
-        System.err.println("Wrote New ClassFile to: "+destFile);
+        if(changed || all){
+            File destFile;
+            if(dest != null){
+                ensureDirectory(dest);
+                destFile = classPathFile(dest, newClassModel.thisClass().name().stringValue());
+            } else {
+                destFile = sourceFile;
+            }
+            if (verbose) System.err.println("writing "+destFile);
+            Files.write(destFile.toPath(), new_bytes);
+            System.err.println("Wrote New ClassFile to: "+destFile);
+        }
     }
 
     byte[] transformToBytes(ClassModel classModel) {
@@ -435,7 +442,8 @@ public class Indify {
                     // fall through
                 } catch (Exception ex) {
                     // pass error from reportPatternMethods, etc.
-                    throw (RuntimeException) ex;
+                    if (ex instanceof RuntimeException)  throw (RuntimeException) ex;
+                    throw new RuntimeException(ex);
                 }
             }
             return super.loadClass(name, resolve);
@@ -466,11 +474,10 @@ public class Indify {
             if (verbose)  System.err.println("Loading class from "+f);
             ClassModel model = parseClassFile(f);
             Logic logic = new Logic(model);
-            Boolean isChanged = logic.transform();
-            if(!isChanged)  throw new IOException("No transformation has been done");
+            Boolean changed = logic.transform();
+            if (verbose && changed) System.err.println("(no change)");
             logic.reportPatternMethods(!verbose, keepgoing);
             byte[] new_Bytes = transformToBytes(logic.classModel);
-            System.err.println("Transformed bytes: " + new_Bytes.length);
 
             return defineClass(null, new_Bytes, 0, new_Bytes.length);
         }

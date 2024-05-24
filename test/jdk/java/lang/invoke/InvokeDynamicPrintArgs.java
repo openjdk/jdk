@@ -235,11 +235,11 @@ public class InvokeDynamicPrintArgs {
         throw new AssertionError("this code should be statically transformed away by Indify");
     }
 
-    public static class TestPolicy extends Policy {
+    static class TestPolicy extends Policy {
         static final Policy DEFAULT_POLICY = Policy.getPolicy();
 
         final PermissionCollection permissions = new Permissions();
-        public TestPolicy() {
+        TestPolicy() {
             permissions.add(new java.io.FilePermission("<<ALL FILES>>", "read"));
         }
         public PermissionCollection getPermissions(ProtectionDomain domain) {

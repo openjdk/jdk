@@ -93,7 +93,7 @@ public class CallSiteTest {
         }
     }
 
-    public static class MyCCS extends ConstantCallSite {
+    static class MyCCS extends ConstantCallSite {
         public MyCCS(MethodType targetType, MethodHandle createTargetHook) throws Throwable {
             super(targetType, createTargetHook);
         }
