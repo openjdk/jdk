@@ -2351,40 +2351,40 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
   }
 
   if (have_same_inputs) {
-    if (opd->is_Vector() || opd->is_LoadVector()) {
-      if (opd_idx == 2 && VectorNode::is_shift(p0)) {
-        assert(false, "shift's count can't be vector");
-        return nullptr;
-      }
-      return opd; // input is matching vector
-    }
-    if ((opd_idx == 2) && VectorNode::is_shift(p0)) {
-      Node* cnt = opd;
-      // Vector instructions do not mask shift count, do it here.
-      juint mask = (p0->bottom_type() == TypeInt::INT) ? (BitsPerInt - 1) : (BitsPerLong - 1);
-      const TypeInt* t = opd->find_int_type();
-      if (t != nullptr && t->is_con()) {
-        juint shift = t->get_con();
-        if (shift > mask) { // Unsigned cmp
-          cnt = igvn().intcon(shift & mask);
-          phase()->set_ctrl(cnt, phase()->C->root());
-        }
-      } else {
-        if (t == nullptr || t->_lo < 0 || t->_hi > (int)mask) {
-          cnt = igvn().intcon(mask);
-          cnt = new AndINode(opd, cnt);
-          phase()->register_new_node_with_ctrl_of(cnt, opd);
-        }
-        if (!opd->bottom_type()->isa_int()) {
-          assert(false, "int type only");
-          return nullptr;
-        }
-      }
-      // Move shift count into vector register.
-      cnt = VectorNode::shift_count(p0->Opcode(), cnt, vlen, velt_basic_type(p0));
-      phase()->register_new_node_with_ctrl_of(cnt, opd);
-      return cnt;
-    }
+    //if (opd->is_Vector() || opd->is_LoadVector()) {
+    //  if (opd_idx == 2 && VectorNode::is_shift(p0)) {
+    //    assert(false, "shift's count can't be vector");
+    //    return nullptr;
+    //  }
+    //  return opd; // input is matching vector
+    //}
+    //if ((opd_idx == 2) && VectorNode::is_shift(p0)) {
+    //  Node* cnt = opd;
+    //  // Vector instructions do not mask shift count, do it here.
+    //  juint mask = (p0->bottom_type() == TypeInt::INT) ? (BitsPerInt - 1) : (BitsPerLong - 1);
+    //  const TypeInt* t = opd->find_int_type();
+    //  if (t != nullptr && t->is_con()) {
+    //    juint shift = t->get_con();
+    //    if (shift > mask) { // Unsigned cmp
+    //      cnt = igvn().intcon(shift & mask);
+    //      phase()->set_ctrl(cnt, phase()->C->root());
+    //    }
+    //  } else {
+    //    if (t == nullptr || t->_lo < 0 || t->_hi > (int)mask) {
+    //      cnt = igvn().intcon(mask);
+    //      cnt = new AndINode(opd, cnt);
+    //      phase()->register_new_node_with_ctrl_of(cnt, opd);
+    //    }
+    //    if (!opd->bottom_type()->isa_int()) {
+    //      assert(false, "int type only");
+    //      return nullptr;
+    //    }
+    //  }
+    //  // Move shift count into vector register.
+    //  cnt = VectorNode::shift_count(p0->Opcode(), cnt, vlen, velt_basic_type(p0));
+    //  phase()->register_new_node_with_ctrl_of(cnt, opd);
+    //  return cnt;
+    //}
     if (opd->is_StoreVector()) {
       assert(false, "StoreVector is not expected here");
       return nullptr;
@@ -3615,6 +3615,7 @@ VTransformNode* SuperWordVTransformBuilder::find_input_for_vector(int j, Node_Li
   Node_List* pack_in = _packset.isa_pack_input_or_null(pack, j);
   if (pack_in != nullptr) {
     // Input is a matching pack -> vtnode already exists.
+    assert(j != 2 || !VectorNode::is_shift(p0), "shift's count cannot be vector");
     return _bb_idx_to_vtnode.at(bb_idx(pack_in->at(0)));
   }
 
@@ -3654,12 +3655,23 @@ VTransformNode* SuperWordVTransformBuilder::find_input_for_vector(int j, Node_Li
     return populate_index;
   }
 
+  if (unique != nullptr && j == 2 && VectorNode::is_shift(p0)) {
+    // Scalar shift count for vector shift operation: vec2 = shiftV(vec1, scalar_count)
+    // Scalar shift operations masks the shift count, but the vector shift does not, so
+    // create a special ShiftCount node.
+    VTransformNode* unique_vtn = find_scalar(unique);
+    BasicType element_bt = _vloop_analyzer.types().velt_basic_type(p0);
+    juint mask = (p0->bottom_type() == TypeInt::INT) ? (BitsPerInt - 1) : (BitsPerLong - 1);
+    VTransformNode* shift_count = new (_graph.arena()) VTransformShiftCountNode(_graph, pack->size(), element_bt, mask, p0->Opcode());
+    shift_count->set_req(1, unique_vtn);
+    return shift_count;
+  }
+
   if (unique != nullptr) {
     // Replicate
     // Convert scalar input to vector with the same number of elements as
     // p0's vector. Use p0's type because size of operand's container in
     // vector should match p0's size regardless operand's size.
-    // TODO maybe does not work for everything, e.g. some shift cases?
     VTransformNode* unique_vtn = find_scalar(unique);
     const Type* element_type = _vloop_analyzer.types().velt_type(p0);
     VTransformNode* replicate = new (_graph.arena()) VTransformReplicateNode(_graph, pack->size(), element_type);

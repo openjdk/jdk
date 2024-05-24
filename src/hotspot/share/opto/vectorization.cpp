@@ -2067,12 +2067,31 @@ VTransformApplyStatus VTransformInputScalarNode::apply(const VLoopAnalyzer& vloo
 }
 
 VTransformApplyStatus VTransformReplicateNode::apply(const VLoopAnalyzer& vloop_analyzer, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
-
   Node* val = find_transformed_input(1, vnode_idx_to_transformed_node);
   VectorNode* vn = VectorNode::scalar2vector(val, _vlen, _element_type);
   register_new_vector(vloop_analyzer, vn, val);
   return VTransformApplyStatus::make_vector(vn, _vlen, vn->length_in_bytes());
 }
+
+VTransformApplyStatus VTransformShiftCountNode::apply(const VLoopAnalyzer& vloop_analyzer, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
+  PhaseIdealLoop* phase = vloop_analyzer.vloop().phase();
+
+  Node* shift_count_in = find_transformed_input(1, vnode_idx_to_transformed_node);
+  assert(shift_count_in->bottom_type()->isa_int(), "int type only for shift count");
+
+  // The shift_count_in would be automatically truncated to the lowest _mask
+  // bits in a scalar shift operation. But vector shift does not truncate, so
+  // we must apply the mask now.
+  Node* shift_count_masked = new AndINode(shift_count_in, phase->igvn().intcon(_mask));
+  register_new_vector(vloop_analyzer, shift_count_masked, shift_count_in);
+
+  // Now that masked value is "boadcast" (some platforms only set the lowest element).
+  VectorNode* vn = VectorNode::shift_count(_shift_opcode, shift_count_masked, _vlen, _element_bt);
+  register_new_vector(vloop_analyzer, vn, shift_count_in);
+
+  return VTransformApplyStatus::make_vector(vn, _vlen, vn->length_in_bytes());
+}
+
 
 VTransformApplyStatus VTransformPopulateIndexNode::apply(const VLoopAnalyzer& vloop_analyzer, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
   PhaseIdealLoop* phase = vloop_analyzer.vloop().phase();
@@ -2325,6 +2344,12 @@ void VTransformScalarNode::print_spec() const {
 void VTransformReplicateNode::print_spec() const {
   tty->print("vlen=%d element_type=", _vlen);
   _element_type->dump();
+}
+
+void VTransformShiftCountNode::print_spec() const {
+  tty->print("vlen=%d element_bt=%s mask=%d shift_opcode=%s",
+             _vlen, type2name(_element_bt), _mask,
+             NodeClassNames[_shift_opcode]);
 }
 
 void VTransformPopulateIndexNode::print_spec() const {

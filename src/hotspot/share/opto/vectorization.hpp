@@ -1574,6 +1574,23 @@ public:
   NOT_PRODUCT(virtual void print_spec() const override;)
 };
 
+class VTransformShiftCountNode : public VTransformNode {
+private:
+  int _vlen;
+  const BasicType _element_bt;
+  juint _mask;
+  int _shift_opcode;
+public:
+  VTransformShiftCountNode(VTransformGraph& graph, int vlen, BasicType element_bt, juint mask, int shift_opcode) :
+    VTransformNode(graph, 2), _vlen(vlen), _element_bt(element_bt), _mask(mask), _shift_opcode(shift_opcode) {}
+
+  virtual VTransformApplyStatus apply(const VLoopAnalyzer& vloop_analyzer,
+                                      const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
+
+  NOT_PRODUCT(virtual const char* name() const { return "ShiftCount"; };)
+  NOT_PRODUCT(virtual void print_spec() const override;)
+};
+
 class VTransformPopulateIndexNode : public VTransformNode {
 private:
   int _vlen;
