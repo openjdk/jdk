@@ -35,6 +35,7 @@ import java.util.stream.Stream;
 import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.DocTreeVisitor;
+import com.sun.source.doctree.EscapeTree;
 import com.sun.source.doctree.RawTextTree;
 import com.sun.source.util.DocTreeScanner;
 import com.sun.source.util.DocTrees;
@@ -60,6 +61,8 @@ import jdk.internal.org.commonmark.parser.Parser;
 import jdk.internal.org.commonmark.parser.delimiter.DelimiterProcessor;
 
 import static com.sun.tools.javac.util.Position.NOPOS;
+import java.util.regex.Matcher;
+import jdk.internal.org.commonmark.internal.util.Escaping;
 
 /**
  * A class to transform a {@code DocTree} node into a similar one with
@@ -803,8 +806,9 @@ public class MarkdownTransformer implements JavacTrees.DocCommentTreeTransformer
                     // determine whether to use {@link ... } or {@linkplain ...}
                     // based on whether the "link text" is the same as the "link destination"
                     String ref = dest.substring(autorefScheme.length());
-                    int refPos = sourcePosToTreePos(getRefPos(ref, link));
-                    var newRefTree = m.at(refPos).newReferenceTree(ref).setEndPos(refPos + ref.length());
+                    int[] span = getRefSpan(ref, link);
+                    int refPos = sourcePosToTreePos(span[0]);
+                    var newRefTree = m.at(refPos).newReferenceTree(ref).setEndPos(sourcePosToTreePos(span[1]));
 
                     Node child = link.getFirstChild();
                     DocTree.Kind linkKind = child.getNext() == null
@@ -835,7 +839,7 @@ public class MarkdownTransformer implements JavacTrees.DocCommentTreeTransformer
          * @param ref the reference to find
          * @param link the link containing the reference
          */
-        private int getRefPos(String ref, Link link) {
+        private int[] getRefSpan(String ref, Link link) {
             var spans = link.getSourceSpans();
             var revSpanIter = spans.listIterator(spans.size());
             while (revSpanIter.hasPrevious()) {
@@ -845,11 +849,31 @@ public class MarkdownTransformer implements JavacTrees.DocCommentTreeTransformer
                 var s = source.substring(start, end);
                 var index = s.lastIndexOf(ref);
                 if (index != -1) {
-                    return start + index;
+                    return new int[] {start + index, start + index + ref.length()};
+                } else {
+                    StringBuilder pattern = new StringBuilder(2 * ref.length());
+
+                    for (char c : ref.toCharArray()) {
+                        if (Escaping.ESCAPABLE.indexOf(c) >= 0) {
+                            pattern.append("\\\\?");
+                        }
+                        pattern.append(Pattern.quote(String.valueOf(c)));
+                    }
+
+                    Matcher m = Pattern.compile(pattern.toString()).matcher(s);
+                    int[] result = new int[] {NOPOS, NOPOS};
+
+                    while (m.find()) {
+                        result[0] = m.start();
+                        result[1] = m.end();
+                    }
+
+                    return result;
                 }
             }
-            return NOPOS;
+            return NOSPAN;
         }
+            private static final int[] NOSPAN = new int[] {NOPOS, NOPOS};
 
         /**
          * {@return the position in the original comment for a position in {@code source},

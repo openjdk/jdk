@@ -31,9 +31,16 @@
  *
  * @compile TestMHUnloaded.java TestMHUnloadedHelper.java
  * @run driver jdk.test.lib.helpers.ClassFileInstaller compiler.runtime.unloaded.TestMHUnloadedHelper
+ *
  * @run main/othervm -Xbootclasspath/a:.
  *                   -Xbatch -XX:-TieredCompilation -XX:CompileCommand=exclude,*::test
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+PrintCompilation -XX:+PrintInlining
+ *                      compiler.runtime.unloaded.TestMHUnloaded
+ *
+ * @run main/othervm -Xbootclasspath/a:.
+ *                   -Xbatch -XX:-TieredCompilation -XX:CompileCommand=exclude,*::test
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:+PrintCompilation -XX:+PrintInlining
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+AlwaysIncrementalInline
  *                      compiler.runtime.unloaded.TestMHUnloaded
  */
 

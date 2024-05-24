@@ -2218,6 +2218,32 @@ instruct replicateD(vReg dst, fRegD src) %{
 %}
 
 // vector shift
+//
+// Following shift instruct's are shared by vectorization (in SLP, superword.cpp) and Vector API.
+//
+// Shift behaviour in vectorization is defined by java language spec, which includes:
+//  1. "If the promoted type of the left-hand operand is int, then only the five lowest-order bits of
+//      the right-hand operand are used as the shift distance. It is as if the right-hand operand were
+//      subjected to a bitwise logical AND operator & (§15.22.1) with the mask value 0x1f (0b11111).
+//      The shift distance actually used is therefore always in the range 0 to 31, inclusive."
+//  2. similarly, for long "with the mask value 0x3f (0b111111)"
+// check https://docs.oracle.com/javase/specs/jls/se21/html/jls-15.html#jls-15.19 for details.
+//
+// Shift behaviour in Vector API is defined as:
+//   e.g. for ASHR, "a>>(n&(ESIZE*8-1))"
+//   this behaviour is the same as shift instrunction's in riscv vector extension.
+// check https://docs.oracle.com/en/java/javase/21/docs/api/jdk.incubator.vector/jdk/incubator/vector/VectorOperators.html#ASHR
+// and https://github.com/riscv/riscv-v-spec/blob/master/v-spec.adoc#116-vector-single-width-shift-instructions for details.
+//
+// Despite the difference between these 2 behaviours, the same shift instruct's of byte and short are
+// still shared between vectorization and Vector API. The way it works is hidden inside the implementation
+// of vectorization and Vector API:
+//  1. when doing optimization vectorization masks the shift value with "(BitsPerInt - 1)" or "(BitsPerLong - 1)"
+//  2. in Vector API, shift value is masked with SHIFT_MASK (e.g. for ByteVector it's "Byte.SIZE - 1")
+//
+// If not because of this pre-processing of shift value respectively in vectorization and Vector API, then
+// e.g. for a byte shift value 16, the intrinsic behaviour will be different, and they can not share the same
+// instruct here, as vectorization requires x >> 16, but Vector API requires x >> (16 & 7).
 
 instruct vasrB(vReg dst, vReg src, vReg shift, vRegMask_V0 v0) %{
   match(Set dst (RShiftVB src shift));

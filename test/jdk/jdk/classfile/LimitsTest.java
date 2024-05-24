@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8320360 8330684 8331320 8331655 8331940
+ * @bug 8320360 8330684 8331320 8331655 8331940 8332486
  * @summary Testing ClassFile limits.
  * @run junit LimitsTest
  */
@@ -37,8 +37,11 @@ import java.lang.classfile.Opcode;
 import java.lang.classfile.attribute.CodeAttribute;
 import java.lang.classfile.attribute.LineNumberInfo;
 import java.lang.classfile.attribute.LineNumberTableAttribute;
+import java.lang.classfile.attribute.LocalVariableInfo;
+import java.lang.classfile.attribute.LocalVariableTableAttribute;
 import java.lang.classfile.constantpool.ConstantPoolException;
 import java.lang.classfile.constantpool.IntegerEntry;
+import java.lang.classfile.instruction.LocalVariable;
 import java.util.List;
 import jdk.internal.classfile.impl.DirectCodeBuilder;
 import jdk.internal.classfile.impl.DirectMethodBuilder;
@@ -173,6 +176,18 @@ class LimitsTest {
                 "lineNumberMethod", MethodTypeDesc.of(ConstantDescs.CD_void), 0, cob -> ((DirectCodeBuilder)cob
                         .return_())
                         .writeAttribute(LineNumberTableAttribute.of(List.of(LineNumberInfo.of(500, 0))))
+                ))).methods().get(0).code().get().elementList());
+    }
+
+    @Test
+    void testLocalVariableOutOfBounds() {
+        assertThrows(IllegalArgumentException.class, () ->
+                ClassFile.of().parse(ClassFile.of().build(ClassDesc.of("LocalVariableClass"), cb -> cb.withMethodBody(
+                "localVariableMethod", MethodTypeDesc.of(ConstantDescs.CD_void), 0, cob -> ((DirectCodeBuilder)cob
+                        .return_())
+                        .writeAttribute(LocalVariableTableAttribute.of(List.of(
+                                new UnboundAttribute.UnboundLocalVariableInfo(0, 200,
+                                        cob.constantPool().utf8Entry("a"), cob.constantPool().utf8Entry("A"), 0))))
                 ))).methods().get(0).code().get().elementList());
     }
 }
