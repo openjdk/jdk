@@ -100,7 +100,7 @@ public class DuplicatedCheckcastTest extends TestRunner {
         ArrayList<Instruction> checkCastList = new ArrayList<>();
         for (MethodModel method : cf.methods()) {
             if (method.methodName().equalsString("test")) {
-                CodeAttribute code_attribute = method.findAttribute(Attributes.CODE).orElseThrow();
+                CodeAttribute code_attribute = method.findAttribute(Attributes.code()).orElseThrow();
                 for (CodeElement ce : code_attribute.elementList()) {
                     if (ce instanceof Instruction instruction && Opcode.CHECKCAST == instruction.opcode()) {
                         checkCastList.add(instruction);

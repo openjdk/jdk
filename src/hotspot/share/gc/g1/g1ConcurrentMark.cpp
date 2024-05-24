@@ -37,6 +37,7 @@
 #include "gc/g1/g1DirtyCardQueue.hpp"
 #include "gc/g1/g1HeapRegion.inline.hpp"
 #include "gc/g1/g1HeapRegionManager.hpp"
+#include "gc/g1/g1HeapRegionPrinter.hpp"
 #include "gc/g1/g1HeapRegionRemSet.inline.hpp"
 #include "gc/g1/g1HeapRegionSet.inline.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
@@ -1246,6 +1247,7 @@ class G1UpdateRegionLivenessAndSelectForRebuildTask : public WorkerTask {
         hr->set_containing_set(nullptr);
         hr->clear_cardtable();
         _g1h->concurrent_mark()->clear_statistics(hr);
+        G1HeapRegionPrinter::mark_reclaim(hr);
         _g1h->free_humongous_region(hr, _local_cleanup_list);
       };
 
@@ -1262,6 +1264,7 @@ class G1UpdateRegionLivenessAndSelectForRebuildTask : public WorkerTask {
       hr->set_containing_set(nullptr);
       hr->clear_cardtable();
       _g1h->concurrent_mark()->clear_statistics(hr);
+      G1HeapRegionPrinter::mark_reclaim(hr);
       _g1h->free_region(hr, _local_cleanup_list);
     }
 
@@ -1316,8 +1319,6 @@ public:
   ~G1UpdateRegionLivenessAndSelectForRebuildTask() {
     if (!_cleanup_list.is_empty()) {
       log_debug(gc)("Reclaimed %u empty regions", _cleanup_list.length());
-      // Now print the empty regions list.
-      _g1h->hr_printer()->mark_reclaim(&_cleanup_list);
       // And actually make them available.
       _g1h->prepend_to_freelist(&_cleanup_list);
     }
@@ -1437,7 +1438,14 @@ void G1ConcurrentMark::remark() {
 
       log_debug(gc, remset, tracking)("Remembered Set Tracking update regions total %u, selected %u",
                                         _g1h->num_regions(), cl.total_selected_for_rebuild());
+
       _needs_remembered_set_rebuild = (cl.total_selected_for_rebuild() > 0);
+
+      if (_needs_remembered_set_rebuild) {
+        // Prune rebuild candidates based on G1HeapWastePercent.
+        // Improves rebuild time in addition to remembered set memory usage.
+        G1CollectionSetChooser::build(_g1h->workers(), _g1h->num_regions(), _g1h->policy()->candidates());
+      }
     }
 
     if (log_is_enabled(Trace, gc, liveness)) {
