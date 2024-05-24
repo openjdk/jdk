@@ -449,7 +449,7 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
   __ leaq(r13, Address(save_ndl_len, -1));
   __ cmpq(r13, NUMBER_OF_CASES - 1);
   __ ja(L_smallCaseDefault);
-  __ mov64(r15, (int64_t)small_jump_table);
+  __ lea(r15, InternalAddress(small_jump_table));
   __ jmp(Address(r15, r13, Address::times_8));
 
   // Dispatch to handlers for small needle and large haystack
@@ -458,7 +458,7 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
   __ leaq(rax, Address(save_ndl_len, -1));
   __ cmpq(rax, NUMBER_OF_CASES - 1);
   __ ja(L_bigCaseDefault);
-  __ mov64(r15, (int64_t)big_jump_table);
+  __ lea(r15, InternalAddress(big_jump_table));
   __ jmp(Address(r15, rax, Address::times_8));
 
   ////////////////////////////////////////////////////////////////////////////////////////
