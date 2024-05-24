@@ -21,9 +21,6 @@
  * questions.
  */
 
-
-package tools.javac.annotations;
-
 import toolbox.*;
 
 import javax.annotation.processing.AbstractProcessor;
@@ -38,41 +35,33 @@ import java.util.Set;
 /**
  * @test
  * @bug 8332497
- * @summary error: javac crashes when annotation processing runs on program with module imports
+ * @summary error: javac prints an AssertionError when annotation processing runs on program with module imports
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
- * jdk.compiler/com.sun.tools.javac.main
- * @build toolbox.JavacTask toolbox.ToolBox toolbox.Assert toolbox.Task
- * @run main tools.javac.annotations.ModuleImportProcessingTest
+ *          jdk.compiler/com.sun.tools.javac.main
+ * @build toolbox.JavacTask toolbox.ToolBox toolbox.Task
+ * @run main ModuleImportProcessingTest
  */
 public class ModuleImportProcessingTest {
     final toolbox.ToolBox tb = new ToolBox();
     final Path base = Paths.get(".");
     final String processedSource = """
-            import module java.base;
-            import java.util.List;
-            import java.lang.annotation.ElementType;
-            import java.lang.annotation.Retention;
-            import java.lang.annotation.RetentionPolicy;
-            import java.lang.annotation.Target;
-            public class Main {
-              public static void main(String[] args) {
-                List.of();
-              }
-              @Ann
-              private void test() {
-                List.of();
-              }
-              @Retention(RetentionPolicy.RUNTIME)
-              @Target(ElementType.METHOD)
-              public @interface Ann {
-              }
-            }
-            """;
+        import module java.base;
+        import java.lang.annotation.*;
+        public class Main {
+          public static void main(String[] args) {
+            List.of();
+          }
+          @Ann
+          private void test() {}
+          @Retention(RetentionPolicy.RUNTIME)
+          @Target(ElementType.METHOD)
+          public @interface Ann {}
+        }
+        """;
 
     public static void main(String[] args) throws Exception {
-        var t = new ModuleImportProcessingTest();
-        t.test();
+        new ModuleImportProcessingTest().test();
     }
 
     public void test() throws Exception {
@@ -81,13 +70,13 @@ public class ModuleImportProcessingTest {
                 .options(
                         "-processor", AP.class.getName(),
                         "--enable-preview",
-                        "--source", System.getProperty("java.specification.version")
+                        "-source", Integer.toString(Runtime.version().feature()),
+                        "-proc:only"
                 )
                 .outdir(base.toString())
                 .files(base.resolve("Main.java"))
                 .run(Task.Expect.SUCCESS)
-                .writeAll()
-                .getOutputLines(Task.OutputKind.DIRECT);
+                .writeAll();
     }
 
     @SupportedAnnotationTypes("*")
