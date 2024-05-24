@@ -100,6 +100,8 @@ public class CopyOnWriteArrayList<E>
     implements List<E>, RandomAccess, Cloneable, java.io.Serializable {
     private static final long serialVersionUID = 8673264195747942595L;
 
+    private static final Object[] EMPTY_ELEMENTDATA = {};
+
     /**
      * The lock protecting all mutators.  (We have a mild preference
      * for builtin monitors over ReentrantLock when either will do.)
@@ -128,7 +130,7 @@ public class CopyOnWriteArrayList<E>
      * Creates an empty list.
      */
     public CopyOnWriteArrayList() {
-        setArray(new Object[0]);
+        setArray(EMPTY_ELEMENTDATA);
     }
 
     /**
@@ -143,6 +145,8 @@ public class CopyOnWriteArrayList<E>
         Object[] es;
         if (c.getClass() == CopyOnWriteArrayList.class)
             es = ((CopyOnWriteArrayList<?>)c).getArray();
+        else if (c.isEmpty()) 
+            es = EMPTY_ELEMENTDATA;
         else {
             es = c.toArray();
             if (c.getClass() != java.util.ArrayList.class)
@@ -159,7 +163,10 @@ public class CopyOnWriteArrayList<E>
      * @throws NullPointerException if the specified array is null
      */
     public CopyOnWriteArrayList(E[] toCopyIn) {
-        setArray(Arrays.copyOf(toCopyIn, toCopyIn.length, Object[].class));
+        if (toCopyIn.length == 0)
+            setArray(toCopyIn);
+        else
+            setArray(Arrays.copyOf(toCopyIn, toCopyIn.length, Object[].class));
     }
 
     /**
@@ -328,7 +335,7 @@ public class CopyOnWriteArrayList<E>
      * @return an array containing all the elements in this list
      */
     public Object[] toArray() {
-        return getArray().clone();
+        return getArray().length == 0 ? getArray() : getArray().clone();
     }
 
     /**
@@ -804,7 +811,7 @@ public class CopyOnWriteArrayList<E>
      */
     public void clear() {
         synchronized (lock) {
-            setArray(new Object[0]);
+            setArray(EMPTY_ELEMENTDATA);
         }
     }
 
