@@ -390,13 +390,13 @@ void ConstantPoolCache::record_gc_epoch() {
 void ConstantPoolCache::remove_unshareable_info() {
   assert(CDSConfig::is_dumping_archive(), "sanity");
 
-  if (_resolved_field_entries != nullptr) {
-    remove_resolved_field_entries_if_non_deterministic();
+  if (_resolved_indy_entries != nullptr) {
+    for (int i = 0; i < _resolved_indy_entries->length(); i++) {
+      resolved_indy_entry_at(i)->remove_unshareable_info();
+    }
   }
   if (_resolved_field_entries != nullptr) {
-    for (int i = 0; i < _resolved_field_entries->length(); i++) {
-      resolved_field_entry_at(i)->remove_unshareable_info();
-    }
+    remove_resolved_field_entries_if_non_deterministic();
   }
   if (_resolved_method_entries != nullptr) {
     for (int i = 0; i < _resolved_method_entries->length(); i++) {
