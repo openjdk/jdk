@@ -682,13 +682,8 @@ class ConstantPool : public Metadata {
   void remove_unshareable_info();
   void restore_unshareable_info(TRAPS);
 private:
-  bool can_archive_invokehandle(ResolvedMethodEntry* rme);
-  bool can_archive_resolved_method(ResolvedMethodEntry* method_entry);
   void remove_unshareable_entries();
   void remove_resolved_klass_if_non_deterministic(int cp_index);
-  void remove_resolved_field_entries_if_non_deterministic();
-  void remove_resolved_method_entries_if_non_deterministic();
-  void remove_resolved_indy_entries_if_non_deterministic();
 #endif
 
  private:
