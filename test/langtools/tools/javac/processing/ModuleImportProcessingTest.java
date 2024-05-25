@@ -40,7 +40,6 @@ import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.TypeElement;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Set;
 
 
@@ -50,14 +49,14 @@ public class ModuleImportProcessingTest extends TestRunner {
         import module java.base;
         import java.lang.annotation.*;
         public class Main {
-          public static void main(String[] args) {
-            List.of();
-          }
-          @Ann
-          private void test() {}
-          @Retention(RetentionPolicy.RUNTIME)
-          @Target(ElementType.METHOD)
-          public @interface Ann {}
+           public static void main(String[] args) {
+               List.of();
+           }
+           @Ann
+           private void test() {}
+           @Retention(RetentionPolicy.RUNTIME)
+           @Target(ElementType.METHOD)
+           public @interface Ann {}
         }
         """;
 
@@ -70,7 +69,7 @@ public class ModuleImportProcessingTest extends TestRunner {
     }
 
     protected void runTests() throws Exception {
-        runTests(m -> new Object[] { Paths.get(m.getName()) });
+        runTests(m -> new Object[] { Path.of(m.getName()) });
     }
 
     @Test
