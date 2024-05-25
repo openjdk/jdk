@@ -115,8 +115,9 @@ define_pd_global(intx, InitArrayShortSize, 8*BytesPerLong);
           "Highest supported AVX instructions set on x86/x64")              \
           range(0, 3)                                                       \
                                                                             \
+                                                                            \
   product(bool, UseAPX, false, EXPERIMENTAL,                                \
-          "Use Intel Advanced Performance Extensions.")                     \
+          "Use Intel Advanced Performance Extensions")                      \
                                                                             \
   product(bool, UseKNLSetting, false, DIAGNOSTIC,                           \
           "Control whether Knights platform setting should be used")        \
