@@ -661,49 +661,6 @@ int Method::extra_stack_words() {
   return extra_stack_entries() * Interpreter::stackElementSize;
 }
 
-bool Method::is_vanilla_constructor() const {
-  // Returns true if this method is a vanilla constructor, i.e. an "<init>" "()V" method
-  // which only calls the superclass vanilla constructor and possibly does stores of
-  // zero constants to local fields:
-  //
-  //   aload_0
-  //   invokespecial
-  //   indexbyte1
-  //   indexbyte2
-  //
-  // followed by an (optional) sequence of:
-  //
-  //   aload_0
-  //   aconst_null / iconst_0 / fconst_0 / dconst_0
-  //   putfield
-  //   indexbyte1
-  //   indexbyte2
-  //
-  // followed by:
-  //
-  //   return
-
-  assert(name() == vmSymbols::object_initializer_name(),    "Should only be called for default constructors");
-  assert(signature() == vmSymbols::void_method_signature(), "Should only be called for default constructors");
-  int size = code_size();
-  // Check if size match
-  if (size == 0 || size % 5 != 0) return false;
-  address cb = code_base();
-  int last = size - 1;
-  if (cb[0] != Bytecodes::_aload_0 || cb[1] != Bytecodes::_invokespecial || cb[last] != Bytecodes::_return) {
-    // Does not call superclass default constructor
-    return false;
-  }
-  // Check optional sequence
-  for (int i = 4; i < last; i += 5) {
-    if (cb[i] != Bytecodes::_aload_0) return false;
-    if (!Bytecodes::is_zero_const(Bytecodes::cast(cb[i+1]))) return false;
-    if (cb[i+2] != Bytecodes::_putfield) return false;
-  }
-  return true;
-}
-
-
 bool Method::compute_has_loops_flag() {
   BytecodeStream bcs(methodHandle(Thread::current(), this));
   Bytecodes::Code bc;
