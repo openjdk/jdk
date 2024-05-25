@@ -25,7 +25,6 @@
  * @bug 4162796 4162796
  * @summary Test indexOf and lastIndexOf
  * @requires vm.cpu.features ~= ".*avx2.*"
- * @requires vm.compiler2.enabled
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+EnableX86ECoreOpts -XX:UseAVX=2 -Xbatch -XX:-TieredCompilation -XX:CompileCommand=dontinline,ECoreIndexOf.indexOfKernel ECoreIndexOf
  * @key randomness
  */
