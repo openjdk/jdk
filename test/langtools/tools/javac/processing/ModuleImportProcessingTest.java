@@ -49,14 +49,14 @@ public class ModuleImportProcessingTest extends TestRunner {
         import module java.base;
         import java.lang.annotation.*;
         public class Main {
-           public static void main(String[] args) {
-               List.of();
-           }
-           @Ann
-           private void test() {}
-           @Retention(RetentionPolicy.RUNTIME)
-           @Target(ElementType.METHOD)
-           public @interface Ann {}
+            public static void main(String[] args) {
+                List.of();
+            }
+            @Ann
+            private void test() {}
+            @Retention(RetentionPolicy.RUNTIME)
+            @Target(ElementType.METHOD)
+            public @interface Ann {}
         }
         """;
 
