@@ -21,6 +21,17 @@
  * questions.
  */
 
+/**
+ * @test
+ * @bug 8332497
+ * @summary error: javac prints an AssertionError when annotation processing runs on program with module imports
+ * @library /tools/lib
+ * @modules jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.main
+ * @build toolbox.JavacTask toolbox.ToolBox toolbox.Task
+ * @run main ModuleImportProcessingTest
+ */
+
 import toolbox.*;
 
 import javax.annotation.processing.AbstractProcessor;
@@ -32,19 +43,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Set;
 
-/**
- * @test
- * @bug 8332497
- * @summary error: javac prints an AssertionError when annotation processing runs on program with module imports
- * @library /tools/lib
- * @modules jdk.compiler/com.sun.tools.javac.api
- *          jdk.compiler/com.sun.tools.javac.main
- * @build toolbox.JavacTask toolbox.ToolBox toolbox.Task
- * @run main ModuleImportProcessingTest
- */
-public class ModuleImportProcessingTest {
+
+public class ModuleImportProcessingTest extends TestRunner {
     final toolbox.ToolBox tb = new ToolBox();
-    final Path base = Paths.get(".");
     final String processedSource = """
         import module java.base;
         import java.lang.annotation.*;
@@ -60,11 +61,20 @@ public class ModuleImportProcessingTest {
         }
         """;
 
-    public static void main(String[] args) throws Exception {
-        new ModuleImportProcessingTest().test();
+    public ModuleImportProcessingTest() {
+        super(System.err);
     }
 
-    public void test() throws Exception {
+    public static void main(String[] args) throws Exception {
+        new ModuleImportProcessingTest().runTests();
+    }
+
+    protected void runTests() throws Exception {
+        runTests(m -> new Object[] { Paths.get(m.getName()) });
+    }
+
+    @Test
+    public void test(Path base) throws Exception {
         tb.writeJavaFiles(base, processedSource);
         new toolbox.JavacTask(tb)
                 .options(
@@ -73,10 +83,8 @@ public class ModuleImportProcessingTest {
                         "-source", Integer.toString(Runtime.version().feature()),
                         "-proc:only"
                 )
-                .outdir(base.toString())
-                .files(base.resolve("Main.java"))
-                .run(Task.Expect.SUCCESS)
-                .writeAll();
+                .files(tb.findJavaFiles(base))
+                .run();
     }
 
     @SupportedAnnotationTypes("*")
