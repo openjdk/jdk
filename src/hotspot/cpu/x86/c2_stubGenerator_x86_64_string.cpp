@@ -255,7 +255,7 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
 
   Label L_begin;
 
-  Label L_returnRBP, L_checkRangeAndReturn, L_returnError, L_bigCaseFixupAndReturn;
+  Label L_checkRangeAndReturn, L_returnError, L_bigCaseFixupAndReturn;
   Label L_bigSwitchTop, L_bigCaseDefault, L_smallCaseDefault;
   Label L_nextCheck, L_checksPassed, L_zeroCheckFailed, L_return;
   Label L_wcharBegin, L_continue, L_wideNoExpand;
@@ -312,7 +312,7 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
   }
 
   // Set up jump tables.  Used when needle size <= NUMBER_OF_CASES
-  setup_jump_tables(ae, L_returnRBP, L_checkRangeAndReturn, L_bigCaseFixupAndReturn,
+  setup_jump_tables(ae, L_returnError, L_checkRangeAndReturn, L_bigCaseFixupAndReturn,
                     &big_jump_table, &small_jump_table, _masm);
 
   ////////////////////////////////////////////////////////////////////////////////////////
@@ -471,10 +471,6 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
   __ movq(rax, -1);
   __ jmpb(L_return);
 
-// Used to check and return value in rbp - usually error
-  __ bind(L_returnRBP);
-  __ movq(rax, rbp);
-
   // At this point, rcx has &haystack where match found, rbx has &haystack,
   // and r8 has the index where a match was found
   __ bind(L_bigCaseFixupAndReturn);
@@ -600,11 +596,11 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
     // Need a lot of registers here to preserve state across arrays_equals call
 
     // Starting address in the haystack
-    __ leaq(haystackStart, Address(hsPtrRet, index));
-    // Starting address of first byte of needle to compare
-    __ movq(firstNeedleCompare, needle);
-    // Number of bytes to compare
-    __ movq(compLen, needleLen);
+    __ leaq(haystackStart, Address(hsPtrRet, index, Address::times_1, isU ? 4 : 2));
+        // Starting address of first byte of needle to compare
+    __ leaq(firstNeedleCompare, Address(needle, isU ? 4 : 2));
+        // Number of bytes to compare
+    __ leaq(compLen, Address(needleLen, isU ? -6 : -3));
 
     // Call arrays_equals for both UU and LL cases as bytes should compare exact
     __C2 arrays_equals(false, haystackStart, firstNeedleCompare, compLen, retval, rScratch,
@@ -696,7 +692,7 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
     // in the correct position.  Since the haystack is < 32 bytes, not finding matching
     // needle bytes can just return failure.  Otherwise, we loop through the found
     // matches.
-    compare_haystack_to_needle(false, 0, L_returnRBP, haystack, mask, needleLen, rTmp3, XMM_TMP1,
+    compare_haystack_to_needle(false, 0, L_returnError, haystack, mask, needleLen, rTmp3, XMM_TMP1,
                                XMM_TMP2, ae, _masm);
 
 // NOTE: REGISTER RE-USE for r12 and r14
@@ -731,7 +727,7 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
     // Jump to inner loop if more matches to check, otherwise return not found
     CLEAR_BIT(mask);
     __ jne(L_innerLoop);
-    __ jmp(L_returnRBP);
+    __ jmp(L_returnError);
 
 #undef saveCompLen
 #undef saveNeedleAddress
@@ -779,7 +775,7 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
     // Ensure haystack >= needle
     __ leaq(index, Address(nLen, nLen, Address::times_1));
     __ cmpq(index, hsLen);
-    __ jg(L_returnRBP);
+    __ jg(L_returnError);
 
     // Can't expand large-ish needles
     __ cmpq(nLen, MAX_NEEDLE_LEN_TO_EXPAND);
@@ -967,7 +963,7 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
       __ bind(topLoop);
       __ addq(r11, 2);
       __ cmpq(r11, nMinusK);
-      __ jg(L_returnRBP);
+      __ jg(L_returnError);
 
       __ bind(doCompare);
       __ leaq(r9, Address(haystack, r11));
@@ -1331,39 +1327,63 @@ static void big_case_loop_helper(bool sizeKnown, int size, Label &noMatch, Label
   // Assume failure
   __ movq(r11, -1);
 
-  if (!sizeKnown) {
-    __ cmpq(nMinusK, 32);
-    __ jae_b(L_greaterThan32);
-
-    // Here the needle is too long, so we can't do a 32-byte read.
-    // Default to a pseudo-scalar compare.
-    // Find a match within the first 32 bytes for the first character.
-    // If the matched character is at an offset > nMinusK, there's no match.
-    // Otherwise fall out of the loop and let the callee do the compare.
-    // Set last to hsPtrRet so the next attempt at loop iteration ends the compare.
-    __ movq(last, haystack);
-    __ movq(hsPtrRet, haystack);
-
-    // Build bitmask for compare
-    __ movq(rTmp2, -1);
-    __ movq(eq_mask, nMinusK);
-    __ addq(eq_mask, 1);
-    __ bzhiq(rTmp2, rTmp2, eq_mask);
-
-    // Compare first byte of needle to haystack and mask result
-    vpcmpeq(XMM_TMP3, XMM_BYTE_0, Address(haystack, 0), Assembler::AVX_256bit, ae, _masm);
-
-    __ vpmovmskb(eq_mask, XMM_TMP3, Assembler::AVX_256bit);
-    __ andq(eq_mask, rTmp2);
-
-    __ testl(eq_mask, eq_mask);
-    __ je(noMatch);
-
-    __ jmp(L_out);
-  }
-  __ bind(L_greaterThan32);
-
   broadcast_additional_needles(sizeKnown, size, needle, needleLen, temp1, ae, _masm);
+
+  __ cmpq(nMinusK, 32);
+  __ jae_b(L_greaterThan32);
+
+  // Here the needle is too long, so we can't do a 32-byte read to compare the last element.
+  //
+  // Instead we match the first two characters, read from the end of the haystack
+  // back 32 characters, shift the result compare and check that way.
+  //
+  // Set last to hsPtrRet so the next attempt at loop iteration ends the compare.
+  __ movq(last, haystack);
+  __ movq(hsPtrRet, haystack);
+
+  // Compare first element of needle to haystack
+  vpcmpeq(XMM_TMP3, XMM_BYTE_0, Address(haystack, 0), Assembler::AVX_256bit, ae, _masm);
+
+  __ vpmovmskb(eq_mask, XMM_TMP3, Assembler::AVX_256bit);
+
+  if (!sizeKnown || (sizeKnown && (size > (isU ? 4 : 2)))) {
+    // Compare second element of needle to haystack and mask result
+    vpcmpeq(XMM_TMP3, XMM_BYTE_1, Address(haystack, isU ? 2 : 1), Assembler::AVX_256bit, ae, _masm);
+
+    __ vpmovmskb(temp1, XMM_TMP3, Assembler::AVX_256bit);
+    __ andq(eq_mask, temp1);
+  }
+
+  // Compare last element of needle to haystack, shift and mask result
+  vpcmpeq(XMM_TMP3, XMM_BYTE_K, Address(haystack, hsLength, Address::times_1, -32),
+          Assembler::AVX_256bit, ae, _masm);
+
+  __ vpmovmskb(temp1, XMM_TMP3, Assembler::AVX_256bit);
+
+  // Compute the proper shift value.  If we let k be the needle length and n be the haystack
+  // length, we should be comparing to haystack[k - 1] through haystack[k - 1 + 31].  Since
+  // (n - k) < 32, (k - 1 + 31) would be past the end of the haystack.  So the shift value
+  // is computed as (k + 31 - n).
+  //
+  // Clarification:  The BYTE_K compare above compares haystack[(n-32):(n-1)].  We need to
+  // compare haystack[(k-1):(k-1+31)].  Subtracting either index gives shift value of
+  // (k + 31 - n):  x = (k-1+31)-(n-1) = k-1+31-n+1 = k+31-n.
+  if (sizeKnown) {
+    __ movl(temp2, 31 + size);
+  } else {
+    __ movl(temp2, 31);
+    __ addl(temp2, needleLen);
+  }
+  __ subl(temp2, hsLength);
+  __ shrxl(temp1, temp1, temp2);
+  __ andq(eq_mask, temp1);
+
+  __ testl(eq_mask, eq_mask);
+  __ je(noMatch);
+
+  __ jmp(L_out);
+
+  __ bind(L_greaterThan32);
 
   // Read 32-byte chunks at a time until the last 32-byte read would go
   // past the end of the haystack.  Then, set the final read to read exactly
@@ -1731,10 +1751,10 @@ static void setup_jump_tables(StrIntrinsicNode::ArgEncoding ae, Label &L_error, 
     //
     //  The haystack is <= 32 bytes
     //
-    // If a match is not found, branch to L_returnRBP (which will always
+    // If a match is not found, branch to L_error (which will always
     // return -1).
     //
-    // If a match is found, jump to L_checkRangeAndReturn, which ensures the
+    // If a match is found, jump to L_checkRange, which ensures the
     // matched needle is not past the end of the haystack.
 
     const Register haystack = rbx;
@@ -1809,7 +1829,7 @@ static void setup_jump_tables(StrIntrinsicNode::ArgEncoding ae, Label &L_error, 
       } else {
         Label L_loopTop;
 
-        big_case_loop_helper(true, i + 1, L_checkRange, L_loopTop, eq_mask, hs_ptr, needle_len,
+        big_case_loop_helper(true, i + 1, L_error, L_loopTop, eq_mask, hs_ptr, needle_len,
                              needle, haystack, hsLength, rTmp1, rTmp2, rTmp3, rTmp4, ae, _masm);
         byte_compare_helper(i + 1, L_loopTop, L_fixup, needle, needle_val, hs_ptr, eq_mask, set_bit,
                             rTmp4, ae, _masm);
