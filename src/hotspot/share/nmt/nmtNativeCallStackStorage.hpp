@@ -70,8 +70,8 @@ private:
     }
   };
   StackIndex put(const NativeCallStack& value) {
-    int bucket = value.calculate_hash() % _nr_buckets;
-    Link* link = _buckets[bucket];
+    int bucket = value.calculate_hash() % _table_size;
+    Link* link = _table[bucket];
     while (link != nullptr) {
       if (value.equals(get(link->stack))) {
         return link->stack;
@@ -79,8 +79,8 @@ private:
       link = link->next;
     }
     int idx = _stacks.append(value);
-    Link* new_link = new (&_arena) Link(_buckets[bucket], StackIndex(idx));
-    _buckets[bucket] = new_link;
+    Link* new_link = new (&_arena) Link(_table[bucket], StackIndex(idx));
+    _table[bucket] = new_link;
     return new_link->stack;
   }
 
@@ -88,9 +88,9 @@ private:
   Arena _arena;
   // Pick a prime number of buckets.
   // 4099 gives a 50% probability of collisions at 76 stacks (as per birthday problem).
-  static const constexpr int default_nr_buckets = 4099;
-  int _nr_buckets;
-  Link** _buckets;
+  static const constexpr int default_table_size = 4099;
+  int _table_size;
+  Link** _table;
   GrowableArrayCHeap<NativeCallStack, mtNMT> _stacks;
   const bool _is_detailed_mode;
 
@@ -112,12 +112,12 @@ public:
     return _stacks.at(si._stack_index);
   }
 
-  NativeCallStackStorage(bool is_detailed_mode, int nr_buckets = default_nr_buckets)
-  : _arena(mtNMT), _nr_buckets(nr_buckets), _buckets(nullptr), _stacks(), _is_detailed_mode(is_detailed_mode), _fake_stack(NativeCallStack::FakeMarker::its_fake) {
+  NativeCallStackStorage(bool is_detailed_mode, int table_size = default_table_size)
+  : _arena(mtNMT), _table_size(table_size), _table(nullptr), _stacks(), _is_detailed_mode(is_detailed_mode), _fake_stack(NativeCallStack::FakeMarker::its_fake) {
     if (_is_detailed_mode) {
-      _buckets = NEW_ARENA_ARRAY(&_arena, Link*, _nr_buckets);
-      for (int i = 0; i < _nr_buckets; i++) {
-        _buckets[i] = nullptr;
+      _table = NEW_ARENA_ARRAY(&_arena, Link*, _table_size);
+      for (int i = 0; i < _table_size; i++) {
+        _table[i] = nullptr;
       }
     }
   }
