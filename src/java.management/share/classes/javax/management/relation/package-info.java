@@ -23,70 +23,70 @@
  * questions.
  */
 /**
- *       <p>Provides the definition of the Relation Service.  The
- *     Relation Service is used to record relationships between
- *     MBeans in an MBean Server.  The Relation Service is itself an
- *     MBean.  More than one instance of a {@link
- *     javax.management.relation.RelationService RelationService}
- *     MBean can be registered in an MBean Server.</p>
+ * <p>Provides the definition of the Relation Service.  The
+ * Relation Service is used to record relationships between
+ * MBeans in an MBean Server.  The Relation Service is itself an
+ * MBean.  More than one instance of a {@link
+ * javax.management.relation.RelationService RelationService}
+ * MBean can be registered in an MBean Server.</p>
  *
- *       <p>A <em>relation type</em> defines a relationship between MBeans.
- *     It contains <em>roles</em> that the MBeans play in the
- *     relationship.  Usually there are at least two roles in a
- *     relation type.</p>
+ * <p>A <em>relation type</em> defines a relationship between MBeans.
+ * It contains <em>roles</em> that the MBeans play in the
+ * relationship.  Usually there are at least two roles in a
+ * relation type.</p>
  *
- *       <p>A <em>relation</em> is a named instance of a relation type,
- *     where specific MBeans appear in the roles, represented by
- *     their {@link javax.management.ObjectName ObjectName}s.</p>
+ * <p>A <em>relation</em> is a named instance of a relation type,
+ * where specific MBeans appear in the roles, represented by
+ * their {@link javax.management.ObjectName ObjectName}s.</p>
  *
- *       <p>For example, suppose there are <code>Module</code> MBeans,
- *     representing modules within an application.  A
- *     <code>DependsOn</code> relation type could express the
- *     relationship that some modules depend on others, which could
- *     be used to determine the order in which the modules are
- *     started or stopped.  The <code>DependsOn</code> relation type
- *     would have two roles, <code>dependent</code> and
- *     <code>dependedOn</code>.</p>
+ * <p>For example, suppose there are <code>Module</code> MBeans,
+ * representing modules within an application.  A
+ * <code>DependsOn</code> relation type could express the
+ * relationship that some modules depend on others, which could
+ * be used to determine the order in which the modules are
+ * started or stopped.  The <code>DependsOn</code> relation type
+ * would have two roles, <code>dependent</code> and
+ * <code>dependedOn</code>.</p>
  *
- *       <p>Every role is <em>typed</em>, meaning that an MBean that
- *     appears in that role must be an instance of the role's type.
- *     In the <code>DependsOn</code> example, both roles would be of
- *     type <code>Module</code>.</p>
+ * <p>Every role is <em>typed</em>, meaning that an MBean that
+ * appears in that role must be an instance of the role's type.
+ * In the <code>DependsOn</code> example, both roles would be of
+ * type <code>Module</code>.</p>
  *
- *       <p>Every role has a <em>cardinality</em>, which provides lower
- *     and upper bounds on the number of MBeans that can appear in
- *     that role in a given relation instance.  Usually, the lower
- *     and upper bounds are both 1, with exactly one MBean appearing
- *     in the role.  The cardinality only limits the number of MBeans
- *     in the role per relation instance.  The same MBean can appear
- *     in the same role in any number of instances of a relation
- *     type.  In the <code>DependsOn</code> example, a given module
- *     can depend on many other modules, and be depended on by many
- *     others, but any given relation instance links exactly one
- *     <code>dependent</code> module with exactly one
- *     <code>dependedOn</code> module.</p>
+ * <p>Every role has a <em>cardinality</em>, which provides lower
+ * and upper bounds on the number of MBeans that can appear in
+ * that role in a given relation instance.  Usually, the lower
+ * and upper bounds are both 1, with exactly one MBean appearing
+ * in the role.  The cardinality only limits the number of MBeans
+ * in the role per relation instance.  The same MBean can appear
+ * in the same role in any number of instances of a relation
+ * type.  In the <code>DependsOn</code> example, a given module
+ * can depend on many other modules, and be depended on by many
+ * others, but any given relation instance links exactly one
+ * <code>dependent</code> module with exactly one
+ * <code>dependedOn</code> module.</p>
  *
- *       <p>A relation type can be created explicitly, as an object
- *     implementing the {@link javax.management.relation.RelationType
- *     RelationType} interface, typically a {@link
- *     javax.management.relation.RelationTypeSupport
- *     RelationTypeSupport}.  Alternatively, it can be created
- *     implicitly using the Relation Service's {@link
- *     javax.management.relation.RelationServiceMBean#createRelationType(String,
- *     RoleInfo[]) createRelationType} method.</p>
+ * <p>A relation type can be created explicitly, as an object
+ * implementing the {@link javax.management.relation.RelationType
+ * RelationType} interface, typically a {@link
+ * javax.management.relation.RelationTypeSupport
+ * RelationTypeSupport}.  Alternatively, it can be created
+ * implicitly using the Relation Service's {@link
+ * javax.management.relation.RelationServiceMBean#createRelationType(String,
+ * RoleInfo[]) createRelationType} method.</p>
  *
- *       <p>A relation instance can be created explicitly, as an object
- *     implementing the {@link javax.management.relation.Relation
- *     Relation} interface, typically a {@link
- *     javax.management.relation.RelationSupport RelationSupport}.
- *     (A <code>RelationSupport</code> is itself a valid MBean, so it
- *     can be registered in the MBean Server, though this is not
- *     required.)  Alternatively, a relation instance can be created
- *     implicitly using the Relation Service's {@link
- *     javax.management.relation.RelationServiceMBean#createRelation(String,
- *     String, RoleList) createRelation} method.</p>
+ * <p>A relation instance can be created explicitly, as an object
+ * implementing the {@link javax.management.relation.Relation
+ * Relation} interface, typically a {@link
+ * javax.management.relation.RelationSupport RelationSupport}.
+ * (A <code>RelationSupport</code> is itself a valid MBean, so it
+ * can be registered in the MBean Server, though this is not
+ * required.)  Alternatively, a relation instance can be created
+ * implicitly using the Relation Service's {@link
+ * javax.management.relation.RelationServiceMBean#createRelation(String,
+ * String, RoleList) createRelation} method.</p>
  *
- *       <p>The <code>DependsOn</code> example might be coded as follows.</p>
+ * <p>The <code>DependsOn</code> example might be coded as follows.</p>
  *
  * <pre>
  * import java.util.*;
@@ -132,9 +132,9 @@
  * // Set of ObjectName containing moduleB
  * </pre>
  *
- *     @see <a href="https://jcp.org/aboutJava/communityprocess/mrel/jsr160/index2.html">
- *       JMX Specification, version 1.4</a>
+ * @see <a href="https://jcp.org/aboutJava/communityprocess/mrel/jsr160/index2.html">
+ * JMX Specification, version 1.4</a>
  *
- *       @since 1.5
+ * @since 1.5
  */
 package javax.management.relation;

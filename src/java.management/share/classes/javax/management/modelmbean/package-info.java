@@ -25,47 +25,47 @@
 
 
 /**
- *     <p>Provides the definition of the ModelMBean classes.  A Model
- *       MBean is an MBean that acts as a bridge between the management
- *       interface and the underlying managed resource.  Both the
- *       management interface and the managed resource are specified as
- *       Java objects.  The same Model MBean implementation can be
- *       reused many times with different management interfaces and
- *       managed resources, and it can provide common functionality
- *       such as persistence and caching.</p>
+ * <p>Provides the definition of the ModelMBean classes.  A Model
+ * MBean is an MBean that acts as a bridge between the management
+ * interface and the underlying managed resource.  Both the
+ * management interface and the managed resource are specified as
+ * Java objects.  The same Model MBean implementation can be
+ * reused many times with different management interfaces and
+ * managed resources, and it can provide common functionality
+ * such as persistence and caching.</p>
  *
- *     <p>A Model MBean implements the {@link
- *       javax.management.modelmbean.ModelMBean ModelMBean} interface.
- *       It is a {@link javax.management.DynamicMBean DynamicMBean}
- *       whose {@link javax.management.DynamicMBean#getMBeanInfo()
- *       getMBeanInfo} method returns an object implementing {@link
- *       javax.management.modelmbean.ModelMBeanInfo
- *       ModelMBeanInfo}.</p>
+ * <p>A Model MBean implements the {@link
+ * javax.management.modelmbean.ModelMBean ModelMBean} interface.
+ * It is a {@link javax.management.DynamicMBean DynamicMBean}
+ * whose {@link javax.management.DynamicMBean#getMBeanInfo()
+ * getMBeanInfo} method returns an object implementing {@link
+ * javax.management.modelmbean.ModelMBeanInfo
+ * ModelMBeanInfo}.</p>
  *
- *     <p>Every MBean has an {@link javax.management.MBeanInfo
- *       MBeanInfo} with information about the MBean itself, and its
- *       attributes, operations, constructors, and notifications.  A
- *       Model MBean augments this <code>MBeanInfo</code> with {@link
- *       javax.management.Descriptor Descriptor}s that encode
- *       additional information in the form of (key,value) pairs.
- *       Usually, <code>Descriptor</code>s are instances of {@link
- *       javax.management.modelmbean.DescriptorSupport
- *       DescriptorSupport}.</p>
+ * <p>Every MBean has an {@link javax.management.MBeanInfo
+ * MBeanInfo} with information about the MBean itself, and its
+ * attributes, operations, constructors, and notifications.  A
+ * Model MBean augments this <code>MBeanInfo</code> with {@link
+ * javax.management.Descriptor Descriptor}s that encode
+ * additional information in the form of (key,value) pairs.
+ * Usually, <code>Descriptor</code>s are instances of {@link
+ * javax.management.modelmbean.DescriptorSupport
+ * DescriptorSupport}.</p>
  *
- *     <p>The class {@link
- *       javax.management.modelmbean.RequiredModelMBean
- *       RequiredModelMBean} provides a standard Model MBean
- *       implementation.</p>
+ * <p>The class {@link
+ * javax.management.modelmbean.RequiredModelMBean
+ * RequiredModelMBean} provides a standard Model MBean
+ * implementation.</p>
  *
- *     <p>The following example shows a Model MBean being used to make
- *       the <code>get</code> method of a <code>HashMap</code>
- *       available for management through an MBean server.  No other
- *       methods are available through the MBean server.  There is
- *       nothing special about <code>HashMap</code> here.  Public
- *       methods from any public class can be exposed for management in
- *       the same way.</p>
+ * <p>The following example shows a Model MBean being used to make
+ * the <code>get</code> method of a <code>HashMap</code>
+ * available for management through an MBean server.  No other
+ * methods are available through the MBean server.  There is
+ * nothing special about <code>HashMap</code> here.  Public
+ * methods from any public class can be exposed for management in
+ * the same way.</p>
  *
- *     <pre>
+ * <pre>
  * import java.lang.reflect.Method;
  * import java.util.HashMap;
  * import javax.management.*;
@@ -107,14 +107,14 @@
  * // returns "value"
  *     </pre>
  *
- *     <h2><a id="spec">Package Specification</a></h2>
+ * <h2><a id="spec">Package Specification</a></h2>
  *
- *     <ul>
- *       <li>See the <i>JMX 1.4 Specification</i>
- *          <a href="https://jcp.org/aboutJava/communityprocess/mrel/jsr160/index2.html">
- *              JMX Specification, version 1.4</a>
- *     </ul>
+ * <ul>
+ *   <li>See the <i>JMX 1.4 Specification</i>
+ *      <a href="https://jcp.org/aboutJava/communityprocess/mrel/jsr160/index2.html">
+ *          JMX Specification, version 1.4</a>
+ * </ul>
  *
- *     @since 1.5
+ * @since 1.5
  */
 package javax.management.modelmbean;
