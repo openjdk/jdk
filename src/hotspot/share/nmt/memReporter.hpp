@@ -164,7 +164,7 @@ class MemDetailReporter : public MemSummaryReporter {
   virtual void report() {
     MemSummaryReporter::report();
     report_virtual_memory_map();
-    report_physical_devices();
+    report_memory_file_allocations();
     report_detail();
   }
 
@@ -174,7 +174,7 @@ class MemDetailReporter : public MemSummaryReporter {
   // Report virtual memory map
   void report_virtual_memory_map();
   // Report all physical devices
-  void report_physical_devices();
+  void report_memory_file_allocations();
   // Report malloc allocation sites; returns number of omitted sites
   int report_malloc_sites();
   // Report virtual memory reservation sites; returns number of omitted sites

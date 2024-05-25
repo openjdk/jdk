@@ -876,7 +876,7 @@ void MemDetailDiffReporter::diff_virtual_memory_site(const NativeCallStack* stac
   out->print_cr(")\n");
 }
 
-void MemDetailReporter::report_physical_devices() {
+void MemDetailReporter::report_memory_file_allocations() {
   MemoryFileTracker::Instance::Locker lock;
   MemoryFileTracker::Instance::print_all_reports_on(output(), scale());
 }
