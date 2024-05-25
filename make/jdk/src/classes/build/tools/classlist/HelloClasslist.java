@@ -151,6 +151,17 @@ public class HelloClasslist {
 
         LOGGER.log(Level.FINE, "New Date: " + newDate + " - old: " + oldDate);
 
+        // Pull SwitchBootstraps and associated classes into the classlist
+        record A(int a) { }
+        record B(int b) { }
+        Object o = new A(4711);
+        int value = switch (o) {
+            case A a -> a.a;
+            case B b -> b.b;
+            default -> 17;
+        };
+        LOGGER.log(Level.FINE, "Value: " + value);
+
         // The Striped64$Cell is loaded rarely only when there's a contention among
         // multiple threads performing LongAdder.increment(). This results in
         // an inconsistency in the classlist between builds (see JDK-8295951).
