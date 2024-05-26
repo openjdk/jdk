@@ -55,7 +55,6 @@ public class IO {
     public class OSSpecificTests {
 
         private static Path expect;
-        static final int JCK_STATUS_BASE = 95;
 
         @BeforeAll
         public static void prepareTTY() {
