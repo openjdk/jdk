@@ -40,6 +40,7 @@
  *         waiting to re-enter, from N to 0 threads waiting to be notified
  *       - all the above scenarios are executed with platform and virtual threads
  * @requires vm.jvmti
+ * @requires vm.continuations
  * @run main/othervm/native
  *     -Djdk.virtualThreadScheduler.parallelism=10
  *     -agentlib:ObjectMonitorUsage ObjectMonitorUsage
