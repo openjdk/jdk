@@ -85,7 +85,7 @@ void G1SurvRateGroup::stop_adding_regions() {
 void G1SurvRateGroup::record_surviving_words(uint age, size_t surv_words) {
   assert(is_valid_age(age), "age is %u not between 0 and %u", age, _num_added_regions);
 
-  double surv_rate = (double)surv_words / HeapRegion::GrainWords;
+  double surv_rate = (double)surv_words / G1HeapRegion::GrainWords;
   _surv_rate_predictors[age]->add(surv_rate);
 }
 

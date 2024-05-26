@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ public final class IntegerPolynomial1305 extends IntegerPolynomial {
         super(BITS_PER_LIMB, NUM_LIMBS, 1, MODULUS);
     }
 
-    protected void mult(long[] a, long[] b, long[] r) {
+    protected int mult(long[] a, long[] b, long[] r) {
 
         // Use grade-school multiplication into primitives to avoid the
         // temporary array allocation. This is equivalent to the following
@@ -73,6 +73,7 @@ public final class IntegerPolynomial1305 extends IntegerPolynomial {
         long c8 = (a[4] * b[4]);
 
         carryReduce(r, c0, c1, c2, c3, c4, c5, c6, c7, c8);
+        return 0;
     }
 
     private void carryReduce(long[] r, long c0, long c1, long c2, long c3,
@@ -99,7 +100,7 @@ public final class IntegerPolynomial1305 extends IntegerPolynomial {
     }
 
     @Override
-    protected void square(long[] a, long[] r) {
+    protected int square(long[] a, long[] r) {
         // Use grade-school multiplication with a simple squaring optimization.
         // Multiply into primitives to avoid the temporary array allocation.
         // This is equivalent to the following code:
@@ -122,6 +123,7 @@ public final class IntegerPolynomial1305 extends IntegerPolynomial {
         long c8 = (a[4] * a[4]);
 
         carryReduce(r, c0, c1, c2, c3, c4, c5, c6, c7, c8);
+        return 0;
     }
 
     @Override
