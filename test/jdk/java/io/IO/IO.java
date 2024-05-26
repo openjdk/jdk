@@ -29,7 +29,7 @@ import java.util.stream.Stream;
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
-import jtreg.SkippedException;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.condition.EnabledOnOs;
@@ -46,7 +46,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @bug 8305457
  * @summary java.io.IO tests
  * @library /test/lib
- * @run junit/othervm IO
+ * @run junit IO
  */
 public class IO {
 
@@ -61,8 +61,7 @@ public class IO {
         public static void prepareTTY() {
             expect = Paths.get("/usr/bin/expect"); // os-specific path
             if (!Files.exists(expect) || !Files.isExecutable(expect)) {
-                System.out.println("jtreg.SkippedException: '" + expect + "' not found");
-                System.exit(JCK_STATUS_BASE);
+                Assumptions.abort("'" + expect + "' not found");
             }
         }
 
