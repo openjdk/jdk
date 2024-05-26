@@ -172,7 +172,6 @@ class VtableStub {
 
  public:
   // Query
-  bool is_itable_stub()                          { return !_is_vtable_stub; }
   bool is_vtable_stub()                          { return  _is_vtable_stub; }
   bool is_abstract_method_error(address epc)     { return epc == code_begin()+_ame_offset; }
   bool is_null_pointer_exception(address epc)    { return epc == code_begin()+_npe_offset; }

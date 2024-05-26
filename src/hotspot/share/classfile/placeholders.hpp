@@ -100,13 +100,10 @@ class PlaceholderEntry {
   bool remove_seen_thread(JavaThread* thread, PlaceholderTable::classloadAction action);
 
   SeenThread*        superThreadQ()        const { return _superThreadQ; }
-  void               set_superThreadQ(SeenThread* SeenThread) { _superThreadQ = SeenThread; }
 
   SeenThread*        loadInstanceThreadQ() const { return _loadInstanceThreadQ; }
-  void               set_loadInstanceThreadQ(SeenThread* SeenThread) { _loadInstanceThreadQ = SeenThread; }
 
   SeenThread*        defineThreadQ()       const { return _defineThreadQ; }
-  void               set_defineThreadQ(SeenThread* SeenThread) { _defineThreadQ = SeenThread; }
  public:
   PlaceholderEntry() :
      _definer(nullptr), _instanceKlass(nullptr),
@@ -127,10 +124,6 @@ class PlaceholderEntry {
 
   bool instance_load_in_progress() {
     return (_loadInstanceThreadQ != nullptr);
-  }
-
-  bool define_class_in_progress() {
-    return (_defineThreadQ != nullptr);
   }
 
   // Used for ClassCircularityError checking

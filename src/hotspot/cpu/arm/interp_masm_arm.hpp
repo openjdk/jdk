@@ -66,7 +66,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
   inline void check_stack_top() {}
   inline void check_stack_top_on_expansion() {}
   inline void check_extended_sp(Register tmp) {}
-  inline void check_no_cached_stack_top(Register tmp) {}
 
   void save_bcp()                                          { str(Rbcp, Address(FP, frame::interpreter_frame_bcp_offset * wordSize)); }
   void restore_bcp()                                       { ldr(Rbcp, Address(FP, frame::interpreter_frame_bcp_offset * wordSize)); }

@@ -874,29 +874,11 @@ class VectorElementSizeStats {
     _stats[exact_log2(size)]++;
   }
 
-  int count_size(int size) {
-    assert(1 <= size && size <= 8 && is_power_of_2(size), "Illegal size");
-    return _stats[exact_log2(size)];
-  }
-
   int smallest_size() {
     for (int i = 0; i <= 3; i++) {
       if (_stats[i] > 0) return (1 << i);
     }
     return NO_SIZE;
-  }
-
-  int largest_size() {
-    for (int i = 3; i >= 0; i--) {
-      if (_stats[i] > 0) return (1 << i);
-    }
-    return NO_SIZE;
-  }
-
-  int unique_size() {
-    int small = smallest_size();
-    int large = largest_size();
-    return (small == large) ? small : MIXED_SIZE;
   }
 };
 

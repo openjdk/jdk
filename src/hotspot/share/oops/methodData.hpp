@@ -217,21 +217,6 @@ public:
     return true;
   }
 
-  bool clear_flag_at(u1 flag_number) {
-    const u1 bit = 1 << flag_number;
-    u1 compare_value;
-    u1 exchange_value;
-    do {
-      compare_value = _header._struct._flags;
-      if ((compare_value & bit) == 0) {
-        // already cleaed.
-        return false;
-      }
-      exchange_value = compare_value & ~bit;
-    } while (compare_value != Atomic::cmpxchg(&_header._struct._flags, compare_value, exchange_value));
-    return true;
-  }
-
   bool flag_at(u1 flag_number) const {
     return (flags() & (1 << flag_number)) != 0;
   }
@@ -441,10 +426,6 @@ public:
     assert(is_ReceiverTypeData(), "wrong type");
     return is_ReceiverTypeData() ? (ReceiverTypeData*)this : nullptr;
   }
-  VirtualCallData* as_VirtualCallData() const {
-    assert(is_VirtualCallData(), "wrong type");
-    return is_VirtualCallData() ? (VirtualCallData*)this : nullptr;
-  }
   RetData* as_RetData() const {
     assert(is_RetData(), "wrong type");
     return is_RetData()         ? (RetData*)        this : nullptr;
@@ -452,18 +433,6 @@ public:
   BranchData* as_BranchData() const {
     assert(is_BranchData(), "wrong type");
     return is_BranchData()      ? (BranchData*)     this : nullptr;
-  }
-  ArrayData* as_ArrayData() const {
-    assert(is_ArrayData(), "wrong type");
-    return is_ArrayData()       ? (ArrayData*)      this : nullptr;
-  }
-  MultiBranchData* as_MultiBranchData() const {
-    assert(is_MultiBranchData(), "wrong type");
-    return is_MultiBranchData() ? (MultiBranchData*)this : nullptr;
-  }
-  ArgInfoData* as_ArgInfoData() const {
-    assert(is_ArgInfoData(), "wrong type");
-    return is_ArgInfoData() ? (ArgInfoData*)this : nullptr;
   }
   CallTypeData* as_CallTypeData() const {
     assert(is_CallTypeData(), "wrong type");
@@ -544,10 +513,8 @@ public:
   // The null_seen flag bit is specially known to the interpreter.
   // Consulting it allows the compiler to avoid setting up null_check traps.
   bool null_seen()     { return flag_at(null_seen_flag); }
-  void set_null_seen()    { set_flag_at(null_seen_flag); }
   bool deprecated_method_call_site() const { return flag_at(deprecated_method_callsite_flag); }
   bool set_deprecated_method_call_site() { return data()->set_flag_at(deprecated_method_callsite_flag); }
-  bool clear_deprecated_method_call_site() { return data()->clear_flag_at(deprecated_method_callsite_flag); }
 
 #if INCLUDE_JVMCI
   // true if an exception was thrown at the specific BCI
@@ -660,19 +627,6 @@ public:
   // Direct accessor
   uint taken() const {
     return uint_at(taken_off_set);
-  }
-
-  void set_taken(uint cnt) {
-    set_uint_at(taken_off_set, cnt);
-  }
-
-  // Saturating counter
-  uint inc_taken() {
-    uint cnt = taken() + 1;
-    // Did we wrap? Will compiler screw us??
-    if (cnt == 0) cnt--;
-    set_uint_at(taken_off_set, cnt);
-    return cnt;
   }
 
   int displacement() const {
@@ -1212,9 +1166,6 @@ public:
   static ByteSize receiver_count_offset(uint row) {
     return cell_offset(receiver_count_cell_index(row));
   }
-  static ByteSize receiver_type_data_size() {
-    return cell_offset(static_cell_count());
-  }
 
   // GC support
   virtual void clean_weak_klass_links(bool always_clean);
@@ -1517,18 +1468,6 @@ public:
     return uint_at(not_taken_off_set);
   }
 
-  void set_not_taken(uint cnt) {
-    set_uint_at(not_taken_off_set, cnt);
-  }
-
-  uint inc_not_taken() {
-    uint cnt = not_taken() + 1;
-    // Did we wrap? Will compiler screw us??
-    if (cnt == 0) cnt--;
-    set_uint_at(not_taken_off_set, cnt);
-    return cnt;
-  }
-
   // Code generation support
   static ByteSize not_taken_offset() {
     return cell_offset(not_taken_off_set);
@@ -1567,10 +1506,6 @@ protected:
     int aindex = index + array_start_off_set;
     return int_at(aindex);
   }
-  oop array_oop_at(int index) const {
-    int aindex = index + array_start_off_set;
-    return oop_at(aindex);
-  }
   void array_set_int_at(int index, int value) {
     int aindex = index + array_start_off_set;
     set_int_at(aindex, value);
@@ -1601,9 +1536,6 @@ public:
   // Code generation support
   static ByteSize array_len_offset() {
     return cell_offset(array_len_off_set);
-  }
-  static ByteSize array_start_offset() {
-    return cell_offset(array_start_off_set);
   }
 };
 

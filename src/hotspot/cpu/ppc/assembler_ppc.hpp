@@ -1028,11 +1028,6 @@ class Assembler : public AbstractAssembler {
            "value out of range");
   }
 
-  static void assert_signed_word_disp_range(intptr_t x, int nbits) {
-    assert((x & 3) == 0, "not word aligned");
-    assert_signed_range(x, nbits + 2);
-  }
-
   static void assert_unsigned_const(int x, int nbits) {
     assert(juint(x) < juint(1 << nbits), "unsigned constant out of range");
   }
@@ -1107,20 +1102,6 @@ class Assembler : public AbstractAssembler {
   static int inv_bo_field(int x)  { return inv_opp_u_field(x, 10,  6); }
   static int inv_bi_field(int x)  { return inv_opp_u_field(x, 15, 11); }
 
-  // For extended opcodes (prefixed instructions) introduced with Power 10
-  static long inv_r_eo(   int x)  { return  inv_opp_u_field(x, 11, 11); }
-  static long inv_type(   int x)  { return  inv_opp_u_field(x,  7,  6); }
-  static long inv_st_x0(  int x)  { return  inv_opp_u_field(x,  8,  8); }
-  static long inv_st_x1(  int x)  { return  inv_opp_u_field(x, 11,  8); }
-
-  //  - 8LS:D/MLS:D Formats
-  static long inv_d0_eo( long x)  { return  inv_opp_u_field(x, 31, 14); }
-
-  //  - 8RR:XX4/8RR:D Formats
-  static long inv_imm0_eo(int x)  { return  inv_opp_u_field(x, 31, 16); }
-  static long inv_uimm_eo(int x)  { return  inv_opp_u_field(x, 31, 29); }
-  static long inv_imm_eo( int x)  { return  inv_opp_u_field(x, 31, 24); }
-
   #define opp_u_field(x, hi_bit, lo_bit) u_field(x, 31-(lo_bit), 31-(hi_bit))
   #define opp_s_field(x, hi_bit, lo_bit) s_field(x, 31-(lo_bit), 31-(hi_bit))
 
@@ -1142,7 +1123,6 @@ class Assembler : public AbstractAssembler {
   static int d1(       int         x)  { return  opp_s_field(x,             31, 16); }
   static int ds(       int         x)  { assert((x & 0x3) == 0, "unaligned offset"); return opp_s_field(x, 31, 16); }
   static int eh(       int         x)  { return  opp_u_field(x,             31, 31); }
-  static int flm(      int         x)  { return  opp_u_field(x,             14,  7); }
   static int fra(    FloatRegister r)  { return  fra(r->encoding());}
   static int frb(    FloatRegister r)  { return  frb(r->encoding());}
   static int frc(    FloatRegister r)  { return  frc(r->encoding());}
@@ -1245,28 +1225,13 @@ class Assembler : public AbstractAssembler {
   // For extended opcodes (prefixed instructions) introduced with Power 10
   static long r_eo(     int        x)  { return  opp_u_field(x,             11, 11); }
   static long type(     int        x)  { return  opp_u_field(x,              7,  6); }
-  static long st_x0(    int        x)  { return  opp_u_field(x,              8,  8); }
-  static long st_x1(    int        x)  { return  opp_u_field(x,             11,  8); }
 
   //  - 8LS:D/MLS:D Formats
   static long d0_eo(    long       x)  { return  opp_u_field((x >> 16) & 0x3FFFF, 31, 14); }
   static long d1_eo(    long       x)  { return  opp_u_field(x & 0xFFFF,    31, 16); }
-  static long s0_eo(    long       x)  { return  d0_eo(x); }
-  static long s1_eo(    long       x)  { return  d1_eo(x); }
 
   //  - 8RR:XX4/8RR:D Formats
-  static long imm0_eo(  int        x)  { return  opp_u_field(x >> 16,       31, 16); }
-  static long imm1_eo(  int        x)  { return  opp_u_field(x & 0xFFFF,    31, 16); }
-  static long uimm_eo(  int        x)  { return  opp_u_field(x,             31, 29); }
   static long imm_eo(   int        x)  { return  opp_u_field(x,             31, 24); }
-
-  //static int xo1(     int        x)  { return  opp_u_field(x,             29, 21); }// is contained in our opcodes
-  //static int xo2(     int        x)  { return  opp_u_field(x,             30, 21); }// is contained in our opcodes
-  //static int xo3(     int        x)  { return  opp_u_field(x,             30, 22); }// is contained in our opcodes
-  //static int xo4(     int        x)  { return  opp_u_field(x,             30, 26); }// is contained in our opcodes
-  //static int xo5(     int        x)  { return  opp_u_field(x,             29, 27); }// is contained in our opcodes
-  //static int xo6(     int        x)  { return  opp_u_field(x,             30, 27); }// is contained in our opcodes
-  //static int xo7(     int        x)  { return  opp_u_field(x,             31, 30); }// is contained in our opcodes
 
  protected:
   // Compute relative address for branch.
@@ -1299,9 +1264,6 @@ class Assembler : public AbstractAssembler {
   static int get_imm(address a, int instruction_number) {
     return (short)((int *)a)[instruction_number];
   }
-
-  static inline int hi16_signed(  int x) { return (int)(int16_t)(x >> 16); }
-  static inline int lo16_unsigned(int x) { return x & 0xffff; }
 
  protected:
 
@@ -1475,9 +1437,6 @@ class Assembler : public AbstractAssembler {
   static bool is_bcxx(int x) {
      return BCXX_OPCODE == (x & BCXX_OPCODE_MASK);
   }
-  static bool is_bxx_or_bcxx(int x) {
-     return is_bxx(x) || is_bcxx(x);
-  }
   static bool is_bctrl(int x) {
      return x == 0x4e800421;
   }
@@ -1508,23 +1467,11 @@ class Assembler : public AbstractAssembler {
   static bool is_stdu(int x) {
      return STDU_OPCODE == (x & STDU_OPCODE_MASK);
   }
-  static bool is_stdx(int x) {
-     return STDX_OPCODE == (x & STDX_OPCODE_MASK);
-  }
   static bool is_stdux(int x) {
      return STDUX_OPCODE == (x & STDUX_OPCODE_MASK);
   }
-  static bool is_stwx(int x) {
-     return STWX_OPCODE == (x & STWX_OPCODE_MASK);
-  }
-  static bool is_stwux(int x) {
-     return STWUX_OPCODE == (x & STWUX_OPCODE_MASK);
-  }
   static bool is_stw(int x) {
      return STW_OPCODE == (x & STW_OPCODE_MASK);
-  }
-  static bool is_stwu(int x) {
-     return STWU_OPCODE == (x & STWU_OPCODE_MASK);
   }
   static bool is_ori(int x) {
      return ORI_OPCODE == (x & ORI_OPCODE_MASK);

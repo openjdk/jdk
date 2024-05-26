@@ -391,9 +391,6 @@ class MacroAssembler: public Assembler {
   static inline bool is_load_addr_pcrel(address a);
 
   static void patch_target_addr_pcrel(address pc, address con);
-  static void patch_addr_pcrel(address pc, address con) {
-    patch_target_addr_pcrel(pc, con); // Just delegate. This is only for nativeInst_s390.cpp.
-  }
 
   //---------------------------------------------------------
   //  Some macros for more comfortable assembler programming.
@@ -602,12 +599,8 @@ class MacroAssembler: public Assembler {
   // END OF PCrelative TOC access.
 
   static int jump_byregister_size()          { return 2; }
-  static int jump_pcrelative_size()          { return 4; }
-  static int jump_far_pcrelative_size()      { return 6; }
   static int call_byregister_size()          { return 2; }
-  static int call_pcrelative_size()          { return 4; }
   static int call_far_pcrelative_size()      { return 2 + 6; } // Prepend each BRASL with a nop.
-  static int call_far_pcrelative_size_raw()  { return 6; }     // Prepend each BRASL with a nop.
 
   //
   // Java utilities
@@ -878,26 +871,14 @@ class MacroAssembler: public Assembler {
                             Register mem_base, const char* msg, int id);
 
  public:
-  inline void asm_assert_mem4_is_zero(int64_t mem_offset, Register mem_base, const char* msg, int id) {
-    asm_assert_mems_zero(true,  true, 4, mem_offset, mem_base, msg, id);
-  }
   inline void asm_assert_mem8_is_zero(int64_t mem_offset, Register mem_base, const char* msg, int id) {
     asm_assert_mems_zero(true,  true, 8, mem_offset, mem_base, msg, id);
-  }
-  inline void asm_assert_mem4_isnot_zero(int64_t mem_offset, Register mem_base, const char* msg, int id) {
-    asm_assert_mems_zero(false, true, 4, mem_offset, mem_base, msg, id);
   }
   inline void asm_assert_mem8_isnot_zero(int64_t mem_offset, Register mem_base, const char* msg, int id) {
     asm_assert_mems_zero(false, true, 8, mem_offset, mem_base, msg, id);
   }
-  inline void asm_assert_mem4_is_zero_static(int64_t mem_offset, Register mem_base, const char* msg, int id) {
-    asm_assert_mems_zero(true,  false, 4, mem_offset, mem_base, msg, id);
-  }
   inline void asm_assert_mem8_is_zero_static(int64_t mem_offset, Register mem_base, const char* msg, int id) {
     asm_assert_mems_zero(true,  false, 8, mem_offset, mem_base, msg, id);
-  }
-  inline void asm_assert_mem4_isnot_zero_static(int64_t mem_offset, Register mem_base, const char* msg, int id) {
-    asm_assert_mems_zero(false, false, 4, mem_offset, mem_base, msg, id);
   }
   inline void asm_assert_mem8_isnot_zero_static(int64_t mem_offset, Register mem_base, const char* msg, int id) {
     asm_assert_mems_zero(false, false, 8, mem_offset, mem_base, msg, id);
@@ -958,9 +939,6 @@ class MacroAssembler: public Assembler {
   //-----------------------------
   void trace_basic_block(uint i);
   void init_basic_block_trace();
-  // Number of bytes a basic block gets larger due to the tracing code macro (worst case).
-  // Currently, worst case is 48 bytes. 64 puts us securely on the safe side.
-  static int basic_blck_trace_blk_size_incr() { return 64; }
 
   // Write pattern 0x0101010101010101 in region [low-before, high+after].
   // Low and high may be the same registers. Before and after are

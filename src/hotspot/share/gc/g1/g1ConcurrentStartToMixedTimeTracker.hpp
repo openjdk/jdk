@@ -39,9 +39,6 @@ private:
   double _mixed_start_time;
   double _total_pause_time;
 
-  double wall_time() const {
-    return _mixed_start_time - _concurrent_start_end_time;
-  }
 public:
   G1ConcurrentStartToMixedTimeTracker() { reset(); }
 

@@ -184,7 +184,6 @@ public:
   JavaObjectNode* as_JavaObject() { assert(is_JavaObject(),""); return (JavaObjectNode*)this; }
   LocalVarNode*   as_LocalVar()   { assert(is_LocalVar(),"");   return (LocalVarNode*)this; }
   FieldNode*      as_Field()      { assert(is_Field(),"");      return (FieldNode*)this; }
-  ArraycopyNode*  as_Arraycopy()  { assert(is_Arraycopy(),"");  return (ArraycopyNode*)this; }
 
   EscapeState escape_state() const { return (EscapeState)_escape; }
   void    set_escape_state(EscapeState state) { _escape = (u1)state; }

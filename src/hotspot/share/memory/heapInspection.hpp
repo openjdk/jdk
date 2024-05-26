@@ -172,16 +172,6 @@ class KlassInfoHisto : public StackObj {
     return w;
   }
 
-  static int col_width(julong n, const char *name) {
-    int w = julong_width(n);
-    int min = (int)(strlen(name));
-    if (w < min) {
-        w = min;
-    }
-    // add a leading space for separation.
-    return w + 1;
-  }
-
  public:
   KlassInfoHisto(KlassInfoTable* cit);
   ~KlassInfoHisto();

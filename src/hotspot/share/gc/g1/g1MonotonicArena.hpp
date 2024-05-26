@@ -81,8 +81,6 @@ private:
   DEBUG_ONLY(uint calculate_length() const;)
 
 public:
-  const Segment* first_segment() const { return Atomic::load(&_first); }
-
   uint num_total_slots() const { return Atomic::load(&_num_total_slots); }
   uint num_allocated_slots() const {
     uint allocated = Atomic::load(&_num_allocated_slots);

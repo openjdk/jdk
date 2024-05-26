@@ -85,12 +85,8 @@ class zarch {
   // or atomic_increment -- should probably use more locks for more
   // scalability -- for instance one for each eden space or group of.
 
-  // Address of the lock for atomic_compare_and_exchange.
-  static int* atomic_memory_operation_lock_addr() { return &_atomic_memory_operation_lock; }
-
   // Accessor and mutator for _atomic_memory_operation_lock.
   static int atomic_memory_operation_lock() { return _atomic_memory_operation_lock; }
-  static void set_atomic_memory_operation_lock(int value) { _atomic_memory_operation_lock = value; }
 
   static address partial_subtype_check()                  { return _partial_subtype_check; }
 

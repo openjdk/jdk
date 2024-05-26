@@ -5362,10 +5362,6 @@ class FPU_Register {
   int32_t _m1;
   int16_t _ex;
 
-  bool is_indefinite() const           {
-    return _ex == -1 && _m1 == (int32_t)0xC0000000 && _m0 == 0;
-  }
-
   void print() const {
     char  sign = (_ex < 0) ? '-' : '+';
     const char* kind = (_ex == 0x7FFF || _ex == (int16_t)-1) ? "NaN" : "   ";

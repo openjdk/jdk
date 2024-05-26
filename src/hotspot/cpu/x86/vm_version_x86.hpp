@@ -663,9 +663,7 @@ public:
   //
   // Feature identification which can be affected by VM settings
   //
-  static bool supports_cpuid()        { return _features  != 0; }
   static bool supports_cmov()         { return (_features & CPU_CMOV) != 0; }
-  static bool supports_fxsr()         { return (_features & CPU_FXSR) != 0; }
   static bool supports_ht()           { return (_features & CPU_HT) != 0; }
   static bool supports_mmx()          { return (_features & CPU_MMX) != 0; }
   static bool supports_sse()          { return (_features & CPU_SSE) != 0; }
@@ -678,11 +676,8 @@ public:
   static bool supports_avx()          { return (_features & CPU_AVX) != 0; }
   static bool supports_avx2()         { return (_features & CPU_AVX2) != 0; }
   static bool supports_tsc()          { return (_features & CPU_TSC) != 0; }
-  static bool supports_rdtscp()       { return (_features & CPU_RDTSCP) != 0; }
-  static bool supports_rdpid()        { return (_features & CPU_RDPID) != 0; }
   static bool supports_aes()          { return (_features & CPU_AES) != 0; }
   static bool supports_erms()         { return (_features & CPU_ERMS) != 0; }
-  static bool supports_fsrm()         { return (_features & CPU_FSRM) != 0; }
   static bool supports_clmul()        { return (_features & CPU_CLMUL) != 0; }
   static bool supports_rtm()          { return (_features & CPU_RTM) != 0; }
   static bool supports_bmi1()         { return (_features & CPU_BMI1) != 0; }
@@ -692,20 +687,14 @@ public:
   static bool supports_avx512dq()     { return (_features & CPU_AVX512DQ) != 0; }
   static bool supports_avx512ifma()   { return (_features & CPU_AVX512_IFMA) != 0; }
   static bool supports_avxifma()      { return (_features & CPU_AVX_IFMA) != 0; }
-  static bool supports_avx512pf()     { return (_features & CPU_AVX512PF) != 0; }
-  static bool supports_avx512er()     { return (_features & CPU_AVX512ER) != 0; }
   static bool supports_avx512cd()     { return (_features & CPU_AVX512CD) != 0; }
   static bool supports_avx512bw()     { return (_features & CPU_AVX512BW) != 0; }
   static bool supports_avx512vl()     { return (_features & CPU_AVX512VL) != 0; }
   static bool supports_avx512vlbw()   { return (supports_evex() && supports_avx512bw() && supports_avx512vl()); }
-  static bool supports_avx512bwdq()   { return (supports_evex() && supports_avx512bw() && supports_avx512dq()); }
   static bool supports_avx512vldq()   { return (supports_evex() && supports_avx512dq() && supports_avx512vl()); }
   static bool supports_avx512vlbwdq() { return (supports_evex() && supports_avx512vl() &&
                                                 supports_avx512bw() && supports_avx512dq()); }
   static bool supports_avx512novl()   { return (supports_evex() && !supports_avx512vl()); }
-  static bool supports_avx512nobw()   { return (supports_evex() && !supports_avx512bw()); }
-  static bool supports_avx256only()   { return (supports_avx2() && !supports_evex()); }
-  static bool supports_avxonly()      { return ((supports_avx2() || supports_avx()) && !supports_evex()); }
   static bool supports_sha()          { return (_features & CPU_SHA) != 0; }
   static bool supports_fma()          { return (_features & CPU_FMA) != 0 && supports_avx(); }
   static bool supports_vzeroupper()   { return (_features & CPU_VZEROUPPER) != 0; }
@@ -720,10 +709,6 @@ public:
   static bool supports_hv()           { return (_features & CPU_HV) != 0; }
   static bool supports_serialize()    { return (_features & CPU_SERIALIZE) != 0; }
   static bool supports_f16c()         { return (_features & CPU_F16C) != 0; }
-  static bool supports_pku()          { return (_features & CPU_PKU) != 0; }
-  static bool supports_ospke()        { return (_features & CPU_OSPKE) != 0; }
-  static bool supports_cet_ss()       { return (_features & CPU_CET_SS) != 0; }
-  static bool supports_cet_ibt()      { return (_features & CPU_CET_IBT) != 0; }
 
   //
   // Feature identification not affected by VM flags

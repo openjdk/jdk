@@ -252,9 +252,6 @@ class Thread: public ThreadShadow {
     return _missed_ic_stub_refill_verifier;
   }
 
-  void set_missed_ic_stub_refill_verifier(ICRefillVerifier* verifier) {
-    _missed_ic_stub_refill_verifier = verifier;
-  }
 #endif // ASSERT
 
  private:

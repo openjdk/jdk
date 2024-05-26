@@ -169,19 +169,6 @@ private:
     return Atomic::fetch_then_add(&_claim_array[index], 1, memory_order_relaxed);
   }
 
-  int claim_at(int* indices, int level) {
-    const int index = claim_index(indices, level);
-    const int value = claim(index);
-#if 0
-    if      (level == 0) { tty->print_cr("Claim at: %d index: %d got: %d",             indices[0], index, value); }
-    else if (level == 1) { tty->print_cr("Claim at: %d %d index: %d got: %d",          indices[0], indices[1], index, value); }
-    else if (level == 2) { tty->print_cr("Claim at: %d %d %d index: %d got: %d",       indices[0], indices[1], indices[2], index, value); }
-    else if (level == 3) { tty->print_cr("Claim at: %d %d %d %d index: %d got: %d",    indices[0], indices[1], indices[2], indices[3], index, value); }
-    else if (level == 4) { tty->print_cr("Claim at: %d %d %d %d %d index: %d got: %d", indices[0], indices[1], indices[2], indices[3], indices[4], index, value); }
-#endif
-    return value;
-  }
-
   template <typename Function>
   void claim_and_do(Function function, int* indices, int level) {
     if (level < N) {

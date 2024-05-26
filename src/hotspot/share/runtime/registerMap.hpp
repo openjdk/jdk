@@ -141,8 +141,6 @@ class RegisterMap : public StackObj {
   bool process_frames() const { return _process_frames; }
   bool walk_cont()      const { return _walk_cont; }
 
-  void set_walk_cont(bool value) { _walk_cont = value; }
-
   bool in_cont()        const { return _chunk() != nullptr; } // Whether we are currently on the hstack; if true, frames are relativized
   oop cont() const;
   stackChunkHandle stack_chunk() const { return _chunk; }

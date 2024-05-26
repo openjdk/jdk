@@ -185,23 +185,6 @@ class UNSIGNED5 : AllStatic {
     }
   }
 
-  // reports the largest uint32_t value that can be encoded using len bytes
-  // len must be in the range [1..5]
-  static constexpr uint32_t max_encoded_in_length(uint32_t len) {
-    assert(len >= 1 && len <= MAX_LENGTH, "invalid length");
-    if (len >= MAX_LENGTH)  return MAX_VALUE;  // largest non-overflow value
-    // Be careful:  the constexpr magic evaporates if undefined behavior
-    // results from any of these expressions.  Beware of signed overflow!
-    uint32_t all_combinations = 0;
-    uint32_t combinations_i = L;  // L * H^i
-    for (uint32_t i = 0; i < len; i++) {
-      // count combinations of <H*L> that end at byte i
-      all_combinations += combinations_i;
-      combinations_i <<= lg_H;
-    }
-    return all_combinations - 1;
-  }
-
   // tells if a value, when encoded, would fit between the offset and limit
   template<typename OFF>
   static constexpr bool fits_in_limit(uint32_t value, OFF offset, OFF limit) {

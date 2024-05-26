@@ -78,8 +78,6 @@ public:
   void verify_is_compacting(uint idx) { assert(get_by_index(idx) == Compacting, "invariant"); }
 
   void verify_is_skip_compacting(uint idx) { assert(get_by_index(idx) == SkipCompacting, "invariant"); }
-
-  void verify_is_invalid(uint idx) { assert(get_by_index(idx) == Invalid, "invariant"); }
 };
 
 #endif // SHARE_GC_G1_G1FULLGCHEAPREGIONATTR_HPP

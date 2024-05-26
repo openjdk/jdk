@@ -166,7 +166,6 @@ class ObjectValue: public ScopeValue {
   void                        set_id(int id)                   { _id = id; }
   virtual void                set_value(oop value);
   void                        set_visited(bool visited)        { _visited = visited; }
-  void                        set_is_scalar_replaced(bool scd) { _is_scalar_replaced = scd; }
   void                        set_root(bool root)              { _is_root = root; }
 
   // Serialization of debugging information

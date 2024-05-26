@@ -298,11 +298,6 @@ class inputStream : public CHeapObjBase {
   // Copy the current line to the given output stream.
   void print_on(outputStream* out);
 
-  // Copy the current line to the given output stream, and also call cr().
-  void print_cr_on(outputStream* out) {
-    print_on(out); out->cr();
-  }
-
 #ifdef ASSERT
   void dump(const char* what = nullptr);
   static int coverage_mode(int mode, int& cases, int& total, int& zeroes);

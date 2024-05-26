@@ -334,14 +334,12 @@ class InstanceKlass: public Klass {
   void set_nonstatic_field_size(int size)  { _nonstatic_field_size = size; }
 
   int static_field_size() const            { return _static_field_size; }
-  void set_static_field_size(int size)     { _static_field_size = size; }
 
   int static_oop_field_count() const       { return (int)_static_oop_field_count; }
   void set_static_oop_field_count(u2 size) { _static_oop_field_count = size; }
 
   // Java itable
   int  itable_length() const               { return _itable_len; }
-  void set_itable_length(int len)          { _itable_len = len; }
 
   // array klasses
   ObjArrayKlass* array_klasses() const     { return _array_klasses; }
@@ -679,9 +677,6 @@ public:
     return _nonstatic_oop_map_size / OopMapBlock::size_in_words();
   }
   int nonstatic_oop_map_size() const { return _nonstatic_oop_map_size; }
-  void set_nonstatic_oop_map_size(int words) {
-    _nonstatic_oop_map_size = words;
-  }
 
   bool has_contended_annotations() const { return _misc_flags.has_contended_annotations(); }
   void set_has_contended_annotations(bool value)  { _misc_flags.set_has_contended_annotations(value); }
@@ -716,10 +711,6 @@ public:
 
 public:
 #if INCLUDE_JVMTI
-
-  void init_previous_versions() {
-    _previous_versions = nullptr;
-  }
 
  private:
   static bool  _should_clean_previous_versions;
@@ -835,7 +826,6 @@ public:
 
   // OopMapCache support
   OopMapCache* oop_map_cache()               { return _oop_map_cache; }
-  void set_oop_map_cache(OopMapCache *cache) { _oop_map_cache = cache; }
   void mask_for(const methodHandle& method, int bci, InterpreterOopMap* entry);
 
   // JNI identifier support (for static fields - for jni performance)

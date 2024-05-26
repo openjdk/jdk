@@ -414,15 +414,6 @@ class NativeLoadAddress: public NativeMovRegMem {
 
   void verify();
   void print ();
-
- private:
-  friend NativeLoadAddress* nativeLoadAddress_at (address address) {
-    NativeLoadAddress* test = (NativeLoadAddress*)(address - instruction_offset);
-    #ifdef ASSERT
-      test->verify();
-    #endif
-    return test;
-  }
 };
 
 // destination is rbx or rax

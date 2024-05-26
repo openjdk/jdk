@@ -436,11 +436,6 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
   // Todo: get rid of this!
  private:
   bool _debuggable;
- public:
-  // Should the thread be enumerated by jvmtiInternal::GetAllThreads?
-  bool is_debuggable()                 { return _debuggable; }
-  // If a thread cannot be suspended (has no valid last_java_frame) then it gets marked !debuggable
-  void set_debuggable(bool debuggable) { _debuggable = debuggable; }
 
  public:
 

@@ -447,7 +447,6 @@ class GenerateOopMap {
   void compute_ret_adr_at_TOS               ();
   void update_ret_adr_at_TOS                (int bci, int delta);
 
-  int  binsToHold                           (int no)                      { return  ((no+(BitsPerWord-1))/BitsPerWord); }
   char *state_vec_to_string                 (CellTypeState* vec, int len);
 
   // Helper method. Can be used in subclasses to fx. calculate gc_points. If the current instruction
@@ -469,7 +468,6 @@ class GenerateOopMap {
   // Query
   int max_locals() const                           { return _max_locals; }
   Method* method() const                           { return _method(); }
-  methodHandle method_as_handle() const            { return _method; }
 
   bool did_rewriting()                             { return _did_rewriting; }
   bool did_relocation()                            { return _did_relocation; }

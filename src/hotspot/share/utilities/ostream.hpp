@@ -80,7 +80,6 @@ class outputStream : public CHeapObjBase {
    void inc(int n) { _indentation += n; };
    void dec(int n) { _indentation -= n; };
    int  indentation() const    { return _indentation; }
-   void set_indentation(int i) { _indentation = i;    }
    void fill_to(int col);
    void move_to(int col, int slop = 6, int min_space = 2);
 
@@ -128,15 +127,11 @@ class outputStream : public CHeapObjBase {
    // flushing
    virtual void flush() {}
    virtual void write(const char* str, size_t len) = 0;
-   virtual void rotate_log(bool force, outputStream* out = nullptr) {} // GC log rotation
    virtual ~outputStream() {}   // close properly on deletion
 
    // Caller may specify their own scratch buffer to use for printing; otherwise,
    // an automatic buffer on the stack (with O_BUFLEN len) is used.
    void set_scratch_buffer(char* p, size_t len) { _scratch = p; _scratch_len = len; }
-
-   void dec_cr() { dec(); cr(); }
-   void inc_cr() { inc(); cr(); }
 };
 
 // standard output

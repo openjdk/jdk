@@ -122,10 +122,6 @@ class JfrEvent {
     return T::isInstant;
   }
 
-  static bool is_requestable() {
-    return T::isRequestable;
-  }
-
   static bool has_thread() {
     return T::hasThread;
   }

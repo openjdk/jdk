@@ -654,7 +654,6 @@ public:
   virtual Node* Identity(PhaseGVN* phase);
   virtual const Type *bottom_type() const { return Type::CONTROL; }
   int  handler_bci() const        { return _handler_bci; }
-  bool is_handler_proj() const    { return _handler_bci >= 0; }
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
 #endif

@@ -1114,7 +1114,6 @@ class VectorMaskOpNode : public TypeNode {
   virtual  uint  size_of() const { return sizeof(VectorMaskOpNode); }
   virtual uint  ideal_reg() const { return Op_RegI; }
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
-  int get_mask_Opcode() const { return _mopc;}
   static Node* make(Node* mask, const Type* ty, int mopc);
 };
 
@@ -1449,7 +1448,6 @@ class VectorMaskWrapperNode : public VectorNode {
   }
 
   virtual int Opcode() const;
-  Node* vector_val() const { return in(1); }
   Node* vector_mask() const { return in(2); }
 };
 
@@ -1485,7 +1483,6 @@ class VectorBlendNode : public VectorNode {
   virtual Node* Identity(PhaseGVN* phase);
   Node* vec1() const { return in(1); }
   Node* vec2() const { return in(2); }
-  Node* vec_mask() const { return in(3); }
 };
 
 class VectorRearrangeNode : public VectorNode {
@@ -1497,7 +1494,6 @@ class VectorRearrangeNode : public VectorNode {
 
   virtual int Opcode() const;
   Node* vec1() const { return in(1); }
-  Node* vec_shuffle() const { return in(2); }
 };
 
 class VectorLoadShuffleNode : public VectorNode {
@@ -1507,7 +1503,6 @@ class VectorLoadShuffleNode : public VectorNode {
     assert(in->bottom_type()->is_vect()->element_basic_type() == T_BYTE, "must be BYTE");
   }
 
-  int GetOutShuffleSize() const { return type2aelembytes(vect_type()->element_basic_type()); }
   virtual int Opcode() const;
 };
 

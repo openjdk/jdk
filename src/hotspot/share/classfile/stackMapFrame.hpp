@@ -120,7 +120,6 @@ class StackMapFrame : public ResourceObj {
   }
 
   inline void set_offset(int32_t offset)      { _offset = offset; }
-  inline void set_verifier(ClassVerifier* v)  { _verifier = v; }
   inline void set_flags(u1 flags)             { _flags = flags; }
   inline void set_locals_size(int32_t locals_size) { _locals_size = locals_size; }
   inline void set_stack_size(int32_t stack_size)   { _stack_size = _stack_mark = stack_size; }

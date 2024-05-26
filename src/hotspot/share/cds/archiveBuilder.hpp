@@ -311,10 +311,6 @@ public:
     return (T)(address(obj) + _buffer_to_requested_delta);
   }
 
-  static intx get_buffer_to_requested_delta() {
-    return current()->buffer_to_requested_delta();
-  }
-
   inline static u4 to_offset_u4(uintx offset) {
     guarantee(offset <= MAX_SHARED_DELTA, "must be 32-bit offset " INTPTR_FORMAT, offset);
     return (u4)offset;

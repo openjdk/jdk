@@ -336,12 +336,6 @@ public:
     _child = info;
   }
 
-  void add_sibling(LoaderTreeNode* info) {
-    assert(info->_next == nullptr, "must be");
-    info->_next = _next;
-    _next = info;
-  }
-
   void add_classes(LoadedClassInfo* first_class, int num_classes, bool has_class_mirror_holder) {
     LoadedClassInfo** p_list_to_add_to;
     bool is_hidden = first_class->_klass->is_hidden();

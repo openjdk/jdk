@@ -365,12 +365,7 @@ class LIR_Opr {
   char type_char() const                         { return type_char((is_pointer()) ? pointer()->type() : type()); }
 
   bool is_equal(LIR_Opr opr) const         { return *this == opr; }
-  // checks whether types are same
-  bool is_same_type(LIR_Opr opr) const     {
-    assert(type_field() != unknown_type &&
-           opr->type_field() != unknown_type, "shouldn't see unknown_type");
-    return type_field() == opr->type_field();
-  }
+
   bool is_same_register(LIR_Opr opr) {
     return (is_register() && opr->is_register() &&
             kind_field() == opr->kind_field() &&
@@ -2400,7 +2395,6 @@ class LIR_InsertionBuffer : public CompilationResourceObj {
   LIR_OpList  _ops;
 
   void append_new(int index, int count)  { _index_and_count.append(index); _index_and_count.append(count); }
-  void set_index_at(int i, int value)    { _index_and_count.at_put((i << 1),     value); }
   void set_count_at(int i, int value)    { _index_and_count.at_put((i << 1) + 1, value); }
 
 #ifdef ASSERT

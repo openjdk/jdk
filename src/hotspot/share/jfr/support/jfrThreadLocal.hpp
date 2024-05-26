@@ -141,10 +141,6 @@ class JfrThreadLocal {
     return _stackframes != nullptr ? _stackframes : install_stackframes();
   }
 
-  void set_stackframes(JfrStackFrame* frames) {
-    _stackframes = frames;
-  }
-
   u4 stackdepth() const;
 
   void set_stackdepth(u4 depth) {

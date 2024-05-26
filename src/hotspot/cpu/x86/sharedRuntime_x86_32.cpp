@@ -113,7 +113,6 @@ class RegisterSaver {
 
   static int raxOffset(void) { return rax_off; }
   static int rdxOffset(void) { return rdx_off; }
-  static int rbxOffset(void) { return rbx_off; }
   static int xmm0Offset(void) { return xmm0_off; }
   // This really returns a slot in the fp save area, which one is not important
   static int fpResultOffset(void) { return st0_off; }

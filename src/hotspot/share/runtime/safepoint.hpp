@@ -255,10 +255,6 @@ public:
 
   static void statistics_exit_log();
 
-  static jlong time_since_last_safepoint_ms() {
-    return nanos_to_millis(os::javaTimeNanos() - _last_safepoint_end_time_ns);
-  }
-
   static jlong end_of_last_safepoint_ms() {
     return nanos_to_millis(_last_safepoint_end_time_ns);
   }

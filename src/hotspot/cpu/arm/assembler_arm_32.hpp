@@ -317,11 +317,6 @@ class Assembler : public AbstractAssembler  {
               rn->encoding() << 12 | rs->encoding() << 8 | 0x9 << 4 | rm->encoding());
   }
 
-  void mlas(Register rd, Register rm, Register rs, Register rn, AsmCondition cond = al) {
-    emit_int32(cond << 28 | 1 << 21 | 1 << 20 | rd->encoding() << 16 |
-              rn->encoding() << 12 | rs->encoding() << 8 | 0x9 << 4 | rm->encoding());
-  }
-
   // Loads and stores
 
 #define F(mnemonic, l, b) \
@@ -583,11 +578,6 @@ class Assembler : public AbstractAssembler  {
   F(b,  0xa)
   F(bl, 0xb)
 #undef F
-
-  void udf(int imm_16) {
-    assert((imm_16 >> 16) == 0, "encoding constraint");
-    emit_int32(0xe7f000f0 | (imm_16 & 0xfff0) << 8 | (imm_16 & 0xf));
-  }
 
   // ARMv7 instructions
 

@@ -1114,7 +1114,6 @@ class jdk_internal_foreign_abi_NativeEntryPoint: AllStatic {
   static bool is_instance(oop obj);
 
   // Accessors for code generation:
-  static int method_type_offset_in_bytes()           { return _method_type_offset; }
   static int downcall_stub_address_offset_in_bytes() { return _downcall_stub_address_offset; }
 };
 

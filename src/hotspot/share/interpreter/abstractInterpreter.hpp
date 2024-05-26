@@ -261,32 +261,6 @@ class AbstractInterpreter: AllStatic {
     return ((frame::interpreter_frame_expression_stack_direction() * n) * stackElementSize);
   }
 
-  // access to stacked values according to type:
-  static oop* oop_addr_in_slot(intptr_t* slot_addr) {
-    return (oop*) slot_addr;
-  }
-  static jint* int_addr_in_slot(intptr_t* slot_addr) {
-    if ((int) sizeof(jint) < wordSize && !Endian::is_Java_byte_ordering_different())
-      // big-endian LP64
-      return (jint*)(slot_addr + 1) - 1;
-    else
-      return (jint*) slot_addr;
-  }
-  static jlong long_in_slot(intptr_t* slot_addr) {
-    if (sizeof(intptr_t) >= sizeof(jlong)) {
-      return *(jlong*) slot_addr;
-    } else {
-      return Bytes::get_native_u8((address)slot_addr);
-    }
-  }
-  static void set_long_in_slot(intptr_t* slot_addr, jlong value) {
-    if (sizeof(intptr_t) >= sizeof(jlong)) {
-      *(jlong*) slot_addr = value;
-    } else {
-      Bytes::put_native_u8((address)slot_addr, value);
-    }
-  }
-
   static void initialize_method_handle_entries();
 };
 

@@ -877,10 +877,6 @@ public:
   void xchgptr(Register src1, Register src2) { LP64_ONLY(xchgq(src1, src2)) NOT_LP64(xchgl(src1, src2)) ; }
   void xchgptr(Register src1, Address src2) { LP64_ONLY(xchgq(src1, src2)) NOT_LP64(xchgl(src1, src2)) ; }
 
-  void xaddptr(Address src1, Register src2) { LP64_ONLY(xaddq(src1, src2)) NOT_LP64(xaddl(src1, src2)) ; }
-
-
-
   // Helper functions for statistics gathering.
   // Conditionally (atomically, on MPs) increments passed counter address, preserving condition codes.
   void cond_inc32(Condition cond, AddressLiteral counter_addr, Register rscratch = noreg);
@@ -897,8 +893,6 @@ public:
   void lea(Register dst, Address        adr) { Assembler::lea(dst, adr); }
   void lea(Register dst, AddressLiteral adr);
   void lea(Address  dst, AddressLiteral adr, Register rscratch);
-
-  void leal32(Register dst, Address src) { leal(dst, src); }
 
   // Import other testl() methods from the parent class or else
   // they will be hidden by the following overriding declaration.
@@ -959,67 +953,28 @@ public:
   void ALWAYSINLINE jo(Label& L, bool maybe_short = true) { jcc(Assembler::overflow, L, maybe_short); }
   void ALWAYSINLINE jno(Label& L, bool maybe_short = true) { jcc(Assembler::noOverflow, L, maybe_short); }
   void ALWAYSINLINE js(Label& L, bool maybe_short = true) { jcc(Assembler::negative, L, maybe_short); }
-  void ALWAYSINLINE jns(Label& L, bool maybe_short = true) { jcc(Assembler::positive, L, maybe_short); }
   void ALWAYSINLINE je(Label& L, bool maybe_short = true) { jcc(Assembler::equal, L, maybe_short); }
   void ALWAYSINLINE jz(Label& L, bool maybe_short = true) { jcc(Assembler::zero, L, maybe_short); }
   void ALWAYSINLINE jne(Label& L, bool maybe_short = true) { jcc(Assembler::notEqual, L, maybe_short); }
   void ALWAYSINLINE jnz(Label& L, bool maybe_short = true) { jcc(Assembler::notZero, L, maybe_short); }
   void ALWAYSINLINE jb(Label& L, bool maybe_short = true) { jcc(Assembler::below, L, maybe_short); }
-  void ALWAYSINLINE jnae(Label& L, bool maybe_short = true) { jcc(Assembler::below, L, maybe_short); }
   void ALWAYSINLINE jc(Label& L, bool maybe_short = true) { jcc(Assembler::carrySet, L, maybe_short); }
   void ALWAYSINLINE jnb(Label& L, bool maybe_short = true) { jcc(Assembler::aboveEqual, L, maybe_short); }
   void ALWAYSINLINE jae(Label& L, bool maybe_short = true) { jcc(Assembler::aboveEqual, L, maybe_short); }
-  void ALWAYSINLINE jnc(Label& L, bool maybe_short = true) { jcc(Assembler::carryClear, L, maybe_short); }
   void ALWAYSINLINE jbe(Label& L, bool maybe_short = true) { jcc(Assembler::belowEqual, L, maybe_short); }
   void ALWAYSINLINE jna(Label& L, bool maybe_short = true) { jcc(Assembler::belowEqual, L, maybe_short); }
   void ALWAYSINLINE ja(Label& L, bool maybe_short = true) { jcc(Assembler::above, L, maybe_short); }
-  void ALWAYSINLINE jnbe(Label& L, bool maybe_short = true) { jcc(Assembler::above, L, maybe_short); }
   void ALWAYSINLINE jl(Label& L, bool maybe_short = true) { jcc(Assembler::less, L, maybe_short); }
-  void ALWAYSINLINE jnge(Label& L, bool maybe_short = true) { jcc(Assembler::less, L, maybe_short); }
   void ALWAYSINLINE jge(Label& L, bool maybe_short = true) { jcc(Assembler::greaterEqual, L, maybe_short); }
   void ALWAYSINLINE jnl(Label& L, bool maybe_short = true) { jcc(Assembler::greaterEqual, L, maybe_short); }
   void ALWAYSINLINE jle(Label& L, bool maybe_short = true) { jcc(Assembler::lessEqual, L, maybe_short); }
   void ALWAYSINLINE jng(Label& L, bool maybe_short = true) { jcc(Assembler::lessEqual, L, maybe_short); }
   void ALWAYSINLINE jg(Label& L, bool maybe_short = true) { jcc(Assembler::greater, L, maybe_short); }
-  void ALWAYSINLINE jnle(Label& L, bool maybe_short = true) { jcc(Assembler::greater, L, maybe_short); }
   void ALWAYSINLINE jp(Label& L, bool maybe_short = true) { jcc(Assembler::parity, L, maybe_short); }
-  void ALWAYSINLINE jpe(Label& L, bool maybe_short = true) { jcc(Assembler::parity, L, maybe_short); }
   void ALWAYSINLINE jnp(Label& L, bool maybe_short = true) { jcc(Assembler::noParity, L, maybe_short); }
-  void ALWAYSINLINE jpo(Label& L, bool maybe_short = true) { jcc(Assembler::noParity, L, maybe_short); }
   // * No condition for this *  void ALWAYSINLINE jcxz(Label& L, bool maybe_short = true) { jcc(Assembler::cxz, L, maybe_short); }
   // * No condition for this *  void ALWAYSINLINE jecxz(Label& L, bool maybe_short = true) { jcc(Assembler::cxz, L, maybe_short); }
 
-  // Short versions of the above
-  void ALWAYSINLINE jo_b(Label& L) { jccb(Assembler::overflow, L); }
-  void ALWAYSINLINE jno_b(Label& L) { jccb(Assembler::noOverflow, L); }
-  void ALWAYSINLINE js_b(Label& L) { jccb(Assembler::negative, L); }
-  void ALWAYSINLINE jns_b(Label& L) { jccb(Assembler::positive, L); }
-  void ALWAYSINLINE je_b(Label& L) { jccb(Assembler::equal, L); }
-  void ALWAYSINLINE jz_b(Label& L) { jccb(Assembler::zero, L); }
-  void ALWAYSINLINE jne_b(Label& L) { jccb(Assembler::notEqual, L); }
-  void ALWAYSINLINE jnz_b(Label& L) { jccb(Assembler::notZero, L); }
-  void ALWAYSINLINE jb_b(Label& L) { jccb(Assembler::below, L); }
-  void ALWAYSINLINE jnae_b(Label& L) { jccb(Assembler::below, L); }
-  void ALWAYSINLINE jc_b(Label& L) { jccb(Assembler::carrySet, L); }
-  void ALWAYSINLINE jnb_b(Label& L) { jccb(Assembler::aboveEqual, L); }
-  void ALWAYSINLINE jae_b(Label& L) { jccb(Assembler::aboveEqual, L); }
-  void ALWAYSINLINE jnc_b(Label& L) { jccb(Assembler::carryClear, L); }
-  void ALWAYSINLINE jbe_b(Label& L) { jccb(Assembler::belowEqual, L); }
-  void ALWAYSINLINE jna_b(Label& L) { jccb(Assembler::belowEqual, L); }
-  void ALWAYSINLINE ja_b(Label& L) { jccb(Assembler::above, L); }
-  void ALWAYSINLINE jnbe_b(Label& L) { jccb(Assembler::above, L); }
-  void ALWAYSINLINE jl_b(Label& L) { jccb(Assembler::less, L); }
-  void ALWAYSINLINE jnge_b(Label& L) { jccb(Assembler::less, L); }
-  void ALWAYSINLINE jge_b(Label& L) { jccb(Assembler::greaterEqual, L); }
-  void ALWAYSINLINE jnl_b(Label& L) { jccb(Assembler::greaterEqual, L); }
-  void ALWAYSINLINE jle_b(Label& L) { jccb(Assembler::lessEqual, L); }
-  void ALWAYSINLINE jng_b(Label& L) { jccb(Assembler::lessEqual, L); }
-  void ALWAYSINLINE jg_b(Label& L) { jccb(Assembler::greater, L); }
-  void ALWAYSINLINE jnle_b(Label& L) { jccb(Assembler::greater, L); }
-  void ALWAYSINLINE jp_b(Label& L) { jccb(Assembler::parity, L); }
-  void ALWAYSINLINE jpe_b(Label& L) { jccb(Assembler::parity, L); }
-  void ALWAYSINLINE jnp_b(Label& L) { jccb(Assembler::noParity, L); }
-  void ALWAYSINLINE jpo_b(Label& L) { jccb(Assembler::noParity, L); }
   // * No condition for this *  void ALWAYSINLINE jcxz_b(Label& L) { jccb(Assembler::cxz, L); }
   // * No condition for this *  void ALWAYSINLINE jecxz_b(Label& L) { jccb(Assembler::cxz, L); }
 
@@ -1766,9 +1721,6 @@ public:
   }
 
   // 256bit copy to/from high 256 bits of 512bit (ZMM) vector registers
-  void vinserti64x4_high(XMMRegister dst, XMMRegister src) {
-    Assembler::vinserti64x4(dst, dst, src, 1);
-  }
   void vinsertf64x4_high(XMMRegister dst, XMMRegister src) {
     Assembler::vinsertf64x4(dst, dst, src, 1);
   }
@@ -1832,14 +1784,8 @@ public:
   }
 
   // 256bit copy to/from low 256 bits of 512bit (ZMM) vector registers
-  void vinserti64x4_low(XMMRegister dst, XMMRegister src) {
-    Assembler::vinserti64x4(dst, dst, src, 0);
-  }
   void vinsertf64x4_low(XMMRegister dst, XMMRegister src) {
     Assembler::vinsertf64x4(dst, dst, src, 0);
-  }
-  void vextracti64x4_low(XMMRegister dst, XMMRegister src) {
-    Assembler::vextracti64x4(dst, src, 0);
   }
   void vextractf64x4_low(XMMRegister dst, XMMRegister src) {
     Assembler::vextractf64x4(dst, src, 0);
@@ -1867,15 +1813,6 @@ public:
   void vpclmulhqlqdq(XMMRegister dst, XMMRegister nds, XMMRegister src) {
     //0x01 - multiply nds[64:127] and src[0:63]
     Assembler::vpclmulqdq(dst, nds, src, 0x01);
-  }
-
-  void evpclmulldq(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len) {
-    // 0x00 - multiply lower 64 bits [0:63]
-    Assembler::evpclmulqdq(dst, nds, src, 0x00, vector_len);
-  }
-  void evpclmulhdq(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len) {
-    // 0x11 - multiply upper 64 bits [64:127]
-    Assembler::evpclmulqdq(dst, nds, src, 0x11, vector_len);
   }
 
   // AVX-512 mask operations.

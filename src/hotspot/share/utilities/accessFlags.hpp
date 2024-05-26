@@ -86,11 +86,6 @@ class AccessFlags {
   // get .class file flags
   jint get_flags               () const { return (_flags & JVM_ACC_WRITTEN_FLAGS); }
 
-  // Initialization
-  void set_field_flags(jint flags)      {
-    assert((flags & JVM_RECOGNIZED_FIELD_MODIFIERS) == flags, "only recognized flags");
-    _flags = (flags & JVM_RECOGNIZED_FIELD_MODIFIERS);
-  }
   void set_flags(jint flags)            { _flags = (flags & JVM_ACC_WRITTEN_FLAGS); }
 
  private:

@@ -43,7 +43,6 @@ class JVMCIObject {
 
   static JVMCIObject create(jobject o, bool is_hotspot) { JVMCIObject r(o, is_hotspot); return r; }
   jobject as_jobject() { return _object; }
-  jobject as_jweak()   { return (jweak) _object; }
   jstring as_jstring() { return (jstring) _object; }
   bool is_hotspot() { return _is_hotspot; }
 
@@ -79,12 +78,8 @@ class JVMCIPrimitiveArray : public JVMCIArray {
 
   jbooleanArray as_jbooleanArray() { return (jbooleanArray) as_jobject(); }
   jbyteArray    as_jbyteArray()    { return (jbyteArray) as_jobject();    }
-  jcharArray    as_jcharArray()    { return (jcharArray) as_jobject();    }
-  jshortArray   as_jshortArray()   { return (jshortArray) as_jobject();   }
   jintArray     as_jintArray()     { return (jintArray) as_jobject();     }
-  jfloatArray   as_jfloatArray()   { return (jfloatArray) as_jobject();   }
   jlongArray    as_jlongArray()    { return (jlongArray) as_jobject();    }
-  jdoubleArray  as_jdoubleArray()  { return (jdoubleArray) as_jobject();  }
 };
 
 inline JVMCIObject::operator JVMCIArray() { return JVMCIArray(_object, _is_hotspot); }

@@ -520,12 +520,9 @@ class Instruction: public CompilationResourceObj {
   virtual Constant*         as_Constant()        { return nullptr; }
   virtual AccessField*      as_AccessField()     { return nullptr; }
   virtual LoadField*        as_LoadField()       { return nullptr; }
-  virtual StoreField*       as_StoreField()      { return nullptr; }
-  virtual AccessArray*      as_AccessArray()     { return nullptr; }
   virtual ArrayLength*      as_ArrayLength()     { return nullptr; }
   virtual AccessIndexed*    as_AccessIndexed()   { return nullptr; }
   virtual LoadIndexed*      as_LoadIndexed()     { return nullptr; }
-  virtual StoreIndexed*     as_StoreIndexed()    { return nullptr; }
   virtual NegateOp*         as_NegateOp()        { return nullptr; }
   virtual Op2*              as_Op2()             { return nullptr; }
   virtual ArithmeticOp*     as_ArithmeticOp()    { return nullptr; }
@@ -540,35 +537,20 @@ class Instruction: public CompilationResourceObj {
   virtual Invoke*           as_Invoke()          { return nullptr; }
   virtual NewInstance*      as_NewInstance()     { return nullptr; }
   virtual NewArray*         as_NewArray()        { return nullptr; }
-  virtual NewTypeArray*     as_NewTypeArray()    { return nullptr; }
-  virtual NewObjectArray*   as_NewObjectArray()  { return nullptr; }
   virtual NewMultiArray*    as_NewMultiArray()   { return nullptr; }
-  virtual TypeCheck*        as_TypeCheck()       { return nullptr; }
-  virtual CheckCast*        as_CheckCast()       { return nullptr; }
-  virtual InstanceOf*       as_InstanceOf()      { return nullptr; }
-  virtual TypeCast*         as_TypeCast()        { return nullptr; }
-  virtual AccessMonitor*    as_AccessMonitor()   { return nullptr; }
   virtual MonitorEnter*     as_MonitorEnter()    { return nullptr; }
   virtual MonitorExit*      as_MonitorExit()     { return nullptr; }
   virtual Intrinsic*        as_Intrinsic()       { return nullptr; }
-  virtual BlockBegin*       as_BlockBegin()      { return nullptr; }
   virtual BlockEnd*         as_BlockEnd()        { return nullptr; }
   virtual Goto*             as_Goto()            { return nullptr; }
   virtual If*               as_If()              { return nullptr; }
-  virtual TableSwitch*      as_TableSwitch()     { return nullptr; }
-  virtual LookupSwitch*     as_LookupSwitch()    { return nullptr; }
   virtual Return*           as_Return()          { return nullptr; }
   virtual Throw*            as_Throw()           { return nullptr; }
   virtual Base*             as_Base()            { return nullptr; }
   virtual RoundFP*          as_RoundFP()         { return nullptr; }
   virtual ExceptionObject*  as_ExceptionObject() { return nullptr; }
-  virtual UnsafeOp*         as_UnsafeOp()        { return nullptr; }
   virtual ProfileInvoke*    as_ProfileInvoke()   { return nullptr; }
   virtual RangeCheckPredicate* as_RangeCheckPredicate() { return nullptr; }
-
-#ifdef ASSERT
-  virtual Assert*           as_Assert()          { return nullptr; }
-#endif
 
   virtual void visit(InstructionVisitor* v)      = 0;
 

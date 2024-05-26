@@ -242,21 +242,12 @@ public:
     number_of_registers = 32
   };
   const SingleFloatRegister* operator->() const { return this; }
-
-  inline constexpr friend FloatRegister as_SingleFloatRegister(int encoding) {
-    assert(encoding < number_of_registers, "bad single float register encoding");
-    return as_FloatRegister(encoding);
-  }
 };
 
 class DoubleFloatRegister {
 public:
 
   const DoubleFloatRegister* operator->() const { return this; }
-
-  inline constexpr friend FloatRegister as_DoubleFloatRegister(int encoding) {
-    return as_FloatRegister(((encoding & 1) << 5) | (encoding & 0x1e));
-  }
 };
 
 class QuadFloatRegister {
@@ -266,11 +257,6 @@ public:
   };
 
   const QuadFloatRegister* operator->() const { return this; }
-
-  inline constexpr friend FloatRegister as_QuadFloatRegister(int encoding) {
-    assert(encoding < QuadFloatRegister::number_of_registers && ((encoding & 2) == 0), "bad quad float register encoding");
-    return as_FloatRegister(((encoding & 1) << 5) | (encoding & 0x1c));
-  }
 };
 
 

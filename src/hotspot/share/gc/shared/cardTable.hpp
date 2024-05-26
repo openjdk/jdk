@@ -135,9 +135,6 @@ public:
   const CardValue* byte_for_const(const void* p) const {
     return byte_for(p);
   }
-  const CardValue* byte_after_const(const void* p) const {
-    return byte_after(p);
-  }
 
   // Mapping from card marking array entry to address of first word
   HeapWord* addr_for(const CardValue* p) const {

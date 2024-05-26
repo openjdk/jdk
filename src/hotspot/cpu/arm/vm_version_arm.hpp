@@ -102,8 +102,6 @@ class VM_Version: public Abstract_VM_Version {
 
   static bool simd_math_is_compliant() { return false; }
 
-  static bool prefer_moves_over_load_literal() { return supports_movw(); }
-
   friend class VM_Version_StubGenerator;
 
   static void initialize_cpu_information(void);

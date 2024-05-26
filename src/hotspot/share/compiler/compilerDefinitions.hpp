@@ -81,9 +81,7 @@ public:
   static bool disable_intermediate()     { return high_only() || high_only_quick_internal(); }
   static bool quick_internal()           { return !high_only(); }
 
-  static void set_high_only_quick_internal() { _mode = Mode::HIGH_ONLY_QUICK_INTERNAL; }
   static void set_quick_only()               { _mode = Mode::QUICK_ONLY;               }
-  static void set_high_only()                { _mode = Mode::HIGH_ONLY;                }
 };
 
 inline bool is_c1_compile(int comp_level) {

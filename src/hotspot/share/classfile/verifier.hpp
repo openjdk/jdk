@@ -263,10 +263,6 @@ class sig_as_verification_types : public ResourceObj {
   void set_num_args(int num_args) { _num_args = num_args; }
 
   GrowableArray<VerificationType>* sig_verif_types() { return _sig_verif_types; }
-  void set_sig_verif_types(GrowableArray<VerificationType>* sig_verif_types) {
-    _sig_verif_types = sig_verif_types;
-  }
-
 };
 
 // This hashtable is indexed by the Utf8 constant pool indexes pointed to

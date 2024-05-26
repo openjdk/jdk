@@ -96,9 +96,6 @@ class BaseBytecodeStream: StackObj {
   address         bcp() const                    { return method()->code_base() + _bci; }
   Bytecode        bytecode() const               { return Bytecode(_method(), bcp()); }
 
-  // State changes
-  void            set_next_bci(int bci)          { assert(0 <= bci && bci <= method()->code_size(), "illegal bci"); _next_bci = bci; }
-
   // Bytecode-specific attributes
   int             dest() const                   { return bci() + bytecode().get_offset_s2(raw_code()); }
   int             dest_w() const                 { return bci() + bytecode().get_offset_s4(raw_code()); }

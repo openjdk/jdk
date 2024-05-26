@@ -61,7 +61,6 @@ class CompressedReadStream : public CompressedStream {
 
   jboolean read_bool()                 { return (jboolean) read();      }
   jbyte    read_byte()                 { return (jbyte   ) read();      }
-  jchar    read_char()                 { return (jchar   ) read_int();  }
   jshort   read_short()                { return (jshort  ) read_signed_int(); }
   jint     read_signed_int();
   jfloat   read_float();               // jfloat_cast(reverse_bits(read_int()))
@@ -98,8 +97,6 @@ class CompressedWriteStream : public CompressedStream {
 
   void write_bool(jboolean value)      { write(value);      }
   void write_byte(jbyte value)         { write(value);      }
-  void write_char(jchar value)         { write_int(value); }
-  void write_short(jshort value)       { write_signed_int(value);  }
   void write_signed_int(jint value)    { write_int(UNSIGNED5::encode_sign(value)); }
   void write_float(jfloat value);      // write_int(reverse_bits(jint_cast(v)))
   void write_double(jdouble value);    // write_int(reverse_bits(<low,high>))

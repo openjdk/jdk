@@ -132,7 +132,6 @@ class ValueType: public CompilationResourceObj {
   bool is_address()                              { return as_AddressType()  != nullptr; }
   bool is_illegal()                              { return tag() == illegalTag; }
 
-  bool is_int_kind() const                       { return tag() == intTag || tag() == longTag; }
   bool is_float_kind() const                     { return tag() == floatTag || tag() == doubleTag; }
   bool is_object_kind() const                    { return tag() == objectTag; }
 

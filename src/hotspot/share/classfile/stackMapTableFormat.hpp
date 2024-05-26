@@ -60,20 +60,6 @@ class verification_type_info {
     return vti;
   }
 
-  static verification_type_info* create_object_at(address addr, u2 cp_idx) {
-    verification_type_info* vti = (verification_type_info*)addr;
-    vti->set_tag(ITEM_Object);
-    vti->set_cpool_index(cp_idx);
-    return vti;
-  }
-
-  static verification_type_info* create_uninit_at(address addr, u2 bci) {
-    verification_type_info* vti = (verification_type_info*)addr;
-    vti->set_tag(ITEM_Uninitialized);
-    vti->set_bci(bci);
-    return vti;
-  }
-
   static size_t calculate_size(u1 tag) {
     if (tag == ITEM_Object || tag == ITEM_Uninitialized) {
       return sizeof(u1) + sizeof(u2);
@@ -921,10 +907,6 @@ class stack_map_table {
   stack_map_frame* entries() const {
     return stack_map_frame::at(entries_addr());
   }
-
-  void set_number_of_entries(u2 num) {
-    Bytes::put_Java_u2(number_of_entries_addr(), num);
-  }
 };
 
 class stack_map_table_attribute {
@@ -957,9 +939,6 @@ class stack_map_table_attribute {
 
   void set_name_index(u2 idx) {
     Bytes::put_Java_u2(name_index_addr(), idx);
-  }
-  void set_attribute_length(u4 len) {
-    Bytes::put_Java_u4(attribute_length_addr(), len);
   }
 };
 

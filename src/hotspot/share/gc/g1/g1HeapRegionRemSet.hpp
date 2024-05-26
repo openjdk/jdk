@@ -177,10 +177,6 @@ public:
   }
 
 #ifndef PRODUCT
-  static void print_from_card_cache() {
-    G1FromCardCache::print();
-  }
-
   static void test();
 #endif
 };

@@ -2284,12 +2284,6 @@ public:
     }
   }
 
-  void emit_reloc_type(const char* type) {
-    fprintf(_fp, "%s", type)
-      ;
-  }
-
-
   void emit() {
     //
     //   "emit_d32_reloc(" or "emit_hi_reloc" or "emit_lo_reloc"

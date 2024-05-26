@@ -260,10 +260,6 @@ public:
     _projection_list.push(node);
   }
 
-  Node* pop_projection() {
-    return _projection_list.pop();
-  }
-
   // Number of nodes in the projection list
   uint number_of_projections() const {
     return _projection_list.size();

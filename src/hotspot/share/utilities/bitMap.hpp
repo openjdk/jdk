@@ -155,7 +155,6 @@ class BitMap {
   // Set a word to a specified value or to all ones; clear a word.
   void set_word  (idx_t word, bm_word_t val) { _map[word] = val; }
   void set_word  (idx_t word)            { set_word(word, ~(bm_word_t)0); }
-  void clear_word(idx_t word)            { _map[word] = 0; }
 
   static inline bm_word_t load_word_ordered(const volatile bm_word_t* const addr, atomic_memory_order memory_order);
 

@@ -2966,9 +2966,6 @@ public:
   int  get_evex_encoding(void) const { return _evex_encoding; }
   int  get_embedded_opmask_register_specifier(void) const { return _embedded_opmask_register_specifier; }
 
-  // Set the vector len manually
-  void set_vector_len(int vector_len) { _avx_vector_len = vector_len; }
-
   // Set revert rex_vex_w for avx encoding
   void set_rex_vex_w_reverted(void) { _rex_vex_w_reverted = true; }
 

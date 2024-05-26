@@ -135,9 +135,6 @@ public:
   void assert_is_heap_region() const {
     assert(_is_heap_region, "must be heap region");
   }
-  void assert_is_not_heap_region() const {
-    assert(!_is_heap_region, "must not be heap region");
-  }
 
   static FileMapRegion* cast(CDSFileMapRegion* p) {
     return (FileMapRegion*)p;
@@ -425,10 +422,6 @@ public:
   static FileMapInfo* current_info() {
     CDS_ONLY(return _current_info;)
     NOT_CDS(return nullptr;)
-  }
-
-  static void set_current_info(FileMapInfo* info) {
-    CDS_ONLY(_current_info = info;)
   }
 
   static FileMapInfo* dynamic_info() {

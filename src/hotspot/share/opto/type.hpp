@@ -718,10 +718,6 @@ public:
     assert(i < _cnt, "oob");
     return _fields[i];
   }
-  void set_field_at(uint i, const Type* t) {
-    assert(i < _cnt, "oob");
-    _fields[i] = t;
-  }
 
   static const TypeTuple *make( uint cnt, const Type **fields );
   static const TypeTuple *make_range(ciSignature *sig, InterfaceHandling interface_handling = ignore_interfaces);
@@ -1379,11 +1375,6 @@ public:
 
 private:
   virtual bool is_meet_subtype_of_helper(const TypeOopPtr* other, bool this_xk, bool other_xk) const;
-
-  virtual bool is_meet_same_type_as(const TypePtr* other) const {
-    return _klass->equals(other->is_instptr()->_klass) && _interfaces->eq(other->is_instptr()->_interfaces);
-  }
-
 };
 
 //------------------------------TypeAryPtr-------------------------------------

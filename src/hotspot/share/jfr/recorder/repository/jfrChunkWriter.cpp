@@ -113,11 +113,6 @@ class JfrChunkHeadWriter : public StackObj {
     _writer->be_write(PAD);
   }
 
-  void write_guard_flush() {
-    write_guard();
-    _writer->flush();
-  }
-
   void write_flags() {
     _writer->be_write(_chunk->flags());
   }

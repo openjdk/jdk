@@ -241,7 +241,6 @@ public:
   bool        is_loc(uint i) const { return locoff() <= i && i < stkoff(); }
   bool        is_stk(uint i) const { return stkoff() <= i && i < monoff(); }
   bool        is_mon(uint i) const { return monoff() <= i && i < scloff(); }
-  bool        is_scl(uint i) const { return scloff() <= i && i < endoff(); }
 
   uint                      sp() const { return _sp; }
   int                      bci() const { return _bci; }

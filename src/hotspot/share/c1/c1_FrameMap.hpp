@@ -104,7 +104,6 @@ class FrameMap : public CompilationResourceObj {
   CallingConvention*  _incoming_arguments;
   intArray*           _argument_locations;
 
-  void check_spill_index   (int spill_index)   const { assert(spill_index   >= 0, "bad index"); }
   void check_monitor_index (int monitor_index) const { assert(monitor_index >= 0 &&
                                                               monitor_index < _num_monitors, "bad index"); }
 

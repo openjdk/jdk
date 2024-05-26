@@ -347,8 +347,6 @@ public:
   static bool is_general_purpose_reg(VMReg hotspotRegister);
   static ScopeValue* to_primitive_value(HotSpotCompiledCodeStream* stream, jlong raw, BasicType type, ScopeValue* &second, JVMCI_TRAPS);
 
-  const OopMapSet* oopMapSet() const { return _debug_recorder->_oopmaps; }
-
   // Gets the tag to be used with `read_oop()` corresponding to `patch_object_tag`.
   static u1 as_read_oop_tag(HotSpotCompiledCodeStream* stream, u1 patch_object_tag, JVMCI_TRAPS);
 

@@ -171,12 +171,6 @@ class TypedMethodOptionMatcher : public MethodMatcher {
     _option = option;
   }
 
-  void init_matcher(Symbol* class_name, Mode class_mode,
-                    Symbol* method_name, Mode method_mode,
-                    Symbol* signature) {
-    MethodMatcher::init(class_name, class_mode, method_name, method_mode, signature);
-  }
-
   void set_next(TypedMethodOptionMatcher* next) {_next = next; }
   TypedMethodOptionMatcher* next() { return _next; }
   CompileCommandEnum option() { return _option; }

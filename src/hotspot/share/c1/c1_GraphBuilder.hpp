@@ -332,11 +332,6 @@ class GraphBuilder {
   BlockBegin*  inline_cleanup_block() const              { return scope_data()->inline_cleanup_block();  }
   Instruction* inline_cleanup_return_prev() const        { return scope_data()->inline_cleanup_return_prev(); }
   ValueStack*  inline_cleanup_state() const              { return scope_data()->inline_cleanup_state();  }
-  void restore_inline_cleanup_info() {
-    _block = inline_cleanup_block();
-    _last  = inline_cleanup_return_prev();
-    _state = inline_cleanup_state();
-  }
   void incr_num_returns()                                { scope_data()->incr_num_returns();             }
   int  num_returns() const                               { return scope_data()->num_returns();           }
   intx max_inline_size() const                           { return scope_data()->max_inline_size();       }

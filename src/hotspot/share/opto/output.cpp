@@ -208,14 +208,6 @@ private:
 public:
   static void print_statistics();
 
-  static void increment_instructions_per_bundle(uint i) {
-    _total_instructions_per_bundle[i]++;
-  }
-
-  static void increment_nop_size(uint s) {
-    _total_nop_size += s;
-  }
-
   static void increment_method_size(uint s) {
     _total_method_size += s;
   }

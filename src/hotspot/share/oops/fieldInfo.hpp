@@ -191,10 +191,6 @@ class FieldInfo {
     _contention_group = group;
   }
 
-  bool is_offset_set() const {
-    return _offset != 0;
-  }
-
   inline Symbol* name(ConstantPool* cp) const;
 
   inline Symbol* signature(ConstantPool* cp) const;
@@ -215,7 +211,6 @@ class Mapper {
 public:
   Mapper(CON* consumer) : _consumer(consumer) { _next_index = 0; }
   int next_index() const { return _next_index; }
-  void set_next_index(int next_index) { _next_index = next_index; }
   CON* consumer() const { return _consumer; }
   void map_field_info(const FieldInfo& fi);
 };

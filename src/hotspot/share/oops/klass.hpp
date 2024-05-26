@@ -342,9 +342,6 @@ protected:
   void set_has_value_based_class_annotation() {
     CDS_ONLY(_shared_class_flags |= _has_value_based_class_annotation;)
   }
-  void clear_has_value_based_class_annotation() {
-    CDS_ONLY(_shared_class_flags &= (u2)(~_has_value_based_class_annotation);)
-  }
   bool has_value_based_class_annotation() const {
     CDS_ONLY(return (_shared_class_flags & _has_value_based_class_annotation) != 0;)
     NOT_CDS(return false;)
@@ -671,7 +668,6 @@ protected:
 
   bool is_instance_klass()              const { return assert_same_query(_kind <= InstanceStackChunkKlassKind, is_instance_klass_slow()); }
   // Other is anything that is not one of the more specialized kinds of InstanceKlass.
-  bool is_other_instance_klass()        const { return _kind == InstanceKlassKind; }
   bool is_reference_instance_klass()    const { return _kind == InstanceRefKlassKind; }
   bool is_mirror_instance_klass()       const { return _kind == InstanceMirrorKlassKind; }
   bool is_class_loader_instance_klass() const { return _kind == InstanceClassLoaderKlassKind; }

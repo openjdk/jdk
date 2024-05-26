@@ -370,10 +370,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     _cur_verify_after_time_ms = time_ms;
   }
 
-  void inc_external_accounted_time_ms(double time_ms) {
-    _external_accounted_time_ms += time_ms;
-  }
-
   void record_prepare_heap_roots_time_ms(double recorded_prepare_heap_roots_time_ms) {
     _recorded_prepare_heap_roots_time_ms = recorded_prepare_heap_roots_time_ms;
   }

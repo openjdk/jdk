@@ -323,9 +323,6 @@ class Dependencies: public ResourceObj {
   static void check_ctxk(ciKlass* ctxk) {
     assert(ctxk->is_instance_klass(), "java types only");
   }
-  static void check_ctxk_concrete(ciKlass* ctxk) {
-    assert(is_concrete_klass(ctxk->as_instance_klass()), "must be concrete");
-  }
   static void check_ctxk_abstract(ciKlass* ctxk) {
     check_ctxk(ctxk);
     assert(!is_concrete_klass(ctxk->as_instance_klass()), "must be abstract");

@@ -49,11 +49,8 @@ class Bytecode: public StackObj {
   address aligned_addr_at    (int offset)        const     { return align_up(addr_at(offset), jintSize); }
 
   // Word access:
-  int     get_Java_u2_at     (int offset)        const     { return Bytes::get_Java_u2(addr_at(offset)); }
   int     get_Java_u4_at     (int offset)        const     { return Bytes::get_Java_u4(addr_at(offset)); }
   int     get_aligned_Java_u4_at(int offset)     const     { return Bytes::get_Java_u4(aligned_addr_at(offset)); }
-  int     get_native_u2_at   (int offset)        const     { return Bytes::get_native_u2(addr_at(offset)); }
-  int     get_native_u4_at   (int offset)        const     { return Bytes::get_native_u4(addr_at(offset)); }
 
  public:
   Bytecode(Method* method, address bcp): _bcp(bcp), _code(Bytecodes::code_at(method, addr_at(0))) {

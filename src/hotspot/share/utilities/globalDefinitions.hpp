@@ -918,7 +918,7 @@ class JavaValue {
  jbyte get_jbyte() const { return (jbyte) (_value.i);}
  jchar get_jchar() const { return (jchar) (_value.i);}
  jshort get_jshort() const { return (jshort) (_value.i);}
-
+ 
 };
 
 

@@ -84,10 +84,6 @@ class JfrTraceIdEpoch : AllStatic {
     return _generation;
   }
 
-  static bool is_current_epoch_generation(u2 generation) {
-    return _generation == generation;
-  }
-
   static u1 previous() {
     return _epoch_state ? (u1)0 : (u1)1;
   }

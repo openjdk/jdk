@@ -133,11 +133,6 @@ class MemBaseline {
     return amount;
   }
 
-  size_t total_arena_memory() const {
-    assert(baseline_type() != Not_baselined, "Not yet baselined");
-    return _malloc_memory_snapshot.total_arena();
-  }
-
   size_t malloc_tracking_overhead() const {
     assert(baseline_type() != Not_baselined, "Not yet baselined");
     MemBaseline* bl = const_cast<MemBaseline*>(this);

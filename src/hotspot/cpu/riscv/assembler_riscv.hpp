@@ -3075,7 +3075,6 @@ public:
   void lh(Register Rd_Rs2, Register Rs1, const int32_t uimm)    { lh_c_mux<false>(Rd_Rs2, Rs1, uimm); }
 
   // Prerequisites: Zcb
-  void c_lhu(Register Rd_Rs2, Register Rs1, const int32_t uimm) {  c_lh_if<true>(Rd_Rs2, Rs1, uimm); }
   void lhu(Register Rd_Rs2, Register Rs1, const int32_t uimm)   { lh_c_mux<true>(Rd_Rs2, Rs1, uimm); }
 
   // Prerequisites: Zcb

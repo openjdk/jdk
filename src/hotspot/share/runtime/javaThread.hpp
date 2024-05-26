@@ -786,7 +786,6 @@ private:
   static ByteSize pending_monitorenter_offset()  { return byte_offset_of(JavaThread, _pending_monitorenter); }
   static ByteSize jvmci_alternate_call_target_offset() { return byte_offset_of(JavaThread, _jvmci._alternate_call_target); }
   static ByteSize jvmci_implicit_exception_pc_offset() { return byte_offset_of(JavaThread, _jvmci._implicit_exception_pc); }
-  static ByteSize jvmci_counters_offset()        { return byte_offset_of(JavaThread, _jvmci_counters); }
 #endif // INCLUDE_JVMCI
   static ByteSize exception_oop_offset()         { return byte_offset_of(JavaThread, _exception_oop); }
   static ByteSize exception_pc_offset()          { return byte_offset_of(JavaThread, _exception_pc); }
@@ -936,7 +935,6 @@ private:
   javaVFrame* carrier_last_java_vframe(RegisterMap* reg_map) { return last_java_vframe(carrier_last_frame(reg_map), reg_map); }
 
   frame vthread_last_frame();
-  javaVFrame* vthread_last_java_vframe(RegisterMap* reg_map) { return last_java_vframe(vthread_last_frame(), reg_map); }
 
   frame platform_thread_last_frame(RegisterMap* reg_map);
   javaVFrame*  platform_thread_last_java_vframe(RegisterMap* reg_map) {

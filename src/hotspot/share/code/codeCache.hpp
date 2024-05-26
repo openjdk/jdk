@@ -341,9 +341,6 @@ template <class T, class Filter, bool is_relaxed> class CodeBlobIterator : publi
   GrowableArrayIterator<CodeHeap*> _end;
   bool _not_unloading;    // Those nmethods that are not unloading
 
-  void initialize_iteration(T* nm) {
-  }
-
   bool next_impl() {
     for (;;) {
       // Walk through heaps as required

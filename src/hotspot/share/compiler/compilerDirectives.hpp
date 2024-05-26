@@ -218,7 +218,7 @@ void set_##name(void* value) {                                      \
   void print_double(outputStream* st, ccstr n, double v, bool mod) { if (mod) { st->print("%s:%f ", n, v); } }
   void print_ccstr(outputStream* st, ccstr n, ccstr v, bool mod) { if (mod) { st->print("%s:%s ", n, v); } }
   void print_ccstrlist(outputStream* st, ccstr n, ccstr v, bool mod) { print_ccstr(st, n, v, mod); }
-
+  
 void print(outputStream* st) {
     print_inline(st);
     st->print("  ");

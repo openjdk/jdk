@@ -440,15 +440,6 @@ public:
   void should_not_reach_here()                   { stop("should not reach here"); }
   static void debug(const char* msg, const intx* registers);
 
-  // Create a walkable frame to help tracking down who called this code.
-  // Returns the frame size in words.
-  int should_not_call_this() {
-    raw_push(FP, LR);
-    should_not_reach_here();
-    flush();
-    return 2; // frame_size_in_words (FP+LR)
-  }
-
   int save_all_registers();
   void restore_all_registers();
   int save_caller_save_registers();
@@ -754,10 +745,6 @@ public:
 
   void logical_shift_right(Register dst, Register src, int shift) {
     mov(dst, AsmOperand(src, lsr, shift));
-  }
-
-  void arith_shift_right(Register dst, Register src, int shift) {
-    mov(dst, AsmOperand(src, asr, shift));
   }
 
   void asr_32(Register dst, Register src, int shift) {

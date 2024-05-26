@@ -65,7 +65,6 @@ class MetaspaceGC : public AllStatic {
   static uint _shrink_factor;
 
   static size_t shrink_factor() { return _shrink_factor; }
-  void set_shrink_factor(uint v) { _shrink_factor = v; }
 
  public:
 

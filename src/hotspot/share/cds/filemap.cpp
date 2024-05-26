@@ -611,13 +611,6 @@ class ManifestStream: public ResourceObj {
   static bool is_attr(u1* attr, const char* name) {
     return strncmp((const char*)attr, name, strlen(name)) == 0;
   }
-
-  static char* copy_attr(u1* value, size_t len) {
-    char* buf = NEW_RESOURCE_ARRAY(char, len + 1);
-    strncpy(buf, (char*)value, len);
-    buf[len] = 0;
-    return buf;
-  }
 };
 
 void FileMapInfo::update_jar_manifest(ClassPathEntry *cpe, SharedClassPathEntry* ent, TRAPS) {

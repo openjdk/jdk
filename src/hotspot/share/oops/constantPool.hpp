@@ -218,7 +218,6 @@ class ConstantPool : public Metadata {
   // Klass holding pool
   InstanceKlass* pool_holder() const      { return _pool_holder; }
   void set_pool_holder(InstanceKlass* k)  { _pool_holder = k; }
-  InstanceKlass** pool_holder_addr()      { return &_pool_holder; }
 
   // Interpreter runtime support
   ConstantPoolCache* cache() const        { return _cache; }

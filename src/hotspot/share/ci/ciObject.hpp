@@ -128,7 +128,6 @@ public:
   virtual bool is_array()                   { return false; }
   virtual bool is_obj_array()               { return false; }
   virtual bool is_type_array()              { return false; }
-  virtual bool is_native_entry_point()const { return false; }
 
   // Is this a type or value which has no associated class?
   // It is true of primitive types and null objects.
@@ -165,10 +164,6 @@ public:
   ciMethodHandle* as_method_handle() {
     assert(is_method_handle(), "bad cast");
     return (ciMethodHandle*)this;
-  }
-  ciMethodType* as_method_type() {
-    assert(is_method_type(), "bad cast");
-    return (ciMethodType*)this;
   }
   ciArray* as_array() {
     assert(is_array(), "bad cast");

@@ -99,11 +99,6 @@ class MemoryPool : public CHeapObj<mtInternal> {
   bool is_pool(instanceHandle pool) const;
 
   bool available_for_allocation()   { return _available_for_allocation; }
-  bool set_available_for_allocation(bool value) {
-    bool prev = _available_for_allocation;
-    _available_for_allocation = value;
-    return prev;
-  }
 
   MemoryManager* get_memory_manager(int index) {
     assert(index >= 0 && index < _num_managers, "Invalid index");

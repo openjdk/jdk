@@ -55,7 +55,6 @@ class LIR_Assembler: public CompilationResourceObj {
 
   FrameMap* frame_map() const { return _frame_map; }
 
-  void set_current_block(BlockBegin* b) { _current_block = b; }
   BlockBegin* current_block() const { return _current_block; }
 
   // non-safepoint debug info management

@@ -136,7 +136,6 @@ public:
   // Offsets
   static ByteSize field_holder_offset() { return byte_offset_of(ResolvedFieldEntry, _field_holder); }
   static ByteSize field_offset_offset() { return byte_offset_of(ResolvedFieldEntry, _field_offset); }
-  static ByteSize field_index_offset()  { return byte_offset_of(ResolvedFieldEntry, _field_index);  }
   static ByteSize get_code_offset()     { return byte_offset_of(ResolvedFieldEntry, _get_code);     }
   static ByteSize put_code_offset()     { return byte_offset_of(ResolvedFieldEntry, _put_code);     }
   static ByteSize type_offset()         { return byte_offset_of(ResolvedFieldEntry, _tos_state);    }

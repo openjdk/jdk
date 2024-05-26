@@ -59,10 +59,6 @@ void CodeInstaller::pd_patch_DataSectionReference(int pc_offset, int data_offset
   Unimplemented();
 }
 
-void CodeInstaller::pd_relocate_CodeBlob(CodeBlob* cb, NativeInstruction* inst) {
-  Unimplemented();
-}
-
 void CodeInstaller::pd_relocate_ForeignCall(NativeInstruction* inst, jlong foreign_call_destination) {
   Unimplemented();
 }

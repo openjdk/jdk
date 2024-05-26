@@ -246,11 +246,6 @@ class FieldLayoutBuilder : public ResourceObj {
   FieldLayoutBuilder(const Symbol* classname, const InstanceKlass* super_klass, ConstantPool* constant_pool,
                      GrowableArray<FieldInfo>* field_info, bool is_contended, FieldLayoutInfo* info);
 
-  int get_alignment() {
-    assert(_alignment != -1, "Uninitialized");
-    return _alignment;
-  }
-
   void build_layout();
   void compute_regular_layout();
   void insert_contended_padding(LayoutRawBlock* slot);

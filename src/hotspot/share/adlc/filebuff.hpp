@@ -73,9 +73,5 @@ class FileBuff {
   char *get_line(void);
   int linenum() const { return _linenum; }
   void set_linenum(int line) { _linenum = line; }
-
-  // This converts a pointer into the buffer to a file offset.  It only works
-  // when the pointer is valid (i.e. just obtained from getline()).
-  long getoff(const char* s) { return _bufoff + (long)(s - _buf); }
 };
 #endif // SHARE_ADLC_FILEBUFF_HPP

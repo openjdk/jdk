@@ -415,7 +415,6 @@ public:
   static int get_total_compile_count() {            return _total_compile_count; }
   static int get_total_bailout_count() {            return _total_bailout_count; }
   static int get_total_invalidated_count() {        return _total_invalidated_count; }
-  static int get_total_native_compile_count() {     return _total_native_compile_count; }
   static int get_total_osr_compile_count() {        return _total_osr_compile_count; }
   static int get_total_standard_compile_count() {   return _total_standard_compile_count; }
   static int get_total_compiler_stopped_count() {   return _total_compiler_stopped_count; }

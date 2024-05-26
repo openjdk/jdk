@@ -974,11 +974,6 @@ public:
     _annotations_present |= (int)nth_bit((int)id);
   }
 
-  void remove_annotation(ID id) {
-    assert((int)id >= 0 && (int)id < (int)_annotation_LIMIT, "oob");
-    _annotations_present &= (int)~nth_bit((int)id);
-  }
-
   // Report if the annotation is present.
   bool has_any_annotations() const { return _annotations_present != 0; }
   bool has_annotation(ID id) const { return (nth_bit((int)id) & _annotations_present) != 0; }
@@ -988,7 +983,6 @@ public:
 
   bool is_contended() const { return has_annotation(_jdk_internal_vm_annotation_Contended); }
 
-  void set_stable(bool stable) { set_annotation(_field_Stable); }
   bool is_stable() const { return has_annotation(_field_Stable); }
 };
 

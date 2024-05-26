@@ -166,14 +166,6 @@ public:
     }
   }
 
-protected:
-  // Returns the address of the element the given address maps to
-  T* address_mapped_to(HeapWord* address) {
-    idx_t biased_index = ((uintptr_t)address) >> this->shift_by();
-    this->verify_biased_index_inclusive_end(biased_index);
-    return biased_base() + biased_index;
-  }
-
 public:
   // Return the smallest address (inclusive) in the heap that this array covers.
   HeapWord* bottom_address_mapped() const {

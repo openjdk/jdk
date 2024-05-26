@@ -639,7 +639,6 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
 
   // is a given address in the insts section?  (2nd version is end-inclusive)
   bool insts_contains(address pc) const  { return _insts.contains(pc); }
-  bool insts_contains2(address pc) const { return _insts.contains2(pc); }
 
   // Record any extra oops required to keep embedded metadata alive
   void finalize_oop_references(const methodHandle& method);

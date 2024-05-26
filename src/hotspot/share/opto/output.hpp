@@ -179,7 +179,6 @@ public:
   void          set_scratch_buffer_blob(BufferBlob* b) { _scratch_buffer_blob = b; }
   relocInfo*        scratch_locs_memory()       { return _scratch_locs_memory; }
   void          set_scratch_locs_memory(relocInfo* b)  { _scratch_locs_memory = b; }
-  int               scratch_buffer_code_size()  { return (address)scratch_locs_memory() - _scratch_buffer_blob->content_begin(); }
 
   // emit to scratch blob, report resulting size
   uint              scratch_emit_size(const Node* n);

@@ -420,7 +420,6 @@ public:
   // Unsets the humongous-related fields on the region.
   void clear_humongous();
 
-  void set_rem_set(HeapRegionRemSet* rem_set) { _rem_set = rem_set; }
   // If the region has a remembered set, return a pointer to it.
   HeapRegionRemSet* rem_set() const {
     return _rem_set;

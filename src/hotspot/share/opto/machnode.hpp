@@ -603,7 +603,6 @@ public:
     add_req(n);
   }
   virtual uint size_of() const { return sizeof(*this); }
-  void set_out_RegMask(const RegMask &out) { _out = &out; }
   void set_in_RegMask(const RegMask &in) { _in = &in; }
   virtual const RegMask &out_RegMask() const { return *_out; }
   virtual const RegMask &in_RegMask(uint) const { return *_in; }

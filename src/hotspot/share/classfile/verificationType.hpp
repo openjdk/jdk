@@ -151,8 +151,6 @@ class VerificationType {
     { return VerificationType(Category1Query); }
   static VerificationType category2_check()
     { return VerificationType(Category2Query); }
-  static VerificationType category2_2nd_check()
-    { return VerificationType(Category2_2ndQuery); }
 
   // For reference types, store the actual Symbol
   static VerificationType reference_type(Symbol* sh) {
@@ -172,7 +170,6 @@ class VerificationType {
 
   bool is_bogus() const     { return (_u._data == Bogus); }
   bool is_null() const      { return (_u._data == Null); }
-  bool is_boolean() const   { return (_u._data == Boolean); }
   bool is_byte() const      { return (_u._data == Byte); }
   bool is_char() const      { return (_u._data == Char); }
   bool is_short() const     { return (_u._data == Short); }
@@ -199,10 +196,6 @@ class VerificationType {
   bool is_category2_2nd() const {
     return ((_u._data & Category2_2nd) == Category2_2nd);
   }
-  bool is_reference_check() const { return _u._data == ReferenceQuery; }
-  bool is_category1_check() const { return _u._data == Category1Query; }
-  bool is_category2_check() const { return _u._data == Category2Query; }
-  bool is_category2_2nd_check() const { return _u._data == Category2_2ndQuery; }
   bool is_check() const { return (_u._data & TypeQuery) == TypeQuery; }
 
   bool is_x_array(char sig) const {

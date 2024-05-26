@@ -67,10 +67,8 @@ public:
   const MetaspaceStats& non_class_space_stats() const { return _ncstats; }
   size_t class_used() const       { return _cstats.used(); }
   size_t class_committed() const  { return _cstats.committed(); }
-  size_t class_reserved() const   { return _cstats.reserved(); }
   size_t non_class_used() const       { return _ncstats.used(); }
   size_t non_class_committed() const  { return _ncstats.committed(); }
-  size_t non_class_reserved() const   { return _ncstats.reserved(); }
 };
 
 #endif // SHARE_MEMORY_METASPACESTATS_HPP

@@ -293,7 +293,6 @@ public:
   void   reset()   { if (_root) {_cur = _root; _justReset = 1;} };
 
   // Second iterator, state is internal
-  Form * current2(){ return _cur2; };
   Form * iter2()   { if (_justReset2) _justReset2 = 0;
                     else if (_cur2)  _cur2 = _cur2->_next;
                     return _cur2;};

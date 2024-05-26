@@ -199,12 +199,6 @@ class ConstantPoolCache: public MetaspaceObj {
  public:
   static int size() { return align_metadata_size(sizeof(ConstantPoolCache) / wordSize); }
 
- private:
-
-  // Helpers
-  ConstantPool**        constant_pool_addr()     { return &_constant_pool; }
-
- public:
   // Accessors
   void set_constant_pool(ConstantPool* pool)   { _constant_pool = pool; }
   ConstantPool* constant_pool() const          { return _constant_pool; }

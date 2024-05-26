@@ -58,7 +58,6 @@ public:
 #endif
 
   address instruction_address() const { return addr_at(0); }
-  address immediate_address() const { return addr_at(imm_offset); }
 
   jint get_immediate() const { return int_at(imm_offset); }
   void set_immediate(jint imm) { set_int_at(imm_offset, imm); }

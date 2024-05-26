@@ -193,8 +193,6 @@ inline void set_msg(messages new_msg) { _msg = new_msg; }
 inline Method* callee() { return _result._to_call._callee; }
 inline void set_callee(Method* new_callee) { _result._to_call._callee = new_callee; }
 inline void set_callee_entry_point(address entry) { _result._to_call._callee_entry_point = entry; }
-inline void set_osr_buf(address buf) { _result._osr._osr_buf = buf; }
-inline void set_osr_entry(address entry) { _result._osr._osr_entry = entry; }
 inline int bcp_advance() { return _result._to_call._bcp_advance; }
 inline void set_bcp_advance(int count) { _result._to_call._bcp_advance = count; }
 

@@ -195,16 +195,6 @@ public:
     return _capacity[int(which_partition)] - _used[int(which_partition)];
   }
 
-  inline void set_capacity_of(ShenandoahFreeSetPartitionId which_partition, size_t value) {
-    assert (which_partition < NumPartitions, "selected free set must be valid");
-    _capacity[int(which_partition)] = value;
-  }
-
-  inline void set_used_by(ShenandoahFreeSetPartitionId which_partition, size_t value) {
-    assert (which_partition < NumPartitions, "selected free set must be valid");
-    _used[int(which_partition)] = value;
-  }
-
   inline size_t count(ShenandoahFreeSetPartitionId which_partition) const { return _region_counts[int(which_partition)]; }
 
   // Assure leftmost, rightmost, leftmost_empty, and rightmost_empty bounds are valid for all free sets.

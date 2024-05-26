@@ -1540,10 +1540,6 @@ class MergeMemStream : public StackObj {
     assert(_mm_base == _mm->base_memory(), "no update to base memory, please");
     return _mm_base;
   }
-  const MergeMemNode* all_memory2() const {
-    assert(_mm2 != nullptr, "");
-    return _mm2;
-  }
   bool at_base_memory() const {
     return _idx == Compile::AliasIdxBot;
   }

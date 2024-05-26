@@ -202,9 +202,6 @@ public:
   void output(FILE *fp);        // Write info to output files
   virtual void forms_do(FormClosure* f);
 
-  virtual bool has_stack_version() {
-    return _stack_or_reg;
-  }
   virtual void set_stack_version(bool flag) {
     _stack_or_reg = flag;
   }
@@ -708,9 +705,6 @@ public:
   PeepChild(int inst_num, char *inst_op, char *inst_name)
     : _inst_num(inst_num), _inst_op(inst_op), _inst_name(inst_name) {};
   ~PeepChild();
-
-  bool  use_leaf_operand()        { return _inst_num != -1; };
-  bool  generate_an_instruction() { return _inst_num == -1; }
 
   void dump();
   void output(FILE *fp);

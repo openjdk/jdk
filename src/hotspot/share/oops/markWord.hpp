@@ -232,7 +232,6 @@ class markWord {
 
   // age operations
   markWord set_marked()   { return markWord((value() & ~lock_mask_in_place) | marked_value); }
-  markWord set_unmarked() { return markWord((value() & ~lock_mask_in_place) | unlocked_value); }
 
   uint     age()           const { return (uint) mask_bits(value() >> age_shift, age_mask); }
   markWord set_age(uint v) const {

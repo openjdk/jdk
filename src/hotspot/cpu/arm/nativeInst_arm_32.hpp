@@ -65,14 +65,6 @@ class RawNativeInstruction {
   // permanently undefined (UDF): 0xe << 28 | 0b1111111 << 20 | 0b1111 << 4
   static const int not_entrant_illegal_instruction = 0xe7f000f0;
 
-  static int decode_rotated_imm12(int encoding) {
-    int base = encoding & 0xff;
-    int right_rotation = (encoding & 0xf00) >> 7;
-    int left_rotation = 32 - right_rotation;
-    int val = (base >> right_rotation) | (base << left_rotation);
-    return val;
-  }
-
   address addr_at(int offset)        const { return (address)this + offset; }
   address instruction_address()      const { return addr_at(0); }
   address next_raw_instruction_address() const { return addr_at(instruction_size); }
@@ -106,17 +98,12 @@ class RawNativeInstruction {
   bool is_b()              const { return (encoding() & 0x0f000000) == 0x0a000000; }
   bool is_bx()             const { return (encoding() & 0x0ffffff0) == 0x012fff10; }
   bool is_bl()             const { return (encoding() & 0x0f000000) == 0x0b000000; }
-  bool is_blx()            const { return (encoding() & 0x0ffffff0) == 0x012fff30; }
   bool is_fat_call()       const {
     return (is_add_lr() && next_raw()->is_jump());
-  }
-  bool is_ldr_call()       const {
-    return (is_add_lr() && next_raw()->is_ldr_pc());
   }
   bool is_jump()           const { return is_b() || is_ldr_pc(); }
   bool is_call()           const { return is_bl() || is_fat_call(); }
   bool is_branch()         const { return is_b() || is_bl(); }
-  bool is_far_branch()     const { return is_movw() || is_ldr_literal(); }
   bool is_ldr_literal()    const {
     // ldr Rx, [PC, #offset] for positive or negative offsets
     return (encoding() & 0x0f7f0000) == 0x051f0000;
@@ -145,7 +132,6 @@ class RawNativeInstruction {
   bool is_sub_pc()         const { return (encoding() & 0x0fff0000) == 0x024f0000; }
   bool is_pc_rel()         const { return is_add_pc() || is_sub_pc(); }
   bool is_movw()           const { return (encoding() & 0x0ff00000) == 0x03000000; }
-  bool is_movt()           const { return (encoding() & 0x0ff00000) == 0x03400000; }
   // c2 doesn't use fixed registers for safepoint poll address
   bool is_safepoint_poll() const { return (encoding() & 0xfff0ffff) == 0xe590c000; }
 };

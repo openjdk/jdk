@@ -377,9 +377,6 @@ public:
   void set_adapter_entry(AdapterHandlerEntry* adapter) {
     _adapter = adapter;
   }
-  void set_from_compiled_entry(address entry) {
-    _from_compiled_entry =  entry;
-  }
 
   address get_i2c_entry();
   address get_c2i_entry();
@@ -497,7 +494,6 @@ public:
   Symbol* klass_name() const;                    // returns the name of the method holder
   BasicType result_type() const                  { return constMethod()->result_type(); }
   bool is_returning_oop() const                  { BasicType r = result_type(); return is_reference_type(r); }
-  bool is_returning_fp() const                   { BasicType r = result_type(); return (r == T_FLOAT || r == T_DOUBLE); }
 
   // Checked exceptions thrown by this method (resolved to mirrors)
   objArrayHandle resolved_checked_exceptions(TRAPS) { return resolved_checked_exceptions_impl(this, THREAD); }
@@ -775,10 +771,6 @@ public:
   bool is_overpass() const { return method_type() == ConstMethod::OVERPASS; }
 
   // On-stack replacement support
-  bool has_osr_nmethod(int level, bool match_level) {
-   return method_holder()->lookup_osr_nmethod(this, InvocationEntryBci, level, match_level) != nullptr;
-  }
-
   nmethod* lookup_osr_nmethod_for(int bci, int level, bool match_level) {
     return method_holder()->lookup_osr_nmethod(this, bci, level, match_level);
   }
@@ -820,7 +812,6 @@ public:
   // not_c1_osr_compilable == not_c1_compilable
   bool is_not_c1_osr_compilable() const       { return is_not_c1_compilable(); }
   void set_is_not_c1_osr_compilable()         { set_is_not_c1_compilable(); }
-  void clear_is_not_c1_osr_compilable()       { clear_is_not_c1_compilable(); }
 
   // Background compilation support
   void clear_queued_for_compilation()  { set_queued_for_compilation(false);   }

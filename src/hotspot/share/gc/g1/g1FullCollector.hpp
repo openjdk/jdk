@@ -115,7 +115,6 @@ public:
   G1FullGCCompactionPoint* compaction_point(uint id) { return _compaction_points[id]; }
   OopQueueSet*             oop_queue_set() { return &_oop_queue_set; }
   ObjArrayTaskQueueSet*    array_queue_set() { return &_array_queue_set; }
-  PreservedMarksSet*       preserved_mark_set() { return &_preserved_marks_set; }
   G1FullGCCompactionPoint* serial_compaction_point() { return &_serial_compaction_point; }
   G1FullGCCompactionPoint* humongous_compaction_point() { return &_humongous_compaction_point; }
   G1CMBitMap*              mark_bitmap();

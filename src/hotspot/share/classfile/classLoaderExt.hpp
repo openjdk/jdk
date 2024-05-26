@@ -99,10 +99,6 @@ public:
     _app_module_paths_start_index = module_start;
   }
 
-  static bool is_boot_classpath(int classpath_index) {
-    return classpath_index < _app_class_paths_start_index;
-  }
-
   static bool has_platform_or_app_classes() {
     return _has_app_classes || _has_platform_classes;
   }

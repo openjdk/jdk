@@ -401,19 +401,6 @@ class Argument {
   // Locating register-based arguments:
   bool is_register() const { return _number < n_register_parameters; }
 
-  // Locating Floating Point register-based arguments:
-  bool is_float_register() const { return _number < n_float_register_parameters; }
-
-  FloatRegister as_float_register() const {
-    assert(is_float_register(), "must be a register argument");
-    return as_FloatRegister((number() *2) + 1);
-  }
-
-  FloatRegister as_double_register() const {
-    assert(is_float_register(), "must be a register argument");
-    return as_FloatRegister((number() *2));
-  }
-
   Register as_register() const {
     assert(is_register(), "must be a register argument");
     return as_Register(number() + Z_ARG1->encoding());
@@ -1534,12 +1521,6 @@ class Assembler : public AbstractAssembler {
   // Longest instructions are 6 bytes on z/Architecture.
   static unsigned int instr_maxlen() { return 6; }
 
-  // Average instruction is 4 bytes on z/Architecture (just a guess).
-  static unsigned int instr_avglen() { return 4; }
-
-  // Shortest instructions are 2 bytes on z/Architecture.
-  static unsigned int instr_minlen() { return 2; }
-
   // Move instruction at pc right-justified into passed long int.
   // Return instr len in bytes as function result.
   static unsigned int get_instruction(unsigned char *pc, unsigned long *instr);
@@ -1639,7 +1620,6 @@ class Assembler : public AbstractAssembler {
   // For instructions which use address calculation to derive an input value to the instruction.
   // Shift instructions are an example of such use.
   static int64_t rsmaskt_32( int64_t d2, Register b2)             { return uimm12(d2, 20, 32)                    | regt(b2, 16, 32); }
-  static int64_t rsmaskt_48( int64_t d2, Register b2)             { return uimm12(d2, 20, 48)                    | regt(b2, 16, 48); }
   static int64_t rsymaskt_48(int64_t d2, Register b2)             { return simm20(d2)                            | regt(b2, 16, 48); }
   static int64_t rxmaskt_32( int64_t d2, Register x2, Register b2){ return uimm12(d2, 20, 32) | regt(x2, 12, 32) | regt(b2, 16, 32); }
   static int64_t rxymaskt_48(int64_t d2, Register x2, Register b2){ return simm20(d2)         | regt(x2, 12, 48) | regt(b2, 16, 48); }
@@ -1647,33 +1627,12 @@ class Assembler : public AbstractAssembler {
   // Address calculated from d12(vx,b) - vx is vector index register.
   static int64_t rvmask_48( int64_t d2, VectorRegister x2, Register b2) { return uimm12(d2, 20, 48) | vreg(x2, 12) | regz(b2, 16, 48); }
 
-  static int64_t vreg_mask(VectorRegister v, int pos) {
-    return vreg(v, pos) | v->RXB_mask(pos);
-  }
-
   // Vector Element Size Control. 4-bit field which indicates the size of the vector elements.
   static int64_t vesc_mask(int64_t size, int min_size, int max_size, int pos) {
     // min_size - minimum element size. Not all instructions support element sizes beginning with "byte".
     // max_size - maximum element size. Not all instructions support element sizes up to "QW".
     assert((min_size <= size) && (size <= max_size), "element size control out of range");
     return uimm4(size, pos, 48);
-  }
-
-  // Vector Element IndeX. 4-bit field which indexes the target vector element.
-  static int64_t veix_mask(int64_t ix, int el_size, int pos) {
-    // el_size - size of the vector element. This is a VRegElemType enum value.
-    // ix      - vector element index.
-    int max_ix = -1;
-    switch (el_size) {
-      case VRET_BYTE: max_ix = 15; break;
-      case VRET_HW:   max_ix =  7; break;
-      case VRET_FW:   max_ix =  3; break;
-      case VRET_DW:   max_ix =  1; break;
-      case VRET_QW:   max_ix =  0; break;
-      default:        guarantee(false, "bad vector element size %d", el_size); break;
-    }
-    assert((0 <= ix) && (ix <= max_ix), "element size out of range (0 <= %ld <= %d)", ix, max_ix);
-    return uimm4(ix, pos, 48);
   }
 
   // Vector Operation Result Control. 4-bit field.
@@ -1697,14 +1656,6 @@ class Assembler : public AbstractAssembler {
   // Only used once in nativeInst_s390.cpp.
   static intptr_t z_pcrel_off(address dest, address pc) {
     return RelAddr::pcrel_off32(dest, pc);
-  }
-
-  // Extract 20-bit signed displacement.
-  // Only used in disassembler_s390.cpp for temp enhancements.
-  static int inv_simm20_xx(address iLoc) {
-    unsigned long instr = 0;
-    unsigned long iLen  = get_instruction(iLoc, &instr);
-    return inv_simm20(instr);
   }
 
   // unsigned immediate, in low bits, nbits long
@@ -1786,14 +1737,6 @@ class Assembler : public AbstractAssembler {
     return imm;
   }
 
-  static short get_imm16(address a, int instruction_number) {
-    short imm;
-    short *p =((short *)a) + 2 * instruction_number + 1;
-    imm = *p;
-    return imm;
-  }
-
-
   //--------------------------------------------
   // instruction field setter methods
   //--------------------------------------------
@@ -1801,12 +1744,6 @@ class Assembler : public AbstractAssembler {
   static void set_imm32(address a, int64_t s) {
     assert(Immediate::is_simm32(s) || Immediate::is_uimm32(s), "to big");
     int* p = (int *) (a + 2);
-    *p = s;
-  }
-
-  static void set_imm16(int* instr, int64_t s) {
-    assert(Immediate::is_simm16(s) || Immediate::is_uimm16(s), "to big");
-    short* p = ((short *)instr) + 1;
     *p = s;
   }
 
@@ -3123,22 +3060,11 @@ class Assembler : public AbstractAssembler {
 
   static int nop_size() { return 2; }
 
-  static int z_brul_size() { return 6; }
-
   static bool is_z_basr(short x) {
     return (BASR_ZOPC == (x & BASR_MASK));
   }
-  static bool is_z_algr(long x) {
-    return (ALGR_ZOPC == (x & RRE_MASK));
-  }
   static bool is_z_cfi(long x) {
     return (CFI_ZOPC == (x & RIL_MASK));
-  }
-  static bool is_z_lb(long x) {
-    return (LB_ZOPC == (x & LB_MASK));
-  }
-  static bool is_z_lh(int x) {
-    return (LH_ZOPC == (x & LH_MASK));
   }
   static bool is_z_l(int x) {
     return (L_ZOPC == (x & L_MASK));
@@ -3146,44 +3072,8 @@ class Assembler : public AbstractAssembler {
   static bool is_z_lgr(long x) {
     return (LGR_ZOPC == (x & RRE_MASK));
   }
-  static bool is_z_ly(long x) {
-    return (LY_ZOPC == (x & LY_MASK));
-  }
   static bool is_z_lg(long x) {
     return (LG_ZOPC == (x & LG_MASK));
-  }
-  static bool is_z_llgh(long x) {
-    return (LLGH_ZOPC == (x & LLGH_MASK));
-  }
-  static bool is_z_llgf(long x) {
-    return (LLGF_ZOPC == (x & LLGF_MASK));
-  }
-  static bool is_z_le(int x) {
-    return (LE_ZOPC == (x & LE_MASK));
-  }
-  static bool is_z_ld(int x) {
-    return (LD_ZOPC == (x & LD_MASK));
-  }
-  static bool is_z_st(int x) {
-    return (ST_ZOPC == (x & ST_MASK));
-  }
-  static bool is_z_stc(int x) {
-    return (STC_ZOPC == (x & STC_MASK));
-  }
-  static bool is_z_stg(long x) {
-    return (STG_ZOPC == (x & STG_MASK));
-  }
-  static bool is_z_sth(int x) {
-    return (STH_ZOPC == (x & STH_MASK));
-  }
-  static bool is_z_ste(int x) {
-    return (STE_ZOPC == (x & STE_MASK));
-  }
-  static bool is_z_std(int x) {
-    return (STD_ZOPC == (x & STD_MASK));
-  }
-  static bool is_z_slag(long x) {
-    return (SLAG_ZOPC == (x & SLAG_MASK));
   }
   static bool is_z_tmy(long x) {
     return (TMY_ZOPC == (x & TMY_MASK));
@@ -3202,9 +3092,6 @@ class Assembler : public AbstractAssembler {
   }
   static bool is_z_br(long x) {
     return is_z_bcr(x) && ((x & 0x00f0) == 0x00f0);
-  }
-  static bool is_z_brc(long x, int cond) {
-    return ((unsigned int)BRC_ZOPC == (x & BRC_MASK)) && ((cond<<20) == (x & 0x00f00000U));
   }
   // Make use of lightweight sync.
   static bool is_z_sync_full(long x) {
@@ -3234,41 +3121,8 @@ class Assembler : public AbstractAssembler {
   long x = (*((long *)a))>>16;
    return is_z_lgrl(x);
   }
-
-  static bool is_z_lghi(unsigned long x) {
-    return (unsigned int)LGHI_ZOPC == (x & (unsigned int)LGHI_MASK);
-  }
-
-  static bool is_z_llill(unsigned long x) {
-    return (unsigned int)LLILL_ZOPC == (x & (unsigned int)LLI_MASK);
-  }
-  static bool is_z_llilh(unsigned long x) {
-    return (unsigned int)LLILH_ZOPC == (x & (unsigned int)LLI_MASK);
-  }
-  static bool is_z_llihl(unsigned long x) {
-    return (unsigned int)LLIHL_ZOPC == (x & (unsigned int)LLI_MASK);
-  }
-  static bool is_z_llihh(unsigned long x) {
-    return (unsigned int)LLIHH_ZOPC == (x & (unsigned int)LLI_MASK);
-  }
   static bool is_z_llilf(unsigned long x) {
     return LLILF_ZOPC == (x & LLIF_MASK);
-  }
-  static bool is_z_llihf(unsigned long x) {
-    return LLIHF_ZOPC == (x & LLIF_MASK);
-  }
-
-  static bool is_z_iill(unsigned long x) {
-    return (unsigned int)IILL_ZOPC == (x & (unsigned int)II_MASK);
-  }
-  static bool is_z_iilh(unsigned long x) {
-    return (unsigned int)IILH_ZOPC == (x & (unsigned int)II_MASK);
-  }
-  static bool is_z_iihl(unsigned long x) {
-    return (unsigned int)IIHL_ZOPC == (x & (unsigned int)II_MASK);
-  }
-  static bool is_z_iihh(unsigned long x) {
-    return (unsigned int)IIHH_ZOPC == (x & (unsigned int)II_MASK);
   }
   static bool is_z_iilf(unsigned long x) {
     return IILF_ZOPC == (x & IIF_MASK);

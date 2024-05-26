@@ -88,9 +88,7 @@ class JfrStackTrace : public JfrCHeapObj {
   bool equals(const JfrStackTrace& rhs) const;
 
   void set_id(traceid id) { _id = id; }
-  void set_nr_of_frames(u4 nr_of_frames) { _nr_of_frames = nr_of_frames; }
   void set_hash(unsigned int hash) { _hash = hash; }
-  void set_reached_root(bool reached_root) { _reached_root = reached_root; }
   void resolve_linenos() const;
 
   bool record(JavaThread* current_thread, int skip, int64_t stack_frame_id);
@@ -98,7 +96,6 @@ class JfrStackTrace : public JfrCHeapObj {
   bool record_async(JavaThread* other_thread, const frame& frame);
 
   bool have_lineno() const { return _lineno; }
-  bool full_stacktrace() const { return _reached_root; }
 
   JfrStackTrace(traceid id, const JfrStackTrace& trace, const JfrStackTrace* next);
   JfrStackTrace(JfrStackFrame* frames, u4 max_frames);

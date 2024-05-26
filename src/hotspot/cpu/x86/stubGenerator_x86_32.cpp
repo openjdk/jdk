@@ -2313,13 +2313,6 @@ class StubGenerator: public StubCodeGenerator {
     __ aesenc(xmmdst, xmmtmp);
   }
 
-  // aesdec using specified key+offset
-  // can optionally specify that the shuffle mask is already in an xmmregister
-  void aes_dec_key(XMMRegister xmmdst, XMMRegister xmmtmp, Register key, int offset, XMMRegister xmm_shuf_mask = xnoreg) {
-    load_key(xmmtmp, key, offset, xmm_shuf_mask);
-    __ aesdec(xmmdst, xmmtmp);
-  }
-
   // Utility routine for increase 128bit counter (iv in CTR mode)
   //  XMM_128bit,  D3, D2, D1, D0
   void inc_counter(Register reg, XMMRegister xmmdst, int inc_delta, Label& next_block) {

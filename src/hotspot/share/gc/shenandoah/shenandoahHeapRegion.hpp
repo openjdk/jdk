@@ -290,27 +290,9 @@ public:
   }
 
   // Convert to jint with sanity checking
-  inline static jint region_size_bytes_jint() {
-    assert (ShenandoahHeapRegion::RegionSizeBytes <= (size_t)max_jint, "sanity");
-    return (jint)ShenandoahHeapRegion::RegionSizeBytes;
-  }
-
-  // Convert to jint with sanity checking
-  inline static jint region_size_words_jint() {
-    assert (ShenandoahHeapRegion::RegionSizeWords <= (size_t)max_jint, "sanity");
-    return (jint)ShenandoahHeapRegion::RegionSizeWords;
-  }
-
-  // Convert to jint with sanity checking
   inline static jint region_size_bytes_shift_jint() {
     assert (ShenandoahHeapRegion::RegionSizeBytesShift <= (size_t)max_jint, "sanity");
     return (jint)ShenandoahHeapRegion::RegionSizeBytesShift;
-  }
-
-  // Convert to jint with sanity checking
-  inline static jint region_size_words_shift_jint() {
-    assert (ShenandoahHeapRegion::RegionSizeWordsShift <= (size_t)max_jint, "sanity");
-    return (jint)ShenandoahHeapRegion::RegionSizeWordsShift;
   }
 
   inline static size_t humongous_threshold_bytes() {

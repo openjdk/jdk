@@ -129,7 +129,6 @@ class Label {
     return _loc;
   }
   int loc_pos()  const { return CodeBuffer::locator_pos(loc()); }
-  int loc_sect() const { return CodeBuffer::locator_sect(loc()); }
 
   bool is_bound() const    { return _loc >=  0; }
   bool is_unbound() const  { return _loc == -1 && _patch_index > 0; }

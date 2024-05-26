@@ -105,19 +105,12 @@ public:
   bool  processed() const           { return (_flags & Processed) != 0; }
   bool  is_handler() const          { return (_flags & Handler) != 0; }
   bool  may_throw() const           { return (_flags & MayThrow) != 0; }
-  bool  does_jsr() const            { return (_flags & DoesJsr) != 0; }
-  bool  does_ret() const            { return (_flags & DoesRet) != 0; }
   bool  has_handler() const         { return (_flags & HasHandler) != 0; }
   bool  is_ret_target() const       { return (_flags & RetTarget) != 0; }
   void  set_processed()             { _flags |= Processed; }
   void  clear_processed()           { _flags &= ~Processed; }
   void  set_handler()               { _flags |= Handler; }
   void  set_may_throw()             { _flags |= MayThrow; }
-  void  set_does_jsr()              { _flags |= DoesJsr; }
-  void  clear_does_jsr()            { _flags &= ~DoesJsr; }
-  void  set_does_ret()              { _flags |= DoesRet; }
-  void  clear_does_ret()            { _flags &= ~DoesRet; }
-  void  set_is_ret_target()         { _flags |= RetTarget; }
   void  set_has_handler()           { _flags |= HasHandler; }
   void  clear_exception_handler()   { _flags &= ~Handler; _ex_start_bci = -1; _ex_limit_bci = -1; }
 #ifndef PRODUCT

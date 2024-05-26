@@ -106,7 +106,6 @@ class xmlStream : public outputStream {
   virtual void flush();  // flushes out, sets _last_flush = count()
   virtual void write(const char* s, size_t len);
   void    write_text(const char* s, size_t len);  // used by xmlTextStream
-  int unflushed_count() { return (int)(out()->count() - _last_flush); }
 
   // writing complete XML elements
   void          elem(const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
