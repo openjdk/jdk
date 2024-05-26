@@ -27,9 +27,6 @@ package java.net;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.nio.channels.DatagramChannel;
-import java.security.AccessController;
-import java.security.PrivilegedExceptionAction;
 import java.util.Enumeration;
 import java.util.Objects;
 import java.util.Set;
@@ -651,14 +648,6 @@ final class NetMulticastSocket extends MulticastSocket {
     private InetAddress infAddress = null;
 
     @Override
-    @SuppressWarnings("removal")
-    public void setTTL(byte ttl) throws IOException {
-        if (isClosed())
-            throw new SocketException("Socket is closed");
-        getImpl().setTTL(ttl);
-    }
-
-    @Override
     public void setTimeToLive(int ttl) throws IOException {
         if (ttl < 0 || ttl > 255) {
             throw new IllegalArgumentException("ttl out of range");
@@ -666,14 +655,6 @@ final class NetMulticastSocket extends MulticastSocket {
         if (isClosed())
             throw new SocketException("Socket is closed");
         getImpl().setTimeToLive(ttl);
-    }
-
-    @Override
-    @SuppressWarnings("removal")
-    public byte getTTL() throws IOException {
-        if (isClosed())
-            throw new SocketException("Socket is closed");
-        return getImpl().getTTL();
     }
 
     @Override
@@ -882,62 +863,4 @@ final class NetMulticastSocket extends MulticastSocket {
     public boolean getLoopbackMode() throws SocketException {
         return ((Boolean)getImpl().getOption(SocketOptions.IP_MULTICAST_LOOP)).booleanValue();
     }
-
-    @SuppressWarnings("removal")
-    @Override
-    public void send(DatagramPacket p, byte ttl)
-            throws IOException {
-        if (isClosed())
-            throw new SocketException("Socket is closed");
-        synchronized(ttlLock) {
-            synchronized(p) {
-                InetAddress packetAddress = p.getAddress();
-                checkAddress(packetAddress, "send");
-                if (connectState == NetMulticastSocket.ST_NOT_CONNECTED) {
-                    if (packetAddress == null) {
-                        throw new IllegalArgumentException("Address not set");
-                    }
-                    // Security manager makes sure that the multicast address
-                    // is allowed one and that the ttl used is less
-                    // than the allowed maxttl.
-                    SecurityManager security = System.getSecurityManager();
-                    if (security != null) {
-                        if (packetAddress.isMulticastAddress()) {
-                            security.checkMulticast(packetAddress, ttl);
-                        } else {
-                            security.checkConnect(packetAddress.getHostAddress(),
-                                    p.getPort());
-                        }
-                    }
-                } else {
-                    // we're connected
-                    if (packetAddress == null) {
-                        p.setAddress(connectedAddress);
-                        p.setPort(connectedPort);
-                    } else if ((!packetAddress.equals(connectedAddress)) ||
-                            p.getPort() != connectedPort) {
-                        throw new IllegalArgumentException("connected address and packet address" +
-                                " differ");
-                    }
-                }
-                byte dttl = getTTL();
-                try {
-                    if (ttl != dttl) {
-                        // set the ttl
-                        getImpl().setTTL(ttl);
-                    }
-                    if (p.getPort() == 0) {
-                        throw new SocketException("Can't send to port 0");
-                    }
-                    // call the datagram method to send
-                    getImpl().send(p);
-                } finally {
-                    // set it back to default
-                    if (ttl != dttl) {
-                        getImpl().setTTL(dttl);
-                    }
-                }
-            } // synch p
-        }  //synch ttl
-    } //method
 }

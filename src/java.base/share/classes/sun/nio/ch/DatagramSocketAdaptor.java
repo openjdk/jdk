@@ -401,12 +401,6 @@ public class DatagramSocketAdaptor
     private InetAddress outgoingInetAddress;
 
     @Override
-    @SuppressWarnings("removal")
-    public void setTTL(byte ttl) throws IOException {
-        setTimeToLive(Byte.toUnsignedInt(ttl));
-    }
-
-    @Override
     public void setTimeToLive(int ttl) throws IOException {
         sendLock.lock();
         try {
@@ -414,12 +408,6 @@ public class DatagramSocketAdaptor
         } finally {
             sendLock.unlock();
         }
-    }
-
-    @Override
-    @SuppressWarnings("removal")
-    public byte getTTL() throws IOException {
-        return (byte) getTimeToLive();
     }
 
     @Override
@@ -589,23 +577,6 @@ public class DatagramSocketAdaptor
     public boolean getLoopbackMode() throws SocketException {
         boolean enabled = getBooleanOption(StandardSocketOptions.IP_MULTICAST_LOOP);
         return !enabled;
-    }
-
-    @Override
-    @SuppressWarnings("removal")
-    public void send(DatagramPacket p, byte ttl) throws IOException {
-        sendLock.lock();
-        try {
-            int oldValue = getTimeToLive();
-            try {
-                setTTL(ttl);
-                send(p);
-            } finally {
-                setTimeToLive(oldValue);
-            }
-        } finally {
-            sendLock.unlock();
-        }
     }
 
     /**
