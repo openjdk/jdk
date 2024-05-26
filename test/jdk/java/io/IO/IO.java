@@ -46,7 +46,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @bug 8305457
  * @summary java.io.IO tests
  * @library /test/lib
- * @run junit IO
+ * @run junit/othervm IO
  */
 public class IO {
 
@@ -55,12 +55,14 @@ public class IO {
     public class OSSpecificTests {
 
         private static Path expect;
+        static final int JCK_STATUS_BASE = 95;
 
         @BeforeAll
         public static void prepareTTY() {
             expect = Paths.get("/usr/bin/expect"); // os-specific path
             if (!Files.exists(expect) || !Files.isExecutable(expect)) {
-                throw new SkippedException("'" + expect + "' not found");
+                System.out.println("jtreg.SkippedException: '" + expect + "' not found");
+                System.exit(JCK_STATUS_BASE);
             }
         }
 
