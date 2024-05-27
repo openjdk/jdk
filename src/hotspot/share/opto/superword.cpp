@@ -2078,12 +2078,12 @@ bool SuperWord::output() {
         vn = VectorNode::make(opc, in1, in2, vlen, velt_basic_type(n));
         vlen_in_bytes = vn->as_Vector()->length_in_bytes();
       } else if (opc == Op_SignumF || opc == Op_SignumD) {
-        assert(n->req() == 4, "four inputs expected");
-        Node* in = vector_opd(p, 1);
-        Node* zero = vector_opd(p, 2);
-        Node* one = vector_opd(p, 3);
-        vn = VectorNode::make(opc, in, zero, one, vlen, velt_basic_type(n));
-        vlen_in_bytes = vn->as_Vector()->length_in_bytes();
+        //assert(n->req() == 4, "four inputs expected");
+        //Node* in = vector_opd(p, 1);
+        //Node* zero = vector_opd(p, 2);
+        //Node* one = vector_opd(p, 3);
+        //vn = VectorNode::make(opc, in, zero, one, vlen, velt_basic_type(n));
+        //vlen_in_bytes = vn->as_Vector()->length_in_bytes();
       } else if (n->is_Cmp()) {
         // Bool + Cmp + CMove -> VectorMaskCmp + VectorBlend
         continue;
@@ -3555,6 +3555,7 @@ VTransformVectorNode* SuperWordVTransformBuilder::make_vtnode_for_pack(const Nod
   Node* p0 = pack->at(0);
   VTransformVectorNode* vtn = nullptr;
   int opc = p0->Opcode();
+  // TODO refactor a bit!
   if (p0->is_Load()) {
     vtn = new (_graph.arena()) VTransformLoadVectorNode(_graph, pack_size);
   } else if (p0->is_Store()) {
@@ -3572,7 +3573,8 @@ VTransformVectorNode* SuperWordVTransformBuilder::make_vtnode_for_pack(const Nod
     assert(p0->req() == 5, "MulAddS2I should have 4 operands");
     vtn = new (_graph.arena()) VTransformElementWiseVectorNode(_graph, 3, pack_size);
   } else if (opc == Op_SignumF || opc == Op_SignumD) {
-    assert(false, "TODO");
+    assert(p0->req() == 4, "3 operands expected");
+    vtn = new (_graph.arena()) VTransformElementWiseVectorNode(_graph, 4, pack_size);
   } else if (p0->is_Cmp() || p0->is_Bool()) {
     assert(false, "TODO");
   } else if (p0->is_CMove()) {

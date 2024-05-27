@@ -2144,9 +2144,7 @@ VTransformApplyStatus VTransformElementWiseVectorNode::apply(const VLoopAnalyzer
   int   opc  = first->Opcode();
   BasicType bt = vloop_analyzer.types().velt_basic_type(first);
 
-  if (opc == Op_SignumF || opc == Op_SignumD) {
-    assert(false, "TODO Signum");
-  } else if (first->is_CMove()) {
+  if (first->is_CMove()) {
     assert(false, "TODO CMove");
   } else if (req() == 3) {
     assert(req() == 3, "only one input expected");
@@ -2208,7 +2206,10 @@ VTransformApplyStatus VTransformElementWiseVectorNode::apply(const VLoopAnalyzer
     register_new_vector_and_replace_scalar_nodes(vloop_analyzer, vn);
 
     return VTransformApplyStatus::make_vector(vn, vlen, vn->length_in_bytes());
-  } else if (opc == Op_FmaD || opc == Op_FmaF) {
+  } else if (opc == Op_FmaD ||
+             opc == Op_FmaF ||
+             opc == Op_SignumF ||
+             opc == Op_SignumD) {
     assert(first->req() == 4 && req() == 4, "expect 3 inputs");
     Node* in1 = find_transformed_input(1, vnode_idx_to_transformed_node);
     Node* in2 = find_transformed_input(2, vnode_idx_to_transformed_node);
