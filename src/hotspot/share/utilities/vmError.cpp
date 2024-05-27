@@ -2082,7 +2082,8 @@ bool VMError::check_timeout() {
 #ifdef ASSERT
 typedef void (*voidfun_t)();
 
-// Crash with an authentic sigfpe
+// Crash with an authentic sigfpe; behavior is subtly different from a real signal
+// compared to one generated with raise (asynchronous vs synchronous). See JDK-8065895.
 volatile int sigfpe_int = 0;
 
 #if defined(__clang__) || defined(__GNUC__)
