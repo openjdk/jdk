@@ -285,7 +285,7 @@ char* CgroupV2Controller::construct_path(char* mount_path, char *cgroup_path) {
  */
 jlong CgroupV2Subsystem::pids_max() {
   jlong pids_max;
-  CONTAINER_READ_NUMBER_CHECKED_MAX(_unified, "/pids.max", "Maximum number of tasks", pids_max);
+  CONTAINER_READ_NUMBER_CHECKED_MAX(static_cast<CgroupV2Controller*>(_unified), "/pids.max", "Maximum number of tasks", pids_max);
   return pids_max;
 }
 
