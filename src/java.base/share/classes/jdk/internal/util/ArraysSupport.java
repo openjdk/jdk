@@ -297,8 +297,8 @@ public class ArraysSupport {
      */
     public static int hashCodeOfUTF16(byte[] a, int fromIndex, int length, int initialValue) {
         return switch (length) {
-            case 0 -> 0;
-            case 2 -> JLA.getUTF16Char(a, 0);
+            case 0 -> initialValue;
+            case 1 -> 31 * initialValue + JLA.getUTF16Char(a, fromIndex);
             default -> vectorizedHashCode(a, fromIndex, length, initialValue, T_CHAR);
         };
     }
