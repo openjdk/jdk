@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,27 +25,49 @@
  * @test
  * @summary sourcefile attribute test for synthetic class.
  * @bug 8040129
- * @library /tools/lib /tools/javac/lib ../lib_legacy
+ * @library /tools/lib /tools/javac/lib /test/lib ../lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- *          jdk.jdeps/com.sun.tools.classfile
- * @build toolbox.ToolBox InMemoryFileManager TestBase SourceFileTestBase_legacy
- * @compile -source 10 -target 10 SyntheticClassTest.java
- * @run main SyntheticClassTest true
- * @clean SyntheticClassTest$1
- * @compile SyntheticClassTest.java
- * @run main SyntheticClassTest false
+ *          java.base/jdk.internal.classfile.impl
+ * @build toolbox.ToolBox InMemoryFileManager TestBase SourceFileTestBase
+ * @enablePreview
+ * @run main SyntheticClassTest
  */
 
+import jdk.test.lib.compiler.CompilerUtils;
+import toolbox.ToolBox;
+
 import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
 
-public class SyntheticClassTest extends SourceFileTestBase_legacy {
+public class SyntheticClassTest extends SourceFileTestBase {
     public static void main(String[] args) throws Exception {
-        boolean expectSynthetic = Boolean.parseBoolean(args[0]);
-        new Inner();
+        String sourceCode = """
+                public class SyntheticClass {
+                    static class Inner {
+                        private Inner() {
+                        }
+                    }
 
+                    public SyntheticClass() {
+                        new Inner();
+                    }
+                }
+                """;
+        Path srcDir = Path.of("src");
+        Path v10Dir = Path.of("out10");
+        Path modernDir = Path.of("out");
+        ToolBox toolBox = new ToolBox();
+        toolBox.writeJavaFiles(srcDir, sourceCode);
+        CompilerUtils.compile(srcDir, v10Dir, "--release", "10");
+        CompilerUtils.compile(srcDir, modernDir);
+        test(v10Dir, true);
+        test(modernDir, false);
+    }
+
+    private static void test(Path path, boolean expectSynthetic) throws Exception {
         try {
-            new SyntheticClassTest().test("SyntheticClassTest$1", "SyntheticClassTest.java");
+            new SyntheticClassTest().test(path.resolve("SyntheticClass$1.class"), "SyntheticClass.java");
             if (!expectSynthetic) {
                 throw new AssertionError("Synthetic class should not have been emitted!");
             }
@@ -53,11 +75,6 @@ public class SyntheticClassTest extends SourceFileTestBase_legacy {
             if (expectSynthetic) {
                 throw new AssertionError("Synthetic class should have been emitted!");
             }
-        }
-    }
-
-    static class Inner {
-        private Inner() {
         }
     }
 }

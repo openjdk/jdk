@@ -61,7 +61,7 @@ class BoundAttributeTest {
         });
         ClassModel model = cc.parse(raw);
         MethodParametersAttribute methodParametersAttribute = model.methods().get(0)
-                .findAttribute(Attributes.METHOD_PARAMETERS)
+                .findAttribute(Attributes.methodParameters())
                 .orElseThrow(() -> new AssertionFailedError("Attribute not present"));
         // MethodParametersAttribute#parameters() materializes the parameters
         List<MethodParameterInfo> parameters = assertDoesNotThrow(methodParametersAttribute::parameters);
