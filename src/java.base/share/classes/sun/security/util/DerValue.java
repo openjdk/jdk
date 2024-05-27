@@ -1267,7 +1267,7 @@ public class DerValue {
      */
     @Override
     public int hashCode() {
-        return ArraysSupport.vectorizedHashCode(buffer, start, end - start, tag, ArraysSupport.T_BYTE);
+        return ArraysSupport.hashCode(buffer, start, end - start, tag);
     }
 
     /**

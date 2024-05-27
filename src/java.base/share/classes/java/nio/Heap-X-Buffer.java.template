@@ -707,7 +707,7 @@ class Heap$Type$Buffer$RW$
     }
 
     public int hashCode() {
-        return ArraysSupport.vectorizedHashCode(hb, ix(position()), remaining(), 1, ArraysSupport.T_BYTE);
+        return ArraysSupport.hashCode(hb, ix(position()), remaining(), 1);
     }
 
 #end[byte]
@@ -738,7 +738,7 @@ class Heap$Type$Buffer$RW$
     }
 
     public int hashCode() {
-        return ArraysSupport.vectorizedHashCode(hb, ix(position()), remaining(), 1, ArraysSupport.T_CHAR);
+        return ArraysSupport.hashCode(hb, ix(position()), remaining(), 1);
     }
 #end[char]
 

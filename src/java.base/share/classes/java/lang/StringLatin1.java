@@ -303,11 +303,7 @@ final class StringLatin1 {
     }
 
     public static int hashCode(byte[] value) {
-        return switch (value.length) {
-            case 0 -> 0;
-            case 1 -> value[0] & 0xff;
-            default -> ArraysSupport.vectorizedHashCode(value, 0, value.length, 0, ArraysSupport.T_BOOLEAN);
-        };
+        return ArraysSupport.hashCodeOfUnsigned(value, 0, value.length, 0);
     }
 
     // Caller must ensure that from- and toIndex are within bounds

@@ -230,7 +230,7 @@ public abstract sealed class AbstractPoolEntry {
          */
         private void inflate() {
             int singleBytes = JLA.countPositives(rawBytes, offset, rawLen);
-            int hash = ArraysSupport.vectorizedHashCode(rawBytes, offset, singleBytes, 0, ArraysSupport.T_BOOLEAN);
+            int hash = ArraysSupport.hashCodeOfUnsigned(rawBytes, offset, singleBytes, 0);
             if (singleBytes == rawLen) {
                 this.hash = hashString(hash);
                 charLen = rawLen;

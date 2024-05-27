@@ -803,8 +803,7 @@ class UnixPath implements Path {
         // OK if two or more threads compute hash
         int h = hash;
         if (h == 0) {
-            h = ArraysSupport.vectorizedHashCode(path, 0, path.length, 0,
-                    /* unsigned bytes */ ArraysSupport.T_BOOLEAN);
+            h = ArraysSupport.hashCodeOfUnsigned(path, 0, path.length, 0);
             hash = h;
         }
         return h;

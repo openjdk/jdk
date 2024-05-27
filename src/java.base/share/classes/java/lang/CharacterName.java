@@ -113,7 +113,7 @@ class CharacterName {
     }
 
     private static int hashN(byte[] a, int off, int len) {
-        return ArraysSupport.vectorizedHashCode(a, off, len, 1, ArraysSupport.T_BYTE);
+        return ArraysSupport.hashCode(a, off, len, 1);
     }
 
     private int addCp(int idx, int hash, int next, int cp) {
