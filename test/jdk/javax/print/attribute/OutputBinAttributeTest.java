@@ -82,7 +82,7 @@ public class OutputBinAttributeTest {
                     testPrint(outputBin, supportedOutputBins);
                 }
             } else {
-                System.out.println("Skip the test as the number of supported output bins less than 2.");
+                System.out.println("Skip the test as the number of supported output bins is less than 2.");
             }
             testFinished = true;
         });

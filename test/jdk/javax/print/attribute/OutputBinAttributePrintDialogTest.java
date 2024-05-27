@@ -93,7 +93,7 @@ public class OutputBinAttributePrintDialogTest {
 
         final OutputBin[] supportedOutputBins = getSupportedOutputBinttributes();
         if (supportedOutputBins.length < 2) {
-            System.out.println("Skip the test as the number of supported output bins less than 2.");
+            System.out.println("Skip the test as the number of supported output bins is less than 2.");
             return;
         }
 
@@ -308,7 +308,7 @@ public class OutputBinAttributePrintDialogTest {
             return new String[]{
                     " - Select 'Appearance' tab.",
                     " - Select '" + outputBin + "' output tray from 'Output trays' combo box.",
-                    " - Pres 'Print' button."
+                    " - Press 'Print' button."
             };
         } else if (dialogTypeSelection == DialogTypeSelection.NATIVE) {
             return new String[]{
