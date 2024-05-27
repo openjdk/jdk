@@ -114,6 +114,18 @@ TEST(cgroupTest, read_numerical_key_value_failure_cases) {
   EXPECT_EQ((julong)0xBAD, x) << "x must be unchanged";
 
   x = 0xBAD;
+  fill_file(test_file, nullptr);
+  is_ok = controller->read_numerical_key_value(base_with_slash, "foo", &x);
+  EXPECT_FALSE(is_ok) << "key not in empty file";
+  EXPECT_EQ((julong)0xBAD, x) << "x must be unchanged";
+
+  x = 0xBAD;
+  fill_file(test_file, "foo\n");
+  is_ok = controller->read_numerical_key_value(base_with_slash, "foo", &x);
+  EXPECT_FALSE(is_ok) << "key must have a value";
+  EXPECT_EQ((julong)0xBAD, x) << "x must be unchanged";
+
+  x = 0xBAD;
   fill_file(test_file, "foof 1002");
   is_ok = controller->read_numerical_key_value(base_with_slash, "foo", &x);
   EXPECT_FALSE(is_ok) << "key must be exact match";
@@ -142,6 +154,12 @@ TEST(cgroupTest, read_numerical_key_value_success_cases) {
 
   x = 0xBAD;
   fill_file(test_file, "foo\t111");
+  is_ok = controller->read_numerical_key_value(base_with_slash, "foo", &x);
+  EXPECT_TRUE(is_ok);
+  EXPECT_EQ((julong)111, x) << "Incorrect!";
+
+  x = 0xBAD;
+  fill_file(test_file, "foo\nbar 333\nfoo\t111");
   is_ok = controller->read_numerical_key_value(base_with_slash, "foo", &x);
   EXPECT_TRUE(is_ok);
   EXPECT_EQ((julong)111, x) << "Incorrect!";
@@ -176,13 +194,6 @@ TEST(cgroupTest, read_number_null) {
   bool is_ok = null_path_controller->read_number(test_file_path, &a);
   EXPECT_FALSE(is_ok) << "Null subsystem path should be an error";
   EXPECT_EQ((julong)0xBAD, a) << "Expected untouched scan value";
-  // null file, null return pointer
-  TestController* test_controller = new TestController((char*)"/something");
-  is_ok = test_controller->read_number(nullptr, &a);
-  EXPECT_FALSE(is_ok) << "Null file should be an error";
-  EXPECT_EQ((julong)0xBAD, a) << "Expected untouched scan value";
-  is_ok = test_controller->read_number(test_file_path, nullptr);
-  EXPECT_FALSE(is_ok) << "Null return pointer should be an error";
 }
 
 TEST(cgroupTest, read_string_beyond_max_path) {
@@ -218,14 +229,6 @@ TEST(cgroupTest, read_numerical_key_value_null) {
   bool is_ok = null_path_controller->read_numerical_key_value(test_file_path, key, &a);
   EXPECT_FALSE(is_ok) << "Null subsystem path should be an error";
   EXPECT_EQ((julong)0xBAD, a) << "Expected untouched scan value";
-  // null key, null file, null return pointer
-  TestController* test_controller = new TestController((char*)"/something");
-  is_ok = test_controller->read_numerical_key_value(test_file_path, nullptr, &a);
-  EXPECT_FALSE(is_ok) << "Null key should be an error";
-  is_ok = test_controller->read_numerical_key_value(nullptr, key, &a);
-  EXPECT_FALSE(is_ok) << "Null file should be an error";
-  is_ok = test_controller->read_numerical_key_value(test_file_path, key, nullptr);
-  EXPECT_FALSE(is_ok) << "Null return pointer should be an error";
 }
 
 TEST(cgroupTest, read_number_tests) {

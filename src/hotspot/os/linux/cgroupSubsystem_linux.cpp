@@ -557,11 +557,8 @@ jlong CgroupSubsystem::memory_limit_in_bytes() {
 }
 
 bool CgroupController::read_string(const char* filename, char* buf) {
-  assert(buf != nullptr, "invariant");
-  if (filename == nullptr) {
-    log_debug(os, container)("read_string: filename is null");
-    return false;
-  }
+  assert(buf != nullptr, "buffer must not be null");
+  assert(filename != nullptr, "filename must be given");
   char* s_path = subsystem_path();
   if (s_path == nullptr) {
     log_debug(os, container)("read_string: subsystem path is null");
@@ -628,17 +625,12 @@ bool CgroupController::read_number_handle_max(const char* filename, jlong* resul
 }
 
 bool CgroupController::read_numerical_key_value(const char* filename, const char* key, julong* result) {
-  if (filename == nullptr) {
-    log_debug(os, container)("read_numerical_key_value: filename is null");
-    return false;
-  }
+  assert(key != nullptr, "key must be given");
+  assert(result != nullptr, "result pointer must not be null");
+  assert(filename != nullptr, "file to search in must be given");
   char* s_path = subsystem_path();
   if (s_path == nullptr) {
     log_debug(os, container)("read_numerical_key_value: subsystem path is null");
-    return false;
-  }
-  if (key == nullptr || result == nullptr) {
-    log_debug(os, container)("read_numerical_key_value: key or return pointer is null");
     return false;
   }
 
@@ -661,20 +653,13 @@ bool CgroupController::read_numerical_key_value(const char* filename, const char
   const int buf_len = MAXPATHLEN+1;
   char buf[buf_len];
   char* line = fgets(buf, buf_len, fp);
-  if (line == nullptr) {
-    log_debug(os, container)("Empty file %s", absolute_path);
-    fclose(fp);
-    return false;
-  }
-
   bool found_match = false;
   // File consists of multiple lines in a "key value"
   // fashion, we have to find the key.
-  const int key_len = (int)strlen(key);
+  const size_t key_len = strlen(key);
   for (; line != nullptr; line = fgets(buf, buf_len, fp)) {
-    char* key_substr = strstr(line, key);
     char after_key = line[key_len];
-    if (key_substr == line
+    if (strncmp(line, key, key_len) == 0
           && isspace(after_key) != 0
           && after_key != '\n') {
       // Skip key, skip space
