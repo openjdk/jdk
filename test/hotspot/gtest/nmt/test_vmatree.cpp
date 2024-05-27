@@ -443,7 +443,7 @@ TEST_VM_F(VMATreeTest, TestConsistencyWithSimpleTracker) {
   SimpleVMATracker* tr = new SimpleVMATracker();
   const size_t page_size = tr->page_size;
   VMATree tree;
-  NativeCallStackStorage ncss(true);
+  NCS ncss(true);
   constexpr const int candidates_len_flags = 4;
   constexpr const int candidates_len_stacks = 2;
 
@@ -472,7 +472,7 @@ TEST_VM_F(VMATreeTest, TestConsistencyWithSimpleTracker) {
     const MEMFLAGS flag = candidate_flags[os::random() % candidates_len_flags];
     const NativeCallStack stack = candidate_stacks[os::random() % candidates_len_stacks];
 
-    const NativeCallStackStorage::StackIndex si = ncss.push(stack);
+    const NCS::StackIndex si = ncss.push(stack);
     VMATree::RegionData data(si, flag);
 
     const SimpleVMATracker::Type type = (SimpleVMATracker::Type)(os::random() % 3);
