@@ -826,9 +826,7 @@ PSParallelCompact::clear_data_covering_space(SpaceId id)
   HeapWord* const top = space->top();
   HeapWord* const max_top = MAX2(top, _space_info[id].new_top());
 
-  const idx_t beg_bit = _mark_bitmap.addr_to_bit(bot);
-  const idx_t end_bit = _mark_bitmap.addr_to_bit(top);
-  _mark_bitmap.clear_range(beg_bit, end_bit);
+  _mark_bitmap.clear_range(bot, top);
 
   const size_t beg_region = _summary_data.addr_to_region_idx(bot);
   const size_t end_region =
@@ -1001,10 +999,9 @@ void PSParallelCompact::fill_dense_prefix_end(SpaceId id) {
     return;
   }
   RegionData* const region_after_dense_prefix = _summary_data.addr_to_region_ptr(dense_prefix_end);
-  idx_t const dense_prefix_bit = _mark_bitmap.addr_to_bit(dense_prefix_end);
 
   if (region_after_dense_prefix->partial_obj_size() != 0 ||
-      _mark_bitmap.is_marked(dense_prefix_bit)) {
+      _mark_bitmap.is_marked(dense_prefix_end)) {
     // The region after the dense prefix starts with live bytes.
     return;
   }
