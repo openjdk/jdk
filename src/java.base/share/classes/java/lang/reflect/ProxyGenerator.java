@@ -45,6 +45,8 @@ import jdk.internal.constant.ReferenceClassDescImpl;
 import sun.security.action.GetBooleanAction;
 
 import static java.lang.classfile.ClassFile.*;
+import java.lang.classfile.attribute.StackMapFrameInfo;
+import java.lang.classfile.attribute.StackMapTableAttribute;
 import static java.lang.constant.ConstantDescs.*;
 
 /**
@@ -122,6 +124,7 @@ final class ProxyGenerator {
      */
     private final ClassFile classfileContext;
     private final ConstantPoolBuilder cp;
+    private final List<StackMapFrameInfo.VerificationTypeInfo> throwableStack;
 
     /**
      * Name of proxy class
@@ -161,12 +164,14 @@ final class ProxyGenerator {
     private ProxyGenerator(ClassLoader loader, String className, List<Class<?>> interfaces,
                            int accessFlags) {
         this.classfileContext = ClassFile.of(
+                ClassFile.StackMapsOption.DROP_STACK_MAPS,
                 ClassFile.ClassHierarchyResolverOption.of(
                         ClassHierarchyResolver.ofClassLoading(loader).cached()));
         this.cp = ConstantPoolBuilder.of();
         this.classEntry = cp.classEntry(ReferenceClassDescImpl.ofValidatedBinaryName(className));
         this.interfaces = interfaces;
         this.accessFlags = accessFlags;
+        this.throwableStack = List.of(StackMapFrameInfo.ObjectVerificationTypeInfo.of(cp.classEntry(CD_Throwable)));
     }
 
     /**
@@ -468,7 +473,7 @@ final class ProxyGenerator {
                     clb.withField(pm.methodFieldName, CD_Method, ACC_PRIVATE | ACC_STATIC | ACC_FINAL);
 
                     // Generate code for proxy method
-                    pm.generateMethod(clb, classEntry);
+                    pm.generateMethod(clb, classEntry, throwableStack);
                 }
             }
 
@@ -574,7 +579,10 @@ final class ProxyGenerator {
                .swap()
                .invokevirtual(tgm)
                .invokespecial(CD_NoClassDefFoundError, INIT_NAME, MTD_void_String)
-               .athrow();
+               .athrow()
+               .with(StackMapTableAttribute.of(List.of(
+                      StackMapFrameInfo.of(c1, List.of(), throwableStack),
+                      StackMapFrameInfo.of(c2, List.of(), throwableStack))));
         });
     }
 
@@ -588,23 +596,30 @@ final class ProxyGenerator {
                 MTD_MethodHandles$Lookup_MethodHandles$Lookup,
                 ACC_PRIVATE | ACC_STATIC,
                 mb -> mb.with(ExceptionsAttribute.of(List.of(mb.constantPool().classEntry(CD_IllegalAccessException))))
-                        .withCode(cob -> cob
-                            .block(blockBuilder -> blockBuilder
-                                    .aload(cob.parameterSlot(0))
-                                    .invokevirtual(CD_MethodHandles_Lookup, "lookupClass", MTD_Class)
-                                    .ldc(CD_Proxy)
-                                    .if_acmpne(blockBuilder.breakLabel())
-                                    .aload(cob.parameterSlot(0))
-                                    .invokevirtual(CD_MethodHandles_Lookup, "hasFullPrivilegeAccess", MTD_boolean)
-                                    .ifeq(blockBuilder.breakLabel())
-                                    .invokestatic(CD_MethodHandles, "lookup", MTD_MethodHandles$Lookup)
-                                    .areturn())
-                            .new_(CD_IllegalAccessException)
-                            .dup()
-                            .aload(cob.parameterSlot(0))
-                            .invokevirtual(CD_MethodHandles_Lookup, "toString", MTD_String)
-                            .invokespecial(CD_IllegalAccessException, INIT_NAME, MTD_void_String)
-                            .athrow()));
+                        .withCode(cob -> {
+                            Label failLabel = cob.newLabel();
+                            cob.aload(cob.parameterSlot(0))
+                               .invokevirtual(CD_MethodHandles_Lookup, "lookupClass", MTD_Class)
+                               .ldc(CD_Proxy)
+                               .if_acmpne(failLabel)
+                               .aload(cob.parameterSlot(0))
+                               .invokevirtual(CD_MethodHandles_Lookup, "hasFullPrivilegeAccess", MTD_boolean)
+                               .ifeq(failLabel)
+                               .invokestatic(CD_MethodHandles, "lookup", MTD_MethodHandles$Lookup)
+                               .areturn()
+                               .labelBinding(failLabel)
+                               .new_(CD_IllegalAccessException)
+                               .dup()
+                               .aload(cob.parameterSlot(0))
+                               .invokevirtual(CD_MethodHandles_Lookup, "toString", MTD_String)
+                               .invokespecial(CD_IllegalAccessException, INIT_NAME, MTD_void_String)
+                               .athrow()
+                               .with(StackMapTableAttribute.of(List.of(
+                                       StackMapFrameInfo.of(failLabel,
+                                               List.of(StackMapFrameInfo.ObjectVerificationTypeInfo.of(
+                                                       cob.constantPool().classEntry(CD_MethodHandles_Lookup))),
+                                               List.of()))));
+                        }));
     }
 
     /**
@@ -649,7 +664,7 @@ final class ProxyGenerator {
         /**
          * Generate this method, including the code and exception table entry.
          */
-        private void generateMethod(ClassBuilder clb, ClassEntry classEntry) {
+        private void generateMethod(ClassBuilder clb, ClassEntry classEntry, List<StackMapFrameInfo.VerificationTypeInfo> throwableStack) {
             var cp = clb.constantPool();
             var pTypes = new ClassDesc[parameterTypes.length];
             for (int i = 0; i < pTypes.length; i++) {
@@ -701,7 +716,10 @@ final class ProxyGenerator {
                                .dup_x1()
                                .swap()
                                .invokespecial(CD_UndeclaredThrowableException, INIT_NAME, MTD_void_Throwable)
-                               .athrow();
+                               .athrow()
+                               .with(StackMapTableAttribute.of(List.of(
+                                       StackMapFrameInfo.of(c1, List.of(), throwableStack),
+                                       StackMapFrameInfo.of(c2, List.of(), throwableStack))));
                         }
                     }));
         }
