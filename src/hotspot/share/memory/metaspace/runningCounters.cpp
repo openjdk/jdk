@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,8 @@ size_t RunningCounters::reserved_words_class() {
 }
 
 size_t RunningCounters::reserved_words_nonclass() {
-  return VirtualSpaceList::vslist_nonclass()->reserved_words();
+  VirtualSpaceList* vs = VirtualSpaceList::vslist_nonclass();
+  return vs != nullptr ? vs->reserved_words() : 0;
 }
 
 // Return total committed size, in words, for Metaspace
