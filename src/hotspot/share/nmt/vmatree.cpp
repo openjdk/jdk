@@ -29,6 +29,10 @@
 
 const VMATree::RegionData VMATree::empty_regiondata{NativeCallStackStorage::StackIndex{}, mtNone};
 
+const char* VMATree::statetype_strings[3] = {
+  "reserved", "committed", "released",
+};
+
 VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType state,
                                                const RegionData& metadata) {
   if (A == B) {

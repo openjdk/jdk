@@ -30,6 +30,7 @@
 #include "nmt/nmtTreap.hpp"
 #include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include <cstdint>
 
 // A VMATree stores a sequence of points on the natural number line.
 // Each of these points stores information about a state change.
@@ -52,7 +53,16 @@ public:
     }
   };
 
-  enum class StateType : uint8_t { Reserved, Committed, Released };
+  enum class StateType : uint8_t { Reserved, Committed, Released, LAST };
+
+private:
+  static const char* statetype_strings[static_cast<uint8_t>(StateType::LAST)];
+
+public:
+  static const char* statetype_to_string(StateType type) {
+    assert(type != StateType::LAST, "must be");
+    return statetype_strings[static_cast<uint8_t>(type)];
+  }
 
   // Each point has some stack and a flag associated with it.
   struct RegionData {

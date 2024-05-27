@@ -63,13 +63,22 @@ void MemoryFileTracker::print_report_on(const MemoryFile* file, outputStream* st
   stream->print_cr("Memory map of %s", file->_descriptive_name);
   stream->cr();
   VMATree::TreapNode* prev = nullptr;
+#ifdef ASSERT
+  VMATree::TreapNode* broken_start = nullptr;
+  VMATree::TreapNode* broken_end = nullptr;
+#endif
   file->_tree.visit_in_order([&](VMATree::TreapNode* current) {
     if (prev == nullptr) {
       // Must be first node.
       prev = current;
       return;
     }
-    assert(prev->val().out.type() == current->val().in.type(), "must be");
+#ifdef ASSERT
+    if (broken_start != nullptr && prev->val().out.type() != current->val().in.type()) {
+      broken_start = prev;
+      broken_end = current;
+    }
+#endif
     if (prev->val().out.type() == VMATree::StateType::Committed) {
       const VMATree::position& start_addr = prev->key();
       const VMATree::position& end_addr = current->key();
@@ -83,6 +92,15 @@ void MemoryFileTracker::print_report_on(const MemoryFile* file, outputStream* st
     }
     prev = current;
   });
+#ifdef ASSERT
+  if (broken_start != nullptr) {
+    tty->print_cr("Broken tree found with first occurrence at nodes %lu, %lu",
+                  broken_start->key(), broken_end->key());
+    tty->print_cr("Expected start out to have same type as end in, but was: %s, %s",
+                  VMATree::statetype_to_string(broken_start->val().out.type()),
+                  VMATree::statetype_to_string(broken_end->val().in.type()));
+  }
+#endif
 }
 
 MemoryFileTracker::MemoryFile* MemoryFileTracker::make_file(const char* descriptive_name) {
