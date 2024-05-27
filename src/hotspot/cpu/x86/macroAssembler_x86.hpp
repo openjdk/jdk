@@ -213,8 +213,8 @@ class MacroAssembler: public Assembler {
   // Alignment
   void align32();
   void align64();
-  void align(int modulus);
-  void align(int modulus, int target);
+  void align(uint modulus);
+  void align(uint modulus, uint target);
 
   void post_call_nop();
   // A 5 byte nop that is safe for patching (see patch_verified_entry)
