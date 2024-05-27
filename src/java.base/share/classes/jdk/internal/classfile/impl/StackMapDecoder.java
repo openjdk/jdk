@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,21 +25,21 @@
 
 package jdk.internal.classfile.impl;
 
+import java.lang.classfile.BufWriter;
+import java.lang.classfile.ClassReader;
+import java.lang.classfile.Label;
+import java.lang.classfile.MethodModel;
+import java.lang.classfile.attribute.StackMapFrameInfo;
+import java.lang.classfile.attribute.StackMapFrameInfo.*;
+import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.reflect.AccessFlag;
 import java.util.List;
+import java.util.Objects;
 import java.util.TreeMap;
-import java.lang.classfile.BufWriter;
-
-import java.lang.classfile.constantpool.ClassEntry;
-import java.lang.classfile.attribute.StackMapFrameInfo;
-import java.lang.classfile.attribute.StackMapFrameInfo.*;
-import java.lang.classfile.ClassReader;
 
 import static java.lang.classfile.ClassFile.*;
-import java.lang.classfile.Label;
-import java.lang.classfile.MethodModel;
 
 public class StackMapDecoder {
 
@@ -242,6 +242,20 @@ public class StackMapDecoder {
 
         @Override
         public int tag() { return VT_OBJECT; }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o instanceof ObjectVerificationTypeInfoImpl that) {
+                return Objects.equals(className, that.className);
+            }
+            return false;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(className);
+        }
 
         @Override
         public String toString() {
