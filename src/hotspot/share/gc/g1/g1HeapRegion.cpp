@@ -150,7 +150,9 @@ double G1HeapRegion::calc_gc_efficiency() {
 }
 
 void G1HeapRegion::set_free() {
-  report_region_type_change(G1HeapRegionTraceType::Free);
+  if (!is_free()) {
+    report_region_type_change(G1HeapRegionTraceType::Free);
+  }
   _type.set_free();
 }
 
@@ -170,8 +172,9 @@ void G1HeapRegion::set_survivor() {
 }
 
 void G1HeapRegion::move_to_old() {
+  G1HeapRegionTraceType::Type prev_trace_type = _type.get_trace_type();
   if (_type.relabel_as_old()) {
-    report_region_type_change(G1HeapRegionTraceType::Old);
+    report_region_type_change(prev_trace_type);
   }
 }
 
