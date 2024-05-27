@@ -387,6 +387,126 @@ instruct vadd_fp_masked(vReg dst_src1, vReg src2, vRegMask_V0 v0) %{
   ins_pipe(pipe_slow);
 %}
 
+// vector-immediate add (unpredicated)
+
+instruct vadd_immI(vReg dst_src, immI5 con) %{
+  match(Set dst_src (AddVB dst_src (Replicate con)));
+  match(Set dst_src (AddVS dst_src (Replicate con)));
+  match(Set dst_src (AddVI dst_src (Replicate con)));
+  format %{ "vadd_immI $dst_src, $dst_src, $con" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vadd_vi(as_VectorRegister($dst_src$$reg),
+               as_VectorRegister($dst_src$$reg),
+               $con$$constant);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vadd_immL(vReg dst_src, immL5 con) %{
+  match(Set dst_src (AddVL dst_src (Replicate con)));
+  format %{ "vadd_immL $dst_src, $dst_src, $con" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vadd_vi(as_VectorRegister($dst_src$$reg),
+               as_VectorRegister($dst_src$$reg),
+               $con$$constant);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// vector-scalar add (unpredicated)
+
+instruct vadd_regI(vReg dst_src, iRegIorL2I src) %{
+  match(Set dst_src (AddVB dst_src (Replicate src)));
+  match(Set dst_src (AddVS dst_src (Replicate src)));
+  match(Set dst_src (AddVI dst_src (Replicate src)));
+  format %{ "vadd_regI $dst_src, $dst_src, $src" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vadd_vx(as_VectorRegister($dst_src$$reg),
+               as_VectorRegister($dst_src$$reg),
+               as_Register($src$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vadd_regL(vReg dst_src, iRegL src) %{
+  match(Set dst_src (AddVL dst_src (Replicate src)));
+  format %{ "vadd_regL $dst_src, $dst_src, $src" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vadd_vx(as_VectorRegister($dst_src$$reg),
+               as_VectorRegister($dst_src$$reg),
+               as_Register($src$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// vector-immediate add (predicated)
+
+instruct vadd_immI_masked(vReg dst_src, immI5 con, vRegMask_V0 v0) %{
+  match(Set dst_src (AddVB (Binary dst_src (Replicate con)) v0));
+  match(Set dst_src (AddVS (Binary dst_src (Replicate con)) v0));
+  match(Set dst_src (AddVI (Binary dst_src (Replicate con)) v0));
+  format %{ "vadd_immI_masked $dst_src, $dst_src, $con" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vadd_vi(as_VectorRegister($dst_src$$reg),
+               as_VectorRegister($dst_src$$reg),
+               $con$$constant, Assembler::v0_t);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vadd_immL_masked(vReg dst_src, immL5 con, vRegMask_V0 v0) %{
+  match(Set dst_src (AddVL (Binary dst_src (Replicate con)) v0));
+  format %{ "vadd_immL_masked $dst_src, $dst_src, $con" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vadd_vi(as_VectorRegister($dst_src$$reg),
+               as_VectorRegister($dst_src$$reg),
+               $con$$constant, Assembler::v0_t);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// vector-scalar add (predicated)
+
+instruct vadd_regI_masked(vReg dst_src, iRegIorL2I src, vRegMask_V0 v0) %{
+  match(Set dst_src (AddVB (Binary dst_src (Replicate src)) v0));
+  match(Set dst_src (AddVS (Binary dst_src (Replicate src)) v0));
+  match(Set dst_src (AddVI (Binary dst_src (Replicate src)) v0));
+  format %{ "vadd_regI_masked $dst_src, $dst_src, $src" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vadd_vx(as_VectorRegister($dst_src$$reg),
+               as_VectorRegister($dst_src$$reg),
+               as_Register($src$$reg), Assembler::v0_t);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vadd_regL_masked(vReg dst_src, iRegL src, vRegMask_V0 v0) %{
+  match(Set dst_src (AddVL (Binary dst_src (Replicate src)) v0));
+  format %{ "vadd_regL_masked $dst_src, $dst_src, $src" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vadd_vx(as_VectorRegister($dst_src$$reg),
+               as_VectorRegister($dst_src$$reg),
+               as_Register($src$$reg), Assembler::v0_t);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 // vector sub
 
 instruct vsub(vReg dst, vReg src1, vReg src2) %{
@@ -447,6 +567,66 @@ instruct vsub_fp_masked(vReg dst_src1, vReg src2, vRegMask_V0 v0) %{
     __ vsetvli_helper(bt, Matcher::vector_length(this));
     __ vfsub_vv(as_VectorRegister($dst_src1$$reg), as_VectorRegister($dst_src1$$reg),
                 as_VectorRegister($src2$$reg), Assembler::v0_t);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// vector-scalar sub (unpredicated)
+
+instruct vsub_regI(vReg dst_src, iRegIorL2I src) %{
+  match(Set dst_src (SubVB dst_src (Replicate src)));
+  match(Set dst_src (SubVS dst_src (Replicate src)));
+  match(Set dst_src (SubVI dst_src (Replicate src)));
+  format %{ "vsub_regI $dst_src, $dst_src, $src" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vsub_vx(as_VectorRegister($dst_src$$reg),
+               as_VectorRegister($dst_src$$reg),
+               as_Register($src$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vsub_regL(vReg dst_src, iRegL src) %{
+  match(Set dst_src (SubVL dst_src (Replicate src)));
+  format %{ "vsub_regL $dst_src, $dst_src, $src" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vsub_vx(as_VectorRegister($dst_src$$reg),
+               as_VectorRegister($dst_src$$reg),
+               as_Register($src$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// vector-scalar sub (predicated)
+
+instruct vsub_regI_masked(vReg dst_src, iRegIorL2I src, vRegMask_V0 v0) %{
+  match(Set dst_src (SubVB (Binary dst_src (Replicate src)) v0));
+  match(Set dst_src (SubVS (Binary dst_src (Replicate src)) v0));
+  match(Set dst_src (SubVI (Binary dst_src (Replicate src)) v0));
+  format %{ "vsub_regI_masked $dst_src, $dst_src, $src" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vsub_vx(as_VectorRegister($dst_src$$reg),
+               as_VectorRegister($dst_src$$reg),
+               as_Register($src$$reg), Assembler::v0_t);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vsub_regL_masked(vReg dst_src, iRegL src, vRegMask_V0 v0) %{
+  match(Set dst_src (SubVL (Binary dst_src (Replicate src)) v0));
+  format %{ "vsub_regL_masked $dst_src, $dst_src, $src" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vsub_vx(as_VectorRegister($dst_src$$reg),
+               as_VectorRegister($dst_src$$reg),
+               as_Register($src$$reg), Assembler::v0_t);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -1463,6 +1643,66 @@ instruct vmul_fp_masked(vReg dst_src1, vReg src2, vRegMask_V0 v0) %{
     __ vsetvli_helper(bt, Matcher::vector_length(this));
     __ vfmul_vv(as_VectorRegister($dst_src1$$reg), as_VectorRegister($dst_src1$$reg),
                 as_VectorRegister($src2$$reg), Assembler::v0_t);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// vector-scalar mul (unpredicated)
+
+instruct vmul_regI(vReg dst_src, iRegIorL2I src) %{
+  match(Set dst_src (MulVB dst_src (Replicate src)));
+  match(Set dst_src (MulVS dst_src (Replicate src)));
+  match(Set dst_src (MulVI dst_src (Replicate src)));
+  format %{ "vmul_regI $dst_src, $dst_src, $src" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vmul_vx(as_VectorRegister($dst_src$$reg),
+               as_VectorRegister($dst_src$$reg),
+               as_Register($src$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vmul_regL(vReg dst_src, iRegL src) %{
+  match(Set dst_src (MulVL dst_src (Replicate src)));
+  format %{ "vmul_regL $dst_src, $dst_src, $src" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vmul_vx(as_VectorRegister($dst_src$$reg),
+               as_VectorRegister($dst_src$$reg),
+               as_Register($src$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// vector-scalar mul (predicated)
+
+instruct vmul_regI_masked(vReg dst_src, iRegIorL2I src, vRegMask_V0 v0) %{
+  match(Set dst_src (MulVB (Binary dst_src (Replicate src)) v0));
+  match(Set dst_src (MulVS (Binary dst_src (Replicate src)) v0));
+  match(Set dst_src (MulVI (Binary dst_src (Replicate src)) v0));
+  format %{ "vmul_regI_masked $dst_src, $dst_src, $src" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vmul_vx(as_VectorRegister($dst_src$$reg),
+               as_VectorRegister($dst_src$$reg),
+               as_Register($src$$reg), Assembler::v0_t);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vmul_regL_masked(vReg dst_src, iRegL src, vRegMask_V0 v0) %{
+  match(Set dst_src (MulVL (Binary dst_src (Replicate src)) v0));
+  format %{ "vmul_regL_masked $dst_src, $dst_src, $src" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vmul_vx(as_VectorRegister($dst_src$$reg),
+               as_VectorRegister($dst_src$$reg),
+               as_Register($src$$reg), Assembler::v0_t);
   %}
   ins_pipe(pipe_slow);
 %}
