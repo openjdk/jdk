@@ -32,8 +32,8 @@
  * @library TLSKeyLogger
  * @build java.base/sun.security.ssl.TLSKeyLogger
  *
- * @run main/othervm -DSSLKEYLOGFILE=SSLKEYLOGFILE.txt TLSKeyLoggerTest TLSv1.3
- * run main/othervm -DSSLKEYLOGFILE=SSLKEYLOGFILE.txt TLSKeyLoggerTest TLSv1.2
+ * @run main/othervm TLSKeyLoggerTest TLSv1.3
+ * run main/othervm TLSKeyLoggerTest TLSv1.2
  */
 import javax.net.ssl.*;
 import javax.net.ssl.SSLEngineResult.HandshakeStatus;

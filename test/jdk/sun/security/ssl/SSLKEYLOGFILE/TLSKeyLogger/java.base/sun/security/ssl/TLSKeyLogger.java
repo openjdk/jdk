@@ -64,7 +64,7 @@ final class TLSKeyLogger {
         @SuppressWarnings("removal")
         final String envVal = AccessController.doPrivileged(
                 (PrivilegedAction<String>) () ->
-                    {return System.getProperty("SSLKEYLOGFILE");
+                    {return System.getenv("SSLKEYLOGFILE");
         });
 
         if (envVal == null) {

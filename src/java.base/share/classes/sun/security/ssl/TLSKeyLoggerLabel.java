@@ -34,7 +34,7 @@ package sun.security.ssl;
  * Note well, this facility is for development/testing only, and should not be
  * used in production.
  */
-enum TLSKeyLoggerLabel {
+public enum TLSKeyLoggerLabel {
     // TLSv1.2
     CLIENT_RANDOM,
 
