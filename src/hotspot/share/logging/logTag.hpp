@@ -161,7 +161,6 @@ class outputStream;
   LOG_TAG(protectiondomain) /* "Trace protection domain verification" */ \
   LOG_TAG(ptrqueue) \
   LOG_TAG(purge) \
-  LOG_TAG(rand) \
   LOG_TAG(record) \
   LOG_TAG(redefine) \
   LOG_TAG(ref) \

@@ -43,28 +43,33 @@ import jdk.test.lib.process.ProcessTools;
 
 public class TestOsRandom {
 
+    private final static class Tester {
+        public static void main(String[] args) {
+            Object o = new Object();
+            System.out.println("Hash:" + System.identityHashCode(o));
+        }
+    }
+
     public static void main(String[] args) throws Exception {
 
-        // Call JVM twice and let it trace out os::random results.
+        // Call JVM twice and let it trace out os::random results. We do this via
+        // identity hash, whose seed is initialized - with hashCode=5 - with os::random.
         // Values must not repeat.
 
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
-                "-Xmx100M",
-                "-Xlog:os+rand=debug",
-                "-version");
+                "-XX:+UnlockExperimentalVMOptions", "-XX:hashCode=5",
+                "-Xmx100M", Tester.class.getName());
 
         OutputAnalyzer o = new OutputAnalyzer(pb.start());
         o.reportDiagnosticSummary();
-        long l1 = Long.parseLong(o.firstMatch(".*os::random ([0-9]+).*", 1));
-        System.out.println("First Random: " + l1);
+        long l1 = Long.parseLong(o.firstMatch("Hash:(\\d+).*", 1));
 
         o = new OutputAnalyzer(pb.start());
         o.reportDiagnosticSummary();
-        long l2 = Long.parseLong(o.firstMatch(".*os::random ([0-9]+).*", 1));
-        System.out.println("Second Random: " + l2);
+        long l2 = Long.parseLong(o.firstMatch("Hash:(\\d+).*", 1));
 
         if (l1 == l2) {
-            throw new RuntimeException("Randoms match?");
+            throw new RuntimeException("Random values match?");
         }
 
     }
