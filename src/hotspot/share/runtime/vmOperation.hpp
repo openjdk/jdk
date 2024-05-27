@@ -47,12 +47,11 @@
   template(ZombieAll)                             \
   template(Verify)                                \
   template(HeapDumper)                            \
-  template(HeapDumpMerge)                         \
   template(CollectForMetadataAllocation)          \
   template(CollectForCodeCacheAllocation)         \
   template(GC_HeapInspection)                     \
-  template(GenCollectFull)                        \
-  template(GenCollectForAllocation)               \
+  template(SerialCollectForAllocation)            \
+  template(SerialGCCollect)                       \
   template(ParallelGCFailedAllocation)            \
   template(ParallelGCSystemGC)                    \
   template(G1CollectForAllocation)                \
@@ -83,7 +82,6 @@
   template(ChangeBreakpoints)                     \
   template(GetOrSetLocal)                         \
   template(VirtualThreadGetOrSetLocal)            \
-  template(VirtualThreadGetCurrentLocation)       \
   template(ChangeSingleStep)                      \
   template(SetNotifyJvmtiEventsMode)              \
   template(HeapWalkOperation)                     \

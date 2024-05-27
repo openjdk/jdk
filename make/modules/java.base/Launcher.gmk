@@ -28,10 +28,13 @@ include LauncherCommon.gmk
 # Hook to include the corresponding custom file, if present.
 $(eval $(call IncludeCustomExtension, modules/java.base/Launcher.gmk))
 
-JAVA_VERSION_INFO_RESOURCE := $(TOPDIR)/src/java.base/windows/native/launcher/java.rc
+JAVA_VERSION_INFO_RESOURCE := \
+    $(TOPDIR)/src/java.base/windows/native/launcher/java.rc
 
 JAVA_RCFLAGS ?= -I$(TOPDIR)/src/java.base/windows/native/launcher/icons
 
+################################################################################
+## Build java
 ################################################################################
 
 $(eval $(call SetupBuildLauncher, java, \
@@ -41,6 +44,10 @@ $(eval $(call SetupBuildLauncher, java, \
     OPTIMIZATION := HIGH, \
 ))
 
+################################################################################
+## Build javaw
+################################################################################
+
 ifeq ($(call isTargetOs, windows), true)
   $(eval $(call SetupBuildLauncher, javaw, \
       CFLAGS := -DJAVAW -DEXPAND_CLASSPATH_WILDCARDS -DENABLE_ARG_FILES, \
@@ -49,19 +56,24 @@ ifeq ($(call isTargetOs, windows), true)
   ))
 endif
 
+################################################################################
+## Build keytool
+################################################################################
+
 $(eval $(call SetupBuildLauncher, keytool, \
     MAIN_CLASS := sun.security.tools.keytool.Main, \
 ))
 
-################################################################################
-
 ifeq ($(call isTargetOs, linux), true)
+  ##############################################################################
+  ## Build jexec
+  ##############################################################################
+
   $(eval $(call SetupJdkExecutable, BUILD_JEXEC, \
       NAME := jexec, \
       SRC := $(TOPDIR)/src/$(MODULE)/unix/native/launcher, \
-      INCLUDE_FILES := jexec.c, \
       OPTIMIZATION := LOW, \
-      CFLAGS := -I$(TOPDIR)/src/$(MODULE)/share/native/libjli, \
+      EXTRA_HEADER_DIRS := libjli, \
       CFLAGS_linux := -fPIC, \
       LD_SET_ORIGIN := false, \
       OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/modules_libs/$(MODULE), \
@@ -70,21 +82,21 @@ ifeq ($(call isTargetOs, linux), true)
   TARGETS += $(BUILD_JEXEC)
 endif
 
-################################################################################
-
 ifeq ($(call isTargetOsType, unix), true)
+  ##############################################################################
+  ## Build jspawnhelper
+  ##############################################################################
+
   $(eval $(call SetupJdkExecutable, BUILD_JSPAWNHELPER, \
       NAME := jspawnhelper, \
-      SRC := $(TOPDIR)/src/$(MODULE)/unix/native/jspawnhelper, \
       OPTIMIZATION := LOW, \
-      CFLAGS := $(VERSION_CFLAGS) \
-          -I$(TOPDIR)/src/$(MODULE)/unix/native/libjava, \
-      EXTRA_OBJECT_FILES := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjava/childproc$(OBJ_SUFFIX), \
+      CFLAGS := $(VERSION_CFLAGS), \
+      EXTRA_HEADER_DIRS := libjava, \
+      EXTRA_OBJECT_FILES := \
+          $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjava/childproc$(OBJ_SUFFIX), \
       LD_SET_ORIGIN := false, \
       OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/modules_libs/$(MODULE), \
   ))
 
   TARGETS += $(BUILD_JSPAWNHELPER)
 endif
-
-################################################################################

@@ -72,6 +72,8 @@
 #ifndef SHARED_TOOLS_HSDIS_H
 #define SHARED_TOOLS_HSDIS_H
 
+#include "jni.h"
+
 #ifdef __cplusplus
 extern "C"
 {

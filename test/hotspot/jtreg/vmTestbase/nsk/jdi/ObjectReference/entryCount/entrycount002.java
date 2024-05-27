@@ -197,8 +197,11 @@ public class entrycount002 {
 
                              display("Checking entryCount for iteration : " + i);
                              try {
+                                 // The lockRef.entryCount() is expected to return 0 if the owner thread is virtual.
+                                 int expEntryCount = mainThread.isVirtual() ? 0 : i;
                                  int entryCount = lockRef.entryCount();
-                                 if (entryCount != i) {
+
+                                 if (entryCount != expEntryCount) {
                                      exitCode = Consts.TEST_FAILED;
                                      complain("entry count method returned unexpected value : " + entryCount +
                                          "\n\t expected one : " + i);
