@@ -238,7 +238,7 @@ public class CheckCSMs {
     private static boolean isCallerSensitive(MethodModel m)
         throws IllegalArgumentException
     {
-        var attr = m.findAttribute(Attributes.RUNTIME_VISIBLE_ANNOTATIONS).orElse(null);
+        var attr = m.findAttribute(Attributes.runtimeVisibleAnnotations()).orElse(null);
         if (attr != null) {
             for (var ann : attr.annotations()) {
                 if (ann.className().equalsString(CALLER_SENSITIVE_ANNOTATION)) {
@@ -250,7 +250,7 @@ public class CheckCSMs {
     }
 
     private static boolean isCallerSensitiveAdapter(MethodModel m) {
-        var attr = m.findAttribute(Attributes.RUNTIME_INVISIBLE_ANNOTATIONS).orElse(null);
+        var attr = m.findAttribute(Attributes.runtimeInvisibleAnnotations()).orElse(null);
 
         if (attr != null) {
             for (var ann : attr.annotations()) {
