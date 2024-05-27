@@ -68,7 +68,7 @@ public class CheckSupportedOutputBinsTest {
 
             if (supportedAttributeCategories.contains(OutputBin.class)) {
                 throw new Exception("OutputBin category is not supported" +
-                        " and supported attribute categories contains OutputBin.class.");
+                        " and supported attribute categories contain OutputBin.class.");
             }
 
             if (defaultOutputBin != null) {
@@ -86,7 +86,7 @@ public class CheckSupportedOutputBinsTest {
 
         if (!supportedAttributeCategories.contains(OutputBin.class)) {
             throw new Exception("OutputBin category is supported" +
-                    " and supported attribute categories do not contain OutputBin.class/");
+                    " and supported attribute categories do not contain OutputBin.class.");
         }
 
         if (defaultOutputBin == null) {
@@ -107,7 +107,7 @@ public class CheckSupportedOutputBinsTest {
         for (OutputBin outputBin : supportedOutputBins) {
             if (!service.isAttributeValueSupported(outputBin, null, null)) {
                 throw new Exception("OutputBin category is supported" +
-                        " the output bin " + outputBin + " from supported attribute values" +
+                        " and the output bin " + outputBin + " from supported attribute values" +
                         " is not supported");
             }
         }
