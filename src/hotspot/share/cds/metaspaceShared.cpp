@@ -1266,7 +1266,6 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
   assert(static_mapinfo->mapping_base_offset() == 0, "Must be");
   size_t archive_end_offset  = (dynamic_mapinfo == nullptr) ? static_mapinfo->mapping_end_offset() : dynamic_mapinfo->mapping_end_offset();
   size_t archive_space_size = align_up(archive_end_offset, archive_space_alignment);
-  guarantee(archive_space_size < G, "weirdly large archive (" SIZE_FORMAT ")", archive_space_size);
 
   if (!Metaspace::using_class_space()) {
     // Get the simple case out of the way first:
@@ -1315,6 +1314,7 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
 
   // Reduce class space size if it would not fit into the Klass encoding range
   constexpr size_t max_encoding_range_size = 4 * G;
+  guarantee(archive_space_size < max_encoding_range_size - class_space_alignment, "Archive too large");
   if ((archive_space_size + gap_size + class_space_size) > max_encoding_range_size) {
     class_space_size = align_down(max_encoding_range_size - archive_space_size - gap_size, class_space_alignment);
     log_info(metaspace)("CDS initialization: reducing class space size from " SIZE_FORMAT " to " SIZE_FORMAT,
