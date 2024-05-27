@@ -60,6 +60,8 @@ void MemoryFileTracker::free_memory(MemoryFile* file, size_t offset, size_t size
 }
 
 void MemoryFileTracker::print_report_on(const MemoryFile* file, outputStream* stream, size_t scale) {
+  assert(MemTracker::tracking_level() == NMT_detail, "must");
+
   stream->print_cr("Memory map of %s", file->_descriptive_name);
   stream->cr();
   VMATree::TreapNode* prev = nullptr;
