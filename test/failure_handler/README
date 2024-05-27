@@ -106,7 +106,7 @@ $ ${JTREG_HOME}/bin/jtreg -jdk:${JAVA_HOME}                                   \
 TESTING
 
 There are a few make targets for testing the failure_handler itself.
- - Everythin in `test/failure_handler/Makefile`
+ - Everything in `test/failure_handler/Makefile`
  - The `test-failure-handler` target in `make/RunTests.gmk`
  - The `test` target in make/test/BuildFailureHandler.gmk
 All of these targets are written for manual testing only. They rely on
