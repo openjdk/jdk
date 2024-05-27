@@ -1327,6 +1327,7 @@ public class MOAT {
             hashCode += entryHash;
         }
         check(m.hashCode() == hashCode);
+        check(m.hashCode() == m.entrySet().hashCode());
 
         if (m instanceof ConcurrentMap)
             testConcurrentMap((ConcurrentMap<Integer,Integer>) m);
