@@ -27,18 +27,34 @@ import jdk.test.lib.process.ProcessTools;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.concurrent.CyclicBarrier;
 
+import static jdk.test.lib.Platform.isLinux;
+import static jdk.test.lib.Platform.isWindows;
+
 /*
- * @test
+ * @test id=preTouch
  * @summary Test AlwaysPreTouchThreadStacks
  * @requires os.family != "aix"
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run driver TestAlwaysPreTouchStacks
+ * @run driver TestAlwaysPreTouchStacks preTouch
+ */
+
+/*
+ * @test id=noPreTouch
+ * @summary Test that only touched committed memory is reported as thread stack usage.
+ * @requires os.family != "aix"
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc
+ *          java.management
+ * @run driver TestAlwaysPreTouchStacks noPreTouch
  */
 
 public class TestAlwaysPreTouchStacks {
@@ -89,14 +105,23 @@ public class TestAlwaysPreTouchStacks {
             // should show up with fully - or almost fully - committed thread stacks.
 
         } else {
-
-            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+            boolean noPreTouch = args.length == 1 && args[0].equals("noPreTouch");
+            List<String> options = new LinkedList<>(Arrays.asList(
                     "-XX:+UnlockDiagnosticVMOptions",
                     "-Xmx100M",
-                    "-XX:+AlwaysPreTouchStacks",
-                    "-XX:NativeMemoryTracking=summary", "-XX:+PrintNMTStatistics",
-                    "TestAlwaysPreTouchStacks",
-                    "test");
+                    "-XX:NativeMemoryTracking=summary", "-XX:+PrintNMTStatistics"));
+            if (!noPreTouch){
+                options.add("-XX:+AlwaysPreTouchStacks");
+            }
+
+            if (isLinux()) {
+                options.add( "-XX:-UseMadvPopulateWrite");
+            }
+
+            options.add("TestAlwaysPreTouchStacks");
+            options.add("test");
+
+            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(options);
             OutputAnalyzer output = new OutputAnalyzer(pb.start());
             output.reportDiagnosticSummary();
 
@@ -106,8 +131,8 @@ public class TestAlwaysPreTouchStacks {
                 output.shouldContain("Alive: " + i);
             }
 
-            // We want to see, in the final NMT printout, a committed thread stack size very close to reserved
-            // stack size. Like this:
+            // If using -XX:+AlwaysPreTouchStacks, we want to see, in the final NMT printout,
+            // a committed thread stack size very close to reserved stack size. Like this:
             // -                    Thread (reserved=10332400KB, committed=10284360KB)
             //                      (thread #10021)
             //                      (stack: reserved=10301560KB, committed=10253520KB)   <<<<
@@ -131,8 +156,10 @@ public class TestAlwaysPreTouchStacks {
                     // as thread stack. But without pre-touching, the thread stacks would be committed to about 1/5th
                     // of their reserved size. Requiring them to be committed for over 3/4th shows that pretouch is
                     // really working.
-                    if ((double)committed < ((double)reserved * 0.75)) {
+                    if (!noPreTouch && (double)committed < ((double)reserved * 0.75)) {
                         throw new RuntimeException("Expected a higher ratio between stack committed and reserved.");
+                    } else if (noPreTouch && (double)committed > ((double)reserved * 0.50)){
+                        throw new RuntimeException("Expected a lower ratio between stack committed and reserved.");
                     }
                     // Added sanity tests: we expect our test threads to be still alive when NMT prints its final
                     // report, so their stacks should dominate the NMT-reported total stack size.
