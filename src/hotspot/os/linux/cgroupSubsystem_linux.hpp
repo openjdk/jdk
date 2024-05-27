@@ -102,14 +102,6 @@
   log_trace(os, container)(log_string " is: %s", retval);                             \
 }
 
-/*
- * Used to model the tuple-valued cgroup interface files like cpu.max, which
- * contains two values: <quota> <period>. In this case the first tuple value
- * is <quota> and the second tuple value is <period>. We use this to map the
- * tuple value to a constant string format for sscanf reading.
- */
-enum class TupleValue { FIRST, SECOND };
-
 class CgroupController: public CHeapObj<mtInternal> {
   public:
     virtual char *subsystem_path() = 0;
@@ -148,7 +140,7 @@ class CgroupController: public CHeapObj<mtInternal> {
      * returns: false if any error occurred. true otherwise and the parsed
      * value of the appropriate tuple entry set in the provided jlong pointer.
      */
-    bool read_numerical_tuple_value(const char* filename, TupleValue val, jlong* result);
+    bool read_numerical_tuple_value(const char* filename, bool use_first, jlong* result);
 
     /* Read a numerical value from a multi-line interface file. The matched line is
      * determined by the provided 'key'. The associated numerical value is being set

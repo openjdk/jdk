@@ -695,24 +695,14 @@ bool CgroupController::read_numerical_key_value(const char* filename, const char
   return false;
 }
 
-bool CgroupController::read_numerical_tuple_value(const char* filename, TupleValue tup, jlong* result) {
+bool CgroupController::read_numerical_tuple_value(const char* filename, bool use_first, jlong* result) {
   char buf[1024];
   bool is_ok = read_string(filename, buf);
   if (!is_ok) {
     return false;
   }
   char token[1024];
-  int matched = -1;
-  switch(tup) {
-    case TupleValue::FIRST:  {
-      matched = sscanf(buf, "%1023s %*s", token);
-      break;
-    }
-    case TupleValue::SECOND: {
-      matched = sscanf(buf, "%*s %1023s", token);
-      break;
-    }
-  }
+  const int matched = sscanf(buf, (use_first ? "%1023s %*s" : "%*s %1023s"), token);
   if (matched != 1) {
     return false;
   }
