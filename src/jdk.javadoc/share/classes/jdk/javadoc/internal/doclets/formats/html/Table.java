@@ -363,7 +363,6 @@ public class Table<T> extends Content {
                         .put(HtmlAttr.TABINDEX, "0");
                 }
             }
-
             row.add(cell);
             colIndex++;
         }
