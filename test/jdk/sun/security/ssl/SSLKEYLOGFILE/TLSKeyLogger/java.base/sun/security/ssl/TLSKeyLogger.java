@@ -46,11 +46,32 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
  * This follows the SSLKEYLOGFILE format propsed in draft RFC:
  * <a href="https://datatracker.ietf.org/doc/draft-ietf-tls-keylogfile/"
  * <p>
- * This is a stub library API that could allow SunJSSE to output connection
- * keys if a real library is provided.
+ * This is an example implementation of a TLSKeyLogger library API that
+ * will allow SunJSSE to output connection keys.
  * <p>
  * Note well, this facility is for development/testing only, and should not be
  * used in production.
+ *
+ * {@snippet lang = java:
+ *     #!/bin/sh
+ *
+ *     # Build the test app
+ *     /java/ws/jdk/build/linux-x64/jdk/bin/javac \
+ *         TLSKeyLoggerTest.java
+ *
+ *     # Build the patch module for java.base.
+ *     /java/ws/jdk/build/linux-x64/jdk/bin/javac \
+ *         -g:vars,lines \
+ *         -d module/java.base \
+ *         --patch-module java.base=TLSKeyLogger/java.base \
+ *         --add-reads java.base=ALL-UNNAMED \
+ *         TLSKeyLogger/java.base/sun/security/ssl/TLSKeyLogger.java
+ *
+ *     # Run the test app
+ *     /java/ws/jdk/build/linux-x64/jdk/bin/java \
+ *         --patch-module java.base=module/java.base \
+ *         TLSKeyLoggerTest
+ *  }
  */
 final class TLSKeyLogger {
 
