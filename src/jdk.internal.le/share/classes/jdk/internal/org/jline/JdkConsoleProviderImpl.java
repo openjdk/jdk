@@ -97,7 +97,7 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
                 writer.println(obj);
                 writer.flush();
             } else {
-                delegate.print(obj);
+                delegate.println(obj);
             }
             return this;
         }
@@ -208,6 +208,8 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
             }
             synchronized (this) {
                 if (!terminalInitialized) {
+                    delegate.flush();
+
                     try {
                         Terminal terminal = TerminalBuilder.builder()
                                                            .encoding(charset)
