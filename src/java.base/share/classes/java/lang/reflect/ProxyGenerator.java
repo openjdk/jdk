@@ -126,10 +126,10 @@ final class ProxyGenerator {
     private final ConstantPoolBuilder cp;
     private final List<StackMapFrameInfo.VerificationTypeInfo> throwableStack;
     private final NameAndTypeEntry exInit;
-    private final ClassEntry object, proxy, ute;
+    private final ClassEntry clazz, object, proxy, ute;
     private final FieldRefEntry handlerField;
     private final InterfaceMethodRefEntry invoke;
-    private final MethodRefEntry uteInit;
+    private final MethodRefEntry forName, getMethod, uteInit;
 
 
     /**
@@ -179,6 +179,9 @@ final class ProxyGenerator {
         this.accessFlags = accessFlags;
         this.throwableStack = List.of(StackMapFrameInfo.ObjectVerificationTypeInfo.of(cp.classEntry(CD_Throwable)));
         this.exInit = cp.nameAndTypeEntry(INIT_NAME, MTD_void_String);
+        this.clazz = cp.classEntry(CD_Class);
+        this.forName = cp.methodRefEntry(clazz, cp.nameAndTypeEntry("forName", MTD_Class_String_boolean_ClassLoader));
+        this.getMethod = cp.methodRefEntry(clazz, cp.nameAndTypeEntry("getMethod", MTD_Method_String_ClassArray));
         this.object = cp.classEntry(CD_Object);
         this.proxy = cp.classEntry(CD_Proxy);
         this.handlerField = cp.fieldRefEntry(proxy, cp.nameAndTypeEntry(NAME_HANDLER_FIELD, CD_InvocationHandler));
@@ -572,7 +575,7 @@ final class ProxyGenerator {
             Label ts = cob.newBoundLabel();
             for (List<ProxyMethod> sigmethods : proxyMethods.values()) {
                 for (ProxyMethod pm : sigmethods) {
-                    pm.codeFieldInitialization(cob, classEntry);
+                    pm.codeFieldInitialization(cob, this);
                 }
             }
             cob.return_();
@@ -779,13 +782,13 @@ final class ProxyGenerator {
          * the Method object for this proxy method. A class loader is
          * anticipated at local variable index 0.
          */
-        private void codeFieldInitialization(CodeBuilder cob, ClassEntry className) {
+        private void codeFieldInitialization(CodeBuilder cob, ProxyGenerator pg) {
             var cp = cob.constantPool();
-            codeClassForName(cob, fromClass);
+            codeClassForName(cob, fromClass, pg);
 
             cob.ldc(method.getName())
                .loadConstant(parameterTypes.length)
-               .anewarray(CD_Class);
+               .anewarray(pg.clazz);
 
             // Construct an array with the parameter types mapping primitives to Wrapper types
             for (int i = 0; i < parameterTypes.length; i++) {
@@ -795,13 +798,13 @@ final class ProxyGenerator {
                     PrimitiveTypeInfo prim = PrimitiveTypeInfo.get(parameterTypes[i]);
                     cob.getstatic(prim.typeFieldRef(cob.constantPool()));
                 } else {
-                    codeClassForName(cob, parameterTypes[i]);
+                    codeClassForName(cob, parameterTypes[i], pg);
                 }
                 cob.aastore();
             }
             // lookup the method
-            cob.invokevirtual(CD_Class, "getMethod", MTD_Method_String_ClassArray)
-               .putstatic(cp.fieldRefEntry(className, cp.nameAndTypeEntry(methodFieldName, CD_Method)));
+            cob.invokevirtual(pg.getMethod)
+               .putstatic(cp.fieldRefEntry(pg.classEntry, cp.nameAndTypeEntry(methodFieldName, CD_Method)));
         }
 
         /*
@@ -815,11 +818,11 @@ final class ProxyGenerator {
          * may cause the checked ClassNotFoundException to be thrown. A class
          * loader is anticipated at local variable index 0.
          */
-        private void codeClassForName(CodeBuilder cob, Class<?> cl) {
+        private void codeClassForName(CodeBuilder cob, Class<?> cl, ProxyGenerator pg) {
             cob.ldc(cl.getName())
                .iconst_0() // false
                .aload(0)// classLoader
-               .invokestatic(CD_Class, "forName", MTD_Class_String_boolean_ClassLoader);
+               .invokestatic(pg.forName);
         }
 
         @Override
