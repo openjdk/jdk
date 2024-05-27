@@ -2004,16 +2004,16 @@ void VTransformGraph::apply_vectorization() const {
   // TODO desc
   GrowableArray<Node*> vnode_idx_to_transformed_node(length, length, nullptr);
 
-  uint max_vector_size  = 0; // number of elements
-  uint max_vector_width = 0; // total width in bytes
+  uint max_vector_length = 0; // number of elements
+  uint max_vector_width  = 0; // total width in bytes
 
   for (int i = 0; i < _schedule.length(); i++) {
     VTransformNode* vtn = _schedule.at(i);
     VTransformApplyStatus status = vtn->apply(_vloop_analyzer,
                                               vnode_idx_to_transformed_node);
-    Node* n           = status.node();
-    uint vector_size  = status.vector_size();
-    uint vector_width = status.vector_width();
+    Node* n            = status.node();
+    uint vector_length = status.vector_length();
+    uint vector_width  = status.vector_width();
 #ifndef PRODUCT
     if (_is_trace_verbose) {
       tty->print("  apply: ");
@@ -2034,15 +2034,15 @@ void VTransformGraph::apply_vectorization() const {
     }
 
     vnode_idx_to_transformed_node.at_put(vtn->_idx, n);
-    max_vector_size  = MAX2(max_vector_size,  vector_size);
-    max_vector_width = MAX2(max_vector_width, vector_width);
+    max_vector_length = MAX2(max_vector_length, vector_length);
+    max_vector_width  = MAX2(max_vector_width,  vector_width);
   }
 
-  assert(max_vector_size > 0 && max_vector_width > 0, "must have vectorized");
+  assert(max_vector_length > 0 && max_vector_width > 0, "must have vectorized");
   cl()->mark_loop_vectorized();
 
-  if (max_vector_size > phase()->C->max_vector_size()) {
-    phase()->C->set_max_vector_size(max_vector_size);
+  if (max_vector_width > phase()->C->max_vector_size()) {
+    phase()->C->set_max_vector_size(max_vector_width);
   }
 
   // TODO SuperWordLoopUnrollAnalysis

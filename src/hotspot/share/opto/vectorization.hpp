@@ -1334,23 +1334,23 @@ class VTransformReductionVectorNode;
 class VTransformApplyStatus {
 private:
   Node* const _node;
-  const uint _vector_size;  // number of elements
-  const uint _vector_width; // total width in bytes
+  const uint _vector_length; // number of elements
+  const uint _vector_width;  // total width in bytes
 
-  VTransformApplyStatus(Node* n, uint vector_size, uint vector_width) :
-    _node(n), _vector_size(vector_size), _vector_width(vector_width) {}
+  VTransformApplyStatus(Node* n, uint vector_length, uint vector_width) :
+    _node(n), _vector_length(vector_length), _vector_width(vector_width) {}
 
 public:
   static VTransformApplyStatus make_scalar(Node* n) {
     return VTransformApplyStatus(n, 0, 0);
   }
-  static VTransformApplyStatus make_vector(Node* n, uint vector_size, uint vector_width) {
-    assert(vector_size > 0 && vector_width > 0, "must have nonzero size");
-    return VTransformApplyStatus(n, vector_size, vector_width);
+  static VTransformApplyStatus make_vector(Node* n, uint vector_length, uint vector_width) {
+    assert(vector_length > 0 && vector_width > 0, "must have nonzero size");
+    return VTransformApplyStatus(n, vector_length, vector_width);
   }
 
   Node* node() const { return _node; }
-  uint vector_size() const { return _vector_size; }
+  uint vector_length() const { return _vector_length; }
   uint vector_width() const { return _vector_width; }
 };
 
