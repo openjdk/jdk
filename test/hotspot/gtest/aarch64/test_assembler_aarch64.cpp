@@ -354,10 +354,10 @@ void test_merge_dmb_all_kinds() {
       }
     }
   }
- 
+
   BufferBlob::free(b);
 }
- 
+
 TEST_VM(AssemblerAArch64, merge_dmb_all_kinds_1) {
   FlagSetting fs(AlwaysMergeDMB, true);
   test_merge_dmb_all_kinds();
