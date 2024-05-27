@@ -206,7 +206,7 @@ TEST(cgroupTest, read_string_beyond_max_path) {
   const char* test_file_path = "/file-not-found";
   char foo[1024];
   foo[0] = '\0';
-  bool is_ok = too_large_path_controller->read_string(test_file_path, foo);
+  bool is_ok = too_large_path_controller->read_string(test_file_path, foo, 1024);
   EXPECT_FALSE(is_ok) << "Too long path should be an error";
   EXPECT_STREQ("", foo) << "Expected untouched scan value";
 }
@@ -296,33 +296,33 @@ TEST(cgroupTest, read_string_tests) {
 
   TestController* controller = new TestController((char*)os::get_temp_directory());
   char result[1024];
-  bool ok = controller->read_string(base_with_slash, result);
+  bool ok = controller->read_string(base_with_slash, result, 1024);
   EXPECT_TRUE(ok) << "String parsing should have been successful";
   EXPECT_STREQ("foo-bar", result) << "Expected strings to be equal";
 
   result[0] = '\0';
   fill_file(test_file, "1234");
-  ok = controller->read_string(base_with_slash, result);
+  ok = controller->read_string(base_with_slash, result, 1024);
   EXPECT_TRUE(ok) << "String parsing should have been successful";
   EXPECT_STREQ("1234", result) << "Expected strings to be equal";
 
   // values with a space
   result[0] = '\0';
   fill_file(test_file, "abc def");
-  ok = controller->read_string(base_with_slash, result);
+  ok = controller->read_string(base_with_slash, result, 1024);
   EXPECT_TRUE(ok) << "String parsing should have been successful";
   EXPECT_STREQ("abc def", result) << "Expected strings to be equal";
 
   // only the first line are being returned
   result[0] = '\0';
   fill_file(test_file, "test\nabc");
-  ok = controller->read_string(base_with_slash, result);
+  ok = controller->read_string(base_with_slash, result, 1024);
   EXPECT_TRUE(ok) << "String parsing should have been successful";
   EXPECT_STREQ("test", result) << "Expected strings to be equal";
 
   result[0] = '\0';
   fill_file(test_file, nullptr);
-  ok = controller->read_string(base_with_slash, result);
+  ok = controller->read_string(base_with_slash, result, 1024);
   EXPECT_FALSE(ok) << "Empty file should have failed";
   EXPECT_STREQ("", result) << "Expected untouched result";
   delete_file(test_file);
@@ -335,7 +335,7 @@ TEST(cgroupTest, read_string_tests) {
   }
   result[0] = '\0';
   fill_file(test_file, too_large);
-  ok = controller->read_string(base_with_slash, result);
+  ok = controller->read_string(base_with_slash, result, 1024);
   EXPECT_TRUE(ok) << "String parsing should have been successful";
   EXPECT_TRUE(1023 == strlen(result)) << "Expected only the first 1023 chars to be read in";
   for (int i = 0; i < 1023; i++) {

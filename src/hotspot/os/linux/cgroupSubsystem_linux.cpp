@@ -556,7 +556,7 @@ jlong CgroupSubsystem::memory_limit_in_bytes() {
   return mem_limit;
 }
 
-bool CgroupController::read_string(const char* filename, char* buf) {
+bool CgroupController::read_string(const char* filename, char* buf, size_t buf_size) {
   assert(buf != nullptr, "buffer must not be null");
   assert(filename != nullptr, "filename must be given");
   char* s_path = subsystem_path();
@@ -582,15 +582,16 @@ bool CgroupController::read_string(const char* filename, char* buf) {
     return false;
   }
 
-  // Read a single line into the provided buffer. At most 1023 characters.
-  char* line = fgets(buf, 1024, fp);
+  // Read a single line into the provided buffer.
+  // At most buf_size - 1 characters.
+  char* line = fgets(buf, buf_size, fp);
   fclose(fp);
   if (line == nullptr) {
     log_debug(os, container)("Empty file %s", absolute_path);
     return false;
   }
-  int len = strlen(line);
-  assert(len <= 1023, "At most 1023 bytes can be read");
+  size_t len = strlen(line);
+  assert(len <= buf_size - 1, "At most buf_size - 1 bytes can be read");
   if (line[len - 1] == '\n') {
     line[len - 1] = '\0'; // trim trailing new line
   }
@@ -599,7 +600,7 @@ bool CgroupController::read_string(const char* filename, char* buf) {
 
 bool CgroupController::read_number(const char* filename, julong* result) {
   char buf[1024];
-  bool is_ok = read_string(filename, buf);
+  bool is_ok = read_string(filename, buf, 1024);
   if (!is_ok) {
     return false;
   }
@@ -612,7 +613,7 @@ bool CgroupController::read_number(const char* filename, julong* result) {
 
 bool CgroupController::read_number_handle_max(const char* filename, jlong* result) {
   char buf[1024];
-  bool is_ok = read_string(filename, buf);
+  bool is_ok = read_string(filename, buf, 1024);
   if (!is_ok) {
     return false;
   }
@@ -682,7 +683,7 @@ bool CgroupController::read_numerical_key_value(const char* filename, const char
 
 bool CgroupController::read_numerical_tuple_value(const char* filename, bool use_first, jlong* result) {
   char buf[1024];
-  bool is_ok = read_string(filename, buf);
+  bool is_ok = read_string(filename, buf, 1024);
   if (!is_ok) {
     return false;
   }

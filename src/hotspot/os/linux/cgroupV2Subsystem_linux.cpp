@@ -96,13 +96,13 @@ int CgroupV2Subsystem::cpu_quota() {
 
 char* CgroupV2Subsystem::cpu_cpuset_cpus() {
   char cpus[1024];
-  CONTAINER_READ_STRING_CHECKED(_unified, "/cpuset.cpus", "cpuset.cpus", cpus);
+  CONTAINER_READ_STRING_CHECKED(_unified, "/cpuset.cpus", "cpuset.cpus", cpus, 1024);
   return os::strdup(cpus);
 }
 
 char* CgroupV2Subsystem::cpu_cpuset_memory_nodes() {
   char mems[1024];
-  CONTAINER_READ_STRING_CHECKED(_unified, "/cpuset.mems", "cpuset.mems", mems);
+  CONTAINER_READ_STRING_CHECKED(_unified, "/cpuset.mems", "cpuset.mems", mems, 1024);
   return os::strdup(mems);
 }
 

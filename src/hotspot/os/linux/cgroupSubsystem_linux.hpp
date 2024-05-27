@@ -91,15 +91,15 @@
   log_trace(os, container)(log_string " is: " JLONG_FORMAT, retval);                  \
 }
 
-#define CONTAINER_READ_STRING_CHECKED(controller, filename, log_string, retval)       \
-{                                                                                     \
-  bool is_ok;                                                                         \
-  is_ok = controller->read_string(filename, retval);                                  \
-  if (!is_ok) {                                                                       \
-    log_trace(os, container)(log_string " failed: %d", OSCONTAINER_ERROR);            \
-    return nullptr;                                                                   \
-  }                                                                                   \
-  log_trace(os, container)(log_string " is: %s", retval);                             \
+#define CONTAINER_READ_STRING_CHECKED(controller, filename, log_string, retval, buf_size) \
+{                                                                                         \
+  bool is_ok;                                                                             \
+  is_ok = controller->read_string(filename, retval, buf_size);                            \
+  if (!is_ok) {                                                                           \
+    log_trace(os, container)(log_string " failed: %d", OSCONTAINER_ERROR);                \
+    return nullptr;                                                                       \
+  }                                                                                       \
+  log_trace(os, container)(log_string " is: %s", retval);                                 \
 }
 
 class CgroupController: public CHeapObj<mtInternal> {
@@ -122,16 +122,16 @@ class CgroupController: public CHeapObj<mtInternal> {
      */
     bool read_number_handle_max(const char* filename, jlong* result);
 
-    /* Read a string of at most 1K - 1 characters from the interface file.
-     * The provided buffer must be at least 1K (1024) in size so as to account
+    /* Read a string of at most buf_size - 1 characters from the interface file.
+     * The provided buffer must be at least buf_size in size so as to account
      * for the null terminating character. Callers must ensure that the buffer
      * is appropriately in-scope and of sufficient size.
      *
      * returns: false if any error occured. true otherwise and the passed
-     * in buffer will contain the first 1023 characters of the string or
-     * up to the first new line character ('\n') whichever comes first.
+     * in buffer will contain the first buf_size - 1 characters of the string
+     * or up to the first new line character ('\n') whichever comes first.
      */
-    bool read_string(const char* filename, char* buf);
+    bool read_string(const char* filename, char* buf, size_t buf_size);
 
     /* Read a tuple value as a number. Tuple is: '<first> <second>'.
      * Handles 'max' (for unlimited) for any tuple value. This is handy for
