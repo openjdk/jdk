@@ -181,7 +181,7 @@ public class OutputBinAttributePrintDialogTest {
 
         PrinterJob printerJob = PrinterJob.getPrinterJob();
         PrintService service = printerJob.getPrintService();
-        if (service == null) {
+        if (service == null || !service.isAttributeCategorySupported(OutputBin.class)) {
             return new OutputBin[0];
         }
 

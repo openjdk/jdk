@@ -160,7 +160,7 @@ public class OutputBinAttributeTest {
 
         PrinterJob printerJob = PrinterJob.getPrinterJob();
         PrintService service = printerJob.getPrintService();
-        if (service == null) {
+        if (service == null || !service.isAttributeCategorySupported(OutputBin.class)) {
             return supportedOutputBins;
         }
 
