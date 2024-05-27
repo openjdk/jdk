@@ -4120,7 +4120,7 @@ void MacroAssembler::multiply_128_x_128_loop(Register y, Register z,
  * x12: y
  * x13: ylen
  * x14: z
- * x15: zlen
+ * x15: tmp0
  * x16: tmp1
  * x17: tmp2
  * x7:  tmp3
@@ -4130,10 +4130,10 @@ void MacroAssembler::multiply_128_x_128_loop(Register y, Register z,
  * x31: tmp7
  */
 void MacroAssembler::multiply_to_len(Register x, Register xlen, Register y, Register ylen,
-                                     Register z, Register zlen,
+                                     Register z, Register tmp0,
                                      Register tmp1, Register tmp2, Register tmp3, Register tmp4,
                                      Register tmp5, Register tmp6, Register product_hi) {
-  assert_different_registers(x, xlen, y, ylen, z, zlen, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6);
+  assert_different_registers(x, xlen, y, ylen, z, tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6);
 
   const Register idx = tmp1;
   const Register kdx = tmp2;
@@ -4142,11 +4142,11 @@ void MacroAssembler::multiply_to_len(Register x, Register xlen, Register y, Regi
   const Register y_idx = tmp4;
   const Register carry = tmp5;
   const Register product = xlen;
-  const Register x_xstart = zlen; // reuse register
+  const Register x_xstart = tmp0;
 
-  mv(idx, ylen); // idx = ylen;
-  mv(kdx, zlen); // kdx = xlen+ylen;
-  mv(carry, zr); // carry = 0;
+  mv(idx, ylen);         // idx = ylen;
+  addw(kdx, xlen, ylen); // kdx = xlen+ylen;
+  mv(carry, zr);         // carry = 0;
 
   Label L_multiply_64_x_64_loop, L_done;
 
