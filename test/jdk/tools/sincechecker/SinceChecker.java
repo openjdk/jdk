@@ -123,7 +123,7 @@ public class SinceChecker {
         sinceCheckerTestHelper.checkModule(args[0]);
     }
 
-    void error(String message) {
+    private void error(String message) {
         System. err.println(message);
         errorCount++;
     }
@@ -198,9 +198,9 @@ public class SinceChecker {
                 .forEach(nestedClass -> processClassElement(nestedClass, version, types, elements));
     }
 
-    public void processElement(Element explicitOwner, Element element, Types types, String version) {
+    private void processElement(Element explicitOwner, Element element, Types types, String version) {
         String uniqueId = getElementName(explicitOwner, element, types);
-        IntroducedIn introduced = classDictionary.computeIfAbsent(uniqueId, i -> new IntroducedIn());
+        IntroducedIn introduced = classDictionary.computeIfAbsent(uniqueId, _ -> new IntroducedIn());
         if (isPreview(element, uniqueId, version)) {
             if (introduced.introducedPreview == null) {
                 introduced.introducedPreview = version;
@@ -350,7 +350,7 @@ public class SinceChecker {
             return true;
         }
         String uniqueId = getElementName(te, element, types);
-        boolean isCommonMethod = uniqueId.endsWith("toString()") ||
+        boolean isCommonMethod = uniqueId.endsWith(".toString()") ||
                 uniqueId.endsWith(".hashCode()") ||
                 uniqueId.endsWith(".equals(java.lang.Object)");
         if (isCommonMethod) {
