@@ -60,12 +60,9 @@ final class ProxyGenerator {
 
     private static final ClassDesc
             CD_Class_array = ReferenceClassDescImpl.ofValidated("[Ljava/lang/Class;"),
-            CD_ClassLoader = ReferenceClassDescImpl.ofValidated("Ljava/lang/ClassLoader;"),
-            CD_ClassNotFoundException = ReferenceClassDescImpl.ofValidated("Ljava/lang/ClassNotFoundException;"),
             CD_IllegalAccessException = ReferenceClassDescImpl.ofValidated("Ljava/lang/IllegalAccessException;"),
             CD_InvocationHandler = ReferenceClassDescImpl.ofValidated("Ljava/lang/reflect/InvocationHandler;"),
             CD_Method = ReferenceClassDescImpl.ofValidated("Ljava/lang/reflect/Method;"),
-            CD_NoClassDefFoundError = ReferenceClassDescImpl.ofValidated("Ljava/lang/NoClassDefFoundError;"),
             CD_NoSuchMethodError = ReferenceClassDescImpl.ofValidated("Ljava/lang/NoSuchMethodError;"),
             CD_NoSuchMethodException = ReferenceClassDescImpl.ofValidated("Ljava/lang/NoSuchMethodException;"),
             CD_Object_array = ReferenceClassDescImpl.ofValidated("[Ljava/lang/Object;"),
@@ -78,8 +75,6 @@ final class ProxyGenerator {
             MTD_void_String = MethodTypeDescImpl.ofValidated(CD_void, new ClassDesc[]{CD_String}),
             MTD_void_Throwable = MethodTypeDescImpl.ofValidated(CD_void, new ClassDesc[]{CD_Throwable}),
             MTD_Class = MethodTypeDescImpl.ofValidated(CD_Class, ConstantUtils.EMPTY_CLASSDESC),
-            MTD_Class_String_boolean_ClassLoader = MethodTypeDescImpl.ofValidated(CD_Class, new ClassDesc[]{CD_String, CD_boolean, CD_ClassLoader}),
-            MTD_ClassLoader = MethodTypeDescImpl.ofValidated(CD_ClassLoader, ConstantUtils.EMPTY_CLASSDESC),
             MTD_MethodHandles$Lookup = MethodTypeDescImpl.ofValidated(CD_MethodHandles_Lookup, ConstantUtils.EMPTY_CLASSDESC),
             MTD_MethodHandles$Lookup_MethodHandles$Lookup = MethodTypeDescImpl.ofValidated(CD_MethodHandles_Lookup, new ClassDesc[]{CD_MethodHandles_Lookup}),
             MTD_Method_String_ClassArray = MethodTypeDescImpl.ofValidated(CD_Method, new ClassDesc[]{CD_String, CD_Class_array}),
@@ -129,7 +124,7 @@ final class ProxyGenerator {
     private final ClassEntry clazz, object, proxy, ute;
     private final FieldRefEntry handlerField;
     private final InterfaceMethodRefEntry invoke;
-    private final MethodRefEntry forName, getMethod, uteInit;
+    private final MethodRefEntry getMethod, uteInit;
 
 
     /**
@@ -180,7 +175,6 @@ final class ProxyGenerator {
         this.throwableStack = List.of(StackMapFrameInfo.ObjectVerificationTypeInfo.of(cp.classEntry(CD_Throwable)));
         this.exInit = cp.nameAndTypeEntry(INIT_NAME, MTD_void_String);
         this.clazz = cp.classEntry(CD_Class);
-        this.forName = cp.methodRefEntry(clazz, cp.nameAndTypeEntry("forName", MTD_Class_String_boolean_ClassLoader));
         this.getMethod = cp.methodRefEntry(clazz, cp.nameAndTypeEntry("getMethod", MTD_Method_String_ClassArray));
         this.object = cp.classEntry(CD_Object);
         this.proxy = cp.classEntry(CD_Proxy);
@@ -567,11 +561,6 @@ final class ProxyGenerator {
      */
     private void generateStaticInitializer(ClassBuilder clb) {
         clb.withMethodBody(CLASS_INIT_NAME, MTD_void, ACC_STATIC, cob -> {
-            // Put ClassLoader at local variable index 0, used by
-            // Class.forName(String, boolean, ClassLoader) calls
-            cob.ldc(classEntry)
-               .invokevirtual(CD_Class, "getClassLoader", MTD_ClassLoader)
-               .astore(0);
             Label ts = cob.newBoundLabel();
             for (List<ProxyMethod> sigmethods : proxyMethods.values()) {
                 for (ProxyMethod pm : sigmethods) {
@@ -579,28 +568,17 @@ final class ProxyGenerator {
                 }
             }
             cob.return_();
-            Label c1 = cob.newBoundLabel();
+            Label failLabel = cob.newBoundLabel();
             ClassEntry nsme = cp.classEntry(CD_NoSuchMethodError);
-            ClassEntry ncdfe = cp.classEntry(CD_NoClassDefFoundError);
-            MethodRefEntry tgm = cp.methodRefEntry(CD_Throwable, "getMessage", MTD_String);
-            cob.exceptionCatch(ts, c1, c1, CD_NoSuchMethodException)
+            cob.exceptionCatch(ts, failLabel, failLabel, CD_NoSuchMethodException)
                .new_(nsme)
                .dup_x1()
                .swap()
-               .invokevirtual(tgm)
+               .invokevirtual(cp.methodRefEntry(CD_Throwable, "getMessage", MTD_String))
                .invokespecial(cp.methodRefEntry(nsme, exInit))
-               .athrow();
-            Label c2 = cob.newBoundLabel();
-            cob.exceptionCatch(ts, c1, c2, CD_ClassNotFoundException)
-               .new_(ncdfe)
-               .dup_x1()
-               .swap()
-               .invokevirtual(tgm)
-               .invokespecial(cp.methodRefEntry(ncdfe, exInit))
                .athrow()
                .with(StackMapTableAttribute.of(List.of(
-                      StackMapFrameInfo.of(c1, List.of(), throwableStack),
-                      StackMapFrameInfo.of(c2, List.of(), throwableStack))));
+                       StackMapFrameInfo.of(failLabel, List.of(), throwableStack))));
         });
     }
 
@@ -784,45 +762,21 @@ final class ProxyGenerator {
          */
         private void codeFieldInitialization(CodeBuilder cob, ProxyGenerator pg) {
             var cp = cob.constantPool();
-            codeClassForName(cob, fromClass, pg);
-
-            cob.ldc(method.getName())
+            cob.ldc(toClassDesc(fromClass))
+               .ldc(method.getName())
                .loadConstant(parameterTypes.length)
                .anewarray(pg.clazz);
 
             // Construct an array with the parameter types mapping primitives to Wrapper types
             for (int i = 0; i < parameterTypes.length; i++) {
                 cob.dup()
-                   .loadConstant(i);
-                if (parameterTypes[i].isPrimitive()) {
-                    PrimitiveTypeInfo prim = PrimitiveTypeInfo.get(parameterTypes[i]);
-                    cob.getstatic(prim.typeFieldRef(cob.constantPool()));
-                } else {
-                    codeClassForName(cob, parameterTypes[i], pg);
-                }
-                cob.aastore();
+                   .loadConstant(i)
+                   .ldc(toClassDesc(parameterTypes[i]))
+                   .aastore();
             }
             // lookup the method
             cob.invokevirtual(pg.getMethod)
                .putstatic(cp.fieldRefEntry(pg.classEntry, cp.nameAndTypeEntry(methodFieldName, CD_Method)));
-        }
-
-        /*
-         * =============== Code Generation Utility Methods ===============
-         */
-
-        /**
-         * Generate code to invoke the Class.forName with the name of the given
-         * class to get its Class object at runtime.  The code is written to
-         * the supplied stream.  Note that the code generated by this method
-         * may cause the checked ClassNotFoundException to be thrown. A class
-         * loader is anticipated at local variable index 0.
-         */
-        private void codeClassForName(CodeBuilder cob, Class<?> cl, ProxyGenerator pg) {
-            cob.ldc(cl.getName())
-               .iconst_0() // false
-               .aload(0)// classLoader
-               .invokestatic(pg.forName);
         }
 
         @Override
@@ -890,10 +844,6 @@ final class ProxyGenerator {
 
         public MethodRefEntry unwrapMethodRef(ConstantPoolBuilder cp) {
             return cp.methodRefEntry(wrapperClass, unwrapMethodName, unwrapMethodType);
-        }
-
-        public FieldRefEntry typeFieldRef(ConstantPoolBuilder cp) {
-            return cp.fieldRefEntry(wrapperClass, "TYPE", CD_Class);
         }
     }
 }
