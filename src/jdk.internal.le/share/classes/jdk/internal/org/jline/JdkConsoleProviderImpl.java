@@ -72,7 +72,7 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
 
         @Override
         public PrintWriter writer() {
-            Terminal terminal = getTerminalOrNull(false);
+            Terminal terminal = getTerminalOrNull(true);
             if (terminal != null) {
                 return terminal.writer();
             }
@@ -81,7 +81,7 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
 
         @Override
         public Reader reader() {
-            Terminal terminal = getTerminalOrNull(false);
+            Terminal terminal = getTerminalOrNull(true);
             if (terminal != null) {
                 return terminal.reader();
             } else {
@@ -91,15 +91,27 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
 
         @Override
         public JdkConsole println(Object obj) {
-            writer().println(obj);
-            writer().flush();
+            Terminal terminal = getTerminalOrNull(false);
+            if (terminal != null) {
+                PrintWriter writer = terminal.writer();
+                writer.println(obj);
+                writer.flush();
+            } else {
+                delegate.print(obj);
+            }
             return this;
         }
 
         @Override
         public JdkConsole print(Object obj) {
-            writer().print(obj);
-            writer().flush();
+            Terminal terminal = getTerminalOrNull(false);
+            if (terminal != null) {
+                PrintWriter writer = terminal.writer();
+                writer.print(obj);
+                writer.flush();
+            } else {
+                delegate.print(obj);
+            }
             return this;
         }
 
@@ -119,7 +131,13 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
 
         @Override
         public JdkConsole format(Locale locale, String format, Object ... args) {
-            writer().format(locale, format, args).flush();
+            Terminal terminal = getTerminalOrNull(false);
+            if (terminal != null) {
+                PrintWriter writer = terminal.writer();
+                writer.format(locale, format, args).flush();
+            } else {
+                delegate.format(locale, format, args);
+            }
             return this;
         }
 
