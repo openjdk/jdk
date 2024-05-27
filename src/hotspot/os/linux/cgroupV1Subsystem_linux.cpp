@@ -96,8 +96,9 @@ jlong CgroupV1Subsystem::read_memory_limit_in_bytes() {
     CgroupV1MemoryController* mem_controller = reinterpret_cast<CgroupV1MemoryController*>(_memory->controller());
     if (mem_controller->is_hierarchical()) {
       julong hier_memlimit;
-      bool is_ok = _memory->controller()->
-                        read_numerical_key_value("/memory.stat", "hierarchical_memory_limit", &hier_memlimit);
+      bool is_ok = _memory->controller()->read_numerical_key_value("/memory.stat",
+                                                                   "hierarchical_memory_limit",
+                                                                   &hier_memlimit);
       if (!is_ok) {
         return OSCONTAINER_ERROR;
       }
@@ -138,8 +139,9 @@ jlong CgroupV1Subsystem::read_mem_swap() {
     CgroupV1MemoryController* mem_controller = reinterpret_cast<CgroupV1MemoryController*>(_memory->controller());
     if (mem_controller->is_hierarchical()) {
       const char* matchline = "hierarchical_memsw_limit";
-      bool is_ok = _memory->controller()->
-                      read_numerical_key_value("/memory.stat", matchline, &hier_memswlimit);
+      bool is_ok = _memory->controller()->read_numerical_key_value("/memory.stat",
+                                                                   matchline,
+                                                                   &hier_memswlimit);
       if (!is_ok) {
         return OSCONTAINER_ERROR;
       }
@@ -244,8 +246,9 @@ jlong CgroupV1Subsystem::memory_max_usage_in_bytes() {
 
 jlong CgroupV1Subsystem::rss_usage_in_bytes() {
   julong rss;
-  bool is_ok = _memory->controller()->
-                    read_numerical_key_value("/memory.stat", "rss", &rss);
+  bool is_ok = _memory->controller()->read_numerical_key_value("/memory.stat",
+                                                               "rss",
+                                                               &rss);
   if (!is_ok) {
     return OSCONTAINER_ERROR;
   }
@@ -255,8 +258,9 @@ jlong CgroupV1Subsystem::rss_usage_in_bytes() {
 
 jlong CgroupV1Subsystem::cache_usage_in_bytes() {
   julong cache;
-  bool is_ok = _memory->controller()->
-                    read_numerical_key_value("/memory.stat", "cache", &cache);
+  bool is_ok = _memory->controller()->read_numerical_key_value("/memory.stat",
+                                                               "cache",
+                                                               &cache);
   if (!is_ok) {
     return OSCONTAINER_ERROR;
   }
