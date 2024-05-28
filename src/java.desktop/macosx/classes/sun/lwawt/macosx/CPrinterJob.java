@@ -44,9 +44,9 @@ import javax.print.attribute.standard.Media;
 import javax.print.attribute.standard.MediaPrintableArea;
 import javax.print.attribute.standard.MediaSize;
 import javax.print.attribute.standard.MediaSizeName;
+import javax.print.attribute.standard.OutputBin;
 import javax.print.attribute.standard.PageRanges;
 import javax.print.attribute.standard.Sides;
-import javax.print.attribute.standard.OutputBin;
 import javax.print.attribute.Attribute;
 
 import sun.java2d.*;
