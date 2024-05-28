@@ -680,4 +680,13 @@ TEST(GrowableArrayCHeap, returning_references_works_as_expected) {
   EXPECT_EQ(-1, arr.at(10));
   y = arr.top();
   EXPECT_EQ(-1, arr.at(10));
+
+  GrowableArrayCHeap<int, mtTest> arr2(1, 1, -1);
+  int& first = arr2.first();
+  int& last = arr2.last();
+  EXPECT_EQ(-1, first);
+  EXPECT_EQ(-1, last);
+  first = 5;
+  EXPECT_EQ(5, first);
+  EXPECT_EQ(5, last);
 }
