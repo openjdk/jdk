@@ -34,12 +34,12 @@ import javax.xml.transform.TransformerFactory;
 
 /**
  * @test @bug 8330542
+ * @summary verifies the default JAXP configuration file jaxp.properties and
+ * strict template jaxp-strict.properties.template.
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
  * @modules java.xml/jdk.xml.internal
  * @run driver common.config.ConfigFileTest 0 // verifies jaxp.properties
  * @run driver common.config.ConfigFileTest 1 // verifies jaxp-strict.properties.template
- * @summary verifies the default JAXP configuration file jaxp.properties and
- * strict template jaxp-strict.properties.template.
  */
 public class ConfigFileTest {
     // system property for custom configuration file
