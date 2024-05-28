@@ -2303,12 +2303,12 @@ void MacroAssembler::lookup_secondary_supers_table_slow_path(Register r_super_kl
 
 #ifdef ASSERT
     {
-      // We should only reach here after having found two bits in the bitmap.
+      // We should only reach here after having found a bit in the bitmap.
       // Invariant: array_length == popcount(bitmap)
       Label ok;
-      cmpdi(CCR0, r_array_length, 2);
-      bge(CCR0, ok);
-      stop("array_length too small");
+      cmpdi(CCR0, r_array_length, 0);
+      bgt(CCR0, ok);
+      stop("array_length must be positive");
       bind(ok);
     }
 #endif
