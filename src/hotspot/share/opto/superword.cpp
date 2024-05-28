@@ -504,7 +504,7 @@ void SuperWord::find_adjacent_memop_pairs() {
   // Sort the VPointers. This does 2 things:
   //  - Separate the VPointer into groups (e.g. all LoadI of the same base and invar). We only need to find adjacent memops inside
   //    the group. This decreases the work.
-  //  - Sort by offset inside the VPointers. This decreases the work needed to determine adjacent memops inside a group.
+  //  - Sort by offset inside the group. This decreases the work needed to determine adjacent memops inside a group.
   vpointers.sort(VPointer::cmp_for_sort);
 
 #ifndef PRODUCT
@@ -2755,7 +2755,7 @@ bool SuperWord::is_vector_use(Node* use, int u_idx) const {
   if (is_marked_reduction(use) && u_idx == 1) {
 #ifdef ASSERT
       for (uint i = 1; i < u_pk->size(); i++) {
-        assert(u_pk->at(i-1) == u_pk->at(i)->in(1), "internal connection");
+        assert(u_pk->at(i - 1) == u_pk->at(i)->in(1), "internal connection");
       }
 #endif
     return true;
@@ -2840,6 +2840,7 @@ bool SuperWord::is_velt_basic_type_compatible_use_def(Node* use, int idx) const 
            type2aelembytes(use_bt) == 4;
   }
 
+  // Default case: input size of use equals output size of def.
   return type2aelembytes(use_bt) == type2aelembytes(def_bt);
 }
 

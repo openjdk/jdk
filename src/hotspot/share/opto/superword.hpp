@@ -560,7 +560,7 @@ private:
 
   // Find the "seed" pairs. These are pairs that we strongly suspect would lead to vectorization.
   void find_adjacent_memop_pairs();
-  void find_adjacent_memop_pairs_in_group(const GrowableArray<const VPointer*> &vpointers, const int group_start, int group_end);
+  void find_adjacent_memop_pairs_in_group(const GrowableArray<const VPointer*>& vpointers, const int group_start, int group_end);
 
   // Various methods to check if we can pack two nodes.
   bool can_pack_into_pair(Node* s1, Node* s2);
