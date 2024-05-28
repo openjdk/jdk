@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -45,7 +45,8 @@ size_t RunningCounters::reserved_words_class() {
 }
 
 size_t RunningCounters::reserved_words_nonclass() {
-  return VirtualSpaceList::vslist_nonclass()->reserved_words();
+  VirtualSpaceList* vs = VirtualSpaceList::vslist_nonclass();
+  return vs != nullptr ? vs->reserved_words() : 0;
 }
 
 // Return total committed size, in words, for Metaspace
@@ -59,7 +60,8 @@ size_t RunningCounters::committed_words_class() {
 }
 
 size_t RunningCounters::committed_words_nonclass() {
-  return VirtualSpaceList::vslist_nonclass()->committed_words();
+  VirtualSpaceList* vs = VirtualSpaceList::vslist_nonclass();
+  return vs != nullptr ? vs->committed_words() : 0;
 }
 
 // ---- used chunks -----
@@ -90,7 +92,8 @@ size_t RunningCounters::free_chunks_words_class() {
 }
 
 size_t RunningCounters::free_chunks_words_nonclass() {
-  return ChunkManager::chunkmanager_nonclass()->total_word_size();
+  ChunkManager* cm = ChunkManager::chunkmanager_nonclass();
+  return cm != nullptr ? cm->total_word_size() : 0;
 }
 
 } // namespace metaspace
