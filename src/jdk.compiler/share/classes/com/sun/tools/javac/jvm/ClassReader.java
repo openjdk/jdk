@@ -600,15 +600,12 @@ public class ClassReader {
                     else
                         updateBounds(actuals, formals);
                 }
-                if (actuals.length() != (formals == null ? 0 : formals.length())) {
-                    final List<Type> actualsCp = actuals;
-                    addSymbolReadListener(t, () -> {
-                        List<Type> formalsCp = ((ClassType)t.type.tsym.type).typarams_field;
-                        if (formalsCp != null && !formalsCp.isEmpty()) {
-                            updateBounds(actualsCp, formalsCp);
-                        }
-                    });
-                }
+                /* actualsCp is final as it will be captured by the inner class below. We could avoid defining
+                 * this additional local variable and depend on field ClassType::typarams_field which `actuals` is
+                 * assigned to but then we would have a dependendy on the internal representation of ClassType which
+                 * could change in the future
+                 */
+                final List<Type> actualsCp = actuals;
                 outer = new ClassType(outer, actuals, t) {
                         boolean completed = false;
                         @Override @DefinedBy(Api.LANGUAGE_MODEL)
@@ -632,6 +629,12 @@ public class ClassReader {
                                     }
                                 } else {
                                     super.setEnclosingType(Type.noType);
+                                }
+                                if (actualsCp.length() != (formals == null ? 0 : formals.length())) {
+                                    List<Type> formalsCp = ((ClassType)t.type.tsym.type).typarams_field;
+                                    if (formalsCp != null && !formalsCp.isEmpty()) {
+                                        updateBounds(actualsCp, formalsCp);
+                                    }
                                 }
                             }
                             return super.getEnclosingType();
@@ -2908,21 +2911,6 @@ public class ClassReader {
         return syms.enterClass(currentModule, name, owner);
     }
 
-    Map<ClassSymbol, java.util.List<SymbolReadListener>> symbolReadListeners = new LinkedHashMap<>();
-
-    interface SymbolReadListener {
-        void symbolRead();
-    }
-
-    private void addSymbolReadListener(ClassSymbol csym, SymbolReadListener listener) {
-        java.util.List<SymbolReadListener> listeners = symbolReadListeners.get(csym);
-        if (listeners == null) {
-            listeners = new ArrayList<>();
-        }
-        listeners.add(listener);
-        symbolReadListeners.put(csym, listeners);
-    }
-
     /** Read contents of a given class symbol `c'. Both external and internal
      *  versions of an inner class are read.
      */
@@ -3008,13 +2996,6 @@ public class ClassReader {
             }
         }
         typevars = typevars.leave();
-        java.util.List<SymbolReadListener> listeners = symbolReadListeners.get(c);
-        if (listeners != null) {
-            for (SymbolReadListener listener : listeners) {
-                listener.symbolRead();
-            }
-            symbolReadListeners.remove(c);
-        }
     }
 
     private MethodSymbol lookupMethod(TypeSymbol tsym, Name name, List<Type> argtypes) {
