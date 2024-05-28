@@ -161,7 +161,7 @@ public class UnloadingTest extends GCTestBase {
         }
 //        if (WhiteBox.getWhiteBox().g1GetTotalFullCollections() != 0 || (oldGenBean != null && oldGenBean.getCollectionCount() != 0)) {
         if (oldGenBean != null && oldGenBean.getCollectionCount() != 0) {
-            throw new RuntimeException("Full gc happened. Test was useless.");
+            throw new SkippedException("Full gc happened, skip the test.");
         }
     }
 

@@ -25,6 +25,7 @@ package nsk.share.test;
 
 import nsk.share.log.*;
 import nsk.share.runner.*;
+import jtreg.SkippedException;
 import nsk.share.TestFailure;
 
 public class Tests {
@@ -82,6 +83,8 @@ public class Tests {
                                         ((Runnable) o).run();
                                 if (o instanceof TestExitCode)
                                         exitCode = ((TestExitCode) o).getExitCode();
+                        }catch (SkippedException se) {
+                                throw se;
                         } catch (RuntimeException t) {
                                 getLog().error(t);
                                 exitCode = 97;
