@@ -70,7 +70,7 @@ public class FileOutputStream extends OutputStream
         SharedSecrets.getJavaIOFileDescriptorAccess();
 
     /**
-     * Flag set by jdk.internal.event.JFRTracing to determines if
+     * Flag set by jdk.internal.event.JFRTracing to indicate if
      * file writes should be traced by JFR.
      */
     private static boolean jfrTracing;

@@ -74,7 +74,7 @@ public class FileChannelImpl
     // Used to make native read and write calls
     private static final FileDispatcher nd = new FileDispatcherImpl();
 
-    // Flag set by jdk.internal.event.JFRTracing to determines if
+    // Flag set by jdk.internal.event.JFRTracing to indicate if
     // file reads and writes should be traced by JFR.
     private static boolean jfrTracing;
 

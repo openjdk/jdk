@@ -120,7 +120,7 @@ public class Throwable implements Serializable {
     private static final long serialVersionUID = -3042686055658047285L;
 
     /**
-     * Flag set by jdk.internal.event.JFRTracing to determines if
+     * Flag set by jdk.internal.event.JFRTracing to indicate if
      * exceptions should be traced by JFR.
      */
     static volatile boolean jfrTracing;

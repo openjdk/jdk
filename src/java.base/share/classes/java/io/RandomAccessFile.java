@@ -71,7 +71,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
     private static final int O_TEMPORARY =  16;
 
     /**
-     * Flag set by jdk.internal.event.JFRTracing to determines if
+     * Flag set by jdk.internal.event.JFRTracing to indicate if
      * file reads and writes should be traced by JFR.
      */
     private static boolean jfrTracing;
