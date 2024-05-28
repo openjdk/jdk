@@ -1483,7 +1483,7 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
   owning_thread = ObjectSynchronizer::get_lock_owner(tlh.list(), hobj);
   if (owning_thread != nullptr) {
     oop thread_oop = get_vthread_or_thread_oop(owning_thread);
-    bool is_virtual = java_lang_VirtualThread::is_instance(thread_oop);
+    bool is_virtual = thread_oop->is_a(vmClasses::BaseVirtualThread_klass());
     if (is_virtual) {
       thread_oop = nullptr;
     }
@@ -1503,6 +1503,7 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
   ResourceMark rm(current_thread);
   GrowableArray<JavaThread*>* wantList = nullptr;
 
+  jint nWant_Skip = 0;
   if (mark.has_monitor()) {
     mon = mark.monitor();
     assert(mon != nullptr, "must have monitor");
@@ -1514,6 +1515,13 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
     // Get the actual set of threads trying to enter, or re-enter, the monitor.
     wantList = Threads::get_pending_threads(tlh.list(), nWant + nWait, (address)mon);
     nWant = wantList->length();
+    for(jint i = 0; i < nWant; i++) {
+      JavaThread* w = wantList->at(i);
+      oop thread_oop = get_vthread_or_thread_oop(w);
+      if (thread_oop->is_a(vmClasses::BaseVirtualThread_klass())) {
+        nWant_Skip++;
+      }
+    }
   } else {
     // this object has a lightweight monitor
   }
@@ -1530,13 +1538,13 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
          waiter = mon->next_waiter(waiter)) {
       JavaThread *w = mon->thread_of_waiter(waiter);
       oop thread_oop = get_vthread_or_thread_oop(w);
-      if (java_lang_VirtualThread::is_instance(thread_oop)) {
+      if (thread_oop->is_a(vmClasses::BaseVirtualThread_klass())) {
         skipped++;
       }
       nWait++;
     }
   }
-  ret.waiter_count = nWant;
+  ret.waiter_count = nWant - nWant_Skip;
   ret.notify_waiter_count = nWait - skipped;
 
   // Allocate memory for heavyweight and lightweight monitor.
@@ -1576,9 +1584,9 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
       for (int i = 0; i < nWait; i++) {
         JavaThread *w = mon->thread_of_waiter(waiter);
         oop thread_oop = get_vthread_or_thread_oop(w);
-        bool is_virtual = java_lang_VirtualThread::is_instance(thread_oop);
+        bool is_virtual = thread_oop->is_a(vmClasses::BaseVirtualThread_klass());
         assert(w != nullptr, "sanity check");
-        if (java_lang_VirtualThread::is_instance(thread_oop)) {
+        if (is_virtual) {
           skipped++;
         } else {
           // If the thread was found on the ObjectWaiter list, then
