@@ -32,40 +32,35 @@
 #include "runtime/javaThread.hpp"
 #include "runtime/os.inline.hpp"
 
-// These are inline variants of Thread::SpinAcquire with optional blocking in VM.
-
-class ShenandoahNoBlockOp : public StackObj {
-public:
-  ShenandoahNoBlockOp(JavaThread* java_thread) {
-    assert(java_thread == nullptr, "Should not pass anything");
-  }
-};
-
 void ShenandoahLock::contended_lock(bool allow_block_for_safepoint) {
   Thread* thread = Thread::current();
   if (allow_block_for_safepoint && thread->is_Java_thread()) {
-    contended_lock_internal<ThreadBlockInVM>(JavaThread::cast(thread));
+    contended_lock_internal<true>(JavaThread::cast(thread));
   } else {
-    contended_lock_internal<ShenandoahNoBlockOp>(nullptr);
+    contended_lock_internal<false>(nullptr);
   }
 }
 
-template<typename BlockOp>
+template<bool ALLOW_BLOCK>
 void ShenandoahLock::contended_lock_internal(JavaThread* java_thread) {
   int ctr = 0;
-  int yields = 0;
   while (Atomic::load(&_state) == locked ||
          Atomic::cmpxchg(&_state, unlocked, locked) != unlocked) {
-    if ((++ctr & 0xFFF) == 0) {
-      BlockOp block(java_thread);
-      if (yields > 5) {
-        os::naked_short_sleep(1);
-      } else {
-        os::naked_yield();
-        yields++;
-      }
-    } else {
+    if (ALLOW_BLOCK && SafepointSynchronize::is_synchronizing()) {
+      // Synchronizing for safepoint. This condition preempts everything else.
+      // Do not do anything else, suspend until safepoint is over.
+      ThreadBlockInVM block(java_thread, true);
+    } else if (ctr < 0x1F) {
+      // Lightly contended. Spin a little.
+      ctr++;
       SpinPause();
+    } else if (ALLOW_BLOCK) {
+      // Notify VM we are blocking, and suspend if safepoint was announced
+      // while we were backing off.
+      ThreadBlockInVM block(java_thread, true);
+      os::naked_yield();
+    } else {
+      os::naked_yield();
     }
   }
 }
