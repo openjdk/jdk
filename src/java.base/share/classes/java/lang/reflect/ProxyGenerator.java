@@ -551,7 +551,7 @@ final class ProxyGenerator {
     }
 
     /**
-     * Generate the static initializer method for the proxy class.
+     * Generate CONDY bootstrap method for the proxy class to retrieve {@link Method} instances.
      */
     private void generateBootstrapMethod(ClassBuilder clb) {
         clb.withMethodBody(bsm.methodName(), bsm.invocationType(), ClassFile.ACC_PRIVATE | ClassFile.ACC_STATIC, cob -> {
