@@ -1247,7 +1247,6 @@ bool LibraryCallKit::inline_string_indexOfI(StrIntrinsicNode::ArgEnc ae) {
     return false;
   }
 
-  assert(arrayOopDesc::base_offset_in_bytes(T_BYTE) >= 16, "Needed for indexOf");
   assert(callee()->signature()->size() == 5, "String.indexOf() has 5 arguments");
   Node* src         = argument(0); // byte[]
   Node* src_count   = argument(1); // char count
@@ -1278,6 +1277,7 @@ bool LibraryCallKit::inline_string_indexOfI(StrIntrinsicNode::ArgEnc ae) {
   bool call_opt_stub = (StubRoutines::_string_indexof_array[ae] != nullptr);
 
   if (call_opt_stub) {
+    assert(arrayOopDesc::base_offset_in_bytes(T_BYTE) >= 16, "Needed for indexOf");
     Node* call = make_runtime_call(RC_LEAF, OptoRuntime::string_IndexOf_Type(),
                                    StubRoutines::_string_indexof_array[ae],
                                    "stringIndexOf", TypePtr::BOTTOM, src_start,
