@@ -226,6 +226,6 @@ bool oopDesc::size_might_change() {
   // the grey portion of an already copied array. This will cause the first
   // disjunct below to fail if the two comparands are computed across such
   // a concurrent change.
-  return Universe::heap()->is_gc_active() && is_objArray() && is_forwarded() && (UseParallelGC || UseG1GC);
+  return Universe::heap()->is_stw_gc_active() && is_objArray() && is_forwarded() && (UseParallelGC || UseG1GC);
 }
 #endif

@@ -37,10 +37,12 @@ SerialBlockOffsetTable::SerialBlockOffsetTable(MemRegion reserved,
                                                size_t init_word_size):
   _reserved(reserved) {
   size_t size = compute_size(reserved.word_size());
-  ReservedSpace rs(size, mtGC);
+  ReservedSpace rs(size);
   if (!rs.is_reserved()) {
     vm_exit_during_initialization("Could not reserve enough space for heap offset array");
   }
+
+  MemTracker::record_virtual_memory_type((address)rs.base(), mtGC);
 
   if (!_vs.initialize(rs, 0)) {
     vm_exit_during_initialization("Could not reserve enough space for heap offset array");

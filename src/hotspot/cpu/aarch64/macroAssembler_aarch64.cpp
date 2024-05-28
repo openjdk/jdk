@@ -3879,7 +3879,7 @@ void MacroAssembler::multiply_128_x_128_loop(Register y, Register z,
  * r2: y
  * r3: ylen
  * r4:  z
- * r5: zlen
+ * r5: tmp0
  * r10: tmp1
  * r11: tmp2
  * r12: tmp3
@@ -3890,11 +3890,11 @@ void MacroAssembler::multiply_128_x_128_loop(Register y, Register z,
  *
  */
 void MacroAssembler::multiply_to_len(Register x, Register xlen, Register y, Register ylen,
-                                     Register z, Register zlen,
+                                     Register z, Register tmp0,
                                      Register tmp1, Register tmp2, Register tmp3, Register tmp4,
                                      Register tmp5, Register tmp6, Register product_hi) {
 
-  assert_different_registers(x, xlen, y, ylen, z, zlen, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6);
+  assert_different_registers(x, xlen, y, ylen, z, tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, product_hi);
 
   const Register idx = tmp1;
   const Register kdx = tmp2;
@@ -3903,7 +3903,7 @@ void MacroAssembler::multiply_to_len(Register x, Register xlen, Register y, Regi
   const Register y_idx = tmp4;
   const Register carry = tmp5;
   const Register product  = xlen;
-  const Register x_xstart = zlen;  // reuse register
+  const Register x_xstart = tmp0;
 
   // First Loop.
   //
@@ -3919,9 +3919,9 @@ void MacroAssembler::multiply_to_len(Register x, Register xlen, Register y, Regi
   //  z[xstart] = (int)carry;
   //
 
-  movw(idx, ylen);      // idx = ylen;
-  movw(kdx, zlen);      // kdx = xlen+ylen;
-  mov(carry, zr);       // carry = 0;
+  movw(idx, ylen);       // idx = ylen;
+  addw(kdx, xlen, ylen); // kdx = xlen+ylen;
+  mov(carry, zr);        // carry = 0;
 
   Label L_done;
 
@@ -5535,12 +5535,22 @@ address MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
   Label DONE, SAME;
   Register tmp1 = rscratch1;
   Register tmp2 = rscratch2;
-  Register cnt2 = tmp2;  // cnt2 only used in array length compare
   int elem_per_word = wordSize/elem_size;
   int log_elem_size = exact_log2(elem_size);
+  int klass_offset  = arrayOopDesc::klass_offset_in_bytes();
   int length_offset = arrayOopDesc::length_offset_in_bytes();
   int base_offset
     = arrayOopDesc::base_offset_in_bytes(elem_size == 2 ? T_CHAR : T_BYTE);
+  // When the length offset is not aligned to 8 bytes,
+  // then we align it down. This is valid because the new
+  // offset will always be the klass which is the same
+  // for type arrays.
+  int start_offset = align_down(length_offset, BytesPerWord);
+  int extra_length = base_offset - start_offset;
+  assert(start_offset == length_offset || start_offset == klass_offset,
+         "start offset must be 8-byte-aligned or be the klass offset");
+  assert(base_offset != start_offset, "must include the length field");
+  extra_length = extra_length / elem_size; // We count in elements, not bytes.
   int stubBytesThreshold = 3 * 64 + (UseSIMDForArrayEquals ? 0 : 16);
 
   assert(elem_size == 1 || elem_size == 2, "must be char or byte");
@@ -5574,11 +5584,10 @@ address MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
     //      return false;
     bind(A_IS_NOT_NULL);
     ldrw(cnt1, Address(a1, length_offset));
-    ldrw(cnt2, Address(a2, length_offset));
-    eorw(tmp5, cnt1, cnt2);
-    cbnzw(tmp5, DONE);
-    lea(a1, Address(a1, base_offset));
-    lea(a2, Address(a2, base_offset));
+    // Increase loop counter by diff between base- and actual start-offset.
+    addw(cnt1, cnt1, extra_length);
+    lea(a1, Address(a1, start_offset));
+    lea(a2, Address(a2, start_offset));
     // Check for short strings, i.e. smaller than wordSize.
     subs(cnt1, cnt1, elem_per_word);
     br(Assembler::LT, SHORT);
@@ -5641,18 +5650,18 @@ address MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
     cbz(a1, DONE);
     ldrw(cnt1, Address(a1, length_offset));
     cbz(a2, DONE);
-    ldrw(cnt2, Address(a2, length_offset));
+    // Increase loop counter by diff between base- and actual start-offset.
+    addw(cnt1, cnt1, extra_length);
+
     // on most CPUs a2 is still "locked"(surprisingly) in ldrw and it's
     // faster to perform another branch before comparing a1 and a2
     cmp(cnt1, (u1)elem_per_word);
     br(LE, SHORT); // short or same
-    ldr(tmp3, Address(pre(a1, base_offset)));
+    ldr(tmp3, Address(pre(a1, start_offset)));
     subs(zr, cnt1, stubBytesThreshold);
     br(GE, STUB);
-    ldr(tmp4, Address(pre(a2, base_offset)));
+    ldr(tmp4, Address(pre(a2, start_offset)));
     sub(tmp5, zr, cnt1, LSL, 3 + log_elem_size);
-    cmp(cnt2, cnt1);
-    br(NE, DONE);
 
     // Main 16 byte comparison loop with 2 exits
     bind(NEXT_DWORD); {
@@ -5684,9 +5693,7 @@ address MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
     b(LAST_CHECK);
 
     bind(STUB);
-    ldr(tmp4, Address(pre(a2, base_offset)));
-    cmp(cnt2, cnt1);
-    br(NE, DONE);
+    ldr(tmp4, Address(pre(a2, start_offset)));
     if (elem_size == 2) { // convert to byte counter
       lsl(cnt1, cnt1, 1);
     }
@@ -5707,12 +5714,9 @@ address MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
     mov(result, a2);
     b(DONE);
     bind(SHORT);
-    cmp(cnt2, cnt1);
-    br(NE, DONE);
-    cbz(cnt1, SAME);
     sub(tmp5, zr, cnt1, LSL, 3 + log_elem_size);
-    ldr(tmp3, Address(a1, base_offset));
-    ldr(tmp4, Address(a2, base_offset));
+    ldr(tmp3, Address(a1, start_offset));
+    ldr(tmp4, Address(a2, start_offset));
     bind(LAST_CHECK);
     eor(tmp4, tmp3, tmp4);
     lslv(tmp5, tmp4, tmp5);

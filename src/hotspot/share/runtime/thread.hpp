@@ -210,14 +210,6 @@ class Thread: public ThreadShadow {
   DEBUG_ONLY(bool _indirectly_safepoint_thread;)
 
  public:
-  // Determines if a heap allocation failure will be retried
-  // (e.g., by deoptimizing and re-executing in the interpreter).
-  // In this case, the failed allocation must raise
-  // Universe::out_of_memory_error_retry() and omit side effects
-  // such as JVMTI events and handling -XX:+HeapDumpOnOutOfMemoryError
-  // and -XX:OnOutOfMemoryError.
-  virtual bool in_retryable_allocation() const { return false; }
-
 #ifdef ASSERT
   void set_suspendible_thread()   { _suspendible_thread = true; }
   void clear_suspendible_thread() { _suspendible_thread = false; }
@@ -483,9 +475,6 @@ class Thread: public ThreadShadow {
   }
 
  public:
-  // Used by fast lock support
-  virtual bool is_lock_owned(address adr) const;
-
   // Check if address is within the given range of this thread's
   // stack:  stack_base() > adr >= limit
   bool is_in_stack_range_incl(address adr, address limit) const {
@@ -603,8 +592,6 @@ protected:
   static ByteSize tlab_end_offset()              { return byte_offset_of(Thread, _tlab) + ThreadLocalAllocBuffer::end_offset(); }
   static ByteSize tlab_top_offset()              { return byte_offset_of(Thread, _tlab) + ThreadLocalAllocBuffer::top_offset(); }
   static ByteSize tlab_pf_top_offset()           { return byte_offset_of(Thread, _tlab) + ThreadLocalAllocBuffer::pf_top_offset(); }
-
-  static ByteSize allocated_bytes_offset()       { return byte_offset_of(Thread, _allocated_bytes); }
 
   JFR_ONLY(DEFINE_THREAD_LOCAL_OFFSET_JFR;)
 

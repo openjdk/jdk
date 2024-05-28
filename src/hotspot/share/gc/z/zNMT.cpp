@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zNMT.hpp"
 #include "gc/z/zVirtualMemory.hpp"
-#include "memory/allocation.hpp"
+#include "nmt/memflags.hpp"
 #include "nmt/memTracker.hpp"
 #include "utilities/nativeCallStack.hpp"
 
@@ -71,10 +71,10 @@ void ZNMT::process_fake_mapping(zoffset offset, size_t size, bool commit) {
 
     // commit / uncommit memory
     if (commit) {
-      MemTracker::record_virtual_memory_commit((void*)sub_range_addr, sub_range_size, CALLER_PC, mtGC);
+      MemTracker::record_virtual_memory_commit((void*)sub_range_addr, sub_range_size, CALLER_PC);
     } else {
       ThreadCritical tc;
-      MemTracker::record_virtual_memory_uncommit((address)sub_range_addr, sub_range_size, mtGC);
+      MemTracker::record_virtual_memory_uncommit((address)sub_range_addr, sub_range_size);
     }
 
     left_to_process -= sub_range_size;
