@@ -258,7 +258,7 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
   Label L_checkRangeAndReturn, L_returnError, L_bigCaseFixupAndReturn;
   Label L_bigSwitchTop, L_bigCaseDefault, L_smallCaseDefault;
   Label L_nextCheck, L_checksPassed, L_zeroCheckFailed, L_return;
-  Label L_wcharBegin, L_continue, L_wideNoExpand;
+  Label L_wcharBegin, L_continue, L_wideNoExpand, L_returnR11;
 
   __ align(CodeEntryAlignment);
   fnptrs[ae] = __ pc();
@@ -355,9 +355,6 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
 #ifdef _WIN64
   __ push(rsi);
   __ push(rdi);
-  __ push(rcx);
-  __ push(r8);
-  __ push(r9);
 
   // Move to Linux-style ABI
   __ movq(rdi, rcx);
@@ -374,9 +371,6 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
 
   __ push(rbp);
   __ subptr(rsp, STACK_SPACE);
-
-  // Assume failure
-  __ movq(rbp, -1);
 
   if (isReallyUL) {
     // Branch out if doing UL
@@ -485,6 +479,7 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
   __ movq(rax, -1);
   __ cmpq(r11, nMinusK);
   __ ja_b(L_return);
+  __ bind(L_returnR11);
   __ movq(rax, r11);
 
   // Restore stack, vzeroupper and return
@@ -492,9 +487,6 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
   __ addptr(rsp, STACK_SPACE);
   __ pop(rbp);
 #ifdef _WIN64
-  __ pop(r9);
-  __ pop(r8);
-  __ pop(rcx);
   __ pop(rdi);
   __ pop(rsi);
 #endif
@@ -561,7 +553,7 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
     //  r12: k
     //  r13: junk
     //  r14: needle
-    //  rbp: -1
+    //  rbp: junk
     //  XMM_BYTE_0 - first element of needle broadcast
     //  XMM_BYTE_K - last element of needle broadcast
     //
@@ -588,10 +580,6 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
 #undef tmp3
 #define retval r15
 #define firstNeedleCompare rdx
-
-    // Note that we're comparing the full needle here even though in some paths
-    // the 1st, 2nd, and last bytes are already known to be equal.  This is necessary
-    // due to the handling of cases where nMinusK is < 32
 
     // Need a lot of registers here to preserve state across arrays_equals call
 
@@ -644,7 +632,7 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
   //  r13: k - 1
   //  r12: k
   //  r10: n - k
-  //  rbp: -1
+  //  rbp: junk
   //  rdi: junk
   //  rsi: n
   //  rdx: junk
@@ -656,8 +644,8 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
   //  XMM_BYTE_1 - second element of needle broadcast
   //
   //  Haystack always copied to stack, so 32-byte reads OK
-  //  Haystack length < 32
-  //  10 < needle length < 32
+  //  Haystack length <= 32
+  //  10 < needle length <= 32
 
   {
     __ bind(L_smallCaseDefault);
@@ -718,7 +706,7 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
     __C2 arrays_equals(false, rTmp, firstNeedleCompare, compLen, rTmp3, rTmp2, XMM_TMP3, XMM_TMP4,
                        false /* char */, knoreg);
     __ testl(rTmp3, rTmp3);
-    __ jne(L_checkRangeAndReturn);
+    __ jne(L_returnR11);
 
     // Restore saved registers
     __ movq(compLen, saveCompLen);
@@ -855,7 +843,7 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
       //  r12: k
       //  r13: junk
       //  r14: needle
-      //  rbp: -1
+      //  rbp: junk
       //  XMM_BYTE_0 - first element of needle broadcast
       //  XMM_BYTE_K - last element of needle broadcast
 
@@ -1302,7 +1290,7 @@ static void compare_haystack_to_needle(bool sizeKnown, int size, Label &noMatch,
 //  r12: k
 //  r13: junk
 //  r14: needle
-//  rbp: -1
+//  rbp: junk
 //  XMM_BYTE_0 - first element of needle broadcast
 //  XMM_BYTE_K - last element of needle broadcast
 
@@ -1311,7 +1299,7 @@ static void big_case_loop_helper(bool sizeKnown, int size, Label &noMatch, Label
                                  Register needle, Register haystack, Register hsLength,
                                  Register rTmp1, Register rTmp2, Register rTmp3, Register rTmp4,
                                  StrIntrinsicNode::ArgEncoding ae, MacroAssembler *_masm) {
-  Label L_midLoop, L_greaterThan32, L_out;
+  Label L_midLoop, L_greaterThanOrEqual32, L_out;
 
   assert_different_registers(eq_mask, hsPtrRet, needleLen, rdi, r15, rdx, rsi, rbx, r14, nMinusK);
 
@@ -1330,7 +1318,7 @@ static void big_case_loop_helper(bool sizeKnown, int size, Label &noMatch, Label
   broadcast_additional_needles(sizeKnown, size, needle, needleLen, temp1, ae, _masm);
 
   __ cmpq(nMinusK, 32);
-  __ jae_b(L_greaterThan32);
+  __ jae_b(L_greaterThanOrEqual32);
 
   // Here the needle is too long, so we can't do a 32-byte read to compare the last element.
   //
@@ -1376,14 +1364,14 @@ static void big_case_loop_helper(bool sizeKnown, int size, Label &noMatch, Label
   }
   __ subl(temp2, hsLength);
   __ shrxl(temp1, temp1, temp2);
-  __ andq(eq_mask, temp1);
+  __ andl(eq_mask, temp1);
 
   __ testl(eq_mask, eq_mask);
   __ je(noMatch);
 
   __ jmp(L_out);
 
-  __ bind(L_greaterThan32);
+  __ bind(L_greaterThanOrEqual32);
 
   // Read 32-byte chunks at a time until the last 32-byte read would go
   // past the end of the haystack.  Then, set the final read to read exactly
@@ -1737,7 +1725,7 @@ static void setup_jump_tables(StrIntrinsicNode::ArgEncoding ae, Label &L_error, 
     //  rdx = &needle
     //  rsi = haystack length
     //  rdi = &haystack
-    //  rbp = -1
+    //  rbp = unused
     //  r8  = unused
     //  r9  = unused
     //  r10 = hs_len - needle len
@@ -1756,6 +1744,8 @@ static void setup_jump_tables(StrIntrinsicNode::ArgEncoding ae, Label &L_error, 
     //
     // If a match is found, jump to L_checkRange, which ensures the
     // matched needle is not past the end of the haystack.
+    //
+    // The index where a match is found is returned in set_bit (r11).
 
     const Register haystack = rbx;
     const Register needle = r14;
@@ -1795,7 +1785,7 @@ static void setup_jump_tables(StrIntrinsicNode::ArgEncoding ae, Label &L_error, 
     //  rdx = &needle
     //  rsi = haystack length
     //  rdi = &haystack
-    //  rbp = -1
+    //  rbp = unused
     //  r8  = unused
     //  r9  = unused
     //  r10 = hs_len - needle len
@@ -1808,6 +1798,13 @@ static void setup_jump_tables(StrIntrinsicNode::ArgEncoding ae, Label &L_error, 
     //  XMM_BYTE_K - last element of needle, broadcast
     //
     //  The haystack is > 32 bytes
+    //
+    // The value returned on a match is in hs_ptr (rcx) which is the address
+    // of the first matching byte within the haystack.  The L_fixup label
+    // takes hs_ptr (rcx), haystack (rbx), and set_bit (r8) to compute the
+    // index as: hs_ptr - haystack + r8.  hs_ptr - haystack is the offset
+    // within the haystack of the 32-byte chunk wherein a match was found,
+    // and set_bit is the index within that 32-byte chunk of the matching string.
 
     const Register haystack = rbx;
     const Register needle = r14;

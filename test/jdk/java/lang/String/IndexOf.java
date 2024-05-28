@@ -25,6 +25,13 @@
  * @test
  * @summary test String indexOf() intrinsic
  * @run main/othervm IndexOf
+ */
+
+/*
+ * @test
+ * @summary test String indexOf() intrinsic
+ * @requires vm.cpu.features ~= ".*avx2.*"
+ * @requires vm.compiler2.enabled
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -Xcomp -XX:-TieredCompilation -XX:UseAVX=2 -XX:+UnlockDiagnosticVMOptions -XX:+EnableX86ECoreOpts IndexOf
  */
 
