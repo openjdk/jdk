@@ -23,9 +23,10 @@
 
 package nsk.share.test;
 
+import jtreg.SkippedException;
+
 import nsk.share.log.*;
 import nsk.share.runner.*;
-import jtreg.SkippedException;
 import nsk.share.TestFailure;
 
 public class Tests {
