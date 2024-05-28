@@ -126,7 +126,7 @@ final class ProxyGenerator {
     private final ConstantPoolBuilder cp;
     private final List<StackMapFrameInfo.VerificationTypeInfo> throwableStack;
     private final NameAndTypeEntry exInit;
-    private final ClassEntry clazz, object, proxy, ute;
+    private final ClassEntry object, proxy, ute;
     private final FieldRefEntry handlerField;
     private final InterfaceMethodRefEntry invoke;
     private final MethodRefEntry uteInit;
@@ -174,7 +174,6 @@ final class ProxyGenerator {
         this.accessFlags = accessFlags;
         this.throwableStack = List.of(StackMapFrameInfo.ObjectVerificationTypeInfo.of(cp.classEntry(CD_Throwable)));
         this.exInit = cp.nameAndTypeEntry(INIT_NAME, MTD_void_String);
-        this.clazz = cp.classEntry(CD_Class);
         this.object = cp.classEntry(CD_Object);
         this.proxy = cp.classEntry(CD_Proxy);
         this.handlerField = cp.fieldRefEntry(proxy, cp.nameAndTypeEntry(NAME_HANDLER_FIELD, CD_InvocationHandler));
