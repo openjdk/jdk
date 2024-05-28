@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2022 SAP SE. All rights reserved.
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,33 +19,15 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#include "defs.S.inc"
+ // key: compiler.misc.feature.flexible.constructors
+ // key: compiler.warn.preview.feature.use
+ // options: --enable-preview -source ${jdk.version} -Xlint:preview
 
-    # Support for int SafeFetch32(int* address, int defaultval);
-    #
-    #  r3 : address
-    #  r4 : defaultval
-    #  r3 : retval
-DECLARE_FUNC(SafeFetch32_impl):
-DECLARE_FUNC(_SafeFetch32_fault):
-    lwa      %r3, 0(%r3)
-    blr
-DECLARE_FUNC(_SafeFetch32_continuation):
-    mr       %r3, %r4
-    blr
-
-    # Support for intptr_t SafeFetchN(intptr_t* address, intptr_t defaultval);
-    #
-    #  r3 : address
-    #  r4 : defaultval
-    #  r3 : retval
-DECLARE_FUNC(SafeFetchN_impl):
-DECLARE_FUNC(_SafeFetchN_fault):
-    ld     %r3, 0(%r3)
-    blr
-DECLARE_FUNC(_SafeFetchN_continuation):
-    mr     %r3, %r4
-    blr
+class FeatureFlexibleConstructors {
+    FeatureFlexibleConstructors() {
+        System.out.println();
+        super();
+    }
+}
