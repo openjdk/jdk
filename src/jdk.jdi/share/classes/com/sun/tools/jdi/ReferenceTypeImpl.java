@@ -182,8 +182,7 @@ public abstract class ReferenceTypeImpl extends TypeImpl implements ReferenceTyp
 
     public String signature() {
         if (signature == null) {
-            // Does not need synchronization, since worst-case
-            // static info is fetched twice
+            // Does not need synchronization. Worst case is static info is fetched twice
             if (vm.canGet1_5LanguageFeatures()) {
                 /*
                  * we might as well get both the signature and the
@@ -205,8 +204,7 @@ public abstract class ReferenceTypeImpl extends TypeImpl implements ReferenceTyp
     public String genericSignature() {
         // This gets both the signature and the generic signature
         if (vm.canGet1_5LanguageFeatures() && !genericSignatureGotten) {
-            // Does not need synchronization, since worst-case
-            // static info is fetched twice
+            // Does not need synchronization. Worst case is static info is fetched twice
             JDWP.ReferenceType.SignatureWithGeneric result;
             try {
                 result = JDWP.ReferenceType.SignatureWithGeneric.
@@ -222,7 +220,7 @@ public abstract class ReferenceTypeImpl extends TypeImpl implements ReferenceTyp
 
     public ClassLoaderReference classLoader() {
         if (!isClassLoaderCached) {
-            // Does not need synchronization. Worst-case case is static info is fetched twice
+            // Does not need synchronization. Worst case is static info is fetched twice
             try {
                 classLoader = JDWP.ReferenceType.ClassLoader.
                     process(vm, this).classLoader;
@@ -238,9 +236,8 @@ public abstract class ReferenceTypeImpl extends TypeImpl implements ReferenceTyp
         if (module != null) {
             return module;
         }
-        // Does not need synchronization, since worst-case
-        // static info is fetched twice
         try {
+            // Does not need synchronization. Worst case is static info is fetched twice
             ModuleReferenceImpl m = JDWP.ReferenceType.Module.
                 process(vm, this).module;
             module = vm.getModule(m.ref());
@@ -692,8 +689,8 @@ public abstract class ReferenceTypeImpl extends TypeImpl implements ReferenceTyp
     }
 
     public ClassObjectReference classObject() {
-        // Does not need synchronization. Worst-case case is static info is fetched twice
         if (classObject == null) {
+            // Does not need synchronization. Worst case is static info is fetched twice
             try {
                 classObject = JDWP.ReferenceType.ClassObject.
                     process(vm, this).classObject;
@@ -741,8 +738,7 @@ public abstract class ReferenceTypeImpl extends TypeImpl implements ReferenceTyp
     String baseSourceName() throws AbsentInformationException {
         String bsn = baseSourceName;
         if (bsn == null) {
-            // Does not need synchronization, since worst-case
-            // static info is fetched twice
+            // Does not need synchronization. Worst case is static info is fetched twice
             try {
                 bsn = JDWP.ReferenceType.SourceFile.
                     process(vm, this).sourceFile;
@@ -1059,13 +1055,12 @@ public abstract class ReferenceTypeImpl extends TypeImpl implements ReferenceTyp
         }
     }
 
-    // Does not need synchronization, since worst-case
-    // static info is fetched twice
     void getModifiers() {
         if (modifiers != -1) {
             return;
         }
         try {
+            // Does not need synchronization. Worst case is static info is fetched twice
             modifiers = JDWP.ReferenceType.Modifiers.
                                   process(vm, this).modBits;
         } catch (JDWPException exc) {
