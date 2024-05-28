@@ -7235,7 +7235,7 @@ instruct vxor_mem(vec dst, vec src, memory mem) %{
 // --------------------------------- VectorCast --------------------------------------
 
 instruct vcastBtoX(vec dst, vec src) %{
-  predicate(!VM_Version::is_knights_family() || Matcher::vector_element_basic_type(n) != T_DOUBLE);
+  predicate(VM_Version::supports_avx512vl() || Matcher::vector_element_basic_type(n) != T_DOUBLE);
   match(Set dst (VectorCastB2X src));
   format %{ "vector_cast_b2x $dst,$src\t!" %}
   ins_encode %{
@@ -7247,7 +7247,7 @@ instruct vcastBtoX(vec dst, vec src) %{
 %}
 
 instruct vcastBtoD(legVec dst, legVec src) %{
-  predicate(VM_Version::is_knights_family() && Matcher::vector_element_basic_type(n) == T_DOUBLE);
+  predicate(!VM_Version::supports_avx512vl() && Matcher::vector_element_basic_type(n) == T_DOUBLE);
   match(Set dst (VectorCastB2X src));
   format %{ "vector_cast_b2x $dst,$src\t!" %}
   ins_encode %{
