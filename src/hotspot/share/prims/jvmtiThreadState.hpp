@@ -113,6 +113,7 @@ class JvmtiVTMSTransitionDisabler {
 
   // set VTMS transition bit value in JavaThread and java.lang.VirtualThread object
   static void set_is_in_VTMS_transition(JavaThread* thread, jobject vthread, bool in_trans);
+  static void process_pending_interp_only(JavaThread* current);
 
   static void start_VTMS_transition(jthread vthread, bool is_mount);
   static void finish_VTMS_transition(jthread vthread, bool is_mount);

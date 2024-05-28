@@ -550,6 +550,18 @@ void JvmtiVTMSTransitionDisabler::set_is_in_VTMS_transition(JavaThread* thread, 
   thread->set_is_in_VTMS_transition(in_trans);
 }
 
+void JvmtiVTMSTransitionDisabler::process_pending_interp_only(JavaThread* current) {
+  JvmtiThreadState* state = current->jvmti_thread_state();
+
+  if (state != nullptr && state->is_pending_interp_only_mode()) {
+    MutexLocker mu(JvmtiThreadState_lock);
+    state = current->jvmti_thread_state();
+    if (state != nullptr && state->is_pending_interp_only_mode()) {
+      JvmtiEventController::enter_interp_only_mode(state);
+    }
+  }
+}
+
 void
 JvmtiVTMSTransitionDisabler::VTMS_vthread_start(jobject vthread) {
   VTMS_mount_end(vthread);
@@ -639,14 +651,9 @@ JvmtiVTMSTransitionDisabler::VTMS_mount_end(jobject vthread) {
 
   thread->rebind_to_jvmti_thread_state_of(vt);
 
-  JvmtiThreadState* state = thread->jvmti_thread_state();
-  if (state != nullptr && state->is_pending_interp_only_mode()) {
-    MutexLocker mu(JvmtiThreadState_lock);
-    state = thread->jvmti_thread_state();
-    if (state != nullptr && state->is_pending_interp_only_mode()) {
-      JvmtiEventController::enter_interp_only_mode();
-    }
-  }
+  // enable interp_only_mode for virtual thread if it has pending bit
+  process_pending_interp_only(thread);
+
   assert(thread->is_in_VTMS_transition(), "sanity check");
   assert(!thread->is_in_tmp_VTMS_transition(), "sanity check");
   finish_VTMS_transition(vthread, /* is_mount */ true);
@@ -663,6 +670,8 @@ JvmtiVTMSTransitionDisabler::VTMS_unmount_begin(jobject vthread, bool last_unmou
   if (!last_unmount) {
     thread->rebind_to_jvmti_thread_state_of(thread->threadObj());
   }
+  // enable interp_only_mode for carrier thread if it has pending bit
+  process_pending_interp_only(thread);
 }
 
 void
