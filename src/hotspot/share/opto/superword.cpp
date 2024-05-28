@@ -3465,7 +3465,7 @@ void SuperWordVTransformBuilder::build_vtransform() {
   // Create VTransformScalarNode for all non-packed nodes:
   for (int i = 0; i < body().length(); i++) {
     Node* n = body().at(i);
-    if (_bb_idx_to_vtnode.at(i) != nullptr) { continue; }
+    if (_packset.get_pack(n) != nullptr) { continue; }
     VTransformScalarNode* vtn = new (_graph.arena()) VTransformScalarNode(_graph, n);
     _bb_idx_to_vtnode.at_put(bb_idx(n), vtn);
   }
@@ -3477,7 +3477,16 @@ void SuperWordVTransformBuilder::build_vtransform() {
   for (int i = 0; i < _packset.length(); i++) {
     Node_List* pack = _packset.at(i);
     Node* p0 = pack->at(0);
+
+    VTransformNode* pack_vtn = _bb_idx_to_vtnode.at(bb_idx(p0));
+    if (pack_vtn == nullptr) {
+      // Cmp and Bool are handled by CMove
+      assert(p0->is_Cmp() || p0->is_Bool(), "all others must have a vector vtnode");
+      continue;
+    }
+
     VTransformVectorNode* vtn = _bb_idx_to_vtnode.at(bb_idx(p0))->isa_Vector();
+    assert(vtn != nullptr, "all packs must have vector vtnodes");
     _dependency_set.clear();
 
     if (p0->is_Load()) {
@@ -3503,6 +3512,8 @@ void SuperWordVTransformBuilder::build_vtransform() {
       } else if (VectorNode::is_roundopD(p0)) {
         set_req_for_vector(vtn, 1, pack);
         set_req_for_scalar(vtn, 2, p0); // constant rounding mode
+      } else if (p0->is_CMove()) {
+        assert(false, "TODO CMove x");
       } else {
         set_req_all_for_vector(vtn, pack);
       }
@@ -3576,9 +3587,11 @@ VTransformVectorNode* SuperWordVTransformBuilder::make_vtnode_for_pack(const Nod
     assert(p0->req() == 4, "3 operands expected");
     vtn = new (_graph.arena()) VTransformElementWiseVectorNode(_graph, 4, pack_size);
   } else if (p0->is_Cmp() || p0->is_Bool()) {
-    assert(false, "TODO");
+    // Bool + Cmp + CMove -> VectorMaskCmp + VectorBlend
+    return nullptr;
   } else if (p0->is_CMove()) {
-    assert(false, "TODO");
+    // Bool + Cmp + CMove -> VectorMaskCmp + VectorBlend
+    vtn = new (_graph.arena()) VTransformElementWiseVectorNode(_graph, 5, pack_size);
   } else if (p0->req() == 3) {
     if (is_marked_reduction(p0)) {
       // Reduction: (scalar, vector) -> scalar.
