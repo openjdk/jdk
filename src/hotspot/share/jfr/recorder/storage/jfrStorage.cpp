@@ -217,6 +217,7 @@ static void write_data_loss_event(JfrBuffer* buffer, u8 unflushed_size, Thread* 
     writer.begin_event_write(false);
     writer.write<u8>(EventDataLoss::eventId);
     writer.write(JfrTicks::now());
+    writer.write(JfrThreadLocal::thread_id(thread));
     writer.write(unflushed_size);
     writer.write(total_data_loss);
     writer.end_event_write(false);
