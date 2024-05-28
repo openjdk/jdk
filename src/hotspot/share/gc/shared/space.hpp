@@ -41,9 +41,6 @@
 // implementations for keeping track of free and used space,
 // for iterating over objects and free blocks, etc.
 
-// Forward decls.
-class GenSpaceMangler;
-
 // A space in which the free area is contiguous.  It therefore supports
 // faster allocation, and compaction.
 //
@@ -57,10 +54,6 @@ private:
   HeapWord* _bottom;
   HeapWord* _end;
   HeapWord* _top;
-  // A helper for mangling the unused area of the space in debug builds.
-  GenSpaceMangler* _mangler;
-
-  GenSpaceMangler* mangler() { return _mangler; }
 
   // Allocation helpers (return null if full).
   inline HeapWord* allocate_impl(size_t word_size);
@@ -68,7 +61,6 @@ private:
 
 public:
   ContiguousSpace();
-  ~ContiguousSpace();
 
   // Accessors
   HeapWord* bottom() const         { return _bottom; }
@@ -115,24 +107,8 @@ public:
   // had allocation performed in it, but is now to be considered empty.
   void clear(bool mangle_space);
 
-  // Used to save the space's current top for later use during mangling.
-  void set_top_for_allocations() PRODUCT_RETURN;
-
-  // For detecting GC bugs.  Should only be called at GC boundaries, since
-  // some unused space may be used as scratch space during GC's.
-  // We also call this when expanding a space to satisfy an allocation
-  // request. See bug #4668531
-  // Mangle regions in the space from the current top up to the
-  // previously mangled part of the space.
   void mangle_unused_area() PRODUCT_RETURN;
-  // Mangle [top, end)
-  void mangle_unused_area_complete() PRODUCT_RETURN;
-
-  // Do some sparse checking on the area that should have been mangled.
-  void check_mangled_unused_area(HeapWord* limit) PRODUCT_RETURN;
-  // Check the complete area that should have been mangled.
-  // This code may be null depending on the macro DEBUG_MANGLING.
-  void check_mangled_unused_area_complete() PRODUCT_RETURN;
+  void mangle_unused_area(MemRegion mr) PRODUCT_RETURN;
 
   MemRegion used_region() const { return MemRegion(bottom(), top()); }
 

@@ -78,7 +78,7 @@ public class G1MonitoringSupport extends VMObject {
     }
 
     public long edenSpaceRegionNum() {
-        return edenSpaceUsed() / HeapRegion.grainBytes();
+        return edenSpaceUsed() / G1HeapRegion.grainBytes();
     }
 
     public long survivorSpaceCommitted() {
@@ -90,7 +90,7 @@ public class G1MonitoringSupport extends VMObject {
     }
 
     public long survivorSpaceRegionNum() {
-        return survivorSpaceUsed() / HeapRegion.grainBytes();
+        return survivorSpaceUsed() / G1HeapRegion.grainBytes();
     }
 
     public long oldGenCommitted() {

@@ -24,32 +24,36 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
-
-import java.lang.classfile.ClassBuilder;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.reflect.AccessFlag;
 import java.lang.classfile.AccessFlags;
 import java.lang.classfile.Attribute;
-import java.lang.classfile.AttributeMapper;
 import java.lang.classfile.Attributes;
 import java.lang.classfile.ClassElement;
 import java.lang.classfile.ClassModel;
 import java.lang.classfile.ClassReader;
-import java.lang.classfile.ClassTransform;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.ClassFileVersion;
+import java.lang.classfile.CustomAttribute;
 import java.lang.classfile.constantpool.ConstantPool;
-import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.classfile.FieldModel;
 import java.lang.classfile.Interfaces;
 import java.lang.classfile.MethodModel;
 import java.lang.classfile.Superclass;
+import java.lang.classfile.attribute.InnerClassesAttribute;
+import java.lang.classfile.attribute.ModuleAttribute;
+import java.lang.classfile.attribute.ModuleHashesAttribute;
+import java.lang.classfile.attribute.ModuleMainClassAttribute;
+import java.lang.classfile.attribute.ModulePackagesAttribute;
+import java.lang.classfile.attribute.ModuleResolutionAttribute;
+import java.lang.classfile.attribute.ModuleTargetAttribute;
+import java.lang.classfile.attribute.RuntimeInvisibleAnnotationsAttribute;
+import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
+import java.lang.classfile.attribute.SourceDebugExtensionAttribute;
+import java.lang.classfile.attribute.SourceFileAttribute;
 import jdk.internal.access.SharedSecrets;
 
 public final class ClassImpl
@@ -202,28 +206,21 @@ public final class ClassImpl
     }
 
     private boolean verifyModuleAttributes() {
-        if (findAttribute(Attributes.MODULE).isEmpty())
+        if (findAttribute(Attributes.module()).isEmpty())
             return false;
 
-        Set<AttributeMapper<?>> found = attributes().stream()
-                                                    .map(Attribute::attributeMapper)
-                                                    .collect(Collectors.toSet());
-
-        found.removeAll(allowedModuleAttributes);
-        found.retainAll(Attributes.PREDEFINED_ATTRIBUTES);
-        return found.isEmpty();
+        return attributes().stream().allMatch(a ->
+                a instanceof ModuleAttribute
+             || a instanceof ModulePackagesAttribute
+             || a instanceof ModuleHashesAttribute
+             || a instanceof ModuleMainClassAttribute
+             || a instanceof ModuleResolutionAttribute
+             || a instanceof ModuleTargetAttribute
+             || a instanceof InnerClassesAttribute
+             || a instanceof SourceFileAttribute
+             || a instanceof SourceDebugExtensionAttribute
+             || a instanceof RuntimeVisibleAnnotationsAttribute
+             || a instanceof RuntimeInvisibleAnnotationsAttribute
+             || a instanceof CustomAttribute);
     }
-
-    private static final Set<AttributeMapper<?>> allowedModuleAttributes
-            = Set.of(Attributes.MODULE,
-                     Attributes.MODULE_HASHES,
-                     Attributes.MODULE_MAIN_CLASS,
-                     Attributes.MODULE_PACKAGES,
-                     Attributes.MODULE_RESOLUTION,
-                     Attributes.MODULE_TARGET,
-                     Attributes.INNER_CLASSES,
-                     Attributes.SOURCE_FILE,
-                     Attributes.SOURCE_DEBUG_EXTENSION,
-                     Attributes.RUNTIME_VISIBLE_ANNOTATIONS,
-                     Attributes.RUNTIME_INVISIBLE_ANNOTATIONS);
 }

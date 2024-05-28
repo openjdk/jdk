@@ -784,24 +784,6 @@ public:
   void do_vthread(Handle target_h);
 };
 
-// HandshakeClosure to get virtual thread thread at safepoint.
-class VirtualThreadGetThreadClosure : public HandshakeClosure {
-private:
-  Handle _vthread_h;
-  jthread* _carrier_thread_ptr;
-  jvmtiError _result;
-
-public:
-  VirtualThreadGetThreadClosure(Handle vthread_h, jthread* carrier_thread_ptr)
-    : HandshakeClosure("VirtualThreadGetThread"),
-      _vthread_h(vthread_h),
-      _carrier_thread_ptr(carrier_thread_ptr),
-      _result(JVMTI_ERROR_NONE) {}
-
-  void do_thread(Thread *target);
-  jvmtiError result() { return _result; }
-};
-
 // ResourceTracker
 //
 // ResourceTracker works a little like a ResourceMark. All allocates
