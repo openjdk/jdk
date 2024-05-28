@@ -222,8 +222,7 @@ public abstract class ReferenceTypeImpl extends TypeImpl implements ReferenceTyp
 
     public ClassLoaderReference classLoader() {
         if (!isClassLoaderCached) {
-            // Does not need synchronization, since worst-case
-            // static info is fetched twice
+            // Does not need synchronization. Worst-case case is static info is fetched twice
             try {
                 classLoader = JDWP.ReferenceType.ClassLoader.
                     process(vm, this).classLoader;
@@ -693,18 +692,13 @@ public abstract class ReferenceTypeImpl extends TypeImpl implements ReferenceTyp
     }
 
     public ClassObjectReference classObject() {
+        // Does not need synchronization. Worst-case case is static info is fetched twice
         if (classObject == null) {
-            // Are classObjects unique for an Object, or
-            // created each time? Is this spec'ed?
-            synchronized(this) {
-                if (classObject == null) {
-                    try {
-                        classObject = JDWP.ReferenceType.ClassObject.
-                            process(vm, this).classObject;
-                    } catch (JDWPException exc) {
-                        throw exc.toJDIException();
-                    }
-                }
+            try {
+                classObject = JDWP.ReferenceType.ClassObject.
+                    process(vm, this).classObject;
+            } catch (JDWPException exc) {
+                throw exc.toJDIException();
             }
         }
         return classObject;
