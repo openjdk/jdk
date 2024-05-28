@@ -7239,7 +7239,6 @@ instruct vcastBtoX(vec dst, vec src) %{
   match(Set dst (VectorCastB2X src));
   format %{ "vector_cast_b2x $dst,$src\t!" %}
   ins_encode %{
-    assert(UseAVX > 0, "required");
     BasicType to_elem_bt = Matcher::vector_element_basic_type(this);
     int vlen_enc = vector_length_encoding(this);
     __ vconvert_b2x(to_elem_bt, $dst$$XMMRegister, $src$$XMMRegister, vlen_enc);
@@ -7252,7 +7251,6 @@ instruct vcastBtoD(legVec dst, legVec src) %{
   match(Set dst (VectorCastB2X src));
   format %{ "vector_cast_b2x $dst,$src\t!" %}
   ins_encode %{
-    assert(UseAVX > 0, "required");
     int vlen_enc = vector_length_encoding(this);
     __ vconvert_b2x(T_DOUBLE, $dst$$XMMRegister, $src$$XMMRegister, vlen_enc);
   %}
