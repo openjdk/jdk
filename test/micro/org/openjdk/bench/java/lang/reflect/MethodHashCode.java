@@ -36,7 +36,7 @@ import java.util.concurrent.TimeUnit;
 @Fork(3)
 public class MethodHashCode {
     Method method;
-    
+
     @Setup
     public void setup() throws NoSuchMethodException {
         method = String.class.getDeclaredMethod("toString");
@@ -46,5 +46,4 @@ public class MethodHashCode {
     public void benchmarkHashCode(Blackhole bh) {
         bh.consume(method.hashCode());
     }
-    
 }
