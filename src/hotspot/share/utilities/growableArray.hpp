@@ -170,7 +170,7 @@ public:
 
   E const& top() const {
     assert(_len > 0, "empty");
-    return  _data[_len - 1];
+    return _data[_len - 1];
   }
 
   E& last() {
