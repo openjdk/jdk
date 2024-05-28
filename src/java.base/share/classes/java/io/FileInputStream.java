@@ -229,7 +229,7 @@ public class FileInputStream extends InputStream
      */
     @Override
     public int read() throws IOException {
-        if (jfrTracing) {
+        if (jfrTracing && FileReadEvent.enabled()) {
             return traceRead0();
         }
         return read0();
@@ -238,9 +238,6 @@ public class FileInputStream extends InputStream
     private native int read0() throws IOException;
 
     private int traceRead0() throws IOException {
-        if (!FileReadEvent.enabled()) {
-            return read0();
-        }
         int result = 0;
         boolean endOfFile = false;
         long bytesRead = 0;
@@ -272,9 +269,6 @@ public class FileInputStream extends InputStream
     private native int readBytes(byte[] b, int off, int len) throws IOException;
 
     private int traceReadBytes(byte b[], int off, int len) throws IOException {
-        if (!FileReadEvent.enabled()) {
-            return readBytes(b, off, len);
-        }
         int bytesRead = 0;
         long start = 0;
         try {
@@ -306,7 +300,7 @@ public class FileInputStream extends InputStream
      */
     @Override
     public int read(byte[] b) throws IOException {
-        if (jfrTracing) {
+        if (jfrTracing && FileReadEvent.enabled()) {
             return traceReadBytes(b, 0, b.length);
         }
         return readBytes(b, 0, b.length);
@@ -328,7 +322,7 @@ public class FileInputStream extends InputStream
      */
     @Override
     public int read(byte[] b, int off, int len) throws IOException {
-        if (jfrTracing) {
+        if (jfrTracing && FileReadEvent.enabled()) {
             return traceReadBytes(b, off, len);
         }
         return readBytes(b, off, len);

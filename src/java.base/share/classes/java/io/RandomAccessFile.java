@@ -384,7 +384,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      *                          end-of-file has been reached.
      */
     public int read() throws IOException {
-        if (jfrTracing) {
+        if (jfrTracing && FileReadEvent.enabled()) {
             return traceRead0();
         }
         return read0();
@@ -393,9 +393,6 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
     private native int read0() throws IOException;
 
     private int traceRead0() throws IOException {
-        if (!FileReadEvent.enabled()) {
-            return read0();
-        }
         int result = 0;
         long bytesRead = 0;
         boolean endOfFile = false;
@@ -425,7 +422,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @throws    IOException If an I/O error has occurred.
      */
     private int readBytes(byte[] b, int off, int len) throws IOException {
-        if (jfrTracing) {
+        if (jfrTracing && FileReadEvent.enabled()) {
             return traceReadBytes0(b, off, len);
         }
         return readBytes0(b, off, len);
@@ -434,9 +431,6 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
     private native int readBytes0(byte[] b, int off, int len) throws IOException;
 
     private int traceReadBytes0(byte b[], int off, int len) throws IOException {
-        if (!FileReadEvent.enabled()) {
-            return readBytes0(b, off, len);
-        }
         int bytesRead = 0;
         long start = 0;
         try {
@@ -598,7 +592,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @throws     IOException  if an I/O error occurs.
      */
     public void write(int b) throws IOException {
-        if (jfrTracing) {
+        if (jfrTracing && FileWriteEvent.enabled()) {
             traceImplWrite(b);
             return;
         }
@@ -615,10 +609,6 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
     }
 
     private void traceImplWrite(int b) throws IOException {
-        if (!FileWriteEvent.enabled()) {
-            implWrite(b);
-            return;
-        }
         long bytesWritten = 0;
         long start = 0;
         try {
@@ -644,7 +634,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @throws    IOException If an I/O error has occurred.
      */
     private void writeBytes(byte[] b, int off, int len) throws IOException {
-        if (jfrTracing) {
+        if (jfrTracing && FileWriteEvent.enabled()) {
             traceImplWriteBytes(b, off, len);
             return;
         }
@@ -661,10 +651,6 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
     }
 
     private void traceImplWriteBytes(byte b[], int off, int len) throws IOException {
-        if (!FileWriteEvent.enabled()) {
-            implWriteBytes(b, off, len);
-            return;
-        }
         long bytesWritten = 0;
         long start = 0;
         try {

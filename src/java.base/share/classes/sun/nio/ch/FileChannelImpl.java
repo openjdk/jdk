@@ -225,7 +225,7 @@ public class FileChannelImpl
 
     @Override
     public int read(ByteBuffer dst) throws IOException {
-        if (jfrTracing) {
+        if (jfrTracing && FileReadEvent.enabled()) {
             return traceImplRead(dst);
         }
         return implRead(dst);
@@ -263,9 +263,6 @@ public class FileChannelImpl
     }
 
     private int traceImplRead(ByteBuffer dst) throws IOException {
-        if (!FileReadEvent.enabled()) {
-            return implRead(dst);
-        }
         int bytesRead = 0;
         long start = 0;
         try {
@@ -286,7 +283,7 @@ public class FileChannelImpl
 
     @Override
     public long read(ByteBuffer[] dsts, int offset, int length) throws IOException {
-        if (jfrTracing) {
+        if (jfrTracing && FileReadEvent.enabled()) {
             return traceImplRead(dsts, offset, length);
         }
         return implRead(dsts, offset, length);
@@ -328,9 +325,6 @@ public class FileChannelImpl
     }
 
     private long traceImplRead(ByteBuffer[] dsts, int offset, int length) throws IOException {
-        if (!FileReadEvent.enabled()) {
-            return implRead(dsts, offset, length);
-        }
         long bytesRead = 0;
         long start = 0;
         try {
@@ -351,7 +345,7 @@ public class FileChannelImpl
 
     @Override
     public int write(ByteBuffer src) throws IOException {
-        if (jfrTracing) {
+        if (jfrTracing && FileWriteEvent.enabled()) {
             return traceImplWrite(src);
         }
         return implWrite(src);
@@ -390,9 +384,6 @@ public class FileChannelImpl
     }
 
     private int traceImplWrite(ByteBuffer src) throws IOException {
-        if (!FileWriteEvent.enabled()) {
-            return implWrite(src);
-        }
         int bytesWritten = 0;
         long start = 0;
         try {
@@ -410,7 +401,7 @@ public class FileChannelImpl
 
     @Override
     public long write(ByteBuffer[] srcs, int offset, int length) throws IOException {
-        if (jfrTracing) {
+        if (jfrTracing && FileWriteEvent.enabled()) {
             return traceImplWrite(srcs, offset, length);
         }
         return implWrite(srcs, offset, length);
@@ -449,9 +440,6 @@ public class FileChannelImpl
     }
 
     private long traceImplWrite(ByteBuffer[] srcs, int offset, int length) throws IOException {
-        if (!FileWriteEvent.enabled()) {
-            return implWrite(srcs, offset, length);
-        }
         long bytesWritten = 0;
         long start = 0;
         try {
@@ -1140,7 +1128,7 @@ public class FileChannelImpl
 
     @Override
     public int read(ByteBuffer dst, long position) throws IOException {
-        if (jfrTracing) {
+        if (jfrTracing && FileReadEvent.enabled()) {
             return traceImplRead(dst, position);
         }
         return implRead(dst, position);
@@ -1166,9 +1154,6 @@ public class FileChannelImpl
     }
 
     private int traceImplRead(ByteBuffer dst, long position) throws IOException {
-        if (!FileReadEvent.enabled()) {
-            return implRead(dst, position);
-        }
         int bytesRead = 0;
         long start = 0;
         try {
@@ -1215,7 +1200,7 @@ public class FileChannelImpl
 
     @Override
     public int write(ByteBuffer src, long position) throws IOException {
-        if (jfrTracing) {
+        if (jfrTracing && FileReadEvent.enabled()) {
             return traceImplWrite(src, position);
         }
         return implWrite(src, position);
@@ -1241,10 +1226,6 @@ public class FileChannelImpl
     }
 
     private int traceImplWrite(ByteBuffer src, long position) throws IOException {
-        if (!FileWriteEvent.enabled()) {
-            return implWrite(src, position);
-        }
-
         int bytesWritten = 0;
         long start = 0;
         try {

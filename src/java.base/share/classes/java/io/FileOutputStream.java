@@ -305,10 +305,6 @@ public class FileOutputStream extends OutputStream
     private native void write(int b, boolean append) throws IOException;
 
     private void traceWrite(int b, boolean append) throws IOException {
-        if (!FileWriteEvent.enabled()) {
-            write(b, append);
-            return;
-        }
         long bytesWritten = 0;
         long start = 0;
         try {
@@ -333,7 +329,7 @@ public class FileOutputStream extends OutputStream
     @Override
     public void write(int b) throws IOException {
         boolean append = FD_ACCESS.getAppend(fd);
-        if (jfrTracing) {
+        if (jfrTracing && FileWriteEvent.enabled()) {
             traceWrite(b, append);
             return;
         }
@@ -353,10 +349,6 @@ public class FileOutputStream extends OutputStream
         throws IOException;
 
     private void traceWriteBytes(byte b[], int off, int len, boolean append) throws IOException {
-        if (!FileWriteEvent.enabled()) {
-            writeBytes(b, off, len, append);
-            return;
-        }
         long bytesWritten = 0;
         long start = 0;
         try {
@@ -381,7 +373,7 @@ public class FileOutputStream extends OutputStream
     @Override
     public void write(byte[] b) throws IOException {
         boolean append = FD_ACCESS.getAppend(fd);
-        if (jfrTracing) {
+        if (jfrTracing && FileWriteEvent.enabled()) {
             traceWriteBytes(b, 0, b.length, append);
             return;
         }
@@ -401,7 +393,7 @@ public class FileOutputStream extends OutputStream
     @Override
     public void write(byte[] b, int off, int len) throws IOException {
         boolean append = FD_ACCESS.getAppend(fd);
-        if (jfrTracing) {
+        if (jfrTracing && FileWriteEvent.enabled()) {
             traceWriteBytes(b, off, len, append);
             return;
         }
