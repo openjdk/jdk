@@ -190,6 +190,8 @@ public class ConsoleTest extends KullaTesting {
         console = new ThrowingJShellConsole();
         assertEval("System.console().readLine(null)", DiagCheck.DIAG_OK, DiagCheck.DIAG_OK, chain(added(Status.VALID), null, EvalException.class));
         assertEval("System.console().readPassword(null)", DiagCheck.DIAG_OK, DiagCheck.DIAG_OK, chain(added(Status.VALID), null, EvalException.class));
+        assertEval("System.console().readLine(\"%d\", \"\")", DiagCheck.DIAG_OK, DiagCheck.DIAG_OK, chain(added(Status.VALID), null, EvalException.class));
+        assertEval("System.console().readPassword(\"%d\", \"\")", DiagCheck.DIAG_OK, DiagCheck.DIAG_OK, chain(added(Status.VALID), null, EvalException.class));
     }
 
     @Override

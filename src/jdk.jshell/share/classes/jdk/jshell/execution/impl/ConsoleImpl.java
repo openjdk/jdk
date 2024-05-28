@@ -35,6 +35,7 @@ import java.io.Writer;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Locale;
+import java.util.Objects;
 
 import jdk.internal.io.JdkConsole;
 import jdk.internal.io.JdkConsoleProvider;
@@ -246,6 +247,8 @@ public class ConsoleImpl {
          */
         @Override
         public String readLine(Locale locale, String format, Object... args) {
+            Objects.requireNonNull(format, "the format String must be non-null");
+
             String prompt = String.format(locale, format, args);
             char[] chars = prompt.toCharArray();
 
@@ -274,6 +277,8 @@ public class ConsoleImpl {
          */
         @Override
         public char[] readPassword(Locale locale, String format, Object... args) {
+            Objects.requireNonNull(format, "the format String must be non-null");
+
             String prompt = String.format(locale, format, args);
             char[] chars = prompt.toCharArray();
 
