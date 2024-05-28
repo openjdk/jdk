@@ -281,7 +281,7 @@ const char *JvmtiTrace::safe_get_thread_name(Thread *thread) {
   if (Thread::current()->is_Java_thread()) {
     JavaThreadState current_state = JavaThread::cast(Thread::current())->thread_state();
     if (current_state == _thread_in_native || current_state == _thread_blocked) {
-      return thread->Thread::name();
+      return "not readable";
     }
   }
   JavaThread* java_thread = JavaThread::cast(thread);
