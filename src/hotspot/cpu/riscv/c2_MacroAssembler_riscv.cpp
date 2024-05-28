@@ -2762,6 +2762,10 @@ void C2_MacroAssembler::compare_integral_v(VectorRegister vd, VectorRegister src
     case BoolTest::ge: vmsge_vv(vd, src1, src2, vm); break;
     case BoolTest::lt: vmslt_vv(vd, src1, src2, vm); break;
     case BoolTest::gt: vmsgt_vv(vd, src1, src2, vm); break;
+    case BoolTest::ule: vmsleu_vv(vd, src1, src2, vm); break;
+    case BoolTest::uge: vmsgeu_vv(vd, src1, src2, vm); break;
+    case BoolTest::ult: vmsltu_vv(vd, src1, src2, vm); break;
+    case BoolTest::ugt: vmsgtu_vv(vd, src1, src2, vm); break;
     default:
       assert(false, "unsupported compare condition");
       ShouldNotReachHere();

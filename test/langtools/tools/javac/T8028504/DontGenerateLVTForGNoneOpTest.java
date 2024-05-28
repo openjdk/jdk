@@ -52,9 +52,9 @@ public class DontGenerateLVTForGNoneOpTest {
     void checkClassFile(final File cfile) throws Exception {
         ClassModel classFile = ClassFile.of().parse(cfile.toPath());
         for (MethodModel method : classFile.methods()) {
-            CodeAttribute code = method.findAttribute(Attributes.CODE).orElse(null);
+            CodeAttribute code = method.findAttribute(Attributes.code()).orElse(null);
             if (code != null) {
-                if (code.findAttribute(Attributes.LOCAL_VARIABLE_TABLE).orElse(null) != null) {
+                if (code.findAttribute(Attributes.localVariableTable()).orElse(null) != null) {
                     throw new AssertionError("LVT shouldn't be generated for g:none");
                 }
             }
