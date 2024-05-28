@@ -63,6 +63,7 @@ import java.lang.invoke.MethodType;
 final class ProxyGenerator {
 
     private static final ClassDesc
+            CD_Class_array = ReferenceClassDescImpl.ofValidated("[Ljava/lang/Class;"),
             CD_IllegalAccessException = ReferenceClassDescImpl.ofValidated("Ljava/lang/IllegalAccessException;"),
             CD_InvocationHandler = ReferenceClassDescImpl.ofValidated("Ljava/lang/reflect/InvocationHandler;"),
             CD_Method = ReferenceClassDescImpl.ofValidated("Ljava/lang/reflect/Method;"),
@@ -78,6 +79,8 @@ final class ProxyGenerator {
             MTD_void_String = MethodTypeDescImpl.ofValidated(CD_void, new ClassDesc[]{CD_String}),
             MTD_void_Throwable = MethodTypeDescImpl.ofValidated(CD_void, new ClassDesc[]{CD_Throwable}),
             MTD_Class = MethodTypeDescImpl.ofValidated(CD_Class, ConstantUtils.EMPTY_CLASSDESC),
+            MTD_Class_array = MethodTypeDescImpl.ofValidated(CD_Class_array, ConstantUtils.EMPTY_CLASSDESC),
+            MTD_Method_String_Class_array = MethodTypeDescImpl.ofValidated(CD_Method, new ClassDesc[]{ConstantDescs.CD_String, CD_Class_array}),
             MTD_MethodHandles$Lookup = MethodTypeDescImpl.ofValidated(CD_MethodHandles_Lookup, ConstantUtils.EMPTY_CLASSDESC),
             MTD_MethodHandles$Lookup_MethodHandles$Lookup = MethodTypeDescImpl.ofValidated(CD_MethodHandles_Lookup, new ClassDesc[]{CD_MethodHandles_Lookup}),
             MTD_Object_Object_Method_ObjectArray = MethodTypeDescImpl.ofValidated(CD_Object, new ClassDesc[]{CD_Object, CD_Method, CD_Object_array}),
@@ -558,8 +561,8 @@ final class ProxyGenerator {
             cob.aload(3) //interface Class
                .aload(4) //interface method name String
                .aload(5) //interface MethodType
-               .invokevirtual(CD_MethodType, "parameterArray", MethodTypeDesc.of(ConstantDescs.CD_Class.arrayType()))
-               .invokevirtual(ConstantDescs.CD_Class, "getMethod", MethodTypeDesc.of(CD_Method, ConstantDescs.CD_String, ConstantDescs.CD_Class.arrayType()))
+               .invokevirtual(CD_MethodType, "parameterArray", MTD_Class_array)
+               .invokevirtual(ConstantDescs.CD_Class, "getMethod", MTD_Method_String_Class_array)
                .areturn();
             Label failLabel = cob.newBoundLabel();
             ClassEntry nsme = cp.classEntry(CD_NoSuchMethodError);
