@@ -265,7 +265,11 @@ public final class ToolTipManager extends MouseAdapter implements MouseMotionLis
                 toFind = new Point(screenLocation.x + preferredLocation.x,
                         screenLocation.y + preferredLocation.y);
             } else {
-                toFind = mouseEvent.getLocationOnScreen();
+                if (mouseEvent != null) {
+                    toFind = mouseEvent.getLocationOnScreen();
+                } else {
+                    toFind = screenLocation;
+                }
             }
 
             GraphicsConfiguration gc = getDrawingGC(toFind);
@@ -303,8 +307,12 @@ public final class ToolTipManager extends MouseAdapter implements MouseMotionLis
             location.x -= size.width;
         }
             } else {
-                location = new Point(screenLocation.x + mouseEvent.getX(),
-                        screenLocation.y + mouseEvent.getY() + 20);
+                if (mouseEvent != null) {
+                    location = new Point(screenLocation.x + mouseEvent.getX(),
+                            screenLocation.y + mouseEvent.getY() + 20);
+                } else {
+                    location = screenLocation;
+                }
         if (!leftToRight) {
             if(location.x - size.width>=0) {
                 location.x -= size.width;
