@@ -136,9 +136,9 @@ public class StressNativeSignal {
         public void waitTestThreadStart() {
             try {
                 threadStarted.await();
-            } catch (InterruptedException intEx) {
-                System.err.println("ServerSocketThread.waitTestThreadStart:" +
-                                   " InterruptException caught ... continue");
+            } catch (Exception z) {
+                z.printStackTrace(System.err);
+                // ignore
             }
         }
     }
@@ -188,9 +188,9 @@ public class StressNativeSignal {
         public void waitTestThreadStart() {
             try {
                 threadStarted.await();
-            } catch (InterruptedException intEx) {
-                System.err.println("UDPThread.waitTestThreadStart:" +
-                                   " InterruptException caught ... continue");
+            } catch (Exception z) {
+                z.printStackTrace(System.err);
+                // ignore
             }
         }
     }
