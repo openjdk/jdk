@@ -1246,6 +1246,8 @@ bool LibraryCallKit::inline_string_indexOfI(StrIntrinsicNode::ArgEnc ae) {
   if (!Matcher::match_rule_supported(Op_StrIndexOf)) {
     return false;
   }
+
+  assert(arrayOopDesc::base_offset_in_bytes(T_BYTE) >= 16, "Needed for indexOf");
   assert(callee()->signature()->size() == 5, "String.indexOf() has 5 arguments");
   Node* src         = argument(0); // byte[]
   Node* src_count   = argument(1); // char count

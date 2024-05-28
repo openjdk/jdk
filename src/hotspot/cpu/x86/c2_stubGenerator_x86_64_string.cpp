@@ -255,9 +255,9 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
 
   Label L_begin;
 
-  Label L_checkRangeAndReturn, L_returnError, L_bigCaseFixupAndReturn;
+  Label L_returnError, L_bigCaseFixupAndReturn;
   Label L_bigSwitchTop, L_bigCaseDefault, L_smallCaseDefault;
-  Label L_nextCheck, L_checksPassed, L_zeroCheckFailed, L_return;
+  Label L_nextCheck, L_checksPassed, L_return;
   Label L_wcharBegin, L_continue, L_wideNoExpand, L_returnR11;
 
   __ align(CodeEntryAlignment);
@@ -272,17 +272,12 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
   __ leave();
   __ ret(0);
 
-  // haystack length == 0?
   __ bind(L_nextCheck);
-  __ testq(haystack_len_p, haystack_len_p);
-  __ je(L_zeroCheckFailed);
-
   // haystack length >= needle length?
   __ movq(rax, haystack_len_p);
   __ subq(rax, needle_len_p);
   __ jge_b(L_checksPassed);
 
-  __ bind(L_zeroCheckFailed);
   __ movq(rax, -1);
   __ leave();
   __ ret(0);
@@ -312,8 +307,8 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
   }
 
   // Set up jump tables.  Used when needle size <= NUMBER_OF_CASES
-  setup_jump_tables(ae, L_returnError, L_checkRangeAndReturn, L_bigCaseFixupAndReturn,
-                    &big_jump_table, &small_jump_table, _masm);
+  setup_jump_tables(ae, L_returnError, L_returnR11, L_bigCaseFixupAndReturn, &big_jump_table,
+                    &small_jump_table, _masm);
 
   ////////////////////////////////////////////////////////////////////////////////////////
   ////////////////////////////////////////////////////////////////////////////////////////
@@ -473,12 +468,7 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
 
   __ movq(r11, rcx);
 
-  // Ensure that the index where a match was found is within valid range.
-  // r11 contains -1 or the index where match was found.
-  __ bind(L_checkRangeAndReturn);
-  __ movq(rax, -1);
-  __ cmpq(r11, nMinusK);
-  __ ja_b(L_return);
+  // r11 will contain the valid index.
   __ bind(L_returnR11);
   __ movq(rax, r11);
 
@@ -565,9 +555,9 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
     // Loop construct handling for big haystacks
     // The helper binds L_loopTop which should be jumped to if potential matches fail to compare
     // equal (thus moving on to the next chunk of haystack).  If we run out of haystack, the
-    // helper jumps to L_checkRangeAndReturn with a (-1) return value.
-    big_case_loop_helper(false, 0, L_checkRangeAndReturn, L_loopTop, mask, hsPtrRet, needleLen,
-                         needle, haystack, hsLength, tmp1, tmp2, tmp3, rScratch, ae, _masm);
+    // helper jumps to L_returnError.
+    big_case_loop_helper(false, 0, L_returnError, L_loopTop, mask, hsPtrRet, needleLen, needle,
+                         haystack, hsLength, tmp1, tmp2, tmp3, rScratch, ae, _masm);
 
     // big_case_loop_helper will fall through to this point if one or more potential matches are found
     // The mask will have a bitmask indicating the position of the potential matches within the haystack
@@ -606,7 +596,7 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
     __ subq(hsPtrRet, haystack);
     __ addq(hsPtrRet, index);
     __ movq(r11, hsPtrRet);
-    __ jmp(L_checkRangeAndReturn);
+    __ jmp(L_returnR11);
 
 #undef retval
 #undef firstNeedleCompare
@@ -872,7 +862,7 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
       __ movq(nMinusK, rScratch);
 
       // Check for room for a 32-byte read for the last iteration
-      __ cmpq(nMinusK, 0x20);
+      __ cmpq(nMinusK, 0x1f);
       __ jl(L_compareFull);
 
       // Always need needle broadcast to ymm registers
@@ -889,9 +879,9 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
       // Loop construct handling for big haystacks
       // The helper binds L_loopTop which should be jumped to if potential matches fail to compare
       // equal (thus moving on to the next chunk of haystack).  If we run out of haystack, the
-      // helper jumps to L_checkRangeAndReturn with a (-1) return value.
-      big_case_loop_helper(false, 0, L_checkRangeAndReturn, L_loopTop, mask, hsPtrRet, needleLen,
-                           needle, haystack, hsLength, tmp1, tmp2, tmp3, rScratch, ae, _masm);
+      // helper jumps to L_returnError.
+      big_case_loop_helper(false, 0, L_returnError, L_loopTop, mask, hsPtrRet, needleLen, needle,
+                           haystack, hsLength, tmp1, tmp2, tmp3, rScratch, ae, _masm);
 
       // big_case_loop_helper will fall through to this point if one or more potential matches are
       // found The mask will have a bitmask indicating the position of the potential matches within
@@ -935,7 +925,7 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
       __ subq(hsPtrRet, haystack);
       __ addq(hsPtrRet, index);
       __ movq(r11, hsPtrRet);
-      __ jmp(L_checkRangeAndReturn);
+      __ jmp(L_returnR11);
 
 #undef retval
 #undef firstNeedleCompare
@@ -964,7 +954,7 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
       __ jz(topLoop);
 
       // Match found
-      __ jmp(L_checkRangeAndReturn);
+      __ jmp(L_returnR11);
     }
   }
 
@@ -1299,7 +1289,7 @@ static void big_case_loop_helper(bool sizeKnown, int size, Label &noMatch, Label
                                  Register needle, Register haystack, Register hsLength,
                                  Register rTmp1, Register rTmp2, Register rTmp3, Register rTmp4,
                                  StrIntrinsicNode::ArgEncoding ae, MacroAssembler *_masm) {
-  Label L_midLoop, L_greaterThanOrEqual32, L_out;
+  Label L_midLoop, L_greaterThan32, L_out;
 
   assert_different_registers(eq_mask, hsPtrRet, needleLen, rdi, r15, rdx, rsi, rbx, r14, nMinusK);
 
@@ -1317,13 +1307,13 @@ static void big_case_loop_helper(bool sizeKnown, int size, Label &noMatch, Label
 
   broadcast_additional_needles(sizeKnown, size, needle, needleLen, temp1, ae, _masm);
 
-  __ cmpq(nMinusK, 32);
-  __ jae_b(L_greaterThanOrEqual32);
+  __ cmpq(nMinusK, 31);
+  __ jae_b(L_greaterThan32);
 
   // Here the needle is too long, so we can't do a 32-byte read to compare the last element.
   //
   // Instead we match the first two characters, read from the end of the haystack
-  // back 32 characters, shift the result compare and check that way.
+  // back 32 characters, shift the result, compare and check that way.
   //
   // Set last to hsPtrRet so the next attempt at loop iteration ends the compare.
   __ movq(last, haystack);
@@ -1371,7 +1361,7 @@ static void big_case_loop_helper(bool sizeKnown, int size, Label &noMatch, Label
 
   __ jmp(L_out);
 
-  __ bind(L_greaterThanOrEqual32);
+  __ bind(L_greaterThan32);
 
   // Read 32-byte chunks at a time until the last 32-byte read would go
   // past the end of the haystack.  Then, set the final read to read exactly
@@ -1708,6 +1698,27 @@ static void setup_jump_tables(StrIntrinsicNode::ArgEncoding ae, Label &L_error, 
   address small_hs_jmp_table[NUMBER_OF_CASES];  // Jump table for small haystacks
   int jmp_ndx = 0;
 
+  ////////////////////////////////////////////////
+  //  On entry to each case, the register state is:
+  //
+  //  rax = unused
+  //  rbx = &haystack
+  //  rcx = haystack length
+  //  rdx = &needle
+  //  rsi = haystack length
+  //  rdi = &haystack
+  //  rbp = unused
+  //  r8  = unused
+  //  r9  = unused
+  //  r10 = hs_len - needle len
+  //  r11 = unused
+  //  r12 = needle length
+  //  r13 = (needle length - 1)
+  //  r14 = &needle
+  //  r15 = unused
+  //  XMM_BYTE_0 - first element of needle, broadcast
+  //  XMM_BYTE_K - last element of needle, broadcast
+
   {
     ////////////////////////////////////////////////////////////////////////////////////////
     //
@@ -1717,26 +1728,6 @@ static void setup_jump_tables(StrIntrinsicNode::ArgEncoding ae, Label &L_error, 
     // haystack size <= 32 bytes with 6 < needle size < NUMBER_OF_CASES bytes.
 
     ////////////////////////////////////////////////
-    //  On entry to each case of small_hs, the register state is:
-    //
-    //  rax = unused
-    //  rbx = &haystack
-    //  rcx = haystack length
-    //  rdx = &needle
-    //  rsi = haystack length
-    //  rdi = &haystack
-    //  rbp = unused
-    //  r8  = unused
-    //  r9  = unused
-    //  r10 = hs_len - needle len
-    //  r11 = unused
-    //  r12 = needle length
-    //  r13 = (needle length - 1)
-    //  r14 = &needle
-    //  r15 = unused
-    //  XMM_BYTE_0 - first element of needle, broadcast
-    //  XMM_BYTE_K - last element of needle, broadcast
-    //
     //  The haystack is <= 32 bytes
     //
     // If a match is not found, branch to L_error (which will always
@@ -1775,28 +1766,7 @@ static void setup_jump_tables(StrIntrinsicNode::ArgEncoding ae, Label &L_error, 
   // Large haystack (> 32 bytes) switch
 
   {
-
     ////////////////////////////////////////////////
-    //  On entry to each case of large_hs, the register state is:
-    //
-    //  rax = unused
-    //  rbx = &haystack
-    //  rcx = haystack length
-    //  rdx = &needle
-    //  rsi = haystack length
-    //  rdi = &haystack
-    //  rbp = unused
-    //  r8  = unused
-    //  r9  = unused
-    //  r10 = hs_len - needle len
-    //  r11 = unused
-    //  r12 = needle length
-    //  r13 = (needle length - 1)
-    //  r14 = &needle
-    //  r15 = unused
-    //  XMM_BYTE_0 - first element of needle, broadcast
-    //  XMM_BYTE_K - last element of needle, broadcast
-    //
     //  The haystack is > 32 bytes
     //
     // The value returned on a match is in hs_ptr (rcx) which is the address
