@@ -92,6 +92,10 @@ public class OutputBinAttributePrintDialogTest {
         }
 
         final OutputBin[] supportedOutputBins = getSupportedOutputBinttributes();
+        if (supportedOutputBins == null) {
+            return;
+        }
+
         if (supportedOutputBins.length < 2) {
             System.out.println("Skip the test as the number of supported output bins is less than 2.");
             return;
@@ -181,17 +185,23 @@ public class OutputBinAttributePrintDialogTest {
 
         PrinterJob printerJob = PrinterJob.getPrinterJob();
         PrintService service = printerJob.getPrintService();
-        if (service == null || !service.isAttributeCategorySupported(OutputBin.class)) {
-            return new OutputBin[0];
+        if (service == null) {
+            System.out.printf("No print service found.");
+            return null;
+        }
+
+        if (!service.isAttributeCategorySupported(OutputBin.class)) {
+            System.out.printf("Skipping the test as OutputBin category is not supported for this printer.");
+            return null;
         }
 
         Object obj = service.getSupportedAttributeValues(OutputBin.class, null, null);
 
-        if (obj instanceof Attribute[]) {
+        if (obj instanceof OutputBin[]) {
             return (OutputBin[]) obj;
         }
 
-        return new OutputBin[0];
+        throw new RuntimeException("OutputBin category is supported but no supported attribute values are returned.");
     }
 
     private static void pass() {

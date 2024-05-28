@@ -76,13 +76,15 @@ public class OutputBinAttributeTest {
 
         SwingUtilities.invokeLater(() -> {
             Set<OutputBin> supportedOutputBins = getSupportedOutputBinttributes();
-            if (supportedOutputBins.size() > 1) {
-                testTotalCount = supportedOutputBins.size();
-                for(OutputBin outputBin: supportedOutputBins) {
-                    testPrint(outputBin, supportedOutputBins);
+            if (supportedOutputBins != null) {
+                if (supportedOutputBins.size() > 1) {
+                    testTotalCount = supportedOutputBins.size();
+                    for (OutputBin outputBin : supportedOutputBins) {
+                        testPrint(outputBin, supportedOutputBins);
+                    }
+                } else {
+                    System.out.println("Skip the test as the number of supported output bins is less than 2.");
                 }
-            } else {
-                System.out.println("Skip the test as the number of supported output bins is less than 2.");
             }
             testFinished = true;
         });
@@ -160,18 +162,24 @@ public class OutputBinAttributeTest {
 
         PrinterJob printerJob = PrinterJob.getPrinterJob();
         PrintService service = printerJob.getPrintService();
-        if (service == null || !service.isAttributeCategorySupported(OutputBin.class)) {
-            return supportedOutputBins;
+        if (service == null) {
+            System.out.printf("No print service found.");
+            return null;
+        }
+
+        if (!service.isAttributeCategorySupported(OutputBin.class)) {
+            System.out.printf("Skipping the test as OutputBin category is not supported for this printer.");
+            return null;
         }
 
         Object obj = service.getSupportedAttributeValues(OutputBin.class, null, null);
 
-        if (obj instanceof Attribute[]) {
-            OutputBin[] attrs = (OutputBin[]) obj;
-            Collections.addAll(supportedOutputBins, attrs);
+        if (obj instanceof OutputBin[]) {
+            Collections.addAll(supportedOutputBins, (OutputBin[]) obj);
+            return supportedOutputBins;
         }
 
-        return supportedOutputBins;
+        throw new RuntimeException("OutputBin category is supported but no supported attribute values are returned.");
     }
 
     private static void pass() {
