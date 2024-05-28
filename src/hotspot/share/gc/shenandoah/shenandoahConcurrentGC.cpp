@@ -127,6 +127,26 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
   // Complete marking under STW, and start evacuation
   vmop_entry_final_mark();
 
+  // If the GC was cancelled just before final mark (but after the preceding cancellation check),
+  // then the safepoint operation will do nothing and the concurrent mark will still be in progress.
+  // In this case it is safe (and necessary) to resume the degenerated cycle from the marking phase.
+  //
+  // On the other hand, if the GC is cancelled after final mark (but before this check), then the
+  // final mark safepoint operation will have finished the mark (setting concurrent mark in progress
+  // to false). In this case (final mark has completed), we need control to fall past the next
+  // cancellation check and resume the degenerated cycle from the evacuation phase.
+  if (heap->is_concurrent_mark_in_progress()) {
+    // If the concurrent mark is still in progress after the final mark safepoint, then the GC has
+    // been cancelled. The degenerated cycle must resume from the marking phase. Without this check,
+    // the non-generational mode may fall all the way to the end of this collect routine without
+    // having done anything (besides mark most of the heap). Without having collected anything, we
+    // can expect an 'out of cycle' degenerated GC which will again mark the entire heap. This is
+    // not optimal.
+    bool cancelled = check_cancellation_and_abort(ShenandoahDegenPoint::_degenerated_mark);
+    assert(cancelled, "GC must have been cancelled between concurrent and final mark");
+    return false;
+  }
+
   // Concurrent stack processing
   if (heap->is_evacuation_in_progress()) {
     entry_thread_roots();
