@@ -3089,7 +3089,20 @@ instruct vrotate_right(vReg dst, vReg src, vReg shift) %{
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ vsetvli_helper(bt, Matcher::vector_length(this));
-    __ vror_vv(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg), as_VectorRegister($shift$$reg));
+    __ vror_vv(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg),
+               as_VectorRegister($shift$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vrotate_right_reg(vReg dst, vReg src, iRegIorL2I shift) %{
+  match(Set dst (RotateRightV src (Replicate shift)));
+  format %{ "vrotate_right_reg $dst, $src, $shift\t" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vror_vx(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg),
+               as_Register($shift$$reg));
   %}
   ins_pipe(pipe_slow);
 %}
@@ -3120,7 +3133,20 @@ instruct vrotate_right_masked(vReg dst_src, vReg shift, vRegMask_V0 v0) %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ vsetvli_helper(bt, Matcher::vector_length(this));
     __ vror_vv(as_VectorRegister($dst_src$$reg), as_VectorRegister($dst_src$$reg),
-                                 as_VectorRegister($shift$$reg), Assembler::v0_t);
+               as_VectorRegister($shift$$reg), Assembler::v0_t);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vrotate_right_reg_masked(vReg dst_src, iRegIorL2I shift, vRegMask_V0 v0) %{
+  match(Set dst_src (RotateRightV (Binary dst_src (Replicate shift)) v0));
+  effect(TEMP_DEF dst_src);
+  format %{ "vrotate_right_reg_masked $dst_src, $dst_src, $shift, v0.t\t" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vror_vx(as_VectorRegister($dst_src$$reg), as_VectorRegister($dst_src$$reg),
+               as_Register($shift$$reg), Assembler::v0_t);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -3137,7 +3163,8 @@ instruct vrotate_right_imm_masked(vReg dst_src, immI shift, vRegMask_V0 v0) %{
       return;
     }
     __ vsetvli_helper(bt, Matcher::vector_length(this));
-    __ vror_vi(as_VectorRegister($dst_src$$reg), as_VectorRegister($dst_src$$reg), con, Assembler::v0_t);
+    __ vror_vi(as_VectorRegister($dst_src$$reg), as_VectorRegister($dst_src$$reg),
+               con, Assembler::v0_t);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -3150,7 +3177,20 @@ instruct vrotate_left(vReg dst, vReg src, vReg shift) %{
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ vsetvli_helper(bt, Matcher::vector_length(this));
-    __ vrol_vv(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg), as_VectorRegister($shift$$reg));
+    __ vrol_vv(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg),
+               as_VectorRegister($shift$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vrotate_left_reg(vReg dst, vReg src, iRegIorL2I shift) %{
+  match(Set dst (RotateLeftV src (Replicate shift)));
+  format %{ "vrotate_left_reg $dst, $src, $shift\t" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vrol_vx(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg),
+               as_Register($shift$$reg));
   %}
   ins_pipe(pipe_slow);
 %}
@@ -3187,6 +3227,19 @@ instruct vrotate_left_masked(vReg dst_src, vReg shift, vRegMask_V0 v0) %{
   ins_pipe(pipe_slow);
 %}
 
+instruct vrotate_left_reg_masked(vReg dst_src, iRegIorL2I shift, vRegMask_V0 v0) %{
+  match(Set dst_src (RotateLeftV (Binary dst_src (Replicate shift)) v0));
+  effect(TEMP_DEF dst_src);
+  format %{ "vrotate_left_reg_masked $dst_src, $dst_src, $shift, v0.t\t" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vrol_vx(as_VectorRegister($dst_src$$reg), as_VectorRegister($dst_src$$reg),
+               as_Register($shift$$reg), Assembler::v0_t);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 instruct vrotate_left_imm_masked(vReg dst_src, immI shift, vRegMask_V0 v0) %{
   match(Set dst_src (RotateLeftV (Binary dst_src shift) v0));
   effect(TEMP_DEF dst_src);
@@ -3200,7 +3253,8 @@ instruct vrotate_left_imm_masked(vReg dst_src, immI shift, vRegMask_V0 v0) %{
     }
     __ vsetvli_helper(bt, Matcher::vector_length(this));
     con = bits - con;
-    __ vror_vi(as_VectorRegister($dst_src$$reg), as_VectorRegister($dst_src$$reg), con, Assembler::v0_t);
+    __ vror_vi(as_VectorRegister($dst_src$$reg), as_VectorRegister($dst_src$$reg),
+               con, Assembler::v0_t);
   %}
   ins_pipe(pipe_slow);
 %}

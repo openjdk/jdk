@@ -1880,6 +1880,7 @@ enum Nf {
   }
 
   // Vector Bit-manipulation used in Cryptography (Zvbb) Extension
+  INSN(vrol_vx,    0b1010111, 0b100, 0b010101);
   INSN(vror_vx,    0b1010111, 0b100, 0b010100);
 
 #undef INSN
