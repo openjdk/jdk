@@ -1150,7 +1150,7 @@ const TypeFunc* OptoRuntime::digestBase_implCompressMB_Type(bool is_sha3) {
 
 const TypeFunc* OptoRuntime::multiplyToLen_Type() {
   // create input type (domain)
-  int num_args      = 6;
+  int num_args      = 5;
   int argcnt = num_args;
   const Type** fields = TypeTuple::fields(argcnt);
   int argp = TypeFunc::Parms;
@@ -1159,7 +1159,6 @@ const TypeFunc* OptoRuntime::multiplyToLen_Type() {
   fields[argp++] = TypePtr::NOTNULL;    // y
   fields[argp++] = TypeInt::INT;        // ylen
   fields[argp++] = TypePtr::NOTNULL;    // z
-  fields[argp++] = TypeInt::INT;        // zlen
   assert(argp == TypeFunc::Parms+argcnt, "correct decoding");
   const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms+argcnt, fields);
 
@@ -1397,6 +1396,45 @@ const TypeFunc* OptoRuntime::poly1305_processBlocks_Type() {
   // result type needed
   fields = TypeTuple::fields(1);
   fields[TypeFunc::Parms + 0] = nullptr; // void
+  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms, fields);
+  return TypeFunc::make(domain, range);
+}
+
+// MontgomeryIntegerPolynomialP256 multiply function
+const TypeFunc* OptoRuntime::intpoly_montgomeryMult_P256_Type() {
+  int argcnt = 3;
+
+  const Type** fields = TypeTuple::fields(argcnt);
+  int argp = TypeFunc::Parms;
+  fields[argp++] = TypePtr::NOTNULL;    // a array
+  fields[argp++] = TypePtr::NOTNULL;    // b array
+  fields[argp++] = TypePtr::NOTNULL;    // r(esult) array
+  assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms+argcnt, fields);
+
+  // result type needed
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms + 0] = TypeInt::INT; // carry bits in output
+  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms+1, fields);
+  return TypeFunc::make(domain, range);
+}
+
+// IntegerPolynomial constant time assignment function
+const TypeFunc* OptoRuntime::intpoly_assign_Type() {
+  int argcnt = 4;
+
+  const Type** fields = TypeTuple::fields(argcnt);
+  int argp = TypeFunc::Parms;
+  fields[argp++] = TypeInt::INT;        // set flag
+  fields[argp++] = TypePtr::NOTNULL;    // a array (result)
+  fields[argp++] = TypePtr::NOTNULL;    // b array (if set is set)
+  fields[argp++] = TypeInt::INT;        // array length
+  assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms+argcnt, fields);
+
+  // result type needed
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms + 0] = NULL; // void
   const TypeTuple* range = TypeTuple::make(TypeFunc::Parms, fields);
   return TypeFunc::make(domain, range);
 }

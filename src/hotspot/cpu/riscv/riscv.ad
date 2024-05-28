@@ -1244,7 +1244,7 @@ int MachCallStaticJavaNode::ret_addr_offset()
 
 int MachCallDynamicJavaNode::ret_addr_offset()
 {
-  return 7 * NativeInstruction::instruction_size; // movptr, jal
+  return NativeMovConstReg::movptr2_instruction_size +  NativeInstruction::instruction_size; // movptr2, jal
 }
 
 int MachCallRuntimeNode::ret_addr_offset() {
@@ -1285,12 +1285,11 @@ int CallStaticJavaDirectNode::compute_padding(int current_offset) const
 // ensure that it does not span a cache line so that it can be patched.
 int CallDynamicJavaDirectNode::compute_padding(int current_offset) const
 {
-  // skip the movptr in MacroAssembler::ic_call():
-  // lui + addi + slli + addi + slli + addi
-  // Though movptr() has already 4-byte aligned with or without RVC,
+  // skip the movptr2 in MacroAssembler::ic_call():
+  // lui, lui, slli, add, addi
+  // Though movptr2() has already 4-byte aligned with or without RVC,
   // We need to prevent from further changes by explicitly calculating the size.
-  const int movptr_size = 6 * NativeInstruction::instruction_size;
-  current_offset += movptr_size;
+  current_offset += NativeMovConstReg::movptr2_instruction_size;
   // to make sure the address of jal 4-byte aligned.
   return align_up(current_offset, alignment_required()) - current_offset;
 }
@@ -10014,7 +10013,7 @@ instruct CallDynamicJavaDirect(method meth, rFlagsReg cr)
 
   effect(USE meth, KILL cr);
 
-  ins_cost(BRANCH_COST + ALU_COST * 6);
+  ins_cost(BRANCH_COST + ALU_COST * 5);
 
   format %{ "CALL,dynamic $meth\t#@CallDynamicJavaDirect" %}
 

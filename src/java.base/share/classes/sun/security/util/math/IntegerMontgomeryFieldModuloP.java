@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,13 +23,18 @@
  * questions.
  */
 
- // key: compiler.misc.feature.super.init
- // key: compiler.warn.preview.feature.use
- // options: --enable-preview -source ${jdk.version} -Xlint:preview
+package sun.security.util.math;
 
-class FeatureStatementsBeforeSuper {
-    FeatureStatementsBeforeSuper() {
-        System.out.println();
-        super();
-    }
+import java.math.BigInteger;
+
+/**
+ * An interface for the field of integers modulo a prime number. An
+ * implementation of this interface can be used to get properties of the
+ * field and to produce field elements of type ImmutableIntegerModuloP from
+ * other objects and representations of field elements.
+ */
+
+public interface IntegerMontgomeryFieldModuloP extends IntegerFieldModuloP {
+    ImmutableIntegerModuloP fromMontgomery(ImmutableIntegerModuloP m);
+    IntegerFieldModuloP residueField();
 }

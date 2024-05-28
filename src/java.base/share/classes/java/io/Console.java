@@ -33,6 +33,7 @@ import jdk.internal.access.JavaIOAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.io.JdkConsoleImpl;
 import jdk.internal.io.JdkConsoleProvider;
+import jdk.internal.javac.PreviewFeature;
 import jdk.internal.util.StaticProperty;
 import sun.security.action.GetPropertyAction;
 
@@ -147,6 +148,69 @@ public sealed class Console implements Flushable permits ProxyingConsole {
      * @return  The reader associated with this console
      */
     public Reader reader() {
+        throw newUnsupportedOperationException();
+    }
+
+    /**
+     * Writes a string representation of the specified object to this console's
+     * output stream, terminates the line using {@link System#lineSeparator()}
+     * and then flushes the console.
+     *
+     * <p> The string representation of the specified object is obtained as if
+     * by calling {@link String#valueOf(Object)}.
+     *
+     * @param  obj
+     *         An object whose string representation is to be written,
+     *         may be {@code null}.
+     *
+     * @return  This console
+     *
+     * @since 23
+     */
+    @PreviewFeature(feature = PreviewFeature.Feature.IMPLICIT_CLASSES)
+    public Console println(Object obj) {
+        throw newUnsupportedOperationException();
+    }
+
+    /**
+     * Writes a string representation of the specified object to this console's
+     * output stream and then flushes the console.
+     *
+     * <p> The string representation of the specified object is obtained as if
+     * by calling {@link String#valueOf(Object)}.
+     *
+     * @param  obj
+     *         An object whose string representation is to be written,
+     *         may be {@code null}.
+     *
+     * @return  This console
+     *
+     * @since 23
+     */
+    @PreviewFeature(feature = PreviewFeature.Feature.IMPLICIT_CLASSES)
+    public Console print(Object obj) {
+        throw newUnsupportedOperationException();
+    }
+
+    /**
+     * Writes a prompt as if by calling {@code print}, then reads a single line
+     * of text from this console.
+     *
+     * @param  prompt
+     *         A prompt string, may be {@code null}.
+     *
+     * @throws IOError
+     *         If an I/O error occurs.
+     *
+     * @return  A string containing the line read from the console, not
+     *          including any line-termination characters, or {@code null}
+     *          if an end of stream has been reached without having read
+     *          any characters.
+     *
+     * @since 23
+     */
+    @PreviewFeature(feature = PreviewFeature.Feature.IMPLICIT_CLASSES)
+    public String readln(String prompt) {
         throw newUnsupportedOperationException();
     }
 
