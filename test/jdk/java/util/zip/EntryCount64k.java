@@ -163,6 +163,6 @@ public class EntryCount64k {
         OutputAnalyzer a = ProcessTools.executeTestJava("-jar", zipFile.getName());
         a.shouldHaveExitValue(0);
         a.stdoutShouldMatch("\\AMain\\Z");
-        a.stderrShouldMatch("\\A\\Z");
+        a.stderrShouldMatchIgnoreDeprecatedWarnings("\\A\\Z");
     }
 }

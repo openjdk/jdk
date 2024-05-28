@@ -29,15 +29,17 @@
  *          jdk.javadoc/jdk.javadoc.internal.doclets.formats.html.resources:open
  *          jdk.javadoc/jdk.javadoc.internal.doclets.toolkit.resources:open
  *          jdk.javadoc/jdk.javadoc.internal.tool.resources:open
- *          jdk.jdeps/com.sun.tools.classfile
+ * @enablePreview
  */
 
 import java.io.*;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.constantpool.Utf8Entry;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.tools.*;
-import com.sun.tools.classfile.*;
 
 /**
  * Compare string constants in javadoc classes against keys in javadoc resource bundles.
@@ -268,15 +270,15 @@ public class CheckResourceKeys {
         //System.err.println("scan " + fo.getName());
         InputStream in = fo.openInputStream();
         try {
-            ClassFile cf = ClassFile.read(in);
-            for (ConstantPool.CPInfo cpinfo: cf.constant_pool.entries()) {
-                if (cpinfo.getTag() == ConstantPool.CONSTANT_Utf8) {
-                    String v = ((ConstantPool.CONSTANT_Utf8_info) cpinfo).value;
+            ClassModel cf = ClassFile.of().parse(in.readAllBytes());
+            for (var cpinfo : cf.constantPool()) {
+                if (cpinfo instanceof Utf8Entry utf8Entry) {
+                    String v = utf8Entry.stringValue();
                     if (v.matches("(doclet|main|javadoc|tag)\\.[A-Za-z0-9-_.]+"))
                         results.add(v);
                 }
             }
-        } catch (ConstantPoolException ignore) {
+        } catch (IllegalArgumentException ignore) {
         } finally {
             in.close();
         }
