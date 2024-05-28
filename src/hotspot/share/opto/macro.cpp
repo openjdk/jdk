@@ -2429,7 +2429,8 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
       default:
         assert(n->Opcode() == Op_LoopLimit ||
                n->Opcode() == Op_Opaque3   ||
-               n->Opcode() == Op_Opaque4   ||
+               n->is_Opaque4()             ||
+               n->is_OpaqueInitializedAssertionPredicate() ||
                n->Opcode() == Op_MaxL      ||
                n->Opcode() == Op_MinL      ||
                BarrierSet::barrier_set()->barrier_set_c2()->is_gc_barrier_node(n),
@@ -2504,7 +2505,7 @@ bool PhaseMacroExpand::expand_macro_nodes() {
         _igvn.replace_node(n, repl);
         success = true;
 #endif
-      } else if (n->Opcode() == Op_Opaque4) {
+      } else if (n->is_Opaque4()) {
         // With Opaque4 nodes, the expectation is that the test of input 1
         // is always equal to the constant value of input 2. So we can
         // remove the Opaque4 and replace it by input 2. In debug builds,
@@ -2517,6 +2518,17 @@ bool PhaseMacroExpand::expand_macro_nodes() {
         _igvn.replace_node(n, n->in(2));
 #endif
         success = true;
+      } else if (n->is_OpaqueInitializedAssertionPredicate()) {
+          // Initialized Assertion Predicates must always evaluate to true. Therefore, we get rid of them in product
+          // builds as they are useless. In debug builds we keep them as additional verification code. Even though
+          // loop opts are already over, we want to keep Initialized Assertion Predicates alive as long as possible to
+          // enable folding of dead control paths within which cast nodes become top after due to impossible types -
+          // even after loop opts are over. Therefore, we delay the removal of these opaque nodes until now.
+#ifdef ASSERT
+        _igvn.replace_node(n, n->in(1));
+#else
+        _igvn.replace_node(n, _igvn.intcon(1));
+#endif // ASSERT
       } else if (n->Opcode() == Op_OuterStripMinedLoop) {
         n->as_OuterStripMinedLoop()->adjust_strip_mined_loop(&_igvn);
         C->remove_macro_node(n);
