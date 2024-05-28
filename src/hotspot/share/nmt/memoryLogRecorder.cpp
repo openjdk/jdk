@@ -541,7 +541,7 @@ void NMT_MemoryLogRecorder::replay(const char* path, const int pid) {
           fprintf(stderr, "HUH?\n");
           os:exit(-1);
         }
-ytrewq
+
         if (!IS_FREE(e)) {
           void* outer_ptr = pointers[i];
           if ((outer_ptr != nullptr) && (MemTracker::enabled())) {
