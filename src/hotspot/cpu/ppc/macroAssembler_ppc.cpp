@@ -2226,7 +2226,7 @@ bool MacroAssembler::lookup_secondary_supers_table(Register r_sub_klass,
   beq(CCR0, L_fallthrough); // Found a match (result == 0)
 
   // Is there another entry to check? Consult the bitmap.
-  cmpdi(CCR0, r_bitmap, (bit + 1) & Klass::SECONDARY_SUPERS_TABLE_MASK);
+  testbitdi(CCR0, /* temp */ r_array_length, r_bitmap, (bit + 1) & Klass::SECONDARY_SUPERS_TABLE_MASK);
   beq(CCR0, L_fallthrough); // (result != 0)
 
   // Linear probe. Rotate the bitmap so that the next bit to test is
@@ -2302,14 +2302,20 @@ void MacroAssembler::lookup_secondary_supers_table_slow_path(Register r_super_kl
     // eventually terminates.
 
 #ifdef ASSERT
-    cmpdi(CCR0, result, 0);
-    asm_assert_ne("result must be != 0 after lookup_secondary_supers_table");
+    {
+      // We should only reach here after having found two bits in the bitmap.
+      // Invariant: array_length == popcount(bitmap)
+      Label ok;
+      cmpdi(CCR0, r_array_length, 2);
+      bge(CCR0, ok);
+      stop("array_length too small");
+      bind(ok);
+    }
 #endif
 
     // Compute limit in r_array_length
     addi(r_array_length, r_array_length, -1);
-    sldi_(r_array_length, r_array_length, LogBytesPerWord);
-    blt(CCR0, L_fallthrough); // length negative after decrement: failure (result != 0)
+    sldi(r_array_length, r_array_length, LogBytesPerWord);
 
     Label L_loop;
     bind(L_loop);
