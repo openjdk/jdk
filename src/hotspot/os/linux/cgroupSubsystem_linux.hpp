@@ -104,7 +104,7 @@
 
 class CgroupController: public CHeapObj<mtInternal> {
   public:
-    virtual char *subsystem_path() = 0;
+    virtual char* subsystem_path() = 0;
 
     /* Read a numerical value as unsigned long
      *
