@@ -436,8 +436,10 @@ class MacroAssembler: public Assembler {
     return false;
   }
 
+  address emit_address_stub(int insts_call_instruction_offset, address target);
   address emit_trampoline_stub(int insts_call_instruction_offset, address target);
-  static int max_trampoline_stub_size();
+  static int max_patchable_far_call_stub_size();
+
   void emit_static_call_stub();
   static int static_call_stub_size();
 
@@ -593,6 +595,7 @@ class MacroAssembler: public Assembler {
   void bgtz(Register Rs, const address dest);
 
  private:
+  void load_link(const address source, Register temp);
   void jump_link(const address dest, Register temp);
   void jump_link(const Address &adr, Register temp);
  public:
@@ -1175,6 +1178,27 @@ public:
   //     be used instead.
   //     All instructions are embedded at a call site.
   //
+  //   - indirect call: movptr + jalr
+  //     This too can reach anywhere in the address space, but it cannot be
+  //     patched while code is running, so it must only be modified at a safepoint.
+  //     This form of call is most suitable for targets at fixed addresses, which
+  //     will never be patched.
+  //
+  //   - patchable far call:
+  //     This is only available in C1/C2-generated code (nmethod).
+  //
+  //     [Main code section]
+  //       auipc
+  //       ld <address_from_stub_section>
+  //       jalr
+  //     [Stub section]
+  //     trampoline:
+  //       <64-bit destination address>
+  //
+  //    To change the destination we simply atomically store the new
+  //    address in the stub section.
+  //
+  // Old patchable far calls: (-XX:+UseTrampolines)
   //   - trampoline call:
   //     This is only available in C1/C2-generated code (nmethod). It is a combination
   //     of a direct call, which is used if the destination of a call is in range,
@@ -1194,17 +1218,10 @@ public:
   //     cache, 'jal trampoline' is replaced with 'jal destination' and the trampoline
   //     is not used.
   //     The optimization does not remove the trampoline from the stub section.
-
+  //
   //     This is necessary because the trampoline may well be redirected later when
   //     code is patched, and the new destination may not be reachable by a simple JAL
   //     instruction.
-  //
-  //   - indirect call: movptr + jalr
-  //     This too can reach anywhere in the address space, but it cannot be
-  //     patched while code is running, so it must only be modified at a safepoint.
-  //     This form of call is most suitable for targets at fixed addresses, which
-  //     will never be patched.
-  //
   //
   // To patch a trampoline call when the JAL can't reach, we first modify
   // the 64-bit destination address in the trampoline, then modify the
@@ -1218,9 +1235,10 @@ public:
   // invalidated, so there will be a trap at its start.
   // For this to work, the destination address in the trampoline is
   // always updated, even if we're not using the trampoline.
+  // --
 
   // Emit a direct call if the entry address will always be in range,
-  // otherwise a trampoline call.
+  // otherwise a patachable far call.
   // Supported entry.rspec():
   // - relocInfo::runtime_call_type
   // - relocInfo::opt_virtual_call_type
@@ -1228,7 +1246,7 @@ public:
   // - relocInfo::virtual_call_type
   //
   // Return: the call PC or null if CodeCache is full.
-  address trampoline_call(Address entry);
+  address patchable_far_call(Address entry);
 
   address ic_call(address entry, jint method_index = 0);
   static int ic_check_size();
