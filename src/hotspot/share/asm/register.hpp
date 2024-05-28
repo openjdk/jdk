@@ -98,7 +98,7 @@ class AbstractRegSet {
   constexpr AbstractRegSet(size_t bitset) : _bitset(bitset) { }
 
   static constexpr int max_size() {
-    return (int)(sizeof _bitset * CHAR_BIT);
+    return (int)(sizeof(_bitset) * BitsPerByte);
   }
 
 public:
