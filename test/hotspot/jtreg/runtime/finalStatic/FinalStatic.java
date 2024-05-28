@@ -101,7 +101,7 @@ public class FinalStatic {
                 default:
                     break;
             }
-            return null;
+            throw new AssertionError("Unknown class " + name);
         }
     }
 

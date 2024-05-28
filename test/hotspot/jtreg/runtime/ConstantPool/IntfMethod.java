@@ -69,13 +69,13 @@ public class IntfMethod {
                         .withMethodBody("testSpecialClass", MTD_void, ACC_PUBLIC,
                                 cob -> cob
                                         .aload(0)
-                                        .invokespecial(cob.constantPool().interfaceMethodRefEntry(ClassDesc.of("C"), "f1", MTD_void))
+                                        .invokespecial(ClassDesc.of("C"), "f1", MTD_void, true)
                                         .return_())
                         .withMethodBody("f2", MTD_void, ACC_PUBLIC | ACC_STATIC,
                                 CodeBuilder::return_)
                         .withMethodBody("testStaticClass", MTD_void, ACC_PUBLIC,
                                 cob -> cob
-                                        .invokestatic(cob.constantPool().interfaceMethodRefEntry(ClassDesc.of("C"), "f2", MTD_void))
+                                        .invokestatic(ClassDesc.of("C"), "f2", MTD_void, true)
                                         .return_())
 
                 );

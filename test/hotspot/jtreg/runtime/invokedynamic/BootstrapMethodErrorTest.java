@@ -55,7 +55,7 @@ public class BootstrapMethodErrorTest {
 
         @Override
         public Class findClass(String name) throws ClassNotFoundException {
-            byte[] b = new byte[0];
+            byte[] b;
             try {
                 b = loadClassData(name);
             }

@@ -88,6 +88,7 @@ public class LargeClassTest{
                                             .invokevirtual(CD_Large, "f_1", MethodTypeDesc.of(CD_int, CD_int))
                                             .pop()
                                             .return_());
+                    // Write 34560 methods called f_$i
                     for (int i = 1000; i < 34560 ; i++) {
                         clb.withMethodBody("f_" + i, MethodTypeDesc.of(CD_void), ACC_PUBLIC,
                                 CodeBuilder::return_);

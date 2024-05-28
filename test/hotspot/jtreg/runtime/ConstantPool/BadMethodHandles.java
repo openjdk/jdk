@@ -47,7 +47,6 @@ public class BadMethodHandles {
 
     private static final ClassDesc CD_System = ClassDesc.of("java.lang.System");
     private static final ClassDesc CD_PrintStream = ClassDesc.of("java.io.PrintStream");
-    private static final ClassDesc CD_LPrintStream = ClassDesc.ofDescriptor("Ljava/io/PrintStream;");
     private static final ClassDesc CD_MethodHandle = ClassDesc.of("java.lang.invoke.MethodHandle");
 
     static byte[] dumpBadInterfaceMethodref() {
@@ -70,13 +69,13 @@ public class BadMethodHandles {
                                             .return_())
                             .withMethodBody("m", MTD_void, ACC_PUBLIC,
                                     cob -> cob
-                                            .getstatic(CD_System, "out", CD_LPrintStream)
+                                            .getstatic(CD_System, "out", CD_PrintStream)
                                             .ldc("hello from m")
                                             .invokevirtual(CD_PrintStream, "println", MethodTypeDesc.of(CD_void, CD_String))
                                             .return_())
                             .withMethodBody("staticM", MTD_void, ACC_PUBLIC | ACC_STATIC,
                                     cob -> cob
-                                            .getstatic(CD_System, "out", CD_LPrintStream)
+                                            .getstatic(CD_System, "out", CD_PrintStream)
                                             .ldc("hello from staticM")
                                             .invokevirtual(CD_PrintStream, "println", MethodTypeDesc.of(CD_void, CD_String))
                                             .return_())
@@ -103,13 +102,13 @@ public class BadMethodHandles {
                             .withSuperclass(CD_Object)
                             .withMethodBody("m", MTD_void, ACC_PUBLIC,
                                     cob -> cob
-                                            .getstatic(CD_System, "out", CD_LPrintStream)
+                                            .getstatic(CD_System, "out", CD_PrintStream)
                                             .ldc("hello from m")
                                             .invokevirtual(CD_PrintStream, "println", MethodTypeDesc.of(CD_void, CD_String))
                                             .return_())
                             .withMethodBody("staticM", MTD_void, ACC_PUBLIC | ACC_STATIC,
                                     cob -> cob
-                                            .getstatic(CD_System, "out", CD_LPrintStream)
+                                            .getstatic(CD_System, "out", CD_PrintStream)
                                             .ldc("hello from staticM")
                                             .invokevirtual(CD_PrintStream, "println", MethodTypeDesc.of(CD_void, CD_String))
                                             .return_())
@@ -151,7 +150,7 @@ public class BadMethodHandles {
     static byte[] dumpInvokeBasic() {
 
         DirectMethodHandleDesc handle = MethodHandleDesc.of(DirectMethodHandleDesc.Kind.VIRTUAL,
-                ClassDesc.of("InvokeBasicref"), "runInvokeBasicM", "()V");
+                CD_MethodHandle, "invokeBasic", "([Ljava/lang/Object;)Ljava/lang/Object;");
 
         return ClassFile.of().build(ClassDesc.of("InvokeBasicref"),
                     clb -> clb
