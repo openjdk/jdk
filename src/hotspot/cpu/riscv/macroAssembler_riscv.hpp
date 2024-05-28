@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -804,17 +804,16 @@ public:
     }
   }
 
-  void movptr(Register Rd, address addr, int32_t &offset);
-
-  void movptr(Register Rd, address addr) {
-    int offset = 0;
-    movptr(Rd, addr, offset);
-    addi(Rd, Rd, offset);
-  }
-
-  inline void movptr(Register Rd, uintptr_t imm64) {
-    movptr(Rd, (address)imm64);
-  }
+  // Generates a load of a 48-bit constant which can be
+  // patched to any 48-bit constant, i.e. address.
+  // If common case supply additional temp register
+  // to shorten the instruction sequence.
+  void movptr(Register Rd, address addr, Register tmp = noreg);
+  void movptr(Register Rd, address addr, int32_t &offset, Register tmp = noreg);
+ private:
+  void movptr1(Register Rd, uintptr_t addr, int32_t &offset);
+  void movptr2(Register Rd, uintptr_t addr, int32_t &offset, Register tmp);
+ public:
 
   // arith
   void add (Register Rd, Register Rn, int64_t increment, Register temp = t0);
@@ -1287,7 +1286,7 @@ public:
                                Register tmp, Register tmp3, Register tmp4,
                                Register tmp6, Register product_hi);
   void multiply_to_len(Register x, Register xlen, Register y, Register ylen,
-                       Register z, Register zlen,
+                       Register z, Register tmp0,
                        Register tmp1, Register tmp2, Register tmp3, Register tmp4,
                        Register tmp5, Register tmp6, Register product_hi);
 #endif

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,8 @@
 package nsk.share.jdb;
 
 import nsk.share.*;
-import nsk.share.jpda.*;
 
 import java.io.*;
-import java.util.*;
 
 public abstract class JdbTest {
     public static final int PASSED = 0;            // Exit code for passed test
@@ -174,6 +172,14 @@ public abstract class JdbTest {
                     } else {
                         failure("jdb abnormally exited with code: " + code);
                     }
+
+                    try {
+                        jdb.close();
+                    } catch (Throwable ex) {
+                        failure("Caught exception/error while closing jdb streams:\n\t" + ex);
+                        ex.printStackTrace(log.getOutStream());
+                    }
+
                     jdb = null;
 
                     if (debuggee != null
@@ -204,19 +210,19 @@ public abstract class JdbTest {
 
                 if (jdb != null) {
                     try {
-                        jdb.finalize();
+                        jdb.close();
                     } catch (Throwable ex) {
-                        failure("Caught exception/error while finalization of jdb:\n\t" + ex);
+                        failure("Caught exception/error while closing jdb streams:\n\t" + ex);
                         ex.printStackTrace(log.getOutStream());
                     }
                 } else {
-                    log.complain("jdb reference is null, cannot run jdb.finalize() method");
+                    log.complain("jdb reference is null, cannot run jdb.close() method");
                 }
 
                 if (debuggee != null) {
                     debuggee.killDebuggee();
                 } else {
-                    log.complain("debuggee reference is null, cannot run debuggee.finalize() method");
+                    log.complain("debuggee reference is null, cannot run debuggee.killDebuggee() method");
                 }
 
             }
