@@ -491,20 +491,15 @@ void SuperWord::find_adjacent_memop_pairs() {
   ResourceMark rm;
   GrowableArray<const VPointer*> vpointers;
 
-  // Collect all valid VPointers.
-  for_each_mem([&] (const MemNode* mem, int bb_idx) {
-    const VPointer& p = vpointer(mem);
-    if (p.valid() &&
-        !mem->is_LoadStore() &&
-        is_java_primitive(mem->memory_type())) {
-      vpointers.append(&p);
-    }
-  });
+  collect_valid_vpointers(vpointers);
 
   // Sort the VPointers. This does 2 things:
-  //  - Separate the VPointer into groups (e.g. all LoadI of the same base and invar). We only need to find adjacent memops inside
-  //    the group. This decreases the work.
-  //  - Sort by offset inside the VPointers. This decreases the work needed to determine adjacent memops inside a group.
+  //  - Separate the VPointer into groups: all memops that have the same opcode and the same
+  //    VPointer, except for the offset. Adjacent memops must have the same opcode and the
+  //    same VPointer, except for a shift in the offset. Thus, two memops can only be adjacent
+  //    if they are in the same group. This decreases the work.
+  //  - Sort by offset inside the groups. This decreases the work needed to determine adjacent
+  //    memops inside a group.
   vpointers.sort(VPointer::cmp_for_sort);
 
 #ifndef PRODUCT
@@ -513,20 +508,7 @@ void SuperWord::find_adjacent_memop_pairs() {
   }
 #endif
 
-  // For each group, find the adjacent memops:
-  int group_start = 0;
-  while (group_start < vpointers.length()) {
-    int group_end = group_start + 1;
-    while (group_end < vpointers.length() &&
-           VPointer::cmp_for_sort_by_group(
-             vpointers.adr_at(group_start),
-             vpointers.adr_at(group_end)
-           ) == 0) {
-      group_end++;
-    }
-    find_adjacent_memop_pairs_in_group(vpointers, group_start, group_end);
-    group_start = group_end;
-  }
+  find_adjacent_memop_pairs_in_all_groups(vpointers);
 
 #ifndef PRODUCT
   if (is_trace_superword_packset()) {
@@ -536,8 +518,43 @@ void SuperWord::find_adjacent_memop_pairs() {
 #endif
 }
 
+
+void SuperWord::collect_valid_vpointers(GrowableArray<const VPointer*>& vpointers) {
+  for_each_mem([&] (const MemNode* mem, int bb_idx) {
+    const VPointer& p = vpointer(mem);
+    if (p.valid() &&
+        !mem->is_LoadStore() &&
+        is_java_primitive(mem->memory_type())) {
+      vpointers.append(&p);
+    }
+  });
+}
+
+// For each group, find the adjacent memops.
+void SuperWord::find_adjacent_memop_pairs_in_all_groups(const GrowableArray<const VPointer*> &vpointers) {
+  int group_start = 0;
+  while (group_start < vpointers.length()) {
+    int group_end = find_group_end(vpointers, group_start);
+    find_adjacent_memop_pairs_in_one_group(vpointers, group_start, group_end);
+    group_start = group_end;
+  }
+}
+
+// Step forward until we find a VPointer of another group, or we reach the end of the array.
+int SuperWord::find_group_end(const GrowableArray<const VPointer*> &vpointers, int group_start) {
+  int group_end = group_start + 1;
+  while (group_end < vpointers.length() &&
+         VPointer::cmp_for_sort_by_group(
+           vpointers.adr_at(group_start),
+           vpointers.adr_at(group_end)
+         ) == 0) {
+    group_end++;
+  }
+  return group_end;
+}
+
 // Find adjacent memops for a single group, e.g. for all LoadI of the same base, invar, etc.
-void SuperWord::find_adjacent_memop_pairs_in_group(const GrowableArray<const VPointer*> &vpointers, const int group_start, int group_end) {
+void SuperWord::find_adjacent_memop_pairs_in_one_group(const GrowableArray<const VPointer*> &vpointers, const int group_start, int group_end) {
 #ifndef PRODUCT
   if (is_trace_superword_adjacent_memops()) {
     tty->print_cr(" group:");
@@ -2787,7 +2804,7 @@ bool SuperWord::is_vector_use(Node* use, int u_idx) const {
     return true;
   }
 
-  if (!is_velt_basic_type_compatible_use_def(use, u_idx)) {
+  if (!is_velt_basic_type_compatible_use_def(use, def)) {
     return false;
   }
 
@@ -2813,8 +2830,9 @@ bool SuperWord::is_vector_use(Node* use, int u_idx) const {
   return true;
 }
 
-bool SuperWord::is_velt_basic_type_compatible_use_def(Node* use, int idx) const {
-  Node* def = use->in(idx);
+// Check if the output type of def is compatible with the input type of use, i.e. if the
+// types have the same size.
+bool SuperWord::is_velt_basic_type_compatible_use_def(Node* use, Node* def) const {
   assert(in_bb(def) && in_bb(use), "both use and def are in loop");
 
   // Conversions are trivially compatible.

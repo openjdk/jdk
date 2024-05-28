@@ -560,7 +560,10 @@ private:
 
   // Find the "seed" pairs. These are pairs that we strongly suspect would lead to vectorization.
   void find_adjacent_memop_pairs();
-  void find_adjacent_memop_pairs_in_group(const GrowableArray<const VPointer*> &vpointers, const int group_start, int group_end);
+  void collect_valid_vpointers(GrowableArray<const VPointer*>& vpointers);
+  void find_adjacent_memop_pairs_in_all_groups(const GrowableArray<const VPointer*> &vpointers);
+  static int find_group_end(const GrowableArray<const VPointer*>& vpointers, int group_start);
+  void find_adjacent_memop_pairs_in_one_group(const GrowableArray<const VPointer*>& vpointers, const int group_start, int group_end);
 
   // Various methods to check if we can pack two nodes.
   bool can_pack_into_pair(Node* s1, Node* s2);
@@ -631,7 +634,7 @@ private:
 
   static bool requires_long_to_int_conversion(int opc);
 
-  bool is_velt_basic_type_compatible_use_def(Node* use, int idx) const;
+  bool is_velt_basic_type_compatible_use_def(Node* use, Node* def) const;
 
   static LoadNode::ControlDependency control_dependency(Node_List* p);
 
