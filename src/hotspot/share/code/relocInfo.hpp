@@ -602,6 +602,9 @@ class RelocIterator : public StackObj {
   RelocIterator(CodeSection* cb, address begin = nullptr, address limit = nullptr);
 
   // get next reloc info, return !eos
+#if defined(__clang__) || defined(__GNUC__)
+__attribute__((no_sanitize("undefined")))
+#endif
   bool next() {
     _current++;
     assert(_current <= _end, "must not overrun relocInfo");

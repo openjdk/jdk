@@ -147,7 +147,9 @@ void RelocIterator::initialize(nmethod* nm, address begin, address limit) {
   set_limits(begin, limit);
 }
 
-
+#if defined(__clang__) || defined(__GNUC__)
+__attribute__((no_sanitize("undefined")))
+#endif
 RelocIterator::RelocIterator(CodeSection* cs, address begin, address limit) {
   initialize_misc();
   assert(((cs->locs_start() != nullptr) && (cs->locs_end() != nullptr)) ||
