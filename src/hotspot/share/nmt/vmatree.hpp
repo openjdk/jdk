@@ -152,8 +152,9 @@ public:
   VMATree() : _tree() {}
 
   struct SingleDiff {
-    int64_t reserve;
-    int64_t commit;
+    using delta = int64_t;
+    delta reserve;
+    delta commit;
   };
   struct SummaryDiff {
     SingleDiff flag[mt_number_of_types];
