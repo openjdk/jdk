@@ -380,8 +380,7 @@ public final class Method extends Executable {
     /**
      * Returns a hashcode for this {@code Method}.  The hashcode is computed
      * as the exclusive-or of the hashcodes for the underlying
-     * method's declaring class name and the method's name. Once
-     * initialized, the hash field value does not change.
+     * method's declaring class name and the method's name.
      */
     public int hashCode() {
         int hc = hash;
