@@ -34,8 +34,10 @@ inline ParMarkBitMap::ParMarkBitMap():
   _region_start(nullptr), _region_size(0), _beg_bits(), _virtual_space(nullptr), _reserved_byte_size(0)
 { }
 
-inline void ParMarkBitMap::clear_range(idx_t beg, idx_t end) {
-  _beg_bits.clear_range(beg, end);
+inline void ParMarkBitMap::clear_range(HeapWord* beg, HeapWord* end) {
+  const idx_t beg_bit = addr_to_bit(beg);
+  const idx_t end_bit = addr_to_bit(end);
+  _beg_bits.clear_range(beg_bit, end_bit);
 }
 
 inline ParMarkBitMap::idx_t ParMarkBitMap::bits_required(size_t words) {
@@ -62,12 +64,8 @@ inline size_t ParMarkBitMap::size() const {
   return _beg_bits.size();
 }
 
-inline bool ParMarkBitMap::is_marked(idx_t bit) const {
-  return _beg_bits.at(bit);
-}
-
 inline bool ParMarkBitMap::is_marked(HeapWord* addr) const {
-  return is_marked(addr_to_bit(addr));
+  return _beg_bits.at(addr_to_bit(addr));
 }
 
 inline bool ParMarkBitMap::is_marked(oop obj) const {
