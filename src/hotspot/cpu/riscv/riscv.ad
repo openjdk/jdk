@@ -3299,6 +3299,16 @@ operand iRegP_R15()
   interface(REG_INTER);
 %}
 
+operand iRegP_R16()
+%{
+  constraint(ALLOC_IN_RC(r16_reg));
+  match(RegP);
+  match(iRegPNoSp);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
 // Pointer 64 bit Register R28 only
 operand iRegP_R28()
 %{
@@ -10095,6 +10105,36 @@ instruct partialSubtypeCheck(iRegP_R15 result, iRegP_R14 sub, iRegP_R10 super, i
   ins_encode(riscv_enc_partial_subtype_check(sub, super, tmp, result));
 
   opcode(0x1); // Force zero of result reg on hit
+
+  ins_pipe(pipe_class_memory);
+%}
+
+instruct partialSubtypeCheckConstSuper(iRegP_R14 sub, iRegP_R10 super_reg, immP super_con, iRegP_R15 result,
+                                       iRegP_R11 tmpR11, iRegP_R12 tmpR12, iRegP_R13 tmpR13, iRegP_R16 tmpR16)
+%{
+  match(Set result (PartialSubtypeCheck sub (Binary super_reg super_con)));
+  predicate(UseSecondarySupersTable);
+  effect(TEMP tmpR11, TEMP tmpR12, TEMP tmpR13, TEMP tmpR16);
+
+  ins_cost(700);  // smaller than the next version
+  format %{ "partialSubtypeCheck $result, $sub, $super_reg, $super_con" %}
+
+  ins_encode %{
+    bool success = false;
+    u1 super_klass_slot = ((Klass*)$super_con$$constant)->hash_slot();
+    if (InlineSecondarySupersTest) {
+      success = __ lookup_secondary_supers_table($sub$$Register, $super_reg$$Register, $result$$Register,
+                                                 $tmpR11$$Register, $tmpR12$$Register, $tmpR13$$Register,
+                                                 $tmpR16$$Register, super_klass_slot);
+    } else {
+      address call = __ trampoline_call(RuntimeAddress(StubRoutines::lookup_secondary_supers_table_stub(super_klass_slot)));
+      success = (call != nullptr);
+    }
+    if (!success) {
+      ciEnv::current()->record_failure("CodeCache is full");
+      return;
+    }
+  %}
 
   ins_pipe(pipe_class_memory);
 %}
