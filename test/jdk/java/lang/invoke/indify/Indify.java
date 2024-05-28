@@ -649,95 +649,42 @@ public class Indify {
             if (!quiet)  System.err.flush();
         }
 
-        /**
-         * Initializes the marks for the constant pool entries.
-         * <p>
-         * This method iterates through the constant pool and assigns marks to each entry
-         * based on its type and value. These marks are used to identify specific types of
-         * constant pool entries .
-         * <p>
-         * The method iterates until no changes are made to the pool marks array in a complete pass.
-         * This ensures that all dependent entries are processed correctly.
-         *
-         * @return true if any marks were changed, false otherwise.
-         */
-        boolean initializeMarks() {
-            boolean anyMarksChanged = false;
-            for (;;) {
-                boolean someMarksChangedInLoop = false;
-                for (PoolEntry poolEntry : classModel.constantPool()) {
-                    // Get the index directly from PoolEntry
-                    if (poolEntry == null) {
-                        continue; // Skip null entries
+        boolean initializeMarks(){
+            boolean anyMarkChanged = false;
+            for(PoolEntry entry : classModel.constantPool()){
+                char mark = 0;
+                if(poolMarks[entry.index()] != 0) continue;
+
+                if(entry instanceof Utf8Entry utf8Entry){
+                    mark = nameMark(utf8Entry.stringValue());
+                }
+                if(entry instanceof ClassEntry classEntry){
+                    mark = nameMark(classEntry.asInternalName());
+                }
+                if(entry instanceof StringEntry stringEntry){
+                    mark = nameMark(stringEntry.stringValue());
+                }
+                if(entry instanceof NameAndTypeEntry nameAndTypeEntry){
+                    mark = nameAndTypeMark(nameAndTypeEntry.name(), nameAndTypeEntry.type());
+                }
+                if(entry instanceof MemberRefEntry memberRefEntry){
+                    poolMarks[memberRefEntry.owner().index()] = nameMark(memberRefEntry.owner().asInternalName());
+                    if(poolMarks[memberRefEntry.owner().index()] != 0){
+                        mark = poolMarks[memberRefEntry.owner().index()];
                     }
-                    int cpIndex = poolEntry.index();
-
-                    char mark = poolMarks[cpIndex];
-                    if (mark != 0) {
-                        continue;
-                    }
-
-                    mark = switch (poolEntry.tag()) {
-                        case TAG_UTF8 -> nameMark(((Utf8Entry) poolEntry).stringValue());
-                        case TAG_NAMEANDTYPE -> {
-                            NameAndTypeEntry nameAndTypeEntry = (NameAndTypeEntry) poolEntry;
-                            yield nameAndTypeMark(nameAndTypeEntry.name(), nameAndTypeEntry.type());
+                    else{
+                        if(memberRefEntry.owner().equals(classModel.thisClass())){
+                            mark = nameMark(memberRefEntry.name().stringValue());
                         }
-                        case TAG_CLASS -> {
-                            int nameIndex = ((ClassEntry) poolEntry).name().index();
-                            char nameMark = poolMarks[nameIndex];
-                            if ("DJ".indexOf(nameMark) >= 0) {
-                                yield nameMark;
-                            } else {
-                                yield mark;
-                            }
-                        }
-                        case TAG_FIELDREF, TAG_METHODREF -> {
-                            MemberRefEntry memberRefEntry = (MemberRefEntry) poolEntry;
-                            int classIndex = memberRefEntry.owner().index();
-                            int nameAndTypeIndex = memberRefEntry.nameAndType().index();
-                            char classMark = poolMarks[classIndex];
-                            if (classMark != 0) {
-                                yield classMark;  // java.lang.invoke.* or java.lang.* method
-                            } else {
-                                String cls = memberRefEntry.owner().name().stringValue();
-                                if (cls.equals(classModel.thisClass().name().stringValue())) {
-                                    yield switch (poolMarks[nameAndTypeIndex]) {
-                                        case 'T', 'H', 'I' -> poolMarks[nameAndTypeIndex];
-                                        default -> mark;
-                                    };
-                                } else {
-                                    yield mark;
-                                }
-                            }
-                        }
-                        default -> mark;
-                    };
-
-                    if (mark != 0) {
-                        poolMarks[cpIndex] = mark;
-                        someMarksChangedInLoop = true;
                     }
                 }
-                if (!someMarksChangedInLoop) {
-                    break;
-                }
-                anyMarksChanged = true;
+                poolMarks[entry.index()] = mark;
+                anyMarkChanged = true;
             }
-            return anyMarksChanged;
+            return anyMarkChanged;
         }
-
-        char nameMark(String s) {
-            if (s.startsWith("MT_"))                return 'T';
-            else if (s.startsWith("MH_"))           return 'H';
-            else if (s.startsWith("INDY_"))         return 'I';
-            else if (s.startsWith("java/lang/invoke/"))  return 'D';
-            else if (s.startsWith("java/lang/"))    return 'J';
-            return 0;
-        }
-
         char nameAndTypeMark(Utf8Entry name, Utf8Entry type){
-            char mark = poolMarks[name.index()];
+            char mark = poolMarks[name.index()] = nameMark(name.stringValue());
             if (mark == 0) return 0;
             String descriptor = type.stringValue();
             String requiredType;
@@ -747,6 +694,15 @@ public class Indify {
                 default:  return 0;
             }
             if(matchType(descriptor, requiredType)) return mark;
+            return 0;
+        }
+
+        char nameMark(String s) {
+            if (s.startsWith("MT_"))                return 'T';
+            else if (s.startsWith("MH_"))           return 'H';
+            else if (s.startsWith("INDY_"))         return 'I';
+            else if (s.startsWith("java/lang/invoke/"))  return 'D';
+            else if (s.startsWith("java/lang/"))    return 'J';
             return 0;
         }
 
