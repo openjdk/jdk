@@ -5016,11 +5016,22 @@ public class JavacParser implements Parser {
                 } else {
                     defaultValue = null;
                 }
-                accept(SEMI);
+                accept(SEMI, tk -> Errors.Expected2(LBRACE, SEMI));
                 if (token.pos <= endPosTable.errorEndPos) {
                     // error recovery
-                    skip(false, true, false, false);
-                    if (token.kind == LBRACE) {
+                    skip(false, true, false, true);
+                    boolean parseAsBlock;
+                    if (token.kind == TokenKind.RBRACE && peekToken(0, EOF)) {
+                        parseAsBlock = false;
+                    } else {
+                        JavacParser speculative = new VirtualParser(this);
+                        JCBlock speculativeResult =
+                                speculative.block();
+                        parseAsBlock = speculativeResult.stats.isEmpty() ||
+                                       !(speculativeResult.stats.head instanceof JCExpressionStatement s &&
+                                        s.expr.hasTag(ERRONEOUS));
+                    }
+                    if (parseAsBlock) {
                         body = block();
                     }
                 }
