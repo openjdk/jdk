@@ -280,6 +280,8 @@ protected:
   virtual Node* atomic_xchg_at_resolved(C2AtomicParseAccess& access, Node* new_val, const Type* val_type) const;
   virtual Node* atomic_add_at_resolved(C2AtomicParseAccess& access, Node* new_val, const Type* val_type) const;
   void pin_atomic_op(C2AtomicParseAccess& access) const;
+  void clone_in_runtime(PhaseMacroExpand* phase, ArrayCopyNode* ac,
+                        address call_addr, const char* call_name) const;
 
 public:
   // This is the entry-point for the backend to perform accesses through the Access API.

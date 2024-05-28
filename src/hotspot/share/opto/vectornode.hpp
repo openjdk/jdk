@@ -912,6 +912,10 @@ class LoadVectorGatherNode : public LoadVectorNode {
             ((is_subword_type(vect_type()->element_basic_type())) &&
               idx == MemNode::ValueIn + 1);
   }
+  virtual int store_Opcode() const {
+    // Ensure it is different from any store opcode to avoid folding when indices are used
+    return -1;
+  }
 };
 
 //------------------------------StoreVectorNode--------------------------------
@@ -944,6 +948,8 @@ class StoreVectorNode : public StoreNode {
 
   // Needed for proper cloning.
   virtual uint size_of() const { return sizeof(*this); }
+  virtual Node* mask() const { return nullptr; }
+  virtual Node* indices() const { return nullptr; }
 
 #ifdef ASSERT
   // When AlignVector is enabled, SuperWord only creates aligned vector loads and stores.
@@ -959,6 +965,7 @@ class StoreVectorNode : public StoreNode {
 
  class StoreVectorScatterNode : public StoreVectorNode {
   public:
+   enum { Indices = 4 };
    StoreVectorScatterNode(Node* c, Node* mem, Node* adr, const TypePtr* at, Node* val, Node* indices)
      : StoreVectorNode(c, mem, adr, at, val) {
      init_class_id(Class_StoreVectorScatter);
@@ -970,12 +977,14 @@ class StoreVectorNode : public StoreNode {
    virtual uint match_edge(uint idx) const { return idx == MemNode::Address ||
                                                     idx == MemNode::ValueIn ||
                                                     idx == MemNode::ValueIn + 1; }
+   virtual Node* indices() const { return in(Indices); }
 };
 
 //------------------------------StoreVectorMaskedNode--------------------------------
 // Store Vector to memory under the influence of a predicate register(mask).
 class StoreVectorMaskedNode : public StoreVectorNode {
  public:
+  enum { Mask = 4 };
   StoreVectorMaskedNode(Node* c, Node* mem, Node* dst, Node* src, const TypePtr* at, Node* mask)
    : StoreVectorNode(c, mem, dst, at, src) {
     init_class_id(Class_StoreVectorMasked);
@@ -989,6 +998,7 @@ class StoreVectorMaskedNode : public StoreVectorNode {
     return idx > 1;
   }
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+  virtual Node* mask() const { return in(Mask); }
 };
 
 //------------------------------LoadVectorMaskedNode--------------------------------
@@ -1009,6 +1019,10 @@ class LoadVectorMaskedNode : public LoadVectorNode {
     return idx > 1;
   }
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+  virtual int store_Opcode() const {
+    // Ensure it is different from any store opcode to avoid folding when a mask is used
+    return -1;
+  }
 };
 
 //-------------------------------LoadVectorGatherMaskedNode---------------------------------
@@ -1032,12 +1046,19 @@ class LoadVectorGatherMaskedNode : public LoadVectorNode {
                                                    idx == MemNode::ValueIn + 1 ||
                                                    (is_subword_type(vect_type()->is_vect()->element_basic_type()) &&
                                                    idx == MemNode::ValueIn + 2); }
+  virtual int store_Opcode() const {
+    // Ensure it is different from any store opcode to avoid folding when indices and mask are used
+    return -1;
+  }
 };
 
 //------------------------------StoreVectorScatterMaskedNode--------------------------------
 // Store Vector into memory via index map under the influence of a predicate register(mask).
 class StoreVectorScatterMaskedNode : public StoreVectorNode {
   public:
+   enum { Indices = 4,
+          Mask
+   };
    StoreVectorScatterMaskedNode(Node* c, Node* mem, Node* adr, const TypePtr* at, Node* val, Node* indices, Node* mask)
      : StoreVectorNode(c, mem, adr, at, val) {
      init_class_id(Class_StoreVectorScatterMasked);
@@ -1052,6 +1073,8 @@ class StoreVectorScatterMaskedNode : public StoreVectorNode {
                                                     idx == MemNode::ValueIn ||
                                                     idx == MemNode::ValueIn + 1 ||
                                                     idx == MemNode::ValueIn + 2; }
+   virtual Node* mask() const { return in(Mask); }
+   virtual Node* indices() const { return in(Indices); }
 };
 
 // Verify that memory address (adr) is aligned. The mask specifies the

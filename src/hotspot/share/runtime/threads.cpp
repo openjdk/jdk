@@ -1183,7 +1183,8 @@ void Threads::metadata_handles_do(void f(Metadata*)) {
 }
 
 #if INCLUDE_JVMTI
-// Get count of Java threads that are waiting to enter or re-enter the specified monitor.
+// Get Java threads that are waiting to enter or re-enter the specified monitor.
+// Java threads that are executing mounted virtual threads are not included.
 GrowableArray<JavaThread*>* Threads::get_pending_threads(ThreadsList * t_list,
                                                          int count,
                                                          address monitor) {
@@ -1194,14 +1195,16 @@ GrowableArray<JavaThread*>* Threads::get_pending_threads(ThreadsList * t_list,
   for (JavaThread* p : *t_list) {
     if (!p->can_call_java()) continue;
 
+    oop thread_oop = JvmtiEnvBase::get_vthread_or_thread_oop(p);
+    if (java_lang_VirtualThread::is_instance(thread_oop)) {
+      continue;
+    }
     // The first stage of async deflation does not affect any field
     // used by this comparison so the ObjectMonitor* is usable here.
     address pending = (address)p->current_pending_monitor();
     address waiting = (address)p->current_waiting_monitor();
-    oop thread_oop = JvmtiEnvBase::get_vthread_or_thread_oop(p);
-    bool is_virtual = java_lang_VirtualThread::is_instance(thread_oop);
-    jint state = is_virtual ? JvmtiEnvBase::get_vthread_state(thread_oop, p)
-                            : JvmtiEnvBase::get_thread_state(thread_oop, p);
+    // do not include virtual threads to the list
+    jint state = JvmtiEnvBase::get_thread_state(thread_oop, p);
     if (pending == monitor || (waiting == monitor &&
         (state & JVMTI_THREAD_STATE_BLOCKED_ON_MONITOR_ENTER))
     ) { // found a match
