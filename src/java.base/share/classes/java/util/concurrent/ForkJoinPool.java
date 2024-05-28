@@ -2011,13 +2011,13 @@ public class ForkJoinPool extends AbstractExecutorService {
                                     if (q.top - b > 0) {  // stalled
                                         if (!taken)       // move unless taking
                                             continue rescan;
-                                        Thread.onSpinWait();
                                     }
                                     else if (taken)
                                         continue rescan;  // depleted; restart
                                     else
                                         break;            // empty
                                 }
+                                Thread.onSpinWait();
                             }
                             else if (!U.compareAndSetReference(a, kp, t, null))
                                 b = q.base;               // contended
