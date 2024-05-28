@@ -541,7 +541,7 @@ void SuperWord::find_adjacent_memop_pairs_in_all_groups(const GrowableArray<cons
 }
 
 // Step forward until we find a VPointer of another group, or we reach the end of the array.
-int SuperWord::find_group_end(const GrowableArray<const VPointer*> &vpointers, int group_start) {
+int SuperWord::find_group_end(const GrowableArray<const VPointer*>& vpointers, int group_start) {
   int group_end = group_start + 1;
   while (group_end < vpointers.length() &&
          VPointer::cmp_for_sort_by_group(
@@ -554,7 +554,7 @@ int SuperWord::find_group_end(const GrowableArray<const VPointer*> &vpointers, i
 }
 
 // Find adjacent memops for a single group, e.g. for all LoadI of the same base, invar, etc.
-void SuperWord::find_adjacent_memop_pairs_in_one_group(const GrowableArray<const VPointer*> &vpointers, const int group_start, int group_end) {
+void SuperWord::find_adjacent_memop_pairs_in_one_group(const GrowableArray<const VPointer*>& vpointers, const int group_start, int group_end) {
 #ifndef PRODUCT
   if (is_trace_superword_adjacent_memops()) {
     tty->print_cr(" group:");
@@ -2772,7 +2772,7 @@ bool SuperWord::is_vector_use(Node* use, int u_idx) const {
   if (is_marked_reduction(use) && u_idx == 1) {
 #ifdef ASSERT
       for (uint i = 1; i < u_pk->size(); i++) {
-        assert(u_pk->at(i-1) == u_pk->at(i)->in(1), "internal connection");
+        assert(u_pk->at(i - 1) == u_pk->at(i)->in(1), "internal connection");
       }
 #endif
     return true;
@@ -2858,6 +2858,7 @@ bool SuperWord::is_velt_basic_type_compatible_use_def(Node* use, Node* def) cons
            type2aelembytes(use_bt) == 4;
   }
 
+  // Default case: input size of use equals output size of def.
   return type2aelembytes(use_bt) == type2aelembytes(def_bt);
 }
 
