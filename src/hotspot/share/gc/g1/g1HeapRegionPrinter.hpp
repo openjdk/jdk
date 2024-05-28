@@ -34,7 +34,7 @@ class FreeRegionList;
 class G1HeapRegionPrinter : public AllStatic {
 
   // Print an action event.
-  static void print(const char* action, HeapRegion* hr) {
+  static void print(const char* action, G1HeapRegion* hr) {
     log_trace(gc, region)("G1HR %s(%s) [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT "]",
                           action, hr->get_type_str(), p2i(hr->bottom()), p2i(hr->top()), p2i(hr->end()));
   }
@@ -47,31 +47,31 @@ public:
 
   // The methods below are convenient wrappers for the print() method.
 
-  static void alloc(HeapRegion* hr)                     { print("ALLOC", hr); }
+  static void alloc(G1HeapRegion* hr)                     { print("ALLOC", hr); }
 
-  static void retire(HeapRegion* hr)                    { print("RETIRE", hr); }
+  static void retire(G1HeapRegion* hr)                    { print("RETIRE", hr); }
 
-  static void reuse(HeapRegion* hr)                     { print("REUSE", hr); }
+  static void reuse(G1HeapRegion* hr)                     { print("REUSE", hr); }
 
-  static void cset(HeapRegion* hr)                      { print("CSET", hr); }
+  static void cset(G1HeapRegion* hr)                      { print("CSET", hr); }
 
-  static void evac_failure(HeapRegion* hr)              { print("EVAC-FAILURE", hr); }
+  static void evac_failure(G1HeapRegion* hr)              { print("EVAC-FAILURE", hr); }
 
-  static void mark_reclaim(HeapRegion* hr)              { print("MARK-RECLAIM", hr); }
+  static void mark_reclaim(G1HeapRegion* hr)              { print("MARK-RECLAIM", hr); }
 
-  static void eager_reclaim(HeapRegion* hr)             { print("EAGER-RECLAIM", hr); }
+  static void eager_reclaim(G1HeapRegion* hr)             { print("EAGER-RECLAIM", hr); }
 
-  static void evac_reclaim(HeapRegion* hr)              { print("EVAC-RECLAIM", hr); }
+  static void evac_reclaim(G1HeapRegion* hr)              { print("EVAC-RECLAIM", hr); }
 
-  static void post_compaction(HeapRegion* hr)           { print("POST-COMPACTION", hr); }
+  static void post_compaction(G1HeapRegion* hr)           { print("POST-COMPACTION", hr); }
 
-  static void commit(HeapRegion* hr)                    { print("COMMIT", hr); }
+  static void commit(G1HeapRegion* hr)                    { print("COMMIT", hr); }
 
-  static void active(HeapRegion* hr)                    { print("ACTIVE", hr); }
+  static void active(G1HeapRegion* hr)                    { print("ACTIVE", hr); }
 
-  static void inactive(HeapRegion* hr)                  { print("INACTIVE", hr); }
+  static void inactive(G1HeapRegion* hr)                  { print("INACTIVE", hr); }
 
-  static void uncommit(HeapRegion* hr)                  { print("UNCOMMIT", hr); }
+  static void uncommit(G1HeapRegion* hr)                  { print("UNCOMMIT", hr); }
 };
 
 #endif // SHARE_GC_G1_G1HEAPREGIONPRINTER_HPP
