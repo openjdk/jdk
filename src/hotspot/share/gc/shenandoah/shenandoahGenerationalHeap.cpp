@@ -927,19 +927,18 @@ private:
 
 void ShenandoahGenerationalHeap::update_heap_references(bool concurrent) {
   assert(!is_full_gc_in_progress(), "Only for concurrent and degenerated GC");
-  uint nworkers = workers()->active_workers();
+  const uint nworkers = workers()->active_workers();
   ShenandoahRegionChunkIterator work_list(nworkers);
-  ShenandoahRegionIterator update_refs_iterator(this);
   if (concurrent) {
-    ShenandoahGenerationalUpdateHeapRefsTask<true> task(&update_refs_iterator, &work_list);
+    ShenandoahGenerationalUpdateHeapRefsTask<true> task(&_update_refs_iterator, &work_list);
     workers()->run_task(&task);
   } else {
-    ShenandoahGenerationalUpdateHeapRefsTask<false> task(&update_refs_iterator, &work_list);
+    ShenandoahGenerationalUpdateHeapRefsTask<false> task(&_update_refs_iterator, &work_list);
     workers()->run_task(&task);
   }
-  assert(cancelled_gc() || !update_refs_iterator.has_next(), "Should have finished update references");
 
-  if (ShenandoahEnableCardStats) { // generational check proxy
+  if (ShenandoahEnableCardStats) {
+    // Only do this if we are collecting card stats
     assert(card_scan() != nullptr, "Card table must exist when card stats are enabled");
     card_scan()->log_card_stats(nworkers, CARD_STAT_UPDATE_REFS);
   }

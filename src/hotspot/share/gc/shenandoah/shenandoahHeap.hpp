@@ -436,6 +436,12 @@ public:
   // Returns true if the soft maximum heap has been changed using management APIs.
   bool check_soft_max_changed();
 
+protected:
+  // This is shared between shConcurrentGC and shDegenerateGC so that degenerated
+  // GC can resume update refs from where the concurrent GC was cancelled. It is
+  // also used in shGenerationalHeap, which uses a different closure for update refs.
+  ShenandoahRegionIterator _update_refs_iterator;
+
 private:
   // GC support
   // Evacuation

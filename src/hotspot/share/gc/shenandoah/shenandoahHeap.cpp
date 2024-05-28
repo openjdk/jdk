@@ -571,6 +571,7 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _gc_no_progress_count(0),
   _age_census(nullptr),
   _cancel_requested_time(0),
+  _update_refs_iterator(this),
   _young_generation(nullptr),
   _global_generation(nullptr),
   _old_generation(nullptr),
@@ -1955,6 +1956,8 @@ void ShenandoahHeap::prepare_update_heap_references(bool concurrent) {
                             ShenandoahPhaseTimings::degen_gc_init_update_refs_manage_gclabs);
     gclabs_retire(ResizeTLAB);
   }
+
+  _update_refs_iterator.reset();
 }
 
 void ShenandoahHeap::propagate_gc_state_to_java_threads() {
@@ -2373,15 +2376,14 @@ private:
 
 void ShenandoahHeap::update_heap_references(bool concurrent) {
   assert(!is_full_gc_in_progress(), "Only for concurrent and degenerated GC");
-  ShenandoahRegionIterator update_refs_iterator(this);
+
   if (concurrent) {
-    ShenandoahUpdateHeapRefsTask<true> task(&update_refs_iterator);
+    ShenandoahUpdateHeapRefsTask<true> task(&_update_refs_iterator);
     workers()->run_task(&task);
   } else {
-    ShenandoahUpdateHeapRefsTask<false> task(&update_refs_iterator);
+    ShenandoahUpdateHeapRefsTask<false> task(&_update_refs_iterator);
     workers()->run_task(&task);
   }
-  assert(cancelled_gc() || !update_refs_iterator.has_next(), "Should have finished update references");
 }
 
 class ShenandoahFinalUpdateRefsUpdateRegionStateClosure : public ShenandoahHeapRegionClosure {
