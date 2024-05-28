@@ -218,7 +218,7 @@ public abstract class JdbTest {
                     }
                 }
 
-                if (debuggee != null && debuggee.terminated()) {
+                if (debuggee != null && !debuggee.terminated()) {
                     log.complain("debuggee is still running, check for exception in the logs.");
                     debuggee.killDebuggee();
                 }
