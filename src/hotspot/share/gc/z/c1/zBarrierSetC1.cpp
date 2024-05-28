@@ -528,7 +528,7 @@ public:
 static address generate_c1_store_runtime_stub(BufferBlob* blob, bool self_healing, const char* name) {
   ZStoreBarrierRuntimeStubCodeGenClosure cl(self_healing);
   CodeBlob* const code_blob = Runtime1::generate_blob(blob, -1 /* stub_id */, name, false /* expect_oop_map*/, &cl);
-  return code_blob != nullptr?code_blob->code_begin():nullptr;
+  return (code_blob != nullptr) ? code_blob->code_begin() : nullptr;
 }
 
 bool ZBarrierSetC1::generate_c1_runtime_stubs(BufferBlob* blob) {
