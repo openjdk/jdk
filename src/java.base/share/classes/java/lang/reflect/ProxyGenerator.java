@@ -673,7 +673,7 @@ final class ProxyGenerator {
                            .ldc(DynamicConstantDesc.of(pg.bsm,
                                 toClassDesc(fromClass),
                                 method.getName(),
-                                desc);
+                                desc));
                         if (parameterTypes.length > 0) {
                             // Create an array and fill with the parameters converting primitives to wrappers
                             cob.loadConstant(parameterTypes.length)
