@@ -36,8 +36,9 @@
 
 class ShenandoahNoBlockOp : public StackObj {
 public:
-  ShenandoahNoBlockOp(JavaThread* java_thread) {
+  ShenandoahNoBlockOp(JavaThread* java_thread, bool allow_suspend) {
     assert(java_thread == nullptr, "Should not pass anything");
+    assert(allow_suspend == true, "allow_suspend should be always true");
   }
 };
 
@@ -56,8 +57,8 @@ void ShenandoahLock::contended_lock_internal(JavaThread* java_thread) {
   int yields = 0;
   while (Atomic::load(&_state) == locked ||
          Atomic::cmpxchg(&_state, unlocked, locked) != unlocked) {
-    if ((++ctr & 0xFFF) == 0) {
-      BlockOp block(java_thread);
+    if ((++ctr & 0x7FF) == 0 || SafepointSynchronize::is_synchronizing()) {
+      BlockOp block(java_thread, true);
       if (yields > 5) {
         os::naked_short_sleep(1);
       } else {
