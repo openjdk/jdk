@@ -81,6 +81,7 @@ import javax.print.attribute.standard.MediaPrintableArea;
 import javax.print.attribute.standard.MediaSize;
 import javax.print.attribute.standard.MediaSizeName;
 import javax.print.attribute.standard.OrientationRequested;
+import javax.print.attribute.standard.OutputBin;
 import javax.print.attribute.standard.PageRanges;
 import javax.print.attribute.standard.PrinterResolution;
 import javax.print.attribute.standard.PrinterState;
@@ -90,7 +91,6 @@ import javax.print.attribute.standard.PrinterIsAcceptingJobs;
 import javax.print.attribute.standard.RequestingUserName;
 import javax.print.attribute.standard.SheetCollate;
 import javax.print.attribute.standard.Sides;
-import javax.print.attribute.standard.OutputBin;
 
 /**
  * A class which rasterizes a printer job.
