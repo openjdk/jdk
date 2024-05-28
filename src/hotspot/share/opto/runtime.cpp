@@ -1150,7 +1150,7 @@ const TypeFunc* OptoRuntime::digestBase_implCompressMB_Type(bool is_sha3) {
 
 const TypeFunc* OptoRuntime::multiplyToLen_Type() {
   // create input type (domain)
-  int num_args      = 6;
+  int num_args      = 5;
   int argcnt = num_args;
   const Type** fields = TypeTuple::fields(argcnt);
   int argp = TypeFunc::Parms;
@@ -1159,7 +1159,6 @@ const TypeFunc* OptoRuntime::multiplyToLen_Type() {
   fields[argp++] = TypePtr::NOTNULL;    // y
   fields[argp++] = TypeInt::INT;        // ylen
   fields[argp++] = TypePtr::NOTNULL;    // z
-  fields[argp++] = TypeInt::INT;        // zlen
   assert(argp == TypeFunc::Parms+argcnt, "correct decoding");
   const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms+argcnt, fields);
 
