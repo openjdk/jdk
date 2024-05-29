@@ -35,7 +35,7 @@
  *                   -XX:+WhiteBoxAPI
  *                   compiler.vectorization.runner.ArrayShiftOpTest
  *
- * @requires (os.simpleArch == "x64") | (os.simpleArch == "aarch64")
+ * @requires (os.simpleArch == "x64") | (os.simpleArch == "aarch64") | (os.simpleArch == "riscv64")
  * @requires vm.compiler2.enabled
  */
 
@@ -75,6 +75,9 @@ public class ArrayShiftOpTest extends VectorizationTestRunner {
         counts = {IRNode.STORE_VECTOR, ">0"})
     @IR(applyIfCPUFeature = {"avx512f", "true"},
         counts = {IRNode.ROTATE_RIGHT_V, ">0"})
+    @IR(applyIfPlatform = {"riscv64", "true"},
+        applyIfCPUFeature = {"zvbb", "true"},
+        counts = {IRNode.ROTATE_RIGHT_V, ">0"})
     public int[] intCombinedRotateShift() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -88,6 +91,9 @@ public class ArrayShiftOpTest extends VectorizationTestRunner {
         counts = {IRNode.STORE_VECTOR, ">0"})
     @IR(applyIfCPUFeature = {"avx512f", "true"},
         counts = {IRNode.ROTATE_RIGHT_V, ">0"})
+    @IR(applyIfPlatform = {"riscv64", "true"},
+        applyIfCPUFeature = {"zvbb", "true"},
+        counts = {IRNode.ROTATE_RIGHT_V, ">0"})
     public long[] longCombinedRotateShift() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -98,6 +104,9 @@ public class ArrayShiftOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.RSHIFT_VI, ">0"})
+    @IR(applyIfPlatform = {"riscv64", "true"},
+        applyIfCPUFeature = {"v", "true"},
         counts = {IRNode.RSHIFT_VI, ">0"})
     public int[] intShiftLargeDistConstant() {
         int[] res = new int[SIZE];
@@ -110,6 +119,9 @@ public class ArrayShiftOpTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         counts = {IRNode.RSHIFT_VI, ">0"})
+    @IR(applyIfPlatform = {"riscv64", "true"},
+        applyIfCPUFeature = {"v", "true"},
+        counts = {IRNode.RSHIFT_VI, ">0"})
     public int[] intShiftLargeDistInvariant() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -120,6 +132,9 @@ public class ArrayShiftOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.RSHIFT_VS, ">0"})
+    @IR(applyIfPlatform = {"riscv64", "true"},
+        applyIfCPUFeature = {"v", "true"},
         counts = {IRNode.RSHIFT_VS, ">0"})
     public short[] shortShiftLargeDistConstant() {
         short[] res = new short[SIZE];
@@ -132,6 +147,9 @@ public class ArrayShiftOpTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         counts = {IRNode.RSHIFT_VS, ">0"})
+    @IR(applyIfPlatform = {"riscv64", "true"},
+        applyIfCPUFeature = {"v", "true"},
+        counts = {IRNode.RSHIFT_VS, ">0"})
     public short[] shortShiftLargeDistInvariant() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -143,6 +161,9 @@ public class ArrayShiftOpTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         counts = {IRNode.LSHIFT_VL, ">0"})
+    @IR(applyIfPlatform = {"riscv64", "true"},
+        applyIfCPUFeature = {"v", "true"},
+        counts = {IRNode.LSHIFT_VL, ">0"})
     public long[] longShiftLargeDistConstant() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -153,6 +174,9 @@ public class ArrayShiftOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.URSHIFT_VL, ">0"})
+    @IR(applyIfPlatform = {"riscv64", "true"},
+        applyIfCPUFeature = {"v", "true"},
         counts = {IRNode.URSHIFT_VL, ">0"})
     public long[] longShiftLargeDistInvariant() {
         long[] res = new long[SIZE];
@@ -186,6 +210,9 @@ public class ArrayShiftOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.RSHIFT_VS, ">0"})
+    @IR(applyIfPlatform = {"riscv64", "true"},
+        applyIfCPUFeature = {"v", "true"},
         counts = {IRNode.RSHIFT_VS, ">0"})
     public short[] vectorUnsignedShiftRight() {
         short[] res = new short[SIZE];
