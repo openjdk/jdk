@@ -1877,7 +1877,7 @@ void VTransformGraph::for_each_memop_in_schedule(Callback callback) const {
 
 void VTransformGraph::apply() {
 #ifndef PRODUCT
-  if (_is_trace_info) {
+  if (_is_trace_info || TraceLoopOpts) {
     tty->print_cr("\nVLoopTransformGraph::apply:");
     lpt()->dump_head();
     lpt()->head()->dump();
@@ -2046,6 +2046,25 @@ void VTransformGraph::apply_vectorization() const {
   }
 
   // TODO SuperWordLoopUnrollAnalysis
+//   if (SuperWordLoopUnrollAnalysis) {
+//     if (cl->has_passed_slp()) {
+//       uint slp_max_unroll_factor = cl->slp_max_unroll();
+//       if (slp_max_unroll_factor == max_vlen) {
+// #ifndef PRODUCT
+//         if (TraceSuperWordLoopUnrollAnalysis) {
+//           tty->print_cr("vector loop(unroll=%d, len=%d)\n", max_vlen, max_vlen_in_bytes*BitsPerByte);
+//         }
+// #endif
+//         // For atomic unrolled loops which are vector mapped, instigate more unrolling
+//         cl->set_notpassed_slp();
+//         // if vector resources are limited, do not allow additional unrolling
+//         if (Matcher::float_pressure_limit() > 8) {
+//           C->set_major_progress();
+//           cl->mark_do_unroll_only();
+//         }
+//       }
+//     }
+//   }
 }
 
 Node* VTransformNode::find_transformed_input(int i, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
@@ -2171,7 +2190,9 @@ VTransformApplyStatus VTransformElementWiseVectorNode::apply(const VLoopAnalyzer
     assert(req() == 3, "two inputs expected");
     Node* in1 = find_transformed_input(1, vnode_idx_to_transformed_node);
     Node* in2 = find_transformed_input(2, vnode_idx_to_transformed_node);
+
     // TODO register spilling trick?
+    // Move invariant vector input into second position to avoid register spilling.
 
     if (VectorNode::can_transform_shift_op(first, bt)) {
       opc = Op_RShiftI;

@@ -633,13 +633,6 @@ private:
 
   DEBUG_ONLY(void verify_packs() const;)
 
-  // TODO start remove
-  // Convert packs into vector node operations
-  bool output();
-  // Create a vector operand for the nodes in pack p for operand: in(opd_idx)
-  Node* vector_opd(Node_List* p, int opd_idx);
-  // TODO end remove
-
   // Can code be generated for the pack, restricted to size nodes?
   bool implemented(const Node_List* pack, const uint size) const;
   // Find the maximal implemented size smaller or equal to the packs size
