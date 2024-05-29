@@ -195,15 +195,16 @@ class CachingCgroupController : public CHeapObj<mtInternal> {
     T controller() { return _controller; }
 };
 
-class CgroupCpuController: public CgroupController {
+// Pure virtual class representing version agnostic CPU controllers
+class CgroupCpuController {
   public:
     virtual int cpu_quota() = 0;
     virtual int cpu_period() = 0;
     virtual int cpu_shares() = 0;
-    virtual char *subsystem_path() = 0;
 };
 
-class CgroupMemoryController: public CgroupController {
+// Pure virtual class representing version agnostic memory controllers
+class CgroupMemoryController {
   public:
     virtual jlong read_memory_limit_in_bytes(julong upper_bound) = 0;
     virtual jlong memory_usage_in_bytes() = 0;
@@ -213,9 +214,7 @@ class CgroupMemoryController: public CgroupController {
     virtual jlong memory_max_usage_in_bytes() = 0;
     virtual jlong rss_usage_in_bytes() = 0;
     virtual jlong cache_usage_in_bytes() = 0;
-    virtual char *subsystem_path() = 0;
 };
-
 
 class CgroupSubsystem: public CHeapObj<mtInternal> {
   public:
