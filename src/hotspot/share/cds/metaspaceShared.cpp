@@ -436,6 +436,9 @@ void MetaspaceShared::rewrite_nofast_bytecodes_and_calculate_fingerprints(Thread
 class VM_PopulateDumpSharedSpace : public VM_Operation {
 private:
   ArchiveHeapInfo _heap_info;
+  FileMapInfo* _map_info;
+  StaticArchiveBuilder& _builder;
+  bool _failed;
 
   void dump_java_heap_objects(GrowableArray<Klass*>* klasses) NOT_CDS_JAVA_HEAP_RETURN;
   void dump_shared_symbol_table(GrowableArray<Symbol*>* symbols) {
@@ -446,11 +449,15 @@ private:
 
 public:
 
-  VM_PopulateDumpSharedSpace() : VM_Operation(), _heap_info() {}
+  VM_PopulateDumpSharedSpace(StaticArchiveBuilder& b) :
+    VM_Operation(), _heap_info(), _map_info(nullptr), _builder(b), _failed(false) {}
 
   bool skip_operation() const { return false; }
 
   VMOp_Type type() const { return VMOp_PopulateDumpSharedSpace; }
+  ArchiveHeapInfo* heap_info()  { return &_heap_info; }
+  FileMapInfo* map_info() const { return _map_info; }
+  bool failed() const { return _failed; }
   void doit();   // outline because gdb sucks
   bool allow_nested_vm_operations() const { return true; }
 }; // class VM_PopulateDumpSharedSpace
@@ -507,22 +514,25 @@ void VM_PopulateDumpSharedSpace::doit() {
   MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
   SystemDictionaryShared::check_excluded_classes();
 
-  StaticArchiveBuilder builder;
-  builder.gather_source_objs();
-  builder.reserve_buffer();
+  _builder.gather_source_objs();
+  if (_builder.reserve_buffer() == nullptr) {
+    // report error ...
+    this->_failed = true;
+    return;
+  }
 
-  CppVtables::dumptime_init(&builder);
+  CppVtables::dumptime_init(&_builder);
 
-  builder.sort_metadata_objs();
-  builder.dump_rw_metadata();
-  builder.dump_ro_metadata();
-  builder.relocate_metaspaceobj_embedded_pointers();
+  _builder.sort_metadata_objs();
+  _builder.dump_rw_metadata();
+  _builder.dump_ro_metadata();
+  _builder.relocate_metaspaceobj_embedded_pointers();
 
-  dump_java_heap_objects(builder.klasses());
-  dump_shared_symbol_table(builder.symbols());
+  dump_java_heap_objects(_builder.klasses());
+  dump_shared_symbol_table(_builder.symbols());
 
   log_info(cds)("Make classes shareable");
-  builder.make_klasses_shareable();
+  _builder.make_klasses_shareable();
 
   char* serialized_data = dump_read_only_tables();
 
@@ -532,10 +542,6 @@ void VM_PopulateDumpSharedSpace::doit() {
   // We don't want to write these addresses into the archive.
   CppVtables::zero_archived_vtables();
 
-  // relocate the data so that it can be mapped to MetaspaceShared::requested_base_address()
-  // without runtime relocation.
-  builder.relocate_to_requested();
-
   // Write the archive file
   const char* static_archive = CDSConfig::static_archive_path();
   assert(static_archive != nullptr, "SharedArchiveFile not set?");
@@ -543,8 +549,6 @@ void VM_PopulateDumpSharedSpace::doit() {
   mapinfo->populate_header(MetaspaceShared::core_region_alignment());
   mapinfo->set_serialized_data(serialized_data);
   mapinfo->set_cloned_vtables(CppVtables::vtables_serialized_base());
-  mapinfo->open_for_write();
-  builder.write_archive(mapinfo, &_heap_info);
 
   if (PrintSystemDictionaryAtExit) {
     SystemDictionary::print();
@@ -657,7 +661,8 @@ void MetaspaceShared::prepare_for_dumping() {
 // file.
 void MetaspaceShared::preload_and_dump(TRAPS) {
   ResourceMark rm(THREAD);
-  preload_and_dump_impl(THREAD);
+  StaticArchiveBuilder builder;
+  preload_and_dump_impl(builder, THREAD);
   if (HAS_PENDING_EXCEPTION) {
     if (PENDING_EXCEPTION->is_a(vmClasses::OutOfMemoryError_klass())) {
       log_error(cds)("Out of memory. Please run with a larger Java heap, current MaxHeapSize = "
@@ -758,7 +763,7 @@ void MetaspaceShared::preload_classes(TRAPS) {
   log_info(cds)("Shared spaces: preloaded %d classes", class_count);
 }
 
-void MetaspaceShared::preload_and_dump_impl(TRAPS) {
+void MetaspaceShared::preload_and_dump_impl(StaticArchiveBuilder& builder, TRAPS) {
   preload_classes(CHECK);
 
   if (SharedArchiveConfigFile) {
@@ -795,8 +800,32 @@ void MetaspaceShared::preload_and_dump_impl(TRAPS) {
   }
 #endif
 
-  VM_PopulateDumpSharedSpace op;
+  VM_PopulateDumpSharedSpace op(builder);
   VMThread::execute(&op);
+
+  if (op.failed()) {
+    THROW_MSG(vmSymbols::java_io_IOException(), "Encountered error while dumping");
+  }
+
+  write_static_archive(&builder, op.map_info(), op.heap_info());
+}
+
+void MetaspaceShared::write_static_archive(ArchiveBuilder* builder, FileMapInfo *mapinfo, ArchiveHeapInfo* heap_info) {
+  // relocate the data so that it can be mapped to MetaspaceShared::requested_base_address()
+  // without runtime relocation.
+  builder->relocate_to_requested();
+
+  mapinfo->open_for_write();
+  builder->write_archive(mapinfo, heap_info);
+
+  if (PrintSystemDictionaryAtExit) {
+    SystemDictionary::print();
+  }
+
+  if (AllowArchivingWithJavaAgent) {
+    log_warning(cds)("This archive was created with AllowArchivingWithJavaAgent. It should be used "
+            "for testing purposes only and should not be used in a production environment");
+  }
 }
 
 // Returns true if the class's status has changed.
