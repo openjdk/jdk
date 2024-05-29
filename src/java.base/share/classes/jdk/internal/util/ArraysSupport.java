@@ -272,7 +272,7 @@ public class ArraysSupport {
     public static int hashCodeOfUnsigned(byte[] a, int fromIndex, int length, int initialValue) {
         return switch (length) {
             case 0 -> initialValue;
-            case 1 -> 31 * initialValue + (a[fromIndex] & 0xff);
+            case 1 -> 31 * initialValue + Byte.toUnsignedInt(a[fromIndex]);
             default -> vectorizedHashCode(a, fromIndex, length, initialValue, T_BOOLEAN);
         };
     }
@@ -376,7 +376,7 @@ public class ArraysSupport {
     private static int unsignedHashCode(int result, byte[] a, int fromIndex, int length) {
         int end = fromIndex + length;
         for (int i = fromIndex; i < end; i++) {
-            result = 31 * result + (a[i] & 0xff);
+            result = 31 * result + Byte.toUnsignedInt(a[i]);
         }
         return result;
     }
