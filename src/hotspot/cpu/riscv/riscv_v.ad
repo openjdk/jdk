@@ -75,9 +75,11 @@ source %{
         break;
       case Op_CountTrailingZerosV:
       case Op_CountLeadingZerosV:
-      case Op_ReverseBytesV:
       case Op_PopCountVL:
       case Op_PopCountVI:
+      case Op_ReverseBytesV:
+      case Op_RotateLeftV:
+      case Op_RotateRightV:
         return UseZvbb;
       case Op_LoadVectorGather:
       case Op_LoadVectorGatherMasked:
@@ -2218,6 +2220,32 @@ instruct replicateD(vReg dst, fRegD src) %{
 %}
 
 // vector shift
+//
+// Following shift instruct's are shared by vectorization (in SLP, superword.cpp) and Vector API.
+//
+// Shift behaviour in vectorization is defined by java language spec, which includes:
+//  1. "If the promoted type of the left-hand operand is int, then only the five lowest-order bits of
+//      the right-hand operand are used as the shift distance. It is as if the right-hand operand were
+//      subjected to a bitwise logical AND operator & (§15.22.1) with the mask value 0x1f (0b11111).
+//      The shift distance actually used is therefore always in the range 0 to 31, inclusive."
+//  2. similarly, for long "with the mask value 0x3f (0b111111)"
+// check https://docs.oracle.com/javase/specs/jls/se21/html/jls-15.html#jls-15.19 for details.
+//
+// Shift behaviour in Vector API is defined as:
+//   e.g. for ASHR, "a>>(n&(ESIZE*8-1))"
+//   this behaviour is the same as shift instrunction's in riscv vector extension.
+// check https://docs.oracle.com/en/java/javase/21/docs/api/jdk.incubator.vector/jdk/incubator/vector/VectorOperators.html#ASHR
+// and https://github.com/riscv/riscv-v-spec/blob/master/v-spec.adoc#116-vector-single-width-shift-instructions for details.
+//
+// Despite the difference between these 2 behaviours, the same shift instruct's of byte and short are
+// still shared between vectorization and Vector API. The way it works is hidden inside the implementation
+// of vectorization and Vector API:
+//  1. when doing optimization vectorization masks the shift value with "(BitsPerInt - 1)" or "(BitsPerLong - 1)"
+//  2. in Vector API, shift value is masked with SHIFT_MASK (e.g. for ByteVector it's "Byte.SIZE - 1")
+//
+// If not because of this pre-processing of shift value respectively in vectorization and Vector API, then
+// e.g. for a byte shift value 16, the intrinsic behaviour will be different, and they can not share the same
+// instruct here, as vectorization requires x >> 16, but Vector API requires x >> (16 & 7).
 
 instruct vasrB(vReg dst, vReg src, vReg shift, vRegMask_V0 v0) %{
   match(Set dst (RShiftVB src shift));
@@ -3027,6 +3055,200 @@ instruct vshiftcnt(vReg dst, iRegIorL2I cnt) %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ vsetvli_helper(bt, Matcher::vector_length(this));
     __ vmv_v_x(as_VectorRegister($dst$$reg), as_Register($cnt$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// --------------------------------- Vector Rotation ----------------------------------
+//
+// Following rotate instruct's are shared by vectorization (in SLP, superword.cpp) and Vector API.
+//
+// Rotate behaviour in vectorization is defined by java API, which includes:
+//  1. Integer.rorateRight, Integer.rorateLeft.
+//     `rotation by any multiple of 32 is a no-op, so all but the last five bits of the rotation distance can be ignored`.
+//  2. Long.rorateRight, Long.rorateLeft.
+//     `rotation by any multiple of 64 is a no-op, so all but the last six bits of the rotation distance can be ignored`.
+//
+// Rotate behaviour in Vector API is defined as below, e.g.
+//  1. For Byte ROR, `a ROR b` is: (byte)(((((byte)a) & 0xFF) >>> (b & 7)) | ((((byte)a) & 0xFF) << (8 - (b & 7))))
+//  2. For Short ROR, `a ROR b` is: (short)(((((short)a) & 0xFFFF) >>> (b & 15)) | ((((short)a) & 0xFFFF) << (16 - (b & 15))))
+//  3. For Integer ROR, `a ROR b` is: Integer.rotateRight(a, ((int)b))
+//  4. For Long ROR, `a ROR b` is: Long.rotateRight(a, ((int)b))
+//
+// Basically, the behaviour between vectorization and Vector API is the same for Long and Integer, except that Vector API
+// also supports Byte and Short rotation. But we can still share the intrinsics between vectorization and Vector API.
+//
+// NOTE: As vror.vi encodes 6-bits immediate rotate amount, which is different from other vector-immediate instructions,
+//       implementation of vector rotation for long and other types can be unified.
+
+// Rotate right
+
+instruct vrotate_right(vReg dst, vReg src, vReg shift) %{
+  match(Set dst (RotateRightV src shift));
+  format %{ "vrotate_right $dst, $src, $shift\t" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vror_vv(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg),
+               as_VectorRegister($shift$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vrotate_right_reg(vReg dst, vReg src, iRegIorL2I shift) %{
+  match(Set dst (RotateRightV src (Replicate shift)));
+  format %{ "vrotate_right_reg $dst, $src, $shift\t" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vror_vx(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg),
+               as_Register($shift$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vrotate_right_imm(vReg dst, vReg src, immI shift) %{
+  match(Set dst (RotateRightV src shift));
+  format %{ "vrotate_right_imm $dst, $src, $shift\t" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    uint32_t bits = type2aelembytes(bt) * 8;
+    uint32_t con = (unsigned)$shift$$constant & (bits - 1);
+    if (con == 0) {
+      return;
+    }
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vror_vi(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg), con);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// Rotate right - masked
+
+instruct vrotate_right_masked(vReg dst_src, vReg shift, vRegMask_V0 v0) %{
+  match(Set dst_src (RotateRightV (Binary dst_src shift) v0));
+  format %{ "vrotate_right_masked $dst_src, $dst_src, $shift, v0.t\t" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vror_vv(as_VectorRegister($dst_src$$reg), as_VectorRegister($dst_src$$reg),
+               as_VectorRegister($shift$$reg), Assembler::v0_t);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vrotate_right_reg_masked(vReg dst_src, iRegIorL2I shift, vRegMask_V0 v0) %{
+  match(Set dst_src (RotateRightV (Binary dst_src (Replicate shift)) v0));
+  format %{ "vrotate_right_reg_masked $dst_src, $dst_src, $shift, v0.t\t" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vror_vx(as_VectorRegister($dst_src$$reg), as_VectorRegister($dst_src$$reg),
+               as_Register($shift$$reg), Assembler::v0_t);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vrotate_right_imm_masked(vReg dst_src, immI shift, vRegMask_V0 v0) %{
+  match(Set dst_src (RotateRightV (Binary dst_src shift) v0));
+  format %{ "vrotate_right_imm_masked $dst_src, $dst_src, $shift, v0.t\t" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    uint32_t bits = type2aelembytes(bt) * 8;
+    uint32_t con = (unsigned)$shift$$constant & (bits - 1);
+    if (con == 0) {
+      return;
+    }
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vror_vi(as_VectorRegister($dst_src$$reg), as_VectorRegister($dst_src$$reg),
+               con, Assembler::v0_t);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// Rotate left
+
+instruct vrotate_left(vReg dst, vReg src, vReg shift) %{
+  match(Set dst (RotateLeftV src shift));
+  format %{ "vrotate_left $dst, $src, $shift\t" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vrol_vv(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg),
+               as_VectorRegister($shift$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vrotate_left_reg(vReg dst, vReg src, iRegIorL2I shift) %{
+  match(Set dst (RotateLeftV src (Replicate shift)));
+  format %{ "vrotate_left_reg $dst, $src, $shift\t" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vrol_vx(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg),
+               as_Register($shift$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vrotate_left_imm(vReg dst, vReg src, immI shift) %{
+  match(Set dst (RotateLeftV src shift));
+  format %{ "vrotate_left_imm $dst, $src, $shift\t" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    uint32_t bits = type2aelembytes(bt) * 8;
+    uint32_t con = (unsigned)$shift$$constant & (bits - 1);
+    if (con == 0) {
+      return;
+    }
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    con = bits - con;
+    __ vror_vi(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg), con);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// Rotate left - masked
+
+instruct vrotate_left_masked(vReg dst_src, vReg shift, vRegMask_V0 v0) %{
+  match(Set dst_src (RotateLeftV (Binary dst_src shift) v0));
+  format %{ "vrotate_left_masked $dst_src, $dst_src, $shift, v0.t\t" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vrol_vv(as_VectorRegister($dst_src$$reg), as_VectorRegister($dst_src$$reg),
+               as_VectorRegister($shift$$reg), Assembler::v0_t);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vrotate_left_reg_masked(vReg dst_src, iRegIorL2I shift, vRegMask_V0 v0) %{
+  match(Set dst_src (RotateLeftV (Binary dst_src (Replicate shift)) v0));
+  format %{ "vrotate_left_reg_masked $dst_src, $dst_src, $shift, v0.t\t" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vrol_vx(as_VectorRegister($dst_src$$reg), as_VectorRegister($dst_src$$reg),
+               as_Register($shift$$reg), Assembler::v0_t);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vrotate_left_imm_masked(vReg dst_src, immI shift, vRegMask_V0 v0) %{
+  match(Set dst_src (RotateLeftV (Binary dst_src shift) v0));
+  format %{ "vrotate_left_imm_masked $dst_src, $dst_src, $shift, v0.t\t" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    uint32_t bits = type2aelembytes(bt) * 8;
+    uint32_t con = (unsigned)$shift$$constant & (bits - 1);
+    if (con == 0) {
+      return;
+    }
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    con = bits - con;
+    __ vror_vi(as_VectorRegister($dst_src$$reg), as_VectorRegister($dst_src$$reg),
+               con, Assembler::v0_t);
   %}
   ins_pipe(pipe_slow);
 %}

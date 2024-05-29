@@ -83,7 +83,7 @@ class CorpusTest {
             var dcob = (DirectCodeBuilder)cob;
             var curPc = dcob.curPc();
             switch (coe) {
-                case LineNumber ln -> dcob.writeAttribute(new UnboundAttribute.AdHocAttribute<>(Attributes.LINE_NUMBER_TABLE) {
+                case LineNumber ln -> dcob.writeAttribute(new UnboundAttribute.AdHocAttribute<>(Attributes.lineNumberTable()) {
                     @Override
                     public void writeBody(BufWriter b) {
                         b.writeU2(1);
@@ -91,14 +91,14 @@ class CorpusTest {
                         b.writeU2(ln.line());
                     }
                 });
-                case LocalVariable lv -> dcob.writeAttribute(new UnboundAttribute.AdHocAttribute<>(Attributes.LOCAL_VARIABLE_TABLE) {
+                case LocalVariable lv -> dcob.writeAttribute(new UnboundAttribute.AdHocAttribute<>(Attributes.localVariableTable()) {
                     @Override
                     public void writeBody(BufWriter b) {
                         b.writeU2(1);
                         lv.writeTo(b);
                     }
                 });
-                case LocalVariableType lvt -> dcob.writeAttribute(new UnboundAttribute.AdHocAttribute<>(Attributes.LOCAL_VARIABLE_TYPE_TABLE) {
+                case LocalVariableType lvt -> dcob.writeAttribute(new UnboundAttribute.AdHocAttribute<>(Attributes.localVariableTypeTable()) {
                     @Override
                     public void writeBody(BufWriter b) {
                         b.writeU2(1);

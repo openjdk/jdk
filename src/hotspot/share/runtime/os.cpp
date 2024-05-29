@@ -111,6 +111,16 @@ int os::snprintf_checked(char* buf, size_t len, const char* fmt, ...) {
   return result;
 }
 
+int os::vsnprintf(char* buf, size_t len, const char* fmt, va_list args) {
+  ALLOW_C_FUNCTION(::vsnprintf, int result = ::vsnprintf(buf, len, fmt, args);)
+  // If an encoding error occurred (result < 0) then it's not clear
+  // whether the buffer is NUL terminated, so ensure it is.
+  if ((result < 0) && (len > 0)) {
+    buf[len - 1] = '\0';
+  }
+  return result;
+}
+
 // Fill in buffer with current local time as an ISO-8601 string.
 // E.g., YYYY-MM-DDThh:mm:ss.mmm+zzzz.
 // Returns buffer, or null if it failed.
