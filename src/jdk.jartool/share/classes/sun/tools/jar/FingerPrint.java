@@ -284,7 +284,7 @@ final class FingerPrint {
                 case MethodModel mm -> {
                     if (isPublic(mm.flags())) {
                         Set<String> exceptionSet = new HashSet<>();
-                        mm.findAttribute(Attributes.EXCEPTIONS).ifPresent(ea ->
+                        mm.findAttribute(Attributes.exceptions()).ifPresent(ea ->
                                 ea.exceptions().forEach(e ->
                                         exceptionSet.add(e.asInternalName())));
                         // treat type descriptor as a proxy for signature because signature

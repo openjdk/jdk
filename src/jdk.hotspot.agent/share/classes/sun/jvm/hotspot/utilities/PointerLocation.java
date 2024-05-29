@@ -59,7 +59,7 @@ public class PointerLocation {
 
   CollectedHeap heap;
   Generation gen;  // Serial heap generation
-  HeapRegion hr;   // G1 heap region
+  G1HeapRegion hr;   // G1 heap region
 
   // If UseTLAB was enabled and the pointer was found in a
   // currently-active TLAB, these will be set
@@ -128,7 +128,7 @@ public class PointerLocation {
     return gen; // SerialHeap generation
   }
 
-  public HeapRegion getHeapRegion() {
+  public G1HeapRegion getG1HeapRegion() {
     return hr; // G1 heap region
   }
 
@@ -302,11 +302,11 @@ public class PointerLocation {
               getGeneration().printOn(tty); // does not include "\n"
           }
           tty.println();
-        } else if (getHeapRegion() != null) {
+        } else if (getG1HeapRegion() != null) {
             // Address is in the G1 heap
             if (verbose) {
                 tty.print("In G1 heap ");
-                getHeapRegion().printOn(tty); // includes "\n"
+                getG1HeapRegion().printOn(tty); // includes "\n"
             } else {
                 tty.println("In G1 heap region");
             }

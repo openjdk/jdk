@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -841,6 +841,18 @@ public class CSS implements Serializable {
         CssValue conv = (CssValue) valueConvertor.get(key);
         Object r = conv.parseCssValue(value);
         return r != null ? r : conv.parseCssValue(key.getDefaultValue());
+    }
+
+    static Object mergeTextDecoration(String value) {
+        boolean underline = value.contains("underline");
+        boolean strikeThrough = value.contains("line-through");
+        if (!underline && !strikeThrough) {
+            return null;
+        }
+        String newValue = underline && strikeThrough
+                          ? "underline,line-through"
+                          : (underline ? "underline" : "line-through");
+        return new StringValue().parseCssValue(newValue);
     }
 
     /**

@@ -1380,7 +1380,8 @@ public:
                                                IfProjNode* upper_bound_proj, int scale, Node* offset, Node* init, Node* limit,
                                                jint stride, Node* rng, bool& overflow, Deoptimization::DeoptReason reason);
   Node* add_range_check_elimination_assertion_predicate(IdealLoopTree* loop, Node* predicate_proj, int scale_con,
-                                                        Node* offset, Node* limit, jint stride_con, Node* value);
+                                                        Node* offset, Node* limit, int stride_con, Node* value,
+                                                        bool is_template);
 
   // Helper function to collect predicate for eliminating the useless ones
   void eliminate_useless_predicates();

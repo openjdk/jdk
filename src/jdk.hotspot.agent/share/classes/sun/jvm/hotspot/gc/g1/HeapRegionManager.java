@@ -63,14 +63,14 @@ public class HeapRegionManager extends VMObject {
     }
 
     public long capacity() {
-        return length() * HeapRegion.grainBytes();
+        return length() * G1HeapRegion.grainBytes();
     }
 
     public long length() {
         return regions().length();
     }
 
-    public Iterator<HeapRegion> heapRegionIterator() {
+    public Iterator<G1HeapRegion> heapRegionIterator() {
         return regions().heapRegionIterator(length());
     }
 
@@ -78,7 +78,7 @@ public class HeapRegionManager extends VMObject {
         super(addr);
     }
 
-    public HeapRegion getByAddress(Address addr) {
+    public G1HeapRegion getByAddress(Address addr) {
       return regions().getByAddress(addr);
     }
 }
