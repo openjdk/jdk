@@ -2084,95 +2084,95 @@ bool SuperWord::output() {
         //Node* one = vector_opd(p, 3);
         //vn = VectorNode::make(opc, in, zero, one, vlen, velt_basic_type(n));
         //vlen_in_bytes = vn->as_Vector()->length_in_bytes();
-      } else if (n->is_Cmp()) {
-        // Bool + Cmp + CMove -> VectorMaskCmp + VectorBlend
-        continue;
-      } else if (n->is_Bool()) {
-        // Bool + Cmp + CMove -> VectorMaskCmp + VectorBlend
-        continue;
-      } else if (n->is_CMove()) {
-        // Bool + Cmp + CMove -> VectorMaskCmp + VectorBlend
-
-        BoolNode* bol = n->in(1)->as_Bool();
-        assert(bol != nullptr, "must have Bool above CMove");
-        BoolTest::mask bol_test = bol->_test._test;
-        assert(bol_test == BoolTest::eq ||
-               bol_test == BoolTest::ne ||
-               bol_test == BoolTest::ge ||
-               bol_test == BoolTest::gt ||
-               bol_test == BoolTest::lt ||
-               bol_test == BoolTest::le,
-               "CMove bool should be one of: eq,ne,ge,ge,lt,le");
-        Node_List* p_bol = get_pack(bol);
-        assert(p_bol != nullptr, "CMove must have matching Bool pack");
-
-#ifdef ASSERT
-        for (uint j = 0; j < p_bol->size(); j++) {
-          Node* m = p_bol->at(j);
-          assert(m->as_Bool()->_test._test == bol_test,
-                 "all bool nodes must have same test");
-        }
-#endif
-
-        CmpNode* cmp = bol->in(1)->as_Cmp();
-        assert(cmp != nullptr, "must have cmp above CMove");
-        Node_List* p_cmp = get_pack(cmp);
-        assert(p_cmp != nullptr, "Bool must have matching Cmp pack");
-
-        Node* cmp_in1 = vector_opd(p_cmp, 1);
-        Node* cmp_in2 = vector_opd(p_cmp, 2);
-
-        Node* blend_in1 = vector_opd(p, 2);
-        Node* blend_in2 = vector_opd(p, 3);
-
-        if (cmp->Opcode() == Op_CmpF || cmp->Opcode() == Op_CmpD) {
-          // If we have a Float or Double comparison, we must be careful with
-          // handling NaN's correctly. CmpF and CmpD have a return code, as
-          // they are based on the java bytecodes fcmpl/dcmpl:
-          // -1: cmp_in1 <  cmp_in2, or at least one of the two is a NaN
-          //  0: cmp_in1 == cmp_in2  (no NaN)
-          //  1: cmp_in1 >  cmp_in2  (no NaN)
-          //
-          // The "bol_test" selects which of the [-1, 0, 1] cases lead to "true".
-          //
-          // Note: ordered   (O) comparison returns "false" if either input is NaN.
-          //       unordered (U) comparison returns "true"  if either input is NaN.
-          //
-          // The VectorMaskCmpNode does a comparison directly on in1 and in2, in the java
-          // standard way (all comparisons are ordered, except NEQ is unordered).
-          //
-          // In the following, "bol_test" already matches the cmp code for VectorMaskCmpNode:
-          //   BoolTest::eq:  Case 0     -> EQ_O
-          //   BoolTest::ne:  Case -1, 1 -> NEQ_U
-          //   BoolTest::ge:  Case 0, 1  -> GE_O
-          //   BoolTest::gt:  Case 1     -> GT_O
-          //
-          // But the lt and le comparisons must be converted from unordered to ordered:
-          //   BoolTest::lt:  Case -1    -> LT_U -> VectorMaskCmp would interpret lt as LT_O
-          //   BoolTest::le:  Case -1, 0 -> LE_U -> VectorMaskCmp would interpret le as LE_O
-          //
-          if (bol_test == BoolTest::lt || bol_test == BoolTest::le) {
-            // Negating the bol_test and swapping the blend-inputs leaves all non-NaN cases equal,
-            // but converts the unordered (U) to an ordered (O) comparison.
-            //      VectorBlend(VectorMaskCmp(LT_U, in1_cmp, in2_cmp), in1_blend, in2_blend)
-            // <==> VectorBlend(VectorMaskCmp(GE_O, in1_cmp, in2_cmp), in2_blend, in1_blend)
-            //      VectorBlend(VectorMaskCmp(LE_U, in1_cmp, in2_cmp), in1_blend, in2_blend)
-            // <==> VectorBlend(VectorMaskCmp(GT_O, in1_cmp, in2_cmp), in2_blend, in1_blend)
-            bol_test = bol->_test.negate();
-            swap(blend_in1, blend_in2);
-          }
-        }
-
-        // VectorMaskCmp
-        ConINode* bol_test_node  = igvn().intcon((int)bol_test);
-        BasicType bt = velt_basic_type(cmp);
-        const TypeVect* vt = TypeVect::make(bt, vlen);
-        VectorNode* mask = new VectorMaskCmpNode(bol_test, cmp_in1, cmp_in2, bol_test_node, vt);
-        phase()->register_new_node_with_ctrl_of(mask, p->at(0));
-        igvn()._worklist.push(mask);
-
-        // VectorBlend
-        vn = new VectorBlendNode(blend_in1, blend_in2, mask);
+//      } else if (n->is_Cmp()) {
+//        // Bool + Cmp + CMove -> VectorMaskCmp + VectorBlend
+//        continue;
+//      } else if (n->is_Bool()) {
+//        // Bool + Cmp + CMove -> VectorMaskCmp + VectorBlend
+//        continue;
+//      } else if (n->is_CMove()) {
+//        // Bool + Cmp + CMove -> VectorMaskCmp + VectorBlend
+//
+//        BoolNode* bol = n->in(1)->as_Bool();
+//        assert(bol != nullptr, "must have Bool above CMove");
+//        BoolTest::mask bol_test_mask = bol->_test._test;
+//        assert(bol_test_mask == BoolTest::eq ||
+//               bol_test_mask == BoolTest::ne ||
+//               bol_test_mask == BoolTest::ge ||
+//               bol_test_mask == BoolTest::gt ||
+//               bol_test_mask == BoolTest::lt ||
+//               bol_test_mask == BoolTest::le,
+//               "CMove bool should be one of: eq,ne,ge,ge,lt,le");
+//        Node_List* p_bol = get_pack(bol);
+//        assert(p_bol != nullptr, "CMove must have matching Bool pack");
+//
+//#ifdef ASSERT
+//        for (uint j = 0; j < p_bol->size(); j++) {
+//          Node* m = p_bol->at(j);
+//          assert(m->as_Bool()->_test._test == bol_test_mask,
+//                 "all bool nodes must have same test");
+//        }
+//#endif
+//
+//        CmpNode* cmp = bol->in(1)->as_Cmp();
+//        assert(cmp != nullptr, "must have cmp above CMove");
+//        Node_List* p_cmp = get_pack(cmp);
+//        assert(p_cmp != nullptr, "Bool must have matching Cmp pack");
+//
+//        Node* cmp_in1 = vector_opd(p_cmp, 1);
+//        Node* cmp_in2 = vector_opd(p_cmp, 2);
+//
+//        Node* blend_in1 = vector_opd(p, 2);
+//        Node* blend_in2 = vector_opd(p, 3);
+//
+//        if (cmp->Opcode() == Op_CmpF || cmp->Opcode() == Op_CmpD) {
+//          // If we have a Float or Double comparison, we must be careful with
+//          // handling NaN's correctly. CmpF and CmpD have a return code, as
+//          // they are based on the java bytecodes fcmpl/dcmpl:
+//          // -1: cmp_in1 <  cmp_in2, or at least one of the two is a NaN
+//          //  0: cmp_in1 == cmp_in2  (no NaN)
+//          //  1: cmp_in1 >  cmp_in2  (no NaN)
+//          //
+//          // The "bol_test_mask" selects which of the [-1, 0, 1] cases lead to "true".
+//          //
+//          // Note: ordered   (O) comparison returns "false" if either input is NaN.
+//          //       unordered (U) comparison returns "true"  if either input is NaN.
+//          //
+//          // The VectorMaskCmpNode does a comparison directly on in1 and in2, in the java
+//          // standard way (all comparisons are ordered, except NEQ is unordered).
+//          //
+//          // In the following, "bol_test_mask" already matches the cmp code for VectorMaskCmpNode:
+//          //   BoolTest::eq:  Case 0     -> EQ_O
+//          //   BoolTest::ne:  Case -1, 1 -> NEQ_U
+//          //   BoolTest::ge:  Case 0, 1  -> GE_O
+//          //   BoolTest::gt:  Case 1     -> GT_O
+//          //
+//          // But the lt and le comparisons must be converted from unordered to ordered:
+//          //   BoolTest::lt:  Case -1    -> LT_U -> VectorMaskCmp would interpret lt as LT_O
+//          //   BoolTest::le:  Case -1, 0 -> LE_U -> VectorMaskCmp would interpret le as LE_O
+//          //
+//          if (bol_test_mask == BoolTest::lt || bol_test_mask == BoolTest::le) {
+//            // Negating the bol_test_mask and swapping the blend-inputs leaves all non-NaN cases equal,
+//            // but converts the unordered (U) to an ordered (O) comparison.
+//            //      VectorBlend(VectorMaskCmp(LT_U, in1_cmp, in2_cmp), in1_blend, in2_blend)
+//            // <==> VectorBlend(VectorMaskCmp(GE_O, in1_cmp, in2_cmp), in2_blend, in1_blend)
+//            //      VectorBlend(VectorMaskCmp(LE_U, in1_cmp, in2_cmp), in1_blend, in2_blend)
+//            // <==> VectorBlend(VectorMaskCmp(GT_O, in1_cmp, in2_cmp), in2_blend, in1_blend)
+//            bol_test_mask = bol->_test.negate();
+//            swap(blend_in1, blend_in2);
+//          }
+//        }
+//
+//        // VectorMaskCmp
+//        ConINode* bol_test_mask_node  = igvn().intcon((int)bol_test_mask);
+//        BasicType bt = velt_basic_type(cmp);
+//        const TypeVect* vt = TypeVect::make(bt, vlen);
+//        VectorNode* mask = new VectorMaskCmpNode(bol_test_mask, cmp_in1, cmp_in2, bol_test_mask_node, vt);
+//        phase()->register_new_node_with_ctrl_of(mask, p->at(0));
+//        igvn()._worklist.push(mask);
+//
+//        // VectorBlend
+//        vn = new VectorBlendNode(blend_in1, blend_in2, mask);
       } else if (n->req() == 3) {
         // Promote operands to vector
         Node* in1 = nullptr;
@@ -3478,13 +3478,6 @@ void SuperWordVTransformBuilder::build_vtransform() {
     Node_List* pack = _packset.at(i);
     Node* p0 = pack->at(0);
 
-    VTransformNode* pack_vtn = _bb_idx_to_vtnode.at(bb_idx(p0));
-    if (pack_vtn == nullptr) {
-      // Cmp and Bool are handled by CMove
-      assert(p0->is_Cmp() || p0->is_Bool(), "all others must have a vector vtnode");
-      continue;
-    }
-
     VTransformVectorNode* vtn = _bb_idx_to_vtnode.at(bb_idx(p0))->isa_Vector();
     assert(vtn != nullptr, "all packs must have vector vtnodes");
     _dependency_set.clear();
@@ -3513,7 +3506,16 @@ void SuperWordVTransformBuilder::build_vtransform() {
         set_req_for_vector(vtn, 1, pack);
         set_req_for_scalar(vtn, 2, p0); // constant rounding mode
       } else if (p0->is_CMove()) {
-        assert(false, "TODO CMove x");
+        // Cmp + Bool + CMove -> VectorMaskCmp + VectorBlend.
+        set_req_for_vector(vtn, 1, pack); // MaskCmpVector
+        set_req_for_vector(vtn, 2, pack); // Vector
+        set_req_for_vector(vtn, 3, pack); // Vector
+        VTransformMaskCmpVectorNode* vtn_mask_cmp = vtn->in(1)->isa_MaskCmpVector();
+        assert(vtn_mask_cmp != nullptr, "CMove always expects Cmp + Bool as inputs");
+        // Swap the inputs if the test was negated.
+        if (vtn_mask_cmp->cmp_bool_kind()._is_test_negated) {
+          vtn->swap_req(2, 3);
+        }
       } else {
         set_req_all_for_vector(vtn, pack);
       }
@@ -3586,12 +3588,16 @@ VTransformVectorNode* SuperWordVTransformBuilder::make_vtnode_for_pack(const Nod
   } else if (opc == Op_SignumF || opc == Op_SignumD) {
     assert(p0->req() == 4, "3 operands expected");
     vtn = new (_graph.arena()) VTransformElementWiseVectorNode(_graph, 4, pack_size);
-  } else if (p0->is_Cmp() || p0->is_Bool()) {
-    // Bool + Cmp + CMove -> VectorMaskCmp + VectorBlend
-    return nullptr;
+  } else if (p0->is_Cmp()) {
+    // Cmp + Bool -> VectorMaskCmp
+    vtn = new (_graph.arena()) VTransformElementWiseVectorNode(_graph, 3, pack_size);
+  } else if (p0->is_Bool()) {
+    // Cmp + Bool -> VectorMaskCmp
+    VTransformMaskCmpVectorNode::CmpBoolKind kind = _packset.as_cmp_bool_pack(pack);
+    vtn = new (_graph.arena()) VTransformMaskCmpVectorNode(_graph, pack_size, kind);
   } else if (p0->is_CMove()) {
-    // Bool + Cmp + CMove -> VectorMaskCmp + VectorBlend
-    vtn = new (_graph.arena()) VTransformElementWiseVectorNode(_graph, 5, pack_size);
+    // CMove -> VectorBlend
+    vtn = new (_graph.arena()) VTransformElementWiseVectorNode(_graph, 4, pack_size);
   } else if (p0->req() == 3) {
     if (is_marked_reduction(p0)) {
       // Reduction: (scalar, vector) -> scalar.
@@ -3792,4 +3798,76 @@ Node_List* PackSet::isa_strided_pack_input_or_null(const Node_List* pack, int j,
     }
   }
   return pack_in;
+}
+
+VTransformMaskCmpVectorNode::CmpBoolKind PackSet::as_cmp_bool_pack(const Node_List* pack) const {
+  BoolNode* bol0 = pack->at(0)->as_Bool();
+  BoolTest::mask bol_test_mask = bol0->_test._test;
+  bool is_test_negated = false;
+  assert(bol_test_mask == BoolTest::eq ||
+         bol_test_mask == BoolTest::ne ||
+         bol_test_mask == BoolTest::ge ||
+         bol_test_mask == BoolTest::gt ||
+         bol_test_mask == BoolTest::lt ||
+         bol_test_mask == BoolTest::le,
+         "Bool should be one of: eq,ne,ge,ge,lt,le");
+
+#ifdef ASSERT
+  for (uint j = 0; j < pack->size(); j++) {
+    Node* m = pack->at(j);
+    assert(m->as_Bool()->_test._test == bol_test_mask,
+           "all bool nodes must have same test");
+  }
+#endif
+
+  CmpNode* cmp0 = bol0->in(1)->as_Cmp();
+  assert(get_pack(cmp0) != nullptr, "Bool must have matching Cmp pack");
+
+  if (cmp0->Opcode() == Op_CmpF || cmp0->Opcode() == Op_CmpD) {
+    // If we have a Float or Double comparison, we must be careful with
+    // handling NaN's correctly. CmpF and CmpD have a return code, as
+    // they are based on the java bytecodes fcmpl/dcmpl:
+    // -1: cmp_in1 <  cmp_in2, or at least one of the two is a NaN
+    //  0: cmp_in1 == cmp_in2  (no NaN)
+    //  1: cmp_in1 >  cmp_in2  (no NaN)
+    //
+    // The "bol_test_mask" selects which of the [-1, 0, 1] cases lead to "true".
+    //
+    // Note: ordered   (O) comparison returns "false" if either input is NaN.
+    //       unordered (U) comparison returns "true"  if either input is NaN.
+    //
+    // The VectorMaskCmpNode does a comparison directly on in1 and in2, in the java
+    // standard way (all comparisons are ordered, except NEQ is unordered).
+    //
+    // In the following, "bol_test_mask" already matches the cmp code for VectorMaskCmpNode:
+    //   BoolTest::eq:  Case 0     -> EQ_O
+    //   BoolTest::ne:  Case -1, 1 -> NEQ_U
+    //   BoolTest::ge:  Case 0, 1  -> GE_O
+    //   BoolTest::gt:  Case 1     -> GT_O
+    //
+    // But the lt and le comparisons must be converted from unordered to ordered:
+    //   BoolTest::lt:  Case -1    -> LT_U -> VectorMaskCmp would interpret lt as LT_O
+    //   BoolTest::le:  Case -1, 0 -> LE_U -> VectorMaskCmp would interpret le as LE_O
+    //
+    if (bol_test_mask == BoolTest::lt || bol_test_mask == BoolTest::le) {
+      // Negating the bol_test_mask gives us the negated result, since all non-NaN cases are
+      // negated, and the unordered (U) comparisons are turned into ordered (O) comparisons.
+      //          VectorMaskCmp(LT_U, in1_cmp, in2_cmp)
+      // <==> NOT VectorMaskCmp(GE_O, in1_cmp, in2_cmp)
+      //          VectorMaskCmp(LE_U, in1_cmp, in2_cmp)
+      // <==> NOT VectorMaskCmp(GT_O, in1_cmp, in2_cmp)
+      //
+      // When a VectorBlend uses the negated mask, it can simply swap its blend-inputs:
+      //      VectorBlend(    VectorMaskCmp(LT_U, in1_cmp, in2_cmp), in1_blend, in2_blend)
+      // <==> VectorBlend(NOT VectorMaskCmp(GE_O, in1_cmp, in2_cmp), in1_blend, in2_blend)
+      // <==> VectorBlend(    VectorMaskCmp(GE_O, in1_cmp, in2_cmp), in2_blend, in1_blend)
+      //      VectorBlend(    VectorMaskCmp(LE_U, in1_cmp, in2_cmp), in1_blend, in2_blend)
+      // <==> VectorBlend(NOT VectorMaskCmp(GT_O, in1_cmp, in2_cmp), in1_blend, in2_blend)
+      // <==> VectorBlend(    VectorMaskCmp(GT_O, in1_cmp, in2_cmp), in2_blend, in1_blend)
+      bol_test_mask = bol0->_test.negate();
+      is_test_negated = true;
+    }
+  }
+
+  return VTransformMaskCmpVectorNode::CmpBoolKind(bol_test_mask, is_test_negated);
 }

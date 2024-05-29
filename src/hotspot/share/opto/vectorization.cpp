@@ -2027,8 +2027,8 @@ void VTransformGraph::apply_vectorization() const {
     }
 #endif
 
-    if (n == nullptr) {
-      assert(false, "got null node");
+    if (!status.is_valid()) {
+      assert(false, "got invalid status from apply");
       phase()->C->record_failure(C2Compiler::retry_no_superword());
       return; // bailout
     }
@@ -2144,10 +2144,21 @@ VTransformApplyStatus VTransformElementWiseVectorNode::apply(const VLoopAnalyzer
   int   opc  = first->Opcode();
   BasicType bt = vloop_analyzer.types().velt_basic_type(first);
 
-  if (first->is_CMove()) {
-    assert(false, "TODO CMove");
+  if (first->is_Cmp()) {
+    // Cmp + Bool -> VectorMaskCmp
+    return VTransformApplyStatus::make_empty();
+  } else if (first->is_CMove()) {
+    assert(req() == 4, "three inputs expected");
+    Node* in_mask   = find_transformed_input(1, vnode_idx_to_transformed_node);
+    Node* in_blend1 = find_transformed_input(2, vnode_idx_to_transformed_node);
+    Node* in_blend2 = find_transformed_input(3, vnode_idx_to_transformed_node);
+
+    VectorBlendNode* vn = new VectorBlendNode(in_blend1, in_blend2, in_mask);
+    register_new_vector_and_replace_scalar_nodes(vloop_analyzer, vn);
+
+    return VTransformApplyStatus::make_vector(vn, vlen, vn->length_in_bytes());
   } else if (req() == 3) {
-    assert(req() == 3, "only one input expected");
+    assert(req() == 3, "two inputs expected");
     Node* in1 = find_transformed_input(1, vnode_idx_to_transformed_node);
     Node* in2 = find_transformed_input(2, vnode_idx_to_transformed_node);
     // TODO register spilling trick?
@@ -2222,8 +2233,31 @@ VTransformApplyStatus VTransformElementWiseVectorNode::apply(const VLoopAnalyzer
   } else {
     DEBUG_ONLY(print();)
     assert(false, "TODO element wise");
+    return VTransformApplyStatus::make_invalid();
   }
-  return VTransformApplyStatus::make_vector(nullptr, 0, 0);
+}
+
+VTransformApplyStatus VTransformMaskCmpVectorNode::apply(const VLoopAnalyzer& vloop_analyzer, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
+  BoolNode* first = nodes().at(0)->as_Bool();
+  uint  vlen = nodes().length();
+  BasicType bt = vloop_analyzer.types().velt_basic_type(first);
+
+  // Cmp + Bool -> VectorMaskCmp
+  VTransformElementWiseVectorNode* vtn_cmp = in(1)->isa_ElementWiseVector();
+  assert(vtn_cmp != nullptr && vtn_cmp->nodes().at(0)->is_Cmp(),
+         "bool vtn expects cmp vtn as input");
+
+  Node* cmp_in1 = vtn_cmp->find_transformed_input(1, vnode_idx_to_transformed_node);
+  Node* cmp_in2 = vtn_cmp->find_transformed_input(2, vnode_idx_to_transformed_node);
+
+  BoolTest::mask bol_test_mask = cmp_bool_kind()._bol_test_mask;
+
+  PhaseIdealLoop* phase = vloop_analyzer.vloop().phase();
+  ConINode* bol_test_mask_node  = phase->igvn().intcon((int)bol_test_mask);
+  const TypeVect* vt = TypeVect::make(bt, vlen);
+  VectorNode* vn = new VectorMaskCmpNode(bol_test_mask, cmp_in1, cmp_in2, bol_test_mask_node, vt);
+  register_new_vector_and_replace_scalar_nodes(vloop_analyzer, vn);
+  return VTransformApplyStatus::make_vector(vn, vlen, vn->vect_type()->length_in_bytes());
 }
 
 VTransformApplyStatus VTransformReductionVectorNode::apply(const VLoopAnalyzer& vloop_analyzer, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {

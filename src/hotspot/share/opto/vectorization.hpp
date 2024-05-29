@@ -1328,27 +1328,42 @@ class VTransformScalarNode;
 class VTransformInputScalarNode;
 class VTransformVectorNode;
 class VTransformElementWiseVectorNode;
+class VTransformMaskCmpVectorNode;
 class VTransformReductionVectorNode;
 
 // TODO desc
 class VTransformApplyStatus {
 private:
+  const bool _is_valid;
   Node* const _node;
   const uint _vector_length; // number of elements
   const uint _vector_width;  // total width in bytes
 
-  VTransformApplyStatus(Node* n, uint vector_length, uint vector_width) :
-    _node(n), _vector_length(vector_length), _vector_width(vector_width) {}
+  VTransformApplyStatus(bool is_valid, Node* n, uint vector_length, uint vector_width) :
+    _is_valid(is_valid),
+    _node(n),
+    _vector_length(vector_length),
+    _vector_width(vector_width) {}
 
 public:
   static VTransformApplyStatus make_scalar(Node* n) {
-    return VTransformApplyStatus(n, 0, 0);
-  }
-  static VTransformApplyStatus make_vector(Node* n, uint vector_length, uint vector_width) {
-    assert(vector_length > 0 && vector_width > 0, "must have nonzero size");
-    return VTransformApplyStatus(n, vector_length, vector_width);
+    return VTransformApplyStatus(true, n, 0, 0);
   }
 
+  static VTransformApplyStatus make_vector(Node* n, uint vector_length, uint vector_width) {
+    assert(vector_length > 0 && vector_width > 0, "must have nonzero size");
+    return VTransformApplyStatus(true, n, vector_length, vector_width);
+  }
+
+  static VTransformApplyStatus make_empty() {
+    return VTransformApplyStatus(true, nullptr, 0, 0);
+  }
+
+  static VTransformApplyStatus make_invalid() {
+    return VTransformApplyStatus(false, nullptr, 0, 0);
+  }
+
+  bool is_valid() const { return _is_valid; }
   Node* node() const { return _node; }
   uint vector_length() const { return _vector_length; }
   uint vector_width() const { return _vector_width; }
@@ -1485,6 +1500,14 @@ public:
     n->add_out(this);
   }
 
+  void swap_req(int i, int j) {
+    assert(0 <= i && i < _req, "must be a req");
+    assert(0 <= j && j < _req, "must be a req");
+    VTransformNode* tmp = _in.at(i);
+    _in.at_put(i, _in.at(j));
+    _in.at_put(j, tmp);
+  }
+
   void add_dependency(VTransformNode* n) {
     assert(n != nullptr, "no need to add nullptr");
     _in.push(n);
@@ -1511,6 +1534,7 @@ public:
   virtual VTransformInputScalarNode* isa_InputScalar() { return nullptr; }
   virtual VTransformVectorNode* isa_Vector() { return nullptr; }
   virtual VTransformElementWiseVectorNode* isa_ElementWiseVector() { return nullptr; }
+  virtual VTransformMaskCmpVectorNode* isa_MaskCmpVector() { return nullptr; }
   virtual VTransformReductionVectorNode* isa_ReductionVector() { return nullptr; }
 
   virtual VTransformApplyStatus apply(const VLoopAnalyzer& vloop_analyzer,
@@ -1641,6 +1665,33 @@ public:
                                       const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
 
   NOT_PRODUCT(virtual const char* name() const { return "ElementWiseVector"; };)
+};
+
+class VTransformMaskCmpVectorNode : public VTransformElementWiseVectorNode {
+public:
+  struct CmpBoolKind {
+    const BoolTest::mask _bol_test_mask;
+    bool _is_test_negated;
+    CmpBoolKind(const BoolTest::mask bol_test_mask, bool is_test_negated) :
+      _bol_test_mask(bol_test_mask), _is_test_negated(is_test_negated) {}
+  };
+
+private:
+  CmpBoolKind _cmp_bool_kind;
+
+public:
+  VTransformMaskCmpVectorNode(VTransformGraph& graph, int number_of_nodes, CmpBoolKind cmp_bool_kind) :
+    VTransformElementWiseVectorNode(graph, 3, number_of_nodes),
+    _cmp_bool_kind(cmp_bool_kind) {}
+
+  CmpBoolKind cmp_bool_kind() const { return _cmp_bool_kind; }
+
+  virtual VTransformMaskCmpVectorNode* isa_MaskCmpVector() { return this; }
+
+  virtual VTransformApplyStatus apply(const VLoopAnalyzer& vloop_analyzer,
+                                      const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
+
+  NOT_PRODUCT(virtual const char* name() const { return "MaskCmpVector"; };)
 };
 
 // Reduction of some initial scalar value and a vector, resulting in a new scalar.
