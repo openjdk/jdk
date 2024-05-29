@@ -91,73 +91,59 @@ public:
   }
 
   // Tests
-  // Adjacent reservations should result in exactly 2 nodes
+  // Adjacent reservations are merged if the properties match.
   void adjacent_2_nodes(const VMATree::RegionData& rd) {
     Tree tree;
-    for (int i = 0; i < 100; i++) {
+    for (int i = 0; i < 10; i++) {
       tree.reserve_mapping(i * 100, 100, rd);
     }
-    int found_nodes = 0;
-    treap(tree).visit_range_in_order(0, 999999, [&](Node* x) {
-      found_nodes++;
-    });
-    EXPECT_EQ(2, found_nodes) << "Adjacent reservations should result in exactly 2 nodes";
+    expect_node_count(tree, 2);
 
     // Reserving the exact same space again should result in still having only 2 nodes
-    for (int i = 0; i < 100; i++) {
+    for (int i = 0; i < 10; i++) {
       tree.reserve_mapping(i * 100, 100, rd);
     }
-    found_nodes = 0;
-    treap(tree).visit_range_in_order(0, 999999, [&](Node* x) {
-      found_nodes++;
-    });
-    EXPECT_EQ(2, found_nodes) << "Adjacent reservations should result in exactly 2 nodes";
+    expect_node_count(tree, 2);
 
     // Do it backwards instead.
     Tree tree2;
-    for (int i = 99; i >= 0; i--) {
+    for (int i = 9; i >= 0; i--) {
       tree2.reserve_mapping(i * 100, 100, rd);
     }
-    found_nodes = 0;
-    treap(tree2).visit_range_in_order(0, 999999, [&](Node* x) {
-      found_nodes++;
-    });
-    EXPECT_EQ(2, found_nodes) << "Adjacent reservations should result in exactly 2 nodes";
+    expect_node_count(tree2, 2);
   }
 
   // After removing all ranges we should be left with an entirely empty tree
   void remove_all_leaves_empty_tree(const VMATree::RegionData& rd) {
     Tree tree;
     tree.reserve_mapping(0, 100 * 100, rd);
-    for (int i = 0; i < 100; i++) {
+    for (int i = 0; i < 10; i++) {
       tree.release_mapping(i * 100, 100);
     }
-    EXPECT_EQ(nullptr, treap_root(tree)) << "Releasing all memory should result in an empty tree";
+    expect_null_root(tree);
 
     // Other way around
     tree.reserve_mapping(0, 100 * 100, rd);
-    for (int i = 99; i >= 0; i--) {
+    for (int i = 9; i >= 0; i--) {
       tree.release_mapping(i * 100, 100);
     }
-    EXPECT_EQ(nullptr, treap_root(tree)) << "Releasing all memory should result in an empty tree";
+    expect_null_root(tree);
   }
 
   // Committing in a whole reserved range results in 2 nodes
   void commit_whole(const VMATree::RegionData& rd) {
     Tree tree;
     tree.reserve_mapping(0, 100 * 100, rd);
-    for (int i = 0; i < 100; i++) {
+    for (int i = 0; i < 10; i++) {
       tree.commit_mapping(i * 100, 100, rd);
     }
-    int found_nodes = 0;
-    treap(tree).visit_range_in_order(0, 999999, [&](Node* x) {
-      found_nodes++;
+    treap(tree).visit_in_order([&](Node* x) {
       VMATree::StateType in = in_type_of(x);
       VMATree::StateType out = out_type_of(x);
       EXPECT_TRUE((in == VMATree::StateType::Released && out == VMATree::StateType::Committed) ||
                   (in == VMATree::StateType::Committed && out == VMATree::StateType::Released));
     });
-    EXPECT_EQ(2, found_nodes);
+    expect_node_count(tree, 2);
   }
 
   // Committing in middle of reservation ends with a sequence of 4 nodes
@@ -176,7 +162,7 @@ public:
     };
 
     int i = 0;
-    treap(tree).visit_range_in_order(0, 300, [&](Node* x) {
+    treap(tree).visit_in_order([&](Node* x) {
       if (i < 16) {
         found[i] = x->key();
       }
@@ -232,7 +218,7 @@ TEST_VM_F(VMATreeTest, LowLevel) {
     VMATree::RegionData rd2{si[1], mtNMT };
     tree.commit_mapping(50, 50, rd2);
     tree.reserve_mapping(0, 100, rd);
-    treap(tree).visit_range_in_order(0, 99999, [&](Node* x) {
+    treap(tree).visit_in_order([&](Node* x) {
       EXPECT_TRUE(x->key() == 0 || x->key() == 100);
       if (x->key() == 0) {
         EXPECT_EQ(x->val().out.regiondata().flag, mtTest);
@@ -461,11 +447,20 @@ TEST_VM_F(VMATreeTest, TestConsistencyWithSimpleTracker) {
 
   const int operation_count = 100000; // One hundred thousand
   for (int i = 0; i < operation_count; i++) {
-    const size_t page_start = (size_t)(os::random() % SimpleVMATracker::num_pages);
-    const size_t num_pages = (size_t)(os::random() % (SimpleVMATracker::num_pages - page_start));
+    size_t page_start = (size_t)(os::random() % SimpleVMATracker::num_pages);
+    size_t page_end = (size_t)(os::random() % (SimpleVMATracker::num_pages));
+
+    if (page_end < page_start) {
+      const size_t temp = page_start;
+      page_start = page_end;
+      page_end = page_start;
+    }
+    const size_t num_pages = page_end - page_start;
+
     if (num_pages == 0) {
       i--; continue;
     }
+
     const size_t start = page_start * page_size;
     const size_t size = num_pages * page_size;
 

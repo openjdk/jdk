@@ -46,6 +46,8 @@ public:
     friend NativeCallStackStorage;
 
   private:
+    static constexpr const int32_t _invalid = -1;
+
     int32_t _stack_index;
     StackIndex(int32_t stack_index)
       : _stack_index(stack_index) {
@@ -55,8 +57,13 @@ public:
     static bool equals(const StackIndex& a, const StackIndex& b) {
       return a._stack_index == b._stack_index;
     }
+
+    bool is_invalid() {
+      return _stack_index == _invalid;
+    }
+
     StackIndex()
-      : _stack_index(-1) {
+      : _stack_index(_invalid) {
     }
   };
 
@@ -113,7 +120,8 @@ public:
   }
 
   NativeCallStackStorage(bool is_detailed_mode, int table_size = default_table_size)
-  : _arena(mtNMT), _table_size(table_size), _table(nullptr), _stacks(), _is_detailed_mode(is_detailed_mode), _fake_stack(NativeCallStack::FakeMarker::its_fake) {
+  : _arena(mtNMT), _table_size(table_size), _table(nullptr), _stacks(),
+    _is_detailed_mode(is_detailed_mode), _fake_stack() {
     if (_is_detailed_mode) {
       _table = NEW_ARENA_ARRAY(&_arena, Link*, _table_size);
       for (int i = 0; i < _table_size; i++) {
