@@ -2025,7 +2025,8 @@ public class ForkJoinPool extends AbstractExecutorService {
                                 q.base = nb;
                                 w.nsteals = ++nsteals;
                                 w.source = j;             // volatile write
-                                if (taken != (taken = true) && a[nk] != null)
+                                taken = true;
+                                if (a[nk] != null)
                                     signalWork();         // propagate signal
                                 w.topLevelExec(t, cfg);
                                 if ((b = q.base) != nb && src != (src = j))
