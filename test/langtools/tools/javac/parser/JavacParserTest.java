@@ -2434,7 +2434,7 @@ public class JavacParserTest extends TestCase {
             codes.add(d.getLineNumber() + ":" + d.getColumnNumber() + ":" + d.getCode());
         }
 
-        assertEquals("testDanglingElse: " + codes,
+        assertEquals("testImplicitlyDeclaredClassesConfusion1: " + codes,
                      List.of("3:33:compiler.err.expected2"),
                      codes);
         String result = toStringWithErrors(cut).replaceAll("\\R", "\n");
@@ -2480,7 +2480,7 @@ public class JavacParserTest extends TestCase {
             codes.add(d.getLineNumber() + ":" + d.getColumnNumber() + ":" + d.getCode());
         }
 
-        assertEquals("testDanglingElse: " + codes,
+        assertEquals("testImplicitlyDeclaredClassesConfusion2: " + codes,
                      List.of("3:33:compiler.err.expected2"),
                      codes);
         String result = toStringWithErrors(cut).replaceAll("\\R", "\n");
@@ -2521,7 +2521,7 @@ public class JavacParserTest extends TestCase {
             codes.add(d.getLineNumber() + ":" + d.getColumnNumber() + ":" + d.getCode());
         }
 
-        assertEquals("testDanglingElse: " + codes,
+        assertEquals("testImplicitlyDeclaredClassesConfusion3: " + codes,
                      List.of("3:33:compiler.err.expected2"),
                      codes);
         String result = toStringWithErrors(cut).replaceAll("\\R", "\n");
@@ -2559,7 +2559,7 @@ public class JavacParserTest extends TestCase {
             codes.add(d.getLineNumber() + ":" + d.getColumnNumber() + ":" + d.getCode());
         }
 
-        assertEquals("testDanglingElse: " + codes,
+        assertEquals("testImplicitlyDeclaredClassesConfusion4: " + codes,
                      List.of("3:33:compiler.err.expected2"),
                      codes);
         String result = toStringWithErrors(cut).replaceAll("\\R", "\n");
@@ -2573,6 +2573,47 @@ public class JavacParserTest extends TestCase {
                          \n\
                          public static boolean test() {
                          }
+                     }""");
+    }
+
+    @Test //JDK-8324859
+    void testImplicitlyDeclaredClassesConfusion5() throws IOException {
+        String code = """
+                      package tests;
+                      public class TestB {
+                          public static boolean test(String,
+                      }
+                      class T {}
+                      """;
+        DiagnosticCollector<JavaFileObject> coll =
+                new DiagnosticCollector<>();
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, coll,
+                List.of("--enable-preview", "--source", SOURCE_VERSION),
+                null, Arrays.asList(new MyFileObject(code)));
+        CompilationUnitTree cut = ct.parse().iterator().next();
+
+        List<String> codes = new LinkedList<>();
+
+        for (Diagnostic<? extends JavaFileObject> d : coll.getDiagnostics()) {
+            codes.add(d.getLineNumber() + ":" + d.getColumnNumber() + ":" + d.getCode());
+        }
+
+        assertEquals("testImplicitlyDeclaredClassesConfusion5: " + codes,
+                     List.of("3:38:compiler.err.expected",
+                             "4:1:compiler.err.illegal.start.of.type"),
+                     codes);
+        String result = toStringWithErrors(cut).replaceAll("\\R", "\n");
+        System.out.println("RESULT\n" + result);
+        assertEquals("incorrect AST",
+                     result,
+                     """
+                     package tests;
+                     \n\
+                     public class TestB {
+                         \n\
+                         public static boolean test(String <error>, (ERROR: ) <error>);
+                     }
+                     class T {
                      }""");
     }
 

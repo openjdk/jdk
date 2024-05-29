@@ -59,6 +59,7 @@ import static com.sun.tools.javac.parser.Tokens.TokenKind.EQ;
 import static com.sun.tools.javac.parser.Tokens.TokenKind.GT;
 import static com.sun.tools.javac.parser.Tokens.TokenKind.IMPORT;
 import static com.sun.tools.javac.parser.Tokens.TokenKind.LT;
+import com.sun.tools.javac.parser.VirtualParser.VirtualScanner;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
 import static com.sun.tools.javac.resources.CompilerProperties.Fragments.ImplicitAndExplicitNotAllowed;
 import static com.sun.tools.javac.resources.CompilerProperties.Fragments.VarAndExplicitNotAllowed;
@@ -5021,15 +5022,31 @@ public class JavacParser implements Parser {
                     // error recovery
                     skip(false, true, false, true);
                     boolean parseAsBlock;
-                    if (token.kind == TokenKind.RBRACE && peekToken(0, EOF)) {
-                        parseAsBlock = false;
+                    if (token.kind == LBRACE) {
+                        parseAsBlock = true;
+                    } else if (token.kind == RBRACE) {
+                        int braceBalance = 1;
+                        VirtualScanner virtualScanner = new VirtualScanner(S);
+
+                        virtualScanner.nextToken();
+
+                        while (virtualScanner.token().kind != TokenKind.EOF) {
+                            switch (virtualScanner.token().kind) {
+                                case LBRACE -> braceBalance++;
+                                case RBRACE -> braceBalance--;
+                            }
+                            virtualScanner.nextToken();
+                        }
+
+                        parseAsBlock = braceBalance == 0;
                     } else {
                         JavacParser speculative = new VirtualParser(this);
                         JCBlock speculativeResult =
                                 speculative.block();
-                        parseAsBlock = speculativeResult.stats.isEmpty() ||
-                                       !(speculativeResult.stats.head instanceof JCExpressionStatement s &&
-                                        s.expr.hasTag(ERRONEOUS));
+                        parseAsBlock =
+                                !speculativeResult.stats.isEmpty() &&
+                                !(speculativeResult.stats.head instanceof JCExpressionStatement s &&
+                                 s.expr.hasTag(ERRONEOUS));
                     }
                     if (parseAsBlock) {
                         body = block();
