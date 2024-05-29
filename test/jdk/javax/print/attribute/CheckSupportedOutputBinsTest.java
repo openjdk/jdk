@@ -31,7 +31,7 @@ import javax.print.attribute.standard.OutputBin;
 
 /*
  * @test
- * @bug JDK-8314070
+ * @bug 8314070
  * @key printer
  * @summary javax.print: Support IPP output-bin attribute extension
  */
