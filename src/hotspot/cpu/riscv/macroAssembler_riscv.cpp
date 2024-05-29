@@ -38,7 +38,6 @@
 #include "interpreter/interpreter.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
-#include "nativeInst_riscv.hpp"
 #include "oops/accessDecorators.hpp"
 #include "oops/compressedKlass.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
@@ -64,6 +63,108 @@
 #endif
 #define STOP(str) stop(str);
 #define BIND(label) bind(label); __ BLOCK_COMMENT(#label ":")
+
+
+
+Register MacroAssembler::extract_rs1(address instr) {
+  assert_cond(instr != nullptr);
+  return as_Register(Assembler::extract(Assembler::ld_instr(instr), 19, 15));
+}
+
+Register MacroAssembler::extract_rs2(address instr) {
+  assert_cond(instr != nullptr);
+  return as_Register(Assembler::extract(Assembler::ld_instr(instr), 24, 20));
+}
+
+Register MacroAssembler::extract_rd(address instr) {
+  assert_cond(instr != nullptr);
+  return as_Register(Assembler::extract(Assembler::ld_instr(instr), 11, 7));
+}
+
+uint32_t MacroAssembler::extract_opcode(address instr) {
+  assert_cond(instr != nullptr);
+  return Assembler::extract(Assembler::ld_instr(instr), 6, 0);
+}
+
+uint32_t MacroAssembler::extract_funct3(address instr) {
+  assert_cond(instr != nullptr);
+  return Assembler::extract(Assembler::ld_instr(instr), 14, 12);
+}
+
+bool MacroAssembler::is_pc_relative_at(address instr) {
+  // auipc + jalr
+  // auipc + addi
+  // auipc + load
+  // auipc + fload_load
+  return (is_auipc_at(instr)) &&
+         (is_addi_at(instr + instruction_size) ||
+          is_jalr_at(instr + instruction_size) ||
+          is_load_at(instr + instruction_size) ||
+          is_float_load_at(instr + instruction_size)) &&
+         check_pc_relative_data_dependency(instr);
+}
+
+// ie:ld(Rd, Label)
+bool MacroAssembler::is_load_pc_relative_at(address instr) {
+  return is_auipc_at(instr) && // auipc
+         is_ld_at(instr + instruction_size) && // ld
+         check_load_pc_relative_data_dependency(instr);
+}
+
+bool MacroAssembler::is_movptr1_at(address instr) {
+  return is_lui_at(instr) && // Lui
+         is_addi_at(instr + instruction_size) && // Addi
+         is_slli_shift_at(instr + instruction_size * 2, 11) && // Slli Rd, Rs, 11
+         is_addi_at(instr + instruction_size * 3) && // Addi
+         is_slli_shift_at(instr + instruction_size * 4, 6) && // Slli Rd, Rs, 6
+         (is_addi_at(instr + instruction_size * 5) ||
+          is_jalr_at(instr + instruction_size * 5) ||
+          is_load_at(instr + instruction_size * 5)) && // Addi/Jalr/Load
+         check_movptr1_data_dependency(instr);
+}
+
+bool MacroAssembler::is_movptr2_at(address instr) {
+  return is_lui_at(instr) && // lui
+         is_lui_at(instr + instruction_size) && // lui
+         is_slli_shift_at(instr + instruction_size * 2, 18) && // slli Rd, Rs, 18
+         is_add_at(instr + instruction_size * 3) &&
+         (is_addi_at(instr + instruction_size * 4) ||
+          is_jalr_at(instr + instruction_size * 4) ||
+          is_load_at(instr + instruction_size * 4)) && // Addi/Jalr/Load
+         check_movptr2_data_dependency(instr);
+}
+
+bool MacroAssembler::is_li16u_at(address instr) {
+  return is_lui_at(instr) && // lui
+         is_srli_at(instr + instruction_size) && // srli
+         check_li16u_data_dependency(instr);
+}
+
+bool MacroAssembler::is_li32_at(address instr) {
+  return is_lui_at(instr) && // lui
+         is_addiw_at(instr + instruction_size) && // addiw
+         check_li32_data_dependency(instr);
+}
+
+bool MacroAssembler::is_li64_at(address instr) {
+  return is_lui_at(instr) && // lui
+         is_addi_at(instr + instruction_size) && // addi
+         is_slli_shift_at(instr + instruction_size * 2, 12) &&  // Slli Rd, Rs, 12
+         is_addi_at(instr + instruction_size * 3) && // addi
+         is_slli_shift_at(instr + instruction_size * 4, 12) &&  // Slli Rd, Rs, 12
+         is_addi_at(instr + instruction_size * 5) && // addi
+         is_slli_shift_at(instr + instruction_size * 6, 8) &&   // Slli Rd, Rs, 8
+         is_addi_at(instr + instruction_size * 7) && // addi
+         check_li64_data_dependency(instr);
+}
+
+bool MacroAssembler::is_lwu_to_zr(address instr) {
+  assert_cond(instr != nullptr);
+  return (extract_opcode(instr) == 0b0000011 &&
+          extract_funct3(instr) == 0b110 &&
+          extract_rd(instr) == zr);         // zr
+}
+
 
 static void pass_arg0(MacroAssembler* masm, Register arg) {
   if (c_rarg0 != arg) {
@@ -1432,7 +1533,7 @@ static int patch_addr_in_movptr1(address branch, address target) {
   Assembler::patch(branch + 4,  31, 20, (lower >> 17) & 0xfff);                 // Addi.            target[28:17] ==> branch[31:20]
   Assembler::patch(branch + 12, 31, 20, (lower >> 6) & 0x7ff);                  // Addi.            target[16: 6] ==> branch[31:20]
   Assembler::patch(branch + 20, 31, 20, lower & 0x3f);                          // Addi/Jalr/Load.  target[ 5: 0] ==> branch[31:20]
-  return NativeMovConstReg::movptr1_instruction_size;
+  return MacroAssembler::movptr1_instruction_size;
 }
 
 static int patch_addr_in_movptr2(address instruction_address, address target) {
@@ -1452,7 +1553,7 @@ static int patch_addr_in_movptr2(address instruction_address, address target) {
 
   assert(MacroAssembler::target_addr_for_insn(instruction_address) == target, "Must be");
 
-  return NativeMovConstReg::movptr2_instruction_size;
+  return MacroAssembler::movptr2_instruction_size;
 }
 
 static int patch_imm_in_li64(address branch, address target) {
@@ -1568,22 +1669,22 @@ address MacroAssembler::get_target_of_li32(address insn_addr) {
 int MacroAssembler::pd_patch_instruction_size(address instruction_address, address target) {
   assert_cond(instruction_address != nullptr);
   int64_t offset = target - instruction_address;
-  if (NativeInstruction::is_jal_at(instruction_address)) {                         // jal
+  if (MacroAssembler::is_jal_at(instruction_address)) {                         // jal
     return patch_offset_in_jal(instruction_address, offset);
-  } else if (NativeInstruction::is_branch_at(instruction_address)) {               // beq/bge/bgeu/blt/bltu/bne
+  } else if (MacroAssembler::is_branch_at(instruction_address)) {               // beq/bge/bgeu/blt/bltu/bne
     return patch_offset_in_conditional_branch(instruction_address, offset);
-  } else if (NativeInstruction::is_pc_relative_at(instruction_address)) {          // auipc, addi/jalr/load
+  } else if (MacroAssembler::is_pc_relative_at(instruction_address)) {          // auipc, addi/jalr/load
     return patch_offset_in_pc_relative(instruction_address, offset);
-  } else if (NativeInstruction::is_movptr1_at(instruction_address)) {              // movptr1
+  } else if (MacroAssembler::is_movptr1_at(instruction_address)) {              // movptr1
     return patch_addr_in_movptr1(instruction_address, target);
-  } else if (NativeInstruction::is_movptr2_at(instruction_address)) {              // movptr2
+  } else if (MacroAssembler::is_movptr2_at(instruction_address)) {              // movptr2
     return patch_addr_in_movptr2(instruction_address, target);
-  } else if (NativeInstruction::is_li64_at(instruction_address)) {                 // li64
+  } else if (MacroAssembler::is_li64_at(instruction_address)) {                 // li64
     return patch_imm_in_li64(instruction_address, target);
-  } else if (NativeInstruction::is_li32_at(instruction_address)) {                 // li32
+  } else if (MacroAssembler::is_li32_at(instruction_address)) {                 // li32
     int64_t imm = (intptr_t)target;
     return patch_imm_in_li32(instruction_address, (int32_t)imm);
-  } else if (NativeInstruction::is_li16u_at(instruction_address)) {
+  } else if (MacroAssembler::is_li16u_at(instruction_address)) {
     int64_t imm = (intptr_t)target;
     return patch_imm_in_li16u(instruction_address, (uint16_t)imm);
   } else {
@@ -1600,19 +1701,19 @@ int MacroAssembler::pd_patch_instruction_size(address instruction_address, addre
 address MacroAssembler::target_addr_for_insn(address insn_addr) {
   long offset = 0;
   assert_cond(insn_addr != nullptr);
-  if (NativeInstruction::is_jal_at(insn_addr)) {                     // jal
+  if (MacroAssembler::is_jal_at(insn_addr)) {                     // jal
     offset = get_offset_of_jal(insn_addr);
-  } else if (NativeInstruction::is_branch_at(insn_addr)) {           // beq/bge/bgeu/blt/bltu/bne
+  } else if (MacroAssembler::is_branch_at(insn_addr)) {           // beq/bge/bgeu/blt/bltu/bne
     offset = get_offset_of_conditional_branch(insn_addr);
-  } else if (NativeInstruction::is_pc_relative_at(insn_addr)) {      // auipc, addi/jalr/load
+  } else if (MacroAssembler::is_pc_relative_at(insn_addr)) {      // auipc, addi/jalr/load
     offset = get_offset_of_pc_relative(insn_addr);
-  } else if (NativeInstruction::is_movptr1_at(insn_addr)) {          // movptr1
+  } else if (MacroAssembler::is_movptr1_at(insn_addr)) {          // movptr1
     return get_target_of_movptr1(insn_addr);
-  } else if (NativeInstruction::is_movptr2_at(insn_addr)) {          // movptr2
+  } else if (MacroAssembler::is_movptr2_at(insn_addr)) {          // movptr2
     return get_target_of_movptr2(insn_addr);
-  } else if (NativeInstruction::is_li64_at(insn_addr)) {             // li64
+  } else if (MacroAssembler::is_li64_at(insn_addr)) {             // li64
     return get_target_of_li64(insn_addr);
-  } else if (NativeInstruction::is_li32_at(insn_addr)) {             // li32
+  } else if (MacroAssembler::is_li32_at(insn_addr)) {             // li32
     return get_target_of_li32(insn_addr);
   } else {
     ShouldNotReachHere();
@@ -1624,14 +1725,14 @@ int MacroAssembler::patch_oop(address insn_addr, address o) {
   // OOPs are either narrow (32 bits) or wide (48 bits).  We encode
   // narrow OOPs by setting the upper 16 bits in the first
   // instruction.
-  if (NativeInstruction::is_li32_at(insn_addr)) {
+  if (MacroAssembler::is_li32_at(insn_addr)) {
     // Move narrow OOP
     uint32_t n = CompressedOops::narrow_oop_value(cast_to_oop(o));
     return patch_imm_in_li32(insn_addr, (int32_t)n);
-  } else if (NativeInstruction::is_movptr1_at(insn_addr)) {
+  } else if (MacroAssembler::is_movptr1_at(insn_addr)) {
     // Move wide OOP
     return patch_addr_in_movptr1(insn_addr, o);
-  } else if (NativeInstruction::is_movptr2_at(insn_addr)) {
+  } else if (MacroAssembler::is_movptr2_at(insn_addr)) {
     // Move wide OOP
     return patch_addr_in_movptr2(insn_addr, o);
   }
@@ -2757,7 +2858,7 @@ void MacroAssembler::lookup_virtual_method(Register recv_klass,
 }
 
 void MacroAssembler::membar(uint32_t order_constraint) {
-  address prev = pc() - NativeMembar::instruction_size;
+  address prev = pc() - MacroAssembler::instruction_size;
   address last = code()->last_insn();
 
   if (last != nullptr && nativeInstruction_at(last)->is_membar() && prev == last) {
@@ -3698,7 +3799,7 @@ address MacroAssembler::emit_trampoline_stub(int insts_call_instruction_offset,
   // instructions code-section.
 
   // Make sure the address of destination 8-byte aligned after 3 instructions.
-  align(wordSize, NativeCallTrampolineStub::data_offset);
+  align(wordSize, MacroAssembler::trampoline_stub_data_offset);
 
   RelocationHolder rh = trampoline_stub_Relocation::spec(code()->insts()->start() +
                                                          insts_call_instruction_offset);
@@ -3711,7 +3812,7 @@ address MacroAssembler::emit_trampoline_stub(int insts_call_instruction_offset,
     ld(t0, target);  // auipc + ld
     jr(t0);          // jalr
     bind(target);
-    assert(offset() - stub_start_offset == NativeCallTrampolineStub::data_offset,
+    assert(offset() - stub_start_offset == MacroAssembler::trampoline_stub_data_offset,
            "should be");
     assert(offset() % wordSize == 0, "bad alignment");
     emit_int64((int64_t)dest);
@@ -3719,7 +3820,7 @@ address MacroAssembler::emit_trampoline_stub(int insts_call_instruction_offset,
 
   const address stub_start_addr = addr_at(stub_start_offset);
 
-  assert(is_NativeCallTrampolineStub_at(stub_start_addr), "doesn't look like a trampoline");
+  assert(MacroAssembler::is_trampoline_stub_at(stub_start_addr), "doesn't look like a trampoline");
 
   end_a_stub();
   return stub_start_addr;
@@ -3727,7 +3828,7 @@ address MacroAssembler::emit_trampoline_stub(int insts_call_instruction_offset,
 
 int MacroAssembler::max_trampoline_stub_size() {
   // Max stub size: alignment nop, TrampolineStub.
-  return MacroAssembler::instruction_size + NativeCallTrampolineStub::instruction_size;
+  return MacroAssembler::instruction_size + MacroAssembler::trampoline_stub_instruction_size;
 }
 
 int MacroAssembler::static_call_stub_size() {
