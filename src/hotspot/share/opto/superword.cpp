@@ -2326,121 +2326,123 @@ bool SuperWord::output() {
   return true;
 }
 
+// TODO remove
 //------------------------------vector_opd---------------------------
 // Create a vector operand for the nodes in pack p for operand: in(opd_idx)
 Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
-  Node* p0 = p->at(0);
-  uint vlen = p->size();
-  Node* opd = p0->in(opd_idx);
-  CountedLoopNode *cl = lpt()->_head->as_CountedLoop();
-  bool have_same_inputs = same_inputs(p, opd_idx);
+//  Node* p0 = p->at(0);
+//  uint vlen = p->size();
+//  Node* opd = p0->in(opd_idx);
+//  CountedLoopNode *cl = lpt()->_head->as_CountedLoop();
+//  bool have_same_inputs = same_inputs(p, opd_idx);
+//
+//  // Insert index population operation to create a vector of increasing
+//  // indices starting from the iv value. In some special unrolled loops
+//  // (see JDK-8286125), we need scalar replications of the iv value if
+//  // all inputs are the same iv, so we do a same inputs check here.
+//  if (opd == iv() && !have_same_inputs) {
+//    // BasicType p0_bt = velt_basic_type(p0);
+//    // BasicType iv_bt = is_subword_type(p0_bt) ? p0_bt : T_INT;
+//    // assert(VectorNode::is_populate_index_supported(iv_bt), "Should support");
+//    // const TypeVect* vt = TypeVect::make(iv_bt, vlen);
+//    // Node* vn = new PopulateIndexNode(iv(), igvn().intcon(1), vt);
+//    // VectorNode::trace_new_vector(vn, "SuperWord");
+//    // phase()->register_new_node_with_ctrl_of(vn, opd);
+//    // return vn;
+//  }
+//
+//  if (have_same_inputs) {
+//    //if (opd->is_Vector() || opd->is_LoadVector()) {
+//    //  if (opd_idx == 2 && VectorNode::is_shift(p0)) {
+//    //    assert(false, "shift's count can't be vector");
+//    //    return nullptr;
+//    //  }
+//    //  return opd; // input is matching vector
+//    //}
+//    //if ((opd_idx == 2) && VectorNode::is_shift(p0)) {
+//    //  Node* cnt = opd;
+//    //  // Vector instructions do not mask shift count, do it here.
+//    //  juint mask = (p0->bottom_type() == TypeInt::INT) ? (BitsPerInt - 1) : (BitsPerLong - 1);
+//    //  const TypeInt* t = opd->find_int_type();
+//    //  if (t != nullptr && t->is_con()) {
+//    //    juint shift = t->get_con();
+//    //    if (shift > mask) { // Unsigned cmp
+//    //      cnt = igvn().intcon(shift & mask);
+//    //      phase()->set_ctrl(cnt, phase()->C->root());
+//    //    }
+//    //  } else {
+//    //    if (t == nullptr || t->_lo < 0 || t->_hi > (int)mask) {
+//    //      cnt = igvn().intcon(mask);
+//    //      cnt = new AndINode(opd, cnt);
+//    //      phase()->register_new_node_with_ctrl_of(cnt, opd);
+//    //    }
+//    //    if (!opd->bottom_type()->isa_int()) {
+//    //      assert(false, "int type only");
+//    //      return nullptr;
+//    //    }
+//    //  }
+//    //  // Move shift count into vector register.
+//    //  cnt = VectorNode::shift_count(p0->Opcode(), cnt, vlen, velt_basic_type(p0));
+//    //  phase()->register_new_node_with_ctrl_of(cnt, opd);
+//    //  return cnt;
+//    //}
+//    //if (opd->is_StoreVector()) {
+//    //  assert(false, "StoreVector is not expected here");
+//    //  return nullptr;
+//    //}
+//    //
+//    // Convert scalar input to vector with the same number of elements as
+//    // p0's vector. Use p0's type because size of operand's container in
+//    // vector should match p0's size regardless operand's size.
+//    //const Type* p0_t = nullptr;
+//    //VectorNode* vn = nullptr;
+//    //if (opd_idx == 2 && VectorNode::is_scalar_rotate(p0)) {
+//    //   Node* conv = opd;
+//    //   p0_t =  TypeInt::INT;
+//    //   if (p0->bottom_type()->isa_long()) {
+//    //     p0_t = TypeLong::LONG;
+//    //     conv = new ConvI2LNode(opd);
+//    //     phase()->register_new_node_with_ctrl_of(conv, opd);
+//    //   }
+//    //   vn = VectorNode::scalar2vector(conv, vlen, p0_t);
+//    //} else {
+//    //   p0_t =  velt_type(p0);
+//    //   vn = VectorNode::scalar2vector(opd, vlen, p0_t);
+//    }
+//
+//    phase()->register_new_node_with_ctrl_of(vn, opd);
+//    VectorNode::trace_new_vector(vn, "SuperWord");
+//    return vn;
+//  }
 
-  // Insert index population operation to create a vector of increasing
-  // indices starting from the iv value. In some special unrolled loops
-  // (see JDK-8286125), we need scalar replications of the iv value if
-  // all inputs are the same iv, so we do a same inputs check here.
-  if (opd == iv() && !have_same_inputs) {
-    // BasicType p0_bt = velt_basic_type(p0);
-    // BasicType iv_bt = is_subword_type(p0_bt) ? p0_bt : T_INT;
-    // assert(VectorNode::is_populate_index_supported(iv_bt), "Should support");
-    // const TypeVect* vt = TypeVect::make(iv_bt, vlen);
-    // Node* vn = new PopulateIndexNode(iv(), igvn().intcon(1), vt);
-    // VectorNode::trace_new_vector(vn, "SuperWord");
-    // phase()->register_new_node_with_ctrl_of(vn, opd);
-    // return vn;
-  }
+  //// Insert pack operation
+  //BasicType bt = velt_basic_type(p0);
+  //PackNode* pk = PackNode::make(opd, vlen, bt);
+  //DEBUG_ONLY( const BasicType opd_bt = opd->bottom_type()->basic_type(); )
 
-  if (have_same_inputs) {
-    //if (opd->is_Vector() || opd->is_LoadVector()) {
-    //  if (opd_idx == 2 && VectorNode::is_shift(p0)) {
-    //    assert(false, "shift's count can't be vector");
-    //    return nullptr;
-    //  }
-    //  return opd; // input is matching vector
-    //}
-    //if ((opd_idx == 2) && VectorNode::is_shift(p0)) {
-    //  Node* cnt = opd;
-    //  // Vector instructions do not mask shift count, do it here.
-    //  juint mask = (p0->bottom_type() == TypeInt::INT) ? (BitsPerInt - 1) : (BitsPerLong - 1);
-    //  const TypeInt* t = opd->find_int_type();
-    //  if (t != nullptr && t->is_con()) {
-    //    juint shift = t->get_con();
-    //    if (shift > mask) { // Unsigned cmp
-    //      cnt = igvn().intcon(shift & mask);
-    //      phase()->set_ctrl(cnt, phase()->C->root());
-    //    }
-    //  } else {
-    //    if (t == nullptr || t->_lo < 0 || t->_hi > (int)mask) {
-    //      cnt = igvn().intcon(mask);
-    //      cnt = new AndINode(opd, cnt);
-    //      phase()->register_new_node_with_ctrl_of(cnt, opd);
-    //    }
-    //    if (!opd->bottom_type()->isa_int()) {
-    //      assert(false, "int type only");
-    //      return nullptr;
-    //    }
-    //  }
-    //  // Move shift count into vector register.
-    //  cnt = VectorNode::shift_count(p0->Opcode(), cnt, vlen, velt_basic_type(p0));
-    //  phase()->register_new_node_with_ctrl_of(cnt, opd);
-    //  return cnt;
-    //}
-    //if (opd->is_StoreVector()) {
-    //  assert(false, "StoreVector is not expected here");
-    //  return nullptr;
-    //}
-    //
-    // Convert scalar input to vector with the same number of elements as
-    // p0's vector. Use p0's type because size of operand's container in
-    // vector should match p0's size regardless operand's size.
-    //const Type* p0_t = nullptr;
-    //VectorNode* vn = nullptr;
-    //if (opd_idx == 2 && VectorNode::is_scalar_rotate(p0)) {
-    //   Node* conv = opd;
-    //   p0_t =  TypeInt::INT;
-    //   if (p0->bottom_type()->isa_long()) {
-    //     p0_t = TypeLong::LONG;
-    //     conv = new ConvI2LNode(opd);
-    //     phase()->register_new_node_with_ctrl_of(conv, opd);
-    //   }
-    //   vn = VectorNode::scalar2vector(conv, vlen, p0_t);
-    //} else {
-    //   p0_t =  velt_type(p0);
-    //   vn = VectorNode::scalar2vector(opd, vlen, p0_t);
-    }
-
-    phase()->register_new_node_with_ctrl_of(vn, opd);
-    VectorNode::trace_new_vector(vn, "SuperWord");
-    return vn;
-  }
-
-  // Insert pack operation
-  BasicType bt = velt_basic_type(p0);
-  PackNode* pk = PackNode::make(opd, vlen, bt);
-  DEBUG_ONLY( const BasicType opd_bt = opd->bottom_type()->basic_type(); )
-
-  for (uint i = 1; i < vlen; i++) {
-    Node* pi = p->at(i);
-    Node* in = pi->in(opd_idx);
-    if (get_pack(in) != nullptr) {
-      assert(false, "Should already have been unpacked");
-      return nullptr;
-    }
-    assert(opd_bt == in->bottom_type()->basic_type(), "all same type");
-    pk->add_opd(in);
-    if (VectorNode::is_muladds2i(pi)) {
-      Node* in2 = pi->in(opd_idx + 2);
-      if (get_pack(in2) != nullptr) {
-        assert(false, "Should already have been unpacked");
-        return nullptr;
-      }
-      assert(opd_bt == in2->bottom_type()->basic_type(), "all same type");
-      pk->add_opd(in2);
-    }
-  }
-  phase()->register_new_node_with_ctrl_of(pk, opd);
-  VectorNode::trace_new_vector(pk, "SuperWord");
-  return pk;
+  //for (uint i = 1; i < vlen; i++) {
+  //  Node* pi = p->at(i);
+  //  Node* in = pi->in(opd_idx);
+  //  if (get_pack(in) != nullptr) {
+  //    assert(false, "Should already have been unpacked");
+  //    return nullptr;
+  //  }
+  //  assert(opd_bt == in->bottom_type()->basic_type(), "all same type");
+  //  pk->add_opd(in);
+  //  if (VectorNode::is_muladds2i(pi)) {
+  //    Node* in2 = pi->in(opd_idx + 2);
+  //    if (get_pack(in2) != nullptr) {
+  //      assert(false, "Should already have been unpacked");
+  //      return nullptr;
+  //    }
+  //    assert(opd_bt == in2->bottom_type()->basic_type(), "all same type");
+  //    pk->add_opd(in2);
+  //  }
+  //}
+  //phase()->register_new_node_with_ctrl_of(pk, opd);
+  //VectorNode::trace_new_vector(pk, "SuperWord");
+  //return pk;
+  return nullptr;
 }
 
 #ifdef ASSERT
@@ -3723,9 +3725,13 @@ VTransformNode* SuperWordVTransformBuilder::find_input_for_vector(int j, Node_Li
     return replicate;
   }
 
-  tty->print_cr("input at j=%d", j);
+  // The input is neither a pack not a unique node. SuperWord::profitable does not allow
+  // any other case. In the future, we could insert a PackNode.
+#ifdef ASSERT
+  tty->print_cr("\nSuperWordVTransformBuilder::find_input_for_vector: j=%d", j);
   pack->dump();
-  assert(false, "TODO more logic");
+  assert(false, "Pack input was neither a pack nor a unique node");
+#endif
   return nullptr;
 }
 
