@@ -33,7 +33,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSessionContext;
 
@@ -91,16 +90,13 @@ final class SSLSessionContextImpl implements SSLSessionContext {
         if (server) {
             sessionCache = Cache.newSoftMemoryCache(cacheLimit, timeout);
             sessionHostPortCache = Cache.newSoftMemoryCache(cacheLimit, timeout);
+            keyHashMap = new ConcurrentHashMap<>();
+            // Should be "randomly generated" according to RFC 5077,
+            // but doesn't necessarily have to be a true random number.
+            currentKeyID = new Random(System.nanoTime()).nextInt();
         } else {
             sessionCache = Cache.newSoftMemoryCache(cacheLimit, timeout);
             sessionHostPortCache = Cache.newSoftMemoryQueue(cacheLimit, timeout);
-        }
-        if (server) {
-            keyHashMap = new ConcurrentHashMap<>();
-            // Should be "randomly generated" according to RFC 5077,
-            // but doesn't necessarily has to be a true random number.
-            currentKeyID = new Random(System.nanoTime()).nextInt();
-        } else {
             keyHashMap = Map.of();
         }
     }
@@ -422,17 +418,4 @@ final class SSLSessionContextImpl implements SSLSessionContext {
                                   Collections.emptyEnumeration();
         }
     }
-/*
-    public NSTRecord getNST(String id) {
-        var q = nstCache.get(id);
-        if (q == null) return null;
-
-        return q.poll();
-    }
-
-    public NSTRecord putNST(String id, NSTRecord nst) {
-        nstCache.get(id);
-    }
-
- */
 }

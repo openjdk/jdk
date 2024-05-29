@@ -365,7 +365,8 @@ final class NewSessionTicket {
                 if (!hc.handshakeSession.isPSKable()) {
                     if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                         SSLLogger.fine(
-                                "No session ticket produced: No PSK set");
+                                "No session ticket produced: " +
+                                "No session ticket allowed in this session");
                     }
 
                     return null;
@@ -460,10 +461,12 @@ final class NewSessionTicket {
 
             // If a stateless ticket is allowed, attempt to make one
             if (hc.statelessResumption &&
-                hc.handshakeSession.isStatelessable()) {
+                    hc.handshakeSession.isStatelessable()) {
                 nstm = new T13NewSessionTicketMessage(hc,
-                    sessionTimeoutSeconds, hc.sslContext.getSecureRandom(),
-                    nonceArr, new SessionTicketSpec().encrypt(hc, sessionCopy));
+                        sessionTimeoutSeconds,
+                        hc.sslContext.getSecureRandom(),
+                        nonceArr,
+                        new SessionTicketSpec().encrypt(hc, sessionCopy));
                 // If ticket construction failed, switch to session cache
                 if (!nstm.isValid()) {
                     hc.statelessResumption = false;
@@ -471,7 +474,7 @@ final class NewSessionTicket {
                     if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                         SSLLogger.fine(
                             "Produced NewSessionTicket stateless " +
-                                "post-handshake message", nstm);
+                            "post-handshake message", nstm);
                     }
                 }
                 return nstm;
@@ -479,13 +482,14 @@ final class NewSessionTicket {
 
             // If a session cache ticket is being used, make one
             if (!hc.statelessResumption ||
-                !hc.handshakeSession.isStatelessable()) {
+                    !hc.handshakeSession.isStatelessable()) {
                 nstm = new T13NewSessionTicketMessage(hc, sessionTimeoutSeconds,
-                    hc.sslContext.getSecureRandom(), nonceArr, newId.getId());
+                        hc.sslContext.getSecureRandom(), nonceArr,
+                        newId.getId());
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
-                        "Produced NewSessionTicket post-handshake message",
-                        nstm);
+                            "Produced NewSessionTicket post-handshake message",
+                            nstm);
                 }
 
                 // create and cache the new session
@@ -617,7 +621,7 @@ final class NewSessionTicket {
             if (resumptionMasterSecret == null) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
-                        "Session has no resumption master secret. " +
+                            "Session has no resumption master secret. " +
                             "Ignoring ticket.");
                 }
                 return;

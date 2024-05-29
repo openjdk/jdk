@@ -1,6 +1,29 @@
-package sun.security.util;
+/*
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
 
-import sun.security.ssl.SSLSessionImpl;
+package sun.security.util;
 
 import java.lang.ref.ReferenceQueue;
 import java.util.*;
@@ -22,7 +45,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 
 class MemoryQueue<K,V> extends Cache<K,V> {
-    private static final float LOAD_FACTOR = 0.75f;
+
     private static final boolean DEBUG = true;
 
     private final ConcurrentHashMap<K, CacheEntry<K,V>> cacheMap;
@@ -32,6 +55,8 @@ class MemoryQueue<K,V> extends Cache<K,V> {
 
     private static ReentrantReadWriteLock lock;
     private static ReentrantLock qlock;
+
+    private long lastExpunge = 0;
 
     // ReferenceQueue is of type V instead of Cache<K,V>
     // to allow SoftCacheEntry to extend SoftReference<V>
@@ -45,15 +70,12 @@ class MemoryQueue<K,V> extends Cache<K,V> {
         this.maxSize = maxSize;
         this.lifetime = lifetime * 1000L;
         this.rQueue = (soft ? new ReferenceQueue<>() : null);
-        cacheMap = new ConcurrentHashMap<>(1, LOAD_FACTOR);
+        cacheMap = new ConcurrentHashMap<>(1);
     }
 
     /**
      * Empty the reference queue and remove all corresponding entries
      * from the cache.
-     *
-     * This method should be called at the beginning of each public
-     * method.
      */
     private void emptyQueue() {
         if (rQueue == null) {
@@ -76,10 +98,14 @@ class MemoryQueue<K,V> extends Cache<K,V> {
             var value = cacheMap.get(key);
             if (value instanceof QueueCacheEntry<K,V> qe) {
                 Queue<CacheEntry<K,V>> queue = qe.getQueue();
-                queue.forEach(e -> queue.remove(e));
+                queue.forEach(queue::remove);
             }
-            cacheMap.remove(key);
-            count++;
+            try {
+                cacheMap.remove(key);
+                count++;
+            } catch (NullPointerException e) {
+                // Something else took and evaluated the entry
+            }
         }
         if (DEBUG) {
             if (count > 0) {
@@ -97,24 +123,24 @@ class MemoryQueue<K,V> extends Cache<K,V> {
         if (lifetime == 0) {
             return;
         }
-        //int cnt = 0;
+
         long time = System.currentTimeMillis();
         if (nextExpirationTime > time) {
             return;
         }
-        nextExpirationTime = Long.MAX_VALUE;
-        //AtomicInteger cnt = new AtomicInteger(0);
 
-        cacheMap.keySet().parallelStream().forEach(k -> {
-            var v = cacheMap.get(k);
-            if (v.isValid(time)) {
-                cacheMap.remove(k);
-                if (v instanceof QueueCacheEntry<K,V> q) {
-                    q.invalidate();
+        nextExpirationTime = Long.MAX_VALUE;
+        cacheMap.values().parallelStream().forEach(entry -> {
+            if (!entry.isValid(time)) {
+                try {
+                    cacheMap.remove(entry.getKey());
+                } catch (NullPointerException e) {
+                    // Something else took and evaluated the entry
                 }
+            } else if (nextExpirationTime > entry.getExpirationTime()) {
+                nextExpirationTime = entry.getExpirationTime();
             }
         });
-
     }
 
     public synchronized int size() {
@@ -178,10 +204,16 @@ class MemoryQueue<K,V> extends Cache<K,V> {
         emptyQueue();
         CacheEntry<K,V> value = cacheMap.get(key);
         V result;
-        if (value == null) return null;
+        if (value == null) {
+            return null;
+        }
 
         if (lifetime > 0 && !value.isValid(System.currentTimeMillis())) {
-            cacheMap.remove(key);
+            try {
+                cacheMap.remove(key);
+            } catch (NullPointerException e) {
+                // Something else took and evaluated the entry
+            }
             return null;
         }
 
@@ -190,7 +222,11 @@ class MemoryQueue<K,V> extends Cache<K,V> {
         if (value instanceof QueueCacheEntry<K,V> qe) {
             result = (lifetime == 0 ? qe.getValue() : qe.getValue(lifetime));
             if (qe.isEmpty()) {
-                cacheMap.remove(key);
+                try {
+                    cacheMap.remove(key);
+                } catch (NullPointerException e) {
+                    // Something else took and evaluated the entry
+                }
             }
         } else {
             result = value.getValue();
@@ -225,7 +261,10 @@ class MemoryQueue<K,V> extends Cache<K,V> {
 
     public synchronized void setCapacity(int size) {
         expungeExpiredEntries();
-        if (cacheMap.size() <= size) return;
+        if (cacheMap.size() <= size) {
+            return;
+        }
+
         var list = cacheMap.keys();
         while (cacheMap.size() > size) {
             var entry = cacheMap.remove(list.nextElement());
@@ -254,19 +293,11 @@ class MemoryQueue<K,V> extends Cache<K,V> {
     // it is a heavyweight method.
     public synchronized void accept(CacheVisitor<K,V> visitor) {
         expungeExpiredEntries();
-        Map<K,V> cached = getCachedEntries();
+        Map<K, V> cached = HashMap.newHashMap(cacheMap.size());
+        cacheMap.values().forEach(entry ->
+            cached.put(entry.getKey(), entry.getValue()));
 
         visitor.visit(cached);
-    }
-
-    private Map<K,V> getCachedEntries() {
-        Map<K,V> kvmap = HashMap.newHashMap(cacheMap.size());
-
-        for (CacheEntry<K,V> entry : cacheMap.values()) {
-            kvmap.put(entry.getKey(), entry.getValue());
-        }
-
-        return kvmap;
     }
 
     protected CacheEntry<K,V> newEntry(K key, V value,

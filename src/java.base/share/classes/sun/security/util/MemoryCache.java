@@ -1,17 +1,42 @@
-package sun.security.util;
+/*
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
 
+package sun.security.util;
 
 import java.lang.ref.ReferenceQueue;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 class MemoryCache<K,V> extends Cache<K,V> {
 
     private static final float LOAD_FACTOR = 0.75f;
 
-    // XXXX
+    // For debugging
     private static final boolean DEBUG = false;
 
     private final Map<K, CacheEntry<K,V>> cacheMap;
@@ -103,6 +128,30 @@ class MemoryCache<K,V> extends Cache<K,V> {
                     + " expired entries, remaining " + cacheMap.size());
             }
         }
+        /*
+        AtomicInteger cnt = new AtomicInteger(0);
+        long time = System.currentTimeMillis();
+        if (nextExpirationTime > time) {
+            return;
+        }
+
+        nextExpirationTime = Long.MAX_VALUE;
+        cacheMap.values().parallelStream().forEach(entry -> {
+            if (!entry.isValid(time)) {
+                cacheMap.remove(entry.getKey());
+                cnt.incrementAndGet();
+            } else if (nextExpirationTime > entry.getExpirationTime()) {
+                nextExpirationTime = entry.getExpirationTime();
+            }
+        });
+
+        if (DEBUG) {
+            if (cnt.get() != 0) {
+                System.out.println("Removed " + cnt.get()
+                    + " expired entries, remaining " + cacheMap.size());
+            }
+        }
+        */
     }
 
     public synchronized int size() {
@@ -114,9 +163,7 @@ class MemoryCache<K,V> extends Cache<K,V> {
         if (queue != null) {
             // if this is a SoftReference cache, first invalidate() all
             // entries so that GC does not have to enqueue them
-            for (CacheEntry<K,V> entry : cacheMap.values()) {
-                entry.invalidate();
-            }
+            cacheMap.values().forEach(CacheEntry::invalidate);
             while (queue.poll() != null) {
                 // empty
             }
