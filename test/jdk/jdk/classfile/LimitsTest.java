@@ -127,7 +127,7 @@ class LimitsTest {
         assertThrows(IllegalArgumentException.class, () ->
                 ClassFile.of().parse(ClassFile.of().build(ClassDesc.of("LookupSwitchClass"), cb -> cb.withMethod(
                 "lookupSwitchMethod", MethodTypeDesc.of(ConstantDescs.CD_void), 0, mb ->
-                        ((DirectMethodBuilder)mb).writeAttribute(new UnboundAttribute.AdHocAttribute<CodeAttribute>(Attributes.CODE) {
+                        ((DirectMethodBuilder)mb).writeAttribute(new UnboundAttribute.AdHocAttribute<CodeAttribute>(Attributes.code()) {
                                 @Override
                                 public void writeBody(BufWriter b) {
                                     b.writeU2(-1);//max stack
@@ -152,7 +152,7 @@ class LimitsTest {
         assertThrows(IllegalArgumentException.class, () ->
                 ClassFile.of().parse(ClassFile.of().build(ClassDesc.of("TableSwitchClass"), cb -> cb.withMethod(
                 "tableSwitchMethod", MethodTypeDesc.of(ConstantDescs.CD_void), 0, mb ->
-                        ((DirectMethodBuilder)mb).writeAttribute(new UnboundAttribute.AdHocAttribute<CodeAttribute>(Attributes.CODE) {
+                        ((DirectMethodBuilder)mb).writeAttribute(new UnboundAttribute.AdHocAttribute<CodeAttribute>(Attributes.code()) {
                                 @Override
                                 public void writeBody(BufWriter b) {
                                     b.writeU2(-1);//max stack

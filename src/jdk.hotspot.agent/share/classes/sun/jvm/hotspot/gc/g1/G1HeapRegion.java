@@ -41,10 +41,10 @@ import sun.jvm.hotspot.types.CIntegerField;
 import sun.jvm.hotspot.types.Type;
 import sun.jvm.hotspot.types.TypeDataBase;
 
-// Mirror class for HeapRegion. Currently we don't actually include
+// Mirror class for G1HeapRegion. Currently we don't actually include
 // any of its fields but only iterate over it.
 
-public class HeapRegion extends ContiguousSpace implements LiveRegionsProvider {
+public class G1HeapRegion extends ContiguousSpace implements LiveRegionsProvider {
     private static AddressField bottomField;
     private static AddressField topField;
     private static AddressField endField;
@@ -66,7 +66,7 @@ public class HeapRegion extends ContiguousSpace implements LiveRegionsProvider {
     }
 
     private static synchronized void initialize(TypeDataBase db) {
-        Type type = db.lookupType("HeapRegion");
+        Type type = db.lookupType("G1HeapRegion");
 
         bottomField = type.getAddressField("_bottom");
         topField = type.getAddressField("_top");
@@ -77,14 +77,14 @@ public class HeapRegion extends ContiguousSpace implements LiveRegionsProvider {
 
         typeFieldOffset = type.getField("_type").getOffset();
 
-        pointerSize = db.lookupType("HeapRegion*").getSize();
+        pointerSize = db.lookupType("G1HeapRegion*").getSize();
     }
 
     public static long grainBytes() {
         return grainBytesField.getValue();
     }
 
-    public HeapRegion(Address addr) {
+    public G1HeapRegion(Address addr) {
         super(addr);
         Address typeAddr = (addr instanceof OopHandle) ? addr.addOffsetToAsOopHandle(typeFieldOffset)
                                                        : addr.addOffsetTo(typeFieldOffset);

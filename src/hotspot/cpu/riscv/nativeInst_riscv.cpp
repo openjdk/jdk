@@ -84,7 +84,7 @@ bool NativeInstruction::is_load_pc_relative_at(address instr) {
          check_load_pc_relative_data_dependency(instr);
 }
 
-bool NativeInstruction::is_movptr_at(address instr) {
+bool NativeInstruction::is_movptr1_at(address instr) {
   return is_lui_at(instr) && // Lui
          is_addi_at(instr + instruction_size) && // Addi
          is_slli_shift_at(instr + instruction_size * 2, 11) && // Slli Rd, Rs, 11
@@ -93,7 +93,18 @@ bool NativeInstruction::is_movptr_at(address instr) {
          (is_addi_at(instr + instruction_size * 5) ||
           is_jalr_at(instr + instruction_size * 5) ||
           is_load_at(instr + instruction_size * 5)) && // Addi/Jalr/Load
-         check_movptr_data_dependency(instr);
+         check_movptr1_data_dependency(instr);
+}
+
+bool NativeInstruction::is_movptr2_at(address instr) {
+  return is_lui_at(instr) && // lui
+         is_lui_at(instr + instruction_size) && // lui
+         is_slli_shift_at(instr + instruction_size * 2, 18) && // slli Rd, Rs, 18
+         is_add_at(instr + instruction_size * 3) &&
+         (is_addi_at(instr + instruction_size * 4) ||
+          is_jalr_at(instr + instruction_size * 4) ||
+          is_load_at(instr + instruction_size * 4)) && // Addi/Jalr/Load
+         check_movptr2_data_dependency(instr);
 }
 
 bool NativeInstruction::is_li16u_at(address instr) {
@@ -201,10 +212,11 @@ void NativeCall::insert(address code_pos, address entry) { Unimplemented(); }
 //-------------------------------------------------------------------
 
 void NativeMovConstReg::verify() {
-  if (!(nativeInstruction_at(instruction_address())->is_movptr() ||
-        is_auipc_at(instruction_address()))) {
-    fatal("should be MOVPTR or AUIPC");
+  NativeInstruction* ni = nativeInstruction_at(instruction_address());
+  if (ni->is_movptr() || ni->is_auipc()) {
+    return;
   }
+  fatal("should be MOVPTR or AUIPC");
 }
 
 intptr_t NativeMovConstReg::data() const {
@@ -223,7 +235,7 @@ void NativeMovConstReg::set_data(intptr_t x) {
   } else {
     // Store x into the instruction stream.
     MacroAssembler::pd_patch_instruction_size(instruction_address(), (address)x);
-    ICache::invalidate_range(instruction_address(), movptr_instruction_size);
+    ICache::invalidate_range(instruction_address(), movptr1_instruction_size /* > movptr2_instruction_size */ );
   }
 
   // Find and replace the oop/metadata corresponding to this
@@ -393,13 +405,15 @@ void NativeJump::patch_verified_entry(address entry, address verified_entry, add
   ICache::invalidate_range(verified_entry, instruction_size);
 }
 
+//-------------------------------------------------------------------
+
 void NativeGeneralJump::insert_unconditional(address code_pos, address entry) {
   CodeBuffer cb(code_pos, instruction_size);
   MacroAssembler a(&cb);
   Assembler::IncompressibleRegion ir(&a);  // Fixed length: see NativeGeneralJump::get_instruction_size()
 
   int32_t offset = 0;
-  a.movptr(t0, entry, offset); // lui, addi, slli, addi, slli
+  a.movptr(t0, entry, offset, t1); // lui, lui, slli, add
   a.jr(t0, offset); // jalr
 
   ICache::invalidate_range(code_pos, instruction_size);
@@ -409,6 +423,8 @@ void NativeGeneralJump::insert_unconditional(address code_pos, address entry) {
 void NativeGeneralJump::replace_mt_safe(address instr_addr, address code_buffer) {
   ShouldNotCallThis();
 }
+
+//-------------------------------------------------------------------
 
 address NativeCallTrampolineStub::destination(nmethod *nm) const {
   return ptr_at(data_offset);

@@ -1800,7 +1800,7 @@ private:
   void negq(Address dst);
 #endif
 
-  void nop(int i = 1);
+  void nop(uint i = 1);
 
   void notl(Register dst);
 
