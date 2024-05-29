@@ -40,6 +40,12 @@
 
 class MacroAssembler: public Assembler {
 
+  friend class NativeInstruction;
+  friend class NativeCall;
+  friend class NativeMovConstReg;
+  friend class NativeCallTrampolineStub;
+  friend class NativePostCallNop;
+
  public:
   enum {
     instruction_size = 4,
@@ -55,6 +61,42 @@ class MacroAssembler: public Assembler {
     load_pc_relative_instruction_size = 2 * instruction_size // auipc, ld
   };
 
+  static bool is_load_pc_relative_at(address branch);
+  static bool is_li16u_at(address instr);
+
+  static bool is_trampoline_stub_at(address addr) {
+    // Ensure that the stub is exactly
+    //      ld   t0, L--->auipc + ld
+    //      jr   t0
+    // L:
+
+    // judge inst + register + imm
+    // 1). check the instructions: auipc + ld + jalr
+    // 2). check if auipc[11:7] == t0 and ld[11:7] == t0 and ld[19:15] == t0 && jr[19:15] == t0
+    // 3). check if the offset in ld[31:20] equals the data_offset
+    assert_cond(addr != nullptr);
+    const int instr_size = instruction_size;
+    if (is_auipc_at(addr) &&
+        is_ld_at(addr + instr_size) &&
+        is_jalr_at(addr + 2 * instr_size) &&
+        (extract_rd(addr)                    == x5) &&
+        (extract_rd(addr + instr_size)       == x5) &&
+        (extract_rs1(addr + instr_size)      == x5) &&
+        (extract_rs1(addr + 2 * instr_size)  == x5) &&
+        (Assembler::extract(Assembler::ld_instr(addr + 4), 31, 20) == trampoline_stub_data_offset)) {
+      return true;
+    }
+    return false;
+  }
+
+  static bool is_call_at(address instr) {
+    if (is_jal_at(instr) || is_jalr_at(instr)) {
+      return true;
+    }
+    return false;
+  }
+
+ private:
   static bool is_jal_at(address instr)        { assert_cond(instr != nullptr); return extract_opcode(instr) == 0b1101111; }
   static bool is_jalr_at(address instr)       { assert_cond(instr != nullptr); return extract_opcode(instr) == 0b1100111 && extract_funct3(instr) == 0b000; }
   static bool is_branch_at(address instr)     { assert_cond(instr != nullptr); return extract_opcode(instr) == 0b1100011; }
@@ -214,46 +256,11 @@ class MacroAssembler: public Assembler {
 
   static bool is_movptr1_at(address instr);
   static bool is_movptr2_at(address instr);
-  static bool is_li16u_at(address instr);
   static bool is_li32_at(address instr);
   static bool is_li64_at(address instr);
   static bool is_pc_relative_at(address branch);
-  static bool is_load_pc_relative_at(address branch);
 
-  static bool is_call_at(address instr) {
-    if (is_jal_at(instr) || is_jalr_at(instr)) {
-      return true;
-    }
-    return false;
-  }
   static bool is_lwu_to_zr(address instr);
-
-  static bool is_trampoline_stub_at(address addr) {
-    // Ensure that the stub is exactly
-    //      ld   t0, L--->auipc + ld
-    //      jr   t0
-    // L:
-
-    // judge inst + register + imm
-    // 1). check the instructions: auipc + ld + jalr
-    // 2). check if auipc[11:7] == t0 and ld[11:7] == t0 and ld[19:15] == t0 && jr[19:15] == t0
-    // 3). check if the offset in ld[31:20] equals the data_offset
-    assert_cond(addr != nullptr);
-    const int instr_size = instruction_size;
-    if (is_auipc_at(addr) &&
-        is_ld_at(addr + instr_size) &&
-        is_jalr_at(addr + 2 * instr_size) &&
-        (extract_rd(addr)                    == x5) &&
-        (extract_rd(addr + instr_size)       == x5) &&
-        (extract_rs1(addr + instr_size)      == x5) &&
-        (extract_rs1(addr + 2 * instr_size)  == x5) &&
-        (Assembler::extract(Assembler::ld_instr(addr + 4), 31, 20) == trampoline_stub_data_offset)) {
-      return true;
-    }
-    return false;
-  }
-
- private:
 
   static bool is_membar(address addr) {
     return (Bytes::get_native_u4(addr) & 0x7f) == 0b1111 && extract_funct3(addr) == 0;
