@@ -248,6 +248,17 @@ class CodeBuffer;
 class CodeSection;
 class RelocIterator;
 
+// helper templates to avoid undefined addition/subtraction from nullptr
+template<typename T>
+T* add_to_ptr(T* ptr, uintptr_t val) {
+  return (T*)((uintptr_t)ptr + val * sizeof(T));
+}
+
+template<typename T>
+T* sub_from_ptr(T* ptr, uintptr_t val) {
+  return (T*)((uintptr_t)ptr - val * sizeof(T));
+}
+
 class relocInfo {
   friend class RelocIterator;
  public:
@@ -602,11 +613,8 @@ class RelocIterator : public StackObj {
   RelocIterator(CodeSection* cb, address begin = nullptr, address limit = nullptr);
 
   // get next reloc info, return !eos
-#if defined(__clang__) || defined(__GNUC__)
-__attribute__((no_sanitize("undefined")))
-#endif
   bool next() {
-    _current++;
+    _current = add_to_ptr(_current, 1);
     assert(_current <= _end, "must not overrun relocInfo");
     if (_current == _end) {
       set_has_current(false);

@@ -147,14 +147,11 @@ void RelocIterator::initialize(nmethod* nm, address begin, address limit) {
   set_limits(begin, limit);
 }
 
-#if defined(__clang__) || defined(__GNUC__)
-__attribute__((no_sanitize("undefined")))
-#endif
 RelocIterator::RelocIterator(CodeSection* cs, address begin, address limit) {
   initialize_misc();
   assert(((cs->locs_start() != nullptr) && (cs->locs_end() != nullptr)) ||
          ((cs->locs_start() == nullptr) && (cs->locs_end() == nullptr)), "valid start and end pointer");
-  _current = cs->locs_start()-1;
+  _current = sub_from_ptr(cs->locs_start(), 1);
   _end     = cs->locs_end();
   _addr    = cs->start();
   _code    = nullptr; // Not cb->blob();
