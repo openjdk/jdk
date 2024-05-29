@@ -51,7 +51,6 @@ import java.lang.constant.ConstantDescs;
 import static java.lang.constant.ConstantDescs.*;
 import java.lang.constant.DirectMethodHandleDesc;
 import java.lang.constant.DynamicConstantDesc;
-import java.lang.invoke.MethodType;
 
 /**
  * ProxyGenerator contains the code to generate a dynamic proxy class
