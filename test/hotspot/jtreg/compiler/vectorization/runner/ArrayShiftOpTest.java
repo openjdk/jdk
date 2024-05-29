@@ -86,7 +86,7 @@ public class ArrayShiftOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+    @IR(applyIfCPUFeatureOr = {"sve", "true", "avx2", "true"},
         counts = {IRNode.STORE_VECTOR, ">0"})
     @IR(applyIfCPUFeature = {"avx512f", "true"},
         counts = {IRNode.ROTATE_RIGHT_V, ">0"})
