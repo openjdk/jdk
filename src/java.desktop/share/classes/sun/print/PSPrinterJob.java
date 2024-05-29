@@ -1649,7 +1649,7 @@ public class PSPrinterJob extends RasterPrinterJob {
                 execCmd[n++] = "-o job-sheets=standard";
             }
             if ((pFlags & OPTIONS) != 0) {
-                for(String option: options.trim().split(" ")) {
+                for (String option : options.trim().split(" ")) {
                     execCmd[n++] = "-o " + option;
                 }
             }
@@ -1674,7 +1674,7 @@ public class PSPrinterJob extends RasterPrinterJob {
                 execCmd[n++] = "-o job-sheets=standard";
             }
             if ((pFlags & OPTIONS) != 0) {
-                for(String option: options.trim().split(" ")) {
+                for (String option : options.trim().split(" ")) {
                     execCmd[n++] = "-o " + option;
                 }
             }
