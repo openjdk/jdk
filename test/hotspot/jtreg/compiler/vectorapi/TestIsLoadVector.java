@@ -56,8 +56,8 @@ public class TestIsLoadVector {
   }
 
   public static void main(String[] strArr) {
-    for (int i = 0; i < 100; i++) {
-        test();
-    }
+      for (int i = 0; i < 100; i++) {
+          test();
+      }
   }
 }
