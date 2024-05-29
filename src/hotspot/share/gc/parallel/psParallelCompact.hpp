@@ -904,7 +904,6 @@ class MoveAndUpdateClosure: public StackObj {
 
  public:
   typedef ParMarkBitMap::idx_t idx_t;
-  typedef ParMarkBitMap::IterationStatus IterationStatus;
 
   ParMarkBitMap*        bitmap() const { return _bitmap; }
 
@@ -914,10 +913,8 @@ class MoveAndUpdateClosure: public StackObj {
   void      set_source(HeapWord* addr) { _source = addr; }
 
   // If the object will fit (size <= words_remaining()), copy it to the current
-  // destination, update the interior oops and the start array and return either
-  // full (if the closure is full) or incomplete.  If the object will not fit,
-  // return would_overflow.
-  virtual IterationStatus do_addr(HeapWord* addr, size_t words);
+  // destination, update the interior oops and the start array.
+  void do_addr(HeapWord* addr, size_t words);
 
   inline MoveAndUpdateClosure(ParMarkBitMap* bitmap, size_t region);
 
