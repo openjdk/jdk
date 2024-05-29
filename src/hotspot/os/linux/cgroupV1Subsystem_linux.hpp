@@ -67,7 +67,6 @@ class CgroupV1MemoryController: public CgroupV1Controller, public CgroupMemoryCo
     jlong kernel_memory_limit_in_bytes(julong host_mem);
     jlong kernel_memory_max_usage_in_bytes();
     void print_version_specific_info(outputStream* st, julong host_mem);
-    char *subsystem_path() override { return CgroupV1Controller::subsystem_path(); }
   private:
     /* Some container runtimes set limits via cgroup
      * hierarchy. If set to true consider also memory.stat
@@ -95,7 +94,6 @@ class CgroupV1CpuController: public CgroupV1Controller, public CgroupCpuControll
   public:
     CgroupV1CpuController(char *root, char *mountpoint) : CgroupV1Controller(root, mountpoint) {
     }
-    char *subsystem_path() override { return CgroupV1Controller::subsystem_path(); }
 };
 
 class CgroupV1Subsystem: public CgroupSubsystem {

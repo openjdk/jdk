@@ -55,7 +55,6 @@ class CgroupV2CpuController: public CgroupV2Controller, public CgroupCpuControll
     int cpu_quota();
     int cpu_period();
     int cpu_shares();
-    char *subsystem_path() { return CgroupV2Controller::subsystem_path(); }
 };
 
 class CgroupV2MemoryController: public CgroupV2Controller, public CgroupMemoryController {
@@ -72,7 +71,6 @@ class CgroupV2MemoryController: public CgroupV2Controller, public CgroupMemoryCo
     jlong rss_usage_in_bytes();
     jlong cache_usage_in_bytes();
     void print_version_specific_info(outputStream* st, julong host_mem);
-    char *subsystem_path() { return CgroupV2Controller::subsystem_path(); }
 };
 
 class CgroupV2Subsystem: public CgroupSubsystem {
