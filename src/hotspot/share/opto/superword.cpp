@@ -2390,21 +2390,20 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
     //  return nullptr;
     //}
     //
-    // TODO check if scalar-rotate is all ok
     // Convert scalar input to vector with the same number of elements as
     // p0's vector. Use p0's type because size of operand's container in
     // vector should match p0's size regardless operand's size.
-    const Type* p0_t = nullptr;
-    VectorNode* vn = nullptr;
-    if (opd_idx == 2 && VectorNode::is_scalar_rotate(p0)) {
-       Node* conv = opd;
-       p0_t =  TypeInt::INT;
-       if (p0->bottom_type()->isa_long()) {
-         p0_t = TypeLong::LONG;
-         conv = new ConvI2LNode(opd);
-         phase()->register_new_node_with_ctrl_of(conv, opd);
-       }
-       vn = VectorNode::scalar2vector(conv, vlen, p0_t);
+    //const Type* p0_t = nullptr;
+    //VectorNode* vn = nullptr;
+    //if (opd_idx == 2 && VectorNode::is_scalar_rotate(p0)) {
+    //   Node* conv = opd;
+    //   p0_t =  TypeInt::INT;
+    //   if (p0->bottom_type()->isa_long()) {
+    //     p0_t = TypeLong::LONG;
+    //     conv = new ConvI2LNode(opd);
+    //     phase()->register_new_node_with_ctrl_of(conv, opd);
+    //   }
+    //   vn = VectorNode::scalar2vector(conv, vlen, p0_t);
     //} else {
     //   p0_t =  velt_type(p0);
     //   vn = VectorNode::scalar2vector(opd, vlen, p0_t);
@@ -3709,6 +3708,16 @@ VTransformNode* SuperWordVTransformBuilder::find_input_for_vector(int j, Node_Li
     // vector should match p0's size regardless operand's size.
     VTransformNode* unique_vtn = find_scalar(unique);
     const Type* element_type = _vloop_analyzer.types().velt_type(p0);
+
+    // Scalar rotate has int rotation value. But if we are rotating longs, then we must
+    // convert the int rotation to long.
+    if (j == 2 && VectorNode::is_scalar_rotate(p0) && element_type->isa_long()) {
+      assert(unique->bottom_type()->isa_int(), "scalar rotate expects int rotation");
+      VTransformNode* conv = new (_graph.arena()) VTransformConvI2LNode(_graph);
+      conv->set_req(1, unique_vtn);
+      unique_vtn = conv;
+    }
+
     VTransformNode* replicate = new (_graph.arena()) VTransformReplicateNode(_graph, pack->size(), element_type);
     replicate->set_req(1, unique_vtn);
     return replicate;

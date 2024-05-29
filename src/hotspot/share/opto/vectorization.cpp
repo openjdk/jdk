@@ -2073,6 +2073,15 @@ VTransformApplyStatus VTransformReplicateNode::apply(const VLoopAnalyzer& vloop_
   return VTransformApplyStatus::make_vector(vn, _vlen, vn->length_in_bytes());
 }
 
+VTransformApplyStatus VTransformConvI2LNode::apply(const VLoopAnalyzer& vloop_analyzer, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
+  Node* val = find_transformed_input(1, vnode_idx_to_transformed_node);
+
+  Node* n = new ConvI2LNode(val);
+  register_new_vector(vloop_analyzer, n, val);
+
+  return VTransformApplyStatus::make_scalar(n);
+}
+
 VTransformApplyStatus VTransformShiftCountNode::apply(const VLoopAnalyzer& vloop_analyzer, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
   PhaseIdealLoop* phase = vloop_analyzer.vloop().phase();
 
@@ -2129,6 +2138,7 @@ void VTransformVectorNode::register_new_vector_and_replace_scalar_nodes(const VL
   }
 }
 
+// TODO consider renaming, so that we can also use it for new scalars.
 void VTransformNode::register_new_vector(const VLoopAnalyzer& vloop_analyzer, Node* vn, Node* old_node) const {
   PhaseIdealLoop* phase = vloop_analyzer.vloop().phase();
   // TODO is this really the way to go?

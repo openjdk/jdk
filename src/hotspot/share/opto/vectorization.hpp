@@ -1598,6 +1598,17 @@ public:
   NOT_PRODUCT(virtual void print_spec() const override;)
 };
 
+class VTransformConvI2LNode : public VTransformNode {
+public:
+  VTransformConvI2LNode(VTransformGraph& graph) : VTransformNode(graph, 2) {}
+
+  virtual VTransformApplyStatus apply(const VLoopAnalyzer& vloop_analyzer,
+                                      const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
+
+  NOT_PRODUCT(virtual const char* name() const { return "ConvI2L"; };)
+};
+
+
 class VTransformShiftCountNode : public VTransformNode {
 private:
   int _vlen;

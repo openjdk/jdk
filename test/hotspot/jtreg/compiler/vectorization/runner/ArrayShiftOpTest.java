@@ -115,6 +115,18 @@ public class ArrayShiftOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    // Tests that we add a ConvI2L for size, when converting it to long for
+    // the rotateRight rotation input.
+    // However, it currently only seems to vectorize in OSR, so we cannot add IR rules.
+    public long[] longExplicitRotateWithPopulateIndex() {
+        long[] res = new long[SIZE];
+        for (int i = 0; i < SIZE; i++) {
+            res[i] = Long.rotateRight(i, /* some rotation value*/ size);
+        }
+        return res;
+    }
+
+    @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         counts = {IRNode.RSHIFT_VI, ">0"})
     @IR(applyIfPlatform = {"riscv64", "true"},
