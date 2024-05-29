@@ -27,5 +27,5 @@
 #include "oops/instanceClassLoaderKlass.hpp"
 
 InstanceClassLoaderKlass::InstanceClassLoaderKlass() {
-  assert(CDSConfig::is_dumping_static_archive() || UseSharedSpaces, "only for CDS");
+  assert(CDSConfig::is_dumping_static_archive() || CDSConfig::is_using_archive(), "only for CDS");
 }

@@ -41,7 +41,7 @@
 int InstanceMirrorKlass::_offset_of_static_fields = 0;
 
 InstanceMirrorKlass::InstanceMirrorKlass() {
-  assert(CDSConfig::is_dumping_static_archive() || UseSharedSpaces, "only for CDS");
+  assert(CDSConfig::is_dumping_static_archive() || CDSConfig::is_using_archive(), "only for CDS");
 }
 
 size_t InstanceMirrorKlass::instance_size(Klass* k) {

@@ -44,7 +44,7 @@ void VMError::install_secondary_signal_handler() {
 // and the offending address points into CDS archive.
 void VMError::check_failing_cds_access(outputStream* st, const void* siginfo) {
 #if INCLUDE_CDS
-  if (siginfo && UseSharedSpaces) {
+  if (siginfo && CDSConfig::is_using_archive()) {
     const EXCEPTION_RECORD* const er = (const EXCEPTION_RECORD*)siginfo;
     if (er->ExceptionCode == EXCEPTION_IN_PAGE_ERROR &&
         er->NumberParameters >= 2) {

@@ -116,7 +116,7 @@ static void print_settings(outputStream* out, size_t scale) {
   out->print("Current GC threshold: ");
   print_human_readable_size(out, MetaspaceGC::capacity_until_GC(), scale);
   out->cr();
-  out->print_cr("CDS: %s", (UseSharedSpaces ? "on" : (CDSConfig::is_dumping_static_archive() ? "dump" : "off")));
+  out->print_cr("CDS: %s", (CDSConfig::is_using_archive() ? "on" : (CDSConfig::is_dumping_static_archive() ? "dump" : "off")));
   Settings::print_on(out);
 }
 
