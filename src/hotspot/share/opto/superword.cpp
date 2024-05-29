@@ -2385,10 +2385,12 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
     //  phase()->register_new_node_with_ctrl_of(cnt, opd);
     //  return cnt;
     //}
-    if (opd->is_StoreVector()) {
-      assert(false, "StoreVector is not expected here");
-      return nullptr;
-    }
+    //if (opd->is_StoreVector()) {
+    //  assert(false, "StoreVector is not expected here");
+    //  return nullptr;
+    //}
+    //
+    // TODO check if scalar-rotate is all ok
     // Convert scalar input to vector with the same number of elements as
     // p0's vector. Use p0's type because size of operand's container in
     // vector should match p0's size regardless operand's size.
@@ -2403,9 +2405,9 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
          phase()->register_new_node_with_ctrl_of(conv, opd);
        }
        vn = VectorNode::scalar2vector(conv, vlen, p0_t);
-    } else {
-       p0_t =  velt_type(p0);
-       vn = VectorNode::scalar2vector(opd, vlen, p0_t);
+    //} else {
+    //   p0_t =  velt_type(p0);
+    //   vn = VectorNode::scalar2vector(opd, vlen, p0_t);
     }
 
     phase()->register_new_node_with_ctrl_of(vn, opd);
