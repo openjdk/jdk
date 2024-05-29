@@ -344,39 +344,29 @@ public final class ClassReaderImpl
         return entryByIndex(index, PoolEntry.class);
     }
 
-    private static final @Stable Class<?>[] TAG_TO_TYPE;
-    private static final int TAG_TABLE_SIZE = 32;
-
-    static {
-        @SuppressWarnings("unchecked")
-        var a = (Class<? extends PoolEntry>[]) new Class<?>[TAG_TABLE_SIZE];
-        // JVMS Table 4.4-B. Constant pool tags
-        a[TAG_UTF8] = AbstractPoolEntry.Utf8EntryImpl.class;
-        a[TAG_INTEGER] = AbstractPoolEntry.IntegerEntryImpl.class;
-        a[TAG_FLOAT] = AbstractPoolEntry.FloatEntryImpl.class;
-        a[TAG_LONG] = AbstractPoolEntry.LongEntryImpl.class;
-        a[TAG_DOUBLE] = AbstractPoolEntry.DoubleEntryImpl.class;
-        a[TAG_CLASS] = AbstractPoolEntry.ClassEntryImpl.class;
-        a[TAG_STRING] = AbstractPoolEntry.StringEntryImpl.class;
-        a[TAG_FIELDREF] = AbstractPoolEntry.FieldRefEntryImpl.class;
-        a[TAG_METHODREF] = AbstractPoolEntry.MethodRefEntryImpl.class;
-        a[TAG_INTERFACEMETHODREF] = AbstractPoolEntry.InterfaceMethodRefEntryImpl.class;
-        a[TAG_NAMEANDTYPE] = AbstractPoolEntry.NameAndTypeEntryImpl.class;
-        a[TAG_METHODHANDLE] = AbstractPoolEntry.MethodHandleEntryImpl.class;
-        a[TAG_METHODTYPE] = AbstractPoolEntry.MethodTypeEntryImpl.class;
-        a[TAG_CONSTANTDYNAMIC] = AbstractPoolEntry.ConstantDynamicEntryImpl.class;
-        a[TAG_INVOKEDYNAMIC] = AbstractPoolEntry.InvokeDynamicEntryImpl.class;
-        a[TAG_MODULE] = AbstractPoolEntry.ModuleEntryImpl.class;
-        a[TAG_PACKAGE] = AbstractPoolEntry.PackageEntryImpl.class;
-        TAG_TO_TYPE = a;
-    }
-
     private static boolean checkTag(int tag, Class<?> cls) {
-        if (0 <= tag && tag < TAG_TABLE_SIZE) {
-            var type = TAG_TO_TYPE[tag];
-            return type != null && cls.isAssignableFrom(type);
-        }
-        return false;
+        var type = switch (tag) {
+            // JVMS Table 4.4-B. Constant pool tags
+            case TAG_UTF8 -> AbstractPoolEntry.Utf8EntryImpl.class;
+            case TAG_INTEGER -> AbstractPoolEntry.IntegerEntryImpl.class;
+            case TAG_FLOAT -> AbstractPoolEntry.FloatEntryImpl.class;
+            case TAG_LONG -> AbstractPoolEntry.LongEntryImpl.class;
+            case TAG_DOUBLE -> AbstractPoolEntry.DoubleEntryImpl.class;
+            case TAG_CLASS -> AbstractPoolEntry.ClassEntryImpl.class;
+            case TAG_STRING -> AbstractPoolEntry.StringEntryImpl.class;
+            case TAG_FIELDREF -> AbstractPoolEntry.FieldRefEntryImpl.class;
+            case TAG_METHODREF -> AbstractPoolEntry.MethodRefEntryImpl.class;
+            case TAG_INTERFACEMETHODREF -> AbstractPoolEntry.InterfaceMethodRefEntryImpl.class;
+            case TAG_NAMEANDTYPE -> AbstractPoolEntry.NameAndTypeEntryImpl.class;
+            case TAG_METHODHANDLE -> AbstractPoolEntry.MethodHandleEntryImpl.class;
+            case TAG_METHODTYPE -> AbstractPoolEntry.MethodTypeEntryImpl.class;
+            case TAG_CONSTANTDYNAMIC -> AbstractPoolEntry.ConstantDynamicEntryImpl.class;
+            case TAG_INVOKEDYNAMIC -> AbstractPoolEntry.InvokeDynamicEntryImpl.class;
+            case TAG_MODULE -> AbstractPoolEntry.ModuleEntryImpl.class;
+            case TAG_PACKAGE -> AbstractPoolEntry.PackageEntryImpl.class;
+            default -> null;
+        };
+        return type != null && cls.isAssignableFrom(type);
     }
 
     static <T extends PoolEntry> T checkType(PoolEntry e, int index, Class<T> cls) {
