@@ -160,9 +160,9 @@ jlong CgroupV1MemoryController::read_mem_swap(julong host_total_memsw) {
     log_trace(os, container)("Non-Hierarchical Memory and Swap Limit is: Unlimited");
     if (is_hierarchical()) {
       const char* matchline = "hierarchical_memsw_limit";
-      bool is_ok = _memory->controller()->read_numerical_key_value("/memory.stat",
-                                                                   matchline,
-                                                                   &hier_memswlimit);
+      bool is_ok = v1_controller->read_numerical_key_value("/memory.stat",
+                                                           matchline,
+                                                           &hier_memswlimit);
       if (!is_ok) {
         return OSCONTAINER_ERROR;
       }
