@@ -30,7 +30,7 @@ package compiler.vectorapi;
  * @run main/othervm -XX:CompileCommand=compileonly,compiler.vectorapi.TestIsLoadVector::test -Xcomp compiler.vectorapi.TestIsLoadVector
  */
 
- public class TestIsLoadVector {
+public class TestIsLoadVector {
   static int[] iArrFld = new int[400];
 
   static void test() {
