@@ -27,6 +27,7 @@
 #ifndef CPU_RISCV_NATIVEINST_RISCV_HPP
 #define CPU_RISCV_NATIVEINST_RISCV_HPP
 
+#include "macroAssembler_riscv.hpp"
 #include "asm/assembler.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/icache.hpp"
@@ -55,8 +56,8 @@ class NativeInstruction {
   friend bool is_NativeCallTrampolineStub_at(address);
  public:
   enum {
-    instruction_size = 4,
-    compressed_instruction_size = 2,
+    instruction_size = MacroAssembler::instruction_size,
+    compressed_instruction_size = MacroAssembler::compressed_instruction_size,
   };
 
   juint encoding() const {

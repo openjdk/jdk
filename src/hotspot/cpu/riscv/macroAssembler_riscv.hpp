@@ -30,7 +30,6 @@
 #include "asm/assembler.inline.hpp"
 #include "code/vmreg.hpp"
 #include "metaprogramming/enableIf.hpp"
-#include "nativeInst_riscv.hpp"
 #include "oops/compressedOops.hpp"
 #include "utilities/powerOfTwo.hpp"
 
@@ -42,6 +41,11 @@
 class MacroAssembler: public Assembler {
 
  public:
+  enum {
+    instruction_size = 4,
+    compressed_instruction_size = 2,
+  };
+
   MacroAssembler(CodeBuffer* code) : Assembler(code) {}
 
   void safepoint_poll(Label& slow_path, bool at_return, bool acquire, bool in_nmethod);
@@ -49,7 +53,7 @@ class MacroAssembler: public Assembler {
   // Alignment
   int align(int modulus, int extra_offset = 0);
 
-  static inline void assert_alignment(address pc, int alignment = NativeInstruction::instruction_size) {
+  static inline void assert_alignment(address pc, int alignment = MacroAssembler::instruction_size) {
     assert(is_aligned(pc, alignment), "bad alignment");
   }
 
@@ -1232,7 +1236,7 @@ public:
 
   address ic_call(address entry, jint method_index = 0);
   static int ic_check_size();
-  int ic_check(int end_alignment = NativeInstruction::instruction_size);
+  int ic_check(int end_alignment = MacroAssembler::instruction_size);
 
   // Support for memory inc/dec
   // n.b. increment/decrement calls with an Address destination will
