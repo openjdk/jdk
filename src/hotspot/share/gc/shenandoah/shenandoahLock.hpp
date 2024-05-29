@@ -40,7 +40,7 @@ private:
   volatile Thread* _owner;
   shenandoah_padding(2);
 
-  template<typename BlockOp>
+  template<bool ALLOW_BLOCK>
   void contended_lock_internal(JavaThread* java_thread);
 
 public:
