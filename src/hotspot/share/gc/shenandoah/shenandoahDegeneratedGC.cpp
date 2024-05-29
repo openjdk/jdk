@@ -164,15 +164,15 @@ void ShenandoahDegenGC::op_degenerated() {
           // we will rescan the roots on this safepoint.
           heap->old_generation()->transfer_pointers_from_satb();
         }
-      }
 
-      if (_degen_point == ShenandoahDegenPoint::_degenerated_roots) {
-        // We only need this if the concurrent cycle has already swapped the card tables.
-        // Marking will use the 'read' table, but interesting pointers may have been
-        // recorded in the 'write' table in the time between the cancelled concurrent cycle
-        // and this degenerated cycle. These pointers need to be included the 'read' table
-        // used to scan the remembered set during the STW mark which follows here.
-        _generation->merge_write_table();
+        if (_degen_point == ShenandoahDegenPoint::_degenerated_roots) {
+          // We only need this if the concurrent cycle has already swapped the card tables.
+          // Marking will use the 'read' table, but interesting pointers may have been
+          // recorded in the 'write' table in the time between the cancelled concurrent cycle
+          // and this degenerated cycle. These pointers need to be included the 'read' table
+          // used to scan the remembered set during the STW mark which follows here.
+          _generation->merge_write_table();
+        }
       }
 
       op_reset();
@@ -280,36 +280,15 @@ void ShenandoahDegenGC::op_degenerated() {
       // In above case, update roots should disarm them
       ShenandoahCodeRoots::disarm_nmethods();
 
-      if (heap->mode()->is_generational() && heap->is_concurrent_old_mark_in_progress()) {
-        // This is still necessary for degenerated cycles because the degeneration point may occur
-        // after final mark of the young generation. See ShenandoahConcurrentGC::op_final_updaterefs for
-        // a more detailed explanation.
-        heap->old_generation()->transfer_pointers_from_satb();
+      op_cleanup_complete();
+
+      if (heap->mode()->is_generational()) {
+        ShenandoahGenerationalHeap::heap()->complete_degenerated_cycle();
       }
 
-      op_cleanup_complete();
-      // We defer generation resizing actions until after cset regions have been recycled.
-      if (heap->mode()->is_generational()) {
-        auto result = ShenandoahGenerationalHeap::heap()->balance_generations();
-        LogTarget(Info, gc, ergo) lt;
-        if (lt.is_enabled()) {
-          LogStream ls(lt);
-          result.print_on("Degenerated GC", &ls);
-        }
-      }
       break;
     default:
       ShouldNotReachHere();
-  }
-
-  if (heap->mode()->is_generational()) {
-    // In case degeneration interrupted concurrent evacuation or update references, we need to clean up transient state.
-    // Otherwise, these actions have no effect.
-    ShenandoahGenerationalHeap::heap()->reset_generation_reserves();
-
-    if (!ShenandoahGenerationalHeap::heap()->old_generation()->is_parseable()) {
-      op_global_coalesce_and_fill();
-    }
   }
 
   if (ShenandoahVerify) {
@@ -401,11 +380,6 @@ void ShenandoahDegenGC::op_prepare_evacuation() {
 
 void ShenandoahDegenGC::op_cleanup_early() {
   ShenandoahHeap::heap()->recycle_trash();
-}
-
-void ShenandoahDegenGC::op_global_coalesce_and_fill() {
-  ShenandoahGCPhase phase(ShenandoahPhaseTimings::degen_gc_coalesce_and_fill);
-  ShenandoahGenerationalHeap::heap()->coalesce_and_fill_old_regions(false);
 }
 
 void ShenandoahDegenGC::op_evacuate() {

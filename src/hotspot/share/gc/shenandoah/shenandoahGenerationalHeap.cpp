@@ -33,14 +33,17 @@
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahInitLogger.hpp"
 #include "gc/shenandoah/shenandoahMemoryPool.hpp"
+#include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahOopClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahRegulatorThread.hpp"
 #include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
+#include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "logging/log.hpp"
+#include "utilities/events.hpp"
 
 
 class ShenandoahGenerationalInitLogger : public ShenandoahInitLogger {
@@ -941,5 +944,88 @@ void ShenandoahGenerationalHeap::update_heap_references(bool concurrent) {
     // Only do this if we are collecting card stats
     assert(card_scan() != nullptr, "Card table must exist when card stats are enabled");
     card_scan()->log_card_stats(nworkers, CARD_STAT_UPDATE_REFS);
+  }
+}
+
+void ShenandoahGenerationalHeap::complete_degenerated_cycle() {
+  shenandoah_assert_heaplocked_or_safepoint();
+  if (is_concurrent_old_mark_in_progress()) {
+    // This is still necessary for degenerated cycles because the degeneration point may occur
+    // after final mark of the young generation. See ShenandoahConcurrentGC::op_final_updaterefs for
+    // a more detailed explanation.
+    old_generation()->transfer_pointers_from_satb();
+  }
+
+  // We defer generation resizing actions until after cset regions have been recycled.
+  TransferResult result = balance_generations();
+  LogTarget(Info, gc, ergo) lt;
+  if (lt.is_enabled()) {
+    LogStream ls(lt);
+    result.print_on("Degenerated GC", &ls);
+  }
+
+  // In case degeneration interrupted concurrent evacuation or update references, we need to clean up
+  // transient state. Otherwise, these actions have no effect.
+  reset_generation_reserves();
+
+  if (!old_generation()->is_parseable()) {
+    ShenandoahGCPhase phase(ShenandoahPhaseTimings::degen_gc_coalesce_and_fill);
+    coalesce_and_fill_old_regions(false);
+  }
+}
+
+void ShenandoahGenerationalHeap::complete_concurrent_cycle() {
+  if (!old_generation()->is_parseable()) {
+    // Class unloading may render the card offsets unusable, so we must rebuild them before
+    // the next remembered set scan. We _could_ let the control thread do this sometime after
+    // the global cycle has completed and before the next young collection, but under memory
+    // pressure the control thread may not have the time (that is, because it's running back
+    // to back GCs). In that scenario, we would have to make the old regions parsable before
+    // we could start a young collection. This could delay the start of the young cycle and
+    // throw off the heuristics.
+    entry_global_coalesce_and_fill();
+  }
+
+  TransferResult result;
+  {
+    ShenandoahHeapLocker locker(lock());
+
+    result = balance_generations();
+    reset_generation_reserves();
+  }
+
+  LogTarget(Info, gc, ergo) lt;
+  if (lt.is_enabled()) {
+    LogStream ls(lt);
+    result.print_on("Concurrent GC", &ls);
+  }
+}
+
+void ShenandoahGenerationalHeap::entry_global_coalesce_and_fill() {
+  const char* msg = "Coalescing and filling old regions";
+  ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_coalesce_and_fill);
+
+  TraceCollectorStats tcs(monitoring_support()->concurrent_collection_counters());
+  EventMark em("%s", msg);
+  ShenandoahWorkerScope scope(workers(),
+                              ShenandoahWorkerPolicy::calc_workers_for_conc_marking(),
+                              "concurrent coalesce and fill");
+
+  coalesce_and_fill_old_regions(true);
+}
+
+void ShenandoahGenerationalHeap::update_region_ages() {
+  ShenandoahMarkingContext *ctx = complete_marking_context();
+  for (size_t i = 0; i < num_regions(); i++) {
+    ShenandoahHeapRegion *r = get_region(i);
+    if (r->is_active() && r->is_young()) {
+      HeapWord* tams = ctx->top_at_mark_start(r);
+      HeapWord* top = r->top();
+      if (top > tams) {
+        r->reset_age();
+      } else if (is_aging_cycle()) {
+        r->increment_age();
+      }
+    }
   }
 }
