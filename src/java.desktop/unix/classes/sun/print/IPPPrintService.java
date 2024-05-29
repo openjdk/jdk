@@ -1521,6 +1521,18 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
                DialogTypeSelection dst = (DialogTypeSelection)attr;
                return attr == DialogTypeSelection.COMMON;
             }
+        } else if (attr.getCategory() == OutputBin.class) {
+            if (attr instanceof CustomOutputBin) {
+                return true;
+            }
+            String name = attr.toString();
+            for (OutputBin outputBin : outputBins) {
+                String choice = ((CustomOutputBin) outputBin).getChoiceName();
+                if (name.equalsIgnoreCase(choice) || name.replaceAll("-", "").equalsIgnoreCase(choice)) {
+                    return true;
+                }
+            }
+            return false;
         }
         return true;
     }

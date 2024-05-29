@@ -2629,20 +2629,21 @@ public abstract class RasterPrinterJob extends PrinterJob {
     protected String getOutputBinValue(Attribute attr) {
         if (attr instanceof CustomOutputBin customOutputBin) {
             return customOutputBin.getChoiceName();
-        } else if (attr instanceof OutputBin outputBin) {
-            String name = outputBin.toString().replace('-', ' ');
+        } else if (attr instanceof OutputBin) {
             PrintService ps = getPrintService();
             if (ps == null) {
-                return name;
+                return null;
             }
-            OutputBin[] supportedBins = (OutputBin[]) ps.getSupportedAttributeValues(OutputBin.class, null, null);
-            for (OutputBin bin : supportedBins) {
-                CustomOutputBin customBin = (CustomOutputBin) bin;
-                if (customBin.getCustomName().equalsIgnoreCase(name)) {
-                    return customBin.getChoiceName();
+            String name = attr.toString();
+            OutputBin[] outputBins = (OutputBin[]) ps
+                    .getSupportedAttributeValues(OutputBin.class, null, null);
+            for (OutputBin outputBin : outputBins) {
+                String choice = ((CustomOutputBin) outputBin).getChoiceName();
+                if (name.equalsIgnoreCase(choice) || name.replaceAll("-", "").equalsIgnoreCase(choice)) {
+                    return choice;
                 }
             }
-            return name;
+            return null;
         }
         return null;
     }
