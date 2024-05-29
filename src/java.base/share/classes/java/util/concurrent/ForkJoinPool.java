@@ -909,7 +909,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      * Currently, arrays for workers are initialized to be just large
      * enough to avoid resizing in most tree-structured tasks, but
      * larger for external queues where both false-sharing problems
-     * and the need for resizing are more common..  (Maintenance note:
+     * and the need for resizing are more common.  (Maintenance note:
      * any changes in fields, queues, or their uses, or JVM layout
      * policies, must be accompanied by re-evaluation of these
      * placement and sizing decisions.)
@@ -1854,7 +1854,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                                        (TC_MASK & (c - TC_UNIT)) |
                                        (LMASK & c)))));
         }
-        if ((tryTerminate(false, false) & STOP) == 0 && w != null) {
+        if ((tryTerminate(false, false) & STOP) == 0L && w != null) {
             WorkQueue[] qs; int n, i;     // remove index unless terminating
             long ns = w.nsteals & 0xffffffffL;
             if ((lockRunState() & STOP) != 0L)
@@ -1984,9 +1984,8 @@ public class ForkJoinPool extends AbstractExecutorService {
         if (w != null) {
             int phase = w.phase, r = w.stackPred;     // seed from registerWorker
             int cfg = w.config, src = -1, nsteals = 0;
-            rescan: for (boolean working = false;;) { // set if ran since active
+            rescan: for (;;) {
                 WorkQueue[] qs;
-                boolean taken = false;
                 r ^= r << 13; r ^= r >>> 17; r ^= r << 5; // xorshift
                 if ((runState & STOP) != 0L || (qs = queues) == null)
                     return;
@@ -1994,6 +1993,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                 for (int l = n; l > 0; --l, i += step) {  // scan queues
                     int j; WorkQueue q;
                     if ((q = qs[j = i & (n - 1)]) != null) {
+                        boolean taken = false;
                         for (int b = q.base;;) {
                             int cap, k, nb; ForkJoinTask<?>[] a;
                             if ((a = q.array) == null || (cap = a.length) <= 0)
@@ -2025,8 +2025,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                                 q.base = nb;
                                 w.nsteals = ++nsteals;
                                 w.source = j;             // volatile write
-                                if (working != (working = taken = true) &&
-                                    a[nk] != null)
+                                if (taken != (taken = true) && a[nk] != null)
                                     signalWork();         // propagate signal
                                 w.topLevelExec(t, cfg);
                                 if ((b = q.base) != nb && src != (src = j))
@@ -2037,7 +2036,6 @@ public class ForkJoinPool extends AbstractExecutorService {
                 }
                 if (((phase = deactivate(w, r, phase)) & IDLE) != 0)
                     return;
-                working = false;                          // reactivated
             }
         }
     }
@@ -2058,7 +2056,7 @@ public class ForkJoinPool extends AbstractExecutorService {
             for (;;) {                           // try to enqueue
                 w.stackPred = (int)pc;           // set ctl stack link
                 qc = (active & LMASK) | ((pc - RC_UNIT) & UMASK);
-                if (pc == (pc = compareAndExchangeCtl(pc, qc)))
+                if (pc == (pc = compareAndExchangeCtl(pc, qc))) // success
                     break;
                 if ((pc & RC_MASK) >= (qc & RC_MASK)) {
                     p = w.phase = phase;         // back out on possible signal
