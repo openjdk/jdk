@@ -124,7 +124,6 @@ public:
   }
 
   void print_on(outputStream* out) const;
-  void print_on(outputStream* out, int indent) const;
 };
 
 #define FAKE_CALLSTACK NativeCallStack(NativeCallStack::FakeMarker::its_fake)
