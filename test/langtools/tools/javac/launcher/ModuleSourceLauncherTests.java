@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8304400
+ * @bug 8304400 8332226
  * @summary Test source launcher running Java programs contained in one module
  * @modules jdk.compiler/com.sun.tools.javac.launcher
  * @run junit ModuleSourceLauncherTests
@@ -112,6 +112,8 @@ class ModuleSourceLauncherTests {
         Files.writeString(barFolder.resolve("Bar.java"), "package bar; public record Bar() {}");
         var bazFolder = Files.createDirectories(base.resolve("baz"));
         Files.writeString(bazFolder.resolve("baz.txt"), "baz");
+        var badFolder = Files.createDirectories(base.resolve(".bad"));
+        Files.writeString(badFolder.resolve("bad.txt"), "bad");
 
         Files.writeString(base.resolve("module-info.java"),
                 """
@@ -140,8 +142,11 @@ class ModuleSourceLauncherTests {
         assertEquals("m", module.getName());
         var reference = module.getLayer().configuration().findModule(module.getName()).orElseThrow().reference();
         try (var reader = reference.open()) {
+            var actual = reader.list().toList();
             assertLinesMatch(
                     """
+                    .bad/
+                    .bad/bad.txt
                     bar/
                     bar/Bar.class
                     bar/Bar.java
@@ -152,8 +157,8 @@ class ModuleSourceLauncherTests {
                     foo/Main.java
                     module-info.class
                     module-info.java
-                    """.lines(),
-                    reader.list());
+                    """.lines().toList(),
+                    actual, "Actual lines -> " + actual);
         }
     }
 

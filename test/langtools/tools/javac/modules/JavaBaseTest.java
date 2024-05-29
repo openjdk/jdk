@@ -206,7 +206,7 @@ public class JavaBaseTest {
 
         ClassModel cm1 = ClassFile.of().parse(modules1.resolve("module-info.class"));
 
-        ModuleAttribute modAttr1 = cm1.findAttribute(Attributes.MODULE).orElseThrow();
+        ModuleAttribute modAttr1 = cm1.findAttribute(Attributes.module()).orElseThrow();
         List<ModuleRequireInfo> requires = Arrays.asList(new ModuleRequireInfo[modAttr1.requires().size()]);
         for (int i = 0; i < modAttr1.requires().size(); ++i) {
             ModuleRequireInfo e1 = modAttr1.requires().get(i);
