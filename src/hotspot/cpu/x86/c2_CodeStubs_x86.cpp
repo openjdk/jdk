@@ -74,13 +74,11 @@ void C2EntryBarrierStub::emit(C2_MacroAssembler& masm) {
 }
 
 int C2FastUnlockLightweightStub::max_size() const {
-  return 128;
+  return 256;
 }
 
 void C2FastUnlockLightweightStub::emit(C2_MacroAssembler& masm) {
   assert(_t == rax, "must be");
-
-  Label restore_held_monitor_count_and_slow_path;
 
   { // Restore lock-stack and handle the unlock in runtime.
 
@@ -91,55 +89,52 @@ void C2FastUnlockLightweightStub::emit(C2_MacroAssembler& masm) {
     __ movptr(Address(_thread, _t), _obj);
 #endif
     __ addl(Address(_thread, JavaThread::lock_stack_top_offset()), oopSize);
-  }
-
-  { // Restore held monitor count and slow path.
-
-    __ bind(restore_held_monitor_count_and_slow_path);
-    // Restore held monitor count.
-    __ increment(Address(_thread, JavaThread::held_monitor_count_offset()));
-    // increment will always result in ZF = 0 (no overflows).
+    __ xorl(rax, 1); // Make ZF = 0
     __ jmp(slow_path_continuation());
   }
 
-  { // Handle monitor medium path.
+  {  // Check for, and try to cancel any async deflation.
+    __ bind(_check_deflater);
 
-    __ bind(_check_successor);
-
-    Label fix_zf_and_unlocked;
     const Register monitor = _mark;
+    Label slow_path, decrement_contentions_slow_path, decrement_contentions_fast_path;
 
-#ifndef _LP64
-    __ jmpb(restore_held_monitor_count_and_slow_path);
-#else // _LP64
-    // successor null check.
-    __ cmpptr(Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(succ)), NULL_WORD);
-    __ jccb(Assembler::equal, restore_held_monitor_count_and_slow_path);
-
-    // Release lock.
-    __ movptr(Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), NULL_WORD);
-
-    // Fence.
-    // Instead of MFENCE we use a dummy locked add of 0 to the top-of-stack.
-    __ lock(); __ addl(Address(rsp, 0), 0);
-
-    // Recheck successor.
-    __ cmpptr(Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(succ)), NULL_WORD);
-    // Observed a successor after the release -> fence we have handed off the monitor
-    __ jccb(Assembler::notEqual, fix_zf_and_unlocked);
-
-    // Try to relock, if it fails the monitor has been handed over
-    // TODO: Caveat, this may fail due to deflation, which does
-    //       not handle the monitor handoff. Currently only works
-    //       due to the responsible thread.
+    // CAS owner (null => current thread).
     __ xorptr(rax, rax);
     __ lock(); __ cmpxchgptr(_thread, Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
-    __ jccb  (Assembler::equal, restore_held_monitor_count_and_slow_path);
-#endif
+    __ jccb(Assembler::equal, slow_path);
 
-    __ bind(fix_zf_and_unlocked);
-    __ xorl(rax, rax);
+    // rax contains the current owner here
+    __ cmpptr(rax, reinterpret_cast<intptr_t>(DEFLATER_MARKER));
+    __ jcc(Assembler::notEqual, unlocked_continuation());
+
+    // The deflator owns the lock.  Try to cancel the deflation by
+    // first incrementing contentions...
+    __ lock(); __ incrementl(Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(contentions)));
+
+    __ cmpl(Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(contentions)), 0);
+    __ jccb(Assembler::less, decrement_contentions_fast_path); // Mr. Deflator won the race.
+
+    // ... then try to take the ownership.  If we manage to cancel deflation,
+    // ObjectMonitor::deflate_monitor() will decrementcontentions, which is why
+    // we don'tdo it here.
+    // rax contains DEFLATER_MARKER (the current owner)
+    __ lock(); __ cmpxchgptr(_thread, Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
+    __ jcc(Assembler::equal, slow_path); // We successfully canceled deflation.
+
+    __ xorptr(rax, rax);
+    __ lock(); __ cmpxchgptr(_thread, Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
+    __ jccb(Assembler::equal, decrement_contentions_slow_path);
+
+    __ bind(decrement_contentions_fast_path);
+    __ lock(); __ decrementl(Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(contentions)));
     __ jmp(unlocked_continuation());
+
+    __ bind(decrement_contentions_slow_path);
+    __ lock(); __ decrementl(Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(contentions)));
+    __ bind(slow_path);
+    __ xorl(rax, 1); // Make ZF = 0
+    __ jmp(slow_path_continuation());
   }
 }
 

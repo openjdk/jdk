@@ -99,4 +99,60 @@ void C2HandleAnonOMOwnerStub::emit(C2_MacroAssembler& masm) {
   __ j(continuation());
 }
 
+int C2FastUnlockLightweightStub::max_size() const {
+  return 256;
+}
+
+void C2FastUnlockLightweightStub::emit(C2_MacroAssembler& masm) {
+  const Register flag = t1;
+  const Register monitor = _mark;
+  const Register contentions_addr = _t;
+  const Register prev_contentions_value = _mark;
+  const Register owner_addr = _thread;
+
+  Label slow_path, fast_path, decrement_contentions_slow_path, decrement_contentions_fast_path;
+
+  { // Check for, and try to cancel any async deflation.
+    __ bind(_check_deflater);
+
+    // CAS owner (null => current thread).
+    __ cmpxchg(owner_addr, /*expected*/ zr, /*new*/ xthread, Assembler::int64,
+               /*acquire*/ Assembler::aq, /*release*/ Assembler::relaxed, /*result*/ t1);
+    __ beqz(t1, slow_path);
+
+    __ li(t0, reinterpret_cast<intptr_t>(DEFLATER_MARKER));
+    __ bne(t0, t1, fast_path);
+
+    // The deflator owns the lock.  Try to cancel the deflation by
+    // first incrementing contentions...
+    __ la(contentions_addr, Address(monitor, ObjectMonitor::contentions_offset()));
+    __ atomic_addw(prev_contentions_value, 1, contentions_addr);
+
+    __ blez(prev_contentions_value, decrement_contentions_fast_path); // Mr. Deflator won the race.
+
+    // ... then try to take the ownership.  If we manage to cancel deflation,
+    // ObjectMonitor::deflate_monitor() will decrement contentions, which is why
+    // we don't do it here.
+    // t1 contains DEFLATER_MARKER (the current owner)
+    __ cmpxchg(owner_addr, /*expected*/ t1, /*new*/ xthread, Assembler::int64,
+               /*acquire*/ Assembler::aq, /*release*/ Assembler::relaxed, /*result*/ t2);
+    __ beq(t1, t2, slow_path); // We successfully canceled deflation.
+
+    __ cmpxchg(owner_addr, /*expected*/ zr, /*new*/ xthread, Assembler::int64,
+               /*acquire*/ Assembler::aq, /*release*/ Assembler::relaxed, /*result*/ t1);
+    __ beqz(t1, decrement_contentions_slow_path);
+
+    __ bind(decrement_contentions_fast_path);
+    __ atomic_addw(noreg, -1, contentions_addr);
+    __ bind(fast_path);
+    __ j(unlocked_continuation());
+
+    __ bind(decrement_contentions_slow_path);
+    __ atomic_addw(noreg, -1, contentions_addr);
+    __ bind(slow_path);
+    __ mv(flag, 1); // Set Flag to NE
+    __ j(slow_path_continuation());
+  }
+}
+
 #undef __

@@ -37,6 +37,7 @@
 #include "oops/compressedOops.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/methodData.hpp"
+#include "opto/c2_CodeStubs.hpp"
 #include "prims/methodHandles.hpp"
 #include "register_ppc.hpp"
 #include "runtime/icache.hpp"
@@ -2575,6 +2576,16 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(ConditionRegister f
   const Register top = tmp2;
   const Register t = tmp3;
 
+  Label dummy;
+  C2FastUnlockLightweightStub* stub = nullptr;
+
+  if (!Compile::current()->output()->in_scratch_emit_size()) {
+    stub = new (Compile::current()->comp_arena()) C2FastUnlockLightweightStub(flag, obj, mark, tmp3, tmp2);
+    Compile::current()->output()->add_stub(stub);
+  }
+
+  Label& check_deflater = stub == nullptr ? dummy : stub->check_deflater();
+
   { // Lightweight unlock
     Label push_and_slow;
 
@@ -2673,31 +2684,34 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(ConditionRegister f
 
     bind(not_recursive);
 
-    Label release_;
     const Register t2 = tmp2;
+
+    // Set owner to null.
+    release();
+    li(t, 0);
+    std(t, in_bytes(ObjectMonitor::owner_offset()), monitor);
+    membar(StoreLoad);
 
     // Check if the entry lists are empty.
     ld(t, in_bytes(ObjectMonitor::EntryList_offset()), monitor);
     ld(t2, in_bytes(ObjectMonitor::cxq_offset()), monitor);
     orr(t, t, t2);
     cmpdi(flag, t, 0);
-    beq(flag, release_);
+    beq(flag, unlocked);
 
-    // The owner may be anonymous and we removed the last obj entry in
-    // the lock-stack. This loses the information about the owner.
-    // Write the thread to the owner field so the runtime knows the owner.
-    std(R16_thread, in_bytes(ObjectMonitor::owner_offset()), monitor);
-    b(slow_path);
+    ld(t, in_bytes(ObjectMonitor::succ_offset()), monitor);
+    cmpdi(flag, t, 0);
+    bne(flag, unlocked);
 
-    bind(release_);
-    // Set owner to null.
-    release();
-    // t contains 0
-    std(t, in_bytes(ObjectMonitor::owner_offset()), monitor);
+    b(check_deflater);
   }
 
   bind(unlocked);
+  if (stub != nullptr) {
+    bind(stub->unlocked_continuation());
+  }
   dec_held_monitor_count(t);
+  cmpd(flag, t, t); // Set Flag to EQ
 
 #ifdef ASSERT
   // Check that unlocked label is reached with flag == EQ.
@@ -2706,6 +2720,9 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(ConditionRegister f
   stop("Fast Lock Flag != EQ");
 #endif
   bind(slow_path);
+  if (stub != nullptr) {
+    bind(stub->slow_path_continuation());
+  }
 #ifdef ASSERT
   // Check that slow_path label is reached with flag == NE.
   bne(flag, flag_correct);

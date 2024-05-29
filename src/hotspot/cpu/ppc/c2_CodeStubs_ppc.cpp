@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, 2022, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,6 +26,7 @@
 #include "precompiled.hpp"
 #include "opto/c2_MacroAssembler.hpp"
 #include "opto/c2_CodeStubs.hpp"
+#include "runtime/objectMonitor.hpp"
 #include "runtime/sharedRuntime.hpp"
 
 #define __ masm.
@@ -57,4 +58,82 @@ void C2SafepointPollStub::emit(C2_MacroAssembler& masm) {
   __ mtctr(R0);
   __ bctr();
 }
+
+int C2FastUnlockLightweightStub::max_size() const {
+  return 256;
+}
+
+void C2FastUnlockLightweightStub::emit(C2_MacroAssembler& masm) {
+  const Register monitor = _mark;
+  const Register contentions_addr = _t;
+  const Register current_value = _t;
+  const Register prev_contentions_value = _mark;
+  const Register owner_addr = _thread;
+
+  Label slow_path, decrement_contentions_slow_path, decrement_contentions_fast_path;
+
+  { // Check for, and try to cancel any async deflation.
+    __ bind(_check_deflater);
+
+    // Compute owner address.
+    __ addi(owner_addr, monitor, in_bytes(ObjectMonitor::owner_offset()));
+
+    // CAS owner (null => current thread).
+    __ cmpxchgd(/*flag=*/_flag,
+                current_value,
+                /*compare_value=*/(intptr_t)0,
+                /*exchange_value=*/R16_thread,
+                /*where=*/owner_addr,
+                MacroAssembler::MemBarRel | MacroAssembler::MemBarAcq,
+             MacroAssembler::cmpxchgx_hint_acquire_lock());
+    __ beq(_flag, slow_path);
+
+    __ cmpdi(_flag, current_value, reinterpret_cast<intptr_t>(DEFLATER_MARKER));
+    __ bne(_flag, unlocked_continuation());
+
+    // The deflator owns the lock.  Try to cancel the deflation by
+    // first incrementing contentions...
+    __ addi(contentions_addr, monitor, in_bytes(ObjectMonitor::contentions_offset()));
+    __ li(R0, 1);
+    __ getandaddw(prev_contentions_value, /*inc_value*/ R0, contentions_addr, /*tmp1*/ _t, MacroAssembler::cmpxchgx_hint_atomic_update());
+
+    __ cmpwi(_flag, prev_contentions_value, 0);
+    __ ble(_flag, decrement_contentions_fast_path); // Mr. Deflator won the race.
+
+    // ... then try to take the ownership.  If we manage to cancel deflation,
+    // ObjectMonitor::deflate_monitor() will decrement contentions, which is why
+    // we don't do it here.
+    __ cmpxchgd(/*flag=*/_flag,
+                current_value,
+                /*compare_value=*/reinterpret_cast<intptr_t>(DEFLATER_MARKER),
+                /*exchange_value=*/R16_thread,
+                /*where=*/owner_addr,
+                MacroAssembler::MemBarRel | MacroAssembler::MemBarAcq,
+             MacroAssembler::cmpxchgx_hint_acquire_lock());
+    __ beq(_flag, slow_path);  // We successfully canceled deflation.
+
+    // CAS owner (null => current thread).
+    __ cmpxchgd(/*flag=*/_flag,
+                current_value,
+                /*compare_value=*/(intptr_t)0,
+                /*exchange_value=*/R16_thread,
+                /*where=*/owner_addr,
+                MacroAssembler::MemBarRel | MacroAssembler::MemBarAcq,
+             MacroAssembler::cmpxchgx_hint_acquire_lock());
+    __ beq(_flag, decrement_contentions_slow_path);
+
+    __ bind(decrement_contentions_fast_path);
+    __ li(R0, -1);
+    __ getandaddw(prev_contentions_value, /*inc_value*/ R0, contentions_addr, /*tmp1*/ _t, MacroAssembler::cmpxchgx_hint_atomic_update());
+    __ b(unlocked_continuation());
+
+    __ bind(decrement_contentions_slow_path);
+    __ li(R0, -1);
+    __ getandaddw(prev_contentions_value, /*inc_value*/ R0, contentions_addr, /*tmp1*/ _t, MacroAssembler::cmpxchgx_hint_atomic_update());
+    __ bind(slow_path);
+    __ cmpdi(_flag, R16_thread, 0); // Set Flag to NE
+    __ b(slow_path_continuation());
+  }
+}
+
 #undef __

@@ -339,13 +339,23 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register t1, Regis
   // Handle inflated monitor.
   Label inflated, inflated_load_monitor;
   // Finish fast unlock successfully. MUST branch to with flag == EQ
-  Label unlocked;
+  Label unlocked, set_eq_unlocked;
   // Finish fast unlock unsuccessfully. MUST branch to with flag == NE
   Label slow_path;
 
   const Register t1_mark = t1;
   const Register t2_top = t2;
   const Register t3_t = t3;
+
+  Label dummy;
+  C2FastUnlockLightweightStub* stub = nullptr;
+
+  if (!Compile::current()->output()->in_scratch_emit_size()) {
+    stub = new (Compile::current()->comp_arena()) C2FastUnlockLightweightStub(obj, t1, t3, t2);
+    Compile::current()->output()->add_stub(stub);
+  }
+
+  Label& check_deflater = stub == nullptr ? dummy : stub->check_deflater();
 
   { // Lightweight unlock
 
@@ -435,33 +445,37 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register t1, Regis
 
     bind(not_recursive);
 
-    Label release;
     const Register t2_owner_addr = t2;
 
     // Compute owner address.
     lea(t2_owner_addr, Address(t1_monitor, ObjectMonitor::owner_offset()));
+
+    // Set owner to null.
+    // Release to satisfy the JMM
+    stlr(zr, t2_owner_addr);
+    membar(StoreLoad);
 
     // Check if the entry lists are empty.
     ldr(rscratch1, Address(t1_monitor, ObjectMonitor::EntryList_offset()));
     ldr(t3_t, Address(t1_monitor, ObjectMonitor::cxq_offset()));
     orr(rscratch1, rscratch1, t3_t);
     cmp(rscratch1, zr);
-    br(Assembler::EQ, release);
+    br(Assembler::EQ, unlocked);
 
-    // The owner may be anonymous and we removed the last obj entry in
-    // the lock-stack. This loses the information about the owner.
-    // Write the thread to the owner field so the runtime knows the owner.
-    str(rthread, Address(t2_owner_addr));
-    b(slow_path);
+    ldr(rscratch1, Address(t1_monitor, ObjectMonitor::succ_offset()));
+    cmp(rscratch1, zr);
+    br(Assembler::NE, unlocked);
 
-    bind(release);
-    // Set owner to null.
-    // Release to satisfy the JMM
-    stlr(zr, t2_owner_addr);
+    // Check for, and try to cancel any async deflation.
+    b(check_deflater);
   }
 
   bind(unlocked);
+  if (stub != nullptr) {
+    bind(stub->unlocked_continuation());
+  }
   decrement(Address(rthread, JavaThread::held_monitor_count_offset()));
+  cmp(zr, zr); // Set Flags to EQ
 
 #ifdef ASSERT
   // Check that unlocked label is reached with Flags == EQ.
@@ -471,6 +485,9 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register t1, Regis
 #endif
 
   bind(slow_path);
+  if (stub != nullptr) {
+    bind(stub->slow_path_continuation());
+  }
 #ifdef ASSERT
   // Check that slow_path label is reached with Flags == NE.
   br(Assembler::NE, flag_correct);

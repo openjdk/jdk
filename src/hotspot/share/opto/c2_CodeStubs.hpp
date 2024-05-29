@@ -99,20 +99,26 @@ public:
 
 class C2FastUnlockLightweightStub : public C2CodeStub {
 private:
+  PPC_ONLY(ConditionRegister _flag;)
   Register _obj;
   Register _mark;
   Register _t;
   Register _thread;
   Label _push_and_slow_path;
-  Label _check_successor;
+  Label _check_deflater;
   Label _unlocked_continuation;
 public:
+#ifdef PPC64
+  C2FastUnlockLightweightStub(ConditionRegister flag, Register obj, Register mark, Register t, Register thread) : C2CodeStub(),
+    _flag(flag), _obj(obj), _mark(mark), _t(t), _thread(thread) {}
+#else
   C2FastUnlockLightweightStub(Register obj, Register mark, Register t, Register thread) : C2CodeStub(),
     _obj(obj), _mark(mark), _t(t), _thread(thread) {}
+#endif
   int max_size() const;
   void emit(C2_MacroAssembler& masm);
   Label& push_and_slow_path() { return _push_and_slow_path; }
-  Label& check_successor() { return _check_successor; }
+  Label& check_deflater() { return _check_deflater; }
   Label& unlocked_continuation() { return _unlocked_continuation; }
   Label& slow_path_continuation() { return continuation(); }
 };

@@ -812,7 +812,11 @@ void ObjectMonitor::EnterI(JavaThread* current) {
   // timer scalability issues we see on some platforms as we'd only have one thread
   // -- the checker -- parked on a timer.
 
-  if (nxt == nullptr && _EntryList == nullptr) {
+  if (nxt == nullptr && _EntryList == nullptr
+      X86_ONLY    (&& LockingMode != LM_LIGHTWEIGHT)
+      RISCV_ONLY  (&& LockingMode != LM_LIGHTWEIGHT)
+      AARCH64_ONLY(&& LockingMode != LM_LIGHTWEIGHT)
+      ) {
     // Try to assume the role of responsible thread for the monitor.
     // CONSIDER:  ST vs CAS vs { if (Responsible==null) Responsible=current }
     Atomic::replace_if_null(&_Responsible, current);
@@ -834,6 +838,22 @@ void ObjectMonitor::EnterI(JavaThread* current) {
   for (;;) {
 
     if (TryLock(current) == TryLockResult::Success) {
+      break;
+    }
+
+    if (try_set_owner_from(DEFLATER_MARKER, current) == DEFLATER_MARKER) {
+      // Cancelled the in-progress async deflation by changing owner from
+      // DEFLATER_MARKER to current. As part of the contended enter protocol,
+      // contentions was incremented to a positive value before EnterI()
+      // was called and that prevents the deflater thread from winning the
+      // last part of the 2-part async deflation protocol. After EnterI()
+      // returns to enter(), contentions is decremented because the caller
+      // now owns the monitor. We bump contentions an extra time here to
+      // prevent the deflater thread from winning the last part of the
+      // 2-part async deflation protocol after the regular decrement
+      // occurs in enter(). The deflater thread will decrement contentions
+      // after it recognizes that the async deflation was cancelled.
+      add_to_contentions(1);
       break;
     }
     assert(owner_raw() != current, "invariant");
@@ -1207,7 +1227,7 @@ void ObjectMonitor::exit(JavaThread* current, bool not_suspended) {
     return;
   }
 
-  // Invariant: after setting Responsible=null an thread must execute
+  // Invariant: after setting Responsible=null a thread must execute
   // a MEMBAR or other serializing instruction before fetching EntryList|cxq.
   _Responsible = nullptr;
 
@@ -1272,8 +1292,36 @@ void ObjectMonitor::exit(JavaThread* current, bool not_suspended) {
     // to reacquire the lock the responsibility for ensuring succession
     // falls to the new owner.
     //
-    if (try_set_owner_from(nullptr, current) != nullptr) {
-      return;
+    void* owner = try_set_owner_from(nullptr, current);
+    if (owner != nullptr) {
+      if (owner != DEFLATER_MARKER) {
+        // Owned by another thread, so we are done.
+        return;
+      }
+
+      // The deflator owns the lock.  Try to cancel the deflation by
+      // first incrementing contentions...
+      add_to_contentions(1);
+
+      if (contentions() < 0) {
+        assert((intptr_t(_EntryList)|intptr_t(_cxq)) == 0 || _succ != nullptr, "");
+        add_to_contentions(-1);
+        // Mr. Deflator won the race, so we are done.
+        return;
+      }
+
+      // ... then try to take the ownership.
+      if (try_set_owner_from(DEFLATER_MARKER, current) == DEFLATER_MARKER) {
+        // We successfully canceled deflation.  ObjectMonitor::deflate_monitor()
+        // will decrement contentions, which is why we don't do it here.
+      } else {
+        owner = try_set_owner_from(nullptr, current);
+        add_to_contentions(-1);
+        if (owner != nullptr) {
+          // Owned by another thread, so we are done.
+          return;
+        }
+      }
     }
 
     guarantee(owner_raw() == current, "invariant");
