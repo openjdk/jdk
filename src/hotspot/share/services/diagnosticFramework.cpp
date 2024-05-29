@@ -400,6 +400,15 @@ void DCmd::parse_and_execute(DCmdSource source, outputStream* out,
       break;
     }
     if (line.is_executable()) {
+      // Allow for "<cmd> help" to enable help diagnostic command
+      // if the only argument provided is "help"
+      if (strcmp(line.args_addr(), " help") == 0) {
+        stringStream updated_line;
+        reorder_help_cmd(line, updated_line);
+        CmdLine updated_cmd(updated_line.base(),
+                            updated_line.size(), false);
+        line = updated_cmd;
+      }
       ResourceMark rm;
       DCmd* command = DCmdFactory::create_local_DCmd(source, line, out, CHECK);
       assert(command != nullptr, "command error must be handled before this line");
@@ -409,6 +418,11 @@ void DCmd::parse_and_execute(DCmdSource source, outputStream* out,
     }
     count++;
   }
+}
+
+void DCmd::reorder_help_cmd(CmdLine line, stringStream& updated_line) {
+  updated_line.print("%s", "help ");
+  updated_line.write(line.cmd_addr(), line.cmd_len());
 }
 
 void DCmdWithParser::parse(CmdLine* line, char delim, TRAPS) {

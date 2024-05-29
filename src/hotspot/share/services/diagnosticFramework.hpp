@@ -312,6 +312,8 @@ public:
   // management.cpp every time.
   static void register_dcmds();
 
+  // Helper method to substitute "<cmd> help" for "help <cmd>".
+  static void reorder_help_cmd(CmdLine line, stringStream& updated_line);
 };
 
 class DCmdWithParser : public DCmd {
