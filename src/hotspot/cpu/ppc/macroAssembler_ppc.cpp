@@ -2198,7 +2198,7 @@ bool MacroAssembler::lookup_secondary_supers_table(Register r_sub_klass,
 
   li(result, 1); // failure
   // We test the MSB of r_array_index, i.e. its sign bit
-  bgt(CCR0, L_fallthrough);
+  bge(CCR0, L_fallthrough);
 
   // We will consult the secondary-super array.
   ld(r_array_base, in_bytes(Klass::secondary_supers_offset()), r_sub_klass);
