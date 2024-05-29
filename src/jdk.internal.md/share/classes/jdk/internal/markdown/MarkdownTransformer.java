@@ -852,7 +852,7 @@ public class MarkdownTransformer implements JavacTrees.DocCommentTreeTransformer
                     var escapedIndex = s.lastIndexOf(escapedRef);
                     if (escapedIndex != -1) {
                         return new int[] {start + escapedIndex,
-                                          start + escapedIndex + ref.length()};
+                                          start + escapedIndex + escapedRef.length()};
                     }
                 }
             }
