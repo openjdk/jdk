@@ -66,7 +66,7 @@ public class ActionEventTest {
 
         frame = new Frame("ActionEventTest");
         frame.add(list);
-        frame.setSize(400,400);
+        frame.setSize(400, 400);
         frame.setLayout(new FlowLayout());
         frame.setLocationRelativeTo(null);
         frame.pack();

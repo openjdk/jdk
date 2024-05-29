@@ -148,7 +148,7 @@ public class KeyEventsTest {
         p2.add(multiple);
         keyFrame.add("South", p2);
 
-        keyFrame.setSize (200,200);
+        keyFrame.setSize(200, 200);
         keyFrame.validate();
         keyFrame.setUndecorated(true);
         keyFrame.setLocationRelativeTo(null);
