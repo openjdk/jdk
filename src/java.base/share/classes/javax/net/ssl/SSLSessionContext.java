@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,8 +88,9 @@ public interface SSLSessionContext {
      * If the timeout limit is set to 't' seconds, a session exceeds the
      * timeout limit 't' seconds after its creation time.
      * When the timeout limit is exceeded for a session, the
-     * <code>SSLSession</code> object is invalidated and future connections
-     * cannot resume or rejoin the session.
+     * <code>SSLSession</code> object is marked so that future connections
+     * cannot resume or rejoin the session. Sessions can continue to be used
+     * so long as resume and rejoin operations are not attempted.
      * A check for sessions exceeding the timeout is made immediately whenever
      * the timeout limit is changed for this <code>SSLSessionContext</code>.
      *
@@ -115,8 +116,9 @@ public interface SSLSessionContext {
      * If the timeout limit is set to 't' seconds, a session exceeds the
      * timeout limit 't' seconds after its creation time.
      * When the timeout limit is exceeded for a session, the
-     * <code>SSLSession</code> object is invalidated and future connections
-     * cannot resume or rejoin the session.
+     * <code>SSLSession</code> object is marked so that future connections
+     * cannot resume or rejoin the session. Sessions can continue to be used
+     * so long as resume and rejoin operations are not attempted.
      * A check for sessions exceeding the timeout limit is made immediately
      * whenever the timeout limit is changed for this
      * <code>SSLSessionContext</code>.
