@@ -26,7 +26,6 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "opto/addnode.hpp"
-#include "opto/c2compiler.hpp" // TODO remove?
 #include "opto/castnode.hpp"
 #include "opto/convertnode.hpp"
 #include "opto/matcher.hpp"
@@ -1807,24 +1806,6 @@ uint SuperWord::max_implemented_size(const Node_List* pack) {
   }
 }
 
-// TODO replace with _packset.isa_unique_input_or_null
-// TODO maybe as a separate RFE
-//------------------------------same_inputs--------------------------
-// For pack p, are all idx operands the same?
-bool SuperWord::same_inputs(const Node_List* p, int idx) const {
-  Node* p0 = p->at(0);
-  uint vlen = p->size();
-  Node* p0_def = p0->in(idx);
-  for (uint i = 1; i < vlen; i++) {
-    Node* pi = p->at(i);
-    Node* pi_def = pi->in(idx);
-    if (p0_def != pi_def) {
-      return false;
-    }
-  }
-  return true;
-}
-
 //------------------------------profitable---------------------------
 // For pack p, are all operands and all uses (with in the block) vector?
 bool SuperWord::profitable(const Node_List* p) const {
@@ -1859,10 +1840,12 @@ bool SuperWord::profitable(const Node_List* p) const {
     // case (different shift counts) because it is not supported yet.
     Node* cnt = p0->in(2);
     Node_List* cnt_pk = get_pack(cnt);
-    if (cnt_pk != nullptr)
+    if (cnt_pk != nullptr) {
       return false;
-    if (!same_inputs(p, 2))
+    }
+    if (_packset.isa_unique_input_or_null(p, 2) == nullptr) {
       return false;
+    }
   }
   if (!p0->is_Store()) {
     // For now, return false if not all uses are vector.
@@ -2184,14 +2167,14 @@ bool SuperWord::output() {
           in1 = vector_opd(p, 1);
           if (in1 == nullptr) {
             assert(false, "input in1 to vector operand was not created");
-            C->record_failure(C2Compiler::retry_no_superword());
+            //C->record_failure(C2Compiler::retry_no_superword());
             return false; // bailout
           }
         }
         Node* in2 = vector_opd(p, 2);
         if (in2 == nullptr) {
           assert(false, "input in2 to vector operand was not created");
-          C->record_failure(C2Compiler::retry_no_superword());
+          //C->record_failure(C2Compiler::retry_no_superword());
           return false; // bailout
         }
         if (in1->Opcode() == Op_Replicate && (node_isa_reduction == false) && (n->is_Add() || n->is_Mul())) {
@@ -2256,7 +2239,7 @@ bool SuperWord::output() {
         // vlen_in_bytes = vn->as_Vector()->length_in_bytes();
       } else {
         assert(false, "Unhandled scalar opcode (%s)", NodeClassNames[opc]);
-        C->record_failure(C2Compiler::retry_no_superword());
+        //C->record_failure(C2Compiler::retry_no_superword());
         return false; // bailout
       }
 
@@ -3735,7 +3718,9 @@ VTransformNode* SuperWordVTransformBuilder::find_input_for_vector(int j, Node_Li
   return nullptr;
 }
 
-// TODO desc: find existing node in_bb, or create new one for outside.
+// For a scalar node, find the vtnode. If the node is in_bb, then we should find
+// an existing vtnode. If the node is not in_bb, then we create a special "input"
+// vtnode for it.
 VTransformNode* SuperWordVTransformBuilder::find_scalar(Node* n) {
   if (in_bb(n)) {
     VTransformNode* vtn = _bb_idx_to_vtnode.at(bb_idx(n));

@@ -583,10 +583,6 @@ class SuperWord : public ResourceObj {
   int alignment(Node* n) const               { return _node_info.adr_at(bb_idx(n))->_alignment; }
   void set_alignment(Node* n, int a)         { int i = bb_idx(n); grow_node_info(i); _node_info.adr_at(i)->_alignment = a; }
 
-  // TODO remove?
-  // For pack p, are all idx operands the same?
-  bool same_inputs(const Node_List* p, int idx) const;
-
   // CloneMap utilities
   bool same_origin_idx(Node* a, Node* b) const;
   bool same_generation(Node* a, Node* b) const;
