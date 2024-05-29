@@ -1452,7 +1452,8 @@ void LIRGenerator::do_CheckCast(CheckCast* x) {
   }
   LIR_Opr reg = rlock_result(x);
   LIR_Opr tmp3 = LIR_OprFact::illegalOpr;
-  if (!x->klass()->is_loaded() || UseCompressedClassPointers) {
+  if (!x->klass()->is_loaded() || UseCompressedClassPointers
+      || UseSecondarySupersTable) {
     tmp3 = new_register(objectType);
   }
   LIR_Opr tmp4 = LIR_OprFact::illegalOpr;
@@ -1478,7 +1479,8 @@ void LIRGenerator::do_InstanceOf(InstanceOf* x) {
   }
   obj.load_item();
   LIR_Opr tmp3 = LIR_OprFact::illegalOpr;
-  if (!x->klass()->is_loaded() || UseCompressedClassPointers) {
+  if (!x->klass()->is_loaded() || UseCompressedClassPointers
+      || UseSecondarySupersTable) {
     tmp3 = new_register(objectType);
   }
   LIR_Opr tmp4 = LIR_OprFact::illegalOpr;

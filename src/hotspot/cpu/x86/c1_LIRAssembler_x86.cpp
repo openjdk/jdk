@@ -1654,10 +1654,6 @@ void LIR_Assembler::type_profile_helper(Register mdo,
   }
 }
 
-void poo() {
-  asm("nop");
-}
-
 void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, Label* failure, Label* obj_is_null) {
   // we always need a stub for the failure case.
   CodeStub* stub = op->stub();
