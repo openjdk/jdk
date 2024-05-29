@@ -1425,11 +1425,6 @@ const int ObjectAlignmentInBytes = 8;
           range(0, 100)                                                     \
           constraint(MaxHeapFreeRatioConstraintFunc,AfterErgo)              \
                                                                             \
-  product(bool, ShrinkHeapInSteps, true,                                    \
-          "When disabled, informs the GC to shrink the java heap directly"  \
-          " to the target size at the next full GC rather than requiring"   \
-          " smaller steps during multiple full GCs.")                       \
-                                                                            \
   product(intx, SoftRefLRUPolicyMSPerMB, 1000,                              \
           "Number of milliseconds per MB of free space in the heap")        \
           range(0, max_intx)                                                \
