@@ -1557,8 +1557,12 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
     // this object has a heavyweight monitor
 
     // null out memory for robustness
-    memset(ret.waiters, 0, ret.waiter_count * sizeof(jthread *));
-    memset(ret.notify_waiters, 0, ret.notify_waiter_count * sizeof(jthread *));
+    if (ret.waiters != nullptr) {
+      memset(ret.waiters, 0, ret.waiter_count * sizeof(jthread *));
+    }
+    if (ret.notify_waiters != nullptr) {
+      memset(ret.notify_waiters, 0, ret.notify_waiter_count * sizeof(jthread *));
+    }
 
     if (ret.waiter_count > 0) { // we have contending threads waiting to enter/re-enter the monitor
       // identify threads waiting to enter and re-enter the monitor
