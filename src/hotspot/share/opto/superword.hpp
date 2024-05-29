@@ -641,7 +641,6 @@ private:
   // For pack p, are all operands and all uses (with in the block) vector?
   bool profitable(const Node_List* p) const;
 
-  // TODO move or remove
   // Verify that all uses of packs are also packs, i.e. we do not need extract operations.
   DEBUG_ONLY(void verify_no_extract();)
 

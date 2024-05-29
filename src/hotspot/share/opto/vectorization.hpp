@@ -1378,8 +1378,8 @@ private:
   // Everything in the graph is allocated from this arena, including all vtnodes.
   Arena _arena;
 
-  VTransformNodeIDX _next_idx;             // TODO debug only?
-  GrowableArray<VTransformNode*> _vtnodes; // TODO debug only?
+  VTransformNodeIDX _next_idx;
+  GrowableArray<VTransformNode*> _vtnodes;
   VTransformNode* _cl_vtnode; // vtnode of the vloop.cl(), the "root" of the graph.
 
   // Schedule (linearization) of the graph. We use this to reorder the memory graph
@@ -1643,7 +1643,7 @@ public:
 
 class VTransformVectorNode : public VTransformNode {
 private:
-  GrowableArray<Node*> _nodes; // TODO make not growable?
+  GrowableArray<Node*> _nodes;
 
 public:
   VTransformVectorNode(VTransformGraph& graph, const int req, const int number_of_nodes) :

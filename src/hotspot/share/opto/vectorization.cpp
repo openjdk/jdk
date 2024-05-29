@@ -1827,7 +1827,6 @@ bool VTransformGraph::schedule() {
 #endif
           return false;
         }
-        // TODO phi and cl?
         stack.push(use);
       }
 
@@ -2263,7 +2262,7 @@ VTransformApplyStatus VTransformElementWiseVectorNode::apply(const VLoopAnalyzer
     return VTransformApplyStatus::make_vector(vn, vlen, vn->length_in_bytes());
   } else {
     DEBUG_ONLY(print();)
-    assert(false, "TODO element wise");
+    assert(false, "node type not handled");
     return VTransformApplyStatus::make_invalid();
   }
 }
