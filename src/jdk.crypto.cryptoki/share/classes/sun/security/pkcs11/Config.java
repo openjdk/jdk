@@ -48,7 +48,6 @@ import static sun.security.pkcs11.TemplateManager.*;
  * @since   1.5
  */
 final class Config {
-    public enum CTSVariant {CS1, CS2, CS3}
 
     static final int ERR_HALT       = 1;
     static final int ERR_IGNORE_ALL = 2;
@@ -168,7 +167,7 @@ final class Config {
     // CTS mode variant used by the token, as described in Addendum to NIST
     // Special Publication 800-38A, "Recommendation for Block Cipher Modes
     // of Operation: Three Variants of Ciphertext Stealing for CBC Mode".
-    private CTSVariant ctsVariant = CTSVariant.CS1;
+    private Token.CTSVariant ctsVariant = null;
 
     // whether to use NSS secmod mode. Implicitly set if nssLibraryDirectory,
     // nssSecmodDirectory, or nssModule is specified.
@@ -327,7 +326,7 @@ final class Config {
         return functionList;
     }
 
-    CTSVariant getCTSVariant() {
+    Token.CTSVariant getCTSVariant() {
         return ctsVariant;
     }
 
@@ -482,14 +481,8 @@ final class Config {
                 allowSingleThreadedModules = parseBooleanEntry(st.sval);
             case "functionList"->
                 functionList = parseStringEntry(st.sval);
-            case "cipherTextStealingVariant" -> {
-                try {
-                    ctsVariant = CTSVariant.valueOf(parseStringEntry(st.sval));
-                } catch (IllegalArgumentException ignored) {
-                    throw excToken("cipherTextStealingVariant must be one of " +
-                            Arrays.toString(CTSVariant.values()) + " :");
-                }
-            }
+            case "cipherTextStealingVariant"->
+                ctsVariant = parseEnumEntry(Token.CTSVariant.class, st.sval);
             case "nssUseSecmod"->
                 nssUseSecmod = parseBooleanEntry(st.sval);
             case "nssLibraryDirectory"-> {
@@ -643,6 +636,17 @@ final class Config {
             System.out.println(keyword + ": " + value);
         }
         return value;
+    }
+
+    private <E extends Enum<E>> E parseEnumEntry(Class<E> enumClass,
+            String keyword) throws IOException {
+        String value = parseStringEntry(keyword);
+        try {
+            return Enum.valueOf(enumClass, value);
+        } catch (IllegalArgumentException ignored) {
+            throw excToken(keyword + " must be one of " +
+                    Arrays.toString(enumClass.getEnumConstants()) + ", read:");
+        }
     }
 
     private boolean parseBoolean() throws IOException {

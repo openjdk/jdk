@@ -1299,7 +1299,13 @@ public final class SunPKCS11 extends AuthProvider {
                 }
                 continue;
             }
-
+            if (longMech == CKM_AES_CTS && token.ctsVariant == null) {
+                if (showInfo) {
+                    System.out.println("DISABLED due to an unspecified " +
+                            "cipherTextStealingVariant in configuration");
+                }
+                continue;
+            }
             if (brokenMechanisms.contains(longMech)) {
                 if (showInfo) {
                     System.out.println("DISABLED due to known issue with NSS");

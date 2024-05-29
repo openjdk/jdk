@@ -1156,13 +1156,14 @@ final class P11Cipher extends CipherSpi {
             // No reordering needed for a single block
             return;
         }
-        Config.CTSVariant tokenVariant = token.config.getCTSVariant();
-        if (tokenVariant == Config.CTSVariant.CS3) {
+        assert token.ctsVariant != null : "CTS algorithms should not be " +
+                "registered if the CTS variant of the token is unknown";
+        if (token.ctsVariant == Token.CTSVariant.CS3) {
             // Already CS3
             return;
         }
         int pad = end % blockSize;
-        if (tokenVariant == Config.CTSVariant.CS2 && pad != 0) {
+        if (token.ctsVariant == Token.CTSVariant.CS2 && pad != 0) {
             // CS2 and 'p' is a partial block, equal to CS3
             return;
         }
