@@ -101,10 +101,6 @@ class NativeInstruction {
   static bool maybe_cpool_ref(address instr) {
     return MacroAssembler::is_auipc_at(instr);
   }
-
-  bool is_membar() {
-    return (uint_at(0) & 0x7f) == 0b1111 && MacroAssembler::extract_funct3(addr_at(0)) == 0;
-  }
 };
 
 inline NativeInstruction* nativeInstruction_at(address addr) {
@@ -388,18 +384,6 @@ inline NativeCallTrampolineStub* nativeCallTrampolineStub_at(address addr) {
   assert_cond(addr != nullptr);
   assert(MacroAssembler::is_trampoline_stub_at(addr), "no call trampoline found");
   return (NativeCallTrampolineStub*)addr;
-}
-
-class NativeMembar : public NativeInstruction {
-public:
-  uint32_t get_kind();
-  void set_kind(uint32_t order_kind);
-};
-
-inline NativeMembar *NativeMembar_at(address addr) {
-  assert_cond(addr != nullptr);
-  assert(nativeInstruction_at(addr)->is_membar(), "no membar found");
-  return (NativeMembar*)addr;
 }
 
 // A NativePostCallNop takes the form of three instructions:

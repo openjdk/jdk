@@ -336,30 +336,6 @@ void NativeCallTrampolineStub::set_destination(address new_destination) {
   OrderAccess::release();
 }
 
-uint32_t NativeMembar::get_kind() {
-  uint32_t insn = uint_at(0);
-
-  uint32_t predecessor = Assembler::extract(insn, 27, 24);
-  uint32_t successor = Assembler::extract(insn, 23, 20);
-
-  return MacroAssembler::pred_succ_to_membar_mask(predecessor, successor);
-}
-
-void NativeMembar::set_kind(uint32_t order_kind) {
-  uint32_t predecessor = 0;
-  uint32_t successor = 0;
-
-  MacroAssembler::membar_mask_to_pred_succ(order_kind, predecessor, successor);
-
-  uint32_t insn = uint_at(0);
-  address pInsn = (address) &insn;
-  Assembler::patch(pInsn, 27, 24, predecessor);
-  Assembler::patch(pInsn, 23, 20, successor);
-
-  address membar = addr_at(0);
-  Assembler::sd_instr(membar, insn);
-}
-
 void NativePostCallNop::make_deopt() {
   MacroAssembler::assert_alignment(addr_at(0));
   NativeDeoptInstruction::insert(addr_at(0));

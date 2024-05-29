@@ -165,6 +165,36 @@ bool MacroAssembler::is_lwu_to_zr(address instr) {
           extract_rd(instr) == zr);         // zr
 }
 
+uint32_t MacroAssembler::get_membar_kind(address addr) {
+  assert_cond(addr != nullptr);
+  assert(is_membar(addr), "no membar found");
+
+  uint32_t insn = Bytes::get_native_u4(addr);
+
+  uint32_t predecessor = Assembler::extract(insn, 27, 24);
+  uint32_t successor = Assembler::extract(insn, 23, 20);
+
+  return MacroAssembler::pred_succ_to_membar_mask(predecessor, successor);
+}
+
+void MacroAssembler::set_membar_kind(address addr, uint32_t order_kind) {
+  assert_cond(addr != nullptr);
+  assert(is_membar(addr), "no membar found");
+
+  uint32_t predecessor = 0;
+  uint32_t successor = 0;
+
+  MacroAssembler::membar_mask_to_pred_succ(order_kind, predecessor, successor);
+
+  uint32_t insn = Bytes::get_native_u4(addr);
+  address pInsn = (address) &insn;
+  Assembler::patch(pInsn, 27, 24, predecessor);
+  Assembler::patch(pInsn, 23, 20, successor);
+
+  address membar = addr;
+  Assembler::sd_instr(membar, insn);
+}
+
 
 static void pass_arg0(MacroAssembler* masm, Register arg) {
   if (c_rarg0 != arg) {
@@ -2861,11 +2891,10 @@ void MacroAssembler::membar(uint32_t order_constraint) {
   address prev = pc() - MacroAssembler::instruction_size;
   address last = code()->last_insn();
 
-  if (last != nullptr && nativeInstruction_at(last)->is_membar() && prev == last) {
-    NativeMembar *bar = NativeMembar_at(prev);
+  if (last != nullptr && is_membar(last) && prev == last) {
     // We are merging two memory barrier instructions.  On RISCV we
     // can do this simply by ORing them together.
-    bar->set_kind(bar->get_kind() | order_constraint);
+    set_membar_kind(prev, get_membar_kind(prev) | order_constraint);
     BLOCK_COMMENT("merged membar");
   } else {
     code()->set_last_insn(pc());
