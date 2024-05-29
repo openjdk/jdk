@@ -77,7 +77,7 @@ public:
 
   size_t count_nodes(Tree tree) {
     int count = 0;
-    treap(tree).visit_range_in_order(0, 0xFFFFFF, [&](Node* x) {
+    treap(tree).visit_in_order([&](Node* x) {
       ++count;
     });
     return count;
