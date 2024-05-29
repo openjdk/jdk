@@ -227,36 +227,30 @@ class ModuleSourceLauncherTests {
         var mainFile = Files.writeString(packageFolder.resolve("Main.java"),
                 """
                 package p;
-                
+
                 import java.util.ServiceLoader;
                 import java.util.spi.ToolProvider;
-                
+
                 class Main {
                     public static void main(String... args) throws Exception {
                         System.out.println(Main.class + " in " + Main.class.getModule());
-                
                         System.out.println("1");
                         System.out.println(Main.class.getResource("/p/Main.java"));
                         System.out.println(Main.class.getResource("/p/Main.class"));
-                
                         System.out.println("2");
                         System.out.println(Main.class.getResource("/p/Tool.java"));
                         System.out.println(Main.class.getResource("/p/Tool.class"));
-                
                         System.out.println("3");
                         System.out.println(ToolProvider.findFirst("p.Tool")); // empty due to SCL being used
-                
                         System.out.println("4");
                         listToolProvidersIn(Main.class.getModule().getLayer());
-                
                         System.out.println("5");
                         Class.forName("p.Tool"); // trigger compilation of "p/Tool.java"
                         System.out.println(Main.class.getResource("/p/Tool.class"));
-                
                         System.out.println("6");
                         listToolProvidersIn(Main.class.getModule().getLayer());
                     }
-                
+
                     static void listToolProvidersIn(ModuleLayer layer) {
                         try {
                             ServiceLoader.load(layer, ToolProvider.class).stream()
@@ -272,19 +266,19 @@ class ModuleSourceLauncherTests {
         Files.writeString(packageFolder.resolve("Tool.java"),
                 """
                 package p;
-                
+
                 import java.io.PrintWriter;
                 import java.util.spi.ToolProvider;
-                
+
                 public record Tool(String name) implements ToolProvider {
                    public static void main(String... args) {
                      System.exit(new Tool().run(System.out, System.err, args));
                    }
-                
+
                    public Tool() {
                      this(Tool.class.getName());
                    }
-                
+
                    @Override
                    public int run(PrintWriter out, PrintWriter err, String... args) {
                      out.println(name + "/out");
