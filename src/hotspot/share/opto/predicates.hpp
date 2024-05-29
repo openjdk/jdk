@@ -199,7 +199,7 @@ class AssertionPredicatesWithHalt : public StackObj {
   Node* _entry;
 
   static Node* find_entry(Node* start_proj);
-  static bool has_opaque4(const Node* predicate_proj);
+  static bool has_assertion_predicate_opaque(const Node* predicate_proj);
   static bool has_halt(const Node* success_proj);
   static bool is_assertion_predicate_success_proj(const Node* predicate_proj);
 

@@ -2018,7 +2018,7 @@ public:
                                Register yz_idx, Register idx, Register jdx,
                                Register carry, Register product,
                                Register carry2);
-  void multiply_to_len(Register x, Register xlen, Register y, Register ylen, Register z, Register zlen,
+  void multiply_to_len(Register x, Register xlen, Register y, Register ylen, Register z, Register tmp0,
                        Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5);
   void square_rshift(Register x, Register len, Register z, Register tmp1, Register tmp3,
                      Register tmp4, Register tmp5, Register rdxReg, Register raxReg);

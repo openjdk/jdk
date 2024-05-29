@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,13 +21,15 @@
  * questions.
  */
 
- // key: compiler.misc.feature.super.init
- // key: compiler.warn.preview.feature.use
- // options: --enable-preview -source ${jdk.version} -Xlint:preview
+ // key: compiler.note.preview.filename
+ // key: compiler.note.preview.recompile
+ // key: compiler.err.cant.assign.initialized.before.ctor.called
+ // options: --enable-preview  -source ${jdk.version}
 
-class FeatureStatementsBeforeSuper {
-    FeatureStatementsBeforeSuper() {
-        System.out.println();
+class CantAssignInitializedBeforeCtorCalled {
+    int x = 1;
+    CantAssignInitializedBeforeCtorCalled() {
+        x = 2;
         super();
     }
 }
