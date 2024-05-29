@@ -60,10 +60,10 @@ public class CarrierThreadEventNotification {
         }
         for (int cnt = 0; cnt < 500; cnt++) {
             setSingleSteppingMode(true);
-            Thread.sleep(10);   
+            Thread.sleep(10);
             setSingleSteppingMode(false);
         }
-        stopRunning = true;   
+        stopRunning = true;
         for (Thread t : virtualThreads) {
             t.join();
         }
