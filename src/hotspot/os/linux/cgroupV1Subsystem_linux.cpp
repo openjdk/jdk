@@ -123,12 +123,11 @@ jlong CgroupV1MemoryController::read_memory_limit_in_bytes(julong phys_mem) {
         return OSCONTAINER_ERROR;
       }
       log_trace(os, container)("Hierarchical Memory Limit is: " JULONG_FORMAT, hier_memlimit);
-      if (hier_memlimit >= phys_mem) {
-        log_trace(os, container)("Hierarchical Memory Limit is: Unlimited");
-      } else {
+      if (hier_memlimit < phys_mem) {
         do_trace_log(hier_memlimit, phys_mem);
         return (jlong)hier_memlimit;
       }
+      log_trace(os, container)("Hierarchical Memory Limit is: Unlimited");
     }
     do_trace_log(memlimit, phys_mem);
     return (jlong)-1;
