@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8301580 8322159
+ * @bug 8301580 8322159 8333107
  * @summary Verify error recovery w.r.t. Attr
  * @library /tools/lib
  * @enablePreview
@@ -124,8 +124,8 @@ public class AttrRecovery extends TestRunner {
         }
     }
 
-    @Test
-    public void testY() throws Exception {
+    @Test //JDK-8333107
+    public void testNestedLambda() throws Exception {
         String code = """
                       public class Dummy {
                           private void main() {
@@ -134,6 +134,12 @@ public class AttrRecovery extends TestRunner {
                                   l.map(b -> {
                                       return null;
                                   });
+                                  l.map(new FI() {
+                                      public String convert(String s) {
+                                          return null;
+                                      }
+                                  });
+                                  class Local {}
                               });
                           }
                           public interface Stream {
