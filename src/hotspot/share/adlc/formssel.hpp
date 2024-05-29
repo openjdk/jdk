@@ -221,10 +221,11 @@ public:
   // Does this instruction need a base-oop edge?
   int needs_base_oop_edge(FormDict &globals) const;
 
-  // Build instruction predicates.  If the user uses the same operand name
-  // twice, we need to check that the operands are pointer-eequivalent in
-  // the DFA during the labeling process.
-  Predicate *build_predicate();
+  // Build predicates for instructions or operands.
+  //
+  // If the user uses the same operand name twice, we need to check that the
+  // operands are pointer-equivalent in the DFA during the labeling process.
+  static Predicate* build_predicate(MatchRule* matrule, Predicate* predicate);
 
   virtual void        build_components(); // top-level operands
   // Return zero-based position in component list; -1 if not in list.

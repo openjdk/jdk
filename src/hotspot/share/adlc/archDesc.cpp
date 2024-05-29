@@ -249,6 +249,15 @@ void ArchDesc::inspectOperands() {
     MatchRule *mrule = op->_matrule;
     Predicate *pred  = op->_predicate;
 
+    // If there are multiple arguments, we need to insert
+    // parentheses for predicate so that these arguments
+    // can be chained together logically with "&&".
+    if (op->_matrule &&
+        !(op->_matrule->_lChild == nullptr &&
+          op->_matrule->_rChild == nullptr)) {
+      pred = InstructForm::build_predicate(op->_matrule, op->_predicate);
+    }
+
     // Grab the machine type of the operand
     const char  *rootOp    = op->_ident;
     mrule->_machType  = rootOp;
@@ -296,7 +305,7 @@ void ArchDesc::inspectInstructions() {
     if ( instr->_matrule == nullptr )  continue;
 
     MatchRule &mrule = *instr->_matrule;
-    Predicate *pred  =  instr->build_predicate();
+    Predicate* pred  = InstructForm::build_predicate(instr->_matrule, instr->_predicate);
 
     // Grab the machine type of the operand
     const char  *rootOp    = instr->_ident;

@@ -1525,24 +1525,25 @@ void MachNodeForm::output(FILE *fp) {
 }
 
 //------------------------------build_predicate--------------------------------
-// Build instruction predicates.  If the user uses the same operand name
-// twice, we need to check that the operands are pointer-eequivalent in
-// the DFA during the labeling process.
-Predicate *InstructForm::build_predicate() {
+// Build predicates for instructions or operands.
+//
+// If the user uses the same operand name twice, we need to check that
+// the operands are pointer-equivalent in the DFA during the labeling process.
+Predicate* InstructForm::build_predicate(MatchRule* matrule, Predicate* predicate) {
   const int buflen = 1024;
   char buf[buflen], *s=buf;
   Dict names(cmpstr,hashstr,Form::arena);       // Map Names to counts
 
-  MatchNode *mnode =
-    strcmp(_matrule->_opType, "Set") ? _matrule : _matrule->_rChild;
+  MatchNode* mnode =
+    strcmp(matrule->_opType, "Set") ? matrule : matrule->_rChild;
   if (mnode != nullptr) mnode->count_instr_names(names);
 
   uint first = 1;
   // Start with the predicate supplied in the .ad file.
-  if (_predicate) {
+  if (predicate) {
     if (first) first = 0;
     strcpy(s, "("); s += strlen(s);
-    strncpy(s, _predicate->_pred, buflen - strlen(s) - 1);
+    strncpy(s, predicate->_pred, buflen - strlen(s) - 1);
     s += strlen(s);
     strcpy(s, ")"); s += strlen(s);
   }
