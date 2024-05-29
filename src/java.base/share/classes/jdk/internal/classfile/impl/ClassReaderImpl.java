@@ -25,8 +25,6 @@
 
 package jdk.internal.classfile.impl;
 
-import jdk.internal.vm.annotation.Stable;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
