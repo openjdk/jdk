@@ -50,7 +50,7 @@ public final class JVM {
      */
     public static final Object CHUNK_ROTATION_MONITOR = new ChunkRotationMonitor();
 
-    private volatile static boolean nativeOK;
+    private static volatile boolean nativeOK;
 
     private static native void registerNatives();
 
@@ -628,6 +628,12 @@ public final class JVM {
     public static native long hostTotalMemory();
 
     /**
+     * Returns the total amount of swap memory of the host system whether or not this
+     * JVM runs in a container.
+     */
+    public static native long hostTotalSwapMemory();
+
+    /**
      * Emit a jdk.DataLoss event for the specified amount of bytes.
      *
      * @param bytes number of bytes that were lost
@@ -659,4 +665,12 @@ public final class JVM {
      * @param stackFilterId the stack filter ID to unregister
      */
     public static native void unregisterStackFilter(long stackFilterId);
+
+    /**
+     * Sets bits used for event settings, like cutoff(ticks) and level
+     *
+     * @param eventTypeId the id of the event type
+     * @param value
+     */
+    public static native void setMiscellaneous(long eventTypeId, long value);
 }

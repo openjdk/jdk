@@ -60,9 +60,10 @@ class InterpreterCodelet: public Stub {
   // General info/converters
   int     size() const                           { return _size; }
   static  int alignment()                        { return HeapWordSize; }
+  static  int code_alignment()                   { return CodeEntryAlignment; }
 
   // Code info
-  address code_begin() const                     { return align_up((address)this + sizeof(InterpreterCodelet), CodeEntryAlignment); }
+  address code_begin() const                     { return align_up((address)this + sizeof(InterpreterCodelet), code_alignment()); }
   address code_end() const                       { return (address)this + size(); }
 
   // Debugging

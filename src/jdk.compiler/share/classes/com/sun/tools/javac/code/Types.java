@@ -1701,7 +1701,7 @@ public class Types {
                     // permitted subtypes have to be disjoint with the other symbol
                     ClassSymbol sealedOne = ts.isSealed() ? ts : ss;
                     ClassSymbol other = sealedOne == ts ? ss : ts;
-                    return sealedOne.permitted.stream().allMatch(sym -> areDisjoint((ClassSymbol)sym, other));
+                    return sealedOne.getPermittedSubclasses().stream().allMatch(type -> areDisjoint((ClassSymbol)type.tsym, other));
                 }
                 return false;
             }
@@ -2407,20 +2407,26 @@ public class Types {
     }
     // where
         private TypeMapping<Boolean> erasure = new StructuralTypeMapping<Boolean>() {
+            @SuppressWarnings("fallthrough")
             private Type combineMetadata(final Type s,
                                          final Type t) {
                 if (t.getMetadata().nonEmpty()) {
-                    switch (s.getKind()) {
-                        case OTHER:
-                        case UNION:
-                        case INTERSECTION:
-                        case PACKAGE:
-                        case EXECUTABLE:
-                        case NONE:
-                        case VOID:
-                        case ERROR:
+                    switch (s.getTag()) {
+                        case CLASS:
+                            if (s instanceof UnionClassType ||
+                                s instanceof IntersectionClassType) {
+                                return s;
+                            }
+                            //fall-through
+                        case BYTE, CHAR, SHORT, LONG, FLOAT, INT, DOUBLE, BOOLEAN,
+                             ARRAY, MODULE, TYPEVAR, WILDCARD, BOT:
+                            return s.dropMetadata(Annotations.class);
+                        case VOID, METHOD, PACKAGE, FORALL, DEFERRED,
+                             NONE, ERROR, UNKNOWN, UNDETVAR, UNINITIALIZED_THIS,
+                             UNINITIALIZED_OBJECT:
                             return s;
-                        default: return s.dropMetadata(Annotations.class);
+                        default:
+                            throw new AssertionError(s.getTag().name());
                     }
                 } else {
                     return s;
@@ -4728,6 +4734,10 @@ public class Types {
 
         boolean high;
         boolean rewriteTypeVars;
+        // map to avoid visiting same type argument twice, like in Foo<T>.Bar<T>
+        Map<Type, Type> argMap = new HashMap<>();
+        // cycle detection within an argument, see JDK-8324809
+        Set<Type> seen = new HashSet<>();
 
         Rewriter(boolean high, boolean rewriteTypeVars) {
             this.high = high;
@@ -4739,7 +4749,10 @@ public class Types {
             ListBuffer<Type> rewritten = new ListBuffer<>();
             boolean changed = false;
             for (Type arg : t.allparams()) {
-                Type bound = visit(arg);
+                Type bound = argMap.get(arg);
+                if (bound == null) {
+                    argMap.put(arg, bound = visit(arg));
+                }
                 if (arg != bound) {
                     changed = true;
                 }
@@ -4768,13 +4781,17 @@ public class Types {
 
         @Override
         public Type visitTypeVar(TypeVar t, Void s) {
-            if (rewriteTypeVars) {
-                Type bound = t.getUpperBound().contains(t) ?
-                        erasure(t.getUpperBound()) :
-                        visit(t.getUpperBound());
-                return rewriteAsWildcardType(bound, t, EXTENDS);
+            if (seen.add(t)) {
+                if (rewriteTypeVars) {
+                    Type bound = t.getUpperBound().contains(t) ?
+                            erasure(t.getUpperBound()) :
+                            visit(t.getUpperBound());
+                    return rewriteAsWildcardType(bound, t, EXTENDS);
+                } else {
+                    return t;
+                }
             } else {
-                return t;
+                return rewriteTypeVars ? makeExtendsWildcard(syms.objectType, t) : t;
             }
         }
 
@@ -5018,6 +5035,52 @@ public class Types {
     }
     // </editor-fold>
 
+    // <editor-fold defaultstate="collapsed" desc="Unconditionality">
+    /** Check unconditionality between any combination of reference or primitive types.
+     *
+     *  Rules:
+     *    an identity conversion
+     *    a widening reference conversion
+     *    a widening primitive conversion (delegates to `checkUnconditionallyExactPrimitives`)
+     *    a boxing conversion
+     *    a boxing conversion followed by a widening reference conversion
+     *
+     *  @param source     Source primitive or reference type
+     *  @param target     Target primitive or reference type
+     */
+    public boolean isUnconditionallyExact(Type source, Type target) {
+        if (isSameType(source, target)) {
+            return true;
+        }
+
+        return target.isPrimitive()
+                ? isUnconditionallyExactPrimitives(source, target)
+                : isSubtype(boxedTypeOrType(erasure(source)), target);
+    }
+
+    /** Check unconditionality between primitive types.
+     *
+     *  - widening from one integral type to another,
+     *  - widening from one floating point type to another,
+     *  - widening from byte, short, or char to a floating point type,
+     *  - widening from int to double.
+     *
+     *  @param selectorType     Type of selector
+     *  @param targetType       Target type
+     */
+    public boolean isUnconditionallyExactPrimitives(Type selectorType, Type targetType) {
+        if (isSameType(selectorType, targetType)) {
+            return true;
+        }
+
+        return (selectorType.isPrimitive() && targetType.isPrimitive()) &&
+                ((selectorType.hasTag(BYTE) && !targetType.hasTag(CHAR)) ||
+                 (selectorType.hasTag(SHORT) && (selectorType.getTag().isStrictSubRangeOf(targetType.getTag()))) ||
+                 (selectorType.hasTag(CHAR)  && (selectorType.getTag().isStrictSubRangeOf(targetType.getTag())))  ||
+                 (selectorType.hasTag(INT)   && (targetType.hasTag(DOUBLE) || targetType.hasTag(LONG))) ||
+                 (selectorType.hasTag(FLOAT) && (selectorType.getTag().isStrictSubRangeOf(targetType.getTag()))));
+    }
+    // </editor-fold>
 
     // <editor-fold defaultstate="collapsed" desc="Annotation support">
 

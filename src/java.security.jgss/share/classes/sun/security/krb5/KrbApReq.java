@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,8 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import sun.security.krb5.internal.rcache.AuthTimeWithHash;
 
+import static sun.security.krb5.internal.Krb5.DEBUG;
+
 /**
  * This class encapsulates a KRB-AP-REQ that a client sends to a
  * server for authentication.
@@ -57,7 +59,6 @@ public class KrbApReq {
 
     // Used by acceptor side
     private static ReplayCache rcache = ReplayCache.getInstance();
-    private static boolean DEBUG = Krb5.DEBUG;
     private static final char[] hexConst = "0123456789ABCDEF".toCharArray();
 
     /**
@@ -109,8 +110,8 @@ public class KrbApReq {
         APOptions apOptions = (mutualRequired?
                                new APOptions(Krb5.AP_OPTS_MUTUAL_REQUIRED):
                                new APOptions());
-        if (DEBUG)
-            System.out.println(">>> KrbApReq: APOptions are " + apOptions);
+        if (DEBUG != null)
+            DEBUG.println(">>> KrbApReq: APOptions are " + apOptions);
 
         EncryptionKey subKey = (useSubKey?
                                 new EncryptionKey(tgsCred.getSessionKey()):
@@ -329,8 +330,8 @@ public class KrbApReq {
             HostAddress sender = new HostAddress(initiator);
             if (enc_ticketPart.caddr != null
                     && !enc_ticketPart.caddr.inList(sender)) {
-                if (DEBUG) {
-                    System.out.println(">>> KrbApReq: initiator is "
+                if (DEBUG != null) {
+                    DEBUG.println(">>> KrbApReq: initiator is "
                             + sender.getInetAddress()
                             + ", but caddr is "
                             + Arrays.toString(
@@ -374,8 +375,8 @@ public class KrbApReq {
                                 enc_ticketPart.renewTill,
                                 enc_ticketPart.caddr,
                                 enc_ticketPart.authorizationData);
-        if (DEBUG) {
-            System.out.println(">>> KrbApReq: authenticate succeed.");
+        if (DEBUG != null) {
+            DEBUG.println(">>> KrbApReq: authenticate succeed.");
         }
     }
 

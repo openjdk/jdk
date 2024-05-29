@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,20 +28,41 @@ package sun.awt;
 import java.awt.GraphicsEnvironment;
 import java.awt.Toolkit;
 
+import sun.awt.windows.WToolkit;
+
 public class PlatformGraphicsInfo {
+
+    private static final boolean hasDisplays;
+
+    static {
+        loadAWTLibrary();
+        hasDisplays = hasDisplays0();
+    }
+
+    @SuppressWarnings("removal")
+    private static void loadAWTLibrary() {
+        java.security.AccessController.doPrivileged(
+            new java.security.PrivilegedAction<Void>() {
+                public Void run() {
+                    System.loadLibrary("awt");
+                    return null;
+                }
+            });
+    }
+
+    private static native boolean hasDisplays0();
 
     public static GraphicsEnvironment createGE() {
         return new Win32GraphicsEnvironment();
     }
 
     public static Toolkit createToolkit() {
-        return new sun.awt.windows.WToolkit();
+        return new WToolkit();
     }
 
     public static boolean getDefaultHeadlessProperty() {
-        // On Windows, we assume we can always create headful apps.
-        // Here is where we can add code that would actually check.
-        return false;
+        // If we don't find usable displays, we run headless.
+        return !hasDisplays;
     }
 
     /*
@@ -54,5 +75,4 @@ public class PlatformGraphicsInfo {
             "\nThe application does not have desktop access,\n" +
             "but this program performed an operation which requires it.";
     }
-
 }

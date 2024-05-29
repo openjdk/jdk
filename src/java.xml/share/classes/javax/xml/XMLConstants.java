@@ -258,7 +258,7 @@ public final class XMLConstants {
          * <p>
          * <b>Configuration File:</b>
          * Yes. The property can be set in the
-         * <a href="{@docRoot}/java.xml/module-summary.html#ConfigurationFile">configuration file</a>.
+         * <a href="{@docRoot}/java.xml/module-summary.html#Conf_CF">configuration file</a>.
          *
          * @since 1.7
          */
@@ -283,7 +283,7 @@ public final class XMLConstants {
          * <p>
          * <b>Configuration File:</b>
          * Yes. The property can be set in the
-         * <a href="{@docRoot}/java.xml/module-summary.html#ConfigurationFile">configuration file</a>.
+         * <a href="{@docRoot}/java.xml/module-summary.html#Conf_CF">configuration file</a>.
         *
          * @since 1.7
          */
@@ -310,7 +310,7 @@ public final class XMLConstants {
          * <p>
          * <b>Configuration File:</b>
          * Yes. The property can be set in the
-         * <a href="{@docRoot}/java.xml/module-summary.html#ConfigurationFile">configuration file</a>.
+         * <a href="{@docRoot}/java.xml/module-summary.html#Conf_CF">configuration file</a>.
          *
          * @since 1.7
          */
@@ -345,7 +345,7 @@ public final class XMLConstants {
          * <p>
          * <b>Configuration File:</b>
          * Yes. The property can be set in the
-         * <a href="{@docRoot}/java.xml/module-summary.html#ConfigurationFile">configuration file</a>.
+         * <a href="{@docRoot}/java.xml/module-summary.html#Conf_CF">configuration file</a>.
          *
          * @since 9
          */

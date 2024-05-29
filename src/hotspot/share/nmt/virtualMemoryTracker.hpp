@@ -132,7 +132,6 @@ class VirtualMemorySnapshot : public ResourceObj {
 
 class VirtualMemorySummary : AllStatic {
  public:
-  static void initialize();
 
   static inline void record_reserved_memory(size_t size, MEMFLAGS flag) {
     as_snapshot()->by_type(flag)->reserve_memory(size);
@@ -167,11 +166,11 @@ class VirtualMemorySummary : AllStatic {
   static void snapshot(VirtualMemorySnapshot* s);
 
   static VirtualMemorySnapshot* as_snapshot() {
-    return (VirtualMemorySnapshot*)_snapshot;
+    return &_snapshot;
   }
 
  private:
-  static size_t _snapshot[CALC_OBJ_SIZE_IN_TYPE(VirtualMemorySnapshot, size_t)];
+  static VirtualMemorySnapshot _snapshot;
 };
 
 
@@ -391,7 +390,7 @@ class VirtualMemoryTracker : AllStatic {
   // Given an existing memory mapping registered with NMT, split the mapping in
   //  two. The newly created two mappings will be registered under the call
   //  stack and the memory flags of the original section.
-  static bool split_reserved_region(address addr, size_t size, size_t split);
+  static bool split_reserved_region(address addr, size_t size, size_t split, MEMFLAGS flag, MEMFLAGS split_flag);
 
   // Walk virtual memory data structure for creating baseline, etc.
   static bool walk_virtual_memory(VirtualMemoryWalker* walker);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@
 #include "services/lowMemoryDetector.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 class MemAllocator::Allocation: StackObj {
   friend class MemAllocator;
@@ -122,21 +123,21 @@ bool MemAllocator::Allocation::check_out_of_memory() {
   }
 
   const char* message = _overhead_limit_exceeded ? "GC overhead limit exceeded" : "Java heap space";
-  if (!_thread->in_retryable_allocation()) {
+  if (!_thread->is_in_internal_oome_mark()) {
     // -XX:+HeapDumpOnOutOfMemoryError and -XX:OnOutOfMemoryError support
     report_java_out_of_memory(message);
-
     if (JvmtiExport::should_post_resource_exhausted()) {
       JvmtiExport::post_resource_exhausted(
         JVMTI_RESOURCE_EXHAUSTED_OOM_ERROR | JVMTI_RESOURCE_EXHAUSTED_JAVA_HEAP,
         message);
     }
+
     oop exception = _overhead_limit_exceeded ?
         Universe::out_of_memory_error_gc_overhead_limit() :
         Universe::out_of_memory_error_java_heap();
     THROW_OOP_(exception, true);
   } else {
-    THROW_OOP_(Universe::out_of_memory_error_retry(), true);
+    THROW_OOP_(Universe::out_of_memory_error_java_heap_without_backtrace(), true);
   }
 }
 
@@ -146,7 +147,7 @@ void MemAllocator::Allocation::verify_before() {
   JavaThread* THREAD = _thread; // For exception macros.
   assert(!HAS_PENDING_EXCEPTION, "Should not allocate with exception pending");
   debug_only(check_for_valid_allocation_state());
-  assert(!Universe::heap()->is_gc_active(), "Allocation during gc not allowed");
+  assert(!Universe::heap()->is_stw_gc_active(), "Allocation during GC pause not allowed");
 }
 
 #ifdef ASSERT
@@ -249,19 +250,6 @@ HeapWord* MemAllocator::mem_allocate_outside_tlab(Allocation& allocation) const 
   return mem;
 }
 
-HeapWord* MemAllocator::mem_allocate_inside_tlab(Allocation& allocation) const {
-  assert(UseTLAB, "should use UseTLAB");
-
-  // Try allocating from an existing TLAB.
-  HeapWord* mem = mem_allocate_inside_tlab_fast();
-  if (mem != nullptr) {
-    return mem;
-  }
-
-  // Try refilling the TLAB and allocating the object in it.
-  return mem_allocate_inside_tlab_slow(allocation);
-}
-
 HeapWord* MemAllocator::mem_allocate_inside_tlab_fast() const {
   return _thread->tlab().allocate(_word_size);
 }
@@ -315,26 +303,30 @@ HeapWord* MemAllocator::mem_allocate_inside_tlab_slow(Allocation& allocation) co
          PTR_FORMAT " min: " SIZE_FORMAT ", desired: " SIZE_FORMAT,
          p2i(mem), min_tlab_size, new_tlab_size);
 
+  // ...and clear or zap just allocated TLAB, if needed.
   if (ZeroTLAB) {
-    // ..and clear it.
     Copy::zero_to_words(mem, allocation._allocated_tlab_size);
-  } else {
-    // ...and zap just allocated object.
-#ifdef ASSERT
+  } else if (ZapTLAB) {
     // Skip mangling the space corresponding to the object header to
     // ensure that the returned space is not considered parsable by
     // any concurrent GC thread.
     size_t hdr_size = oopDesc::header_size();
     Copy::fill_to_words(mem + hdr_size, allocation._allocated_tlab_size - hdr_size, badHeapWordVal);
-#endif // ASSERT
   }
 
   tlab.fill(mem, mem + _word_size, allocation._allocated_tlab_size);
   return mem;
 }
 
+HeapWord* MemAllocator::mem_allocate(Allocation& allocation) const {
+  if (UseTLAB) {
+    // Try allocating from an existing TLAB.
+    HeapWord* mem = mem_allocate_inside_tlab_fast();
+    if (mem != nullptr) {
+      return mem;
+    }
+  }
 
-HeapWord* MemAllocator::mem_allocate_slow(Allocation& allocation) const {
   // Allocation of an oop can always invoke a safepoint.
   debug_only(allocation._thread->check_for_valid_safepoint_state());
 
@@ -347,18 +339,6 @@ HeapWord* MemAllocator::mem_allocate_slow(Allocation& allocation) const {
   }
 
   return mem_allocate_outside_tlab(allocation);
-}
-
-HeapWord* MemAllocator::mem_allocate(Allocation& allocation) const {
-  if (UseTLAB) {
-    // Try allocating from an existing TLAB.
-    HeapWord* mem = mem_allocate_inside_tlab_fast();
-    if (mem != nullptr) {
-      return mem;
-    }
-  }
-
-  return mem_allocate_slow(allocation);
 }
 
 oop MemAllocator::allocate() const {
@@ -408,10 +388,29 @@ oop ObjArrayAllocator::initialize(HeapWord* mem) const {
   assert(_length >= 0, "length should be non-negative");
   if (_do_zero) {
     mem_clear(mem);
+    mem_zap_end_padding(mem);
   }
   arrayOopDesc::set_length(mem, _length);
   return finish(mem);
 }
+
+#ifndef PRODUCT
+void ObjArrayAllocator::mem_zap_end_padding(HeapWord* mem) const {
+  const size_t length_in_bytes = static_cast<size_t>(_length) << ArrayKlass::cast(_klass)->log2_element_size();
+  const BasicType element_type = ArrayKlass::cast(_klass)->element_type();
+  const size_t base_offset_in_bytes = arrayOopDesc::base_offset_in_bytes(element_type);
+  const size_t size_in_bytes = _word_size * BytesPerWord;
+
+  const address obj_end = reinterpret_cast<address>(mem) + size_in_bytes;
+  const address base = reinterpret_cast<address>(mem) + base_offset_in_bytes;
+  const address elements_end = base + length_in_bytes;
+  assert(elements_end <= obj_end, "payload must fit in object");
+  if (elements_end < obj_end) {
+    const size_t padding_in_bytes = obj_end - elements_end;
+    Copy::fill_to_bytes(elements_end, padding_in_bytes, heapPaddingByteVal);
+  }
+}
+#endif
 
 oop ClassAllocator::initialize(HeapWord* mem) const {
   // Set oop_size field before setting the _klass field because a

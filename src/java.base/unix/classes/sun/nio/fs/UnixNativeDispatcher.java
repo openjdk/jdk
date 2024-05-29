@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package sun.nio.fs;
 
 import java.util.function.Function;
-import jdk.internal.misc.Blocker;
 
 /**
  * Unix system and library calls.
@@ -67,12 +66,7 @@ class UnixNativeDispatcher {
      */
     static int open(UnixPath path, int flags, int mode) throws UnixException {
         try (NativeBuffer buffer = copyToNativeBuffer(path)) {
-            long comp = Blocker.begin();
-            try {
-                return open0(buffer.address(), flags, mode);
-            } finally {
-                Blocker.end(comp);
-            }
+            return open0(buffer.address(), flags, mode);
         }
     }
     private static native int open0(long pathAddress, int flags, int mode)
@@ -83,12 +77,7 @@ class UnixNativeDispatcher {
      */
     static int openat(int dfd, byte[] path, int flags, int mode) throws UnixException {
         try (NativeBuffer buffer = NativeBuffers.asNativeBuffer(path)) {
-            long comp = Blocker.begin();
-            try {
-                return openat0(dfd, buffer.address(), flags, mode);
-            } finally {
-                Blocker.end(comp);
-            }
+            return openat0(dfd, buffer.address(), flags, mode);
         }
     }
     private static native int openat0(int dfd, long pathAddress, int flags, int mode)
@@ -138,12 +127,7 @@ class UnixNativeDispatcher {
     static void link(UnixPath existing, UnixPath newfile) throws UnixException {
         try (NativeBuffer existingBuffer = copyToNativeBuffer(existing);
              NativeBuffer newBuffer = copyToNativeBuffer(newfile)) {
-            long comp = Blocker.begin();
-            try {
-                link0(existingBuffer.address(), newBuffer.address());
-            } finally {
-                Blocker.end(comp);
-            }
+            link0(existingBuffer.address(), newBuffer.address());
         }
     }
     private static native void link0(long existingAddress, long newAddress)
@@ -154,12 +138,7 @@ class UnixNativeDispatcher {
      */
     static void unlink(UnixPath path) throws UnixException {
         try (NativeBuffer buffer = copyToNativeBuffer(path)) {
-            long comp = Blocker.begin();
-            try {
-                unlink0(buffer.address());
-            } finally {
-                Blocker.end(comp);
-            }
+            unlink0(buffer.address());
         }
     }
     private static native void unlink0(long pathAddress) throws UnixException;
@@ -169,12 +148,7 @@ class UnixNativeDispatcher {
      */
     static void unlinkat(int dfd, byte[] path, int flag) throws UnixException {
         try (NativeBuffer buffer = NativeBuffers.asNativeBuffer(path)) {
-            long comp = Blocker.begin();
-            try {
-                unlinkat0(dfd, buffer.address(), flag);
-            } finally {
-                Blocker.end(comp);
-            }
+            unlinkat0(dfd, buffer.address(), flag);
         }
     }
     private static native void unlinkat0(int dfd, long pathAddress, int flag)
@@ -185,12 +159,7 @@ class UnixNativeDispatcher {
      */
     static void mknod(UnixPath path, int mode, long dev) throws UnixException {
         try (NativeBuffer buffer = copyToNativeBuffer(path)) {
-            long comp = Blocker.begin();
-            try {
-                mknod0(buffer.address(), mode, dev);
-            } finally {
-                Blocker.end(comp);
-            }
+            mknod0(buffer.address(), mode, dev);
         }
     }
     private static native void mknod0(long pathAddress, int mode, long dev)
@@ -202,12 +171,7 @@ class UnixNativeDispatcher {
     static void rename(UnixPath from, UnixPath to) throws UnixException {
         try (NativeBuffer fromBuffer = copyToNativeBuffer(from);
              NativeBuffer toBuffer = copyToNativeBuffer(to)) {
-            long comp = Blocker.begin();
-            try {
-                rename0(fromBuffer.address(), toBuffer.address());
-            } finally {
-                Blocker.end(comp);
-            }
+            rename0(fromBuffer.address(), toBuffer.address());
         }
     }
     private static native void rename0(long fromAddress, long toAddress)
@@ -219,12 +183,7 @@ class UnixNativeDispatcher {
     static void renameat(int fromfd, byte[] from, int tofd, byte[] to) throws UnixException {
         try (NativeBuffer fromBuffer = NativeBuffers.asNativeBuffer(from);
              NativeBuffer toBuffer = NativeBuffers.asNativeBuffer(to)) {
-            long comp = Blocker.begin();
-            try {
-                renameat0(fromfd, fromBuffer.address(), tofd, toBuffer.address());
-            } finally {
-                Blocker.end(comp);
-            }
+            renameat0(fromfd, fromBuffer.address(), tofd, toBuffer.address());
         }
     }
     private static native void renameat0(int fromfd, long fromAddress, int tofd, long toAddress)
@@ -235,12 +194,7 @@ class UnixNativeDispatcher {
      */
     static void mkdir(UnixPath path, int mode) throws UnixException {
         try (NativeBuffer buffer = copyToNativeBuffer(path)) {
-            long comp = Blocker.begin();
-            try {
-                mkdir0(buffer.address(), mode);
-            } finally {
-                Blocker.end(comp);
-            }
+            mkdir0(buffer.address(), mode);
         }
     }
     private static native void mkdir0(long pathAddress, int mode) throws UnixException;
@@ -250,12 +204,7 @@ class UnixNativeDispatcher {
      */
     static void rmdir(UnixPath path) throws UnixException {
         try (NativeBuffer buffer = copyToNativeBuffer(path)) {
-            long comp = Blocker.begin();
-            try {
-                rmdir0(buffer.address());
-            } finally {
-                Blocker.end(comp);
-            }
+            rmdir0(buffer.address());
         }
     }
     private static native void rmdir0(long pathAddress) throws UnixException;
@@ -267,12 +216,7 @@ class UnixNativeDispatcher {
      */
     static byte[] readlink(UnixPath path) throws UnixException {
         try (NativeBuffer buffer = copyToNativeBuffer(path)) {
-            long comp = Blocker.begin();
-            try {
-                return readlink0(buffer.address());
-            } finally {
-                Blocker.end(comp);
-            }
+            return readlink0(buffer.address());
         }
     }
     private static native byte[] readlink0(long pathAddress) throws UnixException;
@@ -284,12 +228,7 @@ class UnixNativeDispatcher {
      */
     static byte[] realpath(UnixPath path) throws UnixException {
         try (NativeBuffer buffer = copyToNativeBuffer(path)) {
-            long comp = Blocker.begin();
-            try {
-                return realpath0(buffer.address());
-            } finally {
-                Blocker.end(comp);
-            }
+            return realpath0(buffer.address());
         }
     }
     private static native byte[] realpath0(long pathAddress) throws UnixException;
@@ -300,12 +239,7 @@ class UnixNativeDispatcher {
     static void symlink(byte[] name1, UnixPath name2) throws UnixException {
         try (NativeBuffer targetBuffer = NativeBuffers.asNativeBuffer(name1);
              NativeBuffer linkBuffer = copyToNativeBuffer(name2)) {
-            long comp = Blocker.begin();
-            try {
-                symlink0(targetBuffer.address(), linkBuffer.address());
-            } finally {
-                Blocker.end(comp);
-            }
+            symlink0(targetBuffer.address(), linkBuffer.address());
         }
     }
     private static native void symlink0(long name1, long name2)
@@ -316,26 +250,16 @@ class UnixNativeDispatcher {
      */
     static void stat(UnixPath path, UnixFileAttributes attrs) throws UnixException {
         try (NativeBuffer buffer = copyToNativeBuffer(path)) {
-            long comp = Blocker.begin();
-            try {
-                int errno = stat0(buffer.address(), attrs);
-                if (errno != 0) {
-                    throw new UnixException(errno);
-                }
-            } finally {
-                Blocker.end(comp);
+            int errno = stat0(buffer.address(), attrs);
+            if (errno != 0) {
+                throw new UnixException(errno);
             }
         }
     }
 
     static int stat2(UnixPath path, UnixFileAttributes attrs) {
         try (NativeBuffer buffer = copyToNativeBuffer(path)) {
-            long comp = Blocker.begin();
-            try {
-                return stat0(buffer.address(), attrs);
-            } finally {
-                Blocker.end(comp);
-            }
+            return stat0(buffer.address(), attrs);
         }
     }
 
@@ -346,12 +270,7 @@ class UnixNativeDispatcher {
      */
     static void lstat(UnixPath path, UnixFileAttributes attrs) throws UnixException {
         try (NativeBuffer buffer = copyToNativeBuffer(path)) {
-            long comp = Blocker.begin();
-            try {
-                lstat0(buffer.address(), attrs);
-            } finally {
-                Blocker.end(comp);
-            }
+            lstat0(buffer.address(), attrs);
         }
     }
     private static native void lstat0(long pathAddress, UnixFileAttributes attrs)
@@ -361,12 +280,7 @@ class UnixNativeDispatcher {
      * fstat(int filedes, struct stat* buf)
      */
     static void fstat(int fd, UnixFileAttributes attrs) throws UnixException {
-        long comp = Blocker.begin();
-        try {
-            fstat0(fd, attrs);
-        } finally {
-            Blocker.end(comp);
-        }
+        fstat0(fd, attrs);
     }
     private static native void fstat0(int fd, UnixFileAttributes attrs)
         throws UnixException;
@@ -378,12 +292,7 @@ class UnixNativeDispatcher {
         throws UnixException
     {
         try (NativeBuffer buffer = NativeBuffers.asNativeBuffer(path)) {
-            long comp = Blocker.begin();
-            try {
-                fstatat0(dfd, buffer.address(), flag, attrs);
-            } finally {
-                Blocker.end(comp);
-            }
+            fstatat0(dfd, buffer.address(), flag, attrs);
         }
     }
     private static native void fstatat0(int dfd, long pathAddress, int flag,
@@ -394,12 +303,7 @@ class UnixNativeDispatcher {
      */
     static void chown(UnixPath path, int uid, int gid) throws UnixException {
         try (NativeBuffer buffer = copyToNativeBuffer(path)) {
-            long comp = Blocker.begin();
-            try {
-                chown0(buffer.address(), uid, gid);
-            } finally {
-                Blocker.end(comp);
-            }
+            chown0(buffer.address(), uid, gid);
         }
     }
     private static native void chown0(long pathAddress, int uid, int gid)
@@ -410,12 +314,7 @@ class UnixNativeDispatcher {
      */
     static void lchown(UnixPath path, int uid, int gid) throws UnixException {
         try (NativeBuffer buffer = copyToNativeBuffer(path)) {
-            long comp = Blocker.begin();
-            try {
-                lchown0(buffer.address(), uid, gid);
-            } finally {
-                Blocker.end(comp);
-            }
+            lchown0(buffer.address(), uid, gid);
         }
     }
     private static native void lchown0(long pathAddress, int uid, int gid)
@@ -425,12 +324,7 @@ class UnixNativeDispatcher {
      * fchown(int filedes, uid_t owner, gid_t group)
      */
     static void fchown(int fd, int uid, int gid) throws UnixException {
-        long comp = Blocker.begin();
-        try {
-            fchown0(fd, uid, gid);
-        } finally {
-            Blocker.end(comp);
-        }
+        fchown0(fd, uid, gid);
     }
     static native void fchown0(int fd, int uid, int gid) throws UnixException;
 
@@ -439,12 +333,7 @@ class UnixNativeDispatcher {
      */
     static void chmod(UnixPath path, int mode) throws UnixException {
         try (NativeBuffer buffer = copyToNativeBuffer(path)) {
-            long comp = Blocker.begin();
-            try {
-                chmod0(buffer.address(), mode);
-            } finally {
-                Blocker.end(comp);
-            }
+            chmod0(buffer.address(), mode);
         }
     }
     private static native void chmod0(long pathAddress, int mode)
@@ -454,12 +343,7 @@ class UnixNativeDispatcher {
      * fchmod(int fildes, mode_t mode)
      */
     static void fchmod(int fd, int mode) throws UnixException {
-        long comp = Blocker.begin();
-        try {
-            fchmod0(fd, mode);
-        } finally {
-            Blocker.end(comp);
-        }
+        fchmod0(fd, mode);
     }
     private static native void fchmod0(int fd, int mode) throws UnixException;
 
@@ -470,12 +354,7 @@ class UnixNativeDispatcher {
         throws UnixException
     {
         try (NativeBuffer buffer = copyToNativeBuffer(path)) {
-            long comp = Blocker.begin();
-            try {
-                utimes0(buffer.address(), times0, times1);
-            } finally {
-                Blocker.end(comp);
-            }
+            utimes0(buffer.address(), times0, times1);
         }
     }
     private static native void utimes0(long pathAddress, long times0, long times1)
@@ -485,12 +364,7 @@ class UnixNativeDispatcher {
      * futimes(int fildes, const struct timeval times[2])
      */
     static void futimes(int fd, long times0, long times1) throws UnixException {
-        long comp = Blocker.begin();
-        try {
-            futimes0(fd, times0, times1);
-        } finally {
-            Blocker.end(comp);
-        }
+        futimes0(fd, times0, times1);
     }
     private static native void futimes0(int fd, long times0, long times1)
         throws UnixException;
@@ -499,12 +373,7 @@ class UnixNativeDispatcher {
      * futimens(int fildes, const struct timespec times[2])
      */
     static void futimens(int fd, long times0, long times1) throws UnixException {
-        long comp = Blocker.begin();
-        try {
-            futimens0(fd, times0, times1);
-        } finally {
-            Blocker.end(comp);
-        }
+        futimens0(fd, times0, times1);
     }
     private static native void futimens0(int fd, long times0, long times1)
         throws UnixException;
@@ -516,12 +385,7 @@ class UnixNativeDispatcher {
         throws UnixException
     {
         try (NativeBuffer buffer = copyToNativeBuffer(path)) {
-            long comp = Blocker.begin();
-            try {
-                lutimes0(buffer.address(), times0, times1);
-            } finally {
-                Blocker.end(comp);
-            }
+            lutimes0(buffer.address(), times0, times1);
         }
     }
     private static native void lutimes0(long pathAddress, long times0, long times1)
@@ -532,12 +396,7 @@ class UnixNativeDispatcher {
      */
     static long opendir(UnixPath path) throws UnixException {
         try (NativeBuffer buffer = copyToNativeBuffer(path)) {
-            long comp = Blocker.begin();
-            try {
-                return opendir0(buffer.address());
-            } finally {
-                Blocker.end(comp);
-            }
+            return opendir0(buffer.address());
         }
     }
     private static native long opendir0(long pathAddress) throws UnixException;
@@ -559,12 +418,7 @@ class UnixNativeDispatcher {
      * @return  dirent->d_name
      */
     static byte[] readdir(long dir) throws UnixException {
-        long comp = Blocker.begin();
-        try {
-            return readdir0(dir);
-        } finally {
-            Blocker.end(comp);
-        }
+        return readdir0(dir);
     }
     static native byte[] readdir0(long dir) throws UnixException;
 
@@ -572,12 +426,7 @@ class UnixNativeDispatcher {
      * size_t read(int fildes, void* buf, size_t nbyte)
      */
     static int read(int fildes, long buf, int nbyte) throws UnixException {
-        long comp = Blocker.begin();
-        try {
-            return read0(fildes, buf, nbyte);
-        } finally {
-            Blocker.end(comp);
-        }
+        return read0(fildes, buf, nbyte);
     }
     private static native int read0(int fildes, long buf, int nbyte) throws UnixException;
 
@@ -585,46 +434,19 @@ class UnixNativeDispatcher {
      * size_t writeint fildes, void* buf, size_t nbyte)
      */
     static int write(int fildes, long buf, int nbyte) throws UnixException {
-        long comp = Blocker.begin();
-        try {
-            return write0(fildes, buf, nbyte);
-        } finally {
-            Blocker.end(comp);
-        }
+        return write0(fildes, buf, nbyte);
     }
     private static native int write0(int fildes, long buf, int nbyte) throws UnixException;
 
     /**
      * access(const char* path, int amode);
      */
-    static void access(UnixPath path, int amode) throws UnixException {
+    static int access(UnixPath path, int amode) {
         try (NativeBuffer buffer = copyToNativeBuffer(path)) {
-            long comp = Blocker.begin();
-            try {
-                access0(buffer.address(), amode);
-            } finally {
-                Blocker.end(comp);
-            }
+            return access0(buffer.address(), amode);
         }
     }
-    private static native void access0(long pathAddress, int amode) throws UnixException;
-
-    /**
-     * access(constant char* path, F_OK)
-     *
-     * @return true if the file exists, false otherwise
-     */
-    static boolean exists(UnixPath path) {
-        try (NativeBuffer buffer = copyToNativeBuffer(path)) {
-            long comp = Blocker.begin();
-            try {
-                return exists0(buffer.address());
-            } finally {
-                Blocker.end(comp);
-            }
-        }
-    }
-    private static native boolean exists0(long pathAddress);
+    private static native int access0(long pathAddress, int amode);
 
     /**
      * struct passwd *getpwuid(uid_t uid);
@@ -647,12 +469,7 @@ class UnixNativeDispatcher {
      */
     static int getpwnam(String name) throws UnixException {
         try (NativeBuffer buffer = NativeBuffers.asNativeBuffer(Util.toBytes(name))) {
-            long comp = Blocker.begin();
-            try {
-                return getpwnam0(buffer.address());
-            } finally {
-                Blocker.end(comp);
-            }
+            return getpwnam0(buffer.address());
         }
     }
     private static native int getpwnam0(long nameAddress) throws UnixException;
@@ -664,12 +481,7 @@ class UnixNativeDispatcher {
      */
     static int getgrnam(String name) throws UnixException {
         try (NativeBuffer buffer = NativeBuffers.asNativeBuffer(Util.toBytes(name))) {
-            long comp = Blocker.begin();
-            try {
-                return getgrnam0(buffer.address());
-            } finally {
-                Blocker.end(comp);
-            }
+            return getgrnam0(buffer.address());
         }
     }
     private static native int getgrnam0(long nameAddress) throws UnixException;
@@ -681,12 +493,7 @@ class UnixNativeDispatcher {
         throws UnixException
     {
         try (NativeBuffer buffer = copyToNativeBuffer(path)) {
-            long comp = Blocker.begin();
-            try {
-                statvfs0(buffer.address(), attrs);
-            } finally {
-                Blocker.end(comp);
-            }
+            statvfs0(buffer.address(), attrs);
         }
     }
     private static native void statvfs0(long pathAddress, UnixFileStoreAttributes attrs)
@@ -704,12 +511,7 @@ class UnixNativeDispatcher {
         throws UnixException
     {
         try (NativeBuffer buffer = NativeBuffers.asNativeBuffer(name)) {
-            long comp = Blocker.begin();
-            try {
-                return fgetxattr0(filedes, buffer.address(), valueAddress, valueLen);
-            } finally {
-                Blocker.end(comp);
-            }
+            return fgetxattr0(filedes, buffer.address(), valueAddress, valueLen);
         }
     }
 
@@ -723,12 +525,7 @@ class UnixNativeDispatcher {
         throws UnixException
     {
         try (NativeBuffer buffer = NativeBuffers.asNativeBuffer(name)) {
-            long comp = Blocker.begin();
-            try {
-                fsetxattr0(filedes, buffer.address(), valueAddress, valueLen);
-            } finally {
-                Blocker.end(comp);
-            }
+            fsetxattr0(filedes, buffer.address(), valueAddress, valueLen);
         }
     }
 
@@ -740,12 +537,7 @@ class UnixNativeDispatcher {
      */
     static void fremovexattr(int filedes, byte[] name) throws UnixException {
         try (NativeBuffer buffer = NativeBuffers.asNativeBuffer(name)) {
-            long comp = Blocker.begin();
-            try {
-                fremovexattr0(filedes, buffer.address());
-            } finally {
-                Blocker.end(comp);
-            }
+            fremovexattr0(filedes, buffer.address());
         }
     }
 

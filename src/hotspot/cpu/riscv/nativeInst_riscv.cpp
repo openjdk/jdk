@@ -27,7 +27,6 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "code/compiledIC.hpp"
-#include "memory/resourceArea.hpp"
 #include "nativeInst_riscv.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.hpp"
@@ -157,7 +156,6 @@ void NativeCall::set_destination_mt_safe(address dest, bool assert_lock) {
          CompiledICLocker::is_safe(addr_at(0)),
          "concurrent code patching");
 
-  ResourceMark rm;
   address addr_call = addr_at(0);
   assert(NativeCall::is_call_at(addr_call), "unexpected code at call site");
 
@@ -451,16 +449,27 @@ void NativePostCallNop::make_deopt() {
   NativeDeoptInstruction::insert(addr_at(0));
 }
 
-int NativePostCallNop::displacement() const {
+bool NativePostCallNop::decode(int32_t& oopmap_slot, int32_t& cb_offset) const {
   // Discard the high 32 bits
-  return (int)(intptr_t)MacroAssembler::get_target_of_li32(addr_at(4));
+  int32_t data = (int32_t)(intptr_t)MacroAssembler::get_target_of_li32(addr_at(4));
+  if (data == 0) {
+    return false; // no information encoded
+  }
+  cb_offset = (data & 0xffffff);
+  oopmap_slot = (data >> 24) & 0xff;
+  return true; // decoding succeeded
 }
 
-void NativePostCallNop::patch(jint diff) {
-  assert(diff != 0, "must be");
+bool NativePostCallNop::patch(int32_t oopmap_slot, int32_t cb_offset) {
+  if (((oopmap_slot & 0xff) != oopmap_slot) || ((cb_offset & 0xffffff) != cb_offset)) {
+    return false; // cannot encode
+  }
+  int32_t data = (oopmap_slot << 24) | cb_offset;
+  assert(data != 0, "must be");
   assert(is_lui_to_zr_at(addr_at(4)) && is_addiw_to_zr_at(addr_at(8)), "must be");
 
-  MacroAssembler::patch_imm_in_li32(addr_at(4), diff);
+  MacroAssembler::patch_imm_in_li32(addr_at(4), data);
+  return true; // successfully encoded
 }
 
 void NativeDeoptInstruction::verify() {

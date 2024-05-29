@@ -229,17 +229,145 @@ void strFrom16(char str[3], cmsUInt16Number n)
     str[0] = (char)(n >> 8);
     str[1] = (char)n;
     str[2] = (char)0;
+}
 
+
+// Convert from UTF8 to wchar, returns len.
+static
+cmsUInt32Number decodeUTF8(wchar_t* out, const char* in)
+{
+    cmsUInt32Number codepoint = 0;
+    cmsUInt32Number size = 0;
+
+    while (*in)
+    {
+        cmsUInt8Number ch = (cmsUInt8Number) *in;
+
+        if (ch <= 0x7f)
+        {
+            codepoint = ch;
+        }
+        else if (ch <= 0xbf)
+        {
+            codepoint = (codepoint << 6) | (ch & 0x3f);
+        }
+        else if (ch <= 0xdf)
+        {
+            codepoint = ch & 0x1f;
+        }
+        else if (ch <= 0xef)
+        {
+            codepoint = ch & 0x0f;
+        }
+        else
+        {
+            codepoint = ch & 0x07;
+        }
+
+        in++;
+
+        if (((*in & 0xc0) != 0x80) && (codepoint <= 0x10ffff))
+        {
+            if (sizeof(wchar_t) > 2)
+            {
+                if (out) *out++ = (wchar_t) codepoint;
+                size++;
+            }
+            else
+                if (codepoint > 0xffff)
+                {
+                    if (out)
+                    {
+                        *out++ = (wchar_t)(0xd800 + (codepoint >> 10));
+                        *out++ = (wchar_t)(0xdc00 + (codepoint & 0x03ff));
+                        size += 2;
+                    }
+                }
+                else
+                    if (codepoint < 0xd800 || codepoint >= 0xe000)
+                    {
+                        if (out) *out++ = (wchar_t) codepoint;
+                        size++;
+                    }
+        }
+    }
+
+    return size;
+}
+
+// Convert from wchar_t to UTF8
+static
+cmsUInt32Number encodeUTF8(char* out, const wchar_t* in, cmsUInt32Number max_wchars, cmsUInt32Number max_chars)
+{
+    cmsUInt32Number codepoint = 0;
+    cmsUInt32Number size = 0;
+    cmsUInt32Number len_w = 0;
+
+    while (*in && len_w < max_wchars)
+    {
+        if (*in >= 0xd800 && *in <= 0xdbff)
+            codepoint = ((*in - 0xd800) << 10) + 0x10000;
+        else
+        {
+            if (*in >= 0xdc00 && *in <= 0xdfff)
+                codepoint |= *in - 0xdc00;
+            else
+                codepoint = *in;
+
+            if (codepoint <= 0x7f)
+            {
+                if (out && (size + 1 < max_chars)) *out++ = (char)codepoint;
+                size++;
+            }
+
+            else if (codepoint <= 0x7ff)
+            {
+                if (out && (max_chars > 0) && (size + 2 < max_chars))
+                {
+                    *out++ = (char)(cmsUInt32Number)(0xc0 | ((codepoint >> 6) & 0x1f));
+                    *out++ = (char)(cmsUInt32Number)(0x80 | (codepoint & 0x3f));
+                }
+                size += 2;
+            }
+            else if (codepoint <= 0xffff)
+            {
+                if (out && (max_chars > 0) && (size + 3 < max_chars))
+                {
+                    *out++ = (char)(cmsUInt32Number)(0xe0 | ((codepoint >> 12) & 0x0f));
+                    *out++ = (char)(cmsUInt32Number)(0x80 | ((codepoint >> 6) & 0x3f));
+                    *out++ = (char)(cmsUInt32Number)(0x80 | (codepoint & 0x3f));
+                }
+                size += 3;
+            }
+            else
+            {
+                if (out && (max_chars > 0) && (size + 4 < max_chars))
+                {
+                    *out++ = (char)(cmsUInt32Number)(0xf0 | ((codepoint >> 18) & 0x07));
+                    *out++ = (char)(cmsUInt32Number)(0x80 | ((codepoint >> 12) & 0x3f));
+                    *out++ = (char)(cmsUInt32Number)(0x80 | ((codepoint >> 6) & 0x3f));
+                    *out++ = (char)(cmsUInt32Number)(0x80 | (codepoint & 0x3f));
+                }
+                size += 4;
+            }
+
+            codepoint = 0;
+        }
+
+        in++; len_w++;
+    }
+
+    return size;
 }
 
 // Add an ASCII entry. Do not add any \0 termination (ICC1v43_2010-12.pdf page 61)
 // In the case the user explicitly sets an empty string, we force a \0
 cmsBool CMSEXPORT cmsMLUsetASCII(cmsMLU* mlu, const char LanguageCode[3], const char CountryCode[3], const char* ASCIIString)
 {
-    cmsUInt32Number i, len = (cmsUInt32Number) strlen(ASCIIString);
+    cmsUInt32Number i, len = (cmsUInt32Number)strlen(ASCIIString);
     wchar_t* WStr;
     cmsBool  rc;
-    cmsUInt16Number Lang  = strTo16(LanguageCode);
+    cmsUInt16Number Lang = strTo16(LanguageCode);
     cmsUInt16Number Cntry = strTo16(CountryCode);
 
     if (mlu == NULL) return FALSE;
@@ -247,20 +375,54 @@ cmsBool CMSEXPORT cmsMLUsetASCII(cmsMLU* mlu, const char LanguageCode[3], const 
     // len == 0 would prevent operation, so we set a empty string pointing to zero
     if (len == 0)
     {
-        len = 1;
+        wchar_t empty = 0;
+        return AddMLUBlock(mlu, sizeof(wchar_t), &empty, Lang, Cntry);
     }
 
-    WStr = (wchar_t*) _cmsCalloc(mlu ->ContextID, len,  sizeof(wchar_t));
+    WStr = (wchar_t*)_cmsCalloc(mlu->ContextID, len, sizeof(wchar_t));
     if (WStr == NULL) return FALSE;
 
-    for (i=0; i < len; i++)
-        WStr[i] = (wchar_t) ASCIIString[i];
+    for (i = 0; i < len; i++)
+        WStr[i] = (wchar_t)ASCIIString[i];
 
-    rc = AddMLUBlock(mlu, len  * sizeof(wchar_t), WStr, Lang, Cntry);
+    rc = AddMLUBlock(mlu, len * sizeof(wchar_t), WStr, Lang, Cntry);
+
+    _cmsFree(mlu->ContextID, WStr);
+    return rc;
+
+}
+
+// Add an UTF8 entry. Do not add any \0 termination (ICC1v43_2010-12.pdf page 61)
+// In the case the user explicitly sets an empty string, we force a \0
+cmsBool CMSEXPORT cmsMLUsetUTF8(cmsMLU* mlu, const char LanguageCode[3], const char CountryCode[3], const char* UTF8String)
+{
+    cmsUInt32Number UTF8len;
+    wchar_t* WStr;
+    cmsBool  rc;
+    cmsUInt16Number Lang  = strTo16(LanguageCode);
+    cmsUInt16Number Cntry = strTo16(CountryCode);
+
+    if (mlu == NULL) return FALSE;
+
+    if (*UTF8String == '\0')
+    {
+        wchar_t empty = 0;
+        return AddMLUBlock(mlu, sizeof(wchar_t), &empty, Lang, Cntry);
+    }
+
+    // Len excluding terminator 0
+    UTF8len = decodeUTF8(NULL, UTF8String);
+
+    // Get space for dest
+    WStr = (wchar_t*) _cmsCalloc(mlu ->ContextID, UTF8len,  sizeof(wchar_t));
+    if (WStr == NULL) return FALSE;
+
+    decodeUTF8(WStr, UTF8String);
+
+    rc = AddMLUBlock(mlu, UTF8len  * sizeof(wchar_t), WStr, Lang, Cntry);
 
     _cmsFree(mlu ->ContextID, WStr);
     return rc;
-
 }
 
 // We don't need any wcs support library
@@ -401,7 +563,7 @@ const wchar_t* _cmsMLUgetWide(const cmsMLU* mlu,
 
     if (v->StrW + v->Len > mlu->PoolSize) return NULL;
 
-    return(wchar_t*) ((cmsUInt8Number*) mlu ->MemPool + v ->StrW);
+    return (wchar_t*) ((cmsUInt8Number*) mlu ->MemPool + v ->StrW);
 }
 
 
@@ -439,15 +601,57 @@ cmsUInt32Number CMSEXPORT cmsMLUgetASCII(const cmsMLU* mlu,
     // Precess each character
     for (i=0; i < ASCIIlen; i++) {
 
-        if (Wide[i] == 0)
-            Buffer[i] = 0;
+        wchar_t wc = Wide[i];
+
+        if (wc < 0xff)
+            Buffer[i] = (char)wc;
         else
-            Buffer[i] = (char) Wide[i];
+            Buffer[i] = '?';
     }
 
     // We put a termination "\0"
     Buffer[ASCIIlen] = 0;
     return ASCIIlen + 1;
+}
+
+
+// Obtain a UTF8 representation of the wide string. Setting buffer to NULL returns the len
+cmsUInt32Number CMSEXPORT cmsMLUgetUTF8(const cmsMLU* mlu,
+                                       const char LanguageCode[3], const char CountryCode[3],
+                                       char* Buffer, cmsUInt32Number BufferSize)
+{
+    const wchar_t *Wide;
+    cmsUInt32Number  StrLen = 0;
+    cmsUInt32Number UTF8len;
+
+    cmsUInt16Number Lang  = strTo16(LanguageCode);
+    cmsUInt16Number Cntry = strTo16(CountryCode);
+
+    // Sanitize
+    if (mlu == NULL) return 0;
+
+    // Get WideChar
+    Wide = _cmsMLUgetWide(mlu, &StrLen, Lang, Cntry, NULL, NULL);
+    if (Wide == NULL) return 0;
+
+    UTF8len = encodeUTF8(NULL, Wide, StrLen / sizeof(wchar_t), BufferSize);
+
+    // Maybe we want only to know the len?
+    if (Buffer == NULL) return UTF8len + 1; // Note the zero at the end
+
+    // No buffer size means no data
+    if (BufferSize <= 0) return 0;
+
+    // Some clipping may be required
+    if (BufferSize < UTF8len + 1)
+        UTF8len = BufferSize - 1;
+
+    // Process it
+    encodeUTF8(Buffer, Wide, StrLen / sizeof(wchar_t), BufferSize);
+
+    // We put a termination "\0"
+    Buffer[UTF8len] = 0;
+    return UTF8len + 1;
 }
 
 // Obtain a wide representation of the MLU, on depending on current locale settings
@@ -470,12 +674,12 @@ cmsUInt32Number CMSEXPORT cmsMLUgetWide(const cmsMLU* mlu,
     // Maybe we want only to know the len?
     if (Buffer == NULL) return StrLen + sizeof(wchar_t);
 
-  // No buffer size means no data
-    if (BufferSize <= 0) return 0;
+    // Invalid buffer size means no data
+    if (BufferSize < sizeof(wchar_t)) return 0;
 
     // Some clipping may be required
     if (BufferSize < StrLen + sizeof(wchar_t))
-        StrLen = BufferSize - + sizeof(wchar_t);
+        StrLen = BufferSize - sizeof(wchar_t);
 
     memmove(Buffer, Wide, StrLen);
     Buffer[StrLen / sizeof(wchar_t)] = 0;
@@ -843,13 +1047,19 @@ void CMSEXPORT cmsFreeProfileSequenceDescription(cmsSEQ* pseq)
 {
     cmsUInt32Number i;
 
-    for (i=0; i < pseq ->n; i++) {
-        if (pseq ->seq[i].Manufacturer != NULL) cmsMLUfree(pseq ->seq[i].Manufacturer);
-        if (pseq ->seq[i].Model != NULL) cmsMLUfree(pseq ->seq[i].Model);
-        if (pseq ->seq[i].Description != NULL) cmsMLUfree(pseq ->seq[i].Description);
+    if (pseq == NULL)
+        return;
+
+    if (pseq ->seq != NULL) {
+        for (i=0; i < pseq ->n; i++) {
+            if (pseq ->seq[i].Manufacturer != NULL) cmsMLUfree(pseq ->seq[i].Manufacturer);
+            if (pseq ->seq[i].Model != NULL) cmsMLUfree(pseq ->seq[i].Model);
+            if (pseq ->seq[i].Description != NULL) cmsMLUfree(pseq ->seq[i].Description);
+        }
+
+        _cmsFree(pseq ->ContextID, pseq ->seq);
     }
 
-    if (pseq ->seq != NULL) _cmsFree(pseq ->ContextID, pseq ->seq);
     _cmsFree(pseq -> ContextID, pseq);
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 import jdk.internal.foreign.LayoutPath;
-import jdk.internal.foreign.LayoutPath.PathElementImpl.PathKind;
 import jdk.internal.foreign.Utils;
 import jdk.internal.foreign.layout.MemoryLayoutUtil;
 import jdk.internal.foreign.layout.PaddingLayoutImpl;
@@ -572,6 +571,10 @@ public sealed interface MemoryLayout
      * derived from the size of the element layout of a sequence, and
      * {@code c_1}, {@code c_2}, ... {@code c_m} are other <em>static</em> offset
      * constants (such as field offsets) which are derived from the layout path.
+     * <p>
+     * For any given dynamic argument {@code x_i}, it must be that {@code 0 <= x_i < size_i},
+     * where {@code size_i} is the size of the open path element associated with {@code x_i}.
+     * Otherwise, the returned method handle throws {@link IndexOutOfBoundsException}.
      *
      * @apiNote The returned method handle can be used to compute a layout offset,
      *          similarly to {@link #byteOffset(PathElement...)}, but more flexibly, as
@@ -610,7 +613,7 @@ public sealed interface MemoryLayout
      * offset {@code O} of the access operation is computed as follows:
      *
      * {@snippet lang = "java":
-     * O = this.offsetHandle(P).invokeExact(B, I1, I2, ... In);
+     * O = this.byteOffsetHandle(P).invokeExact(B, I1, I2, ... In);
      * }
      * <p>
      * Accessing a memory segment using the var handle returned by this method is subject
@@ -628,9 +631,15 @@ public sealed interface MemoryLayout
      *     {@code O + A <= S}, where {@code O} is the accessed offset (computed as above),
      *     {@code A} is the size of the selected layout and {@code S} is the size of the
      *     accessed memory segment.</li>
+     *     <li>If the provided layout path has an open path element whose size is {@code S},
+     *     its corresponding trailing {@code long} coordinate value {@code I} must be
+     *     {@code 0 <= I < S}, or an {@link IndexOutOfBoundsException} is thrown.</li>
      *     <li>The accessed memory segment must be
      *     {@link MemorySegment#isAccessibleBy(Thread) accessible} from the thread
      *     performing the access operation, or a {@link WrongThreadException} is thrown.</li>
+     *     <li>For write operations, the accessed memory segment must not be
+     *     {@link MemorySegment#isReadOnly() read only}, or an
+     *     {@link IllegalArgumentException} is thrown.</li>
      *     <li>The {@linkplain MemorySegment#scope() scope} associated with the accessed
      *     segment must be {@linkplain MemorySegment.Scope#isAlive() alive}, or an
      *     {@link IllegalStateException} is thrown.</li>
@@ -726,14 +735,43 @@ public sealed interface MemoryLayout
      * offset {@code O} of the access operation is computed as follows:
      *
      * {@snippet lang = "java":
-     * O = this.offsetHandle(P).invokeExact(this.scale(B, I0), I1, I2, ... In);
+     * O = this.byteOffsetHandle(P).invokeExact(this.scale(B, I0), I1, I2, ... In);
      * }
      * <p>
-     * More formally, this method can be obtained from the {@link #varHandle(PathElement...)},
+     * More formally, the method handle returned by this method is obtained from {@link #varHandle(PathElement...)},
      * as follows:
      * {@snippet lang = "java":
      * MethodHandles.collectCoordinates(varHandle(elements), 1, scaleHandle())
      * }
+     * <p>
+     * Accessing a memory segment using the var handle returned by this method is subject
+     * to the following checks:
+     * <ul>
+     *     <li>The physical address of the accessed memory segment must be
+     *     <a href="MemorySegment.html#segment-alignment">aligned</a> according to the
+     *     {@linkplain #byteAlignment() alignment constraint} of the root layout
+     *     (this layout), or an {@link IllegalArgumentException} is thrown. Note
+     *     that the alignment constraint of the root layout can be more strict
+     *     (but not less) than the alignment constraint of the selected value layout.</li>
+     *     <li>The offset of the access operation (computed as above) must fall inside
+     *     the spatial bounds of the accessed memory segment, or an
+     *     {@link IndexOutOfBoundsException} is thrown. This is the case when
+     *     {@code O + A <= S}, where {@code O} is the accessed offset (computed as above),
+     *     {@code A} is the size of the selected layout and {@code S} is the size of the
+     *     accessed memory segment.</li>
+     *     <li>If the provided layout path has an open path element whose size is {@code S},
+     *     its corresponding trailing {@code long} coordinate value {@code I} must be
+     *     {@code 0 <= I < S}, or an {@link IndexOutOfBoundsException} is thrown.</li>
+     *     <li>The accessed memory segment must be
+     *     {@link MemorySegment#isAccessibleBy(Thread) accessible} from the thread
+     *     performing the access operation, or a {@link WrongThreadException} is thrown.</li>
+     *     <li>For write operations, the accessed memory segment must not be
+     *     {@link MemorySegment#isReadOnly() read only}, or an
+     *     {@link IllegalArgumentException} is thrown.</li>
+     *     <li>The {@linkplain MemorySegment#scope() scope} associated with the accessed
+     *     segment must be {@linkplain MemorySegment.Scope#isAlive() alive}, or an
+     *     {@link IllegalStateException} is thrown.</li>
+     * </ul>
      *
      * @apiNote
      * As the leading index coordinate {@code I0} is not bound by any sequence layout, it
@@ -790,6 +828,9 @@ public sealed interface MemoryLayout
      *     {@code O + A <= S}, where {@code O} is the start offset of
      *     the slicing operation (computed as above), {@code A} is the size of the
      *     selected layout and {@code S} is the size of the accessed memory segment.</li>
+     *     <li>If the provided layout path has an open path element whose size is {@code S},
+     *     its corresponding trailing {@code long} coordinate value {@code I} must be
+     *     {@code 0 <= I < S}, or an {@link IndexOutOfBoundsException} is thrown.</li>
      * </ul>
      *
      * @apiNote The returned method handle can be used to obtain a memory segment slice,
@@ -836,7 +877,8 @@ public sealed interface MemoryLayout
      *     layout as its target layout.</li>
      * </ul>
      * Sequence path elements selecting more than one sequence element layout are called
-     * <a href="MemoryLayout.html#open-path-elements">open path elements</a>.
+     * <a href="MemoryLayout.html#open-path-elements">open path elements</a>. The <em>size</em>
+     * of an open path element determines the number of element layouts that can be selected by it.
      *
      * @implSpec
      * Implementations of this interface are immutable, thread-safe and
@@ -844,7 +886,13 @@ public sealed interface MemoryLayout
      *
      * @since 22
      */
-    sealed interface PathElement permits LayoutPath.PathElementImpl {
+    sealed interface PathElement
+            permits LayoutPath.DereferenceElement,
+            LayoutPath.GroupElementByIndex,
+            LayoutPath.GroupElementByName,
+            LayoutPath.SequenceElement,
+            LayoutPath.SequenceElementByIndex,
+            LayoutPath.SequenceElementByRange {
 
         /**
          * {@return a path element which selects a member layout with the given name in a
@@ -859,9 +907,7 @@ public sealed interface MemoryLayout
          * @param name the name of the member layout to be selected
          */
         static PathElement groupElement(String name) {
-            Objects.requireNonNull(name);
-            return new LayoutPath.PathElementImpl(PathKind.GROUP_ELEMENT,
-                                                  path -> path.groupElement(name));
+            return new LayoutPath.GroupElementByName(name);
         }
 
         /**
@@ -872,11 +918,7 @@ public sealed interface MemoryLayout
          * @throws IllegalArgumentException if {@code index < 0}
          */
         static PathElement groupElement(long index) {
-            if (index < 0) {
-                throw new IllegalArgumentException("Index < 0");
-            }
-            return new LayoutPath.PathElementImpl(PathKind.GROUP_ELEMENT,
-                    path -> path.groupElement(index));
+            return new LayoutPath.GroupElementByIndex(index);
         }
 
         /**
@@ -887,11 +929,7 @@ public sealed interface MemoryLayout
          * @throws IllegalArgumentException if {@code index < 0}
          */
         static PathElement sequenceElement(long index) {
-            if (index < 0) {
-                throw new IllegalArgumentException("Index must be positive: " + index);
-            }
-            return new LayoutPath.PathElementImpl(PathKind.SEQUENCE_ELEMENT_INDEX,
-                                                  path -> path.sequenceElement(index));
+            return new LayoutPath.SequenceElementByIndex(index);
         }
 
         /**
@@ -908,6 +946,7 @@ public sealed interface MemoryLayout
          *    <li>if {@code F > 0}, then {@code B = ceilDiv(C - S, F)}</li>
          *    <li>if {@code F < 0}, then {@code B = ceilDiv(-(S + 1), -F)}</li>
          * </ul>
+         * That is, the size of the returned open path element is {@code B}.
          *
          * @param start the index of the first sequence element to be selected
          * @param step the step factor at which subsequence sequence elements are to be
@@ -917,14 +956,7 @@ public sealed interface MemoryLayout
          * @throws IllegalArgumentException if {@code start < 0}, or {@code step == 0}
          */
         static PathElement sequenceElement(long start, long step) {
-            if (start < 0) {
-                throw new IllegalArgumentException("Start index must be positive: " + start);
-            }
-            if (step == 0) {
-                throw new IllegalArgumentException("Step must be != 0: " + step);
-            }
-            return new LayoutPath.PathElementImpl(PathKind.SEQUENCE_RANGE,
-                                                  path -> path.sequenceElement(start, step));
+            return new LayoutPath.SequenceElementByRange(start, step);
         }
 
         /**
@@ -933,11 +965,10 @@ public sealed interface MemoryLayout
          * <p>
          * The exact sequence element selected by this layout is expressed as an index
          * {@code I}. If {@code C} is the sequence element count, it follows that
-         * {@code 0 <= I < C}.
+         * {@code 0 <= I < C}. That is, {@code C} is the size of the returned open path element.
          */
         static PathElement sequenceElement() {
-            return new LayoutPath.PathElementImpl(PathKind.SEQUENCE_ELEMENT,
-                                                  LayoutPath::sequenceElement);
+            return LayoutPath.SequenceElement.instance();
         }
 
         /**
@@ -945,8 +976,7 @@ public sealed interface MemoryLayout
          * {@linkplain AddressLayout#targetLayout() target layout} (where set)}
          */
         static PathElement dereferenceElement() {
-            return new LayoutPath.PathElementImpl(PathKind.DEREF_ELEMENT,
-                    LayoutPath::derefElement);
+            return LayoutPath.DereferenceElement.instance();
         }
     }
 
@@ -1013,7 +1043,7 @@ public sealed interface MemoryLayout
      * @throws IllegalArgumentException if {@code elementLayout.byteSize() % elementLayout.byteAlignment() != 0}
      */
     static SequenceLayout sequenceLayout(long elementCount, MemoryLayout elementLayout) {
-        MemoryLayoutUtil.requireNonNegative(elementCount);
+        Utils.checkNonNegativeArgument(elementCount, "elementCount");
         Objects.requireNonNull(elementLayout);
         Utils.checkElementAlignment(elementLayout,
                 "Element layout size is not multiple of alignment");

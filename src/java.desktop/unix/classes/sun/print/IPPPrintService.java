@@ -1013,15 +1013,15 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
      * Returns the matching standard Media using string comparison of names.
      */
     private Media getIPPMedia(String mediaName) {
-        CustomMediaSizeName sampleSize = new CustomMediaSizeName("sample", "",
-                                                                 0, 0);
+        CustomMediaSizeName sampleSize =
+                CustomMediaSizeName.create("sample", "", 0, 0);
         Media[] sizes = sampleSize.getSuperEnumTable();
         for (int i=0; i<sizes.length; i++) {
             if (mediaName.equals(""+sizes[i])) {
                 return sizes[i];
             }
         }
-        CustomMediaTray sampleTray = new CustomMediaTray("sample", "");
+        CustomMediaTray sampleTray = CustomMediaTray.create("sample", "");
         Media[] trays = sampleTray.getSuperEnumTable();
         for (int i=0; i<trays.length; i++) {
             if (mediaName.equals(""+trays[i])) {

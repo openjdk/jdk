@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -263,7 +263,7 @@ public final class TypeLibrary {
         // STRUCT
         String superType = null;
         boolean eventType = false;
-        if (jdk.internal.event.Event.class.isAssignableFrom(clazz)) {
+        if (isEventClass(clazz)) {
             superType = Type.SUPER_TYPE_EVENT;
             eventType= true;
         }
@@ -289,6 +289,16 @@ public final class TypeLibrary {
             type.log("Added", LogTag.JFR_METADATA, LogLevel.INFO);
         }
         return type;
+    }
+
+    private static boolean isEventClass(Class<?> clazz) {
+        if (jdk.internal.event.Event.class.isAssignableFrom(clazz)) {
+            return true;
+        }
+        if (MirrorEvent.class.isAssignableFrom(clazz)) {
+            return true;
+        }
+        return false;
     }
 
     private static void addAnnotations(Class<?> clazz, Type type, List<AnnotationElement> dynamicAnnotations) {
@@ -322,7 +332,7 @@ public final class TypeLibrary {
             ValueDescriptor vd = dynamicFieldSet.get(field.getName());
             if (vd != null) {
                 if (!vd.getTypeName().equals(field.getType().getName())) {
-                    throw new InternalError("Type expected to match for field " + vd.getName() + " expected "  + field.getName() + " but got " + vd.getName());
+                    throw new InternalError("Type expected to match for field " + vd.getName() + " expected "  + field.getType().getName() + " but got " + vd.getTypeName());
                 }
                 for (AnnotationElement ae : vd.getAnnotationElements()) {
                     newTypes.add(PrivateAccess.getInstance().getType(ae));
@@ -339,7 +349,7 @@ public final class TypeLibrary {
     }
 
     // By convention all events have these fields.
-    public synchronized static void addImplicitFields(Type type, boolean requestable, boolean hasDuration, boolean hasThread, boolean hasStackTrace, boolean hasCutoff) {
+    public static synchronized void addImplicitFields(Type type, boolean requestable, boolean hasDuration, boolean hasThread, boolean hasStackTrace, boolean hasCutoff) {
         if (!implicitFieldTypes) {
             createAnnotationType(Timespan.class);
             createAnnotationType(Timestamp.class);

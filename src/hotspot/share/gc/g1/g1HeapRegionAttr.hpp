@@ -26,7 +26,7 @@
 #define SHARE_GC_G1_G1HEAPREGIONATTR_HPP
 
 #include "gc/g1/g1BiasedArray.hpp"
-#include "gc/g1/heapRegion.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
 
 // Per-region attributes often used during garbage collection to avoid costly
 // lookups for that information all over the place.

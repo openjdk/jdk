@@ -234,4 +234,3 @@ public class RecordComponentNode extends RecordComponentVisitor {
         recordComponentVisitor.visitEnd();
     }
 }
-

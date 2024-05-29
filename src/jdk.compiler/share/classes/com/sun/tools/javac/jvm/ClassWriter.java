@@ -196,7 +196,7 @@ public class ClassWriter extends ClassFile {
         extraAttributeHooks = extraAttributeHooks.prepend(addExtraAttributes);
     }
 
-/******************************************************************
+/* ****************************************************************
  * Diagnostics: dump generated class names and modifiers
  ******************************************************************/
 
@@ -237,7 +237,7 @@ public class ClassWriter extends ClassFile {
             "SUPER", "VOLATILE", "TRANSIENT", "NATIVE", "INTERFACE",
             "ABSTRACT", "STRICTFP"};
 
-/******************************************************************
+/* ****************************************************************
  * Output routines
  ******************************************************************/
 
@@ -259,7 +259,7 @@ public class ClassWriter extends ClassFile {
         buf.elems[adr+3] = (byte)((x      ) & 0xFF);
     }
 
-/******************************************************************
+/* ****************************************************************
  * Writing the Constant Pool
  ******************************************************************/
 
@@ -277,7 +277,7 @@ public class ClassWriter extends ClassFile {
         }
     }
 
-/******************************************************************
+/* ****************************************************************
  * Writing Attributes
  ******************************************************************/
 
@@ -480,7 +480,7 @@ public class ClassWriter extends ClassFile {
         return attrCount;
     }
 
-/**********************************************************************
+/* ********************************************************************
  * Writing Java-language annotations (aka metadata, attributes)
  **********************************************************************/
 
@@ -741,7 +741,7 @@ public class ClassWriter extends ClassFile {
         }
     }
 
-/**********************************************************************
+/* ********************************************************************
  * Writing module attributes
  **********************************************************************/
 
@@ -823,7 +823,7 @@ public class ClassWriter extends ClassFile {
         return 1;
     }
 
-/**********************************************************************
+/* ********************************************************************
  * Writing Objects
  **********************************************************************/
 
@@ -922,11 +922,11 @@ public class ClassWriter extends ClassFile {
     /** Write "PermittedSubclasses" attribute.
      */
     int writePermittedSubclassesIfNeeded(ClassSymbol csym) {
-        if (csym.permitted.nonEmpty()) {
+        if (csym.getPermittedSubclasses().nonEmpty()) {
             int alenIdx = writeAttr(names.PermittedSubclasses);
-            databuf.appendChar(csym.permitted.size());
-            for (Symbol c : csym.permitted) {
-                databuf.appendChar(poolWriter.putClass((ClassSymbol) c));
+            databuf.appendChar(csym.getPermittedSubclasses().size());
+            for (Type t : csym.getPermittedSubclasses()) {
+                databuf.appendChar(poolWriter.putClass((ClassSymbol) t.tsym));
             }
             endAttr(alenIdx);
             return 1;

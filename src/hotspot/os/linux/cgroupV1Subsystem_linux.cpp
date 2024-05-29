@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -168,6 +168,20 @@ jlong CgroupV1Subsystem::memory_and_swap_limit_in_bytes() {
   return memory_swap;
 }
 
+jlong CgroupV1Subsystem::memory_and_swap_usage_in_bytes() {
+  jlong memory_sw_limit = memory_and_swap_limit_in_bytes();
+  jlong memory_limit = CgroupSubsystem::memory_limit_in_bytes();
+  if (memory_sw_limit > 0 && memory_limit > 0) {
+    jlong delta_swap = memory_sw_limit - memory_limit;
+    if (delta_swap > 0) {
+      GET_CONTAINER_INFO(julong, _memory->controller(), "/memory.memsw.usage_in_bytes",
+                         "mem swap usage is: ", JULONG_FORMAT, JULONG_FORMAT, memory_swap_usage);
+      return (jlong)memory_swap_usage;
+    }
+  }
+  return memory_usage_in_bytes();
+}
+
 jlong CgroupV1Subsystem::read_mem_swappiness() {
   GET_CONTAINER_INFO(julong, _memory->controller(), "/memory.swappiness",
                      "Swappiness is: ", JULONG_FORMAT, JULONG_FORMAT, swappiness);
@@ -214,6 +228,17 @@ jlong CgroupV1Subsystem::memory_max_usage_in_bytes() {
   return memmaxusage;
 }
 
+jlong CgroupV1Subsystem::rss_usage_in_bytes() {
+  GET_CONTAINER_INFO_LINE(julong, _memory->controller(), "/memory.stat",
+                          "rss", JULONG_FORMAT, JULONG_FORMAT, rss);
+  return rss;
+}
+
+jlong CgroupV1Subsystem::cache_usage_in_bytes() {
+  GET_CONTAINER_INFO_LINE(julong, _memory->controller(), "/memory.stat",
+                          "cache", JULONG_FORMAT, JULONG_FORMAT, cache);
+  return cache;
+}
 
 jlong CgroupV1Subsystem::kernel_memory_usage_in_bytes() {
   GET_CONTAINER_INFO(jlong, _memory->controller(), "/memory.kmem.usage_in_bytes",

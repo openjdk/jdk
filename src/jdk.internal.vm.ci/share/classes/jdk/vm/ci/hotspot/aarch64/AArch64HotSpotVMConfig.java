@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,6 @@ class AArch64HotSpotVMConfig extends HotSpotVMConfigAccess {
      * These flags are set based on the corresponding command line flags.
      */
     final boolean useCRC32 = getFlag("UseCRC32", Boolean.class);
-    final boolean useNeon = getFlag("UseNeon", Boolean.class);
     final boolean useSIMDForMemoryOps = getFlag("UseSIMDForMemoryOps", Boolean.class);
     final boolean avoidUnalignedAccesses = getFlag("AvoidUnalignedAccesses", Boolean.class);
     final boolean useLSE = getFlag("UseLSE", Boolean.class);

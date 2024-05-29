@@ -30,6 +30,7 @@
 #include "memory/allocation.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 
 // Forward decl
@@ -43,24 +44,25 @@ class ThreadClosure;
 // iterate over them.
 class G1ConcurrentRefineThreadControl {
   G1ConcurrentRefine* _cr;
-  G1ConcurrentRefineThread** _threads;
-  uint _max_num_threads;
+  GrowableArrayCHeap<G1ConcurrentRefineThread*, mtGC> _threads;
 
   // Create the refinement thread for the given worker id.
   // If initializing is true, ignore InjectGCWorkerCreationFailure.
   G1ConcurrentRefineThread* create_refinement_thread(uint worker_id, bool initializing);
 
+  bool ensure_threads_created(uint worker_id, bool initializing);
+
   NONCOPYABLE(G1ConcurrentRefineThreadControl);
 
 public:
-  G1ConcurrentRefineThreadControl();
+  G1ConcurrentRefineThreadControl(uint max_num_threads);
   ~G1ConcurrentRefineThreadControl();
 
-  jint initialize(G1ConcurrentRefine* cr, uint max_num_threads);
+  jint initialize(G1ConcurrentRefine* cr);
 
   void assert_current_thread_is_primary_refinement_thread() const NOT_DEBUG_RETURN;
 
-  uint max_num_threads() const { return _max_num_threads; }
+  uint max_num_threads() const { return _threads.capacity(); }
 
   // Activate the indicated thread.  If the thread has not yet been allocated,
   // allocate and then activate.  If allocation is needed and fails, return
@@ -215,9 +217,6 @@ public:
 
   // Iterate over all concurrent refinement threads applying the given closure.
   void threads_do(ThreadClosure *tc);
-
-  // Maximum number of refinement threads.
-  static uint max_num_threads();
 };
 
 #endif // SHARE_GC_G1_G1CONCURRENTREFINE_HPP

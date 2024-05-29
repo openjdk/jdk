@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,14 +91,6 @@ void InstanceRefKlass::oop_oop_iterate_discovery(oop obj, ReferenceType type, Oo
 }
 
 template <typename T, class OopClosureType, class Contains>
-void InstanceRefKlass::oop_oop_iterate_discovered_and_discovery(oop obj, ReferenceType type, OopClosureType* closure, Contains& contains) {
-  // Explicitly apply closure to the discovered field.
-  do_discovered<T>(obj, closure, contains);
-  // Then do normal reference processing with discovery.
-  oop_oop_iterate_discovery<T>(obj, type, closure, contains);
-}
-
-template <typename T, class OopClosureType, class Contains>
 void InstanceRefKlass::oop_oop_iterate_fields(oop obj, OopClosureType* closure, Contains& contains) {
   assert(closure->ref_discoverer() == nullptr, "ReferenceDiscoverer should not be set");
   do_referent<T>(obj, closure, contains);
@@ -117,10 +109,6 @@ void InstanceRefKlass::oop_oop_iterate_ref_processing(oop obj, OopClosureType* c
     case OopIterateClosure::DO_DISCOVERY:
       trace_reference_gc<T>("do_discovery", obj);
       oop_oop_iterate_discovery<T>(obj, reference_type(), closure, contains);
-      break;
-    case OopIterateClosure::DO_DISCOVERED_AND_DISCOVERY:
-      trace_reference_gc<T>("do_discovered_and_discovery", obj);
-      oop_oop_iterate_discovered_and_discovery<T>(obj, reference_type(), closure, contains);
       break;
     case OopIterateClosure::DO_FIELDS:
       trace_reference_gc<T>("do_fields", obj);

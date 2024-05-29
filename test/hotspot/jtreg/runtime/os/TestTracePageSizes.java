@@ -350,7 +350,7 @@ class RangeWithPageSize {
         this.start = Long.parseUnsignedLong(start, 16);
         this.end = Long.parseUnsignedLong(end, 16);
         this.pageSize = Long.parseLong(pageSize);
-        this.thpEligible = Integer.parseInt(thpEligible) == 1;
+        this.thpEligible = thpEligible == null ? false : (Integer.parseInt(thpEligible) == 1);
 
         vmFlagHG = false;
         vmFlagHT = false;
@@ -365,12 +365,11 @@ class RangeWithPageSize {
             }
         }
 
-        // When the THP policy is 'always' instead of 'madvise, the vmFlagHG property is false.
-        // Check the THPeligible property instead.
-        isTHP = !vmFlagHT && this.thpEligible;
+        // When the THP policy is 'always' instead of 'madvise, the vmFlagHG property is false,
+        // therefore also check thpEligible. If this is still causing problems in the future,
+        // we might have to check the AnonHugePages field.
 
-        // vmFlagHG should imply isTHP
-        assert !vmFlagHG || isTHP;
+        isTHP = vmFlagHG || this.thpEligible;
     }
 
     public long getPageSize() {

@@ -71,9 +71,9 @@ final class ShellScriptResource {
     private Set<PosixFilePermission> execPerms = ALL_CAN_EXECUTE;
     private OverridableResource resource;
 
-    private final static Set<PosixFilePermission> ALL_CAN_EXECUTE = Set.of(
+    private static final Set<PosixFilePermission> ALL_CAN_EXECUTE = Set.of(
             PosixFilePermission.OWNER_EXECUTE, PosixFilePermission.GROUP_EXECUTE,
             PosixFilePermission.OTHERS_EXECUTE);
-    private final static Set<PosixFilePermission> OWNER_CAN_EXECUTE = Set.of(
+    private static final Set<PosixFilePermission> OWNER_CAN_EXECUTE = Set.of(
             PosixFilePermission.OWNER_EXECUTE);
 }

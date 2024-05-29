@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,6 +93,11 @@ import jdk.internal.vm.annotation.ForceInline;
  * <li>The address of a native segment (including mapped segments) denotes the physical
  * address of the region of memory which backs the segment.</li>
  * </ul>
+ * <p>
+ * Every memory segment has a {@linkplain #maxByteAlignment() maximum byte alignment},
+ * expressed as a {@code long} value. The maximum alignment is always a power of two,
+ * derived from the segment address, and the segment type, as explained in more detail
+ * <a href="#segment-alignment">below</a>.
  * <p>
  * Every memory segment has a {@linkplain #byteSize() size}. The size of a heap segment
  * is derived from the Java array from which it is obtained. This size is predictable
@@ -304,8 +309,7 @@ import jdk.internal.vm.annotation.ForceInline;
  * and/or garbage collection behavior).
  * <p>
  * In practice, the Java runtime lays out arrays in memory so that each n-byte element
- * occurs at an n-byte aligned physical address (except for {@code long[]} and
- * {@code double[]}, where alignment is platform-dependent, as explained below). The
+ * occurs at an n-byte aligned physical address. The
  * runtime preserves this invariant even if the array is relocated during garbage
  * collection. Access operations rely on this invariant to determine if the specified
  * offset in a heap segment refers to an aligned address in physical memory.
@@ -324,26 +328,17 @@ import jdk.internal.vm.annotation.ForceInline;
  *     would correspond to physical address 1008 but offset 4 would correspond to
  *     physical address 1010.</li>
  * <li>The starting physical address of a {@code long[]} array will be 8-byte aligned
- *     (e.g. 1000) on 64-bit platforms, so that successive long elements occur at
- *     8-byte aligned addresses (e.g., 1000, 1008, 1016, 1024, etc.) On 64-bit platforms,
- *     a heap segment backed by a {@code long[]} array can be accessed at offsets
- *     0, 8, 16, 24, etc under an 8-byte alignment constraint. In addition, the segment
- *     can be accessed at offsets 0, 4, 8, 12, etc under a 4-byte alignment constraint,
- *     because the target addresses (1000, 1004, 1008, 1012) are 4-byte aligned. And,
- *     the segment can be accessed at offsets 0, 2, 4, 6, etc under a 2-byte alignment
- *     constraint, because the target addresses (e.g. 1000, 1002, 1004, 1006) are
- *     2-byte aligned.</li>
- * <li>The starting physical address of a {@code long[]} array will be 4-byte aligned
- *     (e.g. 1004) on 32-bit platforms, so that successive long elements occur at 4-byte
- *     aligned addresses (e.g., 1004, 1008, 1012, 1016, etc.) On 32-bit platforms, a heap
- *     segment backed by a {@code long[]} array can be accessed at offsets
- *     0, 4, 8, 12, etc under a 4-byte alignment constraint, because the target addresses
- *     (1004, 1008, 1012, 1016) are 4-byte aligned. And, the segment can be accessed at
- *     offsets 0, 2, 4, 6, etc under a 2-byte alignment constraint, because the target
- *     addresses (e.g. 1000, 1002, 1004, 1006) are 2-byte aligned.</li>
+ *     (e.g. 1000), so that successive long elements occur at 8-byte aligned addresses
+ *     (e.g., 1000, 1008, 1016, 1024, etc.) A heap segment backed by a {@code long[]}
+ *     array can be accessed at offsets 0, 8, 16, 24, etc under an 8-byte alignment
+ *     constraint. In addition, the segment can be accessed at offsets 0, 4, 8, 12,
+ *     etc under a 4-byte alignment constraint, because the target addresses (1000, 1004,
+ *     1008, 1012) are 4-byte aligned. And, the segment can be accessed at offsets 0, 2,
+ *     4, 6, etc under a 2-byte alignment constraint, because the target addresses (e.g.
+ *     1000, 1002, 1004, 1006) are 2-byte aligned.</li>
  * </ul>
  * <p>
- * In other words, heap segments feature a (platform-dependent) <em>maximum</em>
+ * In other words, heap segments feature a <em>maximum</em>
  * alignment which is derived from the size of the elements of the Java array backing the
  * segment, as shown in the following table:
  *
@@ -388,10 +383,7 @@ import jdk.internal.vm.annotation.ForceInline;
  * In such circumstances, clients have two options. They can use a heap segment backed
  * by a different array type (e.g. {@code long[]}), capable of supporting greater maximum
  * alignment. More specifically, the maximum alignment associated with {@code long[]} is
- * set to {@code ValueLayout.JAVA_LONG.byteAlignment()} which is a platform-dependent
- * value (set to {@code ValueLayout.ADDRESS.byteSize()}). That is, {@code long[]}) is
- * guaranteed to provide at least 8-byte alignment in 64-bit platforms, but only 4-byte
- * alignment in 32-bit platforms:
+ * set to {@code ValueLayout.JAVA_LONG.byteAlignment()}, which is 8 bytes:
  *
  * {@snippet lang=java :
  * MemorySegment longSegment = MemorySegment.ofArray(new long[10]);
@@ -404,6 +396,14 @@ import jdk.internal.vm.annotation.ForceInline;
  * {@snippet lang=java :
  * MemorySegment byteSegment = MemorySegment.ofArray(new byte[10]);
  * byteSegment.get(ValueLayout.JAVA_INT_UNALIGNED, 0); // ok: ValueLayout.JAVA_INT_UNALIGNED.byteAlignment() == ValueLayout.JAVA_BYTE.byteAlignment()
+ * }
+ *
+ * Clients can use the {@linkplain MemorySegment#maxByteAlignment()} method to check if
+ * a memory segment supports the alignment constraint of a memory layout, as follows:
+ * {@snippet lang=java:
+ * MemoryLayout layout = ...
+ * MemorySegment segment = ...
+ * boolean isAligned = segment.maxByteAlignment() >= layout.byteAlignment();
  * }
  *
  * <h2 id="wrapping-addresses">Zero-length memory segments</h2>
@@ -600,6 +600,26 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * {@return the size (in bytes) of this memory segment}
      */
     long byteSize();
+
+    /**
+     * {@return the <a href="#segment-alignment">maximum byte alignment</a>
+     * associated with this memory segment}
+     * <p>
+     * The returned alignment is always a power of two and is derived from
+     * the segment {@linkplain #address() address()} and, if it is a heap segment,
+     * the type of the {@linkplain #heapBase() backing heap storage}.
+     * <p>
+     * This method can be used to ensure that a segment is sufficiently aligned
+     * with a layout:
+     * {@snippet lang=java:
+     * MemoryLayout layout = ...
+     * MemorySegment segment = ...
+     * if (segment.maxByteAlignment() < layout.byteAlignment()) {
+     *     // Take action (e.g. throw an Exception)
+     * }
+     * }
+     */
+    long maxByteAlignment();
 
     /**
      * Returns a slice of this memory segment, at the given offset. The returned
@@ -869,7 +889,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *         this segment is not {@linkplain Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},
      *         such that {@code isAccessibleBy(T) == false}
-     * @throws UnsupportedOperationException if this segment is
+     * @throws IllegalArgumentException if this segment is
      *         {@linkplain #isReadOnly() read-only}
      */
     MemorySegment fill(byte value);
@@ -894,7 +914,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *         {@code src} is not {@linkplain Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},
      *         such that {@code src.isAccessibleBy(T) == false}
-     * @throws UnsupportedOperationException if this segment is
+     * @throws IllegalArgumentException if this segment is
      *         {@linkplain #isReadOnly() read-only}
      * @return this segment
      */
@@ -1269,6 +1289,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *         this segment is not {@linkplain Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},
      *         such that {@code isAccessibleBy(T) == false}
+     * @throws IllegalArgumentException if this segment is
+     *         {@linkplain #isReadOnly() read-only}
      */
     void setString(long offset, String str);
 
@@ -1306,6 +1328,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *         such that {@code isAccessibleBy(T) == false}
      * @throws IllegalArgumentException if {@code charset} is not a
      *         {@linkplain StandardCharsets standard charset}
+     * @throws IllegalArgumentException if this segment is
+     *         {@linkplain #isReadOnly() read-only}
      */
     void setString(long offset, String str, Charset charset);
 
@@ -1432,6 +1456,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     /**
      * A zero-length native segment modelling the {@code NULL} address. Equivalent to
      * {@code MemorySegment.ofAddress(0L)}.
+     * <p>
+     * The {@linkplain MemorySegment#maxByteAlignment() maximum byte alignment} for
+     * the {@code NULL} segment is of 2<sup>62</sup>.
      */
     MemorySegment NULL = MemorySegment.ofAddress(0L);
 
@@ -1493,7 +1520,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IndexOutOfBoundsException if {@code dstOffset > dstSegment.byteSize() - bytes}
      * @throws IndexOutOfBoundsException if either {@code srcOffset},
      *         {@code dstOffset} or {@code bytes} are {@code < 0}
-     * @throws UnsupportedOperationException if {@code dstSegment} is
+     * @throws IllegalArgumentException if {@code dstSegment} is
      *         {@linkplain #isReadOnly() read-only}
      */
     @ForceInline
@@ -1552,7 +1579,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *         {@code dstSegment} is not {@linkplain Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},
      *         such that {@code dstSegment.isAccessibleBy(T) == false}
-     * @throws UnsupportedOperationException if {@code dstSegment} is {@linkplain #isReadOnly() read-only}
+     * @throws IllegalArgumentException if {@code dstSegment} is {@linkplain #isReadOnly() read-only}
      * @throws IndexOutOfBoundsException if {@code elementCount * srcLayout.byteSize()} overflows
      * @throws IndexOutOfBoundsException if {@code elementCount * dtsLayout.byteSize()} overflows
      * @throws IndexOutOfBoundsException if {@code srcOffset > srcSegment.byteSize() - (elementCount * srcLayout.byteSize())}
@@ -1587,6 +1614,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *         <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a>
      *         in the provided layout
      * @throws IndexOutOfBoundsException if {@code offset > byteSize() - layout.byteSize()}
+     *         or {@code offset < 0}
      */
     byte get(ValueLayout.OfByte layout, long offset);
 
@@ -1605,7 +1633,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *         <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a>
      *         in the provided layout
      * @throws IndexOutOfBoundsException if {@code offset > byteSize() - layout.byteSize()}
-     * @throws UnsupportedOperationException if this segment is
+     *         or {@code offset < 0}
+     * @throws IllegalArgumentException if this segment is
      *         {@linkplain #isReadOnly() read-only}
      */
     void set(ValueLayout.OfByte layout, long offset, byte value);
@@ -1625,6 +1654,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *         <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a>
      *         in the provided layout
      * @throws IndexOutOfBoundsException if {@code offset > byteSize() - layout.byteSize()}
+     *         or {@code offset < 0}
      */
     boolean get(ValueLayout.OfBoolean layout, long offset);
 
@@ -1643,7 +1673,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *         <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a>
      *         in the provided layout
      * @throws IndexOutOfBoundsException if {@code offset > byteSize() - layout.byteSize()}
-     * @throws UnsupportedOperationException if this segment is
+     *         or {@code offset < 0}
+     * @throws IllegalArgumentException if this segment is
      *         {@linkplain #isReadOnly() read-only}
      */
     void set(ValueLayout.OfBoolean layout, long offset, boolean value);
@@ -1663,6 +1694,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *         <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a>
      *         in the provided layout
      * @throws IndexOutOfBoundsException if {@code offset > byteSize() - layout.byteSize()}
+     *         or {@code offset < 0}
      */
     char get(ValueLayout.OfChar layout, long offset);
 
@@ -1681,7 +1713,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *         <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a>
      *         in the provided layout
      * @throws IndexOutOfBoundsException if {@code offset > byteSize() - layout.byteSize()}
-     * @throws UnsupportedOperationException if this segment is
+     *         or {@code offset < 0}
+     * @throws IllegalArgumentException if this segment is
      *         {@linkplain #isReadOnly() read-only}
      */
     void set(ValueLayout.OfChar layout, long offset, char value);
@@ -1701,6 +1734,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *         <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a>
      *         in the provided layout
      * @throws IndexOutOfBoundsException if {@code offset > byteSize() - layout.byteSize()}
+     *         or {@code offset < 0}
      */
     short get(ValueLayout.OfShort layout, long offset);
 
@@ -1719,7 +1753,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *         <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a>
      *         in the provided layout
      * @throws IndexOutOfBoundsException if {@code offset > byteSize() - layout.byteSize()}
-     * @throws UnsupportedOperationException if this segment is
+     *         or {@code offset < 0}
+     * @throws IllegalArgumentException if this segment is
      *         {@linkplain #isReadOnly() read-only}
      */
     void set(ValueLayout.OfShort layout, long offset, short value);
@@ -1739,6 +1774,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *         <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a>
      *         in the provided layout
      * @throws IndexOutOfBoundsException if {@code offset > byteSize() - layout.byteSize()}
+     *         or {@code offset < 0}
      */
     int get(ValueLayout.OfInt layout, long offset);
 
@@ -1757,7 +1793,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *         <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a>
      *         in the provided layout
      * @throws IndexOutOfBoundsException if {@code offset > byteSize() - layout.byteSize()}
-     * @throws UnsupportedOperationException if this segment is
+     *         or {@code offset < 0}
+     * @throws IllegalArgumentException if this segment is
      *         {@linkplain #isReadOnly() read-only}
      */
     void set(ValueLayout.OfInt layout, long offset, int value);
@@ -1777,6 +1814,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *         <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a>
      *         in the provided layout
      * @throws IndexOutOfBoundsException if {@code offset > byteSize() - layout.byteSize()}
+     *         or {@code offset < 0}
      */
     float get(ValueLayout.OfFloat layout, long offset);
 
@@ -1795,7 +1833,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *         <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a>
      *         in the provided layout
      * @throws IndexOutOfBoundsException if {@code offset > byteSize() - layout.byteSize()}
-     * @throws UnsupportedOperationException if this segment is
+     *         or {@code offset < 0}
+     * @throws IllegalArgumentException if this segment is
      *         {@linkplain #isReadOnly() read-only}
      */
     void set(ValueLayout.OfFloat layout, long offset, float value);
@@ -1815,6 +1854,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *         <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a>
      *         in the provided layout
      * @throws IndexOutOfBoundsException if {@code offset > byteSize() - layout.byteSize()}
+     *         or {@code offset < 0}
      */
     long get(ValueLayout.OfLong layout, long offset);
 
@@ -1833,7 +1873,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *         <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a>
      *         in the provided layout
      * @throws IndexOutOfBoundsException if {@code offset > byteSize() - layout.byteSize()}
-     * @throws UnsupportedOperationException if this segment is
+     *         or {@code offset < 0}
+     * @throws IllegalArgumentException if this segment is
      *         {@linkplain #isReadOnly() read-only}
      */
     void set(ValueLayout.OfLong layout, long offset, long value);
@@ -1853,6 +1894,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *         <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a>
      *         in the provided layout
      * @throws IndexOutOfBoundsException if {@code offset > byteSize() - layout.byteSize()}
+     *         or {@code offset < 0}
      */
     double get(ValueLayout.OfDouble layout, long offset);
 
@@ -1871,7 +1913,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *         <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a>
      *         in the provided layout
      * @throws IndexOutOfBoundsException if {@code offset > byteSize() - layout.byteSize()}
-     * @throws UnsupportedOperationException if this segment is
+     *         or {@code offset < 0}
+     * @throws IllegalArgumentException if this segment is
      *         {@linkplain #isReadOnly() read-only}
      */
     void set(ValueLayout.OfDouble layout, long offset, double value);
@@ -1901,6 +1944,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *         <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a>
      *         in {@code T}
      * @throws IndexOutOfBoundsException if {@code offset > byteSize() - layout.byteSize()}
+     *         or {@code offset < 0}
      */
     MemorySegment get(AddressLayout layout, long offset);
 
@@ -1919,10 +1963,11 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *         <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a>
      *         in the provided layout
      * @throws IndexOutOfBoundsException if {@code offset > byteSize() - layout.byteSize()}
-     * @throws UnsupportedOperationException if this segment is
-     *         {@linkplain #isReadOnly() read-only}
-     * @throws UnsupportedOperationException if {@code value} is not a
+     *         or {@code offset < 0}
+     * @throws IllegalArgumentException if {@code value} is not a
      *         {@linkplain #isNative() native} segment
+     * @throws IllegalArgumentException if this segment is
+     *         {@linkplain #isReadOnly() read-only}
      */
     void set(AddressLayout layout, long offset, MemorySegment value);
 
@@ -1945,6 +1990,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IllegalArgumentException if {@code layout.byteAlignment() > layout.byteSize()}
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize()} overflows
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize() > byteSize() - layout.byteSize()}
+     *         or {@code index < 0}
      */
     byte getAtIndex(ValueLayout.OfByte layout, long index);
 
@@ -1967,6 +2013,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IllegalArgumentException if {@code layout.byteAlignment() > layout.byteSize()}
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize()} overflows
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize() > byteSize() - layout.byteSize()}
+     *         or {@code index < 0}
      */
     boolean getAtIndex(ValueLayout.OfBoolean layout, long index);
 
@@ -1989,6 +2036,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IllegalArgumentException if {@code layout.byteAlignment() > layout.byteSize()}
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize()} overflows
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize() > byteSize() - layout.byteSize()}
+     *         or {@code index < 0}
      */
     char getAtIndex(ValueLayout.OfChar layout, long index);
 
@@ -2011,7 +2059,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IllegalArgumentException if {@code layout.byteAlignment() > layout.byteSize()}
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize()} overflows
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize() > byteSize() - layout.byteSize()}
-     * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}
+     *         or {@code index < 0}
+     * @throws IllegalArgumentException if this segment is {@linkplain #isReadOnly() read-only}
      */
     void setAtIndex(ValueLayout.OfChar layout, long index, char value);
 
@@ -2034,6 +2083,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IllegalArgumentException if {@code layout.byteAlignment() > layout.byteSize()}
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize()} overflows
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize() > byteSize() - layout.byteSize()}
+     *         or {@code index < 0}
      */
     short getAtIndex(ValueLayout.OfShort layout, long index);
 
@@ -2055,7 +2105,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IllegalArgumentException if {@code layout.byteAlignment() > layout.byteSize()}
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize()} overflows
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize() > byteSize() - layout.byteSize()}
-     * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}
+     *         or {@code index < 0}
+     * @throws IllegalArgumentException if this segment is {@linkplain #isReadOnly() read-only}
      */
     void setAtIndex(ValueLayout.OfByte layout, long index, byte value);
 
@@ -2078,7 +2129,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IllegalArgumentException if {@code layout.byteAlignment() > layout.byteSize()}
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize()} overflows
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize() > byteSize() - layout.byteSize()}
-     * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}
+     *         or {@code index < 0}
+     * @throws IllegalArgumentException if this segment is {@linkplain #isReadOnly() read-only}
      */
     void setAtIndex(ValueLayout.OfBoolean layout, long index, boolean value);
 
@@ -2101,7 +2153,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IllegalArgumentException if {@code layout.byteAlignment() > layout.byteSize()}
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize()} overflows
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize() > byteSize() - layout.byteSize()}
-     * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}
+     *         or {@code index < 0}
+     * @throws IllegalArgumentException if this segment is {@linkplain #isReadOnly() read-only}
      */
     void setAtIndex(ValueLayout.OfShort layout, long index, short value);
 
@@ -2124,6 +2177,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IllegalArgumentException if {@code layout.byteAlignment() > layout.byteSize()}
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize()} overflows
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize() > byteSize() - layout.byteSize()}
+     *         or {@code index < 0}
      */
     int getAtIndex(ValueLayout.OfInt layout, long index);
 
@@ -2146,7 +2200,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IllegalArgumentException if {@code layout.byteAlignment() > layout.byteSize()}
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize()} overflows
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize() > byteSize() - layout.byteSize()}
-     * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}
+     *         or {@code index < 0}
+     * @throws IllegalArgumentException if this segment is {@linkplain #isReadOnly() read-only}
      */
     void setAtIndex(ValueLayout.OfInt layout, long index, int value);
 
@@ -2169,6 +2224,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IllegalArgumentException if {@code layout.byteAlignment() > layout.byteSize()}
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize()} overflows
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize() > byteSize() - layout.byteSize()}
+     *         or {@code index < 0}
      */
     float getAtIndex(ValueLayout.OfFloat layout, long index);
 
@@ -2191,7 +2247,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IllegalArgumentException if {@code layout.byteAlignment() > layout.byteSize()}
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize()} overflows
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize() > byteSize() - layout.byteSize()}
-     * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}
+     *         or {@code index < 0}
+     * @throws IllegalArgumentException if this segment is {@linkplain #isReadOnly() read-only}
      */
     void setAtIndex(ValueLayout.OfFloat layout, long index, float value);
 
@@ -2214,6 +2271,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IllegalArgumentException if {@code layout.byteAlignment() > layout.byteSize()}
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize()} overflows
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize() > byteSize() - layout.byteSize()}
+     *         or {@code index < 0}
      */
     long getAtIndex(ValueLayout.OfLong layout, long index);
 
@@ -2236,7 +2294,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IllegalArgumentException if {@code layout.byteAlignment() > layout.byteSize()}
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize()} overflows
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize() > byteSize() - layout.byteSize()}
-     * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}
+     *         or {@code index < 0}
+     * @throws IllegalArgumentException if this segment is {@linkplain #isReadOnly() read-only}
      */
     void setAtIndex(ValueLayout.OfLong layout, long index, long value);
 
@@ -2259,6 +2318,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IllegalArgumentException if {@code layout.byteAlignment() > layout.byteSize()}
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize()} overflows
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize() > byteSize() - layout.byteSize()}
+     *         or {@code index < 0}
      */
     double getAtIndex(ValueLayout.OfDouble layout, long index);
 
@@ -2281,7 +2341,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IllegalArgumentException if {@code layout.byteAlignment() > layout.byteSize()}
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize()} overflows
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize() > byteSize() - layout.byteSize()}
-     * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}
+     *         or {@code index < 0}
+     * @throws IllegalArgumentException if this segment is {@linkplain #isReadOnly() read-only}
      */
     void setAtIndex(ValueLayout.OfDouble layout, long index, double value);
 
@@ -2313,6 +2374,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *         in {@code T}
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize()} overflows
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize() > byteSize() - layout.byteSize()}
+     *         or {@code index < 0}
      */
     MemorySegment getAtIndex(AddressLayout layout, long index);
 
@@ -2335,8 +2397,10 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IllegalArgumentException if {@code layout.byteAlignment() > layout.byteSize()}
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize()} overflows
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize() > byteSize() - layout.byteSize()}
-     * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}
-     * @throws UnsupportedOperationException if {@code value} is not a {@linkplain #isNative() native} segment
+     *         or {@code index < 0}
+     * @throws IllegalArgumentException if {@code value} is not a {@linkplain #isNative() native} segment
+     * @throws IllegalArgumentException if this segment is
+     *         {@linkplain #isReadOnly() read-only}
      */
     void setAtIndex(AddressLayout layout, long index, MemorySegment value);
 
@@ -2460,7 +2524,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *         <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a>
      *         in the source element layout
      * @throws IllegalArgumentException if {@code dstLayout.byteAlignment() > dstLayout.byteSize()}
-     * @throws UnsupportedOperationException if {@code dstSegment} is {@linkplain #isReadOnly() read-only}
+     * @throws IllegalArgumentException if {@code dstSegment} is {@linkplain #isReadOnly() read-only}
      * @throws IndexOutOfBoundsException if {@code elementCount * dstLayout.byteSize()} overflows
      * @throws IndexOutOfBoundsException if {@code dstOffset > dstSegment.byteSize() - (elementCount * dstLayout.byteSize())}
      * @throws IndexOutOfBoundsException if {@code srcIndex > srcArray.length - elementCount}

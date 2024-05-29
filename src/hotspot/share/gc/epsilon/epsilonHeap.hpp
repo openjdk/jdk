@@ -37,7 +37,6 @@
 class EpsilonHeap : public CollectedHeap {
   friend class VMStructs;
 private:
-  SoftRefPolicy _soft_ref_policy;
   EpsilonMonitoringSupport* _monitoring_support;
   MemoryPool* _pool;
   GCMemoryManager _memory_manager;
@@ -63,10 +62,6 @@ public:
 
   const char* name() const override {
     return "Epsilon";
-  }
-
-  SoftRefPolicy* soft_ref_policy() override {
-    return &_soft_ref_policy;
   }
 
   jint initialize() override;

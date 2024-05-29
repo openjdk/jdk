@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,9 +58,10 @@ class ValueStack: public CompilationResourceObj {
   Values   _locals;                              // the locals
   Values   _stack;                               // the expression stack
   Values*  _locks;                               // the monitor stack (holding the locked values)
+  bool     _force_reexecute;                     // force the reexecute flag on, used for patching stub
 
   Value check(ValueTag tag, Value t) {
-    assert(tag == t->type()->tag() || tag == objectTag && t->type()->tag() == addressTag, "types must correspond");
+    assert(tag == t->type()->tag() || (tag == objectTag && t->type()->tag() == addressTag), "types must correspond");
     return t;
   }
 
@@ -224,6 +225,9 @@ class ValueStack: public CompilationResourceObj {
   // SSA form IR support
   void setup_phi_for_stack(BlockBegin* b, int index);
   void setup_phi_for_local(BlockBegin* b, int index);
+
+  bool force_reexecute() const         { return _force_reexecute; }
+  void set_force_reexecute()           { _force_reexecute = true; }
 
   // debugging
   void print()  PRODUCT_RETURN;

@@ -211,11 +211,6 @@ void InterpreterMacroAssembler::get_index_at_bcp(Register index, int bcp_offset,
     orr(index, tmp_reg, AsmOperand(index, lsl, BitsPerByte));
     ldrb(tmp_reg, Address(Rbcp, bcp_offset));
     orr(index, tmp_reg, AsmOperand(index, lsl, BitsPerByte));
-    // Check if the secondary index definition is still ~x, otherwise
-    // we have to change the following assembler code to calculate the
-    // plain index.
-    assert(ConstantPool::decode_invokedynamic_index(~123) == 123, "else change next line");
-    mvn_32(index, index);  // convert to plain index
   } else if (index_size == sizeof(u1)) {
     ldrb(index, Address(Rbcp, bcp_offset));
   } else {
@@ -303,15 +298,19 @@ void InterpreterMacroAssembler::load_field_entry(Register cache, Register index,
 }
 
 void InterpreterMacroAssembler::load_method_entry(Register cache, Register index, int bcp_offset) {
+  assert_different_registers(cache, index);
+
   // Get index out of bytecode pointer
   get_index_at_bcp(index, bcp_offset, cache /* as tmp */, sizeof(u2));
+
+  // sizeof(ResolvedMethodEntry) is not a power of 2 on Arm, so can't use shift
   mov(cache, sizeof(ResolvedMethodEntry));
   mul(index, index, cache); // Scale the index to be the entry index * sizeof(ResolvedMethodEntry)
 
   // load constant pool cache pointer
   ldr(cache, Address(FP, frame::interpreter_frame_cache_offset * wordSize));
   // Get address of method entries array
-  ldr(cache, Address(cache, ConstantPoolCache::method_entries_offset()));
+  ldr(cache, Address(cache, in_bytes(ConstantPoolCache::method_entries_offset())));
   add(cache, cache, Array<ResolvedMethodEntry>::base_offset_in_bytes());
   add(cache, cache, index);
 }

@@ -29,6 +29,14 @@
 #include "asm/macroAssembler.hpp"
 #include "memory/allocation.hpp"
 #include "oops/access.hpp"
+#ifdef COMPILER2
+#include "code/vmreg.hpp"
+#include "opto/optoreg.hpp"
+#include "opto/regmask.hpp"
+
+class BarrierStubC2;
+class Node;
+#endif // COMPILER2
 
 enum class NMethodPatchingType {
   stw_instruction_and_data_patch,
@@ -71,6 +79,42 @@ public:
   virtual void c2i_entry_barrier(MacroAssembler* masm, Register tmp1, Register tmp2, Register tmp3);
 
   virtual void check_oop(MacroAssembler *masm, Register oop, const char* msg);
+
+#ifdef COMPILER2
+  OptoReg::Name refine_register(const Node* node, OptoReg::Name opto_reg) const;
+#endif // COMPILER2
 };
+
+#ifdef COMPILER2
+
+// This class saves and restores the registers that need to be preserved across
+// the runtime call represented by a given C2 barrier stub. Use as follows:
+// {
+//   SaveLiveRegisters save(masm, stub);
+//   ..
+//   __ call_VM_leaf(...);
+//   ..
+// }
+class SaveLiveRegisters {
+  MacroAssembler* _masm;
+  RegMask _reg_mask;
+  int _frame_size;
+
+ public:
+  SaveLiveRegisters(MacroAssembler *masm, BarrierStubC2 *stub);
+
+  ~SaveLiveRegisters();
+
+ private:
+  enum IterationAction : int {
+    ACTION_SAVE,
+    ACTION_RESTORE,
+    ACTION_COUNT_ONLY
+  };
+
+  int iterate_over_register_mask(IterationAction action, int offset = 0);
+};
+
+#endif // COMPILER2
 
 #endif // CPU_PPC_GC_SHARED_BARRIERSETASSEMBLER_PPC_HPP

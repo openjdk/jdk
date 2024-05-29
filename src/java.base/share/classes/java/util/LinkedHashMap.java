@@ -474,6 +474,7 @@ public class LinkedHashMap<K,V>
      * @param  m the map whose mappings are to be placed in this map
      * @throws NullPointerException if the specified map is null
      */
+    @SuppressWarnings("this-escape")
     public LinkedHashMap(Map<? extends K, ? extends V> m) {
         super();
         accessOrder = false;

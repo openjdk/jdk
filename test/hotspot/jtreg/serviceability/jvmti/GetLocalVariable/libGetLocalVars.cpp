@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ extern "C" {
 #define TranslateError(err) "JVMTI error"
 
 static jint result = STATUS_PASSED;
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 
 #define DECL_TEST_FUNC(type, Type) \
 static void \
@@ -167,7 +167,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   static jvmtiCapabilities caps;
 
   res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_9);
-  if (res != JNI_OK || jvmti == NULL) {
+  if (res != JNI_OK || jvmti == nullptr) {
     printf("Wrong result of a valid call to GetEnv!\n");
     return JNI_ERR;
   }
@@ -223,16 +223,16 @@ Java_GetLocalVars_testLocals(JNIEnv *env, jclass cls, jobject thread) {
   static const int IntSlot = 4;
   static const int InvalidSlot = 5;
 
-  jmethodID mid = NULL;
+  jmethodID mid = nullptr;
 
-  if (jvmti == NULL) {
+  if (jvmti == nullptr) {
     printf("JVMTI client was not properly loaded!\n");
     result = STATUS_FAILED;
     return;
   }
 
   mid = env->GetStaticMethodID(cls, METHOD_NAME, METHOD_SIGN);
-  if (mid == NULL) {
+  if (mid == nullptr) {
     printf("Cannot find Method ID for %s%s\n", METHOD_NAME, METHOD_SIGN);
     result = STATUS_FAILED;
     return;

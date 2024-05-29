@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/gc_globals.hpp"
-#include "gc/shared/genCollectedHeap.hpp"
+#include "gc/shared/softRefPolicy.hpp"
 #include "interpreter/oopMapCache.hpp"
 #include "logging/log.hpp"
 #include "memory/classLoaderMetaspace.hpp"
@@ -130,9 +130,9 @@ bool VM_GC_Operation::doit_prologue() {
 
 
 void VM_GC_Operation::doit_epilogue() {
-  // Clean up old interpreter OopMap entries that were replaced
-  // during the GC thread root traversal.
-  OopMapCache::cleanup_old_entries();
+  // GC thread root traversal likely used OopMapCache a lot, which
+  // might have created lots of old entries. Trigger the cleanup now.
+  OopMapCache::trigger_cleanup();
   if (Universe::has_reference_pending_list()) {
     Heap_lock->notify_all();
   }
@@ -194,28 +194,6 @@ void VM_GC_HeapInspection::doit() {
   }
 }
 
-
-void VM_GenCollectForAllocation::doit() {
-  SvcGCMarker sgcm(SvcGCMarker::MINOR);
-
-  GenCollectedHeap* gch = GenCollectedHeap::heap();
-  GCCauseSetter gccs(gch, _gc_cause);
-  _result = gch->satisfy_failed_allocation(_word_size, _tlab);
-  assert(_result == nullptr || gch->is_in_reserved(_result), "result not in heap");
-
-  if (_result == nullptr && GCLocker::is_active_and_needs_gc()) {
-    set_gc_locked();
-  }
-}
-
-void VM_GenCollectFull::doit() {
-  SvcGCMarker sgcm(SvcGCMarker::FULL);
-
-  GenCollectedHeap* gch = GenCollectedHeap::heap();
-  GCCauseSetter gccs(gch, _gc_cause);
-  gch->do_full_collection(gch->must_clear_all_soft_refs(), _max_generation);
-}
-
 VM_CollectForMetadataAllocation::VM_CollectForMetadataAllocation(ClassLoaderData* loader_data,
                                                                  size_t size,
                                                                  Metaspace::MetadataType mdtype,
@@ -237,11 +215,9 @@ void VM_CollectForMetadataAllocation::doit() {
   // Check again if the space is available.  Another thread
   // may have similarly failed a metadata allocation and induced
   // a GC that freed space for the allocation.
-  if (!MetadataAllocationFailALot) {
-    _result = _loader_data->metaspace_non_null()->allocate(_size, _mdtype);
-    if (_result != nullptr) {
-      return;
-    }
+  _result = _loader_data->metaspace_non_null()->allocate(_size, _mdtype);
+  if (_result != nullptr) {
+    return;
   }
 
 #if INCLUDE_G1GC

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,8 +81,8 @@ extern "C" {
 
 TEST(QuickSort, quicksort) {
   {
-    int* test_array = NULL;
-    int* expected_array = NULL;
+    int* test_array = nullptr;
+    int* expected_array = nullptr;
     EXPECT_TRUE(sort_and_compare(test_array, expected_array, 0, test_comparator));
   }
   {

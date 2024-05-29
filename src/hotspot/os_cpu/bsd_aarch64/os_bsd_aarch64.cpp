@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -29,7 +29,6 @@
 #include "classfile/classLoader.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
-#include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jvm.h"
@@ -257,12 +256,12 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
         // here if the underlying file has been truncated.
         // Do not crash the VM in such a case.
         CodeBlob* cb = CodeCache::find_blob(pc);
-        CompiledMethod* nm = (cb != nullptr) ? cb->as_compiled_method_or_null() : nullptr;
-        bool is_unsafe_arraycopy = (thread->doing_unsafe_access() && UnsafeCopyMemory::contains_pc(pc));
-        if ((nm != nullptr && nm->has_unsafe_access()) || is_unsafe_arraycopy) {
+        nmethod* nm = (cb != nullptr) ? cb->as_nmethod_or_null() : nullptr;
+        bool is_unsafe_memory_access = (thread->doing_unsafe_access() && UnsafeMemoryAccess::contains_pc(pc));
+        if ((nm != nullptr && nm->has_unsafe_access()) || is_unsafe_memory_access) {
           address next_pc = pc + NativeCall::instruction_size;
-          if (is_unsafe_arraycopy) {
-            next_pc = UnsafeCopyMemory::page_error_continue_pc(pc);
+          if (is_unsafe_memory_access) {
+            next_pc = UnsafeMemoryAccess::page_error_continue_pc(pc);
           }
           stub = SharedRuntime::handle_unsafe_access(thread, next_pc);
         }
@@ -300,8 +299,8 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
                sig == SIGBUS && /* info->si_code == BUS_OBJERR && */
                thread->doing_unsafe_access()) {
       address next_pc = pc + NativeCall::instruction_size;
-      if (UnsafeCopyMemory::contains_pc(pc)) {
-        next_pc = UnsafeCopyMemory::page_error_continue_pc(pc);
+      if (UnsafeMemoryAccess::contains_pc(pc)) {
+        next_pc = UnsafeMemoryAccess::page_error_continue_pc(pc);
       }
       stub = SharedRuntime::handle_unsafe_access(thread, next_pc);
     }
@@ -514,7 +513,39 @@ static inline void atomic_copy64(const volatile void *src, volatile void *dst) {
 
 extern "C" {
   int SpinPause() {
-    return 0;
+    // We don't use StubRoutines::aarch64::spin_wait stub in order to
+    // avoid a costly call to os::current_thread_enable_wx() on MacOS.
+    // We should return 1 if SpinPause is implemented, and since there
+    // will be a sequence of 11 instructions for NONE and YIELD and 12
+    // instructions for NOP and ISB, SpinPause will always return 1.
+    uint64_t br_dst;
+    const int instructions_per_case = 2;
+    int64_t off = VM_Version::spin_wait_desc().inst() * instructions_per_case * Assembler::instruction_size;
+
+    assert(VM_Version::spin_wait_desc().inst() >= SpinWait::NONE &&
+           VM_Version::spin_wait_desc().inst() <= SpinWait::YIELD, "must be");
+    assert(-1 == SpinWait::NONE,  "must be");
+    assert( 0 == SpinWait::NOP,   "must be");
+    assert( 1 == SpinWait::ISB,   "must be");
+    assert( 2 == SpinWait::YIELD, "must be");
+
+    asm volatile(
+        "  adr  %[d], 20          \n" // 20 == PC here + 5 instructions => address
+                                      // to entry for case SpinWait::NOP
+        "  add  %[d], %[d], %[o]  \n"
+        "  br   %[d]              \n"
+        "  b    SpinPause_return  \n" // case SpinWait::NONE  (-1)
+        "  nop                    \n" // padding
+        "  nop                    \n" // case SpinWait::NOP   ( 0)
+        "  b    SpinPause_return  \n"
+        "  isb                    \n" // case SpinWait::ISB   ( 1)
+        "  b    SpinPause_return  \n"
+        "  yield                  \n" // case SpinWait::YIELD ( 2)
+        "SpinPause_return:        \n"
+        : [d]"=&r"(br_dst)
+        : [o]"r"(off)
+        : "memory");
+    return 1;
   }
 
   void _Copy_conjoint_jshorts_atomic(const jshort* from, jshort* to, size_t count) {

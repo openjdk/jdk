@@ -33,6 +33,7 @@ import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import jdk.internal.foreign.ArenaImpl;
 import jdk.internal.foreign.SlicingAllocator;
 import jdk.internal.foreign.StringSupport;
+import jdk.internal.foreign.Utils;
 import jdk.internal.vm.annotation.ForceInline;
 
 /**
@@ -350,7 +351,7 @@ public interface SegmentAllocator {
      *
      * @param layout the layout of the block of memory to be allocated
      * @param value  the value to be set in the newly allocated memory segment
-     * @throws UnsupportedOperationException if {@code value} is not
+     * @throws IllegalArgumentException if {@code value} is not
      *         a {@linkplain MemorySegment#isNative() native} segment
      */
     default MemorySegment allocateFrom(AddressLayout layout, MemorySegment value) {
@@ -390,9 +391,10 @@ public interface SegmentAllocator {
      *         with {@code source} is not {@linkplain MemorySegment.Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},
      *         such that {@code source.isAccessibleBy(T) == false}
-     * @throws IndexOutOfBoundsException if {@code elementCount * sourceElementLayout.byteSize()} overflows
+     * @throws IllegalArgumentException if {@code elementCount * sourceElementLayout.byteSize()} overflows
+     * @throws IllegalArgumentException if {@code elementCount < 0}
      * @throws IndexOutOfBoundsException if {@code sourceOffset > source.byteSize() - (elementCount * sourceElementLayout.byteSize())}
-     * @throws IndexOutOfBoundsException if either {@code sourceOffset} or {@code elementCount} are {@code < 0}
+     * @throws IndexOutOfBoundsException if {@code sourceOffset < 0}
      */
     @ForceInline
     default MemorySegment allocateFrom(ValueLayout elementLayout,
@@ -670,9 +672,11 @@ public interface SegmentAllocator {
      *
      * @param segment the segment from which the returned allocator should slice from
      * @return a new slicing allocator
+     * @throws IllegalArgumentException if the {@code segment} is
+     *         {@linkplain MemorySegment#isReadOnly() read-only}
      */
     static SegmentAllocator slicingAllocator(MemorySegment segment) {
-        Objects.requireNonNull(segment);
+        assertWritable(segment);
         return new SlicingAllocator(segment);
     }
 
@@ -700,9 +704,19 @@ public interface SegmentAllocator {
      * @param segment the memory segment to be recycled by the returned allocator
      * @return an allocator that recycles an existing segment upon each new
      *         allocation request
+     * @throws IllegalArgumentException if the {@code segment} is
+     *         {@linkplain MemorySegment#isReadOnly() read-only}
      */
     static SegmentAllocator prefixAllocator(MemorySegment segment) {
-        return (AbstractMemorySegmentImpl)Objects.requireNonNull(segment);
+        assertWritable(segment);
+        return (AbstractMemorySegmentImpl)segment;
+    }
+
+    private static void assertWritable(MemorySegment segment) {
+        // Implicit null check
+        if (segment.isReadOnly()) {
+            throw new IllegalArgumentException("read-only segment");
+        }
     }
 
     @ForceInline

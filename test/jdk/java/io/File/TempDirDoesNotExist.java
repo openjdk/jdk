@@ -124,21 +124,21 @@ public class TempDirDoesNotExist {
     @ParameterizedTest
     @MethodSource("tempDirSource")
     public void existingMessage(List<String> options) throws Exception {
-       ProcessTools.executeTestJvm(options).shouldContain(WARNING)
+       ProcessTools.executeTestJava(options).shouldContain(WARNING)
            .shouldHaveExitValue(0);
     }
 
     @ParameterizedTest
     @MethodSource("noTempDirSource")
     public void nonexistentMessage(List<String> options) throws Exception {
-        ProcessTools.executeTestJvm(options).shouldNotContain(WARNING)
+        ProcessTools.executeTestJava(options).shouldNotContain(WARNING)
             .shouldHaveExitValue(0);
     }
 
     @ParameterizedTest
     @MethodSource("counterSource")
     public void messageCounter(List<String> options) throws Exception {
-        OutputAnalyzer originalOutput = ProcessTools.executeTestJvm(options);
+        OutputAnalyzer originalOutput = ProcessTools.executeTestJava(options);
         long count = originalOutput.asLines().stream().filter(
                 line -> line.equalsIgnoreCase(WARNING)).count();
         assertEquals(1, count,

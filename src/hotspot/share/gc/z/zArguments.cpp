@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,6 @@ void ZArguments::initialize_alignments() {
 
 void ZArguments::initialize_heap_flags_and_sizes() {
   if (!FLAG_IS_CMDLINE(MaxHeapSize) &&
-      !FLAG_IS_CMDLINE(MaxRAMFraction) &&
       !FLAG_IS_CMDLINE(MaxRAMPercentage) &&
       !FLAG_IS_CMDLINE(SoftMaxHeapSize)) {
     // We are really just guessing how much memory the program needs.
@@ -142,6 +141,9 @@ void ZArguments::initialize() {
   if (FLAG_IS_DEFAULT(ZFragmentationLimit)) {
     FLAG_SET_DEFAULT(ZFragmentationLimit, 5.0);
   }
+
+  // Set medium page size here because MaxTenuringThreshold may use it.
+  ZHeuristics::set_medium_page_size();
 
   if (!FLAG_IS_DEFAULT(ZTenuringThreshold) && ZTenuringThreshold != -1) {
     FLAG_SET_ERGO_IF_DEFAULT(MaxTenuringThreshold, ZTenuringThreshold);
