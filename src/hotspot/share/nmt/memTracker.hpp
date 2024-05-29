@@ -167,14 +167,14 @@ class MemTracker : AllStatic {
     }
   }
 
-  static inline MemoryFileTracker::MemoryFile* register_device(const char* descriptive_name) {
+  static inline MemoryFileTracker::MemoryFile* register_file(const char* descriptive_name) {
     assert_post_init();
     if (!enabled()) return nullptr;
     MemoryFileTracker::Instance::Locker lock;
     return MemoryFileTracker::Instance::make_file(descriptive_name);
   }
 
-  static inline void remove_device(MemoryFileTracker::MemoryFile* device) {
+  static inline void remove_file(MemoryFileTracker::MemoryFile* device) {
     assert(device != nullptr, "must be");
     assert_post_init();
     if (!enabled()) return;
@@ -182,22 +182,22 @@ class MemTracker : AllStatic {
     MemoryFileTracker::Instance::free_file(device);
   }
 
-  static inline void allocate_memory_in(MemoryFileTracker::MemoryFile* device, size_t offset, size_t size,
+  static inline void allocate_memory_in(MemoryFileTracker::MemoryFile* file, size_t offset, size_t size,
                                        const NativeCallStack& stack, MEMFLAGS flag) {
-    assert(device != nullptr, "must be");
+    assert(file != nullptr, "must be");
     assert_post_init();
     if (!enabled()) return;
     MemoryFileTracker::Instance::Locker lock;
-    MemoryFileTracker::Instance::allocate_memory(device, offset, size, stack, flag);
+    MemoryFileTracker::Instance::allocate_memory(file, offset, size, stack, flag);
   }
 
-  static inline void free_memory_in(MemoryFileTracker::MemoryFile* device,
+  static inline void free_memory_in(MemoryFileTracker::MemoryFile* file,
                                         size_t offset, size_t size) {
-    assert(device != nullptr, "must be");
+    assert(file != nullptr, "must be");
     assert_post_init();
     if (!enabled()) return;
     MemoryFileTracker::Instance::Locker lock;
-    MemoryFileTracker::Instance::free_memory(device, offset, size);
+    MemoryFileTracker::Instance::free_memory(file, offset, size);
   }
 
   // Given an existing memory mapping registered with NMT and a splitting
