@@ -50,7 +50,7 @@ void ShenandoahLock::contended_lock_internal(JavaThread* java_thread) {
       // Synchronizing for safepoint. This condition preempts everything else.
       // Do not do anything else, suspend until safepoint is over.
       ThreadBlockInVM block(java_thread, true);
-    } else if (ctr < 0xFF) {
+    } else if (ctr < 0x7F) {
       // Lightly contended. Spin a little.
       ctr++;
       SpinPause();
