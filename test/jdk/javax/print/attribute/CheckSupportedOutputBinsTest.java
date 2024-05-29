@@ -22,11 +22,12 @@
  * questions.
  */
 
+import java.util.Arrays;
+import java.util.Set;
+
 import javax.print.PrintService;
 import javax.print.PrintServiceLookup;
 import javax.print.attribute.Attribute;
-import java.util.Arrays;
-import java.util.Set;
 import javax.print.attribute.standard.OutputBin;
 
 /*
