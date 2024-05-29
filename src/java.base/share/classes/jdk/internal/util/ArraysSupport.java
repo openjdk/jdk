@@ -205,7 +205,7 @@ public class ArraysSupport {
     public static int hashCode(short[] a, int fromIndex, int length, int initialValue) {
         return switch (length) {
             case 0 -> initialValue;
-            case 1 -> 31 * initialValue + (int) a[fromIndex];
+            case 1 -> 31 * initialValue + a[fromIndex];
             default -> vectorizedHashCode(a, fromIndex, length, initialValue, T_SHORT);
         };
     }
@@ -227,7 +227,7 @@ public class ArraysSupport {
     public static int hashCode(char[] a, int fromIndex, int length, int initialValue) {
         return switch (length) {
             case 0 -> initialValue;
-            case 1 -> 31 * initialValue + (int) a[fromIndex];
+            case 1 -> 31 * initialValue + a[fromIndex];
             default -> vectorizedHashCode(a, fromIndex, length, initialValue, T_CHAR);
         };
     }
@@ -249,7 +249,7 @@ public class ArraysSupport {
     public static int hashCode(byte[] a, int fromIndex, int length, int initialValue) {
         return switch (length) {
             case 0 -> initialValue;
-            case 1 -> 31 * initialValue + (int) a[fromIndex];
+            case 1 -> 31 * initialValue + a[fromIndex];
             default -> vectorizedHashCode(a, fromIndex, length, initialValue, T_BYTE);
         };
     }
