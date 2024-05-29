@@ -444,6 +444,7 @@ public final class ClassReaderImpl
 
     @Override
     public <T extends PoolEntry> T readEntry(int pos, Class<T> cls) {
+        Objects.requireNonNull(cls);
         return entryByIndex(readU2(pos), cls);
     }
 
@@ -458,6 +459,7 @@ public final class ClassReaderImpl
 
     @Override
     public <T extends PoolEntry> T readEntryOrNull(int offset, Class<T> cls) {
+        Objects.requireNonNull(cls);
         int index = readU2(offset);
         if (index == 0) {
             return null;
@@ -467,17 +469,12 @@ public final class ClassReaderImpl
 
     @Override
     public Utf8Entry readUtf8Entry(int pos) {
-        int index = readU2(pos);
-        return entryByIndex(index, Utf8Entry.class);
+        return readEntry(pos, Utf8Entry.class);
     }
 
     @Override
     public Utf8Entry readUtf8EntryOrNull(int pos) {
-        int index = readU2(pos);
-        if (index == 0) {
-            return null;
-        }
-        return entryByIndex(index, Utf8Entry.class);
+        return readEntryOrNull(pos, Utf8Entry.class);
     }
 
     @Override

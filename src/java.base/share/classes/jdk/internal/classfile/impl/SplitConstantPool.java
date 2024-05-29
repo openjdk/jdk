@@ -37,6 +37,7 @@ import java.lang.classfile.BootstrapMethodEntry;
 import java.lang.classfile.BufWriter;
 import java.lang.classfile.attribute.BootstrapMethodsAttribute;
 import java.lang.classfile.constantpool.*;
+import java.util.Objects;
 
 import static java.lang.classfile.ClassFile.TAG_CLASS;
 import static java.lang.classfile.ClassFile.TAG_CONSTANTDYNAMIC;
@@ -115,6 +116,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
 
     @Override
     public <T extends PoolEntry> T entryByIndex(int index, Class<T> cls) {
+        Objects.requireNonNull(cls);
         return ClassReaderImpl.checkType(entryByIndex(index), index, cls);
     }
 
