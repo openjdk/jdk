@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,14 @@
 /*
  * @test
  * @bug 4162583 7054918 8130181
- * @library ../testlibrary
+ * @library /test/lib ../testlibrary
  * @summary Make sure Provider api implementations are synchronized properly
+ * @run main/othervm SynchronizedAccess
  */
 
 import java.security.*;
+
+import jdk.test.lib.Asserts;
 
 public class SynchronizedAccess {
 
@@ -42,52 +45,96 @@ public class SynchronizedAccess {
     }
 
     public static void main0(String[] args) throws Exception {
+        var providersCountBefore = Security.getProviders().length;
         AccessorThread[] acc = new AccessorThread[200];
-        for (int i=0; i < acc.length; i++)
-            acc[i] = new AccessorThread("thread"+i);
-        for (int i=0; i < acc.length; i++)
+        for (int i = 0; i < acc.length; i++)
+            acc[i] = new AccessorThread("thread" + i);
+        for (int i = 0; i < acc.length; i++)
             acc[i].start();
-        for (int i=0; i < acc.length; i++)
+        for (int i = 0; i < acc.length; i++)
             acc[i].join();
-    }
-}
 
-class AccessorThread extends Thread {
-
-    public AccessorThread(String str) {
-        super(str);
+        var providersCountAfter = Security.getProviders().length;
+        Asserts.assertEquals(providersCountBefore + 1, providersCountAfter);
     }
 
-    public void run() {
-        Provider[] provs = new Provider[10];
-        for (int i=0; i < provs.length; i++)
-            provs[i] = new MyProvider("name"+i, "1", "test");
+    public static class AccessorThread extends Thread {
 
-        int rounds = 20;
-        while (rounds-- > 0) {
-            try {
-                for (int i=0; i<provs.length; i++) {
-                    Security.addProvider(provs[i]);
+        public AccessorThread(String str) {
+            super(str);
+        }
+
+        public void run() {
+            Provider[] provs = new Provider[10];
+            for (int i = 0; i < provs.length; i++)
+                provs[i] = new MyProvider("name" + i, "1", "test");
+
+            int rounds = 20;
+            while (rounds-- > 0) {
+                try {
+                    for (int i = 0; i < provs.length; i++) {
+                        Security.addProvider(provs[i]);
+                    }
+                    Signature.getInstance("sigalg");
+                    // skipping first provider so there is always 1 available for getInstance
+                    for (int i = 1; i < provs.length; i++) {
+                        Security.removeProvider("name" + i);
+                    }
+                } catch (NoSuchAlgorithmException nsae) {
+                    throw new RuntimeException("Should not reach here " + nsae);
                 }
-                Signature sig = Signature.getInstance("sigalg");
-                for (int i=0; i<provs.length; i++) {
-                    Security.removeProvider("name"+i);
-                }
-                provs = Security.getProviders();
-            } catch (NoSuchAlgorithmException nsae) {
+            } // while
+        }
+
+        public static final class MyProvider extends Provider {
+            public MyProvider(String name, String version, String info) {
+                super(name, version, info);
+                put("Signature.sigalg", SigImpl.class.getName());
+            }
+        }
+
+        public static final class SigImpl extends Signature {
+
+            public SigImpl() {
+                super(null);
             }
 
-            try {
-                Thread.sleep(5);
-            } catch (InterruptedException ie) {
+            @Override
+            protected void engineInitVerify(PublicKey publicKey) {
             }
-        } // while
-    }
-}
 
-class MyProvider extends Provider {
-    public MyProvider(String name, String version, String info) {
-        super(name, version, info);
-        put("Signature.sigalg", "sigimpl");
+            @Override
+            protected void engineInitSign(PrivateKey privateKey) {
+            }
+
+            @Override
+            protected void engineUpdate(byte b) {
+            }
+
+            @Override
+            protected void engineUpdate(byte[] b, int off, int len) {
+            }
+
+            @Override
+            protected byte[] engineSign() {
+                return new byte[0];
+            }
+
+            @Override
+            protected boolean engineVerify(byte[] sigBytes) {
+                return false;
+            }
+
+            @Override
+            protected void engineSetParameter(String param, Object value)
+                    throws InvalidParameterException {
+            }
+
+            @Override
+            protected Object engineGetParameter(String param)
+                    throws InvalidParameterException {
+                return null;
+            }
+        }
     }
 }
