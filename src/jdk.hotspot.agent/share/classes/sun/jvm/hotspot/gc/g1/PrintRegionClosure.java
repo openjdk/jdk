@@ -25,7 +25,7 @@
 package sun.jvm.hotspot.gc.g1;
 
 import java.io.PrintStream;
-import sun.jvm.hotspot.gc.g1.HeapRegion;
+import sun.jvm.hotspot.gc.g1.G1HeapRegion;
 
 public class PrintRegionClosure implements HeapRegionClosure {
     private PrintStream tty;
@@ -34,7 +34,7 @@ public class PrintRegionClosure implements HeapRegionClosure {
         this.tty = tty;
     }
 
-    public void doHeapRegion(HeapRegion hr) {
+    public void doHeapRegion(G1HeapRegion hr) {
         hr.printOn(tty);
     }
 }

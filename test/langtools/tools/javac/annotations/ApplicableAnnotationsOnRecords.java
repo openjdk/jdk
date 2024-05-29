@@ -63,21 +63,21 @@ public record ApplicableAnnotationsOnRecords(@FieldAnnotation @MethodAnnotation 
                 if (methodName.equals("toString") || methodName.equals("hashCode") || methodName.equals("equals") || methodName.equals("main")) {
                     // ignore
                 } else if (methodName.equals("<init>")) {
-                    var paAnnos = mm.findAttribute(Attributes.RUNTIME_VISIBLE_PARAMETER_ANNOTATIONS).orElseThrow().parameterAnnotations();
+                    var paAnnos = mm.findAttribute(Attributes.runtimeVisibleParameterAnnotations()).orElseThrow().parameterAnnotations();
                     Assert.check(paAnnos.size() > 0);
                     for (var pa : paAnnos) {
                         Assert.check(pa.size() == 1);
                         Assert.check(Objects.equals(pa.get(0).classSymbol().descriptorString(), "LParameterAnnotation;"));
                     }
                 } else {
-                    var annos = mm.findAttribute(Attributes.RUNTIME_VISIBLE_ANNOTATIONS).orElseThrow().annotations();
+                    var annos = mm.findAttribute(Attributes.runtimeVisibleAnnotations()).orElseThrow().annotations();
                     Assert.check(annos.size() == 1);
                     Assert.check(Objects.equals(annos.get(0).classSymbol().descriptorString(), "LMethodAnnotation;"));
                 }
             }
             Assert.check(cm.fields().size() > 0);
             for (FieldModel fm : cm.fields()) {
-                var annos = fm.findAttribute(Attributes.RUNTIME_VISIBLE_ANNOTATIONS).orElseThrow().annotations();
+                var annos = fm.findAttribute(Attributes.runtimeVisibleAnnotations()).orElseThrow().annotations();
                 Assert.check(annos.size() == 1);
                 Assert.check(Objects.equals(annos.getFirst().classSymbol().descriptorString(), "LFieldAnnotation;"));
             }

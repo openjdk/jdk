@@ -164,7 +164,7 @@ void C1_MacroAssembler::try_allocate(
   Register obj,                        // result: Pointer to object after successful allocation.
   Register var_size_in_bytes,          // Object size in bytes if unknown at compile time; invalid otherwise.
   int      con_size_in_bytes,          // Object size in bytes if   known at compile time.
-  Register t1,                         // Temp register: Must be global register for incr_allocated_bytes.
+  Register t1,                         // Temp register.
   Label&   slow_case                   // Continuation point if fast allocation fails.
 ) {
   if (UseTLAB) {

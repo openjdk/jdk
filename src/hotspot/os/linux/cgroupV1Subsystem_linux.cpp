@@ -160,7 +160,9 @@ jlong CgroupV1MemoryController::read_mem_swap(julong host_total_memsw) {
     log_trace(os, container)("Non-Hierarchical Memory and Swap Limit is: Unlimited");
     if (is_hierarchical()) {
       const char* matchline = "hierarchical_memsw_limit";
-      bool is_ok = v1_controller->read_numerical_key_value("/memory.stat", matchline, &hier_memswlimit);
+      bool is_ok = _memory->controller()->read_numerical_key_value("/memory.stat",
+                                                                   matchline,
+                                                                   &hier_memswlimit);
       if (!is_ok) {
         return OSCONTAINER_ERROR;
       }
@@ -265,7 +267,9 @@ jlong CgroupV1MemoryController::memory_max_usage_in_bytes() {
 
 jlong CgroupV1MemoryController::rss_usage_in_bytes() {
   julong rss;
-  bool is_ok = static_cast<CgroupV1Controller*>(this)->read_numerical_key_value("/memory.stat", "rss", &rss);
+  bool is_ok = static_cast<CgroupV1Controller*>(this)->read_numerical_key_value("/memory.stat",
+                                                               "rss",
+                                                               &rss);
   if (!is_ok) {
     return OSCONTAINER_ERROR;
   }
@@ -275,7 +279,9 @@ jlong CgroupV1MemoryController::rss_usage_in_bytes() {
 
 jlong CgroupV1MemoryController::cache_usage_in_bytes() {
   julong cache;
-  bool is_ok = static_cast<CgroupV1Controller*>(this)->read_numerical_key_value("/memory.stat", "cache", &cache);
+  bool is_ok = static_cast<CgroupV1Controller*>(this)->read_numerical_key_value("/memory.stat",
+                                                                                "cache",
+                                                                                &cache);
   if (!is_ok) {
     return OSCONTAINER_ERROR;
   }
@@ -318,13 +324,13 @@ void CgroupV1Subsystem::print_version_specific_info(outputStream* st) {
 
 char* CgroupV1Subsystem::cpu_cpuset_cpus() {
   char cpus[1024];
-  CONTAINER_READ_STRING_CHECKED(_cpuset, "/cpuset.cpus", "cpuset.cpus", cpus);
+  CONTAINER_READ_STRING_CHECKED(_cpuset, "/cpuset.cpus", "cpuset.cpus", cpus, 1024);
   return os::strdup(cpus);
 }
 
 char* CgroupV1Subsystem::cpu_cpuset_memory_nodes() {
   char mems[1024];
-  CONTAINER_READ_STRING_CHECKED(_cpuset, "/cpuset.mems", "cpuset.mems", mems);
+  CONTAINER_READ_STRING_CHECKED(_cpuset, "/cpuset.mems", "cpuset.mems", mems, 1024);
   return os::strdup(mems);
 }
 

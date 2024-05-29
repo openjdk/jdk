@@ -86,7 +86,7 @@ int CgroupV2CpuController::cpu_shares() {
  */
 int CgroupV2CpuController::cpu_quota() {
   jlong quota_val;
-  bool is_ok = static_cast<CgroupV2Controller*>(this)->read_numerical_tuple_value("/cpu.max", TupleValue::FIRST, &quota_val);
+  bool is_ok = static_cast<CgroupV2Controller*>(this)->read_numerical_tuple_value("/cpu.max", true /* use_first */, &quota_val);
   if (!is_ok) {
     return OSCONTAINER_ERROR;
   }
@@ -97,19 +97,19 @@ int CgroupV2CpuController::cpu_quota() {
 
 char* CgroupV2Subsystem::cpu_cpuset_cpus() {
   char cpus[1024];
-  CONTAINER_READ_STRING_CHECKED(static_cast<CgroupV2Controller*>(_unified), "/cpuset.cpus", "cpuset.cpus", cpus);
+  CONTAINER_READ_STRING_CHECKED(static_cast<CgroupV2Controller*>(_unified), "/cpuset.cpus", "cpuset.cpus", cpus, 1024);
   return os::strdup(cpus);
 }
 
 char* CgroupV2Subsystem::cpu_cpuset_memory_nodes() {
   char mems[1024];
-  CONTAINER_READ_STRING_CHECKED(static_cast<CgroupV2Controller*>(_unified), "/cpuset.mems", "cpuset.mems", mems);
+  CONTAINER_READ_STRING_CHECKED(static_cast<CgroupV2Controller*>(_unified), "/cpuset.mems", "cpuset.mems", mems, 1024);
   return os::strdup(mems);
 }
 
 int CgroupV2CpuController::cpu_period() {
   jlong period_val;
-  bool is_ok = static_cast<CgroupV2Controller*>(this)->read_numerical_tuple_value("/cpu.max", TupleValue::SECOND, &period_val);
+  bool is_ok = static_cast<CgroupV2Controller*>(this)->read_numerical_tuple_value("/cpu.max", false /* use_first */, &period_val);
   if (!is_ok) {
     log_trace(os, container)("CPU Period failed: %d", OSCONTAINER_ERROR);
     return OSCONTAINER_ERROR;
@@ -148,7 +148,9 @@ jlong CgroupV2MemoryController::memory_max_usage_in_bytes() {
 
 jlong CgroupV2MemoryController::rss_usage_in_bytes() {
   julong rss;
-  bool is_ok = static_cast<CgroupV2Controller*>(this)->read_numerical_key_value("/memory.stat", "anon", &rss);
+  bool is_ok = static_cast<CgroupV2Controller*>(this)->read_numerical_key_value("/memory.stat",
+                                                                                "anon",
+                                                                                &rss);
   if (!is_ok) {
     return OSCONTAINER_ERROR;
   }
@@ -158,7 +160,9 @@ jlong CgroupV2MemoryController::rss_usage_in_bytes() {
 
 jlong CgroupV2MemoryController::cache_usage_in_bytes() {
   julong cache;
-  bool is_ok = static_cast<CgroupV2Controller*>(this)->read_numerical_key_value("/memory.stat", "file", &cache);
+  bool is_ok = static_cast<CgroupV2Controller*>(this)->read_numerical_key_value("/memory.stat",
+                                                                                "file",
+                                                                                &cache);
   if (!is_ok) {
     return OSCONTAINER_ERROR;
   }

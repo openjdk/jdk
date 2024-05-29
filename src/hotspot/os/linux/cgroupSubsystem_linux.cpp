@@ -522,12 +522,9 @@ jlong CgroupSubsystem::memory_limit_in_bytes() {
   return mem_limit;
 }
 
-bool CgroupController::read_string(const char* filename, char* buf) {
-  assert(buf != nullptr, "invariant");
-  if (filename == nullptr) {
-    log_debug(os, container)("read_string: filename is null");
-    return false;
-  }
+bool CgroupController::read_string(const char* filename, char* buf, size_t buf_size) {
+  assert(buf != nullptr, "buffer must not be null");
+  assert(filename != nullptr, "filename must be given");
   char* s_path = subsystem_path();
   if (s_path == nullptr) {
     log_debug(os, container)("read_string: subsystem path is null");
@@ -551,15 +548,16 @@ bool CgroupController::read_string(const char* filename, char* buf) {
     return false;
   }
 
-  // Read a single line into the provided buffer. At most 1023 characters.
-  char* line = fgets(buf, 1024, fp);
+  // Read a single line into the provided buffer.
+  // At most buf_size - 1 characters.
+  char* line = fgets(buf, buf_size, fp);
   fclose(fp);
   if (line == nullptr) {
     log_debug(os, container)("Empty file %s", absolute_path);
     return false;
   }
-  int len = strlen(line);
-  assert(len <= 1023, "At most 1023 bytes can be read");
+  size_t len = strlen(line);
+  assert(len <= buf_size - 1, "At most buf_size - 1 bytes can be read");
   if (line[len - 1] == '\n') {
     line[len - 1] = '\0'; // trim trailing new line
   }
@@ -568,7 +566,7 @@ bool CgroupController::read_string(const char* filename, char* buf) {
 
 bool CgroupController::read_number(const char* filename, julong* result) {
   char buf[1024];
-  bool is_ok = read_string(filename, buf);
+  bool is_ok = read_string(filename, buf, 1024);
   if (!is_ok) {
     return false;
   }
@@ -581,7 +579,7 @@ bool CgroupController::read_number(const char* filename, julong* result) {
 
 bool CgroupController::read_number_handle_max(const char* filename, jlong* result) {
   char buf[1024];
-  bool is_ok = read_string(filename, buf);
+  bool is_ok = read_string(filename, buf, 1024);
   if (!is_ok) {
     return false;
   }
@@ -594,17 +592,12 @@ bool CgroupController::read_number_handle_max(const char* filename, jlong* resul
 }
 
 bool CgroupController::read_numerical_key_value(const char* filename, const char* key, julong* result) {
-  if (filename == nullptr) {
-    log_debug(os, container)("read_numerical_key_value: filename is null");
-    return false;
-  }
+  assert(key != nullptr, "key must be given");
+  assert(result != nullptr, "result pointer must not be null");
+  assert(filename != nullptr, "file to search in must be given");
   char* s_path = subsystem_path();
   if (s_path == nullptr) {
     log_debug(os, container)("read_numerical_key_value: subsystem path is null");
-    return false;
-  }
-  if (key == nullptr || result == nullptr) {
-    log_debug(os, container)("read_numerical_key_value: key or return pointer is null");
     return false;
   }
 
@@ -627,20 +620,13 @@ bool CgroupController::read_numerical_key_value(const char* filename, const char
   const int buf_len = MAXPATHLEN+1;
   char buf[buf_len];
   char* line = fgets(buf, buf_len, fp);
-  if (line == nullptr) {
-    log_debug(os, container)("Empty file %s", absolute_path);
-    fclose(fp);
-    return false;
-  }
-
   bool found_match = false;
   // File consists of multiple lines in a "key value"
   // fashion, we have to find the key.
-  const int key_len = (int)strlen(key);
+  const size_t key_len = strlen(key);
   for (; line != nullptr; line = fgets(buf, buf_len, fp)) {
-    char* key_substr = strstr(line, key);
     char after_key = line[key_len];
-    if (key_substr == line
+    if (strncmp(line, key, key_len) == 0
           && isspace(after_key) != 0
           && after_key != '\n') {
       // Skip key, skip space
@@ -661,24 +647,14 @@ bool CgroupController::read_numerical_key_value(const char* filename, const char
   return false;
 }
 
-bool CgroupController::read_numerical_tuple_value(const char* filename, TupleValue tup, jlong* result) {
+bool CgroupController::read_numerical_tuple_value(const char* filename, bool use_first, jlong* result) {
   char buf[1024];
-  bool is_ok = read_string(filename, buf);
+  bool is_ok = read_string(filename, buf, 1024);
   if (!is_ok) {
     return false;
   }
   char token[1024];
-  int matched = -1;
-  switch(tup) {
-    case TupleValue::FIRST:  {
-      matched = sscanf(buf, "%1023s %*s", token);
-      break;
-    }
-    case TupleValue::SECOND: {
-      matched = sscanf(buf, "%*s %1023s", token);
-      break;
-    }
-  }
+  const int matched = sscanf(buf, (use_first ? "%1023s %*s" : "%*s %1023s"), token);
   if (matched != 1) {
     return false;
   }
