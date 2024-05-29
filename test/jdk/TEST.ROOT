@@ -100,7 +100,6 @@ requires.properties= \
     vm.jvmci.enabled \
     vm.jvmti \
     vm.cpu.features \
-    vm.compiler2.enabled \
     docker.support \
     release.implementor \
     jdk.containerized \
