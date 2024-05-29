@@ -453,7 +453,7 @@ bool SuperWord::SLP_extract() {
   assert(cl()->is_main_loop(), "SLP should only work on main loops");
 
   // Find "seed" pairs.
-  find_adjacent_memop_pairs();
+  create_adjacent_memop_pairs();
 
   if (_pairset.is_empty()) {
 #ifndef PRODUCT
@@ -487,7 +487,8 @@ bool SuperWord::SLP_extract() {
   return output();
 }
 
-void SuperWord::find_adjacent_memop_pairs() {
+// Find the "seed" memops pairs. These are pairs that we strongly suspect would lead to vectorization.
+void SuperWord::create_adjacent_memop_pairs() {
   ResourceMark rm;
   GrowableArray<const VPointer*> vpointers;
 
@@ -504,21 +505,21 @@ void SuperWord::find_adjacent_memop_pairs() {
 
 #ifndef PRODUCT
   if (is_trace_superword_adjacent_memops()) {
-    tty->print_cr("\nSuperWord::find_adjacent_memop_pairs:");
+    tty->print_cr("\nSuperWord::create_adjacent_memop_pairs:");
   }
 #endif
 
-  find_adjacent_memop_pairs_in_all_groups(vpointers);
+  create_adjacent_memop_pairs_in_all_groups(vpointers);
 
 #ifndef PRODUCT
   if (is_trace_superword_packset()) {
-    tty->print_cr("\nAfter Superword::find_adjacent_memop_pairs");
+    tty->print_cr("\nAfter Superword::create_adjacent_memop_pairs");
     _pairset.print();
   }
 #endif
 }
 
-
+// Collect all memops vpointers that could potentially be vectorized.
 void SuperWord::collect_valid_vpointers(GrowableArray<const VPointer*>& vpointers) {
   for_each_mem([&] (const MemNode* mem, int bb_idx) {
     const VPointer& p = vpointer(mem);
@@ -531,11 +532,11 @@ void SuperWord::collect_valid_vpointers(GrowableArray<const VPointer*>& vpointer
 }
 
 // For each group, find the adjacent memops.
-void SuperWord::find_adjacent_memop_pairs_in_all_groups(const GrowableArray<const VPointer*> &vpointers) {
+void SuperWord::create_adjacent_memop_pairs_in_all_groups(const GrowableArray<const VPointer*> &vpointers) {
   int group_start = 0;
   while (group_start < vpointers.length()) {
     int group_end = find_group_end(vpointers, group_start);
-    find_adjacent_memop_pairs_in_one_group(vpointers, group_start, group_end);
+    create_adjacent_memop_pairs_in_one_group(vpointers, group_start, group_end);
     group_start = group_end;
   }
 }
@@ -554,7 +555,8 @@ int SuperWord::find_group_end(const GrowableArray<const VPointer*>& vpointers, i
 }
 
 // Find adjacent memops for a single group, e.g. for all LoadI of the same base, invar, etc.
-void SuperWord::find_adjacent_memop_pairs_in_one_group(const GrowableArray<const VPointer*>& vpointers, const int group_start, int group_end) {
+// Create pairs and add them to the pairset.
+void SuperWord::create_adjacent_memop_pairs_in_one_group(const GrowableArray<const VPointer*>& vpointers, const int group_start, int group_end) {
 #ifndef PRODUCT
   if (is_trace_superword_adjacent_memops()) {
     tty->print_cr(" group:");
