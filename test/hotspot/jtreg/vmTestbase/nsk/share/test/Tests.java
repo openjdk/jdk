@@ -84,7 +84,7 @@ public class Tests {
                                         ((Runnable) o).run();
                                 if (o instanceof TestExitCode)
                                         exitCode = ((TestExitCode) o).getExitCode();
-                        }catch (SkippedException se) {
+                        } catch (SkippedException se) {
                                 throw se;
                         } catch (RuntimeException t) {
                                 getLog().error(t);
