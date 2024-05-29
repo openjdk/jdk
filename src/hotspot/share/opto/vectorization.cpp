@@ -2044,26 +2044,27 @@ void VTransformGraph::apply_vectorization() const {
     phase()->C->set_max_vector_size(max_vector_width);
   }
 
-  // TODO SuperWordLoopUnrollAnalysis
-//   if (SuperWordLoopUnrollAnalysis) {
-//     if (cl->has_passed_slp()) {
-//       uint slp_max_unroll_factor = cl->slp_max_unroll();
-//       if (slp_max_unroll_factor == max_vlen) {
-// #ifndef PRODUCT
-//         if (TraceSuperWordLoopUnrollAnalysis) {
-//           tty->print_cr("vector loop(unroll=%d, len=%d)\n", max_vlen, max_vlen_in_bytes*BitsPerByte);
-//         }
-// #endif
-//         // For atomic unrolled loops which are vector mapped, instigate more unrolling
-//         cl->set_notpassed_slp();
-//         // if vector resources are limited, do not allow additional unrolling
-//         if (Matcher::float_pressure_limit() > 8) {
-//           C->set_major_progress();
-//           cl->mark_do_unroll_only();
-//         }
-//       }
-//     }
-//   }
+  if (SuperWordLoopUnrollAnalysis) {
+    if (cl()->has_passed_slp()) {
+      uint slp_max_unroll_factor = cl()->slp_max_unroll();
+      if (slp_max_unroll_factor == max_vector_length) {
+#ifndef PRODUCT
+        if (TraceSuperWordLoopUnrollAnalysis) {
+          tty->print_cr("vector loop(unroll=%d, len=%d)\n",
+                        max_vector_length,
+                        max_vector_width * BitsPerByte);
+        }
+#endif
+        // For atomic unrolled loops which are vector mapped, instigate more unrolling
+        cl()->set_notpassed_slp();
+        // if vector resources are limited, do not allow additional unrolling
+        if (Matcher::float_pressure_limit() > 8) {
+          phase()->C->set_major_progress();
+          cl()->mark_do_unroll_only();
+        }
+      }
+    }
+  }
 }
 
 Node* VTransformNode::find_transformed_input(int i, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
