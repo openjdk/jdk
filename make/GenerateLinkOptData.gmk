@@ -65,7 +65,7 @@ endif
 # These are needed for deterministic classlist:
 # - The classlist can be influenced by locale. Always set it to en/US.
 # - Run with -Xint, as the compiler can speculatively resolve constant pool entries.
-# - ForkJoinPool parallelism can cause constant pool resolution to be non-dererministic.
+# - ForkJoinPool parallelism can cause constant pool resolution to be non-deterministic.
 CLASSLIST_FILE_VM_OPTS = \
     -Duser.language=en -Duser.country=US \
     -Xint \
