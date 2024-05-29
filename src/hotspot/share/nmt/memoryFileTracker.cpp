@@ -48,6 +48,7 @@ void MemoryFileTracker::allocate_memory(MemoryFile* file, size_t offset,
   VMATree::SummaryDiff diff = file->_tree.commit_mapping(offset, size, regiondata);
   for (int i = 0; i < mt_number_of_types; i++) {
     VirtualMemory* summary = file->_summary.by_type(NMTUtil::index_to_flag(i));
+    summary->reserve_memory(diff.flag[i].commit);
     summary->commit_memory(diff.flag[i].commit);
   }
 }
@@ -56,6 +57,7 @@ void MemoryFileTracker::free_memory(MemoryFile* file, size_t offset, size_t size
   VMATree::SummaryDiff diff = file->_tree.release_mapping(offset, size);
   for (int i = 0; i < mt_number_of_types; i++) {
     VirtualMemory* summary = file->_summary.by_type(NMTUtil::index_to_flag(i));
+    summary->reserve_memory(diff.flag[i].commit);
     summary->commit_memory(diff.flag[i].commit);
   }
 }
@@ -179,6 +181,7 @@ void MemoryFileTracker::summary_snapshot(VirtualMemorySnapshot* snapshot) const 
     for (int i = 0; i < mt_number_of_types; i++) {
       VirtualMemory* snap = snapshot->by_type(NMTUtil::index_to_flag(i));
       const VirtualMemory* current = file->_summary.by_type(NMTUtil::index_to_flag(i));
+      snap->reserve_memory(current->reserved());
       snap->commit_memory(current->committed());
     }
   }
