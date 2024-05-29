@@ -556,7 +556,7 @@ int SuperWord::find_group_end(const GrowableArray<const VPointer*>& vpointers, i
 
 // Find adjacent memops for a single group, e.g. for all LoadI of the same base, invar, etc.
 // Create pairs and add them to the pairset.
-void SuperWord::create_adjacent_memop_pairs_in_one_group(const GrowableArray<const VPointer*>& vpointers, const int group_start, int group_end) {
+void SuperWord::create_adjacent_memop_pairs_in_one_group(const GrowableArray<const VPointer*>& vpointers, const int group_start, const int group_end) {
 #ifndef PRODUCT
   if (is_trace_superword_adjacent_memops()) {
     tty->print_cr(" group:");
