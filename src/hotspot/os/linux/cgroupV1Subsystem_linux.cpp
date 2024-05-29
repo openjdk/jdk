@@ -304,12 +304,10 @@ jlong CgroupV1MemoryController::kernel_memory_max_usage_in_bytes() {
   return (jlong)kmem_max_usage;
 }
 
-void CgroupV1Subsystem::print_version_specific_info(outputStream* st) {
-  julong phys_mem = os::Linux::physical_memory();
-  CgroupV1MemoryController* ctrl = reinterpret_cast<CgroupV1MemoryController*>(memory_controller()->controller());
-  jlong kmem_usage = ctrl->kernel_memory_usage_in_bytes();
-  jlong kmem_limit = ctrl->kernel_memory_limit_in_bytes(phys_mem);
-  jlong kmem_max_usage = ctrl->kernel_memory_max_usage_in_bytes();
+void CgroupV1MemoryController::print_version_specific_info(outputStream* st, julong phys_mem) {
+  jlong kmem_usage = kernel_memory_usage_in_bytes();
+  jlong kmem_limit = kernel_memory_limit_in_bytes(phys_mem);
+  jlong kmem_max_usage = kernel_memory_max_usage_in_bytes();
 
   OSContainer::print_container_helper(st, kmem_usage, "kernel_memory_usage_in_bytes");
   OSContainer::print_container_helper(st, kmem_limit, "kernel_memory_max_usage_in_bytes");

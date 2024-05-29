@@ -257,9 +257,9 @@ jlong mem_swp_limit_val(CgroupV2Controller* ctrl) {
   return swap_limit;
 }
 
-void CgroupV2Subsystem::print_version_specific_info(outputStream* st) {
-  jlong swap_current = mem_swp_current_val(_unified);
-  jlong swap_limit = mem_swp_limit_val(_unified);
+void CgroupV2MemoryController::print_version_specific_info(outputStream* st, julong phys_mem) {
+  jlong swap_current = mem_swp_current_val(this);
+  jlong swap_limit = mem_swp_limit_val(this);
 
   OSContainer::print_container_helper(st, swap_current, "memory_swap_current_in_bytes");
   OSContainer::print_container_helper(st, swap_limit, "memory_swap_max_limit_in_bytes");

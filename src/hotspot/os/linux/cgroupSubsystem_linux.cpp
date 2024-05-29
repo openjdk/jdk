@@ -728,3 +728,8 @@ int CgroupSubsystem::cpu_period() {
 int CgroupSubsystem::cpu_shares() {
   return cpu_controller()->controller()->cpu_shares();
 }
+
+void CgroupSubsystem::print_version_specific_info(outputStream* st) {
+  julong phys_mem = os::Linux::physical_memory();
+  memory_controller()->controller()->print_version_specific_info(st, phys_mem);
+}

@@ -214,6 +214,7 @@ class CgroupMemoryController {
     virtual jlong memory_max_usage_in_bytes() = 0;
     virtual jlong rss_usage_in_bytes() = 0;
     virtual jlong cache_usage_in_bytes() = 0;
+    virtual void print_version_specific_info(outputStream* st, julong host_mem);
 };
 
 class CgroupSubsystem: public CHeapObj<mtInternal> {
@@ -240,7 +241,7 @@ class CgroupSubsystem: public CHeapObj<mtInternal> {
     jlong memory_max_usage_in_bytes();
     jlong rss_usage_in_bytes();
     jlong cache_usage_in_bytes();
-    virtual void print_version_specific_info(outputStream* st) = 0;
+    void print_version_specific_info(outputStream* st);
 };
 
 // Utility class for storing info retrieved from /proc/cgroups,

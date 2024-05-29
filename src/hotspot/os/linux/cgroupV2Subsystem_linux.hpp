@@ -71,6 +71,7 @@ class CgroupV2MemoryController: public CgroupV2Controller, public CgroupMemoryCo
     jlong memory_max_usage_in_bytes();
     jlong rss_usage_in_bytes();
     jlong cache_usage_in_bytes();
+    void print_version_specific_info(outputStream* st, julong host_mem);
     char *subsystem_path() { return CgroupV2Controller::subsystem_path(); }
 };
 
