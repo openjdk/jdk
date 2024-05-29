@@ -3078,8 +3078,8 @@ instruct vshiftcnt(vReg dst, iRegIorL2I cnt) %{
 // Basically, the behaviour between vectorization and Vector API is the same for Long and Integer, except that Vector API
 // also supports Byte and Short rotation. But we can still share the intrinsics between vectorization and Vector API.
 //
-// NOTE: for Long, its valid rotation value is 6 bits, although basic vector instruction only support 5 bit vector-immediate,
-//       in Zvbb, vror.vi support 6 bits vector-immediate, so the imm implementation of Long and other types can be unified.
+// NOTE: As vror.vi encodes 6-bits immediate rotate amount, which is different from other vector-immediate instructions,
+//       implementation of vector rotation for long and other types can be unified.
 
 // Rotate right
 
@@ -3127,7 +3127,6 @@ instruct vrotate_right_imm(vReg dst, vReg src, immI shift) %{
 
 instruct vrotate_right_masked(vReg dst_src, vReg shift, vRegMask_V0 v0) %{
   match(Set dst_src (RotateRightV (Binary dst_src shift) v0));
-  effect(TEMP_DEF dst_src);
   format %{ "vrotate_right_masked $dst_src, $dst_src, $shift, v0.t\t" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
@@ -3140,7 +3139,6 @@ instruct vrotate_right_masked(vReg dst_src, vReg shift, vRegMask_V0 v0) %{
 
 instruct vrotate_right_reg_masked(vReg dst_src, iRegIorL2I shift, vRegMask_V0 v0) %{
   match(Set dst_src (RotateRightV (Binary dst_src (Replicate shift)) v0));
-  effect(TEMP_DEF dst_src);
   format %{ "vrotate_right_reg_masked $dst_src, $dst_src, $shift, v0.t\t" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
@@ -3153,7 +3151,6 @@ instruct vrotate_right_reg_masked(vReg dst_src, iRegIorL2I shift, vRegMask_V0 v0
 
 instruct vrotate_right_imm_masked(vReg dst_src, immI shift, vRegMask_V0 v0) %{
   match(Set dst_src (RotateRightV (Binary dst_src shift) v0));
-  effect(TEMP_DEF dst_src);
   format %{ "vrotate_right_imm_masked $dst_src, $dst_src, $shift, v0.t\t" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
@@ -3216,7 +3213,6 @@ instruct vrotate_left_imm(vReg dst, vReg src, immI shift) %{
 
 instruct vrotate_left_masked(vReg dst_src, vReg shift, vRegMask_V0 v0) %{
   match(Set dst_src (RotateLeftV (Binary dst_src shift) v0));
-  effect(TEMP_DEF dst_src);
   format %{ "vrotate_left_masked $dst_src, $dst_src, $shift, v0.t\t" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
@@ -3229,7 +3225,6 @@ instruct vrotate_left_masked(vReg dst_src, vReg shift, vRegMask_V0 v0) %{
 
 instruct vrotate_left_reg_masked(vReg dst_src, iRegIorL2I shift, vRegMask_V0 v0) %{
   match(Set dst_src (RotateLeftV (Binary dst_src (Replicate shift)) v0));
-  effect(TEMP_DEF dst_src);
   format %{ "vrotate_left_reg_masked $dst_src, $dst_src, $shift, v0.t\t" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
@@ -3242,7 +3237,6 @@ instruct vrotate_left_reg_masked(vReg dst_src, iRegIorL2I shift, vRegMask_V0 v0)
 
 instruct vrotate_left_imm_masked(vReg dst_src, immI shift, vRegMask_V0 v0) %{
   match(Set dst_src (RotateLeftV (Binary dst_src shift) v0));
-  effect(TEMP_DEF dst_src);
   format %{ "vrotate_left_imm_masked $dst_src, $dst_src, $shift, v0.t\t" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
