@@ -27,7 +27,7 @@
 #define SHARE_NMT_MALLOCTRACKER_INLINE_HPP
 
 #include "nmt/mallocTracker.hpp"
-#include "services/mallocLimit.hpp"
+#include "nmt/mallocLimit.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 

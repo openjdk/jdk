@@ -38,7 +38,7 @@
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safefetch.hpp"
-#include "services/mallocLimit.hpp"
+#include "nmt/mallocLimit.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"

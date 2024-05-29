@@ -39,7 +39,7 @@
 #include "runtime/orderAccess.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
-#include "services/mallocLimit.hpp"
+#include "nmt/mallocLimit.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/vmError.hpp"
