@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4162796 4162796 8320448
+ * @bug 8320448
  * @summary Test indexOf and lastIndexOf
  * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileCommand=dontinline,ECoreIndexOf.indexOfKernel ECoreIndexOf
  * @run main/othervm -Xbatch -XX:CompileCommand=dontinline,ECoreIndexOf.indexOfKernel ECoreIndexOf
@@ -30,7 +30,7 @@
  */
 
 /* @test
- * @bug 4162796 4162796 8320448
+ * @bug 8320448
  * @summary Test indexOf and lastIndexOf
  * @requires vm.cpu.features ~= ".*avx2.*"
  * @requires vm.compiler2.enabled
