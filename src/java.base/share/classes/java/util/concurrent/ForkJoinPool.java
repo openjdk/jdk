@@ -613,7 +613,9 @@ public class ForkJoinPool extends AbstractExecutorService {
      * it tries to deactivate()), giving up (and rescanning) on "ctl"
      * contention. To avoid missed signals during deactivation, the
      * method rescans and reactivates if there may have been a missed
-     * signal during deactivation.
+     * signal during deactivation.  Because idle workers are often not
+     * yet blocked (parked), we use a WorkQueue field to advertise
+     * that a waiter actually needs unparking upon signal.
      *
      * Quiescence. Workers scan looking for work, giving up when they
      * don't find any, without being sure that none are available.
@@ -1212,6 +1214,8 @@ public class ForkJoinPool extends AbstractExecutorService {
         volatile int source;       // source queue id (or DROPPED)
         @jdk.internal.vm.annotation.Contended("w")
         int nsteals;               // number of steals from other queues
+        @jdk.internal.vm.annotation.Contended("w")
+        volatile int parking;      // nonzero if parked in awaitWork
 
         // Support for atomic operations
         private static final Unsafe U;
@@ -1903,7 +1907,8 @@ public class ForkJoinPool extends AbstractExecutorService {
                     createWorker();
                 else {
                     v.phase = sp;
-                    U.unpark(v.owner);
+                    if (v.parking != 0)
+                        U.unpark(v.owner);
                 }
                 break;
             }
@@ -1926,7 +1931,8 @@ public class ForkJoinPool extends AbstractExecutorService {
                           c, ((UMASK & (c + RC_UNIT)) | (c & TC_MASK) |
                               (v.stackPred & LMASK))))) {
                 v.phase = sp;
-                U.unpark(v.owner);
+                if (v.parking != 0)
+                    U.unpark(v.owner);
             }
         }
         return c;
@@ -2108,6 +2114,7 @@ public class ForkJoinPool extends AbstractExecutorService {
             LockSupport.setCurrentBlocker(this);
             long deadline = (delay == 0L ? 0L :
                              delay + System.currentTimeMillis());
+            w.parking = 1;                 // enable unpark
             while (((p = w.phase) & IDLE) != 0) {
                 boolean trimmable = false; int trim;
                 Thread.interrupted();      // clear status
@@ -2123,6 +2130,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                 }
                 U.park(trimmable, deadline);
             }
+            w.parking = 0;
             LockSupport.setCurrentBlocker(null);
         }
         return p;
@@ -2211,7 +2219,8 @@ public class ForkJoinPool extends AbstractExecutorService {
                 (v = qs[i]) != null &&
                 compareAndSetCtl(c, (c & UMASK) | (v.stackPred & LMASK))) {
                 v.phase = sp;
-                U.unpark(v.owner);
+                if (v.parking != 0)
+                    U.unpark(v.owner);
                 stat = UNCOMPENSATE;
             }
         }
