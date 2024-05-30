@@ -7838,6 +7838,7 @@ instruct membar_release() %{
 
   ins_encode %{
     __ block_comment("membar_release");
+    // These will be merged if AlwaysMergeDMB is enabled.
     __ membar(Assembler::StoreStore);
     __ membar(Assembler::LoadStore);
   %}
