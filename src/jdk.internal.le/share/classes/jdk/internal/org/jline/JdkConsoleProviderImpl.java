@@ -50,7 +50,135 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
      */
     @Override
     public JdkConsole console(boolean isTTY, Charset charset) {
-        return new JdkConsoleImpl(charset, new jdk.internal.io.JdkConsoleImpl(charset));
+        return new LazyDelegatingJdkConsoleImpl(charset);
+    }
+
+    private static class LazyDelegatingJdkConsoleImpl implements JdkConsole {
+        private final Charset charset;
+        private volatile boolean jlineInitialized;
+        private volatile JdkConsole delegate;
+
+        public LazyDelegatingJdkConsoleImpl(Charset charset) {
+            this.charset = charset;
+            this.delegate = new jdk.internal.io.JdkConsoleImpl(charset);
+        }
+
+        @Override
+        public PrintWriter writer() {
+            return getDelegate(true).writer();
+        }
+
+        @Override
+        public Reader reader() {
+            return getDelegate(true).reader();
+        }
+
+        @Override
+        public JdkConsole println(Object obj) {
+            JdkConsole delegate = getDelegate(false);
+
+            delegate.println(obj);
+            flushOldDelegateIfNeeded(delegate);
+
+            return this;
+        }
+
+        @Override
+        public JdkConsole print(Object obj) {
+            JdkConsole delegate = getDelegate(false);
+
+            delegate.print(obj);
+            flushOldDelegateIfNeeded(delegate);
+
+            return this;
+        }
+
+        @Override
+        public String readln(String prompt) {
+            return getDelegate(true).readln(prompt);
+        }
+
+        @Override
+        public JdkConsole format(Locale locale, String format, Object... args) {
+            JdkConsole delegate = getDelegate(false);
+
+            delegate.format(locale, format, args);
+            flushOldDelegateIfNeeded(delegate);
+
+            return this;
+        }
+
+        @Override
+        public String readLine(Locale locale, String format, Object... args) {
+            return getDelegate(true).readLine(locale, format, args);
+        }
+
+        @Override
+        public String readLine() {
+            return getDelegate(true).readLine();
+        }
+
+        @Override
+        public char[] readPassword(Locale locale, String format, Object... args) {
+            return getDelegate(true).readPassword(locale, format, args);
+        }
+
+        @Override
+        public char[] readPassword() {
+            return getDelegate(true).readPassword();
+        }
+
+        @Override
+        public void flush() {
+            getDelegate(false).flush();
+        }
+
+        @Override
+        public Charset charset() {
+            return charset;
+        }
+
+        private void flushOldDelegateIfNeeded(JdkConsole oldDelegate) {
+            if (oldDelegate != getDelegate(false)) {
+                //if the delegate changed in the mean time, make sure the original
+                //delegate is flushed:
+                oldDelegate.flush();
+            }
+        }
+
+        private JdkConsole getDelegate(boolean needsJLine) {
+            if (!needsJLine || jlineInitialized) {
+                return delegate;
+            }
+
+            return initializeJLineDelegate();
+        }
+
+        private synchronized JdkConsole initializeJLineDelegate() {
+            JdkConsole newDelegate = delegate;
+
+            if (jlineInitialized) {
+                return newDelegate;
+            }
+
+            try {
+                Terminal terminal = TerminalBuilder.builder().encoding(charset)
+                                                   .exec(false)
+                                                   .systemOutput(SystemOutput.SysOut)
+                                                   .build();
+                newDelegate = new JdkConsoleImpl(terminal);
+            } catch (IllegalStateException ise) {
+                //cannot create a non-dumb, non-exec terminal,
+                //use the standard Console:
+            } catch (IOException ioe) {
+                //something went wrong, keep the existing delegate
+            }
+
+            delegate = newDelegate;
+            jlineInitialized = true;
+
+            return newDelegate;
+        }
     }
 
     /**
@@ -58,72 +186,38 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
      * public Console class.
      */
     private static class JdkConsoleImpl implements JdkConsole {
-        private final Charset charset;
-        private final jdk.internal.io.JdkConsoleImpl delegate;
-        private volatile boolean terminalInitialized;
-        private volatile Terminal terminalX;
-        private volatile boolean jlineInitialized;
-        private volatile LineReader jlineX;
-
-        public JdkConsoleImpl(Charset charset, jdk.internal.io.JdkConsoleImpl delegate) {
-            this.charset = charset;
-            this.delegate = delegate;
-        }
+        private final Terminal terminal;
+        private volatile LineReader jline;
 
         @Override
         public PrintWriter writer() {
-            Terminal terminal = getTerminalOrNull(true);
-            if (terminal != null) {
-                return terminal.writer();
-            }
-            return delegate.writer();
+            return terminal.writer();
         }
 
         @Override
         public Reader reader() {
-            Terminal terminal = getTerminalOrNull(true);
-            if (terminal != null) {
-                return terminal.reader();
-            } else {
-                return delegate.reader();
-            }
+            return terminal.reader();
         }
 
         @Override
         public JdkConsole println(Object obj) {
-            Terminal terminal = getTerminalOrNull(false);
-            if (terminal != null) {
-                PrintWriter writer = terminal.writer();
-                writer.println(obj);
-                writer.flush();
-            } else {
-                delegate.println(obj);
-            }
+            writer().println(obj);
+            writer().flush();
             return this;
         }
 
         @Override
         public JdkConsole print(Object obj) {
-            Terminal terminal = getTerminalOrNull(false);
-            if (terminal != null) {
-                PrintWriter writer = terminal.writer();
-                writer.print(obj);
-                writer.flush();
-            } else {
-                delegate.print(obj);
-            }
+            writer().print(obj);
+            writer().flush();
             return this;
         }
 
         @Override
         public String readln(String prompt) {
             try {
-                LineReader jline = getInitializedJLineReader();
-                if (jline != null) {
-                    return jline.readLine(prompt == null ? "null" : prompt.replace("%", "%%"));
-                } else {
-                    return delegate.readln(prompt);
-                }
+                initJLineIfNeeded();
+                return jline.readLine(prompt == null ? "null" : prompt.replace("%", "%%"));
             } catch (EndOfFileException eofe) {
                 return null;
             }
@@ -131,25 +225,15 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
 
         @Override
         public JdkConsole format(Locale locale, String format, Object ... args) {
-            Terminal terminal = getTerminalOrNull(false);
-            if (terminal != null) {
-                PrintWriter writer = terminal.writer();
-                writer.format(locale, format, args).flush();
-            } else {
-                delegate.format(locale, format, args);
-            }
+            writer().format(locale, format, args).flush();
             return this;
         }
 
         @Override
         public String readLine(Locale locale, String format, Object ... args) {
             try {
-                LineReader jline = getInitializedJLineReader();
-                if (jline != null) {
-                    return jline.readLine(String.format(locale, format, args).replace("%", "%%"));
-                } else {
-                    return delegate.readLine(locale, format, args);
-                }
+                initJLineIfNeeded();
+                return jline.readLine(String.format(locale, format, args).replace("%", "%%"));
             } catch (EndOfFileException eofe) {
                 return null;
             }
@@ -163,19 +247,13 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
         @Override
         public char[] readPassword(Locale locale, String format, Object ... args) {
             try {
-                LineReader jline = getInitializedJLineReader();
-                if (jline != null) {
-                    try {
-                        return jline.readLine(String.format(locale, format, args).replace("%", "%%"), '\0')
-                                    .toCharArray();
-                    } finally {
-                        jline.zeroOut();
-                    }
-                } else {
-                    return delegate.readPassword(locale, format, args);
-                }
+                initJLineIfNeeded();
+                return jline.readLine(String.format(locale, format, args).replace("%", "%%"), '\0')
+                            .toCharArray();
             } catch (EndOfFileException eofe) {
                 return null;
+            } finally {
+                jline.zeroOut();
             }
         }
 
@@ -186,65 +264,27 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
 
         @Override
         public void flush() {
-            Terminal terminal = getTerminalOrNull(false);
-            if (terminal != null) {
-                terminal.flush();
-            } else {
-                delegate.flush();
-            }
+            terminal.flush();
         }
 
         @Override
         public Charset charset() {
-            return charset;
+            return terminal.encoding();
         }
 
-        private Terminal getTerminalOrNull(boolean initialize) {
-            if (terminalInitialized) {
-                return this.terminalX;
-            }
-            if (!initialize) {
-                return null;
-            }
-            synchronized (this) {
-                if (!terminalInitialized) {
-                    delegate.flush();
-
-                    try {
-                        Terminal terminal = TerminalBuilder.builder()
-                                                           .encoding(charset)
-                                                           .exec(false)
-                                                           .systemOutput(SystemOutput.SysOut)
-                                                           .build();
-                        this.terminalX = terminal;
-                        this.terminalInitialized = true;
-
-                        return terminal;
-                    } catch (IllegalStateException | IOException ioe) {
-                        this.terminalInitialized = true;
-                    }
-                }
-                return this.terminalX;
-            }
+        public JdkConsoleImpl(Terminal terminal) {
+            this.terminal = terminal;
         }
 
-        private LineReader getInitializedJLineReader() {
-            if (jlineInitialized) {
-                return this.jlineX;
-            }
-            synchronized (this) {
-                if (!jlineInitialized) {
-                    Terminal terminal = getTerminalOrNull(true);
-                    if (terminal != null) {
-                        LineReader jline = LineReaderBuilder.builder().terminal(terminal).build();
-                        this.jlineX = jline;
-                        this.jlineInitialized = true;
-                        return jline;
-                    } else {
-                        return null;
+        private void initJLineIfNeeded() {
+            LineReader jline = this.jline;
+            if (jline == null) {
+                synchronized (this) {
+                    jline = this.jline;
+                    if (jline == null) {
+                        jline = LineReaderBuilder.builder().terminal(terminal).build();
+                        this.jline = jline;
                     }
-                } else {
-                    return this.jlineX;
                 }
             }
         }
