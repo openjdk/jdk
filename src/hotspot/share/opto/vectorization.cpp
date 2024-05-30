@@ -586,8 +586,18 @@ bool VPointer::scaled_iv_plus_offset(Node* n) {
       NOT_PRODUCT(_tracer.scaled_iv_plus_offset_6(n);)
       return true;
     }
-    if (offset_plus_k(n->in(1)) && scaled_iv_plus_offset(n->in(2))) {
-      _scale *= -1;
+    VPointer tmp(this);
+    if (offset_plus_k(n->in(1)) && tmp.scaled_iv_plus_offset(n->in(2))) {
+      assert(_scale == 0, "shouldn't be set yet");
+      _scale = tmp._scale * -1;
+      _offset -= tmp._offset;
+      if (tmp._invar != nullptr) {
+        maybe_add_to_invar(tmp._invar, true);
+#ifdef ASSERT
+        _debug_invar_scale = tmp._debug_invar_scale;
+        _debug_negate_invar = !tmp._debug_negate_invar;
+#endif
+      }
       NOT_PRODUCT(_tracer.scaled_iv_plus_offset_7(n);)
       return true;
     }
