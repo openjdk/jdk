@@ -2523,7 +2523,7 @@ void PSParallelCompact::fill_region(ParCompactionManager* cm, MoveAndUpdateClosu
 
 void PSParallelCompact::fill_and_update_region(ParCompactionManager* cm, size_t region_idx)
 {
-  MoveAndUpdateClosure cl(mark_bitmap(), cm, region_idx);
+  MoveAndUpdateClosure cl(mark_bitmap(), region_idx);
   fill_region(cm, cl, region_idx);
 }
 
@@ -2537,7 +2537,7 @@ void PSParallelCompact::fill_and_update_shadow_region(ParCompactionManager* cm, 
   // so use MoveAndUpdateClosure to fill the normal region. Otherwise, use
   // MoveAndUpdateShadowClosure to fill the acquired shadow region.
   if (shadow_region == ParCompactionManager::InvalidShadow) {
-    MoveAndUpdateClosure cl(mark_bitmap(), cm, region_idx);
+    MoveAndUpdateClosure cl(mark_bitmap(), region_idx);
     region_ptr->shadow_to_normal();
     return fill_region(cm, cl, region_idx);
   } else {
@@ -2624,8 +2624,7 @@ void MoveAndUpdateClosure::complete_region(ParCompactionManager *cm, HeapWord *d
   region_ptr->set_completed();
 }
 
-ParMarkBitMapClosure::IterationStatus
-MoveAndUpdateClosure::do_addr(HeapWord* addr, size_t words) {
+void MoveAndUpdateClosure::do_addr(HeapWord* addr, size_t words) {
   assert(destination() != nullptr, "sanity");
   _source = addr;
 
@@ -2648,7 +2647,6 @@ MoveAndUpdateClosure::do_addr(HeapWord* addr, size_t words) {
   }
 
   update_state(words);
-  return is_full() ? ParMarkBitMap::full : ParMarkBitMap::incomplete;
 }
 
 void MoveAndUpdateShadowClosure::complete_region(ParCompactionManager *cm, HeapWord *dest_addr,

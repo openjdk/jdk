@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8301580 8322159 8333107
+ * @bug 8301580 8322159 8333107 8332230
  * @summary Verify error recovery w.r.t. Attr
  * @library /tools/lib
  * @enablePreview
@@ -117,6 +117,39 @@ public class AttrRecovery extends TestRunner {
                 "C.java:6:20: compiler.warn.possible.this.escape",
                 "3 errors",
                 "1 warning"
+        );
+
+        if (!Objects.equals(actual, expected)) {
+            error("Expected: " + expected + ", but got: " + actual);
+        }
+    }
+
+    @Test //JDK-8332230
+    public void testAnnotationsInErroneousTree1() throws Exception {
+        String code = """
+                      package p;
+                      public class C {
+                          static int v;
+                          public void t() {
+                              //not a statement expression,
+                              //will be wrapped in an erroneous tree:
+                              p.@Ann C.v;
+                          }
+                          @interface Ann {}
+                      }
+                      """;
+        Path curPath = Path.of(".");
+        List<String> actual = new JavacTask(tb)
+                .options("-XDrawDiagnostics", "-XDdev", "-XDshould-stop.at=FLOW")
+                .sources(code)
+                .outdir(curPath)
+                .run(Expect.FAIL)
+                .writeAll()
+                .getOutputLines(OutputKind.DIRECT);
+
+        List<String> expected = List.of(
+                "C.java:7:17: compiler.err.not.stmt",
+                "1 error"
         );
 
         if (!Objects.equals(actual, expected)) {
