@@ -30,7 +30,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 
 class MemoryCache<K,V> extends Cache<K,V> {
 
@@ -55,7 +54,10 @@ class MemoryCache<K,V> extends Cache<K,V> {
     public MemoryCache(boolean soft, int maxSize, int lifetime) {
         this.maxSize = maxSize;
         this.lifetime = lifetime * 1000L;
-        this.queue = (soft ? new ReferenceQueue<>() : null);
+        if (soft)
+            this.queue = new ReferenceQueue<>();
+        else
+            this.queue = null;
         cacheMap = new LinkedHashMap<>(1, LOAD_FACTOR, true);
     }
 
@@ -128,30 +130,6 @@ class MemoryCache<K,V> extends Cache<K,V> {
                     + " expired entries, remaining " + cacheMap.size());
             }
         }
-        /*
-        AtomicInteger cnt = new AtomicInteger(0);
-        long time = System.currentTimeMillis();
-        if (nextExpirationTime > time) {
-            return;
-        }
-
-        nextExpirationTime = Long.MAX_VALUE;
-        cacheMap.values().parallelStream().forEach(entry -> {
-            if (!entry.isValid(time)) {
-                cacheMap.remove(entry.getKey());
-                cnt.incrementAndGet();
-            } else if (nextExpirationTime > entry.getExpirationTime()) {
-                nextExpirationTime = entry.getExpirationTime();
-            }
-        });
-
-        if (DEBUG) {
-            if (cnt.get() != 0) {
-                System.out.println("Removed " + cnt.get()
-                    + " expired entries, remaining " + cacheMap.size());
-            }
-        }
-        */
     }
 
     public synchronized int size() {
