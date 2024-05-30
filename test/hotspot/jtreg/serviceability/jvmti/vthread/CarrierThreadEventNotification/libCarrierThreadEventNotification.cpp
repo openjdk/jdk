@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,31 +33,31 @@ extern "C" {
 // set by Agent_OnLoad
 static jvmtiEnv* jvmti = nullptr;
 
-static jthread* tested_cthreads = nullptr;
+static jthread* carrier_threads = nullptr;
 static jint cthread_cnt = 0;
 
 static const char* CTHREAD_NAME_START = "ForkJoinPool";
-static const int CTHREAD_NAME_START_LEN = (int)strlen("ForkJoinPool");
+static const size_t CTHREAD_NAME_START_LEN = (int)strlen("ForkJoinPool");
 
 static jint
 get_cthreads(JNIEnv* jni, jthread** cthreads_p) {
-  jthread* tested_cthreads = NULL;
+  jthread* cthreads = nullptr;
   jint all_cnt = 0;
   jint ct_cnt = 0;
 
-  jvmtiError err = jvmti->GetAllThreads(&all_cnt, &tested_cthreads);
+  jvmtiError err = jvmti->GetAllThreads(&all_cnt, &cthreads);
   check_jvmti_status(jni, err, "get_cthreads: error in JVMTI GetAllThreads");
 
   for (int idx = 0; idx < all_cnt; idx++) {
-    jthread thread = tested_cthreads[idx];
+    jthread thread = cthreads[idx];
     char* tname = get_thread_name(jvmti, jni, thread);
 
     if (strncmp(tname, CTHREAD_NAME_START, CTHREAD_NAME_START_LEN) == 0) {
-      tested_cthreads[ct_cnt++] = jni->NewGlobalRef(thread);
+      cthreads[ct_cnt++] = jni->NewGlobalRef(thread);
     }
     deallocate(jvmti, jni, (void*)tname);
   }
-  *cthreads_p = tested_cthreads;
+  *cthreads_p = cthreads;
   return ct_cnt;
 }
 
@@ -73,31 +73,29 @@ SingleStep(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread,
 JNIEXPORT void JNICALL
 Java_CarrierThreadEventNotification_setSingleSteppingMode(JNIEnv* jni, jclass klass, jboolean enable) {
   if (enable) {
-    if (cthread_cnt != 0 || tested_cthreads != nullptr) {
+    if (cthread_cnt != 0 || carrier_threads != nullptr) {
       jni->FatalError("Should not be set");
     }
-    cthread_cnt = get_cthreads(jni, &tested_cthreads);
+    cthread_cnt = get_cthreads(jni, &carrier_threads);
     for (int i = 0; i < cthread_cnt; i++) {
-      jthread thread = tested_cthreads[i];
+      jthread thread = carrier_threads[i];
       jvmtiError err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_SINGLE_STEP, thread);
       check_jvmti_status(jni, err, "event handler: error in JVMTI SetEventNotificationMode for event JVMTI_EVENT_SINGLE_STEP");
     }
   } else {
-    if (tested_cthreads == nullptr) {
+    if (carrier_threads == nullptr) {
       jni->FatalError("Should be set");
     }
     for (int i = 0; i < cthread_cnt; i++) {
-      jthread thread = tested_cthreads[i];
-      char* tname = get_thread_name(jvmti, jni, thread);
+      jthread thread = carrier_threads[i];
       jvmtiError err = jvmti->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_SINGLE_STEP, thread);
       check_jvmti_status(jni, err, "event handler: error in JVMTI SetEventNotificationMode for event JVMTI_EVENT_SINGLE_STEP");
       jni->DeleteGlobalRef(thread);
-      deallocate(jvmti, jni, (void*)tname);
     }
-    jvmtiError err = jvmti->Deallocate((unsigned char*)tested_cthreads);
+    jvmtiError err = jvmti->Deallocate((unsigned char*)carrier_threads);
     check_jvmti_status(jni, err, "deallocate: error in JVMTI Deallocate call");
     cthread_cnt = 0;
-    tested_cthreads = nullptr;
+    carrier_threads = nullptr;
   }
 }
 
