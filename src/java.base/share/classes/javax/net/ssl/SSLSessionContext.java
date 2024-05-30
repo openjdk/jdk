@@ -89,8 +89,8 @@ public interface SSLSessionContext {
      * timeout limit 't' seconds after its creation time.
      * When the timeout limit is exceeded for a session, the
      * <code>SSLSession</code> object is marked so that future connections
-     * cannot resume or rejoin the session. Sessions can continue to be used
-     * so long as resume and rejoin operations are not attempted.
+     * cannot resume or rejoin the session. Active sessions can continue
+     * to be used so long as resume and rejoin operations are not attempted.
      * A check for sessions exceeding the timeout is made immediately whenever
      * the timeout limit is changed for this <code>SSLSessionContext</code>.
      *
@@ -117,8 +117,8 @@ public interface SSLSessionContext {
      * timeout limit 't' seconds after its creation time.
      * When the timeout limit is exceeded for a session, the
      * <code>SSLSession</code> object is marked so that future connections
-     * cannot resume or rejoin the session. Sessions can continue to be used
-     * so long as resume and rejoin operations are not attempted.
+     * cannot resume or rejoin the session. Active sessions can continue
+     * to be used so long as resume and rejoin operations are not attempted.
      * A check for sessions exceeding the timeout limit is made immediately
      * whenever the timeout limit is changed for this
      * <code>SSLSessionContext</code>.
