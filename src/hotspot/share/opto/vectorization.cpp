@@ -1995,7 +1995,8 @@ void VTransformGraph::apply_memops_reordering_with_schedule() const {
   }
 }
 
-// TODO desc
+// We call "apply" on every VTransformNode, which replaces the packed scalar nodes
+// with vector nodes.
 void VTransformGraph::apply_vectorization() const {
 #ifndef PRODUCT
   if (_is_trace_verbose) {
@@ -2005,7 +2006,9 @@ void VTransformGraph::apply_vectorization() const {
 
   ResourceMark rm;
   int length = _vtnodes.length();
-  // TODO desc
+  // We keep track of the resulting Nodes from every "VTransformNode::apply" call.
+  // Since "apply" is called on defs before uses, this allows us to find the
+  // generated def (input) nodes when we are generating the use nodes in "apply".
   GrowableArray<Node*> vnode_idx_to_transformed_node(length, length, nullptr);
 
   uint max_vector_length = 0; // number of elements
@@ -2188,9 +2191,6 @@ VTransformApplyStatus VTransformElementWiseVectorNode::apply(const VLoopAnalyzer
     assert(req() == 3, "two inputs expected");
     Node* in1 = find_transformed_input(1, vnode_idx_to_transformed_node);
     Node* in2 = find_transformed_input(2, vnode_idx_to_transformed_node);
-
-    // TODO register spilling trick?
-    // Move invariant vector input into second position to avoid register spilling.
 
     if (VectorNode::can_transform_shift_op(first, bt)) {
       opc = Op_RShiftI;

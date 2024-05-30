@@ -1320,7 +1320,25 @@ private:
 #endif
 };
 
-// TODO desc for VTransform
+// VTransform
+//
+// Maps the transformation from the scalar to the vectorized loop.
+//
+// The graph (VTransformGraph) of vtnodes (VTransformNode) represents the output
+// C2 graph after vectorization as closely as possible.
+//
+// This allows us to schedule the graph, and check for possible cycles that
+// vectorization might introduce.
+//
+// Changes to the C2 IR are only made once the "apply" method is called, and
+// each vtnode generates its corresponding scalar or vector C2 nodes.
+//
+// Future Plans with VTransform:
+// - Cost model: estimate if vectorization is profitable.
+// - Optimizations: moving unordered reductions out of the loop, whih decreases cost.
+// - Pack/Unpack/Shuffle: introduce additional nodes not present in the scalar loop.
+//                        This is difficult to do with the SuperWord packset approach.
+// - If-conversion: convert predicated nodes into CFG.
 
 typedef int VTransformNodeIDX;
 class VTransformNode;
@@ -1331,10 +1349,10 @@ class VTransformElementWiseVectorNode;
 class VTransformMaskCmpVectorNode;
 class VTransformReductionVectorNode;
 
-// TODO desc
+// Status output from a VTransformNode::apply
 class VTransformApplyStatus {
 private:
-  const bool _is_valid;
+  const bool _is_valid; // errors lead to compilation bailout
   Node* const _node;
   const uint _vector_length; // number of elements
   const uint _vector_width;  // total width in bytes
@@ -1369,7 +1387,6 @@ public:
   uint vector_width() const { return _vector_width; }
 };
 
-// TODO desc
 class VTransformGraph : public StackObj {
 private:
   const VLoopAnalyzer& _vloop_analyzer;
@@ -1472,7 +1489,8 @@ private:
 #endif
 };
 
-// TODO desc
+// VTransformNodes resemble the C2 IR Nodes. They represent the resulting scalar and
+// vector nodes as closely as possible.
 class VTransformNode : public ArenaObj {
 public:
   const VTransformNodeIDX _idx;
