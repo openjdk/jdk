@@ -499,6 +499,9 @@ java/lang/invoke/RicochetTest.java                              8251969 generic-
 java/lang/instrument/RedefineBigClass.sh                        8065756 generic-all
 java/lang/instrument/RetransformBigClass.sh                     8065756 generic-all
 
+java/lang/instrument/NativeMethodPrefixAgent.java               8333130 generic-all
+java/lang/instrument/RetransformAgent.java                      8333130 generic-all
+
 ############################################################################
 
 # jdk_io
