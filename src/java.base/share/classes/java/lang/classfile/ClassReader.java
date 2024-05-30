@@ -71,21 +71,8 @@ public sealed interface ClassReader extends ConstantPool
     /** {@return the constant pool entry describing the name of the superclass, if any} */
     Optional<ClassEntry> superclassEntry();
 
-    /** {@return the offset into the classfile of the {@code this_class} field} */
-    int thisClassPos();
-
     /** {@return the length of the classfile, in bytes} */
     int classfileLength();
-
-    // Buffer related
-
-    /**
-     * {@return the offset following the block of attributes starting at the
-     * specified position}
-     * @param offset the offset into the classfile at which the attribute block
-     *               starts
-     */
-    int skipAttributeHolder(int offset);
 
     // Constant pool
 
