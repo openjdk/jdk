@@ -37,6 +37,8 @@ import java.lang.invoke.MethodType;
 import java.lang.invoke.VarHandle;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
 import jdk.internal.access.SharedSecrets;
@@ -88,6 +90,14 @@ public final class Utils {
     }
 
     public static VarHandle makeSegmentViewVarHandle(ValueLayout layout) {
+        final class VarHandleCache {
+            private static final Map<ValueLayout, VarHandle> HANDLE_MAP = new ConcurrentHashMap<>();
+        }
+        return VarHandleCache.HANDLE_MAP
+                .computeIfAbsent(layout.withoutName(), Utils::makeSegmentViewVarHandleInternal);
+    }
+
+    private static VarHandle makeSegmentViewVarHandleInternal(ValueLayout layout) {
         Class<?> baseCarrier = layout.carrier();
         if (layout.carrier() == MemorySegment.class) {
             baseCarrier = switch ((int) ValueLayout.ADDRESS.byteSize()) {
@@ -108,7 +118,7 @@ public final class Utils {
             handle = MethodHandles.filterValue(handle,
                     MethodHandles.explicitCastArguments(ADDRESS_TO_LONG, MethodType.methodType(baseCarrier, MemorySegment.class)),
                     MethodHandles.explicitCastArguments(MethodHandles.insertArguments(LONG_TO_ADDRESS, 1,
-                            pointeeByteSize(addressLayout), pointeeByteAlign(addressLayout)),
+                                    pointeeByteSize(addressLayout), pointeeByteAlign(addressLayout)),
                             MethodType.methodType(MemorySegment.class, baseCarrier)));
         }
         return handle;
