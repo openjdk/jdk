@@ -244,8 +244,11 @@ public enum WixTool {
     }
 
     private static List<Path> findWixCurrentInstallDirs() {
-        return Stream.of(getEnvVariableAsPath("USERPROFILE").resolve(
-                ".dotnet/tools")).filter(Files::isDirectory).toList();
+        return Stream.of(getEnvVariableAsPath("USERPROFILE"), Optional.ofNullable(System.
+                getProperty("user.home")).map(Path::of).orElse(null)).filter(Objects::nonNull).map(
+                path -> {
+                    return path.resolve(".dotnet/tools");
+                }).filter(Files::isDirectory).distinct().toList();
     }
 
     private static List<Path> findWix3InstallDirs() {
