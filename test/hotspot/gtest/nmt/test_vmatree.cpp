@@ -75,7 +75,7 @@ public:
     return x->val().out.type();
   }
 
-  size_t count_nodes(Tree tree) {
+  size_t count_nodes(Tree& tree) {
     int count = 0;
     treap(tree).visit_in_order([&](Node* x) {
       ++count;
@@ -83,10 +83,10 @@ public:
     return count;
   }
 
-  void expect_node_count(Tree tree, size_t count) {
+  void expect_node_count(Tree& tree, size_t count) {
     EXPECT_EQ(count, count_nodes(tree));
   }
-  void expect_null_root(Tree tree) {
+  void expect_null_root(Tree& tree) {
     EXPECT_EQ(nullptr, treap_root(tree));
   }
 

@@ -223,6 +223,8 @@ private:
 #endif // ASSERT
 
 public:
+  NONCOPYABLE(Treap);
+
   Treap(uint64_t seed = static_cast<uint64_t>(os::random())
                         | (static_cast<uint64_t>(os::random()) << 32))
   : _allocator(),

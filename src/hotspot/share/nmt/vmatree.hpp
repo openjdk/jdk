@@ -59,6 +59,8 @@ private:
   static const char* statetype_strings[static_cast<uint8_t>(StateType::LAST)];
 
 public:
+  NONCOPYABLE(VMATree);
+
   static const char* statetype_to_string(StateType type) {
     assert(type != StateType::LAST, "must be");
     return statetype_strings[static_cast<uint8_t>(type)];
