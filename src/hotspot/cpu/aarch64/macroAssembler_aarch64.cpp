@@ -2285,6 +2285,37 @@ Address MacroAssembler::form_address(Register Rd, Register base, int64_t byte_of
   return Address(Rd);
 }
 
+// On Neoverse, MSUB uses the same ALU with other instructions (e.g. SDIV).
+// The combination of MUL/SUB can utilize multiple ALUs,
+// and can be somewhat faster than MSUB.
+void MacroAssembler::msub(Register Rd, Register Rn, Register Rm, Register Ra)
+{
+  assert(Rn != rscratch2 && Rm != rscratch2 && Ra != rscratch2, "reg cannot be scratch");
+
+  if (VM_Version::supports_a53mac() && Ra != zr)
+    nop();
+  if (VM_Version::is_neoverse()) {
+    mul(rscratch2, Rn, Rm);
+    sub(Rd, Ra, rscratch2);
+  } else {
+    Assembler::msub(Rd, Rn, Rm, Ra);
+  }
+}
+
+void MacroAssembler::msubw(Register Rd, Register Rn, Register Rm, Register Ra)
+{
+  assert(Rn != rscratch2 && Rm != rscratch2 && Ra != rscratch2, "reg cannot be scratch");
+
+  if (VM_Version::supports_a53mac() && Ra != zr)
+    nop();
+  if (VM_Version::is_neoverse()) {
+    mulw(rscratch2, Rn, Rm);
+    subw(Rd, Ra, rscratch2);
+  } else {
+    Assembler::msubw(Rd, Rn, Rm, Ra);
+  }
+}
+
 int MacroAssembler::corrected_idivl(Register result, Register ra, Register rb,
                                     bool want_remainder, Register scratch)
 {
@@ -2309,7 +2340,7 @@ int MacroAssembler::corrected_idivl(Register result, Register ra, Register rb,
     sdivw(result, ra, rb);
   } else {
     sdivw(scratch, ra, rb);
-    Assembler::msubw(result, scratch, rb, ra);
+    msubw(result, scratch, rb, ra);
   }
 
   return idivl_offset;
@@ -2339,7 +2370,7 @@ int MacroAssembler::corrected_idivq(Register result, Register ra, Register rb,
     sdiv(result, ra, rb);
   } else {
     sdiv(scratch, ra, rb);
-    Assembler::msub(result, scratch, rb, ra);
+    msub(result, scratch, rb, ra);
   }
 
   return idivq_offset;
