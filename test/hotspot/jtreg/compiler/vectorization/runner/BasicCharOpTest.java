@@ -193,6 +193,9 @@ public class BasicCharOpTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         counts = {IRNode.LSHIFT_VC, ">0"})
+    @IR(applyIfPlatform = {"riscv64", "true"},
+        applyIfCPUFeature = {"v", "true"},
+        counts = {IRNode.LSHIFT_VC, ">0"})
     public char[] vectorShiftLeft() {
         char[] res = new char[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -203,6 +206,9 @@ public class BasicCharOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.URSHIFT_VC, ">0"})
+    @IR(applyIfPlatform = {"riscv64", "true"},
+        applyIfCPUFeature = {"v", "true"},
         counts = {IRNode.URSHIFT_VC, ">0"})
     public char[] vectorSignedShiftRight() {
         char[] res = new char[SIZE];
@@ -215,6 +221,9 @@ public class BasicCharOpTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         counts = {IRNode.URSHIFT_VC, ">0"})
+    @IR(applyIfPlatform = {"riscv64", "true"},
+        applyIfCPUFeature = {"v", "true"},
+        counts = {IRNode.URSHIFT_VC, ">0"})
     public char[] vectorUnsignedShiftRight() {
         char[] res = new char[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -226,6 +235,9 @@ public class BasicCharOpTest extends VectorizationTestRunner {
     // ------------- ReverseBytes -------------
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+        counts = {IRNode.REVERSE_BYTES_VS, ">0"})
+    @IR(applyIfPlatform = {"riscv64", "true"},
+        applyIfCPUFeature = {"zvbb", "true"},
         counts = {IRNode.REVERSE_BYTES_VS, ">0"})
     public char[] reverseBytesWithChar() {
         char[] res = new char[SIZE];
