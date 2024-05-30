@@ -826,15 +826,21 @@ void PSParallelCompact::fill_dense_prefix_end(SpaceId id) {
   }
 }
 
-bool PSParallelCompact::reassess_maximum_compaction(bool maximum_compaction,
-                                                    size_t total_live_words,
-                                                    MutableSpace* const old_space,
-                                                    HeapWord* full_region_prefix_end) {
+bool PSParallelCompact::check_maximum_compaction(size_t total_live_words,
+                                                 MutableSpace* const old_space,
+                                                 HeapWord* full_region_prefix_end) {
+
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
+
+  // Check System.GC
+  bool is_max_on_system_gc = UseMaximumCompactionOnSystemGC
+                          && GCCause::is_user_requested_gc(heap->gc_cause());
+
   // Check if all live objs are larger than old-gen.
   const bool is_old_gen_overflowing = (total_live_words > old_space->capacity_in_words());
 
   // JVM flags
-  const uint total_invocations = ParallelScavengeHeap::heap()->total_full_collections();
+  const uint total_invocations = heap->total_full_collections();
   assert(total_invocations >= _maximum_compaction_gc_num, "sanity");
   const size_t gcs_since_max = total_invocations - _maximum_compaction_gc_num;
   const bool is_interval_ended = gcs_since_max > HeapMaximumCompactionInterval;
@@ -843,7 +849,7 @@ bool PSParallelCompact::reassess_maximum_compaction(bool maximum_compaction,
   const bool is_region_full =
     full_region_prefix_end >= _summary_data.region_align_down(old_space->top());
 
-  if (maximum_compaction || is_old_gen_overflowing || is_interval_ended || is_region_full) {
+  if (is_max_on_system_gc || is_old_gen_overflowing || is_interval_ended || is_region_full) {
     _maximum_compaction_gc_num = total_invocations;
     return true;
   }
@@ -851,7 +857,7 @@ bool PSParallelCompact::reassess_maximum_compaction(bool maximum_compaction,
   return false;
 }
 
-void PSParallelCompact::summary_phase(bool maximum_compaction)
+void PSParallelCompact::summary_phase()
 {
   GCTraceTime(Info, gc, phases) tm("Summary Phase", &_gc_timer);
 
@@ -874,10 +880,9 @@ void PSParallelCompact::summary_phase(bool maximum_compaction)
       _space_info[i].set_dense_prefix(space->bottom());
     }
 
-    maximum_compaction = reassess_maximum_compaction(maximum_compaction,
-                                                     total_live_words,
-                                                     old_space,
-                                                     full_region_prefix_end);
+    bool maximum_compaction = check_maximum_compaction(total_live_words,
+                                                       old_space,
+                                                       full_region_prefix_end);
     HeapWord* dense_prefix_end =
       maximum_compaction ? full_region_prefix_end
                          : compute_dense_prefix_for_old_space(old_space,
@@ -958,26 +963,23 @@ void PSParallelCompact::summary_phase(bool maximum_compaction)
 // may be true because this method can be called without intervening
 // activity.  For example when the heap space is tight and full measure
 // are being taken to free space.
-bool PSParallelCompact::invoke(bool maximum_heap_compaction) {
+bool PSParallelCompact::invoke(bool clear_all_soft_refs) {
   assert(SafepointSynchronize::is_at_safepoint(), "should be at safepoint");
   assert(Thread::current() == (Thread*)VMThread::vm_thread(),
          "should be in vm thread");
 
-  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
-  assert(!heap->is_stw_gc_active(), "not reentrant");
-
   IsSTWGCActiveMark mark;
 
-  const bool clear_all_soft_refs =
-    heap->soft_ref_policy()->should_clear_all_soft_refs();
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
+  clear_all_soft_refs = clear_all_soft_refs
+                     || heap->soft_ref_policy()->should_clear_all_soft_refs();
 
-  return PSParallelCompact::invoke_no_policy(clear_all_soft_refs ||
-                                             maximum_heap_compaction);
+  return PSParallelCompact::invoke_no_policy(clear_all_soft_refs);
 }
 
 // This method contains no policy. You should probably
 // be calling invoke() instead.
-bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
+bool PSParallelCompact::invoke_no_policy(bool clear_all_soft_refs) {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at a safepoint");
   assert(ref_processor() != nullptr, "Sanity");
 
@@ -998,7 +1000,7 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
 
   // The scope of casr should end after code that can change
   // SoftRefPolicy::_should_clear_all_soft_refs.
-  ClearedAllSoftRefs casr(maximum_heap_compaction,
+  ClearedAllSoftRefs casr(clear_all_soft_refs,
                           heap->soft_ref_policy());
 
   // Make sure data structures are sane, make the heap parsable, and do other
@@ -1033,7 +1035,7 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
     DerivedPointerTable::clear();
 #endif
 
-    ref_processor()->start_discovery(maximum_heap_compaction);
+    ref_processor()->start_discovery(clear_all_soft_refs);
 
     ClassUnloadingContext ctx(1 /* num_nmethod_unlink_workers */,
                               false /* unregister_nmethods_during_purge */,
@@ -1041,9 +1043,7 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
 
     marking_phase(&_gc_tracer);
 
-    bool max_on_system_gc = UseMaximumCompactionOnSystemGC
-      && GCCause::is_user_requested_gc(gc_cause);
-    summary_phase(maximum_heap_compaction || max_on_system_gc);
+    summary_phase();
 
 #if COMPILER2_OR_JVMCI
     assert(DerivedPointerTable::is_active(), "Sanity");

@@ -723,10 +723,9 @@ private:
   static void pre_compact();
   static void post_compact();
 
-  static bool reassess_maximum_compaction(bool maximum_compaction,
-                                          size_t total_live_words,
-                                          MutableSpace* const old_space,
-                                          HeapWord* full_region_prefix_end);
+  static bool check_maximum_compaction(size_t total_live_words,
+                                       MutableSpace* const old_space,
+                                       HeapWord* full_region_prefix_end);
 
   // Mark live objects
   static void marking_phase(ParallelOldTracer *gc_tracer);
@@ -739,7 +738,7 @@ private:
   // make the heap parsable.
   static void fill_dense_prefix_end(SpaceId id);
 
-  static void summary_phase(bool maximum_compaction);
+  static void summary_phase();
 
   static void adjust_pointers();
   static void forward_to_new_addr();

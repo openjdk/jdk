@@ -441,11 +441,7 @@ HeapWord* ParallelScavengeHeap::mem_allocate_old_gen(size_t size) {
 }
 
 void ParallelScavengeHeap::do_full_collection(bool clear_all_soft_refs) {
-  // The do_full_collection() parameter clear_all_soft_refs
-  // is interpreted here as maximum_compaction which will
-  // cause SoftRefs to be cleared.
-  bool maximum_compaction = clear_all_soft_refs;
-  PSParallelCompact::invoke(maximum_compaction);
+  PSParallelCompact::invoke(clear_all_soft_refs);
 }
 
 // Failed allocation policy. Must be called from the VM thread, and
