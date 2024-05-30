@@ -26,18 +26,14 @@
  * @bug     8011738
  * @author  sogoel
  * @summary Code translation test for Lambda expressions, method references
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
+ * @enablePreview
+ * @modules java.base/jdk.internal.classfile.impl
  * @run main ByteCodeTest
  */
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.BootstrapMethodsAttribute;
-import jdk.internal.classfile.constantpool.*;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.BootstrapMethodsAttribute;
+import java.lang.classfile.constantpool.*;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -78,7 +74,7 @@ public class ByteCodeTest {
     private static boolean verifyClassFileAttributes(File classFile, TestCases tc) {
         ClassModel c = null;
         try {
-            c = Classfile.of().parse(classFile.toPath());
+            c = ClassFile.of().parse(classFile.toPath());
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -427,7 +423,7 @@ public class ByteCodeTest {
         }
 
         private Map<Integer, String> readBSM() {
-            BootstrapMethodsAttribute bsmAttr = cf.findAttribute(Attributes.BOOTSTRAP_METHODS).orElse(null);
+            BootstrapMethodsAttribute bsmAttr = cf.findAttribute(Attributes.bootstrapMethods()).orElse(null);
             if (bsmAttr != null) {
                 Map<Integer, String> out =
                         new HashMap<>(bsmAttr.bootstrapMethodsSize());

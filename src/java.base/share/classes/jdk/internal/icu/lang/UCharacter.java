@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
  * questions.
  */
 
-/**
+/*
 *******************************************************************************
 * Copyright (C) 1996-2014, International Business Machines Corporation and
 * others. All Rights Reserved.
@@ -84,7 +84,7 @@ import jdk.internal.icu.util.VersionInfo;
  * <p>
  * Further detail on differences can be determined using the program
  *        <a href=
- * "https://github.com/unicode-org/icu/blob/main/icu4j/main/tests/core/src/com/ibm/icu/dev/test/lang/UCharacterCompare.java">
+ * "https://github.com/unicode-org/icu/blob/main/icu4j/main/core/src/test/java/com/ibm/icu/dev/test/lang/UCharacterCompare.java">
  *        com.ibm.icu.dev.test.lang.UCharacterCompare</a>
  * </p>
  * <p>

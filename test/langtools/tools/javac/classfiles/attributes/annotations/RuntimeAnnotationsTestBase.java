@@ -21,8 +21,8 @@
  * questions.
  */
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.*;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
 
 import java.io.IOException;
 import java.lang.annotation.RetentionPolicy;
@@ -96,11 +96,11 @@ public abstract class RuntimeAnnotationsTestBase extends AnnotationsTestBase {
         Map<String, Annotation> actualInvisible = collectAnnotations(
                 member,
                 attributedElement,
-                Attributes.RUNTIME_INVISIBLE_ANNOTATIONS);
+                Attributes.runtimeInvisibleAnnotations());
         Map<String, Annotation> actualVisible = collectAnnotations(
                 member,
                 attributedElement,
-                Attributes.RUNTIME_VISIBLE_ANNOTATIONS);
+                Attributes.runtimeVisibleAnnotations());
 
         checkEquals(actualInvisible.keySet(),
                 member.getRuntimeInvisibleAnnotations(), "RuntimeInvisibleAnnotations");

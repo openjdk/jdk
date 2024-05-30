@@ -26,17 +26,13 @@
  * @bug 8256266 8281238
  * @summary Verify annotations work correctly on binding variables
  * @library /tools/javac/lib
+ * @enablePreview
  * @modules java.compiler
  *          jdk.compiler
- *          java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
  *          java.base/jdk.internal.classfile.impl
  * @build JavacTestingAbstractProcessor
  * @compile Annotations.java
- * @compile -processor Annotations -proc:only Annotations.java
+ * @compile -J--enable-preview -processor Annotations -proc:only Annotations.java
  * @run main Annotations
  */
 
@@ -54,9 +50,9 @@ import com.sun.source.tree.BindingPatternTree;
 import com.sun.source.tree.VariableTree;
 import com.sun.source.util.TreePathScanner;
 import com.sun.source.util.Trees;
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.CodeAttribute;
-import jdk.internal.classfile.attribute.RuntimeInvisibleTypeAnnotationsAttribute;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.CodeAttribute;
+import java.lang.classfile.attribute.RuntimeInvisibleTypeAnnotationsAttribute;
 import java.io.InputStream;
 
 public class Annotations extends JavacTestingAbstractProcessor {
@@ -68,11 +64,11 @@ public class Annotations extends JavacTestingAbstractProcessor {
         InputStream annotationsClass =
                 Annotations.class.getResourceAsStream("Annotations.class");
         assert annotationsClass != null;
-        ClassModel cf = Classfile.of().parse(annotationsClass.readAllBytes());
+        ClassModel cf = ClassFile.of().parse(annotationsClass.readAllBytes());
         for (MethodModel m : cf.methods()) {
             if (m.methodName().equalsString("test")) {
-                CodeAttribute codeAttr = m.findAttribute(Attributes.CODE).orElseThrow();
-                RuntimeInvisibleTypeAnnotationsAttribute annotations = codeAttr.findAttribute(Attributes.RUNTIME_INVISIBLE_TYPE_ANNOTATIONS).orElseThrow();
+                CodeAttribute codeAttr = m.findAttribute(Attributes.code()).orElseThrow();
+                RuntimeInvisibleTypeAnnotationsAttribute annotations = codeAttr.findAttribute(Attributes.runtimeInvisibleTypeAnnotations()).orElseThrow();
                 String expected = "LAnnotations$DTA; pos: [LOCAL_VARIABLE, {start_pc=31, end_pc=38, index=1}], " +
                                   "LAnnotations$TA; pos: [LOCAL_VARIABLE, {start_pc=50, end_pc=57, index=1}], ";
                 StringBuilder actual = new StringBuilder();

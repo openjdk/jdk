@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@ import java.io.*;
 import sun.jvm.hotspot.code.*;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.debugger.cdbg.*;
+import sun.jvm.hotspot.gc.g1.*;
+import sun.jvm.hotspot.gc.serial.*;
 import sun.jvm.hotspot.gc.shared.*;
 import sun.jvm.hotspot.interpreter.*;
 import sun.jvm.hotspot.memory.*;
@@ -56,11 +58,11 @@ public class PointerLocation {
   ClosestSymbol nativeSymbol;
 
   CollectedHeap heap;
-  Generation gen;
+  Generation gen;  // Serial heap generation
+  G1HeapRegion hr;   // G1 heap region
 
   // If UseTLAB was enabled and the pointer was found in a
   // currently-active TLAB, these will be set
-  boolean inTLAB;
   JavaThread tlabThread;
   ThreadLocalAllocBuffer tlab;
 
@@ -111,11 +113,11 @@ public class PointerLocation {
   }
 
   public boolean isInNewGen() {
-    return ((gen != null) && (gen.equals(((GenCollectedHeap)heap).getGen(0))));
+    return ((gen != null) && (gen.equals(((SerialHeap)heap).youngGen())));
   }
 
   public boolean isInOldGen() {
-    return ((gen != null) && (gen.equals(((GenCollectedHeap)heap).getGen(1))));
+    return ((gen != null) && (gen.equals(((SerialHeap)heap).oldGen())));
   }
 
   public boolean inOtherGen() {
@@ -123,12 +125,16 @@ public class PointerLocation {
   }
 
   public Generation getGeneration() {
-      return gen;
+    return gen; // SerialHeap generation
+  }
+
+  public G1HeapRegion getG1HeapRegion() {
+    return hr; // G1 heap region
   }
 
   /** This may be true if isInNewGen is also true */
   public boolean isInTLAB() {
-    return inTLAB;
+    return (tlab != null);
   }
 
   /** Only valid if isInTLAB() returns true */
@@ -268,22 +274,46 @@ public class PointerLocation {
         tty.println();
     } else if (isInHeap()) {
       if (isInTLAB()) {
-        tty.print("In thread-local allocation buffer for thread (");
-        getTLABThread().printThreadInfoOn(tty);
-        tty.print(") ");
-        getTLAB().printOn(tty); // includes "\n"
-      } else {
-        if (isInNewGen()) {
-          tty.print("In new generation ");
-        } else if (isInOldGen()) {
-          tty.print("In old generation ");
+        tty.print("In TLAB for thread ");
+        JavaThread thread = getTLABThread();
+        if (verbose) {
+          tty.print("(");
+          thread.printThreadInfoOn(tty);
+          tty.print(") ");
+          getTLAB().printOn(tty); // includes "\n"
         } else {
-          tty.print("In unknown section of Java heap");
+          tty.format("\"%s\" %s\n", thread.getThreadName(), thread);
         }
+      }
+      // This section provides details about where in the heap the address is located,
+      // but we only want to do that if it is not in a TLAB or if verbose requested.
+      if (!isInTLAB() || verbose) {
         if (getGeneration() != null) {
-          getGeneration().printOn(tty); // does not include "\n"
+          // Address is in SerialGC heap
+          if (isInNewGen()) {
+              tty.print("In new generation of SerialGC heap");
+          } else if (isInOldGen()) {
+              tty.print("In old generation of SerialGC heap");
+          } else {
+              tty.print("In unknown generation of SerialGC heap");
+          }
+          if (verbose) {
+              tty.print(":");
+              getGeneration().printOn(tty); // does not include "\n"
+          }
+          tty.println();
+        } else if (getG1HeapRegion() != null) {
+            // Address is in the G1 heap
+            if (verbose) {
+                tty.print("In G1 heap ");
+                getG1HeapRegion().printOn(tty); // includes "\n"
+            } else {
+                tty.println("In G1 heap region");
+            }
+        } else {
+            // Address is some other heap type that we haven't special cased yet.
+            tty.println("In unknown section of the Java heap");
         }
-        tty.println();
       }
     } else if (isInInterpreter()) {
       tty.print("In interpreter codelet: ");
@@ -329,7 +359,8 @@ public class PointerLocation {
       tty.print(" JNI handle block (" + handleBlock.top() + " handle slots present)");
       if (handleThread.isJavaThread()) {
         tty.print(" for JavaThread ");
-        ((JavaThread) handleThread).printThreadIDOn(tty); // includes "\n"
+        ((JavaThread) handleThread).printThreadIDOn(tty);
+        tty.println();
       } else {
         tty.println(" for a non-Java Thread");
       }

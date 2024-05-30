@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@
 #include "opto/rootnode.hpp"
 #include "opto/subnode.hpp"
 #include "opto/subtypenode.hpp"
+#include "opto/superword.hpp"
 #include "opto/vectornode.hpp"
 #include "utilities/macros.hpp"
 
@@ -48,8 +49,9 @@
 //------------------------------split_thru_phi---------------------------------
 // Split Node 'n' through merge point if there is enough win.
 Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
-  if (n->Opcode() == Op_ConvI2L && n->bottom_type() != TypeLong::LONG) {
-    // ConvI2L may have type information on it which is unsafe to push up
+  if ((n->Opcode() == Op_ConvI2L && n->bottom_type() != TypeLong::LONG) ||
+      (n->Opcode() == Op_ConvL2I && n->bottom_type() != TypeInt::INT)) {
+    // ConvI2L/ConvL2I may have type information on it which is unsafe to push up
     // so disable this for now
     return nullptr;
   }
@@ -152,9 +154,22 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
         }
       }
     }
-    if (x != the_clone && the_clone != nullptr)
-      _igvn.remove_dead_node(the_clone);
+
     phi->set_req( i, x );
+
+    if (the_clone == nullptr) {
+      continue;
+    }
+
+    if (the_clone != x) {
+      _igvn.remove_dead_node(the_clone);
+    } else if (region->is_Loop() && i == LoopNode::LoopBackControl &&
+               n->is_Load() && can_move_to_inner_loop(n, region->as_Loop(), x)) {
+      // it is not a win if 'x' moved from an outer to an inner loop
+      // this edge case can only happen for Load nodes
+      wins = 0;
+      break;
+    }
   }
   // Too few wins?
   if (wins <= policy) {
@@ -218,6 +233,16 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
   return phi;
 }
 
+// Test whether node 'x' can move into an inner loop relative to node 'n'.
+// Note: The test is not exact. Returns true if 'x' COULD end up in an inner loop,
+// BUT it can also return true and 'x' is in the outer loop
+bool PhaseIdealLoop::can_move_to_inner_loop(Node* n, LoopNode* n_loop, Node* x) {
+  IdealLoopTree* n_loop_tree = get_loop(n_loop);
+  IdealLoopTree* x_loop_tree = get_loop(get_early_ctrl(x));
+  // x_loop_tree should be outer or same loop as n_loop_tree
+  return !x_loop_tree->is_member(n_loop_tree);
+}
+
 // Subtype checks that carry profile data don't common so look for a replacement by following edges
 Node* PhaseIdealLoop::similar_subtype_check(const Node* x, Node* r_in) {
   if (x->is_SubTypeCheck()) {
@@ -264,7 +289,11 @@ bool PhaseIdealLoop::cannot_split_division(const Node* n, const Node* region) co
       return false;
   }
 
-  assert(n->in(0) == nullptr, "divisions with zero check should already have bailed out earlier in split-if");
+  if (n->in(0) != nullptr) {
+    // Cannot split through phi if Div or Mod node has a control dependency to a zero check.
+    return true;
+  }
+
   Node* divisor = n->in(2);
   return is_divisor_counted_loop_phi(divisor, region) &&
          loop_phi_backedge_type_contains_zero(divisor, zero);
@@ -282,7 +311,7 @@ bool PhaseIdealLoop::loop_phi_backedge_type_contains_zero(const Node* phi_diviso
 // Replace the dominated test with an obvious true or false.  Place it on the
 // IGVN worklist for later cleanup.  Move control-dependent data Nodes on the
 // live path up to the dominating control.
-void PhaseIdealLoop::dominated_by(IfProjNode* prevdom, IfNode* iff, bool flip, bool exclude_loop_predicate) {
+void PhaseIdealLoop::dominated_by(IfProjNode* prevdom, IfNode* iff, bool flip, bool pin_array_access_nodes) {
   if (VerifyLoopOptimizations && PrintOpto) { tty->print_cr("dominating test"); }
 
   // prevdom is the dominating projection of the dominating test.
@@ -307,7 +336,7 @@ void PhaseIdealLoop::dominated_by(IfProjNode* prevdom, IfNode* iff, bool flip, b
   // Hack the dominated test
   _igvn.replace_input_of(iff, 1, con);
 
-  // If I dont have a reachable TRUE and FALSE path following the IfNode then
+  // If I don't have a reachable TRUE and FALSE path following the IfNode then
   // I can assume this path reaches an infinite loop.  In this case it's not
   // important to optimize the data Nodes - either the whole compilation will
   // be tossed or this path (and all data Nodes) will go dead.
@@ -318,23 +347,8 @@ void PhaseIdealLoop::dominated_by(IfProjNode* prevdom, IfNode* iff, bool flip, b
   // dominating projection.
   Node* dp = iff->proj_out_or_null(pop == Op_IfTrue);
 
-  // Loop predicates may have depending checks which should not
-  // be skipped. For example, range check predicate has two checks
-  // for lower and upper bounds.
   if (dp == nullptr)
     return;
-
-  ProjNode* dp_proj  = dp->as_Proj();
-  ProjNode* unc_proj = iff->proj_out(1 - dp_proj->_con)->as_Proj();
-  if (exclude_loop_predicate &&
-      (unc_proj->is_uncommon_trap_proj(Deoptimization::Reason_predicate) != nullptr ||
-       unc_proj->is_uncommon_trap_proj(Deoptimization::Reason_profile_predicate) != nullptr ||
-       unc_proj->is_uncommon_trap_proj(Deoptimization::Reason_range_check) != nullptr)) {
-    // If this is a range check (IfNode::is_range_check), do not
-    // reorder because Compile::allow_range_check_smearing might have
-    // changed the check.
-    return; // Let IGVN transformation change control dependence.
-  }
 
   IdealLoopTree* old_loop = get_loop(dp);
 
@@ -344,6 +358,20 @@ void PhaseIdealLoop::dominated_by(IfProjNode* prevdom, IfNode* iff, bool flip, b
     if (cd->depends_only_on_test() && _igvn.no_dependent_zero_check(cd)) {
       assert(cd->in(0) == dp, "");
       _igvn.replace_input_of(cd, 0, prevdom);
+      if (pin_array_access_nodes) {
+        // Because of Loop Predication, Loads and range check Cast nodes that are control dependent on this range
+        // check (that is about to be removed) now depend on multiple dominating Hoisted Check Predicates. After the
+        // removal of this range check, these control dependent nodes end up at the lowest/nearest dominating predicate
+        // in the graph. To ensure that these Loads/Casts do not float above any of the dominating checks (even when the
+        // lowest dominating check is later replaced by yet another dominating check), we need to pin them at the lowest
+        // dominating check.
+        Node* clone = cd->pin_array_access_node();
+        if (clone != nullptr) {
+          clone = _igvn.register_new_node_with_optimizer(clone, cd);
+          _igvn.replace_node(cd, clone);
+          cd = clone;
+        }
+      }
       set_early_ctrl(cd, false);
       IdealLoopTree* new_loop = get_loop(get_ctrl(cd));
       if (old_loop != new_loop) {
@@ -440,7 +468,7 @@ Node* PhaseIdealLoop::remix_address_expressions_add_left_shift(Node* n, IdealLoo
       Node* zero = _igvn.integercon(0, bt);
       set_ctrl(zero, C->root());
       Node* neg = SubNode::make(zero, add->in(2), bt);
-      register_new_node(neg, get_ctrl(add->in(2)));
+      register_new_node_with_ctrl_of(neg, add->in(2));
       add = AddNode::make(add->in(1), neg, bt);
       register_new_node(add, add_ctrl);
     }
@@ -544,8 +572,8 @@ Node* PhaseIdealLoop::remix_address_expressions(Node* n) {
   }
 
   // Replace ((I1 +p V) +p I2) with ((I1 +p I2) +p V),
-  // but not if I2 is a constant.
-  if (n_op == Op_AddP) {
+  // but not if I2 is a constant. Skip for irreducible loops.
+  if (n_op == Op_AddP && n_loop->_head->is_Loop()) {
     if (n2_loop == n_loop && n3_loop != n_loop) {
       if (n->in(2)->Opcode() == Op_AddP && !n->in(3)->is_Con()) {
         Node* n22_ctrl = get_ctrl(n->in(2)->in(2));
@@ -627,13 +655,13 @@ Node *PhaseIdealLoop::convert_add_to_muladd(Node* n) {
             if ((adr1->in(AddPNode::Base) == adr3->in(AddPNode::Base)) &&
                 (adr2->in(AddPNode::Base) == adr4->in(AddPNode::Base))) {
               nn = new MulAddS2INode(mul_in1, mul_in2, mul_in3, mul_in4);
-              register_new_node(nn, get_ctrl(n));
+              register_new_node_with_ctrl_of(nn, n);
               _igvn.replace_node(n, nn);
               return nn;
             } else if ((adr1->in(AddPNode::Base) == adr4->in(AddPNode::Base)) &&
                        (adr2->in(AddPNode::Base) == adr3->in(AddPNode::Base))) {
               nn = new MulAddS2INode(mul_in1, mul_in2, mul_in4, mul_in3);
-              register_new_node(nn, get_ctrl(n));
+              register_new_node_with_ctrl_of(nn, n);
               _igvn.replace_node(n, nn);
               return nn;
             }
@@ -751,8 +779,12 @@ Node *PhaseIdealLoop::conditional_move( Node *region ) {
     }
   }//for
   Node* bol = iff->in(1);
-  if (bol->Opcode() == Op_Opaque4) {
-    return nullptr; // Ignore loop predicate checks (the Opaque4 ensures they will go away)
+  assert(!bol->is_OpaqueInitializedAssertionPredicate(), "Initialized Assertion Predicates cannot form a diamond with Halt");
+  if (bol->is_Opaque4()) {
+    // Ignore Template Assertion Predicates with Opaque4 nodes.
+    assert(assertion_predicate_has_loop_opaque_node(iff),
+           "must be Template Assertion Predicate, non-null-check with Opaque4 cannot form a diamond with Halt");
+    return nullptr;
   }
   assert(bol->Opcode() == Op_Bool, "Unexpected node");
   int cmp_op = bol->in(1)->Opcode();
@@ -763,25 +795,18 @@ Node *PhaseIdealLoop::conditional_move( Node *region ) {
   // Avoid duplicated float compare.
   if (phis > 1 && (cmp_op == Op_CmpF || cmp_op == Op_CmpD)) return nullptr;
 
-  float infrequent_prob = PROB_UNLIKELY_MAG(3);
-  // Ignore cost and blocks frequency if CMOVE can be moved outside the loop.
-  if (used_inside_loop) {
-    if (cost >= ConditionalMoveLimit) return nullptr; // Too much goo
-
-    // BlockLayoutByFrequency optimization moves infrequent branch
-    // from hot path. No point in CMOV'ing in such case (110 is used
-    // instead of 100 to take into account not exactness of float value).
-    if (BlockLayoutByFrequency) {
-      infrequent_prob = MAX2(infrequent_prob, (float)BlockLayoutMinDiamondPercentage/110.0f);
-    }
+  // Ignore cost if CMOVE can be moved outside the loop.
+  if (used_inside_loop && cost >= ConditionalMoveLimit) {
+    return nullptr;
   }
   // Check for highly predictable branch.  No point in CMOV'ing if
   // we are going to predict accurately all the time.
+  constexpr float infrequent_prob = PROB_UNLIKELY_MAG(2);
   if (C->use_cmove() && (cmp_op == Op_CmpF || cmp_op == Op_CmpD)) {
     //keep going
-  } else if (iff->_prob < infrequent_prob ||
-      iff->_prob > (1.0f - infrequent_prob))
+  } else if (iff->_prob < infrequent_prob || iff->_prob > (1.0f - infrequent_prob)) {
     return nullptr;
+  }
 
   // --------------
   // Now replace all Phis with CMOV's
@@ -1423,7 +1448,12 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
     }
 
     // Now split the IF
+    C->print_method(PHASE_BEFORE_SPLIT_IF, 4, iff);
+    if ((PrintOpto && VerifyLoopOptimizations) || TraceLoopOpts) {
+      tty->print_cr("Split-If");
+    }
     do_split_if(iff);
+    C->print_method(PHASE_AFTER_SPLIT_IF, 4, iff);
     return;
   }
 
@@ -1465,7 +1495,16 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
           // Replace the dominated test with an obvious true or false.
           // Place it on the IGVN worklist for later cleanup.
           C->set_major_progress();
-          dominated_by(prevdom->as_IfProj(), n->as_If(), false, true);
+          // Split if: pin array accesses that are control dependent on a range check and moved to a regular if,
+          // to prevent an array load from floating above its range check. There are three cases:
+          // 1. Move from RangeCheck "a" to RangeCheck "b": don't need to pin. If we ever remove b, then we pin
+          //    all its array accesses at that point.
+          // 2. We move from RangeCheck "a" to regular if "b": need to pin. If we ever remove b, then its array
+          //    accesses would start to float, since we don't pin at that point.
+          // 3. If we move from regular if: don't pin. All array accesses are already assumed to be pinned.
+          bool pin_array_access_nodes =  n->Opcode() == Op_RangeCheck &&
+                                         prevdom->in(0)->Opcode() != Op_RangeCheck;
+          dominated_by(prevdom->as_IfProj(), n->as_If(), false, pin_array_access_nodes);
           DEBUG_ONLY( if (VerifyLoopOptimizations) { verify(); } );
           return;
         }
@@ -1558,10 +1597,10 @@ bool PhaseIdealLoop::try_merge_identical_ifs(Node* n) {
     // unrelated control dependency.
     for (uint i = 1; i < new_false_region->req(); i++) {
       if (is_dominator(dom_proj_true, new_false_region->in(i))) {
-        dominated_by(dom_proj_true->as_IfProj(), new_false_region->in(i)->in(0)->as_If(), false, false);
+        dominated_by(dom_proj_true->as_IfProj(), new_false_region->in(i)->in(0)->as_If());
       } else {
         assert(is_dominator(dom_proj_false, new_false_region->in(i)), "bad if");
-        dominated_by(dom_proj_false->as_IfProj(), new_false_region->in(i)->in(0)->as_If(), false, false);
+        dominated_by(dom_proj_false->as_IfProj(), new_false_region->in(i)->in(0)->as_If());
       }
     }
     return true;
@@ -1628,7 +1667,8 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
       !n->is_Proj() &&
       !n->is_MergeMem() &&
       !n->is_CMove() &&
-      n->Opcode() != Op_Opaque4 &&
+      !n->is_Opaque4() &&
+      !n->is_OpaqueInitializedAssertionPredicate() &&
       !n->is_Type()) {
     Node *n_ctrl = get_ctrl(n);
     IdealLoopTree *n_loop = get_loop(n_ctrl);
@@ -1639,7 +1679,20 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
         // n has a control input inside a loop but get_ctrl() is member of an outer loop. This could happen, for example,
         // for Div nodes inside a loop (control input inside loop) without a use except for an UCT (outside the loop).
         // Rewire control of n to right outside of the loop, regardless if its input(s) are later sunk or not.
-        _igvn.replace_input_of(n, 0, place_outside_loop(n_ctrl, loop_ctrl));
+        Node* maybe_pinned_n = n;
+        Node* outside_ctrl = place_outside_loop(n_ctrl, loop_ctrl);
+        if (n->depends_only_on_test()) {
+          Node* pinned_clone = n->pin_array_access_node();
+          if (pinned_clone != nullptr) {
+            // Pin array access nodes: if this is an array load, it's going to be dependent on a condition that's not a
+            // range check for that access. If that condition is replaced by an identical dominating one, then an
+            // unpinned load would risk floating above its range check.
+            register_new_node(pinned_clone, n_ctrl);
+            maybe_pinned_n = pinned_clone;
+            _igvn.replace_node(n, pinned_clone);
+          }
+        }
+        _igvn.replace_input_of(maybe_pinned_n, 0, outside_ctrl);
       }
     }
     if (n_loop != _ltree_root && n->outcnt() > 1) {
@@ -1653,7 +1706,16 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
         for (DUIterator_Last jmin, j = n->last_outs(jmin); j >= jmin;) {
           Node* u = n->last_out(j); // Clone private computation per use
           _igvn.rehash_node_delayed(u);
-          Node* x = n->clone(); // Clone computation
+          Node* x = nullptr;
+          if (n->depends_only_on_test()) {
+            // Pin array access nodes: if this is an array load, it's going to be dependent on a condition that's not a
+            // range check for that access. If that condition is replaced by an identical dominating one, then an
+            // unpinned load would risk floating above its range check.
+            x = n->pin_array_access_node();
+          }
+          if (x == nullptr) {
+            x = n->clone();
+          }
           Node* x_ctrl = nullptr;
           if (u->is_Phi()) {
             // Replace all uses of normal nodes.  Replace Phi uses
@@ -1919,18 +1981,18 @@ Node* PhaseIdealLoop::clone_iff(PhiNode* phi) {
   // Convert this Phi into a Phi merging Bools
   uint i;
   for (i = 1; i < phi->req(); i++) {
-    Node *b = phi->in(i);
+    Node* b = phi->in(i);
     if (b->is_Phi()) {
       _igvn.replace_input_of(phi, i, clone_iff(b->as_Phi()));
     } else {
-      assert(b->is_Bool() || b->Opcode() == Op_Opaque4, "");
+      assert(b->is_Bool() || b->is_Opaque4() || b->is_OpaqueInitializedAssertionPredicate(),
+             "bool, non-null check with Opaque4 node or Initialized Assertion Predicate with its Opaque node");
     }
   }
-
   Node* n = phi->in(1);
   Node* sample_opaque = nullptr;
   Node *sample_bool = nullptr;
-  if (n->Opcode() == Op_Opaque4) {
+  if (n->is_Opaque4() || n->is_OpaqueInitializedAssertionPredicate()) {
     sample_opaque = n;
     sample_bool = n->in(1);
     assert(sample_bool->is_Bool(), "wrong type");
@@ -2103,7 +2165,7 @@ void PhaseIdealLoop::clone_loop_handle_data_uses(Node* old, Node_List &old_new,
       // make sure the Bool/Cmp input is cloned down to avoid a Phi between
       // the AllocateArray node and its ValidLengthTest input that could cause
       // split if to break.
-      if (use->is_If() || use->is_CMove() || use->Opcode() == Op_Opaque4 ||
+      if (use->is_If() || use->is_CMove() || use->is_Opaque4() ||
           (use->Opcode() == Op_AllocateArray && use->in(AllocateNode::ValidLengthTest) == old)) {
         // Since this code is highly unlikely, we lazily build the worklist
         // of such Nodes to go split.
@@ -2203,6 +2265,20 @@ void PhaseIdealLoop::clone_loop_handle_data_uses(Node* old, Node_List &old_new,
       // We notify all uses of old, including use, and the indirect uses,
       // that may now be optimized because we have replaced old with phi.
       _igvn.add_users_to_worklist(old);
+      if (idx == 0 &&
+          use->depends_only_on_test()) {
+        Node* pinned_clone = use->pin_array_access_node();
+        if (pinned_clone != nullptr) {
+          // Pin array access nodes: control is updated here to a region. If, after some transformations, only one path
+          // into the region is left, an array load could become dependent on a condition that's not a range check for
+          // that access. If that condition is replaced by an identical dominating one, then an unpinned load would risk
+          // floating above its range check.
+          pinned_clone->set_req(0, phi);
+          register_new_node_with_ctrl_of(pinned_clone, use);
+          _igvn.replace_node(use, pinned_clone);
+          continue;
+        }
+      }
       _igvn.replace_input_of(use, idx, phi);
       if( use->_idx >= new_counter ) { // If updating new phis
         // Not needed for correctness, but prevents a weak assert
@@ -2842,8 +2918,7 @@ ProjNode* PhaseIdealLoop::insert_if_before_proj(Node* left, bool Signed, BoolTes
 
   int opcode = iff->Opcode();
   assert(opcode == Op_If || opcode == Op_RangeCheck, "unexpected opcode");
-  IfNode* new_if = (opcode == Op_If) ? new IfNode(proj2, bol, iff->_prob, iff->_fcnt):
-    new RangeCheckNode(proj2, bol, iff->_prob, iff->_fcnt);
+  IfNode* new_if = IfNode::make_with_same_profile(iff, proj2, bol);
   register_node(new_if, loop, proj2, ddepth);
 
   proj->set_req(0, new_if); // reattach
@@ -3602,6 +3677,9 @@ bool PhaseIdealLoop::partial_peel( IdealLoopTree *loop, Node_List &old_new ) {
     }
   }
 #endif
+
+  C->print_method(PHASE_BEFORE_PARTIAL_PEELING, 4, head);
+
   VectorSet peel;
   VectorSet not_peel;
   Node_List peel_list;
@@ -3835,6 +3913,19 @@ bool PhaseIdealLoop::partial_peel( IdealLoopTree *loop, Node_List &old_new ) {
     if (!n->is_CFG()           && n->in(0) != nullptr        &&
         not_peel.test(n->_idx) && peel.test(n->in(0)->_idx)) {
       Node* n_clone = old_new[n->_idx];
+      if (n_clone->depends_only_on_test()) {
+        // Pin array access nodes: control is updated here to the loop head. If, after some transformations, the
+        // backedge is removed, an array load could become dependent on a condition that's not a range check for that
+        // access. If that condition is replaced by an identical dominating one, then an unpinned load would risk
+        // floating above its range check.
+        Node* pinned_clone = n_clone->pin_array_access_node();
+        if (pinned_clone != nullptr) {
+          register_new_node_with_ctrl_of(pinned_clone, n_clone);
+          old_new.map(n->_idx, pinned_clone);
+          _igvn.replace_node(n_clone, pinned_clone);
+          n_clone = pinned_clone;
+        }
+      }
       _igvn.replace_input_of(n_clone, 0, new_head_clone);
     }
   }
@@ -3896,6 +3987,9 @@ bool PhaseIdealLoop::partial_peel( IdealLoopTree *loop, Node_List &old_new ) {
     }
   }
 #endif
+
+  C->print_method(PHASE_AFTER_PARTIAL_PEELING, 4, new_head_clone);
+
   return true;
 }
 
@@ -4162,7 +4256,8 @@ bool PhaseIdealLoop::duplicate_loop_backedge(IdealLoopTree *loop, Node_List &old
   Node_List *split_if_set = nullptr;
   Node_List *split_bool_set = nullptr;
   Node_List *split_cex_set = nullptr;
-  fix_data_uses(wq, loop, ControlAroundStripMined, head->is_strip_mined() ? loop->_parent : loop, new_counter, old_new, worklist, split_if_set, split_bool_set, split_cex_set);
+  fix_data_uses(wq, loop, ControlAroundStripMined, loop->skip_strip_mined(), new_counter, old_new, worklist,
+                split_if_set, split_bool_set, split_cex_set);
 
   finish_clone_loop(split_if_set, split_bool_set, split_cex_set);
 
@@ -4177,6 +4272,41 @@ bool PhaseIdealLoop::duplicate_loop_backedge(IdealLoopTree *loop, Node_List &old
   C->set_major_progress();
 
   return true;
+}
+
+// AutoVectorize the loop: replace scalar ops with vector ops.
+PhaseIdealLoop::AutoVectorizeStatus
+PhaseIdealLoop::auto_vectorize(IdealLoopTree* lpt, VSharedData &vshared) {
+  // Counted loop only
+  if (!lpt->is_counted()) {
+    return AutoVectorizeStatus::Impossible;
+  }
+
+  // Main-loop only
+  CountedLoopNode* cl = lpt->_head->as_CountedLoop();
+  if (!cl->is_main_loop()) {
+    return AutoVectorizeStatus::Impossible;
+  }
+
+  VLoop vloop(lpt, false);
+  if (!vloop.check_preconditions()) {
+    return AutoVectorizeStatus::TriedAndFailed;
+  }
+
+  // Ensure the shared data is cleared before each use
+  vshared.clear();
+
+  const VLoopAnalyzer vloop_analyzer(vloop, vshared);
+  if (!vloop_analyzer.success()) {
+    return AutoVectorizeStatus::TriedAndFailed;
+  }
+
+  SuperWord sw(vloop_analyzer);
+  if (!sw.transform_loop()) {
+    return AutoVectorizeStatus::TriedAndFailed;
+  }
+
+  return AutoVectorizeStatus::Success;
 }
 
 // Having ReductionNodes in the loop is expensive. They need to recursively
@@ -4370,4 +4500,59 @@ void PhaseIdealLoop::move_unordered_reduction_out_of_loop(IdealLoopTree* loop) {
     assert(post_loop_reduction->outcnt() > 0, "should have taken over all non loop uses of last_accumulator");
     assert(phi->outcnt() == 1, "accumulator is the only use of phi");
   }
+}
+
+void DataNodeGraph::clone_data_nodes(Node* new_ctrl) {
+  for (uint i = 0; i < _data_nodes.size(); i++) {
+    clone(_data_nodes[i], new_ctrl);
+  }
+}
+
+// Clone the given node and set it up properly. Set 'new_ctrl' as ctrl.
+void DataNodeGraph::clone(Node* node, Node* new_ctrl) {
+  Node* clone = node->clone();
+  _phase->igvn().register_new_node_with_optimizer(clone);
+  _orig_to_new.put(node, clone);
+  _phase->set_ctrl(clone, new_ctrl);
+}
+
+// Rewire the data inputs of all (unprocessed) cloned nodes, whose inputs are still pointing to the same inputs as their
+// corresponding orig nodes, to the newly cloned inputs to create a separate cloned graph.
+void DataNodeGraph::rewire_clones_to_cloned_inputs() {
+  _orig_to_new.iterate_all([&](Node* node, Node* clone) {
+    for (uint i = 1; i < node->req(); i++) {
+      Node** cloned_input = _orig_to_new.get(node->in(i));
+      if (cloned_input != nullptr) {
+        // Input was also cloned -> rewire clone to the cloned input.
+        _phase->igvn().replace_input_of(clone, i, *cloned_input);
+      }
+    }
+  });
+}
+
+// Clone all non-OpaqueLoop* nodes and apply the provided transformation strategy for OpaqueLoop* nodes.
+// Set 'new_ctrl' as ctrl for all cloned non-OpaqueLoop* nodes.
+void DataNodeGraph::clone_data_nodes_and_transform_opaque_loop_nodes(
+    const TransformStrategyForOpaqueLoopNodes& transform_strategy,
+    Node* new_ctrl) {
+  for (uint i = 0; i < _data_nodes.size(); i++) {
+    Node* data_node = _data_nodes[i];
+    if (data_node->is_Opaque1()) {
+      transform_opaque_node(transform_strategy, data_node);
+    } else {
+      clone(data_node, new_ctrl);
+    }
+  }
+}
+
+void DataNodeGraph::transform_opaque_node(const TransformStrategyForOpaqueLoopNodes& transform_strategy, Node* node) {
+  Node* transformed_node;
+  if (node->is_OpaqueLoopInit()) {
+    transformed_node = transform_strategy.transform_opaque_init(node->as_OpaqueLoopInit());
+  } else {
+    assert(node->is_OpaqueLoopStride(), "must be OpaqueLoopStrideNode");
+    transformed_node = transform_strategy.transform_opaque_stride(node->as_OpaqueLoopStride());
+  }
+  // Add an orig->new mapping to correctly update the inputs of the copied graph in rewire_clones_to_cloned_inputs().
+  _orig_to_new.put(node, transformed_node);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,8 +47,12 @@ final class StringLatin1 {
         return (char)(value[index] & 0xff);
     }
 
+    public static boolean canEncode(char cp) {
+        return cp <= 0xff;
+    }
+
     public static boolean canEncode(int cp) {
-        return cp >>> 8 == 0;
+        return cp >=0 && cp <= 0xff;
     }
 
     public static int length(byte[] value) {
@@ -299,20 +303,12 @@ final class StringLatin1 {
     }
 
     public static int hashCode(byte[] value) {
-        return switch (value.length) {
-            case 0 -> 0;
-            case 1 -> value[0] & 0xff;
-            default -> ArraysSupport.vectorizedHashCode(value, 0, value.length, 0, ArraysSupport.T_BOOLEAN);
-        };
+        return ArraysSupport.hashCodeOfUnsigned(value, 0, value.length, 0);
     }
 
+    // Caller must ensure that from- and toIndex are within bounds
     public static int indexOf(byte[] value, int ch, int fromIndex, int toIndex) {
         if (!canEncode(ch)) {
-            return -1;
-        }
-        fromIndex = Math.max(fromIndex, 0);
-        toIndex = Math.min(toIndex, value.length);
-        if (fromIndex >= toIndex) {
             return -1;
         }
         return indexOfChar(value, ch, fromIndex, toIndex);

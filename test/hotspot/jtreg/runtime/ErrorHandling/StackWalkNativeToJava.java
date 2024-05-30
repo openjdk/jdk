@@ -65,7 +65,7 @@ public class StackWalkNativeToJava {
         commands.addAll(Arrays.asList(extraFlags));
         commands.add("StackWalkNativeToJava$TestNativeToJavaNative");
 
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(commands);
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(commands);
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldNotContain("java.lang.RuntimeException: Reached statement after obj.wait()");
         output.shouldNotContain("[error occurred during error reporting (printing native stack");
@@ -99,7 +99,7 @@ public class StackWalkNativeToJava {
         commands.addAll(Arrays.asList(extraFlags));
         commands.add("StackWalkNativeToJava$TestNativeToJava");
 
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(commands);
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(commands);
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldNotContain("java.lang.RuntimeException: Reached statement after synchronized");
         output.shouldNotContain("[error occurred during error reporting (printing native stack");

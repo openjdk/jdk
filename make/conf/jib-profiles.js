@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -390,8 +390,8 @@ var getJibProfilesCommon = function (input, data) {
         };
     };
 
-    common.boot_jdk_version = "21";
-    common.boot_jdk_build_number = "35";
+    common.boot_jdk_version = "22";
+    common.boot_jdk_build_number = "36";
     common.boot_jdk_home = input.get("boot_jdk", "install_path") + "/jdk-"
         + common.boot_jdk_version
         + (input.build_os == "macosx" ? ".jdk/Contents/Home" : "");
@@ -407,6 +407,8 @@ var getJibProfilesCommon = function (input, data) {
  * @returns {{}} Profiles part of the configuration
  */
 var getJibProfilesProfiles = function (input, common, data) {
+    var cross_compiling = input.build_platform != input.target_platform;
+
     // Main SE profiles
     var profiles = {
 
@@ -439,7 +441,7 @@ var getJibProfilesProfiles = function (input, common, data) {
         "macosx-x64": {
             target_os: "macosx",
             target_cpu: "x64",
-            dependencies: ["devkit", "gtest", "pandoc"],
+            dependencies: ["devkit", "gtest", "graphviz", "pandoc"],
             configure_args: concat(common.configure_args_64bit, "--with-zlib=system",
                 "--with-macosx-version-max=11.00.00",
                 "--enable-compatible-cds-alignment",
@@ -451,7 +453,7 @@ var getJibProfilesProfiles = function (input, common, data) {
         "macosx-aarch64": {
             target_os: "macosx",
             target_cpu: "aarch64",
-            dependencies: ["devkit", "gtest", "pandoc"],
+            dependencies: ["devkit", "gtest", "graphviz", "pandoc"],
             configure_args: concat(common.configure_args_64bit,
                 "--with-macosx-version-max=11.00.00"),
         },
@@ -484,14 +486,12 @@ var getJibProfilesProfiles = function (input, common, data) {
         "linux-aarch64": {
             target_os: "linux",
             target_cpu: "aarch64",
-            build_cpu: "x64",
-            dependencies: ["devkit", "gtest", "build_devkit", "pandoc"],
+            dependencies: ["devkit", "gtest", "build_devkit", "graphviz", "pandoc"],
             configure_args: [
-                "--openjdk-target=aarch64-linux-gnu",
                 "--with-zlib=system",
                 "--disable-dtrace",
 		"--enable-compatible-cds-alignment",
-            ],
+	    ].concat(cross_compiling ? ["--openjdk-target=aarch64-linux-gnu"] : []),
         },
 
         "linux-arm32": {
@@ -1085,10 +1085,10 @@ var getJibProfilesProfiles = function (input, common, data) {
 var getJibProfilesDependencies = function (input, common) {
 
     var devkit_platform_revisions = {
-        linux_x64: "gcc11.2.0-OL6.4+1.0",
+        linux_x64: "gcc13.2.0-OL6.4+1.0",
         macosx: "Xcode14.3.1+1.0",
-        windows_x64: "VS2022-17.1.0+1.1",
-        linux_aarch64: input.build_cpu == "x64" ? "gcc11.2.0-OL7.6+1.1" : "gcc11.2.0-OL7.6+1.0",
+        windows_x64: "VS2022-17.6.5+1.0",
+        linux_aarch64: "gcc13.2.0-OL7.6+1.0",
         linux_arm: "gcc8.2.0-Fedora27+1.0",
         linux_ppc64le: "gcc8.2.0-Fedora27+1.0",
         linux_s390x: "gcc8.2.0-Fedora27+1.0",
@@ -1181,12 +1181,6 @@ var getJibProfilesDependencies = function (input, common) {
             revision: (input.build_cpu == "x64" ? "Xcode11.3.1-MacOSX10.15+1.2" : devkit_platform_revisions[devkit_platform])
         },
 
-        cups: {
-            organization: common.organization,
-            ext: "tar.gz",
-            revision: "1.0118+1.0"
-        },
-
         jtreg: {
             server: "jpg",
             product: "jtreg",
@@ -1206,7 +1200,7 @@ var getJibProfilesDependencies = function (input, common) {
 
         jcov: {
             organization: common.organization,
-            revision: "3.0-15-jdk-asm+1.0",
+            revision: "3.0-16-jdk-asm+1.0",
             ext: "zip",
             environment_name: "JCOV_HOME",
         },
@@ -1237,7 +1231,7 @@ var getJibProfilesDependencies = function (input, common) {
         graphviz: {
             organization: common.organization,
             ext: "tar.gz",
-            revision: "2.38.0-1+1.1",
+            revision: "9.0.0+1.0",
             module: "graphviz-" + input.target_platform,
             configure_args: "DOT=" + input.get("graphviz", "install_path") + "/dot",
             environment_path: input.get("graphviz", "install_path")

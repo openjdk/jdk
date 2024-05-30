@@ -25,8 +25,8 @@
 package jdk.internal.classfile.impl;
 
 import java.lang.constant.MethodTypeDesc;
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.constantpool.Utf8Entry;
+import java.lang.classfile.*;
+import java.lang.classfile.constantpool.Utf8Entry;
 
 import java.util.List;
 import java.util.Optional;
@@ -118,7 +118,7 @@ public final class MethodImpl
 
     @Override
     public Optional<CodeModel> code() {
-        return findAttribute(Attributes.CODE).map(a -> (CodeModel) a);
+        return findAttribute(Attributes.code()).map(a -> (CodeModel) a);
     }
 
     @Override

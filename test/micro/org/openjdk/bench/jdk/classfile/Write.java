@@ -22,11 +22,11 @@
  */
 package org.openjdk.bench.jdk.classfile;
 
-import jdk.internal.classfile.AccessFlags;
+import java.lang.classfile.AccessFlags;
 import java.lang.reflect.AccessFlag;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.TypeKind;
-import jdk.internal.classfile.attribute.SourceFileAttribute;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.TypeKind;
+import java.lang.classfile.attribute.SourceFileAttribute;
 import jdk.internal.org.objectweb.asm.*;
 import org.openjdk.jmh.annotations.*;
 import java.io.FileOutputStream;
@@ -35,8 +35,8 @@ import static java.lang.constant.ConstantDescs.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
-import static jdk.internal.classfile.Opcode.*;
-import static jdk.internal.classfile.TypeKind.*;
+import static java.lang.classfile.Opcode.*;
+import static java.lang.classfile.TypeKind.*;
 import static org.openjdk.bench.jdk.classfile.TestConstants.*;
 
 /**
@@ -59,11 +59,7 @@ import static org.openjdk.bench.jdk.classfile.TestConstants.*;
 @Fork(value = 1, jvmArgsAppend = {
         "--add-exports", "java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED",
         "--add-exports", "java.base/jdk.internal.org.objectweb.asm.tree=ALL-UNNAMED",
-        "--add-exports", "java.base/jdk.internal.classfile=ALL-UNNAMED",
-        "--add-exports", "java.base/jdk.internal.classfile.attribute=ALL-UNNAMED",
-        "--add-exports", "java.base/jdk.internal.classfile.constantpool=ALL-UNNAMED",
-        "--add-exports", "java.base/jdk.internal.classfile.instruction=ALL-UNNAMED",
-        "--add-exports", "java.base/jdk.internal.classfile.components=ALL-UNNAMED",
+        "--enable-preview",
         "--add-exports", "java.base/jdk.internal.classfile.impl=ALL-UNNAMED"})
 public class Write {
     static String checkFileAsm = "/tmp/asw/MyClass.class";
@@ -140,43 +136,43 @@ public class Write {
     @BenchmarkMode(Mode.Throughput)
     public byte[] jdkTree() {
 
-        byte[] bytes = Classfile.of().build(CD_MyClass, cb -> {
+        byte[] bytes = ClassFile.of().build(CD_MyClass, cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
             cb.withVersion(52, 0);
             cb.with(SourceFileAttribute.of(cb.constantPool().utf8Entry(("MyClass.java"))))
               .withMethod(INIT_NAME, MTD_void, 0, mb -> mb
-                      .withCode(codeb -> codeb.loadInstruction(TypeKind.ReferenceType, 0)
-                                              .invokeInstruction(INVOKESPECIAL, CD_Object, INIT_NAME, MTD_void, false)
-                                              .returnInstruction(VoidType)
+                      .withCode(codeb -> codeb.loadLocal(TypeKind.ReferenceType, 0)
+                                              .invoke(INVOKESPECIAL, CD_Object, INIT_NAME, MTD_void, false)
+                                              .return_(VoidType)
                       )
               );
             for (int xi = 0; xi < 40; ++xi) {
                 cb.withMethod("main" + ((xi == 0) ? "" : "" + xi), MTD_void_StringArray,
                               AccessFlags.ofMethod(AccessFlag.STATIC, AccessFlag.PUBLIC).flagsMask(),
                               mb -> mb.withCode(c0 -> {
-                                  jdk.internal.classfile.Label loopTop = c0.newLabel();
-                                  jdk.internal.classfile.Label loopEnd = c0.newLabel();
+                                  java.lang.classfile.Label loopTop = c0.newLabel();
+                                  java.lang.classfile.Label loopEnd = c0.newLabel();
                                   int vFac = 1;
                                   int vI = 2;
-                                  c0.constantInstruction(ICONST_1, 1)         // 0
-                                    .storeInstruction(IntType, vFac)        // 1
-                                    .constantInstruction(ICONST_1, 1)         // 2
-                                    .storeInstruction(IntType, vI)          // 3
+                                  c0.iconst_1()         // 0
+                                    .istore(vFac)       // 1
+                                    .iconst_1()         // 2
+                                    .istore(vI)         // 3
                                     .labelBinding(loopTop)
-                                    .loadInstruction(IntType, vI)           // 4
-                                    .constantInstruction(BIPUSH, 10)         // 5
-                                    .branchInstruction(IF_ICMPGE, loopEnd) // 6
-                                    .loadInstruction(IntType, vFac)         // 7
-                                    .loadInstruction(IntType, vI)           // 8
-                                    .operatorInstruction(IMUL)             // 9
-                                    .storeInstruction(IntType, vFac)        // 10
-                                    .incrementInstruction(vI, 1)    // 11
-                                    .branchInstruction(GOTO, loopTop)     // 12
+                                    .iload(vI)          // 4
+                                    .bipush(10)         // 5
+                                    .if_icmpge(loopEnd) // 6
+                                    .iload(vFac)        // 7
+                                    .iload(vI)          // 8
+                                    .imul()             // 9
+                                    .istore(vFac)       // 10
+                                    .iinc(vI, 1)        // 11
+                                    .goto_(loopTop)     // 12
                                     .labelBinding(loopEnd)
-                                    .fieldInstruction(GETSTATIC, CD_System, "out", CD_PrintStream)   // 13
-                                    .loadInstruction(IntType, vFac)
-                                    .invokeInstruction(INVOKEVIRTUAL, CD_PrintStream, "println", MTD_void_int, false)  // 15
-                                    .returnInstruction(VoidType);
+                                    .getstatic(CD_System, "out", CD_PrintStream) // 13
+                                    .iload(vFac)
+                                    .invokevirtual(CD_PrintStream, "println", MTD_void_int) // 15
+                                    .return_();
                         }));
             }
         });
@@ -188,43 +184,43 @@ public class Write {
     @BenchmarkMode(Mode.Throughput)
     public byte[] jdkTreePrimitive() {
 
-        byte[] bytes = Classfile.of().build(CD_MyClass, cb -> {
+        byte[] bytes = ClassFile.of().build(CD_MyClass, cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
             cb.withVersion(52, 0);
             cb.with(SourceFileAttribute.of(cb.constantPool().utf8Entry(("MyClass.java"))))
               .withMethod(INIT_NAME, MTD_void, 0,
-                          mb -> mb.withCode(codeb -> codeb.loadInstruction(ReferenceType, 0)
-                                                          .invokeInstruction(INVOKESPECIAL, CD_Object, INIT_NAME, MTD_void, false)
-                                                          .returnInstruction(VoidType)
+                          mb -> mb.withCode(codeb -> codeb.loadLocal(ReferenceType, 0)
+                                                          .invokespecial(CD_Object, INIT_NAME, MTD_void, false)
+                                                          .return_()
                           )
               );
             for (int xi = 0; xi < 40; ++xi) {
                 cb.withMethod("main" + ((xi == 0) ? "" : "" + xi), MTD_void_StringArray,
                               AccessFlags.ofMethod(AccessFlag.STATIC, AccessFlag.PUBLIC).flagsMask(),
                               mb -> mb.withCode(c0 -> {
-                                  jdk.internal.classfile.Label loopTop = c0.newLabel();
-                                  jdk.internal.classfile.Label loopEnd = c0.newLabel();
+                                  java.lang.classfile.Label loopTop = c0.newLabel();
+                                  java.lang.classfile.Label loopEnd = c0.newLabel();
                                   int vFac = 1;
                                   int vI = 2;
-                                  c0.constantInstruction(ICONST_1, 1)        // 0
-                                    .storeInstruction(IntType, 1)          // 1
-                                    .constantInstruction(ICONST_1, 1)        // 2
-                                    .storeInstruction(IntType, 2)          // 3
+                                  c0.iconst_1()         // 0
+                                    .istore(1)          // 1
+                                    .iconst_1()         // 2
+                                    .istore(2)          // 3
                                     .labelBinding(loopTop)
-                                    .loadInstruction(IntType, 2)           // 4
-                                    .constantInstruction(BIPUSH, 10)         // 5
-                                    .branchInstruction(IF_ICMPGE, loopEnd) // 6
-                                    .loadInstruction(IntType, 1)           // 7
-                                    .loadInstruction(IntType, 2)           // 8
-                                    .operatorInstruction(IMUL)             // 9
-                                    .storeInstruction(IntType, 1)          // 10
-                                    .incrementInstruction(2, 1)    // 11
-                                    .branchInstruction(GOTO, loopTop)     // 12
+                                    .iload(2)           // 4
+                                    .bipush(10)         // 5
+                                    .if_icmpge(loopEnd) // 6
+                                    .iload(1)           // 7
+                                    .iload(2)           // 8
+                                    .imul()             // 9
+                                    .istore(1)          // 10
+                                    .iinc(2, 1)         // 11
+                                    .goto_(loopTop)     // 12
                                     .labelBinding(loopEnd)
-                                    .fieldInstruction(GETSTATIC, CD_System, "out", CD_PrintStream)   // 13
-                                    .loadInstruction(IntType, 1)
-                                    .invokeInstruction(INVOKEVIRTUAL, CD_PrintStream, "println", MTD_void_int, false)  // 15
-                                    .returnInstruction(VoidType);
+                                    .getstatic(CD_System, "out", CD_PrintStream)  // 13
+                                    .iload(1)
+                                    .invokevirtual(CD_PrintStream, "println", MTD_void_int)  // 15
+                                    .return_();
                         }));
             }
         });

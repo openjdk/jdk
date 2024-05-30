@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,7 +90,7 @@ public class ClhsdbCDSCore {
             try {
                List<String> options = new ArrayList<>();
                options.addAll(Arrays.asList(jArgs));
-               ProcessBuilder pb = ProcessTools.createTestJvm(options);
+               ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(options);
                // Add "ulimit -c unlimited" if we can since we are generating a core file.
                pb = CoreUtils.addCoreUlimitCommand(pb);
                crashOutput = ProcessTools.executeProcess(pb);

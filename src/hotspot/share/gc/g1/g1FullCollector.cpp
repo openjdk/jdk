@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,6 @@
 
 #include "precompiled.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
-#include "classfile/systemDictionary.hpp"
-#include "code/codeCache.hpp"
-#include "compiler/oopMap.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1FullCollector.inline.hpp"
 #include "gc/g1/g1FullGCAdjustTask.hpp"
@@ -41,6 +38,7 @@
 #include "gc/g1/g1RegionMarkStatsCache.inline.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
+#include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/verifyOption.hpp"
 #include "gc/shared/weakProcessor.inline.hpp"
@@ -122,8 +120,8 @@ G1FullCollector::G1FullCollector(G1CollectedHeap* heap,
     _oop_queue_set(_num_workers),
     _array_queue_set(_num_workers),
     _preserved_marks_set(true),
-    _serial_compaction_point(this),
-    _humongous_compaction_point(this),
+    _serial_compaction_point(this, nullptr),
+    _humongous_compaction_point(this, nullptr),
     _is_alive(this, heap->concurrent_mark()->mark_bitmap()),
     _is_alive_mutator(heap->ref_processor_stw(), &_is_alive),
     _humongous_compaction_regions(8),
@@ -144,12 +142,14 @@ G1FullCollector::G1FullCollector(G1CollectedHeap* heap,
   }
 
   for (uint i = 0; i < _num_workers; i++) {
-    _markers[i] = new G1FullGCMarker(this, i, _preserved_marks_set.get(i), _live_stats);
-    _compaction_points[i] = new G1FullGCCompactionPoint(this);
+    _markers[i] = new G1FullGCMarker(this, i, _live_stats);
+    _compaction_points[i] = new G1FullGCCompactionPoint(this, _preserved_marks_set.get(i));
     _oop_queue_set.register_queue(i, marker(i)->oop_stack());
     _array_queue_set.register_queue(i, marker(i)->objarray_stack());
   }
-  _region_attr_table.initialize(heap->reserved(), HeapRegion::GrainBytes);
+  _serial_compaction_point.set_preserved_stack(_preserved_marks_set.get(0));
+  _humongous_compaction_point.set_preserved_stack(_preserved_marks_set.get(0));
+  _region_attr_table.initialize(heap->reserved(), G1HeapRegion::GrainBytes);
 }
 
 G1FullCollector::~G1FullCollector() {
@@ -170,7 +170,8 @@ class PrepareRegionsClosure : public HeapRegionClosure {
 public:
   PrepareRegionsClosure(G1FullCollector* collector) : _collector(collector) { }
 
-  bool do_heap_region(HeapRegion* hr) {
+  bool do_heap_region(G1HeapRegion* hr) {
+    hr->prepare_for_full_gc();
     G1CollectedHeap::heap()->prepare_region_for_full_compaction(hr);
     _collector->before_marking_update_attribute_table(hr);
     return false;
@@ -190,6 +191,7 @@ void G1FullCollector::prepare_collection() {
 
   _heap->gc_prologue(true);
   _heap->retire_tlabs();
+  _heap->flush_region_pin_cache();
   _heap->prepare_heap_for_full_collection();
 
   PrepareRegionsClosure cl(this);
@@ -253,12 +255,12 @@ void G1FullCollector::complete_collection() {
   _heap->print_heap_after_full_collection();
 }
 
-void G1FullCollector::before_marking_update_attribute_table(HeapRegion* hr) {
+void G1FullCollector::before_marking_update_attribute_table(G1HeapRegion* hr) {
   if (hr->is_free()) {
     _region_attr_table.set_free(hr->hrm_index());
-  } else if (hr->is_humongous()) {
-    // Humongous objects will never be moved in the "main" compaction phase, but
-    // afterwards in a special phase if needed.
+  } else if (hr->is_humongous() || hr->has_pinned_objects()) {
+    // Humongous objects or pinned regions will never be moved in the "main"
+    // compaction phase, but non-pinned regions might afterwards in a special phase.
     _region_attr_table.set_skip_compacting(hr->hrm_index());
   } else {
     // Everything else should be compacted.
@@ -310,6 +312,13 @@ void G1FullCollector::phase1_mark_live_objects() {
     reference_processor()->set_active_mt_degree(old_active_mt_degree);
   }
 
+  {
+    GCTraceTime(Debug, gc, phases) debug("Phase 1: Flush Mark Stats Cache", scope()->timer());
+    for (uint i = 0; i < workers(); i++) {
+      marker(i)->flush_mark_stats_cache();
+    }
+  }
+
   // Weak oops cleanup.
   {
     GCTraceTime(Debug, gc, phases) debug("Phase 1: Weak Processing", scope()->timer());
@@ -318,14 +327,7 @@ void G1FullCollector::phase1_mark_live_objects() {
 
   // Class unloading and cleanup.
   if (ClassUnloading) {
-    GCTraceTime(Debug, gc, phases) debug("Phase 1: Class Unloading and Cleanup", scope()->timer());
-    {
-      CodeCache::UnlinkingScope unloading_scope(&_is_alive);
-      // Unload classes and purge the SystemDictionary.
-      bool unloading_occurred = SystemDictionary::do_unloading(scope()->timer());
-      _heap->complete_cleaning(unloading_occurred);
-    }
-    CodeCache::flush_unlinked_nmethods();
+    _heap->unload_classes_and_code("Phase 1: Class Unloading and Cleanup", &_is_alive, scope()->timer());
   }
 
   {
@@ -417,7 +419,7 @@ void G1FullCollector::phase2c_prepare_serial_compaction() {
   G1FullGCCompactionPoint* serial_cp = serial_compaction_point();
   assert(!serial_cp->is_initialized(), "sanity!");
 
-  HeapRegion* start_hr = _heap->region_at(start_serial);
+  G1HeapRegion* start_hr = _heap->region_at(start_serial);
   serial_cp->add(start_hr);
   serial_cp->initialize(start_hr);
 
@@ -426,7 +428,7 @@ void G1FullCollector::phase2c_prepare_serial_compaction() {
 
   for (uint i = start_serial + 1; i < _heap->max_reserved_regions(); i++) {
     if (is_compaction_target(i)) {
-      HeapRegion* current = _heap->region_at(i);
+      G1HeapRegion* current = _heap->region_at(i);
       set_compaction_top(current, current->bottom());
       serial_cp->add(current);
       current->apply_to_marked_objects(mark_bitmap(), &re_prepare);
@@ -447,16 +449,22 @@ void G1FullCollector::phase2d_prepare_humongous_compaction() {
   G1FullGCCompactionPoint* humongous_cp = humongous_compaction_point();
 
   while (region_index < max_reserved_regions) {
-    HeapRegion* hr = _heap->region_at_or_null(region_index);
+    G1HeapRegion* hr = _heap->region_at_or_null(region_index);
 
     if (hr == nullptr) {
       region_index++;
       continue;
     } else if (hr->is_starts_humongous()) {
-      uint num_regions = humongous_cp->forward_humongous(hr);
-      region_index += num_regions; // Skip over the continues humongous regions.
+      size_t obj_size = cast_to_oop(hr->bottom())->size();
+      uint num_regions = (uint)G1CollectedHeap::humongous_obj_size_in_regions(obj_size);
+      // Even during last-ditch compaction we should not move pinned humongous objects.
+      if (!hr->has_pinned_objects()) {
+        humongous_cp->forward_humongous(hr);
+      }
+      region_index += num_regions; // Advance over all humongous regions.
       continue;
     } else if (is_compaction_target(region_index)) {
+      assert(!hr->has_pinned_objects(), "pinned regions should not be compaction targets");
       // Add the region to the humongous compaction point.
       humongous_cp->add(hr);
     }

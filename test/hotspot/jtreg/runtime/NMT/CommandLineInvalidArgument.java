@@ -37,7 +37,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class CommandLineInvalidArgument {
 
   public static void main(String args[]) throws Exception {
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:NativeMemoryTracking=apa");
+    ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:NativeMemoryTracking=apa");
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
     output.shouldContain("Syntax error, expecting -XX:NativeMemoryTracking=[off|summary|detail]");
     output.shouldHaveExitValue(1);

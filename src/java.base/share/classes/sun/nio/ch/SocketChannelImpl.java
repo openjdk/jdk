@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -494,10 +494,7 @@ class SocketChannelImpl
         }
         long start = SocketReadEvent.timestamp();
         int nbytes = implRead(buf);
-        long duration = SocketReadEvent.timestamp() - start;
-        if (SocketReadEvent.shouldCommit(duration)) {
-            SocketReadEvent.emit(start, duration, nbytes, remoteAddress(), 0);
-        }
+        SocketReadEvent.offer(start, nbytes, remoteAddress(), 0);
         return nbytes;
     }
 
@@ -511,10 +508,7 @@ class SocketChannelImpl
         }
         long start = SocketReadEvent.timestamp();
         long nbytes = implRead(dsts, offset, length);
-        long duration = SocketReadEvent.timestamp() - start;
-        if (SocketReadEvent.shouldCommit(duration)) {
-            SocketReadEvent.emit(start, duration, nbytes, remoteAddress(), 0);
-        }
+        SocketReadEvent.offer(start, nbytes, remoteAddress(), 0);
         return nbytes;
     }
 
@@ -625,10 +619,7 @@ class SocketChannelImpl
         }
         long start = SocketWriteEvent.timestamp();
         int nbytes = implWrite(buf);
-        long duration = SocketWriteEvent.timestamp() - start;
-        if (SocketWriteEvent.shouldCommit(duration)) {
-            SocketWriteEvent.emit(start, duration, nbytes, remoteAddress());
-        }
+        SocketWriteEvent.offer(start, nbytes, remoteAddress());
         return nbytes;
     }
 
@@ -641,10 +632,7 @@ class SocketChannelImpl
         }
         long start = SocketWriteEvent.timestamp();
         long nbytes = implWrite(srcs, offset, length);
-        long duration = SocketWriteEvent.timestamp() - start;
-        if (SocketWriteEvent.shouldCommit(duration)) {
-            SocketWriteEvent.emit(start, duration, nbytes, remoteAddress());
-        }
+        SocketWriteEvent.offer(start, nbytes, remoteAddress());
         return nbytes;
     }
 
@@ -967,6 +955,7 @@ class SocketChannelImpl
             try {
                 writeLock.lock();
                 try {
+                    ensureOpen();
                     boolean blocking = isBlocking();
                     boolean connected = false;
                     try {
@@ -1065,6 +1054,7 @@ class SocketChannelImpl
                     if (isConnected())
                         return true;
 
+                    ensureOpen();
                     boolean blocking = isBlocking();
                     boolean connected = false;
                     try {

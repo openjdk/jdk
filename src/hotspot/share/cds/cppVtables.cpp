@@ -213,23 +213,30 @@ void CppVtableCloner<T>::init_orig_cpp_vtptr(int kind) {
 // the following holds true:
 //     _index[ConstantPool_Kind]->cloned_vtable()  == ((intptr_t**)cp)[0]
 //     _index[InstanceKlass_Kind]->cloned_vtable() == ((intptr_t**)ik)[0]
-CppVtableInfo** CppVtables::_index = nullptr;
+static CppVtableInfo* _index[_num_cloned_vtable_kinds];
 
-char* CppVtables::dumptime_init(ArchiveBuilder* builder) {
-  assert(DumpSharedSpaces, "must");
-  size_t vtptrs_bytes = _num_cloned_vtable_kinds * sizeof(CppVtableInfo*);
-  _index = (CppVtableInfo**)builder->rw_region()->allocate(vtptrs_bytes);
+// Vtables are all fixed offsets from ArchiveBuilder::current()->mapped_base()
+// E.g. ConstantPool is at offset 0x58. We can archive these offsets in the
+// RO region and use them to alculate their location at runtime without storing
+// the pointers in the RW region
+char* CppVtables::_vtables_serialized_base = nullptr;
+
+void CppVtables::dumptime_init(ArchiveBuilder* builder) {
+  assert(CDSConfig::is_dumping_static_archive(), "cpp tables are only dumped into static archive");
 
   CPP_VTABLE_TYPES_DO(ALLOCATE_AND_INITIALIZE_VTABLE);
 
   size_t cpp_tables_size = builder->rw_region()->top() - builder->rw_region()->base();
   builder->alloc_stats()->record_cpp_vtables((int)cpp_tables_size);
-
-  return (char*)_index;
 }
 
 void CppVtables::serialize(SerializeClosure* soc) {
-  soc->do_ptr(&_index);
+  if (!soc->reading()) {
+    _vtables_serialized_base = (char*)ArchiveBuilder::current()->buffer_top();
+  }
+  for (int i = 0; i < _num_cloned_vtable_kinds; i++) {
+    soc->do_ptr(&_index[i]);
+  }
   if (soc->reading()) {
     CPP_VTABLE_TYPES_DO(INITIALIZE_VTABLE);
   }
@@ -284,7 +291,7 @@ intptr_t* CppVtables::get_archived_vtable(MetaspaceObj::Type msotype, address ob
 }
 
 void CppVtables::zero_archived_vtables() {
-  assert(DumpSharedSpaces, "dump-time only");
+  assert(CDSConfig::is_dumping_static_archive(), "cpp tables are only dumped into static archive");
   for (int kind = 0; kind < _num_cloned_vtable_kinds; kind ++) {
     _index[kind]->zero();
   }

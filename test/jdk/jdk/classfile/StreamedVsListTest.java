@@ -23,30 +23,30 @@
 
 /*
  * @test
- * @summary Testing Classfile streaming versus model.
+ * @summary Testing ClassFile streaming versus model.
  * @run junit StreamedVsListTest
  */
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.CodeElement;
-import jdk.internal.classfile.Instruction;
-import jdk.internal.classfile.MethodModel;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.CodeElement;
+import java.lang.classfile.Instruction;
+import java.lang.classfile.MethodModel;
 import jdk.internal.classfile.impl.DirectCodeBuilder;
-import jdk.internal.classfile.instruction.BranchInstruction;
-import jdk.internal.classfile.instruction.ConstantInstruction;
-import jdk.internal.classfile.instruction.FieldInstruction;
-import jdk.internal.classfile.instruction.IncrementInstruction;
-import jdk.internal.classfile.instruction.InvokeDynamicInstruction;
-import jdk.internal.classfile.instruction.InvokeInstruction;
-import jdk.internal.classfile.instruction.LoadInstruction;
-import jdk.internal.classfile.instruction.LookupSwitchInstruction;
-import jdk.internal.classfile.instruction.NewMultiArrayInstruction;
-import jdk.internal.classfile.instruction.NewObjectInstruction;
-import jdk.internal.classfile.instruction.NewPrimitiveArrayInstruction;
-import jdk.internal.classfile.instruction.NewReferenceArrayInstruction;
-import jdk.internal.classfile.instruction.StoreInstruction;
-import jdk.internal.classfile.instruction.TableSwitchInstruction;
-import jdk.internal.classfile.instruction.TypeCheckInstruction;
+import java.lang.classfile.instruction.BranchInstruction;
+import java.lang.classfile.instruction.ConstantInstruction;
+import java.lang.classfile.instruction.FieldInstruction;
+import java.lang.classfile.instruction.IncrementInstruction;
+import java.lang.classfile.instruction.InvokeDynamicInstruction;
+import java.lang.classfile.instruction.InvokeInstruction;
+import java.lang.classfile.instruction.LoadInstruction;
+import java.lang.classfile.instruction.LookupSwitchInstruction;
+import java.lang.classfile.instruction.NewMultiArrayInstruction;
+import java.lang.classfile.instruction.NewObjectInstruction;
+import java.lang.classfile.instruction.NewPrimitiveArrayInstruction;
+import java.lang.classfile.instruction.NewReferenceArrayInstruction;
+import java.lang.classfile.instruction.StoreInstruction;
+import java.lang.classfile.instruction.TableSwitchInstruction;
+import java.lang.classfile.instruction.TypeCheckInstruction;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 
@@ -76,7 +76,7 @@ class StreamedVsListTest {
 
     private class Vs {
         boolean failed;
-        ClassModel cm = Classfile.of().parse(fileBytes);
+        ClassModel cm = ClassFile.of().parse(fileBytes);
         String meth;
         CodeElement iim;
         CodeElement mim;

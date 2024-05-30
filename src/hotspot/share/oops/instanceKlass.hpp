@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,7 +145,7 @@ class InstanceKlass: public Klass {
   InstanceKlass(const ClassFileParser& parser, KlassKind kind = Kind, ReferenceType reference_type = REF_NONE);
 
  public:
-  InstanceKlass() { assert(DumpSharedSpaces || UseSharedSpaces, "only for CDS"); }
+  InstanceKlass();
 
   // See "The Java Virtual Machine Specification" section 2.16.2-5 for a detailed description
   // of the class loading & initialization procedure, and the use of the states.
@@ -237,9 +237,9 @@ class InstanceKlass: public Klass {
   JavaThread* volatile _init_thread;        // Pointer to current thread doing initialization (to handle recursive initialization)
 
   OopMapCache*    volatile _oop_map_cache;   // OopMapCache for all methods in the klass (allocated lazily)
-  JNIid*          _jni_ids;              // First JNI identifier for static fields in this class
-  jmethodID*      volatile _methods_jmethod_ids;  // jmethodIDs corresponding to method_idnum, or null if none
-  nmethodBucket*  volatile _dep_context;          // packed DependencyContext structure
+  JNIid*          _jni_ids;                  // First JNI identifier for static fields in this class
+  jmethodID* volatile _methods_jmethod_ids;  // jmethodIDs corresponding to method_idnum, or null if none
+  nmethodBucket*  volatile _dep_context;     // packed DependencyContext structure
   uint64_t        volatile _dep_context_last_cleaned;
   nmethod*        _osr_nmethods_head;    // Head of list of on-stack replacement nmethods for this class
 #if INCLUDE_JVMTI
@@ -766,8 +766,6 @@ public:
   bool declares_nonstatic_concrete_methods() const { return _misc_flags.declares_nonstatic_concrete_methods(); }
   void set_declares_nonstatic_concrete_methods(bool b) { _misc_flags.set_declares_nonstatic_concrete_methods(b); }
 
-  bool has_vanilla_constructor() const  { return _misc_flags.has_vanilla_constructor(); }
-  void set_has_vanilla_constructor()    { _misc_flags.set_has_vanilla_constructor(true); }
   bool has_miranda_methods () const     { return _misc_flags.has_miranda_methods(); }
   void set_has_miranda_methods()        { _misc_flags.set_has_miranda_methods(true); }
   bool has_final_method() const         { return _misc_flags.has_final_method(); }
@@ -794,14 +792,9 @@ public:
 
   // jmethodID support
   jmethodID get_jmethod_id(const methodHandle& method_h);
-  jmethodID get_jmethod_id_fetch_or_update(size_t idnum,
-                     jmethodID new_id, jmethodID* new_jmeths,
-                     jmethodID* to_dealloc_id_p,
-                     jmethodID** to_dealloc_jmeths_p);
-  static void get_jmethod_id_length_value(jmethodID* cache, size_t idnum,
-                size_t *length_p, jmethodID* id_p);
   void ensure_space_for_methodids(int start_offset = 0);
   jmethodID jmethod_id_or_null(Method* method);
+  void update_methods_jmethod_cache();
 
   // annotations support
   Annotations* annotations() const          { return _annotations; }
@@ -964,7 +957,6 @@ public:
   // This bit is initialized in classFileParser.cpp.
   // It is false under any of the following conditions:
   //  - the class is abstract (including any interface)
-  //  - the class has a finalizer (if !RegisterFinalizersAtInit)
   //  - the class size is larger than FastAllocateSizeLimit
   //  - the class is java/lang/Class, which cannot be allocated directly
   bool can_be_fastpath_allocated() const {
@@ -1073,15 +1065,12 @@ public:
     Atomic::store(&_init_thread, thread);
   }
 
-  // The RedefineClasses() API can cause new method idnums to be needed
-  // which will cause the caches to grow. Safety requires different
-  // cache management logic if the caches can grow instead of just
-  // going from null to non-null.
-  bool idnum_can_increment() const      { return has_been_redefined(); }
   inline jmethodID* methods_jmethod_ids_acquire() const;
   inline void release_set_methods_jmethod_ids(jmethodID* jmeths);
+  // This nulls out jmethodIDs for all methods in 'klass'
+  static void clear_jmethod_ids(InstanceKlass* klass);
+  jmethodID update_jmethod_id(jmethodID* jmeths, Method* method, int idnum);
 
-  // Lock during initialization
 public:
   // Returns the array class for the n'th dimension
   virtual ArrayKlass* array_klass(int n, TRAPS);

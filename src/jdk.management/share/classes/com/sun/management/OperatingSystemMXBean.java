@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,7 +134,7 @@ public interface OperatingSystemMXBean extends
      * double in the [0.0,1.0] interval. A value of 0.0 means that all CPUs
      * were idle during the recent period of time observed, while a value
      * of 1.0 means that all CPUs were actively running 100% of the time
-     * during the recent period being observed. All values betweens 0.0 and
+     * during the recent period being observed. All values between 0.0 and
      * 1.0 are possible depending of the activities going on in the system.
      * If the system recent cpu usage is not available, the method returns a
      * negative value.
@@ -157,7 +157,7 @@ public interface OperatingSystemMXBean extends
      * is a double in the [0.0,1.0] interval. A value of 0.0 means that all CPUs
      * were idle during the recent period of time observed, while a value
      * of 1.0 means that all CPUs were actively running 100% of the time
-     * during the recent period being observed. All values betweens 0.0 and
+     * during the recent period being observed. All values between 0.0 and
      * 1.0 are possible depending of the activities going on.
      * If the recent cpu usage is not available, the method returns a
      * negative value.
@@ -176,7 +176,7 @@ public interface OperatingSystemMXBean extends
      * CPUs were actively running threads from the JVM 100% of the time
      * during the recent period being observed. Threads from the JVM include
      * the application threads as well as the JVM internal threads. All values
-     * betweens 0.0 and 1.0 are possible depending of the activities going on
+     * between 0.0 and 1.0 are possible depending of the activities going on
      * in the JVM process and the whole system. If the Java Virtual Machine
      * recent CPU usage is not available, the method returns a negative value.
      *

@@ -23,12 +23,16 @@
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.IntBuffer;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.IntFunction;
+import java.util.stream.Stream;
 
 public class AbstractVectorLoadStoreTest extends AbstractVectorTest {
 
@@ -50,12 +54,57 @@ public class AbstractVectorLoadStoreTest extends AbstractVectorTest {
     );
 
     static final List<IntFunction<MemorySegment>> MEMORY_SEGMENT_GENERATORS = List.of(
-            withToString("HMS", (int s) ->
+            withToString("DMS", (int s) ->
                     Arena.ofAuto().allocate(s)
             ),
-            withToString("DMS", (int s) -> {
+            withToString("HMS:byte[]", (int s) -> {
                 byte[] b = new byte[s];
                 return MemorySegment.ofArray(b);
+            }),
+            withToString("HMS:short[]", (int s) -> {
+                short[] b = new short[s / Short.BYTES];
+                return MemorySegment.ofArray(b);
+            }),
+            withToString("HMS:int[]", (int s) -> {
+                int[] b = new int[s / Integer.BYTES];
+                return MemorySegment.ofArray(b);
+            }),
+            withToString("HMS:float[]", (int s) -> {
+                float[] b = new float[s / Float.BYTES];
+                return MemorySegment.ofArray(b);
+            }),
+            withToString("HMS:long[]", (int s) -> {
+                long[] b = new long[s / Long.BYTES];
+                return MemorySegment.ofArray(b);
+            }),
+            withToString("HMS:double[]", (int s) -> {
+                double[] b = new double[s / Double.BYTES];
+                return MemorySegment.ofArray(b);
+            }),
+            withToString("HMS:ByteBuffer.wrap", (int s) -> {
+                byte[] b = new byte[s];
+                ByteBuffer buff = ByteBuffer.wrap(b);
+                return MemorySegment.ofBuffer(buff);
+            }),
+            // Just test one of the specialized buffers
+            withToString("HMS:IntBuffer.wrap", (int s) -> {
+                int[] b = new int[s / Integer.BYTES];
+                IntBuffer buff = IntBuffer.wrap(b);
+                return MemorySegment.ofBuffer(buff);
+            }),
+            withToString("HMS:ByteBuffer.allocate", (int s) -> {
+                ByteBuffer buff = ByteBuffer.allocate(s);
+                return MemorySegment.ofBuffer(buff);
+            }),
+            // Just test one of the specialized buffers
+            withToString("HMS:IntBuffer.allocate", (int s) -> {
+                IntBuffer buff = IntBuffer.allocate(s / Integer.BYTES);
+                return MemorySegment.ofBuffer(buff);
+            }),
+            // Slice
+            withToString("HMS:long[].asSlice", (int s) -> {
+                long[] b = new long[s / Long.BYTES + 1];
+                return MemorySegment.ofArray(b).asSlice(Long.BYTES);
             })
     );
 

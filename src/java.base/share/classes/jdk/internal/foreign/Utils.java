@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -37,8 +37,6 @@ import java.lang.invoke.MethodType;
 import java.lang.invoke.VarHandle;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
 import jdk.internal.access.SharedSecrets;
@@ -90,26 +88,6 @@ public final class Utils {
     }
 
     public static VarHandle makeSegmentViewVarHandle(ValueLayout layout) {
-        final class VarHandleCache {
-            private static final Map<ValueLayout, VarHandle> HANDLE_MAP = new ConcurrentHashMap<>();
-
-            static VarHandle put(ValueLayout layout, VarHandle handle) {
-                VarHandle prev = HANDLE_MAP.putIfAbsent(layout, handle);
-                return prev != null ? prev : handle;
-            }
-
-            static VarHandle get(ValueLayout layout) {
-                return HANDLE_MAP.get(layout);
-            }
-        }
-        layout = layout.withoutName(); // name doesn't matter
-        // keep the addressee layout as it's used below
-
-        VarHandle handle = VarHandleCache.get(layout);
-        if (handle != null) {
-            return handle;
-        }
-
         Class<?> baseCarrier = layout.carrier();
         if (layout.carrier() == MemorySegment.class) {
             baseCarrier = switch ((int) ValueLayout.ADDRESS.byteSize()) {
@@ -121,7 +99,7 @@ public final class Utils {
             baseCarrier = byte.class;
         }
 
-        handle = SharedSecrets.getJavaLangInvokeAccess().memorySegmentViewHandle(baseCarrier,
+        VarHandle handle = SharedSecrets.getJavaLangInvokeAccess().memorySegmentViewHandle(baseCarrier,
                 layout.byteAlignment() - 1, layout.order());
 
         if (layout.carrier() == boolean.class) {
@@ -133,7 +111,7 @@ public final class Utils {
                             pointeeByteSize(addressLayout), pointeeByteAlign(addressLayout)),
                             MethodType.methodType(MemorySegment.class, baseCarrier)));
         }
-        return VarHandleCache.put(layout, handle);
+        return handle;
     }
 
     public static boolean byteToBoolean(byte b) {
@@ -200,11 +178,8 @@ public final class Utils {
     }
 
     public static void checkAllocationSizeAndAlign(long byteSize, long byteAlignment) {
-        // size should be >= 0
-        if (byteSize < 0) {
-            throw new IllegalArgumentException("Invalid allocation size : " + byteSize);
-        }
-
+        // byteSize should be >= 0
+        Utils.checkNonNegativeArgument(byteSize, "allocation size");
         checkAlign(byteAlignment);
     }
 
@@ -213,6 +188,20 @@ public final class Utils {
         if (byteAlignment <= 0 ||
                 ((byteAlignment & (byteAlignment - 1)) != 0L)) {
             throw new IllegalArgumentException("Invalid alignment constraint : " + byteAlignment);
+        }
+    }
+
+    @ForceInline
+    public static void checkNonNegativeArgument(long value, String name) {
+        if (value < 0) {
+            throw new IllegalArgumentException("The provided " + name + " is negative: " + value);
+        }
+    }
+
+    @ForceInline
+    public static void checkNonNegativeIndex(long value, String name) {
+        if (value < 0) {
+            throw new IndexOutOfBoundsException("The provided " + name + " is negative: " + value);
         }
     }
 
@@ -296,13 +285,13 @@ public final class Utils {
 
         public static BaseAndScale of(Object array) {
             return switch (array) {
-                case byte[]   __ -> BaseAndScale.BYTE;
-                case char[]   __ -> BaseAndScale.CHAR;
-                case short[]  __ -> BaseAndScale.SHORT;
-                case int[]    __ -> BaseAndScale.INT;
-                case float[]  __ -> BaseAndScale.FLOAT;
-                case long[]   __ -> BaseAndScale.LONG;
-                case double[] __ -> BaseAndScale.DOUBLE;
+                case byte[]   _ -> BaseAndScale.BYTE;
+                case char[]   _ -> BaseAndScale.CHAR;
+                case short[]  _ -> BaseAndScale.SHORT;
+                case int[]    _ -> BaseAndScale.INT;
+                case float[]  _ -> BaseAndScale.FLOAT;
+                case long[]   _ -> BaseAndScale.LONG;
+                case double[] _ -> BaseAndScale.DOUBLE;
                 default -> throw new IllegalArgumentException("Not a supported array class: " + array.getClass().getSimpleName());
             };
         }

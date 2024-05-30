@@ -25,11 +25,7 @@
  * @test
  * @bug 8028504
  * @summary javac generates LocalVariableTable even with -g:none
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
+ * @enablePreview
  * @compile -g:none DontGenerateLVTForGNoneOpTest.java
  * @run main DontGenerateLVTForGNoneOpTest
  */
@@ -39,8 +35,8 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Target;
 import java.nio.file.Paths;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.CodeAttribute;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.CodeAttribute;
 
 public class DontGenerateLVTForGNoneOpTest {
 
@@ -54,11 +50,11 @@ public class DontGenerateLVTForGNoneOpTest {
     }
 
     void checkClassFile(final File cfile) throws Exception {
-        ClassModel classFile = Classfile.of().parse(cfile.toPath());
+        ClassModel classFile = ClassFile.of().parse(cfile.toPath());
         for (MethodModel method : classFile.methods()) {
-            CodeAttribute code = method.findAttribute(Attributes.CODE).orElse(null);
+            CodeAttribute code = method.findAttribute(Attributes.code()).orElse(null);
             if (code != null) {
-                if (code.findAttribute(Attributes.LOCAL_VARIABLE_TABLE).orElse(null) != null) {
+                if (code.findAttribute(Attributes.localVariableTable()).orElse(null) != null) {
                     throw new AssertionError("LVT shouldn't be generated for g:none");
                 }
             }

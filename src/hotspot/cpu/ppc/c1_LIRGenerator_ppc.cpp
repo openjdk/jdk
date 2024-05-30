@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -165,8 +165,10 @@ LIR_Address* LIRGenerator::generate_address(LIR_Opr base, LIR_Opr index,
   if (index->is_register()) {
     // Apply the shift and accumulate the displacement.
     if (shift > 0) {
-      LIR_Opr tmp = new_pointer_register();
-      __ shift_left(index, shift, tmp);
+      // Use long register to avoid overflow when shifting large index values left.
+      LIR_Opr tmp = new_register(T_LONG);
+      __ convert(Bytecodes::_i2l, index, tmp);
+      __ shift_left(tmp, shift, tmp);
       index = tmp;
     }
     if (large_disp != 0) {
@@ -576,7 +578,7 @@ inline bool can_handle_logic_op_as_uimm(ValueType *type, Bytecodes::Code bc) {
        is_power_of_2(int_or_long_const) ||
        is_power_of_2(-int_or_long_const))) return true;
   if (bc == Bytecodes::_land &&
-      (is_power_of_2(int_or_long_const+1) ||
+      (is_power_of_2((unsigned long)int_or_long_const+1) ||
        (Assembler::is_uimm(int_or_long_const, 32) && is_power_of_2(int_or_long_const)) ||
        (int_or_long_const != min_jlong && is_power_of_2(-int_or_long_const)))) return true;
 
@@ -639,13 +641,6 @@ LIR_Opr LIRGenerator::atomic_cmpxchg(BasicType type, LIR_Opr addr, LIRItem& cmp_
   cmp_value.load_item();
   new_value.load_item();
 
-  // Volatile load may be followed by Unsafe CAS.
-  if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
-    __ membar();
-  } else {
-    __ membar_release();
-  }
-
   if (is_reference_type(type)) {
     if (UseCompressedOops) {
       t1 = new_register(T_OBJECT);
@@ -670,21 +665,7 @@ LIR_Opr LIRGenerator::atomic_xchg(BasicType type, LIR_Opr addr, LIRItem& value) 
   LIR_Opr tmp = FrameMap::R0_opr;
 
   value.load_item();
-
-  // Volatile load may be followed by Unsafe CAS.
-  if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
-    __ membar();
-  } else {
-    __ membar_release();
-  }
-
   __ xchg(addr, value.result(), result, tmp);
-
-  if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
-    __ membar_acquire();
-  } else {
-    __ membar();
-  }
   return result;
 }
 
@@ -694,21 +675,7 @@ LIR_Opr LIRGenerator::atomic_add(BasicType type, LIR_Opr addr, LIRItem& value) {
   LIR_Opr tmp = FrameMap::R0_opr;
 
   value.load_item();
-
-  // Volatile load may be followed by Unsafe CAS.
-  if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
-    __ membar(); // To be safe. Unsafe semantics are unclear.
-  } else {
-    __ membar_release();
-  }
-
   __ xadd(addr, value.result(), result, tmp);
-
-  if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
-    __ membar_acquire();
-  } else {
-    __ membar();
-  }
   return result;
 }
 

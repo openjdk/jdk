@@ -55,8 +55,7 @@ public abstract sealed class MemorySessionImpl
         implements Scope
         permits ConfinedSession, GlobalSession, SharedSession {
     static final int OPEN = 0;
-    static final int CLOSING = -1;
-    static final int CLOSED = -2;
+    static final int CLOSED = -1;
 
     static final VarHandle STATE;
     static final int MAX_FORKS = Integer.MAX_VALUE;
@@ -254,10 +253,23 @@ public abstract sealed class MemorySessionImpl
         }
 
         static void cleanup(ResourceCleanup first) {
+            RuntimeException pendingException = null;
             ResourceCleanup current = first;
             while (current != null) {
-                current.cleanup();
+                try {
+                    current.cleanup();
+                } catch (RuntimeException ex) {
+                    if (pendingException == null) {
+                        pendingException = ex;
+                    } else if (ex != pendingException) {
+                        // note: self-suppression is not supported
+                        pendingException.addSuppressed(ex);
+                    }
+                }
                 current = current.next;
+            }
+            if (pendingException != null) {
+                throw pendingException;
             }
         }
 

@@ -166,4 +166,3 @@ final class Context {
       */
     Object[] currentFrameStackTypes;
 }
-

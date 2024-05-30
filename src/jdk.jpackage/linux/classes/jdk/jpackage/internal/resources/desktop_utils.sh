@@ -2,7 +2,7 @@
 # Remove $1 desktop file from the list of default handlers for $2 mime type
 # in $3 file dumping output to stdout.
 #
-_filter_out_default_mime_handler ()
+desktop_filter_out_default_mime_handler ()
 {
   local defaults_list="$3"
 
@@ -50,7 +50,7 @@ EOF
 # in $1 file.
 # Result is saved in $1 file.
 #
-_uninstall_default_mime_handler ()
+desktop_uninstall_default_mime_handler_0 ()
 {
   local defaults_list=$1
   shift
@@ -66,20 +66,20 @@ _uninstall_default_mime_handler ()
   local v
   local update=
   for mime in "$@"; do
-    _filter_out_default_mime_handler "$desktop_file" "$mime" "$tmpfile1" > "$tmpfile2"
+    desktop_filter_out_default_mime_handler "$desktop_file" "$mime" "$tmpfile1" > "$tmpfile2"
     v="$tmpfile2"
     tmpfile2="$tmpfile1"
     tmpfile1="$v"
 
     if ! diff -q "$tmpfile1" "$tmpfile2" > /dev/null; then
       update=yes
-      trace Remove $desktop_file default handler for $mime mime type from $defaults_list file
+      desktop_trace Remove $desktop_file default handler for $mime mime type from $defaults_list file
     fi
   done
 
   if [ -n "$update" ]; then
     cat "$tmpfile1" > "$defaults_list"
-    trace "$defaults_list" file updated
+    desktop_trace "$defaults_list" file updated
   fi
 
   rm -f "$tmpfile1" "$tmpfile2"
@@ -90,15 +90,15 @@ _uninstall_default_mime_handler ()
 # Remove $1 desktop file from the list of default handlers for $@ mime types
 # in all known system defaults lists.
 #
-uninstall_default_mime_handler ()
+desktop_uninstall_default_mime_handler ()
 {
   for f in /usr/share/applications/defaults.list /usr/local/share/applications/defaults.list; do
-    _uninstall_default_mime_handler "$f" "$@"
+    desktop_uninstall_default_mime_handler_0 "$f" "$@"
   done
 }
 
 
-trace ()
+desktop_trace ()
 {
   echo "$@"
 }

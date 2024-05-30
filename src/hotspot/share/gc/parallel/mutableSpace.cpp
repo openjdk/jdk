@@ -25,7 +25,6 @@
 #include "precompiled.hpp"
 #include "gc/parallel/mutableSpace.hpp"
 #include "gc/shared/pretouchTask.hpp"
-#include "gc/shared/spaceDecorator.inline.hpp"
 #include "memory/iterator.inline.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
@@ -36,7 +35,6 @@
 #include "utilities/macros.hpp"
 
 MutableSpace::MutableSpace(size_t alignment) :
-  _mangler(nullptr),
   _last_setup_region(),
   _alignment(alignment),
   _bottom(nullptr),
@@ -45,11 +43,6 @@ MutableSpace::MutableSpace(size_t alignment) :
 {
   assert(MutableSpace::alignment() % os::vm_page_size() == 0,
          "Space should be aligned");
-  _mangler = new MutableSpaceMangler(this);
-}
-
-MutableSpace::~MutableSpace() {
-  delete _mangler;
 }
 
 void MutableSpace::numa_setup_pages(MemRegion mr, size_t page_size, bool clear_space) {
@@ -120,11 +113,12 @@ void MutableSpace::initialize(MemRegion mr,
     }
 
     if (AlwaysPreTouch) {
+      size_t pretouch_page_size = UseLargePages ? page_size : os::vm_page_size();
       PretouchTask::pretouch("ParallelGC PreTouch head", (char*)head.start(), (char*)head.end(),
-                             page_size, pretouch_workers);
+                             pretouch_page_size, pretouch_workers);
 
       PretouchTask::pretouch("ParallelGC PreTouch tail", (char*)tail.start(), (char*)tail.end(),
-                             page_size, pretouch_workers);
+                             pretouch_page_size, pretouch_workers);
     }
 
     // Remember where we stopped so that we can continue later.
@@ -151,36 +145,15 @@ void MutableSpace::clear(bool mangle_space) {
 }
 
 #ifndef PRODUCT
-void MutableSpace::check_mangled_unused_area(HeapWord* limit) {
-  mangler()->check_mangled_unused_area(limit);
-}
 
-void MutableSpace::check_mangled_unused_area_complete() {
-  mangler()->check_mangled_unused_area_complete();
-}
-
-// Mangle only the unused space that has not previously
-// been mangled and that has not been allocated since being
-// mangled.
 void MutableSpace::mangle_unused_area() {
-  mangler()->mangle_unused_area();
-}
-
-void MutableSpace::mangle_unused_area_complete() {
-  mangler()->mangle_unused_area_complete();
+  mangle_region(MemRegion(_top, _end));
 }
 
 void MutableSpace::mangle_region(MemRegion mr) {
   SpaceMangler::mangle_region(mr);
 }
 
-void MutableSpace::set_top_for_allocations(HeapWord* v) {
-  mangler()->set_top_for_allocations(v);
-}
-
-void MutableSpace::set_top_for_allocations() {
-  mangler()->set_top_for_allocations(top());
-}
 #endif
 
 HeapWord* MutableSpace::cas_allocate(size_t size) {
@@ -235,8 +208,19 @@ void MutableSpace::oop_iterate(OopIterateClosure* cl) {
 void MutableSpace::object_iterate(ObjectClosure* cl) {
   HeapWord* p = bottom();
   while (p < top()) {
-    cl->do_object(cast_to_oop(p));
-    p += cast_to_oop(p)->size();
+    oop obj = cast_to_oop(p);
+    // When promotion-failure occurs during Young GC, eden/from space is not cleared,
+    // so we can encounter objects with "forwarded" markword.
+    // They are essentially dead, so skipping them
+    if (!obj->is_forwarded()) {
+      cl->do_object(obj);
+    }
+#ifdef ASSERT
+    else {
+      assert(obj->forwardee() != obj, "must not be self-forwarded");
+    }
+#endif
+    p += obj->size();
   }
 }
 
@@ -256,10 +240,8 @@ void MutableSpace::print_on(outputStream* st) const {
 void MutableSpace::verify() {
   HeapWord* p = bottom();
   HeapWord* t = top();
-  HeapWord* prev_p = nullptr;
   while (p < t) {
     oopDesc::verify(cast_to_oop(p));
-    prev_p = p;
     p += cast_to_oop(p)->size();
   }
   guarantee(p == top(), "end of last object must match end of space");

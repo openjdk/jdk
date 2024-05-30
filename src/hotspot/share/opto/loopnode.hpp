@@ -28,6 +28,7 @@
 #include "opto/cfgnode.hpp"
 #include "opto/multnode.hpp"
 #include "opto/phaseX.hpp"
+#include "opto/predicates.hpp"
 #include "opto/subnode.hpp"
 #include "opto/type.hpp"
 #include "utilities/checkedCast.hpp"
@@ -42,7 +43,9 @@ class OuterStripMinedLoopEndNode;
 class PredicateBlock;
 class PathFrequency;
 class PhaseIdealLoop;
+class UnswitchedLoopSelector;
 class VectorSet;
+class VSharedData;
 class Invariance;
 struct small_cache;
 
@@ -231,14 +234,11 @@ class CountedLoopNode : public BaseCountedLoopNode {
   // vector mapped unroll factor here
   int _slp_maximum_unroll_factor;
 
-  // Cached CountedLoopEndNode of pre loop for main loops
-  CountedLoopEndNode* _pre_loop_end;
-
 public:
   CountedLoopNode(Node *entry, Node *backedge)
     : BaseCountedLoopNode(entry, backedge), _main_idx(0), _trip_count(max_juint),
       _unrolled_count_log2(0), _node_count_before_unroll(0),
-      _slp_maximum_unroll_factor(0), _pre_loop_end(nullptr) {
+      _slp_maximum_unroll_factor(0) {
     init_class_id(Class_CountedLoop);
     // Initialize _trip_count to the largest possible value.
     // Will be reset (lower) if the loop's trip count is known.
@@ -330,9 +330,6 @@ public:
 
   Node* is_canonical_loop_entry();
   CountedLoopEndNode* find_pre_loop_end();
-  CountedLoopNode* pre_loop_head() const;
-  CountedLoopEndNode* pre_loop_end();
-  void set_pre_loop_end(CountedLoopEndNode* pre_loop_end);
 
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
@@ -742,13 +739,15 @@ public:
   void reassociate_invariants(PhaseIdealLoop *phase);
   // Reassociate invariant binary expressions.
   Node* reassociate(Node* n1, PhaseIdealLoop *phase);
-  // Reassociate invariant add and subtract expressions.
-  Node* reassociate_add_sub(Node* n1, int inv1_idx, int inv2_idx, PhaseIdealLoop *phase);
+  // Reassociate invariant add, subtract, and compare expressions.
+  Node* reassociate_add_sub_cmp(Node* n1, int inv1_idx, int inv2_idx, PhaseIdealLoop* phase);
   // Return nonzero index of invariant operand if invariant and variant
   // are combined with an associative binary. Helper for reassociate_invariants.
   int find_invariant(Node* n, PhaseIdealLoop *phase);
   // Return TRUE if "n" is associative.
   bool is_associative(Node* n, Node* base=nullptr);
+  // Return TRUE if "n" is an associative cmp node.
+  bool is_associative_cmp(Node* n);
 
   // Return true if n is invariant
   bool is_invariant(Node* n) const;
@@ -773,6 +772,12 @@ public:
       _has_range_checks_computed = 1;
     }
     return _has_range_checks;
+  }
+
+  // Return the parent's IdealLoopTree for a strip mined loop which is the outer strip mined loop.
+  // In all other cases, return this.
+  IdealLoopTree* skip_strip_mined() {
+    return _head->as_Loop()->is_strip_mined() ? _parent : this;
   }
 
 #ifndef PRODUCT
@@ -946,9 +951,6 @@ private:
                                                  Node* uncommon_proj, Node* control, IdealLoopTree* outer_loop,
                                                  Node* input_proj);
   static void count_opaque_loop_nodes(Node* n, uint& init, uint& stride);
-  static bool subgraph_has_opaque(Node* n);
-  Node* create_bool_from_template_assertion_predicate(Node* template_assertion_predicate, Node* new_init, Node* new_stride,
-                                                      Node* control);
   static bool assertion_predicate_has_loop_opaque_node(IfNode* iff);
   static void get_assertion_predicates(Node* predicate, Unique_Node_List& list, bool get_opaque = false);
   void update_main_loop_assertion_predicates(Node* ctrl, CountedLoopNode* loop_head, Node* init, int stride_con);
@@ -1103,6 +1105,7 @@ private:
   // Compute the Ideal Node to Loop mapping
   PhaseIdealLoop(PhaseIterGVN& igvn, LoopOptsMode mode) :
     PhaseTransform(Ideal_Loop),
+    _loop_or_ctrl(igvn.C->comp_arena()),
     _igvn(igvn),
     _verify_me(nullptr),
     _verify_only(false),
@@ -1117,6 +1120,7 @@ private:
   // or only verify that the graph is valid if verify_me is null.
   PhaseIdealLoop(PhaseIterGVN& igvn, const PhaseIdealLoop* verify_me = nullptr) :
     PhaseTransform(Ideal_Loop),
+    _loop_or_ctrl(igvn.C->comp_arena()),
     _igvn(igvn),
     _verify_me(verify_me),
     _verify_only(verify_me == nullptr),
@@ -1333,25 +1337,30 @@ public:
                                       bool* p_short_scale, int depth);
 
   // Create a new if above the uncommon_trap_if_pattern for the predicate to be promoted
-  IfProjNode* create_new_if_for_predicate(ParsePredicateSuccessProj* parse_predicate_proj, Node* new_entry,
+  IfTrueNode* create_new_if_for_predicate(ParsePredicateSuccessProj* parse_predicate_proj, Node* new_entry,
                                           Deoptimization::DeoptReason reason, int opcode,
                                           bool rewire_uncommon_proj_phi_inputs = false);
 
  private:
   // Helper functions for create_new_if_for_predicate()
-  void set_ctrl_of_nodes_with_same_ctrl(Node* node, ProjNode* old_ctrl, Node* new_ctrl);
+  void set_ctrl_of_nodes_with_same_ctrl(Node* start_node, ProjNode* old_uncommon_proj, Node* new_uncommon_proj);
   Unique_Node_List find_nodes_with_same_ctrl(Node* node, const ProjNode* ctrl);
-  Node* clone_nodes_with_same_ctrl(Node* node, ProjNode* old_ctrl, Node* new_ctrl);
-  Dict clone_nodes(const Node_List& list_to_clone);
-  void rewire_cloned_nodes_to_ctrl(const ProjNode* old_ctrl, Node* new_ctrl, const Node_List& nodes_with_same_ctrl,
-                                   const Dict& old_new_mapping);
-  void rewire_inputs_of_clones_to_clones(Node* new_ctrl, Node* clone, const Dict& old_new_mapping, const Node* next);
+  Node* clone_nodes_with_same_ctrl(Node* start_node, ProjNode* old_uncommon_proj, Node* new_uncommon_proj);
+  void fix_cloned_data_node_controls(const ProjNode* orig, Node* new_uncommon_proj,
+                                     const OrigToNewHashtable& orig_to_clone);
+  bool has_dominating_loop_limit_check(Node* init_trip, Node* limit, jlong stride_con, BasicType iv_bt,
+                                       Node* loop_entry);
 
  public:
   void register_control(Node* n, IdealLoopTree *loop, Node* pred, bool update_body = true);
 
+  void replace_loop_entry(LoopNode* loop_head, Node* new_entry) {
+    _igvn.replace_input_of(loop_head, LoopNode::EntryControl, new_entry);
+    set_idom(loop_head, new_entry, dom_depth(new_entry));
+  }
+
   // Construct a range check for a predicate if
-  BoolNode* rc_predicate(IdealLoopTree* loop, Node* ctrl, int scale, Node* offset, Node* init, Node* limit,
+  BoolNode* rc_predicate(Node* ctrl, int scale, Node* offset, Node* init, Node* limit,
                          jint stride, Node* range, bool upper, bool& overflow);
 
   // Implementation of the loop predication to promote checks outside the loop
@@ -1371,7 +1380,8 @@ public:
                                                IfProjNode* upper_bound_proj, int scale, Node* offset, Node* init, Node* limit,
                                                jint stride, Node* rng, bool& overflow, Deoptimization::DeoptReason reason);
   Node* add_range_check_elimination_assertion_predicate(IdealLoopTree* loop, Node* predicate_proj, int scale_con,
-                                                        Node* offset, Node* limit, jint stride_con, Node* value);
+                                                        Node* offset, Node* limit, int stride_con, Node* value,
+                                                        bool is_template);
 
   // Helper function to collect predicate for eliminating the useless ones
   void eliminate_useless_predicates();
@@ -1389,8 +1399,6 @@ public:
 
   void eliminate_useless_zero_trip_guard();
 
-  bool has_control_dependencies_from_predicates(LoopNode* head) const;
-  void verify_fast_loop(LoopNode* head, const ProjNode* proj_true) const NOT_DEBUG_RETURN;
  public:
   // Change the control input of expensive nodes to allow commoning by
   // IGVN when it is guaranteed to not result in a more frequent
@@ -1405,21 +1413,30 @@ public:
   // Eliminate range-checks and other trip-counter vs loop-invariant tests.
   void do_range_check(IdealLoopTree *loop, Node_List &old_new);
 
-  // Create a slow version of the loop by cloning the loop
-  // and inserting an if to select fast-slow versions.
-  // Return the inserted if.
-  IfNode* create_slow_version_of_loop(IdealLoopTree *loop,
-                                        Node_List &old_new,
-                                        IfNode* unswitch_iff,
-                                        CloneLoopMode mode);
-
   // Clone loop with an invariant test (that does not exit) and
   // insert a clone of the test that selects which version to
   // execute.
-  void do_unswitching (IdealLoopTree *loop, Node_List &old_new);
+  void do_unswitching(IdealLoopTree* loop, Node_List& old_new);
 
-  // Find candidate "if" for unswitching
-  IfNode* find_unswitching_candidate(const IdealLoopTree *loop) const;
+  IfNode* find_unswitch_candidate(const IdealLoopTree* loop) const;
+
+ private:
+  static bool has_control_dependencies_from_predicates(LoopNode* head);
+  static void revert_to_normal_loop(const LoopNode* loop_head);
+
+  void hoist_invariant_check_casts(const IdealLoopTree* loop, const Node_List& old_new,
+                                   const UnswitchedLoopSelector& unswitched_loop_selector);
+  void add_unswitched_loop_version_bodies_to_igvn(IdealLoopTree* loop, const Node_List& old_new);
+  static void increment_unswitch_counts(LoopNode* original_head, LoopNode* new_head);
+  void remove_unswitch_candidate_from_loops(const Node_List& old_new, const UnswitchedLoopSelector& unswitched_loop_selector);
+#ifndef PRODUCT
+  static void trace_loop_unswitching_count(IdealLoopTree* loop, LoopNode* original_head);
+  static void trace_loop_unswitching_impossible(const LoopNode* original_head);
+  static void trace_loop_unswitching_result(const UnswitchedLoopSelector& unswitched_loop_selector,
+                                            const LoopNode* original_head, const LoopNode* new_head);
+#endif
+
+ public:
 
   // Range Check Elimination uses this function!
   // Constrain the main loop iterations so the affine function:
@@ -1434,6 +1451,14 @@ public:
   // Partially peel loop up through last_peel node.
   bool partial_peel( IdealLoopTree *loop, Node_List &old_new );
   bool duplicate_loop_backedge(IdealLoopTree *loop, Node_List &old_new);
+
+  // AutoVectorize the loop: replace scalar ops with vector ops.
+  enum AutoVectorizeStatus {
+    Impossible,      // This loop has the wrong shape to even try vectorization.
+    Success,         // We just successfully vectorized the loop.
+    TriedAndFailed,  // We tried to vectorize, but failed.
+  };
+  AutoVectorizeStatus auto_vectorize(IdealLoopTree* lpt, VSharedData &vshared);
 
   // Move UnorderedReduction out of loop if possible
   void move_unordered_reduction_out_of_loop(IdealLoopTree* loop);
@@ -1507,7 +1532,7 @@ public:
   Node *has_local_phi_input( Node *n );
   // Mark an IfNode as being dominated by a prior test,
   // without actually altering the CFG (and hence IDOM info).
-  void dominated_by(IfProjNode* prevdom, IfNode* iff, bool flip = false, bool exclude_loop_predicate = false);
+  void dominated_by(IfProjNode* prevdom, IfNode* iff, bool flip = false, bool pin_array_access_nodes = false);
 
   // Split Node 'n' through merge point
   RegionNode* split_thru_region(Node* n, RegionNode* region);
@@ -1618,9 +1643,11 @@ private:
     _nodes_required = UINT_MAX;
   }
 
+ public:
   // Clone Parse Predicates to slow and fast loop when unswitching a loop
   void clone_parse_and_assertion_predicates_to_unswitched_loop(IdealLoopTree* loop, Node_List& old_new,
                                                                IfProjNode*& iffast_pred, IfProjNode*& ifslow_pred);
+ private:
   void clone_loop_predication_predicates_to_unswitched_loop(IdealLoopTree* loop, const Node_List& old_new,
                                                             const PredicateBlock* predicate_block,
                                                             Deoptimization::DeoptReason reason, IfProjNode*& iffast_pred,
@@ -1633,7 +1660,7 @@ private:
                                                      Deoptimization::DeoptReason reason, IfProjNode* old_predicate_proj,
                                                      ParsePredicateSuccessProj* fast_loop_parse_predicate_proj,
                                                      ParsePredicateSuccessProj* slow_loop_parse_predicate_proj);
-  IfProjNode* clone_assertion_predicate_for_unswitched_loops(Node* iff, IfProjNode* predicate,
+  IfProjNode* clone_assertion_predicate_for_unswitched_loops(IfNode* template_assertion_predicate, IfProjNode* predicate,
                                                              Deoptimization::DeoptReason reason,
                                                              ParsePredicateSuccessProj* parse_predicate_proj);
   static void check_cloned_parse_predicate_for_unswitching(const Node* new_entry, bool is_fast_loop) PRODUCT_RETURN;
@@ -1646,6 +1673,15 @@ public:
   void set_created_loop_node() { _created_loop_node = true; }
   bool created_loop_node()     { return _created_loop_node; }
   void register_new_node(Node* n, Node* blk);
+  void register_new_node_with_ctrl_of(Node* new_node, Node* ctrl_of) {
+    register_new_node(new_node, get_ctrl(ctrl_of));
+  }
+
+  Node* clone_and_register(Node* n, Node* ctrl) {
+    n = n->clone();
+    register_new_node(n, ctrl);
+    return n;
+  }
 
 #ifdef ASSERT
   void dump_bad_graph(const char* msg, Node* n, Node* early, Node* LCA);
@@ -1684,8 +1720,8 @@ public:
   LoopNode* create_inner_head(IdealLoopTree* loop, BaseCountedLoopNode* head, IfNode* exit_test);
 
 
-  int extract_long_range_checks(const IdealLoopTree* loop, jlong stride_con, int iters_limit, PhiNode* phi,
-                                      Node_List &range_checks);
+  int extract_long_range_checks(const IdealLoopTree* loop, jint stride_con, int iters_limit, PhiNode* phi,
+                                Node_List &range_checks);
 
   void transform_long_range_checks(int stride_con, const Node_List &range_checks, Node* outer_phi,
                                    Node* inner_iters_actual_int, Node* inner_phi,
@@ -1723,18 +1759,20 @@ public:
 
   void finish_clone_loop(Node_List* split_if_set, Node_List* split_bool_set, Node_List* split_cex_set);
 
-  bool clone_cmp_down(Node* n, const Node* blk1, const Node* blk2);
-
-  void clone_loadklass_nodes_at_cmp_index(const Node* n, Node* cmp, int i);
-
-  bool clone_cmp_loadklass_down(Node* n, const Node* blk1, const Node* blk2);
-
   bool at_relevant_ctrl(Node* n, const Node* blk1, const Node* blk2);
 
+  bool clone_cmp_loadklass_down(Node* n, const Node* blk1, const Node* blk2);
+  void clone_loadklass_nodes_at_cmp_index(const Node* n, Node* cmp, int i);
+  bool clone_cmp_down(Node* n, const Node* blk1, const Node* blk2);
+  void clone_template_assertion_predicate_expression_down(Node* node);
 
   Node* similar_subtype_check(const Node* x, Node* r_in);
 
   void update_addp_chain_base(Node* x, Node* old_base, Node* new_base);
+
+  bool can_move_to_inner_loop(Node* n, LoopNode* n_loop, Node* x);
+
+  void pin_array_access_nodes_dependent_on(Node* ctrl);
 };
 
 
@@ -1850,4 +1888,58 @@ public:
   float to(Node* n);
 };
 
+// Class to clone a data node graph by taking a list of data nodes. This is done in 2 steps:
+//   1. Clone the data nodes
+//   2. Fix the cloned data inputs pointing to the old nodes to the cloned inputs by using an old->new mapping.
+class DataNodeGraph : public StackObj {
+  PhaseIdealLoop* const _phase;
+  const Unique_Node_List& _data_nodes;
+  OrigToNewHashtable _orig_to_new;
+
+ public:
+  DataNodeGraph(const Unique_Node_List& data_nodes, PhaseIdealLoop* phase)
+      : _phase(phase),
+        _data_nodes(data_nodes),
+        // Use 107 as best guess which is the first resize value in ResizeableResourceHashtable::large_table_sizes.
+        _orig_to_new(107, MaxNodeLimit)
+  {
+#ifdef ASSERT
+    for (uint i = 0; i < data_nodes.size(); i++) {
+      assert(!data_nodes[i]->is_CFG(), "only data nodes");
+    }
+#endif
+  }
+  NONCOPYABLE(DataNodeGraph);
+
+ private:
+  void clone(Node* node, Node* new_ctrl);
+  void clone_data_nodes(Node* new_ctrl);
+  void clone_data_nodes_and_transform_opaque_loop_nodes(const TransformStrategyForOpaqueLoopNodes& transform_strategy,
+                                                        Node* new_ctrl);
+  void rewire_clones_to_cloned_inputs();
+  void transform_opaque_node(const TransformStrategyForOpaqueLoopNodes& transform_strategy, Node* node);
+
+ public:
+  // Clone the provided data node collection and rewire the clones in such a way to create an identical graph copy.
+  // Set 'new_ctrl' as ctrl for the cloned nodes.
+  const OrigToNewHashtable& clone(Node* new_ctrl) {
+    assert(_orig_to_new.number_of_entries() == 0, "should not call this method twice in a row");
+    clone_data_nodes(new_ctrl);
+    rewire_clones_to_cloned_inputs();
+    return _orig_to_new;
+  }
+
+  // Create a copy of the data nodes provided to the constructor by doing the following:
+  // Clone all non-OpaqueLoop* nodes and rewire them to create an identical subgraph copy. For the OpaqueLoop* nodes,
+  // apply the provided transformation strategy and include the transformed node into the subgraph copy to get a complete
+  // "cloned-and-transformed" graph copy. For all newly cloned nodes (which could also be new OpaqueLoop* nodes), set
+  // `new_ctrl` as ctrl.
+  const OrigToNewHashtable& clone_with_opaque_loop_transform_strategy(
+      const TransformStrategyForOpaqueLoopNodes& transform_strategy,
+      Node* new_ctrl) {
+    clone_data_nodes_and_transform_opaque_loop_nodes(transform_strategy, new_ctrl);
+    rewire_clones_to_cloned_inputs();
+    return _orig_to_new;
+  }
+};
 #endif // SHARE_OPTO_LOOPNODE_HPP

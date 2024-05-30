@@ -101,6 +101,9 @@ public enum Target {
 
     /** JDK 22. */
     JDK1_22("22", 66, 0),
+
+    /** JDK 23. */
+    JDK1_23("23", 67, 0),
     ; // Reduce code churn when appending new constants
 
     private static final Context.Key<Target> targetKey = new Context.Key<>();
@@ -222,5 +225,11 @@ public enum Target {
      */
     public boolean optimizeOuterThis() {
         return compareTo(JDK1_18) >= 0;
+    }
+
+    /** Releases prior to JDK 23 expect a less precise SwitchBootstraps.typeSwitch signature on the selectorType
+     */
+    public boolean usesReferenceOnlySelectorTypes() {
+        return compareTo(Target.JDK1_23) < 0;
     }
 }

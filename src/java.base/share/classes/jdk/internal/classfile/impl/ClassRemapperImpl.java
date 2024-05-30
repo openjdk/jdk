@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,61 +24,61 @@
  */
 package jdk.internal.classfile.impl;
 
-import jdk.internal.classfile.Annotation;
-import jdk.internal.classfile.AnnotationElement;
-import jdk.internal.classfile.AnnotationValue;
-import jdk.internal.classfile.ClassBuilder;
-import jdk.internal.classfile.ClassElement;
-import jdk.internal.classfile.ClassSignature;
-import jdk.internal.classfile.CodeBuilder;
-import jdk.internal.classfile.CodeElement;
-import jdk.internal.classfile.CodeModel;
-import jdk.internal.classfile.CodeTransform;
-import jdk.internal.classfile.FieldBuilder;
-import jdk.internal.classfile.FieldElement;
-import jdk.internal.classfile.FieldModel;
-import jdk.internal.classfile.FieldTransform;
-import jdk.internal.classfile.Interfaces;
-import jdk.internal.classfile.MethodBuilder;
-import jdk.internal.classfile.MethodElement;
-import jdk.internal.classfile.MethodModel;
-import jdk.internal.classfile.MethodSignature;
-import jdk.internal.classfile.MethodTransform;
-import jdk.internal.classfile.Signature;
-import jdk.internal.classfile.Superclass;
-import jdk.internal.classfile.TypeAnnotation;
-import jdk.internal.classfile.attribute.AnnotationDefaultAttribute;
-import jdk.internal.classfile.attribute.EnclosingMethodAttribute;
-import jdk.internal.classfile.attribute.ExceptionsAttribute;
-import jdk.internal.classfile.attribute.InnerClassInfo;
-import jdk.internal.classfile.attribute.InnerClassesAttribute;
-import jdk.internal.classfile.attribute.ModuleAttribute;
-import jdk.internal.classfile.attribute.ModuleProvideInfo;
-import jdk.internal.classfile.attribute.NestHostAttribute;
-import jdk.internal.classfile.attribute.NestMembersAttribute;
-import jdk.internal.classfile.attribute.PermittedSubclassesAttribute;
-import jdk.internal.classfile.attribute.RecordAttribute;
-import jdk.internal.classfile.attribute.RecordComponentInfo;
-import jdk.internal.classfile.attribute.RuntimeInvisibleAnnotationsAttribute;
-import jdk.internal.classfile.attribute.RuntimeInvisibleParameterAnnotationsAttribute;
-import jdk.internal.classfile.attribute.RuntimeInvisibleTypeAnnotationsAttribute;
-import jdk.internal.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
-import jdk.internal.classfile.attribute.RuntimeVisibleParameterAnnotationsAttribute;
-import jdk.internal.classfile.attribute.RuntimeVisibleTypeAnnotationsAttribute;
-import jdk.internal.classfile.attribute.SignatureAttribute;
-import jdk.internal.classfile.components.ClassRemapper;
-import jdk.internal.classfile.constantpool.Utf8Entry;
-import jdk.internal.classfile.instruction.ConstantInstruction.LoadConstantInstruction;
-import jdk.internal.classfile.instruction.ExceptionCatch;
-import jdk.internal.classfile.instruction.FieldInstruction;
-import jdk.internal.classfile.instruction.InvokeDynamicInstruction;
-import jdk.internal.classfile.instruction.InvokeInstruction;
-import jdk.internal.classfile.instruction.LocalVariable;
-import jdk.internal.classfile.instruction.LocalVariableType;
-import jdk.internal.classfile.instruction.NewMultiArrayInstruction;
-import jdk.internal.classfile.instruction.NewObjectInstruction;
-import jdk.internal.classfile.instruction.NewReferenceArrayInstruction;
-import jdk.internal.classfile.instruction.TypeCheckInstruction;
+import java.lang.classfile.Annotation;
+import java.lang.classfile.AnnotationElement;
+import java.lang.classfile.AnnotationValue;
+import java.lang.classfile.ClassBuilder;
+import java.lang.classfile.ClassElement;
+import java.lang.classfile.ClassSignature;
+import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.CodeElement;
+import java.lang.classfile.CodeModel;
+import java.lang.classfile.CodeTransform;
+import java.lang.classfile.FieldBuilder;
+import java.lang.classfile.FieldElement;
+import java.lang.classfile.FieldModel;
+import java.lang.classfile.FieldTransform;
+import java.lang.classfile.Interfaces;
+import java.lang.classfile.MethodBuilder;
+import java.lang.classfile.MethodElement;
+import java.lang.classfile.MethodModel;
+import java.lang.classfile.MethodSignature;
+import java.lang.classfile.MethodTransform;
+import java.lang.classfile.Signature;
+import java.lang.classfile.Superclass;
+import java.lang.classfile.TypeAnnotation;
+import java.lang.classfile.attribute.AnnotationDefaultAttribute;
+import java.lang.classfile.attribute.EnclosingMethodAttribute;
+import java.lang.classfile.attribute.ExceptionsAttribute;
+import java.lang.classfile.attribute.InnerClassInfo;
+import java.lang.classfile.attribute.InnerClassesAttribute;
+import java.lang.classfile.attribute.ModuleAttribute;
+import java.lang.classfile.attribute.ModuleProvideInfo;
+import java.lang.classfile.attribute.NestHostAttribute;
+import java.lang.classfile.attribute.NestMembersAttribute;
+import java.lang.classfile.attribute.PermittedSubclassesAttribute;
+import java.lang.classfile.attribute.RecordAttribute;
+import java.lang.classfile.attribute.RecordComponentInfo;
+import java.lang.classfile.attribute.RuntimeInvisibleAnnotationsAttribute;
+import java.lang.classfile.attribute.RuntimeInvisibleParameterAnnotationsAttribute;
+import java.lang.classfile.attribute.RuntimeInvisibleTypeAnnotationsAttribute;
+import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
+import java.lang.classfile.attribute.RuntimeVisibleParameterAnnotationsAttribute;
+import java.lang.classfile.attribute.RuntimeVisibleTypeAnnotationsAttribute;
+import java.lang.classfile.attribute.SignatureAttribute;
+import java.lang.classfile.components.ClassRemapper;
+import java.lang.classfile.constantpool.Utf8Entry;
+import java.lang.classfile.instruction.ConstantInstruction.LoadConstantInstruction;
+import java.lang.classfile.instruction.ExceptionCatch;
+import java.lang.classfile.instruction.FieldInstruction;
+import java.lang.classfile.instruction.InvokeDynamicInstruction;
+import java.lang.classfile.instruction.InvokeInstruction;
+import java.lang.classfile.instruction.LocalVariable;
+import java.lang.classfile.instruction.LocalVariableType;
+import java.lang.classfile.instruction.NewMultiArrayInstruction;
+import java.lang.classfile.instruction.NewObjectInstruction;
+import java.lang.classfile.instruction.NewReferenceArrayInstruction;
+import java.lang.classfile.instruction.TypeCheckInstruction;
 
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDesc;
@@ -231,25 +231,25 @@ public record ClassRemapperImpl(Function<ClassDesc, ClassDesc> mapFunction) impl
         return (CodeBuilder cob, CodeElement coe) -> {
             switch (coe) {
                 case FieldInstruction fai ->
-                    cob.fieldInstruction(fai.opcode(), map(fai.owner().asSymbol()),
+                    cob.fieldAccess(fai.opcode(), map(fai.owner().asSymbol()),
                             fai.name().stringValue(), map(fai.typeSymbol()));
                 case InvokeInstruction ii ->
-                    cob.invokeInstruction(ii.opcode(), map(ii.owner().asSymbol()),
+                    cob.invoke(ii.opcode(), map(ii.owner().asSymbol()),
                             ii.name().stringValue(), mapMethodDesc(ii.typeSymbol()),
                             ii.isInterface());
                 case InvokeDynamicInstruction idi ->
-                    cob.invokeDynamicInstruction(DynamicCallSiteDesc.of(
-                            idi.bootstrapMethod(), idi.name().stringValue(),
+                    cob.invokedynamic(DynamicCallSiteDesc.of(
+                            mapDirectMethodHandle(idi.bootstrapMethod()), idi.name().stringValue(),
                             mapMethodDesc(idi.typeSymbol()),
                             idi.bootstrapArgs().stream().map(this::mapConstantValue).toArray(ConstantDesc[]::new)));
                 case NewObjectInstruction c ->
-                    cob.newObjectInstruction(map(c.className().asSymbol()));
+                    cob.new_(map(c.className().asSymbol()));
                 case NewReferenceArrayInstruction c ->
                     cob.anewarray(map(c.componentType().asSymbol()));
                 case NewMultiArrayInstruction c ->
                     cob.multianewarray(map(c.arrayType().asSymbol()), c.dimensions());
                 case TypeCheckInstruction c ->
-                    cob.typeCheckInstruction(c.opcode(), map(c.type().asSymbol()));
+                    cob.with(TypeCheckInstruction.of(c.opcode(), map(c.type().asSymbol())));
                 case ExceptionCatch c ->
                     cob.exceptionCatch(c.tryStart(), c.tryEnd(), c.handler(),c.catchType()
                             .map(d -> TemporaryConstantPool.INSTANCE.classEntry(map(d.asSymbol()))));
@@ -260,7 +260,7 @@ public record ClassRemapperImpl(Function<ClassDesc, ClassDesc> mapFunction) impl
                     cob.localVariableType(c.slot(), c.name().stringValue(),
                             mapSignature(c.signatureSymbol()), c.startScope(), c.endScope());
                 case LoadConstantInstruction ldc ->
-                    cob.constantInstruction(ldc.opcode(),
+                    cob.loadConstant(ldc.opcode(),
                             mapConstantValue(ldc.constantValue()));
                 case RuntimeVisibleTypeAnnotationsAttribute aa ->
                     cob.with(RuntimeVisibleTypeAnnotationsAttribute.of(
@@ -291,7 +291,7 @@ public record ClassRemapperImpl(Function<ClassDesc, ClassDesc> mapFunction) impl
         return ClassSignature.of(mapTypeParams(signature.typeParameters()),
                 mapSignature(signature.superclassSignature()),
                 signature.superinterfaceSignatures().stream()
-                        .map(this::mapSignature).toArray(Signature.RefTypeSig[]::new));
+                        .map(this::mapSignature).toArray(Signature.ClassTypeSig[]::new));
     }
 
     MethodSignature mapMethodSignature(MethodSignature signature) {
@@ -369,11 +369,11 @@ public record ClassRemapperImpl(Function<ClassDesc, ClassDesc> mapFunction) impl
                 Signature.ClassTypeSig.of(
                         cts.outerType().map(this::mapSignature).orElse(null),
                         map(cts.classDesc()),
-                        cts.typeArgs().stream()
-                                .map(ta -> Signature.TypeArg.of(
-                                        ta.wildcardIndicator(),
-                                        ta.boundType().map(this::mapSignature)))
-                                .toArray(Signature.TypeArg[]::new));
+                        cts.typeArgs().stream().map(ta -> switch (ta) {
+                            case Signature.TypeArg.Unbounded u -> u;
+                            case Signature.TypeArg.Bounded bta -> Signature.TypeArg.bounded(
+                                    bta.wildcardIndicator(), mapSignature(bta.boundType()));
+                        }).toArray(Signature.TypeArg[]::new));
             default -> signature;
         };
     }

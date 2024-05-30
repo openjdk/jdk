@@ -24,16 +24,16 @@
  */
 package jdk.internal.classfile.impl;
 
-import jdk.internal.classfile.CodeBuilder;
-import jdk.internal.classfile.CodeElement;
-import jdk.internal.classfile.Signature;
-import jdk.internal.classfile.TypeKind;
-import jdk.internal.classfile.components.CodeLocalsShifter;
-import jdk.internal.classfile.instruction.IncrementInstruction;
-import jdk.internal.classfile.instruction.LoadInstruction;
-import jdk.internal.classfile.instruction.LocalVariable;
-import jdk.internal.classfile.instruction.LocalVariableType;
-import jdk.internal.classfile.instruction.StoreInstruction;
+import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.CodeElement;
+import java.lang.classfile.Signature;
+import java.lang.classfile.TypeKind;
+import java.lang.classfile.components.CodeLocalsShifter;
+import java.lang.classfile.instruction.IncrementInstruction;
+import java.lang.classfile.instruction.LoadInstruction;
+import java.lang.classfile.instruction.LocalVariable;
+import java.lang.classfile.instruction.LocalVariableType;
+import java.lang.classfile.instruction.StoreInstruction;
 
 import java.util.Arrays;
 
@@ -50,15 +50,15 @@ public final class CodeLocalsShifterImpl implements CodeLocalsShifter {
     public void accept(CodeBuilder cob, CodeElement coe) {
         switch (coe) {
             case LoadInstruction li ->
-                cob.loadInstruction(
+                cob.loadLocal(
                         li.typeKind(),
                         shift(cob, li.slot(), li.typeKind()));
             case StoreInstruction si ->
-                cob.storeInstruction(
+                cob.storeLocal(
                         si.typeKind(),
                         shift(cob, si.slot(), si.typeKind()));
             case IncrementInstruction ii ->
-                cob.incrementInstruction(
+                cob.iinc(
                         shift(cob, ii.slot(), TypeKind.IntType),
                         ii.constant());
             case LocalVariable lv ->

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,18 +25,18 @@
 
 package jdk.internal.classfile.impl;
 
-import jdk.internal.classfile.Annotation;
-import jdk.internal.classfile.AnnotationElement;
-import jdk.internal.classfile.AnnotationValue;
-import jdk.internal.classfile.ClassReader;
-import jdk.internal.classfile.constantpool.*;
-import jdk.internal.classfile.TypeAnnotation;
-import static jdk.internal.classfile.Classfile.*;
-import static jdk.internal.classfile.TypeAnnotation.TargetInfo.*;
+import java.lang.classfile.Annotation;
+import java.lang.classfile.AnnotationElement;
+import java.lang.classfile.AnnotationValue;
+import java.lang.classfile.ClassReader;
+import java.lang.classfile.constantpool.*;
+import java.lang.classfile.TypeAnnotation;
+import static java.lang.classfile.ClassFile.*;
+import static java.lang.classfile.TypeAnnotation.TargetInfo.*;
 
 import java.util.List;
-import jdk.internal.classfile.Label;
-import jdk.internal.classfile.constantpool.Utf8Entry;
+import java.lang.classfile.Label;
+import java.lang.classfile.constantpool.Utf8Entry;
 import jdk.internal.access.SharedSecrets;
 
 class AnnotationReader {
@@ -127,7 +127,7 @@ class AnnotationReader {
     }
 
     private static Annotation readAnnotation(ClassReader classReader, int p) {
-        Utf8Entry annotationClass = classReader.utf8EntryByIndex(classReader.readU2(p));
+        Utf8Entry annotationClass = classReader.entryByIndex(classReader.readU2(p), Utf8Entry.class);
         p += 2;
         List<AnnotationElement> elems = readAnnotationElementValuePairs(classReader, p);
         return new AnnotationImpl(annotationClass, elems);

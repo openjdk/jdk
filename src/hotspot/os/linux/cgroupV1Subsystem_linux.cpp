@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,9 +75,9 @@ void CgroupV1Controller::set_subsystem_path(char *cgroup_path) {
  *    OSCONTAINER_ERROR for not supported
  */
 jlong CgroupV1MemoryController::uses_mem_hierarchy() {
-  GET_CONTAINER_INFO(jlong, this, "/memory.use_hierarchy",
-                    "Use Hierarchy is: ", JLONG_FORMAT, JLONG_FORMAT, use_hierarchy);
-  return use_hierarchy;
+  julong use_hierarchy;
+  CONTAINER_READ_NUMBER_CHECKED(this, "/memory.use_hierarchy", "Use Hierarchy", use_hierarchy);
+  return (jlong)use_hierarchy;
 }
 
 void CgroupV1MemoryController::set_subsystem_path(char *cgroup_path) {
@@ -89,15 +89,20 @@ void CgroupV1MemoryController::set_subsystem_path(char *cgroup_path) {
 }
 
 jlong CgroupV1Subsystem::read_memory_limit_in_bytes() {
-  GET_CONTAINER_INFO(julong, _memory->controller(), "/memory.limit_in_bytes",
-                     "Memory Limit is: ", JULONG_FORMAT, JULONG_FORMAT, memlimit);
-
+  julong memlimit;
+  CONTAINER_READ_NUMBER_CHECKED(_memory->controller(), "/memory.limit_in_bytes", "Memory Limit", memlimit);
   if (memlimit >= os::Linux::physical_memory()) {
     log_trace(os, container)("Non-Hierarchical Memory Limit is: Unlimited");
     CgroupV1MemoryController* mem_controller = reinterpret_cast<CgroupV1MemoryController*>(_memory->controller());
     if (mem_controller->is_hierarchical()) {
-      GET_CONTAINER_INFO_LINE(julong, _memory->controller(), "/memory.stat", "hierarchical_memory_limit",
-                             "Hierarchical Memory Limit is: " JULONG_FORMAT, JULONG_FORMAT, hier_memlimit)
+      julong hier_memlimit;
+      bool is_ok = _memory->controller()->read_numerical_key_value("/memory.stat",
+                                                                   "hierarchical_memory_limit",
+                                                                   &hier_memlimit);
+      if (!is_ok) {
+        return OSCONTAINER_ERROR;
+      }
+      log_trace(os, container)("Hierarchical Memory Limit is: " JULONG_FORMAT, hier_memlimit);
       if (hier_memlimit >= os::Linux::physical_memory()) {
         log_trace(os, container)("Hierarchical Memory Limit is: Unlimited");
       } else {
@@ -125,16 +130,22 @@ jlong CgroupV1Subsystem::read_memory_limit_in_bytes() {
  */
 jlong CgroupV1Subsystem::read_mem_swap() {
   julong host_total_memsw;
-  GET_CONTAINER_INFO(julong, _memory->controller(), "/memory.memsw.limit_in_bytes",
-                     "Memory and Swap Limit is: ", JULONG_FORMAT, JULONG_FORMAT, memswlimit);
+  julong hier_memswlimit;
+  julong memswlimit;
+  CONTAINER_READ_NUMBER_CHECKED(_memory->controller(), "/memory.memsw.limit_in_bytes", "Memory and Swap Limit", memswlimit);
   host_total_memsw = os::Linux::host_swap() + os::Linux::physical_memory();
   if (memswlimit >= host_total_memsw) {
     log_trace(os, container)("Non-Hierarchical Memory and Swap Limit is: Unlimited");
     CgroupV1MemoryController* mem_controller = reinterpret_cast<CgroupV1MemoryController*>(_memory->controller());
     if (mem_controller->is_hierarchical()) {
       const char* matchline = "hierarchical_memsw_limit";
-      GET_CONTAINER_INFO_LINE(julong, _memory->controller(), "/memory.stat", matchline,
-                             "Hierarchical Memory and Swap Limit is : " JULONG_FORMAT, JULONG_FORMAT, hier_memswlimit)
+      bool is_ok = _memory->controller()->read_numerical_key_value("/memory.stat",
+                                                                   matchline,
+                                                                   &hier_memswlimit);
+      if (!is_ok) {
+        return OSCONTAINER_ERROR;
+      }
+      log_trace(os, container)("Hierarchical Memory and Swap Limit is: " JULONG_FORMAT, hier_memswlimit);
       if (hier_memswlimit >= host_total_memsw) {
         log_trace(os, container)("Hierarchical Memory and Swap Limit is: Unlimited");
       } else {
@@ -168,15 +179,34 @@ jlong CgroupV1Subsystem::memory_and_swap_limit_in_bytes() {
   return memory_swap;
 }
 
+static inline
+jlong memory_swap_usage_impl(CgroupController* ctrl) {
+  julong memory_swap_usage;
+  CONTAINER_READ_NUMBER_CHECKED(ctrl, "/memory.memsw.usage_in_bytes", "mem swap usage", memory_swap_usage);
+  return (jlong)memory_swap_usage;
+}
+
+jlong CgroupV1Subsystem::memory_and_swap_usage_in_bytes() {
+  jlong memory_sw_limit = memory_and_swap_limit_in_bytes();
+  jlong memory_limit = CgroupSubsystem::memory_limit_in_bytes();
+  if (memory_sw_limit > 0 && memory_limit > 0) {
+    jlong delta_swap = memory_sw_limit - memory_limit;
+    if (delta_swap > 0) {
+      return memory_swap_usage_impl(_memory->controller());
+    }
+  }
+  return memory_usage_in_bytes();
+}
+
 jlong CgroupV1Subsystem::read_mem_swappiness() {
-  GET_CONTAINER_INFO(julong, _memory->controller(), "/memory.swappiness",
-                     "Swappiness is: ", JULONG_FORMAT, JULONG_FORMAT, swappiness);
-  return swappiness;
+  julong swappiness;
+  CONTAINER_READ_NUMBER_CHECKED(_memory->controller(), "/memory.swappiness", "Swappiness", swappiness);
+  return (jlong)swappiness;
 }
 
 jlong CgroupV1Subsystem::memory_soft_limit_in_bytes() {
-  GET_CONTAINER_INFO(julong, _memory->controller(), "/memory.soft_limit_in_bytes",
-                     "Memory Soft Limit is: ", JULONG_FORMAT, JULONG_FORMAT, memsoftlimit);
+  julong memsoftlimit;
+  CONTAINER_READ_NUMBER_CHECKED(_memory->controller(), "/memory.soft_limit_in_bytes", "Memory Soft Limit", memsoftlimit);
   if (memsoftlimit >= os::Linux::physical_memory()) {
     log_trace(os, container)("Memory Soft Limit is: Unlimited");
     return (jlong)-1;
@@ -195,9 +225,9 @@ jlong CgroupV1Subsystem::memory_soft_limit_in_bytes() {
  *    OSCONTAINER_ERROR for not supported
  */
 jlong CgroupV1Subsystem::memory_usage_in_bytes() {
-  GET_CONTAINER_INFO(jlong, _memory->controller(), "/memory.usage_in_bytes",
-                     "Memory Usage is: ", JLONG_FORMAT, JLONG_FORMAT, memusage);
-  return memusage;
+  julong memusage;
+  CONTAINER_READ_NUMBER_CHECKED(_memory->controller(), "/memory.usage_in_bytes", "Memory Usage", memusage);
+  return (jlong)memusage;
 }
 
 /* memory_max_usage_in_bytes
@@ -209,21 +239,44 @@ jlong CgroupV1Subsystem::memory_usage_in_bytes() {
  *    OSCONTAINER_ERROR for not supported
  */
 jlong CgroupV1Subsystem::memory_max_usage_in_bytes() {
-  GET_CONTAINER_INFO(jlong, _memory->controller(), "/memory.max_usage_in_bytes",
-                     "Maximum Memory Usage is: ", JLONG_FORMAT, JLONG_FORMAT, memmaxusage);
-  return memmaxusage;
+  julong memmaxusage;
+  CONTAINER_READ_NUMBER_CHECKED(_memory->controller(), "/memory.max_usage_in_bytes", "Maximum Memory Usage", memmaxusage);
+  return (jlong)memmaxusage;
 }
 
+jlong CgroupV1Subsystem::rss_usage_in_bytes() {
+  julong rss;
+  bool is_ok = _memory->controller()->read_numerical_key_value("/memory.stat",
+                                                               "rss",
+                                                               &rss);
+  if (!is_ok) {
+    return OSCONTAINER_ERROR;
+  }
+  log_trace(os, container)("RSS usage is: " JULONG_FORMAT, rss);
+  return (jlong)rss;
+}
+
+jlong CgroupV1Subsystem::cache_usage_in_bytes() {
+  julong cache;
+  bool is_ok = _memory->controller()->read_numerical_key_value("/memory.stat",
+                                                               "cache",
+                                                               &cache);
+  if (!is_ok) {
+    return OSCONTAINER_ERROR;
+  }
+  log_trace(os, container)("Cache usage is: " JULONG_FORMAT, cache);
+  return cache;
+}
 
 jlong CgroupV1Subsystem::kernel_memory_usage_in_bytes() {
-  GET_CONTAINER_INFO(jlong, _memory->controller(), "/memory.kmem.usage_in_bytes",
-                     "Kernel Memory Usage is: ", JLONG_FORMAT, JLONG_FORMAT, kmem_usage);
-  return kmem_usage;
+  julong kmem_usage;
+  CONTAINER_READ_NUMBER_CHECKED(_memory->controller(), "/memory.kmem.usage_in_bytes", "Kernel Memory Usage", kmem_usage);
+  return (jlong)kmem_usage;
 }
 
 jlong CgroupV1Subsystem::kernel_memory_limit_in_bytes() {
-  GET_CONTAINER_INFO(julong, _memory->controller(), "/memory.kmem.limit_in_bytes",
-                     "Kernel Memory Limit is: ", JULONG_FORMAT, JULONG_FORMAT, kmem_limit);
+  julong kmem_limit;
+  CONTAINER_READ_NUMBER_CHECKED(_memory->controller(), "/memory.kmem.limit_in_bytes", "Kernel Memory Limit", kmem_limit);
   if (kmem_limit >= os::Linux::physical_memory()) {
     return (jlong)-1;
   }
@@ -231,9 +284,9 @@ jlong CgroupV1Subsystem::kernel_memory_limit_in_bytes() {
 }
 
 jlong CgroupV1Subsystem::kernel_memory_max_usage_in_bytes() {
-  GET_CONTAINER_INFO(jlong, _memory->controller(), "/memory.kmem.max_usage_in_bytes",
-                     "Maximum Kernel Memory Usage is: ", JLONG_FORMAT, JLONG_FORMAT, kmem_max_usage);
-  return kmem_max_usage;
+  julong kmem_max_usage;
+  CONTAINER_READ_NUMBER_CHECKED(_memory->controller(), "/memory.kmem.max_usage_in_bytes", "Maximum Kernel Memory Usage", kmem_max_usage);
+  return (jlong)kmem_max_usage;
 }
 
 void CgroupV1Subsystem::print_version_specific_info(outputStream* st) {
@@ -246,15 +299,15 @@ void CgroupV1Subsystem::print_version_specific_info(outputStream* st) {
   OSContainer::print_container_helper(st, kmem_max_usage, "kernel_memory_limit_in_bytes");
 }
 
-char * CgroupV1Subsystem::cpu_cpuset_cpus() {
-  GET_CONTAINER_INFO_CPTR(cptr, _cpuset, "/cpuset.cpus",
-                     "cpuset.cpus is: %s", "%1023s", cpus, 1024);
+char* CgroupV1Subsystem::cpu_cpuset_cpus() {
+  char cpus[1024];
+  CONTAINER_READ_STRING_CHECKED(_cpuset, "/cpuset.cpus", "cpuset.cpus", cpus, 1024);
   return os::strdup(cpus);
 }
 
-char * CgroupV1Subsystem::cpu_cpuset_memory_nodes() {
-  GET_CONTAINER_INFO_CPTR(cptr, _cpuset, "/cpuset.mems",
-                     "cpuset.mems is: %s", "%1023s", mems, 1024);
+char* CgroupV1Subsystem::cpu_cpuset_memory_nodes() {
+  char mems[1024];
+  CONTAINER_READ_STRING_CHECKED(_cpuset, "/cpuset.mems", "cpuset.mems", mems, 1024);
   return os::strdup(mems);
 }
 
@@ -269,15 +322,24 @@ char * CgroupV1Subsystem::cpu_cpuset_memory_nodes() {
  *    OSCONTAINER_ERROR for not supported
  */
 int CgroupV1Subsystem::cpu_quota() {
-  GET_CONTAINER_INFO(int, _cpu->controller(), "/cpu.cfs_quota_us",
-                     "CPU Quota is: ", "%d", "%d", quota);
-  return quota;
+  julong quota;
+  bool is_ok = _cpu->controller()->
+                  read_number("/cpu.cfs_quota_us", &quota);
+  if (!is_ok) {
+    log_trace(os, container)("CPU Quota failed: %d", OSCONTAINER_ERROR);
+    return OSCONTAINER_ERROR;
+  }
+  // cast to int since the read value might be negative
+  // and we want to avoid logging -1 as a large unsigned value.
+  int quota_int = (int)quota;
+  log_trace(os, container)("CPU Quota is: %d", quota_int);
+  return quota_int;
 }
 
 int CgroupV1Subsystem::cpu_period() {
-  GET_CONTAINER_INFO(int, _cpu->controller(), "/cpu.cfs_period_us",
-                     "CPU Period is: ", "%d", "%d", period);
-  return period;
+  julong period;
+  CONTAINER_READ_NUMBER_CHECKED(_cpu->controller(), "/cpu.cfs_period_us", "CPU Period", period);
+  return (int)period;
 }
 
 /* cpu_shares
@@ -291,19 +353,13 @@ int CgroupV1Subsystem::cpu_period() {
  *    OSCONTAINER_ERROR for not supported
  */
 int CgroupV1Subsystem::cpu_shares() {
-  GET_CONTAINER_INFO(int, _cpu->controller(), "/cpu.shares",
-                     "CPU Shares is: ", "%d", "%d", shares);
+  julong shares;
+  CONTAINER_READ_NUMBER_CHECKED(_cpu->controller(), "/cpu.shares", "CPU Shares", shares);
+  int shares_int = (int)shares;
   // Convert 1024 to no shares setup
-  if (shares == 1024) return -1;
+  if (shares_int == 1024) return -1;
 
-  return shares;
-}
-
-
-char* CgroupV1Subsystem::pids_max_val() {
-  GET_CONTAINER_INFO_CPTR(cptr, _pids, "/pids.max",
-                     "Maximum number of tasks is: %s", "%1023s", pidsmax, 1024);
-  return os::strdup(pidsmax);
+  return shares_int;
 }
 
 /* pids_max
@@ -317,8 +373,9 @@ char* CgroupV1Subsystem::pids_max_val() {
  */
 jlong CgroupV1Subsystem::pids_max() {
   if (_pids == nullptr) return OSCONTAINER_ERROR;
-  char * pidsmax_str = pids_max_val();
-  return limit_from_str(pidsmax_str);
+  jlong pids_max;
+  CONTAINER_READ_NUMBER_CHECKED_MAX(_pids, "/pids.max", "Maximum number of tasks", pids_max);
+  return pids_max;
 }
 
 /* pids_current
@@ -331,7 +388,7 @@ jlong CgroupV1Subsystem::pids_max() {
  */
 jlong CgroupV1Subsystem::pids_current() {
   if (_pids == nullptr) return OSCONTAINER_ERROR;
-  GET_CONTAINER_INFO(jlong, _pids, "/pids.current",
-                     "Current number of tasks is: ", JLONG_FORMAT, JLONG_FORMAT, pids_current);
-  return pids_current;
+  julong pids_current;
+  CONTAINER_READ_NUMBER_CHECKED(_pids, "/pids.current", "Current number of tasks", pids_current);
+  return (jlong)pids_current;
 }

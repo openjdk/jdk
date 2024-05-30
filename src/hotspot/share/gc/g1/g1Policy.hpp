@@ -44,7 +44,7 @@
 //   * choice of collection set.
 //   * when to collect.
 
-class HeapRegion;
+class G1HeapRegion;
 class G1CollectionSet;
 class G1CollectionCandidateList;
 class G1CollectionSetCandidates;
@@ -122,12 +122,12 @@ public:
 
   G1OldGenAllocationTracker* old_gen_alloc_tracker() { return &_old_gen_alloc_tracker; }
 
-  void set_region_eden(HeapRegion* hr) {
+  void set_region_eden(G1HeapRegion* hr) {
     hr->set_eden();
     hr->install_surv_rate_group(_eden_surv_rate_group);
   }
 
-  void set_region_survivor(HeapRegion* hr) {
+  void set_region_survivor(G1HeapRegion* hr) {
     assert(hr->is_survivor(), "pre-condition");
     hr->install_surv_rate_group(_survivor_surv_rate_group);
   }
@@ -145,14 +145,14 @@ private:
   double predict_base_time_ms(size_t pending_cards, size_t card_rs_length, size_t code_root_length) const;
 
   // Copy time for a region is copying live data.
-  double predict_region_copy_time_ms(HeapRegion* hr, bool for_young_only_phase) const;
+  double predict_region_copy_time_ms(G1HeapRegion* hr, bool for_young_only_phase) const;
   // Merge-scan time for a region is handling card-based remembered sets of that region
   // (as a single unit).
-  double predict_region_merge_scan_time(HeapRegion* hr, bool for_young_only_phase) const;
+  double predict_region_merge_scan_time(G1HeapRegion* hr, bool for_young_only_phase) const;
   // Code root scan time prediction for the given region.
-  double predict_region_code_root_scan_time(HeapRegion* hr, bool for_young_only_phase) const;
+  double predict_region_code_root_scan_time(G1HeapRegion* hr, bool for_young_only_phase) const;
   // Non-copy time for a region is handling remembered sets and other time.
-  double predict_region_non_copy_time_ms(HeapRegion* hr, bool for_young_only_phase) const;
+  double predict_region_non_copy_time_ms(G1HeapRegion* hr, bool for_young_only_phase) const;
 
 public:
 
@@ -163,7 +163,7 @@ public:
   double predict_eden_copy_time_ms(uint count, size_t* bytes_to_copy = nullptr) const;
   // Total time for a region is handling remembered sets (as a single unit), copying its live data
   // and other time.
-  double predict_region_total_time_ms(HeapRegion* hr, bool for_young_only_phase) const;
+  double predict_region_total_time_ms(G1HeapRegion* hr, bool for_young_only_phase) const;
 
   void cset_regions_freed() {
     bool update = should_update_surv_rate_group_predictors();
@@ -184,9 +184,10 @@ public:
     return _mmu_tracker->max_gc_time() * 1000.0;
   }
 
+  G1CollectionSetCandidates* candidates() const;
+
 private:
   G1CollectionSet* _collection_set;
-  G1CollectionSetCandidates* candidates() const;
 
   double average_time_ms(G1GCPhaseTimes::GCParPhases phase) const;
   double other_time_ms(double pause_time_ms) const;
@@ -243,11 +244,8 @@ private:
   uint calculate_young_desired_length(size_t pending_cards, size_t card_rs_length, size_t code_root_rs_length) const;
   // Limit the given desired young length to available free regions.
   uint calculate_young_target_length(uint desired_young_length) const;
-  // The GCLocker might cause us to need more regions than the target. Calculate
-  // the maximum number of regions to use in that case.
-  uint calculate_young_max_length(uint target_young_length) const;
 
-  size_t predict_bytes_to_copy(HeapRegion* hr) const;
+  size_t predict_bytes_to_copy(G1HeapRegion* hr) const;
   double predict_survivor_regions_evac_time() const;
   double predict_retained_regions_evac_time() const;
 
@@ -275,7 +273,7 @@ private:
   void record_pause(G1GCPauseType gc_type,
                     double start,
                     double end,
-                    bool evacuation_failure = false);
+                    bool allocation_failure = false);
 
   void update_gc_pause_time_ratios(G1GCPauseType gc_type, double start_sec, double end_sec);
 
@@ -314,7 +312,7 @@ public:
 
   // Record the start and end of the actual collection part of the evacuation pause.
   void record_young_collection_start();
-  void record_young_collection_end(bool concurrent_operation_is_full_mark, bool evacuation_failure);
+  void record_young_collection_end(bool concurrent_operation_is_full_mark, bool allocation_failure);
 
   // Record the start and end of a full collection.
   void record_full_collection_start();
@@ -335,18 +333,20 @@ public:
 
   // Amount of allowed waste in bytes in the collection set.
   size_t allowed_waste_in_collection_set() const;
-  // Calculate and fill in the initial and optional old gen candidate regions from
+  // Calculate and fill in the initial, optional and pinned old gen candidate regions from
   // the given candidate list and the remaining time.
   // Returns the remaining time.
   double select_candidates_from_marking(G1CollectionCandidateList* marking_list,
                                         double time_remaining_ms,
                                         G1CollectionCandidateRegionList* initial_old_regions,
-                                        G1CollectionCandidateRegionList* optional_old_regions);
+                                        G1CollectionCandidateRegionList* optional_old_regions,
+                                        G1CollectionCandidateRegionList* pinned_old_regions);
 
   void select_candidates_from_retained(G1CollectionCandidateList* retained_list,
                                        double time_remaining_ms,
                                        G1CollectionCandidateRegionList* initial_old_regions,
-                                       G1CollectionCandidateRegionList* optional_old_regions);
+                                       G1CollectionCandidateRegionList* optional_old_regions,
+                                       G1CollectionCandidateRegionList* pinned_old_regions);
 
   // Calculate the number of optional regions from the given collection set candidates,
   // the remaining time and the maximum number of these regions and return the number
@@ -383,11 +383,8 @@ public:
 
   uint young_list_desired_length() const { return Atomic::load(&_young_list_desired_length); }
   uint young_list_target_length() const { return Atomic::load(&_young_list_target_length); }
-  uint young_list_max_length() const { return Atomic::load(&_young_list_max_length); }
 
   bool should_allocate_mutator_region() const;
-
-  bool can_expand_young_list() const;
 
   bool use_adaptive_young_list_length() const;
 
@@ -403,7 +400,7 @@ public:
   void record_concurrent_refinement_stats(size_t pending_cards,
                                           size_t thread_buffer_cards);
 
-  bool should_retain_evac_failed_region(HeapRegion* r) const {
+  bool should_retain_evac_failed_region(G1HeapRegion* r) const {
     return should_retain_evac_failed_region(r->hrm_index());
   }
   bool should_retain_evac_failed_region(uint index) const;

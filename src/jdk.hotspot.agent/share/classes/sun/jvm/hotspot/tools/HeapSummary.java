@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,35 +87,38 @@ public class HeapSummary extends Tool {
       printValMB("CompressedClassSpaceSize = ", getFlagValue("CompressedClassSpaceSize", flagMap));
       printValMB("MaxMetaspaceSize         = ", getFlagValue("MaxMetaspaceSize", flagMap));
       if (heap instanceof G1CollectedHeap) {
-        printValMB("G1HeapRegionSize         = ", HeapRegion.grainBytes());
+        printValMB("G1HeapRegionSize       = ", G1HeapRegion.grainBytes());
       }
 
       System.out.println();
       System.out.println("Heap Usage:");
 
-      if (heap instanceof GenCollectedHeap) {
-         GenCollectedHeap genHeap = (GenCollectedHeap) heap;
-         for (int n = 0; n < genHeap.nGens(); n++) {
-            Generation gen = genHeap.getGen(n);
-            if (gen instanceof DefNewGeneration) {
-               System.out.println("New Generation (Eden + 1 Survivor Space):");
-               printGen(gen);
+      if (heap instanceof SerialHeap) {
+         SerialHeap sh = (SerialHeap) heap;
+         {
+           // youngGen
+           DefNewGeneration youngGen = sh.youngGen();
 
-               ContiguousSpace eden = ((DefNewGeneration)gen).eden();
-               System.out.println("Eden Space:");
-               printSpace(eden);
+           System.out.println("New Generation (Eden + 1 Survivor Space):");
+           printGen(youngGen);
 
-               ContiguousSpace from = ((DefNewGeneration)gen).from();
-               System.out.println("From Space:");
-               printSpace(from);
+           ContiguousSpace eden = youngGen.eden();
+           System.out.println("Eden Space:");
+           printSpace(eden);
 
-               ContiguousSpace to = ((DefNewGeneration)gen).to();
-               System.out.println("To Space:");
-               printSpace(to);
-            } else {
-               System.out.println(gen.name() + ":");
-               printGen(gen);
-            }
+           ContiguousSpace from = youngGen.from();
+           System.out.println("From Space:");
+           printSpace(from);
+
+           ContiguousSpace to = youngGen.to();
+           System.out.println("To Space:");
+           printSpace(to);
+         }
+         {
+           // oldGen
+           TenuredGeneration oldGen = sh.oldGen();
+           System.out.println(oldGen.name() + ":");
+           printGen(oldGen);
          }
       } else if (heap instanceof G1CollectedHeap) {
           printG1HeapSummary((G1CollectedHeap)heap);

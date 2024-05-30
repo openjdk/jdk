@@ -91,7 +91,7 @@ public class CheckForProperDetailStackTrace {
         // If modules in the system image have been archived in CDS, they will not be
         // created again at run time. Explicitly use an external module to make sure
         // we have a runtime-defined ModuleEntry
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:NativeMemoryTracking=detail",
             "-XX:+PrintNMTStatistics",

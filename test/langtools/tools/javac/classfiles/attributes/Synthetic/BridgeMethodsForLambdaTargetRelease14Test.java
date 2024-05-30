@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,17 +29,14 @@
  *          compiling with --release 14.
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- *          java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
  * @library /tools/lib /tools/javac/lib ../lib
- * @build toolbox.ToolBox InMemoryFileManager TestResult TestBase
- * @build SyntheticTestDriver ExpectedClass ExpectedClasses
+ * @build toolbox.ToolBox InMemoryFileManager
+ *        ExpectedClass ExpectedClasses
+ * @compile --enable-preview --source ${jdk.version} --target ${jdk.version}
+ *          SyntheticTestDriver.java
+ *          ../lib/TestResult.java ../lib/TestBase.java
  * @compile --source 14 -target 14 -XDdeduplicateLambdas=false BridgeMethodsForLambdaTargetRelease14Test.java
- * @run main SyntheticTestDriver BridgeMethodsForLambdaTargetRelease14Test
+ * @run main/othervm --enable-preview SyntheticTestDriver BridgeMethodsForLambdaTargetRelease14Test
  */
 
 import java.util.Comparator;

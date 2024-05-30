@@ -25,19 +25,15 @@
  * @test
  * @bug 7003595
  * @summary IncompatibleClassChangeError with unreferenced local class with subclass
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
+ * @enablePreview
+ * @modules java.base/jdk.internal.classfile.impl
  *          jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
  */
 
 import com.sun.source.util.JavacTask;
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.*;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
 import com.sun.tools.javac.api.JavacTool;
 
 import java.io.File;
@@ -162,12 +158,12 @@ public class T7003595 {
             String filename = cks[i].getClassfileName(cnames, cks, i);
             File compiledTest = new File(filename + ".class");
             try {
-                ClassModel cf = Classfile.of().parse(compiledTest.toPath());
+                ClassModel cf = ClassFile.of().parse(compiledTest.toPath());
                 if (cf == null) {
                     throw new Error("Classfile not found: " + filename);
                 }
 
-                InnerClassesAttribute innerClasses = cf.findAttribute(Attributes.INNER_CLASSES).orElse(null);
+                InnerClassesAttribute innerClasses = cf.findAttribute(Attributes.innerClasses()).orElse(null);
 
                 ArrayList<String> foundInnerSig = new ArrayList<>();
                 if (innerClasses != null) {

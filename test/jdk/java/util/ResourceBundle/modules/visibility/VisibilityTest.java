@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 8137317 8139238 8210408
  * @summary Visibility tests for ResourceBundle.getBundle with and without
  *          an unnamed module argument.
+ * @requires vm.flagless
  * @library /test/lib
  *          ..
  * @build jdk.test.lib.JDKToolLauncher
@@ -39,10 +40,12 @@
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.stream.Stream;
 
 import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.Utils;
 import jdk.test.lib.process.ProcessTools;
+
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -328,11 +331,10 @@ public class VisibilityTest {
     }
 
     private int runCmd(List<String> argsList) throws Throwable {
-        JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("java");
-        launcher.addToolArg("-ea")
-                .addToolArg("-esa");
-        argsList.forEach(launcher::addToolArg);
-
-        return ProcessTools.executeCommand(launcher.getCommand()).getExitValue();
+        // Build process (without VM flags)
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+                Stream.concat(Stream.of("-ea", "-esa"), argsList.stream()).toList());
+        // Evaluate process status
+        return ProcessTools.executeCommand(pb).getExitValue();
     }
 }

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -16,14 +16,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ang">gammalengelsk</language>
 			<language type="asa">asu (Tanzania)</language>
 			<language type="bas">basa</language>
-			<language type="be">kviterussisk</language>
-			<language type="bez">bena (Tanzania)</language>
 			<language type="bss">bakossi</language>
 			<language type="car">carib</language>
 			<language type="chg">tsjagataisk</language>
-			<language type="chr">cherokee</language>
 			<language type="ckb">sorani</language>
-			<language type="ckb" alt="variant">kurdisk (sorani)</language>
 			<language type="crj">sørleg aust-cree</language>
 			<language type="crl">nordleg aust-cree</language>
 			<language type="crs">seselwa (fransk-kreolsk)</language>
@@ -38,25 +34,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="fro">gammalfransk</language>
 			<language type="frs">austfrisisk</language>
 			<language type="fur">friulisk</language>
-			<language type="gil">gilbertese</language>
 			<language type="gmh">mellomhøgtysk</language>
 			<language type="goh">gammalhøgtysk</language>
 			<language type="grc">gammalgresk</language>
 			<language type="gv">manx</language>
-			<language type="gwi">gwichin</language>
 			<language type="hax">sørleg haida</language>
 			<language type="hsb">høgsorbisk</language>
 			<language type="ikt">vestleg kanadisk inuktitut</language>
 			<language type="kl">grønlandsk (kalaallisut)</language>
-			<language type="krc">karachay-balkar</language>
+			<language type="krc">karatsjaiisk-balkarsk</language>
 			<language type="kum">kumyk</language>
 			<language type="lad">ladino</language>
 			<language type="lez">lezghian</language>
-			<language type="li">limburgisk</language>
 			<language type="lrc">nord-lurisk</language>
 			<language type="lus">lushai</language>
 			<language type="luy">olulujia</language>
-			<language type="mdf">moksha</language>
 			<language type="mfe">morisyen</language>
 			<language type="mg">madagassisk</language>
 			<language type="mul">fleire språk</language>
@@ -78,7 +70,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="quc">k’iche</language>
 			<language type="ro_MD">moldavisk</language>
 			<language type="rup">arumensk</language>
-			<language type="rw">kinjarwanda</language>
 			<language type="sc">sardinsk</language>
 			<language type="sga">gammalirsk</language>
 			<language type="slh">sørleg lushootseed</language>
@@ -104,7 +95,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="zh_Hans">forenkla kinesisk</language>
 			<language type="zh_Hans" alt="long">forenkla mandarinkinesisk</language>
 			<language type="zxx">utan språkleg innhald</language>
-			<language type="zza">zaza</language>
 		</languages>
 		<scripts>
 			<script type="Armi">armisk</script>
@@ -118,7 +108,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Hans">forenkla</script>
 			<script type="Hans" alt="stand-alone">forenkla han</script>
 			<script type="Hmng">pahawk hmong</script>
-			<script type="Hrkt">japansk stavingsskrifter</script>
+			<script type="Hrkt">japanske stavingsskrifter</script>
 			<script type="Hung">gammalungarsk</script>
 			<script type="Ital">gammalitalisk</script>
 			<script type="Latf">latinsk (frakturvariant)</script>
@@ -154,12 +144,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="151">Aust-Europa</territory>
 			<territory type="AE">Dei sameinte arabiske emirata</territory>
 			<territory type="AT">Austerrike</territory>
-			<territory type="BY">Kviterussland</territory>
 			<territory type="CC">Kokosøyane</territory>
 			<territory type="CD">Kongo-Kinshasa</territory>
 			<territory type="CF">Den sentralafrikanske republikken</territory>
 			<territory type="CI">Elfenbeinskysten</territory>
-			<territory type="CI" alt="variant">Elfenbeinskysten</territory>
 			<territory type="CK">Cookøyane</territory>
 			<territory type="DO">Den dominikanske republikken</territory>
 			<territory type="EU">Den europeiske unionen</territory>
@@ -170,6 +158,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="GS">Sør-Georgia og Sør-Sandwichøyane</territory>
 			<territory type="HM">Heardøya og McDonaldøyane</territory>
 			<territory type="IC">Kanariøyane</territory>
+			<territory type="IO" alt="chagos">Chagosøyane</territory>
 			<territory type="KM">Komorane</territory>
 			<territory type="KY">Caymanøyane</territory>
 			<territory type="LU">Luxembourg</territory>
@@ -187,7 +176,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="TL">Aust-Timor</territory>
 			<territory type="TL" alt="variant">Aust-Timor</territory>
 			<territory type="UM">USAs ytre småøyar</territory>
-			<territory type="UN">SN</territory>
+			<territory type="UN">Sameinte nasjonar</territory>
 			<territory type="UN" alt="short">SN</territory>
 			<territory type="VC">St. Vincent og Grenadinane</territory>
 			<territory type="VG">Dei britiske Jomfruøyane</territory>
@@ -202,7 +191,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<variant type="AREVMDA">vestarmensk</variant>
 			<variant type="BAKU1926">samla tyrkisk-latinsk alfabet</variant>
 			<variant type="FONIPA">det internasjonale fonetiske alfabetet (IPA)</variant>
-			<variant type="FONUPA">det uralske fonetiske alfabetet UPA</variant>
+			<variant type="FONUPA">det uralske fonetiske alfabetet (UPA)</variant>
 			<variant type="LIPAW">resian, lipovazdialekt</variant>
 			<variant type="REVISED">revidert rettskriving</variant>
 			<variant type="SAAHO">saaho-dialekt</variant>
@@ -222,7 +211,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<key type="numbers">tal</key>
 		</keys>
 		<types>
-			<type key="calendar" type="islamic-civil">islamsk sivil kalender</type>
 			<type key="cf" type="account">valutaformat for rekneskapsføring</type>
 			<type key="collation" type="big5han">tradisjonell kinesisk sortering</type>
 			<type key="collation" type="ducet">standard Unicode-sorteringsrekkjefølgje</type>
@@ -231,10 +219,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="collation" type="standard">standard sorteringsrekkjefølgje</type>
 			<type key="d0" type="fwidth">full breidd</type>
 			<type key="d0" type="hwidth">halv breidd</type>
-			<type key="hc" type="h11">12-timesystem (0–11)</type>
-			<type key="hc" type="h12">12-timesystem (1–12)</type>
-			<type key="hc" type="h23">24-timesystem (0–23)</type>
-			<type key="hc" type="h24">24-timesystem (1–24)</type>
+			<type key="hc" type="h11">12-timarssystem (0–11)</type>
+			<type key="hc" type="h12">12-timarssystem (1–12)</type>
+			<type key="hc" type="h23">24-timarssystem (0–23)</type>
+			<type key="hc" type="h24">24-timarssystem (1–24)</type>
 			<type key="lb" type="loose">laus lineskiftstil</type>
 			<type key="lb" type="normal">normal lineskiftstil</type>
 			<type key="lb" type="strict">streng lineskiftstil</type>
@@ -265,6 +253,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="numbers" type="laoo">laotiske siffer</type>
 			<type key="numbers" type="latn">vestlege siffer</type>
 			<type key="numbers" type="mlym">malayalam-siffer</type>
+			<type key="numbers" type="mtei">meetei mayek-siffer</type>
 			<type key="numbers" type="mymr">burmesiske siffer</type>
 			<type key="numbers" type="native">språkspesifikke siffer</type>
 			<type key="numbers" type="orya">odia-siffer</type>
@@ -277,23 +266,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="numbers" type="tibt">tibetanske siffer</type>
 			<type key="numbers" type="vaii">vai-siffer</type>
 		</types>
+		<measurementSystemNames>
+			<measurementSystemName type="UK">britisk</measurementSystemName>
+		</measurementSystemNames>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters type="auxiliary">[á ǎ č ç đ è ê ń ñ ŋ š ŧ ü ž ä ö]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[áǎ čç đ èê ńñ ŋ š ŧ ü ž ä ö]</exemplarCharacters>
 	</characters>
 	<dates>
 		<calendars>
 			<calendar type="generic">
 				<dateTimeFormats>
 					<intervalFormats>
-						<intervalFormatItem id="Md">
-							<greatestDifference id="d">dd.MM.–dd.MM.</greatestDifference>
-							<greatestDifference id="M">dd.MM.–dd.MM.</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="MEd">
-							<greatestDifference id="d">E dd.MM.–E dd.MM.</greatestDifference>
-							<greatestDifference id="M">E dd.MM.–E dd.MM.</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
 							<greatestDifference id="d">E d.–E d. MMM</greatestDifference>
 						</intervalFormatItem>
@@ -358,35 +342,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="fri">fre</day>
 							<day type="sat">lau</day>
 						</dayWidth>
-						<dayWidth type="short">
-							<day type="sun">sø.</day>
-							<day type="mon">må.</day>
-							<day type="tue">ty.</day>
-							<day type="wed">on.</day>
-							<day type="thu">to.</day>
-							<day type="fri">fr.</day>
-							<day type="sat">la.</day>
-						</dayWidth>
-						<dayWidth type="wide">
-							<day type="sun">søndag</day>
-							<day type="mon">måndag</day>
-							<day type="tue">tysdag</day>
-							<day type="wed">onsdag</day>
-							<day type="thu">torsdag</day>
-							<day type="fri">fredag</day>
-							<day type="sat">laurdag</day>
-						</dayWidth>
 					</dayContext>
 				</days>
 				<quarters>
-					<quarterContext type="format">
-						<quarterWidth type="narrow">
-							<quarter type="1">1</quarter>
-							<quarter type="2">2</quarter>
-							<quarter type="3">3</quarter>
-							<quarter type="4">4</quarter>
-						</quarterWidth>
-					</quarterContext>
 					<quarterContext type="stand-alone">
 						<quarterWidth type="narrow">
 							<quarter type="1">1</quarter>
@@ -412,10 +370,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dayPeriodWidth>
 					</dayPeriodContext>
 					<dayPeriodContext type="stand-alone">
-						<dayPeriodWidth type="narrow">
-							<dayPeriod type="am">f.m.</dayPeriod>
-							<dayPeriod type="pm">e.m.</dayPeriod>
-						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
 							<dayPeriod type="morning1">morgon</dayPeriod>
 							<dayPeriod type="morning2">formiddag</dayPeriod>
@@ -525,12 +479,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other">for {0} år sidan</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="year-short">
-				<relativeTime type="past">
-					<relativeTimePattern count="one">for {0} år sidan</relativeTimePattern>
-					<relativeTimePattern count="other">for {0} år sidan</relativeTimePattern>
-				</relativeTime>
-			</field>
 			<field type="year-narrow">
 				<relativeTime type="future">
 					<relativeTimePattern count="one">om {0} år</relativeTimePattern>
@@ -591,9 +539,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</relativeTime>
 			</field>
 			<field type="month-narrow">
-				<relative type="-1">førre md.</relative>
-				<relative type="0">denne md.</relative>
-				<relative type="1">neste md.</relative>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">–{0} md.</relativeTimePattern>
 					<relativeTimePattern count="other">–{0} md.</relativeTimePattern>
@@ -615,10 +560,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relativePeriod>veka som inneheld {0}</relativePeriod>
 			</field>
 			<field type="week-short">
-				<displayName>veke</displayName>
-				<relative type="-1">førre veke</relative>
-				<relative type="0">denne veka</relative>
-				<relative type="1">neste veke</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">om {0} v.</relativeTimePattern>
 					<relativeTimePattern count="other">om {0} v.</relativeTimePattern>
@@ -631,9 +572,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="week-narrow">
 				<displayName>v.</displayName>
-				<relative type="-1">førre veke</relative>
-				<relative type="0">denne veka</relative>
-				<relative type="1">neste veke</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">+{0} v.</relativeTimePattern>
 					<relativeTimePattern count="other">+{0} v.</relativeTimePattern>
@@ -665,27 +603,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</relativeTime>
 			</field>
 			<field type="day-short">
-				<relative type="-1">i går</relative>
-				<relative type="0">i dag</relative>
-				<relative type="1">i morgon</relative>
+				<relative type="-2">i forgårs</relative>
+				<relative type="2">i overmorgen</relative>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">for {0} d. sidan</relativeTimePattern>
 					<relativeTimePattern count="other">for {0} d. sidan</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="day-narrow">
-				<relative type="-1">i går</relative>
-				<relative type="0">i dag</relative>
-				<relative type="1">i morgon</relative>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">–{0} d.</relativeTimePattern>
 					<relativeTimePattern count="other">–{0} d.</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="weekday">
-				<displayName>vekedag</displayName>
-			</field>
-			<field type="weekday-short">
 				<displayName>vekedag</displayName>
 			</field>
 			<field type="weekday-narrow">
@@ -1080,9 +1011,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="Asia/Ashgabat">
 				<exemplarCity>Asjgabat</exemplarCity>
-			</zone>
-			<zone type="Europe/Kiev">
-				<exemplarCity>Kyiv</exemplarCity>
 			</zone>
 			<metazone type="Africa_Eastern">
 				<long>
@@ -1494,13 +1422,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>mauritisk sommartid</daylight>
 				</long>
 			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic>tidssone for nordvestlege Mexico</generic>
-					<standard>normaltid for nordvestlege Mexico</standard>
-					<daylight>sommartid for nordvestlege Mexico</daylight>
-				</long>
-			</metazone>
 			<metazone type="Mexico_Pacific">
 				<long>
 					<generic>tidssone for den meksikanske stillehavskysten</generic>
@@ -1533,7 +1454,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<long>
 					<generic>nyzealandsk tid</generic>
 					<standard>nyzealandsk normaltid</standard>
-					<daylight>nyzealandsk sumartid</daylight>
+					<daylight>nyzealandsk sommartid</daylight>
 				</long>
 			</metazone>
 			<metazone type="Newfoundland">
@@ -1716,31 +1637,27 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<decimalFormat>
 					<pattern type="1000000" count="one">0 million</pattern>
 					<pattern type="1000000" count="other">0 millionar</pattern>
-					<pattern type="10000000" count="one">00 million</pattern>
+					<pattern type="10000000" count="one">00 millionar</pattern>
 					<pattern type="10000000" count="other">00 millionar</pattern>
-					<pattern type="100000000" count="one">000 million</pattern>
+					<pattern type="100000000" count="one">000 millionar</pattern>
 					<pattern type="100000000" count="other">000 millionar</pattern>
 					<pattern type="1000000000" count="one">0 milliard</pattern>
 					<pattern type="1000000000" count="other">0 milliardar</pattern>
-					<pattern type="10000000000" count="one">00 milliard</pattern>
+					<pattern type="10000000000" count="one">00 milliardar</pattern>
 					<pattern type="10000000000" count="other">00 milliardar</pattern>
-					<pattern type="100000000000" count="one">000 milliard</pattern>
+					<pattern type="100000000000" count="one">000 milliardar</pattern>
 					<pattern type="100000000000" count="other">000 milliardar</pattern>
 					<pattern type="1000000000000" count="one">0 billion</pattern>
 					<pattern type="1000000000000" count="other">0 billionar</pattern>
-					<pattern type="10000000000000" count="one">00 billion</pattern>
+					<pattern type="10000000000000" count="one">00 billionar</pattern>
 					<pattern type="10000000000000" count="other">00 billionar</pattern>
-					<pattern type="100000000000000" count="one">000 billion</pattern>
+					<pattern type="100000000000000" count="one">000 billionar</pattern>
 					<pattern type="100000000000000" count="other">000 billionar</pattern>
 				</decimalFormat>
 			</decimalFormatLength>
 		</decimalFormats>
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
-				<currencyFormat type="standard">
-					<pattern>#,##0.00 ¤</pattern>
-					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
-				</currencyFormat>
 				<currencyFormat type="accounting">
 					<pattern>#,##0.00 ¤</pattern>
 					<pattern alt="noCurrency">#,##0.00</pattern>
@@ -1752,7 +1669,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>andorranske peseta</displayName>
 			</currency>
 			<currency type="AFA">
-				<displayName>afghani (1927–2002)</displayName>
+				<displayName>afghanske afghani (1927–2002)</displayName>
 			</currency>
 			<currency type="AOK">
 				<displayName>angolske kwanza (1977–1990)</displayName>
@@ -1772,11 +1689,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="ATS">
 				<displayName>austerrikske schilling</displayName>
 			</currency>
-			<currency type="AZM">
-				<displayName>aserbaijanske manat</displayName>
+			<currency type="AWG">
+				<displayName>arubiske florinar</displayName>
 			</currency>
 			<currency type="BAD">
-				<displayName>bosnisk-hercegovinske dinarar</displayName>
+				<displayName>bosnisk-hercegovinske dinarar (1992–1994)</displayName>
+				<displayName count="one">bosnisk-hercegovinsk dinar (1992–1994)</displayName>
+				<displayName count="other">bosnisk-hercegovinske dinarer (1992–1994)</displayName>
+			</currency>
+			<currency type="BAN">
+				<displayName>nye bosnisk-hercegovinske dinarar (1994–1997)</displayName>
 			</currency>
 			<currency type="BEC">
 				<displayName>belgiske franc (konvertibel)</displayName>
@@ -1789,8 +1711,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="BHD">
 				<displayName>bahrainske dinarar</displayName>
-				<displayName count="one">bahrainsk dinar</displayName>
-				<displayName count="other">bahrainske dinarar</displayName>
 			</currency>
 			<currency type="BOP">
 				<displayName>boliviske peso</displayName>
@@ -1806,35 +1726,37 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="BRN">
 				<displayName>brasilianske cruzado novo</displayName>
+				<displayName count="one">brasiliansk cruzado novo (1989–1990)</displayName>
+				<displayName count="other">brasilianske cruzado novo (1989–1990)</displayName>
 			</currency>
 			<currency type="BRR">
 				<displayName>brasilianske cruzeiro</displayName>
+				<displayName count="one">brasiliansk cruzeiro (1993–1994)</displayName>
+				<displayName count="other">brasilianske cruzeiro (1993–1994)</displayName>
 			</currency>
 			<currency type="BUK">
 				<displayName>burmesisk kyat</displayName>
 			</currency>
 			<currency type="BYB">
-				<displayName>kviterussiske nye rublar (1994–1999)</displayName>
-				<displayName count="one">kviterussisk ny rubel (BYB)</displayName>
-				<displayName count="other">kviterussiske nye rublar (BYB)</displayName>
+				<displayName>belarusiske nye rublar (1994–1999)</displayName>
+				<displayName count="one">belarusisk ny rubel (BYB)</displayName>
+				<displayName count="other">belarusiske nye rublar (BYB)</displayName>
 			</currency>
 			<currency type="BYN">
-				<displayName>nye kviterussiske rublar</displayName>
-				<displayName count="one">ny kviterussisk rubel</displayName>
-				<displayName count="other">nye kviterussiske rublar</displayName>
+				<displayName>nye belarusiske rublar</displayName>
+				<displayName count="one">ny belarusisk rubel</displayName>
+				<displayName count="other">nye belarusiske rublar</displayName>
 			</currency>
 			<currency type="BYR">
-				<displayName>kviterussiske rublar (2000–2016)</displayName>
-				<displayName count="one">kviterussisk rubel (2000–2016)</displayName>
-				<displayName count="other">kviterussiske rublar (2000–2016)</displayName>
+				<displayName>belarusiske rublar (2000–2016)</displayName>
+				<displayName count="one">belarusisk rubel (2000–2016)</displayName>
+				<displayName count="other">belarusiske rublar (2000–2016)</displayName>
 			</currency>
 			<currency type="CHE">
-				<displayName count="one">WIR euro</displayName>
-				<displayName count="other">WIR euro</displayName>
+				<displayName>WIR-euro</displayName>
 			</currency>
 			<currency type="CHW">
-				<displayName count="one">WIR franc</displayName>
-				<displayName count="other">WIR franc</displayName>
+				<displayName>WIR-franc</displayName>
 			</currency>
 			<currency type="COP">
 				<displayName>kolombianske pesos</displayName>
@@ -1858,8 +1780,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="CVE">
 				<displayName>kappverdiske escudo</displayName>
-				<displayName count="one">kappverdisk escudo</displayName>
-				<displayName count="other">kappverdiske escudo</displayName>
 			</currency>
 			<currency type="DDM">
 				<displayName>austtyske mark</displayName>
@@ -1868,8 +1788,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="DZD">
 				<displayName>algeriske dinarar</displayName>
-				<displayName count="one">algerisk dinar</displayName>
-				<displayName count="other">algeriske dinarar</displayName>
 			</currency>
 			<currency type="EEK">
 				<displayName count="one">estisk kroon</displayName>
@@ -1880,8 +1798,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="GHC">
 				<displayName>ghanesiske cedi (1979–2007)</displayName>
-				<displayName count="one">ghanesisk cedi (GHC)</displayName>
-				<displayName count="other">ghanesiske cedi (GHC)</displayName>
 			</currency>
 			<currency type="GQE">
 				<displayName count="one">ekvatorialguineansk ekwele</displayName>
@@ -1889,9 +1805,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="GRD">
 				<displayName>greske drakme</displayName>
+				<displayName count="one">gresk drakme</displayName>
+				<displayName count="other">greske drakmar</displayName>
 			</currency>
 			<currency type="GWP">
 				<displayName>Guinea-Bissau-peso</displayName>
+				<displayName count="one">Guinea-Bissau-peso</displayName>
 			</currency>
 			<currency type="HRD">
 				<displayName>kroatiske dinar</displayName>
@@ -1900,23 +1819,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="HUF">
 				<displayName>ungarske forintar</displayName>
-				<displayName count="one">ungarsk forint</displayName>
-				<displayName count="other">ungarske forintar</displayName>
 			</currency>
 			<currency type="IDR">
-				<displayName>indonesiske rupiar</displayName>
-				<displayName count="one">indonesisk rupi</displayName>
-				<displayName count="other">indonesiske rupiar</displayName>
+				<displayName>indonesiske rupiahar</displayName>
+				<displayName count="one">indonesisk rupiah</displayName>
+				<displayName count="other">indonesiske rupiahar</displayName>
 			</currency>
 			<currency type="ILS">
 				<displayName>nye israelske sheklar</displayName>
-				<displayName count="one">ny israelsk shekel</displayName>
-				<displayName count="other">nye israelske sheklar</displayName>
 			</currency>
 			<currency type="INR">
 				<displayName>indiske rupiar</displayName>
-				<displayName count="one">indisk rupi</displayName>
-				<displayName count="other">indiske rupiar</displayName>
 			</currency>
 			<currency type="IQD">
 				<displayName>irakiske dinarar</displayName>
@@ -1925,23 +1838,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="IRR">
 				<displayName>iranske rial</displayName>
-				<displayName count="one">iransk rial</displayName>
-				<displayName count="other">iranske rial</displayName>
 			</currency>
 			<currency type="JOD">
 				<displayName>jordanske dinarar</displayName>
-				<displayName count="one">jordansk dinar</displayName>
-				<displayName count="other">jordanske dinarar</displayName>
 			</currency>
 			<currency type="KWD">
 				<displayName>kuwaitiske dinarar</displayName>
-				<displayName count="one">kuwaitisk dinar</displayName>
-				<displayName count="other">kuwaitiske dinarar</displayName>
 			</currency>
 			<currency type="LKR">
 				<displayName>srilankiske rupiar</displayName>
-				<displayName count="one">srilankisk rupi</displayName>
-				<displayName count="other">srilankiske rupiar</displayName>
 			</currency>
 			<currency type="LTL">
 				<displayName>litauiske lita</displayName>
@@ -1961,13 +1866,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="LVR">
 				<displayName>latviske rublar</displayName>
-				<displayName count="one">latvisk rubel</displayName>
-				<displayName count="other">latviske rublar</displayName>
 			</currency>
 			<currency type="LYD">
 				<displayName>libyske dinarar</displayName>
-				<displayName count="one">libysk dinar</displayName>
-				<displayName count="other">libyske dinarar</displayName>
 			</currency>
 			<currency type="MDL">
 				<displayName>moldovske leuar</displayName>
@@ -1976,16 +1877,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="MKD">
 				<displayName>makedonske denarar</displayName>
-				<displayName count="one">makedonsk denar</displayName>
-				<displayName count="other">makedonske denarar</displayName>
 			</currency>
-			<currency type="MRU">
-				<symbol>MRU</symbol>
+			<currency type="MKN">
+				<displayName>makedonske denarar (1992–1993)</displayName>
 			</currency>
 			<currency type="MUR">
 				<displayName>mauritiske rupiar</displayName>
-				<displayName count="one">mauritisk rupi</displayName>
-				<displayName count="other">mauritiske rupiar</displayName>
+			</currency>
+			<currency type="MVP">
+				<displayName>maldiviske rupiar</displayName>
 			</currency>
 			<currency type="MXP">
 				<displayName>meksikanske sølvpeso (1861–1992)</displayName>
@@ -2003,8 +1903,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="NPR">
 				<displayName>nepalske rupiar</displayName>
-				<displayName count="one">nepalsk rupi</displayName>
-				<displayName count="other">nepalske rupiar</displayName>
 			</currency>
 			<currency type="NZD">
 				<displayName>nyzealandske dollar</displayName>
@@ -2013,13 +1911,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="OMR">
 				<displayName>omanske rial</displayName>
-				<displayName count="one">omansk rial</displayName>
-				<displayName count="other">omanske rial</displayName>
 			</currency>
 			<currency type="PKR">
 				<displayName>pakistanske rupiar</displayName>
-				<displayName count="one">pakistansk rupi</displayName>
-				<displayName count="other">pakistanske rupiar</displayName>
 			</currency>
 			<currency type="PLZ">
 				<displayName count="one">polsk zloty (PLZ)</displayName>
@@ -2032,8 +1926,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="QAR">
 				<displayName>qatarske rial</displayName>
-				<displayName count="one">qatarsk rial</displayName>
-				<displayName count="other">qatarske rial</displayName>
 			</currency>
 			<currency type="ROL">
 				<displayName>gamle rumenske leu</displayName>
@@ -2048,18 +1940,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="RSD">
 				<displayName>serbiske dinarar</displayName>
-				<displayName count="one">serbisk dinar</displayName>
-				<displayName count="other">serbiske dinarar</displayName>
 			</currency>
 			<currency type="RUB">
 				<displayName>russiske rublar</displayName>
-				<displayName count="one">russisk rubel</displayName>
-				<displayName count="other">russiske rublar</displayName>
 			</currency>
 			<currency type="RUR">
 				<displayName>russiske rublar (1991–1998)</displayName>
-				<displayName count="one">russisk rubel (RUR)</displayName>
-				<displayName count="other">russiske rublar (RUR)</displayName>
+				<displayName count="one">russisk rubel (1991–1998)</displayName>
+				<displayName count="other">russiske rublar (1991–1998)</displayName>
 			</currency>
 			<currency type="SAR">
 				<displayName>saudiarabiske rial</displayName>
@@ -2068,8 +1956,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="SCR">
 				<displayName>seychelliske rupiar</displayName>
-				<displayName count="one">seychellisk rupi</displayName>
-				<displayName count="other">seychelliske rupiar</displayName>
 			</currency>
 			<currency type="SDD">
 				<displayName>gamle sudanske dinarer</displayName>
@@ -2081,8 +1967,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="one">gammalt sudansk pund</displayName>
 				<displayName count="other">gamle sudanske pund</displayName>
 			</currency>
-			<currency type="STN">
-				<symbol alt="narrow">Db</symbol>
+			<currency type="SLE">
+				<displayName>sierraleonske leonar</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>sierraleonske leonar (1964—2022)</displayName>
 			</currency>
 			<currency type="SUR">
 				<displayName>sovjetiske rublar</displayName>
@@ -2099,25 +1988,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="one">tadsjikisk rubel</displayName>
 				<displayName count="other">tadsjikiske rublar</displayName>
 			</currency>
-			<currency type="TMM">
-				<displayName>turkmensk manat (1993–2009)</displayName>
-			</currency>
 			<currency type="TND">
 				<displayName>tunisiske dinarar</displayName>
-				<displayName count="one">tunisisk dinar</displayName>
-				<displayName count="other">tunisiske dinarar</displayName>
 			</currency>
 			<currency type="TRL">
 				<displayName>gamle tyrkiske lire</displayName>
 				<displayName count="one">gammal tyrkisk lire</displayName>
 				<displayName count="other">gamle tyrkiske lire</displayName>
 			</currency>
+			<currency type="TRY">
+				<displayName>tyrkiske lira</displayName>
+				<displayName count="one">tyrkisk lira</displayName>
+				<displayName count="other">tyrkiske lira</displayName>
+			</currency>
 			<currency type="TWD">
 				<symbol alt="narrow">$</symbol>
-			</currency>
-			<currency type="UGS">
-				<displayName count="one">ugandisk shilling (UGS)</displayName>
-				<displayName count="other">ugandiske shilling (UGS)</displayName>
 			</currency>
 			<currency type="USS">
 				<displayName>amerikanske dollar (same dag)</displayName>
@@ -2147,14 +2032,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>vanuatuiske vatu</displayName>
 				<displayName count="one">vanuatuisk vatu</displayName>
 				<displayName count="other">vanuatuiske vatu</displayName>
-			</currency>
-			<currency type="XAG">
-				<displayName count="one">sølv</displayName>
-				<displayName count="other">sølv</displayName>
-			</currency>
-			<currency type="XAU">
-				<displayName count="one">gull</displayName>
-				<displayName count="other">gull</displayName>
 			</currency>
 			<currency type="XBA">
 				<displayName>europeiske samansette einingar</displayName>
@@ -2195,14 +2072,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="one">palladium</displayName>
 				<displayName count="other">palladium</displayName>
 			</currency>
-			<currency type="XPT">
-				<displayName count="one">platina</displayName>
-				<displayName count="other">platina</displayName>
-			</currency>
-			<currency type="XRE">
-				<displayName count="one">RINET-fond</displayName>
-				<displayName count="other">RINET-fond</displayName>
-			</currency>
 			<currency type="XTS">
 				<displayName count="one">testvalutakode</displayName>
 				<displayName count="other">testvalutakode</displayName>
@@ -2219,8 +2088,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="YER">
 				<displayName>jemenittiske rial</displayName>
-				<displayName count="one">jemenittisk rial</displayName>
-				<displayName count="other">jemenittiske rial</displayName>
 			</currency>
 			<currency type="YUD">
 				<displayName>jugoslaviske dinarar (hard)</displayName>
@@ -2249,10 +2116,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="ZWD">
 				<displayName>zimbabwisk dollar</displayName>
 			</currency>
-			<currency type="ZWL">
-				<displayName count="one" draft="unconfirmed">Zimbabwe-dollar (2009)</displayName>
-				<displayName count="other" draft="unconfirmed">Zimbabwe-dollar (2009)</displayName>
-			</currency>
 		</currencies>
 		<minimalPairs>
 			<pluralMinimalPairs count="one">{0} dag</pluralMinimalPairs>
@@ -2265,9 +2128,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</numbers>
 	<units>
 		<unitLength type="long">
-			<compoundUnit type="times">
-				<compoundUnitPattern>{0}{1}</compoundUnitPattern>
-			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<gender>feminine</gender>
 				<unitPattern count="one">{0} g-kraft</unitPattern>
@@ -2290,14 +2150,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="genitive">{0} omdreiingars</unitPattern>
 			</unit>
 			<unit type="angle-radian">
-				<displayName>radianar</displayName>
 				<unitPattern count="one">{0} radian</unitPattern>
 				<unitPattern count="one" case="genitive">{0} radians</unitPattern>
 				<unitPattern count="other">{0} radianar</unitPattern>
 				<unitPattern count="other" case="genitive">{0} radianars</unitPattern>
 			</unit>
 			<unit type="angle-arc-minute">
-				<displayName>bogeminutt</displayName>
 				<unitPattern count="one">{0} bogeminutt</unitPattern>
 				<unitPattern count="one" case="genitive">{0} bogeminutts</unitPattern>
 				<unitPattern count="other">{0} bogeminutt</unitPattern>
@@ -2334,7 +2192,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="concentr-permillion">
 				<displayName>delar per million</displayName>
-				<unitPattern count="one">{0} del per million</unitPattern>
+				<unitPattern count="one">{0} milliondel</unitPattern>
 				<unitPattern count="one" case="genitive">{0} del per millions</unitPattern>
 				<unitPattern count="other">{0} milliondelar</unitPattern>
 				<unitPattern count="other" case="genitive">{0} delar per millions</unitPattern>
@@ -2359,7 +2217,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="genitive">{0} hundreårs</unitPattern>
 			</unit>
 			<unit type="duration-month">
-				<displayName>månadar</displayName>
 				<unitPattern count="one">{0} månad</unitPattern>
 				<unitPattern count="one" case="genitive">{0} månads</unitPattern>
 				<unitPattern count="other">{0} månadar</unitPattern>
@@ -2368,7 +2225,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="duration-week">
 				<gender>feminine</gender>
-				<displayName>veker</displayName>
 				<unitPattern count="one">{0} veke</unitPattern>
 				<unitPattern count="one" case="genitive">{0} vekes</unitPattern>
 				<unitPattern count="other">{0} veker</unitPattern>
@@ -2376,7 +2232,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<perUnitPattern>{0} per veke</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
-				<displayName>timar</displayName>
 				<unitPattern count="one">{0} time</unitPattern>
 				<unitPattern count="one" case="genitive">{0} times</unitPattern>
 				<unitPattern count="other">{0} timar</unitPattern>
@@ -2459,19 +2314,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} British thermal units</unitPattern>
 			</unit>
 			<unit type="force-pound-force">
-				<displayName>poundforce</displayName>
 				<unitPattern count="one">{0} poundforce</unitPattern>
 				<unitPattern count="other">{0} poundforce</unitPattern>
 			</unit>
 			<unit type="graphics-pixel">
-				<displayName>pikslar</displayName>
 				<unitPattern count="one">{0} piksel</unitPattern>
 				<unitPattern count="one" case="genitive">{0} piksels</unitPattern>
 				<unitPattern count="other">{0} pikslar</unitPattern>
 				<unitPattern count="other" case="genitive">{0} pikslars</unitPattern>
 			</unit>
 			<unit type="graphics-megapixel">
-				<displayName>megapikslar</displayName>
 				<unitPattern count="one">{0} megapiksel</unitPattern>
 				<unitPattern count="one" case="genitive">{0} megapiksels</unitPattern>
 				<unitPattern count="other">{0} megapikslar</unitPattern>
@@ -2507,26 +2359,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} jordradius</unitPattern>
 				<unitPattern count="other">{0} jordradius</unitPattern>
 			</unit>
-			<unit type="length-nanometer">
-				<unitPattern count="one">{0} nanometer</unitPattern>
-				<unitPattern count="one" case="genitive">{0} nanometers</unitPattern>
-				<unitPattern count="other">{0} nm</unitPattern>
-				<unitPattern count="other" case="genitive">{0} nanometers</unitPattern>
+			<unit type="length-meter">
+				<displayName>meter</displayName>
 			</unit>
 			<unit type="length-mile">
-				<displayName>engelske mil</displayName>
 				<unitPattern count="one">{0} engelsk mil</unitPattern>
 				<unitPattern count="other">{0} engelske mil</unitPattern>
 			</unit>
 			<unit type="length-yard">
-				<displayName>engelske yard</displayName>
 				<unitPattern count="one">{0} engelsk yard</unitPattern>
 				<unitPattern count="other">{0} engelske yard</unitPattern>
-			</unit>
-			<unit type="length-inch">
-				<displayName>tommar</displayName>
-				<unitPattern count="one">{0} tomme</unitPattern>
-				<unitPattern count="other">{0} tommar</unitPattern>
 			</unit>
 			<unit type="length-astronomical-unit">
 				<displayName>astronomiske einingar</displayName>
@@ -2534,7 +2376,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} astronomiske einingar</unitPattern>
 			</unit>
 			<unit type="length-fathom">
-				<displayName>famner</displayName>
 				<unitPattern count="one">{0} famn</unitPattern>
 				<unitPattern count="other">{0} famner</unitPattern>
 			</unit>
@@ -2552,7 +2393,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} solradius</unitPattern>
 			</unit>
 			<unit type="light-solar-luminosity">
-				<displayName>solluminositetar</displayName>
 				<unitPattern count="one">{0} solluminositet</unitPattern>
 				<unitPattern count="other">{0} solluminositetar</unitPattern>
 			</unit>
@@ -2562,8 +2402,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="mass-stone">
 				<displayName>engelske stones</displayName>
-				<unitPattern count="one">{0} engelsk stone</unitPattern>
-				<unitPattern count="other">{0} engelske stones</unitPattern>
 			</unit>
 			<unit type="mass-ounce">
 				<gender>feminine</gender>
@@ -2574,7 +2412,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} jordmassar</unitPattern>
 			</unit>
 			<unit type="mass-solar-mass">
-				<displayName>solmassar</displayName>
 				<unitPattern count="one">{0} solmasse</unitPattern>
 				<unitPattern count="other">{0} solmassar</unitPattern>
 			</unit>
@@ -2588,7 +2425,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} atmosfære</unitPattern>
 				<unitPattern count="one" case="genitive">{0} atmosfæres</unitPattern>
 				<unitPattern count="other">{0} atmosfærar</unitPattern>
-				<unitPattern count="other" case="genitive">{0} atmosfærers</unitPattern>
+				<unitPattern count="other" case="genitive">{0} atmosfærars</unitPattern>
 			</unit>
 			<unit type="speed-mile-per-hour">
 				<gender>feminine</gender>
@@ -2626,7 +2463,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} metrisk kopp</unitPattern>
 				<unitPattern count="one" case="genitive">{0} metrisk kopps</unitPattern>
 				<unitPattern count="other">{0} metriske koppar</unitPattern>
-				<unitPattern count="other" case="genitive">{0} metriske koppers</unitPattern>
+				<unitPattern count="other" case="genitive">{0} metriske koppars</unitPattern>
 			</unit>
 			<unit type="volume-bushel">
 				<unitPattern count="one">{0} bushel</unitPattern>
@@ -2636,7 +2473,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<perUnitPattern>{0} per britiske gallon</perUnitPattern>
 			</unit>
 			<unit type="volume-cup">
-				<displayName>koppar</displayName>
 				<unitPattern count="one">{0} kopp</unitPattern>
 				<unitPattern count="other">{0} koppar</unitPattern>
 			</unit>
@@ -2671,7 +2507,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} britisk dessertskei</unitPattern>
 			</unit>
 			<unit type="volume-drop">
-				<displayName>drope</displayName>
 				<unitPattern count="one">{0} drope</unitPattern>
 				<unitPattern count="other">{0} dropar</unitPattern>
 			</unit>
@@ -2775,6 +2610,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="duration-microsecond">
 				<displayName>mikrosekund</displayName>
 			</unit>
+			<unit type="energy-foodcalorie">
+				<displayName>cal</displayName>
+				<unitPattern count="one">{0} cal</unitPattern>
+				<unitPattern count="other">{0} cal</unitPattern>
+			</unit>
 			<unit type="force-pound-force">
 				<displayName>poundforce</displayName>
 			</unit>
@@ -2783,10 +2623,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="graphics-megapixel">
 				<displayName>megapikslar</displayName>
-			</unit>
-			<unit type="graphics-dot-per-centimeter">
-				<unitPattern count="one">{0} dpcm</unitPattern>
-				<unitPattern count="other">{0} ppcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
 				<displayName>ppt</displayName>
@@ -2835,8 +2671,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="mass-stone">
 				<displayName>stones</displayName>
-				<unitPattern count="one">{0} eng. st.</unitPattern>
-				<unitPattern count="other">{0} eng. st.</unitPattern>
 			</unit>
 			<unit type="mass-solar-mass">
 				<displayName>solmassar</displayName>
@@ -2876,6 +2710,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} britisk væskeunse</unitPattern>
 				<unitPattern count="other">{0} britiske væskeunser</unitPattern>
 			</unit>
+			<unit type="volume-tablespoon">
+				<displayName>ms</displayName>
+				<unitPattern count="one">{0} ms</unitPattern>
+				<unitPattern count="other">{0} ms</unitPattern>
+			</unit>
 			<unit type="volume-dessert-spoon">
 				<displayName>dsskei</displayName>
 				<unitPattern count="one">{0} dsskei</unitPattern>
@@ -2898,9 +2737,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 		</unitLength>
 		<unitLength type="narrow">
-			<compoundUnit type="times">
-				<compoundUnitPattern>{0}{1}</compoundUnitPattern>
-			</compoundUnit>
 			<unit type="angle-arc-minute">
 				<displayName>bogemin</displayName>
 			</unit>
@@ -2908,25 +2744,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>bogesek</displayName>
 			</unit>
 			<unit type="area-square-mile">
-				<perUnitPattern>{0}/mi²</perUnitPattern>
+				<perUnitPattern>{0}/mile²</perUnitPattern>
+			</unit>
+			<unit type="area-acre">
+				<unitPattern count="one">{0} ac</unitPattern>
+				<unitPattern count="other">{0} ac</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>l/100 km</displayName>
 			</unit>
 			<unit type="consumption-mile-per-gallon">
-				<displayName>eng. mil/gal</displayName>
+				<displayName>miles/gal</displayName>
 			</unit>
 			<unit type="consumption-mile-per-gallon-imperial">
-				<displayName>eng. mil/brit. gal</displayName>
-			</unit>
-			<unit type="digital-byte">
-				<unitPattern count="one">{0}B</unitPattern>
-				<unitPattern count="other">{0} byte</unitPattern>
-			</unit>
-			<unit type="duration-century">
-				<displayName>hå.</displayName>
-				<unitPattern count="one">{0} hå.</unitPattern>
-				<unitPattern count="other">{0} hå.</unitPattern>
+				<displayName>miles/brit. gal</displayName>
 			</unit>
 			<unit type="duration-month">
 				<displayName>månad</displayName>
@@ -2937,42 +2768,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>vk.</displayName>
 				<unitPattern count="one">{0}v</unitPattern>
 				<unitPattern count="other">{0}v</unitPattern>
-				<perUnitPattern>{0}/v</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
-				<displayName>timar</displayName>
 				<perUnitPattern>{0}/h</perUnitPattern>
 			</unit>
-			<unit type="duration-minute">
-				<displayName>minutt</displayName>
-			</unit>
-			<unit type="duration-second">
-				<displayName>sekund</displayName>
-			</unit>
-			<unit type="duration-millisecond">
-				<displayName>millisekund</displayName>
-			</unit>
-			<unit type="graphics-dot-per-centimeter">
-				<unitPattern count="one">{0} dpcm</unitPattern>
-				<unitPattern count="other">{0} ppcm</unitPattern>
-			</unit>
-			<unit type="graphics-dot-per-inch">
-				<unitPattern count="one">{0} ppt</unitPattern>
-				<unitPattern count="other">{0} ppt</unitPattern>
-			</unit>
-			<unit type="length-picometer">
-				<displayName>pikometer</displayName>
-			</unit>
-			<unit type="length-astronomical-unit">
-				<displayName>au</displayName>
-			</unit>
-			<unit type="length-fathom">
-				<displayName>famner</displayName>
-			</unit>
 			<unit type="mass-stone">
-				<displayName>stones</displayName>
-				<unitPattern count="one">{0} eng. st.</unitPattern>
-				<unitPattern count="other">{0} eng. st.</unitPattern>
+				<displayName>stone</displayName>
 			</unit>
 			<unit type="mass-ounce">
 				<unitPattern count="one">{0} unse</unitPattern>
@@ -2989,35 +2790,31 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="volume-liter">
 				<displayName>liter</displayName>
 			</unit>
-			<unit type="volume-cup-metric">
-				<displayName>m. koppar</displayName>
+			<unit type="volume-deciliter">
+				<unitPattern count="one">{0} dl</unitPattern>
+				<unitPattern count="other">{0}dl</unitPattern>
 			</unit>
-			<unit type="volume-pint">
-				<unitPattern count="one">{0} pt</unitPattern>
-				<unitPattern count="other">{0} pt</unitPattern>
+			<unit type="volume-centiliter">
+				<unitPattern count="one">{0} cl</unitPattern>
+				<unitPattern count="other">{0} cl</unitPattern>
+			</unit>
+			<unit type="volume-milliliter">
+				<unitPattern count="one">{0} ml</unitPattern>
+				<unitPattern count="other">{0}ml</unitPattern>
 			</unit>
 			<unit type="volume-fluid-ounce">
-				<displayName>væskeunse</displayName>
+				<displayName>fl oz</displayName>
 			</unit>
 			<unit type="volume-fluid-ounce-imperial">
-				<displayName>britisk væskeunse</displayName>
 				<unitPattern count="one">{0} imp. fl oz</unitPattern>
 				<unitPattern count="other">{0} imp. fl oz</unitPattern>
-			</unit>
-			<unit type="volume-tablespoon">
-				<displayName>ms</displayName>
-				<unitPattern count="one">{0} ms</unitPattern>
-				<unitPattern count="other">{0} ms</unitPattern>
-			</unit>
-			<unit type="volume-dessert-spoon-imperial">
-				<displayName>brit. barneskei</displayName>
 			</unit>
 			<unit type="volume-drop">
 				<unitPattern count="one">{0} dr</unitPattern>
 				<unitPattern count="other">{0} drope</unitPattern>
 			</unit>
 			<unit type="volume-quart-imperial">
-				<displayName>brit. quart</displayName>
+				<displayName>imp. quart</displayName>
 			</unit>
 		</unitLength>
 	</units>
@@ -3042,6 +2839,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	<characterLabels>
 		<characterLabelPattern type="enclosed">{0} – omslutta</characterLabelPattern>
 		<characterLabelPattern type="extended">{0} – utvida</characterLabelPattern>
+		<characterLabelPattern type="facing-right">{0} vendt mot høgre</characterLabelPattern>
 		<characterLabelPattern type="other">{0} – anna</characterLabelPattern>
 		<characterLabelPattern type="scripts">skriftsystem – {0}</characterLabelPattern>
 		<characterLabelPattern type="strokes" count="one">{0} strek</characterLabelPattern>
@@ -3086,6 +2884,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<characterLabel type="numbers">tal</characterLabel>
 		<characterLabel type="objects">objekt</characterLabel>
 		<characterLabel type="other">anna</characterLabel>
+		<characterLabel type="paired">para</characterLabel>
 		<characterLabel type="person">person</characterLabel>
 		<characterLabel type="pictographs">piktogram</characterLabel>
 		<characterLabel type="place">stad</characterLabel>
@@ -3101,7 +2900,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<characterLabel type="technical_symbols">tekniske symbol</characterLabel>
 		<characterLabel type="tone_marks">tonemerke</characterLabel>
 		<characterLabel type="travel_places">reise og stadar</characterLabel>
-		<characterLabel type="upwards_arrows">pil som peiker oppover</characterLabel>
 		<characterLabel type="variant_forms">variantar</characterLabel>
 		<characterLabel type="weather">vêr</characterLabel>
 		<characterLabel type="western_asian_scripts">vestasiatiske skriftsystem</characterLabel>
@@ -3129,7 +2927,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<styleName type="wdth" subtype="200" alt="extended">ultraforlenga</styleName>
 		<styleName type="wdth" subtype="200" alt="wide">ultrabrei</styleName>
 		<styleName type="wght" subtype="600">halvfeit</styleName>
-		<styleName type="wght" subtype="600" alt="demi">halvfeit</styleName>
 		<styleName type="wght" subtype="700">feit</styleName>
 		<styleName type="wght" subtype="800">ekstra feit</styleName>
 		<styleName type="wght" subtype="800" alt="ultra">ultrafeit</styleName>

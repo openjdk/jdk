@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,32 +29,32 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.List;
 
-import jdk.internal.classfile.BufWriter;
-import jdk.internal.classfile.WritableElement;
-import jdk.internal.classfile.constantpool.ClassEntry;
-import jdk.internal.classfile.constantpool.ConstantPool;
-import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
-import jdk.internal.classfile.constantpool.PoolEntry;
+import java.lang.classfile.BufWriter;
+import java.lang.classfile.WritableElement;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.constantpool.ConstantPool;
+import java.lang.classfile.constantpool.ConstantPoolBuilder;
+import java.lang.classfile.constantpool.PoolEntry;
 
 public final class BufWriterImpl implements BufWriter {
 
     private final ConstantPoolBuilder constantPool;
-    private final ClassfileImpl context;
+    private final ClassFileImpl context;
     private LabelContext labelContext;
     private final ClassEntry thisClass;
     private final int majorVersion;
     byte[] elems;
     int offset = 0;
 
-    public BufWriterImpl(ConstantPoolBuilder constantPool, ClassfileImpl context) {
+    public BufWriterImpl(ConstantPoolBuilder constantPool, ClassFileImpl context) {
         this(constantPool, context, 64, null, 0);
     }
 
-    public BufWriterImpl(ConstantPoolBuilder constantPool, ClassfileImpl context, int initialSize) {
+    public BufWriterImpl(ConstantPoolBuilder constantPool, ClassFileImpl context, int initialSize) {
         this(constantPool, context, initialSize, null, 0);
     }
 
-    public BufWriterImpl(ConstantPoolBuilder constantPool, ClassfileImpl context, int initialSize, ClassEntry thisClass, int majorVersion) {
+    public BufWriterImpl(ConstantPoolBuilder constantPool, ClassFileImpl context, int initialSize, ClassEntry thisClass, int majorVersion) {
         this.constantPool = constantPool;
         this.context = context;
         elems = new byte[initialSize];
@@ -87,7 +87,7 @@ public final class BufWriterImpl implements BufWriter {
         return majorVersion;
     }
 
-    public ClassfileImpl context() {
+    public ClassFileImpl context() {
         return context;
     }
 
@@ -171,9 +171,8 @@ public final class BufWriterImpl implements BufWriter {
         return offset;
     }
 
-    @Override
     public ByteBuffer asByteBuffer() {
-        return ByteBuffer.wrap(elems, 0, offset);
+        return ByteBuffer.wrap(elems, 0, offset).slice();
     }
 
     @Override

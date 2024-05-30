@@ -118,4 +118,25 @@ bool JfrLinkedList<NodeType, AllocPolicy>::in_list(const NodeType* node) const {
   return false;
 }
 
+template <typename NodeType, typename AllocPolicy>
+NodeType* JfrLinkedList<NodeType, AllocPolicy>::cut() {
+  NodePtr node;
+  do {
+    node = head();
+  } while (Atomic::cmpxchg(&_head, node, (NodeType*)nullptr) != node);
+  return node;
+}
+
+template <typename NodeType, typename AllocPolicy>
+void JfrLinkedList<NodeType, AllocPolicy>::clear() {
+  cut();
+}
+
+
+template <typename NodeType, typename AllocPolicy>
+inline void JfrLinkedList<NodeType, AllocPolicy>::add_list(NodeType* first) {
+  assert(head() == nullptr, "invariant");
+  Atomic::store(&_head, first);
+}
+
 #endif // SHARE_JFR_UTILITIES_JFRLINKEDLIST_INLINE_HPP

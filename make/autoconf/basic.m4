@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -123,6 +123,22 @@ AC_DEFUN_ONCE([BASIC_SETUP_BUILD_ENV],
       ]
   )
   AC_SUBST(BUILD_ENV)
+
+  if test "x$LOCALE" != x; then
+    # Check if we actually have C.UTF-8; if so, use it
+    if $LOCALE -a | $GREP -q -E "^C\.(utf8|UTF-8)$"; then
+      LOCALE_USED=C.UTF-8
+    else
+      AC_MSG_WARN([C.UTF-8 locale not found, using C locale])
+      LOCALE_USED=C
+    fi
+  else
+    AC_MSG_WARN([locale command not not found, using C locale])
+    LOCALE_USED=C
+  fi
+
+  export LC_ALL=$LOCALE_USED
+  AC_SUBST(LOCALE_USED)
 ])
 
 ###############################################################################
@@ -448,17 +464,17 @@ AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
   AC_SUBST(CONFIGURESUPPORT_OUTPUTDIR)
 
   # The spec.gmk file contains all variables for the make system.
-  AC_CONFIG_FILES([$OUTPUTDIR/spec.gmk:$AUTOCONF_DIR/spec.gmk.in])
+  AC_CONFIG_FILES([$OUTPUTDIR/spec.gmk:$AUTOCONF_DIR/spec.gmk.template])
   # The bootcycle-spec.gmk file contains support for boot cycle builds.
-  AC_CONFIG_FILES([$OUTPUTDIR/bootcycle-spec.gmk:$AUTOCONF_DIR/bootcycle-spec.gmk.in])
+  AC_CONFIG_FILES([$OUTPUTDIR/bootcycle-spec.gmk:$AUTOCONF_DIR/bootcycle-spec.gmk.template])
   # The buildjdk-spec.gmk file contains support for building a buildjdk when cross compiling.
-  AC_CONFIG_FILES([$OUTPUTDIR/buildjdk-spec.gmk:$AUTOCONF_DIR/buildjdk-spec.gmk.in])
+  AC_CONFIG_FILES([$OUTPUTDIR/buildjdk-spec.gmk:$AUTOCONF_DIR/buildjdk-spec.gmk.template])
   # The compare.sh is used to compare the build output to other builds.
-  AC_CONFIG_FILES([$OUTPUTDIR/compare.sh:$AUTOCONF_DIR/compare.sh.in])
+  AC_CONFIG_FILES([$OUTPUTDIR/compare.sh:$AUTOCONF_DIR/compare.sh.template])
   # The generated Makefile knows where the spec.gmk is and where the source is.
   # You can run make from the OUTPUTDIR, or from the top-level Makefile
   # which will look for generated configurations
-  AC_CONFIG_FILES([$OUTPUTDIR/Makefile:$AUTOCONF_DIR/Makefile.in])
+  AC_CONFIG_FILES([$OUTPUTDIR/Makefile:$AUTOCONF_DIR/Makefile.template])
 ])
 
 ###############################################################################

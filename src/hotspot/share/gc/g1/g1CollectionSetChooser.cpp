@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,8 @@
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectionSetCandidates.hpp"
 #include "gc/g1/g1CollectionSetChooser.hpp"
-#include "gc/g1/heapRegionRemSet.inline.hpp"
-#include "gc/shared/space.inline.hpp"
+#include "gc/g1/g1HeapRegionRemSet.inline.hpp"
+#include "gc/shared/space.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/quickSort.hpp"
 
@@ -39,7 +39,7 @@
 // moved to the destination.
 class G1BuildCandidateRegionsTask : public WorkerTask {
 
-  using CandidateInfo = G1CollectionCandidateList::CandidateInfo;
+  using CandidateInfo = G1CollectionSetCandidateInfo;
 
   // Work area for building the set of collection set candidates. Contains references
   // to heap regions with their GC efficiencies calculated. To reduce contention
@@ -91,20 +91,20 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
     }
 
     // Set element in array.
-    void set(uint idx, HeapRegion* hr) {
+    void set(uint idx, G1HeapRegion* hr) {
       assert(idx < _max_size, "Index %u out of bounds %u", idx, _max_size);
       assert(_data[idx]._r == nullptr, "Value must not have been set.");
-      _data[idx] = CandidateInfo(hr, hr->calc_gc_efficiency());
+      _data[idx] = CandidateInfo(hr, 0.0);
     }
 
-    void sort_by_efficiency() {
+    void sort_by_reclaimable_bytes() {
       if (_cur_claim_idx == 0) {
         return;
       }
       for (uint i = _cur_claim_idx; i < _max_size; i++) {
         assert(_data[i]._r == nullptr, "must be");
       }
-      qsort(_data, _cur_claim_idx, sizeof(_data[0]), (_sort_Fn)G1CollectionCandidateList::compare);
+      qsort(_data, _cur_claim_idx, sizeof(_data[0]), (_sort_Fn)G1CollectionCandidateList::compare_reclaimble_bytes);
       for (uint i = _cur_claim_idx; i < _max_size; i++) {
         assert(_data[i]._r == nullptr, "must be");
       }
@@ -124,7 +124,7 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
 
     uint _regions_added;
 
-    void add_region(HeapRegion* hr) {
+    void add_region(G1HeapRegion* hr) {
       if (_cur_chunk_idx == _cur_chunk_end) {
         _array->claim_chunk(_cur_chunk_idx, _cur_chunk_end);
       }
@@ -143,7 +143,7 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
       _cur_chunk_end(0),
       _regions_added(0) { }
 
-    bool do_heap_region(HeapRegion* r) {
+    bool do_heap_region(G1HeapRegion* r) {
       // Candidates from marking are always old; also keep regions that are already
       // collection set candidates (some retained regions) in that list.
       if (!r->is_old() || r->is_collection_set_candidate()) {
@@ -152,8 +152,7 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
       }
 
       // Can not add a region without a remembered set to the candidates.
-      assert(!r->rem_set()->is_updating(), "must be");
-      if (!r->rem_set()->is_complete()) {
+      if (!r->rem_set()->is_tracked()) {
         return false;
       }
 
@@ -213,7 +212,7 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
     uint max_to_prune = num_candidates - min_old_cset_length;
 
     while (true) {
-      HeapRegion* r = data[num_candidates - num_pruned - 1]._r;
+      G1HeapRegion* r = data[num_candidates - num_pruned - 1]._r;
       size_t const reclaimable = r->reclaimable_bytes();
       if (num_pruned >= max_to_prune ||
           wasted_bytes + reclaimable > allowed_waste) {
@@ -249,7 +248,7 @@ public:
   }
 
   void sort_and_prune_into(G1CollectionSetCandidates* candidates) {
-    _result.sort_by_efficiency();
+    _result.sort_by_reclaimable_bytes();
     prune(_result.array());
     candidates->set_candidates_from_marking(_result.array(),
                                             _num_regions_added);

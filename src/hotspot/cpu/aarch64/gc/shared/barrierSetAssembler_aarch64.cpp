@@ -34,6 +34,10 @@
 #include "runtime/jniHandles.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
+#ifdef COMPILER2
+#include "code/vmreg.inline.hpp"
+#include "gc/shared/c2/barrierSetC2.hpp"
+#endif // COMPILER2
 
 
 #define __ masm->
@@ -265,21 +269,6 @@ void BarrierSetAssembler::tlab_allocate(MacroAssembler* masm, Register obj,
   // verify_tlab();
 }
 
-void BarrierSetAssembler::incr_allocated_bytes(MacroAssembler* masm,
-                                               Register var_size_in_bytes,
-                                               int con_size_in_bytes,
-                                               Register t1) {
-  assert(t1->is_valid(), "need temp reg");
-
-  __ ldr(t1, Address(rthread, in_bytes(JavaThread::allocated_bytes_offset())));
-  if (var_size_in_bytes->is_valid()) {
-    __ add(t1, t1, var_size_in_bytes);
-  } else {
-    __ add(t1, t1, con_size_in_bytes);
-  }
-  __ str(t1, Address(rthread, in_bytes(JavaThread::allocated_bytes_offset())));
-}
-
 static volatile uint32_t _patching_epoch = 0;
 
 address BarrierSetAssembler::patching_epoch_addr() {
@@ -358,7 +347,7 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slo
   __ br(condition, barrier_target);
 
   if (slow_path == nullptr) {
-    __ movptr(rscratch1, (uintptr_t) StubRoutines::aarch64::method_entry_barrier());
+    __ lea(rscratch1, RuntimeAddress(StubRoutines::method_entry_barrier()));
     __ blr(rscratch1);
     __ b(skip_barrier);
 
@@ -419,3 +408,200 @@ void BarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Register
   __ load_klass(obj, obj); // get klass
   __ cbz(obj, error);      // if klass is null it is broken
 }
+
+#ifdef COMPILER2
+
+OptoReg::Name BarrierSetAssembler::encode_float_vector_register_size(const Node* node, OptoReg::Name opto_reg) {
+  switch (node->ideal_reg()) {
+    case Op_RegF:
+      // No need to refine. The original encoding is already fine to distinguish.
+      assert(opto_reg % 4 == 0, "Float register should only occupy a single slot");
+      break;
+    // Use different encoding values of the same fp/vector register to help distinguish different sizes.
+    // Such as V16. The OptoReg::name and its corresponding slot value are
+    // "V16": 64, "V16_H": 65, "V16_J": 66, "V16_K": 67.
+    case Op_RegD:
+    case Op_VecD:
+      opto_reg &= ~3;
+      opto_reg |= 1;
+      break;
+    case Op_VecX:
+      opto_reg &= ~3;
+      opto_reg |= 2;
+      break;
+    case Op_VecA:
+      opto_reg &= ~3;
+      opto_reg |= 3;
+      break;
+    default:
+      assert(false, "unexpected ideal register");
+      ShouldNotReachHere();
+  }
+  return opto_reg;
+}
+
+OptoReg::Name BarrierSetAssembler::refine_register(const Node* node, OptoReg::Name opto_reg) {
+  if (!OptoReg::is_reg(opto_reg)) {
+    return OptoReg::Bad;
+  }
+
+  const VMReg vm_reg = OptoReg::as_VMReg(opto_reg);
+  if (vm_reg->is_FloatRegister()) {
+    opto_reg = encode_float_vector_register_size(node, opto_reg);
+  }
+
+  return opto_reg;
+}
+
+#undef __
+#define __ _masm->
+
+void SaveLiveRegisters::initialize(BarrierStubC2* stub) {
+  int index = -1;
+  GrowableArray<RegisterData> registers;
+  VMReg prev_vm_reg = VMRegImpl::Bad();
+
+  RegMaskIterator rmi(stub->preserve_set());
+  while (rmi.has_next()) {
+    OptoReg::Name opto_reg = rmi.next();
+    VMReg vm_reg = OptoReg::as_VMReg(opto_reg);
+
+    if (vm_reg->is_Register()) {
+      // GPR may have one or two slots in regmask
+      // Determine whether the current vm_reg is the same physical register as the previous one
+      if (is_same_register(vm_reg, prev_vm_reg)) {
+        registers.at(index)._slots++;
+      } else {
+        RegisterData reg_data = { vm_reg, 1 };
+        index = registers.append(reg_data);
+      }
+    } else if (vm_reg->is_FloatRegister()) {
+      // We have size encoding in OptoReg of stub->preserve_set()
+      // After encoding, float/neon/sve register has only one slot in regmask
+      // Decode it to get the actual size
+      VMReg vm_reg_base = vm_reg->as_FloatRegister()->as_VMReg();
+      int slots = decode_float_vector_register_size(opto_reg);
+      RegisterData reg_data = { vm_reg_base, slots };
+      index = registers.append(reg_data);
+    } else if (vm_reg->is_PRegister()) {
+      // PRegister has only one slot in regmask
+      RegisterData reg_data = { vm_reg, 1 };
+      index = registers.append(reg_data);
+    } else {
+      assert(false, "Unknown register type");
+      ShouldNotReachHere();
+    }
+    prev_vm_reg = vm_reg;
+  }
+
+  // Record registers that needs to be saved/restored
+  for (GrowableArrayIterator<RegisterData> it = registers.begin(); it != registers.end(); ++it) {
+    RegisterData reg_data = *it;
+    VMReg vm_reg = reg_data._reg;
+    int slots = reg_data._slots;
+    if (vm_reg->is_Register()) {
+      assert(slots == 1 || slots == 2, "Unexpected register save size");
+      _gp_regs += RegSet::of(vm_reg->as_Register());
+    } else if (vm_reg->is_FloatRegister()) {
+      if (slots == 1 || slots == 2) {
+        _fp_regs += FloatRegSet::of(vm_reg->as_FloatRegister());
+      } else if (slots == 4) {
+        _neon_regs += FloatRegSet::of(vm_reg->as_FloatRegister());
+      } else {
+        assert(slots == Matcher::scalable_vector_reg_size(T_FLOAT), "Unexpected register save size");
+        _sve_regs += FloatRegSet::of(vm_reg->as_FloatRegister());
+      }
+    } else {
+      assert(vm_reg->is_PRegister() && slots == 1, "Unknown register type");
+      _p_regs += PRegSet::of(vm_reg->as_PRegister());
+    }
+  }
+
+  // Remove C-ABI SOE registers and scratch regs
+  _gp_regs -= RegSet::range(r19, r30) + RegSet::of(r8, r9);
+
+  // Remove C-ABI SOE fp registers
+  _fp_regs -= FloatRegSet::range(v8, v15);
+}
+
+enum RC SaveLiveRegisters::rc_class(VMReg reg) {
+  if (reg->is_reg()) {
+    if (reg->is_Register()) {
+      return rc_int;
+    } else if (reg->is_FloatRegister()) {
+      return rc_float;
+    } else if (reg->is_PRegister()) {
+      return rc_predicate;
+    }
+  }
+  if (reg->is_stack()) {
+    return rc_stack;
+  }
+  return rc_bad;
+}
+
+bool SaveLiveRegisters::is_same_register(VMReg reg1, VMReg reg2) {
+  if (reg1 == reg2) {
+    return true;
+  }
+  if (rc_class(reg1) == rc_class(reg2)) {
+    if (reg1->is_Register()) {
+      return reg1->as_Register() == reg2->as_Register();
+    } else if (reg1->is_FloatRegister()) {
+      return reg1->as_FloatRegister() == reg2->as_FloatRegister();
+    } else if (reg1->is_PRegister()) {
+      return reg1->as_PRegister() == reg2->as_PRegister();
+    }
+  }
+  return false;
+}
+
+int SaveLiveRegisters::decode_float_vector_register_size(OptoReg::Name opto_reg) {
+  switch (opto_reg & 3) {
+    case 0:
+      return 1;
+    case 1:
+      return 2;
+    case 2:
+      return 4;
+    case 3:
+      return Matcher::scalable_vector_reg_size(T_FLOAT);
+    default:
+      ShouldNotReachHere();
+      return 0;
+  }
+}
+
+SaveLiveRegisters::SaveLiveRegisters(MacroAssembler* masm, BarrierStubC2* stub)
+  : _masm(masm),
+    _gp_regs(),
+    _fp_regs(),
+    _neon_regs(),
+    _sve_regs(),
+    _p_regs() {
+
+  // Figure out what registers to save/restore
+  initialize(stub);
+
+  // Save registers
+  __ push(_gp_regs, sp);
+  __ push_fp(_fp_regs, sp, MacroAssembler::PushPopFp);
+  __ push_fp(_neon_regs, sp, MacroAssembler::PushPopNeon);
+  __ push_fp(_sve_regs, sp, MacroAssembler::PushPopSVE);
+  __ push_p(_p_regs, sp);
+}
+
+SaveLiveRegisters::~SaveLiveRegisters() {
+  // Restore registers
+  __ pop_p(_p_regs, sp);
+  __ pop_fp(_sve_regs, sp, MacroAssembler::PushPopSVE);
+  __ pop_fp(_neon_regs, sp, MacroAssembler::PushPopNeon);
+  __ pop_fp(_fp_regs, sp, MacroAssembler::PushPopFp);
+
+  // External runtime call may clobber ptrue reg
+  __ reinitialize_ptrue();
+
+  __ pop(_gp_regs, sp);
+}
+
+#endif // COMPILER2

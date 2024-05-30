@@ -26,6 +26,8 @@ default: all
 
 include $(SPEC)
 include MakeBase.gmk
+
+include CopyFiles.gmk
 include Execute.gmk
 include Modules.gmk
 include ModuleTools.gmk
@@ -139,11 +141,6 @@ ifeq ($(IS_DRAFT), true)
   endif
   DRAFT_TEXT := This specification is not final and is subject to change. \
       Use is subject to <a href="$(LICENSE_URL)">license terms</a>.
-
-  # Workaround stylesheet bug
-  HEADER_STYLE := style="margin-top: 9px;"
-else
-  HEADER_STYLE := style="margin-top: 14px;"
 endif
 
 # $1 - Relative prefix to COPYRIGHT_URL
@@ -339,7 +336,7 @@ define SetupApiDocsGenerationBody
   $1_DOC_TITLE := $$($1_LONG_NAME)<br>Version $$(VERSION_SPECIFICATION) API \
       Specification
   $1_WINDOW_TITLE := $$(subst &amp;,&,$$($1_SHORT_NAME))$$(DRAFT_MARKER_TITLE)
-  $1_HEADER_TITLE := <div $$(HEADER_STYLE)><strong>$$($1_SHORT_NAME)</strong> \
+  $1_HEADER_TITLE := <div><strong>$$($1_SHORT_NAME)</strong> \
       $$(DRAFT_MARKER_STR)</div>
   ifneq ($$($1_OTHER_VERSIONS), )
       $1_JAVADOC_BOTTOM := $$(call JAVADOC_BOTTOM, <a href="$$($1_OTHER_VERSIONS)">Other versions.</a>)
@@ -647,7 +644,7 @@ ifeq ($(ENABLE_PANDOC), true)
   GLOBAL_SPECS_DEFAULT_CSS_FILE := $(DOCS_OUTPUTDIR)/resources/jdk-default.css
   # Unset the following to suppress the link to the tool guides
   NAV_LINK_GUIDES := --nav-link-guides
-  HEADER_RIGHT_SIDE_INFO := <strong>$(subst &amp;,&,$(JDK_SHORT_NAME))$(DRAFT_MARKER_STR)</strong>
+  HEADER_RIGHT_SIDE_INFO := <strong>$(subst &amp;,&,$(JDK_SHORT_NAME))</strong>$(DRAFT_MARKER_STR)
 
   $(foreach m, $(ALL_MODULES), \
     $(eval SPECS_$m := $(call FindModuleSpecsDirs, $m)) \
@@ -684,28 +681,25 @@ ifeq ($(ENABLE_PANDOC), true)
       $(TOPDIR)/make/jdk/src/classes/build/tools/pandocfilter)
 
   $(foreach m, $(ALL_MODULES), \
-    $(eval MAN_$m := $(call FindModuleManDirs, $m)) \
-    $(foreach d, $(MAN_$m), \
-      $(foreach f, $(call ApplySpecFilter, $(filter %.md, $(call FindFiles, $d))), \
-        $(eval $m_$f_NAME := MAN_TO_HTML_$m_$(strip $(call RelativePath, $f, $(TOPDIR)))) \
-        $(eval $(call SetupProcessMarkdown, $($m_$f_NAME), \
-            SRC := $d, \
-            FILES := $f, \
-            DEST := $(DOCS_OUTPUTDIR)/specs/man, \
-            FILTER := $(PANDOC_HTML_MANPAGE_FILTER), \
-            CSS := $(GLOBAL_SPECS_DEFAULT_CSS_FILE), \
-            REPLACEMENTS := \
-		@@COPYRIGHT_YEAR@@ => $(COPYRIGHT_YEAR) ; \
-		@@VERSION_SHORT@@ => $(VERSION_SHORT) ; \
-		@@VERSION_SPECIFICATION@@ => $(VERSION_SPECIFICATION), \
-            OPTIONS := --toc -V include-before='$(SPECS_TOP)' -V include-after='$(SPECS_BOTTOM_1)', \
-            POST_PROCESS := $(TOOL_FIXUPPANDOC) --insert-nav --nav-right-info '$(HEADER_RIGHT_SIDE_INFO)' \
-                --nav-subdirs 1 --nav-link-guides, \
-            EXTRA_DEPS := $(PANDOC_HTML_MANPAGE_FILTER) \
-                $(PANDOC_HTML_MANPAGE_FILTER_SOURCE), \
-        )) \
-        $(eval JDK_SPECS_TARGETS += $($($m_$f_NAME))) \
-      ) \
+    $(eval MAN_$m := $(call ApplySpecFilter, $(filter %.md, $(call FindFiles, \
+          $(call FindModuleManDirs, $m))))) \
+    $(if $(MAN_$m), \
+      $(eval $(call SetupProcessMarkdown, MAN_TO_HTML_$m, \
+        FILES := $(MAN_$m), \
+        DEST := $(DOCS_OUTPUTDIR)/specs/man, \
+        FILTER := $(PANDOC_HTML_MANPAGE_FILTER), \
+        CSS := $(GLOBAL_SPECS_DEFAULT_CSS_FILE), \
+        REPLACEMENTS := \
+            @@COPYRIGHT_YEAR@@ => $(COPYRIGHT_YEAR) ; \
+            @@VERSION_SHORT@@ => $(VERSION_SHORT) ; \
+            @@VERSION_SPECIFICATION@@ => $(VERSION_SPECIFICATION), \
+        OPTIONS := --toc -V include-before='$(SPECS_TOP)' -V include-after='$(SPECS_BOTTOM_1)', \
+        POST_PROCESS := $(TOOL_FIXUPPANDOC) --insert-nav --nav-right-info '$(HEADER_RIGHT_SIDE_INFO)' \
+            --nav-subdirs 1 --nav-link-guides, \
+        EXTRA_DEPS := $(PANDOC_HTML_MANPAGE_FILTER) \
+            $(PANDOC_HTML_MANPAGE_FILTER_SOURCE), \
+      )) \
+      $(eval JDK_SPECS_TARGETS += $(MAN_TO_HTML_$m)) \
     ) \
   )
 

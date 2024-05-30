@@ -23,10 +23,9 @@
 
 /**
  * @test
- * @key headful
+ * @key headful printer
  * @bug 4061440
  * @summary Checks that rounded rectangles print correctly.
- * @author dpm
  */
 
 import java.awt.*;

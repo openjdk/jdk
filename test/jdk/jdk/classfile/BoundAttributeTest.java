@@ -27,12 +27,12 @@
  * @summary Testing BoundAttributes
  * @run junit BoundAttributeTest
  */
-import jdk.internal.classfile.Attributes;
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.CodeBuilder;
-import jdk.internal.classfile.attribute.MethodParameterInfo;
-import jdk.internal.classfile.attribute.MethodParametersAttribute;
+import java.lang.classfile.Attributes;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.attribute.MethodParameterInfo;
+import java.lang.classfile.attribute.MethodParametersAttribute;
 import org.junit.jupiter.api.Test;
 import org.opentest4j.AssertionFailedError;
 
@@ -49,7 +49,7 @@ class BoundAttributeTest {
 
     @Test
     void testReadMethodParametersAttributeWithoutParameterName() {
-        var cc = Classfile.of();
+        var cc = ClassFile.of();
         // build a simple method: void method(int)
         MethodTypeDesc methodTypeDesc = MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_int);
         byte[] raw = cc.build(ClassDesc.of("TestClass"), builder -> {
@@ -61,7 +61,7 @@ class BoundAttributeTest {
         });
         ClassModel model = cc.parse(raw);
         MethodParametersAttribute methodParametersAttribute = model.methods().get(0)
-                .findAttribute(Attributes.METHOD_PARAMETERS)
+                .findAttribute(Attributes.methodParameters())
                 .orElseThrow(() -> new AssertionFailedError("Attribute not present"));
         // MethodParametersAttribute#parameters() materializes the parameters
         List<MethodParameterInfo> parameters = assertDoesNotThrow(methodParametersAttribute::parameters);

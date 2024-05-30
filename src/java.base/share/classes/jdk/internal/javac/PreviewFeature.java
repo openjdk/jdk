@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,21 +67,25 @@ public @interface PreviewFeature {
         // not used, but required for interim javac to not warn.
         VIRTUAL_THREADS,
         FOREIGN,
-
-        @JEP(number=430, title="String Templates")
+        @JEP(number=459, title="String Templates", status="Second Preview")
         STRING_TEMPLATES,
-        @JEP(number=443, title="Unnamed Patterns and Variables")
-        UNNAMED,
-        @JEP(number=445, title="Unnamed Classes and Instance Main Methods")
-        UNNAMED_CLASSES,
-        @JEP(number=446, title="Scoped Values", status="Preview")
+        @JEP(number=477, title="Implicitly Declared Classes and Instance Main Methods", status="Third Preview")
+        IMPLICIT_CLASSES,
+        @JEP(number=481, title="Scoped Values", status="Third Preview")
         SCOPED_VALUES,
-        @JEP(number=453, title="Structured Concurrency", status="Preview")
+        @JEP(number=480, title="Structured Concurrency", status="Third Preview")
         STRUCTURED_CONCURRENCY,
+        @JEP(number=466, title="ClassFile API", status="Second Preview")
+        CLASSFILE_API,
+        @JEP(number=473, title="Stream Gatherers", status="Second Preview")
+        STREAM_GATHERERS,
+        @JEP(number=476, title="Module Import Declarations", status="Preview")
+        MODULE_IMPORTS,
+        LANGUAGE_MODEL,
         /**
          * A key for testing.
          */
-        @JEP(number=0, title="Test Feature")
+        @JEP(number=2_147_483_647, title="Test Feature")
         TEST,
         ;
     }

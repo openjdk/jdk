@@ -77,7 +77,7 @@ void Compiler::initialize() {
   }
 }
 
-int Compiler::code_buffer_size() {
+uint Compiler::code_buffer_size() {
   return Compilation::desired_max_code_buffer_size() + Compilation::desired_max_constant_size();
 }
 
@@ -110,7 +110,6 @@ bool Compiler::is_intrinsic_supported(const methodHandle& method) {
 bool Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   switch (id) {
   case vmIntrinsics::_compareAndSetLong:
-    if (!VM_Version::supports_cx8()) return false;
     break;
   case vmIntrinsics::_getAndAddInt:
     if (!VM_Version::supports_atomic_getadd4()) return false;
@@ -236,6 +235,9 @@ bool Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_counterTime:
 #endif
   case vmIntrinsics::_getObjectSize:
+#if defined(X86) || defined(AARCH64) || defined(S390)
+  case vmIntrinsics::_clone:
+#endif
     break;
   case vmIntrinsics::_blackhole:
     break;

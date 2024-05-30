@@ -26,12 +26,8 @@
  * @bug 7008643
  * @summary inlined finally clauses confuse debuggers
  * @library /tools/lib
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
+ * @enablePreview
+ * @modules java.base/jdk.internal.classfile.impl
  *          jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.util
@@ -43,8 +39,8 @@
 import java.io.File;
 import java.nio.file.Paths;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.*;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
 import com.sun.tools.javac.util.Assert;
 
 import toolbox.JavacTask;
@@ -100,13 +96,13 @@ public class InlinedFinallyConfuseDebuggersTest {
     }
 
     void checkClassFile(final File cfile, String methodToFind) throws Exception {
-        ClassModel classFile = Classfile.of().parse(cfile.toPath());
+        ClassModel classFile = ClassFile.of().parse(cfile.toPath());
         boolean methodFound = false;
         for (MethodModel m : classFile.methods()) {
             if (m.methodName().equalsString(methodToFind)) {
                 methodFound = true;
-                CodeAttribute code = m.findAttribute(Attributes.CODE).orElseThrow();
-                LineNumberTableAttribute lnt = code.findAttribute(Attributes.LINE_NUMBER_TABLE).orElseThrow();
+                CodeAttribute code = m.findAttribute(Attributes.code()).orElseThrow();
+                LineNumberTableAttribute lnt = code.findAttribute(Attributes.lineNumberTable()).orElseThrow();
                 Assert.check(lnt.lineNumbers().size() == expectedLNT.length,
                         "The LineNumberTable found has a length different to the expected one");
                 int i = 0;

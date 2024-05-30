@@ -27,7 +27,6 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "code/compiledIC.hpp"
-#include "memory/resourceArea.hpp"
 #include "nativeInst_riscv.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.hpp"
@@ -85,7 +84,7 @@ bool NativeInstruction::is_load_pc_relative_at(address instr) {
          check_load_pc_relative_data_dependency(instr);
 }
 
-bool NativeInstruction::is_movptr_at(address instr) {
+bool NativeInstruction::is_movptr1_at(address instr) {
   return is_lui_at(instr) && // Lui
          is_addi_at(instr + instruction_size) && // Addi
          is_slli_shift_at(instr + instruction_size * 2, 11) && // Slli Rd, Rs, 11
@@ -94,7 +93,18 @@ bool NativeInstruction::is_movptr_at(address instr) {
          (is_addi_at(instr + instruction_size * 5) ||
           is_jalr_at(instr + instruction_size * 5) ||
           is_load_at(instr + instruction_size * 5)) && // Addi/Jalr/Load
-         check_movptr_data_dependency(instr);
+         check_movptr1_data_dependency(instr);
+}
+
+bool NativeInstruction::is_movptr2_at(address instr) {
+  return is_lui_at(instr) && // lui
+         is_lui_at(instr + instruction_size) && // lui
+         is_slli_shift_at(instr + instruction_size * 2, 18) && // slli Rd, Rs, 18
+         is_add_at(instr + instruction_size * 3) &&
+         (is_addi_at(instr + instruction_size * 4) ||
+          is_jalr_at(instr + instruction_size * 4) ||
+          is_load_at(instr + instruction_size * 4)) && // Addi/Jalr/Load
+         check_movptr2_data_dependency(instr);
 }
 
 bool NativeInstruction::is_li16u_at(address instr) {
@@ -157,7 +167,6 @@ void NativeCall::set_destination_mt_safe(address dest, bool assert_lock) {
          CompiledICLocker::is_safe(addr_at(0)),
          "concurrent code patching");
 
-  ResourceMark rm;
   address addr_call = addr_at(0);
   assert(NativeCall::is_call_at(addr_call), "unexpected code at call site");
 
@@ -203,10 +212,11 @@ void NativeCall::insert(address code_pos, address entry) { Unimplemented(); }
 //-------------------------------------------------------------------
 
 void NativeMovConstReg::verify() {
-  if (!(nativeInstruction_at(instruction_address())->is_movptr() ||
-        is_auipc_at(instruction_address()))) {
-    fatal("should be MOVPTR or AUIPC");
+  NativeInstruction* ni = nativeInstruction_at(instruction_address());
+  if (ni->is_movptr() || ni->is_auipc()) {
+    return;
   }
+  fatal("should be MOVPTR or AUIPC");
 }
 
 intptr_t NativeMovConstReg::data() const {
@@ -225,7 +235,7 @@ void NativeMovConstReg::set_data(intptr_t x) {
   } else {
     // Store x into the instruction stream.
     MacroAssembler::pd_patch_instruction_size(instruction_address(), (address)x);
-    ICache::invalidate_range(instruction_address(), movptr_instruction_size);
+    ICache::invalidate_range(instruction_address(), movptr1_instruction_size /* > movptr2_instruction_size */ );
   }
 
   // Find and replace the oop/metadata corresponding to this
@@ -395,14 +405,16 @@ void NativeJump::patch_verified_entry(address entry, address verified_entry, add
   ICache::invalidate_range(verified_entry, instruction_size);
 }
 
+//-------------------------------------------------------------------
+
 void NativeGeneralJump::insert_unconditional(address code_pos, address entry) {
   CodeBuffer cb(code_pos, instruction_size);
   MacroAssembler a(&cb);
   Assembler::IncompressibleRegion ir(&a);  // Fixed length: see NativeGeneralJump::get_instruction_size()
 
   int32_t offset = 0;
-  a.movptr(t0, entry, offset); // lui, addi, slli, addi, slli
-  a.jalr(x0, t0, offset); // jalr
+  a.movptr(t0, entry, offset, t1); // lui, lui, slli, add
+  a.jr(t0, offset); // jalr
 
   ICache::invalidate_range(code_pos, instruction_size);
 }
@@ -412,6 +424,7 @@ void NativeGeneralJump::replace_mt_safe(address instr_addr, address code_buffer)
   ShouldNotCallThis();
 }
 
+//-------------------------------------------------------------------
 
 address NativeCallTrampolineStub::destination(nmethod *nm) const {
   return ptr_at(data_offset);
@@ -451,16 +464,27 @@ void NativePostCallNop::make_deopt() {
   NativeDeoptInstruction::insert(addr_at(0));
 }
 
-int NativePostCallNop::displacement() const {
+bool NativePostCallNop::decode(int32_t& oopmap_slot, int32_t& cb_offset) const {
   // Discard the high 32 bits
-  return (int)(intptr_t)MacroAssembler::get_target_of_li32(addr_at(4));
+  int32_t data = (int32_t)(intptr_t)MacroAssembler::get_target_of_li32(addr_at(4));
+  if (data == 0) {
+    return false; // no information encoded
+  }
+  cb_offset = (data & 0xffffff);
+  oopmap_slot = (data >> 24) & 0xff;
+  return true; // decoding succeeded
 }
 
-void NativePostCallNop::patch(jint diff) {
-  assert(diff != 0, "must be");
+bool NativePostCallNop::patch(int32_t oopmap_slot, int32_t cb_offset) {
+  if (((oopmap_slot & 0xff) != oopmap_slot) || ((cb_offset & 0xffffff) != cb_offset)) {
+    return false; // cannot encode
+  }
+  int32_t data = (oopmap_slot << 24) | cb_offset;
+  assert(data != 0, "must be");
   assert(is_lui_to_zr_at(addr_at(4)) && is_addiw_to_zr_at(addr_at(8)), "must be");
 
-  MacroAssembler::patch_imm_in_li32(addr_at(4), diff);
+  MacroAssembler::patch_imm_in_li32(addr_at(4), data);
+  return true; // successfully encoded
 }
 
 void NativeDeoptInstruction::verify() {

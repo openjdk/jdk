@@ -22,7 +22,7 @@
  */
 package org.openjdk.bench.java.lang.invoke;
 
-import jdk.internal.classfile.Classfile;
+import java.lang.classfile.ClassFile;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -43,7 +43,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 import static java.lang.constant.ConstantDescs.*;
-import static jdk.internal.classfile.Classfile.ACC_STATIC;
+import static java.lang.classfile.ClassFile.ACC_STATIC;
 
 /**
  * A benchmark ensuring that var and method handle lazy initialization are not
@@ -53,11 +53,7 @@ import static jdk.internal.classfile.Classfile.ACC_STATIC;
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
 @State(Scope.Thread)
 @Fork(value = 10, warmups = 5, jvmArgsAppend = {
-        "--add-exports", "java.base/jdk.internal.classfile=ALL-UNNAMED",
-        "--add-exports", "java.base/jdk.internal.classfile.attribute=ALL-UNNAMED",
-        "--add-exports", "java.base/jdk.internal.classfile.constantpool=ALL-UNNAMED",
-        "--add-exports", "java.base/jdk.internal.classfile.instruction=ALL-UNNAMED",
-        "--add-exports", "java.base/jdk.internal.classfile.components=ALL-UNNAMED"
+        "--enable-preview"
 })
 public class LazyStaticColdStart {
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
@@ -77,10 +73,10 @@ public class LazyStaticColdStart {
             static final MethodTypeDesc MTD_void_long = MethodTypeDesc.of(CD_void, CD_long);
             static final MethodTypeDesc MTD_ThreadLocalRandom = MethodTypeDesc.of(CD_ThreadLocalRandom);
             static final MethodTypeDesc MTD_long = MethodTypeDesc.of(CD_long);
-            static final byte[] classBytes = Classfile.of().build(describedClass, clb -> {
+            static final byte[] classBytes = ClassFile.of().build(describedClass, clb -> {
                 clb.withField("v", CD_long, ACC_STATIC);
                 clb.withMethodBody(CLASS_INIT_NAME, MTD_void, ACC_STATIC, cob -> {
-                    cob.constantInstruction(100L);
+                    cob.loadConstant(100L);
                     cob.invokestatic(CD_Blackhole, "consumeCPU", MTD_void_long);
                     cob.invokestatic(CD_ThreadLocalRandom, "current", MTD_ThreadLocalRandom);
                     cob.invokevirtual(CD_ThreadLocalRandom, "nextLong", MTD_long);

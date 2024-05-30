@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,29 +24,29 @@
  */
 package jdk.internal.classfile.impl;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.constantpool.ClassEntry;
-import jdk.internal.classfile.constantpool.ConstantDynamicEntry;
-import jdk.internal.classfile.constantpool.ConstantPool;
-import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
-import jdk.internal.classfile.constantpool.DoubleEntry;
-import jdk.internal.classfile.constantpool.FieldRefEntry;
-import jdk.internal.classfile.constantpool.FloatEntry;
-import jdk.internal.classfile.constantpool.IntegerEntry;
-import jdk.internal.classfile.constantpool.InterfaceMethodRefEntry;
-import jdk.internal.classfile.constantpool.InvokeDynamicEntry;
-import jdk.internal.classfile.constantpool.LoadableConstantEntry;
-import jdk.internal.classfile.constantpool.LongEntry;
-import jdk.internal.classfile.constantpool.MemberRefEntry;
-import jdk.internal.classfile.constantpool.MethodHandleEntry;
-import jdk.internal.classfile.constantpool.MethodRefEntry;
-import jdk.internal.classfile.constantpool.MethodTypeEntry;
-import jdk.internal.classfile.constantpool.ModuleEntry;
-import jdk.internal.classfile.constantpool.NameAndTypeEntry;
-import jdk.internal.classfile.constantpool.PackageEntry;
-import jdk.internal.classfile.constantpool.PoolEntry;
-import jdk.internal.classfile.constantpool.StringEntry;
-import jdk.internal.classfile.constantpool.Utf8Entry;
+import java.lang.classfile.*;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.constantpool.ConstantDynamicEntry;
+import java.lang.classfile.constantpool.ConstantPool;
+import java.lang.classfile.constantpool.ConstantPoolBuilder;
+import java.lang.classfile.constantpool.DoubleEntry;
+import java.lang.classfile.constantpool.FieldRefEntry;
+import java.lang.classfile.constantpool.FloatEntry;
+import java.lang.classfile.constantpool.IntegerEntry;
+import java.lang.classfile.constantpool.InterfaceMethodRefEntry;
+import java.lang.classfile.constantpool.InvokeDynamicEntry;
+import java.lang.classfile.constantpool.LoadableConstantEntry;
+import java.lang.classfile.constantpool.LongEntry;
+import java.lang.classfile.constantpool.MemberRefEntry;
+import java.lang.classfile.constantpool.MethodHandleEntry;
+import java.lang.classfile.constantpool.MethodRefEntry;
+import java.lang.classfile.constantpool.MethodTypeEntry;
+import java.lang.classfile.constantpool.ModuleEntry;
+import java.lang.classfile.constantpool.NameAndTypeEntry;
+import java.lang.classfile.constantpool.PackageEntry;
+import java.lang.classfile.constantpool.PoolEntry;
+import java.lang.classfile.constantpool.StringEntry;
+import java.lang.classfile.constantpool.Utf8Entry;
 
 import java.lang.constant.MethodTypeDesc;
 import java.util.List;
@@ -167,6 +167,11 @@ public final class TemporaryConstantPool implements ConstantPoolBuilder {
 
     @Override
     public int size() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public <T extends PoolEntry> T entryByIndex(int index, Class<T> cls) {
         throw new UnsupportedOperationException();
     }
 

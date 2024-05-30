@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -17,7 +17,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</languages>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters draft="unconfirmed">[\u135F ፡ ፣-፧ ። ፠ ፨ ፲-፼ ፩-፱ ሀ-ሆ ለ-ሟ ረ-ቆ ቈ ቊ-ቍ ቐ-ቖ ቘ ቚ-ቝ በ-ኆ ኈ ኊ-ኍ ነ-ኮ ኰ ኲ-ኵ ኸ-ኾ ዀ ዂ-ዅ ወ-ዎ ዐ-ዖ ዘ-ዮ ደ-ዷ ጀ-ጎ ጐ ጒ-ጕ ጠ-ጯ ጸ-ጿ ፈ-ፗ]</exemplarCharacters>
+		<exemplarCharacters draft="unconfirmed">[፟ ፡ ፣ ፤ ፥ ፦ ፧ ። ፠ ፨ ፲ ፳ ፴ ፵ ፶ ፷ ፸ ፹ ፺ ፻ ፼ ፩ ፪ ፫ ፬ ፭ ፮ ፯ ፰ ፱ ሀ ሁ ሂ ሃ ሄ ህ ሆ ለ ሉ ሊ ላ ሌ ል ሎ ሏ ሐ ሑ ሒ ሓ ሔ ሕ ሖ ሗ መ ሙ ሚ ማ ሜ ም ሞ ሟ ረ ሩ ሪ ራ ሬ ር ሮ ሯ ሰ ሱ ሲ ሳ ሴ ስ ሶ ሷ ሸ ሹ ሺ ሻ ሼ ሽ ሾ ሿ ቀ ቁ ቂ ቃ ቄ ቅ ቆ ቈ ቊ ቋ ቌ ቍ ቐ ቑ ቒ ቓ ቔ ቕ ቖ ቘ ቚ ቛ ቜ ቝ በ ቡ ቢ ባ ቤ ብ ቦ ቧ ቨ ቩ ቪ ቫ ቬ ቭ ቮ ቯ ተ ቱ ቲ ታ ቴ ት ቶ ቷ ቸ ቹ ቺ ቻ ቼ ች ቾ ቿ ኀ ኁ ኂ ኃ ኄ ኅ ኆ ኈ ኊ ኋ ኌ ኍ ነ ኑ ኒ ና ኔ ን ኖ ኗ ኘ ኙ ኚ ኛ ኜ ኝ ኞ ኟ አ ኡ ኢ ኣ ኤ እ ኦ ኧ ከ ኩ ኪ ካ ኬ ክ ኮ ኰ ኲ ኳ ኴ ኵ ኸ ኹ ኺ ኻ ኼ ኽ ኾ ዀ ዂ ዃ ዄ ዅ ወ ዉ ዊ ዋ ዌ ው ዎ ዐ ዑ ዒ ዓ ዔ ዕ ዖ ዘ ዙ ዚ ዛ ዜ ዝ ዞ ዟ ዠ ዡ ዢ ዣ ዤ ዥ ዦ ዧ የ ዩ ዪ ያ ዬ ይ ዮ ደ ዱ ዲ ዳ ዴ ድ ዶ ዷ ጀ ጁ ጂ ጃ ጄ ጅ ጆ ጇ ገ ጉ ጊ ጋ ጌ ግ ጎ ጐ ጒ ጓ ጔ ጕ ጠ ጡ ጢ ጣ ጤ ጥ ጦ ጧ ጨ ጩ ጪ ጫ ጬ ጭ ጮ ጯ ጸ ጹ ጺ ጻ ጼ ጽ ጾ ጿ ፈ ፉ ፊ ፋ ፌ ፍ ፎ ፏ ፐ ፑ ፒ ፓ ፔ ፕ ፖ ፗ]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary" draft="unconfirmed">[᎐ ᎑ ᎒ ᎓ ᎔ ᎕ ᎖ ᎗ ᎘ ᎙ ሇ ⶀ ᎀ ᎁ ᎂ ᎃ ⶁ ሠ ሡ ሢ ሣ ሤ ሥ ሦ ሧ ⶂ ⶃ ⶄ ቇ ᎄ ᎅ ᎆ ᎇ ⶅ ⶆ ⶇ ኇ ⶈ ⶉ ⶊ ኯ ዏ ⶋ ዯ ⶌ ዸ ዹ ዺ ዻ ዼ ዽ ዾ ዿ ⶍ ⶎ ጏ ጘ ጙ ጚ ጛ ጜ ጝ ጞ ጟ ⶓ ⶔ ⶕ ⶖ ⶏ ⶐ ⶑ ፀ ፁ ፂ ፃ ፄ ፅ ፆ ፇ ᎈ ᎉ ᎊ ᎋ ᎌ ᎍ ᎎ ᎏ ⶒ ፘ ፙ ፚ ⶠ ⶡ ⶢ ⶣ ⶤ ⶥ ⶦ ⶨ ⶩ ⶪ ⶫ ⶬ ⶭ ⶮ ⶰ ⶱ ⶲ ⶳ ⶴ ⶵ ⶶ ⶸ ⶹ ⶺ ⶻ ⶼ ⶽ ⶾ ⷀ ⷁ ⷂ ⷃ ⷄ ⷅ ⷆ ⷈ ⷉ ⷊ ⷋ ⷌ ⷍ ⷎ ⷐ ⷑ ⷒ ⷓ ⷔ ⷕ ⷖ ⷘ ⷙ ⷚ ⷛ ⷜ ⷝ ⷞ]</exemplarCharacters>
 		<exemplarCharacters type="index" draft="unconfirmed">[ሀ ለ ሐ መ ረ ሰ ሸ ቀ ቈ ቐ ቘ በ ቨ ተ ቸ ኀ ኈ ነ ኘ አ ከ ኰ ኸ ዀ ወ ዐ ዘ ዠ የ ደ ጀ ገ ጐ ጠ ጨ ጸ ፈ ፐ]</exemplarCharacters>
 	</characters>
@@ -27,22 +27,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</delimiters>
 	<dates>
 		<calendars>
-			<calendar type="coptic">
-				<dateFormats>
-					<dateFormatLength type="full">
-						<dateFormat>
-							<pattern>EEEE፡ dd MMMM መዓልቲ y G</pattern>
-						</dateFormat>
-					</dateFormatLength>
-				</dateFormats>
-			</calendar>
-			<calendar type="ethiopic">
-				<dateTimeFormats>
-					<intervalFormats>
-						<intervalFormatFallback>{0} - {1}</intervalFormatFallback>
-					</intervalFormats>
-				</dateTimeFormats>
-			</calendar>
 			<calendar type="generic">
 				<dateFormats>
 					<dateFormatLength type="full">
@@ -55,20 +39,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<dateTimeFormats>
 					<intervalFormats>
 						<intervalFormatFallback draft="unconfirmed">{0} - {1}</intervalFormatFallback>
-						<intervalFormatItem id="Md">
-							<greatestDifference id="d" draft="unconfirmed">MM-dd – MM-dd</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">MM-dd – MM-dd</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
 							<greatestDifference id="d" draft="unconfirmed">E፡ MM-dd – E፡ MM-dd</greatestDifference>
 							<greatestDifference id="M" draft="unconfirmed">E፡ MM-dd – E፡ MM-dd</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMM">
 							<greatestDifference id="M" draft="unconfirmed">MMM–MMM</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="MMMd">
-							<greatestDifference id="d" draft="unconfirmed">MMM d–d</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">MMM d – MMM d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
 							<greatestDifference id="d" draft="unconfirmed">E፡ MMM d – E፡ MMM d</greatestDifference>
@@ -123,27 +99,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
-			</calendar>
-			<calendar type="japanese">
-				<dateTimeFormats>
-					<intervalFormats>
-						<intervalFormatFallback>{0} - {1}</intervalFormatFallback>
-					</intervalFormats>
-				</dateTimeFormats>
-			</calendar>
-			<calendar type="persian">
-				<dateTimeFormats>
-					<intervalFormats>
-						<intervalFormatFallback>{0} - {1}</intervalFormatFallback>
-					</intervalFormats>
-				</dateTimeFormats>
-			</calendar>
-			<calendar type="roc">
-				<dateTimeFormats>
-					<intervalFormats>
-						<intervalFormatFallback>{0} - {1}</intervalFormatFallback>
-					</intervalFormats>
-				</dateTimeFormats>
 			</calendar>
 		</calendars>
 	</dates>

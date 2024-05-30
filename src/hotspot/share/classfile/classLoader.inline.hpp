@@ -58,12 +58,6 @@ inline ClassPathEntry* ClassLoader::classpath_entry(int n) {
   }
 }
 
-inline void ClassLoader::load_zip_library_if_needed() {
-  if (Atomic::load_acquire(&_libzip_loaded) == 0) {
-    release_load_zip_library();
-  }
-}
-
 #if INCLUDE_CDS
 
 // Helper function used by CDS code to get the number of boot classpath

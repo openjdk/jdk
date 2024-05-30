@@ -159,46 +159,6 @@ void BarrierSetAssembler::tlab_allocate(MacroAssembler* masm, Register obj, Regi
   __ str(obj_end, Address(Rthread, JavaThread::tlab_top_offset()));
 }
 
-void BarrierSetAssembler::incr_allocated_bytes(MacroAssembler* masm, RegisterOrConstant size_in_bytes, Register tmp) {
-  // Bump total bytes allocated by this thread
-  Label done;
-
-  // Borrow the Rthread for alloc counter
-  Register Ralloc = Rthread;
-  __ add(Ralloc, Ralloc, in_bytes(JavaThread::allocated_bytes_offset()));
-  __ ldr(tmp, Address(Ralloc));
-  __ adds(tmp, tmp, size_in_bytes);
-  __ str(tmp, Address(Ralloc), cc);
-  __ b(done, cc);
-
-  // Increment the high word and store single-copy atomically (that is an unlikely scenario on typical embedded systems as it means >4GB has been allocated)
-  // To do so ldrd/strd instructions used which require an even-odd pair of registers. Such a request could be difficult to satisfy by
-  // allocating those registers on a higher level, therefore the routine is ready to allocate a pair itself.
-  Register low, high;
-  // Select ether R0/R1 or R2/R3
-
-  if (size_in_bytes.is_register() && (size_in_bytes.as_register() == R0 || size_in_bytes.as_register() == R1)) {
-    low = R2;
-    high  = R3;
-  } else {
-    low = R0;
-    high  = R1;
-  }
-  __ push(RegisterSet(low, high));
-
-  __ ldrd(low, Address(Ralloc));
-  __ adds(low, low, size_in_bytes);
-  __ adc(high, high, 0);
-  __ strd(low, Address(Ralloc));
-
-  __ pop(RegisterSet(low, high));
-
-  __ bind(done);
-
-  // Unborrow the Rthread
-  __ sub(Rthread, Ralloc, in_bytes(JavaThread::allocated_bytes_offset()));
-}
-
 void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm) {
 
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
@@ -227,7 +187,7 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm) {
   __ cmp(tmp0, tmp1);
   __ b(skip, eq);
 
-  __ mov_address(tmp0, StubRoutines::Arm::method_entry_barrier());
+  __ mov_address(tmp0, StubRoutines::method_entry_barrier());
   __ call(tmp0);
   __ b(skip);
 
@@ -242,3 +202,11 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm) {
   __ bind(skip);
   __ block_comment("nmethod_barrier end");
 }
+
+#ifdef COMPILER2
+
+OptoReg::Name BarrierSetAssembler::refine_register(const Node* node, OptoReg::Name opto_reg) {
+  Unimplemented(); // This must be implemented to support late barrier expansion.
+}
+
+#endif // COMPILER2

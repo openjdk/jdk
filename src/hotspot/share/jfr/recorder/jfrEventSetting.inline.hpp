@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,8 +43,12 @@ inline jlong JfrEventSetting::threshold(JfrEventId event_id) {
   return setting(event_id).threshold_ticks;
 }
 
+inline jlong JfrEventSetting::level(JfrEventId event_id) {
+  return setting(event_id).miscellaneous;
+}
+
 inline jlong JfrEventSetting::cutoff(JfrEventId event_id) {
-  return setting(event_id).cutoff_ticks;
+  return setting(event_id).miscellaneous;
 }
 
 inline bool JfrEventSetting::is_large(JfrEventId event_id) {

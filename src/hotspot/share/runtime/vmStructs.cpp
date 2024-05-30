@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@
 #include "classfile/vmSymbols.hpp"
 #include "code/codeBlob.hpp"
 #include "code/codeCache.hpp"
+#include "code/compiledIC.hpp"
 #include "code/compressedStream.hpp"
 #include "code/location.hpp"
 #include "code/nmethod.hpp"
@@ -63,7 +64,6 @@
 #include "oops/array.hpp"
 #include "oops/arrayKlass.hpp"
 #include "oops/arrayOop.hpp"
-#include "oops/compiledICHolder.hpp"
 #include "oops/constMethod.hpp"
 #include "oops/constantPool.hpp"
 #include "oops/cpCache.hpp"
@@ -85,6 +85,7 @@
 #include "oops/oopHandle.hpp"
 #include "oops/resolvedFieldEntry.hpp"
 #include "oops/resolvedIndyEntry.hpp"
+#include "oops/resolvedMethodEntry.hpp"
 #include "oops/symbol.hpp"
 #include "oops/typeArrayKlass.hpp"
 #include "oops/typeArrayOop.hpp"
@@ -210,8 +211,6 @@
   nonstatic_field(ArrayKlass,                  _dimension,                                    int)                                   \
   volatile_nonstatic_field(ArrayKlass,         _higher_dimension,                             ObjArrayKlass*)                        \
   volatile_nonstatic_field(ArrayKlass,         _lower_dimension,                              ArrayKlass*)                           \
-  nonstatic_field(CompiledICHolder,            _holder_metadata,                              Metadata*)                             \
-  nonstatic_field(CompiledICHolder,            _holder_klass,                                 Klass*)                                \
   nonstatic_field(ConstantPool,                _tags,                                         Array<u1>*)                            \
   nonstatic_field(ConstantPool,                _cache,                                        ConstantPoolCache*)                    \
   nonstatic_field(ConstantPool,                _pool_holder,                                  InstanceKlass*)                        \
@@ -224,10 +223,11 @@
   nonstatic_field(ConstantPool,                _source_file_name_index,                       u2)                                    \
   nonstatic_field(ConstantPoolCache,           _resolved_references,                          OopHandle)                             \
   nonstatic_field(ConstantPoolCache,           _reference_map,                                Array<u2>*)                            \
-  nonstatic_field(ConstantPoolCache,           _length,                                       int)                                   \
   nonstatic_field(ConstantPoolCache,           _constant_pool,                                ConstantPool*)                         \
   nonstatic_field(ConstantPoolCache,           _resolved_field_entries,                       Array<ResolvedFieldEntry>*)            \
   nonstatic_field(ResolvedFieldEntry,          _cpool_index,                                  u2)                                    \
+  nonstatic_field(ConstantPoolCache,           _resolved_method_entries,                      Array<ResolvedMethodEntry>*)           \
+  nonstatic_field(ResolvedMethodEntry,         _cpool_index,                                  u2)                                    \
   nonstatic_field(ConstantPoolCache,           _resolved_indy_entries,                        Array<ResolvedIndyEntry>*)             \
   nonstatic_field(ResolvedIndyEntry,           _cpool_index,                                  u2)                                    \
   volatile_nonstatic_field(InstanceKlass,      _array_klasses,                                ObjArrayKlass*)                        \
@@ -307,7 +307,7 @@
   nonstatic_field(Method,                      _access_flags,                                 AccessFlags)                           \
   nonstatic_field(Method,                      _vtable_index,                                 int)                                   \
   nonstatic_field(Method,                      _intrinsic_id,                                 u2)                                    \
-  volatile_nonstatic_field(Method,             _code,                                         CompiledMethod*)                       \
+  volatile_nonstatic_field(Method,             _code,                                         nmethod*)                              \
   nonstatic_field(Method,                      _i2i_entry,                                    address)                               \
   volatile_nonstatic_field(Method,             _from_compiled_entry,                          address)                               \
   volatile_nonstatic_field(Method,             _from_interpreted_entry,                       address)                               \
@@ -336,15 +336,6 @@
   nonstatic_field(Annotations,                 _fields_annotations,                           Array<Array<u1>*>*)                    \
   nonstatic_field(Annotations,                 _class_type_annotations,                       Array<u1>*)                            \
   nonstatic_field(Annotations,                 _fields_type_annotations,                      Array<Array<u1>*>*)                    \
-                                                                                                                                     \
-  /***********************/                                                                                                          \
-  /* Constant Pool Cache */                                                                                                          \
-  /***********************/                                                                                                          \
-                                                                                                                                     \
-  volatile_nonstatic_field(ConstantPoolCacheEntry,      _indices,                             intx)                                  \
-  volatile_nonstatic_field(ConstantPoolCacheEntry,      _f1,                                  Metadata*)                             \
-  volatile_nonstatic_field(ConstantPoolCacheEntry,      _f2,                                  intx)                                  \
-  volatile_nonstatic_field(ConstantPoolCacheEntry,      _flags,                               intx)                                  \
                                                                                                                                      \
   /*****************************/                                                                                                    \
   /* Method related structures */                                                                                                    \
@@ -488,6 +479,8 @@
   nonstatic_field(Array<Klass*>,               _data[0],                                      Klass*)                                \
   nonstatic_field(Array<ResolvedFieldEntry>,   _length,                                       int)                                   \
   nonstatic_field(Array<ResolvedFieldEntry>,   _data[0],                                      ResolvedFieldEntry)                    \
+  nonstatic_field(Array<ResolvedMethodEntry>,  _length,                                       int)                                   \
+  nonstatic_field(Array<ResolvedMethodEntry>,  _data[0],                                      ResolvedMethodEntry)                   \
   nonstatic_field(Array<ResolvedIndyEntry>,    _length,                                       int)                                   \
   nonstatic_field(Array<ResolvedIndyEntry>,    _data[0],                                      ResolvedIndyEntry)                     \
                                                                                                                                      \
@@ -515,7 +508,7 @@
   nonstatic_field(CodeHeap,                    _segmap,                                       VirtualSpace)                          \
   nonstatic_field(CodeHeap,                    _log2_segment_size,                            int)                                   \
   nonstatic_field(HeapBlock,                   _header,                                       HeapBlock::Header)                     \
-  nonstatic_field(HeapBlock::Header,           _length,                                       size_t)                                \
+  nonstatic_field(HeapBlock::Header,           _length,                                       uint32_t)                              \
   nonstatic_field(HeapBlock::Header,           _used,                                         bool)                                  \
                                                                                                                                      \
   /**********************************/                                                                                               \
@@ -556,55 +549,46 @@
   /* CodeBlobs (NOTE: incomplete, but only a little) */                                                                              \
   /***************************************************/                                                                              \
                                                                                                                                      \
-  nonstatic_field(CodeBlob,                 _name,                                   const char*)                                    \
-  nonstatic_field(CodeBlob,                 _size,                                   int)                                            \
-  nonstatic_field(CodeBlob,                 _header_size,                            int)                                            \
-  nonstatic_field(CodeBlob,                 _frame_complete_offset,                  int)                                            \
-  nonstatic_field(CodeBlob,                 _data_offset,                            int)                                            \
-  nonstatic_field(CodeBlob,                 _frame_size,                             int)                                            \
-  nonstatic_field(CodeBlob,                 _oop_maps,                               ImmutableOopMapSet*)                            \
-  nonstatic_field(CodeBlob,                 _code_begin,                             address)                                        \
-  nonstatic_field(CodeBlob,                 _code_end,                               address)                                        \
-  nonstatic_field(CodeBlob,                 _content_begin,                          address)                                        \
-  nonstatic_field(CodeBlob,                 _data_end,                               address)                                        \
+  nonstatic_field(CodeBlob,                    _name,                                         const char*)                           \
+  nonstatic_field(CodeBlob,                    _size,                                         int)                                   \
+  nonstatic_field(CodeBlob,                    _header_size,                                  u2)                                    \
+  nonstatic_field(CodeBlob,                    _relocation_size,                              int)                                   \
+  nonstatic_field(CodeBlob,                    _content_offset,                               int)                                   \
+  nonstatic_field(CodeBlob,                    _code_offset,                                  int)                                   \
+  nonstatic_field(CodeBlob,                    _frame_complete_offset,                        int16_t)                               \
+  nonstatic_field(CodeBlob,                    _data_offset,                                  int)                                   \
+  nonstatic_field(CodeBlob,                    _frame_size,                                   int)                                   \
+  nonstatic_field(CodeBlob,                    _oop_maps,                                     ImmutableOopMapSet*)                   \
+  nonstatic_field(CodeBlob,                    _caller_must_gc_arguments,                     bool)                                  \
                                                                                                                                      \
   nonstatic_field(DeoptimizationBlob,          _unpack_offset,                                int)                                   \
-                                                                                                                                     \
-  nonstatic_field(RuntimeStub,                 _caller_must_gc_arguments,                     bool)                                  \
-                                                                                                                                     \
-  /********************************************************/                                                                         \
-  /* CompiledMethod (NOTE: incomplete, but only a little) */                                                                         \
-  /********************************************************/                                                                         \
-                                                                                                                                     \
-  nonstatic_field(CompiledMethod,                     _method,                                       Method*)                        \
-  volatile_nonstatic_field(CompiledMethod,            _exception_cache,                              ExceptionCache*)                \
-  nonstatic_field(CompiledMethod,                     _scopes_data_begin,                            address)                        \
-  nonstatic_field(CompiledMethod,                     _deopt_handler_begin,                          address)                        \
-  nonstatic_field(CompiledMethod,                     _deopt_mh_handler_begin,                       address)                        \
                                                                                                                                      \
   /**************************************************/                                                                               \
   /* NMethods (NOTE: incomplete, but only a little) */                                                                               \
   /**************************************************/                                                                               \
                                                                                                                                      \
+  nonstatic_field(nmethod,                     _method,                                       Method*)                               \
   nonstatic_field(nmethod,                     _entry_bci,                                    int)                                   \
   nonstatic_field(nmethod,                     _osr_link,                                     nmethod*)                              \
   nonstatic_field(nmethod,                     _state,                                        volatile signed char)                  \
   nonstatic_field(nmethod,                     _exception_offset,                             int)                                   \
+  nonstatic_field(nmethod,                     _deopt_handler_offset,                         int)                                   \
+  nonstatic_field(nmethod,                     _deopt_mh_handler_offset,                      int)                                   \
   nonstatic_field(nmethod,                     _orig_pc_offset,                               int)                                   \
   nonstatic_field(nmethod,                     _stub_offset,                                  int)                                   \
-  nonstatic_field(nmethod,                     _consts_offset,                                int)                                   \
-  nonstatic_field(nmethod,                     _oops_offset,                                  int)                                   \
-  nonstatic_field(nmethod,                     _metadata_offset,                              int)                                   \
-  nonstatic_field(nmethod,                     _scopes_pcs_offset,                            int)                                   \
-  nonstatic_field(nmethod,                     _dependencies_offset,                          int)                                   \
-  nonstatic_field(nmethod,                     _handler_table_offset,                         int)                                   \
-  nonstatic_field(nmethod,                     _nul_chk_table_offset,                         int)                                   \
-  nonstatic_field(nmethod,                     _nmethod_end_offset,                           int)                                   \
-  nonstatic_field(nmethod,                     _entry_point,                                  address)                               \
-  nonstatic_field(nmethod,                     _verified_entry_point,                         address)                               \
+  nonstatic_field(nmethod,                     _metadata_offset,                              u2)                                    \
+  nonstatic_field(nmethod,                     _scopes_pcs_offset,                            int)                                    \
+  nonstatic_field(nmethod,                     _scopes_data_offset,                           int)                                   \
+  nonstatic_field(nmethod,                     _handler_table_offset,                         u2)                                    \
+  nonstatic_field(nmethod,                     _nul_chk_table_offset,                         u2)                                    \
+  nonstatic_field(nmethod,                     _entry_offset,                                 u2)                                    \
+  nonstatic_field(nmethod,                     _verified_entry_offset,                        u2)                                    \
   nonstatic_field(nmethod,                     _osr_entry_point,                              address)                               \
+  nonstatic_field(nmethod,                     _immutable_data,                               address)                               \
+  nonstatic_field(nmethod,                     _immutable_data_size,                          int)                                   \
   nonstatic_field(nmethod,                     _compile_id,                                   int)                                   \
   nonstatic_field(nmethod,                     _comp_level,                                   CompLevel)                             \
+  volatile_nonstatic_field(nmethod,            _exception_cache,                              ExceptionCache*)                       \
                                                                                                                                      \
   unchecked_c2_static_field(Deoptimization,    _trap_reason_name,                             void*)                                 \
                                                                                                                                      \
@@ -731,7 +715,6 @@
   /************/                                                                                                                     \
                                                                                                                                      \
   nonstatic_field(ciEnv,                       _compiler_data,                                void*)                                 \
-  nonstatic_field(ciEnv,                       _failure_reason,                               const char*)                           \
   nonstatic_field(ciEnv,                       _factory,                                      ciObjectFactory*)                      \
   nonstatic_field(ciEnv,                       _dependencies,                                 Dependencies*)                         \
   nonstatic_field(ciEnv,                       _task,                                         CompileTask*)                          \
@@ -975,6 +958,7 @@
   unchecked_nonstatic_field(Array<Method*>,            _data,                                 sizeof(Method*))                       \
   unchecked_nonstatic_field(Array<Klass*>,             _data,                                 sizeof(Klass*))                        \
   unchecked_nonstatic_field(Array<ResolvedFieldEntry>, _data,                                 sizeof(ResolvedFieldEntry))            \
+  unchecked_nonstatic_field(Array<ResolvedMethodEntry>,_data,                                 sizeof(ResolvedMethodEntry))           \
   unchecked_nonstatic_field(Array<ResolvedIndyEntry>,  _data,                                 sizeof(ResolvedIndyEntry))             \
   unchecked_nonstatic_field(Array<Array<u1>*>,         _data,                                 sizeof(Array<u1>*))                    \
                                                                                                                                      \
@@ -1112,6 +1096,7 @@
   declare_unsigned_integer_type(u_char)                                   \
   declare_unsigned_integer_type(unsigned int)                             \
   declare_unsigned_integer_type(uint)                                     \
+  declare_unsigned_integer_type(volatile uint)                            \
   declare_unsigned_integer_type(unsigned short)                           \
   declare_unsigned_integer_type(jushort)                                  \
   declare_unsigned_integer_type(unsigned long)                            \
@@ -1145,6 +1130,7 @@
   declare_integer_type(ssize_t)                                           \
   declare_integer_type(intx)                                              \
   declare_integer_type(intptr_t)                                          \
+  declare_integer_type(int16_t)                                           \
   declare_integer_type(int64_t)                                           \
   declare_unsigned_integer_type(uintx)                                    \
   declare_unsigned_integer_type(uintptr_t)                                \
@@ -1165,7 +1151,6 @@
   /* MetadataOopDesc hierarchy (NOTE: some missing) */                    \
   /**************************************************/                    \
                                                                           \
-  declare_toplevel_type(CompiledICHolder)                                 \
   declare_toplevel_type(MetaspaceObj)                                     \
     declare_type(Metadata, MetaspaceObj)                                  \
     declare_type(Klass, Metadata)                                         \
@@ -1318,8 +1303,7 @@
   declare_type(AdapterBlob,              BufferBlob)                      \
   declare_type(MethodHandlesAdapterBlob, BufferBlob)                      \
   declare_type(VtableBlob,               BufferBlob)                      \
-  declare_type(CompiledMethod,           CodeBlob)                        \
-  declare_type(nmethod,                  CompiledMethod)                  \
+  declare_type(nmethod,                  CodeBlob)                        \
   declare_type(RuntimeStub,              RuntimeBlob)                     \
   declare_type(SingletonBlob,            RuntimeBlob)                     \
   declare_type(SafepointBlob,            SingletonBlob)                   \
@@ -1749,12 +1733,7 @@
   declare_c2_type(MinVNode, VectorNode)                                   \
   declare_c2_type(LoadVectorNode, LoadNode)                               \
   declare_c2_type(StoreVectorNode, StoreNode)                             \
-  declare_c2_type(ReplicateBNode, VectorNode)                             \
-  declare_c2_type(ReplicateSNode, VectorNode)                             \
-  declare_c2_type(ReplicateINode, VectorNode)                             \
-  declare_c2_type(ReplicateLNode, VectorNode)                             \
-  declare_c2_type(ReplicateFNode, VectorNode)                             \
-  declare_c2_type(ReplicateDNode, VectorNode)                             \
+  declare_c2_type(ReplicateNode, VectorNode)                              \
   declare_c2_type(PopulateIndexNode, VectorNode)                          \
   declare_c2_type(PackNode, VectorNode)                                   \
   declare_c2_type(PackBNode, PackNode)                                    \
@@ -1892,7 +1871,6 @@
   /* all enum types */                                                    \
                                                                           \
    declare_integer_type(Bytecodes::Code)                                  \
-   declare_integer_type(Generation::Name)                                 \
    declare_integer_type(InstanceKlass::ClassState)                        \
    declare_integer_type(JavaThreadState)                                  \
    declare_integer_type(ThreadState)                                      \
@@ -1908,6 +1886,7 @@
             declare_type(Array<Klass*>, MetaspaceObj)                     \
             declare_type(Array<Method*>, MetaspaceObj)                    \
             declare_type(Array<ResolvedFieldEntry>, MetaspaceObj)         \
+            declare_type(Array<ResolvedMethodEntry>, MetaspaceObj)        \
             declare_type(Array<ResolvedIndyEntry>, MetaspaceObj)          \
             declare_type(Array<Array<u1>*>, MetaspaceObj)                 \
                                                                           \
@@ -1925,8 +1904,8 @@
   declare_toplevel_type(CodeBlob*)                                        \
   declare_toplevel_type(RuntimeBlob*)                                     \
   declare_toplevel_type(CompressedWriteStream*)                           \
-  declare_toplevel_type(ConstantPoolCacheEntry)                           \
   declare_toplevel_type(ResolvedFieldEntry)                               \
+  declare_toplevel_type(ResolvedMethodEntry)                              \
   declare_toplevel_type(ResolvedIndyEntry)                                \
   declare_toplevel_type(elapsedTimer)                                     \
   declare_toplevel_type(frame)                                            \
@@ -2203,18 +2182,6 @@
   declare_constant(ConstantPool::_indy_bsm_offset)                        \
   declare_constant(ConstantPool::_indy_argc_offset)                       \
   declare_constant(ConstantPool::_indy_argv_offset)                       \
-  declare_constant(ConstantPool::CPCACHE_INDEX_TAG)                       \
-                                                                          \
-  /********************************/                                      \
-  /* ConstantPoolCacheEntry enums */                                      \
-  /********************************/                                      \
-                                                                          \
-  declare_constant(ConstantPoolCacheEntry::is_volatile_shift)             \
-  declare_constant(ConstantPoolCacheEntry::is_final_shift)                \
-  declare_constant(ConstantPoolCacheEntry::is_forced_virtual_shift)       \
-  declare_constant(ConstantPoolCacheEntry::is_vfinal_shift)               \
-  declare_constant(ConstantPoolCacheEntry::is_field_entry_shift)          \
-  declare_constant(ConstantPoolCacheEntry::tos_state_shift)               \
                                                                           \
   /***************************************/                               \
   /* JavaThreadStatus enum               */                               \

@@ -1,4 +1,4 @@
-# Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -38,48 +38,53 @@ define ProcessMarkdown
   $1_$2_INPUT_FILE := $3/$2
   $1_$2_MARKER := $$(subst /,_,$1_$2)
 
-  ifneq ($$($1_REPLACEMENTS), )
-    $1_$2_PANDOC_INPUT := $$(SUPPORT_OUTPUTDIR)/markdown/$$($1_$2_MARKER)_pre.tmp
+  # Only continue if this target file hasn't been processed already. This lets
+  # the first found source file override any other with the same name.
+  ifeq ($$($1_$2_OUTPUT_FILE_PROCESSED), )
+    $1_$2_OUTPUT_FILE_PROCESSED := true
 
-    $$(eval $$(call SetupTextFileProcessing, $1_$2_PREPROCESSED, \
-        SOURCE_FILES := $$($1_$2_INPUT_FILE), \
-        OUTPUT_FILE := $$($1_$2_PANDOC_INPUT), \
-        REPLACEMENTS := $$($1_REPLACEMENTS), \
-    ))
-  else
-    $1_$2_PANDOC_INPUT := $$($1_$2_INPUT_FILE)
-  endif
+    ifneq ($$($1_REPLACEMENTS), )
+      $1_$2_PANDOC_INPUT := $$(SUPPORT_OUTPUTDIR)/markdown/$$($1_$2_MARKER)_pre.tmp
 
-  ifneq ($$($1_POST_PROCESS), )
-    $1_$2_PANDOC_OUTPUT := $$(SUPPORT_OUTPUTDIR)/markdown/$$($1_$2_MARKER)_post.tmp
-  else
-    $1_$2_PANDOC_OUTPUT := $$($1_$2_OUTPUT_FILE)
-  endif
-
-  ifneq ($$($1_CSS), )
-    ifneq ($$(findstring https:/, $$($1_CSS)), )
-      $1_$2_CSS_OPTION := --css '$$($1_CSS)'
+      $$(eval $$(call SetupTextFileProcessing, $1_$2_PREPROCESSED, \
+          SOURCE_FILES := $$($1_$2_INPUT_FILE), \
+          OUTPUT_FILE := $$($1_$2_PANDOC_INPUT), \
+          REPLACEMENTS := $$($1_REPLACEMENTS), \
+      ))
     else
-      $1_$2_CSS := $$(strip $$(call RelativePath, $$($1_CSS), $$($1_$2_TARGET_DIR)))
-      $1_$2_CSS_OPTION := --css '$$($1_$2_CSS)'
+      $1_$2_PANDOC_INPUT := $$($1_$2_INPUT_FILE)
     endif
-  endif
 
-  # This does not need to be included in VARDEPS since it's from the actual
-  # source file. Only run the shell if the recipe gets executed below.
-  $1_$2_OPTIONS_FROM_SRC = \
-      $$(shell $$(GREP) _pandoc-options_: $3/$2 | $$(CUT) -d : -f 2-)
+    ifneq ($$($1_POST_PROCESS), )
+      $1_$2_PANDOC_OUTPUT := $$(SUPPORT_OUTPUTDIR)/markdown/$$($1_$2_MARKER)_post.tmp
+    else
+      $1_$2_PANDOC_OUTPUT := $$($1_$2_OUTPUT_FILE)
+    endif
 
-  ifneq ($$($1_FILTER), )
-    $1_$2_OPTIONS := --filter $$($1_FILTER)
-  endif
+    ifneq ($$($1_CSS), )
+      ifneq ($$(findstring https:/, $$($1_CSS)), )
+        $1_$2_CSS_OPTION := --css '$$($1_CSS)'
+      else
+        $1_$2_CSS := $$(strip $$(call RelativePath, $$($1_CSS), $$($1_$2_TARGET_DIR)))
+        $1_$2_CSS_OPTION := --css '$$($1_$2_CSS)'
+      endif
+    endif
 
-  $1_$2_VARDEPS := $$($1_OPTIONS) $$($1_$2_OPTIONS) $$($1_CSS) \
-      $$($1_REPLACEMENTS) $$($1_POST_PROCESS)
-  $1_$2_VARDEPS_FILE := $$(call DependOnVariable, $1_$2_VARDEPS, \
-      $$(SUPPORT_OUTPUTDIR)/markdown/$$($1_$2_MARKER).vardeps)
+    # This does not need to be included in VARDEPS since it's from the actual
+    # source file. Only run the shell if the recipe gets executed below.
+    $1_$2_OPTIONS_FROM_SRC = \
+        $$(shell $$(GREP) _pandoc-options_: $3/$2 | $$(CUT) -d : -f 2-)
 
-  $$($1_$2_PANDOC_OUTPUT): $$($1_$2_PANDOC_INPUT) $$($1_$2_VARDEPS_FILE) $$($1_EXTRA_DEPS)
+    ifneq ($$($1_FILTER), )
+      $1_$2_OPTIONS := --filter $$($1_FILTER)
+    endif
+
+    $1_$2_VARDEPS := $$($1_OPTIONS) $$($1_$2_OPTIONS) $$($1_CSS) \
+        $$($1_REPLACEMENTS) $$($1_POST_PROCESS)
+    $1_$2_VARDEPS_FILE := $$(call DependOnVariable, $1_$2_VARDEPS, \
+        $$(SUPPORT_OUTPUTDIR)/markdown/$$($1_$2_MARKER).vardeps)
+
+    $$($1_$2_PANDOC_OUTPUT): $$($1_$2_PANDOC_INPUT) $$($1_$2_VARDEPS_FILE) $$($1_EXTRA_DEPS)
 	$$(call LogInfo, Converting $2 to $$($1_FORMAT))
 	$$(call MakeDir, $$(SUPPORT_OUTPUTDIR)/markdown $$(dir $$($1_$2_PANDOC_OUTPUT)))
 	$$(call ExecuteWithLog, $$(SUPPORT_OUTPUTDIR)/markdown/$$($1_$2_MARKER), \
@@ -96,17 +101,18 @@ define ProcessMarkdown
 	  fi
         endif
 
-  # If we have no post processing, PANDOC_OUTPUT is set to OUTPUT_FILE. Otherwise
-  # PANDOC_OUTPUT is a temporary file, and we must now create the real OUTPUT_FILE.
-  ifneq ($$($1_POST_PROCESS), )
-    $$($1_$2_OUTPUT_FILE): $$($1_$2_PANDOC_OUTPUT)
+    # If we have no post processing, PANDOC_OUTPUT is set to OUTPUT_FILE. Otherwise
+    # PANDOC_OUTPUT is a temporary file, and we must now create the real OUTPUT_FILE.
+    ifneq ($$($1_POST_PROCESS), )
+      $$($1_$2_OUTPUT_FILE): $$($1_$2_PANDOC_OUTPUT)
 	$$(call LogInfo, Post-processing markdown file $2)
 	$$(call MakeDir, $$(SUPPORT_OUTPUTDIR)/markdown $$($1_$2_TARGET_DIR))
 	$$(call ExecuteWithLog, $$(SUPPORT_OUTPUTDIR)/markdown/$$($1_$2_MARKER)_post, \
 	    ( $$($1_POST_PROCESS) $$($1_$2_PANDOC_OUTPUT) > $$($1_$2_OUTPUT_FILE) ) )
-  endif
+    endif
 
-  $1 += $$($1_$2_OUTPUT_FILE)
+    $1 += $$($1_$2_OUTPUT_FILE)
+  endif
 endef
 
 ################################################################################

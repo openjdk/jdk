@@ -21,9 +21,9 @@
  * questions.
  */
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.*;
-import jdk.internal.classfile.constantpool.Utf8Entry;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
+import java.lang.classfile.constantpool.Utf8Entry;
 import java.io.*;
 import java.lang.constant.MethodTypeDesc;
 
@@ -87,15 +87,15 @@ class ClassFileVisitor extends MethodParametersTester.Visitor {
      */
     void visitClass(final String cname, final File cfile, final StringBuilder sb) throws Exception {
         this.cname = cname;
-        classFile = Classfile.of().parse(cfile.toPath());
-        isEnum = (classFile.flags().flagsMask() & Classfile.ACC_ENUM) != 0;
-        isInterface = (classFile.flags().flagsMask() & Classfile.ACC_INTERFACE) != 0;
-        isPublic = (classFile.flags().flagsMask() & Classfile.ACC_PUBLIC) != 0;
+        classFile = ClassFile.of().parse(cfile.toPath());
+        isEnum = (classFile.flags().flagsMask() & ClassFile.ACC_ENUM) != 0;
+        isInterface = (classFile.flags().flagsMask() & ClassFile.ACC_INTERFACE) != 0;
+        isPublic = (classFile.flags().flagsMask() & ClassFile.ACC_PUBLIC) != 0;
         isInner = false;
         isStatic = false;
         isAnon = false;
 
-        classFile.findAttribute(Attributes.INNER_CLASSES).ifPresent(this::visitInnerClasses);
+        classFile.findAttribute(Attributes.innerClasses()).ifPresent(this::visitInnerClasses);
         isAnon = isInner & isAnon;
 
         sb.append(isStatic ? "static " : "")
@@ -127,7 +127,7 @@ class ClassFileVisitor extends MethodParametersTester.Visitor {
                 if (!cname.equals(in)) continue;
                 isInner = true;
                 isAnon = null == info.innerName().orElse(null);
-                isStatic = (info.flagsMask() & Classfile.ACC_STATIC) != 0;
+                isStatic = (info.flagsMask() & ClassFile.ACC_STATIC) != 0;
                 break;
             }
         } catch(Exception e) {
@@ -159,11 +159,11 @@ class ClassFileVisitor extends MethodParametersTester.Visitor {
             mParams =  mDesc.parameterCount();
             mAttrs = method.attributes().size();
             mNumParams = -1; // no MethodParameters attribute found
-            mSynthetic = (method.flags().flagsMask() & Classfile.ACC_SYNTHETIC) != 0;
+            mSynthetic = (method.flags().flagsMask() & ClassFile.ACC_SYNTHETIC) != 0;
             mIsConstructor = mName.equals("<init>");
             mIsClinit = mName.equals("<clinit>");
             prefix = cname + "." + mName + "() - ";
-            mIsBridge = (method.flags().flagsMask() & Classfile.ACC_BRIDGE) != 0;
+            mIsBridge = (method.flags().flagsMask() & ClassFile.ACC_BRIDGE) != 0;
 
             if (mIsClinit) {
                 sb = new StringBuilder(); // Discard output
@@ -232,7 +232,7 @@ class ClassFileVisitor extends MethodParametersTester.Visitor {
             String sep = "";
             String userParam = null;
             for (int x = 0; x <  mNumParams; x++) {
-                isFinal = (mp.parameters().get(x).flagsMask() & Classfile.ACC_FINAL) != 0;
+                isFinal = (mp.parameters().get(x).flagsMask() & ClassFile.ACC_FINAL) != 0;
                 // IMPL: Assume all parameters are named, something.
                 Utf8Entry paramEntry = mp.parameters().get(x).name().orElse(null);
                 if (paramEntry == null) {
@@ -293,9 +293,9 @@ class ClassFileVisitor extends MethodParametersTester.Visitor {
                        StringBuilder sb, boolean isFinal) {
 
             boolean synthetic = (mp.parameters().get(index).flagsMask()
-                                 & Classfile.ACC_SYNTHETIC) != 0;
+                                 & ClassFile.ACC_SYNTHETIC) != 0;
             boolean mandated = (mp.parameters().get(index).flagsMask()
-                                & Classfile.ACC_MANDATED) != 0;
+                                & ClassFile.ACC_MANDATED) != 0;
 
             // Setup expectations for flags and special names
             String expect = null;

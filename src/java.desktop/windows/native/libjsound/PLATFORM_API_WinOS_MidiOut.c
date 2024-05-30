@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -161,7 +161,7 @@ INT32 unprepareLongBuffers(MidiDeviceHandle* handle) {
     }
     sysex = (SysExQueue*) handle->longBuffers;
     for (i = 0; i<sysex->count; i++) {
-        MIDIHDR* hdr = &(sysex->header[i]);
+        MIDIHDR* hdr = &(sysex->headerInfo[i].header);
         if (hdr->dwFlags) {
             err = midiOutUnprepareHeader((HMIDIOUT) handle->deviceHandle, hdr, sizeof(MIDIHDR));
         }
@@ -170,8 +170,9 @@ INT32 unprepareLongBuffers(MidiDeviceHandle* handle) {
     return (INT32) err;
 }
 
-INT32 freeLongBuffer(MIDIHDR* hdr, HMIDIOUT deviceHandle, INT32 minToLeaveData) {
+INT32 freeLongBuffer(MidiHeaderInfo* info, HMIDIOUT deviceHandle, INT32 minToLeaveData) {
     MMRESULT err = MMSYSERR_NOERROR;
+    MIDIHDR* hdr = &(info->header);
 
     if (!hdr) {
         ERROR0("MIDI_OUT_freeLongBuffer: hdr == NULL\n");
@@ -180,10 +181,11 @@ INT32 freeLongBuffer(MIDIHDR* hdr, HMIDIOUT deviceHandle, INT32 minToLeaveData) 
     if (hdr->dwFlags && deviceHandle) {
         err = midiOutUnprepareHeader(deviceHandle, hdr, sizeof(MIDIHDR));
     }
-    if (hdr->lpData && (((INT32) hdr->dwBufferLength) < minToLeaveData || minToLeaveData < 0)) {
+    if (hdr->lpData && (info->bufferLength < minToLeaveData || minToLeaveData < 0)) {
         free(hdr->lpData);
         hdr->lpData=NULL;
         hdr->dwBufferLength=0;
+        info->bufferLength=0;
     }
     hdr->dwBytesRecorded=0;
     hdr->dwFlags=0;
@@ -201,7 +203,7 @@ INT32 freeLongBuffers(MidiDeviceHandle* handle) {
     }
     sysex = (SysExQueue*) handle->longBuffers;
     for (i = 0; i<sysex->count; i++) {
-        err = freeLongBuffer(&(sysex->header[i]), (HMIDIOUT) handle->deviceHandle, -1);
+        err = freeLongBuffer(&(sysex->headerInfo[i]), (HMIDIOUT) handle->deviceHandle, -1);
     }
     MIDIOUT_CHECK_ERROR;
     return (INT32) err;
@@ -352,6 +354,7 @@ INT32 MIDI_OUT_SendShortMessage(MidiDeviceHandle* handle, UINT32 packedMsg, UINT
 INT32 MIDI_OUT_SendLongMessage(MidiDeviceHandle* handle, UBYTE* data, UINT32 size, UINT32 timestamp) {
     MMRESULT err;
     SysExQueue* sysex;
+    MidiHeaderInfo* info = NULL;
     MIDIHDR* hdr = NULL;
     INT32 remainingSize;
     int i;
@@ -378,10 +381,12 @@ INT32 MIDI_OUT_SendLongMessage(MidiDeviceHandle* handle, UBYTE* data, UINT32 siz
         while (!hdr && handle->platformData) {
             /* find a non-queued header */
             for (i = 0; i < sysex->count; i++) {
-                hdr = &(sysex->header[i]);
+                info = &(sysex->headerInfo[i]);
+                hdr = &(info->header);
                 if ((hdr->dwFlags & MHDR_DONE) || (hdr->dwFlags == 0)) {
                     break;
                 }
+                info = NULL;
                 hdr = NULL;
             }
             /* wait for a buffer to free up */
@@ -404,22 +409,26 @@ INT32 MIDI_OUT_SendLongMessage(MidiDeviceHandle* handle, UBYTE* data, UINT32 siz
         }
 
         TRACE2("-> sending %d bytes with buffer index=%d\n", (int) size, (int) hdr->dwUser);
-        freeLongBuffer(hdr, handle->deviceHandle, (INT32) size);
+        freeLongBuffer(info, handle->deviceHandle, (INT32) size);
         if (hdr->lpData == NULL) {
             hdr->lpData = malloc(size);
-            hdr->dwBufferLength = size;
+            info->bufferLength = size;
         }
+        // Because midiOutLongMsg() ignores dwBytesRecorded, set both
+        // dwBufferLength to the size of the data. The actual buffer
+        // size is recorded in info->bufferLength.
+        hdr->dwBufferLength = size;
         hdr->dwBytesRecorded = size;
         memcpy(hdr->lpData, data, size);
         err = midiOutPrepareHeader((HMIDIOUT) handle->deviceHandle, hdr, sizeof(MIDIHDR));
         if (err != MMSYSERR_NOERROR) {
-            freeLongBuffer(hdr, handle->deviceHandle, -1);
+            freeLongBuffer(info, handle->deviceHandle, -1);
             MIDIOUT_CHECK_ERROR;
             return (INT32) err;
         }
         err = midiOutLongMsg((HMIDIOUT) handle->deviceHandle, hdr, sizeof(MIDIHDR));
         if (err != MMSYSERR_NOERROR) {
-            freeLongBuffer(hdr, handle->deviceHandle, -1);
+            freeLongBuffer(info, handle->deviceHandle, -1);
             ERROR0("ERROR: MIDI_OUT_SendLongMessage: midiOutLongMsg returned error:\n");
             MIDIOUT_CHECK_ERROR;
             return (INT32) err;

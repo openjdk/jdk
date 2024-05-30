@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,9 @@
  * @modules java.base/sun.security.provider
  */
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.FileInputStream;
+import java.io.File;
 import java.io.PrintStream;
 import java.security.KeyStore;
 import java.security.cert.CertificateException;
@@ -38,7 +39,6 @@ import java.util.Base64;
 
 import sun.security.provider.X509Factory;
 import java.security.cert.CertificateFactory;
-import java.io.ByteArrayInputStream;
 
 public class BadPem {
 
@@ -49,8 +49,8 @@ public class BadPem {
         String alias = "dummy";
 
         CertificateFactory cf = CertificateFactory.getInstance("X.509");
-        KeyStore keyStore = KeyStore.getInstance("JKS");
-        keyStore.load(new FileInputStream(ks), pass.toCharArray());
+        KeyStore keyStore = KeyStore.getInstance(new File(ks),
+                pass.toCharArray());
         byte[] cert = keyStore.getCertificate(alias).getEncoded();
 
         // 8074935

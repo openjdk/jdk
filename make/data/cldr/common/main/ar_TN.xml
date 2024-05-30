@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -19,24 +19,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<calendar type="gregorian">
 				<months>
 					<monthContext type="format">
-						<monthWidth type="abbreviated">
-							<month type="1">جانفي</month>
-							<month type="2">فيفري</month>
-							<month type="4">أفريل</month>
-							<month type="5">ماي</month>
-							<month type="6">جوان</month>
-							<month type="7">جويلية</month>
-							<month type="8">أوت</month>
-						</monthWidth>
-						<monthWidth type="narrow">
-							<month type="1">ج</month>
-							<month type="5">م</month>
-							<month type="6">ج</month>
-							<month type="7">ج</month>
-							<month type="8">أ</month>
-							<month type="10">أ</month>
-							<month type="11">ن</month>
-						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">جانفي</month>
 							<month type="2">فيفري</month>
@@ -48,15 +30,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
-						<monthWidth type="abbreviated">
-							<month type="1">جانفي</month>
-							<month type="2">فيفري</month>
-							<month type="4">أفريل</month>
-							<month type="5">ماي</month>
-							<month type="6">جوان</month>
-							<month type="7">جويلية</month>
-							<month type="8">أوت</month>
-						</monthWidth>
 						<monthWidth type="narrow">
 							<month type="1" draft="contributed">ج</month>
 							<month type="5" draft="contributed">م</month>
@@ -66,15 +39,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="10" draft="contributed">أ</month>
 							<month type="11" draft="contributed">ن</month>
 						</monthWidth>
-						<monthWidth type="wide">
-							<month type="1">جانفي</month>
-							<month type="2">فيفري</month>
-							<month type="4">أفريل</month>
-							<month type="5">ماي</month>
-							<month type="6">جوان</month>
-							<month type="7">جويلية</month>
-							<month type="8">أوت</month>
-						</monthWidth>
 					</monthContext>
 				</months>
 			</calendar>
@@ -82,6 +46,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</dates>
 	<numbers>
 		<defaultNumberingSystem>latn</defaultNumberingSystem>
+		<defaultNumberingSystem alt="latn">latn</defaultNumberingSystem>
 		<symbols numberSystem="latn">
 			<decimal>,</decimal>
 			<group>.</group>

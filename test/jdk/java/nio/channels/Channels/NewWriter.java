@@ -51,7 +51,7 @@ public class NewWriter {
     private int actual = 0;
 
     @Test
-    public void oneByteChannel() throws IOException {
+    public void customWritableByteChannel() throws IOException {
         try (Writer writer = Channels.newWriter(new WritableByteChannel() {
             @Override
             public int write(ByteBuffer src) {
@@ -89,7 +89,6 @@ public class NewWriter {
                 ss.bind(new InetSocketAddress(lb, 0));
                 sc.connect(ss.getLocalSocketAddress());
                 sc.configureBlocking(false);
-                sc.setOption(StandardSocketOptions.SO_SNDBUF, 8192);
                 try (Writer writer = Channels.newWriter(sc,
                     StandardCharsets.UTF_8)) {
                     for (int i = 1; i < Integer.MAX_VALUE; i++) {

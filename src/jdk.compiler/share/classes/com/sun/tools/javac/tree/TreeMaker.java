@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,6 +129,7 @@ public class TreeMaker implements JCTree.Factory {
             Assert.check(node instanceof JCClassDecl
                 || node instanceof JCPackageDecl
                 || node instanceof JCImport
+                || node instanceof JCModuleImport
                 || node instanceof JCModuleDecl
                 || node instanceof JCSkip
                 || node instanceof JCErroneous
@@ -151,8 +152,14 @@ public class TreeMaker implements JCTree.Factory {
         return tree;
     }
 
-    public JCImport Import(JCFieldAccess qualid, boolean importStatic) {
-        JCImport tree = new JCImport(qualid, importStatic);
+    public JCImport Import(JCFieldAccess qualid, boolean staticImport) {
+        JCImport tree = new JCImport(qualid, staticImport);
+        tree.pos = pos;
+        return tree;
+    }
+
+    public JCModuleImport ModuleImport(JCExpression moduleName) {
+        JCModuleImport tree = new JCModuleImport(moduleName);
         tree.pos = pos;
         return tree;
     }
@@ -548,14 +555,6 @@ public class TreeMaker implements JCTree.Factory {
 
     public JCLiteral Literal(TypeTag tag, Object value) {
         JCLiteral tree = new JCLiteral(tag, value);
-        tree.pos = pos;
-        return tree;
-    }
-
-    public JCStringTemplate StringTemplate(JCExpression processor,
-                                           List<String> fragments,
-                                           List<JCExpression> expressions) {
-        JCStringTemplate tree = new JCStringTemplate(processor, fragments, expressions);
         tree.pos = pos;
         return tree;
     }
@@ -1161,7 +1160,7 @@ public class TreeMaker implements JCTree.Factory {
                   !it.hasNext();
             }
         }
-        return sym.kind == TYP && (sym.flags_field & Flags.UNNAMED_CLASS) != 0;
+        return sym.kind == TYP && sym.isImplicit();
     }
 
     /** The name of synthetic parameter number `i'.

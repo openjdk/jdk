@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,43 +28,43 @@ import java.lang.constant.ConstantDesc;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.Instruction;
-import jdk.internal.classfile.constantpool.ClassEntry;
-import jdk.internal.classfile.instruction.SwitchCase;
-import jdk.internal.classfile.constantpool.FieldRefEntry;
-import jdk.internal.classfile.constantpool.InterfaceMethodRefEntry;
-import jdk.internal.classfile.constantpool.InvokeDynamicEntry;
-import jdk.internal.classfile.constantpool.LoadableConstantEntry;
-import jdk.internal.classfile.constantpool.MemberRefEntry;
-import jdk.internal.classfile.instruction.ArrayLoadInstruction;
-import jdk.internal.classfile.instruction.ArrayStoreInstruction;
-import jdk.internal.classfile.instruction.BranchInstruction;
-import jdk.internal.classfile.instruction.ConstantInstruction;
-import jdk.internal.classfile.instruction.ConvertInstruction;
-import jdk.internal.classfile.instruction.DiscontinuedInstruction;
-import jdk.internal.classfile.instruction.FieldInstruction;
-import jdk.internal.classfile.instruction.IncrementInstruction;
-import jdk.internal.classfile.instruction.InvokeDynamicInstruction;
-import jdk.internal.classfile.instruction.InvokeInstruction;
-import jdk.internal.classfile.instruction.LoadInstruction;
-import jdk.internal.classfile.instruction.LookupSwitchInstruction;
-import jdk.internal.classfile.instruction.MonitorInstruction;
-import jdk.internal.classfile.instruction.NewMultiArrayInstruction;
-import jdk.internal.classfile.instruction.NewObjectInstruction;
-import jdk.internal.classfile.instruction.NewPrimitiveArrayInstruction;
-import jdk.internal.classfile.instruction.NewReferenceArrayInstruction;
-import jdk.internal.classfile.instruction.NopInstruction;
-import jdk.internal.classfile.instruction.OperatorInstruction;
-import jdk.internal.classfile.instruction.ReturnInstruction;
-import jdk.internal.classfile.instruction.StackInstruction;
-import jdk.internal.classfile.instruction.StoreInstruction;
-import jdk.internal.classfile.instruction.TableSwitchInstruction;
-import jdk.internal.classfile.instruction.ThrowInstruction;
-import jdk.internal.classfile.instruction.TypeCheckInstruction;
-import jdk.internal.classfile.Label;
-import jdk.internal.classfile.Opcode;
-import jdk.internal.classfile.TypeKind;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.Instruction;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.instruction.SwitchCase;
+import java.lang.classfile.constantpool.FieldRefEntry;
+import java.lang.classfile.constantpool.InterfaceMethodRefEntry;
+import java.lang.classfile.constantpool.InvokeDynamicEntry;
+import java.lang.classfile.constantpool.LoadableConstantEntry;
+import java.lang.classfile.constantpool.MemberRefEntry;
+import java.lang.classfile.instruction.ArrayLoadInstruction;
+import java.lang.classfile.instruction.ArrayStoreInstruction;
+import java.lang.classfile.instruction.BranchInstruction;
+import java.lang.classfile.instruction.ConstantInstruction;
+import java.lang.classfile.instruction.ConvertInstruction;
+import java.lang.classfile.instruction.DiscontinuedInstruction;
+import java.lang.classfile.instruction.FieldInstruction;
+import java.lang.classfile.instruction.IncrementInstruction;
+import java.lang.classfile.instruction.InvokeDynamicInstruction;
+import java.lang.classfile.instruction.InvokeInstruction;
+import java.lang.classfile.instruction.LoadInstruction;
+import java.lang.classfile.instruction.LookupSwitchInstruction;
+import java.lang.classfile.instruction.MonitorInstruction;
+import java.lang.classfile.instruction.NewMultiArrayInstruction;
+import java.lang.classfile.instruction.NewObjectInstruction;
+import java.lang.classfile.instruction.NewPrimitiveArrayInstruction;
+import java.lang.classfile.instruction.NewReferenceArrayInstruction;
+import java.lang.classfile.instruction.NopInstruction;
+import java.lang.classfile.instruction.OperatorInstruction;
+import java.lang.classfile.instruction.ReturnInstruction;
+import java.lang.classfile.instruction.StackInstruction;
+import java.lang.classfile.instruction.StoreInstruction;
+import java.lang.classfile.instruction.TableSwitchInstruction;
+import java.lang.classfile.instruction.ThrowInstruction;
+import java.lang.classfile.instruction.TypeCheckInstruction;
+import java.lang.classfile.Label;
+import java.lang.classfile.Opcode;
+import java.lang.classfile.TypeKind;
 
 public abstract sealed class AbstractInstruction
         extends AbstractElement
@@ -114,7 +114,7 @@ public abstract sealed class AbstractInstruction
     @Override
     public abstract void writeTo(DirectCodeBuilder writer);
 
-    public static abstract sealed class BoundInstruction extends AbstractInstruction {
+    public abstract static sealed class BoundInstruction extends AbstractInstruction {
         final CodeImpl code;
         final int pos;
 
@@ -262,6 +262,9 @@ public abstract sealed class AbstractInstruction
 
             this.afterPad = pos + 1 + ((4 - ((pos + 1 - code.codeStart) & 3)) & 3);
             this.npairs = code.classReader.readInt(afterPad + 4);
+            if (npairs < 0 || npairs > code.codeLength >> 3) {
+                throw new IllegalArgumentException("Invalid lookupswitch npairs value: " + npairs);
+            }
         }
 
         static int size(CodeImpl code, int codeStart, int pos) {
@@ -314,6 +317,9 @@ public abstract sealed class AbstractInstruction
             int pad = ap - (pos + 1);
             int low = code.classReader.readInt(ap + 4);
             int high = code.classReader.readInt(ap + 8);
+            if (high < low || high - low > code.codeLength >> 2) {
+                throw new IllegalArgumentException("Invalid tableswitch values low: " + low + " high: " + high);
+            }
             int cnt = high - low + 1;
             return 1 + pad + 12 + cnt * 4;
         }
@@ -419,12 +425,12 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public boolean isInterface() {
-            return method().tag() == Classfile.TAG_INTERFACEMETHODREF;
+            return method().tag() == ClassFile.TAG_INTERFACEMETHODREF;
         }
 
         @Override
         public int count() {
-            return Util.parameterSlots(Util.methodTypeSymbol(method().nameAndType()));
+            return 0;
         }
 
         @Override
@@ -551,7 +557,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public TypeKind typeKind() {
-            return TypeKind.fromNewArrayCode(code.classReader.readU1(pos + 1));
+            return TypeKind.fromNewarrayCode(code.classReader.readU1(pos + 1));
         }
 
         @Override
@@ -681,10 +687,10 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public LoadableConstantEntry constantEntry() {
-            return (LoadableConstantEntry)
-                    code.classReader.entryByIndex(op == Opcode.LDC
+            return code.classReader.entryByIndex(op == Opcode.LDC
                                                   ? code.classReader.readU1(pos + 1)
-                                                  : code.classReader.readU2(pos + 1));
+                                                  : code.classReader.readU2(pos + 1),
+                            LoadableConstantEntry.class);
         }
 
         @Override
@@ -760,7 +766,7 @@ public abstract sealed class AbstractInstruction
 
     }
 
-    public static abstract sealed class UnboundInstruction extends AbstractInstruction {
+    public abstract static sealed class UnboundInstruction extends AbstractInstruction {
 
         UnboundInstruction(Opcode op) {
             super(op, op.sizeIfFixed());
@@ -860,7 +866,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public int constant() {
-            return 0;
+            return constant;
         }
 
         @Override
@@ -1143,7 +1149,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public void writeTo(DirectCodeBuilder writer) {
-            writer.writeNewPrimitiveArray(typeKind.newarraycode());
+            writer.writeNewPrimitiveArray(typeKind.newarrayCode());
         }
 
         @Override

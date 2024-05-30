@@ -42,7 +42,7 @@ public class TestTimerSlack {
 
         // Check the timer slack value is not printed by default
         {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:os+thread",
+            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:os+thread",
                                                       "TestTimerSlack$TestMain");
 
             OutputAnalyzer output = new OutputAnalyzer(pb.start());
@@ -52,7 +52,7 @@ public class TestTimerSlack {
 
         // Check the timer slack value is not printed when explicitly disabled
         {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:os+thread",
+            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:os+thread",
                                                       "-XX:+UnlockExperimentalVMOptions",
                                                       "-XX:TimerSlack=-1",
                                                       "TestTimerSlack$TestMain");
@@ -64,7 +64,7 @@ public class TestTimerSlack {
 
         // Check the timer slack value is good when system-wide default is requested
         {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:os+thread",
+            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:os+thread",
                                                       "-XX:+UnlockExperimentalVMOptions",
                                                       "-XX:TimerSlack=0",
                                                       "TestTimerSlack$TestMain");
@@ -82,7 +82,7 @@ public class TestTimerSlack {
 
         // Check the timer slack value is accepted by all threads
         for (int slack : new int[] {1, 10, 100, 1000, 10000, 100000, 1000000}) {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:os+thread",
+            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:os+thread",
                                                       "-XX:+UnlockExperimentalVMOptions",
                                                       "-XX:TimerSlack=" + slack,
                                                       "TestTimerSlack$TestMain");

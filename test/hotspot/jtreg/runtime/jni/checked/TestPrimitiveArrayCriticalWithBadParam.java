@@ -65,7 +65,7 @@ public class TestPrimitiveArrayCriticalWithBadParam {
         pbArgs.add(TestPrimitiveArrayCriticalWithBadParam.class.getName());
         pbArgs.add(useVThread ? "vtest" : "test");
         try {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(pbArgs.toArray(new String[0]));
+            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(pbArgs.toArray(new String[0]));
             OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
 
             // -Xcheck:jni should warn the bad parameter

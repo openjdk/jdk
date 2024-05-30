@@ -30,17 +30,17 @@ import java.lang.module.ModuleDescriptor;
 import java.lang.reflect.AccessFlag;
 import java.nio.ByteBuffer;
 import java.util.Map;
-import jdk.internal.classfile.Classfile;
+import java.lang.classfile.ClassFile;
 import java.lang.constant.PackageDesc;
-import jdk.internal.classfile.attribute.ModuleAttribute;
-import jdk.internal.classfile.attribute.ModuleExportInfo;
-import jdk.internal.classfile.attribute.ModuleMainClassAttribute;
-import jdk.internal.classfile.attribute.ModuleOpenInfo;
-import jdk.internal.classfile.attribute.ModulePackagesAttribute;
-import jdk.internal.classfile.attribute.ModuleResolutionAttribute;
-import jdk.internal.classfile.attribute.ModuleRequireInfo;
-import jdk.internal.classfile.attribute.ModuleTargetAttribute;
-import jdk.internal.classfile.constantpool.ModuleEntry;
+import java.lang.classfile.attribute.ModuleAttribute;
+import java.lang.classfile.attribute.ModuleExportInfo;
+import java.lang.classfile.attribute.ModuleMainClassAttribute;
+import java.lang.classfile.attribute.ModuleOpenInfo;
+import java.lang.classfile.attribute.ModulePackagesAttribute;
+import java.lang.classfile.attribute.ModuleResolutionAttribute;
+import java.lang.classfile.attribute.ModuleRequireInfo;
+import java.lang.classfile.attribute.ModuleTargetAttribute;
+import java.lang.classfile.constantpool.ModuleEntry;
 import jdk.internal.module.ModuleResolution;
 import jdk.internal.module.ModuleTarget;
 
@@ -52,29 +52,29 @@ public final class ModuleInfoWriter {
 
     private static final Map<ModuleDescriptor.Modifier, Integer>
         MODULE_MODS_TO_FLAGS = Map.of(
-            ModuleDescriptor.Modifier.OPEN, Classfile.ACC_OPEN,
-            ModuleDescriptor.Modifier.SYNTHETIC, Classfile.ACC_SYNTHETIC,
-            ModuleDescriptor.Modifier.MANDATED, Classfile.ACC_MANDATED
+            ModuleDescriptor.Modifier.OPEN, ClassFile.ACC_OPEN,
+            ModuleDescriptor.Modifier.SYNTHETIC, ClassFile.ACC_SYNTHETIC,
+            ModuleDescriptor.Modifier.MANDATED, ClassFile.ACC_MANDATED
         );
 
     private static final Map<ModuleDescriptor.Requires.Modifier, Integer>
         REQUIRES_MODS_TO_FLAGS = Map.of(
-            ModuleDescriptor.Requires.Modifier.TRANSITIVE, Classfile.ACC_TRANSITIVE,
-            ModuleDescriptor.Requires.Modifier.STATIC, Classfile.ACC_STATIC_PHASE,
-            ModuleDescriptor.Requires.Modifier.SYNTHETIC, Classfile.ACC_SYNTHETIC,
-            ModuleDescriptor.Requires.Modifier.MANDATED, Classfile.ACC_MANDATED
+            ModuleDescriptor.Requires.Modifier.TRANSITIVE, ClassFile.ACC_TRANSITIVE,
+            ModuleDescriptor.Requires.Modifier.STATIC, ClassFile.ACC_STATIC_PHASE,
+            ModuleDescriptor.Requires.Modifier.SYNTHETIC, ClassFile.ACC_SYNTHETIC,
+            ModuleDescriptor.Requires.Modifier.MANDATED, ClassFile.ACC_MANDATED
         );
 
     private static final Map<ModuleDescriptor.Exports.Modifier, Integer>
         EXPORTS_MODS_TO_FLAGS = Map.of(
-            ModuleDescriptor.Exports.Modifier.SYNTHETIC, Classfile.ACC_SYNTHETIC,
-            ModuleDescriptor.Exports.Modifier.MANDATED, Classfile.ACC_MANDATED
+            ModuleDescriptor.Exports.Modifier.SYNTHETIC, ClassFile.ACC_SYNTHETIC,
+            ModuleDescriptor.Exports.Modifier.MANDATED, ClassFile.ACC_MANDATED
         );
 
     private static final Map<ModuleDescriptor.Opens.Modifier, Integer>
         OPENS_MODS_TO_FLAGS = Map.of(
-            ModuleDescriptor.Opens.Modifier.SYNTHETIC, Classfile.ACC_SYNTHETIC,
-            ModuleDescriptor.Opens.Modifier.MANDATED, Classfile.ACC_MANDATED
+            ModuleDescriptor.Opens.Modifier.SYNTHETIC, ClassFile.ACC_SYNTHETIC,
+            ModuleDescriptor.Opens.Modifier.MANDATED, ClassFile.ACC_MANDATED
         );
 
     private ModuleInfoWriter() { }
@@ -87,7 +87,7 @@ public final class ModuleInfoWriter {
                                        ModuleResolution mres,
                                        ModuleTarget target) {
         //using low-level module building to avoid validation in ModuleDesc and allow invalid names
-        return Classfile.of().build(ClassDesc.of("module-info"), clb -> {
+        return ClassFile.of().build(ClassDesc.of("module-info"), clb -> {
             clb.withFlags(AccessFlag.MODULE);
             var cp = clb.constantPool();
             clb.with(ModuleAttribute.of(cp.moduleEntry(cp.utf8Entry(md.name())), mb -> {

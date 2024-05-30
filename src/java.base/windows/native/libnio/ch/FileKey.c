@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,9 +38,9 @@ static jfieldID key_indexLow;    /* id for FileKey.nFileIndexLow */
 JNIEXPORT void JNICALL
 Java_sun_nio_ch_FileKey_initIDs(JNIEnv *env, jclass clazz)
 {
-    CHECK_NULL(key_volumeSN = (*env)->GetFieldID(env, clazz, "dwVolumeSerialNumber", "J"));
-    CHECK_NULL(key_indexHigh = (*env)->GetFieldID(env, clazz, "nFileIndexHigh", "J"));
-    CHECK_NULL(key_indexLow = (*env)->GetFieldID(env, clazz, "nFileIndexLow", "J"));
+    CHECK_NULL(key_volumeSN = (*env)->GetFieldID(env, clazz, "dwVolumeSerialNumber", "I"));
+    CHECK_NULL(key_indexHigh = (*env)->GetFieldID(env, clazz, "nFileIndexHigh", "I"));
+    CHECK_NULL(key_indexLow = (*env)->GetFieldID(env, clazz, "nFileIndexLow", "I"));
 }
 
 
@@ -53,9 +53,9 @@ Java_sun_nio_ch_FileKey_init(JNIEnv *env, jobject this, jobject fdo)
 
     result = GetFileInformationByHandle(fileHandle, &fileInfo);
     if (result) {
-        (*env)->SetLongField(env, this, key_volumeSN, fileInfo.dwVolumeSerialNumber);
-        (*env)->SetLongField(env, this, key_indexHigh, fileInfo.nFileIndexHigh);
-        (*env)->SetLongField(env, this, key_indexLow, fileInfo.nFileIndexLow);
+        (*env)->SetIntField(env, this, key_volumeSN, fileInfo.dwVolumeSerialNumber);
+        (*env)->SetIntField(env, this, key_indexHigh, fileInfo.nFileIndexHigh);
+        (*env)->SetIntField(env, this, key_indexLow, fileInfo.nFileIndexLow);
     } else {
         JNU_ThrowIOExceptionWithLastError(env, "GetFileInformationByHandle failed");
     }

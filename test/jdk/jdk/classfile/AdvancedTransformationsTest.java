@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,21 +23,22 @@
 
 /*
  * @test
- * @summary Testing Classfile advanced transformations.
+ * @summary Testing ClassFile advanced transformations.
+ * @bug 8332505
  * @run junit AdvancedTransformationsTest
  */
 import helpers.ByteArrayClassLoader;
 import java.util.Map;
 import java.util.Set;
-import jdk.internal.classfile.ClassHierarchyResolver;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.CodeElement;
-import jdk.internal.classfile.CodeModel;
-import jdk.internal.classfile.MethodModel;
-import jdk.internal.classfile.TypeKind;
+import java.lang.classfile.ClassHierarchyResolver;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.CodeElement;
+import java.lang.classfile.CodeModel;
+import java.lang.classfile.MethodModel;
+import java.lang.classfile.TypeKind;
 import jdk.internal.classfile.impl.StackMapGenerator;
-import jdk.internal.classfile.components.ClassRemapper;
-import jdk.internal.classfile.components.CodeLocalsShifter;
+import java.lang.classfile.components.ClassRemapper;
+import java.lang.classfile.components.CodeLocalsShifter;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 import static helpers.TestUtil.assertEmpty;
@@ -45,26 +46,27 @@ import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import jdk.internal.classfile.Attributes;
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.ClassTransform;
-import jdk.internal.classfile.CodeBuilder;
-import jdk.internal.classfile.CodeTransform;
-import jdk.internal.classfile.FieldModel;
-import jdk.internal.classfile.Signature;
-import jdk.internal.classfile.attribute.ModuleAttribute;
+import java.lang.classfile.Attributes;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.ClassTransform;
+import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.CodeTransform;
+import java.lang.classfile.FieldModel;
+import java.lang.classfile.Signature;
+import java.lang.classfile.attribute.ModuleAttribute;
 import jdk.internal.classfile.impl.RawBytecodeHelper;
-import jdk.internal.classfile.instruction.InvokeInstruction;
-import jdk.internal.classfile.instruction.ReturnInstruction;
-import jdk.internal.classfile.instruction.StoreInstruction;
+import java.lang.classfile.instruction.InvokeInstruction;
+import java.lang.classfile.instruction.ReturnInstruction;
+import java.lang.classfile.instruction.StoreInstruction;
 import java.lang.reflect.AccessFlag;
-import jdk.internal.classfile.components.CodeRelabeler;
+import java.lang.classfile.components.CodeRelabeler;
 import java.lang.constant.ModuleDesc;
-import jdk.internal.classfile.components.ClassPrinter;
+import java.lang.classfile.components.ClassPrinter;
 import static java.lang.annotation.ElementType.*;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.lang.runtime.ObjectMethods;
 import java.util.ArrayDeque;
 import jdk.internal.classfile.impl.AbstractPseudoInstruction;
 
@@ -73,9 +75,9 @@ class AdvancedTransformationsTest {
     @Test
     void testShiftLocals() throws Exception {
         try (var in = StackMapGenerator.class.getResourceAsStream("StackMapGenerator.class")) {
-            var cc = Classfile.of();
+            var cc = ClassFile.of();
             var clm = cc.parse(in.readAllBytes());
-            var remapped = cc.parse(cc.transform(clm, (clb, cle) -> {
+            cc.verify(cc.transform(clm, (clb, cle) -> {
                 if (cle instanceof MethodModel mm) {
                     clb.transformMethod(mm, (mb, me) -> {
                         if (me instanceof CodeModel com) {
@@ -99,7 +101,6 @@ class AdvancedTransformationsTest {
                 else
                     clb.with(cle);
             }));
-            remapped.verify(null);
         }
     }
 
@@ -112,18 +113,18 @@ class AdvancedTransformationsTest {
                 ClassDesc.ofDescriptor(StackMapGenerator.class.descriptorString()), ClassDesc.of("remapped.StackMapGenerator")
         );
         try (var in = StackMapGenerator.class.getResourceAsStream("StackMapGenerator.class")) {
-            var cc = Classfile.of();
+            var cc = ClassFile.of();
             var clm = cc.parse(in.readAllBytes());
             var remapped = cc.parse(ClassRemapper.of(map).remapClass(cc, clm));
-            assertEmpty(remapped.verify(
+            assertEmpty(ClassFile.of(ClassFile.ClassHierarchyResolverOption.of(
                     ClassHierarchyResolver.of(Set.of(ClassDesc.of("remapped.List")), Map.of(
                             ClassDesc.of("remapped.RemappedBytecode"), ConstantDescs.CD_Object,
                             ClassDesc.ofDescriptor(RawBytecodeHelper.class.descriptorString()), ClassDesc.of("remapped.RemappedBytecode")))
                                           .orElse(ClassHierarchyResolver.defaultResolver())
-                    , null)); //System.out::print));
-            remapped.fields().forEach(f -> f.findAttribute(Attributes.SIGNATURE).ifPresent(sa ->
+                    )).verify(remapped));
+            remapped.fields().forEach(f -> f.findAttribute(Attributes.signature()).ifPresent(sa ->
                     verifySignature(f.fieldTypeSymbol(), sa.asTypeSignature())));
-            remapped.methods().forEach(m -> m.findAttribute(Attributes.SIGNATURE).ifPresent(sa -> {
+            remapped.methods().forEach(m -> m.findAttribute(Attributes.signature()).ifPresent(sa -> {
                     var md = m.methodTypeSymbol();
                     var ms = sa.asMethodSignature();
                     verifySignature(md.returnType(), ms.result());
@@ -167,14 +168,14 @@ class AdvancedTransformationsTest {
     void testRemapModule() throws Exception {
         var foo = ClassDesc.ofDescriptor(Foo.class.descriptorString());
         var bar = ClassDesc.ofDescriptor(Bar.class.descriptorString());
-        var cc = Classfile.of();
+        var cc = ClassFile.of();
         var ma = cc.parse(
                 ClassRemapper.of(Map.of(foo, bar)).remapClass(
                         cc,
                         cc.parse(
                                 cc.buildModule(
                                         ModuleAttribute.of(ModuleDesc.of("MyModule"), mab ->
-                                                mab.uses(foo).provides(foo, foo)))))).findAttribute(Attributes.MODULE).get();
+                                                mab.uses(foo).provides(foo, foo)))))).findAttribute(Attributes.module()).get();
         assertEquals(ma.uses().get(0).asSymbol(), bar);
         var provides = ma.provides().get(0);
         assertEquals(provides.provides().asSymbol(), bar);
@@ -188,9 +189,10 @@ class AdvancedTransformationsTest {
         var fooAnno = ClassDesc.ofDescriptor(FooAnno.class.descriptorString());
         var barAnno = ClassDesc.ofDescriptor(BarAnno.class.descriptorString());
         var rec = ClassDesc.ofDescriptor(Rec.class.descriptorString());
-        var cc = Classfile.of();
+        var objectMethods = ClassDesc.ofDescriptor(ObjectMethods.class.descriptorString());
+        var cc = ClassFile.of();
         var remapped = cc.parse(
-                ClassRemapper.of(Map.of(foo, bar, fooAnno, barAnno)).remapClass(
+                ClassRemapper.of(Map.of(foo, bar, fooAnno, barAnno, objectMethods, bar)).remapClass(
                         cc,
                         cc.parse(
                                 Rec.class.getResourceAsStream(Rec.class.getName() + ".class")
@@ -212,7 +214,8 @@ class AdvancedTransformationsTest {
                 "PUTSTATIC, owner: AdvancedTransformationsTest$Bar, field name: fooField, field type: LAdvancedTransformationsTest$Bar;",
                 "INVOKESTATIC, owner: AdvancedTransformationsTest$Bar, method name: fooMethod, method type: (LAdvancedTransformationsTest$Bar;)LAdvancedTransformationsTest$Bar",
                 "method type: ()LAdvancedTransformationsTest$Bar;",
-                "GETFIELD, owner: AdvancedTransformationsTest$Rec, field name: foo, field type: LAdvancedTransformationsTest$Bar;");
+                "GETFIELD, owner: AdvancedTransformationsTest$Rec, field name: foo, field type: LAdvancedTransformationsTest$Bar;",
+                "bootstrap method: STATIC AdvancedTransformationsTest$Bar::bootstrap");
         assertFalse(out.contains("bootstrap method arguments indexes: []"), "bootstrap arguments lost");
     }
 
@@ -235,11 +238,11 @@ class AdvancedTransformationsTest {
 
     @Test
     void testInstrumentClass() throws Exception {
-        var cc = Classfile.of();
+        var cc = ClassFile.of();
         var instrumentor = cc.parse(AdvancedTransformationsTest.class.getResourceAsStream("AdvancedTransformationsTest$InstrumentorClass.class").readAllBytes());
         var target = cc.parse(AdvancedTransformationsTest.class.getResourceAsStream("AdvancedTransformationsTest$TargetClass.class").readAllBytes());
         var instrumentedBytes = instrument(target, instrumentor, mm -> mm.methodName().stringValue().equals("instrumentedMethod"));
-        assertEmpty(cc.parse(instrumentedBytes).verify(null)); //System.out::print));
+        assertEmpty(cc.verify(instrumentedBytes));
         var targetClass = new ByteArrayClassLoader(AdvancedTransformationsTest.class.getClassLoader(), "AdvancedTransformationsTest$TargetClass", instrumentedBytes).loadClass("AdvancedTransformationsTest$TargetClass");
         assertEquals(targetClass.getDeclaredMethod("instrumentedMethod", Boolean.class).invoke(targetClass.getDeclaredConstructor().newInstance(), false), 34);
     }
@@ -300,7 +303,7 @@ class AdvancedTransformationsTest {
         var targetFieldNames = target.fields().stream().map(f -> f.fieldName().stringValue()).collect(Collectors.toSet());
         var targetMethods = target.methods().stream().map(m -> m.methodName().stringValue() + m.methodType().stringValue()).collect(Collectors.toSet());
         var instrumentorClassRemapper = ClassRemapper.of(Map.of(instrumentor.thisClass().asSymbol(), target.thisClass().asSymbol()));
-        return Classfile.of().transform(target,
+        return ClassFile.of().transform(target,
                 ClassTransform.transformingMethods(
                         instrumentedMethodsFilter,
                         (mb, me) -> {

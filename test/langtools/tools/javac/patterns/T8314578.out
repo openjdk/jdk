@@ -1,6 +1,4 @@
 T8314578.java:14:18: compiler.err.flows.through.from.pattern
 T8314578.java:15:18: compiler.err.flows.through.to.pattern
 T8314578.java:27:18: compiler.err.flows.through.to.pattern
-- compiler.note.preview.filename: T8314578.java, DEFAULT
-- compiler.note.preview.recompile
 3 errors

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,9 @@
  */
 package jdk.internal.classfile.impl;
 
-import jdk.internal.classfile.BufWriter;
-import jdk.internal.classfile.Label;
-import jdk.internal.classfile.constantpool.Utf8Entry;
+import java.lang.classfile.BufWriter;
+import java.lang.classfile.Label;
+import java.lang.classfile.constantpool.Utf8Entry;
 
 public class AbstractBoundLocalVariable
         extends AbstractElement {
@@ -46,7 +46,7 @@ public class AbstractBoundLocalVariable
 
     public Utf8Entry name() {
         if (nameEntry == null)
-            nameEntry = (Utf8Entry) code.constantPool().entryByIndex(nameIndex());
+            nameEntry = code.constantPool().entryByIndex(nameIndex(), Utf8Entry.class);
         return nameEntry;
     }
 
@@ -56,7 +56,7 @@ public class AbstractBoundLocalVariable
 
     protected Utf8Entry secondaryEntry() {
         if (secondaryEntry == null)
-            secondaryEntry = (Utf8Entry) code.constantPool().entryByIndex(secondaryIndex());
+            secondaryEntry = code.constantPool().entryByIndex(secondaryIndex(), Utf8Entry.class);
         return secondaryEntry;
     }
 

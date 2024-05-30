@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,15 +46,15 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.*;
-import jdk.internal.classfile.constantpool.*;
-import jdk.internal.classfile.instruction.*;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
+import java.lang.classfile.constantpool.*;
+import java.lang.classfile.instruction.*;
 
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
-import static jdk.internal.classfile.Classfile.*;
-import static jdk.internal.classfile.Attributes.*;
+import static java.lang.classfile.ClassFile.*;
+import static java.lang.classfile.Attributes.*;
 import static helpers.ClassRecord.CompatibilityFilter.By_ClassBuilder;
 
 /**
@@ -97,7 +97,7 @@ public record ClassRecord(
                 cl.constantPool(),
                 cl::elementStream, compatibilityFilter);
     }
-    public static ClassRecord ofStreamingElements(int majorVersion, int minorVersion, String thisClass, String superClass, Set<String> interfaces, int flags, ConstantPool cp, Supplier<Stream<? extends ClassfileElement>> elements, CompatibilityFilter... compatibilityFilter) {
+    public static ClassRecord ofStreamingElements(int majorVersion, int minorVersion, String thisClass, String superClass, Set<String> interfaces, int flags, ConstantPool cp, Supplier<Stream<? extends ClassFileElement>> elements, CompatibilityFilter... compatibilityFilter) {
         return new ClassRecord(
                 majorVersion,
                 minorVersion,
@@ -133,7 +133,7 @@ public record ClassRecord(
             String fieldFlags,
             AttributesRecord fieldAttributes) {
 
-        public static FieldRecord ofStreamingElements(String fieldName, String fieldType, int flags, Supplier<Stream<? extends ClassfileElement>> elements, CompatibilityFilter... compatibilityFilter) {
+        public static FieldRecord ofStreamingElements(String fieldName, String fieldType, int flags, Supplier<Stream<? extends ClassFileElement>> elements, CompatibilityFilter... compatibilityFilter) {
             return new FieldRecord(
                     fieldName,
                     fieldType,
@@ -156,7 +156,7 @@ public record ClassRecord(
             String methodFlags,
             AttributesRecord methodAttributes) {
 
-        public static MethodRecord ofStreamingElements(String methodName, String methodType, int flags, Supplier<Stream<? extends ClassfileElement>> elements, CompatibilityFilter... compatibilityFilter) {
+        public static MethodRecord ofStreamingElements(String methodName, String methodType, int flags, Supplier<Stream<? extends ClassFileElement>> elements, CompatibilityFilter... compatibilityFilter) {
             return new MethodRecord(
                     methodName,
                     methodType,
@@ -238,80 +238,80 @@ public record ClassRecord(
             String sourceIDAttribute,
             DefinedValue syntheticAttribute) {
 
-        public static AttributesRecord ofStreamingElements(Supplier<Stream<? extends ClassfileElement>> elements, ConstantPool cp, CompatibilityFilter... cf) {
+        public static AttributesRecord ofStreamingElements(Supplier<Stream<? extends ClassFileElement>> elements, ConstantPool cp, CompatibilityFilter... cf) {
             Map<String, Attribute<?>> attrs = elements.get().filter(e -> e instanceof Attribute<?>)
                     .map(e -> (Attribute<?>) e)
                     .collect(toMap(Attribute::attributeName, e -> e));
             return new AttributesRecord(
-                    mapAttr(attrs, ANNOTATION_DEFAULT, a -> ElementValueRecord.ofElementValue(a.defaultValue())),
+                    mapAttr(attrs, annotationDefault(), a -> ElementValueRecord.ofElementValue(a.defaultValue())),
                     cp == null ? null : IntStream.range(0, cp.bootstrapMethodCount()).mapToObj(i -> BootstrapMethodRecord.ofBootstrapMethodEntry(cp.bootstrapMethodEntry(i))).collect(toSetOrNull()),
-                    mapAttr(attrs, CODE, a -> CodeRecord.ofStreamingElements(a.maxStack(), a.maxLocals(), a.codeLength(), a::elementStream, a, new CodeNormalizerHelper(a.codeArray()), cf)),
-                    mapAttr(attrs, COMPILATION_ID, a -> a.compilationId().stringValue()),
-                    mapAttr(attrs, CONSTANT_VALUE, a -> ConstantPoolEntryRecord.ofCPEntry(a.constant())),
-                    mapAttr(attrs, DEPRECATED, a -> DefinedValue.DEFINED),
-                    mapAttr(attrs, ENCLOSING_METHOD, a -> EnclosingMethodRecord.ofEnclosingMethodAttribute(a)),
-                    mapAttr(attrs, EXCEPTIONS, a -> new HashSet<>(a.exceptions().stream().map(e -> e.asInternalName()).toList())),
-                    mapAttr(attrs, INNER_CLASSES, a -> a.classes().stream().collect(toMap(ic -> ic.innerClass().asInternalName(), ic -> InnerClassRecord.ofInnerClassInfo(ic)))),
-                    mapAttr(attrs, METHOD_PARAMETERS, a -> a.parameters().stream().map(mp -> MethodParameterRecord.ofMethodParameter(mp)).toList()),
-                    mapAttr(attrs, MODULE, a -> ModuleRecord.ofModuleAttribute(a)),
-                    mapAttr(attrs, MODULE_HASHES, a -> ModuleHashesRecord.ofModuleHashesAttribute(a)),
-                    mapAttr(attrs, MODULE_MAIN_CLASS, a -> a.mainClass().asInternalName()),
-                    mapAttr(attrs, MODULE_PACKAGES, a -> a.packages().stream().map(p -> p.name().stringValue()).collect(toSet())),
-                    mapAttr(attrs, MODULE_RESOLUTION, a -> a.resolutionFlags()),
-                    mapAttr(attrs, MODULE_TARGET, a -> a.targetPlatform().stringValue()),
-                    mapAttr(attrs, NEST_HOST, a -> a.nestHost().asInternalName()),
-                    mapAttr(attrs, NEST_MEMBERS, a -> a.nestMembers().stream().map(m -> m.asInternalName()).collect(toSet())),
-                    mapAttr(attrs, PERMITTED_SUBCLASSES, a -> new HashSet<>(a.permittedSubclasses().stream().map(e -> e.asInternalName()).toList())),
-                    mapAttr(attrs, RECORD, a -> a.components().stream().map(rc -> RecordComponentRecord.ofRecordComponent(rc, cf)).toList()),
+                    mapAttr(attrs, code(), a -> CodeRecord.ofStreamingElements(a.maxStack(), a.maxLocals(), a.codeLength(), a::elementStream, a, new CodeNormalizerHelper(a.codeArray()), cf)),
+                    mapAttr(attrs, compilationId(), a -> a.compilationId().stringValue()),
+                    mapAttr(attrs, constantValue(), a -> ConstantPoolEntryRecord.ofCPEntry(a.constant())),
+                    mapAttr(attrs, Attributes.deprecated(), a -> DefinedValue.DEFINED),
+                    mapAttr(attrs, enclosingMethod(), a -> EnclosingMethodRecord.ofEnclosingMethodAttribute(a)),
+                    mapAttr(attrs, exceptions(), a -> new HashSet<>(a.exceptions().stream().map(e -> e.asInternalName()).toList())),
+                    mapAttr(attrs, innerClasses(), a -> a.classes().stream().collect(toMap(ic -> ic.innerClass().asInternalName(), ic -> InnerClassRecord.ofInnerClassInfo(ic)))),
+                    mapAttr(attrs, methodParameters(), a -> a.parameters().stream().map(mp -> MethodParameterRecord.ofMethodParameter(mp)).toList()),
+                    mapAttr(attrs, module(), a -> ModuleRecord.ofModuleAttribute(a)),
+                    mapAttr(attrs, moduleHashes(), a -> ModuleHashesRecord.ofModuleHashesAttribute(a)),
+                    mapAttr(attrs, moduleMainClass(), a -> a.mainClass().asInternalName()),
+                    mapAttr(attrs, modulePackages(), a -> a.packages().stream().map(p -> p.name().stringValue()).collect(toSet())),
+                    mapAttr(attrs, moduleResolution(), a -> a.resolutionFlags()),
+                    mapAttr(attrs, moduleTarget(), a -> a.targetPlatform().stringValue()),
+                    mapAttr(attrs, nestHost(), a -> a.nestHost().asInternalName()),
+                    mapAttr(attrs, nestMembers(), a -> a.nestMembers().stream().map(m -> m.asInternalName()).collect(toSet())),
+                    mapAttr(attrs, permittedSubclasses(), a -> new HashSet<>(a.permittedSubclasses().stream().map(e -> e.asInternalName()).toList())),
+                    mapAttr(attrs, record(), a -> a.components().stream().map(rc -> RecordComponentRecord.ofRecordComponent(rc, cf)).toList()),
                     elements.get().filter(e -> e instanceof RuntimeVisibleAnnotationsAttribute).map(e -> (RuntimeVisibleAnnotationsAttribute) e).flatMap(a -> a.annotations().stream())
                             .map(AnnotationRecord::ofAnnotation).collect(toSetOrNull()),
                     elements.get().filter(e -> e instanceof RuntimeInvisibleAnnotationsAttribute).map(e -> (RuntimeInvisibleAnnotationsAttribute) e).flatMap(a -> a.annotations().stream())
                             .map(AnnotationRecord::ofAnnotation).collect(toSetOrNull()),
-                    mapAttr(attrs, RUNTIME_VISIBLE_PARAMETER_ANNOTATIONS, a -> a.parameterAnnotations().stream().map(list -> list.stream().map(AnnotationRecord::ofAnnotation).collect(toSet())).toList()),
-                    mapAttr(attrs, RUNTIME_INVISIBLE_PARAMETER_ANNOTATIONS, a -> a.parameterAnnotations().stream().map(list -> list.stream().map(AnnotationRecord::ofAnnotation).collect(toSet())).toList()),
-                    mapAttr(attrs, RUNTIME_VISIBLE_TYPE_ANNOTATIONS, a -> a.annotations().stream().map(TypeAnnotationRecord::ofTypeAnnotation).collect(toSet())),
-                    mapAttr(attrs, RUNTIME_INVISIBLE_TYPE_ANNOTATIONS, a -> a.annotations().stream().map(TypeAnnotationRecord::ofTypeAnnotation).collect(toSet())),
-                    mapAttr(attrs, SIGNATURE, a -> a.signature().stringValue()),
-                    mapAttr(attrs, SOURCE_DEBUG_EXTENSION, a -> new String(a.contents(), StandardCharsets.UTF_8)),
-                    mapAttr(attrs, SOURCE_FILE, a -> a.sourceFile().stringValue()),
-                    mapAttr(attrs, SOURCE_ID, a -> a.sourceId().stringValue()),
-                    mapAttr(attrs, SYNTHETIC, a -> DefinedValue.DEFINED)
+                    mapAttr(attrs, runtimeVisibleParameterAnnotations(), a -> a.parameterAnnotations().stream().map(list -> list.stream().map(AnnotationRecord::ofAnnotation).collect(toSet())).toList()),
+                    mapAttr(attrs, runtimeInvisibleParameterAnnotations(), a -> a.parameterAnnotations().stream().map(list -> list.stream().map(AnnotationRecord::ofAnnotation).collect(toSet())).toList()),
+                    mapAttr(attrs, runtimeVisibleTypeAnnotations(), a -> a.annotations().stream().map(TypeAnnotationRecord::ofTypeAnnotation).collect(toSet())),
+                    mapAttr(attrs, runtimeInvisibleTypeAnnotations(), a -> a.annotations().stream().map(TypeAnnotationRecord::ofTypeAnnotation).collect(toSet())),
+                    mapAttr(attrs, signature(), a -> a.signature().stringValue()),
+                    mapAttr(attrs, sourceDebugExtension(), a -> new String(a.contents(), StandardCharsets.UTF_8)),
+                    mapAttr(attrs, sourceFile(), a -> a.sourceFile().stringValue()),
+                    mapAttr(attrs, sourceId(), a -> a.sourceId().stringValue()),
+                    mapAttr(attrs, synthetic(), a -> DefinedValue.DEFINED)
             );
         }
 
         public static AttributesRecord ofAttributes(AttributeFinder af, CompatibilityFilter... cf) {
             return new AttributesRecord(
-                    af.findAndMap(Attributes.ANNOTATION_DEFAULT, a -> ElementValueRecord.ofElementValue(a.defaultValue())),
-                    af.findAndMap(Attributes.BOOTSTRAP_METHODS, a -> a.bootstrapMethods().stream().map(bm -> BootstrapMethodRecord.ofBootstrapMethodEntry(bm)).collect(toSet())),
-                    af.findAndMap(Attributes.CODE, a -> CodeRecord.ofCodeAttribute(a, cf)),
-                    af.findAndMap(Attributes.COMPILATION_ID, a -> a.compilationId().stringValue()),
-                    af.findAndMap(Attributes.CONSTANT_VALUE, a -> ConstantPoolEntryRecord.ofCPEntry(a.constant())),
-                    af.findAndMap(Attributes.DEPRECATED, a -> DefinedValue.DEFINED),
-                    af.findAndMap(Attributes.ENCLOSING_METHOD, a -> EnclosingMethodRecord.ofEnclosingMethodAttribute(a)),
-                    af.findAndMap(Attributes.EXCEPTIONS, a -> a.exceptions().stream().map(e -> e.asInternalName()).collect(toSet())),
-                    af.findAndMap(Attributes.INNER_CLASSES, a -> a.classes().stream().collect(toMap(ic -> ic.innerClass().asInternalName(), ic -> InnerClassRecord.ofInnerClassInfo(ic)))),
-                    af.findAndMap(Attributes.METHOD_PARAMETERS, a -> a.parameters().stream().map(mp -> MethodParameterRecord.ofMethodParameter(mp)).toList()),
-                    af.findAndMap(Attributes.MODULE, a -> ModuleRecord.ofModuleAttribute(a)),
-                    af.findAndMap(Attributes.MODULE_HASHES, a -> ModuleHashesRecord.ofModuleHashesAttribute(a)),
-                    af.findAndMap(Attributes.MODULE_MAIN_CLASS, a -> a.mainClass().asInternalName()),
-                    af.findAndMap(Attributes.MODULE_PACKAGES, a -> a.packages().stream().map(p -> p.name().stringValue()).collect(toSet())),
-                    af.findAndMap(Attributes.MODULE_RESOLUTION, a -> a.resolutionFlags()),
-                    af.findAndMap(Attributes.MODULE_TARGET, a -> a.targetPlatform().stringValue()),
-                    af.findAndMap(Attributes.NEST_HOST, a -> a.nestHost().asInternalName()),
-                    af.findAndMap(Attributes.NEST_MEMBERS, a -> a.nestMembers().stream().map(m -> m.asInternalName()).collect(toSet())),
-                    af.findAndMap(Attributes.PERMITTED_SUBCLASSES, a -> a.permittedSubclasses().stream().map(e -> e.asInternalName()).collect(toSet())),
-                    af.findAndMap(RECORD, a -> a.components().stream().map(rc -> RecordComponentRecord.ofRecordComponent(rc, cf)).toList()),
-                    af.findAll(Attributes.RUNTIME_VISIBLE_ANNOTATIONS).flatMap(a -> a.annotations().stream()).map(AnnotationRecord::ofAnnotation).collect(toSetOrNull()),
-                    af.findAll(Attributes.RUNTIME_INVISIBLE_ANNOTATIONS).flatMap(a -> a.annotations().stream()).map(AnnotationRecord::ofAnnotation).collect(toSetOrNull()),
-                    af.findAndMap(Attributes.RUNTIME_VISIBLE_PARAMETER_ANNOTATIONS, a -> a.parameterAnnotations().stream().map(list -> list.stream().map(AnnotationRecord::ofAnnotation).collect(toSet())).toList()),
-                    af.findAndMap(Attributes.RUNTIME_INVISIBLE_PARAMETER_ANNOTATIONS, a -> a.parameterAnnotations().stream().map(list -> list.stream().map(AnnotationRecord::ofAnnotation).collect(toSet())).toList()),
-                    af.findAndMap(Attributes.RUNTIME_VISIBLE_TYPE_ANNOTATIONS, a -> a.annotations().stream().map(TypeAnnotationRecord::ofTypeAnnotation).collect(toSet())),
-                    af.findAndMap(Attributes.RUNTIME_INVISIBLE_TYPE_ANNOTATIONS, a -> a.annotations().stream().map(TypeAnnotationRecord::ofTypeAnnotation).collect(toSet())),
-                    af.findAndMap(Attributes.SIGNATURE, a -> a.signature().stringValue()),
-                    af.findAndMap(Attributes.SOURCE_DEBUG_EXTENSION, a -> new String(a.contents(), StandardCharsets.UTF_8)),
-                    af.findAndMap(Attributes.SOURCE_FILE, a -> a.sourceFile().stringValue()),
-                    af.findAndMap(Attributes.SOURCE_ID, a -> a.sourceId().stringValue()),
-                    af.findAndMap(Attributes.SYNTHETIC, a -> DefinedValue.DEFINED));
+                    af.findAndMap(annotationDefault(), a -> ElementValueRecord.ofElementValue(a.defaultValue())),
+                    af.findAndMap(bootstrapMethods(), a -> a.bootstrapMethods().stream().map(bm -> BootstrapMethodRecord.ofBootstrapMethodEntry(bm)).collect(toSet())),
+                    af.findAndMap(code(), a -> CodeRecord.ofCodeAttribute(a, cf)),
+                    af.findAndMap(compilationId(), a -> a.compilationId().stringValue()),
+                    af.findAndMap(constantValue(), a -> ConstantPoolEntryRecord.ofCPEntry(a.constant())),
+                    af.findAndMap(Attributes.deprecated(), a -> DefinedValue.DEFINED),
+                    af.findAndMap(enclosingMethod(), a -> EnclosingMethodRecord.ofEnclosingMethodAttribute(a)),
+                    af.findAndMap(exceptions(), a -> a.exceptions().stream().map(e -> e.asInternalName()).collect(toSet())),
+                    af.findAndMap(innerClasses(), a -> a.classes().stream().collect(toMap(ic -> ic.innerClass().asInternalName(), ic -> InnerClassRecord.ofInnerClassInfo(ic)))),
+                    af.findAndMap(methodParameters(), a -> a.parameters().stream().map(mp -> MethodParameterRecord.ofMethodParameter(mp)).toList()),
+                    af.findAndMap(module(), a -> ModuleRecord.ofModuleAttribute(a)),
+                    af.findAndMap(moduleHashes(), a -> ModuleHashesRecord.ofModuleHashesAttribute(a)),
+                    af.findAndMap(moduleMainClass(), a -> a.mainClass().asInternalName()),
+                    af.findAndMap(modulePackages(), a -> a.packages().stream().map(p -> p.name().stringValue()).collect(toSet())),
+                    af.findAndMap(moduleResolution(), a -> a.resolutionFlags()),
+                    af.findAndMap(moduleTarget(), a -> a.targetPlatform().stringValue()),
+                    af.findAndMap(nestHost(), a -> a.nestHost().asInternalName()),
+                    af.findAndMap(nestMembers(), a -> a.nestMembers().stream().map(m -> m.asInternalName()).collect(toSet())),
+                    af.findAndMap(permittedSubclasses(), a -> a.permittedSubclasses().stream().map(e -> e.asInternalName()).collect(toSet())),
+                    af.findAndMap(record(), a -> a.components().stream().map(rc -> RecordComponentRecord.ofRecordComponent(rc, cf)).toList()),
+                    af.findAll(runtimeVisibleAnnotations()).flatMap(a -> a.annotations().stream()).map(AnnotationRecord::ofAnnotation).collect(toSetOrNull()),
+                    af.findAll(runtimeInvisibleAnnotations()).flatMap(a -> a.annotations().stream()).map(AnnotationRecord::ofAnnotation).collect(toSetOrNull()),
+                    af.findAndMap(runtimeVisibleParameterAnnotations(), a -> a.parameterAnnotations().stream().map(list -> list.stream().map(AnnotationRecord::ofAnnotation).collect(toSet())).toList()),
+                    af.findAndMap(runtimeInvisibleParameterAnnotations(), a -> a.parameterAnnotations().stream().map(list -> list.stream().map(AnnotationRecord::ofAnnotation).collect(toSet())).toList()),
+                    af.findAndMap(runtimeVisibleTypeAnnotations(), a -> a.annotations().stream().map(TypeAnnotationRecord::ofTypeAnnotation).collect(toSet())),
+                    af.findAndMap(runtimeInvisibleTypeAnnotations(), a -> a.annotations().stream().map(TypeAnnotationRecord::ofTypeAnnotation).collect(toSet())),
+                    af.findAndMap(signature(), a -> a.signature().stringValue()),
+                    af.findAndMap(sourceDebugExtension(), a -> new String(a.contents(), StandardCharsets.UTF_8)),
+                    af.findAndMap(sourceFile(), a -> a.sourceFile().stringValue()),
+                    af.findAndMap(sourceId(), a -> a.sourceId().stringValue()),
+                    af.findAndMap(synthetic(), a -> DefinedValue.DEFINED));
         }
     }
 
@@ -323,7 +323,7 @@ public record ClassRecord(
             Set<TypeAnnotationRecord> runtimeVisibleTypeAnnotationsAttribute,
             Set<TypeAnnotationRecord> runtimeInvisibleTypeAnnotationsAttribute) {
 
-        static CodeAttributesRecord ofStreamingElements(Supplier<Stream<? extends ClassfileElement>> elements, CodeAttribute lc, CodeNormalizerHelper code, CompatibilityFilter... cf) {
+        static CodeAttributesRecord ofStreamingElements(Supplier<Stream<? extends ClassFileElement>> elements, CodeAttribute lc, CodeNormalizerHelper code, CompatibilityFilter... cf) {
             int[] p = {0};
             var characterRanges = new HashSet<CharacterRangeRecord>();
             var lineNumbers = new HashSet<LineNumberRecord>();
@@ -353,12 +353,12 @@ public record ClassRecord(
 
         static CodeAttributesRecord ofAttributes(AttributeFinder af, CodeNormalizerHelper code, CodeAttribute lr, CompatibilityFilter... cf) {
             return new CodeAttributesRecord(
-                    af.findAll(Attributes.CHARACTER_RANGE_TABLE).flatMap(a -> a.characterRangeTable().stream()).map(cr -> CharacterRangeRecord.ofCharacterRange(cr, code)).collect(toSetOrNull()),
-                    af.findAll(Attributes.LINE_NUMBER_TABLE).flatMap(a -> a.lineNumbers().stream()).map(ln -> new LineNumberRecord(ln.lineNumber(), code.targetIndex(ln.startPc()))).collect(toSetOrNull()),
-                    af.findAll(Attributes.LOCAL_VARIABLE_TABLE).flatMap(a -> a.localVariables().stream()).map(lv -> LocalVariableRecord.ofLocalVariableInfo(lv, code)).collect(toSetOrNull()),
-                    af.findAll(Attributes.LOCAL_VARIABLE_TYPE_TABLE).flatMap(a -> a.localVariableTypes().stream()).map(lv -> LocalVariableTypeRecord.ofLocalVariableTypeInfo(lv, code)).collect(toSetOrNull()),
-                    af.findAndMap(Attributes.RUNTIME_VISIBLE_TYPE_ANNOTATIONS, a -> a.annotations().stream().map(ann -> TypeAnnotationRecord.ofTypeAnnotation(ann, lr, code)).collect(toSet())),
-                    af.findAndMap(Attributes.RUNTIME_INVISIBLE_TYPE_ANNOTATIONS, a -> a.annotations().stream().map(ann -> TypeAnnotationRecord.ofTypeAnnotation(ann, lr, code)).collect(toSet())));
+                    af.findAll(Attributes.characterRangeTable()).flatMap(a -> a.characterRangeTable().stream()).map(cr -> CharacterRangeRecord.ofCharacterRange(cr, code)).collect(toSetOrNull()),
+                    af.findAll(Attributes.lineNumberTable()).flatMap(a -> a.lineNumbers().stream()).map(ln -> new LineNumberRecord(ln.lineNumber(), code.targetIndex(ln.startPc()))).collect(toSetOrNull()),
+                    af.findAll(Attributes.localVariableTable()).flatMap(a -> a.localVariables().stream()).map(lv -> LocalVariableRecord.ofLocalVariableInfo(lv, code)).collect(toSetOrNull()),
+                    af.findAll(Attributes.localVariableTypeTable()).flatMap(a -> a.localVariableTypes().stream()).map(lv -> LocalVariableTypeRecord.ofLocalVariableTypeInfo(lv, code)).collect(toSetOrNull()),
+                    af.findAndMap(Attributes.runtimeVisibleTypeAnnotations(), a -> a.annotations().stream().map(ann -> TypeAnnotationRecord.ofTypeAnnotation(ann, lr, code)).collect(toSet())),
+                    af.findAndMap(Attributes.runtimeInvisibleTypeAnnotations(), a -> a.annotations().stream().map(ann -> TypeAnnotationRecord.ofTypeAnnotation(ann, lr, code)).collect(toSet())));
         }
     }
 
@@ -485,7 +485,7 @@ public record ClassRecord(
 
         int hash(int from, int length) {
             int result = 1;
-            for (int i = from; i < length; i++) {
+            for (int i = from; i < from + length; i++) {
                 int elementHash = (codeToIndexMap[i] ^ (codeToIndexMap[i] >>> 32));
                 result = 31 * result + elementHash;
             }
@@ -501,7 +501,7 @@ public record ClassRecord(
             Set<ExceptionHandlerRecord> exceptionHandlers,
             CodeAttributesRecord codeAttributes) {
 
-        private static List<String> instructions(Supplier<Stream<? extends ClassfileElement>> elements, CodeNormalizerHelper code, CodeAttribute lr) {
+        private static List<String> instructions(Supplier<Stream<? extends ClassFileElement>> elements, CodeNormalizerHelper code, CodeAttribute lr) {
             int[] p = {0};
             return elements.get().filter(e -> e instanceof Instruction).map(e -> {
                 var ins = (Instruction)e;
@@ -557,7 +557,7 @@ public record ClassRecord(
                             yield local.slot();
                         }
                         else {
-                            yield code.hash(p[0] + 1, ins.sizeInBytes());
+                            yield code.hash(p[0] + 1, ins.sizeInBytes() - 1);
                         }
                     }
                 };
@@ -566,7 +566,7 @@ public record ClassRecord(
             }).toList();
         }
 
-        public static CodeRecord ofStreamingElements(int maxStack, int maxLocals, int codeLength, Supplier<Stream<? extends ClassfileElement>> elements, CodeAttribute lc, CodeNormalizerHelper codeHelper, CompatibilityFilter... cf) {
+        public static CodeRecord ofStreamingElements(int maxStack, int maxLocals, int codeLength, Supplier<Stream<? extends ClassFileElement>> elements, CodeAttribute lc, CodeNormalizerHelper codeHelper, CompatibilityFilter... cf) {
             return new CodeRecord(
                     By_ClassBuilder.isNotDirectlyComparable(cf, maxStack),
                     By_ClassBuilder.isNotDirectlyComparable(cf, maxLocals),

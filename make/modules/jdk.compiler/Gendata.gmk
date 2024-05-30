@@ -23,6 +23,7 @@
 # questions.
 #
 
+include CopyFiles.gmk
 include JarArchive.gmk
 include JavaCompilation.gmk
 include Modules.gmk
@@ -35,59 +36,59 @@ $(eval $(call IncludeCustomExtension, modules/jdk.compiler/Gendata.gmk))
 # This is needed to properly setup DOCS_MODULES.
 $(eval $(call ReadImportMetaData))
 
-# Modules that should be visible for 9 - the documented modules:
-CT_MODULES := $(DOCS_MODULES)
+# Modules that should be visible - the documented modules:
+CT_MODULES := $(filter-out $(MODULES_FILTER), $(DOCS_MODULES))
+CT_TRANSITIVE_MODULES := $(call FindTransitiveIndirectDepsForModules, $(CT_MODULES))
+CT_MODULES_API_TARGETS := \
+    $(foreach m, $(CT_MODULES) $(CT_TRANSITIVE_MODULES), \
+      $(call SetupJavaCompilationApiTarget, $m, $(JDK_OUTPUTDIR)/modules/$m))
 
-# Get the complete module source path:
-CT_MODULESOURCEPATH := $(call GetModuleSrcPath)
+#undocumented modules which should also be included in ct.sym:
+CT_EXTRA_MODULES := jdk.unsupported
+
+SYMBOL_FILES := $(wildcard $(MODULE_SRC)/share/data/symbols/*)
 
 CT_DATA_DESCRIPTION += $(MODULE_SRC)/share/data/symbols/symbols
 
 COMPILECREATESYMBOLS_ADD_EXPORTS := \
-    --add-exports java.base/jdk.internal.javac=java.compiler.interim,jdk.compiler.interim \
-    --add-exports jdk.internal.opt/jdk.internal.opt=jdk.compiler.interim,jdk.javadoc.interim \
-    --add-exports jdk.compiler.interim/com.sun.tools.javac.api=ALL-UNNAMED \
-    --add-exports jdk.compiler.interim/com.sun.tools.javac.code=ALL-UNNAMED \
-    --add-exports jdk.compiler.interim/com.sun.tools.javac.util=ALL-UNNAMED \
-    --add-exports jdk.compiler.interim/com.sun.tools.javac.jvm=ALL-UNNAMED \
+    --add-modules jdk.compiler,jdk.jdeps \
+    --add-exports jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED \
+    --add-exports jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED \
+    --add-exports jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED \
+    --add-exports jdk.compiler/com.sun.tools.javac.jvm=ALL-UNNAMED \
+    --add-exports jdk.jdeps/com.sun.tools.classfile=ALL-UNNAMED \
     #
 
+# TODO: Unify with jdk.javadoc-gendata. Should only compile this once and share.
 $(eval $(call SetupJavaCompilation, COMPILE_CREATE_SYMBOLS, \
-    TARGET_RELEASE := $(TARGET_RELEASE_BOOTJDK), \
-    SRC := $(TOPDIR)/make/langtools/src/classes \
-        $(TOPDIR)/src/jdk.jdeps/share/classes, \
+    TARGET_RELEASE := $(TARGET_RELEASE_NEWJDK), \
+    COMPILER := buildjdk, \
+    SRC := $(TOPDIR)/make/langtools/src/classes, \
     INCLUDES := build/tools/symbolgenerator com/sun/tools/classfile, \
-    BIN := $(BUILDTOOLS_OUTPUTDIR)/create_symbols, \
-    DISABLED_WARNINGS := options this-escape, \
+    BIN := $(BUILDTOOLS_OUTPUTDIR)/create_symbols_javac, \
+    DISABLED_WARNINGS := options, \
     JAVAC_FLAGS := \
-        $(INTERIM_LANGTOOLS_ARGS) \
         $(COMPILECREATESYMBOLS_ADD_EXPORTS), \
 ))
 
-$(SUPPORT_OUTPUTDIR)/symbols/ct.sym: \
-    $(COMPILE_CREATE_SYMBOLS) \
-    $(wildcard $(MODULE_SRC)/share/data/symbols/*) \
-    $(MODULE_INFOS)
+$(SUPPORT_OUTPUTDIR)/symbols/ct.sym: $(COMPILE_CREATE_SYMBOLS) $(SYMBOL_FILES) \
+    $(MODULE_INFOS) $(CT_MODULES_API_TARGETS)
 	$(RM) -r $(@D)
 	$(MKDIR) -p $(@D)
 	$(ECHO) Creating ct.sym classes
-	$(JAVA_SMALL) $(INTERIM_LANGTOOLS_ARGS) \
+	$(ECHO) $(CT_MODULES) $(CT_TRANSITIVE_MODULES) $(CT_EXTRA_MODULES) >$(SUPPORT_OUTPUTDIR)/symbols/included-modules
+	$(BUILD_JAVA_SMALL) \
 	    $(COMPILECREATESYMBOLS_ADD_EXPORTS) \
-	    -classpath $(BUILDTOOLS_OUTPUTDIR)/create_symbols \
-	    build.tools.symbolgenerator.TransitiveDependencies \
-	    $(@D)/system-modules \
-	    $(CT_MODULESOURCEPATH) \
-	    $(CT_MODULES)
-	$(JAVA_SMALL) $(INTERIM_LANGTOOLS_ARGS) \
-	    $(COMPILECREATESYMBOLS_ADD_EXPORTS) \
-	    -classpath $(BUILDTOOLS_OUTPUTDIR)/create_symbols \
+	    -classpath $(BUILDTOOLS_OUTPUTDIR)/create_symbols_javac \
 	    build.tools.symbolgenerator.CreateSymbols \
 	    build-ctsym \
 	    $(CT_DATA_DESCRIPTION) \
 	    $(@D)/ct.sym \
 	    $(SOURCE_DATE_EPOCH) \
 	    $(JDK_SOURCE_TARGET_VERSION) \
-	    $(@D)/system-modules
+	    "$(VERSION_PRE)" \
+	    $(JDK_OUTPUTDIR)/modules/ \
+	    $(SUPPORT_OUTPUTDIR)/symbols/included-modules
 	$(TOUCH) $@
 
 # Copy ct.sym to the modules libs dir

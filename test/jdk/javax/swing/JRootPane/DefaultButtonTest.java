@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,6 +83,7 @@ public class DefaultButtonTest {
 
     public void runTest() throws Exception {
         Robot robot = new Robot();
+        robot.setAutoWaitForIdle(true);
         robot.setAutoDelay(100);
         for (UIManager.LookAndFeelInfo laf : UIManager.getInstalledLookAndFeels()) {
             try {
@@ -100,6 +101,8 @@ public class DefaultButtonTest {
                     createUI();
                 });
                 robot.waitForIdle();
+                robot.delay(1000);
+
                 robot.keyPress(KeyEvent.VK_ENTER);
                 robot.keyRelease(KeyEvent.VK_ENTER);
                 robot.waitForIdle();

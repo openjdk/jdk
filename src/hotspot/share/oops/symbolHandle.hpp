@@ -28,6 +28,16 @@
 #include "memory/allocation.hpp"
 #include "oops/symbol.hpp"
 
+class TempSymbolCleanupDelayer : AllStatic {
+  static Symbol* volatile _queue[];
+  static volatile uint _index;
+
+public:
+  static const uint QueueSize = 128;
+  static void delay_cleanup(Symbol* s);
+  static void drain_queue();
+};
+
 // TempNewSymbol acts as a handle class in a handle/body idiom and is
 // responsible for proper resource management of the body (which is a Symbol*).
 // The body is resource managed by a reference counting scheme.
@@ -49,10 +59,17 @@ public:
   SymbolHandleBase() : _temp(nullptr) { }
 
   // Conversion from a Symbol* to a SymbolHandleBase.
-  // Does not increment the current reference count if temporary.
   SymbolHandleBase(Symbol *s) : _temp(s) {
     if (!TEMP) {
       Symbol::maybe_increment_refcount(_temp);
+      return;
+    }
+
+    // Delay cleanup for temp symbols. Refcount is incremented while in
+    // queue. But don't requeue existing entries, or entries that are held
+    // elsewhere - it's a waste of effort.
+    if (s != nullptr && s->refcount() == 1) {
+      TempSymbolCleanupDelayer::delay_cleanup(s);
     }
   }
 

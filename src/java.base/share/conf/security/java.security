@@ -892,7 +892,7 @@ jdk.tls.legacyAlgorithms=NULL, anon, RC4, DES, 3DES_EDE_CBC
 #   KeyLimits:
 #       " KeyLimit { , KeyLimit } "
 #
-#   WeakKeyLimit:
+#   KeyLimit:
 #       AlgorithmName Action Length
 #
 #   AlgorithmName:
@@ -1515,3 +1515,23 @@ jdk.tls.alpnCharset=ISO_8859_1
 #
 # [1] https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-sfu/bde93b0e-f3c9-4ddf-9f44-e1453be7af5a
 #jdk.security.krb5.s4u2proxy.acceptNonForwardableServiceTicket=false
+
+#
+# Policy for name comparison in keytab and ccache entry lookup
+#
+# When looking up a keytab or credentials cache (ccache) entry for a Kerberos
+# principal, the principal name is compared with the name in the entry.
+# The comparison is by default case-insensitive. However, many Kerberos
+# implementations consider principal names to be case-sensitive. Consequently,
+# if two principals have names that differ only in case, there is a risk that
+# an incorrect keytab or ccache entry might be selected.
+#
+# If this security property is set to "true", the comparison of principal
+# names at keytab and ccache entry lookup is case-sensitive.
+#
+# The default value is "false".
+#
+# If a system property of the same name is also specified, it supersedes the
+# security property value defined here.
+#
+#jdk.security.krb5.name.case.sensitive=false

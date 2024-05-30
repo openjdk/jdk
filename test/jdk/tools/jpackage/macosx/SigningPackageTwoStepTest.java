@@ -73,7 +73,7 @@ public class SigningPackageTwoStepTest {
         }
 
         Path outputBundle = cmd.outputBundle();
-        SigningBase.verifyPkgutil(outputBundle, SigningBase.DEFAULT_INDEX);
+        SigningBase.verifyPkgutil(outputBundle, true, SigningBase.DEFAULT_INDEX);
         SigningBase.verifySpctl(outputBundle, "install", SigningBase.DEFAULT_INDEX);
     }
 
@@ -101,10 +101,18 @@ public class SigningPackageTwoStepTest {
     }
 
     @Test
-    @Parameter("true")
-    @Parameter("false")
-    public static void test(boolean signAppImage) throws Exception {
-        SigningCheck.checkCertificates(0);
+    // (Signed, "signing-key or sign-identity"})
+    // Signed and signing-key
+    @Parameter({"true", "true"})
+    // Signed and signing-identity
+    @Parameter({"true", "false"})
+    // Unsigned
+    @Parameter({"false", "true"})
+    public static void test(String... testArgs) throws Exception {
+        boolean signAppImage = Boolean.parseBoolean(testArgs[0]);
+        boolean signingKey = Boolean.parseBoolean(testArgs[1]);
+
+        SigningCheck.checkCertificates(SigningBase.DEFAULT_INDEX);
 
         Path appimageOutput = TKit.createTempDirectory("appimage");
 
@@ -112,10 +120,15 @@ public class SigningPackageTwoStepTest {
                 .setArgumentValue("--dest", appimageOutput);
         if (signAppImage) {
             appImageCmd.addArguments("--mac-sign")
-                    .addArguments("--mac-signing-key-user-name",
-                            SigningBase.getDevName(0))
-                    .addArguments("--mac-signing-keychain",
-                            SigningBase.getKeyChain());
+                       .addArguments("--mac-signing-keychain",
+                                     SigningBase.getKeyChain());
+            if (signingKey) {
+                appImageCmd.addArguments("--mac-signing-key-user-name",
+                                SigningBase.getDevName(SigningBase.DEFAULT_INDEX));
+            } else {
+                appImageCmd.addArguments("--mac-app-image-sign-identity",
+                                SigningBase.getAppCert(SigningBase.DEFAULT_INDEX));
+            }
         }
 
         new PackageTest()
@@ -126,15 +139,31 @@ public class SigningPackageTwoStepTest {
                     cmd.removeArgumentWithValue("--input");
                     if (signAppImage) {
                         cmd.addArguments("--mac-sign",
-                                "--mac-signing-key-user-name",
-                                SigningBase.getDevName(0),
                                 "--mac-signing-keychain",
                                 SigningBase.getKeyChain());
+                        if (signingKey) {
+                            cmd.addArguments("--mac-signing-key-user-name",
+                                    SigningBase.getDevName(SigningBase.DEFAULT_INDEX));
+                        } else {
+                            cmd.addArguments("--mac-installer-sign-identity",
+                                    SigningBase.getInstallerCert(SigningBase.DEFAULT_INDEX));
+                        }
                     }
                 })
                 .forTypes(PackageType.MAC_PKG)
                 .addBundleVerifier(SigningPackageTwoStepTest::verifyPKG)
                 .forTypes(PackageType.MAC_DMG)
+                .addInitializer(cmd -> {
+                    if (signAppImage && !signingKey) {
+                        // jpackage throws expected error with
+                        // --mac-installer-sign-identity and DMG type
+                        cmd.removeArgumentWithValue("--mac-installer-sign-identity");
+                        // It will do nothing, but it signals test that app
+                        // image itself is signed for verification.
+                        cmd.addArguments("--mac-app-image-sign-identity",
+                                SigningBase.getAppCert(SigningBase.DEFAULT_INDEX));
+                    }
+                })
                 .addBundleVerifier(SigningPackageTwoStepTest::verifyDMG)
                 .addBundleVerifier(SigningPackageTwoStepTest::verifyAppImageInDMG)
                 .run();

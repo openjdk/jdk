@@ -27,13 +27,15 @@ default: all
 
 include $(SPEC)
 include MakeBase.gmk
+
+include CopyFiles.gmk
 include JavaCompilation.gmk
 include JarArchive.gmk
 include TextFileProcessing.gmk
 
 # This rule will be depended on due to the MANIFEST line
 $(eval $(call SetupTextFileProcessing, BUILD_JAVA_MANIFEST, \
-  SOURCE_FILES := $(TOPDIR)/make/data/mainmanifest/manifest.mf, \
+  SOURCE_FILES := $(TOPDIR)/make/data/mainmanifest/manifest.mf.template, \
   OUTPUT_FILE := $(SUPPORT_OUTPUTDIR)/java-main-manifest.mf, \
   REPLACEMENTS := \
       @@VERSION_SPECIFICATION@@ => $(VERSION_SPECIFICATION) ; \

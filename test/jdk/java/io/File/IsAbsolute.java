@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,42 +22,46 @@
  */
 
 /* @test
-   @bug 4022397
-   @summary General test for isAbsolute
+ * @bug 4022397 8287843
+ * @summary General test for isAbsolute
+ * @run junit IsAbsolute
  */
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
 
+import org.junit.jupiter.api.condition.EnabledOnOs;
+import org.junit.jupiter.api.condition.OS;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class IsAbsolute {
-
-    private static void ck(String path, boolean ans) throws Exception {
-        File f = new File(path);
-        boolean x = f.isAbsolute();
-        if (x != ans)
-            throw new Exception(path + ": expected " + ans + ", got " + x);
-        System.err.println(path + " ==> " + x);
+    @EnabledOnOs(OS.WINDOWS)
+    @ParameterizedTest
+    @ValueSource(strings = {"c:\\foo\\bar", "c:/foo/bar", "\\\\foo\\bar"})
+    public void windowsAbsolute(String path) throws IOException {
+        assertTrue(new File(path).isAbsolute());
     }
 
-    private static void testWin32() throws Exception {
-        ck("/foo/bar", false);
-        ck("\\foo\\bar", false);
-        ck("c:\\foo\\bar", true);
-        ck("c:/foo/bar", true);
-        ck("c:foo\\bar", false);
-        ck("\\\\foo\\bar", true);
+    @EnabledOnOs(OS.WINDOWS)
+    @ParameterizedTest
+    @ValueSource(strings = {"/foo/bar", "\\foo\\bar", "c:foo\\bar"})
+    public void windowsNotAbsolute(String path) throws IOException {
+        assertFalse(new File(path).isAbsolute());
     }
 
-    private static void testUnix() throws Exception {
-        ck("foo", false);
-        ck("foo/bar", false);
-        ck("/foo", true);
-        ck("/foo/bar", true);
+    @EnabledOnOs({OS.LINUX, OS.MAC})
+    @ParameterizedTest
+    @ValueSource(strings = {"/foo", "/foo/bar"})
+    public void unixAbsolute(String path) throws IOException {
+        assertTrue(new File(path).isAbsolute());
     }
 
-    public static void main(String[] args) throws Exception {
-        if (File.separatorChar == '\\') testWin32();
-        if (File.separatorChar == '/') testUnix();
+    @EnabledOnOs({OS.LINUX, OS.MAC})
+    @ParameterizedTest
+    @ValueSource(strings = {"foo", "foo/bar"})
+    public void unixNotAbsolute(String path) throws IOException {
+        assertFalse(new File(path).isAbsolute());
     }
-
 }

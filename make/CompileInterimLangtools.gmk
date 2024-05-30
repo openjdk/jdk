@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@ default: all
 
 include $(SPEC)
 include MakeBase.gmk
+
+include CopyFiles.gmk
 include JavaCompilation.gmk
 include Modules.gmk
 
@@ -99,10 +101,13 @@ define SetupInterimModule
       EXCLUDE_FILES := $(TOPDIR)/src/$1/share/classes/module-info.java \
           $(TOPDIR)/src/$1/share/classes/javax/tools/ToolProvider.java \
           $(TOPDIR)/src/$1/share/classes/com/sun/tools/javac/launcher/Main.java \
+          $(TOPDIR)/src/$1/share/classes/com/sun/tools/javac/launcher/MemoryContext.java \
+          $(TOPDIR)/src/$1/share/classes/com/sun/tools/javac/launcher/MemoryModuleFinder.java \
+          $(TOPDIR)/src/$1/share/classes/com/sun/tools/javac/launcher/SourceLauncher.java \
           Standard.java, \
       EXTRA_FILES := $(BUILDTOOLS_OUTPUTDIR)/gensrc/$1.interim/module-info.java \
           $($1.interim_EXTRA_FILES), \
-      COPY := .gif .png .xml .css .svg .js .js.template .txt javax.tools.JavaCompilerTool, \
+      COPY := .gif .png .xml .css .svg .js .js.template .txt .woff .woff2 javax.tools.JavaCompilerTool, \
       BIN := $(BUILDTOOLS_OUTPUTDIR)/interim_langtools_modules/$1.interim, \
       DISABLED_WARNINGS := module options, \
       JAVAC_FLAGS := \

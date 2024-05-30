@@ -47,12 +47,12 @@ public class TestOnOutOfMemoryError {
         // else this is the main test
         String msg1 = "Test1 Succeeded";
         String msg2 = "Test2 Succeeded";
-        ProcessBuilder pb_single = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb_single = ProcessTools.createLimitedTestJavaProcessBuilder(
            "-XX:OnOutOfMemoryError=echo " + msg1,
            TestOnOutOfMemoryError.class.getName(),
            "throwOOME");
 
-        ProcessBuilder pb_multiple = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb_multiple = ProcessTools.createLimitedTestJavaProcessBuilder(
            "-XX:OnOutOfMemoryError=echo " + msg1,
            "-XX:OnOutOfMemoryError=echo " + msg2,
            TestOnOutOfMemoryError.class.getName(),

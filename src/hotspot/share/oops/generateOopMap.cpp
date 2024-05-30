@@ -1318,7 +1318,7 @@ void GenerateOopMap::print_current_state(outputStream   *os,
     case Bytecodes::_invokestatic:
     case Bytecodes::_invokedynamic:
     case Bytecodes::_invokeinterface: {
-      int idx = currentBC->has_index_u4() ? currentBC->get_index_u4() : currentBC->get_index_u2_cpcache();
+      int idx = currentBC->has_index_u4() ? currentBC->get_index_u4() : currentBC->get_index_u2();
       ConstantPool* cp      = method()->constants();
       int nameAndTypeIdx    = cp->name_and_type_ref_index_at(idx, currentBC->code());
       int signatureIdx      = cp->signature_ref_index_at(nameAndTypeIdx);
@@ -1597,24 +1597,16 @@ void GenerateOopMap::interp1(BytecodeStream *itr) {
     case Bytecodes::_jsr:               do_jsr(itr->dest());         break;
     case Bytecodes::_jsr_w:             do_jsr(itr->dest_w());       break;
 
-    case Bytecodes::_getstatic:
-      do_field(true,  true,  itr->get_index_u2(), itr->bci(), itr->code());
-      break;
-    case Bytecodes::_putstatic:
-      do_field(false,  true,  itr->get_index_u2(), itr->bci(), itr->code());
-      break;
-    case Bytecodes::_getfield:
-      do_field(true,  false,  itr->get_index_u2(), itr->bci(), itr->code());
-      break;
-    case Bytecodes::_putfield:
-      do_field(false,  false,  itr->get_index_u2(), itr->bci(), itr->code());
-      break;
+    case Bytecodes::_getstatic:         do_field(true,   true,  itr->get_index_u2(), itr->bci(), itr->code()); break;
+    case Bytecodes::_putstatic:         do_field(false,  true,  itr->get_index_u2(), itr->bci(), itr->code()); break;
+    case Bytecodes::_getfield:          do_field(true,   false, itr->get_index_u2(), itr->bci(), itr->code()); break;
+    case Bytecodes::_putfield:          do_field(false,  false, itr->get_index_u2(), itr->bci(), itr->code()); break;
 
     case Bytecodes::_invokevirtual:
-    case Bytecodes::_invokespecial:     do_method(false, false, itr->get_index_u2_cpcache(), itr->bci(), itr->code()); break;
-    case Bytecodes::_invokestatic:      do_method(true,  false, itr->get_index_u2_cpcache(), itr->bci(), itr->code()); break;
-    case Bytecodes::_invokedynamic:     do_method(true,  false, itr->get_index_u4(),         itr->bci(), itr->code()); break;
-    case Bytecodes::_invokeinterface:   do_method(false, true,  itr->get_index_u2_cpcache(), itr->bci(), itr->code()); break;
+    case Bytecodes::_invokespecial:     do_method(false, false, itr->get_index_u2(), itr->bci(), itr->code()); break;
+    case Bytecodes::_invokestatic:      do_method(true,  false, itr->get_index_u2(), itr->bci(), itr->code()); break;
+    case Bytecodes::_invokedynamic:     do_method(true,  false, itr->get_index_u4(), itr->bci(), itr->code()); break;
+    case Bytecodes::_invokeinterface:   do_method(false, true,  itr->get_index_u2(), itr->bci(), itr->code()); break;
     case Bytecodes::_newarray:
     case Bytecodes::_anewarray:         pp_new_ref(vCTS, itr->bci()); break;
     case Bytecodes::_checkcast:         do_checkcast(); break;

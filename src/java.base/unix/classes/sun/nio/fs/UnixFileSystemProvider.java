@@ -74,6 +74,7 @@ public abstract class UnixFileSystemProvider
     private static final byte[] EMPTY_PATH = new byte[0];
     private final UnixFileSystem theFileSystem;
 
+    @SuppressWarnings("this-escape")
     public UnixFileSystemProvider() {
         theFileSystem = newFileSystem(StaticProperty.userDir());
     }
@@ -349,11 +350,35 @@ public abstract class UnixFileSystemProvider
             }
             mode |= X_OK;
         }
-        try {
-            access(file, mode);
-        } catch (UnixException exc) {
-            exc.rethrowAsIOException(file);
+        int errno = access(file, mode);
+        if (errno != 0)
+            new UnixException(errno).rethrowAsIOException(file);
+    }
+
+    @Override
+    public boolean isReadable(Path path) {
+        UnixPath file = UnixPath.toUnixPath(path);
+        file.checkRead();
+        return access(file, R_OK) == 0;
+    }
+
+    @Override
+    public boolean isWritable(Path path) {
+        UnixPath file = UnixPath.toUnixPath(path);
+        file.checkWrite();
+        return access(file, W_OK) == 0;
+    }
+
+    @Override
+    public boolean isExecutable(Path path) {
+        UnixPath file = UnixPath.toUnixPath(path);
+        @SuppressWarnings("removal")
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            // not cached
+            sm.checkExec(file.getPathForPermissionCheck());
         }
+        return access(file, X_OK) == 0;
     }
 
     @Override
@@ -561,7 +586,7 @@ public abstract class UnixFileSystemProvider
         if (Util.followLinks(options)) {
             UnixPath file = UnixPath.toUnixPath(path);
             file.checkRead();
-            return UnixNativeDispatcher.exists(file);
+            return access(file, F_OK) == 0;
         } else {
             return super.exists(path, options);
         }

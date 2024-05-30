@@ -23,12 +23,12 @@
 
 /*
  * @test
- * @summary Testing Classfile TempConstantPoolBuilder.
+ * @summary Testing ClassFile TempConstantPoolBuilder.
  * @run junit TempConstantPoolBuilderTest
  */
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
-import jdk.internal.classfile.attribute.SourceFileAttribute;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
+import java.lang.classfile.attribute.SourceFileAttribute;
 import java.lang.reflect.AccessFlag;
 import org.junit.jupiter.api.Test;
 
@@ -38,8 +38,8 @@ import static helpers.TestConstants.MTD_VOID;
 import static java.lang.constant.ConstantDescs.CD_Object;
 import static java.lang.constant.ConstantDescs.CD_void;
 import java.lang.constant.MethodTypeDesc;
-import static jdk.internal.classfile.Opcode.INVOKESPECIAL;
-import static jdk.internal.classfile.TypeKind.VoidType;
+import static java.lang.classfile.Opcode.INVOKESPECIAL;
+import static java.lang.classfile.TypeKind.VoidType;
 
 class TempConstantPoolBuilderTest {
 
@@ -53,14 +53,14 @@ class TempConstantPoolBuilderTest {
 
     @Test
     void addAnno() {
-        var cc = Classfile.of();
+        var cc = ClassFile.of();
         byte[] bytes = cc.build(ClassDesc.of("MyClass"), cb -> {
             cb.withFlags(AccessFlag.PUBLIC)
               .with(SourceFileAttribute.of(cb.constantPool().utf8Entry(("MyClass.java"))))
               .withMethod("<init>", MethodTypeDesc.of(CD_void), 0, mb -> mb
-                            .withCode(codeb -> codeb.loadInstruction(TypeKind.ReferenceType, 0)
-                                    .invokeInstruction(INVOKESPECIAL, CD_Object, "<init>", MTD_VOID, false)
-                                    .returnInstruction(VoidType)
+                            .withCode(codeb -> codeb.aload(0)
+                                    .invokespecial(CD_Object, "<init>", MTD_VOID, false)
+                                    .return_()
                             )
                             .with(RuntimeVisibleAnnotationsAttribute.of(Annotation.of(INTERFACE,
                                                                                       AnnotationElement.ofString("foo", "bar"))))

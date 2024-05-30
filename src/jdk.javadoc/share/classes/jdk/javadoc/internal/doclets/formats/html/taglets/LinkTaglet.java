@@ -117,7 +117,7 @@ public class LinkTaglet extends BaseTaglet {
      * @param refTree       the tree node containing the information, or {@code null} if not available
      * @param refSignature  the normalized signature of the target of the reference
      * @param ref           the target of the reference
-     * @param isLinkPlain   {@code true} if the link should be presented in "plain" font,
+     * @param isPlain       {@code true} if the link should be presented in "plain" font,
      *                      or {@code false} for "code" font
      * @param label         the label for the link,
      *                      or an empty item to use a default label derived from the signature
@@ -130,17 +130,17 @@ public class LinkTaglet extends BaseTaglet {
                                    DocTree refTree,
                                    String refSignature,
                                    Element ref,
-                                   boolean isLinkPlain,
+                                   boolean isPlain,
                                    Content label,
                                    BiConsumer<String, Object[]> reportWarning,
                                    TagletWriter tagletWriter) {
         var config = tagletWriter.configuration;
         var htmlWriter = tagletWriter.htmlWriter;
 
-        Content labelContent = plainOrCode(isLinkPlain, label);
+        Content labelContent = plainOrCode(isPlain, label);
 
         // The signature from the @see tag. We will output this text when a label is not specified.
-        Content text = plainOrCode(isLinkPlain,
+        Content text = plainOrCode(isPlain,
                 Text.of(Objects.requireNonNullElse(refSignature, "")));
 
         CommentHelper ch = utils.getCommentHelper(holder);
@@ -170,7 +170,7 @@ public class LinkTaglet extends BaseTaglet {
             if (refPackage != null && utils.isIncluded(refPackage)) {
                 //@see is referencing an included package
                 if (labelContent.isEmpty()) {
-                    labelContent = plainOrCode(isLinkPlain,
+                    labelContent = plainOrCode(isPlain,
                             Text.of(refPackage.getQualifiedName()));
                 }
                 return htmlWriter.getPackageLink(refPackage, labelContent, refFragment);
@@ -202,10 +202,10 @@ public class LinkTaglet extends BaseTaglet {
                 TypeMirror referencedType = ch.getReferencedType(refTree);
                 if (utils.isGenericType(referencedType)) {
                     // This is a generic type link, use the TypeMirror representation.
-                    return plainOrCode(isLinkPlain, htmlWriter.getLink(
+                    return plainOrCode(isPlain, htmlWriter.getLink(
                             new HtmlLinkInfo(config, HtmlLinkInfo.Kind.LINK_TYPE_PARAMS_AND_BOUNDS, referencedType)));
                 }
-                labelContent = plainOrCode(isLinkPlain, Text.of(utils.getSimpleName(refClass)));
+                labelContent = plainOrCode(isPlain, Text.of(utils.getSimpleName(refClass)));
             }
             return htmlWriter.getLink(new HtmlLinkInfo(config, HtmlLinkInfo.Kind.PLAIN, refClass)
                     .label(labelContent));
@@ -267,7 +267,7 @@ public class LinkTaglet extends BaseTaglet {
 
             return htmlWriter.getDocLink(HtmlLinkInfo.Kind.SHOW_PREVIEW, containing,
                     refMem, (labelContent.isEmpty()
-                            ? plainOrCode(isLinkPlain, Text.of(refMemName))
+                            ? plainOrCode(isPlain, Text.of(refMemName))
                             : labelContent), null, false);
         }
     }

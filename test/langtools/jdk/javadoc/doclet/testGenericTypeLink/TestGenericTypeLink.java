@@ -112,8 +112,8 @@ public class TestGenericTypeLink extends JavadocTester {
                     " class="external-link">String</a>,<wbr><a href="A.SomeException.html" title="class\
                      in pkg1">A.SomeException</a>&gt;</code></li>
                     <li><a href="http://example.com/docs/api/java.base/java/util/List.html" title="clas\
-                    s or interface in java.util" class="external-link"><code>Link to generic type with \
-                    label</code></a></li>
+                    s or interface in java.util" class="external-link">Link to generic type with label<\
+                    /a></li>
                     </ul>
                     </dd>
                     </dl>"""

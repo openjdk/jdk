@@ -28,6 +28,7 @@
  * @library /tools/javac/lib
  * @build   JavacTestingAbstractProcessor TestExecutableReceiverType
  * @compile -processor TestExecutableReceiverType -proc:only TestExecutableReceiverType.java
+ * @compile/process -processor TestExecutableReceiverType -proc:only MethodHost
  */
 
 import java.util.Set;
@@ -45,8 +46,14 @@ public class TestExecutableReceiverType extends JavacTestingAbstractProcessor {
                            RoundEnvironment roundEnv) {
         if (!roundEnv.processingOver()) {
             int count = 0;
-            count += testType(elements.getTypeElement("MethodHost"));
-            count += testType(elements.getTypeElement("MethodHost.Nested"));
+            for (ExecutableElement e : ElementFilter.methodsIn(
+                  roundEnv.getElementsAnnotatedWith(ReceiverTypeKind.class))) {
+                count += testExecutable(e);
+            }
+            for (ExecutableElement e : ElementFilter.constructorsIn(
+                  roundEnv.getElementsAnnotatedWith(ReceiverTypeKind.class))) {
+                count += testExecutable(e);
+            }
 
             if (count == 0) {
                 messager.printError("No executables visited.");
@@ -55,42 +62,42 @@ public class TestExecutableReceiverType extends JavacTestingAbstractProcessor {
         return true;
     }
 
-    int testType(TypeElement typeElement) {
-        int count = 0;
-        for (ExecutableElement executable :
-                 ElementFilter.constructorsIn(typeElement.getEnclosedElements())) {
-            count += testExecutable(executable);
-        }
-
-        for (ExecutableElement executable :
-                 ElementFilter.methodsIn(typeElement.getEnclosedElements())) {
-            count += testExecutable(executable);
-        }
-        return count;
-    }
-
     int testExecutable(ExecutableElement executable) {
-        TypeKind expectedKind = executable.getAnnotation(ReceiverTypeKind.class).value();
-        TypeKind actualKind = executable.getReceiverType().getKind();
+        ReceiverTypeKind expected = executable.getAnnotation(ReceiverTypeKind.class);
+        TypeKind expectedKind = expected.value();
+        String expectedType = expected.type();
+        TypeMirror actualType = executable.getReceiverType();
+        TypeKind actualKind = actualType.getKind();
 
         if (actualKind != expectedKind) {
             messager.printError(String.format("Unexpected TypeKind on receiver of %s:" +
                                               " expected %s\t got %s%n",
-                                              executable, expectedKind, actualKind));
+                                              executable, expectedKind, actualKind), executable);
+        }
+        if (!expectedType.isEmpty() && !actualType.toString().equals(expectedType)) {
+            messager.printError(String.format("Unexpected receiver type of %s:" +
+                                              " expected %s\t got %s%n",
+                                              executable, expectedType, actualType), executable);
         }
 
         // Get kind from the type of the executable directly
-        TypeKind kindFromType = new TypeKindVisitor<TypeKind, Object>(null) {
+        TypeMirror fromType = new TypeKindVisitor<TypeMirror, Object>(null) {
             @Override
-            public TypeKind visitExecutable(ExecutableType t, Object p) {
-                return t.getReceiverType().getKind();
+            public TypeMirror visitExecutable(ExecutableType t, Object p) {
+                return t.getReceiverType();
             }
         }.visit(executable.asType());
+        TypeKind kindFromType = fromType.getKind();
 
         if (kindFromType != expectedKind) {
             messager.printError(String.format("Unexpected TypeKind on executable's asType() of %s:" +
                                               " expected %s\t got %s%n",
-                                              executable, expectedKind, kindFromType));
+                                              executable, expectedKind, kindFromType), executable);
+        }
+        if (!expectedType.isEmpty() && !fromType.toString().equals(expectedType)) {
+            messager.printError(String.format("Unexpected receiver type of %s:" +
+                                              " expected %s\t got %s%n",
+                                              executable, expectedType, fromType), executable);
         }
         return 1;
     }
@@ -99,7 +106,11 @@ public class TestExecutableReceiverType extends JavacTestingAbstractProcessor {
 @Retention(RetentionPolicy.RUNTIME)
 @interface ReceiverTypeKind {
     TypeKind value();
+    String type() default "";
 }
+
+@Target(ElementType.TYPE_USE)
+@interface TA {}
 
 /**
  * Class to host various methods, etc.
@@ -114,11 +125,29 @@ class MethodHost {
     @ReceiverTypeKind(TypeKind.NONE)
     public void bar() {return;}
 
-    @ReceiverTypeKind(TypeKind.DECLARED)
-    public void quux(MethodHost this) {return;}
+    @ReceiverTypeKind(value = TypeKind.DECLARED, type = "@TA MethodHost")
+    public void quux(@TA MethodHost this) {return;}
 
     private class Nested {
-        @ReceiverTypeKind(TypeKind.DECLARED)
-        public Nested(MethodHost MethodHost.this) {}
+        @ReceiverTypeKind(value = TypeKind.DECLARED, type = "@TA MethodHost")
+        public Nested(@TA MethodHost MethodHost.this) {}
+
+        @ReceiverTypeKind(TypeKind.NONE)
+        public Nested(int foo) {}
+    }
+
+    private static class StaticNested {
+        @ReceiverTypeKind(TypeKind.NONE)
+        public StaticNested() {}
+    }
+
+    private static class Generic<X> {
+      private class GenericNested<Y> {
+        @ReceiverTypeKind(value = TypeKind.DECLARED, type = "MethodHost.@TA Generic<X>")
+        GenericNested(@TA Generic<X> Generic.this) {}
+
+        @ReceiverTypeKind(TypeKind.NONE)
+        GenericNested(int x) {}
+      }
     }
 }

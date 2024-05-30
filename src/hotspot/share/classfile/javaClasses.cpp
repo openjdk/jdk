@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -802,9 +802,7 @@ GrowableArray<Klass*>* java_lang_Class::_fixup_module_field_list = nullptr;
 inline static void assert_valid_static_string_field(fieldDescriptor* fd) {
   assert(fd->has_initial_value(), "caller should have checked this");
   assert(fd->field_type() == T_OBJECT, "caller should have checked this");
-  // Can't use vmSymbols::string_signature() as fd->signature() may have been relocated
-  // during DumpSharedSpaces
-  assert(fd->signature()->equals("Ljava/lang/String;"), "just checking");
+  assert(fd->signature() == vmSymbols::string_signature(), "just checking");
 }
 #endif
 
@@ -1261,7 +1259,7 @@ oop java_lang_Class::create_basic_type_mirror(const char* basic_type_name, Basic
   // introducing a new VM klass (see comment in ClassFileParser)
   oop java_class = InstanceMirrorKlass::cast(vmClasses::Class_klass())->allocate_instance(nullptr, CHECK_NULL);
   if (type != T_VOID) {
-    Klass* aklass = Universe::typeArrayKlassObj(type);
+    Klass* aklass = Universe::typeArrayKlass(type);
     assert(aklass != nullptr, "correct bootstrap");
     release_set_array_klass(java_class, aklass);
   }
@@ -1345,7 +1343,7 @@ const char* java_lang_Class::as_external_name(oop java_class) {
 
 Klass* java_lang_Class::array_klass_acquire(oop java_class) {
   Klass* k = ((Klass*)java_class->metadata_field_acquire(_array_klass_offset));
-  assert(k == nullptr || k->is_klass() && k->is_array_klass(), "should be array klass");
+  assert(k == nullptr || (k->is_klass() && k->is_array_klass()), "should be array klass");
   return k;
 }
 
@@ -1543,6 +1541,7 @@ int java_lang_Thread::_jvmti_thread_state_offset;
 int java_lang_Thread::_jvmti_VTMS_transition_disable_count_offset;
 int java_lang_Thread::_jvmti_is_in_VTMS_transition_offset;
 int java_lang_Thread::_interrupted_offset;
+int java_lang_Thread::_interruptLock_offset;
 int java_lang_Thread::_tid_offset;
 int java_lang_Thread::_continuation_offset;
 int java_lang_Thread::_park_blocker_offset;
@@ -1556,6 +1555,7 @@ JFR_ONLY(int java_lang_Thread::_jfr_epoch_offset;)
   macro(_inheritedAccessControlContext_offset, k, vmSymbols::inheritedAccessControlContext_name(), accesscontrolcontext_signature, false); \
   macro(_eetop_offset,         k, "eetop", long_signature, false); \
   macro(_interrupted_offset,   k, "interrupted", bool_signature, false); \
+  macro(_interruptLock_offset, k, "interruptLock", object_signature, false); \
   macro(_tid_offset,           k, "tid", long_signature, false); \
   macro(_park_blocker_offset,  k, "parkBlocker", object_signature, false); \
   macro(_continuation_offset,  k, "cont", continuation_signature, false); \
@@ -1637,6 +1637,9 @@ void java_lang_Thread::clear_scopedValueBindings(oop java_thread) {
 oop java_lang_Thread::holder(oop java_thread) {
   // Note: may return null if the thread is still attaching
   return java_thread->obj_field(_holder_offset);
+}
+oop java_lang_Thread::interrupt_lock(oop java_thread) {
+  return java_thread->obj_field(_interruptLock_offset);
 }
 
 bool java_lang_Thread::interrupted(oop java_thread) {
@@ -1988,26 +1991,27 @@ int java_lang_VirtualThread::state(oop vthread) {
 JavaThreadStatus java_lang_VirtualThread::map_state_to_thread_status(int state) {
   JavaThreadStatus status = JavaThreadStatus::NEW;
   switch (state & ~SUSPENDED) {
-    case NEW :
+    case NEW:
       status = JavaThreadStatus::NEW;
       break;
-    case STARTED :
-    case RUNNABLE :
-    case RUNNING :
-    case PARKING :
+    case STARTED:
+    case RUNNING:
+    case PARKING:
     case TIMED_PARKING:
-    case YIELDING :
+    case UNPARKED:
+    case YIELDING:
+    case YIELDED:
       status = JavaThreadStatus::RUNNABLE;
       break;
-    case PARKED :
-    case PINNED :
+    case PARKED:
+    case PINNED:
       status = JavaThreadStatus::PARKED;
       break;
     case TIMED_PARKED:
     case TIMED_PINNED:
       status = JavaThreadStatus::PARKED_TIMED;
       break;
-    case TERMINATED :
+    case TERMINATED:
       status = JavaThreadStatus::TERMINATED;
       break;
     default:
@@ -2077,18 +2081,17 @@ oop java_lang_Throwable::message(oop throwable) {
   return throwable->obj_field(_detailMessage_offset);
 }
 
-oop java_lang_Throwable::cause(oop throwable) {
-  return throwable->obj_field(_cause_offset);
+const char* java_lang_Throwable::message_as_utf8(oop throwable) {
+  oop msg = java_lang_Throwable::message(throwable);
+  const char* msg_utf8 = nullptr;
+  if (msg != nullptr) {
+    msg_utf8 = java_lang_String::as_utf8_string(msg);
+  }
+  return msg_utf8;
 }
 
-// Return Symbol for detailed_message or null
-Symbol* java_lang_Throwable::detail_message(oop throwable) {
-  PreserveExceptionMark pm(Thread::current());
-  oop detailed_message = java_lang_Throwable::message(throwable);
-  if (detailed_message != nullptr) {
-    return java_lang_String::as_symbol(detailed_message);
-  }
-  return nullptr;
+oop java_lang_Throwable::cause(oop throwable) {
+  return throwable->obj_field(_cause_offset);
 }
 
 void java_lang_Throwable::set_message(oop throwable, oop value) {
@@ -2413,7 +2416,7 @@ static void print_stack_element_to_stream(outputStream* st, Handle mirror, int m
         // Neither sourcename nor linenumber
         buf_off += os::snprintf_checked(buf + buf_off, buf_size - buf_off, "Unknown Source)");
       }
-      CompiledMethod* nm = method->code();
+      nmethod* nm = method->code();
       if (WizardMode && nm != nullptr) {
         os::snprintf_checked(buf + buf_off, buf_size - buf_off, "(nmethod " INTPTR_FORMAT ")", (intptr_t)nm);
       }
@@ -2453,7 +2456,7 @@ void java_lang_Throwable::print_stack_trace(Handle throwable, outputStream* st) 
       BacktraceElement bte = iter.next(THREAD);
       print_stack_element_to_stream(st, bte._mirror, bte._method_id, bte._version, bte._bci, bte._name);
     }
-    {
+    if (THREAD->can_call_java()) {
       // Call getCause() which doesn't necessarily return the _cause field.
       ExceptionMark em(THREAD);
       JavaValue cause(T_OBJECT);
@@ -2475,6 +2478,9 @@ void java_lang_Throwable::print_stack_trace(Handle throwable, outputStream* st) 
           st->cr();
         }
       }
+    } else {
+      st->print_raw_cr("<<cannot call Java to get cause>>");
+      return;
     }
   }
 }
@@ -2536,7 +2542,7 @@ void java_lang_Throwable::fill_in_stack_trace(Handle throwable, const methodHand
                   RegisterMap::ProcessFrames::skip,
                   RegisterMap::WalkContinuation::include);
   int decode_offset = 0;
-  CompiledMethod* nm = nullptr;
+  nmethod* nm = nullptr;
   bool skip_fillInStackTrace_check = false;
   bool skip_throwableInit_check = false;
   bool skip_hidden = !ShowHiddenFrames;
@@ -2580,10 +2586,10 @@ void java_lang_Throwable::fill_in_stack_trace(Handle throwable, const methodHand
         // HMMM QQQ might be nice to have frame return nm as null if cb is non-null
         // but non nmethod
         fr = fr.sender(&map);
-        if (cb == nullptr || !cb->is_compiled()) {
+        if (cb == nullptr || !cb->is_nmethod()) {
           continue;
         }
-        nm = cb->as_compiled_method();
+        nm = cb->as_nmethod();
         assert(nm->method() != nullptr, "must be");
         if (nm->method()->is_native()) {
           method = nm->method();

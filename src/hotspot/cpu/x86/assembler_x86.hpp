@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -308,15 +308,27 @@ class Address {
 
  private:
   bool base_needs_rex() const {
-    return _base->is_valid() && _base->encoding() >= 8;
+    return _base->is_valid() && ((_base->encoding() & 8) == 8);
+  }
+
+  bool base_needs_rex2() const {
+    return _base->is_valid() && _base->encoding() >= 16;
   }
 
   bool index_needs_rex() const {
-    return _index->is_valid() &&_index->encoding() >= 8;
+    return _index->is_valid() && ((_index->encoding() & 8) == 8);
+  }
+
+  bool index_needs_rex2() const {
+    return _index->is_valid() &&_index->encoding() >= 16;
   }
 
   bool xmmindex_needs_rex() const {
-    return _xmmindex->is_valid() && _xmmindex->encoding() >= 8;
+    return _xmmindex->is_valid() && ((_xmmindex->encoding() & 8) == 8);
+  }
+
+  bool xmmindex_needs_rex2() const {
+    return _xmmindex->is_valid() && _xmmindex->encoding() >= 16;
   }
 
   relocInfo::relocType reloc() const { return _rspec.type(); }
@@ -508,10 +520,24 @@ class Assembler : public AbstractAssembler  {
     REX_WRX    = 0x4E,
     REX_WRXB   = 0x4F,
 
+    REX2       = 0xd5,
+    WREX2      = REX2 << 8,
+
     VEX_3bytes = 0xC4,
     VEX_2bytes = 0xC5,
     EVEX_4bytes = 0x62,
     Prefix_EMPTY = 0x0
+  };
+
+  enum PrefixBits {
+    REXBIT_B  = 0x01,
+    REXBIT_X  = 0x02,
+    REXBIT_R  = 0x04,
+    REXBIT_W  = 0x08,
+    REX2BIT_B4 = 0x10,
+    REX2BIT_X4 = 0x20,
+    REX2BIT_R4 = 0x40,
+    REX2BIT_M0 = 0x80
   };
 
   enum VexPrefix {
@@ -525,8 +551,16 @@ class Assembler : public AbstractAssembler  {
     EVEX_F  = 0x04,
     EVEX_V  = 0x08,
     EVEX_Rb = 0x10,
+    EVEX_B  = 0x20,
     EVEX_X  = 0x40,
     EVEX_Z  = 0x80
+  };
+
+  enum ExtEvexPrefix {
+    EEVEX_R = 0x10,
+    EEVEX_B = 0x08,
+    EEVEX_X = 0x04,
+    EEVEX_V = 0x08
   };
 
   enum EvexRoundPrefix {
@@ -540,7 +574,7 @@ class Assembler : public AbstractAssembler  {
     VEX_SIMD_NONE = 0x0,
     VEX_SIMD_66   = 0x1,
     VEX_SIMD_F3   = 0x2,
-    VEX_SIMD_F2   = 0x3
+    VEX_SIMD_F2   = 0x3,
   };
 
   enum VexOpcode {
@@ -548,6 +582,7 @@ class Assembler : public AbstractAssembler  {
     VEX_OPCODE_0F    = 0x1,
     VEX_OPCODE_0F_38 = 0x2,
     VEX_OPCODE_0F_3A = 0x3,
+    VEX_OPCODE_0F_3C = 0x4,
     VEX_OPCODE_MASK  = 0x1F
   };
 
@@ -572,7 +607,8 @@ class Assembler : public AbstractAssembler  {
     EVEX_OVM  = 20,
     EVEX_M128 = 21,
     EVEX_DUP  = 22,
-    EVEX_ETUP = 23
+    EVEX_NOSCALE = 23,
+    EVEX_ETUP = 24
   };
 
   enum EvexInputSizeInBits {
@@ -686,33 +722,62 @@ private:
   InstructionAttr *_attributes;
   void set_attributes(InstructionAttr* attributes);
 
+  int get_base_prefix_bits(int enc);
+  int get_index_prefix_bits(int enc);
+  int get_base_prefix_bits(Register base);
+  int get_index_prefix_bits(Register index);
+  int get_reg_prefix_bits(int enc);
+
   // 64bit prefixes
   void prefix(Register reg);
   void prefix(Register dst, Register src, Prefix p);
+  void prefix_rex2(Register dst, Register src);
   void prefix(Register dst, Address adr, Prefix p);
+  void prefix_rex2(Register dst, Address adr);
 
-  void prefix(Address adr);
-  void prefix(Address adr, Register reg,  bool byteinst = false);
+  // The is_map1 bool indicates an x86 map1 instruction which, when
+  // legacy encoded, uses a 0x0F opcode prefix.  By specification, the
+  // opcode prefix is omitted when using rex2 encoding in support
+  // of APX extended GPRs.
+  void prefix(Address adr, bool is_map1 = false);
+  void prefix_rex2(Address adr, bool is_map1 = false);
+  void prefix(Address adr, Register reg,  bool byteinst = false, bool is_map1 = false);
+  void prefix_rex2(Address adr, Register reg,  bool byteinst = false, bool is_map1 = false);
   void prefix(Address adr, XMMRegister reg);
+  void prefix_rex2(Address adr, XMMRegister reg);
 
-  int prefix_and_encode(int reg_enc, bool byteinst = false);
-  int prefix_and_encode(int dst_enc, int src_enc) {
-    return prefix_and_encode(dst_enc, false, src_enc, false);
+  int prefix_and_encode(int reg_enc, bool byteinst = false, bool is_map1 = false);
+  int prefix_and_encode_rex2(int reg_enc, bool is_map1 = false);
+  int prefix_and_encode(int dst_enc, int src_enc, bool is_map1 = false) {
+    return prefix_and_encode(dst_enc, false, src_enc, false, is_map1);
   }
-  int prefix_and_encode(int dst_enc, bool dst_is_byte, int src_enc, bool src_is_byte);
+  int prefix_and_encode(int dst_enc, bool dst_is_byte, int src_enc, bool src_is_byte, bool is_map1 = false);
 
+  int prefix_and_encode_rex2(int dst_enc, int src_enc, int init_bits = 0);
   // Some prefixq variants always emit exactly one prefix byte, so besides a
   // prefix-emitting method we provide a method to get the prefix byte to emit,
   // which can then be folded into a byte stream.
-  int8_t get_prefixq(Address adr);
-  int8_t get_prefixq(Address adr, Register reg);
+  int get_prefixq(Address adr, bool is_map1 = false);
+  int get_prefixq_rex2(Address adr, bool is_map1 = false);
+  int get_prefixq(Address adr, Register reg, bool is_map1 = false);
+  int get_prefixq_rex2(Address adr, Register reg, bool ismap1 = false);
 
   void prefixq(Address adr);
-  void prefixq(Address adr, Register reg);
+  void prefixq(Address adr, Register reg, bool is_map1 = false);
   void prefixq(Address adr, XMMRegister reg);
+  void prefixq_rex2(Address adr, XMMRegister src);
 
-  int prefixq_and_encode(int reg_enc);
-  int prefixq_and_encode(int dst_enc, int src_enc);
+  bool prefix_is_rex2(int prefix);
+
+  int prefixq_and_encode(int reg_enc, bool is_map1 = false);
+  int prefixq_and_encode_rex2(int reg_enc, bool is_map1 = false);
+  int prefixq_and_encode(int dst_enc, int src_enc, bool is_map1 = false);
+  int prefixq_and_encode_rex2(int dst_enc, int src_enc, bool is_map1 = false);
+
+  bool needs_rex2(Register reg1, Register reg2 = noreg, Register reg3 = noreg);
+
+  bool needs_eevex(Register reg1, Register reg2 = noreg, Register reg3 = noreg);
+  bool needs_eevex(int enc1, int enc2 = -1, int enc3 = -1);
 
   void rex_prefix(Address adr, XMMRegister xreg,
                   VexSimdPrefix pre, VexOpcode opc, bool rex_w);
@@ -721,22 +786,21 @@ private:
 
   void vex_prefix(bool vex_r, bool vex_b, bool vex_x, int nds_enc, VexSimdPrefix pre, VexOpcode opc);
 
-  void evex_prefix(bool vex_r, bool vex_b, bool vex_x, bool evex_r, bool evex_v,
-                   int nds_enc, VexSimdPrefix pre, VexOpcode opc);
+  void evex_prefix(bool vex_r, bool vex_b, bool vex_x, bool evex_v, bool evex_r, bool evex_b,
+                       bool eevex_x, int nds_enc, VexSimdPrefix pre, VexOpcode opc);
 
-  void vex_prefix(Address adr, int nds_enc, int xreg_enc,
-                  VexSimdPrefix pre, VexOpcode opc,
+  void vex_prefix(Address adr, int nds_enc, int xreg_enc, VexSimdPrefix pre, VexOpcode opc,
                   InstructionAttr *attributes);
 
   int  vex_prefix_and_encode(int dst_enc, int nds_enc, int src_enc,
                              VexSimdPrefix pre, VexOpcode opc,
-                             InstructionAttr *attributes);
+                             InstructionAttr *attributes, bool src_is_gpr = false);
 
   void simd_prefix(XMMRegister xreg, XMMRegister nds, Address adr, VexSimdPrefix pre,
                    VexOpcode opc, InstructionAttr *attributes);
 
   int simd_prefix_and_encode(XMMRegister dst, XMMRegister nds, XMMRegister src, VexSimdPrefix pre,
-                             VexOpcode opc, InstructionAttr *attributes);
+                             VexOpcode opc, InstructionAttr *attributes, bool src_is_gpr = false);
 
   // Helper functions for groups of instructions
   void emit_arith_b(int op1, int op2, Register dst, int imm8);
@@ -816,11 +880,15 @@ private:
   void check_relocation(RelocationHolder const& rspec, int format);
 #endif
 
-  void emit_data(jint data, relocInfo::relocType    rtype, int format);
-  void emit_data(jint data, RelocationHolder const& rspec, int format);
+  void emit_data(jint data, relocInfo::relocType    rtype, int format = 0);
+  void emit_data(jint data, RelocationHolder const& rspec, int format = 0);
   void emit_data64(jlong data, relocInfo::relocType rtype, int format = 0);
   void emit_data64(jlong data, RelocationHolder const& rspec, int format = 0);
 
+  void emit_prefix_and_int8(int prefix, int b1);
+  void emit_opcode_prefix_and_encoding(int byte1, int ocp_and_encoding);
+  void emit_opcode_prefix_and_encoding(int byte1, int byte2, int ocp_and_encoding);
+  void emit_opcode_prefix_and_encoding(int byte1, int byte2, int ocp_and_encoding, int byte3);
   bool always_reachable(AddressLiteral adr) NOT_LP64( { return true; } );
   bool        reachable(AddressLiteral adr) NOT_LP64( { return true; } );
 
@@ -906,6 +974,8 @@ private:
 
   // Instruction prefixes
   void prefix(Prefix p);
+
+  void prefix16(int p);
 
   public:
 
@@ -1094,6 +1164,7 @@ private:
   void cdql();
 
   void cdqq();
+  void cdqe();
 
   void cld();
 
@@ -1109,12 +1180,15 @@ private:
 
 
   void cmpb(Address dst, int imm8);
+  void cmpb(Address dst, Register reg);
+  void cmpb(Register reg, Address dst);
 
   void cmpl(Address dst, int32_t imm32);
   void cmpl(Register dst, int32_t imm32);
   void cmpl(Register dst, Register src);
   void cmpl(Register dst, Address src);
   void cmpl_imm32(Address dst, int32_t imm32);
+  void cmpl(Address dst,  Register reg);
 
   void cmpq(Address dst, int32_t imm32);
   void cmpq(Address dst, Register src);
@@ -1123,6 +1197,7 @@ private:
   void cmpq(Register dst, Address src);
 
   void cmpw(Address dst, int imm16);
+  void cmpw(Address dst, Register reg);
 
   void cmpxchg8 (Address adr);
 
@@ -1524,6 +1599,8 @@ private:
   void kordl(KRegister dst, KRegister src1, KRegister src2);
   void korql(KRegister dst, KRegister src1, KRegister src2);
 
+  void kxnorwl(KRegister dst, KRegister src1, KRegister src2);
+
   void kxorbl(KRegister dst, KRegister src1, KRegister src2);
   void kxorwl(KRegister dst, KRegister src1, KRegister src2);
   void kxordl(KRegister dst, KRegister src1, KRegister src2);
@@ -1615,6 +1692,9 @@ private:
   void evmovdqul(XMMRegister dst, KRegister mask, Address src, bool merge, int vector_len);
   void evmovdqul(Address dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
 
+  void evmovntdquq(Address dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
+  void evmovntdquq(Address dst, XMMRegister src, int vector_len);
+
   void evmovdquq(Address dst, XMMRegister src, int vector_len);
   void evmovdquq(XMMRegister dst, Address src, int vector_len);
   void evmovdquq(XMMRegister dst, XMMRegister src, int vector_len);
@@ -1656,7 +1736,6 @@ private:
 
   // Move signed 32bit immediate to 64bit extending sign
   void movslq(Address  dst, int32_t imm64);
-  void movslq(Register dst, int32_t imm64);
 
   void movslq(Register dst, Address src);
   void movslq(Register dst, Register src);
@@ -1721,7 +1800,7 @@ private:
   void negq(Address dst);
 #endif
 
-  void nop(int i = 1);
+  void nop(uint i = 1);
 
   void notl(Register dst);
 
@@ -1730,7 +1809,9 @@ private:
 
   void btsq(Address dst, int imm8);
   void btrq(Address dst, int imm8);
+  void btq(Register src, int imm8);
 #endif
+  void btq(Register dst, Register src);
 
   void orw(Register dst, Register src);
 
@@ -1796,6 +1877,7 @@ private:
   void vpcmpCCbwd(XMMRegister dst, XMMRegister nds, XMMRegister src, int cond_encoding, int vector_len);
 
   void vpcmpeqb(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void vpcmpeqb(XMMRegister dst, XMMRegister src1, Address src2, int vector_len);
   void evpcmpeqb(KRegister kdst, XMMRegister nds, XMMRegister src, int vector_len);
   void evpcmpeqb(KRegister kdst, XMMRegister nds, Address src, int vector_len);
   void evpcmpeqb(KRegister kdst, KRegister mask, XMMRegister nds, Address src, int vector_len);
@@ -1810,6 +1892,7 @@ private:
   void evpcmpuq(KRegister kdst, XMMRegister nds, XMMRegister src, ComparisonPredicate vcc, int vector_len);
 
   void pcmpeqw(XMMRegister dst, XMMRegister src);
+  void vpcmpeqw(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
   void vpcmpeqw(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void evpcmpeqw(KRegister kdst, XMMRegister nds, XMMRegister src, int vector_len);
   void evpcmpeqw(KRegister kdst, XMMRegister nds, Address src, int vector_len);
@@ -1910,8 +1993,12 @@ private:
   void pmaddwd(XMMRegister dst, XMMRegister src);
   void vpmaddwd(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vpmaddubsw(XMMRegister dst, XMMRegister src1, XMMRegister src2, int vector_len);
+  void vpmadd52luq(XMMRegister dst, XMMRegister src1, XMMRegister src2, int vector_len);
+  void vpmadd52luq(XMMRegister dst, XMMRegister src1, Address src2, int vector_len);
   void evpmadd52luq(XMMRegister dst, XMMRegister src1, XMMRegister src2, int vector_len);
   void evpmadd52luq(XMMRegister dst, KRegister mask, XMMRegister src1, XMMRegister src2, bool merge, int vector_len);
+  void vpmadd52huq(XMMRegister dst, XMMRegister src1, XMMRegister src2, int vector_len);
+  void vpmadd52huq(XMMRegister dst, XMMRegister src1, Address src2, int vector_len);
   void evpmadd52huq(XMMRegister dst, XMMRegister src1, XMMRegister src2, int vector_len);
   void evpmadd52huq(XMMRegister dst, KRegister mask, XMMRegister src1, XMMRegister src2, bool merge, int vector_len);
 
@@ -2006,6 +2093,8 @@ private:
   void punpckldq(XMMRegister dst, XMMRegister src);
   void punpckldq(XMMRegister dst, Address src);
   void vpunpckldq(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void vpunpcklqdq(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+
 
   // Interleave High Word
   void vpunpckhwd(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
@@ -2015,6 +2104,7 @@ private:
 
   // Interleave High Doublewords
   void vpunpckhdq(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void vpunpckhqdq(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
 
   // Interleave Low Quadwords
   void punpcklqdq(XMMRegister dst, XMMRegister src);
@@ -2242,6 +2332,7 @@ private:
   void xorb(Address dst, Register src);
   void xorb(Register dst, Address src);
   void xorw(Register dst, Register src);
+  void xorw(Register dst, Address src);
 
   void xorq(Register dst, Address src);
   void xorq(Address dst, int32_t imm32);
@@ -2293,6 +2384,7 @@ private:
   void shrxq(Register dst, Address src1, Register src2);
 
   void bzhiq(Register dst, Register src1, Register src2);
+  void bzhil(Register dst, Register src1, Register src2);
 
   void pextl(Register dst, Register src1, Register src2);
   void pdepl(Register dst, Register src1, Register src2);
@@ -2568,6 +2660,7 @@ private:
   // Minimum of packed integers
   void pminsb(XMMRegister dst, XMMRegister src);
   void vpminsb(XMMRegister dst, XMMRegister src1, XMMRegister src2, int vector_len);
+  void vpminub(XMMRegister dst, XMMRegister src1, XMMRegister src2, int vector_len);
   void pminsw(XMMRegister dst, XMMRegister src);
   void vpminsw(XMMRegister dst, XMMRegister src1, XMMRegister src2, int vector_len);
   void pminsd(XMMRegister dst, XMMRegister src);

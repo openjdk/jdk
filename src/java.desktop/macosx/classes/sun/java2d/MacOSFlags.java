@@ -125,16 +125,7 @@ public class MacOSFlags {
                                 System.out.println("Could not enable OpenGL pipeline (CGL not available)");
                             }
                             oglEnabled = false;
-                            metalEnabled = MTLGraphicsConfig.isMetalAvailable();
-                        }
-                    } else if (metalEnabled && !oglEnabled) {
-                        // Check whether Metal framework is available
-                        if (!MTLGraphicsConfig.isMetalAvailable()) {
-                            if (metalVerbose) {
-                                System.out.println("Could not enable Metal pipeline (Metal framework not available)");
-                            }
-                            metalEnabled = false;
-                            oglEnabled = CGLGraphicsConfig.isCGLAvailable();
+                            metalEnabled = true;
                         }
                     }
 

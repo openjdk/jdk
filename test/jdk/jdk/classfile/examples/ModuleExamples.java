@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary Testing Classfile ModuleExamples compilation.
+ * @summary Testing ClassFile ModuleExamples compilation.
  * @compile ModuleExamples.java
  */
 import java.io.IOException;
@@ -34,16 +34,16 @@ import java.nio.file.FileSystems;
 import java.util.List;
 import java.util.function.Consumer;
 
-import jdk.internal.classfile.Annotation;
-import jdk.internal.classfile.AnnotationElement;
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.attribute.ModuleAttribute;
-import jdk.internal.classfile.attribute.ModuleAttribute.ModuleAttributeBuilder;
-import jdk.internal.classfile.attribute.ModuleMainClassAttribute;
-import jdk.internal.classfile.attribute.ModulePackagesAttribute;
-import jdk.internal.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
-import jdk.internal.classfile.Attributes;
+import java.lang.classfile.Annotation;
+import java.lang.classfile.AnnotationElement;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.attribute.ModuleAttribute;
+import java.lang.classfile.attribute.ModuleAttribute.ModuleAttributeBuilder;
+import java.lang.classfile.attribute.ModuleMainClassAttribute;
+import java.lang.classfile.attribute.ModulePackagesAttribute;
+import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
+import java.lang.classfile.Attributes;
 import java.lang.constant.PackageDesc;
 import java.lang.constant.ModuleDesc;
 
@@ -51,17 +51,17 @@ public class ModuleExamples {
     private static final FileSystem JRT = FileSystems.getFileSystem(URI.create("jrt:/"));
 
     public void examineModule() throws IOException {
-        ClassModel cm = Classfile.of().parse(JRT.getPath("modules/java.base/module-info.class"));
+        ClassModel cm = ClassFile.of().parse(JRT.getPath("modules/java.base/module-info.class"));
         System.out.println("Is JVMS $4.7 compatible module-info: " + cm.isModuleInfo());
 
-        ModuleAttribute ma = cm.findAttribute(Attributes.MODULE).orElseThrow();
+        ModuleAttribute ma = cm.findAttribute(Attributes.module()).orElseThrow();
         System.out.println("Module name: " + ma.moduleName().name().stringValue());
         System.out.println("Exports: " + ma.exports());
 
-        ModuleMainClassAttribute mmca = cm.findAttribute(Attributes.MODULE_MAIN_CLASS).orElse(null);
+        ModuleMainClassAttribute mmca = cm.findAttribute(Attributes.moduleMainClass()).orElse(null);
         System.out.println("Does the module have a MainClassAttribute?: " + (mmca != null));
 
-        ModulePackagesAttribute mmp = cm.findAttribute(Attributes.MODULE_PACKAGES).orElseThrow();
+        ModulePackagesAttribute mmp = cm.findAttribute(Attributes.modulePackages()).orElseThrow();
         System.out.println("Packages?: " + mmp.packages());
     }
 
@@ -76,7 +76,7 @@ public class ModuleExamples {
         });
 
         // Build it
-        var cc = Classfile.of();
+        var cc = ClassFile.of();
         byte[] moduleInfo = cc.buildModule(ModuleAttribute.of(moduleName, handler), clb -> {
 
                 // Add an annotation to the module

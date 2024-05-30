@@ -37,7 +37,7 @@ public class TestLambdaExceptionInInitializer {
     public static void main(String args[]) throws Throwable {
 
         // Run Lamba class
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("TestPkg.Lambda");
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("TestPkg.Lambda");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
         output.shouldMatch("Exception in thread \".+\" java.lang.ExceptionInInitializerError");

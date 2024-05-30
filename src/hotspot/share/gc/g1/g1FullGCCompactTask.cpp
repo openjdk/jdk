@@ -28,7 +28,7 @@
 #include "gc/g1/g1FullCollector.inline.hpp"
 #include "gc/g1/g1FullGCCompactionPoint.hpp"
 #include "gc/g1/g1FullGCCompactTask.hpp"
-#include "gc/g1/heapRegion.inline.hpp"
+#include "gc/g1/g1HeapRegion.inline.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "logging/log.hpp"
 #include "oops/oop.inline.hpp"
@@ -66,7 +66,8 @@ void G1FullGCCompactTask::copy_object_to_new_location(oop obj) {
   assert(cast_to_oop(destination)->klass() != nullptr, "should have a class");
 }
 
-void G1FullGCCompactTask::compact_region(HeapRegion* hr) {
+void G1FullGCCompactTask::compact_region(G1HeapRegion* hr) {
+  assert(!hr->has_pinned_objects(), "Should be no region with pinned objects in compaction queue");
   assert(!hr->is_humongous(), "Should be no humongous regions in compaction queue");
 
   if (!collector()->is_free(hr->hrm_index())) {
@@ -86,8 +87,8 @@ void G1FullGCCompactTask::compact_region(HeapRegion* hr) {
 
 void G1FullGCCompactTask::work(uint worker_id) {
   Ticks start = Ticks::now();
-  GrowableArray<HeapRegion*>* compaction_queue = collector()->compaction_point(worker_id)->regions();
-  for (GrowableArrayIterator<HeapRegion*> it = compaction_queue->begin();
+  GrowableArray<G1HeapRegion*>* compaction_queue = collector()->compaction_point(worker_id)->regions();
+  for (GrowableArrayIterator<G1HeapRegion*> it = compaction_queue->begin();
        it != compaction_queue->end();
        ++it) {
     compact_region(*it);
@@ -96,8 +97,8 @@ void G1FullGCCompactTask::work(uint worker_id) {
 
 void G1FullGCCompactTask::serial_compaction() {
   GCTraceTime(Debug, gc, phases) tm("Phase 4: Serial Compaction", collector()->scope()->timer());
-  GrowableArray<HeapRegion*>* compaction_queue = collector()->serial_compaction_point()->regions();
-  for (GrowableArrayIterator<HeapRegion*> it = compaction_queue->begin();
+  GrowableArray<G1HeapRegion*>* compaction_queue = collector()->serial_compaction_point()->regions();
+  for (GrowableArrayIterator<G1HeapRegion*> it = compaction_queue->begin();
        it != compaction_queue->end();
        ++it) {
     compact_region(*it);
@@ -107,13 +108,13 @@ void G1FullGCCompactTask::serial_compaction() {
 void G1FullGCCompactTask::humongous_compaction() {
   GCTraceTime(Debug, gc, phases) tm("Phase 4: Humonguous Compaction", collector()->scope()->timer());
 
-  for (HeapRegion* hr : collector()->humongous_compaction_regions()) {
+  for (G1HeapRegion* hr : collector()->humongous_compaction_regions()) {
     assert(collector()->is_compaction_target(hr->hrm_index()), "Sanity");
     compact_humongous_obj(hr);
   }
 }
 
-void G1FullGCCompactTask::compact_humongous_obj(HeapRegion* src_hr) {
+void G1FullGCCompactTask::compact_humongous_obj(G1HeapRegion* src_hr) {
   assert(src_hr->is_starts_humongous(), "Should be start region of the humongous object");
 
   oop obj = cast_to_oop(src_hr->bottom());
@@ -145,7 +146,7 @@ void G1FullGCCompactTask::free_non_overlapping_regions(uint src_start_idx, uint 
                                dest_end_idx + 1;
 
   for (uint i = non_overlapping_start; i <= src_end_idx; ++i) {
-    HeapRegion* hr = _g1h->region_at(i);
+    G1HeapRegion* hr = _g1h->region_at(i);
     _g1h->free_humongous_region(hr, nullptr);
   }
 }

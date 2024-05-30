@@ -60,6 +60,7 @@ class Opaque1Node : public Node {
 class OpaqueLoopInitNode : public Opaque1Node {
   public:
   OpaqueLoopInitNode(Compile* C, Node *n) : Opaque1Node(C, n) {
+    init_class_id(Class_OpaqueLoopInit);
   }
   virtual int Opcode() const;
 };
@@ -67,6 +68,7 @@ class OpaqueLoopInitNode : public Opaque1Node {
 class OpaqueLoopStrideNode : public Opaque1Node {
   public:
   OpaqueLoopStrideNode(Compile* C, Node *n) : Opaque1Node(C, n) {
+    init_class_id(Class_OpaqueLoopStride);
   }
   virtual int Opcode() const;
 };
@@ -119,16 +121,32 @@ class Opaque3Node : public Node {
 // GraphKit::must_be_not_null().
 class Opaque4Node : public Node {
   public:
-  Opaque4Node(Compile* C, Node *tst, Node* final_tst) : Node(nullptr, tst, final_tst) {
+  Opaque4Node(Compile* C, Node* tst, Node* final_tst) : Node(nullptr, tst, final_tst) {
+    init_class_id(Class_Opaque4);
     init_flags(Flag_is_macro);
     C->add_macro_node(this);
   }
 
   virtual int Opcode() const;
-  virtual const Type *bottom_type() const { return TypeInt::BOOL; }
   virtual const Type* Value(PhaseGVN* phase) const;
+  virtual const Type* bottom_type() const { return TypeInt::BOOL; }
 };
 
+// This node is used for Initialized Assertion Predicate BoolNodes. Initialized Assertion Predicates must always evaluate
+// to true. Therefore, we get rid of them in product builds during macro expansion as they are useless. In debug builds
+// we keep them as additional verification code (i.e. removing this node and use the BoolNode input instead).
+class OpaqueInitializedAssertionPredicateNode : public Node {
+ public:
+  OpaqueInitializedAssertionPredicateNode(BoolNode* bol, Compile* C) : Node(nullptr, bol) {
+    init_class_id(Class_OpaqueInitializedAssertionPredicate);
+    init_flags(Flag_is_macro);
+    C->add_macro_node(this);
+  }
+
+  virtual int Opcode() const;
+  virtual const Type* Value(PhaseGVN* phase) const;
+  virtual const Type* bottom_type() const { return TypeInt::BOOL; }
+};
 
 //------------------------------ProfileBooleanNode-------------------------------
 // A node represents value profile for a boolean during parsing.

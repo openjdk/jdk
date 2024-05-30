@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "cds/archiveBuilder.hpp"
+#include "cds/cdsConfig.hpp"
 #include "cds/dynamicArchive.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/classLoaderData.hpp"
@@ -154,8 +155,9 @@ public:
     assert(value.is_permanent() || (value.refcount() == 1) || (value.refcount() == 0),
            "refcount %d", value.refcount());
 #if INCLUDE_CDS
-    if (DumpSharedSpaces) {
-      // no deallocation is needed
+    if (CDSConfig::is_dumping_static_archive()) {
+      // We have allocated with MetaspaceShared::symbol_space_alloc(). No deallocation is needed.
+      // Unreferenced Symbols will not be copied into the archive.
       return;
     }
 #endif
@@ -182,7 +184,7 @@ private:
   static void* allocate_node_impl(size_t size, Value const& value) {
     size_t alloc_size = size + value.byte_size() + value.effective_length();
 #if INCLUDE_CDS
-    if (DumpSharedSpaces) {
+    if (CDSConfig::is_dumping_static_archive()) {
       MutexLocker ml(DumpRegion_lock, Mutex::_no_safepoint_check_flag);
       // To get deterministic output from -Xshare:dump, we ensure that Symbols are allocated in
       // increasing addresses. When the symbols are copied into the archive, we preserve their
@@ -244,10 +246,15 @@ size_t SymbolTable::table_size() {
   return ((size_t)1) << _local_table->get_size_log2(Thread::current());
 }
 
+bool SymbolTable::has_work() { return Atomic::load_acquire(&_has_work); }
+
 void SymbolTable::trigger_cleanup() {
-  MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
-  _has_work = true;
-  Service_lock->notify_all();
+  // Avoid churn on ServiceThread
+  if (!has_work()) {
+    MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
+    _has_work = true;
+    Service_lock->notify_all();
+  }
 }
 
 class SymbolsDo : StackObj {
@@ -411,6 +418,13 @@ public:
   }
 };
 
+void SymbolTable::update_needs_rehash(bool rehash) {
+  if (rehash) {
+    _needs_rehashing = true;
+    trigger_cleanup();
+  }
+}
+
 Symbol* SymbolTable::do_lookup(const char* name, int len, uintx hash) {
   Thread* thread = Thread::current();
   SymbolTableLookup lookup(name, len, hash);
@@ -491,7 +505,7 @@ Symbol* SymbolTable::do_add_if_needed(const char* name, int len, uintx hash, boo
   const int alloc_size = Symbol::byte_size(len);
   u1* u1_buf = NEW_RESOURCE_ARRAY_IN_THREAD(current, u1, alloc_size);
   Symbol* tmp = ::new ((void*)u1_buf) Symbol((const u1*)name, len,
-                                             (is_permanent || DumpSharedSpaces) ? PERM_REFCOUNT : 1);
+                                             (is_permanent || CDSConfig::is_dumping_static_archive()) ? PERM_REFCOUNT : 1);
 
   do {
     if (_local_table->insert(current, lookup, *tmp, &rehash_warning, &clean_hint)) {
@@ -671,10 +685,11 @@ size_t SymbolTable::estimate_size_for_archive() {
 void SymbolTable::write_to_archive(GrowableArray<Symbol*>* symbols) {
   CompactHashtableWriter writer(int(_items_count), ArchiveBuilder::symbol_stats());
   copy_shared_symbol_table(symbols, &writer);
-  if (!DynamicDumpSharedSpaces) {
+  if (CDSConfig::is_dumping_static_archive()) {
     _shared_table.reset();
     writer.dump(&_shared_table, "symbol");
   } else {
+    assert(CDSConfig::is_dumping_dynamic_archive(), "must be");
     _dynamic_shared_table.reset();
     writer.dump(&_dynamic_shared_table, "symbol");
   }
@@ -769,7 +784,7 @@ void SymbolTable::clean_dead_entries(JavaThread* jt) {
 }
 
 void SymbolTable::check_concurrent_work() {
-  if (_has_work) {
+  if (has_work()) {
     return;
   }
   // We should clean/resize if we have
@@ -782,98 +797,70 @@ void SymbolTable::check_concurrent_work() {
   }
 }
 
+bool SymbolTable::should_grow() {
+  return get_load_factor() > PREF_AVG_LIST_LEN && !_local_table->is_max_size_reached();
+}
+
 void SymbolTable::do_concurrent_work(JavaThread* jt) {
-  double load_factor = get_load_factor();
-  log_debug(symboltable, perf)("Concurrent work, live factor: %g", load_factor);
+  // Rehash if needed.  Rehashing goes to a safepoint but the rest of this
+  // work is concurrent.
+  if (needs_rehashing() && maybe_rehash_table()) {
+    Atomic::release_store(&_has_work, false);
+    return; // done, else grow
+  }
+  log_debug(symboltable, perf)("Concurrent work, live factor: %g", get_load_factor());
   // We prefer growing, since that also removes dead items
-  if (load_factor > PREF_AVG_LIST_LEN && !_local_table->is_max_size_reached()) {
+  if (should_grow()) {
     grow(jt);
   } else {
     clean_dead_entries(jt);
   }
-  _has_work = false;
+  Atomic::release_store(&_has_work, false);
 }
 
-// Rehash
-bool SymbolTable::do_rehash() {
-  if (!_local_table->is_safepoint_safe()) {
-    return false;
-  }
+// Called at VM_Operation safepoint
+void SymbolTable::rehash_table() {
+  assert(SafepointSynchronize::is_at_safepoint(), "must be called at safepoint");
+  // The ServiceThread initiates the rehashing so it is not resizing.
+  assert (_local_table->is_safepoint_safe(), "Should not be resizing now");
+
+  _alt_hash_seed = AltHashing::compute_seed();
 
   // We use current size
   size_t new_size = _local_table->get_size_log2(Thread::current());
   SymbolTableHash* new_table = new SymbolTableHash(new_size, END_SIZE, REHASH_LEN, true);
   // Use alt hash from now on
   _alt_hash = true;
-  if (!_local_table->try_move_nodes_to(Thread::current(), new_table)) {
-    _alt_hash = false;
-    delete new_table;
-    return false;
-  }
+  _local_table->rehash_nodes_to(Thread::current(), new_table);
 
   // free old table
   delete _local_table;
   _local_table = new_table;
 
-  return true;
+  _rehashed = true;
+  _needs_rehashing = false;
 }
 
-bool SymbolTable::should_grow() {
-  return get_load_factor() > PREF_AVG_LIST_LEN && !_local_table->is_max_size_reached();
-}
-
-bool SymbolTable::rehash_table_expects_safepoint_rehashing() {
-  // No rehashing required
-  if (!needs_rehashing()) {
-    return false;
-  }
-
-  // Grow instead of rehash
-  if (should_grow()) {
-    return false;
-  }
-
-  // Already rehashed
-  if (_rehashed) {
-    return false;
-  }
-
-  // Resizing in progress
-  if (!_local_table->is_safepoint_safe()) {
-    return false;
-  }
-
-  return true;
-}
-
-void SymbolTable::rehash_table() {
+bool SymbolTable::maybe_rehash_table() {
   log_debug(symboltable)("Table imbalanced, rehashing called.");
 
   // Grow instead of rehash.
   if (should_grow()) {
     log_debug(symboltable)("Choosing growing over rehashing.");
-    trigger_cleanup();
     _needs_rehashing = false;
-    return;
+    return false;
   }
 
   // Already rehashed.
   if (_rehashed) {
     log_warning(symboltable)("Rehashing already done, still long lists.");
-    trigger_cleanup();
     _needs_rehashing = false;
-    return;
+    return false;
   }
 
-  _alt_hash_seed = AltHashing::compute_seed();
-
-  if (do_rehash()) {
-    _rehashed = true;
-  } else {
-    log_info(symboltable)("Resizes in progress rehashing skipped.");
-  }
-
-  _needs_rehashing = false;
+  VM_RehashSymbolTable op;
+  VMThread::execute(&op);
+  return true;
 }
 
 //---------------------------------------------------------------------------

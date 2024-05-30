@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -241,32 +241,3 @@ else # HAS_FILE_FUNCTION = false
     $$(call ListPathsSafely_IfPrintf,$1,$2,29751,30000)
   endef
 endif # HAS_FILE_FUNCTION
-
-################################################################################
-# Write to and read from file
-
-# Param 1 - File to read
-ReadFile = \
-    $(shell $(CAT) $1)
-
-# Param 1 - Text to write
-# Param 2 - File to write to
-ifeq ($(HAS_FILE_FUNCTION), true)
-  WriteFile = \
-      $(file >$2,$(strip $1))
-else
-  # Use printf to get consistent behavior on all platforms.
-  WriteFile = \
-      $(shell $(PRINTF) "%s\n" $(strip $(call ShellQuote, $1)) > $2)
-endif
-
-# Param 1 - Text to write
-# Param 2 - File to write to
-ifeq ($(HAS_FILE_FUNCTION), true)
-  AppendFile = \
-      $(file >>$2,$(strip $1))
-else
-  # Use printf to get consistent behavior on all platforms.
-  AppendFile = \
-      $(shell $(PRINTF) "%s\n" $(strip $(call ShellQuote, $1)) >> $2)
-endif
