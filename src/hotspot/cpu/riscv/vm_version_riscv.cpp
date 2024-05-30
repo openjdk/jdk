@@ -216,13 +216,8 @@ void VM_Version::initialize() {
   }
 
   if (UseRVV) {
-    if (!ext_V.enabled()) {
-      warning("RVV is not supported on this CPU");
-      FLAG_SET_DEFAULT(UseRVV, false);
-    } else {
-      // read vector length from vector CSR vlenb
-      _initial_vector_length = cpu_vector_length();
-    }
+    // read vector length from vector CSR vlenb
+    _initial_vector_length = cpu_vector_length();
   }
 
 #ifdef COMPILER2
