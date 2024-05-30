@@ -1503,7 +1503,6 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
   ResourceMark rm(current_thread);
   GrowableArray<JavaThread*>* wantList = nullptr;
 
-  jint nWant_Skip = 0;
   if (mark.has_monitor()) {
     mon = mark.monitor();
     assert(mon != nullptr, "must have monitor");
@@ -1515,13 +1514,6 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
     // Get the actual set of threads trying to enter, or re-enter, the monitor.
     wantList = Threads::get_pending_threads(tlh.list(), nWant + nWait, (address)mon);
     nWant = wantList->length();
-    for(jint i = 0; i < nWant; i++) {
-      JavaThread* w = wantList->at(i);
-      oop thread_oop = get_vthread_or_thread_oop(w);
-      if (thread_oop->is_a(vmClasses::BaseVirtualThread_klass())) {
-        nWant_Skip++;
-      }
-    }
   } else {
     // this object has a lightweight monitor
   }
@@ -1544,7 +1536,7 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
       nWait++;
     }
   }
-  ret.waiter_count = nWant - nWant_Skip;
+  ret.waiter_count = nWant;
   ret.notify_waiter_count = nWait - skipped;
 
   // Allocate memory for heavyweight and lightweight monitor.
