@@ -69,8 +69,12 @@ public class OutputBinAttributePrintDialogTest {
 
     private static final long TIMEOUT = 10 * 60_000;
     private static volatile boolean testPassed = true;
+    private static volatile boolean testSkipped = false;
     private static volatile boolean testFinished = false;
+    private static volatile boolean printJobCanceled = false;
     private static volatile boolean timeout = false;
+
+    private static volatile boolean isNativeDialog;
 
     private static volatile int testCount;
     private static volatile int testTotalCount;
@@ -82,6 +86,7 @@ public class OutputBinAttributePrintDialogTest {
         }
 
         final DialogTypeSelection dialogTypeSelection = getDialogTypeSelection(args[0]);
+        isNativeDialog = (dialogTypeSelection == DialogTypeSelection.NATIVE);
 
         if (dialogTypeSelection == DialogTypeSelection.NATIVE) {
             String os = System.getProperty("os.name").toLowerCase();
@@ -104,6 +109,9 @@ public class OutputBinAttributePrintDialogTest {
         SwingUtilities.invokeLater(() -> {
             testTotalCount = supportedOutputBins.length;
             for (OutputBin outputBin : supportedOutputBins) {
+                if (testSkipped) {
+                    break;
+                }
                 testPrint(dialogTypeSelection, outputBin, supportedOutputBins);
             }
             testFinished = true;
@@ -121,6 +129,11 @@ public class OutputBinAttributePrintDialogTest {
         timeout = true;
 
         closeDialogs();
+
+        if (testSkipped) {
+            System.out.printf("Test is skipped!%n");
+            return;
+        }
 
         if (!testPassed) {
             throw new Exception("Test failed!");
@@ -147,6 +160,8 @@ public class OutputBinAttributePrintDialogTest {
 
         if (job.printDialog(attr)) {
             job.print();
+        } else if (isNativeDialog) {
+            printJobCanceled = true;
         } else {
             throw new RuntimeException(dialogTypeSelection + " print dialog for " + outputBin + " is canceled!");
         }
@@ -208,6 +223,10 @@ public class OutputBinAttributePrintDialogTest {
         testCount++;
     }
 
+    private static void skip() {
+        testSkipped = true;
+    }
+
     private static void fail(OutputBin outputBin) {
         System.out.printf("Failed test: %s%n", getPageText(outputBin));
         testPassed = false;
@@ -219,6 +238,7 @@ public class OutputBinAttributePrintDialogTest {
         } catch (PrinterException e) {
             e.printStackTrace();
             fail(outputBin);
+            closeDialogs();
         }
     }
 
@@ -258,10 +278,16 @@ public class OutputBinAttributePrintDialogTest {
         JTextArea textArea = new JTextArea(String.join("\n", instructions));
         textArea.setEditable(false);
         final JButton testButton = new JButton("Start Test");
+        final JButton skipButton = new JButton("Skip Test");
         final JButton passButton = new JButton("PASS");
+        skipButton.setEnabled(false);
         passButton.setEnabled(false);
         passButton.addActionListener((e) -> {
             pass();
+            dialog.dispose();
+        });
+        skipButton.addActionListener((e) -> {
+            skip();
             dialog.dispose();
         });
         final JButton failButton = new JButton("FAIL");
@@ -273,6 +299,7 @@ public class OutputBinAttributePrintDialogTest {
         testButton.addActionListener((e) -> {
             testButton.setEnabled(false);
             runPrint(dialogTypeSelection, outputBin);
+            skipButton.setEnabled(true);
             passButton.setEnabled(true);
             failButton.setEnabled(true);
         });
@@ -281,6 +308,9 @@ public class OutputBinAttributePrintDialogTest {
         mainPanel.add(textArea, BorderLayout.CENTER);
         JPanel buttonPanel = new JPanel(new FlowLayout());
         buttonPanel.add(testButton);
+        if (isNativeDialog) {
+            buttonPanel.add(skipButton);
+        }
         buttonPanel.add(passButton);
         buttonPanel.add(failButton);
         mainPanel.add(buttonPanel, BorderLayout.SOUTH);
@@ -323,6 +353,11 @@ public class OutputBinAttributePrintDialogTest {
         } else if (dialogTypeSelection == DialogTypeSelection.NATIVE) {
             return new String[]{
                     " - Press 'Show Details' buttons if the details are hidded.",
+                    " - Check that the native print dialog contains 'Finishing Options' in the drop-down list.",
+                    " - If there is no 'Finishing Options' in the drop-down list then",
+                    "   - Press 'Cancel' button on the print dialog.",
+                    "   - Press 'Skip Test' button on the test dialog.",
+                    "   otherwise",
                     " - Select 'Finishing Options' from the drop-down list.",
                     " - Select '" + outputBin + "' Output Bin.",
                     " - Press 'Print' button."
