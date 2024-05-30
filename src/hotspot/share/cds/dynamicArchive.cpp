@@ -119,8 +119,8 @@ public:
       return;
     }
 
-    log_info(cds,dynamic)("CDS dynamic dump: clinit = " INT64_FORMAT "ms)",
-                          (int64_t)ClassLoader::class_init_time_ms());
+    log_info(cds,dynamic)("CDS dynamic dump: clinit = " JLONG_FORMAT "ms)",
+                          ClassLoader::class_init_time_ms());
 
     init_header();
     gather_source_objs();

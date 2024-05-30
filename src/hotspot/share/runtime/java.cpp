@@ -157,10 +157,12 @@ static void print_method_profiling_data() {
   }
 }
 
-void log_vm_init_stats() {
+void log_vm_stats(outputStream *st) {
   LogStreamHandle(Info, init) log;
   if (log.is_enabled()) {
-    ClassLoader::print_counters();
+    if (ProfileClassLinkage) {
+      ClassLoader::print_counters(st);
+    }
   }
 }
 
@@ -364,7 +366,7 @@ void print_statistics() {
 
   ThreadsSMRSupport::log_statistics();
 
-  log_vm_init_stats();
+  log_vm_stats(tty);
 }
 
 // Note: before_exit() can be executed only once, if more than one threads

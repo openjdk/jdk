@@ -3754,15 +3754,11 @@ jint Arguments::apply_ergo() {
   }
 #endif // COMPILER2_OR_JVMCI
 
-  if (log_is_enabled(Info, init)) {
-     FLAG_SET_ERGO_IF_DEFAULT(ProfileClassLinkage, true);
-  }
-
-  if (ProfileClassLinkage && !UsePerfData) {
+  if (FLAG_IS_CMDLINE(ProfileClassLinkage) && !UsePerfData) {
     if (!FLAG_IS_DEFAULT(ProfileClassLinkage)) {
        warning("Disabling ProfileClassLinkage since UsePerfData is turned off.");
        FLAG_SET_DEFAULT(ProfileClassLinkage, false);
-     }
+    }
   }
 
   if (FLAG_IS_CMDLINE(DiagnoseSyncOnValueBasedClasses)) {

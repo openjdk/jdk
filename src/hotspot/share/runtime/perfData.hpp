@@ -835,7 +835,10 @@ class PerfTraceTime : public StackObj {
       _t.start();
     }
 
-    const char* name() const { return (_timerp != nullptr) ? _timerp->name() : nullptr; }
+    const char* name() const {
+      assert(_timerp != nullptr, "sanity");
+      return _timerp->name();
+    }
 
     ~PerfTraceTime() {
       if (!UsePerfData || !_t.is_active()) { return; }

@@ -829,8 +829,9 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   }
 
   if (ProfileClassLinkage) {
-    log_info(init)("Before main:");
-    log_vm_init_stats();
+    LogStreamHandle(Info, init) log;
+    log.print_cr("At VM initialization completion:");
+    log_vm_stats(&log);
   }
 
   return JNI_OK;
