@@ -1208,12 +1208,19 @@ C2V_VMENTRY_NULL(jobject, executeHotSpotNmethod, (JNIEnv* env, jobject, jobject 
   HandleMark hm(THREAD);
 
   JVMCIObject nmethod_mirror = JVMCIENV->wrap(hs_nmethod);
-  JVMCINMethodHandle nmethod_handle(THREAD);
-  nmethod* nm = JVMCIENV->get_nmethod(nmethod_mirror, nmethod_handle);
-  if (nm == nullptr || !nm->is_in_use()) {
-    JVMCI_THROW_NULL(InvalidInstalledCodeException);
+  methodHandle mh;
+  {
+    // Reduce the scope of JVMCINMethodHandle so that it isn't alive across the Java call.  Once the
+    // nmethod has been validated and the method is fetched from the nmethod it's fine for the
+    // nmethod to be reclaimed if necessary.
+    JVMCINMethodHandle nmethod_handle(THREAD);
+    nmethod* nm = JVMCIENV->get_nmethod(nmethod_mirror, nmethod_handle);
+    if (nm == nullptr || !nm->is_in_use()) {
+      JVMCI_THROW_NULL(InvalidInstalledCodeException);
+    }
+    methodHandle nmh(THREAD, nm->method());
+    mh = nmh;
   }
-  methodHandle mh(THREAD, nm->method());
   Symbol* signature = mh->signature();
   JavaCallArguments jca(mh->size_of_parameters());
 
