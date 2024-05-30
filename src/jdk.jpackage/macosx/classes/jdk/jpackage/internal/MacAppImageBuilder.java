@@ -750,8 +750,8 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
 
                 // APP_CONTENT is never null.
                 if (!APP_CONTENT.fetchFrom(params).isEmpty()) {
-                    Log.info(MessageFormat.format(I18N.getString(
-                        "message.tool.failed.reason.app.content"), "codesign"));
+                    Log.info(I18N.getString(
+                        "message.codesign.failed.reason.app.content"));
                 }
 
                 // Log "codesign" output

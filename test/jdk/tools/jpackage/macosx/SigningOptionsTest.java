@@ -90,11 +90,12 @@ public final class SigningOptionsTest {
                                  "--mac-installer-sign-identity", "test-identity"},
                     new String[]{"--type"},
                     "Option [--mac-installer-sign-identity] is not valid with type"},
-            // --mac-installer-sign-identity and --type dmg
+            // --app-content and --type app-image
             {"Hello",
                     new String[]{"--app-content", TEST_DUKE},
                     null,
-                    "\"codesign\" failure is additional content provided via \"--app-content\""},
+                    "\"codesign\" failed and additional application content" +
+                    " was supplied via the \"--app-content\" parameter."},
         });
     }
 
