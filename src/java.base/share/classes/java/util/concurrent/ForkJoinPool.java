@@ -1963,8 +1963,11 @@ public class ForkJoinPool extends AbstractExecutorService {
                         if ((q = qs[i]) != null) {
                             int p = q.phase, s = q.top, b = q.base;
                             sum += (p & 0xffffffffL) | ((long)b << 32);
-                            if ((p & IDLE) == 0 || s - b > 0)
+                            if ((p & IDLE) == 0 || s - b > 0) {
+                                if ((i & 1) == 0 && compareAndSetCtl(c, c))
+                                    signalWork();        // ensure live
                                 return -1;
+                            }
                         }
                     }
                     swept = (phaseSum == (phaseSum = sum));
@@ -2069,12 +2072,12 @@ public class ForkJoinPool extends AbstractExecutorService {
                 }
             }
             if (p != phase &&                    // check quiescent termination
-                ((runState & SHUTDOWN) == 0 || quiescent() <= 0)) {
+                ((qc & RC_MASK) > 0L || quiescent() <= 0)) {
                 WorkQueue[] qs;
                 int spins = ((short)(qc >>> TC_SHIFT) << 1) + SPIN_WAITS + 1;
-                while (((p = w.phase) & IDLE) != 0 && --spins > 0)
+                while ((p = w.phase) != active && --spins > 0)
                     Thread.onSpinWait();         // reduce flailing
-                if ((p & IDLE) != 0 && (qs = queues) != null) {
+                if (p != active && (qs = queues) != null) {
                     int n = qs.length, step = (r >>> 16) | 1;
                     for (int i = r, l = n; l > 0; --l, i += step) {
                         WorkQueue q;             // check for missed signals
@@ -2084,16 +2087,16 @@ public class ForkJoinPool extends AbstractExecutorService {
                                 p = w.phase = active;
                                 break;           // self-signal
                             }
-                            if (((p = w.phase) & IDLE) == 0)
+                            if ((p = w.phase) == active)
                                 break;
                         }
                     }
-                    if ((p & IDLE) != 0) {
+                    if (p != active) {
                         long delay = (((qc & RC_MASK) > 0L) ? 0L :
                                       (w.source != INVALID_ID) ? keepAlive :
                                       TIMEOUT_SLOP); // minimal delay if cascade
-                        if (((p = w.phase) & IDLE) != 0)
-                            p = awaitWork(w, delay); // block, drop, or exit
+                        if ((p = w.phase) != active)
+                            p = awaitWork(w, p, delay); // block, drop, or exit
                     }
                 }
             }
@@ -2108,14 +2111,14 @@ public class ForkJoinPool extends AbstractExecutorService {
      * @param delay if nonzero keepAlive before trimming if quiescent
      * @return current phase, with IDLE set if worker should exit
      */
-    private int awaitWork(WorkQueue w, long delay) {
-        int p = IDLE;
+    private int awaitWork(WorkQueue w, int p, long delay) {
         if (w != null) {
+            int active = p + IDLE;
             LockSupport.setCurrentBlocker(this);
             long deadline = (delay == 0L ? 0L :
                              delay + System.currentTimeMillis());
             w.parking = 1;                 // enable unpark
-            while (((p = w.phase) & IDLE) != 0) {
+            while ((p = w.phase) != active) {
                 boolean trimmable = false; int trim;
                 Thread.interrupted();      // clear status
                 if ((runState & STOP) != 0L)
