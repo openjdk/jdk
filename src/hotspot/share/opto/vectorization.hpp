@@ -1566,7 +1566,7 @@ public:
   virtual VTransformApplyStatus apply(const VLoopAnalyzer& vloop_analyzer,
                                       const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
 
-  NOT_PRODUCT(virtual const char* name() const { return "Scalar"; };)
+  NOT_PRODUCT(virtual const char* name() const override { return "Scalar"; };)
   NOT_PRODUCT(virtual void print_spec() const override;)
 };
 
@@ -1580,7 +1580,7 @@ public:
   virtual VTransformApplyStatus apply(const VLoopAnalyzer& vloop_analyzer,
                                       const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
 
-  NOT_PRODUCT(virtual const char* name() const { return "InputScalar"; };)
+  NOT_PRODUCT(virtual const char* name() const override { return "InputScalar"; };)
 };
 
 class VTransformReplicateNode : public VTransformNode {
@@ -1594,7 +1594,7 @@ public:
   virtual VTransformApplyStatus apply(const VLoopAnalyzer& vloop_analyzer,
                                       const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
 
-  NOT_PRODUCT(virtual const char* name() const { return "Replicate"; };)
+  NOT_PRODUCT(virtual const char* name() const override { return "Replicate"; };)
   NOT_PRODUCT(virtual void print_spec() const override;)
 };
 
@@ -1605,7 +1605,7 @@ public:
   virtual VTransformApplyStatus apply(const VLoopAnalyzer& vloop_analyzer,
                                       const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
 
-  NOT_PRODUCT(virtual const char* name() const { return "ConvI2L"; };)
+  NOT_PRODUCT(virtual const char* name() const override { return "ConvI2L"; };)
 };
 
 
@@ -1622,7 +1622,7 @@ public:
   virtual VTransformApplyStatus apply(const VLoopAnalyzer& vloop_analyzer,
                                       const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
 
-  NOT_PRODUCT(virtual const char* name() const { return "ShiftCount"; };)
+  NOT_PRODUCT(virtual const char* name() const override { return "ShiftCount"; };)
   NOT_PRODUCT(virtual void print_spec() const override;)
 };
 
@@ -1637,7 +1637,7 @@ public:
   virtual VTransformApplyStatus apply(const VLoopAnalyzer& vloop_analyzer,
                                       const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
 
-  NOT_PRODUCT(virtual const char* name() const { return "PopulateIndex"; };)
+  NOT_PRODUCT(virtual const char* name() const override { return "PopulateIndex"; };)
   NOT_PRODUCT(virtual void print_spec() const override;)
 };
 
@@ -1675,7 +1675,7 @@ public:
   virtual VTransformApplyStatus apply(const VLoopAnalyzer& vloop_analyzer,
                                       const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
 
-  NOT_PRODUCT(virtual const char* name() const { return "ElementWiseVector"; };)
+  NOT_PRODUCT(virtual const char* name() const override { return "ElementWiseVector"; };)
 };
 
 class VTransformMaskCmpVectorNode : public VTransformElementWiseVectorNode {
@@ -1702,7 +1702,7 @@ public:
   virtual VTransformApplyStatus apply(const VLoopAnalyzer& vloop_analyzer,
                                       const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
 
-  NOT_PRODUCT(virtual const char* name() const { return "MaskCmpVector"; };)
+  NOT_PRODUCT(virtual const char* name() const override { return "MaskCmpVector"; };)
 };
 
 // Reduction of some initial scalar value and a vector, resulting in a new scalar.
@@ -1720,7 +1720,7 @@ public:
   virtual VTransformApplyStatus apply(const VLoopAnalyzer& vloop_analyzer,
                                       const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
 
-  NOT_PRODUCT(virtual const char* name() const { return "ReductionVector"; };)
+  NOT_PRODUCT(virtual const char* name() const override { return "ReductionVector"; };)
 };
 
 class VTransformLoadVectorNode : public VTransformVectorNode {
@@ -1733,7 +1733,7 @@ public:
                                       const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
   LoadNode::ControlDependency control_dependency() const;
 
-  NOT_PRODUCT(virtual const char* name() const { return "LoadVector"; };)
+  NOT_PRODUCT(virtual const char* name() const override { return "LoadVector"; };)
 };
 
 class VTransformStoreVectorNode : public VTransformVectorNode {
@@ -1745,7 +1745,7 @@ public:
   virtual VTransformApplyStatus apply(const VLoopAnalyzer& vloop_analyzer,
                                       const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
 
-  NOT_PRODUCT(virtual const char* name() const { return "StoreVector"; };)
+  NOT_PRODUCT(virtual const char* name() const override { return "StoreVector"; };)
 };
 
 #endif // SHARE_OPTO_VECTORIZATION_HPP
