@@ -40,12 +40,12 @@ public class IndexOf {
         compareStringStringBuffer();
 
         if (failure)
-          throw new RuntimeException("One or more BitSet failures.");
+           throw new RuntimeException("One or more BitSet failures.");
     }
 
     private static void report(String testName, int failCount) {
         System.err.println(testName+": " +
-                        (failCount==0 ? "Passed":"Failed("+failCount+")"));
+                         (failCount==0 ? "Passed":"Failed("+failCount+")"));
         if (failCount > 0)
             failure = true;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Intel Corporation. All rights reserved.
+ * Copyright (c) 2024, Intel Corporation. All rights reserved.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -331,7 +331,7 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
   // and <= 32 bytes for small.  The switches implement optimized code for handling 1 to
   // NUMBER_OF_CASES (currently 10) needle sizes for both big and small.  There are special
   // routines for handling needle sizes > NUMBER_OF_CASES (L_{big,small}CaseDefault).  These
-  // cases use C@'s arrays_equals() to compare the needle to the haystack.  The small cases
+  // cases use C2's arrays_equals() to compare the needle to the haystack.  The small cases
   // use specialized code for comparing the needle.
   //
   // The algorithm currently does vector comparisons for the first, last, and second bytes
@@ -770,7 +770,7 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
     // cmp nndx, ndlLen
     // jae done
     //
-    // Final index of start of needle @((16 - (ndlLen %16)) & 0xf) << 1
+    // Final index of start of needle at ((16 - (ndlLen %16)) & 0xf) << 1
     //
     // Starting read for needle at -(16 - (nLen % 16))
     // Offset of needle in stack should be (16 - (nLen % 16)) * 2
