@@ -23,8 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
-#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 
 // This is in a separate file since it will need to be compiled to two different
@@ -38,7 +36,3 @@ bool vm_is_statically_linked(void) {
   return JNI_FALSE;
 #endif
 }
-
-JVM_ENTRY_NO_ENV(jboolean, JVM_IsStaticallyLinked(void))
-  return vm_is_statically_linked();
-JVM_END
