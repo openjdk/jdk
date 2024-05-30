@@ -68,6 +68,10 @@ class CompilerToVM {
     static address ZBarrierSetRuntime_load_barrier_on_oop_array;
     static address ZBarrierSetRuntime_clone;
 
+    static address ZPointerVectorLoadBadMask_address;
+    static address ZPointerVectorStoreBadMask_address;
+    static address ZPointerVectorStoreGoodMask_address;
+
     static bool continuations_enabled;
 
     static size_t ThreadLocalAllocBuffer_alignment_reserve;
@@ -100,6 +104,7 @@ class CompilerToVM {
     static int sizeof_narrowKlass;
     static int sizeof_arrayOopDesc;
     static int sizeof_BasicLock;
+    static int sizeof_ZStoreBarrierEntry;
 
     static address dsin;
     static address dcos;

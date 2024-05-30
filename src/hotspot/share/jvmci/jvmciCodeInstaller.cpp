@@ -1297,6 +1297,10 @@ void CodeInstaller::site_Mark(CodeBuffer& buffer, jint pc_offset, HotSpotCompile
   u1 id = stream->read_u1("mark:id");
   address pc = _instructions->start() + pc_offset;
 
+  if (pd_relocate(pc, id)) {
+    return;
+  }
+
   switch (id) {
     case UNVERIFIED_ENTRY:
       _offsets.set_value(CodeOffsets::Entry, pc_offset);
@@ -1330,12 +1334,6 @@ void CodeInstaller::site_Mark(CodeBuffer& buffer, jint pc_offset, HotSpotCompile
       _next_call_type = (MarkId) id;
       _invoke_mark_pc = pc;
       break;
-    case POLL_NEAR:
-    case POLL_FAR:
-    case POLL_RETURN_NEAR:
-    case POLL_RETURN_FAR:
-      pd_relocate_poll(pc, id, JVMCI_CHECK);
-      break;
     case CARD_TABLE_SHIFT:
     case CARD_TABLE_ADDRESS:
     case HEAP_TOP_ADDRESS:
@@ -1350,6 +1348,7 @@ void CodeInstaller::site_Mark(CodeBuffer& buffer, jint pc_offset, HotSpotCompile
     case VERIFY_OOP_MASK:
     case VERIFY_OOP_COUNT_ADDRESS:
       break;
+
     default:
       JVMCI_ERROR("invalid mark id: %d%s", id, stream->context());
       break;
