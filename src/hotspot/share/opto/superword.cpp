@@ -2981,7 +2981,7 @@ void SuperWordVTransformBuilder::build_vtransform() {
     VTransformVectorNode* vtn = make_vtnode_for_pack(pack);
     for (uint k = 0; k < pack->size(); k++) {
       Node* n = pack->at(k);
-      _bb_idx_to_vtnode.at_put(bb_idx(n), vtn);
+      set_vtnode(n, vtn);
     }
   }
 
@@ -2990,18 +2990,18 @@ void SuperWordVTransformBuilder::build_vtransform() {
     Node* n = body().at(i);
     if (_packset.get_pack(n) != nullptr) { continue; }
     VTransformScalarNode* vtn = new (_graph.arena()) VTransformScalarNode(_graph, n);
-    _bb_idx_to_vtnode.at_put(bb_idx(n), vtn);
+    set_vtnode(n, vtn);
   }
 
   // This is the "root" of the graph.
-  _graph.set_cl_vtnode(_bb_idx_to_vtnode.at(bb_idx(cl())));
+  _graph.set_cl_vtnode(get_vtnode(cl()));
 
   // Map edges for packed nodes:
   for (int i = 0; i < _packset.length(); i++) {
     Node_List* pack = _packset.at(i);
     Node* p0 = pack->at(0);
 
-    VTransformVectorNode* vtn = _bb_idx_to_vtnode.at(bb_idx(p0))->isa_Vector();
+    VTransformVectorNode* vtn = get_vtnode(p0)->isa_Vector();
     assert(vtn != nullptr, "all packs must have vector vtnodes");
     _dependency_set.clear();
 
@@ -3059,7 +3059,7 @@ void SuperWordVTransformBuilder::build_vtransform() {
   // Map edges for non-packed nodes, i.e. scalar vtnodes:
   for (int i = 0; i < body().length(); i++) {
     Node* n = body().at(i);
-    VTransformScalarNode* vtn = _bb_idx_to_vtnode.at(i)->isa_Scalar();
+    VTransformScalarNode* vtn = get_vtnode(n)->isa_Scalar();
     if (vtn == nullptr) { continue; }
 
     _dependency_set.clear();
@@ -3160,7 +3160,7 @@ VTransformNode* SuperWordVTransformBuilder::find_input_for_vector(int j, Node_Li
   if (pack_in != nullptr) {
     // Input is a matching pack -> vtnode already exists.
     assert(j != 2 || !VectorNode::is_shift(p0), "shift's count cannot be vector");
-    return _bb_idx_to_vtnode.at(bb_idx(pack_in->at(0)));
+    return get_vtnode(pack_in->at(0));
   }
 
   if (VectorNode::is_muladds2i(p0)) {
@@ -3175,11 +3175,11 @@ VTransformNode* SuperWordVTransformBuilder::find_input_for_vector(int j, Node_Li
     // All inputs are strided (stride = 2), either with offset 0 or 1.
     Node_List* pack_in0 = _packset.isa_strided_pack_input_or_null(pack, j, 2, 0);
     if (pack_in0 != nullptr) {
-      return _bb_idx_to_vtnode.at(bb_idx(pack_in0->at(0)));
+      return get_vtnode(pack_in0->at(0));
     }
     Node_List* pack_in1 = _packset.isa_strided_pack_input_or_null(pack, j, 2, 1);
     if (pack_in1 != nullptr) {
-      return _bb_idx_to_vtnode.at(bb_idx(pack_in1->at(0)));
+      return get_vtnode(pack_in1->at(0));
     }
   }
 
@@ -3246,15 +3246,16 @@ VTransformNode* SuperWordVTransformBuilder::find_input_for_vector(int j, Node_Li
 // an existing vtnode. If the node is not in_bb, then we create a special "input"
 // vtnode for it.
 VTransformNode* SuperWordVTransformBuilder::find_scalar(Node* n) {
-  if (in_bb(n)) {
-    VTransformNode* vtn = _bb_idx_to_vtnode.at(bb_idx(n));
-    assert(vtn != nullptr, "must already have vtnode");
-    return vtn;
-  } else {
+  VTransformNode* vtn = get_vtnode_or_null(n);
+
+  if (vtn == nullptr) {
+    assert(!in_bb(n), "all nodes inside the loop already have a vtnode");
     // Node is outside the loop. Just wrap it.
-    // TODO prevent duplicates!
-    return new (_graph.arena()) VTransformInputScalarNode(_graph, n);
+    vtn = new (_graph.arena()) VTransformInputScalarNode(_graph, n);
+    set_vtnode(n, vtn);
   }
+
+  return vtn;
 }
 
 void SuperWordVTransformBuilder::set_req_for_vector(VTransformNode* vtn, int j, Node_List* pack) {
@@ -3289,7 +3290,7 @@ void SuperWordVTransformBuilder::add_dependencies(VTransformNode* vtn, Node* n) 
     // Only add memory dependencies to memory nodes. All others are taken care of with the req.
     if (n->is_Mem() && !pred->is_Mem()) { continue; }
 
-    VTransformNode* dependency = _bb_idx_to_vtnode.at(bb_idx(pred));
+    VTransformNode* dependency = get_vtnode(pred);
 
     // Reduction self-cycle?
     if (vtn == dependency && is_marked_reduction(n)) { continue; }

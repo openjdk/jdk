@@ -673,8 +673,8 @@ private:
   const PackSet& _packset;
   VTransformGraph& _graph;
 
-  // Map: C2-IR-Nodes (bb_idx) -> VTransformNode* (nullptr if none exists).
-  GrowableArray<VTransformNode*> _bb_idx_to_vtnode;
+  // Map: C2-IR nodes (node->_idx) -> VTransformNode* (nullptr if none exists).
+  ResourceHashtable<int, VTransformNode*> _idx_to_vtnode;
 
   // Only add every dependency once per vtnode.
   VectorSet _dependency_set;
@@ -685,10 +685,7 @@ public:
       _vloop_analyzer(graph.vloop_analyzer()),
       _vloop(_vloop_analyzer.vloop()),
       _packset(packset),
-      _graph(graph),
-      _bb_idx_to_vtnode(_vloop.estimated_body_length(),
-                        _vloop.estimated_body_length(),
-                        nullptr)
+      _graph(graph)
   {
     assert(!_packset.is_empty(), "must have non-empty packset");
   }
@@ -718,6 +715,23 @@ private:
   }
 
   // Helper methods for building VTransformGraph.
+  VTransformNode* get_vtnode_or_null(Node* n) const {
+    VTransformNode** ptr = _idx_to_vtnode.get(n->_idx);
+    if (ptr == nullptr) { return nullptr; }
+    return *ptr;
+  }
+
+  VTransformNode* get_vtnode(Node* n) const {
+    VTransformNode* vtn = get_vtnode_or_null(n);
+    assert(vtn != nullptr, "expect non-null vtnode");
+    return vtn;
+  }
+
+  void set_vtnode(Node* n, VTransformNode* vtn) {
+    assert(vtn != nullptr, "only set non-null vtnodes");
+    _idx_to_vtnode.put_when_absent(n->_idx, vtn);
+  }
+
   VTransformVectorNode* make_vtnode_for_pack(const Node_List* pack) const;
   VTransformNode* find_input_for_vector(int j, Node_List* pack);
   VTransformNode* find_scalar(Node* n);
