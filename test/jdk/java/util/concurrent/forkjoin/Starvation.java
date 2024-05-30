@@ -26,21 +26,26 @@
  * @bug 8322732
  * @summary ForkJoinPool utilizes available workers even with arbitrary task dependencies
  */
+import java.util.concurrent.Callable;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Starvation {
+    static final AtomicBoolean stop = new AtomicBoolean();
+    static final Callable<Void> noop = new Callable<Void>() {
+            public Void call() {
+                return null; }};
+    static final Callable<Void> awaitStop = new Callable<Void>() {
+            public Void call() {
+                while (!stop.get()) Thread.onSpinWait();
+                stop.set(false);
+                return null; }};
 
     public static void main(String[] args) throws Exception {
         try (var pool = new ForkJoinPool(2)) {
-            for (int i = 0; i < 1_000_000; i++) {
-                var stop = new AtomicBoolean();
-                var future1 = pool.submit(() -> {
-                    while (!stop.get()) {
-                        Thread.onSpinWait();
-                    }
-                });
-                var future2 = pool.submit(() -> null);
+            for (int i = 0; i < 100_000; i++) {
+                var future1 = pool.submit(awaitStop);
+                var future2 = pool.submit(noop);
                 future2.get();
                 stop.set(true);
                 future1.get();

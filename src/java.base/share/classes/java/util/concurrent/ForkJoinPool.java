@@ -1990,7 +1990,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                 if ((runState & STOP) != 0L || (qs = queues) == null)
                     return;
                 int n = qs.length, i = r, step = (r >>> 16) | 1;
-                for (int l = n; l > 0; --l, i += step) {  // scan queues
+                for (int l = -n; l < n; ++l, i += step) {  // scan queues (twice)
                     int j; WorkQueue q;
                     if ((q = qs[j = i & (n - 1)]) != null) {
                         boolean taken = false;
@@ -2025,8 +2025,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                                 q.base = nb;
                                 w.nsteals = ++nsteals;
                                 w.source = j;             // volatile write
-                                taken = true;
-                                if (a[nk] != null)
+                                if (taken != (taken = true) && a[nk] != null)
                                     signalWork();         // propagate signal
                                 w.topLevelExec(t, cfg);
                                 if ((b = q.base) != nb && src != (src = j))
