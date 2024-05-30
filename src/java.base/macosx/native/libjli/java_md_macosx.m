@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -369,6 +369,7 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
     int  argc         = *pargc;
     char **argv       = *pargv;
 
+#ifndef STATIC_BUILD
     /* Find out where the JRE is that we will be using. */
     if (!GetJREPath(jrepath, so_jrepath, JNI_FALSE) ) {
         JLI_ReportErrorMessage(JRE_ERROR1);
@@ -393,6 +394,7 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
         JLI_ReportErrorMessage(CFG_ERROR8, jvmtype, jvmpath);
         exit(4);
     }
+#endif
 
     /*
      * Mac OS X requires the Cocoa event loop to be run on the "main"

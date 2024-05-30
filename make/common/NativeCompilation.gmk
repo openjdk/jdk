@@ -127,7 +127,6 @@ include native/Paths.gmk
 #   PRECOMPILED_HEADER Header file to use as precompiled header
 #   PRECOMPILED_HEADER_EXCLUDE List of source files that should not use PCH
 #   BUILD_INFO_LOG_MACRO Overrides log level of the build info log message, default LogWarn
-#   STATIC_LIB_EXCLUDE_OBJS exclude objects that matches from static library
 #
 # After being called, some variables are exported from this macro, all prefixed
 # with parameter 1 followed by a '_':

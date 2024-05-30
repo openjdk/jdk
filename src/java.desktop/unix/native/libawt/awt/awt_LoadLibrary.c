@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -143,9 +143,7 @@ AWT_OnLoad(JavaVM *vm, void *reserved)
 #ifndef STATIC_BUILD
     /* Calculate library name to load */
     strncpy(p, tk, MAXPATHLEN-len-1);
-#endif
 
-#ifndef STATIC_BUILD
     jstring jbuf = JNU_NewStringPlatform(env, buf);
     CHECK_EXCEPTION_FATAL(env, "Could not allocate library name");
     JNU_CallStaticMethodByName(env, NULL, "java/lang/System", "load",
@@ -153,6 +151,8 @@ AWT_OnLoad(JavaVM *vm, void *reserved)
                                jbuf);
 
     awtHandle = dlopen(buf, RTLD_LAZY | RTLD_GLOBAL);
+#else
+    awtHandle = dlopen(NULL, RTLD_LAZY);
 #endif
     return JNI_VERSION_1_2;
 }
