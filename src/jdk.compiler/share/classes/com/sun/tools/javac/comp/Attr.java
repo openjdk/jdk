@@ -4222,6 +4222,10 @@ public class Attr extends JCTree.Visitor {
         if (chk.checkUnique(tree.var.pos(), v, env.info.scope)) {
             chk.checkTransparentVar(tree.var.pos(), v, env.info.scope);
         }
+        if (tree.var.isImplicitlyTyped()) {
+            setSyntheticVariableType(tree.var, type == Type.noType ? syms.errType
+                                                                   : type);
+        }
         annotate.annotateLater(tree.var.mods.annotations, env, v, tree.pos());
         if (!tree.var.isImplicitlyTyped()) {
             annotate.queueScanTreeAndTypeAnnotate(tree.var.vartype, env, v, tree.var.pos());
