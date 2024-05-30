@@ -2201,68 +2201,50 @@ VTransformApplyStatus VTransformElementWiseVectorNode::apply(const VLoopAnalyzer
     // Cmp + Bool -> VectorMaskCmp
     // Handled by Bool / VTransformMaskCmpVectorNode, so we do not generate any nodes here.
     return VTransformApplyStatus::make_empty();
-  } else if (first->is_CMove()) {
-    assert(req() == 4, "three inputs expected");
-    Node* in_mask   = find_transformed_input(1, vnode_idx_to_transformed_node);
-    Node* in_blend1 = find_transformed_input(2, vnode_idx_to_transformed_node);
-    Node* in_blend2 = find_transformed_input(3, vnode_idx_to_transformed_node);
+  }
 
-    VectorBlendNode* vn = new VectorBlendNode(in_blend1, in_blend2, in_mask);
-    register_new_node_from_vectorization_and_replace_scalar_nodes(vloop_analyzer, vn);
+  assert(2 <= req() && req() <= 4, "Must have 1-3 inputs");
+  VectorNode* vn = nullptr;
+  Node* in1 =                find_transformed_input(1, vnode_idx_to_transformed_node);
+  Node* in2 = (req() >= 3) ? find_transformed_input(2, vnode_idx_to_transformed_node) : nullptr;
+  Node* in3 = (req() >= 4) ? find_transformed_input(3, vnode_idx_to_transformed_node) : nullptr;
 
-    return VTransformApplyStatus::make_vector(vn, vlen, vn->length_in_bytes());
+  if (first->is_CMove()) {
+    assert(req() == 4, "three inputs expected: mask, blend1, blend2");
+    vn = new VectorBlendNode(/* blend1 */ in2, /* blend2 */ in3, /* mask */ in1);
   } else if (VectorNode::is_convert_opcode(opc)) {
     assert(first->req() == 2 && req() == 2, "only one input expected");
-    Node* in = find_transformed_input(1, vnode_idx_to_transformed_node);
-    int vopc = VectorCastNode::opcode(opc, in->bottom_type()->is_vect()->element_basic_type());
+    int vopc = VectorCastNode::opcode(opc, in1->bottom_type()->is_vect()->element_basic_type());
+    vn = VectorCastNode::make(vopc, in1, bt, vlen);
+  } else if (VectorNode::can_transform_shift_op(first, bt)) {
+    opc = Op_RShiftI;
+    vn = VectorNode::make(opc, in1, in2, vlen, bt);
+  } else if (VectorNode::requires_long_to_int_conversion(opc)) {
+    // The scalar operation was a long -> int operation.
+    // However, the vector operation is long -> long.
+    VectorNode* long_vn = VectorNode::make(opc, in1, nullptr, vlen, T_LONG);
+    register_new_node_from_vectorization(vloop_analyzer, long_vn, first);
 
-    VectorCastNode* vn = VectorCastNode::make(vopc, in, bt, vlen);
-    register_new_node_from_vectorization_and_replace_scalar_nodes(vloop_analyzer, vn);
-
-    return VTransformApplyStatus::make_vector(vn, vlen, vn->length_in_bytes());
+    // Cast long -> int, to mimic the scalar long -> int operation.
+    vn = VectorCastNode::make(Op_VectorCastL2X, long_vn, T_INT, vlen);
   } else {
-    assert(2 <= req() && req() <= 4, "Must have 1-3 inputs");
     assert(req() == 3 ||
-           VectorNode::requires_long_to_int_conversion(opc) ||
            is_unary_element_wise_opcode(opc) ||
            opc == Op_FmaD ||
            opc == Op_FmaF ||
            opc == Op_SignumF ||
            opc == Op_SignumD,
            "element wise operation must be from this list");
-
-    Node* in1 =                find_transformed_input(1, vnode_idx_to_transformed_node);
-    Node* in2 = (req() >= 3) ? find_transformed_input(2, vnode_idx_to_transformed_node) : nullptr;
-    Node* in3 = (req() >= 4) ? find_transformed_input(3, vnode_idx_to_transformed_node) : nullptr;
-
-    if (VectorNode::can_transform_shift_op(first, bt)) {
-      opc = Op_RShiftI;
-    } else if (VectorNode::is_roundopD(first)) {
-      assert(in2->is_Con(), "Constant rounding mode expected.");
-    } else if (VectorNode::requires_long_to_int_conversion(opc)) {
-      // The scalar operation was a long -> int operation.
-      // However, the vector operation is long -> long.
-      bt = T_LONG;
-    }
-
-    VectorNode* vn = nullptr;
+    assert(!VectorNode::is_roundopD(first) || in2->is_Con(), "rounding mode must be constant");
     if (req() <= 3) {
-      vn = VectorNode::make(opc, in1, in2, vlen, bt);
+      vn = VectorNode::make(opc, in1, in2, vlen, bt); // unary and binary
     } else {
-      vn = VectorNode::make(opc, in1, in2, in3, vlen, bt);
+      vn = VectorNode::make(opc, in1, in2, in3, vlen, bt); // ternary
     }
-    register_new_node_from_vectorization_and_replace_scalar_nodes(vloop_analyzer, vn);
-
-    if (VectorNode::requires_long_to_int_conversion(opc)) {
-      // The scalar operation was a long -> int operation.
-      // However, the vector operation is long -> long.
-      // Cast long -> int, to mimic the scalar long -> int operation.
-      vn = VectorCastNode::make(Op_VectorCastL2X, vn, T_INT, vlen);
-      register_new_node_from_vectorization(vloop_analyzer, vn, first);
-    }
-
-    return VTransformApplyStatus::make_vector(vn, vlen, vn->length_in_bytes());
   }
+
+  register_new_node_from_vectorization_and_replace_scalar_nodes(vloop_analyzer, vn);
+  return VTransformApplyStatus::make_vector(vn, vlen, vn->length_in_bytes());
 }
 
 VTransformApplyStatus VTransformMaskCmpVectorNode::apply(const VLoopAnalyzer& vloop_analyzer, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
