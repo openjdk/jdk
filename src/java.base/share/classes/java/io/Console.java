@@ -655,8 +655,9 @@ public sealed class Console implements Flushable permits ProxyingConsole {
              * The JdkConsole provider used for Console instantiation can be specified
              * with the system property "jdk.console", whose value designates the module
              * name of the implementation, and which defaults to the value of
-             * {@code JdkConsoleProvider.DEFAULT_PROVIDER_MODULE_NAME}. If no
-             * providers are available, or instantiation failed, java.base built-in
+             * {@code JdkConsoleProvider.DEFAULT_PROVIDER_MODULE_NAME}. If multiple
+             * provider implementations exist in that module, the first one found is used.
+             * If no providers are available, or instantiation failed, java.base built-in
              * Console implementation is used.
              */
             c = AccessController.doPrivileged(new PrivilegedAction<Console>() {
