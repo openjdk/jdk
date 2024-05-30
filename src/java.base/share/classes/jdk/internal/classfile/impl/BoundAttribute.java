@@ -51,12 +51,12 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
 
     static final int NAME_AND_LENGTH_PREFIX = 6;
     private final AttributeMapper<T> mapper;
-    final ClassReader classReader;
+    final ClassReaderImpl classReader;
     final int payloadStart;
 
     BoundAttribute(ClassReader classReader, AttributeMapper<T> mapper, int payloadStart) {
         this.mapper = mapper;
-        this.classReader = classReader;
+        this.classReader = (ClassReaderImpl)classReader;
         this.payloadStart = payloadStart;
     }
 
