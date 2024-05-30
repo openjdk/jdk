@@ -42,10 +42,12 @@ import java.nio.ByteOrder;
 
 public class VectorGatherMaskFoldingTest {
     // Species
-    private static final VectorSpecies<Long> L_SPECIES = LongVector.SPECIES_MAX;
     private static final VectorSpecies<Integer> I_SPECIES = IntVector.SPECIES_MAX;
     private static final VectorSpecies<Float> F_SPECIES = FloatVector.SPECIES_MAX;
-    private static final VectorSpecies<Double> D_SPECIES = DoubleVector.SPECIES_MAX;
+    private static final VectorSpecies<Long> L_SPECIES = LongVector.SPECIES_MAX.length() == 1 ? LongVector.SPECIES_128
+                                                       : LongVector.SPECIES_MAX;
+    private static final VectorSpecies<Double> D_SPECIES = DoubleVector.SPECIES_MAX.length() == 1 ? DoubleVector.SPECIES_128
+                                                         : DoubleVector.SPECIES_MAX;
     // Vectors
     private static final LongVector longVector;
     private static final LongVector longVector2;
