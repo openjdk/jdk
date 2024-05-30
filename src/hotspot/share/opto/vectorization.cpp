@@ -2081,13 +2081,8 @@ Node* VTransformNode::find_transformed_input(int i, const GrowableArray<Node*>& 
 }
 
 VTransformApplyStatus VTransformScalarNode::apply(const VLoopAnalyzer& vloop_analyzer, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
-  // TODO hook up to its proper inputs!
-  return VTransformApplyStatus::make_scalar(_node);
-}
-
-VTransformApplyStatus VTransformInputScalarNode::apply(const VLoopAnalyzer& vloop_analyzer, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
   // This was just wrapped. Now we simply unwap without touching the inputs.
-  return VTransformApplyStatus::make_scalar(node());
+  return VTransformApplyStatus::make_scalar(_node);
 }
 
 VTransformApplyStatus VTransformReplicateNode::apply(const VLoopAnalyzer& vloop_analyzer, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {

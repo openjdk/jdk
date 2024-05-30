@@ -1577,9 +1577,6 @@ public:
 
   virtual VTransformInputScalarNode* isa_InputScalar() override { return this; }
 
-  virtual VTransformApplyStatus apply(const VLoopAnalyzer& vloop_analyzer,
-                                      const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
-
   NOT_PRODUCT(virtual const char* name() const override { return "InputScalar"; };)
 };
 
