@@ -3024,7 +3024,7 @@ void SuperWordVTransformBuilder::build_vtransform() {
           set_req_for_scalar(vtn, 2, p0);
         } else {
           set_req_for_vector(vtn, 2, pack);
-	}
+        }
       } else if (VectorNode::is_roundopD(p0)) {
         set_req_for_vector(vtn, 1, pack);
         set_req_for_scalar(vtn, 2, p0); // constant rounding mode
@@ -3089,70 +3089,58 @@ void SuperWordVTransformBuilder::build_vtransform() {
 VTransformVectorNode* SuperWordVTransformBuilder::make_vtnode_for_pack(const Node_List* pack) const {
   uint pack_size = pack->size();
   Node* p0 = pack->at(0);
-  VTransformVectorNode* vtn = nullptr;
   int opc = p0->Opcode();
-  // TODO refactor a bit!
+  VTransformVectorNode* vtn = nullptr;
+
   if (p0->is_Load()) {
     vtn = new (_graph.arena()) VTransformLoadVectorNode(_graph, pack_size);
   } else if (p0->is_Store()) {
     vtn = new (_graph.arena()) VTransformStoreVectorNode(_graph, pack_size);
-  } else if (VectorNode::is_scalar_rotate(p0)) {
-    assert(p0->req() == 3, "2 operands expected");
-    vtn = new (_graph.arena()) VTransformElementWiseVectorNode(_graph, 3, pack_size);
-  } else if (VectorNode::is_roundopD(p0)) {
-    assert(p0->req() == 3, "2 operands expected");
-    vtn = new (_graph.arena()) VTransformElementWiseVectorNode(_graph, 3, pack_size);
+  } else if (p0->is_Bool()) {
+    // Cmp + Bool -> VectorMaskCmp
+    VTransformMaskCmpVectorNode::CmpBoolKind kind = _packset.as_cmp_bool_pack(pack);
+    vtn = new (_graph.arena()) VTransformMaskCmpVectorNode(_graph, pack_size, kind);
+  } else if (is_marked_reduction(p0)) {
+    // Reduction: (scalar, vector) -> scalar.
+    assert(p0->req() == 3, "Reductions should have 2 operands");
+    vtn = new (_graph.arena()) VTransformReductionVectorNode(_graph, pack_size);
   } else if (VectorNode::is_muladds2i(p0)) {
     // A special kind of binary element-wise vector op: the inputs are "ints" a and b,
     // but reinterpreted as two "shorts" [a0, a1] and [b0, b1]:
     //   v = MulAddS2I(a, b) = a0 * b0 + a1 + b1
     assert(p0->req() == 5, "MulAddS2I should have 4 operands");
     vtn = new (_graph.arena()) VTransformElementWiseVectorNode(_graph, 3, pack_size);
-  } else if (opc == Op_SignumF || opc == Op_SignumD) {
-    assert(p0->req() == 4, "3 operands expected");
-    vtn = new (_graph.arena()) VTransformElementWiseVectorNode(_graph, 4, pack_size);
-  } else if (p0->is_Cmp()) {
-    // Cmp + Bool -> VectorMaskCmp
-    vtn = new (_graph.arena()) VTransformElementWiseVectorNode(_graph, 3, pack_size);
-  } else if (p0->is_Bool()) {
-    // Cmp + Bool -> VectorMaskCmp
-    VTransformMaskCmpVectorNode::CmpBoolKind kind = _packset.as_cmp_bool_pack(pack);
-    vtn = new (_graph.arena()) VTransformMaskCmpVectorNode(_graph, pack_size, kind);
-  } else if (p0->is_CMove()) {
-    // CMove -> VectorBlend
-    vtn = new (_graph.arena()) VTransformElementWiseVectorNode(_graph, 4, pack_size);
-  } else if (p0->req() == 3) {
-    if (is_marked_reduction(p0)) {
-      // Reduction: (scalar, vector) -> scalar.
-      vtn = new (_graph.arena()) VTransformReductionVectorNode(_graph, pack_size);
-    } else {
-      // Binary element-wise vector operation.
-      vtn = new (_graph.arena()) VTransformElementWiseVectorNode(_graph, 3, pack_size);
-    }
-  } else if (opc == Op_SqrtF || opc == Op_SqrtD ||
-             opc == Op_AbsF || opc == Op_AbsD ||
-             opc == Op_AbsI || opc == Op_AbsL ||
-             opc == Op_NegF || opc == Op_NegD ||
-             opc == Op_RoundF || opc == Op_RoundD ||
-             opc == Op_ReverseBytesI || opc == Op_ReverseBytesL ||
-             opc == Op_ReverseBytesUS || opc == Op_ReverseBytesS ||
-             opc == Op_ReverseI || opc == Op_ReverseL ||
-             opc == Op_PopCountI || opc == Op_CountLeadingZerosI ||
-             opc == Op_CountTrailingZerosI) {
-    assert(p0->req() == 2, "only one input expected");
-    vtn = new (_graph.arena()) VTransformElementWiseVectorNode(_graph, 2, pack_size);
-  } else if (VectorNode::requires_long_to_int_conversion(opc)) {
-    assert(p0->req() == 2, "only one input expected");
-    vtn = new (_graph.arena()) VTransformElementWiseVectorNode(_graph, 2, pack_size);
-  } else if (VectorNode::is_convert_opcode(opc)) {
-    assert(p0->req() == 2, "only one input expected");
-    vtn = new (_graph.arena()) VTransformElementWiseVectorNode(_graph, 2, pack_size);
-  } else if (opc == Op_FmaD || opc == Op_FmaF) {
-    assert(p0->req() == 4, "three inputs expected");
-    vtn = new (_graph.arena()) VTransformElementWiseVectorNode(_graph, 4, pack_size);
   } else {
-    DEBUG_ONLY(p0->dump();)
-    assert(false, "failed to handle pack");
+    assert(p0->req() == 3 ||
+           opc == Op_SignumF ||
+           opc == Op_SignumD ||
+           p0->is_CMove() ||
+           opc == Op_SqrtF ||
+           opc == Op_SqrtD ||
+           opc == Op_AbsF ||
+           opc == Op_AbsD ||
+           opc == Op_AbsI ||
+           opc == Op_AbsL ||
+           opc == Op_NegF ||
+           opc == Op_NegD ||
+           opc == Op_RoundF ||
+           opc == Op_RoundD ||
+           opc == Op_ReverseBytesI ||
+           opc == Op_ReverseBytesL ||
+           opc == Op_ReverseBytesUS ||
+           opc == Op_ReverseBytesS ||
+           opc == Op_ReverseI ||
+           opc == Op_ReverseL ||
+           opc == Op_PopCountI ||
+           opc == Op_CountLeadingZerosI ||
+           opc == Op_CountTrailingZerosI ||
+           VectorNode::requires_long_to_int_conversion(opc) ||
+           VectorNode::is_convert_opcode(opc) ||
+           opc == Op_FmaD ||
+           opc == Op_FmaF,
+           "pack type must be in this list");
+    // ElementWise Vector operations. Number of inputs is the same for scalar and vector operations.
+    vtn = new (_graph.arena()) VTransformElementWiseVectorNode(_graph, p0->req(), pack_size);
   }
   vtn->set_nodes(pack);
   return vtn;
@@ -3196,7 +3184,6 @@ VTransformNode* SuperWordVTransformBuilder::find_input_for_vector(int j, Node_Li
   }
 
   Node* unique = _packset.isa_unique_input_or_null(pack, j);
-  // TODO special check instead? refactor elsewhere?
   if (p0->in(j) == iv() && unique == nullptr) {
     // PopulateIndex: [iv+0, iv+1, iv+2, ...]
     VTransformNode* iv_vtn = find_scalar(iv());

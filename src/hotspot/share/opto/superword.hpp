@@ -665,7 +665,7 @@ private:
   bool vtransform() const;
 };
 
-// TODO desc?
+// Facility class that builds a VTransformGraph from a SuperWord PackSet.
 class SuperWordVTransformBuilder : public StackObj {
 private:
   const VLoopAnalyzer& _vloop_analyzer;
@@ -673,7 +673,6 @@ private:
   const PackSet& _packset;
   VTransformGraph& _graph;
 
-  // TODO desc?
   // Map: C2-IR-Nodes (bb_idx) -> VTransformNode* (nullptr if none exists).
   GrowableArray<VTransformNode*> _bb_idx_to_vtnode;
 
@@ -697,6 +696,7 @@ public:
   void build_vtransform();
 
 private:
+  // VLoop accessors.
   CountedLoopNode* cl()     const { return _vloop.cl(); }
   bool in_bb(const Node* n) const { return _vloop.in_bb(n); }
   PhiNode* iv()             const { return _vloop.iv(); }
@@ -717,6 +717,7 @@ private:
     return _vloop_analyzer.dependency_graph();
   }
 
+  // Helper methods for building VTransformGraph.
   VTransformVectorNode* make_vtnode_for_pack(const Node_List* pack) const;
   VTransformNode* find_input_for_vector(int j, Node_List* pack);
   VTransformNode* find_scalar(Node* n);
