@@ -59,8 +59,8 @@ import static java.util.zip.ZipUtils.NIO_ACCESS;
  * {@snippet id="compdecomp" lang="java" class="Snippets" region="DeflaterInflaterExample"}
  *
  * @apiNote
- * To release resources used by this {@code Inflater}, the {@link #end()} method
- * should be called explicitly. Subclasses are responsible for the cleanup of resources
+ * To release resources used by this {@code Inflater}, the {@link #close()} method
+ * should be used. Subclasses are responsible for the cleanup of resources
  * acquired by the subclass. Subclasses that override {@link #finalize()} in order
  * to perform cleanup should be modified to use alternative cleanup mechanisms such
  * as {@link java.lang.ref.Cleaner} and remove the overriding {@code finalize} method.
@@ -71,7 +71,7 @@ import static java.util.zip.ZipUtils.NIO_ACCESS;
  *
  */
 
-public class Inflater {
+public class Inflater implements AutoCloseable {
 
     private final InflaterZStreamRef zsRef;
     private ByteBuffer input = ZipUtils.defaultBuf;
@@ -691,17 +691,43 @@ public class Inflater {
      * Closes the decompressor and discards any unprocessed input.
      *
      * This method should be called when the decompressor is no longer
-     * being used. Once this method is called, the behavior of the
-     * Inflater object is undefined.
+     * being used. Once this method is called, further operations using
+     * this Inflater may throw an exception.
+     * 
+     * @see #close()
      */
     public void end() {
         synchronized (zsRef) {
+            // check if already closed
+            if (zsRef.address() == 0) {
+                return;
+            }
             zsRef.clean();
             input = ZipUtils.defaultBuf;
             inputArray = null;
         }
     }
 
+
+    /**
+     * Releases resources held by this decompressor and discards any unprocessed input.
+     * This method should be called when the decompressor is no longer needed.
+     *
+     * @implNote This method calls the {@link #end()} method. This method is a no-op
+     * if this decompressor has already been previously closed, either through {@code close()}
+     * or {@code end()}
+     * @since 24
+     */
+    @Override
+    public void close() {
+        synchronized (zsRef) {
+            // check if already closed
+            if (zsRef.address() == 0) {
+                return;
+            }
+        }
+        end();
+    }
 
     private void ensureOpen () {
         assert Thread.holdsLock(zsRef);
@@ -741,10 +767,11 @@ public class Inflater {
      */
     static class InflaterZStreamRef implements Runnable {
 
-        private long address;
+        private long address; // will be a non-zero value when the native resource is in use
         private final Cleanable cleanable;
 
         private InflaterZStreamRef(Inflater owner, long addr) {
+            assert addr != 0 : "native address is 0";
             this.cleanable = (owner != null) ? CleanerFactory.cleaner().register(owner, this) : null;
             this.address = addr;
         }
