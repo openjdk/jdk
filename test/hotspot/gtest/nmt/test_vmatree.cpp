@@ -109,14 +109,14 @@ public:
   // After removing all ranges we should be left with an entirely empty tree
   void remove_all_leaves_empty_tree(const VMATree::RegionData& rd) {
     Tree tree;
-    tree.reserve_mapping(0, 100 * 100, rd);
+    tree.reserve_mapping(0, 100 * 10, rd);
     for (int i = 0; i < 10; i++) {
       tree.release_mapping(i * 100, 100);
     }
     EXPECT_EQ(nullptr, treap_root(tree));
 
     // Other way around
-    tree.reserve_mapping(0, 100 * 100, rd);
+    tree.reserve_mapping(0, 100 * 10, rd);
     for (int i = 9; i >= 0; i--) {
       tree.release_mapping(i * 100, 100);
     }
@@ -126,7 +126,7 @@ public:
   // Committing in a whole reserved range results in 2 nodes
   void commit_whole(const VMATree::RegionData& rd) {
     Tree tree;
-    tree.reserve_mapping(0, 100 * 100, rd);
+    tree.reserve_mapping(0, 100 * 10, rd);
     for (int i = 0; i < 10; i++) {
       tree.commit_mapping(i * 100, 100, rd);
     }
