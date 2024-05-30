@@ -75,7 +75,7 @@ public:
     return x->val().out.type();
   }
 
-  size_t count_nodes(Tree& tree) {
+  int count_nodes(Tree& tree) {
     int count = 0;
     treap(tree).visit_in_order([&](Node* x) {
       ++count;
