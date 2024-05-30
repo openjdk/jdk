@@ -35,9 +35,6 @@ class ParMarkBitMap: public CHeapObj<mtGC> {
 public:
   typedef BitMap::idx_t idx_t;
 
-  // Values returned by the iterate() methods.
-  enum IterationStatus { incomplete, complete, full };
-
   inline ParMarkBitMap();
   bool initialize(MemRegion covered_region);
 
