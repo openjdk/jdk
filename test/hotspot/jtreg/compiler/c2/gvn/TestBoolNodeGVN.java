@@ -21,22 +21,16 @@
  * questions.
  */
 
-package compiler.c2.irTests;
+package compiler.c2.gvn;
 
-import compiler.lib.ir_framework.Argument;
-import compiler.lib.ir_framework.Arguments;
-import compiler.lib.ir_framework.CompilePhase;
-import compiler.lib.ir_framework.IR;
-import compiler.lib.ir_framework.IRNode;
-import compiler.lib.ir_framework.Test;
-import compiler.lib.ir_framework.TestFramework;
+import compiler.lib.ir_framework.*;
 
 /**
  * @test
  * @bug 8327381
  * @summary Refactor boolean node tautology transformations
  * @library /test/lib /
- * @run main compiler.c2.irTests.TestBoolNodeGVN
+ * @run main compiler.c2.gvn.TestBoolNodeGVN
  */
 public class TestBoolNodeGVN {
     public static void main(String[] args) {
@@ -54,11 +48,23 @@ public class TestBoolNodeGVN {
     @IR(failOn = IRNode.CMP_U,
         phase = CompilePhase.AFTER_PARSING,
         applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"})
-    public static boolean test(int x, int m) {
+    public static boolean testShouldReplaceCpmU(int x, int m) {
         return !(Integer.compareUnsigned((x & m), m) > 0) & // assert in inversions to generates the pattern looking for
                !(Integer.compareUnsigned((m & x), m) > 0) &
                Integer.compareUnsigned((x & m), m + 1) < 0 &
                Integer.compareUnsigned((m & x), m + 1) < 0;
+    }
+
+    @Test
+    @Arguments(values = {Argument.DEFAULT, Argument.DEFAULT})
+    @IR(counts = {IRNode.CMP_U, "4"},
+        phase = CompilePhase.AFTER_PARSING,
+        applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"})
+    public static boolean testShouldHaveCpmU(int x, int m) {
+        return !(Integer.compareUnsigned((x & m), m - 1) > 0) |
+                !(Integer.compareUnsigned((m & x), m - 1) > 0) |
+                Integer.compareUnsigned((x & m), m + 2) < 0 |
+                Integer.compareUnsigned((m & x), m + 2) < 0;
     }
 
     private static void testCorrectness() {
@@ -66,7 +72,7 @@ public class TestBoolNodeGVN {
 
         for (int x : values) {
             for (int m : values) {
-                if (!test(x, m)) {
+                if (!testShouldReplaceCpmU(x, m)) {
                     throw new RuntimeException("Bad result for x = " + x + " and m = " + m + ", expected always true");
                 }
             }
