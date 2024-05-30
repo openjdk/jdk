@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,9 +21,7 @@
  * questions.
  */
 
-package nsk.share;
-
-import nsk.share.*;
+package nsk.share.jdb;
 
 import java.io.*;
 
@@ -33,14 +31,9 @@ import java.io.*;
  * This class provides abilities to launch such process,
  * redirect standard output streams, wait for process terminates
  * or kill the process, and so on.
- * <p>
- * This object is finalized with <code>nsk.share.Finalizer</code>.
- *
- * @see nsk.share.FinalizableObject
- * @see nsk.share.Finalizer
  */
 
-public class LocalProcess extends FinalizableObject {
+class LocalProcess {
 
     public final static int PROCESS_IS_ALIVE = 222;
 
@@ -59,16 +52,11 @@ public class LocalProcess extends FinalizableObject {
         }
 
         process = Runtime.getRuntime().exec(args);
-
-        registerCleanup();
     }
 
     public void launch (String cmdLine) throws IOException {
         System.out.println("Launching process by command line: " + cmdLine);
-
         process = Runtime.getRuntime().exec(cmdLine);
-
-        registerCleanup();
     }
 
     /** Return exit status. */
@@ -163,12 +151,4 @@ public class LocalProcess extends FinalizableObject {
         process.destroy();
     }
 
-    /**
-     * This method is called at finalization and calls <code>kill()</code>.
-     *
-     */
-    @Override
-    public void cleanup() {
-        kill();
-    }
 }

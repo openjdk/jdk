@@ -2282,6 +2282,15 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
       if (res != JNI_OK) {
         return res;
       }
+    } else if (match_option(option, "--sun-misc-unsafe-memory-access=", &tail)) {
+      if (strcmp(tail, "allow") == 0 || strcmp(tail, "warn") == 0 || strcmp(tail, "debug") == 0 || strcmp(tail, "deny") == 0) {
+        PropertyList_unique_add(&_system_properties, "sun.misc.unsafe.memory.access", tail,
+                                AddProperty, WriteableProperty, InternalProperty);
+      } else {
+        jio_fprintf(defaultStream::error_stream(),
+                    "Value specified to --sun-misc-unsafe-memory-access not recognized: '%s'\n", tail);
+        return JNI_ERR;
+      }
     } else if (match_option(option, "--illegal-access=", &tail)) {
       char version[256];
       JDK_Version::jdk(17).to_string(version, sizeof(version));

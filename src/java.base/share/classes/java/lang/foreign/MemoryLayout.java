@@ -625,12 +625,12 @@ public sealed interface MemoryLayout
      *     (this layout), or an {@link IllegalArgumentException} is thrown. Note
      *     that the alignment constraint of the root layout can be more strict
      *     (but not less) than the alignment constraint of the selected value layout.</li>
-     *     <li>The offset of the access operation (computed as above) must fall inside
-     *     the spatial bounds of the accessed memory segment, or an
-     *     {@link IndexOutOfBoundsException} is thrown. This is the case when
-     *     {@code O + A <= S}, where {@code O} is the accessed offset (computed as above),
-     *     {@code A} is the size of the selected layout and {@code S} is the size of the
-     *     accessed memory segment.</li>
+     *     <li>The access operation must fall inside the spatial bounds of the accessed
+     *     memory segment, or an {@link IndexOutOfBoundsException} is thrown. This is the case
+     *     when {@code B + A <= S}, where {@code B} is the base offset (defined above),
+     *     {@code A} is the size of this layout and {@code S} is the size of the
+     *     accessed memory segment. Note that the size of this layout might be <em>bigger</em>
+     *     than the size of the accessed layout (e.g. when accessing a struct member).</li>
      *     <li>If the provided layout path has an open path element whose size is {@code S},
      *     its corresponding trailing {@code long} coordinate value {@code I} must be
      *     {@code 0 <= I < S}, or an {@link IndexOutOfBoundsException} is thrown.</li>
@@ -753,12 +753,12 @@ public sealed interface MemoryLayout
      *     (this layout), or an {@link IllegalArgumentException} is thrown. Note
      *     that the alignment constraint of the root layout can be more strict
      *     (but not less) than the alignment constraint of the selected value layout.</li>
-     *     <li>The offset of the access operation (computed as above) must fall inside
-     *     the spatial bounds of the accessed memory segment, or an
-     *     {@link IndexOutOfBoundsException} is thrown. This is the case when
-     *     {@code O + A <= S}, where {@code O} is the accessed offset (computed as above),
-     *     {@code A} is the size of the selected layout and {@code S} is the size of the
-     *     accessed memory segment.</li>
+     *     <li>The access operation must fall inside the spatial bounds of the accessed
+     *     memory segment, or an {@link IndexOutOfBoundsException} is thrown. This is the case
+     *     when {@code B + A <= S}, where {@code B} is the base offset (defined above),
+     *     {@code A} is the size of this layout and {@code S} is the size of the
+     *     accessed memory segment. Note that the size of this layout might be <em>bigger</em>
+     *     than the size of the accessed layout (e.g. when accessing a struct member).</li>
      *     <li>If the provided layout path has an open path element whose size is {@code S},
      *     its corresponding trailing {@code long} coordinate value {@code I} must be
      *     {@code 0 <= I < S}, or an {@link IndexOutOfBoundsException} is thrown.</li>
@@ -822,12 +822,12 @@ public sealed interface MemoryLayout
      *     (this layout), or an {@link IllegalArgumentException} will be issued. Note
      *     that the alignment constraint of the root layout can be more strict
      *     (but not less) than the alignment constraint of the selected layout.</li>
-     *     <li>The start offset of the slicing operation (computed as above) must fall
-     *     inside the spatial bounds of the accessed memory segment, or an
-     *     {@link IndexOutOfBoundsException} is thrown. This is the case when
-     *     {@code O + A <= S}, where {@code O} is the start offset of
-     *     the slicing operation (computed as above), {@code A} is the size of the
-     *     selected layout and {@code S} is the size of the accessed memory segment.</li>
+     *     <li>The slicing operation must fall inside the spatial bounds of the accessed
+     *     memory segment, or an {@link IndexOutOfBoundsException} is thrown. This is the case
+     *     when {@code B + A <= S}, where {@code B} is the base offset (defined above),
+     *     {@code A} is the size of this layout and {@code S} is the size of the
+     *     accessed memory segment. Note that the size of this layout might be <em>bigger</em>
+     *     than the size of the accessed layout (e.g. when accessing a struct member).</li>
      *     <li>If the provided layout path has an open path element whose size is {@code S},
      *     its corresponding trailing {@code long} coordinate value {@code I} must be
      *     {@code 0 <= I < S}, or an {@link IndexOutOfBoundsException} is thrown.</li>
