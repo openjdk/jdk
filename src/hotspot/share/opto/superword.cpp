@@ -3252,6 +3252,7 @@ VTransformNode* SuperWordVTransformBuilder::find_scalar(Node* n) {
     return vtn;
   } else {
     // Node is outside the loop. Just wrap it.
+    // TODO prevent duplicates!
     return new (_graph.arena()) VTransformInputScalarNode(_graph, n);
   }
 }

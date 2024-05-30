@@ -1861,10 +1861,15 @@ void VTransformGraph::for_each_memop_in_schedule(Callback callback) const {
 
   for (int i = 0; i < _schedule.length(); i++) {
     VTransformNode* vtn = _schedule.at(i);
+
+    // We can ignore input nodes, they are outside the loop.
+    if (vtn->isa_InputScalar() != nullptr) { continue; }
+
     VTransformScalarNode* scalar = vtn->isa_Scalar();
     if (scalar != nullptr && scalar->node()->is_Mem()) {
       callback(scalar->node()->as_Mem());
     }
+
     VTransformVectorNode* vector = vtn->isa_Vector();
     if (vector != nullptr && vector->nodes().at(0)->is_Mem()) {
       for (int j = 0; j < vector->nodes().length(); j++) {
@@ -2167,7 +2172,6 @@ void VTransformNode::register_new_vector(const VLoopAnalyzer& vloop_analyzer, No
 }
 
 VTransformApplyStatus VTransformElementWiseVectorNode::apply(const VLoopAnalyzer& vloop_analyzer, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
-  // TODO all cases?
   Node* first = nodes().at(0);
   uint  vlen = nodes().length();
   int   opc  = first->Opcode();
@@ -2175,6 +2179,7 @@ VTransformApplyStatus VTransformElementWiseVectorNode::apply(const VLoopAnalyzer
 
   if (first->is_Cmp()) {
     // Cmp + Bool -> VectorMaskCmp
+    // Handled by Bool / VTransformMaskCmpVectorNode, so we do not generate any nodes here.
     return VTransformApplyStatus::make_empty();
   } else if (first->is_CMove()) {
     assert(req() == 4, "three inputs expected");
