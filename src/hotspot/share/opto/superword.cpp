@@ -3112,32 +3112,14 @@ VTransformVectorNode* SuperWordVTransformBuilder::make_vtnode_for_pack(const Nod
     vtn = new (_graph.arena()) VTransformElementWiseVectorNode(_graph, 3, pack_size);
   } else {
     assert(p0->req() == 3 ||
-           opc == Op_SignumF ||
-           opc == Op_SignumD ||
            p0->is_CMove() ||
-           opc == Op_SqrtF ||
-           opc == Op_SqrtD ||
-           opc == Op_AbsF ||
-           opc == Op_AbsD ||
-           opc == Op_AbsI ||
-           opc == Op_AbsL ||
-           opc == Op_NegF ||
-           opc == Op_NegD ||
-           opc == Op_RoundF ||
-           opc == Op_RoundD ||
-           opc == Op_ReverseBytesI ||
-           opc == Op_ReverseBytesL ||
-           opc == Op_ReverseBytesUS ||
-           opc == Op_ReverseBytesS ||
-           opc == Op_ReverseI ||
-           opc == Op_ReverseL ||
-           opc == Op_PopCountI ||
-           opc == Op_CountLeadingZerosI ||
-           opc == Op_CountTrailingZerosI ||
            VectorNode::requires_long_to_int_conversion(opc) ||
            VectorNode::is_convert_opcode(opc) ||
+           VTransformElementWiseVectorNode::is_unary_element_wise_opcode(opc) ||
            opc == Op_FmaD ||
-           opc == Op_FmaF,
+           opc == Op_FmaF ||
+           opc == Op_SignumF ||
+           opc == Op_SignumD,
            "pack type must be in this list");
     // ElementWise Vector operations. Number of inputs is the same for scalar and vector operations.
     vtn = new (_graph.arena()) VTransformElementWiseVectorNode(_graph, p0->req(), pack_size);

@@ -1687,6 +1687,8 @@ public:
 
   virtual VTransformElementWiseVectorNode* isa_ElementWiseVector() override { return this; }
 
+  DEBUG_ONLY( static bool is_unary_element_wise_opcode(int opc); )
+
   virtual VTransformApplyStatus apply(const VLoopAnalyzer& vloop_analyzer,
                                       const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
 
