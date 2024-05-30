@@ -38,6 +38,15 @@ method name format descriptor (Ljava/util/Locale;Ljava/lang/String;[Ljava/lang/O
 method name printf descriptor (Ljava/util/Locale;Ljava/lang/String;[Ljava/lang/Object;)Ljava/io/Console; flags 81
 method name readLine descriptor (Ljava/util/Locale;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/String; flags 81
 method name readPassword descriptor (Ljava/util/Locale;Ljava/lang/String;[Ljava/lang/Object;)[C flags 81
+method name println descriptor (Ljava/lang/Object;)Ljava/io/Console; flags 1 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;IMPLICIT_CLASSES;)
+method name print descriptor (Ljava/lang/Object;)Ljava/io/Console; flags 1 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;IMPLICIT_CLASSES;)
+method name readln descriptor (Ljava/lang/String;)Ljava/lang/String; flags 1 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;IMPLICIT_CLASSES;)
+
+class name java/io/IO
+header extends java/lang/Object flags 31 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;IMPLICIT_CLASSES;)
+method name println descriptor (Ljava/lang/Object;)V flags 9
+method name print descriptor (Ljava/lang/Object;)V flags 9
+method name readln descriptor (Ljava/lang/String;)Ljava/lang/String; flags 9
 
 class name java/io/ObjectOutputStream$PutField
 -method name write descriptor (Ljava/io/ObjectOutput;)V
@@ -50,6 +59,9 @@ method name format descriptor (Ljava/util/Locale;Ljava/lang/String;[Ljava/lang/O
 method name printf descriptor (Ljava/util/Locale;Ljava/lang/String;[Ljava/lang/Object;)Ljava/io/Console; flags 81
 method name readLine descriptor (Ljava/util/Locale;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/String; flags 81
 method name readPassword descriptor (Ljava/util/Locale;Ljava/lang/String;[Ljava/lang/Object;)[C flags 81
+method name println descriptor (Ljava/lang/Object;)Ljava/io/Console; flags 1
+method name print descriptor (Ljava/lang/Object;)Ljava/io/Console; flags 1
+method name readln descriptor (Ljava/lang/String;)Ljava/lang/String; flags 1
 
 -class name java/lang/StringTemplate
 
@@ -65,6 +77,83 @@ class name java/lang/ThreadGroup
 -method name suspend descriptor ()V
 -method name resume descriptor ()V
 -method name stop descriptor ()V
+
+class name java/lang/classfile/Attributes
+header extends java/lang/Object flags 31 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;CLASSFILE_API;)
+-field name ANNOTATION_DEFAULT descriptor Ljava/lang/classfile/AttributeMapper;
+-field name BOOTSTRAP_METHODS descriptor Ljava/lang/classfile/AttributeMapper;
+-field name CHARACTER_RANGE_TABLE descriptor Ljava/lang/classfile/AttributeMapper;
+-field name CODE descriptor Ljava/lang/classfile/AttributeMapper;
+-field name COMPILATION_ID descriptor Ljava/lang/classfile/AttributeMapper;
+-field name CONSTANT_VALUE descriptor Ljava/lang/classfile/AttributeMapper;
+-field name DEPRECATED descriptor Ljava/lang/classfile/AttributeMapper;
+-field name ENCLOSING_METHOD descriptor Ljava/lang/classfile/AttributeMapper;
+-field name EXCEPTIONS descriptor Ljava/lang/classfile/AttributeMapper;
+-field name INNER_CLASSES descriptor Ljava/lang/classfile/AttributeMapper;
+-field name LINE_NUMBER_TABLE descriptor Ljava/lang/classfile/AttributeMapper;
+-field name LOCAL_VARIABLE_TABLE descriptor Ljava/lang/classfile/AttributeMapper;
+-field name LOCAL_VARIABLE_TYPE_TABLE descriptor Ljava/lang/classfile/AttributeMapper;
+-field name METHOD_PARAMETERS descriptor Ljava/lang/classfile/AttributeMapper;
+-field name MODULE descriptor Ljava/lang/classfile/AttributeMapper;
+-field name MODULE_HASHES descriptor Ljava/lang/classfile/AttributeMapper;
+-field name MODULE_MAIN_CLASS descriptor Ljava/lang/classfile/AttributeMapper;
+-field name MODULE_PACKAGES descriptor Ljava/lang/classfile/AttributeMapper;
+-field name MODULE_RESOLUTION descriptor Ljava/lang/classfile/AttributeMapper;
+-field name MODULE_TARGET descriptor Ljava/lang/classfile/AttributeMapper;
+-field name NEST_HOST descriptor Ljava/lang/classfile/AttributeMapper;
+-field name NEST_MEMBERS descriptor Ljava/lang/classfile/AttributeMapper;
+-field name PERMITTED_SUBCLASSES descriptor Ljava/lang/classfile/AttributeMapper;
+-field name RECORD descriptor Ljava/lang/classfile/AttributeMapper;
+-field name RUNTIME_INVISIBLE_ANNOTATIONS descriptor Ljava/lang/classfile/AttributeMapper;
+-field name RUNTIME_INVISIBLE_PARAMETER_ANNOTATIONS descriptor Ljava/lang/classfile/AttributeMapper;
+-field name RUNTIME_INVISIBLE_TYPE_ANNOTATIONS descriptor Ljava/lang/classfile/AttributeMapper;
+-field name RUNTIME_VISIBLE_ANNOTATIONS descriptor Ljava/lang/classfile/AttributeMapper;
+-field name RUNTIME_VISIBLE_PARAMETER_ANNOTATIONS descriptor Ljava/lang/classfile/AttributeMapper;
+-field name RUNTIME_VISIBLE_TYPE_ANNOTATIONS descriptor Ljava/lang/classfile/AttributeMapper;
+-field name SIGNATURE descriptor Ljava/lang/classfile/AttributeMapper;
+-field name SOURCE_DEBUG_EXTENSION descriptor Ljava/lang/classfile/AttributeMapper;
+-field name SOURCE_FILE descriptor Ljava/lang/classfile/AttributeMapper;
+-field name SOURCE_ID descriptor Ljava/lang/classfile/AttributeMapper;
+-field name STACK_MAP_TABLE descriptor Ljava/lang/classfile/AttributeMapper;
+-field name SYNTHETIC descriptor Ljava/lang/classfile/AttributeMapper;
+-field name PREDEFINED_ATTRIBUTES descriptor Ljava/util/Set;
+-method name standardAttribute descriptor (Ljava/lang/classfile/constantpool/Utf8Entry;)Ljava/lang/classfile/AttributeMapper;
+method name annotationDefault descriptor ()Ljava/lang/classfile/AttributeMapper; flags 9 signature ()Ljava/lang/classfile/AttributeMapper<Ljava/lang/classfile/attribute/AnnotationDefaultAttribute;>;
+method name bootstrapMethods descriptor ()Ljava/lang/classfile/AttributeMapper; flags 9 signature ()Ljava/lang/classfile/AttributeMapper<Ljava/lang/classfile/attribute/BootstrapMethodsAttribute;>;
+method name characterRangeTable descriptor ()Ljava/lang/classfile/AttributeMapper; flags 9 signature ()Ljava/lang/classfile/AttributeMapper<Ljava/lang/classfile/attribute/CharacterRangeTableAttribute;>;
+method name code descriptor ()Ljava/lang/classfile/AttributeMapper; flags 9 signature ()Ljava/lang/classfile/AttributeMapper<Ljava/lang/classfile/attribute/CodeAttribute;>;
+method name compilationId descriptor ()Ljava/lang/classfile/AttributeMapper; flags 9 signature ()Ljava/lang/classfile/AttributeMapper<Ljava/lang/classfile/attribute/CompilationIDAttribute;>;
+method name constantValue descriptor ()Ljava/lang/classfile/AttributeMapper; flags 9 signature ()Ljava/lang/classfile/AttributeMapper<Ljava/lang/classfile/attribute/ConstantValueAttribute;>;
+method name deprecated descriptor ()Ljava/lang/classfile/AttributeMapper; flags 9 signature ()Ljava/lang/classfile/AttributeMapper<Ljava/lang/classfile/attribute/DeprecatedAttribute;>;
+method name enclosingMethod descriptor ()Ljava/lang/classfile/AttributeMapper; flags 9 signature ()Ljava/lang/classfile/AttributeMapper<Ljava/lang/classfile/attribute/EnclosingMethodAttribute;>;
+method name exceptions descriptor ()Ljava/lang/classfile/AttributeMapper; flags 9 signature ()Ljava/lang/classfile/AttributeMapper<Ljava/lang/classfile/attribute/ExceptionsAttribute;>;
+method name innerClasses descriptor ()Ljava/lang/classfile/AttributeMapper; flags 9 signature ()Ljava/lang/classfile/AttributeMapper<Ljava/lang/classfile/attribute/InnerClassesAttribute;>;
+method name lineNumberTable descriptor ()Ljava/lang/classfile/AttributeMapper; flags 9 signature ()Ljava/lang/classfile/AttributeMapper<Ljava/lang/classfile/attribute/LineNumberTableAttribute;>;
+method name localVariableTable descriptor ()Ljava/lang/classfile/AttributeMapper; flags 9 signature ()Ljava/lang/classfile/AttributeMapper<Ljava/lang/classfile/attribute/LocalVariableTableAttribute;>;
+method name localVariableTypeTable descriptor ()Ljava/lang/classfile/AttributeMapper; flags 9 signature ()Ljava/lang/classfile/AttributeMapper<Ljava/lang/classfile/attribute/LocalVariableTypeTableAttribute;>;
+method name methodParameters descriptor ()Ljava/lang/classfile/AttributeMapper; flags 9 signature ()Ljava/lang/classfile/AttributeMapper<Ljava/lang/classfile/attribute/MethodParametersAttribute;>;
+method name module descriptor ()Ljava/lang/classfile/AttributeMapper; flags 9 signature ()Ljava/lang/classfile/AttributeMapper<Ljava/lang/classfile/attribute/ModuleAttribute;>;
+method name moduleHashes descriptor ()Ljava/lang/classfile/AttributeMapper; flags 9 signature ()Ljava/lang/classfile/AttributeMapper<Ljava/lang/classfile/attribute/ModuleHashesAttribute;>;
+method name moduleMainClass descriptor ()Ljava/lang/classfile/AttributeMapper; flags 9 signature ()Ljava/lang/classfile/AttributeMapper<Ljava/lang/classfile/attribute/ModuleMainClassAttribute;>;
+method name modulePackages descriptor ()Ljava/lang/classfile/AttributeMapper; flags 9 signature ()Ljava/lang/classfile/AttributeMapper<Ljava/lang/classfile/attribute/ModulePackagesAttribute;>;
+method name moduleResolution descriptor ()Ljava/lang/classfile/AttributeMapper; flags 9 signature ()Ljava/lang/classfile/AttributeMapper<Ljava/lang/classfile/attribute/ModuleResolutionAttribute;>;
+method name moduleTarget descriptor ()Ljava/lang/classfile/AttributeMapper; flags 9 signature ()Ljava/lang/classfile/AttributeMapper<Ljava/lang/classfile/attribute/ModuleTargetAttribute;>;
+method name nestHost descriptor ()Ljava/lang/classfile/AttributeMapper; flags 9 signature ()Ljava/lang/classfile/AttributeMapper<Ljava/lang/classfile/attribute/NestHostAttribute;>;
+method name nestMembers descriptor ()Ljava/lang/classfile/AttributeMapper; flags 9 signature ()Ljava/lang/classfile/AttributeMapper<Ljava/lang/classfile/attribute/NestMembersAttribute;>;
+method name permittedSubclasses descriptor ()Ljava/lang/classfile/AttributeMapper; flags 9 signature ()Ljava/lang/classfile/AttributeMapper<Ljava/lang/classfile/attribute/PermittedSubclassesAttribute;>;
+method name record descriptor ()Ljava/lang/classfile/AttributeMapper; flags 9 signature ()Ljava/lang/classfile/AttributeMapper<Ljava/lang/classfile/attribute/RecordAttribute;>;
+method name runtimeInvisibleAnnotations descriptor ()Ljava/lang/classfile/AttributeMapper; flags 9 signature ()Ljava/lang/classfile/AttributeMapper<Ljava/lang/classfile/attribute/RuntimeInvisibleAnnotationsAttribute;>;
+method name runtimeInvisibleParameterAnnotations descriptor ()Ljava/lang/classfile/AttributeMapper; flags 9 signature ()Ljava/lang/classfile/AttributeMapper<Ljava/lang/classfile/attribute/RuntimeInvisibleParameterAnnotationsAttribute;>;
+method name runtimeInvisibleTypeAnnotations descriptor ()Ljava/lang/classfile/AttributeMapper; flags 9 signature ()Ljava/lang/classfile/AttributeMapper<Ljava/lang/classfile/attribute/RuntimeInvisibleTypeAnnotationsAttribute;>;
+method name runtimeVisibleAnnotations descriptor ()Ljava/lang/classfile/AttributeMapper; flags 9 signature ()Ljava/lang/classfile/AttributeMapper<Ljava/lang/classfile/attribute/RuntimeVisibleAnnotationsAttribute;>;
+method name runtimeVisibleParameterAnnotations descriptor ()Ljava/lang/classfile/AttributeMapper; flags 9 signature ()Ljava/lang/classfile/AttributeMapper<Ljava/lang/classfile/attribute/RuntimeVisibleParameterAnnotationsAttribute;>;
+method name runtimeVisibleTypeAnnotations descriptor ()Ljava/lang/classfile/AttributeMapper; flags 9 signature ()Ljava/lang/classfile/AttributeMapper<Ljava/lang/classfile/attribute/RuntimeVisibleTypeAnnotationsAttribute;>;
+method name signature descriptor ()Ljava/lang/classfile/AttributeMapper; flags 9 signature ()Ljava/lang/classfile/AttributeMapper<Ljava/lang/classfile/attribute/SignatureAttribute;>;
+method name sourceDebugExtension descriptor ()Ljava/lang/classfile/AttributeMapper; flags 9 signature ()Ljava/lang/classfile/AttributeMapper<Ljava/lang/classfile/attribute/SourceDebugExtensionAttribute;>;
+method name sourceFile descriptor ()Ljava/lang/classfile/AttributeMapper; flags 9 signature ()Ljava/lang/classfile/AttributeMapper<Ljava/lang/classfile/attribute/SourceFileAttribute;>;
+method name sourceId descriptor ()Ljava/lang/classfile/AttributeMapper; flags 9 signature ()Ljava/lang/classfile/AttributeMapper<Ljava/lang/classfile/attribute/SourceIDAttribute;>;
+method name stackMapTable descriptor ()Ljava/lang/classfile/AttributeMapper; flags 9 signature ()Ljava/lang/classfile/AttributeMapper<Ljava/lang/classfile/attribute/StackMapTableAttribute;>;
+method name synthetic descriptor ()Ljava/lang/classfile/AttributeMapper; flags 9 signature ()Ljava/lang/classfile/AttributeMapper<Ljava/lang/classfile/attribute/SyntheticAttribute;>;
 
 class name java/lang/classfile/BufWriter
 -method name asByteBuffer descriptor ()Ljava/nio/ByteBuffer;
@@ -318,6 +407,9 @@ class name java/net/DatagramSocketImpl
 -method name getTTL descriptor ()B
 method name setTTL descriptor (B)V thrownTypes java/io/IOException flags 404 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="1.2")
 method name getTTL descriptor ()B thrownTypes java/io/IOException flags 404 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="1.2")
+
+class name java/net/Inet4Address
+method name ofPosixLiteral descriptor (Ljava/lang/String;)Ljava/net/Inet4Address; flags 9
 
 class name java/net/MulticastSocket
 -method name setTTL descriptor (B)V
@@ -652,6 +744,7 @@ innerclass innerClass jdk/internal/classfile/impl/BoundAttribute$BoundCharacterR
 innerclass innerClass jdk/internal/classfile/impl/BoundAttribute$BoundLineNumberTableAttribute outerClass jdk/internal/classfile/impl/BoundAttribute innerClassName BoundLineNumberTableAttribute flags 19
 innerclass innerClass jdk/internal/classfile/impl/BoundAttribute$BoundSyntheticAttribute outerClass jdk/internal/classfile/impl/BoundAttribute innerClassName BoundSyntheticAttribute flags 19
 innerclass innerClass jdk/internal/classfile/impl/BoundAttribute$BoundStackMapTableAttribute outerClass jdk/internal/classfile/impl/BoundAttribute innerClassName BoundStackMapTableAttribute flags 19
+method name standardAttribute descriptor (Ljava/lang/classfile/constantpool/Utf8Entry;)Ljava/lang/classfile/AttributeMapper; flags 9 signature (Ljava/lang/classfile/constantpool/Utf8Entry;)Ljava/lang/classfile/AttributeMapper<*>;
 
 class name jdk/internal/classfile/impl/ClassPrinterImpl
 header extends java/lang/Object nestMembers jdk/internal/classfile/impl/ClassPrinterImpl$MapNodeImpl,jdk/internal/classfile/impl/ClassPrinterImpl$ListNodeImpl,jdk/internal/classfile/impl/ClassPrinterImpl$LeafNodeImpl flags 31
@@ -942,6 +1035,7 @@ method name equals descriptor (Ljava/lang/Object;)Z flags 1
 method name hashCode descriptor ()I flags 1
 method name toString descriptor ()Ljava/lang/String; flags 1
 method name resolveConstantDesc descriptor (Ljava/lang/invoke/MethodHandles$Lookup;)Ljava/lang/Object; thrownTypes java/lang/ReflectiveOperationException flags 1041 methodParameters 1000:null
+method name ofValidatedBinaryName descriptor (Ljava/lang/String;)Ljava/lang/constant/ClassDesc; flags 9
 
 class name jdk/internal/foreign/abi/aarch64/windows/WindowsAArch64Linker
 -method name linkerByteOrder descriptor ()Ljava/nio/ByteOrder;
@@ -972,5 +1066,21 @@ innerclass innerClass jdk/internal/foreign/LayoutPath$DereferenceElement outerCl
 innerclass innerClass java/lang/foreign/MemoryLayout$PathElement outerClass java/lang/foreign/MemoryLayout innerClassName PathElement flags 609
 innerclass innerClass jdk/internal/foreign/LayoutPath$SequenceElementByIndex outerClass jdk/internal/foreign/LayoutPath innerClassName SequenceElementByIndex flags 19
 innerclass innerClass jdk/internal/foreign/layout/ValueLayouts$AbstractValueLayout outerClass jdk/internal/foreign/layout/ValueLayouts innerClassName AbstractValueLayout flags 408
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+method name varHandleInternal descriptor ([Ljava/lang/foreign/MemoryLayout$PathElement;)Ljava/lang/invoke/VarHandle; flags 81
+
+class name jdk/internal/foreign/layout/ValueLayouts$AbstractValueLayout
+header extends jdk/internal/foreign/layout/AbstractLayout nestHost jdk/internal/foreign/layout/ValueLayouts sealed true permittedSubclasses jdk/internal/foreign/layout/ValueLayouts$OfBooleanImpl,jdk/internal/foreign/layout/ValueLayouts$OfByteImpl,jdk/internal/foreign/layout/ValueLayouts$OfCharImpl,jdk/internal/foreign/layout/ValueLayouts$OfShortImpl,jdk/internal/foreign/layout/ValueLayouts$OfIntImpl,jdk/internal/foreign/layout/ValueLayouts$OfFloatImpl,jdk/internal/foreign/layout/ValueLayouts$OfLongImpl,jdk/internal/foreign/layout/ValueLayouts$OfDoubleImpl,jdk/internal/foreign/layout/ValueLayouts$OfAddressImpl flags 420 signature <V:Ljdk/internal/foreign/layout/ValueLayouts$AbstractValueLayout<TV;>;:Ljava/lang/foreign/ValueLayout;>Ljdk/internal/foreign/layout/AbstractLayout<TV;>;
+innerclass innerClass jdk/internal/foreign/layout/ValueLayouts$AbstractValueLayout outerClass jdk/internal/foreign/layout/ValueLayouts innerClassName AbstractValueLayout flags 408
+innerclass innerClass java/lang/foreign/MemoryLayout$PathElement outerClass java/lang/foreign/MemoryLayout innerClassName PathElement flags 609
+innerclass innerClass jdk/internal/foreign/layout/ValueLayouts$OfBooleanImpl outerClass jdk/internal/foreign/layout/ValueLayouts innerClassName OfBooleanImpl flags 19
+innerclass innerClass jdk/internal/foreign/layout/ValueLayouts$OfByteImpl outerClass jdk/internal/foreign/layout/ValueLayouts innerClassName OfByteImpl flags 19
+innerclass innerClass jdk/internal/foreign/layout/ValueLayouts$OfCharImpl outerClass jdk/internal/foreign/layout/ValueLayouts innerClassName OfCharImpl flags 19
+innerclass innerClass jdk/internal/foreign/layout/ValueLayouts$OfShortImpl outerClass jdk/internal/foreign/layout/ValueLayouts innerClassName OfShortImpl flags 19
+innerclass innerClass jdk/internal/foreign/layout/ValueLayouts$OfIntImpl outerClass jdk/internal/foreign/layout/ValueLayouts innerClassName OfIntImpl flags 19
+innerclass innerClass jdk/internal/foreign/layout/ValueLayouts$OfFloatImpl outerClass jdk/internal/foreign/layout/ValueLayouts innerClassName OfFloatImpl flags 19
+innerclass innerClass jdk/internal/foreign/layout/ValueLayouts$OfLongImpl outerClass jdk/internal/foreign/layout/ValueLayouts innerClassName OfLongImpl flags 19
+innerclass innerClass jdk/internal/foreign/layout/ValueLayouts$OfDoubleImpl outerClass jdk/internal/foreign/layout/ValueLayouts innerClassName OfDoubleImpl flags 19
+innerclass innerClass jdk/internal/foreign/layout/ValueLayouts$OfAddressImpl outerClass jdk/internal/foreign/layout/ValueLayouts innerClassName OfAddressImpl flags 19
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
 
