@@ -174,28 +174,28 @@ class MemTracker : AllStatic {
     return MemoryFileTracker::Instance::make_file(descriptive_name);
   }
 
-  static inline void remove_file(MemoryFileTracker::MemoryFile* device) {
-    assert(device != nullptr, "must be");
+  static inline void remove_file(MemoryFileTracker::MemoryFile* file) {
     assert_post_init();
     if (!enabled()) return;
+    assert(file != nullptr, "must be");
     MemoryFileTracker::Instance::Locker lock;
-    MemoryFileTracker::Instance::free_file(device);
+    MemoryFileTracker::Instance::free_file(file);
   }
 
   static inline void allocate_memory_in(MemoryFileTracker::MemoryFile* file, size_t offset, size_t size,
                                        const NativeCallStack& stack, MEMFLAGS flag) {
-    assert(file != nullptr, "must be");
     assert_post_init();
     if (!enabled()) return;
+    assert(file != nullptr, "must be");
     MemoryFileTracker::Instance::Locker lock;
     MemoryFileTracker::Instance::allocate_memory(file, offset, size, stack, flag);
   }
 
   static inline void free_memory_in(MemoryFileTracker::MemoryFile* file,
                                         size_t offset, size_t size) {
-    assert(file != nullptr, "must be");
     assert_post_init();
     if (!enabled()) return;
+    assert(file != nullptr, "must be");
     MemoryFileTracker::Instance::Locker lock;
     MemoryFileTracker::Instance::free_memory(file, offset, size);
   }
