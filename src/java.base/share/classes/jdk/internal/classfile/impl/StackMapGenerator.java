@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
  */
 package jdk.internal.classfile.impl;
 
+import java.lang.classfile.constantpool.InvokeDynamicEntry;
+import java.lang.classfile.constantpool.NameAndTypeEntry;
 import java.lang.constant.ClassDesc;
 import static java.lang.constant.ConstantDescs.*;
 import java.lang.constant.MethodTypeDesc;
@@ -397,7 +399,7 @@ public final class StackMapGenerator {
     }
 
     private static Type cpIndexToType(int index, ConstantPoolBuilder cp) {
-        return Type.referenceType(((ClassEntry)cp.entryByIndex(index)).asSymbol());
+        return Type.referenceType(cp.entryByIndex(index, ClassEntry.class).asSymbol());
     }
 
     private void processMethod() {
@@ -700,7 +702,7 @@ public final class StackMapGenerator {
             case TAG_METHODTYPE ->
                 currentFrame.pushStack(Type.METHOD_TYPE);
             case TAG_CONSTANTDYNAMIC ->
-                currentFrame.pushStack(((ConstantDynamicEntry)cp.entryByIndex(index)).asSymbol().constantType());
+                currentFrame.pushStack(cp.entryByIndex(index, ConstantDynamicEntry.class).asSymbol().constantType());
             default ->
                 throw generatorError("CP entry #%d %s is not loadable constant".formatted(index, cp.entryByIndex(index).tag()));
         }
@@ -747,7 +749,7 @@ public final class StackMapGenerator {
     }
 
     private void processFieldInstructions(RawBytecodeHelper bcs) {
-        var desc = Util.fieldTypeSymbol(((MemberRefEntry)cp.entryByIndex(bcs.getIndexU2())).nameAndType());
+        var desc = Util.fieldTypeSymbol(cp.entryByIndex(bcs.getIndexU2(), MemberRefEntry.class).nameAndType());
         switch (bcs.rawCode) {
             case GETSTATIC ->
                 currentFrame.pushStack(desc);
@@ -771,8 +773,9 @@ public final class StackMapGenerator {
     private boolean processInvokeInstructions(RawBytecodeHelper bcs, boolean inTryBlock, boolean thisUninit) {
         int index = bcs.getIndexU2();
         int opcode = bcs.rawCode;
-        var cpe = cp.entryByIndex(index);
-        var nameAndType = opcode == INVOKEDYNAMIC ? ((DynamicConstantPoolEntry)cpe).nameAndType() : ((MemberRefEntry)cpe).nameAndType();
+        var nameAndType = opcode == INVOKEDYNAMIC
+                ? cp.entryByIndex(index, InvokeDynamicEntry.class).nameAndType()
+                : cp.entryByIndex(index, MemberRefEntry.class).nameAndType();
         String invokeMethodName = nameAndType.name().stringValue();
         var mDesc = Util.methodTypeSymbol(nameAndType);
         int bci = bcs.bci;
