@@ -59,6 +59,9 @@ extern void vm_shutdown_during_initialization(const char* error, const char* mes
 
 extern void vm_exit_during_cds_dumping(const char* error, const char* message = nullptr);
 
+// This is defined in linkType.cpp due to linking restraints
+extern bool vm_is_statically_linked();
+
 /**
  * With the integration of the changes to handle the version string
  * as defined by JEP-223, most of the code related to handle the version

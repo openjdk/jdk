@@ -85,19 +85,19 @@ static verify_byte_codes_fn_t verify_byte_codes_fn() {
     return _verify_byte_codes_fn;
 
   void *lib_handle = nullptr;
-#ifndef STATIC_BUILD
   // Load verify dll
-  char buffer[JVM_MAXPATHLEN];
-  char ebuf[1024];
-  if (!os::dll_locate_lib(buffer, sizeof(buffer), Arguments::get_dll_dir(), "verify"))
-    return nullptr; // Caller will throw VerifyError
+  if (vm_is_statically_linked()) {
+    lib_handle = os::get_default_process_handle();
+  } else {
+    char buffer[JVM_MAXPATHLEN];
+    char ebuf[1024];
+    if (!os::dll_locate_lib(buffer, sizeof(buffer), Arguments::get_dll_dir(), "verify"))
+      return nullptr; // Caller will throw VerifyError
 
-  lib_handle = os::dll_load(buffer, ebuf, sizeof(ebuf));
-  if (lib_handle == nullptr)
-    return nullptr; // Caller will throw VerifyError
-#else
-  lib_handle = os::get_default_process_handle();
-#endif
+    lib_handle = os::dll_load(buffer, ebuf, sizeof(ebuf));
+    if (lib_handle == nullptr)
+      return nullptr; // Caller will throw VerifyError
+  }
 
   void *fn = os::dll_lookup(lib_handle, "VerifyClassForMajorVersion");
   if (fn == nullptr)

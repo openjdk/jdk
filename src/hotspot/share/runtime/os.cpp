@@ -518,10 +518,10 @@ void* os::native_java_library() {
     char buffer[JVM_MAXPATHLEN];
     char ebuf[1024];
 
-#ifdef STATIC_BUILD
-    _native_java_library = get_default_process_handle();
-    return _native_java_library;
-#endif
+    if (vm_is_statically_linked()) {
+      _native_java_library = get_default_process_handle();
+      return _native_java_library;
+    }
 
     // Load java dll
     if (dll_locate_lib(buffer, sizeof(buffer), Arguments::get_dll_dir(),

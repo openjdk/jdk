@@ -177,6 +177,9 @@ JVM_IsContinuationsSupported(void);
 JNIEXPORT jboolean JNICALL
 JVM_IsForeignLinkerSupported(void);
 
+JNIEXPORT jboolean JNICALL
+JVM_IsStaticallyLinked(void);
+
 JNIEXPORT void JNICALL
 JVM_InitializeFromArchive(JNIEnv* env, jclass cls);
 
