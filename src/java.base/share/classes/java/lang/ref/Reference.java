@@ -545,7 +545,7 @@ public abstract sealed class Reference<T>
      * <a href="package-summary.html#reachability"><em>strongly reachable</em></a>.
      * This reachability is assured regardless of any optimizing transformations
      * the virtual machine may perform that might otherwise allow the object to
-     * become unreachable (see {@jls 12.6.1}). Thus, the given object is not
+     * become unreachable (see JLS {@jls 12.6.1}). Thus, the given object is not
      * reclaimable by garbage collection at least until after the invocation of
      * this method. References to the given object will not be cleared (or
      * enqueued, if applicable) by the garbage collector until after invocation
@@ -596,7 +596,7 @@ public abstract sealed class Reference<T>
      * nulled out in method {@link Object#finalize}, which may otherwise run
      * concurrently.
      *
-     * <pre> {@code
+     * {@snippet :
      * class Resource {
      *   private static ExternalResource[] externalResourceArray = ...
      *
@@ -622,7 +622,8 @@ public abstract sealed class Reference<T>
      *   private static void update(ExternalResource ext) {
      *     ext.status = ...;
      *   }
-     * }}</pre>
+     * }
+     * }
      *
      * The invocation of {@code reachabilityFence} is
      * placed <em>after</em> the call to {@code update}, to ensure that the

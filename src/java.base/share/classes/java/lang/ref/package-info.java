@@ -63,7 +63,7 @@
  *
  * A <em>reachable</em> object is any object that can be accessed in any potential
  * continuing computation from any
- * {@linkplain java.lang.Thread#isAlive live thread} (as stated in {@jls 12.6.1}).
+ * {@linkplain java.lang.Thread#isAlive live thread} (as stated in JLS {@jls 12.6.1}).
  *
  * <p> Going from strongest to weakest, the different levels of
  * reachability reflect the life cycle of an object.  They are
@@ -165,7 +165,7 @@
  * In particular, changes to the state of {@code x} made before
  * {@code reachabilityFence(x)} will be visible to the cleanup code running on
  * a Cleaner thread without additional synchronization.
- * See {@jls 17.4.5}.
+ * See JLS {@jls 17.4.5}.
  *
  * <p>
  * The interaction between references, finalizers, and the garbage collector
@@ -183,7 +183,7 @@
  * In particular, changes to the state of {@code x} made before
  * {@code reachabilityFence(x)} will be visible to the cleanup code running on
  * a finalizer thread without additional synchronization.
- * See {@jls 17.4.5}.
+ * See JLS {@jls 17.4.5}.
  *
  * @author        Mark Reinhold
  * @since         1.2
