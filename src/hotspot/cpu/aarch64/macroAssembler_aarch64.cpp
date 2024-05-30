@@ -2288,29 +2288,31 @@ Address MacroAssembler::form_address(Register Rd, Register base, int64_t byte_of
 // On Neoverse, MSUB uses the same ALU with other instructions (e.g. SDIV).
 // The combination of MUL/SUB can utilize multiple ALUs,
 // and can be somewhat faster than MSUB.
-void MacroAssembler::msub(Register Rd, Register Rn, Register Rm, Register Ra)
+void MacroAssembler::msub(Register Rd, Register Rn, Register Rm, Register Ra,
+                          Register scratch)
 {
-  assert(Rn != rscratch2 && Rm != rscratch2 && Ra != rscratch2, "reg cannot be scratch");
+  assert(Rn != scratch && Rm != scratch && Ra != scratch, "reg cannot be scratch");
 
   if (VM_Version::supports_a53mac() && Ra != zr)
     nop();
   if (VM_Version::is_neoverse()) {
-    mul(rscratch2, Rn, Rm);
-    sub(Rd, Ra, rscratch2);
+    mul(scratch, Rn, Rm);
+    sub(Rd, Ra, scratch);
   } else {
     Assembler::msub(Rd, Rn, Rm, Ra);
   }
 }
 
-void MacroAssembler::msubw(Register Rd, Register Rn, Register Rm, Register Ra)
+void MacroAssembler::msubw(Register Rd, Register Rn, Register Rm, Register Ra,
+                          Register scratch)
 {
-  assert(Rn != rscratch2 && Rm != rscratch2 && Ra != rscratch2, "reg cannot be scratch");
+  assert(Rn != scratch && Rm != scratch && Ra != scratch, "reg cannot be scratch");
 
   if (VM_Version::supports_a53mac() && Ra != zr)
     nop();
   if (VM_Version::is_neoverse()) {
-    mulw(rscratch2, Rn, Rm);
-    subw(Rd, Ra, rscratch2);
+    mulw(scratch, Rn, Rm);
+    subw(Rd, Ra, scratch);
   } else {
     Assembler::msubw(Rd, Rn, Rm, Ra);
   }

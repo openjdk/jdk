@@ -442,8 +442,8 @@ class MacroAssembler: public Assembler {
 #undef WRAP
 
 
-  void msub(Register Rd, Register Rn, Register Rm, Register Ra);
-  void msubw(Register Rd, Register Rn, Register Rm, Register Ra);
+  void msub(Register Rd, Register Rn, Register Rm, Register Ra, Register tmp = rscratch2);
+  void msubw(Register Rd, Register Rn, Register Rm, Register Ra, Register tmp = rscratch2);
 
   // macro assembly operations needed for aarch64
 

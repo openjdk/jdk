@@ -10137,7 +10137,7 @@ instruct msubI(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2, iRegIorL2I src3)
     __ msubw(as_Register($dst$$reg),
              as_Register($src1$$reg),
              as_Register($src2$$reg),
-             as_Register($src3$$reg));
+             as_Register($src3$$reg), rscratch1);
   %}
 
   ins_pipe(imac_reg_reg);
@@ -10188,7 +10188,7 @@ instruct msubL(iRegLNoSp dst, iRegL src1, iRegL src2, iRegL src3) %{
     __ msub(as_Register($dst$$reg),
             as_Register($src1$$reg),
             as_Register($src2$$reg),
-            as_Register($src3$$reg));
+            as_Register($src3$$reg), rscratch1);
   %}
 
   ins_pipe(lmac_reg_reg);
@@ -10367,7 +10367,7 @@ instruct UmodI_reg_reg(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2) %{
 
   ins_encode %{
     __ udivw(rscratch1, $src1$$Register, $src2$$Register);
-    __ msubw($dst$$Register, rscratch1, $src2$$Register, $src1$$Register);
+    __ msubw($dst$$Register, rscratch1, $src2$$Register, $src1$$Register, rscratch1);
   %}
 
   ins_pipe(idiv_reg_reg);
@@ -10384,7 +10384,7 @@ instruct UModL_reg_reg(iRegLNoSp dst, iRegL src1, iRegL src2) %{
 
   ins_encode %{
     __ udiv(rscratch1, $src1$$Register, $src2$$Register);
-    __ msub($dst$$Register, rscratch1, $src2$$Register, $src1$$Register);
+    __ msub($dst$$Register, rscratch1, $src2$$Register, $src1$$Register, rscratch1);
   %}
 
   ins_pipe(ldiv_reg_reg);
