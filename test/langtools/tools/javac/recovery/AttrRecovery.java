@@ -177,10 +177,10 @@ public class AttrRecovery extends TestRunner {
                           }
                           public interface Stream {
                               public void map(FI fi);
-                          } 
+                          }
                           public interface FI {
                               public String convert(String s);
-                          } 
+                          }
                       }
                       """;
         Path curPath = Path.of(".");
