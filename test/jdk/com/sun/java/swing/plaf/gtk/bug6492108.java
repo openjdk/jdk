@@ -41,6 +41,7 @@ import javax.swing.text.JTextComponent;
  * @test
  * @bug 6492108 8160755
  * @key headful
+ * @requires (os.family == "linux")
  * @summary Verifies that the background is painted the same for
  *          JTextArea, JTextPane, and JEditorPane.
  * @library /javax/swing/regtesthelpers
@@ -50,7 +51,6 @@ import javax.swing.text.JTextComponent;
 
 public class bug6492108 extends SwingTestHelper {
 
-    private static boolean showText;
     private JPanel panel;
 
     public static void main(String[] args) throws Throwable {
@@ -69,22 +69,17 @@ public class bug6492108 extends SwingTestHelper {
         throws Throwable
     {
         JTextComponent text = type.newInstance();
-        String name = text.getClass().getSimpleName() + " ";
-        if (showText) text.setText(name + "\neditable");
         addTextComp(parent, text);
 
         text = type.newInstance();
         text.setEditable(false);
-        if (showText) text.setText(name + "\nuneditable");
         addTextComp(parent, text);
 
         text = type.newInstance();
-        if (showText) text.setText(name + "\ndisabled");
         text.setEnabled(false);
         addTextComp(parent, text);
 
         text = type.newInstance();
-        if (showText) text.setText(name + "\ndisabled/uneditable");
         text.setEnabled(false);
         text.setEditable(false);
         addTextComp(parent, text);
