@@ -83,13 +83,6 @@ public:
     return count;
   }
 
-  void expect_node_count(Tree& tree, size_t count) {
-    EXPECT_EQ(count, count_nodes(tree));
-  }
-  void expect_null_root(Tree& tree) {
-    EXPECT_EQ(nullptr, treap_root(tree));
-  }
-
   // Tests
   // Adjacent reservations are merged if the properties match.
   void adjacent_2_nodes(const VMATree::RegionData& rd) {
@@ -97,20 +90,20 @@ public:
     for (int i = 0; i < 10; i++) {
       tree.reserve_mapping(i * 100, 100, rd);
     }
-    expect_node_count(tree, 2);
+    EXPECT_EQ(2, count_nodes(tree));
 
     // Reserving the exact same space again should result in still having only 2 nodes
     for (int i = 0; i < 10; i++) {
       tree.reserve_mapping(i * 100, 100, rd);
     }
-    expect_node_count(tree, 2);
+    EXPECT_EQ(2, count_nodes(tree));
 
     // Do it backwards instead.
     Tree tree2;
     for (int i = 9; i >= 0; i--) {
       tree2.reserve_mapping(i * 100, 100, rd);
     }
-    expect_node_count(tree2, 2);
+    EXPECT_EQ(2, count_nodes(tree2));
   }
 
   // After removing all ranges we should be left with an entirely empty tree
@@ -120,14 +113,14 @@ public:
     for (int i = 0; i < 10; i++) {
       tree.release_mapping(i * 100, 100);
     }
-    expect_null_root(tree);
+    EXPECT_EQ(nullptr, treap_root(tree));
 
     // Other way around
     tree.reserve_mapping(0, 100 * 100, rd);
     for (int i = 9; i >= 0; i--) {
       tree.release_mapping(i * 100, 100);
     }
-    expect_null_root(tree);
+    EXPECT_EQ(nullptr, treap_root(tree));
   }
 
   // Committing in a whole reserved range results in 2 nodes
@@ -143,7 +136,7 @@ public:
       EXPECT_TRUE((in == VMATree::StateType::Released && out == VMATree::StateType::Committed) ||
                   (in == VMATree::StateType::Committed && out == VMATree::StateType::Released));
     });
-    expect_node_count(tree, 2);
+    EXPECT_EQ(2, count_nodes(tree));
   }
 
   // Committing in middle of reservation ends with a sequence of 4 nodes
@@ -185,7 +178,7 @@ TEST_VM_F(VMATreeTest, OverlappingReservationsResultInTwoNodes) {
   for (int i = 99; i >= 0; i--) {
     tree.reserve_mapping(i * 100, 101, rd);
   }
-  expect_node_count(tree, 2);
+  EXPECT_EQ(2, count_nodes(tree));
 }
 
 // Low-level tests inspecting the state of the tree.
@@ -208,7 +201,7 @@ TEST_VM_F(VMATreeTest, LowLevel) {
     tree.reserve_mapping(0, 100, rd);
     tree.reserve_mapping(100, 100, rd2);
 
-    expect_node_count(tree, 3);
+    EXPECT_EQ(3, count_nodes(tree));
     int found_nodes = 0;
   }
 
@@ -225,7 +218,7 @@ TEST_VM_F(VMATreeTest, LowLevel) {
       }
     });
 
-    expect_node_count(tree, 2);
+    EXPECT_EQ(2, count_nodes(tree));
   }
 
   { // Split a reserved region into two different reserved regions
@@ -237,7 +230,7 @@ TEST_VM_F(VMATreeTest, LowLevel) {
     tree.reserve_mapping(0, 50, rd2);
     tree.reserve_mapping(50, 50, rd3);
 
-    expect_node_count(tree, 3);
+    EXPECT_EQ(3, count_nodes(tree));
   }
   { // One big reserve + release leaves an empty tree
     Tree::RegionData rd{si[0], mtNMT};
@@ -245,7 +238,7 @@ TEST_VM_F(VMATreeTest, LowLevel) {
     tree.reserve_mapping(0, 500000, rd);
     tree.release_mapping(0, 500000);
 
-    expect_null_root(tree);
+    EXPECT_EQ(nullptr, treap_root(tree));
   }
   { // A committed region inside of/replacing a reserved region
     // should replace the reserved region's metadata.
