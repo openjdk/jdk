@@ -1670,7 +1670,7 @@ public:
   VTransformElementWiseVectorNode(VTransformGraph& graph, int req, int number_of_nodes) :
     VTransformVectorNode(graph, req, number_of_nodes) {}
 
-  virtual VTransformElementWiseVectorNode* isa_ElementWiseVector() { return this; }
+  virtual VTransformElementWiseVectorNode* isa_ElementWiseVector() override { return this; }
 
   virtual VTransformApplyStatus apply(const VLoopAnalyzer& vloop_analyzer,
                                       const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
@@ -1697,7 +1697,7 @@ public:
 
   CmpBoolKind cmp_bool_kind() const { return _cmp_bool_kind; }
 
-  virtual VTransformMaskCmpVectorNode* isa_MaskCmpVector() { return this; }
+  virtual VTransformMaskCmpVectorNode* isa_MaskCmpVector() override { return this; }
 
   virtual VTransformApplyStatus apply(const VLoopAnalyzer& vloop_analyzer,
                                       const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
@@ -1715,7 +1715,7 @@ public:
   VTransformReductionVectorNode(VTransformGraph& graph, int number_of_nodes) :
     VTransformVectorNode(graph, 3, number_of_nodes) {}
 
-  virtual VTransformReductionVectorNode* isa_ReductionVector() { return this; }
+  virtual VTransformReductionVectorNode* isa_ReductionVector() override { return this; }
 
   virtual VTransformApplyStatus apply(const VLoopAnalyzer& vloop_analyzer,
                                       const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
