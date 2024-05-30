@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ import jdk.test.lib.util.FileUtils;
 public class ReadLongZipFileName {
     private static String entryName = "testFile.txt";;
 
-    public static void realMain(String args[]) {
+    public static void realMain(String[] args) {
         String longDirName = "abcdefghijklmnopqrstuvwx"; // 24 chars.
         String jarFileName = "areallylargejarfilename.jar";    // 27 chars.
         File file = null;
@@ -63,13 +63,12 @@ public class ReadLongZipFileName {
             // Create a new Jar file: use jar instead of zip to make sure long
             // names work for both zip and jar subclass.
             filename = filename + jarFileName;
-            JarOutputStream out = new JarOutputStream(
-                new BufferedOutputStream(
-                    new FileOutputStream(filename.toString())));
-            out.putNextEntry(new JarEntry(entryName));
-            out.write(1);
-            out.close();
-            myJarFile = new File(filename.toString());
+            try (JarOutputStream out = new JarOutputStream(
+                    new BufferedOutputStream(new FileOutputStream(filename)))) {
+                out.putNextEntry(new JarEntry(entryName));
+                out.write(1);
+            }
+            myJarFile = new File(filename);
             currentFileLength = myJarFile.getCanonicalPath().length();
             if (!myJarFile.exists()) {
                 fail("Jar file does not exist.");
@@ -79,20 +78,20 @@ public class ReadLongZipFileName {
         }
 
         try {
-            JarFile readJarFile = new JarFile(myJarFile);
-            JarEntry je = readJarFile.getJarEntry(entryName);
-            check(je != null);
-            DataInputStream dis = new DataInputStream(
-                readJarFile.getInputStream(je));
-            byte val = dis.readByte();
-            check(val == 1);
-            try {
-                dis.readByte();
-                fail("Read past expected EOF");
-            } catch (IOException e) {
-                pass();
+            try (JarFile readJarFile = new JarFile(myJarFile)) {
+                JarEntry je = readJarFile.getJarEntry(entryName);
+                check(je != null);
+                DataInputStream dis = new DataInputStream(
+                        readJarFile.getInputStream(je));
+                byte val = dis.readByte();
+                check(val == 1);
+                try {
+                    dis.readByte();
+                    fail("Read past expected EOF");
+                } catch (IOException e) {
+                    pass();
+                }
             }
-            readJarFile.close();
             pass("Opened Jar file for reading with a name " + currentFileLength
                  + " characters long");
         } catch (IOException e) {
@@ -124,11 +123,10 @@ public class ReadLongZipFileName {
     static void unexpected(Throwable t, String msg) {
         System.out.println(msg); failed++; t.printStackTrace();}
     static void check(boolean cond) {if (cond) pass(); else fail();}
-    static void equal(Object x, Object y) {
-        if (x == null ? y == null : x.equals(y)) pass();
-        else fail(x + " not equal to " + y);}
+
     public static void main(String[] args) throws Throwable {
         try {realMain(args);} catch (Throwable t) {unexpected(t);}
         System.out.println("\nPassed = " + passed + " failed = " + failed);
-        if (failed > 0) throw new AssertionError("Some tests failed");}
+        if (failed > 0) throw new AssertionError("Some tests failed");
+    }
 }
