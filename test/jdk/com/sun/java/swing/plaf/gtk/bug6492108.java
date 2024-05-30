@@ -150,9 +150,4 @@ public class bug6492108 extends SwingTestHelper {
             }
         }
     }
-
-    public void onBackgroundThread30() {
-        // Allow enough time for visual verification
-        try { Thread.sleep(3000); } catch (Exception e) {}
-    }
 }
