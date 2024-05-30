@@ -1542,7 +1542,7 @@ public:
 
   Node* find_transformed_input(int i, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const;
 
-  void register_new_vector(const VLoopAnalyzer& vloop_analyzer, Node* vn, Node* old_node) const;
+  void register_new_node_from_vectorization(const VLoopAnalyzer& vloop_analyzer, Node* vn, Node* old_node) const;
 
   NOT_PRODUCT(virtual const char* name() const = 0;)
   NOT_PRODUCT(void print() const;)
@@ -1660,7 +1660,7 @@ public:
 
   virtual VTransformVectorNode* isa_Vector() override { return this; }
 
-  void register_new_vector_and_replace_scalar_nodes(const VLoopAnalyzer& vloop_analyzer, Node* vn) const;
+  void register_new_node_from_vectorization_and_replace_scalar_nodes(const VLoopAnalyzer& vloop_analyzer, Node* vn) const;
 
   NOT_PRODUCT(virtual void print_spec() const override;)
 };
