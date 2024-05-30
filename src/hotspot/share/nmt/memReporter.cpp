@@ -879,6 +879,10 @@ void MemDetailDiffReporter::diff_virtual_memory_site(const NativeCallStack* stac
 }
 
 void MemDetailReporter::report_memory_file_allocations() {
-  MemoryFileTracker::Instance::Locker lock;
-  MemoryFileTracker::Instance::print_all_reports_on(output(), scale());
+  stringStream st;
+  {
+    MemoryFileTracker::Instance::Locker lock;
+    MemoryFileTracker::Instance::print_all_reports_on(&st, scale());
+  }
+  output()->print_raw(st.freeze());
 }
