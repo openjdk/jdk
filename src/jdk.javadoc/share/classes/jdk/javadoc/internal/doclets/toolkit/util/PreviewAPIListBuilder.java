@@ -33,6 +33,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 /**
  * Build list of all the preview packages, classes, constructors, fields and methods.
@@ -41,6 +42,7 @@ public class PreviewAPIListBuilder extends SummaryAPIListBuilder {
 
     private final Map<Element, JEP> elementJeps = new HashMap<>();
     private final Map<String, JEP> jeps = new HashMap<>();
+    private static final JEP NULL_SENTINEL = new JEP(0, "", "");
 
     /**
      * The JEP for a preview feature in this release.
@@ -85,9 +87,9 @@ public class PreviewAPIListBuilder extends SummaryAPIListBuilder {
                 }
                 return new JEP(number, title, status);
             }
-            return null;
+            return NULL_SENTINEL;
         });
-        if (jep != null) {
+        if (jep != NULL_SENTINEL) {
             elementJeps.put(element, jep);
             return true;
         }
@@ -99,7 +101,10 @@ public class PreviewAPIListBuilder extends SummaryAPIListBuilder {
      * {@return a sorted set of preview feature JEPs in this release}
      */
     public Set<JEP> getJEPs() {
-        return new TreeSet<>(jeps.values());
+        return jeps.values()
+                .stream()
+                .filter(jep -> jep != NULL_SENTINEL)
+                .collect(Collectors.toCollection(TreeSet::new));
     }
 
     /**

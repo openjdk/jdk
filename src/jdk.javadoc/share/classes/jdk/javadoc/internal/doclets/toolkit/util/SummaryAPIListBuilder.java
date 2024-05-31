@@ -67,7 +67,7 @@ public abstract class SummaryAPIListBuilder {
      *
      * @param configuration the current configuration of the doclet
      */
-    public SummaryAPIListBuilder(BaseConfiguration configuration) {
+    protected SummaryAPIListBuilder(BaseConfiguration configuration) {
         this.configuration = configuration;
         this.utils = configuration.utils;
         summaryMap = new EnumMap<>(SummaryElementKind.class);
