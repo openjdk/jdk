@@ -240,7 +240,7 @@ public final class MainClassTest {
                 List<String> output = appVerifier
                         .saveOutput(true)
                         .expectedExitCode(1)
-                        .executeWithRetries().getOutput();
+                        .execute().getOutput();
                 TKit.assertTextStream(String.format(
                         "Error: Could not find or load main class %s",
                         nonExistingMainClass)).apply(output.stream());

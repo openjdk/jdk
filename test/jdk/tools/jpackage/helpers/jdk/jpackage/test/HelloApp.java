@@ -327,7 +327,7 @@ public final class HelloApp {
             String... args) {
         AppOutputVerifier av = assertMainLauncher(cmd, args);
         if (av != null) {
-            return av.saveOutput(true).executeWithRetries(args);
+            return av.saveOutput(true).execute(args);
         } else {
             return null;
         }
@@ -395,6 +395,8 @@ public final class HelloApp {
                 outputFilePath = Path.of(value);
             } else if ("jpackage.test.exitCode".equals(name)) {
                 expectedExitCode = Integer.parseInt(value);
+            } else if ("jpackage.test.noexit".equals(name)) {
+                launcherNoExit = Boolean.parseBoolean(value);
             }
             return this;
         }
@@ -438,15 +440,19 @@ public final class HelloApp {
         }
 
         public void executeAndVerifyOutput(String... args) {
-            executeWithRetries(args);
+            execute(args);
             verifyOutput(args);
         }
 
-        public Executor.Result executeWithRetries(String... args) {
-            final int attempts = 3;
-            final int waitBetweenAttemptsSeconds = 5;
-            return getExecutor(args).executeAndRepeatUntilExitCode(expectedExitCode, attempts,
-                    waitBetweenAttemptsSeconds);
+        public Executor.Result execute(String... args) {
+            if (launcherNoExit) {
+                return getExecutor(args).executeWithoutExitCodeCheck();
+            } else {
+                final int attempts = 3;
+                final int waitBetweenAttemptsSeconds = 5;
+                return getExecutor(args).executeAndRepeatUntilExitCode(expectedExitCode, attempts,
+                        waitBetweenAttemptsSeconds);
+            }
         }
 
         private Executor getExecutor(String...args) {
@@ -473,6 +479,7 @@ public final class HelloApp {
                     .addArguments(launcherArgs);
         }
 
+        private boolean launcherNoExit;
         private boolean removePath;
         private boolean saveOutput;
         private final Path launcherPath;
