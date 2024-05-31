@@ -40,12 +40,6 @@
 
 class MacroAssembler: public Assembler {
 
-  friend class NativeInstruction;
-  friend class NativeCall;
-  friend class NativeMovConstReg;
-  friend class NativeCallTrampolineStub;
-  friend class NativePostCallNop;
-
  public:
   enum {
     instruction_size = 4,
@@ -96,7 +90,6 @@ class MacroAssembler: public Assembler {
     return false;
   }
 
- private:
   static bool is_jal_at(address instr)        { assert_cond(instr != nullptr); return extract_opcode(instr) == 0b1101111; }
   static bool is_jalr_at(address instr)       { assert_cond(instr != nullptr); return extract_opcode(instr) == 0b1100111 && extract_funct3(instr) == 0b000; }
   static bool is_branch_at(address instr)     { assert_cond(instr != nullptr); return extract_opcode(instr) == 0b1100011; }
@@ -126,6 +119,12 @@ class MacroAssembler: public Assembler {
             Assembler::extract(Assembler::ld_instr(instr), 25, 20) == shift);    // shamt field
   }
 
+  static bool is_movptr1_at(address instr);
+  static bool is_movptr2_at(address instr);
+
+  static bool is_lwu_to_zr(address instr);
+
+ private:
   static Register extract_rs1(address instr);
   static Register extract_rs2(address instr);
   static Register extract_rd(address instr);
@@ -254,13 +253,9 @@ class MacroAssembler: public Assembler {
            extract_rs1(load) == extract_rd(load);
   }
 
-  static bool is_movptr1_at(address instr);
-  static bool is_movptr2_at(address instr);
   static bool is_li32_at(address instr);
   static bool is_li64_at(address instr);
   static bool is_pc_relative_at(address branch);
-
-  static bool is_lwu_to_zr(address instr);
 
   static bool is_membar(address addr) {
     return (Bytes::get_native_u4(addr) & 0x7f) == 0b1111 && extract_funct3(addr) == 0;
