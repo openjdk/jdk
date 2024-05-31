@@ -30,8 +30,8 @@ int main()
 {
   DWORD active_processor_count = GetActiveProcessorCount(ALL_PROCESSOR_GROUPS);
   if (active_processor_count == 0) {
-      printf("GetActiveProcessorCount failed with error: %x\n", GetLastError());
-      return 1;
+    printf("GetActiveProcessorCount failed with error: %x\n", GetLastError());
+    return 1;
   }
 
   printf("IsWindowsServer: %d\n", IsWindowsServer() ? 1 : 0);
@@ -47,8 +47,8 @@ int main()
         return 1;
       }
     } else {
-        printf("GetActiveProcessorCount failed with error: %x\n", GetLastError());
-        return 1;
+      printf("GetActiveProcessorCount failed with error: %x\n", GetLastError());
+      return 1;
     }
   } else {
     printf("Unexpected GetProcessGroupAffinity success result.\n");
@@ -65,8 +65,8 @@ int main()
   for (USHORT i=0; i < group_count; i++) {
     DWORD active_processors_in_group = GetActiveProcessorCount(i);
     if (active_processors_in_group == 0) {
-        printf("GetActiveProcessorCount(%d) failed with error: %x\n", i, GetLastError());
-        return 1;
+      printf("GetActiveProcessorCount(%d) failed with error: %x\n", i, GetLastError());
+      return 1;
     }
 
     printf("%d,", active_processors_in_group);
