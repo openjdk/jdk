@@ -1793,10 +1793,10 @@ bool VTransformGraph::schedule() {
     if (!pre_visited.test_set(vtn->_idx)) {
       // Forward arc in graph (pre-visit).
     } else if (!post_visited.test(vtn->_idx)) {
-      // Forward arc in graph. Check if any outputs still need to be visited:
-      //   Yes -> we are mid-visit.
-      //   No  -> post-visit.
-      const int old_length = stack.length();
+      // Forward arc in graph. Check if all uses were already visited:
+      //   Yes -> post-visit.
+      //   No  -> we are mid-visit.
+      bool all_uses_already_visited = true;
 
       for (int i = 0; i < vtn->outs(); i++) {
         VTransformNode* use = vtn->out(i);
@@ -1827,18 +1827,17 @@ bool VTransformGraph::schedule() {
           return false;
         }
         stack.push(use);
+        all_uses_already_visited = false;
       }
 
-      if (stack.length() == old_length) {
-        // There were no additional uses, post visit node now
+      if (all_uses_already_visited) {
         stack.pop();
-        post_visited.set(vtn->_idx);
-        _schedule.at_put_grow(rpo_idx--, vtn);
+        post_visited.set(vtn->_idx);           // post-visit
+        _schedule.at_put_grow(rpo_idx--, vtn); // assign rpo_idx
       }
 
     } else {
-      // This node has already been post-visited, ignore.
-      stack.pop();
+      stack.pop(); // Already post-visited. Ignore secondary edge.
     }
   }
 
@@ -1849,7 +1848,6 @@ bool VTransformGraph::schedule() {
 #endif
 
   assert(rpo_idx == -1, "used up all rpo_idx, rpo_idx=%d", rpo_idx);
-
   return true;
 }
 

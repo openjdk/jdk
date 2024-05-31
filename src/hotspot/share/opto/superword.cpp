@@ -3237,7 +3237,7 @@ void SuperWordVTransformBuilder::set_req_all_for_vector(VTransformNode* vtn, Vec
 }
 
 void SuperWordVTransformBuilder::add_dependencies(VTransformNode* vtn, VectorSet& vtn_dependencies, Node* n) {
-  for (VLoopDependencyGraph::PredsIterator preds(dependency_graph(), n); !preds.done(); preds.next()) {
+  for (VLoopDependencyGraph::PredsIterator preds(_vloop_analyzer.dependency_graph(), n); !preds.done(); preds.next()) {
     Node* pred = preds.current();
     if (!in_bb(pred)) { continue; }
 

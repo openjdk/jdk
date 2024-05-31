@@ -706,14 +706,6 @@ private:
     return _vloop_analyzer.body().body();
   }
 
-  int bb_idx(const Node* n) const     {
-    return _vloop_analyzer.body().bb_idx(n);
-  }
-
-  const VLoopDependencyGraph& dependency_graph() const {
-    return _vloop_analyzer.dependency_graph();
-  }
-
   // Helper methods for building VTransformGraph.
   VTransformNode* get_vtnode_or_null(Node* n) const {
     VTransformNode** ptr = _idx_to_vtnode.get(n->_idx);
