@@ -96,8 +96,8 @@ class BytecodePrinter {
   // the adjustments that BytecodeStream performs applies.
   void trace(const methodHandle& method, address bcp, uintptr_t tos, uintptr_t tos2, outputStream* st) {
     ResourceMark rm;
-    bool methodChange = _current_method != method();
-    if (methodChange) {
+    bool method_changed = _current_method != method();
+    if (method_changed) {
       // Note 1: This code will not work as expected with true MT/MP.
       //         Need an explicit lock or a different solution.
       // It is possible for this block to be skipped, if a garbage
@@ -123,7 +123,7 @@ class BytecodePrinter {
     _next_pc = is_wide() ? bcp+2 : bcp+1;
     // Trace each bytecode unless we're truncating the tracing output, then only print the first
     // bytecode in every method as well as returns/throws that pop control flow
-    if (!TraceBytecodesTruncated || methodChange ||
+    if (!TraceBytecodesTruncated || method_changed ||
         code == Bytecodes::_athrow ||
         code == Bytecodes::_return_register_finalizer ||
         (code >= Bytecodes::_ireturn && code <= Bytecodes::_return)) {
