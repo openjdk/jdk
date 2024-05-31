@@ -604,6 +604,7 @@ public class ClassReader {
                 final List<Type> actualsCp = actuals;
                 outer = new ClassType(outer, actuals, t) {
                         boolean completed = false;
+                        boolean typeArgsSet = false;
                         @Override @DefinedBy(Api.LANGUAGE_MODEL)
                         public Type getEnclosingType() {
                             if (!completed) {
@@ -636,15 +637,18 @@ public class ClassReader {
 
                         @Override
                         public List<Type> getTypeArguments() {
-                            List<Type> formalsCp = ((ClassType)t.type.tsym.type).typarams_field;
-                            if (formalsCp != null && !formalsCp.isEmpty()) {
-                                if (actualsCp.length() == formalsCp.length()) {
-                                    List<Type> a = actualsCp;
-                                    List<Type> f = formalsCp;
-                                    while (a.nonEmpty()) {
-                                        a.head = a.head.withTypeVar(f.head);
-                                        a = a.tail;
-                                        f = f.tail;
+                            if (!typeArgsSet) {
+                                typeArgsSet = true;
+                                List<Type> formalsCp = ((ClassType)t.type.tsym.type).typarams_field;
+                                if (formalsCp != null && !formalsCp.isEmpty()) {
+                                    if (actualsCp.length() == formalsCp.length()) {
+                                        List<Type> a = actualsCp;
+                                        List<Type> f = formalsCp;
+                                        while (a.nonEmpty()) {
+                                            a.head = a.head.withTypeVar(f.head);
+                                            a = a.tail;
+                                            f = f.tail;
+                                        }
                                     }
                                 }
                             }
