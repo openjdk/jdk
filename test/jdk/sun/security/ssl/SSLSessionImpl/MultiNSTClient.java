@@ -31,7 +31,7 @@
  * @run main/othervm MultiNSTClient -Djdk.tls.client.protocols=TLSv1.3 -Djdk.tls.server.enableSessionTicketExtension=true -Djdk.tls.client.enableSessionTicketExtension=false
  * @run main/othervm MultiNSTClient -Djdk.tls.client.protocols=TLSv1.3 -Djdk.tls.server.enableSessionTicketExtension=false -Djdk.tls.client.enableSessionTicketExtension=false
  * @run main/othervm MultiNSTClient -Djdk.tls.client.protocols=TLSv1.2 -Djdk.tls.server.enableSessionTicketExtension=true -Djdk.tls.client.enableSessionTicketExtension=true
- * @summary jkljkf fjkslfjfdsl
+ * @summary Verifies multiple session tickets are PSKs are used by JSSE
  */
 
 
@@ -42,6 +42,12 @@ import jdk.test.lib.process.ProcessTools;
 import javax.net.ssl.SSLSession;
 import java.util.HexFormat;
 import java.util.List;
+
+/**
+ * This test verifies that multiple NSTs and PSKs are sent by a JSSE server.
+ * Then JSSE client is able to store them all and resume the connection.  It
+ * requires specific text in the TLS debugging to verify the success.
+ */
 
 public class MultiNSTClient {
 
@@ -153,6 +159,3 @@ public class MultiNSTClient {
         System.exit(0);
     }
 }
-
-//run main/othervm -Djdk.tls.client.protocols=TLSv1.2 -Djdk.tls.server.enableSessionTicketExtension=false -Djdk.tls.client.enableSessionTicketExtension=false MultiNSTClient
-//run main/othervm -Djdk.tls.client.protocols=TLSv1.2 -Djdk.tls.server.enableSessionTicketExtension=true -Djdk.tls.client.enableSessionTicketExtension=true MultiNSTClient
