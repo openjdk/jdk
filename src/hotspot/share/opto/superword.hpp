@@ -674,7 +674,6 @@ private:
   VTransformGraph& _graph;
 
   ResourceHashtable</* Node::_idx*/ int, VTransformNode* /* or null*/> _idx_to_vtnode;
-  VectorSet _dependency_set;
 
 public:
   SuperWordVTransformBuilder(const PackSet& packset,
@@ -689,6 +688,10 @@ public:
 
 private:
   void build_vtransform();
+  void build_vector_vtnodes_for_packed_nodes();
+  void build_scalar_vtnodes_for_non_packed_nodes();
+  void build_edges_for_vector_vtnodes(VectorSet& dependency_set);
+  void build_edges_for_scalar_vtnodes(VectorSet& dependency_set);
 
   // VLoop accessors.
   CountedLoopNode* cl()     const { return _vloop.cl(); }
@@ -732,11 +735,11 @@ private:
   VTransformVectorNode* make_vtnode_for_pack(const Node_List* pack) const;
   VTransformNode* find_input_for_vector(int j, Node_List* pack);
   VTransformNode* find_scalar(Node* n);
-  void set_req_for_scalar(VTransformNode* vtn, int j, Node* n);
-  void set_req_for_vector(VTransformNode* vtn, int j, Node_List* pack);
-  void set_req_all_for_scalar(VTransformNode* vtn, Node* n);
-  void set_req_all_for_vector(VTransformNode* vtn, Node_List* pack);
-  void add_dependencies(VTransformNode* vtn, Node* n);
+  void set_req_for_scalar(VTransformNode* vtn, VectorSet& dependency_set, int j, Node* n);
+  void set_req_for_vector(VTransformNode* vtn, VectorSet& dependency_set, int j, Node_List* pack);
+  void set_req_all_for_scalar(VTransformNode* vtn, VectorSet& dependency_set, Node* n);
+  void set_req_all_for_vector(VTransformNode* vtn, VectorSet& dependency_set, Node_List* pack);
+  void add_dependencies(VTransformNode* vtn, VectorSet& dependency_set, Node* n);
 };
 
 #endif // SHARE_OPTO_SUPERWORD_HPP

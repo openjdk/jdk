@@ -1397,7 +1397,6 @@ private:
 
   VTransformNodeIDX _next_idx;
   GrowableArray<VTransformNode*> _vtnodes;
-  VTransformNode* _cl_vtnode; // vtnode of the vloop.cl(), the "root" of the graph.
 
   // Schedule (linearization) of the graph. We use this to reorder the memory graph
   // before inserting vector operations.
@@ -1429,7 +1428,6 @@ public:
     _arena(mtCompiler),
     _next_idx(0),
     _vtnodes(&_arena, _vloop.estimated_body_length(), 0, nullptr),
-    _cl_vtnode(nullptr),
     _schedule(&_arena, _vloop.estimated_body_length(), 0, nullptr),
     _mem_ref_for_main_loop_alignment(mem_ref_for_main_loop_alignment),
     _aw_for_main_loop_alignment(aw_for_main_loop_alignment)
@@ -1451,7 +1449,6 @@ public:
   Arena* arena() { return &_arena; }
   VTransformNodeIDX new_idx() { return _next_idx++; }
   void add_vtnode(VTransformNode* vtnode);
-  void set_cl_vtnode(VTransformNode* cl_vtnode) { _cl_vtnode = cl_vtnode; }
 
   bool schedule();
   void apply();

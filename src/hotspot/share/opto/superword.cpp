@@ -2970,7 +2970,16 @@ bool SuperWord::vtransform() const {
 
 void SuperWordVTransformBuilder::build_vtransform() {
   assert(!_packset.is_empty(), "must have non-empty packset");
-  // Create VTransformVectorNode for all packed nodes:
+
+  build_vector_vtnodes_for_packed_nodes();
+  build_scalar_vtnodes_for_non_packed_nodes();
+
+  VectorSet vtn_dependencies; // Shared, but cleared for every vtnode.
+  build_edges_for_vector_vtnodes(vtn_dependencies);
+  build_edges_for_scalar_vtnodes(vtn_dependencies);
+}
+
+void SuperWordVTransformBuilder::build_vector_vtnodes_for_packed_nodes() {
   for (int i = 0; i < _packset.length(); i++) {
     Node_List* pack = _packset.at(i);
     VTransformVectorNode* vtn = make_vtnode_for_pack(pack);
@@ -2979,55 +2988,54 @@ void SuperWordVTransformBuilder::build_vtransform() {
       set_vtnode(n, vtn);
     }
   }
+}
 
-  // Create VTransformScalarNode for all non-packed nodes:
+void SuperWordVTransformBuilder::build_scalar_vtnodes_for_non_packed_nodes() {
   for (int i = 0; i < body().length(); i++) {
     Node* n = body().at(i);
     if (_packset.get_pack(n) != nullptr) { continue; }
     VTransformScalarNode* vtn = new (_graph.arena()) VTransformScalarNode(_graph, n);
     set_vtnode(n, vtn);
   }
+}
 
-  // This is the "root" of the graph.
-  _graph.set_cl_vtnode(get_vtnode(cl()));
-
-  // Map edges for packed nodes:
+void SuperWordVTransformBuilder::build_edges_for_vector_vtnodes(VectorSet& vtn_dependencies) {
   for (int i = 0; i < _packset.length(); i++) {
     Node_List* pack = _packset.at(i);
     Node* p0 = pack->at(0);
 
     VTransformVectorNode* vtn = get_vtnode(p0)->isa_Vector();
     assert(vtn != nullptr, "all packs must have vector vtnodes");
-    _dependency_set.clear(); // Add every dependency only once per vtn.
+    vtn_dependencies.clear(); // Add every dependency only once per vtn.
 
     if (p0->is_Load()) {
-      set_req_for_scalar(vtn, MemNode::Address, p0);
+      set_req_for_scalar(vtn, vtn_dependencies, MemNode::Address, p0);
     } else if (p0->is_Store()) {
-      set_req_for_scalar(vtn, MemNode::Address, p0);
-      set_req_for_vector(vtn, MemNode::ValueIn, pack);
+      set_req_for_scalar(vtn, vtn_dependencies, MemNode::Address, p0);
+      set_req_for_vector(vtn, vtn_dependencies, MemNode::ValueIn, pack);
     } else if (vtn->isa_ElementWiseVector() != nullptr) {
       if (VectorNode::is_muladds2i(p0)) {
         // A special kind of binary element-wise vector op: the inputs are "ints" a and b,
         // but reinterpreted as two "shorts" [a0, a1] and [b0, b1]:
         //   v = MulAddS2I(a, b) = a0 * b0 + a1 + b1
-        set_req_for_vector(vtn, 1, pack);
-        set_req_for_vector(vtn, 2, pack);
+        set_req_for_vector(vtn, vtn_dependencies, 1, pack);
+        set_req_for_vector(vtn, vtn_dependencies, 2, pack);
       } else if (VectorNode::is_scalar_rotate(p0)) {
-        set_req_for_vector(vtn, 1, pack);
+        set_req_for_vector(vtn, vtn_dependencies, 1, pack);
         Node* in2 = p0->in(2);
         if (in2->is_Con() && Matcher::supports_vector_constant_rotates(in2->get_int())) {
-          set_req_for_scalar(vtn, 2, p0);
+          set_req_for_scalar(vtn, vtn_dependencies, 2, p0);
         } else {
-          set_req_for_vector(vtn, 2, pack);
+          set_req_for_vector(vtn, vtn_dependencies, 2, pack);
         }
       } else if (VectorNode::is_roundopD(p0)) {
-        set_req_for_vector(vtn, 1, pack);
-        set_req_for_scalar(vtn, 2, p0); // constant rounding mode
+        set_req_for_vector(vtn, vtn_dependencies, 1, pack);
+        set_req_for_scalar(vtn, vtn_dependencies, 2, p0); // constant rounding mode
       } else if (p0->is_CMove()) {
         // Cmp + Bool + CMove -> VectorMaskCmp + VectorBlend.
-        set_req_for_vector(vtn, 1, pack); // MaskCmpVector
-        set_req_for_vector(vtn, 2, pack); // Vector
-        set_req_for_vector(vtn, 3, pack); // Vector
+        set_req_for_vector(vtn, vtn_dependencies, 1, pack); // MaskCmpVector
+        set_req_for_vector(vtn, vtn_dependencies, 2, pack); // Vector
+        set_req_for_vector(vtn, vtn_dependencies, 3, pack); // Vector
         VTransformMaskCmpVectorNode* vtn_mask_cmp = vtn->in(1)->isa_MaskCmpVector();
         assert(vtn_mask_cmp != nullptr, "CMove always expects Cmp + Bool as inputs");
         // Swap the inputs if the test was negated.
@@ -3035,11 +3043,11 @@ void SuperWordVTransformBuilder::build_vtransform() {
           vtn->swap_req(2, 3);
         }
       } else {
-        set_req_all_for_vector(vtn, pack);
+        set_req_all_for_vector(vtn, vtn_dependencies, pack);
       }
     } else if (vtn->isa_ReductionVector() != nullptr) {
-      set_req_for_scalar(vtn, 1, p0);
-      set_req_for_vector(vtn, 2, pack);
+      set_req_for_scalar(vtn, vtn_dependencies, 1, p0);
+      set_req_for_vector(vtn, vtn_dependencies, 2, pack);
     } else {
       DEBUG_ONLY( vtn->print(); )
       assert(false, "vtn type not handled for inputs");
@@ -3047,35 +3055,36 @@ void SuperWordVTransformBuilder::build_vtransform() {
 
     for (uint k = 0; k < pack->size(); k++) {
       Node* n = pack->at(k);
-      add_dependencies(vtn, n);
+      add_dependencies(vtn, vtn_dependencies, n);
     }
   }
+}
 
-  // Map edges for non-packed nodes, i.e. scalar vtnodes:
+void SuperWordVTransformBuilder::build_edges_for_scalar_vtnodes(VectorSet& vtn_dependencies) {
   for (int i = 0; i < body().length(); i++) {
     Node* n = body().at(i);
     VTransformScalarNode* vtn = get_vtnode(n)->isa_Scalar();
     if (vtn == nullptr) { continue; }
-    _dependency_set.clear(); // Add every dependency only once per vtn.
+    vtn_dependencies.clear(); // Add every dependency only once per vtn.
 
     if (n->is_Load()) {
-      set_req_for_scalar(vtn, MemNode::Address, n);
+      set_req_for_scalar(vtn, vtn_dependencies, MemNode::Address, n);
     } else if (n->is_Store()) {
-      set_req_for_scalar(vtn, MemNode::Address, n);
-      set_req_for_scalar(vtn, MemNode::ValueIn, n);
+      set_req_for_scalar(vtn, vtn_dependencies, MemNode::Address, n);
+      set_req_for_scalar(vtn, vtn_dependencies, MemNode::ValueIn, n);
     } else if (n->is_CountedLoop()) {
       // Is "root", has no dependency.
       continue;
     } else if (n->is_Phi()) {
       // CountedLoop Phi's: ignore backedge (and entry value).
       assert(n->in(0) == cl(), "only Phi's from the CountedLoop allowed");
-      set_req_for_scalar(vtn, 0, n);
+      set_req_for_scalar(vtn, vtn_dependencies, 0, n);
       continue;
     } else {
-      set_req_all_for_scalar(vtn, n);
+      set_req_all_for_scalar(vtn, vtn_dependencies, n);
     }
 
-    add_dependencies(vtn, n);
+    add_dependencies(vtn, vtn_dependencies, n);
   }
 }
 
@@ -3122,11 +3131,11 @@ VTransformVectorNode* SuperWordVTransformBuilder::make_vtnode_for_pack(const Nod
   return vtn;
 }
 
-void SuperWordVTransformBuilder::set_req_for_scalar(VTransformNode* vtn, int j, Node* n) {
+void SuperWordVTransformBuilder::set_req_for_scalar(VTransformNode* vtn, VectorSet& vtn_dependencies, int j, Node* n) {
   Node* def = n->in(j);
   VTransformNode* req = find_scalar(def);
   vtn->set_req(j, req);
-  _dependency_set.set(req->_idx);
+  vtn_dependencies.set(req->_idx);
 }
 
 VTransformNode* SuperWordVTransformBuilder::find_input_for_vector(int j, Node_List* pack) {
@@ -3234,31 +3243,31 @@ VTransformNode* SuperWordVTransformBuilder::find_scalar(Node* n) {
   return vtn;
 }
 
-void SuperWordVTransformBuilder::set_req_for_vector(VTransformNode* vtn, int j, Node_List* pack) {
+void SuperWordVTransformBuilder::set_req_for_vector(VTransformNode* vtn, VectorSet& vtn_dependencies, int j, Node_List* pack) {
   VTransformNode* req = find_input_for_vector(j, pack);
   vtn->set_req(j, req);
-  _dependency_set.set(req->_idx);
+  vtn_dependencies.set(req->_idx);
 }
 
-void SuperWordVTransformBuilder::set_req_all_for_scalar(VTransformNode* vtn, Node* n) {
+void SuperWordVTransformBuilder::set_req_all_for_scalar(VTransformNode* vtn, VectorSet& vtn_dependencies, Node* n) {
   for (uint j = 0; j < n->req(); j++) {
     Node* def = n->in(j);
     if (def == nullptr) { continue; }
-    set_req_for_scalar(vtn, j, n);
+    set_req_for_scalar(vtn, vtn_dependencies, j, n);
   }
 }
 
-void SuperWordVTransformBuilder::set_req_all_for_vector(VTransformNode* vtn, Node_List* pack) {
+void SuperWordVTransformBuilder::set_req_all_for_vector(VTransformNode* vtn, VectorSet& vtn_dependencies, Node_List* pack) {
   Node* p0 = pack->at(0);
   // Ignore ctrl, start at input 1.
   for (uint j = 1; j < p0->req(); j++) {
     Node* def = p0->in(j);
     if (def == nullptr) { continue; }
-    set_req_for_vector(vtn, j, pack);
+    set_req_for_vector(vtn, vtn_dependencies, j, pack);
   }
 }
 
-void SuperWordVTransformBuilder::add_dependencies(VTransformNode* vtn, Node* n) {
+void SuperWordVTransformBuilder::add_dependencies(VTransformNode* vtn, VectorSet& vtn_dependencies, Node* n) {
   for (VLoopDependencyGraph::PredsIterator preds(dependency_graph(), n); !preds.done(); preds.next()) {
     Node* pred = preds.current();
     if (!in_bb(pred)) { continue; }
@@ -3271,7 +3280,7 @@ void SuperWordVTransformBuilder::add_dependencies(VTransformNode* vtn, Node* n) 
     // Reduction self-cycle?
     if (vtn == dependency && is_marked_reduction(n)) { continue; }
 
-    if (_dependency_set.test_set(dependency->_idx)) { continue; }
+    if (vtn_dependencies.test_set(dependency->_idx)) { continue; }
     vtn->add_dependency(dependency); // Add every dependency only once per vtn.
   }
 }

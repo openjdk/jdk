@@ -1778,7 +1778,6 @@ bool VTransformGraph::schedule() {
   VectorSet post_visited;
 
   // Push all "root" nodes, i.e. those that have no inputs (req or dependency):
-  assert(_cl_vtnode != nullptr && !_cl_vtnode->has_req_or_dep(), "cl is a 'root' node");
   for (int i = 0; i < _vtnodes.length(); i++) {
     VTransformNode* vtn = _vtnodes.at(i);
     if (!vtn->has_req_or_dep()) {
