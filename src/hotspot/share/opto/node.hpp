@@ -1106,7 +1106,7 @@ public:
   Node* find_exact_control(Node* ctrl);
 
   // Check if 'this' node dominates or equal to 'sub'.
-  bool dominates(Node* sub, Node_List &nlist);
+  bool dominates(Node* sub, Node_Stack &nstack);
 
 protected:
   bool remove_dead_region(PhaseGVN *phase, bool can_reshape);
@@ -1891,6 +1891,10 @@ public:
   }
   void set_index(uint i) {
     _inode_top->indx = i;
+  }
+  void set_index_at(uint i, uint index) {
+    assert(_inodes + i <= _inode_top, "in range");
+    _inodes[i].indx = index;
   }
   uint size_max() const { return (uint)pointer_delta(_inode_max, _inodes,  sizeof(INode)); } // Max size
   uint size() const { return (uint)pointer_delta((_inode_top+1), _inodes,  sizeof(INode)); } // Current size

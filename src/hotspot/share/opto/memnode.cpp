@@ -472,7 +472,7 @@ bool MemNode::all_controls_dominate(Node* dom, Node* sub) {
     // Check all control edges of 'dom'.
 
     ResourceMark rm;
-    Node_List nlist;
+    Node_Stack nstack(0);
     Unique_Node_List dom_list;
 
     dom_list.push(dom);
@@ -492,7 +492,7 @@ bool MemNode::all_controls_dominate(Node* dom, Node* sub) {
       } else if (n->is_Con() || n->is_Start() || n->is_Root()) {
         only_dominating_controls = true;
       } else if (n->is_CFG()) {
-        if (n->dominates(sub, nlist))
+        if (n->dominates(sub, nstack))
           only_dominating_controls = true;
         else
           return false;

@@ -35,6 +35,7 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 
+import java.util.Enumeration;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -125,6 +126,21 @@ public class Maps {
         }
         map.putAll(staticMap);
         return map;
+    }
+
+    @Benchmark
+    public int testConcurrentHashMapIterators() {
+        ConcurrentHashMap<Integer, Integer> map = (ConcurrentHashMap<Integer, Integer>) staticMap;
+        int sum = 0;
+        Enumeration it = map.elements();
+        while (it.hasMoreElements()) {
+            sum += (int) it.nextElement();
+        }
+        it = map.keys();
+        while (it.hasMoreElements()) {
+            sum += (int) it.nextElement();
+        }
+        return sum;
     }
 
     private static class SimpleRandom {
