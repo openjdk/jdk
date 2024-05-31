@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,6 @@
 package com.sun.crypto.provider;
 
 import java.util.Arrays;
-import java.security.*;
-import java.security.spec.*;
-import javax.crypto.*;
-import javax.crypto.spec.*;
 
 /**
  * This class acts as the base class for AES KeyWrap algorithms as defined
@@ -58,7 +54,7 @@ class KWUtil {
                 ("Invalid data length for W: " + inLen);
         assert(icvIn.length == SEMI_BLKSIZE) : "Invalid ICV buffer size";
 
-        // overwrite the first block of in with the icv semiblock
+        // overwrite the first block of in with the icv semi-block
         System.arraycopy(icvIn, 0, in, 0, SEMI_BLKSIZE);
 
         int n = inLen / SEMI_BLKSIZE - 1;
@@ -93,7 +89,7 @@ class KWUtil {
      *   data until the initial value and padding bytes are verified.
      * @param in input bytes, i.e. the to-be-processed data
      * @param inLen length of the to-be-processed bytes
-     * @param ivOut buffer for holding the recovered ICV semiblock
+     * @param ivOut buffer for holding the recovered ICV semi-block
      * @param cipher the initialized cipher object used
      * @return the recovered data length, i.e. {@code (inLen - icvOut.length)}
      */

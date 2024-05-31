@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,9 @@ package com.sun.crypto.provider;
 
 import java.security.InvalidKeyException;
 import java.security.ProviderException;
-import sun.security.util.ArrayUtil;
-import java.util.Objects;
+
 import jdk.internal.vm.annotation.IntrinsicCandidate;
+import sun.security.util.ArrayUtil;
 
 /**
  * This class represents ciphers in electronic codebook (ECB) mode.

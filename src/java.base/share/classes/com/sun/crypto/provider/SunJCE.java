@@ -131,12 +131,9 @@ public final class SunJCE extends Provider {
         if (System.getSecurityManager() == null) {
             putEntries();
         } else {
-            AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                @Override
-                public Void run() {
-                    putEntries();
-                    return null;
-                }
+            AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+                putEntries();
+                return null;
             });
         }
         if (instance == null) {

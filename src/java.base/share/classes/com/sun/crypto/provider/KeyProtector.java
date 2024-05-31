@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,7 +98,7 @@ final class KeyProtector {
                         iterationCount > MAX_ITERATION_COUNT) {
                     iterationCount = DEFAULT_ITERATION_COUNT;
                 }
-            } catch (NumberFormatException e) {}
+            } catch (NumberFormatException ignored) {}
         }
         ITERATION_COUNT = iterationCount;
     }
@@ -369,7 +369,7 @@ final class KeyProtector {
             sKey = new PBEKey(pbeKeySpec, "PBEWithMD5AndTripleDES");
             pbeKeySpec.clearPassword();
 
-            SealedObjectForKeyProtector soForKeyProtector = null;
+            SealedObjectForKeyProtector soForKeyProtector;
             if (!(so instanceof SealedObjectForKeyProtector)) {
                 soForKeyProtector = new SealedObjectForKeyProtector(so);
             } else {
