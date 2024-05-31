@@ -3043,14 +3043,72 @@ IfNode* PhaseIdealLoop::insert_cmpi_loop_exit(IfNode* if_cmpu, IdealLoopTree *lo
     // We therefore can't add a single exit condition.
     return nullptr;
   }
-  // The loop exit condition is !(i <u limit) ==> (i < 0 || i >= limit).
-  // Split out the exit condition (i < 0) for stride < 0 or (i >= limit) for stride > 0.
-  Node* limit = nullptr;
+  // The unsigned loop exit condition is
+  //   !(i <u  limit)
+  // =   i >=u limit
+  // If
+  //   limit >= 0   (COND)
+  // then the unsigned loop exit condition is equivalent to the signed loop exit condition
+  //   i < 0 || i >= limit
+  //
+  // Note that this does not hold for limit < 0:
+  // Example with i = -3 and limit = -2:
+  //   i  < 0
+  //   -2 < 0
+  // is true and thus also "i < 0 || i >= limit". But
+  //   i  >=u limit
+  //   -3 >=u -2
+  // is false.
+  Node* limit = cmpu->in(2);
+  const TypeInt* type_limit = _igvn.type(limit)->is_int();
+  if (type_limit->_lo < 0) {
+    return nullptr;
+  }
+
+  // For stride < 0, we split off the signed loop exit condition
+  //   i < 0
+  // and for stride > 0
+  //   i >= limit
+  // such that we have the following graph before Partial Peeling:
+  //
+  // Loop:
+  //   <peeled section>
+  //   Signed Loop Exit Condition i < 0 or i >= limit
+  //   <-- CUT HERE -->
+  //   Unsigned Loop Exit Condition i >=u limit
+  //   <rest of unpeeled section>
+  //   goto Loop
+  //
+  // We either exit the loop with the Unsigned Loop Exit Condition if the Signed Loop Exit Condition is false, or we
+  // exit the loop with the Signed Loop Exit Condition. In the latter case, the Unsigned Loop Exit Condition also needs
+  // to be true (otherwise, we wrongly exit a loop that should not have been exited). More formally, we need to ensure:
+  //   "Signed Loop Exit Test" implies "Unsigned Loop Exit Test"
+  // This is trivially given:
+  // - Stride < 0:
+  //      i <   0        // Signed Loop Exit Condition
+  //      i >u  MAX_INT  // all negative values are greater than MAX_INT when converted to unsigned
+  //      i >=u limit    // limit <= MAX_INT (trivially) and since limit >= 0 assumption (COND)
+  //    which is the Unsigned Loop Exit Condition.
+  // - Stride > 0:
+  //      i >=  limit   // Signed Loop Exit Condition
+  //      i >=u limit   // Since limit >= 0 assumption (COND)
+  //    which is the Unsigned Loop Exit Condition.
+  //
+  // After Partial Peeling, we have the following structure:
+  //   <cloned peeled section>
+  //   Signed Loop Exit Condition i < 0 or i >= limit
+  //   Loop:
+  //     Unsigned Loop Exit Condition i >=u limit
+  //     <rest of unpeeled section>
+  //     <peeled section>
+  //     Signed Loop Exit Condition i < 0 or i >= limit
+  //     goto Loop
+  Node* rhs_cmpi;
   if (stride > 0) {
-    limit = cmpu->in(2);
+    rhs_cmpi = limit; // For i >= limit
   } else {
-    limit = _igvn.makecon(TypeInt::ZERO);
-    set_ctrl(limit, C->root());
+    rhs_cmpi = _igvn.makecon(TypeInt::ZERO); // For i < 0
+    set_ctrl(rhs_cmpi, C->root());
   }
   // Create a new region on the exit path
   RegionNode* reg = insert_region_before_proj(lp_exit);
@@ -3058,7 +3116,7 @@ IfNode* PhaseIdealLoop::insert_cmpi_loop_exit(IfNode* if_cmpu, IdealLoopTree *lo
 
   // Clone the if-cmpu-true-false using a signed compare
   BoolTest::mask rel_i = stride > 0 ? bol->_test._test : BoolTest::ge;
-  ProjNode* cmpi_exit = insert_if_before_proj(cmpu->in(1), Signed, rel_i, limit, lp_continue);
+  ProjNode* cmpi_exit = insert_if_before_proj(cmpu->in(1), Signed, rel_i, rhs_cmpi, lp_continue);
   reg->add_req(cmpi_exit);
 
   // Clone the if-cmpu-true-false
