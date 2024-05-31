@@ -31,7 +31,7 @@
 uint FreeRegionList::_unrealistically_long_length = 0;
 
 #ifndef PRODUCT
-void HeapRegionSetBase::verify_region(HeapRegion* hr) {
+void HeapRegionSetBase::verify_region(G1HeapRegion* hr) {
   assert(hr->containing_set() == this, "Inconsistent containing set for %u", hr->hrm_index());
   assert(!hr->is_young(), "Adding young region %u", hr->hrm_index()); // currently we don't use these sets for young regions
   assert(_checker == nullptr || _checker->is_correct_type(hr), "Wrong type of region %u (%s) and set %s",
@@ -99,11 +99,11 @@ void FreeRegionList::remove_all() {
   check_mt_safety();
   verify_optional();
 
-  HeapRegion* curr = _head;
+  G1HeapRegion* curr = _head;
   while (curr != nullptr) {
     verify_region(curr);
 
-    HeapRegion* next = curr->next();
+    G1HeapRegion* next = curr->next();
     curr->set_next(nullptr);
     curr->set_prev(nullptr);
     curr->set_containing_set(nullptr);
@@ -134,7 +134,7 @@ void FreeRegionList::add_list_common_start(FreeRegionList* from_list) {
   #ifdef ASSERT
   FreeRegionListIterator iter(from_list);
   while (iter.more_available()) {
-    HeapRegion* hr = iter.get_next();
+    G1HeapRegion* hr = iter.get_next();
     // In set_containing_set() we check that we either set the value
     // from null to non-null or vice versa to catch bugs. So, we have
     // to null it first before setting it to the value.
@@ -189,8 +189,8 @@ void FreeRegionList::add_ordered(FreeRegionList* from_list) {
     _head = from_list->_head;
     _tail = from_list->_tail;
   } else {
-    HeapRegion* curr_to = _head;
-    HeapRegion* curr_from = from_list->_head;
+    G1HeapRegion* curr_to = _head;
+    G1HeapRegion* curr_from = from_list->_head;
 
     while (curr_from != nullptr) {
       while (curr_to != nullptr && curr_to->hrm_index() < curr_from->hrm_index()) {
@@ -203,7 +203,7 @@ void FreeRegionList::add_ordered(FreeRegionList* from_list) {
         curr_from->set_prev(_tail);
         curr_from = nullptr;
       } else {
-        HeapRegion* next_from = curr_from->next();
+        G1HeapRegion* next_from = curr_from->next();
 
         curr_from->set_next(curr_to);
         curr_from->set_prev(curr_to->prev());
@@ -227,7 +227,7 @@ void FreeRegionList::add_ordered(FreeRegionList* from_list) {
 }
 
 #ifdef ASSERT
-void FreeRegionList::verify_region_to_remove(HeapRegion* curr, HeapRegion* next) {
+void FreeRegionList::verify_region_to_remove(G1HeapRegion* curr, G1HeapRegion* next) {
   assert_free_region_list(_head != next, "invariant");
   if (next != nullptr) {
     assert_free_region_list(next->prev() == curr, "invariant");
@@ -235,7 +235,7 @@ void FreeRegionList::verify_region_to_remove(HeapRegion* curr, HeapRegion* next)
   } else {
     assert_free_region_list(_tail == curr, "invariant");
   }
-  HeapRegion* prev = curr->prev();
+  G1HeapRegion* prev = curr->prev();
   if (prev == nullptr) {
     assert_free_region_list(_head == curr, "invariant");
   } else {
@@ -244,7 +244,7 @@ void FreeRegionList::verify_region_to_remove(HeapRegion* curr, HeapRegion* next)
 }
 #endif
 
-void FreeRegionList::remove_starting_at(HeapRegion* first, uint num_regions) {
+void FreeRegionList::remove_starting_at(G1HeapRegion* first, uint num_regions) {
   check_mt_safety();
   assert_free_region_list(num_regions >= 1, "pre-condition");
   assert_free_region_list(!is_empty(), "pre-condition");
@@ -254,13 +254,13 @@ void FreeRegionList::remove_starting_at(HeapRegion* first, uint num_regions) {
   DEBUG_ONLY(uint old_length = length();)
 
   // prev points to the node right before first or null when first == _head
-  HeapRegion* const prev = first->prev();
+  G1HeapRegion* const prev = first->prev();
   // next points to the node right after first or null when first == _tail,
   // and after the while loop below, next should point to the next node right
   // after the removed sublist, or null if the sublist contains _tail.
-  HeapRegion* next = first->next();
+  G1HeapRegion* next = first->next();
 
-  HeapRegion* curr = first;
+  G1HeapRegion* curr = first;
   uint count = 0;
   while (count < num_regions) {
     verify_region(curr);
@@ -329,9 +329,9 @@ void FreeRegionList::clear() {
 }
 
 void FreeRegionList::verify_list() {
-  HeapRegion* curr = _head;
-  HeapRegion* prev1 = nullptr;
-  HeapRegion* prev0 = nullptr;
+  G1HeapRegion* curr = _head;
+  G1HeapRegion* prev1 = nullptr;
+  G1HeapRegion* prev0 = nullptr;
   uint count = 0;
   size_t capacity = 0;
   uint last_index = 0;

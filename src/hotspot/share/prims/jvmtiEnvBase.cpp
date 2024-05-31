@@ -1421,14 +1421,6 @@ JvmtiEnvBase::get_threadOop_and_JavaThread(ThreadsList* t_list, jthread thread, 
   return JVMTI_ERROR_NONE;
 }
 
-jvmtiError
-JvmtiEnvBase::get_threadOop_and_JavaThread(ThreadsList* t_list, jthread thread,
-                                           JavaThread** jt_pp, oop* thread_oop_p) {
-  JavaThread* cur_thread = JavaThread::current();
-  jvmtiError err = get_threadOop_and_JavaThread(t_list, thread, cur_thread, jt_pp, thread_oop_p);
-  return err;
-}
-
 // Check for JVMTI_ERROR_NOT_SUSPENDED and JVMTI_ERROR_OPAQUE_FRAME errors.
 // Used in PopFrame and ForceEarlyReturn implementations.
 jvmtiError
@@ -1557,8 +1549,12 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
     // this object has a heavyweight monitor
 
     // null out memory for robustness
-    memset(ret.waiters, 0, ret.waiter_count * sizeof(jthread *));
-    memset(ret.notify_waiters, 0, ret.notify_waiter_count * sizeof(jthread *));
+    if (ret.waiters != nullptr) {
+      memset(ret.waiters, 0, ret.waiter_count * sizeof(jthread *));
+    }
+    if (ret.notify_waiters != nullptr) {
+      memset(ret.notify_waiters, 0, ret.notify_waiter_count * sizeof(jthread *));
+    }
 
     if (ret.waiter_count > 0) { // we have contending threads waiting to enter/re-enter the monitor
       // identify threads waiting to enter and re-enter the monitor
@@ -1996,7 +1992,7 @@ JvmtiHandshake::execute(JvmtiUnitedHandshakeClosure* hs_cl, jthread target) {
   JavaThread* java_thread = nullptr;
   oop thread_obj = nullptr;
 
-  jvmtiError err = JvmtiEnvBase::get_threadOop_and_JavaThread(tlh.list(), target, &java_thread, &thread_obj);
+  jvmtiError err = JvmtiEnvBase::get_threadOop_and_JavaThread(tlh.list(), target, current, &java_thread, &thread_obj);
   if (err != JVMTI_ERROR_NONE) {
     hs_cl->set_result(err);
     return;
@@ -2194,7 +2190,7 @@ JvmtiEnvBase::force_early_return(jthread thread, jvalue value, TosState tos) {
 
   JavaThread* java_thread = nullptr;
   oop thread_obj = nullptr;
-  jvmtiError err = get_threadOop_and_JavaThread(tlh.list(), thread, &java_thread, &thread_obj);
+  jvmtiError err = get_threadOop_and_JavaThread(tlh.list(), thread, current_thread, &java_thread, &thread_obj);
 
   if (err != JVMTI_ERROR_NONE) {
     return err;
@@ -2641,12 +2637,4 @@ void
 GetFrameLocationClosure::do_vthread(Handle target_h) {
   _result = ((JvmtiEnvBase*)_env)->get_frame_location(target_h(), _depth,
                                                       _method_ptr, _location_ptr);
-}
-
-void
-VirtualThreadGetThreadClosure::do_thread(Thread *target) {
-  assert(target->is_Java_thread(), "just checking");
-  JavaThread *jt = JavaThread::cast(target);
-  oop carrier_thread = java_lang_VirtualThread::carrier_thread(_vthread_h());
-  *_carrier_thread_ptr = (jthread)JNIHandles::make_local(jt, carrier_thread);
 }

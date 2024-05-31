@@ -851,24 +851,12 @@ public class MarkdownTransformer implements JavacTrees.DocCommentTreeTransformer
                 if (index != -1) {
                     return new int[] {start + index, start + index + ref.length()};
                 } else {
-                    StringBuilder pattern = new StringBuilder(2 * ref.length());
-
-                    for (char c : ref.toCharArray()) {
-                        if (Escaping.ESCAPABLE.indexOf(c) >= 0) {
-                            pattern.append("\\\\?");
-                        }
-                        pattern.append(Pattern.quote(String.valueOf(c)));
+                    String escapedRef = ref.replace("[]", "\\[\\]");
+                    var escapedIndex = s.lastIndexOf(escapedRef);
+                    if (escapedIndex != -1) {
+                        return new int[] {start + escapedIndex,
+                                          start + escapedIndex + escapedRef.length()};
                     }
-
-                    Matcher m = Pattern.compile(pattern.toString()).matcher(s);
-                    int[] result = new int[] {NOPOS, NOPOS};
-
-                    while (m.find()) {
-                        result[0] = start + m.start();
-                        result[1] = start + m.end();
-                    }
-
-                    return result;
                 }
             }
             return NOSPAN;

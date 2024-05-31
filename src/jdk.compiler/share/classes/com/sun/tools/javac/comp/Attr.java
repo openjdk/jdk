@@ -293,7 +293,9 @@ public class Attr extends JCTree.Visitor {
     void checkAssignable(DiagnosticPosition pos, VarSymbol v, JCTree base, Env<AttrContext> env) {
         if (v.name == names._this) {
             log.error(pos, Errors.CantAssignValToThis);
-        } else if ((v.flags() & FINAL) != 0 &&
+            return;
+        }
+        if ((v.flags() & FINAL) != 0 &&
             ((v.flags() & HASINIT) != 0
              ||
              !((base == null ||
@@ -303,6 +305,23 @@ public class Attr extends JCTree.Visitor {
                 log.error(pos, Errors.TryResourceMayNotBeAssigned(v));
             } else {
                 log.error(pos, Errors.CantAssignValToVar(Flags.toSource(v.flags() & (STATIC | FINAL)), v));
+            }
+            return;
+        }
+
+        // Check instance field assignments that appear in constructor prologues
+        if (rs.isEarlyReference(env, base, v)) {
+
+            // Field may not be inherited from a superclass
+            if (v.owner != env.enclClass.sym) {
+                log.error(pos, Errors.CantRefBeforeCtorCalled(v));
+                return;
+            }
+
+            // Field may not have an initializer
+            if ((v.flags() & HASINIT) != 0) {
+                log.error(pos, Errors.CantAssignInitializedBeforeCtorCalled(v));
+                return;
             }
         }
     }
@@ -2779,6 +2798,7 @@ public class Attr extends JCTree.Visitor {
                 }
             }
         } else if (!clazztype.tsym.isInterface() &&
+                   (clazztype.tsym.flags_field & NOOUTERTHIS) == 0 &&
                    clazztype.getEnclosingType().hasTag(CLASS)) {
             // Check for the existence of an apropos outer instance
             rs.resolveImplicitThis(tree.pos(), env, clazztype);
@@ -4202,6 +4222,10 @@ public class Attr extends JCTree.Visitor {
         if (chk.checkUnique(tree.var.pos(), v, env.info.scope)) {
             chk.checkTransparentVar(tree.var.pos(), v, env.info.scope);
         }
+        if (tree.var.isImplicitlyTyped()) {
+            setSyntheticVariableType(tree.var, type == Type.noType ? syms.errType
+                                                                   : type);
+        }
         annotate.annotateLater(tree.var.mods.annotations, env, v, tree.pos());
         if (!tree.var.isImplicitlyTyped()) {
             annotate.queueScanTreeAndTypeAnnotate(tree.var.vartype, env, v, tree.var.pos());
@@ -5255,6 +5279,8 @@ public class Attr extends JCTree.Visitor {
             default:
                 attribClass(env.tree.pos(), env.enclClass.sym);
         }
+
+        annotate.flush();
     }
 
     public void attribPackage(DiagnosticPosition pos, PackageSymbol p) {
