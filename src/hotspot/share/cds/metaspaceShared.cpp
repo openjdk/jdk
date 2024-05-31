@@ -516,7 +516,6 @@ void VM_PopulateDumpSharedSpace::doit() {
 
   _builder.gather_source_objs();
   if (_builder.reserve_buffer() == nullptr) {
-    // report error ...
     this->_failed = true;
     return;
   }
@@ -545,19 +544,10 @@ void VM_PopulateDumpSharedSpace::doit() {
   // Write the archive file
   const char* static_archive = CDSConfig::static_archive_path();
   assert(static_archive != nullptr, "SharedArchiveFile not set?");
-  FileMapInfo* mapinfo = new FileMapInfo(static_archive, true);
-  mapinfo->populate_header(MetaspaceShared::core_region_alignment());
-  mapinfo->set_serialized_data(serialized_data);
-  mapinfo->set_cloned_vtables(CppVtables::vtables_serialized_base());
-
-  if (PrintSystemDictionaryAtExit) {
-    SystemDictionary::print();
-  }
-
-  if (AllowArchivingWithJavaAgent) {
-    log_warning(cds)("This archive was created with AllowArchivingWithJavaAgent. It should be used "
-            "for testing purposes only and should not be used in a production environment");
-  }
+  _map_info = new FileMapInfo(static_archive, true);
+  _map_info->populate_header(MetaspaceShared::core_region_alignment());
+  _map_info->set_serialized_data(serialized_data);
+  _map_info->set_cloned_vtables(CppVtables::vtables_serialized_base());
 }
 
 class CollectCLDClosure : public CLDClosure {
@@ -810,13 +800,13 @@ void MetaspaceShared::preload_and_dump_impl(StaticArchiveBuilder& builder, TRAPS
   write_static_archive(&builder, op.map_info(), op.heap_info());
 }
 
-void MetaspaceShared::write_static_archive(ArchiveBuilder* builder, FileMapInfo *mapinfo, ArchiveHeapInfo* heap_info) {
+void MetaspaceShared::write_static_archive(ArchiveBuilder* builder, FileMapInfo* map_info, ArchiveHeapInfo* heap_info) {
   // relocate the data so that it can be mapped to MetaspaceShared::requested_base_address()
   // without runtime relocation.
   builder->relocate_to_requested();
 
-  mapinfo->open_for_write();
-  builder->write_archive(mapinfo, heap_info);
+  map_info->open_for_write();
+  builder->write_archive(map_info, heap_info);
 
   if (PrintSystemDictionaryAtExit) {
     SystemDictionary::print();

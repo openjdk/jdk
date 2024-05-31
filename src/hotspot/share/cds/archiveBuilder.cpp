@@ -1392,12 +1392,5 @@ void ArchiveBuilder::report_out_of_space(const char* name, size_t needed_bytes) 
   _ro_region.print_out_of_space_msg(name, needed_bytes);
 
   log_error(cds)("Unable to allocate from '%s' region: Please reduce the number of shared classes.", name);
-  MetaspaceShared::writing_error();
+  MetaspaceShared::unrecoverable_writing_error();
 }
-
-
-#ifndef PRODUCT
-void ArchiveBuilder::assert_is_vm_thread() {
-  assert(Thread::current()->is_VM_thread(), "ArchiveBuilder should be used only inside the VMThread");
-}
-#endif

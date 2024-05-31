@@ -201,7 +201,7 @@ char* DumpRegion::expand_top_to(char* newtop) {
       // happens only if you allocate more than 2GB of shared objects and would require
       // millions of shared classes.
       log_error(cds)("Out of memory in the CDS archive: Please reduce the number of shared classes.");
-      MetaspaceShared::writing_error();
+      MetaspaceShared::unrecoverable_writing_error();
     }
   }
 
@@ -228,7 +228,7 @@ void DumpRegion::commit_to(char* newtop) {
   if (!_vs->expand_by(commit, false)) {
     log_error(cds)("Failed to expand shared space to " SIZE_FORMAT " bytes",
                     need_committed_size);
-    MetaspaceShared::writing_error();
+    MetaspaceShared::unrecoverable_writing_error();
   }
 
   const char* which;
