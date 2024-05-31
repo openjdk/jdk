@@ -304,7 +304,12 @@ void C1_MacroAssembler::allocate_array(Register obj, Register len, Register t1, 
     return;
   }
 
-  membar(StoreStore);
+  // Only add membar if zeroing the array.
+  // If not zeroing, subsequent instructions should populate the array (e.g. copy contents),
+  // and the membar should be set after the array has been populated accordingly.
+  if (zero_array) {
+    membar(StoreStore);
+  }
 
   if (CURRENT_ENV->dtrace_alloc_probes()) {
     assert(obj == r0, "must be");
