@@ -515,6 +515,10 @@ bool VectorNode::is_shift_opcode(int opc) {
   }
 }
 
+// Vector unsigned right shift for signed subword types behaves differently
+// from Java Spec. But when the shift amount is a constant not greater than
+// the number of sign extended bits, the unsigned right shift can be
+// vectorized to a signed right shift.
 bool VectorNode::can_transform_shift_op(Node* n, BasicType bt) {
   if (n->Opcode() != Op_URShiftI) {
     return false;

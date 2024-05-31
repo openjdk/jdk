@@ -1779,10 +1779,6 @@ bool SuperWord::implemented(const Node_List* pack, const uint size) const {
       retValue = VectorNode::implemented(opc, size, T_LONG) &&
                  VectorCastNode::implemented(Op_ConvL2I, size, T_LONG, T_INT);
     } else {
-      // Vector unsigned right shift for signed subword types behaves differently
-      // from Java Spec. But when the shift amount is a constant not greater than
-      // the number of sign extended bits, the unsigned right shift can be
-      // vectorized to a signed right shift.
       if (VectorNode::can_transform_shift_op(p0, velt_basic_type(p0))) {
         opc = Op_RShiftI;
       }

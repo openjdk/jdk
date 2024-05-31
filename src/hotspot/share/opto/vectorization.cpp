@@ -2167,29 +2167,32 @@ void VTransformNode::register_new_node_from_vectorization(const VLoopAnalyzer& v
   VectorNode::trace_new_vector(vn, "AutoVectorization");
 }
 
-#ifdef ASSERT
 bool VTransformElementWiseVectorNode::is_unary_element_wise_opcode(int opc) {
-  return opc == Op_SqrtF ||
-         opc == Op_SqrtD ||
-         opc == Op_AbsF ||
-         opc == Op_AbsD ||
-         opc == Op_AbsI ||
-         opc == Op_AbsL ||
-         opc == Op_NegF ||
-         opc == Op_NegD ||
-         opc == Op_RoundF ||
-         opc == Op_RoundD ||
-         opc == Op_ReverseBytesI ||
-         opc == Op_ReverseBytesL ||
-         opc == Op_ReverseBytesUS ||
-         opc == Op_ReverseBytesS ||
-         opc == Op_ReverseI ||
-         opc == Op_ReverseL ||
-         opc == Op_PopCountI ||
-         opc == Op_CountLeadingZerosI ||
-         opc == Op_CountTrailingZerosI;
+  switch (opc) {
+  case Op_SqrtF:
+  case Op_SqrtD:
+  case Op_AbsF:
+  case Op_AbsD:
+  case Op_AbsI:
+  case Op_AbsL:
+  case Op_NegF:
+  case Op_NegD:
+  case Op_RoundF:
+  case Op_RoundD:
+  case Op_ReverseBytesI:
+  case Op_ReverseBytesL:
+  case Op_ReverseBytesUS:
+  case Op_ReverseBytesS:
+  case Op_ReverseI:
+  case Op_ReverseL:
+  case Op_PopCountI:
+  case Op_CountLeadingZerosI:
+  case Op_CountTrailingZerosI:
+    return true;
+  default:
+    return false;
+  }
 }
-#endif
 
 VTransformApplyStatus VTransformElementWiseVectorNode::apply(const VLoopAnalyzer& vloop_analyzer, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
   Node* first = nodes().at(0);
@@ -2227,20 +2230,18 @@ VTransformApplyStatus VTransformElementWiseVectorNode::apply(const VLoopAnalyzer
 
     // Cast long -> int, to mimic the scalar long -> int operation.
     vn = VectorCastNode::make(Op_VectorCastL2X, long_vn, T_INT, vlen);
+  } else if (req() == 3 ||
+             is_unary_element_wise_opcode(opc)) {
+    assert(!VectorNode::is_roundopD(first) || in2->is_Con(), "rounding mode must be constant");
+    vn = VectorNode::make(opc, in1, in2, vlen, bt); // unary and binary
   } else {
-    assert(req() == 3 ||
-           is_unary_element_wise_opcode(opc) ||
-           opc == Op_FmaD ||
+    assert(req() == 4, "three inputs expected");
+    assert(opc == Op_FmaD ||
            opc == Op_FmaF ||
            opc == Op_SignumF ||
            opc == Op_SignumD,
            "element wise operation must be from this list");
-    assert(!VectorNode::is_roundopD(first) || in2->is_Con(), "rounding mode must be constant");
-    if (req() <= 3) {
-      vn = VectorNode::make(opc, in1, in2, vlen, bt); // unary and binary
-    } else {
-      vn = VectorNode::make(opc, in1, in2, in3, vlen, bt); // ternary
-    }
+    vn = VectorNode::make(opc, in1, in2, in3, vlen, bt); // ternary
   }
 
   register_new_node_from_vectorization_and_replace_scalar_nodes(vloop_analyzer, vn);
