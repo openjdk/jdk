@@ -766,8 +766,8 @@ public class SynthGraphicsUtils {
      * Recursively searches for all the subcomponents.
      */
     static void repaintMnemonicsInContainer(final Container cont) {
-        for (int i = 0; i < cont.getComponentCount(); i++) {
-            final Component c = cont.getComponent(i);
+        final Component[] elements = cont.getComponents();
+        for (final Component c : elements) {
             if (c == null || !c.isVisible()) {
                 continue;
             }

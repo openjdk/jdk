@@ -53,7 +53,7 @@ public class TestMenuMnemonicOnAltPress {
     public static void main(String[] args) throws Exception {
         UIManager.setLookAndFeel("com.sun.java.swing.plaf.gtk.GTKLookAndFeel");
         Robot robot = new Robot();
-        robot.setAutoDelay(100);
+        robot.setAutoDelay(200);
 
         try {
             SwingUtilities.invokeAndWait(TestMenuMnemonicOnAltPress::createAndShowUI);
@@ -63,11 +63,9 @@ public class TestMenuMnemonicOnAltPress {
             for (int i = 0; i < EXPECTED; i++) {
                 robot.keyPress(KeyEvent.VK_ALT);
                 robot.waitForIdle();
-                robot.delay(100);
                 SwingUtilities.invokeAndWait(TestMenuMnemonicOnAltPress::verifyMnemonicsState);
                 robot.keyRelease(KeyEvent.VK_ALT);
                 robot.waitForIdle();
-                robot.delay(100);
                 SwingUtilities.invokeAndWait(TestMenuMnemonicOnAltPress::verifyMnemonicsState);
             }
 
