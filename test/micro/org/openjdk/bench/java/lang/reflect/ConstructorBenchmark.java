@@ -3,7 +3,7 @@
  */
 package org.openjdk.bench.java.lang.reflect;
 
-import java.lang.reflect.Method;
+import java.lang.reflect.Constructor;
 import java.util.concurrent.TimeUnit;
 
 import org.openjdk.jmh.annotations.Benchmark;
@@ -17,7 +17,7 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
 /**
- * Benchmark measuring the speed of Method/Method.getExceptionTypes() and
+ * Benchmark measuring the speed of Method/Constructor.getExceptionTypes() and
  * getParameterTypes(), in cases where the result array is length zero.
  */
 @BenchmarkMode(Mode.AverageTime)
@@ -26,19 +26,19 @@ import org.openjdk.jmh.annotations.Warmup;
 @Fork(1)
 @Warmup(iterations = 3, time = 2, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 5, time = 2, timeUnit = TimeUnit.SECONDS)
-public class MethodBenchmark {
-    Method emptyParametersMethod;
-    Method oneParameterMethod;
-    Method emptyExceptionsMethod;
-    Method oneExceptionMethod;
+public class ConstructorBenchmark {
+    Constructor<?> emptyParametersConstructor;
+    Constructor<?> oneParameterConstructor;
+    Constructor<?> emptyExceptionsConstructor;
+    Constructor<?> oneExceptionConstructor;
 
-    public MethodBenchmark() {
+    public ConstructorBenchmark() {
         try {
-            emptyParametersMethod = Object.class.getDeclaredMethod("hashCode");
-            oneParameterMethod = String.class.getDeclaredMethod("getBytes", String.class);
+            emptyParametersConstructor = Object.class.getConstructor();
+            oneParameterConstructor = String.class.getConstructor(String.class);
 
-            emptyExceptionsMethod = emptyParametersMethod;
-            oneExceptionMethod = oneParameterMethod;
+            emptyExceptionsConstructor = emptyParametersConstructor;
+            oneExceptionConstructor = String.class.getConstructor(byte[].class, String.class);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -47,21 +47,21 @@ public class MethodBenchmark {
 
     @Benchmark
     public void getExceptionTypes() throws Exception {
-        oneExceptionMethod.getExceptionTypes();
+        oneExceptionConstructor.getExceptionTypes();
     }
 
     @Benchmark
     public void getExceptionTypesEmpty() throws Exception {
-        emptyExceptionsMethod.getExceptionTypes();
+        emptyExceptionsConstructor.getExceptionTypes();
     }
 
     @Benchmark
     public void getParameterTypesEmpty() throws Exception {
-        emptyParametersMethod.getParameterTypes();
+        emptyParametersConstructor.getParameterTypes();
     }
 
     @Benchmark
     public void getParameterTypes() throws Exception {
-        oneParameterMethod.getParameterTypes();
+        oneParameterConstructor.getParameterTypes();
     }
 }
