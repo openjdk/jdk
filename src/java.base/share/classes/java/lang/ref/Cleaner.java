@@ -38,7 +38,7 @@ import java.util.function.Function;
  * to run after the cleaner is notified that the object has become
  * phantom reachable.
  * The cleaner uses {@link PhantomReference} and {@link ReferenceQueue} to be
- * notified when the <a href="package-summary.html#reachability">reachability</a>
+ * notified when the {@linkplain java.lang.ref##reachability reachability}
  * changes.
  * <p>
  * Each cleaner operates independently, managing the pending cleaning actions
@@ -218,7 +218,7 @@ public final class Cleaner {
      * <p>The given object is kept strongly reachable (and therefore not eligible
      * for cleaning) during the register() method.
      *
-     * <p><a href="package-summary.html#MemoryConsistency">Memory consistency effects</a>:
+     * <p>{@linkplain java.lang.ref##MemoryConsistency Memory consistency effects}:
      * Actions in a thread prior to calling {@code Cleaner.register()}
      * <a href="{@docRoot}/java.base/java/util/concurrent/package-summary.html#MemoryVisibility"><i>happen-before</i></a>
      * the cleaning action is run by the Cleaner's thread.

@@ -488,7 +488,7 @@ public abstract sealed class Reference<T>
      * (by the garbage collector, or a previous call to {@code enqueue}), this
      * method is <b><i>unsuccessful</i></b> and returns false.
      *
-     * <p><a href="package-summary.html#MemoryConsistency">Memory consistency effects</a>:
+     * <p>{@linkplain java.lang.ref##MemoryConsistency Memory consistency effects}:
      * Actions in a thread prior to a <b><i>successful</i></b> call to {@code enqueue}
      * <a href="{@docRoot}/java.base/java/util/concurrent/package-summary.html#MemoryVisibility"><i>happen-before</i></a>
      * the reference is removed from the queue by {@link ReferenceQueue#poll}
@@ -559,10 +559,9 @@ public abstract sealed class Reference<T>
      * triggering garbage collection.  This method is applicable only
      * when reclamation may have visible effects,
      * such as for objects that use finalizers or {@link Cleaner}, or code that
-     * performs
-     * <a href="{@docRoot}/java.base/java/lang/ref/package-summary.html">reference processing</a>.
+     * performs {@linkplain java.lang.ref reference processing}.
      *
-     * <p><a href="package-summary.html#MemoryConsistency">Memory consistency effects</a>:
+     * <p>{@linkplain java.lang.ref##MemoryConsistency Memory consistency effects}:
      * Actions in a thread prior to calling {@code reachabilityFence(x)}
      * <a href="{@docRoot}/java.base/java/util/concurrent/package-summary.html#MemoryVisibility"><i>happen-before</i></a>
      * the garbage collector clears any reference to {@code x}.
