@@ -23,10 +23,14 @@
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.util.stream.Stream;
 import java.util.zip.GZIPInputStream;
 
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /*
  * @test
@@ -35,32 +39,57 @@ import org.junit.jupiter.api.Test;
  */
 public class BasicGZIPInputStreamTest {
 
-    /*
-     * Verifies that the GZIPInputStream constructors throw the expected exceptions
-     */
-    @Test
-    public void testConstructors() throws Exception {
-        Assertions.assertThrows(NullPointerException.class,
-                () -> new GZIPInputStream(null),
-                "GZIPInputStream did not throw NullPointerException for null InputStream");
-        Assertions.assertThrows(NullPointerException.class,
-                () -> new GZIPInputStream(null, 1),
-                "GZIPInputStream did not throw NullPointerException for null InputStream");
-        Assertions.assertThrows(IllegalArgumentException.class,
-                () -> new GZIPInputStream(new ByteArrayInputStream(new byte[0]), 0),
-                "GZIPInputStream did not throw IllegalArgumentException for size = 0");
-        Assertions.assertThrows(IllegalArgumentException.class,
-                () -> new GZIPInputStream(new ByteArrayInputStream(new byte[0]), -1),
-                "GZIPInputStream did not throw IllegalArgumentException for size = -1");
 
-        // verify the constructor throws IOException when the underlying stream isn't
-        // a GZIP stream
+    private static Stream<Arguments> npeFromConstructors() {
+        return Stream.of(Arguments.of((Executable) () -> new GZIPInputStream(null)),
+                Arguments.of((Executable) () -> new GZIPInputStream(null, 1)));
+    }
+
+    /*
+     * Verifies that the GZIPInputStream constructors throw the expected NullPointerException
+     */
+    @ParameterizedTest
+    @MethodSource("npeFromConstructors")
+    public void testNPEFromConstructors(final Executable constructor) {
+        Assertions.assertThrows(NullPointerException.class, constructor,
+                "GZIPInputStream constructor did not throw NullPointerException");
+    }
+
+    private static Stream<Arguments> iaeFromConstructors() {
+        return Stream.of(
+                Arguments.of((Executable) () -> new GZIPInputStream(
+                        new ByteArrayInputStream(new byte[0]), 0)),
+                Arguments.of((Executable) () -> new GZIPInputStream(
+                        new ByteArrayInputStream(new byte[0]), -1)),
+                Arguments.of((Executable) () -> new GZIPInputStream(
+                        new ByteArrayInputStream(new byte[0]), -42)));
+    }
+
+    /*
+     * Verifies that the GZIPInputStream constructors throw the expected IllegalArgumentException
+     */
+    @ParameterizedTest
+    @MethodSource("iaeFromConstructors")
+    public void testIAEFromConstructors(final Executable constructor) {
+        Assertions.assertThrows(IllegalArgumentException.class, constructor,
+                "GZIPInputStream constructor did not throw IllegalArgumentException");
+    }
+
+    private static Stream<Arguments> ioeFromConstructors() {
         final ByteArrayInputStream notGZIPContent = new ByteArrayInputStream(new byte[0]);
-        Assertions.assertThrows(IOException.class,
-                () -> new GZIPInputStream(notGZIPContent),
-                "GZIPInputStream did not throw IOException for non-gzip stream");
-        Assertions.assertThrows(IOException.class,
-                () -> new GZIPInputStream(notGZIPContent, 1024 /* buffer size */),
-                "GZIPInputStream did not throw IOException for non-gzip stream");
+        return Stream.of(
+                Arguments.of((Executable) () -> new GZIPInputStream(notGZIPContent)),
+                Arguments.of((Executable) () -> new GZIPInputStream(
+                        notGZIPContent, 1024 /* buffer size */)));
+    }
+
+    /*
+     * Verifies that the GZIPInputStream constructors throw the expected IOException
+     */
+    @ParameterizedTest
+    @MethodSource("ioeFromConstructors")
+    public void testIOEFromConstructors(final Executable constructor) {
+        Assertions.assertThrows(IOException.class, constructor,
+                "GZIPInputStream constructor did not throw IOException");
     }
 }
