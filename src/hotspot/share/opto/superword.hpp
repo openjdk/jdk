@@ -673,10 +673,7 @@ private:
   const PackSet& _packset;
   VTransformGraph& _graph;
 
-  // Map: C2-IR nodes (node->_idx) -> VTransformNode* (nullptr if none exists).
-  ResourceHashtable<int, VTransformNode*> _idx_to_vtnode;
-
-  // Only add every dependency once per vtnode.
+  ResourceHashtable</* Node::_idx*/ int, VTransformNode* /* or null*/> _idx_to_vtnode;
   VectorSet _dependency_set;
 
 public:
@@ -687,12 +684,12 @@ public:
       _packset(packset),
       _graph(graph)
   {
-    assert(!_packset.is_empty(), "must have non-empty packset");
+    build_vtransform();
   }
 
+private:
   void build_vtransform();
 
-private:
   // VLoop accessors.
   CountedLoopNode* cl()     const { return _vloop.cl(); }
   bool in_bb(const Node* n) const { return _vloop.in_bb(n); }

@@ -2958,19 +2958,18 @@ bool SuperWord::vtransform() const {
                         NOT_PRODUCT( COMMA is_trace_superword_verbose())
                         );
 
-  ResourceMark rm;
-  SuperWordVTransformBuilder builder(_packset, graph);
-  builder.build_vtransform();
-
-  if (!graph.schedule()) {
-    return false;
+  {
+    ResourceMark rm;
+    SuperWordVTransformBuilder builder(_packset, graph);
   }
 
+  if (!graph.schedule()) { return false; }
   graph.apply();
   return true;
 }
 
 void SuperWordVTransformBuilder::build_vtransform() {
+  assert(!_packset.is_empty(), "must have non-empty packset");
   // Create VTransformVectorNode for all packed nodes:
   for (int i = 0; i < _packset.length(); i++) {
     Node_List* pack = _packset.at(i);
@@ -2999,7 +2998,7 @@ void SuperWordVTransformBuilder::build_vtransform() {
 
     VTransformVectorNode* vtn = get_vtnode(p0)->isa_Vector();
     assert(vtn != nullptr, "all packs must have vector vtnodes");
-    _dependency_set.clear();
+    _dependency_set.clear(); // Add every dependency only once per vtn.
 
     if (p0->is_Load()) {
       set_req_for_scalar(vtn, MemNode::Address, p0);
@@ -3057,8 +3056,7 @@ void SuperWordVTransformBuilder::build_vtransform() {
     Node* n = body().at(i);
     VTransformScalarNode* vtn = get_vtnode(n)->isa_Scalar();
     if (vtn == nullptr) { continue; }
-
-    _dependency_set.clear();
+    _dependency_set.clear(); // Add every dependency only once per vtn.
 
     if (n->is_Load()) {
       set_req_for_scalar(vtn, MemNode::Address, n);
@@ -3274,7 +3272,7 @@ void SuperWordVTransformBuilder::add_dependencies(VTransformNode* vtn, Node* n) 
     if (vtn == dependency && is_marked_reduction(n)) { continue; }
 
     if (_dependency_set.test_set(dependency->_idx)) { continue; }
-    vtn->add_dependency(dependency);
+    vtn->add_dependency(dependency); // Add every dependency only once per vtn.
   }
 }
 
