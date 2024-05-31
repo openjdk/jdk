@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,7 +117,16 @@ public class TestParallelGCWithCDS {
                     String pattern = "((Too small maximum heap)" +
                                        "|(GC triggered before VM initialization completed)" +
                                        "|(java.lang.OutOfMemoryError: Java heap space))";
-                    out.shouldMatch(pattern);
+                    try {
+                        out.shouldMatch(pattern);
+                    } catch (RuntimeException ex) {
+                        // If the test is run with a very small heap, the above expected
+                        // output may not occurred as the JVM may fail in many locations
+                        // with different messages. Just make sure the exit code is
+                        // non-zero and the JVM has not crashed.
+                        out.shouldNotHaveExitValue(0);
+                        out.shouldNotHaveFatalError();
+                    }
                 }
                 n++;
             }
