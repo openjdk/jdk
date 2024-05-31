@@ -66,6 +66,6 @@ public class ArgumentsFilteringTest {
         if (appVerifier != null) {
             appVerifier.execute("-psn_1_1");
             appVerifier.verifyOutput("-psn_2_2");
-        }        
+        }
     }
 }
