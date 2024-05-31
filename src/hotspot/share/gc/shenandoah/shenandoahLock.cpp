@@ -51,18 +51,16 @@ void ShenandoahLock::contended_lock_internal(JavaThread* java_thread) {
       // Do not do anything else, suspend until safepoint is over.
       ThreadBlockInVM block(java_thread, true);
     } else if (ctr < 0x1F) {
-      // Lightly contended. Spin a little(seems just once deliver best performance in both heavily&lightly contended cases.)
+      // Lightly contended. Spin a little.
       ctr++;
       SpinPause();
+    } else if (ALLOW_BLOCK) {
+      // Notify VM we are blocking, and suspend if safepoint was announced
+      // while we were backing off.
+      ThreadBlockInVM block(java_thread, true);
+      os::naked_yield();
     } else {
-      if (ALLOW_BLOCK) {
-          // Notify VM we are blocking, and suspend if safepoint was announced
-          // while we were backing off.
-          ThreadBlockInVM block(java_thread, true);
-          os::naked_yield();
-      } else {
-        os::naked_yield();
-      }
+      os::naked_yield();
     }
   }
 }
