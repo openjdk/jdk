@@ -374,9 +374,9 @@ public class Navigation {
     }
 
     /**
-     * Adds a breadcrumb navigation link for {@code element} to {@code contents} after
-     * having recursively invoked itself with its {@code element}'s containing element.
-     * Only module, package and type elements are supported in breadcrumb navigation.
+     * Adds breadcrumb navigation links for {@code element} and its containing elements
+     * to {@code contents}. Only module, package and type elements are supported in
+     * breadcrumb navigation.
      *
      * @param elem a module, package or type element
      * @param contents the list to which links are added
