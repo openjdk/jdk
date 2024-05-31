@@ -1021,13 +1021,6 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseAVX, use_avx_limit);
   }
 
-  if (UseAPX && !supports_apx_f()) {
-    warning("UseAPX is not supported on this CPU, setting it to false");
-    FLAG_SET_DEFAULT(UseAPX, false);
-  } else if (FLAG_IS_DEFAULT(UseAPX)) {
-    FLAG_SET_DEFAULT(UseAPX, supports_apx_f() ? true : false);
-  }
-
   if (UseAVX < 3) {
     _features &= ~CPU_AVX512F;
     _features &= ~CPU_AVX512DQ;
@@ -1043,6 +1036,15 @@ void VM_Version::get_processor_features() {
     _features &= ~CPU_AVX512_BITALG;
     _features &= ~CPU_AVX512_IFMA;
   }
+
+  // Currently APX support is only enabled for targets supporting AVX512VL feature.
+  if (UseAPX && (!supports_apx_f() || !supports_avx512vl())) {
+    warning("UseAPX is not supported on this CPU, setting it to false");
+    FLAG_SET_DEFAULT(UseAPX, false);
+  } else if (FLAG_IS_DEFAULT(UseAPX)) {
+    FLAG_SET_DEFAULT(UseAPX, (supports_apx_f() && supports_avx512vl()) ? true : false);
+  }
+
 
   if (UseAVX < 2) {
     _features &= ~CPU_AVX2;
