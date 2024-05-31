@@ -46,10 +46,10 @@ import org.openjdk.jmh.annotations.Warmup;
 @Warmup(iterations = 3, time = 2, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 5, time = 2, timeUnit = TimeUnit.SECONDS)
 public class ConstructorBenchmark {
-    Constructor<?> emptyParametersConstructor;
-    Constructor<?> oneParameterConstructor;
     Constructor<?> emptyExceptionsConstructor;
+    Constructor<?> emptyParametersConstructor;
     Constructor<?> oneExceptionConstructor;
+    Constructor<?> oneParameterConstructor;
 
     public ConstructorBenchmark() {
         try {
@@ -61,7 +61,6 @@ public class ConstructorBenchmark {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-
     }
 
     @Benchmark
@@ -75,12 +74,12 @@ public class ConstructorBenchmark {
     }
 
     @Benchmark
-    public Object[] getParameterTypesEmpty() throws Exception {
-        return emptyParametersConstructor.getParameterTypes();
+    public Object[] getParameterTypes() throws Exception {
+        return oneParameterConstructor.getParameterTypes();
     }
 
     @Benchmark
-    public Object[] getParameterTypes() throws Exception {
-        return oneParameterConstructor.getParameterTypes();
+    public Object[] getParameterTypesEmpty() throws Exception {
+        return emptyParametersConstructor.getParameterTypes();
     }
 }
