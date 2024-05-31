@@ -3013,15 +3013,16 @@ void SuperWordVTransformBuilder::build_edges_for_vector_vtnodes(VectorSet& vtn_d
     } else if (p0->is_Store()) {
       set_req_for_scalar(vtn, vtn_dependencies, MemNode::Address, p0);
       set_req_for_vector(vtn, vtn_dependencies, MemNode::ValueIn, pack);
-    } else if (vtn->isa_ElementWiseVector() != nullptr) {
-      if (VectorNode::is_scalar_rotate(p0)) {
+    } else if (vtn->isa_ReductionVector() != nullptr) {
+      set_req_for_scalar(vtn, vtn_dependencies, 1, p0);   // scalar init
+      set_req_for_vector(vtn, vtn_dependencies, 2, pack); // vector
+    } else {
+      assert(vtn->isa_ElementWiseVector() != nullptr, "all other vtnodes are handled above");
+      if (VectorNode::is_scalar_rotate(p0) &&
+          p0->in(2)->is_Con() &&
+          Matcher::supports_vector_constant_rotates(p0->in(2)->get_int())) {
         set_req_for_vector(vtn, vtn_dependencies, 1, pack);
-        Node* in2 = p0->in(2);
-        if (in2->is_Con() && Matcher::supports_vector_constant_rotates(in2->get_int())) {
-          set_req_for_scalar(vtn, vtn_dependencies, 2, p0);
-        } else {
-          set_req_for_vector(vtn, vtn_dependencies, 2, pack);
-        }
+        set_req_for_scalar(vtn, vtn_dependencies, 2, p0); // constant rotation
       } else if (VectorNode::is_roundopD(p0)) {
         set_req_for_vector(vtn, vtn_dependencies, 1, pack);
         set_req_for_scalar(vtn, vtn_dependencies, 2, p0); // constant rounding mode
@@ -3035,12 +3036,6 @@ void SuperWordVTransformBuilder::build_edges_for_vector_vtnodes(VectorSet& vtn_d
       } else {
         set_req_all_for_vector(vtn, vtn_dependencies, pack);
       }
-    } else if (vtn->isa_ReductionVector() != nullptr) {
-      set_req_for_scalar(vtn, vtn_dependencies, 1, p0);
-      set_req_for_vector(vtn, vtn_dependencies, 2, pack);
-    } else {
-      DEBUG_ONLY( vtn->print(); )
-      assert(false, "vtn type not handled for inputs");
     }
 
     for (uint k = 0; k < pack->size(); k++) {
@@ -3063,8 +3058,7 @@ void SuperWordVTransformBuilder::build_edges_for_scalar_vtnodes(VectorSet& vtn_d
       set_req_for_scalar(vtn, vtn_dependencies, MemNode::Address, n);
       set_req_for_scalar(vtn, vtn_dependencies, MemNode::ValueIn, n);
     } else if (n->is_CountedLoop()) {
-      // Is "root", has no dependency.
-      continue;
+      continue; // Is "root", has no dependency.
     } else if (n->is_Phi()) {
       // CountedLoop Phi's: ignore backedge (and entry value).
       assert(n->in(0) == cl(), "only Phi's from the CountedLoop allowed");
