@@ -253,13 +253,13 @@ inline ReverseRegSetIterator<RegImpl> AbstractRegSet<RegImpl>::rbegin() {
 
 // Debugging support
 
-template<typename R, typename... Rx>
-inline constexpr bool different_registers(AbstractRegSet<R> allocated_regs, R first_register) {
+template<typename R>
+constexpr bool different_registers(AbstractRegSet<R> allocated_regs, R first_register) {
   return !allocated_regs.contains(first_register);
 }
 
 template<typename R, typename... Rx>
-inline constexpr bool different_registers(AbstractRegSet<R> allocated_regs, R first_register, Rx... more_registers) {
+constexpr bool different_registers(AbstractRegSet<R> allocated_regs, R first_register, Rx... more_registers) {
   if (allocated_regs.contains(first_register)) {
     return false;
   }
