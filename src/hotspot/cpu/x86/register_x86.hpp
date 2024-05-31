@@ -391,7 +391,7 @@ class ConcreteRegisterImpl : public AbstractRegisterImpl {
 
 template <>
 inline Register AbstractRegSet<Register>::first() {
-  if (_bitset == 0)  { return noreg; }
+  if (_bitset == 0) { return noreg; }
   return as_Register(count_trailing_zeros(_bitset));
 }
 
@@ -404,7 +404,7 @@ inline Register AbstractRegSet<Register>::last() {
 
 template <>
 inline XMMRegister AbstractRegSet<XMMRegister>::first() {
-  if (_bitset == 0)  { return xnoreg; }
+  if (_bitset == 0) { return xnoreg; }
   return as_XMMRegister(count_trailing_zeros(_bitset));
 }
 

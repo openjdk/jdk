@@ -251,7 +251,7 @@ inline ReverseRegSetIterator<RegImpl> AbstractRegSet<RegImpl>::rbegin() {
 
 #include CPU_HEADER(register)
 
-// Debugging support
+// Debugging and assertion support
 
 template<typename R>
 constexpr bool different_registers(AbstractRegSet<R> allocated_regs, R first_register) {
