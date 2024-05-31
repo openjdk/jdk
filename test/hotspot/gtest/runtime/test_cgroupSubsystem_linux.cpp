@@ -34,6 +34,10 @@
 
 #include <stdio.h>
 
+#ifdef MUSL_LIBC
+#include <libgen.h> // for basename
+#endif
+
 typedef struct {
   const char* mount_path;
   const char* root_path;
@@ -89,7 +93,7 @@ static void fill_file(const char* path, const char* content) {
 }
 
 TEST(cgroupTest, read_numerical_key_value_failure_cases) {
-  const char* test_file = temp_file("cgroups");
+  char* test_file = temp_file("cgroups");
   const char* b = basename(test_file);
   EXPECT_TRUE(b != nullptr) << "basename was null";
   stringStream path;
@@ -135,7 +139,7 @@ TEST(cgroupTest, read_numerical_key_value_failure_cases) {
 }
 
 TEST(cgroupTest, read_numerical_key_value_success_cases) {
-  const char* test_file = temp_file("cgroups");
+  char* test_file = temp_file("cgroups");
   const char* b = basename(test_file);
   EXPECT_TRUE(b != nullptr) << "basename was null";
   stringStream path;
@@ -235,7 +239,7 @@ TEST(cgroupTest, read_numerical_key_value_null) {
 }
 
 TEST(cgroupTest, read_number_tests) {
-  const char* test_file = temp_file("cgroups");
+  char* test_file = temp_file("cgroups");
   const char* b = basename(test_file);
   constexpr julong bad = 0xBAD;
   EXPECT_TRUE(b != nullptr) << "basename was null";
@@ -289,7 +293,7 @@ TEST(cgroupTest, read_number_tests) {
 }
 
 TEST(cgroupTest, read_string_tests) {
-  const char* test_file = temp_file("cgroups");
+  char* test_file = temp_file("cgroups");
   const char* b = basename(test_file);
   EXPECT_TRUE(b != nullptr) << "basename was null";
   stringStream path;
@@ -355,7 +359,7 @@ TEST(cgroupTest, read_string_tests) {
 }
 
 TEST(cgroupTest, read_number_tuple_test) {
-  const char* test_file = temp_file("cgroups");
+  char* test_file = temp_file("cgroups");
   const char* b = basename(test_file);
   EXPECT_TRUE(b != nullptr) << "basename was null";
   stringStream path;
