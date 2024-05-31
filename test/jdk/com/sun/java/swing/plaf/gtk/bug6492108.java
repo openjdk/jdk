@@ -37,6 +37,8 @@ import javax.swing.JTextPane;
 import javax.swing.UIManager;
 import javax.swing.text.JTextComponent;
 
+import jtreg.SkippedException;
+
 /*
  * @test
  * @bug 6492108 8160755
@@ -44,7 +46,7 @@ import javax.swing.text.JTextComponent;
  * @requires (os.family == "linux")
  * @summary Verifies that the background is painted the same for
  *          JTextArea, JTextPane, and JEditorPane.
- * @library /javax/swing/regtesthelpers
+ * @library /javax/swing/regtesthelpers /test/lib
  * @build SwingTestHelper
  * @run main/othervm bug6492108
  */
@@ -58,16 +60,15 @@ public class bug6492108 extends SwingTestHelper {
             UIManager.setLookAndFeel(
                 "com.sun.java.swing.plaf.gtk.GTKLookAndFeel");
         } catch (Exception e) {
-            System.out.println("GTK LAF is not supported on this system; test passes");
-            return;
+            throw new SkippedException("GTK LAF is not supported on this system;" +
+                    " test passes");
         }
         new bug6492108().run(args);
     }
 
     private static void addTextComps(Container parent,
                                      Class<? extends JTextComponent> type)
-        throws Throwable
-    {
+                                     throws Throwable {
         JTextComponent text = type.newInstance();
         addTextComp(parent, text);
 
