@@ -1421,14 +1421,6 @@ JvmtiEnvBase::get_threadOop_and_JavaThread(ThreadsList* t_list, jthread thread, 
   return JVMTI_ERROR_NONE;
 }
 
-jvmtiError
-JvmtiEnvBase::get_threadOop_and_JavaThread(ThreadsList* t_list, jthread thread,
-                                           JavaThread** jt_pp, oop* thread_oop_p) {
-  JavaThread* cur_thread = JavaThread::current();
-  jvmtiError err = get_threadOop_and_JavaThread(t_list, thread, cur_thread, jt_pp, thread_oop_p);
-  return err;
-}
-
 // Check for JVMTI_ERROR_NOT_SUSPENDED and JVMTI_ERROR_OPAQUE_FRAME errors.
 // Used in PopFrame and ForceEarlyReturn implementations.
 jvmtiError
@@ -2000,7 +1992,7 @@ JvmtiHandshake::execute(JvmtiUnitedHandshakeClosure* hs_cl, jthread target) {
   JavaThread* java_thread = nullptr;
   oop thread_obj = nullptr;
 
-  jvmtiError err = JvmtiEnvBase::get_threadOop_and_JavaThread(tlh.list(), target, &java_thread, &thread_obj);
+  jvmtiError err = JvmtiEnvBase::get_threadOop_and_JavaThread(tlh.list(), target, current, &java_thread, &thread_obj);
   if (err != JVMTI_ERROR_NONE) {
     hs_cl->set_result(err);
     return;
@@ -2198,7 +2190,7 @@ JvmtiEnvBase::force_early_return(jthread thread, jvalue value, TosState tos) {
 
   JavaThread* java_thread = nullptr;
   oop thread_obj = nullptr;
-  jvmtiError err = get_threadOop_and_JavaThread(tlh.list(), thread, &java_thread, &thread_obj);
+  jvmtiError err = get_threadOop_and_JavaThread(tlh.list(), thread, current_thread, &java_thread, &thread_obj);
 
   if (err != JVMTI_ERROR_NONE) {
     return err;
