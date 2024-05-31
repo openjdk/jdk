@@ -1352,36 +1352,29 @@ class VTransformReductionVectorNode;
 // Status output from a VTransformNode::apply
 class VTransformApplyStatus {
 private:
-  const bool _is_valid; // errors lead to compilation bailout
   Node* const _node;
   const uint _vector_length; // number of elements
   const uint _vector_width;  // total width in bytes
 
-  VTransformApplyStatus(bool is_valid, Node* n, uint vector_length, uint vector_width) :
-    _is_valid(is_valid),
+  VTransformApplyStatus(Node* n, uint vector_length, uint vector_width) :
     _node(n),
     _vector_length(vector_length),
     _vector_width(vector_width) {}
 
 public:
   static VTransformApplyStatus make_scalar(Node* n) {
-    return VTransformApplyStatus(true, n, 0, 0);
+    return VTransformApplyStatus(n, 0, 0);
   }
 
   static VTransformApplyStatus make_vector(Node* n, uint vector_length, uint vector_width) {
     assert(vector_length > 0 && vector_width > 0, "must have nonzero size");
-    return VTransformApplyStatus(true, n, vector_length, vector_width);
+    return VTransformApplyStatus(n, vector_length, vector_width);
   }
 
   static VTransformApplyStatus make_empty() {
-    return VTransformApplyStatus(true, nullptr, 0, 0);
+    return VTransformApplyStatus(nullptr, 0, 0);
   }
 
-  static VTransformApplyStatus make_invalid() {
-    return VTransformApplyStatus(false, nullptr, 0, 0);
-  }
-
-  bool is_valid() const { return _is_valid; }
   Node* node() const { return _node; }
   uint vector_length() const { return _vector_length; }
   uint vector_width() const { return _vector_width; }

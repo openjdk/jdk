@@ -2030,12 +2030,6 @@ void VTransformGraph::apply_vectorization() const {
     }
 #endif
 
-    if (!status.is_valid()) {
-      assert(false, "got invalid status from apply");
-      phase()->C->record_failure(C2Compiler::retry_no_superword());
-      return; // bailout
-    }
-
     vnode_idx_to_transformed_node.at_put(vtn->_idx, n);
     max_vector_length = MAX2(max_vector_length, vector_length);
     max_vector_width  = MAX2(max_vector_width,  vector_width);
