@@ -767,9 +767,6 @@
   product(bool, UseProfiledLoopPredicate, true,                             \
           "Move predicates out of loops based on profiling data")           \
                                                                             \
-  product(bool, ExpandSubTypeCheckAtParseTime, false, DIAGNOSTIC,           \
-          "Do not use subtype check macro node")                            \
-                                                                            \
   develop(uintx, StressLongCountedLoop, 0,                                  \
           "if > 0, convert int counted loops to long counted loops"         \
           "to stress handling of long counted loops: run inner loop"        \
@@ -797,6 +794,10 @@
                                                                             \
   product(bool, InlineSecondarySupersTest, true, DIAGNOSTIC,                \
           "Inline the secondary supers hash lookup.")                       \
+                                                                            \
+  product(bool, UseStoreStoreForCtor, true, DIAGNOSTIC,                     \
+          "Use StoreStore barrier instead of Release barrier at the end "   \
+          "of constructors")                                                \
 
 // end of C2_FLAGS
 

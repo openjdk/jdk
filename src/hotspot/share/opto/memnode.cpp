@@ -856,7 +856,7 @@ bool LoadNode::can_remove_control() const {
 uint LoadNode::size_of() const { return sizeof(*this); }
 bool LoadNode::cmp(const Node &n) const {
   LoadNode& load = (LoadNode &)n;
-  return !Type::cmp(_type, load._type) &&
+  return Type::equals(_type, load._type) &&
          _control_dependency == load._control_dependency &&
          _mo == load._mo;
 }
@@ -2971,9 +2971,17 @@ StoreNode* MergePrimitiveArrayStores::run() {
   }
 
   // Only merge stores on arrays, and the stores must have the same size as the elements.
-  const TypeAryPtr* aryptr_t = _store->adr_type()->isa_aryptr();
-  if (aryptr_t == nullptr ||
-      type2aelembytes(aryptr_t->elem()->array_element_basic_type()) != _store->memory_size()) {
+  const TypePtr* ptr_t = _store->adr_type();
+  if (ptr_t == nullptr) {
+    return nullptr;
+  }
+  const TypeAryPtr* aryptr_t = ptr_t->isa_aryptr();
+  if (aryptr_t == nullptr) {
+    return nullptr;
+  }
+  BasicType bt = aryptr_t->elem()->array_element_basic_type();
+  if (!is_java_primitive(bt) ||
+      type2aelembytes(bt) != _store->memory_size()) {
     return nullptr;
   }
 
@@ -3012,6 +3020,7 @@ bool MergePrimitiveArrayStores::is_compatible_store(const StoreNode* other_store
 
   if (other_store == nullptr ||
       _store->Opcode() != other_store->Opcode() ||
+      other_store->adr_type() == nullptr ||
       other_store->adr_type()->isa_aryptr() == nullptr) {
     return false;
   }
@@ -3019,8 +3028,13 @@ bool MergePrimitiveArrayStores::is_compatible_store(const StoreNode* other_store
   // Check that the size of the stores, and the array elements are all the same.
   const TypeAryPtr* aryptr_t1 = _store->adr_type()->is_aryptr();
   const TypeAryPtr* aryptr_t2 = other_store->adr_type()->is_aryptr();
-  int size1 = type2aelembytes(aryptr_t1->elem()->array_element_basic_type());
-  int size2 = type2aelembytes(aryptr_t2->elem()->array_element_basic_type());
+  BasicType aryptr_bt1 = aryptr_t1->elem()->array_element_basic_type();
+  BasicType aryptr_bt2 = aryptr_t2->elem()->array_element_basic_type();
+  if (!is_java_primitive(aryptr_bt1) || !is_java_primitive(aryptr_bt2)) {
+    return false;
+  }
+  int size1 = type2aelembytes(aryptr_bt1);
+  int size2 = type2aelembytes(aryptr_bt2);
   if (size1 != size2 ||
       size1 != _store->memory_size() ||
       _store->memory_size() != other_store->memory_size()) {
@@ -3099,8 +3113,8 @@ bool MergePrimitiveArrayStores::is_con_RShift(const Node* n, Node const*& base_o
       n->in(2)->is_ConI()) {
     base_out = n->in(1);
     shift_out = n->in(2)->get_int();
-    assert(shift_out >= 0, "must be positive");
-    return true;
+    // The shift must be positive:
+    return shift_out >= 0;
   }
   return false;
 }
@@ -3502,7 +3516,10 @@ Node* StoreNode::Identity(PhaseGVN* phase) {
       val->in(MemNode::Address)->eqv_uncast(adr) &&
       val->in(MemNode::Memory )->eqv_uncast(mem) &&
       val->as_Load()->store_Opcode() == Opcode()) {
-    result = mem;
+    // Ensure vector type is the same
+    if (!is_StoreVector() || (mem->is_LoadVector() && as_StoreVector()->vect_type() == mem->as_LoadVector()->vect_type())) {
+      result = mem;
+    }
   }
 
   // Two stores in a row of the same value?
@@ -3511,7 +3528,24 @@ Node* StoreNode::Identity(PhaseGVN* phase) {
       mem->in(MemNode::Address)->eqv_uncast(adr) &&
       mem->in(MemNode::ValueIn)->eqv_uncast(val) &&
       mem->Opcode() == Opcode()) {
-    result = mem;
+    if (!is_StoreVector()) {
+      result = mem;
+    } else {
+      const StoreVectorNode* store_vector = as_StoreVector();
+      const StoreVectorNode* mem_vector = mem->as_StoreVector();
+      const Node* store_indices = store_vector->indices();
+      const Node* mem_indices = mem_vector->indices();
+      const Node* store_mask = store_vector->mask();
+      const Node* mem_mask = mem_vector->mask();
+      // Ensure types, indices, and masks match
+      if (store_vector->vect_type() == mem_vector->vect_type() &&
+          ((store_indices == nullptr) == (mem_indices == nullptr) &&
+           (store_indices == nullptr || store_indices->eqv_uncast(mem_indices))) &&
+          ((store_mask == nullptr) == (mem_mask == nullptr) &&
+           (store_mask == nullptr || store_mask->eqv_uncast(mem_mask)))) {
+        result = mem;
+      }
+    }
   }
 
   // Store of zero anywhere into a freshly-allocated object?
@@ -4125,7 +4159,7 @@ Node *MemBarNode::Ideal(PhaseGVN *phase, bool can_reshape) {
           eliminate = true;
         }
       }
-    } else if (opc == Op_MemBarRelease) {
+    } else if (opc == Op_MemBarRelease || (UseStoreStoreForCtor && opc == Op_MemBarStoreStore)) {
       // Final field stores.
       Node* alloc = AllocateNode::Ideal_allocation(in(MemBarNode::Precedent));
       if ((alloc != nullptr) && alloc->is_Allocate() &&

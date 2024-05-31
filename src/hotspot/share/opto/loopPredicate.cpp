@@ -99,40 +99,38 @@ void PhaseIdealLoop::register_control(Node* n, IdealLoopTree *loop, Node* pred, 
 // We will create a region to guard the uct call if there is no one there.
 // The continuation projection (if_cont) of the new_iff is returned which
 // is an IfTrue projection. This code is also used to clone predicates to cloned loops.
-IfProjNode* PhaseIdealLoop::create_new_if_for_predicate(ParsePredicateSuccessProj* parse_predicate_proj, Node* new_entry,
-                                                        Deoptimization::DeoptReason reason,
+IfTrueNode* PhaseIdealLoop::create_new_if_for_predicate(ParsePredicateSuccessProj* parse_predicate_success_proj,
+                                                        Node* new_entry, const Deoptimization::DeoptReason reason,
                                                         const int opcode, const bool rewire_uncommon_proj_phi_inputs) {
-  assert(parse_predicate_proj->is_uncommon_trap_if_pattern(reason), "must be a uct if pattern!");
-  ParsePredicateNode* parse_predicate = parse_predicate_proj->in(0)->as_ParsePredicate();
-
-  ProjNode* uncommon_proj = parse_predicate->proj_out(false);
-  Node* uct_region = uncommon_proj->unique_ctrl_out();
-  assert(uct_region->is_Region() || uct_region->is_Call(), "must be a region or call uct");
+  assert(parse_predicate_success_proj->is_uncommon_trap_if_pattern(reason), "must be a uct if pattern!");
+  ParsePredicateNode* parse_predicate = parse_predicate_success_proj->in(0)->as_ParsePredicate();
+  ParsePredicateUncommonProj* uncommon_proj = parse_predicate->uncommon_proj();
+  Node* uncommon_trap = parse_predicate->uncommon_trap();
 
   uint proj_index = 1; // region's edge corresponding to uncommon_proj
-  if (!uct_region->is_Region()) { // create a region to guard the call
-    assert(uct_region->is_Call(), "must be call uct");
-    CallNode* call = uct_region->as_Call();
+  if (!uncommon_trap->is_Region()) { // create a region to guard the call
+    assert(uncommon_trap->is_Call(), "must be call uct");
+    CallNode* call = uncommon_trap->as_Call();
     IdealLoopTree* loop = get_loop(call);
-    uct_region = new RegionNode(1);
+    uncommon_trap = new RegionNode(1);
     Node* uncommon_proj_orig = uncommon_proj;
-    uncommon_proj = uncommon_proj->clone()->as_Proj();
+    uncommon_proj = uncommon_proj->clone()->as_IfFalse();
     register_control(uncommon_proj, loop, parse_predicate);
-    uct_region->add_req(uncommon_proj);
-    register_control(uct_region, loop, uncommon_proj);
-    _igvn.replace_input_of(call, 0, uct_region);
+    uncommon_trap->add_req(uncommon_proj);
+    register_control(uncommon_trap, loop, uncommon_proj);
+    _igvn.replace_input_of(call, 0, uncommon_trap);
     // When called from beautify_loops() idom is not constructed yet.
     if (_idom != nullptr) {
-      set_idom(call, uct_region, dom_depth(uct_region));
+      set_idom(call, uncommon_trap, dom_depth(uncommon_trap));
     }
     // Move nodes pinned on the projection or whose control is set to
     // the projection to the region.
-    lazy_replace(uncommon_proj_orig, uct_region);
+    lazy_replace(uncommon_proj_orig, uncommon_trap);
   } else {
     // Find region's edge corresponding to uncommon_proj
-    for (; proj_index < uct_region->req(); proj_index++)
-      if (uct_region->in(proj_index) == uncommon_proj) break;
-    assert(proj_index < uct_region->req(), "sanity");
+    for (; proj_index < uncommon_trap->req(); proj_index++)
+      if (uncommon_trap->in(proj_index) == uncommon_proj) break;
+    assert(proj_index < uncommon_trap->req(), "sanity");
   }
 
   Node* entry = parse_predicate->in(0);
@@ -157,22 +155,23 @@ IfProjNode* PhaseIdealLoop::create_new_if_for_predicate(ParsePredicateSuccessPro
       fatal("no other If variant here");
   }
   register_control(new_iff, lp, entry);
-  IfProjNode* if_cont = new IfTrueNode(new_iff);
-  IfProjNode* if_uct  = new IfFalseNode(new_iff);
+
+  IfTrueNode* if_cont = new IfTrueNode(new_iff);
+  IfFalseNode* if_uct = new IfFalseNode(new_iff);
 
   register_control(if_cont, lp, new_iff);
-  register_control(if_uct, get_loop(uct_region), new_iff);
+  register_control(if_uct, get_loop(uncommon_trap), new_iff);
 
-  _igvn.add_input_to(uct_region, if_uct);
+  _igvn.add_input_to(uncommon_trap, if_uct);
 
   // If rgn has phis add new edges which has the same
   // value as on original uncommon_proj pass.
-  assert(uct_region->in(uct_region->req() - 1) == if_uct, "new edge should be last");
+  assert(uncommon_trap->in(uncommon_trap->req() - 1) == if_uct, "new edge should be last");
   bool has_phi = false;
-  for (DUIterator_Fast imax, i = uct_region->fast_outs(imax); i < imax; i++) {
-    Node* use = uct_region->fast_out(i);
+  for (DUIterator_Fast imax, i = uncommon_trap->fast_outs(imax); i < imax; i++) {
+    Node* use = uncommon_trap->fast_out(i);
     if (use->is_Phi() && use->outcnt() > 0) {
-      assert(use->in(0) == uct_region, "");
+      assert(use->in(0) == uncommon_trap, "");
       _igvn.rehash_node_delayed(use);
       Node* phi_input = use->in(proj_index);
 
@@ -193,7 +192,7 @@ IfProjNode* PhaseIdealLoop::create_new_if_for_predicate(ParsePredicateSuccessPro
       has_phi = true;
     }
   }
-  assert(!has_phi || uct_region->req() > 3, "no phis when region is created");
+  assert(!has_phi || uncommon_trap->req() > 3, "no phis when region is created");
 
   if (new_entry == nullptr) {
     // Attach if_cont to iff
@@ -205,12 +204,12 @@ IfProjNode* PhaseIdealLoop::create_new_if_for_predicate(ParsePredicateSuccessPro
 
   // When called from beautify_loops() idom is not constructed yet.
   if (_idom != nullptr) {
-    Node* ridom = idom(uct_region);
+    Node* ridom = idom(uncommon_trap);
     Node* nrdom = dom_lca_internal(ridom, new_iff);
-    set_idom(uct_region, nrdom, dom_depth(uct_region));
+    set_idom(uncommon_trap, nrdom, dom_depth(uncommon_trap));
   }
 
-  return if_cont->as_IfProj();
+  return if_cont;
 }
 
 // Update ctrl and control inputs of all data nodes starting from 'node' to 'new_ctrl' which have 'old_ctrl' as
@@ -349,10 +348,13 @@ void PhaseIdealLoop::get_assertion_predicates(Node* predicate, Unique_Node_List&
     if (uncommon_proj->unique_ctrl_out() != rgn) {
       break;
     }
-    if (iff->in(1)->Opcode() == Op_Opaque4 && assertion_predicate_has_loop_opaque_node(iff)) {
+    Node* bol = iff->in(1);
+    assert(!bol->is_OpaqueInitializedAssertionPredicate(), "should not find an Initialized Assertion Predicate");
+    if (bol->is_Opaque4()) {
+      assert(assertion_predicate_has_loop_opaque_node(iff), "must find OpaqueLoop* nodes");
       if (get_opaque) {
         // Collect the predicate Opaque4 node.
-        list.push(iff->in(1));
+        list.push(bol);
       } else {
         // Collect the predicate projection.
         list.push(predicate);
@@ -757,8 +759,8 @@ bool IdealLoopTree::is_range_check_if(IfProjNode* if_success_proj, PhaseIdealLoo
 //   max(scale*i + offset) = scale*(limit-stride) + offset
 // (2) stride*scale < 0
 //   max(scale*i + offset) = scale*init + offset
-BoolNode* PhaseIdealLoop::rc_predicate(IdealLoopTree* loop, Node* ctrl, int scale, Node* offset, Node* init,
-                                       Node* limit, jint stride, Node* range, bool upper, bool& overflow) {
+BoolNode* PhaseIdealLoop::rc_predicate(Node* ctrl, const int scale, Node* offset, Node* init, Node* limit,
+                                       const jint stride, Node* range, const bool upper, bool& overflow) {
   jint con_limit  = (limit != nullptr && limit->is_Con())  ? limit->get_int()  : 0;
   jint con_init   = init->is_Con()   ? init->get_int()   : 0;
   jint con_offset = offset->is_Con() ? offset->get_int() : 0;
@@ -1165,18 +1167,19 @@ bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree* loop, IfProjNod
                                                      reason,
                                                      iff->Opcode());
     Node* ctrl = new_predicate_proj->in(0)->as_If()->in(0);
-    BoolNode* new_predicate_bol = invar.clone(bol, ctrl)->as_Bool();
+    BoolNode* hoisted_check_predicate_bool = invar.clone(bol, ctrl)->as_Bool();
 
     // Negate test if necessary (Parse Predicates always have IfTrue as success projection and IfFalse as uncommon trap)
     bool negated = false;
     if (if_success_proj->is_IfFalse()) {
-      new_predicate_bol = new BoolNode(new_predicate_bol->in(1), new_predicate_bol->_test.negate());
-      register_new_node(new_predicate_bol, ctrl);
+      hoisted_check_predicate_bool = new BoolNode(hoisted_check_predicate_bool->in(1),
+                                                  hoisted_check_predicate_bool->_test.negate());
+      register_new_node(hoisted_check_predicate_bool, ctrl);
       negated = true;
     }
     IfNode* new_predicate_iff = new_predicate_proj->in(0)->as_If();
     _igvn.hash_delete(new_predicate_iff);
-    new_predicate_iff->set_req(1, new_predicate_bol);
+    new_predicate_iff->set_req(1, hoisted_check_predicate_bool);
 
     C->print_method(PHASE_AFTER_LOOP_PREDICATION_IC, 4, new_predicate_proj->in(0));
 
@@ -1220,7 +1223,8 @@ bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree* loop, IfProjNod
 
     // Perform cloning to keep Invariance state correct since the
     // late schedule will place invariant things in the loop.
-    Node* ctrl = parse_predicate_proj->in(0)->as_If()->in(0);
+    ParsePredicateNode* parse_predicate = parse_predicate_proj->in(0)->as_ParsePredicate();
+    Node* ctrl = parse_predicate->in(0);
     rng = invar.clone(rng, ctrl);
     if (offset && offset != zero) {
       assert(invar.is_invariant(offset), "offset must be loop invariant");
@@ -1229,25 +1233,28 @@ bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree* loop, IfProjNod
     // If predicate expressions may overflow in the integer range, longs are used.
     bool overflow = false;
     // Test the lower bound
-    BoolNode* lower_bound_bol = rc_predicate(loop, ctrl, scale, offset, init, limit, stride, rng, false, overflow);
+    BoolNode* lower_bound_bol = rc_predicate(ctrl, scale, offset, init, limit, stride, rng, false, overflow);
 
     const int if_opcode = iff->Opcode();
     IfProjNode* lower_bound_proj = create_new_if_for_predicate(parse_predicate_proj, nullptr, reason, overflow ? Op_If : if_opcode);
     IfNode* lower_bound_iff = lower_bound_proj->in(0)->as_If();
     _igvn.hash_delete(lower_bound_iff);
     lower_bound_iff->set_req(1, lower_bound_bol);
-    if (TraceLoopPredicate) tty->print_cr("lower bound check if: %d", lower_bound_iff->_idx);
+    if (TraceLoopPredicate) {
+      tty->print_cr("lower bound check if: %d", lower_bound_iff->_idx);
+    }
 
     // Test the upper bound
-    BoolNode* upper_bound_bol = rc_predicate(loop, lower_bound_proj, scale, offset, init, limit, stride, rng, true,
-                                             overflow);
+    BoolNode* upper_bound_bol = rc_predicate(lower_bound_proj, scale, offset, init, limit, stride, rng, true, overflow);
 
     IfProjNode* upper_bound_proj = create_new_if_for_predicate(parse_predicate_proj, nullptr, reason, overflow ? Op_If : if_opcode);
     assert(upper_bound_proj->in(0)->as_If()->in(0) == lower_bound_proj, "should dominate");
     IfNode* upper_bound_iff = upper_bound_proj->in(0)->as_If();
     _igvn.hash_delete(upper_bound_iff);
     upper_bound_iff->set_req(1, upper_bound_bol);
-    if (TraceLoopPredicate) tty->print_cr("upper bound check if: %d", lower_bound_iff->_idx);
+    if (TraceLoopPredicate) {
+      tty->print_cr("upper bound check if: %d", upper_bound_iff->_idx);
+    }
 
     // Fall through into rest of the cleanup code which will move any dependent nodes to the skeleton predicates of the
     // upper bound test. We always need to create skeleton predicates in order to properly remove dead loops when later
@@ -1294,7 +1301,7 @@ IfProjNode* PhaseIdealLoop::add_template_assertion_predicate(IfNode* iff, IdealL
   Node* opaque_init = new OpaqueLoopInitNode(C, init);
   register_new_node(opaque_init, upper_bound_proj);
   bool negate = (if_proj->_con != parse_predicate_proj->_con);
-  BoolNode* bol = rc_predicate(loop, upper_bound_proj, scale, offset, opaque_init, limit, stride, rng,
+  BoolNode* bol = rc_predicate(upper_bound_proj, scale, offset, opaque_init, limit, stride, rng,
                                (stride > 0) != (scale > 0), overflow);
   Node* opaque_bol = new Opaque4Node(C, bol, _igvn.intcon(1)); // This will go away once loop opts are over
   C->add_template_assertion_predicate_opaq(opaque_bol);
@@ -1317,7 +1324,7 @@ IfProjNode* PhaseIdealLoop::add_template_assertion_predicate(IfNode* iff, IdealL
   max_value = new CastIINode(max_value, loop->_head->as_CountedLoop()->phi()->bottom_type());
   register_new_node(max_value, parse_predicate_proj);
 
-  bol = rc_predicate(loop, new_proj, scale, offset, max_value, limit, stride, rng, (stride > 0) != (scale > 0),
+  bol = rc_predicate(new_proj, scale, offset, max_value, limit, stride, rng, (stride > 0) != (scale > 0),
                      overflow);
   opaque_bol = new Opaque4Node(C, bol, _igvn.intcon(1));
   C->add_template_assertion_predicate_opaq(opaque_bol);
@@ -1337,10 +1344,6 @@ bool PhaseIdealLoop::loop_predication_impl(IdealLoopTree* loop) {
 
   if (head->unique_ctrl_out()->is_NeverBranch()) {
     // do nothing for infinite loops
-    return false;
-  }
-
-  if (head->is_OuterStripMinedLoop()) {
     return false;
   }
 
@@ -1514,19 +1517,20 @@ bool PhaseIdealLoop::can_create_loop_predicates(const PredicateBlock* profiled_l
 
 //------------------------------loop_predication--------------------------------
 // driver routine for loop predication optimization
-bool IdealLoopTree::loop_predication( PhaseIdealLoop *phase) {
+bool IdealLoopTree::loop_predication(PhaseIdealLoop* phase) {
   bool hoisted = false;
   // Recursively promote predicates
   if (_child) {
     hoisted = _child->loop_predication( phase);
   }
 
-  // self
+  // Self
   if (can_apply_loop_predication()) {
     hoisted |= phase->loop_predication_impl(this);
   }
 
-  if (_next) { //sibling
+  // Sibling
+  if (_next) {
     hoisted |= _next->loop_predication( phase);
   }
 
@@ -1534,5 +1538,9 @@ bool IdealLoopTree::loop_predication( PhaseIdealLoop *phase) {
 }
 
 bool IdealLoopTree::can_apply_loop_predication() {
-  return _head->is_Loop() && !_irreducible && !tail()->is_top();
+  return !_head->is_Root() &&
+         _head->is_Loop() &&
+         !_head->is_OuterStripMinedLoop() &&
+         !_irreducible &&
+         !tail()->is_top();
 }

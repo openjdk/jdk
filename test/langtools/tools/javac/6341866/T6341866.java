@@ -67,7 +67,6 @@ public class T6341866 {
 
     enum AnnoType {
         NONE,           // no annotation processing
-        SERVICE,        // implicit annotation processing, via ServiceLoader
         SPECIFY         // explicit annotation processing
     };
 
@@ -99,14 +98,14 @@ public class T6341866 {
         processorServices.delete();
 
         List<String> opts = new ArrayList<String>();
-        opts.addAll(Arrays.asList("-d", ".", "-sourcepath", testSrc, "-classpath", testClasses, "-Xlint:-options"));
+        opts.addAll(Arrays.asList("-d", ".",
+                                  "-sourcepath", testSrc,
+                                  "-classpath", testClasses,
+                                  "-proc:full"));
         if (implicitType.opt != null)
             opts.add(implicitType.opt);
 
         switch (annoType) {
-        case SERVICE:
-            createProcessorServices(Anno.class.getName());
-            break;
         case SPECIFY:
             opts.addAll(Arrays.asList("-processor", Anno.class.getName()));
             break;
@@ -145,9 +144,6 @@ public class T6341866 {
             String expectKey = null;
             if (implicitType == ImplicitType.OPT_UNSET) {
                 switch (annoType) {
-                case SERVICE:
-                    expectKey = "compiler.warn.proc.use.proc.or.implicit";
-                    break;
                 case SPECIFY:
                     expectKey = "compiler.warn.proc.use.implicit";
                     break;

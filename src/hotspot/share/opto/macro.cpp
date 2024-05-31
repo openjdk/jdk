@@ -573,6 +573,9 @@ bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode
     if (res_type == nullptr) {
       NOT_PRODUCT(fail_eliminate = "Neither instance or array allocation";)
       can_eliminate = false;
+    } else if (!res_type->klass_is_exact()) {
+      NOT_PRODUCT(fail_eliminate = "Not an exact type.";)
+      can_eliminate = false;
     } else if (res_type->isa_aryptr()) {
       int length = alloc->in(AllocateNode::ALength)->find_int_con(-1);
       if (length < 0) {
@@ -633,7 +636,10 @@ bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode
         } else if (!reduce_merge_precheck) {
           safepoints->append_if_missing(sfpt);
         }
-      } else if (reduce_merge_precheck && (use->is_Phi() || use->is_EncodeP() || use->Opcode() == Op_MemBarRelease)) {
+      } else if (reduce_merge_precheck &&
+                 (use->is_Phi() || use->is_EncodeP() ||
+                  use->Opcode() == Op_MemBarRelease ||
+                  (UseStoreStoreForCtor && use->Opcode() == Op_MemBarStoreStore))) {
         // Nothing to do
       } else if (use->Opcode() != Op_CastP2X) { // CastP2X is used by card mark
         if (use->is_Phi()) {
@@ -1306,8 +1312,7 @@ void PhaseMacroExpand::expand_allocate_common(
     slow_region = new RegionNode(3);
 
     // Now make the initial failure test.  Usually a too-big test but
-    // might be a TRUE for finalizers or a fancy class check for
-    // newInstance0.
+    // might be a TRUE for finalizers.
     IfNode *toobig_iff = new IfNode(ctrl, initial_slow_test, PROB_MIN, COUNT_UNKNOWN);
     transform_later(toobig_iff);
     // Plug the failing-too-big test into the slow-path region
@@ -2424,7 +2429,8 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
       default:
         assert(n->Opcode() == Op_LoopLimit ||
                n->Opcode() == Op_Opaque3   ||
-               n->Opcode() == Op_Opaque4   ||
+               n->is_Opaque4()             ||
+               n->is_OpaqueInitializedAssertionPredicate() ||
                n->Opcode() == Op_MaxL      ||
                n->Opcode() == Op_MinL      ||
                BarrierSet::barrier_set()->barrier_set_c2()->is_gc_barrier_node(n),
@@ -2445,6 +2451,8 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
 //------------------------------expand_macro_nodes----------------------
 //  Returns true if a failure occurred.
 bool PhaseMacroExpand::expand_macro_nodes() {
+  // Do not allow new macro nodes once we started to expand
+  C->reset_allow_macro_nodes();
   if (StressMacroExpansion) {
     C->shuffle_macro_nodes();
   }
@@ -2497,7 +2505,7 @@ bool PhaseMacroExpand::expand_macro_nodes() {
         _igvn.replace_node(n, repl);
         success = true;
 #endif
-      } else if (n->Opcode() == Op_Opaque4) {
+      } else if (n->is_Opaque4()) {
         // With Opaque4 nodes, the expectation is that the test of input 1
         // is always equal to the constant value of input 2. So we can
         // remove the Opaque4 and replace it by input 2. In debug builds,
@@ -2510,6 +2518,17 @@ bool PhaseMacroExpand::expand_macro_nodes() {
         _igvn.replace_node(n, n->in(2));
 #endif
         success = true;
+      } else if (n->is_OpaqueInitializedAssertionPredicate()) {
+          // Initialized Assertion Predicates must always evaluate to true. Therefore, we get rid of them in product
+          // builds as they are useless. In debug builds we keep them as additional verification code. Even though
+          // loop opts are already over, we want to keep Initialized Assertion Predicates alive as long as possible to
+          // enable folding of dead control paths within which cast nodes become top after due to impossible types -
+          // even after loop opts are over. Therefore, we delay the removal of these opaque nodes until now.
+#ifdef ASSERT
+        _igvn.replace_node(n, n->in(1));
+#else
+        _igvn.replace_node(n, _igvn.intcon(1));
+#endif // ASSERT
       } else if (n->Opcode() == Op_OuterStripMinedLoop) {
         n->as_OuterStripMinedLoop()->adjust_strip_mined_loop(&_igvn);
         C->remove_macro_node(n);

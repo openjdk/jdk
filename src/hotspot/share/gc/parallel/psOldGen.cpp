@@ -31,7 +31,6 @@
 #include "gc/parallel/psOldGen.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/gcLocker.hpp"
-#include "gc/shared/spaceDecorator.inline.hpp"
 #include "logging/log.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"
@@ -376,10 +375,3 @@ void PSOldGen::update_counters() {
 void PSOldGen::verify() {
   object_space()->verify();
 }
-
-#ifndef PRODUCT
-void PSOldGen::record_spaces_top() {
-  assert(ZapUnusedHeapArea, "Not mangling unused space");
-  object_space()->set_top_for_allocations();
-}
-#endif

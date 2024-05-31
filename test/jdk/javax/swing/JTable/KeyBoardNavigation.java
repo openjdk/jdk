@@ -30,11 +30,9 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
-import javax.swing.SwingUtilities;
 import javax.swing.border.BevelBorder;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableModel;
 
@@ -49,52 +47,7 @@ import javax.swing.table.TableModel;
  */
 
 public class KeyBoardNavigation {
-    static JFrame frame;
-    public static PassFailJFrame passFailJFrame;
-
-    static void initTest() throws Exception {
-        final String INSTRUCTIONS = """
-                Instructions to Test:
-                1. Refer the below keyboard navigation specs
-                 (referenced from bug report 4112270).
-                2. Check all combinations of navigational keys in all four modes
-                  shift and control verifying each change to the selection against
-                  the spec. If it does, press "pass", otherwise press "fail".
-
-                  Navigate In - Tab, shift-tab, control-tab, shift-control-tab
-                  Return/shift-return - move focus one cell down/up.
-                  Tab/shift-tab - move focus one cell right/left.
-                  Up/down arrow - deselect current selection; move focus one cell up/down
-                  Left/right arrow - deselect current selection; move focus one cell
-                                             left/right
-                  PageUp/PageDown - deselect current selection; scroll up/down one
-                                    JViewport view; first visible cell in current
-                                    column gets focus
-                  Control-PageUp/PageDown - deselect current selection; scroll
-                                            left/right one JViewport view; first
-                                            visible cell in current row gets
-                                            focus
-                  Home/end - deselect current selection; move focus and view to
-                                     first/last cell in current row
-                  Control-home/end - deselect current selection; move focus and view to
-                                             upper-left/lower-right cell in table
-                  F2 - Allows editing in a cell containing information without
-                               overwriting the information
-                  Esc - Resets the cell content back to the state it was in before
-                                editing started
-                  Ctrl+A, Ctrl+/ = Select all
-                  Ctrl+\\ = De-select all
-                  Shift-up/down arrow - extend selection up/down one row
-                  Shift-left/right arrow - extend selection left/right one column
-                  Control-shift up/down arrow - extend selection to top/bottom of column
-                  Shift-home/end - extend selection to left/right end of row
-                  Control-shift-home/end - extend selection to beginning/end of data
-                  Shift-PageUp/PageDown - extend selection up/down one view and scroll
-                                          table
-                  Control-shift-PageUp/PageDown - extend selection left/right one view
-                                                          and scroll table
-                """;
-
+    static JFrame initTest() {
         final String[] names = {"First Name", "Last Name", "Favorite Color",
                 "Favorite Number", "Vegetarian"};
         final Object[][] data = {
@@ -121,12 +74,7 @@ public class KeyBoardNavigation {
                 {"Arnaud", "Weber", "Green", 44, Boolean.FALSE}
         };
 
-        frame = new JFrame("JTable Keyboard Navigation Test");
-        passFailJFrame = new PassFailJFrame("Test Instructions",
-                INSTRUCTIONS, 5L, 15, 50);
-
-        PassFailJFrame.addTestWindow(frame);
-        PassFailJFrame.positionTestWindow(frame, PassFailJFrame.Position.VERTICAL);
+        JFrame frame = new JFrame("JTable Keyboard Navigation Test");
 
         JTable tableView = getTableDetails(names, data);
 
@@ -151,9 +99,9 @@ public class KeyBoardNavigation {
         colorColumn.setCellRenderer(colorColumnRenderer);
 
         // Set a tooltip for the header of the colors column.
-        TableCellRenderer headerRenderer = colorColumn.getHeaderRenderer();
-        if (headerRenderer instanceof DefaultTableCellRenderer)
-            ((DefaultTableCellRenderer) headerRenderer).setToolTipText("Hi Mom!");
+        if (colorColumn.getHeaderRenderer() instanceof DefaultTableCellRenderer headerRenderer) {
+            headerRenderer.setToolTipText("Hi Mom!");
+        }
 
         // Set the width of the "Vegetarian" column.
         TableColumn vegetarianColumn = tableView.getColumn("Vegetarian");
@@ -163,7 +111,7 @@ public class KeyBoardNavigation {
         TableColumn numbersColumn = tableView.getColumn("Favorite Number");
         DefaultTableCellRenderer numberColumnRenderer = new DefaultTableCellRenderer() {
             public void setValue(Object value) {
-                int cellValue = (value instanceof Number) ? ((Number) value).intValue() : 0;
+                int cellValue = (value instanceof Number number) ? number.intValue() : 0;
                 setForeground((cellValue > 30) ? Color.black : Color.red);
                 setText((value == null) ? "" : value.toString());
             }
@@ -172,13 +120,14 @@ public class KeyBoardNavigation {
         numbersColumn.setCellRenderer(numberColumnRenderer);
         numbersColumn.setPreferredWidth(110);
 
+        tableView.setColumnSelectionAllowed(true);
         JScrollPane scrollPane = new JScrollPane(tableView);
         scrollPane.setBorder(new BevelBorder(BevelBorder.LOWERED));
         scrollPane.setPreferredSize(new Dimension(430, 200));
 
         frame.add(scrollPane);
         frame.pack();
-        frame.setVisible(true);
+        return frame;
     }
 
     private static JTable getTableDetails(String[] names, Object[][] data) {
@@ -224,13 +173,128 @@ public class KeyBoardNavigation {
     }
 
     public static void main(String[] args) throws Exception {
-        SwingUtilities.invokeAndWait(() -> {
-            try {
-                initTest();
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        });
-        passFailJFrame.awaitAndCheck();
+        String INSTRUCTIONS = """
+                Instructions to Test:
+                1. Refer the below keyboard navigation specs
+                 (referenced from bug report 4112270).
+                2. Check all combinations of navigational keys mentioned below
+                 and verifying each key combinations against the spec defined.
+                 If it does, press "pass", otherwise press "fail".
+
+                """;
+
+        INSTRUCTIONS += getOSSpecificInstructions();
+        PassFailJFrame.builder()
+                .instructions(INSTRUCTIONS)
+                .rows(30)
+                .columns(50)
+                .testUI(KeyBoardNavigation::initTest)
+                .testTimeOut(10)
+                .build()
+                .awaitAndCheck();
+    }
+
+    public static String getOSSpecificInstructions() {
+        final String WINDOWS_SPECIFIC = """
+                Tab, Shift-Tab - Navigate In.
+                Return/Shift-Return - Move focus one cell down/up.
+                Tab/Shift-Tab -  Move focus one cell right/left.
+                Up/Down Arrow - Deselect current selection; move focus one
+                                cell up/down
+                Left/Right Arrow - Deselect current selection; move focus
+                                   one cell left/right
+                PageUp/PageDown - Deselect current selection; scroll up/down
+                                  one JViewport view; first visible cell in
+                                  current column gets focus
+                Control-PageUp/PageDown - Deselect current selection;
+                                          move focus and view to
+                                          first/last cell in current row
+                Home/End - Deselect current selection; move focus and view to
+                           first/last cell in current row
+                Control-Home/End - Deselect current selection;
+                                   scroll up/down one  JViewport view;
+                                   first/last visible row of the table
+                F2 - Allows editing in a cell containing information without
+                     overwriting the information
+                Esc -  Resets the cell content back to the state it was in
+                       before editing started
+                Ctrl+A, Ctrl+/ - Select All
+                Ctrl+\\ - Deselect all
+                Shift-Up/Down Arrow -  Extend selection up/down one row
+                Shift-Left/Right Arrow - Extend selection left/right one
+                                         column
+                Control-shift Up/Down Arrow -  Extend selection to top/bottom
+                                                of column
+                Shift-Home/End -  Extend selection to left/right end of row
+                Control-Shift-Home/End  - Extend selection to beginning/end
+                                          of data
+                Shift-PageUp/PageDown - Extend selection up/down one view
+                                        and scroll table
+                Control-Shift-PageUp/PageDown - Extend selection left/right
+                                                end of row
+                """;
+
+        final String LINUX_SPECIFIC = """
+                Tab, Shift-Tab - Navigate In.
+                Return/Shift-Return - Move focus one cell down/up.
+                Tab/Shift-Tab -  Move focus one cell right/left.
+                Up/Down Arrow - Deselect current selection;
+                                move focus one cell up/down
+                Left/Right Arrow - Deselect current selection;
+                                   move focus one cell left/right
+                PageUp/PageDown - Deselect current selection;
+                                  scroll up/down one  JViewport view;
+                                  first visible cell in current column gets focus
+                Home/End - Deselect current selection; move focus and view to
+                                     first/last cell in current row
+                F2 - Allows editing in a cell containing information without
+                     overwriting the information
+                Esc -  Resets the cell content back to the state it was in
+                       before editing started
+                Ctrl+A, Ctrl+/ - Select All
+                Ctrl+\\ - Deselect all
+                Shift-Up/Down Arrow -  Extend selection up/down one row
+                Shift-Left/Right Arrow - Extend selection left/right one column
+                Control-Shift Up/Down Arrow -  Extend selection to top/bottom of
+                                               column
+                Shift-Home/End -  Extend selection to left/right end of row
+                Shift-PageUp/PageDown - Extend selection up/down one view and
+                                        scroll  table
+                """;
+
+        final String MAC_SPECIFIC = """
+                Tab, Shift-Tab - Navigate In.
+                Return/Shift-Return - Move focus one cell down/up.
+                Tab/Shift-Tab -  Move focus one cell right/left.
+                Up/Down Arrow - Deselect current selection; move focus one cell
+                                up/down
+                Left/Right Arrow - Deselect current selection;
+                                   move focus one cell left/right
+                FN+Up Arrow/FN+Down Arrow - Deselect current selection;
+                                   scroll up/down one JViewport view;
+                                   first visible cell in current column gets focus
+                Control-FN+Up Arrow/FN+Down Arrow - Deselect current selection;
+                                                    move focus and view to
+                                                    first/last cell in current row
+                F2 - Allows editing in a cell containing information without
+                     overwriting the information
+                Esc -  Resets the cell content back to the state it was in
+                       before editing started
+                Ctrl+A, Ctrl+/ - Select All
+                Ctrl+\\ - Deselect all
+                Shift-Up/Down Arrow -  Extend selection up/down one row
+                Shift-Left/Right Arrow - Extend selection left/right one column
+                FN-Shift Up/Down Arrow -  Extend selection to top/bottom of column
+                Shift-PageUp/PageDown - Extend selection up/down one view and scroll
+                                        table
+                                """;
+        String osName = System.getProperty("os.name").toLowerCase();
+        if (osName.startsWith("mac")) {
+            return MAC_SPECIFIC;
+        } else if (osName.startsWith("win")) {
+            return WINDOWS_SPECIFIC;
+        } else {
+            return LINUX_SPECIFIC;
+        }
     }
 }
