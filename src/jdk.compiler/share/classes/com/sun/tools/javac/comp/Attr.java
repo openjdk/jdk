@@ -6026,6 +6026,12 @@ public class Attr extends JCTree.Visitor {
         }
 
         @Override
+        public void visitRecordPattern(JCRecordPattern that) {
+            initTypeIfNeeded(that);
+            super.visitRecordPattern(that);
+        }
+
+        @Override
         public void visitNewClass(JCNewClass that) {
             if (that.constructor == null) {
                 that.constructor = new MethodSymbol(0, names.init,
