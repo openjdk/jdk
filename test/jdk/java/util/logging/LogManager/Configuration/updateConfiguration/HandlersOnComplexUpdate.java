@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,7 +86,7 @@ public class HandlersOnComplexUpdate {
         TIMEOUT_FACTOR = Double.parseDouble(toFactor);
     }
     static int adjustCount(int count) {
-        return (int) Math.ceil(TIMEOUT_FACTOR * count);
+        return Math.min(count, (int) Math.ceil(TIMEOUT_FACTOR * count));
     }
 
     private static final String PREFIX =
@@ -221,11 +221,10 @@ public class HandlersOnComplexUpdate {
                     + barChild.getParent() +"\n\texpected: " + barRef.get());
         }
         Reference<? extends Logger> ref2;
-        int max = adjustCount(3);
+        int max = adjustCount(6);
         barChild = null;
-        while ((ref2 = queue.poll()) == null) {
+        while ((ref2 = queue.remove(500)) == null) {
             System.gc();
-            Thread.sleep(1000);
             if (--max == 0) break;
         }
 
