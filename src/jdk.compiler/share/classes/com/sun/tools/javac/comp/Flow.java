@@ -827,30 +827,24 @@ public class Flow {
                 }
             }
             Set<PatternDescription> patterns = patternSet;
-            boolean genericPatternsExpanded = false;
+            boolean useHashes = true;
             try {
                 boolean repeat = true;
                 while (repeat) {
                     Set<PatternDescription> updatedPatterns;
                     updatedPatterns = reduceBindingPatterns(selector.type, patterns);
-                    updatedPatterns = reduceNestedPatterns(updatedPatterns);
+                    updatedPatterns = reduceNestedPatterns(updatedPatterns, useHashes);
                     updatedPatterns = reduceRecordPatterns(updatedPatterns);
                     updatedPatterns = removeCoveredRecordPatterns(updatedPatterns);
                     repeat = !updatedPatterns.equals(patterns);
                     if (checkCovered(selector.type, patterns)) {
                         return true;
                     }
-                    if (!repeat && !genericPatternsExpanded) {
-                        //there may be situation like:
-                        //class B extends S1, S2
-                        //patterns: R(S1, B), R(S2, S2)
-                        //this should be joined to R(B, S2),
-                        //but hashing in reduceNestedPatterns will not allow that
-                        //attempt to once expand all types to their transitive permitted types,
-                        //on all depth of nesting:
-                        updatedPatterns = expandGenericPatterns(updatedPatterns);
-                        genericPatternsExpanded = true;
-                        repeat = !updatedPatterns.equals(patterns);
+                    if (!repeat) {
+                        repeat = useHashes;
+                        useHashes = false;
+                    } else {
+                        useHashes = true;
                     }
                     patterns = updatedPatterns;
                 }
@@ -1024,7 +1018,7 @@ public class Flow {
          * of patterns is replaced with a new set of patterns of the form:
          * $record($prefix$, $resultOfReduction, $suffix$)
          */
-        private Set<PatternDescription> reduceNestedPatterns(Set<PatternDescription> patterns) {
+        private Set<PatternDescription> reduceNestedPatterns(Set<PatternDescription> patterns, boolean useHashes) {
             /* implementation note:
              * finding a sub-set of patterns that only differ in a single
              * column is time-consuming task, so this method speeds it up by:
@@ -1054,7 +1048,7 @@ public class Flow {
                              .stream()
                              //error recovery, ignore patterns with incorrect number of nested patterns:
                              .filter(pd -> pd.nested.length == nestedPatternsCount)
-                             .collect(groupingBy(pd -> pd.hashCode(mismatchingCandidateFin)));
+                             .collect(groupingBy(pd -> useHashes ? pd.hashCode(mismatchingCandidateFin) : 0));
                     for (var candidates : groupByHashes.values()) {
                         var candidatesArr = candidates.toArray(RecordPattern[]::new);
 
@@ -1076,9 +1070,13 @@ public class Flow {
                                 RecordPattern rpOther = candidatesArr[nextCandidate];
                                 if (rpOne.recordType.tsym == rpOther.recordType.tsym) {
                                     for (int i = 0; i < rpOne.nested.length; i++) {
-                                        if (i != mismatchingCandidate &&
-                                            !rpOne.nested[i].equals(rpOther.nested[i])) {
-                                            continue NEXT_PATTERN;
+                                        if (i != mismatchingCandidate) {
+                                            if (!rpOne.nested[i].equals(rpOther.nested[i])) {
+//                                                if (useHashes || !(rpOne.nested[i] instanceof BindingPattern bpOne) || !(rpOther.nested[i] instanceof BindingPattern bpOther) || !types.isSubtype(types.erasure(bpOne.type), types.erasure(bpOther.type))) {
+                                                if (useHashes || !(rpOne.nested[i] instanceof BindingPattern bpOne) || !(rpOther.nested[i] instanceof BindingPattern bpOther) || !types.isSubtype(types.erasure(bpOne.type), types.erasure(bpOther.type))) {
+                                                    continue NEXT_PATTERN;
+                                                }
+                                            }
                                         }
                                     }
                                     join.append(rpOther);
@@ -1086,13 +1084,14 @@ public class Flow {
                             }
 
                             var nestedPatterns = join.stream().map(rp -> rp.nested[mismatchingCandidateFin]).collect(Collectors.toSet());
-                            var updatedPatterns = reduceNestedPatterns(nestedPatterns);
+                            var updatedPatterns = reduceNestedPatterns(nestedPatterns, useHashes);
 
                             updatedPatterns = reduceRecordPatterns(updatedPatterns);
                             updatedPatterns = removeCoveredRecordPatterns(updatedPatterns);
                             updatedPatterns = reduceBindingPatterns(rpOne.fullComponentTypes()[mismatchingCandidateFin], updatedPatterns);
 
                             if (!nestedPatterns.equals(updatedPatterns)) {
+                                //TODO: probably do not remove if subtyping was used?
                                 current.removeAll(join);
 
                                 for (PatternDescription nested : updatedPatterns) {
