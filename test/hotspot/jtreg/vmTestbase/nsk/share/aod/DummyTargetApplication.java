@@ -65,6 +65,7 @@ public class DummyTargetApplication {
 
         if ((signal == null) || !signal.equals(AODTestRunner.SIGNAL_FINISH))
             throw new TestBug("Unexpected signal: '" + signal + "'");
+        pipe.close();
     }
 
     public static void main(String[] args) {

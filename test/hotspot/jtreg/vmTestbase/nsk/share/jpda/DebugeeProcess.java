@@ -207,6 +207,12 @@ abstract public class DebugeeProcess {
         if (process != null) {
             process.destroy();
         }
+        if (pipe != null) {
+            pipe.close();
+        }
+        if (binder != null) {
+            binder.close();
+        }
         return exitCode;
     }
 
