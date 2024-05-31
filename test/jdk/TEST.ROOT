@@ -100,6 +100,7 @@ requires.properties= \
     vm.jvmci.enabled \
     vm.jvmti \
     docker.support \
+    systemd.support \
     release.implementor \
     jdk.containerized \
     jdk.foreign.linker
