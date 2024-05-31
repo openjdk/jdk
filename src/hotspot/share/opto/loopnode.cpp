@@ -4320,7 +4320,7 @@ void PhaseIdealLoop::mark_loop_associated_parse_predicates_useful() {
 }
 
 void PhaseIdealLoop::mark_useful_parse_predicates_for_loop(IdealLoopTree* loop) {
-  Node* entry = loop->_head->in(LoopNode::EntryControl);
+  Node* entry = loop->_head->as_Loop()->skip_strip_mined()->in(LoopNode::EntryControl);
   const Predicates predicates(entry);
   ParsePredicateIterator iterator(predicates);
   while (iterator.has_next()) {
@@ -4359,7 +4359,7 @@ void PhaseIdealLoop::collect_useful_template_assertion_predicates(Unique_Node_Li
 
 void PhaseIdealLoop::collect_useful_template_assertion_predicates_for_loop(IdealLoopTree* loop,
                                                                            Unique_Node_List &useful_predicates) {
-  Node* entry = loop->_head->in(LoopNode::EntryControl);
+  Node* entry = loop->_head->as_Loop()->skip_strip_mined()->in(LoopNode::EntryControl);
   const Predicates predicates(entry);
   if (UseProfiledLoopPredicate) {
     const PredicateBlock* profiled_loop_predicate_block = predicates.profiled_loop_predicate_block();
@@ -4380,10 +4380,9 @@ void PhaseIdealLoop::collect_useful_template_assertion_predicates_for_loop(Ideal
 
 void PhaseIdealLoop::eliminate_useless_template_assertion_predicates(Unique_Node_List& useful_predicates) {
   for (int i = C->template_assertion_predicate_count(); i > 0; i--) {
-    Node* opaque4 = C->template_assertion_predicate_opaq_node(i - 1);
-    assert(opaque4->Opcode() == Op_Opaque4, "must be");
-    if (!useful_predicates.member(opaque4)) { // not in the useful list
-      _igvn.replace_node(opaque4, opaque4->in(2));
+    Opaque4Node* opaque4_node = C->template_assertion_predicate_opaq_node(i - 1)->as_Opaque4();
+    if (!useful_predicates.member(opaque4_node)) { // not in the useful list
+      _igvn.replace_node(opaque4_node, opaque4_node->in(2));
     }
   }
 }

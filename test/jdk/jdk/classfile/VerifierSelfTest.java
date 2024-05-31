@@ -45,6 +45,7 @@ import java.util.stream.Stream;
 import java.lang.classfile.*;
 import java.lang.classfile.attribute.*;
 import java.lang.classfile.components.ClassPrinter;
+import java.lang.constant.ModuleDesc;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -120,6 +121,12 @@ class VerifierSelfTest {
                 DeprecatedAttribute.of(),
                 EnclosingMethodAttribute.of(cd_test, Optional.empty(), Optional.empty()),
                 InnerClassesAttribute.of(InnerClassInfo.of(cd_test, Optional.of(cd_test), Optional.of("inner"), 0)),
+                ModuleAttribute.of(ModuleDesc.of("m"), mab -> {}),
+                ModuleHashesAttribute.of("alg", List.of()),
+                ModuleMainClassAttribute.of(cd_test),
+                ModulePackagesAttribute.of(),
+                ModuleResolutionAttribute.of(0),
+                ModuleTargetAttribute.of("t"),
                 NestHostAttribute.of(cd_test),
                 NestMembersAttribute.ofSymbols(cd_test),
                 PermittedSubclassesAttribute.ofSymbols(cd_test),
@@ -162,7 +169,10 @@ class VerifierSelfTest {
                             SignatureAttribute.of(MethodSignature.of(MTD_void)),
                             SyntheticAttribute.of())
                             .withCode(cob ->
-                                cob.return_()
+                                cob.iconst_0()
+                                   .ifThen(CodeBuilder::nop)
+                                   .return_()
+                                   .with(new CloneAttribute(StackMapTableAttribute.of(List.of())))
                                    .with(new CloneAttribute(CharacterRangeTableAttribute.of(List.of())))
                                    .with(new CloneAttribute(LineNumberTableAttribute.of(List.of())))
                                    .with(new CloneAttribute(LocalVariableTableAttribute.of(List.of())))
@@ -198,6 +208,7 @@ class VerifierSelfTest {
                 Illegal method name <> in class ParserVerificationTestClass
                 Interface cannot have a method named <init> in class ParserVerificationTestClass
                 Method <clinit> is not static in class ParserVerificationTestClass
+                Multiple CompilationID attributes in class ParserVerificationTestClass
                 Wrong CompilationID attribute length in class ParserVerificationTestClass
                 Wrong Deprecated attribute length in class ParserVerificationTestClass
                 Multiple EnclosingMethod attributes in class ParserVerificationTestClass
@@ -206,6 +217,18 @@ class VerifierSelfTest {
                 Multiple InnerClasses attributes in class ParserVerificationTestClass
                 Class is both outer and inner class in class ParserVerificationTestClass
                 Wrong InnerClasses attribute length in class ParserVerificationTestClass
+                Multiple Module attributes in class ParserVerificationTestClass
+                Wrong Module attribute length in class ParserVerificationTestClass
+                Multiple ModuleHashes attributes in class ParserVerificationTestClass
+                Wrong ModuleHashes attribute length in class ParserVerificationTestClass
+                Multiple ModuleMainClass attributes in class ParserVerificationTestClass
+                Wrong ModuleMainClass attribute length in class ParserVerificationTestClass
+                Multiple ModulePackages attributes in class ParserVerificationTestClass
+                Wrong ModulePackages attribute length in class ParserVerificationTestClass
+                Multiple ModuleResolution attributes in class ParserVerificationTestClass
+                Wrong ModuleResolution attribute length in class ParserVerificationTestClass
+                Multiple ModuleTarget attributes in class ParserVerificationTestClass
+                Wrong ModuleTarget attribute length in class ParserVerificationTestClass
                 Multiple NestHost attributes in class ParserVerificationTestClass
                 Wrong NestHost attribute length in class ParserVerificationTestClass
                 Conflicting NestHost and NestMembers attributes in class ParserVerificationTestClass
@@ -223,7 +246,9 @@ class VerifierSelfTest {
                 Multiple RuntimeInvisibleAnnotations attributes in class ParserVerificationTestClass
                 Wrong RuntimeInvisibleAnnotations attribute length in class ParserVerificationTestClass
                 Multiple RuntimeVisibleTypeAnnotations attributes in class ParserVerificationTestClass
+                Wrong RuntimeVisibleTypeAnnotations attribute length in class ParserVerificationTestClass
                 Multiple RuntimeInvisibleTypeAnnotations attributes in class ParserVerificationTestClass
+                Wrong RuntimeInvisibleTypeAnnotations attribute length in class ParserVerificationTestClass
                 Multiple Signature attributes in class ParserVerificationTestClass
                 Wrong Signature attribute length in class ParserVerificationTestClass
                 Multiple SourceDebugExtension attributes in class ParserVerificationTestClass
@@ -242,7 +267,9 @@ class VerifierSelfTest {
                 Multiple RuntimeInvisibleAnnotations attributes in field ParserVerificationTestClass.f
                 Wrong RuntimeInvisibleAnnotations attribute length in field ParserVerificationTestClass.f
                 Multiple RuntimeVisibleTypeAnnotations attributes in field ParserVerificationTestClass.f
+                Wrong RuntimeVisibleTypeAnnotations attribute length in field ParserVerificationTestClass.f
                 Multiple RuntimeInvisibleTypeAnnotations attributes in field ParserVerificationTestClass.f
+                Wrong RuntimeInvisibleTypeAnnotations attribute length in field ParserVerificationTestClass.f
                 Multiple Signature attributes in field ParserVerificationTestClass.f
                 Wrong Signature attribute length in field ParserVerificationTestClass.f
                 Wrong Synthetic attribute length in field ParserVerificationTestClass.f
@@ -265,10 +292,12 @@ class VerifierSelfTest {
                 Wrong Signature attribute length in method ParserVerificationTestClass::m()
                 Wrong Synthetic attribute length in method ParserVerificationTestClass::m()
                 Code attribute in native or abstract method ParserVerificationTestClass::m()
+                Wrong StackMapTable attribute length in Code attribute for method ParserVerificationTestClass::m()
                 Wrong CharacterRangeTable attribute length in Code attribute for method ParserVerificationTestClass::m()
                 Wrong LineNumberTable attribute length in Code attribute for method ParserVerificationTestClass::m()
                 Wrong LocalVariableTable attribute length in Code attribute for method ParserVerificationTestClass::m()
                 Wrong LocalVariableTypeTable attribute length in Code attribute for method ParserVerificationTestClass::m()
+                Multiple StackMapTable attributes in Code attribute for method ParserVerificationTestClass::m()
                 Multiple Signature attributes in Record component c of class ParserVerificationTestClass
                 Wrong Signature attribute length in Record component c of class ParserVerificationTestClass
                 Multiple RuntimeVisibleAnnotations attributes in Record component c of class ParserVerificationTestClass
@@ -276,7 +305,9 @@ class VerifierSelfTest {
                 Multiple RuntimeInvisibleAnnotations attributes in Record component c of class ParserVerificationTestClass
                 Wrong RuntimeInvisibleAnnotations attribute length in Record component c of class ParserVerificationTestClass
                 Multiple RuntimeVisibleTypeAnnotations attributes in Record component c of class ParserVerificationTestClass
+                Wrong RuntimeVisibleTypeAnnotations attribute length in Record component c of class ParserVerificationTestClass
                 Multiple RuntimeInvisibleTypeAnnotations attributes in Record component c of class ParserVerificationTestClass
+                Wrong RuntimeInvisibleTypeAnnotations attribute length in Record component c of class ParserVerificationTestClass
                 Multiple Signature attributes in Record component c of class ParserVerificationTestClass
                 Wrong Signature attribute length in Record component c of class ParserVerificationTestClass
                 Multiple RuntimeVisibleAnnotations attributes in Record component c of class ParserVerificationTestClass
@@ -284,7 +315,9 @@ class VerifierSelfTest {
                 Multiple RuntimeInvisibleAnnotations attributes in Record component c of class ParserVerificationTestClass
                 Wrong RuntimeInvisibleAnnotations attribute length in Record component c of class ParserVerificationTestClass
                 Multiple RuntimeVisibleTypeAnnotations attributes in Record component c of class ParserVerificationTestClass
+                Wrong RuntimeVisibleTypeAnnotations attribute length in Record component c of class ParserVerificationTestClass
                 Multiple RuntimeInvisibleTypeAnnotations attributes in Record component c of class ParserVerificationTestClass
+                Wrong RuntimeInvisibleTypeAnnotations attribute length in Record component c of class ParserVerificationTestClass
                 Missing Code attribute in ParserVerificationTestClass::<init>() @0
                 Missing Code attribute in ParserVerificationTestClass::<clinit>() @0
                 """.formatted(indexes).lines().filter(exp -> !found.remove(exp)).toList();

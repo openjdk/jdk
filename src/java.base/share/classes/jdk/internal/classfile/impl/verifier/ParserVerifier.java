@@ -37,18 +37,22 @@ import java.util.stream.Collectors;
 import java.lang.classfile.Attribute;
 import java.lang.classfile.AttributedElement;
 import java.lang.classfile.Attributes;
-import java.lang.classfile.ClassFile;
 import java.lang.classfile.ClassModel;
 import java.lang.classfile.ClassFileElement;
 import java.lang.classfile.CodeModel;
 import java.lang.classfile.CompoundElement;
+import java.lang.classfile.CustomAttribute;
 import java.lang.classfile.FieldModel;
 import java.lang.classfile.MethodModel;
+import java.lang.classfile.TypeAnnotation;
 import java.lang.classfile.TypeKind;
 import java.lang.classfile.attribute.*;
 import java.lang.classfile.constantpool.*;
 import java.lang.constant.ConstantDescs;
 import java.lang.reflect.AccessFlag;
+import java.util.Collection;
+import java.util.function.Function;
+import java.util.function.ToIntFunction;
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.Util;
 
@@ -146,9 +150,10 @@ public record ParserVerifier(ClassModel classModel) {
     }
 
     private void verifyFields(List<VerifyError> errors) {
-        var fields = new HashSet<String>();
+        record F(Utf8Entry name, Utf8Entry type) {};
+        var fields = new HashSet<F>();
         for (var f : classModel.fields()) try {
-            if (!fields.add(f.fieldName().stringValue() + f.fieldType().stringValue())) {
+            if (!fields.add(new F(f.fieldName(), f.fieldType()))) {
                 errors.add(new VerifyError("Duplicate field name %s with signature %s in %s".formatted(f.fieldName().stringValue(), f.fieldType().stringValue(), toString(classModel))));
             }
             verifyFieldName(f.fieldName().stringValue());
@@ -158,9 +163,10 @@ public record ParserVerifier(ClassModel classModel) {
     }
 
     private void verifyMethods(List<VerifyError> errors) {
-        var methods = new HashSet<String>();
+        record M(Utf8Entry name, Utf8Entry type) {};
+        var methods = new HashSet<M>();
         for (var m : classModel.methods()) try {
-            if (!methods.add(m.methodName().stringValue() + m.methodType().stringValue())) {
+            if (!methods.add(new M(m.methodName(), m.methodType()))) {
                 errors.add(new VerifyError("Duplicate method name %s with signature %s in %s".formatted(m.methodName().stringValue(), m.methodType().stringValue(), toString(classModel))));
             }
             if (m.methodName().equalsString(CLASS_INIT_NAME)
@@ -199,17 +205,13 @@ public record ParserVerifier(ClassModel classModel) {
     }
 
     private void verifyAttribute(AttributedElement ae, Attribute<?> a, List<VerifyError> errors) {
-        int payLoad = ((BoundAttribute)a).payloadLen();
-        if (payLoad != switch (a) {
-            case AnnotationDefaultAttribute aa -> valueSize(aa.defaultValue());
-            case BootstrapMethodsAttribute bma -> {
-                int l = 2;
-                for (var bm : bma.bootstrapMethods()) {
-                    l += 4 + 2 * bm.arguments().size();
-                }
-                yield l;
-            }
-            case CharacterRangeTableAttribute cra -> 2 + 14 * cra.characterRangeTable().size();
+        int size = switch (a) {
+            case AnnotationDefaultAttribute aa ->
+                valueSize(aa.defaultValue());
+            case BootstrapMethodsAttribute bma ->
+                2 + bma.bootstrapMethods().stream().mapToInt(bm -> 4 + 2 * bm.arguments().size()).sum();
+            case CharacterRangeTableAttribute cra ->
+                2 + 14 * cra.characterRangeTable().size();
             case CodeAttribute ca -> {
                 MethodModel mm = (MethodModel)ae;
                 if (mm.flags().has(AccessFlag.NATIVE) || mm.flags().has(AccessFlag.ABSTRACT)) {
@@ -218,13 +220,12 @@ public record ParserVerifier(ClassModel classModel) {
                 if (ca.maxLocals() < Util.maxLocals(mm.flags().flagsMask(), mm.methodTypeSymbol())) {
                     errors.add(new VerifyError("Arguments can't fit into locals in %s".formatted(toString(ae))));
                 }
-                int l = 12 + ca.codeLength() + 8 * ca.exceptionHandlers().size();
-                for (var caa : ca.attributes()) {
-                    l += 6 + ((BoundAttribute)caa).payloadLen();
-                }
-                yield l;
+                yield 10 + ca.codeLength() + 8 * ca.exceptionHandlers().size() + attributesSize(ca.attributes());
             }
-            case CompilationIDAttribute cida -> 2;
+            case CompilationIDAttribute cida -> {
+                cida.compilationId();
+                yield 2;
+            }
             case ConstantValueAttribute cva -> {
                 ClassDesc type = ((FieldModel)ae).fieldTypeSymbol();
                 ConstantValueEntry cve = cva.constant();
@@ -240,9 +241,15 @@ public record ParserVerifier(ClassModel classModel) {
                 }
                 yield 2;
             }
-            case DeprecatedAttribute da -> 0;
-            case EnclosingMethodAttribute ema -> 4;
-            case ExceptionsAttribute ea -> 2 + 2 * ea.exceptions().size();
+            case DeprecatedAttribute _ ->
+                0;
+            case EnclosingMethodAttribute ema -> {
+                ema.enclosingClass();
+                ema.enclosingMethod();
+                yield 4;
+            }
+            case ExceptionsAttribute ea ->
+                2 + 2 * ea.exceptions().size();
             case InnerClassesAttribute ica -> {
                 for (var ici : ica.classes()) {
                     if (ici.outerClass().isPresent() && ici.outerClass().get().equals(ici.innerClass())) {
@@ -251,13 +258,40 @@ public record ParserVerifier(ClassModel classModel) {
                 }
                 yield 2 + 8 * ica.classes().size();
             }
-            case LineNumberTableAttribute lta -> 2 + 4 * lta.lineNumbers().size();
-            case LocalVariableTableAttribute lvta -> 2 + 10 * lvta.localVariables().size();
-            case LocalVariableTypeTableAttribute lvta -> 2 + 10 * lvta.localVariableTypes().size();
-            case MethodParametersAttribute mpa -> 1 + 4 * mpa.parameters().size();
-            case NestHostAttribute nha -> 2;
+            case LineNumberTableAttribute lta ->
+                2 + 4 * lta.lineNumbers().size();
+            case LocalVariableTableAttribute lvta ->
+                2 + 10 * lvta.localVariables().size();
+            case LocalVariableTypeTableAttribute lvta ->
+                2 + 10 * lvta.localVariableTypes().size();
+            case MethodParametersAttribute mpa ->
+                1 + 4 * mpa.parameters().size();
+            case ModuleAttribute ma ->
+                16 + subSize(ma.exports(), ModuleExportInfo::exportsTo, 6, 2)
+                   + subSize(ma.opens(), ModuleOpenInfo::opensTo, 6, 2)
+                   + subSize(ma.provides(), ModuleProvideInfo::providesWith, 4, 2)
+                   + 6 * ma.requires().size()
+                   + 2 * ma.uses().size();
+            case ModuleHashesAttribute mha ->
+                2 + moduleHashesSize(mha.hashes());
+            case ModuleMainClassAttribute mmca -> {
+                mmca.mainClass();
+                yield 2;
+            }
+            case ModulePackagesAttribute mpa ->
+                2 + 2 * mpa.packages().size();
+            case ModuleResolutionAttribute mra ->
+                2;
+            case ModuleTargetAttribute mta -> {
+                mta.targetPlatform();
+                yield 2;
+            }
+            case NestHostAttribute nha -> {
+                nha.nestHost();
+                yield 2;
+            }
             case NestMembersAttribute nma -> {
-                if (ae.findAttribute(Attributes.NEST_HOST).isPresent()) {
+                if (ae.findAttribute(Attributes.nestHost()).isPresent()) {
                     errors.add(new VerifyError("Conflicting NestHost and NestMembers attributes in %s".formatted(toString(ae))));
                 }
                 yield 2 + 2 * nma.nestMembers().size();
@@ -268,60 +302,100 @@ public record ParserVerifier(ClassModel classModel) {
                 }
                 yield 2 + 2 * psa.permittedSubclasses().size();
             }
-            case RecordAttribute ra -> {
-                int l = 2;
-                for (var rc : ra.components()) {
-                    l += 6;
-                    for (var rca : rc.attributes()) {
-                        l += 6 + ((BoundAttribute)rca).payloadLen();
-                    }
-                }
-                yield l;
+            case RecordAttribute ra ->
+                componentsSize(ra.components());
+            case RuntimeVisibleAnnotationsAttribute aa ->
+                annotationsSize(aa.annotations());
+            case RuntimeInvisibleAnnotationsAttribute aa ->
+                annotationsSize(aa.annotations());
+            case RuntimeVisibleTypeAnnotationsAttribute aa ->
+                typeAnnotationsSize(aa.annotations());
+            case RuntimeInvisibleTypeAnnotationsAttribute aa ->
+                typeAnnotationsSize(aa.annotations());
+            case RuntimeVisibleParameterAnnotationsAttribute aa ->
+                parameterAnnotationsSize(aa.parameterAnnotations());
+            case RuntimeInvisibleParameterAnnotationsAttribute aa ->
+                parameterAnnotationsSize(aa.parameterAnnotations());
+            case SignatureAttribute sa -> {
+                sa.signature();
+                yield 2;
             }
-            case RuntimeVisibleAnnotationsAttribute aa -> {
-                int l = 2;
-                for (var an : aa.annotations()) {
-                    l += annotationSize(an);
-                }
-                yield l;
+            case SourceDebugExtensionAttribute sda ->
+                sda.contents().length;
+            case SourceFileAttribute sfa -> {
+                sfa.sourceFile();
+                yield 2;
             }
-            case RuntimeInvisibleAnnotationsAttribute aa -> {
-                int l = 2;
-                for (var an : aa.annotations()) {
-                    l += annotationSize(an);
-                }
-                yield l;
+            case SourceIDAttribute sida -> {
+                sida.sourceId();
+                yield 2;
             }
-            case RuntimeVisibleParameterAnnotationsAttribute aa -> {
-                int l = 1;
-                for (var ans : aa.parameterAnnotations()) {
-                    l += 2;
-                    for (var an : ans) {
-                        l += annotationSize(an);
-                    }
-                }
-                yield l;
-            }
-            case RuntimeInvisibleParameterAnnotationsAttribute aa -> {
-                int l = 1;
-                for (var ans : aa.parameterAnnotations()) {
-                    l += 2;
-                    for (var an : ans) {
-                        l += annotationSize(an);
-                    }
-                }
-                yield l;
-            }
-            case SignatureAttribute sa -> 2;
-            case SourceDebugExtensionAttribute sda -> sda.contents().length;
-            case SourceFileAttribute sfa -> 2;
-            case SourceIDAttribute sida -> 2;
-            case SyntheticAttribute sa -> 0;
-            default -> payLoad;
-        }) {
+            case StackMapTableAttribute smta ->
+                2 + subSize(smta.entries(), frame -> stackMapFrameSize(frame));
+            case SyntheticAttribute _ ->
+                0;
+            case UnknownAttribute _ ->
+                -1;
+            case CustomAttribute<?> _ ->
+                -1;
+            default -> // should not happen if all known attributes are verified
+                throw new AssertionError(a);
+        };
+        if (size >= 0 && size != ((BoundAttribute)a).payloadLen()) {
             errors.add(new VerifyError("Wrong %s attribute length in %s".formatted(a.attributeName(), toString(ae))));
         }
+    }
 
+    private static <T, S extends Collection<?>> int subSize(Collection<T> entries, Function<T, S> subMH, int entrySize, int subSize) {
+        return subSize(entries, (ToIntFunction<T>) t -> entrySize + subSize * subMH.apply(t).size());
+    }
+
+    private static <T> int subSize(Collection<T> entries, ToIntFunction<T> subMH) {
+        int l = 0;
+        for (T entry : entries) {
+            l += subMH.applyAsInt(entry);
+        }
+        return l;
+    }
+
+    private static int componentsSize(List<RecordComponentInfo> comps) {
+        int l = 2;
+        for (var rc : comps) {
+            l += 4 + attributesSize(rc.attributes());
+        }
+        return l;
+    }
+
+    private static int attributesSize(List<Attribute<?>> attrs) {
+        int l = 2;
+        for (var a : attrs) {
+            l += 6 + ((BoundAttribute)a).payloadLen();
+        }
+        return l;
+    }
+
+    private static int parameterAnnotationsSize(List<List<Annotation>> pans) {
+        int l = 1;
+        for (var ans : pans) {
+            l += annotationsSize(ans);
+        }
+        return l;
+    }
+
+    private static int annotationsSize(List<Annotation> ans) {
+        int l = 2;
+        for (var an : ans) {
+            l += annotationSize(an);
+        }
+        return l;
+    }
+
+    private static int typeAnnotationsSize(List<TypeAnnotation> ans) {
+        int l = 2;
+        for (var an : ans) {
+            l += 2 + an.targetInfo().size() + 2 * an.targetPath().size() + annotationSize(an);
+        }
+        return l;
     }
 
     private static int annotationSize(Annotation an) {
@@ -345,6 +419,55 @@ public record ParserVerifier(ClassModel classModel) {
             }
             case AnnotationValue.OfConstant _, AnnotationValue.OfClass _ -> 2;
             case AnnotationValue.OfEnum _ -> 4;
+        };
+    }
+
+    private static int moduleHashesSize(List<ModuleHashInfo> hashes) {
+        int l = 2;
+        for (var h : hashes) {
+            h.moduleName();
+            l += 4 + h.hash().length;
+        }
+        return l;
+    }
+
+    private int stackMapFrameSize(StackMapFrameInfo frame) {
+        int ft = frame.frameType();
+        if (ft < 64) return 1;
+        if (ft < 128) return 1 + verificationTypeSize(frame.stack().getFirst());
+        if (ft > 246) {
+            if (ft == 247) return 3 + verificationTypeSize(frame.stack().getFirst());
+            if (ft < 252) return 3;
+            if (ft < 255) {
+                var loc = frame.locals();
+                int l = 3;
+                for (int i = loc.size() + 251 - ft; i < loc.size(); i++) {
+                    l += verificationTypeSize(loc.get(i));
+                }
+                return l;
+            }
+            if (ft == 255) {
+                int l = 7;
+                for (var vt : frame.stack()) {
+                    l += verificationTypeSize(vt);
+                }
+                for (var vt : frame.locals()) {
+                    l += verificationTypeSize(vt);
+                }
+                return l;
+            }
+        }
+        throw new IllegalArgumentException("Invalid stack map frame type " + ft);
+    }
+
+    private static int verificationTypeSize(StackMapFrameInfo.VerificationTypeInfo vti) {
+        return switch (vti) {
+            case StackMapFrameInfo.SimpleVerificationTypeInfo _ -> 1;
+            case StackMapFrameInfo.ObjectVerificationTypeInfo ovti -> {
+                ovti.classSymbol();
+                yield 3;
+            }
+            case StackMapFrameInfo.UninitializedVerificationTypeInfo _ -> 3;
         };
     }
 
