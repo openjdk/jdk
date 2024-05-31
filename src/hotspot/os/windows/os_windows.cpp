@@ -958,7 +958,7 @@ int os::active_processor_count() {
   if (use_process_affinity_mask) {
     DWORD_PTR lpProcessAffinityMask = 0;
     DWORD_PTR lpSystemAffinityMask = 0;
-    if (GetProcessAffinityMask(GetCurrentProcess(), &lpProcessAffinityMask, &lpSystemAffinityMask)) {
+    if (GetProcessAffinityMask(GetCurrentProcess(), &lpProcessAffinityMask, &lpSystemAffinityMask) != 0) {
       // Number of active processors is number of bits in process affinity mask
       logical_processors = population_count(lpProcessAffinityMask);
 
@@ -4110,14 +4110,14 @@ void os::win32::initialize_windows_version() {
     return;
   }
 
-  if (!GetFileVersionInfo(kernel32_path, 0, version_size, version_info)) {
+  if (GetFileVersionInfo(kernel32_path, 0, version_size, version_info) == 0) {
     os::free(version_info);
     size_t buf_len = os::lasterror(error_msg_buffer, sizeof(error_msg_buffer));
     warning("Attempt to retrieve version information from kernel32.dll failed: %s", buf_len != 0 ? error_msg_buffer : "<unknown error>");
     return;
   }
 
-  if (!VerQueryValue(version_info, TEXT("\\"), (LPVOID*)&file_info, &len)) {
+  if (VerQueryValue(version_info, TEXT("\\"), (LPVOID*)&file_info, &len) == 0) {
     os::free(version_info);
     size_t buf_len = os::lasterror(error_msg_buffer, sizeof(error_msg_buffer));
     warning("Attempt to determine Windows version from kernel32.dll failed: %s", buf_len != 0 ? error_msg_buffer : "<unknown error>");
