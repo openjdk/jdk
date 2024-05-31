@@ -250,12 +250,12 @@ class RelocIterator;
 
 // helper templates to avoid undefined addition/subtraction from nullptr
 template<typename T>
-T* add_to_ptr(T* ptr, uintptr_t val) {
+T* add_to_ptr_maybe_null(T* ptr, uintptr_t val) {
   return (T*)((uintptr_t)ptr + val * sizeof(T));
 }
 
 template<typename T>
-T* sub_from_ptr(T* ptr, uintptr_t val) {
+T* sub_from_ptr_maybe_null(T* ptr, uintptr_t val) {
   return (T*)((uintptr_t)ptr - val * sizeof(T));
 }
 
@@ -614,7 +614,7 @@ class RelocIterator : public StackObj {
 
   // get next reloc info, return !eos
   bool next() {
-    _current = add_to_ptr(_current, 1);
+    _current = add_to_ptr_maybe_null(_current, 1);
     assert(_current <= _end, "must not overrun relocInfo");
     if (_current == _end) {
       set_has_current(false);
