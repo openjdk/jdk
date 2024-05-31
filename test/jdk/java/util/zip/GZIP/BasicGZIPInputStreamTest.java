@@ -22,6 +22,7 @@
  */
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.util.zip.GZIPInputStream;
 
 import org.junit.jupiter.api.Assertions;
@@ -51,5 +52,15 @@ public class BasicGZIPInputStreamTest {
         Assertions.assertThrows(IllegalArgumentException.class,
                 () -> new GZIPInputStream(new ByteArrayInputStream(new byte[0]), -1),
                 "GZIPInputStream did not throw IllegalArgumentException for size = -1");
+
+        // verify the constructor throws IOException when the underlying stream isn't
+        // a GZIP stream
+        final ByteArrayInputStream notGZIPContent = new ByteArrayInputStream(new byte[0]);
+        Assertions.assertThrows(IOException.class,
+                () -> new GZIPInputStream(notGZIPContent),
+                "GZIPInputStream did not throw IOException for non-gzip stream");
+        Assertions.assertThrows(IOException.class,
+                () -> new GZIPInputStream(notGZIPContent, 1024 /* buffer size */),
+                "GZIPInputStream did not throw IOException for non-gzip stream");
     }
 }
