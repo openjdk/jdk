@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -632,7 +632,7 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
                 for (int i = 0; p < end; p += 6, i++) {
                     elements[i] = ModuleRequireInfo.of(classReader.readModuleEntry(p),
                             classReader.readU2(p + 2),
-                            (Utf8Entry) classReader.readEntryOrNull(p + 4));
+                            classReader.readEntryOrNull(p + 4, Utf8Entry.class));
                 }
                 requires = List.of(elements);
             }
@@ -771,15 +771,9 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
                 int p = payloadStart + 2;
                 InnerClassInfo[] elements = new InnerClassInfo[cnt];
                 for (int i = 0; i < cnt; i++) {
-                    ClassEntry innerClass = classReader.readClassEntry(p); // TODO FIXME
-                    int outerClassIndex = classReader.readU2(p + 2);
-                    ClassEntry outerClass = outerClassIndex == 0
-                            ? null
-                            : (ClassEntry) classReader.entryByIndex(outerClassIndex);
-                    int innerNameIndex = classReader.readU2(p + 4);
-                    Utf8Entry innerName = innerNameIndex == 0
-                            ? null
-                            : (Utf8Entry) classReader.entryByIndex(innerNameIndex);
+                    ClassEntry innerClass = classReader.readClassEntry(p);
+                    var outerClass = classReader.readEntryOrNull(p + 2, ClassEntry.class);
+                    var innerName = classReader.readEntryOrNull(p + 4, Utf8Entry.class);
                     int flags = classReader.readU2(p + 6);
                     p += 8;
                     elements[i] = InnerClassInfo.of(innerClass, Optional.ofNullable(outerClass), Optional.ofNullable(innerName), flags);
@@ -803,7 +797,7 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
 
         @Override
         public Optional<NameAndTypeEntry> enclosingMethod() {
-            return Optional.ofNullable((NameAndTypeEntry) classReader.readEntryOrNull(payloadStart + 2));
+            return Optional.ofNullable(classReader.readEntryOrNull(payloadStart + 2, NameAndTypeEntry.class));
         }
     }
 
