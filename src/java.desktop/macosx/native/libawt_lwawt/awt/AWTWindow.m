@@ -1026,9 +1026,9 @@ AWT_ASSERT_APPKIT_THREAD;
             // Check if the click happened in the non-client area (title bar)
             // Also, non-client area includes the edges at left, right and botton of frame
             if ((p.y >= (frame.origin.y + contentRect.size.height)) ||
-                (p.x >= (frame.origin.x + contentRect.size.width)) ||
-                (fabs(frame.origin.x - p.x) < 4) ||
-                (fabs(frame.origin.y - p.y) < 4)) {
+                (p.x >= (frame.origin.x + contentRect.size.width - 3)) ||
+                (fabs(frame.origin.x - p.x) < 3) ||
+                (fabs(frame.origin.y - p.y) < 3)) {
                 JNIEnv *env = [ThreadUtilities getJNIEnvUncached];
                 jobject platformWindow = (*env)->NewLocalRef(env, self.javaPlatformWindow);
                 if (platformWindow != NULL) {

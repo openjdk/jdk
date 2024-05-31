@@ -53,6 +53,8 @@ public class TestUngrab {
     static JMenu menu;
     static JFrame frame;
     static volatile Point loc;
+    static volatile Point point;
+    static volatile Dimension dim;
     static volatile int width;
     static volatile int height;
 
@@ -65,7 +67,7 @@ public class TestUngrab {
         mb.add(menu);
 
         frame.setJMenuBar(mb);
-        frame.setSize(300,300);
+        frame.setSize(300, 300);
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
@@ -74,12 +76,14 @@ public class TestUngrab {
         try {
             Robot robot = new Robot();
             robot.setAutoDelay(100);
-            SwingUtilities.invokeLater(() -> createAndShowGUI());
+            SwingUtilities.invokeAndWait(() -> createAndShowGUI());
             robot.waitForIdle();
             robot.delay(1000);
-            Point point = menu.getLocationOnScreen();
-            Dimension dim = menu.getSize();
-            robot.mouseMove(point.x + dim.width/2, point.y + dim.height/2);
+            SwingUtilities.invokeAndWait(() -> {
+                point = menu.getLocationOnScreen();
+                dim = menu.getSize();
+            });
+            robot.mouseMove(point.x + dim.width / 2, point.y + dim.height / 2);
             robot.waitForIdle();
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
@@ -98,7 +102,11 @@ public class TestUngrab {
                 throw new RuntimeException("popup menu not closed on resize");
             }
         } finally {
-            SwingUtilities.invokeAndWait(() -> frame.dispose());
+            SwingUtilities.invokeAndWait(() -> {
+                if (frame != null) {
+                    frame.dispose();
+                }
+            });
         }
     }
 
