@@ -595,8 +595,6 @@ public class ClassReader {
                 if (formals != null) {
                     if (actuals.isEmpty())
                         actuals = formals;
-                    else
-                        updateBounds(actuals, formals);
                 }
                 /* actualsCp is final as it will be captured by the inner class below. We could avoid defining
                  * this additional local variable and depend on field ClassType::typarams_field which `actuals` is
@@ -628,12 +626,6 @@ public class ClassReader {
                                 } else {
                                     super.setEnclosingType(Type.noType);
                                 }
-                                if (actualsCp.length() != (formals == null ? 0 : formals.length())) {
-                                    List<Type> formalsCp = ((ClassType)t.type.tsym.type).typarams_field;
-                                    if (formalsCp != null && !formalsCp.isEmpty()) {
-                                        updateBounds(actualsCp, formalsCp);
-                                    }
-                                }
                             }
                             return super.getEnclosingType();
                         }
@@ -641,7 +633,16 @@ public class ClassReader {
                         public void setEnclosingType(Type outer) {
                             throw new UnsupportedOperationException();
                         }
-                    };
+
+                        @Override
+                        public List<Type> getTypeArguments() {
+                            List<Type> formalsCp = ((ClassType)t.type.tsym.type).typarams_field;
+                            if (formalsCp != null && !formalsCp.isEmpty()) {
+                                updateBounds(actualsCp, formalsCp);
+                            }
+                            return super.getTypeArguments();
+                        }
+                };
                 switch (signature[sigp++]) {
                 case ';':
                     if (sigp < siglimit && signature[sigp] == '.') {
