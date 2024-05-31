@@ -638,7 +638,15 @@ public class ClassReader {
                         public List<Type> getTypeArguments() {
                             List<Type> formalsCp = ((ClassType)t.type.tsym.type).typarams_field;
                             if (formalsCp != null && !formalsCp.isEmpty()) {
-                                updateBounds(actualsCp, formalsCp);
+                                if (actualsCp.length() == formalsCp.length()) {
+                                    List<Type> a = actualsCp;
+                                    List<Type> f = formalsCp;
+                                    while (a.nonEmpty()) {
+                                        a.head = a.head.withTypeVar(f.head);
+                                        a = a.tail;
+                                        f = f.tail;
+                                    }
+                                }
                             }
                             return super.getTypeArguments();
                         }
@@ -684,18 +692,6 @@ public class ClassReader {
             default:
                 signatureBuffer[sbp++] = c;
                 continue;
-            }
-        }
-    }
-
-    private void updateBounds(List<Type> actuals, List<Type> formals) {
-        if (actuals.length() == formals.length()) {
-            List<Type> a = actuals;
-            List<Type> f = formals;
-            while (a.nonEmpty()) {
-                a.head = a.head.withTypeVar(f.head);
-                a = a.tail;
-                f = f.tail;
             }
         }
     }
