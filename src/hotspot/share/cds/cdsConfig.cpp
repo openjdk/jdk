@@ -305,7 +305,7 @@ void CDSConfig::check_unsupported_dumping_module_options() {
 }
 
 bool CDSConfig::has_unsupported_runtime_module_options() {
-  assert(CDSConfig::is_using_archive(), "this function is only used with -Xshare:{on,auto}");
+  assert(is_using_archive(), "this function is only used with -Xshare:{on,auto}");
   if (ArchiveClassesAtExit != nullptr) {
     // dynamic dumping, just return false for now.
     // check_unsupported_dumping_properties() will be called later to check the same set of
