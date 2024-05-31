@@ -2363,10 +2363,10 @@ void VTransformGraph::print_memops_schedule() const {
 
 void VTransformNode::print() const {
   tty->print("%3d %s (", _idx, name());
-  for (int i = 0; i < _req; i++) {
+  for (uint i = 0; i < _req; i++) {
     print_node_idx(_in.at(i));
   }
-  if (_in.length() > _req) {
+  if ((uint)_in.length() > _req) {
     tty->print(" |");
     for (int i = _req; i < _in.length(); i++) {
       print_node_idx(_in.at(i));

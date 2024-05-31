@@ -3014,13 +3014,7 @@ void SuperWordVTransformBuilder::build_edges_for_vector_vtnodes(VectorSet& vtn_d
       set_req_for_scalar(vtn, vtn_dependencies, MemNode::Address, p0);
       set_req_for_vector(vtn, vtn_dependencies, MemNode::ValueIn, pack);
     } else if (vtn->isa_ElementWiseVector() != nullptr) {
-      if (VectorNode::is_muladds2i(p0)) {
-        // A special kind of binary element-wise vector op: the inputs are "ints" a and b,
-        // but reinterpreted as two "shorts" [a0, a1] and [b0, b1]:
-        //   v = MulAddS2I(a, b) = a0 * b0 + a1 + b1
-        set_req_for_vector(vtn, vtn_dependencies, 1, pack);
-        set_req_for_vector(vtn, vtn_dependencies, 2, pack);
-      } else if (VectorNode::is_scalar_rotate(p0)) {
+      if (VectorNode::is_scalar_rotate(p0)) {
         set_req_for_vector(vtn, vtn_dependencies, 1, pack);
         Node* in2 = p0->in(2);
         if (in2->is_Con() && Matcher::supports_vector_constant_rotates(in2->get_int())) {
@@ -3033,14 +3027,10 @@ void SuperWordVTransformBuilder::build_edges_for_vector_vtnodes(VectorSet& vtn_d
         set_req_for_scalar(vtn, vtn_dependencies, 2, p0); // constant rounding mode
       } else if (p0->is_CMove()) {
         // Cmp + Bool + CMove -> VectorMaskCmp + VectorBlend.
-        set_req_for_vector(vtn, vtn_dependencies, 1, pack); // MaskCmpVector
-        set_req_for_vector(vtn, vtn_dependencies, 2, pack); // Vector
-        set_req_for_vector(vtn, vtn_dependencies, 3, pack); // Vector
+        set_req_all_for_vector(vtn, vtn_dependencies, pack);
         VTransformMaskCmpVectorNode* vtn_mask_cmp = vtn->in(1)->isa_MaskCmpVector();
-        assert(vtn_mask_cmp != nullptr, "CMove always expects Cmp + Bool as inputs");
-        // Swap the inputs if the test was negated.
         if (vtn_mask_cmp->cmp_bool_kind()._is_test_negated) {
-          vtn->swap_req(2, 3);
+          vtn->swap_req(2, 3); // swap if test was negated.
         }
       } else {
         set_req_all_for_vector(vtn, vtn_dependencies, pack);
@@ -3259,8 +3249,9 @@ void SuperWordVTransformBuilder::set_req_all_for_scalar(VTransformNode* vtn, Vec
 
 void SuperWordVTransformBuilder::set_req_all_for_vector(VTransformNode* vtn, VectorSet& vtn_dependencies, Node_List* pack) {
   Node* p0 = pack->at(0);
+  assert(vtn->req() <= p0->req(), "must have at at most as many reqs");
   // Ignore ctrl, start at input 1.
-  for (uint j = 1; j < p0->req(); j++) {
+  for (uint j = 1; j < vtn->req(); j++) {
     Node* def = p0->in(j);
     if (def == nullptr) { continue; }
     set_req_for_vector(vtn, vtn_dependencies, j, pack);

@@ -1494,12 +1494,12 @@ public:
 
 private:
   // _in is split into required inputs (_req), and additional dependencies.
-  const int _req;
+  const uint _req;
   GrowableArray<VTransformNode*> _in;
   GrowableArray<VTransformNode*> _out;
 
 public:
-  VTransformNode(VTransformGraph& graph, const int req) :
+  VTransformNode(VTransformGraph& graph, const uint req) :
     _idx(graph.new_idx()),
     _req(req),
     _in(graph.arena(),  req, req, nullptr),
@@ -1508,16 +1508,16 @@ public:
     graph.add_vtnode(this);
   }
 
-  void set_req(int i, VTransformNode* n) {
-    assert(0 <= i && i < _req, "must be a req");
+  void set_req(uint i, VTransformNode* n) {
+    assert(i < _req, "must be a req");
     assert(_in.at(i) == nullptr && n != nullptr, "only set once");
     _in.at_put(i, n);
     n->add_out(this);
   }
 
-  void swap_req(int i, int j) {
-    assert(0 <= i && i < _req, "must be a req");
-    assert(0 <= j && j < _req, "must be a req");
+  void swap_req(uint i, uint j) {
+    assert(i < _req, "must be a req");
+    assert(j < _req, "must be a req");
     VTransformNode* tmp = _in.at(i);
     _in.at_put(i, _in.at(j));
     _in.at_put(j, tmp);
@@ -1533,7 +1533,7 @@ public:
     _out.push(n);
   }
 
-  int req() const { return _req; }
+  uint req() const { return _req; }
   VTransformNode* in(int i) const { return _in.at(i); }
   int outs() const { return _out.length(); }
   VTransformNode* out(int i) const { return _out.at(i); }
@@ -1658,7 +1658,7 @@ private:
   GrowableArray<Node*> _nodes;
 
 public:
-  VTransformVectorNode(VTransformGraph& graph, const int req, const int number_of_nodes) :
+  VTransformVectorNode(VTransformGraph& graph, const uint req, const int number_of_nodes) :
     VTransformNode(graph, req),
     _nodes(graph.arena(), number_of_nodes, number_of_nodes, nullptr) {}
 
@@ -1679,7 +1679,7 @@ public:
 
 class VTransformElementWiseVectorNode : public VTransformVectorNode {
 public:
-  VTransformElementWiseVectorNode(VTransformGraph& graph, int req, int number_of_nodes) :
+  VTransformElementWiseVectorNode(VTransformGraph& graph, uint req, int number_of_nodes) :
     VTransformVectorNode(graph, req, number_of_nodes) {}
 
   virtual VTransformElementWiseVectorNode* isa_ElementWiseVector() override { return this; }
@@ -1692,6 +1692,7 @@ public:
   NOT_PRODUCT(virtual const char* name() const override { return "ElementWiseVector"; };)
 };
 
+// TODO consider renaming for Bool
 class VTransformMaskCmpVectorNode : public VTransformElementWiseVectorNode {
 public:
   struct CmpBoolKind {
@@ -1706,7 +1707,7 @@ private:
 
 public:
   VTransformMaskCmpVectorNode(VTransformGraph& graph, int number_of_nodes, CmpBoolKind cmp_bool_kind) :
-    VTransformElementWiseVectorNode(graph, 3, number_of_nodes),
+    VTransformElementWiseVectorNode(graph, 2, number_of_nodes),
     _cmp_bool_kind(cmp_bool_kind) {}
 
   CmpBoolKind cmp_bool_kind() const { return _cmp_bool_kind; }
