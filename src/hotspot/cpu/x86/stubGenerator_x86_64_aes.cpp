@@ -2754,134 +2754,132 @@ void StubGenerator::gfmul_avx512(XMMRegister GH, XMMRegister HK) {
 }
 
 void StubGenerator::generateHtbl_32_blocks_avx512(Register htbl, Register avx512_htbl) {
-    const XMMRegister HK = xmm6;
-    const XMMRegister ZT1 = xmm0, ZT2 = xmm1, ZT3 = xmm2, ZT4 = xmm3;
-    const XMMRegister ZT5 = xmm4, ZT6 = xmm5, ZT7 = xmm7, ZT8 = xmm8;
-    const XMMRegister T5 = xmm4;
+  const XMMRegister HK = xmm6;
+  const XMMRegister ZT1 = xmm0, ZT2 = xmm1, ZT3 = xmm2, ZT4 = xmm3;
+  const XMMRegister ZT5 = xmm4, ZT6 = xmm5, ZT7 = xmm7, ZT8 = xmm8;
+  const XMMRegister T5 = xmm4;
 
-    __ movdqu(HK, Address(htbl, 0));
-    __ movdqu(xmm10, ExternalAddress(ghash_long_swap_mask_addr()), r15);
-    __ vpshufb(HK, HK, xmm10, Assembler::AVX_128bit);
-    __ movdqu(xmm11, ExternalAddress(ghash_polynomial_addr()), r15);
-    __ movdqu(xmm12, ExternalAddress(ghash_polynomial_two_one_addr()), r15);
-    // Compute H ^ 2 from the input subkeyH
-    __ movdqu(xmm2, xmm6);
-    __ vpsllq(xmm6, xmm6, 1, Assembler::AVX_128bit);
-    __ vpsrlq(xmm2, xmm2, 63, Assembler::AVX_128bit);
-    __ movdqu(xmm1, xmm2);
-    __ vpslldq(xmm2, xmm2, 8, Assembler::AVX_128bit);
-    __ vpsrldq(xmm1, xmm1, 8, Assembler::AVX_128bit);
-    __ vpor(xmm6, xmm6, xmm2, Assembler::AVX_128bit);
+  __ movdqu(HK, Address(htbl, 0));
+  __ movdqu(xmm10, ExternalAddress(ghash_long_swap_mask_addr()), r15);
+  __ vpshufb(HK, HK, xmm10, Assembler::AVX_128bit);
+  __ movdqu(xmm11, ExternalAddress(ghash_polynomial_addr()), r15);
+  __ movdqu(xmm12, ExternalAddress(ghash_polynomial_two_one_addr()), r15);
+  // Compute H ^ 2 from the input subkeyH
+  __ movdqu(xmm2, xmm6);
+  __ vpsllq(xmm6, xmm6, 1, Assembler::AVX_128bit);
+  __ vpsrlq(xmm2, xmm2, 63, Assembler::AVX_128bit);
+  __ movdqu(xmm1, xmm2);
+  __ vpslldq(xmm2, xmm2, 8, Assembler::AVX_128bit);
+  __ vpsrldq(xmm1, xmm1, 8, Assembler::AVX_128bit);
+  __ vpor(xmm6, xmm6, xmm2, Assembler::AVX_128bit);
+  __ vpshufd(xmm2, xmm1, 0x24, Assembler::AVX_128bit);
+  __ vpcmpeqd(xmm2, xmm2, xmm12, Assembler::AVX_128bit);
+  __ vpand(xmm2, xmm2, xmm11, Assembler::AVX_128bit);
+  __ vpxor(xmm6, xmm6, xmm2, Assembler::AVX_128bit);
+  __ movdqu(Address(avx512_htbl, 16 * 31), xmm6); // H ^ 2
 
-    __ vpshufd(xmm2, xmm1, 0x24, Assembler::AVX_128bit);
-    __ vpcmpeqd(xmm2, xmm2, xmm12, Assembler::AVX_128bit);
-    __ vpand(xmm2, xmm2, xmm11, Assembler::AVX_128bit);
-    __ vpxor(xmm6, xmm6, xmm2, Assembler::AVX_128bit);
-    __ movdqu(Address(avx512_htbl, 16 * 31), xmm6); // H ^ 2
+  __ movdqu(T5, HK);
+  __ vinserti64x2(ZT7, ZT7, HK, 3);
 
-    __ movdqu(T5, HK);
-    __ vinserti64x2(ZT7, ZT7, HK, 3);
+  //calculate HashKey ^ 2 << 1 mod poly
+  gfmul_avx512(T5, HK);
+  __ movdqu(Address(avx512_htbl, 16 * 30), T5);
+  __ vinserti64x2(ZT7, ZT7, T5, 2);
 
-    //calculate HashKey ^ 2 << 1 mod poly
-    gfmul_avx512(T5, HK);
-    __ movdqu(Address(avx512_htbl, 16 * 30), T5);
-    __ vinserti64x2(ZT7, ZT7, T5, 2);
+  //calculate HashKey ^ 3 << 1 mod poly
+  gfmul_avx512(T5, HK);
+  __ movdqu(Address(avx512_htbl, 16 * 29), T5);
+  __ vinserti64x2(ZT7, ZT7, T5, 1);
 
-    //calculate HashKey ^ 3 << 1 mod poly
-    gfmul_avx512(T5, HK);
-    __ movdqu(Address(avx512_htbl, 16 * 29), T5);
-    __ vinserti64x2(ZT7, ZT7, T5, 1);
+  //calculate HashKey ^ 4 << 1 mod poly
+  gfmul_avx512(T5, HK);
+  __ movdqu(Address(avx512_htbl, 16 * 28), T5);
+  __ vinserti64x2(ZT7, ZT7, T5, 0);
+  // ZT5 amd ZT7 to be cleared(hash key)
+  //calculate HashKeyK = HashKey x POLY
+  __ evmovdquq(xmm11, ExternalAddress(ghash_polynomial_addr()), Assembler::AVX_512bit, r15);
+  __ evpclmulqdq(ZT1, ZT7, xmm11, 0x10, Assembler::AVX_512bit);
+  __ vpshufd(ZT2, ZT7, 78, Assembler::AVX_512bit);
+  __ evpxorq(ZT1, ZT1, ZT2, Assembler::AVX_512bit);
+  __ evmovdquq(Address(avx512_htbl, 16 * 60), ZT1, Assembler::AVX_512bit);
+  //**ZT1 amd ZT2 to be cleared(hash key)
 
-    //calculate HashKey ^ 4 << 1 mod poly
-    gfmul_avx512(T5, HK);
-    __ movdqu(Address(avx512_htbl, 16 * 28), T5);
-    __ vinserti64x2(ZT7, ZT7, T5, 0);
-    // ZT5 amd ZT7 to be cleared(hash key)
+  //switch to 4x128 - bit computations now
+  __ evshufi64x2(ZT5, ZT5, ZT5, 0x00, Assembler::AVX_512bit); //;; broadcast HashKey ^ 4 across all ZT5
+  __ evmovdquq(ZT8, ZT7, Assembler::AVX_512bit);//; save HashKey ^ 4 to HashKey ^ 1 in ZT8
+  //**ZT8 to be cleared(hash key)
 
-    //calculate HashKeyK = HashKey x POLY
-    __ evmovdquq(xmm11, ExternalAddress(ghash_polynomial_addr()), Assembler::AVX_512bit, r15);
-    __ evpclmulqdq(ZT1, ZT7, xmm11, 0x10, Assembler::AVX_512bit);
-    __ vpshufd(ZT2, ZT7, 78, Assembler::AVX_512bit);
-    __ evpxorq(ZT1, ZT1, ZT2, Assembler::AVX_512bit);
-    __ evmovdquq(Address(avx512_htbl, 16 * 60), ZT1, Assembler::AVX_512bit);
-    //**ZT1 amd ZT2 to be cleared(hash key)
+  //calculate HashKey ^ 5 << 1 mod poly, HashKey ^ 6 << 1 mod poly, ... HashKey ^ 8 << 1 mod poly
+  gfmul_avx512(ZT7, ZT5);
+  __ evmovdquq(Address(avx512_htbl, 16 * 24), ZT7, Assembler::AVX_512bit);//; HashKey ^ 8 to HashKey ^ 5 in ZT7 now
 
-    //switch to 4x128 - bit computations now
-    __ evshufi64x2(ZT5, ZT5, ZT5, 0x00, Assembler::AVX_512bit); //;; broadcast HashKey ^ 4 across all ZT5
-    __ evmovdquq(ZT8, ZT7, Assembler::AVX_512bit);//; save HashKey ^ 4 to HashKey ^ 1 in ZT8
-    //**ZT8 to be cleared(hash key)
+  //calculate HashKeyX = HashKey x POLY
+  __ evpclmulqdq(ZT1, ZT7, xmm11, 0x10, Assembler::AVX_512bit);
+  __ vpshufd(ZT2, ZT7, 78, Assembler::AVX_512bit);
+  __ evpxorq(ZT1, ZT1, ZT2, Assembler::AVX_512bit);
+  __ evmovdquq(Address(avx512_htbl, 16 * 56), ZT1, Assembler::AVX_512bit);
 
-    //calculate HashKey ^ 5 << 1 mod poly, HashKey ^ 6 << 1 mod poly, ... HashKey ^ 8 << 1 mod poly
-    gfmul_avx512(ZT7, ZT5);
-    __ evmovdquq(Address(avx512_htbl, 16 * 24), ZT7, Assembler::AVX_512bit);//; HashKey ^ 8 to HashKey ^ 5 in ZT7 now
+  __ evshufi64x2(ZT5, ZT7, ZT7, 0x00, Assembler::AVX_512bit);//;; broadcast HashKey ^ 8 across all ZT5
 
-    //calculate HashKeyX = HashKey x POLY
-    __ evpclmulqdq(ZT1, ZT7, xmm11, 0x10, Assembler::AVX_512bit);
-    __ vpshufd(ZT2, ZT7, 78, Assembler::AVX_512bit);
-    __ evpxorq(ZT1, ZT1, ZT2, Assembler::AVX_512bit);
-    __ evmovdquq(Address(avx512_htbl, 16 * 56), ZT1, Assembler::AVX_512bit);
+  //calculate HashKey ^ 9 << 1 mod poly, HashKey ^ 10 << 1 mod poly, ... HashKey ^ 32 << 1 mod poly
+  //use HashKey ^ 8 as multiplier against ZT8 and ZT7 - this allows deeper ooo execution
+  //compute HashKey ^ (4 + n), HashKey ^ (3 + n), ... HashKey ^ (1 + n)
+  gfmul_avx512(ZT8, ZT5);
+  __ evmovdquq(Address(avx512_htbl, 16 * 20), ZT8, Assembler::AVX_512bit);
 
-    __ evshufi64x2(ZT5, ZT7, ZT7, 0x00, Assembler::AVX_512bit);//;; broadcast HashKey ^ 8 across all ZT5
+  //calculate HashKeyK = HashKey x POLY
+  __ evpclmulqdq(ZT1, ZT8, xmm11, 0x10, Assembler::AVX_512bit);
+  __ vpshufd(ZT2, ZT8, 78, Assembler::AVX_512bit);
+  __ evpxorq(ZT1, ZT1, ZT2, Assembler::AVX_512bit);
+  __ evmovdquq(Address(avx512_htbl, 16 * 52), ZT1, Assembler::AVX_512bit);
 
-    //calculate HashKey ^ 9 << 1 mod poly, HashKey ^ 10 << 1 mod poly, ... HashKey ^ 32 << 1 mod poly
-    //use HashKey ^ 8 as multiplier against ZT8 and ZT7 - this allows deeper ooo execution
-    //;; compute HashKey ^ (4 + n), HashKey ^ (3 + n), ... HashKey ^ (1 + n)
-    gfmul_avx512(ZT8, ZT5);
-    __ evmovdquq(Address(avx512_htbl, 16 * 20), ZT8, Assembler::AVX_512bit);
+  //compute HashKey ^ (8 + n), HashKey ^ (7 + n), ... HashKey ^ (5 + n)
+  gfmul_avx512(ZT7, ZT5);
+  __ evmovdquq(Address(avx512_htbl, 16 * 16), ZT7, Assembler::AVX_512bit);
 
-    //;; calculate HashKeyK = HashKey x POLY
-    __ evpclmulqdq(ZT1, ZT8, xmm11, 0x10, Assembler::AVX_512bit);
-    __ vpshufd(ZT2, ZT8, 78, Assembler::AVX_512bit);
-    __ evpxorq(ZT1, ZT1, ZT2, Assembler::AVX_512bit);
-    __ evmovdquq(Address(avx512_htbl, 16 * 52), ZT1, Assembler::AVX_512bit);
+  //calculate HashKeyK = HashKey x POLY
+  __ evpclmulqdq(ZT1, ZT7, xmm11, 0x10, Assembler::AVX_512bit);
+  __ vpshufd(ZT2, ZT7, 78, Assembler::AVX_512bit);
+  __ evpxorq(ZT1, ZT1, ZT2, Assembler::AVX_512bit);
+  __ evmovdquq(Address(avx512_htbl, 16 * 48), ZT1, Assembler::AVX_512bit);
 
-    //compute HashKey ^ (8 + n), HashKey ^ (7 + n), ... HashKey ^ (5 + n)
-    gfmul_avx512(ZT7, ZT5);
-    __ evmovdquq(Address(avx512_htbl, 16 * 16), ZT7, Assembler::AVX_512bit);
+  gfmul_avx512(ZT8, ZT5);
+  __ evmovdquq(Address(avx512_htbl, 16 * 12), ZT8, Assembler::AVX_512bit);
 
-    //calculate HashKeyK = HashKey x POLY
-    __ evpclmulqdq(ZT1, ZT7, xmm11, 0x10, Assembler::AVX_512bit);
-    __ vpshufd(ZT2, ZT7, 78, Assembler::AVX_512bit);
-    __ evpxorq(ZT1, ZT1, ZT2, Assembler::AVX_512bit);
-    __ evmovdquq(Address(avx512_htbl, 16 * 48), ZT1, Assembler::AVX_512bit);
+  //calculate HashKeyK = HashKey x POLY
+  __ evpclmulqdq(ZT1, ZT8, xmm11, 0x10, Assembler::AVX_512bit);
+  __ vpshufd(ZT2, ZT8, 78, Assembler::AVX_512bit);
+  __ evpxorq(ZT1, ZT1, ZT2, Assembler::AVX_512bit);
+  __ evmovdquq(Address(avx512_htbl, 16 * 44), ZT1, Assembler::AVX_512bit);
 
-    gfmul_avx512(ZT8, ZT5);
-    __ evmovdquq(Address(avx512_htbl, 16 * 12), ZT8, Assembler::AVX_512bit);
+  //compute HashKey ^ (8 + n), HashKey ^ (7 + n), ... HashKey ^ (5 + n)
+  gfmul_avx512(ZT7, ZT5);
+  __ evmovdquq(Address(avx512_htbl, 16 * 8), ZT7, Assembler::AVX_512bit);
 
-    //calculate HashKeyK = HashKey x POLY
-    __ evpclmulqdq(ZT1, ZT8, xmm11, 0x10, Assembler::AVX_512bit);
-    __ vpshufd(ZT2, ZT8, 78, Assembler::AVX_512bit);
-    __ evpxorq(ZT1, ZT1, ZT2, Assembler::AVX_512bit);
-    __ evmovdquq(Address(avx512_htbl, 16 * 44), ZT1, Assembler::AVX_512bit);
+  //calculate HashKeyK = HashKey x POLY
+  __ evpclmulqdq(ZT1, ZT7, xmm11, 0x10, Assembler::AVX_512bit);
+  __ vpshufd(ZT2, ZT7, 78, Assembler::AVX_512bit);
+  __ evpxorq(ZT1, ZT1, ZT2, Assembler::AVX_512bit);
+  __ evmovdquq(Address(avx512_htbl, 16 * 40), ZT1, Assembler::AVX_512bit);
 
-    //compute HashKey ^ (8 + n), HashKey ^ (7 + n), ... HashKey ^ (5 + n)
-    gfmul_avx512(ZT7, ZT5);
-    __ evmovdquq(Address(avx512_htbl, 16 * 8), ZT7, Assembler::AVX_512bit);
+  gfmul_avx512(ZT8, ZT5);
+  __ evmovdquq(Address(avx512_htbl, 16 * 4), ZT8, Assembler::AVX_512bit);
 
-    //;; calculate HashKeyK = HashKey x POLY
-    __ evpclmulqdq(ZT1, ZT7, xmm11, 0x10, Assembler::AVX_512bit);
-    __ vpshufd(ZT2, ZT7, 78, Assembler::AVX_512bit);
-    __ evpxorq(ZT1, ZT1, ZT2, Assembler::AVX_512bit);
-    __ evmovdquq(Address(avx512_htbl, 16 * 40), ZT1, Assembler::AVX_512bit);
+  //calculate HashKeyK = HashKey x POLY
+  __ evpclmulqdq(ZT1, ZT8, xmm11, 0x10, Assembler::AVX_512bit);
+  __ vpshufd(ZT2, ZT8, 78, Assembler::AVX_512bit);
+  __ evpxorq(ZT1, ZT1, ZT2, Assembler::AVX_512bit);
+  __ evmovdquq(Address(avx512_htbl, 16 * 36), ZT1, Assembler::AVX_512bit);
 
-    gfmul_avx512(ZT8, ZT5);
-    __ evmovdquq(Address(avx512_htbl, 16 * 4), ZT8, Assembler::AVX_512bit);
+  //compute HashKey ^ (8 + n), HashKey ^ (7 + n), ... HashKey ^ (5 + n)
+  gfmul_avx512(ZT7, ZT5);
+  __ evmovdquq(Address(avx512_htbl, 16 * 0), ZT7, Assembler::AVX_512bit);
 
-    //calculate HashKeyK = HashKey x POLY
-    __ evpclmulqdq(ZT1, ZT8, xmm11, 0x10, Assembler::AVX_512bit);
-    __ vpshufd(ZT2, ZT8, 78, Assembler::AVX_512bit);
-    __ evpxorq(ZT1, ZT1, ZT2, Assembler::AVX_512bit);
-    __ evmovdquq(Address(avx512_htbl, 16 * 36), ZT1, Assembler::AVX_512bit);
-
-    //compute HashKey ^ (8 + n), HashKey ^ (7 + n), ... HashKey ^ (5 + n)
-    gfmul_avx512(ZT7, ZT5);
-    __ evmovdquq(Address(avx512_htbl, 16 * 0), ZT7, Assembler::AVX_512bit);
-
-    //calculate HashKeyK = HashKey x POLY
-    __ evpclmulqdq(ZT1, ZT7, xmm11, 0x10, Assembler::AVX_512bit);
-    __ vpshufd(ZT2, ZT7, 78, Assembler::AVX_512bit);
-    __ evpxorq(ZT1, ZT1, ZT2, Assembler::AVX_512bit);
-    __ evmovdquq(Address(avx512_htbl, 16 * 32), ZT1, Assembler::AVX_512bit);
+  //calculate HashKeyK = HashKey x POLY
+  __ evpclmulqdq(ZT1, ZT7, xmm11, 0x10, Assembler::AVX_512bit);
+  __ vpshufd(ZT2, ZT7, 78, Assembler::AVX_512bit);
+  __ evpxorq(ZT1, ZT1, ZT2, Assembler::AVX_512bit);
+  __ evmovdquq(Address(avx512_htbl, 16 * 32), ZT1, Assembler::AVX_512bit);
  }
 
 void StubGenerator::generateHtbl_48_block_zmm(Register htbl, Register avx512_htbl, Register rscratch) {
@@ -3026,589 +3024,581 @@ __ vpternlogq(dst3, 0x96, src32, src33, Assembler::AVX_512bit); \
 
 //schoolbook multiply of 16 blocks(8 x 16 bytes)
 //it is assumed that data read is already shuffledand
-void StubGenerator::ghash16_avx512(bool start_ghash, bool do_reduction, Register in, Register pos, Register subkeyHtbl, XMMRegister HASH, int in_offset, int in_disp, int displacement, int hashkey_offset) {
-    bool uload_and_shuffle = false;
-    bool hk_broadcast = false;
-    bool do_hxor = true;
+void StubGenerator::ghash16_avx512(bool start_ghash, bool do_reduction, Register in, Register pos, Register subkeyHtbl,
+                                   XMMRegister HASH, int in_offset, int in_disp, int displacement, int hashkey_offset) {
+  bool uload_and_shuffle = false;
+  bool hk_broadcast = false;
+  bool do_hxor = true;
 
-    const XMMRegister ZTMP0 = xmm0;
-    const XMMRegister ZTMP1 = xmm3;
-    const XMMRegister ZTMP2 = xmm4;
-    const XMMRegister ZTMP3 = xmm5;
-    const XMMRegister ZTMP4 = xmm6;
-    const XMMRegister ZTMP5 = xmm7;
-    const XMMRegister ZTMP6 = xmm10;
-    const XMMRegister ZTMP7 = xmm11;
-    const XMMRegister ZTMP8 = xmm12;
-    const XMMRegister ZTMP9 = xmm13;
-    const XMMRegister ZTMPA = xmm26;
-    const XMMRegister SHUFM = xmm29;
-    const XMMRegister GH = xmm24;
-    const XMMRegister GL = xmm25;
-    const int hkey_gap = 16 * 32;
+  const XMMRegister ZTMP0 = xmm0;
+  const XMMRegister ZTMP1 = xmm3;
+  const XMMRegister ZTMP2 = xmm4;
+  const XMMRegister ZTMP3 = xmm5;
+  const XMMRegister ZTMP4 = xmm6;
+  const XMMRegister ZTMP5 = xmm7;
+  const XMMRegister ZTMP6 = xmm10;
+  const XMMRegister ZTMP7 = xmm11;
+  const XMMRegister ZTMP8 = xmm12;
+  const XMMRegister ZTMP9 = xmm13;
+  const XMMRegister ZTMPA = xmm26;
+  const XMMRegister SHUFM = xmm29;
+  const XMMRegister GH = xmm24;
+  const XMMRegister GL = xmm25;
+  const int hkey_gap = 16 * 32;
 
-    if (uload_and_shuffle) {
-        __ evmovdquq(ZTMP9, Address(subkeyHtbl,  in_offset * 16 + in_disp), Assembler::AVX_512bit);
-        __ vpshufb(ZTMP9, ZTMP9, SHUFM, Assembler::AVX_512bit);
-    } else {
-        __ evmovdquq(ZTMP9, Address(subkeyHtbl, in_offset * 16 + in_disp), Assembler::AVX_512bit);
-    }
+  if (uload_and_shuffle) {
+    __ evmovdquq(ZTMP9, Address(subkeyHtbl,  in_offset * 16 + in_disp), Assembler::AVX_512bit);
+    __ vpshufb(ZTMP9, ZTMP9, SHUFM, Assembler::AVX_512bit);
+  } else {
+    __ evmovdquq(ZTMP9, Address(subkeyHtbl, in_offset * 16 + in_disp), Assembler::AVX_512bit);
+  }
 
-    if (start_ghash) {
-        __ evpxorq(ZTMP9, ZTMP9, HASH, Assembler::AVX_512bit);
-    }
-    if (hk_broadcast) {
-        __ evbroadcastf64x2(ZTMP8, Address(subkeyHtbl, hashkey_offset + displacement + 0 * 64), Assembler::AVX_512bit);
-        __ evbroadcastf64x2(ZTMPA, Address(subkeyHtbl, hashkey_offset + displacement + hkey_gap + 0 * 64), Assembler::AVX_512bit);
-    }
-    else {
-        __ evmovdquq(ZTMP8, Address(subkeyHtbl, hashkey_offset + displacement + 0 * 64), Assembler::AVX_512bit);
-        __ evmovdquq(ZTMPA, Address(subkeyHtbl, hashkey_offset + displacement + hkey_gap + 0 * 64), Assembler::AVX_512bit);
-    }
+  if (start_ghash) {
+    __ evpxorq(ZTMP9, ZTMP9, HASH, Assembler::AVX_512bit);
+  }
+  if (hk_broadcast) {
+    __ evbroadcastf64x2(ZTMP8, Address(subkeyHtbl, hashkey_offset + displacement + 0 * 64), Assembler::AVX_512bit);
+    __ evbroadcastf64x2(ZTMPA, Address(subkeyHtbl, hashkey_offset + displacement + hkey_gap + 0 * 64), Assembler::AVX_512bit);
+  } else {
+    __ evmovdquq(ZTMP8, Address(subkeyHtbl, hashkey_offset + displacement + 0 * 64), Assembler::AVX_512bit);
+    __ evmovdquq(ZTMPA, Address(subkeyHtbl, hashkey_offset + displacement + hkey_gap + 0 * 64), Assembler::AVX_512bit);
+  }
 
-    __ evpclmulqdq(ZTMP0, ZTMP9, ZTMPA, 0x00, Assembler::AVX_512bit);//TLL = ML * KL
-    __ evpclmulqdq(ZTMP1, ZTMP9, ZTMPA, 0x10, Assembler::AVX_512bit);//TLH = ML * KH
-    __ evpclmulqdq(ZTMP2, ZTMP9, ZTMP8, 0x01, Assembler::AVX_512bit);//THL = MH * HL
-    __ evpclmulqdq(ZTMP3, ZTMP9, ZTMP8, 0x11, Assembler::AVX_512bit);//THH = MH * HH
-    //ghash blocks 4 - 7
-    if (uload_and_shuffle) {
-        __ evmovdquq(ZTMP9, Address(subkeyHtbl, in_offset * 16 + in_disp + 64), Assembler::AVX_512bit);
-        __ vpshufb(ZTMP9, ZTMP9, SHUFM, Assembler::AVX_512bit);
-    }
-    else {
-        __ evmovdquq(ZTMP9, Address(subkeyHtbl, in_offset * 16 + in_disp + 64), Assembler::AVX_512bit);
-    }
+  __ evpclmulqdq(ZTMP0, ZTMP9, ZTMPA, 0x00, Assembler::AVX_512bit);//TLL = ML * KL
+  __ evpclmulqdq(ZTMP1, ZTMP9, ZTMPA, 0x10, Assembler::AVX_512bit);//TLH = ML * KH
+  __ evpclmulqdq(ZTMP2, ZTMP9, ZTMP8, 0x01, Assembler::AVX_512bit);//THL = MH * HL
+  __ evpclmulqdq(ZTMP3, ZTMP9, ZTMP8, 0x11, Assembler::AVX_512bit);//THH = MH * HH
+  //ghash blocks 4 - 7
+  if (uload_and_shuffle) {
+    __ evmovdquq(ZTMP9, Address(subkeyHtbl, in_offset * 16 + in_disp + 64), Assembler::AVX_512bit);
+    __ vpshufb(ZTMP9, ZTMP9, SHUFM, Assembler::AVX_512bit);
+  } else {
+    __ evmovdquq(ZTMP9, Address(subkeyHtbl, in_offset * 16 + in_disp + 64), Assembler::AVX_512bit);
+  }
 
-    if (hk_broadcast) {
-        __ evbroadcastf64x2(ZTMP8, Address(subkeyHtbl, hashkey_offset + displacement + 1 * 64), Assembler::AVX_512bit);;
-        __ evbroadcastf64x2(ZTMPA, Address(subkeyHtbl, hashkey_offset + displacement + hkey_gap + 1 * 64), Assembler::AVX_512bit);
-    }
-    else {
-        __ evmovdquq(ZTMP8, Address(subkeyHtbl, hashkey_offset + displacement + 1 * 64), Assembler::AVX_512bit);
-        __ evmovdquq(ZTMPA, Address(subkeyHtbl, hashkey_offset + displacement + hkey_gap + 1 * 64), Assembler::AVX_512bit);
-    }
-    __ evpclmulqdq(ZTMP4, ZTMP9, ZTMPA, 0x00, Assembler::AVX_512bit);//TLL = ML * KL
-    __ evpclmulqdq(ZTMP5, ZTMP9, ZTMPA, 0x10, Assembler::AVX_512bit);//TLH = ML * KH
-    __ evpclmulqdq(ZTMP6, ZTMP9, ZTMP8, 0x01, Assembler::AVX_512bit);//THL = MH * HL
-    __ evpclmulqdq(ZTMP7, ZTMP9, ZTMP8, 0x11, Assembler::AVX_512bit);//THH = MH * HH
-    //update sums
-    if (start_ghash) {
-        __ evpxorq(GL, ZTMP0, ZTMP2, Assembler::AVX_512bit);//T2 = THL + TLL
-        __ evpxorq(GH, ZTMP1, ZTMP3, Assembler::AVX_512bit);//T1 = THH + TLH
-    }
-    else { //mid, end, end_reduce
-        __ vpternlogq(GL, 0x96, ZTMP0, ZTMP2, Assembler::AVX_512bit);//T2 = THL + TLL
-        __ vpternlogq(GH, 0x96, ZTMP1, ZTMP3, Assembler::AVX_512bit);//T1 = THH + TLH
-    }
-    //ghash blocks 8 - 11
-    if (uload_and_shuffle) {
-        __ evmovdquq(ZTMP9, Address(subkeyHtbl, in_offset * 16 + in_disp + 128), Assembler::AVX_512bit);
-        __ vpshufb(ZTMP9, ZTMP9, SHUFM, Assembler::AVX_512bit);
-    }
-    else {
-        __ evmovdquq(ZTMP9, Address(subkeyHtbl, in_offset * 16 + in_disp + 128), Assembler::AVX_512bit);
-    }
-    if (hk_broadcast) {
-        __ evbroadcastf64x2(ZTMP8, Address(subkeyHtbl, hashkey_offset + displacement + 2 * 64), Assembler::AVX_512bit);
-        __ evbroadcastf64x2(ZTMPA, Address(subkeyHtbl, hashkey_offset + displacement + hkey_gap + 2 * 64), Assembler::AVX_512bit);
-    }
-    else {
-        __ evmovdquq(ZTMP8, Address(subkeyHtbl, hashkey_offset + displacement + 2 * 64), Assembler::AVX_512bit);
-        __ evmovdquq(ZTMPA, Address(subkeyHtbl, hashkey_offset + displacement + hkey_gap + 2 * 64), Assembler::AVX_512bit);
-    }
-    __ evpclmulqdq(ZTMP0, ZTMP9, ZTMPA, 0x00, Assembler::AVX_512bit);//TLL = ML * KL
-    __ evpclmulqdq(ZTMP1, ZTMP9, ZTMPA, 0x10, Assembler::AVX_512bit);//TLH = ML * KH
-    __ evpclmulqdq(ZTMP2, ZTMP9, ZTMP8, 0x01, Assembler::AVX_512bit);//THL = MH * HL
-    __ evpclmulqdq(ZTMP3, ZTMP9, ZTMP8, 0x11, Assembler::AVX_512bit);//THH = MH * HH
-    //update sums
-    __ vpternlogq(GL, 0x96, ZTMP6, ZTMP4, Assembler::AVX_512bit);//T2 = THL + TLL
-    __ vpternlogq(GH, 0x96, ZTMP7, ZTMP5, Assembler::AVX_512bit);//T1 = THH + TLH
-    //ghash blocks 12 - 15
-    if (uload_and_shuffle) {
-        __ evmovdquq(ZTMP9, Address(subkeyHtbl, in_offset * 16 + in_disp + 192), Assembler::AVX_512bit);
-        __ vpshufb(ZTMP9, ZTMP9, SHUFM, Assembler::AVX_512bit);
-    } else {
-        __ evmovdquq(ZTMP9, Address(subkeyHtbl, in_offset * 16 + in_disp + 192), Assembler::AVX_512bit);
-    }
-
-    if (hk_broadcast) {
-        __ evbroadcastf64x2(ZTMP8, Address(subkeyHtbl, hashkey_offset + displacement + 3 * 64), Assembler::AVX_512bit);
-        __ evbroadcastf64x2(ZTMPA, Address(subkeyHtbl, hashkey_offset + displacement + hkey_gap + 3 * 64), Assembler::AVX_512bit);
-    } else {
-        __ evmovdquq(ZTMP8, Address(subkeyHtbl, hashkey_offset + displacement + 3 * 64), Assembler::AVX_512bit);
-        __ evmovdquq(ZTMPA, Address(subkeyHtbl, hashkey_offset + displacement + hkey_gap + 3 * 64), Assembler::AVX_512bit);
-    }
-    __ evpclmulqdq(ZTMP4, ZTMP9, ZTMPA, 0x00, Assembler::AVX_512bit);//TLL = ML * KL
-    __ evpclmulqdq(ZTMP5, ZTMP9, ZTMPA, 0x10, Assembler::AVX_512bit);//TLH = ML * KH
-    __ evpclmulqdq(ZTMP6, ZTMP9, ZTMP8, 0x01, Assembler::AVX_512bit);//THL = MH * HL
-    __ evpclmulqdq(ZTMP7, ZTMP9, ZTMP8, 0x11, Assembler::AVX_512bit);//THH = MH * HH
-    //update sums
+  if (hk_broadcast) {
+    __ evbroadcastf64x2(ZTMP8, Address(subkeyHtbl, hashkey_offset + displacement + 1 * 64), Assembler::AVX_512bit);;
+    __ evbroadcastf64x2(ZTMPA, Address(subkeyHtbl, hashkey_offset + displacement + hkey_gap + 1 * 64), Assembler::AVX_512bit);
+  } else {
+    __ evmovdquq(ZTMP8, Address(subkeyHtbl, hashkey_offset + displacement + 1 * 64), Assembler::AVX_512bit);
+    __ evmovdquq(ZTMPA, Address(subkeyHtbl, hashkey_offset + displacement + hkey_gap + 1 * 64), Assembler::AVX_512bit);
+  }
+  __ evpclmulqdq(ZTMP4, ZTMP9, ZTMPA, 0x00, Assembler::AVX_512bit);//TLL = ML * KL
+  __ evpclmulqdq(ZTMP5, ZTMP9, ZTMPA, 0x10, Assembler::AVX_512bit);//TLH = ML * KH
+  __ evpclmulqdq(ZTMP6, ZTMP9, ZTMP8, 0x01, Assembler::AVX_512bit);//THL = MH * HL
+  __ evpclmulqdq(ZTMP7, ZTMP9, ZTMP8, 0x11, Assembler::AVX_512bit);//THH = MH * HH
+  //update sums
+  if (start_ghash) {
+    __ evpxorq(GL, ZTMP0, ZTMP2, Assembler::AVX_512bit);//T2 = THL + TLL
+    __ evpxorq(GH, ZTMP1, ZTMP3, Assembler::AVX_512bit);//T1 = THH + TLH
+  } else { //mid, end, end_reduce
     __ vpternlogq(GL, 0x96, ZTMP0, ZTMP2, Assembler::AVX_512bit);//T2 = THL + TLL
     __ vpternlogq(GH, 0x96, ZTMP1, ZTMP3, Assembler::AVX_512bit);//T1 = THH + TLH
-    __ vpternlogq(GL, 0x96, ZTMP6, ZTMP4, Assembler::AVX_512bit);//T2 = THL + TLL
-    __ vpternlogq(GH, 0x96, ZTMP7, ZTMP5, Assembler::AVX_512bit);//T1 = THH + TLH
+  }
+  //ghash blocks 8 - 11
+  if (uload_and_shuffle) {
+    __ evmovdquq(ZTMP9, Address(subkeyHtbl, in_offset * 16 + in_disp + 128), Assembler::AVX_512bit);
+    __ vpshufb(ZTMP9, ZTMP9, SHUFM, Assembler::AVX_512bit);
+  } else {
+    __ evmovdquq(ZTMP9, Address(subkeyHtbl, in_offset * 16 + in_disp + 128), Assembler::AVX_512bit);
+  }
+  if (hk_broadcast) {
+    __ evbroadcastf64x2(ZTMP8, Address(subkeyHtbl, hashkey_offset + displacement + 2 * 64), Assembler::AVX_512bit);
+    __ evbroadcastf64x2(ZTMPA, Address(subkeyHtbl, hashkey_offset + displacement + hkey_gap + 2 * 64), Assembler::AVX_512bit);
+  } else {
+    __ evmovdquq(ZTMP8, Address(subkeyHtbl, hashkey_offset + displacement + 2 * 64), Assembler::AVX_512bit);
+    __ evmovdquq(ZTMPA, Address(subkeyHtbl, hashkey_offset + displacement + hkey_gap + 2 * 64), Assembler::AVX_512bit);
+  }
+  __ evpclmulqdq(ZTMP0, ZTMP9, ZTMPA, 0x00, Assembler::AVX_512bit);//TLL = ML * KL
+  __ evpclmulqdq(ZTMP1, ZTMP9, ZTMPA, 0x10, Assembler::AVX_512bit);//TLH = ML * KH
+  __ evpclmulqdq(ZTMP2, ZTMP9, ZTMP8, 0x01, Assembler::AVX_512bit);//THL = MH * HL
+  __ evpclmulqdq(ZTMP3, ZTMP9, ZTMP8, 0x11, Assembler::AVX_512bit);//THH = MH * HH
+  //update sums
+  __ vpternlogq(GL, 0x96, ZTMP6, ZTMP4, Assembler::AVX_512bit);//T2 = THL + TLL
+  __ vpternlogq(GH, 0x96, ZTMP7, ZTMP5, Assembler::AVX_512bit);//T1 = THH + TLH
+  //ghash blocks 12 - 15
+  if (uload_and_shuffle) {
+    __ evmovdquq(ZTMP9, Address(subkeyHtbl, in_offset * 16 + in_disp + 192), Assembler::AVX_512bit);
+    __ vpshufb(ZTMP9, ZTMP9, SHUFM, Assembler::AVX_512bit);
+  } else {
+    __ evmovdquq(ZTMP9, Address(subkeyHtbl, in_offset * 16 + in_disp + 192), Assembler::AVX_512bit);
+  }
 
-    if (do_reduction) {
-    //new reduction
-        __ evmovdquq(xmm23, ExternalAddress(ghash_polynomial_addr()), Assembler::AVX_512bit, rbx /*rscratch*/);
-        __ evpclmulqdq(HASH, GL, xmm23, 0x10, Assembler::AVX_512bit);
-        __ vpshufd(ZTMP0, GL, 78, Assembler::AVX_512bit);
-        __ vpternlogq(HASH, 0x96, GH, ZTMP0, Assembler::AVX_512bit);
-        if (do_hxor) {
-            vhpxori4x128(HASH, ZTMP0);
-        }
+  if (hk_broadcast) {
+    __ evbroadcastf64x2(ZTMP8, Address(subkeyHtbl, hashkey_offset + displacement + 3 * 64), Assembler::AVX_512bit);
+    __ evbroadcastf64x2(ZTMPA, Address(subkeyHtbl, hashkey_offset + displacement + hkey_gap + 3 * 64), Assembler::AVX_512bit);
+  } else {
+    __ evmovdquq(ZTMP8, Address(subkeyHtbl, hashkey_offset + displacement + 3 * 64), Assembler::AVX_512bit);
+    __ evmovdquq(ZTMPA, Address(subkeyHtbl, hashkey_offset + displacement + hkey_gap + 3 * 64), Assembler::AVX_512bit);
+  }
+  __ evpclmulqdq(ZTMP4, ZTMP9, ZTMPA, 0x00, Assembler::AVX_512bit);//TLL = ML * KL
+  __ evpclmulqdq(ZTMP5, ZTMP9, ZTMPA, 0x10, Assembler::AVX_512bit);//TLH = ML * KH
+  __ evpclmulqdq(ZTMP6, ZTMP9, ZTMP8, 0x01, Assembler::AVX_512bit);//THL = MH * HL
+  __ evpclmulqdq(ZTMP7, ZTMP9, ZTMP8, 0x11, Assembler::AVX_512bit);//THH = MH * HH
+  //update sums
+  __ vpternlogq(GL, 0x96, ZTMP0, ZTMP2, Assembler::AVX_512bit);//T2 = THL + TLL
+  __ vpternlogq(GH, 0x96, ZTMP1, ZTMP3, Assembler::AVX_512bit);//T1 = THH + TLH
+  __ vpternlogq(GL, 0x96, ZTMP6, ZTMP4, Assembler::AVX_512bit);//T2 = THL + TLL
+  __ vpternlogq(GH, 0x96, ZTMP7, ZTMP5, Assembler::AVX_512bit);//T1 = THH + TLH
+
+  if (do_reduction) {
+  //new reduction
+    __ evmovdquq(xmm23, ExternalAddress(ghash_polynomial_addr()), Assembler::AVX_512bit, rbx /*rscratch*/);
+    __ evpclmulqdq(HASH, GL, xmm23, 0x10, Assembler::AVX_512bit);
+    __ vpshufd(ZTMP0, GL, 78, Assembler::AVX_512bit);
+    __ vpternlogq(HASH, 0x96, GH, ZTMP0, Assembler::AVX_512bit);
+    if (do_hxor) {
+      vhpxori4x128(HASH, ZTMP0);
     }
+  }
 }
 
-//========================================================================== =
-//========================================================================== =
 //Stitched GHASH of 16 blocks(with reduction) with encryption of N blocks
 //followed with GHASH of the N blocks.
-void StubGenerator::gcm_enc_dec_last_avx512(Register len, Register in, Register pos, XMMRegister HASH, Register subkeyHtbl, int ghashin_offset, int hashkey_offset, bool start_ghash, bool do_reduction) {
-    Label last_num_blocks_is_0;
-    const Register IA0 = r15;
+void StubGenerator::gcm_enc_dec_last_avx512(Register len, Register in, Register pos, XMMRegister HASH, Register subkeyHtbl,
+                                            int ghashin_offset, int hashkey_offset, bool start_ghash, bool do_reduction) {
+  Label last_num_blocks_is_0;
+  const Register IA0 = r15;
 
-    __ movq(IA0, len);
-    __ addl(IA0, 15);
-    __ shrl(IA0, 4);
-    __ jcc(Assembler::equal, last_num_blocks_is_0);
-    __ bind(last_num_blocks_is_0);
-    //// if there is 0 blocks to cipher then there are only 16 blocks for ghashand reduction
-    ghash16_avx512(start_ghash, do_reduction, in, pos, subkeyHtbl, HASH, ghashin_offset, 0, 0, hashkey_offset);
-    ////**ZT01 may include sensitive data
+  __ movq(IA0, len);
+  __ addl(IA0, 15);
+  __ shrl(IA0, 4);
+  __ jcc(Assembler::equal, last_num_blocks_is_0);
+  __ bind(last_num_blocks_is_0);
+  // if there is 0 blocks to cipher then there are only 16 blocks for ghashand reduction
+  ghash16_avx512(start_ghash, do_reduction, in, pos, subkeyHtbl, HASH, ghashin_offset, 0, 0, hashkey_offset);
+  //**ZT01 may include sensitive data
 }
 
 //Main GCM macro stitching cipher with GHASH
 //encrypts 16 blocks at a time
 //ghash the 16 previously encrypted ciphertext blocks
-void StubGenerator::ghash16_encrypt_parallel16_avx512(Register in, Register out, Register ct, Register pos, Register avx512_subkeyHtbl, Register CTR_CHECK, Register NROUNDS,
-                                                      Register key, bool hk_broadcast, bool is_hash_start, bool do_hash_reduction, bool do_hash_hxor, bool no_ghash_in,
+void StubGenerator::ghash16_encrypt_parallel16_avx512(Register in, Register out, Register ct, Register pos, Register avx512_subkeyHtbl,
+                                                      Register CTR_CHECK, Register NROUNDS, Register key, bool hk_broadcast,
+                                                      bool is_hash_start, bool do_hash_reduction, bool do_hash_hxor, bool no_ghash_in,
                                                       int ghashin_offset, int aesout_offset, int hashkey_offset) {
-    const XMMRegister B00_03 = xmm0;
-    const XMMRegister CTR_BE = xmm2;
-    const XMMRegister B04_07 = xmm3;
-    const XMMRegister B08_11 = xmm4;
-    const XMMRegister B12_15 = xmm5;
-    const XMMRegister SHFMSK = xmm29;
-    const XMMRegister THH1 = xmm6;
-    const XMMRegister THL1 = xmm7;
-    const XMMRegister TLH1 = xmm10;
-    const XMMRegister TLL1 = xmm11, THH2 = xmm12, THL2 = xmm13, TLH2 = xmm15;
-    const XMMRegister TLL2 = xmm16, THH3 = xmm17, THL3 = xmm19, TLH3 = xmm20;
-    const XMMRegister TLL3 = xmm21, DATA1 = xmm17, DATA2 = xmm19, DATA3 = xmm20, DATA4 = xmm21;
-    const XMMRegister AESKEY1 = xmm30, AESKEY2 = xmm31;
-    const XMMRegister GHKEY1 = xmm1, GHKEY2 = xmm18, GHDAT1 = xmm8, GHDAT2 = xmm22;
-    const XMMRegister ADDBE_4x4 = xmm27, ADDBE_1234 = xmm28;
-    const XMMRegister GHASH_IN = xmm14, TO_REDUCE_L = xmm25, TO_REDUCE_H = xmm24;
-    int hkey_gap = 16 * 32;
+  const XMMRegister B00_03 = xmm0;
+  const XMMRegister CTR_BE = xmm2;
+  const XMMRegister B04_07 = xmm3;
+  const XMMRegister B08_11 = xmm4;
+  const XMMRegister B12_15 = xmm5;
+  const XMMRegister SHFMSK = xmm29;
+  const XMMRegister THH1 = xmm6;
+  const XMMRegister THL1 = xmm7;
+  const XMMRegister TLH1 = xmm10;
+  const XMMRegister TLL1 = xmm11, THH2 = xmm12, THL2 = xmm13, TLH2 = xmm15;
+  const XMMRegister TLL2 = xmm16, THH3 = xmm17, THL3 = xmm19, TLH3 = xmm20;
+  const XMMRegister TLL3 = xmm21, DATA1 = xmm17, DATA2 = xmm19, DATA3 = xmm20, DATA4 = xmm21;
+  const XMMRegister AESKEY1 = xmm30, AESKEY2 = xmm31;
+  const XMMRegister GHKEY1 = xmm1, GHKEY2 = xmm18, GHDAT1 = xmm8, GHDAT2 = xmm22;
+  const XMMRegister ADDBE_4x4 = xmm27, ADDBE_1234 = xmm28;
+  const XMMRegister GHASH_IN = xmm14, TO_REDUCE_L = xmm25, TO_REDUCE_H = xmm24;
+  int hkey_gap = 16 * 32;
 
-    Label blocks_overflow, blocks_ok, skip_shuffle, cont, aes_256, aes_192, last_aes_rnd;
+  Label blocks_overflow, blocks_ok, skip_shuffle, cont, aes_256, aes_192, last_aes_rnd;
 
-    __ cmpl(CTR_CHECK, (256 - 16));
-    __ jcc(Assembler::greaterEqual, blocks_overflow);
-    __ vpaddd(B00_03, CTR_BE, ADDBE_1234, Assembler::AVX_512bit);
-    __ vpaddd(B04_07, B00_03, ADDBE_4x4, Assembler::AVX_512bit);
-    __ vpaddd(B08_11, B04_07, ADDBE_4x4, Assembler::AVX_512bit);
-    __ vpaddd(B12_15, B08_11, ADDBE_4x4, Assembler::AVX_512bit);
-    __ jmp(blocks_ok);
-    __ bind(blocks_overflow);
-    __ vpshufb(CTR_BE, CTR_BE, SHFMSK, Assembler::AVX_512bit);
-    __ evmovdquq(B12_15, ExternalAddress(counter_mask_linc4_addr()), Assembler::AVX_512bit, rbx /*rscratch*/);
-    __ vpaddd(B00_03, CTR_BE, ExternalAddress(counter_mask_add_1234_addr()), Assembler::AVX_512bit, rbx /*rscratch*/);
-    __ vpaddd(B04_07, B00_03, B12_15, Assembler::AVX_512bit);
-    __ vpaddd(B08_11, B04_07, B12_15, Assembler::AVX_512bit);
-    __ vpaddd(B12_15, B08_11, B12_15, Assembler::AVX_512bit);
-    __ vpshufb(B00_03, B00_03, SHFMSK, Assembler::AVX_512bit);
-    __ vpshufb(B04_07, B04_07, SHFMSK, Assembler::AVX_512bit);
-    __ vpshufb(B08_11, B08_11, SHFMSK, Assembler::AVX_512bit);
-    __ vpshufb(B12_15, B12_15, SHFMSK, Assembler::AVX_512bit);
-    __ bind(blocks_ok);
+  __ cmpl(CTR_CHECK, (256 - 16));
+  __ jcc(Assembler::greaterEqual, blocks_overflow);
+  __ vpaddd(B00_03, CTR_BE, ADDBE_1234, Assembler::AVX_512bit);
+  __ vpaddd(B04_07, B00_03, ADDBE_4x4, Assembler::AVX_512bit);
+  __ vpaddd(B08_11, B04_07, ADDBE_4x4, Assembler::AVX_512bit);
+  __ vpaddd(B12_15, B08_11, ADDBE_4x4, Assembler::AVX_512bit);
+  __ jmp(blocks_ok);
+  __ bind(blocks_overflow);
+  __ vpshufb(CTR_BE, CTR_BE, SHFMSK, Assembler::AVX_512bit);
+  __ evmovdquq(B12_15, ExternalAddress(counter_mask_linc4_addr()), Assembler::AVX_512bit, rbx /*rscratch*/);
+  __ vpaddd(B00_03, CTR_BE, ExternalAddress(counter_mask_add_1234_addr()), Assembler::AVX_512bit, rbx /*rscratch*/);
+  __ vpaddd(B04_07, B00_03, B12_15, Assembler::AVX_512bit);
+  __ vpaddd(B08_11, B04_07, B12_15, Assembler::AVX_512bit);
+  __ vpaddd(B12_15, B08_11, B12_15, Assembler::AVX_512bit);
+  __ vpshufb(B00_03, B00_03, SHFMSK, Assembler::AVX_512bit);
+  __ vpshufb(B04_07, B04_07, SHFMSK, Assembler::AVX_512bit);
+  __ vpshufb(B08_11, B08_11, SHFMSK, Assembler::AVX_512bit);
+  __ vpshufb(B12_15, B12_15, SHFMSK, Assembler::AVX_512bit);
+  __ bind(blocks_ok);
 
-    //;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    //;; pre - load constants
-    ev_load_key(AESKEY1, key, 0, rbx);
-    if (!no_ghash_in) {
-        __ evpxorq(GHDAT1, GHASH_IN, Address(avx512_subkeyHtbl, 16 * ghashin_offset), Assembler::AVX_512bit);
-    } else {
-        __ evmovdquq(GHDAT1, Address(avx512_subkeyHtbl, 16 * ghashin_offset), Assembler::AVX_512bit);
-    }
+  //pre - load constants
+  ev_load_key(AESKEY1, key, 0, rbx);
+  if (!no_ghash_in) {
+    __ evpxorq(GHDAT1, GHASH_IN, Address(avx512_subkeyHtbl, 16 * ghashin_offset), Assembler::AVX_512bit);
+  } else {
+    __ evmovdquq(GHDAT1, Address(avx512_subkeyHtbl, 16 * ghashin_offset), Assembler::AVX_512bit);
+  }
 
-    if (hk_broadcast) {
-        __ evbroadcastf64x2(GHKEY1, Address(avx512_subkeyHtbl, hashkey_offset + 0 * 64), Assembler::AVX_512bit);
-        __ evbroadcastf64x2(GHKEY2, Address(avx512_subkeyHtbl, hashkey_offset + hkey_gap + 0 * 64), Assembler::AVX_512bit);
-    } else {
-        __ evmovdquq(GHKEY1, Address(avx512_subkeyHtbl, hashkey_offset + 0 * 64), Assembler::AVX_512bit);
-        __ evmovdquq(GHKEY2, Address(avx512_subkeyHtbl, hashkey_offset + hkey_gap + 0 * 64), Assembler::AVX_512bit);
-    }
+  if (hk_broadcast) {
+    __ evbroadcastf64x2(GHKEY1, Address(avx512_subkeyHtbl, hashkey_offset + 0 * 64), Assembler::AVX_512bit);
+    __ evbroadcastf64x2(GHKEY2, Address(avx512_subkeyHtbl, hashkey_offset + hkey_gap + 0 * 64), Assembler::AVX_512bit);
+  } else {
+    __ evmovdquq(GHKEY1, Address(avx512_subkeyHtbl, hashkey_offset + 0 * 64), Assembler::AVX_512bit);
+    __ evmovdquq(GHKEY2, Address(avx512_subkeyHtbl, hashkey_offset + hkey_gap + 0 * 64), Assembler::AVX_512bit);
+  }
 
-    //save counter for the next round
-    //increment counter overflow check register
-    __ evshufi64x2(CTR_BE, B12_15, B12_15, 255, Assembler::AVX_512bit);
-    __ addl(CTR_CHECK, 16);
+  //save counter for the next round
+  //increment counter overflow check register
+  __ evshufi64x2(CTR_BE, B12_15, B12_15, 255, Assembler::AVX_512bit);
+  __ addl(CTR_CHECK, 16);
 
-    //pre - load constants
-    ev_load_key(AESKEY2, key, 1 * 16, rbx);
-    __ evmovdquq(GHDAT2, Address(avx512_subkeyHtbl, 16 * (ghashin_offset +4)), Assembler::AVX_512bit);
+  //pre - load constants
+  ev_load_key(AESKEY2, key, 1 * 16, rbx);
+  __ evmovdquq(GHDAT2, Address(avx512_subkeyHtbl, 16 * (ghashin_offset +4)), Assembler::AVX_512bit);
 
-    //stitch AES rounds with GHASH
-    //AES round 0
-    __ evpxorq(B00_03, B00_03, AESKEY1, Assembler::AVX_512bit);
-    __ evpxorq(B04_07, B04_07, AESKEY1, Assembler::AVX_512bit);
-    __ evpxorq(B08_11, B08_11, AESKEY1, Assembler::AVX_512bit);
-    __ evpxorq(B12_15, B12_15, AESKEY1, Assembler::AVX_512bit);
-    ev_load_key(AESKEY1, key, 2 * 16, rbx);
+  //stitch AES rounds with GHASH
+  //AES round 0
+  __ evpxorq(B00_03, B00_03, AESKEY1, Assembler::AVX_512bit);
+  __ evpxorq(B04_07, B04_07, AESKEY1, Assembler::AVX_512bit);
+  __ evpxorq(B08_11, B08_11, AESKEY1, Assembler::AVX_512bit);
+  __ evpxorq(B12_15, B12_15, AESKEY1, Assembler::AVX_512bit);
+  ev_load_key(AESKEY1, key, 2 * 16, rbx);
 
-    //GHASH 4 blocks(15 to 12)
-    __ evpclmulqdq(TLL1, GHDAT1, GHKEY2, 0x00, Assembler::AVX_512bit);//TLL = ML * KL
-    __ evpclmulqdq(TLH1, GHDAT1, GHKEY2, 0x10, Assembler::AVX_512bit);//TLH = ML * KH
-    __ evpclmulqdq(THL1, GHDAT1, GHKEY1, 0x01, Assembler::AVX_512bit);//THL = MH * HL
-    __ evpclmulqdq(THH1, GHDAT1, GHKEY1, 0x11, Assembler::AVX_512bit);//THH = MH * HH
+  //GHASH 4 blocks(15 to 12)
+  __ evpclmulqdq(TLL1, GHDAT1, GHKEY2, 0x00, Assembler::AVX_512bit);//TLL = ML * KL
+  __ evpclmulqdq(TLH1, GHDAT1, GHKEY2, 0x10, Assembler::AVX_512bit);//TLH = ML * KH
+  __ evpclmulqdq(THL1, GHDAT1, GHKEY1, 0x01, Assembler::AVX_512bit);//THL = MH * HL
+  __ evpclmulqdq(THH1, GHDAT1, GHKEY1, 0x11, Assembler::AVX_512bit);//THH = MH * HH
 
-    if (hk_broadcast) {
-        __ evbroadcastf64x2(GHKEY1, Address(avx512_subkeyHtbl, hashkey_offset + 1 * 64), Assembler::AVX_512bit);
-        __ evbroadcastf64x2(GHKEY2, Address(avx512_subkeyHtbl, hashkey_offset + hkey_gap + 1 * 64), Assembler::AVX_512bit);
-    }
-    else {
-        __ evmovdquq(GHKEY1, Address(avx512_subkeyHtbl, hashkey_offset + 1 * 64), Assembler::AVX_512bit);
-        __ evmovdquq(GHKEY2, Address(avx512_subkeyHtbl, hashkey_offset + hkey_gap + 1 * 64), Assembler::AVX_512bit);
-    }
+  if (hk_broadcast) {
+    __ evbroadcastf64x2(GHKEY1, Address(avx512_subkeyHtbl, hashkey_offset + 1 * 64), Assembler::AVX_512bit);
+    __ evbroadcastf64x2(GHKEY2, Address(avx512_subkeyHtbl, hashkey_offset + hkey_gap + 1 * 64), Assembler::AVX_512bit);
+  } else {
+    __ evmovdquq(GHKEY1, Address(avx512_subkeyHtbl, hashkey_offset + 1 * 64), Assembler::AVX_512bit);
+    __ evmovdquq(GHKEY2, Address(avx512_subkeyHtbl, hashkey_offset + hkey_gap + 1 * 64), Assembler::AVX_512bit);
+  }
 
-    __ evmovdquq(GHDAT1, Address(avx512_subkeyHtbl, 16 * (ghashin_offset + 8)), Assembler::AVX_512bit);
+  __ evmovdquq(GHDAT1, Address(avx512_subkeyHtbl, 16 * (ghashin_offset + 8)), Assembler::AVX_512bit);
 
-    //AES round 1
-    __ vaesenc(B00_03, B00_03, AESKEY2, Assembler::AVX_512bit);
-    __ vaesenc(B04_07, B04_07, AESKEY2, Assembler::AVX_512bit);
-    __ vaesenc(B08_11, B08_11, AESKEY2, Assembler::AVX_512bit);
-    __ vaesenc(B12_15, B12_15, AESKEY2, Assembler::AVX_512bit);
-    ev_load_key(AESKEY2, key, 3 * 16, rbx);
+  //AES round 1
+  __ vaesenc(B00_03, B00_03, AESKEY2, Assembler::AVX_512bit);
+  __ vaesenc(B04_07, B04_07, AESKEY2, Assembler::AVX_512bit);
+  __ vaesenc(B08_11, B08_11, AESKEY2, Assembler::AVX_512bit);
+  __ vaesenc(B12_15, B12_15, AESKEY2, Assembler::AVX_512bit);
+  ev_load_key(AESKEY2, key, 3 * 16, rbx);
 
-    //GHASH 4 blocks(11 to 8)
-    __ evpclmulqdq(TLL2, GHDAT2, GHKEY2, 0x00, Assembler::AVX_512bit);//TLL = ML * KL
-    __ evpclmulqdq(TLH2, GHDAT2, GHKEY2, 0x10, Assembler::AVX_512bit);//TLH = ML * KH
-    __ evpclmulqdq(THL2, GHDAT2, GHKEY1, 0x01, Assembler::AVX_512bit);//THL = MH * HL
-    __ evpclmulqdq(THH2, GHDAT2, GHKEY1, 0x11, Assembler::AVX_512bit);//THH = MH * HH
+  //GHASH 4 blocks(11 to 8)
+  __ evpclmulqdq(TLL2, GHDAT2, GHKEY2, 0x00, Assembler::AVX_512bit);//TLL = ML * KL
+  __ evpclmulqdq(TLH2, GHDAT2, GHKEY2, 0x10, Assembler::AVX_512bit);//TLH = ML * KH
+  __ evpclmulqdq(THL2, GHDAT2, GHKEY1, 0x01, Assembler::AVX_512bit);//THL = MH * HL
+  __ evpclmulqdq(THH2, GHDAT2, GHKEY1, 0x11, Assembler::AVX_512bit);//THH = MH * HH
 
-    if (hk_broadcast) {
-        __ evbroadcastf64x2(GHKEY1, Address(avx512_subkeyHtbl, hashkey_offset + 2 * 64), Assembler::AVX_512bit);
-        __ evbroadcastf64x2(GHKEY2, Address(avx512_subkeyHtbl, hashkey_offset + hkey_gap + 2 * 64), Assembler::AVX_512bit);
-    } else {
-        __ evmovdquq(GHKEY1, Address(avx512_subkeyHtbl, hashkey_offset + 2 * 64 ), Assembler::AVX_512bit);
-        __ evmovdquq(GHKEY2, Address(avx512_subkeyHtbl, hashkey_offset + hkey_gap + 2 * 64), Assembler::AVX_512bit);
-    }
-    __ evmovdquq(GHDAT2, Address(avx512_subkeyHtbl, 16 * (ghashin_offset + 12)), Assembler::AVX_512bit);
+  if (hk_broadcast) {
+    __ evbroadcastf64x2(GHKEY1, Address(avx512_subkeyHtbl, hashkey_offset + 2 * 64), Assembler::AVX_512bit);
+    __ evbroadcastf64x2(GHKEY2, Address(avx512_subkeyHtbl, hashkey_offset + hkey_gap + 2 * 64), Assembler::AVX_512bit);
+  } else {
+    __ evmovdquq(GHKEY1, Address(avx512_subkeyHtbl, hashkey_offset + 2 * 64 ), Assembler::AVX_512bit);
+    __ evmovdquq(GHKEY2, Address(avx512_subkeyHtbl, hashkey_offset + hkey_gap + 2 * 64), Assembler::AVX_512bit);
+  }
+  __ evmovdquq(GHDAT2, Address(avx512_subkeyHtbl, 16 * (ghashin_offset + 12)), Assembler::AVX_512bit);
 
-    //AES round 2
-    __ vaesenc(B00_03, B00_03, AESKEY1, Assembler::AVX_512bit);
-    __ vaesenc(B04_07, B04_07, AESKEY1, Assembler::AVX_512bit);
-    __ vaesenc(B08_11, B08_11, AESKEY1, Assembler::AVX_512bit);
-    __ vaesenc(B12_15, B12_15, AESKEY1, Assembler::AVX_512bit);
-    ev_load_key(AESKEY1, key, 4 * 16, rbx);
+  //AES round 2
+  __ vaesenc(B00_03, B00_03, AESKEY1, Assembler::AVX_512bit);
+  __ vaesenc(B04_07, B04_07, AESKEY1, Assembler::AVX_512bit);
+  __ vaesenc(B08_11, B08_11, AESKEY1, Assembler::AVX_512bit);
+  __ vaesenc(B12_15, B12_15, AESKEY1, Assembler::AVX_512bit);
+  ev_load_key(AESKEY1, key, 4 * 16, rbx);
 
-    //GHASH 4 blocks(7 to 4)
-    __ evpclmulqdq(TLL3, GHDAT1, GHKEY2, 0x00, Assembler::AVX_512bit);//TLL = ML * KL
-    __ evpclmulqdq(TLH3, GHDAT1, GHKEY2, 0x10, Assembler::AVX_512bit);//TLH = ML * KH
-    __ evpclmulqdq(THL3, GHDAT1, GHKEY1, 0x01, Assembler::AVX_512bit);//THL = MH * HL
-    __ evpclmulqdq(THH3, GHDAT1, GHKEY1, 0x11, Assembler::AVX_512bit);//THH = MH * HH
+  //GHASH 4 blocks(7 to 4)
+  __ evpclmulqdq(TLL3, GHDAT1, GHKEY2, 0x00, Assembler::AVX_512bit);//TLL = ML * KL
+  __ evpclmulqdq(TLH3, GHDAT1, GHKEY2, 0x10, Assembler::AVX_512bit);//TLH = ML * KH
+  __ evpclmulqdq(THL3, GHDAT1, GHKEY1, 0x01, Assembler::AVX_512bit);//THL = MH * HL
+  __ evpclmulqdq(THH3, GHDAT1, GHKEY1, 0x11, Assembler::AVX_512bit);//THH = MH * HH
 
-    if (hk_broadcast) {
-        __ evbroadcastf64x2(GHKEY1, Address(avx512_subkeyHtbl, hashkey_offset + 3 * 64), Assembler::AVX_512bit);
-        __ evbroadcastf64x2(GHKEY2, Address(avx512_subkeyHtbl, hashkey_offset + hkey_gap + 3 * 64), Assembler::AVX_512bit);
-    } else {
-        __ evmovdquq(GHKEY1, Address(avx512_subkeyHtbl, hashkey_offset + 3 * 64), Assembler::AVX_512bit);
-        __ evmovdquq(GHKEY2, Address(avx512_subkeyHtbl, hashkey_offset + hkey_gap + 3 * 64), Assembler::AVX_512bit);
-    }
+  if (hk_broadcast) {
+    __ evbroadcastf64x2(GHKEY1, Address(avx512_subkeyHtbl, hashkey_offset + 3 * 64), Assembler::AVX_512bit);
+    __ evbroadcastf64x2(GHKEY2, Address(avx512_subkeyHtbl, hashkey_offset + hkey_gap + 3 * 64), Assembler::AVX_512bit);
+  } else {
+    __ evmovdquq(GHKEY1, Address(avx512_subkeyHtbl, hashkey_offset + 3 * 64), Assembler::AVX_512bit);
+    __ evmovdquq(GHKEY2, Address(avx512_subkeyHtbl, hashkey_offset + hkey_gap + 3 * 64), Assembler::AVX_512bit);
+  }
 
-    //AES rounds 3
-    __ vaesenc(B00_03, B00_03, AESKEY2, Assembler::AVX_512bit);
-    __ vaesenc(B04_07, B04_07, AESKEY2, Assembler::AVX_512bit);
-    __ vaesenc(B08_11, B08_11, AESKEY2, Assembler::AVX_512bit);
-    __ vaesenc(B12_15, B12_15, AESKEY2, Assembler::AVX_512bit);
-    ev_load_key(AESKEY2, key, 5 * 16, rbx);
+  //AES rounds 3
+  __ vaesenc(B00_03, B00_03, AESKEY2, Assembler::AVX_512bit);
+  __ vaesenc(B04_07, B04_07, AESKEY2, Assembler::AVX_512bit);
+  __ vaesenc(B08_11, B08_11, AESKEY2, Assembler::AVX_512bit);
+  __ vaesenc(B12_15, B12_15, AESKEY2, Assembler::AVX_512bit);
+  ev_load_key(AESKEY2, key, 5 * 16, rbx);
 
-    //Gather(XOR) GHASH for 12 blocks
-    __ vpternlogq(TLL1, 0x96, TLL2, TLL3, Assembler::AVX_512bit);
-    __ vpternlogq(TLH1, 0x96, TLH2, TLH3, Assembler::AVX_512bit);
-    __ vpternlogq(THL1, 0x96, THL2, THL3, Assembler::AVX_512bit);
-    __ vpternlogq(THH1, 0x96, THH2, THH3, Assembler::AVX_512bit);
+  //Gather(XOR) GHASH for 12 blocks
+  __ vpternlogq(TLL1, 0x96, TLL2, TLL3, Assembler::AVX_512bit);
+  __ vpternlogq(TLH1, 0x96, TLH2, TLH3, Assembler::AVX_512bit);
+  __ vpternlogq(THL1, 0x96, THL2, THL3, Assembler::AVX_512bit);
+  __ vpternlogq(THH1, 0x96, THH2, THH3, Assembler::AVX_512bit);
 
-    //AES rounds 4
-    __ vaesenc(B00_03, B00_03, AESKEY1, Assembler::AVX_512bit);
-    __ vaesenc(B04_07, B04_07, AESKEY1, Assembler::AVX_512bit);
-    __ vaesenc(B08_11, B08_11, AESKEY1, Assembler::AVX_512bit);
-    __ vaesenc(B12_15, B12_15, AESKEY1, Assembler::AVX_512bit);
-    ev_load_key(AESKEY1, key, 6 * 16, rbx);
+  //AES rounds 4
+  __ vaesenc(B00_03, B00_03, AESKEY1, Assembler::AVX_512bit);
+  __ vaesenc(B04_07, B04_07, AESKEY1, Assembler::AVX_512bit);
+  __ vaesenc(B08_11, B08_11, AESKEY1, Assembler::AVX_512bit);
+  __ vaesenc(B12_15, B12_15, AESKEY1, Assembler::AVX_512bit);
+  ev_load_key(AESKEY1, key, 6 * 16, rbx);
    
-    //load plain / cipher text(recycle GH3xx registers)
-    loadData(in, pos, DATA1, DATA2, DATA3, DATA4);
+  //load plain / cipher text(recycle GH3xx registers)
+  loadData(in, pos, DATA1, DATA2, DATA3, DATA4);
 
-    //AES rounds 5
-    __ vaesenc(B00_03, B00_03, AESKEY2, Assembler::AVX_512bit);
-    __ vaesenc(B04_07, B04_07, AESKEY2, Assembler::AVX_512bit);
-    __ vaesenc(B08_11, B08_11, AESKEY2, Assembler::AVX_512bit);
-    __ vaesenc(B12_15, B12_15, AESKEY2, Assembler::AVX_512bit);
-    ev_load_key(AESKEY2, key, 7 * 16, rbx);
+  //AES rounds 5
+  __ vaesenc(B00_03, B00_03, AESKEY2, Assembler::AVX_512bit);
+  __ vaesenc(B04_07, B04_07, AESKEY2, Assembler::AVX_512bit);
+  __ vaesenc(B08_11, B08_11, AESKEY2, Assembler::AVX_512bit);
+  __ vaesenc(B12_15, B12_15, AESKEY2, Assembler::AVX_512bit);
+  ev_load_key(AESKEY2, key, 7 * 16, rbx);
 
-    //GHASH 4 blocks(3 to 0)
-    __ evpclmulqdq(TLL2, GHDAT2, GHKEY2, 0x00, Assembler::AVX_512bit);//TLL = ML * KL
-    __ evpclmulqdq(TLH2, GHDAT2, GHKEY2, 0x10, Assembler::AVX_512bit);//TLH = ML * KH
-    __ evpclmulqdq(THL2, GHDAT2, GHKEY1, 0x01, Assembler::AVX_512bit);//THL = MH * HL
-    __ evpclmulqdq(THH2, GHDAT2, GHKEY1, 0x11, Assembler::AVX_512bit);//THH = MH * HH
+  //GHASH 4 blocks(3 to 0)
+  __ evpclmulqdq(TLL2, GHDAT2, GHKEY2, 0x00, Assembler::AVX_512bit);//TLL = ML * KL
+  __ evpclmulqdq(TLH2, GHDAT2, GHKEY2, 0x10, Assembler::AVX_512bit);//TLH = ML * KH
+  __ evpclmulqdq(THL2, GHDAT2, GHKEY1, 0x01, Assembler::AVX_512bit);//THL = MH * HL
+  __ evpclmulqdq(THH2, GHDAT2, GHKEY1, 0x11, Assembler::AVX_512bit);//THH = MH * HH
 
-    //AES round 6
-    __ vaesenc(B00_03, B00_03, AESKEY1, Assembler::AVX_512bit);
-    __ vaesenc(B04_07, B04_07, AESKEY1, Assembler::AVX_512bit);
-    __ vaesenc(B08_11, B08_11, AESKEY1, Assembler::AVX_512bit);
-    __ vaesenc(B12_15, B12_15, AESKEY1, Assembler::AVX_512bit);
-    ev_load_key(AESKEY1, key, 8 * 16, rbx);
+  //AES round 6
+  __ vaesenc(B00_03, B00_03, AESKEY1, Assembler::AVX_512bit);
+  __ vaesenc(B04_07, B04_07, AESKEY1, Assembler::AVX_512bit);
+  __ vaesenc(B08_11, B08_11, AESKEY1, Assembler::AVX_512bit);
+  __ vaesenc(B12_15, B12_15, AESKEY1, Assembler::AVX_512bit);
+  ev_load_key(AESKEY1, key, 8 * 16, rbx);
 
-    //gather GHASH in TO_REDUCE_H / L
-    if (is_hash_start) {
-        __ evpxorq(TO_REDUCE_L, TLL2, THL2, Assembler::AVX_512bit);
-        __ evpxorq(TO_REDUCE_H, THH2, TLH2, Assembler::AVX_512bit);
-        __ vpternlogq(TO_REDUCE_L, 0x96, TLL1, THL1, Assembler::AVX_512bit);
-        __ vpternlogq(TO_REDUCE_H, 0x96, THH1, TLH1, Assembler::AVX_512bit);
-    } else {
-        //;; not the first round so sums need to be updated
-        __ vpternlogq(TO_REDUCE_L, 0x96, TLL2, THL2, Assembler::AVX_512bit);
-        __ vpternlogq(TO_REDUCE_H, 0x96, THH2, TLH2, Assembler::AVX_512bit);
-        __ vpternlogq(TO_REDUCE_L, 0x96, TLL1, THL1, Assembler::AVX_512bit);
-        __ vpternlogq(TO_REDUCE_H, 0x96, THH1, TLH1, Assembler::AVX_512bit);
-    }
+  //gather GHASH in TO_REDUCE_H / L
+  if (is_hash_start) {
+    __ evpxorq(TO_REDUCE_L, TLL2, THL2, Assembler::AVX_512bit);
+    __ evpxorq(TO_REDUCE_H, THH2, TLH2, Assembler::AVX_512bit);
+    __ vpternlogq(TO_REDUCE_L, 0x96, TLL1, THL1, Assembler::AVX_512bit);
+    __ vpternlogq(TO_REDUCE_H, 0x96, THH1, TLH1, Assembler::AVX_512bit);
+  } else {
+    //not the first round so sums need to be updated
+    __ vpternlogq(TO_REDUCE_L, 0x96, TLL2, THL2, Assembler::AVX_512bit);
+    __ vpternlogq(TO_REDUCE_H, 0x96, THH2, TLH2, Assembler::AVX_512bit);
+    __ vpternlogq(TO_REDUCE_L, 0x96, TLL1, THL1, Assembler::AVX_512bit);
+    __ vpternlogq(TO_REDUCE_H, 0x96, THH1, TLH1, Assembler::AVX_512bit);
+  }
 
-    //AES round 7
-    __ vaesenc(B00_03, B00_03, AESKEY2, Assembler::AVX_512bit);
-    __ vaesenc(B04_07, B04_07, AESKEY2, Assembler::AVX_512bit);
-    __ vaesenc(B08_11, B08_11, AESKEY2, Assembler::AVX_512bit);
-    __ vaesenc(B12_15, B12_15, AESKEY2, Assembler::AVX_512bit);
-    ev_load_key(AESKEY2, key, 9 * 16, rbx);
+  //AES round 7
+  __ vaesenc(B00_03, B00_03, AESKEY2, Assembler::AVX_512bit);
+  __ vaesenc(B04_07, B04_07, AESKEY2, Assembler::AVX_512bit);
+  __ vaesenc(B08_11, B08_11, AESKEY2, Assembler::AVX_512bit);
+  __ vaesenc(B12_15, B12_15, AESKEY2, Assembler::AVX_512bit);
+  ev_load_key(AESKEY2, key, 9 * 16, rbx);
 
-    //new reduction
-    if (do_hash_reduction) {
-        __ evmovdquq(xmm23, ExternalAddress(ghash_polynomial_reduction_addr()), Assembler::AVX_512bit, rbx /*rscratch*/);
-        __ evpclmulqdq(THH1, TO_REDUCE_L, xmm23, 0x10, Assembler::AVX_512bit);
-        __ vpshufd(TO_REDUCE_L, TO_REDUCE_L, 78, Assembler::AVX_512bit);
-        __ vpternlogq(THH1, 0x96, TO_REDUCE_H, TO_REDUCE_L, Assembler::AVX_512bit);
-    }
+  //new reduction
+  if (do_hash_reduction) {
+    __ evmovdquq(xmm23, ExternalAddress(ghash_polynomial_reduction_addr()), Assembler::AVX_512bit, rbx /*rscratch*/);
+    __ evpclmulqdq(THH1, TO_REDUCE_L, xmm23, 0x10, Assembler::AVX_512bit);
+    __ vpshufd(TO_REDUCE_L, TO_REDUCE_L, 78, Assembler::AVX_512bit);
+    __ vpternlogq(THH1, 0x96, TO_REDUCE_H, TO_REDUCE_L, Assembler::AVX_512bit);
+  }
 
-    //AES round 8
-    __ vaesenc(B00_03, B00_03, AESKEY1, Assembler::AVX_512bit);
-    __ vaesenc(B04_07, B04_07, AESKEY1, Assembler::AVX_512bit);
-    __ vaesenc(B08_11, B08_11, AESKEY1, Assembler::AVX_512bit);
-    __ vaesenc(B12_15, B12_15, AESKEY1, Assembler::AVX_512bit);
-    ev_load_key(AESKEY1, key, 10 * 16, rbx);
+  //AES round 8
+  __ vaesenc(B00_03, B00_03, AESKEY1, Assembler::AVX_512bit);
+  __ vaesenc(B04_07, B04_07, AESKEY1, Assembler::AVX_512bit);
+  __ vaesenc(B08_11, B08_11, AESKEY1, Assembler::AVX_512bit);
+  __ vaesenc(B12_15, B12_15, AESKEY1, Assembler::AVX_512bit);
+  ev_load_key(AESKEY1, key, 10 * 16, rbx);
 
-    //horizontalxor of 4 reduced hashes
-    if (do_hash_hxor) {
-        vhpxori4x128(THH1, TLL1);
-    }
+  //horizontalxor of 4 reduced hashes
+  if (do_hash_hxor) {
+    vhpxori4x128(THH1, TLL1);
+  }
 
-    //AES round 9
-    __ vaesenc(B00_03, B00_03, AESKEY2, Assembler::AVX_512bit);
-    __ vaesenc(B04_07, B04_07, AESKEY2, Assembler::AVX_512bit);
-    __ vaesenc(B08_11, B08_11, AESKEY2, Assembler::AVX_512bit);
-    __ vaesenc(B12_15, B12_15, AESKEY2, Assembler::AVX_512bit);
-   
-    ev_load_key(AESKEY2, key, 11 * 16, rbx);
-    //AES rounds up to 11 (AES192) or 13 (AES256)
-    //AES128 is done
-    __ cmpl(NROUNDS, 52);
-    __ jcc(Assembler::less, last_aes_rnd);
-    __ bind(aes_192);
-    __ vaesenc(B00_03, B00_03, AESKEY1, Assembler::AVX_512bit);
-    __ vaesenc(B04_07, B04_07, AESKEY1, Assembler::AVX_512bit);
-    __ vaesenc(B08_11, B08_11, AESKEY1, Assembler::AVX_512bit);
-    __ vaesenc(B12_15, B12_15, AESKEY1, Assembler::AVX_512bit);
-    ev_load_key(AESKEY1, key, 12 * 16, rbx);
-    __ vaesenc(B00_03, B00_03, AESKEY2, Assembler::AVX_512bit);
-    __ vaesenc(B04_07, B04_07, AESKEY2, Assembler::AVX_512bit);
-    __ vaesenc(B08_11, B08_11, AESKEY2, Assembler::AVX_512bit);
-    __ vaesenc(B12_15, B12_15, AESKEY2, Assembler::AVX_512bit);
-    __ cmpl(NROUNDS, 60);
-    __ jcc(Assembler::less, last_aes_rnd);
-    __ bind(aes_256);
-    ev_load_key(AESKEY2, key, 13 * 16, rbx);
-    __ vaesenc(B00_03, B00_03, AESKEY1, Assembler::AVX_512bit);
-    __ vaesenc(B04_07, B04_07, AESKEY1, Assembler::AVX_512bit);
-    __ vaesenc(B08_11, B08_11, AESKEY1, Assembler::AVX_512bit);
-    __ vaesenc(B12_15, B12_15, AESKEY1, Assembler::AVX_512bit);
-    ev_load_key(AESKEY1, key, 14 * 16, rbx);
-    __ vaesenc(B00_03, B00_03, AESKEY2, Assembler::AVX_512bit);
-    __ vaesenc(B04_07, B04_07, AESKEY2, Assembler::AVX_512bit);
-    __ vaesenc(B08_11, B08_11, AESKEY2, Assembler::AVX_512bit);
-    __ vaesenc(B12_15, B12_15, AESKEY2, Assembler::AVX_512bit);
+  //AES round 9
+  __ vaesenc(B00_03, B00_03, AESKEY2, Assembler::AVX_512bit);
+  __ vaesenc(B04_07, B04_07, AESKEY2, Assembler::AVX_512bit);
+  __ vaesenc(B08_11, B08_11, AESKEY2, Assembler::AVX_512bit);
+  __ vaesenc(B12_15, B12_15, AESKEY2, Assembler::AVX_512bit);
+  ev_load_key(AESKEY2, key, 11 * 16, rbx);
+  //AES rounds up to 11 (AES192) or 13 (AES256)
+  //AES128 is done
+  __ cmpl(NROUNDS, 52);
+  __ jcc(Assembler::less, last_aes_rnd);
+  __ bind(aes_192);
+  __ vaesenc(B00_03, B00_03, AESKEY1, Assembler::AVX_512bit);
+  __ vaesenc(B04_07, B04_07, AESKEY1, Assembler::AVX_512bit);
+  __ vaesenc(B08_11, B08_11, AESKEY1, Assembler::AVX_512bit);
+  __ vaesenc(B12_15, B12_15, AESKEY1, Assembler::AVX_512bit);
+  ev_load_key(AESKEY1, key, 12 * 16, rbx);
+  __ vaesenc(B00_03, B00_03, AESKEY2, Assembler::AVX_512bit);
+  __ vaesenc(B04_07, B04_07, AESKEY2, Assembler::AVX_512bit);
+  __ vaesenc(B08_11, B08_11, AESKEY2, Assembler::AVX_512bit);
+  __ vaesenc(B12_15, B12_15, AESKEY2, Assembler::AVX_512bit);
+  __ cmpl(NROUNDS, 60);
+  __ jcc(Assembler::less, last_aes_rnd);
+  __ bind(aes_256);
+  ev_load_key(AESKEY2, key, 13 * 16, rbx);
+  __ vaesenc(B00_03, B00_03, AESKEY1, Assembler::AVX_512bit);
+  __ vaesenc(B04_07, B04_07, AESKEY1, Assembler::AVX_512bit);
+  __ vaesenc(B08_11, B08_11, AESKEY1, Assembler::AVX_512bit);
+  __ vaesenc(B12_15, B12_15, AESKEY1, Assembler::AVX_512bit);
+  ev_load_key(AESKEY1, key, 14 * 16, rbx);
+  __ vaesenc(B00_03, B00_03, AESKEY2, Assembler::AVX_512bit);
+  __ vaesenc(B04_07, B04_07, AESKEY2, Assembler::AVX_512bit);
+  __ vaesenc(B08_11, B08_11, AESKEY2, Assembler::AVX_512bit);
+  __ vaesenc(B12_15, B12_15, AESKEY2, Assembler::AVX_512bit);
 
-    __ bind(last_aes_rnd);
-    //the last AES round
-    __ vaesenclast(B00_03, B00_03, AESKEY1, Assembler::AVX_512bit);
-    __ vaesenclast(B04_07, B04_07, AESKEY1, Assembler::AVX_512bit);
-    __ vaesenclast(B08_11, B08_11, AESKEY1, Assembler::AVX_512bit);
-    __ vaesenclast(B12_15, B12_15, AESKEY1, Assembler::AVX_512bit);
-    //**AESKEY1and AESKEY2 contain AES round keys
+  __ bind(last_aes_rnd);
+  //the last AES round
+  __ vaesenclast(B00_03, B00_03, AESKEY1, Assembler::AVX_512bit);
+  __ vaesenclast(B04_07, B04_07, AESKEY1, Assembler::AVX_512bit);
+  __ vaesenclast(B08_11, B08_11, AESKEY1, Assembler::AVX_512bit);
+  __ vaesenclast(B12_15, B12_15, AESKEY1, Assembler::AVX_512bit);
+  //AESKEY1and AESKEY2 contain AES round keys
 
-    //XOR against plain / cipher text
-    __ evpxorq(B00_03, B00_03, DATA1, Assembler::AVX_512bit);
-    __ evpxorq(B04_07, B04_07, DATA2, Assembler::AVX_512bit);
-    __ evpxorq(B08_11, B08_11, DATA3, Assembler::AVX_512bit);
-    __ evpxorq(B12_15, B12_15, DATA4, Assembler::AVX_512bit);
+  //XOR against plain / cipher text
+  __ evpxorq(B00_03, B00_03, DATA1, Assembler::AVX_512bit);
+  __ evpxorq(B04_07, B04_07, DATA2, Assembler::AVX_512bit);
+  __ evpxorq(B08_11, B08_11, DATA3, Assembler::AVX_512bit);
+  __ evpxorq(B12_15, B12_15, DATA4, Assembler::AVX_512bit);
 
-    //store cipher / plain text
-    storeData(out, pos, B00_03, B04_07, B08_11, B12_15);
-    //**B00_03, B04_07, B08_011, B12_B15 may contain sensitive data
+  //store cipher / plain text
+  storeData(out, pos, B00_03, B04_07, B08_11, B12_15);
+  //**B00_03, B04_07, B08_011, B12_B15 may contain sensitive data
 
-    //shuffle cipher text blocks for GHASH computation
-    __ cmpptr(ct, out);
-    __ jcc(Assembler::notEqual, skip_shuffle);
-    __ vpshufb(B00_03, B00_03, SHFMSK, Assembler::AVX_512bit);
-    __ vpshufb(B04_07, B04_07, SHFMSK, Assembler::AVX_512bit);
-    __ vpshufb(B08_11, B08_11, SHFMSK, Assembler::AVX_512bit);
-    __ vpshufb(B12_15, B12_15, SHFMSK, Assembler::AVX_512bit);
-    __ jmp(cont);
-    __ bind(skip_shuffle);
-    __ vpshufb(B00_03, DATA1, SHFMSK, Assembler::AVX_512bit);
-    __ vpshufb(B04_07, DATA2, SHFMSK, Assembler::AVX_512bit);
-    __ vpshufb(B08_11, DATA3, SHFMSK, Assembler::AVX_512bit);
-    __ vpshufb(B12_15, DATA4, SHFMSK, Assembler::AVX_512bit);
-    
-    //**B00_03, B04_07, B08_011, B12_B15 overwritten with shuffled cipher text
-    __ bind(cont);
-    //store shuffled cipher text for ghashing
-    __ evmovdquq(Address(avx512_subkeyHtbl, 16 * aesout_offset), B00_03, Assembler::AVX_512bit);
-    __ evmovdquq(Address(avx512_subkeyHtbl, 16 * (aesout_offset + 4)), B04_07, Assembler::AVX_512bit);
-    __ evmovdquq(Address(avx512_subkeyHtbl, 16 * (aesout_offset + 8)), B08_11, Assembler::AVX_512bit);
-    __ evmovdquq(Address(avx512_subkeyHtbl, 16 * (aesout_offset + 12)), B12_15, Assembler::AVX_512bit);
+  //shuffle cipher text blocks for GHASH computation
+  __ cmpptr(ct, out);
+  __ jcc(Assembler::notEqual, skip_shuffle);
+  __ vpshufb(B00_03, B00_03, SHFMSK, Assembler::AVX_512bit);
+  __ vpshufb(B04_07, B04_07, SHFMSK, Assembler::AVX_512bit);
+  __ vpshufb(B08_11, B08_11, SHFMSK, Assembler::AVX_512bit);
+  __ vpshufb(B12_15, B12_15, SHFMSK, Assembler::AVX_512bit);
+  __ jmp(cont);
+  __ bind(skip_shuffle);
+  __ vpshufb(B00_03, DATA1, SHFMSK, Assembler::AVX_512bit);
+  __ vpshufb(B04_07, DATA2, SHFMSK, Assembler::AVX_512bit);
+  __ vpshufb(B08_11, DATA3, SHFMSK, Assembler::AVX_512bit);
+  __ vpshufb(B12_15, DATA4, SHFMSK, Assembler::AVX_512bit);
+
+  //**B00_03, B04_07, B08_011, B12_B15 overwritten with shuffled cipher text
+  __ bind(cont);
+  //store shuffled cipher text for ghashing
+  __ evmovdquq(Address(avx512_subkeyHtbl, 16 * aesout_offset), B00_03, Assembler::AVX_512bit);
+  __ evmovdquq(Address(avx512_subkeyHtbl, 16 * (aesout_offset + 4)), B04_07, Assembler::AVX_512bit);
+  __ evmovdquq(Address(avx512_subkeyHtbl, 16 * (aesout_offset + 8)), B08_11, Assembler::AVX_512bit);
+  __ evmovdquq(Address(avx512_subkeyHtbl, 16 * (aesout_offset + 12)), B12_15, Assembler::AVX_512bit);
 }
 
 
 //Encrypt / decrypt the initial 16 blocks
 void StubGenerator::initial_blocks_16_avx512(Register in, Register out, Register ct, Register pos, Register key, Register avx512_subkeyHtbl,
                                              Register CTR_CHECK, Register rounds, XMMRegister CTR, XMMRegister GHASH,  XMMRegister ADDBE_4x4,
-                                             XMMRegister ADDBE_1234, XMMRegister SHUF_MASK,
-                                             int stack_offset, bool no_ghash) {
-    const XMMRegister B00_03 = xmm7;
-    const XMMRegister B04_07 = xmm10;
-    const XMMRegister B08_11 = xmm11;
-    const XMMRegister B12_15 = xmm12;
-    const XMMRegister T0 = xmm0;
-    const XMMRegister T1 = xmm3;
-    const XMMRegister T2 = xmm4;
-    const XMMRegister T3 = xmm5;
-    const XMMRegister T4 = xmm6;
+                                             XMMRegister ADDBE_1234, XMMRegister SHUF_MASK, int stack_offset, bool no_ghash) {
+  const XMMRegister B00_03 = xmm7;
+  const XMMRegister B04_07 = xmm10;
+  const XMMRegister B08_11 = xmm11;
+  const XMMRegister B12_15 = xmm12;
+  const XMMRegister T0 = xmm0;
+  const XMMRegister T1 = xmm3;
+  const XMMRegister T2 = xmm4;
+  const XMMRegister T3 = xmm5;
+  const XMMRegister T4 = xmm6;
 
-    Label next_16_overflow, next_16_ok, cont, skip_shuffle, aes_256, aes_192, last_aes_rnd;
-    //;; prepare counter blocks
-    __ cmpl(CTR_CHECK, (256 - 16));
-    __ jcc(Assembler::aboveEqual, next_16_overflow);
-    __ vpaddd(B00_03, CTR, ADDBE_1234, Assembler::AVX_512bit);
-    __ vpaddd(B04_07, B00_03, ADDBE_4x4, Assembler::AVX_512bit);
-    __ vpaddd(B08_11, B04_07, ADDBE_4x4, Assembler::AVX_512bit);
-    __ vpaddd(B12_15, B08_11, ADDBE_4x4, Assembler::AVX_512bit);
-    __ jmp(next_16_ok);
-    __ bind(next_16_overflow);
-    __ vpshufb(CTR, CTR, SHUF_MASK, Assembler::AVX_512bit);
-    __ movdqu(B12_15, ADDBE_4x4);
-    __ vpaddd(B00_03, CTR, ADDBE_1234, Assembler::AVX_512bit);
-    __ vpaddd(B04_07, B00_03, B12_15, Assembler::AVX_512bit);
-    __ vpaddd(B08_11, B04_07, B12_15, Assembler::AVX_512bit);
-    __ vpaddd(B12_15, B08_11, B12_15, Assembler::AVX_512bit);
-    __ vpshufb(B00_03, B00_03, SHUF_MASK, Assembler::AVX_512bit);
-    __ vpshufb(B04_07, B04_07, SHUF_MASK, Assembler::AVX_512bit);
-    __ vpshufb(B08_11, B08_11, SHUF_MASK, Assembler::AVX_512bit);
-    __ vpshufb(B12_15, B12_15, SHUF_MASK, Assembler::AVX_512bit);
-    __ bind(next_16_ok);
-    __ evshufi64x2(CTR, B12_15, B12_15, 255, Assembler::AVX_512bit);
-    __ addb(CTR_CHECK, 16);
+  Label next_16_overflow, next_16_ok, cont, skip_shuffle, aes_256, aes_192, last_aes_rnd;
+  //prepare counter blocks
+  __ cmpl(CTR_CHECK, (256 - 16));
+  __ jcc(Assembler::aboveEqual, next_16_overflow);
+  __ vpaddd(B00_03, CTR, ADDBE_1234, Assembler::AVX_512bit);
+  __ vpaddd(B04_07, B00_03, ADDBE_4x4, Assembler::AVX_512bit);
+  __ vpaddd(B08_11, B04_07, ADDBE_4x4, Assembler::AVX_512bit);
+  __ vpaddd(B12_15, B08_11, ADDBE_4x4, Assembler::AVX_512bit);
+  __ jmp(next_16_ok);
+  __ bind(next_16_overflow);
+  __ vpshufb(CTR, CTR, SHUF_MASK, Assembler::AVX_512bit);
+  __ movdqu(B12_15, ADDBE_4x4);
+  __ vpaddd(B00_03, CTR, ADDBE_1234, Assembler::AVX_512bit);
+  __ vpaddd(B04_07, B00_03, B12_15, Assembler::AVX_512bit);
+  __ vpaddd(B08_11, B04_07, B12_15, Assembler::AVX_512bit);
+  __ vpaddd(B12_15, B08_11, B12_15, Assembler::AVX_512bit);
+  __ vpshufb(B00_03, B00_03, SHUF_MASK, Assembler::AVX_512bit);
+  __ vpshufb(B04_07, B04_07, SHUF_MASK, Assembler::AVX_512bit);
+  __ vpshufb(B08_11, B08_11, SHUF_MASK, Assembler::AVX_512bit);
+  __ vpshufb(B12_15, B12_15, SHUF_MASK, Assembler::AVX_512bit);
+  __ bind(next_16_ok);
+  __ evshufi64x2(CTR, B12_15, B12_15, 255, Assembler::AVX_512bit);
+  __ addb(CTR_CHECK, 16);
 
-    //load 16 blocks of data
-    loadData(in, pos, T0, T1, T2, T3);
+  //load 16 blocks of data
+  loadData(in, pos, T0, T1, T2, T3);
 
-    //move to AES encryption rounds
-    __ movdqu(xmm30, ExternalAddress(key_shuffle_mask_addr()), rbx /*rscratch*/);
-    ev_load_key(T4, key, 0, xmm30);
-    __ evpxorq(B00_03, B00_03, T4, Assembler::AVX_512bit);
-    __ evpxorq(B04_07, B04_07, T4, Assembler::AVX_512bit);
-    __ evpxorq(B08_11, B08_11, T4, Assembler::AVX_512bit);
-    __ evpxorq(B12_15, B12_15, T4, Assembler::AVX_512bit);
+  //move to AES encryption rounds
+  __ movdqu(xmm30, ExternalAddress(key_shuffle_mask_addr()), rbx /*rscratch*/);
+  ev_load_key(T4, key, 0, xmm30);
+  __ evpxorq(B00_03, B00_03, T4, Assembler::AVX_512bit);
+  __ evpxorq(B04_07, B04_07, T4, Assembler::AVX_512bit);
+  __ evpxorq(B08_11, B08_11, T4, Assembler::AVX_512bit);
+  __ evpxorq(B12_15, B12_15, T4, Assembler::AVX_512bit);
 
-    for (int i = 1; i < 10; i++) {
-        ev_load_key(T4, key, i * 16, xmm30);
-        __ vaesenc(B00_03, B00_03, T4, Assembler::AVX_512bit);
-        __ vaesenc(B04_07, B04_07, T4, Assembler::AVX_512bit);
-        __ vaesenc(B08_11, B08_11, T4, Assembler::AVX_512bit);
-        __ vaesenc(B12_15, B12_15, T4, Assembler::AVX_512bit);
-    }
-
-    ev_load_key(T4, key, 10 * 16, xmm30);
-    __ cmpl(rounds, 52);
-    __ jcc(Assembler::less, last_aes_rnd);
-    __ bind(aes_192);
+  for (int i = 1; i < 10; i++) {
+    ev_load_key(T4, key, i * 16, xmm30);
     __ vaesenc(B00_03, B00_03, T4, Assembler::AVX_512bit);
     __ vaesenc(B04_07, B04_07, T4, Assembler::AVX_512bit);
     __ vaesenc(B08_11, B08_11, T4, Assembler::AVX_512bit);
     __ vaesenc(B12_15, B12_15, T4, Assembler::AVX_512bit);
-    ev_load_key(T4, key, 16 * 11, xmm30);
-    __ vaesenc(B00_03, B00_03, T4, Assembler::AVX_512bit);
-    __ vaesenc(B04_07, B04_07, T4, Assembler::AVX_512bit);
-    __ vaesenc(B08_11, B08_11, T4, Assembler::AVX_512bit);
-    __ vaesenc(B12_15, B12_15, T4, Assembler::AVX_512bit);
-    ev_load_key(T4, key, 16 * 12, xmm30);
-    __ cmpl(rounds, 60);
-    __ jcc(Assembler::less, last_aes_rnd);
-    __ bind(aes_256);
-    __ vaesenc(B00_03, B00_03, T4, Assembler::AVX_512bit);
-    __ vaesenc(B04_07, B04_07, T4, Assembler::AVX_512bit);
-    __ vaesenc(B08_11, B08_11, T4, Assembler::AVX_512bit);
-    __ vaesenc(B12_15, B12_15, T4, Assembler::AVX_512bit);
-    ev_load_key(T4, key, 16 * 13, xmm30);
-    __ vaesenc(B00_03, B00_03, T4, Assembler::AVX_512bit);
-    __ vaesenc(B04_07, B04_07, T4, Assembler::AVX_512bit);
-    __ vaesenc(B08_11, B08_11, T4, Assembler::AVX_512bit);
-    __ vaesenc(B12_15, B12_15, T4, Assembler::AVX_512bit);
-    ev_load_key(T4, key, 16 * 14, xmm30);
+  }
 
-    __ bind(last_aes_rnd);
-    __ vaesenclast(B00_03, B00_03, T4, Assembler::AVX_512bit);
-    __ vaesenclast(B04_07, B04_07, T4, Assembler::AVX_512bit);
-    __ vaesenclast(B08_11, B08_11, T4, Assembler::AVX_512bit);
-    __ vaesenclast(B12_15, B12_15, T4, Assembler::AVX_512bit);
+  ev_load_key(T4, key, 10 * 16, xmm30);
+  __ cmpl(rounds, 52);
+  __ jcc(Assembler::less, last_aes_rnd);
+  __ bind(aes_192);
+  __ vaesenc(B00_03, B00_03, T4, Assembler::AVX_512bit);
+  __ vaesenc(B04_07, B04_07, T4, Assembler::AVX_512bit);
+  __ vaesenc(B08_11, B08_11, T4, Assembler::AVX_512bit);
+  __ vaesenc(B12_15, B12_15, T4, Assembler::AVX_512bit);
+  ev_load_key(T4, key, 16 * 11, xmm30);
+  __ vaesenc(B00_03, B00_03, T4, Assembler::AVX_512bit);
+  __ vaesenc(B04_07, B04_07, T4, Assembler::AVX_512bit);
+  __ vaesenc(B08_11, B08_11, T4, Assembler::AVX_512bit);
+  __ vaesenc(B12_15, B12_15, T4, Assembler::AVX_512bit);
+  ev_load_key(T4, key, 16 * 12, xmm30);
+  __ cmpl(rounds, 60);
+  __ jcc(Assembler::less, last_aes_rnd);
+  __ bind(aes_256);
+  __ vaesenc(B00_03, B00_03, T4, Assembler::AVX_512bit);
+  __ vaesenc(B04_07, B04_07, T4, Assembler::AVX_512bit);
+  __ vaesenc(B08_11, B08_11, T4, Assembler::AVX_512bit);
+  __ vaesenc(B12_15, B12_15, T4, Assembler::AVX_512bit);
+  ev_load_key(T4, key, 16 * 13, xmm30);
+  __ vaesenc(B00_03, B00_03, T4, Assembler::AVX_512bit);
+  __ vaesenc(B04_07, B04_07, T4, Assembler::AVX_512bit);
+  __ vaesenc(B08_11, B08_11, T4, Assembler::AVX_512bit);
+  __ vaesenc(B12_15, B12_15, T4, Assembler::AVX_512bit);
+  ev_load_key(T4, key, 16 * 14, xmm30);
 
-    //xor against text
-    __ evpxorq(B00_03, B00_03, T0, Assembler::AVX_512bit);
-    __ evpxorq(B04_07, B04_07, T1, Assembler::AVX_512bit);
-    __ evpxorq(B08_11, B08_11, T2, Assembler::AVX_512bit);
-    __ evpxorq(B12_15, B12_15, T3, Assembler::AVX_512bit);
+  __ bind(last_aes_rnd);
+  __ vaesenclast(B00_03, B00_03, T4, Assembler::AVX_512bit);
+  __ vaesenclast(B04_07, B04_07, T4, Assembler::AVX_512bit);
+  __ vaesenclast(B08_11, B08_11, T4, Assembler::AVX_512bit);
+  __ vaesenclast(B12_15, B12_15, T4, Assembler::AVX_512bit);
 
-    //store
-    storeData(out, pos, B00_03, B04_07, B08_11, B12_15);
+  //xor against text
+  __ evpxorq(B00_03, B00_03, T0, Assembler::AVX_512bit);
+  __ evpxorq(B04_07, B04_07, T1, Assembler::AVX_512bit);
+  __ evpxorq(B08_11, B08_11, T2, Assembler::AVX_512bit);
+  __ evpxorq(B12_15, B12_15, T3, Assembler::AVX_512bit);
 
-    __ cmpptr(ct, out);
-    __ jcc(Assembler::equal, skip_shuffle);
-    //decryption - cipher text needs to go to GHASH phase
-    __ vpshufb(B00_03, T0, SHUF_MASK, Assembler::AVX_512bit);
-    __ vpshufb(B04_07, T1, SHUF_MASK, Assembler::AVX_512bit);
-    __ vpshufb(B08_11, T2, SHUF_MASK, Assembler::AVX_512bit);
-    __ vpshufb(B12_15, T3, SHUF_MASK, Assembler::AVX_512bit);
-    __ jmp(cont);
-    __ bind(skip_shuffle);
-    __ vpshufb(B00_03, B00_03, SHUF_MASK, Assembler::AVX_512bit);
-    __ vpshufb(B04_07, B04_07, SHUF_MASK, Assembler::AVX_512bit);
-    __ vpshufb(B08_11, B08_11, SHUF_MASK, Assembler::AVX_512bit);
-    __ vpshufb(B12_15, B12_15, SHUF_MASK, Assembler::AVX_512bit);
+  //store
+  storeData(out, pos, B00_03, B04_07, B08_11, B12_15);
 
-    //B00_03, B04_07, B08_11, B12_15 overwritten with shuffled cipher text
-    __ bind(cont);
-    if (no_ghash) {
-        //xor cipher block 0 with GHASH for the next GHASH round
-        __ evpxorq(B00_03, B00_03, GHASH, Assembler::AVX_512bit);
-    }
+  __ cmpptr(ct, out);
+  __ jcc(Assembler::equal, skip_shuffle);
+  //decryption - cipher text needs to go to GHASH phase
+  __ vpshufb(B00_03, T0, SHUF_MASK, Assembler::AVX_512bit);
+  __ vpshufb(B04_07, T1, SHUF_MASK, Assembler::AVX_512bit);
+  __ vpshufb(B08_11, T2, SHUF_MASK, Assembler::AVX_512bit);
+  __ vpshufb(B12_15, T3, SHUF_MASK, Assembler::AVX_512bit);
+  __ jmp(cont);
+  __ bind(skip_shuffle);
+  __ vpshufb(B00_03, B00_03, SHUF_MASK, Assembler::AVX_512bit);
+  __ vpshufb(B04_07, B04_07, SHUF_MASK, Assembler::AVX_512bit);
+  __ vpshufb(B08_11, B08_11, SHUF_MASK, Assembler::AVX_512bit);
+  __ vpshufb(B12_15, B12_15, SHUF_MASK, Assembler::AVX_512bit);
 
-    __ evmovdquq(Address(avx512_subkeyHtbl, 16 * stack_offset), B00_03, Assembler::AVX_512bit);
-    __ evmovdquq(Address(avx512_subkeyHtbl, 16 * (stack_offset + 4)), B04_07, Assembler::AVX_512bit);
-    __ evmovdquq(Address(avx512_subkeyHtbl, 16 * (stack_offset + 8)), B08_11, Assembler::AVX_512bit);
-    __ evmovdquq(Address(avx512_subkeyHtbl, 16 * (stack_offset + 12)), B12_15, Assembler::AVX_512bit);
+  //B00_03, B04_07, B08_11, B12_15 overwritten with shuffled cipher text
+  __ bind(cont);
+  if (no_ghash) {
+    //xor cipher block 0 with GHASH for the next GHASH round
+    __ evpxorq(B00_03, B00_03, GHASH, Assembler::AVX_512bit);
+  }
+
+  __ evmovdquq(Address(avx512_subkeyHtbl, 16 * stack_offset), B00_03, Assembler::AVX_512bit);
+  __ evmovdquq(Address(avx512_subkeyHtbl, 16 * (stack_offset + 4)), B04_07, Assembler::AVX_512bit);
+  __ evmovdquq(Address(avx512_subkeyHtbl, 16 * (stack_offset + 8)), B08_11, Assembler::AVX_512bit);
+  __ evmovdquq(Address(avx512_subkeyHtbl, 16 * (stack_offset + 12)), B12_15, Assembler::AVX_512bit);
 }
 
 void StubGenerator::ghash16_encrypt16_parallel(Register key, Register subkeyHtbl, XMMRegister ctr_blockx, XMMRegister aad_hashx,
-                                               Register in, Register out, Register data, Register pos, bool first_time_reduction, XMMRegister addmask, bool ghash_input, Register rounds,
+                                               Register in, Register out, Register data, Register pos, bool first_time_reduction,
+                                               XMMRegister addmask, bool ghash_input, Register rounds,
                                                Register ghash_pos, bool final_reduction, int i, XMMRegister counter_inc_mask) {
   Label AES_192, AES_256, LAST_AES_RND;
   const XMMRegister ZTMP0 = xmm0;
@@ -3799,154 +3789,152 @@ void StubGenerator::ghash16_encrypt16_parallel(Register key, Register subkeyHtbl
   storeData(out, pos, ZTMP0, ZTMP1, ZTMP2, ZTMP3);
 }
 
-void StubGenerator::aesgcm_avx512(Register in, Register len, Register ct, Register out, Register key,
-    Register state, Register subkeyHtbl, Register avx512_subkeyHtbl, Register counter) {
-    Label ENC_DEC_DONE, MESG_BELOW_32_BLKS, NO_BIG_BLKS, ENCRYPT_BIG_BLKS_NO_HXOR,
-          ENCRYPT_BIG_NBLKS, ENCRYPT_16_BLKS, ENCRYPT_N_GHASH_32_N_BLKS, GHASH_DONE;
-    const XMMRegister CTR_BLOCKx = xmm2;
-    const XMMRegister AAD_HASHx = xmm14;
-    const XMMRegister ZTMP0 = xmm0;
-    const XMMRegister ZTMP1 = xmm3; //**sensitive
-    const XMMRegister ZTMP2 = xmm4; //**sensitive(small data)
-    const XMMRegister ZTMP3 = xmm5; //**sensitive(small data)
-    const XMMRegister ZTMP4 = xmm6;
-    const XMMRegister ZTMP5 = xmm7;
-    const XMMRegister ZTMP6 = xmm10;
-    const XMMRegister ZTMP7 = xmm11;
-    const XMMRegister ZTMP8 = xmm12;
-    const XMMRegister ZTMP9 = xmm13;
-    const XMMRegister ZTMP10 = xmm15;
-    const XMMRegister ZTMP11 = xmm16;
-    const XMMRegister ZTMP12 = xmm17;
-    const XMMRegister ZTMP13 = xmm19;
-    const XMMRegister ZTMP14 = xmm20;
-    const XMMRegister ZTMP15 = xmm21;
-    const XMMRegister ZTMP16 = xmm30;
-    const XMMRegister ZTMP17 = xmm31;
-    const XMMRegister ZTMP18 = xmm1;
-    const XMMRegister ZTMP19 = xmm18;
-    const XMMRegister ZTMP20 = xmm8;
-    const XMMRegister ZTMP21 = xmm22;
-    const XMMRegister ZTMP22 = xmm23;
-    const XMMRegister ZTMP23 = xmm26;
-    const XMMRegister GH = xmm24;
-    const XMMRegister GL = xmm25;
-    const XMMRegister SHUF_MASK = xmm29;
+void StubGenerator::aesgcm_avx512(Register in, Register len, Register ct, Register out, Register key, Register state,
+                                  Register subkeyHtbl, Register avx512_subkeyHtbl, Register counter) {
+  Label ENC_DEC_DONE, MESG_BELOW_32_BLKS, NO_BIG_BLKS, ENCRYPT_BIG_BLKS_NO_HXOR,
+        ENCRYPT_BIG_NBLKS, ENCRYPT_16_BLKS, ENCRYPT_N_GHASH_32_N_BLKS, GHASH_DONE;
+  const XMMRegister CTR_BLOCKx = xmm2;
+  const XMMRegister AAD_HASHx = xmm14;
+  const XMMRegister ZTMP0 = xmm0;
+  const XMMRegister ZTMP1 = xmm3; //**sensitive
+  const XMMRegister ZTMP2 = xmm4; //**sensitive(small data)
+  const XMMRegister ZTMP3 = xmm5; //**sensitive(small data)
+  const XMMRegister ZTMP4 = xmm6;
+  const XMMRegister ZTMP5 = xmm7;
+  const XMMRegister ZTMP6 = xmm10;
+  const XMMRegister ZTMP7 = xmm11;
+  const XMMRegister ZTMP8 = xmm12;
+  const XMMRegister ZTMP9 = xmm13;
+  const XMMRegister ZTMP10 = xmm15;
+  const XMMRegister ZTMP11 = xmm16;
+  const XMMRegister ZTMP12 = xmm17;
+  const XMMRegister ZTMP13 = xmm19;
+  const XMMRegister ZTMP14 = xmm20;
+  const XMMRegister ZTMP15 = xmm21;
+  const XMMRegister ZTMP16 = xmm30;
+  const XMMRegister ZTMP17 = xmm31;
+  const XMMRegister ZTMP18 = xmm1;
+  const XMMRegister ZTMP19 = xmm18;
+  const XMMRegister ZTMP20 = xmm8;
+  const XMMRegister ZTMP21 = xmm22;
+  const XMMRegister ZTMP22 = xmm23;
+  const XMMRegister ZTMP23 = xmm26;
+  const XMMRegister GH = xmm24;
+  const XMMRegister GL = xmm25;
+  const XMMRegister SHUF_MASK = xmm29;
+  const XMMRegister ADDBE_4x4 = xmm27;
+  const XMMRegister ADDBE_1234 = xmm28;
+  const KRegister MASKREG = k1;
+  const Register pos = rax;
+  const Register rounds = r15;
+  const Register CTR_CHECK = r14;
 
-    const XMMRegister ADDBE_4x4 = xmm27;
-    const XMMRegister ADDBE_1234 = xmm28;
-    const KRegister MASKREG = k1;
-    const Register pos = rax;
-    const Register rounds = r15;
-    const Register CTR_CHECK = r14;
-
-    int stack_offset = 64;
-    int ghashin_offset = 64;
-    int aesout_offset = 64;
-    int hashkey_offset = 0;
-    int hashkey_gap = 16 * 32;
+  int stack_offset = 64;
+  int ghashin_offset = 64;
+  int aesout_offset = 64;
+  int hashkey_offset = 0;
+  int hashkey_gap = 16 * 32;
 
 #define HashKey_32 0
 #define HashKey_16 16 * 16
-    __ movl(pos, 0);
-    __ cmpl(len, 256);
-    __ jcc(Assembler::lessEqual, ENC_DEC_DONE);
+  __ movl(pos, 0);
+  __ cmpl(len, 256);
+  __ jcc(Assembler::lessEqual, ENC_DEC_DONE);
 
-    generateHtbl_32_blocks_avx512(subkeyHtbl, avx512_subkeyHtbl);
+  generateHtbl_32_blocks_avx512(subkeyHtbl, avx512_subkeyHtbl);
 
-    // Move initial counter value and STATE value into variables
-    __ movdqu(CTR_BLOCKx, Address(counter, 0));
-    __ movdqu(AAD_HASHx, Address(state, 0));
+  //Move initial counter value and STATE value into variables
+  __ movdqu(CTR_BLOCKx, Address(counter, 0));
+  __ movdqu(AAD_HASHx, Address(state, 0));
 
-    // Load lswap mask for ghash
-    __ movdqu(xmm24, ExternalAddress(ghash_long_swap_mask_addr()), rbx /*rscratch*/);
-    // Shuffle input state using lswap mask
-    __ vpshufb(AAD_HASHx, AAD_HASHx, xmm24, Assembler::AVX_128bit);
+  //Load lswap mask for ghash
+  __ movdqu(xmm24, ExternalAddress(ghash_long_swap_mask_addr()), rbx /*rscratch*/);
+  //Shuffle input state using lswap mask
+  __ vpshufb(AAD_HASHx, AAD_HASHx, xmm24, Assembler::AVX_128bit);
 
-    // Compute #rounds for AES based on the length of the key array
-    __ movl(rounds, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
+  // Compute #rounds for AES based on the length of the key array
+  __ movl(rounds, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
 
-    __ evmovdquq(ADDBE_4x4, ExternalAddress(counter_mask_addbe_4444_addr()), Assembler::AVX_512bit, rbx /*rscratch*/);
-    __ evmovdquq(ADDBE_1234, ExternalAddress(counter_mask_addbe_0123_addr()), Assembler::AVX_512bit, rbx /*rscratch*/);
-    __ evmovdquq(SHUF_MASK, ExternalAddress(counter_shuffle_mask_addr()), Assembler::AVX_512bit, rbx /*rscratch*/);
+  __ evmovdquq(ADDBE_4x4, ExternalAddress(counter_mask_addbe_4444_addr()), Assembler::AVX_512bit, rbx /*rscratch*/);
+  __ evmovdquq(ADDBE_1234, ExternalAddress(counter_mask_addbe_0123_addr()), Assembler::AVX_512bit, rbx /*rscratch*/);
+  __ evmovdquq(SHUF_MASK, ExternalAddress(counter_shuffle_mask_addr()), Assembler::AVX_512bit, rbx /*rscratch*/);
 
-    // Broadcast counter value to 512 bit register
-    __ evshufi64x2(CTR_BLOCKx, CTR_BLOCKx, CTR_BLOCKx, 0, Assembler::AVX_512bit);
-    __ vpshufb(CTR_BLOCKx, CTR_BLOCKx, SHUF_MASK, Assembler::AVX_512bit);
+  //Broadcast counter value to 512 bit register
+  __ evshufi64x2(CTR_BLOCKx, CTR_BLOCKx, CTR_BLOCKx, 0, Assembler::AVX_512bit);
+  __ vpshufb(CTR_BLOCKx, CTR_BLOCKx, SHUF_MASK, Assembler::AVX_512bit);
 
-    __ movdl(CTR_CHECK, CTR_BLOCKx);
-    __ andl(CTR_CHECK, 255);
+  __ movdl(CTR_CHECK, CTR_BLOCKx);
+  __ andl(CTR_CHECK, 255);
 
-    // Reshuffle counter
-    __ vpshufb(CTR_BLOCKx, CTR_BLOCKx, SHUF_MASK, Assembler::AVX_512bit);
+  // Reshuffle counter
+  __ vpshufb(CTR_BLOCKx, CTR_BLOCKx, SHUF_MASK, Assembler::AVX_512bit);
 
-    initial_blocks_16_avx512(in, out, ct, pos, key, avx512_subkeyHtbl, CTR_CHECK, rounds, CTR_BLOCKx, AAD_HASHx,  ADDBE_4x4, ADDBE_1234, SHUF_MASK, stack_offset, false);
-    __ addl(pos, 16 * 16);
-    __ cmpl(len, 32 * 16);
-    __ jcc(Assembler::below, MESG_BELOW_32_BLKS);
+  initial_blocks_16_avx512(in, out, ct, pos, key, avx512_subkeyHtbl, CTR_CHECK, rounds, CTR_BLOCKx, AAD_HASHx,  ADDBE_4x4, ADDBE_1234, SHUF_MASK, stack_offset, false);
+  __ addl(pos, 16 * 16);
+  __ cmpl(len, 32 * 16);
+  __ jcc(Assembler::below, MESG_BELOW_32_BLKS);
 
-    __ evmovdquq(ADDBE_1234, ExternalAddress(counter_mask_addbe_1234_addr()), Assembler::AVX_512bit, rbx /*rscratch*/);
-    initial_blocks_16_avx512(in, out, ct, pos, key, avx512_subkeyHtbl, CTR_CHECK, rounds, CTR_BLOCKx, AAD_HASHx, ADDBE_4x4, ADDBE_1234, SHUF_MASK, stack_offset + 16, false);
-    __ addl(pos, 16 * 16);
-    __ subl(len, 32 * 16);
+  __ evmovdquq(ADDBE_1234, ExternalAddress(counter_mask_addbe_1234_addr()), Assembler::AVX_512bit, rbx /*rscratch*/);
+  initial_blocks_16_avx512(in, out, ct, pos, key, avx512_subkeyHtbl, CTR_CHECK, rounds, CTR_BLOCKx, AAD_HASHx, ADDBE_4x4, ADDBE_1234, SHUF_MASK, stack_offset + 16, false);
+  __ addl(pos, 16 * 16);
+  __ subl(len, 32 * 16);
 
-    __ cmpl(len, 32 * 16);
-    __ jcc(Assembler::below, NO_BIG_BLKS);
+  __ cmpl(len, 32 * 16);
+  __ jcc(Assembler::below, NO_BIG_BLKS);
 
-    __ bind(ENCRYPT_BIG_BLKS_NO_HXOR);
-    __ cmpl(len, 2 * 32 * 16);
-    __ jcc(Assembler::below, ENCRYPT_BIG_NBLKS);
-    ghash16_encrypt_parallel16_avx512(in, out, ct, pos, avx512_subkeyHtbl, CTR_CHECK, rounds, key, true, true, false, false, false, ghashin_offset, aesout_offset, HashKey_32);
-    __ addl(pos, 16 * 16);
+  __ bind(ENCRYPT_BIG_BLKS_NO_HXOR);
+  __ cmpl(len, 2 * 32 * 16);
+  __ jcc(Assembler::below, ENCRYPT_BIG_NBLKS);
+  ghash16_encrypt_parallel16_avx512(in, out, ct, pos, avx512_subkeyHtbl, CTR_CHECK, rounds, key, true, true, false, false, false, ghashin_offset, aesout_offset, HashKey_32);
+  __ addl(pos, 16 * 16);
 
-    ghash16_encrypt_parallel16_avx512(in, out, ct, pos, avx512_subkeyHtbl, CTR_CHECK, rounds, key, true, false, true, false, true, ghashin_offset + 16, aesout_offset + 16, HashKey_16);
-    __ evmovdquq(AAD_HASHx, ZTMP4, Assembler::AVX_512bit);
-    __ addl(pos, 16 * 16);
-    __ subl(len, 32 * 16);
-    __ jmp(ENCRYPT_BIG_BLKS_NO_HXOR);
+  ghash16_encrypt_parallel16_avx512(in, out, ct, pos, avx512_subkeyHtbl, CTR_CHECK, rounds, key, true, false, true, false, true, ghashin_offset + 16, aesout_offset + 16, HashKey_16);
+  __ evmovdquq(AAD_HASHx, ZTMP4, Assembler::AVX_512bit);
+  __ addl(pos, 16 * 16);
+  __ subl(len, 32 * 16);
+  __ jmp(ENCRYPT_BIG_BLKS_NO_HXOR);
 
-    __ bind(ENCRYPT_BIG_NBLKS);
-    ghash16_encrypt_parallel16_avx512(in, out, ct, pos, avx512_subkeyHtbl, CTR_CHECK, rounds, key, false, true, false, false, false, ghashin_offset, aesout_offset, HashKey_32);
-    __ addl(pos, 16 * 16);
-    ghash16_encrypt_parallel16_avx512(in, out, ct, pos, avx512_subkeyHtbl, CTR_CHECK, rounds, key, false, false, true, true, true, ghashin_offset + 16, aesout_offset + 16, HashKey_16);
+  __ bind(ENCRYPT_BIG_NBLKS);
+  ghash16_encrypt_parallel16_avx512(in, out, ct, pos, avx512_subkeyHtbl, CTR_CHECK, rounds, key, false, true, false, false, false, ghashin_offset, aesout_offset, HashKey_32);
+  __ addl(pos, 16 * 16);
+  ghash16_encrypt_parallel16_avx512(in, out, ct, pos, avx512_subkeyHtbl, CTR_CHECK, rounds, key, false, false, true, true, true, ghashin_offset + 16, aesout_offset + 16, HashKey_16);
 
-    __ movdqu(AAD_HASHx, ZTMP4);
-    __ addl(pos, 16 * 16);
-    __ subl(len, 32 * 16);
+  __ movdqu(AAD_HASHx, ZTMP4);
+  __ addl(pos, 16 * 16);
+  __ subl(len, 32 * 16);
 
-    __ bind(NO_BIG_BLKS);
-    __ cmpl(len, 16 * 16);
-    __ jcc(Assembler::aboveEqual, ENCRYPT_16_BLKS);
+  __ bind(NO_BIG_BLKS);
+  __ cmpl(len, 16 * 16);
+  __ jcc(Assembler::aboveEqual, ENCRYPT_16_BLKS);
 
-    __ bind(ENCRYPT_N_GHASH_32_N_BLKS);
-    ghash16_avx512(true, false, in, pos, avx512_subkeyHtbl, AAD_HASHx, stack_offset, 0, 0, HashKey_32);
-    gcm_enc_dec_last_avx512(len, in, pos, AAD_HASHx, avx512_subkeyHtbl, ghashin_offset + 16, HashKey_16, false, true);
-    __ jmp(GHASH_DONE);
+  __ bind(ENCRYPT_N_GHASH_32_N_BLKS);
+  ghash16_avx512(true, false, in, pos, avx512_subkeyHtbl, AAD_HASHx, stack_offset, 0, 0, HashKey_32);
+  gcm_enc_dec_last_avx512(len, in, pos, AAD_HASHx, avx512_subkeyHtbl, ghashin_offset + 16, HashKey_16, false, true);
+  __ jmp(GHASH_DONE);
 
-    __ bind(ENCRYPT_16_BLKS);
-    ghash16_encrypt_parallel16_avx512(in, out, ct, pos, avx512_subkeyHtbl, CTR_CHECK, rounds, key, false, true, false, false, false, ghashin_offset, aesout_offset, HashKey_32);
+  __ bind(ENCRYPT_16_BLKS);
+  ghash16_encrypt_parallel16_avx512(in, out, ct, pos, avx512_subkeyHtbl, CTR_CHECK, rounds, key, false, true, false, false, false, ghashin_offset, aesout_offset, HashKey_32);
 
-    ghash16_avx512(false, true, in, pos, avx512_subkeyHtbl, AAD_HASHx, stack_offset, 16 * 16, 0, HashKey_16);
+  ghash16_avx512(false, true, in, pos, avx512_subkeyHtbl, AAD_HASHx, stack_offset, 16 * 16, 0, HashKey_16);
 
-    __ bind(MESG_BELOW_32_BLKS);
-    __ subl(len, 16 * 16);
-    __ addl(pos, 16 * 16);
-    gcm_enc_dec_last_avx512(len, in, pos, AAD_HASHx, avx512_subkeyHtbl, ghashin_offset, HashKey_16, true, true);
+  __ bind(MESG_BELOW_32_BLKS);
+  __ subl(len, 16 * 16);
+  __ addl(pos, 16 * 16);
+  gcm_enc_dec_last_avx512(len, in, pos, AAD_HASHx, avx512_subkeyHtbl, ghashin_offset, HashKey_16, true, true);
 
-    __ bind(GHASH_DONE);
-    __ evpxorq(ZTMP21, ZTMP21, ZTMP21, Assembler::AVX_512bit);
+  __ bind(GHASH_DONE);
+  __ evpxorq(ZTMP21, ZTMP21, ZTMP21, Assembler::AVX_512bit);
 
-    // Pre-increment counter for next operation
-    __ vpaddd(CTR_BLOCKx, CTR_BLOCKx, ADDBE_1234, Assembler::AVX_128bit);
-    __ movdqu(Address(counter, 0), CTR_BLOCKx);
-    // Load ghash lswap mask
-    __ movdqu(xmm24, ExternalAddress(ghash_long_swap_mask_addr()), rbx /*rscratch*/);
-    // Shuffle ghash using lbswap_mask and store it
-    __ vpshufb(AAD_HASHx, AAD_HASHx, xmm24, Assembler::AVX_128bit);
-    __ movdqu(Address(state, 0), AAD_HASHx);
+  //Pre-increment counter for next operation
+  __ vpaddd(CTR_BLOCKx, CTR_BLOCKx, ADDBE_1234, Assembler::AVX_128bit);
+  __ movdqu(Address(counter, 0), CTR_BLOCKx);
+  //Load ghash lswap mask
+  __ movdqu(xmm24, ExternalAddress(ghash_long_swap_mask_addr()), rbx /*rscratch*/);
+  //Shuffle ghash using lbswap_mask and store it
+  __ vpshufb(AAD_HASHx, AAD_HASHx, xmm24, Assembler::AVX_128bit);
+  __ movdqu(Address(state, 0), AAD_HASHx);
 
-    __ bind(ENC_DEC_DONE);
-
+  __ bind(ENC_DEC_DONE);
 }
 
 void StubGenerator::aesgcm_encrypt(Register in, Register len, Register ct, Register out, Register key,
