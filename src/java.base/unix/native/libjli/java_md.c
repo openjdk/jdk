@@ -516,6 +516,17 @@ GetJREPath(char *path, jint pathsize, jboolean speculative)
         }
     }
 
+#if defined(AIX)
+    /* at least on AIX try also the LD_LIBRARY_PATH / LIBPATH */
+    if (GetApplicationHomeFromLibpath(path, pathsize)) {
+        JLI_Snprintf(libjava, sizeof(libjava), "%s/lib/" JAVA_DLL, path);
+        if (stat(libjava, &s) == 0) {
+            JLI_TraceLauncher("JRE path is %s\n", path);
+            return JNI_TRUE;
+        }
+    }
+#endif
+
     if (!speculative)
       JLI_ReportErrorMessage(JRE_ERROR8 JAVA_DLL);
     return JNI_FALSE;
