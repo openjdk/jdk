@@ -22,6 +22,7 @@
  */
 
 
+import java.io.File;
 import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -73,7 +74,7 @@ public class RetransformApp {
     }
 
     private static Path createAgentJar() throws Exception {
-        final Path outputDir = Files.createTempDirectory(Path.of("."), "RetransformApp-test");
+        final Path outputDir = Files.createTempDirectory(Path.of("."), "RetransformApp");
         final Path bootClassesDir = outputDir.resolve("bootclasses");
         compileBootpathClasses(bootClassesDir);
         final Path agentClasses = outputDir.resolve("agentclasses");
@@ -84,8 +85,9 @@ public class RetransformApp {
                 Premain-Class: RetransformAgent
                 Can-Retransform-Classes: true
                 """
-                + "Boot-Class-Path: " + bootClassesDir.toString() + "\n";
-        System.err.println("manifest is: " + manifest);
+                + "Boot-Class-Path: " + bootClassesDir.toString().replace(File.separatorChar, '/')
+                + "\n";
+        System.err.println("manifest is:\n" + manifest);
         final Path manifestFile = Files.writeString(Path.of("agentmanifest.mf"), manifest);
         final Path agentJarFile = Path.of("RetransformAgent.jar").toAbsolutePath();
         final String[] jarCmdArgs = {"cvfm",

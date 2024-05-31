@@ -22,6 +22,7 @@
  */
 
 
+import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.lang.management.*;
@@ -82,7 +83,7 @@ public class NativeMethodPrefixApp implements StringIdCallback {
     }
 
     private static Path createAgentJar() throws Exception {
-        final Path outputDir = Files.createTempDirectory(Path.of("."), "6263319-test");
+        final Path outputDir = Files.createTempDirectory(Path.of("."), "NativeMethodPrefixApp");
         final Path bootClassesDir = outputDir.resolve("bootclasses");
         compileBootpathClasses(bootClassesDir);
         final Path agentClasses = outputDir.resolve("agentclasses");
@@ -94,8 +95,9 @@ public class NativeMethodPrefixApp implements StringIdCallback {
                 Can-Retransform-Classes: true
                 Can-Set-Native-Method-Prefix: true
                 """
-                + "Boot-Class-Path: " + bootClassesDir.toString() + "\n";
-        System.err.println("manifest is: " + manifest);
+                + "Boot-Class-Path: " + bootClassesDir.toString().replace(File.separatorChar, '/')
+                + "\n";
+        System.err.println("manifest is:\n" + manifest);
         final Path manifestFile = Files.writeString(Path.of("agentmanifest.mf"), manifest);
         final Path agentJarFile = Path.of("NativeMethodPrefixAgent.jar").toAbsolutePath();
         final String[] jarCmdArgs = {"cvfm",
