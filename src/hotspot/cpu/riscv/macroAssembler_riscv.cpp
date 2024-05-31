@@ -1683,7 +1683,7 @@ void MacroAssembler::movptr1(Register Rd, uint64_t imm64, int32_t &offset) {
   //
   // In case of 11th bit of `lower` is 0, it's straightforward to understand.
   // In case of 11th bit of `lower` is 1, it's a bit tricky, to help understand,
-  // image divide both `upper` and `lower` into 2 parts respectively, i.e.
+  // imagine divide both `upper` and `lower` into 2 parts respectively, i.e.
   // [upper_20, upper_12], [lower_20, lower_12], they are the same just before
   // `lower = (lower << 52) >> 52;`.
   // After `upper -= lower;`,
