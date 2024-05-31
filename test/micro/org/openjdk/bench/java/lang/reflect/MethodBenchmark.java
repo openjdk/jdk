@@ -1,24 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
- * or visit www.oracle.com if you need additional information or have any
- * questions.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  */
 package org.openjdk.bench.java.lang.reflect;
 
@@ -46,11 +27,11 @@ import org.openjdk.jmh.infra.Blackhole;
 @Fork(1)
 @Warmup(iterations = 3, time = 2, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 5, time = 2, timeUnit = TimeUnit.SECONDS)
-public class ExecutableParameterAndExceptionTypesBenchmark {
+public class MethodBenchmark {
     Executable objectConstructor;
     Executable hashCodeMethod;
 
-    public ExecutableParameterAndExceptionTypesBenchmark() {
+    public MethodBenchmark() {
         try {
             hashCodeMethod = Object.class.getDeclaredMethod("hashCode");
             objectConstructor = Object.class.getConstructor();
@@ -61,22 +42,22 @@ public class ExecutableParameterAndExceptionTypesBenchmark {
     }
 
     @Benchmark
-    public void constructorExceptionsWithNoExceptions(Blackhole bh) throws Exception {
+    public void constructorExceptionsEmpty(Blackhole bh) throws Exception {
         bh.consume(objectConstructor.getExceptionTypes());
     }
 
     @Benchmark
-    public void constructorParametersWithNoExceptions(Blackhole bh) throws Exception {
+    public void constructorParametersEmpty(Blackhole bh) throws Exception {
         bh.consume(objectConstructor.getParameterTypes());
     }
 
     @Benchmark
-    public void methodExceptionsWithNoExceptions(Blackhole bh) throws Exception {
+    public void methodExceptionsEmpty(Blackhole bh) throws Exception {
         bh.consume(hashCodeMethod.getExceptionTypes());
     }
 
     @Benchmark
-    public void methodParametersWithNoExceptions(Blackhole bh) throws Exception {
+    public void methodParametersEmpty(Blackhole bh) throws Exception {
         bh.consume(hashCodeMethod.getParameterTypes());
     }
 }
