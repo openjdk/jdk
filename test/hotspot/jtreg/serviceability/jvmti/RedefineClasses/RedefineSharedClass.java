@@ -24,16 +24,18 @@
 /*
  * @test
  * @bug 8306929
- * @summary Verify should_clean_previous_versions when run with JFR and CDS
+ * @summary Verify should_clean_previous_versions when run with retransformation and CDS
  * @requires vm.jvmti
  * @requires vm.cds
- * @requires vm.hasJFR
  * @requires vm.opt.final.ClassUnloading
  * @requires vm.flagless
  * @library /test/lib
- * @run driver RedefineSharedClassJFR xshare-off
- * @run driver RedefineSharedClassJFR xshare-on
+ * @run main RedefineClassHelper
+ * @run driver RedefineSharedClass xshare-off
+ * @run driver RedefineSharedClass xshare-on
  */
+import java.io.InputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -43,7 +45,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 import jtreg.SkippedException;
 
-public class RedefineSharedClassJFR {
+public class RedefineSharedClass {
 
     private static final String SHOULD_CLEAN_TRUE = "Class unloading: should_clean_previous_versions = true";
     private static final String SHOULD_CLEAN_FALSE = "Class unloading: should_clean_previous_versions = false";
@@ -56,16 +58,16 @@ public class RedefineSharedClassJFR {
             throw new SkippedException("Supported platform");
         }
 
-        // Test is run with JFR which will transform a number of classes. Depending
-        // on if the test is run with or without CDS the output will be different,
-        // due to the fact that shared classes can never be cleaned out after retranform.
+        // The test will redefine a single class below and depending on if the test
+        // is run with or without CDS the output will be different, due to the fact
+        // that shared classes can never be cleaned out after retranform.
         if (args.length > 0) {
             // When run with an argument the class is used as driver and should parse
             // the output to verify it is correct given the command line.
             List<String> baseCommand = List.of(
-                "-XX:StartFlightRecording",
+                "-javaagent:redefineagent.jar",
                 "-Xlog:redefine+class+iklass+add=trace,redefine+class+iklass+purge=trace",
-                "RedefineSharedClassJFR");
+                "RedefineSharedClass");
 
             if (args[0].equals("xshare-off")) {
                 // First case is with -Xshare:off. In this case no classes are shared
@@ -104,8 +106,17 @@ public class RedefineSharedClassJFR {
             }
         }
 
-        // When run without any argument this class acts as test and we do a system GC
-        // to trigger cleaning and get the output we want to check.
+        // When run without arguments this class acts as the test. First redefining
+        // a class that we expect to be in the archive if used and the triggering a
+        // System.gc() to clean up.
+        RedefineClassHelper.redefineClass(java.io.RandomAccessFile.class, getClassBytes(java.io.RandomAccessFile.class));
         System.gc();
+    }
+
+    private static byte[] getClassBytes(Class clazz) throws IOException {
+        String name = "/" + clazz.getName().replace(".", "/") + ".class";
+        try (InputStream is = clazz.getResourceAsStream(name)) {
+            return is.readAllBytes();
+        }
     }
 }
