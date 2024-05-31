@@ -1346,7 +1346,7 @@ class VTransformScalarNode;
 class VTransformInputScalarNode;
 class VTransformVectorNode;
 class VTransformElementWiseVectorNode;
-class VTransformMaskCmpVectorNode;
+class VTransformBoolVectorNode;
 class VTransformReductionVectorNode;
 
 // Status output from a VTransformNode::apply
@@ -1549,7 +1549,7 @@ public:
   virtual VTransformInputScalarNode* isa_InputScalar() { return nullptr; }
   virtual VTransformVectorNode* isa_Vector() { return nullptr; }
   virtual VTransformElementWiseVectorNode* isa_ElementWiseVector() { return nullptr; }
-  virtual VTransformMaskCmpVectorNode* isa_MaskCmpVector() { return nullptr; }
+  virtual VTransformBoolVectorNode* isa_BoolVector() { return nullptr; }
   virtual VTransformReductionVectorNode* isa_ReductionVector() { return nullptr; }
 
   virtual VTransformApplyStatus apply(const VLoopAnalyzer& vloop_analyzer,
@@ -1692,32 +1692,30 @@ public:
   NOT_PRODUCT(virtual const char* name() const override { return "ElementWiseVector"; };)
 };
 
-// TODO consider renaming for Bool
-class VTransformMaskCmpVectorNode : public VTransformElementWiseVectorNode {
-public:
-  struct CmpBoolKind {
-    const BoolTest::mask _bol_test_mask;
-    bool _is_test_negated;
-    CmpBoolKind(const BoolTest::mask bol_test_mask, bool is_test_negated) :
-      _bol_test_mask(bol_test_mask), _is_test_negated(is_test_negated) {}
-  };
+struct VTransformBoolTest {
+  const BoolTest::mask _mask;
+  const bool _is_negated;
+  VTransformBoolTest(const BoolTest::mask mask, bool is_negated) :
+    _mask(mask), _is_negated(is_negated) {}
+};
 
+class VTransformBoolVectorNode : public VTransformElementWiseVectorNode {
 private:
-  CmpBoolKind _cmp_bool_kind;
+  const VTransformBoolTest _test;
 
 public:
-  VTransformMaskCmpVectorNode(VTransformGraph& graph, int number_of_nodes, CmpBoolKind cmp_bool_kind) :
+  VTransformBoolVectorNode(VTransformGraph& graph, int number_of_nodes, VTransformBoolTest test) :
     VTransformElementWiseVectorNode(graph, 2, number_of_nodes),
-    _cmp_bool_kind(cmp_bool_kind) {}
+    _test(test) {}
 
-  CmpBoolKind cmp_bool_kind() const { return _cmp_bool_kind; }
+  VTransformBoolTest test() const { return _test; }
 
-  virtual VTransformMaskCmpVectorNode* isa_MaskCmpVector() override { return this; }
+  virtual VTransformBoolVectorNode* isa_BoolVector() override { return this; }
 
   virtual VTransformApplyStatus apply(const VLoopAnalyzer& vloop_analyzer,
                                       const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
 
-  NOT_PRODUCT(virtual const char* name() const override { return "MaskCmpVector"; };)
+  NOT_PRODUCT(virtual const char* name() const override { return "BoolVector"; };)
 };
 
 // Reduction of some initial scalar value and a vector, resulting in a new scalar.

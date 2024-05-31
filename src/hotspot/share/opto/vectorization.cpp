@@ -2201,7 +2201,7 @@ VTransformApplyStatus VTransformElementWiseVectorNode::apply(const VLoopAnalyzer
 
   if (first->is_Cmp()) {
     // Cmp + Bool -> VectorMaskCmp
-    // Handled by Bool / VTransformMaskCmpVectorNode, so we do not generate any nodes here.
+    // Handled by Bool / VTransformBoolVectorNode, so we do not generate any nodes here.
     return VTransformApplyStatus::make_empty();
   }
 
@@ -2247,7 +2247,7 @@ VTransformApplyStatus VTransformElementWiseVectorNode::apply(const VLoopAnalyzer
   return VTransformApplyStatus::make_vector(vn, vlen, vn->length_in_bytes());
 }
 
-VTransformApplyStatus VTransformMaskCmpVectorNode::apply(const VLoopAnalyzer& vloop_analyzer, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
+VTransformApplyStatus VTransformBoolVectorNode::apply(const VLoopAnalyzer& vloop_analyzer, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
   BoolNode* first = nodes().at(0)->as_Bool();
   uint  vlen = nodes().length();
   BasicType bt = vloop_analyzer.types().velt_basic_type(first);
@@ -2260,12 +2260,12 @@ VTransformApplyStatus VTransformMaskCmpVectorNode::apply(const VLoopAnalyzer& vl
   Node* cmp_in1 = vtn_cmp->find_transformed_input(1, vnode_idx_to_transformed_node);
   Node* cmp_in2 = vtn_cmp->find_transformed_input(2, vnode_idx_to_transformed_node);
 
-  BoolTest::mask bol_test_mask = cmp_bool_kind()._bol_test_mask;
+  BoolTest::mask mask = test()._mask;
 
   PhaseIdealLoop* phase = vloop_analyzer.vloop().phase();
-  ConINode* bol_test_mask_node  = phase->igvn().intcon((int)bol_test_mask);
+  ConINode* mask_node  = phase->igvn().intcon((int)mask);
   const TypeVect* vt = TypeVect::make(bt, vlen);
-  VectorNode* vn = new VectorMaskCmpNode(bol_test_mask, cmp_in1, cmp_in2, bol_test_mask_node, vt);
+  VectorNode* vn = new VectorMaskCmpNode(mask, cmp_in1, cmp_in2, mask_node, vt);
   register_new_node_from_vectorization_and_replace_scalar_nodes(vloop_analyzer, vn);
   return VTransformApplyStatus::make_vector(vn, vlen, vn->vect_type()->length_in_bytes());
 }

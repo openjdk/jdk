@@ -368,7 +368,7 @@ public:
     return isa_strided_pack_input_or_null(pack, j, 1, 0);
   }
 
-  VTransformMaskCmpVectorNode::CmpBoolKind as_cmp_bool_pack(const Node_List* pack) const;
+  VTransformBoolTest get_bool_test(const Node_List* pack) const;
 
 private:
   SplitStatus split_pack(const char* split_name, Node_List* pack, SplitTask task);
