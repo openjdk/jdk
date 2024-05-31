@@ -3218,6 +3218,7 @@ void SuperWordVTransformBuilder::set_req_for_vector(VTransformNode* vtn, VectorS
 }
 
 void SuperWordVTransformBuilder::set_req_all_for_scalar(VTransformNode* vtn, VectorSet& vtn_dependencies, Node* n) {
+  assert(vtn->req() == n->req(), "scalars must have same number of reqs");
   for (uint j = 0; j < n->req(); j++) {
     Node* def = n->in(j);
     if (def == nullptr) { continue; }
@@ -3228,8 +3229,7 @@ void SuperWordVTransformBuilder::set_req_all_for_scalar(VTransformNode* vtn, Vec
 void SuperWordVTransformBuilder::set_req_all_for_vector(VTransformNode* vtn, VectorSet& vtn_dependencies, Node_List* pack) {
   Node* p0 = pack->at(0);
   assert(vtn->req() <= p0->req(), "must have at at most as many reqs");
-  // Ignore ctrl, start at input 1.
-  for (uint j = 1; j < vtn->req(); j++) {
+  for (uint j = 0; j < vtn->req(); j++) {
     Node* def = p0->in(j);
     if (def == nullptr) { continue; }
     set_req_for_vector(vtn, vtn_dependencies, j, pack);
@@ -3259,7 +3259,7 @@ Node* PackSet::isa_unique_input_or_null(const Node_List* pack, int j) const {
   Node* unique = p0->in(j);
   for (uint i = 1; i < pack->size(); i++) {
     if (pack->at(i)->in(j) != unique) {
-      return nullptr;
+      return nullptr; // not unique
     }
   }
   return unique;
@@ -3271,12 +3271,12 @@ Node_List* PackSet::isa_strided_pack_input_or_null(const Node_List* pack, int j,
 
   Node_List* pack_in = get_pack(def0);
   if (pack_in == nullptr || pack->size() * stride != pack_in->size()) {
-    return nullptr;
+    return nullptr; // size mismatch
   }
 
   for (uint i = 1; i < pack->size(); i++) {
     if (pack->at(i)->in(j) != pack_in->at(i * stride + offset)) {
-      return nullptr;
+      return nullptr; // use-def mismatch
     }
   }
   return pack_in;
