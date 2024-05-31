@@ -1585,6 +1585,7 @@ public:
   NOT_PRODUCT(virtual void print_spec() const override;)
 };
 
+// Wrapper node for nodes outside the loop that are inputs to the loop.
 class VTransformInputScalarNode : public VTransformScalarNode {
 public:
   VTransformInputScalarNode(VTransformGraph& graph, Node* n) :

@@ -2128,6 +2128,7 @@ VTransformApplyStatus VTransformPopulateIndexNode::apply(const VLoopAnalyzer& vl
 
   Node* val = find_transformed_input(1, vnode_idx_to_transformed_node);
   assert(val->is_Phi(), "expected to be iv");
+  assert(VectorNode::is_populate_index_supported(_element_bt), "should support");
   const TypeVect* vt = TypeVect::make(_element_bt, _vlen);
 
   VectorNode* vn = new PopulateIndexNode(val, phase->igvn().intcon(1), vt);

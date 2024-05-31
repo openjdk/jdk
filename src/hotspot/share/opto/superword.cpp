@@ -2957,7 +2957,6 @@ bool SuperWord::vtransform() const {
                         NOT_PRODUCT( COMMA is_trace_superword_info())
                         NOT_PRODUCT( COMMA is_trace_superword_verbose())
                         );
-
   {
     ResourceMark rm;
     SuperWordVTransformBuilder builder(_packset, graph);
@@ -2984,8 +2983,7 @@ void SuperWordVTransformBuilder::build_vector_vtnodes_for_packed_nodes() {
     Node_List* pack = _packset.at(i);
     VTransformVectorNode* vtn = make_vtnode_for_pack(pack);
     for (uint k = 0; k < pack->size(); k++) {
-      Node* n = pack->at(k);
-      set_vtnode(n, vtn);
+      set_vtnode(pack->at(k), vtn);
     }
   }
 }
@@ -3084,12 +3082,9 @@ VTransformVectorNode* SuperWordVTransformBuilder::make_vtnode_for_pack(const Nod
   } else if (p0->is_Store()) {
     vtn = new (_graph.arena()) VTransformStoreVectorNode(_graph, pack_size);
   } else if (p0->is_Bool()) {
-    // Cmp + Bool -> VectorMaskCmp
     VTransformBoolTest kind = _packset.get_bool_test(pack);
     vtn = new (_graph.arena()) VTransformBoolVectorNode(_graph, pack_size, kind);
   } else if (is_marked_reduction(p0)) {
-    // Reduction: (scalar, vector) -> scalar.
-    assert(p0->req() == 3, "Reductions should have 2 operands");
     vtn = new (_graph.arena()) VTransformReductionVectorNode(_graph, pack_size);
   } else if (VectorNode::is_muladds2i(p0)) {
     // A special kind of binary element-wise vector op: the inputs are "ints" a and b,
@@ -3108,7 +3103,6 @@ VTransformVectorNode* SuperWordVTransformBuilder::make_vtnode_for_pack(const Nod
            opc == Op_SignumF ||
            opc == Op_SignumD,
            "pack type must be in this list");
-    // ElementWise Vector operations. Number of inputs is the same for scalar and vector operations.
     vtn = new (_graph.arena()) VTransformElementWiseVectorNode(_graph, p0->req(), pack_size);
   }
   vtn->set_nodes(pack);
@@ -3116,8 +3110,7 @@ VTransformVectorNode* SuperWordVTransformBuilder::make_vtnode_for_pack(const Nod
 }
 
 void SuperWordVTransformBuilder::set_req_for_scalar(VTransformNode* vtn, VectorSet& vtn_dependencies, int j, Node* n) {
-  Node* def = n->in(j);
-  VTransformNode* req = find_scalar(def);
+  VTransformNode* req = find_scalar(n->in(j));
   vtn->set_req(j, req);
   vtn_dependencies.set(req->_idx);
 }
@@ -3153,15 +3146,14 @@ VTransformNode* SuperWordVTransformBuilder::find_input_for_vector(int j, Node_Li
   }
 
   Node* unique = _packset.isa_unique_input_or_null(pack, j);
-  if (p0->in(j) == iv() && unique == nullptr) {
+  if (unique == nullptr && p0->in(j) == iv()) {
     // PopulateIndex: [iv+0, iv+1, iv+2, ...]
     VTransformNode* iv_vtn = find_scalar(iv());
     BasicType p0_bt = _vloop_analyzer.types().velt_basic_type(p0);
-    // If we have subword type, take that directly. If p0 is some ConvI2L/F/D, then
-    // the p0_bt can also be L/F/D but we need to produce ints for the input of the
-    // ConvI2L/F/D.
+    // If we have subword type, take that type directly. If p0 is some ConvI2L/F/D,
+    // then the p0_bt can also be L/F/D but we need to produce ints for the input of
+    // the ConvI2L/F/D.
     BasicType element_bt = is_subword_type(p0_bt) ? p0_bt : T_INT;
-    assert(VectorNode::is_populate_index_supported(element_bt), "Should support");
     VTransformNode* populate_index = new (_graph.arena()) VTransformPopulateIndexNode(_graph, pack->size(), element_bt);
     populate_index->set_req(1, iv_vtn);
     return populate_index;
@@ -3180,10 +3172,8 @@ VTransformNode* SuperWordVTransformBuilder::find_input_for_vector(int j, Node_Li
   }
 
   if (unique != nullptr) {
-    // Replicate
-    // Convert scalar input to vector with the same number of elements as
-    // p0's vector. Use p0's type because size of operand's container in
-    // vector should match p0's size regardless operand's size.
+    // Replicate the scalar unique to every vector element. The resulting elements must
+    // be of the same velt_type as p0.
     VTransformNode* unique_vtn = find_scalar(unique);
     const Type* element_type = _vloop_analyzer.types().velt_type(p0);
 
@@ -3208,22 +3198,16 @@ VTransformNode* SuperWordVTransformBuilder::find_input_for_vector(int j, Node_Li
   pack->dump();
   assert(false, "Pack input was neither a pack nor a unique node");
 #endif
-  return nullptr;
+  ShouldNotReachHere();
 }
 
-// For a scalar node, find the vtnode. If the node is in_bb, then we should find
-// an existing vtnode. If the node is not in_bb, then we create a special "input"
-// vtnode for it.
 VTransformNode* SuperWordVTransformBuilder::find_scalar(Node* n) {
   VTransformNode* vtn = get_vtnode_or_null(n);
+  if (vtn != nullptr) { return vtn; }
 
-  if (vtn == nullptr) {
-    assert(!in_bb(n), "all nodes inside the loop already have a vtnode");
-    // Node is outside the loop. Just wrap it.
-    vtn = new (_graph.arena()) VTransformInputScalarNode(_graph, n);
-    set_vtnode(n, vtn);
-  }
-
+  assert(!in_bb(n), "only nodes outside the loop can be input nodes to the loop");
+  vtn = new (_graph.arena()) VTransformInputScalarNode(_graph, n);
+  set_vtnode(n, vtn);
   return vtn;
 }
 
