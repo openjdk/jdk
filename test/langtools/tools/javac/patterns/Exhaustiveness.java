@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8262891 8268871 8274363 8281100 8294670 8311038 8311815 8325215
+ * @bug 8262891 8268871 8274363 8281100 8294670 8311038 8311815 8325215 8333169
  * @summary Check exhaustiveness of switches over sealed types.
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -2075,6 +2075,35 @@ public class Exhaustiveness extends TestRunner {
                }
                """);
     }
+
+   @Test //JDK-8333169
+   public void testFlowForNestedSwitch(Path base) throws Exception {
+       doTest(base,
+              new String[0],
+              """
+              class Main {
+
+                  record A() {};
+
+                  public static void main(String[] args) {
+                      A a1 = new A();
+                      A a2 = new A();
+
+                      String causesCompilationError = log(
+                              switch(a1) {
+                                  case A() -> switch(a2) {
+                                      case A() -> "A";
+                                  };
+                              }
+                      );
+                   }
+
+                  static <T> T log(T t) {
+                      System.out.println("LOG: " + t);
+                      return t;
+                  }
+              }""");
+   }
 
     private void doTest(Path base, String[] libraryCode, String testCode, String... expectedErrors) throws IOException {
         doTest(base, libraryCode, testCode, false, expectedErrors);
