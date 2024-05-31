@@ -24,10 +24,10 @@
 
 #include "precompiled.hpp"
 #include "memory/allocation.hpp"
+#include "nmt/mallocLimit.hpp"
 #include "nmt/memTracker.hpp"
 #include "nmt/nmtCommon.hpp"
 #include "runtime/os.hpp"
-#include "nmt/mallocLimit.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
