@@ -58,35 +58,64 @@ import static java.util.zip.ZipUtils.NIO_ACCESS;
  * and decompression of a string using {@code Deflater} and
  * {@code Inflater}.
  *
- * <blockquote><pre>
- * try {
- *     // Encode a String into bytes
- *     String inputString = "blahblahblah";
- *     byte[] input = inputString.getBytes("UTF-8");
+ * {@snippet id="compdecomp" lang="java":
+ *    // Encode a String into bytes
+ *    String inputString = "blahblahblah\u20AC\u20AC";
+ *    byte[] input = inputString.getBytes(StandardCharsets.UTF_8);
  *
- *     // Compress the bytes
- *     byte[] output = new byte[100];
- *     Deflater compresser = new Deflater();
- *     compresser.setInput(input);
- *     compresser.finish();
- *     int compressedDataLength = compresser.deflate(output);
- *     compresser.end();
+ *    // Compress the bytes
+ *    ByteArrayOutputStream compressedBaos = new ByteArrayOutputStream();
+ *    Deflater compressor = new Deflater();
+ *    try {
+ *        compressor.setInput(input);
+ *        // Let the compressor know that the complete input
+ *        // has been made available
+ *        compressor.finish();
+ *        // Keep compressing the input till the compressor
+ *        // is finished compressing
+ *        while (!compressor.finished()) {
+ *            // Use some reasonable size for the temporary buffer
+ *            // based on the data being compressed
+ *            byte[] tmpBuffer = new byte[100];
+ *            int numCompressed = compressor.deflate(tmpBuffer);
+ *            // Copy over the compressed bytes from the temporary
+ *            // buffer into the final byte array
+ *            compressedBaos.write(tmpBuffer, 0, numCompressed);
+ *        }
+ *    } finally {
+ *        // Release the resources held by the compressor
+ *        compressor.end();
+ *    }
  *
- *     // Decompress the bytes
- *     Inflater decompresser = new Inflater();
- *     decompresser.setInput(output, 0, compressedDataLength);
- *     byte[] result = new byte[100];
- *     int resultLength = decompresser.inflate(result);
- *     decompresser.end();
- *
- *     // Decode the bytes into a String
- *     String outputString = new String(result, 0, resultLength, "UTF-8");
- * } catch (java.io.UnsupportedEncodingException ex) {
- *     // handle
- * } catch (java.util.zip.DataFormatException ex) {
- *     // handle
+ *    // Decompress the bytes
+ *    Inflater decompressor = new Inflater();
+ *    ByteArrayOutputStream decompressedBaos = new ByteArrayOutputStream();
+ *    try {
+ *        byte[] compressed = compressedBaos.toByteArray();
+ *        decompressor.setInput(compressed, 0, compressed.length);
+ *        while (!decompressor.finished()) {
+ *            // Use some reasonable size for the temporary buffer
+ *            // based on the data being decompressed
+ *            byte[] tmpBuffer = new byte[100];
+ *            int numDecompressed = 0;
+ *            try {
+ *                numDecompressed = decompressor.inflate(tmpBuffer);
+ *            } catch (DataFormatException dfe) {
+ *                // Handle exception
+ *                ...
+ *            }
+ *            // Copy over the decompressed bytes from the temporary
+ *            // buffer into the final byte array
+ *            decompressedBaos.write(tmpBuffer, 0, numDecompressed);
+ *        }
+ *    } finally {
+ *        // Release the resources held by the decompressor
+ *        decompressor.end();
+ *    }
+ *    // Decode the bytes into a String
+ *    byte[] decompressed = decompressedBaos.toByteArray();
+ *    String outputString = new String(decompressed, 0, decompressed.length, StandardCharsets.UTF_8);
  * }
- * </pre></blockquote>
  *
  * @apiNote
  * To release resources used by this {@code Deflater}, the {@link #end()} method
