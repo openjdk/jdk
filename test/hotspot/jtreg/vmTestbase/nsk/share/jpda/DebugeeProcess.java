@@ -196,24 +196,27 @@ abstract public class DebugeeProcess {
      */
     public int waitFor () {
         long timeout = binder.getArgumentHandler().getWaitTime() * 60 * 1000;
-        int exitCode = 0;
         try {
-            exitCode = waitForDebugee();
+            int exitCode = waitForDebugee();
+            return exitCode;
         } catch (InterruptedException ie) {
             ie.printStackTrace(log.getOutStream());
             throw new Failure("Caught exception while waiting for debuggee process: \n\t" + ie);
+        } finally {
+            try {
+                waitForRedirectors(timeout);
+            } finally {
+                if (process != null) {
+                    process.destroy();
+                }
+                if (pipe != null) {
+                    pipe.close();
+                }
+                if (binder != null) {
+                    binder.close();
+                }
+            }
         }
-        waitForRedirectors(timeout);
-        if (process != null) {
-            process.destroy();
-        }
-        if (pipe != null) {
-            pipe.close();
-        }
-        if (binder != null) {
-            binder.close();
-        }
-        return exitCode;
     }
 
     /**
