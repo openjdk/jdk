@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1021,6 +1021,17 @@ class MacroAssembler: public Assembler {
                        Register z,
                        Register tmp1, Register tmp2,
                        Register tmp3, Register tmp4, Register tmp5);
+
+  /*
+   * When the miscellaneous-instruction-extensions facility 3 is not installed or bit 0 of the M3 field is zero,
+   * a count of the number of "one" bits in each of the eight bytes of general register src is placed into the
+   * corresponding byte of general register dst. Each byte of general register dst is an 8-bit binary integer
+   * in the range of 0-8.
+   *
+   * For more information refer PofZ
+   */
+  void population_count(Register dst, Register src, Register tmp = noreg, bool is_long = false);
+
 };
 
 /**
