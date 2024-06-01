@@ -408,8 +408,7 @@ instruct vadd_immL(vReg dst, vReg src1, immL5 con) %{
   match(Set dst (AddVL src1 (Replicate con)));
   format %{ "vadd_immL $dst, $src1, $con" %}
   ins_encode %{
-    BasicType bt = Matcher::vector_element_basic_type(this);
-    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vsetvli_helper(T_LONG, Matcher::vector_length(this));
     __ vadd_vi(as_VectorRegister($dst$$reg),
                as_VectorRegister($src1$$reg),
                $con$$constant);
@@ -438,8 +437,7 @@ instruct vadd_regL(vReg dst, vReg src1, iRegL src2) %{
   match(Set dst (AddVL src1 (Replicate src2)));
   format %{ "vadd_regL $dst, $src1, $src2" %}
   ins_encode %{
-    BasicType bt = Matcher::vector_element_basic_type(this);
-    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vsetvli_helper(T_LONG, Matcher::vector_length(this));
     __ vadd_vx(as_VectorRegister($dst$$reg),
                as_VectorRegister($src1$$reg),
                as_Register($src2$$reg));
@@ -468,8 +466,7 @@ instruct vadd_immL_masked(vReg dst_src, immL5 con, vRegMask_V0 v0) %{
   match(Set dst_src (AddVL (Binary dst_src (Replicate con)) v0));
   format %{ "vadd_immL_masked $dst_src, $dst_src, $con" %}
   ins_encode %{
-    BasicType bt = Matcher::vector_element_basic_type(this);
-    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vsetvli_helper(T_LONG, Matcher::vector_length(this));
     __ vadd_vi(as_VectorRegister($dst_src$$reg),
                as_VectorRegister($dst_src$$reg),
                $con$$constant, Assembler::v0_t);
@@ -498,8 +495,7 @@ instruct vadd_regL_masked(vReg dst_src, iRegL src2, vRegMask_V0 v0) %{
   match(Set dst_src (AddVL (Binary dst_src (Replicate src2)) v0));
   format %{ "vadd_regL_masked $dst_src, $dst_src, $src2" %}
   ins_encode %{
-    BasicType bt = Matcher::vector_element_basic_type(this);
-    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vsetvli_helper(T_LONG, Matcher::vector_length(this));
     __ vadd_vx(as_VectorRegister($dst_src$$reg),
                as_VectorRegister($dst_src$$reg),
                as_Register($src2$$reg), Assembler::v0_t);
@@ -592,8 +588,7 @@ instruct vsub_regL(vReg dst, vReg src1, iRegL src2) %{
   match(Set dst (SubVL src1 (Replicate src2)));
   format %{ "vsub_regL $dst, $src1, $src2" %}
   ins_encode %{
-    BasicType bt = Matcher::vector_element_basic_type(this);
-    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vsetvli_helper(T_LONG, Matcher::vector_length(this));
     __ vsub_vx(as_VectorRegister($dst$$reg),
                as_VectorRegister($src1$$reg),
                as_Register($src2$$reg));
@@ -622,8 +617,7 @@ instruct vsub_regL_masked(vReg dst_src, iRegL src2, vRegMask_V0 v0) %{
   match(Set dst_src (SubVL (Binary dst_src (Replicate src2)) v0));
   format %{ "vsub_regL_masked $dst_src, $dst_src, $src2" %}
   ins_encode %{
-    BasicType bt = Matcher::vector_element_basic_type(this);
-    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vsetvli_helper(T_LONG, Matcher::vector_length(this));
     __ vsub_vx(as_VectorRegister($dst_src$$reg),
                as_VectorRegister($dst_src$$reg),
                as_Register($src2$$reg), Assembler::v0_t);
@@ -1668,8 +1662,7 @@ instruct vmul_regL(vReg dst, vReg src1, iRegL src2) %{
   match(Set dst (MulVL src1 (Replicate src2)));
   format %{ "vmul_regL $dst, $src1, $src2" %}
   ins_encode %{
-    BasicType bt = Matcher::vector_element_basic_type(this);
-    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vsetvli_helper(T_LONG, Matcher::vector_length(this));
     __ vmul_vx(as_VectorRegister($dst$$reg),
                as_VectorRegister($src1$$reg),
                as_Register($src2$$reg));
@@ -1698,8 +1691,7 @@ instruct vmul_regL_masked(vReg dst_src, iRegL src2, vRegMask_V0 v0) %{
   match(Set dst_src (MulVL (Binary dst_src (Replicate src2)) v0));
   format %{ "vmul_regL_masked $dst_src, $dst_src, $src2" %}
   ins_encode %{
-    BasicType bt = Matcher::vector_element_basic_type(this);
-    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vsetvli_helper(T_LONG, Matcher::vector_length(this));
     __ vmul_vx(as_VectorRegister($dst_src$$reg),
                as_VectorRegister($dst_src$$reg),
                as_Register($src2$$reg), Assembler::v0_t);
