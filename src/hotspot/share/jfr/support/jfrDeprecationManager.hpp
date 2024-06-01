@@ -98,7 +98,6 @@ class JfrDeprecationManager : AllStatic {
   static void write_edges(JfrChunkWriter& cw, Thread* thread, bool on_error = false);
   static void on_link(const Method* method, Method* sender, int bci, u1 frame_type, JavaThread* thread);
   static void on_level_setting_update(int64_t new_level);
-  static bool has_unresolved_entry();
 };
 
 #endif // SHARE_JFR_SUPPORT_JFRDEPRECATIONMANAGER_HPP
