@@ -1196,7 +1196,7 @@ GrowableArray<JavaThread*>* Threads::get_pending_threads(ThreadsList * t_list,
     if (!p->can_call_java()) continue;
 
     oop thread_oop = JvmtiEnvBase::get_vthread_or_thread_oop(p);
-    if (java_lang_VirtualThread::is_instance(thread_oop)) {
+    if (thread_oop->is_a(vmClasses::BaseVirtualThread_klass())) {
       continue;
     }
     // The first stage of async deflation does not affect any field
