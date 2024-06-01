@@ -5807,31 +5807,27 @@ void MacroAssembler::lightweight_unlock(Register obj, Register hdr, Register tmp
 void MacroAssembler::population_count(Register r_dst, Register r_src, Register r_tmp, bool is_long) {
   BLOCK_COMMENT("population_count {");
 
-  z_popcnt(r_dst, r_src);
-
-  if (!VM_Version::has_MiscInstrExt3()) {
-
 #ifdef ASSERT
-    assert(r_tmp != noreg, "temp register required for popcnt, for machines < z15");
-    assert_different_registers(r_dst, r_tmp); // if r_src is same as r_tmp, it should be fine
+  assert(r_tmp != noreg, "temp register required for popcnt, for machines < z15");
+  assert_different_registers(r_dst, r_tmp); // if r_src is same as r_tmp, it should be fine
 #endif
 
-    if (is_long) {
-      z_sllg(r_tmp, r_dst, 32);
-      z_agr(r_dst, r_tmp);
-      z_sllg(r_tmp, r_dst, 16);
-      z_agr(r_dst, r_tmp);
-      z_sllg(r_tmp, r_dst, 8);
-      z_agr(r_dst, r_tmp);
-      z_srlg(r_dst, r_dst, 56);
-    } else {
-      z_sllk(r_tmp, r_dst, 16);
-      z_ar(r_dst, r_tmp);
-      z_sllk(r_tmp, r_dst, 8);
-      z_ar(r_dst, r_tmp);
-      // TODO: use risbgn instruction instead of srl below
-      z_srl(r_dst, 24);
-    }
+  if (is_long) {
+    z_popcnt(r_dst, r_src);
+    z_ahhlr(r_dst, r_dst, r_dst);
+    z_sllg(r_tmp, r_dst, 16);
+    z_algr(r_dst, r_tmp);
+    z_sllg(r_tmp, r_dst, 8);
+    z_algr(r_dst, r_tmp);
+    z_srlg(r_dst, r_dst, 56);
+  } else {
+    z_popcnt(r_dst, r_src);
+    z_srlg(r_tmp, r_dst, 16);
+    z_alr(r_dst, r_tmp);
+    z_srlg(r_tmp, r_dst, 8);
+    z_alr(r_dst, r_tmp);
+    // TODO: use risbgn instruction instead of srl below
+    z_llgcr(r_dst, r_dst);
   }
 
   BLOCK_COMMENT("} population_count");
