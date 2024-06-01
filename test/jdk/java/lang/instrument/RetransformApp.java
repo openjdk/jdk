@@ -22,15 +22,12 @@
  */
 
 
-import java.io.File;
 import java.io.PrintStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
-import java.util.spi.ToolProvider;
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.helpers.ClassFileInstaller;
 
 /*
  * @test
@@ -39,22 +36,12 @@ import jdk.test.lib.process.ProcessTools;
  *
  * @modules java.instrument
  * @library /test/lib
- * @build bootreporter.StringIdCallback bootreporter.StringIdCallbackReporter
+ * @build RetransformAgent asmlib.Instrumentor
  * @enablePreview
- * @comment When this test is compiled by jtreg, it also compiles everything under this test's
- *          source directory. One such class under asmlib/Instrumentor.java uses ClassFile API
- *          which is a PreviewFeature. Hence we enablePreview for this test
+ * @comment The test uses asmlib/Instrumentor.java which relies on ClassFile API PreviewFeature.
  * @run driver RetransformApp roleDriver
  */
 public class RetransformApp {
-
-    private static final ToolProvider JAR_TOOL = ToolProvider.findFirst("jar")
-            .orElseThrow(() -> new RuntimeException("jar tool not found")
-            );
-
-    private static final ToolProvider JAVAC_TOOL = ToolProvider.findFirst("javac")
-            .orElseThrow(() -> new RuntimeException("javac tool not found")
-            );
 
     public static void main(String[] args) throws Exception {
         if (args.length == 1) {
@@ -74,88 +61,22 @@ public class RetransformApp {
     }
 
     private static Path createAgentJar() throws Exception {
-        final Path outputDir = Files.createTempDirectory(Path.of("."), "RetransformApp");
-        final Path bootClassesDir = outputDir.resolve("bootclasses");
-        compileBootpathClasses(bootClassesDir);
-        final Path agentClasses = outputDir.resolve("agentclasses");
-        compileAgentClasses(agentClasses);
-
+        Path agentJar = Path.of("RetransformAgent.jar");
         final String manifest = """
                 Manifest-Version: 1.0
                 Premain-Class: RetransformAgent
                 Can-Retransform-Classes: true
-                """
-                + "Boot-Class-Path: " + bootClassesDir.toString().replace(File.separatorChar, '/')
-                + "\n";
-        System.err.println("manifest is:\n" + manifest);
-        final Path manifestFile = Files.writeString(Path.of("agentmanifest.mf"), manifest);
-        final Path agentJarFile = Path.of("RetransformAgent.jar").toAbsolutePath();
-        final String[] jarCmdArgs = {"cvfm",
-                agentJarFile.toString(), manifestFile.toString(),
-                "-C", agentClasses.toAbsolutePath().toString(), "."};
-        System.out.println("invoking jar with args: " + Arrays.toString(jarCmdArgs));
-        final int exitCode = JAR_TOOL.run(System.out, System.err, jarCmdArgs);
-        if (exitCode != 0) {
-            throw new Exception("jar command failed with exit code: " + exitCode);
-        }
-        return agentJarFile;
-    }
-
-    private static void compileBootpathClasses(final Path destDir) throws Exception {
-        // directory containing this current test file
-        final String testSrc = System.getProperty("test.src");
-        if (testSrc == null) {
-            throw new Exception("test.src system property isn't set");
-        }
-        final Path bootReporterSourceDir = Path.of(testSrc)
-                .resolve("bootreporter").toAbsolutePath();
-        // this directory must be present
-        if (!Files.isDirectory(bootReporterSourceDir)) {
-            throw new Exception(bootReporterSourceDir.toString() + " is missing or not a directory");
-        }
-        final String[] javacCmdArgs = {"-d", destDir.toString(),
-                bootReporterSourceDir.resolve("StringIdCallback.java").toString(),
-                bootReporterSourceDir.resolve("StringIdCallbackReporter.java").toString()
-        };
-        System.out.println("invoking javac with args: " + Arrays.toString(javacCmdArgs));
-        final int exitCode = JAVAC_TOOL.run(System.out, System.err, javacCmdArgs);
-        if (exitCode != 0 ){
-            throw new Exception("javac command failed with exit code: " + exitCode);
-        }
-    }
-
-    private static void compileAgentClasses(final Path destDir) throws Exception {
-        // directory containing this current test file
-        final String testSrc = System.getProperty("test.src");
-        if (testSrc == null) {
-            throw new Exception("test.src system property isn't set");
-        }
-        final Path agentJavaSrc = Path.of(testSrc).resolve("RetransformAgent.java")
-                .toAbsolutePath();
-        // this file must be present
-        if (!Files.isRegularFile(agentJavaSrc)) {
-            throw new Exception(agentJavaSrc.toString() + " is missing or not a file");
-        }
-        final Path instrumentorJavaSrc = Path.of(testSrc)
-                .resolve("asmlib", "Instrumentor.java").toAbsolutePath();
-        // this file must be present
-        if (!Files.isRegularFile(instrumentorJavaSrc)) {
-            throw new Exception(instrumentorJavaSrc.toString() + " is missing or not a file");
-        }
-        final String currentRuntimeVersion = String.valueOf(Runtime.version().feature());
-        final String[] javacCmdArgs = {"-d", destDir.toString(),
-                // enable preview since asmlib/Instrumentor.java uses ClassFile API PreviewFeature
-                "--enable-preview", "--release", currentRuntimeVersion,
-                agentJavaSrc.toString(), instrumentorJavaSrc.toString()};
-        System.out.println("invoking javac with args: " + Arrays.toString(javacCmdArgs));
-        final int exitCode = JAVAC_TOOL.run(System.out, System.err, javacCmdArgs);
-        if (exitCode != 0 ){
-            throw new Exception("javac command failed with exit code: " + exitCode);
-        }
+                """;
+        System.out.println("Manifest is:\n" + manifest);
+        ClassFileInstaller.writeJar(agentJar.getFileName().toString(),
+                ClassFileInstaller.Manifest.fromString(manifest),
+                "RetransformAgent",
+                "asmlib.Instrumentor");
+        return agentJar;
     }
 
     private static void launchApp(final Path agentJar) throws Exception {
-        final OutputAnalyzer oa = ProcessTools.executeLimitedTestJava(
+        final OutputAnalyzer oa = ProcessTools.executeTestJava(
                 "--enable-preview", // due to usage of ClassFile API PreviewFeature in the agent
                 "-XX:+UnlockDiagnosticVMOptions", "-XX:-CheckIntrinsics",
                 "-javaagent:" + agentJar.toString(),

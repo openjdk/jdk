@@ -26,10 +26,9 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.lang.management.*;
-import java.util.Arrays;
-import java.util.spi.ToolProvider;
 
 import bootreporter.*;
+import jdk.test.lib.helpers.ClassFileInstaller;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
@@ -42,21 +41,12 @@ import jdk.test.lib.process.ProcessTools;
  *          java.instrument
  * @library /test/lib
  * @build bootreporter.StringIdCallback bootreporter.StringIdCallbackReporter
+ *        asmlib.Instrumentor NativeMethodPrefixAgent
  * @enablePreview
- * @comment When this test is compiled by jtreg, it also compiles everything under this test's
- *          source directory. One such class under asmlib/Instrumentor.java uses ClassFile API
- *          which is a PreviewFeature. Hence we enablePreview for this test
+ * @comment The test uses asmlib/Instrumentor.java which relies on ClassFile API PreviewFeature.
  * @run driver NativeMethodPrefixApp roleDriver
  */
 public class NativeMethodPrefixApp implements StringIdCallback {
-
-    private static final ToolProvider JAR_TOOL = ToolProvider.findFirst("jar")
-            .orElseThrow(() -> new RuntimeException("jar tool not found")
-            );
-
-    private static final ToolProvider JAVAC_TOOL = ToolProvider.findFirst("javac")
-            .orElseThrow(() -> new RuntimeException("javac tool not found")
-            );
 
     // This test is fragile like a golden file test.
     // It assumes that a specific non-native library method will call a specific
@@ -83,89 +73,46 @@ public class NativeMethodPrefixApp implements StringIdCallback {
     }
 
     private static Path createAgentJar() throws Exception {
-        final Path outputDir = Files.createTempDirectory(Path.of("."), "NativeMethodPrefixApp");
-        final Path bootClassesDir = outputDir.resolve("bootclasses");
-        compileBootpathClasses(bootClassesDir);
-        final Path agentClasses = outputDir.resolve("agentclasses");
-        compileAgentClasses(agentClasses);
-
+        // first setup a directory containing (only) the classes needed in boot classpath
+        // of the application jar to be launched
+        final Path bootClassesDir = createBootClassesDir();
+        final Path agentJar = Path.of("NativeMethodPrefixAgent.jar");
         final String manifest = """
                 Manifest-Version: 1.0
                 Premain-Class: NativeMethodPrefixAgent
                 Can-Retransform-Classes: true
                 Can-Set-Native-Method-Prefix: true
                 """
-                + "Boot-Class-Path: " + bootClassesDir.toString().replace(File.separatorChar, '/')
+                + "Boot-Class-Path: " + bootClassesDir.toString().replace(File.separatorChar, '/') + "/"
                 + "\n";
-        System.err.println("manifest is:\n" + manifest);
-        final Path manifestFile = Files.writeString(Path.of("agentmanifest.mf"), manifest);
-        final Path agentJarFile = Path.of("NativeMethodPrefixAgent.jar").toAbsolutePath();
-        final String[] jarCmdArgs = {"cvfm",
-                agentJarFile.toString(), manifestFile.toString(),
-                "-C", agentClasses.toAbsolutePath().toString(), "."};
-        System.out.println("invoking jar with args: " + Arrays.toString(jarCmdArgs));
-        final int exitCode = JAR_TOOL.run(System.out, System.err, jarCmdArgs);
-        if (exitCode != 0) {
-            throw new Exception("jar command failed with exit code: " + exitCode);
-        }
-        return agentJarFile;
+        System.out.println("Manifest is:\n" + manifest);
+        // create the agent jar
+        ClassFileInstaller.writeJar(agentJar.getFileName().toString(),
+                ClassFileInstaller.Manifest.fromString(manifest),
+                "NativeMethodPrefixAgent",
+                "asmlib.Instrumentor");
+        return agentJar;
     }
 
-    private static void compileBootpathClasses(final Path destDir) throws Exception {
-        // directory containing this current test file
-        final String testSrc = System.getProperty("test.src");
-        if (testSrc == null) {
-            throw new Exception("test.src system property isn't set");
+    private static Path createBootClassesDir() throws Exception {
+        final Path bootreporterClassesDir = Path.of(System.getProperty("test.classes"))
+                .resolve("bootreporter");
+        if (!Files.isDirectory(bootreporterClassesDir)) {
+            throw new Exception(bootreporterClassesDir + " is missing or not a directory");
         }
-        final Path bootReporterSourceDir = Path.of(testSrc)
-                .resolve("bootreporter").toAbsolutePath();
-        // this directory must be present
-        if (!Files.isDirectory(bootReporterSourceDir)) {
-            throw new Exception(bootReporterSourceDir.toString() + " is missing or not a directory");
-        }
-        final String[] javacCmdArgs = {"-d", destDir.toString(),
-                bootReporterSourceDir.resolve("StringIdCallback.java").toString(),
-                bootReporterSourceDir.resolve("StringIdCallbackReporter.java").toString()
-        };
-        System.out.println("invoking javac with args: " + Arrays.toString(javacCmdArgs));
-        final int exitCode = JAVAC_TOOL.run(System.out, System.err, javacCmdArgs);
-        if (exitCode != 0 ){
-            throw new Exception("javac command failed with exit code: " + exitCode);
-        }
-    }
-
-    private static void compileAgentClasses(final Path destDir) throws Exception {
-        // directory containing this current test file
-        final String testSrc = System.getProperty("test.src");
-        if (testSrc == null) {
-            throw new Exception("test.src system property isn't set");
-        }
-        final Path agentJavaSrc = Path.of(testSrc).resolve("NativeMethodPrefixAgent.java")
-                .toAbsolutePath();
-        // this file must be present
-        if (!Files.isRegularFile(agentJavaSrc)) {
-            throw new Exception(agentJavaSrc.toString() + " is missing or not a file");
-        }
-        final Path instrumentorJavaSrc = Path.of(testSrc)
-                .resolve("asmlib", "Instrumentor.java").toAbsolutePath();
-        // this file must be present
-        if (!Files.isRegularFile(instrumentorJavaSrc)) {
-            throw new Exception(instrumentorJavaSrc.toString() + " is missing or not a file");
-        }
-        final String currentRuntimeVersion = String.valueOf(Runtime.version().feature());
-        final String[] javacCmdArgs = {"-d", destDir.toString(),
-                // enable preview since asmlib/Instrumentor.java uses ClassFile API PreviewFeature
-                "--enable-preview", "--release", currentRuntimeVersion,
-                agentJavaSrc.toString(), instrumentorJavaSrc.toString()};
-        System.out.println("invoking javac with args: " + Arrays.toString(javacCmdArgs));
-        final int exitCode = JAVAC_TOOL.run(System.out, System.err, javacCmdArgs);
-        if (exitCode != 0 ){
-            throw new Exception("javac command failed with exit code: " + exitCode);
-        }
+        // copy over the bootreporter.StringIdCallback and bootreporter.StringIdCallbackReporter
+        // into the boot classpath directory
+        final Path bootClassesDir = Path.of("bootclasses");
+        Files.createDirectories(bootClassesDir.resolve("bootreporter"));
+        Files.copy(bootreporterClassesDir.resolve("StringIdCallback.class"),
+                bootClassesDir.resolve("bootreporter", "StringIdCallback.class"));
+        Files.copy(bootreporterClassesDir.resolve("StringIdCallbackReporter.class"),
+                bootClassesDir.resolve("bootreporter", "StringIdCallbackReporter.class"));
+        return bootClassesDir;
     }
 
     private static void launchApp(final Path agentJar) throws Exception {
-        final OutputAnalyzer oa = ProcessTools.executeLimitedTestJava(
+        final OutputAnalyzer oa = ProcessTools.executeTestJava(
                 "--enable-preview", // due to usage of ClassFile API PreviewFeature in the agent
                 "-XX:+UnlockDiagnosticVMOptions", "-XX:-CheckIntrinsics",
                 "-javaagent:" + agentJar.toString(),
@@ -192,6 +139,7 @@ public class NativeMethodPrefixApp implements StringIdCallback {
         }
     }
 
+    @Override
     public void tracker(String name, int id) {
         if (name.endsWith(goldenNativeMethodName)) {
             System.err.println("Tracked #" + id + ": MATCHED -- " + name);
