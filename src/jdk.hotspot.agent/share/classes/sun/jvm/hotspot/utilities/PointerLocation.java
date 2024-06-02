@@ -359,7 +359,8 @@ public class PointerLocation {
       tty.print(" JNI handle block (" + handleBlock.top() + " handle slots present)");
       if (handleThread.isJavaThread()) {
         tty.print(" for JavaThread ");
-        ((JavaThread) handleThread).printThreadIDOn(tty); // includes "\n"
+        ((JavaThread) handleThread).printThreadIDOn(tty);
+        tty.println();
       } else {
         tty.println(" for a non-Java Thread");
       }

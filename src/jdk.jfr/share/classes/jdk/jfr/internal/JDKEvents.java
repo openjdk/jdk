@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,42 +23,30 @@
  * questions.
  */
 
-package jdk.jfr.internal.instrument;
+package jdk.jfr.internal;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Properties;
 
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.event.JFRTracing;
 import jdk.internal.event.ThrowableTracer;
+import jdk.internal.platform.Container;
+import jdk.internal.platform.Metrics;
 import jdk.jfr.Event;
 import jdk.jfr.events.ActiveRecordingEvent;
 import jdk.jfr.events.ActiveSettingEvent;
-import jdk.jfr.events.ContainerIOUsageEvent;
-import jdk.jfr.events.ContainerConfigurationEvent;
-import jdk.jfr.events.ContainerCPUUsageEvent;
 import jdk.jfr.events.ContainerCPUThrottlingEvent;
+import jdk.jfr.events.ContainerCPUUsageEvent;
+import jdk.jfr.events.ContainerConfigurationEvent;
+import jdk.jfr.events.ContainerIOUsageEvent;
 import jdk.jfr.events.ContainerMemoryUsageEvent;
 import jdk.jfr.events.DirectBufferStatisticsEvent;
-import jdk.jfr.events.FileForceEvent;
-import jdk.jfr.events.FileReadEvent;
-import jdk.jfr.events.FileWriteEvent;
 import jdk.jfr.events.InitialSecurityPropertyEvent;
-
-import jdk.jfr.internal.JVM;
-import jdk.jfr.internal.LogLevel;
-import jdk.jfr.internal.LogTag;
-import jdk.jfr.internal.Logger;
-import jdk.jfr.internal.SecuritySupport;
 import jdk.jfr.internal.periodic.PeriodicEvents;
-import jdk.internal.platform.Container;
-import jdk.internal.platform.Metrics;
 
 public final class JDKEvents {
 
     private static final Class<?>[] eventClasses = {
-        FileReadEvent.class,
-        FileWriteEvent.class,
         ActiveSettingEvent.class,
         ActiveRecordingEvent.class,
         // jdk.internal.event.* classes need their mirror
@@ -68,6 +56,8 @@ public final class JDKEvents {
         jdk.internal.event.ExceptionStatisticsEvent.class,
         jdk.internal.event.ExceptionThrownEvent.class,
         jdk.internal.event.FileForceEvent.class,
+        jdk.internal.event.FileReadEvent.class,
+        jdk.internal.event.FileWriteEvent.class,
         jdk.internal.event.ProcessStartEvent.class,
         jdk.internal.event.SecurityPropertyModificationEvent.class,
         jdk.internal.event.SecurityProviderServiceEvent.class,
@@ -86,15 +76,6 @@ public final class JDKEvents {
         InitialSecurityPropertyEvent.class,
     };
 
-    // This is a list of the classes with instrumentation code that should be applied.
-    private static final Class<?>[] instrumentationClasses = new Class<?>[] {
-        FileInputStreamInstrumentor.class,
-        FileOutputStreamInstrumentor.class,
-        RandomAccessFileInstrumentor.class,
-        FileChannelImplInstrumentor.class
-    };
-
-    private static final Class<?>[] targetClasses = new Class<?>[instrumentationClasses.length];
     private static final Runnable emitExceptionStatistics = JDKEvents::emitExceptionStatistics;
     private static final Runnable emitDirectBufferStatistics = JDKEvents::emitDirectBufferStatistics;
     private static final Runnable emitContainerConfiguration = JDKEvents::emitContainerConfiguration;
@@ -118,29 +99,11 @@ public final class JDKEvents {
                 PeriodicEvents.addJDKEvent(InitialSecurityPropertyEvent.class, emitInitialSecurityProperties);
 
                 initializeContainerEvents();
-                ThrowableTracer.enable();
+                JFRTracing.enable();
                 initializationTriggered = true;
             }
         } catch (Exception e) {
             Logger.log(LogTag.JFR_SYSTEM, LogLevel.WARN, "Could not initialize JDK events. " + e.getMessage());
-        }
-    }
-
-    public static void addInstrumentation() {
-        try {
-            List<Class<?>> list = new ArrayList<>();
-            for (int i = 0; i < instrumentationClasses.length; i++) {
-                JIInstrumentationTarget tgt = instrumentationClasses[i].getAnnotation(JIInstrumentationTarget.class);
-                Class<?> clazz = Class.forName(tgt.value());
-                targetClasses[i] = clazz;
-                list.add(clazz);
-            }
-            Logger.log(LogTag.JFR_SYSTEM, LogLevel.INFO, "Retransformed JDK classes");
-            JVM.retransformClasses(list.toArray(new Class<?>[list.size()]));
-        } catch (IllegalStateException ise) {
-            throw ise;
-        } catch (Exception e) {
-            Logger.log(LogTag.JFR_SYSTEM, LogLevel.WARN, "Could not add instrumentation for JDK events. " + e.getMessage());
         }
     }
 
@@ -228,20 +191,6 @@ public final class JDKEvents {
             event.cpuThrottledTime = containerMetrics.getCpuThrottledTime();
             event.commit();
         }
-    }
-
-    @SuppressWarnings("deprecation")
-    public static byte[] retransformCallback(Class<?> klass, byte[] oldBytes) throws Throwable {
-        for (int i = 0; i < targetClasses.length; i++) {
-            if (targetClasses[i].equals(klass)) {
-                Class<?> c = instrumentationClasses[i];
-                if (Logger.shouldLog(LogTag.JFR_SYSTEM, LogLevel.TRACE)) {
-                    Logger.log(LogTag.JFR_SYSTEM, LogLevel.TRACE, "Processing instrumentation class: " + c);
-                }
-                return new JIClassInstrumentation(instrumentationClasses[i], klass, oldBytes).getNewBytes();
-            }
-        }
-        return oldBytes;
     }
 
     public static void remove() {
