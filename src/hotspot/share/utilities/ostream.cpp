@@ -92,9 +92,11 @@ const char* outputStream::do_vsnprintf(char* buffer, size_t buflen,
 
   const char* result;  // The string to return. May not be the buffer.
   size_t required_len = 0; // The length of buffer needed to avoid truncation
-                           // (including space for the nul terminator).
+                           // (excluding space for the nul terminator).
 
-  if (add_cr) buflen--; // Ensure space for CR even if truncation occurs.
+  if (add_cr) { // Ensure space for CR even if truncation occurs.
+    buflen--;
+  }
 
   if (!strchr(format, '%')) {
     // constant format string
