@@ -213,9 +213,11 @@ public class DeflaterInputStream extends FilterInputStream {
     /**
      * Skips over and discards data from the input stream.
      * This method may block until the specified number of bytes are read and
-     * skipped. <em>Note:</em> While {@code n} is given as a {@code long},
-     * the maximum number of bytes which can be skipped is
-     * {@code Integer.MAX_VALUE}.
+     * skipped.
+     *
+     * @implNote
+     * If {@code n} is greater than {@link Integer#MAX_VALUE} then this method
+     * will only skip at most {@code Integer.MAX_VALUE} bytes.
      *
      * @param n number of bytes to be skipped
      * @return the actual number of bytes skipped
