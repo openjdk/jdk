@@ -61,6 +61,7 @@ public class VMDeprecatedOptions {
             {"PreserveAllAnnotations", "true"},
             {"AllowRedefinitionToAddDeleteMethods", "true"},
             {"UseEmptySlotsInSupers", "true"},
+            {"ZGenerational", "false"},
 
             // deprecated alias flags (see also aliased_jvm_flags):
             {"CreateMinidumpOnCrash", "false"}

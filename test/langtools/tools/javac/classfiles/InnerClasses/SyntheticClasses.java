@@ -47,14 +47,14 @@ public class SyntheticClasses {
         for (File classFile : Objects.requireNonNull(testClasses.listFiles(f -> f.getName().endsWith(".class")))) {
             ClassModel cf = ClassFile.of().parse(classFile.toPath());
             if (cf.thisClass().asInternalName().matches(".*\\$[0-9]+")) {
-                EnclosingMethodAttribute encl = cf.findAttribute(Attributes.ENCLOSING_METHOD).orElse(null);
+                EnclosingMethodAttribute encl = cf.findAttribute(Attributes.enclosingMethod()).orElse(null);
                 if (encl != null) {
                     if (encl.enclosingMethodName().isPresent())
                         throw new IllegalStateException("Invalid EnclosingMethod.method: " +
                                                         encl.enclosingMethodName().get().stringValue() + ".");
                 }
             }
-            InnerClassesAttribute attr = cf.findAttribute(Attributes.INNER_CLASSES).orElse(null);
+            InnerClassesAttribute attr = cf.findAttribute(Attributes.innerClasses()).orElse(null);
             if (attr != null) {
                 for (InnerClassInfo info : attr.classes()) {
                     if (cf.majorVersion() < 51)
