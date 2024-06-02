@@ -791,8 +791,8 @@ public abstract class PKCS11Test {
                 (tp, attr) -> tp.getFileName().equals(libraryName))) {
 
             return files.findAny()
-                        .orElseThrow(() -> new SkippedException(
-                        "NSS library \"" + libraryName + "\" was not found in " + path));
+                        .orElseThrow(() ->
+                            new RuntimeException("NSS library \"" + libraryName + "\" was not found in " + path));
         }
     }
 
