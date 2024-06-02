@@ -5214,7 +5214,7 @@ static const uint64_t right_16_bits = right_n_bits(16);
     VectorRegister vs2acc[] = {
       v16, v18, v20, v22
     };
-    VectorRegister vtable_64 = v24; // group: v25, v26, v27
+    VectorRegister vtable_64 = v24; // group: v24, v25, v26, v27
     VectorRegister vtable_16 = (MaxVectorSize == 16) ? v27 : v30;
     VectorRegister vtemp1 = v28; // group: v29, v30, v31
     VectorRegister vtemp2 = v29;
