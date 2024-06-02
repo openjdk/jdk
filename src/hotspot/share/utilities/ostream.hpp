@@ -41,7 +41,9 @@ DEBUG_ONLY(class ResourceMark;)
 // we may use jio_printf:
 //     jio_fprintf(defaultStream::output_stream(), "Message");
 // This allows for redirection via -XX:+DisplayVMOutputToStdout and
-// -XX:+DisplayVMOutputToStderr
+// -XX:+DisplayVMOutputToStderr.
+//
+
 class outputStream : public CHeapObjBase {
  private:
    NONCOPYABLE(outputStream);
@@ -56,6 +58,20 @@ class outputStream : public CHeapObjBase {
 
   // Returns whether a newline was seen or not
    bool update_position(const char* s, size_t len);
+
+  // Nominally processes the given format string and the supplied arguments
+  // to produce a formatted string using the supplied buffer. The formatted
+  // string (in the buffer) is returned, and the outgoing `result_len` set
+  // to the size of the returned string.
+  //
+  // If the format string is a plain string (no format specifiers)
+  // or idiomatically it is "%s" to print a supplied argument string, then
+  // the buffer is ignored, we return the string directly and set `result_len` to its
+  // length. However, if `add_cr` is true then we have to copy the string
+  // into the buffer and we risk truncation. The `result_len` is always set to the length
+  // of the returned string.
+  //
+  // In a debug build, if truncation occurs a VM warning is issued.
    static const char* do_vsnprintf(char* buffer, size_t buflen,
                                    const char* format, va_list ap,
                                    bool add_cr,
@@ -91,14 +107,18 @@ class outputStream : public CHeapObjBase {
    void set_position(int pos)   { _position = pos; }
 
    // printing
+   // Note that (v)print_cr forces the use of internal buffering to allow
+   // appending of the "cr". This can lead to truncation if the buffer is
+   // too small.
+
    void print(const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
    void print_cr(const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
    void vprint(const char *format, va_list argptr) ATTRIBUTE_PRINTF(2, 0);
    void vprint_cr(const char* format, va_list argptr) ATTRIBUTE_PRINTF(2, 0);
-   void print_raw(const char* str)            { write(str, strlen(str)); }
-   void print_raw(const char* str, size_t len)   { write(str,         len); }
-   void print_raw_cr(const char* str)         { write(str, strlen(str)); cr(); }
-   void print_raw_cr(const char* str, size_t len){ write(str,         len); cr(); }
+   void print_raw(const char* str) { write(str, strlen(str)); }
+   void print_raw(const char* str, size_t len) { write(str, len); }
+   void print_raw_cr(const char* str) { write(str, strlen(str)); cr(); }
+   void print_raw_cr(const char* str, size_t len){ write(str, len); cr(); }
    void print_data(void* data, size_t len, bool with_ascii, bool rel_addr=true);
    void put(char ch);
    void sp(int count = 1);
