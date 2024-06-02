@@ -511,7 +511,7 @@ bool LibraryCallKit::inline_vector_nary_operation(int n) {
   return true;
 }
 
-Node* LibraryCallKit::wrap_indexes(Node* index_vec, int num_elem, BasicType elem_bt) {
+Node* LibraryCallKit::partially_wrap_indexes(Node* index_vec, int num_elem, BasicType elem_bt) {
   assert(elem_bt == T_BYTE, "");
   const TypeVect * vt  = TypeVect::make(elem_bt, num_elem);
   const Type * type_bt = Type::get_const_basic_type(elem_bt);
@@ -619,7 +619,7 @@ bool LibraryCallKit::inline_vector_shuffle_iota() {
     // Wrap the indices greater than lane count.
      res = gvn().transform(VectorNode::make(Op_AndV, res, bcast_mod, vt));
   } else {
-     res = wrap_indexes(res, num_elem, elem_bt);
+     res = partially_wrap_indexes(res, num_elem, elem_bt);
   }
 
   ciKlass* sbox_klass = shuffle_klass->const_oop()->as_instance()->java_lang_Class_klass();
@@ -2406,7 +2406,7 @@ bool LibraryCallKit::inline_vector_convert() {
   }
 
   if (is_vector_shuffle(vbox_klass_to)) {
-     op = wrap_indexes(op, num_elem_to, elem_bt_to);
+     op = partially_wrap_indexes(op, num_elem_to, elem_bt_to);
   }
 
   const TypeInstPtr* vbox_type_to = TypeInstPtr::make_exact(TypePtr::NotNull, vbox_klass_to);

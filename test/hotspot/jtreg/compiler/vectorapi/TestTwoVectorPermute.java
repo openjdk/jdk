@@ -44,16 +44,17 @@ public class TestTwoVectorPermute {
    public static void validate(float [] res, float [] shuf, float [] src1, float [] src2) {
        for (int i = 0; i < res.length; i++) {
            float expected = Float.NaN;
+           int shuf_index = (int)shuf[i];
            // Exceptional index.
-           if (shuf[i] < 0 || shuf[i] >= FSP.length()) {
-               int wrapped_index = ((int)shuf[i] & (FSP.length() - 1));
-               if (Integer.compareUnsigned((int)shuf[i], FSP.length()) > 0) {
+           if (shuf_index < 0 || shuf_index >= FSP.length()) {
+               int wrapped_index = (shuf_index & (FSP.length() - 1));
+               if (Integer.compareUnsigned(shuf_index, FSP.length()) > 0) {
                    wrapped_index -= FSP.length();
                }
                wrapped_index = wrapped_index < 0 ? wrapped_index + FSP.length() : wrapped_index;
                expected = src2[wrapped_index];
            } else {
-               expected = src1[(int)shuf[i]];
+               expected = src1[shuf_index];
            }
            if (res[i] != expected) {
               throw new AssertionError("Result mismatch at " + i + " index, (actual = " + res[i] + ") != ( expected " +   expected + " )");
