@@ -370,12 +370,12 @@ public class TestErasure extends JavadocTester {
                 <div class="col-summary-item-name even-row-color constructor constructor-tab1">\
                 <a href="java.base/p/Foo.html#%3Cinit%3E(T)">p.Foo<wbr>(T)</a><sup>\
                 <a href="java.base/p/Foo.html#preview-%3Cinit%3E(T)">PREVIEW</a></sup></div>
-                <div class="col-second even-row-color constructor constructor-tab1">Test Feature</div>
-                <div class="col-last even-row-color constructor constructor-tab1"></div>
+                <div class="col-second even-row-color constructor constructor-tab1" role="tablist" tabindex="0">Test Feature</div>
+                <div class="col-last even-row-color constructor constructor-tab1" role="tablist" tabindex="0"></div>
                 <div class="col-summary-item-name odd-row-color constructor constructor-tab1">\
                 <a href="java.base/p/Foo.html#%3Cinit%3E(p.Y)">p.Foo<wbr>(T)</a><sup>\
                 <a href="java.base/p/Foo.html#preview-%3Cinit%3E(p.Y)">PREVIEW</a></sup></div>
-                <div class="col-second odd-row-color constructor constructor-tab1">Test Feature</div>
-                <div class="col-last odd-row-color constructor constructor-tab1"></div>""");
+                <div class="col-second odd-row-color constructor constructor-tab1" role="tablist" tabindex="0">Test Feature</div>
+                <div class="col-last odd-row-color constructor constructor-tab1" role="tablist" tabindex="0"></div>""");
     }
 }

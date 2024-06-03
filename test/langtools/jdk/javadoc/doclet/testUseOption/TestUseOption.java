@@ -272,7 +272,7 @@ public class TestUseOption extends JavadocTester {
                     <div class="table-header col-last">Description</div>
                     <div class="col-first even-row-color" role="tablist" tabindex="0"><code>class&nbsp;</code></div>
                     <div class="col-second even-row-color"><code><a href="../Two.html" class="type-name-link" \
-                    title="class in Unnamed Package" role="tablist" tabindex="0">Two</a></code></div>
+                    title="class in Unnamed Package">Two</a></code></div>
                     <div class="col-last even-row-color" role="tablist" tabindex="0">&nbsp;</div>
                     </div>
                     """);
