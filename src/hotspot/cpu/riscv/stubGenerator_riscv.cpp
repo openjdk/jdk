@@ -5302,8 +5302,9 @@ static const uint64_t right_16_bits = right_n_bits(16);
     __ vsetivli(temp0, 16, Assembler::e8, Assembler::m1);
     if (MaxVectorSize > 16) {
       // Need to generate vtable_16 explicitly
+      __ mv(temp1, 16);
       __ vid_v(vtemp1);
-      __ vrsub_vi(vtable_16, vtemp1, 16);
+      __ vrsub_vx(vtable_16, vtemp1, temp1);
       // vtable_32 group now contains { 0x10, 0xf, 0xe, ..., 0x3, 0x2, 0x1 }
     }
     __ vmv_v_i(vzero, 0);
